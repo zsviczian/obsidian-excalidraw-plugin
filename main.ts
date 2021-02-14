@@ -32,6 +32,11 @@ export default class DailyStats extends Plugin {
 			const toAdd = await this.getTodaysWords(file);
 			this.currentWordCount += toAdd;
 		};
+		await this.saveSettings();
+
+		this.registerEvent(
+			this.app.workspace.on("quit", this.onunload, this)
+		);
 
 		this.registerInterval(
 			window.setInterval(async () => {
@@ -43,8 +48,6 @@ export default class DailyStats extends Plugin {
 				};
 				this.currentWordCount = todaysWords;
 				this.statusBar.displayText(this.currentWordCount + " words today ");
-				this.settings.stats.find((dayStat) => isSameDay(new Date(dayStat.date), new Date())).wordCount = this.currentWordCount;
-				this.saveSettings();
 			}, 500)
 		);
 	}
@@ -53,8 +56,8 @@ export default class DailyStats extends Plugin {
 		var currDayStat = this.settings.stats.find((dayStat) => isSameDay(new Date(dayStat.date), new Date()));
 		if (currDayStat) {
 			currDayStat.wordCount = this.currentWordCount;
-			this.saveSettings();
 		}
+		this.saveSettings();
 	}
 
 	//Credit: better-word-count by Luke Leppan (https://github.com/lukeleppan/better-word-count)
@@ -88,14 +91,12 @@ export default class DailyStats extends Plugin {
 				prev = dayStat.initialNoteWordCount[file.name];
 			} else {
 				dayStat.initialNoteWordCount[file.name] = curr;
-				await this.saveSettings();
 			}
 		} else {
 			this.currentWordCount = 0;
 			var newRecord: Record<string, number> = {};
 			newRecord[file.name] = curr;
 			this.settings.stats.push({ date: new Date(), wordCount: 0, initialNoteWordCount: newRecord });
-			await this.saveSettings();
 		}
 		return Math.max(0, curr - prev);
 	}
