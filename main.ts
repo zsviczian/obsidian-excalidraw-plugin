@@ -1,63 +1,68 @@
 import { TFile, Plugin } from 'obsidian';
 
-interface DayStats {
-	date: Date;
-	wordCount: number;
-	initialNoteWordCount: Record<string, number>;
+interface WordCount {
+	initial: number;
+	current: number;
 }
 
 interface DailyStatsSettings {
-	stats: DayStats[];
+	dayCounts: Record<string, number>;
+	todaysWordCount: Record<string, WordCount>;
 }
 
 const DEFAULT_SETTINGS: DailyStatsSettings = {
-	stats: []
+	dayCounts: {},
+	todaysWordCount: {}
 }
 
 export default class DailyStats extends Plugin {
 	settings: DailyStatsSettings;
-	currentFile: TFile;
-	statusBar: StatusBar;
+	statusBarEl: HTMLElement;
 	currentWordCount: number;
+	today: string;
 
 	async onload() {
 		await this.loadSettings();
 
-		let statusBarEl = this.addStatusBarItem();
-		this.statusBar = new StatusBar(statusBarEl);
-
-		let files: TFile[] = this.app.vault.getMarkdownFiles();
-		this.currentWordCount = 0;
-		for (const file of files) {
-			const toAdd = await this.getTodaysWords(file);
-			this.currentWordCount += toAdd;
-		};
-		await this.saveSettings();
+		this.statusBarEl = this.addStatusBarItem();
+		this.updateDate();
+		if (this.today in this.settings.dayCounts) {
+			this.updateCounts();
+		} else {
+			this.currentWordCount = 0;
+		}
 
 		this.registerEvent(
 			this.app.workspace.on("quit", this.onunload, this)
 		);
 
-		this.registerInterval(
-			window.setInterval(async () => {
-				let files: TFile[] = this.app.vault.getMarkdownFiles();
-				var todaysWords = 0;
-				for (const file of files) {
-					const toAdd = await this.getTodaysWords(file);
-					todaysWords += toAdd;
-				};
-				this.currentWordCount = todaysWords;
-				this.statusBar.displayText(this.currentWordCount + " words today ");
-			}, 500)
+		this.registerEvent(
+			this.app.workspace.on("quick-preview", this.onQuickPreview, this)
 		);
+
+		this.registerInterval(
+			window.setInterval(() => {
+				this.statusBarEl.setText(this.currentWordCount + " words today ");
+			}, 200)
+		);
+
+		this.registerInterval(window.setInterval(() => {
+			this.updateDate();
+			this.saveSettings();
+		}, 1000));
 	}
 
-	onunload() {
-		var currDayStat = this.settings.stats.find((dayStat) => isSameDay(new Date(dayStat.date), new Date()));
-		if (currDayStat) {
-			currDayStat.wordCount = this.currentWordCount;
+	async onunload() {
+		await this.saveSettings();
+	}
+
+	//Credit: better-word-count by Luke Leppan (https://github.com/lukeleppan/better-word-count)
+	onQuickPreview(file: TFile, contents: string) {
+		const leaf = this.app.workspace.activeLeaf;
+
+		if (leaf && leaf.view.getViewType() === "markdown") {
+			this.updateWordCount(contents, file.name);
 		}
-		this.saveSettings();
 	}
 
 	//Credit: better-word-count by Luke Leppan (https://github.com/lukeleppan/better-word-count)
@@ -81,24 +86,29 @@ export default class DailyStats extends Plugin {
 		return words;
 	}
 
-	async getTodaysWords(file: TFile) {
-		const contents = await this.app.vault.cachedRead(file);
+	updateWordCount(contents: string, filename: string) {
 		const curr = this.getWordCount(contents);
-		var dayStat = this.settings.stats.find((dayStat) => isSameDay(new Date(dayStat.date), new Date()));
-		var prev = curr;
-		if (dayStat) {
-			if (file.name in dayStat.initialNoteWordCount) {
-				prev = dayStat.initialNoteWordCount[file.name];
-			} else {
-				dayStat.initialNoteWordCount[file.name] = curr;
+		if (this.today in this.settings.dayCounts) {
+			if (filename in this.settings.todaysWordCount) {//updating existing file
+				this.settings.todaysWordCount[filename].current = curr;
+			} else {//created new file during session
+				this.settings.todaysWordCount[filename] = { initial: curr, current: curr };
 			}
-		} else {
-			this.currentWordCount = 0;
-			var newRecord: Record<string, number> = {};
-			newRecord[file.name] = curr;
-			this.settings.stats.push({ date: new Date(), wordCount: 0, initialNoteWordCount: newRecord });
+		} else {//new day, flush the cache
+			this.settings.todaysWordCount = {};
+			this.settings.todaysWordCount[filename] = { initial: curr, current: curr };
 		}
-		return Math.max(0, curr - prev);
+		this.updateCounts();
+	}
+
+	updateDate() {
+		const d = new Date();
+		this.today = d.getFullYear() + "/" + d.getMonth() + "/" + d.getDate();
+	}
+
+	updateCounts() {
+		this.currentWordCount = Object.values(this.settings.todaysWordCount).map((wordCount) => Math.max(0, wordCount.current - wordCount.initial)).reduce((a, b) => a + b, 0);
+		this.settings.dayCounts[this.today] = this.currentWordCount;
 	}
 
 	async loadSettings() {
@@ -109,20 +119,3 @@ export default class DailyStats extends Plugin {
 		await this.saveData(this.settings);
 	}
 }
-
-class StatusBar {
-	private statusBarEl: HTMLElement;
-
-	constructor(statusBarEl: HTMLElement) {
-		this.statusBarEl = statusBarEl;
-	}
-
-	displayText(text: string) {
-		this.statusBarEl.setText(text);
-	}
-}
-
-const isSameDay = (first: Date, second: Date) =>
-	first.getFullYear() === second.getFullYear() &&
-	first.getMonth() === second.getMonth() &&
-	first.getDate() === second.getDate();

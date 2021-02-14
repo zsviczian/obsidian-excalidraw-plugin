@@ -1,7 +1,7 @@
 {
-  "name": "obsidian-sample-plugin",
-  "version": "0.9.7",
-  "description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+  "name": "obsidian-daily-stats",
+  "version": "1.0.0",
+  "description": "This is an Obsidian.md plugin that lets you view your daily word count.",
   "main": "main.js",
   "scripts": {
     "dev": "rollup --config rollup.config.js -w",

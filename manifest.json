@@ -1,10 +1,10 @@
 {
-	"id": "obsidian-sample-plugin",
-	"name": "Sample Plugin",
-	"version": "1.0.1",
+	"id": "obsidian-daily-stats",
+	"name": "Daily Stats",
+	"version": "1.0.0",
 	"minAppVersion": "0.9.12",
-	"description": "This is a sample plugin for Obsidian. This plugin demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md/about",
+	"description": "Track your daily word count across all notes in your vault.",
+	"author": "Dhruvik Parikh",
+	"authorUrl": "https://github.com/dhruvik7",
 	"isDesktopOnly": false
 }
