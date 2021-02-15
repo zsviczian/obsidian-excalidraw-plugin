@@ -1,8 +1,8 @@
 {
 	"id": "obsidian-daily-stats",
 	"name": "Daily Stats",
-	"version": "1.0.0",
-	"minAppVersion": "0.9.12",
+	"version": "1.0.1",
+	"minAppVersion": "0.9.10",
 	"description": "Track your daily word count across all notes in your vault.",
 	"author": "Dhruvik Parikh",
 	"authorUrl": "https://github.com/dhruvik7",

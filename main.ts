@@ -1,4 +1,4 @@
-import { TFile, Plugin } from 'obsidian';
+import { TFile, Plugin, MarkdownView } from 'obsidian';
 
 interface WordCount {
 	initial: number;
@@ -26,18 +26,18 @@ export default class DailyStats extends Plugin {
 
 		this.statusBarEl = this.addStatusBarItem();
 		this.updateDate();
-		if (this.today in this.settings.dayCounts) {
+		if (this.settings.dayCounts.hasOwnProperty(this.today)) {
 			this.updateCounts();
 		} else {
 			this.currentWordCount = 0;
 		}
 
 		this.registerEvent(
-			this.app.workspace.on("quit", this.onunload, this)
+			this.app.workspace.on("quit", this.onunload.bind(this))
 		);
 
 		this.registerEvent(
-			this.app.workspace.on("quick-preview", this.onQuickPreview, this)
+			this.app.workspace.on("quick-preview", this.onQuickPreview.bind(this))
 		);
 
 		this.registerInterval(
@@ -56,12 +56,9 @@ export default class DailyStats extends Plugin {
 		await this.saveSettings();
 	}
 
-	//Credit: better-word-count by Luke Leppan (https://github.com/lukeleppan/better-word-count)
 	onQuickPreview(file: TFile, contents: string) {
-		const leaf = this.app.workspace.activeLeaf;
-
-		if (leaf && leaf.view.getViewType() === "markdown") {
-			this.updateWordCount(contents, file.name);
+		if (this.app.workspace.getActiveViewOfType(MarkdownView)) {
+			this.updateWordCount(contents, file.path);
 		}
 	}
 
@@ -86,17 +83,17 @@ export default class DailyStats extends Plugin {
 		return words;
 	}
 
-	updateWordCount(contents: string, filename: string) {
+	updateWordCount(contents: string, filepath: string) {
 		const curr = this.getWordCount(contents);
-		if (this.today in this.settings.dayCounts) {
-			if (filename in this.settings.todaysWordCount) {//updating existing file
-				this.settings.todaysWordCount[filename].current = curr;
+		if (this.settings.dayCounts.hasOwnProperty(this.today)) {
+			if (this.settings.todaysWordCount.hasOwnProperty(filepath)) {//updating existing file
+				this.settings.todaysWordCount[filepath].current = curr;
 			} else {//created new file during session
-				this.settings.todaysWordCount[filename] = { initial: curr, current: curr };
+				this.settings.todaysWordCount[filepath] = { initial: curr, current: curr };
 			}
 		} else {//new day, flush the cache
 			this.settings.todaysWordCount = {};
-			this.settings.todaysWordCount[filename] = { initial: curr, current: curr };
+			this.settings.todaysWordCount[filepath] = { initial: curr, current: curr };
 		}
 		this.updateCounts();
 	}
