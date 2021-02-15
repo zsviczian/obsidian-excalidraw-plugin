@@ -1,4 +1,4 @@
-import { TFile, Plugin, MarkdownView } from 'obsidian';
+import { TFile, Plugin, MarkdownView, debounce, Debouncer } from 'obsidian';
 
 interface WordCount {
 	initial: number;
@@ -20,6 +20,7 @@ export default class DailyStats extends Plugin {
 	statusBarEl: HTMLElement;
 	currentWordCount: number;
 	today: string;
+	debouncedUpdate: Debouncer<[contents: string, filepath: string]>;
 
 	async onload() {
 		await this.loadSettings();
@@ -31,6 +32,10 @@ export default class DailyStats extends Plugin {
 		} else {
 			this.currentWordCount = 0;
 		}
+
+		this.debouncedUpdate = debounce((contents: string, filepath: string) => {
+			this.updateWordCount(contents, filepath);
+		}, 400, false);
 
 		this.registerEvent(
 			this.app.workspace.on("quit", this.onunload.bind(this))
@@ -58,7 +63,7 @@ export default class DailyStats extends Plugin {
 
 	onQuickPreview(file: TFile, contents: string) {
 		if (this.app.workspace.getActiveViewOfType(MarkdownView)) {
-			this.updateWordCount(contents, file.path);
+			this.debouncedUpdate(contents, file.path);
 		}
 	}
 
