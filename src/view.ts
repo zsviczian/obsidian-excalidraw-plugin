@@ -28,7 +28,7 @@ export default class StatsTrackerView extends ItemView {
     }
 
     getIcon() {
-        return "calendar-with-checkmark";
+        return "bar-graph";
     }
 
     getViewType() {

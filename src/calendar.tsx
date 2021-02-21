@@ -1,24 +1,13 @@
 import * as React from "react";
 import ReactCalendarHeatmap from "react-calendar-heatmap";
 import ReactTooltip from "react-tooltip";
+import { MAX_COLORS, COLOR_FREQ } from "./constants";
 
 interface HeatmapProps {
     data: any[];
 }
 
-const MAX_COLORS = 5;
-const COLOR_FREQ = 6;
-
 class Heatmap extends React.Component<HeatmapProps> {
-
-    componentDidMount() {
-        ReactTooltip.rebuild();
-    }
-
-    componentDidUpdate() {
-        ReactTooltip.rebuild();
-    }
-
     render() {
         const customTooltipDataAttrs = (value: any) => ({
             'data-tip': value.date === null ? '' : value.count + ' on ' + new Date(value.date).toLocaleDateString()
