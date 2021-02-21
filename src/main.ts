@@ -43,7 +43,7 @@ export default class DailyStats extends Plugin {
 
 		this.registerView(
 			VIEW_TYPE_STATS_TRACKER,
-			(leaf: WorkspaceLeaf) => (this.view = new StatsTrackerView(leaf))
+			(leaf: WorkspaceLeaf) => (this.view = new StatsTrackerView(leaf, this.settings.dayCounts))
 		);
 
 		this.addCommand({
