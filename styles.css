@@ -8,7 +8,7 @@ react-calendar-heatmap-small-text {
 
 rect:hover {
     stroke: #555;
-    stroke-width: 1px;
+    stroke-width: 0.5px;
 }
 
 /*
@@ -24,7 +24,7 @@ rect:hover {
 }
 
 /*
-* Github color scale
+* Github color scale   
 */
 
 .color-github-0 {
