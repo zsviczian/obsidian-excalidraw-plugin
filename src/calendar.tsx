@@ -10,9 +10,18 @@ const MAX_COLORS = 5;
 const COLOR_FREQ = 6;
 
 class Heatmap extends React.Component<HeatmapProps> {
+
+    componentDidMount() {
+        ReactTooltip.rebuild();
+    }
+
+    componentDidUpdate() {
+        ReactTooltip.rebuild();
+    }
+
     render() {
         const customTooltipDataAttrs = (value: any) => ({
-            'data-tip': value.date === null ? '' : value.status + ' on ' + value.date
+            'data-tip': value.date === null ? '' : value.count + ' on ' + new Date(value.date).toLocaleDateString()
         });
 
         return <div style={{ padding: "10px 10px 0px 10px", maxWidth: "300px", marginLeft: "auto", marginRight: "auto" }}>
@@ -28,14 +37,12 @@ class Heatmap extends React.Component<HeatmapProps> {
                     }
                     return `color-github-${Math.min(MAX_COLORS, Math.floor(Math.log(value.count) / Math.log(COLOR_FREQ)))}`;
                 }}
+                titleForValue={(value) => !value || value.date === null ? '' : value.count + ' words on ' + new Date(value.date).toLocaleDateString()}
                 tooltipDataAttrs={customTooltipDataAttrs}
-            />
-            <ReactTooltip
-                type='warning'
-                effect='solid'
             />
         </div>
     }
+
 }
 
 export default Heatmap;
