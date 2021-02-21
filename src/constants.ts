@@ -1,0 +1,1 @@
+export const VIEW_TYPE_STATS_TRACKER = "stats-tracker";

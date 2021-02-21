@@ -1,4 +1,6 @@
-import { TFile, Plugin, MarkdownView, debounce, Debouncer } from 'obsidian';
+import { TFile, Plugin, MarkdownView, debounce, Debouncer, WorkspaceLeaf } from 'obsidian';
+import { VIEW_TYPE_STATS_TRACKER } from './constants';
+import StatsTrackerView from './view';
 
 interface WordCount {
 	initial: number;
@@ -22,6 +24,8 @@ export default class DailyStats extends Plugin {
 	today: string;
 	debouncedUpdate: Debouncer<[contents: string, filepath: string]>;
 
+	private view: StatsTrackerView;
+
 	async onload() {
 		await this.loadSettings();
 
@@ -36,6 +40,24 @@ export default class DailyStats extends Plugin {
 		this.debouncedUpdate = debounce((contents: string, filepath: string) => {
 			this.updateWordCount(contents, filepath);
 		}, 400, false);
+
+		this.registerView(
+			VIEW_TYPE_STATS_TRACKER,
+			(leaf: WorkspaceLeaf) => (this.view = new StatsTrackerView(leaf))
+		);
+
+		this.addCommand({
+			id: "show-daily-stats-tracker-view",
+			name: "Open tracker view",
+			checkCallback: (checking: boolean) => {
+				if (checking) {
+					return (
+						this.app.workspace.getLeavesOfType(VIEW_TYPE_STATS_TRACKER).length === 0
+					);
+				}
+				this.initLeaf();
+			},
+		});
 
 		this.registerEvent(
 			this.app.workspace.on("quit", this.onunload.bind(this))
@@ -55,6 +77,23 @@ export default class DailyStats extends Plugin {
 			this.updateDate();
 			this.saveSettings();
 		}, 1000));
+
+		if (this.app.workspace.layoutReady) {
+			this.initLeaf();
+		} else {
+			this.registerEvent(
+				this.app.workspace.on("layout-ready", this.initLeaf.bind(this))
+			);
+		}
+	}
+
+	initLeaf(): void {
+		if (this.app.workspace.getLeavesOfType(VIEW_TYPE_STATS_TRACKER).length) {
+			return;
+		}
+		this.app.workspace.getRightLeaf(false).setViewState({
+			type: VIEW_TYPE_STATS_TRACKER,
+		});
 	}
 
 	async onunload() {
