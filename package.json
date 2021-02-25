@@ -1,6 +1,6 @@
 {
   "name": "obsidian-daily-stats",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "This is an Obsidian.md plugin that lets you view your daily word count.",
   "main": "main.js",
   "scripts": {

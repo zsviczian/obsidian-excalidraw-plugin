@@ -6,6 +6,22 @@ interface HeatmapProps {
     data: any[];
 }
 
+const getColorLevel = (count: number) => {
+    if (count < 150) {
+        return 1;
+    }
+    if (count < 400) {
+        return 2;
+    }
+    if (count < 750) {
+        return 3;
+    }
+    if (count < 1500) {
+        return 4;
+    }
+    return 5;
+}
+
 class Heatmap extends React.Component<HeatmapProps> {
     render() {
         const element = document.getElementById("color-elem");
@@ -27,6 +43,10 @@ class Heatmap extends React.Component<HeatmapProps> {
                 elem.style.fill = base;
                 elem.style.opacity = "0.92";
             }
+            for (let elem of Array.from(document.getElementsByClassName("color5") as HTMLCollectionOf<HTMLElement>)) {
+                elem.style.fill = base;
+                elem.style.opacity = "1";
+            }
         }
         return <div style={{ padding: "10px 0px 0px 10px", maxWidth: "300px", marginLeft: "auto", marginRight: "auto", fontSize: "4px !important" }} id="calendar-container">
             <ReactCalendarHeatmap
@@ -41,7 +61,7 @@ class Heatmap extends React.Component<HeatmapProps> {
                     if (!value || value.count == 0) {
                         return 'color-empty';
                     }
-                    return `color${Math.min(MAX_COLORS, Math.floor(Math.log(value.count) / Math.log(COLOR_FREQ)))}`;
+                    return `color${getColorLevel(value.count)}`;
                 }}
                 titleForValue={(value) => !value || value.date === null ? '' : value.count + ' words on ' + new Date(value.date).toLocaleDateString()}
             />

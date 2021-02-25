@@ -60,10 +60,6 @@ export default class DailyStats extends Plugin {
 		});
 
 		this.registerEvent(
-			this.app.workspace.on("quit", this.onunload.bind(this))
-		);
-
-		this.registerEvent(
 			this.app.workspace.on("quick-preview", this.onQuickPreview.bind(this))
 		);
 
@@ -95,10 +91,6 @@ export default class DailyStats extends Plugin {
 		this.app.workspace.getRightLeaf(false).setViewState({
 			type: VIEW_TYPE_STATS_TRACKER,
 		});
-	}
-
-	async onunload() {
-		await this.saveSettings();
 	}
 
 	onQuickPreview(file: TFile, contents: string) {
