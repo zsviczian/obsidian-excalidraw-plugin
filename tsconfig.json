@@ -13,10 +13,13 @@
       "dom",
       "es5",
       "scripthost",
-      "es2015"
-    ]
+      "es2015",
+      "DOM.Iterable"
+    ],
+    "jsx": "react",
   },
   "include": [
-    "**/*.ts"
+    "**/*.ts",
+    "**/*.tsx",
   ]
 }

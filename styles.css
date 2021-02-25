@@ -1,0 +1,24 @@
+text {
+    fill: #aaa;
+}
+
+rect:hover {
+    stroke: #555;
+    stroke-width: 0.5px;
+}
+
+/*
+* Default color scale
+*/
+
+.color-empty {
+    fill: var(--background-modifier-border);
+}
+
+.color-filled {
+    fill: var(--text-accent);
+}
+
+#color-elem {
+    color: var(--text-accent);
+}
