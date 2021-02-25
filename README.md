@@ -5,3 +5,4 @@ This is a daily word count plugin for Obsidian (https://obsidian.md). You can se
 This plugin was inspired by liamcain's [Calender](https://github.com/liamcain/obsidian-calendar-plugin) and lukeleppan's [Better Word Count](https://github.com/lukeleppan/better-word-count).
 
 ![Example](./images/example-graph.png)
+
