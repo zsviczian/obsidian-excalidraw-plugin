@@ -1,45 +1,79 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
-import { VIEW_TYPE_STATS_TRACKER } from "./constants";
+import { VIEW_TYPE_EXCALIDRAW } from "./constants";
 import * as ReactDOM from "react-dom";
 import * as React from "react";
-import Calendar from "./calendar";
+import Excalidraw, {
+    exportToCanvas,
+    exportToSvg,
+    exportToBlob
+  } from "@excalidraw/excalidraw";
 import '../styles.css';
 
-export default class StatsTrackerView extends ItemView {
-    private dayCounts: Record<string, number>;
+export default class ExcalidrawView extends ItemView {
 
-    constructor(leaf: WorkspaceLeaf, dayCounts: Record<string, number>) {
+    constructor(leaf: WorkspaceLeaf) {
         super(leaf);
-        this.dayCounts = dayCounts;
 
-        this.registerInterval(
-            window.setInterval(() => {
-                ReactDOM.render(React.createElement(Calendar, {
-                    data: Object.keys(this.dayCounts).map(day => {
-                        return { "date": new Date(new Date(day).setMonth(new Date(day).getMonth() + 1)), "count": this.dayCounts[day] }
-                    }),
-                }), (this as any).contentEl);
-            }, 1000)
-        );
+        ReactDOM.render(React.createElement(() => {
+            const excalidrawRef = React.useRef(null);
+            const excalidrawWrapperRef = React.useRef(null);
+            const [dimensions, setDimensions] = React.useState({
+              width: undefined,
+              height: undefined
+            });
+                        
+            React.useEffect(() => {
+              setDimensions({
+                width: excalidrawWrapperRef.current.getBoundingClientRect().width,
+                height: excalidrawWrapperRef.current.getBoundingClientRect().height
+              });
+              const onResize = () => {
+                try {
+                  setDimensions({
+                    width: excalidrawWrapperRef.current.getBoundingClientRect().width,
+                    height: excalidrawWrapperRef.current.getBoundingClientRect().height
+                  });
+                } catch(err) {console.log ("onResize ",err)}
+              };
+      
+              window.addEventListener("resize", onResize);
+              this.onResize = onResize;
+      
+              return () => window.removeEventListener("resize", onResize);
+            }, [excalidrawWrapperRef]);
+                  
+            return React.createElement(
+              React.Fragment,
+              null,
+              React.createElement(
+                "div",
+                {
+                  className: "excalidraw-wrapper",
+                  ref: excalidrawWrapperRef
+                },
+                React.createElement(Excalidraw.default, {
+                  ref: excalidrawRef,
+                  width: dimensions.width,
+                  height: dimensions.height
+                })
+              )
+            );
+        }),(this as any).contentEl);
     }
 
     getDisplayText() {
-        return "Daily Stats";
+        return "Excalidraw";
     }
 
     getIcon() {
-        return "bar-graph";
+        return "palette";
     }
 
     getViewType() {
-        return VIEW_TYPE_STATS_TRACKER;
+        return VIEW_TYPE_EXCALIDRAW;
     }
 
     async onOpen() {
-        ReactDOM.render(React.createElement(Calendar, {
-            data: Object.keys(this.dayCounts).map(day => {
-                return { "date": new Date(new Date(day).setMonth(new Date(day).getMonth() + 1)), "count": this.dayCounts[day] }
-            }),
-        }), (this as any).contentEl);
+
     }
 }
