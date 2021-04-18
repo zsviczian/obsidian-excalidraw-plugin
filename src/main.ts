@@ -90,7 +90,7 @@ export default class ExcalidrawPlugin extends Plugin {
 			this.loadLastDrawing(this.activeDrawingFilename);
 			return;
 		}
-		
+
 		this.app.workspace.getRightLeaf(false).setViewState({
 			type: VIEW_TYPE_EXCALIDRAW,
 		});
@@ -102,8 +102,8 @@ export default class ExcalidrawPlugin extends Plugin {
 
 	private async loadSettings() {
 		const savedData = await this.loadData();
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, savedData.settings);
-		this.activeDrawingFilename = savedData.openFile != null ? savedData.openFile : '';
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, savedData?.settings);
+		this.activeDrawingFilename = savedData?.openFile != null ? savedData.openFile : '';
 	}
 
 	async saveSettings() {
@@ -148,8 +148,13 @@ export default class ExcalidrawPlugin extends Plugin {
 			this.app.vault.createFolder(this.settings.folder);
 		}
 
-		this.openDrawing(await this.app.vault.create(filename,BLANK_DRAWING));
+		const file = (this.app.vault.getAbstractFileByPath(this.settings.templateFilePath) as TFile);
+		if(file) {
+			this.app.vault.read(file).then(async (content: string) => {
+		    this.openDrawing(await this.app.vault.create(filename,content==''?BLANK_DRAWING:content))   
+			});
+		} else {
+		  this.openDrawing(await this.app.vault.create(filename,BLANK_DRAWING));
+		}
 	}
-
-	
 }

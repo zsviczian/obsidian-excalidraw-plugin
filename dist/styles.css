@@ -1,0 +1,13 @@
+.App {
+    font-family: sans-serif;
+    text-align: center;
+  }
+    
+  .excalidraw-wrapper {
+    height: 100%;
+    margin: 0px;
+  }
+  
+  .context-menu-option__shortcut {
+      background-color: transparent !important;
+  }

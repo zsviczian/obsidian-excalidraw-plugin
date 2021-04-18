@@ -37,7 +37,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Excalidraw template file') 
-			.setDesc('Full path to file containing the file to use as the template for new Excalidraw drawings.')
+			.setDesc('Full path to file containing the file you want to use as the template for new Excalidraw drawings. '+
+			         'Note that Excalidraw files will have an extension of ".excalidraw" ' +
+			         'Assuming your template is in the default excalidraw folder, the setting would be: excalidraw/Template.excalidraw')
 			.addText(text => text
 				.setPlaceholder('excalidraw')
         .setValue(this.plugin.settings.templateFilePath)
