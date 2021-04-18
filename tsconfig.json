@@ -20,6 +20,6 @@
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx",
+    "**/*.tsx", "src/openDrawing.ts",
   ]
 }
