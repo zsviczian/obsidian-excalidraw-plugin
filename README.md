@@ -16,3 +16,6 @@
 
 ### Known bug registered with Excalidraw
 ![2021-04-18 08-04-28](https://user-images.githubusercontent.com/14358394/115161065-d773d600-a09b-11eb-9e49-783e77fd2b78.gif)
+
+
+https://user-images.githubusercontent.com/14358394/115161352-84028780-a09d-11eb-90ee-7d4dad82ec98.mp4
