@@ -25,7 +25,7 @@
     "cross-env": "7.0.3",
     "obsidian": "https://github.com/obsidianmd/obsidian-api/tarball/master",
     "postcss": "^8.2.6",
-    "rollup": "^2.32.1",
+    "rollup": "2.45.2",
     "rollup-plugin-copy": "3.4.0",
     "rollup-plugin-minify": "1.0.3",
     "rollup-plugin-postcss": "^4.0.0",

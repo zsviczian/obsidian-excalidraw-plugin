@@ -3,7 +3,8 @@ import { nodeResolve } from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import postcss from 'rollup-plugin-postcss';
 import copy from 'rollup-plugin-copy';
-import minify from 'rollup-plugin-minify';
+//import uglify from 'rollup-plugin-uglify';
+//import minify from "rollup-plugin-minify"
 import { env } from "process";
 import replace from "@rollup/plugin-replace";
 
@@ -37,6 +38,6 @@ export default {
         { src: ['manifest.json', 'styles.css'], dest: './dist' }
       ], flatten: true
     }),
-    minify(),
+    //process.env.NODE_ENV === 'production' && minify(),
   ]
 };
