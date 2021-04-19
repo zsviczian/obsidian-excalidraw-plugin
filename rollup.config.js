@@ -16,7 +16,7 @@ export default {
     format: 'cjs',
     exports: 'default'
   },
-  external: ['obsidian', 'crypto'],
+  external: ['obsidian'],
   plugins: [
     typescript({inlineSources: !isProd}),
     nodeResolve({ browser: true, preferBuiltins: true }),
