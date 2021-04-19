@@ -3700,6 +3700,13 @@
     "safe-buffer" "^5.0.1"
     "sha.js" "^2.4.8"
 
+"cross-env@7.0.3":
+  "integrity" "sha512-+/HKd6EgcQCJGh2PSjZuUitQBQynKor4wrFbRg4DtAgS1aWO+gU52xpH7M9ScGgXSYmAVS9bIJ8EzuaGw0oNAw=="
+  "resolved" "https://registry.npmjs.org/cross-env/-/cross-env-7.0.3.tgz"
+  "version" "7.0.3"
+  dependencies:
+    "cross-spawn" "^7.0.1"
+
 "cross-spawn@^6.0.0":
   "integrity" "sha512-eTVLrBSt7fjbDygz805pMnstIs2VTBNkRm0qxZd+M7A5XDdxVRWO5MxGBXZhjY4cqLYLdtrGqRf8mBPmzwSpWQ=="
   "resolved" "https://registry.npmjs.org/cross-spawn/-/cross-spawn-6.0.5.tgz"
@@ -3711,7 +3718,7 @@
     "shebang-command" "^1.2.0"
     "which" "^1.2.9"
 
-"cross-spawn@^7.0.0", "cross-spawn@^7.0.2", "cross-spawn@7.0.3":
+"cross-spawn@^7.0.0", "cross-spawn@^7.0.1", "cross-spawn@^7.0.2", "cross-spawn@7.0.3":
   "integrity" "sha512-iRDPJKUPVEND7dHPO8rkbOnPpyDygcDFtWjpeWNCgy8WP2rXcxXL8TskReQl6OrB2G7+UJrags1q15Fudc7G6w=="
   "resolved" "https://registry.npmjs.org/cross-spawn/-/cross-spawn-7.0.3.tgz"
   "version" "7.0.3"

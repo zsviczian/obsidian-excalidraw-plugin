@@ -4,8 +4,8 @@
   "description": "This is an Obsidian.md plugin that lets you view and edit Excalidraw drawings",
   "main": "main.js",
   "scripts": {
-    "dev": "rollup --config rollup.config.js -w",
-    "build": "rollup --config rollup.config.js --environment NODE_ENV:production"
+    "dev": "cross-env NODE_ENV=development rollup --config rollup.config.js -w",
+    "build": "cross-env NODE_ENV=production rollup --config rollup.config.js"
   },
   "keywords": [],
   "author": "",
@@ -22,6 +22,7 @@
     "@rollup/plugin-typescript": "^6.0.0",
     "@types/node": "^14.14.2",
     "@types/react-dom": "^17.0.0",
+    "cross-env": "7.0.3",
     "obsidian": "https://github.com/obsidianmd/obsidian-api/tarball/master",
     "postcss": "^8.2.6",
     "rollup": "^2.32.1",
