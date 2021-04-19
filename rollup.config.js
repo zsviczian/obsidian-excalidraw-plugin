@@ -6,7 +6,7 @@ import copy from 'rollup-plugin-copy';
 import minify from 'rollup-plugin-minify';
 
 
-const isProd = (process.env.BUILD === 'production');
+const isProd = (process.env.NODE_ENV === "production");
 
 export default {
   input: 'src/main.ts',

@@ -79,7 +79,7 @@ export default class ExcalidrawView extends ItemView {
             UIOptions: {
               canvasActions: {
                 loadScene: false,
-                saveScene: true,
+                saveScene: false,
                 saveAsScene: false
               },
             },
