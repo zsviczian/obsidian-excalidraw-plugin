@@ -11,7 +11,7 @@ import {
 	TAbstractFile 
 } from 'obsidian';
 import { BLANK_DRAWING, VIEW_TYPE_EXCALIDRAW, PALETTE_ICON } from './constants';
-import ExcalidrawView from './view';
+import ExcalidrawView from './ExcalidrawView';
 import {
 	ExcalidrawSettings, 
 	DEFAULT_SETTINGS, 
@@ -34,110 +34,59 @@ export default class ExcalidrawPlugin extends Plugin {
 		this.activeDrawing = null;
 		this.activeDrawingFilename = '';
   }
-
+  
 	async onload() {
-		addIcon("palette", PALETTE_ICON);
+		addIcon("excalidraw", PALETTE_ICON);
 
-		this.registerView(
-			VIEW_TYPE_EXCALIDRAW,
-			(leaf: WorkspaceLeaf) => (this.view = new ExcalidrawView(leaf))
-		);	
+    this.registerView(
+      VIEW_TYPE_EXCALIDRAW, 
+      (leaf: WorkspaceLeaf) => (this.view = new ExcalidrawView(leaf))
+    );
+
+    this.registerExtensions(["excalidraw"],"excalidraw");
 
 		await this.loadSettings();
 		this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
 
 		this.openDialog = new OpenFileDialog(this.app, this);
-		this.addRibbonIcon('palette', 'Excalidraw', async () => {
+		this.addRibbonIcon('excalidraw', 'Excalidraw', async () => {
 			this.openDialog.start();
 		});
 
 		this.addCommand({
 			id: "excalidraw-open",
-			name: "Open Excalidraw",
+			name: "Open existing drawing or create new one",
 			callback: () => {
 				this.openDialog.start();
 			},
 		});
 
-/*		this.addCommand({
-      id: "excalidraw-new-drawing",
-      name: "Open Excalidraw View",
-      callback: () => {
-				if (this.app.workspace.layoutReady) {
-					this.initLeaf();
-				} else {
-					this.registerEvent(
-						this.app.workspace.on("layout-ready", this.initLeaf.bind(this)));
-				}
-      },
-    });*/
-
-		if (this.app.workspace.layoutReady) {
-			this.initLeaf();
-		} else {
-			this.registerEvent(
-				this.app.workspace.on("layout-ready", this.initLeaf.bind(this)));
-		}
-	}
-
-	onunload():void {
-		this.view.unload();
-	}
-
-	initLeaf(): void {
-		if (this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).length) {
-			this.app.workspace.revealLeaf(this.view.leaf);
-			this.loadLastDrawing(this.activeDrawingFilename);
-			return;
-		}
-
-		this.app.workspace.getRightLeaf(false).setViewState({
-			type: VIEW_TYPE_EXCALIDRAW,
+    this.addCommand({
+			id: "excalidraw-autocreate",
+			name: "Create a new drawing",
+			callback: () => {
+				this.createDrawing(this.getNextDefaultFilename());
+			},
 		});
-		
-		this.app.workspace.revealLeaf(this.view.leaf);
-
-		this.loadLastDrawing(this.activeDrawingFilename);
 	}
 
 	private async loadSettings() {
-		const savedData = await this.loadData();
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, savedData?.settings);
-		this.activeDrawingFilename = savedData?.openFile != null ? savedData.openFile : '';
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 	}
 
 	async saveSettings() {
-		if(this.view != null) {
-			await this.saveData({
-				openFile: this.activeDrawing?.path || '',
-				settings: this.settings,
-		  });
-		}
+  	await this.saveData(this.settings);
 	}
 
-	public openDrawing(drawingFile: TFile) {
+	public async openDrawing(drawingFile: TFile) {
 		this.activeDrawing = drawingFile;
 		this.saveSettings();
-		this.view.loadDrawing(drawingFile);
+    const leaf = this.view ? this.view.leaf : this.app.workspace.activeLeaf;
+    leaf.setViewState({
+      type: VIEW_TYPE_EXCALIDRAW,
+      state: {file: drawingFile.path}}
+    );
 	}
-
-  private loadLastDrawing(fname: string) {
-    let file:TFile = null;
-
-    if(fname != '') {
-			const fileToOpen = (this.app.vault.getAbstractFileByPath(fname) as TFile);
-      if (fileToOpen) {			
-				file = fileToOpen;
-			}
-		}
-
-		if(file) {
-			this.openDrawing(file);
-		} else {
-		  this.createDrawing(this.getNextDefaultFilename());
-		}
-
-  }
 
 	private getNextDefaultFilename():string {
 		return this.settings.folder+'/Drawing ' + getDateString('yyyy-MM-dd HH.mm.ss')+'.excalidraw';
