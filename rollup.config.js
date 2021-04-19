@@ -25,6 +25,7 @@ export default {
     typescript({inlineSources: !isProd}),
     nodeResolve({ browser: true, preferBuiltins: true }),
     replace({
+      preventAssignment: true,
       "process.env.NODE_ENV": JSON.stringify(env.NODE_ENV),
     }),
     commonjs(),
