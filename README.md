@@ -19,3 +19,6 @@
 
 
 https://user-images.githubusercontent.com/14358394/115161352-84028780-a09d-11eb-90ee-7d4dad82ec98.mp4
+
+### Support
+If you want to support me and my work, you can donate me a little something by [buying me a coffee](https://ko-fi.com/zsolt)
