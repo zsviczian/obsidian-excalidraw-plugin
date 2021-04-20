@@ -1,17 +1,11 @@
 import { 
 	TFile, 
-	TFolder, 
 	Plugin, 
 	WorkspaceLeaf, 
 	addIcon, 
 	App, 
 	PluginManifest, 
-	EventRef, 
-	Menu,
-	TAbstractFile,
-  MarkdownPostProcessorContext,
   MarkdownView,
-  Editor,
 } from 'obsidian';
 import { BLANK_DRAWING, VIEW_TYPE_EXCALIDRAW, PALETTE_ICON } from './constants';
 import ExcalidrawView from './ExcalidrawView';
@@ -22,7 +16,6 @@ import {
 } from './settings';
 import {openDialogAction, OpenFileDialog} from './openDrawing';
 import {getDateString} from './utils'
-import { exportToSvg } from '@excalidraw/excalidraw';
 
 
 export default class ExcalidrawPlugin extends Plugin {

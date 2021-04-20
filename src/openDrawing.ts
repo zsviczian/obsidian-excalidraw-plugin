@@ -1,6 +1,5 @@
 import { App, FuzzySuggestModal, TFile, TFolder, normalizePath, Vault, TAbstractFile, Instruction } from "obsidian";
 import ExcalidrawPlugin from './main';
-import ExcalidrawView from './view';
 import {EMPTY_MESSAGE} from './constants';
 
 export enum openDialogAction {
