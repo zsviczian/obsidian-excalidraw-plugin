@@ -71,7 +71,7 @@ export default class ExcalidrawView extends TextFileView {
 
   // icon for the view
   getIcon() {
-    return "document-excalidraw";
+    return "excalidraw-icon";
   }
 
   private instantiateExcalidraw(initdata: any) {  

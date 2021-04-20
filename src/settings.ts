@@ -4,11 +4,13 @@ import type ExcalidrawPlugin from "./main";
 export interface ExcalidrawSettings {
 	folder: string,
 	templateFilePath: string,
+  width: string,
 }
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
 	folder: 'excalidraw',
 	templateFilePath: '',
+  width: '400',
 }
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
@@ -45,6 +47,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.templateFilePath)
 				.onChange(async (value) => {
 					this.plugin.settings.templateFilePath = value;
+					await this.plugin.saveSettings();
+				}));
+
+    new Setting(containerEl)
+			.setName('Default width of embedded image') 
+			.setDesc('The default width of an embedded drawing. You can specify a different ' +
+               'width when embedding an image using the [[drawing.excalidraw|100]] or ' +
+               '[[drawing.excalidraw|100x100]] format.')
+			.addText(text => text
+				.setPlaceholder('400')
+        .setValue(this.plugin.settings.width)
+				.onChange(async (value) => {
+					this.plugin.settings.width = value;
 					await this.plugin.saveSettings();
 				}));
 	}

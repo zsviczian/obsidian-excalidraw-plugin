@@ -7,7 +7,7 @@ import {
 	PluginManifest, 
   MarkdownView,
 } from 'obsidian';
-import { BLANK_DRAWING, VIEW_TYPE_EXCALIDRAW, PALETTE_ICON } from './constants';
+import { BLANK_DRAWING, VIEW_TYPE_EXCALIDRAW, EXCALIDRAW_ICON } from './constants';
 import ExcalidrawView from './ExcalidrawView';
 import {
 	ExcalidrawSettings, 
@@ -33,7 +33,7 @@ export default class ExcalidrawPlugin extends Plugin {
   }
   
 	async onload() {
-		addIcon("excalidraw", PALETTE_ICON);
+		addIcon("excalidraw-icon", EXCALIDRAW_ICON);
 
     this.registerView(
       VIEW_TYPE_EXCALIDRAW, 
@@ -52,14 +52,36 @@ export default class ExcalidrawPlugin extends Plugin {
       }
 
       const filename = source.match(/\[{2}(.*)\]{2}/m);
-      if(filename.length==2) {
-        const file:TFile = (this.app.vault.getAbstractFileByPath(filename[1]) as TFile);
+      const filenameWH = source.match(/\[{2}(.*)\|(\d*)x(\d*)\]{2}/m);
+      const filenameW = source.match(/\[{2}(.*)\|(\d*)\]{2}/m);
+      
+      let fname:string = '';
+      let fwidth:string = this.settings.width;
+      let fheight:string = null;
+
+      if (filenameWH) {
+        fname = filenameWH[1];
+        fwidth = filenameWH[2];
+        fheight = filenameWH[3];
+      } else if (filenameW) {
+        fname = filenameW[1];
+        fwidth = filenameW[2];
+      } else if (filename) {
+        fname = filename[1];
+      }
+
+      if(fname!='') {
+        const file:TFile = (this.app.vault.getAbstractFileByPath(fname) as TFile);
         if(file) {
           if(file.extension == "excalidraw") {
             this.app.vault.read(file).then(async (content: string) => {
               const svg = ExcalidrawView.getSVG(content);
               if(svg) {
                 el.createDiv("excalidraw-svg",(el)=> {
+                  svg.removeAttribute('width');
+                  svg.removeAttribute('height');
+                  svg.style.setProperty('width',fwidth);
+                  if(fheight) svg.style.setProperty('height',fheight);
                   el.appendChild(svg);
                 })        
           
@@ -74,7 +96,7 @@ export default class ExcalidrawPlugin extends Plugin {
 		this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
 
 		this.openDialog = new OpenFileDialog(this.app, this);
-		this.addRibbonIcon('excalidraw', 'Excalidraw', async () => {
+		this.addRibbonIcon('excalidraw-icon', 'Excalidraw', async () => {
 			this.openDialog.start(openDialogAction.openFile);
 		});
 
