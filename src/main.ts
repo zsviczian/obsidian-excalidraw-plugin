@@ -8,7 +8,10 @@ import {
 	PluginManifest, 
 	EventRef, 
 	Menu,
-	TAbstractFile 
+	TAbstractFile,
+  MarkdownPostProcessorContext,
+  MarkdownView,
+  Editor,
 } from 'obsidian';
 import { BLANK_DRAWING, VIEW_TYPE_EXCALIDRAW, PALETTE_ICON } from './constants';
 import ExcalidrawView from './ExcalidrawView';
@@ -17,8 +20,9 @@ import {
 	DEFAULT_SETTINGS, 
 	ExcalidrawSettingTab
 } from './settings';
-import {OpenFileDialog} from './openDrawing';
+import {openDialogAction, OpenFileDialog} from './openDrawing';
 import {getDateString} from './utils'
+import { exportToSvg } from '@excalidraw/excalidraw';
 
 
 export default class ExcalidrawPlugin extends Plugin {
@@ -45,21 +49,58 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.registerExtensions(["excalidraw"],"excalidraw");
 
+    this.registerMarkdownCodeBlockProcessor('excalidraw', (source,el,ctx) => {
+      const parseError = (message: string) => {
+        el.createDiv("excalidraw-error",(el)=> {
+          el.createEl("p","Please provide a link to an excalidraw file: [[file.excalidraw]]");
+          el.createEl("p",message);
+          el.createEl("p",source);
+        })  
+      }
+
+      const filename = source.match(/\[{2}(.*)\]{2}/m);
+      if(filename.length==2) {
+        const file:TFile = (this.app.vault.getAbstractFileByPath(filename[1]) as TFile);
+        if(file) {
+          if(file.extension == "excalidraw") {
+            this.app.vault.read(file).then(async (content: string) => {
+              const svg = ExcalidrawView.getSVG(content);
+              if(svg) {
+                el.createDiv("excalidraw-svg",(el)=> {
+                  el.appendChild(svg);
+                })        
+          
+              } else parseError("Parse error. Not a valid Excalidraw file.");
+            });
+          } else parseError("Not an excalidraw file. Must have extension .excalidraw");
+        } else parseError("File does not exist");
+      } else parseError("No link to file found in codeblock.");
+    });
+
 		await this.loadSettings();
 		this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
 
 		this.openDialog = new OpenFileDialog(this.app, this);
 		this.addRibbonIcon('excalidraw', 'Excalidraw', async () => {
-			this.openDialog.start();
+			this.openDialog.start(openDialogAction.openFile);
 		});
 
 		this.addCommand({
 			id: "excalidraw-open",
 			name: "Open existing drawing or create new one",
 			callback: () => {
-				this.openDialog.start();
+				this.openDialog.start(openDialogAction.openFile);
 			},
 		});
+
+		this.addCommand({
+			id: "excalidraw-insert-transclusion",
+			name: "Insert link to .excalidraw file into markdown document",
+			callback: () => {
+				this.openDialog.start(openDialogAction.insertLink);
+			},
+		});
+
 
     this.addCommand({
 			id: "excalidraw-autocreate",
@@ -69,6 +110,20 @@ export default class ExcalidrawPlugin extends Plugin {
 			},
 		});
 	}
+   
+  public insertCodeblock(data:string) {
+    const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+    if(activeView) {
+      const editor = activeView.editor;
+      let doc = editor.getDoc();
+      doc.replaceSelection(
+        String.fromCharCode(96,96,96) + 
+        "excalidraw\n[["+data+"]]\n" +
+        String.fromCharCode(96,96,96));
+      editor.focus();
+    }
+  
+  }
 
 	private async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());

@@ -1,24 +1,32 @@
 import { App, FuzzySuggestModal, TFile, TFolder, normalizePath, Vault, TAbstractFile, Instruction } from "obsidian";
 import ExcalidrawPlugin from './main';
 import ExcalidrawView from './view';
+import {EMPTY_MESSAGE} from './constants';
+
+export enum openDialogAction {
+  openFile,
+  insertLink,
+}
 
 export class OpenFileDialog extends FuzzySuggestModal<TFile> {
   public app: App;
   private plugin: ExcalidrawPlugin;
+  private action: openDialogAction;
+  
 
   constructor(app: App, plugin: ExcalidrawPlugin) {
     super(app);
     this.app = app;
+    this.action = openDialogAction.openFile;
     this.plugin = plugin;
-    const EMPTY_MESSAGE = "Hit enter to create a new drawing";
-    this.emptyStateText = EMPTY_MESSAGE;
     this.setInstructions([{
-      command: "Select an existing drawing or type title for your new drawing, then hit enter.",
-      purpose: "The new drawing will be created in the default Excalidraw folder specified in Settings.",
+      command: "Type name of drawing to select.",
+      purpose: "",
     }]);
+
     
     this.inputEl.onkeyup = (e) => {
-      if(e.key=="Enter") {
+      if(e.key=="Enter" && this.action == openDialogAction.openFile) {
         if (this.containerEl.innerText.includes(EMPTY_MESSAGE)) {
           this.plugin.createDrawing(this.plugin.settings.folder+'/'+this.inputEl.value+'.excalidraw');
           this.close();
@@ -38,10 +46,28 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
   }
 
   onChooseItem(item: TFile, _evt: MouseEvent | KeyboardEvent): void {
-    this.plugin.openDrawing(item);
+    switch(this.action) {
+      case(openDialogAction.openFile):
+        this.plugin.openDrawing(item);
+        break;
+      case(openDialogAction.insertLink):
+        this.plugin.insertCodeblock(item.path);
+        break;
+    }
   }
 
-  start(): void {
+  start(action:openDialogAction): void {
+    this.action = action;
+    switch(action) {
+      case (openDialogAction.openFile):
+        this.emptyStateText = EMPTY_MESSAGE;
+        this.setPlaceholder("Select existing drawing or type name of new and hit enter.");
+        break;
+      case (openDialogAction.insertLink):
+        this.emptyStateText = "No file matches your query.";
+        this.setPlaceholder("Select existing drawing to insert into document.");
+        break;
+    }
     try {
       let files = this.getItems();
       this.open();
