@@ -21,6 +21,11 @@ The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/),
 ### Excalidraw in Obsidian
 https://user-images.githubusercontent.com/14358394/115386872-3fc8d180-a1da-11eb-9366-16d0e064932a.mp4
 
+### Contributing
+Feel free to contribute.
+
+By clicking [here](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues) you can create an issue to report a bug, suggest an improvement for this plugin, ask a question, etc.
+
 ### Support
 If you want to support me and my work, you can donate me a little something.
 
