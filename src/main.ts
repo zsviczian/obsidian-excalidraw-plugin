@@ -102,7 +102,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
 		this.addCommand({
 			id: "excalidraw-open",
-			name: "Open existing drawing or create new one",
+			name: "Open an existing drawing or create new one",
 			callback: () => {
 				this.openDialog.start(openDialogAction.openFile);
 			},
@@ -110,7 +110,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
 		this.addCommand({
 			id: "excalidraw-insert-transclusion",
-			name: "Insert link to .excalidraw file into markdown document",
+			name: "Transclude an .excalidraw file into a markdown document",
 			callback: () => {
 				this.openDialog.start(openDialogAction.insertLink);
 			},
