@@ -31,7 +31,6 @@ import {
 
 export default class ExcalidrawPlugin extends Plugin {
   public settings: ExcalidrawSettings;
-  public view: ExcalidrawView;
   private openDialog: OpenFileDialog;
   
   constructor(app: App, manifest: PluginManifest) {
@@ -43,12 +42,12 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.registerView(
       VIEW_TYPE_EXCALIDRAW, 
-      (leaf: WorkspaceLeaf) => (this.view = new ExcalidrawView(leaf))
+      (leaf: WorkspaceLeaf) => new ExcalidrawView(leaf)
     );
 
     this.registerExtensions([EXCALIDRAW_FILE_EXTENSION],VIEW_TYPE_EXCALIDRAW);
 
-    this.registerMarkdownCodeBlockProcessor(CODEBLOCK_EXCALIDRAW, (source,el,ctx) => {
+    this.registerMarkdownCodeBlockProcessor(CODEBLOCK_EXCALIDRAW, async (source,el,ctx) => {
       const parseError = (message: string) => {
         el.createDiv("excalidraw-error",(el)=> {
           el.createEl("p","Please provide a link to an excalidraw file: [[file."+EXCALIDRAW_FILE_EXTENSION+"]]");
@@ -92,23 +91,19 @@ export default class ExcalidrawPlugin extends Plugin {
         return;
       }
 
-      this.app.vault.read(file).then(async (content: string) => {
-        const svg = ExcalidrawView.getSVG(content);
-        if(!svg) {
-          parseError("Parse error. Not a valid Excalidraw file.");
-          return;
-        }
-        el.createDiv("excalidraw-svg",(el)=> {
-          svg.removeAttribute('width');
-          svg.removeAttribute('height');
-          svg.style.setProperty('width',fwidth);
-          if(fheight) svg.style.setProperty('height',fheight);
-          el.appendChild(svg);
-        })        
+      const content = await this.app.vault.read(file);
+      const svg = ExcalidrawView.getSVG(content);
+      if(!svg) {
+        parseError("Parse error. Not a valid Excalidraw file.");
+        return;
+      }
+      el.createDiv("excalidraw-svg",(el)=> {
+        svg.removeAttribute('width');
+        svg.removeAttribute('height');
+        svg.style.setProperty('width',fwidth);
+        if(fheight) svg.style.setProperty('height',fheight);
+        el.appendChild(svg);
       });
-      
-      
-      
     });
 
     await this.loadSettings();
@@ -168,8 +163,16 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public async openDrawing(drawingFile: TFile) {
-    let leaf = this.view ? this.view.leaf : this.app.workspace.activeLeaf;
-    
+    const leafs = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+    let leaf:WorkspaceLeaf = null;
+
+    if (leafs?.length > 0) {
+      leaf = leafs[0];
+    }
+    if(!leaf) {
+      leaf = this.app.workspace.activeLeaf;
+    }
+
     if(!leaf) {
       leaf = this.app.workspace.getLeaf();
     }

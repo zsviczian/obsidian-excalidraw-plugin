@@ -33,7 +33,7 @@ export default class ExcalidrawView extends TextFileView {
 
  
 
-  setViewData (data: string, clear: boolean) {
+  setViewData (data: string, clear: boolean) {   
     if (this.app.workspace.layoutReady) {
       this.loadDrawing(data,clear);
     } else {
@@ -41,7 +41,7 @@ export default class ExcalidrawView extends TextFileView {
     }
   }
 
-  private loadDrawing (data:string, clear:boolean) :void {
+  private loadDrawing (data:string, clear:boolean) :void {   
     if(clear) this.clear();
     const excalidrawData = JSON.parse(data);
     this.instantiateExcalidraw({

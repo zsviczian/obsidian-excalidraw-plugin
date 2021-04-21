@@ -36,9 +36,7 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
 
   getItems(): TFile[] {
     const excalidrawFiles = this.app.vault.getFiles();
-    if(excalidrawFiles) {
-      return excalidrawFiles.filter((f:TFile) => (f.extension==EXCALIDRAW_FILE_EXTENSION));
-    } else return [];
+    return (excalidrawFiles || []).filter((f:TFile) => (f.extension==EXCALIDRAW_FILE_EXTENSION));
   }
 
   getItemText(item: TFile): string {
