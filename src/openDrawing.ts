@@ -1,6 +1,6 @@
 import { App, FuzzySuggestModal, TFile, TFolder, normalizePath, Vault, TAbstractFile, Instruction } from "obsidian";
 import ExcalidrawPlugin from './main';
-import {EMPTY_MESSAGE} from './constants';
+import {EMPTY_MESSAGE,EXCALIDRAW_FILE_EXTENSION} from './constants';
 
 export enum openDialogAction {
   openFile,
@@ -27,7 +27,7 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
     this.inputEl.onkeyup = (e) => {
       if(e.key=="Enter" && this.action == openDialogAction.openFile) {
         if (this.containerEl.innerText.includes(EMPTY_MESSAGE)) {
-          this.plugin.createDrawing(this.plugin.settings.folder+'/'+this.inputEl.value+'.excalidraw');
+          this.plugin.createDrawing(this.plugin.settings.folder+'/'+this.inputEl.value+'.'+EXCALIDRAW_FILE_EXTENSION);
           this.close();
         }
       }
@@ -35,9 +35,10 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
   }
 
   getItems(): TFile[] {
-    let excalidrawFiles: TFile[] = [];
-    excalidrawFiles = this.app.vault.getFiles();
-    return excalidrawFiles.filter((f:TFile) => (f.extension=='excalidraw'));
+    const excalidrawFiles = this.app.vault.getFiles();
+    if(excalidrawFiles) {
+      return excalidrawFiles.filter((f:TFile) => (f.extension==EXCALIDRAW_FILE_EXTENSION));
+    } else return [];
   }
 
   getItemText(item: TFile): string {
@@ -67,13 +68,7 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
         this.setPlaceholder("Select existing drawing to insert into document.");
         break;
     }
-    try {
-      let files = this.getItems();
-      this.open();
-    }
-    catch(error) {
-      console.log(error);
-    }
+    this.open();
   }
 
 }

@@ -4,6 +4,7 @@ import * as ReactDOM from "react-dom";
 import Excalidraw, {exportToSvg} from "@excalidraw/excalidraw";
 import { ExcalidrawElement } from "@excalidraw/excalidraw/types/element/types";
 import { AppState } from "@excalidraw/excalidraw/types/types";
+import {VIEW_TYPE_EXCALIDRAW, EXCALIDRAW_FILE_EXTENSION, ICON_NAME} from './constants';
 
 
 export default class ExcalidrawView extends TextFileView {
@@ -17,9 +18,7 @@ export default class ExcalidrawView extends TextFileView {
   async onClose() {
     this.requestSave();
   }
-
-  
-  
+ 
   // clear the view content
   clear() {
     ReactDOM.unmountComponentAtNode(this.contentEl);
@@ -55,23 +54,23 @@ export default class ExcalidrawView extends TextFileView {
   // gets the title of the document
   getDisplayText() {
     if(this.file) return this.file.basename;
-    else return "excalidraw (no file)";
+    else return "Excalidraw (no file)";
 
   }
 
   // confirms this view can accept csv extension
   canAcceptExtension(extension: string) {
-    return extension == 'excalidraw';
+    return extension == EXCALIDRAW_FILE_EXTENSION;
   }  
 
   // the view type name
   getViewType() {
-    return "excalidraw";
+    return VIEW_TYPE_EXCALIDRAW;
   }
 
   // icon for the view
   getIcon() {
-    return "excalidraw-icon";
+    return ICON_NAME;
   }
 
   private instantiateExcalidraw(initdata: any) {  
