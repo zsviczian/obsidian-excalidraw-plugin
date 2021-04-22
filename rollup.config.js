@@ -6,6 +6,7 @@ import copy from 'rollup-plugin-copy';
 import { env } from "process";
 import babel from '@rollup/plugin-babel';
 import replace from "@rollup/plugin-replace";
+import visualizer from "rollup-plugin-visualizer";
 
 const isProd = (process.env.NODE_ENV === "production");
 
@@ -40,6 +41,6 @@ export default {
         { src: ['manifest.json', 'styles.css'], dest: './dist' }
       ], flatten: true
     }),
-    //process.env.NODE_ENV === 'production' && minify(),
+    visualizer(),
   ]
 };
