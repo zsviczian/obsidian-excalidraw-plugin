@@ -3,9 +3,8 @@ import { nodeResolve } from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import postcss from 'rollup-plugin-postcss';
 import copy from 'rollup-plugin-copy';
-//import uglify from 'rollup-plugin-uglify';
-//import minify from "rollup-plugin-minify"
 import { env } from "process";
+import babel from '@rollup/plugin-babel';
 import replace from "@rollup/plugin-replace";
 
 const isProd = (process.env.NODE_ENV === "production");
@@ -28,6 +27,9 @@ export default {
     replace({
       preventAssignment: true,
       "process.env.NODE_ENV": JSON.stringify(env.NODE_ENV),
+    }),
+    babel({
+      exclude: "node_modules/**"
     }),
     commonjs(),
     postcss({

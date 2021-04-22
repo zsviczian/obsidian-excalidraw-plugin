@@ -1,39 +1,43 @@
 import { TextFileView, WorkspaceLeaf } from "obsidian";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import Excalidraw, {exportToSvg} from "@excalidraw/excalidraw";
+//import Excalidraw, {exportToSvg} from "@excalidraw/excalidraw";
 import { ExcalidrawElement } from "@excalidraw/excalidraw/types/element/types";
 import { AppState } from "@excalidraw/excalidraw/types/types";
-import {VIEW_TYPE_EXCALIDRAW, EXCALIDRAW_FILE_EXTENSION, ICON_NAME} from './constants';
+import Excalidraw, {exportToSvg} from "aakansha-excalidraw";
 
+import {VIEW_TYPE_EXCALIDRAW, EXCALIDRAW_FILE_EXTENSION, ICON_NAME} from './constants';
 
 export default class ExcalidrawView extends TextFileView {
   private getScene: any;
+  private excalidrawRef: React.MutableRefObject<any>;
 
   constructor(leaf: WorkspaceLeaf) {
     super(leaf);
     this.getScene = null;
+    this.excalidrawRef = null;
   }
 
-  async onClose() {
-    this.requestSave();
-  }
- 
-  // clear the view content
-  clear() {
-    ReactDOM.unmountComponentAtNode(this.contentEl);
-    this.getScene = null;
-  }
+
+  // onload() {
+
+  // }
+
+  // onunload() {
+
+  // }
+
 
   // get the new file content
   getViewData () {
-    if(this.getScene) return this.getScene();
-    else return '';
+    console.log("getViewData");
+    if(this.getScene) 
+      return this.getScene();
+    else return this.data;
   }
 
- 
-
   setViewData (data: string, clear: boolean) {   
+    console.log("setViewData", this.leaf);
     if (this.app.workspace.layoutReady) {
       this.loadDrawing(data,clear);
     } else {
@@ -41,7 +45,8 @@ export default class ExcalidrawView extends TextFileView {
     }
   }
 
-  private loadDrawing (data:string, clear:boolean) :void {   
+  private loadDrawing (data:string, clear:boolean) :void {  
+    console.log("loadDrawing clear?",clear,data); 
     if(clear) this.clear();
     const excalidrawData = JSON.parse(data);
     this.instantiateExcalidraw({
@@ -73,9 +78,23 @@ export default class ExcalidrawView extends TextFileView {
     return ICON_NAME;
   }
 
+  // clear the view content  
+  clear() {
+    
+    //this.excalidrawRef.resetScene();
+    return;
+    console.log("clear");
+    if(this.containerEl.hasChildNodes) {
+      console.log("unmount ReactDOM");
+      ReactDOM.unmountComponentAtNode(this.contentEl);
+      this.getScene = null;
+    }
+  }
+
   private instantiateExcalidraw(initdata: any) {  
-    ReactDOM.render(React.createElement(() => {
-      let previousSceneVersion = 0;
+    //this.clear();
+    console.log("this.instantiateExcalidraw");
+    const reactElement = React.createElement(() => {
       const excalidrawRef = React.useRef(null);
       const excalidrawWrapperRef = React.useRef(null);
       const [dimensions, setDimensions] = React.useState({
@@ -83,6 +102,8 @@ export default class ExcalidrawView extends TextFileView {
         height: undefined
       });
       
+      this.excalidrawRef = excalidrawRef;
+
       React.useEffect(() => {
         setDimensions({
           width: this.contentEl.clientWidth, 
@@ -100,14 +121,17 @@ export default class ExcalidrawView extends TextFileView {
         return () => window.removeEventListener("resize", onResize);
       }, [excalidrawWrapperRef]);
       
-      this.getScene = function() {
+      this.getScene = () => {
+        if(!excalidrawRef?.current) {
+          return null;
+        }
         const el: ExcalidrawElement[] = excalidrawRef.current.getSceneElements();
         const st: AppState = excalidrawRef.current.getAppState();
         return JSON.stringify({
           "type": "excalidraw",
           "version": 2,
           "source": "https://excalidraw.com",
-          "elements": el.filter(e => !e.isDeleted),
+          "elements": el, 
           "appState": {
             "theme": st.theme,
             "viewBackgroundColor": st.viewBackgroundColor,
@@ -116,7 +140,7 @@ export default class ExcalidrawView extends TextFileView {
           }
         });
       };
-
+      
       return React.createElement(
         React.Fragment,
         null,
@@ -124,7 +148,7 @@ export default class ExcalidrawView extends TextFileView {
           "div",
           {
             className: "excalidraw-wrapper",
-            ref: excalidrawWrapperRef
+            ref: excalidrawWrapperRef,
           },
           React.createElement(Excalidraw.default, {
             ref: excalidrawRef,
@@ -141,7 +165,8 @@ export default class ExcalidrawView extends TextFileView {
           })
         )
       );
-    }),(this as any).contentEl);
+    });
+    ReactDOM.render(reactElement,(this as any).contentEl);
   }
 
   public static getSVG(data:string):SVGSVGElement {
