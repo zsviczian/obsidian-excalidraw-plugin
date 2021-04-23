@@ -27,15 +27,15 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.containerEl.empty();
 
     new Setting(containerEl)
-      .setName('Excalidraw folder') 
-      .setDesc('Default location for Excalidraw drawings. Leaving this empty means drawings will be saved to the Vault root.')
-      .addText(text => text
-        .setPlaceholder('excalidraw')
-        .setValue(this.plugin.settings.folder)
-        .onChange(async (value) => {
-          this.plugin.settings.folder = value;
-          await this.plugin.saveSettings();
-        }));
+    .setName('Excalidraw folder') 
+    .setDesc('Default location for your Excalidraw drawings. Leaving this empty means drawings will be created in the Vault root.')
+    .addText(text => text
+      .setPlaceholder('excalidraw')
+      .setValue(this.plugin.settings.folder)
+      .onChange(async (value) => {
+        this.plugin.settings.folder = value;
+        await this.plugin.saveSettings();
+      }));
 
     new Setting(containerEl)
       .setName('Excalidraw template file') 
