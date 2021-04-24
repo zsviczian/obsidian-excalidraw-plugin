@@ -1,6 +1,13 @@
-import { App, FuzzySuggestModal, TFile, TFolder, normalizePath, Vault, TAbstractFile, Instruction } from "obsidian";
+import { 
+  App, 
+  FuzzySuggestModal, 
+  TFile 
+} from "obsidian";
 import ExcalidrawPlugin from './main';
-import {EMPTY_MESSAGE,EXCALIDRAW_FILE_EXTENSION} from './constants';
+import {
+  EMPTY_MESSAGE,
+  EXCALIDRAW_FILE_EXTENSION
+} from './constants';
 
 export enum openDialogAction {
   openFile,
@@ -12,7 +19,6 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
   private plugin: ExcalidrawPlugin;
   private action: openDialogAction;
   
-
   constructor(app: App, plugin: ExcalidrawPlugin) {
     super(app);
     this.app = app;
@@ -22,7 +28,6 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
       command: "Type name of drawing to select.",
       purpose: "",
     }]);
-
     
     this.inputEl.onkeyup = (e) => {
       if(e.key=="Enter" && this.action == openDialogAction.openFile) {

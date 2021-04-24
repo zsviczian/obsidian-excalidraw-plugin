@@ -1,4 +1,8 @@
-import {App, PluginSettingTab, Setting} from 'obsidian';
+import {
+  App, 
+  PluginSettingTab, 
+  Setting
+} from 'obsidian';
 import type ExcalidrawPlugin from "./main";
 
 export interface ExcalidrawSettings {

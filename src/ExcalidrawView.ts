@@ -1,13 +1,15 @@
 import { 
   TextFileView, 
   WorkspaceLeaf, 
-  TFile, 
 } from "obsidian";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 //import Excalidraw, {exportToSvg} from "@excalidraw/excalidraw";
 import { ExcalidrawElement } from "@excalidraw/excalidraw/types/element/types";
-import { AppState,LibraryItems } from "@excalidraw/excalidraw/types/types";
+import { 
+  AppState,
+  LibraryItems 
+} from "@excalidraw/excalidraw/types/types";
 import Excalidraw, {exportToSvg } from "aakansha-excalidraw";
 import {
   VIEW_TYPE_EXCALIDRAW,
@@ -16,7 +18,6 @@ import {
   EXCALIDRAW_LIB_HEADER,
 } from './constants';
 import ExcalidrawPlugin from './main';
-import { THEME_FILTER } from "@excalidraw/excalidraw/types/constants";
 
 export default class ExcalidrawView extends TextFileView {
   private getScene: any;
