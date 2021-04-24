@@ -1,7 +1,7 @@
 import { 
   TextFileView, 
   WorkspaceLeaf, 
-  TFile 
+  TFile, 
 } from "obsidian";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -13,30 +13,20 @@ import {
   VIEW_TYPE_EXCALIDRAW,
   EXCALIDRAW_FILE_EXTENSION, 
   ICON_NAME, 
-  BLANK_DRAWING, 
-  EXCALIDRAWLIB_FILE_EXTENSION
+  EXCALIDRAWLIB_FILE,
+  EXCALIDRAW_LIB_HEADER
 } from './constants';
-import { getElementsAtPosition } from "@excalidraw/excalidraw/types/scene";
-
 
 export default class ExcalidrawView extends TextFileView {
   private getScene: any;
   private excalidrawRef: React.MutableRefObject<any>;
+  private justLoaded: boolean;
 
   constructor(leaf: WorkspaceLeaf) {
     super(leaf);
     this.getScene = null;
     this.excalidrawRef = null;
-  }
-
-  onload() {
-    const excalidrawData = JSON.parse(BLANK_DRAWING);
-    this.instantiateExcalidraw({
-      elements: excalidrawData.elements,
-      appState: excalidrawData.appState,
-      scrollToContent: true,
-      libraryItems: this.getLibraries()
-    });
+    this.justLoaded = false;
   }
 
   // get the new file content
@@ -59,21 +49,22 @@ export default class ExcalidrawView extends TextFileView {
     if(this.excalidrawRef) this.excalidrawRef.current.resetScene();
   }
 
-  private loadDrawing (data:string, clear:boolean) :void {   
+  private async loadDrawing (data:string, clear:boolean) {   
     if(clear) this.clear();
+    this.justLoaded = true;
     const excalidrawData = JSON.parse(data);
     if(this.excalidrawRef) {
       this.excalidrawRef.current.updateScene({
         elements: excalidrawData.elements,
         appState: excalidrawData.appState,  
       });
-      this.excalidrawRef.current.setScrollToContent(excalidrawData.elements);
+      //this.excalidrawRef.current.setScrollToContent([]);//excalidrawData.elements);
     } else {
       this.instantiateExcalidraw({
         elements: excalidrawData.elements,
         appState: excalidrawData.appState,
         scrollToContent: true,
-        libraryItems: this.getLibraries()
+        libraryItems: await this.getLibrary(),
       });
     }
   }
@@ -100,18 +91,20 @@ export default class ExcalidrawView extends TextFileView {
     return ICON_NAME;
   }
 
-  async getLibraries() {
-    const excalidrawLibFiles = this.app.vault.getFiles();
-    const files = (excalidrawLibFiles || [])
-              .filter((f:TFile) => (f.extension==EXCALIDRAWLIB_FILE_EXTENSION));
-    let libs:LibraryItems = [];
-    let data;
-    for (let i=0;i<files.length;i++) {
-      data = JSON.parse(await this.app.vault.read(files[i]));
-      libs = libs.concat(data.library);
+  private async getLibFile() {
+    const lib = this.app.vault.getAbstractFileByPath(EXCALIDRAWLIB_FILE);
+    if(!(lib && lib instanceof TFile)) {
+      return await this.app.vault.create(EXCALIDRAWLIB_FILE,EXCALIDRAW_LIB_HEADER+'[]}');
+    } else {
+      return lib;
     }
-    const result = JSON.stringify(libs);
-    return result;
+
+  }
+
+  async getLibrary() {
+    const libFile = await this.getLibFile();
+    const data = JSON.parse(await this.app.vault.read(libFile));
+    return data?.library ? data.library : [];
   }
 
   
@@ -143,7 +136,7 @@ export default class ExcalidrawView extends TextFileView {
         window.addEventListener("resize", onResize); 
         return () => window.removeEventListener("resize", onResize);
       }, [excalidrawWrapperRef]);
-      
+
       this.getScene = () => {
         if(!excalidrawRef?.current) {
           return null;
@@ -185,7 +178,17 @@ export default class ExcalidrawView extends TextFileView {
               },
             },
             initialData: initdata,
-            onLibraryChange: (items:LibraryItems) => {console.log("onLibraryChange",items,JSON.stringify(items))}
+            onChange: (et:ExcalidrawElement[],st:AppState) => {
+              if(this.justLoaded) {
+                this.justLoaded = false;             
+                const e = new KeyboardEvent("keydown", {bubbles : true, cancelable : true, shiftKey : true, code:"Digit1"});
+                this.contentEl.querySelector("canvas")?.dispatchEvent(e);
+              }
+            },
+            onLibraryChange: async (items:LibraryItems) => {
+              const libFile = await this.getLibFile();
+              await this.app.vault.modify(libFile,EXCALIDRAW_LIB_HEADER+JSON.stringify(items)+'}');
+            }
           })
         )
       );
