@@ -10,3 +10,4 @@ package-lock.json
 main.js
 *.js.map
 stats.html
+hot-reload.bat

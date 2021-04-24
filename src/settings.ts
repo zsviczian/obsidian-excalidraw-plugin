@@ -5,12 +5,14 @@ export interface ExcalidrawSettings {
   folder: string,
   templateFilePath: string,
   width: string,
+  library: string,
 }
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   folder: 'excalidraw',
   templateFilePath: '',
   width: '400',
+  library: `{"type":"excalidrawlib","version":1,"library":[]}`,
 }
 
 export class ExcalidrawSettingTab extends PluginSettingTab {

@@ -3360,6 +3360,13 @@
   dependencies:
     "source-map" "~0.6.0"
 
+"clean-css@^5.0.1":
+  "integrity" "sha512-QcaGg9OuMo+0Ds933yLOY+gHPWbxhxqF0HDexmToPf8pczvmvZGYzd+QqWp9/mkucAOKViI+dSFOqoZIvXbeBw=="
+  "resolved" "https://registry.npmjs.org/clean-css/-/clean-css-5.1.2.tgz"
+  "version" "5.1.2"
+  dependencies:
+    "source-map" "~0.6.0"
+
 "clean-stack@^2.0.0":
   "integrity" "sha512-4diC9HaTE+KRAMWhDhrGOECgWZxoevMc5TlkObMqNSsVU62PYzXZ/SMTjzyGAFF1YusgxGcSWTEXBhp0CPwQ1A=="
   "resolved" "https://registry.npmjs.org/clean-stack/-/clean-stack-2.2.0.tgz"
@@ -3791,6 +3798,16 @@
   "resolved" "https://registry.npmjs.org/crypto-random-string/-/crypto-random-string-1.0.0.tgz"
   "version" "1.0.0"
 
+"cyclist@^1.0.1":
+  "integrity" "sha1-WW6WmP0MgOEgOMK4LW6xs1tiJNk="
+  "resolved" "https://registry.npmjs.org/cyclist/-/cyclist-1.0.1.tgz"
+  "version" "1.0.1"
+
+"css-b64-images@~0.2.5":
+  "integrity" "sha1-QgBdgyBLK0pdk7axpWRBM7WSegI="
+  "resolved" "https://registry.npmjs.org/css-b64-images/-/css-b64-images-0.2.5.tgz"
+  "version" "0.2.5"
+
 "css-blank-pseudo@^0.1.4":
   "integrity" "sha512-LHz35Hr83dnFeipc7oqFDmsjHdljj3TQtxGGiNWSOsTLIAubSm4TEz8qCaKFpk7idaQ1GfWscF4E6mgpBysA1w=="
   "resolved" "https://registry.npmjs.org/css-blank-pseudo/-/css-blank-pseudo-0.1.4.tgz"
@@ -4001,11 +4018,6 @@
   "integrity" "sha512-+ZAmfyWMT7TiIlzdqJgjMb7S4f1beorDbWbsocyK4RaiqA5RTX3K14bnBWmmA9QEM0gRdsjyyrEmcyga8Zsxmw=="
   "resolved" "https://registry.npmjs.org/csstype/-/csstype-3.0.6.tgz"
   "version" "3.0.6"
-
-"cyclist@^1.0.1":
-  "integrity" "sha1-WW6WmP0MgOEgOMK4LW6xs1tiJNk="
-  "resolved" "https://registry.npmjs.org/cyclist/-/cyclist-1.0.1.tgz"
-  "version" "1.0.1"
 
 "d@^1.0.1", "d@1":
   "integrity" "sha512-m62ShEObQ39CfralilEQRjH6oAMtNCV1xJyEx5LpRYUVN+EviphDgUc/F3hnYbADmkiNs67Y+3ylmlG7Lnu+FA=="
@@ -5725,7 +5737,7 @@
   "resolved" "https://registry.npmjs.org/html-escaper/-/html-escaper-2.0.2.tgz"
   "version" "2.0.2"
 
-"html-minifier-terser@^5.0.1":
+"html-minifier-terser@^5.0.1", "html-minifier-terser@^5.1.1":
   "integrity" "sha512-ZPr5MNObqnV/T9akshPKbVgyOqLmy+Bxo7juKCfTfnjNniTAMdy4hz21YQqoofMBJD2kdREaqPPdThoR78Tgxg=="
   "resolved" "https://registry.npmjs.org/html-minifier-terser/-/html-minifier-terser-5.1.1.tgz"
   "version" "5.1.1"
@@ -7505,6 +7517,18 @@
     "normalize-url" "1.9.1"
     "schema-utils" "^1.0.0"
     "webpack-sources" "^1.1.0"
+
+"minify@7.0.1":
+  "integrity" "sha512-U3CjnPKRjPu3DxZX7NsB833r2ijbw9af3fHsaChn6o7BHKvaT/zxYDQ8Q/3W7VFXGDrnkAx6XBx3ggEf5KJm7A=="
+  "resolved" "https://registry.npmjs.org/minify/-/minify-7.0.1.tgz"
+  "version" "7.0.1"
+  dependencies:
+    "clean-css" "^5.0.1"
+    "css-b64-images" "~0.2.5"
+    "debug" "^4.1.0"
+    "html-minifier-terser" "^5.1.1"
+    "terser" "^5.3.2"
+    "try-to-catch" "^3.0.0"
 
 "minimalistic-assert@^1.0.0", "minimalistic-assert@^1.0.1":
   "integrity" "sha512-UtJcAD4yEaGtjPezWuO9wC4nwUnVH/8/Im3yEHQP4b67cXlD/Qr9hdITCU1xDbSEXg2XKNaP8jsReV7vQd00/A=="
@@ -11175,6 +11199,15 @@
     "source-map" "~0.6.1"
     "source-map-support" "~0.5.12"
 
+"terser@^5.3.2":
+  "integrity" "sha512-yv9YLFQQ+3ZqgWCUk+pvNJwgUTdlIxUk1WTN+RnaFJe2L7ipG2csPT0ra2XRm7Cs8cxN7QXmK1rFzEwYEQkzXw=="
+  "resolved" "https://registry.npmjs.org/terser/-/terser-5.6.1.tgz"
+  "version" "5.6.1"
+  dependencies:
+    "commander" "^2.20.0"
+    "source-map" "~0.7.2"
+    "source-map-support" "~0.5.19"
+
 "terser@^5.3.4":
   "integrity" "sha512-yv9YLFQQ+3ZqgWCUk+pvNJwgUTdlIxUk1WTN+RnaFJe2L7ipG2csPT0ra2XRm7Cs8cxN7QXmK1rFzEwYEQkzXw=="
   "resolved" "https://registry.npmjs.org/terser/-/terser-5.6.1.tgz"
@@ -11317,6 +11350,11 @@
   dependencies:
     "punycode" "^2.1.1"
 
+"try-to-catch@^3.0.0":
+  "integrity" "sha512-eIm6ZXwR35jVF8By/HdbbkcaCDTBI5PpCPkejRKrYp0jyf/DbCCcRhHD7/O9jtFI3ewsqo9WctFEiJTS6i+CQA=="
+  "resolved" "https://registry.npmjs.org/try-to-catch/-/try-to-catch-3.0.0.tgz"
+  "version" "3.0.0"
+
 "tryer@^1.0.1":
   "integrity" "sha512-c3zayb8/kWWpycWYg87P71E1S1ZL6b6IJxfb5fvsUgsf0S2MVGaDhDXXjDMpdCpfWXqptc+4mXwmiy1ypXqRAA=="
   "resolved" "https://registry.npmjs.org/tryer/-/tryer-1.0.1.tgz"
@@ -11353,11 +11391,6 @@
   "version" "3.21.0"
   dependencies:
     "tslib" "^1.8.1"
-
-"tty-browserify@0.0.0":
-  "integrity" "sha1-oVe6QC2iTpv5V/mqadUk7tQpAaY="
-  "resolved" "https://registry.npmjs.org/tty-browserify/-/tty-browserify-0.0.0.tgz"
-  "version" "0.0.0"
 
 "tunnel-agent@^0.6.0":
   "integrity" "sha1-J6XeoGs2sEoKmWZ3SykIaPD8QP0="
@@ -11449,6 +11482,11 @@
   "integrity" "sha512-6OSu9PTIzmn9TCDiovULTnET6BgXtDYL4Gg4szY+cGsc3JP1dQL8qvE8kShTRx1NIw4Q9IBHlwODjkjWEtMUyA=="
   "resolved" "https://registry.npmjs.org/typescript/-/typescript-4.1.5.tgz"
   "version" "4.1.5"
+
+"tty-browserify@0.0.0":
+  "integrity" "sha1-oVe6QC2iTpv5V/mqadUk7tQpAaY="
+  "resolved" "https://registry.npmjs.org/tty-browserify/-/tty-browserify-0.0.0.tgz"
+  "version" "0.0.0"
 
 "uglify-js@^2.7.4":
   "integrity" "sha1-KcVzMUgFe7Th913zW3qcty5qWd0="

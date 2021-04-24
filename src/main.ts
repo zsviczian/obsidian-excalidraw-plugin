@@ -42,7 +42,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.registerView(
       VIEW_TYPE_EXCALIDRAW, 
-      (leaf: WorkspaceLeaf) => new ExcalidrawView(leaf)
+      (leaf: WorkspaceLeaf) => new ExcalidrawView(leaf, this)
     );
 
     this.registerExtensions([EXCALIDRAW_FILE_EXTENSION],VIEW_TYPE_EXCALIDRAW);

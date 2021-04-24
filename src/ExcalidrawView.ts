@@ -12,20 +12,22 @@ import Excalidraw, {exportToSvg } from "aakansha-excalidraw";
 import {
   VIEW_TYPE_EXCALIDRAW,
   EXCALIDRAW_FILE_EXTENSION, 
-  ICON_NAME, 
-  EXCALIDRAWLIB_FILE,
-  EXCALIDRAW_LIB_HEADER
+  ICON_NAME,
+  EXCALIDRAW_LIB_HEADER,
 } from './constants';
+import ExcalidrawPlugin from './main';
 
 export default class ExcalidrawView extends TextFileView {
   private getScene: any;
   private excalidrawRef: React.MutableRefObject<any>;
   private justLoaded: boolean;
+  private plugin: ExcalidrawPlugin;
 
-  constructor(leaf: WorkspaceLeaf) {
+  constructor(leaf: WorkspaceLeaf, plugin: ExcalidrawPlugin) {
     super(leaf);
     this.getScene = null;
     this.excalidrawRef = null;
+    this.plugin = plugin;
     this.justLoaded = false;
   }
 
@@ -51,14 +53,13 @@ export default class ExcalidrawView extends TextFileView {
 
   private async loadDrawing (data:string, clear:boolean) {   
     if(clear) this.clear();
-    this.justLoaded = true;
+    this.justLoaded = true; //a flag to trigger zoom to fit after the drawing has been loaded
     const excalidrawData = JSON.parse(data);
     if(this.excalidrawRef) {
       this.excalidrawRef.current.updateScene({
         elements: excalidrawData.elements,
         appState: excalidrawData.appState,  
       });
-      //this.excalidrawRef.current.setScrollToContent([]);//excalidrawData.elements);
     } else {
       this.instantiateExcalidraw({
         elements: excalidrawData.elements,
@@ -91,19 +92,8 @@ export default class ExcalidrawView extends TextFileView {
     return ICON_NAME;
   }
 
-  private async getLibFile() {
-    const lib = this.app.vault.getAbstractFileByPath(EXCALIDRAWLIB_FILE);
-    if(!(lib && lib instanceof TFile)) {
-      return await this.app.vault.create(EXCALIDRAWLIB_FILE,EXCALIDRAW_LIB_HEADER+'[]}');
-    } else {
-      return lib;
-    }
-
-  }
-
   async getLibrary() {
-    const libFile = await this.getLibFile();
-    const data = JSON.parse(await this.app.vault.read(libFile));
+    const data = JSON.parse(this.plugin.settings.library);
     return data?.library ? data.library : [];
   }
 
@@ -186,8 +176,8 @@ export default class ExcalidrawView extends TextFileView {
               }
             },
             onLibraryChange: async (items:LibraryItems) => {
-              const libFile = await this.getLibFile();
-              await this.app.vault.modify(libFile,EXCALIDRAW_LIB_HEADER+JSON.stringify(items)+'}');
+              this.plugin.settings.library = EXCALIDRAW_LIB_HEADER+JSON.stringify(items)+'}';
+              this.plugin.saveSettings();
             }
           })
         )
