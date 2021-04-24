@@ -39,6 +39,10 @@ export default class ExcalidrawView extends TextFileView {
     else return this.data;
   }
 
+  async onunload() {
+    if(this.excalidrawRef) await this.save();
+  }
+
   setViewData (data: string, clear: boolean) {   
     if (this.app.workspace.layoutReady) {
       this.loadDrawing(data,clear);
