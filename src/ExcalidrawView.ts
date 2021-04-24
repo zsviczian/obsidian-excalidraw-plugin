@@ -16,6 +16,7 @@ import {
   EXCALIDRAW_LIB_HEADER,
 } from './constants';
 import ExcalidrawPlugin from './main';
+import { THEME_FILTER } from "@excalidraw/excalidraw/types/constants";
 
 export default class ExcalidrawView extends TextFileView {
   private getScene: any;
@@ -48,7 +49,12 @@ export default class ExcalidrawView extends TextFileView {
 
   // clear the view content  
   clear() {
-    if(this.excalidrawRef) this.excalidrawRef.current.resetScene();
+    if(this.excalidrawRef) {
+      this.excalidrawRef = null;
+      this.getScene = null;
+      ReactDOM.unmountComponentAtNode(this.contentEl);
+    }
+    //this.excalidrawRef.current.resetScene({ resetLoadingState: true });
   }
 
   private async loadDrawing (data:string, clear:boolean) {   
@@ -99,7 +105,6 @@ export default class ExcalidrawView extends TextFileView {
 
   
   private instantiateExcalidraw(initdata: any) {  
-    //this.clear();
     const reactElement = React.createElement(() => {
       const excalidrawRef = React.useRef(null);
       const excalidrawWrapperRef = React.useRef(null);
@@ -107,14 +112,14 @@ export default class ExcalidrawView extends TextFileView {
         width: undefined,
         height: undefined
       });
-      
+
       this.excalidrawRef = excalidrawRef;
-      
       React.useEffect(() => {
         setDimensions({
           width: this.contentEl.clientWidth, 
           height: this.contentEl.clientHeight, 
         });
+        
         const onResize = () => {
           try {
             setDimensions({
@@ -141,8 +146,6 @@ export default class ExcalidrawView extends TextFileView {
           "appState": {
             "theme": st.theme,
             "viewBackgroundColor": st.viewBackgroundColor,
-            "gridSize": st.gridSize,
-            "zenModeEnabled": st.zenModeEnabled
           }
         });
       };
@@ -155,9 +158,11 @@ export default class ExcalidrawView extends TextFileView {
           {
             className: "excalidraw-wrapper",
             ref: excalidrawWrapperRef,
+            key: "abc",
           },
           React.createElement(Excalidraw.default, {
             ref: excalidrawRef,
+            key: "xyz",
             width: dimensions.width,
             height: dimensions.height,
             UIOptions: {
@@ -184,6 +189,7 @@ export default class ExcalidrawView extends TextFileView {
       );
     });
     ReactDOM.render(reactElement,(this as any).contentEl);
+    
   }
 
   public static getSVG(data:string):SVGSVGElement {

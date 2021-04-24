@@ -2156,10 +2156,10 @@
   "resolved" "https://registry.npmjs.org/@xtuc/long/-/long-4.2.2.tgz"
   "version" "4.2.2"
 
-"aakansha-excalidraw@0.7.0-fixtext":
-  "integrity" "sha512-3rrI/FaqaINxxWZVmWPqhBtW4ySn3aco7rds8k9a/dAffShw/3zPBtiPpy8HWwwNTEu3Mzz0oqpq88l+mCw4sQ=="
-  "resolved" "https://registry.npmjs.org/aakansha-excalidraw/-/aakansha-excalidraw-0.7.0-fixtext.tgz"
-  "version" "0.7.0-fixtext"
+"aakansha-excalidraw@0.7.0-ccp":
+  "integrity" "sha512-/RQBh8x9WBmuwT2xebmQnktJlPkD58eLuc9D8wT4bL1X+mf4q5jK6TF4YxUUn2qbyvHVunHenz+N9Z6Az5bB/w=="
+  "resolved" "https://registry.npmjs.org/aakansha-excalidraw/-/aakansha-excalidraw-0.7.0-ccp.tgz"
+  "version" "0.7.0-ccp"
 
 "abab@^2.0.3", "abab@^2.0.5":
   "integrity" "sha512-9IK9EadsbHo6jLWIpxpR6pL0sazTXV6+SQv25ZB+F7Bj9mJNaOc4nCRabwd5M/JwmUa8idz6Eci6eKfJryPs6Q=="
@@ -3360,13 +3360,6 @@
   dependencies:
     "source-map" "~0.6.0"
 
-"clean-css@^5.0.1":
-  "integrity" "sha512-QcaGg9OuMo+0Ds933yLOY+gHPWbxhxqF0HDexmToPf8pczvmvZGYzd+QqWp9/mkucAOKViI+dSFOqoZIvXbeBw=="
-  "resolved" "https://registry.npmjs.org/clean-css/-/clean-css-5.1.2.tgz"
-  "version" "5.1.2"
-  dependencies:
-    "source-map" "~0.6.0"
-
 "clean-stack@^2.0.0":
   "integrity" "sha512-4diC9HaTE+KRAMWhDhrGOECgWZxoevMc5TlkObMqNSsVU62PYzXZ/SMTjzyGAFF1YusgxGcSWTEXBhp0CPwQ1A=="
   "resolved" "https://registry.npmjs.org/clean-stack/-/clean-stack-2.2.0.tgz"
@@ -3802,11 +3795,6 @@
   "integrity" "sha1-WW6WmP0MgOEgOMK4LW6xs1tiJNk="
   "resolved" "https://registry.npmjs.org/cyclist/-/cyclist-1.0.1.tgz"
   "version" "1.0.1"
-
-"css-b64-images@~0.2.5":
-  "integrity" "sha1-QgBdgyBLK0pdk7axpWRBM7WSegI="
-  "resolved" "https://registry.npmjs.org/css-b64-images/-/css-b64-images-0.2.5.tgz"
-  "version" "0.2.5"
 
 "css-blank-pseudo@^0.1.4":
   "integrity" "sha512-LHz35Hr83dnFeipc7oqFDmsjHdljj3TQtxGGiNWSOsTLIAubSm4TEz8qCaKFpk7idaQ1GfWscF4E6mgpBysA1w=="
@@ -5737,7 +5725,7 @@
   "resolved" "https://registry.npmjs.org/html-escaper/-/html-escaper-2.0.2.tgz"
   "version" "2.0.2"
 
-"html-minifier-terser@^5.0.1", "html-minifier-terser@^5.1.1":
+"html-minifier-terser@^5.0.1":
   "integrity" "sha512-ZPr5MNObqnV/T9akshPKbVgyOqLmy+Bxo7juKCfTfnjNniTAMdy4hz21YQqoofMBJD2kdREaqPPdThoR78Tgxg=="
   "resolved" "https://registry.npmjs.org/html-minifier-terser/-/html-minifier-terser-5.1.1.tgz"
   "version" "5.1.1"
@@ -7517,18 +7505,6 @@
     "normalize-url" "1.9.1"
     "schema-utils" "^1.0.0"
     "webpack-sources" "^1.1.0"
-
-"minify@7.0.1":
-  "integrity" "sha512-U3CjnPKRjPu3DxZX7NsB833r2ijbw9af3fHsaChn6o7BHKvaT/zxYDQ8Q/3W7VFXGDrnkAx6XBx3ggEf5KJm7A=="
-  "resolved" "https://registry.npmjs.org/minify/-/minify-7.0.1.tgz"
-  "version" "7.0.1"
-  dependencies:
-    "clean-css" "^5.0.1"
-    "css-b64-images" "~0.2.5"
-    "debug" "^4.1.0"
-    "html-minifier-terser" "^5.1.1"
-    "terser" "^5.3.2"
-    "try-to-catch" "^3.0.0"
 
 "minimalistic-assert@^1.0.0", "minimalistic-assert@^1.0.1":
   "integrity" "sha512-UtJcAD4yEaGtjPezWuO9wC4nwUnVH/8/Im3yEHQP4b67cXlD/Qr9hdITCU1xDbSEXg2XKNaP8jsReV7vQd00/A=="
@@ -11199,15 +11175,6 @@
     "source-map" "~0.6.1"
     "source-map-support" "~0.5.12"
 
-"terser@^5.3.2":
-  "integrity" "sha512-yv9YLFQQ+3ZqgWCUk+pvNJwgUTdlIxUk1WTN+RnaFJe2L7ipG2csPT0ra2XRm7Cs8cxN7QXmK1rFzEwYEQkzXw=="
-  "resolved" "https://registry.npmjs.org/terser/-/terser-5.6.1.tgz"
-  "version" "5.6.1"
-  dependencies:
-    "commander" "^2.20.0"
-    "source-map" "~0.7.2"
-    "source-map-support" "~0.5.19"
-
 "terser@^5.3.4":
   "integrity" "sha512-yv9YLFQQ+3ZqgWCUk+pvNJwgUTdlIxUk1WTN+RnaFJe2L7ipG2csPT0ra2XRm7Cs8cxN7QXmK1rFzEwYEQkzXw=="
   "resolved" "https://registry.npmjs.org/terser/-/terser-5.6.1.tgz"
@@ -11349,11 +11316,6 @@
   "version" "2.0.2"
   dependencies:
     "punycode" "^2.1.1"
-
-"try-to-catch@^3.0.0":
-  "integrity" "sha512-eIm6ZXwR35jVF8By/HdbbkcaCDTBI5PpCPkejRKrYp0jyf/DbCCcRhHD7/O9jtFI3ewsqo9WctFEiJTS6i+CQA=="
-  "resolved" "https://registry.npmjs.org/try-to-catch/-/try-to-catch-3.0.0.tgz"
-  "version" "3.0.0"
 
 "tryer@^1.0.1":
   "integrity" "sha512-c3zayb8/kWWpycWYg87P71E1S1ZL6b6IJxfb5fvsUgsf0S2MVGaDhDXXjDMpdCpfWXqptc+4mXwmiy1ypXqRAA=="

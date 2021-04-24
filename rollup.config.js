@@ -6,7 +6,6 @@ import { env } from "process";
 import babel from '@rollup/plugin-babel';
 import replace from "@rollup/plugin-replace";
 import visualizer from "rollup-plugin-visualizer";
-import minify from "rollup-plugin-minify"
 
 const isProd = (process.env.NODE_ENV === "production");
 console.log("Is production", isProd);
