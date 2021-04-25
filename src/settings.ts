@@ -29,7 +29,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
   display(): void {
     let {containerEl} = this;
-
     this.containerEl.empty();
 
     new Setting(containerEl)

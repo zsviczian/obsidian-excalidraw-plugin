@@ -58,7 +58,6 @@ export default class ExcalidrawView extends TextFileView {
       this.getScene = null;
       ReactDOM.unmountComponentAtNode(this.contentEl);
     }
-    //this.excalidrawRef.current.resetScene({ resetLoadingState: true });
   }
 
   private async loadDrawing (data:string, clear:boolean) {   
@@ -84,7 +83,6 @@ export default class ExcalidrawView extends TextFileView {
   getDisplayText() {
     if(this.file) return this.file.basename;
     else return "Excalidraw (no file)";
-
   }
 
   // confirms this view can accept csv extension
