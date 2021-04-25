@@ -13,8 +13,8 @@ export interface ExcalidrawSettings {
 }
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
-  folder: 'excalidraw',
-  templateFilePath: '',
+  folder: 'Excalidraw',
+  templateFilePath: 'Excalidraw/Template.excalidraw',
   width: '400',
   library: `{"type":"excalidrawlib","version":1,"library":[]}`,
 }
@@ -36,7 +36,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     .setName('Excalidraw folder') 
     .setDesc('Default location for your Excalidraw drawings. Leaving this empty means drawings will be created in the Vault root.')
     .addText(text => text
-      .setPlaceholder('excalidraw')
+      .setPlaceholder('Excalidraw')
       .setValue(this.plugin.settings.folder)
       .onChange(async (value) => {
         this.plugin.settings.folder = value;
@@ -49,7 +49,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
                'Note that Excalidraw files will have an extension of ".excalidraw" ' +
                'Assuming your template is in the default excalidraw folder, the setting would be: excalidraw/Template.excalidraw')
       .addText(text => text
-        .setPlaceholder('excalidraw')
+        .setPlaceholder('Excalidraw/Template.excalidraw')
         .setValue(this.plugin.settings.templateFilePath)
         .onChange(async (value) => {
           this.plugin.settings.templateFilePath = value;
