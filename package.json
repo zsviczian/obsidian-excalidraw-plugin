@@ -11,8 +11,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@excalidraw/excalidraw": "0.6.0",
-    "aakansha-excalidraw": "0.7.0-ccp",
+    "@excalidraw/excalidraw": "0.7.0",
     "react": "17.0.1",
     "react-dom": "17.0.1",
     "react-scripts": "4.0.1"

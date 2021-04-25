@@ -4,13 +4,12 @@ import {
 } from "obsidian";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-//import Excalidraw, {exportToSvg} from "@excalidraw/excalidraw";
+import Excalidraw, {exportToSvg} from "@excalidraw/excalidraw";
 import { ExcalidrawElement } from "@excalidraw/excalidraw/types/element/types";
 import { 
   AppState,
   LibraryItems 
 } from "@excalidraw/excalidraw/types/types";
-import Excalidraw, {exportToSvg } from "aakansha-excalidraw";
 import {
   VIEW_TYPE_EXCALIDRAW,
   EXCALIDRAW_FILE_EXTENSION, 
