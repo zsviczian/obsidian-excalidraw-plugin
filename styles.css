@@ -16,3 +16,16 @@
 .block-language-excalidraw {
   text-align:center;
 }
+
+.excalidraw .github-corner {
+  display: none;
+}
+
+@font-face {
+  font-family: "Virgil";
+  src: url("https://excalidraw.com/Virgil.woff2");
+}
+@font-face {
+  font-family: "Cascadia";
+  src: url("https://excalidraw.com/Cascadia.woff2");
+}

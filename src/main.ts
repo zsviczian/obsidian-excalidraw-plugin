@@ -17,7 +17,7 @@ import {
   EXCALIDRAW_FILE_EXTENSION,
   CODEBLOCK_EXCALIDRAW,
 } from './constants';
-import ExcalidrawView from './ExcalidrawView';
+import ExcalidrawView, {ExportSettings} from './ExcalidrawView';
 import {
   ExcalidrawSettings, 
   DEFAULT_SETTINGS, 
@@ -92,7 +92,11 @@ export default class ExcalidrawPlugin extends Plugin {
       }
 
       const content = await this.app.vault.read(file);
-      const svg = ExcalidrawView.getSVG(content);
+      const exportSettings: ExportSettings = {
+        withBackground: this.settings.exportWithBackground, 
+        withTheme: this.settings.exportWithTheme
+      }
+      const svg = ExcalidrawView.getSVG(content,exportSettings);
       if(!svg) {
         parseError("Parse error. Not a valid Excalidraw file.");
         return;
@@ -137,6 +141,27 @@ export default class ExcalidrawPlugin extends Plugin {
       callback: () => {
         this.createDrawing(this.getNextDefaultFilename());
       },
+    });
+
+    //watch filename change to rename .svg
+    this.app.vault.on('rename',async (file,oldPath) => {
+      if (!this.settings.keepInSync) return;
+      const oldSVGpath = oldPath.substring(0,oldPath.lastIndexOf('.excalidraw')) + '.svg'; 
+      const svgFile = this.app.vault.getAbstractFileByPath(normalizePath(oldSVGpath));
+      if(svgFile && svgFile instanceof TFile) {
+        const newSVGpath = file.path.substring(0,file.path.lastIndexOf('.excalidraw')) + '.svg';
+        await this.app.vault.rename(svgFile,newSVGpath); 
+      }
+    });
+
+    //watch file delete and delete corresponding .svg
+    this.app.vault.on('delete',async (file) => {
+      if (!this.settings.keepInSync) return;
+      const svgPath = file.path.substring(0,file.path.lastIndexOf('.excalidraw')) + '.svg'; 
+      const svgFile = this.app.vault.getAbstractFileByPath(normalizePath(svgPath));
+      if(svgFile && svgFile instanceof TFile) {
+        await this.app.vault.delete(svgFile); 
+      }
     });
   }
    

@@ -9,6 +9,10 @@ export interface ExcalidrawSettings {
   folder: string,
   templateFilePath: string,
   width: string,
+  exportWithTheme: boolean,
+  exportWithBackground: boolean,
+  autoexportSVG: boolean,
+  keepInSync: boolean,
   library: string,
 }
 
@@ -16,6 +20,10 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   folder: 'Excalidraw',
   templateFilePath: 'Excalidraw/Template.excalidraw',
   width: '400',
+  exportWithTheme: true,
+  exportWithBackground: true,
+  autoexportSVG: false,
+  keepInSync: false,
   library: `{"type":"excalidrawlib","version":1,"library":[]}`,
 }
 
@@ -67,5 +75,53 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           this.plugin.settings.width = value;
           await this.plugin.saveSettings();
         }));
+
+    
+
+    this.containerEl.createEl('h1', {text: 'Embedded image settings'});
+
+    new Setting(containerEl)
+      .setName('Export image with background') 
+      .setDesc('If turned of the exported image will be transparent.')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.exportWithBackground)
+        .onChange(async (value) => {
+          this.plugin.settings.exportWithBackground = value;
+          await this.plugin.saveSettings();
+        }));
+    
+    new Setting(containerEl)
+      .setName('Export image with theme') 
+      .setDesc('Export the image matching the dark/light theme setting used for your drawing in Excalidraw')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.exportWithTheme)
+        .onChange(async (value) => {
+          this.plugin.settings.exportWithTheme = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Auto export SVG') 
+      .setDesc('Automatically create an SVG export of your drawing matching the title of your .excalidraw file, saved in the same folder. '+
+               'You can use this file ("my drawing.svg") to embed into documents in a platform independent way. ' +
+               'The file will get updated every time you edit the excalidraw drawing.')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.autoexportSVG)
+        .onChange(async (value) => {
+          this.plugin.settings.autoexportSVG = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Keep .svg filename in sync with the .excalidraw filename') 
+      .setDesc('Automaticaly update the .svg filename when .excalidraw file in the same folder is renamed. ' +
+               'Automatically delete the .svg file when the .excalidraw file in the same folder is deleted. ')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.keepInSync)
+        .onChange(async (value) => {
+          this.plugin.settings.keepInSync = value;
+          await this.plugin.saveSettings();
+        }));
+
   }
 }
