@@ -56,23 +56,22 @@ export default class ExcalidrawPlugin extends Plugin {
         })  
       }
 
-      const filename = source.match(/\[{2}(.*)\]{2}/m);
+      const fname = source.match(/\[{2}([^|]*).*\]{2}/m)[1];
       const filenameWH = source.match(/\[{2}(.*)\|(\d*)x(\d*)\]{2}/m);
       const filenameW = source.match(/\[{2}(.*)\|(\d*)\]{2}/m);
-      
-      let fname:string = '';
+      let style = "excalidraw-svg"
+      style += source.contains("|left") ? "-left" : "";
+      style += source.contains("|right") ? "-right" : "";
+      style += source.contains("|center") ? "-center" : "";
       let fwidth:string = this.settings.width;
       let fheight:string = null;
 
+      
       if (filenameWH) {
-        fname = filenameWH[1];
         fwidth = filenameWH[2];
         fheight = filenameWH[3];
       } else if (filenameW) {
-        fname = filenameW[1];
         fwidth = filenameW[2];
-      } else if (filename) {
-        fname = filename[1];
       }
 
       if(fname == '') {
@@ -106,6 +105,7 @@ export default class ExcalidrawPlugin extends Plugin {
         svg.removeAttribute('height');
         svg.style.setProperty('width',fwidth);
         if(fheight) svg.style.setProperty('height',fheight);
+        svg.addClass(style);
         el.appendChild(svg);
       });
     });
@@ -115,49 +115,105 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.openDialog = new OpenFileDialog(this.app, this);
     this.addRibbonIcon(ICON_NAME, 'Excalidraw', async () => {
-      this.openDialog.start(openDialogAction.openFile);
+      this.createDrawing(this.getNextDefaultFilename(), this.settings.ribbonInNewPane);
     });
 
     this.addCommand({
       id: "excalidraw-open",
-      name: "Open an existing drawing or create new one",
+      name: "Open an existing drawing or create new one on a new pane",
       callback: () => {
-        this.openDialog.start(openDialogAction.openFile);
+        this.openDialog.start(openDialogAction.openFile, true);
+      },
+    });
+
+    this.addCommand({
+      id: "excalidraw-open-on-current",
+      name: "Open an existing drawing or create new one on the currently active pane",
+      callback: () => {
+        this.openDialog.start(openDialogAction.openFile, false);
       },
     });
 
     this.addCommand({
       id: "excalidraw-insert-transclusion",
       name: "Transclude an ."+EXCALIDRAW_FILE_EXTENSION+" file into a markdown document",
-      callback: () => {
-        this.openDialog.start(openDialogAction.insertLink);
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return this.app.workspace.activeLeaf.view.getViewType() == "markdown";
+        } else {
+          this.openDialog.start(openDialogAction.insertLink, false);
+          return true;
+        }
       },
     });
 
 
     this.addCommand({
       id: "excalidraw-autocreate",
-      name: "Create a new drawing",
+      name: "Create a new drawing and open on a new pane",
       callback: () => {
-        this.createDrawing(this.getNextDefaultFilename());
+        this.createDrawing(this.getNextDefaultFilename(), true);
       },
     });
 
+    this.addCommand({
+      id: "excalidraw-autocreate-on-current",
+      name: "Create a new drawing and open on the currently active pane",
+      callback: () => {
+        this.createDrawing(this.getNextDefaultFilename(), false);
+      },
+    });
+
+    this.addCommand({
+      id: 'export-svg',
+      name: 'Export the current drawing as an SVG image next to the current .excalidraw file',
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return this.app.workspace.activeLeaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW;
+        } else {
+          const view = this.app.workspace.activeLeaf.view;
+          if(view.getViewType() == VIEW_TYPE_EXCALIDRAW) {
+            (this.app.workspace.activeLeaf.view as ExcalidrawView).saveSVG();
+            return true;
+          }
+          else return false;
+        }
+      },
+    });
+
+    this.addCommand({
+      id: 'export-png',
+      name: 'Export the current drawing as a PNG image next to the current .excalidraw file',
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return this.app.workspace.activeLeaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW;
+        } else {
+          const view = this.app.workspace.activeLeaf.view;
+          if(view.getViewType() == VIEW_TYPE_EXCALIDRAW) {
+            (this.app.workspace.activeLeaf.view as ExcalidrawView).savePNG();
+            return true;
+          }
+          else return false;
+        }
+      },
+    });
     //watch filename change to rename .svg
     this.app.vault.on('rename',async (file,oldPath) => {
-      if (!this.settings.keepInSync) return;
-      const oldSVGpath = oldPath.substring(0,oldPath.lastIndexOf('.excalidraw')) + '.svg'; 
+      if (!(this.settings.keepInSync  && file instanceof TFile)) return;
+      if (file.extension != EXCALIDRAW_FILE_EXTENSION) return;
+      const oldSVGpath = oldPath.substring(0,oldPath.lastIndexOf('.'+EXCALIDRAW_FILE_EXTENSION)) + '.svg'; 
       const svgFile = this.app.vault.getAbstractFileByPath(normalizePath(oldSVGpath));
       if(svgFile && svgFile instanceof TFile) {
-        const newSVGpath = file.path.substring(0,file.path.lastIndexOf('.excalidraw')) + '.svg';
+        const newSVGpath = file.path.substring(0,file.path.lastIndexOf('.'+EXCALIDRAW_FILE_EXTENSION)) + '.svg';
         await this.app.vault.rename(svgFile,newSVGpath); 
       }
     });
 
     //watch file delete and delete corresponding .svg
-    this.app.vault.on('delete',async (file) => {
-      if (!this.settings.keepInSync) return;
-      const svgPath = file.path.substring(0,file.path.lastIndexOf('.excalidraw')) + '.svg'; 
+    this.app.vault.on('delete',async (file:TFile) => {
+      if (!(this.settings.keepInSync  && file instanceof TFile)) return;
+      if (file.extension != EXCALIDRAW_FILE_EXTENSION) return;
+      const svgPath = file.path.substring(0,file.path.lastIndexOf('.'+EXCALIDRAW_FILE_EXTENSION)) + '.svg'; 
       const svgFile = this.app.vault.getAbstractFileByPath(normalizePath(svgPath));
       if(svgFile && svgFile instanceof TFile) {
         await this.app.vault.delete(svgFile); 
@@ -187,7 +243,7 @@ export default class ExcalidrawPlugin extends Plugin {
     await this.saveData(this.settings);
   }
 
-  public async openDrawing(drawingFile: TFile) {
+  public async openDrawing(drawingFile: TFile, onNewPane: boolean) {
     const leafs = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
     let leaf:WorkspaceLeaf = null;
 
@@ -201,6 +257,10 @@ export default class ExcalidrawPlugin extends Plugin {
     if(!leaf) {
       leaf = this.app.workspace.getLeaf();
     }
+    
+    if(onNewPane) {
+      leaf = this.app.workspace.createLeafBySplit(leaf);
+    }    
 
     leaf.setViewState({
       type: VIEW_TYPE_EXCALIDRAW,
@@ -212,7 +272,7 @@ export default class ExcalidrawPlugin extends Plugin {
     return this.settings.folder+'/Drawing ' + window.moment().format('YYYY-MM-DD HH.mm.ss')+'.'+EXCALIDRAW_FILE_EXTENSION;
   }
  
-  public async createDrawing(filename: string) {
+  public async createDrawing(filename: string, onNewPane: boolean) {
     const folder = this.app.vault.getAbstractFileByPath(normalizePath(this.settings.folder));
     if (!(folder && folder instanceof TFolder)) {
       await this.app.vault.createFolder(this.settings.folder);
@@ -221,9 +281,9 @@ export default class ExcalidrawPlugin extends Plugin {
     const file = this.app.vault.getAbstractFileByPath(normalizePath(this.settings.templateFilePath));
     if(file && file instanceof TFile) {
       const content = await this.app.vault.read(file);
-      this.openDrawing(await this.app.vault.create(filename,content==''?BLANK_DRAWING:content));
+      this.openDrawing(await this.app.vault.create(filename,content==''?BLANK_DRAWING:content), onNewPane);
     } else {
-      this.openDrawing(await this.app.vault.create(filename,BLANK_DRAWING));
+      this.openDrawing(await this.app.vault.create(filename,BLANK_DRAWING), onNewPane);
     }
   }
 }

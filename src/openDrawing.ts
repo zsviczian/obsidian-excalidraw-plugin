@@ -18,12 +18,14 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
   public app: App;
   private plugin: ExcalidrawPlugin;
   private action: openDialogAction;
+  private onNewPane: boolean;
   
   constructor(app: App, plugin: ExcalidrawPlugin) {
     super(app);
     this.app = app;
     this.action = openDialogAction.openFile;
     this.plugin = plugin;
+    this.onNewPane = false;
     this.setInstructions([{
       command: "Type name of drawing to select.",
       purpose: "",
@@ -32,7 +34,7 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
     this.inputEl.onkeyup = (e) => {
       if(e.key=="Enter" && this.action == openDialogAction.openFile) {
         if (this.containerEl.innerText.includes(EMPTY_MESSAGE)) {
-          this.plugin.createDrawing(this.plugin.settings.folder+'/'+this.inputEl.value+'.'+EXCALIDRAW_FILE_EXTENSION);
+          this.plugin.createDrawing(this.plugin.settings.folder+'/'+this.inputEl.value+'.'+EXCALIDRAW_FILE_EXTENSION, this.onNewPane);
           this.close();
         }
       }
@@ -51,7 +53,7 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
   onChooseItem(item: TFile, _evt: MouseEvent | KeyboardEvent): void {
     switch(this.action) {
       case(openDialogAction.openFile):
-        this.plugin.openDrawing(item);
+        this.plugin.openDrawing(item, this.onNewPane);
         break;
       case(openDialogAction.insertLink):
         this.plugin.insertCodeblock(item.path);
@@ -59,8 +61,9 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
     }
   }
 
-  start(action:openDialogAction): void {
+  start(action:openDialogAction, onNewPane: boolean): void {
     this.action = action;
+    this.onNewPane = onNewPane;
     switch(action) {
       case (openDialogAction.openFile):
         this.emptyStateText = EMPTY_MESSAGE;

@@ -1,5 +1,6 @@
 import {
   App, 
+  parseFrontMatterAliases, 
   PluginSettingTab, 
   Setting
 } from 'obsidian';
@@ -9,9 +10,11 @@ export interface ExcalidrawSettings {
   folder: string,
   templateFilePath: string,
   width: string,
+  ribbonInNewPane: boolean,
   exportWithTheme: boolean,
   exportWithBackground: boolean,
   autoexportSVG: boolean,
+  autoexportPNG: boolean,
   keepInSync: boolean,
   library: string,
 }
@@ -20,9 +23,11 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   folder: 'Excalidraw',
   templateFilePath: 'Excalidraw/Template.excalidraw',
   width: '400',
+  ribbonInNewPane: false,
   exportWithTheme: true,
   exportWithBackground: true,
   autoexportSVG: false,
+  autoexportPNG: false,
   keepInSync: false,
   library: `{"type":"excalidrawlib","version":1,"library":[]}`,
 }
@@ -76,6 +81,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
         }));
 
+    new Setting(containerEl)
+      .setName('Ribbon button opens drawing in new pane by splitting active pane') 
+      .setDesc('If set, when pressing the ribbon button an empty drawing will open in a new pane by splitting the active pane.')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.ribbonInNewPane)
+        .onChange(async (value) => {
+          this.plugin.settings.ribbonInNewPane = value;
+          await this.plugin.saveSettings();
+        }));
+  
     
 
     this.containerEl.createEl('h1', {text: 'Embedded image settings'});
@@ -113,9 +128,22 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         }));
 
     new Setting(containerEl)
-      .setName('Keep .svg filename in sync with the .excalidraw filename') 
-      .setDesc('Automaticaly update the .svg filename when .excalidraw file in the same folder is renamed. ' +
-               'Automatically delete the .svg file when the .excalidraw file in the same folder is deleted. ')
+      .setName('Auto export PNG') 
+      .setDesc('Automatically create a PNG export of your drawing matching the title of your .excalidraw file, saved in the same folder. '+
+                'You can use this file ("my drawing.png") to embed into documents in a platform independent way. ' +
+                'The file will get updated every time you edit the excalidraw drawing.')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.autoexportPNG)
+        .onChange(async (value) => {
+          this.plugin.settings.autoexportPNG = value;
+          await this.plugin.saveSettings();
+        }));
+  
+
+    new Setting(containerEl)
+      .setName('Keep .svg and/or .png filename in sync with the .excalidraw filename') 
+      .setDesc('Automaticaly update the .svg and/or .png filename when .excalidraw file in the same folder is renamed. ' +
+               'Automatically delete the .svg and/or .png file when the .excalidraw file in the same folder is deleted. ')
       .addToggle(toggle => toggle
         .setValue(this.plugin.settings.keepInSync)
         .onChange(async (value) => {
