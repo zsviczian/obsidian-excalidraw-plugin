@@ -19,17 +19,28 @@ The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/),
 - You can setup Excalidraw to automatically export SVG and/or PNG files for your drawings, and to keep those in sync with your drawing.
 
 ## How to?
-#### Part 1: Intro to Obsidian-Excalidraw - Start a new drawing (3:12)
+Part 1: Intro to Obsidian-Excalidraw - Start a new drawing (3:12)
+
 [![Part 1: Intro to Obsidian-Excalidraw - Start a new drawing](https://user-images.githubusercontent.com/14358394/115983840-05797e80-a5a4-11eb-93cd-bae4b1973f72.jpg)](https://youtu.be/i-hIfY-Ecjg)
-#### Part 2: Intro to Obsidian-Excalidraw - Basic features (6:06)
+
+Part 2: Intro to Obsidian-Excalidraw - Basic features (6:06)
+
 [![Part 2: Intro to Obsidian-Excalidraw - Basic features](https://user-images.githubusercontent.com/14358394/115983902-699c4280-a5a4-11eb-973d-2ba1bd7ac2db.jpg)](https://youtu.be/-dk7pvdl-H0)
-#### Part 3: Intro to Obsidian-Excalidraw - Advanced features (3:26)
+
+Part 3: Intro to Obsidian-Excalidraw - Advanced features (3:26)
+
 [![Part 3: Intro to Obsidian-Excalidraw - Advanced features](https://user-images.githubusercontent.com/14358394/115983916-7de03f80-a5a4-11eb-8f36-4ad516ef9e80.jpg)](https://youtu.be/2cKlEwo8WU0)
-#### Part 4: Intro to Obsidian-Excalidraw - Setting up a template (1:45)
+
+Part 4: Intro to Obsidian-Excalidraw - Setting up a template (1:45)
+
 [![Part 4: Intro to Obsidian-Excalidraw - Setting up a template](https://user-images.githubusercontent.com/14358394/115983929-92bcd300-a5a4-11eb-9d4f-03e5cb9e3ebf.jpg)](https://youtu.be/oNPYZEpmuJ8)
-#### Part 5: Intro to Obsidian-Excalidraw - Stencil Library (3:16)
+
+Part 5: Intro to Obsidian-Excalidraw - Stencil Library (3:16)
+
 [![Part 5: Intro to Obsidian-Excalidraw - Stencil Library](https://user-images.githubusercontent.com/14358394/115983944-a8ca9380-a5a4-11eb-8a69-e74ae00d95be.jpg)](https://youtu.be/rLx-9FvlzgI)
-#### Part 6: Intro to Obsidian-Excalidraw: Embedding drawings (2:08)
+
+Part 6: Intro to Obsidian-Excalidraw: Embedding drawings (2:08)
+
 [![Part 6: Intro to Obsidian-Excalidraw: Embedding drawings](https://user-images.githubusercontent.com/14358394/115983954-bbdd6380-a5a4-11eb-9243-f0151451afcd.jpg)](https://youtu.be/JQeJ-Hh-xAI)
 
 ## 1.0.6 update
