@@ -3,16 +3,20 @@ The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/),
 
 ![image](https://user-images.githubusercontent.com/14358394/115983515-d06c2c80-a5a1-11eb-8d12-c7df91d18107.png)
 
+### See details of the 1.0.6 release including a short video, futher below
+
 ### Key features
-- The plugin adds 3 commands to the command palette. 
-  - To create a new drawing. 
-  - To find and edit existing drawings in your vault, and 
-  - To embed (transclude) a drawing into a document.
-- You can also use the file explorer in your vault to open Excalidraw files.
+- The plugin adds the following actions to the command palette:
+  - To create a new drawing
+  - To find and edit existing drawings in your vault, 
+  - To embed (transclude) a drawing into a document, and
+  - To export a drawing as PNG or SVG.
+- You can also use the file explorer in your vault to open Excalidraw files and the ribbon button to create a new drawing.
 - Open settings to set up a default folder for new drawings. 
 - Set up a Template by creating a drawing, customizing it the way you like it, and specifying the file as the template in settings.
 - The plugin saves drawings to your vault as a file with the *.excalidraw* file extension.
-- You can customize the size of embedded image using the [[image.excalidraw|100]] or [[image.excalidraw|100x100]] format.
+- You can customize the size and position of the embedded image using the [[image.excalidraw|100]], [[image.excalidraw|100x100]], [[image.excalidraw|100|left]] or [[image.excalidraw|right]], format.
+- You can setup Excalidraw to automatically export SVG and/or PNG files for your drawings, and to keep those in sync with your drawing.
 
 ### How to?
 #### Part 1: Intro to Obsidian-Excalidraw - Start a new drawing (3:12)
@@ -28,16 +32,35 @@ The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/),
 #### Part 6: Intro to Obsidian-Excalidraw: Embedding drawings (2:08)
 [![Part 6: Intro to Obsidian-Excalidraw: Embedding drawings](https://user-images.githubusercontent.com/14358394/115983954-bbdd6380-a5a4-11eb-9243-f0151451afcd.jpg)](https://youtu.be/JQeJ-Hh-xAI)
 
+### 1.0.6 update
+[![1.0.6 Update](https://user-images.githubusercontent.com/14358394/116312909-58725200-a7ad-11eb-89b9-c67cb48ffebb.jpg)](https://youtu.be/ipZPbcP2B0M)
+
+#### SVG styling when embedding using a code block
+- new formatting option for the code block embedding
+- Valid values: left, right, center... but really anything after the last |.
+Here is the corresponding CSS:
+```
+.excalidraw-svg-left {
+ float: left;
+}
+
+.excalidraw-svg-right {
+ float: right;
+}
+
+.excalidraw-svg-center {
+}
+
+.excalidraw-svg {
+}
+```
+
+
 ### Known issues
 - On mobile (iOS and Android): As you draw left to right it opens left sidebar. Draw right to left, opens right sidebar. Draw down, opens commands palette. So seems open is emulating the gestures, even when drawing towards the center. I understand that the issue will be resolved in the next release of Obsidian mobile. 
 - I have seen two cases when adding a stencil library did not work. In both cases the end solution was a reinstall of Obsidian. The root cause is not clear, but may be due to the incremental updates of Obsidian from an early version.
 
-### Excalidraw in Obsidian
-https://user-images.githubusercontent.com/14358394/115386872-3fc8d180-a1da-11eb-9366-16d0e064932a.mp4
-
-### Contributing
-Feel free to contribute.
-
+### Feedback, questions, ideas, problems
 By clicking [here](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues) you can create an issue to report a bug, suggest an improvement for this plugin, ask a question, etc.
 
 ### Support
