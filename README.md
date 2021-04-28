@@ -11,7 +11,8 @@ The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/),
   - To find and edit existing drawings in your vault, 
   - To embed (transclude) a drawing into a document, and
   - To export a drawing as PNG or SVG.
-- You can also use the file explorer in your vault to open Excalidraw files and the ribbon button to create a new drawing.
+- You can also use the file explorer in your vault to open Excalidraw files. 
+- Use the ribbon button to create a new drawing, do CTRL+Click to open on a new page.
 - Open settings to set up a default folder for new drawings. 
 - Set up a Template by creating a drawing, customizing it the way you like it, and specifying the file as the template in settings.
 - The plugin saves drawings to your vault as a file with the *.excalidraw* file extension.
