@@ -29,7 +29,8 @@ The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/),
 [![Part 6: Intro to Obsidian-Excalidraw: Embedding drawings](https://user-images.githubusercontent.com/14358394/115983954-bbdd6380-a5a4-11eb-9243-f0151451afcd.jpg)](https://youtu.be/JQeJ-Hh-xAI)
 
 ### Known issues
-- On iPad: As you draw left to right it opens left sidebar. Draw right to left, opens right sidebar. Draw down, opens commands palette. So seems open is emulating the gestures, even when drawing towards the center. I understand that the issue will be resolved in the next release of Obsidian mobile. 
+- On mobile (iOS and Android): As you draw left to right it opens left sidebar. Draw right to left, opens right sidebar. Draw down, opens commands palette. So seems open is emulating the gestures, even when drawing towards the center. I understand that the issue will be resolved in the next release of Obsidian mobile. 
+- I have seen two cases when adding a stencil library did not work. In both cases the end solution was a reinstall of Obsidian. The root cause is not clear, but may be due to the incremental updates of Obsidian from an early version.
 
 ### Excalidraw in Obsidian
 https://user-images.githubusercontent.com/14358394/115386872-3fc8d180-a1da-11eb-9366-16d0e064932a.mp4
