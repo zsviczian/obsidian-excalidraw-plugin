@@ -3,6 +3,7 @@ import {
   WorkspaceLeaf, 
   normalizePath,
   TFile,
+  Menu,
 } from "obsidian";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -19,7 +20,10 @@ import {
   ICON_NAME,
   EXCALIDRAW_LIB_HEADER,
   VIRGIL_FONT,
-  CASCADIA_FONT
+  CASCADIA_FONT,
+  DISK_ICON_NAME,
+  PNG_ICON_NAME,
+  SVG_ICON_NAME
 } from './constants';
 import ExcalidrawPlugin from './main';
 
@@ -93,6 +97,21 @@ export default class ExcalidrawView extends TextFileView {
       return scene;
     }
     else return this.data;
+  }
+/*
+  public onHeaderMenu(menu: Menu) {
+    
+    menu.addSeparator();
+    menu.addItem((menuItem) =>
+    menuItem
+      .setTitle('Save Drawing')
+      .onClick(async () => this.requestSave()));
+  }*/
+
+  async onload() {
+    this.addAction(DISK_ICON_NAME,"Save drawing",async (ev)=>this.requestSave());
+    this.addAction(PNG_ICON_NAME,"Export as PNG",async (ev)=>this.savePNG());
+    this.addAction(SVG_ICON_NAME,"Export as SVG",async (ev)=>this.saveSVG());
   }
 
   async onunload() {
@@ -239,9 +258,11 @@ export default class ExcalidrawView extends TextFileView {
                 this.contentEl.querySelector("canvas")?.dispatchEvent(e);
               }
             },
-            onLibraryChange: async (items:LibraryItems) => {
-              this.plugin.settings.library = EXCALIDRAW_LIB_HEADER+JSON.stringify(items)+'}';
-              await this.plugin.saveSettings();
+            onLibraryChange: (items:LibraryItems) => {
+              (async () => {
+                this.plugin.settings.library = EXCALIDRAW_LIB_HEADER+JSON.stringify(items)+'}';
+                await this.plugin.saveSettings();  
+              })();
             }
           })
         )

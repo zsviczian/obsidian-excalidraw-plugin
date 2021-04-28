@@ -16,6 +16,12 @@ import {
   ICON_NAME,
   EXCALIDRAW_FILE_EXTENSION,
   CODEBLOCK_EXCALIDRAW,
+  DISK_ICON,
+  DISK_ICON_NAME,
+  PNG_ICON,
+  PNG_ICON_NAME,
+  SVG_ICON,
+  SVG_ICON_NAME
 } from './constants';
 import ExcalidrawView, {ExportSettings} from './ExcalidrawView';
 import {
@@ -39,6 +45,9 @@ export default class ExcalidrawPlugin extends Plugin {
   
   async onload() {
     addIcon(ICON_NAME, EXCALIDRAW_ICON);
+    addIcon(DISK_ICON_NAME,DISK_ICON);
+    addIcon(PNG_ICON_NAME,PNG_ICON);
+    addIcon(SVG_ICON_NAME,SVG_ICON);
 
     this.registerView(
       VIEW_TYPE_EXCALIDRAW, 
@@ -114,21 +123,22 @@ export default class ExcalidrawPlugin extends Plugin {
     this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
 
     this.openDialog = new OpenFileDialog(this.app, this);
-    this.addRibbonIcon(ICON_NAME, 'Excalidraw', async () => {
+    this.addRibbonIcon(ICON_NAME, 'Create a new drawing in Excalidraw', async () => {
       this.createDrawing(this.getNextDefaultFilename(), this.settings.ribbonInNewPane);
     });
 
     this.addCommand({
       id: "excalidraw-open",
-      name: "Open an existing drawing or create new one on a new pane",
+      name: "Open an existing drawing - IN A NEW PANE",
       callback: () => {
         this.openDialog.start(openDialogAction.openFile, true);
       },
     });
 
+
     this.addCommand({
       id: "excalidraw-open-on-current",
-      name: "Open an existing drawing or create new one on the currently active pane",
+      name: "Open an existing drawing - IN THE CURRENT ACTIVE PANE",
       callback: () => {
         this.openDialog.start(openDialogAction.openFile, false);
       },
@@ -136,7 +146,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "excalidraw-insert-transclusion",
-      name: "Transclude an ."+EXCALIDRAW_FILE_EXTENSION+" file into a markdown document",
+      name: "Transclude (embed) an ."+EXCALIDRAW_FILE_EXTENSION+" drawing",
       checkCallback: (checking: boolean) => {
         if (checking) {
           return this.app.workspace.activeLeaf.view.getViewType() == "markdown";
@@ -147,10 +157,9 @@ export default class ExcalidrawPlugin extends Plugin {
       },
     });
 
-
     this.addCommand({
       id: "excalidraw-autocreate",
-      name: "Create a new drawing and open on a new pane",
+      name: "Create a new drawing - IN A NEW PANE",
       callback: () => {
         this.createDrawing(this.getNextDefaultFilename(), true);
       },
@@ -158,7 +167,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "excalidraw-autocreate-on-current",
-      name: "Create a new drawing and open on the currently active pane",
+      name: "Create a new drawing - IN THE CURRENT ACTIVE PANE",
       callback: () => {
         this.createDrawing(this.getNextDefaultFilename(), false);
       },
@@ -166,7 +175,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: 'export-svg',
-      name: 'Export the current drawing as an SVG image next to the current .excalidraw file',
+      name: 'Export SVG. Save it next to the current file',
       checkCallback: (checking: boolean) => {
         if (checking) {
           return this.app.workspace.activeLeaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW;
@@ -183,7 +192,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: 'export-png',
-      name: 'Export the current drawing as a PNG image next to the current .excalidraw file',
+      name: 'Export PNG. Save it next to the current file',
       checkCallback: (checking: boolean) => {
         if (checking) {
           return this.app.workspace.activeLeaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW;
