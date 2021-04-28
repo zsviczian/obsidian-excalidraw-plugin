@@ -11,3 +11,4 @@ main.js
 *.js.map
 stats.html
 hot-reload.bat
+data.json
