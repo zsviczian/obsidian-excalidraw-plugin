@@ -8,6 +8,7 @@ import {
   PluginManifest, 
   MarkdownView,
   normalizePath,
+  MarkdownPostProcessorContext,
 } from 'obsidian';
 import { 
   BLANK_DRAWING,
@@ -21,7 +22,8 @@ import {
   PNG_ICON,
   PNG_ICON_NAME,
   SVG_ICON,
-  SVG_ICON_NAME
+  SVG_ICON_NAME,
+  RERENDER_EVENT
 } from './constants';
 import ExcalidrawView, {ExportSettings} from './ExcalidrawView';
 import {
@@ -57,74 +59,20 @@ export default class ExcalidrawPlugin extends Plugin {
     this.registerExtensions([EXCALIDRAW_FILE_EXTENSION],VIEW_TYPE_EXCALIDRAW);
 
     this.registerMarkdownCodeBlockProcessor(CODEBLOCK_EXCALIDRAW, async (source,el,ctx) => {
-      const parseError = (message: string) => {
-        el.createDiv("excalidraw-error",(el)=> {
-          el.createEl("p","Please provide a link to an excalidraw file: [[file."+EXCALIDRAW_FILE_EXTENSION+"]]");
-          el.createEl("p",message);
-          el.createEl("p",source);
-        })  
-      }
-
-      const fname = source.match(/\[{2}([^|]*).*\]{2}/m)[1];
-      const filenameWH = source.match(/\[{2}(.*)\|(\d*)x(\d*)\]{2}/m);
-      const filenameW = source.match(/\[{2}(.*)\|(\d*)\]{2}/m);
-      let style = "excalidraw-svg"
-      style += source.contains("|left") ? "-left" : "";
-      style += source.contains("|right") ? "-right" : "";
-      style += source.contains("|center") ? "-center" : "";
-      let fwidth:string = this.settings.width;
-      let fheight:string = null;
-
-      
-      if (filenameWH) {
-        fwidth = filenameWH[2];
-        fheight = filenameWH[3];
-      } else if (filenameW) {
-        fwidth = filenameW[2];
-      }
-
-      if(fname == '') {
-        parseError("No link to file found in codeblock.");
-        return;
-      }
-
-      const file = this.app.vault.getAbstractFileByPath(fname);
-      if(!(file && file instanceof TFile)) {
-        parseError("File does not exist. " + fname);
-        return;
-      }
-
-      if(file.extension != EXCALIDRAW_FILE_EXTENSION) {
-        parseError("Not an excalidraw file. Must have extension " + EXCALIDRAW_FILE_EXTENSION);
-        return;
-      }
-
-      const content = await this.app.vault.read(file);
-      const exportSettings: ExportSettings = {
-        withBackground: this.settings.exportWithBackground, 
-        withTheme: this.settings.exportWithTheme
-      }
-      const svg = ExcalidrawView.getSVG(content,exportSettings);
-      if(!svg) {
-        parseError("Parse error. Not a valid Excalidraw file.");
-        return;
-      }
-      el.createDiv("excalidraw-svg",(el)=> {
-        svg.removeAttribute('width');
-        svg.removeAttribute('height');
-        svg.style.setProperty('width',fwidth);
-        if(fheight) svg.style.setProperty('height',fheight);
-        svg.addClass(style);
-        el.appendChild(svg);
+      el.addEventListener(RERENDER_EVENT,async (e) => {
+        e.stopPropagation();
+        el.empty();
+        this.codeblockProcessor(source,el,ctx,this);
       });
-    });
+      this.codeblockProcessor(source,el,ctx,this);
+    }); 
 
     await this.loadSettings();
     this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
 
     this.openDialog = new OpenFileDialog(this.app, this);
-    this.addRibbonIcon(ICON_NAME, 'Create a new drawing in Excalidraw', async () => {
-      this.createDrawing(this.getNextDefaultFilename(), this.settings.ribbonInNewPane);
+    this.addRibbonIcon(ICON_NAME, 'Create a new drawing in Excalidraw', async (e) => {
+      this.createDrawing(this.getNextDefaultFilename(), e.ctrlKey);
     });
 
     this.addCommand({
@@ -229,7 +177,62 @@ export default class ExcalidrawPlugin extends Plugin {
       }
     });
   }
-   
+  
+  private async codeblockProcessor(source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext, plugin: ExcalidrawPlugin) {
+    const parseError = (message: string) => {
+      el.createDiv("excalidraw-error",(el)=> {
+        el.createEl("p","Please provide a link to an excalidraw file: [[file."+EXCALIDRAW_FILE_EXTENSION+"]]");
+        el.createEl("p",message);
+        el.createEl("p",source);
+      })  
+    }
+
+    const parts = source.match(/\[{2}([^|]*)\|?(\d*)x?(\d*)\|?(.*)\]{2}/m);
+    if(!parts) {
+      parseError("No link to file found in codeblock.");
+      return;
+    }
+    const fname = parts[1];
+    const fwidth = parts[2]? parts[2] : plugin.settings.width;
+    const fheight = parts[3];
+    const style = "excalidraw-svg" + (parts[4] ? "-" + parts[4] : "");
+
+    if(!fname) {
+      parseError("No link to file found in codeblock.");
+      return;
+    }
+
+    const file = plugin.app.vault.getAbstractFileByPath(fname);
+    if(!(file && file instanceof TFile)) {
+      parseError("File does not exist. " + fname);
+      return;
+    }
+
+    if(file.extension != EXCALIDRAW_FILE_EXTENSION) {
+      parseError("Not an excalidraw file. Must have extension " + EXCALIDRAW_FILE_EXTENSION);
+      return;
+    }
+
+    const content = await plugin.app.vault.read(file);
+    const exportSettings: ExportSettings = {
+      withBackground: plugin.settings.exportWithBackground, 
+      withTheme: plugin.settings.exportWithTheme
+    }
+    const svg = ExcalidrawView.getSVG(content,exportSettings);
+    if(!svg) {
+      parseError("Parse error. Not a valid Excalidraw file.");
+      return;
+    }
+    el.createDiv("excalidraw-svg",(el)=> {
+      svg.removeAttribute('width');
+      svg.removeAttribute('height');
+      svg.style.setProperty('width',fwidth);
+      if(fheight) svg.style.setProperty('height',fheight);
+      svg.addClass(style);
+      el.appendChild(svg);
+    });
+  }
+
   public insertCodeblock(data:string) {
     const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
     if(activeView) {
@@ -250,6 +253,14 @@ export default class ExcalidrawPlugin extends Plugin {
 
   async saveSettings() {
     await this.saveData(this.settings);
+  }
+
+  public triggerEmbedUpdates(){
+    const e = document.createEvent("Event")
+    e.initEvent(RERENDER_EVENT,true,false);
+    document
+      .querySelectorAll("svg[class^='excalidraw-svg']")
+      .forEach((el) => el.dispatchEvent(e));
   }
 
   public async openDrawing(drawingFile: TFile, onNewPane: boolean) {

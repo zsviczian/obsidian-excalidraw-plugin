@@ -10,7 +10,6 @@ export interface ExcalidrawSettings {
   folder: string,
   templateFilePath: string,
   width: string,
-  ribbonInNewPane: boolean,
   exportWithTheme: boolean,
   exportWithBackground: boolean,
   autoexportSVG: boolean,
@@ -23,7 +22,6 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   folder: 'Excalidraw',
   templateFilePath: 'Excalidraw/Template.excalidraw',
   width: '400',
-  ribbonInNewPane: false,
   exportWithTheme: true,
   exportWithBackground: true,
   autoexportSVG: false,
@@ -79,21 +77,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .onChange(async (value) => {
           this.plugin.settings.width = value;
           await this.plugin.saveSettings();
+          this.plugin.triggerEmbedUpdates();
         }));
-
-    new Setting(containerEl)
-      .setName('Ribbon button to open Excalidraw in a new workspace pane by splitting active pane') 
-      .setDesc('If set, pressing the ribbon button will create a new drawing in a new pane by splitting the active pane. ' +
-               'If not set, pressing the button will create a new drawing in the currently active pane.')
-      .addToggle(toggle => toggle
-        .setValue(this.plugin.settings.ribbonInNewPane)
-        .onChange(async (value) => {
-          this.plugin.settings.ribbonInNewPane = value;
-          await this.plugin.saveSettings();
-        }));
-  
-    
-
+   
     this.containerEl.createEl('h1', {text: 'Embedded image settings'});
 
     new Setting(containerEl)
@@ -104,6 +90,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .onChange(async (value) => {
           this.plugin.settings.exportWithBackground = value;
           await this.plugin.saveSettings();
+          this.plugin.triggerEmbedUpdates();
         }));
     
     new Setting(containerEl)
@@ -115,6 +102,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .onChange(async (value) => {
           this.plugin.settings.exportWithTheme = value;
           await this.plugin.saveSettings();
+          this.plugin.triggerEmbedUpdates();
         }));
 
     new Setting(containerEl)

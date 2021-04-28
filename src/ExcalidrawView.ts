@@ -8,7 +8,6 @@ import {
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import Excalidraw, {exportToSvg} from "@excalidraw/excalidraw";
-//import Excalidraw, {exportToSvg} from "aakansha-excalidraw";
 import { ExcalidrawElement } from "@excalidraw/excalidraw/types/element/types";
 import { 
   AppState,
@@ -98,18 +97,12 @@ export default class ExcalidrawView extends TextFileView {
     }
     else return this.data;
   }
-/*
-  public onHeaderMenu(menu: Menu) {
-    
-    menu.addSeparator();
-    menu.addItem((menuItem) =>
-    menuItem
-      .setTitle('Save Drawing')
-      .onClick(async () => this.requestSave()));
-  }*/
 
   async onload() {
-    this.addAction(DISK_ICON_NAME,"Save drawing",async (ev)=>this.requestSave());
+    this.addAction(DISK_ICON_NAME,"Save drawing",async (ev)=> {
+      await this.save();
+      this.plugin.triggerEmbedUpdates();
+    });
     this.addAction(PNG_ICON_NAME,"Export as PNG",async (ev)=>this.savePNG());
     this.addAction(SVG_ICON_NAME,"Export as SVG",async (ev)=>this.saveSVG());
   }

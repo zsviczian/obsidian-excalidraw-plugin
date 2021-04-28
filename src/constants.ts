@@ -4,6 +4,7 @@ export const ICON_NAME = "excalidraw-icon";
 export const CODEBLOCK_EXCALIDRAW = "excalidraw";
 export const MAX_COLORS = 5;
 export const COLOR_FREQ = 6;
+export const RERENDER_EVENT = "excalidraw-embed-rerender";
 export const BLANK_DRAWING = '{"type":"excalidraw","version":2,"source":"https://excalidraw.com","elements":[],"appState":{"gridSize":null,"viewBackgroundColor":"#ffffff"}}';
 export const EMPTY_MESSAGE = "Hit enter to create a new drawing";
 export const DISK_ICON_NAME = "disk";
