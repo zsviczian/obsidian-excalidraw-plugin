@@ -16,17 +16,22 @@ The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/),
 
 ### How to?
 #### Part 1: Intro to Obsidian-Excalidraw - Start a new drawing (3:12)
-[![Part 1: Intro to Obsidian-Excalidraw - Start a new drawing](https://user-images.githubusercontent.com/14358394/115983840-05797e80-a5a4-11eb-93cd-bae4b1973f72.jpg)](https://youtu.be/i-hIfY-Ecjg)
+<a href="https://youtu.be/i-hIfY-Ecjg"><img style="float: left;" alt="Part 1: Intro to Obsidian-Excalidraw - Start a new drawing" src="https://user-images.githubusercontent.com/14358394/115983840-05797e80-a5a4-11eb-93cd-bae4b1973f72.jpg"></a><br>
+
 #### Part 2: Intro to Obsidian-Excalidraw - Basic features (6:06)
-[![Part 2: Intro to Obsidian-Excalidraw - Basic features](https://user-images.githubusercontent.com/14358394/115983902-699c4280-a5a4-11eb-973d-2ba1bd7ac2db.jpg)](https://youtu.be/-dk7pvdl-H0)
+<a href="https://youtu.be/-dk7pvdl-H0"><img style="float: left;" alt="Part 2: Intro to Obsidian-Excalidraw - Basic features" src="https://user-images.githubusercontent.com/14358394/115983902-699c4280-a5a4-11eb-973d-2ba1bd7ac2db.jpg"></a><br>
+
 #### Part 3: Intro to Obsidian-Excalidraw - Advanced features (3:26)
-[![Part 3: Intro to Obsidian-Excalidraw - Advanced features](https://user-images.githubusercontent.com/14358394/115983916-7de03f80-a5a4-11eb-8f36-4ad516ef9e80.jpg)](https://youtu.be/2cKlEwo8WU0)
+<a href="https://youtu.be/2cKlEwo8WU0"><img style="float: left;" alt="Part 3: Intro to Obsidian-Excalidraw - Advanced features" src="https://user-images.githubusercontent.com/14358394/115983916-7de03f80-a5a4-11eb-8f36-4ad516ef9e80.jpg"></a><br>
+
 #### Part 4: Intro to Obsidian-Excalidraw - Setting up a template (1:45)
-[![Part 4: Intro to Obsidian-Excalidraw - Setting up a template](https://user-images.githubusercontent.com/14358394/115983929-92bcd300-a5a4-11eb-9d4f-03e5cb9e3ebf.jpg)](https://youtu.be/oNPYZEpmuJ8)
+<a href="https://youtu.be/oNPYZEpmuJ8"><img style="float: left;" alt="Part 4: Intro to Obsidian-Excalidraw - Setting up a template" src="https://user-images.githubusercontent.com/14358394/115983929-92bcd300-a5a4-11eb-9d4f-03e5cb9e3ebf.jpg"></a><br>
+
 #### Part 5: Intro to Obsidian-Excalidraw - Stencil Library (3:16)
-[![Part 5: Intro to Obsidian-Excalidraw - Stencil Library](https://user-images.githubusercontent.com/14358394/115983944-a8ca9380-a5a4-11eb-8a69-e74ae00d95be.jpg)](https://youtu.be/rLx-9FvlzgI)
+<a href="https://youtu.be/rLx-9FvlzgI"><img style="float: left;" alt="Part 5: Intro to Obsidian-Excalidraw - Stencil Library" src="https://user-images.githubusercontent.com/14358394/115983944-a8ca9380-a5a4-11eb-8a69-e74ae00d95be.jpg"></a><br>
+
 #### Part 6: Intro to Obsidian-Excalidraw: Embedding drawings (2:08)
-[![Part 6: Intro to Obsidian-Excalidraw: Embedding drawings](https://user-images.githubusercontent.com/14358394/115983954-bbdd6380-a5a4-11eb-9243-f0151451afcd.jpg)](https://youtu.be/JQeJ-Hh-xAI)
+<a href="https://youtu.be/JQeJ-Hh-xAI"><img style="float: left;" alt="Part 6: Intro to Obsidian-Excalidraw: Embedding drawings" src="https://user-images.githubusercontent.com/14358394/115983954-bbdd6380-a5a4-11eb-9243-f0151451afcd.jpg"></a><br>
 
 ### Known issues
 - On mobile (iOS and Android): As you draw left to right it opens left sidebar. Draw right to left, opens right sidebar. Draw down, opens commands palette. So seems open is emulating the gestures, even when drawing towards the center. I understand that the issue will be resolved in the next release of Obsidian mobile. 
@@ -43,6 +48,6 @@ By clicking [here](https://github.com/zsviczian/obsidian-excalidraw-plugin/issue
 ### Support
 If you want to support me and my work, you can donate me a little something.
 
-[<img src="https://user-images.githubusercontent.com/14358394/115450238-f39e8100-a21b-11eb-89d0-fa4b82cdbce8.png" width="200">](https://ko-fi.com/zsolt)
+<a href="https://ko-fi.com/zsolt"><img style="float: left;" src="https://user-images.githubusercontent.com/14358394/115450238-f39e8100-a21b-11eb-89d0-fa4b82cdbce8.png" width="200"></a></br>
 
 [https://ko-fi/zsolt](https://ko-fi.com/zsolt)
