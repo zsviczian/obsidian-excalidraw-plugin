@@ -76,6 +76,15 @@ div.excalidraw-svg-left {
 ## Known issues
 - On mobile (iOS and Android): As you draw left to right it opens left sidebar. Draw right to left, opens right sidebar. Draw down, opens commands palette. So seems open is emulating the gestures, even when drawing towards the center. I understand that the issue will be resolved in the next release of Obsidian mobile. 
 - I have seen two cases when adding a stencil library did not work. In both cases, the end solution was a reinstall of Obsidian. The root cause is not clear, but maybe because of  the incremental updates of Obsidian from an early version.
+- Sync does not support .excalidraw files. This issue will be addressed in a later release of Obsidian sync. Until then, 
+  - you have an option to use OneDrive, Google Drive, iCloud, DropBox, etc. to sync your vault between devices
+  - or to use Sync in conjunction with "Obsidian Git" (find it in community plugins), and setting Obsidian Git up to ignore all files except for .excalidraw by adding the following to `.gitignore`
+  ```
+  #ignore all kind of files
+  *.*
+  #except excalidraw files
+  !*.excalidraw
+  ```
 
 ## Feedback, questions, ideas, problems
 Join the conversation about the Excalidraw plugin on [forum.obsidian.md](https://forum.obsidian.md/t/excalidraw-full-featured-sketching-plugin-in-obsidian)
