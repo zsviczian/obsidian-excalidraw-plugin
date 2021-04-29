@@ -6,18 +6,18 @@ The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/),
 ![image](https://user-images.githubusercontent.com/14358394/115983515-d06c2c80-a5a1-11eb-8d12-c7df91d18107.png)
 
 ## Key features
-- The plugin adds the following actions to the command palette:
+- The plugin adds the following actions to the **command palette**:
   - To create a new drawing
   - To find and edit existing drawings in your vault, 
   - To embed (transclude) a drawing into a document, and
   - To export a drawing as PNG or SVG.
-- You can also use the file explorer in your vault to open Excalidraw files. 
-- Use the ribbon button to create a new drawing, do CTRL+Click to open on a new page.
-- Open settings to set up a default folder for new drawings. 
-- Set up a Template by creating a drawing, customizing it the way you like it, and specifying the file as the template in settings.
+- You can also use the **file explorer** in your vault to open Excalidraw files. 
+- Use the **ribbon button** to create a new drawing, do CTRL+Click to open on a new page.
+- Open settings to set up a **default folder** for new drawings. 
+- Set up a **Template** by creating a drawing, customizing it the way you like it, and specifying the file as the template in settings.
 - The plugin saves drawings to your vault as a file with the *.excalidraw* file extension.
-- You can customize the size and position of the embedded image using the `[[image.excalidraw|100]]`, `[[image.excalidraw|100x100]]`, `[[image.excalidraw|100|left]]`, `[[image.excalidraw|right-wrap]]`, formatting options. `[[filename.excalidraw|<width>x<height>|<alignment>]]`. You can add your custom alignment via css. Any text that appears in `<alignment>` will be added as style to the SVG element and the wrapper DIV element. Check below and styles.css for more insight.
-- You can setup Excalidraw to automatically export SVG and/or PNG files for your drawings, and to keep those in sync with your drawing.
+- You can customize the **size and position of the embedded image** using the `[[image.excalidraw|100]]`, `[[image.excalidraw|100x100]]`, `[[image.excalidraw|100|left]]`, `[[image.excalidraw|right-wrap]]`, formatting options. `[[filename.excalidraw|<width>x<height>|<alignment>]]`. You can add your custom alignment via css. Any text that appears in `<alignment>` will be added as style to the SVG element and the wrapper DIV element. Check below and styles.css for more insight.
+- You can setup Excalidraw to **automatically export SVG and/or PNG** files for your drawings, and to keep those in sync with your drawing.
 
 ## How to?
 Part 1: Intro to Obsidian-Excalidraw - Start a new drawing (3:12)
@@ -83,7 +83,7 @@ By clicking [here](https://github.com/zsviczian/obsidian-excalidraw-plugin/issue
 ## Say Thank You
 If you are enjoying Excalidraw then please support my work and enthusiasm by buying me a coffee on [https://ko-fi/zsolt](https://ko-fi.com/zsolt).
 
-Please also help spread the word by sharing about Obsidian Excalidraw Plugin on Twitter, Reddit, or any other social media platform you regularly use. 
+Please also help spread the word by sharing about the Obsidian Excalidraw Plugin on Twitter, Reddit, or any other social media platform you regularly use. 
 
 You can find me on Twitter [@zsviczian](https://twitter.com/zsviczian), and on my blog [zsolt.blog](https://zsolt.blog).
 
