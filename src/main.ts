@@ -223,7 +223,7 @@ export default class ExcalidrawPlugin extends Plugin {
       parseError("Parse error. Not a valid Excalidraw file.");
       return;
     }
-    el.createDiv("excalidraw-svg",(el)=> {
+    el.createDiv(style,(el)=> {
       svg.removeAttribute('width');
       svg.removeAttribute('height');
       svg.style.setProperty('width',fwidth);

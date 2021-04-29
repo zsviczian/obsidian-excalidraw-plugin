@@ -21,10 +21,20 @@
   display: none;
 }
 
-.excalidraw-svg-left {
-  float: left;
+svg.excalidraw-svg-right-wrap {
+  float: right;
+  margin: 0px 0px 20px 20px;
 }
 
-.excalidraw-svg-right {
-  float: right;
+svg.excalidraw-svg-left-wrap {
+  float: left;
+  margin: 0px 35px 20px 0px;
+}
+
+div.excalidraw-svg-right {
+  text-align: right;
+}
+
+div.excalidraw-svg-left {
+  text-align: left;
 }
