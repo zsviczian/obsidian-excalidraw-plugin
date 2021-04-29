@@ -78,7 +78,7 @@ div.excalidraw-svg-left {
 - I have seen two cases when adding a stencil library did not work. In both cases, the end solution was a reinstall of Obsidian. The root cause is not clear, but maybe because of  the incremental updates of Obsidian from an early version.
 - Sync does not support .excalidraw files. This issue will be addressed in a later release of Obsidian sync. Until then, here are two hacks you can play with: 
   - You have the option to use OneDrive, Google Drive, iCloud, DropBox, etc. to sync your vault between devices.
-  - You can also use Obsidian Sync in conjunction with "Obsidian Git" (find it in community plugins). Make you you set up git to ignore all files except for .excalidraw by adding the following to `.gitignore`. Obsidian Git does not work on mobile, but on Android you can use an app like MGIT to sync your `.excalidraw` files from/to the git repository.
+  - You can also use Obsidian Sync in conjunction with "Obsidian Git" (find it in community plugins). Be sure to set up git to ignore all files except for .excalidraw by adding the following to `.gitignore`. Obsidian Git does not work on mobile, but on Android you can use an app like MGIT to sync your `.excalidraw` files from/to the git repository.
   ```
   #ignore all kind of files
   *.*
