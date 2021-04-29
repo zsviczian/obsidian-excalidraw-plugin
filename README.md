@@ -1,7 +1,7 @@
 # Obsidian Excalidraw Plugin
 The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/), a feature rich sketching tool, into Obsidian. You can store and edit Excalidraw files in your vault and you can transclude drawings into your documents. For a showcase of Excalidraw features, please read my blog post [here](https://www.zsolt.blog/2021/03/showcasing-excalidraw.html).
 
-**See details of the 1.0.6 release including a short video, futher below**
+**See details of the 1.0.6 and 1.0.7 release including a short video, futher below**
 
 ![image](https://user-images.githubusercontent.com/14358394/115983515-d06c2c80-a5a1-11eb-8d12-c7df91d18107.png)
 
@@ -16,7 +16,7 @@ The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/),
 - Open settings to set up a default folder for new drawings. 
 - Set up a Template by creating a drawing, customizing it the way you like it, and specifying the file as the template in settings.
 - The plugin saves drawings to your vault as a file with the *.excalidraw* file extension.
-- You can customize the size and position of the embedded image using the [[image.excalidraw|100]], [[image.excalidraw|100x100]], [[image.excalidraw|100|left]] or [[image.excalidraw|right]], format.
+- You can customize the size and position of the embedded image using the `[[image.excalidraw|100]]`, `[[image.excalidraw|100x100]]`, `[[image.excalidraw|100|left]]`, `[[image.excalidraw|right-wrap]]`, formatting options. [[filename.excalidraw|<width>x<height>|<alignment>]]`. You can add your custom alignment via css. Any text that appears in `<alignment>` will be added as style to the SVG element and the wrapper DIV element. Check below and styles.css for more insight.
 - You can setup Excalidraw to automatically export SVG and/or PNG files for your drawings, and to keep those in sync with your drawing.
 
 ## How to?
@@ -44,26 +44,31 @@ Part 6: Intro to Obsidian-Excalidraw: Embedding drawings (2:08)
 
 [![Part 6: Intro to Obsidian-Excalidraw: Embedding drawings](https://user-images.githubusercontent.com/14358394/115983954-bbdd6380-a5a4-11eb-9243-f0151451afcd.jpg)](https://youtu.be/JQeJ-Hh-xAI)
 
-## 1.0.6 update
+## 1.0.6 and 1.0.7 update
 [![1.0.6 Update](https://user-images.githubusercontent.com/14358394/116312909-58725200-a7ad-11eb-89b9-c67cb48ffebb.jpg)](https://youtu.be/ipZPbcP2B0M)
 
 ### SVG styling when embedding using a code block
+- 1.0.7 adds further flexibility to styling
 - new formatting option for the code block embedding
-- Valid values: left, right, center... but really anything after the last |.
+- Valid values: `left`, `right`, `left-wrap`, `right-wrap`... but anything after the last `|` character will be added to the class of the SVG element and the wrapper DIV element.
 Here is the corresponding CSS:
 ```
-.excalidraw-svg-left {
- float: left;
+svg.excalidraw-svg-right-wrap {
+  float: right;
+  margin: 0px 0px 20px 20px;
 }
 
-.excalidraw-svg-right {
- float: right;
+svg.excalidraw-svg-left-wrap {
+  float: left;
+  margin: 0px 35px 20px 0px;
 }
 
-.excalidraw-svg-center {
+div.excalidraw-svg-right {
+  text-align: right;
 }
 
-.excalidraw-svg {
+div.excalidraw-svg-left {
+  text-align: left;
 }
 ```
 
