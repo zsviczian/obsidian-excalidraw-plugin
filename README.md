@@ -85,6 +85,8 @@ div.excalidraw-svg-left {
   #except excalidraw files
   !*.excalidraw
   ```
+## Tips and tricks
+- If you want to sketch in fullscreen, I recommend installing the [Fullscreen Focus Mode](https://github.com/razumihin/obsidian-fullscreen-plugin) plugin.
 
 ## Feedback, questions, ideas, problems
 Join the conversation about the Excalidraw plugin on [forum.obsidian.md](https://forum.obsidian.md/t/excalidraw-full-featured-sketching-plugin-in-obsidian)
