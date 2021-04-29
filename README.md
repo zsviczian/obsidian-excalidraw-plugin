@@ -1,7 +1,7 @@
 # Obsidian Excalidraw Plugin
 The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/), a feature rich sketching tool, into Obsidian. You can store and edit Excalidraw files in your vault and you can transclude drawings into your documents. For a showcase of Excalidraw features, please read my blog post [here](https://www.zsolt.blog/2021/03/showcasing-excalidraw.html).
 
-**See details of the 1.0.6 and 1.0.7 release including a short video, futher below**
+**See details of the 1.0.6 and 1.0.7 release including a short video, further below**
 
 ![image](https://user-images.githubusercontent.com/14358394/115983515-d06c2c80-a5a1-11eb-8d12-c7df91d18107.png)
 
@@ -75,12 +75,12 @@ div.excalidraw-svg-left {
 
 ## Known issues
 - On mobile (iOS and Android): As you draw left to right it opens left sidebar. Draw right to left, opens right sidebar. Draw down, opens commands palette. So seems open is emulating the gestures, even when drawing towards the center. I understand that the issue will be resolved in the next release of Obsidian mobile. 
-- I have seen two cases when adding a stencil library did not work. In both cases the end solution was a reinstall of Obsidian. The root cause is not clear, but may be due to the incremental updates of Obsidian from an early version.
+- I have seen two cases when adding a stencil library did not work. In both cases, the end solution was a reinstall of Obsidian. The root cause is not clear, but maybe because of  the incremental updates of Obsidian from an early version.
 
 ## Feedback, questions, ideas, problems
 By clicking [here](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues) you can create an issue to report a bug, suggest an improvement for this plugin, ask a question, etc.
 
-## Support
-If you want to support me and my work, you can donate me a little something on [https://ko-fi/zsolt](https://ko-fi.com/zsolt).
+## Say "Thank You"
+If you are enjoying Excalidraw then please support my work and enthusiasm by buying me a coffee on [https://ko-fi/zsolt](https://ko-fi.com/zsolt).
 
 [<img style="float:left" src="https://user-images.githubusercontent.com/14358394/115450238-f39e8100-a21b-11eb-89d0-fa4b82cdbce8.png" width="200">](https://ko-fi.com/zsolt)
