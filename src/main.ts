@@ -9,6 +9,8 @@ import {
   MarkdownView,
   normalizePath,
   MarkdownPostProcessorContext,
+  Menu,
+  MenuItem,
 } from 'obsidian';
 import { 
   BLANK_DRAWING,
@@ -23,7 +25,9 @@ import {
   PNG_ICON_NAME,
   SVG_ICON,
   SVG_ICON_NAME,
-  RERENDER_EVENT
+  RERENDER_EVENT,
+  VIRGIL_FONT,
+  CASCADIA_FONT
 } from './constants';
 import ExcalidrawView, {ExportSettings} from './ExcalidrawView';
 import {
@@ -35,12 +39,24 @@ import {
   openDialogAction, 
   OpenFileDialog
 } from './openDrawing';
+import {
+  initExcalidrawAutomate,
+  destroyExcalidrawAutomate
+} from './ExcalidrawTemplate';
+import { norm } from '@excalidraw/excalidraw/types/ga';
 
+export interface ExcalidrawAutomate extends Window {
+  ExcalidrawAutomate: {
+    theme: string;
+    createNew: Function;
+  };
+}
 
 export default class ExcalidrawPlugin extends Plugin {
   public settings: ExcalidrawSettings;
   private openDialog: OpenFileDialog;
-  
+  private excalidrawAutomate: ExcalidrawAutomate;
+
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
   }
@@ -50,6 +66,13 @@ export default class ExcalidrawPlugin extends Plugin {
     addIcon(DISK_ICON_NAME,DISK_ICON);
     addIcon(PNG_ICON_NAME,PNG_ICON);
     addIcon(SVG_ICON_NAME,SVG_ICON);
+
+    const myFonts = document.createElement('style');
+    myFonts.appendChild(document.createTextNode(VIRGIL_FONT));
+    myFonts.appendChild(document.createTextNode(CASCADIA_FONT));
+    document.head.appendChild(myFonts);
+
+    initExcalidrawAutomate(this);
 
     this.registerView(
       VIEW_TYPE_EXCALIDRAW, 
@@ -154,6 +177,21 @@ export default class ExcalidrawPlugin extends Plugin {
         }
       },
     });
+
+    this.registerEvent(
+      this.app.workspace.on("file-menu", (menu: Menu, file: TFile) => {
+        if (file instanceof TFolder) {
+          menu.addItem((item: MenuItem) => {
+            item.setTitle("Create Excalidraw drawing")
+              .setIcon(ICON_NAME)
+              .onClick(evt => {
+                this.createDrawing(file.path+this.getNextDefaultFilename(),false,file.path);
+              })
+          });
+        }
+      })
+    );
+
     //watch filename change to rename .svg
     this.app.vault.on('rename',async (file,oldPath) => {
       if (!(this.settings.keepInSync  && file instanceof TFile)) return;
@@ -168,16 +206,34 @@ export default class ExcalidrawPlugin extends Plugin {
 
     //watch file delete and delete corresponding .svg
     this.app.vault.on('delete',async (file:TFile) => {
-      if (!(this.settings.keepInSync  && file instanceof TFile)) return;
+      if (!(file instanceof TFile)) return;
       if (file.extension != EXCALIDRAW_FILE_EXTENSION) return;
-      const svgPath = file.path.substring(0,file.path.lastIndexOf('.'+EXCALIDRAW_FILE_EXTENSION)) + '.svg'; 
-      const svgFile = this.app.vault.getAbstractFileByPath(normalizePath(svgPath));
-      if(svgFile && svgFile instanceof TFile) {
-        await this.app.vault.delete(svgFile); 
+      
+      const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+      for (let i=0;i<leaves.length;i++) {
+        if((leaves[i].view as ExcalidrawView).file.path == file.path) {
+          //(leaves[i].view as ExcalidrawView).clear();
+          leaves[i].setViewState({
+            type: VIEW_TYPE_EXCALIDRAW,
+            state: {file: null}}
+          );
+        }
+      }      
+      
+      if (this.settings.keepInSync) {
+        const svgPath = file.path.substring(0,file.path.lastIndexOf('.'+EXCALIDRAW_FILE_EXTENSION)) + '.svg'; 
+        const svgFile = this.app.vault.getAbstractFileByPath(normalizePath(svgPath));
+        if(svgFile && svgFile instanceof TFile) {
+          await this.app.vault.delete(svgFile); 
+        }
       }
     });
   }
   
+  onunload() {
+    destroyExcalidrawAutomate();
+  }
+
   private async codeblockProcessor(source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext, plugin: ExcalidrawPlugin) {
     const parseError = (message: string) => {
       el.createDiv("excalidraw-error",(el)=> {
@@ -264,11 +320,11 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public async openDrawing(drawingFile: TFile, onNewPane: boolean) {
-    const leafs = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+    const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
     let leaf:WorkspaceLeaf = null;
 
-    if (leafs?.length > 0) {
-      leaf = leafs[0];
+    if (leaves?.length > 0) {
+      leaf = leaves[0];
     }
     if(!leaf) {
       leaf = this.app.workspace.activeLeaf;
@@ -289,21 +345,27 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   private getNextDefaultFilename():string {
-    return this.settings.folder+'/Drawing ' + window.moment().format('YYYY-MM-DD HH.mm.ss')+'.'+EXCALIDRAW_FILE_EXTENSION;
+    return 'Drawing ' + window.moment().format('YYYY-MM-DD HH.mm.ss')+'.'+EXCALIDRAW_FILE_EXTENSION;
   }
  
-  public async createDrawing(filename: string, onNewPane: boolean) {
-    const folder = this.app.vault.getAbstractFileByPath(normalizePath(this.settings.folder));
+  public async createDrawing(filename: string, onNewPane: boolean, foldername?: string, initData?:string) {
+    const fname = foldername ? normalizePath(foldername)+'/'+filename : normalizePath(this.settings.folder) + '/' + filename;
+    const folder = this.app.vault.getAbstractFileByPath(normalizePath(foldername ? foldername: this.settings.folder));
     if (!(folder && folder instanceof TFolder)) {
       await this.app.vault.createFolder(this.settings.folder);
+    }
+
+    if(initData) {
+      this.openDrawing(await this.app.vault.create(fname,initData),onNewPane);
+      return;
     }
 
     const file = this.app.vault.getAbstractFileByPath(normalizePath(this.settings.templateFilePath));
     if(file && file instanceof TFile) {
       const content = await this.app.vault.read(file);
-      this.openDrawing(await this.app.vault.create(filename,content==''?BLANK_DRAWING:content), onNewPane);
+      this.openDrawing(await this.app.vault.create(fname,content==''?BLANK_DRAWING:content), onNewPane);
     } else {
-      this.openDrawing(await this.app.vault.create(filename,BLANK_DRAWING), onNewPane);
+      this.openDrawing(await this.app.vault.create(fname,BLANK_DRAWING), onNewPane);
     }
   }
 }

@@ -110,7 +110,7 @@ export default class ExcalidrawView extends TextFileView {
   async onunload() {
     if(this.excalidrawRef) await this.save();
   }
-
+  
   setViewData (data: string, clear: boolean) {   
     if (this.app.workspace.layoutReady) {
       this.loadDrawing(data,clear);
@@ -127,7 +127,7 @@ export default class ExcalidrawView extends TextFileView {
       ReactDOM.unmountComponentAtNode(this.contentEl);
     }
   }
-
+  
   private async loadDrawing (data:string, clear:boolean) {   
     if(clear) this.clear();
     this.justLoaded = true; //a flag to trigger zoom to fit after the drawing has been loaded

@@ -7650,7 +7650,7 @@
     "dns-packet" "^1.3.1"
     "thunky" "^1.0.2"
 
-"nanoid@^3.1.20", "nanoid@^3.1.22":
+"nanoid@^3.1.20", "nanoid@^3.1.22", "nanoid@3.1.22":
   "integrity" "sha512-/2ZUaJX2ANuLtTvqTlgqBQNJoQO398KyJgZloL0PZkC0dpysjncRUPsFe3DUPzz/y3h+u7C46np8RMuvF3jsSQ=="
   "resolved" "https://registry.npmjs.org/nanoid/-/nanoid-3.1.22.tgz"
   "version" "3.1.22"
