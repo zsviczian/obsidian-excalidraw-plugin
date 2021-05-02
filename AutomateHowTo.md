@@ -168,7 +168,7 @@ String. Alignment of the text vertically. Valid values are "top" and "middle".
 
 This is relevant when setting a fix height using the `addText()` function.
 
-### startArroHead, endArrowHead
+### startArrowHead, endArrowHead
 String. Valid values are "arrow", "bar", "dot", and "none". Specifies the beginning and ending of an arrow.
 
 This is relavant when using the `addArrow()` and the `connectObjects()` functions.
