@@ -18,7 +18,7 @@ The second line resets ExcalidrawAutomate to defaults. This is important as you 
 ## Basic logic of using Excalidraw Automate
 1. Set the styling of the elements you want to draw
 2. Add elements. As you add elements, each new element is added one layer above the previous, thus in case of overlapping objects the later one will be on the top of the prior one.
-3. Call create to instantiate the drawing
+3. Call `await create();` to instantiate the drawing
 
 You can change styling between adding different elements. My logic for separating element styling and creation is based on the assumption that you will probably set a stroke color, stroke style, stroke roughness, etc. and draw most of your elements using this. There would be no point in setting all these parameters each time you add an element.
 
