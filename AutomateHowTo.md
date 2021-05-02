@@ -189,7 +189,7 @@ String. This is the fill color of an object.
 Allowed values are [HTML color names](https://www.w3schools.com/colors/colors_names.asp), hexadecimal RGB strings e.g. `#FF0000` for red, or `transparent`.
 
 ## Adding objects
-These functions will add objects to your drawing. The canvas is infinite, and it accepts negative and positive X and Y values. The top left corner x values increase left to right, y values increase top to bottom.
+These functions will add objects to your drawing. The canvas is infinite, and it accepts negative and positive X and Y values. X values increase left to right, Y values increase top to bottom.
 
 ![coordinates](https://user-images.githubusercontent.com/14358394/116825632-6569b980-ab90-11eb-827b-ada598e91e46.png)
 
