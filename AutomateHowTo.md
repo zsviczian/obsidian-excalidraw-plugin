@@ -38,7 +38,7 @@ You can change styling between adding different elements. My logic for separatin
 %>
 ```
 The script will generate the following drawing:
-![[./images/FristDemo.png]]
+![FristDemo](https://user-images.githubusercontent.com/14358394/116825643-6e5a8b00-ab90-11eb-9e3a-37c524620d0d.png)
 
 ## Attributes and functions at a glance
 Here's the interface implemented by ExcalidrawAutomate:
@@ -189,7 +189,7 @@ Allowed values are [HTML color names](https://www.w3schools.com/colors/colors_na
 
 ## Adding objects
 These functions will add objects to your drawing. The canvas is infinite, and it accepts negative and positive X and Y values. The top left corner x values increase left to right, y values increase top to bottom.
-![[./images/coordinates.png]]
+![coordinates](https://user-images.githubusercontent.com/14358394/116825632-6569b980-ab90-11eb-827b-ada598e91e46.png)
 
 ### addRect(), addDiamond, addEllipse
 ```typescript
