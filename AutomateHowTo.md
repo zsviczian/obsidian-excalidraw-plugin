@@ -25,16 +25,16 @@ You can change styling between adding different elements. My logic for separatin
 ### Before we dive deeper, here's a simple example script
 ```javascript
 <%*
-    const ea = ExcalidrawAutomate;
-	ea.reset();
-	ea.addRect(-150,-50,450,300);
-	await ea.addText(-100,70,"Left to right");
-	ea.addArrow([[-100,100],[100,100]]);
+  const ea = ExcalidrawAutomate;
+  ea.reset();
+  ea.addRect(-150,-50,450,300);
+  await ea.addText(-100,70,"Left to right");
+  ea.addArrow([[-100,100],[100,100]]);
 
-    ea.style.strokeColor = "red";
-	await ea.addText(100,-30,"top to bottom",200,null,"center");
-	ea.addArrow([[200,0],[200,200]]);
-	await ea.create();
+  ea.style.strokeColor = "red";
+  await ea.addText(100,-30,"top to bottom",200,null,"center");
+  ea.addArrow([[200,0],[200,200]]);
+  await ea.create();
 %>
 ```
 The script will generate the following drawing:
@@ -272,32 +272,32 @@ Creates the drawing and opens it.
 ### Connect objects
 ```javascript
 <%*
-    const ea = ExcalidrawAutomate;
-	ea.reset();
-	await ea.addText(-130,-100,"Connecting two objects");
-	const a = ea.addRect(-100,-100,100,100);
-	const b = ea.addEllipse(200,200,100,100);
-	ea.connectObjects(a,"bottom",b,"left",2); //see how the line breaks differently when moving objects around
-	ea.style.strokeColor = "red";
-	ea.connectObjects(a,"right",b,"top",1);
-	await ea.create();
+  const ea = ExcalidrawAutomate;
+  ea.reset();
+  await ea.addText(-130,-100,"Connecting two objects");
+  const a = ea.addRect(-100,-100,100,100);
+  const b = ea.addEllipse(200,200,100,100);
+  ea.connectObjects(a,"bottom",b,"left",2); //see how the line breaks differently when moving objects around
+  ea.style.strokeColor = "red";
+  ea.connectObjects(a,"right",b,"top",1);
+  await ea.create();
 %>
 ```
 ### Using a template
 This example is similar to the first one, but rotated 90°, and using a template, plus specifying a filename and folder to save the drawing, and opening the new drawing in a new pane.
 ```javascript
 <%*
-    const ea = ExcalidrawAutomate;
-	ea.reset();
-	ea.style.angle = Math.PI/2;
-	ea.style.strokeWidth = 3.5;
-	ea.addRect(-150,-50,450,300);
-	await ea.addText(-100,70,"Left to right");
-	ea.addArrow([[-100,100],[100,100]]);
+  const ea = ExcalidrawAutomate;
+  ea.reset();
+  ea.style.angle = Math.PI/2; 
+  ea.style.strokeWidth = 3.5;
+  ea.addRect(-150,-50,450,300);
+  await ea.addText(-100,70,"Left to right");
+  ea.addArrow([[-100,100],[100,100]]);
 
-    ea.style.strokeColor = "red";
-	await ea.addText(100,-30,"top to bottom",200,null,"center");
-	ea.addArrow([[200,0],[200,200]]);
-	await ea.create("My Drawing","myfolder/fordemo/","Excalidraw/Template2.excalidraw",true);
+  ea.style.strokeColor = "red";
+  await ea.addText(100,-30,"top to bottom",200,null,"center");
+  ea.addArrow([[200,0],[200,200]]);
+  await ea.create("My Drawing","myfolder/fordemo/","Excalidraw/Template2.excalidraw",true);
 %>
 ```
