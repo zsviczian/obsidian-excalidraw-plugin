@@ -46,39 +46,39 @@ Here's the interface implemented by ExcalidrawAutomate:
 
 ```typescript
 ExcalidrawAutomate: {
-	style: {
-		strokeColor: string;
-		backgroundColor: string;
-		angle: number;
-		fillStyle: FillStyle;
-		strokeWidth: number;
-		storkeStyle: StrokeStyle;
-		roughness: number;
-		opacity: number;
-		strokeSharpness: StrokeSharpness;
-		fontFamily: FontFamily;
-		fontSize: number;
-		textAlign: string;
-		verticalAlign: string;
-		startArrowHead: string;
-		endArrowHead: string;
-	}
-	canvas: {theme: string, viewBackgroundColor: string};
-	setFillStyle: Function;
-	setStrokeStyle: Function;
-	setStrokeSharpness: Function;
-	setFontFamily: Function;
-	setTheme: Function;
-	create: Function;
-	addRect: Function;
-	addDiamond: Function;
-	addEllipse: Function;
-	addText: Function;
-	addLine: Function;
-	addArrow: Function;
-	connectObjects: Function;
-	clear: Function;
-	reset: Function;
+  style: {
+    strokeColor: string;
+    backgroundColor: string;
+    angle: number;
+    fillStyle: FillStyle;
+    strokeWidth: number;
+    storkeStyle: StrokeStyle;
+    roughness: number;
+    opacity: number;
+    strokeSharpness: StrokeSharpness;
+    fontFamily: FontFamily;
+    fontSize: number;
+    textAlign: string;
+    verticalAlign: string;
+    startArrowHead: string;
+    endArrowHead: string;
+  }
+  canvas: {theme: string, viewBackgroundColor: string};
+  setFillStyle: Function;
+  setStrokeStyle: Function;
+  setStrokeSharpness: Function;
+  setFontFamily: Function;
+  setTheme: Function;
+  create: Function;
+  addRect: Function;
+  addDiamond: Function;
+  addEllipse: Function;
+  addText: Function;
+  addLine: Function;
+  addArrow: Function;
+  connectObjects: Function;
+  clear: Function;
+  reset: Function;
 };
 ```
 
@@ -86,12 +86,12 @@ ExcalidrawAutomate: {
 As you will notice, some styles have setter functions. This is to help you navigate the allowed values for the property. You do not need to use the setter function however, you can use set the value directly as well.
 
 ### strokeColor
-String. The color of the line.
+String. The color of the line. [CSS Legal Color Values](https://www.w3schools.com/cssref/css_colors_legal.asp)
 
-Allowed values are [HTML color names](https://www.w3schools.com/colors/colors_names.asp) or hexadecimal RGB strings e.g. `#FF0000` for red.
+Allowed values are [HTML color names](https://www.w3schools.com/colors/colors_names.asp), hexadecimal RGB strings, or  e.g. `#FF0000` for red.
 
 ### backgroundColor
-String. This is the fill color of an object.
+String. This is the fill color of an object. [CSS Legal Color Values](https://www.w3schools.com/cssref/css_colors_legal.asp)
 
 Allowed values are [HTML color names](https://www.w3schools.com/colors/colors_names.asp), hexadecimal RGB strings e.g. `#FF0000` for red, or `transparent`.
 
@@ -184,7 +184,7 @@ String. Valid values are "light" and "dark".
 - any other number: "dark"
 
 ### viewBackgroundColor
-String. This is the fill color of an object.
+String. This is the fill color of an object. [CSS Legal Color Values](https://www.w3schools.com/cssref/css_colors_legal.asp)
 
 Allowed values are [HTML color names](https://www.w3schools.com/colors/colors_names.asp), hexadecimal RGB strings e.g. `#FF0000` for red, or `transparent`.
 
