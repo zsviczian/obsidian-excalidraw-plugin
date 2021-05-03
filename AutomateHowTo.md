@@ -44,7 +44,7 @@ The script will generate the following drawing:
 ## Attributes and functions at a glance
 Here's the interface implemented by ExcalidrawAutomate:
 
-```typescript
+```javascript
 ExcalidrawAutomate: {
   style: {
     strokeColor: string;
@@ -234,7 +234,6 @@ Adds an arrow following the points provided. Must include at least two points `p
 ### connectObjects()
 ```typescript
 declare type ConnectionPoint = "top"|"bottom"|"left"|"right";
-
 connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, numberOfPoints: number = 1,startArrowHead?:string,endArrowHead?:string):void
 ```
 Connects two objects with an arrow.
