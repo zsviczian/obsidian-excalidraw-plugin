@@ -414,13 +414,13 @@ offsets = [0];
 for(i=0;i<=linecount;i++) {
   depth = tree[i][IDX.depth];
   if (depth == 1) ea.style.strokeColor = '#'+(Math.random()*0xFFFFFF<<0).toString(16);
-  tree[i][IDX.objectId] = ea.addText(depth*width,((tree[i][IDX.size]/2)+offsets[depth])*height,tree[i][IDX.text],{startArrowHead: 'dot',box:true});  
+  tree[i][IDX.objectId] = ea.addText(depth*width,((tree[i][IDX.size]/2)+offsets[depth])*height,tree[i][IDX.text],{box:true});  
   //set child offset equal to parent offset
   if((depth+1)>offsets.length) offsets.push(offsets[depth]);
   else offsets[depth+1] = offsets[depth];
   offsets[depth] += tree[i][IDX.size];
   if(tree[i][IDX.parent]!=-1) {
-    ea.connectObjects(tree[tree[i][IDX.parent]][IDX.objectId],"right",tree[i][IDX.objectId],"left",);
+    ea.connectObjects(tree[tree[i][IDX.parent]][IDX.objectId],"right",tree[i][IDX.objectId],"left",{startArrowHead: 'dot'});
   }
 }
 
