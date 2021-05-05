@@ -378,26 +378,26 @@ let parents = [0];
 
 //load outline into tree
 for(i=0;i<linecount;i++) {
-	[depth,text] = getLineProps(i);
-	if(depth>parents.length) parents.push(i+1);
+  [depth,text] = getLineProps(i);
+  if(depth>parents.length) parents.push(i+1);
   else parents[depth] = i+1;
-	tree.push([depth,text,parents[depth-1],1,[]]);
-	tree[parents[depth-1]][IDX.children].push(i+1);
+  tree.push([depth,text,parents[depth-1],1,[]]);
+  tree[parents[depth-1]][IDX.children].push(i+1);
 }
 
 //recursive function to crawl the tree and identify height aka. size of each node
 function crawlTree(i) {
-	if(i>linecount) return 0;
-	size = 0;
-	if((i+1<=linecount && tree[i+1][IDX.depth] <= tree[i][IDX.depth])|| i == linecount) { //I am a leaf
-	  tree[i][IDX.size] = 1; 
-		return 1; 
-	}
-	tree[i][IDX.children].forEach((node)=>{ 
-		size += crawlTree(node);
-	});
+  if(i>linecount) return 0;
+  size = 0;
+  if((i+1<=linecount && tree[i+1][IDX.depth] <= tree[i][IDX.depth])|| i == linecount) { //I am a leaf
+    tree[i][IDX.size] = 1; 
+    return 1; 
+  }
+  tree[i][IDX.children].forEach((node)=>{ 
+    size += crawlTree(node);
+  });
   tree[i][IDX.size] = size; 
-	return size; 	
+  return size;   
 }
 
 crawlTree(0);
@@ -412,16 +412,16 @@ ea.reset();
 offsets = [0];
 
 for(i=0;i<=linecount;i++) {
-	depth = tree[i][IDX.depth];
-	if (depth == 1) ea.style.strokeColor = '#'+(Math.random()*0xFFFFFF<<0).toString(16);
-  tree[i][IDX.objectId] = ea.addText(depth*width,((tree[i][IDX.size]/2)+offsets[depth])*height,tree[i][IDX.text],{startArrowHead: 'dot',box:true});	
-	//set child offset equal to parent offset
-	if((depth+1)>offsets.length) offsets.push(offsets[depth]);
-	else offsets[depth+1] = offsets[depth];
-	offsets[depth] += tree[i][IDX.size];
-	if(tree[i][IDX.parent]!=-1) {
-		ea.connectObjects(tree[tree[i][IDX.parent]][IDX.objectId],"right",tree[i][IDX.objectId],"left",);
-	}
+  depth = tree[i][IDX.depth];
+  if (depth == 1) ea.style.strokeColor = '#'+(Math.random()*0xFFFFFF<<0).toString(16);
+  tree[i][IDX.objectId] = ea.addText(depth*width,((tree[i][IDX.size]/2)+offsets[depth])*height,tree[i][IDX.text],{startArrowHead: 'dot',box:true});  
+  //set child offset equal to parent offset
+  if((depth+1)>offsets.length) offsets.push(offsets[depth]);
+  else offsets[depth+1] = offsets[depth];
+  offsets[depth] += tree[i][IDX.size];
+  if(tree[i][IDX.parent]!=-1) {
+    ea.connectObjects(tree[tree[i][IDX.parent]][IDX.objectId],"right",tree[i][IDX.objectId],"left",);
+  }
 }
 
 await ea.create({onNewPane: true});
