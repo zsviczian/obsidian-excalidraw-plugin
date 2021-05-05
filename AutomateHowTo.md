@@ -28,11 +28,11 @@ You can change styling between adding different elements. My logic for separatin
   const ea = ExcalidrawAutomate;
   ea.reset();
   ea.addRect(-150,-50,450,300);
-  await ea.addText(-100,70,"Left to right");
+  ea.addText(-100,70,"Left to right");
   ea.addArrow([[-100,100],[100,100]]);
 
   ea.style.strokeColor = "red";
-  await ea.addText(100,-30,"top to bottom",200,null,"center");
+  ea.addText(100,-30,"top to bottom",{width:200,textAligh:"center"});
   ea.addArrow([[200,0],[200,200]]);
   await ea.create();
 %>
@@ -69,7 +69,6 @@ ExcalidrawAutomate: {
   setStrokeSharpness: Function;
   setFontFamily: Function;
   setTheme: Function;
-  create: Function;
   addRect: Function;
   addDiamond: Function;
   addEllipse: Function;
@@ -77,6 +76,11 @@ ExcalidrawAutomate: {
   addLine: Function;
   addArrow: Function;
   connectObjects: Function;
+  addToGroup: Function;
+  toClipboard: Function;
+  create: Function;
+  createPNG: Function;
+  createSVG: Function;
   clear: Function;
   reset: Function;
 };
@@ -193,7 +197,7 @@ These functions will add objects to your drawing. The canvas is infinite, and it
 
 ![coordinates](https://user-images.githubusercontent.com/14358394/116825632-6569b980-ab90-11eb-827b-ada598e91e46.png)
 
-### addRect(), addDiamond, addEllipse
+### addRect(), addDiamond(), addEllipse()
 ```typescript
 addRect(topX:number, topY:number, width:number, height:number):string
 addDiamond(topX:number, topY:number, width:number, height:number):string
@@ -203,16 +207,17 @@ Returns the `id` of the object. The `id` is required when connecting objects wit
 
 ### addText
 ```typescript
-async addText(topX:number, topY:number, text:string, width?:number, height?:number,textAlign?: string, verticalAlign?:string):Promise<string>
+addText(topX:number, topY:number, text:string, formatting?:{width:number, height:number,textAlign: string, verticalAlign:string, box: boolean, boxPadding: number}):string
 ```
 
-Adds text to the drawing. If `width` and `height` are not specified, the function will calculate the width and height based on the fontFamily, the fontSize and the text provided.
+Adds text to the drawing. 
 
-In case you want to position a text in the center compared to other elements on the drawing, you can provide a fixed height and width, and you can also specify `textAlign` and `verticalAlign` as described above.
+Formatting parameters are optional:
+- If `width` and `height` are not specified, the function will calculate the width and height based on the fontFamily, the fontSize and the text provided.
+- In case you want to position a text in the center compared to other elements on the drawing, you can provide a fixed height and width, and you can also specify `textAlign` and `verticalAlign` as described above. e.g.: `{width:500, textAlign:"center"}`
+- If you want to add a box around the text, set `{box:true}`
 
-Returns the `id` of the object. The `id` is required when connecting objects with lines. See later.
-
-This is an asynchronous function. It must be called with an `await` from the Templater script, otherwise the text will not appear. See code example above.
+Returns the `id` of the object. The `id` is required when connecting objects with lines. See later. If `{box:true}` then returns the id of the enclosing box.
 
 ### addLine()
 ```typescript
@@ -222,29 +227,35 @@ Adds a line following the points provided. Must include at least two points `poi
 
 ### addArrow()
 ```typescript
-addArrow(points: [[x:number,y:number]],startArrowHead?:string,endArrowHead?:string,startBinding?:string,endBinding?:string):void
+addArrow(points: [[x:number,y:number]],formatting?:{startArrowHead:string,endArrowHead:string,startObjectId:string,endObjectId:string}):void
 ```
 
-Adds an arrow following the points provided. Must include at least two points `points.length >= 2`. If more than 2 points are provided the interim points will be added as breakpoints. The line will break with angles if `strokeSharpness` is set to "sharp" and will be curvey if it is set to "round".
+Adds an arrow following the points provided. Must include at least two points `points.length >= 2`. If more than 2 points are provided the interim points will be added as breakpoints. The line will break with angles if element `style.strokeSharpness` is set to "sharp" and will be curvey if it is set to "round".
 
-`startArrowHead` and `endArrowHead` specify the type of arrow head to use, as described above. Valid values are "none", "arrow", "dot", and "bar".
+`startArrowHead` and `endArrowHead` specify the type of arrow head to use, as described above. Valid values are "none", "arrow", "dot", and "bar". e.g. `{startArrowHead: "dot", endArrowHead: "arrow"}`
 
-`startBinding` and `endBinding` are the object id's of connected objects. Do not use directly with this function. Use `connectObjects` instead.
+`startObjectId` and `endObjectId` are the object id's of connected objects. I recommend using `connectObjects` instead calling addArrow() for the purpose of connecting objects.
 
 ### connectObjects()
 ```typescript
 declare type ConnectionPoint = "top"|"bottom"|"left"|"right";
-connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, numberOfPoints: number = 1,startArrowHead?:string,endArrowHead?:string):void
+connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, formatting?:{numberOfPoints: number,startArrowHead:string,endArrowHead:string, padding: number}):void
 ```
 Connects two objects with an arrow.
 
-`objectA` and `objectB` are strings. These are the ids of the objects to connect. IDs are returned by addRect(), addDiamond(), addEllipse() and addText() when creating these objects.
+`objectA` and `objectB` are strings. These are the ids of the objects to connect. These IDs are returned by addRect(), addDiamond(), addEllipse() and addText() when creating those objects.
 
 `connectionA` and `connectionB` specify where to connect on the object. Valid values are: "top", "bottom", "left", and "right".
 
-`numberOfPoints` set the number of interim break points for the line. Default value is one, meaning there will be 1 breakpoint between the start and the end points of the arrow. When moving objects on the drawing, these breakpoints will influence how the line is rerouted by Excalidraw.
+`numberOfPoints` set the number of interim break points for the line. Default value is zero, meaning there will be no breakpoint in between the start and the end points of the arrow. When moving objects on the drawing, these breakpoints will influence how the line is rerouted by Excalidraw.
 
-`startArrowHead` and `endArrowHead` function as described for `addArrow()` above.
+`startArrowHead` and `endArrowHead` work as described for `addArrow()` above.
+
+### addToGroup()
+```typescript
+addToGroup(objectIds:[]):void
+```
+Groups objects listed in `objectIds`.
 
 ## Utility functions
 ### clear()
@@ -253,9 +264,15 @@ Connects two objects with an arrow.
 ### reset()
 `reset()` will first call `clear()` and then reset element style to defaults.
 
+### toClipboard()
+```typescript
+async toClipboard(templatePath?:string)
+```
+Places the generated drawing to the clipboard. Useful when you don't want to create a new drawing, but want to paste additional items onto an exising drawing.
+
 ### create()
 ```typescript
-async create(filename?: string, foldername?:string, templatePath?:string, onNewPane: boolean = false)
+async create(params?:{filename: string, foldername:string, templatePath:string, onNewPane: boolean})
 ```
 Creates the drawing and opens it.
 
@@ -267,16 +284,32 @@ Creates the drawing and opens it.
 
 `onNewPane` defines where the new drawing should be created. `false` will open the drawing on the current active leaf. `true` will open the drawing by vertically splitting the current leaf.
 
+Example:
+```javascript
+create({filename:"my drawing", foldername:"myfolder/subfolder/", templatePath: "Excalidraw/template.excalidraw", onNewPane: true});
+```
+### createSVG()
+```typescript
+async createSVG(templatePath?:string)
+```
+Returns an HTML SVGSVGElement containing the generated drawing.
+
+### createPNG()
+```typescript
+async createPNG(templatePath?:string)
+```
+Returns a blob containing a PNG image of the generated drawing.
+
 ## Examples
 ### Connect objects
 ```javascript
 <%*
   const ea = ExcalidrawAutomate;
   ea.reset();
-  await ea.addText(-130,-100,"Connecting two objects");
+  ea.addText(-130,-100,"Connecting two objects");
   const a = ea.addRect(-100,-100,100,100);
   const b = ea.addEllipse(200,200,100,100);
-  ea.connectObjects(a,"bottom",b,"left",2); //see how the line breaks differently when moving objects around
+  ea.connectObjects(a,"bottom",b,"left",{numberOfPoints: 2}); //see how the line breaks differently when moving objects around
   ea.style.strokeColor = "red";
   ea.connectObjects(a,"right",b,"top",1);
   await ea.create();
@@ -291,12 +324,106 @@ This example is similar to the first one, but rotated 90°, and using a template
   ea.style.angle = Math.PI/2; 
   ea.style.strokeWidth = 3.5;
   ea.addRect(-150,-50,450,300);
-  await ea.addText(-100,70,"Left to right");
+  ea.addText(-100,70,"Left to right");
   ea.addArrow([[-100,100],[100,100]]);
 
   ea.style.strokeColor = "red";
-  await ea.addText(100,-30,"top to bottom",200,null,"center");
+  await ea.addText(100,-30,"top to bottom",{width:200,textAlign:"center"});
   ea.addArrow([[200,0],[200,200]]);
-  await ea.create("My Drawing","myfolder/fordemo/","Excalidraw/Template2.excalidraw",true);
+  await ea.create({filename:"My Drawing",foldername:"myfolder/fordemo/",templatePath:"Excalidraw/Template2.excalidraw",onNewPane:true});
+%>
+```
+
+### Generating a simple mindmap from a text outline
+This is a slightly more elaborate example. This will generate an a mindmap from a tabulated outline.
+
+![Drawing 2021-05-05 20 09 21](https://user-images.githubusercontent.com/14358394/117189016-fbdeea80-addd-11eb-8b5f-8a43c66c36fd.png)
+
+Example input:
+```
+- Test 1
+	- Test 1.1
+- Test 2
+	- Test 2.1
+	- Test 2.2 
+		- Test 2.2.1
+		- Test 2.2.2
+		- Test 2.2.3
+			- Test 2.2.3.1
+- Test 3
+	- Test 3.1
+```
+
+The script:
+```javascript
+<%*
+const IDX = Object.freeze({"depth":0, "text":1, "parent":2, "size":3, "children": 4, "objectId":5});
+
+//check if an editor is the active view
+const editor = this.app.workspace.activeLeaf?.view?.editor;
+if(!editor) return;
+
+//initialize the tree with the title of the document as the first element
+let tree = [[0,this.app.workspace.activeLeaf?.view?.getDisplayText(),-1,0,[],0]];
+const linecount = editor.lineCount();
+
+//helper function, use regex to calculate indentation depth, and to get line text
+function getLineProps (i) {
+  props = editor.getLine(i).match(/^(\t*)-\s+(.*)/);
+  return [props[1].length+1, props[2]];
+}
+
+//a vector that will hold last valid parent for each depth
+let parents = [0];
+
+//load outline into tree
+for(i=0;i<linecount;i++) {
+	[depth,text] = getLineProps(i);
+	if(depth>parents.length) parents.push(i+1);
+  else parents[depth] = i+1;
+	tree.push([depth,text,parents[depth-1],1,[]]);
+	tree[parents[depth-1]][IDX.children].push(i+1);
+}
+
+//recursive function to crawl the tree and identify height aka. size of each node
+function crawlTree(i) {
+	if(i>linecount) return 0;
+	size = 0;
+	if((i+1<=linecount && tree[i+1][IDX.depth] <= tree[i][IDX.depth])|| i == linecount) { //I am a leaf
+	  tree[i][IDX.size] = 1; 
+		return 1; 
+	}
+	tree[i][IDX.children].forEach((node)=>{ 
+		size += crawlTree(node);
+	});
+  tree[i][IDX.size] = size; 
+	return size; 	
+}
+
+crawlTree(0);
+
+//Build the mindmap in Excalidraw
+const width = 300;
+const height = 100;
+const ea = ExcalidrawAutomate;
+ea.reset();
+
+//stores position offset of branch/leaf in height units
+offsets = [0];
+
+for(i=0;i<=linecount;i++) {
+	depth = tree[i][IDX.depth];
+	if (depth == 1) ea.style.strokeColor = '#'+(Math.random()*0xFFFFFF<<0).toString(16);
+  tree[i][IDX.objectId] = ea.addText(depth*width,((tree[i][IDX.size]/2)+offsets[depth])*height,tree[i][IDX.text],{startArrowHead: 'dot',box:true});	
+	//set child offset equal to parent offset
+	if((depth+1)>offsets.length) offsets.push(offsets[depth]);
+	else offsets[depth+1] = offsets[depth];
+	offsets[depth] += tree[i][IDX.size];
+	if(tree[i][IDX.parent]!=-1) {
+		ea.connectObjects(tree[tree[i][IDX.parent]][IDX.objectId],"right",tree[i][IDX.objectId],"left",);
+	}
+}
+
+await ea.create({onNewPane: true});
 %>
 ```
