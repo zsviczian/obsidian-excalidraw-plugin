@@ -337,7 +337,7 @@ This example is similar to the first one, but rotated 90°, and using a template
 ### Generating a simple mindmap from a text outline
 This is a slightly more elaborate example. This will generate an a mindmap from a tabulated outline.
 
-![Drawing 2021-05-05 20 09 21](https://user-images.githubusercontent.com/14358394/117189016-fbdeea80-addd-11eb-8b5f-8a43c66c36fd.png)
+![Drawing 2021-05-05 20 14 04](https://user-images.githubusercontent.com/14358394/117189615-afe07580-adde-11eb-81da-fa4bd84d4970.png)
 
 Example input:
 ```
