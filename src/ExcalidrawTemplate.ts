@@ -12,6 +12,7 @@ import {
   parseFrontMatterAliases,
   TFile
 } from "obsidian"
+import ExcalidrawView from "./ExcalidrawView"
 
 declare type ConnectionPoint = "top"|"bottom"|"left"|"right";
 
@@ -43,7 +44,6 @@ export interface ExcalidrawAutomate extends Window {
     setStrokeSharpness: Function;
     setFontFamily: Function;
     setTheme: Function;
-    create: Function;
     addRect: Function;
     addDiamond: Function;
     addEllipse: Function;
@@ -51,6 +51,11 @@ export interface ExcalidrawAutomate extends Window {
     addLine: Function;
     addArrow: Function;
     connectObjects: Function;
+    addToGroup: Function;
+    toClipboard: Function;
+    create: Function;
+    createPNG: Function;
+    createSVG: Function;
     clear: Function;
     reset: Function;
   };
@@ -140,27 +145,87 @@ export function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
           return "dark";
       }      
     },
-    async create(filename?: string, foldername?:string, templatePath?:string, onNewPane: boolean = false) {
+    addToGroup(objectIds:[]):void {
+      const id = nanoid();
+      objectIds.forEach((objectId)=>{
+        this.elementsDict[objectId]?.groupIds?.push(id);
+      });
+    },
+    async toClipboard(templatePath?:string) {
       let elements = templatePath ? (await getTemplate(templatePath)).elements : [];
       for (let i=0;i<this.elementIds.length;i++) {
         elements.push(this.elementsDict[this.elementIds[i]]);
       }
+      navigator.clipboard.writeText(
+        JSON.stringify({
+          "type":"excalidraw/clipboard",
+          "elements": elements,
+      }));
+    },
+    async create(params?:{filename: string, foldername:string, templatePath:string, onNewPane: boolean}) {
+      let elements = params?.templatePath ? (await getTemplate(params.templatePath)).elements : [];
+      for (let i=0;i<this.elementIds.length;i++) {
+        elements.push(this.elementsDict[this.elementIds[i]]);
+      }
       plugin.createDrawing(
-        filename ? filename + '.excalidraw' : this.plugin.getNextDefaultFilename(),
-        onNewPane,
-        foldername ? foldername : this.plugin.settings.folder,
-        (()=>{
-          return JSON.stringify({
-            "type": "excalidraw",
-            "version": 2,
-            "source": "https://excalidraw.com",
-            "elements": elements,
-            "appState": {
-              "theme": this.canvas.theme,
-              "viewBackgroundColor": this.canvas.viewBackgroundColor
-            }
-          });
-      })());  
+        params?.filename ? params.filename + '.excalidraw' : this.plugin.getNextDefaultFilename(),
+        params?.onNewPane ? params.onNewPane : false,
+        params?.foldername ? params.foldername : this.plugin.settings.folder,
+        JSON.stringify({
+          "type": "excalidraw",
+          "version": 2,
+          "source": "https://excalidraw.com",
+          "elements": elements,
+          "appState": {
+            "theme": this.canvas.theme,
+            "viewBackgroundColor": this.canvas.viewBackgroundColor
+          }
+        })
+      );  
+    },
+    async createSVG(templatePath?:string) {
+      let elements = templatePath ? (await getTemplate(templatePath)).elements : [];
+      for (let i=0;i<this.elementIds.length;i++) {
+        elements.push(this.elementsDict[this.elementIds[i]]);
+      }
+      return ExcalidrawView.getSVG(
+        JSON.stringify({
+          "type": "excalidraw",
+          "version": 2,
+          "source": "https://excalidraw.com",
+          "elements": elements,
+          "appState": {
+            "theme": this.canvas.theme,
+            "viewBackgroundColor": this.canvas.viewBackgroundColor
+          }
+        }),
+        {
+          withBackground: plugin.settings.exportWithBackground, 
+          withTheme: plugin.settings.exportWithTheme
+        }
+      )     
+    },
+    async createPNG(templatePath?:string) {
+      let elements = templatePath ? (await getTemplate(templatePath)).elements : [];
+      for (let i=0;i<this.elementIds.length;i++) {
+        elements.push(this.elementsDict[this.elementIds[i]]);
+      }
+      return ExcalidrawView.getPNG(
+        JSON.stringify({
+          "type": "excalidraw",
+          "version": 2,
+          "source": "https://excalidraw.com",
+          "elements": elements,
+          "appState": {
+            "theme": this.canvas.theme,
+            "viewBackgroundColor": this.canvas.viewBackgroundColor
+          }
+        }),
+        {
+          withBackground: plugin.settings.exportWithBackground, 
+          withTheme: plugin.settings.exportWithTheme
+        }
+      )  
     },
     addRect(topX:number, topY:number, width:number, height:number):string {
       const id = nanoid();
@@ -180,19 +245,27 @@ export function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       this.elementsDict[id] = boxedElement(id,"ellipse",topX,topY,width,height);
       return id;
     },
-    async addText(topX:number, topY:number, text:string, width?:number, height?:number,textAlign?: string, verticalAlign?:string):Promise<string> {
+    addText(topX:number, topY:number, text:string, formatting?:{width:number, height:number,textAlign: string, verticalAlign:string, box: boolean, boxPadding: number}):string {
       const id = nanoid();    
-      const {w, h, baseline} = await measureText(text);
+      const {w, h, baseline} = measureText(text);
+      const width = formatting?.width ? formatting.width : w;
+      const height = formatting?.height ? formatting.height : h;
       this.elementIds.push(id);
       this.elementsDict[id] = {
         text: text,
         fontSize: window.ExcalidrawAutomate.style.fontSize,
         fontFamily: window.ExcalidrawAutomate.style.fontFamily,
-        textAlign: textAlign ? textAlign : window.ExcalidrawAutomate.style.textAlign,
-        verticalAlign: verticalAlign ? verticalAlign : window.ExcalidrawAutomate.style.verticalAlign,
+        textAlign: formatting?.textAlign ? formatting.textAlign : window.ExcalidrawAutomate.style.textAlign,
+        verticalAlign: formatting?.verticalAlign ? formatting.verticalAlign : window.ExcalidrawAutomate.style.verticalAlign,
         baseline: baseline,
-        ... boxedElement(id,"text",topX,topY,width ? width:w, height ? height:h)
+        ... boxedElement(id,"text",topX,topY,width,height)
       };
+      if(formatting?.box) {
+        const boxPadding = formatting?.boxPadding ? formatting.boxPadding : 10;
+        const boxId = this.addRect(topX-boxPadding,topY-boxPadding,width+2*boxPadding,height+2*boxPadding);
+        this.addToGroup([id,boxId])
+        return boxId; 
+      }
       return id;
     },
     addLine(points: [[x:number,y:number]]):void {
@@ -209,36 +282,38 @@ export function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         ... boxedElement(id,"line",box.x,box.y,box.w,box.h)
       };
     },
-    addArrow(points: [[x:number,y:number]],startArrowHead?:string,endArrowHead?:string,startBinding?:string,endBinding?:string):void {
+    addArrow(points: [[x:number,y:number]],formatting?:{startArrowHead:string,endArrowHead:string,startObjectId:string,endObjectId:string}):void {
       const box = getLineBox(points);
       const id = nanoid();
       this.elementIds.push(id);
       this.elementsDict[id] = {
         points: normalizeLinePoints(points),
         lastCommittedPoint: null,
-        startBinding: {elementId:startBinding,focus:0.1,gap:4},
-        endBinding: {elementId:endBinding,focus:0.1,gap:4},
-        startArrowhead: startArrowHead ? startArrowHead : this.style.startArrowHead,
-        endArrowhead: endArrowHead ? endArrowHead : this.style.endArrowHead,
+        startBinding: {elementId:formatting?.startObjectId,focus:0.1,gap:4},
+        endBinding: {elementId:formatting?.endObjectId,focus:0.1,gap:4},
+        startArrowhead: formatting?.startArrowHead ? formatting.startArrowHead : this.style.startArrowHead,
+        endArrowhead: formatting?.endArrowHead ? formatting.endArrowHead : this.style.endArrowHead,
         ... boxedElement(id,"arrow",box.x,box.y,box.w,box.h)
       };
-      if(startBinding) this.elementsDict[startBinding].boundElementIds.push(id);
-      if(endBinding) this.elementsDict[endBinding].boundElementIds.push(id);
+      if(formatting?.startObjectId) this.elementsDict[formatting.startObjectId].boundElementIds.push(id);
+      if(formatting?.endObjectId) this.elementsDict[formatting.endObjectId].boundElementIds.push(id);
     },
-    connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, numberOfPoints: number = 1,startArrowHead?:string,endArrowHead?:string):void {
+    connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, formatting?:{numberOfPoints: number,startArrowHead:string,endArrowHead:string, padding: number}):void {
       if(!(this.elementsDict[objectA] && this.elementsDict[objectB])) {
         return;
       }
+      const padding = formatting?.padding ? formatting.padding : 10;
+      const numberOfPoints = formatting?.numberOfPoints ? formatting.numberOfPoints : 0;
       const getSidePoints = (side:string, el:any) => {
         switch(side) {
           case "bottom": 
-            return [((el.x) + (el.x+el.width))/2, el.y+el.height];
+            return [((el.x) + (el.x+el.width))/2, el.y+el.height+padding];
           case "left": 
-            return [el.x, ((el.y) + (el.y+el.height))/2];
+            return [el.x-padding, ((el.y) + (el.y+el.height))/2];
           case "right": 
-            return [el.x+el.width, ((el.y) + (el.y+el.height))/2];
+            return [el.x+el.width+padding, ((el.y) + (el.y+el.height))/2];
           default: //"top"
-            return [((el.x) + (el.x+el.width))/2, el.y];
+            return [((el.x) + (el.x+el.width))/2, el.y-padding];
         }
       }
       const [aX, aY] = getSidePoints(connectionA,this.elementsDict[objectA]);
@@ -247,7 +322,12 @@ export function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       let points = [];
       for(let i=0;i<numAP;i++)
         points.push([aX+i*(bX-aX)/(numAP-1), aY+i*(bY-aY)/(numAP-1)]);
-      this.addArrow(points,startArrowHead,endArrowHead,objectA,objectB);
+      this.addArrow(points,{ 
+        startArrowHead: formatting?.startArrowHead,
+        endArrowHead: formatting?.endArrowHead,
+        startObjectId: objectA, 
+        endObjectId: objectB
+      });
     },
     clear() {
       this.elementIds = [];
@@ -273,7 +353,8 @@ export function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       this.canvas.theme = "light";
       this.canvas.viewBackgroundColor="#FFFFFF";
     },
-  }
+  };
+  initFonts();
 }
 
 export function destroyExcalidrawAutomate() {
@@ -315,20 +396,12 @@ function boxedElement(id:string,eltype:any,x:number,y:number,w:number,h:number) 
 }
 
 function getLineBox(points: [[x:number,y:number]]) {
-  let leftX:number,rightX:number = points[0][0];
-  let topY:number,bottomY:number = points[0][1];
-  for (let i=0;i<points.length;i++) {
-    leftX = (leftX < points[i][0]) ? leftX : points[i][0];
-    topY = (topY < points[i][1]) ? topY : points[i][1];
-    rightX = (rightX > points[i][0]) ? rightX : points[i][0];
-    bottomY = (bottomY > points[i][1]) ? bottomY : points[i][1];
-  }
   return {
-    x: leftX,
-    y: topY,
-    w: rightX-leftX,
-    h: bottomY-topY
-  };
+    x: points[0][0],
+    y: points[0][1],
+    w: Math.abs(points[points.length-1][0]-points[0][0]),
+    h: Math.abs(points[points.length-1][1]-points[0][1])
+  }
 }
 
 function getFontFamily(id:number) {
@@ -339,14 +412,23 @@ function getFontFamily(id:number) {
   }
 }
 
-async function measureText (newText:string) {
+async function initFonts () {
+  for (let i=0;i<3;i++) {
+    await (document as any).fonts.load(
+      window.ExcalidrawAutomate.style.fontSize.toString()+'px ' +
+      getFontFamily(window.ExcalidrawAutomate.style.fontFamily)
+    );
+  }
+}
+
+function measureText (newText:string) {
   const line = document.createElement("div");
   const body = document.body;
   line.style.position = "absolute";
   line.style.whiteSpace = "pre";
   line.style.font = window.ExcalidrawAutomate.style.fontSize.toString()+'px ' +
                     getFontFamily(window.ExcalidrawAutomate.style.fontFamily);
-  await (document as any).fonts.load(line.style.font);
+//  await (document as any).fonts.load(line.style.font);
   body.appendChild(line);
   line.innerText = newText
     .split("\n")
