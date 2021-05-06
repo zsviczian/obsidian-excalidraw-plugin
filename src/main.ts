@@ -228,6 +228,14 @@ export default class ExcalidrawPlugin extends Plugin {
         }
       }
     });
+
+    //save open drawings when user quits the application
+    this.app.workspace.on('quit',(tasks) => {
+      const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);      
+      for (let i=0;i<leaves.length;i++) {
+        (leaves[i].view as ExcalidrawView).save(); 
+      }
+    });
   }
   
   onunload() {

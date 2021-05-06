@@ -97,7 +97,7 @@ export default class ExcalidrawView extends TextFileView {
     }
     else return this.data;
   }
-
+  
   async onload() {
     this.addAction(DISK_ICON_NAME,"Save drawing",async (ev)=> {
       await this.save();
@@ -107,10 +107,11 @@ export default class ExcalidrawView extends TextFileView {
     this.addAction(SVG_ICON_NAME,"Export as SVG",async (ev)=>this.saveSVG());
   }
 
+  //save current drawing when user closes workspace leaf
   async onunload() {
     if(this.excalidrawRef) await this.save();
   }
-  
+
   setViewData (data: string, clear: boolean) {   
     if (this.app.workspace.layoutReady) {
       this.loadDrawing(data,clear);
