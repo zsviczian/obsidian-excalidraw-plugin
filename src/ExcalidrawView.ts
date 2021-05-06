@@ -105,7 +105,7 @@ export default class ExcalidrawView extends TextFileView {
   }
   
   async onload() {
-    this.addAction(DISK_ICON_NAME,"Force-save now\n(Please note, that autosave is always on)",async (ev)=> {
+    this.addAction(DISK_ICON_NAME,"Force-save now to update transclusion visible in adjacent workspace pane\n(Please note, that autosave is always on)",async (ev)=> {
       await this.save();
       this.plugin.triggerEmbedUpdates();
     });
