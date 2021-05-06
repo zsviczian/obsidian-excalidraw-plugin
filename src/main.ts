@@ -185,7 +185,7 @@ export default class ExcalidrawPlugin extends Plugin {
             item.setTitle("Create Excalidraw drawing")
               .setIcon(ICON_NAME)
               .onClick(evt => {
-                this.createDrawing(file.path+this.getNextDefaultFilename(),false,file.path);
+                this.createDrawing(this.getNextDefaultFilename(),false,file.path);
               })
           });
         }

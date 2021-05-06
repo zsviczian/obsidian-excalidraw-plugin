@@ -38,3 +38,7 @@ div.excalidraw-svg-right {
 div.excalidraw-svg-left {
   text-align: left;
 }
+
+button.ToolIcon_type_button[title="Export"] {
+  display:none;
+}

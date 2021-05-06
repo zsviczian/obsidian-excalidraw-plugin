@@ -3,7 +3,7 @@ import {
   WorkspaceLeaf, 
   normalizePath,
   TFile,
-  Menu,
+  WorkspaceItem
 } from "obsidian";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -25,6 +25,10 @@ import {
   SVG_ICON_NAME
 } from './constants';
 import ExcalidrawPlugin from './main';
+
+interface WorkspaceItemExt extends WorkspaceItem {
+  containerEl: HTMLElement;
+}
 
 export interface ExportSettings {
   withBackground: boolean,
@@ -107,6 +111,11 @@ export default class ExcalidrawView extends TextFileView {
     });
     this.addAction(PNG_ICON_NAME,"Export as PNG",async (ev)=>this.savePNG());
     this.addAction(SVG_ICON_NAME,"Export as SVG",async (ev)=>this.saveSVG());
+    if (this.app.workspace.layoutReady) {
+      (this.app.workspace.rootSplit as WorkspaceItem as WorkspaceItemExt).containerEl.addEventListener('scroll',(e)=>{if(this.refresh) this.refresh();});
+    } else {
+      this.registerEvent(this.app.workspace.on('layout-ready', async () => (this.app.workspace.rootSplit as WorkspaceItem as WorkspaceItemExt).containerEl.addEventListener('scroll',(e)=>{if(this.refresh) this.refresh();})));
+    }
   }
 
   //save current drawing when user closes workspace leaf
