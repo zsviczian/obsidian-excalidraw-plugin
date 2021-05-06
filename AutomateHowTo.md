@@ -337,7 +337,7 @@ This example is similar to the first one, but rotated 90°, and using a template
 ### Generating a simple mindmap from a text outline
 This is a slightly more elaborate example. This will generate an a mindmap from a tabulated outline.
 
-![Drawing 2021-05-05 20 14 04](https://user-images.githubusercontent.com/14358394/117189615-afe07580-adde-11eb-81da-fa4bd84d4970.png)
+![Drawing 2021-05-05 20 52 34](https://user-images.githubusercontent.com/14358394/117194124-00a69d00-ade4-11eb-8b75-5e18a9cbc3cd.png)
 
 Example input:
 ```
@@ -414,13 +414,13 @@ offsets = [0];
 for(i=0;i<=linecount;i++) {
   depth = tree[i][IDX.depth];
   if (depth == 1) ea.style.strokeColor = '#'+(Math.random()*0xFFFFFF<<0).toString(16);
-  tree[i][IDX.objectId] = ea.addText(depth*width,((tree[i][IDX.size]/2)+offsets[depth])*height,tree[i][IDX.text],{startArrowHead: 'dot',box:true});  
+  tree[i][IDX.objectId] = ea.addText(depth*width,((tree[i][IDX.size]/2)+offsets[depth])*height,tree[i][IDX.text],{box:true});  
   //set child offset equal to parent offset
   if((depth+1)>offsets.length) offsets.push(offsets[depth]);
   else offsets[depth+1] = offsets[depth];
   offsets[depth] += tree[i][IDX.size];
   if(tree[i][IDX.parent]!=-1) {
-    ea.connectObjects(tree[tree[i][IDX.parent]][IDX.objectId],"right",tree[i][IDX.objectId],"left",);
+    ea.connectObjects(tree[tree[i][IDX.parent]][IDX.objectId],"right",tree[i][IDX.objectId],"left",{startArrowHead: 'dot'});
   }
 }
 
