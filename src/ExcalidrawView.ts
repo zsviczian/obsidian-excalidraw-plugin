@@ -32,7 +32,8 @@ export interface ExportSettings {
 }
 
 export default class ExcalidrawView extends TextFileView {
-  private getScene: any;
+  private getScene: Function;
+  private refresh: Function;
   private excalidrawRef: React.MutableRefObject<any>;
   private justLoaded: boolean;
   private plugin: ExcalidrawPlugin;
@@ -40,6 +41,7 @@ export default class ExcalidrawView extends TextFileView {
   constructor(leaf: WorkspaceLeaf, plugin: ExcalidrawPlugin) {
     super(leaf);
     this.getScene = null;
+    this.refresh = null;
     this.excalidrawRef = null;
     this.plugin = plugin;
     this.justLoaded = false;
@@ -125,6 +127,7 @@ export default class ExcalidrawView extends TextFileView {
     if(this.excalidrawRef) {
       this.excalidrawRef = null;
       this.getScene = null;
+      this.refresh = null;
       ReactDOM.unmountComponentAtNode(this.contentEl);
     }
   }
@@ -183,7 +186,7 @@ export default class ExcalidrawView extends TextFileView {
         width: undefined,
         height: undefined
       });
-
+      
       this.excalidrawRef = excalidrawRef;
       React.useEffect(() => {
         setDimensions({
@@ -197,6 +200,7 @@ export default class ExcalidrawView extends TextFileView {
               width: this.contentEl.clientWidth, 
               height: this.contentEl.clientHeight, 
             });
+            console.log("Excalidraw resize",this.contentEl.clientWidth,this.contentEl.clientHeight);
           } catch(err) {console.log ("Excalidraw React-Wrapper, onResize ",err)}
         };
         window.addEventListener("resize", onResize); 
@@ -220,6 +224,11 @@ export default class ExcalidrawView extends TextFileView {
           }
         });
       };
+
+      this.refresh = () => {
+        if(!excalidrawRef?.current) return;
+        excalidrawRef.current.refresh();
+      };
       
       return React.createElement(
         React.Fragment,
@@ -233,7 +242,6 @@ export default class ExcalidrawView extends TextFileView {
           },
           React.createElement(Excalidraw.default, {
             ref: excalidrawRef,
-            key: "xyz",
             width: dimensions.width,
             height: dimensions.height,
             UIOptions: {
@@ -245,6 +253,7 @@ export default class ExcalidrawView extends TextFileView {
               },
             },
             initialData: initdata,
+            detectScroll: true,
             onChange: (et:ExcalidrawElement[],st:AppState) => {
               if(this.justLoaded) {
                 this.justLoaded = false;             

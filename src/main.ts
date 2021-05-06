@@ -331,7 +331,7 @@ export default class ExcalidrawPlugin extends Plugin {
       .forEach((el) => el.dispatchEvent(e));
   }
 
-  public async openDrawing(drawingFile: TFile, onNewPane: boolean) {
+  public openDrawing(drawingFile: TFile, onNewPane: boolean) {
     const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
     let leaf:WorkspaceLeaf = null;
 
