@@ -105,7 +105,7 @@ export default class ExcalidrawView extends TextFileView {
   }
   
   async onload() {
-    this.addAction(DISK_ICON_NAME,"Save drawing",async (ev)=> {
+    this.addAction(DISK_ICON_NAME,"Force-save now\n(Please note, that autosave is always on)",async (ev)=> {
       await this.save();
       this.plugin.triggerEmbedUpdates();
     });
