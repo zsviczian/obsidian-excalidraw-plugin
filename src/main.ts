@@ -43,7 +43,7 @@ import {
   initExcalidrawAutomate,
   destroyExcalidrawAutomate
 } from './ExcalidrawTemplate';
-import { norm } from '@excalidraw/excalidraw/types/ga';
+import TransclusionIndex from './TransclusionIndex';
 
 export interface ExcalidrawAutomate extends Window {
   ExcalidrawAutomate: {
@@ -55,7 +55,7 @@ export interface ExcalidrawAutomate extends Window {
 export default class ExcalidrawPlugin extends Plugin {
   public settings: ExcalidrawSettings;
   private openDialog: OpenFileDialog;
-  private excalidrawAutomate: ExcalidrawAutomate;
+  private transclusionIndex: TransclusionIndex;
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
@@ -194,6 +194,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     //watch filename change to rename .svg
     this.app.vault.on('rename',async (file,oldPath) => {
+      this.transclusionIndex.updateTransclusion(oldPath,file.path);
       if (!(this.settings.keepInSync  && file instanceof TFile)) return;
       if (file.extension != EXCALIDRAW_FILE_EXTENSION) return;
       const oldSVGpath = oldPath.substring(0,oldPath.lastIndexOf('.'+EXCALIDRAW_FILE_EXTENSION)) + '.svg'; 
@@ -236,6 +237,9 @@ export default class ExcalidrawPlugin extends Plugin {
         (leaves[i].view as ExcalidrawView).save(); 
       }
     });
+
+    this.transclusionIndex = new TransclusionIndex(this.app.vault);
+    this.transclusionIndex.initialize();
   }
   
   onunload() {

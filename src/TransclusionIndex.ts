@@ -1,28 +1,14 @@
 import {Vault,TFile,TAbstractFile} from 'obsidian';
 
-class TransclusionItem {
-  public excalidrawFilePath: string;
-  public sourceFilePath: string;
-  public startIndex: number;
-  public length: number;
-
-  constructor(excalidrawFilePath: string, sourceFilePath: string, startIndex: number, length: number ) {
-    this.excalidrawFilePath = excalidrawFilePath;
-    this.sourceFilePath = sourceFilePath;
-    this.startIndex = startIndex;
-    this.length = length;
-  }
-}
-
-class TransclusionIndex {
+export default class TransclusionIndex {
   private vault: Vault;
-  private transclusions: Map<string, TransclusionItem[]>;
-  private listeners: ((transclusions: TransclusionItem[]) => void)[];
+  private doc2ex: Map<string, Set<string>>;
+  private ex2doc: Map<string, Set<string>>;
 
-  constructor(vault: Vault, listener: (todos: TransclusionItem[]) => void) {
+  constructor(vault: Vault) {
     this.vault = vault;
-    this.transclusions = new Map<string, TransclusionItem[]>();
-    this.listeners = [listener];
+    this.doc2ex = new Map<string,Set<string>>(); //markdown document includes these excalidraw drawings
+    this.ex2doc = new Map<string,Set<string>>(); //excalidraw drawings are referenced in these markdown documents
   }
 
   async reloadIndex() {
@@ -30,58 +16,84 @@ class TransclusionIndex {
   }
 
   async initialize(): Promise<void> {
-    // TODO: persist index & last sync timestamp; only parse files that changed since then.
-    const transclusionMap = new Map<string, TransclusionItem[]>();
-    let numberOfTransclusions = 0;
+    const doc2ex = new Map<string,Set<string>>(); 
+    const ex2doc = new Map<string,Set<string>>();
 
     const markdownFiles = this.vault.getMarkdownFiles();
     for (const file of markdownFiles) {     
-      const transclusions = await this.parseTransclusionsInFile(file);
-      numberOfTransclusions += transclusions.length;
-      if (transclusions.length > 0) {
-        transclusionMap.set(file.path, transclusions);
+      const drawings = await this.parseTransclusionsInFile(file);
+      if (drawings.size > 0) {
+        doc2ex.set(file.path, drawings);
+        drawings.forEach((drawing)=>{
+          if(ex2doc.has(drawing)) ex2doc.set(drawing,ex2doc.get(drawing).add(file.path));
+          else ex2doc.set(drawing,(new Set<string>()).add(file.path));
+        });
       }
     }
 
-    this.transclusions = transclusionMap;
+    this.doc2ex = doc2ex;
+    this.ex2doc = ex2doc;
     this.registerEventHandlers();
-    this.invokeListeners();
   }
 
-  updateTransclusion(transclusion: TransclusionItem, newFilePath: string): void {
-    const file = this.vault.getAbstractFileByPath(transclusion.sourceFilePath) as TFile;
+  private updateMarkdownFile(file:TFile,oldExPath:string,newExPath:string) {
     const fileContents = this.vault.read(file);
-    fileContents.then((c: string) => {
-      const newContents = c.substring(0, transclusion.startIndex) + newFilePath + c.substring(transclusion.startIndex + transclusion.length);
-      this.vault.modify(file, newContents);
-    });
+    fileContents.then((c: string) => this.vault.modify(file, c.split("[["+oldExPath).join("[["+newExPath)));
+    const exlist = this.doc2ex.get(file.path);
+    exlist.delete(oldExPath);
+    exlist.add(newExPath);
+    this.doc2ex.set(file.path,exlist);
+  }
+
+  public updateTransclusion(oldExPath: string, newExPath: string): void {
+    if(!this.ex2doc.has(oldExPath)) return; //drawing is not transcluded in any markdown document
+    for(const filePath of this.ex2doc.get(oldExPath)) {
+      this.updateMarkdownFile(this.vault.getAbstractFileByPath(filePath) as TFile,oldExPath,newExPath);
+    }
+    this.ex2doc.set(newExPath, this.ex2doc.get(oldExPath));
+    this.ex2doc.delete(oldExPath);
   }
 
   private indexAbstractFile(file: TAbstractFile) {
-    if (!(file instanceof TFile)) {
-      return;
-    }
+    if (!(file instanceof TFile)) return;
+    if (file.extension.toLowerCase() != "md") return; //not a markdown document
     this.indexFile(file as TFile);
   }
 
   private indexFile(file: TFile) {
-    this.parseTransclusionsInFile(file).then((transclusions) => {
-      this.transclusions.set(file.path, transclusions);
-      this.invokeListeners();
+    this.clearIndex(file.path);
+    this.parseTransclusionsInFile(file).then((drawings) => {
+      if(drawings.size == 0) return;
+      this.doc2ex.set(file.path, drawings);
+      drawings.forEach((drawing)=>{
+        if(this.ex2doc.has(drawing)) {
+          this.ex2doc.set(drawing,this.ex2doc.get(drawing).add(file.path));
+        }
+        else this.ex2doc.set(drawing,(new Set<string>()).add(file.path));
+      });
     });
   }
 
-  private clearIndex(path: string, silent = false) {
-    this.transclusions.delete(path);
-    if (!silent) {
-      this.invokeListeners();
-    }
+  private clearIndex(path: string) {
+    if(!this.doc2ex.get(path)) return;
+    this.doc2ex.get(path).forEach((ex)=> {
+      const files = this.ex2doc.get(ex);
+      files.delete(path);
+      if(files.size>0) this.ex2doc.set(ex,files);
+      else this.ex2doc.delete(ex);
+    });
+    this.doc2ex.delete(path);
   }
 
-  private async parseTransclusionsInFile(file: TFile): Promise<TransclusionItem[]> {
-    const transclusionParser = new TransclusionParser();
+  private async parseTransclusionsInFile(file: TFile): Promise<Set<string>> {
     const fileContents = await this.vault.cachedRead(file);
-    return transclusionParser.parseTransclusions(file.path, fileContents);
+    const pattern =  new RegExp('('+String.fromCharCode(96,96,96)+'excalidraw\\s+.*\\[{2})([^|\\]]*).*\\]{2}[\\s]+'+String.fromCharCode(96,96,96),'gm');
+    const transclusions = new Set<string>();
+    for(const transclusion of [...fileContents.matchAll(pattern)]) {
+      if(transclusion[2] && transclusion[2].endsWith('.excalidraw'))
+        transclusions.add(transclusion[2]);
+    }
+    return transclusions;
   }
 
   private registerEventHandlers() {
@@ -100,34 +112,6 @@ class TransclusionIndex {
       this.indexAbstractFile(file);
     });
   }
-
-  private invokeListeners() {
-    const transclusions = ([] as TransclusionItem[]).concat(...Array.from(this.transclusions.values()));
-    this.listeners.forEach((listener) => listener(transclusions));
-  }
 }
 
-export class TransclusionParser {
-  constructor() {    
-  }
 
-  async parseTransclusions(filePath: string, fileContents: string): Promise<TransclusionItem[]> {
-    const pattern =  new RegExp('('+String.fromCharCode(96,96,96)+'excalidraw\\s+.*\\[{2})([^|\\]]*).*\\]{2}[\\s]+'+String.fromCharCode(96,96,96),'gm');
-    return [...fileContents.matchAll(pattern)].map((transclusion) => this.parseTransclusion(filePath, transclusion));
-  }
-
-  private parseTransclusion(filePath: string, entry: RegExpMatchArray): TransclusionItem {
-    const offset = entry[1].length;
-    const excalidrawFilePath = entry[2];
-    if(!excalidrawFilePath && !excalidrawFilePath.endsWith('.excalidraw')) {
-      return null;
-    }
-
-    return new TransclusionItem(
-      excalidrawFilePath,
-      filePath,
-      (entry.index ?? 0) + offset,
-      excalidrawFilePath.length,
-    );
-  }
-}
