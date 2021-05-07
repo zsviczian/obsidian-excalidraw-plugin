@@ -56,9 +56,13 @@ export default class ExcalidrawPlugin extends Plugin {
   public settings: ExcalidrawSettings;
   private openDialog: OpenFileDialog;
   private transclusionIndex: TransclusionIndex;
+  private activeExcalidrawView: ExcalidrawView;
+  public lastActiveExcalidrawFilePath: string;
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
+    this.activeExcalidrawView = null;
+    this.lastActiveExcalidrawFilePath = null;
   }
   
   async onload() {
@@ -117,12 +121,25 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "excalidraw-insert-transclusion",
-      name: "Transclude (embed) an ."+EXCALIDRAW_FILE_EXTENSION+" drawing",
+      name: "Transclude (embed) an Excalidraw drawing",
       checkCallback: (checking: boolean) => {
         if (checking) {
           return this.app.workspace.activeLeaf.view.getViewType() == "markdown";
         } else {
           this.openDialog.start(openDialogAction.insertLink, false);
+          return true;
+        }
+      },
+    });
+
+    this.addCommand({
+      id: "excalidraw-insert-last-active-transclusion",
+      name: "Transclude (embed) the most recently edited Excalidraw drawing",
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return (this.app.workspace.activeLeaf.view.getViewType() == "markdown") && (this.lastActiveExcalidrawFilePath!=null);
+        } else {
+          this.insertCodeblock(this.lastActiveExcalidrawFilePath);
           return true;
         }
       },
@@ -236,6 +253,17 @@ export default class ExcalidrawPlugin extends Plugin {
       for (let i=0;i<leaves.length;i++) {
         (leaves[i].view as ExcalidrawView).save(); 
       }
+    });
+
+    //save Excalidraw leaf and update embeds when switching to another leaf
+    this.app.workspace.on('active-leaf-change',(leaf:WorkspaceLeaf) => {
+      if(this.activeExcalidrawView) {
+        this.activeExcalidrawView.save();
+        this.triggerEmbedUpdates();
+      }
+      this.activeExcalidrawView = (leaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW) ? leaf.view as ExcalidrawView : null;
+      if(this.activeExcalidrawView)
+        this.lastActiveExcalidrawFilePath = this.activeExcalidrawView.file.path;
     });
 
     this.transclusionIndex = new TransclusionIndex(this.app.vault);
@@ -361,10 +389,11 @@ export default class ExcalidrawPlugin extends Plugin {
   }
  
   public async createDrawing(filename: string, onNewPane: boolean, foldername?: string, initData?:string) {
-    const fname = foldername ? normalizePath(foldername)+'/'+filename : normalizePath(this.settings.folder) + '/' + filename;
-    const folder = this.app.vault.getAbstractFileByPath(normalizePath(foldername ? foldername: this.settings.folder));
+    const folderpath = normalizePath(foldername ? foldername: this.settings.folder);
+    const fname = folderpath +'/'+ filename; 
+    const folder = this.app.vault.getAbstractFileByPath(folderpath);
     if (!(folder && folder instanceof TFolder)) {
-      await this.app.vault.createFolder(this.settings.folder);
+      await this.app.vault.createFolder(folderpath);
     }
 
     if(initData) {

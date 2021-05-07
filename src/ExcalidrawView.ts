@@ -209,7 +209,6 @@ export default class ExcalidrawView extends TextFileView {
               width: this.contentEl.clientWidth, 
               height: this.contentEl.clientHeight, 
             });
-            console.log("Excalidraw resize",this.contentEl.clientWidth,this.contentEl.clientHeight);
           } catch(err) {console.log ("Excalidraw React-Wrapper, onResize ",err)}
         };
         window.addEventListener("resize", onResize); 
