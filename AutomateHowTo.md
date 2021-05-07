@@ -22,7 +22,24 @@ The second line resets ExcalidrawAutomate to defaults. This is important as you 
 
 You can change styling between adding different elements. My logic for separating element styling and creation is based on the assumption that you will probably set a stroke color, stroke style, stroke roughness, etc. and draw most of your elements using this. There would be no point in setting all these parameters each time you add an element.
 
-### Before we dive deeper, here's a simple example script
+### Before we dive deeper, here are two a simple example scripts
+#### Create a new drawing with custom name, in a custom folder, using a template
+This simple script gives you significant additional flexibility over Excalidraw Plugin settings to name your drawings, place them into folders, and to apply templates.
+
+```javascript
+<%*
+  const ea = ExcalidrawAutomate;
+  ea.reset();
+  await ea.create({
+    filename    : tp.date.now("HH.mm"), 
+    foldername  : tp.date.now("YYYY-MM-DD"),
+    templatePath: "Excalidraw/Template1.excalidraw",
+    onNewPane   : false
+  });
+%>
+```
+
+#### Create a simple drawing
 ```javascript
 <%*
   const ea = ExcalidrawAutomate;
