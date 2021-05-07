@@ -1,7 +1,7 @@
 # Obsidian Excalidraw Plugin
 The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/), a feature rich sketching tool, into Obsidian. You can store and edit Excalidraw files in your vault and you can transclude drawings into your documents. For a showcase of Excalidraw features, please read my blog post [here](https://www.zsolt.blog/2021/03/showcasing-excalidraw.html).
 
-**See details of the 1.0.6 and 1.0.7 release including a short video, further below**
+**See details of the 1.0.6, 1.0.7 and 1.0.8 release including a short video, further below**
 
 ![image](https://user-images.githubusercontent.com/14358394/115983515-d06c2c80-a5a1-11eb-8d12-c7df91d18107.png)
 
@@ -18,6 +18,7 @@ The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/),
 - The plugin saves drawings to your vault as a file with the *.excalidraw* file extension.
 - You can customize the **size and position of the embedded image** using the `[[image.excalidraw|100]]`, `[[image.excalidraw|100x100]]`, `[[image.excalidraw|100|left]]`, `[[image.excalidraw|right-wrap]]`, formatting options. `[[<filename.excalidraw>|<width>x<height>|<alignment>]]`. You can add your custom alignment via css. Any text that appears in `<alignment>` will be added as style to the SVG element and the wrapper DIV element. Check below and styles.css for more insight.
 - You can setup Excalidraw to **automatically export SVG and/or PNG** files for your drawings, and to keep those in sync with your drawing.
+- Includes full [Templater](https://github.com/SilentVoid13/Templater) support through ExcalidrawAutomate. Read detailed help + examples: [here](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/AutomateHowTo.md)
 
 ## How to?
 Part 1: Intro to Obsidian-Excalidraw - Start a new drawing (3:12)
@@ -71,11 +72,32 @@ div.excalidraw-svg-left {
   text-align: left;
 }
 ```
+## 1.0.8 update
+[![Obsidian-Excalidraw 1.0.8 update](https://user-images.githubusercontent.com/14358394/117492534-029e6680-af72-11eb-90a3-086e67e70c1c.jpg)](https://youtu.be/AtEhmHJjnxM)
 
+### QoL improvements
+- Adds context menu to File Explorer to create new drawings
+- Adds a new command to the palette: “Transclude (embed) the most recently edited Excalidraw drawing”
+- Automatically update file-links in transclusions when you rename or move your drawing
+- Saves drawing and updates all active pre-views when drawing loses focus
+- File is closed and removed when you select “Delete file” from more options
+- Saves drawing when exiting Obsidian
+- Fixes pen positioning bug with sliding panes after panes scroll
 
+### ExcalidrawAutomte full Templater support
+You now have ultimate flexibility over your Excalidraw templates using Templater. 
+- Detailed documentation available [here](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/AutomateHowTo.md)
+- I created few examples from the simple to the more complex
+	- Simple use-case: Creating a drawing using a custom template and following a file and folder naming convention of your choice.
+	- Complex use-case: Create a mindmap from a tabulated outline.
+  ![Drawing 2021-05-05 20 52 34](https://user-images.githubusercontent.com/14358394/117194124-00a69d00-ade4-11eb-8b75-5e18a9cbc3cd.png)
+  
 ## Known issues
 - On mobile (iOS and Android): As you draw left to right it opens left sidebar. Draw right to left, opens right sidebar. Draw down, opens commands palette. So seems open is emulating the gestures, even when drawing towards the center. Obsidian mobile 0.18 has resolved this issue.
 - I have seen two cases when adding a stencil library did not work. In both cases, the end solution was a reinstall of Obsidian. The root cause is not clear, but maybe because of  the incremental updates of Obsidian from an early version.
+- Mobile support
+  - Positioning of the pen gets misaligned after you open the command palette.
+  - Your drawing will not be saved when you terminate the mobile app by closing the Obsidian task.
 - Sync does not support .excalidraw files. This issue will be addressed in a later release of Obsidian sync. Until then, here are two hacks you can play with: 
   - You have the option to use OneDrive, Google Drive, iCloud, DropBox, etc. to sync your vault between devices.
   - You can also use Obsidian Sync in conjunction with "Obsidian Git" (find it in community plugins). Be sure to set up git to ignore all files except for .excalidraw by adding the following to `.gitignore`. Obsidian Git does not work on mobile, but on Android you can use an app like MGIT to sync your `.excalidraw` files from/to the git repository.
