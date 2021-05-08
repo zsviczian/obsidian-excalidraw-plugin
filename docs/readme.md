@@ -26,9 +26,7 @@ With a little work, using Excalidraw Automate you can generate simple mindmaps, 
   - [Family tree with Dataview](Examples/dataviewjs_familytree.md)
 
 ## If you are enjoying the Obsidian Excalidraw Plugin...
-Support my work and enthusiasm by buying me a coffee on [https://ko-fi/zsolt](https://ko-fi.com/zsolt).
-
-Please also help spread the word by sharing about the Plugin on social media.
+Help spread the word by sharing about the Plugin on social media.
 
 You can find me on Twitter [@zsviczian](https://twitter.com/zsviczian), and on my blog [zsolt.blog](https://zsolt.blog).
 
