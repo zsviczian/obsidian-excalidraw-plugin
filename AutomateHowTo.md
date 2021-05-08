@@ -327,7 +327,7 @@ This template will prompt you for the title of the drawing. It will create a new
 *Use CTRL+Shift+V to paste code into Obsidian!*
 ```javascript
 <%*
-  defaultTitle = tp.file.title;
+  defaultTitle = tp.date.now("HHmm")+' '+tp.file.title;
   title = await tp.system.prompt("Title of the new drawing?",defaultTitle);
   tR = String.fromCharCode(96,96,96)+'excalidraw\n[['+title+'.excalidraw]]\n'+String.fromCharCode(96,96,96)
   const ea = ExcalidrawAutomate;
