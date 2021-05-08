@@ -1,6 +1,7 @@
-Here's a rewrite of my mindmap script using dataviewjs
+# Mindmap from Tasklist using dataviewjs
+This is similar to the mindmap script using templater, but because dataview already returns tasks in a tree, it is slightly simpler
 
-my input file is `Demo.md` with the following contents:
+The input file is `Demo.md` with the following contents:
 ```markdown
 - [ ] Root task
     - [ ] task 1.1
@@ -11,7 +12,8 @@ my input file is `Demo.md` with the following contents:
         - [ ] task 1.3.1
 ```
 
-and my `dataviewjs` script is:
+The `dataviewjs` script looks like this: 
+*Use CTRL+Shift+V to paste code into Obsidian!*
 ```javascript
 function crawl(subtasks) {
   let size = subtasks.length > 0 ? 0 : 1; //if no children then a leaf with size 1
