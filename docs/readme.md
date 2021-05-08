@@ -321,7 +321,7 @@ async createPNG(templatePath?:string)
 Returns a blob containing a PNG image of the generated drawing.
 
 ## Examples
-### [Mindmap with Dataview]([[dataviewjs.md]])
+### [Mindmap with Dataview](dataviewjs)
 ### Insert new drawing into currently edited document
 This template will prompt you for the title of the drawing. It will create a new drawing with the provided title, and in the folder of the document you were editing. It will then transclude the new drawing at the cursor location and open the new drawing in a new workspace leaf by splitting the current leaf.
 
