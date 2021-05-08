@@ -331,7 +331,7 @@ This template will prompt you for the title of the drawing. It will create a new
   const title = await tp.system.prompt("Title of the drawing?", defaultTitle);
   const folder = tp.file.folder(true);
   const transcludePath = (folder== '/' ? '' : folder + '/') + title + '.excalidraw';
-  tR = String.fromCharCode(96,96,96)+'excalidraw\n'+transcludePath+'\n'+String.fromCharCode(96,96,96);
+  tR = String.fromCharCode(96,96,96)+'excalidraw\n[['+transcludePath+']]\n'+String.fromCharCode(96,96,96);
   const ea = ExcalidrawAutomate;
   ea.reset();
   ea.setTheme(1); //set Theme to dark
