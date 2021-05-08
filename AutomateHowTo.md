@@ -6,6 +6,7 @@ With a little work, using Excalidraw Automate you can generate simple mindmaps, 
 
 You can access Excalidraw Automate via the ExcalidrawAutomate object. I recommend staring your Automate scripts with the following code.
 
+Use CTRL+Shift+V to paste it into Obsidian!
 ```javascript
 const ea = ExcalidrawAutomate;
 ea.reset();
@@ -26,6 +27,7 @@ You can change styling between adding different elements. My logic for separatin
 #### Create a new drawing with custom name, in a custom folder, using a template
 This simple script gives you significant additional flexibility over Excalidraw Plugin settings to name your drawings, place them into folders, and to apply templates.
 
+Use CTRL+Shift+V to paste it into Obsidian!
 ```javascript
 <%*
   const ea = ExcalidrawAutomate;
@@ -40,6 +42,7 @@ This simple script gives you significant additional flexibility over Excalidraw 
 ```
 
 #### Create a simple drawing
+Use CTRL+Shift+V to paste it into Obsidian!
 ```javascript
 <%*
   const ea = ExcalidrawAutomate;
@@ -60,7 +63,7 @@ The script will generate the following drawing:
 
 ## Attributes and functions at a glance
 Here's the interface implemented by ExcalidrawAutomate:
-
+Use CTRL+Shift+V to paste it into Obsidian!
 ```javascript
 ExcalidrawAutomate: {
   style: {
@@ -318,7 +321,28 @@ async createPNG(templatePath?:string)
 Returns a blob containing a PNG image of the generated drawing.
 
 ## Examples
+### Create new drawing and insert into currently edited document
+This template will prompt you for the title of the drawing. It will create a new drawing with the provided title, and in the folder of the document you were editing. It will then transclude the new drawing at the cursor location and open the new drawing in a new workspace leaf by splitting the current leaf.
+
+Use CTRL+Shift+V to paste it into Obsidian!
+```javascript
+<%*
+  defaultTitle = tp.file.title;
+  title = await tp.system.prompt("Title of the new drawing?",defaultTitle);
+  tR = String.fromCharCode(96,96,96)+'excalidraw\n[['+title+'.excalidraw]]\n'+String.fromCharCode(96,96,96)
+  const ea = ExcalidrawAutomate;
+  ea.reset();
+  await ea.create({
+    filename    : title, 
+    foldername  : tp.file.folder(true),
+    template    : 'Excalidraw/Template.excalidraw',
+    onNewPane   : true
+  });
+%>
+```
+
 ### Connect objects
+Use CTRL+Shift+V to paste it into Obsidian!
 ```javascript
 <%*
   const ea = ExcalidrawAutomate;
@@ -334,6 +358,8 @@ Returns a blob containing a PNG image of the generated drawing.
 ```
 ### Using a template
 This example is similar to the first one, but rotated 90°, and using a template, plus specifying a filename and folder to save the drawing, and opening the new drawing in a new pane.
+
+Use CTRL+Shift+V to paste it into Obsidian!
 ```javascript
 <%*
   const ea = ExcalidrawAutomate;
@@ -372,6 +398,8 @@ Example input:
 ```
 
 The script:
+
+Use CTRL+Shift+V to paste it into Obsidian!
 ```javascript
 <%*
 const IDX = Object.freeze({"depth":0, "text":1, "parent":2, "size":3, "children": 4, "objectId":5});
