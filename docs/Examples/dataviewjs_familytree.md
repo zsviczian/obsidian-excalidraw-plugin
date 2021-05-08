@@ -1,6 +1,11 @@
-# Family tree from Tasklist using dataviewjs
+# [◀ Excalidraw Automate How To](../readme.md)
+## Family tree from Tasklist using dataviewjs
 This is similar to the mindmap script using dataviewjs, but the output is rendered vertically.
 
+### Output
+![image](https://user-images.githubusercontent.com/14358394/117549637-d3ecc280-b03b-11eb-952a-840a9a75b6ca.png)
+
+### Input file
 Task List looks like:
 ```markdown
 - [ ] OBSIDIAN
@@ -12,6 +17,7 @@ Task List looks like:
         - [ ] MeeMaw Li
 ```
 
+### dataviewjs script
 Code to render the excalidraw looks like:
 ```javascript
 function crawl(subtasks) {
@@ -59,5 +65,3 @@ buildMindmap(tasks.subtasks, 2, 0, tasks.objectID);
   el.appendChild(svg); 
 })();
 ```
-And the output is:
-![image](https://user-images.githubusercontent.com/14358394/117549637-d3ecc280-b03b-11eb-952a-840a9a75b6ca.png)

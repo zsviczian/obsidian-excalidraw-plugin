@@ -1,4 +1,5 @@
-# Attributes and functions overivew
+# [◀ Excalidraw Automate How To](../readme.md)
+## Attributes and functions overivew
 Here's the interface implemented by ExcalidrawAutomate:
 
 ```javascript

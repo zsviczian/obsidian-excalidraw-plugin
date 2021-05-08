@@ -1,4 +1,5 @@
-# Connect Objects
+# [◀ Excalidraw Automate How To](../readme.md)
+## Connect Objects
 This [Templater](https://github.com/SilentVoid13/Templater) template demonstrates how to connect two objects using ExcalidrawAutomate.
 
 *Use CTRL+Shift+V to paste code into Obsidian!*

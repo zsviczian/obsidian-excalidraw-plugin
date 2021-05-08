@@ -1,17 +1,18 @@
-# Utility functions
-## clear()
+# [◀ Excalidraw Automate How To](../readme.md)
+## Utility functions
+### clear()
 `clear()` will clear objects from cache, but will retain element style settings.
 
-## reset()
+### reset()
 `reset()` will first call `clear()` and then reset element style to defaults.
 
-## toClipboard()
+### toClipboard()
 ```typescript
 async toClipboard(templatePath?:string)
 ```
 Places the generated drawing to the clipboard. Useful when you don't want to create a new drawing, but want to paste additional items onto an exising drawing.
 
-## create()
+### create()
 ```typescript
 async create(params?:{filename: string, foldername:string, templatePath:string, onNewPane: boolean})
 ```
@@ -29,13 +30,13 @@ Example:
 ```javascript
 create({filename:"my drawing", foldername:"myfolder/subfolder/", templatePath: "Excalidraw/template.excalidraw", onNewPane: true});
 ```
-## createSVG()
+### createSVG()
 ```typescript
 async createSVG(templatePath?:string)
 ```
 Returns an HTML SVGSVGElement containing the generated drawing.
 
-## createPNG()
+### createPNG()
 ```typescript
 async createPNG(templatePath?:string)
 ```

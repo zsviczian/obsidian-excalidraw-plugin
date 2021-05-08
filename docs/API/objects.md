@@ -1,9 +1,10 @@
-# Adding objects
+# [◀ Excalidraw Automate How To](../readme.md)
+## Adding objects
 These functions will add objects to your drawing. The canvas is infinite, and it accepts negative and positive X and Y values. X values increase left to right, Y values increase top to bottom.
 
 ![coordinates](https://user-images.githubusercontent.com/14358394/116825632-6569b980-ab90-11eb-827b-ada598e91e46.png)
 
-## addRect(), addDiamond(), addEllipse()
+### addRect(), addDiamond(), addEllipse()
 ```typescript
 addRect(topX:number, topY:number, width:number, height:number):string
 addDiamond(topX:number, topY:number, width:number, height:number):string
@@ -11,7 +12,7 @@ addEllipse(topX:number, topY:number, width:number, height:number):string
 ```
 Returns the `id` of the object. The `id` is required when connecting objects with lines. See later.
 
-## addText
+### addText()
 ```typescript
 addText(topX:number, topY:number, text:string, formatting?:{width:number, height:number,textAlign: string, verticalAlign:string, box: boolean, boxPadding: number}):string
 ```
@@ -25,13 +26,13 @@ Formatting parameters are optional:
 
 Returns the `id` of the object. The `id` is required when connecting objects with lines. See later. If `{box:true}` then returns the id of the enclosing box.
 
-## addLine()
+### addLine()
 ```typescript
 addLine(points: [[x:number,y:number]]):void
 ```
 Adds a line following the points provided. Must include at least two points `points.length >= 2`. If more than 2 points are provided the interim points will be added as breakpoints. The line will break with angles if `strokeSharpness` is set to "sharp" and will be curvey if it is set to "round".
 
-## addArrow()
+### addArrow()
 ```typescript
 addArrow(points: [[x:number,y:number]],formatting?:{startArrowHead:string,endArrowHead:string,startObjectId:string,endObjectId:string}):void
 ```
@@ -42,7 +43,7 @@ Adds an arrow following the points provided. Must include at least two points `p
 
 `startObjectId` and `endObjectId` are the object id's of connected objects. I recommend using `connectObjects` instead calling addArrow() for the purpose of connecting objects.
 
-## connectObjects()
+### connectObjects()
 ```typescript
 declare type ConnectionPoint = "top"|"bottom"|"left"|"right";
 connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, formatting?:{numberOfPoints: number,startArrowHead:string,endArrowHead:string, padding: number}):void
@@ -57,7 +58,7 @@ Connects two objects with an arrow.
 
 `startArrowHead` and `endArrowHead` work as described for `addArrow()` above.
 
-## addToGroup()
+### addToGroup()
 ```typescript
 addToGroup(objectIds:[]):void
 ```

@@ -1,6 +1,11 @@
-# Mindmap from Tasklist using dataviewjs
+# [◀ Excalidraw Automate How To](../readme.md)
+## Mindmap from Tasklist using dataviewjs
 This is similar to the mindmap script using templater, but because dataview already returns tasks in a tree, it is slightly simpler
 
+### Output
+![image](https://user-images.githubusercontent.com/14358394/117548665-71dd8e80-b036-11eb-8a45-4169fdd7cc05.png)
+
+### Input file
 The input file is `Demo.md` with the following contents:
 ```markdown
 - [ ] Root task
@@ -12,6 +17,7 @@ The input file is `Demo.md` with the following contents:
         - [ ] task 1.3.1
 ```
 
+### dataviewjs script
 The `dataviewjs` script looks like this: 
 *Use CTRL+Shift+V to paste code into Obsidian!*
 ```javascript
@@ -52,6 +58,3 @@ buildMindmap(tasks.subtasks, 1, 0, tasks.objectID);
   el.appendChild(svg); 
 })();
 ```
-And the output is:
-
-![image](https://user-images.githubusercontent.com/14358394/117548665-71dd8e80-b036-11eb-8a45-4169fdd7cc05.png)

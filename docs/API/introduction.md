@@ -1,4 +1,4 @@
-# [Excalidraw Automate How To](../readme.md)
+# [◀ Excalidraw Automate How To](../readme.md)
 ## Introduction to the API
 You can access Excalidraw Automate via the ExcalidrawAutomate object. I recommend staring your Automate scripts with the following code.
 
