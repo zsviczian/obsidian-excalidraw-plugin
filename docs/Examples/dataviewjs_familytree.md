@@ -60,3 +60,4 @@ buildMindmap(tasks.subtasks, 2, 0, tasks.objectID);
 })();
 ```
 And the output is:
+![image](https://user-images.githubusercontent.com/14358394/117549637-d3ecc280-b03b-11eb-952a-840a9a75b6ca.png)
