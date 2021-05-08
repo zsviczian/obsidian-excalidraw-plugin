@@ -335,11 +335,11 @@ This template will prompt you for the title of the drawing. It will create a new
   const ea = ExcalidrawAutomate;
   ea.reset();
   await ea.create({
-  filename : title,
-  foldername : tp.file.folder(true),
-  templatePath: 'Excalidraw/Template.excalidraw',
-  onNewPane : true
-});
+    filename : title,
+    foldername : tp.file.folder(true),
+    templatePath: 'Excalidraw/Template.excalidraw',
+    onNewPane : true
+  });
 %>
 ```
 
