@@ -337,7 +337,7 @@ This template will prompt you for the title of the drawing. It will create a new
   ea.setTheme(1); //set Theme to dark
   await ea.create({
     filename : title,
-    foldername : tp.file.folder(true),
+    foldername : folder,
     //templatePath: 'Excalidraw/Template.excalidraw', //uncomment if you want to use a template
     onNewPane : true
   });
