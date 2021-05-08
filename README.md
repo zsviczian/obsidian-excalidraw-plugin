@@ -18,7 +18,7 @@ The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/),
 - The plugin saves drawings to your vault as a file with the *.excalidraw* file extension.
 - You can customize the **size and position of the embedded image** using the `[[image.excalidraw|100]]`, `[[image.excalidraw|100x100]]`, `[[image.excalidraw|100|left]]`, `[[image.excalidraw|right-wrap]]`, formatting options. `[[<filename.excalidraw>|<width>x<height>|<alignment>]]`. You can add your custom alignment via css. Any text that appears in `<alignment>` will be added as style to the SVG element and the wrapper DIV element. Check below and styles.css for more insight.
 - You can setup Excalidraw to **automatically export SVG and/or PNG** files for your drawings, and to keep those in sync with your drawing.
-- Includes full [Templater](https://github.com/SilentVoid13/Templater) support through ExcalidrawAutomate. Read detailed help + examples: [here](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/AutomateHowTo.md)
+- Includes full [Templater](https://silentvoid13.github.io/Templater/) and [Dataview](https://blacksmithgu.github.io/obsidian-dataview/docs/api/intro/) support through ExcalidrawAutomate. Read detailed help + examples: [here](https://zsviczian.github.io/obsidian-excalidraw-plugin/)
 
 ## How to?
 Part 1: Intro to Obsidian-Excalidraw - Start a new drawing (3:12)
@@ -84,9 +84,9 @@ div.excalidraw-svg-left {
 - Saves drawing when exiting Obsidian
 - Fixes pen positioning bug with sliding panes after panes scroll
 
-### ExcalidrawAutomte full Templater support
-You now have ultimate flexibility over your Excalidraw templates using Templater. 
-- Detailed documentation available [here](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/AutomateHowTo.md)
+### ExcalidrawAutomte full Templater and DataviewJS support
+You now have ultimate flexibility over your Excalidraw templates using Templater and Dataview.
+- Detailed documentation available [here](https://zsviczian.github.io/obsidian-excalidraw-plugin/)
 - I created few examples from the simple to the more complex
 	- Simple use-case: Creating a drawing using a custom template and following a file and folder naming convention of your choice.
 	- Complex use-case: Create a mindmap from a tabulated outline.
