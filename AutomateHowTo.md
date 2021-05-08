@@ -321,23 +321,25 @@ async createPNG(templatePath?:string)
 Returns a blob containing a PNG image of the generated drawing.
 
 ## Examples
-### Create new drawing and insert into currently edited document
+### Insert new drawing into currently edited document
 This template will prompt you for the title of the drawing. It will create a new drawing with the provided title, and in the folder of the document you were editing. It will then transclude the new drawing at the cursor location and open the new drawing in a new workspace leaf by splitting the current leaf.
 
 *Use CTRL+Shift+V to paste code into Obsidian!*
 ```javascript
 <%*
-  defaultTitle = tp.date.now("HHmm")+' '+tp.file.title;
-  title = await tp.system.prompt("Title of the new drawing?",defaultTitle);
-  tR = String.fromCharCode(96,96,96)+'excalidraw\n[['+title+'.excalidraw]]\n'+String.fromCharCode(96,96,96)
+  const defaultTitle = tp.date.now("HHmm")+' '+tp.file.title;
+  const title = await tp.system.prompt("Title of the drawing?", defaultTitle);
+  const folder = tp.file.folder(true);
+  const transcludePath = (folder== '/' ? '' : folder + '/') + title + '.excalidraw';
+  tR = String.fromCharCode(96,96,96)+'excalidraw\n'+transcludePath+'\n'+String.fromCharCode(96,96,96);
   const ea = ExcalidrawAutomate;
   ea.reset();
-  ea.setTheme(1); //set Theme to dark
   await ea.create({
-    filename    : title, 
-    foldername  : tp.file.folder(true),
-    onNewPane   : true
-  });
+  filename : title,
+  foldername : tp.file.folder(true),
+  templatePath: 'Excalidraw/Template.excalidraw',
+  onNewPane : true
+});
 %>
 ```
 
