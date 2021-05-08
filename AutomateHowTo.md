@@ -334,10 +334,11 @@ This template will prompt you for the title of the drawing. It will create a new
   tR = String.fromCharCode(96,96,96)+'excalidraw\n'+transcludePath+'\n'+String.fromCharCode(96,96,96);
   const ea = ExcalidrawAutomate;
   ea.reset();
+  ea.setTheme(1); //set Theme to dark
   await ea.create({
     filename : title,
     foldername : tp.file.folder(true),
-    templatePath: 'Excalidraw/Template.excalidraw',
+    //templatePath: 'Excalidraw/Template.excalidraw', //uncomment if you want to use a template
     onNewPane : true
   });
 %>
