@@ -141,7 +141,7 @@ export function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
           this.canvas.theme = "light";
           return "light";
         default:
-          this.canvas = "dark";
+          this.canvas.theme = "dark";
           return "dark";
       }      
     },
@@ -152,7 +152,8 @@ export function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       });
     },
     async toClipboard(templatePath?:string) {
-      let elements = templatePath ? (await getTemplate(templatePath)).elements : [];
+      const template = templatePath ? (await getTemplate(templatePath)) : null;
+      let elements = template ? template.elements : [];
       for (let i=0;i<this.elementIds.length;i++) {
         elements.push(this.elementsDict[this.elementIds[i]]);
       }
@@ -163,7 +164,8 @@ export function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       }));
     },
     async create(params?:{filename: string, foldername:string, templatePath:string, onNewPane: boolean}) {
-      let elements = params?.templatePath ? (await getTemplate(params.templatePath)).elements : [];
+      const template = params?.templatePath ? (await getTemplate(params.templatePath)) : null;
+      let elements = template ? template.elements : [];
       for (let i=0;i<this.elementIds.length;i++) {
         elements.push(this.elementsDict[this.elementIds[i]]);
       }
@@ -177,14 +179,15 @@ export function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
           "source": "https://excalidraw.com",
           "elements": elements,
           "appState": {
-            "theme": this.canvas.theme,
-            "viewBackgroundColor": this.canvas.viewBackgroundColor
+            "theme": template ? template.appState.theme : this.canvas.theme,
+            "viewBackgroundColor": template? template.appState.viewBackgroundColor : this.canvas.viewBackgroundColor
           }
         })
       );  
     },
     async createSVG(templatePath?:string) {
-      let elements = templatePath ? (await getTemplate(templatePath)).elements : [];
+      const template = templatePath ? (await getTemplate(templatePath)) : null;
+      let elements = template ? template.elements : [];
       for (let i=0;i<this.elementIds.length;i++) {
         elements.push(this.elementsDict[this.elementIds[i]]);
       }
@@ -195,8 +198,8 @@ export function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
           "source": "https://excalidraw.com",
           "elements": elements,
           "appState": {
-            "theme": this.canvas.theme,
-            "viewBackgroundColor": this.canvas.viewBackgroundColor
+            "theme": template ? template.appState.theme : this.canvas.theme,
+            "viewBackgroundColor": template? template.appState.viewBackgroundColor : this.canvas.viewBackgroundColor
           }
         }),
         {
@@ -206,7 +209,8 @@ export function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       )     
     },
     async createPNG(templatePath?:string) {
-      let elements = templatePath ? (await getTemplate(templatePath)).elements : [];
+      const template = templatePath ? (await getTemplate(templatePath)) : null;
+      let elements = template ? template.elements : [];
       for (let i=0;i<this.elementIds.length;i++) {
         elements.push(this.elementsDict[this.elementIds[i]]);
       }
@@ -217,8 +221,8 @@ export function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
           "source": "https://excalidraw.com",
           "elements": elements,
           "appState": {
-            "theme": this.canvas.theme,
-            "viewBackgroundColor": this.canvas.viewBackgroundColor
+            "theme": template ? template.appState.theme : this.canvas.theme,
+            "viewBackgroundColor": template? template.appState.viewBackgroundColor : this.canvas.viewBackgroundColor
           }
         }),
         {
