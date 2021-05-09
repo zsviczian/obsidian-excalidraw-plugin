@@ -7,7 +7,7 @@ import {
 } from "obsidian";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import Excalidraw, {exportToSvg} from "@excalidraw/excalidraw";
+import Excalidraw, {exportToSvg, getSceneVersion} from "@excalidraw/excalidraw";
 import { ExcalidrawElement } from "@excalidraw/excalidraw/types/element/types";
 import { 
   AppState,
@@ -41,6 +41,9 @@ export default class ExcalidrawView extends TextFileView {
   private excalidrawRef: React.MutableRefObject<any>;
   private justLoaded: boolean;
   private plugin: ExcalidrawPlugin;
+  private dirty: boolean;
+  private autosaveTimer: any;
+  private previousSceneVersion: number;
 
   constructor(leaf: WorkspaceLeaf, plugin: ExcalidrawPlugin) {
     super(leaf);
@@ -49,6 +52,9 @@ export default class ExcalidrawView extends TextFileView {
     this.excalidrawRef = null;
     this.plugin = plugin;
     this.justLoaded = false;
+    this.dirty = false;
+    this.autosaveTimer = null;
+    this.previousSceneVersion = 0;
   }
 
   public async saveSVG(data?: string) {
@@ -111,15 +117,31 @@ export default class ExcalidrawView extends TextFileView {
     });
     this.addAction(PNG_ICON_NAME,"Export as PNG",async (ev)=>this.savePNG());
     this.addAction(SVG_ICON_NAME,"Export as SVG",async (ev)=>this.saveSVG());
+    //this is to solve sliding panes bug
     if (this.app.workspace.layoutReady) {
       (this.app.workspace.rootSplit as WorkspaceItem as WorkspaceItemExt).containerEl.addEventListener('scroll',(e)=>{if(this.refresh) this.refresh();});
     } else {
       this.registerEvent(this.app.workspace.on('layout-ready', async () => (this.app.workspace.rootSplit as WorkspaceItem as WorkspaceItemExt).containerEl.addEventListener('scroll',(e)=>{if(this.refresh) this.refresh();})));
     }
+
+    this.setupAutosaveTimer();
+  }
+
+  private setupAutosaveTimer() {
+    const timer = async () => {
+      if(this.dirty) {
+        this.dirty = false;
+        if(this.excalidrawRef) await this.save();
+        this.plugin.triggerEmbedUpdates();
+        console.log("save");
+      }
+    }
+    this.autosaveTimer = setInterval(timer,30000);
   }
 
   //save current drawing when user closes workspace leaf
   async onunload() {
+    if(this.autosaveTimer) clearInterval(this.autosaveTimer);
     if(this.excalidrawRef) await this.save();
   }
 
@@ -188,6 +210,8 @@ export default class ExcalidrawView extends TextFileView {
 
   
   private instantiateExcalidraw(initdata: any) {  
+    this.dirty = false;
+    this.previousSceneVersion = 0;
     const reactElement = React.createElement(() => {
       const excalidrawRef = React.useRef(null);
       const excalidrawWrapperRef = React.useRef(null);
@@ -267,6 +291,15 @@ export default class ExcalidrawView extends TextFileView {
                 this.justLoaded = false;             
                 const e = new KeyboardEvent("keydown", {bubbles : true, cancelable : true, shiftKey : true, code:"Digit1"});
                 this.contentEl.querySelector("canvas")?.dispatchEvent(e);
+              } 
+              if (st.editingElement == null && st.resizingElement == null && 
+                  st.draggingElement == null && st.editingGroupId == null &&
+                  st.editingLinearElement == null ) {
+                const sceneVersion = Excalidraw.getSceneVersion(et);
+                if(sceneVersion != this.previousSceneVersion) {
+                  this.previousSceneVersion = sceneVersion;
+                  this.dirty=true;
+                }
               }
             },
             onLibraryChange: (items:LibraryItems) => {

@@ -1,5 +1,6 @@
 export const VIEW_TYPE_EXCALIDRAW = "excalidraw";
 export const EXCALIDRAW_FILE_EXTENSION = "excalidraw";
+export const EXCALIDRAW_FILE_EXTENSION_LEN = EXCALIDRAW_FILE_EXTENSION.length;
 export const ICON_NAME = "excalidraw-icon";
 export const CODEBLOCK_EXCALIDRAW = "excalidraw";
 export const MAX_COLORS = 5;

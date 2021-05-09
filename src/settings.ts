@@ -16,6 +16,10 @@ export interface ExcalidrawSettings {
   autoexportPNG: boolean,
   keepInSync: boolean,
   library: string,
+  /*Excalidraw Sync Begin*/
+  syncFolder: string,
+  excalidrawSync: boolean,
+  /*Excalidraw Sync End*/
 }
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
@@ -28,6 +32,10 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   autoexportPNG: false,
   keepInSync: false,
   library: `{"type":"excalidrawlib","version":1,"library":[]}`,
+  /*Excalidraw Sync Begin*/
+  syncFolder: 'excalidraw_sync',
+  excalidrawSync: false,
+  /*Excalidraw Sync End*/
 }
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
@@ -139,6 +147,44 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           this.plugin.settings.keepInSync = value;
           await this.plugin.saveSettings();
         }));
+
+
+    /*Excalidraw Sync Begin*/
+    this.containerEl.createEl('h1', {text: 'Excalidraw sync'});
+    this.containerEl.createEl('h3', {text: 'This is a hack and a temporary workaround. Turn it on only if you are comfortable with hacky solutions...'});
+    this.containerEl.createEl('p', {text: 'By enabling this feature Excalidraw will sync drawings to a sync folder where drawings are stored in an ".md" file.  ' +
+                                   'This will allow Obsidian sync to synchronize Excalidraw drawings as well... ' + 
+                                   'Whenever your drawing changes, the corresponding file in the sync folder will also get updated. Similarly, whenever a file is synchronized to the sync folder ' +
+                                   'by Obsidian sync, Excalidraw will sync it with the .excalidraw file in your vault.'});
+    this.containerEl.createEl('p', {text: 'Because this is a temporary workaround until Obsidian sync is ready, I didn\'t implement extensive application logic to manage sync. ' +
+                                   'Sync might get confused requiring some manual intervention.'});
+
+    new Setting(containerEl)
+    .setName('Excalidraw sync folder') 
+    .setDesc('Configure the folder first, before activating the feature! ' +
+             'This is the root folder for your mirrored excalidraw drawings. ' +
+             'Don\'t save other files here, as my algorithm is not prepared to handle those... and I can\'t predict the outcome. ')
+    .addText(text => text
+      .setPlaceholder('.excalidraw_sync')
+      .setValue(this.plugin.settings.syncFolder)
+      .onChange(async (value) => {
+        this.plugin.settings.syncFolder = value;
+        await this.plugin.saveSettings();
+      }));
+
+    new Setting(containerEl)
+      .setName('Excalidraw sync') 
+      .setDesc('Enable Excalidraw Sync')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.excalidrawSync)
+        .onChange(async (value) => {
+          this.plugin.settings.excalidrawSync = value;
+          await this.plugin.saveSettings();
+          this.plugin.initiateSync();
+        }));
+      
+
+    /*Excalidraw Sync End*/
 
   }
 }
