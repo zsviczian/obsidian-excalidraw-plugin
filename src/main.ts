@@ -294,7 +294,8 @@ export default class ExcalidrawPlugin extends Plugin {
       if(target && target instanceof TFile) {
         await plugin.app.vault.modify(target,await plugin.app.vault.read(source));
       } else {
-        await plugin.app.vault.copy(source,targetPath);
+        await plugin.app.vault.create(targetPath,await plugin.app.vault.read(source))
+        //await plugin.app.vault.copy(source,targetPath);
       }
     }
 
