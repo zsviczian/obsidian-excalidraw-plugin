@@ -76,7 +76,7 @@ div.excalidraw-svg-left {
   text-align: left;
 }
 ```
-### 1.0.8 + 1.0.9 (minor fixes) update 
+### 1.0.8 and 1.0.9 (minor fixes) update 
 [![Obsidian-Excalidraw 1.0.8 update](https://user-images.githubusercontent.com/14358394/117492534-029e6680-af72-11eb-90a3-086e67e70c1c.jpg)](https://youtu.be/AtEhmHJjnxM)
 
 #### QoL improvements
