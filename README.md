@@ -107,6 +107,10 @@ You now have ultimate flexibility over your Excalidraw templates using Templater
 #### QoL improvement
 - I added an autosave feature. Your active drawing gets saved every 30 seconds if you've made changes to it. Drawings otherwise get saved when the window loses focus, or when you close the drawing, etc. Autosave limits the risk of accidental data loss on mobiles when you "swipe out" Obsidian to close it.
 
+### 1.0.11 update
+#### QoL improvement
+- Workspace loading speed much improved on large vaults.
+
 ## Known issues
 - I have seen two cases when adding a stencil library did not work. In both cases, the end solution was a reinstall of Obsidian. The root cause is not clear, but maybe because of  the incremental updates of Obsidian from an early version.
 - Mobile support

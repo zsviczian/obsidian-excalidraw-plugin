@@ -18,9 +18,10 @@ export default class TransclusionIndex {
   async initialize(): Promise<void> {
     const doc2ex = new Map<string,Set<string>>(); 
     const ex2doc = new Map<string,Set<string>>();
+    const timeStart = new Date().getTime();
 
     const markdownFiles = this.vault.getMarkdownFiles();
-    for (const file of markdownFiles) {     
+    for (const file of markdownFiles) {
       const drawings = await this.parseTransclusionsInFile(file);
       if (drawings.size > 0) {
         doc2ex.set(file.path, drawings);
@@ -33,6 +34,11 @@ export default class TransclusionIndex {
 
     this.doc2ex = doc2ex;
     this.ex2doc = ex2doc;
+    const totalTimeMs = new Date().getTime() - timeStart;
+    console.log(
+      `Excalidraw: Parsed ${markdownFiles.length} markdown files
+       (${totalTimeMs / 1000.0}s)`,
+    );
     this.registerEventHandlers();
   }
 

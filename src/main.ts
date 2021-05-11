@@ -206,7 +206,6 @@ export default class ExcalidrawPlugin extends Plugin {
     });
 
     this.transclusionIndex = new TransclusionIndex(this.app.vault);
-    this.transclusionIndex.initialize();
 
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu: Menu, file: TFile) => {
@@ -243,6 +242,8 @@ export default class ExcalidrawPlugin extends Plugin {
   /*Excalidraw Sync End*/
 
   private async addEventListeners(plugin: ExcalidrawPlugin) {
+    plugin.transclusionIndex.initialize();
+
     const closeDrawing = async (filePath:string) => {
       const leaves = plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
       for (let i=0;i<leaves.length;i++) {
