@@ -99,6 +99,10 @@ You now have ultimate flexibility over your Excalidraw templates using Templater
 ### 1.0.10 update
 [![Obsidian-Excalidraw 1.0.10 update](https://user-images.githubusercontent.com/14358394/117579017-60a58800-b0f1-11eb-8553-7820964662aa.jpg)](https://youtu.be/W7pWXGIe4rQ)
 
+### 1.0.12 Freehand drawing
+- now includes the new freehand drawing features from Excalidraw.com
+- If you use Obsydian sync with Excalidraw sync, be sure to update all your devices to the new version, as the old excalidraw will simply delete the freehand drawn images and/or simply not show the drawing.
+
 #### Temporary workaround - use it only if you are ok with hacky solutions
 - I implemented a temporary workaround to enable Obsidian Sync for Excalidraw files. This enables almost real-time two-way sync between your devices. You can draw on your iPad with your pencil, on your Android with your stylus, and the image will be available in Obsidian as well and vice versa. 
 - By enabling this feature Excalidraw will sync drawings to a sync folder where drawings are stored in an ".md" file. This will allow Obsidian sync to synchronize Excalidraw drawings as well... Whenever your drawing changes, the corresponding file in the sync folder will also get updated. Similarly, whenever a file is synchronized to the sync folder by Obsidian sync, Excalidraw will sync it with the .excalidraw file in your vault.

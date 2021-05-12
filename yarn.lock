@@ -2156,10 +2156,10 @@
   "resolved" "https://registry.npmjs.org/@xtuc/long/-/long-4.2.2.tgz"
   "version" "4.2.2"
 
-"aakansha-excalidraw@0.7.0-draft":
-  "integrity" "sha512-bafyy/qQES3E+uI7YHGuMzIh2kKlTKx+NYYpHwR5QhdAdDsA+Tru56Yglo+8cLCSDncN/KyEb1ffQlYJyBqQwA=="
-  "resolved" "https://registry.npmjs.org/aakansha-excalidraw/-/aakansha-excalidraw-0.7.0-draft.tgz"
-  "version" "0.7.0-draft"
+"aakansha-excalidraw@0.8.0-bec34f2":
+  "integrity" "sha512-Bvz/vyh3KL6G7KaoIDVCDjHerR8thX3SRUEMZS2fqbzNTe5dT19u44ujonDPGP3YAcXRZ5RhsIO+rv16ucx76A=="
+  "resolved" "https://registry.npmjs.org/aakansha-excalidraw/-/aakansha-excalidraw-0.8.0-bec34f2.tgz"
+  "version" "0.8.0-bec34f2"
 
 "abab@^2.0.3", "abab@^2.0.5":
   "integrity" "sha512-9IK9EadsbHo6jLWIpxpR6pL0sazTXV6+SQv25ZB+F7Bj9mJNaOc4nCRabwd5M/JwmUa8idz6Eci6eKfJryPs6Q=="

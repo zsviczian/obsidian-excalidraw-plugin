@@ -7,7 +7,8 @@ import {
 } from "obsidian";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import Excalidraw, {exportToSvg, getSceneVersion} from "@excalidraw/excalidraw";
+//import Excalidraw, {exportToSvg, getSceneVersion} from "@excalidraw/excalidraw";
+import Excalidraw, {exportToSvg, getSceneVersion} from "aakansha-excalidraw";
 import { ExcalidrawElement } from "@excalidraw/excalidraw/types/element/types";
 import { 
   AppState,
