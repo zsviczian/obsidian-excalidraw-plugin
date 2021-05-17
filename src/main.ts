@@ -80,7 +80,7 @@ export default class ExcalidrawPlugin extends Plugin {
     addIcon(DISK_ICON_NAME,DISK_ICON);
     addIcon(PNG_ICON_NAME,PNG_ICON);
     addIcon(SVG_ICON_NAME,SVG_ICON);
-
+    
     const myFonts = document.createElement('style');
     myFonts.appendChild(document.createTextNode(VIRGIL_FONT));
     myFonts.appendChild(document.createTextNode(CASCADIA_FONT));
@@ -111,6 +111,8 @@ export default class ExcalidrawPlugin extends Plugin {
     this.addRibbonIcon(ICON_NAME, 'Create a new drawing in Excalidraw', async (e) => {
       this.createDrawing(this.getNextDefaultFilename(), e.ctrlKey);
     });
+    
+    
 
     this.addCommand({
       id: "excalidraw-open",

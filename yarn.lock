@@ -1190,10 +1190,10 @@
     "minimatch" "^3.0.4"
     "strip-json-comments" "^3.1.1"
 
-"@excalidraw/excalidraw@0.7.0":
-  "integrity" "sha512-D1yMXhOjWjCJIXT0puZD2QaGQ28QN2DNrVUQTsOouhPSELwhFoM7Exg/ulSwkLBI2l2KN7m39+2tj6QVijv4Sg=="
-  "resolved" "https://registry.npmjs.org/@excalidraw/excalidraw/-/excalidraw-0.7.0.tgz"
-  "version" "0.7.0"
+"@excalidraw/excalidraw@0.8.0":
+  "integrity" "sha512-QSCorwl2NVZr1kv6+pSfMgxwb85v7qmjW37p0n+LMWrW+VgGWQxa3LtQqTIJ8OvdLNLNfO3kN7nHXNC4Z1h3ug=="
+  "resolved" "https://registry.npmjs.org/@excalidraw/excalidraw/-/excalidraw-0.8.0.tgz"
+  "version" "0.8.0"
 
 "@hapi/address@2.x.x":
   "integrity" "sha512-QD1PhQk+s31P1ixsX0H0Suoupp3VMXzIVMSwobR3F3MSUO2YCV0B7xqLcUw/Bh8yuvd3LhpyqLQWTNcRmp6IdQ=="

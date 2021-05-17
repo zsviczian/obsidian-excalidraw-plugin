@@ -6,7 +6,7 @@ import {
   StrokeSharpness,
   FontFamily,
 } from "@excalidraw/excalidraw/types/element/types";
-import {nanoid} from "nanoid";
+import {customAlphabet} from "nanoid";
 import {
   normalizePath,
   parseFrontMatterAliases,
@@ -62,7 +62,7 @@ export interface ExcalidrawAutomate extends Window {
 }
 
 declare let window: ExcalidrawAutomate;
-
+const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',8);
 export function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
   window.ExcalidrawAutomate = {
     plugin: plugin,
