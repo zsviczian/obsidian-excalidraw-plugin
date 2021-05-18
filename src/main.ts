@@ -12,7 +12,9 @@ import {
   Menu,
   MenuItem,
   TAbstractFile,
+  Workspace,
 } from 'obsidian';
+
 import { 
   BLANK_DRAWING,
   VIEW_TYPE_EXCALIDRAW, 
@@ -46,6 +48,9 @@ import {
   destroyExcalidrawAutomate
 } from './ExcalidrawTemplate';
 import TransclusionIndex from './TransclusionIndex';
+import { createElement } from 'react';
+import { link } from 'node:fs';
+import { platform } from 'node:os';
 
 export interface ExcalidrawAutomate extends Window {
   ExcalidrawAutomate: {
@@ -60,6 +65,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private transclusionIndex: TransclusionIndex;
   private activeExcalidrawView: ExcalidrawView;
   public lastActiveExcalidrawFilePath: string;
+  private codemirrorLineChanges:any;
   /*Excalidraw Sync Begin*/
   private excalidrawSync: Set<string>;
   private syncModifyCreate: any;
@@ -86,14 +92,29 @@ export default class ExcalidrawPlugin extends Plugin {
     myFonts.appendChild(document.createTextNode(CASCADIA_FONT));
     document.head.appendChild(myFonts);
 
-    initExcalidrawAutomate(this);
+    await this.loadSettings();
+    this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
 
     this.registerView(
       VIEW_TYPE_EXCALIDRAW, 
       (leaf: WorkspaceLeaf) => new ExcalidrawView(leaf, this)
     );
 
+    initExcalidrawAutomate(this);
     this.registerExtensions([EXCALIDRAW_FILE_EXTENSION],VIEW_TYPE_EXCALIDRAW);
+    this.registerCodeMirrorAndPreview();
+    this.addCommands();
+
+    this.transclusionIndex = new TransclusionIndex(this.app.vault);
+
+    if (this.app.workspace.layoutReady) {
+      this.addEventListeners(this);
+    } else {
+      this.registerEvent(this.app.workspace.on('layout-ready', async () => this.addEventListeners(this)));
+    }
+  }
+
+  private registerCodeMirrorAndPreview() {
 
     this.registerMarkdownCodeBlockProcessor(CODEBLOCK_EXCALIDRAW, async (source,el,ctx) => {
       el.addEventListener(RERENDER_EVENT,async (e) => {
@@ -102,17 +123,97 @@ export default class ExcalidrawPlugin extends Plugin {
         this.codeblockProcessor(source,el,ctx,this);
       });
       this.codeblockProcessor(source,el,ctx,this);
-    }); 
+    });
 
-    await this.loadSettings();
-    this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
+    const markdownPostProcessor = async (el:HTMLElement,ctx:MarkdownPostProcessorContext) => {
+      const drawings = el.querySelectorAll('span[src$=".excalidraw"]');
+      let span, child, fname, fwidth,fheight, alt, style, svg:SVGSVGElement, parts, div, file:TFile;
+      for (span of drawings) {
+        child = span.firstChild;
+        span.removeChild(child);
+        fname=span.getAttribute("src");
+        fwidth = span.getAttribute("width");
+        fheight = span.getAttribute("height");
+        alt = span.getAttribute("alt");
+        style = "excalidraw-svg";
+        if(alt) {
+          parts = alt.match(/(\d*)x?(\d*)\|?(.*)/);
+          fwidth = parts[1]? parts[1] : this.settings.width;
+          fheight = parts[2];
+          if(parts[3]!=fname) style = "excalidraw-svg" + (parts[3] ? "-" + parts[3] : "");
+        }
+        file = this.app.metadataCache.getFirstLinkpathDest(fname, ctx.sourcePath); 
+        fname = file?.path;
+        svg = await getSVG({fname:fname,fwidth:fwidth,fheight:fheight,style:style},this);
+        div = createDiv(style, (el)=>{
+          el.append(svg);
+          el.onClickEvent((ev)=>this.openDrawing(file,ev.ctrlKey));
+        });
+        span.parentElement.replaceChild(div,span);
+      }
+    }
 
+    this.registerMarkdownPostProcessor(markdownPostProcessor);
+
+    //Display drawing in edit mode in the markdown editor
+    // @ts-ignore
+    if(this.settings.displayExcalidrawInEdit && !this.app.isMobile ) 
+      this.loadCodeMirrorOnChange();
+  }
+
+  public loadCodeMirrorOnChange() {
+    this.codemirrorLineChanges = (cm: CodeMirror.Editor, change: any) => {
+      const from = change.from.line;
+      const to = change.from.line + change.text.length - 1;
+      const path = getFilepathCmBelongsTo(cm,this.app.workspace);
+      for (let i = from; i <= to; i++) {
+          this.codeMirrorInlineImages(cm, i, this, path);
+      }
+    } 
+
+    // Only Triggered during initial Load
+    const  handleInitialLoad = (cm: CodeMirror.Editor) => {
+      var lastLine = cm.lastLine();
+      const path = getFilepathCmBelongsTo(cm,this.app.workspace);
+      for (let i = 0; i < lastLine; i++) {
+        this.codeMirrorInlineImages(cm, i, this, path);
+        }
+    }
+
+    this.registerCodeMirror((cm: CodeMirror.Editor) => {
+      cm.on("change", this.codemirrorLineChanges);
+      handleInitialLoad(cm);
+    });
+  }
+
+  public unloadCodeMirrorOnChnage() {
+    if(this.codemirrorLineChanges)
+      this.app.workspace.iterateCodeMirrors((cm) => {
+        cm.off("change", this.codemirrorLineChanges);
+        clearWidgets(cm);
+      });
+  }
+
+  private addCommands() {
     this.openDialog = new OpenFileDialog(this.app, this);
+
     this.addRibbonIcon(ICON_NAME, 'Create a new drawing in Excalidraw', async (e) => {
       this.createDrawing(this.getNextDefaultFilename(), e.ctrlKey);
     });
-    
-    
+  
+    this.registerEvent(
+      this.app.workspace.on("file-menu", (menu: Menu, file: TFile) => {
+        if (file instanceof TFolder) {
+          menu.addItem((item: MenuItem) => {
+            item.setTitle("Create Excalidraw drawing")
+              .setIcon(ICON_NAME)
+              .onClick(evt => {
+                this.createDrawing(this.getNextDefaultFilename(),false,file.path);
+              })
+          });
+        }
+      })
+    );
 
     this.addCommand({
       id: "excalidraw-open",
@@ -121,7 +222,6 @@ export default class ExcalidrawPlugin extends Plugin {
         this.openDialog.start(openDialogAction.openFile, true);
       },
     });
-
 
     this.addCommand({
       id: "excalidraw-open-on-current",
@@ -206,28 +306,6 @@ export default class ExcalidrawPlugin extends Plugin {
         }
       },
     });
-
-    this.transclusionIndex = new TransclusionIndex(this.app.vault);
-
-    this.registerEvent(
-      this.app.workspace.on("file-menu", (menu: Menu, file: TFile) => {
-        if (file instanceof TFolder) {
-          menu.addItem((item: MenuItem) => {
-            item.setTitle("Create Excalidraw drawing")
-              .setIcon(ICON_NAME)
-              .onClick(evt => {
-                this.createDrawing(this.getNextDefaultFilename(),false,file.path);
-              })
-          });
-        }
-      })
-    );
-
-    if (this.app.workspace.layoutReady) {
-      this.addEventListeners(this);
-    } else {
-      this.registerEvent(this.app.workspace.on('layout-ready', async () => this.addEventListeners(this)));
-    }
   }
   
   /*Excalidraw Sync Begin*/
@@ -447,7 +525,33 @@ export default class ExcalidrawPlugin extends Plugin {
 
   onunload() {
     destroyExcalidrawAutomate();
+    this.unloadCodeMirrorOnChnage();
   }
+
+  private async codeMirrorInlineImages (cm: CodeMirror.Editor, lineNumber: number, plugin: ExcalidrawPlugin, sourcePath: string) {
+    // Get the Line edited
+    const line = cm.lineInfo(lineNumber);
+    if (line === null) return;
+
+    const parts = getExcalidrawLinkParts(line.text,plugin.settings.width);
+
+    // Clear the widget if link was removed
+    var SVGWidget = line.widgets ? line.widgets.filter((wid: { className: string; }) => wid.className === 'excalidraw-display-widget') : false;
+    if (SVGWidget && !(parts)) SVGWidget.forEach((w:any)=>w.clear());
+
+    var sourcePath = '';
+
+    // If any of regex matches, it will add image widget
+    if (parts && parts.fname) {
+        // Clear the image widgets if exists
+        clearLineWidgets(line);
+        parts.fname = plugin.app.metadataCache.getFirstLinkpathDest(parts.fname, sourcePath)?.path; 
+        const svg = await getSVG(parts,plugin);
+        const el = createDiv(parts.style,(el)=>el.appendChild(svg));
+        // Add Image widget under the Image Markdown
+        cm.addLineWidget(lineNumber, el, { className: 'excalidraw-display-widget' });
+    }
+}
 
   private async codeblockProcessor(source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext, plugin: ExcalidrawPlugin) {
     const parseError = (message: string) => {
@@ -458,49 +562,32 @@ export default class ExcalidrawPlugin extends Plugin {
       })  
     }
 
-    const parts = source.match(/\[{2}([^|]*)\|?(\d*)x?(\d*)\|?(.*)\]{2}/m);
+    const parts = getExcalidrawLinkParts(source, plugin.settings.width,true);
+
     if(!parts) {
       parseError("No link to file found in codeblock.");
       return;
     }
-    const fname = parts[1];
-    const fwidth = parts[2]? parts[2] : plugin.settings.width;
-    const fheight = parts[3];
-    const style = "excalidraw-svg" + (parts[4] ? "-" + parts[4] : "");
-
-    if(!fname) {
+    
+    if(!parts.fname) {
       parseError("No link to file found in codeblock.");
       return;
     }
 
-    const file = plugin.app.vault.getAbstractFileByPath(fname);
-    if(!(file && file instanceof TFile)) {
-      parseError("File does not exist. " + fname);
-      return;
-    }
+    const svg = await getSVG(parts,plugin);
 
-    if(file.extension != EXCALIDRAW_FILE_EXTENSION) {
-      parseError("Not an excalidraw file. Must have extension " + EXCALIDRAW_FILE_EXTENSION);
-      return;
-    }
-
-    const content = await plugin.app.vault.read(file);
-    const exportSettings: ExportSettings = {
-      withBackground: plugin.settings.exportWithBackground, 
-      withTheme: plugin.settings.exportWithTheme
-    }
-    const svg = ExcalidrawView.getSVG(content,exportSettings);
     if(!svg) {
-      parseError("Parse error. Not a valid Excalidraw file.");
+      parseError("File does not exist, or not a valid Excalidraw file. " + parts.fname);
       return;
     }
-    el.createDiv(style,(el)=> {
-      svg.removeAttribute('width');
-      svg.removeAttribute('height');
-      svg.style.setProperty('width',fwidth);
-      if(fheight) svg.style.setProperty('height',fheight);
-      svg.addClass(style);
+
+    el.createDiv(parts.style,(el)=> {
       el.appendChild(svg);
+      el.onClickEvent((ev)=>{
+        const file = plugin.app.vault.getAbstractFileByPath(parts.fname);
+        if(file && file instanceof TFile)
+          plugin.openDrawing(file,ev.ctrlKey);
+      });
     });
   }
 
@@ -584,4 +671,85 @@ export default class ExcalidrawPlugin extends Plugin {
       this.openDrawing(await this.app.vault.create(fname,BLANK_DRAWING), onNewPane);
     }
   }
+}
+
+
+const getExcalidrawLinkParts = (line: string, width: string, codeblock=false) => {
+  var parts;
+  if (codeblock) parts = line.match(/\[{2}([^|]*\.excalidraw)\|?(\d*)x?(\d*)\|?(.*)\]{2}/m);
+  else parts = line.match(/!\[{2}([^|]*\.excalidraw)\|?(\d*)x?(\d*)\|?(.*)\]{2}/m);
+
+  if(!parts) {
+    return false;
+  }
+
+  const fname = parts[1];
+  const fwidth = parts[2]? parts[2] : width;
+  const fheight = parts[3];
+  const style = "excalidraw-svg" + (parts[4] ? "-" + parts[4] : "");
+  return {fname: fname, fwidth: fwidth, fheight: fheight, style: style};
+}
+
+// Check line if it is image
+const getExcalidrawFromLine = (line: string) => {
+  // Regex for [[ ]] format
+  const line_regex = /!\[\[.*(excalidraw).*\]\]/
+  const match = line.match(line_regex);
+  if (match) {
+      return { result: match, linkType: 1 }
+  } 
+  return { result: false, linkType: 0 }
+}
+
+// Clear Single Line Widget
+const clearLineWidgets = (line: any) => {
+  if (line.widgets) {
+      for (const wid of line.widgets) {
+          if (wid.className === 'excalidraw-display-widget') {
+              wid?.clear()
+          }
+      }
+  }
+}
+
+const clearWidgets = (cm: CodeMirror.Editor) => {
+  var lastLine = cm.lastLine();
+  for (let i = 0; i <= lastLine; i++) {
+      const line = cm.lineInfo(i);
+      clearLineWidgets(line);
+  }
+}
+
+const getSVG = async (parts:any, plugin:ExcalidrawPlugin):Promise<SVGSVGElement> => {
+  const file = plugin.app.vault.getAbstractFileByPath(parts.fname);
+  if(!(file && file instanceof TFile)) {
+    return null;
+  }
+
+  const content = await plugin.app.vault.read(file);
+  const exportSettings: ExportSettings = {
+    withBackground: plugin.settings.exportWithBackground, 
+    withTheme: plugin.settings.exportWithTheme
+  }
+  const svg = ExcalidrawView.getSVG(content,exportSettings);
+  if(!svg) {
+    return null;
+  }
+  
+  svg.removeAttribute('width');
+  svg.removeAttribute('height');
+  svg.style.setProperty('width',parts.fwidth);
+  if(parts.fheight) svg.style.setProperty('height',parts.fheight);
+  svg.addClass(parts.style);
+  return svg;
+}
+
+const getFilepathCmBelongsTo = (cm: CodeMirror.Editor, workspace: Workspace) => {
+  let leafs = workspace.getLeavesOfType("markdown");
+  for (let i = 0; i < leafs.length; i++) {
+      if (leafs[i].view instanceof MarkdownView && (leafs[i].view as MarkdownView).sourceMode?.cmEditor == cm) {
+          return (leafs[i].view as MarkdownView).file?.path;
+      }
+  }
+  return null;
 }

@@ -42,3 +42,14 @@ div.excalidraw-svg-left {
 button.ToolIcon_type_button[title="Export"] {
   display:none;
 }
+
+.CodeMirror-linewidget > svg {
+  margin-top: 5px !important;
+  margin-bottom: 5px !important;
+}
+
+/*
+div.excalidraw-display-widget > svg {
+  max-width: 100%;
+  height: auto;
+}*/
