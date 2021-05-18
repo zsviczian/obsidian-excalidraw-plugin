@@ -57,7 +57,7 @@ Part 6: Intro to Obsidian-Excalidraw: Embedding drawings (2:08)
 - new formatting option for the code block embedding
 - Valid values: `left`, `right`, `left-wrap`, `right-wrap`... but anything after the last `|` character will be added to the class of the SVG element and the wrapper DIV element.
 Here is the corresponding CSS:
-```
+```css
 svg.excalidraw-svg-right-wrap {
   float: right;
   margin: 0px 0px 20px 20px;
