@@ -16,7 +16,6 @@ export interface ExcalidrawSettings {
   autoexportPNG: boolean,
   keepInSync: boolean,
   library: string,
-  displayExcalidrawInEdit: boolean,
   /*Excalidraw Sync Begin*/
   syncFolder: string,
   excalidrawSync: boolean,
@@ -33,7 +32,6 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   autoexportPNG: false,
   keepInSync: false,
   library: `{"type":"excalidrawlib","version":1,"library":[]}`,
-  displayExcalidrawInEdit: false,
   /*Excalidraw Sync Begin*/
   syncFolder: 'excalidraw_sync',
   excalidrawSync: false,
@@ -147,18 +145,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.keepInSync)
         .onChange(async (value) => {
           this.plugin.settings.keepInSync = value;
-          await this.plugin.saveSettings();
-        }));
-
-    new Setting(containerEl)
-      .setName('Display drawing in Markdown edit veiw?') 
-      .setDesc('When turned on, the plugin will render the drawing in the markdown editor in edit mode. ' +
-               'The feature does not work on Mobile.')
-      .addToggle(toggle => toggle
-        .setValue(this.plugin.settings.displayExcalidrawInEdit)
-        .onChange(async (value) => {
-          this.plugin.settings.displayExcalidrawInEdit = value;
-          if (value) this.plugin.loadCodeMirrorOnChange(); else this.plugin.unloadCodeMirrorOnChnage();
           await this.plugin.saveSettings();
         }));
 

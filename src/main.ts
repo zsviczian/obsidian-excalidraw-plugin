@@ -48,9 +48,6 @@ import {
   destroyExcalidrawAutomate
 } from './ExcalidrawTemplate';
 import TransclusionIndex from './TransclusionIndex';
-import { createElement } from 'react';
-import { link } from 'node:fs';
-import { platform } from 'node:os';
 
 export interface ExcalidrawAutomate extends Window {
   ExcalidrawAutomate: {
@@ -65,7 +62,6 @@ export default class ExcalidrawPlugin extends Plugin {
   private transclusionIndex: TransclusionIndex;
   private activeExcalidrawView: ExcalidrawView;
   public lastActiveExcalidrawFilePath: string;
-  private codemirrorLineChanges:any;
   /*Excalidraw Sync Begin*/
   private excalidrawSync: Set<string>;
   private syncModifyCreate: any;
@@ -102,7 +98,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     initExcalidrawAutomate(this);
     this.registerExtensions([EXCALIDRAW_FILE_EXTENSION],VIEW_TYPE_EXCALIDRAW);
-    this.registerCodeMirrorAndPreview();
+    this.registerMarkdownPostProcessor();
     this.addCommands();
 
     this.transclusionIndex = new TransclusionIndex(this.app.vault);
@@ -114,7 +110,7 @@ export default class ExcalidrawPlugin extends Plugin {
     }
   }
 
-  private registerCodeMirrorAndPreview() {
+  private registerMarkdownPostProcessor() {
 
     this.registerMarkdownCodeBlockProcessor(CODEBLOCK_EXCALIDRAW, async (source,el,ctx) => {
       el.addEventListener(RERENDER_EVENT,async (e) => {
@@ -127,7 +123,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     const markdownPostProcessor = async (el:HTMLElement,ctx:MarkdownPostProcessorContext) => {
       const drawings = el.querySelectorAll('span[src$=".excalidraw"]');
-      let span, child, fname, fwidth,fheight, alt, style, svg:SVGSVGElement, parts, div, file:TFile;
+      let span, child, fname:string, fwidth:string,fheight:string, alt:string, divclass:string, svg:SVGSVGElement, parts, div, file:TFile;
       for (span of drawings) {
         child = span.firstChild;
         span.removeChild(child);
@@ -135,19 +131,34 @@ export default class ExcalidrawPlugin extends Plugin {
         fwidth = span.getAttribute("width");
         fheight = span.getAttribute("height");
         alt = span.getAttribute("alt");
-        style = "excalidraw-svg";
+        divclass = "excalidraw-svg";
         if(alt) {
           parts = alt.match(/(\d*)x?(\d*)\|?(.*)/);
           fwidth = parts[1]? parts[1] : this.settings.width;
           fheight = parts[2];
-          if(parts[3]!=fname) style = "excalidraw-svg" + (parts[3] ? "-" + parts[3] : "");
+          if(parts[3]!=fname) divclass = "excalidraw-svg" + (parts[3] ? "-" + parts[3] : "");
         }
         file = this.app.metadataCache.getFirstLinkpathDest(fname, ctx.sourcePath); 
         fname = file?.path;
-        svg = await getSVG({fname:fname,fwidth:fwidth,fheight:fheight,style:style},this);
-        div = createDiv(style, (el)=>{
+        svg = await getSVG({fname:fname,fwidth:fwidth,fheight:fheight,style:divclass},this);
+        div = createDiv(divclass, (el)=>{
           el.append(svg);
-          el.onClickEvent((ev)=>this.openDrawing(file,ev.ctrlKey));
+          el.setAttribute("src",file.path);
+          el.setAttribute("w",fwidth);
+          el.setAttribute("h",fheight);
+          el.onClickEvent((ev)=>{
+            let src = el.getAttribute("src");
+            if(src) this.openDrawing(this.app.vault.getAbstractFileByPath(src) as TFile,ev.ctrlKey);
+          });
+          el.addEventListener(RERENDER_EVENT, async(e) => {
+            e.stopPropagation;
+            el.empty();
+            const svg = await getSVG({ fname:el.getAttribute("src"),
+                                       fwidth:el.getAttribute("w"),
+                                       fheight:el.getAttribute("h"),
+                                       style:el.getAttribute("class")},this);
+            el.append(svg);
+          });
         });
         span.parentElement.replaceChild(div,span);
       }
@@ -155,43 +166,6 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.registerMarkdownPostProcessor(markdownPostProcessor);
 
-    //Display drawing in edit mode in the markdown editor
-    // @ts-ignore
-    if(this.settings.displayExcalidrawInEdit && !this.app.isMobile ) 
-      this.loadCodeMirrorOnChange();
-  }
-
-  public loadCodeMirrorOnChange() {
-    this.codemirrorLineChanges = (cm: CodeMirror.Editor, change: any) => {
-      const from = change.from.line;
-      const to = change.from.line + change.text.length - 1;
-      const path = getFilepathCmBelongsTo(cm,this.app.workspace);
-      for (let i = from; i <= to; i++) {
-          this.codeMirrorInlineImages(cm, i, this, path);
-      }
-    } 
-
-    // Only Triggered during initial Load
-    const  handleInitialLoad = (cm: CodeMirror.Editor) => {
-      var lastLine = cm.lastLine();
-      const path = getFilepathCmBelongsTo(cm,this.app.workspace);
-      for (let i = 0; i < lastLine; i++) {
-        this.codeMirrorInlineImages(cm, i, this, path);
-        }
-    }
-
-    this.registerCodeMirror((cm: CodeMirror.Editor) => {
-      cm.on("change", this.codemirrorLineChanges);
-      handleInitialLoad(cm);
-    });
-  }
-
-  public unloadCodeMirrorOnChnage() {
-    if(this.codemirrorLineChanges)
-      this.app.workspace.iterateCodeMirrors((cm) => {
-        cm.off("change", this.codemirrorLineChanges);
-        clearWidgets(cm);
-      });
   }
 
   private addCommands() {
@@ -525,33 +499,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   onunload() {
     destroyExcalidrawAutomate();
-    this.unloadCodeMirrorOnChnage();
   }
-
-  private async codeMirrorInlineImages (cm: CodeMirror.Editor, lineNumber: number, plugin: ExcalidrawPlugin, sourcePath: string) {
-    // Get the Line edited
-    const line = cm.lineInfo(lineNumber);
-    if (line === null) return;
-
-    const parts = getExcalidrawLinkParts(line.text,plugin.settings.width);
-
-    // Clear the widget if link was removed
-    var SVGWidget = line.widgets ? line.widgets.filter((wid: { className: string; }) => wid.className === 'excalidraw-display-widget') : false;
-    if (SVGWidget && !(parts)) SVGWidget.forEach((w:any)=>w.clear());
-
-    var sourcePath = '';
-
-    // If any of regex matches, it will add image widget
-    if (parts && parts.fname) {
-        // Clear the image widgets if exists
-        clearLineWidgets(line);
-        parts.fname = plugin.app.metadataCache.getFirstLinkpathDest(parts.fname, sourcePath)?.path; 
-        const svg = await getSVG(parts,plugin);
-        const el = createDiv(parts.style,(el)=>el.appendChild(svg));
-        // Add Image widget under the Image Markdown
-        cm.addLineWidget(lineNumber, el, { className: 'excalidraw-display-widget' });
-    }
-}
 
   private async codeblockProcessor(source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext, plugin: ExcalidrawPlugin) {
     const parseError = (message: string) => {
@@ -690,36 +638,6 @@ const getExcalidrawLinkParts = (line: string, width: string, codeblock=false) =>
   return {fname: fname, fwidth: fwidth, fheight: fheight, style: style};
 }
 
-// Check line if it is image
-const getExcalidrawFromLine = (line: string) => {
-  // Regex for [[ ]] format
-  const line_regex = /!\[\[.*(excalidraw).*\]\]/
-  const match = line.match(line_regex);
-  if (match) {
-      return { result: match, linkType: 1 }
-  } 
-  return { result: false, linkType: 0 }
-}
-
-// Clear Single Line Widget
-const clearLineWidgets = (line: any) => {
-  if (line.widgets) {
-      for (const wid of line.widgets) {
-          if (wid.className === 'excalidraw-display-widget') {
-              wid?.clear()
-          }
-      }
-  }
-}
-
-const clearWidgets = (cm: CodeMirror.Editor) => {
-  var lastLine = cm.lastLine();
-  for (let i = 0; i <= lastLine; i++) {
-      const line = cm.lineInfo(i);
-      clearLineWidgets(line);
-  }
-}
-
 const getSVG = async (parts:any, plugin:ExcalidrawPlugin):Promise<SVGSVGElement> => {
   const file = plugin.app.vault.getAbstractFileByPath(parts.fname);
   if(!(file && file instanceof TFile)) {
@@ -742,14 +660,4 @@ const getSVG = async (parts:any, plugin:ExcalidrawPlugin):Promise<SVGSVGElement>
   if(parts.fheight) svg.style.setProperty('height',parts.fheight);
   svg.addClass(parts.style);
   return svg;
-}
-
-const getFilepathCmBelongsTo = (cm: CodeMirror.Editor, workspace: Workspace) => {
-  let leafs = workspace.getLeavesOfType("markdown");
-  for (let i = 0; i < leafs.length; i++) {
-      if (leafs[i].view instanceof MarkdownView && (leafs[i].view as MarkdownView).sourceMode?.cmEditor == cm) {
-          return (leafs[i].view as MarkdownView).file?.path;
-      }
-  }
-  return null;
 }
