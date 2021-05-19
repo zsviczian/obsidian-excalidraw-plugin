@@ -56,7 +56,7 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
         this.plugin.openDrawing(item, this.onNewPane);
         break;
       case(openDialogAction.insertLink):
-        this.plugin.insertCodeblock(item.path);
+        this.plugin.embedDrawing(item.path);
         break;
     }
   }

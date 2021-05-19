@@ -1,7 +1,22 @@
 # Obsidian Excalidraw Plugin
 The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/), a feature rich sketching tool, into Obsidian. You can store and edit Excalidraw files in your vault and you can transclude drawings into your documents. For a showcase of Excalidraw features, please read my blog post [here](https://www.zsolt.blog/2021/03/showcasing-excalidraw.html) and/or watch the videos below.
 
+### Important notice to the 1.1 update!
+
+Thank you for updating to Excalidraw 1.1!
+
+I have improved how drawings are embedded! You no longer need an Excalidraw codeblock. You can now embed drawings just like any other images: `![[my drawing.excalidraw]]` or `![[my drawing.excalidraw|500|left]]` or `![[my drawing.excalidraw|right-wrap]]`,  etc. You get the idea.
+
+ALT+Enter and CTRL+ALT+Enter on the filename in edit mode will open up the Excalidraw editor. Click and CTRL+Click on the image in preview mode will also bring up the Excalidraw editor as expected.
+
+#### MIGRATION
+I have added a Migration command to the Command Palette. When you select this, the program will run a search and replace for all the excalidraw codeblocks in your vault and will convert them to the new format.
+
+#### [Ozan's Image in Editor Plugin](https://github.com/ozntel/oz-image-in-editor-obsidian)
+In a nice collaboration with Ozan, his Image in Editor plugin now supports Excalidraw. I recommend installing his plugin to display drawings also in Edit mode.
+
 ### Pleas find release notes for new releases below the How-to videos.
+Version 1.1 now supports transclusion using the normal markdown syntax `![[excalidrawfile.excalidraw]]`. See details under Version 1.1 release notes below.
 
 ![image](https://user-images.githubusercontent.com/14358394/115983515-d06c2c80-a5a1-11eb-8d12-c7df91d18107.png)
 
@@ -49,55 +64,6 @@ Part 6: Intro to Obsidian-Excalidraw: Embedding drawings (2:08)
 [![Part 6: Intro to Obsidian-Excalidraw: Embedding drawings](https://user-images.githubusercontent.com/14358394/115983954-bbdd6380-a5a4-11eb-9243-f0151451afcd.jpg)](https://youtu.be/JQeJ-Hh-xAI)
 
 ## Release Notes
-### 1.0.6 and 1.0.7 update
-[![1.0.6 Update](https://user-images.githubusercontent.com/14358394/116312909-58725200-a7ad-11eb-89b9-c67cb48ffebb.jpg)](https://youtu.be/ipZPbcP2B0M)
-
-#### SVG styling when embedding using a code block
-- 1.0.7 adds further flexibility to styling
-- new formatting option for the code block embedding
-- Valid values: `left`, `right`, `left-wrap`, `right-wrap`... but anything after the last `|` character will be added to the class of the SVG element and the wrapper DIV element.
-Here is the corresponding CSS:
-```css
-svg.excalidraw-svg-right-wrap {
-  float: right;
-  margin: 0px 0px 20px 20px;
-}
-
-svg.excalidraw-svg-left-wrap {
-  float: left;
-  margin: 0px 35px 20px 0px;
-}
-
-div.excalidraw-svg-right {
-  text-align: right;
-}
-
-div.excalidraw-svg-left {
-  text-align: left;
-}
-```
-### 1.0.8 and 1.0.9 (minor fixes) update 
-[![Obsidian-Excalidraw 1.0.8 update](https://user-images.githubusercontent.com/14358394/117492534-029e6680-af72-11eb-90a3-086e67e70c1c.jpg)](https://youtu.be/AtEhmHJjnxM)
-
-#### QoL improvements
-- Adds context menu to File Explorer to create new drawings
-- Adds a new command to the palette: “Transclude (embed) the most recently edited Excalidraw drawing”
-- Automatically update file-links in transclusions when you rename or move your drawing
-- Saves drawing and updates all active pre-views when drawing loses focus
-- File is closed and removed when you select “Delete file” from more options
-- Saves drawing when exiting Obsidian
-- Fixes pen positioning bug with sliding panes after panes scroll
-
-#### ExcalidrawAutomte full Templater and DataviewJS support
-You now have ultimate flexibility over your Excalidraw templates using Templater and Dataview.
-- Detailed documentation available [here](https://zsviczian.github.io/obsidian-excalidraw-plugin/)
-- I created few examples from the simple to the more complex
-	- Simple use-case: Creating a drawing using a custom template and following a file and folder naming convention of your choice.
-	- Complex use-case: Create a mindmap from a tabulated outline.
-  ![Drawing 2021-05-05 20 52 34](https://user-images.githubusercontent.com/14358394/117194124-00a69d00-ade4-11eb-8b75-5e18a9cbc3cd.png)
-  
-### 1.0.10 update
-[![Obsidian-Excalidraw 1.0.10 update](https://user-images.githubusercontent.com/14358394/117579017-60a58800-b0f1-11eb-8553-7820964662aa.jpg)](https://youtu.be/W7pWXGIe4rQ)
 
 ### 1.0.12 Freehand drawing
 - now includes the new freehand drawing features from Excalidraw.com
@@ -126,6 +92,57 @@ You now have ultimate flexibility over your Excalidraw templates using Templater
 - Resolved with Obsidian mobile 0.18: 
   - On mobile (iOS and Android): As you draw left to right it opens left sidebar. Draw right to left, opens right sidebar. Draw down, opens commands palette. So seems open is emulating the gestures, even when drawing towards the center. 
   
+### 1.0.10 update
+[![Obsidian-Excalidraw 1.0.10 update](https://user-images.githubusercontent.com/14358394/117579017-60a58800-b0f1-11eb-8553-7820964662aa.jpg)](https://youtu.be/W7pWXGIe4rQ)
+ 
+### 1.0.8 and 1.0.9 (minor fixes) update 
+[![Obsidian-Excalidraw 1.0.8 update](https://user-images.githubusercontent.com/14358394/117492534-029e6680-af72-11eb-90a3-086e67e70c1c.jpg)](https://youtu.be/AtEhmHJjnxM)
+
+#### QoL improvements
+- Adds context menu to File Explorer to create new drawings
+- Adds a new command to the palette: “Transclude (embed) the most recently edited Excalidraw drawing”
+- Automatically update file-links in transclusions when you rename or move your drawing
+- Saves drawing and updates all active pre-views when drawing loses focus
+- File is closed and removed when you select “Delete file” from more options
+- Saves drawing when exiting Obsidian
+- Fixes pen positioning bug with sliding panes after panes scroll
+
+#### ExcalidrawAutomte full Templater and DataviewJS support
+You now have ultimate flexibility over your Excalidraw templates using Templater and Dataview.
+- Detailed documentation available [here](https://zsviczian.github.io/obsidian-excalidraw-plugin/)
+- I created few examples from the simple to the more complex
+	- Simple use-case: Creating a drawing using a custom template and following a file and folder naming convention of your choice.
+	- Complex use-case: Create a mindmap from a tabulated outline.
+  ![Drawing 2021-05-05 20 52 34](https://user-images.githubusercontent.com/14358394/117194124-00a69d00-ade4-11eb-8b75-5e18a9cbc3cd.png)
+ 
+### 1.0.6 and 1.0.7 update
+[![1.0.6 Update](https://user-images.githubusercontent.com/14358394/116312909-58725200-a7ad-11eb-89b9-c67cb48ffebb.jpg)](https://youtu.be/ipZPbcP2B0M)
+
+#### SVG styling when embedding
+- 1.0.7 adds further flexibility to styling
+- new formatting option for the code block embedding
+- Valid values: `left`, `right`, `left-wrap`, `right-wrap`... but anything after the last `|` character will be added to the class of the SVG element and the wrapper DIV element.
+Here is the corresponding CSS:
+```css
+svg.excalidraw-svg-right-wrap {
+  float: right;
+  margin: 0px 0px 20px 20px;
+}
+
+svg.excalidraw-svg-left-wrap {
+  float: left;
+  margin: 0px 35px 20px 0px;
+}
+
+div.excalidraw-svg-right {
+  text-align: right;
+}
+
+div.excalidraw-svg-left {
+  text-align: left;
+}
+```
+ 
 ## Tips and tricks
 - If you want to sketch in fullscreen, I recommend installing the [Fullscreen Focus Mode](https://github.com/razumihin/obsidian-fullscreen-plugin) plugin.
 
