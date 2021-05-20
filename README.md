@@ -75,10 +75,6 @@ Part 6: Intro to Obsidian-Excalidraw: Embedding drawings (2:08)
 ### QoL improvement
 - I added an autosave feature. Your active drawing gets saved every 30 seconds if you've made changes to it. Drawings otherwise get saved when the window loses focus, or when you close the drawing, etc. Autosave limits the risk of accidental data loss on mobiles when you "swipe out" Obsidian to close it.
 
-## 1.0.11 update
-### QoL improvement
-- Workspace loading speed much improved on large vaults.
- 
 ## 1.0.10 update
 [![Obsidian-Excalidraw 1.0.10 update](https://user-images.githubusercontent.com/14358394/117579017-60a58800-b0f1-11eb-8553-7820964662aa.jpg)](https://youtu.be/W7pWXGIe4rQ)
  
