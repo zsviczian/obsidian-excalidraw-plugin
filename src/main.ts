@@ -137,7 +137,7 @@ export default class ExcalidrawPlugin extends Plugin {
     }
 
     const markdownPostProcessor = async (el:HTMLElement,ctx:MarkdownPostProcessorContext) => {
-      const drawings = el.querySelectorAll('span[src$=".excalidraw"]');
+      const drawings = el.querySelectorAll('.internal-embed[src$=".excalidraw"]');
       let span:Element, child, fname:string, fwidth:string,fheight:string, alt:string, divclass:string, svg:SVGSVGElement, parts, div, file:TFile;
       for (span of drawings) {
         fname=span.getAttribute("src");
@@ -146,14 +146,13 @@ export default class ExcalidrawPlugin extends Plugin {
         alt = span.getAttribute("alt");
         divclass = "excalidraw-svg";
         if(alt) {
-          parts = alt.match(/(\d*)x?(\d*)\|?(.*)/);
+          if(span.tagName.toLowerCase()=="span") alt = "|"+alt;
+          parts = alt.match(/[^\|]*\|?(\d*)x?(\d*)\|?(.*)/);
           fwidth = parts[1]? parts[1] : this.settings.width;
           fheight = parts[2];
           if(parts[3]!=fname) divclass = "excalidraw-svg" + (parts[3] ? "-" + parts[3] : "");
         }
         file = this.app.metadataCache.getFirstLinkpathDest(fname, ctx.sourcePath); 
-        child = span.firstChild;
-        span.removeChild(child);
         if(file) {  
           fname = file?.path;
           svg = await getSVG({fname:fname,fwidth:fwidth,fheight:fheight,style:divclass});
