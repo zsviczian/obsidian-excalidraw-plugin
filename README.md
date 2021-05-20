@@ -124,22 +124,28 @@ You now have ultimate flexibility over your Excalidraw templates using Templater
 - Valid values: `left`, `right`, `left-wrap`, `right-wrap`... but anything after the last `|` character will be added to the class of the SVG element and the wrapper DIV element.
 Here is the corresponding CSS:
 ```css
-svg.excalidraw-svg-right-wrap {
+img.excalidraw-svg-right-wrap {
   float: right;
   margin: 0px 0px 20px 20px;
 }
 
-svg.excalidraw-svg-left-wrap {
+img.excalidraw-svg-left-wrap {
   float: left;
   margin: 0px 35px 20px 0px;
 }
 
-div.excalidraw-svg-right {
-  text-align: right;
+img.excalidraw-svg-right {
+  float: right;
 }
 
+img.excalidraw-svg-left {
+  float: left;
+}
+
+div.excalidraw-svg-right,
 div.excalidraw-svg-left {
-  text-align: left;
+  display: table;
+  width: 100%;
 }
 ```
  
