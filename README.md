@@ -1,11 +1,11 @@
 # Obsidian Excalidraw Plugin
 The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/), a feature rich sketching tool, into Obsidian. You can store and edit Excalidraw files in your vault and you can transclude drawings into your documents. For a showcase of Excalidraw features, please read my blog post [here](https://www.zsolt.blog/2021/03/showcasing-excalidraw.html) and/or watch the videos below.
 
-### Important notice to the 1.1.0 update!
+### Important notice to the 1.1.x update!
 
-Thank you for updating to Excalidraw 1.1.0!
+Thank you for updating to Excalidraw 1.1.x!
 
-I have improved how drawings are embedded! You no longer need an Excalidraw codeblock. You can now embed drawings just like any other images: `![[my drawing.excalidraw]]` or `![[my drawing.excalidraw|500|left]]` or `![[my drawing.excalidraw|right-wrap]]`,  etc. You get the idea.
+I have improved how drawings are embedded! You no longer need an Excalidraw codeblock. You can now embed drawings just like any other images: `![[my drawing.excalidraw]]` or `![[my drawing.excalidraw|500|left]]` or `![[my drawing.excalidraw|right-wrap]]`, `![alttext|500|right](drawing.excalidraw)`, `![](folder/drawing.excalidraw)` etc. You get the idea.
 
 ALT+Enter and CTRL+ALT+Enter on the filename in edit mode will open up the Excalidraw editor. Click and CTRL+Click on the image in preview mode will also bring up the Excalidraw editor as expected.
 
@@ -15,8 +15,7 @@ I have added a Migration command to the Command Palette. When you select this, t
 #### [Ozan's Image in Editor Plugin](https://github.com/ozntel/oz-image-in-editor-obsidian)
 In a nice collaboration with Ozan, his Image in Editor plugin now supports Excalidraw. I recommend installing his plugin to display drawings also in Edit mode.
 
-### Pleas find release notes for new releases below the How-to videos.
-Version 1.1 now supports transclusion using the normal markdown syntax `![[excalidrawfile.excalidraw]]`. See details under Version 1.1 release notes below.
+### Pleas find release notes for new releases below the How-to videos. 
 
 ![image](https://user-images.githubusercontent.com/14358394/115983515-d06c2c80-a5a1-11eb-8d12-c7df91d18107.png)
 
