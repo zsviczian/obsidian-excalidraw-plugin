@@ -137,7 +137,7 @@ div.excalidraw-svg-left {
 - Mobile support
   - Positioning of the pen gets misaligned after you open the command palette.
   - Partially mitigated in 1.0.10 by the introduction of autosave: Your drawing will not be saved when you terminate the mobile app by closing the Obsidian task. 
-## Resolved known issues:
+### Resolved known issues:
 - Resolved with 1.0.10 Temporary workaround: 
   - Sync does not support .excalidraw files. This issue will be addressed in a later release of Obsidian sync. Until then, you can use my temporary workaround. 
 - Resolved with Obsidian mobile 0.18: 
