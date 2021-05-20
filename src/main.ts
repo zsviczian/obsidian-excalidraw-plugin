@@ -112,7 +112,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   private addMarkdownPostProcessor() {
 
-    const getSVG = async (parts:any):Promise<SVGSVGElement> => {
+    const getSVG = async (parts:any) => {
       const file = this.app.vault.getAbstractFileByPath(parts.fname);
       if(!(file && file instanceof TFile)) {
         return null;
@@ -127,18 +127,21 @@ export default class ExcalidrawPlugin extends Plugin {
       if(!svg) {
         return null;
       }
-      
+      const img = createEl("img");
       svg.removeAttribute('width');
       svg.removeAttribute('height');
-      svg.style.setProperty('width',parts.fwidth);
-      if(parts.fheight) svg.style.setProperty('height',parts.fheight);
-      svg.addClass(parts.style);
-      return svg;
+      img.setAttribute("width",parts.fwidth);
+      //img.style.setProperty('width',parts.fwidth);
+      
+      if(parts.fheight) img.setAttribute("height",parts.fheight);//img.style.setProperty('height',parts.fheight);
+      img.addClass(parts.style);
+      img.setAttribute("src","data:image/svg+xml;base64,"+btoa(svg.outerHTML));
+      return img;
     }
 
     const markdownPostProcessor = async (el:HTMLElement,ctx:MarkdownPostProcessorContext) => {
       const drawings = el.querySelectorAll('.internal-embed[src$=".excalidraw"]');
-      let span:Element, child, fname:string, fwidth:string,fheight:string, alt:string, divclass:string, svg:SVGSVGElement, parts, div, file:TFile;
+      let span:Element, child, fname:string, fwidth:string,fheight:string, alt:string, divclass:string, svg:any, parts, div, file:TFile;
       for (span of drawings) {
         fname=span.getAttribute("src");
         fwidth = span.getAttribute("width");
