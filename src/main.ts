@@ -112,7 +112,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   private addMarkdownPostProcessor() {
 
-    const getSVG = async (parts:any) => {
+    const getIMG = async (parts:any) => {
       const file = this.app.vault.getAbstractFileByPath(parts.fname);
       if(!(file && file instanceof TFile)) {
         return null;
@@ -123,15 +123,13 @@ export default class ExcalidrawPlugin extends Plugin {
         withBackground: this.settings.exportWithBackground, 
         withTheme: this.settings.exportWithTheme
       }
-      const svg = ExcalidrawView.getSVG(content,exportSettings);
-      if(!svg) {
-        return null;
-      }
+      let svg = ExcalidrawView.getSVG(content,exportSettings);
+      if(!svg) return null;
+      svg = ExcalidrawView.embedFontsInSVG(svg);
       const img = createEl("img");
       svg.removeAttribute('width');
       svg.removeAttribute('height');
       img.setAttribute("width",parts.fwidth);
-      //img.style.setProperty('width',parts.fwidth);
       
       if(parts.fheight) img.setAttribute("height",parts.fheight);//img.style.setProperty('height',parts.fheight);
       img.addClass(parts.style);
@@ -141,26 +139,29 @@ export default class ExcalidrawPlugin extends Plugin {
 
     const markdownPostProcessor = async (el:HTMLElement,ctx:MarkdownPostProcessorContext) => {
       const drawings = el.querySelectorAll('.internal-embed[src$=".excalidraw"]');
-      let span:Element, child, fname:string, fwidth:string,fheight:string, alt:string, divclass:string, svg:any, parts, div, file:TFile;
-      for (span of drawings) {
-        fname=span.getAttribute("src");
-        fwidth = span.getAttribute("width");
-        fheight = span.getAttribute("height");
-        alt = span.getAttribute("alt");
+      let fname:string, fwidth:string,fheight:string, alt:string, divclass:string, img:any, parts, div, file:TFile;
+      for (const drawing of drawings) {
+        fname    = drawing.getAttribute("src");
+        fwidth   = drawing.getAttribute("width");
+        fheight  = drawing.getAttribute("height");
+        alt      = drawing.getAttribute("alt");
         divclass = "excalidraw-svg";
         if(alt) {
-          if(span.tagName.toLowerCase()=="span") alt = "|"+alt;
+          //for some reason ![]() is rendered in a DIV and ![[]] in a span by Obsidian
+          //also the alt text of the DIV follows does not include the altext of the image
+          //thus need to add an additional | when its a span
+          if(drawing.tagName.toLowerCase()=="span") alt = "|"+alt;
           parts = alt.match(/[^\|]*\|?(\d*)x?(\d*)\|?(.*)/);
           fwidth = parts[1]? parts[1] : this.settings.width;
           fheight = parts[2];
           if(parts[3]!=fname) divclass = "excalidraw-svg" + (parts[3] ? "-" + parts[3] : "");
         }
         file = this.app.metadataCache.getFirstLinkpathDest(fname, ctx.sourcePath); 
-        if(file) {  
+        if(file) {  //file exists. Display drawing
           fname = file?.path;
-          svg = await getSVG({fname:fname,fwidth:fwidth,fheight:fheight,style:divclass});
+          img = await getIMG({fname:fname,fwidth:fwidth,fheight:fheight,style:divclass});
           div = createDiv(divclass, (el)=>{
-            el.append(svg);
+            el.append(img);
             el.setAttribute("src",file.path);
             el.setAttribute("w",fwidth);
             el.setAttribute("h",fheight);
@@ -171,14 +172,16 @@ export default class ExcalidrawPlugin extends Plugin {
             el.addEventListener(RERENDER_EVENT, async(e) => {
               e.stopPropagation;
               el.empty();
-              const svg = await getSVG({ fname:el.getAttribute("src"),
-                                        fwidth:el.getAttribute("w"),
-                                        fheight:el.getAttribute("h"),
-                                        style:el.getAttribute("class")});
-              el.append(svg);
+              const img = await getIMG({ 
+                fname:el.getAttribute("src"),
+                fwidth:el.getAttribute("w"),
+                fheight:el.getAttribute("h"),
+                style:el.getAttribute("class")
+              });
+              el.append(img);
             });
           });
-        } else {
+        } else { //file does not exist. Replace standard Obsidian div, with mine to create a drawing on click
           div = createDiv("excalidraw-new",(el)=> {
             el.setAttribute("src",fname);
             el.createSpan("internal-embed file-embed mod-empty is-loaded", (el) => {
@@ -195,8 +198,7 @@ export default class ExcalidrawPlugin extends Plugin {
             });
           }); 
         }
-        span.parentElement.replaceChild(div,span);
-
+        drawing.parentElement.replaceChild(div,drawing);
       }
     }
 
@@ -284,6 +286,36 @@ export default class ExcalidrawPlugin extends Plugin {
       name: "Create a new drawing - IN THE CURRENT ACTIVE PANE",
       callback: () => {
         this.createDrawing(this.getNextDefaultFilename(), false);
+      },
+    });
+
+    this.addCommand({
+      id: "excalidraw-autocreate-and-embed",
+      name: "Create a new drawing - IN A NEW PANE - and embed in current document",
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return (this.app.workspace.activeLeaf.view.getViewType() == "markdown");
+        } else {
+          const filename = this.getNextDefaultFilename();
+          this.embedDrawing(filename);
+          this.createDrawing(filename, true);
+          return true;
+        }
+      },
+    });
+
+    this.addCommand({
+      id: "excalidraw-autocreate-and-embed-on-current",
+      name: "Create a new drawing - IN THE CURRENT ACTIVE PANE - and embed in current document",
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return (this.app.workspace.activeLeaf.view.getViewType() == "markdown");
+        } else {
+          const filename = this.getNextDefaultFilename();
+          this.embedDrawing(filename);
+          this.createDrawing(filename, false);
+          return true;
+        }
       },
     });
 

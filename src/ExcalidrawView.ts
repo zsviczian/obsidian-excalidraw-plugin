@@ -71,6 +71,12 @@ export default class ExcalidrawView extends TextFileView {
     }
     const svg = ExcalidrawView.getSVG(data,exportSettings);
     if(!svg) return;
+    const svgString = ExcalidrawView.embedFontsInSVG(svg).outerHTML;                  
+    if(file && file instanceof TFile) await this.app.vault.modify(file,svgString);
+    else await this.app.vault.create(filepath,svgString);
+  }
+
+  public static embedFontsInSVG(svg:SVGSVGElement):SVGSVGElement {
     //replace font references with base64 fonts
     const includesVirgil = svg.querySelector("text[font-family^='Virgil']") != null;
     const includesCascadia = svg.querySelector("text[font-family^='Cascadia']") != null; 
@@ -78,9 +84,7 @@ export default class ExcalidrawView extends TextFileView {
     if (defs && (includesCascadia || includesVirgil)) {
       defs.innerHTML = "<style>" + (includesVirgil ? VIRGIL_FONT : "") + (includesCascadia ? CASCADIA_FONT : "")+"</style>";
     }
-    const svgString = svg.outerHTML;                  
-    if(file && file instanceof TFile) await this.app.vault.modify(file,svgString);
-    else await this.app.vault.create(filepath,svgString);
+    return svg;
   }
 
   public async savePNG(data?: string) {

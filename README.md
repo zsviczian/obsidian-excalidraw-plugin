@@ -10,6 +10,8 @@ I have improved how drawings are embedded! You no longer need an Excalidraw code
 
 ALT+Enter and CTRL+ALT+Enter on the filename in edit mode will open up the Excalidraw editor. Click and CTRL+Click on the image in preview mode will also bring up the Excalidraw editor as expected.
 
+I have also added two new Command Palette commands. Both create a new drawing and immediately embed it in the document you are editing, one will open the drawing in a new workspace pane, the other within the currently active pane.
+
 ### MIGRATION
 I have added a Migration command to the Command Palette. When you select this, the program will run a search and replace for all the excalidraw codeblocks in your vault and will convert them to the new format.
 
