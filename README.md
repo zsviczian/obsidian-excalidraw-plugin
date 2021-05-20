@@ -8,7 +8,7 @@ I have improved how drawings are embedded! You no longer need an Excalidraw code
 
 ALT+Enter and CTRL+ALT+Enter on the filename in edit mode will open up the Excalidraw editor. Click and CTRL+Click on the image in preview mode will also bring up the Excalidraw editor as expected.
 
-## MIGRATION
+### MIGRATION
 I have added a Migration command to the Command Palette. When you select this, the program will run a search and replace for all the excalidraw codeblocks in your vault and will convert them to the new format.
 
 ### [Ozan's Image in Editor Plugin](https://github.com/ozntel/oz-image-in-editor-obsidian)
@@ -34,7 +34,7 @@ In a nice collaboration with Ozan, his Image in Editor plugin now supports Excal
 - Includes full [Templater](https://silentvoid13.github.io/Templater/) and [Dataview](https://blacksmithgu.github.io/obsidian-dataview/docs/api/intro/) support through ExcalidrawAutomate. Read detailed help + examples: [here](https://zsviczian.github.io/obsidian-excalidraw-plugin/)
 - REQUIRES AN OBSIDIAN SYNC SUBSCRIPTION: Temporary hack/workaround to enable Obsidian Sync for Excalidraw files. This enables almost real-time two-way sync for Excalidraw files between your devices. You can draw on your iPad with your pencil, on your Android with your stylus, and the image will be available in Obsidian on your desktop as well and vice versa. 
 
-## Please find release notes for new releases below the How-to videos. 
+### Please find release notes for new releases below the How-to videos. 
 
 # How to?
 Part 1: Intro to Obsidian-Excalidraw - Start a new drawing (3:12)
