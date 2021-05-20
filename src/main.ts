@@ -166,6 +166,7 @@ export default class ExcalidrawPlugin extends Plugin {
             el.setAttribute("w",fwidth);
             el.setAttribute("h",fheight);
             el.onClickEvent((ev)=>{
+              if(ev.target instanceof Element && ev.target.tagName.toLowerCase() != "img") return;
               let src = el.getAttribute("src");
               if(src) this.openDrawing(this.app.vault.getAbstractFileByPath(src) as TFile,ev.ctrlKey);
             });
@@ -398,17 +399,17 @@ export default class ExcalidrawPlugin extends Plugin {
   private async addEventListeners(plugin: ExcalidrawPlugin) {
 
     const notice = new Notice(
-      "Thank you for updating to Excalidraw 1.1!\n"+
-      "This is a temporary notice which will be removed in about a week's time.\n"+
-      "I have much improved how drawings are embedded.\n"+
-      "You no longer need a codeblock, simply embed Excalidraw like any other drawing: " +
+      "Welcome to Excalidraw 1.1!\n\n"+
+      "This is a temporary notice. I will remove this in a week.\n\n"+
+      "I have improved embedding of drawings. "+
+      "You no longer need a code block, simply embed Excalidraw like any other image: " +
       "![[my drawing.excalidraw]] or ![[my drawing.excalidraw|500|left]] or "+
-      "![[my drawing.excalidraw|right-wrap]] etc. you get the idea.\n"+
-      "ALT+Enter and CTRL+ALT+Enter on the filename will open up the Excalidraw editor.\n"+
-      "Click and CTRL+Click on the image in preview mode will again bring up the editor as expected.\n\n"+
+      "![[my drawing.excalidraw|right-wrap]] or ![alt-text|500](my drawing.excalidraw) etc.\n\n"+
+      "ALT+Enter and CTRL+ALT+Enter on the filename will open the drawing in the Excalidraw editor. "+
+      "Click and CTRL+Click on the image in preview mode will also open the editor as expected.\n\n"+
       "MIGRATION\n"+
-      "I have added a Migration command to the Command Palette. Selecting this will search and replace all the "+
-      "excalidraw codeblocks in your vault to the new format.", 60000);
+      'See "Migrate" in Command Palette. Selecting this will convert all the '+
+      "excalidraw code blocks in your vault to the new embed format.", 60000);
 
     const closeDrawing = async (filePath:string) => {
       const leaves = plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
@@ -426,13 +427,13 @@ export default class ExcalidrawPlugin extends Plugin {
     const reloadDrawing = async (oldPath:string, newPath: string) => {
       const file = plugin.app.vault.getAbstractFileByPath(newPath);
       if(!(file && file instanceof TFile)) return;
-      const leaves = plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+      let leaves = plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
       for (let i=0;i<leaves.length;i++) {
         if((leaves[i].view as ExcalidrawView).file.path == oldPath) {
           (leaves[i].view as ExcalidrawView).setViewData(await plugin.app.vault.read(file),false);
-          plugin.triggerEmbedUpdates();
         }
       }
+      plugin.triggerEmbedUpdates(oldPath);
     }
 
     const createPathIfNotThere = async (path:string) => {
@@ -609,7 +610,7 @@ export default class ExcalidrawPlugin extends Plugin {
     const activeLeafChangeEventHandler = (leaf:WorkspaceLeaf) => {
       if(plugin.activeExcalidrawView) {
         plugin.activeExcalidrawView.save();
-        plugin.triggerEmbedUpdates();
+        plugin.triggerEmbedUpdates(plugin.activeExcalidrawView.file.path);
       }
       plugin.activeExcalidrawView = (leaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW) ? leaf.view as ExcalidrawView : null;
       if(plugin.activeExcalidrawView)
@@ -645,11 +646,11 @@ export default class ExcalidrawPlugin extends Plugin {
     await this.saveData(this.settings);
   }
 
-  public triggerEmbedUpdates(){
+  public triggerEmbedUpdates(filepath?:string){
     const e = document.createEvent("Event")
     e.initEvent(RERENDER_EVENT,true,false);
     document
-      .querySelectorAll("svg[class^='excalidraw-svg']")
+      .querySelectorAll("div[class^='excalidraw-svg']"+ (filepath ? "[src='"+filepath+"']" : ""))
       .forEach((el) => el.dispatchEvent(e));
   }
 
