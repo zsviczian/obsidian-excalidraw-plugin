@@ -41,7 +41,7 @@ ea.reset();
 function buildMindmap(subtasks, depth, offset, parentObjectID) {
   if (subtasks.length == 0) return;
   for (let task of subtasks) {
-    if (depth == 1) ea.style.strokeColor = '#'+(Math.random()*0xFFFFFF<<0).toString(16);
+    if (depth == 1) ea.style.strokeColor = '#'+(Math.random()*0xFFFFFF<<0).toString(16).padStart(6,"0");
     task["objectID"] = ea.addText(depth*width,(task.size/2+offset)*height,task.text,{box:true})
     ea.connectObjects(parentObjectID,"right",task.objectID,"left",{startArrowHead: 'dot'});
     buildMindmap(task.subtasks, depth+1,offset,task.objectID);

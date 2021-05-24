@@ -11,9 +11,9 @@
     "importHelpers": true,
     "lib": [
       "dom",
-      "es5",
       "scripthost",
       "es2020",
+      "esnext",
       "DOM.Iterable"
     ],
     "jsx": "react",

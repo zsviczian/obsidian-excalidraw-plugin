@@ -81,7 +81,7 @@ offsets = [0];
 
 for(i=0;i<=linecount;i++) {
   depth = tree[i][IDX.depth];
-  if (depth == 1) ea.style.strokeColor = '#'+(Math.random()*0xFFFFFF<<0).toString(16);
+  if (depth == 1) ea.style.strokeColor = '#'+(Math.random()*0xFFFFFF<<0).toString(16).padStart(6,"0");
   tree[i][IDX.objectId] = ea.addText(depth*width,((tree[i][IDX.size]/2)+offsets[depth])*height,tree[i][IDX.text],{box:true});  
   //set child offset equal to parent offset
   if((depth+1)>offsets.length) offsets.push(offsets[depth]);

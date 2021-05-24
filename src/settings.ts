@@ -4,11 +4,14 @@ import {
   PluginSettingTab, 
   Setting
 } from 'obsidian';
+import { EXCALIDRAW_FILE_EXTENSION } from './constants';
 import type ExcalidrawPlugin from "./main";
 
 export interface ExcalidrawSettings {
   folder: string,
   templateFilePath: string,
+  drawingFilenamePrefix: string,
+  drawingFilenameDateTime: string,
   width: string,
   exportWithTheme: boolean,
   exportWithBackground: boolean,
@@ -25,6 +28,8 @@ export interface ExcalidrawSettings {
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   folder: 'Excalidraw',
   templateFilePath: 'Excalidraw/Template.excalidraw',
+  drawingFilenamePrefix: 'Drawing ',
+  drawingFilenameDateTime: 'YYYY-MM-DD HH.mm.ss',
   width: '400',
   exportWithTheme: true,
   exportWithBackground: true,
@@ -51,6 +56,20 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.containerEl.empty();
 
     new Setting(containerEl)
+    .setName('Default width of embedded (transcluded) image') 
+    .setDesc('The default width of an embedded drawing. You can specify a different ' +
+             'width when embedding an image using the ![[drawing.excalidraw|100]] or ' +
+             '[[drawing.excalidraw|100x100]] format.')
+    .addText(text => text
+      .setPlaceholder('400')
+      .setValue(this.plugin.settings.width)
+      .onChange(async (value) => {
+        this.plugin.settings.width = value;
+        await this.plugin.saveSettings();
+        this.plugin.triggerEmbedUpdates();
+      }));
+
+    new Setting(containerEl)
     .setName('Excalidraw folder') 
     .setDesc('Default location for your Excalidraw drawings. Leaving this empty means drawings will be created in the Vault root.')
     .addText(text => text
@@ -74,19 +93,51 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
         }));
 
+    this.containerEl.createEl('h1', {text: 'New darwing filename'});
+    containerEl.createDiv('',(el) => {
+      el.innerHTML = '<p>The automatically generated filename consists of a prefix and a date. ' + 
+                     'e.g."Drawing 2021-05-24 12.58.07".</p>'+
+                     '<p>Click this link for the <a href="https://momentjs.com/docs/#/displaying/format/">'+
+                     'date and time format reference</a>.</p>';
+
+    });
+
+    const getFilenameSample = () => {
+      return 'The current file format is: <b>' + 
+             this.plugin.settings.drawingFilenamePrefix + 
+            window.moment().format(this.plugin.settings.drawingFilenameDateTime) +
+            '.' + EXCALIDRAW_FILE_EXTENSION + '</b>';
+    };
+
+    const filenameEl = containerEl.createEl('p',{text: ''});
+    filenameEl.innerHTML = getFilenameSample();
+    
     new Setting(containerEl)
-      .setName('Default width of embedded (transcluded) image') 
-      .setDesc('The default width of an embedded drawing. You can specify a different ' +
-               'width when embedding an image using the [[drawing.excalidraw|100]] or ' +
-               '[[drawing.excalidraw|100x100]] format.')
+      .setName('Filename prefix') 
+      .setDesc('The first part of the filename')
       .addText(text => text
-        .setPlaceholder('400')
-        .setValue(this.plugin.settings.width)
+        .setPlaceholder('Drawing ')
+        .setValue(this.plugin.settings.drawingFilenamePrefix)
         .onChange(async (value) => {
-          this.plugin.settings.width = value;
+          this.plugin.settings.drawingFilenamePrefix = value.replaceAll(/[<>:"/\\|?*]/g,'_');
+          text.setValue(this.plugin.settings.drawingFilenamePrefix);
+          filenameEl.innerHTML = getFilenameSample();
           await this.plugin.saveSettings();
-          this.plugin.triggerEmbedUpdates();
         }));
+
+    new Setting(containerEl)
+      .setName('Filename date') 
+      .setDesc('The second part of the filename')
+      .addText(text => text
+        .setPlaceholder('YYYY-MM-DD HH.mm.ss')
+        .setValue(this.plugin.settings.drawingFilenameDateTime)
+        .onChange(async (value) => {
+          this.plugin.settings.drawingFilenameDateTime = value.replaceAll(/[<>:"/\\|?*]/g,'_');
+          text.setValue(this.plugin.settings.drawingFilenameDateTime);
+          filenameEl.innerHTML = getFilenameSample();
+          await this.plugin.saveSettings();
+        }));
+
    
     this.containerEl.createEl('h1', {text: 'Embedded image settings'});
 

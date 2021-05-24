@@ -159,12 +159,12 @@ export default class ExcalidrawView extends TextFileView {
 
   // clear the view content  
   clear() {
-    if(this.excalidrawRef) {
+    /*if(this.excalidrawRef) {
       this.excalidrawRef = null;
       this.getScene = null;
       this.refresh = null;
       ReactDOM.unmountComponentAtNode(this.contentEl);
-    }
+    }*/
   }
   
   private async loadDrawing (data:string, clear:boolean) {   
@@ -250,13 +250,27 @@ export default class ExcalidrawView extends TextFileView {
         const el: ExcalidrawElement[] = excalidrawRef.current.getSceneElements();
         const st: AppState = excalidrawRef.current.getAppState();
         return JSON.stringify({
-          "type": "excalidraw",
-          "version": 2,
-          "source": "https://excalidraw.com",
-          "elements": el, 
-          "appState": {
-            "theme": st.theme,
-            "viewBackgroundColor": st.viewBackgroundColor,
+          type: "excalidraw",
+          version: 2,
+          source: "https://excalidraw.com",
+          elements: el, 
+          appState: {
+            theme: st.theme,
+            viewBackgroundColor: st.viewBackgroundColor,
+            currentItemStrokeColor: st.currentItemStrokeColor,
+            currentItemBackgroundColor: st.currentItemBackgroundColor,
+            currentItemFillStyle: st.currentItemFillStyle,
+            currentItemStrokeWidth: st.currentItemStrokeWidth,
+            currentItemStrokeStyle: st.currentItemStrokeStyle,
+            currentItemRoughness: st.currentItemRoughness,
+            currentItemOpacity: st.currentItemOpacity,
+            currentItemFontFamily: st.currentItemFontFamily,
+            currentItemFontSize: st.currentItemFontSize,
+            currentItemTextAlign: st.currentItemTextAlign,
+            currentItemStrokeSharpness: st.currentItemStrokeSharpness,
+            currentItemStartArrowhead: st.currentItemStartArrowhead,
+            currentItemEndArrowhead: st.currentItemEndArrowhead,
+            currentItemLinearStrokeSharpness: st.currentItemLinearStrokeSharpness,
           }
         });
       };

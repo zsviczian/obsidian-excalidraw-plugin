@@ -9,7 +9,7 @@ This [Templater](https://github.com/SilentVoid13/Templater) template will prompt
   const title = await tp.system.prompt("Title of the drawing?", defaultTitle);
   const folder = tp.file.folder(true);
   const transcludePath = (folder== '/' ? '' : folder + '/') + title + '.excalidraw';
-  tR = String.fromCharCode(96,96,96)+'excalidraw\n[['+transcludePath+']]\n'+String.fromCharCode(96,96,96);
+  tR = '![['+transcludePath+']]';
   const ea = ExcalidrawAutomate;
   ea.reset();
   ea.setTheme(1); //set Theme to dark
