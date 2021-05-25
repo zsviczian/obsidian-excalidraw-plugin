@@ -3,7 +3,8 @@ import {
   WorkspaceLeaf, 
   normalizePath,
   TFile,
-  WorkspaceItem
+  WorkspaceItem,
+  Notice
 } from "obsidian";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -38,6 +39,7 @@ export interface ExportSettings {
 
 export default class ExcalidrawView extends TextFileView {
   private getScene: Function;
+  private getSelectedText: Function;
   private refresh: Function;
   private excalidrawRef: React.MutableRefObject<any>;
   private justLoaded: boolean;
@@ -49,6 +51,7 @@ export default class ExcalidrawView extends TextFileView {
   constructor(leaf: WorkspaceLeaf, plugin: ExcalidrawPlugin) {
     super(leaf);
     this.getScene = null;
+    this.getSelectedText = null;
     this.refresh = null;
     this.excalidrawRef = null;
     this.plugin = plugin;
@@ -122,6 +125,29 @@ export default class ExcalidrawView extends TextFileView {
     });
     this.addAction(PNG_ICON_NAME,"Export as PNG",async (ev)=>this.savePNG());
     this.addAction(SVG_ICON_NAME,"Export as SVG",async (ev)=>this.saveSVG());
+    this.addAction("link","Open selected text as link\n(CTRL/META to open in new pane)",(ev)=>{
+      const text = this.getSelectedText();
+      if(!text) {
+        new Notice('Select a text element.\n'+
+                   'If it is a web link, it will open in a new browser window.\n'+
+                   'Else if it is a valid filename Excalidraw will handle it as an Obsidian internal link.\n'+
+                   'Use CTRL+Click to open it in a new pane.',20000); 
+        return;
+      }
+      if(text.match(/^\w+:\/\//)) {
+        window.open(text,"_blank");
+        return;
+      }
+      if(text.match(/[<>:"\\|?*]/g)) {
+        new Notice('File name cannot contain any of the following characters: * " \\  < > : | ?',4000); 
+        return;
+      }
+      try {
+        this.app.workspace.openLinkText(text,this.file.path,ev.ctrlKey||ev.metaKey);
+      } catch (e) {
+        new Notice(e,4000);
+      }
+    });
     //this is to solve sliding panes bug
     if (this.app.workspace.layoutReady) {
       (this.app.workspace.rootSplit as WorkspaceItem as WorkspaceItemExt).containerEl.addEventListener('scroll',(e)=>{if(this.refresh) this.refresh();});
@@ -243,6 +269,14 @@ export default class ExcalidrawView extends TextFileView {
         return () => window.removeEventListener("resize", onResize);
       }, [excalidrawWrapperRef]);
 
+      this.getSelectedText = ():string => {
+        if(!excalidrawRef?.current) return null;
+        const selectedElement = excalidrawRef.current.getSceneElements().filter((el:any)=>el.id==Object.keys(excalidrawRef.current.getAppState().selectedElementIds)[0]);
+        if(selectedElement.length==0) return null;
+        if(selectedElement[0].type != "text") return null;
+        return selectedElement[0].text;
+      };
+      
       this.getScene = () => {
         if(!excalidrawRef?.current) {
           return null;

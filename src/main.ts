@@ -133,7 +133,7 @@ export default class ExcalidrawPlugin extends Plugin {
       
       if(parts.fheight) img.setAttribute("height",parts.fheight);//img.style.setProperty('height',parts.fheight);
       img.addClass(parts.style);
-      img.setAttribute("src","data:image/svg+xml;base64,"+btoa(svg.outerHTML));
+      img.setAttribute("src","data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svg.outerHTML))));
       return img;
     }
 
@@ -168,7 +168,7 @@ export default class ExcalidrawPlugin extends Plugin {
             el.onClickEvent((ev)=>{
               if(ev.target instanceof Element && ev.target.tagName.toLowerCase() != "img") return;
               let src = el.getAttribute("src");
-              if(src) this.openDrawing(this.app.vault.getAbstractFileByPath(src) as TFile,ev.ctrlKey);
+              if(src) this.openDrawing(this.app.vault.getAbstractFileByPath(src) as TFile,ev.ctrlKey||ev.metaKey);
             });
             el.addEventListener(RERENDER_EVENT, async(e) => {
               e.stopPropagation;
@@ -211,7 +211,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.openDialog = new OpenFileDialog(this.app, this);
 
     this.addRibbonIcon(ICON_NAME, 'Create a new drawing in Excalidraw', async (e) => {
-      this.createDrawing(this.getNextDefaultFilename(), e.ctrlKey);
+      this.createDrawing(this.getNextDefaultFilename(), e.ctrlKey||e.metaKey);
     });
   
     const fileMenuHandler = (menu: Menu, file: TFile) => {
