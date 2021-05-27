@@ -6,7 +6,7 @@ The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/),
 
 Thank you for updating to Excalidraw 1.1.x!
 
-I have improved how drawings are embedded! You no longer need an Excalidraw codeblock. You can now embed drawings just like any other images: `![[my drawing.excalidraw]]` or `![[my drawing.excalidraw|500|left]]` or `![[my drawing.excalidraw|right-wrap]]`, `![alttext|500|right](drawing.excalidraw)`, `![](folder/drawing.excalidraw)` etc. You get the idea.
+I have improved how drawings are embedded! You no longer need an Excalidraw codeblock. You can now embed drawings just like any other images: `![[my drawing.excalidraw]]` or `![[my drawing.excalidraw|500|left]]` or `![[my drawing.excalidraw|right-wrap]]`, `![alttext|500|right](drawing.excalidraw)`, `![](folder/drawing.excalidraw)`, etc. You get the idea.
 
 ### Detailed release notes are under the How to videos. 
 

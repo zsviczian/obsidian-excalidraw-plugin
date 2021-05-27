@@ -145,6 +145,7 @@ export default class ExcalidrawPlugin extends Plugin {
         fwidth   = drawing.getAttribute("width");
         fheight  = drawing.getAttribute("height");
         alt      = drawing.getAttribute("alt");
+        if(alt == fname) alt = ""; //when the filename starts with numbers followed by a space Obsidian recognizes the filename as alt-text
         divclass = "excalidraw-svg";
         if(alt) {
           //for some reason ![]() is rendered in a DIV and ![[]] in a span by Obsidian

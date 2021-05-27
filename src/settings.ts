@@ -93,7 +93,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
         }));
 
-    this.containerEl.createEl('h1', {text: 'New darwing filename'});
+    this.containerEl.createEl('h1', {text: 'New drawing filename'});
     containerEl.createDiv('',(el) => {
       el.innerHTML = '<p>The automatically generated filename consists of a prefix and a date. ' + 
                      'e.g."Drawing 2021-05-24 12.58.07".</p>'+

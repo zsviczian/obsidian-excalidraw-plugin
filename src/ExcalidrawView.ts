@@ -142,6 +142,13 @@ export default class ExcalidrawView extends TextFileView {
         new Notice('File name cannot contain any of the following characters: * " \\  < > : | ?',4000); 
         return;
       }
+      if (!ev.shiftKey) {
+        const file = this.app.metadataCache.getFirstLinkpathDest(text,this.file.path); 
+        if (!file) {
+          new Notice("File does not exist. Hold down SHIFT (or CTRL+SHIFT) and click link button to create.", 4000);
+          return;
+        }
+      }
       try {
         this.app.workspace.openLinkText(text,this.file.path,ev.ctrlKey||ev.metaKey);
       } catch (e) {
