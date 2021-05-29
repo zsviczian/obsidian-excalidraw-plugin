@@ -10,7 +10,7 @@
 ```typescript
 async toClipboard(templatePath?:string)
 ```
-Places the generated drawing to the clipboard. Useful when you don't want to create a new drawing, but want to paste additional items onto an exising drawing.
+Places the generated drawing to the clipboard. Useful when you don't want to create a new drawing, but want to paste additional items onto an existing drawing.
 
 ### create()
 ```typescript

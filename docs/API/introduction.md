@@ -1,6 +1,6 @@
 # [◀ Excalidraw Automate How To](../readme.md)
 ## Introduction to the API
-You can access Excalidraw Automate via the ExcalidrawAutomate object. I recommend staring your Automate scripts with the following code.
+You can access Excalidraw Automate via the ExcalidrawAutomate object. I recommend starting your Automate scripts with the following code.
 
 *Use CTRL+Shift+V to paste code into Obsidian!*
 ```javascript

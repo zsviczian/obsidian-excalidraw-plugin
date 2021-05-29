@@ -4,7 +4,7 @@ Excalidraw Automate allows you to create Excalidraw drawings using the [Template
 
 With a little work, using Excalidraw Automate you can generate simple mindmaps, fill out SVG forms, create customized charts, etc. based on documents in your vault.
 
-You can access Excalidraw Automate via the ExcalidrawAutomate object. I recommend staring your Automate scripts with the following code.
+You can access Excalidraw Automate via the ExcalidrawAutomate object. I recommend starting your Automate scripts with the following code.
 
 *Use CTRL+Shift+V to paste code into Obsidian!*
 ```javascript
@@ -288,7 +288,7 @@ Groups objects listed in `objectIds`.
 ```typescript
 async toClipboard(templatePath?:string)
 ```
-Places the generated drawing to the clipboard. Useful when you don't want to create a new drawing, but want to paste additional items onto an exising drawing.
+Places the generated drawing to the clipboard. Useful when you don't want to create a new drawing, but want to paste additional items onto an existing drawing.
 
 ### create()
 ```typescript

@@ -1,5 +1,5 @@
 # [◀ Excalidraw Automate How To](../readme.md)
-## Attributes and functions overivew
+## Attributes and functions overview
 Here's the interface implemented by ExcalidrawAutomate:
 
 ```javascript

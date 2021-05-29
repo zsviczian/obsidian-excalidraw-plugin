@@ -2,10 +2,10 @@
 
 Excalidraw Automate allows you to create Excalidraw drawings using the [Templater](https://silentvoid13.github.io/Templater/docs/) plugin, and to generate embedded SVG and PNG images using [DataviewJS](https://blacksmithgu.github.io/obsidian-dataview/docs/api/intro/)
 
-With a little work, using Excalidraw Automate you can generate simple mindmaps, build a faimly tree, fill out SVG forms, create customized charts, etc. based on documents in your vault.
+With a little work, using Excalidraw Automate you can generate simple mindmaps, build a family tree, fill out SVG forms, create customized charts, etc. based on documents in your vault.
 ![image](https://user-images.githubusercontent.com/14358394/117549619-bae41180-b03b-11eb-968d-c909e79a7524.png)
 
-## API documenation
+## API documentation
 - [Introduction to the API](API/introduction.md)
 - [Overview of Attributes and Functions](API/attributes_functions_overview.md)
 - [Element Sytle](API/element_style.md)
