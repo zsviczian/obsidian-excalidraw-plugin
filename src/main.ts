@@ -135,7 +135,7 @@ export default class ExcalidrawPlugin extends Plugin {
       svg.removeAttribute('height');
       img.setAttribute("width",parts.fwidth);
       
-      if(parts.fheight) img.setAttribute("height",parts.fheight);//img.style.setProperty('height',parts.fheight);
+      if(parts.fheight) img.setAttribute("height",parts.fheight);
       img.addClass(parts.style);
       img.setAttribute("src","data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svg.outerHTML))));
       return img;
@@ -153,8 +153,8 @@ export default class ExcalidrawPlugin extends Plugin {
         divclass = "excalidraw-svg";
         if(alt) {
           //for some reason ![]() is rendered in a DIV and ![[]] in a span by Obsidian
-          //also the alt text of the DIV follows does not include the altext of the image
-          //thus need to add an additional | when its a span
+          //also the alt text of the DIV does not include the altext of the image
+          //thus need to add an additional "|" character when its a span
           if(drawing.tagName.toLowerCase()=="span") alt = "|"+alt;
           parts = alt.match(/[^\|]*\|?(\d*)x?(\d*)\|?(.*)/);
           fwidth = parts[1]? parts[1] : this.settings.width;
@@ -187,7 +187,7 @@ export default class ExcalidrawPlugin extends Plugin {
               el.append(img);
             });
           });
-        } else { //file does not exist. Replace standard Obsidian div, with mine to create a drawing on click
+        } else { //file does not exist. Replace standard Obsidian div with mine to create a new drawing on click
           div = createDiv("excalidraw-new",(el)=> {
             el.setAttribute("src",fname);
             el.createSpan("internal-embed file-embed mod-empty is-loaded", (el) => {
@@ -210,6 +210,9 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.registerMarkdownPostProcessor(markdownPostProcessor);
 
+    /*****************************
+      internal-link quick preview
+    ******************************/
     const hoverEvent = (e:any) => {
       //@ts-ignore
       if(!e.linktext) return;
@@ -224,23 +227,30 @@ export default class ExcalidrawPlugin extends Plugin {
     this.app.workspace.on('hover-link',hoverEvent);
     this.workspaceEventHandlers.set('hover-link',hoverEvent);
 
-    this.observer = new MutationObserver(async (m)=>{
+    //monitoring for div.popover.hover-popover.file-embed.is-loaded to be added to the DOM tree
+    this.observer = new MutationObserver((m)=>{
       if(!this.hover.linkText) return;
       if(m.length!=1) return;
       if(m[0].addedNodes.length != 1) return;
-      //console.log(m[0].addedNodes[0],this.hover);
       //@ts-ignore
       if(m[0].addedNodes[0].className!="popover hover-popover file-embed is-loaded") return;
       const node = m[0].addedNodes[0];
       node.empty();
       const file = this.app.metadataCache.getFirstLinkpathDest(this.hover.linkText, this.hover.sourcePath?this.hover.sourcePath:""); 
-      if(file) {  //file exists. Display drawing
-        const img = await getIMG({fname:file.path,fwidth:300,fheight:null,style:"excalidraw-svg"});
-        node.addEventListener("click",(e)=>{
-          e.stopImmediatePropagation();
-          console.log(e);
+      if(file) {  
+        //this div will be on top of original DIV. By stopping the propagation of the click
+        //I prevent the default Obsidian feature of openning the link in the native app
+        const div = createDiv("",async (el)=>{
+          const img = await getIMG({fname:file.path,fwidth:300,fheight:null,style:"excalidraw-svg"});
+          el.appendChild(img);
+          el.setAttribute("src",file.path);
+          el.onClickEvent((ev)=>{
+            ev.stopImmediatePropagation();
+            let src = el.getAttribute("src");
+            if(src) this.openDrawing(this.app.vault.getAbstractFileByPath(src) as TFile,ev.ctrlKey||ev.metaKey);
+          });
         });
-        node.appendChild(img);
+        node.appendChild(div);
       }
     });
     this.observer.observe(document, {childList: true, subtree: true});

@@ -127,7 +127,7 @@ export default class ExcalidrawView extends TextFileView {
     this.addAction(PNG_ICON_NAME,"Export as PNG",async (ev)=>this.savePNG());
     this.addAction(SVG_ICON_NAME,"Export as SVG",async (ev)=>this.saveSVG());
     this.addAction("link","Open selected text as link\n(CTRL/META to open in new pane)",(ev)=>{
-      const text = this.getSelectedText();
+      let text = this.getSelectedText();
       if(!text) {
         new Notice('Select a text element.\n'+
                    'If it is a web link, it will open in a new browser window.\n'+
@@ -135,6 +135,8 @@ export default class ExcalidrawView extends TextFileView {
                    'Use CTRL+Click to open it in a new pane.',20000); 
         return;
       }
+      const parts = text.matchAll(/\[\[(.+)]]/g).next();
+      if(parts.value) text = parts.value[1];
       if(text.match(/^\w+:\/\//)) {
         window.open(text,"_blank");
         return;
