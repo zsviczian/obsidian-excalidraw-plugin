@@ -14,6 +14,7 @@ import {
   TAbstractFile,
   Notice,
   Tasks,
+  Workspace,
 } from "obsidian";
 
 import { 
@@ -62,6 +63,8 @@ export default class ExcalidrawPlugin extends Plugin {
   public lastActiveExcalidrawFilePath: string;
   private workspaceEventHandlers:Map<string,any>;
   private vaultEventHandlers:Map<string,any>;
+  private hover: {linkText: string, sourcePath: string};
+  private observer: MutationObserver;
   /*Excalidraw Sync Begin*/
   private excalidrawSync: Set<string>;
   private syncModifyCreate: any;
@@ -73,6 +76,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.lastActiveExcalidrawFilePath = null;
     this.workspaceEventHandlers = new Map();
     this.vaultEventHandlers = new Map();
+    this.hover = {linkText: null, sourcePath: null};
     /*Excalidraw Sync Begin*/
     this.excalidrawSync = new Set<string>();
     this.syncModifyCreate = null;
@@ -206,6 +210,40 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.registerMarkdownPostProcessor(markdownPostProcessor);
 
+    const hoverEvent = (e:any) => {
+      //@ts-ignore
+      if(!e.linktext) return;
+      if(!e.linktext.endsWith('.'+EXCALIDRAW_FILE_EXTENSION)) {
+        this.hover.linkText = null;
+        return;
+      }
+      this.hover.linkText = e.linktext;
+      this.hover.sourcePath = e.sourcePath;
+    };
+    //@ts-ignore
+    this.app.workspace.on('hover-link',hoverEvent);
+    this.workspaceEventHandlers.set('hover-link',hoverEvent);
+
+    this.observer = new MutationObserver(async (m)=>{
+      if(!this.hover.linkText) return;
+      if(m.length!=1) return;
+      if(m[0].addedNodes.length != 1) return;
+      //console.log(m[0].addedNodes[0],this.hover);
+      //@ts-ignore
+      if(m[0].addedNodes[0].className!="popover hover-popover file-embed is-loaded") return;
+      const node = m[0].addedNodes[0];
+      node.empty();
+      const file = this.app.metadataCache.getFirstLinkpathDest(this.hover.linkText, this.hover.sourcePath?this.hover.sourcePath:""); 
+      if(file) {  //file exists. Display drawing
+        const img = await getIMG({fname:file.path,fwidth:300,fheight:null,style:"excalidraw-svg"});
+        node.addEventListener("click",(e)=>{
+          e.stopImmediatePropagation();
+          console.log(e);
+        });
+        node.appendChild(img);
+      }
+    });
+    this.observer.observe(document, {childList: true, subtree: true});
   }
 
   private addCommands() {
@@ -614,6 +652,7 @@ export default class ExcalidrawPlugin extends Plugin {
       this.app.vault.off(key,this.vaultEventHandlers.get(key))
     for(const key of this.workspaceEventHandlers.keys())
       this.app.workspace.off(key,this.workspaceEventHandlers.get(key));
+    this.observer.disconnect();
   }
 
   public embedDrawing(data:string) {

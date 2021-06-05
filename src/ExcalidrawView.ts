@@ -59,6 +59,7 @@ export default class ExcalidrawView extends TextFileView {
     this.dirty = false;
     this.autosaveTimer = null;
     this.previousSceneVersion = 0;
+
   }
 
   public async saveSVG(data?: string) {
