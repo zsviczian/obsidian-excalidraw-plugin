@@ -32,7 +32,10 @@ import {
   SVG_ICON_NAME,
   RERENDER_EVENT,
   VIRGIL_FONT,
-  CASCADIA_FONT
+  CASCADIA_FONT,
+  REG_LINKINDEX_BRACKETS,
+  REG_LINKINDEX_HYPERLINK,
+  REG_LINKINDEX_INVALIDCHARS
 } from "./constants";
 import ExcalidrawView, {ExportSettings} from "./ExcalidrawView";
 import {
@@ -46,8 +49,10 @@ import {
 } from "./openDrawing";
 import {
   initExcalidrawAutomate,
-  destroyExcalidrawAutomate
+  destroyExcalidrawAutomate,
+  measureText
 } from "./ExcalidrawTemplate";
+import ExcalidrawLinkIndex from "./ExcalidrawLinkIndex";
 
 export interface ExcalidrawAutomate extends Window {
   ExcalidrawAutomate: {
@@ -65,6 +70,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private vaultEventHandlers:Map<string,any>;
   private hover: {linkText: string, sourcePath: string};
   private observer: MutationObserver;
+  public linkIndex: ExcalidrawLinkIndex;
   /*Excalidraw Sync Begin*/
   private excalidrawSync: Set<string>;
   private syncModifyCreate: any;
@@ -77,6 +83,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.workspaceEventHandlers = new Map();
     this.vaultEventHandlers = new Map();
     this.hover = {linkText: null, sourcePath: null};
+
     /*Excalidraw Sync Begin*/
     this.excalidrawSync = new Set<string>();
     this.syncModifyCreate = null;
@@ -106,6 +113,8 @@ export default class ExcalidrawPlugin extends Plugin {
     this.registerExtensions([EXCALIDRAW_FILE_EXTENSION],VIEW_TYPE_EXCALIDRAW);
     this.addMarkdownPostProcessor();
     this.addCommands();
+
+    this.linkIndex = new ExcalidrawLinkIndex(this.app);
 
     if (this.app.workspace.layoutReady) {
       this.addEventListeners(this);
@@ -304,7 +313,7 @@ export default class ExcalidrawPlugin extends Plugin {
         if (checking) {
           return this.app.workspace.activeLeaf.view.getViewType() == "markdown";
         } else {
-          this.openDialog.start(openDialogAction.insertLink, false);
+          this.openDialog.start(openDialogAction.insertLinkToDrawing, false);
           return true;
         }
       },
@@ -377,8 +386,8 @@ export default class ExcalidrawPlugin extends Plugin {
           return this.app.workspace.activeLeaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW;
         } else {
           const view = this.app.workspace.activeLeaf.view;
-          if(view.getViewType() == VIEW_TYPE_EXCALIDRAW) {
-            (this.app.workspace.activeLeaf.view as ExcalidrawView).saveSVG();
+          if (view instanceof ExcalidrawView) {
+            view.saveSVG();
             return true;
           }
           else return false;
@@ -394,8 +403,25 @@ export default class ExcalidrawPlugin extends Plugin {
           return this.app.workspace.activeLeaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW;
         } else {
           const view = this.app.workspace.activeLeaf.view;
-          if(view.getViewType() == VIEW_TYPE_EXCALIDRAW) {
-            (this.app.workspace.activeLeaf.view as ExcalidrawView).savePNG();
+          if (view instanceof ExcalidrawView) {
+            view.savePNG();
+            return true;
+          }
+          else return false;
+        }
+      },
+    });
+
+    this.addCommand({
+      id: 'insert-link',
+      name: 'Insert link to file',
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return this.app.workspace.activeLeaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW;
+        } else {
+          const view = this.app.workspace.activeLeaf.view;
+          if (view instanceof ExcalidrawView) {
+            this.openDialog.insertLink(view.file.path,view.addText);
             return true;
           }
           else return false;
@@ -446,7 +472,7 @@ export default class ExcalidrawPlugin extends Plugin {
   /*Excalidraw Sync End*/
 
   private async addEventListeners(plugin: ExcalidrawPlugin) {
-
+    plugin.linkIndex.initialize();
     const closeDrawing = async (filePath:string) => {
       const leaves = plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
       for (let i=0;i<leaves.length;i++) {
@@ -459,7 +485,6 @@ export default class ExcalidrawPlugin extends Plugin {
       }   
     }
 
-    /*Excalidraw Sync Begin*/
     const reloadDrawing = async (oldPath:string, newPath: string) => {
       const file = plugin.app.vault.getAbstractFileByPath(newPath);
       if(!(file && file instanceof TFile)) return;
@@ -472,6 +497,8 @@ export default class ExcalidrawPlugin extends Plugin {
       plugin.triggerEmbedUpdates(oldPath);
     }
 
+    /****************************/
+    /*Excalidraw Sync Begin*/
     const createPathIfNotThere = async (path:string) => {
       const folderArray = path.split("/");
       folderArray.pop();
@@ -532,10 +559,12 @@ export default class ExcalidrawPlugin extends Plugin {
     this.vaultEventHandlers.set("create",syncModifyCreate);
     this.vaultEventHandlers.set("modify",syncModifyCreate);
     /*Excalidraw Sync End*/
+    /****************************/
 
-    //watch filename change to rename .svg
+    //watch filename change to rename .svg, .png; to sync to .md; to update links
     const renameEventHandler = async (file:TAbstractFile,oldPath:string) => {
       if(!(file instanceof TFile)) return;
+      /****************************/
       /*Excalidraw Sync Begin*/
       if(plugin.settings.excalidrawSync) {
         if(plugin.excalidrawSync.has(file.path)) {
@@ -573,6 +602,50 @@ export default class ExcalidrawPlugin extends Plugin {
         }
       }
       /*Excalidraw Sync End*/
+      /****************************/
+
+      /****************************/
+      /*Update link in drawing Begin*/
+      const getPath = (f: TFile):string => 
+        f.extension == "md" ? f.path.substr(0,f.path.length-3) : f.path        
+
+      if(plugin.linkIndex.link2ex.has(oldPath)) {
+        //console.log("RENAME oldPath:",oldPath,"newPath:",file.path);
+        let text, parts, savedText,drawing,drawingFile,measure;
+        plugin.linkIndex.updateKey(oldPath,file.path);
+        for (const drawingPath of plugin.linkIndex.link2ex.get(file.path)) {
+          drawingFile = plugin.app.vault.getAbstractFileByPath(drawingPath);
+          if(drawingFile && drawingFile instanceof TFile) {
+            drawing = JSON.parse(await plugin.app.vault.read(drawingFile));
+            savedText = plugin.linkIndex.getLinkTextForDrawing(drawingPath,oldPath);
+            //console.log("RENAME savedText:", savedText);
+            for(const element of drawing.elements.filter((el:any)=>el.type=="text")) {
+              text = element.text;
+              parts = text?.matchAll(REG_LINKINDEX_BRACKETS).next();
+              if(parts && parts.value) text = parts.value[1];
+              if(!text?.match(REG_LINKINDEX_HYPERLINK) && !text?.match(REG_LINKINDEX_INVALIDCHARS)) { //not a hyperlink and not invalid filename
+                if(savedText == text) {
+                  if(parts && parts.value) { //link is enclosed in [[]]
+                    element.text = element.text.replace("[["+text+"]]","[["+getPath(file)+"]]");
+                  } else {
+                    element.text = getPath(file);
+                  }
+                  measure = measureText(element.text,element.fontSize,element.fontFamily);
+                  element.width = measure.w;
+                  element.height = measure.h;
+                  element.baseline = measure.baseline;
+                }
+              }
+            }
+            await plugin.app.vault.modify(drawingFile,JSON.stringify(drawing));
+            //console.log("RENAME updated drawing:", drawingPath, drawing);
+            reloadDrawing(drawingPath,drawingPath);
+          }
+        }
+      }
+      /*Update link in drawing End*/
+      /****************************/
+
       if (file.extension != EXCALIDRAW_FILE_EXTENSION) return;
       if (!plugin.settings.keepInSync) return;
       const oldSVGpath = oldPath.substring(0,oldPath.lastIndexOf('.'+EXCALIDRAW_FILE_EXTENSION)) + '.svg'; 

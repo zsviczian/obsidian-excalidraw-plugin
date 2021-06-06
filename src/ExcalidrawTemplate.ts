@@ -39,25 +39,25 @@ export interface ExcalidrawAutomate extends Window {
       endArrowHead: string;
     }
     canvas: {theme: string, viewBackgroundColor: string};
-    setFillStyle: Function;
-    setStrokeStyle: Function;
-    setStrokeSharpness: Function;
-    setFontFamily: Function;
-    setTheme: Function;
-    addRect: Function;
-    addDiamond: Function;
-    addEllipse: Function;
-    addText: Function;
-    addLine: Function;
-    addArrow: Function;
-    connectObjects: Function;
-    addToGroup: Function;
-    toClipboard: Function;
-    create: Function;
-    createPNG: Function;
-    createSVG: Function;
-    clear: Function;
-    reset: Function;
+    setFillStyle(val:number): void;
+    setStrokeStyle(val:number): void;
+    setStrokeSharpness(val:number): void;
+    setFontFamily(val:number): void;
+    setTheme(val:number): void;
+    addToGroup(objectIds:[]):void;
+    toClipboard(templatePath?:string): void;
+    create(params?:{filename: string, foldername:string, templatePath:string, onNewPane: boolean}):Promise<void>;
+    createSVG(templatePath?:string):Promise<SVGSVGElement>;
+    createPNG(templatePath?:string):Promise<any>;
+    addRect(topX:number, topY:number, width:number, height:number):string;
+    addDiamond(topX:number, topY:number, width:number, height:number):string;
+    addEllipse(topX:number, topY:number, width:number, height:number):string;
+    addText(topX:number, topY:number, text:string, formatting?:{width:number, height:number,textAlign: string, verticalAlign:string, box: boolean, boxPadding: number}):string;
+    addLine(points: [[x:number,y:number]]):void;
+    addArrow(points: [[x:number,y:number]],formatting?:{startArrowHead:string,endArrowHead:string,startObjectId:string,endObjectId:string}):void ;
+    connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, formatting?:{numberOfPoints: number,startArrowHead:string,endArrowHead:string, padding: number}):void;
+    clear(): void;
+    reset(): void;
   };
 }
 
@@ -199,7 +199,7 @@ export function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         })
       );  
     },
-    async createSVG(templatePath?:string) {
+    async createSVG(templatePath?:string):Promise<SVGSVGElement> {
       const template = templatePath ? (await getTemplate(templatePath)) : null;
       let elements = template ? template.elements : [];
       for (let i=0;i<this.elementIds.length;i++) {
@@ -265,7 +265,7 @@ export function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
     },
     addText(topX:number, topY:number, text:string, formatting?:{width:number, height:number,textAlign: string, verticalAlign:string, box: boolean, boxPadding: number}):string {
       const id = nanoid();    
-      const {w, h, baseline} = measureText(text);
+      const {w, h, baseline} = measureText(text, this.style.fontSize,this.style.fontFamily);
       const width = formatting?.width ? formatting.width : w;
       const height = formatting?.height ? formatting.height : h;
       this.elementIds.push(id);
@@ -439,13 +439,12 @@ async function initFonts () {
   }
 }
 
-function measureText (newText:string) {
+export function measureText (newText:string, fontSize:number, fontFamily:number) {
   const line = document.createElement("div");
   const body = document.body;
   line.style.position = "absolute";
   line.style.whiteSpace = "pre";
-  line.style.font = window.ExcalidrawAutomate.style.fontSize.toString()+'px ' +
-                    getFontFamily(window.ExcalidrawAutomate.style.fontFamily);
+  line.style.font = fontSize.toString()+'px ' + getFontFamily(fontFamily);
 //  await (document as any).fonts.load(line.style.font);
   body.appendChild(line);
   line.innerText = newText

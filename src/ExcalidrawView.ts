@@ -24,9 +24,14 @@ import {
   CASCADIA_FONT,
   DISK_ICON_NAME,
   PNG_ICON_NAME,
-  SVG_ICON_NAME
+  SVG_ICON_NAME,
+  REG_LINKINDEX_BRACKETS,
+  REG_LINKINDEX_HYPERLINK,
+  REG_LINKINDEX_INVALIDCHARS
 } from './constants';
 import ExcalidrawPlugin from './main';
+import {ExcalidrawAutomate} from './ExcalidrawTemplate';
+declare let window: ExcalidrawAutomate;
 
 interface WorkspaceItemExt extends WorkspaceItem {
   containerEl: HTMLElement;
@@ -40,6 +45,7 @@ export interface ExportSettings {
 export default class ExcalidrawView extends TextFileView {
   private getScene: Function;
   private getSelectedText: Function;
+  public addText:Function;
   private refresh: Function;
   private excalidrawRef: React.MutableRefObject<any>;
   private justLoaded: boolean;
@@ -52,6 +58,7 @@ export default class ExcalidrawView extends TextFileView {
     super(leaf);
     this.getScene = null;
     this.getSelectedText = null;
+    this.addText = null;
     this.refresh = null;
     this.excalidrawRef = null;
     this.plugin = plugin;
@@ -126,7 +133,7 @@ export default class ExcalidrawView extends TextFileView {
     });
     this.addAction(PNG_ICON_NAME,"Export as PNG",async (ev)=>this.savePNG());
     this.addAction(SVG_ICON_NAME,"Export as SVG",async (ev)=>this.saveSVG());
-    this.addAction("link","Open selected text as link\n(CTRL/META to open in new pane)",(ev)=>{
+    this.addAction("link","Open selected text as link\n(CTRL/META to open in new pane)", (ev)=>{
       let text = this.getSelectedText();
       if(!text) {
         new Notice('Select a text element.\n'+
@@ -135,13 +142,13 @@ export default class ExcalidrawView extends TextFileView {
                    'Use CTRL+Click to open it in a new pane.',20000); 
         return;
       }
-      const parts = text.matchAll(/\[\[(.+)]]/g).next();
+      const parts = text.matchAll(REG_LINKINDEX_BRACKETS).next();
       if(parts.value) text = parts.value[1];
-      if(text.match(/^\w+:\/\//)) {
+      if(text.match(REG_LINKINDEX_HYPERLINK)) {
         window.open(text,"_blank");
         return;
       }
-      if(text.match(/[<>:"\\|?*]/g)) {
+      if(text.match(REG_LINKINDEX_INVALIDCHARS)) {
         new Notice('File name cannot contain any of the following characters: * " \\  < > : | ?',4000); 
         return;
       }
@@ -153,7 +160,11 @@ export default class ExcalidrawView extends TextFileView {
         }
       }
       try {
-        this.app.workspace.openLinkText(text,this.file.path,ev.ctrlKey||ev.metaKey);
+        this.app.workspace.openLinkText(text,this.file.path,ev.ctrlKey||ev.metaKey).then( ()=> {
+          if(ev.shiftKey)
+            this.plugin.linkIndex.indexFile(this.file);
+        });
+        
       } catch (e) {
         new Notice(e,4000);
       }
@@ -253,6 +264,7 @@ export default class ExcalidrawView extends TextFileView {
     this.dirty = false;
     this.previousSceneVersion = 0;
     const reactElement = React.createElement(() => {
+      let currentPosition = {x:0, y:0};
       const excalidrawRef = React.useRef(null);
       const excalidrawWrapperRef = React.useRef(null);
       const [dimensions, setDimensions] = React.useState({
@@ -286,6 +298,28 @@ export default class ExcalidrawView extends TextFileView {
         if(selectedElement[0].type != "text") return null;
         return selectedElement[0].text;
       };
+
+      this.addText = (text:string) => {
+        if(!excalidrawRef?.current) {
+          return;
+        }       
+        const el: ExcalidrawElement[] = excalidrawRef.current.getSceneElements();
+        const st: AppState = excalidrawRef.current.getAppState();
+        window.ExcalidrawAutomate.reset();
+        window.ExcalidrawAutomate.style.strokeColor = st.currentItemStrokeColor;
+        window.ExcalidrawAutomate.style.opacity = st.currentItemOpacity;
+        window.ExcalidrawAutomate.style.fontFamily = st.currentItemFontFamily;
+        window.ExcalidrawAutomate.style.fontSize = st.currentItemFontSize;
+        window.ExcalidrawAutomate.style.textAlign = st.currentItemTextAlign;
+        const id = window.ExcalidrawAutomate.addText(currentPosition.x, currentPosition.y, text);
+        //@ts-ignore
+        el.push(window.ExcalidrawAutomate.elementsDict[id]);
+        excalidrawRef.current.updateScene({
+          elements: el,
+          appState: st,  
+        });
+        //console.log(currentPosition,el,st);
+      }
       
       this.getScene = () => {
         if(!excalidrawRef?.current) {
@@ -348,6 +382,9 @@ export default class ExcalidrawView extends TextFileView {
             },
             initialData: initdata,
             detectScroll: true,
+            onPointerUpdate: (p:any) => {
+              currentPosition = p.pointer;
+            },
             onChange: (et:ExcalidrawElement[],st:AppState) => {
               if(this.justLoaded) {
                 this.justLoaded = false;             

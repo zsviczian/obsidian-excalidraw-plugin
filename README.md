@@ -17,6 +17,7 @@ I have improved how drawings are embedded! You no longer need an Excalidraw code
   - Find and edit existing drawings in your vault, 
   - Transclude (embed) a drawing into a document, and
   - Export a drawing as PNG or SVG.
+  - Insert vault internal-link into drawing
 - You can also use the **file explorer** in your vault to open existing Excalidraw files. 
 - Use the **ribbon button** to create a new drawing, CTRL+Click to open on a new page.
 - Open settings to set up
@@ -24,7 +25,10 @@ I have improved how drawings are embedded! You no longer need an Excalidraw code
   - a **Template** by first creating a drawing, customizing it the way you like it, and specifying the file as the template in settings,
   - Excalidraw to **automatically export SVG and/or PNG** files for your drawings, and to keep those in sync with your drawing,
   - default width of embedded drawings 
-- You can also ustomize the **size and position of the embedded image** using the `[[image.excalidraw|100]]`, `[[image.excalidraw|100x100]]`, `[[image.excalidraw|100|left]]`, `[[image.excalidraw|right-wrap]]`, formatting options. `[[<filename.excalidraw>|<width>x<height>|<alignment>]]`. You can add your custom alignment via css. Any text that appears in `<alignment>` will be added as style to the SVG element and the wrapper DIV element. Check below and styles.css for more insight.
+- You can also customize the **size and position of the embedded image** using the `[[image.excalidraw|100]]`, `[[image.excalidraw|100x100]]`, `[[image.excalidraw|100|left]]`, `[[image.excalidraw|right-wrap]]`, formatting options. `[[<filename.excalidraw>|<width>x<height>|<alignment>]]`. You can add your custom alignment via css. Any text that appears in `<alignment>` will be added as style to the SVG element and the wrapper DIV element. Check below and styles.css for more insight.
+- Supports hyperlinks e.g. `https://zsolt.blog` and internal links e.g. `[[My file in vault]]` in drawing text.
+  - Square brackets can be omitted if the entire text element is an internal link. i.e. the following two text elements `Check out the [[requirements specification]]!!` and `requirements specification` will both represent a link to `requirements specification.md`.
+  - When files are moved/renamed in your vault, text elements that are recognized links will also get updated.
 - Includes full [Templater](https://silentvoid13.github.io/Templater/) and [Dataview](https://blacksmithgu.github.io/obsidian-dataview/docs/api/intro/) support through ExcalidrawAutomate. Read detailed help + examples: [here](https://zsviczian.github.io/obsidian-excalidraw-plugin/)
 - REQUIRES AN OBSIDIAN SYNC SUBSCRIPTION: Temporary hack/workaround to enable Obsidian Sync for Excalidraw files. This enables almost real-time two-way sync for Excalidraw files between your devices. You can draw on your iPad with your pencil, on your Android with your stylus, and the image will be available in Obsidian on your desktop as well and vice versa. 
 
@@ -54,6 +58,15 @@ Part 6: Intro to Obsidian-Excalidraw: Embedding drawings (2:08)
 [![Part 6: Intro to Obsidian-Excalidraw: Embedding drawings](https://user-images.githubusercontent.com/14358394/115983954-bbdd6380-a5a4-11eb-9243-f0151451afcd.jpg)](https://youtu.be/JQeJ-Hh-xAI)
 
 # Release Notes
+
+## 1.1.8
+- Improvements to links
+  - You can now use square brackets to denote links. i.e. the text element `Which are my [[favorite books]]?` will be a link to `favorite books.md`.
+  - Square brackets can still be omitted if the entire text element is an internal link. i.e. the following two text elements `Check out the [[requirements specification]]!!` and `requirements specification` will both represent a link to `requirements specification.md`.
+  - When files are moved/renamed in your vault, text elements that are recognized links will also get updated in your drawings.
+  - I added a new command palette option to insert an internal link into a file in your vault to the active drawing. While a drawing is open press ctrl/cmd+p and select `Excalidraw: Insert link to file`.
+- I Added CTRL/CMD + hover quick preview for Excalidraw files
+[![Obsidian-Excalidraw 1.1.8 - Links enhanced](https://user-images.githubusercontent.com/14358394/120925953-31c40700-c6db-11eb-904d-65300e91815e.jpg)](https://youtu.be/qT_NQAojkzg)
 
 ## 1.1.6
 [![Obsidian-Excalidraw 1.1.6 - Links](https://user-images.githubusercontent.com/14358394/119559279-bdb46580-bda2-11eb-88cb-7614dc452034.jpg)](https://youtu.be/FDsMH-aLw_I)
