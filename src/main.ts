@@ -736,6 +736,7 @@ export default class ExcalidrawPlugin extends Plugin {
     for(const key of this.workspaceEventHandlers.keys())
       this.app.workspace.off(key,this.workspaceEventHandlers.get(key));
     this.observer.disconnect();
+    this.linkIndex.deregisterEventHandlers();
   }
 
   public embedDrawing(data:string) {
