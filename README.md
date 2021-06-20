@@ -61,7 +61,7 @@ Part 6: Intro to Obsidian-Excalidraw: Embedding drawings (2:08)
 
 ## 1.1.9
 - I modified the behavior of Excalidraw text element links.
-  - CTRL/META click a text element to open it as a link.
+  - CTRL/META + click a text element to open it as a link.
     - +SHIFT opens the link in a new pane
     - +ALT creates the file referenced by the link if the file did not exist
 - Added a setting to limit link functionality to `[[valid Obsidian links]]` only. By default the full text of a text element is treated as a link unless it contains a `[[valid internal link]]`, in which case only the [[internal link]] is used. The new setting may be beneficial if you want to avoid unexpected updates to text on your drawings. This may happen if your text element in a drawing accidentally matches a file in your vault, and you happen to rename or move that file. By limiting link behavior to `[[valid internal links]]` only, these accidental matches can be avoided. Not frequent (but happened to me recently).
