@@ -48,3 +48,16 @@ div.excalidraw-svg-left {
 button.ToolIcon_type_button[title="Export"] {
   display:none;
 }
+
+.excalidraw-prompt-div {
+  display: flex;
+}
+
+.excalidraw-prompt-form {
+  display: flex;
+  flex-grow: 1;
+}
+
+.excalidraw-prompt-input {
+  flex-grow: 1;
+}

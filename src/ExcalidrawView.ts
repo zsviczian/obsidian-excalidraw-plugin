@@ -126,6 +126,50 @@ export default class ExcalidrawView extends TextFileView {
     else return this.data;
   }
   
+  handleLinkClick(view: ExcalidrawView, ev:MouseEvent) {
+    let text = this.getSelectedText();
+    if(!text) {
+      new Notice('Select a text element.\n'+
+                 'If it is a web link, it will open in a new browser window.\n'+
+                 'Else, if it is a valid filename, Excalidraw will handle it as an Obsidian internal link.\n'+
+                 'Use Shift+click to open it in a new pane.\n'+
+                 'You can also ctrl/meta click on the text element in the drawing as a shortcut to using this button.',20000); 
+      return;
+    }
+    if(text.match(REG_LINKINDEX_HYPERLINK)) {
+      window.open(text,"_blank");
+      return;
+    }
+    const parts = text.matchAll(REG_LINKINDEX_BRACKETS).next();    
+    if(view.plugin.settings.validLinksOnly) text = ''; //clear text, if it is a valid link, parts.value[1] will hold a value
+    if(parts.value) text = parts.value[1];
+    if(text=='') {
+      new Notice('Text element is empty, or [[valid links only]] setting is enabled in settings, and text does not contain a [[valid Obsidian link]]',4000); 
+      return;
+    }
+    if(text.match(REG_LINKINDEX_INVALIDCHARS)) {
+      new Notice('File name cannot contain any of the following characters: * " \\  < > : | ?',4000); 
+      return;
+    }
+    if (!ev.altKey) {
+      const file = view.app.metadataCache.getFirstLinkpathDest(text,view.file.path); 
+      if (!file) {
+        new Notice("File does not exist. Hold down ALT (or ALT+SHIFT) and click link button to create a new file.", 4000);
+        return;
+      }
+    }
+    try {
+      const f = view.file;
+      view.app.workspace.openLinkText(text,view.file.path,ev.shiftKey).then( ()=> { 
+        if(ev.altKey) //create new: need to reindex excalidraw file
+          view.plugin.linkIndex.indexFile(f);
+      });
+      
+    } catch (e) {
+      new Notice(e,4000);
+    }
+  }
+
   async onload() {
     this.addAction(DISK_ICON_NAME,"Force-save now to update transclusion visible in adjacent workspace pane\n(Please note, that autosave is always on)",async (ev)=> {
       await this.save();
@@ -133,42 +177,8 @@ export default class ExcalidrawView extends TextFileView {
     });
     this.addAction(PNG_ICON_NAME,"Export as PNG",async (ev)=>this.savePNG());
     this.addAction(SVG_ICON_NAME,"Export as SVG",async (ev)=>this.saveSVG());
-    this.addAction("link","Open selected text as link\n(CTRL/META to open in new pane)", (ev)=>{
-      let text = this.getSelectedText();
-      if(!text) {
-        new Notice('Select a text element.\n'+
-                   'If it is a web link, it will open in a new browser window.\n'+
-                   'Else if it is a valid filename Excalidraw will handle it as an Obsidian internal link.\n'+
-                   'Use CTRL+Click to open it in a new pane.',20000); 
-        return;
-      }
-      const parts = text.matchAll(REG_LINKINDEX_BRACKETS).next();
-      if(parts.value) text = parts.value[1];
-      if(text.match(REG_LINKINDEX_HYPERLINK)) {
-        window.open(text,"_blank");
-        return;
-      }
-      if(text.match(REG_LINKINDEX_INVALIDCHARS)) {
-        new Notice('File name cannot contain any of the following characters: * " \\  < > : | ?',4000); 
-        return;
-      }
-      if (!ev.shiftKey) {
-        const file = this.app.metadataCache.getFirstLinkpathDest(text,this.file.path); 
-        if (!file) {
-          new Notice("File does not exist. Hold down SHIFT (or CTRL+SHIFT) and click link button to create.", 4000);
-          return;
-        }
-      }
-      try {
-        this.app.workspace.openLinkText(text,this.file.path,ev.ctrlKey||ev.metaKey).then( ()=> {
-          if(ev.shiftKey)
-            this.plugin.linkIndex.indexFile(this.file);
-        });
-        
-      } catch (e) {
-        new Notice(e,4000);
-      }
-    });
+    this.addAction("link","Open selected text as link\n(SHIFT+click to open in a new pane)", (ev)=>this.handleLinkClick(this,ev));
+    
     //this is to solve sliding panes bug
     if (this.app.workspace.layoutReady) {
       (this.app.workspace.rootSplit as WorkspaceItem as WorkspaceItemExt).containerEl.addEventListener('scroll',(e)=>{if(this.refresh) this.refresh();});
@@ -299,7 +309,7 @@ export default class ExcalidrawView extends TextFileView {
         return selectedElement[0].text;
       };
 
-      this.addText = (text:string) => {
+      this.addText = (text:string, fontFamily?:1|2|3) => {
         if(!excalidrawRef?.current) {
           return;
         }       
@@ -308,7 +318,7 @@ export default class ExcalidrawView extends TextFileView {
         window.ExcalidrawAutomate.reset();
         window.ExcalidrawAutomate.style.strokeColor = st.currentItemStrokeColor;
         window.ExcalidrawAutomate.style.opacity = st.currentItemOpacity;
-        window.ExcalidrawAutomate.style.fontFamily = st.currentItemFontFamily;
+        window.ExcalidrawAutomate.style.fontFamily = fontFamily ? fontFamily: st.currentItemFontFamily;
         window.ExcalidrawAutomate.style.fontSize = st.currentItemFontSize;
         window.ExcalidrawAutomate.style.textAlign = st.currentItemTextAlign;
         const id = window.ExcalidrawAutomate.addText(currentPosition.x, currentPosition.y, text);
@@ -367,6 +377,11 @@ export default class ExcalidrawView extends TextFileView {
             className: "excalidraw-wrapper",
             ref: excalidrawWrapperRef,
             key: "abc",
+            onClick: (e:MouseEvent):any => {
+              if(!(e.ctrlKey||e.metaKey)) return;
+              if(!this.getSelectedText()) return;
+              this.handleLinkClick(this,e);
+            },
           },
           React.createElement(Excalidraw.default, {
             ref: excalidrawRef,

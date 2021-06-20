@@ -13,6 +13,7 @@ export interface ExcalidrawSettings {
   drawingFilenamePrefix: string,
   drawingFilenameDateTime: string,
   width: string,
+  validLinksOnly: boolean, //valid link as in [[valid Obsidian link]] - how to treat text elements in drawings
   exportWithTheme: boolean,
   exportWithBackground: boolean,
   autoexportSVG: boolean,
@@ -31,6 +32,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   drawingFilenamePrefix: 'Drawing ',
   drawingFilenameDateTime: 'YYYY-MM-DD HH.mm.ss',
   width: '400',
+  validLinksOnly: false,
   exportWithTheme: true,
   exportWithBackground: true,
   autoexportSVG: false,
@@ -138,7 +140,28 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
         }));
 
-   
+    this.containerEl.createEl('h1', {text: 'Links in drawings'});
+    this.containerEl.createEl('p',{
+      text: 'You can CTRL/META + click on text elements in your drawings to open them as links. ' + 
+            'By default the plugin will handle any text as a link, and will try to open it. ' + 
+            'If the text element includes a [[valid Obsidian link]] then the rest of the text element will be ignored ' + 
+            'and only the [[valid Obsidian link]] will be processed as a link. ' +
+            'If the text element starts as a valid web link (i.e. https:// or http://), then it will be treated as a web link ' +
+            'and the plugin will try to open it in a browser window. ' +
+            'The plugin indexes your drawings, and when Obsidian files change, the matching text in your drawings will also change. ' +
+            'If you don\'t want text accidentally changing in your drawings, you can set the below toggle to limit the link ' +
+            'feature to only [[valid Obsidian links]].'});
+    new Setting(containerEl)
+    .setName('Accept only [[valid Obsidian links]]') 
+    .setDesc('If this is on, text in text elements will be ignored unless they contain a [[valid Obsidian link]]')
+    .addToggle(toggle => toggle
+      .setValue(this.plugin.settings.validLinksOnly)
+      .onChange(async (value) => {
+        this.plugin.settings.validLinksOnly = value;
+        this.plugin.reloadIndex();
+        await this.plugin.saveSettings();
+      }));
+
     this.containerEl.createEl('h1', {text: 'Embedded image settings'});
 
     new Setting(containerEl)

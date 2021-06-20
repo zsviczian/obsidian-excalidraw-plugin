@@ -15,6 +15,7 @@ import {
   Notice,
   Tasks,
   Workspace,
+  MarkdownRenderer,
 } from "obsidian";
 
 import { 
@@ -53,6 +54,7 @@ import {
   measureText
 } from "./ExcalidrawTemplate";
 import ExcalidrawLinkIndex from "./ExcalidrawLinkIndex";
+import { Prompt } from "./Prompt";
 
 export interface ExcalidrawAutomate extends Window {
   ExcalidrawAutomate: {
@@ -114,7 +116,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.addMarkdownPostProcessor();
     this.addCommands();
 
-    this.linkIndex = new ExcalidrawLinkIndex(this.app);
+    this.linkIndex = new ExcalidrawLinkIndex(this);
 
     if (this.app.workspace.layoutReady) {
       this.addEventListeners(this);
@@ -429,6 +431,31 @@ export default class ExcalidrawPlugin extends Plugin {
       },
     });
 
+    this.addCommand({
+      id: 'insert-LaTeX-symbol',
+      name: 'Insert LaTeX-symbol (e.g. $\\theta$)',
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return this.app.workspace.activeLeaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW;
+        } else {
+          const view = this.app.workspace.activeLeaf.view;
+          if (view instanceof ExcalidrawView) {
+            const prompt = new Prompt(this.app, 'Enter a valid LaTeX expression','');
+            prompt.openAndGetValue( async (formula:string)=> {
+              if(!formula) return;
+              const el = createEl('p');
+              await MarkdownRenderer.renderMarkdown(formula,el,'',this)
+              view.addText(el.getText());
+              el.empty();
+            });
+            return true;
+          }
+          else return false;
+        }
+      },
+    });
+
+
     /*1.1 migration command*/
     const migrateCodeblock = async () => {
       const timeStart = new Date().getTime();
@@ -470,6 +497,10 @@ export default class ExcalidrawPlugin extends Plugin {
       .forEach((f)=>this.syncModifyCreate(f));
   }
   /*Excalidraw Sync End*/
+
+  public async reloadIndex() {
+    this.linkIndex.reloadIndex();
+  }
 
   private async addEventListeners(plugin: ExcalidrawPlugin) {
     plugin.linkIndex.initialize();

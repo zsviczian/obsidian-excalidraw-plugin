@@ -1,21 +1,24 @@
 import {TFile,TAbstractFile, App} from 'obsidian';
 import {EXCALIDRAW_FILE_EXTENSION, REG_LINKINDEX_BRACKETS, REG_LINKINDEX_HYPERLINK, REG_LINKINDEX_INVALIDCHARS } from './constants';
+import ExcalidrawPlugin from './main';
 
 export default class ExcalidrawLinkIndex {
   private app: App;
+  private plugin: ExcalidrawPlugin;
   public link2ex: Map<string, Set<string>>;
   private ex2link: Map<string, Set<{link:string, text:string}>>;
   private vaultEventHandlers:Map<string,any>;
 
-  constructor(app: App) {
-    this.app = app;
+  constructor(plugin:ExcalidrawPlugin) {
+    this.app = plugin.app;
+    this.plugin = plugin;
     this.link2ex = new Map<string,Set<string>>(); //file is referenced by set of excalidraw drawings
     this.ex2link = new Map<string,Set<{link:string, text:string}>>(); //excalidraw drawing references these files
     this.vaultEventHandlers = new Map();
   }
 
   async reloadIndex() {
-    await this.initialize();
+    this.initialize();
   }
 
   async initialize(): Promise<void> {
@@ -78,15 +81,16 @@ export default class ExcalidrawLinkIndex {
   }
 
 
-  public static getLinks(textElements:any,filepath:string,app:App): Set<{link:string,text:string}>{
+  public static getLinks(textElements:any,filepath:string,app:App,validLinksOnly: boolean): Set<{link:string,text:string}>{
     const links = new Set<{link:string,text:string}>();
     if(!textElements) return links;
     let parts, f, text;
     for (const element of textElements) {
       text = element.text;
       parts = text?.matchAll(REG_LINKINDEX_BRACKETS).next();
+      if(validLinksOnly) text = ''; //clear text, if it is a valid link, parts.value[1] will hold a value
       if(parts && parts.value) text = parts.value[1];
-      if(!text?.match(REG_LINKINDEX_HYPERLINK) && !text?.match(REG_LINKINDEX_INVALIDCHARS)) { //not a hyperlink and not invalid filename
+      if(text!='' && !text?.match(REG_LINKINDEX_HYPERLINK) && !text?.match(REG_LINKINDEX_INVALIDCHARS)) { //not empty, not a hyperlink and not invalid filename
         f = app.metadataCache.getFirstLinkpathDest(text,filepath); 
         if(f) {
           links.add({link:f.path,text:text});
@@ -99,7 +103,7 @@ export default class ExcalidrawLinkIndex {
   private async parseLinks(file: TFile): Promise<Set<{link:string, text:string}>> {
     const fileContents = await this.app.vault.read(file);
     const textElements = JSON.parse(fileContents)?.elements?.filter((el:any)=> el.type=="text");
-    return ExcalidrawLinkIndex.getLinks(textElements,file.path,this.app);
+    return ExcalidrawLinkIndex.getLinks(textElements,file.path,this.app, this.plugin.settings.validLinksOnly);
   }
 
   public updateKey(oldpath:string, newpath:string) {

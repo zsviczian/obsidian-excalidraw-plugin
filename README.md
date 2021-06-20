@@ -26,9 +26,9 @@ I have improved how drawings are embedded! You no longer need an Excalidraw code
   - Excalidraw to **automatically export SVG and/or PNG** files for your drawings, and to keep those in sync with your drawing,
   - default width of embedded drawings 
 - You can also customize the **size and position of the embedded image** using the `[[image.excalidraw|100]]`, `[[image.excalidraw|100x100]]`, `[[image.excalidraw|100|left]]`, `[[image.excalidraw|right-wrap]]`, formatting options. `[[<filename.excalidraw>|<width>x<height>|<alignment>]]`. You can add your custom alignment via css. Any text that appears in `<alignment>` will be added as style to the SVG element and the wrapper DIV element. Check below and styles.css for more insight.
-- Supports hyperlinks e.g. `https://zsolt.blog` and internal links e.g. `[[My file in vault]]` in drawing text.
+- Supports hyperlinks e.g. `https://zsolt.blog` and internal links e.g. `[[My file in vault]]` in drawing text. Ctrl/meta + click on a text element.
   - Square brackets can be omitted if the entire text element is an internal link. i.e. the following two text elements `Check out the [[requirements specification]]!!` and `requirements specification` will both represent a link to `requirements specification.md`.
-  - When files are moved/renamed in your vault, text elements that are recognized links will also get updated.
+  - When files are moved/renamed in your vault, text elements that are recognized links will also get updated. Check corresponding setting.
 - Includes full [Templater](https://silentvoid13.github.io/Templater/) and [Dataview](https://blacksmithgu.github.io/obsidian-dataview/docs/api/intro/) support through ExcalidrawAutomate. Read detailed help + examples: [here](https://zsviczian.github.io/obsidian-excalidraw-plugin/)
 - REQUIRES AN OBSIDIAN SYNC SUBSCRIPTION: Temporary hack/workaround to enable Obsidian Sync for Excalidraw files. This enables almost real-time two-way sync for Excalidraw files between your devices. You can draw on your iPad with your pencil, on your Android with your stylus, and the image will be available in Obsidian on your desktop as well and vice versa. 
 
@@ -58,6 +58,14 @@ Part 6: Intro to Obsidian-Excalidraw: Embedding drawings (2:08)
 [![Part 6: Intro to Obsidian-Excalidraw: Embedding drawings](https://user-images.githubusercontent.com/14358394/115983954-bbdd6380-a5a4-11eb-9243-f0151451afcd.jpg)](https://youtu.be/JQeJ-Hh-xAI)
 
 # Release Notes
+
+## 1.1.9
+- I modified the behavior of Excalidraw text element links.
+  - CTRL/META click a text element to open it as a link.
+    - +SHIFT opens the link in a new pane
+    - +ALT creates the file referenced by the link if the file did not exist
+- Added a setting to limit link functionality to [[valid Obsidian links]] only. By default the full text of a text element is treated as a link unless it contains a [[valid internal link]], in which case only the [[internal link]] is used. The new setting may be beneficial if you want to avoid unexpected updates to text on your drawings. This may happen if your text element in a drawing accidentally matches a file in your vault, and you happen to rename or move that file. By limiting link behavior to [[valid internal links]] only, these accidental matches can be avoided. Not frequent (but happened to me recently).
+- LaTeX symbol support. I resolved issue #75 by adding a new command palette option ("Insert LaTeX-symbol") to insert an expression containing a LaTeX symbol or a simple formula. Some symbols may not display properly using the "Hand-drawn" font. If that is the case try using the "Normal" or "Code" fonts.
 
 ## 1.1.8
 - Improvements to links
