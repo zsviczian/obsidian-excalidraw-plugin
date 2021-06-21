@@ -305,8 +305,16 @@ export default class ExcalidrawView extends TextFileView {
         if(!excalidrawRef?.current) return null;
         const selectedElement = excalidrawRef.current.getSceneElements().filter((el:any)=>el.id==Object.keys(excalidrawRef.current.getAppState().selectedElementIds)[0]);
         if(selectedElement.length==0) return null;
-        if(selectedElement[0].type != "text") return null;
-        return selectedElement[0].text;
+        if(selectedElement[0].type == "text") return selectedElement[0].text; //a text element was selected. Retrun text
+        if(selectedElement[0].groupIds.length == 0) return null; //is the selected element part of a group?
+        const group = selectedElement[0].groupIds[0]; //if yes, take the first group it is part of
+        const textElement = excalidrawRef
+                            .current
+                            .getSceneElements()
+                            .filter((el:any)=>el.groupIds?.includes(group))
+                            .filter((el:any)=>el.type=="text"); //filter for text elements of the group
+        if(textElement.length==0) return null; //the group had no text element member
+        return textElement[0].text; //return text element text
       };
 
       this.addText = (text:string, fontFamily?:1|2|3) => {
@@ -379,6 +387,7 @@ export default class ExcalidrawView extends TextFileView {
             key: "abc",
             onClick: (e:MouseEvent):any => {
               if(!(e.ctrlKey||e.metaKey)) return;
+              if(!(this.plugin.settings.allowCtrlClick)) return;
               if(!this.getSelectedText()) return;
               this.handleLinkClick(this,e);
             },

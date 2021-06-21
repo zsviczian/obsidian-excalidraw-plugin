@@ -14,6 +14,7 @@ export interface ExcalidrawSettings {
   drawingFilenameDateTime: string,
   width: string,
   validLinksOnly: boolean, //valid link as in [[valid Obsidian link]] - how to treat text elements in drawings
+  allowCtrlClick: boolean, //if disabled only the link button in the view header will open links 
   exportWithTheme: boolean,
   exportWithBackground: boolean,
   autoexportSVG: boolean,
@@ -33,6 +34,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   drawingFilenameDateTime: 'YYYY-MM-DD HH.mm.ss',
   width: '400',
   validLinksOnly: false,
+  allowCtrlClick: true,
   exportWithTheme: true,
   exportWithBackground: true,
   autoexportSVG: false,
@@ -161,6 +163,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         this.plugin.reloadIndex();
         await this.plugin.saveSettings();
       }));
+    new Setting(containerEl)
+      .setName('CTRL + CLICK on text to open them as links') 
+      .setDesc('You can turn this feature off if it interferes with default Excalidraw features you want to use. If ' +
+               'this is turned off, only the link button in the title bar of the drawing will open links.')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.allowCtrlClick)
+        .onChange(async (value) => {
+          this.plugin.settings.allowCtrlClick = value;
+          await this.plugin.saveSettings();
+        }));
 
     this.containerEl.createEl('h1', {text: 'Embedded image settings'});
 

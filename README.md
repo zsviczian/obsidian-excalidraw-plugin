@@ -58,6 +58,9 @@ Part 6: Intro to Obsidian-Excalidraw: Embedding drawings (2:08)
 [![Part 6: Intro to Obsidian-Excalidraw: Embedding drawings](https://user-images.githubusercontent.com/14358394/115983954-bbdd6380-a5a4-11eb-9243-f0151451afcd.jpg)](https://youtu.be/JQeJ-Hh-xAI)
 
 # Release Notes
+## 1.1.10
+- When you CTRL-Click a grouped collection of objects Excalidraw will open the page based on the embedded text.
+- I added a setting to disable the CTRL-click functionality should it interfere with default Excalidraw behavior for you. In my experience double-clicking achieves the same outcome as a CTRL-click on an element in a grouped collection of objects, but if you use the CTRL-click feature to select an element of a group frequently, and find the "CTRL-click to open a link" feature annoying, you can now disable it.
 
 ## 1.1.9
 - I modified the behavior of Excalidraw text element links.
