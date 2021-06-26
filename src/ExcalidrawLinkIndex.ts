@@ -15,6 +15,8 @@ export default class ExcalidrawLinkIndex {
     this.link2ex = new Map<string,Set<string>>(); //file is referenced by set of excalidraw drawings
     this.ex2link = new Map<string,Set<{link:string, text:string}>>(); //excalidraw drawing references these files
     this.vaultEventHandlers = new Map();
+    const initialize = async () => {this.initialize()};
+    plugin.app.workspace.onLayoutReady(initialize);
   }
 
   async reloadIndex() {
