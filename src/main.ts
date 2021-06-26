@@ -114,14 +114,19 @@ export default class ExcalidrawPlugin extends Plugin {
     initExcalidrawAutomate(this);
     this.registerExtensions([EXCALIDRAW_FILE_EXTENSION],VIEW_TYPE_EXCALIDRAW);
     this.addMarkdownPostProcessor();
-    this.addCommands();
+    this.registerCommands();
 
     this.linkIndex = new ExcalidrawLinkIndex(this);
 
+    const onLayoutReady = async () => {
+      this.linkIndex.initialize();
+      this.registerEventListeners(this);
+    }
+
     if (this.app.workspace.layoutReady) {
-      this.addEventListeners(this);
+      onLayoutReady();
     } else {
-      this.registerEvent(this.app.workspace.on("layout-ready", async () => this.addEventListeners(this)));
+      this.registerEvent(this.app.workspace.on("layout-ready", async () => onLayoutReady()));
     }
   }
 
@@ -267,7 +272,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.observer.observe(document, {childList: true, subtree: true});
   }
 
-  private addCommands() {
+  private registerCommands() {
     this.openDialog = new OpenFileDialog(this.app, this);
 
     this.addRibbonIcon(ICON_NAME, 'Create a new drawing in Excalidraw', async (e) => {
@@ -502,8 +507,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.linkIndex.reloadIndex();
   }
 
-  private async addEventListeners(plugin: ExcalidrawPlugin) {
-    plugin.linkIndex.initialize();
+  private async registerEventListeners(plugin: ExcalidrawPlugin) {
     const closeDrawing = async (filePath:string) => {
       const leaves = plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
       for (let i=0;i<leaves.length;i++) {
@@ -557,7 +561,6 @@ export default class ExcalidrawPlugin extends Plugin {
         await plugin.app.vault.modify(target,await plugin.app.vault.read(source));
       } else {
         await plugin.app.vault.create(targetPath,await plugin.app.vault.read(source))
-        //await plugin.app.vault.copy(source,targetPath);
       }
     }
 
