@@ -122,17 +122,28 @@ export default class ExcalidrawPlugin extends Plugin {
       this.linkIndex.initialize();
       this.registerEventListeners(this);
     }
-
-    if (this.app.workspace.layoutReady) {
-      onLayoutReady();
-    } else {
-      this.registerEvent(this.app.workspace.on("layout-ready", async () => onLayoutReady()));
-    }
+    this.app.workspace.onLayoutReady(onLayoutReady);
+    
   }
 
+  /**
+   * Displays a transcluded .excalidraw image in markdown preview mode
+   */
   private addMarkdownPostProcessor() {
+    
+    interface imgElementAttributes {
+      fname:   string, //Excalidraw filename
+      fwidth:  string, //Display width of image
+      fheight: string, //Display height of image
+      style:   string  //css style to apply to IMG element
+    }
 
-    const getIMG = async (parts:any) => {
+    /**
+     * Generates an img element with the .excalidraw drawing encoded as a base64 svg
+     * @param parts {imgElementAttributes} - display properties of the image
+     * @returns {Promise<HTMLElement>} - the IMG HTML element containing the encoded SVG image
+     */
+    const getIMG = async (parts:imgElementAttributes):Promise<HTMLElement> => {
       const file = this.app.vault.getAbstractFileByPath(parts.fname);
       if(!(file && file instanceof TFile)) {
         return null;
@@ -157,35 +168,41 @@ export default class ExcalidrawPlugin extends Plugin {
       return img;
     }
 
+    /**
+     * 
+     * @param el 
+     * @param ctx 
+     */
     const markdownPostProcessor = async (el:HTMLElement,ctx:MarkdownPostProcessorContext) => {
       const drawings = el.querySelectorAll('.internal-embed[src$=".excalidraw"]');
-      let fname:string, fwidth:string,fheight:string, alt:string, divclass:string, img:any, parts, div, file:TFile;
+      let attr:imgElementAttributes;
+      let alt:string, img:any, parts, div, file:TFile;
       for (const drawing of drawings) {
-        fname    = drawing.getAttribute("src");
-        fwidth   = drawing.getAttribute("width");
-        fheight  = drawing.getAttribute("height");
+        attr.fname    = drawing.getAttribute("src");
+        attr.fwidth   = drawing.getAttribute("width");
+        attr.fheight  = drawing.getAttribute("height");
         alt      = drawing.getAttribute("alt");
-        if(alt == fname) alt = ""; //when the filename starts with numbers followed by a space Obsidian recognizes the filename as alt-text
-        divclass = "excalidraw-svg";
+        if(alt == attr.fname) alt = ""; //when the filename starts with numbers followed by a space Obsidian recognizes the filename as alt-text
+        attr.style = "excalidraw-svg";
         if(alt) {
           //for some reason ![]() is rendered in a DIV and ![[]] in a span by Obsidian
           //also the alt text of the DIV does not include the altext of the image
           //thus need to add an additional "|" character when its a span
           if(drawing.tagName.toLowerCase()=="span") alt = "|"+alt;
           parts = alt.match(/[^\|]*\|?(\d*)x?(\d*)\|?(.*)/);
-          fwidth = parts[1]? parts[1] : this.settings.width;
-          fheight = parts[2];
-          if(parts[3]!=fname) divclass = "excalidraw-svg" + (parts[3] ? "-" + parts[3] : "");
+          attr.fwidth = parts[1]? parts[1] : this.settings.width;
+          attr.fheight = parts[2];
+          if(parts[3]!=attr.fname) attr.style = "excalidraw-svg" + (parts[3] ? "-" + parts[3] : "");
         }
-        file = this.app.metadataCache.getFirstLinkpathDest(fname, ctx.sourcePath); 
+        file = this.app.metadataCache.getFirstLinkpathDest(attr.fname, ctx.sourcePath); 
         if(file) {  //file exists. Display drawing
-          fname = file?.path;
-          img = await getIMG({fname:fname,fwidth:fwidth,fheight:fheight,style:divclass});
-          div = createDiv(divclass, (el)=>{
+          attr.fname = file?.path;
+          img = await getIMG(attr);
+          div = createDiv(attr.style, (el)=>{
             el.append(img);
             el.setAttribute("src",file.path);
-            el.setAttribute("w",fwidth);
-            el.setAttribute("h",fheight);
+            el.setAttribute("w",attr.fwidth);
+            el.setAttribute("h",attr.fheight);
             el.onClickEvent((ev)=>{
               if(ev.target instanceof Element && ev.target.tagName.toLowerCase() != "img") return;
               let src = el.getAttribute("src");
@@ -205,9 +222,9 @@ export default class ExcalidrawPlugin extends Plugin {
           });
         } else { //file does not exist. Replace standard Obsidian div with mine to create a new drawing on click
           div = createDiv("excalidraw-new",(el)=> {
-            el.setAttribute("src",fname);
+            el.setAttribute("src",attr.fname);
             el.createSpan("internal-embed file-embed mod-empty is-loaded", (el) => {
-              el.setText('"'+fname+'" is not created yet. Click to create.');
+              el.setText('"'+attr.fname+'" is not created yet. Click to create.');
             });
             el.onClickEvent(async (ev)=> {
               const fname = el.getAttribute("src");
@@ -226,9 +243,11 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.registerMarkdownPostProcessor(markdownPostProcessor);
 
-    /*****************************
-      internal-link quick preview
-    ******************************/
+    /**
+     * internal-link quick preview 
+     * @param e 
+     * @returns 
+     */
     const hoverEvent = (e:any) => {
       //@ts-ignore
       if(!e.linktext) return;
@@ -257,7 +276,7 @@ export default class ExcalidrawPlugin extends Plugin {
         //this div will be on top of original DIV. By stopping the propagation of the click
         //I prevent the default Obsidian feature of openning the link in the native app
         const div = createDiv("",async (el)=>{
-          const img = await getIMG({fname:file.path,fwidth:300,fheight:null,style:"excalidraw-svg"});
+          const img = await getIMG({fname:file.path,fwidth:"300",fheight:null,style:"excalidraw-svg"});
           el.appendChild(img);
           el.setAttribute("src",file.path);
           el.onClickEvent((ev)=>{
