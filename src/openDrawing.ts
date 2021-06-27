@@ -6,7 +6,6 @@ import {
 import ExcalidrawPlugin from './main';
 import {
   EMPTY_MESSAGE,
-  EXCALIDRAW_FILE_EXTENSION
 } from './constants';
 
 export enum openDialogAction {
@@ -33,7 +32,7 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
     this.inputEl.onkeyup = (e) => {
       if(e.key=="Enter" && this.action == openDialogAction.openFile) {
         if (this.containerEl.innerText.includes(EMPTY_MESSAGE)) {
-          this.plugin.createDrawing(this.plugin.settings.folder+'/'+this.inputEl.value+'.'+EXCALIDRAW_FILE_EXTENSION, this.onNewPane);
+          this.plugin.createDrawing(this.plugin.settings.folder+'/'+this.inputEl.value+'.md', this.onNewPane);
           this.close();
         }
       }
@@ -42,7 +41,10 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
 
   getItems(): TFile[] {
     const excalidrawFiles = this.app.vault.getFiles();
-    return (excalidrawFiles || []).filter((f:TFile) => (this.action == openDialogAction.insertLink) || (f.extension==EXCALIDRAW_FILE_EXTENSION));
+    return (excalidrawFiles || []).filter((f:TFile) => {
+      if (this.action == openDialogAction.insertLink) return true;
+      return this.plugin.isExcalidrawFile(f);
+    });
   }
 
   getItemText(item: TFile): string {

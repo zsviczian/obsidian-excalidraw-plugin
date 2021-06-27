@@ -12,10 +12,9 @@ import {
   Menu,
   MenuItem,
   TAbstractFile,
-  Notice,
   Tasks,
-  Workspace,
   MarkdownRenderer,
+  ViewState,
 } from "obsidian";
 
 import { 
@@ -23,8 +22,6 @@ import {
   VIEW_TYPE_EXCALIDRAW, 
   EXCALIDRAW_ICON,
   ICON_NAME,
-  EXCALIDRAW_FILE_EXTENSION,
-  EXCALIDRAW_FILE_EXTENSION_LEN,
   DISK_ICON,
   DISK_ICON_NAME,
   PNG_ICON,
@@ -32,13 +29,10 @@ import {
   SVG_ICON,
   SVG_ICON_NAME,
   RERENDER_EVENT,
-  VIRGIL_FONT,
-  CASCADIA_FONT,
-  REG_LINKINDEX_BRACKETS,
-  REG_LINKINDEX_HYPERLINK,
-  REG_LINKINDEX_INVALIDCHARS
+  FRONTMATTER_KEY,
+  FRONTMATTER
 } from "./constants";
-import ExcalidrawView, {ExportSettings} from "./ExcalidrawView";
+import ExcalidrawView, {ExportSettings, getJSON, textElementsToMD} from "./ExcalidrawView";
 import {
   ExcalidrawSettings, 
   DEFAULT_SETTINGS, 
@@ -51,11 +45,10 @@ import {
 import {
   initExcalidrawAutomate,
   destroyExcalidrawAutomate,
-  measureText
 } from "./ExcalidrawTemplate";
-import ExcalidrawLinkIndex from "./ExcalidrawLinkIndex";
 import { Prompt } from "./Prompt";
 import { around } from "monkey-around";
+import { t } from "./lang/helpers";
 
 export interface ExcalidrawAutomate extends Window {
   ExcalidrawAutomate: {
@@ -65,32 +58,19 @@ export interface ExcalidrawAutomate extends Window {
 }
 
 export default class ExcalidrawPlugin extends Plugin {
+  public excalidrawFileModes: { [file: string]: string } = {};
+  private _loaded: boolean = false;
   public settings: ExcalidrawSettings;
   private openDialog: OpenFileDialog;
-  private activeExcalidrawView: ExcalidrawView;
-  public lastActiveExcalidrawFilePath: string;
-  private workspaceEventHandlers:Map<string,any>;
-  private vaultEventHandlers:Map<string,any>;
-  private hover: {linkText: string, sourcePath: string};
+  private activeExcalidrawView: ExcalidrawView = null;
+  public lastActiveExcalidrawFilePath: string = null;
+  private workspaceEventHandlers:Map<string,any> = new Map();
+  private vaultEventHandlers:Map<string,any> = new Map();
+  private hover: {linkText: string, sourcePath: string} = {linkText: null, sourcePath: null};
   private observer: MutationObserver;
-  public linkIndex: ExcalidrawLinkIndex;
-  /*Excalidraw Sync Begin*/
-  private excalidrawSync: Set<string>;
-  private syncModifyCreate: any;
-  /*Excalidraw Sync Begin*/
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
-    this.activeExcalidrawView = null;
-    this.lastActiveExcalidrawFilePath = null;
-    this.workspaceEventHandlers = new Map();
-    this.vaultEventHandlers = new Map();
-    this.hover = {linkText: null, sourcePath: null};
-
-    /*Excalidraw Sync Begin*/
-    this.excalidrawSync = new Set<string>();
-    this.syncModifyCreate = null;
-    /*Excalidraw Sync End*/
   }
   
   async onload() {
@@ -99,11 +79,6 @@ export default class ExcalidrawPlugin extends Plugin {
     addIcon(PNG_ICON_NAME,PNG_ICON);
     addIcon(SVG_ICON_NAME,SVG_ICON);
     
-    const myFonts = document.createElement('style');
-    myFonts.appendChild(document.createTextNode(VIRGIL_FONT));
-    myFonts.appendChild(document.createTextNode(CASCADIA_FONT));
-    document.head.appendChild(myFonts);
-
     await this.loadSettings();
     this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
 
@@ -113,14 +88,13 @@ export default class ExcalidrawPlugin extends Plugin {
     );
 
     initExcalidrawAutomate(this);
-    this.registerExtensions([EXCALIDRAW_FILE_EXTENSION],VIEW_TYPE_EXCALIDRAW);
     this.addMarkdownPostProcessor();
     this.registerCommands();
 
-    this.linkIndex = new ExcalidrawLinkIndex(this);
     this.registerEventListeners();
-
-    //this.registerMonkeyPatches();
+    
+    //inspiration taken from kanban: https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/main.ts#L267
+    this.registerMonkeyPatches();
   }
 
   /**
@@ -151,7 +125,7 @@ export default class ExcalidrawPlugin extends Plugin {
         withBackground: this.settings.exportWithBackground, 
         withTheme: this.settings.exportWithTheme
       }
-      let svg = ExcalidrawView.getSVG(content,exportSettings);
+      let svg = ExcalidrawView.getSVG(getJSON(content),exportSettings);
       if(!svg) return null;
       svg = ExcalidrawView.embedFontsInSVG(svg);
       const img = createEl("img");
@@ -171,28 +145,29 @@ export default class ExcalidrawPlugin extends Plugin {
      * @param ctx 
      */
     const markdownPostProcessor = async (el:HTMLElement,ctx:MarkdownPostProcessorContext) => {
-      const drawings = el.querySelectorAll('.internal-embed[src$=".excalidraw"]');
-      let attr:imgElementAttributes;
+      const drawings = el.querySelectorAll('.internal-embed');
+      let attr:imgElementAttributes={fname:"",fheight:"",fwidth:"",style:""};
       let alt:string, img:any, parts, div, file:TFile;
       for (const drawing of drawings) {
-        attr.fname    = drawing.getAttribute("src");
-        attr.fwidth   = drawing.getAttribute("width");
-        attr.fheight  = drawing.getAttribute("height");
-        alt      = drawing.getAttribute("alt");
-        if(alt == attr.fname) alt = ""; //when the filename starts with numbers followed by a space Obsidian recognizes the filename as alt-text
-        attr.style = "excalidraw-svg";
-        if(alt) {
-          //for some reason ![]() is rendered in a DIV and ![[]] in a span by Obsidian
-          //also the alt text of the DIV does not include the altext of the image
-          //thus need to add an additional "|" character when its a span
-          if(drawing.tagName.toLowerCase()=="span") alt = "|"+alt;
-          parts = alt.match(/[^\|]*\|?(\d*)x?(\d*)\|?(.*)/);
-          attr.fwidth = parts[1]? parts[1] : this.settings.width;
-          attr.fheight = parts[2];
-          if(parts[3]!=attr.fname) attr.style = "excalidraw-svg" + (parts[3] ? "-" + parts[3] : "");
-        }
+        attr.fname = drawing.getAttribute("src");
         file = this.app.metadataCache.getFirstLinkpathDest(attr.fname, ctx.sourcePath); 
-        if(file) {  //file exists. Display drawing
+        if(file && file instanceof TFile && this.isExcalidrawFile(file)) {  
+          attr.fwidth   = drawing.getAttribute("width");
+          attr.fheight  = drawing.getAttribute("height");
+          alt = drawing.getAttribute("alt");
+          if(alt == attr.fname) alt = ""; //when the filename starts with numbers followed by a space Obsidian recognizes the filename as alt-text
+          attr.style = "excalidraw-svg";
+          if(alt) {
+            //for some reason ![]() is rendered in a DIV and ![[]] in a span by Obsidian
+            //also the alt text of the DIV does not include the altext of the image
+            //thus need to add an additional "|" character when its a span
+            if(drawing.tagName.toLowerCase()=="span") alt = "|"+alt;
+            parts = alt.match(/[^\|]*\|?(\d*)x?(\d*)\|?(.*)/);
+            attr.fwidth = parts[1]? parts[1] : this.settings.width;
+            attr.fheight = parts[2];
+            if(parts[3]!=attr.fname) attr.style = "excalidraw-svg" + (parts[3] ? "-" + parts[3] : "");
+          }
+        
           attr.fname = file?.path;
           img = await getIMG(attr);
           div = createDiv(attr.style, (el)=>{
@@ -247,13 +222,17 @@ export default class ExcalidrawPlugin extends Plugin {
      */
     const hoverEvent = (e:any) => {
       //@ts-ignore
+      if(!(e.event.ctrlKey||e.event.metaKey)) return;
       if(!e.linktext) return;
-      if(!e.linktext.endsWith('.'+EXCALIDRAW_FILE_EXTENSION)) {
-        this.hover.linkText = null;
-        return;
-      }
       this.hover.linkText = e.linktext;
       this.hover.sourcePath = e.sourcePath;
+
+      const file = this.app.vault.getAbstractFileByPath(e.linktext);
+      if(file && file instanceof TFile && !this.isExcalidrawFile(file)) {
+          this.hover.linkText = null;
+          return;
+      }
+      
     };
     //@ts-ignore
     this.app.workspace.on('hover-link',hoverEvent);
@@ -262,12 +241,19 @@ export default class ExcalidrawPlugin extends Plugin {
     //monitoring for div.popover.hover-popover.file-embed.is-loaded to be added to the DOM tree
     this.observer = new MutationObserver((m)=>{
       if(!this.hover.linkText) return;
-      if(m.length!=1) return;
-      if(m[0].addedNodes.length != 1) return;
+      if(m.length == 0) return;
+      let i=0;
+      //@ts-ignore      
+      while(i<m.length && m[i].target?.className!="markdown-preview-sizer markdown-preview-section") i++;
+      if(i==m.length) return;
+      if(m[i].addedNodes.length==0) return;
       //@ts-ignore
-      if(m[0].addedNodes[0].className!="popover hover-popover file-embed is-loaded") return;
-      const node = m[0].addedNodes[0];
-      node.empty();
+      if(m[i].addedNodes[0].childElementCount!=2) return;
+      //@ts-ignore
+      if(m[i].addedNodes[0].firstElementChild.className.indexOf("frontmatter")==-1) return;
+      //@ts-ignore
+      if(m[i].addedNodes[0].firstElementChild?.firstElementChild?.className=="excalidraw-svg") return;
+      
       const file = this.app.metadataCache.getFirstLinkpathDest(this.hover.linkText, this.hover.sourcePath?this.hover.sourcePath:""); 
       if(file) {  
         //this div will be on top of original DIV. By stopping the propagation of the click
@@ -282,7 +268,7 @@ export default class ExcalidrawPlugin extends Plugin {
             if(src) this.openDrawing(this.app.vault.getAbstractFileByPath(src) as TFile,ev.ctrlKey||ev.metaKey);
           });
         });
-        node.appendChild(div);
+        m[i].addedNodes[0].insertBefore(div,m[i].addedNodes[0].firstChild)
       }
     });
     this.observer.observe(document, {childList: true, subtree: true});
@@ -291,14 +277,14 @@ export default class ExcalidrawPlugin extends Plugin {
   private registerCommands() {
     this.openDialog = new OpenFileDialog(this.app, this);
 
-    this.addRibbonIcon(ICON_NAME, 'Create a new drawing in Excalidraw', async (e) => {
+    this.addRibbonIcon(ICON_NAME, t("Create a new drawing in Excalidraw"), async (e) => {
       this.createDrawing(this.getNextDefaultFilename(), e.ctrlKey||e.metaKey);
     });
   
     const fileMenuHandler = (menu: Menu, file: TFile) => {
       if (file instanceof TFolder) {
         menu.addItem((item: MenuItem) => {
-          item.setTitle("Create Excalidraw drawing")
+          item.setTitle(t("Create Excalidraw drawing"))
             .setIcon(ICON_NAME)
             .onClick(evt => {
               this.createDrawing(this.getNextDefaultFilename(),false,file.path);
@@ -315,7 +301,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "excalidraw-open",
-      name: "Open an existing drawing - IN A NEW PANE",
+      name: t("Open an existing drawing - IN A NEW PANE"),
       callback: () => {
         this.openDialog.start(openDialogAction.openFile, true);
       },
@@ -323,7 +309,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "excalidraw-open-on-current",
-      name: "Open an existing drawing - IN THE CURRENT ACTIVE PANE",
+      name: t("Open an existing drawing - IN THE CURRENT ACTIVE PANE"),
       callback: () => {
         this.openDialog.start(openDialogAction.openFile, false);
       },
@@ -331,7 +317,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "excalidraw-insert-transclusion",
-      name: "Transclude (embed) an Excalidraw drawing",
+      name: t("Transclude (embed) an Excalidraw drawing"),
       checkCallback: (checking: boolean) => {
         if (checking) {
           return this.app.workspace.activeLeaf.view.getViewType() == "markdown";
@@ -344,7 +330,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "excalidraw-insert-last-active-transclusion",
-      name: "Transclude (embed) the most recently edited Excalidraw drawing",
+      name: t("Transclude (embed) the most recently edited Excalidraw drawing"),
       checkCallback: (checking: boolean) => {
         if (checking) {
           return (this.app.workspace.activeLeaf.view.getViewType() == "markdown") && (this.lastActiveExcalidrawFilePath!=null);
@@ -357,7 +343,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "excalidraw-autocreate",
-      name: "Create a new drawing - IN A NEW PANE",
+      name: t("Create a new drawing - IN A NEW PANE"),
       callback: () => {
         this.createDrawing(this.getNextDefaultFilename(), true);
       },
@@ -365,7 +351,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "excalidraw-autocreate-on-current",
-      name: "Create a new drawing - IN THE CURRENT ACTIVE PANE",
+      name: t("Create a new drawing - IN THE CURRENT ACTIVE PANE"),
       callback: () => {
         this.createDrawing(this.getNextDefaultFilename(), false);
       },
@@ -373,7 +359,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "excalidraw-autocreate-and-embed",
-      name: "Create a new drawing - IN A NEW PANE - and embed in current document",
+      name: t("Create a new drawing - IN A NEW PANE - and embed in current document"),
       checkCallback: (checking: boolean) => {
         if (checking) {
           return (this.app.workspace.activeLeaf.view.getViewType() == "markdown");
@@ -388,7 +374,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "excalidraw-autocreate-and-embed-on-current",
-      name: "Create a new drawing - IN THE CURRENT ACTIVE PANE - and embed in current document",
+      name: t("Create a new drawing - IN THE CURRENT ACTIVE PANE - and embed in current document"),
       checkCallback: (checking: boolean) => {
         if (checking) {
           return (this.app.workspace.activeLeaf.view.getViewType() == "markdown");
@@ -402,8 +388,8 @@ export default class ExcalidrawPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: 'export-svg',
-      name: 'Export SVG. Save it next to the current file',
+      id: "export-svg",
+      name: t("Export SVG. Save it next to the current file"),
       checkCallback: (checking: boolean) => {
         if (checking) {
           return this.app.workspace.activeLeaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW;
@@ -419,8 +405,8 @@ export default class ExcalidrawPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: 'export-png',
-      name: 'Export PNG. Save it next to the current file',
+      id: "export-png",
+      name: t("Export PNG. Save it next to the current file"),
       checkCallback: (checking: boolean) => {
         if (checking) {
           return this.app.workspace.activeLeaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW;
@@ -436,8 +422,8 @@ export default class ExcalidrawPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: 'insert-link',
-      name: 'Insert link to file',
+      id: "insert-link",
+      name: t("Insert link to file"),
       checkCallback: (checking: boolean) => {
         if (checking) {
           return this.app.workspace.activeLeaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW;
@@ -453,8 +439,8 @@ export default class ExcalidrawPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: 'insert-LaTeX-symbol',
-      name: 'Insert LaTeX-symbol (e.g. $\\theta$)',
+      id: "insert-LaTeX-symbol",
+      name: t("Insert LaTeX-symbol (e.g. $\\theta$)"),
       checkCallback: (checking: boolean) => {
         if (checking) {
           return this.app.workspace.activeLeaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW;
@@ -474,6 +460,70 @@ export default class ExcalidrawPlugin extends Plugin {
           else return false;
         }
       },
+    });
+
+    this.addCommand({
+      id: "toggle-excalidraw-view",
+      name: t("Toggle between Excalidraw and markdown mode"),
+      checkCallback: (checking) => {
+        const activeFile = this.app.workspace.getActiveFile();
+        if (!activeFile) return false;
+        const fileIsExcalidraw = this.isExcalidrawFile(activeFile);
+
+        if (checking) {
+          return fileIsExcalidraw;
+        }
+
+        const activeLeaf = this.app.workspace.activeLeaf;
+
+        if (activeLeaf?.view && activeLeaf.view instanceof ExcalidrawView) {
+          this.excalidrawFileModes[(activeLeaf as any).id || activeFile.path] =
+            "markdown";
+          this.setMarkdownView(activeLeaf);
+        } else if (fileIsExcalidraw) {
+          this.excalidrawFileModes[(activeLeaf as any).id || activeFile.path] =
+            VIEW_TYPE_EXCALIDRAW;
+          this.setExcalidrawView(activeLeaf);
+        }
+      },
+    });
+
+    this.addCommand({
+      id: "convert-to-excalidraw",
+      name: t("Convert empty note to Excalidraw Drawing"),
+      checkCallback: (checking) => {
+        const activeFile = this.app.workspace.getActiveFile();
+        const activeLeaf = this.app.workspace.activeLeaf;
+
+        if (!activeFile || !activeLeaf) return false;
+
+        const isFileEmpty = activeFile.stat.size === 0;
+
+        if (checking) return isFileEmpty;
+        if (isFileEmpty) {
+          (async()=>{
+            await this.app.vault.modify(activeFile, await this.getBlankDrawing());
+            this.setExcalidrawView(activeLeaf);  
+          })();
+        }
+      },
+    });
+
+    
+    /*1.2 migration command */
+    this.addCommand({
+      id: "migrate-to-1.2.x",
+      name: t("MIGRATE to version 1.2: convert .excalidraw files to .md files"),
+      callback: async () => {
+        const files = this.app.vault.getFiles().filter((f)=>f.extension=="excalidraw");
+        for (const file of files) {
+          const data = await this.app.vault.read(file);
+          const fname = this.getNewUniqueFilepath(file.name+'.md',normalizePath(file.path.substr(0,file.path.lastIndexOf(file.name))));
+          console.log(fname);
+          await this.app.vault.create(fname,FRONTMATTER + textElementsToMD(data) +'# Drawing\n'+ data);
+          this.app.vault.delete(file);
+        }
+      }
     });
 
 
@@ -501,31 +551,101 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "migrate-codeblock-transclusions",
-      name: "MIGRATE to version 1.1: Replace codeblocks with ![[...]] style embedments",
+      name: t("MIGRATE to version 1.1: Replace codeblocks with ![[...]] style embedments"),
       callback: async () => migrateCodeblock(),  
     });
   }
   
-  /*Excalidraw Sync Begin*/
-  public initiateSync() {
-    if(!this.syncModifyCreate) return;
-    const files = this.app.vault.getFiles();
-    (files || [])
-      .filter((f:TFile) => (f.path.startsWith(this.settings.syncFolder) && f.extension == "md"))
-      .forEach((f)=>this.syncModifyCreate(f));
-    (files || [])
-      .filter((f:TFile) => (!f.path.startsWith(this.settings.syncFolder) && f.extension == EXCALIDRAW_FILE_EXTENSION))
-      .forEach((f)=>this.syncModifyCreate(f));
+  private registerMonkeyPatches() {
+    const self = this;
+
+    // Monkey patch WorkspaceLeaf to open Excalidraw drawings with ExcalidrawView by default
+    this.register(
+      around(WorkspaceLeaf.prototype, {
+        // Drawings can be viewed as markdown or Excalidraw, and we keep track of the mode
+        // while the file is open. When the file closes, we no longer need to keep track of it.
+        detach(next) {
+          return function () {
+            const state = this.view?.getState();
+
+            if (state?.file && self.excalidrawFileModes[this.id || state.file]) {
+              delete self.excalidrawFileModes[this.id || state.file];
+            }
+
+            return next.apply(this);
+          };
+        },
+
+        setViewState(next) {
+          return function (state: ViewState, ...rest: any[]) {
+            if (
+              // Don't force excalidraw mode during shutdown
+              self._loaded &&
+              // If we have a markdown file
+              state.type === "markdown" &&
+              state.state?.file &&
+              // And the current mode of the file is not set to markdown
+              self.excalidrawFileModes[this.id || state.state.file] !== "markdown"
+            ) {
+              // Then check for the kanban frontMatterKey
+              const cache = self.app.metadataCache.getCache(state.state.file);
+
+              if (cache?.frontmatter && cache.frontmatter[FRONTMATTER_KEY]) {
+                // If we have it, force the view type to excalidraw
+                const newState = {
+                  ...state,
+                  type: VIEW_TYPE_EXCALIDRAW,
+                };
+
+                self.excalidrawFileModes[state.state.file] = VIEW_TYPE_EXCALIDRAW;
+
+                return next.apply(this, [newState, ...rest]);
+              }
+            }
+
+            return next.apply(this, [state, ...rest]);
+          };
+        },
+      })
+    );
+
+    // Add a menu item to go back to Excalidraw view
+    this.register(
+      around(MarkdownView.prototype, {
+        onMoreOptionsMenu(next) {
+          return function (menu: Menu) {
+            const file = this.file;
+            const cache = file
+              ? self.app.metadataCache.getFileCache(file)
+              : null;
+
+            if (
+              !file ||
+              !cache?.frontmatter ||
+              !cache.frontmatter[FRONTMATTER_KEY]
+            ) {
+              return next.call(this, menu);
+            }
+
+            menu
+              .addItem((item) => {
+                item
+                  .setTitle(t("Open as Excalidraw Drawing"))
+                  .setIcon(ICON_NAME)
+                  .onClick(() => {
+                    self.excalidrawFileModes[this.leaf.id || file.path] =
+                    VIEW_TYPE_EXCALIDRAW;
+                    self.setExcalidrawView(this.leaf);
+                  });
+              })
+              .addSeparator();
+
+            next.call(this, menu);
+          };
+        },
+      })
+    );
   }
-  /*Excalidraw Sync End*/
-
-  public async reloadIndex() {
-    this.linkIndex.reloadIndex();
-  }
-
-  /*private registerMonkeyPatches(plugin: ExcalidrawPlugin) {
-
-  }*/
 
   private registerEventListeners() {
     const self = this;
@@ -554,162 +674,19 @@ export default class ExcalidrawPlugin extends Plugin {
         self.triggerEmbedUpdates(oldPath);
       }
 
-      /****************************/
-      /*Excalidraw Sync Begin*/
-      const createPathIfNotThere = async (path:string) => {
-        const folderArray = path.split("/");
-        folderArray.pop();
-        const folderPath = folderArray.join("/");
-        const folder = self.app.vault.getAbstractFileByPath(folderPath);
-        if(!folder)
-          await self.app.vault.createFolder(folderPath); 
-      }
-
-      const getSyncFilepath = (excalidrawPath:string):string => {
-        return normalizePath(self.settings.syncFolder)+'/'+excalidrawPath.slice(0,excalidrawPath.length-EXCALIDRAW_FILE_EXTENSION_LEN)+"md";
-      }
-
-      const getExcalidrawFilepath = (syncFilePath:string):string => {
-        const syncFolder = normalizePath(self.settings.syncFolder)+'/';
-        const normalFilePath = syncFilePath.slice(syncFolder.length);
-        return normalFilePath.slice(0,normalFilePath.length-2)+EXCALIDRAW_FILE_EXTENSION; //2=="md".length
-      }
-
-      const syncCopy = async (source:TFile, targetPath: string) => {
-        await createPathIfNotThere(targetPath);
-        const target = self.app.vault.getAbstractFileByPath(targetPath);
-        self.excalidrawSync.add(targetPath);
-        if(target && target instanceof TFile) {
-          await self.app.vault.modify(target,await self.app.vault.read(source));
-        } else {
-          await self.app.vault.create(targetPath,await self.app.vault.read(source))
-        }
-      }
-
-      const syncModifyCreate = async (file:TAbstractFile) => {
-        if(!(file instanceof TFile)) return;
-        if(self.excalidrawSync.has(file.path)) {
-          self.excalidrawSync.delete(file.path);
-          return;
-        }
-        if(self.settings.excalidrawSync) {
-          switch (file.extension) {
-            case EXCALIDRAW_FILE_EXTENSION: 
-              const syncFilePath = getSyncFilepath(file.path); 
-              await syncCopy(file,syncFilePath);
-              break;
-            case 'md':
-              if(file.path.startsWith(normalizePath(self.settings.syncFolder))) {
-                const excalidrawNewPath = getExcalidrawFilepath(file.path); 
-                await syncCopy(file,excalidrawNewPath);
-                reloadDrawing(excalidrawNewPath,excalidrawNewPath);
-              }
-              break;
-          }
-        }
-      };
-      this.syncModifyCreate = syncModifyCreate;
-
-      self.app.vault.on("create", syncModifyCreate);
-      self.app.vault.on("modify", syncModifyCreate);
-      this.vaultEventHandlers.set("create",syncModifyCreate);
-      this.vaultEventHandlers.set("modify",syncModifyCreate);
-      /*Excalidraw Sync End*/
-      /****************************/
-
       //watch filename change to rename .svg, .png; to sync to .md; to update links
       const renameEventHandler = async (file:TAbstractFile,oldPath:string) => {
         if(!(file instanceof TFile)) return;
-        /****************************/
-        /*Excalidraw Sync Begin*/
-        if(self.settings.excalidrawSync) {
-          if(self.excalidrawSync.has(file.path)) {
-            self.excalidrawSync.delete(file.path);
-          } else {
-            switch (file.extension) {
-              case EXCALIDRAW_FILE_EXTENSION: 
-                const syncOldPath = getSyncFilepath(oldPath);
-                const syncNewPath = getSyncFilepath(file.path); 
-                const oldFile = self.app.vault.getAbstractFileByPath(syncOldPath);
-                if(oldFile && oldFile instanceof TFile) {
-                  self.excalidrawSync.add(syncNewPath);
-                  await createPathIfNotThere(syncNewPath);
-                  await self.app.vault.rename(oldFile,syncNewPath);
-                } else {
-                  await syncCopy(file,syncNewPath);
-                }
-                break;
-              case 'md':
-                if(file.path.startsWith(normalizePath(self.settings.syncFolder))) {
-                  const excalidrawOldPath = getExcalidrawFilepath(oldPath);
-                  const excalidrawNewPath = getExcalidrawFilepath(file.path); 
-                  const excalidrawOldFile = self.app.vault.getAbstractFileByPath(excalidrawOldPath);
-                  if(excalidrawOldFile && excalidrawOldFile instanceof TFile) {
-                    self.excalidrawSync.add(excalidrawNewPath);
-                    await createPathIfNotThere(excalidrawNewPath);
-                    await self.app.vault.rename(excalidrawOldFile,excalidrawNewPath);
-                  } else {
-                    await syncCopy(file,excalidrawNewPath);
-                  }
-                  reloadDrawing(excalidrawOldFile.path,excalidrawNewPath);
-                }
-                break;
-            }
-          }
-        }
-        /*Excalidraw Sync End*/
-        /****************************/
-
-        /****************************/
-        /*Update link in drawing Begin*/
-        const getPath = (f: TFile):string => 
-          f.extension == "md" ? f.path.substr(0,f.path.length-3) : f.path        
-
-        if(self.linkIndex.link2ex.has(oldPath)) {
-          //console.log("RENAME oldPath:",oldPath,"newPath:",file.path);
-          let text, parts, savedText,drawing,drawingFile,measure;
-          self.linkIndex.updateKey(oldPath,file.path);
-          for (const drawingPath of self.linkIndex.link2ex.get(file.path)) {
-            drawingFile = self.app.vault.getAbstractFileByPath(drawingPath);
-            if(drawingFile && drawingFile instanceof TFile) {
-              drawing = JSON.parse(await self.app.vault.read(drawingFile));
-              savedText = self.linkIndex.getLinkTextForDrawing(drawingPath,oldPath);
-              //console.log("RENAME savedText:", savedText);
-              for(const element of drawing.elements.filter((el:any)=>el.type=="text")) {
-                text = element.text;
-                parts = text?.matchAll(REG_LINKINDEX_BRACKETS).next();
-                if(parts && parts.value) text = parts.value[1];
-                if(!text?.match(REG_LINKINDEX_HYPERLINK) && !text?.match(REG_LINKINDEX_INVALIDCHARS)) { //not a hyperlink and not invalid filename
-                  if(savedText == text) {
-                    if(parts && parts.value) { //link is enclosed in [[]]
-                      element.text = element.text.replace("[["+text+"]]","[["+getPath(file)+"]]");
-                    } else {
-                      element.text = getPath(file);
-                    }
-                    measure = measureText(element.text,element.fontSize,element.fontFamily);
-                    element.width = measure.w;
-                    element.height = measure.h;
-                    element.baseline = measure.baseline;
-                  }
-                }
-              }
-              await self.app.vault.modify(drawingFile,JSON.stringify(drawing));
-              //console.log("RENAME updated drawing:", drawingPath, drawing);
-              reloadDrawing(drawingPath,drawingPath);
-            }
-          }
-        }
-        /*Update link in drawing End*/
-        /****************************/
-
-        if (file.extension != EXCALIDRAW_FILE_EXTENSION) return;
+        if (!self.isExcalidrawFile(file)) return;
         if (!self.settings.keepInSync) return;
-        const oldSVGpath = oldPath.substring(0,oldPath.lastIndexOf('.'+EXCALIDRAW_FILE_EXTENSION)) + '.svg'; 
-        const svgFile = self.app.vault.getAbstractFileByPath(normalizePath(oldSVGpath));
-        if(svgFile && svgFile instanceof TFile) {
-          const newSVGpath = file.path.substring(0,file.path.lastIndexOf('.'+EXCALIDRAW_FILE_EXTENSION)) + '.svg';
-          await self.app.vault.rename(svgFile,newSVGpath); 
-        }
+        ['.svg','.png'].forEach(async (ext:string)=>{
+          const oldIMGpath = oldPath.substring(0,oldPath.lastIndexOf('.md')) + ext; 
+          const imgFile = self.app.vault.getAbstractFileByPath(normalizePath(oldIMGpath));
+          if(imgFile && imgFile instanceof TFile) {
+            const newIMGpath = file.path.substring(0,file.path.lastIndexOf('.md')) + ext;
+            await self.app.vault.rename(imgFile,newIMGpath); 
+          }
+        });
       };
       self.app.vault.on("rename",renameEventHandler);
       this.vaultEventHandlers.set("rename",renameEventHandler);
@@ -718,44 +695,18 @@ export default class ExcalidrawPlugin extends Plugin {
       //watch file delete and delete corresponding .svg
       const deleteEventHandler = async (file:TFile) => {
         if (!(file instanceof TFile)) return;
-        /*Excalidraw Sync Begin*/
-        if(self.settings.excalidrawSync) {
-          if(self.excalidrawSync.has(file.path)) {
-            self.excalidrawSync.delete(file.path);
-          } else { 
-            switch (file.extension) {
-              case EXCALIDRAW_FILE_EXTENSION: 
-                const syncFilePath = getSyncFilepath(file.path);
-                const oldFile = self.app.vault.getAbstractFileByPath(syncFilePath);
-                if(oldFile && oldFile instanceof TFile) {
-                  self.excalidrawSync.add(oldFile.path);
-                  self.app.vault.delete(oldFile);
-                }
-                break;
-              case "md":
-                if(file.path.startsWith(normalizePath(self.settings.syncFolder))) {
-                  const excalidrawPath = getExcalidrawFilepath(file.path); 
-                  const excalidrawFile = self.app.vault.getAbstractFileByPath(excalidrawPath);
-                  if(excalidrawFile && excalidrawFile instanceof TFile) {
-                    self.excalidrawSync.add(excalidrawFile.path);
-                    await closeDrawing(excalidrawFile.path);
-                    self.app.vault.delete(excalidrawFile);
-                  } 
-                }
-                break;
-            }
-          }
-        }
-        /*Excalidraw Sync End*/
-        if (file.extension != EXCALIDRAW_FILE_EXTENSION) return;      
+        if (!self.isExcalidrawFile(file)) return;
+
         closeDrawing(file.path);
         
         if (self.settings.keepInSync) {
-          const svgPath = file.path.substring(0,file.path.lastIndexOf('.'+EXCALIDRAW_FILE_EXTENSION)) + '.svg'; 
-          const svgFile = self.app.vault.getAbstractFileByPath(normalizePath(svgPath));
-          if(svgFile && svgFile instanceof TFile) {
-            await self.app.vault.delete(svgFile); 
-          }
+          ['.svg','.png'].forEach(async (ext:string) => {
+            const imgPath = file.path.substring(0,file.path.lastIndexOf('.md')) + ext; 
+            const imgFile = self.app.vault.getAbstractFileByPath(normalizePath(imgPath));
+            if(imgFile && imgFile instanceof TFile) {
+              await self.app.vault.delete(imgFile); 
+            }
+          });
         }
       }
       self.app.vault.on("delete",deleteEventHandler);
@@ -793,7 +744,13 @@ export default class ExcalidrawPlugin extends Plugin {
     for(const key of this.workspaceEventHandlers.keys())
       this.app.workspace.off(key,this.workspaceEventHandlers.get(key));
     this.observer.disconnect();
-    this.linkIndex.deregisterEventHandlers();
+    //this.linkIndex.deregisterEventHandlers();
+
+    const excalidrawLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+    excalidrawLeaves.forEach((leaf) => {
+      this.setMarkdownView(leaf);
+    });
+
   }
 
   public embedDrawing(data:string) {
@@ -848,36 +805,75 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   private getNextDefaultFilename():string {
-    return this.settings.drawingFilenamePrefix + window.moment().format(this.settings.drawingFilenameDateTime)+'.'+EXCALIDRAW_FILE_EXTENSION;
+    return this.settings.drawingFilenamePrefix + window.moment().format(this.settings.drawingFilenameDateTime)+'.md';
   }
  
+
+  private async getBlankDrawing():Promise<string> {
+    const template = this.app.vault.getAbstractFileByPath(normalizePath(this.settings.templateFilePath));
+    if(template && template instanceof TFile) {
+      const data = await this.app.vault.read(template);
+      if (data) return data;
+    }
+    return FRONTMATTER + '\n# Drawing\n'+ BLANK_DRAWING;
+  }
+
   public async createDrawing(filename: string, onNewPane: boolean, foldername?: string, initData?:string) {
     const folderpath = normalizePath(foldername ? foldername: this.settings.folder);
-    let fname = folderpath +'/'+ filename; 
     const folder = this.app.vault.getAbstractFileByPath(folderpath);
     if (!(folder && folder instanceof TFolder)) {
       await this.app.vault.createFolder(folderpath);
     }
 
-    let file:TAbstractFile = this.app.vault.getAbstractFileByPath(fname);
-    let i = 0;
-    while(file) {
-      fname = folderpath + '/' + filename.slice(0,filename.lastIndexOf("."))+"_"+i+filename.slice(filename.lastIndexOf("."));
-      i++;
-      file = this.app.vault.getAbstractFileByPath(fname);
-    }
+    const fname = this.getNewUniqueFilepath(filename,folderpath);
 
     if(initData) {
       this.openDrawing(await this.app.vault.create(fname,initData),onNewPane);
       return;
     }
 
-    const template = this.app.vault.getAbstractFileByPath(normalizePath(this.settings.templateFilePath));
-    if(template && template instanceof TFile) {
-      const content = await this.app.vault.read(template);
-      this.openDrawing(await this.app.vault.create(fname,content==''?BLANK_DRAWING:content), onNewPane);
-    } else {
-      this.openDrawing(await this.app.vault.create(fname,BLANK_DRAWING), onNewPane);
+    this.openDrawing(await this.app.vault.create(fname,await this.getBlankDrawing()), onNewPane);
+  }
+
+  public async setMarkdownView(leaf: WorkspaceLeaf) {
+    await leaf.setViewState(
+      {
+        type: "markdown",
+        state: leaf.view.getState(),
+        popstate: true,
+      } as ViewState,
+      { focus: true }
+    );
+  }
+
+  private async setExcalidrawView(leaf: WorkspaceLeaf) {
+    await leaf.setViewState({
+      type: VIEW_TYPE_EXCALIDRAW,
+      state: leaf.view.getState(),
+      popstate: true,
+    } as ViewState);
+  }
+
+ /**
+ * Create new file, if file already exists find first unique filename by adding a number to the end of the filename
+ * @param filename 
+ * @param folderpath 
+ * @returns 
+ */
+  getNewUniqueFilepath(filename:string, folderpath:string):string {      
+    let fname = normalizePath(folderpath +'/'+ filename); 
+    let file:TAbstractFile = this.app.vault.getAbstractFileByPath(fname);
+    let i = 0;
+    while(file) {
+      fname = normalizePath(folderpath + '/' + filename.slice(0,filename.lastIndexOf("."))+"_"+i+filename.slice(filename.lastIndexOf(".")));
+      i++;
+      file = this.app.vault.getAbstractFileByPath(fname);
     }
+    return fname;
+  }
+
+  isExcalidrawFile(f:TFile) {
+    const fileCache = this.app.metadataCache.getFileCache(f);
+    return !!fileCache?.frontmatter && !!fileCache.frontmatter[FRONTMATTER_KEY];
   }
 }

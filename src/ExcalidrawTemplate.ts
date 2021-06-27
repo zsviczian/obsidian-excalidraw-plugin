@@ -12,7 +12,8 @@ import {
   parseFrontMatterAliases,
   TFile
 } from "obsidian"
-import ExcalidrawView from "./ExcalidrawView"
+import ExcalidrawView, { getJSON } from "./ExcalidrawView"
+import { FRONTMATTER_KEY } from "./constants";
 
 declare type ConnectionPoint = "top"|"bottom"|"left"|"right";
 
@@ -58,6 +59,7 @@ export interface ExcalidrawAutomate extends Window {
     connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, formatting?:{numberOfPoints: number,startArrowHead:string,endArrowHead:string, padding: number}):void;
     clear(): void;
     reset(): void;
+    isExcalidrawFile(f:TFile): boolean;  
   };
 }
 
@@ -371,6 +373,10 @@ export function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       this.canvas.theme = "light";
       this.canvas.viewBackgroundColor="#FFFFFF";
     },
+    isExcalidrawFile(f:TFile) {
+      return this.plugin.isExcalidrawFile(f);
+    }
+  
   };
   initFonts();
 }
@@ -474,7 +480,7 @@ async function getTemplate(fileWithPath: string):Promise<{elements: any,appState
   const file = vault.getAbstractFileByPath(normalizePath(fileWithPath));
   if(file && file instanceof TFile) {
     const data = await vault.read(file);
-    const excalidrawData = JSON.parse(data);
+    const excalidrawData = JSON.parse(getJSON(data));
     return {
       elements: excalidrawData.elements,
       appState: excalidrawData.appState,  
