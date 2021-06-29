@@ -1,3 +1,6 @@
+import {customAlphabet} from "nanoid";
+export const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',8);
+
 export const FRONTMATTER_KEY = "excalidraw-plugin";
 export const VIEW_TYPE_EXCALIDRAW = "excalidraw";
 export const ICON_NAME = "excalidraw-icon";

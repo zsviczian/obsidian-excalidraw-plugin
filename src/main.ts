@@ -32,7 +32,8 @@ import {
   FRONTMATTER_KEY,
   FRONTMATTER
 } from "./constants";
-import ExcalidrawView, {ExportSettings, getJSON, textElementsToMD} from "./ExcalidrawView";
+import ExcalidrawView, {ExportSettings} from "./ExcalidrawView";
+import {getJSON, exportSceneToMD} from "./ExcalidrawData";
 import {
   ExcalidrawSettings, 
   DEFAULT_SETTINGS, 
@@ -45,17 +46,10 @@ import {
 import {
   initExcalidrawAutomate,
   destroyExcalidrawAutomate,
-} from "./ExcalidrawTemplate";
+} from "./ExcalidrawAutomate";
 import { Prompt } from "./Prompt";
 import { around } from "monkey-around";
 import { t } from "./lang/helpers";
-
-export interface ExcalidrawAutomate extends Window {
-  ExcalidrawAutomate: {
-    theme: string;
-    createNew: Function;
-  };
-}
 
 export default class ExcalidrawPlugin extends Plugin {
   public excalidrawFileModes: { [file: string]: string } = {};
@@ -192,24 +186,8 @@ export default class ExcalidrawPlugin extends Plugin {
               el.append(img);
             });
           });
-        } else { //file does not exist. Replace standard Obsidian div with mine to create a new drawing on click
-          div = createDiv("excalidraw-new",(el)=> {
-            el.setAttribute("src",attr.fname);
-            el.createSpan("internal-embed file-embed mod-empty is-loaded", (el) => {
-              el.setText('"'+attr.fname+'" is not created yet. Click to create.');
-            });
-            el.onClickEvent(async (ev)=> {
-              const fname = el.getAttribute("src");
-              if(!fname) return;
-              const i = fname.lastIndexOf("/");
-              if(i>-1) 
-                this.createDrawing(fname.substring(i+1),false,fname.substring(0,i));
-              else
-                this.createDrawing(fname,false); 
-            });
-          }); 
-        }
-        drawing.parentElement.replaceChild(div,drawing);
+          drawing.parentElement.replaceChild(div,drawing);
+        } 
       }
     }
 
@@ -520,12 +498,12 @@ export default class ExcalidrawPlugin extends Plugin {
           const data = await this.app.vault.read(file);
           const fname = this.getNewUniqueFilepath(file.name+'.md',normalizePath(file.path.substr(0,file.path.lastIndexOf(file.name))));
           console.log(fname);
-          await this.app.vault.create(fname,FRONTMATTER + textElementsToMD(data) +'# Drawing\n'+ data);
+          await this.app.vault.create(fname,FRONTMATTER + exportSceneToMD(data));
           this.app.vault.delete(file);
         }
       }
     });
-
+    /*********************/
 
     /*1.1 migration command*/
     const migrateCodeblock = async () => {
@@ -587,7 +565,7 @@ export default class ExcalidrawPlugin extends Plugin {
               // And the current mode of the file is not set to markdown
               self.excalidrawFileModes[this.id || state.state.file] !== "markdown"
             ) {
-              // Then check for the kanban frontMatterKey
+              // Then check for the excalidraw frontMatterKey
               const cache = self.app.metadataCache.getCache(state.state.file);
 
               if (cache?.frontmatter && cache.frontmatter[FRONTMATTER_KEY]) {
@@ -662,6 +640,7 @@ export default class ExcalidrawPlugin extends Plugin {
         }   
       }
 
+      /*
       const reloadDrawing = async (oldPath:string, newPath: string) => {
         const file = self.app.vault.getAbstractFileByPath(newPath);
         if(!(file && file instanceof TFile)) return;
@@ -672,7 +651,7 @@ export default class ExcalidrawPlugin extends Plugin {
           }
         }
         self.triggerEmbedUpdates(oldPath);
-      }
+      }*/
 
       //watch filename change to rename .svg, .png; to sync to .md; to update links
       const renameEventHandler = async (file:TAbstractFile,oldPath:string) => {

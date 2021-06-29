@@ -6,14 +6,13 @@ import {
   StrokeSharpness,
   FontFamily,
 } from "@excalidraw/excalidraw/types/element/types";
-import {customAlphabet} from "nanoid";
 import {
   normalizePath,
-  parseFrontMatterAliases,
   TFile
 } from "obsidian"
-import ExcalidrawView, { getJSON } from "./ExcalidrawView"
-import { FRONTMATTER_KEY } from "./constants";
+import ExcalidrawView from "./ExcalidrawView";
+import { getJSON } from "./ExcalidrawData";
+import { nanoid } from "./constants";
 
 declare type ConnectionPoint = "top"|"bottom"|"left"|"right";
 
@@ -64,7 +63,7 @@ export interface ExcalidrawAutomate extends Window {
 }
 
 declare let window: ExcalidrawAutomate;
-const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',8);
+
 export function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
   window.ExcalidrawAutomate = {
     plugin: plugin,
@@ -451,7 +450,6 @@ export function measureText (newText:string, fontSize:number, fontFamily:number)
   line.style.position = "absolute";
   line.style.whiteSpace = "pre";
   line.style.font = fontSize.toString()+'px ' + getFontFamily(fontFamily);
-//  await (document as any).fonts.load(line.style.font);
   body.appendChild(line);
   line.innerText = newText
     .split("\n")

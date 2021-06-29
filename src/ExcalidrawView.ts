@@ -5,7 +5,8 @@ import {
   TFile,
   WorkspaceItem,
   Notice,
-  Menu
+  Menu,
+  MarkdownRenderer
 } from "obsidian";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -28,11 +29,14 @@ import {
   REG_LINKINDEX_BRACKETS,
   REG_LINKINDEX_HYPERLINK,
   REG_LINKINDEX_INVALIDCHARS,
-  FRONTMATTER
+  FRONTMATTER,
+  nanoid
 } from './constants';
 import ExcalidrawPlugin from './main';
-import {ExcalidrawAutomate} from './ExcalidrawTemplate';
+import {ExcalidrawAutomate} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
+import { ExcalidrawData } from "./ExcalidrawData";
+
 declare let window: ExcalidrawAutomate;
 
 interface WorkspaceItemExt extends WorkspaceItem {
@@ -44,33 +48,8 @@ export interface ExportSettings {
   withTheme: boolean
 }
 
-export function getJSON(data:string):string {
-  const findJSON = /\n# Drawing\n(.*)/gm
-  const res = data.matchAll(findJSON);
-  const parts = res.next();
-  if(parts.value && parts.value.length>1) {
-    return parts.value[1];
-  }
-  return data;
-}
-
-/**
- * Extracts the text elements from an Excalidraw scene into a string of ids as headers followed by the text contents
- * @param {string} data - Excalidraw scene JSON string
- * @returns {string} - Text starting with the "# Text Elements" header and followed by each "## id-value" and text
- */
-export function textElementsToMD(data:string):string {
-  if(!data) return '';
-  const excalidrawData = JSON.parse(data);
-  const textElements = excalidrawData.elements?.filter((el:any)=> el.type=="text")
-  let outString = '# Text Elements\n';
-  for (const te of textElements) {
-    outString += '## ' + te.id + '\n'+te.text+'\n';
-  }
-  return outString + '\n';
-}
-
 export default class ExcalidrawView extends TextFileView {
+  private excalidrawData: ExcalidrawData = new ExcalidrawData();
   private getScene: Function = null;
   private getSelectedText: Function = null;
   public addText:Function = null;
@@ -140,7 +119,10 @@ export default class ExcalidrawView extends TextFileView {
       const scene = this.getScene();
       if(this.plugin.settings.autoexportSVG) this.saveSVG(scene);
       if(this.plugin.settings.autoexportPNG) this.savePNG(scene);
-      return FRONTMATTER + textElementsToMD(scene) +'# Drawing\n'+ scene;
+      if(this.excalidrawData.updateScene(scene)) {
+        this.loadDrawing(false);
+      }
+      return FRONTMATTER + this.excalidrawData.generateMD();
     }
     else return this.data;
   }
@@ -275,23 +257,22 @@ export default class ExcalidrawView extends TextFileView {
     if(this.excalidrawRef) await this.save();
   }
 
-  setViewData (data: string, clear: boolean) {   
-    if (this.app.workspace.layoutReady) {
-      this.loadDrawing(data,clear);
-    } else {
-      this.registerEvent(this.app.workspace.on('layout-ready', async () => this.loadDrawing(data,clear)));
-    }
-  }
-
   // clear the view content  
   clear() {
 
   }
   
-  private async loadDrawing (data:string, clear:boolean) {   
-    if(clear) this.clear();
-    this.justLoaded = true; //a flag to trigger zoom to fit after the drawing has been loaded
-    const excalidrawData = JSON.parse(getJSON(data));
+  async setViewData (data: string, clear: boolean) {   
+    this.app.workspace.onLayoutReady(()=>{
+      if(!this.excalidrawData.loadData(data)) return;
+      if(clear) this.clear();
+      this.loadDrawing(true)
+    });
+  }
+
+  private async loadDrawing (justloaded:boolean) {        
+    this.justLoaded = justloaded; //a flag to trigger zoom to fit after the drawing has been loaded
+    const excalidrawData = this.excalidrawData.scene;
     if(this.excalidrawRef) {
       this.excalidrawRef.current.updateScene({
         elements: excalidrawData.elements,
@@ -306,6 +287,7 @@ export default class ExcalidrawView extends TextFileView {
       });
     }
   }
+
 
   // gets the title of the document
   getDisplayText() {
