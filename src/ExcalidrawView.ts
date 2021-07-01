@@ -30,12 +30,14 @@ import {
   REG_LINKINDEX_HYPERLINK,
   REG_LINKINDEX_INVALIDCHARS,
   FRONTMATTER,
-  nanoid
+  FRONTMATTER_KEY,
+
 } from './constants';
 import ExcalidrawPlugin from './main';
 import {ExcalidrawAutomate} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
 import { ExcalidrawData } from "./ExcalidrawData";
+import { networkInterfaces } from "os";
 
 declare let window: ExcalidrawAutomate;
 
@@ -49,7 +51,7 @@ export interface ExportSettings {
 }
 
 export default class ExcalidrawView extends TextFileView {
-  private excalidrawData: ExcalidrawData = new ExcalidrawData();
+  private excalidrawData: ExcalidrawData;
   private getScene: Function = null;
   private getSelectedText: Function = null;
   public addText:Function = null;
@@ -60,11 +62,16 @@ export default class ExcalidrawView extends TextFileView {
   private dirty: boolean = false;
   private autosaveTimer: any = null;
   private previousSceneVersion: number = 0;
+  public  isTextLocked:boolean = false;
+  private lockedElement:HTMLElement;
+  private unlockedElement:HTMLElement;
+
   id: string = (this.leaf as any).id;
 
   constructor(leaf: WorkspaceLeaf, plugin: ExcalidrawPlugin) {
     super(leaf);
     this.plugin = plugin;
+    this.excalidrawData = new ExcalidrawData(plugin.settings);
   }
 
   public async saveSVG(data?: string) {
@@ -115,6 +122,7 @@ export default class ExcalidrawView extends TextFileView {
 
   // get the new file content
   getViewData () {
+    const reg_frontmatter = /---\n([\s\S]*)---\n/gm;
     if(this.getScene) {
       const scene = this.getScene();
       if(this.plugin.settings.autoexportSVG) this.saveSVG(scene);
@@ -122,7 +130,10 @@ export default class ExcalidrawView extends TextFileView {
       if(this.excalidrawData.updateScene(scene)) {
         this.loadDrawing(false);
       }
-      return FRONTMATTER + this.excalidrawData.generateMD();
+      return this.data
+                 .match(reg_frontmatter)[0]
+                 .replace(new RegExp(FRONTMATTER_KEY+".\n"),FRONTMATTER_KEY+": " + (this.isTextLocked ? "locked\n" : "unlocked\n")) +
+             this.excalidrawData.generateMD();
     }
     else return this.data;
   }
@@ -188,45 +199,18 @@ export default class ExcalidrawView extends TextFileView {
       await this.save();
       this.plugin.triggerEmbedUpdates();
     });
-    this.addAction("down-arrow-with-tail",t("Export to .Excalidraw file"),async (ev) => {
-      if(!this.getScene || !this.file) return;
-      this.download('data:text/plain;charset=utf-8',encodeURIComponent(this.getScene()), this.file.basename+'.excalidraw');
+    
+    this.unlockedElement = this.addAction("pencil","Text Elements are unlocked. Click to lock.", (ev) => {
+      this.setLockUnlock(true);
+      this.unlockedElement.hide(); 
+      this.lockedElement.show();
     });
-    this.addAction(PNG_ICON_NAME,t("Save as PNG into Vault\nCTRL/META+click to export outside Obsidian"),async (ev)=> {
-      if(!this.getScene || !this.file) return;
-      if(ev.ctrlKey || ev.metaKey) {
-        const exportSettings: ExportSettings = {
-          withBackground: this.plugin.settings.exportWithBackground, 
-          withTheme: this.plugin.settings.exportWithTheme
-        }
-        const png = await ExcalidrawView.getPNG(this.getScene(),exportSettings);
-        if(!png) return;
-        let reader = new FileReader();
-        reader.readAsDataURL(png); 
-        const self = this;
-        reader.onloadend = function() {
-          let base64data = reader.result;                
-          self.download(null,base64data,self.file.basename+'.png'); 
-        }
-        return;
-      }
-      this.savePNG();
+    this.lockedElement = this.addAction("crossed-star","Text Elements are locked. Click to unlock.", (ev) => {
+      this.setLockUnlock(false);
+      this.unlockedElement.show(); 
+      this.lockedElement.hide();
     });
-    this.addAction(SVG_ICON_NAME,t("Save as SVG into Vault\nCTRL/META+click to export outside Obsidian"),async (ev)=> {
-      if(!this.getScene || !this.file) return;
-      if(ev.ctrlKey || ev.metaKey) {
-        const exportSettings: ExportSettings = {
-          withBackground: this.plugin.settings.exportWithBackground, 
-          withTheme: this.plugin.settings.exportWithTheme
-        }
-        let svg = ExcalidrawView.getSVG(this.getScene(),exportSettings);
-        if(!svg) return null;
-        svg = ExcalidrawView.embedFontsInSVG(svg);
-        this.download("data:image/svg+xml;base64",btoa(unescape(encodeURIComponent(svg.outerHTML))),this.file.basename+'.svg');
-        return;
-      }
-      this.saveSVG()
-    });
+    
     this.addAction("link",t("Open selected text as link\n(SHIFT+click to open in a new pane)"), (ev)=>this.handleLinkClick(this,ev));
 
     
@@ -238,6 +222,11 @@ export default class ExcalidrawView extends TextFileView {
     }
 
     this.setupAutosaveTimer();
+  }
+
+  private setLockUnlock(locked:boolean) {
+    this.isTextLocked = locked;
+    this.reload();
   }
 
   private setupAutosaveTimer() {
@@ -257,6 +246,14 @@ export default class ExcalidrawView extends TextFileView {
     if(this.excalidrawRef) await this.save();
   }
 
+  public async reload(){
+    if(!this.excalidrawRef) return;
+    if(!this.file) return;
+    await this.save();
+    this.excalidrawData.loadData(this.data, this.file,this.isTextLocked);
+    this.loadDrawing(false);
+  }
+
   // clear the view content  
   clear() {
 
@@ -264,7 +261,15 @@ export default class ExcalidrawView extends TextFileView {
   
   async setViewData (data: string, clear: boolean) {   
     this.app.workspace.onLayoutReady(()=>{
-      if(!this.excalidrawData.loadData(data)) return;
+      this.isTextLocked = data.match(/excalidraw-plugin: unlocked/) ? false : true;
+      if(this.isTextLocked) {
+        this.lockedElement.show();
+        this.unlockedElement.hide();
+      } else {
+        this.lockedElement.hide();
+        this.unlockedElement.show();
+      }
+      if(!this.excalidrawData.loadData(data, this.file,this.isTextLocked)) return;
       if(clear) this.clear();
       this.loadDrawing(true)
     });
@@ -317,6 +322,60 @@ export default class ExcalidrawView extends TextFileView {
             this.plugin.setMarkdownView(this.leaf);
           });
       })
+      .addItem((item) => {
+        item
+          .setTitle(t("Export to .Excalidraw file"))
+          .setIcon(ICON_NAME)
+          .onClick( async (ev) => {
+            if(!this.getScene || !this.file) return;
+            this.download('data:text/plain;charset=utf-8',encodeURIComponent(this.getScene()), this.file.basename+'.excalidraw');
+          });
+      })
+      .addItem((item) => {
+        item
+          .setTitle(t("Save as PNG into Vault\nCTRL/META+click to export outside Obsidian"))
+          .setIcon(PNG_ICON_NAME)
+          .onClick( async (ev)=> {
+            if(!this.getScene || !this.file) return;
+            if(ev.ctrlKey || ev.metaKey) {
+              const exportSettings: ExportSettings = {
+                withBackground: this.plugin.settings.exportWithBackground, 
+                withTheme: this.plugin.settings.exportWithTheme
+              }
+              const png = await ExcalidrawView.getPNG(this.getScene(),exportSettings);
+              if(!png) return;
+              let reader = new FileReader();
+              reader.readAsDataURL(png); 
+              const self = this;
+              reader.onloadend = function() {
+                let base64data = reader.result;                
+                self.download(null,base64data,self.file.basename+'.png'); 
+              }
+              return;
+            }
+            this.savePNG();
+          });
+      })
+      .addItem((item) => {
+        item
+          .setTitle(t("Save as SVG into Vault\nCTRL/META+click to export outside Obsidian"))
+          .setIcon(SVG_ICON_NAME)
+          .onClick(async (ev)=> {
+            if(!this.getScene || !this.file) return;
+            if(ev.ctrlKey || ev.metaKey) {
+              const exportSettings: ExportSettings = {
+                withBackground: this.plugin.settings.exportWithBackground, 
+                withTheme: this.plugin.settings.exportWithTheme
+              }
+              let svg = ExcalidrawView.getSVG(this.getScene(),exportSettings);
+              if(!svg) return null;
+              svg = ExcalidrawView.embedFontsInSVG(svg);
+              this.download("data:image/svg+xml;base64",btoa(unescape(encodeURIComponent(svg.outerHTML))),this.file.basename+'.svg');
+              return;
+            }
+            this.saveSVG()
+          });
+      })
       .addSeparator();
     super.onMoreOptionsMenu(menu);
   }
@@ -358,11 +417,12 @@ export default class ExcalidrawView extends TextFileView {
         return () => window.removeEventListener("resize", onResize);
       }, [excalidrawWrapperRef]);
 
-      this.getSelectedText = ():string => {
+      this.getSelectedText = (textonly:boolean=false):string => {
         if(!excalidrawRef?.current) return null;
         const selectedElement = excalidrawRef.current.getSceneElements().filter((el:any)=>el.id==Object.keys(excalidrawRef.current.getAppState().selectedElementIds)[0]);
         if(selectedElement.length==0) return null;
         if(selectedElement[0].type == "text") return selectedElement[0].text; //a text element was selected. Retrun text
+        if(textonly) return null;
         if(selectedElement[0].groupIds.length == 0) return null; //is the selected element part of a group?
         const group = selectedElement[0].groupIds[0]; //if yes, take the first group it is part of
         const textElement = excalidrawRef
@@ -433,6 +493,8 @@ export default class ExcalidrawView extends TextFileView {
         excalidrawRef.current.refresh();
       };
       
+      let timestamp = (new Date()).getTime();
+      
       return React.createElement(
         React.Fragment,
         null,
@@ -443,11 +505,27 @@ export default class ExcalidrawView extends TextFileView {
             ref: excalidrawWrapperRef,
             key: "abc",
             onClick: (e:MouseEvent):any => {
+              if(this.isTextLocked && this.getSelectedText(true)) { //text element is selected
+                const now = (new Date()).getTime();
+                if(now-timestamp < 600) { //double click
+                  var event = new MouseEvent('dblclick', {
+                    'view': window,
+                    'bubbles': true,
+                    'cancelable': true,
+                  });
+                  e.target.dispatchEvent(event);
+                  new Notice(t("Unlock text elements to edit"))
+                  timestamp = now;
+                  return;
+                }
+                timestamp = now;
+              }
               if(!(e.ctrlKey||e.metaKey)) return;
               if(!(this.plugin.settings.allowCtrlClick)) return;
               if(!this.getSelectedText()) return;
               this.handleLinkClick(this,e);
             },
+            
           },
           React.createElement(Excalidraw.default, {
             ref: excalidrawRef,

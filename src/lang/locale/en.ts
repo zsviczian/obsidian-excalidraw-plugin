@@ -29,5 +29,12 @@ export default {
   "Save as SVG into Vault\nCTRL/META+click to export outside Obsidian": "Save as SVG into Vault\nCTRL/META+click to export outside Obsidian",
   "Open selected text as link\n(SHIFT+click to open in a new pane)": "Open selected text as link\n(SHIFT+click to open in a new pane)",
   "Export to .Excalidraw file": "Export to .Excalidraw file",
+  "Unlock text elements to edit": "Unlock text elements to edit",
+
+  //settings.ts
+  "Show [[bracket]] around links":"Show [[bracket]] around links",
+  "When parsing text elements, place brackets around links":"When parsing text elements, place brackets around links",
+  "Link indicator":"Link indicator",
+  "If text element has link, precede text with these characters.":"If text element has link, precede text with these characters.",
 
 };

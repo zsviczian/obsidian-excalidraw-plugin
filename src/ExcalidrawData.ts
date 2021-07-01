@@ -1,5 +1,8 @@
-import { nanoid } from "./constants";
+import { link } from "fs";
+import { TFile } from "obsidian";
+import { nanoid, REG_LINKINDEX_BRACKETS, REG_LINKINDEX_HYPERLINK } from "./constants";
 import { measureText } from "./ExcalidrawAutomate";
+import { ExcalidrawSettings } from "./settings";
 
 const FIND_JSON:RegExp = /\n# Drawing\n(.*)/gm;
 const FIND_ID:RegExp = /\s\^(.{8})\n/g;
@@ -46,8 +49,14 @@ export function getJSON(data:string):string {
 export class ExcalidrawData {
   private textElements:Map<string,string> = null; 
   public scene:any = null;
+  private file:TFile = null;
+  private settings:ExcalidrawSettings;
+  private showLinkBrackets: boolean;
+  private linkIndicator: string;
+  private allowParse: boolean;
 
-  constructor() {
+  constructor(settings: ExcalidrawSettings) {
+    this.settings = settings;
   }  
 
   /**
@@ -55,7 +64,14 @@ export class ExcalidrawData {
    * @param {TFile} file - the MD file containing the Excalidraw drawing
    * @returns {boolean} - true if file was loaded, false if there was an error
    */
-  public loadData(data: string):boolean {
+  public loadData(data: string,file: TFile, allowParse:boolean):boolean {
+    //I am storing these because if the settings change while a drawing is open parsing will run into errors during save
+    //The drawing will use these values until next drawing is loaded or this drawing is re-loaded
+    this.showLinkBrackets = this.settings.showLinkBrackets;
+    this.linkIndicator = this.settings.linkIndicator;
+    this.allowParse = allowParse;
+
+    this.file = file;
     this.textElements = new Map<string,string>();
     
     //Read the JSON string after "# Drawing" and trim the tail of the string
@@ -159,7 +175,9 @@ export class ExcalidrawData {
       if(el.length==0) {
         this.textElements.delete(key);
       } else {
-        this.textElements.set(key,el[0].text);
+        if(!(this.textElements.has(key) && this.parse(this.textElements.get(key))==el[0].text)) {
+          this.textElements.set(key,el[0].text);
+        }
         idList.push(key);
       }
     }
@@ -180,7 +198,39 @@ export class ExcalidrawData {
    * @returns 
    */
   private parse(text:string):string{
-    return text;
+    if(!this.allowParse) return text;
+    const getTransclusion = (text:string) => {
+      return text;
+    }
+
+    let outString = "";
+    let position = 0;
+    const REG_LINK_BACKETS = /(!)?\[\[([^|\]]+)\|?(.+)?]]/g;
+    const res = text.matchAll(REG_LINK_BACKETS);
+    let linkIcon = false;
+    let parts;
+    while(!(parts=res.next()).done) {
+      if (parts.value[1]) { //transclusion
+        outString += text.substring(position,parts.value.index) + getTransclusion(parts.value[2]);
+      } else {
+        linkIcon = true;
+        outString += text.substring(position,parts.value.index) + 
+                      (this.showLinkBrackets ? "[[" : "") +
+                     (parts.value[3] ? parts.value[3]:parts.value[2]) + //insert alias or link text
+                     (this.showLinkBrackets ? "]]" : "");
+      }
+      position = parts.value.index + parts.value[0].length;
+    }
+    outString += text.substring(position,text.length);
+    if (linkIcon) {
+      outString = this.linkIndicator + outString;
+    }
+/*    if(text.match(REG_LINKINDEX_HYPERLINK)) {
+      window.open(text,"_blank");
+      return;
+    }*/
+
+    return outString;
   }
 
   /**

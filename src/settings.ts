@@ -3,6 +3,9 @@ import {
   PluginSettingTab, 
   Setting
 } from 'obsidian';
+import { VIEW_TYPE_EXCALIDRAW } from './constants';
+import ExcalidrawView from './ExcalidrawView';
+import { t } from './lang/helpers';
 import type ExcalidrawPlugin from "./main";
 
 export interface ExcalidrawSettings {
@@ -11,6 +14,8 @@ export interface ExcalidrawSettings {
   drawingFilenamePrefix: string,
   drawingFilenameDateTime: string,
   width: string,
+  showLinkBrackets: boolean,
+  linkIndicator: string,
   validLinksOnly: boolean, //valid link as in [[valid Obsidian link]] - how to treat text elements in drawings
   allowCtrlClick: boolean, //if disabled only the link button in the view header will open links 
   exportWithTheme: boolean,
@@ -27,6 +32,8 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   drawingFilenamePrefix: 'Drawing ',
   drawingFilenameDateTime: 'YYYY-MM-DD HH.mm.ss',
   width: '400',
+  linkIndicator: ">> ",
+  showLinkBrackets: true,
   validLinksOnly: false,
   allowCtrlClick: true,
   exportWithTheme: true,
@@ -141,16 +148,38 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             'The plugin indexes your drawings, and when Obsidian files change, the matching text in your drawings will also change. ' +
             'If you don\'t want text accidentally changing in your drawings, you can set the below toggle to limit the link ' +
             'feature to only [[valid Obsidian links]].'});
+    
+    const reloadDrawings = () => {
+      const exs = this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+      for(const v of exs) {
+        if(v.view instanceof ExcalidrawView) v.view.reload();
+      }
+      this.plugin.triggerEmbedUpdates();
+    }
+
     new Setting(containerEl)
-    .setName('Accept only [[valid Obsidian links]]') 
-    .setDesc('If this is on, text in text elements will be ignored unless they contain a [[valid Obsidian link]]')
-    .addToggle(toggle => toggle
-      .setValue(this.plugin.settings.validLinksOnly)
-      .onChange(async (value) => {
-        this.plugin.settings.validLinksOnly = value;
-//        this.plugin.reloadIndex();
-        await this.plugin.saveSettings();
-      }));
+      .setName(t("Show [[bracket]] around links")) 
+      .setDesc(t("When parsing text elements, place brackets around links"))
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.showLinkBrackets)
+        .onChange(async (value) => {
+          this.plugin.settings.showLinkBrackets = value;
+          await this.plugin.saveSettings();
+          reloadDrawings();
+        }));
+    
+    new Setting(containerEl)
+      .setName(t("Link indicator"))
+      .setDesc(t("If text element has link, precede text with these characters."))
+      .addText(text => text
+        .setPlaceholder('>> ')
+        .setValue(this.plugin.settings.linkIndicator)
+        .onChange(async (value) => {
+          this.plugin.settings.linkIndicator = value;
+          await this.plugin.saveSettings();
+          reloadDrawings();
+        }));
+
     new Setting(containerEl)
       .setName('CTRL + CLICK on text to open them as links') 
       .setDesc('You can turn this feature off if it interferes with default Excalidraw features you want to use. If ' +

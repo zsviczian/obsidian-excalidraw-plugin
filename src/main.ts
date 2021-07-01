@@ -404,7 +404,11 @@ export default class ExcalidrawPlugin extends Plugin {
       name: t("Insert link to file"),
       checkCallback: (checking: boolean) => {
         if (checking) {
-          return this.app.workspace.activeLeaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW;
+          const view = this.app.workspace.activeLeaf.view;
+          if (view instanceof ExcalidrawView) {
+            return !view.isTextLocked;
+          }
+          return false;
         } else {
           const view = this.app.workspace.activeLeaf.view;
           if (view instanceof ExcalidrawView) {
@@ -567,7 +571,7 @@ export default class ExcalidrawPlugin extends Plugin {
             ) {
               // Then check for the excalidraw frontMatterKey
               const cache = self.app.metadataCache.getCache(state.state.file);
-
+              
               if (cache?.frontmatter && cache.frontmatter[FRONTMATTER_KEY]) {
                 // If we have it, force the view type to excalidraw
                 const newState = {
