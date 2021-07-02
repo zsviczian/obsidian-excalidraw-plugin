@@ -21,12 +21,13 @@ export default {
   "Export PNG. Save it next to the current file": "Export PNG. Save it next to the current file",
   "Insert link to file": "Insert link to file",
   "Insert LaTeX-symbol (e.g. $\\theta$)": "Insert LaTeX-symbol (e.g. $\\theta$)",
+  "Toggle text element edit lock/unlock": "Toggle text element edit lock/unlock",
 
   
   //ExcalidrawView.ts
   "Open as markdown": "Open as markdown",
-  "Save as PNG into Vault\nCTRL/META+click to export outside Obsidian": "Save as PNG into Vault\nCTRL/META+click to export outside Obsidian",
-  "Save as SVG into Vault\nCTRL/META+click to export outside Obsidian": "Save as SVG into Vault\nCTRL/META+click to export outside Obsidian",
+  "Save as PNG into Vault (CTRL/META+click to export)": "Save as PNG into Vault (CTRL/META+click to export)",
+  "Save as SVG into Vault (CTRL/META+click to export)": "Save as SVG into Vault (CTRL/META+click to export)",
   "Open selected text as link\n(SHIFT+click to open in a new pane)": "Open selected text as link\n(SHIFT+click to open in a new pane)",
   "Export to .Excalidraw file": "Export to .Excalidraw file",
   "Unlock text elements to edit": "Unlock text elements to edit",

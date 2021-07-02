@@ -1,13 +1,13 @@
 import { link } from "fs";
-import { TFile } from "obsidian";
-import { nanoid, REG_LINKINDEX_BRACKETS, REG_LINKINDEX_HYPERLINK } from "./constants";
+import { App, TFile } from "obsidian";
+import { nanoid} from "./constants";
 import { measureText } from "./ExcalidrawAutomate";
+import ExcalidrawPlugin from "./main";
 import { ExcalidrawSettings } from "./settings";
 
-const FIND_JSON:RegExp = /\n# Drawing\n(.*)/gm;
-const FIND_ID:RegExp = /\s\^(.{8})\n/g;
-const GAP_LEN:number = " ^12345678\n\n".length;
-const TEXTELEMENTS_HEADER_LEN:number = "# Text Elements\n".length;
+//![[link|alias]]![alias](link)
+//1  2    3      4 5      6
+export const REG_LINK_BACKETS = /(!)?\[\[([^|\]]+)\|?(.+)?]]|(!)?\[(.*)\]\((.*)\)/g;
 
 /**
  * 1.2 Migration only!!!!
@@ -47,16 +47,18 @@ export function getJSON(data:string):string {
 }
 
 export class ExcalidrawData {
-  private textElements:Map<string,string> = null; 
+  private textElements:Map<string,{raw:string, parsed:string}> = null; 
   public scene:any = null;
   private file:TFile = null;
   private settings:ExcalidrawSettings;
+  private app:App;
   private showLinkBrackets: boolean;
   private linkIndicator: string;
   private allowParse: boolean;
 
-  constructor(settings: ExcalidrawSettings) {
-    this.settings = settings;
+  constructor(plugin: ExcalidrawPlugin) {
+    this.settings = plugin.settings;
+    this.app = plugin.app;
   }  
 
   /**
@@ -64,7 +66,7 @@ export class ExcalidrawData {
    * @param {TFile} file - the MD file containing the Excalidraw drawing
    * @returns {boolean} - true if file was loaded, false if there was an error
    */
-  public loadData(data: string,file: TFile, allowParse:boolean):boolean {
+  public async loadData(data: string,file: TFile, allowParse:boolean):Promise<boolean> {
     //I am storing these because if the settings change while a drawing is open parsing will run into errors during save
     //The drawing will use these values until next drawing is loaded or this drawing is re-loaded
     this.showLinkBrackets = this.settings.showLinkBrackets;
@@ -72,51 +74,57 @@ export class ExcalidrawData {
     this.allowParse = allowParse;
 
     this.file = file;
-    this.textElements = new Map<string,string>();
+    this.textElements = new Map<string,{raw:string, parsed:string}>();
     
-    //Read the JSON string after "# Drawing" and trim the tail of the string
+    //Load scene: Read the JSON string after "# Drawing" 
     this.scene = null;
-    let res = data.matchAll(FIND_JSON);
-    let parts = res.next();
-    if(!(parts.value && parts.value.length>1)) return false;    
-
+    let parts = data.matchAll(/\n# Drawing\n(.*)/gm).next();
+    if(!(parts.value && parts.value.length>1)) return false; //JSON not found or invalid
     this.scene = JSON.parse(parts.value[1]);
+    
+    //Trim data to remove the JSON string
     data = data.substring(0,parts.value.index);
 
+    //The Markdown # Text Elements take priority over the JSON text elements. 
+    //i.e. if the JSON is modified to reflect the MD in case of difference
     //Read the text elements into the textElements Map
     let position = data.search("# Text Elements");
-    if(position==-1) return true; 
-    position += TEXTELEMENTS_HEADER_LEN;
-
-    res = data.matchAll(FIND_ID);
+    if(position==-1) return true; //Text Elements header does not exist
+    position += "# Text Elements\n".length;
+    
+    const BLOCKREF_LEN:number = " ^12345678\n\n".length;
+    const res = data.matchAll(/\s\^(.{8})\n/g);
     while(!(parts = res.next()).done) {
-      this.textElements.set(parts.value[1],data.substring(position,parts.value.index));
-      position = parts.value.index + GAP_LEN;  
+      const text = data.substring(position,parts.value.index);
+      this.textElements.set(parts.value[1],{raw: text, parsed: await this.parse(text)});
+      position = parts.value.index + BLOCKREF_LEN;  
     }
 
-    this.findNewTextElementsInScene();
+    //Check to see if there are text elements in the JSON that were missed from the # Text Elements section
+    //e.g. if the entire text elements section was deleted.
+    await this.findNewTextElementsInScene();
 
-    //get scene text elements
-    const texts = this.scene.elements?.filter((el:any)=> el.type=="text")
-    //update text in scene based on textElements Map
-    for (const te of texts) {
-      this.updateSceneTextElement(te,this.parse(this.textElements.get(te.id)));
-    }
+    this.updateSceneTextElements();
     return true;
   }
 
-  /**
-   * update a single text element in the scene if the newText is different
-   * @param sceneTextElement 
-   * @param newText 
-   */
-  private updateSceneTextElement(sceneTextElement:any, newText:string) {
-    if(newText!=sceneTextElement.text) {
-      const measure = measureText(newText,sceneTextElement.fontSize,sceneTextElement.fontFamily);
-      sceneTextElement.text = newText;
-      sceneTextElement.width = measure.w;
-      sceneTextElement.height = measure.h;
-      sceneTextElement.baseline = measure.baseline;
+  private updateSceneTextElements() {
+    //update a single text element in the scene if the newText is different
+    const update = (sceneTextElement:any, newText:string) => {
+      if(newText!=sceneTextElement.text) {
+        const measure = measureText(newText,sceneTextElement.fontSize,sceneTextElement.fontFamily);
+        sceneTextElement.text = newText;
+        sceneTextElement.width = measure.w;
+        sceneTextElement.height = measure.h;
+        sceneTextElement.baseline = measure.baseline;
+      }
+    }
+
+    //update text in scene based on textElements Map
+    //first get scene text elements
+    const texts = this.scene.elements?.filter((el:any)=> el.type=="text")
+    for (const te of texts) {
+      update(te,this.allowParse ? this.textElements.get(te.id).parsed : this.textElements.get(te.id).raw);
     }
   }
 
@@ -124,15 +132,14 @@ export class ExcalidrawData {
    * check for textElements in Scene missing from textElements Map
    * @returns {boolean} - true if there were changes
    */
-  private findNewTextElementsInScene():boolean {
-    let idList = [];
+  private async findNewTextElementsInScene():Promise<boolean> {
     //get scene text elements
     const texts = this.scene.elements?.filter((el:any)=> el.type=="text")
 
     let jsonString = JSON.stringify(this.scene);
 
-    let dirty:boolean = false;
-    let id:string;
+    let dirty:boolean = false; //to keep track if the json has changed
+    let id:string; //will be used to hold the new 8 char long ID for textelements that don't yet appear under # Text Elements
     for (const te of texts) {
       id = te.id;
       //replacing Excalidraw text IDs with my own nanoid, because default IDs may contain 
@@ -145,20 +152,13 @@ export class ExcalidrawData {
       }
       if(!this.textElements.has(id)) {
         dirty = true;
-        this.textElements.set(id,te.text)
-        idList.push(id);
+        this.textElements.set(id,{raw: te.text, parsed: await this.parse(te.text)});
       }
     }
-    if(dirty) { //reload scene json
+    if(dirty) { //reload scene json in case it has changed
       this.scene = JSON.parse(jsonString);
     }
 
-    //parse text for newly added text and update scene accordingly
-    //i.e. if [[link|alias]] was added, it should read just "alias"   
-    idList.forEach((id)=>{
-      const el = this.scene.elements?.filter((el:any)=> (el.type=="text" && el.id==id));
-      this.updateSceneTextElement(el[0],this.parse(this.textElements.get(id)));
-    });
     return dirty;
   }
 
@@ -167,28 +167,25 @@ export class ExcalidrawData {
    * and updating the textElement map based on the text updated in the scene
    * @returns {boolean} - if scene changes return true;
    */
-  private updateTextElementsFromScene():boolean {
+  private async updateTextElementsFromScene():Promise<boolean> {
     let dirty = false;
-    let idList = [];
     for(const key of this.textElements.keys()){
+      //find text element in the scene
       const el = this.scene.elements?.filter((el:any)=> el.type=="text" && el.id==key);
       if(el.length==0) {
-        this.textElements.delete(key);
+        this.textElements.delete(key); //if no longer in the scene, delete the text element
       } else {
-        if(!(this.textElements.has(key) && this.parse(this.textElements.get(key))==el[0].text)) {
-          this.textElements.set(key,el[0].text);
+        if(!this.textElements.has(key)) {
+          this.textElements.set(key,{raw: el[0].text,parsed: await this.parse(el[0].text)});
+        } else {
+          const text = this.allowParse ? this.textElements.get(key).parsed : this.textElements.get(key).raw;
+          if(text != el[0].text) {
+            this.textElements.set(key,{raw: el[0].text,parsed: await this.parse(el[0].text)});
+          }
         }
-        idList.push(key);
       }
     }
 
-    //parse text for newly added text and update scene accordingly
-    //i.e. if [[link|alias]] was added, it should read just "alias"   
-    idList.forEach((id)=>{
-      const el = this.scene.elements?.filter((el:any)=> el.type=="text" && el.id==id);
-      if(el.length==0) return;
-      this.updateSceneTextElement(el[0],this.parse(this.textElements.get(id)));
-    });
     return dirty;
   }
 
@@ -197,26 +194,42 @@ export class ExcalidrawData {
    * @param text 
    * @returns 
    */
-  private parse(text:string):string{
-    if(!this.allowParse) return text;
-    const getTransclusion = (text:string) => {
-      return text;
+  private async parse(text:string):Promise<string>{
+    const getTransclusion = async (text:string) => {
+      //file-name#^blockref
+      //1          2
+      const REG_FILE_BLOCKREF = /(.*)#\^(.*)/g;
+      const parts=text.matchAll(REG_FILE_BLOCKREF).next();
+      if(!parts.value[1] || !parts.value[2]) return text; //filename and/or blockref not found
+      const file = this.app.metadataCache.getFirstLinkpathDest(parts.value[1],this.file.path);
+      const contents = await this.app.vault.cachedRead(file);
+      //get transcluded line and take the part before ^blockref
+      const REG_TRANSCLUDE = new RegExp("(.*)\\s\\^" + parts.value[2] + "\\n");
+      const res = contents.match(REG_TRANSCLUDE);
+      if(res) return res[1];
+      return text;//if blockref not found in file, return the input string
     }
 
     let outString = "";
     let position = 0;
-    const REG_LINK_BACKETS = /(!)?\[\[([^|\]]+)\|?(.+)?]]/g;
     const res = text.matchAll(REG_LINK_BACKETS);
     let linkIcon = false;
     let parts;
     while(!(parts=res.next()).done) {
-      if (parts.value[1]) { //transclusion
-        outString += text.substring(position,parts.value.index) + getTransclusion(parts.value[2]);
+      if (parts.value[1] || parts.value[4]) { //transclusion
+        outString += text.substring(position,parts.value.index) + 
+                     await getTransclusion(parts.value[1] ? parts.value[2] : parts.value[6]);
+      } else if (parts.value[2]) {
+        linkIcon = true;
+        outString += text.substring(position,parts.value.index) + 
+                     (this.showLinkBrackets ? "[[" : "") +
+                     (parts.value[3] ? parts.value[3]:parts.value[2]) + //insert alias or link text
+                     (this.showLinkBrackets ? "]]" : "");
       } else {
         linkIcon = true;
         outString += text.substring(position,parts.value.index) + 
-                      (this.showLinkBrackets ? "[[" : "") +
-                     (parts.value[3] ? parts.value[3]:parts.value[2]) + //insert alias or link text
+                     (this.showLinkBrackets ? "[[" : "") +
+                     (parts.value[5] ? parts.value[5]:parts.value[6]) + //insert alias or link text
                      (this.showLinkBrackets ? "]]" : "");
       }
       position = parts.value.index + parts.value[0].length;
@@ -225,10 +238,6 @@ export class ExcalidrawData {
     if (linkIcon) {
       outString = this.linkIndicator + outString;
     }
-/*    if(text.match(REG_LINKINDEX_HYPERLINK)) {
-      window.open(text,"_blank");
-      return;
-    }*/
 
     return outString;
   }
@@ -240,14 +249,22 @@ export class ExcalidrawData {
   generateMD():string {
     let outString = '# Text Elements\n';
     for(const key of this.textElements.keys()){
-      outString += this.textElements.get(key)+' ^'+key+'\n\n';
+      outString += this.textElements.get(key).raw+' ^'+key+'\n\n';
     }
     return outString + '# Drawing\n' + JSON.stringify(this.scene);
   }
 
-  public updateScene(newScene:any){
+  public async updateScene(newScene:any){
     this.scene = JSON.parse(newScene);
-    return this.findNewTextElementsInScene() || this.updateTextElementsFromScene();
+    if(await this.findNewTextElementsInScene() || await this.updateTextElementsFromScene()) {
+      this.updateSceneTextElements();
+      return true;
+    };
+    return false;
+  }
+
+  public getRawText(id:string) {  
+    return this.textElements.get(id)?.raw;
   }
 
 }

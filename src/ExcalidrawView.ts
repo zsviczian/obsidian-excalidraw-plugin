@@ -6,12 +6,10 @@ import {
   WorkspaceItem,
   Notice,
   Menu,
-  MarkdownRenderer
 } from "obsidian";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import Excalidraw, {exportToSvg, getSceneVersion} from "@excalidraw/excalidraw";
-//import Excalidraw, {exportToSvg, getSceneVersion} from "aakansha-excalidraw";
 import { ExcalidrawElement } from "@excalidraw/excalidraw/types/element/types";
 import { 
   AppState,
@@ -26,18 +24,15 @@ import {
   DISK_ICON_NAME,
   PNG_ICON_NAME,
   SVG_ICON_NAME,
-  REG_LINKINDEX_BRACKETS,
-  REG_LINKINDEX_HYPERLINK,
-  REG_LINKINDEX_INVALIDCHARS,
-  FRONTMATTER,
   FRONTMATTER_KEY,
+  UNLOCK_ICON_NAME,
+  LOCK_ICON_NAME,
 
 } from './constants';
 import ExcalidrawPlugin from './main';
 import {ExcalidrawAutomate} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
-import { ExcalidrawData } from "./ExcalidrawData";
-import { networkInterfaces } from "os";
+import { ExcalidrawData, REG_LINK_BACKETS } from "./ExcalidrawData";
 
 declare let window: ExcalidrawAutomate;
 
@@ -50,10 +45,14 @@ export interface ExportSettings {
   withTheme: boolean
 }
 
+const REG_LINKINDEX_HYPERLINK = /^\w+:\/\//;
+const REG_LINKINDEX_INVALIDCHARS = /[<>:"\\|?*]/g;
+
 export default class ExcalidrawView extends TextFileView {
   private excalidrawData: ExcalidrawData;
   private getScene: Function = null;
   private getSelectedText: Function = null;
+  private getSelectedId: Function = null;
   public addText:Function = null;
   private refresh: Function = null;
   private excalidrawRef: React.MutableRefObject<any> = null;
@@ -71,7 +70,7 @@ export default class ExcalidrawView extends TextFileView {
   constructor(leaf: WorkspaceLeaf, plugin: ExcalidrawPlugin) {
     super(leaf);
     this.plugin = plugin;
-    this.excalidrawData = new ExcalidrawData(plugin.settings);
+    this.excalidrawData = new ExcalidrawData(plugin);
   }
 
   public async saveSVG(data?: string) {
@@ -121,25 +120,32 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   // get the new file content
+  // if drawing is in Text Element Edit Lock, then everything should be parsed and in sync
+  // if drawing is in Text Element Edit Unlock, then everything is raw and parse a.k.a async is not required.
   getViewData () {
-    const reg_frontmatter = /---\n([\s\S]*)---\n/gm;
     if(this.getScene) {
       const scene = this.getScene();
       if(this.plugin.settings.autoexportSVG) this.saveSVG(scene);
       if(this.plugin.settings.autoexportPNG) this.savePNG(scene);
-      if(this.excalidrawData.updateScene(scene)) {
-        this.loadDrawing(false);
-      }
-      return this.data
-                 .match(reg_frontmatter)[0]
-                 .replace(new RegExp(FRONTMATTER_KEY+".\n"),FRONTMATTER_KEY+": " + (this.isTextLocked ? "locked\n" : "unlocked\n")) +
-             this.excalidrawData.generateMD();
+      (async()=>{
+        if(await this.excalidrawData.updateScene(scene)) {
+          await this.loadDrawing(false);
+        }  
+      })();
+      let trimLocation = this.data.search("# Text Elements\n");
+      if(trimLocation == -1) trimLocation = this.data.search("# Drawing\n");
+      if(trimLocation == -1) return this.data;
+      const header = this.data.substring(0,trimLocation)
+                              .replace(/excalidraw-plugin:\s.*\n/,FRONTMATTER_KEY+": " + (this.isTextLocked ? "locked\n" : "unlocked\n"));
+      return header + this.excalidrawData.generateMD();
     }
     else return this.data;
   }
   
   handleLinkClick(view: ExcalidrawView, ev:MouseEvent) {
-    let text = this.getSelectedText();
+    let text:string = this.isTextLocked
+               ? this.excalidrawData.getRawText(this.getSelectedId()) 
+               : this.getSelectedText();
     if(!text) {
       new Notice('Select a text element.\n'+
                  'If it is a web link, it will open in a new browser window.\n'+
@@ -150,15 +156,25 @@ export default class ExcalidrawView extends TextFileView {
     }
     if(text.match(REG_LINKINDEX_HYPERLINK)) {
       window.open(text,"_blank");
+      return;    }
+
+    //![[link|alias]]![alias](link)
+    //1  2    3      4 5      6
+    const parts = text.matchAll(REG_LINK_BACKETS).next();    
+    //if(view.plugin.settings.validLinksOnly) text = ''; //clear text, if it is a valid link, parts.value[1] will hold a value
+    if(!parts.value) {
+      new Notice('Text element is empty, or [[valid-link|alias]] or [alias](valid-link) is not found',4000); 
       return;
     }
-    const parts = text.matchAll(REG_LINKINDEX_BRACKETS).next();    
-    if(view.plugin.settings.validLinksOnly) text = ''; //clear text, if it is a valid link, parts.value[1] will hold a value
-    if(parts.value) text = parts.value[1];
-    if(text=='') {
-      new Notice('Text element is empty, or [[valid links only]] setting is enabled in settings, and text does not contain a [[valid Obsidian link]]',4000); 
+
+    text = parts.value[2] ? parts.value[2]:parts.value[6];
+
+    if(text.match(REG_LINKINDEX_HYPERLINK)) {
+      window.open(text,"_blank");
       return;
     }
+
+    if(text.search("#")>-1) text = text.substring(0,text.search("#"));
     if(text.match(REG_LINKINDEX_INVALIDCHARS)) {
       new Notice('File name cannot contain any of the following characters: * " \\  < > : | ?',4000); 
       return;
@@ -173,12 +189,6 @@ export default class ExcalidrawView extends TextFileView {
     try {
       const f = view.file;
       view.app.workspace.openLinkText(text,view.file.path,ev.shiftKey);
-      /*
-      view.app.workspace.openLinkText(text,view.file.path,ev.shiftKey).then( ()=> { 
-        if(ev.altKey) //create new: need to reindex excalidraw file
-          view.plugin.linkIndex.indexFile(f);
-      });*/
-      
     } catch (e) {
       new Notice(e,4000);
     }
@@ -200,16 +210,8 @@ export default class ExcalidrawView extends TextFileView {
       this.plugin.triggerEmbedUpdates();
     });
     
-    this.unlockedElement = this.addAction("pencil","Text Elements are unlocked. Click to lock.", (ev) => {
-      this.setLockUnlock(true);
-      this.unlockedElement.hide(); 
-      this.lockedElement.show();
-    });
-    this.lockedElement = this.addAction("crossed-star","Text Elements are locked. Click to unlock.", (ev) => {
-      this.setLockUnlock(false);
-      this.unlockedElement.show(); 
-      this.lockedElement.hide();
-    });
+    this.unlockedElement = this.addAction(UNLOCK_ICON_NAME,"Text Elements are unlocked. Click to lock.", (ev) => this.lock(true));
+    this.lockedElement = this.addAction(LOCK_ICON_NAME,"Text Elements are locked. Click to unlock.", (ev) => this.lock(false));
     
     this.addAction("link",t("Open selected text as link\n(SHIFT+click to open in a new pane)"), (ev)=>this.handleLinkClick(this,ev));
 
@@ -224,9 +226,18 @@ export default class ExcalidrawView extends TextFileView {
     this.setupAutosaveTimer();
   }
 
-  private setLockUnlock(locked:boolean) {
+  public async lock(locked:boolean) {
     this.isTextLocked = locked;
-    this.reload();
+    if(locked) {
+      if(this.getScene) await this.excalidrawData.updateScene(this.getScene());
+      this.unlockedElement.hide(); 
+      this.lockedElement.show();
+    } else {
+      this.unlockedElement.show(); 
+      this.lockedElement.hide();
+    }
+
+    await this.reload();
   }
 
   private setupAutosaveTimer() {
@@ -250,7 +261,7 @@ export default class ExcalidrawView extends TextFileView {
     if(!this.excalidrawRef) return;
     if(!this.file) return;
     await this.save();
-    this.excalidrawData.loadData(this.data, this.file,this.isTextLocked);
+    await this.excalidrawData.loadData(this.data, this.file,this.isTextLocked);
     this.loadDrawing(false);
   }
 
@@ -260,16 +271,9 @@ export default class ExcalidrawView extends TextFileView {
   }
   
   async setViewData (data: string, clear: boolean) {   
-    this.app.workspace.onLayoutReady(()=>{
-      this.isTextLocked = data.match(/excalidraw-plugin: unlocked/) ? false : true;
-      if(this.isTextLocked) {
-        this.lockedElement.show();
-        this.unlockedElement.hide();
-      } else {
-        this.lockedElement.hide();
-        this.unlockedElement.show();
-      }
-      if(!this.excalidrawData.loadData(data, this.file,this.isTextLocked)) return;
+    this.app.workspace.onLayoutReady(async ()=>{
+      this.lock(data.search("excalidraw-plugin: locked\n")>-1);
+      if(!(await this.excalidrawData.loadData(data, this.file,this.isTextLocked))) return;
       if(clear) this.clear();
       this.loadDrawing(true)
     });
@@ -317,7 +321,7 @@ export default class ExcalidrawView extends TextFileView {
         item
           .setTitle(t("Open as markdown"))
           .setIcon("document")
-          .onClick(() => {
+          .onClick(async () => {
             this.plugin.excalidrawFileModes[this.id || this.file.path] = "markdown";
             this.plugin.setMarkdownView(this.leaf);
           });
@@ -333,7 +337,7 @@ export default class ExcalidrawView extends TextFileView {
       })
       .addItem((item) => {
         item
-          .setTitle(t("Save as PNG into Vault\nCTRL/META+click to export outside Obsidian"))
+          .setTitle(t("Save as PNG into Vault (CTRL/META+click to export)"))
           .setIcon(PNG_ICON_NAME)
           .onClick( async (ev)=> {
             if(!this.getScene || !this.file) return;
@@ -358,7 +362,7 @@ export default class ExcalidrawView extends TextFileView {
       })
       .addItem((item) => {
         item
-          .setTitle(t("Save as SVG into Vault\nCTRL/META+click to export outside Obsidian"))
+          .setTitle(t("Save as SVG into Vault (CTRL/META+click to export)"))
           .setIcon(SVG_ICON_NAME)
           .onClick(async (ev)=> {
             if(!this.getScene || !this.file) return;
@@ -416,6 +420,23 @@ export default class ExcalidrawView extends TextFileView {
         window.addEventListener("resize", onResize); 
         return () => window.removeEventListener("resize", onResize);
       }, [excalidrawWrapperRef]);
+
+
+      this.getSelectedId = ():string => {
+        if(!excalidrawRef?.current) return null;
+        const selectedElement = excalidrawRef.current.getSceneElements().filter((el:any)=>el.id==Object.keys(excalidrawRef.current.getAppState().selectedElementIds)[0]);
+        if(selectedElement.length==0) return null;
+        if(selectedElement[0].type == "text") return selectedElement[0].id; //a text element was selected. Retrun text
+        if(selectedElement[0].groupIds.length == 0) return null; //is the selected element part of a group?
+        const group = selectedElement[0].groupIds[0]; //if yes, take the first group it is part of
+        const textElement = excalidrawRef
+                            .current
+                            .getSceneElements()
+                            .filter((el:any)=>el.groupIds?.includes(group))
+                            .filter((el:any)=>el.type=="text"); //filter for text elements of the group
+        if(textElement.length==0) return null; //the group had no text element member
+        return textElement[0].id; //return text element text
+      };      
 
       this.getSelectedText = (textonly:boolean=false):string => {
         if(!excalidrawRef?.current) return null;
@@ -484,6 +505,7 @@ export default class ExcalidrawView extends TextFileView {
             currentItemStartArrowhead: st.currentItemStartArrowhead,
             currentItemEndArrowhead: st.currentItemEndArrowhead,
             currentItemLinearStrokeSharpness: st.currentItemLinearStrokeSharpness,
+            gridSize: st.gridSize,
           }
         });
       };
@@ -505,7 +527,7 @@ export default class ExcalidrawView extends TextFileView {
             ref: excalidrawWrapperRef,
             key: "abc",
             onClick: (e:MouseEvent):any => {
-              if(this.isTextLocked && this.getSelectedText(true)) { //text element is selected
+              if(this.isTextLocked && (e.target instanceof HTMLCanvasElement) && this.getSelectedText(true)) { //text element is selected
                 const now = (new Date()).getTime();
                 if(now-timestamp < 600) { //double click
                   var event = new MouseEvent('dblclick', {
@@ -522,7 +544,7 @@ export default class ExcalidrawView extends TextFileView {
               }
               if(!(e.ctrlKey||e.metaKey)) return;
               if(!(this.plugin.settings.allowCtrlClick)) return;
-              if(!this.getSelectedText()) return;
+              if(!this.getSelectedId()) return;
               this.handleLinkClick(this,e);
             },
             

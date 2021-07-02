@@ -16,7 +16,7 @@ export interface ExcalidrawSettings {
   width: string,
   showLinkBrackets: boolean,
   linkIndicator: string,
-  validLinksOnly: boolean, //valid link as in [[valid Obsidian link]] - how to treat text elements in drawings
+//  validLinksOnly: boolean, //valid link as in [[valid Obsidian link]] - how to treat text elements in drawings
   allowCtrlClick: boolean, //if disabled only the link button in the view header will open links 
   exportWithTheme: boolean,
   exportWithBackground: boolean,
@@ -34,7 +34,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   width: '400',
   linkIndicator: ">> ",
   showLinkBrackets: true,
-  validLinksOnly: false,
+//  validLinksOnly: false,
   allowCtrlClick: true,
   exportWithTheme: true,
   exportWithBackground: true,

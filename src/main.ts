@@ -30,7 +30,11 @@ import {
   SVG_ICON_NAME,
   RERENDER_EVENT,
   FRONTMATTER_KEY,
-  FRONTMATTER
+  FRONTMATTER,
+  LOCK_ICON,
+  LOCK_ICON_NAME,
+  UNLOCK_ICON_NAME,
+  UNLOCK_ICON
 } from "./constants";
 import ExcalidrawView, {ExportSettings} from "./ExcalidrawView";
 import {getJSON, exportSceneToMD} from "./ExcalidrawData";
@@ -50,6 +54,7 @@ import {
 import { Prompt } from "./Prompt";
 import { around } from "monkey-around";
 import { t } from "./lang/helpers";
+import { hasStrokeStyle } from "@excalidraw/excalidraw/types/scene";
 
 export default class ExcalidrawPlugin extends Plugin {
   public excalidrawFileModes: { [file: string]: string } = {};
@@ -72,6 +77,8 @@ export default class ExcalidrawPlugin extends Plugin {
     addIcon(DISK_ICON_NAME,DISK_ICON);
     addIcon(PNG_ICON_NAME,PNG_ICON);
     addIcon(SVG_ICON_NAME,SVG_ICON);
+    addIcon(LOCK_ICON_NAME,LOCK_ICON);
+    addIcon(UNLOCK_ICON_NAME,UNLOCK_ICON);
     
     await this.loadSettings();
     this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
@@ -400,7 +407,26 @@ export default class ExcalidrawPlugin extends Plugin {
     });
 
     this.addCommand({
+      id: "toggle-lock",
+      hotkeys: [{modifiers:["Ctrl" || "Meta"], key:"e"}],
+      name: t("Toggle text element edit lock/unlock"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return this.app.workspace.activeLeaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW;
+        } else {
+          const view = this.app.workspace.activeLeaf.view;
+          if (view instanceof ExcalidrawView) {
+            view.lock(!view.isTextLocked);
+            return true;
+          }
+          else return false;
+        }
+      },
+    });
+
+    this.addCommand({
       id: "insert-link",
+      hotkeys: [{modifiers:["Ctrl" || "Meta"], key:"k"}],
       name: t("Insert link to file"),
       checkCallback: (checking: boolean) => {
         if (checking) {

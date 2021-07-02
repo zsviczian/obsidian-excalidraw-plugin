@@ -60,6 +60,9 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
         this.plugin.embedDrawing(item.path);
         break;
       case(openDialogAction.insertLink):
+        //TO-DO
+        //change to this.app.metadataCache.fileToLinktext(file: TFile, sourcePath: string, omitMdExtension?: boolean): string;
+        
         //@ts-ignore
         const filepath = this.app.metadataCache.getLinkpathDest(item.path,this.drawingPath)[0].path;
         this.addText("[["+(filepath.endsWith(".md")?filepath.substr(0,filepath.length-3):filepath)+"]]"); //.md files don't need the extension
