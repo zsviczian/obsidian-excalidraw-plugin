@@ -127,11 +127,9 @@ export default class ExcalidrawView extends TextFileView {
       const scene = this.getScene();
       if(this.plugin.settings.autoexportSVG) this.saveSVG(scene);
       if(this.plugin.settings.autoexportPNG) this.savePNG(scene);
-      (async()=>{
-        if(await this.excalidrawData.updateScene(scene)) {
-          await this.loadDrawing(false);
-        }  
-      })();
+      if(this.excalidrawData.syncElements(scene)) {
+        this.loadDrawing(false);
+      }  
       let trimLocation = this.data.search("# Text Elements\n");
       if(trimLocation == -1) trimLocation = this.data.search("# Drawing\n");
       if(trimLocation == -1) return this.data;
@@ -279,7 +277,7 @@ export default class ExcalidrawView extends TextFileView {
     });
   }
 
-  private async loadDrawing (justloaded:boolean) {        
+  private loadDrawing (justloaded:boolean) {        
     this.justLoaded = justloaded; //a flag to trigger zoom to fit after the drawing has been loaded
     const excalidrawData = this.excalidrawData.scene;
     if(this.excalidrawRef) {
@@ -288,12 +286,14 @@ export default class ExcalidrawView extends TextFileView {
         appState: excalidrawData.appState,  
       });
     } else {
-      this.instantiateExcalidraw({
-        elements: excalidrawData.elements,
-        appState: excalidrawData.appState,
-        scrollToContent: true,
-        libraryItems: await this.getLibrary(),
-      });
+      (async() => {
+        this.instantiateExcalidraw({
+          elements: excalidrawData.elements,
+          appState: excalidrawData.appState,
+          scrollToContent: true,
+          libraryItems: await this.getLibrary(),
+        });
+      })();
     }
   }
 

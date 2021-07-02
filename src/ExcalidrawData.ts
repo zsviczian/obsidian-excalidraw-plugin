@@ -102,13 +102,13 @@ export class ExcalidrawData {
 
     //Check to see if there are text elements in the JSON that were missed from the # Text Elements section
     //e.g. if the entire text elements section was deleted.
-    await this.findNewTextElementsInScene();
+    this.findNewTextElementsInScene();
 
-    this.updateSceneTextElements();
+    await this.updateSceneTextElements();
     return true;
   }
 
-  private updateSceneTextElements() {
+  private async updateSceneTextElements() {
     //update a single text element in the scene if the newText is different
     const update = (sceneTextElement:any, newText:string) => {
       if(newText!=sceneTextElement.text) {
@@ -124,15 +124,28 @@ export class ExcalidrawData {
     //first get scene text elements
     const texts = this.scene.elements?.filter((el:any)=> el.type=="text")
     for (const te of texts) {
-      update(te,this.allowParse ? this.textElements.get(te.id).parsed : this.textElements.get(te.id).raw);
+      update(te,await this.getText(te.id)); //this.allowParse ? this.textElements.get(te.id).parsed : this.textElements.get(te.id).raw);
     }
+  }
+
+  private async getText(id:string):Promise<string> {
+    if (this.allowParse) {
+      if(!this.textElements.get(id)?.parsed) {
+        const raw = this.textElements.get(id).raw;
+        this.textElements.set(id,{raw:raw, parsed: await this.parse(raw)})
+      }
+      //console.log("parsed",this.textElements.get(id).parsed);
+      return this.textElements.get(id).parsed;
+    } 
+    //console.log("raw",this.textElements.get(id).raw);
+    return this.textElements.get(id).raw;
   }
 
   /**
    * check for textElements in Scene missing from textElements Map
    * @returns {boolean} - true if there were changes
    */
-  private async findNewTextElementsInScene():Promise<boolean> {
+  private findNewTextElementsInScene():boolean {
     //get scene text elements
     const texts = this.scene.elements?.filter((el:any)=> el.type=="text")
 
@@ -152,7 +165,8 @@ export class ExcalidrawData {
       }
       if(!this.textElements.has(id)) {
         dirty = true;
-        this.textElements.set(id,{raw: te.text, parsed: await this.parse(te.text)});
+        this.textElements.set(id,{raw: te.text, parsed: null});
+        this.parseasync(id,te.text);
       }
     }
     if(dirty) { //reload scene json in case it has changed
@@ -165,10 +179,8 @@ export class ExcalidrawData {
   /**
    * update text element map by deleting entries that are no long in the scene
    * and updating the textElement map based on the text updated in the scene
-   * @returns {boolean} - if scene changes return true;
    */
-  private async updateTextElementsFromScene():Promise<boolean> {
-    let dirty = false;
+  private async updateTextElementsFromScene() {
     for(const key of this.textElements.keys()){
       //find text element in the scene
       const el = this.scene.elements?.filter((el:any)=> el.type=="text" && el.id==key);
@@ -178,15 +190,42 @@ export class ExcalidrawData {
         if(!this.textElements.has(key)) {
           this.textElements.set(key,{raw: el[0].text,parsed: await this.parse(el[0].text)});
         } else {
-          const text = this.allowParse ? this.textElements.get(key).parsed : this.textElements.get(key).raw;
+          const text = await this.getText(key); //this.allowParse ? this.textElements.get(key).parsed : this.textElements.get(key).raw;
           if(text != el[0].text) {
             this.textElements.set(key,{raw: el[0].text,parsed: await this.parse(el[0].text)});
           }
         }
       }
     }
+  }
 
-    return dirty;
+  /**
+   * update text element map by deleting entries that are no long in the scene
+   * and updating the textElement map based on the text updated in the scene
+   */
+   private updateTextElementsFromSceneRawOnly() {
+    for(const key of this.textElements.keys()){
+      //find text element in the scene
+      const el = this.scene.elements?.filter((el:any)=> el.type=="text" && el.id==key);
+      if(el.length==0) {
+        this.textElements.delete(key); //if no longer in the scene, delete the text element
+      } else {
+        if(!this.textElements.has(key)) {
+          this.textElements.set(key,{raw: el[0].text,parsed: null});
+          this.parseasync(key,el[0].text);
+        } else {
+          const text = this.allowParse ? this.textElements.get(key).parsed : this.textElements.get(key).raw;
+          if(text != el[0].text) {
+            this.textElements.set(key,{raw: el[0].text,parsed: null});
+            this.parseasync(key,el[0].text);
+          }
+        }
+      }
+    }
+  }
+
+  private async parseasync(key:string, raw:string) {
+    this.textElements.set(key,{raw:raw,parsed: await this.parse(raw)});
   }
 
   /**
@@ -254,10 +293,19 @@ export class ExcalidrawData {
     return outString + '# Drawing\n' + JSON.stringify(this.scene);
   }
 
+  public syncElements(newScene:any):boolean {
+    this.scene = JSON.parse(newScene);
+    const result = this.findNewTextElementsInScene();
+    this.updateTextElementsFromSceneRawOnly();
+    return result;
+  }
+
   public async updateScene(newScene:any){
     this.scene = JSON.parse(newScene);
-    if(await this.findNewTextElementsInScene() || await this.updateTextElementsFromScene()) {
-      this.updateSceneTextElements();
+    const result = this.findNewTextElementsInScene();
+    await this.updateTextElementsFromScene();
+    if(result) {
+      await this.updateSceneTextElements();
       return true;
     };
     return false;
