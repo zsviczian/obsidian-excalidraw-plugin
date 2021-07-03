@@ -658,18 +658,6 @@ export default class ExcalidrawPlugin extends Plugin {
   private registerEventListeners() {
     const self = this;
     this.app.workspace.onLayoutReady(async () => {
-      const closeDrawing = async (filePath:string) => {
-        const leaves = self.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
-        for (let i=0;i<leaves.length;i++) {
-          if((leaves[i].view as ExcalidrawView).file.path == filePath) {
-            await leaves[i].setViewState({
-              type: VIEW_TYPE_EXCALIDRAW,
-              state: {file: null}}
-            );
-          }
-        }   
-      }
-
       /*
       const reloadDrawing = async (oldPath:string, newPath: string) => {
         const file = self.app.vault.getAbstractFileByPath(newPath);
@@ -706,8 +694,15 @@ export default class ExcalidrawPlugin extends Plugin {
         if (!(file instanceof TFile)) return;
         if (!self.isExcalidrawFile(file)) return;
 
-        closeDrawing(file.path);
-        
+        //close excalidraw view where this file is open
+        const leaves = self.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+        for (let i=0;i<leaves.length;i++) {
+          if((leaves[i].view as ExcalidrawView).file.path == file.path) {
+            await leaves[i].setViewState({type: VIEW_TYPE_EXCALIDRAW, state: {file: null}});
+          }
+        }   
+
+        //delete PNG and SVG files as well
         if (self.settings.keepInSync) {
           ['.svg','.png'].forEach(async (ext:string) => {
             const imgPath = file.path.substring(0,file.path.lastIndexOf('.md')) + ext; 
@@ -732,14 +727,15 @@ export default class ExcalidrawPlugin extends Plugin {
       this.workspaceEventHandlers.set("quit",quitEventHandler);
 
       //save Excalidraw leaf and update embeds when switching to another leaf
-      const activeLeafChangeEventHandler = (leaf:WorkspaceLeaf) => {
+      const activeLeafChangeEventHandler = async (leaf:WorkspaceLeaf) => {
         if(self.activeExcalidrawView) {
-          self.activeExcalidrawView.save();
+          await self.activeExcalidrawView.save();
           self.triggerEmbedUpdates(self.activeExcalidrawView.file?.path);
         }
         self.activeExcalidrawView = (leaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW) ? leaf.view as ExcalidrawView : null;
-        if(self.activeExcalidrawView)
+        if(self.activeExcalidrawView) {
           self.lastActiveExcalidrawFilePath = self.activeExcalidrawView.file?.path;
+        }
       };
       self.app.workspace.on("active-leaf-change",activeLeafChangeEventHandler);
       this.workspaceEventHandlers.set("active-leaf-change",activeLeafChangeEventHandler);

@@ -60,7 +60,6 @@ export default class ExcalidrawView extends TextFileView {
   private plugin: ExcalidrawPlugin;
   private dirty: boolean = false;
   private autosaveTimer: any = null;
-  private previousSceneVersion: number = 0;
   public  isTextLocked:boolean = false;
   private lockedElement:HTMLElement;
   private unlockedElement:HTMLElement;
@@ -123,6 +122,7 @@ export default class ExcalidrawView extends TextFileView {
   // if drawing is in Text Element Edit Lock, then everything should be parsed and in sync
   // if drawing is in Text Element Edit Unlock, then everything is raw and parse a.k.a async is not required.
   getViewData () {
+    console.log("ExcalidrawView.getViewData()");
     if(this.getScene) {
       const scene = this.getScene();
       if(this.plugin.settings.autoexportSVG) this.saveSVG(scene);
@@ -220,22 +220,23 @@ export default class ExcalidrawView extends TextFileView {
     } else {
       this.registerEvent(this.app.workspace.on('layout-ready', async () => (this.app.workspace.rootSplit as WorkspaceItem as WorkspaceItemExt).containerEl.addEventListener('scroll',(e)=>{if(this.refresh) this.refresh();})));
     }
-
     this.setupAutosaveTimer();
   }
 
-  public async lock(locked:boolean) {
+  public async lock(locked:boolean,reload:boolean=true) {
+    console.log("ExcalidrawView.lock(), locked",locked, "reload",reload);
     this.isTextLocked = locked;
     if(locked) {
-      if(this.getScene) await this.excalidrawData.updateScene(this.getScene());
+//      if(this.getScene) await this.excalidrawData.updateScene(this.getScene());
       this.unlockedElement.hide(); 
       this.lockedElement.show();
     } else {
       this.unlockedElement.show(); 
       this.lockedElement.hide();
     }
-
-    await this.reload();
+    if(reload) await this.reload();
+    /*await this.save();
+    this.loadDrawing(false);*/
   }
 
   private setupAutosaveTimer() {
@@ -255,11 +256,13 @@ export default class ExcalidrawView extends TextFileView {
     if(this.excalidrawRef) await this.save();
   }
 
-  public async reload(){
+  public async reload(fullreload:boolean = false){
+    console.log("ExcalidrawView.reload()");
     if(!this.excalidrawRef) return;
     if(!this.file) return;
     await this.save();
-    await this.excalidrawData.loadData(this.data, this.file,this.isTextLocked);
+    if(fullreload) await this.excalidrawData.loadData(this.data, this.file,this.isTextLocked);
+    else await this.excalidrawData.setAllowParse(this.isTextLocked);
     this.loadDrawing(false);
   }
 
@@ -269,15 +272,18 @@ export default class ExcalidrawView extends TextFileView {
   }
   
   async setViewData (data: string, clear: boolean) {   
+    console.log("ExcalidrawView.setViewData()");
     this.app.workspace.onLayoutReady(async ()=>{
-      this.lock(data.search("excalidraw-plugin: locked\n")>-1);
+      this.lock(data.search("excalidraw-plugin: locked\n")>-1,false);
       if(!(await this.excalidrawData.loadData(data, this.file,this.isTextLocked))) return;
       if(clear) this.clear();
       this.loadDrawing(true)
+      this.dirty = false;
     });
   }
 
   private loadDrawing (justloaded:boolean) {        
+    console.log("ExcalidrawView.loadDrawing, justloaded", justloaded);
     this.justLoaded = justloaded; //a flag to trigger zoom to fit after the drawing has been loaded
     const excalidrawData = this.excalidrawData.scene;
     if(this.excalidrawRef) {
@@ -392,8 +398,8 @@ export default class ExcalidrawView extends TextFileView {
   
   private instantiateExcalidraw(initdata: any) {  
     this.dirty = false;
-    this.previousSceneVersion = 0;
     const reactElement = React.createElement(() => {
+      let previousSceneVersion = 0;
       let currentPosition = {x:0, y:0};
       const excalidrawRef = React.useRef(null);
       const excalidrawWrapperRef = React.useRef(null);
@@ -569,6 +575,7 @@ export default class ExcalidrawView extends TextFileView {
             onChange: (et:ExcalidrawElement[],st:AppState) => {
               if(this.justLoaded) {
                 this.justLoaded = false;             
+                previousSceneVersion = Excalidraw.getSceneVersion(et);
                 const e = new KeyboardEvent("keydown", {bubbles : true, cancelable : true, shiftKey : true, code:"Digit1"});
                 this.contentEl.querySelector("canvas")?.dispatchEvent(e);
               } 
@@ -576,8 +583,8 @@ export default class ExcalidrawView extends TextFileView {
                   st.draggingElement == null && st.editingGroupId == null &&
                   st.editingLinearElement == null ) {
                 const sceneVersion = Excalidraw.getSceneVersion(et);
-                if(sceneVersion != this.previousSceneVersion) {
-                  this.previousSceneVersion = sceneVersion;
+                if(sceneVersion != previousSceneVersion) {
+                  previousSceneVersion = sceneVersion;
                   this.dirty=true;
                 }
               }

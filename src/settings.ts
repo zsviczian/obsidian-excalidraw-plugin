@@ -152,7 +152,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     const reloadDrawings = () => {
       const exs = this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
       for(const v of exs) {
-        if(v.view instanceof ExcalidrawView) v.view.reload();
+        if(v.view instanceof ExcalidrawView) v.view.reload(true);
       }
       this.plugin.triggerEmbedUpdates();
     }
