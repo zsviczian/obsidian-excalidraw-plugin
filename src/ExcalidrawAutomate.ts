@@ -12,7 +12,7 @@ import {
 } from "obsidian"
 import ExcalidrawView from "./ExcalidrawView";
 import { getJSON } from "./ExcalidrawData";
-import { nanoid } from "./constants";
+import { CASCADIA_FONT, FRONTMATTER, nanoid, VIRGIL_FONT } from "./constants";
 
 declare type ConnectionPoint = "top"|"bottom"|"left"|"right";
 
@@ -64,7 +64,7 @@ export interface ExcalidrawAutomate extends Window {
 
 declare let window: ExcalidrawAutomate;
 
-export function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
+export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
   window.ExcalidrawAutomate = {
     plugin: plugin,
     elementIds: [],
@@ -174,6 +174,7 @@ export function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         params?.filename ? params.filename + '.excalidraw' : this.plugin.getNextDefaultFilename(),
         params?.onNewPane ? params.onNewPane : false,
         params?.foldername ? params.foldername : this.plugin.settings.folder,
+        FRONTMATTER + exportSceneToMD(
         JSON.stringify({
           type: "excalidraw",
           version: 2,
@@ -197,7 +198,7 @@ export function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
             currentItemEndArrowhead: template? template.appState.currentItemEndArrowhead : this.style.endArrowHead,
             currentItemLinearStrokeSharpness: template? template.appState.currentItemLinearStrokeSharpness : this.style.strokeSharpness,
           }
-        })
+        }))
       );  
     },
     async createSVG(templatePath?:string):Promise<SVGSVGElement> {
@@ -377,7 +378,7 @@ export function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
     }
   
   };
-  initFonts();
+  await initFonts();
 }
 
 export function destroyExcalidrawAutomate() {
@@ -436,12 +437,10 @@ function getFontFamily(id:number) {
 }
 
 async function initFonts () {
-  for (let i=0;i<3;i++) {
-    await (document as any).fonts.load(
-      window.ExcalidrawAutomate.style.fontSize.toString()+'px ' +
-      getFontFamily(window.ExcalidrawAutomate.style.fontFamily)
-    );
+  for (let i=1;i<=3;i++) {
+    await (document as any).fonts.load('20px ' + getFontFamily(i));
   }
+  console.log("Fonts Ready");
 }
 
 export function measureText (newText:string, fontSize:number, fontFamily:number) {
@@ -488,4 +487,29 @@ async function getTemplate(fileWithPath: string):Promise<{elements: any,appState
     elements: [],
     appState: {},
   }
+}
+
+/**
+ * Extracts the text elements from an Excalidraw scene into a string of ids as headers followed by the text contents
+ * @param {string} data - Excalidraw scene JSON string
+ * @returns {string} - Text starting with the "# Text Elements" header and followed by each "## id-value" and text
+ */
+ export function exportSceneToMD(data:string): string {
+  if(!data) return "";
+  const excalidrawData = JSON.parse(data);
+  const textElements = excalidrawData.elements?.filter((el:any)=> el.type=="text")
+  let outString = '# Text Elements\n';
+  let id:string;
+  for (const te of textElements) {
+    id = te.id;
+    //replacing Excalidraw text IDs with my own, because default IDs may contain 
+    //characters not recognized by Obsidian block references
+    //also Excalidraw IDs are inconveniently long
+    if(te.id.length>8) {  
+      id=nanoid();
+      data = data.replaceAll(te.id,id); //brute force approach to replace all occurances.
+    }
+    outString += te.text+' ^'+id+'\n\n';
+  }
+  return outString + '# Drawing\n'+ data;
 }

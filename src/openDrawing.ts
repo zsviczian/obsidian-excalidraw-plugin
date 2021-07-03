@@ -7,6 +7,7 @@ import ExcalidrawPlugin from './main';
 import {
   EMPTY_MESSAGE,
 } from './constants';
+import {t} from './lang/helpers'
 
 export enum openDialogAction {
   openFile,
@@ -48,7 +49,7 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
   }
 
   getItemText(item: TFile): string {
-    return item.path; //this.action == openDialogAction.insertLink ? item.path : item.basename;
+    return item.path; 
   }
 
   onChooseItem(item: TFile, _evt: MouseEvent | KeyboardEvent): void {
@@ -75,17 +76,17 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
     this.addText = addText;
     this.drawingPath = drawingPath;
     this.setInstructions([{
-      command: "Select a file then hit enter.",
+      command: t("SELECT_FILE"),
       purpose: "",
     }]);
-    this.emptyStateText = "No file matches your query.";
-    this.setPlaceholder("Select existing file to insert link into drawing.");
+    this.emptyStateText = t("NO_MATCH");
+    this.setPlaceholder(t("SELECT_FILE_TO_LINK"));
     this.open();
   }
 
   public start(action:openDialogAction, onNewPane: boolean): void {
     this.setInstructions([{
-      command: "Type name of drawing to select.",
+      command: t("TYPE_FILENAME"),
       purpose: "",
     }]);
     this.action = action;
@@ -93,11 +94,11 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
     switch(action) {
       case (openDialogAction.openFile):
         this.emptyStateText = EMPTY_MESSAGE;
-        this.setPlaceholder("Select existing drawing or type name of new and hit enter.");
+        this.setPlaceholder(t("SELECT_FILE_OR_TYPE_NEW"));
         break;
       case (openDialogAction.insertLinkToDrawing):
-        this.emptyStateText = "No file matches your query.";
-        this.setPlaceholder("Select existing drawing to insert into document.");
+        this.emptyStateText = t("NO_MATCH");
+        this.setPlaceholder(t("SELECT_TO_EMBED"));
         break;
     }
     this.open();

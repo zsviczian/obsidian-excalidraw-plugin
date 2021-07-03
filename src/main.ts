@@ -37,7 +37,7 @@ import {
   UNLOCK_ICON
 } from "./constants";
 import ExcalidrawView, {ExportSettings} from "./ExcalidrawView";
-import {getJSON, exportSceneToMD} from "./ExcalidrawData";
+import {getJSON} from "./ExcalidrawData";
 import {
   ExcalidrawSettings, 
   DEFAULT_SETTINGS, 
@@ -50,11 +50,11 @@ import {
 import {
   initExcalidrawAutomate,
   destroyExcalidrawAutomate,
+  exportSceneToMD,
 } from "./ExcalidrawAutomate";
 import { Prompt } from "./Prompt";
 import { around } from "monkey-around";
 import { t } from "./lang/helpers";
-import { hasStrokeStyle } from "@excalidraw/excalidraw/types/scene";
 
 export default class ExcalidrawPlugin extends Plugin {
   public excalidrawFileModes: { [file: string]: string } = {};
@@ -83,12 +83,13 @@ export default class ExcalidrawPlugin extends Plugin {
     await this.loadSettings();
     this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
 
+    await initExcalidrawAutomate(this);
+
     this.registerView(
       VIEW_TYPE_EXCALIDRAW, 
       (leaf: WorkspaceLeaf) => new ExcalidrawView(leaf, this)
     );
 
-    initExcalidrawAutomate(this);
     this.addMarkdownPostProcessor();
     this.registerCommands();
 
@@ -262,14 +263,14 @@ export default class ExcalidrawPlugin extends Plugin {
   private registerCommands() {
     this.openDialog = new OpenFileDialog(this.app, this);
 
-    this.addRibbonIcon(ICON_NAME, t("Create a new drawing in Excalidraw"), async (e) => {
+    this.addRibbonIcon(ICON_NAME, t("CREATE_NEW"), async (e) => {
       this.createDrawing(this.getNextDefaultFilename(), e.ctrlKey||e.metaKey);
     });
   
     const fileMenuHandler = (menu: Menu, file: TFile) => {
       if (file instanceof TFolder) {
         menu.addItem((item: MenuItem) => {
-          item.setTitle(t("Create Excalidraw drawing"))
+          item.setTitle(t("CREATE_NEW"))
             .setIcon(ICON_NAME)
             .onClick(evt => {
               this.createDrawing(this.getNextDefaultFilename(),false,file.path);
@@ -286,7 +287,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "excalidraw-open",
-      name: t("Open an existing drawing - IN A NEW PANE"),
+      name: t("OPEN_EXISTING_NEW_PANE"),
       callback: () => {
         this.openDialog.start(openDialogAction.openFile, true);
       },
@@ -294,7 +295,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "excalidraw-open-on-current",
-      name: t("Open an existing drawing - IN THE CURRENT ACTIVE PANE"),
+      name: t("OPEN_EXISTING_ACTIVE_PANE"),
       callback: () => {
         this.openDialog.start(openDialogAction.openFile, false);
       },
@@ -302,7 +303,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "excalidraw-insert-transclusion",
-      name: t("Transclude (embed) an Excalidraw drawing"),
+      name: t("TRANSCLUDE"),
       checkCallback: (checking: boolean) => {
         if (checking) {
           return this.app.workspace.activeLeaf.view.getViewType() == "markdown";
@@ -315,7 +316,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "excalidraw-insert-last-active-transclusion",
-      name: t("Transclude (embed) the most recently edited Excalidraw drawing"),
+      name: t("TRANSCLUDE_MOST_RECENT"),
       checkCallback: (checking: boolean) => {
         if (checking) {
           return (this.app.workspace.activeLeaf.view.getViewType() == "markdown") && (this.lastActiveExcalidrawFilePath!=null);
@@ -328,7 +329,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "excalidraw-autocreate",
-      name: t("Create a new drawing - IN A NEW PANE"),
+      name: t("NEW_IN_NEW_PANE"),
       callback: () => {
         this.createDrawing(this.getNextDefaultFilename(), true);
       },
@@ -336,7 +337,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "excalidraw-autocreate-on-current",
-      name: t("Create a new drawing - IN THE CURRENT ACTIVE PANE"),
+      name: t("NEW_IN_ACTIVE_PANE"),
       callback: () => {
         this.createDrawing(this.getNextDefaultFilename(), false);
       },
@@ -344,7 +345,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "excalidraw-autocreate-and-embed",
-      name: t("Create a new drawing - IN A NEW PANE - and embed in current document"),
+      name: t("NEW_IN_NEW_PANE_EMBED"),
       checkCallback: (checking: boolean) => {
         if (checking) {
           return (this.app.workspace.activeLeaf.view.getViewType() == "markdown");
@@ -359,7 +360,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "excalidraw-autocreate-and-embed-on-current",
-      name: t("Create a new drawing - IN THE CURRENT ACTIVE PANE - and embed in current document"),
+      name: t("NEW_IN_ACTIVE_PANE_EMBED"),
       checkCallback: (checking: boolean) => {
         if (checking) {
           return (this.app.workspace.activeLeaf.view.getViewType() == "markdown");
@@ -374,7 +375,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "export-svg",
-      name: t("Export SVG. Save it next to the current file"),
+      name: t("EXPORT_SVG"),
       checkCallback: (checking: boolean) => {
         if (checking) {
           return this.app.workspace.activeLeaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW;
@@ -391,7 +392,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "export-png",
-      name: t("Export PNG. Save it next to the current file"),
+      name: t("EXPORT_PNG"),
       checkCallback: (checking: boolean) => {
         if (checking) {
           return this.app.workspace.activeLeaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW;
@@ -409,7 +410,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.addCommand({
       id: "toggle-lock",
       hotkeys: [{modifiers:["Ctrl" || "Meta"], key:"e"}],
-      name: t("Toggle text element edit lock/unlock"),
+      name: t("TOGGLE_LOCK"),
       checkCallback: (checking: boolean) => {
         if (checking) {
           return this.app.workspace.activeLeaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW;
@@ -427,14 +428,11 @@ export default class ExcalidrawPlugin extends Plugin {
     this.addCommand({
       id: "insert-link",
       hotkeys: [{modifiers:["Ctrl" || "Meta"], key:"k"}],
-      name: t("Insert link to file"),
+      name: t("INSERT_LINK"),
       checkCallback: (checking: boolean) => {
         if (checking) {
           const view = this.app.workspace.activeLeaf.view;
-          if (view instanceof ExcalidrawView) {
-            return !view.isTextLocked;
-          }
-          return false;
+          return (view instanceof ExcalidrawView);
         } else {
           const view = this.app.workspace.activeLeaf.view;
           if (view instanceof ExcalidrawView) {
@@ -448,14 +446,14 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "insert-LaTeX-symbol",
-      name: t("Insert LaTeX-symbol (e.g. $\\theta$)"),
+      name: t("INSERT_LATEX"),
       checkCallback: (checking: boolean) => {
         if (checking) {
           return this.app.workspace.activeLeaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW;
         } else {
           const view = this.app.workspace.activeLeaf.view;
           if (view instanceof ExcalidrawView) {
-            const prompt = new Prompt(this.app, 'Enter a valid LaTeX expression','');
+            const prompt = new Prompt(this.app, t("ENTER_LATEX"),'');
             prompt.openAndGetValue( async (formula:string)=> {
               if(!formula) return;
               const el = createEl('p');
@@ -472,7 +470,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "toggle-excalidraw-view",
-      name: t("Toggle between Excalidraw and markdown mode"),
+      name: t("TOGGLE_MODE"),
       checkCallback: (checking) => {
         const activeFile = this.app.workspace.getActiveFile();
         if (!activeFile) return false;
@@ -498,7 +496,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "convert-to-excalidraw",
-      name: t("Convert empty note to Excalidraw Drawing"),
+      name: t("CONVERT_NOTE_TO_EXCALIDRAW"),
       checkCallback: (checking) => {
         const activeFile = this.app.workspace.getActiveFile();
         const activeLeaf = this.app.workspace.activeLeaf;
@@ -516,12 +514,11 @@ export default class ExcalidrawPlugin extends Plugin {
         }
       },
     });
-
-    
+   
     /*1.2 migration command */
     this.addCommand({
       id: "migrate-to-1.2.x",
-      name: t("MIGRATE to version 1.2: convert .excalidraw files to .md files"),
+      name: t("MIGRATE_TO_2"),
       callback: async () => {
         const files = this.app.vault.getFiles().filter((f)=>f.extension=="excalidraw");
         for (const file of files) {
@@ -532,35 +529,6 @@ export default class ExcalidrawPlugin extends Plugin {
           this.app.vault.delete(file);
         }
       }
-    });
-    /*********************/
-
-    /*1.1 migration command*/
-    const migrateCodeblock = async () => {
-      const timeStart = new Date().getTime();
-      let counter = 0;
-      const markdownFiles = this.app.vault.getMarkdownFiles();
-      let fileContents:string;
-      const pattern =  new RegExp(String.fromCharCode(96,96,96)+'excalidraw\\s+([^`]*)\\s+'+String.fromCharCode(96,96,96),'gms');
-      for (const file of markdownFiles) {
-        fileContents = await this.app.vault.read(file);
-        for(const match of [...fileContents.matchAll(pattern)]) {
-          if(match[0] && match[1]) {
-            fileContents = fileContents.split(match[0]).join("!"+match[1]);
-            counter++;
-          }
-        }
-        await this.app.vault.modify(file,fileContents)
-      }
-      const totalTimeMs = new Date().getTime() - timeStart;
-      console.log(`Excalidraw: Parsed ${markdownFiles.length} markdown files 
-                   and made ${counter} replacements in ${totalTimeMs / 1000.0} seconds.`);      
-    }
-
-    this.addCommand({
-      id: "migrate-codeblock-transclusions",
-      name: t("MIGRATE to version 1.1: Replace codeblocks with ![[...]] style embedments"),
-      callback: async () => migrateCodeblock(),  
     });
   }
   
@@ -638,7 +606,7 @@ export default class ExcalidrawPlugin extends Plugin {
             menu
               .addItem((item) => {
                 item
-                  .setTitle(t("Open as Excalidraw Drawing"))
+                  .setTitle(t("OPEN_AS_EXCALIDRAW"))
                   .setIcon(ICON_NAME)
                   .onClick(() => {
                     self.excalidrawFileModes[this.leaf.id || file.path] =
@@ -658,18 +626,6 @@ export default class ExcalidrawPlugin extends Plugin {
   private registerEventListeners() {
     const self = this;
     this.app.workspace.onLayoutReady(async () => {
-      /*
-      const reloadDrawing = async (oldPath:string, newPath: string) => {
-        const file = self.app.vault.getAbstractFileByPath(newPath);
-        if(!(file && file instanceof TFile)) return;
-        let leaves = self.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
-        for (let i=0;i<leaves.length;i++) {
-          if((leaves[i].view as ExcalidrawView).file.path == oldPath) {
-            (leaves[i].view as ExcalidrawView).setViewData(await self.app.vault.read(file),false);
-          }
-        }
-        self.triggerEmbedUpdates(oldPath);
-      }*/
 
       //watch filename change to rename .svg, .png; to sync to .md; to update links
       const renameEventHandler = async (file:TAbstractFile,oldPath:string) => {
@@ -688,6 +644,17 @@ export default class ExcalidrawPlugin extends Plugin {
       self.app.vault.on("rename",renameEventHandler);
       this.vaultEventHandlers.set("rename",renameEventHandler);
 
+      const modifyEventHandler = async (file:TFile) => {
+        const leaves = self.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+        leaves.forEach((leaf:WorkspaceLeaf)=> {
+          const excalidrawView = (leaf.view as ExcalidrawView); 
+          if(excalidrawView.file && excalidrawView.file.path == file.path) {
+            excalidrawView.reload(true,file);
+          }
+        });
+      }
+      self.app.vault.on("modify",modifyEventHandler);
+      this.vaultEventHandlers.set("modify",modifyEventHandler);
 
       //watch file delete and delete corresponding .svg
       const deleteEventHandler = async (file:TFile) => {
@@ -728,11 +695,13 @@ export default class ExcalidrawPlugin extends Plugin {
 
       //save Excalidraw leaf and update embeds when switching to another leaf
       const activeLeafChangeEventHandler = async (leaf:WorkspaceLeaf) => {
-        if(self.activeExcalidrawView) {
+        const activeview:ExcalidrawView = (leaf.view instanceof ExcalidrawView) ? leaf.view as ExcalidrawView : null;
+        if(self.activeExcalidrawView && self.activeExcalidrawView != activeview) {
+          //console.log("ExcalidrawPlugin.activeLeafChangeEventHandler()");
           await self.activeExcalidrawView.save();
           self.triggerEmbedUpdates(self.activeExcalidrawView.file?.path);
         }
-        self.activeExcalidrawView = (leaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW) ? leaf.view as ExcalidrawView : null;
+        self.activeExcalidrawView = activeview;
         if(self.activeExcalidrawView) {
           self.lastActiveExcalidrawFilePath = self.activeExcalidrawView.file?.path;
         }
@@ -749,7 +718,6 @@ export default class ExcalidrawPlugin extends Plugin {
     for(const key of this.workspaceEventHandlers.keys())
       this.app.workspace.off(key,this.workspaceEventHandlers.get(key));
     this.observer.disconnect();
-    //this.linkIndex.deregisterEventHandlers();
 
     const excalidrawLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
     excalidrawLeaves.forEach((leaf) => {

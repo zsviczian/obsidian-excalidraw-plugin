@@ -63,6 +63,7 @@ export default class ExcalidrawView extends TextFileView {
   public  isTextLocked:boolean = false;
   private lockedElement:HTMLElement;
   private unlockedElement:HTMLElement;
+  private preventReload:boolean = true;
 
   id: string = (this.leaf as any).id;
 
@@ -118,11 +119,16 @@ export default class ExcalidrawView extends TextFileView {
     else await this.app.vault.createBinary(filepath,await png.arrayBuffer());    
   }
 
+  async save(preventReload:boolean=true) {
+    this.preventReload = preventReload;
+    await super.save();
+  }
+
   // get the new file content
   // if drawing is in Text Element Edit Lock, then everything should be parsed and in sync
   // if drawing is in Text Element Edit Unlock, then everything is raw and parse a.k.a async is not required.
   getViewData () {
-    console.log("ExcalidrawView.getViewData()");
+    //console.log("ExcalidrawView.getViewData()");
     if(this.getScene) {
       const scene = this.getScene();
       if(this.plugin.settings.autoexportSVG) this.saveSVG(scene);
@@ -145,11 +151,7 @@ export default class ExcalidrawView extends TextFileView {
                ? this.excalidrawData.getRawText(this.getSelectedId()) 
                : this.getSelectedText();
     if(!text) {
-      new Notice('Select a text element.\n'+
-                 'If it is a web link, it will open in a new browser window.\n'+
-                 'Else, if it is a valid filename, Excalidraw will handle it as an Obsidian internal link.\n'+
-                 'Use Shift+click to open it in a new pane.\n'+
-                 'You can also ctrl/meta click on the text element in the drawing as a shortcut to using this button.',20000); 
+      new Notice(t("LINK_BUTTON_CLICK_NO_TEXT"),20000); 
       return;
     }
     if(text.match(REG_LINKINDEX_HYPERLINK)) {
@@ -159,9 +161,8 @@ export default class ExcalidrawView extends TextFileView {
     //![[link|alias]]![alias](link)
     //1  2    3      4 5      6
     const parts = text.matchAll(REG_LINK_BACKETS).next();    
-    //if(view.plugin.settings.validLinksOnly) text = ''; //clear text, if it is a valid link, parts.value[1] will hold a value
     if(!parts.value) {
-      new Notice('Text element is empty, or [[valid-link|alias]] or [alias](valid-link) is not found',4000); 
+      new Notice(t("TEXT_ELEMENT_EMPTY"),4000); 
       return;
     }
 
@@ -174,13 +175,13 @@ export default class ExcalidrawView extends TextFileView {
 
     if(text.search("#")>-1) text = text.substring(0,text.search("#"));
     if(text.match(REG_LINKINDEX_INVALIDCHARS)) {
-      new Notice('File name cannot contain any of the following characters: * " \\  < > : | ?',4000); 
+      new Notice(t("FILENAME_INVALID_CHARS"),4000); 
       return;
     }
     if (!ev.altKey) {
       const file = view.app.metadataCache.getFirstLinkpathDest(text,view.file.path); 
       if (!file) {
-        new Notice("File does not exist. Hold down ALT (or ALT+SHIFT) and click link button to create a new file.", 4000);
+        new Notice(t("FILE_DOES_NOT_EXIST"), 4000);
         return;
       }
     }
@@ -202,17 +203,17 @@ export default class ExcalidrawView extends TextFileView {
     document.body.removeChild(element);
   }
 
-  async onload() {
-    this.addAction(DISK_ICON_NAME,"Force-save now to update transclusion visible in adjacent workspace pane\n(Please note, that autosave is always on)",async (ev)=> {
+  onload() {
+    //console.log("ExcalidrawView.onload()");
+    this.addAction(DISK_ICON_NAME,t("FORCE_SAVE"),async (ev)=> {
       await this.save();
       this.plugin.triggerEmbedUpdates();
     });
     
-    this.unlockedElement = this.addAction(UNLOCK_ICON_NAME,"Text Elements are unlocked. Click to lock.", (ev) => this.lock(true));
-    this.lockedElement = this.addAction(LOCK_ICON_NAME,"Text Elements are locked. Click to unlock.", (ev) => this.lock(false));
+    this.unlockedElement = this.addAction(UNLOCK_ICON_NAME,t("LOCK"), (ev) => this.lock(true));
+    this.lockedElement = this.addAction(LOCK_ICON_NAME,t("UNLOCK"), (ev) => this.lock(false));
     
-    this.addAction("link",t("Open selected text as link\n(SHIFT+click to open in a new pane)"), (ev)=>this.handleLinkClick(this,ev));
-
+    this.addAction("link",t("OPEN_LINK"), (ev)=>this.handleLinkClick(this,ev));
     
     //this is to solve sliding panes bug
     if (this.app.workspace.layoutReady) {
@@ -224,23 +225,23 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   public async lock(locked:boolean,reload:boolean=true) {
-    console.log("ExcalidrawView.lock(), locked",locked, "reload",reload);
+    //console.log("ExcalidrawView.lock(), locked",locked, "reload",reload);
     this.isTextLocked = locked;
     if(locked) {
-//      if(this.getScene) await this.excalidrawData.updateScene(this.getScene());
       this.unlockedElement.hide(); 
       this.lockedElement.show();
     } else {
       this.unlockedElement.show(); 
       this.lockedElement.hide();
     }
-    if(reload) await this.reload();
-    /*await this.save();
-    this.loadDrawing(false);*/
+    if(reload) {
+      await this.save(false);
+    }
   }
 
   private setupAutosaveTimer() {
     const timer = async () => {
+      //console.log("ExcalidrawView.autosaveTimer(), dirty", this.dirty);
       if(this.dirty) {
         this.dirty = false;
         if(this.excalidrawRef) await this.save();
@@ -252,15 +253,20 @@ export default class ExcalidrawView extends TextFileView {
 
   //save current drawing when user closes workspace leaf
   async onunload() {
+    //console.log("ExcalidrawView.onunload()");
     if(this.autosaveTimer) clearInterval(this.autosaveTimer);
-    if(this.excalidrawRef) await this.save();
+    //if(this.excalidrawRef) await this.save();
   }
 
-  public async reload(fullreload:boolean = false){
-    console.log("ExcalidrawView.reload()");
+  public async reload(fullreload:boolean = false, file?:TFile){
+    //console.log("ExcalidrawView.reload(), fullreload",fullreload,"preventReload",this.preventReload);
+    if(this.preventReload) {
+      this.preventReload = false;
+      return;
+    }
     if(!this.excalidrawRef) return;
     if(!this.file) return;
-    await this.save();
+    if(file) this.data = await this.app.vault.read(file);
     if(fullreload) await this.excalidrawData.loadData(this.data, this.file,this.isTextLocked);
     else await this.excalidrawData.setAllowParse(this.isTextLocked);
     this.loadDrawing(false);
@@ -272,8 +278,8 @@ export default class ExcalidrawView extends TextFileView {
   }
   
   async setViewData (data: string, clear: boolean) {   
-    console.log("ExcalidrawView.setViewData()");
     this.app.workspace.onLayoutReady(async ()=>{
+      //console.log("ExcalidrawView.setViewData()");
       this.lock(data.search("excalidraw-plugin: locked\n")>-1,false);
       if(!(await this.excalidrawData.loadData(data, this.file,this.isTextLocked))) return;
       if(clear) this.clear();
@@ -283,7 +289,7 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   private loadDrawing (justloaded:boolean) {        
-    console.log("ExcalidrawView.loadDrawing, justloaded", justloaded);
+    //console.log("ExcalidrawView.loadDrawing, justloaded", justloaded);
     this.justLoaded = justloaded; //a flag to trigger zoom to fit after the drawing has been loaded
     const excalidrawData = this.excalidrawData.scene;
     if(this.excalidrawRef) {
@@ -296,7 +302,7 @@ export default class ExcalidrawView extends TextFileView {
         this.instantiateExcalidraw({
           elements: excalidrawData.elements,
           appState: excalidrawData.appState,
-          scrollToContent: true,
+//          scrollToContent: true,
           libraryItems: await this.getLibrary(),
         });
       })();
@@ -307,7 +313,7 @@ export default class ExcalidrawView extends TextFileView {
   // gets the title of the document
   getDisplayText() {
     if(this.file) return this.file.basename;
-    else return "Excalidraw (no file)";
+    else return t("NOFILE");
   }
 
   // the view type name
@@ -325,7 +331,7 @@ export default class ExcalidrawView extends TextFileView {
     menu
       .addItem((item) => {
         item
-          .setTitle(t("Open as markdown"))
+          .setTitle(t("OPEN_AS_MD"))
           .setIcon("document")
           .onClick(async () => {
             this.plugin.excalidrawFileModes[this.id || this.file.path] = "markdown";
@@ -334,7 +340,7 @@ export default class ExcalidrawView extends TextFileView {
       })
       .addItem((item) => {
         item
-          .setTitle(t("Export to .Excalidraw file"))
+          .setTitle(t("EXPORT_EXCALIDRAW"))
           .setIcon(ICON_NAME)
           .onClick( async (ev) => {
             if(!this.getScene || !this.file) return;
@@ -343,7 +349,7 @@ export default class ExcalidrawView extends TextFileView {
       })
       .addItem((item) => {
         item
-          .setTitle(t("Save as PNG into Vault (CTRL/META+click to export)"))
+          .setTitle(t("SAVE_AS_PNG"))
           .setIcon(PNG_ICON_NAME)
           .onClick( async (ev)=> {
             if(!this.getScene || !this.file) return;
@@ -368,7 +374,7 @@ export default class ExcalidrawView extends TextFileView {
       })
       .addItem((item) => {
         item
-          .setTitle(t("Save as SVG into Vault (CTRL/META+click to export)"))
+          .setTitle(t("SAVE_AS_SVG"))
           .setIcon(SVG_ICON_NAME)
           .onClick(async (ev)=> {
             if(!this.getScene || !this.file) return;
@@ -397,6 +403,7 @@ export default class ExcalidrawView extends TextFileView {
 
   
   private instantiateExcalidraw(initdata: any) {  
+    //console.log("ExcalidrawView.instantiateExcalidraw()");
     this.dirty = false;
     const reactElement = React.createElement(() => {
       let previousSceneVersion = 0;
@@ -480,7 +487,6 @@ export default class ExcalidrawView extends TextFileView {
           elements: el,
           appState: st,  
         });
-        //console.log(currentPosition,el,st);
       }
       
       this.getScene = () => {
@@ -542,7 +548,7 @@ export default class ExcalidrawView extends TextFileView {
                     'cancelable': true,
                   });
                   e.target.dispatchEvent(event);
-                  new Notice(t("Unlock text elements to edit"))
+                  new Notice(t("UNLOCK_TO_EDIT"))
                   timestamp = now;
                   return;
                 }

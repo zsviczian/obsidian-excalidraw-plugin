@@ -1,4 +1,3 @@
-import { link } from "fs";
 import { App, TFile } from "obsidian";
 import { nanoid} from "./constants";
 import { measureText } from "./ExcalidrawAutomate";
@@ -8,33 +7,6 @@ import { ExcalidrawSettings } from "./settings";
 //![[link|alias]]![alias](link)
 //1  2    3      4 5      6
 export const REG_LINK_BACKETS = /(!)?\[\[([^|\]]+)\|?(.+)?]]|(!)?\[(.*)\]\((.*)\)/g;
-
-/**
- * 1.2 Migration only!!!!
- * Extracts the text elements from an Excalidraw scene into a string of ids as headers followed by the text contents
- * @param {string} data - Excalidraw scene JSON string
- * @returns {string} - Text starting with the "# Text Elements" header and followed by each "## id-value" and text
- */
- export function exportSceneToMD(data:string): string {
-  if(!data) return "";
-  const excalidrawData = JSON.parse(data);
-  const textElements = excalidrawData.elements?.filter((el:any)=> el.type=="text")
-  let outString = '# Text Elements\n';
-  let id:string;
-  for (const te of textElements) {
-    id = te.id;
-    //replacing Excalidraw text IDs with my own, because default IDs may contain 
-    //characters not recognized by Obsidian block references
-    //also Excalidraw IDs are inconveniently long
-    if(te.id.length>8) {  
-      id=nanoid();
-      data = data.replaceAll(te.id,id); //brute force approach to replace all occurances.
-    }
-    outString += te.text+' ^'+id+'\n\n';
-  }
-  return outString + '# Drawing\n'+ data;
-}
-
 
 export function getJSON(data:string):string {
   const findJSON = /\n# Drawing\n(.*)/gm
@@ -67,7 +39,7 @@ export class ExcalidrawData {
    * @returns {boolean} - true if file was loaded, false if there was an error
    */
   public async loadData(data: string,file: TFile, allowParse:boolean):Promise<boolean> {
-    console.log("Excalidraw.Data.loadData()");
+    //console.log("Excalidraw.Data.loadData()",{data:data,allowParse:allowParse,file:file});
     //I am storing these because if the settings change while a drawing is open parsing will run into errors during save
     //The drawing will use these values until next drawing is loaded or this drawing is re-loaded
     this.showLinkBrackets = this.settings.showLinkBrackets;
@@ -113,7 +85,7 @@ export class ExcalidrawData {
   }
 
   private async updateSceneTextElements(forceupdate:boolean=false) {
-    console.log("Excalidraw.Data.updateSceneTextElements(), forceupdate",forceupdate);
+    //console.log("Excalidraw.Data.updateSceneTextElements(), forceupdate",forceupdate);
     //update a single text element in the scene if the newText is different
     const update = (sceneTextElement:any, newText:string) => {
       if(forceupdate || newText!=sceneTextElement.text) {
@@ -151,7 +123,7 @@ export class ExcalidrawData {
    * @returns {boolean} - true if there were changes
    */
   private findNewTextElementsInScene():boolean {
-    console.log("Excalidraw.Data.findNewTextElementsInScene()");
+    //console.log("Excalidraw.Data.findNewTextElementsInScene()");
     //get scene text elements
     const texts = this.scene.elements?.filter((el:any)=> el.type=="text")
 
@@ -187,7 +159,7 @@ export class ExcalidrawData {
    * and updating the textElement map based on the text updated in the scene
    */
   private async updateTextElementsFromScene() {
-    console.log("Excalidraw.Data.updateTextElementesFromScene()");
+    //console.log("Excalidraw.Data.updateTextElementesFromScene()");
     for(const key of this.textElements.keys()){
       //find text element in the scene
       const el = this.scene.elements?.filter((el:any)=> el.type=="text" && el.id==key);
@@ -211,7 +183,7 @@ export class ExcalidrawData {
    * and updating the textElement map based on the text updated in the scene
    */
    private updateTextElementsFromSceneRawOnly() {
-    console.log("Excalidraw.Data.updateTextElementsFromSceneRawOnly()");
+    //console.log("Excalidraw.Data.updateTextElementsFromSceneRawOnly()");
     for(const key of this.textElements.keys()){
       //find text element in the scene
       const el = this.scene.elements?.filter((el:any)=> el.type=="text" && el.id==key);
@@ -294,7 +266,7 @@ export class ExcalidrawData {
    * @returns markdown string
    */
   generateMD():string {
-    console.log("Excalidraw.Data.generateMD()");
+    //console.log("Excalidraw.Data.generateMD()");
     let outString = '# Text Elements\n';
     for(const key of this.textElements.keys()){
       outString += this.textElements.get(key).raw+' ^'+key+'\n\n';
@@ -303,7 +275,7 @@ export class ExcalidrawData {
   }
 
   public syncElements(newScene:any):boolean {
-    console.log("Excalidraw.Data.syncElements()");
+    //console.log("Excalidraw.Data.syncElements()");
     this.scene = JSON.parse(newScene);
     const result = this.findNewTextElementsInScene();
     this.updateTextElementsFromSceneRawOnly();
@@ -311,7 +283,7 @@ export class ExcalidrawData {
   }
 
   public async updateScene(newScene:any){
-    console.log("Excalidraw.Data.updateScene()");
+    //console.log("Excalidraw.Data.updateScene()");
     this.scene = JSON.parse(newScene);
     const result = this.findNewTextElementsInScene();
     await this.updateTextElementsFromScene();
