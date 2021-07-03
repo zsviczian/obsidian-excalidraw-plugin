@@ -1,6 +1,9 @@
+//This is to avoid brackets littering graph view with links 
+export function JSON_stringify(x:any):string {return JSON.stringify(x).replaceAll("[","&#91;");}
+export function JSON_parse(x:string):any {return JSON.parse(x.replaceAll("&#91;","["));}
+
 import {customAlphabet} from "nanoid";
 export const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',8);
-
 export const FRONTMATTER_KEY = "excalidraw-plugin";
 export const VIEW_TYPE_EXCALIDRAW = "excalidraw";
 export const ICON_NAME = "excalidraw-icon";

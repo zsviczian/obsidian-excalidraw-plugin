@@ -1,6 +1,5 @@
 import ExcalidrawPlugin from "./main";
 import { 
-  ExcalidrawElement,
   FillStyle,
   StrokeStyle,
   StrokeSharpness,
@@ -12,7 +11,12 @@ import {
 } from "obsidian"
 import ExcalidrawView from "./ExcalidrawView";
 import { getJSON } from "./ExcalidrawData";
-import { CASCADIA_FONT, FRONTMATTER, nanoid, VIRGIL_FONT } from "./constants";
+import { 
+  FRONTMATTER, 
+  nanoid, 
+  JSON_stringify,
+  JSON_parse 
+} from "./constants";
 
 declare type ConnectionPoint = "top"|"bottom"|"left"|"right";
 
@@ -159,7 +163,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         elements.push(this.elementsDict[this.elementIds[i]]);
       }
       navigator.clipboard.writeText(
-        JSON.stringify({
+        JSON_stringify({
           "type":"excalidraw/clipboard",
           "elements": elements,
       }));
@@ -175,7 +179,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         params?.onNewPane ? params.onNewPane : false,
         params?.foldername ? params.foldername : this.plugin.settings.folder,
         FRONTMATTER + exportSceneToMD(
-        JSON.stringify({
+        JSON_stringify({
           type: "excalidraw",
           version: 2,
           source: "https://excalidraw.com",
@@ -208,7 +212,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         elements.push(this.elementsDict[this.elementIds[i]]);
       }
       return ExcalidrawView.getSVG(
-        JSON.stringify({
+        JSON_stringify({
           "type": "excalidraw",
           "version": 2,
           "source": "https://excalidraw.com",
@@ -231,7 +235,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         elements.push(this.elementsDict[this.elementIds[i]]);
       }
       return ExcalidrawView.getPNG(
-        JSON.stringify({
+        JSON_stringify({
           "type": "excalidraw",
           "version": 2,
           "source": "https://excalidraw.com",
@@ -440,7 +444,6 @@ async function initFonts () {
   for (let i=1;i<=3;i++) {
     await (document as any).fonts.load('20px ' + getFontFamily(i));
   }
-  console.log("Fonts Ready");
 }
 
 export function measureText (newText:string, fontSize:number, fontFamily:number) {
@@ -477,7 +480,7 @@ async function getTemplate(fileWithPath: string):Promise<{elements: any,appState
   const file = vault.getAbstractFileByPath(normalizePath(fileWithPath));
   if(file && file instanceof TFile) {
     const data = await vault.read(file);
-    const excalidrawData = JSON.parse(getJSON(data));
+    const excalidrawData = JSON_parse(getJSON(data));
     return {
       elements: excalidrawData.elements,
       appState: excalidrawData.appState,  
@@ -496,7 +499,7 @@ async function getTemplate(fileWithPath: string):Promise<{elements: any,appState
  */
  export function exportSceneToMD(data:string): string {
   if(!data) return "";
-  const excalidrawData = JSON.parse(data);
+  const excalidrawData = JSON_parse(data);
   const textElements = excalidrawData.elements?.filter((el:any)=> el.type=="text")
   let outString = '# Text Elements\n';
   let id:string;
@@ -511,5 +514,5 @@ async function getTemplate(fileWithPath: string):Promise<{elements: any,appState
     }
     outString += te.text+' ^'+id+'\n\n';
   }
-  return outString + '# Drawing\n'+ data;
+  return outString + '# Drawing\n'+ data.replaceAll("[","&#91;");
 }

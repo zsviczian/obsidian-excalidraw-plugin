@@ -3,6 +3,10 @@ import { nanoid} from "./constants";
 import { measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
 import { ExcalidrawSettings } from "./settings";
+import {  
+  JSON_stringify,
+  JSON_parse
+} from "./constants";
 
 //![[link|alias]]![alias](link)
 //1  2    3      4 5      6
@@ -52,7 +56,7 @@ export class ExcalidrawData {
     this.scene = null;
     let parts = data.matchAll(/\n# Drawing\n(.*)/gm).next();
     if(!(parts.value && parts.value.length>1)) return false; //JSON not found or invalid
-    this.scene = JSON.parse(parts.value[1]);
+    this.scene = JSON_parse(parts.value[1]);
     
     //Trim data to remove the JSON string
     data = data.substring(0,parts.value.index);
@@ -127,7 +131,7 @@ export class ExcalidrawData {
     //get scene text elements
     const texts = this.scene.elements?.filter((el:any)=> el.type=="text")
 
-    let jsonString = JSON.stringify(this.scene);
+    let jsonString = JSON_stringify(this.scene);
 
     let dirty:boolean = false; //to keep track if the json has changed
     let id:string; //will be used to hold the new 8 char long ID for textelements that don't yet appear under # Text Elements
@@ -148,7 +152,7 @@ export class ExcalidrawData {
       }
     }
     if(dirty) { //reload scene json in case it has changed
-      this.scene = JSON.parse(jsonString);
+      this.scene = JSON_parse(jsonString);
     }
 
     return dirty;
@@ -223,7 +227,7 @@ export class ExcalidrawData {
       const file = this.app.metadataCache.getFirstLinkpathDest(parts.value[1],this.file.path);
       const contents = await this.app.vault.cachedRead(file);
       //get transcluded line and take the part before ^blockref
-      const REG_TRANSCLUDE = new RegExp("(.*)\\s\\^" + parts.value[2] + "\\n");
+      const REG_TRANSCLUDE = new RegExp("(.*)\\s\\^" + parts.value[2]);
       const res = contents.match(REG_TRANSCLUDE);
       if(res) return res[1];
       return text;//if blockref not found in file, return the input string
@@ -271,12 +275,12 @@ export class ExcalidrawData {
     for(const key of this.textElements.keys()){
       outString += this.textElements.get(key).raw+' ^'+key+'\n\n';
     }
-    return outString + '# Drawing\n' + JSON.stringify(this.scene);
+    return outString + '# Drawing\n' + JSON_stringify(this.scene);
   }
 
   public syncElements(newScene:any):boolean {
     //console.log("Excalidraw.Data.syncElements()");
-    this.scene = JSON.parse(newScene);
+    this.scene = JSON_parse(newScene);
     const result = this.findNewTextElementsInScene();
     this.updateTextElementsFromSceneRawOnly();
     return result;
@@ -284,7 +288,7 @@ export class ExcalidrawData {
 
   public async updateScene(newScene:any){
     //console.log("Excalidraw.Data.updateScene()");
-    this.scene = JSON.parse(newScene);
+    this.scene = JSON_parse(newScene);
     const result = this.findNewTextElementsInScene();
     await this.updateTextElementsFromScene();
     if(result) {

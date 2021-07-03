@@ -409,7 +409,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "toggle-lock",
-      hotkeys: [{modifiers:["Ctrl" || "Meta"], key:"e"}],
+      hotkeys: [{modifiers:["Ctrl" || "Meta","Shift"], key:"e"}],
       name: t("TOGGLE_LOCK"),
       checkCallback: (checking: boolean) => {
         if (checking) {
@@ -427,7 +427,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "insert-link",
-      hotkeys: [{modifiers:["Ctrl" || "Meta"], key:"k"}],
+      hotkeys: [{modifiers:["Ctrl" || "Meta","Shift"], key:"k"}],
       name: t("INSERT_LINK"),
       checkCallback: (checking: boolean) => {
         if (checking) {
@@ -783,7 +783,7 @@ export default class ExcalidrawPlugin extends Plugin {
  
 
   private async getBlankDrawing():Promise<string> {
-    const template = this.app.vault.getAbstractFileByPath(normalizePath(this.settings.templateFilePath));
+    const template = this.app.metadataCache.getFirstLinkpathDest(normalizePath(this.settings.templateFilePath),"");
     if(template && template instanceof TFile) {
       const data = await this.app.vault.read(template);
       if (data) return data;

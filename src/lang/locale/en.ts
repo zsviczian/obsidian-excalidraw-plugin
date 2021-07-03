@@ -5,7 +5,7 @@ export default {
   OPEN_AS_EXCALIDRAW: "Open as Excalidraw Drawing",
   TOGGLE_MODE: "Toggle between Excalidraw and markdown mode",
   CONVERT_NOTE_TO_EXCALIDRAW: "Convert empty note to Excalidraw Drawing",
-  MIGRATE_TO_2: "MIGRATE to version 2: convert .excalidraw files to .md files",
+  MIGRATE_TO_2: "MIGRATE to version 1.2: convert .excalidraw files to .md files",
   CREATE_NEW : "New Excalidraw",
   OPEN_EXISTING_NEW_PANE: "Open an existing drawing - IN A NEW PANE",
   OPEN_EXISTING_ACTIVE_PANE: "Open an existing drawing - IN THE CURRENT ACTIVE PANE",

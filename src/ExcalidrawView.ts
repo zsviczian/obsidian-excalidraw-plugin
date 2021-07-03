@@ -27,7 +27,8 @@ import {
   FRONTMATTER_KEY,
   UNLOCK_ICON_NAME,
   LOCK_ICON_NAME,
-
+  JSON_stringify,
+  JSON_parse
 } from './constants';
 import ExcalidrawPlugin from './main';
 import {ExcalidrawAutomate} from './ExcalidrawAutomate';
@@ -397,7 +398,7 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   async getLibrary() {
-    const data = JSON.parse(this.plugin.settings.library);
+    const data = JSON_parse(this.plugin.settings.library);
     return data?.library ? data.library : [];
   }
 
@@ -495,7 +496,7 @@ export default class ExcalidrawView extends TextFileView {
         }
         const el: ExcalidrawElement[] = excalidrawRef.current.getSceneElements();
         const st: AppState = excalidrawRef.current.getAppState();
-        return JSON.stringify({
+        return JSON_stringify({
           type: "excalidraw",
           version: 2,
           source: "https://excalidraw.com",
@@ -597,7 +598,7 @@ export default class ExcalidrawView extends TextFileView {
             },
             onLibraryChange: (items:LibraryItems) => {
               (async () => {
-                this.plugin.settings.library = EXCALIDRAW_LIB_HEADER+JSON.stringify(items)+'}';
+                this.plugin.settings.library = EXCALIDRAW_LIB_HEADER+JSON_stringify(items)+'}';
                 await this.plugin.saveSettings();  
               })();
             }
@@ -610,7 +611,7 @@ export default class ExcalidrawView extends TextFileView {
 
   public static getSVG(data:string, exportSettings:ExportSettings):SVGSVGElement {
     try {
-      const excalidrawData = JSON.parse(data);
+      const excalidrawData = JSON_parse(data);
       return exportToSvg({
         elements: excalidrawData.elements,
         appState: {
@@ -627,7 +628,7 @@ export default class ExcalidrawView extends TextFileView {
 
   public static async getPNG(data:string, exportSettings:ExportSettings) {
     try {
-      const excalidrawData = JSON.parse(data);      
+      const excalidrawData = JSON_parse(data);      
       return await Excalidraw.exportToBlob({
           elements: excalidrawData.elements,
           appState: {
