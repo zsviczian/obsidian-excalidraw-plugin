@@ -175,7 +175,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         elements.push(this.elementsDict[this.elementIds[i]]);
       }
       plugin.createDrawing(
-        params?.filename ? params.filename + '.excalidraw' : this.plugin.getNextDefaultFilename(),
+        params?.filename ? params.filename + '.excalidraw.md' : this.plugin.getNextDefaultFilename(),
         params?.onNewPane ? params.onNewPane : false,
         params?.foldername ? params.foldername : this.plugin.settings.folder,
         FRONTMATTER + exportSceneToMD(

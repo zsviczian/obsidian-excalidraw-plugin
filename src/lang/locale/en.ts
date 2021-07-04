@@ -22,6 +22,11 @@ export default {
   INSERT_LINK: "Insert link to file",
   INSERT_LATEX: "Insert LaTeX-symbol (e.g. $\\theta$)",
   ENTER_LATEX: "Enter a valid LaTeX expression",
+  MIGRATION_NOTICE: "Welcome to Excalidraw 1.2\n\nThis version comes with major changes / improvements!\n\n"+
+                    "⚠ ⚠ ⚠ ⚠ ⚠ ⚠ ⚠ ⚠ ⚠\n\nDrawings you created with version 1.1.x need to be migrated, they will not work out of the box. Please open the command palette CTRL+P and select " +
+                    "'Excalidraw: MIGRATE to version 1.2: convert *.excalidraw to *.md files'\n\n⚠ ⚠ ⚠ ⚠ ⚠ ⚠ ⚠ ⚠ ⚠\n\n" + 
+                    "This version comes with many new features and possibilities. Please read the description in Community Plugins to find out more.\n\n" +
+                    "Thank you!",
   
   //ExcalidrawView.ts
   OPEN_AS_MD: "Open as Markdown",
@@ -48,7 +53,12 @@ export default {
   TEMPLATE_DESC: "Full filepath to the Excalidraw template. " +
                  "E.g.: If your template is in the default Excalidraw folder and it's name is " +
                  "Template.excalidraw, the setting would be: Excalidraw/Template.excalidraw",
-  FILENAME_HEAD: "Filenam for drawings",
+  AUTOSAVE_NAME: "Autosave",
+  AUTOSAVE_DESC: "Automatically save the active drawing every 30 seconds. Save normally happens when you close Excalidraw or Obsidian, or move "+
+                 "focus to another pane. In rare cases autosave may slightly disrupt your drawing flow. I created this feature with mobile " +
+                 "phones in mind (I only have experience with Android), where 'swiping out Obsidian to close it' led to some data loss, and because " +
+                 "I wasn't able to force save on application termination on mobiles. If you use Excalidraw on a desktop this is likely not needed.",
+  FILENAME_HEAD: "Filename",
   FILENAME_DESC: "<p>The auto-generated filename consists of a prefix and a date. " + 
                  "e.g.'Drawing 2021-05-24 12.58.07'.</p>"+
                  "<p>Click this link for the <a href='https://momentjs.com/docs/#/displaying/format/'>"+
@@ -58,7 +68,7 @@ export default {
   FILENAME_PREFIX_DESC: "The first part of the filename",
   FILENAME_DATE_NAME: "Filename date",
   FILENAME_DATE_DESC: "The second part of the filename",
-  LINKS_HEAD: "Links in drawings",
+  LINKS_HEAD: "Links",
   LINKS_DESC: "CTRL/META + CLICK on Text Elements to open them as links. " + 
               "If the selected text has more than one [[valid Obsidian links]], only the first will be opened. " + 
               "If the text starts as a valid web link (i.e. https:// or http://), then " +
@@ -76,7 +86,7 @@ export default {
   LINK_CTRL_CLICK_NAME: "CTRL + CLICK on text to open them as links",
   LINK_CTRL_CLICK_DESC: "You can turn this feature off if it interferes with default Excalidraw features you want to use. If " +
                         "this is turned off, only the link button in the title bar of the drawing pane will open links.",
-  EMBED_HEAD: "Embedded/Export image settings",
+  EMBED_HEAD: "Embed & Export",
   EMBED_WIDTH_NAME: "Default width of embedded (transcluded) image",
   EMBED_WIDTH_DESC: "The default width of an embedded drawing. You can specify a custom " +
                     "width when embedding an image using the ![[drawing.excalidraw|100]] or " +

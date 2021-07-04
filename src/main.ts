@@ -15,6 +15,7 @@ import {
   Tasks,
   MarkdownRenderer,
   ViewState,
+  Notice,
 } from "obsidian";
 
 import { 
@@ -94,8 +95,20 @@ export default class ExcalidrawPlugin extends Plugin {
     //inspiration taken from kanban: 
     //https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/main.ts#L267
     this.registerMonkeyPatches();
+
+    this.migrationNotice();
   }
 
+  private migrationNotice(){
+    const self = this;
+    this.app.workspace.onLayoutReady(async () => {
+      const excalidrawFiles = (self.app.vault.getFiles() || []).filter((f:TFile) => f.extension=="excalidraw");
+      if(excalidrawFiles.length > 0) {
+        if(Date.now()<1627775999000) //display message until July 31 2021 
+          new Notice(t("MIGRATION_NOTICE"),30000);
+      }
+    });
+  }
   /**
    * Displays a transcluded .excalidraw image in markdown preview mode
    */
@@ -265,15 +278,17 @@ export default class ExcalidrawPlugin extends Plugin {
     });
   
     const fileMenuHandler = (menu: Menu, file: TFile) => {
-      if (file instanceof TFolder) {
-        menu.addItem((item: MenuItem) => {
-          item.setTitle(t("CREATE_NEW"))
-            .setIcon(ICON_NAME)
-            .onClick(evt => {
-              this.createDrawing(this.getNextDefaultFilename(),false,file.path);
-            })
-        });
-      }
+      menu.addItem((item: MenuItem) => {
+        item.setTitle(t("CREATE_NEW"))
+          .setIcon(ICON_NAME)
+          .onClick(evt => {
+            let folderpath = file.path;
+            if(file instanceof TFile) {
+              folderpath = normalizePath(file.path.substr(0,file.path.lastIndexOf(file.name)));  
+            }
+            this.createDrawing(this.getNextDefaultFilename(),false,folderpath);
+          })
+      });      
     };
 
     this.registerEvent(
@@ -695,14 +710,17 @@ export default class ExcalidrawPlugin extends Plugin {
 
       //save Excalidraw leaf and update embeds when switching to another leaf
       const activeLeafChangeEventHandler = async (leaf:WorkspaceLeaf) => {
-        const activeview:ExcalidrawView = (leaf.view instanceof ExcalidrawView) ? leaf.view as ExcalidrawView : null;
-        if(self.activeExcalidrawView && self.activeExcalidrawView != activeview) {
-          await self.activeExcalidrawView.save();
-          self.triggerEmbedUpdates(self.activeExcalidrawView.file?.path);
+        const activeExcalidrawView = self.activeExcalidrawView;
+        const newActiveview:ExcalidrawView = (leaf.view instanceof ExcalidrawView) ? leaf.view as ExcalidrawView : null;
+        if(activeExcalidrawView && activeExcalidrawView != newActiveview) {
+          await activeExcalidrawView.save();
+          if(activeExcalidrawView.file) {
+            self.triggerEmbedUpdates(activeExcalidrawView.file.path);
+          }
         }
-        self.activeExcalidrawView = activeview;
-        if(self.activeExcalidrawView) {
-          self.lastActiveExcalidrawFilePath = self.activeExcalidrawView.file?.path;
+        self.activeExcalidrawView = newActiveview;
+        if(newActiveview) {
+          self.lastActiveExcalidrawFilePath = newActiveview.file?.path;
         }
       };
       self.registerEvent(

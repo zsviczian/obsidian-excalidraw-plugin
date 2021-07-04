@@ -16,7 +16,7 @@ export interface ExcalidrawSettings {
   width: string,
   showLinkBrackets: boolean,
   linkPrefix: string,
-//  validLinksOnly: boolean, //valid link as in [[valid Obsidian link]] - how to treat text elements in drawings
+  autosave: boolean;
   allowCtrlClick: boolean, //if disabled only the link button in the view header will open links 
   exportWithTheme: boolean,
   exportWithBackground: boolean,
@@ -34,7 +34,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   width: '400',
   linkPrefix: ">> ",
   showLinkBrackets: true,
-//  validLinksOnly: false,
+  autosave: false,
   allowCtrlClick: true,
   exportWithTheme: true,
   exportWithBackground: true,
@@ -76,6 +76,28 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .onChange(async (value) => {
           this.plugin.settings.templateFilePath = value;
           await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName(t("AUTOSAVE_NAME")) 
+      .setDesc(t("AUTOSAVE_DESC"))
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.autosave)
+        .onChange(async (value) => {
+          this.plugin.settings.autosave = value;
+          await this.plugin.saveSettings();
+          const exs = this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+          for(const v of exs) {
+            if(v.view instanceof ExcalidrawView) {
+              if(v.view.autosaveTimer) {
+                clearInterval(v.view.autosaveTimer)
+                v.view.autosaveTimer = null;
+              }
+              if(value) { 
+                v.view.setupAutosaveTimer();
+              }
+            }
+          }          
         }));
 
     this.containerEl.createEl('h1', {text: t("FILENAME_HEAD")});

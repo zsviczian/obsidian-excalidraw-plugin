@@ -60,7 +60,7 @@ export default class ExcalidrawView extends TextFileView {
   private justLoaded: boolean = false;
   private plugin: ExcalidrawPlugin;
   private dirty: boolean = false;
-  private autosaveTimer: any = null;
+  public autosaveTimer: any = null;
   public  isTextLocked:boolean = false;
   private lockedElement:HTMLElement;
   private unlockedElement:HTMLElement;
@@ -240,16 +240,19 @@ export default class ExcalidrawView extends TextFileView {
     }
   }
 
-  private setupAutosaveTimer() {
+  public setupAutosaveTimer() {
     const timer = async () => {
       //console.log("ExcalidrawView.autosaveTimer(), dirty", this.dirty);
       if(this.dirty) {
+        console.log("autosave",Date.now());
         this.dirty = false;
         if(this.excalidrawRef) await this.save();
         this.plugin.triggerEmbedUpdates();
       }
     }
-    this.autosaveTimer = setInterval(timer,30000);
+    if(this.plugin.settings.autosave) {
+      this.autosaveTimer = setInterval(timer,30000);
+    }
   }
 
   //save current drawing when user closes workspace leaf
