@@ -1,5 +1,9 @@
 import { App, TFile } from "obsidian";
-import { nanoid} from "./constants";
+import { 
+  nanoid,
+  FRONTMATTER_KEY_CUSTOM_PREFIX,
+  FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS,
+} from "./constants";
 import { measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
 import { ExcalidrawSettings } from "./settings";
@@ -29,7 +33,7 @@ export class ExcalidrawData {
   private settings:ExcalidrawSettings;
   private app:App;
   private showLinkBrackets: boolean;
-  private linkIndicator: string;
+  private linkPrefix: string;
   private allowParse: boolean = false;
 
   constructor(plugin: ExcalidrawPlugin) {
@@ -44,13 +48,16 @@ export class ExcalidrawData {
    */
   public async loadData(data: string,file: TFile, allowParse:boolean):Promise<boolean> {
     //console.log("Excalidraw.Data.loadData()",{data:data,allowParse:allowParse,file:file});
-    //I am storing these because if the settings change while a drawing is open parsing will run into errors during save
-    //The drawing will use these values until next drawing is loaded or this drawing is re-loaded
-    this.showLinkBrackets = this.settings.showLinkBrackets;
-    this.linkIndicator = this.settings.linkIndicator;
 
     this.file = file;
     this.textElements = new Map<string,{raw:string, parsed:string}>();
+
+    //I am storing these because if the settings change while a drawing is open parsing will run into errors during save
+    //The drawing will use these values until next drawing is loaded or this drawing is re-loaded
+    this.setShowLinkBrackets();
+    this.setLinkPrefix();  
+    
+
     
     //Load scene: Read the JSON string after "# Drawing" 
     this.scene = null;
@@ -259,7 +266,7 @@ export class ExcalidrawData {
     }
     outString += text.substring(position,text.length);
     if (linkIcon) {
-      outString = this.linkIndicator + outString;
+      outString = this.linkPrefix + outString;
     }
 
     return outString;
@@ -281,7 +288,7 @@ export class ExcalidrawData {
   public syncElements(newScene:any):boolean {
     //console.log("Excalidraw.Data.syncElements()");
     this.scene = JSON_parse(newScene);
-    const result = this.findNewTextElementsInScene();
+    const result = this.setLinkPrefix() || this.setShowLinkBrackets() || this.findNewTextElementsInScene();
     this.updateTextElementsFromSceneRawOnly();
     return result;
   }
@@ -289,7 +296,7 @@ export class ExcalidrawData {
   public async updateScene(newScene:any){
     //console.log("Excalidraw.Data.updateScene()");
     this.scene = JSON_parse(newScene);
-    const result = this.findNewTextElementsInScene();
+    const result = this.setLinkPrefix() || this.setShowLinkBrackets() || this.findNewTextElementsInScene();
     await this.updateTextElementsFromScene();
     if(result) {
       await this.updateSceneTextElements();
@@ -300,6 +307,28 @@ export class ExcalidrawData {
 
   public getRawText(id:string) {  
     return this.textElements.get(id)?.raw;
+  }
+
+  private setLinkPrefix():boolean {
+    const linkPrefix = this.linkPrefix;
+    const fileCache = this.app.metadataCache.getFileCache(this.file);
+    if (fileCache?.frontmatter && fileCache.frontmatter[FRONTMATTER_KEY_CUSTOM_PREFIX]!=null) {
+      this.linkPrefix=fileCache.frontmatter[FRONTMATTER_KEY_CUSTOM_PREFIX];
+    } else {
+      this.linkPrefix = this.settings.linkPrefix;
+    }
+    return linkPrefix != this.linkPrefix;
+  }
+
+  private setShowLinkBrackets():boolean {
+    const showLinkBrackets = this.showLinkBrackets;
+    const fileCache = this.app.metadataCache.getFileCache(this.file);
+    if (fileCache?.frontmatter && fileCache.frontmatter[FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS]!=null) {
+      this.showLinkBrackets=fileCache.frontmatter[FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS]!=false;
+    } else {
+      this.showLinkBrackets = this.settings.showLinkBrackets;
+    }
+    return showLinkBrackets != this.showLinkBrackets;
   }
 
 }

@@ -15,7 +15,7 @@ export interface ExcalidrawSettings {
   drawingFilenameDateTime: string,
   width: string,
   showLinkBrackets: boolean,
-  linkIndicator: string,
+  linkPrefix: string,
 //  validLinksOnly: boolean, //valid link as in [[valid Obsidian link]] - how to treat text elements in drawings
   allowCtrlClick: boolean, //if disabled only the link button in the view header will open links 
   exportWithTheme: boolean,
@@ -28,11 +28,11 @@ export interface ExcalidrawSettings {
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   folder: 'Excalidraw',
-  templateFilePath: 'Excalidraw/Template',
+  templateFilePath: 'Excalidraw/Template.excalidraw',
   drawingFilenamePrefix: 'Drawing ',
   drawingFilenameDateTime: 'YYYY-MM-DD HH.mm.ss',
   width: '400',
-  linkIndicator: ">> ",
+  linkPrefix: ">> ",
   showLinkBrackets: true,
 //  validLinksOnly: false,
   allowCtrlClick: true,
@@ -146,13 +146,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         }));
     
     new Setting(containerEl)
-      .setName(t("LINK_INDICATOR_NAME"))
-      .setDesc(t("LINK_INDICATOR_DESC"))
+      .setName(t("LINK_PREFIX_NAME"))
+      .setDesc(t("LINK_PREFIX_DESC"))
       .addText(text => text
         .setPlaceholder('>> ')
-        .setValue(this.plugin.settings.linkIndicator)
+        .setValue(this.plugin.settings.linkPrefix)
         .onChange(async (value) => {
-          this.plugin.settings.linkIndicator = value;
+          this.plugin.settings.linkPrefix = value;
           await this.plugin.saveSettings();
           reloadDrawings();
         }));

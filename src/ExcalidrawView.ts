@@ -127,7 +127,7 @@ export default class ExcalidrawView extends TextFileView {
 
   // get the new file content
   // if drawing is in Text Element Edit Lock, then everything should be parsed and in sync
-  // if drawing is in Text Element Edit Unlock, then everything is raw and parse a.k.a async is not required.
+  // if drawing is in Text Element Edit Unlock, then everything is raw and parse and so an async function is not required here
   getViewData () {
     //console.log("ExcalidrawView.getViewData()");
     if(this.getScene) {
@@ -345,7 +345,7 @@ export default class ExcalidrawView extends TextFileView {
           .setIcon(ICON_NAME)
           .onClick( async (ev) => {
             if(!this.getScene || !this.file) return;
-            this.download('data:text/plain;charset=utf-8',encodeURIComponent(this.getScene()), this.file.basename+'.excalidraw');
+            this.download('data:text/plain;charset=utf-8',encodeURIComponent(this.getScene().replaceAll("&#91;","[")), this.file.basename+'.excalidraw');
           });
       })
       .addItem((item) => {

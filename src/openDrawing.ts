@@ -33,7 +33,7 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
     this.inputEl.onkeyup = (e) => {
       if(e.key=="Enter" && this.action == openDialogAction.openFile) {
         if (this.containerEl.innerText.includes(EMPTY_MESSAGE)) {
-          this.plugin.createDrawing(this.plugin.settings.folder+'/'+this.inputEl.value+'.md', this.onNewPane);
+          this.plugin.createDrawing(this.plugin.settings.folder+'/'+this.inputEl.value+'.excalidraw.md', this.onNewPane);
           this.close();
         }
       }
@@ -62,11 +62,8 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
         break;
       case(openDialogAction.insertLink):
         //TO-DO
-        //change to this.app.metadataCache.fileToLinktext(file: TFile, sourcePath: string, omitMdExtension?: boolean): string;
-        
-        //@ts-ignore
-        const filepath = this.app.metadataCache.getLinkpathDest(item.path,this.drawingPath)[0].path;
-        this.addText("[["+(filepath.endsWith(".md")?filepath.substr(0,filepath.length-3):filepath)+"]]"); //.md files don't need the extension
+        const filepath = this.app.metadataCache.fileToLinktext(item,this.drawingPath,true);
+        this.addText("[["+filepath+"]]"); 
         break;
     }
   }

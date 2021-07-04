@@ -63,8 +63,6 @@ export default class ExcalidrawPlugin extends Plugin {
   private openDialog: OpenFileDialog;
   private activeExcalidrawView: ExcalidrawView = null;
   public lastActiveExcalidrawFilePath: string = null;
-  private workspaceEventHandlers:Map<string,any> = new Map();
-  private vaultEventHandlers:Map<string,any> = new Map();
   private hover: {linkText: string, sourcePath: string} = {linkText: null, sourcePath: null};
   private observer: MutationObserver;
 
@@ -82,7 +80,6 @@ export default class ExcalidrawPlugin extends Plugin {
     
     await this.loadSettings();
     this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
-
     await initExcalidrawAutomate(this);
 
     this.registerView(
@@ -92,10 +89,10 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addMarkdownPostProcessor();
     this.registerCommands();
-
     this.registerEventListeners();
     
-    //inspiration taken from kanban: https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/main.ts#L267
+    //inspiration taken from kanban: 
+    //https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/main.ts#L267
     this.registerMonkeyPatches();
   }
 
@@ -207,7 +204,6 @@ export default class ExcalidrawPlugin extends Plugin {
      * @returns 
      */
     const hoverEvent = (e:any) => {
-      //@ts-ignore
       if(!(e.event.ctrlKey||e.event.metaKey)) return;
       if(!e.linktext) return;
       this.hover.linkText = e.linktext;
@@ -219,10 +215,11 @@ export default class ExcalidrawPlugin extends Plugin {
           return;
       }
       
-    };
-    //@ts-ignore
-    this.app.workspace.on('hover-link',hoverEvent);
-    this.workspaceEventHandlers.set('hover-link',hoverEvent);
+    };   
+    this.registerEvent(
+      //@ts-ignore
+      this.app.workspace.on('hover-link',hoverEvent)
+    );
 
     //monitoring for div.popover.hover-popover.file-embed.is-loaded to be added to the DOM tree
     this.observer = new MutationObserver((m)=>{
@@ -282,8 +279,6 @@ export default class ExcalidrawPlugin extends Plugin {
     this.registerEvent(
       this.app.workspace.on("file-menu", fileMenuHandler)
     );
-
-    this.workspaceEventHandlers.set("file-menu",fileMenuHandler);
 
     this.addCommand({
       id: "excalidraw-open",
@@ -641,8 +636,9 @@ export default class ExcalidrawPlugin extends Plugin {
           }
         });
       };
-      self.app.vault.on("rename",renameEventHandler);
-      this.vaultEventHandlers.set("rename",renameEventHandler);
+      self.registerEvent(
+        self.app.vault.on("rename",renameEventHandler)
+      );
 
       const modifyEventHandler = async (file:TFile) => {
         const leaves = self.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
@@ -653,13 +649,15 @@ export default class ExcalidrawPlugin extends Plugin {
           }
         });
       }
-      self.app.vault.on("modify",modifyEventHandler);
-      this.vaultEventHandlers.set("modify",modifyEventHandler);
+      self.registerEvent(
+        self.app.vault.on("modify",modifyEventHandler)
+      )
 
-      //watch file delete and delete corresponding .svg
+      //watch file delete and delete corresponding .svg and .png
       const deleteEventHandler = async (file:TFile) => {
-        if (!(file instanceof TFile)) return;
-        if (!self.isExcalidrawFile(file)) return;
+        if (!(file instanceof TFile)) return;     
+        //@ts-ignore
+        if (file.unsaveCachedData && !file.unsafeCachedData.search(/---\n[\s\S]*excalidraw-plugin:\s*(locked|unlocked)\n[\s\S]*---/gm)==-1) return;
 
         //close excalidraw view where this file is open
         const leaves = self.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
@@ -680,8 +678,9 @@ export default class ExcalidrawPlugin extends Plugin {
           });
         }
       }
-      self.app.vault.on("delete",deleteEventHandler);
-      this.vaultEventHandlers.set("delete",deleteEventHandler);
+      self.registerEvent(
+        self.app.vault.on("delete",deleteEventHandler)
+      );
 
       //save open drawings when user quits the application
       const quitEventHandler = (tasks: Tasks) => {
@@ -690,14 +689,14 @@ export default class ExcalidrawPlugin extends Plugin {
           (leaves[i].view as ExcalidrawView).save(); 
         }
       }
-      self.app.workspace.on("quit",quitEventHandler);
-      this.workspaceEventHandlers.set("quit",quitEventHandler);
+      self.registerEvent(
+        self.app.workspace.on("quit",quitEventHandler)
+      );
 
       //save Excalidraw leaf and update embeds when switching to another leaf
       const activeLeafChangeEventHandler = async (leaf:WorkspaceLeaf) => {
         const activeview:ExcalidrawView = (leaf.view instanceof ExcalidrawView) ? leaf.view as ExcalidrawView : null;
         if(self.activeExcalidrawView && self.activeExcalidrawView != activeview) {
-          //console.log("ExcalidrawPlugin.activeLeafChangeEventHandler()");
           await self.activeExcalidrawView.save();
           self.triggerEmbedUpdates(self.activeExcalidrawView.file?.path);
         }
@@ -706,19 +705,15 @@ export default class ExcalidrawPlugin extends Plugin {
           self.lastActiveExcalidrawFilePath = self.activeExcalidrawView.file?.path;
         }
       };
-      self.app.workspace.on("active-leaf-change",activeLeafChangeEventHandler);
-      this.workspaceEventHandlers.set("active-leaf-change",activeLeafChangeEventHandler);
+      self.registerEvent(
+        self.app.workspace.on("active-leaf-change",activeLeafChangeEventHandler)
+      );
     });
   }
 
   onunload() {
     destroyExcalidrawAutomate();
-    for(const key of this.vaultEventHandlers.keys()) 
-      this.app.vault.off(key,this.vaultEventHandlers.get(key))
-    for(const key of this.workspaceEventHandlers.keys())
-      this.app.workspace.off(key,this.workspaceEventHandlers.get(key));
     this.observer.disconnect();
-
     const excalidrawLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
     excalidrawLeaves.forEach((leaf) => {
       this.setMarkdownView(leaf);
@@ -778,7 +773,7 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   private getNextDefaultFilename():string {
-    return this.settings.drawingFilenamePrefix + window.moment().format(this.settings.drawingFilenameDateTime)+'.md';
+    return this.settings.drawingFilenamePrefix + window.moment().format(this.settings.drawingFilenameDateTime)+'.excalidraw.md';
   }
  
 

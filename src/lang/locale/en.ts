@@ -1,3 +1,5 @@
+import { FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS, FRONTMATTER_KEY_CUSTOM_PREFIX } from "src/constants";
+
 // English
 export default {
   // main.ts
@@ -45,7 +47,7 @@ export default {
   TEMPLATE_NAME: "Excalidraw template file",
   TEMPLATE_DESC: "Full filepath to the Excalidraw template. " +
                  "E.g.: If your template is in the default Excalidraw folder and it's name is " +
-                 "Template, the setting would be: Excalidraw/Template",
+                 "Template.excalidraw, the setting would be: Excalidraw/Template.excalidraw",
   FILENAME_HEAD: "Filenam for drawings",
   FILENAME_DESC: "<p>The auto-generated filename consists of a prefix and a date. " + 
                  "e.g.'Drawing 2021-05-24 12.58.07'.</p>"+
@@ -64,9 +66,13 @@ export default {
               "When Obsidian files change, the matching [[link]] in your drawings will also change. " +
               "If you don't want text accidentally changing in your drawings use [[links|with aliases]].",
   LINK_BRACKETS_NAME: "Show [[brackets]] around links",
-  LINK_BRACKETS_DESC: "In preview (locked) mode, when parsing Text Elements, place brackets around links",
-  LINK_INDICATOR_NAME:"Link indicator",
-  LINK_INDICATOR_DESC:"In preview (locked) mode, if the Text Element contains a link, precede the text with these characters.",
+  LINK_BRACKETS_DESC: "In preview (locked) mode, when parsing Text Elements, place brackets around links. " +
+                      "You can override this setting for a specific drawing by adding '" + FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS + 
+                      ": true/false' to the file\'s frontmatter.",
+  LINK_PREFIX_NAME:"Link prefix",
+  LINK_PREFIX_DESC:"In preview (locked) mode, if the Text Element contains a link, precede the text with these characters. " +
+                   "You can override this setting for a specific drawing by adding \'" + FRONTMATTER_KEY_CUSTOM_PREFIX + 
+                   ': "👉 "\' to the file\'s frontmatter.',
   LINK_CTRL_CLICK_NAME: "CTRL + CLICK on text to open them as links",
   LINK_CTRL_CLICK_DESC: "You can turn this feature off if it interferes with default Excalidraw features you want to use. If " +
                         "this is turned off, only the link button in the title bar of the drawing pane will open links.",

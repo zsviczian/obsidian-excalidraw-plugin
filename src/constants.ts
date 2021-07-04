@@ -5,6 +5,8 @@ export function JSON_parse(x:string):any {return JSON.parse(x.replaceAll("&#91;"
 import {customAlphabet} from "nanoid";
 export const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',8);
 export const FRONTMATTER_KEY = "excalidraw-plugin";
+export const FRONTMATTER_KEY_CUSTOM_PREFIX = "excalidraw-link-prefix";
+export const FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS = "excalidraw-link-brackets";
 export const VIEW_TYPE_EXCALIDRAW = "excalidraw";
 export const ICON_NAME = "excalidraw-icon";
 export const MAX_COLORS = 5;
