@@ -230,7 +230,7 @@ export class ExcalidrawData {
       //1          2
       const REG_FILE_BLOCKREF = /(.*)#\^(.*)/g;
       const parts=text.matchAll(REG_FILE_BLOCKREF).next();
-      if(!parts.value[1] || !parts.value[2]) return text; //filename and/or blockref not found
+      if(parts.done || !parts.value[1] || !parts.value[2]) return text; //filename and/or blockref not found
       const file = this.app.metadataCache.getFirstLinkpathDest(parts.value[1],this.file.path);
       const contents = await this.app.vault.cachedRead(file);
       //get transcluded line and take the part before ^blockref

@@ -713,7 +713,7 @@ export default class ExcalidrawPlugin extends Plugin {
         const activeExcalidrawView = self.activeExcalidrawView;
         const newActiveview:ExcalidrawView = (leaf.view instanceof ExcalidrawView) ? leaf.view as ExcalidrawView : null;
         if(activeExcalidrawView && activeExcalidrawView != newActiveview) {
-          await activeExcalidrawView.save();
+          await activeExcalidrawView.save(false);
           if(activeExcalidrawView.file) {
             self.triggerEmbedUpdates(activeExcalidrawView.file.path);
           }
