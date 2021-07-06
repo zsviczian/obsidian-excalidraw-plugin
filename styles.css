@@ -51,6 +51,7 @@ button.ToolIcon_type_button[title="Export"] {
 
 .excalidraw-prompt-div {
   display: flex;
+  max-width: 600px;
 }
 
 .excalidraw-prompt-form {

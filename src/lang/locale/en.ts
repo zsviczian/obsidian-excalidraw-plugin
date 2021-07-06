@@ -6,7 +6,7 @@ export default {
   OPEN_AS_EXCALIDRAW: "Open as Excalidraw Drawing",
   TOGGLE_MODE: "Toggle between Excalidraw and Markdown mode",
   CONVERT_NOTE_TO_EXCALIDRAW: "Convert empty note to Excalidraw Drawing",
-  MIGRATE_TO_2: "MIGRATE to version 1.2: convert *.excalidraw to *.md files",
+  CONVERT_EXCALIDRAW: "Convert *.excalidraw to *.md files",
   CREATE_NEW : "New Excalidraw drawing",
   OPEN_EXISTING_NEW_PANE: "Open an existing drawing - IN A NEW PANE",
   OPEN_EXISTING_ACTIVE_PANE: "Open an existing drawing - IN THE CURRENT ACTIVE PANE",
@@ -22,11 +22,6 @@ export default {
   INSERT_LINK: "Insert link to file",
   INSERT_LATEX: "Insert LaTeX-symbol (e.g. $\\theta$)",
   ENTER_LATEX: "Enter a valid LaTeX expression",
-  MIGRATION_NOTICE: "Welcome to Excalidraw 1.2\n\nThis version comes with major changes / improvements!\n\n"+
-                    "⚠ ⚠ ⚠ ⚠ ⚠ ⚠ ⚠ ⚠ ⚠\n\nDrawings you created with version 1.1.x need to be migrated, they will not work out of the box. Please open the command palette CTRL+P and select " +
-                    "'Excalidraw: MIGRATE to version 1.2: convert *.excalidraw to *.md files'\n\n⚠ ⚠ ⚠ ⚠ ⚠ ⚠ ⚠ ⚠ ⚠\n\n" + 
-                    "This version comes with many new features and possibilities. Please read the description in Community Plugins to find out more.\n\n" +
-                    "Thank you!",
   
   //ExcalidrawView.ts
   OPEN_AS_MD: "Open as Markdown",

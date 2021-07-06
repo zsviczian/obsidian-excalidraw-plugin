@@ -24,6 +24,8 @@ export interface ExcalidrawSettings {
   autoexportPNG: boolean,
   keepInSync: boolean,
   library: string,
+  loadCount: number, //version 1.2 migration counter
+  drawingOpenCount: number,
 }
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
@@ -42,6 +44,8 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   autoexportPNG: false,
   keepInSync: false,
   library: `{"type":"excalidrawlib","version":1,"library":[]}`,
+  loadCount: 0,
+  drawingOpenCount: 0,
 }
 
 export class ExcalidrawSettingTab extends PluginSettingTab {

@@ -56,6 +56,7 @@ import {
 import { Prompt } from "./Prompt";
 import { around } from "monkey-around";
 import { t } from "./lang/helpers";
+import { MigrationPrompt } from "./MigrationPrompt";
 
 export default class ExcalidrawPlugin extends Plugin {
   public excalidrawFileModes: { [file: string]: string } = {};
@@ -95,17 +96,18 @@ export default class ExcalidrawPlugin extends Plugin {
     //inspiration taken from kanban: 
     //https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/main.ts#L267
     this.registerMonkeyPatches();
-
-    this.migrationNotice();
+    if(this.settings.loadCount<3) this.migrationNotice();
   }
 
   private migrationNotice(){
     const self = this;
     this.app.workspace.onLayoutReady(async () => {
-      const excalidrawFiles = (self.app.vault.getFiles() || []).filter((f:TFile) => f.extension=="excalidraw");
-      if(excalidrawFiles.length > 0) {
-        if(Date.now()<1627775999000) //display message until July 31 2021 
-          new Notice(t("MIGRATION_NOTICE"),30000);
+      self.settings.loadCount++;
+      self.saveSettings();
+      const files = this.app.vault.getFiles().filter((f)=>f.extension=="excalidraw");  
+      if(files.length>0) {
+        const prompt = new MigrationPrompt(self.app, self);
+        prompt.open();
       }
     });
   }
@@ -525,23 +527,32 @@ export default class ExcalidrawPlugin extends Plugin {
       },
     });
    
-    /*1.2 migration command */
     this.addCommand({
-      id: "migrate-to-1.2.x",
-      name: t("MIGRATE_TO_2"),
-      callback: async () => {
-        const files = this.app.vault.getFiles().filter((f)=>f.extension=="excalidraw");
-        for (const file of files) {
-          const data = await this.app.vault.read(file);
-          const fname = this.getNewUniqueFilepath(file.name+'.md',normalizePath(file.path.substr(0,file.path.lastIndexOf(file.name))));
-          console.log(fname);
-          await this.app.vault.create(fname,FRONTMATTER + exportSceneToMD(data));
-          this.app.vault.delete(file);
+      id: "convert-excalidraw",
+      name: t("CONVERT_EXCALIDRAW"),
+      checkCallback: (checking) => {
+        if (checking) {
+          const files = this.app.vault.getFiles().filter((f)=>f.extension=="excalidraw");
+          return files.length>0;
         }
+        this.convertExcalidrawToMD()
+        return true;
       }
     });
   }
   
+  public async convertExcalidrawToMD() {
+    const files = this.app.vault.getFiles().filter((f)=>f.extension=="excalidraw");
+    for (const file of files) {
+      const data = await this.app.vault.read(file);
+      const fname = this.getNewUniqueFilepath(file.name+'.md',normalizePath(file.path.substr(0,file.path.lastIndexOf(file.name))));
+      console.log(fname);
+      await this.app.vault.create(fname,FRONTMATTER + exportSceneToMD(data));
+      this.app.vault.delete(file);
+    }
+    new Notice("Converted " + files.length + " files.")
+  }
+
   private registerMonkeyPatches() {
     const self = this;
 
@@ -766,6 +777,8 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public openDrawing(drawingFile: TFile, onNewPane: boolean) {
+    this.settings.drawingOpenCount++;
+    this.saveSettings();
     const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
     let leaf:WorkspaceLeaf = null;
 
