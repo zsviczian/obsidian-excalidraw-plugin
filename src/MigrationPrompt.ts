@@ -27,8 +27,10 @@ export class MigrationPrompt extends Modal {
     div.createEl('p',{text: "⚠ WARNING: Drawings you have created with version 1.1.x need to be converted, they WILL NOT WORK out of the box. "+
                             "During conversion your old *.excalidraw files will be replaced with new *.excalidraw.md files."});
     div.createEl('p',{text: "Click CONVERT to convert all of your *.excalidraw files now, or if you prefer to make a backup first, then select CANCEL."});
-    div.createEl('p',{text: "To convert files manually, select 'Excalidraw: Convert *.excalidraw files to *.md files' from the Command Palette at any time in the future."});
-    div.createEl('p',{text: "This message will only appear maximum 3 times."});
+    div.createEl('p',{text: "To convert files manually follow one of two options:"});
+    div.createEl('p',{text: "- Command Palette: 'Excalidraw: Convert *.excalidraw files to *.md files'"});
+    div.createEl('p',{text: "- Right click the file in file explorer and select 'Convert .excalidraw to .md' to convert files individually"});
+    div.createEl('p',{text: "This message will only appear maximum 3 times in case you have *.excalidraw files in your Vault."});
     const bConvert = div.createEl('button', {text: "CONVERT FILES"});
     bConvert.onclick = (ev)=>{
       this.plugin.convertExcalidrawToMD();   

@@ -1,4 +1,4 @@
-import { App, TFile } from "obsidian";
+import { App, normalizePath, TFile } from "obsidian";
 import { 
   nanoid,
   FRONTMATTER_KEY_CUSTOM_PREFIX,
@@ -57,14 +57,22 @@ export class ExcalidrawData {
     this.setShowLinkBrackets();
     this.setLinkPrefix();  
     
-
-    
-    //Load scene: Read the JSON string after "# Drawing" 
     this.scene = null;
+    if (this.settings.syncExcalidraw) {
+      const excalfile = file.path.substring(0,file.path.lastIndexOf('.md')) + '.excalidraw';
+      const f = this.app.vault.getAbstractFileByPath(excalfile);
+      if(f && f instanceof TFile && f.stat.mtime>file.stat.mtime) { //the .excalidraw file is newer then the .md file
+        const d = await this.app.vault.read(f);
+        this.scene = JSON.parse(d);
+      }
+    }
+
+    //Load scene: Read the JSON string after "# Drawing" 
     let parts = data.matchAll(/\n# Drawing\n(.*)/gm).next();
     if(!(parts.value && parts.value.length>1)) return false; //JSON not found or invalid
-    this.scene = JSON_parse(parts.value[1]);
-    
+    if(!this.scene) { //scene was not loaded from .excalidraw
+      this.scene = JSON_parse(parts.value[1]);
+    }
     //Trim data to remove the JSON string
     data = data.substring(0,parts.value.index);
 

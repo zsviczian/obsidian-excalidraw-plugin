@@ -279,7 +279,7 @@ export default class ExcalidrawPlugin extends Plugin {
       this.createDrawing(this.getNextDefaultFilename(), e.ctrlKey||e.metaKey);
     });
   
-    const fileMenuHandler = (menu: Menu, file: TFile) => {
+    const fileMenuHandlerCreateNew = (menu: Menu, file: TFile) => {
       menu.addItem((item: MenuItem) => {
         item.setTitle(t("CREATE_NEW"))
           .setIcon(ICON_NAME)
@@ -294,7 +294,22 @@ export default class ExcalidrawPlugin extends Plugin {
     };
 
     this.registerEvent(
-      this.app.workspace.on("file-menu", fileMenuHandler)
+      this.app.workspace.on("file-menu", fileMenuHandlerCreateNew)
+    );
+
+    const fileMenuHandlerConvert = (menu: Menu, file: TFile) => {
+      menu.addItem((item: MenuItem) => {
+        item.setTitle(t("CONVERT_FILE"))
+          .onClick(evt => {
+            if(file instanceof TFile && file.extension == "excalidraw") {
+              this.convertSingleExcalidrawToMD(file);
+            }
+          })
+      });      
+    };
+
+    this.registerEvent(
+      this.app.workspace.on("file-menu", fileMenuHandlerConvert)
     );
 
     this.addCommand({
@@ -541,14 +556,18 @@ export default class ExcalidrawPlugin extends Plugin {
     });
   }
   
+  public async convertSingleExcalidrawToMD(file: TFile) {
+    const data = await this.app.vault.read(file);
+    const fname = this.getNewUniqueFilepath(file.name+'.md',normalizePath(file.path.substr(0,file.path.lastIndexOf(file.name))));
+    console.log(fname);
+    await this.app.vault.create(fname,FRONTMATTER + exportSceneToMD(data));
+    this.app.vault.delete(file);
+  }
+
   public async convertExcalidrawToMD() {
     const files = this.app.vault.getFiles().filter((f)=>f.extension=="excalidraw");
     for (const file of files) {
-      const data = await this.app.vault.read(file);
-      const fname = this.getNewUniqueFilepath(file.name+'.md',normalizePath(file.path.substr(0,file.path.lastIndexOf(file.name))));
-      console.log(fname);
-      await this.app.vault.create(fname,FRONTMATTER + exportSceneToMD(data));
-      this.app.vault.delete(file);
+      this.convertSingleExcalidrawToMD(file);
     }
     new Notice("Converted " + files.length + " files.")
   }
@@ -653,7 +672,7 @@ export default class ExcalidrawPlugin extends Plugin {
         if(!(file instanceof TFile)) return;
         if (!self.isExcalidrawFile(file)) return;
         if (!self.settings.keepInSync) return;
-        ['.svg','.png'].forEach(async (ext:string)=>{
+        ['.svg','.png','.excalidraw'].forEach(async (ext:string)=>{
           const oldIMGpath = oldPath.substring(0,oldPath.lastIndexOf('.md')) + ext; 
           const imgFile = self.app.vault.getAbstractFileByPath(normalizePath(oldIMGpath));
           if(imgFile && imgFile instanceof TFile) {
@@ -670,8 +689,11 @@ export default class ExcalidrawPlugin extends Plugin {
         const leaves = self.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
         leaves.forEach((leaf:WorkspaceLeaf)=> {
           const excalidrawView = (leaf.view as ExcalidrawView); 
-          if(excalidrawView.file && excalidrawView.file.path == file.path) {
-            excalidrawView.reload(true,file);
+          if(excalidrawView.file 
+             && (excalidrawView.file.path == file.path 
+                 || (file.extension=="excalidraw" 
+                     && file.path.substring(0,file.path.lastIndexOf('.excalidraw'))+'.md' == excalidrawView.file.path))) {
+            excalidrawView.reload(true,excalidrawView.file);
           }
         });
       }
@@ -695,7 +717,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
         //delete PNG and SVG files as well
         if (self.settings.keepInSync) {
-          ['.svg','.png'].forEach(async (ext:string) => {
+          ['.svg','.png','.excalidraw'].forEach(async (ext:string) => {
             const imgPath = file.path.substring(0,file.path.lastIndexOf('.md')) + ext; 
             const imgFile = self.app.vault.getAbstractFileByPath(normalizePath(imgPath));
             if(imgFile && imgFile instanceof TFile) {

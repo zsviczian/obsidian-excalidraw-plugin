@@ -20,9 +20,11 @@ export interface ExcalidrawSettings {
   allowCtrlClick: boolean, //if disabled only the link button in the view header will open links 
   exportWithTheme: boolean,
   exportWithBackground: boolean,
+  keepInSync: boolean,
   autoexportSVG: boolean,
   autoexportPNG: boolean,
-  keepInSync: boolean,
+  autoexportExcalidraw: boolean,
+  syncExcalidraw: boolean,
   library: string,
   loadCount: number, //version 1.2 migration counter
   drawingOpenCount: number,
@@ -40,9 +42,11 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   allowCtrlClick: true,
   exportWithTheme: true,
   exportWithBackground: true,
+  keepInSync: false,
   autoexportSVG: false,
   autoexportPNG: false,
-  keepInSync: false,
+  autoexportExcalidraw: false,
+  syncExcalidraw: false,
   library: `{"type":"excalidrawlib","version":1,"library":[]}`,
   loadCount: 0,
   drawingOpenCount: 0,
@@ -228,7 +232,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
           this.plugin.triggerEmbedUpdates();
         }));
-
+    
+    this.containerEl.createEl('h1', {text: t("EXPORT_HEAD")});
+    
+    new Setting(containerEl)
+      .setName(t("EXPORT_SYNC_NAME")) 
+      .setDesc(t("EXPORT_SYNC_DESC"))
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.keepInSync)
+        .onChange(async (value) => {
+          this.plugin.settings.keepInSync = value;
+          await this.plugin.saveSettings();
+        }));
+        
     new Setting(containerEl)
       .setName(t("EXPORT_SVG_NAME")) 
       .setDesc(t("EXPORT_SVG_DESC"))
@@ -239,26 +255,38 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
         }));
 
+        
     new Setting(containerEl)
     .setName(t("EXPORT_PNG_NAME")) 
     .setDesc(t("EXPORT_PNG_DESC"))
-      .addToggle(toggle => toggle
-        .setValue(this.plugin.settings.autoexportPNG)
-        .onChange(async (value) => {
-          this.plugin.settings.autoexportPNG = value;
-          await this.plugin.saveSettings();
-        }));
-  
+    .addToggle(toggle => toggle
+      .setValue(this.plugin.settings.autoexportPNG)
+      .onChange(async (value) => {
+        this.plugin.settings.autoexportPNG = value;
+        await this.plugin.saveSettings();
+      }));
+          
+    this.containerEl.createEl('h1', {text: t("COMPATIBILITY_HEAD")});
 
     new Setting(containerEl)
-      .setName(t("EXPORT_SYNC_NAME")) 
-      .setDesc(t("EXPORT_SYNC_DESC"))
+    .setName(t("EXPORT_EXCALIDRAW_NAME")) 
+    .setDesc(t("EXPORT_EXCALIDRAW_DESC"))
       .addToggle(toggle => toggle
-        .setValue(this.plugin.settings.keepInSync)
+        .setValue(this.plugin.settings.autoexportExcalidraw)
         .onChange(async (value) => {
-          this.plugin.settings.keepInSync = value;
+          this.plugin.settings.autoexportExcalidraw = value;
           await this.plugin.saveSettings();
         }));
 
+    new Setting(containerEl)
+      .setName(t("SYNC_EXCALIDRAW_NAME")) 
+      .setDesc(t("SYNC_EXCALIDRAW_DESC"))
+        .addToggle(toggle => toggle
+          .setValue(this.plugin.settings.syncExcalidraw)
+          .onChange(async (value) => {
+            this.plugin.settings.syncExcalidraw = value;
+            await this.plugin.saveSettings();
+          }));
+    
   }
 }

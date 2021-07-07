@@ -8,6 +8,7 @@ export default {
   CONVERT_NOTE_TO_EXCALIDRAW: "Convert empty note to Excalidraw Drawing",
   CONVERT_EXCALIDRAW: "Convert *.excalidraw to *.md files",
   CREATE_NEW : "New Excalidraw drawing",
+  CONVERT_FILE: "Convert .excalidraw file to .md file",
   OPEN_EXISTING_NEW_PANE: "Open an existing drawing - IN A NEW PANE",
   OPEN_EXISTING_ACTIVE_PANE: "Open an existing drawing - IN THE CURRENT ACTIVE PANE",
   TRANSCLUDE: "Transclude (embed) a drawing",
@@ -91,16 +92,23 @@ export default {
   EXPORT_THEME_NAME: "Export image with theme",
   EXPORT_THEME_DESC: "Export the image matching the dark/light theme of your drawing. If turned off, " +
                      "drawings created in drak mode will appear as they would in light mode.",
+  EXPORT_HEAD: "Export Settings",
+  EXPORT_SYNC_NAME:"Keep the .SVG and/or .PNG filenames in sync with the drawing file",
+  EXPORT_SYNC_DESC:"When turned on, the plugin will automaticaly update the filename of the .SVG and/or .PNG files when the drawing in the same folder (and same name) is renamed. " +
+                  "The plugin will also automatically delete the .SVG and/or .PNG files when the drawing in the same folder (and same name) is deleted. ",
   EXPORT_SVG_NAME: "Auto-export SVG",
   EXPORT_SVG_DESC: "Automatically create an SVG export of your drawing matching the title of your file. " + 
-                   "The plugin will save the .SVG file in the same folder as the drawing. "+
+                   "The plugin will save the *.SVG file in the same folder as the drawing. "+
                    "Embed the .svg file into your documents instead of excalidraw making you embeds platform independent. " +
                    "While the auto-export switch is on, this file will get updated every time you edit the excalidraw drawing with the matching name.",
   EXPORT_PNG_NAME: "Auto-export PNG",
-  EXPORT_PNG_DESC: "Same as the auto-export SVG, but for PNG.",
-  EXPORT_SYNC_NAME:"Keep the .SVG and/or .PNG filenames in sync with the drawing file",
-  EXPORT_SYNC_DESC:"When turned on, the plugin will automaticaly update the filename of the .SVG and/or .PNG files when the drawing in the same folder (and same name) is renamed. " +
-                   "The plugin will also automatically delete the .SVG and/or .PNG files when the drawing in the same folder (and same name) is deleted. ",
+  EXPORT_PNG_DESC: "Same as the auto-export SVG, but for *.PNG",
+  COMPATIBILITY_HEAD: "Compatibility features",
+  EXPORT_EXCALIDRAW_NAME: "Auto-export Excalidraw",
+  EXPORT_EXCALIDRAW_DESC: "Same as the auto-export SVG, but for *.Excalidraw",
+  SYNC_EXCALIDRAW_NAME: "Sync *.excalidraw with *.md version of the same drawing",
+  SYNC_EXCALIDRAW_DESC: "If the modified date of the *.excalidraw file is more recent than the modified date of the *.md file " +
+                        "then update the drawing in the .md file based on the .excalidraw file",
 
   //openDrawings.ts
   SELECT_FILE: "Select a file then press enter.",   

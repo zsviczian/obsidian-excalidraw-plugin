@@ -74,6 +74,17 @@ export default class ExcalidrawView extends TextFileView {
     this.excalidrawData = new ExcalidrawData(plugin);
   }
 
+  public saveExcalidraw(data?: string){
+    if(!data) {
+      if (!this.getScene) return false;
+      data = this.getScene();
+    }
+    const filepath = this.file.path.substring(0,this.file.path.lastIndexOf('.md')) + '.excalidraw';
+    const file = this.app.vault.getAbstractFileByPath(normalizePath(filepath));
+    if(file && file instanceof TFile) this.app.vault.modify(file,data.replaceAll("&#91;","["));
+    else this.app.vault.create(filepath,data.replaceAll("&#91;","["));
+  }
+
   public async saveSVG(data?: string) {
     if(!data) {
       if (!this.getScene) return false;
@@ -131,15 +142,19 @@ export default class ExcalidrawView extends TextFileView {
   getViewData () {
     //console.log("ExcalidrawView.getViewData()");
     if(this.getScene) {
-      const scene = this.getScene();
-      if(this.plugin.settings.autoexportSVG) this.saveSVG(scene);
-      if(this.plugin.settings.autoexportPNG) this.savePNG(scene);
-      if(this.excalidrawData.syncElements(scene)) {
+      
+      if(this.excalidrawData.syncElements(this.getScene())) {
         this.loadDrawing(false);
       }  
       let trimLocation = this.data.search("# Text Elements\n");
       if(trimLocation == -1) trimLocation = this.data.search("# Drawing\n");
       if(trimLocation == -1) return this.data;
+
+      const scene = JSON_stringify(this.excalidrawData.scene);
+      if(this.plugin.settings.autoexportSVG) this.saveSVG(scene);
+      if(this.plugin.settings.autoexportPNG) this.savePNG(scene);
+      if(this.plugin.settings.autoexportExcalidraw) this.saveExcalidraw(scene);
+
       const header = this.data.substring(0,trimLocation)
                               .replace(/excalidraw-plugin:\s.*\n/,FRONTMATTER_KEY+": " + (this.isTextLocked ? "locked\n" : "unlocked\n"));
       return header + this.excalidrawData.generateMD();
