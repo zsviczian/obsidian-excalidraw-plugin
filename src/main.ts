@@ -166,7 +166,7 @@ export default class ExcalidrawPlugin extends Plugin {
         attr.fname = drawing.getAttribute("src");
         file = this.app.metadataCache.getFirstLinkpathDest(attr.fname, ctx.sourcePath); 
         if(file && file instanceof TFile && this.isExcalidrawFile(file)) {  
-          attr.fwidth   = drawing.getAttribute("width");
+          attr.fwidth   = drawing.getAttribute("width") ? drawing.getAttribute("width") : this.settings.width;
           attr.fheight  = drawing.getAttribute("height");
           alt = drawing.getAttribute("alt");
           if(alt == attr.fname) alt = ""; //when the filename starts with numbers followed by a space Obsidian recognizes the filename as alt-text
@@ -187,8 +187,8 @@ export default class ExcalidrawPlugin extends Plugin {
           div = createDiv(attr.style, (el)=>{
             el.append(img);
             el.setAttribute("src",file.path);
-            el.setAttribute("w",attr.fwidth);
-            el.setAttribute("h",attr.fheight);
+            if(attr.fwidth) el.setAttribute("w",attr.fwidth);
+            if(attr.fheight) el.setAttribute("h",attr.fheight);
             el.onClickEvent((ev)=>{
               if(ev.target instanceof Element && ev.target.tagName.toLowerCase() != "img") return;
               let src = el.getAttribute("src");
@@ -297,19 +297,34 @@ export default class ExcalidrawPlugin extends Plugin {
       this.app.workspace.on("file-menu", fileMenuHandlerCreateNew)
     );
 
-    const fileMenuHandlerConvert = (menu: Menu, file: TFile) => {
-      menu.addItem((item: MenuItem) => {
-        item.setTitle(t("CONVERT_FILE"))
-          .onClick(evt => {
-            if(file instanceof TFile && file.extension == "excalidraw") {
-              this.convertSingleExcalidrawToMD(file);
-            }
-          })
-      });      
+    const fileMenuHandlerConvertKeepExtension = (menu: Menu, file: TFile) => {
+      if(file instanceof TFile && file.extension == "excalidraw") {
+        menu.addItem((item: MenuItem) => {
+          item.setTitle(t("CONVERT_FILE_KEEP_EXT"))
+            .onClick(evt => {        
+                this.convertSingleExcalidrawToMD(file,false,false);
+            })
+        });   
+      }   
     };
 
     this.registerEvent(
-      this.app.workspace.on("file-menu", fileMenuHandlerConvert)
+      this.app.workspace.on("file-menu", fileMenuHandlerConvertKeepExtension)
+    );
+
+    const fileMenuHandlerConvertReplaceExtension = (menu: Menu, file: TFile) => {
+      if(file instanceof TFile && file.extension == "excalidraw") {
+        menu.addItem((item: MenuItem) => {
+          item.setTitle(t("CONVERT_FILE_REPLACE_EXT"))
+            .onClick(evt => {        
+                this.convertSingleExcalidrawToMD(file,true,true);
+            })
+        });   
+      }   
+    };
+
+    this.registerEvent(
+      this.app.workspace.on("file-menu", fileMenuHandlerConvertReplaceExtension)
     );
 
     this.addCommand({
@@ -556,18 +571,19 @@ export default class ExcalidrawPlugin extends Plugin {
     });
   }
   
-  public async convertSingleExcalidrawToMD(file: TFile) {
+  public async convertSingleExcalidrawToMD(file: TFile, replaceExtension:boolean = false, keepOriginal:boolean = false) {
     const data = await this.app.vault.read(file);
-    const fname = this.getNewUniqueFilepath(file.name+'.md',normalizePath(file.path.substr(0,file.path.lastIndexOf(file.name))));
+    const filename = file.name.substr(0,file.name.lastIndexOf(".excalidraw")) + (replaceExtension ? ".md" : ".excalidraw.md");
+    const fname = this.getNewUniqueFilepath(filename,normalizePath(file.path.substr(0,file.path.lastIndexOf(file.name))));
     console.log(fname);
     await this.app.vault.create(fname,FRONTMATTER + exportSceneToMD(data));
-    this.app.vault.delete(file);
+    if (!keepOriginal) this.app.vault.delete(file);
   }
 
-  public async convertExcalidrawToMD() {
+  public async convertExcalidrawToMD(replaceExtension:boolean = false, keepOriginal:boolean = false) {
     const files = this.app.vault.getFiles().filter((f)=>f.extension=="excalidraw");
     for (const file of files) {
-      this.convertSingleExcalidrawToMD(file);
+      this.convertSingleExcalidrawToMD(file,replaceExtension,keepOriginal);
     }
     new Notice("Converted " + files.length + " files.")
   }
@@ -799,8 +815,6 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public openDrawing(drawingFile: TFile, onNewPane: boolean) {
-    this.settings.drawingOpenCount++;
-    this.saveSettings();
     const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
     let leaf:WorkspaceLeaf = null;
 

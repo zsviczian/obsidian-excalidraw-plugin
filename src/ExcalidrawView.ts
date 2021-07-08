@@ -299,6 +299,8 @@ export default class ExcalidrawView extends TextFileView {
   async setViewData (data: string, clear: boolean) {   
     this.app.workspace.onLayoutReady(async ()=>{
       //console.log("ExcalidrawView.setViewData()");
+      this.plugin.settings.drawingOpenCount++;
+      this.plugin.saveSettings();
       this.lock(data.search("excalidraw-plugin: locked\n")>-1,false);
       if(!(await this.excalidrawData.loadData(data, this.file,this.isTextLocked))) return;
       if(clear) this.clear();
@@ -561,13 +563,13 @@ export default class ExcalidrawView extends TextFileView {
               if(this.isTextLocked && (e.target instanceof HTMLCanvasElement) && this.getSelectedText(true)) { //text element is selected
                 const now = (new Date()).getTime();
                 if(now-timestamp < 600) { //double click
-                  var event = new MouseEvent('dblclick', {
+                  let event = new MouseEvent('dblclick', {
                     'view': window,
                     'bubbles': true,
                     'cancelable': true,
                   });
                   e.target.dispatchEvent(event);
-                  new Notice(t("UNLOCK_TO_EDIT"))
+                  new Notice(t("UNLOCK_TO_EDIT"));
                   timestamp = now;
                   return;
                 }
