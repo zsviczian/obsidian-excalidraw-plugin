@@ -35,7 +35,8 @@ import {
   LOCK_ICON,
   LOCK_ICON_NAME,
   UNLOCK_ICON_NAME,
-  UNLOCK_ICON
+  UNLOCK_ICON,
+  JSON_parse
 } from "./constants";
 import ExcalidrawView, {ExportSettings} from "./ExcalidrawView";
 import {getJSON} from "./ExcalidrawData";
@@ -139,7 +140,7 @@ export default class ExcalidrawPlugin extends Plugin {
         withBackground: this.settings.exportWithBackground, 
         withTheme: this.settings.exportWithTheme
       }
-      let svg = ExcalidrawView.getSVG(getJSON(content),exportSettings);
+      let svg = ExcalidrawView.getSVG(JSON_parse(getJSON(content)),exportSettings);
       if(!svg) return null;
       svg = ExcalidrawView.embedFontsInSVG(svg);
       const img = createEl("img");

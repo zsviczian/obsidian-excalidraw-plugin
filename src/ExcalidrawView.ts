@@ -74,21 +74,21 @@ export default class ExcalidrawView extends TextFileView {
     this.excalidrawData = new ExcalidrawData(plugin);
   }
 
-  public saveExcalidraw(data?: string){
-    if(!data) {
+  public saveExcalidraw(scene?: any){
+    if(!scene) {
       if (!this.getScene) return false;
-      data = this.getScene();
+      scene = this.getScene();
     }
     const filepath = this.file.path.substring(0,this.file.path.lastIndexOf('.md')) + '.excalidraw';
     const file = this.app.vault.getAbstractFileByPath(normalizePath(filepath));
-    if(file && file instanceof TFile) this.app.vault.modify(file,data.replaceAll("&#91;","["));
-    else this.app.vault.create(filepath,data.replaceAll("&#91;","["));
+    if(file && file instanceof TFile) this.app.vault.modify(file,JSON.stringify(scene));//data.replaceAll("&#91;","["));
+    else this.app.vault.create(filepath,JSON.stringify(scene));//.replaceAll("&#91;","["));
   }
 
-  public async saveSVG(data?: string) {
-    if(!data) {
+  public async saveSVG(scene?: any) {
+    if(!scene) {
       if (!this.getScene) return false;
-      data = this.getScene();
+      scene = this.getScene();
     }
     const filepath = this.file.path.substring(0,this.file.path.lastIndexOf('.md')) + '.svg';
     const file = this.app.vault.getAbstractFileByPath(normalizePath(filepath));
@@ -96,7 +96,7 @@ export default class ExcalidrawView extends TextFileView {
       withBackground: this.plugin.settings.exportWithBackground, 
       withTheme: this.plugin.settings.exportWithTheme
     }
-    const svg = ExcalidrawView.getSVG(data,exportSettings);
+    const svg = ExcalidrawView.getSVG(scene,exportSettings);
     if(!svg) return;
     const svgString = ExcalidrawView.embedFontsInSVG(svg).outerHTML;                  
     if(file && file instanceof TFile) await this.app.vault.modify(file,svgString);
@@ -114,16 +114,16 @@ export default class ExcalidrawView extends TextFileView {
     return svg;
   }
 
-  public async savePNG(data?: string) {
-    if(!data) {
+  public async savePNG(scene?: any) {
+    if(!scene) {
       if (!this.getScene) return false;
-      data = this.getScene();
+      scene = this.getScene();
     }
     const exportSettings: ExportSettings = {
       withBackground: this.plugin.settings.exportWithBackground, 
       withTheme: this.plugin.settings.exportWithTheme
     }
-    const png = await ExcalidrawView.getPNG(data,exportSettings);
+    const png = await ExcalidrawView.getPNG(scene,exportSettings);
     if(!png) return;
     const filepath = this.file.path.substring(0,this.file.path.lastIndexOf('.md')) + '.png';
     const file = this.app.vault.getAbstractFileByPath(normalizePath(filepath));
@@ -150,7 +150,7 @@ export default class ExcalidrawView extends TextFileView {
       if(trimLocation == -1) trimLocation = this.data.search("# Drawing\n");
       if(trimLocation == -1) return this.data;
 
-      const scene = JSON_stringify(this.excalidrawData.scene);
+      const scene = this.excalidrawData.scene;
       if(this.plugin.settings.autoexportSVG) this.saveSVG(scene);
       if(this.plugin.settings.autoexportPNG) this.savePNG(scene);
       if(this.plugin.settings.autoexportExcalidraw) this.saveExcalidraw(scene);
@@ -330,6 +330,10 @@ export default class ExcalidrawView extends TextFileView {
     }
   }
 
+  //Compatibility mode with .excalidraw files
+/*  canAcceptExtension(extension: string) {
+    return extension == "excalidraw";
+  }*/  
 
   // gets the title of the document
   getDisplayText() {
@@ -365,7 +369,7 @@ export default class ExcalidrawView extends TextFileView {
           .setIcon(ICON_NAME)
           .onClick( async (ev) => {
             if(!this.getScene || !this.file) return;
-            this.download('data:text/plain;charset=utf-8',encodeURIComponent(this.getScene().replaceAll("&#91;","[")), this.file.basename+'.excalidraw');
+            this.download('data:text/plain;charset=utf-8',encodeURIComponent(JSON.stringify(this.getScene())), this.file.basename+'.excalidraw');
           });
       })
       .addItem((item) => {
@@ -516,7 +520,7 @@ export default class ExcalidrawView extends TextFileView {
         }
         const el: ExcalidrawElement[] = excalidrawRef.current.getSceneElements();
         const st: AppState = excalidrawRef.current.getAppState();
-        return JSON_stringify({
+        return { //JSON_stringify(
           type: "excalidraw",
           version: 2,
           source: "https://excalidraw.com",
@@ -540,7 +544,7 @@ export default class ExcalidrawView extends TextFileView {
             currentItemLinearStrokeSharpness: st.currentItemLinearStrokeSharpness,
             gridSize: st.gridSize,
           }
-        });
+        };//);
       };
 
       this.refresh = () => {
@@ -618,7 +622,7 @@ export default class ExcalidrawView extends TextFileView {
             },
             onLibraryChange: (items:LibraryItems) => {
               (async () => {
-                this.plugin.settings.library = EXCALIDRAW_LIB_HEADER+JSON_stringify(items)+'}';
+                this.plugin.settings.library = EXCALIDRAW_LIB_HEADER+JSON.stringify(items)+'}';
                 await this.plugin.saveSettings();  
               })();
             }
@@ -629,15 +633,14 @@ export default class ExcalidrawView extends TextFileView {
     ReactDOM.render(reactElement,(this as any).contentEl);  
   }
 
-  public static getSVG(data:string, exportSettings:ExportSettings):SVGSVGElement {
+  public static getSVG(scene:any, exportSettings:ExportSettings):SVGSVGElement {
     try {
-      const excalidrawData = JSON_parse(data);
       return exportToSvg({
-        elements: excalidrawData.elements,
+        elements: scene.elements,
         appState: {
           exportBackground: exportSettings.withBackground,
-          exportWithDarkMode: exportSettings.withTheme ? (excalidrawData.appState?.theme=="light" ? false : true) : false,
-          ... excalidrawData.appState,},
+          exportWithDarkMode: exportSettings.withTheme ? (scene.appState?.theme=="light" ? false : true) : false,
+          ... scene.appState,},
         exportPadding:10,
         metadata: "Generated by Excalidraw-Obsidian plugin",
       });
@@ -646,15 +649,14 @@ export default class ExcalidrawView extends TextFileView {
     }
   }
 
-  public static async getPNG(data:string, exportSettings:ExportSettings) {
+  public static async getPNG(scene:any, exportSettings:ExportSettings) {
     try {
-      const excalidrawData = JSON_parse(data);      
       return await Excalidraw.exportToBlob({
-          elements: excalidrawData.elements,
+          elements: scene.elements,
           appState: {
             exportBackground: exportSettings.withBackground,
-            exportWithDarkMode: exportSettings.withTheme ? (excalidrawData.appState?.theme=="light" ? false : true) : false,
-            ... excalidrawData.appState,},
+            exportWithDarkMode: exportSettings.withTheme ? (scene.appState?.theme=="light" ? false : true) : false,
+            ... scene.appState,},
           mimeType: "image/png",
           exportWithDarkMode: "true",
           metadata: "Generated by Excalidraw-Obsidian plugin",

@@ -295,7 +295,7 @@ export class ExcalidrawData {
 
   public syncElements(newScene:any):boolean {
     //console.log("Excalidraw.Data.syncElements()");
-    this.scene = JSON_parse(newScene);
+    this.scene = newScene;//JSON_parse(newScene);
     const result = this.setLinkPrefix() || this.setShowLinkBrackets() || this.findNewTextElementsInScene();
     this.updateTextElementsFromSceneRawOnly();
     return result;

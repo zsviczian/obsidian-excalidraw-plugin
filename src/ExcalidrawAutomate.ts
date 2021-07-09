@@ -212,7 +212,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         elements.push(this.elementsDict[this.elementIds[i]]);
       }
       return ExcalidrawView.getSVG(
-        JSON_stringify({
+        {//createDrawing
           "type": "excalidraw",
           "version": 2,
           "source": "https://excalidraw.com",
@@ -221,7 +221,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
             "theme": template ? template.appState.theme : this.canvas.theme,
             "viewBackgroundColor": template? template.appState.viewBackgroundColor : this.canvas.viewBackgroundColor
           }
-        }),
+        },//),
         {
           withBackground: plugin.settings.exportWithBackground, 
           withTheme: plugin.settings.exportWithTheme
@@ -235,7 +235,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         elements.push(this.elementsDict[this.elementIds[i]]);
       }
       return ExcalidrawView.getPNG(
-        JSON_stringify({
+        { //JSON_stringify(
           "type": "excalidraw",
           "version": 2,
           "source": "https://excalidraw.com",
@@ -244,7 +244,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
             "theme": template ? template.appState.theme : this.canvas.theme,
             "viewBackgroundColor": template? template.appState.viewBackgroundColor : this.canvas.viewBackgroundColor
           }
-        }),
+        },//),
         {
           withBackground: plugin.settings.exportWithBackground, 
           withTheme: plugin.settings.exportWithTheme

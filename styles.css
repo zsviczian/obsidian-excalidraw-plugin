@@ -62,3 +62,13 @@ button.ToolIcon_type_button[title="Export"] {
 .excalidraw-prompt-input {
   flex-grow: 1;
 }
+
+
+@font-face {
+  font-family: "Virgil";
+  src: url("https://excalidraw.com/Virgil.woff2");
+}
+@font-face {
+  font-family: "Cascadia";
+  src: url("https://excalidraw.com/Cascadia.woff2");
+}
