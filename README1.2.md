@@ -27,17 +27,17 @@ To convert files you have the following options:
 |[![9  Excalidraw Automate](https://user-images.githubusercontent.com/14358394/125160367-bdb6cc00-e17c-11eb-92f1-6f59faea85fd.jpg)](https://youtu.be/VRZVujfVab0)|[![10  Miscellaneous](https://user-images.githubusercontent.com/14358394/125160374-c3141680-e17c-11eb-8cc2-dfaffd903d15.jpg)](https://youtu.be/D1iBYo1_jjc)||
 
 # Key features
-- The plugin aims to integrate Excalidraw seemlessly into Obsidian including Command Palette actions, File Explorer features, Option Menu features, the Ribbon Button.
+- The plugin aims to integrate Excalidraw seemlessly into Obsidian including Command Palette actions, File Explorer features, Option Menu commands, and the Ribbon Button.
 - CTRL+Click on the ribbon button, or in the file explorer to create / open drawings in a new pane.
-- Plenty of settings will allow you to customzie Excalidraw to your needs:
-  - default folder for new drawings
-  - template for new drawings. The template will restore stroke properties. This means you can set up defaults in your template for stroke color, stroke width, opacity, font family, font size, fill style, stroke style, etc. This also applies to ExcalidrawAutomate.
-  - auto-export of SVG and/or PNG files including keep-in-sync feature so you can also embed svg/png into your documents for portability
-  - default width of embedded drawings
-  - Compatibility features to auto export .excalidraw files
-  - Experimental feature to add custom TAG to file expolorer to mark drawing files
-  - Enable / disable autosave
-- You can also customize the size and position of the embedded images using the `[[image.excalidraw|100]]`, `[[image.excalidraw|100x100]]`, `[[image.excalidraw|100|left]]`, `[[image.excalidraw|right-wrap]]`, formatting options. `[[<filename.excalidraw>|<width>x<height>|<alignment>]]`. You can add your custom alignment via css. Any text that appears in `<alignment>` will be added as style to the SVG element and the wrapper DIV element. Check below and styles.css for more insight.
+- Settings will allow you to customzie Excalidraw to your needs:
+  - Default folder for new drawings and define custom filename pattern for new drawings.
+  - Template for new drawings. The template will restore stroke properties. This means you can set up defaults in your template for stroke color, stroke width, opacity, font family, font size, fill style, stroke style, etc. This also applies to ExcalidrawAutomate.
+  - If portability is important to you: Auto-export SVG and/or PNG files including keep-in-sync feature so you can embed svg/png into your documents instead of embedding excalidraw files.
+  - Specify the default width of embedded drawings.
+  - Compatibility features to auto-export and keep in sync markdown excalidraw files and legacy .excalidraw files.
+  - Experimental feature to add custom TAG to file expolorer to mark drawing files.
+  - Enable / disable autosave.
+- You can customize the size and position of the embedded images using the `[[image.excalidraw|100]]`, `[[image.excalidraw|100x100]]`, `[[image.excalidraw|100|left]]`, `[[image.excalidraw|right-wrap]]`, formatting options. `[[<filename.excalidraw>|<width>x<height>|<alignment>]]`. You can add your custom alignment via css. Any text that appears in `<alignment>` will be added to the rendered SVG element style and to the wrapper DIV element. Check below and styles.css for more insight.
 - Supports hyperlinks e.g. `https://zsolt.blog`, `[Obsidian](https://obsidian.md)`, and internal links e.g. `[[My file in vault|Alias]]` in drawing text. 
   - Links will update when files are moved or renamed, if you have the Obsidian setting Files & Links/Automatically Update Internal Links enalbled.
   - Links in drawings will show up in backlinks of documents
