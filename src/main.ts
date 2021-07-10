@@ -167,6 +167,8 @@ export default class ExcalidrawPlugin extends Plugin {
      */
     const markdownPostProcessor = async (el:HTMLElement,ctx:MarkdownPostProcessorContext) => {
       const drawings = el.querySelectorAll('.internal-embed');
+      if(drawings.length==0) return;
+      
       let attr:imgElementAttributes={fname:"",fheight:"",fwidth:"",style:""};
       let alt:string, img:any, parts, div, file:TFile;
       for (const drawing of drawings) {
@@ -262,6 +264,9 @@ export default class ExcalidrawPlugin extends Plugin {
       //@ts-ignore
       if(m[i].addedNodes[0].firstElementChild?.firstElementChild?.className=="excalidraw-svg") return;
       
+      //@ts-ignore
+      if(!m[i].addedNodes[0].matchParent(".hover-popover")) return;
+
       //this div will be on top of original DIV. By stopping the propagation of the click
       //I prevent the default Obsidian feature of openning the link in the native app
       const div = createDiv("",async (el)=>{

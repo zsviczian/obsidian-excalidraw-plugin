@@ -8,7 +8,6 @@ import { measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
 import { ExcalidrawSettings } from "./settings";
 import {  
-  JSON_stringify,
   JSON_parse
 } from "./constants";
 
@@ -17,11 +16,11 @@ import {
 export const REG_LINK_BACKETS = /(!)?\[\[([^|\]]+)\|?(.+)?]]|(!)?\[(.*)\]\((.*)\)/g;
 
 export function getJSON(data:string):string {
-  const findJSON = /\n# Drawing\n(.*)/gm
+  const findJSON = /\n# Drawing\n(```json\n)?(.*)(```)?/gm // /\n# Drawing\n(.*)/gm
   const res = data.matchAll(findJSON);
   const parts = res.next();
   if(parts.value && parts.value.length>1) {
-    return parts.value[1];
+    return parts.value[2];
   }
   return data;
 }
@@ -68,10 +67,10 @@ export class ExcalidrawData {
     }
 
     //Load scene: Read the JSON string after "# Drawing" 
-    let parts = data.matchAll(/\n# Drawing\n(.*)/gm).next();
+    let parts = data.matchAll(/\n# Drawing\n(```json\n)?(.*)(```)?/gm).next();
     if(!(parts.value && parts.value.length>1)) return false; //JSON not found or invalid
     if(!this.scene) { //scene was not loaded from .excalidraw
-      this.scene = JSON_parse(parts.value[1]);
+      this.scene = JSON_parse(parts.value[2]);
     }
     //Trim data to remove the JSON string
     data = data.substring(0,parts.value.index);
@@ -157,7 +156,7 @@ export class ExcalidrawData {
     //get scene text elements
     const texts = this.scene.elements?.filter((el:any)=> el.type=="text")
 
-    let jsonString = JSON_stringify(this.scene);
+    let jsonString = JSON.stringify(this.scene);
 
     let dirty:boolean = false; //to keep track if the json has changed
     let id:string; //will be used to hold the new 8 char long ID for textelements that don't yet appear under # Text Elements
@@ -301,7 +300,10 @@ export class ExcalidrawData {
     for(const key of this.textElements.keys()){
       outString += this.textElements.get(key).raw+' ^'+key+'\n\n';
     }
-    return outString + '# Drawing\n' + JSON_stringify(this.scene);
+    return outString + '# Drawing\n' 
+           + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'json\n' 
+           + JSON.stringify(this.scene) + '\n'
+           + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96);
   }
 
   public syncElements(newScene:any):boolean {

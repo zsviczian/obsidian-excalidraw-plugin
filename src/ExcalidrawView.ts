@@ -27,7 +27,6 @@ import {
   FRONTMATTER_KEY,
   UNLOCK_ICON_NAME,
   LOCK_ICON_NAME,
-  JSON_stringify,
   JSON_parse
 } from './constants';
 import ExcalidrawPlugin from './main';
@@ -551,7 +550,7 @@ export default class ExcalidrawView extends TextFileView {
         }
         const el: ExcalidrawElement[] = excalidrawRef.current.getSceneElements();
         const st: AppState = excalidrawRef.current.getAppState();
-        return { //JSON_stringify(
+        return { 
           type: "excalidraw",
           version: 2,
           source: "https://excalidraw.com",
@@ -575,7 +574,7 @@ export default class ExcalidrawView extends TextFileView {
             currentItemLinearStrokeSharpness: st.currentItemLinearStrokeSharpness,
             gridSize: st.gridSize,
           }
-        };//);
+        };
       };
 
       this.refresh = () => {

@@ -14,7 +14,6 @@ import { getJSON } from "./ExcalidrawData";
 import { 
   FRONTMATTER, 
   nanoid, 
-  JSON_stringify,
   JSON_parse 
 } from "./constants";
 
@@ -163,7 +162,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         elements.push(this.elementsDict[this.elementIds[i]]);
       }
       navigator.clipboard.writeText(
-        JSON_stringify({
+        JSON.stringify({
           "type":"excalidraw/clipboard",
           "elements": elements,
       }));
@@ -179,7 +178,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         params?.onNewPane ? params.onNewPane : false,
         params?.foldername ? params.foldername : this.plugin.settings.folder,
         FRONTMATTER + exportSceneToMD(
-        JSON_stringify({
+        JSON.stringify({
           type: "excalidraw",
           version: 2,
           source: "https://excalidraw.com",
@@ -235,7 +234,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         elements.push(this.elementsDict[this.elementIds[i]]);
       }
       return ExcalidrawView.getPNG(
-        { //JSON_stringify(
+        { 
           "type": "excalidraw",
           "version": 2,
           "source": "https://excalidraw.com",
@@ -244,7 +243,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
             "theme": template ? template.appState.theme : this.canvas.theme,
             "viewBackgroundColor": template? template.appState.viewBackgroundColor : this.canvas.viewBackgroundColor
           }
-        },//),
+        },
         {
           withBackground: plugin.settings.exportWithBackground, 
           withTheme: plugin.settings.exportWithTheme
@@ -514,5 +513,9 @@ async function getTemplate(fileWithPath: string):Promise<{elements: any,appState
     }
     outString += te.text+' ^'+id+'\n\n';
   }
-  return outString + '# Drawing\n'+ data.replaceAll("[","&#91;");
+  return outString + '# Drawing\n'
+         + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'json\n' 
+         + data + '\n'
+         + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96);
+  //+data.replaceAll("[","&#91;");
 }

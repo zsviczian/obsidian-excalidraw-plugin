@@ -120,10 +120,10 @@ export default {
                            "when you open a legacy file for editing.",
   EXPERIMENTAL_HEAD: "Experimental features",
   EXPERIMENTAL_DESC: "These setting will not take effect immediately, only when the File Explorer is refreshed, or Obsidian restarted.",
-  FILETYPE_NAME: "Display TAG (✏️) for excalidraw.md files in File Explorer",
-  FILETYPE_DESC: "Excalidraw files will be tagged using the tag defined in the next setting.",                           
-  FILETAG_NAME: "Set the TAG for excalidraw.md files",
-  FILETAG_DESC: "The text or emojii to display as tag.",                           
+  FILETYPE_NAME: "Display type (✏️) for excalidraw.md files in File Explorer",
+  FILETYPE_DESC: "Excalidraw files will receive an indicator using the emojii or text defined in the next setting.",                           
+  FILETAG_NAME: "Set the type indicator for excalidraw.md files",
+  FILETAG_DESC: "The text or emojii to display as type indicator.",                           
 
 
 
