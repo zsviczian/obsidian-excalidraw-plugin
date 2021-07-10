@@ -1,8 +1,30 @@
-The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/), a feature rich sketching tool, into Obsidian. You can store and edit Excalidraw files in your vault and you can transclude drawings into your documents. For a showcase of Excalidraw features, please read my blog post [here](https://www.zsolt.blog/2021/03/showcasing-excalidraw.html) and/or watch the videos below.
+The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/), a feature rich sketching tool, into Obsidian. You can store and edit Excalidraw files in your vault, you can embed drawings into your documents, and you can link to documents and other drawings to/and from Excalidraw. For a showcase of Excalidraw features, please read my blog post [here](https://www.zsolt.blog/2021/03/showcasing-excalidraw.html) and/or watch the videos below.
 
-![image](https://user-images.githubusercontent.com/14358394/115983515-d06c2c80-a5a1-11eb-8d12-c7df91d18107.png)
+![image](https://user-images.githubusercontent.com/14358394/125159831-336d6880-e17a-11eb-8a3d-ceabc2555a08.png)
 
-## Important notice to the 1.1.x update!
+# Important notice to the 1.2.0 update
+
+This version comes with tons of new features and possibilities. 
+
+Drawings you've created with version 1.1.x need to be converted to take advantage of the new features. If you want, you can also continue to use your exisiting drawings in compatibility mode. During conversion your existing `*.excalidraw` files will be replaced with new `*.excalidraw.md` files.
+
+## Conversion and compatibility
+To convert files you have the following options:
+- Click `CONVERT FILES` in the migration dialog when installing 1.2.0
+- In the Command Palette select `Excalidraw: Convert *.excalidraw files to *.excalidraw.md files` to convert all `*.excalidraw` files to `*.excalidraw.md` files. 
+- To convert files individually: 
+  - Right click an `*.excalidraw` file in File Explorer and select one of the following options:
+    - `*.excalidraw => *.excalidraw.md`
+    - `*.excalidraw => *.md (Logseq compatibility)`: This option will retain the original *.excalidraw file next to the new Obsidian format. Make sure you also enable `Compatibility features` in `Settings` for a full solution.
+  - Open a legacy `*.excalidraw` file and select `Convert to new format` from the `Options Menu`
+https://youtu.be/sY4FoflGaiM
+# Video walkthrough
+| | | |
+|----|----|----|
+|[![Obsidian-Excalidraw 1.2.0 update - Major IMPROVEMENTS](https://user-images.githubusercontent.com/14358394/124356817-7b3f3d80-dc18-11eb-932d-363bb373c5ab.jpg)](https://youtu.be/UxJLLYtgDKE)|![1  Getting Started](https://user-images.githubusercontent.com/14358394/125160304-7f211180-e17c-11eb-8363-c52723de1ffd.jpg)|![2  Basic shapes and features](https://user-images.githubusercontent.com/14358394/125160312-8a743d00-e17c-11eb-9fa2-490ef4cbd59e.jpg)|
+|![3  Groups](https://user-images.githubusercontent.com/14358394/125160323-96f89580-e17c-11eb-9bce-8eb1067a51bb.jpg)|![4  Stencil](https://user-images.githubusercontent.com/14358394/125160332-9f50d080-e17c-11eb-98e9-fec60fe147d9.jpg)|![5  embedding](https://user-images.githubusercontent.com/14358394/125160341-a546b180-e17c-11eb-9de8-d87fdc844c9c.jpg)|
+|![6  Links](https://user-images.githubusercontent.com/14358394/125160346-aa0b6580-e17c-11eb-930b-4024807040d1.jpg)|![7  Markdown](https://user-images.githubusercontent.com/14358394/125160354-b2fc3700-e17c-11eb-81af-9e71e461f6dd.jpg)|![8  Templates](https://user-images.githubusercontent.com/14358394/125160360-b8f21800-e17c-11eb-8bd8-79d4e3f6e92d.jpg)|
+|![9  Excalidraw Automate](https://user-images.githubusercontent.com/14358394/125160367-bdb6cc00-e17c-11eb-92f1-6f59faea85fd.jpg)|![10  Miscellaneous](https://user-images.githubusercontent.com/14358394/125160374-c3141680-e17c-11eb-8cc2-dfaffd903d15.jpg)||
 
 Thank you for updating to Excalidraw 1.1.x!
 
