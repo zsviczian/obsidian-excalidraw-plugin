@@ -51,7 +51,9 @@ export default {
   TEMPLATE_NAME: "Excalidraw template file",
   TEMPLATE_DESC: "Full filepath to the Excalidraw template. " +
                  "E.g.: If your template is in the default Excalidraw folder and it's name is " +
-                 "Template.excalidraw, the setting would be: Excalidraw/Template.excalidraw",
+                 "Template.md, the setting would be: Excalidraw/Template.md " + 
+                 "If you are using Excalidraw in compatibility mode, then your template must be a legacy excalidraw file as well " + 
+                 "such as Excalidraw/Template.excalidraw.",
   AUTOSAVE_NAME: "Autosave",
   AUTOSAVE_DESC: "Automatically save the active drawing every 30 seconds. Save normally happens when you close Excalidraw or Obsidian, or move "+
                  "focus to another pane. In rare cases autosave may slightly disrupt your drawing flow. I created this feature with mobile " +
