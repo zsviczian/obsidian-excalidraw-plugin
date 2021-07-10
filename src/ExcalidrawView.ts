@@ -6,6 +6,8 @@ import {
   WorkspaceItem,
   Notice,
   Menu,
+  parseLinktext,
+  MarkdownSourceView,
 } from "obsidian";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -581,9 +583,64 @@ export default class ExcalidrawView extends TextFileView {
         if(!excalidrawRef?.current) return;
         excalidrawRef.current.refresh();
       };
-      
+
+      /*
+      const dropAction = (transfer: DataTransfer) => {
+        // Return a 'copy' or 'link' action according to the content types, or undefined if no recognized type
+        if (transfer.types.includes('text/uri-list')) return 'link';
+        if (['file', 'files', 'link'].includes((this.app as any).dragManager.draggable?.type)) return 'link';
+        if (transfer.types.includes('text/html') || transfer.types.includes('text/plain')) return 'copy';
+      }
+
+      const linkTo = (f: TFile, subpath?: string) => { 
+        this.addText(this.app.metadataCache.fileToLinktext(f,subpath ? subpath : this.file.path,true));
+      };
+
+      const fixBulletsAndLInks = (text: string) => {
+        // Internal links from e.g. dataview plugin incorrectly begin with `app://obsidian.md/`, and
+        // we also want to remove bullet points and task markers from text and markdown
+        return text.replace(/^\s*[-+*]\s+(\[.]\s+)?/, "").trim().replace(/^\[(.*)\]\(app:\/\/obsidian.md\/(.*)\)$/, "[$1]($2)");
+      }
+
+      const getMarkdown = (transfer: DataTransfer ) => {
+        // crude hack to use Obsidian's html-to-markdown converter (replace when Obsidian exposes it in API):
+        console.log(transfer);
+        
+      }
+
+      let importLines = (transfer: DataTransfer, forcePlaintext: boolean = false) => {
+        const draggable = (this.app as any).dragManager.draggable;
+        const html  = transfer.getData("text/html");
+        const plain = transfer.getData("text/plain");
+        const uris  = transfer.getData("text/uri-list");
+        
+        switch(draggable?.type) {
+          case "file":
+            linkTo(draggable.file);
+            break;
+          case "files":
+            for(const f of draggable.files) {
+              linkTo(f);
+            }
+            break;
+          case "link":
+            if(draggable.file) {
+              linkTo(draggable.file, parseLinktext(draggable.linktext).subpath);
+              break;
+            }
+            console.log(`[[${draggable.linktext}]]`);
+            break;
+          default:
+            const text = forcePlaintext ? (plain||html) :  getMarkdown(transfer);
+            // Split lines and strip leading bullets/task indicators
+            const lines: string[] = (text || html || uris || plain || "").split(/\r\n?|\n/).map(fixBulletsAndLInks);
+            console.log( lines.filter(line => line));
+            break;
+        }
+      }*/
+
       let timestamp = (new Date()).getTime();
-      
+
       return React.createElement(
         React.Fragment,
         null,
@@ -597,12 +654,9 @@ export default class ExcalidrawView extends TextFileView {
               if(this.isTextLocked && (e.target instanceof HTMLCanvasElement) && this.getSelectedText(true)) { //text element is selected
                 const now = (new Date()).getTime();
                 if(now-timestamp < 600) { //double click
-                  let event = new MouseEvent('dblclick', {
-                    'view': window,
-                    'bubbles': true,
-                    'cancelable': true,
-                  });
-                  e.target.dispatchEvent(event);
+                  e.preventDefault();
+                  e.stopPropagation();
+                  this.lock(false);
                   new Notice(t("UNLOCK_TO_EDIT"));
                   timestamp = now;
                   return;
@@ -619,15 +673,29 @@ export default class ExcalidrawView extends TextFileView {
               if(ev.keyCode!=13) return; //not an enter
               if(!(ev.target instanceof HTMLDivElement)) return;
               if(!this.getSelectedId()) return;
-              const event = new MouseEvent('dblclick', {
+/*              const event = new MouseEvent('dblclick', {
                 'view': window,
                 'bubbles': true,
                 'cancelable': true,
               });
-              ev.target.querySelector("canvas").dispatchEvent(event);
+              ev.target.querySelector("canvas").dispatchEvent(event);*/
+              this.lock(false);
               new Notice(t("UNLOCK_TO_EDIT"));
             }, 
-            
+/*            onDragOver: (e:any) => {
+              const action = dropAction(e.dataTransfer);
+              if (action) {
+                e.dataTransfer.dropEffect = action;
+                e.preventDefault();
+                return false;
+              }
+            },
+            onDragLeave: () => { },
+            onDrop: (e:any) => {
+              importLines(e.dataTransfer);
+              e.preventDefault();
+              // shift key to force plain text, the same way Obsidian does it
+            },*/
           },
           React.createElement(Excalidraw.default, {
             ref: excalidrawRef,

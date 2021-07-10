@@ -31,7 +31,7 @@ export default {
   SAVE_AS_SVG: "Save as SVG into Vault (CTRL/META+CLICK to export)",
   OPEN_LINK: "Open selected text as link\n(SHIFT+CLICK to open in a new pane)",
   EXPORT_EXCALIDRAW: "Export to an .Excalidraw file",
-  UNLOCK_TO_EDIT: "UNLOCK Text Elements to edit",
+  UNLOCK_TO_EDIT: "Automatically UNLOCKED Text Elements to allow edit",
   LINK_BUTTON_CLICK_NO_TEXT: 'Select a Text Element containing an internal or external link.\n'+
                              'SHIFT CLICK this button to open the link in a new pane.\n'+
                              'CTRL/META CLICK the Text Element on the canvas has the same effect!',

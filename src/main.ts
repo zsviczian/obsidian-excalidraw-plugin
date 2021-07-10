@@ -156,7 +156,7 @@ export default class ExcalidrawPlugin extends Plugin {
       
       if(parts.fheight) img.setAttribute("height",parts.fheight);
       img.addClass(parts.style);
-      img.setAttribute("src","data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svg.outerHTML))));
+      img.setAttribute("src","data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svg.outerHTML.replaceAll("&nbsp;"," ")))));
       return img;
     }
 
