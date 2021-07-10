@@ -26,6 +26,9 @@ export interface ExcalidrawSettings {
   autoexportExcalidraw: boolean,
   syncExcalidraw: boolean,
   library: string,
+  compatibilityMode: boolean,
+  experimentalFileType: boolean,
+  experimentalFileTag: string,
   loadCount: number, //version 1.2 migration counter
   drawingOpenCount: number,
 }
@@ -48,6 +51,9 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   autoexportExcalidraw: false,
   syncExcalidraw: false,
   library: `{"type":"excalidrawlib","version":1,"library":[]}`,
+  experimentalFileType: false,
+  experimentalFileTag: "✏️",
+  compatibilityMode: false,
   loadCount: 0,
   drawingOpenCount: 0,
 }
@@ -269,6 +275,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.containerEl.createEl('h1', {text: t("COMPATIBILITY_HEAD")});
 
     new Setting(containerEl)
+    .setName(t("COMPATIBILITY_MODE_NAME")) 
+    .setDesc(t("COMPATIBILITY_MODE_DESC"))
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.compatibilityMode)
+        .onChange(async (value) => {
+          this.plugin.settings.compatibilityMode = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
     .setName(t("EXPORT_EXCALIDRAW_NAME")) 
     .setDesc(t("EXPORT_EXCALIDRAW_DESC"))
       .addToggle(toggle => toggle
@@ -287,6 +303,30 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.plugin.settings.syncExcalidraw = value;
             await this.plugin.saveSettings();
           }));
-    
+
+    this.containerEl.createEl('h1', {text: t("EXPERIMENTAL_HEAD")});
+    this.containerEl.createEl('p', {text: t("EXPERIMENTAL_DESC")});
+
+    new Setting(containerEl)
+    .setName(t("FILETYPE_NAME")) 
+    .setDesc(t("FILETYPE_DESC"))
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.experimentalFileType)
+        .onChange(async (value) => {
+          this.plugin.settings.experimentalFileType = value;
+          this.plugin.experimentalFileTypeDisplayToggle(value);
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+    .setName(t("FILETAG_NAME")) 
+    .setDesc(t("FILETAG_DESC"))
+    .addText(text => text
+      .setPlaceholder('✏️')
+      .setValue(this.plugin.settings.experimentalFileTag)
+      .onChange(async (value) => {
+        this.plugin.settings.experimentalFileTag = value;
+        await this.plugin.saveSettings();
+      }));    
   }
 }

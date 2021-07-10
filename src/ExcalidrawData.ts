@@ -98,6 +98,17 @@ export class ExcalidrawData {
     return true;
   }
 
+  public async loadLegacyData(data: string,file: TFile):Promise<boolean> {
+    this.file = file;
+    this.textElements = new Map<string,{raw:string, parsed:string}>();
+    this.setShowLinkBrackets();
+    this.setLinkPrefix(); 
+    this.scene = JSON.parse(data);
+    this.findNewTextElementsInScene();
+    await this.setAllowParse(false,true);
+    return true;
+  }
+
   public async setAllowParse(allowParse:boolean,forceupdate:boolean=false) {
     this.allowParse = allowParse;
     await this.updateSceneTextElements(forceupdate);

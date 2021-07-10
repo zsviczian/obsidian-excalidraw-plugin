@@ -42,6 +42,8 @@ export default {
   LOCK: "Text Elements are unlocked. Click to LOCK.",
   UNLOCK: "Text Elements are locked. Click to UNLOCK.",
   NOFILE: "Excalidraw (no file)",
+  COMPATIBILITY_MODE: "*.excalidraw file opened in compatibility mode. Convert to new format for full plugin functionality.",
+  CONVERT_FILE: "Convert to new format",
 
   //settings.ts
   FOLDER_NAME: "Excalidraw folder",
@@ -110,6 +112,18 @@ export default {
   SYNC_EXCALIDRAW_NAME: "Sync *.excalidraw with *.md version of the same drawing",
   SYNC_EXCALIDRAW_DESC: "If the modified date of the *.excalidraw file is more recent than the modified date of the *.md file " +
                         "then update the drawing in the .md file based on the .excalidraw file",
+  COMPATIBILITY_MODE_NAME: "New drawings as legacy files",
+  COMPATIBILITY_MODE_DESC: "By enabling this feature drawings you create with the ribbon icon, the command palette actions, "+
+                           "and the file explorer are going to be all legacy *.excalidraw files. This setting will also turn off the reminder message " + 
+                           "when you open a legacy file for editing.",
+  EXPERIMENTAL_HEAD: "Experimental features",
+  EXPERIMENTAL_DESC: "These setting will not take effect immediately, only when the File Explorer is refreshed, or Obsidian restarted.",
+  FILETYPE_NAME: "Display TAG (✏️) for excalidraw.md files in File Explorer",
+  FILETYPE_DESC: "Excalidraw files will be tagged using the tag defined in the next setting.",                           
+  FILETAG_NAME: "Set the TAG for excalidraw.md files",
+  FILETAG_DESC: "The text or emojii to display as tag.",                           
+
+
 
   //openDrawings.ts
   SELECT_FILE: "Select a file then press enter.",   
