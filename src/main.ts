@@ -146,7 +146,7 @@ export default class ExcalidrawPlugin extends Plugin {
         withBackground: this.settings.exportWithBackground, 
         withTheme: this.settings.exportWithTheme
       }
-      let svg = ExcalidrawView.getSVG(JSON_parse(getJSON(content)),exportSettings);
+      let svg = await ExcalidrawView.getSVG(JSON_parse(getJSON(content)),exportSettings);
       if(!svg) return null;
       svg = ExcalidrawView.embedFontsInSVG(svg);
       const img = createEl("img");
@@ -168,7 +168,7 @@ export default class ExcalidrawPlugin extends Plugin {
     const markdownPostProcessor = async (el:HTMLElement,ctx:MarkdownPostProcessorContext) => {
       const drawings = el.querySelectorAll('.internal-embed');
       if(drawings.length==0) return;
-      
+
       let attr:imgElementAttributes={fname:"",fheight:"",fwidth:"",style:""};
       let alt:string, img:any, parts, div, file:TFile;
       for (const drawing of drawings) {
@@ -953,7 +953,10 @@ export default class ExcalidrawPlugin extends Plugin {
     if (this.settings.compatibilityMode) {
       return BLANK_DRAWING;
     }
-    return FRONTMATTER + '\n# Drawing\n'+ BLANK_DRAWING;
+    return FRONTMATTER + '\n# Drawing\n'
+           + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'json\n' 
+           + BLANK_DRAWING + '\n'
+           + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96);
   }
 
   public async createDrawing(filename: string, onNewPane: boolean, foldername?: string, initData?:string) {

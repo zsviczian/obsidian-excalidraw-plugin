@@ -11,12 +11,14 @@ import {
   JSON_parse
 } from "./constants";
 
+const DRAWING_REG = /\n# Drawing\n(```json\n)?(.*)(```)?/gm;
+
 //![[link|alias]]![alias](link)
 //1  2    3      4 5      6
 export const REG_LINK_BACKETS = /(!)?\[\[([^|\]]+)\|?(.+)?]]|(!)?\[(.*)\]\((.*)\)/g;
 
 export function getJSON(data:string):string {
-  const findJSON = /\n# Drawing\n(```json\n)?(.*)(```)?/gm // /\n# Drawing\n(.*)/gm
+  const findJSON = DRAWING_REG; 
   const res = data.matchAll(findJSON);
   const parts = res.next();
   if(parts.value && parts.value.length>1) {
@@ -67,7 +69,7 @@ export class ExcalidrawData {
     }
 
     //Load scene: Read the JSON string after "# Drawing" 
-    let parts = data.matchAll(/\n# Drawing\n(```json\n)?(.*)(```)?/gm).next();
+    let parts = data.matchAll(DRAWING_REG).next();
     if(!(parts.value && parts.value.length>1)) return false; //JSON not found or invalid
     if(!this.scene) { //scene was not loaded from .excalidraw
       this.scene = JSON_parse(parts.value[2]);

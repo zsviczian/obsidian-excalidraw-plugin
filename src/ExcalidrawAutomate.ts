@@ -3,7 +3,6 @@ import {
   FillStyle,
   StrokeStyle,
   StrokeSharpness,
-  FontFamily,
 } from "@excalidraw/excalidraw/types/element/types";
 import {
   normalizePath,
@@ -34,7 +33,7 @@ export interface ExcalidrawAutomate extends Window {
       roughness: number;
       opacity: number;
       strokeSharpness: StrokeSharpness;
-      fontFamily: FontFamily;
+      fontFamily: number;
       fontSize: number;
       textAlign: string;
       verticalAlign: string;
@@ -210,7 +209,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       for (let i=0;i<this.elementIds.length;i++) {
         elements.push(this.elementsDict[this.elementIds[i]]);
       }
-      return ExcalidrawView.getSVG(
+      return await ExcalidrawView.getSVG(
         {//createDrawing
           "type": "excalidraw",
           "version": 2,
