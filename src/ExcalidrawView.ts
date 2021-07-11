@@ -9,7 +9,7 @@ import {
 } from "obsidian";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import Excalidraw, {exportToSvg, getSceneVersion} from "@excalidraw/excalidraw";
+import Excalidraw, {exportToSvg, getSceneVersion, loadLibraryFromBlob} from "@excalidraw/excalidraw";
 import { ExcalidrawElement } from "@excalidraw/excalidraw/types/element/types";
 import { 
   AppState,
@@ -33,6 +33,7 @@ import ExcalidrawPlugin from './main';
 import {ExcalidrawAutomate} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINK_BACKETS } from "./ExcalidrawData";
+import { download } from "./Utils";
 
 declare let window: ExcalidrawAutomate;
 
@@ -216,16 +217,6 @@ export default class ExcalidrawView extends TextFileView {
     }
   }
 
-  download(encoding:string,data:any,filename:string) {
-    let element = document.createElement('a');
-    element.setAttribute('href', (encoding ? encoding + ',' : '') + data);
-    element.setAttribute('download', filename);
-    element.style.display = 'none';
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-  }
-
   onload() {
     //console.log("ExcalidrawView.onload()");
     this.addAction(DISK_ICON_NAME,t("FORCE_SAVE"),async (ev)=> {
@@ -307,8 +298,8 @@ export default class ExcalidrawView extends TextFileView {
     this.app.workspace.onLayoutReady(async ()=>{
       //console.log("ExcalidrawView.setViewData()");
       this.compatibilityMode = this.file.extension == "excalidraw";
-      this.plugin.settings.drawingOpenCount++;
-      this.plugin.saveSettings();
+      await this.plugin.loadSettings();
+      this.plugin.opencount++;
       if(this.compatibilityMode) {
         this.unlockedElement.hide(); 
         this.lockedElement.hide();
@@ -390,7 +381,7 @@ export default class ExcalidrawView extends TextFileView {
             .setIcon(ICON_NAME)
             .onClick( async (ev) => {
               if(!this.getScene || !this.file) return;
-              this.download('data:text/plain;charset=utf-8',encodeURIComponent(JSON.stringify(this.getScene())), this.file.basename+'.excalidraw');
+              download('data:text/plain;charset=utf-8',encodeURIComponent(JSON.stringify(this.getScene())), this.file.basename+'.excalidraw');
             });
         });
     } else {
@@ -423,7 +414,7 @@ export default class ExcalidrawView extends TextFileView {
               const self = this;
               reader.onloadend = function() {
                 let base64data = reader.result;                
-                self.download(null,base64data,self.file.basename+'.png'); 
+                download(null,base64data,self.file.basename+'.png'); 
               }
               return;
             }
@@ -444,7 +435,7 @@ export default class ExcalidrawView extends TextFileView {
               let svg = await ExcalidrawView.getSVG(this.getScene(),exportSettings);
               if(!svg) return null;
               svg = ExcalidrawView.embedFontsInSVG(svg);
-              this.download("data:image/svg+xml;base64",btoa(unescape(encodeURIComponent(svg.outerHTML))),this.file.basename+'.svg');
+              download("data:image/svg+xml;base64",btoa(unescape(encodeURIComponent(svg.outerHTML))),this.file.basename+'.svg');
               return;
             }
             this.saveSVG()
@@ -455,7 +446,7 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   async getLibrary() {
-    const data = JSON_parse(this.plugin.settings.library);
+    const data = JSON_parse(this.plugin.getStencilLibrary());
     return data?.library ? data.library : [];
   }
 
@@ -640,7 +631,25 @@ export default class ExcalidrawView extends TextFileView {
         }
       }*/
 
-      let timestamp = (new Date()).getTime();
+      let timestamp = 0;
+
+      const dblclickEvent = (e: Event):boolean => {
+        if((e.target instanceof HTMLCanvasElement) && this.getSelectedText(true)) { //text element is selected
+          const now = (new Date()).getTime();
+          if(now-timestamp < 600) { //double click
+            if(this.isTextLocked) {
+              e.preventDefault();
+              e.stopPropagation();
+              new Notice(t("UNLOCK_TO_EDIT"));
+            }
+            timestamp = 0;
+            this.lock(false);
+            return true;
+          }
+          timestamp = now;
+        }        
+        return false;
+      }
 
       return React.createElement(
         React.Fragment,
@@ -651,19 +660,13 @@ export default class ExcalidrawView extends TextFileView {
             className: "excalidraw-wrapper",
             ref: excalidrawWrapperRef,
             key: "abc",
+            onTouchEnd: (e: TouchEvent) => {
+              if (dblclickEvent(e)) return;
+            },
             onClick: (e:MouseEvent):any => {
-              if(this.isTextLocked && (e.target instanceof HTMLCanvasElement) && this.getSelectedText(true)) { //text element is selected
-                const now = (new Date()).getTime();
-                if(now-timestamp < 600) { //double click
-                  e.preventDefault();
-                  e.stopPropagation();
-                  this.lock(false);
-                  new Notice(t("UNLOCK_TO_EDIT"));
-                  timestamp = now;
-                  return;
-                }
-                timestamp = now;
-              }
+              //@ts-ignore
+              if(this.app.isMobile) return;
+              if(this.isTextLocked && dblclickEvent(e)) return;
               if(!(e.ctrlKey||e.metaKey)) return;
               if(!(this.plugin.settings.allowCtrlClick)) return;
               if(!this.getSelectedId()) return;
@@ -735,7 +738,7 @@ export default class ExcalidrawView extends TextFileView {
             },
             onLibraryChange: (items:LibraryItems) => {
               (async () => {
-                this.plugin.settings.library = EXCALIDRAW_LIB_HEADER+JSON.stringify(items)+'}';
+                this.plugin.setStencilLibrary(EXCALIDRAW_LIB_HEADER+JSON.stringify(items)+'}');
                 await this.plugin.saveSettings();  
               })();
             }

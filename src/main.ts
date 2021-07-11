@@ -1,6 +1,5 @@
 import { 
   TFile, 
-  TFolder,
   Plugin, 
   WorkspaceLeaf, 
   addIcon, 
@@ -16,6 +15,7 @@ import {
   MarkdownRenderer,
   ViewState,
   Notice,
+  TFolder,
 } from "obsidian";
 
 import { 
@@ -58,17 +58,20 @@ import { Prompt } from "./Prompt";
 import { around } from "monkey-around";
 import { t } from "./lang/helpers";
 import { MigrationPrompt } from "./MigrationPrompt";
+import { download, splitFolderAndFilename } from "./Utils";
 
 export default class ExcalidrawPlugin extends Plugin {
   public excalidrawFileModes: { [file: string]: string } = {};
   private _loaded: boolean = false;
   public settings: ExcalidrawSettings;
+  //public stencilLibrary: any = null;
   private openDialog: OpenFileDialog;
   private activeExcalidrawView: ExcalidrawView = null;
   public lastActiveExcalidrawFilePath: string = null;
   private hover: {linkText: string, sourcePath: string} = {linkText: null, sourcePath: null};
   private observer: MutationObserver;
   private fileExplorerObserver: MutationObserver;
+  public opencount:number = 0;
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
@@ -102,7 +105,7 @@ export default class ExcalidrawPlugin extends Plugin {
     //inspiration taken from kanban: 
     //https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/main.ts#L267
     this.registerMonkeyPatches();
-    if(this.settings.loadCount<3) this.migrationNotice();
+    if(this.settings.loadCount<1) this.migrationNotice();
     
   }
 
@@ -110,7 +113,7 @@ export default class ExcalidrawPlugin extends Plugin {
     const self = this;
     this.app.workspace.onLayoutReady(async () => {
       self.settings.loadCount++;
-      self.saveSettings();
+      //self.saveSettings();
       const files = this.app.vault.getFiles().filter((f)=>f.extension=="excalidraw");  
       if(files.length>0) {
         const prompt = new MigrationPrompt(self.app, self);
@@ -239,7 +242,7 @@ export default class ExcalidrawPlugin extends Plugin {
       //@ts-ignore
       this.app.workspace.on('hover-link',hoverEvent)
     );
-
+      
     //monitoring for div.popover.hover-popover.file-embed.is-loaded to be added to the DOM tree
     this.observer = new MutationObserver((m)=>{
       if(m.length == 0) return;
@@ -410,6 +413,14 @@ export default class ExcalidrawPlugin extends Plugin {
     this.registerEvent(
       this.app.workspace.on("file-menu", fileMenuHandlerConvertReplaceExtension)
     );
+
+    this.addCommand({
+      id: "excalidraw-download-lib",
+      name: t("DOWNLOAD_LIBRARY"),
+      callback: () => {
+        download('data:text/plain;charset=utf-8',encodeURIComponent(this.settings.library), 'my-obsidian-library.excalidrawlib');
+      },
+    });
 
     this.addCommand({
       id: "excalidraw-open",
@@ -847,6 +858,9 @@ export default class ExcalidrawPlugin extends Plugin {
         for (let i=0;i<leaves.length;i++) {
           (leaves[i].view as ExcalidrawView).save(); 
         }
+        this.settings.drawingOpenCount += this.opencount;
+        this.settings.loadCount++;
+        this.saveSettings();
       }
       self.registerEvent(
         self.app.workspace.on("quit",quitEventHandler)
@@ -881,7 +895,9 @@ export default class ExcalidrawPlugin extends Plugin {
     excalidrawLeaves.forEach((leaf) => {
       this.setMarkdownView(leaf);
     });
-
+    this.settings.drawingOpenCount += this.opencount;
+    this.settings.loadCount++;
+    this.saveSettings();
   }
 
   public embedDrawing(data:string) {
@@ -894,12 +910,45 @@ export default class ExcalidrawPlugin extends Plugin {
   
   }
 
-  private async loadSettings() {
+  public async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+/*    if(this.settings.libraryInVault) {
+      const filepath = this.settings.libraryLocation+".excalidrawlib";
+      const file = this.app.vault.getAbstractFileByPath(filepath);
+      if(file && file instanceof TFile) {
+        this.stencilLibrary = await this.app.vault.read(file);
+      } else {
+        this.stencilLibrary = this.settings.library;
+      }
+    }*/
   }
 
   async saveSettings() {
     await this.saveData(this.settings);
+/*    if(this.settings.libraryInVault) {
+      const filepath = this.settings.libraryLocation+".excalidrawlib";
+      const f = splitFolderAndFilename(filepath);
+      await this.checkAndCreateFolder(f.folderpath);
+      const file = this.app.vault.getAbstractFileByPath(filepath);
+      if(file && file instanceof TFile) {
+        await this.app.vault.modify(file,this.stencilLibrary ? this.stencilLibrary : this.settings.library)
+      } else {
+        await this.app.vault.create(filepath,JSON.stringify(this.stencilLibrary ? this.stencilLibrary : this.settings.library));
+      }
+    }*/
+  }
+
+  public getStencilLibrary():string {
+    //if(this.settings.libraryInVault) return this.stencilLibrary;
+    return this.settings.library;
+  }
+
+  public setStencilLibrary(library:string) {
+/*    if(this.settings.libraryInVault) {
+      this.stencilLibrary = library;
+    } else {*/
+      this.settings.library = library;
+    //}
   }
 
   public triggerEmbedUpdates(filepath?:string){
@@ -961,10 +1010,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public async createDrawing(filename: string, onNewPane: boolean, foldername?: string, initData?:string) {
     const folderpath = normalizePath(foldername ? foldername: this.settings.folder);
-    const folder = this.app.vault.getAbstractFileByPath(folderpath);
-    if (!(folder && folder instanceof TFolder)) {
-      await this.app.vault.createFolder(folderpath);
-    }
+    await this.checkAndCreateFolder(folderpath); //create folder if it does not exist
 
     const fname = this.getNewUniqueFilepath(filename,folderpath);
 
@@ -1017,5 +1063,15 @@ export default class ExcalidrawPlugin extends Plugin {
     if(f.extension=="excalidraw") return true;
     const fileCache = this.app.metadataCache.getFileCache(f);
     return !!fileCache?.frontmatter && !!fileCache.frontmatter[FRONTMATTER_KEY];
+  }
+
+  /**
+  * Open or create a folderpath if it does not exist
+  * @param folderpath 
+  */
+  public async checkAndCreateFolder(folderpath:string) {
+    let folder = this.app.vault.getAbstractFileByPath(folderpath);
+    if(folder && folder instanceof TFolder) return;
+    await this.app.vault.createFolder(folderpath);
   }
 }

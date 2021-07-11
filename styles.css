@@ -63,7 +63,7 @@ button.ToolIcon_type_button[title="Export"] {
   flex-grow: 1;
 }
 
-
+/*
 @font-face {
   font-family: "Virgil";
   src: url("https://excalidraw.com/Virgil.woff2");
@@ -71,4 +71,4 @@ button.ToolIcon_type_button[title="Export"] {
 @font-face {
   font-family: "Cascadia";
   src: url("https://excalidraw.com/Cascadia.woff2");
-}
+}*/

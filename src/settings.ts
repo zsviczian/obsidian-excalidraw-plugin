@@ -1,12 +1,14 @@
 import {
   App, 
   PluginSettingTab, 
-  Setting
+  Setting,
+  TFile
 } from 'obsidian';
 import { VIEW_TYPE_EXCALIDRAW } from './constants';
 import ExcalidrawView from './ExcalidrawView';
 import { t } from './lang/helpers';
 import type ExcalidrawPlugin from "./main";
+import { splitFolderAndFilename } from './Utils';
 
 export interface ExcalidrawSettings {
   folder: string,
@@ -25,12 +27,14 @@ export interface ExcalidrawSettings {
   autoexportPNG: boolean,
   autoexportExcalidraw: boolean,
   syncExcalidraw: boolean,
-  library: string,
   compatibilityMode: boolean,
   experimentalFileType: boolean,
   experimentalFileTag: string,
   loadCount: number, //version 1.2 migration counter
   drawingOpenCount: number,
+//  libraryInVault: boolean, //if true, library is stored in the vault in a file
+//  libraryLocation: string, //full path to the library file
+  library: string,
 }
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
@@ -50,12 +54,14 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   autoexportPNG: false,
   autoexportExcalidraw: false,
   syncExcalidraw: false,
-  library: `{"type":"excalidrawlib","version":1,"library":[]}`,
   experimentalFileType: false,
   experimentalFileTag: "✏️",
   compatibilityMode: false,
   loadCount: 0,
   drawingOpenCount: 0,
+//  libraryInVault: false,
+//  libraryLocation: "Excalidraw/library",
+  library: `{"type":"excalidrawlib","version":1,"library":[]}`,
 }
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
@@ -271,6 +277,48 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         this.plugin.settings.autoexportPNG = value;
         await this.plugin.saveSettings();
       }));
+
+/*
+    this.containerEl.createEl('h1', {text: t("STENCIL_HEAD")});
+    
+    const changeLibrary = async () => {
+      if(!this.plugin.settings.libraryInVault) return;
+      const filepath = this.plugin.settings.libraryLocation+".excalidrawlib";
+      const f = splitFolderAndFilename(filepath);
+      await this.plugin.checkAndCreateFolder(f.folderpath);
+      const file = this.app.vault.getAbstractFileByPath(filepath);
+      if(file && file instanceof TFile) {
+        this.plugin.stencilLibrary = await this.app.vault.read(file);
+      } else {
+        this.plugin.stencilLibrary = this.plugin.settings.library;
+      }
+    }
+
+    new Setting(containerEl)
+    .setName(t("STENCIL_INVAULT_NAME")) 
+    .setDesc(t("STENCIL_INVAULT_DESC"))
+    .addToggle(toggle => toggle
+      .setValue(this.plugin.settings.libraryInVault)
+      .onChange(async (value) => {
+        this.plugin.settings.libraryInVault = value;
+        if(value) stencilLib.setDisabled(true);
+        
+        await changeLibrary();
+        await this.plugin.saveSettings();
+      }));
+
+    const stencilLib = new Setting(containerEl)
+    .setName(t("STENCIL_PATH_NAME")) 
+    .setDesc(t("STENCIL_PATH_DESC"))
+    .addText(text => text
+      .setPlaceholder('Excalidraw/library')
+      .setValue(this.plugin.settings.libraryLocation)
+      .onChange(async (value) => {
+        this.plugin.settings.libraryInVault = false;
+        this.plugin.stencilLibrary = null;
+        this.plugin.settings.libraryLocation = value;
+        await this.plugin.saveSettings();
+      }));  */
           
     this.containerEl.createEl('h1', {text: t("COMPATIBILITY_HEAD")});
 
