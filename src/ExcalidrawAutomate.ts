@@ -516,5 +516,4 @@ async function getTemplate(fileWithPath: string):Promise<{elements: any,appState
          + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'json\n' 
          + data + '\n'
          + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96);
-  //+data.replaceAll("[","&#91;");
 }
