@@ -682,6 +682,16 @@ export default class ExcalidrawPlugin extends Plugin {
     const fname = this.getNewUniqueFilepath(filename,normalizePath(file.path.substr(0,file.path.lastIndexOf(file.name))));
     console.log(fname);
     const result = await this.app.vault.create(fname,FRONTMATTER + exportSceneToMD(data));
+    if (this.settings.keepInSync) {
+      ['.svg','.png'].forEach( (ext:string)=>{
+        const oldIMGpath = file.path.substring(0,file.path.lastIndexOf(".excalidraw")) + ext;   
+        const imgFile = this.app.vault.getAbstractFileByPath(normalizePath(oldIMGpath));
+        if(imgFile && imgFile instanceof TFile) {
+          const newIMGpath = fname.substr(0,fname.lastIndexOf(".md"))  + ext;
+          this.app.vault.rename(imgFile,newIMGpath); 
+        }
+      });
+    }
     if (!keepOriginal) this.app.vault.delete(file);
     return result;
   }
@@ -795,10 +805,12 @@ export default class ExcalidrawPlugin extends Plugin {
         if (!self.isExcalidrawFile(file)) return;
         if (!self.settings.keepInSync) return;
         ['.svg','.png','.excalidraw'].forEach(async (ext:string)=>{
-          const oldIMGpath = oldPath.substring(0,oldPath.lastIndexOf('.md')) + ext; 
+          const isLegacyFile:boolean = oldPath.endsWith(".excalidraw");
+          const replaceExtension:string = isLegacyFile ? ".excalidraw" : ".md";
+          const oldIMGpath = oldPath.substring(0,oldPath.lastIndexOf(replaceExtension)) + ext;   
           const imgFile = self.app.vault.getAbstractFileByPath(normalizePath(oldIMGpath));
           if(imgFile && imgFile instanceof TFile) {
-            const newIMGpath = file.path.substring(0,file.path.lastIndexOf('.md')) + ext;
+            const newIMGpath = file.path.substring(0,file.path.lastIndexOf(replaceExtension)) + ext;
             await self.app.vault.rename(imgFile,newIMGpath); 
           }
         });
@@ -827,7 +839,11 @@ export default class ExcalidrawPlugin extends Plugin {
       const deleteEventHandler = async (file:TFile) => {
         if (!(file instanceof TFile)) return;     
         //@ts-ignore
-        if (file.unsaveCachedData && !file.unsafeCachedData.search(/---\n[\s\S]*excalidraw-plugin:\s*(locked|unlocked)\n[\s\S]*---/gm)==-1) return;
+        const isExcalidarwFile = ((file.unsaveCachedData) && (file.unsafeCachedData.search(/---\n[\s\S]*excalidraw-plugin:\s*(locked|unlocked)\n[\s\S]*---/gm)>-1))
+                                 || (file.extension=="excalidraw");
+        if(!isExcalidarwFile) return;
+        //@ts-ignore
+        //if (file.unsaveCachedData && !file.unsafeCachedData.search(/---\n[\s\S]*excalidraw-plugin:\s*(locked|unlocked)\n[\s\S]*---/gm)==-1) return;
 
         //close excalidraw view where this file is open
         const leaves = self.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
@@ -840,7 +856,10 @@ export default class ExcalidrawPlugin extends Plugin {
         //delete PNG and SVG files as well
         if (self.settings.keepInSync) {
           ['.svg','.png','.excalidraw'].forEach(async (ext:string) => {
-            const imgPath = file.path.substring(0,file.path.lastIndexOf('.md')) + ext; 
+            const isLegacyFile:boolean = file.extension == "excalidraw";
+            const replaceExtension:string = isLegacyFile ? ".excalidraw" : ".md";
+  
+            const imgPath = file.path.substring(0,file.path.lastIndexOf(replaceExtension)) + ext; 
             const imgFile = self.app.vault.getAbstractFileByPath(normalizePath(imgPath));
             if(imgFile && imgFile instanceof TFile) {
               await self.app.vault.delete(imgFile); 
