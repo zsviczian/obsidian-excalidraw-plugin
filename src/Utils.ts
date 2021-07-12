@@ -28,3 +28,15 @@ export function download(encoding:string,data:any,filename:string) {
   element.click();
   document.body.removeChild(element);
 }
+
+/**
+ * Generates the image filename based on the excalidraw filename
+ * @param excalidrawPath - Full filepath of ExclidrawFile
+ * @param newExtension - extension of IMG file in ".extension" format
+ * @returns 
+ */
+export function getIMGPathFromExcalidrawFile (excalidrawPath:string,newExtension:string):string {
+  const isLegacyFile:boolean = excalidrawPath.endsWith(".excalidraw");
+  const replaceExtension:string = isLegacyFile ? ".excalidraw" : ".md";
+  return excalidrawPath.substring(0,excalidrawPath.lastIndexOf(replaceExtension)) + newExtension;   
+}

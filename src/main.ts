@@ -58,7 +58,7 @@ import { Prompt } from "./Prompt";
 import { around } from "monkey-around";
 import { t } from "./lang/helpers";
 import { MigrationPrompt } from "./MigrationPrompt";
-import { download, splitFolderAndFilename } from "./Utils";
+import { download, getIMGPathFromExcalidrawFile, splitFolderAndFilename } from "./Utils";
 
 export default class ExcalidrawPlugin extends Plugin {
   public excalidrawFileModes: { [file: string]: string } = {};
@@ -516,10 +516,6 @@ export default class ExcalidrawPlugin extends Plugin {
       checkCallback: (checking: boolean) => {
         if (checking) {
           return this.app.workspace.activeLeaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW;
-/*          if(this.app.workspace.activeLeaf.view.getViewType() == VIEW_TYPE_EXCALIDRAW) {
-            return !(this.app.workspace.activeLeaf.view as ExcalidrawView).compatibilityMode;
-          }
-          return false;*/
         } else {
           const view = this.app.workspace.activeLeaf.view;
           if (view instanceof ExcalidrawView) {
@@ -799,18 +795,18 @@ export default class ExcalidrawPlugin extends Plugin {
     const self = this;
     this.app.workspace.onLayoutReady(async () => {
 
+
+
       //watch filename change to rename .svg, .png; to sync to .md; to update links
       const renameEventHandler = async (file:TAbstractFile,oldPath:string) => {
         if(!(file instanceof TFile)) return;
-        if (!self.isExcalidrawFile(file)) return;
-        if (!self.settings.keepInSync) return;
+        if(!self.isExcalidrawFile(file)) return;
+        if(!self.settings.keepInSync) return;
         ['.svg','.png','.excalidraw'].forEach(async (ext:string)=>{
-          const isLegacyFile:boolean = oldPath.endsWith(".excalidraw");
-          const replaceExtension:string = isLegacyFile ? ".excalidraw" : ".md";
-          const oldIMGpath = oldPath.substring(0,oldPath.lastIndexOf(replaceExtension)) + ext;   
+          const oldIMGpath = getIMGPathFromExcalidrawFile(oldPath,ext);
           const imgFile = self.app.vault.getAbstractFileByPath(normalizePath(oldIMGpath));
           if(imgFile && imgFile instanceof TFile) {
-            const newIMGpath = file.path.substring(0,file.path.lastIndexOf(replaceExtension)) + ext;
+            const newIMGpath = getIMGPathFromExcalidrawFile(file.path,ext);
             await self.app.vault.rename(imgFile,newIMGpath); 
           }
         });
@@ -839,11 +835,9 @@ export default class ExcalidrawPlugin extends Plugin {
       const deleteEventHandler = async (file:TFile) => {
         if (!(file instanceof TFile)) return;     
         //@ts-ignore
-        const isExcalidarwFile = ((file.unsaveCachedData) && (file.unsafeCachedData.search(/---\n[\s\S]*excalidraw-plugin:\s*(locked|unlocked)\n[\s\S]*---/gm)>-1))
+        const isExcalidarwFile = (file.unsafeCachedData && file.unsafeCachedData.search(/---\n[\s\S]*excalidraw-plugin:\s*(locked|unlocked)\n[\s\S]*---/gm)>-1) 
                                  || (file.extension=="excalidraw");
         if(!isExcalidarwFile) return;
-        //@ts-ignore
-        //if (file.unsaveCachedData && !file.unsafeCachedData.search(/---\n[\s\S]*excalidraw-plugin:\s*(locked|unlocked)\n[\s\S]*---/gm)==-1) return;
 
         //close excalidraw view where this file is open
         const leaves = self.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
@@ -856,10 +850,7 @@ export default class ExcalidrawPlugin extends Plugin {
         //delete PNG and SVG files as well
         if (self.settings.keepInSync) {
           ['.svg','.png','.excalidraw'].forEach(async (ext:string) => {
-            const isLegacyFile:boolean = file.extension == "excalidraw";
-            const replaceExtension:string = isLegacyFile ? ".excalidraw" : ".md";
-  
-            const imgPath = file.path.substring(0,file.path.lastIndexOf(replaceExtension)) + ext; 
+            const imgPath = getIMGPathFromExcalidrawFile(file.path,ext);
             const imgFile = self.app.vault.getAbstractFileByPath(normalizePath(imgPath));
             if(imgFile && imgFile instanceof TFile) {
               await self.app.vault.delete(imgFile); 
@@ -931,43 +922,18 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-/*    if(this.settings.libraryInVault) {
-      const filepath = this.settings.libraryLocation+".excalidrawlib";
-      const file = this.app.vault.getAbstractFileByPath(filepath);
-      if(file && file instanceof TFile) {
-        this.stencilLibrary = await this.app.vault.read(file);
-      } else {
-        this.stencilLibrary = this.settings.library;
-      }
-    }*/
   }
 
   async saveSettings() {
     await this.saveData(this.settings);
-/*    if(this.settings.libraryInVault) {
-      const filepath = this.settings.libraryLocation+".excalidrawlib";
-      const f = splitFolderAndFilename(filepath);
-      await this.checkAndCreateFolder(f.folderpath);
-      const file = this.app.vault.getAbstractFileByPath(filepath);
-      if(file && file instanceof TFile) {
-        await this.app.vault.modify(file,this.stencilLibrary ? this.stencilLibrary : this.settings.library)
-      } else {
-        await this.app.vault.create(filepath,JSON.stringify(this.stencilLibrary ? this.stencilLibrary : this.settings.library));
-      }
-    }*/
   }
 
   public getStencilLibrary():string {
-    //if(this.settings.libraryInVault) return this.stencilLibrary;
     return this.settings.library;
   }
 
   public setStencilLibrary(library:string) {
-/*    if(this.settings.libraryInVault) {
-      this.stencilLibrary = library;
-    } else {*/
       this.settings.library = library;
-    //}
   }
 
   public triggerEmbedUpdates(filepath?:string){

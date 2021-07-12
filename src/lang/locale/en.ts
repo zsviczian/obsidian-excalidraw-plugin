@@ -109,17 +109,6 @@ export default {
                    "While the auto-export switch is on, this file will get updated every time you edit the excalidraw drawing with the matching name.",
   EXPORT_PNG_NAME: "Auto-export PNG",
   EXPORT_PNG_DESC: "Same as the auto-export SVG, but for *.PNG",
-/*  STENCIL_HEAD: "Stencil Library",
-  STENCIL_INVAULT_NAME: "Store as FILE",
-  STENCIL_INVAULT_DESC: "By enabling this feature, the stencil library will be stored in a file specified in the next setting. " +
-                        "Obsidan Sync now synchronizes all filetypes. By storing your stencil library in a file you can synchronize your library between devices. " +
-                        "When enabling this setting, if the file you specified is empty, your existing stencils in settings will be copied to the file. " +
-                        "When disabling this setting, your current stencil library will not overwirte stencils in your settings. " + 
-                        "You need to close all Excalidraw views and reopen them, for this change to take effect. " +
-                        "The default filename is Excalidraw/stencils.excalidrawlib " ,
-  STENCIL_PATH_NAME: "Filepath",
-  STENCIL_PATH_DESC: "This can only be edited when \"Store as FILE\" is turned off. " +
-                     "The filepath of the stencil library. Enter the filename without the extension. ",*/
   COMPATIBILITY_HEAD: "Compatibility features",
   EXPORT_EXCALIDRAW_NAME: "Auto-export Excalidraw",
   EXPORT_EXCALIDRAW_DESC: "Same as the auto-export SVG, but for *.Excalidraw",

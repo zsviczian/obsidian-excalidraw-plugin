@@ -61,6 +61,7 @@ export default class ExcalidrawView extends TextFileView {
   private plugin: ExcalidrawPlugin;
   private dirty: boolean = false;
   public autosaveTimer: any = null;
+  public autosaving:boolean = false;
   public  isTextLocked:boolean = false;
   private lockedElement:HTMLElement;
   private unlockedElement:HTMLElement;
@@ -82,8 +83,8 @@ export default class ExcalidrawView extends TextFileView {
     }
     const filepath = this.file.path.substring(0,this.file.path.lastIndexOf('.md')) + '.excalidraw';
     const file = this.app.vault.getAbstractFileByPath(normalizePath(filepath));
-    if(file && file instanceof TFile) this.app.vault.modify(file,JSON.stringify(scene));//data.replaceAll("&#91;","["));
-    else this.app.vault.create(filepath,JSON.stringify(scene));//.replaceAll("&#91;","["));
+    if(file && file instanceof TFile) this.app.vault.modify(file,JSON.stringify(scene));
+    else this.app.vault.create(filepath,JSON.stringify(scene));
   }
 
   public async saveSVG(scene?: any) {
@@ -142,9 +143,9 @@ export default class ExcalidrawView extends TextFileView {
   // if drawing is in Text Element Edit Unlock, then everything is raw and parse and so an async function is not required here
   getViewData () {
     //console.log("ExcalidrawView.getViewData()");
-    if(this.getScene && !this.compatibilityMode) {
-      
-      if(this.excalidrawData.syncElements(this.getScene())) {
+    if(!this.getScene) return this.data;
+    if(!this.compatibilityMode) {
+      if(this.excalidrawData.syncElements(this.getScene()) && !this.autosaving) {
         this.loadDrawing(false);
       }  
       let trimLocation = this.data.search("# Text Elements\n");
@@ -152,22 +153,28 @@ export default class ExcalidrawView extends TextFileView {
       if(trimLocation == -1) return this.data;
 
       const scene = this.excalidrawData.scene;
-      if(this.plugin.settings.autoexportSVG) this.saveSVG(scene);
-      if(this.plugin.settings.autoexportPNG) this.savePNG(scene);
-      if(this.plugin.settings.autoexportExcalidraw) this.saveExcalidraw(scene);
+      if(!this.autosaving) {
+        this.autosaving = false;
+        if(this.plugin.settings.autoexportSVG) this.saveSVG(scene);
+        if(this.plugin.settings.autoexportPNG) this.savePNG(scene);
+        if(this.plugin.settings.autoexportExcalidraw) this.saveExcalidraw(scene);
+      }
 
       const header = this.data.substring(0,trimLocation)
                               .replace(/excalidraw-plugin:\s.*\n/,FRONTMATTER_KEY+": " + (this.isTextLocked ? "locked\n" : "unlocked\n"));
       return header + this.excalidrawData.generateMD();
     }
-    if(this.getScene && this.compatibilityMode) {
+    if(this.compatibilityMode) {
       this.excalidrawData.syncElements(this.getScene());
       const scene = this.excalidrawData.scene;
-      if(this.plugin.settings.autoexportSVG) this.saveSVG(scene);
-      if(this.plugin.settings.autoexportPNG) this.savePNG(scene);
+      if(!this.autosaving) {
+        this.autosaving = false;
+        if(this.plugin.settings.autoexportSVG) this.saveSVG(scene);
+        if(this.plugin.settings.autoexportPNG) this.savePNG(scene);
+      }
       return JSON.stringify(scene);
     }
-    else return this.data;
+    return this.data;
   }
   
   handleLinkClick(view: ExcalidrawView, ev:MouseEvent) {
@@ -257,15 +264,15 @@ export default class ExcalidrawView extends TextFileView {
     const timer = async () => {
       //console.log("ExcalidrawView.autosaveTimer(), dirty", this.dirty);
       if(this.dirty) {
-        console.log("autosave",Date.now());
         this.dirty = false;
+        this.autosaving=true;
         if(this.excalidrawRef) await this.save();
-        this.plugin.triggerEmbedUpdates();
+        //this.plugin.triggerEmbedUpdates();
       }
     }
-    if(this.plugin.settings.autosave) {
-      this.autosaveTimer = setInterval(timer,30000);
-    }
+    //if(this.plugin.settings.autosave) {
+    this.autosaveTimer = setInterval(timer,30000);
+    //}
   }
 
   //save current drawing when user closes workspace leaf
@@ -334,7 +341,6 @@ export default class ExcalidrawView extends TextFileView {
         this.instantiateExcalidraw({
           elements: excalidrawData.elements,
           appState: excalidrawData.appState,
-//          scrollToContent: true,
           libraryItems: await this.getLibrary(),
         });
       })();
@@ -576,61 +582,6 @@ export default class ExcalidrawView extends TextFileView {
         excalidrawRef.current.refresh();
       };
 
-      /*
-      const dropAction = (transfer: DataTransfer) => {
-        // Return a 'copy' or 'link' action according to the content types, or undefined if no recognized type
-        if (transfer.types.includes('text/uri-list')) return 'link';
-        if (['file', 'files', 'link'].includes((this.app as any).dragManager.draggable?.type)) return 'link';
-        if (transfer.types.includes('text/html') || transfer.types.includes('text/plain')) return 'copy';
-      }
-
-      const linkTo = (f: TFile, subpath?: string) => { 
-        this.addText(this.app.metadataCache.fileToLinktext(f,subpath ? subpath : this.file.path,true));
-      };
-
-      const fixBulletsAndLInks = (text: string) => {
-        // Internal links from e.g. dataview plugin incorrectly begin with `app://obsidian.md/`, and
-        // we also want to remove bullet points and task markers from text and markdown
-        return text.replace(/^\s*[-+*]\s+(\[.]\s+)?/, "").trim().replace(/^\[(.*)\]\(app:\/\/obsidian.md\/(.*)\)$/, "[$1]($2)");
-      }
-
-      const getMarkdown = (transfer: DataTransfer ) => {
-        // crude hack to use Obsidian's html-to-markdown converter (replace when Obsidian exposes it in API):
-        console.log(transfer);
-        
-      }
-
-      let importLines = (transfer: DataTransfer, forcePlaintext: boolean = false) => {
-        const draggable = (this.app as any).dragManager.draggable;
-        const html  = transfer.getData("text/html");
-        const plain = transfer.getData("text/plain");
-        const uris  = transfer.getData("text/uri-list");
-        
-        switch(draggable?.type) {
-          case "file":
-            linkTo(draggable.file);
-            break;
-          case "files":
-            for(const f of draggable.files) {
-              linkTo(f);
-            }
-            break;
-          case "link":
-            if(draggable.file) {
-              linkTo(draggable.file, parseLinktext(draggable.linktext).subpath);
-              break;
-            }
-            console.log(`[[${draggable.linktext}]]`);
-            break;
-          default:
-            const text = forcePlaintext ? (plain||html) :  getMarkdown(transfer);
-            // Split lines and strip leading bullets/task indicators
-            const lines: string[] = (text || html || uris || plain || "").split(/\r\n?|\n/).map(fixBulletsAndLInks);
-            console.log( lines.filter(line => line));
-            break;
-        }
-      }*/
-
       let timestamp = 0;
 
       const dblclickEvent = (e: Event):boolean => {
@@ -661,6 +612,8 @@ export default class ExcalidrawView extends TextFileView {
             ref: excalidrawWrapperRef,
             key: "abc",
             onTouchEnd: (e: TouchEvent) => {
+              //@ts-ignore
+              if (!this.app.isMobile) return;              
               if (dblclickEvent(e)) return;
             },
             onClick: (e:MouseEvent):any => {
@@ -677,29 +630,9 @@ export default class ExcalidrawView extends TextFileView {
               if(ev.keyCode!=13) return; //not an enter
               if(!(ev.target instanceof HTMLDivElement)) return;
               if(!this.getSelectedId()) return;
-/*              const event = new MouseEvent('dblclick', {
-                'view': window,
-                'bubbles': true,
-                'cancelable': true,
-              });
-              ev.target.querySelector("canvas").dispatchEvent(event);*/
               this.lock(false);
               new Notice(t("UNLOCK_TO_EDIT"));
             }, 
-/*            onDragOver: (e:any) => {
-              const action = dropAction(e.dataTransfer);
-              if (action) {
-                e.dataTransfer.dropEffect = action;
-                e.preventDefault();
-                return false;
-              }
-            },
-            onDragLeave: () => { },
-            onDrop: (e:any) => {
-              importLines(e.dataTransfer);
-              e.preventDefault();
-              // shift key to force plain text, the same way Obsidian does it
-            },*/
           },
           React.createElement(Excalidraw.default, {
             ref: excalidrawRef,
@@ -723,7 +656,11 @@ export default class ExcalidrawView extends TextFileView {
             onChange: (et:ExcalidrawElement[],st:AppState) => {
               if(this.justLoaded) {
                 this.justLoaded = false;             
-                excalidrawRef.current.scrollToContent();
+                const el = this.containerEl;
+                setTimeout(()=>{
+                  const e = new KeyboardEvent("keydown", {bubbles : true, cancelable : true, shiftKey : true, code:"Digit1"});
+                  el.querySelector("canvas")?.dispatchEvent(e);
+                },200)
                 previousSceneVersion = getSceneVersion(et);
               } 
               if (st.editingElement == null && st.resizingElement == null && 

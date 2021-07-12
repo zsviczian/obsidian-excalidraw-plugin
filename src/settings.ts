@@ -18,7 +18,7 @@ export interface ExcalidrawSettings {
   width: string,
   showLinkBrackets: boolean,
   linkPrefix: string,
-  autosave: boolean;
+  //autosave: boolean;
   allowCtrlClick: boolean, //if disabled only the link button in the view header will open links 
   exportWithTheme: boolean,
   exportWithBackground: boolean,
@@ -32,8 +32,6 @@ export interface ExcalidrawSettings {
   experimentalFileTag: string,
   loadCount: number, //version 1.2 migration counter
   drawingOpenCount: number,
-//  libraryInVault: boolean, //if true, library is stored in the vault in a file
-//  libraryLocation: string, //full path to the library file
   library: string,
 }
 
@@ -43,9 +41,9 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   drawingFilenamePrefix: 'Drawing ',
   drawingFilenameDateTime: 'YYYY-MM-DD HH.mm.ss',
   width: '400',
-  linkPrefix: ">> ",
+  linkPrefix: "🔸",
   showLinkBrackets: true,
-  autosave: false,
+  //autosave: false,
   allowCtrlClick: true,
   exportWithTheme: true,
   exportWithBackground: true,
@@ -59,8 +57,6 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   compatibilityMode: false,
   loadCount: 0,
   drawingOpenCount: 0,
-//  libraryInVault: false,
-//  libraryLocation: "Excalidraw/library",
   library: `{"type":"excalidrawlib","version":1,"library":[]}`,
 }
 
@@ -98,7 +94,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
         }));
 
-    new Setting(containerEl)
+/*    new Setting(containerEl)
       .setName(t("AUTOSAVE_NAME")) 
       .setDesc(t("AUTOSAVE_DESC"))
       .addToggle(toggle => toggle
@@ -118,7 +114,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               }
             }
           }          
-        }));
+        }));*/
 
     this.containerEl.createEl('h1', {text: t("FILENAME_HEAD")});
     containerEl.createDiv('',(el) => {
@@ -191,7 +187,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setName(t("LINK_PREFIX_NAME"))
       .setDesc(t("LINK_PREFIX_DESC"))
       .addText(text => text
-        .setPlaceholder('>> ')
+        .setPlaceholder('🔸')
         .setValue(this.plugin.settings.linkPrefix)
         .onChange(async (value) => {
           this.plugin.settings.linkPrefix = value;
@@ -277,49 +273,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         this.plugin.settings.autoexportPNG = value;
         await this.plugin.saveSettings();
       }));
-
-/*
-    this.containerEl.createEl('h1', {text: t("STENCIL_HEAD")});
-    
-    const changeLibrary = async () => {
-      if(!this.plugin.settings.libraryInVault) return;
-      const filepath = this.plugin.settings.libraryLocation+".excalidrawlib";
-      const f = splitFolderAndFilename(filepath);
-      await this.plugin.checkAndCreateFolder(f.folderpath);
-      const file = this.app.vault.getAbstractFileByPath(filepath);
-      if(file && file instanceof TFile) {
-        this.plugin.stencilLibrary = await this.app.vault.read(file);
-      } else {
-        this.plugin.stencilLibrary = this.plugin.settings.library;
-      }
-    }
-
-    new Setting(containerEl)
-    .setName(t("STENCIL_INVAULT_NAME")) 
-    .setDesc(t("STENCIL_INVAULT_DESC"))
-    .addToggle(toggle => toggle
-      .setValue(this.plugin.settings.libraryInVault)
-      .onChange(async (value) => {
-        this.plugin.settings.libraryInVault = value;
-        if(value) stencilLib.setDisabled(true);
-        
-        await changeLibrary();
-        await this.plugin.saveSettings();
-      }));
-
-    const stencilLib = new Setting(containerEl)
-    .setName(t("STENCIL_PATH_NAME")) 
-    .setDesc(t("STENCIL_PATH_DESC"))
-    .addText(text => text
-      .setPlaceholder('Excalidraw/library')
-      .setValue(this.plugin.settings.libraryLocation)
-      .onChange(async (value) => {
-        this.plugin.settings.libraryInVault = false;
-        this.plugin.stencilLibrary = null;
-        this.plugin.settings.libraryLocation = value;
-        await this.plugin.saveSettings();
-      }));  */
-          
+         
     this.containerEl.createEl('h1', {text: t("COMPATIBILITY_HEAD")});
 
     new Setting(containerEl)
