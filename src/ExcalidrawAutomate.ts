@@ -6,6 +6,7 @@ import {
 } from "@excalidraw/excalidraw/types/element/types";
 import {
   normalizePath,
+  Notice,
   TFile
 } from "obsidian"
 import ExcalidrawView from "./ExcalidrawView";

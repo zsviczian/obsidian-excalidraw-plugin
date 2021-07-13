@@ -1,5 +1,4 @@
-//This is to avoid brackets littering graph view with links 
-//export function JSON_stringify(x:any):string {return JSON.stringify(x).replaceAll("[","&#91;");}
+//This is only for backward compatibility because an early version of obsidian included an encoding to avoid fantom links from littering Obsidian graph view
 export function JSON_parse(x:string):any {return JSON.parse(x.replaceAll("&#91;","["));}
 
 import {customAlphabet} from "nanoid";
@@ -13,7 +12,7 @@ export const MAX_COLORS = 5;
 export const COLOR_FREQ = 6;
 export const RERENDER_EVENT = "excalidraw-embed-rerender";
 export const BLANK_DRAWING = '{"type":"excalidraw","version":2,"source":"https://excalidraw.com","elements":[],"appState":{"gridSize":null,"viewBackgroundColor":"#ffffff"}}';
-export const FRONTMATTER = ["---","",`${FRONTMATTER_KEY}: unlocked`,"","---", "", ""].join("\n");
+export const FRONTMATTER = ["---","",`${FRONTMATTER_KEY}: unlocked`,"","---", "==⚠  Switch to EXCALIDRAW VIEW in the MORE OPTIONS menu of this document. ⚠==", "",""].join("\n");
 export const EMPTY_MESSAGE = "Hit enter to create a new drawing";
 export const LOCK_ICON_NAME = "lock";
 export const LOCK_ICON = `<path fill="currentColor" stroke="currentColor" d="M35.715 42.855h28.57v-10.71c0-3.946-1.394-7.313-4.183-10.102-2.793-2.79-6.157-4.188-10.102-4.188-3.945 0-7.309 1.399-10.102 4.188-2.789 2.789-4.183 6.156-4.183 10.102zm46.43 5.36v32.14c0 1.489-.524 2.754-1.563 3.797-1.043 1.043-2.309 1.563-3.797 1.563h-53.57c-1.488 0-2.754-.52-3.797-1.563-1.04-1.043-1.563-2.308-1.563-3.797v-32.14c0-1.488.524-2.754 1.563-3.797 1.043-1.04 2.309-1.563 3.797-1.563H25v-10.71c0-6.848 2.457-12.727 7.367-17.637S43.157 7.145 50 7.145c6.844 0 12.723 2.453 17.633 7.363C72.543 19.418 75 25.297 75 32.145v10.71h1.785c1.488 0 2.754.524 3.797 1.563 1.04 1.043 1.563 2.309 1.563 3.797zm0 0"/>`

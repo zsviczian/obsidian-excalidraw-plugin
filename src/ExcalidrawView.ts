@@ -135,6 +135,7 @@ export default class ExcalidrawView extends TextFileView {
 
   async save(preventReload:boolean=true) {
     this.preventReload = preventReload;
+    this.dirty = false;
     await super.save();
   }
 
