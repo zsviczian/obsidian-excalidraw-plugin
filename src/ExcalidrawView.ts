@@ -264,9 +264,9 @@ export default class ExcalidrawView extends TextFileView {
   public setupAutosaveTimer() {
     const timer = async () => {
       //console.log("ExcalidrawView.autosaveTimer(), dirty", this.dirty);
-      console.log("autosave timer");
+      //console.log("autosave timer");
       if(this.dirty && (this.dirty == this.file?.path)) {
-        console.log("autosaving, file:",this.dirty);
+        //console.log("autosaving, file:",this.dirty);
         this.dirty = null;
         this.autosaving=true;
         if(this.excalidrawRef) await this.save();
