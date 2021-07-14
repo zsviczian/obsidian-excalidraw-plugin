@@ -18,11 +18,11 @@ const DRAWING_REG = /\n# Drawing\n(```json\n)?(.*)(```)?/gm;
 export const REG_LINK_BACKETS = /(!)?\[\[([^|\]]+)\|?(.+)?]]|(!)?\[(.*)\]\((.*)\)/g;
 
 export function getJSON(data:string):string {
-  const findJSON = DRAWING_REG; 
-  const res = data.matchAll(findJSON);
+  const res = data.matchAll(DRAWING_REG);
   const parts = res.next();
   if(parts.value && parts.value.length>1) {
-    return parts.value[2];
+    const result = parts.value[2];
+    return result.substr(0,result.lastIndexOf("}")+1); //this is a workaround in case sync merges two files together and one version is still an old version without the ```codeblock
   }
   return data;
 }
@@ -72,7 +72,8 @@ export class ExcalidrawData {
     let parts = data.matchAll(DRAWING_REG).next();
     if(!(parts.value && parts.value.length>1)) return false; //JSON not found or invalid
     if(!this.scene) { //scene was not loaded from .excalidraw
-      this.scene = JSON_parse(parts.value[2]);
+      const scene = parts.value[2];
+      this.scene = JSON_parse(scene.substr(0,scene.lastIndexOf("}")+1)); //this is a workaround to address when files are mereged by sync and one version is still an old markdown without the codeblock ```
     }
     //Trim data to remove the JSON string
     data = data.substring(0,parts.value.index);
