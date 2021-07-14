@@ -59,7 +59,7 @@ export default class ExcalidrawView extends TextFileView {
   private excalidrawRef: React.MutableRefObject<any> = null;
   private justLoaded: boolean = false;
   private plugin: ExcalidrawPlugin;
-  private dirty: boolean = false;
+  private dirty: string = null;
   public autosaveTimer: any = null;
   public autosaving:boolean = false;
   public  isTextLocked:boolean = false;
@@ -135,7 +135,7 @@ export default class ExcalidrawView extends TextFileView {
 
   async save(preventReload:boolean=true) {
     this.preventReload = preventReload;
-    this.dirty = false;
+    this.dirty = null;
     await super.save();
   }
 
@@ -264,8 +264,8 @@ export default class ExcalidrawView extends TextFileView {
   public setupAutosaveTimer() {
     const timer = async () => {
       //console.log("ExcalidrawView.autosaveTimer(), dirty", this.dirty);
-      if(this.dirty) {
-        this.dirty = false;
+      if(this dirty && (this.dirty == this.file?.path)) {
+        this.dirty = null;
         this.autosaving=true;
         if(this.excalidrawRef) await this.save();
         //this.plugin.triggerEmbedUpdates();
@@ -305,6 +305,7 @@ export default class ExcalidrawView extends TextFileView {
   async setViewData (data: string, clear: boolean = false) {   
     this.app.workspace.onLayoutReady(async ()=>{
       //console.log("ExcalidrawView.setViewData()");
+      this.dirty = null;
       this.compatibilityMode = this.file.extension == "excalidraw";
       await this.plugin.loadSettings();
       this.plugin.opencount++;
@@ -321,7 +322,6 @@ export default class ExcalidrawView extends TextFileView {
       }
       if(clear) this.clear();
       this.loadDrawing(true)
-      this.dirty = false;
     });
   }
 
@@ -460,7 +460,7 @@ export default class ExcalidrawView extends TextFileView {
   
   private instantiateExcalidraw(initdata: any) {  
     //console.log("ExcalidrawView.instantiateExcalidraw()");
-    this.dirty = false;
+    this.dirty = null;
     const reactElement = React.createElement(() => {
       let previousSceneVersion = 0;
       let currentPosition = {x:0, y:0};
@@ -670,7 +670,7 @@ export default class ExcalidrawView extends TextFileView {
                 const sceneVersion = getSceneVersion(et);
                 if(sceneVersion != previousSceneVersion) {
                   previousSceneVersion = sceneVersion;
-                  this.dirty=true;
+                  this.dirty=this.file?.path;
                 }
               }
             },
