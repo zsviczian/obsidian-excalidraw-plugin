@@ -63,6 +63,24 @@ button.ToolIcon_type_button[title="Export"] {
   flex-grow: 1;
 }
 
+li[data-testid] {
+  border: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+}
+
+.excalidraw .context-menu-option-separator {
+  margin: 4px !important;
+}
+
+.excalidraw .popover {
+  padding: 0 !important;
+  border-color: transparent !important;
+  border: 0 !important;
+  box-shadow: 0 !important;
+  background-color: transparent !important;
+}
 /*
 @font-face {
   font-family: "Virgil";
