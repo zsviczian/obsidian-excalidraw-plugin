@@ -264,15 +264,16 @@ export default class ExcalidrawView extends TextFileView {
   public setupAutosaveTimer() {
     const timer = async () => {
       //console.log("ExcalidrawView.autosaveTimer(), dirty", this.dirty);
-      if(this dirty && (this.dirty == this.file?.path)) {
+      console.log("autosave timer");
+      if(this.dirty && (this.dirty == this.file?.path)) {
+        console.log("autosaving, file:",this.dirty);
         this.dirty = null;
         this.autosaving=true;
         if(this.excalidrawRef) await this.save();
-        //this.plugin.triggerEmbedUpdates();
       }
     }
     //if(this.plugin.settings.autosave) {
-    this.autosaveTimer = setInterval(timer,30000);
+    this.autosaveTimer = setInterval(timer,20000);
     //}
   }
 
@@ -330,13 +331,15 @@ export default class ExcalidrawView extends TextFileView {
     this.justLoaded = justloaded; //a flag to trigger zoom to fit after the drawing has been loaded
     const excalidrawData = this.excalidrawData.scene;
     if(this.excalidrawRef) {
-      if(justloaded) this.excalidrawRef.current.resetScene();
+      if(justloaded) {
+        this.excalidrawRef.current.resetScene();
+        this.justLoaded = justloaded; //reset screen will clear justLoaded, so need to set it again
+      }
       this.excalidrawRef.current.updateScene({
         elements: excalidrawData.elements,
         appState: excalidrawData.appState,  
         commitToHistory: false,
       });
-      if(justloaded) this.excalidrawRef.current.scrollToContent();
     } else {
       (async() => {
         this.instantiateExcalidraw({
@@ -663,6 +666,7 @@ export default class ExcalidrawView extends TextFileView {
                   el.querySelector("canvas")?.dispatchEvent(e);
                 },200)
                 previousSceneVersion = getSceneVersion(et);
+                return;
               } 
               if (st.editingElement == null && st.resizingElement == null && 
                   st.draggingElement == null && st.editingGroupId == null &&
