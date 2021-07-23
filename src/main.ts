@@ -113,7 +113,7 @@ export default class ExcalidrawPlugin extends Plugin {
     const self = this;
     this.app.workspace.onLayoutReady(async () => {
       self.settings.loadCount++;
-      //self.saveSettings();
+      self.saveSettings();
       const files = this.app.vault.getFiles().filter((f)=>f.extension=="excalidraw");  
       if(files.length>0) {
         const prompt = new MigrationPrompt(self.app, self);
@@ -870,7 +870,7 @@ export default class ExcalidrawPlugin extends Plugin {
         }
         this.settings.drawingOpenCount += this.opencount;
         this.settings.loadCount++;
-        this.saveSettings();
+        //this.saveSettings();
       }
       self.registerEvent(
         self.app.workspace.on("quit",quitEventHandler)
@@ -907,7 +907,7 @@ export default class ExcalidrawPlugin extends Plugin {
     });
     this.settings.drawingOpenCount += this.opencount;
     this.settings.loadCount++;
-    this.saveSettings();
+    //this.saveSettings();
   }
 
   public embedDrawing(data:string) {
