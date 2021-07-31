@@ -882,11 +882,6 @@
     "@babel/helper-validator-identifier" "^7.14.5"
     "to-fast-properties" "^2.0.0"
 
-"@excalidraw/excalidraw@^0.9.0":
-  "integrity" "sha512-/LrmrZnrI7LLjT6+UOpxYOPVaR9sEEPJT4afodTGFk07ZedpmWbcLk59WekurDhwuiU2vyZW3Pc/fy3pPkFpxw=="
-  "resolved" "https://registry.npmjs.org/@excalidraw/excalidraw/-/excalidraw-0.9.0.tgz"
-  "version" "0.9.0"
-
 "@rollup/plugin-babel@^5.3.0":
   "integrity" "sha512-9uIC8HZOnVLrLHxayq/PTzw+uS25E14KPUBh5ktF+18Mjo5yK0ToMMx6epY0uEgkjwJw0aBW4x2horYXh8juWw=="
   "resolved" "https://registry.npmjs.org/@rollup/plugin-babel/-/plugin-babel-5.3.0.tgz"
@@ -1028,6 +1023,11 @@
   "version" "0.23.3"
   dependencies:
     "@types/estree" "*"
+
+"@zsviczian/excalidraw@^0.9.0-onTextEditEvents-4":
+  "integrity" "sha512-4W/s1gbsOCpSerqgog6Nu38doy6n1h+aEy5q7DS/nodJVca5bc6wj+OcUJJeajw7NabkKofOI2RYOVw3oMgJcw=="
+  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.9.0-onTextEditEvents-4.tgz"
+  "version" "0.9.0-onTextEditEvents-4"
 
 "abab@^1.0.3":
   "integrity" "sha1-X6rZwsB/YN12dw9xzwJbYqY8/U4="
@@ -6897,14 +6897,13 @@
   dependencies:
     "isobject" "^3.0.1"
 
-"obsidian@https://github.com/obsidianmd/obsidian-api/tarball/master":
-  "integrity" "sha512-vXWcdTZ6XFfbzBJUOJ8axQq58KoIxkXQln0yyloUO8DhWSe1xt0xQNZIa0RxOTfsGfK5bgKk/0nOex4pJiW8bw=="
-  "resolved" "https://github.com/obsidianmd/obsidian-api/tarball/master"
-  "version" "0.11.13"
+"obsidian@^0.12.11":
+  "integrity" "sha512-Kv4m1n4nfd17FzpqHZfqFS2YZAyY+cxAUM7/5jqh1bmbPlmKoNd1XJZC7o9KvkXfTCxALiXfGRdrjHB+GUFAEA=="
+  "resolved" "https://registry.npmjs.org/obsidian/-/obsidian-0.12.11.tgz"
+  "version" "0.12.11"
   dependencies:
     "@types/codemirror" "0.0.108"
     "moment" "2.29.1"
-    "yaml" "2.0.0-4"
 
 "obuf@^1.0.0", "obuf@^1.1.1":
   "integrity" "sha512-PX1wu0AmAdPqOL1mWhqmlOd8kOIZQwGZw6rh7uby9fTc5lhaOWFLX3I6R1hrF9k3zUY40e6igsLGkDXK92LJNg=="
@@ -9960,11 +9959,6 @@
   "integrity" "sha1-HBH5IY8HYImkfdUS+TxmmaaoHVI="
   "resolved" "https://registry.npmjs.org/yallist/-/yallist-2.1.2.tgz"
   "version" "2.1.2"
-
-"yaml@2.0.0-4":
-  "integrity" "sha512-MoQoNhTFI400tkaeod+X0Vety1KD2L9dUa6pa1CVcyfcATjC/iDxoMLvqZ6U3D8c5KzxBrU2HnJH+PfaXOqI7w=="
-  "resolved" "https://registry.npmjs.org/yaml/-/yaml-2.0.0-4.tgz"
-  "version" "2.0.0-4"
 
 "yargs-parser@^20.2.2":
   "integrity" "sha512-FiNkvbeHzB/syOjIUxFDCnhSfzAL8R5vs40MgLFBorXACCOAEaWu0gRZl14vG8MR9AOJIZbmkjhusqBYZ3HTHw=="

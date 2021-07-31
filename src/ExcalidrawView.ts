@@ -9,12 +9,12 @@ import {
 } from "obsidian";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import Excalidraw, {exportToSvg, getSceneVersion, loadLibraryFromBlob} from "@excalidraw/excalidraw";
-import { ExcalidrawElement } from "@excalidraw/excalidraw/types/element/types";
+import Excalidraw, {exportToSvg, getSceneVersion, loadLibraryFromBlob} from "@zsviczian/excalidraw";
+import { ExcalidrawElement,ExcalidrawTextElement } from "@zsviczian/excalidraw/types/element/types";
 import { 
   AppState,
   LibraryItems 
-} from "@excalidraw/excalidraw/types/types";
+} from "@zsviczian/excalidraw/types/types";
 import {
   VIEW_TYPE_EXCALIDRAW,
   ICON_NAME,
@@ -34,6 +34,7 @@ import {ExcalidrawAutomate} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINK_BACKETS } from "./ExcalidrawData";
 import { download } from "./Utils";
+import { template } from "@babel/core";
 
 declare let window: ExcalidrawAutomate;
 
@@ -241,7 +242,9 @@ export default class ExcalidrawView extends TextFileView {
     if (this.app.workspace.layoutReady) {
       (this.app.workspace.rootSplit as WorkspaceItem as WorkspaceItemExt).containerEl.addEventListener('scroll',(e)=>{if(this.refresh) this.refresh();});
     } else {
-      this.registerEvent(this.app.workspace.on('layout-ready', async () => (this.app.workspace.rootSplit as WorkspaceItem as WorkspaceItemExt).containerEl.addEventListener('scroll',(e)=>{if(this.refresh) this.refresh();})));
+      this.app.workspace.onLayoutReady(
+       async () => (this.app.workspace.rootSplit as WorkspaceItem as WorkspaceItemExt).containerEl.addEventListener('scroll',(e)=>{if(this.refresh) this.refresh();})
+      );
     }
     this.setupAutosaveTimer();
   }
@@ -683,6 +686,16 @@ export default class ExcalidrawView extends TextFileView {
                 this.plugin.setStencilLibrary(EXCALIDRAW_LIB_HEADER+JSON.stringify(items)+'}');
                 await this.plugin.saveSettings();  
               })();
+            },
+            onBeforeTextEdit: (textElement: ExcalidrawTextElement) => {
+              console.log("onBeforeTextEdit");
+              return null;
+              return textElement.text + "\ntest xxx";
+            },
+            onBeforeTextSubmit: (textElement: ExcalidrawTextElement, text:string, isDeleted:boolean) => {
+              console.log("onBeforeTextSubmit");
+              //return null;
+              return ">>\n"+text+"!!!!!!!!";
             }
           })
         )

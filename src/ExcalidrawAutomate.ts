@@ -3,7 +3,7 @@ import {
   FillStyle,
   StrokeStyle,
   StrokeSharpness,
-} from "@excalidraw/excalidraw/types/element/types";
+} from "@zsviczian/excalidraw/types/element/types";
 import {
   normalizePath,
   Notice,

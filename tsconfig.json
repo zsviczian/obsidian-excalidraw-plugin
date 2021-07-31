@@ -16,10 +16,10 @@
       "esnext",
       "DOM.Iterable"
     ],
-    "jsx": "react",
+    "jsx": "react"
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx", "src/openDrawing.ts",
+    "**/*.tsx", "src/openDrawing.ts"
   ]
 }
