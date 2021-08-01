@@ -4,7 +4,7 @@ export class Prompt extends Modal {
     private promptEl: HTMLInputElement;
     private resolve: (value: string) => void;
 
-    constructor(app: App, private prompt_text: string, private default_value: string) {
+    constructor(app: App, private prompt_text: string, private default_value: string, private placeholder:string) {
         super(app);
     }
 
@@ -32,7 +32,7 @@ export class Prompt extends Modal {
 
         this.promptEl = form.createEl("input");
         this.promptEl.type = "text";
-        this.promptEl.placeholder = "$\\theta$";
+        this.promptEl.placeholder = this.placeholder;
         this.promptEl.value = this.default_value ?? "";
         this.promptEl.addClass("excalidraw-prompt-input")
         this.promptEl.select();

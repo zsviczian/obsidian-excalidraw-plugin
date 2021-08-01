@@ -7105,6 +7105,11 @@
   "resolved" "https://registry.npmjs.org/path-browserify/-/path-browserify-0.0.1.tgz"
   "version" "0.0.1"
 
+"path-data-parser@^0.1.0", "path-data-parser@0.1.0":
+  "integrity" "sha512-NOnmBpt5Y2RWbuv0LMzsayp3lVylAHLPUTut412ZA3l+C4uw4ZVkQbjShYCQ8TCpUMdPapr4YjUqLYD6v68j+w=="
+  "resolved" "https://registry.npmjs.org/path-data-parser/-/path-data-parser-0.1.0.tgz"
+  "version" "0.1.0"
+
 "path-dirname@^1.0.0":
   "integrity" "sha1-zDPSTVJeCZpTiMAzbG4yuRYGCeA="
   "resolved" "https://registry.npmjs.org/path-dirname/-/path-dirname-1.0.2.tgz"
@@ -7236,6 +7241,19 @@
   "integrity" "sha512-ARhBOdzS3e41FbkW/XWrTEtukqqLoK5+Z/4UeDaLuSW+39JPeFgs4gCGqsrJHVZX0fUrx//4OF0K1CUGwlIFow=="
   "resolved" "https://registry.npmjs.org/pluralize/-/pluralize-7.0.0.tgz"
   "version" "7.0.0"
+
+"points-on-curve@^0.2.0", "points-on-curve@0.2.0":
+  "integrity" "sha512-0mYKnYYe9ZcqMCWhUjItv/oHjvgEsfKvnUTg8sAtnHr3GVy7rGkXCb6d5cSyqrWqL4k81b9CPg3urd+T7aop3A=="
+  "resolved" "https://registry.npmjs.org/points-on-curve/-/points-on-curve-0.2.0.tgz"
+  "version" "0.2.0"
+
+"points-on-path@^0.2.1":
+  "integrity" "sha512-25ClnWWuw7JbWZcgqY/gJ4FQWadKxGWk+3kR/7kD0tCaDtPPMj7oHu2ToLaVhfpnHrZzYby2w6tUA0eOIuUg8g=="
+  "resolved" "https://registry.npmjs.org/points-on-path/-/points-on-path-0.2.1.tgz"
+  "version" "0.2.1"
+  dependencies:
+    "path-data-parser" "0.1.0"
+    "points-on-curve" "0.2.0"
 
 "portfinder@^1.0.9":
   "integrity" "sha512-Se+2isanIcEqf2XMHjyUKskczxbPH7dQnlMjXX6+dybayyHvAf/TCgyMRlzf/B6QDhAEFOGes0pzRo3by4AbMA=="
@@ -8410,6 +8428,15 @@
   "version" "2.52.3"
   optionalDependencies:
     "fsevents" "~2.3.2"
+
+"roughjs@4.4.1":
+  "integrity" "sha512-/RZvyVquID319VDc9HsF8wn8VPpbMBVdr4NMCi7mta9UeBBeqP6h5Hg4GZXG29DL6jwTkfMjyth/MF7Hn6Sq/w=="
+  "resolved" "https://registry.npmjs.org/roughjs/-/roughjs-4.4.1.tgz"
+  "version" "4.4.1"
+  dependencies:
+    "path-data-parser" "^0.1.0"
+    "points-on-curve" "^0.2.0"
+    "points-on-path" "^0.2.1"
 
 "run-async@^2.2.0":
   "integrity" "sha512-tvVnVv01b8c1RrA6Ep7JkStj85Guv/YrMcwqYQnwjsAS2cTmmPGBBjAjpCW7RrSodNSoE2/qg9O4bceNvUuDgQ=="

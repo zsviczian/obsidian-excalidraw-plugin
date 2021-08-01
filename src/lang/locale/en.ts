@@ -32,7 +32,6 @@ export default {
   SAVE_AS_SVG: "Save as SVG into Vault (CTRL/META+CLICK to export)",
   OPEN_LINK: "Open selected text as link\n(SHIFT+CLICK to open in a new pane)",
   EXPORT_EXCALIDRAW: "Export to an .Excalidraw file",
-  UNLOCK_TO_EDIT: "UNLOCKED Text Elements automatically to allow edit",
   LINK_BUTTON_CLICK_NO_TEXT: 'Select a Text Element containing an internal or external link.\n'+
                              'SHIFT CLICK this button to open the link in a new pane.\n'+
                              'CTRL/META CLICK the Text Element on the canvas has the same effect!',
@@ -40,8 +39,8 @@ export default {
   FILENAME_INVALID_CHARS: 'File name cannot contain any of the following characters: * " \\  < > : | ?',
   FILE_DOES_NOT_EXIST: "File does not exist. Hold down ALT (or ALT+SHIFT) and CLICK link button to create a new file.",
   FORCE_SAVE: "Force-save to update transclusions in adjacent panes.\n(Please note, that autosave is always on)",
-  LOCK: "Text Elements are unlocked. Click to LOCK.",
-  UNLOCK: "Text Elements are locked. Click to UNLOCK.",
+  RAW: "Text-elements are displayed in RAW mode. Click button to change to PREVIEW mode.",
+  PARSED: "Text-elements are displayed in PREVIEW mode. Click button to change to RAW mode.",
   NOFILE: "Excalidraw (no file)",
   COMPATIBILITY_MODE: "*.excalidraw file opened in compatibility mode. Convert to new format for full plugin functionality.",
   CONVERT_FILE: "Convert to new format",
@@ -93,6 +92,8 @@ export default {
   EMBED_WIDTH_DESC: "The default width of an embedded drawing. You can specify a custom " +
                     "width when embedding an image using the ![[drawing.excalidraw|100]] or " +
                     "[[drawing.excalidraw|100x100]] format.",
+  EXPORT_PNG_SCALE_NAME: "PNG export image scale",
+  EXPORT_PNG_SCALE_DESC: "The size-scale of the exported PNG image",
   EXPORT_BACKGROUND_NAME: "Export image with background",
   EXPORT_BACKGROUND_DESC: "If turned off, the exported image will be transparent.",
   EXPORT_THEME_NAME: "Export image with theme",

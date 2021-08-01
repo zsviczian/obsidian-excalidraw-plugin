@@ -16,6 +16,7 @@ import {
   ViewState,
   Notice,
   TFolder,
+  Modal,
 } from "obsidian";
 
 import { 
@@ -32,13 +33,13 @@ import {
   RERENDER_EVENT,
   FRONTMATTER_KEY,
   FRONTMATTER,
-  LOCK_ICON,
-  LOCK_ICON_NAME,
-  UNLOCK_ICON_NAME,
-  UNLOCK_ICON,
+  //LOCK_ICON,
+  TEXT_DISPLAY_PARSED_ICON_NAME,
+  TEXT_DISPLAY_RAW_ICON_NAME,
+  //UNLOCK_ICON,
   JSON_parse
 } from "./constants";
-import ExcalidrawView, {ExportSettings} from "./ExcalidrawView";
+import ExcalidrawView, {ExportSettings, TextMode} from "./ExcalidrawView";
 import {getJSON} from "./ExcalidrawData";
 import {
   ExcalidrawSettings, 
@@ -58,7 +59,7 @@ import { Prompt } from "./Prompt";
 import { around } from "monkey-around";
 import { t } from "./lang/helpers";
 import { MigrationPrompt } from "./MigrationPrompt";
-import { download, getIMGPathFromExcalidrawFile, splitFolderAndFilename } from "./Utils";
+import { checkAndCreateFolder, download, getIMGPathFromExcalidrawFile, getNewUniqueFilepath } from "./Utils";
 
 export default class ExcalidrawPlugin extends Plugin {
   public excalidrawFileModes: { [file: string]: string } = {};
@@ -82,8 +83,8 @@ export default class ExcalidrawPlugin extends Plugin {
     addIcon(DISK_ICON_NAME,DISK_ICON);
     addIcon(PNG_ICON_NAME,PNG_ICON);
     addIcon(SVG_ICON_NAME,SVG_ICON);
-    addIcon(LOCK_ICON_NAME,LOCK_ICON);
-    addIcon(UNLOCK_ICON_NAME,UNLOCK_ICON);
+    //addIcon(TEXT_DISPLAY_PARSED_ICON_NAME,LOCK_ICON);
+    //addIcon(TEXT_DISPLAY_RAW_ICON_NAME,UNLOCK_ICON);
     
     await this.loadSettings();
     this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
@@ -417,7 +418,21 @@ export default class ExcalidrawPlugin extends Plugin {
     this.addCommand({
       id: "excalidraw-download-lib",
       name: t("DOWNLOAD_LIBRARY"),
-      callback: () => {
+      callback: async () => {
+        //@ts-ignore
+        if(this.app.isMobile) {
+          const prompt = new Prompt(this.app, "Please provide a filename",'my-library','filename, leave blank to cancel action');
+          prompt.openAndGetValue( async (filename:string)=> {
+            if(!filename) return;
+            filename = filename + ".excalidrawlib";
+            const folderpath = normalizePath(this.settings.folder);
+            await checkAndCreateFolder(this.app.vault,folderpath); //create folder if it does not exist         
+            const fname = getNewUniqueFilepath(this.app.vault,filename,folderpath);
+            this.app.vault.create(fname,this.settings.library);
+            new Notice("Exported library to " + fname,6000);  
+          });
+          return;
+        }
         download('data:text/plain;charset=utf-8',encodeURIComponent(this.settings.library), 'my-obsidian-library.excalidrawlib');
       },
     });
@@ -557,7 +572,7 @@ export default class ExcalidrawPlugin extends Plugin {
         } else {
           const view = this.app.workspace.activeLeaf.view;
           if (view instanceof ExcalidrawView) {
-            view.lock(!view.isTextLocked);
+            view.changeTextMode((view.textMode==TextMode.parsed)?TextMode.raw:TextMode.parsed);
             return true;
           }
           else return false;
@@ -593,7 +608,7 @@ export default class ExcalidrawPlugin extends Plugin {
         } else {
           const view = this.app.workspace.activeLeaf.view;
           if (view instanceof ExcalidrawView) {
-            const prompt = new Prompt(this.app, t("ENTER_LATEX"),'');
+            const prompt = new Prompt(this.app, t("ENTER_LATEX"),'','$\\theta$');
             prompt.openAndGetValue( async (formula:string)=> {
               if(!formula) return;
               const el = createEl('p');
@@ -675,7 +690,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public async convertSingleExcalidrawToMD(file: TFile, replaceExtension:boolean = false, keepOriginal:boolean = false):Promise<TFile> {
     const data = await this.app.vault.read(file);
     const filename = file.name.substr(0,file.name.lastIndexOf(".excalidraw")) + (replaceExtension ? ".md" : ".excalidraw.md");
-    const fname = this.getNewUniqueFilepath(filename,normalizePath(file.path.substr(0,file.path.lastIndexOf(file.name))));
+    const fname = getNewUniqueFilepath(this.app.vault,filename,normalizePath(file.path.substr(0,file.path.lastIndexOf(file.name))));
     console.log(fname);
     const result = await this.app.vault.create(fname,FRONTMATTER + exportSceneToMD(data));
     if (this.settings.keepInSync) {
@@ -995,9 +1010,9 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public async createDrawing(filename: string, onNewPane: boolean, foldername?: string, initData?:string) {
     const folderpath = normalizePath(foldername ? foldername: this.settings.folder);
-    await this.checkAndCreateFolder(folderpath); //create folder if it does not exist
+    await checkAndCreateFolder(this.app.vault,folderpath); //create folder if it does not exist
 
-    const fname = this.getNewUniqueFilepath(filename,folderpath);
+    const fname = getNewUniqueFilepath(this.app.vault,filename,folderpath);
 
     if(initData) {
       this.openDrawing(await this.app.vault.create(fname,initData),onNewPane);
@@ -1026,37 +1041,10 @@ export default class ExcalidrawPlugin extends Plugin {
     } as ViewState);
   }
 
- /**
- * Create new file, if file already exists find first unique filename by adding a number to the end of the filename
- * @param filename 
- * @param folderpath 
- * @returns 
- */
-  getNewUniqueFilepath(filename:string, folderpath:string):string {      
-    let fname = normalizePath(folderpath +'/'+ filename); 
-    let file:TAbstractFile = this.app.vault.getAbstractFileByPath(fname);
-    let i = 0;
-    while(file) {
-      fname = normalizePath(folderpath + '/' + filename.slice(0,filename.lastIndexOf("."))+"_"+i+filename.slice(filename.lastIndexOf(".")));
-      i++;
-      file = this.app.vault.getAbstractFileByPath(fname);
-    }
-    return fname;
-  }
-
   isExcalidrawFile(f:TFile) {
     if(f.extension=="excalidraw") return true;
     const fileCache = this.app.metadataCache.getFileCache(f);
     return !!fileCache?.frontmatter && !!fileCache.frontmatter[FRONTMATTER_KEY];
   }
 
-  /**
-  * Open or create a folderpath if it does not exist
-  * @param folderpath 
-  */
-  public async checkAndCreateFolder(folderpath:string) {
-    let folder = this.app.vault.getAbstractFileByPath(folderpath);
-    if(folder && folder instanceof TFolder) return;
-    await this.app.vault.createFolder(folderpath);
-  }
 }

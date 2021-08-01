@@ -227,7 +227,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         }
       )     
     },
-    async createPNG(templatePath?:string) {
+    async createPNG(templatePath?:string, scale:number=1) {
       const template = templatePath ? (await getTemplate(templatePath)) : null;
       let elements = template ? template.elements : [];
       for (let i=0;i<this.elementIds.length;i++) {
@@ -247,7 +247,8 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         {
           withBackground: plugin.settings.exportWithBackground, 
           withTheme: plugin.settings.exportWithTheme
-        }
+        },
+        scale
       )  
     },
     addRect(topX:number, topY:number, width:number, height:number):string {
@@ -376,7 +377,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       this.canvas.theme = "light";
       this.canvas.viewBackgroundColor="#FFFFFF";
     },
-    isExcalidrawFile(f:TFile) {
+    isExcalidrawFile(f:TFile):boolean {
       return this.plugin.isExcalidrawFile(f);
     }
   

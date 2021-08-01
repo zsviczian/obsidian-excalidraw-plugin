@@ -10,6 +10,10 @@ import { ExcalidrawSettings } from "./settings";
 import {  
   JSON_parse
 } from "./constants";
+import { ExcalidrawTextElement } from "@zsviczian/excalidraw/types/element/types";
+import { rawListeners } from "process";
+import { TextMode } from "./ExcalidrawView";
+import { link } from "fs";
 
 const DRAWING_REG = /\n# Drawing\n(```json\n)?(.*)(```)?/gm;
 
@@ -35,8 +39,7 @@ export class ExcalidrawData {
   private app:App;
   private showLinkBrackets: boolean;
   private linkPrefix: string;
-  private allowParse: boolean = false;
-
+  private textMode: TextMode = TextMode.raw;
   constructor(plugin: ExcalidrawPlugin) {
     this.settings = plugin.settings;
     this.app = plugin.app;
@@ -47,8 +50,7 @@ export class ExcalidrawData {
    * @param {TFile} file - the MD file containing the Excalidraw drawing
    * @returns {boolean} - true if file was loaded, false if there was an error
    */
-  public async loadData(data: string,file: TFile, allowParse:boolean):Promise<boolean> {
-    //console.log("Excalidraw.Data.loadData()",{data:data,allowParse:allowParse,file:file});
+  public async loadData(data: string,file: TFile, textMode:TextMode):Promise<boolean> {
 
     this.file = file;
     this.textElements = new Map<string,{raw:string, parsed:string}>();
@@ -96,7 +98,7 @@ export class ExcalidrawData {
     //Check to see if there are text elements in the JSON that were missed from the # Text Elements section
     //e.g. if the entire text elements section was deleted.
     this.findNewTextElementsInScene();
-    await this.setAllowParse(allowParse,true);
+    await this.setTextMode(textMode,true);
     return true;
   }
 
@@ -107,17 +109,23 @@ export class ExcalidrawData {
     this.setLinkPrefix(); 
     this.scene = JSON.parse(data);
     this.findNewTextElementsInScene();
-    await this.setAllowParse(false,true);
+    await this.setTextMode(TextMode.raw,true);
     return true;
   }
 
-  public async setAllowParse(allowParse:boolean,forceupdate:boolean=false) {
-    this.allowParse = allowParse;
+  public async setTextMode(textMode:TextMode,forceupdate:boolean=false) {
+    this.textMode = textMode;
     await this.updateSceneTextElements(forceupdate);
   }
 
+  /**
+   * Updates the TextElements in the Excalidraw scene based on textElements MAP in ExcalidrawData
+   * Depending on textMode, TextElements will receive their raw or parsed values
+   * @param forceupdate : will update text elements even if text contents has not changed, this will
+   * correct sizing issues
+   */
   private async updateSceneTextElements(forceupdate:boolean=false) {
-    //console.log("Excalidraw.Data.updateSceneTextElements(), forceupdate",forceupdate);
+
     //update a single text element in the scene if the newText is different
     const update = (sceneTextElement:any, newText:string) => {
       if(forceupdate || newText!=sceneTextElement.text) {
@@ -138,8 +146,8 @@ export class ExcalidrawData {
   }
 
   private async getText(id:string):Promise<string> {
-    if (this.allowParse) {
-      if(!this.textElements.get(id)?.parsed) {
+    if (this.textMode == TextMode.parsed) {
+      if(!this.textElements.get(id).parsed) {
         const raw = this.textElements.get(id).raw;
         this.textElements.set(id,{raw:raw, parsed: await this.parse(raw)})
       }
@@ -173,7 +181,12 @@ export class ExcalidrawData {
         id=nanoid();
         jsonString = jsonString.replaceAll(te.id,id); //brute force approach to replace all occurances (e.g. links, groups,etc.)
       }
-      if(!this.textElements.has(id)) {
+      if(te.id.length > 8 && this.textElements.has(te.id)) { //element was created with onBeforeTextSubmit
+        const element = this.textElements.get(te.id);
+        this.textElements.set(id,{raw: element.raw, parsed: element.parsed})
+        this.textElements.delete(te.id);
+        dirty = true;
+      } else if(!this.textElements.has(id)) {
         dirty = true;
         this.textElements.set(id,{raw: te.text, parsed: null});
         this.parseasync(id,te.text);
@@ -226,7 +239,7 @@ export class ExcalidrawData {
           this.textElements.set(key,{raw: el[0].text,parsed: null});
           this.parseasync(key,el[0].text);
         } else {
-          const text = this.allowParse ? this.textElements.get(key).parsed : this.textElements.get(key).raw;
+          const text = (this.textMode == TextMode.parsed) ? this.textElements.get(key).parsed : this.textElements.get(key).raw;
           if(text != el[0].text) {
             this.textElements.set(key,{raw: el[0].text,parsed: null});
             this.parseasync(key,el[0].text);
@@ -238,6 +251,22 @@ export class ExcalidrawData {
 
   private async parseasync(key:string, raw:string) {
     this.textElements.set(key,{raw:raw,parsed: await this.parse(raw)});
+  }
+
+  private parseLinks(text:string, position:number, parts:any):string {
+    let outString = null;
+    if (parts.value[2]) {
+      outString = text.substring(position,parts.value.index) + 
+                   (this.showLinkBrackets ? "[[" : "") +
+                   (parts.value[3] ? parts.value[3]:parts.value[2]) + //insert alias or link text
+                   (this.showLinkBrackets ? "]]" : "");
+    } else {
+      outString = text.substring(position,parts.value.index) + 
+                   (this.showLinkBrackets ? "[[" : "") +
+                   (parts.value[5] ? parts.value[5]:parts.value[6]) + //insert alias or link text
+                   (this.showLinkBrackets ? "]]" : "");
+    }
+    return outString;
   }
 
   /**
@@ -270,19 +299,13 @@ export class ExcalidrawData {
       if (parts.value[1] || parts.value[4]) { //transclusion
         outString += text.substring(position,parts.value.index) + 
                      await getTransclusion(parts.value[1] ? parts.value[2] : parts.value[6]);
-      } else if (parts.value[2]) {
-        linkIcon = true;
-        outString += text.substring(position,parts.value.index) + 
-                     (this.showLinkBrackets ? "[[" : "") +
-                     (parts.value[3] ? parts.value[3]:parts.value[2]) + //insert alias or link text
-                     (this.showLinkBrackets ? "]]" : "");
       } else {
-        linkIcon = true;
-        outString += text.substring(position,parts.value.index) + 
-                     (this.showLinkBrackets ? "[[" : "") +
-                     (parts.value[5] ? parts.value[5]:parts.value[6]) + //insert alias or link text
-                     (this.showLinkBrackets ? "]]" : "");
-      }
+        const parsedLink = this.parseLinks(text,position,parts);
+        if(parsedLink) {
+          linkIcon = true;
+          outString += parsedLink;
+        }
+      } 
       position = parts.value.index + parts.value[0].length;
     }
     outString += text.substring(position,text.length);
@@ -292,6 +315,45 @@ export class ExcalidrawData {
 
     return outString;
   }
+
+  /**
+   * Does a quick parse of the raw text. Returns the parsed string if raw text does not include a transclusion.
+   * Return null if raw text includes a transclusion.
+   * This is implemented in a separate function, because by nature resolving a transclusion is an asynchronious
+   * activity. Quick parse gets the job done synchronously if possible.
+   * @param text 
+   */
+  private quickParse(text:string):string {
+    const hasTransclusion = (text:string):boolean => {
+      const res = text.matchAll(REG_LINK_BACKETS);
+      let parts;
+      while(!(parts=res.next()).done) {
+        if (parts.value[1] || parts.value[4]) return true;
+      }
+      return false;
+    }
+    if (hasTransclusion(text)) return null;
+
+    let outString = "";
+    let position = 0;
+    const res = text.matchAll(REG_LINK_BACKETS);
+    let linkIcon = false;
+    let parts;
+    while(!(parts=res.next()).done) {
+      const parsedLink = this.parseLinks(text,position,parts);
+      if(parsedLink) {
+        linkIcon = true;
+        outString += parsedLink;
+      }
+      position = parts.value.index + parts.value[0].length;
+    }
+    outString += text.substring(position,text.length);
+    if (linkIcon) {
+      outString = this.linkPrefix + outString;
+    }
+    return outString;
+  }
+
 
   /**
    * Generate markdown file representation of excalidraw drawing
@@ -331,6 +393,30 @@ export class ExcalidrawData {
 
   public getRawText(id:string) {  
     return this.textElements.get(id)?.raw;
+  }
+  
+  public getParsedText(id:string):string {
+    return this.textElements.get(id)?.parsed;
+  }
+
+  public setTextElement(element:ExcalidrawTextElement, rawText:string, updateScene:Function):string {
+    const parseResult = this.quickParse(rawText); //will return the parsed result if raw text does not include transclusion
+    if(parseResult) { //No transclusion
+      this.textElements.set(element.id,{raw: rawText,parsed: parseResult});
+      return parseResult;
+    }
+    //transclusion needs to be resolved asynchornously
+    this.parse(rawText).then((parsedText:string)=> {
+      this.textElements.set(element.id,{raw: rawText,parsed: parsedText});
+      if(parsedText && element.text!=rawText) {
+        updateScene();
+      }
+    });
+    return null;
+  }
+
+  public deleteTextElement(id:string) {
+    this.textElements.delete(id);
   }
 
   private setLinkPrefix():boolean {

@@ -8,7 +8,6 @@ import { VIEW_TYPE_EXCALIDRAW } from './constants';
 import ExcalidrawView from './ExcalidrawView';
 import { t } from './lang/helpers';
 import type ExcalidrawPlugin from "./main";
-import { splitFolderAndFilename } from './Utils';
 
 export interface ExcalidrawSettings {
   folder: string,
@@ -20,6 +19,7 @@ export interface ExcalidrawSettings {
   linkPrefix: string,
   //autosave: boolean;
   allowCtrlClick: boolean, //if disabled only the link button in the view header will open links 
+  pngExportScale: number,
   exportWithTheme: boolean,
   exportWithBackground: boolean,
   keepInSync: boolean,
@@ -41,10 +41,11 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   drawingFilenamePrefix: 'Drawing ',
   drawingFilenameDateTime: 'YYYY-MM-DD HH.mm.ss',
   width: '400',
-  linkPrefix: "🔸",
+  linkPrefix: "📍",
   showLinkBrackets: true,
   //autosave: false,
   allowCtrlClick: true,
+  pngExportScale: 1,
   exportWithTheme: true,
   exportWithBackground: true,
   keepInSync: false,
@@ -187,7 +188,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setName(t("LINK_PREFIX_NAME"))
       .setDesc(t("LINK_PREFIX_DESC"))
       .addText(text => text
-        .setPlaceholder('🔸')
+        .setPlaceholder('📍')
         .setValue(this.plugin.settings.linkPrefix)
         .onChange(async (value) => {
           this.plugin.settings.linkPrefix = value;
@@ -218,6 +219,26 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
           this.plugin.triggerEmbedUpdates();
         }));
+
+    let scaleText:HTMLDivElement;
+
+    new Setting(containerEl)
+      .setName(t("EXPORT_PNG_SCALE_NAME"))
+      .setDesc(t("EXPORT_PNG_SCALE_DESC"))
+      .addSlider(slider => slider
+        .setLimits(1,5,0.5)
+        .setValue(this.plugin.settings.pngExportScale)
+        .onChange(async (value)=> {
+          scaleText.innerText = " " + value.toString();
+          this.plugin.settings.pngExportScale = value;
+          this.plugin.saveSettings();
+        }))
+        .settingEl.createDiv('',(el)=>{
+          scaleText = el;
+          el.style.minWidth = "2.3em";
+          el.style.textAlign = "right";
+          el.innerText = " " + this.plugin.settings.pngExportScale.toString();
+        });
 
     new Setting(containerEl)
       .setName(t("EXPORT_BACKGROUND_NAME")) 

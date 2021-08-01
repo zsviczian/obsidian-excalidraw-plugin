@@ -1,4 +1,5 @@
-import { normalizePath, TFolder } from "obsidian";
+import { Modal, normalizePath, TAbstractFile, TFolder, Vault } from "obsidian";
+import { Random } from "roughjs/bin/math";
 
 /**
  * Splits a full path including a folderpath and a filename into separate folderpath and filename components
@@ -40,3 +41,34 @@ export function getIMGPathFromExcalidrawFile (excalidrawPath:string,newExtension
   const replaceExtension:string = isLegacyFile ? ".excalidraw" : ".md";
   return excalidrawPath.substring(0,excalidrawPath.lastIndexOf(replaceExtension)) + newExtension;   
 }
+
+/**
+ * Create new file, if file already exists find first unique filename by adding a number to the end of the filename
+ * @param filename 
+ * @param folderpath 
+ * @returns 
+ */
+ export function getNewUniqueFilepath(vault:Vault, filename:string, folderpath:string):string {      
+  let fname = normalizePath(folderpath +'/'+ filename); 
+  let file:TAbstractFile = vault.getAbstractFileByPath(fname);
+  let i = 0;
+  while(file) {
+    fname = normalizePath(folderpath + '/' + filename.slice(0,filename.lastIndexOf("."))+"_"+i+filename.slice(filename.lastIndexOf(".")));
+    i++;
+    file = vault.getAbstractFileByPath(fname);
+  }
+  return fname;
+}
+
+  /**
+  * Open or create a folderpath if it does not exist
+  * @param folderpath 
+  */
+  export async function checkAndCreateFolder(vault:Vault,folderpath:string) {
+    let folder = vault.getAbstractFileByPath(folderpath);
+    if(folder && folder instanceof TFolder) return;
+    await vault.createFolder(folderpath);
+  }
+
+let random = new Random(Date.now());
+export const randomInteger = () => Math.floor(random.next() * 2 ** 31);

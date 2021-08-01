@@ -1,5 +1,11 @@
 # [◀ Excalidraw Automate How To](../readme.md)
 ## Utility functions
+### isExcalidrawFile()
+```typescript
+isExcalidrawFile(f:TFile): boolean
+```
+Returns true if the file provided is a valid Excalidraw file (either a legacy `*.excalidraw` file or a markdown file with the excalidraw key in the front-matter).
+
 ### clear()
 `clear()` will clear objects from cache, but will retain element style settings.
 
@@ -38,6 +44,6 @@ Returns an HTML SVGSVGElement containing the generated drawing.
 
 ### createPNG()
 ```typescript
-async createPNG(templatePath?:string)
+async createPNG(templatePath?:string, scale:number=1)
 ```
 Returns a blob containing a PNG image of the generated drawing.
