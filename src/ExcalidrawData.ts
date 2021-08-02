@@ -399,18 +399,16 @@ export class ExcalidrawData {
     return this.textElements.get(id)?.parsed;
   }
 
-  public setTextElement(element:ExcalidrawTextElement, rawText:string, updateScene:Function):string {
+  public setTextElement(elementID:string, rawText:string, updateScene:Function):string {
     const parseResult = this.quickParse(rawText); //will return the parsed result if raw text does not include transclusion
     if(parseResult) { //No transclusion
-      this.textElements.set(element.id,{raw: rawText,parsed: parseResult});
+      this.textElements.set(elementID,{raw: rawText,parsed: parseResult});
       return parseResult;
     }
     //transclusion needs to be resolved asynchornously
     this.parse(rawText).then((parsedText:string)=> {
-      this.textElements.set(element.id,{raw: rawText,parsed: parsedText});
-      if(parsedText && element.text!=rawText) {
-        updateScene();
-      }
+      this.textElements.set(elementID,{raw: rawText,parsed: parsedText});
+      if(parsedText) updateScene(parsedText);
     });
     return null;
   }

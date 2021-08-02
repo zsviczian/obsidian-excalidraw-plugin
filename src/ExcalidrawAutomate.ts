@@ -55,7 +55,7 @@ export interface ExcalidrawAutomate extends Window {
     addRect(topX:number, topY:number, width:number, height:number):string;
     addDiamond(topX:number, topY:number, width:number, height:number):string;
     addEllipse(topX:number, topY:number, width:number, height:number):string;
-    addText(topX:number, topY:number, text:string, formatting?:{width:number, height:number,textAlign: string, verticalAlign:string, box: boolean, boxPadding: number}):string;
+    addText(topX:number, topY:number, text:string, formatting?:{width?:number, height?:number,textAlign?: string, verticalAlign?:string, box?: boolean, boxPadding?: number},id?:string):string;
     addLine(points: [[x:number,y:number]]):void;
     addArrow(points: [[x:number,y:number]],formatting?:{startArrowHead:string,endArrowHead:string,startObjectId:string,endObjectId:string}):void ;
     connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, formatting?:{numberOfPoints: number,startArrowHead:string,endArrowHead:string, padding: number}):void;
@@ -269,8 +269,8 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       this.elementsDict[id] = boxedElement(id,"ellipse",topX,topY,width,height);
       return id;
     },
-    addText(topX:number, topY:number, text:string, formatting?:{width:number, height:number,textAlign: string, verticalAlign:string, box: boolean, boxPadding: number}):string {
-      const id = nanoid();    
+    addText(topX:number, topY:number, text:string, formatting?:{width?:number, height?:number,textAlign?: string, verticalAlign?:string, box?: boolean, boxPadding?: number},id?:string):string {
+      if(!id) id = nanoid();    
       const {w, h, baseline} = measureText(text, this.style.fontSize,this.style.fontFamily);
       const width = formatting?.width ? formatting.width : w;
       const height = formatting?.height ? formatting.height : h;

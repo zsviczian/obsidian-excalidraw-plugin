@@ -14,7 +14,7 @@ Returns the `id` of the object. The `id` is required when connecting objects wit
 
 ### addText()
 ```typescript
-addText(topX:number, topY:number, text:string, formatting?:{width:number, height:number,textAlign: string, verticalAlign:string, box: boolean, boxPadding: number}):string
+addText(topX:number, topY:number, text:string, formatting?:{width?:number, height?:number,textAlign?: string, verticalAlign?:string, box?: boolean, boxPadding?: number},id?:string):string;
 ```
 
 Adds text to the drawing. 

@@ -30,13 +30,14 @@ import {
   TEXT_DISPLAY_PARSED_ICON_NAME,
   EXIT_FULLSCREEN_ICON_NAME,
   FULLSCREEN_ICON_NAME,
-  JSON_parse
+  JSON_parse,
+  nanoid
 } from './constants';
 import ExcalidrawPlugin from './main';
 import {ExcalidrawAutomate} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINK_BACKETS } from "./ExcalidrawData";
-import { checkAndCreateFolder, download, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, randomInteger, splitFolderAndFilename } from "./Utils";
+import { checkAndCreateFolder, download, getNewUniqueFilepath, splitFolderAndFilename } from "./Utils";
 import { Prompt } from "./Prompt";
 
 declare let window: ExcalidrawAutomate;
@@ -248,7 +249,7 @@ export default class ExcalidrawView extends TextFileView {
   onload() {
     //console.log("ExcalidrawView.onload()");
     this.addAction(DISK_ICON_NAME,t("FORCE_SAVE"),async (ev)=> {
-      await this.save();
+      await this.save(false);
       this.plugin.triggerEmbedUpdates();
     });
     
@@ -291,7 +292,6 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   public async changeTextMode(textMode:TextMode,reload:boolean=true) {
-    //console.log("ExcalidrawView.lock(), locked",locked, "reload",reload);
     this.textMode = textMode;
     if(textMode == TextMode.parsed) {
       this.textIsRaw_Element.hide(); 
@@ -309,7 +309,6 @@ export default class ExcalidrawView extends TextFileView {
   public setupAutosaveTimer() {
     const timer = async () => {
       if(this.dirty && (this.dirty == this.file?.path)) {
-        console.log("autosave",Date.now());
         this.dirty = null;
         this.autosaving=true;
         if(this.excalidrawRef) await this.save();
@@ -598,19 +597,33 @@ export default class ExcalidrawView extends TextFileView {
         }       
         const el: ExcalidrawElement[] = excalidrawRef.current.getSceneElements();
         const st: AppState = excalidrawRef.current.getAppState();
+        const id = nanoid();
         window.ExcalidrawAutomate.reset();
         window.ExcalidrawAutomate.style.strokeColor = st.currentItemStrokeColor;
         window.ExcalidrawAutomate.style.opacity = st.currentItemOpacity;
         window.ExcalidrawAutomate.style.fontFamily = fontFamily ? fontFamily: st.currentItemFontFamily;
         window.ExcalidrawAutomate.style.fontSize = st.currentItemFontSize;
         window.ExcalidrawAutomate.style.textAlign = st.currentItemTextAlign;
-        const id = window.ExcalidrawAutomate.addText(currentPosition.x, currentPosition.y, text);
-        //@ts-ignore
-        el.push(window.ExcalidrawAutomate.elementsDict[id]);
-        excalidrawRef.current.updateScene({
-          elements: el,
-          appState: st,  
+        
+        const addText = (text:string) => {
+          window.ExcalidrawAutomate.addText(currentPosition.x, currentPosition.y, text,null,id);  
+          //@ts-ignore
+          const textElement = window.ExcalidrawAutomate.elementsDict[id];
+          el.push(textElement);
+          excalidrawRef.current.updateScene({
+            elements: el,
+            appState: st,
+          });
+          this.save(false);
+        }
+        const self = this;
+        //setTextElement will attempt a quick parse (without processing transclusions)
+        const parseResult = this.excalidrawData.setTextElement(id, text,async (parsedText:string)=>{
+          addText(self.textMode==TextMode.parsed?parsedText:text);
         });
+        if(parseResult) { //there were no transclusions in the raw text, quick parse was successful
+          addText(self.textMode==TextMode.parsed?parseResult:text);
+        }
       }
       
       this.getScene = () => {
@@ -666,7 +679,7 @@ export default class ExcalidrawView extends TextFileView {
               if(!(this.plugin.settings.allowCtrlClick)) return;
               if(!this.getSelectedId()) return;
               this.handleLinkClick(this,e);
-            },
+            }
           },
           React.createElement(Excalidraw.default, {
             ref: excalidrawRef,
@@ -710,6 +723,10 @@ export default class ExcalidrawView extends TextFileView {
                 await this.plugin.saveSettings();  
               })();
             },
+            /*onPaste: (data: ClipboardData, event: ClipboardEvent | null) => {
+              console.log(data,event);
+              return true;
+            },*/
             onBeforeTextEdit: (textElement: ExcalidrawTextElement) => {
               if(this.autosaveTimer) { //stopping autosave to avoid autosave overwriting text while the user edits it
                 clearInterval(this.autosaveTimer);
@@ -729,7 +746,7 @@ export default class ExcalidrawView extends TextFileView {
               //Then I need to clear the undo history to avoid overwriting raw text with parsed text and losing links
               if(text!=textElement.text) { //the user made changes to the text
                 //setTextElement will attempt a quick parse (without processing transclusions)
-                const parseResult = this.excalidrawData.setTextElement(textElement, text,async ()=>{
+                const parseResult = this.excalidrawData.setTextElement(textElement.id, text,async ()=>{
                   await this.save(false);
                   //this callback function will only be invoked if quick parse fails, i.e. there is a transclusion in the raw text
                   //thus I only check if TextMode.parsed, text is always != with parseResult
