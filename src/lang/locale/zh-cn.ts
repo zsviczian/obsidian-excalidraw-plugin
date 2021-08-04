@@ -51,9 +51,9 @@ export default {
   FOLDER_DESC: "新绘图的默认位置。如果此处为空，将在 Vault 根目录中创建绘图。",
   TEMPLATE_NAME: "Excalidraw 模板文件",
   TEMPLATE_DESC: "Excalidraw 模板的完整文件路径。" +
-                 "例如：如果您的模板在默认的 Excalidraw 文件夹中并且它的名称是" +
-                 "Template.md，设置为：Excalidraw/Template.md" + 
-                 "如果您在兼容模式下使用 Excalidraw，那么您的模板也必须是旧的 excalidraw 文件" + 
+                 "例如：如果您的模板在默认的 Excalidraw 文件夹中且它的名称是" +
+                 "Template.md，你应当设置为：Excalidraw/Template.md。" + 
+                 "如果您在兼容模式下使用 Excalidraw，那么您的模板也必须是旧的 excalidraw 文件，" + 
                  "例如 Excalidraw/Template.excalidraw。",
   AUTOSAVE_NAME: "自动保存",
   AUTOSAVE_DESC: "每 30 秒自动保存编辑中的绘图。当您关闭 Excalidraw 或 Obsidian 或焦点移动到另一个面板时，通常会引发保存"+
@@ -61,7 +61,7 @@ export default {
                  "其中“滑到另一个应用程序”会导致一些数据丢失，并且因为我无法在手机上的应用程序" +
                  " 终止时强制保存。如果您在桌面上使用 Excalidraw，这你可以关掉它。",
   FILENAME_HEAD: "文件名",
-  FILENAME_DESC: "<p>自动生成的文件名包括一个前缀和一个日期." + 
+  FILENAME_DESC: "<p>自动生成的文件名包括一个前缀和一个日期。" + 
                  "例如 'Drawing 2021-05-24 12.58.07'。</p>"+
                  "<p>点击<a href='https://momentjs.com/docs/#/displaying/format/'>"+
                  "日期和时间格式参考</a>来查看如何修改。</p>",
@@ -72,27 +72,27 @@ export default {
   FILENAME_DATE_DESC: "文件名的第二部分",
   LINKS_HEAD: "链接",
   LINKS_DESC: "CTRL/META 加左键点击文本元素来打开链接。" + 
-              "如果选中的文本指向多个双链，只会打开第一个" + 
+              "如果选中的文本指向多个双链，只会打开其中第一个。" + 
               "如果选中的文本为超链接 (i.e. https:// or http://)，然后" +
-              "插件会在浏览器中打开。" +
-              "当对应的文件名修改时，匹配的链接也会修改" +
-              "如果你不希望你自己的链接文本突然修改，用别名",
+              "插件会在浏览器中打开超链接。" +
+              "当对应的文件名修改时，匹配的链接也会修改。" +
+              "如果你不希望你自己的链接文本突然修改，用别名来替代",
   LINK_BRACKETS_NAME: "在链接上显示双链符号[[",
   LINK_BRACKETS_DESC: "在预览（锁定）模式，当解析文本元素，在链接左右展示中括号。" +
                       "你可以在文件的 Frontmatter 中加入'" + FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS + 
-                      ": true/false' 来单独控制某个文件",
+                      ": true/false' 来单独控制某个文件。",
   LINK_PREFIX_NAME:"链接前缀",
   LINK_PREFIX_DESC:"在预览（锁定）模式，如果文本元素包含链接，在文本之前加上这些字符。" +
                    "你可以在文件的 Frontmatter 中加入 \'" + FRONTMATTER_KEY_CUSTOM_PREFIX + 
-                   ': "👉 "\' 中单独更改',
+                   ': "👉 "\' 单独更改',
   LINK_CTRL_CLICK_NAME: "CTRL 加左键点击文本来打开链接",
-  LINK_CTRL_CLICK_DESC: "如果此功能干扰了您要使用的默认 Excalidraw 功能，您可以将其关闭. 如果" +
+  LINK_CTRL_CLICK_DESC: "如果此功能干扰了您要使用的 Excalidraw 功能，您可以将其关闭。 如果" +
                         "关闭此选项，则只有绘图标题栏中的链接按钮可以让你打开链接。",
   EMBED_HEAD: "嵌入 & 导出",
   EMBED_WIDTH_NAME: "嵌入图像的默认宽度",
   EMBED_WIDTH_DESC: "嵌入图形的默认宽度。您可以在使用" +
                     "![[drawing.excalidraw|100]] 或 [[drawing.excalidraw|100x100]]" +
-                    "格式嵌入图像时指定自定义宽度。",
+                    "格式指定嵌入图像时的宽度。",
   EXPORT_PNG_SCALE_NAME: "PNG 导出图像比例",
   EXPORT_PNG_SCALE_DESC: "导出的 PNG 图像的大小比例",
   EXPORT_BACKGROUND_NAME: "导出带有背景的图像",
