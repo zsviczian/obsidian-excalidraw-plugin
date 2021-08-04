@@ -39,6 +39,7 @@ import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINK_BACKETS } from "./ExcalidrawData";
 import { checkAndCreateFolder, download, getNewUniqueFilepath, splitFolderAndFilename } from "./Utils";
 import { Prompt } from "./Prompt";
+import { isRTL } from "@zsviczian/excalidraw/types/utils";
 
 declare let window: ExcalidrawAutomate;
 
@@ -62,8 +63,7 @@ const REG_LINKINDEX_INVALIDCHARS = /[<>:"\\|?*]/g;
 export default class ExcalidrawView extends TextFileView {
   private excalidrawData: ExcalidrawData;
   private getScene: Function = null;
-  private getSelectedText: Function = null;
-  private getSelectedId: Function = null;
+  private getSelectedTextElement: Function = null;
   public addText:Function = null;
   private refresh: Function = null;
   private excalidrawRef: React.MutableRefObject<any> = null;
@@ -190,8 +190,8 @@ export default class ExcalidrawView extends TextFileView {
   
   handleLinkClick(view: ExcalidrawView, ev:MouseEvent) {
     let text:string = (this.textMode == TextMode.parsed) 
-               ? this.excalidrawData.getRawText(this.getSelectedId()) 
-               : this.getSelectedText();
+               ? this.excalidrawData.getRawText(this.getSelectedTextElement().id) 
+               : this.getSelectedTextElement().text;
     if(!text) {
       new Notice(t("LINK_BUTTON_CLICK_NO_TEXT"),20000); 
       return;
@@ -375,22 +375,31 @@ export default class ExcalidrawView extends TextFileView {
     });
   }
 
+  /**
+   * 
+   * @param justloaded - a flag to trigger zoom to fit after the drawing has been loaded
+   */
   private loadDrawing(justloaded:boolean) {        
-    //console.log("ExcalidrawView.loadDrawing, justloaded", justloaded);
-    this.justLoaded = justloaded; //a flag to trigger zoom to fit after the drawing has been loaded
     const excalidrawData = this.excalidrawData.scene;
     if(this.excalidrawRef) {
-      if(justloaded) {
+      const viewModeEnabled = this.excalidrawRef.current.getAppState().viewModeEnabled;
+      const zenModeEnabled = this.excalidrawRef.current.getAppState().zenModeEnabled;
+      if(justloaded) {        
         this.excalidrawRef.current.resetScene();
         this.excalidrawRef.current.history.clear();
-        this.justLoaded = justloaded; //reset screen will clear justLoaded, so need to set it again
+        this.justLoaded = justloaded; //reset screen will clear justLoaded, so need to set it here
       }
       this.excalidrawRef.current.updateScene({
         elements: excalidrawData.elements,
-        appState: excalidrawData.appState,  
+        appState: { 
+          zenModeEnabled: zenModeEnabled,
+          viewModeEnabled: viewModeEnabled,
+          ...  excalidrawData.appState, 
+        },
         commitToHistory: true,
       });
     } else {
+      this.justLoaded = justloaded; 
       (async() => {
         this.instantiateExcalidraw({
           elements: excalidrawData.elements,
@@ -558,38 +567,29 @@ export default class ExcalidrawView extends TextFileView {
       }, [excalidrawWrapperRef]);
 
 
-      this.getSelectedId = ():string => {
-        if(!excalidrawRef?.current) return null;
+      this.getSelectedTextElement = ():{id: string, text:string} => {
+        if(!excalidrawRef?.current) return {id:null,text:null};
+        if(this.excalidrawRef.current.getAppState().viewModeEnabled) {
+          if(selected) {
+            const retval = selected;
+            selected == null;
+            return retval;
+          }
+          return {id:null,text:null};
+        }
         const selectedElement = excalidrawRef.current.getSceneElements().filter((el:any)=>el.id==Object.keys(excalidrawRef.current.getAppState().selectedElementIds)[0]);
-        if(selectedElement.length==0) return null;
-        if(selectedElement[0].type == "text") return selectedElement[0].id; //a text element was selected. Retrun text
-        if(selectedElement[0].groupIds.length == 0) return null; //is the selected element part of a group?
+        if(selectedElement.length==0) return {id:null,text:null};
+        if(selectedElement[0].type == "text") return {id:selectedElement[0].id, text:selectedElement[0].text}; //a text element was selected. Retrun text
+        if(selectedElement[0].groupIds.length == 0) return {id:null,text:null}; //is the selected element part of a group?
         const group = selectedElement[0].groupIds[0]; //if yes, take the first group it is part of
         const textElement = excalidrawRef
                             .current
                             .getSceneElements()
                             .filter((el:any)=>el.groupIds?.includes(group))
                             .filter((el:any)=>el.type=="text"); //filter for text elements of the group
-        if(textElement.length==0) return null; //the group had no text element member
-        return textElement[0].id; //return text element text
+        if(textElement.length==0) return {id:null,text:null}; //the group had no text element member
+        return {id:selectedElement[0].id, text:selectedElement[0].text}; //return text element text
       };      
-
-      this.getSelectedText = (textonly:boolean=false):string => {
-        if(!excalidrawRef?.current) return null;
-        const selectedElement = excalidrawRef.current.getSceneElements().filter((el:any)=>el.id==Object.keys(excalidrawRef.current.getAppState().selectedElementIds)[0]);
-        if(selectedElement.length==0) return null;
-        if(selectedElement[0].type == "text") return selectedElement[0].text; //a text element was selected. Retrun text
-        if(textonly) return null;
-        if(selectedElement[0].groupIds.length == 0) return null; //is the selected element part of a group?
-        const group = selectedElement[0].groupIds[0]; //if yes, take the first group it is part of
-        const textElement = excalidrawRef
-                            .current
-                            .getSceneElements()
-                            .filter((el:any)=>el.groupIds?.includes(group))
-                            .filter((el:any)=>el.type=="text"); //filter for text elements of the group
-        if(textElement.length==0) return null; //the group had no text element member
-        return textElement[0].text; //return text element text
-      };
 
       this.addText = (text:string, fontFamily?:1|2|3) => {
         if(!excalidrawRef?.current) {
@@ -664,6 +664,11 @@ export default class ExcalidrawView extends TextFileView {
         excalidrawRef.current.refresh();
       };
 
+      //variables used to handle click events in view mode
+      let selected:{id:string,text:string} = null;
+      let ctrlKeyDown = false;
+      let block = false;
+
       return React.createElement(
         React.Fragment,
         null,
@@ -673,11 +678,13 @@ export default class ExcalidrawView extends TextFileView {
             className: "excalidraw-wrapper",
             ref: excalidrawWrapperRef,
             key: "abc",
+            onKeyDown: (e:any) => ctrlKeyDown = e.ctrlKey,
+            onKeyUp: (e:any) => ctrlKeyDown = e.ctrlKey,
             onClick: (e:MouseEvent):any => {
               //@ts-ignore
               if(!(e.ctrlKey||e.metaKey)) return;
               if(!(this.plugin.settings.allowCtrlClick)) return;
-              if(!this.getSelectedId()) return;
+              if(!this.getSelectedTextElement().id) return;
               this.handleLinkClick(this,e);
             }
           },
@@ -699,6 +706,22 @@ export default class ExcalidrawView extends TextFileView {
             detectScroll: true,
             onPointerUpdate: (p:any) => {
               currentPosition = p.pointer;
+              if(!this.excalidrawRef.current.getAppState().viewModeEnabled) return;
+              if (ctrlKeyDown && !block && p.button=="down") {
+                block = true; //this is to avoid handleLinkClick firing multiple times on a single click
+                const elements = this.excalidrawRef.current.getSceneElements()
+                                   .filter((e:ExcalidrawElement)=>{
+                                      return e.type == "text" 
+                                             && e.x<=p.pointer.x && (e.x+e.width)>=p.pointer.x
+                                             && e.y<=p.pointer.y && (e.y+e.height)>=p.pointer.y;
+                                   });
+                if(elements.length>0) {
+                  selected = {id:elements[0].id,text:elements[0].text};
+                  this.handleLinkClick(this,new MouseEvent("click", {ctrlKey: true}));
+                  selected = null;
+                }          
+              }
+              if (p.button=="up") block=false;
             },
             onChange: (et:ExcalidrawElement[],st:AppState) => {
               if(this.justLoaded) {
@@ -769,15 +792,29 @@ export default class ExcalidrawView extends TextFileView {
         )
       );
     });
-    ReactDOM.render(reactElement,(this as any).contentEl);  
+    ReactDOM.render(reactElement,this.contentEl);  
   }
 
   private zoomToFit() {
+    //when viewmode is enabled Excalidraw only listens to Alt+R
     const el = this.containerEl;
-    setTimeout(()=>{
-      const e = new KeyboardEvent("keydown", {bubbles : true, cancelable : true, shiftKey : true, code:"Digit1"});
-      el.querySelector("canvas")?.dispatchEvent(e);
-    },400)
+    const pattern = this.excalidrawRef.current.getAppState().viewModeEnabled 
+                    ? [250,500,750] : [null,250,null];
+    if(pattern[0])
+      setTimeout(()=>{
+        const e = new KeyboardEvent("keydown", {bubbles : true, cancelable : true, altKey : true, code:"KeyR"});
+        el.querySelector("canvas")?.dispatchEvent(e);
+      },pattern[0]);
+    if(pattern[1])
+      setTimeout(()=>{
+        const e = new KeyboardEvent("keydown", {bubbles : true, cancelable : true, shiftKey : true, code:"Digit1"});
+        el.querySelector("canvas")?.dispatchEvent(e);
+      },pattern[1])
+    if(pattern[2])
+      setTimeout(()=>{
+        const e = new KeyboardEvent("keydown", {bubbles : true, cancelable : true, altKey : true, code:"KeyR"});
+        el.querySelector("canvas")?.dispatchEvent(e);
+      },pattern[2]);
   }
 
   public static async getSVG(scene:any, exportSettings:ExportSettings):Promise<SVGSVGElement> {
