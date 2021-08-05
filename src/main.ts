@@ -850,7 +850,7 @@ export default class ExcalidrawPlugin extends Plugin {
       const deleteEventHandler = async (file:TFile) => {
         if (!(file instanceof TFile)) return;     
         //@ts-ignore
-        const isExcalidarwFile = (file.unsafeCachedData && file.unsafeCachedData.search(/---\n[\s\S]*excalidraw-plugin:\s*(locked|unlocked)\n[\s\S]*---/gm)>-1) 
+        const isExcalidarwFile = (file.unsafeCachedData && file.unsafeCachedData.search(/---[\r\n][\s\S]*excalidraw-plugin:\s*(locked|unlocked)[\r\n][\s\S]*---/gm)>-1) 
                                  || (file.extension=="excalidraw");
         if(!isExcalidarwFile) return;
 

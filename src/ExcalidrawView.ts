@@ -40,6 +40,8 @@ import { ExcalidrawData, REG_LINK_BACKETS } from "./ExcalidrawData";
 import { checkAndCreateFolder, download, getNewUniqueFilepath, splitFolderAndFilename } from "./Utils";
 import { Prompt } from "./Prompt";
 import { isRTL } from "@zsviczian/excalidraw/types/utils";
+import { SyntheticEvent } from "react";
+import { time } from "console";
 
 declare let window: ExcalidrawAutomate;
 
@@ -79,6 +81,10 @@ export default class ExcalidrawView extends TextFileView {
   private exitFullscreen:HTMLElement;
   private preventReload:boolean = true;
   public compatibilityMode: boolean = false;
+  //store key state for view mode link resolution
+  private ctrlKeyDown = false;
+  private shiftKeyDown = false;
+  private altKeyDown = false;
 
   id: string = (this.leaf as any).id;
 
@@ -316,23 +322,18 @@ export default class ExcalidrawView extends TextFileView {
       }
     }
     if(this.autosaveTimer) clearInterval(this.autosaveTimer); // clear previous timer if one exists
-    //if(this.plugin.settings.autosave) {
     this.autosaveTimer = setInterval(timer,20000);
-    //}
   }
 
   //save current drawing when user closes workspace leaf
   async onunload() {
-    //console.log("ExcalidrawView.onunload()");
     if(this.autosaveTimer) {
       clearInterval(this.autosaveTimer);
       this.autosaveTimer = null;
     }
-    //if(this.excalidrawRef) await this.save();
   }
 
   public async reload(fullreload:boolean = false, file?:TFile){
-    //console.log("ExcalidrawView.reload(), fullreload",fullreload,"preventReload",this.preventReload);
     if(this.preventReload) {
       this.preventReload = false;
       return;
@@ -570,9 +571,9 @@ export default class ExcalidrawView extends TextFileView {
       this.getSelectedTextElement = ():{id: string, text:string} => {
         if(!excalidrawRef?.current) return {id:null,text:null};
         if(this.excalidrawRef.current.getAppState().viewModeEnabled) {
-          if(selected) {
-            const retval = selected;
-            selected == null;
+          if(selectedTextElement) {
+            const retval = selectedTextElement;
+            selectedTextElement == null;
             return retval;
           }
           return {id:null,text:null};
@@ -665,8 +666,8 @@ export default class ExcalidrawView extends TextFileView {
       };
 
       //variables used to handle click events in view mode
-      let selected:{id:string,text:string} = null;
-      let ctrlKeyDown = false;
+      let selectedTextElement:{id:string,text:string} = null;
+      let timestamp = 0;
       let block = false;
 
       return React.createElement(
@@ -678,8 +679,16 @@ export default class ExcalidrawView extends TextFileView {
             className: "excalidraw-wrapper",
             ref: excalidrawWrapperRef,
             key: "abc",
-            onKeyDown: (e:any) => ctrlKeyDown = e.ctrlKey,
-            onKeyUp: (e:any) => ctrlKeyDown = e.ctrlKey,
+            onKeyDown: (e:any) => {
+              this.ctrlKeyDown  = e.ctrlKey;
+              this.shiftKeyDown = e.shiftKey;
+              this.altKeyDown   = e.altKey;
+            },
+            onKeyUp: (e:any) => {
+              this.ctrlKeyDown  = e.ctrlKey;
+              this.shiftKeyDown = e.shiftKey;
+              this.altKeyDown   = e.altKey;
+            },
             onClick: (e:MouseEvent):any => {
               //@ts-ignore
               if(!(e.ctrlKey||e.metaKey)) return;
@@ -707,21 +716,42 @@ export default class ExcalidrawView extends TextFileView {
             onPointerUpdate: (p:any) => {
               currentPosition = p.pointer;
               if(!this.excalidrawRef.current.getAppState().viewModeEnabled) return;
-              if (ctrlKeyDown && !block && p.button=="down") {
-                block = true; //this is to avoid handleLinkClick firing multiple times on a single click
+              const handleLinkClick = () => {
                 const elements = this.excalidrawRef.current.getSceneElements()
-                                   .filter((e:ExcalidrawElement)=>{
-                                      return e.type == "text" 
-                                             && e.x<=p.pointer.x && (e.x+e.width)>=p.pointer.x
-                                             && e.y<=p.pointer.y && (e.y+e.height)>=p.pointer.y;
-                                   });
+                                  .filter((e:ExcalidrawElement)=>{
+                                    return e.type == "text" 
+                                            && e.x<=p.pointer.x && (e.x+e.width)>=p.pointer.x
+                                            && e.y<=p.pointer.y && (e.y+e.height)>=p.pointer.y;
+                                  });
                 if(elements.length>0) {
-                  selected = {id:elements[0].id,text:elements[0].text};
-                  this.handleLinkClick(this,new MouseEvent("click", {ctrlKey: true}));
-                  selected = null;
+                  selectedTextElement = {id:elements[0].id,text:elements[0].text};
+                  const event = new MouseEvent("click", {ctrlKey: true, shiftKey: this.shiftKeyDown, altKey:this.altKeyDown});
+                  this.handleLinkClick(this,event);
+                  selectedTextElement = null;
                 }          
               }
-              if (p.button=="up") block=false;
+
+              const buttonDown = !block && p.button=="down";
+              if(buttonDown) {
+                block = true;
+
+                //ctrl click
+                if(this.ctrlKeyDown) {
+                  handleLinkClick();
+                  return;
+                }
+                
+                //dobule click
+                const now = (new Date()).getTime();
+                if(now-timestamp < 600) {
+                  handleLinkClick();
+                }           
+                timestamp = now;
+                return;
+              }
+              if (p.button=="up") { 
+                block=false;
+              }
             },
             onChange: (et:ExcalidrawElement[],st:AppState) => {
               if(this.justLoaded) {
@@ -798,22 +828,26 @@ export default class ExcalidrawView extends TextFileView {
   private zoomToFit() {
     //when viewmode is enabled Excalidraw only listens to Alt+R
     const el = this.containerEl;
+    const self = this;
     const pattern = this.excalidrawRef.current.getAppState().viewModeEnabled 
                     ? [250,500,750] : [null,250,null];
     if(pattern[0])
       setTimeout(()=>{
         const e = new KeyboardEvent("keydown", {bubbles : true, cancelable : true, altKey : true, code:"KeyR"});
         el.querySelector("canvas")?.dispatchEvent(e);
+        self.altKeyDown = false;
       },pattern[0]);
     if(pattern[1])
       setTimeout(()=>{
         const e = new KeyboardEvent("keydown", {bubbles : true, cancelable : true, shiftKey : true, code:"Digit1"});
         el.querySelector("canvas")?.dispatchEvent(e);
+        self.shiftKeyDown = false;
       },pattern[1])
     if(pattern[2])
       setTimeout(()=>{
         const e = new KeyboardEvent("keydown", {bubbles : true, cancelable : true, altKey : true, code:"KeyR"});
         el.querySelector("canvas")?.dispatchEvent(e);
+        self.altKeyDown=false;
       },pattern[2]);
   }
 

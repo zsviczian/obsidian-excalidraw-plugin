@@ -10,12 +10,9 @@ import { ExcalidrawSettings } from "./settings";
 import {  
   JSON_parse
 } from "./constants";
-import { ExcalidrawTextElement } from "@zsviczian/excalidraw/types/element/types";
-import { rawListeners } from "process";
 import { TextMode } from "./ExcalidrawView";
-import { link } from "fs";
 
-const DRAWING_REG = /\n# Drawing\n(```json\n)?(.*)(```)?/gm;
+const DRAWING_REG = /[\r\n]# Drawing[\r\n](```json[\r\n])?(.*)(```)?/gm;
 
 //![[link|alias]]![alias](link)
 //1  2    3      4 5      6
@@ -40,6 +37,7 @@ export class ExcalidrawData {
   private showLinkBrackets: boolean;
   private linkPrefix: string;
   private textMode: TextMode = TextMode.raw;
+
   constructor(plugin: ExcalidrawPlugin) {
     this.settings = plugin.settings;
     this.app = plugin.app;
@@ -61,6 +59,11 @@ export class ExcalidrawData {
     this.setLinkPrefix();  
     
     this.scene = null;
+
+    //In compatibility mode if the .excalidraw file was more recently updated than the .md file, then the .excalidraw file
+    //should be loaded as the scene.
+    //This feature is mostly likely only relevant to people who use Obsidian and Logseq on the same vault and edit .excalidraw
+    //drawings in Logseq.
     if (this.settings.syncExcalidraw) {
       const excalfile = file.path.substring(0,file.path.lastIndexOf('.md')) + '.excalidraw';
       const f = this.app.vault.getAbstractFileByPath(excalfile);
@@ -76,19 +79,22 @@ export class ExcalidrawData {
     if(!this.scene) { //scene was not loaded from .excalidraw
       const scene = parts.value[2];
       this.scene = JSON_parse(scene.substr(0,scene.lastIndexOf("}")+1)); //this is a workaround to address when files are mereged by sync and one version is still an old markdown without the codeblock ```
+      //using JSON_parse for legacy compatibiltiy. In an earlier version Excalidraw JSON was not enclosed in a codeblock
     }
     //Trim data to remove the JSON string
     data = data.substring(0,parts.value.index);
 
-    //The Markdown # Text Elements take priority over the JSON text elements. 
-    //i.e. if the JSON is modified to reflect the MD in case of difference
+    //The Markdown # Text Elements take priority over the JSON text elements. Assuming the scenario in which the link was updated due to filename changes
+    //The .excalidraw JSON is modified to reflect the MD in case of difference
     //Read the text elements into the textElements Map
     let position = data.search("# Text Elements");
     if(position==-1) return true; //Text Elements header does not exist
     position += "# Text Elements\n".length;
     
+    //iterating through all the text elements in .md
+    //Text elements always contain the raw value
     const BLOCKREF_LEN:number = " ^12345678\n\n".length;
-    const res = data.matchAll(/\s\^(.{8})\n/g);
+    const res = data.matchAll(/\s\^(.{8})[\r\n]/g);
     while(!(parts = res.next()).done) {
       const text = data.substring(position,parts.value.index);
       this.textElements.set(parts.value[1],{raw: text, parsed: await this.parse(text)});
@@ -109,7 +115,7 @@ export class ExcalidrawData {
     this.setLinkPrefix(); 
     this.scene = JSON.parse(data);
     this.findNewTextElementsInScene();
-    await this.setTextMode(TextMode.raw,true);
+    await this.setTextMode(TextMode.raw,true); //legacy files are always displayed in raw mode.
     return true;
   }
 
@@ -184,7 +190,7 @@ export class ExcalidrawData {
       if(te.id.length > 8 && this.textElements.has(te.id)) { //element was created with onBeforeTextSubmit
         const element = this.textElements.get(te.id);
         this.textElements.set(id,{raw: element.raw, parsed: element.parsed})
-        this.textElements.delete(te.id);
+        this.textElements.delete(te.id); //delete the old ID from the Map
         dirty = true;
       } else if(!this.textElements.has(id)) {
         dirty = true;
@@ -193,7 +199,7 @@ export class ExcalidrawData {
       }
     }
     if(dirty) { //reload scene json in case it has changed
-      this.scene = JSON_parse(jsonString);
+      this.scene = JSON.parse(jsonString);
     }
 
     return dirty;
@@ -204,7 +210,6 @@ export class ExcalidrawData {
    * and updating the textElement map based on the text updated in the scene
    */
   private async updateTextElementsFromScene() {
-    //console.log("Excalidraw.Data.updateTextElementesFromScene()");
     for(const key of this.textElements.keys()){
       //find text element in the scene
       const el = this.scene.elements?.filter((el:any)=> el.type=="text" && el.id==key);
@@ -228,7 +233,6 @@ export class ExcalidrawData {
    * and updating the textElement map based on the text updated in the scene
    */
    private updateTextElementsFromSceneRawOnly() {
-    //console.log("Excalidraw.Data.updateTextElementsFromSceneRawOnly()");
     for(const key of this.textElements.keys()){
       //find text element in the scene
       const el = this.scene.elements?.filter((el:any)=> el.type=="text" && el.id==key);

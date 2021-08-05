@@ -81,12 +81,12 @@ li[data-testid] {
   box-shadow: 0 !important;
   background-color: transparent !important;
 }
-/*
-@font-face {
-  font-family: "Virgil";
-  src: url("https://excalidraw.com/Virgil.woff2");
+
+.disable-zen-mode--visible {
+  color: var(--text-primary-color);
 }
-@font-face {
-  font-family: "Cascadia";
-  src: url("https://excalidraw.com/Cascadia.woff2");
-}*/
+
+.disable-zen-mode {
+  width: 9em !important;
+}
+
