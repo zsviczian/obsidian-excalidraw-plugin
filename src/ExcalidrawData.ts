@@ -12,7 +12,7 @@ import {
 } from "./constants";
 import { TextMode } from "./ExcalidrawView";
 
-const DRAWING_REG = /[\r\n]# Drawing[\r\n](```json[\r\n])?(.*)(```)?/gm;
+const DRAWING_REG = /[\r\n]# Drawing[\r\n](```json[\r\n])?(.*)(```)?(%%)?/gm;
 
 //![[link|alias]]![alias](link)
 //1  2    3      4 5      6
@@ -37,8 +37,10 @@ export class ExcalidrawData {
   private showLinkBrackets: boolean;
   private linkPrefix: string;
   private textMode: TextMode = TextMode.raw;
+  private plugin: ExcalidrawPlugin;
 
   constructor(plugin: ExcalidrawPlugin) {
+    this.plugin = plugin;
     this.settings = plugin.settings;
     this.app = plugin.app;
   }  
@@ -369,10 +371,7 @@ export class ExcalidrawData {
     for(const key of this.textElements.keys()){
       outString += this.textElements.get(key).raw+' ^'+key+'\n\n';
     }
-    return outString + '# Drawing\n' 
-           + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'json\n' 
-           + JSON.stringify(this.scene) + '\n'
-           + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96);
+    return outString + this.plugin.getMarkdownDrawingSection(JSON.stringify(this.scene));
   }
 
   public syncElements(newScene:any):boolean {

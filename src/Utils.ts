@@ -60,15 +60,15 @@ export function getIMGPathFromExcalidrawFile (excalidrawPath:string,newExtension
   return fname;
 }
 
-  /**
-  * Open or create a folderpath if it does not exist
-  * @param folderpath 
-  */
-  export async function checkAndCreateFolder(vault:Vault,folderpath:string) {
-    let folder = vault.getAbstractFileByPath(folderpath);
-    if(folder && folder instanceof TFolder) return;
-    await vault.createFolder(folderpath);
-  }
+/**
+* Open or create a folderpath if it does not exist
+* @param folderpath 
+*/
+export async function checkAndCreateFolder(vault:Vault,folderpath:string) {
+  let folder = vault.getAbstractFileByPath(folderpath);
+  if(folder && folder instanceof TFolder) return;
+  await vault.createFolder(folderpath);
+}
 
 let random = new Random(Date.now());
 export const randomInteger = () => Math.floor(random.next() * 2 ** 31);

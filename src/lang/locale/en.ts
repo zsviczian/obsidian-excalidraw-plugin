@@ -88,6 +88,8 @@ export default {
   LINK_CTRL_CLICK_DESC: "You can turn this feature off if it interferes with default Excalidraw features you want to use. If " +
                         "this is turned off, only the link button in the title bar of the drawing pane will open links.",
   EMBED_HEAD: "Embed & Export",
+  EMBED_PREVIEW_SVG_NAME: "Display SVG in markdown preview",
+  EMBED_PREVIEW_SVG_DESC: "The default is to display drawings as SVG images in the markdown preview. Turning this feature off, the markdown preview will display the drawing as an embedded PNG image.",
   EMBED_WIDTH_NAME: "Default width of embedded (transcluded) image",
   EMBED_WIDTH_DESC: "The default width of an embedded drawing. You can specify a custom " +
                     "width when embedding an image using the ![[drawing.excalidraw|100]] or " +

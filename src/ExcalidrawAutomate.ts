@@ -177,7 +177,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         params?.filename ? params.filename + '.excalidraw.md' : this.plugin.getNextDefaultFilename(),
         params?.onNewPane ? params.onNewPane : false,
         params?.foldername ? params.foldername : this.plugin.settings.folder,
-        FRONTMATTER + exportSceneToMD(
+        FRONTMATTER + plugin.exportSceneToMD(
         JSON.stringify({
           type: "excalidraw",
           version: 2,
@@ -492,30 +492,3 @@ async function getTemplate(fileWithPath: string):Promise<{elements: any,appState
   }
 }
 
-/**
- * Extracts the text elements from an Excalidraw scene into a string of ids as headers followed by the text contents
- * @param {string} data - Excalidraw scene JSON string
- * @returns {string} - Text starting with the "# Text Elements" header and followed by each "## id-value" and text
- */
- export function exportSceneToMD(data:string): string {
-  if(!data) return "";
-  const excalidrawData = JSON_parse(data);
-  const textElements = excalidrawData.elements?.filter((el:any)=> el.type=="text")
-  let outString = '# Text Elements\n';
-  let id:string;
-  for (const te of textElements) {
-    id = te.id;
-    //replacing Excalidraw text IDs with my own, because default IDs may contain 
-    //characters not recognized by Obsidian block references
-    //also Excalidraw IDs are inconveniently long
-    if(te.id.length>8) {  
-      id=nanoid();
-      data = data.replaceAll(te.id,id); //brute force approach to replace all occurances.
-    }
-    outString += te.text+' ^'+id+'\n\n';
-  }
-  return outString + '# Drawing\n'
-         + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'json\n' 
-         + data + '\n'
-         + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96);
-}

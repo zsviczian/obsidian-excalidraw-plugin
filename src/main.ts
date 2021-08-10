@@ -37,7 +37,8 @@ import {
   TEXT_DISPLAY_PARSED_ICON_NAME,
   TEXT_DISPLAY_RAW_ICON_NAME,
   //UNLOCK_ICON,
-  JSON_parse
+  JSON_parse,
+  nanoid
 } from "./constants";
 import ExcalidrawView, {ExportSettings, TextMode} from "./ExcalidrawView";
 import {getJSON} from "./ExcalidrawData";
@@ -52,8 +53,7 @@ import {
 } from "./openDrawing";
 import {
   initExcalidrawAutomate,
-  destroyExcalidrawAutomate,
-  exportSceneToMD,
+  destroyExcalidrawAutomate
 } from "./ExcalidrawAutomate";
 import { Prompt } from "./Prompt";
 import { around } from "monkey-around";
@@ -128,6 +128,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private addMarkdownPostProcessor() {
     
     interface imgElementAttributes {
+      file?:   TFile,
       fname:   string, //Excalidraw filename
       fwidth:  string, //Display width of image
       fheight: string, //Display height of image
@@ -140,9 +141,13 @@ export default class ExcalidrawPlugin extends Plugin {
      * @returns {Promise<HTMLElement>} - the IMG HTML element containing the encoded SVG image
      */
     const getIMG = async (parts:imgElementAttributes):Promise<HTMLElement> => {
-      const file = this.app.vault.getAbstractFileByPath(parts.fname);
-      if(!(file && file instanceof TFile)) {
-        return null;
+      let file = parts.file;
+      if(!parts.file) {
+        const f = this.app.vault.getAbstractFileByPath(parts.fname);
+        if(!(f && f instanceof TFile)) {
+          return null;
+        }
+        file = f;
       }
     
       const content = await this.app.vault.read(file);
@@ -150,16 +155,28 @@ export default class ExcalidrawPlugin extends Plugin {
         withBackground: this.settings.exportWithBackground, 
         withTheme: this.settings.exportWithTheme
       }
+      const img = createEl("img");
+      img.setAttribute("width",parts.fwidth);        
+      if(parts.fheight) img.setAttribute("height",parts.fheight);
+      img.addClass(parts.style);
+
+      
+      if(!this.settings.displaySVGInPreview) {
+        const width = parseInt(parts.fwidth);
+        let scale = 1;
+        if(width>=800) scale = 2;
+        if(width>=1600) scale = 3;
+        if(width>=2400) scale = 4;
+        const png = await ExcalidrawView.getPNG(JSON_parse(getJSON(content)),exportSettings, scale);
+        if(!png) return null;
+        img.src = URL.createObjectURL(png);
+        return img;
+      }
       let svg = await ExcalidrawView.getSVG(JSON_parse(getJSON(content)),exportSettings);
       if(!svg) return null;
       svg = ExcalidrawView.embedFontsInSVG(svg);
-      const img = createEl("img");
       svg.removeAttribute('width');
       svg.removeAttribute('height');
-      img.setAttribute("width",parts.fwidth);
-      
-      if(parts.fheight) img.setAttribute("height",parts.fheight);
-      img.addClass(parts.style);
       img.setAttribute("src","data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svg.outerHTML.replaceAll("&nbsp;"," ")))));
       return img;
     }
@@ -174,7 +191,7 @@ export default class ExcalidrawPlugin extends Plugin {
       if(drawings.length==0) return;
 
       let attr:imgElementAttributes={fname:"",fheight:"",fwidth:"",style:""};
-      let alt:string, img:any, parts, div, file:TFile;
+      let alt:string, parts, div, file:TFile;
       for (const drawing of drawings) {
         attr.fname = drawing.getAttribute("src");
         file = this.app.metadataCache.getFirstLinkpathDest(attr.fname, ctx.sourcePath); 
@@ -196,8 +213,8 @@ export default class ExcalidrawPlugin extends Plugin {
           }
         
           attr.fname = file?.path;
-          img = await getIMG(attr);
-          div = createDiv(attr.style, (el)=>{
+          div = createDiv(attr.style, async (el)=>{
+            const img = await getIMG(attr);
             el.append(img);
             el.setAttribute("src",file.path);
             if(attr.fwidth) el.setAttribute("w",attr.fwidth);
@@ -245,13 +262,13 @@ export default class ExcalidrawPlugin extends Plugin {
     );
       
     //monitoring for div.popover.hover-popover.file-embed.is-loaded to be added to the DOM tree
-    this.observer = new MutationObserver((m)=>{
+    this.observer = new MutationObserver(async (m)=>{
       if(m.length == 0) return;
       if(!this.hover.linkText) return;
       const file = this.app.metadataCache.getFirstLinkpathDest(this.hover.linkText, this.hover.sourcePath?this.hover.sourcePath:""); 
       if(!file || !(file instanceof TFile) || !this.isExcalidrawFile(file)) return
    
-      if((file as TFile).extension == "excalidraw") {
+      if(file.extension == "excalidraw") {
         observerForLegacyFileFormat(m,file);
         return;
       }
@@ -271,10 +288,12 @@ export default class ExcalidrawPlugin extends Plugin {
       //@ts-ignore
       if(!m[i].addedNodes[0].matchParent(".hover-popover")) return;
 
+      const node = m[i].addedNodes[0];
+
       //this div will be on top of original DIV. By stopping the propagation of the click
       //I prevent the default Obsidian feature of openning the link in the native app
-      const div = createDiv("",async (el)=>{
-        const img = await getIMG({fname:file.path,fwidth:"300",fheight:null,style:"excalidraw-svg"});
+      const div = createDiv("", async (el)=>{
+        const img = await getIMG({file:file,fname:file.path,fwidth:"300",fheight:null,style:"excalidraw-svg"});
         el.appendChild(img);
         el.setAttribute("src",file.path);
         el.onClickEvent((ev)=>{
@@ -283,12 +302,11 @@ export default class ExcalidrawPlugin extends Plugin {
           if(src) this.openDrawing(this.app.vault.getAbstractFileByPath(src) as TFile,ev.ctrlKey||ev.metaKey);
         });
       });
-      m[i].addedNodes[0].insertBefore(div,m[i].addedNodes[0].firstChild)
-      
+      node.insertBefore(div,node.firstChild)
     });
 
     //compatibility: .excalidraw file observer
-    let observerForLegacyFileFormat = (m:MutationRecord[], file:TFile) => {
+    let observerForLegacyFileFormat = async (m:MutationRecord[], file:TFile) => {
       if(!this.hover.linkText) return;
       if(m.length!=1) return;
       if(m[0].addedNodes.length != 1) return;
@@ -299,8 +317,8 @@ export default class ExcalidrawPlugin extends Plugin {
       
       //this div will be on top of original DIV. By stopping the propagation of the click
       //I prevent the default Obsidian feature of openning the link in the native app
+      const img = await getIMG({file:file,fname:file.path,fwidth:"300",fheight:null,style:"excalidraw-svg"});
       const div = createDiv("",async (el)=>{
-        const img = await getIMG({fname:file.path,fwidth:"300",fheight:null,style:"excalidraw-svg"});
         el.appendChild(img);
         el.setAttribute("src",file.path);
         el.onClickEvent((ev)=>{
@@ -692,7 +710,7 @@ export default class ExcalidrawPlugin extends Plugin {
     const filename = file.name.substr(0,file.name.lastIndexOf(".excalidraw")) + (replaceExtension ? ".md" : ".excalidraw.md");
     const fname = getNewUniqueFilepath(this.app.vault,filename,normalizePath(file.path.substr(0,file.path.lastIndexOf(file.name))));
     console.log(fname);
-    const result = await this.app.vault.create(fname,FRONTMATTER + exportSceneToMD(data));
+    const result = await this.app.vault.create(fname,FRONTMATTER + this.exportSceneToMD(data));
     if (this.settings.keepInSync) {
       ['.svg','.png'].forEach( (ext:string)=>{
         const oldIMGpath = file.path.substring(0,file.path.lastIndexOf(".excalidraw")) + ext;   
@@ -1002,10 +1020,39 @@ export default class ExcalidrawPlugin extends Plugin {
     if (this.settings.compatibilityMode) {
       return BLANK_DRAWING;
     }
-    return FRONTMATTER + '\n# Drawing\n'
-           + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'json\n' 
-           + BLANK_DRAWING + '\n'
-           + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96);
+    return FRONTMATTER + '\n' + this.getMarkdownDrawingSection(BLANK_DRAWING);
+  }
+
+  public getMarkdownDrawingSection(jsonString: string) {
+    return '%%\n# Drawing\n'
+    + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'json\n' 
+    + jsonString + '\n'
+    + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96) + '%%';
+  }
+
+  /**
+  * Extracts the text elements from an Excalidraw scene into a string of ids as headers followed by the text contents
+  * @param {string} data - Excalidraw scene JSON string
+  * @returns {string} - Text starting with the "# Text Elements" header and followed by each "## id-value" and text
+  */
+  public exportSceneToMD(data:string): string {
+    if(!data) return "";
+    const excalidrawData = JSON_parse(data);
+    const textElements = excalidrawData.elements?.filter((el:any)=> el.type=="text")
+    let outString = '# Text Elements\n';
+    let id:string;
+    for (const te of textElements) {
+      id = te.id;
+      //replacing Excalidraw text IDs with my own, because default IDs may contain 
+      //characters not recognized by Obsidian block references
+      //also Excalidraw IDs are inconveniently long
+      if(te.id.length>8) {  
+        id=nanoid();
+        data = data.replaceAll(te.id,id); //brute force approach to replace all occurances.
+      }
+      outString += te.text+' ^'+id+'\n\n';
+    }
+    return outString + this.getMarkdownDrawingSection(data);
   }
 
   public async createDrawing(filename: string, onNewPane: boolean, foldername?: string, initData?:string) {
