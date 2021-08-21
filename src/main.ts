@@ -69,7 +69,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private openDialog: OpenFileDialog;
   private activeExcalidrawView: ExcalidrawView = null;
   public lastActiveExcalidrawFilePath: string = null;
-  private hover: {linkText: string, sourcePath: string} = {linkText: null, sourcePath: null};
+  public hover: {linkText: string, sourcePath: string} = {linkText: null, sourcePath: null};
   private observer: MutationObserver;
   private fileExplorerObserver: MutationObserver;
   public opencount:number = 0;
@@ -83,8 +83,6 @@ export default class ExcalidrawPlugin extends Plugin {
     addIcon(DISK_ICON_NAME,DISK_ICON);
     addIcon(PNG_ICON_NAME,PNG_ICON);
     addIcon(SVG_ICON_NAME,SVG_ICON);
-    //addIcon(TEXT_DISPLAY_PARSED_ICON_NAME,LOCK_ICON);
-    //addIcon(TEXT_DISPLAY_RAW_ICON_NAME,UNLOCK_ICON);
     
     await this.loadSettings();
     this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
@@ -122,6 +120,7 @@ export default class ExcalidrawPlugin extends Plugin {
       }
     });
   }
+
   /**
    * Displays a transcluded .excalidraw image in markdown preview mode
    */
@@ -136,14 +135,14 @@ export default class ExcalidrawPlugin extends Plugin {
     }
 
     /**
-     * Generates an img element with the .excalidraw drawing encoded as a base64 svg
+     * Generates an img element with the drawing encoded as a base64 SVG or a PNG (depending on settings)
      * @param parts {imgElementAttributes} - display properties of the image
-     * @returns {Promise<HTMLElement>} - the IMG HTML element containing the encoded SVG image
+     * @returns {Promise<HTMLElement>} - the IMG HTML element containing the image
      */
-    const getIMG = async (parts:imgElementAttributes):Promise<HTMLElement> => {
-      let file = parts.file;
-      if(!parts.file) {
-        const f = this.app.vault.getAbstractFileByPath(parts.fname);
+    const getIMG = async (imgAttributes:imgElementAttributes):Promise<HTMLElement> => {
+      let file = imgAttributes.file;
+      if(!imgAttributes.file) {
+        const f = this.app.vault.getAbstractFileByPath(imgAttributes.fname);
         if(!(f && f instanceof TFile)) {
           return null;
         }
@@ -156,13 +155,13 @@ export default class ExcalidrawPlugin extends Plugin {
         withTheme: this.settings.exportWithTheme
       }
       const img = createEl("img");
-      img.setAttribute("width",parts.fwidth);        
-      if(parts.fheight) img.setAttribute("height",parts.fheight);
-      img.addClass(parts.style);
+      img.setAttribute("width",imgAttributes.fwidth);        
+      if(imgAttributes.fheight) img.setAttribute("height",imgAttributes.fheight);
+      img.addClass(imgAttributes.style);
 
       
       if(!this.settings.displaySVGInPreview) {
-        const width = parseInt(parts.fwidth);
+        const width = parseInt(imgAttributes.fwidth);
         let scale = 1;
         if(width>=800) scale = 2;
         if(width>=1600) scale = 3;
@@ -187,12 +186,12 @@ export default class ExcalidrawPlugin extends Plugin {
      * @param ctx 
      */
     const markdownPostProcessor = async (el:HTMLElement,ctx:MarkdownPostProcessorContext) => {
-      const drawings = el.querySelectorAll('.internal-embed');
-      if(drawings.length==0) return;
+      const embeddedItems = el.querySelectorAll('.internal-embed');
+      if(embeddedItems.length==0) return;
 
       let attr:imgElementAttributes={fname:"",fheight:"",fwidth:"",style:""};
       let alt:string, parts, div, file:TFile;
-      for (const drawing of drawings) {
+      for (const drawing of embeddedItems) {
         attr.fname = drawing.getAttribute("src");
         file = this.app.metadataCache.getFirstLinkpathDest(attr.fname, ctx.sourcePath); 
         if(file && file instanceof TFile && this.isExcalidrawFile(file)) {  
@@ -202,10 +201,11 @@ export default class ExcalidrawPlugin extends Plugin {
           if(alt == attr.fname) alt = ""; //when the filename starts with numbers followed by a space Obsidian recognizes the filename as alt-text
           attr.style = "excalidraw-svg";
           if(alt) {
-            //for some reason ![]() is rendered in a DIV and ![[]] in a span by Obsidian
-            //also the alt text of the DIV does not include the altext of the image
-            //thus need to add an additional "|" character when its a span
+            //for some reason Obsidian renders ![]() in a DIV and ![[]] in a SPAN
+            //also the alt-text of the DIV does not include the alt-text of the image
+            //thus need to add an additional "|" character when its a SPAN
             if(drawing.tagName.toLowerCase()=="span") alt = "|"+alt;
+            //1:width, 2:height, 3:style  1      2      3
             parts = alt.match(/[^\|]*\|?(\d*)x?(\d*)\|?(.*)/);
             attr.fwidth = parts[1]? parts[1] : this.settings.width;
             attr.fheight = parts[2];
@@ -286,8 +286,8 @@ export default class ExcalidrawPlugin extends Plugin {
       if(m[i].addedNodes[0].firstElementChild?.firstElementChild?.className=="excalidraw-svg") return;
       
       //@ts-ignore
-      if(!m[i].addedNodes[0].matchParent(".hover-popover")) return;
-
+      const hoverPopover = m[i].addedNodes[0].matchParent(".hover-popover");
+      if(!hoverPopover) return;
       const node = m[i].addedNodes[0];
 
       //this div will be on top of original DIV. By stopping the propagation of the click
@@ -344,35 +344,32 @@ export default class ExcalidrawPlugin extends Plugin {
     this.fileExplorerObserver = null;
   }
 
+  /**
+   * Display characters configured in settings, in front of the filename, if the markdown file is an excalidraw drawing
+   */
   private experimentalFileTypeDisplay() {
+    const insertFiletype = (el: HTMLElement) => {
+      if(el.childElementCount != 1) return;
+      //@ts-ignore
+      if(this.isExcalidrawFile(this.app.vault.getAbstractFileByPath(el.attributes["data-path"].value))) {
+        el.insertBefore(createDiv({cls:"nav-file-tag",text:this.settings.experimentalFileTag}),el.firstChild);
+      }
+    };   
+
     this.fileExplorerObserver = new MutationObserver((m)=>{
 
       const mutationsWithNodes = m.filter((v)=>v.addedNodes.length > 0);
       mutationsWithNodes.forEach((mu)=>{
         mu.addedNodes.forEach((n)=>{
           if(!(n instanceof Element)) return;
-          n.querySelectorAll(".nav-file-title").forEach((el)=>{
-            if(el.childElementCount == 1) {
-              //@ts-ignore
-              if(this.isExcalidrawFile(this.app.vault.getAbstractFileByPath(el.attributes["data-path"].value))) {
-                el.insertBefore(createDiv({cls:"nav-file-tag",text:this.settings.experimentalFileTag}),el.firstChild);
-              }
-            }
-          });
+          n.querySelectorAll(".nav-file-title").forEach(insertFiletype);
         });
       });
     });
 
     const self = this;
     this.app.workspace.onLayoutReady(()=>{
-      document.querySelectorAll(".nav-file-title").forEach((el)=>{
-        if(el.childElementCount == 1) {
-          //@ts-ignore
-          if(this.isExcalidrawFile(this.app.vault.getAbstractFileByPath(el.attributes["data-path"].value))) {
-            el.insertBefore(createDiv({cls:"nav-file-tag",text:this.settings.experimentalFileTag}),el.firstChild);
-          }
-        }
-      });
+      document.querySelectorAll(".nav-file-title").forEach(insertFiletype); //apply filetype to files already displayed
       this.fileExplorerObserver.observe(document.querySelector(".workspace"), {childList: true, subtree: true});
     });
     
@@ -966,7 +963,7 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public setStencilLibrary(library:string) {
-      this.settings.library = library;
+    this.settings.library = library;
   }
 
   public triggerEmbedUpdates(filepath?:string){
@@ -1088,7 +1085,7 @@ export default class ExcalidrawPlugin extends Plugin {
     } as ViewState);
   }
 
-  isExcalidrawFile(f:TFile) {
+  public isExcalidrawFile(f:TFile) {
     if(f.extension=="excalidraw") return true;
     const fileCache = this.app.metadataCache.getFileCache(f);
     return !!fileCache?.frontmatter && !!fileCache.frontmatter[FRONTMATTER_KEY];

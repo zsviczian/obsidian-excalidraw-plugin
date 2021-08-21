@@ -6,7 +6,6 @@ import {
   WorkspaceItem,
   Notice,
   Menu,
-  TAbstractFile,
 } from "obsidian";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -39,9 +38,6 @@ import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINK_BACKETS } from "./ExcalidrawData";
 import { checkAndCreateFolder, download, getNewUniqueFilepath, splitFolderAndFilename } from "./Utils";
 import { Prompt } from "./Prompt";
-import { isRTL } from "@zsviczian/excalidraw/types/utils";
-import { SyntheticEvent } from "react";
-import { time } from "console";
 
 declare let window: ExcalidrawAutomate;
 
@@ -69,6 +65,7 @@ export default class ExcalidrawView extends TextFileView {
   public addText:Function = null;
   private refresh: Function = null;
   private excalidrawRef: React.MutableRefObject<any> = null;
+  private excalidrawWrapperRef: React.MutableRefObject<any> = null;
   private justLoaded: boolean = false;
   private plugin: ExcalidrawPlugin;
   private dirty: string = null;
@@ -85,6 +82,9 @@ export default class ExcalidrawView extends TextFileView {
   private ctrlKeyDown = false;
   private shiftKeyDown = false;
   private altKeyDown = false;
+  /*private mouseX = 0;
+  private mouseY = 0;*/
+  private mouseEvent:any = null;
 
   id: string = (this.leaf as any).id;
 
@@ -399,6 +399,7 @@ export default class ExcalidrawView extends TextFileView {
         },
         commitToHistory: true,
       });
+      if(this.excalidrawWrapperRef) this.excalidrawWrapperRef.current.focus();
     } else {
       this.justLoaded = justloaded; 
       (async() => {
@@ -549,6 +550,8 @@ export default class ExcalidrawView extends TextFileView {
       });
       
       this.excalidrawRef = excalidrawRef;
+      this.excalidrawWrapperRef = excalidrawWrapperRef;
+
       React.useEffect(() => {
         setDimensions({
           width: this.contentEl.clientWidth, 
@@ -668,161 +671,233 @@ export default class ExcalidrawView extends TextFileView {
       //variables used to handle click events in view mode
       let selectedTextElement:{id:string,text:string} = null;
       let timestamp = 0;
-      let block = false;
+      let blockOnCtrlKeyDown = false;
+      let blockOnMouseButtonDown = false;
 
+      const getTextElementAtPointer = (pointer:any) => {
+        const elements = this.excalidrawRef.current.getSceneElements()
+                             .filter((e:ExcalidrawElement)=>{
+                                return e.type == "text" 
+                                       && e.x<=pointer.x && (e.x+e.width)>=pointer.x
+                                       && e.y<=pointer.y && (e.y+e.height)>=pointer.y;
+                              });
+        if(elements.length==0) return null;
+        return {id:elements[0].id,text:elements[0].text};
+      }
+ 
+      let hoverPoint = {x:0,y:0};
+      let hoverPreviewTarget:EventTarget = null;
+      const clearHoverPreview = () => {
+        if(hoverPreviewTarget) {
+          const event = new MouseEvent('click', {
+            'view': window,
+            'bubbles': true,
+            'cancelable': true,
+          });
+          hoverPreviewTarget.dispatchEvent(event);
+          hoverPreviewTarget = null;
+        }
+      }
+
+      const excalidrawDiv = React.createElement(
+        "div",
+        {
+          className: "excalidraw-wrapper",
+          ref: excalidrawWrapperRef,
+          key: "abc",
+          tabIndex: 0,
+          onKeyDown: (e:any) => {
+            this.ctrlKeyDown  = e.ctrlKey;
+            this.shiftKeyDown = e.shiftKey;
+            this.altKeyDown   = e.altKey;
+            if(!blockOnCtrlKeyDown && e.ctrlKey) {
+              blockOnCtrlKeyDown = true;
+              clearHoverPreview();
+            };
+            if(e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) {
+              const selectedElement = getTextElementAtPointer(currentPosition);
+              if(!selectedElement) return;
+
+              const text:string = (this.textMode == TextMode.parsed) 
+              ? this.excalidrawData.getRawText(selectedElement.id) 
+              : selectedElement.text;                
+
+              if(text.match(REG_LINKINDEX_HYPERLINK)) return;   
+
+              //![[link|alias]]![alias](link)
+              //1  2    3      4 5      6
+              const parts = text.matchAll(REG_LINK_BACKETS).next();    
+              if(!parts.value) return; 
+              let linktext = parts.value[2] ? parts.value[2]:parts.value[6];
+
+              if(linktext.match(REG_LINKINDEX_HYPERLINK)) return;
+              if(linktext.search("#")>-1) linktext = linktext.substring(0,linktext.search("#"));
+              const file = this.app.metadataCache.getFirstLinkpathDest(linktext,this.file.path); 
+              if (!file) return; 
+
+              this.plugin.hover.linkText = linktext; 
+              this.plugin.hover.sourcePath = this.file.path;
+              hoverPreviewTarget = e.target;
+              this.app.workspace.trigger('hover-link', {
+                event: this.mouseEvent,
+                source: VIEW_TYPE_EXCALIDRAW,
+                hoverParent: e.target,
+                targetEl: e.target,
+                linktext: this.plugin.hover.linkText,
+              });
+              hoverPoint = currentPosition;
+            }
+          },
+          onKeyUp: (e:any) => {
+            blockOnCtrlKeyDown = e.ctrlKey;
+            this.ctrlKeyDown  = e.ctrlKey;
+            this.shiftKeyDown = e.shiftKey;
+            this.altKeyDown   = e.altKey;
+          },
+          onClick: (e:MouseEvent):any => {
+            //@ts-ignore
+            if(!(e.ctrlKey||e.metaKey)) return;
+            if(!(this.plugin.settings.allowCtrlClick)) return;
+            if(!this.getSelectedTextElement().id) return;
+            this.handleLinkClick(this,e);
+          },
+          onMouseMove: (e:MouseEvent) => {
+            //@ts-ignore
+            this.mouseEvent = e.nativeEvent;
+          },
+          onMouseOver: (e:MouseEvent) => {
+            clearHoverPreview();
+            //console.log(e);
+          },
+        
+        },
+        React.createElement(Excalidraw.default, {
+          ref: excalidrawRef,
+          width: dimensions.width,
+          height: dimensions.height,
+          UIOptions: {
+            canvasActions: {
+              loadScene: false,
+              saveScene: false,
+              saveAsScene: false,
+              export: { saveFileToDisk: false },
+              saveAsImage: false,
+              saveToActiveFile: false,
+            },
+          },
+          initialData: initdata,
+          detectScroll: true,
+          onPointerUpdate: (p:any) => {
+            currentPosition = p.pointer;
+            if(hoverPreviewTarget && (Math.abs(hoverPoint.x-p.pointer.x)>50 || Math.abs(hoverPoint.y-p.pointer.y)>50)) clearHoverPreview();
+            if(!this.excalidrawRef.current.getAppState().viewModeEnabled) return;
+            const handleLinkClick = () => {
+              selectedTextElement = getTextElementAtPointer(p.pointer);
+              if(selectedTextElement) {
+                const event = new MouseEvent("click", {ctrlKey: true, shiftKey: this.shiftKeyDown, altKey:this.altKeyDown});
+                this.handleLinkClick(this,event);
+                selectedTextElement = null;
+              }          
+            }
+
+            const buttonDown = !blockOnMouseButtonDown && p.button=="down";
+            if(buttonDown) {
+              blockOnMouseButtonDown = true;
+
+              //ctrl click
+              if(this.ctrlKeyDown) {
+                handleLinkClick();
+                return;
+              }
+              
+              //dobule click
+              const now = (new Date()).getTime();
+              if(now-timestamp < 600) {
+                handleLinkClick();
+              }           
+              timestamp = now;
+              return;
+            }
+            if (p.button=="up") { 
+              blockOnMouseButtonDown=false;
+            }
+          },
+          onChange: (et:ExcalidrawElement[],st:AppState) => {
+            if(this.justLoaded) {
+              this.justLoaded = false;             
+              this.zoomToFit();
+              previousSceneVersion = getSceneVersion(et);
+              return;
+            } 
+            if (st.editingElement == null && st.resizingElement == null && 
+                st.draggingElement == null && st.editingGroupId == null &&
+                st.editingLinearElement == null ) {
+              const sceneVersion = getSceneVersion(et);
+              if(sceneVersion != previousSceneVersion) {
+                previousSceneVersion = sceneVersion;
+                this.dirty=this.file?.path;
+              }
+            }
+          },
+          onLibraryChange: (items:LibraryItems) => {
+            (async () => {
+              this.plugin.setStencilLibrary(EXCALIDRAW_LIB_HEADER+JSON.stringify(items)+'}');
+              await this.plugin.saveSettings();  
+            })();
+          },
+          /*onPaste: (data: ClipboardData, event: ClipboardEvent | null) => {
+            console.log(data,event);
+            return true;
+          },*/
+          onBeforeTextEdit: (textElement: ExcalidrawTextElement) => {
+            if(this.autosaveTimer) { //stopping autosave to avoid autosave overwriting text while the user edits it
+              clearInterval(this.autosaveTimer);
+              this.autosaveTimer = null;
+            }
+            if(this.textMode==TextMode.parsed) return this.excalidrawData.getRawText(textElement.id);
+            return null;
+          },
+          onBeforeTextSubmit: (textElement: ExcalidrawTextElement, text:string, isDeleted:boolean) => {
+            if(isDeleted) {
+              this.excalidrawData.deleteTextElement(textElement.id);
+              this.dirty=this.file?.path;
+              this.setupAutosaveTimer();
+              return;
+            } 
+            //If the parsed text is different than the raw text, and if View is in TextMode.parsed
+            //Then I need to clear the undo history to avoid overwriting raw text with parsed text and losing links
+            if(text!=textElement.text) { //the user made changes to the text
+              //setTextElement will attempt a quick parse (without processing transclusions)
+              const parseResult = this.excalidrawData.setTextElement(textElement.id, text,async ()=>{
+                await this.save(false);
+                //this callback function will only be invoked if quick parse fails, i.e. there is a transclusion in the raw text
+                //thus I only check if TextMode.parsed, text is always != with parseResult
+                if(this.textMode == TextMode.parsed) this.excalidrawRef.current.history.clear(); 
+                this.setupAutosaveTimer(); 
+              });
+              if(parseResult) { //there were no transclusions in the raw text, quick parse was successful
+                this.setupAutosaveTimer();
+                if(this.textMode == TextMode.raw) return; //text is displayed in raw, no need to clear the history, undo will not create problems
+                if(text == parseResult) return; //There were no links to parse, raw text and parsed text are equivalent
+                this.excalidrawRef.current.history.clear();
+                return parseResult;
+              }
+              return;
+            }
+            this.setupAutosaveTimer();
+            if(this.textMode==TextMode.parsed) return this.excalidrawData.getParsedText(textElement.id);
+          }
+        })
+      );
+      
       return React.createElement(
         React.Fragment,
         null,
-        React.createElement(
-          "div",
-          {
-            className: "excalidraw-wrapper",
-            ref: excalidrawWrapperRef,
-            key: "abc",
-            onKeyDown: (e:any) => {
-              this.ctrlKeyDown  = e.ctrlKey;
-              this.shiftKeyDown = e.shiftKey;
-              this.altKeyDown   = e.altKey;
-            },
-            onKeyUp: (e:any) => {
-              this.ctrlKeyDown  = e.ctrlKey;
-              this.shiftKeyDown = e.shiftKey;
-              this.altKeyDown   = e.altKey;
-            },
-            onClick: (e:MouseEvent):any => {
-              //@ts-ignore
-              if(!(e.ctrlKey||e.metaKey)) return;
-              if(!(this.plugin.settings.allowCtrlClick)) return;
-              if(!this.getSelectedTextElement().id) return;
-              this.handleLinkClick(this,e);
-            }
-          },
-          React.createElement(Excalidraw.default, {
-            ref: excalidrawRef,
-            width: dimensions.width,
-            height: dimensions.height,
-            UIOptions: {
-              canvasActions: {
-                loadScene: false,
-                saveScene: false,
-                saveAsScene: false,
-                export: { saveFileToDisk: false },
-                saveAsImage: false,
-                saveToActiveFile: false,
-              },
-            },
-            initialData: initdata,
-            detectScroll: true,
-            onPointerUpdate: (p:any) => {
-              currentPosition = p.pointer;
-              if(!this.excalidrawRef.current.getAppState().viewModeEnabled) return;
-              const handleLinkClick = () => {
-                const elements = this.excalidrawRef.current.getSceneElements()
-                                  .filter((e:ExcalidrawElement)=>{
-                                    return e.type == "text" 
-                                            && e.x<=p.pointer.x && (e.x+e.width)>=p.pointer.x
-                                            && e.y<=p.pointer.y && (e.y+e.height)>=p.pointer.y;
-                                  });
-                if(elements.length>0) {
-                  selectedTextElement = {id:elements[0].id,text:elements[0].text};
-                  const event = new MouseEvent("click", {ctrlKey: true, shiftKey: this.shiftKeyDown, altKey:this.altKeyDown});
-                  this.handleLinkClick(this,event);
-                  selectedTextElement = null;
-                }          
-              }
-
-              const buttonDown = !block && p.button=="down";
-              if(buttonDown) {
-                block = true;
-
-                //ctrl click
-                if(this.ctrlKeyDown) {
-                  handleLinkClick();
-                  return;
-                }
-                
-                //dobule click
-                const now = (new Date()).getTime();
-                if(now-timestamp < 600) {
-                  handleLinkClick();
-                }           
-                timestamp = now;
-                return;
-              }
-              if (p.button=="up") { 
-                block=false;
-              }
-            },
-            onChange: (et:ExcalidrawElement[],st:AppState) => {
-              if(this.justLoaded) {
-                this.justLoaded = false;             
-                this.zoomToFit();
-                previousSceneVersion = getSceneVersion(et);
-                return;
-              } 
-              if (st.editingElement == null && st.resizingElement == null && 
-                  st.draggingElement == null && st.editingGroupId == null &&
-                  st.editingLinearElement == null ) {
-                const sceneVersion = getSceneVersion(et);
-                if(sceneVersion != previousSceneVersion) {
-                  previousSceneVersion = sceneVersion;
-                  this.dirty=this.file?.path;
-                }
-              }
-            },
-            onLibraryChange: (items:LibraryItems) => {
-              (async () => {
-                this.plugin.setStencilLibrary(EXCALIDRAW_LIB_HEADER+JSON.stringify(items)+'}');
-                await this.plugin.saveSettings();  
-              })();
-            },
-            /*onPaste: (data: ClipboardData, event: ClipboardEvent | null) => {
-              console.log(data,event);
-              return true;
-            },*/
-            onBeforeTextEdit: (textElement: ExcalidrawTextElement) => {
-              if(this.autosaveTimer) { //stopping autosave to avoid autosave overwriting text while the user edits it
-                clearInterval(this.autosaveTimer);
-                this.autosaveTimer = null;
-              }
-              if(this.textMode==TextMode.parsed) return this.excalidrawData.getRawText(textElement.id);
-              return null;
-            },
-            onBeforeTextSubmit: (textElement: ExcalidrawTextElement, text:string, isDeleted:boolean) => {
-              if(isDeleted) {
-                this.excalidrawData.deleteTextElement(textElement.id);
-                this.dirty=this.file?.path;
-                this.setupAutosaveTimer();
-                return;
-              } 
-              //If the parsed text is different than the raw text, and if View is in TextMode.parsed
-              //Then I need to clear the undo history to avoid overwriting raw text with parsed text and losing links
-              if(text!=textElement.text) { //the user made changes to the text
-                //setTextElement will attempt a quick parse (without processing transclusions)
-                const parseResult = this.excalidrawData.setTextElement(textElement.id, text,async ()=>{
-                  await this.save(false);
-                  //this callback function will only be invoked if quick parse fails, i.e. there is a transclusion in the raw text
-                  //thus I only check if TextMode.parsed, text is always != with parseResult
-                  if(this.textMode == TextMode.parsed) this.excalidrawRef.current.history.clear(); 
-                  this.setupAutosaveTimer(); 
-                });
-                if(parseResult) { //there were no transclusions in the raw text, quick parse was successful
-                  this.setupAutosaveTimer();
-                  if(this.textMode == TextMode.raw) return; //text is displayed in raw, no need to clear the history, undo will not create problems
-                  if(text == parseResult) return; //There were no links to parse, raw text and parsed text are equivalent
-                  this.excalidrawRef.current.history.clear();
-                  return parseResult;
-                }
-                return;
-              }
-              this.setupAutosaveTimer();
-              if(this.textMode==TextMode.parsed) return this.excalidrawData.getParsedText(textElement.id);
-            }
-          })
-        )
+        excalidrawDiv
       );
+
     });
-    ReactDOM.render(reactElement,this.contentEl);  
+    ReactDOM.render(reactElement,this.contentEl,()=>this.excalidrawWrapperRef.current.focus());  
   }
 
   private zoomToFit() {
