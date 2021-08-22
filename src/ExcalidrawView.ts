@@ -280,8 +280,8 @@ export default class ExcalidrawView extends TextFileView {
       this.addAction(FULLSCREEN_ICON_NAME,"Press ESC to exit fullscreen mode",()=>{
         this.contentEl.requestFullscreen({navigationUI: "hide"});
         if(this.excalidrawWrapperRef) this.excalidrawWrapperRef.current.focus();
-        this.zoomToFit();
       });
+      this.contentEl.onfullscreenchange = () => this.zoomToFit();
     }
     //this.gotoFullscreen = this.addAction(FULLSCREEN_ICON_NAME,"Press ESC to exit fullscreen mode",()=>this.toggleFullscreen());
     //this.exitFullscreen = this.addAction(EXIT_FULLSCREEN_ICON_NAME,"",()=>this.toggleFullscreen());
