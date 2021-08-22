@@ -35,7 +35,7 @@ import {
 import ExcalidrawPlugin from './main';
 import {ExcalidrawAutomate} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
-import { ExcalidrawData, REG_LINK_BACKETS } from "./ExcalidrawData";
+import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REG_LINK_BACKETS } from "./ExcalidrawData";
 import { checkAndCreateFolder, download, getNewUniqueFilepath, splitFolderAndFilename } from "./Utils";
 import { Prompt } from "./Prompt";
 
@@ -55,7 +55,6 @@ export interface ExportSettings {
   withTheme: boolean
 }
 
-const REG_LINKINDEX_HYPERLINK = /^\w+:\/\//;
 const REG_LINKINDEX_INVALIDCHARS = /[<>:"\\|?*]/g;
 
 export default class ExcalidrawView extends TextFileView {
@@ -74,8 +73,8 @@ export default class ExcalidrawView extends TextFileView {
   public textMode:TextMode = TextMode.raw;
   private textIsParsed_Element:HTMLElement;
   private textIsRaw_Element:HTMLElement;
-  private gotoFullscreen:HTMLElement;
-  private exitFullscreen:HTMLElement;
+  /*  private gotoFullscreen:HTMLElement;
+  private exitFullscreen:HTMLElement;*/
   private preventReload:boolean = true;
   public compatibilityMode: boolean = false;
   //store key state for view mode link resolution
@@ -152,8 +151,17 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   async save(preventReload:boolean=true) {
+    if(!this.getScene) return;
     this.preventReload = preventReload;
     this.dirty = null;
+    
+    if(this.compatibilityMode) {
+      await this.excalidrawData.syncElements(this.getScene());
+    } else {
+      if(await this.excalidrawData.syncElements(this.getScene()) && !this.autosaving) {
+        await this.loadDrawing(false);
+      }
+    }
     await super.save();
   }
 
@@ -164,9 +172,6 @@ export default class ExcalidrawView extends TextFileView {
     //console.log("ExcalidrawView.getViewData()");
     if(!this.getScene) return this.data;
     if(!this.compatibilityMode) {
-      if(this.excalidrawData.syncElements(this.getScene()) && !this.autosaving) {
-        this.loadDrawing(false);
-      }  
       let trimLocation = this.data.search("# Text Elements\n");
       if(trimLocation == -1) trimLocation = this.data.search("# Drawing\n");
       if(trimLocation == -1) return this.data;
@@ -183,7 +188,6 @@ export default class ExcalidrawView extends TextFileView {
       return header + this.excalidrawData.generateMD();
     }
     if(this.compatibilityMode) {
-      this.excalidrawData.syncElements(this.getScene());
       const scene = this.excalidrawData.scene;
       if(!this.autosaving) {
         if(this.plugin.settings.autoexportSVG) this.saveSVG(scene);
@@ -204,7 +208,8 @@ export default class ExcalidrawView extends TextFileView {
     }
     if(text.match(REG_LINKINDEX_HYPERLINK)) {
       window.open(text,"_blank");
-      return;    }
+      return;    
+    }
 
     //![[link|alias]]![alias](link)
     //1  2    3      4 5      6
@@ -220,7 +225,9 @@ export default class ExcalidrawView extends TextFileView {
       //@ts-ignore
       search[0].view.setQuery("tag:"+tags.value[1]);
       this.app.workspace.revealLeaf(search[0]);
-      if(this.gotoFullscreen.style.display=="none") this.toggleFullscreen();
+      //if(this.gotoFullscreen.style.display=="none") this.toggleFullscreen();
+      document.exitFullscreen();
+      this.zoomToFit();
       return;
     }
 
@@ -245,7 +252,11 @@ export default class ExcalidrawView extends TextFileView {
     }
     try {
       const f = view.file;
-      if(ev.shiftKey && this.gotoFullscreen.style.display=="none") this.toggleFullscreen();
+      //if(ev.shiftKey && this.gotoFullscreen.style.display=="none") this.toggleFullscreen();
+      if(ev.shiftKey) {
+        document.exitFullscreen();
+        this.zoomToFit();
+      }
       view.app.workspace.openLinkText(text,view.file.path,ev.shiftKey);
     } catch (e) {
       new Notice(e,4000);
@@ -264,12 +275,19 @@ export default class ExcalidrawView extends TextFileView {
     
     this.addAction("link",t("OPEN_LINK"), (ev)=>this.handleLinkClick(this,ev));
 
-    
-    this.gotoFullscreen = this.addAction(FULLSCREEN_ICON_NAME,"",()=>this.toggleFullscreen());
-    this.exitFullscreen = this.addAction(EXIT_FULLSCREEN_ICON_NAME,"",()=>this.toggleFullscreen());
-    this.exitFullscreen.hide();
     //@ts-ignore
-    if(this.app.isMobile) this.gotoFullscreen.hide();
+    if(!this.app.isMobile) {
+      this.addAction(FULLSCREEN_ICON_NAME,"Press ESC to exit fullscreen mode",()=>{
+        this.contentEl.requestFullscreen({navigationUI: "hide"});
+        if(this.excalidrawWrapperRef) this.excalidrawWrapperRef.current.focus();
+        this.zoomToFit();
+      });
+    }
+    //this.gotoFullscreen = this.addAction(FULLSCREEN_ICON_NAME,"Press ESC to exit fullscreen mode",()=>this.toggleFullscreen());
+    //this.exitFullscreen = this.addAction(EXIT_FULLSCREEN_ICON_NAME,"",()=>this.toggleFullscreen());
+    //this.exitFullscreen.hide();
+    //@ts-ignore
+    //if(this.app.isMobile) this.gotoFullscreen.hide();
 
     //this is to solve sliding panes bug
     if (this.app.workspace.layoutReady) {
@@ -282,11 +300,11 @@ export default class ExcalidrawView extends TextFileView {
     this.setupAutosaveTimer();
   }
 
-  private toggleFullscreen() {
+  /*private toggleFullscreen() {
     //@ts-ignore
     if(this.app.isMobile) return;
     if(this.exitFullscreen.style.display=="none") {
-      this.containerEl.requestFullscreen();
+      this.containerEl.requestFullscreen({ navigationUI: "hide" });
       this.gotoFullscreen.hide();
       this.exitFullscreen.show();
     } else {
@@ -295,7 +313,7 @@ export default class ExcalidrawView extends TextFileView {
       this.exitFullscreen.hide();
     }
     this.zoomToFit();
-  }
+  }*/
 
   public async changeTextMode(textMode:TextMode,reload:boolean=true) {
     this.textMode = textMode;
@@ -343,7 +361,7 @@ export default class ExcalidrawView extends TextFileView {
     if(file) this.data = await this.app.vault.read(file);
     if(fullreload) await this.excalidrawData.loadData(this.data, this.file,this.textMode);
     else await this.excalidrawData.setTextMode(this.textMode);
-    this.loadDrawing(false);
+    await this.loadDrawing(false);
     this.dirty = null;
   }
 
@@ -372,7 +390,7 @@ export default class ExcalidrawView extends TextFileView {
         if(!(await this.excalidrawData.loadData(data, this.file,this.textMode))) return;
       }
       if(clear) this.clear();
-      this.loadDrawing(true)
+      await this.loadDrawing(true)
     });
   }
 
@@ -380,7 +398,7 @@ export default class ExcalidrawView extends TextFileView {
    * 
    * @param justloaded - a flag to trigger zoom to fit after the drawing has been loaded
    */
-  private loadDrawing(justloaded:boolean) {        
+  private async loadDrawing(justloaded:boolean) {        
     const excalidrawData = this.excalidrawData.scene;
     if(this.excalidrawRef) {
       const viewModeEnabled = this.excalidrawRef.current.getAppState().viewModeEnabled;
@@ -402,13 +420,11 @@ export default class ExcalidrawView extends TextFileView {
       if(this.excalidrawWrapperRef) this.excalidrawWrapperRef.current.focus();
     } else {
       this.justLoaded = justloaded; 
-      (async() => {
-        this.instantiateExcalidraw({
-          elements: excalidrawData.elements,
-          appState: excalidrawData.appState,
-          libraryItems: await this.getLibrary(),
-        });
-      })();
+      this.instantiateExcalidraw({
+        elements: excalidrawData.elements,
+        appState: excalidrawData.appState,
+        libraryItems: await this.getLibrary(),
+      });
     }
   }
 
@@ -737,15 +753,22 @@ export default class ExcalidrawView extends TextFileView {
 
               this.plugin.hover.linkText = linktext; 
               this.plugin.hover.sourcePath = this.file.path;
-              hoverPreviewTarget = e.target;
+              hoverPreviewTarget = this.contentEl; //e.target;
               this.app.workspace.trigger('hover-link', {
                 event: this.mouseEvent,
                 source: VIEW_TYPE_EXCALIDRAW,
-                hoverParent: e.target,
-                targetEl: e.target,
+                hoverParent: hoverPreviewTarget,
+                targetEl: hoverPreviewTarget,
                 linktext: this.plugin.hover.linkText,
               });
               hoverPoint = currentPosition;
+              if(document.fullscreenElement === this.contentEl) {
+                const self = this;
+                setTimeout(()=>{
+                  const popover = document.body.querySelector("div.popover");
+                  if(popover) self.contentEl.append(popover);
+                },100)
+              }
             }
           },
           onKeyUp: (e:any) => {

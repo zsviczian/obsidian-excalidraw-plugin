@@ -1,4 +1,4 @@
-import { FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS, FRONTMATTER_KEY_CUSTOM_PREFIX } from "src/constants";
+import { FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS, FRONTMATTER_KEY_CUSTOM_PREFIX, FRONTMATTER_KEY_CUSTOM_URL_PREFIX } from "src/constants";
 
 // English
 export default {
@@ -39,8 +39,8 @@ export default {
   FILENAME_INVALID_CHARS: 'File name cannot contain any of the following characters: * " \\  < > : | ?',
   FILE_DOES_NOT_EXIST: "File does not exist. Hold down ALT (or ALT+SHIFT) and CLICK link button to create a new file.",
   FORCE_SAVE: "Force-save to update transclusions in adjacent panes.\n(Please note, that autosave is always on)",
-  RAW: "Text-elements are displayed in RAW mode. Click button to change to PREVIEW mode.",
-  PARSED: "Text-elements are displayed in PREVIEW mode. Click button to change to RAW mode.",
+  RAW: "Change to PREVIEW mode (only effects text-elements with links or transclusions)",
+  PARSED: "Change to RAW mode (only effects text-elements with links or transclusions)",
   NOFILE: "Excalidraw (no file)",
   COMPATIBILITY_MODE: "*.excalidraw file opened in compatibility mode. Convert to new format for full plugin functionality.",
   CONVERT_FILE: "Convert to new format",
@@ -77,13 +77,17 @@ export default {
               "When Obsidian files change, the matching [[link]] in your drawings will also change. " +
               "If you don't want text accidentally changing in your drawings use [[links|with aliases]].",
   LINK_BRACKETS_NAME: "Show [[brackets]] around links",
-  LINK_BRACKETS_DESC: "In preview (locked) mode, when parsing Text Elements, place brackets around links. " +
+  LINK_BRACKETS_DESC: "In PREVIEW mode, when parsing Text Elements, place brackets around links. " +
                       "You can override this setting for a specific drawing by adding '" + FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS + 
                       ": true/false' to the file\'s frontmatter.",
   LINK_PREFIX_NAME:"Link prefix",
-  LINK_PREFIX_DESC:"In preview (locked) mode, if the Text Element contains a link, precede the text with these characters. " +
+  LINK_PREFIX_DESC:"In PREVIEW mode, if the Text Element contains a link, precede the text with these characters. " +
                    "You can override this setting for a specific drawing by adding \'" + FRONTMATTER_KEY_CUSTOM_PREFIX + 
-                   ': "👉 "\' to the file\'s frontmatter.',
+                   ': "📍 "\' to the file\'s frontmatter.',
+  URL_PREFIX_NAME:"URL prefix",
+  URL_PREFIX_DESC:"In PREVIEW mode, if the Text Element contains a URL link, precede the text with these characters. " +
+                  "You can override this setting for a specific drawing by adding \'" + FRONTMATTER_KEY_CUSTOM_URL_PREFIX + 
+                  ': "🌐 "\' to the file\'s frontmatter.',
   LINK_CTRL_CLICK_NAME: "CTRL + CLICK on text to open them as links",
   LINK_CTRL_CLICK_DESC: "You can turn this feature off if it interferes with default Excalidraw features you want to use. If " +
                         "this is turned off, only the link button in the title bar of the drawing pane will open links.",
@@ -128,7 +132,7 @@ export default {
   FILETYPE_DESC: "Excalidraw files will receive an indicator using the emojii or text defined in the next setting.",                           
   FILETAG_NAME: "Set the type indicator for excalidraw.md files",
   FILETAG_DESC: "The text or emojii to display as type indicator.",                           
-
+  INSERT_EMOJI: "Insert an emoji",
 
 
   //openDrawings.ts

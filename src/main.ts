@@ -893,14 +893,11 @@ export default class ExcalidrawPlugin extends Plugin {
       );
 
       //save open drawings when user quits the application
-      const quitEventHandler = (tasks: Tasks) => {
+      const quitEventHandler = async (tasks: Tasks) => {
         const leaves = self.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);      
         for (let i=0;i<leaves.length;i++) {
-          (leaves[i].view as ExcalidrawView).save(); 
+          await (leaves[i].view as ExcalidrawView).save(true); 
         }
-        this.settings.drawingOpenCount += this.opencount;
-        this.settings.loadCount++;
-        //this.saveSettings();
       }
       self.registerEvent(
         self.app.workspace.on("quit",quitEventHandler)

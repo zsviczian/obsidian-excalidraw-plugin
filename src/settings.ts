@@ -18,7 +18,7 @@ export interface ExcalidrawSettings {
   width: string,
   showLinkBrackets: boolean,
   linkPrefix: string,
-  //autosave: boolean;
+  urlPrefix: string,
   allowCtrlClick: boolean, //if disabled only the link button in the view header will open links 
   pngExportScale: number,
   exportWithTheme: boolean,
@@ -44,8 +44,8 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   displaySVGInPreview: true,
   width: '400',
   linkPrefix: "📍",
+  urlPrefix: "🌐",
   showLinkBrackets: true,
-  //autosave: false,
   allowCtrlClick: true,
   pngExportScale: 1,
   exportWithTheme: true,
@@ -65,13 +65,31 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
   plugin: ExcalidrawPlugin;
+  private requestEmbedUpdate:boolean = false;
+  private requestReloadDrawings:boolean = false;
 
   constructor(app: App, plugin: ExcalidrawPlugin) {
     super(app, plugin);
     this.plugin = plugin;
   }
 
+  async hide() {
+    if(this.requestReloadDrawings) {
+      const exs = this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+      for(const v of exs) {
+        if(v.view instanceof ExcalidrawView) {
+          await v.view.save(false);
+          await v.view.reload(true);
+        }
+      }
+      this.requestEmbedUpdate = true;
+    }
+    if(this.requestEmbedUpdate) this.plugin.triggerEmbedUpdates();
+  }
+
   display(): void {
+    this.requestEmbedUpdate = false;
+    this.requestReloadDrawings = false;
     let {containerEl} = this;
     this.containerEl.empty();
 
@@ -96,28 +114,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           this.plugin.settings.templateFilePath = value;
           await this.plugin.saveSettings();
         }));
-
-/*    new Setting(containerEl)
-      .setName(t("AUTOSAVE_NAME")) 
-      .setDesc(t("AUTOSAVE_DESC"))
-      .addToggle(toggle => toggle
-        .setValue(this.plugin.settings.autosave)
-        .onChange(async (value) => {
-          this.plugin.settings.autosave = value;
-          await this.plugin.saveSettings();
-          const exs = this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
-          for(const v of exs) {
-            if(v.view instanceof ExcalidrawView) {
-              if(v.view.autosaveTimer) {
-                clearInterval(v.view.autosaveTimer)
-                v.view.autosaveTimer = null;
-              }
-              if(value) { 
-                v.view.setupAutosaveTimer();
-              }
-            }
-          }          
-        }));*/
 
     this.containerEl.createEl('h1', {text: t("FILENAME_HEAD")});
     containerEl.createDiv('',(el) => {
@@ -163,17 +159,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.containerEl.createEl('h1', {text: t("LINKS_HEAD")});
     this.containerEl.createEl('p',{
       text: t("LINKS_DESC")});
-    
-    const reloadDrawings = async () => {
-      const exs = this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
-      for(const v of exs) {
-        if(v.view instanceof ExcalidrawView) {
-          await v.view.save(false);
-          v.view.reload(true);
-        }
-      }
-      this.plugin.triggerEmbedUpdates();
-    }
 
     new Setting(containerEl)
       .setName(t("LINK_BRACKETS_NAME")) 
@@ -183,19 +168,32 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .onChange(async (value) => {
           this.plugin.settings.showLinkBrackets = value;
           await this.plugin.saveSettings();
-          reloadDrawings();
+          this.requestReloadDrawings = true;
         }));
     
     new Setting(containerEl)
       .setName(t("LINK_PREFIX_NAME"))
       .setDesc(t("LINK_PREFIX_DESC"))
       .addText(text => text
-        .setPlaceholder('📍')
+        .setPlaceholder(t("INSERT_EMOJI"))
         .setValue(this.plugin.settings.linkPrefix)
-        .onChange(async (value) => {
+        .onChange((value) => {
+          console.log(value);
           this.plugin.settings.linkPrefix = value;
+          this.plugin.saveSettings();
+          this.requestReloadDrawings = true;
+        }));
+  
+    new Setting(containerEl)
+      .setName(t("URL_PREFIX_NAME"))
+      .setDesc(t("URL_PREFIX_DESC"))
+      .addText(text => text
+        .setPlaceholder(t("INSERT_EMOJI"))
+        .setValue(this.plugin.settings.urlPrefix)
+        .onChange(async (value) => {
+          this.plugin.settings.urlPrefix = value;
           await this.plugin.saveSettings();
-          reloadDrawings();
+          this.requestReloadDrawings = true;
         }));
 
     new Setting(containerEl)
@@ -231,7 +229,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .onChange(async (value) => {
           this.plugin.settings.width = value;
           await this.plugin.saveSettings();
-          this.plugin.triggerEmbedUpdates();
+          this.requestEmbedUpdate = true;
         }));
 
     let scaleText:HTMLDivElement;
@@ -245,7 +243,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .onChange(async (value)=> {
           scaleText.innerText = " " + value.toString();
           this.plugin.settings.pngExportScale = value;
-          this.plugin.saveSettings();
+          await this.plugin.saveSettings();
         }))
         .settingEl.createDiv('',(el)=>{
           scaleText = el;
@@ -262,7 +260,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .onChange(async (value) => {
           this.plugin.settings.exportWithBackground = value;
           await this.plugin.saveSettings();
-          this.plugin.triggerEmbedUpdates();
+          this.requestEmbedUpdate = true;
         }));
     
     new Setting(containerEl)
@@ -273,7 +271,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .onChange(async (value) => {
           this.plugin.settings.exportWithTheme = value;
           await this.plugin.saveSettings();
-          this.plugin.triggerEmbedUpdates();
+          this.requestEmbedUpdate = true;
         }));
     
     this.containerEl.createEl('h1', {text: t("EXPORT_HEAD")});
@@ -359,7 +357,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     .setName(t("FILETAG_NAME")) 
     .setDesc(t("FILETAG_DESC"))
     .addText(text => text
-      .setPlaceholder('✏️')
+      .setPlaceholder(t("INSERT_EMOJI"))
       .setValue(this.plugin.settings.experimentalFileTag)
       .onChange(async (value) => {
         this.plugin.settings.experimentalFileTag = value;

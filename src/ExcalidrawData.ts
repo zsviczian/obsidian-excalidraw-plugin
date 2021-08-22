@@ -3,6 +3,7 @@ import {
   nanoid,
   FRONTMATTER_KEY_CUSTOM_PREFIX,
   FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS,
+  FRONTMATTER_KEY_CUSTOM_URL_PREFIX,
 } from "./constants";
 import { measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
@@ -17,6 +18,7 @@ const DRAWING_REG = /[\r\n]# Drawing[\r\n](```json[\r\n])?(.*)(```)?(%%)?/gm;
 //![[link|alias]]![alias](link)
 //1  2    3      4 5      6
 export const REG_LINK_BACKETS = /(!)?\[\[([^|\]]+)\|?(.+)?]]|(!)?\[(.*)\]\((.*)\)/g;
+export const REG_LINKINDEX_HYPERLINK = /^\w+:\/\//;
 
 export function getJSON(data:string):string {
   const res = data.matchAll(DRAWING_REG);
@@ -32,16 +34,15 @@ export class ExcalidrawData {
   private textElements:Map<string,{raw:string, parsed:string}> = null; 
   public scene:any = null;
   private file:TFile = null;
-  private settings:ExcalidrawSettings;
   private app:App;
   private showLinkBrackets: boolean;
   private linkPrefix: string;
+  private urlPrefix: string;
   private textMode: TextMode = TextMode.raw;
   private plugin: ExcalidrawPlugin;
 
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
-    this.settings = plugin.settings;
     this.app = plugin.app;
   }  
 
@@ -59,6 +60,7 @@ export class ExcalidrawData {
     //The drawing will use these values until next drawing is loaded or this drawing is re-loaded
     this.setShowLinkBrackets();
     this.setLinkPrefix();  
+    this.setUrlPrefix();
     
     this.scene = null;
 
@@ -66,7 +68,7 @@ export class ExcalidrawData {
     //should be loaded as the scene.
     //This feature is mostly likely only relevant to people who use Obsidian and Logseq on the same vault and edit .excalidraw
     //drawings in Logseq.
-    if (this.settings.syncExcalidraw) {
+    if (this.plugin.settings.syncExcalidraw) {
       const excalfile = file.path.substring(0,file.path.lastIndexOf('.md')) + '.excalidraw';
       const f = this.app.vault.getAbstractFileByPath(excalfile);
       if(f && f instanceof TFile && f.stat.mtime>file.stat.mtime) { //the .excalidraw file is newer then the .md file
@@ -115,6 +117,7 @@ export class ExcalidrawData {
     this.textElements = new Map<string,{raw:string, parsed:string}>();
     this.setShowLinkBrackets();
     this.setLinkPrefix(); 
+    this.setUrlPrefix();
     this.scene = JSON.parse(data);
     this.findNewTextElementsInScene();
     await this.setTextMode(TextMode.raw,true); //legacy files are always displayed in raw mode.
@@ -230,31 +233,6 @@ export class ExcalidrawData {
     }
   }
 
-  /**
-   * update text element map by deleting entries that are no long in the scene
-   * and updating the textElement map based on the text updated in the scene
-   */
-   private updateTextElementsFromSceneRawOnly() {
-    for(const key of this.textElements.keys()){
-      //find text element in the scene
-      const el = this.scene.elements?.filter((el:any)=> el.type=="text" && el.id==key);
-      if(el.length==0) {
-        this.textElements.delete(key); //if no longer in the scene, delete the text element
-      } else {
-        if(!this.textElements.has(key)) {
-          this.textElements.set(key,{raw: el[0].text,parsed: null});
-          this.parseasync(key,el[0].text);
-        } else {
-          const text = (this.textMode == TextMode.parsed) ? this.textElements.get(key).parsed : this.textElements.get(key).raw;
-          if(text != el[0].text) {
-            this.textElements.set(key,{raw: el[0].text,parsed: null});
-            this.parseasync(key,el[0].text);
-          }
-        }
-      }
-    }
-  }
-
   private async parseasync(key:string, raw:string) {
     this.textElements.set(key,{raw:raw,parsed: await this.parse(raw)});
   }
@@ -300,6 +278,7 @@ export class ExcalidrawData {
     let position = 0;
     const res = text.matchAll(REG_LINK_BACKETS);
     let linkIcon = false;
+    let urlIcon = false;
     let parts;
     while(!(parts=res.next()).done) {
       if (parts.value[1] || parts.value[4]) { //transclusion
@@ -308,8 +287,11 @@ export class ExcalidrawData {
       } else {
         const parsedLink = this.parseLinks(text,position,parts);
         if(parsedLink) {
-          linkIcon = true;
           outString += parsedLink;
+          if(!(urlIcon || linkIcon))
+            //[2]: is wiki link? [2] link text, [6] link text
+            if((parts.value[2] ? parts.value[2]:parts.value[6]).match(REG_LINKINDEX_HYPERLINK)) urlIcon = true;  
+            else linkIcon = true;
         }
       } 
       position = parts.value.index + parts.value[0].length;
@@ -317,6 +299,9 @@ export class ExcalidrawData {
     outString += text.substring(position,text.length);
     if (linkIcon) {
       outString = this.linkPrefix + outString;
+    }
+    if (urlIcon) {
+      outString = this.urlPrefix + outString;
     }
 
     return outString;
@@ -344,18 +329,25 @@ export class ExcalidrawData {
     let position = 0;
     const res = text.matchAll(REG_LINK_BACKETS);
     let linkIcon = false;
+    let urlIcon = false;
     let parts;
     while(!(parts=res.next()).done) {
       const parsedLink = this.parseLinks(text,position,parts);
       if(parsedLink) {
-        linkIcon = true;
         outString += parsedLink;
+        if(!(urlIcon || linkIcon))
+          //[2]: is wiki link? [2] link text, [6] link text
+          if((parts.value[2] ? parts.value[2]:parts.value[6]).match(REG_LINKINDEX_HYPERLINK)) urlIcon = true;  
+          else linkIcon = true;
       }
       position = parts.value.index + parts.value[0].length;
     }
     outString += text.substring(position,text.length);
     if (linkIcon) {
       outString = this.linkPrefix + outString;
+    }
+    if (urlIcon) {
+      outString = this.urlPrefix + outString;
     }
     return outString;
   }
@@ -374,18 +366,19 @@ export class ExcalidrawData {
     return outString + this.plugin.getMarkdownDrawingSection(JSON.stringify(this.scene));
   }
 
-  public syncElements(newScene:any):boolean {
+  public async syncElements(newScene:any):Promise<boolean> {
     //console.log("Excalidraw.Data.syncElements()");
     this.scene = newScene;//JSON_parse(newScene);
-    const result = this.setLinkPrefix() || this.setShowLinkBrackets() || this.findNewTextElementsInScene();
-    this.updateTextElementsFromSceneRawOnly();
+    const result = this.setLinkPrefix() || this.setUrlPrefix() || this.setShowLinkBrackets() || this.findNewTextElementsInScene();
+    //this.updateTextElementsFromSceneRawOnly();
+    await this.updateTextElementsFromScene();
     return result;
   }
 
   public async updateScene(newScene:any){
     //console.log("Excalidraw.Data.updateScene()");
     this.scene = JSON_parse(newScene);
-    const result = this.setLinkPrefix() || this.setShowLinkBrackets() || this.findNewTextElementsInScene();
+    const result = this.setLinkPrefix() || this.setUrlPrefix() || this.setShowLinkBrackets() || this.findNewTextElementsInScene();
     await this.updateTextElementsFromScene();
     if(result) {
       await this.updateSceneTextElements();
@@ -426,9 +419,20 @@ export class ExcalidrawData {
     if (fileCache?.frontmatter && fileCache.frontmatter[FRONTMATTER_KEY_CUSTOM_PREFIX]!=null) {
       this.linkPrefix=fileCache.frontmatter[FRONTMATTER_KEY_CUSTOM_PREFIX];
     } else {
-      this.linkPrefix = this.settings.linkPrefix;
+      this.linkPrefix = this.plugin.settings.linkPrefix;
     }
     return linkPrefix != this.linkPrefix;
+  }
+
+  private setUrlPrefix():boolean {
+    const urlPrefix = this.urlPrefix;
+    const fileCache = this.app.metadataCache.getFileCache(this.file);
+    if (fileCache?.frontmatter && fileCache.frontmatter[FRONTMATTER_KEY_CUSTOM_URL_PREFIX]!=null) {
+      this.urlPrefix=fileCache.frontmatter[FRONTMATTER_KEY_CUSTOM_URL_PREFIX];
+    } else {
+      this.urlPrefix = this.plugin.settings.urlPrefix;
+    }
+    return urlPrefix != this.urlPrefix;
   }
 
   private setShowLinkBrackets():boolean {
@@ -437,9 +441,11 @@ export class ExcalidrawData {
     if (fileCache?.frontmatter && fileCache.frontmatter[FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS]!=null) {
       this.showLinkBrackets=fileCache.frontmatter[FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS]!=false;
     } else {
-      this.showLinkBrackets = this.settings.showLinkBrackets;
+      this.showLinkBrackets = this.plugin.settings.showLinkBrackets;
     }
     return showLinkBrackets != this.showLinkBrackets;
   }
 
 }
+
+
