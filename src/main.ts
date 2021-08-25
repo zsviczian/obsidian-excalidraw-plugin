@@ -59,7 +59,7 @@ import { Prompt } from "./Prompt";
 import { around } from "monkey-around";
 import { t } from "./lang/helpers";
 import { MigrationPrompt } from "./MigrationPrompt";
-import { checkAndCreateFolder, download, getIMGPathFromExcalidrawFile, getNewUniqueFilepath } from "./Utils";
+import { checkAndCreateFolder, download, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, splitFolderAndFilename } from "./Utils";
 
 export default class ExcalidrawPlugin extends Plugin {
   public excalidrawFileModes: { [file: string]: string } = {};
@@ -206,7 +206,7 @@ export default class ExcalidrawPlugin extends Plugin {
             //thus need to add an additional "|" character when its a SPAN
             if(drawing.tagName.toLowerCase()=="span") alt = "|"+alt;
             //1:width, 2:height, 3:style  1      2      3
-            parts = alt.match(/[^\|]*\|?(\d*)x?(\d*)\|?(.*)/);
+            parts = alt.match(/[^\|]*\|?(\d*%?)x?(\d*%?)\|?(.*)/);
             attr.fwidth = parts[1]? parts[1] : this.settings.width;
             attr.fheight = parts[2];
             if(parts[3]!=attr.fname) attr.style = "excalidraw-svg" + (parts[3] ? "-" + parts[3] : "");
@@ -510,6 +510,28 @@ export default class ExcalidrawPlugin extends Plugin {
       },
     });
 
+    const insertDrawingToDoc = async (inNewPane:boolean) => {
+      const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+      if(!activeView) return;
+      //@ts-ignore
+      let folder = this.app.vault.config.attachmentFolderPath;
+      // folder == null: save to vault root
+      // folder == "./" save to same folder as current file
+      // folder == "folder" save to specific folder in vault
+      // folder == "./folder" save to specific subfolder of current active folder
+      if(folder && folder.startsWith("./")) { // folder relative to current file
+          let activeFileFolder = splitFolderAndFilename(activeView.file.path).folderpath;
+          activeFileFolder = (activeFileFolder == "/") ? "" : activeFileFolder+"/"; 
+          folder = normalizePath(activeFileFolder + folder.substring(2));
+      }
+      if(!folder) folder = "";
+      await checkAndCreateFolder(this.app.vault,folder);
+      const filename = activeView.file.basename + "_" + window.moment().format(this.settings.drawingFilenameDateTime)
+           + (this.settings.compatibilityMode ? '.excalidraw' : '.excalidraw.md');
+      this.embedDrawing(normalizePath(folder+(folder != "" ?"/":"") +filename));
+      this.createDrawing(filename, inNewPane,folder==""?null:folder);
+    }
+
     this.addCommand({
       id: "excalidraw-autocreate-and-embed",
       name: t("NEW_IN_NEW_PANE_EMBED"),
@@ -517,9 +539,7 @@ export default class ExcalidrawPlugin extends Plugin {
         if (checking) {
           return (this.app.workspace.activeLeaf.view.getViewType() == "markdown");
         } else {
-          const filename = this.getNextDefaultFilename();
-          this.embedDrawing(filename);
-          this.createDrawing(filename, true);
+          insertDrawingToDoc(true);
           return true;
         }
       },
@@ -532,9 +552,7 @@ export default class ExcalidrawPlugin extends Plugin {
         if (checking) {
           return (this.app.workspace.activeLeaf.view.getViewType() == "markdown");
         } else {
-          const filename = this.getNextDefaultFilename();
-          this.embedDrawing(filename);
-          this.createDrawing(filename, false);
+          insertDrawingToDoc(false);
           return true;
         }
       },

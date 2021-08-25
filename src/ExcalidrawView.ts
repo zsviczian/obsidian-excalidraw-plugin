@@ -417,7 +417,9 @@ export default class ExcalidrawView extends TextFileView {
         },
         commitToHistory: true,
       });
-      if(this.excalidrawWrapperRef) this.excalidrawWrapperRef.current.focus();
+      if((this.app.workspace.activeLeaf === this.leaf) && this.excalidrawWrapperRef) {
+        this.excalidrawWrapperRef.current.focus();
+      }
     } else {
       this.justLoaded = justloaded; 
       this.instantiateExcalidraw({
@@ -928,7 +930,7 @@ export default class ExcalidrawView extends TextFileView {
     const el = this.containerEl;
     const self = this;
     const pattern = this.excalidrawRef.current.getAppState().viewModeEnabled 
-                    ? [250,500,750] : [null,250,null];
+                    ? [100,200,300] : [null,100,null];
     if(pattern[0])
       setTimeout(()=>{
         const e = new KeyboardEvent("keydown", {bubbles : true, cancelable : true, altKey : true, code:"KeyR"});

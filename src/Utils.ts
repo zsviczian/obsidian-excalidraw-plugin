@@ -65,6 +65,7 @@ export function getIMGPathFromExcalidrawFile (excalidrawPath:string,newExtension
 * @param folderpath 
 */
 export async function checkAndCreateFolder(vault:Vault,folderpath:string) {
+  folderpath = normalizePath(folderpath);
   let folder = vault.getAbstractFileByPath(folderpath);
   if(folder && folder instanceof TFolder) return;
   await vault.createFolder(folderpath);
