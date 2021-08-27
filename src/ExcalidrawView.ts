@@ -27,7 +27,6 @@ import {
   FRONTMATTER_KEY,
   TEXT_DISPLAY_RAW_ICON_NAME,
   TEXT_DISPLAY_PARSED_ICON_NAME,
-  EXIT_FULLSCREEN_ICON_NAME,
   FULLSCREEN_ICON_NAME,
   JSON_parse,
   nanoid
@@ -73,16 +72,12 @@ export default class ExcalidrawView extends TextFileView {
   public textMode:TextMode = TextMode.raw;
   private textIsParsed_Element:HTMLElement;
   private textIsRaw_Element:HTMLElement;
-  /*  private gotoFullscreen:HTMLElement;
-  private exitFullscreen:HTMLElement;*/
   private preventReload:boolean = true;
   public compatibilityMode: boolean = false;
   //store key state for view mode link resolution
   private ctrlKeyDown = false;
   private shiftKeyDown = false;
   private altKeyDown = false;
-  /*private mouseX = 0;
-  private mouseY = 0;*/
   private mouseEvent:any = null;
 
   id: string = (this.leaf as any).id;
@@ -252,7 +247,6 @@ export default class ExcalidrawView extends TextFileView {
     }
     try {
       const f = view.file;
-      //if(ev.shiftKey && this.gotoFullscreen.style.display=="none") this.toggleFullscreen();
       if(ev.shiftKey) {
         document.exitFullscreen();
         this.zoomToFit();
@@ -278,16 +272,13 @@ export default class ExcalidrawView extends TextFileView {
     //@ts-ignore
     if(!this.app.isMobile) {
       this.addAction(FULLSCREEN_ICON_NAME,"Press ESC to exit fullscreen mode",()=>{
-        this.contentEl.requestFullscreen({navigationUI: "hide"});
+        this.contentEl.requestFullscreen();//{navigationUI: "hide"});
         if(this.excalidrawWrapperRef) this.excalidrawWrapperRef.current.focus();
       });
-      this.contentEl.onfullscreenchange = () => this.zoomToFit();
+      this.contentEl.onfullscreenchange = () => {
+        this.zoomToFit();
+      }
     }
-    //this.gotoFullscreen = this.addAction(FULLSCREEN_ICON_NAME,"Press ESC to exit fullscreen mode",()=>this.toggleFullscreen());
-    //this.exitFullscreen = this.addAction(EXIT_FULLSCREEN_ICON_NAME,"",()=>this.toggleFullscreen());
-    //this.exitFullscreen.hide();
-    //@ts-ignore
-    //if(this.app.isMobile) this.gotoFullscreen.hide();
 
     //this is to solve sliding panes bug
     if (this.app.workspace.layoutReady) {
@@ -299,21 +290,6 @@ export default class ExcalidrawView extends TextFileView {
     }
     this.setupAutosaveTimer();
   }
-
-  /*private toggleFullscreen() {
-    //@ts-ignore
-    if(this.app.isMobile) return;
-    if(this.exitFullscreen.style.display=="none") {
-      this.containerEl.requestFullscreen({ navigationUI: "hide" });
-      this.gotoFullscreen.hide();
-      this.exitFullscreen.show();
-    } else {
-      document.exitFullscreen();
-      this.gotoFullscreen.show();
-      this.exitFullscreen.hide();
-    }
-    this.zoomToFit();
-  }*/
 
   public async changeTextMode(textMode:TextMode,reload:boolean=true) {
     this.textMode = textMode;
@@ -725,6 +701,7 @@ export default class ExcalidrawView extends TextFileView {
           key: "abc",
           tabIndex: 0,
           onKeyDown: (e:any) => {
+            if(document.fullscreenEnabled && e.keyCode==27) document.exitFullscreen();
             this.ctrlKeyDown  = e.ctrlKey;
             this.shiftKeyDown = e.shiftKey;
             this.altKeyDown   = e.altKey;

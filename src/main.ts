@@ -33,10 +33,6 @@ import {
   RERENDER_EVENT,
   FRONTMATTER_KEY,
   FRONTMATTER,
-  //LOCK_ICON,
-  TEXT_DISPLAY_PARSED_ICON_NAME,
-  TEXT_DISPLAY_RAW_ICON_NAME,
-  //UNLOCK_ICON,
   JSON_parse,
   nanoid
 } from "./constants";
@@ -60,6 +56,12 @@ import { around } from "monkey-around";
 import { t } from "./lang/helpers";
 import { MigrationPrompt } from "./MigrationPrompt";
 import { checkAndCreateFolder, download, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, splitFolderAndFilename } from "./Utils";
+
+declare module "obsidian" {
+  interface Vault {
+      getConfig(option:"attachmentFolderPath"): string
+  }
+}
 
 export default class ExcalidrawPlugin extends Plugin {
   public excalidrawFileModes: { [file: string]: string } = {};
@@ -513,22 +515,20 @@ export default class ExcalidrawPlugin extends Plugin {
     const insertDrawingToDoc = async (inNewPane:boolean) => {
       const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
       if(!activeView) return;
-      //@ts-ignore
-      let folder = this.app.vault.config.attachmentFolderPath;
+      let folder = this.app.vault.getConfig("attachmentFolderPath");
       // folder == null: save to vault root
       // folder == "./" save to same folder as current file
       // folder == "folder" save to specific folder in vault
       // folder == "./folder" save to specific subfolder of current active folder
       if(folder && folder.startsWith("./")) { // folder relative to current file
-          let activeFileFolder = splitFolderAndFilename(activeView.file.path).folderpath;
-          activeFileFolder = (activeFileFolder == "/") ? "" : activeFileFolder+"/"; 
+          const activeFileFolder = splitFolderAndFilename(activeView.file.path).folderpath + "/";
           folder = normalizePath(activeFileFolder + folder.substring(2));
       }
       if(!folder) folder = "";
       await checkAndCreateFolder(this.app.vault,folder);
       const filename = activeView.file.basename + "_" + window.moment().format(this.settings.drawingFilenameDateTime)
            + (this.settings.compatibilityMode ? '.excalidraw' : '.excalidraw.md');
-      this.embedDrawing(normalizePath(folder+(folder != "" ?"/":"") +filename));
+      this.embedDrawing(normalizePath(folder + "/" + filename));
       this.createDrawing(filename, inNewPane,folder==""?null:folder);
     }
 

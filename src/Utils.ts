@@ -1,4 +1,4 @@
-import { Modal, normalizePath, TAbstractFile, TFolder, Vault } from "obsidian";
+import {  normalizePath, TAbstractFile, TFolder, Vault } from "obsidian";
 import { Random } from "roughjs/bin/math";
 
 /**
