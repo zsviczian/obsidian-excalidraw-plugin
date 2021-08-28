@@ -41,7 +41,10 @@ To convert files you have the following options:
 - Supports hyperlinks e.g. `https://zsolt.blog`, `[Obsidian](https://obsidian.md)`, and internal links e.g. `[[My file in vault|Alias]]` in drawing text. 
   - Links will update when files are moved or renamed, if you have the Obsidian setting Files & Links/Automatically Update Internal Links enalbled.
   - Links in drawings will show up in backlinks of documents
-  - Transclusions are supported i.e. `![[myfile#^blockref]]` will convert in the drawing into the transcluded text
+  - Transclusions are supported 
+    - `![[myfile#^blockref]]` will convert in the drawing into the transcluded text of the block
+    - `![[myfile#section]]` also works, this will transclude the section
+    - you can also specify word wrapping for transcluded text by adding the max character count in curly brackets right after the transclusion e.g. `![[myfile#^blockref]]{40}` will wrap text at 40 characters.
   - For convenience you can also use the command palette to insert links into drawings
   - CTRL/META + CLICK a text element to open it as a link.
   - CTRL/META + ALT + CLICK to create the file (if it does not yet exist) and open it
@@ -54,6 +57,10 @@ To convert files you have the following options:
   - You can add metadata to the YAML front matter of drawings
   - Anything you add between the frontmatter and the `# Text Elements` heading will be ignored by Excalidraw, i.e. you can add whatever you like here, it will be preserved as part of the document.
   - Excalidraw documents now show in graph view.
+  - The following front matter keys will customize how the drawing is displayed - overriding general settings:
+    - `excalidraw-link-prefix: "📍"` preview prefix for internal links
+    - `excalidraw-url-prefix: "🌐"` preview prefix for external links
+    - `excalidraw-link-brackets: true|false` whether or not to display brackets around links in preview
 - Includes full [Templater](https://silentvoid13.github.io/Templater/) and [Dataview](https://blacksmithgu.github.io/obsidian-dataview/docs/api/intro/) support through ExcalidrawAutomate. Check out the [detailed help + examples](https://zsviczian.github.io/obsidian-excalidraw-plugin/)
 - REQUIRES AN OBSIDIAN SYNC SUBSCRIPTION: Full drawing file history and synchronization between devices
 - Multilanguage support: if you'd like to help out by translating the plugin, please get in contact with me.
