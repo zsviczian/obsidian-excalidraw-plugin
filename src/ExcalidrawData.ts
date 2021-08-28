@@ -308,11 +308,13 @@ export class ExcalidrawData {
       const blocks = (await this.app.metadataCache.blockCache.getForFile({isCancelled: ()=>false},file)).blocks.filter((block:any)=>block.node.type!="comment");
       if(!blocks) return text;
       if(isParagraphRef) {
-        const para = blocks.filter((block:any)=>block.node.id == id)[0]?.node;
+        let para = blocks.filter((block:any)=>block.node.id == id)[0]?.node;
         if(!para) return text;
+        if(para.type=="blockquote") para = para.children[0]; //blockquotes are special, they have one child, which has the paragraph
         const startPos = para.position.start.offset;
         const endPos = para.children[para.children.length-1]?.position.start.offset-1; //alternative: filter((c:any)=>c.type=="blockid")[0]
         return contents.substr(startPos,endPos-startPos)
+      
       } else {
         const headings = blocks.filter((block:any)=>block.display.startsWith("#"));
         let startPos:number = null; 
