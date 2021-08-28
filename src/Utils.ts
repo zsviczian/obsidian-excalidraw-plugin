@@ -73,3 +73,18 @@ export async function checkAndCreateFolder(vault:Vault,folderpath:string) {
 
 let random = new Random(Date.now());
 export const randomInteger = () => Math.floor(random.next() * 2 ** 31);
+
+//https://macromates.com/blog/2006/wrapping-text-with-regular-expressions/
+export function wrapText(text:string, lineLen:number):string {
+  if(!lineLen) return text;
+  let outstring = "";
+  //                       1                2
+  const reg = new RegExp(`(.{1,${lineLen}})(\\s+|$\\n?)|([^\\s]+)(\\s+|$\\n?)`,'gm');
+  const res = text.matchAll(reg);
+  let parts;
+  while(!(parts = res.next()).done) {
+    outstring += parts.value[1] ? parts.value[1].trimEnd() : parts.value[3].trimEnd();
+    outstring += (parts.value[2]=='\n' || parts.value[4]=='\n') ?'\n\n':'\n';
+  }
+  return outstring.trimEnd();
+}

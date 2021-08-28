@@ -34,7 +34,7 @@ import {
 import ExcalidrawPlugin from './main';
 import {ExcalidrawAutomate} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
-import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REG_LINK_BACKETS } from "./ExcalidrawData";
+import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./ExcalidrawData";
 import { checkAndCreateFolder, download, getNewUniqueFilepath, splitFolderAndFilename } from "./Utils";
 import { Prompt } from "./Prompt";
 
@@ -206,9 +206,7 @@ export default class ExcalidrawView extends TextFileView {
       return;    
     }
 
-    //![[link|alias]]![alias](link)
-    //1  2    3      4 5      6
-    const parts = text.matchAll(REG_LINK_BACKETS).next();    
+    const parts = text.matchAll(REGEX_LINK.EXPR).next();    
     if(!parts.value) {
       const tags = text.matchAll(/#([\p{Letter}\p{Emoji_Presentation}\p{Number}\/_-]+)/ug).next();
       if(!tags.value || tags.value.length<2) {
@@ -226,7 +224,7 @@ export default class ExcalidrawView extends TextFileView {
       return;
     }
 
-    text = parts.value[2] ? parts.value[2]:parts.value[6];
+    text = REGEX_LINK.getLink(parts); //parts.value[2] ? parts.value[2]:parts.value[6];
 
     if(text.match(REG_LINKINDEX_HYPERLINK)) {
       window.open(text,"_blank");
@@ -719,11 +717,9 @@ export default class ExcalidrawView extends TextFileView {
 
               if(text.match(REG_LINKINDEX_HYPERLINK)) return;   
 
-              //![[link|alias]]![alias](link)
-              //1  2    3      4 5      6
-              const parts = text.matchAll(REG_LINK_BACKETS).next();    
+              const parts = text.matchAll(REGEX_LINK.EXPR).next();    
               if(!parts.value) return; 
-              let linktext = parts.value[2] ? parts.value[2]:parts.value[6];
+              let linktext = REGEX_LINK.getLink(parts); //parts.value[2] ? parts.value[2]:parts.value[6];
 
               if(linktext.match(REG_LINKINDEX_HYPERLINK)) return;
               if(linktext.search("#")>-1) linktext = linktext.substring(0,linktext.search("#"));

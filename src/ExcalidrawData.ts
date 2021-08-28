@@ -12,6 +12,7 @@ import {
   JSON_parse
 } from "./constants";
 import { TextMode } from "./ExcalidrawView";
+import { wrapText } from "./Utils";
 
 
 declare module "obsidian" {
@@ -25,9 +26,30 @@ declare module "obsidian" {
 
 const DRAWING_REG = /[\r\n]# Drawing[\r\n](```json[\r\n])?(.*)(```)?(%%)?/gm;
 
-//![[link|alias]]![alias](link)
-//1  2    3      4 5      6
-export const REG_LINK_BACKETS = /(!)?\[\[([^|\]]+)\|?(.+)?]]|(!)?\[(.*)\]\((.*)\)/g;
+export const REGEX_LINK = {
+  //![[link|alias]] [alias](link){num}
+  //12 3    4        5      6    7 8
+  EXPR: /(!)?(\[\[([^|\]]+)\|?(.+)?]]|\[(.*)\]\((.*)\))(\{(\d+)\})?/g,
+  isTransclusion: (parts: IteratorResult<RegExpMatchArray, any>):boolean => {
+    return parts.value[1] ? true:false;
+  },
+  getLink: (parts: IteratorResult<RegExpMatchArray, any>):string => {
+    return parts.value[3] ? parts.value[3] : parts.value[6];
+  },
+  isWikiLink: (parts: IteratorResult<RegExpMatchArray, any>):boolean => {
+    return parts.value[3] ? true:false;
+  },
+  getAliasOrLink: (parts: IteratorResult<RegExpMatchArray, any>):string => {
+    return REGEX_LINK.isWikiLink(parts)
+           ? (parts.value[4] ? parts.value[4] : parts.value[3]) 
+           : (parts.value[5] ? parts.value[5] : parts.value[6]);
+  },
+  getWrapLength: (parts: IteratorResult<RegExpMatchArray, any>):number => {
+    return parts.value[8];
+  }
+}
+
+
 export const REG_LINKINDEX_HYPERLINK = /^\w+:\/\//;
 
 export function getJSON(data:string):string {
@@ -248,8 +270,12 @@ export class ExcalidrawData {
   }
 
   private parseLinks(text:string, position:number, parts:any):string {
-    let outString = null;
-    if (parts.value[2]) {
+    return text.substring(position,parts.value.index) + 
+           (this.showLinkBrackets ? "[[" : "") +
+           REGEX_LINK.getAliasOrLink(parts) +
+           (this.showLinkBrackets ? "]]" : "");
+    /*let outString = null;
+    if (REGEX_LINK.isWikiLink(parts)) { //parts.value[2]
       outString = text.substring(position,parts.value.index) + 
                    (this.showLinkBrackets ? "[[" : "") +
                    (parts.value[3] ? parts.value[3]:parts.value[2]) + //insert alias or link text
@@ -260,7 +286,7 @@ export class ExcalidrawData {
                    (parts.value[5] ? parts.value[5]:parts.value[6]) + //insert alias or link text
                    (this.showLinkBrackets ? "]]" : "");
     }
-    return outString;
+    return outString;*/
   }
 
   /**
@@ -301,31 +327,24 @@ export class ExcalidrawData {
         if(startPos) return contents.substr(startPos);
         return text;
       }
-
-      //get transcluded line and take the part before ^blockref
-      /*const REG_TRANSCLUDE = new RegExp("(.*)\\s\\^" + parts.value[2]);
-      const res = contents.match(REG_TRANSCLUDE);
-      if(res) return res[1];
-      return text;//if blockref not found in file, return the input string*/
     }
 
     let outString = "";
     let position = 0;
-    const res = text.matchAll(REG_LINK_BACKETS);
+    const res = text.matchAll(REGEX_LINK.EXPR);
     let linkIcon = false;
     let urlIcon = false;
     let parts;
     while(!(parts=res.next()).done) {
-      if (parts.value[1] || parts.value[4]) { //transclusion
+      if (REGEX_LINK.isTransclusion(parts)) { //transclusion //parts.value[1] || parts.value[4]
         outString += text.substring(position,parts.value.index) + 
-                     await getTransclusion(parts.value[1] ? parts.value[2] : parts.value[6]);
+                     wrapText(await getTransclusion(REGEX_LINK.getLink(parts)),REGEX_LINK.getWrapLength(parts));
       } else {
         const parsedLink = this.parseLinks(text,position,parts);
         if(parsedLink) {
           outString += parsedLink;
           if(!(urlIcon || linkIcon))
-            //[2]: is wiki link? [2] link text, [6] link text
-            if((parts.value[2] ? parts.value[2]:parts.value[6]).match(REG_LINKINDEX_HYPERLINK)) urlIcon = true;  
+            if(REGEX_LINK.getLink(parts).match(REG_LINKINDEX_HYPERLINK)) urlIcon = true;  
             else linkIcon = true;
         }
       } 
@@ -351,10 +370,10 @@ export class ExcalidrawData {
    */
   private quickParse(text:string):string {
     const hasTransclusion = (text:string):boolean => {
-      const res = text.matchAll(REG_LINK_BACKETS);
+      const res = text.matchAll(REGEX_LINK.EXPR);
       let parts;
       while(!(parts=res.next()).done) {
-        if (parts.value[1] || parts.value[4]) return true;
+        if (REGEX_LINK.isTransclusion(parts)) return true; 
       }
       return false;
     }
@@ -362,7 +381,7 @@ export class ExcalidrawData {
 
     let outString = "";
     let position = 0;
-    const res = text.matchAll(REG_LINK_BACKETS);
+    const res = text.matchAll(REGEX_LINK.EXPR);
     let linkIcon = false;
     let urlIcon = false;
     let parts;
@@ -371,8 +390,7 @@ export class ExcalidrawData {
       if(parsedLink) {
         outString += parsedLink;
         if(!(urlIcon || linkIcon))
-          //[2]: is wiki link? [2] link text, [6] link text
-          if((parts.value[2] ? parts.value[2]:parts.value[6]).match(REG_LINKINDEX_HYPERLINK)) urlIcon = true;  
+          if(REGEX_LINK.getLink(parts).match(REG_LINKINDEX_HYPERLINK)) urlIcon = true;  
           else linkIcon = true;
       }
       position = parts.value.index + parts.value[0].length;
@@ -393,7 +411,6 @@ export class ExcalidrawData {
    * @returns markdown string
    */
   generateMD():string {
-    //console.log("Excalidraw.Data.generateMD()");
     let outString = '# Text Elements\n';
     for(const key of this.textElements.keys()){
       outString += this.textElements.get(key).raw+' ^'+key+'\n\n';
@@ -405,7 +422,6 @@ export class ExcalidrawData {
     //console.log("Excalidraw.Data.syncElements()");
     this.scene = newScene;//JSON_parse(newScene);
     const result = this.setLinkPrefix() || this.setUrlPrefix() || this.setShowLinkBrackets() || this.findNewTextElementsInScene();
-    //this.updateTextElementsFromSceneRawOnly();
     await this.updateTextElementsFromScene();
     return result;
   }
