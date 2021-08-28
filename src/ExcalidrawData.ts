@@ -13,6 +13,16 @@ import {
 } from "./constants";
 import { TextMode } from "./ExcalidrawView";
 
+
+declare module "obsidian" {
+  interface MetadataCache {
+    blockCache: {
+      getForFile(x:any,f:TAbstractFile):any;
+    }
+  }
+}
+
+
 const DRAWING_REG = /[\r\n]# Drawing[\r\n](```json[\r\n])?(.*)(```)?(%%)?/gm;
 
 //![[link|alias]]![alias](link)
@@ -261,17 +271,42 @@ export class ExcalidrawData {
   private async parse(text:string):Promise<string>{
     const getTransclusion = async (text:string) => {
       //file-name#^blockref
-      //1          2
-      const REG_FILE_BLOCKREF = /(.*)#\^(.*)/g;
+      //1         2 3
+      const REG_FILE_BLOCKREF = /(.*)#(\^)?(.*)/g;
       const parts=text.matchAll(REG_FILE_BLOCKREF).next();
-      if(parts.done || !parts.value[1] || !parts.value[2]) return text; //filename and/or blockref not found
+      if(parts.done || !parts.value[1] || !parts.value[3]) return text; //filename and/or blockref not found
       const file = this.app.metadataCache.getFirstLinkpathDest(parts.value[1],this.file.path);
       const contents = await this.app.vault.cachedRead(file);
+      const isParagraphRef = parts.value[2] ? true : false; //does the reference contain a ^ character?
+      const id = parts.value[3]; //the block ID or heading text
+      const blocks = (await this.app.metadataCache.blockCache.getForFile({isCancelled: ()=>false},file)).blocks.filter((block:any)=>block.node.type!="comment");
+      if(!blocks) return text;
+      if(isParagraphRef) {
+        const para = blocks.filter((block:any)=>block.node.id == id)[0]?.node;
+        if(!para) return text;
+        const startPos = para.position.start.offset;
+        const endPos = para.children[para.children.length-1]?.position.start.offset-1; //alternative: filter((c:any)=>c.type=="blockid")[0]
+        return contents.substr(startPos,endPos-startPos)
+      } else {
+        const headings = blocks.filter((block:any)=>block.display.startsWith("#"));
+        let startPos:number = null; 
+        let endPos:number = null;
+        for(let i=0;i<headings.length;i++) {
+          if(startPos && !endPos) {
+            endPos = headings[i].node.position.start.offset-1;
+            return contents.substr(startPos,endPos-startPos)
+          }
+          if(!startPos && headings[i].node.children[0]?.value == id) startPos = headings[i].node.children[0]?.position.start.offset; //
+        }
+        if(startPos) return contents.substr(startPos);
+        return text;
+      }
+
       //get transcluded line and take the part before ^blockref
-      const REG_TRANSCLUDE = new RegExp("(.*)\\s\\^" + parts.value[2]);
+      /*const REG_TRANSCLUDE = new RegExp("(.*)\\s\\^" + parts.value[2]);
       const res = contents.match(REG_TRANSCLUDE);
       if(res) return res[1];
-      return text;//if blockref not found in file, return the input string
+      return text;//if blockref not found in file, return the input string*/
     }
 
     let outString = "";

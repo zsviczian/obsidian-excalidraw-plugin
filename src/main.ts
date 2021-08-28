@@ -15,8 +15,6 @@ import {
   MarkdownRenderer,
   ViewState,
   Notice,
-  TFolder,
-  Modal,
 } from "obsidian";
 
 import { 
@@ -58,8 +56,14 @@ import { MigrationPrompt } from "./MigrationPrompt";
 import { checkAndCreateFolder, download, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, splitFolderAndFilename } from "./Utils";
 
 declare module "obsidian" {
+  interface App {
+    isMobile():boolean;
+  }
   interface Vault {
-      getConfig(option:"attachmentFolderPath"): string
+      getConfig(option:"attachmentFolderPath"): string;
+  }
+  interface Workspace {
+    on(name: 'hover-link', callback: (e:MouseEvent) => any, ctx?: any): EventRef;
   }
 }
 
@@ -259,7 +263,6 @@ export default class ExcalidrawPlugin extends Plugin {
       this.hover.sourcePath = e.sourcePath;      
     };   
     this.registerEvent(
-      //@ts-ignore
       this.app.workspace.on('hover-link',hoverEvent)
     );
       
@@ -436,7 +439,6 @@ export default class ExcalidrawPlugin extends Plugin {
       id: "excalidraw-download-lib",
       name: t("DOWNLOAD_LIBRARY"),
       callback: async () => {
-        //@ts-ignore
         if(this.app.isMobile) {
           const prompt = new Prompt(this.app, "Please provide a filename",'my-library','filename, leave blank to cancel action');
           prompt.openAndGetValue( async (filename:string)=> {
