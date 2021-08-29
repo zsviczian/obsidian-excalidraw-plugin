@@ -310,7 +310,7 @@ export class ExcalidrawData {
       if(isParagraphRef) {
         let para = blocks.filter((block:any)=>block.node.id == id)[0]?.node;
         if(!para) return text;
-        if(para.type=="blockquote") para = para.children[0]; //blockquotes are special, they have one child, which has the paragraph
+        if(["blockquote","listItem"].includes(para.type)) para = para.children[0]; //blockquotes are special, they have one child, which has the paragraph
         const startPos = para.position.start.offset;
         const endPos = para.children[para.children.length-1]?.position.start.offset-1; //alternative: filter((c:any)=>c.type=="blockid")[0]
         return contents.substr(startPos,endPos-startPos)

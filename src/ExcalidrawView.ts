@@ -663,7 +663,6 @@ export default class ExcalidrawView extends TextFileView {
       //variables used to handle click events in view mode
       let selectedTextElement:{id:string,text:string} = null;
       let timestamp = 0;
-      let blockOnCtrlKeyDown = false;
       let blockOnMouseButtonDown = false;
 
       const getTextElementAtPointer = (pointer:any) => {
@@ -703,10 +702,7 @@ export default class ExcalidrawView extends TextFileView {
             this.ctrlKeyDown  = e.ctrlKey;
             this.shiftKeyDown = e.shiftKey;
             this.altKeyDown   = e.altKey;
-            if(!blockOnCtrlKeyDown && e.ctrlKey) {
-              blockOnCtrlKeyDown = true;
-              clearHoverPreview();
-            };
+
             if(e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) {
               const selectedElement = getTextElementAtPointer(currentPosition);
               if(!selectedElement) return;
@@ -722,9 +718,6 @@ export default class ExcalidrawView extends TextFileView {
               let linktext = REGEX_LINK.getLink(parts); //parts.value[2] ? parts.value[2]:parts.value[6];
 
               if(linktext.match(REG_LINKINDEX_HYPERLINK)) return;
-              if(linktext.search("#")>-1) linktext = linktext.substring(0,linktext.search("#"));
-              const file = this.app.metadataCache.getFirstLinkpathDest(linktext,this.file.path); 
-              if (!file) return; 
 
               this.plugin.hover.linkText = linktext; 
               this.plugin.hover.sourcePath = this.file.path;
@@ -735,6 +728,7 @@ export default class ExcalidrawView extends TextFileView {
                 hoverParent: hoverPreviewTarget,
                 targetEl: hoverPreviewTarget,
                 linktext: this.plugin.hover.linkText,
+                sourcePath: this.plugin.hover.sourcePath
               });
               hoverPoint = currentPosition;
               if(document.fullscreenElement === this.contentEl) {
@@ -747,7 +741,6 @@ export default class ExcalidrawView extends TextFileView {
             }
           },
           onKeyUp: (e:any) => {
-            blockOnCtrlKeyDown = e.ctrlKey;
             this.ctrlKeyDown  = e.ctrlKey;
             this.shiftKeyDown = e.shiftKey;
             this.altKeyDown   = e.altKey;
