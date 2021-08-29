@@ -47,3 +47,9 @@ Returns an HTML SVGSVGElement containing the generated drawing.
 async createPNG(templatePath?:string, scale:number=1)
 ```
 Returns a blob containing a PNG image of the generated drawing.
+
+### wrapText()
+```typescript
+wrapText(text:string, lineLen:number):string
+```
+Returns a string wrapped to the provided max lineLen.

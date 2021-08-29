@@ -16,6 +16,7 @@ import {
   nanoid, 
   JSON_parse 
 } from "./constants";
+import { wrapText } from "./Utils";
 
 declare type ConnectionPoint = "top"|"bottom"|"left"|"right";
 
@@ -52,6 +53,7 @@ export interface ExcalidrawAutomate extends Window {
     create(params?:{filename: string, foldername:string, templatePath:string, onNewPane: boolean}):Promise<void>;
     createSVG(templatePath?:string):Promise<SVGSVGElement>;
     createPNG(templatePath?:string):Promise<any>;
+    wrapText(text:string, lineLen:number):string;
     addRect(topX:number, topY:number, width:number, height:number):string;
     addDiamond(topX:number, topY:number, width:number, height:number):string;
     addEllipse(topX:number, topY:number, width:number, height:number):string;
@@ -250,6 +252,9 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         },
         scale
       )  
+    },
+    wrapText(text:string, lineLen:number):string {
+      return wrapText(text,lineLen);
     },
     addRect(topX:number, topY:number, width:number, height:number):string {
       const id = nanoid();
