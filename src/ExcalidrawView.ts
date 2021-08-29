@@ -698,7 +698,7 @@ export default class ExcalidrawView extends TextFileView {
           key: "abc",
           tabIndex: 0,
           onKeyDown: (e:any) => {
-            if(document.fullscreenEnabled && e.keyCode==27) document.exitFullscreen();
+            if(document.fullscreenEnabled && document.fullscreenElement == this.contentEl && e.keyCode==27) document.exitFullscreen();
             this.ctrlKeyDown  = e.ctrlKey;
             this.shiftKeyDown = e.shiftKey;
             this.altKeyDown   = e.altKey;
@@ -711,6 +711,7 @@ export default class ExcalidrawView extends TextFileView {
               ? this.excalidrawData.getRawText(selectedElement.id) 
               : selectedElement.text;                
 
+              if(!text) return;
               if(text.match(REG_LINKINDEX_HYPERLINK)) return;   
 
               const parts = text.matchAll(REGEX_LINK.EXPR).next();    

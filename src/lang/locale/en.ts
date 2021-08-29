@@ -21,7 +21,7 @@ export default {
   NEW_IN_ACTIVE_PANE_EMBED: "Create a new drawing - IN THE CURRENT ACTIVE PANE - and embed into active document",
   EXPORT_SVG: "Save as SVG next to the current file",
   EXPORT_PNG: "Save as PNG next to the current file",
-  TOGGLE_LOCK: "Toggle Text Element edit LOCK/UNLOCK",
+  TOGGLE_LOCK: "Toggle Text Element edit RAW/PREVIEW",
   INSERT_LINK: "Insert link to file",
   INSERT_LATEX: "Insert LaTeX-symbol (e.g. $\\theta$)",
   ENTER_LATEX: "Enter a valid LaTeX expression",
