@@ -24,7 +24,7 @@ ExcalidrawAutomate: {
     startArrowHead: string;
     endArrowHead: string;
   }
-  canvas: {theme: string, viewBackgroundColor: string};
+  canvas: {theme: string, viewBackgroundColor: string, gridSize: number};
   setFillStyle(val:number): void;
   setStrokeStyle(val:number): void;
   setStrokeSharpness(val:number): void;

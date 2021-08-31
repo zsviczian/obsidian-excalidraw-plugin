@@ -13,3 +13,6 @@ String. Valid values are "light" and "dark".
 String. This is the fill color of an object. [CSS Legal Color Values](https://www.w3schools.com/cssref/css_colors_legal.asp)
 
 Allowed values are [HTML color names](https://www.w3schools.com/colors/colors_names.asp), hexadecimal RGB strings e.g. `#FF0000` for red, or `transparent`.
+
+### gridSize
+Number. The size of the grid. If set to zero, no grid is displayed.

@@ -42,7 +42,7 @@ export interface ExcalidrawAutomate extends Window {
       startArrowHead: string;
       endArrowHead: string;
     }
-    canvas: {theme: string, viewBackgroundColor: string};
+    canvas: {theme: string, viewBackgroundColor: string, gridSize: number};
     setFillStyle(val:number): void;
     setStrokeStyle(val:number): void;
     setStrokeSharpness(val:number): void;
@@ -89,9 +89,9 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       textAlign: "left",
       verticalAlign: "top",
       startArrowHead: null,
-      endArrowHead: "arrow"
+      endArrowHead: "arrow",
     },
-    canvas: {theme: "light", viewBackgroundColor: "#FFFFFF"},
+    canvas: {theme: "light", viewBackgroundColor: "#FFFFFF", gridSize: 0},
     setFillStyle (val:number) {
       switch(val) {
         case 0: 
@@ -202,6 +202,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
             currentItemStartArrowhead: template? template.appState.currentItemStartArrowhead: this.style.startArrowHead,
             currentItemEndArrowhead: template? template.appState.currentItemEndArrowhead : this.style.endArrowHead,
             currentItemLinearStrokeSharpness: template? template.appState.currentItemLinearStrokeSharpness : this.style.strokeSharpness,
+            gridSize: template ? template.appState.gridSize : this.canvas.gridSize
           }
         }))
       );  
@@ -381,6 +382,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       this.style.endArrowHead= "arrow";
       this.canvas.theme = "light";
       this.canvas.viewBackgroundColor="#FFFFFF";
+      this.canvas.gridSize = 0;
     },
     isExcalidrawFile(f:TFile):boolean {
       return this.plugin.isExcalidrawFile(f);
@@ -481,8 +483,9 @@ export function measureText (newText:string, fontSize:number, fontFamily:number)
 };
 
 async function getTemplate(fileWithPath: string):Promise<{elements: any,appState: any}> {
-  const vault = window.ExcalidrawAutomate.plugin.app.vault;
-  const file = vault.getAbstractFileByPath(normalizePath(fileWithPath));
+  const app = window.ExcalidrawAutomate.plugin.app;
+  const vault = app.vault;
+  const file = app.metadataCache.getFirstLinkpathDest(normalizePath(fileWithPath),'');
   if(file && file instanceof TFile) {
     const data = await vault.read(file);
     const excalidrawData = JSON_parse(getJSON(data));
