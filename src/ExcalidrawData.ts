@@ -274,19 +274,6 @@ export class ExcalidrawData {
            (this.showLinkBrackets ? "[[" : "") +
            REGEX_LINK.getAliasOrLink(parts) +
            (this.showLinkBrackets ? "]]" : "");
-    /*let outString = null;
-    if (REGEX_LINK.isWikiLink(parts)) { //parts.value[2]
-      outString = text.substring(position,parts.value.index) + 
-                   (this.showLinkBrackets ? "[[" : "") +
-                   (parts.value[3] ? parts.value[3]:parts.value[2]) + //insert alias or link text
-                   (this.showLinkBrackets ? "]]" : "");
-    } else {
-      outString = text.substring(position,parts.value.index) + 
-                   (this.showLinkBrackets ? "[[" : "") +
-                   (parts.value[5] ? parts.value[5]:parts.value[6]) + //insert alias or link text
-                   (this.showLinkBrackets ? "]]" : "");
-    }
-    return outString;*/
   }
 
   /**
@@ -460,6 +447,12 @@ export class ExcalidrawData {
       if(parsedText) updateScene(parsedText);
     });
     return null;
+  }
+
+  public async addTextElement(elementID:string, rawText:string):Promise<string> {
+    const parseResult = await this.parse(rawText);
+    this.textElements.set(elementID,{raw: rawText,parsed: parseResult});
+    return parseResult;
   }
 
   public deleteTextElement(id:string) {

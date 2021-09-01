@@ -14,7 +14,8 @@ import { getJSON } from "./ExcalidrawData";
 import { 
   FRONTMATTER, 
   nanoid, 
-  JSON_parse 
+  JSON_parse, 
+  VIEW_TYPE_EXCALIDRAW
 } from "./constants";
 import { wrapText } from "./Utils";
 
@@ -51,6 +52,7 @@ export interface ExcalidrawAutomate extends Window {
     addToGroup(objectIds:[]):void;
     toClipboard(templatePath?:string): void;
     create(params?:{filename: string, foldername:string, templatePath:string, onNewPane: boolean}):Promise<void>;
+    addElementsToView(view:ExcalidrawView|"first"|"active", repositionToCursor:boolean):void;
     createSVG(templatePath?:string):Promise<SVGSVGElement>;
     createPNG(templatePath?:string):Promise<any>;
     wrapText(text:string, lineLen:number):string;
@@ -206,6 +208,26 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
           }
         }))
       );  
+    },
+    async addElementsToView(view:ExcalidrawView|"first"|"active", repositionToCursor:boolean = false) {
+      let targetView:ExcalidrawView;
+      if(view == "active") {
+        const v = this.plugin.app.workspace.activeLeaf.view;
+        if(!(v instanceof ExcalidrawView)) return;
+        targetView = v;
+      }
+      if(view == "first") {
+        const leaves = this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+        if(!leaves || leaves.length == 0) return;
+        targetView = (leaves[0].view as ExcalidrawView);
+      }
+      if(view instanceof ExcalidrawView) targetView = view;
+      let elements=[];
+      for (let i=0;i<this.elementIds.length;i++) {
+        elements.push(this.elementsDict[this.elementIds[i]]);
+      }
+      console.log(targetView);
+      await targetView.addElements(elements,repositionToCursor);
     },
     async createSVG(templatePath?:string):Promise<SVGSVGElement> {
       const template = templatePath ? (await getTemplate(templatePath)) : null;

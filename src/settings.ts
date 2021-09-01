@@ -93,6 +93,17 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     let {containerEl} = this;
     this.containerEl.empty();
 
+    const coffeeDiv = containerEl.createDiv('coffee');
+		coffeeDiv.addClass('ex-coffee-div');
+		const coffeeLink = coffeeDiv.createEl('a', { href: 'https://ko-fi.com/zsolt' });
+		const coffeeImg = coffeeLink.createEl('img', {
+			attr: {
+				src: 'https://cdn.ko-fi.com/cdn/kofi3.png?v=3',
+			},
+		});
+		coffeeImg.height = 45;
+
+
     new Setting(containerEl)
     .setName(t("FOLDER_NAME")) 
     .setDesc(t("FOLDER_DESC"))

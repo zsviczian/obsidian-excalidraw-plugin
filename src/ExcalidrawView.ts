@@ -37,6 +37,7 @@ import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./ExcalidrawData";
 import { checkAndCreateFolder, download, getNewUniqueFilepath, splitFolderAndFilename } from "./Utils";
 import { Prompt } from "./Prompt";
+import { ELEMENT_SHIFT_TRANSLATE_AMOUNT } from "@zsviczian/excalidraw/types/constants";
 
 declare let window: ExcalidrawAutomate;
 
@@ -59,6 +60,7 @@ const REG_LINKINDEX_INVALIDCHARS = /[<>:"\\|?*]/g;
 export default class ExcalidrawView extends TextFileView {
   private excalidrawData: ExcalidrawData;
   private getScene: Function = null;
+  public addElements: Function = null; //add elements to the active Excalidraw drawing
   private getSelectedTextElement: Function = null;
   public addText:Function = null;
   private refresh: Function = null;
@@ -621,7 +623,59 @@ export default class ExcalidrawView extends TextFileView {
           addText(self.textMode==TextMode.parsed?parseResult:text);
         }
       }
+
+      this.addElements = async (newElements:ExcalidrawElement[],repositionToCursor:boolean = false) => {
+        if(!excalidrawRef?.current) return;
       
+        const estimateElementBounds = (element:ExcalidrawElement):[number,number,number,number] => {
+          return[element.x,element.y,element.x+element.width,element.y+element.height];
+        } 
+
+        const estimateBounds = (elements:ExcalidrawElement[]):[number,number,number,number] => {
+          if(!elements.length) return [0,0,0,0];
+          let minX = Infinity;
+          let maxX = -Infinity;
+          let minY = Infinity;
+          let maxY = -Infinity;
+
+          elements.forEach((element)=>{
+            const [x1,y1,x2,y2] = estimateElementBounds(element);
+            minX = Math.min(minX, x1);
+            minY = Math.min(minY, y1);
+            maxX = Math.max(maxX, x2);
+            maxY = Math.max(maxY, y2);
+          });
+          return [minX,minY,maxX,maxY];
+        }
+
+        const repositionElementsToCursor = (elements:ExcalidrawElement[]):ExcalidrawElement[] => {
+          const [x1,y1,x2,y2] = estimateBounds(elements);
+          const [offsetX,offsetY] = [currentPosition.x-(x1+x2)/2,currentPosition.y-(y1+y2)/2]
+          elements.forEach((element:any)=>{ //using any so I can write read-only propery x & y
+            element.x=element.x+offsetX;
+            element.y=element.y+offsetY;
+          });
+          return elements;
+        }
+        
+        const textElements = newElements.filter((el)=>el.type=="text");
+        for(let i=0;i<textElements.length;i++) {
+          //@ts-ignore
+          const parseResult = await this.excalidrawData.addTextElement(textElements[i].id,textElements[i].text);
+          //@ts-ignore
+          if(this.textMode==TextMode.parsed) textElements[i].text = parseResult;
+        };
+
+        const el: ExcalidrawElement[] = excalidrawRef.current.getSceneElements();
+        const st: AppState = excalidrawRef.current.getAppState();
+        if(repositionToCursor) newElements = repositionElementsToCursor(newElements);
+        this.excalidrawRef.current.updateScene({
+          elements: el.concat(newElements),
+          appState: st,
+          commitToHistory: true,
+        });
+      };
+
       this.getScene = () => {
         if(!excalidrawRef?.current) {
           return null;
