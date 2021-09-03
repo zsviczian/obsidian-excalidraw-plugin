@@ -95,4 +95,7 @@ Position the new element under the currently selected element, with an arrow fro
   ea.addElementsToView();
 %>
 ```
+![Add text to active view](https://user-images.githubusercontent.com/14358394/131967188-2a488e38-f742-49d9-ae98-33238a8d4712.mp4)
+
+
 
