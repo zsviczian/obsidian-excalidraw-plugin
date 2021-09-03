@@ -109,7 +109,7 @@ Same as `connectObjects()`, but ObjectB is the currently selected element in the
 
 #### addElementsToView()
 ```typescript
-addElementsToView(repositionToCursor:boolean=false, save:boolean=false):Promise<boolean>
+async addElementsToView(repositionToCursor:boolean=false, save:boolean=false):Promise<boolean>
 ```
 Adds elements created with ExcalidrawAutomate to the target ExcalidrawView.
 `repositionToCursor` dafault is false
