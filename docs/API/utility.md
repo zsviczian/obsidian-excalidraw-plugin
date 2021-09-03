@@ -18,6 +18,19 @@ async toClipboard(templatePath?:string)
 ```
 Places the generated drawing to the clipboard. Useful when you don't want to create a new drawing, but want to paste additional items onto an existing drawing.
 
+### getElements()
+```typescript
+getElements():ExcalidrawElement[];
+```
+Returns the elements in ExcalidrawAutomate as an array of ExcalidrawElements. This format is usefull when working with ExcalidrawRef.
+
+### getElement()
+```typescript
+getElement(id:string):ExcalidrawElement;
+```
+
+Returns the element object matching the id. If the element does not exist, returns null.
+
 ### create()
 ```typescript
 async create(params?:{filename: string, foldername:string, templatePath:string, onNewPane: boolean})
@@ -53,3 +66,56 @@ Returns a blob containing a PNG image of the generated drawing.
 wrapText(text:string, lineLen:number):string
 ```
 Returns a string wrapped to the provided max lineLen.
+
+
+### Accessing the open Excalidraw view
+You first need to initialize targetView, before using any of the view manipulation functions.
+
+#### targetView
+```typescript
+targetView: ExcalidrawView
+```
+The open Excalidraw View configured as the target of the view operations. User `setView` to initialize.
+
+#### setView()
+```typescript
+setView(view:ExcalidrawView|"first"|"active"):ExcalidrawView
+```
+Setting the ExcalidrawView that will be the target of the View operations. Valid `view` input values are:
+- an object instance of ExcalidrawView
+- "first": meaning if there are multiple Excalidraw Views open, pick the first that is returned by `app.workspace.getLeavesOfType("Excalidraw")`
+- "active": meaning the currently active view
+
+#### getExcalidrawAPI()
+```typescript
+getExcalidrawAPI():any
+```
+Returns the native Excalidraw API (ref.current) for the active drawing specified in `targetView`.
+See Excalidraw documentation here: https://www.npmjs.com/package/@excalidraw/excalidraw#ref
+
+#### getViewSelectedElement()
+```typescript
+getViewSelectedElement():ExcalidrawElement
+```
+If an element is selected in the targetView the function returns the selected element. If multiple elements are selected, either by SHIFT+Clicking to select multiple elements, or by selecting a group, the first of the elements will be selected. If you want to specify which element to select from a group, double click the desired element in the group.
+
+This function is helpful if you want to add a new element in relation to an existing element in your drawing.
+
+#### connectObjectWithViewSelectedElement()
+```typescript 
+connectObjectWithViewSelectedElement(objectA:string,connectionA: ConnectionPoint, connectionB: ConnectionPoint, formatting?:{numberOfPoints?: number,startArrowHead?:string,endArrowHead?:string, padding?: number}):boolean
+```
+Same as `connectObjects()`, but ObjectB is the currently selected element in the target ExcalidrawView. The function helps with placing an arrow between a newly created object and the selected element in the target ExcalidrawView.
+
+#### addElementsToView()
+```typescript
+addElementsToView(repositionToCursor:boolean=false, save:boolean=false):Promise<boolean>
+```
+Adds elements created with ExcalidrawAutomate to the target ExcalidrawView.
+`repositionToCursor` dafault is false
+- true: the elements will be moved such that the center point of the elements will be aligned with the current position of the pointer on ExcalidrawView. You can point and place elements to a desired location in your drawing using this switch.
+- false: elements will be positioned as defined by the x&y coordinates of each element.
+
+`save` default is false
+- true: the drawing will be saved after the elements were added.
+- false: the drawing will be saved at the next autosave cycle. Use false when adding multiple elements one after the other. Else, best to use true, to minimize risk of data loss.

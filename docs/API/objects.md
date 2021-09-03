@@ -28,13 +28,15 @@ Returns the `id` of the object. The `id` is required when connecting objects wit
 
 ### addLine()
 ```typescript
-addLine(points: [[x:number,y:number]]):void
+addLine(points: [[x:number,y:number]]):string
 ```
 Adds a line following the points provided. Must include at least two points `points.length >= 2`. If more than 2 points are provided the interim points will be added as breakpoints. The line will break with angles if `strokeSharpness` is set to "sharp" and will be curvey if it is set to "round".
 
+Returns the `id` of the object.
+
 ### addArrow()
 ```typescript
-addArrow(points: [[x:number,y:number]],formatting?:{startArrowHead:string,endArrowHead:string,startObjectId:string,endObjectId:string}):void
+addArrow(points: [[x:number,y:number]],formatting?:{startArrowHead?:string,endArrowHead?:string,startObjectId?:string,endObjectId?:string}):string ;
 ```
 
 Adds an arrow following the points provided. Must include at least two points `points.length >= 2`. If more than 2 points are provided the interim points will be added as breakpoints. The line will break with angles if element `style.strokeSharpness` is set to "sharp" and will be curvey if it is set to "round".
@@ -42,6 +44,8 @@ Adds an arrow following the points provided. Must include at least two points `p
 `startArrowHead` and `endArrowHead` specify the type of arrow head to use, as described above. Valid values are "none", "arrow", "dot", and "bar". e.g. `{startArrowHead: "dot", endArrowHead: "arrow"}`
 
 `startObjectId` and `endObjectId` are the object id's of connected objects. I recommend using `connectObjects` instead calling addArrow() for the purpose of connecting objects.
+
+Returns the `id` of the object.
 
 ### connectObjects()
 ```typescript
@@ -60,6 +64,6 @@ Connects two objects with an arrow.
 
 ### addToGroup()
 ```typescript
-addToGroup(objectIds:[]):void
+addToGroup(objectIds:[]):string
 ```
-Groups objects listed in `objectIds`.
+Groups objects listed in `objectIds`. Returns the `id` of the group.

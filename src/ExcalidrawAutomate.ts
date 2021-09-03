@@ -48,9 +48,10 @@ export interface ExcalidrawAutomate extends Window {
     setStrokeSharpness(val:number): void;
     setFontFamily(val:number): void;
     setTheme(val:number): void;
-    addToGroup(objectIds:[]):void;
+    addToGroup(objectIds:[]):string;
     toClipboard(templatePath?:string): void;
     getElements():ExcalidrawElement[];
+    getElement(id:string):ExcalidrawElement;
     create(params?:{filename?: string, foldername?:string, templatePath?:string, onNewPane?: boolean}):Promise<void>;
     createSVG(templatePath?:string):Promise<SVGSVGElement>;
     createPNG(templatePath?:string):Promise<any>;
@@ -59,8 +60,8 @@ export interface ExcalidrawAutomate extends Window {
     addDiamond(topX:number, topY:number, width:number, height:number):string;
     addEllipse(topX:number, topY:number, width:number, height:number):string;
     addText(topX:number, topY:number, text:string, formatting?:{width?:number, height?:number,textAlign?: string, verticalAlign?:string, box?: boolean, boxPadding?: number},id?:string):string;
-    addLine(points: [[x:number,y:number]]):void;
-    addArrow(points: [[x:number,y:number]],formatting?:{startArrowHead?:string,endArrowHead?:string,startObjectId?:string,endObjectId?:string}):void ;
+    addLine(points: [[x:number,y:number]]):string;
+    addArrow(points: [[x:number,y:number]],formatting?:{startArrowHead?:string,endArrowHead?:string,startObjectId?:string,endObjectId?:string}):string ;
     connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, formatting?:{numberOfPoints?: number,startArrowHead?:string,endArrowHead?:string, padding?: number}):void;
     clear(): void;
     reset(): void;
@@ -68,6 +69,7 @@ export interface ExcalidrawAutomate extends Window {
     //view manipulation
     targetView: ExcalidrawView;
     setView(view:ExcalidrawView|"first"|"active"):ExcalidrawView;
+    getExcalidrawAPI():any;
     getViewSelectedElement():ExcalidrawElement;
     connectObjectWithViewSelectedElement(objectA:string,connectionA: ConnectionPoint, connectionB: ConnectionPoint, formatting?:{numberOfPoints?: number,startArrowHead?:string,endArrowHead?:string, padding?: number}):boolean;
     addElementsToView(repositionToCursor:boolean, save:boolean):Promise<boolean>;
@@ -158,11 +160,12 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
           return "dark";
       }      
     },
-    addToGroup(objectIds:[]):void {
+    addToGroup(objectIds:[]):string {
       const id = nanoid();
       objectIds.forEach((objectId)=>{
         this.elementsDict[objectId]?.groupIds?.push(id);
       });
+      return id;
     },
     async toClipboard(templatePath?:string) {
       const template = templatePath ? (await getTemplate(templatePath)) : null;
@@ -181,6 +184,9 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         elements.push(this.elementsDict[elementIds[i]]);
       }
       return elements;
+    },
+    getElement(id:string):ExcalidrawElement {
+      return this.elementsDict[id];
     },
     async create(params?:{filename?: string, foldername?:string, templatePath?:string, onNewPane?: boolean}) {
       const template = params?.templatePath ? (await getTemplate(params.templatePath)) : null;
@@ -305,7 +311,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       }
       return id;
     },
-    addLine(points: [[x:number,y:number]]):void {
+    addLine(points: [[x:number,y:number]]):string {
       const box = getLineBox(points);
       const id = nanoid();
       //this.elementIds.push(id);
@@ -318,8 +324,9 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         endArrowhead: null,
         ... boxedElement(id,"line",box.x,box.y,box.w,box.h)
       };
+      return id;
     },
-    addArrow(points: [[x:number,y:number]],formatting?:{startArrowHead?:string,endArrowHead?:string,startObjectId?:string,endObjectId?:string}):void {
+    addArrow(points: [[x:number,y:number]],formatting?:{startArrowHead?:string,endArrowHead?:string,startObjectId?:string,endObjectId?:string}):string {
       const box = getLineBox(points);
       const id = nanoid();
       //this.elementIds.push(id);
@@ -340,6 +347,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         if(!this.elementsDict[formatting.endObjectId].boundElementIds) this.elementsDict[formatting.endObjectId].boundElementIds = [];
         this.elementsDict[formatting.endObjectId].boundElementIds.push(id);
       }
+      return id;
     },
     connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, formatting?:{numberOfPoints?: number,startArrowHead?:string,endArrowHead?:string, padding?: number}):void {
       if(!(this.elementsDict[objectA] && this.elementsDict[objectB])) {
@@ -414,6 +422,10 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       }
       if(view instanceof ExcalidrawView) this.targetView = view;
       return this.targetView;
+    },
+    getExcalidrawAPI():any {
+      if (!this.targetView || !this.targetView?._loaded) return null;
+      return (this.targetView as ExcalidrawView).excalidrawRef.current;
     },
     getViewSelectedElement():any {
       if (!this.targetView || !this.targetView?._loaded) return null;
