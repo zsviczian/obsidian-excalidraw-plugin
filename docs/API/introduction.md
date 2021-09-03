@@ -96,6 +96,7 @@ Position the new element under the currently selected element, with an arrow fro
 %>
 ```
 [Click here to view animation](https://user-images.githubusercontent.com/14358394/131967188-2a488e38-f742-49d9-ae98-33238a8d4712.mp4)
+
 [![image](https://user-images.githubusercontent.com/14358394/131967405-a50eea46-f828-4ae7-9312-f47211f6f67a.png)](https://user-images.githubusercontent.com/14358394/131967188-2a488e38-f742-49d9-ae98-33238a8d4712.mp4)
 
 
