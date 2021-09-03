@@ -3,10 +3,10 @@ import {
   FillStyle,
   StrokeStyle,
   StrokeSharpness,
+  ExcalidrawElement,
 } from "@zsviczian/excalidraw/types/element/types";
 import {
   normalizePath,
-  Notice,
   TFile
 } from "obsidian"
 import ExcalidrawView from "./ExcalidrawView";
@@ -24,8 +24,7 @@ declare type ConnectionPoint = "top"|"bottom"|"left"|"right";
 export interface ExcalidrawAutomate extends Window {
   ExcalidrawAutomate: {
     plugin: ExcalidrawPlugin;
-    elementIds: [];
-    elementsDict: {},
+    elementsDict: {};
     style: {
       strokeColor: string;
       backgroundColor: string;
@@ -51,8 +50,8 @@ export interface ExcalidrawAutomate extends Window {
     setTheme(val:number): void;
     addToGroup(objectIds:[]):void;
     toClipboard(templatePath?:string): void;
-    create(params?:{filename: string, foldername:string, templatePath:string, onNewPane: boolean}):Promise<void>;
-    addElementsToView(view:ExcalidrawView|"first"|"active", repositionToCursor:boolean):void;
+    getElements():ExcalidrawElement[];
+    create(params?:{filename?: string, foldername?:string, templatePath?:string, onNewPane?: boolean}):Promise<void>;
     createSVG(templatePath?:string):Promise<SVGSVGElement>;
     createPNG(templatePath?:string):Promise<any>;
     wrapText(text:string, lineLen:number):string;
@@ -61,11 +60,17 @@ export interface ExcalidrawAutomate extends Window {
     addEllipse(topX:number, topY:number, width:number, height:number):string;
     addText(topX:number, topY:number, text:string, formatting?:{width?:number, height?:number,textAlign?: string, verticalAlign?:string, box?: boolean, boxPadding?: number},id?:string):string;
     addLine(points: [[x:number,y:number]]):void;
-    addArrow(points: [[x:number,y:number]],formatting?:{startArrowHead:string,endArrowHead:string,startObjectId:string,endObjectId:string}):void ;
-    connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, formatting?:{numberOfPoints: number,startArrowHead:string,endArrowHead:string, padding: number}):void;
+    addArrow(points: [[x:number,y:number]],formatting?:{startArrowHead?:string,endArrowHead?:string,startObjectId?:string,endObjectId?:string}):void ;
+    connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, formatting?:{numberOfPoints?: number,startArrowHead?:string,endArrowHead?:string, padding?: number}):void;
     clear(): void;
     reset(): void;
     isExcalidrawFile(f:TFile): boolean;  
+    //view manipulation
+    targetView: ExcalidrawView;
+    setView(view:ExcalidrawView|"first"|"active"):ExcalidrawView;
+    getViewSelectedElement():ExcalidrawElement;
+    connectObjectWithViewSelectedElement(objectA:string,connectionA: ConnectionPoint, connectionB: ConnectionPoint, formatting?:{numberOfPoints?: number,startArrowHead?:string,endArrowHead?:string, padding?: number}):boolean;
+    addElementsToView(repositionToCursor:boolean, save:boolean):Promise<boolean>;
   };
 }
 
@@ -74,7 +79,7 @@ declare let window: ExcalidrawAutomate;
 export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
   window.ExcalidrawAutomate = {
     plugin: plugin,
-    elementIds: [],
+    //elementIds: [],
     elementsDict: {},
     style: {
       strokeColor: "#000000",
@@ -162,21 +167,25 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
     async toClipboard(templatePath?:string) {
       const template = templatePath ? (await getTemplate(templatePath)) : null;
       let elements = template ? template.elements : [];
-      for (let i=0;i<this.elementIds.length;i++) {
-        elements.push(this.elementsDict[this.elementIds[i]]);
-      }
+      elements.concat(this.getElements());
       navigator.clipboard.writeText(
         JSON.stringify({
           "type":"excalidraw/clipboard",
           "elements": elements,
       }));
     },
-    async create(params?:{filename: string, foldername:string, templatePath:string, onNewPane: boolean}) {
+    getElements():ExcalidrawElement[] {
+      let elements=[];
+      const elementIds = Object.keys(this.elementsDict);
+      for (let i=0;i<elementIds.length;i++) {
+        elements.push(this.elementsDict[elementIds[i]]);
+      }
+      return elements;
+    },
+    async create(params?:{filename?: string, foldername?:string, templatePath?:string, onNewPane?: boolean}) {
       const template = params?.templatePath ? (await getTemplate(params.templatePath)) : null;
       let elements = template ? template.elements : [];
-      for (let i=0;i<this.elementIds.length;i++) {
-        elements.push(this.elementsDict[this.elementIds[i]]);
-      }
+      elements.concat(this.getElements());
       plugin.createDrawing(
         params?.filename ? params.filename + '.excalidraw.md' : this.plugin.getNextDefaultFilename(),
         params?.onNewPane ? params.onNewPane : false,
@@ -209,32 +218,10 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         }))
       );  
     },
-    async addElementsToView(view:ExcalidrawView|"first"|"active", repositionToCursor:boolean = false) {
-      let targetView:ExcalidrawView;
-      if(view == "active") {
-        const v = this.plugin.app.workspace.activeLeaf.view;
-        if(!(v instanceof ExcalidrawView)) return;
-        targetView = v;
-      }
-      if(view == "first") {
-        const leaves = this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
-        if(!leaves || leaves.length == 0) return;
-        targetView = (leaves[0].view as ExcalidrawView);
-      }
-      if(view instanceof ExcalidrawView) targetView = view;
-      let elements=[];
-      for (let i=0;i<this.elementIds.length;i++) {
-        elements.push(this.elementsDict[this.elementIds[i]]);
-      }
-      console.log(targetView);
-      await targetView.addElements(elements,repositionToCursor);
-    },
     async createSVG(templatePath?:string):Promise<SVGSVGElement> {
       const template = templatePath ? (await getTemplate(templatePath)) : null;
       let elements = template ? template.elements : [];
-      for (let i=0;i<this.elementIds.length;i++) {
-        elements.push(this.elementsDict[this.elementIds[i]]);
-      }
+      elements.concat(this.getElements());
       return await ExcalidrawView.getSVG(
         {//createDrawing
           "type": "excalidraw",
@@ -255,9 +242,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
     async createPNG(templatePath?:string, scale:number=1) {
       const template = templatePath ? (await getTemplate(templatePath)) : null;
       let elements = template ? template.elements : [];
-      for (let i=0;i<this.elementIds.length;i++) {
-        elements.push(this.elementsDict[this.elementIds[i]]);
-      }
+      elements.concat(this.getElements());
       return ExcalidrawView.getPNG(
         { 
           "type": "excalidraw",
@@ -281,19 +266,19 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
     },
     addRect(topX:number, topY:number, width:number, height:number):string {
       const id = nanoid();
-      this.elementIds.push(id);
+      //this.elementIds.push(id);
       this.elementsDict[id] = boxedElement(id,"rectangle",topX,topY,width,height);
       return id;
     },
     addDiamond(topX:number, topY:number, width:number, height:number):string {
       const id = nanoid();
-      this.elementIds.push(id);
+      //this.elementIds.push(id);
       this.elementsDict[id] = boxedElement(id,"diamond",topX,topY,width,height);
       return id;
     },
     addEllipse(topX:number, topY:number, width:number, height:number):string {
       const id = nanoid();
-      this.elementIds.push(id);
+      //this.elementIds.push(id);
       this.elementsDict[id] = boxedElement(id,"ellipse",topX,topY,width,height);
       return id;
     },
@@ -302,7 +287,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       const {w, h, baseline} = measureText(text, this.style.fontSize,this.style.fontFamily);
       const width = formatting?.width ? formatting.width : w;
       const height = formatting?.height ? formatting.height : h;
-      this.elementIds.push(id);
+      //this.elementIds.push(id);
       this.elementsDict[id] = {
         text: text,
         fontSize: window.ExcalidrawAutomate.style.fontSize,
@@ -313,7 +298,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         ... boxedElement(id,"text",topX,topY,width,height)
       };
       if(formatting?.box) {
-        const boxPadding = formatting?.boxPadding ? formatting.boxPadding : 10;
+        const boxPadding = formatting?.boxPadding!=null ? formatting.boxPadding : 10;
         const boxId = this.addRect(topX-boxPadding,topY-boxPadding,width+2*boxPadding,height+2*boxPadding);
         this.addToGroup([id,boxId])
         return boxId; 
@@ -323,7 +308,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
     addLine(points: [[x:number,y:number]]):void {
       const box = getLineBox(points);
       const id = nanoid();
-      this.elementIds.push(id);
+      //this.elementIds.push(id);
       this.elementsDict[id] = {
         points: normalizeLinePoints(points),
         lastCommittedPoint: null,
@@ -334,10 +319,10 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         ... boxedElement(id,"line",box.x,box.y,box.w,box.h)
       };
     },
-    addArrow(points: [[x:number,y:number]],formatting?:{startArrowHead:string,endArrowHead:string,startObjectId:string,endObjectId:string}):void {
+    addArrow(points: [[x:number,y:number]],formatting?:{startArrowHead?:string,endArrowHead?:string,startObjectId?:string,endObjectId?:string}):void {
       const box = getLineBox(points);
       const id = nanoid();
-      this.elementIds.push(id);
+      //this.elementIds.push(id);
       this.elementsDict[id] = {
         points: normalizeLinePoints(points),
         lastCommittedPoint: null,
@@ -347,10 +332,16 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         endArrowhead: formatting?.endArrowHead ? formatting.endArrowHead : this.style.endArrowHead,
         ... boxedElement(id,"arrow",box.x,box.y,box.w,box.h)
       };
-      if(formatting?.startObjectId) this.elementsDict[formatting.startObjectId].boundElementIds.push(id);
-      if(formatting?.endObjectId) this.elementsDict[formatting.endObjectId].boundElementIds.push(id);
+      if(formatting?.startObjectId) {
+        if(!this.elementsDict[formatting.startObjectId].boundElementIds) this.elementsDict[formatting.startObjectId].boundElementIds = [];
+        this.elementsDict[formatting.startObjectId].boundElementIds.push(id);
+      }
+      if(formatting?.endObjectId) {
+        if(!this.elementsDict[formatting.endObjectId].boundElementIds) this.elementsDict[formatting.endObjectId].boundElementIds = [];
+        this.elementsDict[formatting.endObjectId].boundElementIds.push(id);
+      }
     },
-    connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, formatting?:{numberOfPoints: number,startArrowHead:string,endArrowHead:string, padding: number}):void {
+    connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, formatting?:{numberOfPoints?: number,startArrowHead?:string,endArrowHead?:string, padding?: number}):void {
       if(!(this.elementsDict[objectA] && this.elementsDict[objectB])) {
         return;
       }
@@ -382,7 +373,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       });
     },
     clear() {
-      this.elementIds = [];
+      //this.elementIds = [];
       this.elementsDict = {};
     },
     reset() {
@@ -408,7 +399,45 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
     },
     isExcalidrawFile(f:TFile):boolean {
       return this.plugin.isExcalidrawFile(f);
-    }
+    },
+    targetView: null,
+    setView(view:ExcalidrawView|"first"|"active"):ExcalidrawView {
+      if(view == "active") {
+        const v = this.plugin.app.workspace.activeLeaf.view;
+        if(!(v instanceof ExcalidrawView)) return;
+        this.targetView = v;
+      }
+      if(view == "first") {
+        const leaves = this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+        if(!leaves || leaves.length == 0) return;
+        this.targetView = (leaves[0].view as ExcalidrawView);
+      }
+      if(view instanceof ExcalidrawView) this.targetView = view;
+      return this.targetView;
+    },
+    getViewSelectedElement():any {
+      if (!this.targetView || !this.targetView?._loaded) return null;
+      const current = this.targetView?.excalidrawRef?.current;
+      const selectedElements = current?.getAppState()?.selectedElementIds;
+      if(!selectedElements) return null;
+      const selectedElement = Object.keys(selectedElements)[0];
+      if(!selectedElement) return null;     
+      return current.getSceneElements().filter((e:any)=>e.id==selectedElement)[0];
+    },
+    connectObjectWithViewSelectedElement(objectA:string,connectionA: ConnectionPoint, connectionB: ConnectionPoint, formatting?:{numberOfPoints?: number,startArrowHead?:string,endArrowHead?:string, padding?: number}):boolean {
+      const el = this.getViewSelectedElement();
+      if(!el) return false;
+      const id = el.id;
+      this.elementsDict[id] = el;
+      this.connectObjects(objectA,connectionA,id,connectionB,formatting);
+      delete this.elementsDict[id];
+      return true;
+    },
+    async addElementsToView(repositionToCursor:boolean = false, save:boolean=false):Promise<boolean> {
+      if (!this.targetView || !this.targetView?._loaded) return false;
+      const elements = this.getElements();
+      return await this.targetView.addElements(elements,repositionToCursor,save);
+    },
   
   };
   await initFonts();

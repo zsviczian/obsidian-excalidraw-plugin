@@ -9,7 +9,7 @@ import {
 } from "obsidian";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import Excalidraw, {exportToSvg, getSceneVersion, loadLibraryFromBlob} from "@zsviczian/excalidraw";
+import Excalidraw, {exportToSvg, getSceneVersion} from "@zsviczian/excalidraw";
 import { ExcalidrawElement,ExcalidrawTextElement } from "@zsviczian/excalidraw/types/element/types";
 import { 
   AppState,
@@ -28,8 +28,7 @@ import {
   TEXT_DISPLAY_RAW_ICON_NAME,
   TEXT_DISPLAY_PARSED_ICON_NAME,
   FULLSCREEN_ICON_NAME,
-  JSON_parse,
-  nanoid
+  JSON_parse
 } from './constants';
 import ExcalidrawPlugin from './main';
 import {ExcalidrawAutomate} from './ExcalidrawAutomate';
@@ -37,7 +36,6 @@ import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./ExcalidrawData";
 import { checkAndCreateFolder, download, getNewUniqueFilepath, splitFolderAndFilename } from "./Utils";
 import { Prompt } from "./Prompt";
-import { ELEMENT_SHIFT_TRANSLATE_AMOUNT } from "@zsviczian/excalidraw/types/constants";
 
 declare let window: ExcalidrawAutomate;
 
@@ -64,7 +62,7 @@ export default class ExcalidrawView extends TextFileView {
   private getSelectedTextElement: Function = null;
   public addText:Function = null;
   private refresh: Function = null;
-  private excalidrawRef: React.MutableRefObject<any> = null;
+  public excalidrawRef: React.MutableRefObject<any> = null;
   private excalidrawWrapperRef: React.MutableRefObject<any> = null;
   private justLoaded: boolean = false;
   private plugin: ExcalidrawPlugin;
@@ -595,37 +593,18 @@ export default class ExcalidrawView extends TextFileView {
         }       
         const el: ExcalidrawElement[] = excalidrawRef.current.getSceneElements();
         const st: AppState = excalidrawRef.current.getAppState();
-        const id = nanoid();
         window.ExcalidrawAutomate.reset();
         window.ExcalidrawAutomate.style.strokeColor = st.currentItemStrokeColor;
         window.ExcalidrawAutomate.style.opacity = st.currentItemOpacity;
         window.ExcalidrawAutomate.style.fontFamily = fontFamily ? fontFamily: st.currentItemFontFamily;
         window.ExcalidrawAutomate.style.fontSize = st.currentItemFontSize;
         window.ExcalidrawAutomate.style.textAlign = st.currentItemTextAlign;
-        
-        const addText = (text:string) => {
-          window.ExcalidrawAutomate.addText(currentPosition.x, currentPosition.y, text,null,id);  
-          //@ts-ignore
-          const textElement = window.ExcalidrawAutomate.elementsDict[id];
-          el.push(textElement);
-          excalidrawRef.current.updateScene({
-            elements: el,
-            appState: st,
-          });
-          this.save(false);
-        }
-        const self = this;
-        //setTextElement will attempt a quick parse (without processing transclusions)
-        const parseResult = this.excalidrawData.setTextElement(id, text,async (parsedText:string)=>{
-          addText(self.textMode==TextMode.parsed?parsedText:text);
-        });
-        if(parseResult) { //there were no transclusions in the raw text, quick parse was successful
-          addText(self.textMode==TextMode.parsed?parseResult:text);
-        }
+        const id:string = window.ExcalidrawAutomate.addText(currentPosition.x, currentPosition.y, text);
+        this.addElements(window.ExcalidrawAutomate.getElements(),false,true);
       }
 
-      this.addElements = async (newElements:ExcalidrawElement[],repositionToCursor:boolean = false) => {
-        if(!excalidrawRef?.current) return;
+      this.addElements = async (newElements:ExcalidrawElement[],repositionToCursor:boolean = false, save:boolean=false):Promise<boolean> => {
+        if(!excalidrawRef?.current) return false;
       
         const estimateElementBounds = (element:ExcalidrawElement):[number,number,number,number] => {
           return[element.x,element.y,element.x+element.width,element.y+element.height];
@@ -674,6 +653,8 @@ export default class ExcalidrawView extends TextFileView {
           appState: st,
           commitToHistory: true,
         });
+        if(save) this.save(); else this.dirty = this.file?.path;
+        return true;
       };
 
       this.getScene = () => {
