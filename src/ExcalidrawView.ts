@@ -602,7 +602,7 @@ export default class ExcalidrawView extends TextFileView {
         const id:string = window.ExcalidrawAutomate.addText(currentPosition.x, currentPosition.y, text);
         this.addElements(window.ExcalidrawAutomate.getElements(),false,true);
       }
-
+      
       this.addElements = async (newElements:ExcalidrawElement[],repositionToCursor:boolean = false, save:boolean=false):Promise<boolean> => {
         if(!excalidrawRef?.current) return false;
       
@@ -733,7 +733,10 @@ export default class ExcalidrawView extends TextFileView {
           key: "abc",
           tabIndex: 0,
           onKeyDown: (e:any) => {
-            if(document.fullscreenEnabled && document.fullscreenElement == this.contentEl && e.keyCode==27) document.exitFullscreen();
+            if(document.fullscreenEnabled && document.fullscreenElement == this.contentEl && e.keyCode==27) {
+              document.exitFullscreen();
+              this.zoomToFit();
+            }
             this.ctrlKeyDown  = e.ctrlKey;
             this.shiftKeyDown = e.shiftKey;
             this.altKeyDown   = e.altKey;
@@ -928,29 +931,13 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   private zoomToFit() {
-    //when viewmode is enabled Excalidraw only listens to Alt+R
-    const el = this.containerEl;
-    const self = this;
-    const pattern = this.excalidrawRef.current.getAppState().viewModeEnabled 
-                    ? [100,200,300] : [null,100,null];
-    if(pattern[0])
-      setTimeout(()=>{
-        const e = new KeyboardEvent("keydown", {bubbles : true, cancelable : true, altKey : true, code:"KeyR"});
-        el.querySelector("canvas")?.dispatchEvent(e);
-        self.altKeyDown = false;
-      },pattern[0]);
-    if(pattern[1])
-      setTimeout(()=>{
-        const e = new KeyboardEvent("keydown", {bubbles : true, cancelable : true, shiftKey : true, code:"Digit1"});
-        el.querySelector("canvas")?.dispatchEvent(e);
-        self.shiftKeyDown = false;
-      },pattern[1])
-    if(pattern[2])
-      setTimeout(()=>{
-        const e = new KeyboardEvent("keydown", {bubbles : true, cancelable : true, altKey : true, code:"KeyR"});
-        el.querySelector("canvas")?.dispatchEvent(e);
-        self.altKeyDown=false;
-      },pattern[2]);
+    if(!this.excalidrawRef) return;
+    const current = this.excalidrawRef.current;
+    const fullscreen = (document.fullscreenElement==this.contentEl);
+    setTimeout(()=> {//time for the DOM to render, I am sure there is a more elegant solution
+      const elements = current.getSceneElements();
+      current.zoomToFit(elements,10,fullscreen?0:0.05);
+    },100);
   }
 
   public static async getSVG(scene:any, exportSettings:ExportSettings):Promise<SVGSVGElement> {

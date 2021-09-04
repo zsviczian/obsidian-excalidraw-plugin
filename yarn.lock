@@ -1024,10 +1024,10 @@
   dependencies:
     "@types/estree" "*"
 
-"@zsviczian/excalidraw@^0.9.0-onTextEditEvents-4":
-  "integrity" "sha512-4W/s1gbsOCpSerqgog6Nu38doy6n1h+aEy5q7DS/nodJVca5bc6wj+OcUJJeajw7NabkKofOI2RYOVw3oMgJcw=="
-  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.9.0-onTextEditEvents-4.tgz"
-  "version" "0.9.0-onTextEditEvents-4"
+"@zsviczian/excalidraw@0.9.0-obsidian-4":
+  "integrity" "sha512-pjq8O5wyQr1bPWNlUZam/gAivjDDM+d1OtMDtCtLd5gRcDfmdghc4CncPdqmum0gbiRQH7kRiRN4nj9uY5Tx4w=="
+  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.9.0-obsidian-4.tgz"
+  "version" "0.9.0-obsidian-4"
 
 "abab@^1.0.3":
   "integrity" "sha1-X6rZwsB/YN12dw9xzwJbYqY8/U4="
@@ -2787,12 +2787,6 @@
     "readdirp" "~3.6.0"
   optionalDependencies:
     "fsevents" "~2.3.2"
-
-"chokidar2@file:./chokidar2":
-  "resolved" "file:node_modules/watchpack/chokidar2"
-  "version" "2.0.0"
-  dependencies:
-    "chokidar" "^2.1.8"
 
 "ci-info@^1.5.0":
   "integrity" "sha512-vsGdkwSCDpWmP80ncATX7iea5DWQemg1UgCW5J8tqjU3lYw4FBYuj89J0CTVomA7BEfvSZd84GmHko+MxFQU2A=="
