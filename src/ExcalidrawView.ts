@@ -34,7 +34,7 @@ import ExcalidrawPlugin from './main';
 import {ExcalidrawAutomate} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./ExcalidrawData";
-import { checkAndCreateFolder, download, getNewUniqueFilepath, splitFolderAndFilename } from "./Utils";
+import { checkAndCreateFolder, download, getNewUniqueFilepath, splitFolderAndFilename, viewportCoordsToSceneCoords } from "./Utils";
 import { Prompt } from "./Prompt";
 
 declare let window: ExcalidrawAutomate;
@@ -725,6 +725,21 @@ export default class ExcalidrawView extends TextFileView {
         }
       }
 
+      const dropAction = (transfer: DataTransfer) => {
+        // Return a 'copy' or 'link' action according to the content types, or undefined if no recognized type
+
+        //if (transfer.types.includes('text/uri-list')) return 'link';
+        let files = (this.app as any).dragManager.draggable?.files;
+        if(files) {
+          if(files[0] == this.file) {
+            files.shift();
+            (this.app as any).dragManager.draggable.title = files.length + " files";
+          }
+        }
+        if (['file', 'files'].includes((this.app as any).dragManager.draggable?.type)) return 'link';
+        //if (transfer.types.includes('text/html') || transfer.types.includes('text/plain')) return 'copy';
+      }                 
+
       const excalidrawDiv = React.createElement(
         "div",
         {
@@ -799,7 +814,15 @@ export default class ExcalidrawView extends TextFileView {
             clearHoverPreview();
             //console.log(e);
           },
-        
+          onDragOver: (e:any) => {
+            const action = dropAction(e.dataTransfer);
+            if (action) {
+              e.dataTransfer.dropEffect = action;
+              e.preventDefault();
+              return false;
+            }
+          },
+          onDragLeave: () => { },          
         },
         React.createElement(Excalidraw.default, {
           ref: excalidrawRef,
@@ -855,7 +878,7 @@ export default class ExcalidrawView extends TextFileView {
           onChange: (et:ExcalidrawElement[],st:AppState) => {
             if(this.justLoaded) {
               this.justLoaded = false;             
-              this.zoomToFit();
+              this.zoomToFit(false);
               previousSceneVersion = getSceneVersion(et);
               return;
             } 
@@ -879,6 +902,24 @@ export default class ExcalidrawView extends TextFileView {
             console.log(data,event);
             return true;
           },*/
+          onDrop: (event: React.DragEvent<HTMLDivElement>):boolean => {
+            const st: AppState = excalidrawRef.current.getAppState();
+            currentPosition = viewportCoordsToSceneCoords({ clientX: event.clientX, clientY: event.clientY },st);
+            const draggable = (this.app as any).dragManager.draggable;
+            switch(draggable?.type) {
+              case "file":
+                this.addText(`[[${this.app.metadataCache.fileToLinktext(draggable.file,this.file.path,true)}]]`);
+                return true;
+              case "files":
+                for(const f of draggable.files) {
+                  this.addText(`[[${this.app.metadataCache.fileToLinktext(f,this.file.path,true)}]]`);
+                  currentPosition.y+=st.currentItemFontSize*2;
+                }
+                return true;
+              default:
+                return false;
+            }
+          },
           onBeforeTextEdit: (textElement: ExcalidrawTextElement) => {
             if(this.autosaveTimer) { //stopping autosave to avoid autosave overwriting text while the user edits it
               clearInterval(this.autosaveTimer);
@@ -930,14 +971,16 @@ export default class ExcalidrawView extends TextFileView {
     ReactDOM.render(reactElement,this.contentEl,()=>this.excalidrawWrapperRef.current.focus());  
   }
 
-  private zoomToFit() {
+  private zoomToFit(delay:boolean = true) {
     if(!this.excalidrawRef) return;
     const current = this.excalidrawRef.current;
     const fullscreen = (document.fullscreenElement==this.contentEl);
-    setTimeout(()=> {//time for the DOM to render, I am sure there is a more elegant solution
-      const elements = current.getSceneElements();
+    const elements = current.getSceneElements();
+    if(delay) { //time for the DOM to render, I am sure there is a more elegant solution
+      setTimeout(() => current.zoomToFit(elements,10,fullscreen?0:0.05),100);
+    } else {
       current.zoomToFit(elements,10,fullscreen?0:0.05);
-    },100);
+    }
   }
 
   public static async getSVG(scene:any, exportSettings:ExportSettings):Promise<SVGSVGElement> {

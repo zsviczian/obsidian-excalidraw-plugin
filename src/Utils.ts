@@ -1,5 +1,6 @@
 import {  normalizePath, TAbstractFile, TFolder, Vault } from "obsidian";
 import { Random } from "roughjs/bin/math";
+import { Zoom } from "@zsviczian/excalidraw/types/types";
 
 /**
  * Splits a full path including a folderpath and a filename into separate folderpath and filename components
@@ -88,3 +89,25 @@ export function wrapText(text:string, lineLen:number):string {
   }
   return outstring.trimEnd();
 }
+
+export const viewportCoordsToSceneCoords = (
+  { clientX, clientY }: { clientX: number; clientY: number },
+  {
+    zoom,
+    offsetLeft,
+    offsetTop,
+    scrollX,
+    scrollY,
+  }: {
+    zoom: Zoom;
+    offsetLeft: number;
+    offsetTop: number;
+    scrollX: number;
+    scrollY: number;
+  },
+) => {
+  const invScale = 1 / zoom.value;
+  const x = (clientX - zoom.translation.x - offsetLeft) * invScale - scrollX;
+  const y = (clientY - zoom.translation.y - offsetTop) * invScale - scrollY;
+  return { x, y };
+};

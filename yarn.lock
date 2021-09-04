@@ -1024,10 +1024,10 @@
   dependencies:
     "@types/estree" "*"
 
-"@zsviczian/excalidraw@0.9.0-obsidian-4":
-  "integrity" "sha512-pjq8O5wyQr1bPWNlUZam/gAivjDDM+d1OtMDtCtLd5gRcDfmdghc4CncPdqmum0gbiRQH7kRiRN4nj9uY5Tx4w=="
-  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.9.0-obsidian-4.tgz"
-  "version" "0.9.0-obsidian-4"
+"@zsviczian/excalidraw@0.9.0-obsidian-7":
+  "integrity" "sha512-7J10Klh7QWyJoie/nymezF3YALJtk0NORGPwKEP0vQybmPHCSaPCmAoF6GFnrSvC5UiFoa8RYK00F0sa3HJulg=="
+  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.9.0-obsidian-7.tgz"
+  "version" "0.9.0-obsidian-7"
 
 "abab@^1.0.3":
   "integrity" "sha1-X6rZwsB/YN12dw9xzwJbYqY8/U4="
