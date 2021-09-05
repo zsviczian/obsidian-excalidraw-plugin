@@ -20,6 +20,7 @@ export interface ExcalidrawSettings {
   linkPrefix: string,
   urlPrefix: string,
   allowCtrlClick: boolean, //if disabled only the link button in the view header will open links 
+  forceWrap: boolean,
   pngExportScale: number,
   exportWithTheme: boolean,
   exportWithBackground: boolean,
@@ -47,6 +48,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   urlPrefix: "🌐",
   showLinkBrackets: true,
   allowCtrlClick: true,
+  forceWrap: false,
   pngExportScale: 1,
   exportWithTheme: true,
   exportWithBackground: true,
@@ -216,6 +218,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           this.plugin.settings.allowCtrlClick = value;
           await this.plugin.saveSettings();
         }));
+
+    const s = new Setting(containerEl)
+      .setName(t("TRANSCLUSION_WRAP_NAME")) 
+      .setDesc(t("TRANSCLUSION_WRAP_DESC"))
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.forceWrap)
+        .onChange(async (value) => {
+          this.plugin.settings.forceWrap = value;
+          await this.plugin.saveSettings();
+          this.requestReloadDrawings = true;
+        }));
+    s.descEl.innerHTML="<code>![[doc#^ref]]{number}</code> "+t("TRANSCLUSION_WRAP_DESC");
 
     this.containerEl.createEl('h1', {text: t("EMBED_HEAD")});
 

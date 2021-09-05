@@ -69,7 +69,7 @@ export default {
   FILENAME_PREFIX_DESC: "The first part of the filename",
   FILENAME_DATE_NAME: "Filename date",
   FILENAME_DATE_DESC: "The second part of the filename",
-  LINKS_HEAD: "Links",
+  LINKS_HEAD: "Links and transclusion",
   LINKS_DESC: "CTRL/META + CLICK on Text Elements to open them as links. " + 
               "If the selected text has more than one [[valid Obsidian links]], only the first will be opened. " + 
               "If the text starts as a valid web link (i.e. https:// or http://), then " +
@@ -91,6 +91,10 @@ export default {
   LINK_CTRL_CLICK_NAME: "CTRL + CLICK on text to open them as links",
   LINK_CTRL_CLICK_DESC: "You can turn this feature off if it interferes with default Excalidraw features you want to use. If " +
                         "this is turned off, only the link button in the title bar of the drawing pane will open links.",
+  TRANSCLUSION_WRAP_NAME: "Overflow wrap behavior of transcluded text",
+  TRANSCLUSION_WRAP_DESC: "Number specifies the character count where the text should be wrapped. " + 
+                          "Set the text wrapping behavior of transcluded text. Turn this ON to force-wrap " + 
+                          "text (i.e. no overflow), or OFF to soft-warp text (at the nearest whitespace).",
   EMBED_HEAD: "Embed & Export",
   EMBED_PREVIEW_SVG_NAME: "Display SVG in markdown preview",
   EMBED_PREVIEW_SVG_DESC: "The default is to display drawings as SVG images in the markdown preview. Turning this feature off, the markdown preview will display the drawing as an embedded PNG image.",

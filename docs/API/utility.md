@@ -97,9 +97,23 @@ See Excalidraw documentation here: https://www.npmjs.com/package/@excalidraw/exc
 ```typescript
 getViewSelectedElement():ExcalidrawElement
 ```
+
+You first need to set the view calling `setView()`.
+
 If an element is selected in the targetView the function returns the selected element. If multiple elements are selected, either by SHIFT+Clicking to select multiple elements, or by selecting a group, the first of the elements will be selected. If you want to specify which element to select from a group, double click the desired element in the group.
 
 This function is helpful if you want to add a new element in relation to an existing element in your drawing.
+
+#### getViewSelectedElements()
+```typescript
+getViewSelectedElements():ExcalidrawElement[]
+```
+
+You first need to set the view calling `setView()`.
+
+Gets the array of selected elements in the scene. Returns [] if no elements are selected.
+
+Note: you can call `getExcalidrawAPI().getSceneElements()` to retreive all the elements in the scene.
 
 #### connectObjectWithViewSelectedElement()
 ```typescript 

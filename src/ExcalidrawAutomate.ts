@@ -71,6 +71,7 @@ export interface ExcalidrawAutomate extends Window {
     setView(view:ExcalidrawView|"first"|"active"):ExcalidrawView;
     getExcalidrawAPI():any;
     getViewSelectedElement():ExcalidrawElement;
+    getViewSelectedElements():ExcalidrawElement[];
     connectObjectWithViewSelectedElement(objectA:string,connectionA: ConnectionPoint, connectionB: ConnectionPoint, formatting?:{numberOfPoints?: number,startArrowHead?:string,endArrowHead?:string, padding?: number}):boolean;
     addElementsToView(repositionToCursor:boolean, save:boolean):Promise<boolean>;
   };
@@ -268,7 +269,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       )  
     },
     wrapText(text:string, lineLen:number):string {
-      return wrapText(text,lineLen);
+      return wrapText(text,lineLen,this.plugin.settings.forceWrap);
     },
     addRect(topX:number, topY:number, width:number, height:number):string {
       const id = nanoid();
@@ -428,13 +429,17 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       return (this.targetView as ExcalidrawView).excalidrawRef.current;
     },
     getViewSelectedElement():any {
-      if (!this.targetView || !this.targetView?._loaded) return null;
+      const elements = this.getViewSelectedElements();
+      return elements ? elements[0] : null;
+    },
+    getViewSelectedElements():any[] {
+      if (!this.targetView || !this.targetView?._loaded) return [];
       const current = this.targetView?.excalidrawRef?.current;
       const selectedElements = current?.getAppState()?.selectedElementIds;
-      if(!selectedElements) return null;
-      const selectedElement = Object.keys(selectedElements)[0];
-      if(!selectedElement) return null;     
-      return current.getSceneElements().filter((e:any)=>e.id==selectedElement)[0];
+      if(!selectedElements) return [];
+      const selectedElementsKeys = Object.keys(selectedElements);
+      if(!selectedElementsKeys) return [];     
+      return current.getSceneElements().filter((e:any)=>selectedElementsKeys.includes(e.id));
     },
     connectObjectWithViewSelectedElement(objectA:string,connectionA: ConnectionPoint, connectionB: ConnectionPoint, formatting?:{numberOfPoints?: number,startArrowHead?:string,endArrowHead?:string, padding?: number}):boolean {
       const el = this.getViewSelectedElement();

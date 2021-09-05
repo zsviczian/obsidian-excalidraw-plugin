@@ -76,18 +76,30 @@ let random = new Random(Date.now());
 export const randomInteger = () => Math.floor(random.next() * 2 ** 31);
 
 //https://macromates.com/blog/2006/wrapping-text-with-regular-expressions/
-export function wrapText(text:string, lineLen:number):string {
+export function wrapText(text:string, lineLen:number, forceWrap:boolean=false):string {
   if(!lineLen) return text;
   let outstring = "";
-  //                       1                2
+  if(forceWrap) {
+    for(const t of text.split("\n")) {
+      const v = t.match(new RegExp('(.){1,'+lineLen+'}','g'));
+      outstring += v ? v.join("\n")+"\n" : "\n";
+    }
+    return outstring.replace(/\n$/, '');
+  }
+
+  //                       1                2            3        4
   const reg = new RegExp(`(.{1,${lineLen}})(\\s+|$\\n?)|([^\\s]+)(\\s+|$\\n?)`,'gm');
   const res = text.matchAll(reg);
   let parts;
   while(!(parts = res.next()).done) {
     outstring += parts.value[1] ? parts.value[1].trimEnd() : parts.value[3].trimEnd();
-    outstring += (parts.value[2]=='\n' || parts.value[4]=='\n') ?'\n\n':'\n';
+    const newLine1 = parts.value[2]?.includes("\n");
+    const newLine2 = parts.value[4]?.includes("\n");
+    if(newLine1) outstring += parts.value[2];
+    if(newLine2) outstring += parts.value[4];
+    if(!(newLine1 || newLine2)) outstring += "\n";
   }
-  return outstring.trimEnd();
+  return outstring;
 }
 
 export const viewportCoordsToSceneCoords = (

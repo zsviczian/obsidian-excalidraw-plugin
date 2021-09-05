@@ -327,7 +327,7 @@ export class ExcalidrawData {
     while(!(parts=res.next()).done) {
       if (REGEX_LINK.isTransclusion(parts)) { //transclusion //parts.value[1] || parts.value[4]
         outString += text.substring(position,parts.value.index) + 
-                     wrapText(await getTransclusion(REGEX_LINK.getLink(parts)),REGEX_LINK.getWrapLength(parts));
+                     wrapText(await getTransclusion(REGEX_LINK.getLink(parts)),REGEX_LINK.getWrapLength(parts),this.plugin.settings.forceWrap);
       } else {
         const parsedLink = this.parseLinks(text,position,parts);
         if(parsedLink) {
