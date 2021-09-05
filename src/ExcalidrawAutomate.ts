@@ -191,7 +191,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
     async create(params?:{filename?: string, foldername?:string, templatePath?:string, onNewPane?: boolean}) {
       const template = params?.templatePath ? (await getTemplate(params.templatePath)) : null;
       let elements = template ? template.elements : [];
-      elements.concat(this.getElements());
+      elements = elements.concat(this.getElements());
       plugin.createDrawing(
         params?.filename ? params.filename + '.excalidraw.md' : this.plugin.getNextDefaultFilename(),
         params?.onNewPane ? params.onNewPane : false,
