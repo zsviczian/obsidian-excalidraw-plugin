@@ -115,6 +115,13 @@ Gets the array of selected elements in the scene. Returns [] if no elements are 
 
 Note: you can call `getExcalidrawAPI().getSceneElements()` to retreive all the elements in the scene.
 
+#### viewToggleFullScreen()
+```typescript
+viewToggleFullScreen():void
+```
+
+Toggles targetView between fullscreen mode and normal mode.
+
 #### connectObjectWithViewSelectedElement()
 ```typescript 
 connectObjectWithViewSelectedElement(objectA:string,connectionA: ConnectionPoint, connectionB: ConnectionPoint, formatting?:{numberOfPoints?: number,startArrowHead?:string,endArrowHead?:string, padding?: number}):boolean

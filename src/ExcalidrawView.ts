@@ -971,7 +971,7 @@ export default class ExcalidrawView extends TextFileView {
     ReactDOM.render(reactElement,this.contentEl,()=>this.excalidrawWrapperRef.current.focus());  
   }
 
-  private zoomToFit(delay:boolean = true) {
+  public zoomToFit(delay:boolean = true) {
     if(!this.excalidrawRef) return;
     const current = this.excalidrawRef.current;
     const fullscreen = (document.fullscreenElement==this.contentEl);
