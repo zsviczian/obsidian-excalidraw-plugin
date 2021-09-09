@@ -426,15 +426,21 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       return this.targetView;
     },
     getExcalidrawAPI():any {
-      if (!this.targetView || !this.targetView?._loaded) return null;
+      if (!this.targetView || !this.targetView?._loaded) {
+        errorMessage("targetView not set", "getExcalidrawAPI()");
+        return null;
+      }
       return (this.targetView as ExcalidrawView).excalidrawRef.current;
     },
-    getViewSelectedElement():any {
+    getViewSelectedElement():any {      
       const elements = this.getViewSelectedElements();
       return elements ? elements[0] : null;
     },
     getViewSelectedElements():any[] {
-      if (!this.targetView || !this.targetView?._loaded) return [];
+      if (!this.targetView || !this.targetView?._loaded) {
+        errorMessage("targetView not set", "getViewSelectedElements()");
+        return [];
+      }
       const current = this.targetView?.excalidrawRef?.current;
       const selectedElements = current?.getAppState()?.selectedElementIds;
       if(!selectedElements) return [];
@@ -443,8 +449,14 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       return current.getSceneElements().filter((e:any)=>selectedElementsKeys.includes(e.id));
     },
     viewToggleFullScreen():void {
-      if (this.plugin.app.isMobile) return;
-      if (!this.targetView || !this.targetView?._loaded) return;
+      if (this.plugin.app.isMobile) {
+        errorMessage("mobile not supported", "viewToggleFullScreen()");
+        return;
+      }
+      if (!this.targetView || !this.targetView?._loaded) {
+        errorMessage("targetView not set");
+        return;
+      }      
       if(document.fullscreenElement === (this.targetView as ExcalidrawView).contentEl) {
         document.exitFullscreen();
       } else {
@@ -461,7 +473,10 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       return true;
     },
     async addElementsToView(repositionToCursor:boolean = false, save:boolean=false):Promise<boolean> {
-      if (!this.targetView || !this.targetView?._loaded) return false;
+      if (!this.targetView || !this.targetView?._loaded) {
+        errorMessage("targetView not set", "addElementsToView()");
+        return false;
+      }
       const elements = this.getElements();
       return await this.targetView.addElements(elements,repositionToCursor,save);
     },
@@ -578,3 +593,15 @@ async function getTemplate(fileWithPath: string):Promise<{elements: any,appState
   }
 }
 
+function errorMessage(message: string, source: string) {
+  switch(message) {
+    case "targetView not set": 
+      console.log(source, "ExcalidrawAutomate: targetView not set, or no longer active. Use setView before calling this function");
+      break;
+    case "mobile not supported":
+      console.log(source, "ExcalidrawAutomate: this function is not avalable on Obsidian Mobile");
+      break;
+    default:
+      console.log(source, "ExcalidrawAutomate: unknown error");
+  }
+}
