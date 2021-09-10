@@ -72,7 +72,7 @@ export interface ExcalidrawAutomate extends Window {
     getExcalidrawAPI():any;
     getViewSelectedElement():ExcalidrawElement;
     getViewSelectedElements():ExcalidrawElement[];
-    viewToggleFullScreen():void;
+    viewToggleFullScreen(forceViewMode?:boolean):void;
     connectObjectWithViewSelectedElement(objectA:string,connectionA: ConnectionPoint, connectionB: ConnectionPoint, formatting?:{numberOfPoints?: number,startArrowHead?:string,endArrowHead?:string, padding?: number}):boolean;
     addElementsToView(repositionToCursor:boolean, save:boolean):Promise<boolean>;
   };
@@ -448,15 +448,26 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       if(!selectedElementsKeys) return [];     
       return current.getSceneElements().filter((e:any)=>selectedElementsKeys.includes(e.id));
     },
-    viewToggleFullScreen():void {
+    viewToggleFullScreen(forceViewMode:boolean = false):void {
       if (this.plugin.app.isMobile) {
         errorMessage("mobile not supported", "viewToggleFullScreen()");
         return;
       }
       if (!this.targetView || !this.targetView?._loaded) {
-        errorMessage("targetView not set");
+        errorMessage("targetView not set", "viewToggleFullScreen()");
         return;
-      }      
+      }
+      if(forceViewMode){
+        const ref = this.getExcalidrawAPI();
+        ref.updateScene({
+          elements: ref.getSceneElements(),
+          appState: { 
+            viewModeEnabled: true,
+            ...  ref.appState, 
+          },
+          commitToHistory: false,
+        });
+      } 
       if(document.fullscreenElement === (this.targetView as ExcalidrawView).contentEl) {
         document.exitFullscreen();
       } else {

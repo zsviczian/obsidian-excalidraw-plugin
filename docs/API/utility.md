@@ -117,10 +117,12 @@ Note: you can call `getExcalidrawAPI().getSceneElements()` to retreive all the e
 
 #### viewToggleFullScreen()
 ```typescript
-viewToggleFullScreen():void
+viewToggleFullScreen(forceViewMode?:boolean):void;
 ```
 
-Toggles targetView between fullscreen mode and normal mode.
+Toggles targetView between fullscreen mode and normal mode. By setting forceViewMode to `true` will change Excalidraw mode to View mode. Default is `false`.
+
+The function will do nothing on Obsidian Mobile.
 
 #### connectObjectWithViewSelectedElement()
 ```typescript 

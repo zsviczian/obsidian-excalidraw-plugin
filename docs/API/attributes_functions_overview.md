@@ -53,7 +53,7 @@ setView(view:ExcalidrawView|"first"|"active"):ExcalidrawView;
 getExcalidrawAPI():any;
 getViewSelectedElement():ExcalidrawElement;
 getViewSelectedElements():ExcalidrawElement[];
-viewToggleFullScreen():void;
+viewToggleFullScreen(forceViewMode?:boolean):void;
 connectObjectWithViewSelectedElement(objectA:string,connectionA: ConnectionPoint, connectionB: ConnectionPoint, formatting?:{numberOfPoints?: number,startArrowHead?:string,endArrowHead?:string, padding?: number}):boolean;
 addElementsToView(repositionToCursor:boolean, save:boolean):Promise<boolean>;
 };
