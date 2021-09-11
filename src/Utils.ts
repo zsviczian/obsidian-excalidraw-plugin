@@ -99,7 +99,7 @@ export function wrapText(text:string, lineLen:number, forceWrap:boolean=false):s
     if(newLine2) outstring += parts.value[4];
     if(!(newLine1 || newLine2)) outstring += "\n";
   }
-  return outstring;
+  return outstring.replace(/\n$/, '');
 }
 
 export const viewportCoordsToSceneCoords = (

@@ -641,8 +641,9 @@ export default class ExcalidrawView extends TextFileView {
         for(let i=0;i<textElements.length;i++) {
           //@ts-ignore
           const parseResult = await this.excalidrawData.addTextElement(textElements[i].id,textElements[i].text);
-          //@ts-ignore
-          if(this.textMode==TextMode.parsed) textElements[i].text = parseResult;
+          if(this.textMode==TextMode.parsed) {
+            this.excalidrawData.updateTextElement(textElements[i],parseResult);
+          }
         };
 
         const el: ExcalidrawElement[] = excalidrawRef.current.getSceneElements();
@@ -737,7 +738,7 @@ export default class ExcalidrawView extends TextFileView {
           }
         }
         if (['file', 'files'].includes((this.app as any).dragManager.draggable?.type)) return 'link';
-        //if (transfer.types.includes('text/html') || transfer.types.includes('text/plain')) return 'copy';
+        if (transfer.types?.includes('text/html') || transfer.types?.includes('text/plain')) return 'copy';
       }                 
 
       const excalidrawDiv = React.createElement(
@@ -905,6 +906,13 @@ export default class ExcalidrawView extends TextFileView {
           onDrop: (event: React.DragEvent<HTMLDivElement>):boolean => {
             const st: AppState = excalidrawRef.current.getAppState();
             currentPosition = viewportCoordsToSceneCoords({ clientX: event.clientX, clientY: event.clientY },st);
+            
+            if (event.dataTransfer.types.includes("text/plain")) {
+              const text:string = event.dataTransfer.getData("text");
+              this.addText(text.replace(/(!\[\[.*#[^\]]*\]\])/g,"$1{40}"));
+              return true;
+            }
+
             const draggable = (this.app as any).dragManager.draggable;
             switch(draggable?.type) {
               case "file":

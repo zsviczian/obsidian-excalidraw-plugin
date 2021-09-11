@@ -161,6 +161,17 @@ export class ExcalidrawData {
     await this.updateSceneTextElements(forceupdate);
   }
 
+  //update a single text element in the scene if the newText is different
+  public updateTextElement(sceneTextElement:any, newText:string, forceUpdate:boolean = false) {
+    if(forceUpdate || newText!=sceneTextElement.text) {
+      const measure = measureText(newText,sceneTextElement.fontSize,sceneTextElement.fontFamily);
+      sceneTextElement.text = newText;
+      sceneTextElement.width = measure.w;
+      sceneTextElement.height = measure.h;
+      sceneTextElement.baseline = measure.baseline;
+    }
+  }
+
   /**
    * Updates the TextElements in the Excalidraw scene based on textElements MAP in ExcalidrawData
    * Depending on textMode, TextElements will receive their raw or parsed values
@@ -168,23 +179,11 @@ export class ExcalidrawData {
    * correct sizing issues
    */
   private async updateSceneTextElements(forceupdate:boolean=false) {
-
-    //update a single text element in the scene if the newText is different
-    const update = (sceneTextElement:any, newText:string) => {
-      if(forceupdate || newText!=sceneTextElement.text) {
-        const measure = measureText(newText,sceneTextElement.fontSize,sceneTextElement.fontFamily);
-        sceneTextElement.text = newText;
-        sceneTextElement.width = measure.w;
-        sceneTextElement.height = measure.h;
-        sceneTextElement.baseline = measure.baseline;
-      }
-    }
-
     //update text in scene based on textElements Map
     //first get scene text elements
     const texts = this.scene.elements?.filter((el:any)=> el.type=="text")
     for (const te of texts) {
-      update(te,await this.getText(te.id)); 
+      this.updateTextElement(te,await this.getText(te.id),forceupdate); 
     }
   }
 
