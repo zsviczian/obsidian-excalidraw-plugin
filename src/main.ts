@@ -15,6 +15,7 @@ import {
   MarkdownRenderer,
   ViewState,
   Notice,
+  request,
 } from "obsidian";
 
 import { 
@@ -115,6 +116,21 @@ export default class ExcalidrawPlugin extends Plugin {
     if(electron.startsWith("8.")) {
       new Notice(`You are running an older version of the electron Browser (${electron}). If Excalidraw does not start up, please reinstall Obsidian with the latest installer and try again.`,10000);
     }
+    this.switchToExcalidarwAfterLoad()
+  }
+
+  private switchToExcalidarwAfterLoad() {
+    const self = this;
+    this.app.workspace.onLayoutReady(() => {
+      let leaf: WorkspaceLeaf;
+      for (leaf of self.app.workspace.getLeavesOfType("markdown")) {
+        if ((leaf.view instanceof MarkdownView) && self.isExcalidrawFile(leaf.view.file)) {
+          self.excalidrawFileModes[(leaf as any).id || leaf.view.file.path] =
+                    VIEW_TYPE_EXCALIDRAW;
+                    self.setExcalidrawView(leaf);
+        }
+      }
+    });
   }
 
   private migrationNotice(){
@@ -220,10 +236,10 @@ export default class ExcalidrawPlugin extends Plugin {
             attr.fheight = parts[2];
             if(parts[3]!=attr.fname) attr.style = "excalidraw-svg" + (parts[3] ? "-" + parts[3] : "");
           }
-        
+          
           attr.fname = file?.path;
-          div = createDiv(attr.style, async (el)=>{
-            const img = await getIMG(attr);
+          const img = await getIMG(attr);
+          div = createDiv(attr.style, (el)=>{
             el.append(img);
             el.setAttribute("src",file.path);
             if(attr.fwidth) el.setAttribute("w",attr.fwidth);

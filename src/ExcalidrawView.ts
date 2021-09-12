@@ -813,7 +813,6 @@ export default class ExcalidrawView extends TextFileView {
           },
           onMouseOver: (e:MouseEvent) => {
             clearHoverPreview();
-            //console.log(e);
           },
           onDragOver: (e:any) => {
             const action = dropAction(e.dataTransfer);
@@ -907,12 +906,6 @@ export default class ExcalidrawView extends TextFileView {
             const st: AppState = excalidrawRef.current.getAppState();
             currentPosition = viewportCoordsToSceneCoords({ clientX: event.clientX, clientY: event.clientY },st);
             
-            if (event.dataTransfer.types.includes("text/plain")) {
-              const text:string = event.dataTransfer.getData("text");
-              this.addText(text.replace(/(!\[\[.*#[^\]]*\]\])/g,"$1{40}"));
-              return true;
-            }
-
             const draggable = (this.app as any).dragManager.draggable;
             switch(draggable?.type) {
               case "file":
@@ -924,9 +917,14 @@ export default class ExcalidrawView extends TextFileView {
                   currentPosition.y+=st.currentItemFontSize*2;
                 }
                 return true;
-              default:
-                return false;
             }
+            if (event.dataTransfer.types.includes("text/plain")) {
+              const text:string = event.dataTransfer.getData("text");
+              if(!text) return false;
+              this.addText(text.replace(/(!\[\[.*#[^\]]*\]\])/g,"$1{40}"));
+              return true;
+            }
+            return false;
           },
           onBeforeTextEdit: (textElement: ExcalidrawTextElement) => {
             if(this.autosaveTimer) { //stopping autosave to avoid autosave overwriting text while the user edits it
