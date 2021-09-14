@@ -306,26 +306,21 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         pushPoint(i,-1);
       }
       p.push(p[0]);
-      const id=this.addLine(p);
-      const scale = (element:ExcalidrawElement):ExcalidrawElement => {
-        if(!(element.type=="line" || element.type=="arrow")) return null;
-        const scaleX = width/element.width;
-        const scaleY = height/element.height;
+      const scale = (p:[[x:number,y:number]]):[[x:number,y:number]] => {
+        const box = getLineBox(p);
+        const scaleX = width/box.w;
+        const scaleY = height/box.h;
         let i;
-        for(i=0;i<element.points.length;i++) {
-          let [x,y] = element.points[i];
-          x = (x-element.x)*scaleX+element.x;
-          y = (y-element.y)*scaleY+element.y;
-          //@ts-ignore
-          element.points[i]=[x,y]
+        for(i=0;i<p.length;i++) {
+          let [x,y] = p[i];
+          x = (x-box.x)*scaleX+box.x;
+          y = (y-box.y)*scaleY+box.y;
+          p[i]=[x,y]
         }
-        //@ts-ignore
-        element.width=width; 
-        //@ts-ignore
-        element.heigth=height;
-        return element;
+        return p;
       }
-      this.elementsDict[id]=repositionElementsToCursor([scale(this.getElement(id))],{x:topX,y:topY},false)[0];
+      const id=this.addLine(scale(p));
+      this.elementsDict[id]=repositionElementsToCursor([this.getElement(id)],{x:topX,y:topY},false)[0];
       return id;
     }, 
     addText( 
