@@ -59,7 +59,8 @@ export interface ExcalidrawAutomate extends Window {
     addRect(topX:number, topY:number, width:number, height:number):string;
     addDiamond(topX:number, topY:number, width:number, height:number):string;
     addEllipse(topX:number, topY:number, width:number, height:number):string;
-    addText(topX:number, topY:number, text:string, formatting?:{width?:number, height?:number,textAlign?: string, verticalAlign?:string, box?: boolean, boxPadding?: number},id?:string):string;
+    addBlob(topX:number, topY:number, width:number, height:number):string;
+    addText(topX:number, topY:number, text:string, formatting?:{wrapAt?:number, width?:number, height?:number,textAlign?: string, verticalAlign?:string, box?: boolean, boxPadding?: number},id?:string):string;
     addLine(points: [[x:number,y:number]]):string;
     addArrow(points: [[x:number,y:number]],formatting?:{startArrowHead?:string,endArrowHead?:string,startObjectId?:string,endObjectId?:string}):string ;
     connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, formatting?:{numberOfPoints?: number,startArrowHead?:string,endArrowHead?:string, padding?: number}):void;
@@ -83,7 +84,6 @@ declare let window: ExcalidrawAutomate;
 export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
   window.ExcalidrawAutomate = {
     plugin: plugin,
-    //elementIds: [],
     elementsDict: {},
     style: {
       strokeColor: "#000000",
@@ -274,28 +274,99 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
     },
     addRect(topX:number, topY:number, width:number, height:number):string {
       const id = nanoid();
-      //this.elementIds.push(id);
       this.elementsDict[id] = boxedElement(id,"rectangle",topX,topY,width,height);
       return id;
     },
     addDiamond(topX:number, topY:number, width:number, height:number):string {
       const id = nanoid();
-      //this.elementIds.push(id);
       this.elementsDict[id] = boxedElement(id,"diamond",topX,topY,width,height);
       return id;
     },
     addEllipse(topX:number, topY:number, width:number, height:number):string {
       const id = nanoid();
-      //this.elementIds.push(id);
       this.elementsDict[id] = boxedElement(id,"ellipse",topX,topY,width,height);
       return id;
-    },
-    addText(topX:number, topY:number, text:string, formatting?:{width?:number, height?:number,textAlign?: string, verticalAlign?:string, box?: boolean, boxPadding?: number},id?:string):string {
-      if(!id) id = nanoid();    
+    }, 
+    addBlob(topX:number, topY:number, width:number, height:number):string {
+      const b = height*0.5; //minor axis of the ellipsis
+      const a = width*0.5; //major axis of the ellipsis
+      const sx = a/9; 
+      const sy = b*0.8;
+      const step = 6;
+      let p:any = [];
+      const pushPoint = (i:number,dir:number) => {
+          const x = i + Math.random()*sx-sx/2;
+          p.push([x+Math.random()*sx-sx/2+(i%2)*sx/6+topX,dir*Math.sqrt(b*b*(1-(x*x)/(a*a)))+Math.random()*sy-sy/2+(i%2)*sy/6+topY]);
+      }
+      let i:number;
+      for (i=-a+sx/2;i<=a-sx/2;i+=a/step) {
+        pushPoint(i,1);
+      }
+      for(i=a-sx/2;i>=-a+sx/2;i-=a/step) {
+        pushPoint(i,-1);
+      }
+      p.push(p[0]);
+      const id=this.addLine(p);
+      const scale = (element:ExcalidrawElement):ExcalidrawElement => {
+        if(!(element.type=="line" || element.type=="arrow")) return null;
+        const scaleX = width/element.width;
+        const scaleY = height/element.height;
+        let i;
+        for(i=0;i<element.points.length;i++) {
+          let [x,y] = element.points[i];
+          x = (x-element.x)*scaleX+element.x;
+          y = (y-element.y)*scaleY+element.y;
+          //@ts-ignore
+          element.points[i]=[x,y]
+        }
+        //@ts-ignore
+        element.width=width; 
+        //@ts-ignore
+        element.heigth=height;
+        return element;
+      }
+      this.elementsDict[id]=repositionElementsToCursor([scale(this.getElement(id))],{x:topX,y:topY},false)[0];
+      return id;
+    }, 
+    addText( 
+      topX:number, 
+      topY:number, 
+      text:string, 
+      formatting?:{
+        wrapAt?:number, 
+        width?:number, 
+        height?:number,
+        textAlign?:string, 
+        verticalAlign?:string, 
+        box?: boolean|"box"|"blob"|"ellipse"|"diamond", 
+        boxPadding?:number
+      },
+      id?:string
+    ):string {
+      id = id ?? nanoid();
+      text = (formatting?.wrapAt) ? this.wrapText(text,formatting.wrapAt):text;
       const {w, h, baseline} = measureText(text, this.style.fontSize,this.style.fontFamily);
       const width = formatting?.width ? formatting.width : w;
       const height = formatting?.height ? formatting.height : h;
-      //this.elementIds.push(id);
+      
+      let boxId:string = null;
+      const boxPadding = formatting?.boxPadding ?? 10;
+      if(formatting?.box) {
+        switch(formatting?.box) {
+          case true || "box": 
+            boxId = this.addRect(topX-boxPadding,topY-boxPadding,width+2*boxPadding,height+2*boxPadding);
+            break;
+          case "ellipse":
+            boxId = this.addEllipse(topX-boxPadding,topY-boxPadding,width+2*boxPadding,height+2*boxPadding);
+            break;
+          case "diamond":
+            boxId = this.addDiamond(topX-boxPadding,topY-boxPadding,width+2*boxPadding,height+2*boxPadding);
+            break;
+          case "blob":
+            boxId = this.addBlob(topX-boxPadding,topY-boxPadding,width+2*boxPadding,height+2*boxPadding);
+            break;
+        }       
+      }
       this.elementsDict[id] = {
         text: text,
         fontSize: window.ExcalidrawAutomate.style.fontSize,
@@ -305,20 +376,15 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         baseline: baseline,
         ... boxedElement(id,"text",topX,topY,width,height)
       };
-      if(formatting?.box) {
-        const boxPadding = formatting?.boxPadding!=null ? formatting.boxPadding : 10;
-        const boxId = this.addRect(topX-boxPadding,topY-boxPadding,width+2*boxPadding,height+2*boxPadding);
-        this.addToGroup([id,boxId])
-        return boxId; 
-      }
-      return id;
+      if (boxId) this.addToGroup([id,boxId])
+      return boxId ?? id;
     },
     addLine(points: [[x:number,y:number]]):string {
       const box = getLineBox(points);
       const id = nanoid();
       //this.elementIds.push(id);
       this.elementsDict[id] = {
-        points: normalizeLinePoints(points),
+        points: normalizeLinePoints(points,box),
         lastCommittedPoint: null,
         startBinding: null,
         endBinding: null,
@@ -333,7 +399,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       const id = nanoid();
       //this.elementIds.push(id);
       this.elementsDict[id] = {
-        points: normalizeLinePoints(points),
+        points: normalizeLinePoints(points,box),
         lastCommittedPoint: null,
         startBinding: {elementId:formatting?.startObjectId,focus:0.1,gap:4},
         endBinding: {elementId:formatting?.endObjectId,focus:0.1,gap:4},
@@ -383,7 +449,6 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       });
     },
     clear() {
-      //this.elementIds = [];
       this.elementsDict = {};
     },
     reset() {
@@ -500,10 +565,10 @@ export function destroyExcalidrawAutomate() {
   delete window.ExcalidrawAutomate;
 }
 
-function normalizeLinePoints(points:[[x:number,y:number]]) {
+function normalizeLinePoints(points:[[x:number,y:number]],box:{x:number,y:number,w:number,h:number}) {
   let p = [];
   for(let i=0;i<points.length;i++) {
-    p.push([points[i][0]-points[0][0], points[i][1]-points[0][1]]);
+    p.push([points[i][0]-box.x, points[i][1]-box.y]);
   }
   return p;
 }
@@ -535,11 +600,12 @@ function boxedElement(id:string,eltype:any,x:number,y:number,w:number,h:number) 
 }
 
 function getLineBox(points: [[x:number,y:number]]) {
+  const [x1,y1,x2,y2] = estimateLineBound(points);
   return {
-    x: points[0][0],
-    y: points[0][1],
-    w: Math.abs(points[points.length-1][0]-points[0][0]),
-    h: Math.abs(points[points.length-1][1]-points[0][1])
+    x: x1,
+    y: y1,
+    w: x2-x1, //Math.abs(points[points.length-1][0]-points[0][0]),
+    h: y2-y1  //Math.abs(points[points.length-1][1]-points[0][1])
   }
 }
 
@@ -602,6 +668,62 @@ async function getTemplate(fileWithPath: string):Promise<{elements: any,appState
     elements: [],
     appState: {},
   }
+}
+
+function estimateLineBound(points:any):[number,number,number,number] {
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  points.forEach((p:any) => {
+    const [x,y] = p;
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
+    maxX = Math.max(maxX, x);
+    maxY = Math.max(maxY, y);
+  });
+  return[minX,minY,maxX,maxY];
+}
+
+export function estimateElementBounds (element:ExcalidrawElement):[number,number,number,number] {
+  if(element.type=="line" || element.type=="arrow") {
+    const [minX,minY,maxX,maxY] = estimateLineBound(element.points);
+    return [minX+element.x,minY+element.y,maxX+element.x,maxY+element.y];
+  }
+  return[element.x,element.y,element.x+element.width,element.y+element.height];
+} 
+
+export function estimateBounds (elements:ExcalidrawElement[]):[number,number,number,number] {
+  if(!elements.length) return [0,0,0,0];
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+
+  elements.forEach((element)=>{
+    const [x1,y1,x2,y2] = estimateElementBounds(element);
+    minX = Math.min(minX, x1);
+    minY = Math.min(minY, y1);
+    maxX = Math.max(maxX, x2);
+    maxY = Math.max(maxY, y2);
+  });
+  return [minX,minY,maxX,maxY];
+}
+
+export function repositionElementsToCursor (elements:ExcalidrawElement[],newPosition:{x:number, y:number},center:boolean=false):ExcalidrawElement[] {
+  const [x1,y1,x2,y2] = estimateBounds(elements);
+  let [offsetX,offsetY] = [0,0];
+  if (center) {
+    [offsetX,offsetY] = [newPosition.x-(x1+x2)/2,newPosition.y-(y1+y2)/2];
+  } else {
+    [offsetX,offsetY] = [newPosition.x-x1,newPosition.y-y1];
+  }
+
+  elements.forEach((element:any)=>{ //using any so I can write read-only propery x & y
+    element.x=element.x+offsetX;
+    element.y=element.y+offsetY;
+  });
+  return elements;
 }
 
 function errorMessage(message: string, source: string) {

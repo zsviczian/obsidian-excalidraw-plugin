@@ -31,7 +31,7 @@ import {
   JSON_parse
 } from './constants';
 import ExcalidrawPlugin from './main';
-import {ExcalidrawAutomate} from './ExcalidrawAutomate';
+import {estimateBounds, ExcalidrawAutomate, repositionElementsToCursor} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./ExcalidrawData";
 import { checkAndCreateFolder, download, getNewUniqueFilepath, splitFolderAndFilename, viewportCoordsToSceneCoords } from "./Utils";
@@ -604,39 +604,8 @@ export default class ExcalidrawView extends TextFileView {
       }
       
       this.addElements = async (newElements:ExcalidrawElement[],repositionToCursor:boolean = false, save:boolean=false):Promise<boolean> => {
-        if(!excalidrawRef?.current) return false;
-      
-        const estimateElementBounds = (element:ExcalidrawElement):[number,number,number,number] => {
-          return[element.x,element.y,element.x+element.width,element.y+element.height];
-        } 
-
-        const estimateBounds = (elements:ExcalidrawElement[]):[number,number,number,number] => {
-          if(!elements.length) return [0,0,0,0];
-          let minX = Infinity;
-          let maxX = -Infinity;
-          let minY = Infinity;
-          let maxY = -Infinity;
-
-          elements.forEach((element)=>{
-            const [x1,y1,x2,y2] = estimateElementBounds(element);
-            minX = Math.min(minX, x1);
-            minY = Math.min(minY, y1);
-            maxX = Math.max(maxX, x2);
-            maxY = Math.max(maxY, y2);
-          });
-          return [minX,minY,maxX,maxY];
-        }
-
-        const repositionElementsToCursor = (elements:ExcalidrawElement[]):ExcalidrawElement[] => {
-          const [x1,y1,x2,y2] = estimateBounds(elements);
-          const [offsetX,offsetY] = [currentPosition.x-(x1+x2)/2,currentPosition.y-(y1+y2)/2]
-          elements.forEach((element:any)=>{ //using any so I can write read-only propery x & y
-            element.x=element.x+offsetX;
-            element.y=element.y+offsetY;
-          });
-          return elements;
-        }
-        
+        if(!excalidrawRef?.current) return false;    
+       
         const textElements = newElements.filter((el)=>el.type=="text");
         for(let i=0;i<textElements.length;i++) {
           //@ts-ignore
@@ -648,7 +617,7 @@ export default class ExcalidrawView extends TextFileView {
 
         const el: ExcalidrawElement[] = excalidrawRef.current.getSceneElements();
         const st: AppState = excalidrawRef.current.getAppState();
-        if(repositionToCursor) newElements = repositionElementsToCursor(newElements);
+        if(repositionToCursor) newElements = repositionElementsToCursor(newElements,currentPosition,true);
         this.excalidrawRef.current.updateScene({
           elements: el.concat(newElements),
           appState: st,
