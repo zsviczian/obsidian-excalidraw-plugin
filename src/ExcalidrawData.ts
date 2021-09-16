@@ -275,48 +275,53 @@ export class ExcalidrawData {
            (this.showLinkBrackets ? "]]" : "");
   }
 
+  public async getTransclusion (text:string):Promise<[string,number]> {
+    //file-name#^blockref
+    //1         2 3
+    const REG_FILE_BLOCKREF = /(.*)#(\^)?(.*)/g;
+    const parts=text.matchAll(REG_FILE_BLOCKREF).next();
+    if(parts.done || !parts.value[1] || !parts.value[3]) return [text,0]; //filename and/or blockref not found
+    const file = this.app.metadataCache.getFirstLinkpathDest(parts.value[1],this.file.path);
+    const contents = await this.app.vault.cachedRead(file);
+    const isParagraphRef = parts.value[2] ? true : false; //does the reference contain a ^ character?
+    const id = parts.value[3]; //the block ID or heading text
+    const blocks = (await this.app.metadataCache.blockCache.getForFile({isCancelled: ()=>false},file)).blocks.filter((block:any)=>block.node.type!="comment");
+    if(!blocks) return [text,0];
+    if(isParagraphRef) {
+      let para = blocks.filter((block:any)=>block.node.id == id)[0]?.node;
+      if(!para) return [text,0];
+      if(["blockquote","listItem"].includes(para.type)) para = para.children[0]; //blockquotes are special, they have one child, which has the paragraph
+      const startPos = para.position.start.offset;
+      const lineNum = para.position.start.line;
+      const endPos = para.children[para.children.length-1]?.position.start.offset-1; //alternative: filter((c:any)=>c.type=="blockid")[0]
+      return [contents.substr(startPos,endPos-startPos),lineNum]
+    
+    } else {
+      const headings = blocks.filter((block:any)=>block.display.startsWith("#"));
+      let startPos:number = null; 
+      let lineNum:number = 0;
+      let endPos:number = null;
+      for(let i=0;i<headings.length;i++) {
+        if(startPos && !endPos) {
+          endPos = headings[i].node.position.start.offset-1;
+          return [contents.substr(startPos,endPos-startPos),lineNum];
+        }
+        if(!startPos && headings[i].node.children[0]?.value == id) {
+          startPos = headings[i].node.children[0]?.position.start.offset; //
+          lineNum = headings[i].node.children[0]?.position.start.line; //
+        }
+      }
+      if(startPos) return [contents.substr(startPos),lineNum];
+      return [text,0];
+    }
+  }
+
   /**
    * Process aliases and block embeds
    * @param text 
    * @returns 
    */
   private async parse(text:string):Promise<string>{
-    const getTransclusion = async (text:string) => {
-      //file-name#^blockref
-      //1         2 3
-      const REG_FILE_BLOCKREF = /(.*)#(\^)?(.*)/g;
-      const parts=text.matchAll(REG_FILE_BLOCKREF).next();
-      if(parts.done || !parts.value[1] || !parts.value[3]) return text; //filename and/or blockref not found
-      const file = this.app.metadataCache.getFirstLinkpathDest(parts.value[1],this.file.path);
-      const contents = await this.app.vault.cachedRead(file);
-      const isParagraphRef = parts.value[2] ? true : false; //does the reference contain a ^ character?
-      const id = parts.value[3]; //the block ID or heading text
-      const blocks = (await this.app.metadataCache.blockCache.getForFile({isCancelled: ()=>false},file)).blocks.filter((block:any)=>block.node.type!="comment");
-      if(!blocks) return text;
-      if(isParagraphRef) {
-        let para = blocks.filter((block:any)=>block.node.id == id)[0]?.node;
-        if(!para) return text;
-        if(["blockquote","listItem"].includes(para.type)) para = para.children[0]; //blockquotes are special, they have one child, which has the paragraph
-        const startPos = para.position.start.offset;
-        const endPos = para.children[para.children.length-1]?.position.start.offset-1; //alternative: filter((c:any)=>c.type=="blockid")[0]
-        return contents.substr(startPos,endPos-startPos)
-      
-      } else {
-        const headings = blocks.filter((block:any)=>block.display.startsWith("#"));
-        let startPos:number = null; 
-        let endPos:number = null;
-        for(let i=0;i<headings.length;i++) {
-          if(startPos && !endPos) {
-            endPos = headings[i].node.position.start.offset-1;
-            return contents.substr(startPos,endPos-startPos)
-          }
-          if(!startPos && headings[i].node.children[0]?.value == id) startPos = headings[i].node.children[0]?.position.start.offset; //
-        }
-        if(startPos) return contents.substr(startPos);
-        return text;
-      }
-    }
-
     let outString = "";
     let position = 0;
     const res = text.matchAll(REGEX_LINK.EXPR);
@@ -325,8 +330,9 @@ export class ExcalidrawData {
     let parts;
     while(!(parts=res.next()).done) {
       if (REGEX_LINK.isTransclusion(parts)) { //transclusion //parts.value[1] || parts.value[4]
+        const [contents,lineNum] = await this.getTransclusion(REGEX_LINK.getLink(parts));
         outString += text.substring(position,parts.value.index) + 
-                     wrapText(await getTransclusion(REGEX_LINK.getLink(parts)),REGEX_LINK.getWrapLength(parts),this.plugin.settings.forceWrap);
+                     wrapText(contents,REGEX_LINK.getWrapLength(parts),this.plugin.settings.forceWrap);
       } else {
         const parsedLink = this.parseLinks(text,position,parts);
         if(parsedLink) {

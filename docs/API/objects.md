@@ -14,7 +14,20 @@ Returns the `id` of the object. The `id` is required when connecting objects wit
 
 ### addText()
 ```typescript
-addText(topX:number, topY:number, text:string, formatting?:{width?:number, height?:number,textAlign?: string, verticalAlign?:string, box?: boolean, boxPadding?: number},id?:string):string;
+addText( 
+  topX:number, 
+  topY:number, 
+  text:string, 
+  formatting?:{
+    wrapAt?:number, 
+    width?:number, 
+    height?:number,
+    textAlign?:string, 
+    box?: "box"|"blob"|"ellipse"|"diamond", 
+    boxPadding?:number
+  },
+  id?:string
+):string
 ```
 
 Adds text to the drawing. 
@@ -22,9 +35,9 @@ Adds text to the drawing.
 Formatting parameters are optional:
 - If `width` and `height` are not specified, the function will calculate the width and height based on the fontFamily, the fontSize and the text provided.
 - In case you want to position a text in the center compared to other elements on the drawing, you can provide a fixed height and width, and you can also specify `textAlign` and `verticalAlign` as described above. e.g.: `{width:500, textAlign:"center"}`
-- If you want to add a box around the text, set `{box:true}`
+- If you want to add a box around the text, set `{box:"box"|"blob"|"ellipse"|"diamond"}`
 
-Returns the `id` of the object. The `id` is required when connecting objects with lines. See later. If `{box:true}` then returns the id of the enclosing box.
+Returns the `id` of the object. The `id` is required when connecting objects with lines. See later. If `{box:}` then returns the id of the enclosing box object.
 
 ### addLine()
 ```typescript
@@ -52,7 +65,7 @@ Returns the `id` of the object.
 declare type ConnectionPoint = "top"|"bottom"|"left"|"right";
 connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, formatting?:{numberOfPoints: number,startArrowHead:string,endArrowHead:string, padding: number}):void
 ```
-Connects two objects with an arrow.
+Connects two objects with an arrow. Will do nothing if either of the two elements is of type `line`, `arrow`, or `freedraw`.
 
 `objectA` and `objectB` are strings. These are the ids of the objects to connect. These IDs are returned by addRect(), addDiamond(), addEllipse() and addText() when creating those objects.
 

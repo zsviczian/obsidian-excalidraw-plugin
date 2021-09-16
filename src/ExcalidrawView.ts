@@ -193,7 +193,7 @@ export default class ExcalidrawView extends TextFileView {
     return this.data;
   }
   
-  handleLinkClick(view: ExcalidrawView, ev:MouseEvent) {
+  async handleLinkClick(view: ExcalidrawView, ev:MouseEvent) {
     let text:string = (this.textMode == TextMode.parsed) 
                ? this.excalidrawData.getRawText(this.getSelectedTextElement().id) 
                : this.getSelectedTextElement().text;
@@ -231,23 +231,32 @@ export default class ExcalidrawView extends TextFileView {
       return;
     }
 
-    if(text.search("#")>-1) text = text.substring(0,text.search("#"));
+    let lineNum = null;
+    if(text.search("#")>-1) {
+      let t;
+      [t,lineNum] = await this.excalidrawData.getTransclusion(text);
+      text = text.substring(0,text.search("#"));
+    }
     if(text.match(REG_LINKINDEX_INVALIDCHARS)) {
       new Notice(t("FILENAME_INVALID_CHARS"),4000); 
       return;
     }
-    if (!ev.altKey) {
-      const file = view.app.metadataCache.getFirstLinkpathDest(text,view.file.path); 
-      if (!file) {
-        new Notice(t("FILE_DOES_NOT_EXIST"), 4000);
-        return;
-      }
+    const file = view.app.metadataCache.getFirstLinkpathDest(text,view.file.path); 
+    if (!ev.altKey && !file) {
+      new Notice(t("FILE_DOES_NOT_EXIST"), 4000);
+      return;
     }
+    
     try {
       const f = view.file;
-      if(ev.shiftKey) {
+      if(ev.shiftKey && document.fullscreenElement === this.contentEl) {
         document.exitFullscreen();
         this.zoomToFit();
+      }
+      if(lineNum) {
+        const leaf = ev.shiftKey ? view.app.workspace.createLeafBySplit(view.leaf) : view.leaf;
+        leaf.openFile(file,{eState: {line: lineNum-1}});
+        return;
       }
       view.app.workspace.openLinkText(text,view.file.path,ev.shiftKey);
     } catch (e) {

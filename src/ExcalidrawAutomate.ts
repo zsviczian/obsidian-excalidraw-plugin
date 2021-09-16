@@ -42,40 +42,93 @@ export interface ExcalidrawAutomate extends Window {
       startArrowHead: string;
       endArrowHead: string;
     }
-    canvas: {theme: string, viewBackgroundColor: string, gridSize: number};
-    setFillStyle(val:number): void;
-    setStrokeStyle(val:number): void;
-    setStrokeSharpness(val:number): void;
-    setFontFamily(val:number): void;
-    setTheme(val:number): void;
-    addToGroup(objectIds:[]):string;
-    toClipboard(templatePath?:string): void;
-    getElements():ExcalidrawElement[];
-    getElement(id:string):ExcalidrawElement;
-    create(params?:{filename?: string, foldername?:string, templatePath?:string, onNewPane?: boolean}):Promise<void>;
-    createSVG(templatePath?:string):Promise<SVGSVGElement>;
-    createPNG(templatePath?:string):Promise<any>;
-    wrapText(text:string, lineLen:number):string;
-    addRect(topX:number, topY:number, width:number, height:number):string;
-    addDiamond(topX:number, topY:number, width:number, height:number):string;
-    addEllipse(topX:number, topY:number, width:number, height:number):string;
-    addBlob(topX:number, topY:number, width:number, height:number):string;
-    addText(topX:number, topY:number, text:string, formatting?:{wrapAt?:number, width?:number, height?:number,textAlign?: string, verticalAlign?:string, box?: boolean, boxPadding?: number},id?:string):string;
+    canvas: {
+      theme: string, 
+      viewBackgroundColor: string, 
+      gridSize: number
+    };
+    setFillStyle (val:number): void;
+    setStrokeStyle (val:number): void;
+    setStrokeSharpness (val:number): void;
+    setFontFamily (val:number): void;
+    setTheme (val:number): void;
+    addToGroup (objectIds:[]):string;
+    toClipboard (templatePath?:string): void;
+    getElements ():ExcalidrawElement[];
+    getElement (id:string):ExcalidrawElement;
+    create (
+      params?: {
+        filename?: string, 
+        foldername?:string, 
+        templatePath?:string, 
+        onNewPane?: boolean
+      }
+    ):Promise<void>;
+    createSVG (templatePath?:string):Promise<SVGSVGElement>;
+    createPNG (templatePath?:string):Promise<any>;
+    wrapText (text:string, lineLen:number):string;
+    addRect (topX:number, topY:number, width:number, height:number):string;
+    addDiamond (topX:number, topY:number, width:number, height:number):string;
+    addEllipse (topX:number, topY:number, width:number, height:number):string;
+    addBlob (topX:number, topY:number, width:number, height:number):string;
+    addText (
+      topX:number, 
+      topY:number, 
+      text:string, 
+      formatting?: {
+        wrapAt?:number, 
+        width?:number, 
+        height?:number,
+        textAlign?: string, 
+        box?: boolean|"box"|"blob"|"ellipse"|"diamond", 
+        boxPadding?: number
+      },
+      id?:string
+    ):string;
     addLine(points: [[x:number,y:number]]):string;
-    addArrow(points: [[x:number,y:number]],formatting?:{startArrowHead?:string,endArrowHead?:string,startObjectId?:string,endObjectId?:string}):string ;
-    connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, formatting?:{numberOfPoints?: number,startArrowHead?:string,endArrowHead?:string, padding?: number}):void;
-    clear(): void;
-    reset(): void;
-    isExcalidrawFile(f:TFile): boolean;  
+    addArrow (
+      points: [[x:number,y:number]],
+      formatting?: {
+        startArrowHead?:string,
+        endArrowHead?:string,
+        startObjectId?:string,
+        endObjectId?:string
+      }
+    ):string ;
+    connectObjects (
+      objectA: string, 
+      connectionA: ConnectionPoint, 
+      objectB: string, 
+      connectionB: ConnectionPoint, 
+      formatting?: {
+        numberOfPoints?: number,
+        startArrowHead?:string,
+        endArrowHead?:string, 
+        padding?: number
+      }
+    ):void;
+    clear (): void;
+    reset (): void;
+    isExcalidrawFile (f:TFile): boolean;  
     //view manipulation
     targetView: ExcalidrawView;
-    setView(view:ExcalidrawView|"first"|"active"):ExcalidrawView;
-    getExcalidrawAPI():any;
-    getViewSelectedElement():ExcalidrawElement;
-    getViewSelectedElements():ExcalidrawElement[];
-    viewToggleFullScreen(forceViewMode?:boolean):void;
-    connectObjectWithViewSelectedElement(objectA:string,connectionA: ConnectionPoint, connectionB: ConnectionPoint, formatting?:{numberOfPoints?: number,startArrowHead?:string,endArrowHead?:string, padding?: number}):boolean;
-    addElementsToView(repositionToCursor:boolean, save:boolean):Promise<boolean>;
+    setView (view:ExcalidrawView|"first"|"active"):ExcalidrawView;
+    getExcalidrawAPI ():any;
+    getViewSelectedElement( ):ExcalidrawElement;
+    getViewSelectedElements ():ExcalidrawElement[];
+    viewToggleFullScreen (forceViewMode?:boolean):void;
+    connectObjectWithViewSelectedElement (
+      objectA:string,
+      connectionA: ConnectionPoint, 
+      connectionB: ConnectionPoint, 
+      formatting?: {
+        numberOfPoints?: number,
+        startArrowHead?:string,
+        endArrowHead?:string, 
+        padding?: number
+      }
+    ):boolean;
+    addElementsToView (repositionToCursor:boolean, save:boolean):Promise<boolean>;
   };
 }
 
@@ -332,7 +385,6 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         width?:number, 
         height?:number,
         textAlign?:string, 
-        verticalAlign?:string, 
         box?: boolean|"box"|"blob"|"ellipse"|"diamond", 
         boxPadding?:number
       },
@@ -348,9 +400,6 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       const boxPadding = formatting?.boxPadding ?? 10;
       if(formatting?.box) {
         switch(formatting?.box) {
-          case true || "box": 
-            boxId = this.addRect(topX-boxPadding,topY-boxPadding,width+2*boxPadding,height+2*boxPadding);
-            break;
           case "ellipse":
             boxId = this.addEllipse(topX-boxPadding,topY-boxPadding,width+2*boxPadding,height+2*boxPadding);
             break;
@@ -360,6 +409,8 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
           case "blob":
             boxId = this.addBlob(topX-boxPadding,topY-boxPadding,width+2*boxPadding,height+2*boxPadding);
             break;
+          default: 
+            boxId = this.addRect(topX-boxPadding,topY-boxPadding,width+2*boxPadding,height+2*boxPadding);
         }       
       }
       this.elementsDict[id] = {
@@ -367,7 +418,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         fontSize: window.ExcalidrawAutomate.style.fontSize,
         fontFamily: window.ExcalidrawAutomate.style.fontFamily,
         textAlign: formatting?.textAlign ? formatting.textAlign : window.ExcalidrawAutomate.style.textAlign,
-        verticalAlign: formatting?.verticalAlign ? formatting.verticalAlign : window.ExcalidrawAutomate.style.verticalAlign,
+        verticalAlign: window.ExcalidrawAutomate.style.verticalAlign,
         baseline: baseline,
         ... boxedElement(id,"text",topX,topY,width,height)
       };
@@ -416,6 +467,12 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       if(!(this.elementsDict[objectA] && this.elementsDict[objectB])) {
         return;
       }
+
+      if(["line","arrow","freedraw"].includes(this.elementsDict[objectA].type) ||
+         ["line","arrow","freedraw"].includes(this.elementsDict[objectB].type)) {
+        return;
+      }
+
       const padding = formatting?.padding ? formatting.padding : 10;
       const numberOfPoints = formatting?.numberOfPoints ? formatting.numberOfPoints : 0;
       const getSidePoints = (side:string, el:any) => {
