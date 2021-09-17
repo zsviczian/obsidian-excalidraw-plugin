@@ -1088,7 +1088,7 @@ export default class ExcalidrawPlugin extends Plugin {
     return outString + this.getMarkdownDrawingSection(data);
   }
 
-  public async createDrawing(filename: string, onNewPane: boolean, foldername?: string, initData?:string) {
+  public async createDrawing(filename: string, onNewPane: boolean, foldername?: string, initData?:string):Promise<string> {
     const folderpath = normalizePath(foldername ? foldername: this.settings.folder);
     await checkAndCreateFolder(this.app.vault,folderpath); //create folder if it does not exist
 
@@ -1096,10 +1096,11 @@ export default class ExcalidrawPlugin extends Plugin {
 
     if(initData) {
       this.openDrawing(await this.app.vault.create(fname,initData),onNewPane);
-      return;
+      return fname;
     }
 
     this.openDrawing(await this.app.vault.create(fname,await this.getBlankDrawing()), onNewPane);
+    return fname;
   }
 
   public async setMarkdownView(leaf: WorkspaceLeaf) {

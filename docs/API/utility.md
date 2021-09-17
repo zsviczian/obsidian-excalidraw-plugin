@@ -35,7 +35,7 @@ Returns the element object matching the id. If the element does not exist, retur
 ```typescript
 async create(params?:{filename: string, foldername:string, templatePath:string, onNewPane: boolean})
 ```
-Creates the drawing and opens it.
+Creates the drawing and opens it. Returns the full filepath of the created file.
 
 `filename` is the filename without extension of the drawing to be created. If `null`, then Excalidraw will generate a filename.
 
@@ -45,9 +45,30 @@ Creates the drawing and opens it.
 
 `onNewPane` defines where the new drawing should be created. `false` will open the drawing on the current active leaf. `true` will open the drawing by vertically splitting the current leaf.
 
+`frontmatterKeys` are the set of frontmatter keys to apply to the document
+  {
+    excalidraw-plugin?: "raw"|"parsed",
+    excalidraw-link-prefix?: string,
+    excalidraw-link-brackets?: boolean,
+    excalidraw-url-prefix?: string
+  }
+
 Example:
 ```javascript
-create({filename:"my drawing", foldername:"myfolder/subfolder/", templatePath: "Excalidraw/template.excalidraw", onNewPane: true});
+create (
+  {
+    filename:"my drawing", 
+    foldername:"myfolder/subfolder/", 
+    templatePath: "Excalidraw/template.excalidraw", 
+    onNewPane: true, 
+    frontmatterKeys: {
+      "excalidraw-plugin": "parsed",
+      "excalidraw-link-prefix": "",
+      "excalidraw-link-brackets": true,
+      "excalidraw-url-prefix": "🌐",
+    }
+  }
+);
 ```
 ### createSVG()
 ```typescript

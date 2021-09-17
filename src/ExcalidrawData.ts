@@ -7,7 +7,6 @@ import {
 } from "./constants";
 import { measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
-import { ExcalidrawSettings } from "./settings";
 import {  
   JSON_parse
 } from "./constants";

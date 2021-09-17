@@ -61,9 +61,15 @@ export interface ExcalidrawAutomate extends Window {
         filename?: string, 
         foldername?:string, 
         templatePath?:string, 
-        onNewPane?: boolean
+        onNewPane?: boolean,
+        frontmatterKeys?:{
+          "excalidraw-plugin"?: "raw"|"parsed",
+          "excalidraw-link-prefix"?: string,
+          "excalidraw-link-brackets"?: boolean,
+          "excalidraw-url-prefix"?: string
+        }
       }
-    ):Promise<void>;
+    ):Promise<string>;
     createSVG (templatePath?:string):Promise<SVGSVGElement>;
     createPNG (templatePath?:string):Promise<any>;
     wrapText (text:string, lineLen:number):string;
@@ -243,15 +249,43 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
     getElement(id:string):ExcalidrawElement {
       return this.elementsDict[id];
     },
-    async create(params?:{filename?: string, foldername?:string, templatePath?:string, onNewPane?: boolean}) {
+    async create (
+      params?:{
+        filename?: string, 
+        foldername?:string, 
+        templatePath?:string, 
+        onNewPane?: boolean, 
+        frontmatterKeys?:{
+          "excalidraw-plugin"?: "raw"|"parsed",
+          "excalidraw-link-prefix"?: string,
+          "excalidraw-link-brackets"?: boolean,
+          "excalidraw-url-prefix"?: string
+        }
+      }
+    ):Promise<string> {
       const template = params?.templatePath ? (await getTemplate(params.templatePath)) : null;
       let elements = template ? template.elements : [];
       elements = elements.concat(this.getElements());
-      plugin.createDrawing(
+      let frontmatter:string;
+      if(params?.frontmatterKeys) {
+        const keys = Object.keys(params.frontmatterKeys);
+        if(!keys.includes("excalidraw-plugin")) {
+          params.frontmatterKeys["excalidraw-plugin"] = "parsed";
+        }
+        frontmatter = "---\n\n";
+        for(const key of Object.keys(params.frontmatterKeys)) {
+          //@ts-ignore
+          frontmatter += key + ": " + (params.frontmatterKeys[key]==="" ? '""' : params.frontmatterKeys[key]) +"\n";  
+        }
+        frontmatter += "\n---\n";        
+      } else {
+        frontmatter = template?.frontmatter ? template.frontmatter : FRONTMATTER;
+      }
+      return plugin.createDrawing(
         params?.filename ? params.filename + '.excalidraw.md' : this.plugin.getNextDefaultFilename(),
         params?.onNewPane ? params.onNewPane : false,
         params?.foldername ? params.foldername : this.plugin.settings.folder,
-        FRONTMATTER + plugin.exportSceneToMD(
+        frontmatter + plugin.exportSceneToMD(
         JSON.stringify({
           type: "excalidraw",
           version: 2,
@@ -704,21 +738,27 @@ export function measureText (newText:string, fontSize:number, fontFamily:number)
   return {w: width, h: height, baseline: baseline };
 };
 
-async function getTemplate(fileWithPath: string):Promise<{elements: any,appState: any}> {
+async function getTemplate(fileWithPath: string):Promise<{elements: any,appState: any, frontmatter: string}> {
   const app = window.ExcalidrawAutomate.plugin.app;
   const vault = app.vault;
   const file = app.metadataCache.getFirstLinkpathDest(normalizePath(fileWithPath),'');
   if(file && file instanceof TFile) {
     const data = await vault.read(file);
+
+    let trimLocation = data.search("# Text Elements\n");
+    if(trimLocation == -1) trimLocation = data.search("# Drawing\n");
+
     const excalidrawData = JSON_parse(getJSON(data));
     return {
       elements: excalidrawData.elements,
       appState: excalidrawData.appState,  
+      frontmatter: data.substring(0,trimLocation)
     };
   };
   return {
     elements: [],
     appState: {},
+    frontmatter: null
   }
 }
 

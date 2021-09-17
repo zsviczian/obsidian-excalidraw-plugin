@@ -43,9 +43,15 @@ export interface ExcalidrawAutomate extends Window {
         filename?: string, 
         foldername?:string, 
         templatePath?:string, 
-        onNewPane?: boolean
+        onNewPane?: boolean,
+        frontmatterKeys?:{
+          "excalidraw-plugin"?: "raw"|"parsed",
+          "excalidraw-link-prefix"?: string,
+          "excalidraw-link-brackets"?: boolean,
+          "excalidraw-url-prefix"?: string
+        }
       }
-    ):Promise<void>;
+    ):Promise<string>;
     createSVG (templatePath?:string):Promise<SVGSVGElement>;
     createPNG (templatePath?:string):Promise<any>;
     wrapText (text:string, lineLen:number):string;

@@ -218,9 +218,11 @@ export default class ExcalidrawView extends TextFileView {
       //@ts-ignore
       search[0].view.setQuery("tag:"+tags.value[1]);
       this.app.workspace.revealLeaf(search[0]);
-      //if(this.gotoFullscreen.style.display=="none") this.toggleFullscreen();
-      document.exitFullscreen();
-      this.zoomToFit();
+      //if(this.gotoFullscreen.style.display=="none") this.toggleFullscreen(); 
+      if(document.fullscreenElement === this.contentEl) {
+        document.exitFullscreen();
+        this.zoomToFit();
+      }
       return;
     }
 
@@ -341,7 +343,7 @@ export default class ExcalidrawView extends TextFileView {
     }
     if(!this.excalidrawRef) return;
     if(!this.file) return;
-    if(file) this.data = await this.app.vault.read(file);
+    if(file) this.data = await this.app.vault.cachedRead(file);
     if(fullreload) await this.excalidrawData.loadData(this.data, this.file,this.textMode);
     else await this.excalidrawData.setTextMode(this.textMode);
     await this.loadDrawing(false);
