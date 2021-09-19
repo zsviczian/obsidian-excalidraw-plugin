@@ -278,7 +278,6 @@ export default class ExcalidrawView extends TextFileView {
     
     this.addAction("link",t("OPEN_LINK"), (ev)=>this.handleLinkClick(this,ev));
 
-    //@ts-ignore
     if(!this.app.isMobile) {
       this.addAction(FULLSCREEN_ICON_NAME,"Press ESC to exit fullscreen mode",()=>{
         this.contentEl.requestFullscreen();//{navigationUI: "hide"});
@@ -586,7 +585,7 @@ export default class ExcalidrawView extends TextFileView {
         }
         const selectedElement = excalidrawRef.current.getSceneElements().filter((el:any)=>el.id==Object.keys(excalidrawRef.current.getAppState().selectedElementIds)[0]);
         if(selectedElement.length==0) return {id:null,text:null};
-        if(selectedElement[0].type == "text") return {id:selectedElement[0].id, text:selectedElement[0].text}; //a text element was selected. Retrun text
+        if(selectedElement[0].type == "text") return {id:selectedElement[0].id, text:selectedElement[0].text}; //a text element was selected. Return text
         if(selectedElement[0].groupIds.length == 0) return {id:null,text:null}; //is the selected element part of a group?
         const group = selectedElement[0].groupIds[0]; //if yes, take the first group it is part of
         const textElement = excalidrawRef
@@ -880,7 +879,7 @@ export default class ExcalidrawView extends TextFileView {
           },
           /*onPaste: (data: ClipboardData, event: ClipboardEvent | null) => {
             console.log(data,event);
-            return true;
+            return false;
           },*/
           onDrop: (event: React.DragEvent<HTMLDivElement>):boolean => {
             const st: AppState = excalidrawRef.current.getAppState();
@@ -890,21 +889,21 @@ export default class ExcalidrawView extends TextFileView {
             switch(draggable?.type) {
               case "file":
                 this.addText(`[[${this.app.metadataCache.fileToLinktext(draggable.file,this.file.path,true)}]]`);
-                return true;
+                return false;
               case "files":
                 for(const f of draggable.files) {
                   this.addText(`[[${this.app.metadataCache.fileToLinktext(f,this.file.path,true)}]]`);
                   currentPosition.y+=st.currentItemFontSize*2;
                 }
-                return true;
+                return false;
             }
             if (event.dataTransfer.types.includes("text/plain")) {
               const text:string = event.dataTransfer.getData("text");
-              if(!text) return false;
+              if(!text) return true;
               this.addText(text.replace(/(!\[\[.*#[^\]]*\]\])/g,"$1{40}"));
-              return true;
+              return false;
             }
-            return false;
+            return true;
           },
           onBeforeTextEdit: (textElement: ExcalidrawTextElement) => {
             if(this.autosaveTimer) { //stopping autosave to avoid autosave overwriting text while the user edits it
