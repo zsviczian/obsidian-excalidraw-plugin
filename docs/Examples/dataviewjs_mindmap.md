@@ -52,9 +52,5 @@ function buildMindmap(subtasks, depth, offset, parentObjectID) {
 tasks["objectID"] = ea.addText(0,(tasks.size/2)*height,tasks.text,{box:true});    
 buildMindmap(tasks.subtasks, 1, 0, tasks.objectID);
 
-(async ()=> {
-  const svg = await ea.createSVG(); 
-  const el=document.querySelector("div.block-language-dataviewjs"); 
-  el.appendChild(svg); 
-})();
+ea.createSVG().then((svg)=>dv.span(svg.outerHTML));
 ```

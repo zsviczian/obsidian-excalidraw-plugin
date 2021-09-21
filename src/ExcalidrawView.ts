@@ -112,7 +112,8 @@ export default class ExcalidrawView extends TextFileView {
     }
     const svg = await ExcalidrawView.getSVG(scene,exportSettings);
     if(!svg) return;
-    const svgString = ExcalidrawView.embedFontsInSVG(svg).outerHTML;                  
+    let serializer =new XMLSerializer();
+    const svgString = serializer.serializeToString(ExcalidrawView.embedFontsInSVG(svg));                  
     if(file && file instanceof TFile) await this.app.vault.modify(file,svgString);
     else await this.app.vault.create(filepath,svgString);
   }
@@ -168,7 +169,7 @@ export default class ExcalidrawView extends TextFileView {
     if(!this.getScene) return this.data;
     if(!this.compatibilityMode) {
       let trimLocation = this.data.search("# Text Elements\n");
-      if(trimLocation == -1) trimLocation = this.data.search("# Drawing\n");
+      if(trimLocation == -1) trimLocation = this.data.search(/(%%\n)?# Drawing\n/);
       if(trimLocation == -1) return this.data;
 
       const scene = this.excalidrawData.scene;
@@ -732,11 +733,11 @@ export default class ExcalidrawView extends TextFileView {
               document.exitFullscreen();
               this.zoomToFit();
             }
-            this.ctrlKeyDown  = e.ctrlKey;
+            this.ctrlKeyDown  = e.ctrlKey || e.metaKey;
             this.shiftKeyDown = e.shiftKey;
             this.altKeyDown   = e.altKey;
-
-            if(e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) {
+           
+            if(e.ctrlKey && !e.shiftKey && !e.altKey) { // && !e.metaKey) {
               const selectedElement = getTextElementAtPointer(currentPosition);
               if(!selectedElement) return;
 
@@ -775,7 +776,7 @@ export default class ExcalidrawView extends TextFileView {
             }
           },
           onKeyUp: (e:any) => {
-            this.ctrlKeyDown  = e.ctrlKey;
+            this.ctrlKeyDown  = e.ctrlKey || e.metaKey;
             this.shiftKeyDown = e.shiftKey;
             this.altKeyDown   = e.altKey;
           },

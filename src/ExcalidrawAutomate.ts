@@ -316,7 +316,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
     async createSVG(templatePath?:string):Promise<SVGSVGElement> {
       const template = templatePath ? (await getTemplate(templatePath)) : null;
       let elements = template ? template.elements : [];
-      elements.concat(this.getElements());
+      elements = elements.concat(this.getElements());
       return await ExcalidrawView.getSVG(
         {//createDrawing
           "type": "excalidraw",
