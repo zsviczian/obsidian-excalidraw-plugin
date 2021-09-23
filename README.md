@@ -46,7 +46,7 @@ To convert files you have the following options:
     - `![[myfile#section]]` also works, this will transclude the section
     - you can also specify word wrapping for transcluded text by adding the max character count in curly brackets right after the transclusion e.g. `![[myfile#^blockref]]{40}` will wrap text at 40 characters.
   - For convenience you can also use the command palette to insert links into drawings
-  - CTRL/META + hover to bring up the Obsidian quick preview for the link.
+  - CTRL/META + hover to bring up the Obsidian quick preview for the link. (On Mac it is CTRL+CMD+hover).
   - CTRL/META + CLICK a text element to open it as a link.
   - CTRL/META + ALT + CLICK to create the file (if it does not yet exist) and open it
   - CTRL/META + SHIFT + CLICK to open the file in a new pane
