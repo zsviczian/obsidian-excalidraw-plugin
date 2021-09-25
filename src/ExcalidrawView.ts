@@ -99,23 +99,25 @@ export default class ExcalidrawView extends TextFileView {
     else this.app.vault.create(filepath,JSON.stringify(scene));
   }
 
-  public async saveSVG(scene?: any) {
+  public saveSVG(scene?: any) {
     if(!scene) {
       if (!this.getScene) return false;
       scene = this.getScene();
     }
     const filepath = this.file.path.substring(0,this.file.path.lastIndexOf(this.compatibilityMode ? '.excalidraw':'.md')) + '.svg';
     const file = this.app.vault.getAbstractFileByPath(normalizePath(filepath));
-    const exportSettings: ExportSettings = {
-      withBackground: this.plugin.settings.exportWithBackground, 
-      withTheme: this.plugin.settings.exportWithTheme
-    }
-    const svg = await ExcalidrawView.getSVG(scene,exportSettings);
-    if(!svg) return;
-    let serializer =new XMLSerializer();
-    const svgString = serializer.serializeToString(ExcalidrawView.embedFontsInSVG(svg));                  
-    if(file && file instanceof TFile) await this.app.vault.modify(file,svgString);
-    else await this.app.vault.create(filepath,svgString);
+    (async () => {
+      const exportSettings: ExportSettings = {
+        withBackground: this.plugin.settings.exportWithBackground, 
+        withTheme: this.plugin.settings.exportWithTheme
+      }
+      const svg = await ExcalidrawView.getSVG(scene,exportSettings);
+      if(!svg) return;
+      let serializer =new XMLSerializer();
+      const svgString = serializer.serializeToString(ExcalidrawView.embedFontsInSVG(svg));                  
+      if(file && file instanceof TFile) await this.app.vault.modify(file,svgString);
+      else await this.app.vault.create(filepath,svgString);
+    })();
   }
 
   public static embedFontsInSVG(svg:SVGSVGElement):SVGSVGElement {
@@ -129,21 +131,25 @@ export default class ExcalidrawView extends TextFileView {
     return svg;
   }
 
-  public async savePNG(scene?: any) {
+  public savePNG(scene?: any) {
     if(!scene) {
       if (!this.getScene) return false;
       scene = this.getScene();
     }
-    const exportSettings: ExportSettings = {
-      withBackground: this.plugin.settings.exportWithBackground, 
-      withTheme: this.plugin.settings.exportWithTheme
-    }
-    const png = await ExcalidrawView.getPNG(scene,exportSettings,this.plugin.settings.pngExportScale);
-    if(!png) return;
+
     const filepath = this.file.path.substring(0,this.file.path.lastIndexOf(this.compatibilityMode ? '.excalidraw':'.md')) + '.png';
     const file = this.app.vault.getAbstractFileByPath(normalizePath(filepath));
-    if(file && file instanceof TFile) await this.app.vault.modifyBinary(file,await png.arrayBuffer());
-    else await this.app.vault.createBinary(filepath,await png.arrayBuffer());    
+
+    (async () => {
+      const exportSettings: ExportSettings = {
+        withBackground: this.plugin.settings.exportWithBackground, 
+        withTheme: this.plugin.settings.exportWithTheme
+      }
+      const png = await ExcalidrawView.getPNG(scene,exportSettings,this.plugin.settings.pngExportScale);
+      if(!png) return;
+      if(file && file instanceof TFile) await this.app.vault.modifyBinary(file,await png.arrayBuffer());
+      else await this.app.vault.createBinary(filepath,await png.arrayBuffer());      
+    })();
   }
 
   async save(preventReload:boolean=true) {
@@ -167,8 +173,9 @@ export default class ExcalidrawView extends TextFileView {
   getViewData () {
     //console.log("ExcalidrawView.getViewData()");
     if(!this.getScene) return this.data;
+    if(!this.excalidrawData.loaded) return this.data;
     if(!this.compatibilityMode) {
-      let trimLocation = this.data.search("# Text Elements\n");
+      let trimLocation = this.data.search(/(^%%\n)?# Text Elements\n/m);
       if(trimLocation == -1) trimLocation = this.data.search(/(%%\n)?# Drawing\n/);
       if(trimLocation == -1) return this.data;
 
@@ -352,12 +359,15 @@ export default class ExcalidrawView extends TextFileView {
 
   // clear the view content  
   clear() {
-
+    if(!this.excalidrawRef) return;
+    this.excalidrawRef.current.resetScene();
+    this.excalidrawRef.current.history.clear();
   }
   
   async setViewData (data: string, clear: boolean = false) {   
+    if(clear) this.clear();
+    data = this.data = data.replaceAll("\r\n","\n").replaceAll("\r","\n");
     this.app.workspace.onLayoutReady(async ()=>{
-      //console.log("ExcalidrawView.setViewData()");
       this.dirty = null;
       this.compatibilityMode = this.file.extension == "excalidraw";
       await this.plugin.loadSettings();
@@ -372,9 +382,19 @@ export default class ExcalidrawView extends TextFileView {
       } else {
         const parsed = data.search("excalidraw-plugin: parsed\n")>-1 || data.search("excalidraw-plugin: locked\n")>-1; //locked for backward compatibility
         this.changeTextMode(parsed ? TextMode.parsed : TextMode.raw,false);
-        if(!(await this.excalidrawData.loadData(data, this.file,this.textMode))) return;
+        try {
+          if(!(await this.excalidrawData.loadData(data, this.file,this.textMode))) return;
+        } catch(e) {
+          new Notice( "Error loading drawing:\n" 
+                     + e.message
+                     + ((e.message === "Cannot read property 'index' of undefined") 
+                       ? "\n'# Drawing' section is likely missing"
+                       : "")
+                     + "\nTry manually fixing the file or restoring an earlier version from sync history" ,8000);
+          this.setMarkdownView();
+          return;
+        }
       }
-      if(clear) this.clear();
       await this.loadDrawing(true)
     });
   }
@@ -385,14 +405,10 @@ export default class ExcalidrawView extends TextFileView {
    */
   private async loadDrawing(justloaded:boolean) {        
     const excalidrawData = this.excalidrawData.scene;
+    this.justLoaded = justloaded;
     if(this.excalidrawRef) {
       const viewModeEnabled = this.excalidrawRef.current.getAppState().viewModeEnabled;
       const zenModeEnabled = this.excalidrawRef.current.getAppState().zenModeEnabled;
-      if(justloaded) {        
-        this.excalidrawRef.current.resetScene();
-        this.excalidrawRef.current.history.clear();
-        this.justLoaded = justloaded; //reset screen will clear justLoaded, so need to set it here
-      }
       this.excalidrawRef.current.updateScene({
         elements: excalidrawData.elements,
         appState: { 
@@ -406,7 +422,6 @@ export default class ExcalidrawView extends TextFileView {
         this.excalidrawWrapperRef.current.focus();
       }
     } else {
-      this.justLoaded = justloaded; 
       this.instantiateExcalidraw({
         elements: excalidrawData.elements,
         appState: excalidrawData.appState,
@@ -436,6 +451,11 @@ export default class ExcalidrawView extends TextFileView {
     return ICON_NAME;
   }
 
+  setMarkdownView() {
+    this.plugin.excalidrawFileModes[this.id || this.file.path] = "markdown";
+    this.plugin.setMarkdownView(this.leaf);
+  }
+
   onMoreOptionsMenu(menu: Menu) {
     // Add a menu item to force the board to markdown view
     if(!this.compatibilityMode) {
@@ -445,8 +465,7 @@ export default class ExcalidrawView extends TextFileView {
             .setTitle(t("OPEN_AS_MD"))
             .setIcon("document")
             .onClick(async () => {
-              this.plugin.excalidrawFileModes[this.id || this.file.path] = "markdown";
-              this.plugin.setMarkdownView(this.leaf);
+              this.setMarkdownView();
             });
         })
         .addItem((item) => {

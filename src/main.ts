@@ -47,6 +47,9 @@ import {
   OpenFileDialog
 } from "./openDrawing";
 import {
+  InsertLinkDialog
+} from "./InsertLinkDialog";
+import {
   initExcalidrawAutomate,
   destroyExcalidrawAutomate
 } from "./ExcalidrawAutomate";
@@ -55,6 +58,7 @@ import { around } from "monkey-around";
 import { t } from "./lang/helpers";
 import { MigrationPrompt } from "./MigrationPrompt";
 import { checkAndCreateFolder, download, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, splitFolderAndFilename } from "./Utils";
+import { tsExpressionWithTypeArguments } from "@babel/types";
 
 declare module "obsidian" {
   interface App {
@@ -74,6 +78,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public settings: ExcalidrawSettings;
   //public stencilLibrary: any = null;
   private openDialog: OpenFileDialog;
+  private insertLinkDialog: InsertLinkDialog;
   private activeExcalidrawView: ExcalidrawView = null;
   public lastActiveExcalidrawFilePath: string = null;
   public hover: {linkText: string, sourcePath: string} = {linkText: null, sourcePath: null};
@@ -117,6 +122,43 @@ export default class ExcalidrawPlugin extends Plugin {
       new Notice(`You are running an older version of the electron Browser (${electron}). If Excalidraw does not start up, please reinstall Obsidian with the latest installer and try again.`,10000);
     }
     this.switchToExcalidarwAfterLoad()
+
+    //This is a once off cleanup process to remediate incorrectly placed comment %% before # Text Elements
+    if(this.settings.patchCommentBlock) {
+      const self = this;
+      console.log(window.moment().format("HH:mm:ss") + ": Excalidraw will patch drawings in 5 minutes");
+      setTimeout(async ()=>{
+        await self.loadSettings();
+        if (!self.settings.patchCommentBlock) {
+          console.log(window.moment().format("HH:mm:ss") + ": Excalidraw patching aborted because synched data.json is already patched");
+          return;
+        }
+        console.log(window.moment().format("HH:mm:ss") + ": Excalidraw is starting the patching process");
+        let i = 0;
+        const excalidrawFiles = this.app.vault.getFiles();
+        for (const f of (excalidrawFiles || []).filter((f:TFile) => self.isExcalidrawFile(f))) {
+          if (   (f.extension !== "excalidraw")  //legacy files do not need to be touched
+              && (self.app.workspace.getActiveFile() !== f)) {  //file is currently being edited
+            let drawing = await self.app.vault.read(f);
+            const orig_drawing = drawing;
+            drawing = drawing.replaceAll("\r\n","\n").replaceAll("\r","\n"); //Win, Mac, Linux compatibility
+            drawing = drawing.replace("\n%%\n# Text Elements\n","\n# Text Elements\n");
+            if (drawing.search("\n%%\n# Drawing\n") === -1) {
+              const [json,pos] = getJSON(drawing);
+              drawing = drawing.substr(0,pos)+"\n%%\n# Drawing\n```json\n"+json+"\n```%%";
+            };
+            if (drawing !== orig_drawing) {
+              i++;
+              console.log("Excalidraw patched: " + f.path);
+              await self.app.vault.modify(f,drawing);   
+            }
+          }
+        }
+        self.settings.patchCommentBlock = false;
+        self.saveSettings();
+        console.log(window.moment().format("HH:mm:ss") + ": Excalidraw patched in total " + i + " files");
+      },300000) //5 minutes
+    }
   }
 
   private switchToExcalidarwAfterLoad() {
@@ -191,12 +233,12 @@ export default class ExcalidrawPlugin extends Plugin {
         if(width>=800) scale = 2;
         if(width>=1600) scale = 3;
         if(width>=2400) scale = 4;
-        const png = await ExcalidrawView.getPNG(JSON_parse(getJSON(content)),exportSettings, scale);
+        const png = await ExcalidrawView.getPNG(JSON_parse(getJSON(content)[0]),exportSettings, scale);
         if(!png) return null;
         img.src = URL.createObjectURL(png);
         return img;
       }
-      let svg = await ExcalidrawView.getSVG(JSON_parse(getJSON(content)),exportSettings);
+      let svg = await ExcalidrawView.getSVG(JSON_parse(getJSON(content)[0]),exportSettings);
       if(!svg) return null;
       svg = ExcalidrawView.embedFontsInSVG(svg);
       svg.removeAttribute('width');
@@ -401,6 +443,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   private registerCommands() {
     this.openDialog = new OpenFileDialog(this.app, this);
+    this.insertLinkDialog = new InsertLinkDialog(this.app);
 
     this.addRibbonIcon(ICON_NAME, t("CREATE_NEW"), async (e) => {
       this.createDrawing(this.getNextDefaultFilename(), e.ctrlKey||e.metaKey);
@@ -645,7 +688,7 @@ export default class ExcalidrawPlugin extends Plugin {
         } else {
           const view = this.app.workspace.activeLeaf.view;
           if (view instanceof ExcalidrawView) {
-            this.openDialog.insertLink(view.file.path,view.addText);
+            this.insertLinkDialog.start(view.file.path,view.addText);
             return true;
           }
           else return false;
@@ -904,7 +947,7 @@ export default class ExcalidrawPlugin extends Plugin {
       const deleteEventHandler = async (file:TFile) => {
         if (!(file instanceof TFile)) return;     
         //@ts-ignore
-        const isExcalidarwFile = (file.unsafeCachedData && file.unsafeCachedData.search(/---[\r\n][\s\S]*excalidraw-plugin:\s*(locked|unlocked)[\r\n][\s\S]*---/gm)>-1) 
+        const isExcalidarwFile = (file.unsafeCachedData && file.unsafeCachedData.search(/---[\r\n]+[\s\S]*excalidraw-plugin:\s*\w+[\r\n]+[\s\S]*---/gm)>-1) 
                                  || (file.extension=="excalidraw");
         if(!isExcalidarwFile) return;
 
@@ -980,7 +1023,18 @@ export default class ExcalidrawPlugin extends Plugin {
     const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
     if(activeView) {
       const editor = activeView.editor;
-      editor.replaceSelection("![["+data+"]]");
+      switch (this.settings.embedType) {
+        case "excalidraw":
+          editor.replaceSelection("![["+data+"]]");
+          break;
+        case "PNG":
+          editor.replaceSelection("![["+data.substr(0,data.lastIndexOf("."))+".png]] ([["+data+"|*]])");
+          break;
+        case "SVG": 
+          editor.replaceSelection("![["+data.substr(0,data.lastIndexOf("."))+".svg]] ([["+data+"|*]])");
+          break;
+      }
+      
       editor.focus();
     }
   

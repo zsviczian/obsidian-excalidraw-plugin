@@ -51,7 +51,7 @@ export default {
   TEMPLATE_NAME: "Excalidraw template file",
   TEMPLATE_DESC: "Full filepath to the Excalidraw template. " +
                  "E.g.: If your template is in the default Excalidraw folder and it's name is " +
-                 "Template.md, the setting would be: Excalidraw/Template.md " + 
+                 "Template.md, the setting would be: Excalidraw/Template.md (or just Excalidraw/Template - you may ommit the .md file extension" + 
                  "If you are using Excalidraw in compatibility mode, then your template must be a legacy excalidraw file as well " + 
                  "such as Excalidraw/Template.excalidraw.",
   AUTOSAVE_NAME: "Autosave",
@@ -99,9 +99,14 @@ export default {
   EMBED_PREVIEW_SVG_NAME: "Display SVG in markdown preview",
   EMBED_PREVIEW_SVG_DESC: "The default is to display drawings as SVG images in the markdown preview. Turning this feature off, the markdown preview will display the drawing as an embedded PNG image.",
   EMBED_WIDTH_NAME: "Default width of embedded (transcluded) image",
-  EMBED_WIDTH_DESC: "The default width of an embedded drawing. You can specify a custom " +
+  EMBED_WIDTH_DESC: "Only relevant if embed type is excalidraw. Has no effect on PNG and SVG embeds. The default width of an embedded drawing. You can specify a custom " +
                     "width when embedding an image using the ![[drawing.excalidraw|100]] or " +
                     "[[drawing.excalidraw|100x100]] format.",
+  EMBED_TYPE_NAME: "Type of file to insert into the document",                    
+  EMBED_TYPE_DESC: "When you embed an image into a document using the command palette this setting will specify if Excalidraw should embed the original excalidraw file "+
+                   "or a PNG or an SVG copy. You need to enable auto-export PNG / SVG (see below under Export Settings) for those image types to be available in the dropdown. For drawings that do not have a " +
+                   "a correspondign PNG or SVG readily available the command palette action will insert a broken link. You need to open the original drawing and initiate export manually. " +
+                   "This option will not autogenerate PNG/SVG files, but will simply reference the already existing files.",
   EXPORT_PNG_SCALE_NAME: "PNG export image scale",
   EXPORT_PNG_SCALE_DESC: "The size-scale of the exported PNG image",
   EXPORT_BACKGROUND_NAME: "Export image with background",

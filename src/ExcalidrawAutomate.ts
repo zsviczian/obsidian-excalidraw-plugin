@@ -231,7 +231,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
     async toClipboard(templatePath?:string) {
       const template = templatePath ? (await getTemplate(templatePath)) : null;
       let elements = template ? template.elements : [];
-      elements.concat(this.getElements());
+      elements = elements.concat(this.getElements());
       navigator.clipboard.writeText(
         JSON.stringify({
           "type":"excalidraw/clipboard",
@@ -337,7 +337,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
     async createPNG(templatePath?:string, scale:number=1) {
       const template = templatePath ? (await getTemplate(templatePath)) : null;
       let elements = template ? template.elements : [];
-      elements.concat(this.getElements());
+      elements = elements.concat(this.getElements());
       return ExcalidrawView.getPNG(
         { 
           "type": "excalidraw",
@@ -748,7 +748,7 @@ async function getTemplate(fileWithPath: string):Promise<{elements: any,appState
     let trimLocation = data.search("# Text Elements\n");
     if(trimLocation == -1) trimLocation = data.search("# Drawing\n");
 
-    const excalidrawData = JSON_parse(getJSON(data));
+    const excalidrawData = JSON_parse(getJSON(data)[0]);
     return {
       elements: excalidrawData.elements,
       appState: excalidrawData.appState,  

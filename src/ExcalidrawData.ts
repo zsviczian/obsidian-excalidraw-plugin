@@ -22,9 +22,6 @@ declare module "obsidian" {
   }
 }
 
-
-const DRAWING_REG = /[\r\n]# Drawing[\r\n](```json[\r\n])?(.*)(```)?(%%)?/gm;
-
 export const REGEX_LINK = {
   //![[link|alias]] [alias](link){num}
   //12 3    4        5      6    7 8
@@ -51,14 +48,23 @@ export const REGEX_LINK = {
 
 export const REG_LINKINDEX_HYPERLINK = /^\w+:\/\//;
 
-export function getJSON(data:string):string {
-  const res = data.matchAll(DRAWING_REG);
-  const parts = res.next();
+const DRAWING_REG = /\n%%\n# Drawing\n(```json\n)(.*)\n```%%/gm;
+const DRAWING_REG_FALLBACK = /\n# Drawing\n(```json\n)?(.*)(```)?(%%)?/gm;
+export function getJSON(data:string):[string,number] {
+  let res = data.matchAll(DRAWING_REG);
+
+  //In case the user adds a text element with the contents "# Drawing\n"
+  let parts;
+  parts = res.next();
+  if(parts.done) { //did not find a match
+    res = data.matchAll(DRAWING_REG_FALLBACK);
+    parts = res.next();
+  }
   if(parts.value && parts.value.length>1) {
     const result = parts.value[2];
-    return result.substr(0,result.lastIndexOf("}")+1); //this is a workaround in case sync merges two files together and one version is still an old version without the ```codeblock
+    return [result.substr(0,result.lastIndexOf("}")+1),parts.value.index]; //this is a workaround in case sync merges two files together and one version is still an old version without the ```codeblock
   }
-  return data;
+  return [data,parts.value.index];
 }
 
 export class ExcalidrawData {
@@ -71,6 +77,7 @@ export class ExcalidrawData {
   private urlPrefix: string;
   private textMode: TextMode = TextMode.raw;
   private plugin: ExcalidrawPlugin;
+  public loaded: boolean = false;
 
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
@@ -83,7 +90,7 @@ export class ExcalidrawData {
    * @returns {boolean} - true if file was loaded, false if there was an error
    */
   public async loadData(data: string,file: TFile, textMode:TextMode):Promise<boolean> {
-
+    this.loaded = false;
     this.file = file;
     this.textElements = new Map<string,{raw:string, parsed:string}>();
 
@@ -109,27 +116,31 @@ export class ExcalidrawData {
     }
 
     //Load scene: Read the JSON string after "# Drawing" 
-    let parts = data.matchAll(DRAWING_REG).next();
-    if(!(parts.value && parts.value.length>1)) return false; //JSON not found or invalid
-    if(!this.scene) { //scene was not loaded from .excalidraw
-      const scene = parts.value[2];
-      this.scene = JSON_parse(scene.substr(0,scene.lastIndexOf("}")+1)); //this is a workaround to address when files are mereged by sync and one version is still an old markdown without the codeblock ```
-      //using JSON_parse for legacy compatibiltiy. In an earlier version Excalidraw JSON was not enclosed in a codeblock
+    const [scene,pos] = getJSON(data);
+    if (pos === -1) {
+      return false; //JSON not found
     }
-    //Trim data to remove the JSON string
-    data = data.substring(0,parts.value.index);
+    if (!this.scene) {
+      this.scene = JSON_parse(scene); //this is a workaround to address when files are mereged by sync and one version is still an old markdown without the codeblock ```
+    }
+    data = data.substring(0,pos);
 
     //The Markdown # Text Elements take priority over the JSON text elements. Assuming the scenario in which the link was updated due to filename changes
     //The .excalidraw JSON is modified to reflect the MD in case of difference
     //Read the text elements into the textElements Map
-    let position = data.search("# Text Elements");
-    if(position==-1) return true; //Text Elements header does not exist
-    position += "# Text Elements\n".length;
+    let position = data.search(/(^%%\n)?# Text Elements\n/m);
+    if(position==-1) {
+      await this.setTextMode(textMode,false);  
+      this.loaded = true;
+      return true; //Text Elements header does not exist
+    }
+    position += data.match(/((^%%\n)?# Text Elements\n)/m)[0].length
     
     //iterating through all the text elements in .md
     //Text elements always contain the raw value
     const BLOCKREF_LEN:number = " ^12345678\n\n".length;
-    const res = data.matchAll(/\s\^(.{8})[\r\n]/g);
+    const res = data.matchAll(/\s\^(.{8})[\n]+/g);
+    let parts;
     while(!(parts = res.next()).done) {
       const text = data.substring(position,parts.value.index);
       this.textElements.set(parts.value[1],{raw: text, parsed: await this.parse(text)});
@@ -140,6 +151,7 @@ export class ExcalidrawData {
     //e.g. if the entire text elements section was deleted.
     this.findNewTextElementsInScene();
     await this.setTextMode(textMode,true);
+    this.loaded = true;
     return true;
   }
 

@@ -1,5 +1,6 @@
 import {
   App, 
+  DropdownComponent, 
   PluginSettingTab, 
   Setting,
   TFile
@@ -28,6 +29,7 @@ export interface ExcalidrawSettings {
   autoexportSVG: boolean,
   autoexportPNG: boolean,
   autoexportExcalidraw: boolean,
+  embedType: "excalidraw"|"PNG"|"SVG",
   syncExcalidraw: boolean,
   compatibilityMode: boolean,
   experimentalFileType: boolean,
@@ -35,6 +37,7 @@ export interface ExcalidrawSettings {
   loadCount: number, //version 1.2 migration counter
   drawingOpenCount: number,
   library: string,
+  patchCommentBlock: boolean, //1.3.12 
 }
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
@@ -56,6 +59,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   autoexportSVG: false,
   autoexportPNG: false,
   autoexportExcalidraw: false,
+  embedType: "excalidraw",
   syncExcalidraw: false,
   experimentalFileType: false,
   experimentalFileTag: "✏️",
@@ -63,16 +67,27 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   loadCount: 0,
   drawingOpenCount: 0,
   library: `{"type":"excalidrawlib","version":1,"library":[]}`,
+  patchCommentBlock: true,
 }
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
   plugin: ExcalidrawPlugin;
   private requestEmbedUpdate:boolean = false;
   private requestReloadDrawings:boolean = false;
+  private applyDebounceTimer: number = 0;
 
   constructor(app: App, plugin: ExcalidrawPlugin) {
     super(app, plugin);
     this.plugin = plugin;
+  }
+
+  applySettingsUpdate(requestReloadDrawings:boolean = false) {
+    clearTimeout(this.applyDebounceTimer);
+    const plugin = this.plugin;
+    this.applyDebounceTimer = window.setTimeout(() => {
+      plugin.saveSettings();
+    }, 200);
+    if(requestReloadDrawings) this.requestReloadDrawings = true;
   }
 
   async hide() {
@@ -114,7 +129,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setValue(this.plugin.settings.folder)
       .onChange(async (value) => {
         this.plugin.settings.folder = value;
-        await this.plugin.saveSettings();
+        this.applySettingsUpdate();
       }));
 
     new Setting(containerEl)
@@ -125,7 +140,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.templateFilePath)
         .onChange(async (value) => {
           this.plugin.settings.templateFilePath = value;
-          await this.plugin.saveSettings();
+          this.applySettingsUpdate();
         }));
 
     this.containerEl.createEl('h1', {text: t("FILENAME_HEAD")});
@@ -153,7 +168,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           this.plugin.settings.drawingFilenamePrefix = value.replaceAll(/[<>:"/\\|?*]/g,'_');
           text.setValue(this.plugin.settings.drawingFilenamePrefix);
           filenameEl.innerHTML = getFilenameSample();
-          await this.plugin.saveSettings();
+          this.applySettingsUpdate();
         }));
 
     new Setting(containerEl)
@@ -166,7 +181,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           this.plugin.settings.drawingFilenameDateTime = value.replaceAll(/[<>:"/\\|?*]/g,'_');
           text.setValue(this.plugin.settings.drawingFilenameDateTime);
           filenameEl.innerHTML = getFilenameSample();
-          await this.plugin.saveSettings();
+          this.applySettingsUpdate();
         }));
 
     this.containerEl.createEl('h1', {text: t("LINKS_HEAD")});
@@ -180,8 +195,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.showLinkBrackets)
         .onChange(async (value) => {
           this.plugin.settings.showLinkBrackets = value;
-          await this.plugin.saveSettings();
-          this.requestReloadDrawings = true;
+          this.applySettingsUpdate(true);
         }));
     
     new Setting(containerEl)
@@ -193,8 +207,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .onChange((value) => {
           console.log(value);
           this.plugin.settings.linkPrefix = value;
-          this.plugin.saveSettings();
-          this.requestReloadDrawings = true;
+          this.applySettingsUpdate(true);
         }));
   
     new Setting(containerEl)
@@ -205,8 +218,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.urlPrefix)
         .onChange(async (value) => {
           this.plugin.settings.urlPrefix = value;
-          await this.plugin.saveSettings();
-          this.requestReloadDrawings = true;
+          this.applySettingsUpdate(true);
         }));
 
     new Setting(containerEl)
@@ -216,7 +228,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.allowCtrlClick)
         .onChange(async (value) => {
           this.plugin.settings.allowCtrlClick = value;
-          await this.plugin.saveSettings();
+          this.applySettingsUpdate();
         }));
 
     const s = new Setting(containerEl)
@@ -226,8 +238,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.forceWrap)
         .onChange(async (value) => {
           this.plugin.settings.forceWrap = value;
-          await this.plugin.saveSettings();
-          this.requestReloadDrawings = true;
+          this.applySettingsUpdate(true);
         }));
     s.descEl.innerHTML="<code>![[doc#^ref]]{number}</code> "+t("TRANSCLUSION_WRAP_DESC");
 
@@ -241,7 +252,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setValue(this.plugin.settings.displaySVGInPreview)
       .onChange(async (value) => {
         this.plugin.settings.displaySVGInPreview = value;
-        await this.plugin.saveSettings();
+        this.applySettingsUpdate();
       }));
 
 
@@ -253,9 +264,41 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.width)
         .onChange(async (value) => {
           this.plugin.settings.width = value;
-          await this.plugin.saveSettings();
+          this.applySettingsUpdate();
           this.requestEmbedUpdate = true;
-        }));
+        }));  
+    let dropdown: DropdownComponent;
+
+    new Setting(containerEl)
+      .setName(t("EMBED_TYPE_NAME"))
+      .setDesc(t("EMBED_TYPE_DESC"))
+      .addDropdown(async (d:DropdownComponent) => {
+        dropdown = d;
+        dropdown.addOption("excalidraw","excalidraw")
+        if(this.plugin.settings.autoexportPNG) {
+          dropdown.addOption("PNG","PNG");
+        } else {
+          if(this.plugin.settings.embedType === "PNG") {
+            this.plugin.settings.embedType = "excalidraw";
+            this.applySettingsUpdate();
+          }
+        }
+        if(this.plugin.settings.autoexportSVG) {
+          dropdown.addOption("SVG","SVG");
+        } else {
+          if(this.plugin.settings.embedType === "SVG") {
+            this.plugin.settings.embedType = "excalidraw";
+            this.applySettingsUpdate();
+          }
+        }
+        dropdown
+          .setValue(this.plugin.settings.embedType)
+          .onChange(async (value)=>{
+            //@ts-ignore
+            this.plugin.settings.embedType = value;        
+            this.applySettingsUpdate();
+          });
+      });
 
     let scaleText:HTMLDivElement;
 
@@ -268,7 +311,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .onChange(async (value)=> {
           scaleText.innerText = " " + value.toString();
           this.plugin.settings.pngExportScale = value;
-          await this.plugin.saveSettings();
+          this.applySettingsUpdate();
         }))
         .settingEl.createDiv('',(el)=>{
           scaleText = el;
@@ -284,7 +327,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.exportWithBackground)
         .onChange(async (value) => {
           this.plugin.settings.exportWithBackground = value;
-          await this.plugin.saveSettings();
+          this.applySettingsUpdate();
           this.requestEmbedUpdate = true;
         }));
     
@@ -295,7 +338,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.exportWithTheme)
         .onChange(async (value) => {
           this.plugin.settings.exportWithTheme = value;
-          await this.plugin.saveSettings();
+          this.applySettingsUpdate();
           this.requestEmbedUpdate = true;
         }));
     
@@ -308,17 +351,35 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.keepInSync)
         .onChange(async (value) => {
           this.plugin.settings.keepInSync = value;
-          await this.plugin.saveSettings();
+          this.applySettingsUpdate();
         }));
         
+    const removeDropdownOption = (opt: string) => {
+      let i=0;
+      for(i=0;i<dropdown.selectEl.options.length;i++) {
+        if((dropdown.selectEl.item(i) as HTMLOptionElement).label===opt) {
+          dropdown.selectEl.item(i).remove();
+        }
+      }
+    }
+
     new Setting(containerEl)
       .setName(t("EXPORT_SVG_NAME")) 
       .setDesc(t("EXPORT_SVG_DESC"))
       .addToggle(toggle => toggle
         .setValue(this.plugin.settings.autoexportSVG)
         .onChange(async (value) => {
+          if(value) {
+            dropdown.addOption("SVG","SVG");
+          } else {
+            if (this.plugin.settings.embedType === "SVG") {
+              dropdown.setValue("excalidraw");
+              this.plugin.settings.embedType = "excalidraw";
+            }
+            removeDropdownOption("SVG");
+          }
           this.plugin.settings.autoexportSVG = value;
-          await this.plugin.saveSettings();
+          this.applySettingsUpdate();
         }));
 
         
@@ -328,8 +389,17 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     .addToggle(toggle => toggle
       .setValue(this.plugin.settings.autoexportPNG)
       .onChange(async (value) => {
+        if(value) {
+          dropdown.addOption("PNG","PNG");
+        } else {
+          if (this.plugin.settings.embedType === "PNG") {
+            dropdown.setValue("excalidraw");
+            this.plugin.settings.embedType = "excalidraw";
+          }
+          removeDropdownOption("PNG");
+        }
         this.plugin.settings.autoexportPNG = value;
-        await this.plugin.saveSettings();
+        this.applySettingsUpdate();
       }));
          
     this.containerEl.createEl('h1', {text: t("COMPATIBILITY_HEAD")});
@@ -341,7 +411,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.compatibilityMode)
         .onChange(async (value) => {
           this.plugin.settings.compatibilityMode = value;
-          await this.plugin.saveSettings();
+          this.applySettingsUpdate();
         }));
 
     new Setting(containerEl)
@@ -351,7 +421,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.autoexportExcalidraw)
         .onChange(async (value) => {
           this.plugin.settings.autoexportExcalidraw = value;
-          await this.plugin.saveSettings();
+          this.applySettingsUpdate();
         }));
 
     new Setting(containerEl)
@@ -361,7 +431,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.syncExcalidraw)
           .onChange(async (value) => {
             this.plugin.settings.syncExcalidraw = value;
-            await this.plugin.saveSettings();
+            this.applySettingsUpdate();
           }));
 
     this.containerEl.createEl('h1', {text: t("EXPERIMENTAL_HEAD")});
@@ -375,7 +445,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .onChange(async (value) => {
           this.plugin.settings.experimentalFileType = value;
           this.plugin.experimentalFileTypeDisplayToggle(value);
-          await this.plugin.saveSettings();
+          this.applySettingsUpdate();
         }));
 
     new Setting(containerEl)
@@ -386,7 +456,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setValue(this.plugin.settings.experimentalFileTag)
       .onChange(async (value) => {
         this.plugin.settings.experimentalFileTag = value;
-        await this.plugin.saveSettings();
+        this.applySettingsUpdate();
       }));    
   }
 }
