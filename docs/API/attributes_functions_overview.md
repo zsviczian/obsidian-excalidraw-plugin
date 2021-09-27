@@ -102,6 +102,8 @@ export interface ExcalidrawAutomate extends Window {
     targetView: ExcalidrawView;
     setView (view:ExcalidrawView|"first"|"active"):ExcalidrawView;
     getExcalidrawAPI ():any;
+    getViewElements ():ExcalidrawElement[];
+    deleteViewElements (el: ExcalidrawElement[]):boolean;
     getViewSelectedElement( ):ExcalidrawElement;
     getViewSelectedElements ():ExcalidrawElement[];
     viewToggleFullScreen (forceViewMode?:boolean):void;

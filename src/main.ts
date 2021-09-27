@@ -15,9 +15,7 @@ import {
   MarkdownRenderer,
   ViewState,
   Notice,
-  request,
 } from "obsidian";
-
 import { 
   BLANK_DRAWING,
   VIEW_TYPE_EXCALIDRAW, 
@@ -58,7 +56,6 @@ import { around } from "monkey-around";
 import { t } from "./lang/helpers";
 import { MigrationPrompt } from "./MigrationPrompt";
 import { checkAndCreateFolder, download, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, splitFolderAndFilename } from "./Utils";
-import { tsExpressionWithTypeArguments } from "@babel/types";
 
 declare module "obsidian" {
   interface App {
@@ -76,7 +73,6 @@ export default class ExcalidrawPlugin extends Plugin {
   public excalidrawFileModes: { [file: string]: string } = {};
   private _loaded: boolean = false;
   public settings: ExcalidrawSettings;
-  //public stencilLibrary: any = null;
   private openDialog: OpenFileDialog;
   private insertLinkDialog: InsertLinkDialog;
   private activeExcalidrawView: ExcalidrawView = null;

@@ -31,7 +31,7 @@
     "@types/react-dom": "^17.0.8",
     "cross-env": "^7.0.3",
     "nanoid": "^3.1.23",
-    "obsidian": "^0.12.11",
+    "obsidian": "^0.12.16",
     "rollup": "^2.52.3",
     "rollup-plugin-visualizer": "^5.5.0",
     "tslib": "^2.3.0",

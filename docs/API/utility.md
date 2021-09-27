@@ -114,6 +114,28 @@ getExcalidrawAPI():any
 Returns the native Excalidraw API (ref.current) for the active drawing specified in `targetView`.
 See Excalidraw documentation here: https://www.npmjs.com/package/@excalidraw/excalidraw#ref
 
+#### getViewElements()
+```typescript
+getViewElements():ExcalidrawElement[] 
+```
+
+Returns all the elements from the view.
+
+#### deleteViewElements()
+```typescript
+deleteViewElements(elToDelete: ExcalidrawElement[]):boolean 
+```
+
+Deletes those elements from the view that match the elements provided as the input parameter.
+
+Example to delete the selected elements from the view:
+```typescript
+ea = ExcalidrawAutomate;
+ea.setView("active");
+el = ea.getViewSelectedElements();
+ea.deleteViewElements();
+```
+
 #### getViewSelectedElement()
 ```typescript
 getViewSelectedElement():ExcalidrawElement

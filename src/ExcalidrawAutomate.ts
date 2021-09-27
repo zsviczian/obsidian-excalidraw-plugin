@@ -18,6 +18,7 @@ import {
   VIEW_TYPE_EXCALIDRAW
 } from "./constants";
 import { wrapText } from "./Utils";
+import { AppState } from "@zsviczian/excalidraw/types/types";
 
 declare type ConnectionPoint = "top"|"bottom"|"left"|"right";
 
@@ -120,7 +121,9 @@ export interface ExcalidrawAutomate extends Window {
     targetView: ExcalidrawView;
     setView (view:ExcalidrawView|"first"|"active"):ExcalidrawView;
     getExcalidrawAPI ():any;
-    getViewSelectedElement( ):ExcalidrawElement;
+    getViewElements ():ExcalidrawElement[];
+    deleteViewElements (el: ExcalidrawElement[]):boolean;
+    getViewSelectedElement ():ExcalidrawElement;
     getViewSelectedElements ():ExcalidrawElement[];
     viewToggleFullScreen (forceViewMode?:boolean):void;
     connectObjectWithViewSelectedElement (
@@ -582,6 +585,32 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         return null;
       }
       return (this.targetView as ExcalidrawView).excalidrawRef.current;
+    },
+    getViewElements ():ExcalidrawElement[] { 
+      if (!this.targetView || !this.targetView?._loaded) {
+        errorMessage("targetView not set", "getViewSelectedElements()");
+        return [];
+      }
+      const current = this.targetView?.excalidrawRef?.current;
+      if(!current) return [];
+      return current?.getSceneElements();
+    },
+    deleteViewElements (elToDelete: ExcalidrawElement[]):boolean {
+      if (!this.targetView || !this.targetView?._loaded) {
+        errorMessage("targetView not set", "getViewSelectedElements()");
+        return false;
+      }
+      const current = this.targetView?.excalidrawRef?.current;
+      if(!current) return false;
+      const el: ExcalidrawElement[] = current.getSceneElements();
+      const st: AppState = current.getAppState();
+      current.updateScene({
+        elements: el.filter((e:ExcalidrawElement)=>!elToDelete.includes(e)),
+        appState: st,
+        commitToHistory: true,
+      });
+      this.targetView.save(); 
+      return true;
     },
     getViewSelectedElement():any {      
       const elements = this.getViewSelectedElements();

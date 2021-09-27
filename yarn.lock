@@ -6891,10 +6891,10 @@
   dependencies:
     "isobject" "^3.0.1"
 
-"obsidian@^0.12.11":
-  "integrity" "sha512-Kv4m1n4nfd17FzpqHZfqFS2YZAyY+cxAUM7/5jqh1bmbPlmKoNd1XJZC7o9KvkXfTCxALiXfGRdrjHB+GUFAEA=="
-  "resolved" "https://registry.npmjs.org/obsidian/-/obsidian-0.12.11.tgz"
-  "version" "0.12.11"
+"obsidian@^0.12.16":
+  "integrity" "sha512-YwwhYrmlv71A/ntTiGOyGaqr9ONhKPE1OKN1tcHovLJC0N/BRZ7XlGpzaN1T3BnAE5H8DmYLsAI3h67u6eJPGQ=="
+  "resolved" "https://registry.npmjs.org/obsidian/-/obsidian-0.12.16.tgz"
+  "version" "0.12.16"
   dependencies:
     "@types/codemirror" "0.0.108"
     "moment" "2.29.1"
