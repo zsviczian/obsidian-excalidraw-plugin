@@ -241,8 +241,9 @@ export class ExcalidrawData {
         dirty = true;
       } else if(!this.textElements.has(id)) {
         dirty = true;
-        this.textElements.set(id,{raw: te.text, parsed: null});
-        this.parseasync(id,te.text);
+        const raw = (te.rawText!==""?te.rawText:te.text); //this is for compatibility with drawings created before the rawText change on ExcalidrawTextElement
+        this.textElements.set(id,{raw: raw, parsed: null});
+        this.parseasync(id,raw);
       }
     }
     if(dirty) { //reload scene json in case it has changed
@@ -263,13 +264,9 @@ export class ExcalidrawData {
       if(el.length==0) {
         this.textElements.delete(key); //if no longer in the scene, delete the text element
       } else {
-        if(!this.textElements.has(key)) {
+        const text = await this.getText(key); 
+        if(text != el[0].text) {
           this.textElements.set(key,{raw: el[0].text,parsed: await this.parse(el[0].text)});
-        } else {
-          const text = await this.getText(key); 
-          if(text != el[0].text) {
-            this.textElements.set(key,{raw: el[0].text,parsed: await this.parse(el[0].text)});
-          }
         }
       }
     }
@@ -426,17 +423,17 @@ export class ExcalidrawData {
   public async syncElements(newScene:any):Promise<boolean> {
     //console.log("Excalidraw.Data.syncElements()");
     this.scene = newScene;//JSON_parse(newScene);
-    const result = this.setLinkPrefix() || this.setUrlPrefix() || this.setShowLinkBrackets() || this.findNewTextElementsInScene();
+    const result = this.setLinkPrefix() || this.setUrlPrefix() || this.setShowLinkBrackets();
     await this.updateTextElementsFromScene();
-    return result;
+    return result || this.findNewTextElementsInScene();
   }
 
   public async updateScene(newScene:any){
     //console.log("Excalidraw.Data.updateScene()");
     this.scene = JSON_parse(newScene);
-    const result = this.setLinkPrefix() || this.setUrlPrefix() || this.setShowLinkBrackets() || this.findNewTextElementsInScene();
+    const result = this.setLinkPrefix() || this.setUrlPrefix() || this.setShowLinkBrackets();
     await this.updateTextElementsFromScene();
-    if(result) {
+    if(result || this.findNewTextElementsInScene()) {
       await this.updateSceneTextElements();
       return true;
     };

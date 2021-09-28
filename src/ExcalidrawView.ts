@@ -36,6 +36,7 @@ import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./ExcalidrawData";
 import { checkAndCreateFolder, download, getNewUniqueFilepath, splitFolderAndFilename, viewportCoordsToSceneCoords } from "./Utils";
 import { Prompt } from "./Prompt";
+import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 
 declare let window: ExcalidrawAutomate;
 
@@ -897,10 +898,13 @@ export default class ExcalidrawView extends TextFileView {
               await this.plugin.saveSettings();  
             })();
           },
-          /*onPaste: (data: ClipboardData, event: ClipboardEvent | null) => {
-            console.log(data,event);
-            return false;
-          },*/
+          onPaste: (data: ClipboardData, event: ClipboardEvent | null) => {
+            if(data.elements) {
+              const self = this;
+              setTimeout(()=>self.save(false),300);
+            }
+            return true;
+          },
           onDrop: (event: React.DragEvent<HTMLDivElement>):boolean => {
             const st: AppState = excalidrawRef.current.getAppState();
             currentPosition = viewportCoordsToSceneCoords({ clientX: event.clientX, clientY: event.clientY },st);
@@ -930,8 +934,12 @@ export default class ExcalidrawView extends TextFileView {
               clearInterval(this.autosaveTimer);
               this.autosaveTimer = null;
             }
-            if(this.textMode==TextMode.parsed) return this.excalidrawData.getRawText(textElement.id);
-            return null;
+            //if(this.textMode==TextMode.parsed) {
+              const raw = this.excalidrawData.getRawText(textElement.id);
+              if(!raw) return textElement.rawText;
+              return raw;
+            /*}
+            return null;*/
           },
           onBeforeTextSubmit: (textElement: ExcalidrawTextElement, text:string, isDeleted:boolean) => {
             if(isDeleted) {
@@ -942,7 +950,7 @@ export default class ExcalidrawView extends TextFileView {
             } 
             //If the parsed text is different than the raw text, and if View is in TextMode.parsed
             //Then I need to clear the undo history to avoid overwriting raw text with parsed text and losing links
-            if(text!=textElement.text) { //the user made changes to the text
+            if(text!=textElement.text || !this.excalidrawData.getRawText(textElement.id)) { //the user made changes to the text or the text is missing from Excalidraw Data (recently copy/pasted)
               //setTextElement will attempt a quick parse (without processing transclusions)
               const parseResult = this.excalidrawData.setTextElement(textElement.id, text,async ()=>{
                 await this.save(false);
@@ -982,9 +990,9 @@ export default class ExcalidrawView extends TextFileView {
     const fullscreen = (document.fullscreenElement==this.contentEl);
     const elements = current.getSceneElements();
     if(delay) { //time for the DOM to render, I am sure there is a more elegant solution
-      setTimeout(() => current.zoomToFit(elements,10,fullscreen?0:0.05),100);
+      setTimeout(() => current.zoomToFit(elements,2,fullscreen?0:0.05),100); 
     } else {
-      current.zoomToFit(elements,10,fullscreen?0:0.05);
+      current.zoomToFit(elements,2,fullscreen?0:0.05);
     }
   }
 
