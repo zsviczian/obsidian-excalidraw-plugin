@@ -143,7 +143,12 @@ export class ExcalidrawData {
     let parts;
     while(!(parts = res.next()).done) {
       const text = data.substring(position,parts.value.index);
-      this.textElements.set(parts.value[1],{raw: text, parsed: await this.parse(text)});
+      const id:string = parts.value[1];
+      this.textElements.set(id,{raw: text, parsed: await this.parse(text)});
+      //this will set the rawText field of text elements imported from files before 1.3.14, and from other instances of Excalidraw
+      const textEl = this.scene.elements.filter((el:any)=>el.id===id)[0];
+      if(textEl && (!textEl.rawText || textEl.rawText === "")) textEl.rawText = text; 
+
       position = parts.value.index + BLOCKREF_LEN;  
     }
 
@@ -241,7 +246,7 @@ export class ExcalidrawData {
         dirty = true;
       } else if(!this.textElements.has(id)) {
         dirty = true;
-        const raw = (te.rawText!==""?te.rawText:te.text); //this is for compatibility with drawings created before the rawText change on ExcalidrawTextElement
+        const raw = (te.rawText && te.rawText!==""?te.rawText:te.text); //this is for compatibility with drawings created before the rawText change on ExcalidrawTextElement
         this.textElements.set(id,{raw: raw, parsed: null});
         this.parseasync(id,raw);
       }
