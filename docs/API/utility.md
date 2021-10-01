@@ -186,7 +186,7 @@ Adds elements created with ExcalidrawAutomate to the target ExcalidrawView.
 - true: the drawing will be saved after the elements were added.
 - false: the drawing will be saved at the next autosave cycle. Use false when adding multiple elements one after the other. Else, best to use true, to minimize risk of data loss.
 
-#### onDropHook
+### onDropHook
 ```typescript
 onDropHook (data: {
   ea: ExcalidrawAutomate, 
