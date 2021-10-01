@@ -24,7 +24,7 @@ declare module "obsidian" {
 
 export const REGEX_LINK = {
   //![[link|alias]] [alias](link){num}
-  //12 3    4        5      6    7 8
+  //      1  2     3           4        5      6  7     8  9
   EXPR: /(!)?(\[\[([^|\]]+)\|?(.+)?]]|\[(.*)\]\((.*)\))(\{(\d+)\})?/g,
   isTransclusion: (parts: IteratorResult<RegExpMatchArray, any>):boolean => {
     return parts.value[1] ? true:false;
@@ -288,14 +288,24 @@ export class ExcalidrawData {
            (this.showLinkBrackets ? "]]" : "");
   }
 
+  /**
+   * 
+   * @param text 
+   * @returns [string,number] - the transcluded text, and the line number for the location of the text
+   */
   public async getTransclusion (text:string):Promise<[string,number]> {
     //file-name#^blockref
     //1         2 3
     const REG_FILE_BLOCKREF = /(.*)#(\^)?(.*)/g;
     const parts=text.matchAll(REG_FILE_BLOCKREF).next();
-    if(parts.done || !parts.value[1] || !parts.value[3]) return [text,0]; //filename and/or blockref not found
-    const file = this.app.metadataCache.getFirstLinkpathDest(parts.value[1],this.file.path);
+    if(!parts.done && !parts.value[1]) return [text,0]; //filename not found
+    const filename = parts.done ? text : parts.value[1];
+    const file = this.app.metadataCache.getFirstLinkpathDest(filename,this.file.path);
+    if(!file || !(file instanceof TFile)) return [text,0];
     const contents = await this.app.vault.cachedRead(file);
+    if(parts.done) { //no blockreference
+      return([contents.substr(0,this.plugin.settings.pageTransclusionCharLimit),0]);
+    }
     const isParagraphRef = parts.value[2] ? true : false; //does the reference contain a ^ character?
     const id = parts.value[3]; //the block ID or heading text
     const blocks = (await this.app.metadataCache.blockCache.getForFile({isCancelled: ()=>false},file)).blocks.filter((block:any)=>block.node.type!="comment");

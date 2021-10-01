@@ -138,6 +138,19 @@ export interface ExcalidrawAutomate extends Window {
       }
     ):boolean;
     addElementsToView (repositionToCursor:boolean, save:boolean):Promise<boolean>;
+    onDropHook (data: {
+      ea: ExcalidrawAutomate, 
+      event: React.DragEvent<HTMLDivElement>,
+      draggable: any, //Obsidian draggable object
+      type: "file"|"text"|"unknown",
+      payload: {
+        files: TFile[], //TFile[] array of dropped files
+        text: string, //string 
+      },
+      excalidrawFile: TFile, //the file receiving the drop event
+      view: ExcalidrawView, //the excalidraw view receiving the drop
+      pointerPosition: {x:number, y:number} //the pointer position on canvas at the time of drop
+    }):boolean;
   };
 }
 
@@ -671,7 +684,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       const elements = this.getElements();
       return await this.targetView.addElements(elements,repositionToCursor,save);
     },
-  
+    onDropHook:null,
   };
   await initFonts();
 }

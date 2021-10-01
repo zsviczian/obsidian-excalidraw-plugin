@@ -69,6 +69,9 @@ export default {
   FILENAME_PREFIX_DESC: "The first part of the filename",
   FILENAME_DATE_NAME: "Filename date",
   FILENAME_DATE_DESC: "The second part of the filename",
+  DISPLAY_HEAD: "Display",
+  ZOOM_TO_FIT_NAME: "Zoom to fit on view resize",
+  ZOOM_TO_FIT_DESC: "Zoom to fit drawing when the pane is resized",
   LINKS_HEAD: "Links and transclusion",
   LINKS_DESC: "CTRL/META + CLICK on Text Elements to open them as links. " + 
               "If the selected text has more than one [[valid Obsidian links]], only the first will be opened. " + 
@@ -95,6 +98,9 @@ export default {
   TRANSCLUSION_WRAP_DESC: "Number specifies the character count where the text should be wrapped. " + 
                           "Set the text wrapping behavior of transcluded text. Turn this ON to force-wrap " + 
                           "text (i.e. no overflow), or OFF to soft-warp text (at the nearest whitespace).",
+  PAGE_TRANSCLUSION_CHARCOUNT_NAME: "Page transclusion max char count",
+  PAGE_TRANSCLUSION_CHARCOUNT_DESC: "The maximum number of characters to display from the page when transcluding an entire page with the "+
+                                    "![[markdown page]] format.",
   EMBED_HEAD: "Embed & Export",
   EMBED_PREVIEW_SVG_NAME: "Display SVG in markdown preview",
   EMBED_PREVIEW_SVG_DESC: "The default is to display drawings as SVG images in the markdown preview. Turning this feature off, the markdown preview will display the drawing as an embedded PNG image.",

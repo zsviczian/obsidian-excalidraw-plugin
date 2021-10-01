@@ -1135,7 +1135,7 @@ export default class ExcalidrawPlugin extends Plugin {
       }
       outString += te.text+' ^'+id+'\n\n';
     }
-    return outString + this.getMarkdownDrawingSection(data);
+    return outString + this.getMarkdownDrawingSection(JSON.stringify(JSON_parse(data)));
   }
 
   public async createDrawing(filename: string, onNewPane: boolean, foldername?: string, initData?:string):Promise<string> {

@@ -185,3 +185,37 @@ Adds elements created with ExcalidrawAutomate to the target ExcalidrawView.
 `save` default is false
 - true: the drawing will be saved after the elements were added.
 - false: the drawing will be saved at the next autosave cycle. Use false when adding multiple elements one after the other. Else, best to use true, to minimize risk of data loss.
+
+#### onDropHook
+```typescript
+onDropHook (data: {
+  ea: ExcalidrawAutomate, 
+  event: React.DragEvent<HTMLDivElement>,
+  draggable: any, //Obsidian draggable object
+  type: "file"|"text"|"unknown",
+  payload: {
+    files: TFile[], //TFile[] array of dropped files
+    text: string, //string 
+  },
+  excalidrawFile: TFile, //the file receiving the drop event
+  view: ExcalidrawView, //the excalidraw view receiving the drop
+  pointerPosition: {x:number, y:number} //the pointer position on canvas at the time of drop
+}):boolean;
+```
+
+Callback function triggered when an draggable item is dropped on Excalidraw.
+The function should return a boolean value. True if the drop was handled by the hook and futher native processing should be stopped, and false if Excalidraw should continue with the processing of the drop.
+type of drop can be one of:
+- "file" if a file from Obsidian file explorer is dropped onto Excalidraw. In this case payload.files will contain the list of files dropped.
+- "text" if a link (e.g. url, or wiki link) or other text is dropped. In this case payload.text will contain the received string
+- "unknown" if Excalidraw plugin does not recognize the type of dropped object. In this case you can use React.DragEvent to analysed the dropped object.
+
+Use Templater startup templates or similar to set the Hook function. 
+
+```typescript
+ea = ExcalidrawAutomate;
+ea.onDropHook = (data) => {
+  console.log(data); 
+  return false;
+}
+```

@@ -275,6 +275,12 @@ export default class ExcalidrawView extends TextFileView {
     }
   }
 
+  onResize() {
+    if(!this.plugin.settings.zoomToFitOnResize) return;
+    if(!this.excalidrawRef) return;
+    this.zoomToFit(false);
+  }
+
   onload() {
     //console.log("ExcalidrawView.onload()");
     this.addAction(DISK_ICON_NAME,t("FORCE_SAVE"),async (ev)=> {
@@ -910,23 +916,58 @@ export default class ExcalidrawView extends TextFileView {
             currentPosition = viewportCoordsToSceneCoords({ clientX: event.clientX, clientY: event.clientY },st);
             
             const draggable = (this.app as any).dragManager.draggable;
+            const onDropHook = (type:"file"|"text"|"unknown", files:TFile[], text:string):boolean => {
+              if (window.ExcalidrawAutomate.onDropHook) {
+                try {
+                  return window.ExcalidrawAutomate.onDropHook({
+                    //@ts-ignore
+                    ea: window.ExcalidrawAutomate, //the Excalidraw Automate object
+                    event: event, //React.DragEvent<HTMLDivElement>
+                    draggable: draggable, //Obsidian draggable object
+                    type: type, //"file"|"text"
+                    payload: {
+                      files: files, //TFile[] array of dropped files
+                      text: text, //string 
+                    },
+                    excalidrawFile: this.file, //the file receiving the drop event
+                    view: this, //the excalidraw view receiving the drop
+                    pointerPosition: currentPosition //the pointer position on canvas at the time of drop
+                  });
+                } catch (e) {
+                  new Notice("on drop hook error. See console log for details");
+                  console.log(e);
+                  return false;
+                }
+              } else {
+                return false;
+              }
+
+            }
+
             switch(draggable?.type) {
               case "file":
-                this.addText(`[[${this.app.metadataCache.fileToLinktext(draggable.file,this.file.path,true)}]]`);
+                if (!onDropHook("file",[draggable.file],null)) {
+                  this.addText(`[[${this.app.metadataCache.fileToLinktext(draggable.file,this.file.path,true)}]]`);
+                }
                 return false;
               case "files":
-                for(const f of draggable.files) {
-                  this.addText(`[[${this.app.metadataCache.fileToLinktext(f,this.file.path,true)}]]`);
-                  currentPosition.y+=st.currentItemFontSize*2;
+                if (!onDropHook("file",draggable.files,null)) {
+                  for(const f of draggable.files) {
+                    this.addText(`[[${this.app.metadataCache.fileToLinktext(f,this.file.path,true)}]]`);
+                    currentPosition.y+=st.currentItemFontSize*2;
+                  }
                 }
                 return false;
             }
             if (event.dataTransfer.types.includes("text/plain")) {
               const text:string = event.dataTransfer.getData("text");
               if(!text) return true;
-              this.addText(text.replace(/(!\[\[.*#[^\]]*\]\])/g,"$1{40}"));
+              if (!onDropHook("text",null,text)) {
+                this.addText(text.replace(/(!\[\[.*#[^\]]*\]\])/g,"$1{40}"));
+              }
               return false;
             }
+            if(onDropHook("unknown",null,null)) return false;
             return true;
           },
           onBeforeTextEdit: (textElement: ExcalidrawTextElement) => {

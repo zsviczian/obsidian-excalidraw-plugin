@@ -17,11 +17,13 @@ export interface ExcalidrawSettings {
   drawingFilenameDateTime: string,
   displaySVGInPreview: boolean,
   width: string,
+  zoomToFitOnResize: boolean,
   showLinkBrackets: boolean,
   linkPrefix: string,
   urlPrefix: string,
   allowCtrlClick: boolean, //if disabled only the link button in the view header will open links 
   forceWrap: boolean,
+  pageTransclusionCharLimit: number,
   pngExportScale: number,
   exportWithTheme: boolean,
   exportWithBackground: boolean,
@@ -47,11 +49,13 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   drawingFilenameDateTime: 'YYYY-MM-DD HH.mm.ss',
   displaySVGInPreview: true,
   width: '400',
+  zoomToFitOnResize: true,
   linkPrefix: "📍",
   urlPrefix: "🌐",
   showLinkBrackets: true,
   allowCtrlClick: true,
   forceWrap: false,
+  pageTransclusionCharLimit: 200,
   pngExportScale: 1,
   exportWithTheme: true,
   exportWithBackground: true,
@@ -184,6 +188,17 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           this.applySettingsUpdate();
         }));
 
+    this.containerEl.createEl('h1', {text: t("DISPLAY_HEAD")});
+    new Setting(containerEl)
+      .setName(t("ZOOM_TO_FIT_NAME")) 
+      .setDesc(t("ZOOM_TO_FIT_DESC"))
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.zoomToFitOnResize)
+        .onChange(async (value) => {
+          this.plugin.settings.zoomToFitOnResize = value;
+          this.applySettingsUpdate();
+        }));
+
     this.containerEl.createEl('h1', {text: t("LINKS_HEAD")});
     this.containerEl.createEl('p',{
       text: t("LINKS_DESC")});
@@ -242,6 +257,29 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         }));
     s.descEl.innerHTML="<code>![[doc#^ref]]{number}</code> "+t("TRANSCLUSION_WRAP_DESC");
 
+    new Setting(containerEl)
+      .setName(t("PAGE_TRANSCLUSION_CHARCOUNT_NAME")) 
+      .setDesc(t("PAGE_TRANSCLUSION_CHARCOUNT_DESC"))
+      .addText(text => text
+        .setPlaceholder('Enter a number')
+        .setValue(this.plugin.settings.pageTransclusionCharLimit.toString())
+        .onChange(async (value) => {
+          const intVal = parseInt(value);
+          if(isNaN(intVal) && value!=="") {
+            text.setValue(this.plugin.settings.pageTransclusionCharLimit.toString());
+            return;
+          } 
+          this.requestEmbedUpdate = true;
+          if(value === "") {
+            this.plugin.settings.pageTransclusionCharLimit = 10;
+            this.applySettingsUpdate(true);
+            return;
+          }
+          this.plugin.settings.pageTransclusionCharLimit = intVal;
+          text.setValue(this.plugin.settings.pageTransclusionCharLimit.toString());
+          this.applySettingsUpdate(true);
+        }));  
+
     this.containerEl.createEl('h1', {text: t("EMBED_HEAD")});
 
 
@@ -267,6 +305,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           this.applySettingsUpdate();
           this.requestEmbedUpdate = true;
         }));  
+
     let dropdown: DropdownComponent;
 
     new Setting(containerEl)
