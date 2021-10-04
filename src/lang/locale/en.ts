@@ -44,8 +44,6 @@ export default {
   NOFILE: "Excalidraw (no file)",
   COMPATIBILITY_MODE: "*.excalidraw file opened in compatibility mode. Convert to new format for full plugin functionality.",
   CONVERT_FILE: "Convert to new format",
-  DRAWING_CONTAINS_IMAGE: "Warning! The drawing contains image elements. Depending on the number and size of the images, " +
-                          "loading Markdown View may take a while. Please be patient. ",
 
   //settings.ts
   FOLDER_NAME: "Excalidraw folder",

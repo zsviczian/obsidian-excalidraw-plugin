@@ -15,10 +15,9 @@ import {
   FRONTMATTER, 
   nanoid, 
   JSON_parse, 
-  VIEW_TYPE_EXCALIDRAW,
-  MAX_IMAGE_SIZE
+  VIEW_TYPE_EXCALIDRAW
 } from "./constants";
-import { getObsidianImage, wrapText } from "./Utils";
+import { wrapText } from "./Utils";
 import { AppState } from "@zsviczian/excalidraw/types/types";
 
 declare type ConnectionPoint = "top"|"bottom"|"left"|"right";
@@ -27,7 +26,6 @@ export interface ExcalidrawAutomate extends Window {
   ExcalidrawAutomate: {
     plugin: ExcalidrawPlugin;
     elementsDict: {};
-    imagesDict: {};
     style: {
       strokeColor: string;
       backgroundColor: string;
@@ -104,7 +102,6 @@ export interface ExcalidrawAutomate extends Window {
         endObjectId?:string
       }
     ):string ;
-    addImage(topX:number, topY:number, imageFile: TFile):Promise<string>;
     connectObjects (
       objectA: string, 
       connectionA: ConnectionPoint, 
@@ -163,7 +160,6 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
   window.ExcalidrawAutomate = {
     plugin: plugin,
     elementsDict: {},
-    imagesDict: {},
     style: {
       strokeColor: "#000000",
       backgroundColor: "transparent",
@@ -517,25 +513,6 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       }
       return id;
     },
-    async addImage(topX:number, topY:number, imageFile: TFile):Promise<string> {
-      const id = nanoid();
-      const image = await getObsidianImage(this.plugin.app,imageFile);
-      if(!image) return null;
-      this.imagesDict[image.imageId] = {
-        type:"image",
-        id: image.imageId,
-        dataURL: image.dataURL
-      }
-      if (Math.max(image.size.width,image.size.height) > MAX_IMAGE_SIZE) {
-        const scale = MAX_IMAGE_SIZE/Math.max(image.size.width,image.size.height);
-        image.size.width = scale*image.size.width;
-        image.size.height = scale*image.size.height;
-      }
-      this.elementsDict[id] = boxedElement(id,"image",topX,topY,image.size.width,image.size.height);
-      this.elementsDict[id].imageId = image.imageId;
-      this.elementsDict[id].scale = [1,1];
-      return id;
-    },
     connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, formatting?:{numberOfPoints?: number,startArrowHead?:string,endArrowHead?:string, padding?: number}):void {
       if(!(this.elementsDict[objectA] && this.elementsDict[objectB])) {
         return;
@@ -575,7 +552,6 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
     },
     clear() {
       this.elementsDict = {};
-      this.imagesDict = {};
     },
     reset() {
       this.clear();
@@ -706,7 +682,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         return false;
       }
       const elements = this.getElements();
-      return await this.targetView.addElements(elements,repositionToCursor,save,this.imagesDict);
+      return await this.targetView.addElements(elements,repositionToCursor,save);
     },
     onDropHook:null,
   };
