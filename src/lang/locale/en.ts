@@ -81,6 +81,11 @@ export default {
               "the plugin will open it in a browser. " +
               "When Obsidian files change, the matching [[link]] in your drawings will also change. " +
               "If you don't want text accidentally changing in your drawings use [[links|with aliases]].",
+  ADJACENT_PANE_NAME: "Open in adjacent pane",
+  ADJACENT_PANE_DESC: "When CTRL+SHIFT clicking a link in Excalidraw by default the plugin will open the link in a new pane. " + 
+                      "Turning this setting on, Excalidraw will first look for an existing adjacent pane, and try to open the link there. " + 
+                      "Excalidraw will first look too the right, then to the left, then down, then up. If no pane is found, Excalidraw will open " +
+                      "a new pane.",
   LINK_BRACKETS_NAME: "Show [[brackets]] around links",
   LINK_BRACKETS_DESC: "In PREVIEW mode, when parsing Text Elements, place brackets around links. " +
                       "You can override this setting for a specific drawing by adding '" + FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS + 

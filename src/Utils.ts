@@ -1,9 +1,16 @@
-import {  App, normalizePath, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
+import {  App, normalizePath, TAbstractFile, TFile, TFolder, Vault, WorkspaceLeaf } from "obsidian";
 import { Random } from "roughjs/bin/math";
 import { Zoom } from "@zsviczian/excalidraw/types/types";
 import { nanoid } from "nanoid";
 import { IMAGE_TYPES } from "./constants";
 import {ExcalidrawAutomate} from './ExcalidrawAutomate';
+import ExcalidrawPlugin from "./main";
+
+declare module "obsidian" {
+  interface Workspace {
+    getAdjacentLeafInDirection(leaf: WorkspaceLeaf, direction: string): WorkspaceLeaf;
+  }
+}
 declare let window: ExcalidrawAutomate;
 
 /**
@@ -127,6 +134,17 @@ export const viewportCoordsToSceneCoords = (
   const y = (clientY - zoom.translation.y - offsetTop) * invScale - scrollY;
   return { x, y };
 };
+
+export const getNewOrAdjacentLeaf = (plugin: ExcalidrawPlugin, leaf: WorkspaceLeaf):WorkspaceLeaf => {
+  if(plugin.settings.openInAdjacentPane) {
+    let leafToUse = plugin.app.workspace.getAdjacentLeafInDirection(leaf, "right");
+    if(!leafToUse){leafToUse = plugin.app.workspace.getAdjacentLeafInDirection(leaf, "left");}
+    if(!leafToUse){leafToUse = plugin.app.workspace.getAdjacentLeafInDirection(leaf, "bottom");}
+    if(!leafToUse){leafToUse = plugin.app.workspace.getAdjacentLeafInDirection(leaf, "top");}
+    return leafToUse;
+  } 
+  return plugin.app.workspace.createLeafBySplit(leaf);
+}
 
 export const getObsidianImage = async (app: App, file: TFile)
   :Promise<{
