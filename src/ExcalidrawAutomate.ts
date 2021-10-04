@@ -15,9 +15,10 @@ import {
   FRONTMATTER, 
   nanoid, 
   JSON_parse, 
-  VIEW_TYPE_EXCALIDRAW
+  VIEW_TYPE_EXCALIDRAW,
+  MAX_IMAGE_SIZE
 } from "./constants";
-import { wrapText } from "./Utils";
+import { getObsidianImage, wrapText } from "./Utils";
 import { AppState } from "@zsviczian/excalidraw/types/types";
 
 declare type ConnectionPoint = "top"|"bottom"|"left"|"right";
@@ -26,6 +27,7 @@ export interface ExcalidrawAutomate extends Window {
   ExcalidrawAutomate: {
     plugin: ExcalidrawPlugin;
     elementsDict: {};
+    imagesDict: {};
     style: {
       strokeColor: string;
       backgroundColor: string;
@@ -71,7 +73,7 @@ export interface ExcalidrawAutomate extends Window {
         }
       }
     ):Promise<string>;
-    createSVG (templatePath?:string):Promise<SVGSVGElement>;
+    createSVG (templatePath?:string, embedFont?:boolean):Promise<SVGSVGElement>;
     createPNG (templatePath?:string):Promise<any>;
     wrapText (text:string, lineLen:number):string;
     addRect (topX:number, topY:number, width:number, height:number):string;
@@ -102,6 +104,7 @@ export interface ExcalidrawAutomate extends Window {
         endObjectId?:string
       }
     ):string ;
+    addImage(topX:number, topY:number, imageFile: TFile):Promise<string>;
     connectObjects (
       objectA: string, 
       connectionA: ConnectionPoint, 
@@ -160,6 +163,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
   window.ExcalidrawAutomate = {
     plugin: plugin,
     elementsDict: {},
+    imagesDict: {},
     style: {
       strokeColor: "#000000",
       backgroundColor: "transparent",
@@ -308,47 +312,50 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
           source: "https://excalidraw.com",
           elements: elements,
           appState: {
-            theme: template ? template.appState.theme : this.canvas.theme,
-            viewBackgroundColor: template? template.appState.viewBackgroundColor : this.canvas.viewBackgroundColor,
-            currentItemStrokeColor: template? template.appState.currentItemStrokeColor : this.style.strokeColor,
-            currentItemBackgroundColor: template? template.appState.currentItemBackgroundColor : this.style.backgroundColor,
-            currentItemFillStyle: template? template.appState.currentItemFillStyle : this.style.fillStyle,
-            currentItemStrokeWidth: template? template.appState.currentItemStrokeWidth : this.style.strokeWidth,
-            currentItemStrokeStyle: template? template.appState.currentItemStrokeStyle : this.style.strokeStyle,
-            currentItemRoughness: template? template.appState.currentItemRoughness : this.style.roughness,
-            currentItemOpacity: template? template.appState.currentItemOpacity : this.style.opacity,
-            currentItemFontFamily: template? template.appState.currentItemFontFamily : this.style.fontFamily,
-            currentItemFontSize: template? template.appState.currentItemFontSize : this.style.fontSize,
-            currentItemTextAlign: template? template.appState.currentItemTextAlign : this.style.textAlign,
-            currentItemStrokeSharpness: template? template.appState.currentItemStrokeSharpness : this.style.strokeSharpness,
-            currentItemStartArrowhead: template? template.appState.currentItemStartArrowhead: this.style.startArrowHead,
-            currentItemEndArrowhead: template? template.appState.currentItemEndArrowhead : this.style.endArrowHead,
-            currentItemLinearStrokeSharpness: template? template.appState.currentItemLinearStrokeSharpness : this.style.strokeSharpness,
-            gridSize: template ? template.appState.gridSize : this.canvas.gridSize
+            theme:                            template?.appState?.theme                            ?? this.canvas.theme,
+            viewBackgroundColor:              template?.appState?.viewBackgroundColor              ?? this.canvas.viewBackgroundColor,
+            currentItemStrokeColor:           template?.appState?.currentItemStrokeColor           ?? this.style.strokeColor,
+            currentItemBackgroundColor:       template?.appState?.currentItemBackgroundColor       ?? this.style.backgroundColor,
+            currentItemFillStyle:             template?.appState?.currentItemFillStyle             ?? this.style.fillStyle,
+            currentItemStrokeWidth:           template?.appState?.currentItemStrokeWidth           ?? this.style.strokeWidth,
+            currentItemStrokeStyle:           template?.appState?.currentItemStrokeStyle           ?? this.style.strokeStyle,
+            currentItemRoughness:             template?.appState?.currentItemRoughness             ?? this.style.roughness,
+            currentItemOpacity:               template?.appState?.currentItemOpacity               ?? this.style.opacity,
+            currentItemFontFamily:            template?.appState?.currentItemFontFamily            ?? this.style.fontFamily,
+            currentItemFontSize:              template?.appState?.currentItemFontSize              ?? this.style.fontSize,
+            currentItemTextAlign:             template?.appState?.currentItemTextAlign             ?? this.style.textAlign,
+            currentItemStrokeSharpness:       template?.appState?.currentItemStrokeSharpness       ?? this.style.strokeSharpness,
+            currentItemStartArrowhead:        template?.appState?.currentItemStartArrowhead        ?? this.style.startArrowHead,
+            currentItemEndArrowhead:          template?.appState?.currentItemEndArrowhead          ?? this.style.endArrowHead,
+            currentItemLinearStrokeSharpness: template?.appState?.currentItemLinearStrokeSharpness ?? this.style.strokeSharpness,
+            gridSize:                         template?.appState?.gridSize                         ?? this.canvas.gridSize,
+            files:                            template?.appState?.files                            ?? {},
           }
         }))
       );  
     },
-    async createSVG(templatePath?:string):Promise<SVGSVGElement> {
+    async createSVG(templatePath?:string,embedFont:boolean = false):Promise<SVGSVGElement> {
       const template = templatePath ? (await getTemplate(templatePath)) : null;
       let elements = template ? template.elements : [];
       elements = elements.concat(this.getElements());
-      return await ExcalidrawView.getSVG(
+      const svg = await ExcalidrawView.getSVG(
         {//createDrawing
-          "type": "excalidraw",
-          "version": 2,
-          "source": "https://excalidraw.com",
-          "elements": elements,
-          "appState": {
-            "theme": template ? template.appState.theme : this.canvas.theme,
-            "viewBackgroundColor": template? template.appState.viewBackgroundColor : this.canvas.viewBackgroundColor
+          type: "excalidraw",
+          version: 2,
+          source: "https://excalidraw.com",
+          elements: elements,
+          appState: {
+            theme:               template?.appState?.theme               ?? this.canvas.theme,
+            viewBackgroundColor: template?.appState?.viewBackgroundColor ?? this.canvas.viewBackgroundColor,
+            files:               template?.appState?.files               ?? {}
           }
-        },//),
+        },
         {
           withBackground: plugin.settings.exportWithBackground, 
           withTheme: plugin.settings.exportWithTheme
         }
-      )     
+      )
+      return embedFont ? ExcalidrawView.embedFontsInSVG(svg) : svg;     
     },
     async createPNG(templatePath?:string, scale:number=1) {
       const template = templatePath ? (await getTemplate(templatePath)) : null;
@@ -356,13 +363,14 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       elements = elements.concat(this.getElements());
       return ExcalidrawView.getPNG(
         { 
-          "type": "excalidraw",
-          "version": 2,
-          "source": "https://excalidraw.com",
-          "elements": elements,
-          "appState": {
-            "theme": template ? template.appState.theme : this.canvas.theme,
-            "viewBackgroundColor": template? template.appState.viewBackgroundColor : this.canvas.viewBackgroundColor
+          type: "excalidraw",
+          version: 2,
+          source: "https://excalidraw.com",
+          elements: elements,
+          appState: {
+            theme:               template?.appState?.theme               ?? this.canvas.theme,
+            viewBackgroundColor: template?.appState?.viewBackgroundColor ?? this.canvas.viewBackgroundColor,
+            files:               template?.appState?.files               ?? {}
           }
         },
         {
@@ -513,6 +521,25 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       }
       return id;
     },
+    async addImage(topX:number, topY:number, imageFile: TFile):Promise<string> {
+      const id = nanoid();
+      const image = await getObsidianImage(this.plugin.app,imageFile);
+      if(!image) return null;
+      this.imagesDict[image.imageId] = {
+        type:"image",
+        id: image.imageId,
+        dataURL: image.dataURL
+      }
+      if (Math.max(image.size.width,image.size.height) > MAX_IMAGE_SIZE) {
+        const scale = MAX_IMAGE_SIZE/Math.max(image.size.width,image.size.height);
+        image.size.width = scale*image.size.width;
+        image.size.height = scale*image.size.height;
+      }
+      this.elementsDict[id] = boxedElement(id,"image",topX,topY,image.size.width,image.size.height);
+      this.elementsDict[id].imageId = image.imageId;
+      this.elementsDict[id].scale = [1,1];
+      return id;
+    },
     connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, formatting?:{numberOfPoints?: number,startArrowHead?:string,endArrowHead?:string, padding?: number}):void {
       if(!(this.elementsDict[objectA] && this.elementsDict[objectB])) {
         return;
@@ -552,6 +579,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
     },
     clear() {
       this.elementsDict = {};
+      this.imagesDict = {};
     },
     reset() {
       this.clear();
@@ -682,7 +710,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         return false;
       }
       const elements = this.getElements();
-      return await this.targetView.addElements(elements,repositionToCursor,save);
+      return await this.targetView.addElements(elements,repositionToCursor,save,this.imagesDict);
     },
     onDropHook:null,
   };

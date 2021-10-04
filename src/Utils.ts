@@ -1,6 +1,9 @@
-import {  normalizePath, TAbstractFile, TFolder, Vault, WorkspaceLeaf } from "obsidian";
+import {  App, normalizePath, TAbstractFile, TFile, TFolder, Vault, WorkspaceLeaf } from "obsidian";
 import { Random } from "roughjs/bin/math";
 import { Zoom } from "@zsviczian/excalidraw/types/types";
+import { nanoid } from "nanoid";
+import { IMAGE_TYPES } from "./constants";
+import {ExcalidrawAutomate} from './ExcalidrawAutomate';
 import ExcalidrawPlugin from "./main";
 
 declare module "obsidian" {
@@ -8,6 +11,7 @@ declare module "obsidian" {
     getAdjacentLeafInDirection(leaf: WorkspaceLeaf, direction: string): WorkspaceLeaf;
   }
 }
+declare let window: ExcalidrawAutomate;
 
 /**
  * Splits a full path including a folderpath and a filename into separate folderpath and filename components
@@ -140,4 +144,76 @@ export const getNewOrAdjacentLeaf = (plugin: ExcalidrawPlugin, leaf: WorkspaceLe
     return leafToUse;
   } 
   return plugin.app.workspace.createLeafBySplit(leaf);
+}
+
+export const getObsidianImage = async (app: App, file: TFile)
+  :Promise<{
+    imageId: string, 
+    dataURL: string,
+    size: {height: number, width: number},
+  }> => {
+  if(!app || !file) return null;
+  const isExcalidrawFile = window.ExcalidrawAutomate.isExcalidrawFile(file);
+  if (!(IMAGE_TYPES.contains(file.extension) || isExcalidrawFile)) {
+    return null;
+  }
+  const ab = await app.vault.readBinary(file);
+  const excalidrawSVG = isExcalidrawFile
+              ? svgToBase64((await window.ExcalidrawAutomate.createSVG(file.path,true)).outerHTML) 
+              : null;
+  return {
+    imageId: await generateIdFromFile(ab),
+    dataURL: excalidrawSVG ?? (file.extension==="svg" ? await getSVGData(app,file) : await getDataURL(ab)),
+    size: await getImageSize(app,excalidrawSVG??app.vault.getResourcePath(file))
+  }
+}
+
+
+const getSVGData = async (app: App, file: TFile): Promise<string> => {
+  const svg = await app.vault.read(file);
+  return svgToBase64(svg);
+}
+
+export const svgToBase64 = (svg:string):string => {
+  return "data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svg.replaceAll("&nbsp;"," "))));
+}
+const getDataURL = async (file: ArrayBuffer): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataURL = reader.result as string;
+      resolve(dataURL);
+    };
+    reader.onerror = (error) => reject(error);
+    reader.readAsDataURL(new Blob([new Uint8Array(file)]));
+  });
+};
+
+const generateIdFromFile = async (file: ArrayBuffer):Promise<string> => {
+  let id: string;
+  try {
+    const hashBuffer = await window.crypto.subtle.digest(
+      "SHA-1",
+      file,
+    );
+    id =
+      // convert buffer to byte array
+      Array.from(new Uint8Array(hashBuffer))
+        // convert to hex string
+        .map((byte) => byte.toString(16).padStart(2, "0"))
+        .join("");
+  } catch (error) {
+    console.error(error);
+    id = nanoid(40);
+  }
+  return id;
+};
+
+const getImageSize = async (app: App, src:string):Promise<{height:number, width:number}> => {
+  return new Promise((resolve, reject) => {
+    let img = new Image()
+    img.onload = () => resolve({height: img.height, width:img.width});
+    img.onerror = reject;
+    img.src = src;
+    })
 }
