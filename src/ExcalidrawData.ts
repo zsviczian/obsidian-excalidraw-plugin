@@ -136,9 +136,6 @@ export class ExcalidrawData {
     }
     position += data.match(/((^%%\n)?# Text Elements\n)/m)[0].length
     
-    data = data.substring(position);
-    position = 0;
-
     //iterating through all the text elements in .md
     //Text elements always contain the raw value
     const BLOCKREF_LEN:number = " ^12345678\n\n".length;

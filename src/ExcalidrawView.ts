@@ -32,10 +32,10 @@ import {
   IMAGE_TYPES
 } from './constants';
 import ExcalidrawPlugin from './main';
-import {ExcalidrawAutomate, repositionElementsToCursor} from './ExcalidrawAutomate';
+import {estimateBounds, ExcalidrawAutomate, repositionElementsToCursor} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./ExcalidrawData";
-import { checkAndCreateFolder, download, getNewUniqueFilepath, splitFolderAndFilename, svgToBase64, viewportCoordsToSceneCoords } from "./Utils";
+import { checkAndCreateFolder, download, getNewUniqueFilepath, splitFolderAndFilename, viewportCoordsToSceneCoords } from "./Utils";
 import { Prompt } from "./Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 
@@ -556,9 +556,9 @@ export default class ExcalidrawView extends TextFileView {
               let svg = await ExcalidrawView.getSVG(this.getScene(),exportSettings);
               if(!svg) return null;
               svg = ExcalidrawView.embedFontsInSVG(svg);
-              download(null,svgToBase64(svg.outerHTML),this.file.basename+'.svg');
+              download("data:image/svg+xml;base64",btoa(unescape(encodeURIComponent(svg.outerHTML))),this.file.basename+'.svg');
               return;
-            } 
+            }
             this.saveSVG()
           });
       })
@@ -783,13 +783,10 @@ export default class ExcalidrawView extends TextFileView {
           key: "abc",
           tabIndex: 0,
           onKeyDown: (e:any) => {
-            //@ts-ignore  
-            if(e.target === excalidrawDiv.ref.current) return; //event should originate from the canvas
             if(document.fullscreenEnabled && document.fullscreenElement == this.contentEl && e.keyCode==27) {
               document.exitFullscreen();
               this.zoomToFit();
             }
-            
             this.ctrlKeyDown  = e.ctrlKey || e.metaKey;
             this.shiftKeyDown = e.shiftKey;
             this.altKeyDown   = e.altKey;
@@ -978,9 +975,7 @@ export default class ExcalidrawView extends TextFileView {
             switch(draggable?.type) {
               case "file":
                 if (!onDropHook("file",[draggable.file],null)) {
-                  if((event.ctrlKey || event.metaKey) 
-                     && (IMAGE_TYPES.contains(draggable.file.extension) 
-                        || this.plugin.isExcalidrawFile(draggable.file))) {
+                  if((event.ctrlKey || event.metaKey) && IMAGE_TYPES.contains(draggable.file.extension)) {
                     const f = draggable.file;
                     const topX = currentPosition.x;
                     const topY = currentPosition.y;
