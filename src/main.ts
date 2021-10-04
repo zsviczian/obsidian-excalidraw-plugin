@@ -1110,7 +1110,7 @@ export default class ExcalidrawPlugin extends Plugin {
     return '%%\n# Drawing\n'
     + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'json\n' 
     + jsonString + '\n'
-    + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96) + '%%';
+    + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96) + '\n%%';
   }
 
   /**
