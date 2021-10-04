@@ -21,7 +21,7 @@ export class MigrationPrompt extends Modal {
 
   createForm(): void {
     const div = this.contentEl.createDiv();
-    div.addClass("excalidarw-prompt-div");
+    div.addClass("excalidraw-prompt-div");
     div.style.maxWidth = "600px";
     div.createEl('p',{text: "This version comes with tons of new features and possibilities. Please read the description in Community Plugins to find out more."});
     div.createEl('p',{text: ""} , (el) => {

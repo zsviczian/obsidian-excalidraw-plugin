@@ -3,7 +3,8 @@ import { Random } from "roughjs/bin/math";
 import { Zoom } from "@zsviczian/excalidraw/types/types";
 import { nanoid } from "nanoid";
 import { IMAGE_TYPES } from "./constants";
-
+import {ExcalidrawAutomate} from './ExcalidrawAutomate';
+declare let window: ExcalidrawAutomate;
 
 /**
  * Splits a full path including a folderpath and a filename into separate folderpath and filename components
@@ -134,20 +135,30 @@ export const getObsidianImage = async (app: App, file: TFile)
     size: {height: number, width: number},
   }> => {
   if(!app || !file) return null;
-  if (!IMAGE_TYPES.contains(file.extension)) return null;
+  const isExcalidrawFile = window.ExcalidrawAutomate.isExcalidrawFile(file);
+  if (!(IMAGE_TYPES.contains(file.extension) || isExcalidrawFile)) {
+    return null;
+  }
   const ab = await app.vault.readBinary(file);
+  const excalidrawSVG = isExcalidrawFile
+              ? svgToBase64((await window.ExcalidrawAutomate.createSVG(file.path,true)).outerHTML) 
+              : null;
   return {
     imageId: await generateIdFromFile(ab),
-    dataURL: file.extension==="svg" ? await getSVGData(app,file) : await getDataURL(ab),
-    size: await getImageSize(app,file)
+    dataURL: excalidrawSVG ?? (file.extension==="svg" ? await getSVGData(app,file) : await getDataURL(ab)),
+    size: await getImageSize(app,excalidrawSVG??app.vault.getResourcePath(file))
   }
 }
 
+
 const getSVGData = async (app: App, file: TFile): Promise<string> => {
   const svg = await app.vault.read(file);
-  return "data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svg.replaceAll("&nbsp;"," "))))
+  return svgToBase64(svg);
 }
 
+export const svgToBase64 = (svg:string):string => {
+  return "data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svg.replaceAll("&nbsp;"," "))));
+}
 const getDataURL = async (file: ArrayBuffer): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -180,11 +191,11 @@ const generateIdFromFile = async (file: ArrayBuffer):Promise<string> => {
   return id;
 };
 
-const getImageSize = async (app: App, file:TFile):Promise<{height:number, width:number}> => {
+const getImageSize = async (app: App, src:string):Promise<{height:number, width:number}> => {
   return new Promise((resolve, reject) => {
     let img = new Image()
     img.onload = () => resolve({height: img.height, width:img.width});
     img.onerror = reject;
-    img.src = app.vault.getResourcePath(file);
+    img.src = src;
     })
 }
