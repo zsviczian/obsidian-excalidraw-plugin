@@ -18,6 +18,7 @@ export interface ExcalidrawSettings {
   displaySVGInPreview: boolean,
   width: string,
   zoomToFitOnResize: boolean,
+  openInAdjacentPane: boolean,
   showLinkBrackets: boolean,
   linkPrefix: string,
   urlPrefix: string,
@@ -52,6 +53,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   zoomToFitOnResize: true,
   linkPrefix: "📍",
   urlPrefix: "🌐",
+  openInAdjacentPane: false,
   showLinkBrackets: true,
   allowCtrlClick: true,
   forceWrap: false,
@@ -202,6 +204,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.containerEl.createEl('h1', {text: t("LINKS_HEAD")});
     this.containerEl.createEl('p',{
       text: t("LINKS_DESC")});
+
+      new Setting(containerEl)
+      .setName(t("ADJACENT_PANE_NAME")) 
+      .setDesc(t("ADJACENT_PANE_DESC"))
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.openInAdjacentPane)
+        .onChange(async (value) => {
+          this.plugin.settings.openInAdjacentPane = value;
+          this.applySettingsUpdate(true);
+        }));
 
     new Setting(containerEl)
       .setName(t("LINK_BRACKETS_NAME")) 

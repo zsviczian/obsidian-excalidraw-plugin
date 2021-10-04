@@ -1,6 +1,13 @@
-import {  normalizePath, TAbstractFile, TFolder, Vault } from "obsidian";
+import {  normalizePath, TAbstractFile, TFolder, Vault, WorkspaceLeaf } from "obsidian";
 import { Random } from "roughjs/bin/math";
 import { Zoom } from "@zsviczian/excalidraw/types/types";
+import ExcalidrawPlugin from "./main";
+
+declare module "obsidian" {
+  interface Workspace {
+    getAdjacentLeafInDirection(leaf: WorkspaceLeaf, direction: string): WorkspaceLeaf;
+  }
+}
 
 /**
  * Splits a full path including a folderpath and a filename into separate folderpath and filename components
@@ -123,3 +130,14 @@ export const viewportCoordsToSceneCoords = (
   const y = (clientY - zoom.translation.y - offsetTop) * invScale - scrollY;
   return { x, y };
 };
+
+export const getNewOrAdjacentLeaf = (plugin: ExcalidrawPlugin, leaf: WorkspaceLeaf):WorkspaceLeaf => {
+  if(plugin.settings.openInAdjacentPane) {
+    let leafToUse = plugin.app.workspace.getAdjacentLeafInDirection(leaf, "right");
+    if(!leafToUse){leafToUse = plugin.app.workspace.getAdjacentLeafInDirection(leaf, "left");}
+    if(!leafToUse){leafToUse = plugin.app.workspace.getAdjacentLeafInDirection(leaf, "bottom");}
+    if(!leafToUse){leafToUse = plugin.app.workspace.getAdjacentLeafInDirection(leaf, "top");}
+    return leafToUse;
+  } 
+  return plugin.app.workspace.createLeafBySplit(leaf);
+}

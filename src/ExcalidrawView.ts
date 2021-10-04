@@ -34,7 +34,7 @@ import ExcalidrawPlugin from './main';
 import {estimateBounds, ExcalidrawAutomate, repositionElementsToCursor} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./ExcalidrawData";
-import { checkAndCreateFolder, download, getNewUniqueFilepath, splitFolderAndFilename, viewportCoordsToSceneCoords } from "./Utils";
+import { checkAndCreateFolder, download, getNewOrAdjacentLeaf, getNewUniqueFilepath, splitFolderAndFilename, viewportCoordsToSceneCoords } from "./Utils";
 import { Prompt } from "./Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 
@@ -264,12 +264,9 @@ export default class ExcalidrawView extends TextFileView {
         document.exitFullscreen();
         this.zoomToFit();
       }
-      if(lineNum) {
-        const leaf = ev.shiftKey ? view.app.workspace.createLeafBySplit(view.leaf) : view.leaf;
-        leaf.openFile(file,{eState: {line: lineNum-1}});
-        return;
-      }
-      view.app.workspace.openLinkText(text,view.file.path,ev.shiftKey);
+      const leaf = ev.shiftKey ? getNewOrAdjacentLeaf(this.plugin,view.leaf) : view.leaf;
+      const eState = lineNum ? {eState: {line: lineNum-1}} : {};
+      leaf.openFile(file,eState);
     } catch (e) {
       new Notice(e,4000);
     }
