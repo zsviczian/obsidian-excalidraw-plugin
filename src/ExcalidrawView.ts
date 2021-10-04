@@ -28,13 +28,14 @@ import {
   TEXT_DISPLAY_RAW_ICON_NAME,
   TEXT_DISPLAY_PARSED_ICON_NAME,
   FULLSCREEN_ICON_NAME,
-  JSON_parse
+  JSON_parse,
+  IMAGE_TYPES
 } from './constants';
 import ExcalidrawPlugin from './main';
-import {estimateBounds, ExcalidrawAutomate, repositionElementsToCursor} from './ExcalidrawAutomate';
+import {ExcalidrawAutomate, repositionElementsToCursor} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./ExcalidrawData";
-import { checkAndCreateFolder, download, getNewUniqueFilepath, splitFolderAndFilename, viewportCoordsToSceneCoords } from "./Utils";
+import { checkAndCreateFolder, download, getNewUniqueFilepath, splitFolderAndFilename, svgToBase64, viewportCoordsToSceneCoords } from "./Utils";
 import { Prompt } from "./Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 
@@ -459,6 +460,12 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   setMarkdownView() {
+    if(this.excalidrawRef) {
+      const el = this.excalidrawRef.current.getSceneElements();
+      if(el.filter((e:any)=>e.type==="image").length>0) {
+        new Notice(t("DRAWING_CONTAINS_IMAGE"),6000);
+      }
+    }
     this.plugin.excalidrawFileModes[this.id || this.file.path] = "markdown";
     this.plugin.setMarkdownView(this.leaf);
   }
@@ -549,9 +556,9 @@ export default class ExcalidrawView extends TextFileView {
               let svg = await ExcalidrawView.getSVG(this.getScene(),exportSettings);
               if(!svg) return null;
               svg = ExcalidrawView.embedFontsInSVG(svg);
-              download("data:image/svg+xml;base64",btoa(unescape(encodeURIComponent(svg.outerHTML))),this.file.basename+'.svg');
+              download(null,svgToBase64(svg.outerHTML),this.file.basename+'.svg');
               return;
-            }
+            } 
             this.saveSVG()
           });
       })
@@ -640,7 +647,7 @@ export default class ExcalidrawView extends TextFileView {
         this.addElements(window.ExcalidrawAutomate.getElements(),false,true);
       }
       
-      this.addElements = async (newElements:ExcalidrawElement[],repositionToCursor:boolean = false, save:boolean=false):Promise<boolean> => {
+      this.addElements = async (newElements:ExcalidrawElement[],repositionToCursor:boolean = false, save:boolean=false, images:any):Promise<boolean> => {
         if(!excalidrawRef?.current) return false;    
        
         const textElements = newElements.filter((el)=>el.type=="text");
@@ -653,7 +660,20 @@ export default class ExcalidrawView extends TextFileView {
         };
 
         const el: ExcalidrawElement[] = excalidrawRef.current.getSceneElements();
-        const st: AppState = excalidrawRef.current.getAppState();
+        let st: AppState = excalidrawRef.current.getAppState();
+        if(!st.files) {
+          st.files = {};
+        }
+        if(images) {
+          Object.keys(images).forEach((k)=>{
+            st.files[k]={
+              type:images[k].type,
+              id: images[k].id,
+              dataURL: images[k].dataURL
+            }
+          });
+        }
+        //merge appstate.files with files
         if(repositionToCursor) newElements = repositionElementsToCursor(newElements,currentPosition,true);
         this.excalidrawRef.current.updateScene({
           elements: el.concat(newElements),
@@ -670,6 +690,13 @@ export default class ExcalidrawView extends TextFileView {
         }
         const el: ExcalidrawElement[] = excalidrawRef.current.getSceneElements();
         const st: AppState = excalidrawRef.current.getAppState();
+
+        if(st.files) {
+          const imgIds = el.filter((e)=>e.type=="image").map((e:any)=>e.imageId);
+          const toDelete = Object.keys(st.files).filter((k)=>!imgIds.contains(k));
+          toDelete.forEach((k)=>delete st.files[k]);
+        }
+        
         return { 
           type: "excalidraw",
           version: 2,
@@ -693,6 +720,7 @@ export default class ExcalidrawView extends TextFileView {
             currentItemEndArrowhead: st.currentItemEndArrowhead,
             currentItemLinearStrokeSharpness: st.currentItemLinearStrokeSharpness,
             gridSize: st.gridSize,
+            files: st.files??{},
           }
         };
       };
@@ -755,10 +783,13 @@ export default class ExcalidrawView extends TextFileView {
           key: "abc",
           tabIndex: 0,
           onKeyDown: (e:any) => {
+            //@ts-ignore  
+            if(e.target === excalidrawDiv.ref.current) return; //event should originate from the canvas
             if(document.fullscreenEnabled && document.fullscreenElement == this.contentEl && e.keyCode==27) {
               document.exitFullscreen();
               this.zoomToFit();
             }
+            
             this.ctrlKeyDown  = e.ctrlKey || e.metaKey;
             this.shiftKeyDown = e.shiftKey;
             this.altKeyDown   = e.altKey;
@@ -947,6 +978,21 @@ export default class ExcalidrawView extends TextFileView {
             switch(draggable?.type) {
               case "file":
                 if (!onDropHook("file",[draggable.file],null)) {
+                  if((event.ctrlKey || event.metaKey) 
+                     && (IMAGE_TYPES.contains(draggable.file.extension) 
+                        || this.plugin.isExcalidrawFile(draggable.file))) {
+                    const f = draggable.file;
+                    const topX = currentPosition.x;
+                    const topY = currentPosition.y;
+                    const ea = window.ExcalidrawAutomate;
+                    ea.reset();
+                    ea.setView(this);
+                    (async () => {
+                      await ea.addImage(currentPosition.x,currentPosition.y,draggable.file);
+                      ea.addElementsToView(false,false);
+                    })();
+                    return false;
+                  }
                   this.addText(`[[${this.app.metadataCache.fileToLinktext(draggable.file,this.file.path,true)}]]`);
                 }
                 return false;

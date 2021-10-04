@@ -3,6 +3,8 @@ export function JSON_parse(x:string):any {return JSON.parse(x.replaceAll("&#91;"
 
 import {customAlphabet} from "nanoid";
 export const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',8);
+export const IMAGE_TYPES = ['jpeg', 'jpg', 'png', 'gif', 'svg', 'bmp'];
+export const MAX_IMAGE_SIZE = 600;
 export const FRONTMATTER_KEY = "excalidraw-plugin";
 export const FRONTMATTER_KEY_CUSTOM_PREFIX = "excalidraw-link-prefix";
 export const FRONTMATTER_KEY_CUSTOM_URL_PREFIX = "excalidraw-url-prefix";
