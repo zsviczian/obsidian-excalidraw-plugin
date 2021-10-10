@@ -104,7 +104,7 @@ export default {
   TRANSCLUSION_WRAP_NAME: "Overflow wrap behavior of transcluded text",
   TRANSCLUSION_WRAP_DESC: "Number specifies the character count where the text should be wrapped. " + 
                           "Set the text wrapping behavior of transcluded text. Turn this ON to force-wrap " + 
-                          "text (i.e. no overflow), or OFF to soft-warp text (at the nearest whitespace).",
+                          "text (i.e. no overflow), or OFF to soft-wrap text (at the nearest whitespace).",
   PAGE_TRANSCLUSION_CHARCOUNT_NAME: "Page transclusion max char count",
   PAGE_TRANSCLUSION_CHARCOUNT_DESC: "The maximum number of characters to display from the page when transcluding an entire page with the "+
                                     "![[markdown page]] format.",
