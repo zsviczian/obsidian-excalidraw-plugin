@@ -752,6 +752,8 @@ export default class ExcalidrawView extends TextFileView {
           key: "abc",
           tabIndex: 0,
           onKeyDown: (e:any) => {
+            //@ts-ignore  
+            if(e.target === excalidrawDiv.ref.current) return; //event should originate from the canvas            
             if(document.fullscreenEnabled && document.fullscreenElement == this.contentEl && e.keyCode==27) {
               document.exitFullscreen();
               this.zoomToFit();
