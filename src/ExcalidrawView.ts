@@ -34,7 +34,7 @@ import ExcalidrawPlugin from './main';
 import {estimateBounds, ExcalidrawAutomate, repositionElementsToCursor} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./ExcalidrawData";
-import { checkAndCreateFolder, download, getNewOrAdjacentLeaf, getNewUniqueFilepath, splitFolderAndFilename, viewportCoordsToSceneCoords } from "./Utils";
+import { checkAndCreateFolder, download, getNewOrAdjacentLeaf, getNewUniqueFilepath, rotatedDimensions, splitFolderAndFilename, viewportCoordsToSceneCoords } from "./Utils";
 import { Prompt } from "./Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 
@@ -707,12 +707,28 @@ export default class ExcalidrawView extends TextFileView {
       const getTextElementAtPointer = (pointer:any) => {
         const elements = this.excalidrawRef.current.getSceneElements()
                              .filter((e:ExcalidrawElement)=>{
-                                return e.type == "text" 
-                                       && e.x<=pointer.x && (e.x+e.width)>=pointer.x
-                                       && e.y<=pointer.y && (e.y+e.height)>=pointer.y;
+                                if (e.type !== "text") return false;
+                                const [x,y,w,h] = rotatedDimensions(e);
+                                return x<=pointer.x && x+w>=pointer.x
+                                       && y<=pointer.y && y+h>=pointer.y;
                               });
         if(elements.length==0) return null;
-        return {id:elements[0].id,text:elements[0].text};
+        if(elements.length===1) return {id:elements[0].id,text:elements[0].text};
+        //if more than 1 text elements are at the location, look for one that has a link
+        const elementsWithLinks = elements.filter((e:ExcalidrawTextElement)=> {
+          const text:string = (this.textMode == TextMode.parsed) 
+                              ? this.excalidrawData.getRawText(e.id) 
+                              : e.text;                
+          if(!text) return false;
+          if(text.match(REG_LINKINDEX_HYPERLINK)) return true;   
+          const parts = text.matchAll(REGEX_LINK.EXPR).next();    
+          if(!parts.value) return false;
+          return true; 
+        });
+        //if there are no text elements with links, return the first element without a link
+        if(elementsWithLinks.length==0) return {id:elements[0].id,text:elements[0].text};
+        //if there are still multiple text elements with links on top of each other, return the first
+        return {id:elementsWithLinks[0].id,text:elementsWithLinks[0].text};
       }
  
       let hoverPoint = {x:0,y:0};
