@@ -5,6 +5,7 @@ import { nanoid } from "nanoid";
 import { IMAGE_TYPES } from "./constants";
 import {ExcalidrawAutomate} from './ExcalidrawAutomate';
 import ExcalidrawPlugin from "./main";
+import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
 
 declare module "obsidian" {
   interface Workspace {
@@ -112,6 +113,38 @@ export function wrapText(text:string, lineLen:number, forceWrap:boolean=false):s
   }
   return outstring.replace(/\n$/, '');
 }
+
+const rotate = (
+  pointX: number,
+  pointY: number,
+  centerX: number,
+  centerY: number,
+  angle: number,
+): [number, number] =>
+  // 𝑎′𝑥=(𝑎𝑥−𝑐𝑥)cos𝜃−(𝑎𝑦−𝑐𝑦)sin𝜃+𝑐𝑥
+  // 𝑎′𝑦=(𝑎𝑥−𝑐𝑥)sin𝜃+(𝑎𝑦−𝑐𝑦)cos𝜃+𝑐𝑦.
+  // https://math.stackexchange.com/questions/2204520/how-do-i-rotate-a-line-segment-in-a-specific-point-on-the-line
+  [
+    (pointX - centerX) * Math.cos(angle) - (pointY - centerY) * Math.sin(angle) + centerX,
+    (pointX - centerX) * Math.sin(angle) + (pointY - centerY) * Math.cos(angle) + centerY,
+  ];
+
+export const rotatedDimensions = (
+  element: ExcalidrawElement
+): [number, number, number, number] => {
+  if(element.angle===0) [element.x,element.y,element.width,element.height];
+  const centerX = element.x+element.width/2;
+  const centerY = element.y+element.height/2;
+  const [left,top] = rotate(element.x,element.y,centerX,centerY,element.angle);  
+  const [right,bottom] = rotate(element.x+element.width,element.y+element.height,centerX,centerY,element.angle);
+  return [ 
+           left<right ? left : right,
+           top<bottom ? top : bottom,
+           Math.abs(left-right),
+           Math.abs(top-bottom)
+         ];
+}
+   
 
 export const viewportCoordsToSceneCoords = (
   { clientX, clientY }: { clientX: number; clientY: number },
