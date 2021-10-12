@@ -31,7 +31,8 @@ import {
   FRONTMATTER_KEY,
   FRONTMATTER,
   JSON_parse,
-  nanoid
+  nanoid,
+  DARK_BLANK_DRAWING
 } from "./constants";
 import ExcalidrawView, {ExportSettings, TextMode} from "./ExcalidrawView";
 import {getJSON} from "./ExcalidrawData";
@@ -1101,9 +1102,10 @@ export default class ExcalidrawPlugin extends Plugin {
       }
     }
     if (this.settings.compatibilityMode) {
-      return BLANK_DRAWING;
+      return this.settings.matchTheme && document.body.classList.contains("theme-dark") ? DARK_BLANK_DRAWING : BLANK_DRAWING;
     }
-    return FRONTMATTER + '\n' + this.getMarkdownDrawingSection(BLANK_DRAWING);
+    const blank = this.settings.matchTheme && document.body.classList.contains("theme-dark") ? DARK_BLANK_DRAWING : BLANK_DRAWING;
+    return FRONTMATTER + '\n' + this.getMarkdownDrawingSection(blank);
   }
 
   public getMarkdownDrawingSection(jsonString: string) {

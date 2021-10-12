@@ -17,6 +17,7 @@ export interface ExcalidrawSettings {
   drawingFilenameDateTime: string,
   displaySVGInPreview: boolean,
   width: string,
+  matchTheme: boolean,
   zoomToFitOnResize: boolean,
   openInAdjacentPane: boolean,
   showLinkBrackets: boolean,
@@ -50,6 +51,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   drawingFilenameDateTime: 'YYYY-MM-DD HH.mm.ss',
   displaySVGInPreview: true,
   width: '400',
+  matchTheme: false,
   zoomToFitOnResize: true,
   linkPrefix: "📍",
   urlPrefix: "🌐",
@@ -191,6 +193,17 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         }));
 
     this.containerEl.createEl('h1', {text: t("DISPLAY_HEAD")});
+
+    new Setting(containerEl)
+    .setName(t("MATCH_THEME_NAME")) 
+    .setDesc(t("MATCH_THEME_DESC"))
+    .addToggle(toggle => toggle
+      .setValue(this.plugin.settings.matchTheme)
+      .onChange(async (value) => {
+        this.plugin.settings.matchTheme = value;
+        this.applySettingsUpdate();
+      }));
+
     new Setting(containerEl)
       .setName(t("ZOOM_TO_FIT_NAME")) 
       .setDesc(t("ZOOM_TO_FIT_DESC"))

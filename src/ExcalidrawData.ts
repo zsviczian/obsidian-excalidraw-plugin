@@ -25,7 +25,10 @@ declare module "obsidian" {
 export const REGEX_LINK = {
   //![[link|alias]] [alias](link){num}
   //      1  2     3           4        5      6  7     8  9
-  EXPR: /(!)?(\[\[([^|\]]+)\|?(.+)?]]|\[(.*)\]\((.*)\))(\{(\d+)\})?/g,
+  EXPR: /(!)?(\[\[([^|\]]+)\|?([^\]]+)?]]|\[([^\]]*)]\(([^)]*)\))(\{(\d+)\})?/g, //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/187
+  getRes: (text:string):IterableIterator<RegExpMatchArray> => {
+    return text.matchAll(REGEX_LINK.EXPR);
+  },
   isTransclusion: (parts: IteratorResult<RegExpMatchArray, any>):boolean => {
     return parts.value[1] ? true:false;
   },
@@ -48,7 +51,7 @@ export const REGEX_LINK = {
 
 export const REG_LINKINDEX_HYPERLINK = /^\w+:\/\//;
 
-const DRAWING_REG = /\n%%\n# Drawing\n(```json\n)(.*)\n```%%/gm;
+const DRAWING_REG = /\n%%\n# Drawing\n[^`]*(```json\n)(.*)\n[^`]*```[^%]*(%%)?/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
 const DRAWING_REG_FALLBACK = /\n# Drawing\n(```json\n)?(.*)(```)?(%%)?/gm;
 export function getJSON(data:string):[string,number] {
   let res = data.matchAll(DRAWING_REG);
@@ -350,7 +353,7 @@ export class ExcalidrawData {
   private async parse(text:string):Promise<string>{
     let outString = "";
     let position = 0;
-    const res = text.matchAll(REGEX_LINK.EXPR);
+    const res = REGEX_LINK.getRes(text);
     let linkIcon = false;
     let urlIcon = false;
     let parts;
@@ -390,7 +393,7 @@ export class ExcalidrawData {
    */
   private quickParse(text:string):string {
     const hasTransclusion = (text:string):boolean => {
-      const res = text.matchAll(REGEX_LINK.EXPR);
+      const res = REGEX_LINK.getRes(text);
       let parts;
       while(!(parts=res.next()).done) {
         if (REGEX_LINK.isTransclusion(parts)) return true; 
@@ -401,7 +404,7 @@ export class ExcalidrawData {
 
     let outString = "";
     let position = 0;
-    const res = text.matchAll(REGEX_LINK.EXPR);
+    const res = REGEX_LINK.getRes(text);
     let linkIcon = false;
     let urlIcon = false;
     let parts;

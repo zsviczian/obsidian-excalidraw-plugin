@@ -210,12 +210,13 @@ export default class ExcalidrawView extends TextFileView {
       new Notice(t("LINK_BUTTON_CLICK_NO_TEXT"),20000); 
       return;
     }
+    text = text.replaceAll("\n",""); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/187
     if(text.match(REG_LINKINDEX_HYPERLINK)) {
       window.open(text,"_blank");
       return;    
     }
 
-    const parts = text.matchAll(REGEX_LINK.EXPR).next();    
+    const parts = REGEX_LINK.getRes(text).next();    
     if(!parts.value) {
       const tags = text.matchAll(/#([\p{Letter}\p{Emoji_Presentation}\p{Number}\/_-]+)/ug).next();
       if(!tags.value || tags.value.length<2) {
@@ -227,7 +228,6 @@ export default class ExcalidrawView extends TextFileView {
       //@ts-ignore
       search[0].view.setQuery("tag:"+tags.value[1]);
       this.app.workspace.revealLeaf(search[0]);
-      //if(this.gotoFullscreen.style.display=="none") this.toggleFullscreen(); 
       if(document.fullscreenElement === this.contentEl) {
         document.exitFullscreen();
         this.zoomToFit();
@@ -235,7 +235,7 @@ export default class ExcalidrawView extends TextFileView {
       return;
     }
 
-    text = REGEX_LINK.getLink(parts); //parts.value[2] ? parts.value[2]:parts.value[6];
+    text = REGEX_LINK.getLink(parts);
 
     if(text.match(REG_LINKINDEX_HYPERLINK)) {
       window.open(text,"_blank");
@@ -265,8 +265,8 @@ export default class ExcalidrawView extends TextFileView {
         this.zoomToFit();
       }
       const leaf = ev.shiftKey ? getNewOrAdjacentLeaf(this.plugin,view.leaf) : view.leaf;
-      const eState = lineNum ? {eState: {line: lineNum-1}} : {};
-      leaf.openFile(file,eState);
+      view.app.workspace.setActiveLeaf(leaf);
+      leaf.view.app.workspace.openLinkText(text,view.file.path);
     } catch (e) {
       new Notice(e,4000);
     }
@@ -721,7 +721,7 @@ export default class ExcalidrawView extends TextFileView {
                               : e.text;                
           if(!text) return false;
           if(text.match(REG_LINKINDEX_HYPERLINK)) return true;   
-          const parts = text.matchAll(REGEX_LINK.EXPR).next();    
+          const parts = REGEX_LINK.getRes(text).next();    
           if(!parts.value) return false;
           return true; 
         });
@@ -789,7 +789,7 @@ export default class ExcalidrawView extends TextFileView {
               if(!text) return;
               if(text.match(REG_LINKINDEX_HYPERLINK)) return;   
 
-              const parts = text.matchAll(REGEX_LINK.EXPR).next();    
+              const parts = REGEX_LINK.getRes(text).next();    
               if(!parts.value) return; 
               let linktext = REGEX_LINK.getLink(parts); //parts.value[2] ? parts.value[2]:parts.value[6];
 

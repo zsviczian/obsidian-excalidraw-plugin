@@ -170,6 +170,7 @@ export const getNewOrAdjacentLeaf = (plugin: ExcalidrawPlugin, leaf: WorkspaceLe
     if(!leafToUse){leafToUse = plugin.app.workspace.getAdjacentLeafInDirection(leaf, "left");}
     if(!leafToUse){leafToUse = plugin.app.workspace.getAdjacentLeafInDirection(leaf, "bottom");}
     if(!leafToUse){leafToUse = plugin.app.workspace.getAdjacentLeafInDirection(leaf, "top");}
+    if(!leafToUse){leafToUse = plugin.app.workspace.createLeafBySplit(leaf);}
     return leafToUse;
   } 
   return plugin.app.workspace.createLeafBySplit(leaf);
