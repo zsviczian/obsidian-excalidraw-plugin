@@ -56,7 +56,7 @@ import { Prompt } from "./Prompt";
 import { around } from "monkey-around";
 import { t } from "./lang/helpers";
 import { MigrationPrompt } from "./MigrationPrompt";
-import { checkAndCreateFolder, download, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, splitFolderAndFilename } from "./Utils";
+import { checkAndCreateFolder, download, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, splitFolderAndFilename, svgToBase64 } from "./Utils";
 
 declare module "obsidian" {
   interface App {
@@ -240,7 +240,7 @@ export default class ExcalidrawPlugin extends Plugin {
       svg = ExcalidrawView.embedFontsInSVG(svg);
       svg.removeAttribute('width');
       svg.removeAttribute('height');
-      img.setAttribute("src","data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svg.outerHTML.replaceAll("&nbsp;"," ")))));
+      img.setAttribute("src",svgToBase64(svg.outerHTML));
       return img;
     }
 
@@ -1112,7 +1112,7 @@ export default class ExcalidrawPlugin extends Plugin {
     return '%%\n# Drawing\n'
     + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'json\n' 
     + jsonString + '\n'
-    + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96) + '\n%%';
+    + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96) + '%%';
   }
 
   /**
@@ -1181,3 +1181,4 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
 }
+
