@@ -15,6 +15,7 @@ export const MAX_COLORS = 5;
 export const COLOR_FREQ = 6;
 export const RERENDER_EVENT = "excalidraw-embed-rerender";
 export const BLANK_DRAWING = '{"type":"excalidraw","version":2,"source":"https://excalidraw.com","elements":[],"appState":{"gridSize":null,"viewBackgroundColor":"#ffffff"}}';
+export const DARK_BLANK_DRAWING = '{"type":"excalidraw","version":2,"source":"https://excalidraw.com","elements":[],"appState":{"theme":"dark","gridSize":null,"viewBackgroundColor":"#ffffff"}}';
 export const FRONTMATTER = ["---","",`${FRONTMATTER_KEY}: parsed`,"","---", "==⚠  Switch to EXCALIDRAW VIEW in the MORE OPTIONS menu of this document. ⚠==", "",""].join("\n");
 export const EMPTY_MESSAGE = "Hit enter to create a new drawing";
 export const TEXT_DISPLAY_PARSED_ICON_NAME = "quote-glyph";

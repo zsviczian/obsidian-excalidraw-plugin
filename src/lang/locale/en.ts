@@ -72,6 +72,9 @@ export default {
   FILENAME_DATE_NAME: "Filename date",
   FILENAME_DATE_DESC: "The second part of the filename",
   DISPLAY_HEAD: "Display",
+  MATCH_THEME_NAME: "New drawing to match Obsidian theme",
+  MATCH_THEME_DESC: "If theme is dark, new drawing will be created in dark mode. This does not apply when you use a template for new drawings. " +
+                    "Also this will not effect when you open an existing drawing. Those will follow the theme of the template/drawing respectively.",
   ZOOM_TO_FIT_NAME: "Zoom to fit on view resize",
   ZOOM_TO_FIT_DESC: "Zoom to fit drawing when the pane is resized",
   LINKS_HEAD: "Links and transclusion",
