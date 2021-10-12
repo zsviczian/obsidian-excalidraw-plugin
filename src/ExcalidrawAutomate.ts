@@ -525,10 +525,12 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       const id = nanoid();
       const image = await getObsidianImage(this.plugin.app,imageFile);
       if(!image) return null;
-      this.imagesDict[image.imageId] = {
+      this.imagesDict[image.fileId] = {
         type:"image",
-        id: image.imageId,
-        dataURL: image.dataURL
+        id: image.fileId,
+        dataURL: image.dataURL,
+        created: image.created,
+        file: imageFile.path
       }
       if (Math.max(image.size.width,image.size.height) > MAX_IMAGE_SIZE) {
         const scale = MAX_IMAGE_SIZE/Math.max(image.size.width,image.size.height);
@@ -536,7 +538,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         image.size.height = scale*image.size.height;
       }
       this.elementsDict[id] = boxedElement(id,"image",topX,topY,image.size.width,image.size.height);
-      this.elementsDict[id].imageId = image.imageId;
+      this.elementsDict[id].fileId = image.fileId;
       this.elementsDict[id].scale = [1,1];
       return id;
     },

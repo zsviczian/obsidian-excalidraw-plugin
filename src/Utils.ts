@@ -181,8 +181,9 @@ export const getNewOrAdjacentLeaf = (plugin: ExcalidrawPlugin, leaf: WorkspaceLe
 
 export const getObsidianImage = async (app: App, file: TFile)
   :Promise<{
-    imageId: string, 
+    fileId: string, 
     dataURL: string,
+    created: number,
     size: {height: number, width: number},
   }> => {
   if(!app || !file) return null;
@@ -195,8 +196,9 @@ export const getObsidianImage = async (app: App, file: TFile)
               ? svgToBase64((await window.ExcalidrawAutomate.createSVG(file.path,true)).outerHTML) 
               : null;
   return {
-    imageId: await generateIdFromFile(ab),
+    fileId: await generateIdFromFile(ab),
     dataURL: excalidrawSVG ?? (file.extension==="svg" ? await getSVGData(app,file) : await getDataURL(ab)),
+    created: file.stat.mtime,
     size: await getImageSize(app,excalidrawSVG??app.vault.getResourcePath(file))
   }
 }

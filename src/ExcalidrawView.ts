@@ -13,6 +13,7 @@ import Excalidraw, {exportToSvg, getSceneVersion} from "@zsviczian/excalidraw";
 import { ExcalidrawElement,ExcalidrawTextElement } from "@zsviczian/excalidraw/types/element/types";
 import { 
   AppState,
+  BinaryFileData,
   LibraryItems 
 } from "@zsviczian/excalidraw/types/types";
 import {
@@ -661,22 +662,26 @@ export default class ExcalidrawView extends TextFileView {
         if(!st.files) {
           st.files = {};
         }
-        if(images) {
-          Object.keys(images).forEach((k)=>{
-            st.files[k]={
-              type:images[k].type,
-              id: images[k].id,
-              dataURL: images[k].dataURL
-            }
-          });
-        }
-        //merge appstate.files with files
+
         if(repositionToCursor) newElements = repositionElementsToCursor(newElements,currentPosition,true);
         this.excalidrawRef.current.updateScene({
           elements: el.concat(newElements),
           appState: st,
           commitToHistory: true,
         });
+        if(images) {
+          let files:BinaryFileData[] = [];
+          Object.keys(images).forEach((k)=>{
+            files.push({
+              type:images[k].type,
+              id: images[k].id,
+              dataURL: images[k].dataURL,
+              created: images[k].created
+            });
+            this.excalidrawData.files.set(images[k].id,images[k].file);
+          });
+          this.excalidrawRef.current.addFiles(files);
+        }        
         if(save) this.save(); else this.dirty = this.file?.path;
         return true;
       };
@@ -689,7 +694,7 @@ export default class ExcalidrawView extends TextFileView {
         const st: AppState = excalidrawRef.current.getAppState();
 
         if(st.files) {
-          const imgIds = el.filter((e)=>e.type=="image").map((e:any)=>e.imageId);
+          const imgIds = el.filter((e)=>e.type=="image").map((e:any)=>e.fileId);
           const toDelete = Object.keys(st.files).filter((k)=>!imgIds.contains(k));
           toDelete.forEach((k)=>delete st.files[k]);
         }

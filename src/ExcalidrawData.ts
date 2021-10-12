@@ -12,6 +12,7 @@ import {
 } from "./constants";
 import { TextMode } from "./ExcalidrawView";
 import { wrapText } from "./Utils";
+import { FileId } from "@zsviczian/excalidraw/types/element/types";
 
 
 declare module "obsidian" {
@@ -78,6 +79,7 @@ export class ExcalidrawData {
   private textMode: TextMode = TextMode.raw;
   private plugin: ExcalidrawPlugin;
   public loaded: boolean = false;
+  public files:Map<FileId,string> = null; //fileId, path
 
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
@@ -93,6 +95,7 @@ export class ExcalidrawData {
     this.loaded = false;
     this.file = file;
     this.textElements = new Map<string,{raw:string, parsed:string}>();
+    this.files = new Map<FileId,string>();
 
     //I am storing these because if the settings change while a drawing is open parsing will run into errors during save
     //The drawing will use these values until next drawing is loaded or this drawing is re-loaded
@@ -434,6 +437,13 @@ export class ExcalidrawData {
     let outString = '# Text Elements\n';
     for(const key of this.textElements.keys()){
       outString += this.textElements.get(key).raw+' ^'+key+'\n\n';
+    }
+    if(this.files.size>0) {
+      outString += '\n# Embedded files\n';
+      for(const key of this.files.keys()) {
+        outString += key +': [['+this.files.get(key) + ']]\n';
+      }
+      outString += '\n';
     }
     return outString + this.plugin.getMarkdownDrawingSection(JSON.stringify(this.scene));
   }
