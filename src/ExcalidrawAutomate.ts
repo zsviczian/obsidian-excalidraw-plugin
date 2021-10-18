@@ -331,7 +331,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
             gridSize:                         template?.appState?.gridSize                         ?? this.canvas.gridSize,
             files:                            template?.appState?.files                            ?? {},
           }
-        }))
+        },null,"\t"))
       );  
     },
     async createSVG(templatePath?:string,embedFont:boolean = false):Promise<SVGSVGElement> {

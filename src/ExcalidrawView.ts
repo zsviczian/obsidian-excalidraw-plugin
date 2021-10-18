@@ -98,8 +98,8 @@ export default class ExcalidrawView extends TextFileView {
     }
     const filepath = this.file.path.substring(0,this.file.path.lastIndexOf('.md')) + '.excalidraw';
     const file = this.app.vault.getAbstractFileByPath(normalizePath(filepath));
-    if(file && file instanceof TFile) this.app.vault.modify(file,JSON.stringify(scene));
-    else this.app.vault.create(filepath,JSON.stringify(scene));
+    if(file && file instanceof TFile) this.app.vault.modify(file,JSON.stringify(scene,null,"\t"));
+    else this.app.vault.create(filepath,JSON.stringify(scene,null,"\t"));
   }
 
   public saveSVG(scene?: any) {
@@ -199,7 +199,7 @@ export default class ExcalidrawView extends TextFileView {
         if(this.plugin.settings.autoexportSVG) this.saveSVG(scene);
         if(this.plugin.settings.autoexportPNG) this.savePNG(scene);
       }
-      return JSON.stringify(scene);
+      return JSON.stringify(scene,null,"\t");
     }
     return this.data;
   }
@@ -496,12 +496,12 @@ export default class ExcalidrawView extends TextFileView {
                   const folderpath = splitFolderAndFilename(this.file.path).folderpath;
                   await checkAndCreateFolder(this.app.vault,folderpath); //create folder if it does not exist         
                   const fname = getNewUniqueFilepath(this.app.vault,filename,folderpath); 
-                  this.app.vault.create(fname,JSON.stringify(this.getScene()));
+                  this.app.vault.create(fname,JSON.stringify(this.getScene(),null,"\t"));
                   new Notice("Exported to " + fname,6000);  
                 });
                 return;
               }
-              download('data:text/plain;charset=utf-8',encodeURIComponent(JSON.stringify(this.getScene())), this.file.basename+'.excalidraw');
+              download('data:text/plain;charset=utf-8',encodeURIComponent(JSON.stringify(this.getScene(),null,"\t")), this.file.basename+'.excalidraw');
             });
         });
     } else {

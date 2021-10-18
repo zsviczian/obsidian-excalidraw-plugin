@@ -52,7 +52,7 @@ export const REGEX_LINK = {
 
 export const REG_LINKINDEX_HYPERLINK = /^\w+:\/\//;
 
-const DRAWING_REG = /\n%%\n# Drawing\n[^`]*(```json\n)(.*)\n[^`]*```[^%]*(%%)?/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
+const DRAWING_REG = /\n%%\n# Drawing\n[^`]*(```json\n)([\s\S]*?)```/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
 const DRAWING_REG_FALLBACK = /\n# Drawing\n(```json\n)?(.*)(```)?(%%)?/gm;
 export function getJSON(data:string):[string,number] {
   let res = data.matchAll(DRAWING_REG);
@@ -448,7 +448,7 @@ export class ExcalidrawData {
       }
       outString += '\n';
     }
-    return outString + this.plugin.getMarkdownDrawingSection(JSON.stringify(this.scene));
+    return outString + this.plugin.getMarkdownDrawingSection(JSON.stringify(this.scene,null,"\t"));
   }
 
   public async syncElements(newScene:any):Promise<boolean> {
