@@ -326,7 +326,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
             currentItemLinearStrokeSharpness: template? template.appState.currentItemLinearStrokeSharpness : this.style.strokeSharpness,
             gridSize: template ? template.appState.gridSize : this.canvas.gridSize
           }
-        }))
+        },null,"\t"))
       );  
     },
     async createSVG(templatePath?:string):Promise<SVGSVGElement> {
