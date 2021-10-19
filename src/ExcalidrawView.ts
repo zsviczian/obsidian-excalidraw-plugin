@@ -674,7 +674,7 @@ export default class ExcalidrawView extends TextFileView {
           let files:BinaryFileData[] = [];
           Object.keys(images).forEach((k)=>{
             files.push({
-              type:images[k].type,
+              mimeType :images[k].mimeType,
               id: images[k].id,
               dataURL: images[k].dataURL,
               created: images[k].created

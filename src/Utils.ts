@@ -182,6 +182,7 @@ export const getNewOrAdjacentLeaf = (plugin: ExcalidrawPlugin, leaf: WorkspaceLe
 
 export const getObsidianImage = async (app: App, file: TFile)
   :Promise<{
+    mimeType: "image/svg+xml" | "image/png" | "image/jpeg" | "image/gif" | "application/octet-stream",
     fileId: string, 
     dataURL: string,
     created: number,
@@ -196,7 +197,22 @@ export const getObsidianImage = async (app: App, file: TFile)
   const excalidrawSVG = isExcalidrawFile
               ? svgToBase64((await window.ExcalidrawAutomate.createSVG(file.path,true)).outerHTML) 
               : null;
+  const mimeType = isExcalidrawFile ? 
+                   "image/svg+xml" : (
+                     file.extension === "png" ? 
+                     "image/png" : (
+                       file.extension === "jpg" || file.extension === "jpeg" ? 
+                       "image/jpeg" : (
+                         file.extension === "svg" ? 
+                         "image/svg+xml" : (
+                           file.extension === "gif" ? 
+                           "image/gif" : "application/octet-stream"
+                         )
+                       )
+                     )
+                   );
   return {
+    mimeType: mimeType,
     fileId: await generateIdFromFile(ab),
     dataURL: excalidrawSVG ?? (file.extension==="svg" ? await getSVGData(app,file) : await getDataURL(ab)),
     created: file.stat.mtime,

@@ -526,7 +526,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       const image = await getObsidianImage(this.plugin.app,imageFile);
       if(!image) return null;
       this.imagesDict[image.fileId] = {
-        type:"image",
+        mimeType: image.mimeType,
         id: image.fileId,
         dataURL: image.dataURL,
         created: image.created,

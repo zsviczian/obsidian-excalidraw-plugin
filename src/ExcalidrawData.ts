@@ -537,5 +537,3 @@ export class ExcalidrawData {
   }
 
 }
-
-
