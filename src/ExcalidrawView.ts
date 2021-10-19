@@ -81,7 +81,6 @@ export default class ExcalidrawView extends TextFileView {
   private ctrlKeyDown = false;
   private shiftKeyDown = false;
   private altKeyDown = false;
-  private mouseEvent:any = null;
 
   id: string = (this.leaf as any).id;
 
@@ -794,6 +793,18 @@ export default class ExcalidrawView extends TextFileView {
         if (transfer.types?.includes('text/html') || transfer.types?.includes('text/plain')) return 'copy';
       }                 
 
+      let viewModeEnabled = false;
+      const handleLinkClick = () => {
+        selectedTextElement = getTextElementAtPointer(currentPosition);
+        if(selectedTextElement) {
+          const event = new MouseEvent("click", {ctrlKey: true, shiftKey: this.shiftKeyDown, altKey:this.altKeyDown});
+          this.handleLinkClick(this,event);
+          selectedTextElement = null;
+        }          
+      }
+      
+      let mouseEvent:any = null;
+
       const excalidrawDiv = React.createElement(
         "div",
         {
@@ -834,7 +845,7 @@ export default class ExcalidrawView extends TextFileView {
               this.plugin.hover.sourcePath = this.file.path;
               hoverPreviewTarget = this.contentEl; //e.target;
               this.app.workspace.trigger('hover-link', {
-                event: this.mouseEvent,
+                event: mouseEvent,
                 source: VIEW_TYPE_EXCALIDRAW,
                 hoverParent: hoverPreviewTarget,
                 targetEl: hoverPreviewTarget,
@@ -865,7 +876,7 @@ export default class ExcalidrawView extends TextFileView {
           },
           onMouseMove: (e:MouseEvent) => {
             //@ts-ignore
-            this.mouseEvent = e.nativeEvent;
+            mouseEvent = e.nativeEvent;
           },
           onMouseOver: (e:MouseEvent) => {
             clearHoverPreview();
@@ -899,17 +910,9 @@ export default class ExcalidrawView extends TextFileView {
           onPointerUpdate: (p:any) => {
             currentPosition = p.pointer;
             if(hoverPreviewTarget && (Math.abs(hoverPoint.x-p.pointer.x)>50 || Math.abs(hoverPoint.y-p.pointer.y)>50)) clearHoverPreview();
-            if(!this.excalidrawRef.current.getAppState().viewModeEnabled) return;
-            const handleLinkClick = () => {
-              selectedTextElement = getTextElementAtPointer(p.pointer);
-              if(selectedTextElement) {
-                const event = new MouseEvent("click", {ctrlKey: true, shiftKey: this.shiftKeyDown, altKey:this.altKeyDown});
-                this.handleLinkClick(this,event);
-                selectedTextElement = null;
-              }          
-            }
+            if(!viewModeEnabled) return;
 
-            const buttonDown = !blockOnMouseButtonDown && p.button=="down";
+            const buttonDown = !blockOnMouseButtonDown && p.button === "down";
             if(buttonDown) {
               blockOnMouseButtonDown = true;
 
@@ -927,11 +930,12 @@ export default class ExcalidrawView extends TextFileView {
               timestamp = now;
               return;
             }
-            if (p.button=="up") { 
+            if (p.button === "up") { 
               blockOnMouseButtonDown=false;
             }
           },
           onChange: (et:ExcalidrawElement[],st:AppState) => {
+            viewModeEnabled = st.viewModeEnabled;
             if(this.justLoaded) {
               this.justLoaded = false;             
               this.zoomToFit(false);
