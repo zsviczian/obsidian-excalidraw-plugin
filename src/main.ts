@@ -56,14 +56,11 @@ import { Prompt } from "./Prompt";
 import { around } from "monkey-around";
 import { t } from "./lang/helpers";
 import { MigrationPrompt } from "./MigrationPrompt";
-import { checkAndCreateFolder, download, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, splitFolderAndFilename, svgToBase64 } from "./Utils";
+import { checkAndCreateFolder, download, getAttachmentsFolderAndFilePath, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, splitFolderAndFilename, svgToBase64 } from "./Utils";
 
 declare module "obsidian" {
   interface App {
     isMobile():boolean;
-  }
-  interface Vault {
-      getConfig(option:"attachmentFolderPath"): string;
   }
   interface Workspace {
     on(name: 'hover-link', callback: (e:MouseEvent) => any, ctx?: any): EventRef;
@@ -577,21 +574,11 @@ export default class ExcalidrawPlugin extends Plugin {
     const insertDrawingToDoc = async (inNewPane:boolean) => {
       const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
       if(!activeView) return;
-      let folder = this.app.vault.getConfig("attachmentFolderPath");
-      // folder == null: save to vault root
-      // folder == "./" save to same folder as current file
-      // folder == "folder" save to specific folder in vault
-      // folder == "./folder" save to specific subfolder of current active folder
-      if(folder && folder.startsWith("./")) { // folder relative to current file
-          const activeFileFolder = splitFolderAndFilename(activeView.file.path).folderpath + "/";
-          folder = normalizePath(activeFileFolder + folder.substring(2));
-      }
-      if(!folder) folder = "";
-      await checkAndCreateFolder(this.app.vault,folder);
       const filename = activeView.file.basename + "_" + window.moment().format(this.settings.drawingFilenameDateTime)
            + (this.settings.compatibilityMode ? '.excalidraw' : '.excalidraw.md');
-      this.embedDrawing(normalizePath(folder + "/" + filename));
-      this.createDrawing(filename, inNewPane,folder==""?null:folder);
+      const [folder, filepath] = await getAttachmentsFolderAndFilePath(this.app,activeView.file.path,filename);
+      this.embedDrawing(filepath);
+      this.createDrawing(filename, inNewPane, folder===""?null:folder);
     }
 
     this.addCommand({

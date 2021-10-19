@@ -11,7 +11,11 @@ declare module "obsidian" {
   interface Workspace {
     getAdjacentLeafInDirection(leaf: WorkspaceLeaf, direction: string): WorkspaceLeaf;
   }
+  interface Vault {
+    getConfig(option:"attachmentFolderPath"): string;
+  }
 }
+
 declare let window: ExcalidrawAutomate;
 
 /**
@@ -182,7 +186,7 @@ export const getNewOrAdjacentLeaf = (plugin: ExcalidrawPlugin, leaf: WorkspaceLe
 
 export const getObsidianImage = async (app: App, file: TFile)
   :Promise<{
-    mimeType: "image/svg+xml" | "image/png" | "image/jpeg" | "image/gif" | "application/octet-stream",
+    mimeType: string; //"image/svg+xml" | "image/png" | "image/jpeg" | "image/gif" | "application/octet-stream",
     fileId: string, 
     dataURL: string,
     created: number,
@@ -197,20 +201,17 @@ export const getObsidianImage = async (app: App, file: TFile)
   const excalidrawSVG = isExcalidrawFile
               ? svgToBase64((await window.ExcalidrawAutomate.createSVG(file.path,true)).outerHTML) 
               : null;
-  const mimeType = isExcalidrawFile ? 
-                   "image/svg+xml" : (
-                     file.extension === "png" ? 
-                     "image/png" : (
-                       file.extension === "jpg" || file.extension === "jpeg" ? 
-                       "image/jpeg" : (
-                         file.extension === "svg" ? 
-                         "image/svg+xml" : (
-                           file.extension === "gif" ? 
-                           "image/gif" : "application/octet-stream"
-                         )
-                       )
-                     )
-                   );
+  let mimeType = "image/svg+xml";
+  if (!isExcalidrawFile) {
+    switch (file.extension) {
+      case "png": mimeType = "image/png";break;
+      case "jpeg":mimeType = "image/jpeg";break;
+      case "jpg": mimeType = "image/jpeg";break;
+      case "gif": mimeType = "image/gif";break;
+      case "svg": mimeType = "image/svg+xml";break;
+      default: mimeType = "application/octet-stream";
+    }
+  } 
   return {
     mimeType: mimeType,
     fileId: await generateIdFromFile(ab),
@@ -268,4 +269,31 @@ const getImageSize = async (app: App, src:string):Promise<{height:number, width:
     img.onerror = reject;
     img.src = src;
     })
+}
+
+export const getBinaryFileFromDataURL = (dataURL:string):ArrayBuffer => {
+  if(!dataURL) return null;
+  const parts = dataURL.matchAll(/base64,(.*)/g).next();
+  const binary_string = window.atob(parts.value[1]);
+  const len = binary_string.length;
+  const bytes = new Uint8Array(len);
+  for (var i = 0; i < len; i++) {
+      bytes[i] = binary_string.charCodeAt(i);
+  }
+  return bytes.buffer;  
+}
+
+export const getAttachmentsFolderAndFilePath = async (app:App, activeViewFilePath:string, newFileName:string):Promise<[string,string]> => {
+  let folder = app.vault.getConfig("attachmentFolderPath");
+  // folder == null: save to vault root
+  // folder == "./" save to same folder as current file
+  // folder == "folder" save to specific folder in vault
+  // folder == "./folder" save to specific subfolder of current active folder
+  if(folder && folder.startsWith("./")) { // folder relative to current file
+      const activeFileFolder = splitFolderAndFilename(activeViewFilePath).folderpath + "/";
+      folder = normalizePath(activeFileFolder + folder.substring(2));
+  }
+  if(!folder) folder = "";
+  await checkAndCreateFolder(app.vault,folder);
+  return [folder,normalizePath(folder + "/" + newFileName)];
 }

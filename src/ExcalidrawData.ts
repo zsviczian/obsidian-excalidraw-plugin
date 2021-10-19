@@ -11,7 +11,7 @@ import {
   JSON_parse
 } from "./constants";
 import { TextMode } from "./ExcalidrawView";
-import { wrapText } from "./Utils";
+import { getAttachmentsFolderAndFilePath, getBinaryFileFromDataURL, wrapText } from "./Utils";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
 
 
@@ -82,7 +82,7 @@ export class ExcalidrawData {
   private textMode: TextMode = TextMode.raw;
   private plugin: ExcalidrawPlugin;
   public loaded: boolean = false;
-  public files:Map<FileId,string> = null; //fileId, path
+  public files:Map<string,string> = null; //fileId, path
 
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
@@ -98,7 +98,7 @@ export class ExcalidrawData {
     this.loaded = false;
     this.file = file;
     this.textElements = new Map<string,{raw:string, parsed:string}>();
-    this.files = new Map<FileId,string>();
+    this.files = new Map<string,string>();
 
     //I am storing these because if the settings change while a drawing is open parsing will run into errors during save
     //The drawing will use these values until next drawing is loaded or this drawing is re-loaded
@@ -451,10 +451,35 @@ export class ExcalidrawData {
     return outString + this.plugin.getMarkdownDrawingSection(JSON.stringify(this.scene,null,"\t"));
   }
 
+  private async syncFiles(scene:any):Promise<boolean> {
+    //no images to process
+    if(!scene.appState.files || scene.appState.files == {}) return false;
+    let dirty = false;
+    for(const key of Object.keys(scene.appState.files)) {
+      if(!this.files.has(key)) {
+        dirty = true;
+        let fname = "Pasted Image "+window.moment().format("YYYYMMDDHHmmss_SSS");
+        switch(scene.appState.files[key].mimeType) {
+          case "image/png": fname += ".png"; break;
+          case "image/jpeg": fname += ".jpg"; break;
+          case "image/svg": fname += ".svg"; break;
+          case "image/gif": fname += ".gif"; break;
+          default: fname += ".png"; 
+        }
+        const [folder,filepath] = await getAttachmentsFolderAndFilePath(this.app,this.file.path,fname);
+        await this.app.vault.createBinary(filepath,getBinaryFileFromDataURL(scene.appState.files[key].dataURL));
+        this.files.set(key,filepath);
+      }
+    }    
+    return dirty;
+  }
+
   public async syncElements(newScene:any):Promise<boolean> {
     //console.log("Excalidraw.Data.syncElements()");
+    let result = await this.syncFiles(newScene);
     this.scene = newScene;//JSON_parse(newScene);
-    const result = this.setLinkPrefix() || this.setUrlPrefix() || this.setShowLinkBrackets();
+    this.scene.appState.files = {};
+    result = result || this.setLinkPrefix() || this.setUrlPrefix() || this.setShowLinkBrackets();
     await this.updateTextElementsFromScene();
     return result || this.findNewTextElementsInScene();
   }
