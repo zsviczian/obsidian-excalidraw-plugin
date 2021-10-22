@@ -10,7 +10,7 @@ import {
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import Excalidraw, {exportToSvg, getSceneVersion} from "@zsviczian/excalidraw";
-import { ExcalidrawElement,ExcalidrawTextElement } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawElement,ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/element/types";
 import { 
   AppState,
   BinaryFileData,
@@ -36,7 +36,7 @@ import ExcalidrawPlugin from './main';
 import {ExcalidrawAutomate, repositionElementsToCursor} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./ExcalidrawData";
-import { checkAndCreateFolder, download, getNewOrAdjacentLeaf, getNewUniqueFilepath, rotatedDimensions, splitFolderAndFilename, svgToBase64, viewportCoordsToSceneCoords } from "./Utils";
+import { checkAndCreateFolder, download, generateSVGString, getNewOrAdjacentLeaf, getNewUniqueFilepath, getObsidianImage, getPNG, getSVG, rotatedDimensions, splitFolderAndFilename, svgToBase64, viewportCoordsToSceneCoords } from "./Utils";
 import { Prompt } from "./Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 
@@ -113,7 +113,7 @@ export default class ExcalidrawView extends TextFileView {
         withBackground: this.plugin.settings.exportWithBackground, 
         withTheme: this.plugin.settings.exportWithTheme
       }
-      const svg = await ExcalidrawView.getSVG(scene,exportSettings);
+      const svg = await getSVG(scene,exportSettings);
       if(!svg) return;
       let serializer =new XMLSerializer();
       const svgString = serializer.serializeToString(ExcalidrawView.embedFontsInSVG(svg));                  
@@ -147,7 +147,7 @@ export default class ExcalidrawView extends TextFileView {
         withBackground: this.plugin.settings.exportWithBackground, 
         withTheme: this.plugin.settings.exportWithTheme
       }
-      const png = await ExcalidrawView.getPNG(scene,exportSettings,this.plugin.settings.pngExportScale);
+      const png = await getPNG(scene,exportSettings,this.plugin.settings.pngExportScale);
       if(!png) return;
       if(file && file instanceof TFile) await this.app.vault.modifyBinary(file,await png.arrayBuffer());
       else await this.app.vault.createBinary(filepath,await png.arrayBuffer());      
@@ -158,13 +158,16 @@ export default class ExcalidrawView extends TextFileView {
     if(!this.getScene) return;
     this.preventReload = preventReload;
     this.dirty = null;
-    
+    const scene = this.getScene();
+
     if(this.compatibilityMode) {
-      await this.excalidrawData.syncElements(this.getScene());
+      await this.excalidrawData.syncElements(scene);
     } else {
-      if(await this.excalidrawData.syncElements(this.getScene()) && !this.autosaving) {
+      if(await this.excalidrawData.syncElements(scene) && !this.autosaving) {
         await this.loadDrawing(false);
       }
+      //generate SVG preview snapshot
+      this.excalidrawData.svgString = await generateSVGString(this.getScene(),this.plugin.settings);
     }
     await super.save();
   }
@@ -268,7 +271,11 @@ export default class ExcalidrawView extends TextFileView {
       }
       const leaf = ev.shiftKey ? getNewOrAdjacentLeaf(this.plugin,view.leaf) : view.leaf;
       view.app.workspace.setActiveLeaf(leaf);
-      leaf.view.app.workspace.openLinkText(text,view.file.path);
+      if(file) {
+        leaf.openFile(file,{eState: {line: lineNum-1}}); //if file exists open file and jump to reference
+      } else { 
+        leaf.view.app.workspace.openLinkText(text,view.file.path); 
+      }
     } catch (e) {
       new Notice(e,4000);
     }
@@ -434,6 +441,24 @@ export default class ExcalidrawView extends TextFileView {
         libraryItems: await this.getLibrary(),
       });
     }
+
+    //load files
+    this.excalidrawData.files.forEach((value,key)=> {
+      const file = this.app.vault.getAbstractFileByPath(value);
+      if(file && file instanceof TFile) {
+        getObsidianImage(this.plugin.app,file).then(async (data)=>{
+          if(!this.excalidrawData) return;
+          let files:BinaryFileData[] = [];
+            files.push({
+              mimeType : data.mimeType,
+              id: key as FileId,
+              dataURL: data.dataURL,
+              created: data.created
+            });
+            this.excalidrawRef.current.addFiles(files);
+          });
+      }
+    });
   }
 
   //Compatibility mode with .excalidraw files
@@ -526,7 +551,7 @@ export default class ExcalidrawView extends TextFileView {
                 withBackground: this.plugin.settings.exportWithBackground, 
                 withTheme: this.plugin.settings.exportWithTheme
               }
-              const png = await ExcalidrawView.getPNG(this.getScene(),exportSettings,this.plugin.settings.pngExportScale);
+              const png = await getPNG(this.getScene(),exportSettings,this.plugin.settings.pngExportScale);
               if(!png) return;
               let reader = new FileReader();
               reader.readAsDataURL(png); 
@@ -551,7 +576,7 @@ export default class ExcalidrawView extends TextFileView {
                 withBackground: this.plugin.settings.exportWithBackground, 
                 withTheme: this.plugin.settings.exportWithTheme
               }
-              let svg = await ExcalidrawView.getSVG(this.getScene(),exportSettings);
+              let svg = await getSVG(this.getScene(),exportSettings);
               if(!svg) return null;
               svg = ExcalidrawView.embedFontsInSVG(svg);
               download(null,svgToBase64(svg.outerHTML),this.file.basename+'.svg');
@@ -644,7 +669,7 @@ export default class ExcalidrawView extends TextFileView {
         const id:string = window.ExcalidrawAutomate.addText(currentPosition.x, currentPosition.y, text);
         this.addElements(window.ExcalidrawAutomate.getElements(),false,true);
       }
-      
+
       this.addElements = async (newElements:ExcalidrawElement[],repositionToCursor:boolean = false, save:boolean=false, images:any):Promise<boolean> => {
         if(!excalidrawRef?.current) return false;    
        
@@ -659,9 +684,6 @@ export default class ExcalidrawView extends TextFileView {
 
         const el: ExcalidrawElement[] = excalidrawRef.current.getSceneElements();
         let st: AppState = excalidrawRef.current.getAppState();
-        if(!st.files) {
-          st.files = {};
-        }
 
         if(repositionToCursor) newElements = repositionElementsToCursor(newElements,currentPosition,true);
         this.excalidrawRef.current.updateScene({
@@ -692,11 +714,12 @@ export default class ExcalidrawView extends TextFileView {
         }
         const el: ExcalidrawElement[] = excalidrawRef.current.getSceneElements();
         const st: AppState = excalidrawRef.current.getAppState();
+        const files = excalidrawRef.current.getFiles();
 
-        if(st.files) {
+        if(files) {
           const imgIds = el.filter((e)=>e.type=="image").map((e:any)=>e.fileId);
-          const toDelete = Object.keys(st.files).filter((k)=>!imgIds.contains(k));
-          toDelete.forEach((k)=>delete st.files[k]);
+          const toDelete = Object.keys(files).filter((k)=>!imgIds.contains(k));
+          toDelete.forEach((k)=>delete files[k]);
         }
 
         return { 
@@ -722,8 +745,8 @@ export default class ExcalidrawView extends TextFileView {
             currentItemEndArrowhead: st.currentItemEndArrowhead,
             currentItemLinearStrokeSharpness: st.currentItemLinearStrokeSharpness,
             gridSize: st.gridSize,
-            files: st.files??{},
-          }
+          },
+          files: files,
         };
       };
 
@@ -1103,39 +1126,6 @@ export default class ExcalidrawView extends TextFileView {
       setTimeout(() => current.zoomToFit(elements,2,fullscreen?0:0.05),100); 
     } else {
       current.zoomToFit(elements,2,fullscreen?0:0.05);
-    }
-  }
-
-  public static async getSVG(scene:any, exportSettings:ExportSettings):Promise<SVGSVGElement> {
-    try {
-      return exportToSvg({
-        elements: scene.elements,
-        appState: {
-          exportBackground: exportSettings.withBackground,
-          exportWithDarkMode: exportSettings.withTheme ? (scene.appState?.theme=="light" ? false : true) : false,
-          ... scene.appState,},
-        exportPadding:10,
-      });
-    } catch (error) {
-      return null;
-    }
-  }
-
-  public static async getPNG(scene:any, exportSettings:ExportSettings, scale:number = 1) {
-    try {
-      return await Excalidraw.exportToBlob({
-          elements: scene.elements,
-          appState: {
-            exportBackground: exportSettings.withBackground,
-            exportWithDarkMode: exportSettings.withTheme ? (scene.appState?.theme=="light" ? false : true) : false,
-            ... scene.appState,},
-          mimeType: "image/png",
-          exportWithDarkMode: "true",
-          metadata: "Generated by Excalidraw-Obsidian plugin",
-          getDimensions: (width:number, height:number) => ({ width:width*scale, height:height*scale, scale:scale })
-      });
-    } catch (error) {
-      return null;
     }
   }
 }

@@ -18,7 +18,7 @@ import {
   VIEW_TYPE_EXCALIDRAW,
   MAX_IMAGE_SIZE
 } from "./constants";
-import { getObsidianImage, wrapText } from "./Utils";
+import { generateSVGString, getObsidianImage, getPNG, getSVG, wrapText } from "./Utils";
 import { AppState } from "@zsviczian/excalidraw/types/types";
 
 declare type ConnectionPoint = "top"|"bottom"|"left"|"right";
@@ -301,44 +301,47 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       } else {
         frontmatter = template?.frontmatter ? template.frontmatter : FRONTMATTER;
       }
+      
+      const scene = {
+        type: "excalidraw",
+        version: 2,
+        source: "https://excalidraw.com",
+        elements: elements,
+        appState: {
+          theme:                            template?.appState?.theme                            ?? this.canvas.theme,
+          viewBackgroundColor:              template?.appState?.viewBackgroundColor              ?? this.canvas.viewBackgroundColor,
+          currentItemStrokeColor:           template?.appState?.currentItemStrokeColor           ?? this.style.strokeColor,
+          currentItemBackgroundColor:       template?.appState?.currentItemBackgroundColor       ?? this.style.backgroundColor,
+          currentItemFillStyle:             template?.appState?.currentItemFillStyle             ?? this.style.fillStyle,
+          currentItemStrokeWidth:           template?.appState?.currentItemStrokeWidth           ?? this.style.strokeWidth,
+          currentItemStrokeStyle:           template?.appState?.currentItemStrokeStyle           ?? this.style.strokeStyle,
+          currentItemRoughness:             template?.appState?.currentItemRoughness             ?? this.style.roughness,
+          currentItemOpacity:               template?.appState?.currentItemOpacity               ?? this.style.opacity,
+          currentItemFontFamily:            template?.appState?.currentItemFontFamily            ?? this.style.fontFamily,
+          currentItemFontSize:              template?.appState?.currentItemFontSize              ?? this.style.fontSize,
+          currentItemTextAlign:             template?.appState?.currentItemTextAlign             ?? this.style.textAlign,
+          currentItemStrokeSharpness:       template?.appState?.currentItemStrokeSharpness       ?? this.style.strokeSharpness,
+          currentItemStartArrowhead:        template?.appState?.currentItemStartArrowhead        ?? this.style.startArrowHead,
+          currentItemEndArrowhead:          template?.appState?.currentItemEndArrowhead          ?? this.style.endArrowHead,
+          currentItemLinearStrokeSharpness: template?.appState?.currentItemLinearStrokeSharpness ?? this.style.strokeSharpness,
+          gridSize:                         template?.appState?.gridSize                         ?? this.canvas.gridSize,
+          files:                            template?.appState?.files                            ?? {},
+        }
+      };
+
       return plugin.createDrawing(
         params?.filename ? params.filename + '.excalidraw.md' : this.plugin.getNextDefaultFilename(),
         params?.onNewPane ? params.onNewPane : false,
         params?.foldername ? params.foldername : this.plugin.settings.folder,
-        frontmatter + plugin.exportSceneToMD(
-        JSON.stringify({
-          type: "excalidraw",
-          version: 2,
-          source: "https://excalidraw.com",
-          elements: elements,
-          appState: {
-            theme:                            template?.appState?.theme                            ?? this.canvas.theme,
-            viewBackgroundColor:              template?.appState?.viewBackgroundColor              ?? this.canvas.viewBackgroundColor,
-            currentItemStrokeColor:           template?.appState?.currentItemStrokeColor           ?? this.style.strokeColor,
-            currentItemBackgroundColor:       template?.appState?.currentItemBackgroundColor       ?? this.style.backgroundColor,
-            currentItemFillStyle:             template?.appState?.currentItemFillStyle             ?? this.style.fillStyle,
-            currentItemStrokeWidth:           template?.appState?.currentItemStrokeWidth           ?? this.style.strokeWidth,
-            currentItemStrokeStyle:           template?.appState?.currentItemStrokeStyle           ?? this.style.strokeStyle,
-            currentItemRoughness:             template?.appState?.currentItemRoughness             ?? this.style.roughness,
-            currentItemOpacity:               template?.appState?.currentItemOpacity               ?? this.style.opacity,
-            currentItemFontFamily:            template?.appState?.currentItemFontFamily            ?? this.style.fontFamily,
-            currentItemFontSize:              template?.appState?.currentItemFontSize              ?? this.style.fontSize,
-            currentItemTextAlign:             template?.appState?.currentItemTextAlign             ?? this.style.textAlign,
-            currentItemStrokeSharpness:       template?.appState?.currentItemStrokeSharpness       ?? this.style.strokeSharpness,
-            currentItemStartArrowhead:        template?.appState?.currentItemStartArrowhead        ?? this.style.startArrowHead,
-            currentItemEndArrowhead:          template?.appState?.currentItemEndArrowhead          ?? this.style.endArrowHead,
-            currentItemLinearStrokeSharpness: template?.appState?.currentItemLinearStrokeSharpness ?? this.style.strokeSharpness,
-            gridSize:                         template?.appState?.gridSize                         ?? this.canvas.gridSize,
-            files:                            template?.appState?.files                            ?? {},
-          }
-        },null,"\t"))
+        frontmatter + await plugin.exportSceneToMD(
+        JSON.stringify(scene,null,"\t"))
       );  
     },
     async createSVG(templatePath?:string,embedFont:boolean = false):Promise<SVGSVGElement> {
       const template = templatePath ? (await getTemplate(templatePath)) : null;
       let elements = template ? template.elements : [];
       elements = elements.concat(this.getElements());
-      const svg = await ExcalidrawView.getSVG(
+      const svg = await getSVG(
         {//createDrawing
           type: "excalidraw",
           version: 2,
@@ -361,7 +364,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       const template = templatePath ? (await getTemplate(templatePath)) : null;
       let elements = template ? template.elements : [];
       elements = elements.concat(this.getElements());
-      return ExcalidrawView.getPNG(
+      return getPNG(
         { 
           type: "excalidraw",
           version: 2,

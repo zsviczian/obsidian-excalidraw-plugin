@@ -1,11 +1,15 @@
+import Excalidraw,{exportToSvg} from "@zsviczian/excalidraw";
 import {  App, normalizePath, TAbstractFile, TFile, TFolder, Vault, WorkspaceLeaf } from "obsidian";
 import { Random } from "roughjs/bin/math";
-import { Zoom } from "@zsviczian/excalidraw/types/types";
+import { DataURL, Zoom } from "@zsviczian/excalidraw/types/types";
 import { nanoid } from "nanoid";
 import { IMAGE_TYPES } from "./constants";
 import {ExcalidrawAutomate} from './ExcalidrawAutomate';
 import ExcalidrawPlugin from "./main";
-import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawElement, FileId } from "@zsviczian/excalidraw/types/element/types";
+import { ExportSettings } from "./ExcalidrawView";
+import { ExcalidrawSettings } from "./settings";
+import { html_beautify } from "js-beautify"
 
 declare module "obsidian" {
   interface Workspace {
@@ -17,6 +21,8 @@ declare module "obsidian" {
 }
 
 declare let window: ExcalidrawAutomate;
+
+export declare type MimeType = "image/svg+xml" | "image/png" | "image/jpeg" | "image/gif" | "application/octet-stream";
 
 /**
  * Splits a full path including a folderpath and a filename into separate folderpath and filename components
@@ -186,9 +192,9 @@ export const getNewOrAdjacentLeaf = (plugin: ExcalidrawPlugin, leaf: WorkspaceLe
 
 export const getObsidianImage = async (app: App, file: TFile)
   :Promise<{
-    mimeType: string; //"image/svg+xml" | "image/png" | "image/jpeg" | "image/gif" | "application/octet-stream",
-    fileId: string, 
-    dataURL: string,
+    mimeType: MimeType,
+    fileId: FileId, 
+    dataURL: DataURL,
     created: number,
     size: {height: number, width: number},
   }> => {
@@ -199,9 +205,9 @@ export const getObsidianImage = async (app: App, file: TFile)
   }
   const ab = await app.vault.readBinary(file);
   const excalidrawSVG = isExcalidrawFile
-              ? svgToBase64((await window.ExcalidrawAutomate.createSVG(file.path,true)).outerHTML) 
+              ? svgToBase64((await window.ExcalidrawAutomate.createSVG(file.path,true)).outerHTML) as DataURL
               : null;
-  let mimeType = "image/svg+xml";
+  let mimeType:MimeType = "image/svg+xml";
   if (!isExcalidrawFile) {
     switch (file.extension) {
       case "png": mimeType = "image/png";break;
@@ -222,19 +228,19 @@ export const getObsidianImage = async (app: App, file: TFile)
 }
 
 
-const getSVGData = async (app: App, file: TFile): Promise<string> => {
+const getSVGData = async (app: App, file: TFile): Promise<DataURL> => {
   const svg = await app.vault.read(file);
-  return svgToBase64(svg);
+  return svgToBase64(svg) as DataURL;
 }
 
 export const svgToBase64 = (svg:string):string => {
   return "data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svg.replaceAll("&nbsp;"," "))));
 }
-const getDataURL = async (file: ArrayBuffer): Promise<string> => {
+const getDataURL = async (file: ArrayBuffer): Promise<DataURL> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
-      const dataURL = reader.result as string;
+      const dataURL = reader.result as DataURL;
       resolve(dataURL);
     };
     reader.onerror = (error) => reject(error);
@@ -242,8 +248,8 @@ const getDataURL = async (file: ArrayBuffer): Promise<string> => {
   });
 };
 
-const generateIdFromFile = async (file: ArrayBuffer):Promise<string> => {
-  let id: string;
+const generateIdFromFile = async (file: ArrayBuffer):Promise<FileId> => {
+  let id: FileId;
   try {
     const hashBuffer = await window.crypto.subtle.digest(
       "SHA-1",
@@ -254,10 +260,10 @@ const generateIdFromFile = async (file: ArrayBuffer):Promise<string> => {
       Array.from(new Uint8Array(hashBuffer))
         // convert to hex string
         .map((byte) => byte.toString(16).padStart(2, "0"))
-        .join("");
+        .join("") as FileId;
   } catch (error) {
     console.error(error);
-    id = nanoid(40);
+    id = nanoid(40) as FileId;
   }
   return id;
 };
@@ -296,4 +302,52 @@ export const getAttachmentsFolderAndFilePath = async (app:App, activeViewFilePat
   if(!folder) folder = "";
   await checkAndCreateFolder(app.vault,folder);
   return [folder,normalizePath(folder + "/" + newFileName)];
+}
+
+export const getSVG = async (scene:any, exportSettings:ExportSettings):Promise<SVGSVGElement> => {
+  try {
+    return exportToSvg({
+      elements: scene.elements,
+      appState: {
+        exportBackground: exportSettings.withBackground,
+        exportWithDarkMode: exportSettings.withTheme ? (scene.appState?.theme=="light" ? false : true) : false,
+        ... scene.appState,},
+      files: scene.files,
+      exportPadding:10,
+    });
+  } catch (error) {
+    return null;
+  }
+}
+
+export const generateSVGString = async (scene:any, settings: ExcalidrawSettings):Promise<string> => {
+  const exportSettings: ExportSettings = {
+    withBackground: settings.exportWithBackground, 
+    withTheme: settings.exportWithTheme
+  }
+  const svg = await getSVG(scene,exportSettings);
+  if(svg) {
+    
+    return html_beautify(svg.outerHTML,{"indent_with_tabs": true});
+  }
+  return null;
+}
+
+export const getPNG = async (scene:any, exportSettings:ExportSettings, scale:number = 1) => {
+  try {
+    return await Excalidraw.exportToBlob({
+        elements: scene.elements,
+        appState: {
+          exportBackground: exportSettings.withBackground,
+          exportWithDarkMode: exportSettings.withTheme ? (scene.appState?.theme=="light" ? false : true) : false,
+          ... scene.appState,},
+        files: scene.files,
+        mimeType: "image/png",
+        exportWithDarkMode: "true",
+        metadata: "Generated by Excalidraw-Obsidian plugin",
+        getDimensions: (width:number, height:number) => ({ width:width*scale, height:height*scale, scale:scale })
+    });
+  } catch (error) {
+    return null;
+  }
 }
