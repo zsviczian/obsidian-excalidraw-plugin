@@ -18,7 +18,7 @@ import {
   VIEW_TYPE_EXCALIDRAW,
   MAX_IMAGE_SIZE
 } from "./constants";
-import { embedFontsInSVG, generateSVGString, getObsidianImage, getPNG, getSVG, loadSceneFiles, svgToBase64, wrapText } from "./Utils";
+import { embedFontsInSVG, generateSVGString, getObsidianImage, getPNG, getSVG, loadSceneFiles, scaleLoadedImage, svgToBase64, wrapText } from "./Utils";
 import { AppState } from "@zsviczian/excalidraw/types/types";
 
 declare type ConnectionPoint = "top"|"bottom"|"left"|"right";
@@ -828,7 +828,7 @@ async function getTemplate(fileWithPath:string, loadFiles:boolean = false):Promi
   const file = app.metadataCache.getFirstLinkpathDest(normalizePath(fileWithPath),'');
   if(file && file instanceof TFile) {
     const data = (await vault.read(file)).replaceAll("\r\n","\n").replaceAll("\r","\n");
-    const excalidrawData:ExcalidrawData = new ExcalidrawData(window.ExcalidrawAutomate.plugin);
+    let excalidrawData:ExcalidrawData = new ExcalidrawData(window.ExcalidrawAutomate.plugin);
     
     if(file.extension === "excalidraw") {
       await excalidrawData.loadLegacyData(data,file);
@@ -852,6 +852,8 @@ async function getTemplate(fileWithPath:string, loadFiles:boolean = false):Promi
         for(const f of fileArray) {
           excalidrawData.scene.files[f.id] = f;
         }
+        let foo;
+        [foo,excalidrawData] = scaleLoadedImage(excalidrawData,fileArray); 
       });
     }
 

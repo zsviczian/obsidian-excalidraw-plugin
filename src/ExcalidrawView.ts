@@ -10,7 +10,7 @@ import {
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import Excalidraw, {exportToSvg, getSceneVersion} from "@zsviczian/excalidraw";
-import { ExcalidrawElement,ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawElement,ExcalidrawImageElement,ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/element/types";
 import { 
   AppState,
   BinaryFileData,
@@ -36,9 +36,10 @@ import ExcalidrawPlugin from './main';
 import {ExcalidrawAutomate, repositionElementsToCursor} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./ExcalidrawData";
-import { checkAndCreateFolder, download, embedFontsInSVG, generateSVGString, getNewOrAdjacentLeaf, getNewUniqueFilepath, getObsidianImage, getPNG, getSVG, loadSceneFiles, rotatedDimensions, splitFolderAndFilename, svgToBase64, viewportCoordsToSceneCoords } from "./Utils";
+import { checkAndCreateFolder, download, embedFontsInSVG, generateSVGString, getNewOrAdjacentLeaf, getNewUniqueFilepath, getPNG, getSVG, loadSceneFiles, rotatedDimensions, scaleLoadedImage, splitFolderAndFilename, svgToBase64, viewportCoordsToSceneCoords } from "./Utils";
 import { Prompt } from "./Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
+import { ifStatement } from "@babel/types";
 
 declare let window: ExcalidrawAutomate;
 
@@ -446,7 +447,7 @@ export default class ExcalidrawView extends TextFileView {
       if((this.app.workspace.activeLeaf === this.leaf) && this.excalidrawWrapperRef) {
         this.excalidrawWrapperRef.current.focus();
       }
-      loadSceneFiles(this.app,this.excalidrawData.files,this.excalidrawAPI.addFiles);
+      loadSceneFiles(this.app,this.excalidrawData.files,(files:any)=>this.addFiles(files));
     } else {
       this.instantiateExcalidraw({
         elements: excalidrawData.elements,
@@ -456,6 +457,21 @@ export default class ExcalidrawView extends TextFileView {
       });
       //files are loaded on excalidrawRef readyPromise
     }   
+  }
+
+  private addFiles(files:any) {
+    if(files.length === 0) return;
+    const [dirty, scene] = scaleLoadedImage(this.getScene(),files); 
+
+    if(dirty) {
+      this.excalidrawAPI.updateScene({
+        elements: scene.elements,
+        appState: scene.appState,
+        commitToHistory: false,
+      });
+    }
+
+    this.excalidrawAPI.addFiles(files);
   }
 
   //Compatibility mode with .excalidraw files
@@ -633,7 +649,7 @@ export default class ExcalidrawView extends TextFileView {
       React.useEffect(() => {
         excalidrawRef.current.readyPromise.then((api) => {
           this.excalidrawAPI = api;
-          loadSceneFiles(this.app,this.excalidrawData.files,this.excalidrawAPI.addFiles);
+          loadSceneFiles(this.app,this.excalidrawData.files,(files:any)=>this.addFiles(files));
         });
       }, [excalidrawRef]);
 
@@ -821,7 +837,7 @@ export default class ExcalidrawView extends TextFileView {
                                 return x<=pointer.x && x+w>=pointer.x
                                        && y<=pointer.y && y+h>=pointer.y;
                               });
-        if(elements.length==0) return null;
+        if(elements.length==0) return {id:null, text:null};
         if(elements.length===1) return {id:elements[0].id,text:elements[0].text};
         //if more than 1 text elements are at the location, look for one that has a link
         const elementsWithLinks = elements.filter((e:ExcalidrawTextElement)=> {
@@ -848,8 +864,8 @@ export default class ExcalidrawView extends TextFileView {
                                 return x<=pointer.x && x+w>=pointer.x
                                        && y<=pointer.y && y+h>=pointer.y;
                               });
-        if(elements.length==0) return null;
-        if(elements.length>1) return {id:elements[0].id,fileId:elements[0].fileId};
+        if(elements.length===0) return {id:null, fileId:null};
+        if(elements.length>=1) return {id:elements[0].id,fileId:elements[0].fileId};
         //if more than 1 image elements are at the location, return the first
       }      
  
@@ -885,13 +901,13 @@ export default class ExcalidrawView extends TextFileView {
       let viewModeEnabled = false;
       const handleLinkClick = () => {
         selectedTextElement = getTextElementAtPointer(currentPosition);
-        if(selectedTextElement) {
+        if(selectedTextElement && selectedTextElement.id) {
           const event = new MouseEvent("click", {ctrlKey: true, shiftKey: this.shiftKeyDown, altKey:this.altKeyDown});
           this.handleLinkClick(this,event);
           selectedTextElement = null;
         }      
         selectedImageElement = getImageElementAtPointer(currentPosition);
-        if(selectedImageElement) {
+        if(selectedImageElement && selectedImageElement.id) {
           const event = new MouseEvent("click", {ctrlKey: true, shiftKey: this.shiftKeyDown, altKey:this.altKeyDown});
           this.handleLinkClick(this,event);
           selectedImageElement = null;

@@ -376,7 +376,9 @@ export const loadSceneFiles = async (app:App, filesMap: Map<FileId, string>,addF
         mimeType : data.mimeType,
         id: entry.value[0],
         dataURL: data.dataURL,
-        created: data.created
+        created: data.created,
+        //@ts-ignore
+        size: data.size,
       });
     }
   }
@@ -385,5 +387,30 @@ export const loadSceneFiles = async (app:App, filesMap: Map<FileId, string>,addF
     addFiles(files);
   } catch(e) {
 
+  }
+}
+
+export const scaleLoadedImage = (scene:any, files:any):[boolean,any] => {
+  let dirty = false;
+  for(const f of files) {
+    const [w_image,h_image] = [f.size.width,f.size.height];
+    const imageAspectRatio = f.size.width/f.size.height;
+    scene
+    .elements
+    .filter((e:any)=>(e.type === "image" && e.fileId === f.id))
+    .forEach((el:any)=>{
+      const [w_old,h_old] = [el.width,el.height];
+      const elementAspectRatio = w_old/h_old;
+      if(imageAspectRatio != elementAspectRatio) {
+        dirty = true;
+        const h_new = Math.sqrt(w_old*h_old*h_image/w_image);
+        const w_new = Math.sqrt(w_old*h_old*w_image/h_image);
+        el.height = h_new;
+        el.width = w_new;
+        el.y += (h_old-h_new)/2;
+        el.x += (w_old-w_new)/2;
+      }
+    });
+    return [dirty,scene];
   }
 }

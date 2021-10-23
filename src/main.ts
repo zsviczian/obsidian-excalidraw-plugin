@@ -110,7 +110,6 @@ export default class ExcalidrawPlugin extends Plugin {
     //inspiration taken from kanban: 
     //https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/main.ts#L267
     this.registerMonkeyPatches();
-    new Notice("Excalidraw was updated. Files opened with this version will not open with the older version. Please update plugin on all your devices.\n\nI will remove this message with next update.",8000);
     if(this.settings.loadCount<1) this.migrationNotice();
     const electron:string = process.versions.electron;
     if(electron.startsWith("8.")) {
