@@ -36,7 +36,7 @@ import ExcalidrawPlugin from './main';
 import {ExcalidrawAutomate, repositionElementsToCursor} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./ExcalidrawData";
-import { checkAndCreateFolder, download, generateSVGString, getNewOrAdjacentLeaf, getNewUniqueFilepath, getObsidianImage, getPNG, getSVG, loadSceneFiles, rotatedDimensions, splitFolderAndFilename, svgToBase64, viewportCoordsToSceneCoords } from "./Utils";
+import { checkAndCreateFolder, download, embedFontsInSVG, generateSVGString, getNewOrAdjacentLeaf, getNewUniqueFilepath, getObsidianImage, getPNG, getSVG, loadSceneFiles, rotatedDimensions, splitFolderAndFilename, svgToBase64, viewportCoordsToSceneCoords } from "./Utils";
 import { Prompt } from "./Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 
@@ -63,6 +63,7 @@ export default class ExcalidrawView extends TextFileView {
   private getScene: Function = null;
   public addElements: Function = null; //add elements to the active Excalidraw drawing
   private getSelectedTextElement: Function = null;
+  private getSelectedImageElement: Function = null;
   public addText:Function = null;
   private refresh: Function = null;
   public excalidrawRef: React.MutableRefObject<any> = null;
@@ -117,21 +118,10 @@ export default class ExcalidrawView extends TextFileView {
       const svg = await getSVG(scene,exportSettings);
       if(!svg) return;
       let serializer =new XMLSerializer();
-      const svgString = serializer.serializeToString(ExcalidrawView.embedFontsInSVG(svg));                  
+      const svgString = serializer.serializeToString(embedFontsInSVG(svg));                  
       if(file && file instanceof TFile) await this.app.vault.modify(file,svgString);
       else await this.app.vault.create(filepath,svgString);
     })();
-  }
-
-  public static embedFontsInSVG(svg:SVGSVGElement):SVGSVGElement {
-    //replace font references with base64 fonts
-    const includesVirgil = svg.querySelector("text[font-family^='Virgil']") != null;
-    const includesCascadia = svg.querySelector("text[font-family^='Cascadia']") != null; 
-    const defs = svg.querySelector("defs");
-    if (defs && (includesCascadia || includesVirgil)) {
-      defs.innerHTML = "<style>" + (includesVirgil ? VIRGIL_FONT : "") + (includesCascadia ? CASCADIA_FONT : "")+"</style>";
-    }
-    return svg;
   }
 
   public savePNG(scene?: any) {
@@ -168,7 +158,7 @@ export default class ExcalidrawView extends TextFileView {
         await this.loadDrawing(false);
       }
       //generate SVG preview snapshot
-      this.excalidrawData.svgString = await generateSVGString(this.getScene(),this.plugin.settings);
+      this.excalidrawData.svgSnapshot = await generateSVGString(this.getScene(),this.plugin.settings);
     }
     await super.save();
   }
@@ -180,12 +170,12 @@ export default class ExcalidrawView extends TextFileView {
     //console.log("ExcalidrawView.getViewData()");
     if(!this.getScene) return this.data;
     if(!this.excalidrawData.loaded) return this.data;
+    const scene = this.getScene();
     if(!this.compatibilityMode) {
       let trimLocation = this.data.search(/(^%%\n)?# Text Elements\n/m);
       if(trimLocation == -1) trimLocation = this.data.search(/(%%\n)?# Drawing\n/);
       if(trimLocation == -1) return this.data;
 
-      const scene = this.excalidrawData.scene;
       if(!this.autosaving) {
         if(this.plugin.settings.autoexportSVG) this.saveSVG(scene);
         if(this.plugin.settings.autoexportPNG) this.savePNG(scene);
@@ -197,7 +187,6 @@ export default class ExcalidrawView extends TextFileView {
       return header + this.excalidrawData.generateMD();
     }
     if(this.compatibilityMode) {
-      const scene = this.excalidrawData.scene;
       if(!this.autosaving) {
         if(this.plugin.settings.autoexportSVG) this.saveSVG(scene);
         if(this.plugin.settings.autoexportPNG) this.savePNG(scene);
@@ -208,62 +197,79 @@ export default class ExcalidrawView extends TextFileView {
   }
   
   async handleLinkClick(view: ExcalidrawView, ev:MouseEvent) {
-    let text:string = (this.textMode == TextMode.parsed) 
-               ? this.excalidrawData.getRawText(this.getSelectedTextElement().id) 
-               : this.getSelectedTextElement().text;
-    if(!text) {
+    const selectedText = this.getSelectedTextElement();
+    let file = null;
+    let lineNum = 0;
+    let linkText:string = null;
+
+    if(selectedText?.id) {
+      linkText = (this.textMode == TextMode.parsed) 
+                ? this.excalidrawData.getRawText(selectedText.id) 
+                : selectedText.text;
+
+      linkText = linkText.replaceAll("\n",""); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/187
+      if(linkText.match(REG_LINKINDEX_HYPERLINK)) {
+        window.open(linkText,"_blank");
+        return;    
+      }
+
+      const parts = REGEX_LINK.getRes(linkText).next();    
+      if(!parts.value) {
+        const tags = linkText.matchAll(/#([\p{Letter}\p{Emoji_Presentation}\p{Number}\/_-]+)/ug).next();
+        if(!tags.value || tags.value.length<2) {
+          new Notice(t("TEXT_ELEMENT_EMPTY"),4000); 
+          return;
+        }
+        const search=this.app.workspace.getLeavesOfType("search");
+        if(search.length==0) return;
+        //@ts-ignore
+        search[0].view.setQuery("tag:"+tags.value[1]);
+        this.app.workspace.revealLeaf(search[0]);
+
+        if(document.fullscreenElement === this.contentEl) {
+          document.exitFullscreen();
+          this.zoomToFit();
+        }
+        return;
+      }
+
+      linkText = REGEX_LINK.getLink(parts);
+
+      if(linkText.match(REG_LINKINDEX_HYPERLINK)) {
+        window.open(linkText,"_blank");
+        return;
+      }
+      
+      if(linkText.search("#")>-1) {
+        let t;
+        [t,lineNum] = await this.excalidrawData.getTransclusion(linkText);
+        linkText = linkText.substring(0,linkText.search("#"));
+      }
+      if(linkText.match(REG_LINKINDEX_INVALIDCHARS)) {
+        new Notice(t("FILENAME_INVALID_CHARS"),4000); 
+        return;
+      }
+      file = view.app.metadataCache.getFirstLinkpathDest(linkText,view.file.path); 
+      if (!ev.altKey && !file) {
+        new Notice(t("FILE_DOES_NOT_EXIST"), 4000);
+        return;
+      }
+    } else {
+      const selectedImage = this.getSelectedImageElement();
+      if(selectedImage?.id) {
+        await this.save(true); //in case pasted images haven't been saved yet
+        if(this.excalidrawData.files.has(selectedImage.fileId)) {
+          linkText = this.excalidrawData.files.get(selectedImage.fileId);
+        } 
+      }
+    }
+
+    if(!linkText) {
       new Notice(t("LINK_BUTTON_CLICK_NO_TEXT"),20000); 
       return;
     }
-    text = text.replaceAll("\n",""); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/187
-    if(text.match(REG_LINKINDEX_HYPERLINK)) {
-      window.open(text,"_blank");
-      return;    
-    }
 
-    const parts = REGEX_LINK.getRes(text).next();    
-    if(!parts.value) {
-      const tags = text.matchAll(/#([\p{Letter}\p{Emoji_Presentation}\p{Number}\/_-]+)/ug).next();
-      if(!tags.value || tags.value.length<2) {
-        new Notice(t("TEXT_ELEMENT_EMPTY"),4000); 
-        return;
-      }
-      const search=this.app.workspace.getLeavesOfType("search");
-      if(search.length==0) return;
-      //@ts-ignore
-      search[0].view.setQuery("tag:"+tags.value[1]);
-      this.app.workspace.revealLeaf(search[0]);
 
-      if(document.fullscreenElement === this.contentEl) {
-        document.exitFullscreen();
-        this.zoomToFit();
-      }
-      return;
-    }
-
-    text = REGEX_LINK.getLink(parts);
-
-    if(text.match(REG_LINKINDEX_HYPERLINK)) {
-      window.open(text,"_blank");
-      return;
-    }
-
-    let lineNum = null;
-    if(text.search("#")>-1) {
-      let t;
-      [t,lineNum] = await this.excalidrawData.getTransclusion(text);
-      text = text.substring(0,text.search("#"));
-    }
-    if(text.match(REG_LINKINDEX_INVALIDCHARS)) {
-      new Notice(t("FILENAME_INVALID_CHARS"),4000); 
-      return;
-    }
-    const file = view.app.metadataCache.getFirstLinkpathDest(text,view.file.path); 
-    if (!ev.altKey && !file) {
-      new Notice(t("FILE_DOES_NOT_EXIST"), 4000);
-      return;
-    }
-    
     try {
       const f = view.file;
       if(ev.shiftKey && document.fullscreenElement === this.contentEl) {
@@ -275,7 +281,7 @@ export default class ExcalidrawView extends TextFileView {
       if(file) {
         leaf.openFile(file,{eState: {line: lineNum-1}}); //if file exists open file and jump to reference
       } else { 
-        leaf.view.app.workspace.openLinkText(text,view.file.path); 
+        leaf.view.app.workspace.openLinkText(linkText,view.file.path); 
       }
     } catch (e) {
       new Notice(e,4000);
@@ -362,6 +368,10 @@ export default class ExcalidrawView extends TextFileView {
       this.preventReload = false;
       return;
     }
+    if(this.compatibilityMode) {
+      this.dirty = null;
+      return;
+    }
     if(!this.excalidrawRef) return;
     if(!this.file) return;
     if(file) this.data = await this.app.vault.cachedRead(file);
@@ -383,7 +393,7 @@ export default class ExcalidrawView extends TextFileView {
     data = this.data = data.replaceAll("\r\n","\n").replaceAll("\r","\n");
     this.app.workspace.onLayoutReady(async ()=>{
       this.dirty = null;
-      this.compatibilityMode = this.file.extension == "excalidraw";
+      this.compatibilityMode = this.file.extension === "excalidraw";
       await this.plugin.loadSettings();
       this.plugin.opencount++;
       if(this.compatibilityMode) {
@@ -430,6 +440,7 @@ export default class ExcalidrawView extends TextFileView {
           viewModeEnabled: viewModeEnabled,
           ...  excalidrawData.appState, 
         },
+        files: excalidrawData.files,
         commitToHistory: true,
       });
       if((this.app.workspace.activeLeaf === this.leaf) && this.excalidrawWrapperRef) {
@@ -440,30 +451,11 @@ export default class ExcalidrawView extends TextFileView {
       this.instantiateExcalidraw({
         elements: excalidrawData.elements,
         appState: excalidrawData.appState,
+        files: excalidrawData.files,
         libraryItems: await this.getLibrary(),
       });
       //files are loaded on excalidrawRef readyPromise
-    }
-
-    /*
-    //load files
-    this.excalidrawData.files.forEach((value,key)=> {
-      const file = this.app.vault.getAbstractFileByPath(value);
-      if(file && file instanceof TFile) {
-        getObsidianImage(this.plugin.app,file).then(async (data)=>{
-          if(!this.excalidrawData) return;
-          let files:BinaryFileData[] = [];
-            files.push({
-              mimeType : data.mimeType,
-              id: key as FileId,
-              dataURL: data.dataURL,
-              created: data.created
-            });
-            this.excalidrawAPI.addFiles(files);
-          });
-      }
-    });*/
-    
+    }   
   }
 
   //Compatibility mode with .excalidraw files
@@ -583,7 +575,7 @@ export default class ExcalidrawView extends TextFileView {
               }
               let svg = await getSVG(this.getScene(),exportSettings);
               if(!svg) return null;
-              svg = ExcalidrawView.embedFontsInSVG(svg);
+              svg = embedFontsInSVG(svg);
               download(null,svgToBase64(svg.outerHTML),this.file.basename+'.svg');
               return;
             }
@@ -671,7 +663,7 @@ export default class ExcalidrawView extends TextFileView {
         if(this.excalidrawAPI.getAppState().viewModeEnabled) {
           if(selectedTextElement) {
             const retval = selectedTextElement;
-            selectedTextElement == null;
+            selectedTextElement = null;
             return retval;
           }
           return {id:null,text:null};
@@ -688,6 +680,30 @@ export default class ExcalidrawView extends TextFileView {
                             .filter((el:any)=>el.type=="text"); //filter for text elements of the group
         if(textElement.length==0) return {id:null,text:null}; //the group had no text element member
         return {id:selectedElement[0].id, text:selectedElement[0].text}; //return text element text
+      };      
+
+      this.getSelectedImageElement = ():{id: string, fileId:string} => {
+        if(!excalidrawRef?.current) return {id:null,fileId:null};
+        if(this.excalidrawAPI.getAppState().viewModeEnabled) {
+          if(selectedImageElement) {
+            const retval = selectedImageElement;
+            selectedImageElement = null;
+            return retval;
+          }
+          return {id:null,fileId:null};
+        }
+        const selectedElement = this.excalidrawAPI.getSceneElements().filter((el:any)=>el.id==Object.keys(this.excalidrawAPI.getAppState().selectedElementIds)[0]);
+        if(selectedElement.length===0) return {id:null,fileId:null};
+        if(selectedElement[0].type == "image") return {id:selectedElement[0].id, fileId:selectedElement[0].fileId}; //an image element was selected. Return fileId
+        if(selectedElement[0].groupIds.length === 0) return {id:null,fileId:null}; //is the selected element part of a group?
+        const group = selectedElement[0].groupIds[0]; //if yes, take the first group it is part of
+        const imageElement = this
+                            .excalidrawAPI
+                            .getSceneElements()
+                            .filter((el:any)=>el.groupIds?.includes(group))
+                            .filter((el:any)=>el.type=="image"); //filter for Image elements of the group
+        if(imageElement.length===0) return {id:null,fileId:null}; //the group had no image element member
+        return {id:selectedElement[0].id, fileId:selectedElement[0].fileId}; //return image element fileId
       };      
 
       this.addText = (text:string, fontFamily?:1|2|3) => {
@@ -793,6 +809,7 @@ export default class ExcalidrawView extends TextFileView {
 
       //variables used to handle click events in view mode
       let selectedTextElement:{id:string,text:string} = null;
+      let selectedImageElement:{id:string,fileId:string} = null;
       let timestamp = 0;
       let blockOnMouseButtonDown = false;
 
@@ -822,6 +839,19 @@ export default class ExcalidrawView extends TextFileView {
         //if there are still multiple text elements with links on top of each other, return the first
         return {id:elementsWithLinks[0].id,text:elementsWithLinks[0].text};
       }
+
+      const getImageElementAtPointer = (pointer:any) => {
+        const elements = this.excalidrawAPI.getSceneElements()
+                             .filter((e:ExcalidrawElement)=>{
+                                if (e.type !== "image") return false;
+                                const [x,y,w,h] = rotatedDimensions(e);
+                                return x<=pointer.x && x+w>=pointer.x
+                                       && y<=pointer.y && y+h>=pointer.y;
+                              });
+        if(elements.length==0) return null;
+        if(elements.length>1) return {id:elements[0].id,fileId:elements[0].fileId};
+        //if more than 1 image elements are at the location, return the first
+      }      
  
       let hoverPoint = {x:0,y:0};
       let hoverPreviewTarget:EventTarget = null;
@@ -859,7 +889,13 @@ export default class ExcalidrawView extends TextFileView {
           const event = new MouseEvent("click", {ctrlKey: true, shiftKey: this.shiftKeyDown, altKey:this.altKeyDown});
           this.handleLinkClick(this,event);
           selectedTextElement = null;
-        }          
+        }      
+        selectedImageElement = getImageElementAtPointer(currentPosition);
+        if(selectedImageElement) {
+          const event = new MouseEvent("click", {ctrlKey: true, shiftKey: this.shiftKeyDown, altKey:this.altKeyDown});
+          this.handleLinkClick(this,event);
+          selectedImageElement = null;
+        }    
       }
       
       let mouseEvent:any = null;
@@ -930,7 +966,7 @@ export default class ExcalidrawView extends TextFileView {
             //@ts-ignore
             if(!(e.ctrlKey||e.metaKey)) return;
             if(!(this.plugin.settings.allowCtrlClick)) return;
-            if(!this.getSelectedTextElement().id) return;
+            if(!(this.getSelectedTextElement().id || this.getSelectedImageElement().id)) return;
             this.handleLinkClick(this,e);
           },
           onMouseMove: (e:MouseEvent) => {

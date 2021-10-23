@@ -3,7 +3,7 @@ import {  App, normalizePath, TAbstractFile, TFile, TFolder, Vault, WorkspaceLea
 import { Random } from "roughjs/bin/math";
 import { BinaryFileData, DataURL, Zoom } from "@zsviczian/excalidraw/types/types";
 import { nanoid } from "nanoid";
-import { IMAGE_TYPES } from "./constants";
+import { CASCADIA_FONT, IMAGE_TYPES, VIRGIL_FONT } from "./constants";
 import {ExcalidrawAutomate} from './ExcalidrawAutomate';
 import ExcalidrawPlugin from "./main";
 import { ExcalidrawElement, FileId } from "@zsviczian/excalidraw/types/element/types";
@@ -351,6 +351,18 @@ export const getPNG = async (scene:any, exportSettings:ExportSettings, scale:num
     return null;
   }
 }
+
+export const embedFontsInSVG = (svg:SVGSVGElement):SVGSVGElement => {
+  //replace font references with base64 fonts
+  const includesVirgil = svg.querySelector("text[font-family^='Virgil']") != null;
+  const includesCascadia = svg.querySelector("text[font-family^='Cascadia']") != null; 
+  const defs = svg.querySelector("defs");
+  if (defs && (includesCascadia || includesVirgil)) {
+    defs.innerHTML = "<style>" + (includesVirgil ? VIRGIL_FONT : "") + (includesCascadia ? CASCADIA_FONT : "")+"</style>";
+  }
+  return svg;
+}
+
 
 export const loadSceneFiles = async (app:App, filesMap: Map<FileId, string>,addFiles:Function) => {
   const entries = filesMap.entries();

@@ -56,7 +56,7 @@ import { Prompt } from "./Prompt";
 import { around } from "monkey-around";
 import { t } from "./lang/helpers";
 import { MigrationPrompt } from "./MigrationPrompt";
-import { checkAndCreateFolder, download, generateSVGString, getAttachmentsFolderAndFilePath, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, getPNG, getSVG, splitFolderAndFilename, svgToBase64 } from "./Utils";
+import { checkAndCreateFolder, download, embedFontsInSVG, generateSVGString, getAttachmentsFolderAndFilePath, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, getPNG, getSVG, splitFolderAndFilename, svgToBase64 } from "./Utils";
 
 declare module "obsidian" {
   interface App {
@@ -250,7 +250,7 @@ export default class ExcalidrawPlugin extends Plugin {
         svg = await getSVG(JSON_parse(scene),exportSettings);
       }
       if(!svg) return null;
-      svg = ExcalidrawView.embedFontsInSVG(svg);
+      svg = embedFontsInSVG(svg);
       svg.removeAttribute('width');
       svg.removeAttribute('height');
       img.setAttribute("src",svgToBase64(svg.outerHTML));
@@ -789,7 +789,7 @@ export default class ExcalidrawPlugin extends Plugin {
     const filename = file.name.substr(0,file.name.lastIndexOf(".excalidraw")) + (replaceExtension ? ".md" : ".excalidraw.md");
     const fname = getNewUniqueFilepath(this.app.vault,filename,normalizePath(file.path.substr(0,file.path.lastIndexOf(file.name))));
     console.log(fname);
-    const result = await this.app.vault.create(fname,FRONTMATTER + this.exportSceneToMD(data));
+    const result = await this.app.vault.create(fname,FRONTMATTER + await this.exportSceneToMD(data));
     if (this.settings.keepInSync) {
       ['.svg','.png'].forEach( (ext:string)=>{
         const oldIMGpath = file.path.substring(0,file.path.lastIndexOf(".excalidraw")) + ext;   

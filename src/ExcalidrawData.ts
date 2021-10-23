@@ -87,7 +87,7 @@ export function getSVGString(data:string):string {
 }
 
 export class ExcalidrawData {
-  public svgString: string = null;
+  public svgSnapshot: string = null;
   private textElements:Map<string,{raw:string, parsed:string}> = null; 
   public scene:any = null;
   private file:TFile = null;
@@ -99,6 +99,7 @@ export class ExcalidrawData {
   private plugin: ExcalidrawPlugin;
   public loaded: boolean = false;
   public files:Map<FileId,string> = null; //fileId, path
+  private compatibilityMode:boolean = false;
 
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
@@ -116,6 +117,7 @@ export class ExcalidrawData {
     this.file = file;
     this.textElements = new Map<string,{raw:string, parsed:string}>();
     this.files.clear();
+    this.compatibilityMode = false;
 
     //I am storing these because if the settings change while a drawing is open parsing will run into errors during save
     //The drawing will use these values until next drawing is loaded or this drawing is re-loaded
@@ -151,7 +153,7 @@ export class ExcalidrawData {
       this.scene.files = {}; //loading legacy scenes that do not yet have the files attribute.
     }
 
-    this.svgString = getSVGString(data.substr(pos+scene.length));
+    this.svgSnapshot = getSVGString(data.substr(pos+scene.length));
 
     data = data.substring(0,pos);
 
@@ -203,6 +205,7 @@ export class ExcalidrawData {
   }
 
   public async loadLegacyData(data: string,file: TFile):Promise<boolean> {
+    this.compatibilityMode = true;
     this.file = file;
     this.textElements = new Map<string,{raw:string, parsed:string}>();
     this.setShowLinkBrackets();
@@ -485,7 +488,7 @@ export class ExcalidrawData {
       }
       outString += '\n';
     }
-    return outString + this.plugin.getMarkdownDrawingSection(JSON.stringify(this.scene,null,"\t"),this.svgString);
+    return outString + this.plugin.getMarkdownDrawingSection(JSON.stringify(this.scene,null,"\t"),this.svgSnapshot);
   }
 
   private async syncFiles(scene:SceneDataWithFiles):Promise<boolean> {
@@ -523,10 +526,12 @@ export class ExcalidrawData {
   }
 
   public async syncElements(newScene:any):Promise<boolean> {
-    //console.log("Excalidraw.Data.syncElements()");
-    let result = await this.syncFiles(newScene);
-    this.scene = newScene;//JSON_parse(newScene);
-    this.scene.files = {};
+    this.scene = newScene;
+    let result = false;
+    if(!this.compatibilityMode) {
+      result = await this.syncFiles(newScene);
+      this.scene.files = {};
+    }
     result = result || this.setLinkPrefix() || this.setUrlPrefix() || this.setShowLinkBrackets();
     await this.updateTextElementsFromScene();
     return result || this.findNewTextElementsInScene();

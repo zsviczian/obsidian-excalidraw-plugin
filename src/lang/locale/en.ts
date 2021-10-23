@@ -32,10 +32,10 @@ export default {
   SAVE_AS_SVG: "Save as SVG into Vault (CTRL/META+CLICK to export)",
   OPEN_LINK: "Open selected text as link\n(SHIFT+CLICK to open in a new pane)",
   EXPORT_EXCALIDRAW: "Export to an .Excalidraw file",
-  LINK_BUTTON_CLICK_NO_TEXT: 'Select a Text Element containing an internal or external link.\n'+
+  LINK_BUTTON_CLICK_NO_TEXT: 'Select a an ImageElement, or select a TextElement that contains an internal or external link.\n'+
                              'SHIFT CLICK this button to open the link in a new pane.\n'+
-                             'CTRL/META CLICK the Text Element on the canvas has the same effect!',
-  TEXT_ELEMENT_EMPTY: "Text Element is empty, or [[valid-link|alias]] or [alias](valid-link) is not found",
+                             'CTRL/META CLICK the Image or TextElement on the canvas has the same effect!',
+  TEXT_ELEMENT_EMPTY: "No ImageElement is selected or TextElement is empty, or [[valid-link|alias]] or [alias](valid-link) is not found",
   FILENAME_INVALID_CHARS: 'File name cannot contain any of the following characters: * " \\  < > : | ?',
   FILE_DOES_NOT_EXIST: "File does not exist. Hold down ALT (or ALT+SHIFT) and CLICK link button to create a new file.",
   FORCE_SAVE: "Force-save to update transclusions in adjacent panes.\n(Please note, that autosave is always on)",

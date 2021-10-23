@@ -4,9 +4,9 @@
 [x] update code to adopt change files moving from AppState to App 
 - Add "files" to legacy excalidraw export
 
-[ ] PNG preview
-[ ] markdown embed SVG 190
-[ ] markdown embed PNG
+[x] PNG preview
+[x] markdown embed SVG 190
+[x] markdown embed PNG
 [ ] embed Excalidraw into other Excalidraw
 
 

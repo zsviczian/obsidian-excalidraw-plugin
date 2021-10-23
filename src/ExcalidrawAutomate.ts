@@ -9,8 +9,8 @@ import {
   normalizePath,
   TFile
 } from "obsidian"
-import ExcalidrawView from "./ExcalidrawView";
-import { getJSON, getSVGString } from "./ExcalidrawData";
+import ExcalidrawView, { TextMode } from "./ExcalidrawView";
+import { ExcalidrawData, getJSON, getSVGString } from "./ExcalidrawData";
 import { 
   FRONTMATTER, 
   nanoid, 
@@ -18,7 +18,7 @@ import {
   VIEW_TYPE_EXCALIDRAW,
   MAX_IMAGE_SIZE
 } from "./constants";
-import { generateSVGString, getObsidianImage, getPNG, getSVG, wrapText } from "./Utils";
+import { embedFontsInSVG, generateSVGString, getObsidianImage, getPNG, getSVG, loadSceneFiles, svgToBase64, wrapText } from "./Utils";
 import { AppState } from "@zsviczian/excalidraw/types/types";
 
 declare type ConnectionPoint = "top"|"bottom"|"left"|"right";
@@ -283,7 +283,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         }
       }
     ):Promise<string> {
-      const template = params?.templatePath ? (await getTemplate(params.templatePath)) : null;
+      const template = params?.templatePath ? (await getTemplate(params.templatePath,true)) : null;
       let elements = template ? template.elements : [];
       elements = elements.concat(this.getElements());
       let frontmatter:string;
@@ -325,22 +325,24 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
           currentItemEndArrowhead:          template?.appState?.currentItemEndArrowhead          ?? this.style.endArrowHead,
           currentItemLinearStrokeSharpness: template?.appState?.currentItemLinearStrokeSharpness ?? this.style.strokeSharpness,
           gridSize:                         template?.appState?.gridSize                         ?? this.canvas.gridSize,
-          files:                            template?.appState?.files                            ?? {},
-        }
+        },
+        files:                              template?.files                                      ?? {},
       };
 
       return plugin.createDrawing(
         params?.filename ? params.filename + '.excalidraw.md' : this.plugin.getNextDefaultFilename(),
         params?.onNewPane ? params.onNewPane : false,
         params?.foldername ? params.foldername : this.plugin.settings.folder,
-        frontmatter + await plugin.exportSceneToMD(
-        JSON.stringify(scene,null,"\t"))
+        this.plugin.settings.compatibilityMode 
+          ? JSON.stringify(scene,null,"\t") 
+          : frontmatter + await plugin.exportSceneToMD(JSON.stringify(scene,null,"\t"))
       );  
     },
     async createSVG(templatePath?:string,embedFont:boolean = false):Promise<SVGSVGElement> {
-      const template = templatePath ? (await getTemplate(templatePath)) : null;
+      const automateElements = this.getElements();
+      const template = templatePath ? (await getTemplate(templatePath,true)) : null;
       let elements = template ? template.elements : [];
-      elements = elements.concat(this.getElements());
+      elements = elements.concat(automateElements);
       const svg = await getSVG(
         {//createDrawing
           type: "excalidraw",
@@ -350,20 +352,21 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
           appState: {
             theme:               template?.appState?.theme               ?? this.canvas.theme,
             viewBackgroundColor: template?.appState?.viewBackgroundColor ?? this.canvas.viewBackgroundColor,
-            files:               template?.appState?.files               ?? {}
-          }
+          },
+          files: template?.files ?? {}
         },
         {
           withBackground: plugin.settings.exportWithBackground, 
           withTheme: plugin.settings.exportWithTheme
         }
       )
-      return embedFont ? ExcalidrawView.embedFontsInSVG(svg) : svg;     
+      return embedFont ? embedFontsInSVG(svg) : svg;     
     },
     async createPNG(templatePath?:string, scale:number=1) {
-      const template = templatePath ? (await getTemplate(templatePath)) : null;
+      const automateElements = this.getElements();
+      const template = templatePath ? (await getTemplate(templatePath,true)) : null;
       let elements = template ? template.elements : [];
-      elements = elements.concat(this.getElements());
+      elements = elements.concat(automateElements);
       return getPNG(
         { 
           type: "excalidraw",
@@ -373,8 +376,8 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
           appState: {
             theme:               template?.appState?.theme               ?? this.canvas.theme,
             viewBackgroundColor: template?.appState?.viewBackgroundColor ?? this.canvas.viewBackgroundColor,
-            files:               template?.appState?.files               ?? {}
-          }
+          },
+          files: template?.files ?? {}
         },
         {
           withBackground: plugin.settings.exportWithBackground, 
@@ -824,21 +827,40 @@ async function getTemplate(fileWithPath:string, loadFiles:boolean = false):Promi
   const vault = app.vault;
   const file = app.metadataCache.getFirstLinkpathDest(normalizePath(fileWithPath),'');
   if(file && file instanceof TFile) {
-    const data = await vault.read(file);
+    const data = (await vault.read(file)).replaceAll("\r\n","\n").replaceAll("\r","\n");
+    const excalidrawData:ExcalidrawData = new ExcalidrawData(window.ExcalidrawAutomate.plugin);
+    
+    if(file.extension === "excalidraw") {
+      await excalidrawData.loadLegacyData(data,file);
+      return {
+        elements: excalidrawData.scene.elements,
+        appState: excalidrawData.scene.appState,  
+        frontmatter: "",
+        files: excalidrawData.scene.files,
+        svgSnapshot: null,
+      };
+    }
+
+    const parsed = data.search("excalidraw-plugin: parsed\n")>-1 || data.search("excalidraw-plugin: locked\n")>-1; //locked for backward compatibility
+    await excalidrawData.loadData(data,file,parsed ? TextMode.parsed : TextMode.raw)
 
     let trimLocation = data.search("# Text Elements\n");
     if(trimLocation == -1) trimLocation = data.search("# Drawing\n");
 
-    const [scene,pos] = getJSON(data);
-    const svgSnapshot = getSVGString(data.substr(pos+scene.length));
+    if(loadFiles) {
+      await loadSceneFiles(app,excalidrawData.files,(fileArray:any)=>{
+        for(const f of fileArray) {
+          excalidrawData.scene.files[f.id] = f;
+        }
+      });
+    }
 
-    const excalidrawData = JSON_parse(scene);
     return {
-      elements: excalidrawData.elements,
-      appState: excalidrawData.appState,  
+      elements: excalidrawData.scene.elements,
+      appState: excalidrawData.scene.appState,  
       frontmatter: data.substring(0,trimLocation),
-      files: null,
-      svgSnapshot: svgSnapshot
+      files: excalidrawData.scene.files,
+      svgSnapshot: excalidrawData.svgSnapshot
     };
   };
   return {
