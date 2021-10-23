@@ -1,7 +1,7 @@
 import Excalidraw,{exportToSvg} from "@zsviczian/excalidraw";
 import {  App, normalizePath, TAbstractFile, TFile, TFolder, Vault, WorkspaceLeaf } from "obsidian";
 import { Random } from "roughjs/bin/math";
-import { DataURL, Zoom } from "@zsviczian/excalidraw/types/types";
+import { BinaryFileData, DataURL, Zoom } from "@zsviczian/excalidraw/types/types";
 import { nanoid } from "nanoid";
 import { IMAGE_TYPES } from "./constants";
 import {ExcalidrawAutomate} from './ExcalidrawAutomate';
@@ -349,5 +349,29 @@ export const getPNG = async (scene:any, exportSettings:ExportSettings, scale:num
     });
   } catch (error) {
     return null;
+  }
+}
+
+export const loadSceneFiles = async (app:App, filesMap: Map<FileId, string>,addFiles:Function) => {
+  const entries = filesMap.entries();
+  let entry;
+  let files:BinaryFileData[] = [];
+  while(!(entry = entries.next()).done) {
+    const file = app.vault.getAbstractFileByPath(entry.value[1]);
+    if(file && file instanceof TFile) {
+      const data = await getObsidianImage(app,file);
+      files.push({
+        mimeType : data.mimeType,
+        id: entry.value[0],
+        dataURL: data.dataURL,
+        created: data.created
+      });
+    }
+  }
+
+  try { //in try block because by the time files are loaded the user may have closed the view
+    addFiles(files);
+  } catch(e) {
+
   }
 }

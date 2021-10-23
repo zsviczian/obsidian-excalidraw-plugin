@@ -36,9 +36,10 @@ import ExcalidrawPlugin from './main';
 import {ExcalidrawAutomate, repositionElementsToCursor} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./ExcalidrawData";
-import { checkAndCreateFolder, download, generateSVGString, getNewOrAdjacentLeaf, getNewUniqueFilepath, getObsidianImage, getPNG, getSVG, rotatedDimensions, splitFolderAndFilename, svgToBase64, viewportCoordsToSceneCoords } from "./Utils";
+import { checkAndCreateFolder, download, generateSVGString, getNewOrAdjacentLeaf, getNewUniqueFilepath, getObsidianImage, getPNG, getSVG, loadSceneFiles, rotatedDimensions, splitFolderAndFilename, svgToBase64, viewportCoordsToSceneCoords } from "./Utils";
 import { Prompt } from "./Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
+import { sceneCoordsToViewportCoords } from "@zsviczian/excalidraw/types/utils";
 
 declare let window: ExcalidrawAutomate;
 
@@ -434,14 +435,17 @@ export default class ExcalidrawView extends TextFileView {
       if((this.app.workspace.activeLeaf === this.leaf) && this.excalidrawWrapperRef) {
         this.excalidrawWrapperRef.current.focus();
       }
+      loadSceneFiles(this.app,this.excalidrawData.files,this.excalidrawRef.current.addFiles);
     } else {
       this.instantiateExcalidraw({
         elements: excalidrawData.elements,
         appState: excalidrawData.appState,
         libraryItems: await this.getLibrary(),
       });
+      setTimeout(()=>loadSceneFiles(this.app,this.excalidrawData.files,this.excalidrawRef.current.addFiles),1000);
     }
 
+    /*
     //load files
     this.excalidrawData.files.forEach((value,key)=> {
       const file = this.app.vault.getAbstractFileByPath(value);
@@ -458,7 +462,8 @@ export default class ExcalidrawView extends TextFileView {
             this.excalidrawRef.current.addFiles(files);
           });
       }
-    });
+    });*/
+    
   }
 
   //Compatibility mode with .excalidraw files
@@ -628,7 +633,6 @@ export default class ExcalidrawView extends TextFileView {
         window.addEventListener("resize", onResize); 
         return () => window.removeEventListener("resize", onResize);
       }, [excalidrawWrapperRef]);
-
 
       this.getSelectedTextElement = ():{id: string, text:string} => {
         if(!excalidrawRef?.current) return {id:null,text:null};
@@ -1114,7 +1118,10 @@ export default class ExcalidrawView extends TextFileView {
       );
 
     });
-    ReactDOM.render(reactElement,this.contentEl,()=>this.excalidrawWrapperRef.current.focus());  
+
+    ReactDOM.render(reactElement,this.contentEl,()=>{
+      this.excalidrawWrapperRef.current.focus();
+    });  
   }
 
   public zoomToFit(delay:boolean = true) {

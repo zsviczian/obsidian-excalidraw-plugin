@@ -10,7 +10,7 @@ import {
   TFile
 } from "obsidian"
 import ExcalidrawView from "./ExcalidrawView";
-import { getJSON } from "./ExcalidrawData";
+import { getJSON, getSVGString } from "./ExcalidrawData";
 import { 
   FRONTMATTER, 
   nanoid, 
@@ -813,7 +813,13 @@ export function measureText (newText:string, fontSize:number, fontFamily:number)
   return {w: width, h: height, baseline: baseline };
 };
 
-async function getTemplate(fileWithPath: string):Promise<{elements: any,appState: any, frontmatter: string}> {
+async function getTemplate(fileWithPath:string, loadFiles:boolean = false):Promise<{
+  elements: any,
+  appState: any, 
+  frontmatter: string,
+  files: any,
+  svgSnapshot: string
+}> {
   const app = window.ExcalidrawAutomate.plugin.app;
   const vault = app.vault;
   const file = app.metadataCache.getFirstLinkpathDest(normalizePath(fileWithPath),'');
@@ -823,17 +829,24 @@ async function getTemplate(fileWithPath: string):Promise<{elements: any,appState
     let trimLocation = data.search("# Text Elements\n");
     if(trimLocation == -1) trimLocation = data.search("# Drawing\n");
 
-    const excalidrawData = JSON_parse(getJSON(data)[0]);
+    const [scene,pos] = getJSON(data);
+    const svgSnapshot = getSVGString(data.substr(pos+scene.length));
+
+    const excalidrawData = JSON_parse(scene);
     return {
       elements: excalidrawData.elements,
       appState: excalidrawData.appState,  
-      frontmatter: data.substring(0,trimLocation)
+      frontmatter: data.substring(0,trimLocation),
+      files: null,
+      svgSnapshot: svgSnapshot
     };
   };
   return {
     elements: [],
     appState: {},
-    frontmatter: null
+    frontmatter: null,
+    files: [],
+    svgSnapshot: null,
   }
 }
 

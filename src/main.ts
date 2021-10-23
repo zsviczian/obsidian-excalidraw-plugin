@@ -57,7 +57,6 @@ import { around } from "monkey-around";
 import { t } from "./lang/helpers";
 import { MigrationPrompt } from "./MigrationPrompt";
 import { checkAndCreateFolder, download, generateSVGString, getAttachmentsFolderAndFilePath, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, getPNG, getSVG, splitFolderAndFilename, svgToBase64 } from "./Utils";
-import { directive } from "@babel/types";
 
 declare module "obsidian" {
   interface App {
@@ -225,7 +224,10 @@ export default class ExcalidrawPlugin extends Plugin {
       const [scene,pos] = getJSON(content);
       const svgSnapshot = getSVGString(content.substr(pos+scene.length));
       
-      if(!this.settings.displaySVGInPreview) {
+      //Removed in 1.4.0 when implementing ImageElement. Key reason for removing this
+      //is to use SVG snapshot in file, to avoid resource intensive process to generating PNG
+      //due to the need to load excalidraw plus all linked images
+/*      if(!this.settings.displaySVGInPreview) {
         const width = parseInt(imgAttributes.fwidth);
         let scale = 1;
         if(width>=800) scale = 2;
@@ -235,10 +237,9 @@ export default class ExcalidrawPlugin extends Plugin {
         if(!png) return null;
         img.src = URL.createObjectURL(png);
         return img;
-      }
+      }*/
       let svg:SVGSVGElement = null;
       if(svgSnapshot) {
-        console.log("using snapshot");
         const el = document.createElement('div');
         el.innerHTML = svgSnapshot;
         const firstChild = el.firstChild;

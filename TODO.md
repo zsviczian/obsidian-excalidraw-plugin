@@ -5,7 +5,7 @@
 - Add "files" to legacy excalidraw export
 
 [ ] PNG preview
-[ ] markdown embed SVG
+[ ] markdown embed SVG 190
 [ ] markdown embed PNG
 [ ] embed Excalidraw into other Excalidraw
 
