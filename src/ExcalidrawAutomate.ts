@@ -630,7 +630,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         errorMessage("targetView not set", "getExcalidrawAPI()");
         return null;
       }
-      return (this.targetView as ExcalidrawView).excalidrawRef.current;
+      return (this.targetView as ExcalidrawView).excalidrawAPI;
     },
     getViewElements ():ExcalidrawElement[] { 
       if (!this.targetView || !this.targetView?._loaded) {

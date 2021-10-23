@@ -39,7 +39,6 @@ import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./Excalidra
 import { checkAndCreateFolder, download, generateSVGString, getNewOrAdjacentLeaf, getNewUniqueFilepath, getObsidianImage, getPNG, getSVG, loadSceneFiles, rotatedDimensions, splitFolderAndFilename, svgToBase64, viewportCoordsToSceneCoords } from "./Utils";
 import { Prompt } from "./Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
-import { sceneCoordsToViewportCoords } from "@zsviczian/excalidraw/types/utils";
 
 declare let window: ExcalidrawAutomate;
 
@@ -67,6 +66,7 @@ export default class ExcalidrawView extends TextFileView {
   public addText:Function = null;
   private refresh: Function = null;
   public excalidrawRef: React.MutableRefObject<any> = null;
+  public excalidrawAPI: any = null;
   private excalidrawWrapperRef: React.MutableRefObject<any> = null;
   private justLoaded: boolean = false;
   private plugin: ExcalidrawPlugin;
@@ -332,7 +332,7 @@ export default class ExcalidrawView extends TextFileView {
     }
     if(reload) {
       await this.save(false);
-      this.excalidrawRef.current.history.clear(); //to avoid undo replacing links with parsed text
+      this.excalidrawAPI.history.clear(); //to avoid undo replacing links with parsed text
     }
   }
 
@@ -374,8 +374,8 @@ export default class ExcalidrawView extends TextFileView {
   // clear the view content  
   clear() {
     if(!this.excalidrawRef) return;
-    this.excalidrawRef.current.resetScene();
-    this.excalidrawRef.current.history.clear();
+    this.excalidrawAPI.resetScene();
+    this.excalidrawAPI.history.clear();
   }
   
   async setViewData (data: string, clear: boolean = false) {   
@@ -421,9 +421,9 @@ export default class ExcalidrawView extends TextFileView {
     const excalidrawData = this.excalidrawData.scene;
     this.justLoaded = justloaded;
     if(this.excalidrawRef) {
-      const viewModeEnabled = this.excalidrawRef.current.getAppState().viewModeEnabled;
-      const zenModeEnabled = this.excalidrawRef.current.getAppState().zenModeEnabled;
-      this.excalidrawRef.current.updateScene({
+      const viewModeEnabled = this.excalidrawAPI.getAppState().viewModeEnabled;
+      const zenModeEnabled = this.excalidrawAPI.getAppState().zenModeEnabled;
+      this.excalidrawAPI.updateScene({
         elements: excalidrawData.elements,
         appState: { 
           zenModeEnabled: zenModeEnabled,
@@ -435,14 +435,14 @@ export default class ExcalidrawView extends TextFileView {
       if((this.app.workspace.activeLeaf === this.leaf) && this.excalidrawWrapperRef) {
         this.excalidrawWrapperRef.current.focus();
       }
-      loadSceneFiles(this.app,this.excalidrawData.files,this.excalidrawRef.current.addFiles);
+      loadSceneFiles(this.app,this.excalidrawData.files,this.excalidrawAPI.addFiles);
     } else {
       this.instantiateExcalidraw({
         elements: excalidrawData.elements,
         appState: excalidrawData.appState,
         libraryItems: await this.getLibrary(),
       });
-      setTimeout(()=>loadSceneFiles(this.app,this.excalidrawData.files,this.excalidrawRef.current.addFiles),1000);
+      //files are loaded on excalidrawRef readyPromise
     }
 
     /*
@@ -459,7 +459,7 @@ export default class ExcalidrawView extends TextFileView {
               dataURL: data.dataURL,
               created: data.created
             });
-            this.excalidrawRef.current.addFiles(files);
+            this.excalidrawAPI.addFiles(files);
           });
       }
     });*/
@@ -489,7 +489,7 @@ export default class ExcalidrawView extends TextFileView {
 
   setMarkdownView() {
     if(this.excalidrawRef) {
-      const el = this.excalidrawRef.current.getSceneElements();
+      const el = this.excalidrawAPI.getSceneElements();
       if(el.filter((e:any)=>e.type==="image").length>0) {
         new Notice(t("DRAWING_CONTAINS_IMAGE"),6000);
       }
@@ -606,13 +606,45 @@ export default class ExcalidrawView extends TextFileView {
     const reactElement = React.createElement(() => {
       let previousSceneVersion = 0;
       let currentPosition = {x:0, y:0};
-      const excalidrawRef = React.useRef(null);
       const excalidrawWrapperRef = React.useRef(null);
       const [dimensions, setDimensions] = React.useState({
         width: undefined,
         height: undefined
       });
       
+      //excalidrawRef readypromise based on 
+      //https://codesandbox.io/s/eexcalidraw-resolvable-promise-d0qg3?file=/src/App.js:167-760
+      const resolvablePromise = () => {
+        let resolve;
+        let reject;
+        const promise = new Promise((_resolve, _reject) => {
+          resolve = _resolve;
+          reject = _reject;
+        });
+        //@ts-ignore
+        promise.resolve = resolve;
+        //@ts-ignore
+        promise.reject = reject;
+        return promise;
+      };
+      
+      // To memoize value between rerenders
+      const excalidrawRef = React.useMemo(
+        () => ({
+          current: {
+            readyPromise: resolvablePromise()
+          }
+        }),
+        []
+      );
+      
+      React.useEffect(() => {
+        excalidrawRef.current.readyPromise.then((api) => {
+          this.excalidrawAPI = api;
+          loadSceneFiles(this.app,this.excalidrawData.files,this.excalidrawAPI.addFiles);
+        });
+      }, [excalidrawRef]);
+
       this.excalidrawRef = excalidrawRef;
       this.excalidrawWrapperRef = excalidrawWrapperRef;
 
@@ -636,7 +668,7 @@ export default class ExcalidrawView extends TextFileView {
 
       this.getSelectedTextElement = ():{id: string, text:string} => {
         if(!excalidrawRef?.current) return {id:null,text:null};
-        if(this.excalidrawRef.current.getAppState().viewModeEnabled) {
+        if(this.excalidrawAPI.getAppState().viewModeEnabled) {
           if(selectedTextElement) {
             const retval = selectedTextElement;
             selectedTextElement == null;
@@ -644,13 +676,13 @@ export default class ExcalidrawView extends TextFileView {
           }
           return {id:null,text:null};
         }
-        const selectedElement = excalidrawRef.current.getSceneElements().filter((el:any)=>el.id==Object.keys(excalidrawRef.current.getAppState().selectedElementIds)[0]);
+        const selectedElement = this.excalidrawAPI.getSceneElements().filter((el:any)=>el.id==Object.keys(this.excalidrawAPI.getAppState().selectedElementIds)[0]);
         if(selectedElement.length==0) return {id:null,text:null};
         if(selectedElement[0].type == "text") return {id:selectedElement[0].id, text:selectedElement[0].text}; //a text element was selected. Return text
         if(selectedElement[0].groupIds.length == 0) return {id:null,text:null}; //is the selected element part of a group?
         const group = selectedElement[0].groupIds[0]; //if yes, take the first group it is part of
-        const textElement = excalidrawRef
-                            .current
+        const textElement = this
+                            .excalidrawAPI
                             .getSceneElements()
                             .filter((el:any)=>el.groupIds?.includes(group))
                             .filter((el:any)=>el.type=="text"); //filter for text elements of the group
@@ -662,8 +694,8 @@ export default class ExcalidrawView extends TextFileView {
         if(!excalidrawRef?.current) {
           return;
         }       
-        const el: ExcalidrawElement[] = excalidrawRef.current.getSceneElements();
-        const st: AppState = excalidrawRef.current.getAppState();
+        const el: ExcalidrawElement[] = this.excalidrawAPI.getSceneElements();
+        const st: AppState = this.excalidrawAPI.getAppState();
         window.ExcalidrawAutomate.reset();
         window.ExcalidrawAutomate.style.strokeColor = st.currentItemStrokeColor;
         window.ExcalidrawAutomate.style.opacity = st.currentItemOpacity;
@@ -686,11 +718,11 @@ export default class ExcalidrawView extends TextFileView {
           }
         };
 
-        const el: ExcalidrawElement[] = excalidrawRef.current.getSceneElements();
-        let st: AppState = excalidrawRef.current.getAppState();
+        const el: ExcalidrawElement[] = this.excalidrawAPI.getSceneElements();
+        let st: AppState = this.excalidrawAPI.getAppState();
 
         if(repositionToCursor) newElements = repositionElementsToCursor(newElements,currentPosition,true);
-        this.excalidrawRef.current.updateScene({
+        this.excalidrawAPI.updateScene({
           elements: el.concat(newElements),
           appState: st,
           commitToHistory: true,
@@ -706,7 +738,7 @@ export default class ExcalidrawView extends TextFileView {
             });
             this.excalidrawData.files.set(images[k].id,images[k].file);
           });
-          this.excalidrawRef.current.addFiles(files);
+          this.excalidrawAPI.addFiles(files);
         }        
         if(save) this.save(); else this.dirty = this.file?.path;
         return true;
@@ -716,9 +748,9 @@ export default class ExcalidrawView extends TextFileView {
         if(!excalidrawRef?.current) {
           return null;
         }
-        const el: ExcalidrawElement[] = excalidrawRef.current.getSceneElements();
-        const st: AppState = excalidrawRef.current.getAppState();
-        const files = excalidrawRef.current.getFiles();
+        const el: ExcalidrawElement[] = this.excalidrawAPI.getSceneElements();
+        const st: AppState = this.excalidrawAPI.getAppState();
+        const files = this.excalidrawAPI.getFiles();
 
         if(files) {
           const imgIds = el.filter((e)=>e.type=="image").map((e:any)=>e.fileId);
@@ -756,7 +788,7 @@ export default class ExcalidrawView extends TextFileView {
 
       this.refresh = () => {
         if(!excalidrawRef?.current) return;
-        excalidrawRef.current.refresh();
+        this.excalidrawAPI.refresh();
       };
 
       //variables used to handle click events in view mode
@@ -765,7 +797,7 @@ export default class ExcalidrawView extends TextFileView {
       let blockOnMouseButtonDown = false;
 
       const getTextElementAtPointer = (pointer:any) => {
-        const elements = this.excalidrawRef.current.getSceneElements()
+        const elements = this.excalidrawAPI.getSceneElements()
                              .filter((e:ExcalidrawElement)=>{
                                 if (e.type !== "text") return false;
                                 const [x,y,w,h] = rotatedDimensions(e);
@@ -993,7 +1025,7 @@ export default class ExcalidrawView extends TextFileView {
             return true;
           },
           onDrop: (event: React.DragEvent<HTMLDivElement>):boolean => {
-            const st: AppState = excalidrawRef.current.getAppState();
+            const st: AppState = this.excalidrawAPI.getAppState();
             currentPosition = viewportCoordsToSceneCoords({ clientX: event.clientX, clientY: event.clientY },st);
             
             const draggable = (this.app as any).dragManager.draggable;
@@ -1093,14 +1125,14 @@ export default class ExcalidrawView extends TextFileView {
                 await this.save(false);
                 //this callback function will only be invoked if quick parse fails, i.e. there is a transclusion in the raw text
                 //thus I only check if TextMode.parsed, text is always != with parseResult
-                if(this.textMode == TextMode.parsed) this.excalidrawRef.current.history.clear(); 
+                if(this.textMode == TextMode.parsed) this.excalidrawAPI.history.clear(); 
                 this.setupAutosaveTimer(); 
               });
               if(parseResult) { //there were no transclusions in the raw text, quick parse was successful
                 this.setupAutosaveTimer();
                 if(this.textMode == TextMode.raw) return; //text is displayed in raw, no need to clear the history, undo will not create problems
                 if(text == parseResult) return; //There were no links to parse, raw text and parsed text are equivalent
-                this.excalidrawRef.current.history.clear();
+                this.excalidrawAPI.history.clear();
                 return parseResult;
               }
               return;
@@ -1126,7 +1158,7 @@ export default class ExcalidrawView extends TextFileView {
 
   public zoomToFit(delay:boolean = true) {
     if(!this.excalidrawRef) return;
-    const current = this.excalidrawRef.current;
+    const current = this.excalidrawAPI;
     const fullscreen = (document.fullscreenElement==this.contentEl);
     const elements = current.getSceneElements();
     if(delay) { //time for the DOM to render, I am sure there is a more elegant solution
