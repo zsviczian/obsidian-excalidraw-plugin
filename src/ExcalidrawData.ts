@@ -11,8 +11,11 @@ import {
   JSON_parse
 } from "./constants";
 import { TextMode } from "./ExcalidrawView";
-import { wrapText } from "./Utils";
+import { getAttachmentsFolderAndFilePath, getBinaryFileFromDataURL, wrapText } from "./Utils";
+import { ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/element/types";
+import { BinaryFiles, SceneData } from "@zsviczian/excalidraw/types/types";
 
+type SceneDataWithFiles = SceneData & { files: BinaryFiles};
 
 declare module "obsidian" {
   interface MetadataCache {
@@ -67,10 +70,24 @@ export function getJSON(data:string):[string,number] {
     const result = parts.value[2];
     return [result.substr(0,result.lastIndexOf("}")+1),parts.value.index]; //this is a workaround in case sync merges two files together and one version is still an old version without the ```codeblock
   }
-  return [data,parts.value.index];
+  return [data,parts.value ? parts.value.index : 0];
+}
+
+//extracts SVG snapshot from Excalidraw Markdown string
+const SVG_REG = /.*?```html\n([\s\S]*?)```/gm;
+export function getSVGString(data:string):string {
+  let res = data.matchAll(SVG_REG);
+
+  let parts;
+  parts = res.next();
+  if(parts.value && parts.value.length>1) {
+    return parts.value[1];
+  }
+  return null;
 }
 
 export class ExcalidrawData {
+  public svgSnapshot: string = null;
   private textElements:Map<string,{raw:string, parsed:string}> = null; 
   public scene:any = null;
   private file:TFile = null;
@@ -81,10 +98,13 @@ export class ExcalidrawData {
   private textMode: TextMode = TextMode.raw;
   private plugin: ExcalidrawPlugin;
   public loaded: boolean = false;
+  public files:Map<FileId,string> = null; //fileId, path
+  private compatibilityMode:boolean = false;
 
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
     this.app = plugin.app;
+    this.files = new Map<FileId,string>();
   }  
 
   /**
@@ -96,6 +116,8 @@ export class ExcalidrawData {
     this.loaded = false;
     this.file = file;
     this.textElements = new Map<string,{raw:string, parsed:string}>();
+    this.files.clear();
+    this.compatibilityMode = false;
 
     //I am storing these because if the settings change while a drawing is open parsing will run into errors during save
     //The drawing will use these values until next drawing is loaded or this drawing is re-loaded
@@ -126,6 +148,13 @@ export class ExcalidrawData {
     if (!this.scene) {
       this.scene = JSON_parse(scene); //this is a workaround to address when files are mereged by sync and one version is still an old markdown without the codeblock ```
     }
+
+    if(!this.scene.files) {
+      this.scene.files = {}; //loading legacy scenes that do not yet have the files attribute.
+    }
+
+    this.svgSnapshot = getSVGString(data.substr(pos+scene.length));
+
     data = data.substring(0,pos);
 
     //The Markdown # Text Elements take priority over the JSON text elements. Assuming the scenario in which the link was updated due to filename changes
@@ -145,7 +174,7 @@ export class ExcalidrawData {
     //iterating through all the text elements in .md
     //Text elements always contain the raw value
     const BLOCKREF_LEN:number = " ^12345678\n\n".length;
-    const res = data.matchAll(/\s\^(.{8})[\n]+/g);
+    let res = data.matchAll(/\s\^(.{8})[\n]+/g);
     let parts;
     while(!(parts = res.next()).done) {
       const text = data.substring(position,parts.value.index);
@@ -158,6 +187,15 @@ export class ExcalidrawData {
       position = parts.value.index + BLOCKREF_LEN;  
     }
 
+
+    //Load Embedded files
+    const REG_FILEID_FILEPATH = /([\w\d]*):\s*\[\[([^\]]*)]]\n/gm;
+    data = data.substring(data.indexOf("# Embedded files\n")+"# Embedded files\n".length);
+    res = data.matchAll(REG_FILEID_FILEPATH);
+    while(!(parts = res.next()).done) {
+      this.files.set(parts.value[1] as FileId,parts.value[2]);
+    }
+
     //Check to see if there are text elements in the JSON that were missed from the # Text Elements section
     //e.g. if the entire text elements section was deleted.
     this.findNewTextElementsInScene();
@@ -167,12 +205,17 @@ export class ExcalidrawData {
   }
 
   public async loadLegacyData(data: string,file: TFile):Promise<boolean> {
+    this.compatibilityMode = true;
     this.file = file;
     this.textElements = new Map<string,{raw:string, parsed:string}>();
     this.setShowLinkBrackets();
     this.setLinkPrefix(); 
     this.setUrlPrefix();
     this.scene = JSON.parse(data);
+    if(!this.scene.files) {
+      this.scene.files = {}; //loading legacy scenes without the files element
+    }
+    this.files.clear();
     this.findNewTextElementsInScene();
     await this.setTextMode(TextMode.raw,true); //legacy files are always displayed in raw mode.
     return true;
@@ -438,13 +481,58 @@ export class ExcalidrawData {
     for(const key of this.textElements.keys()){
       outString += this.textElements.get(key).raw+' ^'+key+'\n\n';
     }
-    return outString + this.plugin.getMarkdownDrawingSection(JSON.stringify(this.scene,null,"\t"));
+    if(this.files.size>0) {
+      outString += '\n# Embedded files\n';
+      for(const key of this.files.keys()) {
+        outString += key +': [['+this.files.get(key) + ']]\n';
+      }
+      outString += '\n';
+    }
+    return outString + this.plugin.getMarkdownDrawingSection(JSON.stringify(this.scene,null,"\t"),this.svgSnapshot);
+  }
+
+  private async syncFiles(scene:SceneDataWithFiles):Promise<boolean> {
+    let dirty = false;
+
+    //remove files that no longer have a corresponding image element
+    const fileIds = (scene.elements.filter((e)=>e.type==="image") as ExcalidrawImageElement[]).map((e)=>e.fileId);
+    this.files.forEach((value,key)=>{
+      if(!fileIds.contains(key)) {
+        this.files.delete(key);
+        dirty = true;
+      }
+    });
+
+    //check if there are any images that need to be processed in the new scene
+    if(!scene.files || scene.files == {}) return false;
+    
+    for(const key of Object.keys(scene.files)) {
+      if(!this.files.has(key as FileId)) {
+        dirty = true;
+        let fname = "Pasted Image "+window.moment().format("YYYYMMDDHHmmss_SSS");
+        switch(scene.files[key].mimeType) {
+          case "image/png": fname += ".png"; break;
+          case "image/jpeg": fname += ".jpg"; break;
+          case "image/svg+xml": fname += ".svg"; break;
+          case "image/gif": fname += ".gif"; break;
+          default: fname += ".png"; 
+        }
+        const [folder,filepath] = await getAttachmentsFolderAndFilePath(this.app,this.file.path,fname);
+        await this.app.vault.createBinary(filepath,getBinaryFileFromDataURL(scene.files[key].dataURL));
+        this.files.set(key as FileId,filepath);
+      }
+    }    
+    return dirty;
   }
 
   public async syncElements(newScene:any):Promise<boolean> {
-    //console.log("Excalidraw.Data.syncElements()");
-    this.scene = newScene;//JSON_parse(newScene);
-    const result = this.setLinkPrefix() || this.setUrlPrefix() || this.setShowLinkBrackets();
+    this.scene = newScene;
+    let result = false;
+    if(!this.compatibilityMode) {
+      result = await this.syncFiles(newScene);
+      this.scene.files = {};
+    }
+    result = result || this.setLinkPrefix() || this.setUrlPrefix() || this.setShowLinkBrackets();
     await this.updateTextElementsFromScene();
     return result || this.findNewTextElementsInScene();
   }
@@ -527,5 +615,3 @@ export class ExcalidrawData {
   }
 
 }
-
-

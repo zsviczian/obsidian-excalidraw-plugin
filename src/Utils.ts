@@ -1,14 +1,28 @@
-import {  normalizePath, TAbstractFile, TFolder, Vault, WorkspaceLeaf } from "obsidian";
+import Excalidraw,{exportToSvg} from "@zsviczian/excalidraw";
+import {  App, normalizePath, TAbstractFile, TFile, TFolder, Vault, WorkspaceLeaf } from "obsidian";
 import { Random } from "roughjs/bin/math";
-import { Zoom } from "@zsviczian/excalidraw/types/types";
+import { BinaryFileData, DataURL, Zoom } from "@zsviczian/excalidraw/types/types";
+import { nanoid } from "nanoid";
+import { CASCADIA_FONT, IMAGE_TYPES, VIRGIL_FONT } from "./constants";
+import {ExcalidrawAutomate} from './ExcalidrawAutomate';
 import ExcalidrawPlugin from "./main";
-import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawElement, FileId } from "@zsviczian/excalidraw/types/element/types";
+import { ExportSettings } from "./ExcalidrawView";
+import { ExcalidrawSettings } from "./settings";
+import { html_beautify } from "js-beautify"
 
 declare module "obsidian" {
   interface Workspace {
     getAdjacentLeafInDirection(leaf: WorkspaceLeaf, direction: string): WorkspaceLeaf;
   }
+  interface Vault {
+    getConfig(option:"attachmentFolderPath"): string;
+  }
 }
+
+declare let window: ExcalidrawAutomate;
+
+export declare type MimeType = "image/svg+xml" | "image/png" | "image/jpeg" | "image/gif" | "application/octet-stream";
 
 /**
  * Splits a full path including a folderpath and a filename into separate folderpath and filename components
@@ -174,4 +188,229 @@ export const getNewOrAdjacentLeaf = (plugin: ExcalidrawPlugin, leaf: WorkspaceLe
     return leafToUse;
   } 
   return plugin.app.workspace.createLeafBySplit(leaf);
+}
+
+export const getObsidianImage = async (app: App, file: TFile)
+  :Promise<{
+    mimeType: MimeType,
+    fileId: FileId, 
+    dataURL: DataURL,
+    created: number,
+    size: {height: number, width: number},
+  }> => {
+  if(!app || !file) return null;
+  const isExcalidrawFile = window.ExcalidrawAutomate.isExcalidrawFile(file);
+  if (!(IMAGE_TYPES.contains(file.extension) || isExcalidrawFile)) {
+    return null;
+  }
+  const ab = await app.vault.readBinary(file);
+  const excalidrawSVG = isExcalidrawFile
+              ? svgToBase64((await window.ExcalidrawAutomate.createSVG(file.path,true)).outerHTML) as DataURL
+              : null;
+  let mimeType:MimeType = "image/svg+xml";
+  if (!isExcalidrawFile) {
+    switch (file.extension) {
+      case "png": mimeType = "image/png";break;
+      case "jpeg":mimeType = "image/jpeg";break;
+      case "jpg": mimeType = "image/jpeg";break;
+      case "gif": mimeType = "image/gif";break;
+      case "svg": mimeType = "image/svg+xml";break;
+      default: mimeType = "application/octet-stream";
+    }
+  } 
+  return {
+    mimeType: mimeType,
+    fileId: await generateIdFromFile(ab),
+    dataURL: excalidrawSVG ?? (file.extension==="svg" ? await getSVGData(app,file) : await getDataURL(ab)),
+    created: file.stat.mtime,
+    size: await getImageSize(app,excalidrawSVG??app.vault.getResourcePath(file))
+  }
+}
+
+
+const getSVGData = async (app: App, file: TFile): Promise<DataURL> => {
+  const svg = await app.vault.read(file);
+  return svgToBase64(svg) as DataURL;
+}
+
+export const svgToBase64 = (svg:string):string => {
+  return "data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svg.replaceAll("&nbsp;"," "))));
+}
+const getDataURL = async (file: ArrayBuffer): Promise<DataURL> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataURL = reader.result as DataURL;
+      resolve(dataURL);
+    };
+    reader.onerror = (error) => reject(error);
+    reader.readAsDataURL(new Blob([new Uint8Array(file)]));
+  });
+};
+
+const generateIdFromFile = async (file: ArrayBuffer):Promise<FileId> => {
+  let id: FileId;
+  try {
+    const hashBuffer = await window.crypto.subtle.digest(
+      "SHA-1",
+      file,
+    );
+    id =
+      // convert buffer to byte array
+      Array.from(new Uint8Array(hashBuffer))
+        // convert to hex string
+        .map((byte) => byte.toString(16).padStart(2, "0"))
+        .join("") as FileId;
+  } catch (error) {
+    console.error(error);
+    id = nanoid(40) as FileId;
+  }
+  return id;
+};
+
+const getImageSize = async (app: App, src:string):Promise<{height:number, width:number}> => {
+  return new Promise((resolve, reject) => {
+    let img = new Image()
+    img.onload = () => resolve({height: img.height, width:img.width});
+    img.onerror = reject;
+    img.src = src;
+    })
+}
+
+export const getBinaryFileFromDataURL = (dataURL:string):ArrayBuffer => {
+  if(!dataURL) return null;
+  const parts = dataURL.matchAll(/base64,(.*)/g).next();
+  const binary_string = window.atob(parts.value[1]);
+  const len = binary_string.length;
+  const bytes = new Uint8Array(len);
+  for (var i = 0; i < len; i++) {
+      bytes[i] = binary_string.charCodeAt(i);
+  }
+  return bytes.buffer;  
+}
+
+export const getAttachmentsFolderAndFilePath = async (app:App, activeViewFilePath:string, newFileName:string):Promise<[string,string]> => {
+  let folder = app.vault.getConfig("attachmentFolderPath");
+  // folder == null: save to vault root
+  // folder == "./" save to same folder as current file
+  // folder == "folder" save to specific folder in vault
+  // folder == "./folder" save to specific subfolder of current active folder
+  if(folder && folder.startsWith("./")) { // folder relative to current file
+      const activeFileFolder = splitFolderAndFilename(activeViewFilePath).folderpath + "/";
+      folder = normalizePath(activeFileFolder + folder.substring(2));
+  }
+  if(!folder) folder = "";
+  await checkAndCreateFolder(app.vault,folder);
+  return [folder,normalizePath(folder + "/" + newFileName)];
+}
+
+export const getSVG = async (scene:any, exportSettings:ExportSettings):Promise<SVGSVGElement> => {
+  try {
+    return exportToSvg({
+      elements: scene.elements,
+      appState: {
+        exportBackground: exportSettings.withBackground,
+        exportWithDarkMode: exportSettings.withTheme ? (scene.appState?.theme=="light" ? false : true) : false,
+        ... scene.appState,},
+      files: scene.files,
+      exportPadding:10,
+    });
+  } catch (error) {
+    return null;
+  }
+}
+
+export const generateSVGString = async (scene:any, settings: ExcalidrawSettings):Promise<string> => {
+  const exportSettings: ExportSettings = {
+    withBackground: settings.exportWithBackground, 
+    withTheme: settings.exportWithTheme
+  }
+  const svg = await getSVG(scene,exportSettings);
+  if(svg) {
+    
+    return html_beautify(svg.outerHTML,{"indent_with_tabs": true});
+  }
+  return null;
+}
+
+export const getPNG = async (scene:any, exportSettings:ExportSettings, scale:number = 1) => {
+  try {
+    return await Excalidraw.exportToBlob({
+        elements: scene.elements,
+        appState: {
+          exportBackground: exportSettings.withBackground,
+          exportWithDarkMode: exportSettings.withTheme ? (scene.appState?.theme=="light" ? false : true) : false,
+          ... scene.appState,},
+        files: scene.files,
+        mimeType: "image/png",
+        exportWithDarkMode: "true",
+        metadata: "Generated by Excalidraw-Obsidian plugin",
+        getDimensions: (width:number, height:number) => ({ width:width*scale, height:height*scale, scale:scale })
+    });
+  } catch (error) {
+    return null;
+  }
+}
+
+export const embedFontsInSVG = (svg:SVGSVGElement):SVGSVGElement => {
+  //replace font references with base64 fonts
+  const includesVirgil = svg.querySelector("text[font-family^='Virgil']") != null;
+  const includesCascadia = svg.querySelector("text[font-family^='Cascadia']") != null; 
+  const defs = svg.querySelector("defs");
+  if (defs && (includesCascadia || includesVirgil)) {
+    defs.innerHTML = "<style>" + (includesVirgil ? VIRGIL_FONT : "") + (includesCascadia ? CASCADIA_FONT : "")+"</style>";
+  }
+  return svg;
+}
+
+
+export const loadSceneFiles = async (app:App, filesMap: Map<FileId, string>,addFiles:Function) => {
+  const entries = filesMap.entries();
+  let entry;
+  let files:BinaryFileData[] = [];
+  while(!(entry = entries.next()).done) {
+    const file = app.vault.getAbstractFileByPath(entry.value[1]);
+    if(file && file instanceof TFile) {
+      const data = await getObsidianImage(app,file);
+      files.push({
+        mimeType : data.mimeType,
+        id: entry.value[0],
+        dataURL: data.dataURL,
+        created: data.created,
+        //@ts-ignore
+        size: data.size,
+      });
+    }
+  }
+
+  try { //in try block because by the time files are loaded the user may have closed the view
+    addFiles(files);
+  } catch(e) {
+
+  }
+}
+
+export const scaleLoadedImage = (scene:any, files:any):[boolean,any] => {
+  let dirty = false;
+  for(const f of files) {
+    const [w_image,h_image] = [f.size.width,f.size.height];
+    const imageAspectRatio = f.size.width/f.size.height;
+    scene
+    .elements
+    .filter((e:any)=>(e.type === "image" && e.fileId === f.id))
+    .forEach((el:any)=>{
+      const [w_old,h_old] = [el.width,el.height];
+      const elementAspectRatio = w_old/h_old;
+      if(imageAspectRatio != elementAspectRatio) {
+        dirty = true;
+        const h_new = Math.sqrt(w_old*h_old*h_image/w_image);
+        const w_new = Math.sqrt(w_old*h_old*w_image/h_image);
+        el.height = h_new;
+        el.width = w_new;
+        el.y += (h_old-h_new)/2;
+        el.x += (w_old-w_new)/2;
+      }
+    });
+    return [dirty,scene];
+  }
 }

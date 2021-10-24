@@ -15,7 +15,7 @@ export interface ExcalidrawSettings {
   templateFilePath: string,
   drawingFilenamePrefix: string,
   drawingFilenameDateTime: string,
-  displaySVGInPreview: boolean,
+  //displaySVGInPreview: boolean,
   width: string,
   matchTheme: boolean,
   zoomToFitOnResize: boolean,
@@ -49,7 +49,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   templateFilePath: 'Excalidraw/Template.excalidraw',
   drawingFilenamePrefix: 'Drawing ',
   drawingFilenameDateTime: 'YYYY-MM-DD HH.mm.ss',
-  displaySVGInPreview: true,
+  //displaySVGInPreview: true,
   width: '400',
   matchTheme: false,
   zoomToFitOnResize: true,
@@ -307,8 +307,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     this.containerEl.createEl('h1', {text: t("EMBED_HEAD")});
 
-
-    new Setting(containerEl)
+//Removed in 1.4.0 when implementing ImageElement.
+/*    new Setting(containerEl)
     .setName(t("EMBED_PREVIEW_SVG_NAME")) 
     .setDesc(t("EMBED_PREVIEW_SVG_DESC"))
     .addToggle(toggle => toggle
@@ -316,8 +316,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .onChange(async (value) => {
         this.plugin.settings.displaySVGInPreview = value;
         this.applySettingsUpdate();
-      }));
-
+      }));*/
 
     new Setting(containerEl)
       .setName(t("EMBED_WIDTH_NAME")) 

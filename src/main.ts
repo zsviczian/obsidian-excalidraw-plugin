@@ -35,7 +35,7 @@ import {
   DARK_BLANK_DRAWING
 } from "./constants";
 import ExcalidrawView, {ExportSettings, TextMode} from "./ExcalidrawView";
-import {getJSON} from "./ExcalidrawData";
+import {getJSON, getSVGString} from "./ExcalidrawData";
 import {
   ExcalidrawSettings, 
   DEFAULT_SETTINGS, 
@@ -56,14 +56,11 @@ import { Prompt } from "./Prompt";
 import { around } from "monkey-around";
 import { t } from "./lang/helpers";
 import { MigrationPrompt } from "./MigrationPrompt";
-import { checkAndCreateFolder, download, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, splitFolderAndFilename } from "./Utils";
+import { checkAndCreateFolder, download, embedFontsInSVG, generateSVGString, getAttachmentsFolderAndFilePath, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, getPNG, getSVG, splitFolderAndFilename, svgToBase64 } from "./Utils";
 
 declare module "obsidian" {
   interface App {
     isMobile():boolean;
-  }
-  interface Vault {
-      getConfig(option:"attachmentFolderPath"): string;
   }
   interface Workspace {
     on(name: 'hover-link', callback: (e:MouseEvent) => any, ctx?: any): EventRef;
@@ -113,7 +110,6 @@ export default class ExcalidrawPlugin extends Plugin {
     //inspiration taken from kanban: 
     //https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/main.ts#L267
     this.registerMonkeyPatches();
-    new Notice("Excalidraw was updated. Files opened with this version will not open with the older version. Please update plugin on all your devices.\n\nI will remove this message with next update.",8000);
     if(this.settings.loadCount<1) this.migrationNotice();
     const electron:string = process.versions.electron;
     if(electron.startsWith("8.")) {
@@ -224,24 +220,39 @@ export default class ExcalidrawPlugin extends Plugin {
       if(imgAttributes.fheight) img.setAttribute("height",imgAttributes.fheight);
       img.addClass(imgAttributes.style);
 
+      const [scene,pos] = getJSON(content);
+      const svgSnapshot = getSVGString(content.substr(pos+scene.length));
       
-      if(!this.settings.displaySVGInPreview) {
+      //Removed in 1.4.0 when implementing ImageElement. Key reason for removing this
+      //is to use SVG snapshot in file, to avoid resource intensive process to generating PNG
+      //due to the need to load excalidraw plus all linked images
+/*      if(!this.settings.displaySVGInPreview) {
         const width = parseInt(imgAttributes.fwidth);
         let scale = 1;
         if(width>=800) scale = 2;
         if(width>=1600) scale = 3;
         if(width>=2400) scale = 4;
-        const png = await ExcalidrawView.getPNG(JSON_parse(getJSON(content)[0]),exportSettings, scale);
+        const png = await getPNG(JSON_parse(scene),exportSettings, scale);
         if(!png) return null;
         img.src = URL.createObjectURL(png);
         return img;
+      }*/
+      let svg:SVGSVGElement = null;
+      if(svgSnapshot) {
+        const el = document.createElement('div');
+        el.innerHTML = svgSnapshot;
+        const firstChild = el.firstChild;
+        if(firstChild instanceof SVGSVGElement) {
+          svg=firstChild;
+        }
+      } else {
+        svg = await getSVG(JSON_parse(scene),exportSettings);
       }
-      let svg = await ExcalidrawView.getSVG(JSON_parse(getJSON(content)[0]),exportSettings);
       if(!svg) return null;
-      svg = ExcalidrawView.embedFontsInSVG(svg);
+      svg = embedFontsInSVG(svg);
       svg.removeAttribute('width');
       svg.removeAttribute('height');
-      img.setAttribute("src","data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svg.outerHTML.replaceAll("&nbsp;"," ")))));
+      img.setAttribute("src",svgToBase64(svg.outerHTML));
       return img;
     }
 
@@ -577,21 +588,11 @@ export default class ExcalidrawPlugin extends Plugin {
     const insertDrawingToDoc = async (inNewPane:boolean) => {
       const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
       if(!activeView) return;
-      let folder = this.app.vault.getConfig("attachmentFolderPath");
-      // folder == null: save to vault root
-      // folder == "./" save to same folder as current file
-      // folder == "folder" save to specific folder in vault
-      // folder == "./folder" save to specific subfolder of current active folder
-      if(folder && folder.startsWith("./")) { // folder relative to current file
-          const activeFileFolder = splitFolderAndFilename(activeView.file.path).folderpath + "/";
-          folder = normalizePath(activeFileFolder + folder.substring(2));
-      }
-      if(!folder) folder = "";
-      await checkAndCreateFolder(this.app.vault,folder);
       const filename = activeView.file.basename + "_" + window.moment().format(this.settings.drawingFilenameDateTime)
            + (this.settings.compatibilityMode ? '.excalidraw' : '.excalidraw.md');
-      this.embedDrawing(normalizePath(folder + "/" + filename));
-      this.createDrawing(filename, inNewPane,folder==""?null:folder);
+      const [folder, filepath] = await getAttachmentsFolderAndFilePath(this.app,activeView.file.path,filename);
+      this.embedDrawing(filepath);
+      this.createDrawing(filename, inNewPane, folder===""?null:folder);
     }
 
     this.addCommand({
@@ -787,7 +788,7 @@ export default class ExcalidrawPlugin extends Plugin {
     const filename = file.name.substr(0,file.name.lastIndexOf(".excalidraw")) + (replaceExtension ? ".md" : ".excalidraw.md");
     const fname = getNewUniqueFilepath(this.app.vault,filename,normalizePath(file.path.substr(0,file.path.lastIndexOf(file.name))));
     console.log(fname);
-    const result = await this.app.vault.create(fname,FRONTMATTER + this.exportSceneToMD(data));
+    const result = await this.app.vault.create(fname,FRONTMATTER + await this.exportSceneToMD(data));
     if (this.settings.keepInSync) {
       ['.svg','.png'].forEach( (ext:string)=>{
         const oldIMGpath = file.path.substring(0,file.path.lastIndexOf(".excalidraw")) + ext;   
@@ -1106,14 +1107,21 @@ export default class ExcalidrawPlugin extends Plugin {
       return this.settings.matchTheme && document.body.classList.contains("theme-dark") ? DARK_BLANK_DRAWING : BLANK_DRAWING;
     }
     const blank = this.settings.matchTheme && document.body.classList.contains("theme-dark") ? DARK_BLANK_DRAWING : BLANK_DRAWING;
-    return FRONTMATTER + '\n' + this.getMarkdownDrawingSection(blank);
+    return FRONTMATTER + '\n' + this.getMarkdownDrawingSection(blank,'<SVG></SVG>');
   }
 
-  public getMarkdownDrawingSection(jsonString: string) {
+  public getMarkdownDrawingSection(jsonString: string,svgString: string) {
     return '%%\n# Drawing\n'
     + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'json\n' 
     + jsonString + '\n'
-    + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96) + '\n%%';
+    + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)
+    + (svgString ? 
+        '\n\n# SVG snapshot\n'
+        + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'html\n'
+        + svgString + '\n'
+        + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96) 
+       : '') 
+    + '\n%%';
   }
 
   /**
@@ -1121,9 +1129,10 @@ export default class ExcalidrawPlugin extends Plugin {
   * @param {string} data - Excalidraw scene JSON string
   * @returns {string} - Text starting with the "# Text Elements" header and followed by each "## id-value" and text
   */
-  public exportSceneToMD(data:string): string {
+  public async exportSceneToMD(data:string): Promise<string> {
     if(!data) return "";
     const excalidrawData = JSON_parse(data);
+    const svgString = await generateSVGString(excalidrawData,this.settings);
     const textElements = excalidrawData.elements?.filter((el:any)=> el.type=="text")
     let outString = '# Text Elements\n';
     let id:string;
@@ -1138,7 +1147,7 @@ export default class ExcalidrawPlugin extends Plugin {
       }
       outString += te.text+' ^'+id+'\n\n';
     }
-    return outString + this.getMarkdownDrawingSection(JSON.stringify(JSON_parse(data),null,"\t"));
+    return outString + this.getMarkdownDrawingSection(JSON.stringify(JSON_parse(data),null,"\t"),svgString);
   }
 
   public async createDrawing(filename: string, onNewPane: boolean, foldername?: string, initData?:string):Promise<string> {
@@ -1182,3 +1191,4 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
 }
+
