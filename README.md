@@ -2,29 +2,13 @@ The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/),
 
 ![image](https://user-images.githubusercontent.com/14358394/125159831-336d6880-e17a-11eb-8a3d-ceabc2555a08.png)
 
-# Important notice to the 1.2.0 update
-
-This version comes with tons of new features and possibilities. 
-
-Drawings you've created with version 1.1.x need to be converted to take advantage of the new features. If you want, you can also continue to use your exisiting drawings in compatibility mode (e.g. if you use Logseq and Obsidian in parallel). During conversion your existing `*.excalidraw` files will be replaced with new `*.excalidraw.md` files.
-
-## Conversion and compatibility
-To convert files you have the following options:
-- Click `CONVERT FILES` in the migration dialog when installing 1.2.0
-- In the Command Palette select `Excalidraw: Convert *.excalidraw files to *.excalidraw.md files` to convert all `*.excalidraw` files to `*.excalidraw.md` files. 
-- To convert files individually: 
-  - Right click an `*.excalidraw` file in File Explorer and select one of the following options:
-    - `*.excalidraw => *.excalidraw.md`
-    - `*.excalidraw => *.md (Logseq compatibility)`: This option will retain the original *.excalidraw file next to the new Obsidian format. Make sure you also enable additional `Compatibility features` in `Settings` for a full solution.
-  - Open a legacy `*.excalidraw` file and select `Convert to new format` from the `Options Menu` in the Excalidraw view.
-
 # Video walkthrough
 | | | |
 |----|----|----|
 |[![Obsidian-Excalidraw 1.2.0 update - Major IMPROVEMENTS](https://user-images.githubusercontent.com/14358394/124356817-7b3f3d80-dc18-11eb-932d-363bb373c5ab.jpg)](https://youtu.be/UxJLLYtgDKE)|[![1  Getting Started](https://user-images.githubusercontent.com/14358394/125160304-7f211180-e17c-11eb-8363-c52723de1ffd.jpg)](https://youtu.be/sY4FoflGaiM)|[![2  Basic shapes and features](https://user-images.githubusercontent.com/14358394/125160312-8a743d00-e17c-11eb-9fa2-490ef4cbd59e.jpg)](https://youtu.be/Iy_oVTq12Gw)|
 |[![3  Groups](https://user-images.githubusercontent.com/14358394/125160323-96f89580-e17c-11eb-9bce-8eb1067a51bb.jpg)](https://youtu.be/QOL1KF7-kdc)|[![4  Stencil](https://user-images.githubusercontent.com/14358394/125160332-9f50d080-e17c-11eb-98e9-fec60fe147d9.jpg)](https://youtu.be/aSgcbfspvfo)|[![5  embedding](https://user-images.githubusercontent.com/14358394/125160341-a546b180-e17c-11eb-9de8-d87fdc844c9c.jpg)](https://youtu.be/MaJ5jJwBRWs)|
 |[![6  Links](https://user-images.githubusercontent.com/14358394/125160346-aa0b6580-e17c-11eb-930b-4024807040d1.jpg)](https://youtu.be/MXzeCOEExNo)|[![7  Markdown](https://user-images.githubusercontent.com/14358394/125160354-b2fc3700-e17c-11eb-81af-9e71e461f6dd.jpg)](https://youtu.be/R0IAg0s-wQE)|[![8  Templates](https://user-images.githubusercontent.com/14358394/125160360-b8f21800-e17c-11eb-8bd8-79d4e3f6e92d.jpg)](https://youtu.be/ibdS7ykwpW4)|
-|[![9  Excalidraw Automate](https://user-images.githubusercontent.com/14358394/125160367-bdb6cc00-e17c-11eb-92f1-6f59faea85fd.jpg)](https://youtu.be/VRZVujfVab0)|[![10  Miscellaneous](https://user-images.githubusercontent.com/14358394/125160374-c3141680-e17c-11eb-8cc2-dfaffd903d15.jpg)](https://youtu.be/D1iBYo1_jjc)||
+|[![9  Excalidraw Automate](https://user-images.githubusercontent.com/14358394/125160367-bdb6cc00-e17c-11eb-92f1-6f59faea85fd.jpg)](https://youtu.be/VRZVujfVab0)|[![10  Miscellaneous](https://user-images.githubusercontent.com/14358394/125160374-c3141680-e17c-11eb-8cc2-dfaffd903d15.jpg)](https://youtu.be/D1iBYo1_jjc)|[![Image Elements](https://user-images.githubusercontent.com/14358394/138607067-ccb62f92-48a4-4880-ac6e-68c1bf86ac2c.png)](https://www.youtube.com/watch?v=_c_0zpBJ4Xc&)|
 
 # Key features
 - The plugin aims to integrate Excalidraw seemlessly into Obsidian including Command Palette actions, File Explorer features, Option Menu commands, and the Ribbon Button.
@@ -53,6 +37,16 @@ To convert files you have the following options:
   - CTRL/CMD + ALT + SHIFT + CLICK to create the file (if it does not yet exist) and open it in a new pane
 - Using the block reference you can also reference & transclude text that appears on drawings, in other documents
 - Insert LaTex symbols and simple formulas using the Command Palette action "Insert LaTeX-symbol". Some symbols may not display properly using the "Hand-drawn" font. If that is the case try using the "Normal" or "Code" fonts.
+- Drag & Drop support
+  - You can drag files from the Obsidian file explorer and they will become links to those files in Excalidraw.
+  - Dragging image files (PNG, SVG, JPG, Excalidraw) from obsidian files explorer while pressing the CTRL/CMD button will embed the image into your drawing.
+  - You can drag and drop images from outside obsidian onto Excalidraw. These images will be embedded into your drawing and saved to Obsidian.
+  - You can drag and drop text from Markdown views onto Excalidraw.
+  - You can drag and drop web addresses from your browser and they will become links.
+- Image support
+  - On iOS and Android you can add images from your camera by pressing the add image button in Excalidraw.
+  - You can copy/paste images into your drawing. Images will be saved in your vault.
+  - You can drag and drop images as explained above.
 - Since 1.2.0 Drawing files are stored in Markdown files
   - You can add tags to drawings
   - You can add metadata to the YAML front matter of drawings
@@ -62,18 +56,17 @@ To convert files you have the following options:
     - `excalidraw-link-prefix: "📍"` preview prefix for internal links
     - `excalidraw-url-prefix: "🌐"` preview prefix for external links
     - `excalidraw-link-brackets: true|false` whether or not to display brackets around links in preview
-- Includes full [Templater](https://silentvoid13.github.io/Templater/) and [Dataview](https://blacksmithgu.github.io/obsidian-dataview/docs/api/intro/) support through ExcalidrawAutomate. Check out the [detailed help + examples](https://zsviczian.github.io/obsidian-excalidraw-plugin/)
+- Includes full [QuickAdd](https://github.com/chhoumann/quickadd), [Templater](https://silentvoid13.github.io/Templater/) and [Dataview](https://blacksmithgu.github.io/obsidian-dataview/docs/api/intro/) support through ExcalidrawAutomate. Check out the [detailed help + examples](https://zsviczian.github.io/obsidian-excalidraw-plugin/). I also have a [YouTube ExcalidrawAutomate Playlist](https://www.youtube.com/playlist?list=PL6mqgtMZ4NP1IR4nXxSlMA4PA5E-qpyHZ) with lots of examples.
 - REQUIRES AN OBSIDIAN SYNC SUBSCRIPTION: Full drawing file history and synchronization between devices
 - Multilanguage support: if you'd like to help out by translating the plugin, please get in contact with me.
 
 # Known issues
 - Mobile support
-  - Positioning of the pen gets misaligned after you open the command palette.
   - Partially mitigated in 1.0.10 by the introduction of autosave: Your drawing will not be saved when you terminate the mobile app by closing the Obsidian task. 
+- Text elements "jumps off screen" when editing, if drawing is zoomed in and text element does not fit the visible screen area. I am working on a resolution.
 
 # Tips and tricks
-- If you want to sketch in fullscreen, I recommend installing the [Fullscreen Focus Mode](https://github.com/razumihin/obsidian-fullscreen-plugin) plugin.
-- [Ozan's Image in Editor Plugin](https://github.com/ozntel/oz-image-in-editor-obsidian). In a nice collaboration with Ozan, his Image-in-Editor plugin now supports Excalidraw. I recommend installing his plugin to display drawings also in Edit mode. Note that Ozan's plugin will only display Excalidraw drawings if the link ends with `.md` or `.excalidraw`. i.e. the following drawing will show in Edit Mode `![[My Drawing.md]]`, but wiki links such as `[[My Drawing]]` will not.
+- [Ozan's Image in Editor Plugin](https://github.com/ozntel/oz-image-in-editor-obsidian). In a nice collaboration with Ozan, his Image-in-Editor plugin now supports Excalidraw. I recommend installing his plugin to display drawings also in Edit mode. 
 
 # Feedback, questions, ideas, problems
 Join the conversation about the Excalidraw plugin on [forum.obsidian.md](https://forum.obsidian.md/t/excalidraw-full-featured-sketching-plugin-in-obsidian)
