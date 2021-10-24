@@ -28,13 +28,13 @@ export default {
   
   //ExcalidrawView.ts
   OPEN_AS_MD: "Open as Markdown",
-  SAVE_AS_PNG: "Save as PNG into Vault (CTRL/META+CLICK to export)",
-  SAVE_AS_SVG: "Save as SVG into Vault (CTRL/META+CLICK to export)",
+  SAVE_AS_PNG: "Save as PNG into Vault (CTRL/CMD+CLICK to export)",
+  SAVE_AS_SVG: "Save as SVG into Vault (CTRL/CMD+CLICK to export)",
   OPEN_LINK: "Open selected text as link\n(SHIFT+CLICK to open in a new pane)",
   EXPORT_EXCALIDRAW: "Export to an .Excalidraw file",
   LINK_BUTTON_CLICK_NO_TEXT: 'Select a an ImageElement, or select a TextElement that contains an internal or external link.\n'+
                              'SHIFT CLICK this button to open the link in a new pane.\n'+
-                             'CTRL/META CLICK the Image or TextElement on the canvas has the same effect!',
+                             'CTRL/CMD CLICK the Image or TextElement on the canvas has the same effect!',
   TEXT_ELEMENT_EMPTY: "No ImageElement is selected or TextElement is empty, or [[valid-link|alias]] or [alias](valid-link) is not found",
   FILENAME_INVALID_CHARS: 'File name cannot contain any of the following characters: * " \\  < > : | ?',
   FILE_DOES_NOT_EXIST: "File does not exist. Hold down ALT (or ALT+SHIFT) and CLICK link button to create a new file.",
@@ -82,14 +82,14 @@ export default {
   ZOOM_TO_FIT_MAX_LEVEL_NAME: "Zoom to fit max ZOOM level",
   ZOOM_TO_FIT_MAX_LEVEL_DESC: "Set the maximum level to which zoom to fit will enlarge the drawing. Minimum is 0.5 (50%) and maximum is 10 (1000%).",
   LINKS_HEAD: "Links and transclusion",
-  LINKS_DESC: "CTRL/META + CLICK on Text Elements to open them as links. " + 
+  LINKS_DESC: "CTRL/CMD + CLICK on Text Elements to open them as links. " + 
               "If the selected text has more than one [[valid Obsidian links]], only the first will be opened. " + 
               "If the text starts as a valid web link (i.e. https:// or http://), then " +
               "the plugin will open it in a browser. " +
               "When Obsidian files change, the matching [[link]] in your drawings will also change. " +
               "If you don't want text accidentally changing in your drawings use [[links|with aliases]].",
   ADJACENT_PANE_NAME: "Open in adjacent pane",
-  ADJACENT_PANE_DESC: "When CTRL+SHIFT clicking a link in Excalidraw by default the plugin will open the link in a new pane. " + 
+  ADJACENT_PANE_DESC: "When CTRL/CMD+SHIFT clicking a link in Excalidraw by default the plugin will open the link in a new pane. " + 
                       "Turning this setting on, Excalidraw will first look for an existing adjacent pane, and try to open the link there. " + 
                       "Excalidraw will first look too the right, then to the left, then down, then up. If no pane is found, Excalidraw will open " +
                       "a new pane.",
@@ -105,7 +105,7 @@ export default {
   URL_PREFIX_DESC:"In PREVIEW mode, if the Text Element contains a URL link, precede the text with these characters. " +
                   "You can override this setting for a specific drawing by adding \'" + FRONTMATTER_KEY_CUSTOM_URL_PREFIX + 
                   ': "🌐 "\' to the file\'s frontmatter.',
-  LINK_CTRL_CLICK_NAME: "CTRL + CLICK on text to open them as links",
+  LINK_CTRL_CLICK_NAME: "CTRL/CMD + CLICK on text to open them as links",
   LINK_CTRL_CLICK_DESC: "You can turn this feature off if it interferes with default Excalidraw features you want to use. If " +
                         "this is turned off, only the link button in the title bar of the drawing pane will open links.",
   TRANSCLUSION_WRAP_NAME: "Overflow wrap behavior of transcluded text",

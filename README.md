@@ -28,7 +28,7 @@ To convert files you have the following options:
 
 # Key features
 - The plugin aims to integrate Excalidraw seemlessly into Obsidian including Command Palette actions, File Explorer features, Option Menu commands, and the Ribbon Button.
-- CTRL+Click on the ribbon button, or in the file explorer to create / open drawings in a new pane.
+- CTRL/CMD+Click on the ribbon button, or in the file explorer to create / open drawings in a new pane.
 - Settings will allow you to customzie Excalidraw to your needs:
   - Default folder for new drawings and define custom filename pattern for new drawings.
   - Template for new drawings. The template will restore stroke properties. This means you can set up defaults in your template for stroke color, stroke width, opacity, font family, font size, fill style, stroke style, etc. This also applies to ExcalidrawAutomate.
@@ -46,11 +46,11 @@ To convert files you have the following options:
     - `![[myfile#section]]` also works, this will transclude the section
     - you can also specify word wrapping for transcluded text by adding the max character count in curly brackets right after the transclusion e.g. `![[myfile#^blockref]]{40}` will wrap text at 40 characters.
   - For convenience you can also use the command palette to insert links into drawings
-  - CTRL/META + hover to bring up the Obsidian quick preview for the link. (On Mac it is CTRL+CMD+hover).
-  - CTRL/META + CLICK a text element to open it as a link.
-  - CTRL/META + ALT + CLICK to create the file (if it does not yet exist) and open it
-  - CTRL/META + SHIFT + CLICK to open the file in a new pane
-  - CTRL/META + ALT + SHIFT + CLICK to create the file (if it does not yet exist) and open it in a new pane
+  - CTRL/CMD + hover to bring up the Obsidian quick preview for the link. (On Mac it is CTRL+CMD+hover).
+  - CTRL/CMD + CLICK a text element to open it as a link.
+  - CTRL/CMD + ALT + CLICK to create the file (if it does not yet exist) and open it
+  - CTRL/CMD + SHIFT + CLICK to open the file in a new pane
+  - CTRL/CMD + ALT + SHIFT + CLICK to create the file (if it does not yet exist) and open it in a new pane
 - Using the block reference you can also reference & transclude text that appears on drawings, in other documents
 - Insert LaTex symbols and simple formulas using the Command Palette action "Insert LaTeX-symbol". Some symbols may not display properly using the "Hand-drawn" font. If that is the case try using the "Normal" or "Code" fonts.
 - Since 1.2.0 Drawing files are stored in Markdown files

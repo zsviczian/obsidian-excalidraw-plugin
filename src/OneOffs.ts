@@ -1,4 +1,4 @@
-import { App, Modal, TFile } from "obsidian";
+import { App, Modal, Notice, TFile } from "obsidian";
 import { getJSON } from "./ExcalidrawData";
 import ExcalidrawPlugin from "./main";
 
@@ -93,8 +93,8 @@ class MigrationPrompt extends Modal {
 
   createForm(): void {
     const div = this.contentEl.createDiv();
-    div.addClass("excalidraw-prompt-div");
-    div.style.maxWidth = "600px";
+//    div.addClass("excalidraw-prompt-div");
+//    div.style.maxWidth = "600px";
     div.createEl('p',{text:  "This version comes with tons of new features and possibilities. Please read the description in Community Plugins to find out more."});
     div.createEl('p',{text: ""} , (el) => {
       el.innerHTML = "Drawings you've created with version 1.1.x need to be converted to take advantage of the new features. You can also continue to use them in compatibility mode. "+
@@ -147,7 +147,7 @@ class ImageElementNotice extends Modal {
   createForm(): void {
     const div = this.contentEl.createDiv();
     //div.addClass("excalidraw-prompt-div");
-    div.style.maxWidth = "600px";
+    //div.style.maxWidth = "600px";
 
     div.createEl('p',{text: ""},(el) => {
       el.innerHTML = "Welcome to Obsidian-Excalidraw 1.4! I've added Image Elements. " 

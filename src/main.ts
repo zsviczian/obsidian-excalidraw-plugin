@@ -106,14 +106,16 @@ export default class ExcalidrawPlugin extends Plugin {
     this.experimentalFileTypeDisplayToggle(this.settings.experimentalFileType);
     this.registerCommands();
     this.registerEventListeners();
-    
+        
     //inspiration taken from kanban: 
     //https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/main.ts#L267
     this.registerMonkeyPatches();
 
-    const electron:string = process.versions.electron;
-    if(electron.startsWith("8.")) {
-      new Notice(`You are running an older version of the electron Browser (${electron}). If Excalidraw does not start up, please reinstall Obsidian with the latest installer and try again.`,10000);
+    if(!this.app.isMobile) {
+      const electron:string = process?.versions?.electron;
+      if(electron && electron?.startsWith("8.")) {
+        new Notice(`You are running an older version of the electron Browser (${electron}). If Excalidraw does not start up, please reinstall Obsidian with the latest installer and try again.`,10000);
+      }
     }
 
     const patches = new OneOffs(this);

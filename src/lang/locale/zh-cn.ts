@@ -29,13 +29,13 @@ export default {
   
   //ExcalidrawView.ts
   OPEN_AS_MD: "打开为 Markdown 文件",
-  SAVE_AS_PNG: "保存成 PNG 文件到库里（CTRL/META 加左键点击来指定导出位置）",
-  SAVE_AS_SVG: "保存成 SVG 文件到库里（CTRL/META 加左键点击来指定导出位置）",
+  SAVE_AS_PNG: "保存成 PNG 文件到库里（CTRL/CMD 加左键点击来指定导出位置）",
+  SAVE_AS_SVG: "保存成 SVG 文件到库里（CTRL/CMD 加左键点击来指定导出位置）",
   OPEN_LINK: "以链接的方式打开文本 \n（按住 SHIFT 来在新面板中打开）",
   EXPORT_EXCALIDRAW: "导出为 .Excalidraw 文件",
   LINK_BUTTON_CLICK_NO_TEXT: '选择带有外部链接或内部链接的文本。\n'+
                              'SHIFT 加左键点击按钮来在新面板中打开链接。\n'+
-                             'CTRL/META 加左键在画布中点击文本元素也可以打开对应的链接。',
+                             'CTRL/CMD 加左键在画布中点击文本元素也可以打开对应的链接。',
   TEXT_ELEMENT_EMPTY: "文本元素没有链接任何东西.",
   FILENAME_INVALID_CHARS: '文件名不能包含以下符号： * " \\  < > : | ?',
   FILE_DOES_NOT_EXIST: "文件不存在。按住 ALT（或者 ALT + SHIFT）加左键点击来创建新文件。",
@@ -71,7 +71,7 @@ export default {
   FILENAME_DATE_NAME: "文件名日期",
   FILENAME_DATE_DESC: "文件名的第二部分",
   LINKS_HEAD: "链接",
-  LINKS_DESC: "CTRL/META 加左键点击文本元素来打开链接。" + 
+  LINKS_DESC: "CTRL/CMD 加左键点击文本元素来打开链接。" + 
               "如果选中的文本指向多个双链，只会打开其中第一个。" + 
               "如果选中的文本为超链接 (i.e. https:// or http://)，然后" +
               "插件会在浏览器中打开超链接。" +
@@ -85,7 +85,7 @@ export default {
   LINK_PREFIX_DESC:"在预览（锁定）模式，如果文本元素包含链接，在文本之前加上这些字符。" +
                    "你可以在文件的 Frontmatter 中加入 \'" + FRONTMATTER_KEY_CUSTOM_PREFIX + 
                    ': "👉 "\' 单独更改',
-  LINK_CTRL_CLICK_NAME: "CTRL 加左键点击文本来打开链接",
+  LINK_CTRL_CLICK_NAME: "CTRL/CMD 加左键点击文本来打开链接",
   LINK_CTRL_CLICK_DESC: "如果此功能干扰了您要使用的 Excalidraw 功能，您可以将其关闭。 如果" +
                         "关闭此选项，则只有绘图标题栏中的链接按钮可以让你打开链接。",
   EMBED_HEAD: "嵌入 & 导出",
