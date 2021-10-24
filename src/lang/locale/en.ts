@@ -75,8 +75,12 @@ export default {
   MATCH_THEME_NAME: "New drawing to match Obsidian theme",
   MATCH_THEME_DESC: "If theme is dark, new drawing will be created in dark mode. This does not apply when you use a template for new drawings. " +
                     "Also this will not effect when you open an existing drawing. Those will follow the theme of the template/drawing respectively.",
+  MATCH_THEME_ALWAYS_NAME: "Existing drawings to match Obsidian theme",
+  MATCH_THEME_ALWAYS_DESC: "If theme is dark, drawings will be opened in dark mode. If your theme is light, they will be opened in light mode. ",                  
   ZOOM_TO_FIT_NAME: "Zoom to fit on view resize",
   ZOOM_TO_FIT_DESC: "Zoom to fit drawing when the pane is resized",
+  ZOOM_TO_FIT_MAX_LEVEL_NAME: "Zoom to fit max ZOOM level",
+  ZOOM_TO_FIT_MAX_LEVEL_DESC: "Set the maximum level to which zoom to fit will enlarge the drawing. Minimum is 0.5 (50%) and maximum is 10 (1000%).",
   LINKS_HEAD: "Links and transclusion",
   LINKS_DESC: "CTRL/META + CLICK on Text Elements to open them as links. " + 
               "If the selected text has more than one [[valid Obsidian links]], only the first will be opened. " + 

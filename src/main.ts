@@ -55,8 +55,8 @@ import {
 import { Prompt } from "./Prompt";
 import { around } from "monkey-around";
 import { t } from "./lang/helpers";
-import { MigrationPrompt } from "./MigrationPrompt";
-import { checkAndCreateFolder, download, embedFontsInSVG, generateSVGString, getAttachmentsFolderAndFilePath, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, getPNG, getSVG, splitFolderAndFilename, svgToBase64 } from "./Utils";
+import { checkAndCreateFolder, download, embedFontsInSVG, generateSVGString, getAttachmentsFolderAndFilePath, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, getPNG, getSVG, isObsidianThemeDark, splitFolderAndFilename, svgToBase64 } from "./Utils";
+import { OneOffs } from "./OneOffs";
 
 declare module "obsidian" {
   interface App {
@@ -110,49 +110,18 @@ export default class ExcalidrawPlugin extends Plugin {
     //inspiration taken from kanban: 
     //https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/main.ts#L267
     this.registerMonkeyPatches();
-    if(this.settings.loadCount<1) this.migrationNotice();
+
     const electron:string = process.versions.electron;
     if(electron.startsWith("8.")) {
       new Notice(`You are running an older version of the electron Browser (${electron}). If Excalidraw does not start up, please reinstall Obsidian with the latest installer and try again.`,10000);
     }
-    this.switchToExcalidarwAfterLoad()
 
-    //This is a once off cleanup process to remediate incorrectly placed comment %% before # Text Elements
-    if(this.settings.patchCommentBlock) {
-      const self = this;
-      console.log(window.moment().format("HH:mm:ss") + ": Excalidraw will patch drawings in 5 minutes");
-      setTimeout(async ()=>{
-        await self.loadSettings();
-        if (!self.settings.patchCommentBlock) {
-          console.log(window.moment().format("HH:mm:ss") + ": Excalidraw patching aborted because synched data.json is already patched");
-          return;
-        }
-        console.log(window.moment().format("HH:mm:ss") + ": Excalidraw is starting the patching process");
-        let i = 0;
-        const excalidrawFiles = this.app.vault.getFiles();
-        for (const f of (excalidrawFiles || []).filter((f:TFile) => self.isExcalidrawFile(f))) {
-          if (   (f.extension !== "excalidraw")  //legacy files do not need to be touched
-              && (self.app.workspace.getActiveFile() !== f)) {  //file is currently being edited
-            let drawing = await self.app.vault.read(f);
-            const orig_drawing = drawing;
-            drawing = drawing.replaceAll("\r\n","\n").replaceAll("\r","\n"); //Win, Mac, Linux compatibility
-            drawing = drawing.replace("\n%%\n# Text Elements\n","\n# Text Elements\n");
-            if (drawing.search("\n%%\n# Drawing\n") === -1) {
-              const [json,pos] = getJSON(drawing);
-              drawing = drawing.substr(0,pos)+"\n%%\n# Drawing\n```json\n"+json+"\n```%%";
-            };
-            if (drawing !== orig_drawing) {
-              i++;
-              console.log("Excalidraw patched: " + f.path);
-              await self.app.vault.modify(f,drawing);   
-            }
-          }
-        }
-        self.settings.patchCommentBlock = false;
-        self.saveSettings();
-        console.log(window.moment().format("HH:mm:ss") + ": Excalidraw patched in total " + i + " files");
-      },300000) //5 minutes
-    }
+    const patches = new OneOffs(this);
+    patches.migrationNotice();
+    patches.patchCommentBlock();
+    patches.imageElementLaunchNotice();
+
+    this.switchToExcalidarwAfterLoad()
   }
 
   private switchToExcalidarwAfterLoad() {
@@ -165,19 +134,6 @@ export default class ExcalidrawPlugin extends Plugin {
                     VIEW_TYPE_EXCALIDRAW;
                     self.setExcalidrawView(leaf);
         }
-      }
-    });
-  }
-
-  private migrationNotice(){
-    const self = this;
-    this.app.workspace.onLayoutReady(async () => {
-      self.settings.loadCount++;
-      self.saveSettings();
-      const files = this.app.vault.getFiles().filter((f)=>f.extension=="excalidraw");  
-      if(files.length>0) {
-        const prompt = new MigrationPrompt(self.app, self);
-        prompt.open();
       }
     });
   }
@@ -1104,9 +1060,9 @@ export default class ExcalidrawPlugin extends Plugin {
       }
     }
     if (this.settings.compatibilityMode) {
-      return this.settings.matchTheme && document.body.classList.contains("theme-dark") ? DARK_BLANK_DRAWING : BLANK_DRAWING;
+      return this.settings.matchTheme && isObsidianThemeDark() ? DARK_BLANK_DRAWING : BLANK_DRAWING;
     }
-    const blank = this.settings.matchTheme && document.body.classList.contains("theme-dark") ? DARK_BLANK_DRAWING : BLANK_DRAWING;
+    const blank = this.settings.matchTheme && isObsidianThemeDark() ? DARK_BLANK_DRAWING : BLANK_DRAWING;
     return FRONTMATTER + '\n' + this.getMarkdownDrawingSection(blank,'<SVG></SVG>');
   }
 

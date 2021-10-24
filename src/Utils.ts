@@ -414,3 +414,5 @@ export const scaleLoadedImage = (scene:any, files:any):[boolean,any] => {
     return [dirty,scene];
   }
 }
+
+export const isObsidianThemeDark = () => document.body.classList.contains("theme-dark");

@@ -18,7 +18,9 @@ export interface ExcalidrawSettings {
   //displaySVGInPreview: boolean,
   width: string,
   matchTheme: boolean,
+  matchThemeAlways: boolean,
   zoomToFitOnResize: boolean,
+  zoomToFitMaxLevel: number,
   openInAdjacentPane: boolean,
   showLinkBrackets: boolean,
   linkPrefix: string,
@@ -42,6 +44,7 @@ export interface ExcalidrawSettings {
   drawingOpenCount: number,
   library: string,
   patchCommentBlock: boolean, //1.3.12 
+  imageElementNotice: boolean, //1.4.0
 }
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
@@ -52,7 +55,9 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   //displaySVGInPreview: true,
   width: '400',
   matchTheme: false,
+  matchThemeAlways: false,
   zoomToFitOnResize: true,
+  zoomToFitMaxLevel: 2,
   linkPrefix: "📍",
   urlPrefix: "🌐",
   openInAdjacentPane: false,
@@ -76,6 +81,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   drawingOpenCount: 0,
   library: `{"type":"excalidrawlib","version":1,"library":[]}`,
   patchCommentBlock: true,
+  imageElementNotice: true,
 }
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
@@ -205,6 +211,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       }));
 
     new Setting(containerEl)
+      .setName(t("MATCH_THEME_ALWAYS_NAME")) 
+      .setDesc(t("MATCH_THEME_ALWAYS_DESC"))
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.matchThemeAlways)
+        .onChange(async (value) => {
+          this.plugin.settings.matchThemeAlways = value;
+          this.applySettingsUpdate();
+        }));
+
+    new Setting(containerEl)
       .setName(t("ZOOM_TO_FIT_NAME")) 
       .setDesc(t("ZOOM_TO_FIT_DESC"))
       .addToggle(toggle => toggle
@@ -213,6 +229,27 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           this.plugin.settings.zoomToFitOnResize = value;
           this.applySettingsUpdate();
         }));
+
+    let zoomText:HTMLDivElement;
+
+    new Setting(containerEl)
+      .setName(t("ZOOM_TO_FIT_MAX_LEVEL_NAME"))
+      .setDesc(t("ZOOM_TO_FIT_MAX_LEVEL_DESC"))
+      .addSlider(slider => slider
+        .setLimits(0.5,10,0.5)
+        .setValue(this.plugin.settings.zoomToFitMaxLevel)
+        .onChange(async (value)=> {
+          zoomText.innerText = " " + value.toString();
+          this.plugin.settings.zoomToFitMaxLevel = value;
+          this.applySettingsUpdate();
+        }))
+        .settingEl.createDiv('',(el)=>{
+          zoomText = el;
+          el.style.minWidth = "2.3em";
+          el.style.textAlign = "right";
+          el.innerText = " " + this.plugin.settings.zoomToFitMaxLevel.toString();
+        });
+    
 
     this.containerEl.createEl('h1', {text: t("LINKS_HEAD")});
     this.containerEl.createEl('p',{

@@ -785,7 +785,7 @@ export default class ExcalidrawView extends TextFileView {
         const files = this.excalidrawAPI.getFiles();
 
         if(files) {
-          const imgIds = el.filter((e)=>e.type=="image").map((e:any)=>e.fileId);
+          const imgIds = el.filter((e)=>e.type==="image").map((e:any)=>e.fileId);
           const toDelete = Object.keys(files).filter((k)=>!imgIds.contains(k));
           toDelete.forEach((k)=>delete files[k]);
         }
@@ -829,14 +829,17 @@ export default class ExcalidrawView extends TextFileView {
       let timestamp = 0;
       let blockOnMouseButtonDown = false;
 
+      const getElementsAtPointer = (pointer:any, elements:ExcalidrawElement[], type:string):ExcalidrawElement[] => {
+        return elements.filter((e:ExcalidrawElement)=>{
+                 if (e.type !== type) return false;
+                 const [x,y,w,h] = rotatedDimensions(e);
+                 return x<=pointer.x && x+w>=pointer.x
+                        && y<=pointer.y && y+h>=pointer.y;
+               });
+      }
+
       const getTextElementAtPointer = (pointer:any) => {
-        const elements = this.excalidrawAPI.getSceneElements()
-                             .filter((e:ExcalidrawElement)=>{
-                                if (e.type !== "text") return false;
-                                const [x,y,w,h] = rotatedDimensions(e);
-                                return x<=pointer.x && x+w>=pointer.x
-                                       && y<=pointer.y && y+h>=pointer.y;
-                              });
+        const elements = getElementsAtPointer(pointer,this.excalidrawAPI.getSceneElements(),'text') as ExcalidrawTextElement[];
         if(elements.length==0) return {id:null, text:null};
         if(elements.length===1) return {id:elements[0].id,text:elements[0].text};
         //if more than 1 text elements are at the location, look for one that has a link
@@ -857,13 +860,7 @@ export default class ExcalidrawView extends TextFileView {
       }
 
       const getImageElementAtPointer = (pointer:any) => {
-        const elements = this.excalidrawAPI.getSceneElements()
-                             .filter((e:ExcalidrawElement)=>{
-                                if (e.type !== "image") return false;
-                                const [x,y,w,h] = rotatedDimensions(e);
-                                return x<=pointer.x && x+w>=pointer.x
-                                       && y<=pointer.y && y+h>=pointer.y;
-                              });
+        const elements = getElementsAtPointer(pointer,this.excalidrawAPI.getSceneElements(),'image') as ExcalidrawImageElement[];
         if(elements.length===0) return {id:null, fileId:null};
         if(elements.length>=1) return {id:elements[0].id,fileId:elements[0].fileId};
         //if more than 1 image elements are at the location, return the first
@@ -885,8 +882,6 @@ export default class ExcalidrawView extends TextFileView {
 
       const dropAction = (transfer: DataTransfer) => {
         // Return a 'copy' or 'link' action according to the content types, or undefined if no recognized type
-
-        //if (transfer.types.includes('text/uri-list')) return 'link';
         let files = (this.app as any).dragManager.draggable?.files;
         if(files) {
           if(files[0] == this.file) {
@@ -895,7 +890,10 @@ export default class ExcalidrawView extends TextFileView {
           }
         }
         if (['file', 'files'].includes((this.app as any).dragManager.draggable?.type)) return 'link';
-        if (transfer.types?.includes('text/html') || transfer.types?.includes('text/plain')) return 'copy';
+        if ( transfer.types?.includes('text/html') 
+             || transfer.types?.includes('text/plain')
+             || transfer.types?.includes('Files')
+           ) return 'copy';
       }                 
 
       let viewModeEnabled = false;
@@ -1210,13 +1208,14 @@ export default class ExcalidrawView extends TextFileView {
 
   public zoomToFit(delay:boolean = true) {
     if(!this.excalidrawRef) return;
+    const maxZoom = this.plugin.settings.zoomToFitMaxLevel;
     const current = this.excalidrawAPI;
     const fullscreen = (document.fullscreenElement==this.contentEl);
     const elements = current.getSceneElements();
     if(delay) { //time for the DOM to render, I am sure there is a more elegant solution
-      setTimeout(() => current.zoomToFit(elements,2,fullscreen?0:0.05),100); 
+      setTimeout(() => current.zoomToFit(elements,maxZoom,fullscreen?0:0.05),100); 
     } else {
-      current.zoomToFit(elements,2,fullscreen?0:0.05);
+      current.zoomToFit(elements,maxZoom,fullscreen?0:0.05);
     }
   }
 }

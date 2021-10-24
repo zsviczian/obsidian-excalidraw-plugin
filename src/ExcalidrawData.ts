@@ -11,7 +11,7 @@ import {
   JSON_parse
 } from "./constants";
 import { TextMode } from "./ExcalidrawView";
-import { getAttachmentsFolderAndFilePath, getBinaryFileFromDataURL, wrapText } from "./Utils";
+import { getAttachmentsFolderAndFilePath, getBinaryFileFromDataURL, isObsidianThemeDark, wrapText } from "./Utils";
 import { ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/element/types";
 import { BinaryFiles, SceneData } from "@zsviczian/excalidraw/types/types";
 
@@ -153,6 +153,10 @@ export class ExcalidrawData {
       this.scene.files = {}; //loading legacy scenes that do not yet have the files attribute.
     }
 
+    if(this.plugin.settings.matchThemeAlways) {
+      this.scene.appState.theme = isObsidianThemeDark() ? "dark" : "light";
+    }
+
     this.svgSnapshot = getSVGString(data.substr(pos+scene.length));
 
     data = data.substring(0,pos);
@@ -214,6 +218,9 @@ export class ExcalidrawData {
     this.scene = JSON.parse(data);
     if(!this.scene.files) {
       this.scene.files = {}; //loading legacy scenes without the files element
+    }
+    if(this.plugin.settings.matchThemeAlways) {
+      this.scene.appState.theme = isObsidianThemeDark() ? "dark" : "light";
     }
     this.files.clear();
     this.findNewTextElementsInScene();
