@@ -71,6 +71,11 @@ export default {
   FILENAME_PREFIX_DESC: "The first part of the filename",
   FILENAME_DATE_NAME: "Filename date",
   FILENAME_DATE_DESC: "The second part of the filename",
+  /*SVG_IN_MD_NAME: "SVG Snapshot to markdown file",
+  SVG_IN_MD_DESC: "If the switch is 'on' Excalidraw will include an SVG snapshot in the markdown file. "+
+                  "When SVG snapshots are saved to the Excalidraw.md file, drawings that include large png, jpg, gif images may take extreme long time to open in markdown view. " +
+                  "On the other hand, SVG snapshots provide some level of platform independence and longevity to your drawings. Even if Excalidraw will no longer exist, the snapshot " +
+                  "can be opened with an app that reads SVGs. In addition hover previews will be less resource intensive if SVG snapshots are enabled.",*/
   DISPLAY_HEAD: "Display",
   MATCH_THEME_NAME: "New drawing to match Obsidian theme",
   MATCH_THEME_DESC: "If theme is dark, new drawing will be created in dark mode. This does not apply when you use a template for new drawings. " +

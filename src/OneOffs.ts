@@ -137,9 +137,10 @@ class ImageElementNotice extends Modal {
     this.createForm();
   }
 
-  onClose(): void {
+  async onClose() {
     this.contentEl.empty();
     if(!this.saveChanges) return;
+    await this.plugin.loadSettings();
     this.plugin.settings.imageElementNotice = false;
     this.plugin.saveSettings();
   }

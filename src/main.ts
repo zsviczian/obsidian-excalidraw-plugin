@@ -1073,7 +1073,7 @@ export default class ExcalidrawPlugin extends Plugin {
     + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'json\n' 
     + jsonString + '\n'
     + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)
-    + (svgString ? 
+    + (svgString ? //&& this.settings.saveSVGSnapshots
         '\n\n# SVG snapshot\n'
         + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'html\n'
         + svgString + '\n'

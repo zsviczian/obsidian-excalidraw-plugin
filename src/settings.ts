@@ -15,6 +15,7 @@ export interface ExcalidrawSettings {
   templateFilePath: string,
   drawingFilenamePrefix: string,
   drawingFilenameDateTime: string,
+//  saveSVGSnapshots: boolean,
   //displaySVGInPreview: boolean,
   width: string,
   matchTheme: boolean,
@@ -52,6 +53,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   templateFilePath: 'Excalidraw/Template.excalidraw',
   drawingFilenamePrefix: 'Drawing ',
   drawingFilenameDateTime: 'YYYY-MM-DD HH.mm.ss',
+//  saveSVGSnapshots: true,
   //displaySVGInPreview: true,
   width: '400',
   matchTheme: false,
@@ -197,6 +199,17 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           filenameEl.innerHTML = getFilenameSample();
           this.applySettingsUpdate();
         }));
+
+/*    new Setting(containerEl)
+      .setName(t("SVG_IN_MD_NAME")) 
+      .setDesc(t("SVG_IN_MD_DESC"))
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.saveSVGSnapshots)
+        .onChange(async (value) => {
+          this.plugin.settings.saveSVGSnapshots = value;
+          this.applySettingsUpdate();
+        }));*/
+  
 
     this.containerEl.createEl('h1', {text: t("DISPLAY_HEAD")});
 
