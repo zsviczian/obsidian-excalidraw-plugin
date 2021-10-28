@@ -29,6 +29,7 @@ export interface ExcalidrawSettings {
   allowCtrlClick: boolean, //if disabled only the link button in the view header will open links 
   forceWrap: boolean,
   pageTransclusionCharLimit: number,
+  iframelyAllowed: boolean,
   pngExportScale: number,
   exportWithTheme: boolean,
   exportWithBackground: boolean,
@@ -67,6 +68,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   allowCtrlClick: true,
   forceWrap: false,
   pageTransclusionCharLimit: 200,
+  iframelyAllowed: true,
   pngExportScale: 1,
   exportWithTheme: true,
   exportWithBackground: true,
@@ -355,6 +357,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           this.applySettingsUpdate(true);
         }));  
 
+    new Setting(containerEl)
+      .setName(t("GET_URL_TITLE_NAME")) 
+      .setDesc(t("GET_URL_TITLE_DESC"))
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.iframelyAllowed)
+        .onChange(async (value) => {
+          this.plugin.settings.iframelyAllowed = value;
+          this.applySettingsUpdate();
+        }));
+  
     this.containerEl.createEl('h1', {text: t("EMBED_HEAD")});
 
 //Removed in 1.4.0 when implementing ImageElement.

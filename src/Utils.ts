@@ -9,7 +9,7 @@ import ExcalidrawPlugin from "./main";
 import { ExcalidrawElement, FileId } from "@zsviczian/excalidraw/types/element/types";
 import { ExportSettings } from "./ExcalidrawView";
 import { ExcalidrawSettings } from "./settings";
-import { html_beautify } from "js-beautify"
+import { html_beautify } from "js-beautify";
 
 declare module "obsidian" {
   interface Workspace {
@@ -326,9 +326,8 @@ export const generateSVGString = async (scene:any, settings: ExcalidrawSettings)
     withTheme: settings.exportWithTheme
   }
   const svg = await getSVG(scene,exportSettings);
-  if(svg) {
-    
-    return html_beautify(svg.outerHTML,{"indent_with_tabs": true});
+  if(svg) {        
+    return wrapText(html_beautify(svg.outerHTML,{"indent_with_tabs": true}),4096,true);//  html_beautify(svg.outerHTML,{"indent_with_tabs": true});
   }
   return null;
 }

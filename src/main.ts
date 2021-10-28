@@ -35,7 +35,7 @@ import {
   DARK_BLANK_DRAWING
 } from "./constants";
 import ExcalidrawView, {ExportSettings, TextMode} from "./ExcalidrawView";
-import {getJSON, getSVGString} from "./ExcalidrawData";
+import {getJSON, getMarkdownDrawingSection, getSVGString} from "./ExcalidrawData";
 import {
   ExcalidrawSettings, 
   DEFAULT_SETTINGS, 
@@ -48,6 +48,9 @@ import {
 import {
   InsertLinkDialog
 } from "./InsertLinkDialog";
+import {
+  InsertImageDialog
+} from "./InsertImageDialog";
 import {
   initExcalidrawAutomate,
   destroyExcalidrawAutomate
@@ -73,6 +76,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public settings: ExcalidrawSettings;
   private openDialog: OpenFileDialog;
   private insertLinkDialog: InsertLinkDialog;
+  private insertImageDialog: InsertImageDialog;
   private activeExcalidrawView: ExcalidrawView = null;
   public lastActiveExcalidrawFilePath: string = null;
   public hover: {linkText: string, sourcePath: string} = {linkText: null, sourcePath: null};
@@ -411,6 +415,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private registerCommands() {
     this.openDialog = new OpenFileDialog(this.app, this);
     this.insertLinkDialog = new InsertLinkDialog(this.app);
+    this.insertImageDialog = new InsertImageDialog(this.app);
 
     this.addRibbonIcon(ICON_NAME, t("CREATE_NEW"), async (e) => {
       this.createDrawing(this.getNextDefaultFilename(), e.ctrlKey||e.metaKey);
@@ -646,6 +651,24 @@ export default class ExcalidrawPlugin extends Plugin {
           const view = this.app.workspace.activeLeaf.view;
           if (view instanceof ExcalidrawView) {
             this.insertLinkDialog.start(view.file.path,view.addText);
+            return true;
+          }
+          else return false;
+        }
+      },
+    });
+
+    this.addCommand({
+      id: "insert-image",
+      name: t("INSERT_IMAGE"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          const view = this.app.workspace.activeLeaf.view;
+          return (view instanceof ExcalidrawView);
+        } else {
+          const view = this.app.workspace.activeLeaf.view;
+          if (view instanceof ExcalidrawView) {
+            this.insertImageDialog.start(view);
             return true;
           }
           else return false;
@@ -945,16 +968,21 @@ export default class ExcalidrawPlugin extends Plugin {
       //save Excalidraw leaf and update embeds when switching to another leaf
       const activeLeafChangeEventHandler = async (leaf:WorkspaceLeaf) => {
         const activeExcalidrawView = self.activeExcalidrawView;
-        const newActiveview:ExcalidrawView = (leaf.view instanceof ExcalidrawView) ? leaf.view as ExcalidrawView : null;
-        if(activeExcalidrawView && activeExcalidrawView != newActiveview) {
-          await activeExcalidrawView.save(false);
-          if(activeExcalidrawView.file) {
-            self.triggerEmbedUpdates(activeExcalidrawView.file.path);
-          }
-        }
+        const newActiveview:ExcalidrawView = (leaf.view instanceof ExcalidrawView) ? leaf.view : null;
         self.activeExcalidrawView = newActiveview;
         if(newActiveview) {
           self.lastActiveExcalidrawFilePath = newActiveview.file?.path;
+        }
+        
+        if(activeExcalidrawView && activeExcalidrawView != newActiveview) {
+          if(activeExcalidrawView.leaf != leaf) {
+            //if loading new view to same leaf then don't save. Excalidarw view will take care of saving anyway.
+            //avoid double saving
+            await activeExcalidrawView.save(false);
+          }
+          if(activeExcalidrawView.file) {
+            self.triggerEmbedUpdates(activeExcalidrawView.file.path);
+          }
         }
       };
       self.registerEvent(
@@ -1065,21 +1093,7 @@ export default class ExcalidrawPlugin extends Plugin {
       return this.settings.matchTheme && isObsidianThemeDark() ? DARK_BLANK_DRAWING : BLANK_DRAWING;
     }
     const blank = this.settings.matchTheme && isObsidianThemeDark() ? DARK_BLANK_DRAWING : BLANK_DRAWING;
-    return FRONTMATTER + '\n' + this.getMarkdownDrawingSection(blank,'<SVG></SVG>');
-  }
-
-  public getMarkdownDrawingSection(jsonString: string,svgString: string) {
-    return '%%\n# Drawing\n'
-    + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'json\n' 
-    + jsonString + '\n'
-    + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)
-    + (svgString ? //&& this.settings.saveSVGSnapshots
-        '\n\n# SVG snapshot\n'
-        + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'html\n'
-        + svgString + '\n'
-        + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96) 
-       : '') 
-    + '\n%%';
+    return FRONTMATTER + '\n' + getMarkdownDrawingSection(blank,'<SVG></SVG>');
   }
 
   /**
@@ -1105,7 +1119,7 @@ export default class ExcalidrawPlugin extends Plugin {
       }
       outString += te.text+' ^'+id+'\n\n';
     }
-    return outString + this.getMarkdownDrawingSection(JSON.stringify(JSON_parse(data),null,"\t"),svgString);
+    return outString + getMarkdownDrawingSection(JSON.stringify(JSON_parse(data),null,"\t"),svgString);
   }
 
   public async createDrawing(filename: string, onNewPane: boolean, foldername?: string, initData?:string):Promise<string> {
@@ -1124,10 +1138,17 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public async setMarkdownView(leaf: WorkspaceLeaf) {
+    const state=leaf.view.getState();
+    
+    await leaf.setViewState({
+      type:VIEW_TYPE_EXCALIDRAW,
+      state: {file:null}
+    });
+
     await leaf.setViewState(
       {
         type: "markdown",
-        state: leaf.view.getState(),
+        state: state,
         popstate: true,
       } as ViewState,
       { focus: true }

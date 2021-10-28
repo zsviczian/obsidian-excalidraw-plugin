@@ -23,6 +23,7 @@ export default {
   EXPORT_PNG: "Save as PNG next to the current file",
   TOGGLE_LOCK: "Toggle Text Element edit RAW/PREVIEW",
   INSERT_LINK: "Insert link to file",
+  INSERT_IMAGE: "Insert image from vault",
   INSERT_LATEX: "Insert LaTeX-symbol (e.g. $\\theta$)",
   ENTER_LATEX: "Enter a valid LaTeX expression",
   
@@ -44,8 +45,6 @@ export default {
   NOFILE: "Excalidraw (no file)",
   COMPATIBILITY_MODE: "*.excalidraw file opened in compatibility mode. Convert to new format for full plugin functionality.",
   CONVERT_FILE: "Convert to new format",
-  DRAWING_CONTAINS_IMAGE: "Warning! The drawing contains image elements. Depending on the number and size of the images, " +
-                          "loading Markdown View may take a while. Please be patient. ",
 
   //settings.ts
   FOLDER_NAME: "Excalidraw folder",
@@ -120,6 +119,8 @@ export default {
   PAGE_TRANSCLUSION_CHARCOUNT_NAME: "Page transclusion max char count",
   PAGE_TRANSCLUSION_CHARCOUNT_DESC: "The maximum number of characters to display from the page when transcluding an entire page with the "+
                                     "![[markdown page]] format.",
+  GET_URL_TITLE_NAME: "Use iframely to resolve page title",
+  GET_URL_TITLE_DESC: "Use the http://iframely.server.crestify.com/iframely?url= to get title of page when dropping a link into Excalidraw",   
   EMBED_HEAD: "Embed & Export",
   EMBED_PREVIEW_SVG_NAME: "Display SVG in markdown preview",
   EMBED_PREVIEW_SVG_DESC: "The default is to display drawings as SVG images in the markdown preview. Turning this feature off, the markdown preview will display the drawing as an embedded PNG image.",
@@ -172,7 +173,8 @@ export default {
   //openDrawings.ts
   SELECT_FILE: "Select a file then press enter.",   
   NO_MATCH: "No file matches your query.",  
-  SELECT_FILE_TO_LINK: "Select the file you want to insert the link for.",     
+  SELECT_FILE_TO_LINK: "Select the file you want to insert the link for.", 
+  SELECT_DRAWING: "Select the drawing you want to insert",    
   TYPE_FILENAME: "Type name of drawing to select.",
   SELECT_FILE_OR_TYPE_NEW: "Select existing drawing or type name of a new drawing then press Enter.",
   SELECT_TO_EMBED: "Select the drawing to insert into active document.",

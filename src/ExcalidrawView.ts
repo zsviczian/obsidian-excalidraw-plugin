@@ -20,8 +20,6 @@ import {
   VIEW_TYPE_EXCALIDRAW,
   ICON_NAME,
   EXCALIDRAW_LIB_HEADER,
-  VIRGIL_FONT,
-  CASCADIA_FONT,
   DISK_ICON_NAME,
   PNG_ICON_NAME,
   SVG_ICON_NAME,
@@ -39,7 +37,6 @@ import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./Excalidra
 import { checkAndCreateFolder, download, embedFontsInSVG, generateSVGString, getNewOrAdjacentLeaf, getNewUniqueFilepath, getPNG, getSVG, loadSceneFiles, rotatedDimensions, scaleLoadedImage, splitFolderAndFilename, svgToBase64, viewportCoordsToSceneCoords } from "./Utils";
 import { Prompt } from "./Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
-import { ifStatement } from "@babel/types";
 
 declare let window: ExcalidrawAutomate;
 
@@ -496,12 +493,6 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   setMarkdownView() {
-    if(this.excalidrawRef) {
-      const el = this.excalidrawAPI.getSceneElements();
-      if(el.filter((e:any)=>e.type==="image").length>0) {
-        new Notice(t("DRAWING_CONTAINS_IMAGE"),6000);
-      }
-    }
     this.plugin.excalidrawFileModes[this.id || this.file.path] = "markdown";
     this.plugin.setMarkdownView(this.leaf);
   }
@@ -1140,6 +1131,33 @@ export default class ExcalidrawView extends TextFileView {
               const text:string = event.dataTransfer.getData("text");
               if(!text) return true;
               if (!onDropHook("text",null,text)) {
+                if(this.plugin.settings.iframelyAllowed && text.match(/^https?:\/\/\S*$/)) {
+                  let linkAdded = false;
+                  const self = this;
+                  ajaxPromise({
+                    url: `http://iframely.server.crestify.com/iframely?url=${text}`
+                  }).then((res) => {
+                    if(!res || linkAdded) return false;
+                    linkAdded = true;
+                    const data = JSON.parse(res);
+                    if(!data || !(data.meta?.title)) {
+                      this.addText(text);
+                      return false;
+                    }
+                    this.addText(`[${data.meta.title}](${text})`);
+                    return false;
+                  },()=>{
+                    if(linkAdded) return false;
+                    linkAdded = true;
+                    self.addText(text)
+                  });
+                  setTimeout(()=>{
+                    if(linkAdded) return;
+                    linkAdded = true;
+                    self.addText(text)
+                  },600);
+                  return false;
+                } 
                 this.addText(text.replace(/(!\[\[.*#[^\]]*\]\])/g,"$1{40}"));
               }
               return false;

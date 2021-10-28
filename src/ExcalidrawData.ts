@@ -81,9 +81,24 @@ export function getSVGString(data:string):string {
   let parts;
   parts = res.next();
   if(parts.value && parts.value.length>1) {
-    return parts.value[1];
+    return parts.value[1].replaceAll("\n","");
   }
   return null;
+}
+
+export function getMarkdownDrawingSection(jsonString: string,svgString: string) {
+  return '%%\n# Drawing\n'
+  + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'json\n' 
+  + jsonString + '\n'
+  + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)
+  + (svgString ? //&& this.settings.saveSVGSnapshots
+      '\n\n# SVG snapshot\n'
+      + "==⚠ Remove all linebreaks from SVG string before use. Linebreaks were added to improve markdown view speed. ⚠==\n"
+      + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'html\n'
+      + svgString + '\n'
+      + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96) 
+     : '') 
+  + '\n%%';
 }
 
 export class ExcalidrawData {
@@ -495,7 +510,9 @@ export class ExcalidrawData {
       }
       outString += '\n';
     }
-    return outString + this.plugin.getMarkdownDrawingSection(JSON.stringify(this.scene,null,"\t"),this.svgSnapshot);
+
+    const sceneJSONstring = JSON.stringify(this.scene,null,"\t"); 
+    return outString + getMarkdownDrawingSection(sceneJSONstring,this.svgSnapshot);
   }
 
   private async syncFiles(scene:SceneDataWithFiles):Promise<boolean> {
