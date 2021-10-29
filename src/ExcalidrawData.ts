@@ -114,12 +114,14 @@ export class ExcalidrawData {
   private plugin: ExcalidrawPlugin;
   public loaded: boolean = false;
   public files:Map<FileId,string> = null; //fileId, path
+  public equations:Map<FileId,string> = null; //fileId, path
   private compatibilityMode:boolean = false;
 
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
     this.app = plugin.app;
     this.files = new Map<FileId,string>();
+    this.equations = new Map<FileId,string>();
   }  
 
   /**
@@ -132,6 +134,7 @@ export class ExcalidrawData {
     this.file = file;
     this.textElements = new Map<string,{raw:string, parsed:string}>();
     this.files.clear();
+    this.equations.clear();
     this.compatibilityMode = false;
 
     //I am storing these because if the settings change while a drawing is open parsing will run into errors during save
@@ -207,12 +210,19 @@ export class ExcalidrawData {
     }
 
 
+    data = data.substring(data.indexOf("# Embedded files\n")+"# Embedded files\n".length);
     //Load Embedded files
     const REG_FILEID_FILEPATH = /([\w\d]*):\s*\[\[([^\]]*)]]\n/gm;
-    data = data.substring(data.indexOf("# Embedded files\n")+"# Embedded files\n".length);
     res = data.matchAll(REG_FILEID_FILEPATH);
     while(!(parts = res.next()).done) {
       this.files.set(parts.value[1] as FileId,parts.value[2]);
+    }
+
+    //Load Equations
+    const REG_FILEID_EQUATION = /([\w\d]*):\s*\$\$(.*)(\$\$\s*\n)$/gm;
+    res = data.matchAll(REG_FILEID_EQUATION);
+    while(!(parts = res.next()).done) {
+      this.equations.set(parts.value[1] as FileId,parts.value[2]);
     }
 
     //Check to see if there are text elements in the JSON that were missed from the # Text Elements section
@@ -238,6 +248,7 @@ export class ExcalidrawData {
       this.scene.appState.theme = isObsidianThemeDark() ? "dark" : "light";
     }
     this.files.clear();
+    this.equations.clear();
     this.findNewTextElementsInScene();
     await this.setTextMode(TextMode.raw,true); //legacy files are always displayed in raw mode.
     return true;
@@ -503,13 +514,20 @@ export class ExcalidrawData {
     for(const key of this.textElements.keys()){
       outString += this.textElements.get(key).raw+' ^'+key+'\n\n';
     }
+
+    outString += (this.equations.size>0 || this.files.size>0) ? '\n# Embedded files\n' : '';    
+    if(this.equations.size>0) {      
+      for(const key of this.equations.keys()) {
+        outString += key +': $$'+this.equations.get(key) + '$$\n';
+      }
+    }
     if(this.files.size>0) {
-      outString += '\n# Embedded files\n';
       for(const key of this.files.keys()) {
         outString += key +': [['+this.files.get(key) + ']]\n';
       }
-      outString += '\n';
     }
+    outString += (this.equations.size>0 || this.files.size>0) ? '\n' : '';
+
 
     const sceneJSONstring = JSON.stringify(this.scene,null,"\t"); 
     return outString + getMarkdownDrawingSection(sceneJSONstring,this.svgSnapshot);
@@ -531,7 +549,7 @@ export class ExcalidrawData {
     if(!scene.files || scene.files == {}) return false;
     
     for(const key of Object.keys(scene.files)) {
-      if(!this.files.has(key as FileId)) {
+      if(!(this.files.has(key as FileId) || this.equations.has(key as FileId))) {
         dirty = true;
         let fname = "Pasted Image "+window.moment().format("YYYYMMDDHHmmss_SSS");
         switch(scene.files[key].mimeType) {

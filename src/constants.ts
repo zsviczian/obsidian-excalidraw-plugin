@@ -1,8 +1,10 @@
 //This is only for backward compatibility because an early version of obsidian included an encoding to avoid fantom links from littering Obsidian graph view
 export function JSON_parse(x:string):any {return JSON.parse(x.replaceAll("&#91;","["));}
 
+import { FileId } from "@zsviczian/excalidraw/types/element/types";
 import {customAlphabet} from "nanoid";
 export const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',8);
+export const fileid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',40);
 export const IMAGE_TYPES = ['jpeg', 'jpg', 'png', 'gif', 'svg'];
 export const MAX_IMAGE_SIZE = 500;
 export const FRONTMATTER_KEY = "excalidraw-plugin";

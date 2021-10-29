@@ -2,14 +2,13 @@ import Excalidraw,{exportToSvg} from "@zsviczian/excalidraw";
 import {  App, normalizePath, TAbstractFile, TFile, TFolder, Vault, WorkspaceLeaf } from "obsidian";
 import { Random } from "roughjs/bin/math";
 import { BinaryFileData, DataURL, Zoom } from "@zsviczian/excalidraw/types/types";
-import { nanoid } from "nanoid";
-import { CASCADIA_FONT, IMAGE_TYPES, VIRGIL_FONT } from "./constants";
-import {ExcalidrawAutomate} from './ExcalidrawAutomate';
+import { CASCADIA_FONT, fileid, IMAGE_TYPES, VIRGIL_FONT } from "./constants";
 import ExcalidrawPlugin from "./main";
 import { ExcalidrawElement, FileId } from "@zsviczian/excalidraw/types/element/types";
 import { ExportSettings } from "./ExcalidrawView";
 import { ExcalidrawSettings } from "./settings";
 import { html_beautify } from "js-beautify";
+import html2canvas from "html2canvas";
 
 declare module "obsidian" {
   interface Workspace {
@@ -20,7 +19,7 @@ declare module "obsidian" {
   }
 }
 
-declare let window: ExcalidrawAutomate;
+declare let window: any;
 
 export declare type MimeType = "image/svg+xml" | "image/png" | "image/jpeg" | "image/gif" | "application/octet-stream";
 
@@ -190,7 +189,7 @@ export const getNewOrAdjacentLeaf = (plugin: ExcalidrawPlugin, leaf: WorkspaceLe
   return plugin.app.workspace.createLeafBySplit(leaf);
 }
 
-export const getObsidianImage = async (app: App, file: TFile)
+export const getObsidianImage = async (plugin: ExcalidrawPlugin, file: TFile)
   :Promise<{
     mimeType: MimeType,
     fileId: FileId, 
@@ -198,14 +197,15 @@ export const getObsidianImage = async (app: App, file: TFile)
     created: number,
     size: {height: number, width: number},
   }> => {
-  if(!app || !file) return null;
-  const isExcalidrawFile = window.ExcalidrawAutomate.isExcalidrawFile(file);
+  if(!plugin || !file) return null;
+  const app = plugin.app;
+  const isExcalidrawFile = plugin.ea.isExcalidrawFile(file);
   if (!(IMAGE_TYPES.contains(file.extension) || isExcalidrawFile)) {
     return null;
   }
   const ab = await app.vault.readBinary(file);
   const excalidrawSVG = isExcalidrawFile
-              ? svgToBase64((await window.ExcalidrawAutomate.createSVG(file.path,true)).outerHTML) as DataURL
+              ? svgToBase64((await plugin.ea.createSVG(file.path,true)).outerHTML) as DataURL
               : null;
   let mimeType:MimeType = "image/svg+xml";
   if (!isExcalidrawFile) {
@@ -263,7 +263,7 @@ const generateIdFromFile = async (file: ArrayBuffer):Promise<FileId> => {
         .join("") as FileId;
   } catch (error) {
     console.error(error);
-    id = nanoid(40) as FileId;
+    id = fileid() as FileId;
   }
   return id;
 };
@@ -363,14 +363,15 @@ export const embedFontsInSVG = (svg:SVGSVGElement):SVGSVGElement => {
 }
 
 
-export const loadSceneFiles = async (app:App, filesMap: Map<FileId, string>,addFiles:Function) => {
-  const entries = filesMap.entries();
+export const loadSceneFiles = async (plugin:ExcalidrawPlugin, filesMap: Map<FileId, string>, equationsMap: Map<FileId, string>, addFiles:Function) => {
+  const app = plugin.app;
+  let entries = filesMap.entries();
   let entry;
   let files:BinaryFileData[] = [];
   while(!(entry = entries.next()).done) {
     const file = app.vault.getAbstractFileByPath(entry.value[1]);
     if(file && file instanceof TFile) {
-      const data = await getObsidianImage(app,file);
+      const data = await getObsidianImage(plugin,file);
       files.push({
         mimeType : data.mimeType,
         id: entry.value[0],
@@ -381,6 +382,24 @@ export const loadSceneFiles = async (app:App, filesMap: Map<FileId, string>,addF
       });
     }
   }
+
+  entries = equationsMap.entries();
+  while(!(entry = entries.next()).done) {
+    const tex = entry.value[1];
+    const data = await tex2dataURL(tex);
+    if(data) {
+      files.push({
+        mimeType : data.mimeType,
+        id: entry.value[0],
+        dataURL: data.dataURL,
+        created: data.created,
+        //@ts-ignore
+        size: data.size,
+      });
+    }
+  }
+
+
 
   try { //in try block because by the time files are loaded the user may have closed the view
     addFiles(files);
@@ -415,3 +434,27 @@ export const scaleLoadedImage = (scene:any, files:any):[boolean,any] => {
 }
 
 export const isObsidianThemeDark = () => document.body.classList.contains("theme-dark");
+
+export async function tex2dataURL(tex:string, color:string="black"):Promise<{
+  mimeType: MimeType,
+  fileId: FileId, 
+  dataURL: DataURL,
+  created: number,
+  size: {height: number, width: number},
+}> {
+  const div = document.body.createDiv();
+  div.style.display = "table"; //this will ensure div fits width of formula exactly
+  //@ts-ignore
+  const eq = window.MathJax.tex2chtml("\\sum_{a}^{b}\\frac{x}{2}",{display: true, scale: 4}); //scale to ensure good resolution
+  eq.style.margin = "3px";
+  eq.style.color = color;
+  div.appendChild(eq);
+  const canvas = await html2canvas(div, {backgroundColor:null}); //transparent
+  return {
+    mimeType: "image/png",
+    fileId: fileid() as FileId,
+    dataURL: canvas.toDataURL() as DataURL,
+    created: Date.now(),
+    size: {height: canvas.height, width: canvas.width}
+  }
+}

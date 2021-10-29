@@ -10,156 +10,154 @@ import {
   TFile
 } from "obsidian"
 import ExcalidrawView, { TextMode } from "./ExcalidrawView";
-import { ExcalidrawData, getJSON, getSVGString } from "./ExcalidrawData";
+import { ExcalidrawData} from "./ExcalidrawData";
 import { 
   FRONTMATTER, 
   nanoid, 
-  JSON_parse, 
   VIEW_TYPE_EXCALIDRAW,
-  MAX_IMAGE_SIZE
+  MAX_IMAGE_SIZE,
 } from "./constants";
-import { embedFontsInSVG, generateSVGString, getObsidianImage, getPNG, getSVG, loadSceneFiles, scaleLoadedImage, svgToBase64, wrapText } from "./Utils";
+import { embedFontsInSVG, generateSVGString, getObsidianImage, getPNG, getSVG, loadSceneFiles, scaleLoadedImage, svgToBase64, tex2dataURL, wrapText } from "./Utils";
 import { AppState } from "@zsviczian/excalidraw/types/types";
 
 declare type ConnectionPoint = "top"|"bottom"|"left"|"right";
 
-export interface ExcalidrawAutomate extends Window {
-  ExcalidrawAutomate: {
-    plugin: ExcalidrawPlugin;
-    elementsDict: {};
-    imagesDict: {};
-    style: {
-      strokeColor: string;
-      backgroundColor: string;
-      angle: number;
-      fillStyle: FillStyle;
-      strokeWidth: number;
-      storkeStyle: StrokeStyle;
-      roughness: number;
-      opacity: number;
-      strokeSharpness: StrokeSharpness;
-      fontFamily: number;
-      fontSize: number;
-      textAlign: string;
-      verticalAlign: string;
-      startArrowHead: string;
-      endArrowHead: string;
-    }
-    canvas: {
-      theme: string, 
-      viewBackgroundColor: string, 
-      gridSize: number
-    };
-    setFillStyle (val:number): void;
-    setStrokeStyle (val:number): void;
-    setStrokeSharpness (val:number): void;
-    setFontFamily (val:number): void;
-    setTheme (val:number): void;
-    addToGroup (objectIds:[]):string;
-    toClipboard (templatePath?:string): void;
-    getElements ():ExcalidrawElement[];
-    getElement (id:string):ExcalidrawElement;
-    create (
-      params?: {
-        filename?: string, 
-        foldername?:string, 
-        templatePath?:string, 
-        onNewPane?: boolean,
-        frontmatterKeys?:{
-          "excalidraw-plugin"?: "raw"|"parsed",
-          "excalidraw-link-prefix"?: string,
-          "excalidraw-link-brackets"?: boolean,
-          "excalidraw-url-prefix"?: string
-        }
-      }
-    ):Promise<string>;
-    createSVG (templatePath?:string, embedFont?:boolean):Promise<SVGSVGElement>;
-    createPNG (templatePath?:string):Promise<any>;
-    wrapText (text:string, lineLen:number):string;
-    addRect (topX:number, topY:number, width:number, height:number):string;
-    addDiamond (topX:number, topY:number, width:number, height:number):string;
-    addEllipse (topX:number, topY:number, width:number, height:number):string;
-    addBlob (topX:number, topY:number, width:number, height:number):string;
-    addText (
-      topX:number, 
-      topY:number, 
-      text:string, 
-      formatting?: {
-        wrapAt?:number, 
-        width?:number, 
-        height?:number,
-        textAlign?: string, 
-        box?: boolean|"box"|"blob"|"ellipse"|"diamond", 
-        boxPadding?: number
-      },
-      id?:string
-    ):string;
-    addLine(points: [[x:number,y:number]]):string;
-    addArrow (
-      points: [[x:number,y:number]],
-      formatting?: {
-        startArrowHead?:string,
-        endArrowHead?:string,
-        startObjectId?:string,
-        endObjectId?:string
-      }
-    ):string ;
-    addImage(topX:number, topY:number, imageFile: TFile):Promise<string>;
-    connectObjects (
-      objectA: string, 
-      connectionA: ConnectionPoint, 
-      objectB: string, 
-      connectionB: ConnectionPoint, 
-      formatting?: {
-        numberOfPoints?: number,
-        startArrowHead?:string,
-        endArrowHead?:string, 
-        padding?: number
-      }
-    ):void;
-    clear (): void;
-    reset (): void;
-    isExcalidrawFile (f:TFile): boolean;  
-    //view manipulation
-    targetView: ExcalidrawView;
-    setView (view:ExcalidrawView|"first"|"active"):ExcalidrawView;
-    getExcalidrawAPI ():any;
-    getViewElements ():ExcalidrawElement[];
-    deleteViewElements (el: ExcalidrawElement[]):boolean;
-    getViewSelectedElement ():ExcalidrawElement;
-    getViewSelectedElements ():ExcalidrawElement[];
-    viewToggleFullScreen (forceViewMode?:boolean):void;
-    connectObjectWithViewSelectedElement (
-      objectA:string,
-      connectionA: ConnectionPoint, 
-      connectionB: ConnectionPoint, 
-      formatting?: {
-        numberOfPoints?: number,
-        startArrowHead?:string,
-        endArrowHead?:string, 
-        padding?: number
-      }
-    ):boolean;
-    addElementsToView (repositionToCursor:boolean, save:boolean):Promise<boolean>;
-    onDropHook (data: {
-      ea: ExcalidrawAutomate, 
-      event: React.DragEvent<HTMLDivElement>,
-      draggable: any, //Obsidian draggable object
-      type: "file"|"text"|"unknown",
-      payload: {
-        files: TFile[], //TFile[] array of dropped files
-        text: string, //string 
-      },
-      excalidrawFile: TFile, //the file receiving the drop event
-      view: ExcalidrawView, //the excalidraw view receiving the drop
-      pointerPosition: {x:number, y:number} //the pointer position on canvas at the time of drop
-    }):boolean;
+export interface ExcalidrawAutomate {
+  plugin: ExcalidrawPlugin;
+  elementsDict: {};
+  imagesDict: {};
+  style: {
+    strokeColor: string;
+    backgroundColor: string;
+    angle: number;
+    fillStyle: FillStyle;
+    strokeWidth: number;
+    storkeStyle: StrokeStyle;
+    roughness: number;
+    opacity: number;
+    strokeSharpness: StrokeSharpness;
+    fontFamily: number;
+    fontSize: number;
+    textAlign: string;
+    verticalAlign: string;
+    startArrowHead: string;
+    endArrowHead: string;
+  }
+  canvas: {
+    theme: string, 
+    viewBackgroundColor: string, 
+    gridSize: number
   };
+  setFillStyle (val:number): void;
+  setStrokeStyle (val:number): void;
+  setStrokeSharpness (val:number): void;
+  setFontFamily (val:number): void;
+  setTheme (val:number): void;
+  addToGroup (objectIds:[]):string;
+  toClipboard (templatePath?:string): void;
+  getElements ():ExcalidrawElement[];
+  getElement (id:string):ExcalidrawElement;
+  create (
+    params?: {
+      filename?: string, 
+      foldername?:string, 
+      templatePath?:string, 
+      onNewPane?: boolean,
+      frontmatterKeys?:{
+        "excalidraw-plugin"?: "raw"|"parsed",
+        "excalidraw-link-prefix"?: string,
+        "excalidraw-link-brackets"?: boolean,
+        "excalidraw-url-prefix"?: string
+      }
+    }
+  ):Promise<string>;
+  createSVG (templatePath?:string, embedFont?:boolean):Promise<SVGSVGElement>;
+  createPNG (templatePath?:string):Promise<any>;
+  wrapText (text:string, lineLen:number):string;
+  addRect (topX:number, topY:number, width:number, height:number):string;
+  addDiamond (topX:number, topY:number, width:number, height:number):string;
+  addEllipse (topX:number, topY:number, width:number, height:number):string;
+  addBlob (topX:number, topY:number, width:number, height:number):string;
+  addText (
+    topX:number, 
+    topY:number, 
+    text:string, 
+    formatting?: {
+      wrapAt?:number, 
+      width?:number, 
+      height?:number,
+      textAlign?: string, 
+      box?: boolean|"box"|"blob"|"ellipse"|"diamond", 
+      boxPadding?: number
+    },
+    id?:string
+  ):string;
+  addLine(points: [[x:number,y:number]]):string;
+  addArrow (
+    points: [[x:number,y:number]],
+    formatting?: {
+      startArrowHead?:string,
+      endArrowHead?:string,
+      startObjectId?:string,
+      endObjectId?:string
+    }
+  ):string ;
+  addImage(topX:number, topY:number, imageFile: TFile):Promise<string>;
+  addLaTex(topX:number, topY:number, tex: string, color?:string):Promise<string>;
+  connectObjects (
+    objectA: string, 
+    connectionA: ConnectionPoint, 
+    objectB: string, 
+    connectionB: ConnectionPoint, 
+    formatting?: {
+      numberOfPoints?: number,
+      startArrowHead?:string,
+      endArrowHead?:string, 
+      padding?: number
+    }
+  ):void;
+  clear (): void;
+  reset (): void;
+  isExcalidrawFile (f:TFile): boolean;  
+  //view manipulation
+  targetView: ExcalidrawView;
+  setView (view:ExcalidrawView|"first"|"active"):ExcalidrawView;
+  getExcalidrawAPI ():any;
+  getViewElements ():ExcalidrawElement[];
+  deleteViewElements (el: ExcalidrawElement[]):boolean;
+  getViewSelectedElement ():ExcalidrawElement;
+  getViewSelectedElements ():ExcalidrawElement[];
+  viewToggleFullScreen (forceViewMode?:boolean):void;
+  connectObjectWithViewSelectedElement (
+    objectA:string,
+    connectionA: ConnectionPoint, 
+    connectionB: ConnectionPoint, 
+    formatting?: {
+      numberOfPoints?: number,
+      startArrowHead?:string,
+      endArrowHead?:string, 
+      padding?: number
+    }
+  ):boolean;
+  addElementsToView (repositionToCursor:boolean, save:boolean):Promise<boolean>;
+  onDropHook (data: {
+    ea: ExcalidrawAutomate, 
+    event: React.DragEvent<HTMLDivElement>,
+    draggable: any, //Obsidian draggable object
+    type: "file"|"text"|"unknown",
+    payload: {
+      files: TFile[], //TFile[] array of dropped files
+      text: string, //string 
+    },
+    excalidrawFile: TFile, //the file receiving the drop event
+    view: ExcalidrawView, //the excalidraw view receiving the drop
+    pointerPosition: {x:number, y:number} //the pointer position on canvas at the time of drop
+  }):boolean;
 }
 
-declare let window: ExcalidrawAutomate;
+declare let window: any;
 
-export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
+export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<ExcalidrawAutomate> {
   window.ExcalidrawAutomate = {
     plugin: plugin,
     elementsDict: {},
@@ -249,7 +247,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
       return id;
     },
     async toClipboard(templatePath?:string) {
-      const template = templatePath ? (await getTemplate(templatePath)) : null;
+      const template = templatePath ? (await getTemplate(this.plugin,templatePath)) : null;
       let elements = template ? template.elements : [];
       elements = elements.concat(this.getElements());
       navigator.clipboard.writeText(
@@ -283,7 +281,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
         }
       }
     ):Promise<string> {
-      const template = params?.templatePath ? (await getTemplate(params.templatePath,true)) : null;
+      const template = params?.templatePath ? (await getTemplate(this.plugin,params.templatePath,true)) : null;
       let elements = template ? template.elements : [];
       elements = elements.concat(this.getElements());
       let frontmatter:string;
@@ -340,7 +338,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
     },
     async createSVG(templatePath?:string,embedFont:boolean = false):Promise<SVGSVGElement> {
       const automateElements = this.getElements();
-      const template = templatePath ? (await getTemplate(templatePath,true)) : null;
+      const template = templatePath ? (await getTemplate(this.plugin,templatePath,true)) : null;
       let elements = template ? template.elements : [];
       elements = elements.concat(automateElements);
       const svg = await getSVG(
@@ -364,7 +362,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
     },
     async createPNG(templatePath?:string, scale:number=1) {
       const automateElements = this.getElements();
-      const template = templatePath ? (await getTemplate(templatePath,true)) : null;
+      const template = templatePath ? (await getTemplate(this.plugin,templatePath,true)) : null;
       let elements = template ? template.elements : [];
       elements = elements.concat(automateElements);
       return getPNG(
@@ -477,12 +475,13 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
             boxId = this.addRect(topX-boxPadding,topY-boxPadding,width+2*boxPadding,height+2*boxPadding);
         }       
       }
+      const ea = window.ExcalidrawAutomate;
       this.elementsDict[id] = {
         text: text,
-        fontSize: window.ExcalidrawAutomate.style.fontSize,
-        fontFamily: window.ExcalidrawAutomate.style.fontFamily,
-        textAlign: formatting?.textAlign ? formatting.textAlign : window.ExcalidrawAutomate.style.textAlign,
-        verticalAlign: window.ExcalidrawAutomate.style.verticalAlign,
+        fontSize: ea.style.fontSize,
+        fontFamily: ea.style.fontFamily,
+        textAlign: formatting?.textAlign ? formatting.textAlign : ea.style.textAlign,
+        verticalAlign: ea.style.verticalAlign,
         baseline: baseline,
         ... boxedElement(id,"text",topX,topY,width,height)
       };
@@ -529,19 +528,37 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
     },
     async addImage(topX:number, topY:number, imageFile: TFile):Promise<string> {
       const id = nanoid();
-      const image = await getObsidianImage(this.plugin.app,imageFile);
+      const image = await getObsidianImage(this.plugin,imageFile);
       if(!image) return null;
       this.imagesDict[image.fileId] = {
         mimeType: image.mimeType,
         id: image.fileId,
         dataURL: image.dataURL,
         created: image.created,
-        file: imageFile.path
+        file: imageFile.path,
+        tex: null
       }
       if (Math.max(image.size.width,image.size.height) > MAX_IMAGE_SIZE) {
         const scale = MAX_IMAGE_SIZE/Math.max(image.size.width,image.size.height);
         image.size.width = scale*image.size.width;
         image.size.height = scale*image.size.height;
+      }
+      this.elementsDict[id] = boxedElement(id,"image",topX,topY,image.size.width,image.size.height);
+      this.elementsDict[id].fileId = image.fileId;
+      this.elementsDict[id].scale = [1,1];
+      return id;
+    },
+    async addLaTex(topX:number, topY:number, tex:string, color:string = "black"):Promise<string> {
+      const id = nanoid();
+      const image = await tex2dataURL(tex, color);
+      if(!image) return null;
+      this.imagesDict[image.fileId] = {
+        mimeType: image.mimeType,
+        id: image.fileId,
+        dataURL: image.dataURL,
+        created: image.created,
+        file: null,
+        tex: tex
       }
       this.elementsDict[id] = boxedElement(id,"image",topX,topY,image.size.width,image.size.height);
       this.elementsDict[id].fileId = image.fileId;
@@ -723,6 +740,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin) {
     onDropHook:null,
   };
   await initFonts();
+  return window.ExcalidrawAutomate;
 }
 
 export function destroyExcalidrawAutomate() {
@@ -738,6 +756,7 @@ function normalizeLinePoints(points:[[x:number,y:number]],box:{x:number,y:number
 }
 
 function boxedElement(id:string,eltype:any,x:number,y:number,w:number,h:number) {
+  const ea = window.ExcalidrawAutomate;
   return {
     id: id,
     type: eltype,
@@ -745,15 +764,15 @@ function boxedElement(id:string,eltype:any,x:number,y:number,w:number,h:number) 
     y: y,
     width: w,
     height: h, 
-    angle: window.ExcalidrawAutomate.style.angle,
-    strokeColor: window.ExcalidrawAutomate.style.strokeColor,
-    backgroundColor: window.ExcalidrawAutomate.style.backgroundColor,
-    fillStyle: window.ExcalidrawAutomate.style.fillStyle,
-    strokeWidth: window.ExcalidrawAutomate.style.strokeWidth,
-    storkeStyle: window.ExcalidrawAutomate.style.storkeStyle,
-    roughness: window.ExcalidrawAutomate.style.roughness,
-    opacity: window.ExcalidrawAutomate.style.opacity,
-    strokeSharpness: window.ExcalidrawAutomate.style.strokeSharpness,
+    angle: ea.style.angle,
+    strokeColor: ea.style.strokeColor,
+    backgroundColor: ea.style.backgroundColor,
+    fillStyle: ea.style.fillStyle,
+    strokeWidth: ea.style.strokeWidth,
+    storkeStyle: ea.style.storkeStyle,
+    roughness: ea.style.roughness,
+    opacity: ea.style.opacity,
+    strokeSharpness: ea.style.strokeSharpness,
     seed: Math.floor(Math.random() * 100000),
     version: 1,
     versionNounce: 1,
@@ -816,19 +835,19 @@ export function measureText (newText:string, fontSize:number, fontFamily:number)
   return {w: width, h: height, baseline: baseline };
 };
 
-async function getTemplate(fileWithPath:string, loadFiles:boolean = false):Promise<{
+async function getTemplate(plugin: ExcalidrawPlugin, fileWithPath:string, loadFiles:boolean = false):Promise<{
   elements: any,
   appState: any, 
   frontmatter: string,
   files: any,
   svgSnapshot: string
 }> {
-  const app = window.ExcalidrawAutomate.plugin.app;
+  const app = plugin.app;
   const vault = app.vault;
   const file = app.metadataCache.getFirstLinkpathDest(normalizePath(fileWithPath),'');
   if(file && file instanceof TFile) {
     const data = (await vault.read(file)).replaceAll("\r\n","\n").replaceAll("\r","\n");
-    let excalidrawData:ExcalidrawData = new ExcalidrawData(window.ExcalidrawAutomate.plugin);
+    let excalidrawData:ExcalidrawData = new ExcalidrawData(plugin);
     
     if(file.extension === "excalidraw") {
       await excalidrawData.loadLegacyData(data,file);
@@ -848,7 +867,7 @@ async function getTemplate(fileWithPath:string, loadFiles:boolean = false):Promi
     if(trimLocation == -1) trimLocation = data.search("# Drawing\n");
 
     if(loadFiles) {
-      await loadSceneFiles(app,excalidrawData.files,(fileArray:any)=>{
+      await loadSceneFiles(plugin,excalidrawData.files, excalidrawData.equations, (fileArray:any)=>{
         for(const f of fileArray) {
           excalidrawData.scene.files[f.id] = f;
         }

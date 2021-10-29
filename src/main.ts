@@ -12,9 +12,9 @@ import {
   MenuItem,
   TAbstractFile,
   Tasks,
-  MarkdownRenderer,
   ViewState,
   Notice,
+  loadMathJax,
 } from "obsidian";
 import { 
   BLANK_DRAWING,
@@ -53,7 +53,8 @@ import {
 } from "./InsertImageDialog";
 import {
   initExcalidrawAutomate,
-  destroyExcalidrawAutomate
+  destroyExcalidrawAutomate,
+  ExcalidrawAutomate
 } from "./ExcalidrawAutomate";
 import { Prompt } from "./Prompt";
 import { around } from "monkey-around";
@@ -83,6 +84,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private observer: MutationObserver;
   private fileExplorerObserver: MutationObserver;
   public opencount:number = 0;
+  public ea:ExcalidrawAutomate;
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
@@ -96,8 +98,8 @@ export default class ExcalidrawPlugin extends Plugin {
     
     await this.loadSettings();
     this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
-    await initExcalidrawAutomate(this);
-
+    this.ea = await initExcalidrawAutomate(this);
+    
     this.registerView(
       VIEW_TYPE_EXCALIDRAW, 
       (leaf: WorkspaceLeaf) => new ExcalidrawView(leaf, this)
@@ -128,6 +130,8 @@ export default class ExcalidrawPlugin extends Plugin {
     patches.imageElementLaunchNotice();
 
     this.switchToExcalidarwAfterLoad()
+
+    this.app.workspace.onLayoutReady(()=>loadMathJax());
   }
 
   private switchToExcalidarwAfterLoad() {
@@ -415,7 +419,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private registerCommands() {
     this.openDialog = new OpenFileDialog(this.app, this);
     this.insertLinkDialog = new InsertLinkDialog(this.app);
-    this.insertImageDialog = new InsertImageDialog(this.app);
+    this.insertImageDialog = new InsertImageDialog(this);
 
     this.addRibbonIcon(ICON_NAME, t("CREATE_NEW"), async (e) => {
       this.createDrawing(this.getNextDefaultFilename(), e.ctrlKey||e.metaKey);
@@ -688,10 +692,11 @@ export default class ExcalidrawPlugin extends Plugin {
             const prompt = new Prompt(this.app, t("ENTER_LATEX"),'','$\\theta$');
             prompt.openAndGetValue( async (formula:string)=> {
               if(!formula) return;
-              const el = createEl('p');
-              await MarkdownRenderer.renderMarkdown(formula,el,'',this)
-              view.addText(el.getText());
-              el.empty();
+              const ea = this.ea;
+              ea.reset();
+              await ea.addLaTex(0,0,formula);
+              ea.setView(view);
+              ea.addElementsToView(true,true);
             });
             return true;
           }

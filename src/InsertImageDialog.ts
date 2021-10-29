@@ -7,16 +7,18 @@ import { IMAGE_TYPES } from "./constants";
 import { ExcalidrawAutomate } from "./ExcalidrawAutomate";
 import ExcalidrawView from "./ExcalidrawView";
 import {t} from './lang/helpers'
+import ExcalidrawPlugin from "./main";
 
-declare let window: ExcalidrawAutomate;
 
 export class InsertImageDialog extends FuzzySuggestModal<TFile> {
   public app: App;
+  public plugin: ExcalidrawPlugin;
   private view: ExcalidrawView;
   
-  constructor(app: App) {
-    super(app);
-    this.app = app;
+  constructor(plugin: ExcalidrawPlugin) {  
+    super(plugin.app);
+    this.plugin = plugin;
+    this.app = plugin.app;
     this.limit = 20;
     this.setInstructions([{
       command: t("SELECT_FILE"),
@@ -37,7 +39,7 @@ export class InsertImageDialog extends FuzzySuggestModal<TFile> {
 
   onChooseItem(item: TFile, _evt: MouseEvent | KeyboardEvent): void {
 
-    const ea = window.ExcalidrawAutomate;
+    const ea = this.plugin.ea;
     ea.reset();
     ea.setView(this.view);
     (async () => {

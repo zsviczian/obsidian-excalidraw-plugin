@@ -38,8 +38,6 @@ import { checkAndCreateFolder, download, embedFontsInSVG, generateSVGString, get
 import { Prompt } from "./Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 
-declare let window: ExcalidrawAutomate;
-
 export enum TextMode {
   parsed,
   raw
@@ -444,7 +442,7 @@ export default class ExcalidrawView extends TextFileView {
       if((this.app.workspace.activeLeaf === this.leaf) && this.excalidrawWrapperRef) {
         this.excalidrawWrapperRef.current.focus();
       }
-      loadSceneFiles(this.app,this.excalidrawData.files,(files:any)=>this.addFiles(files));
+      loadSceneFiles(this.plugin,this.excalidrawData.files, this.excalidrawData.equations, (files:any)=>this.addFiles(files));
     } else {
       this.instantiateExcalidraw({
         elements: excalidrawData.elements,
@@ -640,7 +638,7 @@ export default class ExcalidrawView extends TextFileView {
       React.useEffect(() => {
         excalidrawRef.current.readyPromise.then((api) => {
           this.excalidrawAPI = api;
-          loadSceneFiles(this.app,this.excalidrawData.files,(files:any)=>this.addFiles(files));
+          loadSceneFiles(this.plugin,this.excalidrawData.files,this.excalidrawData.equations, (files:any)=>this.addFiles(files));
         });
       }, [excalidrawRef]);
 
@@ -719,14 +717,15 @@ export default class ExcalidrawView extends TextFileView {
         }       
         const el: ExcalidrawElement[] = this.excalidrawAPI.getSceneElements();
         const st: AppState = this.excalidrawAPI.getAppState();
-        window.ExcalidrawAutomate.reset();
-        window.ExcalidrawAutomate.style.strokeColor = st.currentItemStrokeColor;
-        window.ExcalidrawAutomate.style.opacity = st.currentItemOpacity;
-        window.ExcalidrawAutomate.style.fontFamily = fontFamily ? fontFamily: st.currentItemFontFamily;
-        window.ExcalidrawAutomate.style.fontSize = st.currentItemFontSize;
-        window.ExcalidrawAutomate.style.textAlign = st.currentItemTextAlign;
-        const id:string = window.ExcalidrawAutomate.addText(currentPosition.x, currentPosition.y, text);
-        this.addElements(window.ExcalidrawAutomate.getElements(),false,true);
+        const ea = this.plugin.ea;
+        ea.reset();
+        ea.style.strokeColor = st.currentItemStrokeColor;
+        ea.style.opacity = st.currentItemOpacity;
+        ea.style.fontFamily = fontFamily ? fontFamily: st.currentItemFontFamily;
+        ea.style.fontSize = st.currentItemFontSize;
+        ea.style.textAlign = st.currentItemTextAlign;
+        const id:string = ea.addText(currentPosition.x, currentPosition.y, text);
+        this.addElements(ea.getElements(),false,true);
       }
 
       this.addElements = async (newElements:ExcalidrawElement[],repositionToCursor:boolean = false, save:boolean=false, images:any):Promise<boolean> => {
@@ -759,7 +758,12 @@ export default class ExcalidrawView extends TextFileView {
               dataURL: images[k].dataURL,
               created: images[k].created
             });
-            this.excalidrawData.files.set(images[k].id,images[k].file);
+            if(images[k].file) {
+              this.excalidrawData.files.set(images[k].id,images[k].file);
+            }
+            if(images[k].tex) {
+              this.excalidrawData.equations.set(images[k].id,images[k].tex);
+            }
           });
           this.excalidrawAPI.addFiles(files);
         }        
@@ -1070,11 +1074,11 @@ export default class ExcalidrawView extends TextFileView {
             
             const draggable = (this.app as any).dragManager.draggable;
             const onDropHook = (type:"file"|"text"|"unknown", files:TFile[], text:string):boolean => {
-              if (window.ExcalidrawAutomate.onDropHook) {
+              if (this.plugin.ea.onDropHook) {
                 try {
-                  return window.ExcalidrawAutomate.onDropHook({
+                  return this.plugin.ea.onDropHook({
                     //@ts-ignore
-                    ea: window.ExcalidrawAutomate, //the Excalidraw Automate object
+                    ea: this.plugin.ea, //the Excalidraw Automate object
                     event: event, //React.DragEvent<HTMLDivElement>
                     draggable: draggable, //Obsidian draggable object
                     type: type, //"file"|"text"
@@ -1106,7 +1110,7 @@ export default class ExcalidrawView extends TextFileView {
                     const f = draggable.file;
                     const topX = currentPosition.x;
                     const topY = currentPosition.y;
-                    const ea = window.ExcalidrawAutomate;
+                    const ea = this.plugin.ea;
                     ea.reset();
                     ea.setView(this);
                     (async () => {
