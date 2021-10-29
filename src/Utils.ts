@@ -445,11 +445,12 @@ export async function tex2dataURL(tex:string, color:string="black"):Promise<{
   const div = document.body.createDiv();
   div.style.display = "table"; //this will ensure div fits width of formula exactly
   //@ts-ignore
-  const eq = window.MathJax.tex2chtml("\\sum_{a}^{b}\\frac{x}{2}",{display: true, scale: 4}); //scale to ensure good resolution
+  const eq = window.MathJax.tex2chtml(tex,{display: true, scale: 4}); //scale to ensure good resolution
   eq.style.margin = "3px";
   eq.style.color = color;
   div.appendChild(eq);
   const canvas = await html2canvas(div, {backgroundColor:null}); //transparent
+  document.body.removeChild(div);
   return {
     mimeType: "image/png",
     fileId: fileid() as FileId,
