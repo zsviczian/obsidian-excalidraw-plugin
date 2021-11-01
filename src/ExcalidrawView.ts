@@ -34,7 +34,7 @@ import ExcalidrawPlugin from './main';
 import {ExcalidrawAutomate, repositionElementsToCursor} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./ExcalidrawData";
-import { checkAndCreateFolder, download, embedFontsInSVG, generateSVGString, getNewOrAdjacentLeaf, getNewUniqueFilepath, getPNG, getSVG, loadSceneFiles, rotatedDimensions, scaleLoadedImage, splitFolderAndFilename, svgToBase64, viewportCoordsToSceneCoords } from "./Utils";
+import { checkAndCreateFolder, download, embedFontsInSVG, generateSVGString, getNewOrAdjacentLeaf, getNewUniqueFilepath, getPNG, getSVG, loadSceneFiles, rotatedDimensions, scaleLoadedImage, splitFolderAndFilename, svgToBase64, updateEquation, viewportCoordsToSceneCoords } from "./Utils";
 import { Prompt } from "./Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 
@@ -54,9 +54,25 @@ export interface ExportSettings {
 
 const REG_LINKINDEX_INVALIDCHARS = /[<>:"\\|?*]/g;
 
+export const addFiles = (files:any, view: ExcalidrawView) => {
+  if(files.length === 0) return;
+  const [dirty, scene] = scaleLoadedImage(view.getScene(),files); 
+
+  if(dirty) {
+    view.excalidrawAPI.updateScene({
+      elements: scene.elements,
+      appState: scene.appState,
+      commitToHistory: false,
+    });
+  }
+
+  view.excalidrawAPI.addFiles(files);
+}
+
+
 export default class ExcalidrawView extends TextFileView {
   private excalidrawData: ExcalidrawData;
-  private getScene: Function = null;
+  public getScene: Function = null;
   public addElements: Function = null; //add elements to the active Excalidraw drawing
   private getSelectedTextElement: Function = null;
   private getSelectedImageElement: Function = null;
@@ -253,6 +269,17 @@ export default class ExcalidrawView extends TextFileView {
     } else {
       const selectedImage = this.getSelectedImageElement();
       if(selectedImage?.id) {
+        if(this.excalidrawData.equations.has(selectedImage.fileId)) {
+          const equation = this.excalidrawData.equations.get(selectedImage.fileId);
+          const prompt = new Prompt(this.app, t("ENTER_LATEX"),equation,'');
+          prompt.openAndGetValue( async (formula:string)=> {
+            if(!formula) return;
+            this.excalidrawData.equations.set(selectedImage.fileId,formula);
+            await this.save(true);
+            await updateEquation(formula,selectedImage.fileId,this,addFiles);
+          });
+          return;
+        }
         await this.save(true); //in case pasted images haven't been saved yet
         if(this.excalidrawData.files.has(selectedImage.fileId)) {
           linkText = this.excalidrawData.files.get(selectedImage.fileId);
@@ -442,7 +469,14 @@ export default class ExcalidrawView extends TextFileView {
       if((this.app.workspace.activeLeaf === this.leaf) && this.excalidrawWrapperRef) {
         this.excalidrawWrapperRef.current.focus();
       }
-      loadSceneFiles(this.plugin,this.excalidrawData.files, this.excalidrawData.equations, (files:any)=>this.addFiles(files));
+      loadSceneFiles(
+        this.plugin,
+        this.excalidrawData.files,
+        this.excalidrawData.equations,
+        this,
+        (files:any, view:ExcalidrawView) => addFiles(files,view),
+        this.file?.path
+      );
     } else {
       this.instantiateExcalidraw({
         elements: excalidrawData.elements,
@@ -452,21 +486,6 @@ export default class ExcalidrawView extends TextFileView {
       });
       //files are loaded on excalidrawRef readyPromise
     }   
-  }
-
-  private addFiles(files:any) {
-    if(files.length === 0) return;
-    const [dirty, scene] = scaleLoadedImage(this.getScene(),files); 
-
-    if(dirty) {
-      this.excalidrawAPI.updateScene({
-        elements: scene.elements,
-        appState: scene.appState,
-        commitToHistory: false,
-      });
-    }
-
-    this.excalidrawAPI.addFiles(files);
   }
 
   //Compatibility mode with .excalidraw files
@@ -638,7 +657,14 @@ export default class ExcalidrawView extends TextFileView {
       React.useEffect(() => {
         excalidrawRef.current.readyPromise.then((api) => {
           this.excalidrawAPI = api;
-          loadSceneFiles(this.plugin,this.excalidrawData.files,this.excalidrawData.equations, (files:any)=>this.addFiles(files));
+          loadSceneFiles(
+            this.plugin,
+            this.excalidrawData.files,
+            this.excalidrawData.equations,
+            this,
+            (files:any, view:ExcalidrawView)=>addFiles(files,view),
+            this.file?.path
+          );
         });
       }, [excalidrawRef]);
 

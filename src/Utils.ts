@@ -5,7 +5,7 @@ import { BinaryFileData, DataURL, Zoom } from "@zsviczian/excalidraw/types/types
 import { CASCADIA_FONT, fileid, IMAGE_TYPES, VIRGIL_FONT } from "./constants";
 import ExcalidrawPlugin from "./main";
 import { ExcalidrawElement, FileId } from "@zsviczian/excalidraw/types/element/types";
-import { ExportSettings } from "./ExcalidrawView";
+import ExcalidrawView, { ExportSettings } from "./ExcalidrawView";
 import { ExcalidrawSettings } from "./settings";
 import { html_beautify } from "js-beautify";
 import html2canvas from "html2canvas";
@@ -363,13 +363,20 @@ export const embedFontsInSVG = (svg:SVGSVGElement):SVGSVGElement => {
 }
 
 
-export const loadSceneFiles = async (plugin:ExcalidrawPlugin, filesMap: Map<FileId, string>, equationsMap: Map<FileId, string>, addFiles:Function) => {
+export const loadSceneFiles = async (
+  plugin:ExcalidrawPlugin, 
+  filesMap: Map<FileId, string>, 
+  equationsMap: Map<FileId, string>, 
+  view: ExcalidrawView,
+  addFiles:Function, 
+  sourcePath:string
+) => {
   const app = plugin.app;
   let entries = filesMap.entries();
   let entry;
   let files:BinaryFileData[] = [];
   while(!(entry = entries.next()).done) {
-    const file = app.vault.getAbstractFileByPath(entry.value[1]);
+    const file = app.metadataCache.getFirstLinkpathDest(entry.value[1],sourcePath)
     if(file && file instanceof TFile) {
       const data = await getObsidianImage(plugin,file);
       files.push({
@@ -399,12 +406,31 @@ export const loadSceneFiles = async (plugin:ExcalidrawPlugin, filesMap: Map<File
     }
   }
 
-
-
   try { //in try block because by the time files are loaded the user may have closed the view
-    addFiles(files);
+    addFiles(files,view);
   } catch(e) {
 
+  }
+}
+
+export const updateEquation = async (
+  equation: string,
+  fileId: string,
+  view: ExcalidrawView,
+  addFiles:Function
+) => {
+  const data = await tex2dataURL(equation);
+  if(data) {
+    let files:BinaryFileData[] = [];
+    files.push({
+      mimeType : data.mimeType,
+      id: fileId as FileId,
+      dataURL: data.dataURL,
+      created: data.created,
+      //@ts-ignore
+      size: data.size,
+    });
+    addFiles(files,view);
   }
 }
 
@@ -445,10 +471,12 @@ export async function tex2dataURL(tex:string, color:string="black"):Promise<{
   const div = document.body.createDiv();
   div.style.display = "table"; //this will ensure div fits width of formula exactly
   //@ts-ignore
+  
   const eq = window.MathJax.tex2chtml(tex,{display: true, scale: 4}); //scale to ensure good resolution
   eq.style.margin = "3px";
   eq.style.color = color;
   div.appendChild(eq);
+  window.MathJax.typeset();
   const canvas = await html2canvas(div, {backgroundColor:null}); //transparent
   document.body.removeChild(div);
   return {

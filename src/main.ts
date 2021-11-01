@@ -15,6 +15,7 @@ import {
   ViewState,
   Notice,
   loadMathJax,
+  MarkdownRenderer,
 } from "obsidian";
 import { 
   BLANK_DRAWING,
@@ -131,7 +132,10 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.switchToExcalidarwAfterLoad()
 
-    this.app.workspace.onLayoutReady(()=>loadMathJax());
+    const self = this;
+    this.app.workspace.onLayoutReady(()=>{
+      loadMathJax();
+    });
   }
 
   private switchToExcalidarwAfterLoad() {
@@ -689,7 +693,7 @@ export default class ExcalidrawPlugin extends Plugin {
         } else {
           const view = this.app.workspace.activeLeaf.view;
           if (view instanceof ExcalidrawView) {
-            const prompt = new Prompt(this.app, t("ENTER_LATEX"),'','$\\theta$');
+            const prompt = new Prompt(this.app, t("ENTER_LATEX"),'','\\color{red}\\oint_S {E_n dA = \\frac{1}{{\\varepsilon _0 }}} Q_{inside}');
             prompt.openAndGetValue( async (formula:string)=> {
               if(!formula) return;
               const ea = this.ea;

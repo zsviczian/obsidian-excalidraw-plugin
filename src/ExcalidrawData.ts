@@ -219,7 +219,7 @@ export class ExcalidrawData {
     }
 
     //Load Equations
-    const REG_FILEID_EQUATION = /([\w\d]*):\s*\$\$(.*)(\$\$\s*\n)$/gm;
+    const REG_FILEID_EQUATION = /([\w\d]*):\s*\$\$(.*)(\$\$\s*\n)/gm;
     res = data.matchAll(REG_FILEID_EQUATION);
     while(!(parts = res.next()).done) {
       this.equations.set(parts.value[1] as FileId,parts.value[2]);

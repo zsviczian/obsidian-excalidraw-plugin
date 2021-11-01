@@ -17,7 +17,7 @@ import {
   VIEW_TYPE_EXCALIDRAW,
   MAX_IMAGE_SIZE,
 } from "./constants";
-import { embedFontsInSVG, generateSVGString, getObsidianImage, getPNG, getSVG, loadSceneFiles, scaleLoadedImage, svgToBase64, tex2dataURL, wrapText } from "./Utils";
+import { embedFontsInSVG, getObsidianImage, getPNG, getSVG, loadSceneFiles, scaleLoadedImage, tex2dataURL, wrapText } from "./Utils";
 import { AppState } from "@zsviczian/excalidraw/types/types";
 
 declare type ConnectionPoint = "top"|"bottom"|"left"|"right";
@@ -844,7 +844,8 @@ async function getTemplate(plugin: ExcalidrawPlugin, fileWithPath:string, loadFi
 }> {
   const app = plugin.app;
   const vault = app.vault;
-  const file = app.metadataCache.getFirstLinkpathDest(normalizePath(fileWithPath),'');
+  const templatePath = normalizePath(fileWithPath);
+  const file = app.metadataCache.getFirstLinkpathDest(templatePath,'');
   if(file && file instanceof TFile) {
     const data = (await vault.read(file)).replaceAll("\r\n","\n").replaceAll("\r","\n");
     let excalidrawData:ExcalidrawData = new ExcalidrawData(plugin);
@@ -867,13 +868,13 @@ async function getTemplate(plugin: ExcalidrawPlugin, fileWithPath:string, loadFi
     if(trimLocation == -1) trimLocation = data.search("# Drawing\n");
 
     if(loadFiles) {
-      await loadSceneFiles(plugin,excalidrawData.files, excalidrawData.equations, (fileArray:any)=>{
+      await loadSceneFiles(plugin,excalidrawData.files, excalidrawData.equations, null, (fileArray:any, view:any)=>{
         for(const f of fileArray) {
           excalidrawData.scene.files[f.id] = f;
         }
         let foo;
         [foo,excalidrawData] = scaleLoadedImage(excalidrawData,fileArray); 
-      });
+      },templatePath);
     }
 
     return {
