@@ -1,5 +1,7 @@
 The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/), a feature rich sketching tool, into Obsidian. You can store and edit Excalidraw files in your vault, you can embed drawings into your documents, and you can link to documents and other drawings to/and from Excalidraw. For a showcase of Excalidraw features, please read my blog post [here](https://www.zsolt.blog/2021/03/showcasing-excalidraw.html) and/or watch the videos below.
 
+Please upgrade to Obsidian v0.12.19 or higher to get the latest release. 
+
 ![image](https://user-images.githubusercontent.com/14358394/125159831-336d6880-e17a-11eb-8a3d-ceabc2555a08.png)
 
 # Video walkthrough
@@ -36,7 +38,7 @@ The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/),
   - CTRL/CMD + SHIFT + CLICK to open the file in a new pane
   - CTRL/CMD + ALT + SHIFT + CLICK to create the file (if it does not yet exist) and open it in a new pane
 - Using the block reference you can also reference & transclude text that appears on drawings, in other documents
-- Insert LaTex symbols and simple formulas using the Command Palette action "Insert LaTeX-symbol". Some symbols may not display properly using the "Hand-drawn" font. If that is the case try using the "Normal" or "Code" fonts.
+- Insert LaTex formulas using the Command Palette action "Insert LaTeX formula". You can edit formulas either in Markdown view, or by CTRL/CMD + Click on the formula.
 - Drag & Drop support
   - You can drag files from the Obsidian file explorer and they will become links to those files in Excalidraw.
   - Dragging image files (PNG, SVG, JPG, Excalidraw) from obsidian files explorer while pressing the CTRL/CMD button will embed the image into your drawing.

@@ -536,11 +536,18 @@ export class ExcalidrawData {
   private async syncFiles(scene:SceneDataWithFiles):Promise<boolean> {
     let dirty = false;
 
-    //remove files that no longer have a corresponding image element
+    //remove files and equations that no longer have a corresponding image element
     const fileIds = (scene.elements.filter((e)=>e.type==="image") as ExcalidrawImageElement[]).map((e)=>e.fileId);
     this.files.forEach((value,key)=>{
       if(!fileIds.contains(key)) {
         this.files.delete(key);
+        dirty = true;
+      }
+    });
+
+    this.equations.forEach((value,key)=>{
+      if(!fileIds.contains(key)) {
+        this.equations.delete(key);
         dirty = true;
       }
     });

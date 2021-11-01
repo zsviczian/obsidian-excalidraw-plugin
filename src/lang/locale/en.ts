@@ -24,7 +24,7 @@ export default {
   TOGGLE_LOCK: "Toggle Text Element edit RAW/PREVIEW",
   INSERT_LINK: "Insert link to file",
   INSERT_IMAGE: "Insert image from vault",
-  INSERT_LATEX: "Insert LaTeX-symbol (e.g. $\\theta$)",
+  INSERT_LATEX: "Insert LaTeX formula (e.g. \\binom{n}{k} = \\frac{n!}{k!(n-k)!})",
   ENTER_LATEX: "Enter a valid LaTeX expression",
   
   //ExcalidrawView.ts

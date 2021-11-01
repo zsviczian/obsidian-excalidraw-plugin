@@ -204,8 +204,14 @@ export const getObsidianImage = async (plugin: ExcalidrawPlugin, file: TFile)
     return null;
   }
   const ab = await app.vault.readBinary(file);
+
+  const getExcalidrawSVG = async () => {
+    plugin.ea.reset();
+    return svgToBase64((await plugin.ea.createSVG(file.path,true)).outerHTML) as DataURL;
+  }
+  
   const excalidrawSVG = isExcalidrawFile
-              ? svgToBase64((await plugin.ea.createSVG(file.path,true)).outerHTML) as DataURL
+              ? await getExcalidrawSVG()
               : null;
   let mimeType:MimeType = "image/svg+xml";
   if (!isExcalidrawFile) {
@@ -475,6 +481,12 @@ export async function tex2dataURL(tex:string, color:string="black"):Promise<{
   const eq = window.MathJax.tex2chtml(tex,{display: true, scale: 4}); //scale to ensure good resolution
   eq.style.margin = "3px";
   eq.style.color = color;
+
+  //ipad support - removing mml as that was causing phantom double-image blur.
+  const el = eq.querySelector("mjx-assistive-mml");
+  if(el) {
+    el.parentElement.removeChild(el);
+  }
   div.appendChild(eq);
   window.MathJax.typeset();
   const canvas = await html2canvas(div, {backgroundColor:null}); //transparent

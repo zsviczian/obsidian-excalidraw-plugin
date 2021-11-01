@@ -19,7 +19,7 @@ export class Prompt extends Modal {
 
     createForm(): void {
         const div = this.contentEl.createDiv();
-        div.addClass("excalidarw-prompt-div");
+        div.addClass("excalidraw-prompt-div");
 
         const form = div.createEl("form");
         form.addClass("excalidraw-prompt-form");
