@@ -868,7 +868,7 @@ async function getTemplate(plugin: ExcalidrawPlugin, fileWithPath:string, loadFi
     if(trimLocation == -1) trimLocation = data.search("# Drawing\n");
 
     if(loadFiles) {
-      await loadSceneFiles(plugin,excalidrawData.files, excalidrawData.equations, null, (fileArray:any, view:any)=>{
+      await loadSceneFiles(plugin,excalidrawData, null, (fileArray:any, view:any)=>{
         for(const f of fileArray) {
           excalidrawData.scene.files[f.id] = f;
         }

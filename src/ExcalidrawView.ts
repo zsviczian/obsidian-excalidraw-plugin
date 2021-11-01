@@ -269,20 +269,20 @@ export default class ExcalidrawView extends TextFileView {
     } else {
       const selectedImage = this.getSelectedImageElement();
       if(selectedImage?.id) {
-        if(this.excalidrawData.equations.has(selectedImage.fileId)) {
-          const equation = this.excalidrawData.equations.get(selectedImage.fileId);
+        if(this.excalidrawData.hasEquation(selectedImage.fileId)) {
+          const equation = this.excalidrawData.getEquation(selectedImage.fileId);
           const prompt = new Prompt(this.app, t("ENTER_LATEX"),equation,'');
           prompt.openAndGetValue( async (formula:string)=> {
             if(!formula) return;
-            this.excalidrawData.equations.set(selectedImage.fileId,formula);
+            this.excalidrawData.setEquation(selectedImage.fileId,formula);
             await this.save(true);
             await updateEquation(formula,selectedImage.fileId,this,addFiles);
           });
           return;
         }
         await this.save(true); //in case pasted images haven't been saved yet
-        if(this.excalidrawData.files.has(selectedImage.fileId)) {
-          linkText = this.excalidrawData.files.get(selectedImage.fileId);
+        if(this.excalidrawData.hasFile(selectedImage.fileId)) {
+          linkText = this.excalidrawData.getFile(selectedImage.fileId);
         } 
       }
     }
@@ -471,8 +471,7 @@ export default class ExcalidrawView extends TextFileView {
       }
       loadSceneFiles(
         this.plugin,
-        this.excalidrawData.files,
-        this.excalidrawData.equations,
+        this.excalidrawData,
         this,
         (files:any, view:ExcalidrawView) => addFiles(files,view),
         this.file?.path
@@ -659,8 +658,7 @@ export default class ExcalidrawView extends TextFileView {
           this.excalidrawAPI = api;
           loadSceneFiles(
             this.plugin,
-            this.excalidrawData.files,
-            this.excalidrawData.equations,
+            this.excalidrawData,
             this,
             (files:any, view:ExcalidrawView)=>addFiles(files,view),
             this.file?.path
@@ -785,10 +783,10 @@ export default class ExcalidrawView extends TextFileView {
               created: images[k].created
             });
             if(images[k].file) {
-              this.excalidrawData.files.set(images[k].id,images[k].file);
+              this.excalidrawData.setFile(images[k].id,images[k].file);
             }
             if(images[k].tex) {
-              this.excalidrawData.equations.set(images[k].id,images[k].tex);
+              this.excalidrawData.setEquation(images[k].id,images[k].tex);
             }
           });
           this.excalidrawAPI.addFiles(files);

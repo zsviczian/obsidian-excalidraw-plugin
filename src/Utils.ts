@@ -9,6 +9,7 @@ import ExcalidrawView, { ExportSettings } from "./ExcalidrawView";
 import { ExcalidrawSettings } from "./settings";
 import { html_beautify } from "js-beautify";
 import html2canvas from "html2canvas";
+import { ExcalidrawData } from "./ExcalidrawData";
 
 declare module "obsidian" {
   interface Workspace {
@@ -371,18 +372,17 @@ export const embedFontsInSVG = (svg:SVGSVGElement):SVGSVGElement => {
 
 export const loadSceneFiles = async (
   plugin:ExcalidrawPlugin, 
-  filesMap: Map<FileId, string>, 
-  equationsMap: Map<FileId, string>, 
+  excalidrawData: ExcalidrawData,
   view: ExcalidrawView,
   addFiles:Function, 
   sourcePath:string
 ) => {
   const app = plugin.app;
-  let entries = filesMap.entries();
+  let entries = excalidrawData.getFileEntries(); 
   let entry;
   let files:BinaryFileData[] = [];
   while(!(entry = entries.next()).done) {
-    const file = app.metadataCache.getFirstLinkpathDest(entry.value[1],sourcePath)
+    const file = app.metadataCache.getFirstLinkpathDest(entry.value[1],sourcePath);
     if(file && file instanceof TFile) {
       const data = await getObsidianImage(plugin,file);
       files.push({
@@ -396,7 +396,7 @@ export const loadSceneFiles = async (
     }
   }
 
-  entries = equationsMap.entries();
+  entries = excalidrawData.getEquationEntries(); 
   while(!(entry = entries.next()).done) {
     const tex = entry.value[1];
     const data = await tex2dataURL(tex);

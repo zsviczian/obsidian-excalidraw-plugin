@@ -62,6 +62,7 @@ import { around } from "monkey-around";
 import { t } from "./lang/helpers";
 import { checkAndCreateFolder, download, embedFontsInSVG, generateSVGString, getAttachmentsFolderAndFilePath, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, getPNG, getSVG, isObsidianThemeDark, splitFolderAndFilename, svgToBase64 } from "./Utils";
 import { OneOffs } from "./OneOffs";
+import { FileId } from "@zsviczian/excalidraw/types/element/types";
 
 declare module "obsidian" {
   interface App {
@@ -86,9 +87,14 @@ export default class ExcalidrawPlugin extends Plugin {
   private fileExplorerObserver: MutationObserver;
   public opencount:number = 0;
   public ea:ExcalidrawAutomate;
+  //A master list of fileIds to facilitate copy / paste
+  public filesMaster:Map<FileId,string> = null; //fileId, path
+  public equationsMaster:Map<FileId,string> = null; //fileId, formula
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
+    this.filesMaster = new Map<FileId,string>();
+    this.equationsMaster = new Map<FileId,string>();
   }
   
   async onload() {

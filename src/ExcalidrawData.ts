@@ -113,8 +113,8 @@ export class ExcalidrawData {
   private textMode: TextMode = TextMode.raw;
   private plugin: ExcalidrawPlugin;
   public loaded: boolean = false;
-  public files:Map<FileId,string> = null; //fileId, path
-  public equations:Map<FileId,string> = null; //fileId, path
+  private files:Map<FileId,string> = null; //fileId, path
+  private equations:Map<FileId,string> = null; //fileId, path
   private compatibilityMode:boolean = false;
 
   constructor(plugin: ExcalidrawPlugin) {
@@ -215,14 +215,14 @@ export class ExcalidrawData {
     const REG_FILEID_FILEPATH = /([\w\d]*):\s*\[\[([^\]]*)]]\n/gm;
     res = data.matchAll(REG_FILEID_FILEPATH);
     while(!(parts = res.next()).done) {
-      this.files.set(parts.value[1] as FileId,parts.value[2]);
+      this.setFile(parts.value[1] as FileId,parts.value[2]);
     }
 
     //Load Equations
     const REG_FILEID_EQUATION = /([\w\d]*):\s*\$\$(.*)(\$\$\s*\n)/gm;
     res = data.matchAll(REG_FILEID_EQUATION);
     while(!(parts = res.next()).done) {
-      this.equations.set(parts.value[1] as FileId,parts.value[2]);
+      this.setEquation(parts.value[1] as FileId,parts.value[2]);
     }
 
     //Check to see if there are text elements in the JSON that were missed from the # Text Elements section
@@ -556,7 +556,7 @@ export class ExcalidrawData {
     if(!scene.files || scene.files == {}) return false;
     
     for(const key of Object.keys(scene.files)) {
-      if(!(this.files.has(key as FileId) || this.equations.has(key as FileId))) {
+      if(!(this.hasFile(key as FileId) || this.hasEquation(key as FileId))) {
         dirty = true;
         let fname = "Pasted Image "+window.moment().format("YYYYMMDDHHmmss_SSS");
         switch(scene.files[key].mimeType) {
@@ -568,7 +568,7 @@ export class ExcalidrawData {
         }
         const [folder,filepath] = await getAttachmentsFolderAndFilePath(this.app,this.file.path,fname);
         await this.app.vault.createBinary(filepath,getBinaryFileFromDataURL(scene.files[key].dataURL));
-        this.files.set(key as FileId,filepath);
+        this.setFile(key as FileId,filepath);
       }
     }    
     return dirty;
@@ -663,4 +663,74 @@ export class ExcalidrawData {
     return showLinkBrackets != this.showLinkBrackets;
   }
 
+  
+  /*
+  // Files and equations copy/paste support
+  // This is not a complete solution, it assumes the source document is opened first
+  // at that time the fileId is stored in the master files/equations map
+  // when pasted the map is checked if the file already exists
+  // This will not work if pasting from one vault to another, but for the most common usecase 
+  // of copying an image or equation from one drawing to another within the same vault
+  // this is going to do the job
+  */
+  public setFile(fileId:FileId, path:string) {
+    //always store absolute path because in case of paste, relative path may not resolve ok
+    const file = this.app.metadataCache.getFirstLinkpathDest(path,this.file.path);
+    const p = file?.path ?? path;
+    this.files.set(fileId,p);
+    this.plugin.filesMaster.set(fileId,p);
+  }
+
+  public getFile(fileId:FileId) {
+    return this.files.get(fileId);
+  }
+
+  public getFileEntries() {
+    return this.files.entries();
+  }
+
+  public deleteFile(fileId:FileId) {
+    this.files.delete(fileId);
+    //deliberately not deleting from plugin.filesMaster
+    //could be present in other drawings as well
+  }
+
+  //Image copy/paste support
+  public hasFile(fileId:FileId):boolean {
+    if(this.files.has(fileId)) return true;
+    if(this.plugin.filesMaster.has(fileId)) {
+      this.files.set(fileId,this.plugin.filesMaster.get(fileId));
+      return true;
+    }
+    return false;
+  } 
+
+  public setEquation(fileId:FileId, equation:string) {
+    this.equations.set(fileId,equation);
+    this.plugin.equationsMaster.set(fileId,equation);
+  }
+
+  public getEquation(fileId: FileId) {
+    return this.equations.get(fileId);
+  }
+
+  public getEquationEntries() {
+    return this.equations.entries();
+  }
+
+  public deleteEquation(fileId:FileId) {
+    this.equations.delete(fileId);
+    //deliberately not deleting from plugin.equationsMaster
+    //could be present in other drawings as well
+  }
+
+  //Image copy/paste support
+  public hasEquation(fileId:FileId):boolean {
+    if(this.equations.has(fileId)) return true;
+    if(this.plugin.equationsMaster.has(fileId)) {
+      this.equations.set(fileId,this.plugin.equationsMaster.get(fileId));
+      return true;
+    }
+    return false;
+  }
 }
