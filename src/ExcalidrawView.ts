@@ -276,7 +276,7 @@ export default class ExcalidrawView extends TextFileView {
             if(!formula) return;
             this.excalidrawData.setEquation(selectedImage.fileId,formula);
             await this.save(true);
-            await updateEquation(formula,selectedImage.fileId,this,addFiles);
+            await updateEquation(formula,selectedImage.fileId,this,addFiles,this.plugin);
           });
           return;
         }

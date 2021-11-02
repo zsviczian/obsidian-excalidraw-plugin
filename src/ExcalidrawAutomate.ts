@@ -103,7 +103,7 @@ export interface ExcalidrawAutomate {
     }
   ):string ;
   addImage(topX:number, topY:number, imageFile: TFile):Promise<string>;
-  addLaTex(topX:number, topY:number, tex: string, color?:string):Promise<string>;
+  addLaTex(topX:number, topY:number, tex: string):Promise<string>;
   connectObjects (
     objectA: string, 
     connectionA: ConnectionPoint, 
@@ -548,9 +548,9 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
       this.elementsDict[id].scale = [1,1];
       return id;
     },
-    async addLaTex(topX:number, topY:number, tex:string, color:string = "black"):Promise<string> {
+    async addLaTex(topX:number, topY:number, tex:string):Promise<string> {
       const id = nanoid();
-      const image = await tex2dataURL(tex, color);
+      const image = await tex2dataURL(tex, this.plugin);
       if(!image) return null;
       this.imagesDict[image.fileId] = {
         mimeType: image.mimeType,

@@ -63,6 +63,8 @@ import { t } from "./lang/helpers";
 import { checkAndCreateFolder, download, embedFontsInSVG, generateSVGString, getAttachmentsFolderAndFilePath, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, getPNG, getSVG, isObsidianThemeDark, splitFolderAndFilename, svgToBase64 } from "./Utils";
 import { OneOffs } from "./OneOffs";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
+import { MATHJAX_DATAURL } from "./mathjax";
+import { config, disconnect } from "process";
 
 declare module "obsidian" {
   interface App {
@@ -90,6 +92,8 @@ export default class ExcalidrawPlugin extends Plugin {
   //A master list of fileIds to facilitate copy / paste
   public filesMaster:Map<FileId,string> = null; //fileId, path
   public equationsMaster:Map<FileId,string> = null; //fileId, formula
+  public mathjax: any = null;
+  private mathjaxDiv: HTMLDivElement = null;
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
@@ -139,9 +143,35 @@ export default class ExcalidrawPlugin extends Plugin {
     this.switchToExcalidarwAfterLoad()
 
     const self = this;
+    this.loadMathJax();
+  }
+
+  private loadMathJax() {
+    //loading Obsidian MathJax as fallback
     this.app.workspace.onLayoutReady(()=>{
       loadMathJax();
     });
+
+    this.mathjaxDiv = document.body.createDiv();
+    this.mathjaxDiv.title = "Excalidraw MathJax Support";
+    this.mathjaxDiv.style.display = "none";
+    const iframe = this.mathjaxDiv.createEl("iframe");
+    const doc = iframe.contentWindow.document;
+    const script = doc.createElement("script");
+    script.type = "text/javascript";
+    const self = this;
+    script.onload = () => {
+      const win = iframe.contentWindow;
+      //@ts-ignore
+      win.MathJax.startup.pagePromise.then(() => {
+        //@ts-ignore
+        this.mathjax = win.MathJax;
+      });  
+    };
+
+    script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js';
+    //script.src = MATHJAX_DATAURL;
+    doc.head.appendChild(script);
   }
 
   private switchToExcalidarwAfterLoad() {
@@ -1014,8 +1044,9 @@ export default class ExcalidrawPlugin extends Plugin {
     excalidrawLeaves.forEach((leaf) => {
       this.setMarkdownView(leaf);
     });
-    this.settings.drawingOpenCount += this.opencount;
-    this.settings.loadCount++;
+    if(this.mathjaxDiv) document.removeChild(this.mathjaxDiv);
+    //this.settings.drawingOpenCount += this.opencount;
+    //this.settings.loadCount++;
     //this.saveSettings();
   }
 

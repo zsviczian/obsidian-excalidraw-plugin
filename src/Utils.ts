@@ -230,7 +230,7 @@ export const getObsidianImage = async (plugin: ExcalidrawPlugin, file: TFile)
     fileId: await generateIdFromFile(ab),
     dataURL: excalidrawSVG ?? (file.extension==="svg" ? await getSVGData(app,file) : await getDataURL(ab)),
     created: file.stat.mtime,
-    size: await getImageSize(app,excalidrawSVG??app.vault.getResourcePath(file))
+    size: await getImageSize(excalidrawSVG??app.vault.getResourcePath(file))
   }
 }
 
@@ -275,7 +275,7 @@ const generateIdFromFile = async (file: ArrayBuffer):Promise<FileId> => {
   return id;
 };
 
-const getImageSize = async (app: App, src:string):Promise<{height:number, width:number}> => {
+const getImageSize = async (src:string):Promise<{height:number, width:number}> => {
   return new Promise((resolve, reject) => {
     let img = new Image()
     img.onload = () => resolve({height: img.height, width:img.width});
@@ -399,7 +399,7 @@ export const loadSceneFiles = async (
   entries = excalidrawData.getEquationEntries(); 
   while(!(entry = entries.next()).done) {
     const tex = entry.value[1];
-    const data = await tex2dataURL(tex);
+    const data = await tex2dataURL(tex, plugin);
     if(data) {
       files.push({
         mimeType : data.mimeType,
@@ -423,9 +423,10 @@ export const updateEquation = async (
   equation: string,
   fileId: string,
   view: ExcalidrawView,
-  addFiles:Function
+  addFiles:Function,
+  plugin: ExcalidrawPlugin
 ) => {
-  const data = await tex2dataURL(equation);
+  const data = await tex2dataURL(equation, plugin);
   if(data) {
     let files:BinaryFileData[] = [];
     files.push({
@@ -467,7 +468,47 @@ export const scaleLoadedImage = (scene:any, files:any):[boolean,any] => {
 
 export const isObsidianThemeDark = () => document.body.classList.contains("theme-dark");
 
-export async function tex2dataURL(tex:string, color:string="black"):Promise<{
+export async function tex2dataURL(tex:string, plugin:ExcalidrawPlugin):Promise<{
+  mimeType: MimeType,
+  fileId: FileId, 
+  dataURL: DataURL,
+  created: number,
+  size: {height: number, width: number},
+}> {
+
+  //if network is slow, or not available, or mathjax has not yet fully loaded
+  try {
+    return await mathjaxSVG(tex, plugin);
+  } catch(e) {
+    //fallback
+    return await mathjaxImage2html(tex);
+  }
+
+}
+
+async function mathjaxSVG (tex:string, plugin:ExcalidrawPlugin):Promise<{
+  mimeType: MimeType,
+  fileId: FileId, 
+  dataURL: DataURL,
+  created: number,
+  size: {height: number, width: number},
+}> {
+  const eq = plugin.mathjax.tex2svg(tex,{display: true, scale: 4});
+  const svg = eq.querySelector("svg");
+  if(svg) { 
+    const dataURL = svgToBase64(svg.outerHTML);
+    return {
+      mimeType: "image/svg+xml",
+      fileId: fileid() as FileId,
+      dataURL: dataURL as DataURL,
+      created: Date.now(),
+      size: await getImageSize(dataURL)
+    }
+  }
+  return null;
+}
+
+async function mathjaxImage2html(tex:string):Promise<{
   mimeType: MimeType,
   fileId: FileId, 
   dataURL: DataURL,
@@ -480,7 +521,7 @@ export async function tex2dataURL(tex:string, color:string="black"):Promise<{
   
   const eq = window.MathJax.tex2chtml(tex,{display: true, scale: 4}); //scale to ensure good resolution
   eq.style.margin = "3px";
-  eq.style.color = color;
+  eq.style.color = "black";
 
   //ipad support - removing mml as that was causing phantom double-image blur.
   const el = eq.querySelector("mjx-assistive-mml");

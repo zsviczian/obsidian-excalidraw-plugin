@@ -3,7 +3,6 @@ import {
   DropdownComponent, 
   PluginSettingTab, 
   Setting,
-  TFile
 } from 'obsidian';
 import { VIEW_TYPE_EXCALIDRAW } from './constants';
 import ExcalidrawView from './ExcalidrawView';
@@ -297,7 +296,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .setPlaceholder(t("INSERT_EMOJI"))
         .setValue(this.plugin.settings.linkPrefix)
         .onChange((value) => {
-          console.log(value);
           this.plugin.settings.linkPrefix = value;
           this.applySettingsUpdate(true);
         }));
