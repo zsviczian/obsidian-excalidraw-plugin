@@ -1044,7 +1044,7 @@ export default class ExcalidrawPlugin extends Plugin {
     excalidrawLeaves.forEach((leaf) => {
       this.setMarkdownView(leaf);
     });
-    if(this.mathjaxDiv) document.removeChild(this.mathjaxDiv);
+    if(this.mathjaxDiv) document.body.removeChild(this.mathjaxDiv);
     //this.settings.drawingOpenCount += this.opencount;
     //this.settings.loadCount++;
     //this.saveSettings();
