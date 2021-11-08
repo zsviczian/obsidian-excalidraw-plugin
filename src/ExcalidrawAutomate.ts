@@ -71,7 +71,7 @@ export interface ExcalidrawAutomate {
       }
     }
   ):Promise<string>;
-  createSVG (templatePath?:string, embedFont?:boolean):Promise<SVGSVGElement>;
+  createSVG (templatePath?:string, embedFont?:boolean, withTheme?:boolean, withBackgroundColor?:boolean):Promise<SVGSVGElement>;
   createPNG (templatePath?:string):Promise<any>;
   wrapText (text:string, lineLen:number):string;
   addRect (topX:number, topY:number, width:number, height:number):string;
@@ -336,7 +336,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
           : frontmatter + await plugin.exportSceneToMD(JSON.stringify(scene,null,"\t"))
       );  
     },
-    async createSVG(templatePath?:string,embedFont:boolean = false):Promise<SVGSVGElement> {
+    async createSVG(templatePath?:string,embedFont:boolean = false,withTheme?:boolean, withBackgroundColor?:boolean):Promise<SVGSVGElement> {
       const automateElements = this.getElements();
       const template = templatePath ? (await getTemplate(this.plugin,templatePath,true)) : null;
       let elements = template ? template.elements : [];
@@ -348,14 +348,14 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
           source: "https://excalidraw.com",
           elements: elements,
           appState: {
-            theme:               template?.appState?.theme               ?? this.canvas.theme,
+            theme: template?.appState?.theme ?? this.canvas.theme,
             viewBackgroundColor: template?.appState?.viewBackgroundColor ?? this.canvas.viewBackgroundColor,
           },
           files: template?.files ?? {}
         },
         {
-          withBackground: plugin.settings.exportWithBackground, 
-          withTheme: plugin.settings.exportWithTheme
+          withBackground: (withBackgroundColor === undefined) ? plugin.settings.exportWithBackground : withBackgroundColor, 
+          withTheme: (withTheme === undefined) ? plugin.settings.exportWithTheme : withTheme
         }
       )
       return embedFont ? embedFontsInSVG(svg) : svg;     

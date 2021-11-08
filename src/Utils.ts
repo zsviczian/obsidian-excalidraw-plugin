@@ -208,7 +208,7 @@ export const getObsidianImage = async (plugin: ExcalidrawPlugin, file: TFile)
 
   const getExcalidrawSVG = async () => {
     plugin.ea.reset();
-    return svgToBase64((await plugin.ea.createSVG(file.path,true)).outerHTML) as DataURL;
+    return svgToBase64((await plugin.ea.createSVG(file.path,true,false,false)).outerHTML) as DataURL;
   }
   
   const excalidrawSVG = isExcalidrawFile
@@ -334,7 +334,7 @@ export const generateSVGString = async (scene:any, settings: ExcalidrawSettings)
   }
   const svg = await getSVG(scene,exportSettings);
   if(svg) {        
-    return wrapText(html_beautify(svg.outerHTML,{"indent_with_tabs": true}),4096,true);//  html_beautify(svg.outerHTML,{"indent_with_tabs": true});
+    return wrapText(html_beautify(svg.outerHTML,{"indent_with_tabs": true}),4096,true);
   }
   return null;
 }
