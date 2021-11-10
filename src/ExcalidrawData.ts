@@ -11,7 +11,7 @@ import {
   JSON_parse
 } from "./constants";
 import { TextMode } from "./ExcalidrawView";
-import { getAttachmentsFolderAndFilePath, getBinaryFileFromDataURL, isObsidianThemeDark, wrapText } from "./Utils";
+import { getAttachmentsFolderAndFilePath, getBinaryFileFromDataURL, getIMGFilename, isObsidianThemeDark, wrapText } from "./Utils";
 import { ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/element/types";
 import { BinaryFiles, SceneData } from "@zsviczian/excalidraw/types/types";
 
@@ -54,7 +54,7 @@ export const REGEX_LINK = {
 
 export const REG_LINKINDEX_HYPERLINK = /^\w+:\/\//;
 
-const DRAWING_REG = /\n%%\n# Drawing\n[^`]*(```json\n)([\s\S]*?)```/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
+const DRAWING_REG = /\n# Drawing\n[^`]*(```json\n)([\s\S]*?)```/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
 const DRAWING_REG_FALLBACK = /\n# Drawing\n(```json\n)?(.*)(```)?(%%)?/gm;
 export function getJSON(data:string):[string,number] {
   let res = data.matchAll(DRAWING_REG);
@@ -75,7 +75,7 @@ export function getJSON(data:string):[string,number] {
 
 //extracts SVG snapshot from Excalidraw Markdown string
 const SVG_REG = /.*?```html\n([\s\S]*?)```/gm;
-export function getSVGString(data:string):string {
+export async function getSVGString(data:string,path:string,app:App):Promise<string> {
   let res = data.matchAll(SVG_REG);
 
   let parts;
@@ -83,11 +83,15 @@ export function getSVGString(data:string):string {
   if(parts.value && parts.value.length>1) {
     return parts.value[1].replaceAll("\n","");
   }
+  const f=app.vault.getAbstractFileByPath(getIMGFilename(path,'svg'));
+  if(f && f instanceof TFile) {
+    return await app.vault.cachedRead(f);
+  }
   return null;
 }
 
 export function getMarkdownDrawingSection(jsonString: string,svgString: string) {
-  return '%%\n# Drawing\n'
+  return '# Drawing\n'
   + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'json\n' 
   + jsonString + '\n'
   + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)
@@ -175,7 +179,7 @@ export class ExcalidrawData {
       this.scene.appState.theme = isObsidianThemeDark() ? "dark" : "light";
     }
 
-    this.svgSnapshot = getSVGString(data.substr(pos+scene.length));
+    this.svgSnapshot = await getSVGString(data.substr(pos+scene.length),file.path,this.app);
 
     data = data.substring(0,pos);
 
@@ -530,7 +534,7 @@ export class ExcalidrawData {
 
 
     const sceneJSONstring = JSON.stringify(this.scene,null,"\t"); 
-    return outString + getMarkdownDrawingSection(sceneJSONstring,this.svgSnapshot);
+    return outString + getMarkdownDrawingSection(sceneJSONstring,this.plugin.settings.autoexportSVG ? null : this.svgSnapshot);
   }
 
   private async syncFiles(scene:SceneDataWithFiles):Promise<boolean> {

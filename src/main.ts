@@ -227,7 +227,7 @@ export default class ExcalidrawPlugin extends Plugin {
       img.addClass(imgAttributes.style);
 
       const [scene,pos] = getJSON(content);
-      const svgSnapshot = getSVGString(content.substr(pos+scene.length));
+      const svgSnapshot = await getSVGString(content.substr(pos+scene.length),file.path,this.app);
       
       //Removed in 1.4.0 when implementing ImageElement. Key reason for removing this
       //is to use SVG snapshot in file, to avoid resource intensive process to generating PNG

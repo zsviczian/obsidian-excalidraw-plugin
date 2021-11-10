@@ -540,3 +540,7 @@ async function mathjaxImage2html(tex:string):Promise<{
     size: {height: canvas.height, width: canvas.width}
   }
 }
+
+export function getIMGFilename(path:string,extension:string):string {
+  return path.substring(0,path.lastIndexOf('.')) + '.' + extension;
+}

@@ -34,9 +34,10 @@ import ExcalidrawPlugin from './main';
 import {ExcalidrawAutomate, repositionElementsToCursor} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./ExcalidrawData";
-import { checkAndCreateFolder, download, embedFontsInSVG, generateSVGString, getNewOrAdjacentLeaf, getNewUniqueFilepath, getPNG, getSVG, loadSceneFiles, rotatedDimensions, scaleLoadedImage, splitFolderAndFilename, svgToBase64, updateEquation, viewportCoordsToSceneCoords } from "./Utils";
+import { checkAndCreateFolder, download, embedFontsInSVG, generateSVGString, getIMGFilename, getNewOrAdjacentLeaf, getNewUniqueFilepath, getPNG, getSVG, loadSceneFiles, rotatedDimensions, scaleLoadedImage, splitFolderAndFilename, svgToBase64, updateEquation, viewportCoordsToSceneCoords } from "./Utils";
 import { Prompt } from "./Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
+import { isImageFileHandle } from "@zsviczian/excalidraw/types/data/blob";
 
 export enum TextMode {
   parsed,
@@ -120,7 +121,7 @@ export default class ExcalidrawView extends TextFileView {
       if (!this.getScene) return false;
       scene = this.getScene();
     }
-    const filepath = this.file.path.substring(0,this.file.path.lastIndexOf(this.compatibilityMode ? '.excalidraw':'.md')) + '.svg';
+    const filepath = getIMGFilename(this.file.path,'svg'); //.substring(0,this.file.path.lastIndexOf(this.compatibilityMode ? '.excalidraw':'.md')) + '.svg';
     const file = this.app.vault.getAbstractFileByPath(normalizePath(filepath));
     (async () => {
       const exportSettings: ExportSettings = {
@@ -142,7 +143,7 @@ export default class ExcalidrawView extends TextFileView {
       scene = this.getScene();
     }
 
-    const filepath = this.file.path.substring(0,this.file.path.lastIndexOf(this.compatibilityMode ? '.excalidraw':'.md')) + '.png';
+    const filepath = getIMGFilename(this.file.path,'png'); //this.file.path.substring(0,this.file.path.lastIndexOf(this.compatibilityMode ? '.excalidraw':'.md')) + '.png';
     const file = this.app.vault.getAbstractFileByPath(normalizePath(filepath));
 
     (async () => {
@@ -194,8 +195,16 @@ export default class ExcalidrawView extends TextFileView {
         if(this.plugin.settings.autoexportExcalidraw) this.saveExcalidraw(scene);
       }
 
-      const header = this.data.substring(0,trimLocation)
+      let header = this.data.substring(0,trimLocation)
                               .replace(/excalidraw-plugin:\s.*\n/,FRONTMATTER_KEY+": " + ( (this.textMode == TextMode.raw) ? "raw\n" : "parsed\n"));
+      if(this.plugin.settings.autoexportSVG) {
+        const REG_IMG = /(^---[\w\W]*?---\n)(!\[\[.*?]]\n\%\%\n)/m;
+        if(header.match(REG_IMG)) {
+          header = header.replace(REG_IMG,"$1![["+getIMGFilename(this.file.path,"svg")+"]]\n%%\n");
+        } else {
+          header = header.replace(/(^---[\w\W]*?---\n)/m, "$1![["+getIMGFilename(this.file.path,"svg")+"]]\n%%\n");
+        }
+      }
       return header + this.excalidrawData.generateMD();
     }
     if(this.compatibilityMode) {
