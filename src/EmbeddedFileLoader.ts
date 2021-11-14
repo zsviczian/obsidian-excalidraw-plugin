@@ -6,7 +6,7 @@ import { ExcalidrawData } from "./ExcalidrawData";
 import ExcalidrawView, { ExportSettings } from "./ExcalidrawView";
 import { tex2dataURL } from "./LaTeX";
 import ExcalidrawPlugin from "./main";
-import { debug, getImageSize, svgToBase64 } from "./Utils";
+import {getImageSize, svgToBase64 } from "./Utils";
 
 export declare type MimeType = "image/svg+xml" | "image/png" | "image/jpeg" | "image/gif" | "application/octet-stream";
 
@@ -27,9 +27,8 @@ export class EmbeddedFilesLoader {
     size: {height: number, width: number},
   }> {
     if(!this.plugin || !file) return null;
-    //debug("EmbeddedFileLoader.getObsidianImage start file:'" + file.path + "'");
     //to block infinite loop of recursive loading of images
-    if(this.processedFiles.has(file.path)) {
+    if((file.extension==="md" || file.extension === "excalidraw") && this.processedFiles.has(file.path)) {
       new Notice("Stopped loading infinite image embed loop at repeated instance of " + file.path,6000);
       return null;
     }
@@ -48,20 +47,14 @@ export class EmbeddedFilesLoader {
         withTheme: false
       };
       this.plugin.ea.reset();
-      //const png:Blob = await this.plugin.ea.createPNG(file.path,3,this);
-      //const dURL = await getDataURL(await png.arrayBuffer());
       const svg = await this.plugin.ea.createSVG(file.path,true,exportSettings,this);     
-      const dURL = "data:image/svg+xml;base64," + btoa(new XMLSerializer().serializeToString(svg));
-      //const dURL = svgToBase64(svg.outerHTML) as DataURL;
-      //debug("EmbeddedFileLoader.getObsidianImage.getExcalidrawSVG start file:'" + file.path + "'", {png,dURL});
-      // const div = document.body.createDiv(); div.appendChild(svg); trying to hack 
+      const dURL = svgToBase64(svg.outerHTML) as DataURL;
       return dURL as DataURL;
     }
     
     const excalidrawSVG = isExcalidrawFile
                 ? await getExcalidrawSVG()
                 : null;
-    //let mimeType:MimeType = "image/png"; 
     let mimeType:MimeType = "image/svg+xml";
     if (!isExcalidrawFile) {
       switch (file.extension) {
@@ -73,9 +66,8 @@ export class EmbeddedFilesLoader {
         default: mimeType = "application/octet-stream";
       }
     } 
-    const dataURL = excalidrawSVG ?? (file.extension==="svg" ? await getSVGData(app,file) : await getDataURL(ab));
+    const dataURL = excalidrawSVG ?? (file.extension==="svg" ? await getSVGData(app,file) : await getDataURL(ab,mimeType));
     const size = await getImageSize(excalidrawSVG??app.vault.getResourcePath(file));
-    debug ("EmbeddedFileLoader.getObsidianImage finish file:'" + file.path + "'",{mimeType, dataURL,size});
     return {
         mimeType: mimeType,
         fileId: await generateIdFromFile(ab),
@@ -91,7 +83,6 @@ export class EmbeddedFilesLoader {
     addFiles:Function, 
     sourcePath:string
   ) {
-      //debug("EmbeddedFileLoader.loadSceneFiles start");
       const app = this.plugin.app;
       let entries = excalidrawData.getFileEntries(); 
       let entry;
@@ -99,9 +90,7 @@ export class EmbeddedFilesLoader {
       while(!(entry = entries.next()).done) {
         const file = app.metadataCache.getFirstLinkpathDest(entry.value[1],sourcePath);
         if(file && file instanceof TFile) {
-          //debug("EmbeddedFileLoader.loadSceneFiles topOfWhile file:'" + file.path + "'");
           const data = await this.getObsidianImage(file);
-          //debug("EmbeddedFileLoader.loadSceneFiles dataLoaded file:'" + file.path + "'");
           if(data) {
             files.push({
               mimeType : data.mimeType,
@@ -132,10 +121,8 @@ export class EmbeddedFilesLoader {
       }
     
       try { //in try block because by the time files are loaded the user may have closed the view
-        //debug("EmbeddedFileLoader.loadSceneFiles addFiles");
         addFiles(files,view);
       } catch(e) {
-        //debug("EmbeddedFileLoader.loadSceneFiles addFiles error", e);
       }
     }
 }
@@ -145,7 +132,7 @@ const getSVGData = async (app: App, file: TFile): Promise<DataURL> => {
   return svgToBase64(svg) as DataURL;
 }
 
-const getDataURL = async (file: ArrayBuffer): Promise<DataURL> => {
+const getDataURL = async (file: ArrayBuffer,mimeType: string): Promise<DataURL> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -153,7 +140,7 @@ const getDataURL = async (file: ArrayBuffer): Promise<DataURL> => {
       resolve(dataURL);
     };
     reader.onerror = (error) => reject(error);
-    reader.readAsDataURL(new Blob([new Uint8Array(file)]));
+    reader.readAsDataURL(new Blob([new Uint8Array(file)],{type:'mimeType'}));
   });
 };
 

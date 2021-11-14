@@ -31,10 +31,10 @@ import {
   IMAGE_TYPES
 } from './constants';
 import ExcalidrawPlugin from './main';
-import {ExcalidrawAutomate, repositionElementsToCursor} from './ExcalidrawAutomate';
+import { repositionElementsToCursor} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./ExcalidrawData";
-import { checkAndCreateFolder, debug, download, embedFontsInSVG, getIMGFilename, getNewOrAdjacentLeaf, getNewUniqueFilepath, getPNG, getSVG, rotatedDimensions, scaleLoadedImage, splitFolderAndFilename, svgToBase64, viewportCoordsToSceneCoords } from "./Utils";
+import { checkAndCreateFolder, download, embedFontsInSVG, getIMGFilename, getNewOrAdjacentLeaf, getNewUniqueFilepath, getPNG, getSVG, rotatedDimensions, scaleLoadedImage, splitFolderAndFilename, svgToBase64, viewportCoordsToSceneCoords } from "./Utils";
 import { Prompt } from "./Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 import { updateEquation } from "./LaTeX";
@@ -57,7 +57,6 @@ export interface ExportSettings {
 const REG_LINKINDEX_INVALIDCHARS = /[<>:"\\|?*]/g;
 
 export const addFiles = (files:any, view: ExcalidrawView) => {
-  //debug("ExcalidrawView.addFiles start file:'"+view.file.path+"'"); 
   if(files.length === 0) return;
   const [dirty, scene] = scaleLoadedImage(view.getScene(),files); 
 
@@ -471,7 +470,6 @@ export default class ExcalidrawView extends TextFileView {
    * @param justloaded - a flag to trigger zoom to fit after the drawing has been loaded
    */
   private async loadDrawing(justloaded:boolean) {     
-    //debug("ExcalidrawView.loadDrawing start file:'"+this.file.path+"'"); 
     const excalidrawData = this.excalidrawData.scene;
     this.justLoaded = justloaded;
     if(this.excalidrawRef) {
@@ -491,7 +489,6 @@ export default class ExcalidrawView extends TextFileView {
         this.excalidrawWrapperRef.current.focus();
       }
       const loader = new EmbeddedFilesLoader(this.plugin);
-      //debug("ExcalidrawView.loadDrawing calling loadSceneFiles file:'"+this.file.path+"'"); 
       loader.loadSceneFiles(
         this.excalidrawData,
         this,

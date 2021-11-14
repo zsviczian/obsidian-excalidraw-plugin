@@ -17,7 +17,7 @@ import {
   VIEW_TYPE_EXCALIDRAW,
   MAX_IMAGE_SIZE,
 } from "./constants";
-import { debug, embedFontsInSVG, getPNG, getSVG, scaleLoadedImage, wrapText } from "./Utils";
+import { embedFontsInSVG, getPNG, getSVG, scaleLoadedImage, wrapText } from "./Utils";
 import { AppState } from "@zsviczian/excalidraw/types/types";
 import { EmbeddedFilesLoader } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
@@ -346,12 +346,10 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
       exportSettings?:ExportSettings,
       loader:EmbeddedFilesLoader = new EmbeddedFilesLoader(this.plugin)
     ):Promise<SVGSVGElement> {
-      //debug("ExcalidrawAutomate.createSVG start file:'" + templatePath + "'");
       const automateElements = this.getElements();
       const template = templatePath ? (await getTemplate(this.plugin,templatePath,true,loader)) : null;
       let elements = template ? template.elements : [];
       elements = elements.concat(automateElements);
-      //debug("ExcalidrawAutomate.createSVG fileLoaded file:'" + templatePath + "', template",template);
       const svg = await getSVG(
         {//createDrawing
           type: "excalidraw",
@@ -369,7 +367,6 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
           withTheme: (exportSettings === undefined) ? plugin.settings.exportWithTheme : exportSettings.withTheme
         }
       )
-      //debug("ExcalidrawAutomate.createSVG SVG ready",(embedFont ? embedFontsInSVG(svg) : svg));
       return embedFont ? embedFontsInSVG(svg) : svg;     
     },
     async createPNG(
@@ -866,7 +863,6 @@ async function getTemplate(
   const app = plugin.app;
   const vault = app.vault;
   const templatePath = normalizePath(fileWithPath);
-  //debug("ExcalidrawAutomate.getTemplate start file:'" + templatePath + "'");
   const file = app.metadataCache.getFirstLinkpathDest(templatePath,'');
   if(file && file instanceof TFile) {
     const data = (await vault.read(file)).replaceAll("\r\n","\n").replaceAll("\r","\n");
@@ -890,9 +886,7 @@ async function getTemplate(
 
     let scene = excalidrawData.scene;
     if(loadFiles) {
-      //debug("ExcalidrawAutomate.getTemplate loadFiles file:'" + templatePath + "'");
       await loader.loadSceneFiles(excalidrawData, null, (fileArray:any, view:any)=>{
-        //debug("ExcalidrawAutomate.getTemplate addFiles file:'" + templatePath + "'");
         if(!fileArray) return;
         for(const f of fileArray) {
           excalidrawData.scene.files[f.id] = f;
@@ -902,7 +896,6 @@ async function getTemplate(
       },templatePath);
     }
 
-    //debug("ExcalidrawAutomate.getTemplate return elements,appState,frontmatter,files",scene.elements,scene.appState,data.substring(0,trimLocation),scene.files);
     return {
       elements: scene.elements,
       appState: scene.appState,  

@@ -213,7 +213,6 @@ export const getAttachmentsFolderAndFilePath = async (app:App, activeViewFilePat
 }
 
 export const getSVG = async (scene:any, exportSettings:ExportSettings):Promise<SVGSVGElement> => {
-  //debug("Utils.getSVG enter scene:",scene);
   try {
     return await exportToSvg({
       elements: scene.elements,
@@ -270,7 +269,6 @@ export const getImageSize = async (src:string):Promise<{height:number, width:num
 
 export const scaleLoadedImage = (scene:any, files:any):[boolean,any] => {
   let dirty = false;
-  //debug("Utils.scaleLoadedImage scene,files", scene,files);
   for(const f of files) {
     const [w_image,h_image] = [f.size.width,f.size.height];
     const imageAspectRatio = f.size.width/f.size.height;
@@ -300,5 +298,5 @@ export function getIMGFilename(path:string,extension:string):string {
   return path.substring(0,path.lastIndexOf('.')) + '.' + extension;
 }
 
-export const debug = console.log.bind(window.console);
+//export const debug = console.log.bind(window.console);
 //export const debug = function(){};
