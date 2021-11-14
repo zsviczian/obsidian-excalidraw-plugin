@@ -34,7 +34,7 @@ import ExcalidrawPlugin from './main';
 import {ExcalidrawAutomate, repositionElementsToCursor} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./ExcalidrawData";
-import { checkAndCreateFolder, download, embedFontsInSVG, generateSVGString, getIMGFilename, getNewOrAdjacentLeaf, getNewUniqueFilepath, getPNG, getSVG, loadSceneFiles, rotatedDimensions, scaleLoadedImage, splitFolderAndFilename, svgToBase64, updateEquation, viewportCoordsToSceneCoords } from "./Utils";
+import { checkAndCreateFolder, download, embedFontsInSVG, getIMGFilename, getNewOrAdjacentLeaf, getNewUniqueFilepath, getPNG, getSVG, loadSceneFiles, rotatedDimensions, scaleLoadedImage, splitFolderAndFilename, svgToBase64, updateEquation, viewportCoordsToSceneCoords } from "./Utils";
 import { Prompt } from "./Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 import { isImageFileHandle } from "@zsviczian/excalidraw/types/data/blob";
@@ -170,8 +170,6 @@ export default class ExcalidrawView extends TextFileView {
       if(await this.excalidrawData.syncElements(scene) && !this.autosaving) {
         await this.loadDrawing(false);
       }
-      //generate SVG preview snapshot
-      this.excalidrawData.svgSnapshot = await generateSVGString(this.getScene(),this.plugin.settings);
     }
     await super.save();
   }

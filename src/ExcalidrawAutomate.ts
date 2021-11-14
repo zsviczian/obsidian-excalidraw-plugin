@@ -9,7 +9,7 @@ import {
   normalizePath,
   TFile
 } from "obsidian"
-import ExcalidrawView, { TextMode } from "./ExcalidrawView";
+import ExcalidrawView, { ExportSettings, TextMode } from "./ExcalidrawView";
 import { ExcalidrawData} from "./ExcalidrawData";
 import { 
   FRONTMATTER, 
@@ -71,8 +71,8 @@ export interface ExcalidrawAutomate {
       }
     }
   ):Promise<string>;
-  createSVG (templatePath?:string, embedFont?:boolean, withTheme?:boolean, withBackgroundColor?:boolean):Promise<SVGSVGElement>;
-  createPNG (templatePath?:string, scale?:number):Promise<any>;
+  createSVG (templatePath?:string, embedFont?:boolean, exportSettings?:ExportSettings, processedFiles?:Set<string>):Promise<SVGSVGElement>;
+  createPNG (templatePath?:string, scale?:number, processedFiles?:Set<string>):Promise<any>;
   wrapText (text:string, lineLen:number):string;
   addRect (topX:number, topY:number, width:number, height:number):string;
   addDiamond (topX:number, topY:number, width:number, height:number):string;
@@ -336,7 +336,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
           : frontmatter + await plugin.exportSceneToMD(JSON.stringify(scene,null,"\t"))
       );  
     },
-    async createSVG(templatePath?:string,embedFont:boolean = false,withTheme?:boolean, withBackgroundColor?:boolean):Promise<SVGSVGElement> {
+    async createSVG(templatePath?:string,embedFont:boolean = false,exportSettings?:ExportSettings):Promise<SVGSVGElement> {
       const automateElements = this.getElements();
       const template = templatePath ? (await getTemplate(this.plugin,templatePath,true)) : null;
       let elements = template ? template.elements : [];
@@ -354,8 +354,8 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
           files: template?.files ?? {}
         },
         {
-          withBackground: (withBackgroundColor === undefined) ? plugin.settings.exportWithBackground : withBackgroundColor, 
-          withTheme: (withTheme === undefined) ? plugin.settings.exportWithTheme : withTheme
+          withBackground: (exportSettings === undefined) ? plugin.settings.exportWithBackground : exportSettings.withBackground, 
+          withTheme: (exportSettings === undefined) ? plugin.settings.exportWithTheme : exportSettings.withTheme
         }
       )
       return embedFont ? embedFontsInSVG(svg) : svg;     
@@ -840,7 +840,6 @@ async function getTemplate(plugin: ExcalidrawPlugin, fileWithPath:string, loadFi
   appState: any, 
   frontmatter: string,
   files: any,
-  svgSnapshot: string
 }> {
   const app = plugin.app;
   const vault = app.vault;
@@ -857,7 +856,6 @@ async function getTemplate(plugin: ExcalidrawPlugin, fileWithPath:string, loadFi
         appState: excalidrawData.scene.appState,  
         frontmatter: "",
         files: excalidrawData.scene.files,
-        svgSnapshot: null,
       };
     }
 
@@ -882,7 +880,6 @@ async function getTemplate(plugin: ExcalidrawPlugin, fileWithPath:string, loadFi
       appState: excalidrawData.scene.appState,  
       frontmatter: data.substring(0,trimLocation),
       files: excalidrawData.scene.files,
-      svgSnapshot: excalidrawData.svgSnapshot
     };
   };
   return {
@@ -890,7 +887,6 @@ async function getTemplate(plugin: ExcalidrawPlugin, fileWithPath:string, loadFi
     appState: {},
     frontmatter: null,
     files: [],
-    svgSnapshot: null,
   }
 }
 

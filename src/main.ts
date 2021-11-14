@@ -36,7 +36,7 @@ import {
   DARK_BLANK_DRAWING
 } from "./constants";
 import ExcalidrawView, {ExportSettings, TextMode} from "./ExcalidrawView";
-import {getJSON, getMarkdownDrawingSection, getSVGString} from "./ExcalidrawData";
+import {getJSON, getMarkdownDrawingSection} from "./ExcalidrawData";
 import {
   ExcalidrawSettings, 
   DEFAULT_SETTINGS, 
@@ -60,7 +60,7 @@ import {
 import { Prompt } from "./Prompt";
 import { around } from "monkey-around";
 import { t } from "./lang/helpers";
-import { checkAndCreateFolder, download, embedFontsInSVG, generateSVGString, getAttachmentsFolderAndFilePath, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, getPNG, getSVG, isObsidianThemeDark, splitFolderAndFilename, svgToBase64 } from "./Utils";
+import { checkAndCreateFolder, download, embedFontsInSVG, getAttachmentsFolderAndFilePath, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, getPNG, getSVG, isObsidianThemeDark, splitFolderAndFilename, svgToBase64 } from "./Utils";
 import { OneOffs } from "./OneOffs";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
 import { MATHJAX_DATAURL } from "./mathjax";
@@ -227,7 +227,8 @@ export default class ExcalidrawPlugin extends Plugin {
       img.addClass(imgAttributes.style);
 
       const [scene,pos] = getJSON(content);
-      const svgSnapshot = await getSVGString(content.substr(pos+scene.length),file.path,this.app);
+      this.ea.reset();
+      const svgSnapshot = (await this.ea.createSVG(file.path,true,exportSettings)).outerHTML;
       
       //Removed in 1.4.0 when implementing ImageElement. Key reason for removing this
       //is to use SVG snapshot in file, to avoid resource intensive process to generating PNG
@@ -244,15 +245,11 @@ export default class ExcalidrawPlugin extends Plugin {
         return img;
       }*/
       let svg:SVGSVGElement = null;
-      if(svgSnapshot) {
-        const el = document.createElement('div');
-        el.innerHTML = svgSnapshot;
-        const firstChild = el.firstChild;
-        if(firstChild instanceof SVGSVGElement) {
-          svg=firstChild;
-        }
-      } else {
-        svg = await getSVG(JSON_parse(scene),exportSettings);
+      const el = document.createElement('div');
+      el.innerHTML = svgSnapshot;
+      const firstChild = el.firstChild;
+      if(firstChild instanceof SVGSVGElement) {
+        svg=firstChild;
       }
       if(!svg) return null;
       svg = embedFontsInSVG(svg);
@@ -1139,7 +1136,7 @@ export default class ExcalidrawPlugin extends Plugin {
       return this.settings.matchTheme && isObsidianThemeDark() ? DARK_BLANK_DRAWING : BLANK_DRAWING;
     }
     const blank = this.settings.matchTheme && isObsidianThemeDark() ? DARK_BLANK_DRAWING : BLANK_DRAWING;
-    return FRONTMATTER + '\n' + getMarkdownDrawingSection(blank,'<SVG></SVG>');
+    return FRONTMATTER + '\n' + getMarkdownDrawingSection(blank);
   }
 
   /**
@@ -1150,7 +1147,6 @@ export default class ExcalidrawPlugin extends Plugin {
   public async exportSceneToMD(data:string): Promise<string> {
     if(!data) return "";
     const excalidrawData = JSON_parse(data);
-    const svgString = await generateSVGString(excalidrawData,this.settings);
     const textElements = excalidrawData.elements?.filter((el:any)=> el.type=="text")
     let outString = '# Text Elements\n';
     let id:string;
@@ -1165,7 +1161,7 @@ export default class ExcalidrawPlugin extends Plugin {
       }
       outString += te.text+' ^'+id+'\n\n';
     }
-    return outString + getMarkdownDrawingSection(JSON.stringify(JSON_parse(data),null,"\t"),svgString);
+    return outString + getMarkdownDrawingSection(JSON.stringify(JSON_parse(data),null,"\t"));
   }
 
   public async createDrawing(filename: string, onNewPane: boolean, foldername?: string, initData?:string):Promise<string> {

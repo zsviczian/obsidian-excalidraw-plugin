@@ -22,8 +22,6 @@ declare module "obsidian" {
 
 declare let window: any;
 
-export declare type MimeType = "image/svg+xml" | "image/png" | "image/jpeg" | "image/gif" | "application/octet-stream";
-
 /**
  * Splits a full path including a folderpath and a filename into separate folderpath and filename components
  * @param filepath 
@@ -192,10 +190,10 @@ export const getNewOrAdjacentLeaf = (plugin: ExcalidrawPlugin, leaf: WorkspaceLe
 
 export const getObsidianImage = async (plugin: ExcalidrawPlugin, file: TFile)
   :Promise<{
-    mimeType: MimeType,
-    fileId: FileId, 
-    dataURL: DataURL,
-    created: number,
+      mimeType: MimeType,
+      fileId: FileId, 
+      dataURL: DataURL,
+      created: number,
     size: {height: number, width: number},
   }> => {
   if(!plugin || !file) return null;
@@ -207,8 +205,12 @@ export const getObsidianImage = async (plugin: ExcalidrawPlugin, file: TFile)
   const ab = await app.vault.readBinary(file);
 
   const getExcalidrawSVG = async () => {
+    const exportSettings:ExportSettings = {
+      withBackground: false,
+      withTheme: false
+    };
     plugin.ea.reset();
-    return svgToBase64((await plugin.ea.createSVG(file.path,true,false,false)).outerHTML) as DataURL;
+    return svgToBase64((await plugin.ea.createSVG(file.path,true,exportSettings)).outerHTML) as DataURL;
   }
   
   const excalidrawSVG = isExcalidrawFile
@@ -226,11 +228,11 @@ export const getObsidianImage = async (plugin: ExcalidrawPlugin, file: TFile)
     }
   } 
   return {
-    mimeType: mimeType,
-    fileId: await generateIdFromFile(ab),
-    dataURL: excalidrawSVG ?? (file.extension==="svg" ? await getSVGData(app,file) : await getDataURL(ab)),
-    created: file.stat.mtime,
-    size: await getImageSize(excalidrawSVG??app.vault.getResourcePath(file))
+      mimeType: mimeType,
+      fileId: await generateIdFromFile(ab),
+      dataURL: excalidrawSVG ?? (file.extension==="svg" ? await getSVGData(app,file) : await getDataURL(ab)),
+      created: file.stat.mtime,
+      size: await getImageSize(excalidrawSVG??app.vault.getResourcePath(file))
   }
 }
 
@@ -325,18 +327,6 @@ export const getSVG = async (scene:any, exportSettings:ExportSettings):Promise<S
   } catch (error) {
     return null;
   }
-}
-
-export const generateSVGString = async (scene:any, settings: ExcalidrawSettings):Promise<string> => {
-  const exportSettings: ExportSettings = {
-    withBackground: settings.exportWithBackground, 
-    withTheme: settings.exportWithTheme
-  }
-  const svg = await getSVG(scene,exportSettings);
-  if(svg) {        
-    return wrapText(html_beautify(svg.outerHTML,{"indent_with_tabs": true}),4096,true);
-  }
-  return null;
 }
 
 export const getPNG = async (scene:any, exportSettings:ExportSettings, scale:number = 1) => {

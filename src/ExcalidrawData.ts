@@ -73,40 +73,14 @@ export function getJSON(data:string):[string,number] {
   return [data,parts.value ? parts.value.index : 0];
 }
 
-//extracts SVG snapshot from Excalidraw Markdown string
-const SVG_REG = /.*?```html\n([\s\S]*?)```/gm;
-export async function getSVGString(data:string,path:string,app:App):Promise<string> {
-  let res = data.matchAll(SVG_REG);
-
-  let parts;
-  parts = res.next();
-  if(parts.value && parts.value.length>1) {
-    return parts.value[1].replaceAll("\n","");
-  }
-  const f=app.vault.getAbstractFileByPath(getIMGFilename(path,'svg'));
-  if(f && f instanceof TFile) {
-    return await app.vault.cachedRead(f);
-  }
-  return null;
-}
-
-export function getMarkdownDrawingSection(jsonString: string,svgString: string) {
+export function getMarkdownDrawingSection(jsonString: string) {
   return '# Drawing\n'
   + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'json\n' 
   + jsonString + '\n'
-  + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)
-  + (svgString ? //&& this.settings.saveSVGSnapshots
-      '\n\n# SVG snapshot\n'
-      + "==⚠ Remove all linebreaks from SVG string before use. Linebreaks were added to improve markdown view speed. ⚠==\n"
-      + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'html\n'
-      + svgString + '\n'
-      + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96) 
-     : '') 
-  + '\n%%';
+  + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'\n%%';
 }
 
 export class ExcalidrawData {
-  public svgSnapshot: string = null;
   private textElements:Map<string,{raw:string, parsed:string}> = null; 
   public scene:any = null;
   private file:TFile = null;
@@ -178,8 +152,6 @@ export class ExcalidrawData {
     if(this.plugin.settings.matchThemeAlways) {
       this.scene.appState.theme = isObsidianThemeDark() ? "dark" : "light";
     }
-
-    this.svgSnapshot = await getSVGString(data.substr(pos+scene.length),file.path,this.app);
 
     data = data.substring(0,pos);
 
@@ -534,7 +506,7 @@ export class ExcalidrawData {
 
 
     const sceneJSONstring = JSON.stringify(this.scene,null,"\t"); 
-    return outString + getMarkdownDrawingSection(sceneJSONstring,this.plugin.settings.autoexportSVG ? null : this.svgSnapshot);
+    return outString + getMarkdownDrawingSection(sceneJSONstring);
   }
 
   private async syncFiles(scene:SceneDataWithFiles):Promise<boolean> {
