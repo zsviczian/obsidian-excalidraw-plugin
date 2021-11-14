@@ -1,15 +1,12 @@
 import Excalidraw,{exportToSvg} from "@zsviczian/excalidraw";
 import {  App, normalizePath, TAbstractFile, TFile, TFolder, Vault, WorkspaceLeaf } from "obsidian";
 import { Random } from "roughjs/bin/math";
-import { BinaryFileData, DataURL, Zoom } from "@zsviczian/excalidraw/types/types";
-import { CASCADIA_FONT, fileid, IMAGE_TYPES, VIRGIL_FONT } from "./constants";
+import { Zoom } from "@zsviczian/excalidraw/types/types";
+import { CASCADIA_FONT, VIRGIL_FONT } from "./constants";
 import ExcalidrawPlugin from "./main";
 import { ExcalidrawElement, FileId } from "@zsviczian/excalidraw/types/element/types";
-import ExcalidrawView, { ExportSettings } from "./ExcalidrawView";
-import { ExcalidrawSettings } from "./settings";
-import { html_beautify } from "js-beautify";
-import html2canvas from "html2canvas";
-import { ExcalidrawData } from "./ExcalidrawData";
+import { ExportSettings } from "./ExcalidrawView";
+
 
 declare module "obsidian" {
   interface Workspace {
@@ -20,14 +17,11 @@ declare module "obsidian" {
   }
 }
 
-declare let window: any;
-
 /**
  * Splits a full path including a folderpath and a filename into separate folderpath and filename components
  * @param filepath 
  */
 export function splitFolderAndFilename(filepath: string):{folderpath: string, filename: string} {
-  let folderpath: string, filename:string;
   const lastIndex = filepath.lastIndexOf("/");
   return {
     folderpath: normalizePath(filepath.substr(0,lastIndex)), 
@@ -153,7 +147,6 @@ export const rotatedDimensions = (
          ];
 }
    
-
 export const viewportCoordsToSceneCoords = (
   { clientX, clientY }: { clientX: number; clientY: number },
   {
@@ -188,102 +181,8 @@ export const getNewOrAdjacentLeaf = (plugin: ExcalidrawPlugin, leaf: WorkspaceLe
   return plugin.app.workspace.createLeafBySplit(leaf);
 }
 
-export const getObsidianImage = async (plugin: ExcalidrawPlugin, file: TFile)
-  :Promise<{
-      mimeType: MimeType,
-      fileId: FileId, 
-      dataURL: DataURL,
-      created: number,
-    size: {height: number, width: number},
-  }> => {
-  if(!plugin || !file) return null;
-  const app = plugin.app;
-  const isExcalidrawFile = plugin.ea.isExcalidrawFile(file);
-  if (!(IMAGE_TYPES.contains(file.extension) || isExcalidrawFile)) {
-    return null;
-  }
-  const ab = await app.vault.readBinary(file);
-
-  const getExcalidrawSVG = async () => {
-    const exportSettings:ExportSettings = {
-      withBackground: false,
-      withTheme: false
-    };
-    plugin.ea.reset();
-    return svgToBase64((await plugin.ea.createSVG(file.path,true,exportSettings)).outerHTML) as DataURL;
-  }
-  
-  const excalidrawSVG = isExcalidrawFile
-              ? await getExcalidrawSVG()
-              : null;
-  let mimeType:MimeType = "image/svg+xml";
-  if (!isExcalidrawFile) {
-    switch (file.extension) {
-      case "png": mimeType = "image/png";break;
-      case "jpeg":mimeType = "image/jpeg";break;
-      case "jpg": mimeType = "image/jpeg";break;
-      case "gif": mimeType = "image/gif";break;
-      case "svg": mimeType = "image/svg+xml";break;
-      default: mimeType = "application/octet-stream";
-    }
-  } 
-  return {
-      mimeType: mimeType,
-      fileId: await generateIdFromFile(ab),
-      dataURL: excalidrawSVG ?? (file.extension==="svg" ? await getSVGData(app,file) : await getDataURL(ab)),
-      created: file.stat.mtime,
-      size: await getImageSize(excalidrawSVG??app.vault.getResourcePath(file))
-  }
-}
-
-
-const getSVGData = async (app: App, file: TFile): Promise<DataURL> => {
-  const svg = await app.vault.read(file);
-  return svgToBase64(svg) as DataURL;
-}
-
 export const svgToBase64 = (svg:string):string => {
   return "data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svg.replaceAll("&nbsp;"," "))));
-}
-const getDataURL = async (file: ArrayBuffer): Promise<DataURL> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataURL = reader.result as DataURL;
-      resolve(dataURL);
-    };
-    reader.onerror = (error) => reject(error);
-    reader.readAsDataURL(new Blob([new Uint8Array(file)]));
-  });
-};
-
-const generateIdFromFile = async (file: ArrayBuffer):Promise<FileId> => {
-  let id: FileId;
-  try {
-    const hashBuffer = await window.crypto.subtle.digest(
-      "SHA-1",
-      file,
-    );
-    id =
-      // convert buffer to byte array
-      Array.from(new Uint8Array(hashBuffer))
-        // convert to hex string
-        .map((byte) => byte.toString(16).padStart(2, "0"))
-        .join("") as FileId;
-  } catch (error) {
-    console.error(error);
-    id = fileid() as FileId;
-  }
-  return id;
-};
-
-const getImageSize = async (src:string):Promise<{height:number, width:number}> => {
-  return new Promise((resolve, reject) => {
-    let img = new Image()
-    img.onload = () => resolve({height: img.height, width:img.width});
-    img.onerror = reject;
-    img.src = src;
-    })
 }
 
 export const getBinaryFileFromDataURL = (dataURL:string):ArrayBuffer => {
@@ -314,8 +213,9 @@ export const getAttachmentsFolderAndFilePath = async (app:App, activeViewFilePat
 }
 
 export const getSVG = async (scene:any, exportSettings:ExportSettings):Promise<SVGSVGElement> => {
+  //debug("Utils.getSVG enter scene:",scene);
   try {
-    return exportToSvg({
+    return await exportToSvg({
       elements: scene.elements,
       appState: {
         exportBackground: exportSettings.withBackground,
@@ -359,80 +259,18 @@ export const embedFontsInSVG = (svg:SVGSVGElement):SVGSVGElement => {
   return svg;
 }
 
-
-export const loadSceneFiles = async (
-  plugin:ExcalidrawPlugin, 
-  excalidrawData: ExcalidrawData,
-  view: ExcalidrawView,
-  addFiles:Function, 
-  sourcePath:string
-) => {
-  const app = plugin.app;
-  let entries = excalidrawData.getFileEntries(); 
-  let entry;
-  let files:BinaryFileData[] = [];
-  while(!(entry = entries.next()).done) {
-    const file = app.metadataCache.getFirstLinkpathDest(entry.value[1],sourcePath);
-    if(file && file instanceof TFile) {
-      const data = await getObsidianImage(plugin,file);
-      files.push({
-        mimeType : data.mimeType,
-        id: entry.value[0],
-        dataURL: data.dataURL,
-        created: data.created,
-        //@ts-ignore
-        size: data.size,
-      });
-    }
-  }
-
-  entries = excalidrawData.getEquationEntries(); 
-  while(!(entry = entries.next()).done) {
-    const tex = entry.value[1];
-    const data = await tex2dataURL(tex, plugin);
-    if(data) {
-      files.push({
-        mimeType : data.mimeType,
-        id: entry.value[0],
-        dataURL: data.dataURL,
-        created: data.created,
-        //@ts-ignore
-        size: data.size,
-      });
-    }
-  }
-
-  try { //in try block because by the time files are loaded the user may have closed the view
-    addFiles(files,view);
-  } catch(e) {
-
-  }
-}
-
-export const updateEquation = async (
-  equation: string,
-  fileId: string,
-  view: ExcalidrawView,
-  addFiles:Function,
-  plugin: ExcalidrawPlugin
-) => {
-  const data = await tex2dataURL(equation, plugin);
-  if(data) {
-    let files:BinaryFileData[] = [];
-    files.push({
-      mimeType : data.mimeType,
-      id: fileId as FileId,
-      dataURL: data.dataURL,
-      created: data.created,
-      //@ts-ignore
-      size: data.size,
-    });
-    addFiles(files,view);
-  }
+export const getImageSize = async (src:string):Promise<{height:number, width:number}> => {
+  return new Promise((resolve, reject) => {
+    let img = new Image()
+    img.onload = () => resolve({height: img.height, width:img.width});
+    img.onerror = reject;
+    img.src = src;
+    })
 }
 
 export const scaleLoadedImage = (scene:any, files:any):[boolean,any] => {
   let dirty = false;
+  //debug("Utils.scaleLoadedImage scene,files", scene,files);
   for(const f of files) {
     const [w_image,h_image] = [f.size.width,f.size.height];
     const imageAspectRatio = f.size.width/f.size.height;
@@ -458,79 +296,9 @@ export const scaleLoadedImage = (scene:any, files:any):[boolean,any] => {
 
 export const isObsidianThemeDark = () => document.body.classList.contains("theme-dark");
 
-export async function tex2dataURL(tex:string, plugin:ExcalidrawPlugin):Promise<{
-  mimeType: MimeType,
-  fileId: FileId, 
-  dataURL: DataURL,
-  created: number,
-  size: {height: number, width: number},
-}> {
-
-  //if network is slow, or not available, or mathjax has not yet fully loaded
-  try {
-    return await mathjaxSVG(tex, plugin);
-  } catch(e) {
-    //fallback
-    return await mathjaxImage2html(tex);
-  }
-
-}
-
-async function mathjaxSVG (tex:string, plugin:ExcalidrawPlugin):Promise<{
-  mimeType: MimeType,
-  fileId: FileId, 
-  dataURL: DataURL,
-  created: number,
-  size: {height: number, width: number},
-}> {
-  const eq = plugin.mathjax.tex2svg(tex,{display: true, scale: 4});
-  const svg = eq.querySelector("svg");
-  if(svg) { 
-    const dataURL = svgToBase64(svg.outerHTML);
-    return {
-      mimeType: "image/svg+xml",
-      fileId: fileid() as FileId,
-      dataURL: dataURL as DataURL,
-      created: Date.now(),
-      size: await getImageSize(dataURL)
-    }
-  }
-  return null;
-}
-
-async function mathjaxImage2html(tex:string):Promise<{
-  mimeType: MimeType,
-  fileId: FileId, 
-  dataURL: DataURL,
-  created: number,
-  size: {height: number, width: number},
-}> {
-  const div = document.body.createDiv();
-  div.style.display = "table"; //this will ensure div fits width of formula exactly
-  //@ts-ignore
-  
-  const eq = window.MathJax.tex2chtml(tex,{display: true, scale: 4}); //scale to ensure good resolution
-  eq.style.margin = "3px";
-  eq.style.color = "black";
-
-  //ipad support - removing mml as that was causing phantom double-image blur.
-  const el = eq.querySelector("mjx-assistive-mml");
-  if(el) {
-    el.parentElement.removeChild(el);
-  }
-  div.appendChild(eq);
-  window.MathJax.typeset();
-  const canvas = await html2canvas(div, {backgroundColor:null}); //transparent
-  document.body.removeChild(div);
-  return {
-    mimeType: "image/png",
-    fileId: fileid() as FileId,
-    dataURL: canvas.toDataURL() as DataURL,
-    created: Date.now(),
-    size: {height: canvas.height, width: canvas.width}
-  }
-}
-
 export function getIMGFilename(path:string,extension:string):string {
   return path.substring(0,path.lastIndexOf('.')) + '.' + extension;
 }
+
+export const debug = console.log.bind(window.console);
+//export const debug = function(){};

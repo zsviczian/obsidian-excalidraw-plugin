@@ -1,4 +1,4 @@
-import { App, normalizePath, TFile } from "obsidian";
+import { App, TFile } from "obsidian";
 import { 
   nanoid,
   FRONTMATTER_KEY_CUSTOM_PREFIX,
@@ -12,7 +12,7 @@ import {
 } from "./constants";
 import { TextMode } from "./ExcalidrawView";
 import { getAttachmentsFolderAndFilePath, getBinaryFileFromDataURL, getIMGFilename, isObsidianThemeDark, wrapText } from "./Utils";
-import { ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawImageElement, FileId } from "@zsviczian/excalidraw/types/element/types";
 import { BinaryFiles, SceneData } from "@zsviczian/excalidraw/types/types";
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles};
@@ -74,7 +74,7 @@ export function getJSON(data:string):[string,number] {
 }
 
 export function getMarkdownDrawingSection(jsonString: string) {
-  return '# Drawing\n'
+  return '%%\n# Drawing\n'
   + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'json\n' 
   + jsonString + '\n'
   + String.fromCharCode(96)+String.fromCharCode(96)+String.fromCharCode(96)+'\n%%';

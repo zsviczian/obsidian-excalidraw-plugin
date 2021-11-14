@@ -34,10 +34,11 @@ import ExcalidrawPlugin from './main';
 import {ExcalidrawAutomate, repositionElementsToCursor} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./ExcalidrawData";
-import { checkAndCreateFolder, download, embedFontsInSVG, getIMGFilename, getNewOrAdjacentLeaf, getNewUniqueFilepath, getPNG, getSVG, loadSceneFiles, rotatedDimensions, scaleLoadedImage, splitFolderAndFilename, svgToBase64, updateEquation, viewportCoordsToSceneCoords } from "./Utils";
+import { checkAndCreateFolder, debug, download, embedFontsInSVG, getIMGFilename, getNewOrAdjacentLeaf, getNewUniqueFilepath, getPNG, getSVG, rotatedDimensions, scaleLoadedImage, splitFolderAndFilename, svgToBase64, viewportCoordsToSceneCoords } from "./Utils";
 import { Prompt } from "./Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
-import { isImageFileHandle } from "@zsviczian/excalidraw/types/data/blob";
+import { updateEquation } from "./LaTeX";
+import { EmbeddedFilesLoader } from "./EmbeddedFileLoader";
 
 export enum TextMode {
   parsed,
@@ -56,6 +57,7 @@ export interface ExportSettings {
 const REG_LINKINDEX_INVALIDCHARS = /[<>:"\\|?*]/g;
 
 export const addFiles = (files:any, view: ExcalidrawView) => {
+  //debug("ExcalidrawView.addFiles start file:'"+view.file.path+"'"); 
   if(files.length === 0) return;
   const [dirty, scene] = scaleLoadedImage(view.getScene(),files); 
 
@@ -195,12 +197,23 @@ export default class ExcalidrawView extends TextFileView {
 
       let header = this.data.substring(0,trimLocation)
                               .replace(/excalidraw-plugin:\s.*\n/,FRONTMATTER_KEY+": " + ( (this.textMode == TextMode.raw) ? "raw\n" : "parsed\n"));
-      if(this.plugin.settings.autoexportSVG) {
-        const REG_IMG = /(^---[\w\W]*?---\n)(!\[\[.*?]]\n\%\%\n)/m;
+      
+      if (header.search(/cssclass:[\s]*excalidraw-hide-preview-text/) === -1) {
+        header = header.replace(/(excalidraw-plugin:\s.*\n)/,"$1cssclass: excalidraw-hide-preview-text\n");
+      }
+
+      const ext = this.plugin.settings.autoexportSVG 
+                  ? "svg"
+                  : ( this.plugin.settings.autoexportPNG 
+                      ? "png"
+                      : null);
+
+      if(ext) {
+        const REG_IMG = /(^---[\w\W]*?---\n)(!\[\[.*?]]\n(%%\n)?)/m; //(%%\n)? because of 1.4.8-beta... to be backward compatible with anyone who installed that version
         if(header.match(REG_IMG)) {
-          header = header.replace(REG_IMG,"$1![["+getIMGFilename(this.file.path,"svg")+"]]\n%%\n");
+          header = header.replace(REG_IMG,"$1![["+getIMGFilename(this.file.path,ext)+"]]\n");
         } else {
-          header = header.replace(/(^---[\w\W]*?---\n)/m, "$1![["+getIMGFilename(this.file.path,"svg")+"]]\n%%\n");
+          header = header.replace(/(^---[\w\W]*?---\n)/m, "$1![["+getIMGFilename(this.file.path,ext)+"]]\n");
         }
       }
       return header + this.excalidrawData.generateMD();
@@ -457,7 +470,8 @@ export default class ExcalidrawView extends TextFileView {
    * 
    * @param justloaded - a flag to trigger zoom to fit after the drawing has been loaded
    */
-  private async loadDrawing(justloaded:boolean) {        
+  private async loadDrawing(justloaded:boolean) {     
+    //debug("ExcalidrawView.loadDrawing start file:'"+this.file.path+"'"); 
     const excalidrawData = this.excalidrawData.scene;
     this.justLoaded = justloaded;
     if(this.excalidrawRef) {
@@ -476,8 +490,9 @@ export default class ExcalidrawView extends TextFileView {
       if((this.app.workspace.activeLeaf === this.leaf) && this.excalidrawWrapperRef) {
         this.excalidrawWrapperRef.current.focus();
       }
-      loadSceneFiles(
-        this.plugin,
+      const loader = new EmbeddedFilesLoader(this.plugin);
+      //debug("ExcalidrawView.loadDrawing calling loadSceneFiles file:'"+this.file.path+"'"); 
+      loader.loadSceneFiles(
         this.excalidrawData,
         this,
         (files:any, view:ExcalidrawView) => addFiles(files,view),
@@ -663,8 +678,8 @@ export default class ExcalidrawView extends TextFileView {
       React.useEffect(() => {
         excalidrawRef.current.readyPromise.then((api) => {
           this.excalidrawAPI = api;
-          loadSceneFiles(
-            this.plugin,
+          const loader = new EmbeddedFilesLoader(this.plugin);
+          loader.loadSceneFiles(
             this.excalidrawData,
             this,
             (files:any, view:ExcalidrawView)=>addFiles(files,view),

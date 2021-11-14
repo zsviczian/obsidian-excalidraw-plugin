@@ -60,7 +60,7 @@ import {
 import { Prompt } from "./Prompt";
 import { around } from "monkey-around";
 import { t } from "./lang/helpers";
-import { checkAndCreateFolder, download, embedFontsInSVG, getAttachmentsFolderAndFilePath, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, getPNG, getSVG, isObsidianThemeDark, splitFolderAndFilename, svgToBase64 } from "./Utils";
+import { checkAndCreateFolder, download, embedFontsInSVG, getAttachmentsFolderAndFilePath, getIMGFilename, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, getPNG, getSVG, isObsidianThemeDark, splitFolderAndFilename, svgToBase64 } from "./Utils";
 import { OneOffs } from "./OneOffs";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
 import { MATHJAX_DATAURL } from "./mathjax";
@@ -228,22 +228,21 @@ export default class ExcalidrawPlugin extends Plugin {
 
       const [scene,pos] = getJSON(content);
       this.ea.reset();
-      const svgSnapshot = (await this.ea.createSVG(file.path,true,exportSettings)).outerHTML;
       
-      //Removed in 1.4.0 when implementing ImageElement. Key reason for removing this
-      //is to use SVG snapshot in file, to avoid resource intensive process to generating PNG
-      //due to the need to load excalidraw plus all linked images
-/*      if(!this.settings.displaySVGInPreview) {
+      
+      if(!this.settings.displaySVGInPreview) {
         const width = parseInt(imgAttributes.fwidth);
         let scale = 1;
         if(width>=800) scale = 2;
         if(width>=1600) scale = 3;
         if(width>=2400) scale = 4;
-        const png = await getPNG(JSON_parse(scene),exportSettings, scale);
+        const png = await this.ea.createPNG(file.path,scale);
+        //const png = await getPNG(JSON_parse(scene),exportSettings, scale);
         if(!png) return null;
         img.src = URL.createObjectURL(png);
         return img;
-      }*/
+      }
+      const svgSnapshot = (await this.ea.createSVG(file.path,true,exportSettings)).outerHTML;
       let svg:SVGSVGElement = null;
       const el = document.createElement('div');
       el.innerHTML = svgSnapshot;
@@ -344,9 +343,17 @@ export default class ExcalidrawPlugin extends Plugin {
       if(m.length == 0) return;
       if(!this.hover.linkText) return;
       const file = this.app.metadataCache.getFirstLinkpathDest(this.hover.linkText, this.hover.sourcePath?this.hover.sourcePath:""); 
-      if(!file || !(file instanceof TFile) || !this.isExcalidrawFile(file)) return
+      if(!file || !(file instanceof TFile) || !this.isExcalidrawFile(file)) return;
    
-      if(file.extension == "excalidraw") {
+      const svgFileName = getIMGFilename(file.path,"svg");
+      const svgFile = this.app.vault.getAbstractFileByPath(svgFileName);
+      if(svgFile && svgFile instanceof TFile) return; //If auto export SVG or PNG is enabled it will be inserted at the top of the excalidraw file. No need to manually insert hover preview
+
+      const pngFileName = getIMGFilename(file.path,"png");
+      const pngFile = this.app.vault.getAbstractFileByPath(pngFileName);
+      if(pngFile && pngFile instanceof TFile) return; //If auto export SVG or PNG is enabled it will be inserted at the top of the excalidraw file. No need to manually insert hover preview
+
+      if(file.extension === "excalidraw") {
         observerForLegacyFileFormat(m,file);
         return;
       }

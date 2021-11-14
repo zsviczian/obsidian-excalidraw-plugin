@@ -14,8 +14,7 @@ export interface ExcalidrawSettings {
   templateFilePath: string,
   drawingFilenamePrefix: string,
   drawingFilenameDateTime: string,
-//  saveSVGSnapshots: boolean,
-  //displaySVGInPreview: boolean,
+  displaySVGInPreview: boolean,
   width: string,
   matchTheme: boolean,
   matchThemeAlways: boolean,
@@ -53,8 +52,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   templateFilePath: 'Excalidraw/Template.excalidraw',
   drawingFilenamePrefix: 'Drawing ',
   drawingFilenameDateTime: 'YYYY-MM-DD HH.mm.ss',
-//  saveSVGSnapshots: true,
-  //displaySVGInPreview: true,
+  displaySVGInPreview: true,
   width: '400',
   matchTheme: false,
   matchThemeAlways: false,
@@ -199,18 +197,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           text.setValue(this.plugin.settings.drawingFilenameDateTime);
           filenameEl.innerHTML = getFilenameSample();
           this.applySettingsUpdate();
-        }));
-
-/*    new Setting(containerEl)
-      .setName(t("SVG_IN_MD_NAME")) 
-      .setDesc(t("SVG_IN_MD_DESC"))
-      .addToggle(toggle => toggle
-        .setValue(this.plugin.settings.saveSVGSnapshots)
-        .onChange(async (value) => {
-          this.plugin.settings.saveSVGSnapshots = value;
-          this.applySettingsUpdate();
-        }));*/
-  
+        }));  
 
     this.containerEl.createEl('h1', {text: t("DISPLAY_HEAD")});
 
@@ -367,8 +354,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   
     this.containerEl.createEl('h1', {text: t("EMBED_HEAD")});
 
-//Removed in 1.4.0 when implementing ImageElement.
-/*    new Setting(containerEl)
+
+    new Setting(containerEl)
     .setName(t("EMBED_PREVIEW_SVG_NAME")) 
     .setDesc(t("EMBED_PREVIEW_SVG_DESC"))
     .addToggle(toggle => toggle
@@ -376,7 +363,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .onChange(async (value) => {
         this.plugin.settings.displaySVGInPreview = value;
         this.applySettingsUpdate();
-      }));*/
+      }));
 
     new Setting(containerEl)
       .setName(t("EMBED_WIDTH_NAME")) 

@@ -17,8 +17,10 @@ import {
   VIEW_TYPE_EXCALIDRAW,
   MAX_IMAGE_SIZE,
 } from "./constants";
-import { embedFontsInSVG, getObsidianImage, getPNG, getSVG, loadSceneFiles, scaleLoadedImage, tex2dataURL, wrapText } from "./Utils";
+import { debug, embedFontsInSVG, getPNG, getSVG, scaleLoadedImage, wrapText } from "./Utils";
 import { AppState } from "@zsviczian/excalidraw/types/types";
+import { EmbeddedFilesLoader } from "./EmbeddedFileLoader";
+import { tex2dataURL } from "./LaTeX";
 
 declare type ConnectionPoint = "top"|"bottom"|"left"|"right";
 
@@ -71,8 +73,8 @@ export interface ExcalidrawAutomate {
       }
     }
   ):Promise<string>;
-  createSVG (templatePath?:string, embedFont?:boolean, exportSettings?:ExportSettings, processedFiles?:Set<string>):Promise<SVGSVGElement>;
-  createPNG (templatePath?:string, scale?:number, processedFiles?:Set<string>):Promise<any>;
+  createSVG (templatePath?:string, embedFont?:boolean, exportSettings?:ExportSettings, loader?:EmbeddedFilesLoader):Promise<SVGSVGElement>;
+  createPNG (templatePath?:string, scale?:number, loader?:EmbeddedFilesLoader):Promise<any>;
   wrapText (text:string, lineLen:number):string;
   addRect (topX:number, topY:number, width:number, height:number):string;
   addDiamond (topX:number, topY:number, width:number, height:number):string;
@@ -247,7 +249,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
       return id;
     },
     async toClipboard(templatePath?:string) {
-      const template = templatePath ? (await getTemplate(this.plugin,templatePath)) : null;
+      const template = templatePath ? (await getTemplate(this.plugin,templatePath, false, new EmbeddedFilesLoader(this.plugin) )) : null;
       let elements = template ? template.elements : [];
       elements = elements.concat(this.getElements());
       navigator.clipboard.writeText(
@@ -281,7 +283,9 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
         }
       }
     ):Promise<string> {
-      const template = params?.templatePath ? (await getTemplate(this.plugin,params.templatePath,true)) : null;
+      const template = params?.templatePath 
+                       ? (await getTemplate(this.plugin,params.templatePath,true, new EmbeddedFilesLoader(this.plugin))) 
+                       : null;
       let elements = template ? template.elements : [];
       elements = elements.concat(this.getElements());
       let frontmatter:string;
@@ -336,11 +340,18 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
           : frontmatter + await plugin.exportSceneToMD(JSON.stringify(scene,null,"\t"))
       );  
     },
-    async createSVG(templatePath?:string,embedFont:boolean = false,exportSettings?:ExportSettings):Promise<SVGSVGElement> {
+    async createSVG(
+      templatePath?:string,
+      embedFont:boolean = false,
+      exportSettings?:ExportSettings,
+      loader:EmbeddedFilesLoader = new EmbeddedFilesLoader(this.plugin)
+    ):Promise<SVGSVGElement> {
+      //debug("ExcalidrawAutomate.createSVG start file:'" + templatePath + "'");
       const automateElements = this.getElements();
-      const template = templatePath ? (await getTemplate(this.plugin,templatePath,true)) : null;
+      const template = templatePath ? (await getTemplate(this.plugin,templatePath,true,loader)) : null;
       let elements = template ? template.elements : [];
       elements = elements.concat(automateElements);
+      //debug("ExcalidrawAutomate.createSVG fileLoaded file:'" + templatePath + "', template",template);
       const svg = await getSVG(
         {//createDrawing
           type: "excalidraw",
@@ -358,14 +369,19 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
           withTheme: (exportSettings === undefined) ? plugin.settings.exportWithTheme : exportSettings.withTheme
         }
       )
+      //debug("ExcalidrawAutomate.createSVG SVG ready",(embedFont ? embedFontsInSVG(svg) : svg));
       return embedFont ? embedFontsInSVG(svg) : svg;     
     },
-    async createPNG(templatePath?:string, scale:number=1) {
+    async createPNG(
+      templatePath?:string,
+      scale:number=1,
+      loader:EmbeddedFilesLoader = new EmbeddedFilesLoader(this.plugin)
+    ) {
       const automateElements = this.getElements();
-      const template = templatePath ? (await getTemplate(this.plugin,templatePath,true)) : null;
+      const template = templatePath ? (await getTemplate(this.plugin,templatePath,true,loader)) : null;
       let elements = template ? template.elements : [];
       elements = elements.concat(automateElements);
-      return getPNG(
+      return await getPNG(
         { 
           type: "excalidraw",
           version: 2,
@@ -528,7 +544,8 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
     },
     async addImage(topX:number, topY:number, imageFile: TFile):Promise<string> {
       const id = nanoid();
-      const image = await getObsidianImage(this.plugin,imageFile);
+      const loader = new EmbeddedFilesLoader(this.plugin)
+      const image = await loader.getObsidianImage(imageFile);
       if(!image) return null;
       this.imagesDict[image.fileId] = {
         mimeType: image.mimeType,
@@ -835,7 +852,12 @@ export function measureText (newText:string, fontSize:number, fontFamily:number)
   return {w: width, h: height, baseline: baseline };
 };
 
-async function getTemplate(plugin: ExcalidrawPlugin, fileWithPath:string, loadFiles:boolean = false):Promise<{
+async function getTemplate(
+  plugin: ExcalidrawPlugin,
+  fileWithPath:string, 
+  loadFiles:boolean = false,
+  loader:EmbeddedFilesLoader
+):Promise<{
   elements: any,
   appState: any, 
   frontmatter: string,
@@ -844,6 +866,7 @@ async function getTemplate(plugin: ExcalidrawPlugin, fileWithPath:string, loadFi
   const app = plugin.app;
   const vault = app.vault;
   const templatePath = normalizePath(fileWithPath);
+  //debug("ExcalidrawAutomate.getTemplate start file:'" + templatePath + "'");
   const file = app.metadataCache.getFirstLinkpathDest(templatePath,'');
   if(file && file instanceof TFile) {
     const data = (await vault.read(file)).replaceAll("\r\n","\n").replaceAll("\r","\n");
@@ -865,21 +888,26 @@ async function getTemplate(plugin: ExcalidrawPlugin, fileWithPath:string, loadFi
     let trimLocation = data.search("# Text Elements\n");
     if(trimLocation == -1) trimLocation = data.search("# Drawing\n");
 
+    let scene = excalidrawData.scene;
     if(loadFiles) {
-      await loadSceneFiles(plugin,excalidrawData, null, (fileArray:any, view:any)=>{
+      //debug("ExcalidrawAutomate.getTemplate loadFiles file:'" + templatePath + "'");
+      await loader.loadSceneFiles(excalidrawData, null, (fileArray:any, view:any)=>{
+        //debug("ExcalidrawAutomate.getTemplate addFiles file:'" + templatePath + "'");
+        if(!fileArray) return;
         for(const f of fileArray) {
           excalidrawData.scene.files[f.id] = f;
         }
         let foo;
-        [foo,excalidrawData] = scaleLoadedImage(excalidrawData,fileArray); 
+        [foo,scene] = scaleLoadedImage(excalidrawData.scene,fileArray); 
       },templatePath);
     }
 
+    //debug("ExcalidrawAutomate.getTemplate return elements,appState,frontmatter,files",scene.elements,scene.appState,data.substring(0,trimLocation),scene.files);
     return {
-      elements: excalidrawData.scene.elements,
-      appState: excalidrawData.scene.appState,  
+      elements: scene.elements,
+      appState: scene.appState,  
       frontmatter: data.substring(0,trimLocation),
-      files: excalidrawData.scene.files,
+      files: scene.files,
     };
   };
   return {
