@@ -72,7 +72,7 @@ export interface ExcalidrawAutomate {
     }
   ):Promise<string>;
   createSVG (templatePath?:string, embedFont?:boolean, withTheme?:boolean, withBackgroundColor?:boolean):Promise<SVGSVGElement>;
-  createPNG (templatePath?:string):Promise<any>;
+  createPNG (templatePath?:string, scale?:number):Promise<any>;
   wrapText (text:string, lineLen:number):string;
   addRect (topX:number, topY:number, width:number, height:number):string;
   addDiamond (topX:number, topY:number, width:number, height:number):string;
