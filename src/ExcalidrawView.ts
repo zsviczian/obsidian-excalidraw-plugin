@@ -439,8 +439,8 @@ export default class ExcalidrawView extends TextFileView {
           new Notice(t("COMPATIBILITY_MODE"),4000);
         }
       } else {
-        const parsed = data.search("excalidraw-plugin: parsed\n")>-1 || data.search("excalidraw-plugin: locked\n")>-1; //locked for backward compatibility
-        this.changeTextMode(parsed ? TextMode.parsed : TextMode.raw,false);
+        const textMode = getTextMode(data);
+        this.changeTextMode(textMode,false);
         try {
           if(!(await this.excalidrawData.loadData(data, this.file,this.textMode))) return;
         } catch(e) {
@@ -1275,4 +1275,9 @@ export default class ExcalidrawView extends TextFileView {
       current.zoomToFit(elements,maxZoom,fullscreen?0:0.05);
     }
   }
+}
+
+export function getTextMode(data:string):TextMode {
+  const parsed = data.search("excalidraw-plugin: parsed\n")>-1 || data.search("excalidraw-plugin: locked\n")>-1; //locked for backward compatibility
+  return parsed ? TextMode.parsed : TextMode.raw;
 }

@@ -36,7 +36,7 @@ import {
   DARK_BLANK_DRAWING
 } from "./constants";
 import ExcalidrawView, {ExportSettings, TextMode} from "./ExcalidrawView";
-import {getJSON, getMarkdownDrawingSection} from "./ExcalidrawData";
+import {ExcalidrawData, getJSON, getMarkdownDrawingSection} from "./ExcalidrawData";
 import {
   ExcalidrawSettings, 
   DEFAULT_SETTINGS, 
@@ -138,6 +138,7 @@ export default class ExcalidrawPlugin extends Plugin {
     const patches = new OneOffs(this);
     patches.migrationNotice();
     patches.patchCommentBlock();
+    patches.wysiwygPatch();
     patches.imageElementLaunchNotice();
 
     this.switchToExcalidarwAfterLoad()
@@ -343,8 +344,10 @@ export default class ExcalidrawPlugin extends Plugin {
       if(m.length == 0) return;
       if(!this.hover.linkText) return;
       const file = this.app.metadataCache.getFirstLinkpathDest(this.hover.linkText, this.hover.sourcePath?this.hover.sourcePath:""); 
-      if(!file || !(file instanceof TFile) || !this.isExcalidrawFile(file)) return;
-   
+      if(!file) return;
+      if(!(file instanceof TFile)) return;
+      if(file.extension!=="excalidraw") return;
+      
       const svgFileName = getIMGFilename(file.path,"svg");
       const svgFile = this.app.vault.getAbstractFileByPath(svgFileName);
       if(svgFile && svgFile instanceof TFile) return; //If auto export SVG or PNG is enabled it will be inserted at the top of the excalidraw file. No need to manually insert hover preview
@@ -353,45 +356,6 @@ export default class ExcalidrawPlugin extends Plugin {
       const pngFile = this.app.vault.getAbstractFileByPath(pngFileName);
       if(pngFile && pngFile instanceof TFile) return; //If auto export SVG or PNG is enabled it will be inserted at the top of the excalidraw file. No need to manually insert hover preview
 
-      if(file.extension === "excalidraw") {
-        observerForLegacyFileFormat(m,file);
-        return;
-      }
-      
-      let i=0;
-      //@ts-ignore      
-      while(i<m.length && m[i].target?.className!="markdown-preview-sizer markdown-preview-section") i++;
-      if(i==m.length) return;
-      if(m[i].addedNodes.length==0) return;
-      //@ts-ignore
-      if(m[i].addedNodes[0].childElementCount!=2) return;
-      //@ts-ignore
-      if(m[i].addedNodes[0].firstElementChild.className.indexOf("frontmatter")==-1) return;
-      //@ts-ignore
-      if(m[i].addedNodes[0].firstElementChild?.firstElementChild?.className=="excalidraw-svg") return;
-      
-      //@ts-ignore
-      const hoverPopover = m[i].addedNodes[0].matchParent(".hover-popover");
-      if(!hoverPopover) return;
-      const node = m[i].addedNodes[0];
-
-      //this div will be on top of original DIV. By stopping the propagation of the click
-      //I prevent the default Obsidian feature of openning the link in the native app
-      const div = createDiv("", async (el)=>{
-        const img = await getIMG({file:file,fname:file.path,fwidth:"300",fheight:null,style:"excalidraw-svg"});
-        el.appendChild(img);
-        el.setAttribute("src",file.path);
-        el.onClickEvent((ev)=>{
-          ev.stopImmediatePropagation();
-          let src = el.getAttribute("src");
-          if(src) this.openDrawing(this.app.vault.getAbstractFileByPath(src) as TFile,ev.ctrlKey||ev.metaKey);
-        });
-      });
-      node.insertBefore(div,node.firstChild)
-    });
-
-    //compatibility: .excalidraw file observer
-    let observerForLegacyFileFormat = async (m:MutationRecord[], file:TFile) => {
       if(!this.hover.linkText) return;
       if(m.length!=1) return;
       if(m[0].addedNodes.length != 1) return;
@@ -413,11 +377,9 @@ export default class ExcalidrawPlugin extends Plugin {
         });
       });
       node.appendChild(div);
-    }
-    this.observer.observe(document, {childList: true, subtree: true});
+    });
 
-    
-
+    this.observer.observe(document, {childList: true, subtree: true});  
   }
 
   public experimentalFileTypeDisplayToggle(enabled: boolean) {

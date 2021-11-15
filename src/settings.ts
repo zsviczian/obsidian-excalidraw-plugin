@@ -45,6 +45,7 @@ export interface ExcalidrawSettings {
   library: string,
   patchCommentBlock: boolean, //1.3.12 
   imageElementNotice: boolean, //1.4.0
+  runWYSIWYGpatch: boolean, //1.4.9
 }
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
@@ -83,6 +84,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   library: `{"type":"excalidrawlib","version":1,"library":[]}`,
   patchCommentBlock: true,
   imageElementNotice: true,
+  runWYSIWYGpatch: true,
 }
 
 export class ExcalidrawSettingTab extends PluginSettingTab {

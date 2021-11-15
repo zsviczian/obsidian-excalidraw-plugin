@@ -1,5 +1,7 @@
 import { App, Modal, Notice, TFile } from "obsidian";
-import { getJSON } from "./ExcalidrawData";
+import { FRONTMATTER_KEY } from "./constants";
+import { ExcalidrawData, getJSON } from "./ExcalidrawData";
+import { getTextMode, TextMode } from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
 
 export class OneOffs {
@@ -71,6 +73,69 @@ export class OneOffs {
       const prompt = new ImageElementNotice(plugin.app, plugin);
       prompt.open();
     });
+  }
+
+  public wysiwygPatch() {
+
+    if(this.plugin.settings.patchCommentBlock) return; //the comment block patch needs to happen first (unlikely that someone has waited this long with the update...)
+    //This is a once off process to patch excalidraw files remediate incorrectly placed comment %% before # Text Elements
+    if(!this.plugin.settings.runWYSIWYGpatch) return;
+    const plugin = this.plugin;
+
+    console.log(window.moment().format("HH:mm:ss") + ": Excalidraw will patch drawings to support WYSIWYG in 5 minutes");
+    setTimeout(async ()=>{
+      await plugin.loadSettings();
+      if (!plugin.settings.runWYSIWYGpatch) {
+        console.log(window.moment().format("HH:mm:ss") + ": Excalidraw patching aborted because synched data.json is already patched");
+        return;
+      }
+      console.log(window.moment().format("HH:mm:ss") + ": Excalidraw is starting the patching process");
+      let i = 0;
+      const excalidrawFiles = plugin.app.vault.getFiles();
+      for (const f of (excalidrawFiles || []).filter((f:TFile) => plugin.isExcalidrawFile(f))) {
+        if (   (f.extension !== "excalidraw")  //legacy files do not need to be touched
+            && (plugin.app.workspace.getActiveFile() !== f)) {  //file is currently being edited
+          try{              
+            const excalidrawData = new ExcalidrawData(plugin);
+            const data = await plugin.app.vault.read(f);
+            const textMode = getTextMode(data);
+            await excalidrawData.loadData(data,f,textMode);
+            
+            let trimLocation = data.search(/(^%%\n)?# Text Elements\n/m);
+            if(trimLocation == -1) trimLocation = data.search(/(%%\n)?# Drawing\n/);
+            if(trimLocation > -1) {
+      
+              let header =  data.substring(0,trimLocation)
+                                .replace(/excalidraw-plugin:\s.*\n/,FRONTMATTER_KEY+": " + ( (textMode == TextMode.raw) ? "raw\n" : "parsed\n"));
+        
+              if (header.search(/cssclass:[\s]*excalidraw-hide-preview-text/) === -1) {
+                header = header.replace(/(excalidraw-plugin:\s.*\n)/,"$1cssclass: excalidraw-hide-preview-text\n");
+              }
+        
+              const REG_IMG = /(^---[\w\W]*?---\n)(!\[\[.*?]]\n(%%\n)?)/m; //(%%\n)? because of 1.4.8-beta... to be backward compatible with anyone who installed that version
+              if(header.match(REG_IMG)) {
+                header = header.replace(REG_IMG,"$1![["+f.path+"]]\n");
+              } else {
+                header = header.replace(/(^---[\w\W]*?---\n)/m, "$1![["+f.path+"]]\n");
+              }
+              const newData = header + excalidrawData.generateMD();
+
+              if (data !== newData) {
+                i++;
+                console.log("Excalidraw patched: " + f.path);
+                await plugin.app.vault.modify(f,newData);   
+              }
+            }
+          } catch (e) {
+            console.log("Unable to process: "+f.path,{error:e});
+          }
+        }
+      }
+      plugin.settings.runWYSIWYGpatch = false;
+      plugin.saveSettings();
+      console.log(window.moment().format("HH:mm:ss") + ": Excalidraw patched in total " + i + " files");
+    },420000) //7 minutes
+    
   }
 }
 

@@ -257,7 +257,7 @@ export class ExcalidrawData {
     //first get scene text elements
     const texts = this.scene.elements?.filter((el:any)=> el.type=="text")
     for (const te of texts) {
-      this.updateTextElement(te,await this.getText(te.id),forceupdate); 
+      this.updateTextElement(te,(await this.getText(te.id))??te.text,forceupdate); //(await this.getText(te.id))??te.text serves the case when the whole #Text Elements section is deleted by accident
     }
   }
 
@@ -271,7 +271,7 @@ export class ExcalidrawData {
       return this.textElements.get(id).parsed;
     } 
     //console.log("raw",this.textElements.get(id).raw);
-    return this.textElements.get(id).raw;
+    return this.textElements.get(id)?.raw;
   }
 
   /**
