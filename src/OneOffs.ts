@@ -82,7 +82,7 @@ export class OneOffs {
     if(!this.plugin.settings.runWYSIWYGpatch) return;
     const plugin = this.plugin;
 
-    console.log(window.moment().format("HH:mm:ss") + ": Excalidraw will patch drawings to support WYSIWYG in 5 minutes");
+    console.log(window.moment().format("HH:mm:ss") + ": Excalidraw will patch drawings to support WYSIWYG in 7 minutes");
     setTimeout(async ()=>{
       await plugin.loadSettings();
       if (!plugin.settings.runWYSIWYGpatch) {
