@@ -201,19 +201,12 @@ export default class ExcalidrawView extends TextFileView {
         header = header.replace(/(excalidraw-plugin:\s.*\n)/,"$1cssclass: excalidraw-hide-preview-text\n");
       }
 
-      const ext = this.plugin.settings.autoexportSVG 
-                  ? "svg"
-                  : ( this.plugin.settings.autoexportPNG 
-                      ? "png"
-                      : null);
 
-      if(ext) {
-        const REG_IMG = /(^---[\w\W]*?---\n)(!\[\[.*?]]\n(%%\n)?)/m; //(%%\n)? because of 1.4.8-beta... to be backward compatible with anyone who installed that version
-        if(header.match(REG_IMG)) {
-          header = header.replace(REG_IMG,"$1![["+getIMGFilename(this.file.path,ext)+"]]\n");
-        } else {
-          header = header.replace(/(^---[\w\W]*?---\n)/m, "$1![["+getIMGFilename(this.file.path,ext)+"]]\n");
-        }
+      const REG_IMG = /(^---[\w\W]*?---\n)(!\[\[.*?]]\n(%%\n)?)/m; //(%%\n)? because of 1.4.8-beta... to be backward compatible with anyone who installed that version
+      if(header.match(REG_IMG)) {
+        header = header.replace(REG_IMG,"$1![["+this.file.path+"]]\n");
+      } else {
+        header = header.replace(/(^---[\w\W]*?---\n)/m, "$1![["+this.file.path+"]]\n");
       }
       return header + this.excalidrawData.generateMD();
     }
