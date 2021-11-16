@@ -197,17 +197,13 @@ export default class ExcalidrawView extends TextFileView {
       let header = this.data.substring(0,trimLocation)
                               .replace(/excalidraw-plugin:\s.*\n/,FRONTMATTER_KEY+": " + ( (this.textMode == TextMode.raw) ? "raw\n" : "parsed\n"));
       
-      if (header.search(/cssclass:[\s]*excalidraw-hide-preview-text/) === -1) {
-        header = header.replace(/(excalidraw-plugin:\s.*\n)/,"$1cssclass: excalidraw-hide-preview-text\n");
-      }
-
-
+      //this should be removed at a later time. Left it here to remediate 1.4.9 mistake
       const REG_IMG = /(^---[\w\W]*?---\n)(!\[\[.*?]]\n(%%\n)?)/m; //(%%\n)? because of 1.4.8-beta... to be backward compatible with anyone who installed that version
       if(header.match(REG_IMG)) {
-        header = header.replace(REG_IMG,"$1![["+this.file.path+"]]\n");
-      } else {
-        header = header.replace(/(^---[\w\W]*?---\n)/m, "$1![["+this.file.path+"]]\n");
-      }
+        header = header.replace(REG_IMG,"$1");
+      } 
+      //end of remove
+
       return header + this.excalidrawData.generateMD();
     }
     if(this.compatibilityMode) {

@@ -95,33 +95,3 @@ li[data-testid] {
 	margin-bottom: 20px;
   
 }
-
-/*hide text elements in markdown preview*/
-.markdown-preview-view.excalidraw-hide-preview-text {
-  font-size: 0px;
-}
-
-.markdown-preview-view mark,
-.markdown-preview-view.excalidraw-hide-preview-text span:not(.image-embed),
-.markdown-preview-view.excalidraw-hide-preview-text ol,
-.markdown-preview-view.excalidraw-hide-preview-text li,
-.markdown-preview-view.excalidraw-hide-preview-text table,
-.markdown-preview-view.excalidraw-hide-preview-text pre,
-.markdown-preview-view.excalidraw-hide-preview-text hr,
-.markdown-preview-view.excalidraw-hide-preview-text a,
-.markdown-preview-view.excalidraw-hide-preview-text h1,
-.markdown-preview-view.excalidraw-hide-preview-text h2,
-.markdown-preview-view.excalidraw-hide-preview-text h3,
-.markdown-preview-view.excalidraw-hide-preview-text h4,
-.markdown-preview-view.excalidraw-hide-preview-text h5 {
-  display: none;
-}
-
-.markdown-preview-view.excalidraw-hide-preview-text p:first-child {
-  margin-top:0px !important;
-}
-
-.markdown-preview-view.excalidraw-hide-preview-text div.markdown-preview-sizer.markdown-preview-section {
-  padding-bottom:0px !important;
-  min-height: 0px !important;
-}

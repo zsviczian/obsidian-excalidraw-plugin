@@ -46,6 +46,7 @@ export interface ExcalidrawSettings {
   patchCommentBlock: boolean, //1.3.12 
   imageElementNotice: boolean, //1.4.0
   runWYSIWYGpatch: boolean, //1.4.9
+  fixInfinitePreviewLoop: boolean, //1.4.10
 }
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
@@ -85,6 +86,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   patchCommentBlock: true,
   imageElementNotice: true,
   runWYSIWYGpatch: true,
+  fixInfinitePreviewLoop: true
 }
 
 export class ExcalidrawSettingTab extends PluginSettingTab {

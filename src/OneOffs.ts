@@ -79,13 +79,13 @@ export class OneOffs {
 
     if(this.plugin.settings.patchCommentBlock) return; //the comment block patch needs to happen first (unlikely that someone has waited this long with the update...)
     //This is a once off process to patch excalidraw files remediate incorrectly placed comment %% before # Text Elements
-    if(!this.plugin.settings.runWYSIWYGpatch) return;
+    if(!(this.plugin.settings.runWYSIWYGpatch||this.plugin.settings.fixInfinitePreviewLoop)) return;
     const plugin = this.plugin;
 
     console.log(window.moment().format("HH:mm:ss") + ": Excalidraw will patch drawings to support WYSIWYG in 7 minutes");
     setTimeout(async ()=>{
       await plugin.loadSettings();
-      if (!plugin.settings.runWYSIWYGpatch) {
+      if (!(this.plugin.settings.runWYSIWYGpatch||this.plugin.settings.fixInfinitePreviewLoop)) {
         console.log(window.moment().format("HH:mm:ss") + ": Excalidraw patching aborted because synched data.json is already patched");
         return;
       }
@@ -108,16 +108,12 @@ export class OneOffs {
               let header =  data.substring(0,trimLocation)
                                 .replace(/excalidraw-plugin:\s.*\n/,FRONTMATTER_KEY+": " + ( (textMode == TextMode.raw) ? "raw\n" : "parsed\n"));
         
-              if (header.search(/cssclass:[\s]*excalidraw-hide-preview-text/) === -1) {
-                header = header.replace(/(excalidraw-plugin:\s.*\n)/,"$1cssclass: excalidraw-hide-preview-text\n");
-              }
+              header = header.replace(/cssclass:[\s]*excalidraw-hide-preview-text[\s]*\n/,"");
         
               const REG_IMG = /(^---[\w\W]*?---\n)(!\[\[.*?]]\n(%%\n)?)/m; //(%%\n)? because of 1.4.8-beta... to be backward compatible with anyone who installed that version
               if(header.match(REG_IMG)) {
-                header = header.replace(REG_IMG,"$1![["+f.path+"]]\n");
-              } else {
-                header = header.replace(/(^---[\w\W]*?---\n)/m, "$1![["+f.path+"]]\n");
-              }
+                header = header.replace(REG_IMG,"$1");
+              } 
               const newData = header + excalidrawData.generateMD();
 
               if (data !== newData) {
@@ -132,6 +128,7 @@ export class OneOffs {
         }
       }
       plugin.settings.runWYSIWYGpatch = false;
+      plugin.settings.fixInfinitePreviewLoop = false;
       plugin.saveSettings();
       console.log(window.moment().format("HH:mm:ss") + ": Excalidraw patched in total " + i + " files");
     },420000) //7 minutes

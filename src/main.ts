@@ -259,6 +259,49 @@ export default class ExcalidrawPlugin extends Plugin {
       return img;
     }
 
+    const createImageDiv = async (attr:imgElementAttributes):Promise<HTMLDivElement> => {
+      const img = await getIMG(attr);
+      return createDiv(attr.style, (el)=>{
+        el.append(img);
+        el.setAttribute("src",attr.file.path);
+        if(attr.fwidth) el.setAttribute("w",attr.fwidth);
+        if(attr.fheight) el.setAttribute("h",attr.fheight);
+        el.onClickEvent((ev)=>{
+          if(ev.target instanceof Element && ev.target.tagName.toLowerCase() != "img") return;
+          let src = el.getAttribute("src");
+          if(src) this.openDrawing(this.app.vault.getAbstractFileByPath(src) as TFile,ev.ctrlKey||ev.metaKey);
+        });
+        el.addEventListener(RERENDER_EVENT, async(e) => {
+          e.stopPropagation;
+          el.empty();
+          const img = await getIMG({ 
+            fname:el.getAttribute("src"),
+            fwidth:el.getAttribute("w"),
+            fheight:el.getAttribute("h"),
+            style:el.getAttribute("class")
+          });
+          el.append(img);
+        });
+      });
+    }
+
+    const tmpObsidianWYSIWYG = async (el:HTMLElement,ctx:MarkdownPostProcessorContext) => {
+      if(!ctx.frontmatter) return;
+      if(!ctx.frontmatter.hasOwnProperty("excalidraw-plugin")) return;
+      //@ts-ignore
+      if(ctx.remainingNestLevel<4) return;
+      if(!el.querySelector(".frontmatter")) {
+        el.style.display="none";
+        return;
+      }
+      const attr:imgElementAttributes={fname:ctx.sourcePath,fheight:"",fwidth:this.settings.width,style:"excalidraw-svg"};
+
+      attr.file = this.app.metadataCache.getFirstLinkpathDest(ctx.sourcePath,""); 
+      const div = await createImageDiv(attr);
+      el.childNodes.forEach((child:HTMLElement)=>child.style.display="none");
+      el.appendChild(div)
+    }
+
     /**
      * 
      * @param el 
@@ -266,13 +309,20 @@ export default class ExcalidrawPlugin extends Plugin {
      */
     const markdownPostProcessor = async (el:HTMLElement,ctx:MarkdownPostProcessorContext) => {
       const embeddedItems = el.querySelectorAll('.internal-embed');
-      if(embeddedItems.length==0) return;
+      if(embeddedItems.length===0) {
+        tmpObsidianWYSIWYG(el,ctx);
+        return;
+      } 
 
       let attr:imgElementAttributes={fname:"",fheight:"",fwidth:"",style:""};
       let alt:string, parts, div, file:TFile;
       for (const drawing of embeddedItems) {
         attr.fname = drawing.getAttribute("src");
         file = this.app.metadataCache.getFirstLinkpathDest(attr.fname, ctx.sourcePath); 
+        if(!file && ctx.frontmatter?.hasOwnProperty("excalidraw-plugin")) {
+          attr.fname = ctx.sourcePath;
+          file = this.app.metadataCache.getFirstLinkpathDest(attr.fname, ctx.sourcePath);   
+        }
         if(file && file instanceof TFile && this.isExcalidrawFile(file)) {  
           attr.fwidth   = drawing.getAttribute("width") ? drawing.getAttribute("width") : this.settings.width;
           attr.fheight  = drawing.getAttribute("height");
@@ -292,29 +342,8 @@ export default class ExcalidrawPlugin extends Plugin {
           }
           
           attr.fname = file?.path;
-          const img = await getIMG(attr);
-          div = createDiv(attr.style, (el)=>{
-            el.append(img);
-            el.setAttribute("src",file.path);
-            if(attr.fwidth) el.setAttribute("w",attr.fwidth);
-            if(attr.fheight) el.setAttribute("h",attr.fheight);
-            el.onClickEvent((ev)=>{
-              if(ev.target instanceof Element && ev.target.tagName.toLowerCase() != "img") return;
-              let src = el.getAttribute("src");
-              if(src) this.openDrawing(this.app.vault.getAbstractFileByPath(src) as TFile,ev.ctrlKey||ev.metaKey);
-            });
-            el.addEventListener(RERENDER_EVENT, async(e) => {
-              e.stopPropagation;
-              el.empty();
-              const img = await getIMG({ 
-                fname:el.getAttribute("src"),
-                fwidth:el.getAttribute("w"),
-                fheight:el.getAttribute("h"),
-                style:el.getAttribute("class")
-              });
-              el.append(img);
-            });
-          });
+          attr.file = file;
+          const div = await createImageDiv(attr);
           drawing.parentElement.replaceChild(div,drawing);
         } 
       }
