@@ -13,19 +13,19 @@ Please upgrade to Obsidian v0.12.19 or higher to get the latest release.
 |[![9  Excalidraw Automate](https://user-images.githubusercontent.com/14358394/125160367-bdb6cc00-e17c-11eb-92f1-6f59faea85fd.jpg)](https://youtu.be/VRZVujfVab0)|[![10  Miscellaneous](https://user-images.githubusercontent.com/14358394/125160374-c3141680-e17c-11eb-8cc2-dfaffd903d15.jpg)](https://youtu.be/D1iBYo1_jjc)|[![Image Elements](https://user-images.githubusercontent.com/14358394/138607067-ccb62f92-48a4-4880-ac6e-68c1bf86ac2c.png)](https://www.youtube.com/watch?v=_c_0zpBJ4Xc&)|
 
 # Key features
-- The plugin aims to integrate Excalidraw seemlessly into Obsidian including Command Palette actions, File Explorer features, Option Menu commands, and the Ribbon Button.
+- The plugin aims to integrate Excalidraw seamlessly into Obsidian including Command Palette actions, File Explorer features, Option Menu commands, and the Ribbon Button.
 - CTRL/CMD+Click on the ribbon button, or in the file explorer to create / open drawings in a new pane.
-- Settings will allow you to customzie Excalidraw to your needs:
+- Settings will allow you to customize Excalidraw to your needs:
   - Default folder for new drawings and define custom filename pattern for new drawings.
   - Template for new drawings. The template will restore stroke properties. This means you can set up defaults in your template for stroke color, stroke width, opacity, font family, font size, fill style, stroke style, etc. This also applies to ExcalidrawAutomate.
-  - If portability is important to you: Auto-export SVG and/or PNG files including keep-in-sync feature so you can embed svg/png into your documents instead of embedding excalidraw files.
+  - If portability is important to you: Auto-export SVG and/or PNG files including keep-in-sync feature so you can embed SVG/PNG into your documents instead of embedding excalidraw files.
   - Specify the default width of embedded drawings.
   - Compatibility features to auto-export and keep in sync markdown excalidraw files and legacy .excalidraw files.
-  - Experimental feature to add custom TAG to file expolorer to mark drawing files.
+  - Experimental feature to add custom TAG to file explorer to mark drawing files.
   - Enable / disable autosave.
-- You can customize the size and position of the embedded images using the `[[image.excalidraw|100]]`, `[[image.excalidraw|100x100]]`, `[[image.excalidraw|100|left]]`, `[[image.excalidraw|right-wrap]]`, formatting options. `[[<filename.excalidraw>|<width>x<height>|<alignment>]]`. You can add your custom alignment via css. Any text that appears in `<alignment>` will be added to the rendered SVG element style and to the wrapper DIV element. Check below and styles.css for more insight.
+- You can customize the size and position of the embedded images using the `[[image.excalidraw|100]]`, `[[image.excalidraw|100x100]]`, `[[image.excalidraw|100|left]]`, `[[image.excalidraw|right-wrap]]`, formatting options. `[[<filename.excalidraw>|<width>x<height>|<alignment>]]`. You can add your custom alignment via CSS. Any text that appears in `<alignment>` will be added to the rendered SVG element style and to the wrapper DIV element. Check below and styles.css for more insight.
 - Supports hyperlinks e.g. `https://zsolt.blog`, `[Obsidian](https://obsidian.md)`, and internal links e.g. `[[My file in vault|Alias]]` in drawing text. 
-  - Links will update when files are moved or renamed, if you have the Obsidian setting Files & Links/Automatically Update Internal Links enalbled.
+  - Links will update when files are moved or renamed, if you have the Obsidian setting Files & Links/Automatically Update Internal Links enabled.
   - Links in drawings will show up in backlinks of documents
   - Transclusions are supported 
     - `![[myfile#^blockref]]` will convert in the drawing into the transcluded text of the block
@@ -38,7 +38,7 @@ Please upgrade to Obsidian v0.12.19 or higher to get the latest release.
   - CTRL/CMD + SHIFT + CLICK to open the file in a new pane
   - CTRL/CMD + ALT + SHIFT + CLICK to create the file (if it does not yet exist) and open it in a new pane
 - Using the block reference you can also reference & transclude text that appears on drawings, in other documents
-- Insert LaTex formulas using the Command Palette action "Insert LaTeX formula". You can edit formulas either in Markdown view, or by CTRL/CMD + Click on the formula.
+- Insert LaTeX formulas using the Command Palette action "Insert LaTeX formula". You can edit formulas either in Markdown view, or by CTRL/CMD + Click on the formula.
 - Drag & Drop support
   - You can drag files from the Obsidian file explorer and they will become links to those files in Excalidraw.
   - Dragging image files (PNG, SVG, JPG, Excalidraw) from obsidian files explorer while pressing the CTRL/CMD button will embed the image into your drawing.
