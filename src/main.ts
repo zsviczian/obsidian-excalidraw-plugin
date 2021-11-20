@@ -33,7 +33,8 @@ import {
   FRONTMATTER,
   JSON_parse,
   nanoid,
-  DARK_BLANK_DRAWING
+  DARK_BLANK_DRAWING,
+  CTRL_OR_CMD
 } from "./constants";
 import ExcalidrawView, {ExportSettings, TextMode} from "./ExcalidrawView";
 import {ExcalidrawData, getJSON, getMarkdownDrawingSection} from "./ExcalidrawData";
@@ -269,7 +270,7 @@ export default class ExcalidrawPlugin extends Plugin {
         el.onClickEvent((ev)=>{
           if(ev.target instanceof Element && ev.target.tagName.toLowerCase() != "img") return;
           let src = el.getAttribute("src");
-          if(src) this.openDrawing(this.app.vault.getAbstractFileByPath(src) as TFile,ev.ctrlKey||ev.metaKey);
+          if(src) this.openDrawing(this.app.vault.getAbstractFileByPath(src) as TFile,ev[CTRL_OR_CMD]);//.ctrlKey||ev.metaKey);
         });
         el.addEventListener(RERENDER_EVENT, async(e) => {
           e.stopPropagation;
@@ -402,7 +403,7 @@ export default class ExcalidrawPlugin extends Plugin {
         el.onClickEvent((ev)=>{
           ev.stopImmediatePropagation();
           let src = el.getAttribute("src");
-          if(src) this.openDrawing(this.app.vault.getAbstractFileByPath(src) as TFile,ev.ctrlKey||ev.metaKey);
+          if(src) this.openDrawing(this.app.vault.getAbstractFileByPath(src) as TFile,ev[CTRL_OR_CMD]); //.ctrlKey||ev.metaKey);
         });
       });
       node.appendChild(div);
@@ -457,7 +458,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.insertImageDialog = new InsertImageDialog(this);
 
     this.addRibbonIcon(ICON_NAME, t("CREATE_NEW"), async (e) => {
-      this.createDrawing(this.getNextDefaultFilename(), e.ctrlKey||e.metaKey);
+      this.createDrawing(this.getNextDefaultFilename(), e[CTRL_OR_CMD]); //.ctrlKey||e.metaKey);
     });
   
     const fileMenuHandlerCreateNew = (menu: Menu, file: TFile) => {

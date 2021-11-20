@@ -1,8 +1,9 @@
+import {customAlphabet} from "nanoid";
+
 //This is only for backward compatibility because an early version of obsidian included an encoding to avoid fantom links from littering Obsidian graph view
 export function JSON_parse(x:string):any {return JSON.parse(x.replaceAll("&#91;","["));}
-
-import { FileId } from "@zsviczian/excalidraw/types/element/types";
-import {customAlphabet} from "nanoid";
+export const isDarwin = /Mac|iPod|iPhone|iPad/.test(window.navigator.platform);
+export const CTRL_OR_CMD = isDarwin ? "metaKey" : "ctrlKey";
 export const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',8);
 export const fileid = customAlphabet('1234567890abcdef',40);
 export const IMAGE_TYPES = ['jpeg', 'jpg', 'png', 'gif', 'svg'];

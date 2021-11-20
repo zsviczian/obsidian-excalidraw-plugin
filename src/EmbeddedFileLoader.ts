@@ -18,7 +18,7 @@ export class EmbeddedFilesLoader {
     this.plugin = plugin;
   }
 
-  public async getObsidianImage (file: TFile)
+  public async getObsidianImage (file: TFile)//,theme:string)
   :Promise<{
       mimeType: MimeType,
       fileId: FileId, 
@@ -81,7 +81,8 @@ export class EmbeddedFilesLoader {
     excalidrawData: ExcalidrawData,
     view: ExcalidrawView,
     addFiles:Function, 
-    sourcePath:string
+    sourcePath:string,
+    //theme: string,
   ) {
       const app = this.plugin.app;
       let entries = excalidrawData.getFileEntries(); 
@@ -90,7 +91,7 @@ export class EmbeddedFilesLoader {
       while(!(entry = entries.next()).done) {
         const file = app.metadataCache.getFirstLinkpathDest(entry.value[1],sourcePath);
         if(file && file instanceof TFile) {
-          const data = await this.getObsidianImage(file);
+          const data = await this.getObsidianImage(file);//,theme);
           if(data) {
             files.push({
               mimeType : data.mimeType,

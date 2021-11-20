@@ -28,7 +28,8 @@ import {
   TEXT_DISPLAY_PARSED_ICON_NAME,
   FULLSCREEN_ICON_NAME,
   JSON_parse,
-  IMAGE_TYPES
+  IMAGE_TYPES,
+  CTRL_OR_CMD
 } from './constants';
 import ExcalidrawPlugin from './main';
 import { repositionElementsToCursor} from './ExcalidrawAutomate';
@@ -574,7 +575,7 @@ export default class ExcalidrawView extends TextFileView {
           .setIcon(PNG_ICON_NAME)
           .onClick( async (ev)=> {
             if(!this.getScene || !this.file) return;
-            if(ev.ctrlKey||ev.metaKey) { 
+            if(ev[CTRL_OR_CMD]) { //.ctrlKey||ev.metaKey) { 
               const exportSettings: ExportSettings = {
                 withBackground: this.plugin.settings.exportWithBackground, 
                 withTheme: this.plugin.settings.exportWithTheme
@@ -599,7 +600,7 @@ export default class ExcalidrawView extends TextFileView {
           .setIcon(SVG_ICON_NAME)
           .onClick(async (ev)=> {
             if(!this.getScene || !this.file) return;
-            if(ev.ctrlKey||ev.metaKey) {
+            if(ev[CTRL_OR_CMD]) { //.ctrlKey||ev.metaKey) {
               const exportSettings: ExportSettings = {
                 withBackground: this.plugin.settings.exportWithBackground, 
                 withTheme: this.plugin.settings.exportWithTheme
@@ -956,11 +957,11 @@ export default class ExcalidrawView extends TextFileView {
               this.zoomToFit();
             }
 
-            this.ctrlKeyDown  = e.ctrlKey||e.metaKey; 
+            this.ctrlKeyDown  = e[CTRL_OR_CMD]; //.ctrlKey||e.metaKey; 
             this.shiftKeyDown = e.shiftKey;
             this.altKeyDown   = e.altKey;
            
-            if((e.ctrlKey||e.metaKey) && !e.shiftKey && !e.altKey) { 
+            if(e[CTRL_OR_CMD] && !e.shiftKey && !e.altKey) { //.ctrlKey||e.metaKey) && !e.shiftKey && !e.altKey) { 
               const selectedElement = getTextElementAtPointer(currentPosition);
               if(!selectedElement) return;
 
@@ -999,12 +1000,12 @@ export default class ExcalidrawView extends TextFileView {
             }
           },
           onKeyUp: (e:any) => {
-            this.ctrlKeyDown  = e.ctrlKey||e.metaKey;
+            this.ctrlKeyDown  = e[CTRL_OR_CMD]; //.ctrlKey||e.metaKey;
             this.shiftKeyDown = e.shiftKey;
             this.altKeyDown   = e.altKey;
           },
           onClick: (e:MouseEvent):any => {
-            if(!(e.ctrlKey||e.metaKey)) return;
+            if(!e[CTRL_OR_CMD]) return; //.ctrlKey||e.metaKey)) return;
             if(!(this.plugin.settings.allowCtrlClick)) return;
             if(!(this.getSelectedTextElement().id || this.getSelectedImageElement().id)) return;
             this.handleLinkClick(this,e);
@@ -1136,7 +1137,7 @@ export default class ExcalidrawView extends TextFileView {
             switch(draggable?.type) {
               case "file":
                 if (!onDropHook("file",[draggable.file],null)) {
-                  if((event.ctrlKey||event.metaKey) 
+                  if(event[CTRL_OR_CMD] //.ctrlKey||event.metaKey) 
                      && (IMAGE_TYPES.contains(draggable.file.extension) 
                         || this.plugin.isExcalidrawFile(draggable.file))) {
                     const f = draggable.file;
