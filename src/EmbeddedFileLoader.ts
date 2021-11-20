@@ -1,3 +1,4 @@
+import { exportToBlob } from "@zsviczian/excalidraw";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
 import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/types";
 import { App, Notice, TFile } from "obsidian";
@@ -13,9 +14,11 @@ export declare type MimeType = "image/svg+xml" | "image/png" | "image/jpeg" | "i
 export class EmbeddedFilesLoader {
   private plugin:ExcalidrawPlugin;
   private processedFiles: Set<string> = new Set<string>();
+  private isDark:boolean = null;
 
-  constructor(plugin: ExcalidrawPlugin) {
+  constructor(plugin: ExcalidrawPlugin, isDark?:boolean) {
     this.plugin = plugin;
+    if(isDark!==undefined) this.isDark = isDark;
   }
 
   public async getObsidianImage (file: TFile)//,theme:string)
@@ -44,10 +47,24 @@ export class EmbeddedFilesLoader {
     const getExcalidrawSVG = async () => {
       const exportSettings:ExportSettings = {
         withBackground: false,
-        withTheme: false
+        withTheme: false, 
       };
       this.plugin.ea.reset();
-      const svg = await this.plugin.ea.createSVG(file.path,true,exportSettings,this);     
+      const loader = new EmbeddedFilesLoader(this.plugin,this.isDark);
+      const svg = await this.plugin.ea.createSVG(file.path,true,exportSettings,loader,null);     
+      if(this.isDark) {
+        //https://stackoverflow.com/questions/51154171/remove-css-filter-on-child-elements
+        const THEME_FILTER = "invert(93%) hue-rotate(180deg)"
+        //"invert(100%) hue-rotate(180deg) saturate(1.25)"
+        svg
+          .querySelectorAll("image:not([href^='data:image/svg'])")
+          .forEach((i) => {
+            const id = i.parentElement?.id;
+              svg.querySelectorAll(`use[href='#${id}']`).forEach((u) => {
+              u.setAttribute("filter", THEME_FILTER);
+            });
+        });
+      }
       const dURL = svgToBase64(svg.outerHTML) as DataURL;
       return dURL as DataURL;
     }
@@ -85,7 +102,10 @@ export class EmbeddedFilesLoader {
     //theme: string,
   ) {
       const app = this.plugin.app;
-      let entries = excalidrawData.getFileEntries(); 
+      let entries = excalidrawData.getFileEntries();
+      if(!this.isDark) {
+        this.isDark = excalidrawData.scene.appState.theme==="dark";
+      }
       let entry;
       let files:BinaryFileData[] = [];
       while(!(entry = entries.next()).done) {

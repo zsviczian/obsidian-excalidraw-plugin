@@ -230,21 +230,24 @@ export default class ExcalidrawPlugin extends Plugin {
 
       const [scene,pos] = getJSON(content);
       this.ea.reset();
-      
-      
+
+      const theme = this.settings.previewMatchObsidianTheme 
+                    ? (isObsidianThemeDark() ? "dark" : "light")
+                    : undefined;     
+            
       if(!this.settings.displaySVGInPreview) {
         const width = parseInt(imgAttributes.fwidth);
         let scale = 1;
         if(width>=800) scale = 2;
         if(width>=1600) scale = 3;
         if(width>=2400) scale = 4;
-        const png = await this.ea.createPNG(file.path,scale);
+        const png = await this.ea.createPNG(file.path,scale,exportSettings,undefined,theme);
         //const png = await getPNG(JSON_parse(scene),exportSettings, scale);
         if(!png) return null;
         img.src = URL.createObjectURL(png);
         return img;
       }
-      const svgSnapshot = (await this.ea.createSVG(file.path,true,exportSettings)).outerHTML;
+      const svgSnapshot = (await this.ea.createSVG(file.path,true,exportSettings,undefined,theme)).outerHTML;
       let svg:SVGSVGElement = null;
       const el = document.createElement('div');
       el.innerHTML = svgSnapshot;

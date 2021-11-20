@@ -73,8 +73,20 @@ export interface ExcalidrawAutomate {
       }
     }
   ):Promise<string>;
-  createSVG (templatePath?:string, embedFont?:boolean, exportSettings?:ExportSettings, loader?:EmbeddedFilesLoader):Promise<SVGSVGElement>;
-  createPNG (templatePath?:string, scale?:number, loader?:EmbeddedFilesLoader):Promise<any>;
+  createSVG (
+    templatePath?:string,
+    embedFont?:boolean,
+    exportSettings?:ExportSettings,
+    loader?:EmbeddedFilesLoader,
+    theme?:string
+  ):Promise<SVGSVGElement>;
+  createPNG (
+    templatePath?:string,
+    scale?:number,
+    exportSettings?:ExportSettings,
+    loader?:EmbeddedFilesLoader,
+    theme?:string
+  ):Promise<any>;
   wrapText (text:string, lineLen:number):string;
   addRect (topX:number, topY:number, width:number, height:number):string;
   addDiamond (topX:number, topY:number, width:number, height:number):string;
@@ -344,7 +356,8 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
       templatePath?:string,
       embedFont:boolean = false,
       exportSettings?:ExportSettings,
-      loader:EmbeddedFilesLoader = new EmbeddedFilesLoader(this.plugin)
+      loader:EmbeddedFilesLoader = new EmbeddedFilesLoader(this.plugin),
+      theme?:string,
     ):Promise<SVGSVGElement> {
       const automateElements = this.getElements();
       const template = templatePath ? (await getTemplate(this.plugin,templatePath,true,loader)) : null;
@@ -357,14 +370,14 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
           source: "https://excalidraw.com",
           elements: elements,
           appState: {
-            theme: template?.appState?.theme ?? this.canvas.theme,
+            theme: theme??(template?.appState?.theme ?? this.canvas.theme),
             viewBackgroundColor: template?.appState?.viewBackgroundColor ?? this.canvas.viewBackgroundColor,
           },
           files: template?.files ?? {}
         },
         {
-          withBackground: (exportSettings === undefined) ? plugin.settings.exportWithBackground : exportSettings.withBackground, 
-          withTheme: (exportSettings === undefined) ? plugin.settings.exportWithTheme : exportSettings.withTheme
+          withBackground: exportSettings?.withBackground ?? plugin.settings.exportWithBackground, 
+          withTheme: exportSettings?.withTheme ?? plugin.settings.exportWithTheme
         }
       )
       return embedFont ? embedFontsInSVG(svg) : svg;     
@@ -372,7 +385,9 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
     async createPNG(
       templatePath?:string,
       scale:number=1,
-      loader:EmbeddedFilesLoader = new EmbeddedFilesLoader(this.plugin)
+      exportSettings?:ExportSettings,
+      loader:EmbeddedFilesLoader = new EmbeddedFilesLoader(this.plugin),
+      theme?:string
     ) {
       const automateElements = this.getElements();
       const template = templatePath ? (await getTemplate(this.plugin,templatePath,true,loader)) : null;
@@ -385,14 +400,14 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
           source: "https://excalidraw.com",
           elements: elements,
           appState: {
-            theme:               template?.appState?.theme               ?? this.canvas.theme,
+            theme: theme??(template?.appState?.theme ?? this.canvas.theme),
             viewBackgroundColor: template?.appState?.viewBackgroundColor ?? this.canvas.viewBackgroundColor,
           },
           files: template?.files ?? {}
         },
         {
-          withBackground: plugin.settings.exportWithBackground, 
-          withTheme: plugin.settings.exportWithTheme
+          withBackground: exportSettings?.withBackground ?? plugin.settings.exportWithBackground, 
+          withTheme: exportSettings?.withTheme ?? plugin.settings.exportWithTheme
         },
         scale
       )  

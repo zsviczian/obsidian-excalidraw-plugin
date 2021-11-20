@@ -15,6 +15,7 @@ export interface ExcalidrawSettings {
   drawingFilenamePrefix: string,
   drawingFilenameDateTime: string,
   displaySVGInPreview: boolean,
+  previewMatchObsidianTheme: boolean,
   width: string,
   matchTheme: boolean,
   matchThemeAlways: boolean,
@@ -55,6 +56,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   drawingFilenamePrefix: 'Drawing ',
   drawingFilenameDateTime: 'YYYY-MM-DD HH.mm.ss',
   displaySVGInPreview: true,
+  previewMatchObsidianTheme: false,
   width: '400',
   matchTheme: false,
   matchThemeAlways: false,
@@ -368,6 +370,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         this.plugin.settings.displaySVGInPreview = value;
         this.applySettingsUpdate();
       }));
+
+    new Setting(containerEl)
+      .setName(t("PREVIEW_MATCH_OBSIDIAN_NAME")) 
+      .setDesc(t("PREVIEW_MATCH_OBSIDIAN_DESC"))
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.previewMatchObsidianTheme)
+        .onChange(async (value) => {
+          this.plugin.settings.previewMatchObsidianTheme = value;
+          this.applySettingsUpdate();
+        }));
 
     new Setting(containerEl)
       .setName(t("EMBED_WIDTH_NAME")) 

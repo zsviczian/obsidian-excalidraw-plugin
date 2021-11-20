@@ -455,6 +455,36 @@ export default class ExcalidrawView extends TextFileView {
     });
   }
 
+  private loaderRunning:boolean=false;
+  private nextLoader:EmbeddedFilesLoader = null;
+  private loadSceneFiles(isDark?:boolean) {
+    let loader = new EmbeddedFilesLoader(this.plugin,isDark);
+    if(this.loaderRunning) {
+      this.nextLoader = loader;
+      return;
+    }
+
+    const executeLoader = () => {
+      this.loaderRunning = true;
+      this.nextLoader = null;  
+      
+      loader.loadSceneFiles(
+        this.excalidrawData,
+        this,
+        (files:any, view:ExcalidrawView) => {
+          addFiles(files,view);
+          if(this.nextLoader) {
+            loader = this.nextLoader;
+            executeLoader();
+          }
+          this.loaderRunning=false;
+        },
+        this.file?.path
+      );
+    };
+    executeLoader();
+  }
+
   /**
    * 
    * @param justloaded - a flag to trigger zoom to fit after the drawing has been loaded
@@ -478,13 +508,6 @@ export default class ExcalidrawView extends TextFileView {
       if((this.app.workspace.activeLeaf === this.leaf) && this.excalidrawWrapperRef) {
         this.excalidrawWrapperRef.current.focus();
       }
-      const loader = new EmbeddedFilesLoader(this.plugin);
-      loader.loadSceneFiles(
-        this.excalidrawData,
-        this,
-        (files:any, view:ExcalidrawView) => addFiles(files,view),
-        this.file?.path
-      );
     } else {
       this.instantiateExcalidraw({
         elements: excalidrawData.elements,
@@ -665,13 +688,7 @@ export default class ExcalidrawView extends TextFileView {
       React.useEffect(() => {
         excalidrawRef.current.readyPromise.then((api) => {
           this.excalidrawAPI = api;
-          const loader = new EmbeddedFilesLoader(this.plugin);
-          loader.loadSceneFiles(
-            this.excalidrawData,
-            this,
-            (files:any, view:ExcalidrawView)=>addFiles(files,view),
-            this.file?.path
-          );
+          this.loadSceneFiles();
         });
       }, [excalidrawRef]);
 
@@ -1100,6 +1117,9 @@ export default class ExcalidrawView extends TextFileView {
               setTimeout(()=>self.save(false),300);
             }
             return true;
+          },
+          onThemeChange: (newTheme:string) => {
+            this.loadSceneFiles(newTheme==="dark");
           },
           onDrop: (event: React.DragEvent<HTMLDivElement>):boolean => {
             const st: AppState = this.excalidrawAPI.getAppState();

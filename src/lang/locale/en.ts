@@ -124,6 +124,9 @@ export default {
   EMBED_HEAD: "Embed & Export",
   EMBED_PREVIEW_SVG_NAME: "Display SVG in markdown preview",
   EMBED_PREVIEW_SVG_DESC: "The default is to display drawings as SVG images in the markdown preview. Turning this feature off, the markdown preview will display the drawing as an embedded PNG image.",
+  PREVIEW_MATCH_OBSIDIAN_NAME: "Image preview match Obsidian theme",
+  PREVIEW_MATCH_OBSIDIAN_DESC: "Image preview in documents should match the Obsidian theme. If enabled, when Obsidian is in dark mode, excalidraw images will render in dark mode. "+
+                               "when Obsidian is in light mode, Excalidraw will render light as well.",
   EMBED_WIDTH_NAME: "Default width of embedded (transcluded) image",
   EMBED_WIDTH_DESC: "Only relevant if embed type is excalidraw. Has no effect on PNG and SVG embeds. The default width of an embedded drawing. You can specify a custom " +
                     "width when embedding an image using the ![[drawing.excalidraw|100]] or " +
