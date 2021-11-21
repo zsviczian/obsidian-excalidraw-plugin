@@ -7,6 +7,7 @@ import {
   FileId,
 } from "@zsviczian/excalidraw/types/element/types";
 import {
+  MarkdownRenderer,
   normalizePath,
   TFile
 } from "obsidian"
@@ -168,6 +169,7 @@ export interface ExcalidrawAutomate {
     view: ExcalidrawView, //the excalidraw view receiving the drop
     pointerPosition: {x:number, y:number} //the pointer position on canvas at the time of drop
   }):boolean;
+  renderMarkdown(text:string,el:HTMLElement):Promise<void>;
 }
 
 declare let window: any;
@@ -771,6 +773,9 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
       return await this.targetView.addElements(elements,repositionToCursor,save,this.imagesDict);
     },
     onDropHook:null,
+    async renderMarkdown(text:string,el:HTMLElement):Promise<void> {
+      await MarkdownRenderer.renderMarkdown(text,el,'',this.plugin);
+    }
   };
   await initFonts();
   return window.ExcalidrawAutomate;
