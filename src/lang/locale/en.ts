@@ -181,4 +181,7 @@ export default {
   TYPE_FILENAME: "Type name of drawing to select.",
   SELECT_FILE_OR_TYPE_NEW: "Select existing drawing or type name of a new drawing then press Enter.",
   SELECT_TO_EMBED: "Select the drawing to insert into active document.",
+
+  //EmbeddedFileLoader.ts
+  INFINITE_LOOP_WARNING: "EXCALIDRAW WARNING\nAborted loading embedded images due to infinite loop in file:\n",
 };

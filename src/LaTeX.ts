@@ -1,9 +1,9 @@
 import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/types";
 import ExcalidrawView from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
-import {MimeType} from "./EmbeddedFileLoader";
+import {FileData, MimeType} from "./EmbeddedFileLoader";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
-import { getImageSize, svgToBase64 } from "./Utils";
+import { getImageSize, sleep, svgToBase64 } from "./Utils";
 import { fileid } from "./constants";
 import html2canvas from "html2canvas";
 
@@ -18,14 +18,14 @@ export const updateEquation = async (
 ) => {
   const data = await tex2dataURL(equation, plugin);
   if(data) {
-    let files:BinaryFileData[] = [];
+    let files:FileData[] = [];
     files.push({
       mimeType : data.mimeType,
       id: fileId as FileId,
       dataURL: data.dataURL,
       created: data.created,
-      //@ts-ignore
       size: data.size,
+      hasSVGwithBitmap: false
     });
     addFiles(files,view);
   }
@@ -42,8 +42,14 @@ export async function tex2dataURL(tex:string, plugin:ExcalidrawPlugin):Promise<{
   try {
     return await mathjaxSVG(tex, plugin);
   } catch(e) {
-    //fallback
-    return await mathjaxImage2html(tex);
+    await sleep(200); //grace period for mathjax to load, if not, then we go for the slower fallback
+    try{
+      return await mathjaxSVG(tex, plugin);
+    }
+    catch(e){
+      //fallback
+      return await mathjaxImage2html(tex);
+    }
   }
 }
 

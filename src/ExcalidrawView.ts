@@ -29,17 +29,18 @@ import {
   FULLSCREEN_ICON_NAME,
   JSON_parse,
   IMAGE_TYPES,
-  CTRL_OR_CMD
+  CTRL_OR_CMD,
+  fileid
 } from './constants';
 import ExcalidrawPlugin from './main';
 import { repositionElementsToCursor} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./ExcalidrawData";
-import { checkAndCreateFolder, download, embedFontsInSVG, getIMGFilename, getNewOrAdjacentLeaf, getNewUniqueFilepath, getPNG, getSVG, rotatedDimensions, scaleLoadedImage, splitFolderAndFilename, svgToBase64, viewportCoordsToSceneCoords } from "./Utils";
+import { checkAndCreateFolder, download, embedFontsInSVG, errorlog, getIMGFilename, getNewOrAdjacentLeaf, getNewUniqueFilepath, getPNG, getSVG, rotatedDimensions, scaleLoadedImage, splitFolderAndFilename, svgToBase64, viewportCoordsToSceneCoords } from "./Utils";
 import { Prompt } from "./Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 import { updateEquation } from "./LaTeX";
-import { EmbeddedFilesLoader } from "./EmbeddedFileLoader";
+import { EmbeddedFilesLoader, FileData } from "./EmbeddedFileLoader";
 
 export enum TextMode {
   parsed,
@@ -57,8 +58,8 @@ export interface ExportSettings {
 
 const REG_LINKINDEX_INVALIDCHARS = /[<>:"\\|?*]/g;
 
-export const addFiles = (files:any, view: ExcalidrawView) => {
-  if(files.length === 0) return;
+export const addFiles = (files:FileData[], view: ExcalidrawView) => {
+  if(!files || files.length === 0 || !view) return;
   const [dirty, scene] = scaleLoadedImage(view.getScene(),files); 
 
   if(dirty) {
@@ -68,13 +69,22 @@ export const addFiles = (files:any, view: ExcalidrawView) => {
       commitToHistory: false,
     });
   }
-
+  files.forEach((f:FileData)=>{
+    if(view.excalidrawData.hasFile(f.id)) {
+      const path = view.excalidrawData.getFile(f.id).path;
+      view.excalidrawData.setFile(f.id,{path,hasSVGwithBitmap:f.hasSVGwithBitmap,isLoaded:true});
+    }
+    if(view.excalidrawData.hasEquation(f.id)) {
+      const latex = view.excalidrawData.getEquation(f.id).latex;
+      view.excalidrawData.setEquation(f.id,{latex,isLoaded:true});
+    }
+  });
   view.excalidrawAPI.addFiles(files);
 }
 
 
 export default class ExcalidrawView extends TextFileView {
-  private excalidrawData: ExcalidrawData;
+  public excalidrawData: ExcalidrawData;
   public getScene: Function = null;
   public addElements: Function = null; //add elements to the active Excalidraw drawing
   private getSelectedTextElement: Function = null;
@@ -162,6 +172,7 @@ export default class ExcalidrawView extends TextFileView {
 
   async save(preventReload:boolean=true) {
     if(!this.getScene) return;
+    if(!this.isLoaded) return;
     this.preventReload = preventReload;
     this.dirty = null;
     const scene = this.getScene();
@@ -279,11 +290,11 @@ export default class ExcalidrawView extends TextFileView {
       const selectedImage = this.getSelectedImageElement();
       if(selectedImage?.id) {
         if(this.excalidrawData.hasEquation(selectedImage.fileId)) {
-          const equation = this.excalidrawData.getEquation(selectedImage.fileId);
+          const equation = this.excalidrawData.getEquation(selectedImage.fileId).latex;
           const prompt = new Prompt(this.app, t("ENTER_LATEX"),equation,'');
           prompt.openAndGetValue( async (formula:string)=> {
             if(!formula) return;
-            this.excalidrawData.setEquation(selectedImage.fileId,formula);
+            this.excalidrawData.setEquation(selectedImage.fileId,{latex:formula,isLoaded:false});
             await this.save(true);
             await updateEquation(formula,selectedImage.fileId,this,addFiles,this.plugin);
           });
@@ -291,7 +302,7 @@ export default class ExcalidrawView extends TextFileView {
         }
         await this.save(true); //in case pasted images haven't been saved yet
         if(this.excalidrawData.hasFile(selectedImage.fileId)) {
-          linkText = this.excalidrawData.getFile(selectedImage.fileId);
+          linkText = this.excalidrawData.getFile(selectedImage.fileId).path;
         } 
       }
     }
@@ -420,7 +431,9 @@ export default class ExcalidrawView extends TextFileView {
     this.excalidrawAPI.history.clear();
   }
   
+  private isLoaded:boolean = false;
   async setViewData (data: string, clear: boolean = false) {   
+    this.isLoaded = false;
     if(clear) this.clear();
     data = this.data = data.replaceAll("\r\n","\n").replaceAll("\r","\n");
     this.app.workspace.onLayoutReady(async ()=>{
@@ -441,6 +454,7 @@ export default class ExcalidrawView extends TextFileView {
         try {
           if(!(await this.excalidrawData.loadData(data, this.file,this.textMode))) return;
         } catch(e) {
+          errorlog({where:"ExcalidrawView.setViewData",error:e});
           new Notice( "Error loading drawing:\n" 
                      + e.message
                      + ((e.message === "Cannot read property 'index' of undefined") 
@@ -451,38 +465,27 @@ export default class ExcalidrawView extends TextFileView {
           return;
         }
       }
-      await this.loadDrawing(true)
+      await this.loadDrawing(true);
+      this.isLoaded=true;
     });
   }
 
-  private loaderRunning:boolean=false;
-  private nextLoader:EmbeddedFilesLoader = null;
-  private loadSceneFiles(isDark?:boolean) {
-    let loader = new EmbeddedFilesLoader(this.plugin,isDark);
-    if(this.loaderRunning) {
-      this.nextLoader = loader;
-      return;
-    }
+  private activeLoader:EmbeddedFilesLoader = null;
+  private async loadSceneFiles(isDark?:boolean) {
+    if(this.activeLoader) this.activeLoader.terminate=true;
+    const loader = new EmbeddedFilesLoader(this.plugin,isDark);
+    this.activeLoader = loader;
 
-    const executeLoader = () => {
-      this.loaderRunning = true;
-      this.nextLoader = null;  
-      
-      loader.loadSceneFiles(
-        this.excalidrawData,
-        this,
-        (files:any, view:ExcalidrawView) => {
-          addFiles(files,view);
-          if(this.nextLoader) {
-            loader = this.nextLoader;
-            executeLoader();
-          }
-          this.loaderRunning=false;
-        },
-        this.file?.path
-      );
-    };
-    executeLoader();
+    loader.loadSceneFiles(
+      this.excalidrawData,
+      this,
+      (files:FileData[], view:ExcalidrawView) => {
+        this.activeLoader = null;
+        if(!files || !view) return;
+        addFiles(files,view);
+      },
+      this.file?.path
+    );
   }
 
   /**
@@ -508,6 +511,7 @@ export default class ExcalidrawView extends TextFileView {
       if((this.app.workspace.activeLeaf === this.leaf) && this.excalidrawWrapperRef) {
         this.excalidrawWrapperRef.current.focus();
       }
+      this.loadSceneFiles();
     } else {
       this.instantiateExcalidraw({
         elements: excalidrawData.elements,
@@ -688,6 +692,7 @@ export default class ExcalidrawView extends TextFileView {
       React.useEffect(() => {
         excalidrawRef.current.readyPromise.then((api) => {
           this.excalidrawAPI = api;
+          //console.log({where:"ExcalidrawView.React.ReadyPromise"});
           this.loadSceneFiles();
         });
       }, [excalidrawRef]);
@@ -809,10 +814,21 @@ export default class ExcalidrawView extends TextFileView {
               created: images[k].created
             });
             if(images[k].file) {
-              this.excalidrawData.setFile(images[k].id,images[k].file);
+              this.excalidrawData.setFile(
+                images[k].id,
+                {
+                  path:images[k].file,
+                  hasSVGwithBitmap:images[k].hasSVGwithBitmap,
+                  isLoaded:true
+              });
             }
             if(images[k].tex) {
-              this.excalidrawData.setEquation(images[k].id,images[k].tex);
+              this.excalidrawData.setEquation(
+                images[k].id,
+                {
+                  latex:images[k].latex,
+                  isLoaded:true
+                });
             }
           });
           this.excalidrawAPI.addFiles(files);
@@ -1118,7 +1134,7 @@ export default class ExcalidrawView extends TextFileView {
             }
             return true;
           },
-          onThemeChange: (newTheme:string) => {
+          onThemeChange: async (newTheme:string) => {
             this.loadSceneFiles(newTheme==="dark");
           },
           onDrop: (event: React.DragEvent<HTMLDivElement>):boolean => {
@@ -1145,7 +1161,7 @@ export default class ExcalidrawView extends TextFileView {
                   });
                 } catch (e) {
                   new Notice("on drop hook error. See console log for details");
-                  console.log(e);
+                  errorlog({where:"ExcalidrawView.onDrop",error:e});
                   return false;
                 }
               } else {
@@ -1167,6 +1183,7 @@ export default class ExcalidrawView extends TextFileView {
                     ea.reset();
                     ea.setView(this);
                     (async () => {
+                      ea.canvas.theme = this.excalidrawAPI.getAppState().theme;
                       await ea.addImage(currentPosition.x,currentPosition.y,draggable.file);
                       ea.addElementsToView(false,false);
                     })();

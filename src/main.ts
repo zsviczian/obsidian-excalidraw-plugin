@@ -66,6 +66,7 @@ import { OneOffs } from "./OneOffs";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
 import { MATHJAX_DATAURL } from "./mathjax";
 import { config, disconnect } from "process";
+import { EmbeddedFilesLoader } from "./EmbeddedFileLoader";
 
 declare module "obsidian" {
   interface App {
@@ -91,14 +92,14 @@ export default class ExcalidrawPlugin extends Plugin {
   public opencount:number = 0;
   public ea:ExcalidrawAutomate;
   //A master list of fileIds to facilitate copy / paste
-  public filesMaster:Map<FileId,string> = null; //fileId, path
+  public filesMaster:Map<FileId,{path:string,hasSVGwithBitmap:boolean}> = null; //fileId, path
   public equationsMaster:Map<FileId,string> = null; //fileId, formula
   public mathjax: any = null;
   private mathjaxDiv: HTMLDivElement = null;
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
-    this.filesMaster = new Map<FileId,string>();
+    this.filesMaster = new Map<FileId,{path:string,hasSVGwithBitmap:boolean}>();
     this.equationsMaster = new Map<FileId,string>();
   }
   
@@ -224,8 +225,12 @@ export default class ExcalidrawPlugin extends Plugin {
         withTheme: this.settings.exportWithTheme
       }
       const img = createEl("img");
-      img.setAttribute("width",imgAttributes.fwidth);        
-      if(imgAttributes.fheight) img.setAttribute("height",imgAttributes.fheight);
+      let style = `max-width:${imgAttributes.fwidth}px !important; width:100%;`;
+      if(imgAttributes.fheight) {
+        style += `height:${imgAttributes.fheight}px;`;
+      }
+      img.setAttribute("style",style);
+      
       img.addClass(imgAttributes.style);
 
       const [scene,pos] = getJSON(content);
@@ -233,21 +238,24 @@ export default class ExcalidrawPlugin extends Plugin {
 
       const theme = this.settings.previewMatchObsidianTheme 
                     ? (isObsidianThemeDark() ? "dark" : "light")
-                    : undefined;     
+                    : undefined;
+      if(theme) exportSettings.withTheme = true;
+      const loader = new EmbeddedFilesLoader(this,this.settings.previewMatchObsidianTheme?isObsidianThemeDark():undefined);
             
       if(!this.settings.displaySVGInPreview) {
         const width = parseInt(imgAttributes.fwidth);
         let scale = 1;
-        if(width>=800) scale = 2;
-        if(width>=1600) scale = 3;
-        if(width>=2400) scale = 4;
-        const png = await this.ea.createPNG(file.path,scale,exportSettings,undefined,theme);
+        if(width>=600) scale = 2;
+        if(width>=1200) scale = 3;
+        if(width>=1800) scale = 4;
+        if(width>=2400) scale = 5;
+        const png = await this.ea.createPNG(file.path,scale,exportSettings,loader,theme);
         //const png = await getPNG(JSON_parse(scene),exportSettings, scale);
         if(!png) return null;
         img.src = URL.createObjectURL(png);
         return img;
       }
-      const svgSnapshot = (await this.ea.createSVG(file.path,true,exportSettings,undefined,theme)).outerHTML;
+      const svgSnapshot = (await this.ea.createSVG(file.path,true,exportSettings,loader,theme)).outerHTML;
       let svg:SVGSVGElement = null;
       const el = document.createElement('div');
       el.innerHTML = svgSnapshot;

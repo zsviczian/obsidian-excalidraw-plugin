@@ -91,15 +91,15 @@ export class ExcalidrawData {
   private textMode: TextMode = TextMode.raw;
   private plugin: ExcalidrawPlugin;
   public loaded: boolean = false;
-  private files:Map<FileId,string> = null; //fileId, path
-  private equations:Map<FileId,string> = null; //fileId, path
+  private files:Map<FileId,{path:string,hasSVGwithBitmap:boolean,isLoaded:boolean}> = null; //fileId, path
+  private equations:Map<FileId,{latex:string,isLoaded:boolean}> = null; //fileId, path
   private compatibilityMode:boolean = false;
 
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
     this.app = plugin.app;
-    this.files = new Map<FileId,string>();
-    this.equations = new Map<FileId,string>();
+    this.files = new Map<FileId,{path:string,hasSVGwithBitmap:boolean,isLoaded:boolean}>();
+    this.equations = new Map<FileId,{latex:string,isLoaded:boolean}>();
   }  
 
   /**
@@ -191,14 +191,20 @@ export class ExcalidrawData {
     const REG_FILEID_FILEPATH = /([\w\d]*):\s*\[\[([^\]]*)]]\n/gm;
     res = data.matchAll(REG_FILEID_FILEPATH);
     while(!(parts = res.next()).done) {
-      this.setFile(parts.value[1] as FileId,parts.value[2]);
+      this.setFile(
+        parts.value[1] as FileId,
+        {
+          path:parts.value[2],
+          hasSVGwithBitmap:undefined,
+          isLoaded:false
+      });
     }
 
     //Load Equations
     const REG_FILEID_EQUATION = /([\w\d]*):\s*\$\$(.*)(\$\$\s*\n)/gm;
     res = data.matchAll(REG_FILEID_EQUATION);
     while(!(parts = res.next()).done) {
-      this.setEquation(parts.value[1] as FileId,parts.value[2]);
+      this.setEquation(parts.value[1] as FileId,{latex:parts.value[2],isLoaded:false});
     }
 
     //Check to see if there are text elements in the JSON that were missed from the # Text Elements section
@@ -494,12 +500,12 @@ export class ExcalidrawData {
     outString += (this.equations.size>0 || this.files.size>0) ? '\n# Embedded files\n' : '';    
     if(this.equations.size>0) {      
       for(const key of this.equations.keys()) {
-        outString += key +': $$'+this.equations.get(key) + '$$\n';
+        outString += key +': $$'+this.equations.get(key).latex + '$$\n';
       }
     }
     if(this.files.size>0) {
       for(const key of this.files.keys()) {
-        outString += key +': [['+this.files.get(key) + ']]\n';
+        outString += key +': [['+this.files.get(key).path + ']]\n';
       }
     }
     outString += (this.equations.size>0 || this.files.size>0) ? '\n' : '';
@@ -544,7 +550,13 @@ export class ExcalidrawData {
         }
         const [folder,filepath] = await getAttachmentsFolderAndFilePath(this.app,this.file.path,fname);
         await this.app.vault.createBinary(filepath,getBinaryFileFromDataURL(scene.files[key].dataURL));
-        this.setFile(key as FileId,filepath);
+        this.setFile(
+          key as FileId,
+          {
+            path:filepath,
+            hasSVGwithBitmap:false,
+            isLoaded:true
+        });
       }
     }    
     return dirty;
@@ -649,15 +661,26 @@ export class ExcalidrawData {
   // of copying an image or equation from one drawing to another within the same vault
   // this is going to do the job
   */
-  public setFile(fileId:FileId, path:string) {
+  public setFile(fileId:FileId, data:{path:string,hasSVGwithBitmap:boolean,isLoaded:boolean}) {
     //always store absolute path because in case of paste, relative path may not resolve ok
-    const file = this.app.metadataCache.getFirstLinkpathDest(path,this.file.path);
-    const p = file?.path ?? path;
-    this.files.set(fileId,p);
-    this.plugin.filesMaster.set(fileId,p);
+    const file = this.app.metadataCache.getFirstLinkpathDest(data.path,this.file.path);
+    const p = file?.path ?? data.path;
+    this.files.set(
+      fileId,
+      {
+        path:p,
+        hasSVGwithBitmap:data.hasSVGwithBitmap,
+        isLoaded:data.isLoaded
+    });
+    this.plugin.filesMaster.set(
+      fileId,
+      {
+        path:p,
+        hasSVGwithBitmap:data.hasSVGwithBitmap
+    });
   }
 
-  public getFile(fileId:FileId) {
+  public getFile(fileId:FileId):{path:string,hasSVGwithBitmap?:boolean,isLoaded:boolean} {
     return this.files.get(fileId);
   }
 
@@ -675,18 +698,23 @@ export class ExcalidrawData {
   public hasFile(fileId:FileId):boolean {
     if(this.files.has(fileId)) return true;
     if(this.plugin.filesMaster.has(fileId)) {
-      this.files.set(fileId,this.plugin.filesMaster.get(fileId));
+      this.files.set(
+        fileId,
+        {
+          isLoaded:false,
+          ...this.plugin.filesMaster.get(fileId)
+      });
       return true;
     }
     return false;
   } 
 
-  public setEquation(fileId:FileId, equation:string) {
-    this.equations.set(fileId,equation);
-    this.plugin.equationsMaster.set(fileId,equation);
+  public setEquation(fileId:FileId, data:{latex:string,isLoaded:boolean}) {
+    this.equations.set(fileId,{latex:data.latex,isLoaded:data.isLoaded});
+    this.plugin.equationsMaster.set(fileId,data.latex);
   }
 
-  public getEquation(fileId: FileId) {
+  public getEquation(fileId: FileId):{latex:string,isLoaded:boolean} {
     return this.equations.get(fileId);
   }
 
@@ -704,7 +732,7 @@ export class ExcalidrawData {
   public hasEquation(fileId:FileId):boolean {
     if(this.equations.has(fileId)) return true;
     if(this.plugin.equationsMaster.has(fileId)) {
-      this.equations.set(fileId,this.plugin.equationsMaster.get(fileId));
+      this.equations.set(fileId,{latex:this.plugin.equationsMaster.get(fileId),isLoaded:false});
       return true;
     }
     return false;

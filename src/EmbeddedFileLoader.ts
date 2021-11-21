@@ -5,38 +5,50 @@ import { App, Notice, TFile } from "obsidian";
 import { fileid, IMAGE_TYPES } from "./constants";
 import { ExcalidrawData } from "./ExcalidrawData";
 import ExcalidrawView, { ExportSettings } from "./ExcalidrawView";
+import { t } from "./lang/helpers";
 import { tex2dataURL } from "./LaTeX";
 import ExcalidrawPlugin from "./main";
-import {getImageSize, svgToBase64 } from "./Utils";
+import {errorlog, getImageSize, svgToBase64 } from "./Utils";
 
 export declare type MimeType = "image/svg+xml" | "image/png" | "image/jpeg" | "image/gif" | "application/octet-stream";
+export type FileData = BinaryFileData & {
+  size: {
+    height: number;
+    width: number;
+  },
+  hasSVGwithBitmap: boolean
+};
 
 export class EmbeddedFilesLoader {
   private plugin:ExcalidrawPlugin;
-  private processedFiles: Set<string> = new Set<string>();
-  private isDark:boolean = null;
+  private processedFiles: Map<string,number> = new Map<string,number>();
+  private isDark:boolean;
+  public terminate=false;
 
   constructor(plugin: ExcalidrawPlugin, isDark?:boolean) {
     this.plugin = plugin;
-    if(isDark!==undefined) this.isDark = isDark;
+    this.isDark = isDark;
   }
 
-  public async getObsidianImage (file: TFile)//,theme:string)
-  :Promise<{
-      mimeType: MimeType,
-      fileId: FileId, 
-      dataURL: DataURL,
-      created: number,
+  public async getObsidianImage (
+    file: TFile
+  ):Promise<{
+    mimeType: MimeType,
+    fileId: FileId, 
+    dataURL: DataURL,
+    created: number,
+    hasSVGwithBitmap: boolean,
     size: {height: number, width: number},
   }> {
     if(!this.plugin || !file) return null;
     //to block infinite loop of recursive loading of images
-    if((file.extension==="md" || file.extension === "excalidraw") && this.processedFiles.has(file.path)) {
-      new Notice("Stopped loading infinite image embed loop at repeated instance of " + file.path,6000);
+    let count=this.processedFiles.has(file.path) ? this.processedFiles.get(file.path):0;
+    if(file.extension==="md" && count>2) {
+      new Notice(t("INFINITE_LOOP_WARNING") + file.path,6000);
       return null;
     }
-    this.processedFiles.add(file.path);
-
+    this.processedFiles.set(file.path,count+1);
+    let hasSVGwithBitmap = false;
     const app = this.plugin.app;
     const isExcalidrawFile = this.plugin.ea.isExcalidrawFile(file);
     if (!(IMAGE_TYPES.contains(file.extension) || isExcalidrawFile)) {
@@ -44,33 +56,32 @@ export class EmbeddedFilesLoader {
     }
     const ab = await app.vault.readBinary(file);
 
-    const getExcalidrawSVG = async () => {
+    const getExcalidrawSVG = async (isDark:boolean) => {
       const exportSettings:ExportSettings = {
         withBackground: false,
         withTheme: false, 
       };
       this.plugin.ea.reset();
-      const loader = new EmbeddedFilesLoader(this.plugin,this.isDark);
-      const svg = await this.plugin.ea.createSVG(file.path,true,exportSettings,loader,null);     
-      if(this.isDark) {
-        //https://stackoverflow.com/questions/51154171/remove-css-filter-on-child-elements
-        const THEME_FILTER = "invert(93%) hue-rotate(180deg)"
-        //"invert(100%) hue-rotate(180deg) saturate(1.25)"
-        svg
-          .querySelectorAll("image:not([href^='data:image/svg'])")
-          .forEach((i) => {
-            const id = i.parentElement?.id;
-              svg.querySelectorAll(`use[href='#${id}']`).forEach((u) => {
+      const svg = await this.plugin.ea.createSVG(file.path,true,exportSettings,this,null);    
+      //https://stackoverflow.com/questions/51154171/remove-css-filter-on-child-elements
+      const imageList = svg.querySelectorAll("image:not([href^='data:image/svg'])");
+      if(imageList.length>0) hasSVGwithBitmap = true;
+      if(hasSVGwithBitmap && isDark) {
+        const THEME_FILTER = "invert(100%) hue-rotate(180deg) saturate(1.25)";
+        imageList.forEach((i) => {
+          const id = i.parentElement?.id;
+            svg.querySelectorAll(`use[href='#${id}']`).forEach((u) => {
               u.setAttribute("filter", THEME_FILTER);
             });
         });
       }
+      if(!hasSVGwithBitmap && svg.getAttribute("hasbitmap")) hasSVGwithBitmap=true;
       const dURL = svgToBase64(svg.outerHTML) as DataURL;
       return dURL as DataURL;
     }
     
     const excalidrawSVG = isExcalidrawFile
-                ? await getExcalidrawSVG()
+                ? await getExcalidrawSVG(this.isDark)
                 : null;
     let mimeType:MimeType = "image/svg+xml";
     if (!isExcalidrawFile) {
@@ -86,11 +97,12 @@ export class EmbeddedFilesLoader {
     const dataURL = excalidrawSVG ?? (file.extension==="svg" ? await getSVGData(app,file) : await getDataURL(ab,mimeType));
     const size = await getImageSize(excalidrawSVG??app.vault.getResourcePath(file));
     return {
-        mimeType: mimeType,
+        mimeType,
         fileId: await generateIdFromFile(ab),
-        dataURL: dataURL,
+        dataURL,
         created: file.stat.mtime,
-        size: size
+        hasSVGwithBitmap,
+        size
     }
   }
 
@@ -99,51 +111,57 @@ export class EmbeddedFilesLoader {
     view: ExcalidrawView,
     addFiles:Function, 
     sourcePath:string,
-    //theme: string,
   ) {
       const app = this.plugin.app;
-      let entries = excalidrawData.getFileEntries();
-      if(!this.isDark) {
+      const entries = excalidrawData.getFileEntries();
+      if(this.isDark===undefined) {
         this.isDark = excalidrawData.scene.appState.theme==="dark";
       }
       let entry;
-      let files:BinaryFileData[] = [];
-      while(!(entry = entries.next()).done) {
-        const file = app.metadataCache.getFirstLinkpathDest(entry.value[1],sourcePath);
-        if(file && file instanceof TFile) {
-          const data = await this.getObsidianImage(file);//,theme);
+      let files:FileData[] = [];
+      while(!this.terminate && !(entry = entries.next()).done) {
+        if(!entry.value[1].isLoaded || entry.value[1].hasSVGwithBitmap) {
+          const file = app.metadataCache.getFirstLinkpathDest(entry.value[1].path,sourcePath);
+          if(file && file instanceof TFile) {
+            const data = await this.getObsidianImage(file);//,theme);
+            if(data) {
+              files.push({
+                mimeType : data.mimeType,
+                id: entry.value[0],
+                dataURL: data.dataURL,
+                created: data.created,
+                size: data.size,
+                hasSVGwithBitmap: data.hasSVGwithBitmap
+              });
+            }
+          }
+        }
+      }
+    
+      let equation;
+      const equations = excalidrawData.getEquationEntries(); 
+      while(!this.terminate  && !(equation = equations.next()).done) {
+        if(!excalidrawData.getEquation(equation.value[0]).isLoaded) {
+          const latex = equation.value[1].latex;
+          const data = await tex2dataURL(latex, this.plugin);
           if(data) {
             files.push({
               mimeType : data.mimeType,
-              id: entry.value[0],
+              id: equation.value[0],
               dataURL: data.dataURL,
               created: data.created,
-              //@ts-ignore
               size: data.size,
+              hasSVGwithBitmap: false
             });
           }
         }
       }
     
-      entries = excalidrawData.getEquationEntries(); 
-      while(!(entry = entries.next()).done) {
-        const tex = entry.value[1];
-        const data = await tex2dataURL(tex, this.plugin);
-        if(data) {
-          files.push({
-            mimeType : data.mimeType,
-            id: entry.value[0],
-            dataURL: data.dataURL,
-            created: data.created,
-            //@ts-ignore
-            size: data.size,
-          });
-        }
-      }
-    
+      if(this.terminate) return;
       try { //in try block because by the time files are loaded the user may have closed the view
         addFiles(files,view);
       } catch(e) {
+        errorlog({where:"EmbeddedFileLoader.loadSceneFiles", error: e});
       }
     }
 }

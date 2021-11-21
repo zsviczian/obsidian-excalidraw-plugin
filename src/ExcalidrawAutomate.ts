@@ -4,6 +4,7 @@ import {
   StrokeStyle,
   StrokeSharpness,
   ExcalidrawElement,
+  FileId,
 } from "@zsviczian/excalidraw/types/element/types";
 import {
   normalizePath,
@@ -18,8 +19,8 @@ import {
   MAX_IMAGE_SIZE,
 } from "./constants";
 import { embedFontsInSVG, getPNG, getSVG, scaleLoadedImage, wrapText } from "./Utils";
-import { AppState } from "@zsviczian/excalidraw/types/types";
-import { EmbeddedFilesLoader } from "./EmbeddedFileLoader";
+import { AppState, DataURL } from "@zsviczian/excalidraw/types/types";
+import { EmbeddedFilesLoader, FileData, MimeType } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
 
 declare type ConnectionPoint = "top"|"bottom"|"left"|"right";
@@ -361,7 +362,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
     ):Promise<SVGSVGElement> {
       const automateElements = this.getElements();
       const template = templatePath ? (await getTemplate(this.plugin,templatePath,true,loader)) : null;
-      let elements = template ? template.elements : [];
+      let elements = template?.elements ?? [];
       elements = elements.concat(automateElements);
       const svg = await getSVG(
         {//createDrawing
@@ -380,7 +381,8 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
           withTheme: exportSettings?.withTheme ?? plugin.settings.exportWithTheme
         }
       )
-      return embedFont ? embedFontsInSVG(svg) : svg;     
+      if(template?.hasSVGwithBitmap) svg.setAttribute("hasbitmap","true");
+      return embedFont ? embedFontsInSVG(svg) : svg;
     },
     async createPNG(
       templatePath?:string,
@@ -391,7 +393,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
     ) {
       const automateElements = this.getElements();
       const template = templatePath ? (await getTemplate(this.plugin,templatePath,true,loader)) : null;
-      let elements = template ? template.elements : [];
+      let elements = template?.elements ?? [];
       elements = elements.concat(automateElements);
       return await getPNG(
         { 
@@ -556,7 +558,7 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
     },
     async addImage(topX:number, topY:number, imageFile: TFile):Promise<string> {
       const id = nanoid();
-      const loader = new EmbeddedFilesLoader(this.plugin)
+      const loader = new EmbeddedFilesLoader(this.plugin,this.canvas.theme==="dark")
       const image = await loader.getObsidianImage(imageFile);
       if(!image) return null;
       this.imagesDict[image.fileId] = {
@@ -565,7 +567,8 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
         dataURL: image.dataURL,
         created: image.created,
         file: imageFile.path,
-        tex: null
+        hasSVGwithBitmap: image.hasSVGwithBitmap,
+        latex: null,
       }
       if (Math.max(image.size.width,image.size.height) > MAX_IMAGE_SIZE) {
         const scale = MAX_IMAGE_SIZE/Math.max(image.size.width,image.size.height);
@@ -587,7 +590,8 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
         dataURL: image.dataURL,
         created: image.created,
         file: null,
-        tex: tex
+        hasSVGwithBitmap: false,
+        latex: tex
       }
       this.elementsDict[id] = boxedElement(id,"image",topX,topY,image.size.width,image.size.height);
       this.elementsDict[id].fileId = image.fileId;
@@ -874,11 +878,13 @@ async function getTemplate(
   appState: any, 
   frontmatter: string,
   files: any,
+  hasSVGwithBitmap:boolean
 }> {
   const app = plugin.app;
   const vault = app.vault;
   const templatePath = normalizePath(fileWithPath);
   const file = app.metadataCache.getFirstLinkpathDest(templatePath,'');
+  let hasSVGwithBitmap = false;
   if(file && file instanceof TFile) {
     const data = (await vault.read(file)).replaceAll("\r\n","\n").replaceAll("\r","\n");
     let excalidrawData:ExcalidrawData = new ExcalidrawData(plugin);
@@ -890,6 +896,7 @@ async function getTemplate(
         appState: excalidrawData.scene.appState,  
         frontmatter: "",
         files: excalidrawData.scene.files,
+        hasSVGwithBitmap
       };
     }
 
@@ -901,10 +908,16 @@ async function getTemplate(
 
     let scene = excalidrawData.scene;
     if(loadFiles) {
-      await loader.loadSceneFiles(excalidrawData, null, (fileArray:any, view:any)=>{
-        if(!fileArray) return;
+      await loader.loadSceneFiles(excalidrawData, null, (fileArray:FileData[], view:any)=>{
+        if(!fileArray || fileArray.length===0) return;
         for(const f of fileArray) {
-          excalidrawData.scene.files[f.id] = f;
+          if(f.hasSVGwithBitmap) hasSVGwithBitmap = true;
+          excalidrawData.scene.files[f.id] = {
+            mimeType : f.mimeType,
+            id: f.id,
+            dataURL: f.dataURL,
+            created: f.created
+          }
         }
         let foo;
         [foo,scene] = scaleLoadedImage(excalidrawData.scene,fileArray); 
@@ -916,6 +929,7 @@ async function getTemplate(
       appState: scene.appState,  
       frontmatter: data.substring(0,trimLocation),
       files: scene.files,
+      hasSVGwithBitmap
     };
   };
   return {
@@ -923,6 +937,7 @@ async function getTemplate(
     appState: {},
     frontmatter: null,
     files: [],
+    hasSVGwithBitmap
   }
 }
 

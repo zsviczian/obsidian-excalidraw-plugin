@@ -267,6 +267,7 @@ export const getImageSize = async (src:string):Promise<{height:number, width:num
 
 export const scaleLoadedImage = (scene:any, files:any):[boolean,any] => {
   let dirty = false;
+  if(!files || !scene) return [dirty,scene];
   for(const f of files) {
     const [w_image,h_image] = [f.size.width,f.size.height];
     const imageAspectRatio = f.size.width/f.size.height;
@@ -294,6 +295,14 @@ export const isObsidianThemeDark = () => document.body.classList.contains("theme
 
 export function getIMGFilename(path:string,extension:string):string {
   return path.substring(0,path.lastIndexOf('.')) + '.' + extension;
+}
+
+export const errorlog = (data:{}) => {
+  console.log({plugin:"Excalidraw",...data});
+}
+
+export const sleep = async (ms:number) => {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 //export const debug = console.log.bind(window.console);
