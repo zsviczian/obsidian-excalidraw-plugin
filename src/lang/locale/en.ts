@@ -134,7 +134,7 @@ export default {
   EMBED_TYPE_NAME: "Type of file to insert into the document",                    
   EMBED_TYPE_DESC: "When you embed an image into a document using the command palette this setting will specify if Excalidraw should embed the original excalidraw file "+
                    "or a PNG or an SVG copy. You need to enable auto-export PNG / SVG (see below under Export Settings) for those image types to be available in the dropdown. For drawings that do not have a " +
-                   "a correspondign PNG or SVG readily available the command palette action will insert a broken link. You need to open the original drawing and initiate export manually. " +
+                   "a corresponding PNG or SVG readily available the command palette action will insert a broken link. You need to open the original drawing and initiate export manually. " +
                    "This option will not autogenerate PNG/SVG files, but will simply reference the already existing files.",
   EXPORT_PNG_SCALE_NAME: "PNG export image scale",
   EXPORT_PNG_SCALE_DESC: "The size-scale of the exported PNG image",
@@ -142,10 +142,10 @@ export default {
   EXPORT_BACKGROUND_DESC: "If turned off, the exported image will be transparent.",
   EXPORT_THEME_NAME: "Export image with theme",
   EXPORT_THEME_DESC: "Export the image matching the dark/light theme of your drawing. If turned off, " +
-                     "drawings created in drak mode will appear as they would in light mode.",
+                     "drawings created in dark mode will appear as they would in light mode.",
   EXPORT_HEAD: "Export Settings",
   EXPORT_SYNC_NAME:"Keep the .SVG and/or .PNG filenames in sync with the drawing file",
-  EXPORT_SYNC_DESC:"When turned on, the plugin will automaticaly update the filename of the .SVG and/or .PNG files when the drawing in the same folder (and same name) is renamed. " +
+  EXPORT_SYNC_DESC:"When turned on, the plugin will automatically update the filename of the .SVG and/or .PNG files when the drawing in the same folder (and same name) is renamed. " +
                   "The plugin will also automatically delete the .SVG and/or .PNG files when the drawing in the same folder (and same name) is deleted. ",
   EXPORT_SVG_NAME: "Auto-export SVG",
   EXPORT_SVG_DESC: "Automatically create an SVG export of your drawing matching the title of your file. " + 
