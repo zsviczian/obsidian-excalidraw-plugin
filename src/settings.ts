@@ -19,6 +19,8 @@ export interface ExcalidrawSettings {
   width: string,
   matchTheme: boolean,
   matchThemeAlways: boolean,
+  matchThemeTrigger:boolean,
+  defaultMode: string,
   zoomToFitOnResize: boolean,
   zoomToFitMaxLevel: number,
   openInAdjacentPane: boolean,
@@ -44,6 +46,7 @@ export interface ExcalidrawSettings {
   loadCount: number, //version 1.2 migration counter
   drawingOpenCount: number,
   library: string,
+  library2: {},
   patchCommentBlock: boolean, //1.3.12 
   imageElementNotice: boolean, //1.4.0
   runWYSIWYGpatch: boolean, //1.4.9
@@ -60,6 +63,8 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   width: '400',
   matchTheme: false,
   matchThemeAlways: false,
+  matchThemeTrigger: false,
+  defaultMode: "normal",
   zoomToFitOnResize: true,
   zoomToFitMaxLevel: 2,
   linkPrefix: "📍",
@@ -84,7 +89,13 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   compatibilityMode: false,
   loadCount: 0,
   drawingOpenCount: 0,
-  library: `{"type":"excalidrawlib","version":1,"library":[]}`,
+  library: `deprecated`,
+  library2:  {
+    type: "excalidrawlib",
+    version: 2,
+    source: "https://excalidraw.com",
+    libraryItems: []
+  },
   patchCommentBlock: true,
   imageElementNotice: true,
   runWYSIWYGpatch: true,
@@ -125,7 +136,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     if(this.requestEmbedUpdate) this.plugin.triggerEmbedUpdates();
   }
 
-  display(): void {
+  async display() {
+    await this.plugin.loadSettings(); //in case sync loaded changed settings in the background
     this.requestEmbedUpdate = false;
     this.requestReloadDrawings = false;
     let {containerEl} = this;
@@ -225,7 +237,31 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .onChange(async (value) => {
           this.plugin.settings.matchThemeAlways = value;
           this.applySettingsUpdate();
-        }));
+      }));
+
+    new Setting(containerEl)
+      .setName(t("MATCH_THEME_TRIGGER_NAME")) 
+      .setDesc(t("MATCH_THEME_TRIGGER_DESC"))
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.matchThemeTrigger)
+        .onChange(async (value) => {
+          this.plugin.settings.matchThemeTrigger = value;
+          this.applySettingsUpdate();
+      }));
+
+    new Setting(containerEl)
+      .setName(t("DEFAULT_OPEN_MODE_NAME")) 
+      .setDesc(t("DEFAULT_OPEN_MODE_DESC"))
+      .addDropdown(dropdown => dropdown
+        .addOption("normal","Normal Mode")
+        .addOption("zen","Zen Mode")
+        .addOption("view","View Mode")
+        .setValue(this.plugin.settings.defaultMode)
+        .onChange(async (value) => {
+          this.plugin.settings.defaultMode = value;
+          this.applySettingsUpdate();
+      }));
+
 
     new Setting(containerEl)
       .setName(t("ZOOM_TO_FIT_NAME")) 

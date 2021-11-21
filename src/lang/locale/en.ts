@@ -80,7 +80,12 @@ export default {
   MATCH_THEME_DESC: "If theme is dark, new drawing will be created in dark mode. This does not apply when you use a template for new drawings. " +
                     "Also this will not effect when you open an existing drawing. Those will follow the theme of the template/drawing respectively.",
   MATCH_THEME_ALWAYS_NAME: "Existing drawings to match Obsidian theme",
-  MATCH_THEME_ALWAYS_DESC: "If theme is dark, drawings will be opened in dark mode. If your theme is light, they will be opened in light mode. ",                  
+  MATCH_THEME_ALWAYS_DESC: "If theme is dark, drawings will be opened in dark mode. If your theme is light, they will be opened in light mode. ",
+  MATCH_THEME_TRIGGER_NAME: "Excalidraw to follow when Obsidian Theme changes",
+  MATCH_THEME_TRIGGER_DESC: "If this option is enabled open Excalidraw pane will switch to light/dark mode when Obsidian theme changes. ",
+  DEFAULT_OPEN_MODE_NAME: "Default mode when opening Excalidraw",
+  DEFAULT_OPEN_MODE_DESC: "Specifies the mode how Excalidraw opens: Normal, Zen, or View mode. You may also set this behaviour on a file level by " +
+                          "adding the excalidraw-default-mode frontmatter key with a value of: normal,view, or zen to your document.",
   ZOOM_TO_FIT_NAME: "Zoom to fit on view resize",
   ZOOM_TO_FIT_DESC: "Zoom to fit drawing when the pane is resized",
   ZOOM_TO_FIT_MAX_LEVEL_NAME: "Zoom to fit max ZOOM level",
@@ -124,9 +129,9 @@ export default {
   EMBED_HEAD: "Embed & Export",
   EMBED_PREVIEW_SVG_NAME: "Display SVG in markdown preview",
   EMBED_PREVIEW_SVG_DESC: "The default is to display drawings as SVG images in the markdown preview. Turning this feature off, the markdown preview will display the drawing as an embedded PNG image.",
-  PREVIEW_MATCH_OBSIDIAN_NAME: "Image preview match Obsidian theme",
-  PREVIEW_MATCH_OBSIDIAN_DESC: "Image preview in documents should match the Obsidian theme. If enabled, when Obsidian is in dark mode, excalidraw images will render in dark mode. "+
-                               "when Obsidian is in light mode, Excalidraw will render light as well.",
+  PREVIEW_MATCH_OBSIDIAN_NAME: "Excalidraw preview to match Obsidian theme",
+  PREVIEW_MATCH_OBSIDIAN_DESC: "Image preview in documents should match the Obsidian theme. If enabled, when Obsidian is in dark mode, Excalidraw images will render in dark mode. "+
+                               "When Obsidian is in light mode, Excalidraw will render light mode as well. You may want to switch 'Export image with background' off for a more Obsidian-integrated look and feel.",
   EMBED_WIDTH_NAME: "Default width of embedded (transcluded) image",
   EMBED_WIDTH_DESC: "Only relevant if embed type is excalidraw. Has no effect on PNG and SVG embeds. The default width of an embedded drawing. You can specify a custom " +
                     "width when embedding an image using the ![[drawing.excalidraw|100]] or " +

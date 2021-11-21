@@ -88,6 +88,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public lastActiveExcalidrawFilePath: string = null;
   public hover: {linkText: string, sourcePath: string} = {linkText: null, sourcePath: null};
   private observer: MutationObserver;
+  private themeObserver: MutationObserver;
   private fileExplorerObserver: MutationObserver;
   public opencount:number = 0;
   public ea:ExcalidrawAutomate;
@@ -122,6 +123,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.registerExtensions(["excalidraw"],VIEW_TYPE_EXCALIDRAW);
 
     this.addMarkdownPostProcessor();
+    this.addThemeObserver();
     this.experimentalFileTypeDisplayToggle(this.settings.experimentalFileType);
     this.registerCommands();
     this.registerEventListeners();
@@ -147,6 +149,8 @@ export default class ExcalidrawPlugin extends Plugin {
 
     const self = this;
     this.loadMathJax();
+    process.env.REACT_APP_LIBRARY_URL = "https://libraries.excalidraw.com/";
+    process.env.REACT_APP_LIBRARY_BACKEND = "https://us-central1-excalidraw-room-persistence.cloudfunctions.net/libraries";
   }
 
   private loadMathJax() {
@@ -230,7 +234,7 @@ export default class ExcalidrawPlugin extends Plugin {
         style += `height:${imgAttributes.fheight}px;`;
       }
       img.setAttribute("style",style);
-      
+
       img.addClass(imgAttributes.style);
 
       const [scene,pos] = getJSON(content);
@@ -421,6 +425,21 @@ export default class ExcalidrawPlugin extends Plugin {
     });
 
     this.observer.observe(document, {childList: true, subtree: true});  
+  }
+
+  private addThemeObserver() {
+    this.themeObserver = new MutationObserver(async (m)=>{
+      if(!this.settings.matchThemeTrigger) return;
+      const theme = isObsidianThemeDark() ? "dark":"light";
+      const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+      leaves.forEach((leaf:WorkspaceLeaf)=> {
+        const excalidrawView = (leaf.view as ExcalidrawView); 
+        if(excalidrawView.file && excalidrawView.excalidrawRef) {
+          excalidrawView.setTheme(theme);
+        }
+      });
+    });
+    this.themeObserver.observe(document.body, {attributeFilter:["class"]});
   }
 
   public experimentalFileTypeDisplayToggle(enabled: boolean) {
@@ -1046,6 +1065,7 @@ export default class ExcalidrawPlugin extends Plugin {
   onunload() {
     destroyExcalidrawAutomate();
     this.observer.disconnect();
+    this.themeObserver.disconnect();
     if (this.fileExplorerObserver) this.fileExplorerObserver.disconnect();
     const excalidrawLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
     excalidrawLeaves.forEach((leaf) => {
@@ -1086,12 +1106,16 @@ export default class ExcalidrawPlugin extends Plugin {
     await this.saveData(this.settings);
   }
 
-  public getStencilLibrary():string {
-    return this.settings.library;
+  public getStencilLibrary():{} {
+    if(this.settings.library === "" || this.settings.library === "deprecated" ) {
+      return this.settings.library2;
+    }
+    return JSON_parse(this.settings.library);
   }
 
-  public setStencilLibrary(library:string) {
-    this.settings.library = library;
+  public setStencilLibrary(library:{}) {
+    this.settings.library = "deprecated";
+    this.settings.library2=library;
   }
 
   public triggerEmbedUpdates(filepath?:string){

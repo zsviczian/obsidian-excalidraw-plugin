@@ -4,6 +4,7 @@ import {
   FRONTMATTER_KEY_CUSTOM_PREFIX,
   FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS,
   FRONTMATTER_KEY_CUSTOM_URL_PREFIX,
+  FRONTMATTER_KEY_DEFAULT_MODE,
 } from "./constants";
 import { measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
@@ -616,6 +617,20 @@ export class ExcalidrawData {
 
   public deleteTextElement(id:string) {
     this.textElements.delete(id);
+  }
+
+  public getOpenMode():{viewModeEnabled:boolean,zenModeEnabled:boolean} {
+    const fileCache = this.app.metadataCache.getFileCache(this.file);
+    let mode = this.plugin.settings.defaultMode;
+    if (fileCache?.frontmatter && fileCache.frontmatter[FRONTMATTER_KEY_DEFAULT_MODE]!=null) {
+      mode = fileCache.frontmatter[FRONTMATTER_KEY_DEFAULT_MODE];
+    }
+
+    switch(mode) {
+      case "zen": return {viewModeEnabled:false,zenModeEnabled:true};
+      case "view": return {viewModeEnabled:true,zenModeEnabled:false};
+      default: return {viewModeEnabled:false,zenModeEnabled:false};
+    }
   }
 
   private setLinkPrefix():boolean {

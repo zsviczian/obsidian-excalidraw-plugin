@@ -19,7 +19,6 @@ import {
 import {
   VIEW_TYPE_EXCALIDRAW,
   ICON_NAME,
-  EXCALIDRAW_LIB_HEADER,
   DISK_ICON_NAME,
   PNG_ICON_NAME,
   SVG_ICON_NAME,
@@ -30,13 +29,12 @@ import {
   JSON_parse,
   IMAGE_TYPES,
   CTRL_OR_CMD,
-  fileid
 } from './constants';
 import ExcalidrawPlugin from './main';
 import { repositionElementsToCursor} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./ExcalidrawData";
-import { checkAndCreateFolder, download, embedFontsInSVG, errorlog, getIMGFilename, getNewOrAdjacentLeaf, getNewUniqueFilepath, getPNG, getSVG, rotatedDimensions, scaleLoadedImage, splitFolderAndFilename, svgToBase64, viewportCoordsToSceneCoords } from "./Utils";
+import { checkAndCreateFolder, download, embedFontsInSVG, errorlog, getIMGFilename, getNewOrAdjacentLeaf, getNewUniqueFilepath, getPNG, getSVG, isObsidianThemeDark, rotatedDimensions, scaleLoadedImage, splitFolderAndFilename, svgToBase64, viewportCoordsToSceneCoords } from "./Utils";
 import { Prompt } from "./Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 import { updateEquation } from "./LaTeX";
@@ -370,6 +368,18 @@ export default class ExcalidrawView extends TextFileView {
     this.setupAutosaveTimer();
   }
 
+  public setTheme(theme:string) {
+    if(!this.excalidrawRef) return;
+    const st:AppState = this.excalidrawAPI.getAppState();
+    this.excalidrawAPI.updateScene({
+      appState: {
+        ...st,
+        theme: theme,
+      },
+      commitToHistory: false,  
+    });
+  }
+
   public async changeTextMode(textMode:TextMode,reload:boolean=true) {
     this.textMode = textMode;
     if(textMode == TextMode.parsed) {
@@ -440,7 +450,6 @@ export default class ExcalidrawView extends TextFileView {
       this.dirty = null;
       this.compatibilityMode = this.file.extension === "excalidraw";
       await this.plugin.loadSettings();
-      this.plugin.opencount++;
       if(this.compatibilityMode) {
         this.textIsRaw_Element.hide(); 
         this.textIsParsed_Element.hide();
@@ -495,9 +504,11 @@ export default class ExcalidrawView extends TextFileView {
   private async loadDrawing(justloaded:boolean) {     
     const excalidrawData = this.excalidrawData.scene;
     this.justLoaded = justloaded;
+    const om = this.excalidrawData.getOpenMode();
     if(this.excalidrawRef) {
-      const viewModeEnabled = this.excalidrawAPI.getAppState().viewModeEnabled;
-      const zenModeEnabled = this.excalidrawAPI.getAppState().zenModeEnabled;
+      //isLoaded flags that a new file is being loaded, isLoaded will be true after loadDrawing completes
+      const viewModeEnabled = !this.isLoaded ? om.viewModeEnabled : this.excalidrawAPI.getAppState().viewModeEnabled;
+      const zenModeEnabled = !this.isLoaded ? om.zenModeEnabled : this.excalidrawAPI.getAppState().zenModeEnabled;
       this.excalidrawAPI.updateScene({
         elements: excalidrawData.elements,
         appState: { 
@@ -515,7 +526,11 @@ export default class ExcalidrawView extends TextFileView {
     } else {
       this.instantiateExcalidraw({
         elements: excalidrawData.elements,
-        appState: excalidrawData.appState,
+        appState: {
+          zenModeEnabled: om.zenModeEnabled,
+          viewModeEnabled: om.viewModeEnabled,
+          ... excalidrawData.appState
+        },
         files: excalidrawData.files,
         libraryItems: await this.getLibrary(),
       });
@@ -646,8 +661,10 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   async getLibrary() {
-    const data = JSON_parse(this.plugin.getStencilLibrary());
-    return data?.library ? data.library : [];
+    const data:any = this.plugin.getStencilLibrary();
+    return data?.library 
+      ? data.library 
+      : (data?.libraryItems??[]);
   }
 
   
@@ -1123,7 +1140,13 @@ export default class ExcalidrawView extends TextFileView {
           },
           onLibraryChange: (items:LibraryItems) => {
             (async () => {
-              this.plugin.setStencilLibrary(EXCALIDRAW_LIB_HEADER+JSON.stringify(items)+'}');
+              const lib = {
+                type: "excalidrawlib",
+                version: 2,
+                source: "https://excalidraw.com",
+                libraryItems: items
+              }
+              this.plugin.setStencilLibrary(lib);
               await this.plugin.saveSettings();  
             })();
           },
