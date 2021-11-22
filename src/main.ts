@@ -242,9 +242,11 @@ export default class ExcalidrawPlugin extends Plugin {
 
       const theme = this.settings.previewMatchObsidianTheme 
                     ? (isObsidianThemeDark() ? "dark" : "light")
-                    : undefined;
+                    : (!this.settings.exportWithTheme 
+                      ? "light" 
+                      : undefined);
       if(theme) exportSettings.withTheme = true;
-      const loader = new EmbeddedFilesLoader(this,this.settings.previewMatchObsidianTheme?isObsidianThemeDark():undefined);
+      const loader = new EmbeddedFilesLoader(this,theme?(theme==="dark"):undefined);
             
       if(!this.settings.displaySVGInPreview) {
         const width = parseInt(imgAttributes.fwidth);
@@ -556,7 +558,7 @@ export default class ExcalidrawPlugin extends Plugin {
           });
           return;
         }
-        download('data:text/plain;charset=utf-8',encodeURIComponent(this.settings.library), 'my-obsidian-library.excalidrawlib');
+        download('data:text/plain;charset=utf-8',encodeURIComponent(JSON.stringify(this.settings.library2,null,"\t")), 'my-obsidian-library.excalidrawlib');
       },
     });
 
