@@ -15,6 +15,8 @@ import { TextMode } from "./ExcalidrawView";
 import { getAttachmentsFolderAndFilePath, getBinaryFileFromDataURL, getIMGFilename, isObsidianThemeDark, wrapText } from "./Utils";
 import { ExcalidrawImageElement, FileId } from "@zsviczian/excalidraw/types/element/types";
 import { BinaryFiles, SceneData } from "@zsviczian/excalidraw/types/types";
+import { nonWhiteSpace } from "html2canvas/dist/types/css/syntax/parser";
+import { EmbeddedFile, EmbeddedFilesLoader } from "./EmbeddedFileLoader";
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles};
 
@@ -92,14 +94,14 @@ export class ExcalidrawData {
   private textMode: TextMode = TextMode.raw;
   private plugin: ExcalidrawPlugin;
   public loaded: boolean = false;
-  private files:Map<FileId,{path:string,hasSVGwithBitmap:boolean,isLoaded:boolean}> = null; //fileId, path
+  private files:Map<FileId,EmbeddedFile> = null; //fileId, path
   private equations:Map<FileId,{latex:string,isLoaded:boolean}> = null; //fileId, path
   private compatibilityMode:boolean = false;
 
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
     this.app = plugin.app;
-    this.files = new Map<FileId,{path:string,hasSVGwithBitmap:boolean,isLoaded:boolean}>();
+    this.files = new Map<FileId,EmbeddedFile>();
     this.equations = new Map<FileId,{latex:string,isLoaded:boolean}>();
   }  
 
@@ -110,10 +112,12 @@ export class ExcalidrawData {
    */
   public async loadData(data: string,file: TFile, textMode:TextMode):Promise<boolean> {
     this.loaded = false;
-    this.file = file;
     this.textElements = new Map<string,{raw:string, parsed:string}>();
-    this.files.clear();
-    this.equations.clear();
+    if(this.file!=file) { //this is a reload - files and equations will take care of reloading when needed
+      this.files.clear();
+      this.equations.clear();
+    }
+    this.file = file;
     this.compatibilityMode = false;
 
     //I am storing these because if the settings change while a drawing is open parsing will run into errors during save
@@ -192,13 +196,8 @@ export class ExcalidrawData {
     const REG_FILEID_FILEPATH = /([\w\d]*):\s*\[\[([^\]]*)]]\n/gm;
     res = data.matchAll(REG_FILEID_FILEPATH);
     while(!(parts = res.next()).done) {
-      this.setFile(
-        parts.value[1] as FileId,
-        {
-          path:parts.value[2],
-          hasSVGwithBitmap:undefined,
-          isLoaded:false
-      });
+      const embeddedFile = new EmbeddedFile(this.plugin,this.file.path,parts.value[2]);
+      this.setFile(parts.value[1] as FileId,embeddedFile);
     }
 
     //Load Equations
@@ -506,7 +505,7 @@ export class ExcalidrawData {
     }
     if(this.files.size>0) {
       for(const key of this.files.keys()) {
-        outString += key +': [['+this.files.get(key).path + ']]\n';
+        outString += key +': [['+this.files.get(key).file.path + ']]\n';
       }
     }
     outString += (this.equations.size>0 || this.files.size>0) ? '\n' : '';
@@ -542,7 +541,8 @@ export class ExcalidrawData {
       if(!(this.hasFile(key as FileId) || this.hasEquation(key as FileId))) {
         dirty = true;
         let fname = "Pasted Image "+window.moment().format("YYYYMMDDHHmmss_SSS");
-        switch(scene.files[key].mimeType) {
+        const mimeType = scene.files[key].mimeType;
+        switch(mimeType) {
           case "image/png": fname += ".png"; break;
           case "image/jpeg": fname += ".jpg"; break;
           case "image/svg+xml": fname += ".svg"; break;
@@ -550,14 +550,17 @@ export class ExcalidrawData {
           default: fname += ".png"; 
         }
         const [folder,filepath] = await getAttachmentsFolderAndFilePath(this.app,this.file.path,fname);
-        await this.app.vault.createBinary(filepath,getBinaryFileFromDataURL(scene.files[key].dataURL));
-        this.setFile(
-          key as FileId,
-          {
-            path:filepath,
-            hasSVGwithBitmap:false,
-            isLoaded:true
-        });
+        const dataURL = scene.files[key].dataURL;
+        await this.app.vault.createBinary(filepath,getBinaryFileFromDataURL(dataURL));
+        const embeddedFile = new EmbeddedFile(this.plugin,this.file.path,filepath);
+        embeddedFile.setImage(
+          dataURL,
+          mimeType,
+          {height:0,width:0},
+          scene.appState?.theme==="dark",
+          mimeType === "image/svg+xml" //this treat all SVGs as if they had embedded images REF:addIMAGE
+        );
+        this.setFile(key as FileId,embeddedFile);
       }
     }    
     return dirty;
@@ -676,26 +679,18 @@ export class ExcalidrawData {
   // of copying an image or equation from one drawing to another within the same vault
   // this is going to do the job
   */
-  public setFile(fileId:FileId, data:{path:string,hasSVGwithBitmap:boolean,isLoaded:boolean}) {
+  public setFile(fileId:FileId, data:EmbeddedFile) {
     //always store absolute path because in case of paste, relative path may not resolve ok
-    const file = this.app.metadataCache.getFirstLinkpathDest(data.path,this.file.path);
-    const p = file?.path ?? data.path;
-    this.files.set(
-      fileId,
-      {
-        path:p,
-        hasSVGwithBitmap:data.hasSVGwithBitmap,
-        isLoaded:data.isLoaded
-    });
+    this.files.set(fileId,data);
     this.plugin.filesMaster.set(
       fileId,
       {
-        path:p,
-        hasSVGwithBitmap:data.hasSVGwithBitmap
+        path:data.file.path,
+        hasSVGwithBitmap:data.isSVGwithBitmap
     });
   }
 
-  public getFile(fileId:FileId):{path:string,hasSVGwithBitmap?:boolean,isLoaded:boolean} {
+  public getFile(fileId:FileId):EmbeddedFile {
     return this.files.get(fileId);
   }
 
@@ -713,12 +708,9 @@ export class ExcalidrawData {
   public hasFile(fileId:FileId):boolean {
     if(this.files.has(fileId)) return true;
     if(this.plugin.filesMaster.has(fileId)) {
-      this.files.set(
-        fileId,
-        {
-          isLoaded:false,
-          ...this.plugin.filesMaster.get(fileId)
-      });
+      const fileMaster = this.plugin.filesMaster.get(fileId);
+      const embeddedFile = new EmbeddedFile(this.plugin,this.file.path,fileMaster.path);
+      this.files.set(fileId,embeddedFile);
       return true;
     }
     return false;

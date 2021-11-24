@@ -305,5 +305,5 @@ export const sleep = async (ms:number) => {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-//export const debug = console.log.bind(window.console);
+export const debug = console.log.bind(window.console);
 //export const debug = function(){};

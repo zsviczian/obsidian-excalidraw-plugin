@@ -926,7 +926,7 @@ async function getTemplate(
         }
         let foo;
         [foo,scene] = scaleLoadedImage(excalidrawData.scene,fileArray); 
-      },templatePath);
+      });
     }
 
     return {

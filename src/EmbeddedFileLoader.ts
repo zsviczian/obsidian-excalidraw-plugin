@@ -1,3 +1,4 @@
+import { file } from "@babel/types";
 import { exportToBlob } from "@zsviczian/excalidraw";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
 import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/types";
@@ -12,12 +13,72 @@ import {errorlog, getImageSize, svgToBase64 } from "./Utils";
 
 export declare type MimeType = "image/svg+xml" | "image/png" | "image/jpeg" | "image/gif" | "application/octet-stream";
 export type FileData = BinaryFileData & {
-  size: {
-    height: number;
-    width: number;
-  },
+  size: Size,
   hasSVGwithBitmap: boolean
 };
+
+export type Size = {
+  height: number,
+  width: number,
+}
+
+export class EmbeddedFile {
+  public file:TFile = null;
+  public isSVGwithBitmap: boolean = false;
+  private img: string=""; //base64
+  private imgInverted: string=""; //base64
+  public mtime: number = 0; //modified time of the image
+  private plugin: ExcalidrawPlugin;
+  public mimeType: MimeType="application/octet-stream";
+  public size: Size ={height:0,width:0};
+
+  constructor(plugin: ExcalidrawPlugin, hostPath: string, imgPath:string) {
+    this.file = plugin.app.metadataCache.getFirstLinkpathDest(imgPath,hostPath);
+    this.plugin = plugin;
+  }
+
+  private fileChanged():boolean {
+    return this.mtime !=this.file.stat.mtime;
+  }
+
+  setImage(imgBase64:string,mimeType:MimeType,size:Size,isDark:boolean,isSVGwithBitmap:boolean) {
+    if(this.fileChanged()) this.imgInverted = this.img = ""; 
+    this.mtime = this.file.stat.mtime;
+    this.size = size;
+    this.mimeType = mimeType;
+    switch(isDark && isSVGwithBitmap) {
+      case true: this.imgInverted = imgBase64;break;
+      case false: this.img = imgBase64; break;
+    }
+    this.isSVGwithBitmap = isSVGwithBitmap;
+    if(isSVGwithBitmap) this.loadImg(!isDark);
+  }
+
+  async loadImg(isDark:boolean) {
+    const img = isDark ? this.imgInverted : this.img;
+    if(img!=="") return; //already loaded
+    const loader = new EmbeddedFilesLoader(this.plugin,isDark);
+    const imgData = await loader.getObsidianImage(this.file);
+    switch(isDark) {
+      case true: this.imgInverted = imgData.dataURL;
+      case false: this.img = imgData.dataURL;
+    }
+    this.size = imgData.size; //if file is pasted and saved to obsidian, if it is an SVG, size will be determined when the inverted version is loaded
+    //see REF:addIMAGE in ExcalidrawData
+  }
+
+  public isLoaded(isDark:boolean):boolean {
+    if(this.fileChanged()) return false;
+    if (this.isSVGwithBitmap && isDark) return this.imgInverted !== "";
+    return this.img !=="";
+  }
+
+  public getImage(isDark:boolean) {
+    if(isDark && this.isSVGwithBitmap) return this.imgInverted;
+    return this.img; //images that are not SVGwithBitmap, only the light string is stored, since inverted and non-inverted are ===
+  }
+  
+}
 
 export class EmbeddedFilesLoader {
   private plugin:ExcalidrawPlugin;
@@ -109,8 +170,7 @@ export class EmbeddedFilesLoader {
   public async loadSceneFiles ( 
     excalidrawData: ExcalidrawData,
     view: ExcalidrawView,
-    addFiles:Function, 
-    sourcePath:string,
+    addFiles:Function
   ) {
       const app = this.plugin.app;
       const entries = excalidrawData.getFileEntries();
@@ -120,22 +180,32 @@ export class EmbeddedFilesLoader {
       let entry;
       let files:FileData[] = [];
       while(!this.terminate && !(entry = entries.next()).done) {
-        if(!entry.value[1].isLoaded || entry.value[1].hasSVGwithBitmap) {
-          const file = app.metadataCache.getFirstLinkpathDest(entry.value[1].path,sourcePath);
-          if(file && file instanceof TFile) {
-            const data = await this.getObsidianImage(file);//,theme);
-            if(data) {
-              files.push({
-                mimeType : data.mimeType,
-                id: entry.value[0],
-                dataURL: data.dataURL,
-                created: data.created,
-                size: data.size,
-                hasSVGwithBitmap: data.hasSVGwithBitmap
-              });
-            }
+        const embeddedFile:EmbeddedFile = entry.value[1];
+        const updateImage:boolean = !embeddedFile.isLoaded(this.isDark) || embeddedFile.isSVGwithBitmap;
+        if(!embeddedFile.isLoaded(this.isDark)) {
+          const data = await this.getObsidianImage(embeddedFile.file);
+          if(data) {
+            files.push({
+              mimeType : data.mimeType,
+              id: entry.value[0],
+              dataURL: data.dataURL,
+              created: data.created,
+              size: data.size,
+              hasSVGwithBitmap: data.hasSVGwithBitmap
+            });
           }
+        } else if (embeddedFile.isSVGwithBitmap) {
+          files.push({
+            mimeType : embeddedFile.mimeType,
+            id: entry.value[0],
+            dataURL: embeddedFile.getImage(this.isDark) as DataURL,
+            created: embeddedFile.mtime,
+            size: embeddedFile.size,
+            hasSVGwithBitmap: embeddedFile.isSVGwithBitmap
+          });
         }
+
+
       }
     
       let equation;

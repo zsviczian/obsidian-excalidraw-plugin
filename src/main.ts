@@ -61,7 +61,7 @@ import {
 import { Prompt } from "./Prompt";
 import { around } from "monkey-around";
 import { t } from "./lang/helpers";
-import { checkAndCreateFolder, download, embedFontsInSVG, getAttachmentsFolderAndFilePath, getIMGFilename, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, getPNG, getSVG, isObsidianThemeDark, splitFolderAndFilename, svgToBase64 } from "./Utils";
+import { checkAndCreateFolder, debug, download, embedFontsInSVG, getAttachmentsFolderAndFilePath, getIMGFilename, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, getPNG, getSVG, isObsidianThemeDark, splitFolderAndFilename, svgToBase64 } from "./Utils";
 import { OneOffs } from "./OneOffs";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
 import { MATHJAX_DATAURL } from "./mathjax";
@@ -430,8 +430,10 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   private addThemeObserver() {
-    this.themeObserver = new MutationObserver(async (m)=>{
+    this.themeObserver = new MutationObserver(async (m:MutationRecord[])=>{
       if(!this.settings.matchThemeTrigger) return;
+      //@ts-ignore
+      if(m[0]?.oldValue === m[0]?.target?.getAttribute("class")) return;
       const theme = isObsidianThemeDark() ? "dark":"light";
       const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
       leaves.forEach((leaf:WorkspaceLeaf)=> {
@@ -441,7 +443,7 @@ export default class ExcalidrawPlugin extends Plugin {
         }
       });
     });
-    this.themeObserver.observe(document.body, {attributeFilter:["class"]});
+    this.themeObserver.observe(document.body, {attributeOldValue:true, attributeFilter:["class"]});
   }
 
   public experimentalFileTypeDisplayToggle(enabled: boolean) {
@@ -985,9 +987,10 @@ export default class ExcalidrawPlugin extends Plugin {
         leaves.forEach((leaf:WorkspaceLeaf)=> {
           const excalidrawView = (leaf.view as ExcalidrawView); 
           if(excalidrawView.file 
-             && (excalidrawView.file.path == file.path 
-                 || (file.extension=="excalidraw" 
-                     && file.path.substring(0,file.path.lastIndexOf('.excalidraw'))+'.md' == excalidrawView.file.path))) {
+             && (excalidrawView.file.path === file.path 
+                 || (file.extension === "excalidraw" 
+                     && file.path.substring(0,file.path.lastIndexOf('.excalidraw'))+'.md' === excalidrawView.file.path))) {
+            //debug({where:"ExcalidrawPlugin.modifyEventHandler",file:file.name,reloadfile:excalidrawView.file,before:"reload(true)"});                       
             excalidrawView.reload(true,excalidrawView.file);
           }
         });
@@ -1037,7 +1040,7 @@ export default class ExcalidrawPlugin extends Plugin {
       self.registerEvent(
         self.app.workspace.on("quit",quitEventHandler)
       );
-
+      
       //save Excalidraw leaf and update embeds when switching to another leaf
       const activeLeafChangeEventHandler = async (leaf:WorkspaceLeaf) => {
         const activeExcalidrawView = self.activeExcalidrawView;
@@ -1051,7 +1054,7 @@ export default class ExcalidrawPlugin extends Plugin {
           if(activeExcalidrawView.leaf != leaf) {
             //if loading new view to same leaf then don't save. Excalidarw view will take care of saving anyway.
             //avoid double saving
-            await activeExcalidrawView.save(false);
+            await activeExcalidrawView.save(true); //this will update transclusions in the drawing
           }
           if(activeExcalidrawView.file) {
             self.triggerEmbedUpdates(activeExcalidrawView.file.path);

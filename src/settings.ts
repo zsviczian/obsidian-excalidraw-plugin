@@ -8,6 +8,7 @@ import { VIEW_TYPE_EXCALIDRAW } from './constants';
 import ExcalidrawView from './ExcalidrawView';
 import { t } from './lang/helpers';
 import type ExcalidrawPlugin from "./main";
+import { debug } from './Utils';
 
 export interface ExcalidrawSettings {
   folder: string,
@@ -128,6 +129,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       for(const v of exs) {
         if(v.view instanceof ExcalidrawView) {
           await v.view.save(false);
+          //debug({where:"ExcalidrawSettings.hide",file:v.view.file.name,before:"reload(true)"})
           await v.view.reload(true);
         }
       }
