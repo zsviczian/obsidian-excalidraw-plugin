@@ -348,6 +348,7 @@ export default class ExcalidrawView extends TextFileView {
     this.addAction(DISK_ICON_NAME,t("FORCE_SAVE"),async (ev)=> {
       await this.save(false);
       this.plugin.triggerEmbedUpdates();
+      this.loadSceneFiles();
     });
     
     this.textIsRaw_Element = this.addAction(TEXT_DISPLAY_RAW_ICON_NAME,t("RAW"), (ev) => this.changeTextMode(TextMode.parsed));
@@ -1217,7 +1218,7 @@ export default class ExcalidrawView extends TextFileView {
                 if (!onDropHook("file",[draggable.file],null)) {
                   if(event[CTRL_OR_CMD] //.ctrlKey||event.metaKey) 
                      && (IMAGE_TYPES.contains(draggable.file.extension) 
-                        || this.plugin.isExcalidrawFile(draggable.file))) {
+                        || draggable.file.extension==="md")) {//this.plugin.isExcalidrawFile(draggable.file)
                     const f = draggable.file;
                     const topX = currentPosition.x;
                     const topY = currentPosition.y;

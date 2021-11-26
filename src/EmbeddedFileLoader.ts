@@ -1,9 +1,7 @@
-import { file } from "@babel/types";
-import { exportToBlob } from "@zsviczian/excalidraw";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
 import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/types";
-import { App, Notice, TFile } from "obsidian";
-import { fileid, IMAGE_TYPES } from "./constants";
+import { App, MarkdownRenderer, Notice, TFile } from "obsidian";
+import { CASCADIA_FONT, fileid, FRONTMATTER_KEY_FONT, IMAGE_TYPES, VIRGIL_FONT } from "./constants";
 import { ExcalidrawData } from "./ExcalidrawData";
 import ExcalidrawView, { ExportSettings } from "./ExcalidrawView";
 import { t } from "./lang/helpers";
@@ -111,8 +109,8 @@ export class EmbeddedFilesLoader {
     this.processedFiles.set(file.path,count+1);
     let hasSVGwithBitmap = false;
     const app = this.plugin.app;
-    const isExcalidrawFile = this.plugin.ea.isExcalidrawFile(file);
-    if (!(IMAGE_TYPES.contains(file.extension) || isExcalidrawFile)) {
+    const isExcalidrawFile = this.plugin.isExcalidrawFile(file);
+    if (!(IMAGE_TYPES.contains(file.extension) || isExcalidrawFile || file.extension==="md")) {
       return null;
     }
     const ab = await app.vault.readBinary(file);
@@ -151,12 +149,23 @@ export class EmbeddedFilesLoader {
         case "jpeg":mimeType = "image/jpeg";break;
         case "jpg": mimeType = "image/jpeg";break;
         case "gif": mimeType = "image/gif";break;
-        case "svg": mimeType = "image/svg+xml";break;
+        case "svg":
+        case "md" : mimeType = "image/svg+xml";break;
         default: mimeType = "application/octet-stream";
       }
     } 
-    const dataURL = excalidrawSVG ?? (file.extension==="svg" ? await getSVGData(app,file) : await getDataURL(ab,mimeType));
-    const size = await getImageSize(excalidrawSVG??app.vault.getResourcePath(file));
+    const dataURL = excalidrawSVG 
+                    ?? (file.extension==="svg" 
+                        ? await getSVGData(app,file) 
+                        : (file.extension==="md" 
+                           ? await convertMarkdownToSVG(this.plugin,file) 
+                           : await getDataURL(ab,mimeType)
+                      ));
+    const size = await getImageSize(excalidrawSVG 
+                                    ?? (file.extension==="md" 
+                                        ? dataURL
+                                        : app.vault.getResourcePath(file)
+                                    ));
     return {
         mimeType,
         fileId: await generateIdFromFile(ab),
@@ -238,6 +247,55 @@ export class EmbeddedFilesLoader {
 
 const getSVGData = async (app: App, file: TFile): Promise<DataURL> => {
   const svg = await app.vault.read(file);
+  return svgToBase64(svg) as DataURL;
+}
+
+const mdSVGwidth = 640;
+const mdSVGmaxHeight = 800;
+const convertMarkdownToSVG = async (plugin: ExcalidrawPlugin, file: TFile): Promise<DataURL> => {
+  const text = await plugin.app.vault.cachedRead(file);
+  const fileCache = plugin.app.metadataCache.getFileCache(file);
+  let fontName = "Virgil";
+  let fontBase64 = VIRGIL_FONT;
+  if (fileCache?.frontmatter && fileCache.frontmatter[FRONTMATTER_KEY_FONT]!=null) {
+    const font = fileCache.frontmatter[FRONTMATTER_KEY_FONT];
+    switch(font){
+      case "Virgil": fontName = "Virgil";fontBase64 = VIRGIL_FONT; break;
+      case "Cascadia": fontName = "Cascadia";fontBase64 = CASCADIA_FONT; break;
+      default: 
+        const f = plugin.app.metadataCache.getFirstLinkpathDest(font,file.path);
+        if(f) {
+          const ab = await plugin.app.vault.readBinary(f);
+          const mimeType="application/font-woff";
+          fontName = f.basename;
+          fontBase64 = ` @font-face {font-family: "${fontName}";src: url("${await getDataURL(ab,mimeType)}") format("${f.extension}");}`;
+        }
+    }
+  }
+
+  const span = createEl("span");
+  span.setAttribute("xmlns","http://www.w3.org/1999/xhtml");
+  span.setAttribute("style","font-family: "+fontName+";");
+  await MarkdownRenderer.renderMarkdown(text,span,file.path,plugin);
+  span.querySelectorAll(":scope > *[class^='frontmatter']").forEach((el)=>span.removeChild(el));
+  const xml = new XMLSerializer().serializeToString(span);
+  let svgStyle = ' width="'+mdSVGwidth+'px" height="100%"';
+  let foreignObjectStyle = ' width="'+mdSVGwidth+'px" height="100%"';
+  let svg= '<svg xmlns="http://www.w3.org/2000/svg"'+svgStyle+'><foreignObject x="0" y="0"'+foreignObjectStyle+'>' +
+             xml+'</foreignObject><defs><style>'+ fontBase64 +'</style></defs></svg>';
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svg,"image/svg+xml");
+  const svgEl = doc.firstElementChild;
+  const div = createDiv();
+  div.appendChild(svgEl);
+  document.body.appendChild(div);
+  const height = svgEl.firstElementChild.scrollHeight;
+  const svgHeight = height <= mdSVGmaxHeight ? height : mdSVGmaxHeight;
+  document.body.removeChild(div);
+  svgStyle = ' width="'+mdSVGwidth+'px" height="'+svgHeight+'px"';
+  foreignObjectStyle = ' width="'+mdSVGwidth+'px" height="'+svgHeight+'px"';
+  svg= '<svg xmlns="http://www.w3.org/2000/svg"'+svgStyle+'><foreignObject x="0" y="0"'+foreignObjectStyle+'>' + 
+  xml+'</foreignObject><defs><style>'+ fontBase64 +'</style></defs></svg>';
   return svgToBase64(svg) as DataURL;
 }
 

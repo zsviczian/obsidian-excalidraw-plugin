@@ -13,6 +13,7 @@ export const FRONTMATTER_KEY_CUSTOM_PREFIX = "excalidraw-link-prefix";
 export const FRONTMATTER_KEY_CUSTOM_URL_PREFIX = "excalidraw-url-prefix";
 export const FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS = "excalidraw-link-brackets";
 export const FRONTMATTER_KEY_DEFAULT_MODE = "excalidraw-default-mode";
+export const FRONTMATTER_KEY_FONT = "excalidraw-font";
 export const VIEW_TYPE_EXCALIDRAW = "excalidraw";
 export const ICON_NAME = "excalidraw-icon";
 export const MAX_COLORS = 5;
