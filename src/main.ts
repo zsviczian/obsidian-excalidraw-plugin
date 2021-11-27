@@ -1109,7 +1109,14 @@ export default class ExcalidrawPlugin extends Plugin {
         if(newActiveviewEV && (!previouslyActiveEV || previouslyActiveEV.leaf != leaf)) {
           //the user switched to a new leaf
           //timeout gives time to the view being exited to finish saving
-          if(newActiveviewEV.file) setTimeout(()=>newActiveviewEV.loadSceneFiles(),1000); //refresh embedded files
+          const f = newActiveviewEV.file;
+          if(newActiveviewEV.file) setTimeout(()=>{
+            //@ts-ignore
+            if(!newActiveviewEV || !newActiveviewEV._loaded) return;
+            if(newActiveviewEV.file?.path !== f?.path) return;
+            if(newActiveviewEV.activeLoader) return;
+            newActiveviewEV.loadSceneFiles()
+          },2000); //refresh embedded files
         }
       };
       self.registerEvent(

@@ -56,7 +56,7 @@ export class EmbeddedFile {
     return this.mtime !=this.file.stat.mtime;
   }
 
-  setImage(imgBase64:string,mimeType:MimeType,size:Size,isDark:boolean,isSVGwithBitmap:boolean) {
+  public setImage(imgBase64:string,mimeType:MimeType,size:Size,isDark:boolean,isSVGwithBitmap:boolean) {
     if(!this.file) return;
     if(this.fileChanged()) this.imgInverted = this.img = ""; 
     this.mtime = this.file.stat.mtime;
@@ -64,23 +64,9 @@ export class EmbeddedFile {
     this.mimeType = mimeType;
     switch(isDark && isSVGwithBitmap) {
       case true: this.imgInverted = imgBase64;break;
-      case false: this.img = imgBase64; break;
+      case false: this.img = imgBase64; break; //bitmaps and SVGs without an embedded bitmap do not need a negative image
     }
     this.isSVGwithBitmap = isSVGwithBitmap;
-  }
-
-  async loadImg(isDark:boolean) {
-    if(!this.file) return;
-    const img = isDark ? this.imgInverted : this.img;
-    if(img!=="") return; //already loaded
-    const loader = new EmbeddedFilesLoader(this.plugin,isDark);
-    const imgData = await loader.getObsidianImage(this.file);
-    switch(isDark) {
-      case true: this.imgInverted = imgData.dataURL;
-      case false: this.img = imgData.dataURL;
-    }
-    this.size = imgData.size; //if file is pasted and saved to obsidian, if it is an SVG, size will be determined when the inverted version is loaded
-    //see REF:addIMAGE in ExcalidrawData
   }
 
   public isLoaded(isDark:boolean):boolean {
@@ -149,7 +135,7 @@ export class EmbeddedFilesLoader {
     const ab = await app.vault.readBinary(file);
 
     const getExcalidrawSVG = async (isDark:boolean) => {
-      debug({where:"EmbeddedFileLoader.getExcalidrawSVG",uid:this.uid,file:file.name});
+      //debug({where:"EmbeddedFileLoader.getExcalidrawSVG",uid:this.uid,file:file.name});
       const exportSettings:ExportSettings = {
         withBackground: false,
         withTheme: false, 
@@ -225,7 +211,7 @@ export class EmbeddedFilesLoader {
   ) {
       const app = this.plugin.app;
       const entries = excalidrawData.getFileEntries();
-      debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,isDark:this.isDark,sceneTheme:excalidrawData.scene.appState.theme});
+      //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,isDark:this.isDark,sceneTheme:excalidrawData.scene.appState.theme});
       if(this.isDark===undefined) {
         this.isDark = excalidrawData.scene.appState.theme==="dark";
       }
@@ -235,7 +221,7 @@ export class EmbeddedFilesLoader {
         const embeddedFile:EmbeddedFile = entry.value[1];
         const updateImage:boolean = !embeddedFile.isLoaded(this.isDark) || embeddedFile.isSVGwithBitmap;
         if(!embeddedFile.isLoaded(this.isDark)) {
-          debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"embedded Files are not loaded"});
+          //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"embedded Files are not loaded"});
           const data = await this.getObsidianImage(embeddedFile);
           if(data) {
             files.push({
@@ -281,9 +267,9 @@ export class EmbeddedFilesLoader {
       }
     
       if(this.terminate) return;
-      debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"add Files"});
+      //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"add Files"});
       try { //in try block because by the time files are loaded the user may have closed the view
-        addFiles(files);
+        addFiles(files,this.isDark);
       } catch(e) {
         errorlog({where:"EmbeddedFileLoader.loadSceneFiles", error: e});
       }
@@ -309,7 +295,8 @@ const convertMarkdownToSVG = async (plugin: ExcalidrawPlugin, file: TFile, linkP
     font = fileCache.frontmatter[FRONTMATTER_KEY_FONT];
   }
   switch(font){
-    case "Virgil": fontName = "Virgil";fontDef = VIRGIL_FONT; break;
+    case "Virgil":
+    case "": fontName = "Virgil";fontDef = VIRGIL_FONT; break;
     case "Cascadia": fontName = "Cascadia";fontDef = CASCADIA_FONT; break;
     default: 
       const f = plugin.app.metadataCache.getFirstLinkpathDest(font,file.path);
@@ -391,7 +378,7 @@ const generateIdFromFile = async (file: ArrayBuffer):Promise<FileId> => {
         .map((byte) => byte.toString(16).padStart(2, "0"))
         .join("") as FileId;
   } catch (error) {
-    console.error(error);
+    errorlog({where:"EmbeddedFileLoader.generateIdFromFile",error});
     id = fileid() as FileId;
   }
   return id;

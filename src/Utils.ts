@@ -240,7 +240,7 @@ export const getPNG = async (scene:any, exportSettings:ExportSettings, scale:num
       getDimensions: (width:number, height:number) => ({ width:width*scale, height:height*scale, scale:scale })
     });
   } catch (error) {
-    console.log(error);
+    errorlog({where:"Utils.getPNG",error});
     return null;
   }
 }
@@ -320,7 +320,7 @@ export const getLinkParts = (fname:string):LinkParts => {
 }
 
 export const errorlog = (data:{}) => {
-  console.log({plugin:"Excalidraw",...data});
+  console.error({plugin:"Excalidraw",...data});
 }
 
 export const sleep = async (ms:number) => {

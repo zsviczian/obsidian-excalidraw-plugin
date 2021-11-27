@@ -1,6 +1,7 @@
 //Solution copied from obsidian-kanban: https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/lang/helpers.ts
 
 import { moment } from "obsidian";
+import { errorlog } from "src/Utils";
 import ar from "./locale/ar";
 import cz from "./locale/cz";
 import da from "./locale/da";
@@ -55,7 +56,7 @@ const locale = localeMap[moment.locale()];
 
 export function t(str: keyof typeof en): string {
   if (!locale) {
-    console.error("Error: Excalidraw locale not found", moment.locale());
+    errorlog({where:"helpers.t",message:"Error: Excalidraw locale not found", locale: moment.locale()});
   }
 
   return (locale && locale[str]) || en[str];

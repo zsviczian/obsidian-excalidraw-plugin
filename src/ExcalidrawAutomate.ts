@@ -19,7 +19,7 @@ import {
   VIEW_TYPE_EXCALIDRAW,
   MAX_IMAGE_SIZE,
 } from "./constants";
-import { debug, embedFontsInSVG, getPNG, getSVG, scaleLoadedImage, wrapText } from "./Utils";
+import { debug, embedFontsInSVG, errorlog, getPNG, getSVG, scaleLoadedImage, wrapText } from "./Utils";
 import { AppState, DataURL } from "@zsviczian/excalidraw/types/types";
 import { EmbeddedFilesLoader, FileData, MimeType } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
@@ -890,8 +890,8 @@ async function getTemplate(
 
     let scene = excalidrawData.scene;
     if(loadFiles) {
-      debug({where:"getTemplate",template:file.name,loader:loader.uid});
-      await loader.loadSceneFiles(excalidrawData, (fileArray:FileData[])=>{
+      //debug({where:"getTemplate",template:file.name,loader:loader.uid});
+      await loader.loadSceneFiles(excalidrawData, (fileArray:FileData[],isDark:boolean)=>{
         if(!fileArray || fileArray.length===0) return;
         for(const f of fileArray) {
           if(f.hasSVGwithBitmap) hasSVGwithBitmap = true;
@@ -1053,12 +1053,12 @@ export function repositionElementsToCursor (elements:ExcalidrawElement[],newPosi
 function errorMessage(message: string, source: string) {
   switch(message) {
     case "targetView not set": 
-      console.log(source, "ExcalidrawAutomate: targetView not set, or no longer active. Use setView before calling this function");
+      errorlog({where:"ExcalidrawAutomate",source, message:"targetView not set, or no longer active. Use setView before calling this function"});
       break;
     case "mobile not supported":
-      console.log(source, "ExcalidrawAutomate: this function is not avalable on Obsidian Mobile");
+      errorlog({where:"ExcalidrawAutomate",source, message:"this function is not avalable on Obsidian Mobile"});
       break;
     default:
-      console.log(source, "ExcalidrawAutomate: unknown error");
+      errorlog({where:"ExcalidrawAutomate",source, message:"unknown error"});
   }
 }

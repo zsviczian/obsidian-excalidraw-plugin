@@ -3,6 +3,7 @@ import { FRONTMATTER_KEY } from "./constants";
 import { ExcalidrawData, getJSON } from "./ExcalidrawData";
 import { getTextMode, TextMode } from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
+import { errorlog } from "./Utils";
 
 export class OneOffs {
   private plugin:ExcalidrawPlugin
@@ -123,7 +124,7 @@ export class OneOffs {
               }
             }
           } catch (e) {
-            console.log("Unable to process: "+f.path,{error:e});
+            errorlog({where:"OneOffs.wysiwygPatch",message:"Unable to process: "+f.path,error:e});
           }
         }
       }

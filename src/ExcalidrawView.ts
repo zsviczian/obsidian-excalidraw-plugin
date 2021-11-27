@@ -514,28 +514,33 @@ export default class ExcalidrawView extends TextFileView {
     });
   }
   
-  private activeLoader:EmbeddedFilesLoader = null;
+  public activeLoader:EmbeddedFilesLoader = null;
   private nextLoader:EmbeddedFilesLoader = null;
-  public async loadSceneFiles(isDark?:boolean) {
-    const loader = new EmbeddedFilesLoader(this.plugin,isDark);
-    debug({where:"ExcalidrawView.loadSceneFiles",status:"loader created",file:this.file.name,loader:loader.uid});
+  public async loadSceneFiles() {
+    const loader = new EmbeddedFilesLoader(this.plugin);
+    //debug({where:"ExcalidrawView.loadSceneFiles",status:"loader created",file:this.file.name,loader:loader.uid});
    
     const runLoader = (l:EmbeddedFilesLoader) => {
       this.nextLoader = null;
       this.activeLoader = l;
-      debug({where:"ExcalidrawView.loadSceneFiles",status:"loader initiated",file:this.file.name,loader:l.uid});
-      if(isDark !== undefined) this.excalidrawData.scene.appState.theme = isDark ? "dark" : "light";
+      //debug({where:"ExcalidrawView.loadSceneFiles",status:"loader initiated",file:this.file.name,loader:l.uid});
       //debug({where:"ExcalidrawView.loadSceneFiles",file:this.file.name,dataTheme:this.excalidrawData.scene.appState.theme,before:"loader.loadSceneFiles",isDark})
       l.loadSceneFiles(
         this.excalidrawData,
-        (files:FileData[]) => {
+        (files:FileData[], isDark:boolean) => {
           if(!files) return;
           addFiles(files,this,isDark);
           this.activeLoader = null;
-          if(this.nextLoader) runLoader(this.nextLoader);
+          if(this.nextLoader) {
+            runLoader(this.nextLoader);
+          }
       });
     }
-    if(!this.activeLoader) runLoader(loader); else this.nextLoader=loader;
+    if(!this.activeLoader) {
+      runLoader(loader); 
+    } else {
+      this.nextLoader=loader;
+    }
   }
 
   /**
@@ -1213,7 +1218,8 @@ export default class ExcalidrawView extends TextFileView {
           },
           onThemeChange: async (newTheme:string) => {
             //debug({where:"ExcalidrawView.onThemeChange",file:this.file.name,before:"this.loadSceneFiles",newTheme});
-            this.loadSceneFiles(newTheme==="dark");
+            this.excalidrawData.scene.appState.theme = newTheme;
+            this.loadSceneFiles();
           },
           onDrop: (event: React.DragEvent<HTMLDivElement>):boolean => {
             const st: AppState = this.excalidrawAPI.getAppState();
