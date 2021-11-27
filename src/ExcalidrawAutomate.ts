@@ -19,7 +19,7 @@ import {
   VIEW_TYPE_EXCALIDRAW,
   MAX_IMAGE_SIZE,
 } from "./constants";
-import { embedFontsInSVG, getPNG, getSVG, scaleLoadedImage, wrapText } from "./Utils";
+import { debug, embedFontsInSVG, getPNG, getSVG, scaleLoadedImage, wrapText } from "./Utils";
 import { AppState, DataURL } from "@zsviczian/excalidraw/types/types";
 import { EmbeddedFilesLoader, FileData, MimeType } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
@@ -362,29 +362,17 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
       loader:EmbeddedFilesLoader = new EmbeddedFilesLoader(this.plugin),
       theme?:string,
     ):Promise<SVGSVGElement> {
-      const automateElements = this.getElements();
-      const template = templatePath ? (await getTemplate(this.plugin,templatePath,true,loader)) : null;
-      let elements = template?.elements ?? [];
-      elements = elements.concat(automateElements);
-      const svg = await getSVG(
-        {//createDrawing
-          type: "excalidraw",
-          version: 2,
-          source: "https://excalidraw.com",
-          elements: elements,
-          appState: {
-            theme: theme??(template?.appState?.theme ?? this.canvas.theme),
-            viewBackgroundColor: template?.appState?.viewBackgroundColor ?? this.canvas.viewBackgroundColor,
-          },
-          files: template?.files ?? {}
-        },
-        {
-          withBackground: exportSettings?.withBackground ?? plugin.settings.exportWithBackground, 
-          withTheme: exportSettings?.withTheme ?? plugin.settings.exportWithTheme
-        }
-      )
-      if(template?.hasSVGwithBitmap) svg.setAttribute("hasbitmap","true");
-      return embedFont ? embedFontsInSVG(svg) : svg;
+      return await createSVG(
+        templatePath,
+        embedFont,
+        exportSettings,
+        loader,
+        theme,
+        this.canvas.theme,
+        this.canvas.viewBackgroundColor,
+        this.getElements(),
+        this.plugin
+      );
     },
     async createPNG(
       templatePath?:string,
@@ -393,28 +381,17 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
       loader:EmbeddedFilesLoader = new EmbeddedFilesLoader(this.plugin),
       theme?:string
     ) {
-      const automateElements = this.getElements();
-      const template = templatePath ? (await getTemplate(this.plugin,templatePath,true,loader)) : null;
-      let elements = template?.elements ?? [];
-      elements = elements.concat(automateElements);
-      return await getPNG(
-        { 
-          type: "excalidraw",
-          version: 2,
-          source: "https://excalidraw.com",
-          elements: elements,
-          appState: {
-            theme: theme??(template?.appState?.theme ?? this.canvas.theme),
-            viewBackgroundColor: template?.appState?.viewBackgroundColor ?? this.canvas.viewBackgroundColor,
-          },
-          files: template?.files ?? {}
-        },
-        {
-          withBackground: exportSettings?.withBackground ?? plugin.settings.exportWithBackground, 
-          withTheme: exportSettings?.withTheme ?? plugin.settings.exportWithTheme
-        },
-        scale
-      )  
+      return await createPNG(
+        templatePath,
+        scale,
+        exportSettings,
+        loader,
+        theme,
+        this.canvas.theme,
+        this.canvas.viewBackgroundColor,
+        this.getElements(),
+        this.plugin
+      )
     },
     wrapText(text:string, lineLen:number):string {
       return wrapText(text,lineLen,this.plugin.settings.forceWrap);
@@ -913,7 +890,8 @@ async function getTemplate(
 
     let scene = excalidrawData.scene;
     if(loadFiles) {
-      await loader.loadSceneFiles(excalidrawData, null, (fileArray:FileData[], view:any)=>{
+      debug({where:"getTemplate",template:file.name,loader:loader.uid});
+      await loader.loadSceneFiles(excalidrawData, (fileArray:FileData[])=>{
         if(!fileArray || fileArray.length===0) return;
         for(const f of fileArray) {
           if(f.hasSVGwithBitmap) hasSVGwithBitmap = true;
@@ -945,6 +923,76 @@ async function getTemplate(
     hasSVGwithBitmap
   }
 }
+
+export async function createPNG(
+  templatePath:string = undefined,
+  scale:number=1,
+  exportSettings:ExportSettings,
+  loader:EmbeddedFilesLoader = new EmbeddedFilesLoader(this.plugin),
+  forceTheme:string = undefined,
+  canvasTheme: string = undefined,
+  canvasBackgroundColor: string = undefined,
+  automateElements: ExcalidrawElement[] = [],
+  plugin: ExcalidrawPlugin,
+) {
+  const template = templatePath ? (await getTemplate(this.plugin,templatePath,true,loader)) : null;
+  let elements = template?.elements ?? [];
+  elements = elements.concat(automateElements);
+  return await getPNG(
+    { 
+      type: "excalidraw",
+      version: 2,
+      source: "https://excalidraw.com",
+      elements: elements,
+      appState: {
+        theme: forceTheme??(template?.appState?.theme ?? canvasTheme),
+        viewBackgroundColor: template?.appState?.viewBackgroundColor ?? canvasBackgroundColor,
+      },
+      files: template?.files ?? {}
+    },
+    {
+      withBackground: exportSettings?.withBackground ?? plugin.settings.exportWithBackground, 
+      withTheme: exportSettings?.withTheme ?? plugin.settings.exportWithTheme
+    },
+    scale
+  )  
+}
+
+export async function createSVG(
+  templatePath:string = undefined,
+  embedFont:boolean = false,
+  exportSettings:ExportSettings,
+  loader:EmbeddedFilesLoader = new EmbeddedFilesLoader(this.plugin),
+  forceTheme:string = undefined,
+  canvasTheme: string = undefined,
+  canvasBackgroundColor: string = undefined,
+  automateElements: ExcalidrawElement[] = [],
+  plugin: ExcalidrawPlugin,
+):Promise<SVGSVGElement> {
+  const template = templatePath ? (await getTemplate(plugin,templatePath,true,loader)) : null;
+  let elements = template?.elements ?? [];
+  elements = elements.concat(automateElements);
+  const svg = await getSVG(
+    {//createDrawing
+      type: "excalidraw",
+      version: 2,
+      source: "https://excalidraw.com",
+      elements: elements,
+      appState: {
+        theme: forceTheme??(template?.appState?.theme ?? canvasTheme),
+        viewBackgroundColor: template?.appState?.viewBackgroundColor ?? canvasBackgroundColor,
+      },
+      files: template?.files ?? {}
+    },
+    {
+      withBackground: exportSettings?.withBackground ?? plugin.settings.exportWithBackground, 
+      withTheme: exportSettings?.withTheme ?? plugin.settings.exportWithTheme
+    }
+  )
+  if(template?.hasSVGwithBitmap) svg.setAttribute("hasbitmap","true");
+  return embedFont ? embedFontsInSVG(svg) : svg;
+}
+
 
 function estimateLineBound(points:any):[number,number,number,number] {
   let minX = Infinity;

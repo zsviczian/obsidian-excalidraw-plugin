@@ -1,13 +1,16 @@
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
 import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/types";
+import { link } from "fs";
 import { App, MarkdownRenderer, Notice, TFile } from "obsidian";
-import { CASCADIA_FONT, fileid, FRONTMATTER_KEY_FONT, IMAGE_TYPES, VIRGIL_FONT } from "./constants";
-import { ExcalidrawData } from "./ExcalidrawData";
+import { CASCADIA_FONT, fileid, FRONTMATTER_KEY_CSS, FRONTMATTER_KEY_FONT, FRONTMATTER_KEY_FONTCOLOR, IMAGE_TYPES, nanoid, VIRGIL_FONT } from "./constants";
+import { createSVG } from "./ExcalidrawAutomate";
+import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
 import ExcalidrawView, { ExportSettings } from "./ExcalidrawView";
 import { t } from "./lang/helpers";
+import de from "./lang/locale/de";
 import { tex2dataURL } from "./LaTeX";
 import ExcalidrawPlugin from "./main";
-import {errorlog, getImageSize, svgToBase64 } from "./Utils";
+import {debug, errorlog, getImageSize, getLinkParts, LinkParts, svgToBase64 } from "./Utils";
 
 export declare type MimeType = "image/svg+xml" | "image/png" | "image/jpeg" | "image/gif" | "application/octet-stream";
 export type FileData = BinaryFileData & {
@@ -29,10 +32,24 @@ export class EmbeddedFile {
   private plugin: ExcalidrawPlugin;
   public mimeType: MimeType="application/octet-stream";
   public size: Size ={height:0,width:0};
+  public linkParts: LinkParts;
 
   constructor(plugin: ExcalidrawPlugin, hostPath: string, imgPath:string) {
-    this.file = plugin.app.metadataCache.getFirstLinkpathDest(imgPath,hostPath);
     this.plugin = plugin;
+    this.resetImage(hostPath,imgPath);
+  }
+
+  public resetImage(hostPath: string, imgPath:string) {
+    this.imgInverted = this.img = ""; 
+    this.mtime = 0;
+    this.linkParts = getLinkParts(imgPath);
+    if(!this.linkParts.path) {
+      new Notice("Excalidraw Error\nIncorrect embedded filename: "+imgPath);
+      return;
+    }
+    if(!this.linkParts.width) this.linkParts.width = this.plugin.settings.mdSVGwidth;
+    if(!this.linkParts.height) this.linkParts.height = this.plugin.settings.mdSVGmaxHeight;
+    this.file = this.plugin.app.metadataCache.getFirstLinkpathDest(this.linkParts.path,hostPath);
   }
 
   private fileChanged():boolean {
@@ -40,6 +57,7 @@ export class EmbeddedFile {
   }
 
   setImage(imgBase64:string,mimeType:MimeType,size:Size,isDark:boolean,isSVGwithBitmap:boolean) {
+    if(!this.file) return;
     if(this.fileChanged()) this.imgInverted = this.img = ""; 
     this.mtime = this.file.stat.mtime;
     this.size = size;
@@ -49,10 +67,10 @@ export class EmbeddedFile {
       case false: this.img = imgBase64; break;
     }
     this.isSVGwithBitmap = isSVGwithBitmap;
-    if(isSVGwithBitmap) this.loadImg(!isDark);
   }
 
   async loadImg(isDark:boolean) {
+    if(!this.file) return;
     const img = isDark ? this.imgInverted : this.img;
     if(img!=="") return; //already loaded
     const loader = new EmbeddedFilesLoader(this.plugin,isDark);
@@ -66,12 +84,14 @@ export class EmbeddedFile {
   }
 
   public isLoaded(isDark:boolean):boolean {
+    if(!this.file) return true;
     if(this.fileChanged()) return false;
     if (this.isSVGwithBitmap && isDark) return this.imgInverted !== "";
     return this.img !=="";
   }
 
   public getImage(isDark:boolean) {
+    if(!this.file) return "";
     if(isDark && this.isSVGwithBitmap) return this.imgInverted;
     return this.img; //images that are not SVGwithBitmap, only the light string is stored, since inverted and non-inverted are ===
   }
@@ -83,14 +103,16 @@ export class EmbeddedFilesLoader {
   private processedFiles: Map<string,number> = new Map<string,number>();
   private isDark:boolean;
   public terminate=false;
+  public uid:string;
 
   constructor(plugin: ExcalidrawPlugin, isDark?:boolean) {
     this.plugin = plugin;
     this.isDark = isDark;
+    this.uid = nanoid();
   }
 
   public async getObsidianImage (
-    file: TFile
+    inFile: TFile | EmbeddedFile
   ):Promise<{
     mimeType: MimeType,
     fileId: FileId, 
@@ -99,7 +121,18 @@ export class EmbeddedFilesLoader {
     hasSVGwithBitmap: boolean,
     size: {height: number, width: number},
   }> {
-    if(!this.plugin || !file) return null;
+    if(!this.plugin || !inFile) return null;
+    const file:TFile = inFile instanceof EmbeddedFile ? inFile.file : inFile;
+    const linkParts = inFile instanceof EmbeddedFile 
+                      ? inFile.linkParts 
+                      : {
+                        original: file.path,
+                        path: file.path,
+                        isBlockRef: false,
+                        ref: null,
+                        width: this.plugin.settings.mdSVGwidth,
+                        height: this.plugin.settings.mdSVGmaxHeight
+                      } 
     //to block infinite loop of recursive loading of images
     let count=this.processedFiles.has(file.path) ? this.processedFiles.get(file.path):0;
     if(file.extension==="md" && count>2) {
@@ -116,12 +149,22 @@ export class EmbeddedFilesLoader {
     const ab = await app.vault.readBinary(file);
 
     const getExcalidrawSVG = async (isDark:boolean) => {
+      debug({where:"EmbeddedFileLoader.getExcalidrawSVG",uid:this.uid,file:file.name});
       const exportSettings:ExportSettings = {
         withBackground: false,
         withTheme: false, 
       };
-      this.plugin.ea.reset();
-      const svg = await this.plugin.ea.createSVG(file.path,true,exportSettings,this,null);    
+      const svg = await createSVG(
+        file.path,
+        true,
+        exportSettings,
+        this,
+        null,
+        null,
+        null,
+        [],
+        this.plugin
+      );    
       //https://stackoverflow.com/questions/51154171/remove-css-filter-on-child-elements
       const imageList = svg.querySelectorAll("image:not([href^='data:image/svg'])");
       if(imageList.length>0) hasSVGwithBitmap = true;
@@ -158,7 +201,7 @@ export class EmbeddedFilesLoader {
                     ?? (file.extension==="svg" 
                         ? await getSVGData(app,file) 
                         : (file.extension==="md" 
-                           ? await convertMarkdownToSVG(this.plugin,file) 
+                           ? await convertMarkdownToSVG(this.plugin,file,linkParts) 
                            : await getDataURL(ab,mimeType)
                       ));
     const size = await getImageSize(excalidrawSVG 
@@ -178,11 +221,11 @@ export class EmbeddedFilesLoader {
 
   public async loadSceneFiles ( 
     excalidrawData: ExcalidrawData,
-    view: ExcalidrawView,
     addFiles:Function
   ) {
       const app = this.plugin.app;
       const entries = excalidrawData.getFileEntries();
+      debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,isDark:this.isDark,sceneTheme:excalidrawData.scene.appState.theme});
       if(this.isDark===undefined) {
         this.isDark = excalidrawData.scene.appState.theme==="dark";
       }
@@ -192,7 +235,8 @@ export class EmbeddedFilesLoader {
         const embeddedFile:EmbeddedFile = entry.value[1];
         const updateImage:boolean = !embeddedFile.isLoaded(this.isDark) || embeddedFile.isSVGwithBitmap;
         if(!embeddedFile.isLoaded(this.isDark)) {
-          const data = await this.getObsidianImage(embeddedFile.file);
+          debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"embedded Files are not loaded"});
+          const data = await this.getObsidianImage(embeddedFile);
           if(data) {
             files.push({
               mimeType : data.mimeType,
@@ -237,8 +281,9 @@ export class EmbeddedFilesLoader {
       }
     
       if(this.terminate) return;
+      debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"add Files"});
       try { //in try block because by the time files are loaded the user may have closed the view
-        addFiles(files,view);
+        addFiles(files);
       } catch(e) {
         errorlog({where:"EmbeddedFileLoader.loadSceneFiles", error: e});
       }
@@ -250,53 +295,74 @@ const getSVGData = async (app: App, file: TFile): Promise<DataURL> => {
   return svgToBase64(svg) as DataURL;
 }
 
-const mdSVGwidth = 640;
-const mdSVGmaxHeight = 800;
-const convertMarkdownToSVG = async (plugin: ExcalidrawPlugin, file: TFile): Promise<DataURL> => {
-  const text = await plugin.app.vault.cachedRead(file);
+const convertMarkdownToSVG = async (plugin: ExcalidrawPlugin, file: TFile, linkParts: LinkParts): Promise<DataURL> => {
+  
+  //const text = await plugin.app.vault.cachedRead(file);
+  const [text,line] = await getTransclusion(linkParts,plugin.app,file);
   const fileCache = plugin.app.metadataCache.getFileCache(file);
-  let fontName = "Virgil";
-  let fontBase64 = VIRGIL_FONT;
+  
+  //get styles
+  let fontName:string;
+  let fontDef:string;
+  let font = plugin.settings.mdFont;
   if (fileCache?.frontmatter && fileCache.frontmatter[FRONTMATTER_KEY_FONT]!=null) {
-    const font = fileCache.frontmatter[FRONTMATTER_KEY_FONT];
-    switch(font){
-      case "Virgil": fontName = "Virgil";fontBase64 = VIRGIL_FONT; break;
-      case "Cascadia": fontName = "Cascadia";fontBase64 = CASCADIA_FONT; break;
-      default: 
-        const f = plugin.app.metadataCache.getFirstLinkpathDest(font,file.path);
-        if(f) {
-          const ab = await plugin.app.vault.readBinary(f);
-          const mimeType="application/font-woff";
-          fontName = f.basename;
-          fontBase64 = ` @font-face {font-family: "${fontName}";src: url("${await getDataURL(ab,mimeType)}") format("${f.extension}");}`;
-        }
-    }
+    font = fileCache.frontmatter[FRONTMATTER_KEY_FONT];
   }
+  switch(font){
+    case "Virgil": fontName = "Virgil";fontDef = VIRGIL_FONT; break;
+    case "Cascadia": fontName = "Cascadia";fontDef = CASCADIA_FONT; break;
+    default: 
+      const f = plugin.app.metadataCache.getFirstLinkpathDest(font,file.path);
+      if(f) {
+        const ab = await plugin.app.vault.readBinary(f);
+        const mimeType=f.extension.startsWith("woff")?"application/font-woff":"font/truetype";
+        fontName = f.basename;
+        fontDef = ` @font-face {font-family: "${fontName}";src: url("${await getDataURL(ab,mimeType)}") format("${f.extension==="ttf"?"truetype":f.extension}");}`;
+        const split = fontDef.split(";base64,",2);
+        fontDef = split[0]+";charset=utf-8;base64,"+split[1];
+      } else {
+        fontName = "Virgil";fontDef = VIRGIL_FONT;
+      }
+  }
+  
+  const fontColor = fileCache?.frontmatter ? fileCache.frontmatter[FRONTMATTER_KEY_FONTCOLOR] : plugin.settings.mdFontColor;
 
-  const span = createEl("span");
-  span.setAttribute("xmlns","http://www.w3.org/1999/xhtml");
-  span.setAttribute("style","font-family: "+fontName+";");
-  await MarkdownRenderer.renderMarkdown(text,span,file.path,plugin);
-  span.querySelectorAll(":scope > *[class^='frontmatter']").forEach((el)=>span.removeChild(el));
-  const xml = new XMLSerializer().serializeToString(span);
-  let svgStyle = ' width="'+mdSVGwidth+'px" height="100%"';
-  let foreignObjectStyle = ' width="'+mdSVGwidth+'px" height="100%"';
-  let svg= '<svg xmlns="http://www.w3.org/2000/svg"'+svgStyle+'><foreignObject x="0" y="0"'+foreignObjectStyle+'>' +
-             xml+'</foreignObject><defs><style>'+ fontBase64 +'</style></defs></svg>';
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svg,"image/svg+xml");
-  const svgEl = doc.firstElementChild;
+  //construct SVG
   const div = createDiv();
-  div.appendChild(svgEl);
-  document.body.appendChild(div);
-  const height = svgEl.firstElementChild.scrollHeight;
-  const svgHeight = height <= mdSVGmaxHeight ? height : mdSVGmaxHeight;
-  document.body.removeChild(div);
-  svgStyle = ' width="'+mdSVGwidth+'px" height="'+svgHeight+'px"';
-  foreignObjectStyle = ' width="'+mdSVGwidth+'px" height="'+svgHeight+'px"';
-  svg= '<svg xmlns="http://www.w3.org/2000/svg"'+svgStyle+'><foreignObject x="0" y="0"'+foreignObjectStyle+'>' + 
-  xml+'</foreignObject><defs><style>'+ fontBase64 +'</style></defs></svg>';
-  return svgToBase64(svg) as DataURL;
+  div.setAttribute("xmlns","http://www.w3.org/1999/xhtml");
+  div.style.fontFamily = fontName;
+  if(fontColor) div.style.color = fontColor;
+  div.style.fontSize = "initial";
+  await MarkdownRenderer.renderMarkdown(text,div,file.path,plugin);
+  div.querySelectorAll(":scope > *[class^='frontmatter']").forEach((el)=>div.removeChild(el));
+  //brute force to swap <a> to <u> because links anyway don't work when the foreignObject is
+  //encapsulated in an img element. <a> does not render with an underline, <u> will.
+  const xml = (new XMLSerializer().serializeToString(div)).replaceAll("<a ","<u ").replaceAll("</a>","</u>");
+  let svgStyle = ' width="'+linkParts.width+'px" height="100%"';
+  let foreignObjectStyle = ' width="'+linkParts.width+'px" height="100%"';
+
+  const svg = () => '<svg xmlns="http://www.w3.org/2000/svg"'+svgStyle+'>' 
+    + '<foreignObject x="0" y="0"'+foreignObjectStyle+'>' 
+    + xml
+    + '</foreignObject><defs><style>'
+    + fontDef 
+    + '</style></defs></svg>';
+
+  //get SVG size
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svg(),"image/svg+xml");
+  const svgEl = doc.firstElementChild;
+  const host = createDiv();
+  host.appendChild(svgEl);
+  document.body.appendChild(host);
+  const height = svgEl.firstElementChild.firstElementChild.scrollHeight;
+  const svgHeight = height <= linkParts.height ? height : linkParts.height;
+  document.body.removeChild(host);
+
+  //finalize SVG
+  svgStyle = ' width="'+linkParts.width+'px" height="'+svgHeight+'px"';
+  foreignObjectStyle = ' width="'+linkParts.width+'px" height="'+svgHeight+'px"';
+  return svgToBase64(svg()) as DataURL;
 }
 
 const getDataURL = async (file: ArrayBuffer,mimeType: string): Promise<DataURL> => {
@@ -307,7 +373,7 @@ const getDataURL = async (file: ArrayBuffer,mimeType: string): Promise<DataURL> 
       resolve(dataURL);
     };
     reader.onerror = (error) => reject(error);
-    reader.readAsDataURL(new Blob([new Uint8Array(file)],{type:'mimeType'}));
+    reader.readAsDataURL(new Blob([new Uint8Array(file)],{type:mimeType}));
   });
 };
 

@@ -10,7 +10,7 @@ import {t} from './lang/helpers'
 import ExcalidrawPlugin from "./main";
 
 
-export class InsertImageDialog extends FuzzySuggestModal<TFile> {
+export class InsertMDDialog extends FuzzySuggestModal<TFile> {
   public app: App;
   public plugin: ExcalidrawPlugin;
   private view: ExcalidrawView;
@@ -24,13 +24,12 @@ export class InsertImageDialog extends FuzzySuggestModal<TFile> {
       command: t("SELECT_FILE"),
       purpose: "",
     }]);    
-    this.setPlaceholder(t("SELECT_DRAWING"));
+    this.setPlaceholder(t("SELECT_MD"));
     this.emptyStateText = t("NO_MATCH");
   }
 
   getItems(): TFile[] {
-    return (this.app.vault.getFiles() || []).filter((f:TFile) => IMAGE_TYPES.contains(f.extension) || this.plugin.isExcalidrawFile(f));
-    
+    return (this.app.vault.getFiles() || []).filter((f:TFile) => (f.extension==="md") && !this.plugin.isExcalidrawFile(f));
   }
 
   getItemText(item: TFile): string {
@@ -42,7 +41,6 @@ export class InsertImageDialog extends FuzzySuggestModal<TFile> {
     const ea = this.plugin.ea;
     ea.reset();
     ea.setView(this.view);
-    ea.canvas.theme = this.view.excalidrawAPI.getAppState().theme;
     (async () => {
       await ea.addImage(0,0,item);
       ea.addElementsToView(true,false);

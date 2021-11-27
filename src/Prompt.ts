@@ -4,7 +4,7 @@ export class Prompt extends Modal {
     private promptEl: HTMLInputElement;
     private resolve: (value: string) => void;
 
-    constructor(app: App, private prompt_text: string, private default_value: string, private placeholder:string) {
+    constructor(app: App, private prompt_text: string, private default_value: string, private placeholder:string, private prompt_desc?:string) {
         super(app);
     }
 
@@ -18,9 +18,14 @@ export class Prompt extends Modal {
     }
 
     createForm(): void {
-        const div = this.contentEl.createDiv();
+        let div = this.contentEl.createDiv();
         div.addClass("excalidraw-prompt-div");
-
+        if(this.prompt_desc) {
+          div = div.createDiv();
+          div.style.width = "100%";
+          const p=div.createEl("p");
+          p.innerHTML = this.prompt_desc;
+        }
         const form = div.createEl("form");
         form.addClass("excalidraw-prompt-form");
         form.type = "submit";

@@ -12,7 +12,7 @@ import {
   JSON_parse
 } from "./constants";
 import { TextMode } from "./ExcalidrawView";
-import { getAttachmentsFolderAndFilePath, getBinaryFileFromDataURL, getIMGFilename, isObsidianThemeDark, wrapText } from "./Utils";
+import { getAttachmentsFolderAndFilePath, getBinaryFileFromDataURL, getIMGFilename, getLinkParts, isObsidianThemeDark, LinkParts, wrapText } from "./Utils";
 import { ExcalidrawImageElement, FileId } from "@zsviczian/excalidraw/types/element/types";
 import { BinaryFiles, SceneData } from "@zsviczian/excalidraw/types/types";
 import { nonWhiteSpace } from "html2canvas/dist/types/css/syntax/parser";
@@ -357,50 +357,10 @@ export class ExcalidrawData {
    * @param text 
    * @returns [string,number] - the transcluded text, and the line number for the location of the text
    */
-  public async getTransclusion (text:string):Promise<[string,number]> {
-    //file-name#^blockref
-    //1         2 3
-    const REG_FILE_BLOCKREF = /(.*)#(\^)?(.*)/g;
-    const parts=text.matchAll(REG_FILE_BLOCKREF).next();
-    if(!parts.done && !parts.value[1]) return [text,0]; //filename not found
-    const filename = parts.done ? text : parts.value[1];
-    const file = this.app.metadataCache.getFirstLinkpathDest(filename,this.file.path);
-    if(!file || !(file instanceof TFile)) return [text,0];
-    const contents = await this.app.vault.cachedRead(file);
-    if(parts.done) { //no blockreference
-      return([contents.substr(0,this.plugin.settings.pageTransclusionCharLimit),0]);
-    }
-    const isParagraphRef = parts.value[2] ? true : false; //does the reference contain a ^ character?
-    const id = parts.value[3]; //the block ID or heading text
-    const blocks = (await this.app.metadataCache.blockCache.getForFile({isCancelled: ()=>false},file)).blocks.filter((block:any)=>block.node.type!="comment");
-    if(!blocks) return [text,0];
-    if(isParagraphRef) {
-      let para = blocks.filter((block:any)=>block.node.id == id)[0]?.node;
-      if(!para) return [text,0];
-      if(["blockquote","listItem"].includes(para.type)) para = para.children[0]; //blockquotes are special, they have one child, which has the paragraph
-      const startPos = para.position.start.offset;
-      const lineNum = para.position.start.line;
-      const endPos = para.children[para.children.length-1]?.position.start.offset-1; //alternative: filter((c:any)=>c.type=="blockid")[0]
-      return [contents.substr(startPos,endPos-startPos),lineNum]
-    
-    } else {
-      const headings = blocks.filter((block:any)=>block.display.startsWith("#"));
-      let startPos:number = null; 
-      let lineNum:number = 0;
-      let endPos:number = null;
-      for(let i=0;i<headings.length;i++) {
-        if(startPos && !endPos) {
-          endPos = headings[i].node.position.start.offset-1;
-          return [contents.substr(startPos,endPos-startPos),lineNum];
-        }
-        if(!startPos && headings[i].node.children[0]?.value == id) {
-          startPos = headings[i].node.children[0]?.position.start.offset; //
-          lineNum = headings[i].node.children[0]?.position.start.line; //
-        }
-      }
-      if(startPos) return [contents.substr(startPos),lineNum];
-      return [text,0];
-    }
+  public async getTransclusion (link:string):Promise<[string,number]> {
+    const linkParts = getLinkParts(link);
+    const file = this.app.metadataCache.getFirstLinkpathDest(linkParts.path,this.file.path);
+    return await getTransclusion(getLinkParts(link),this.app,file,this.plugin.settings.pageTransclusionCharLimit);
   }
 
   /**
@@ -505,7 +465,7 @@ export class ExcalidrawData {
     }
     if(this.files.size>0) {
       for(const key of this.files.keys()) {
-        outString += key +': [['+this.files.get(key).file.path + ']]\n';
+        outString += key +': [['+this.files.get(key).linkParts.original + ']]\n';
       }
     }
     outString += (this.equations.size>0 || this.files.size>0) ? '\n' : '';
@@ -743,5 +703,50 @@ export class ExcalidrawData {
       return true;
     }
     return false;
+  }
+}
+
+export const getTransclusion = async (linkParts:LinkParts,app:App,file:TFile,charCountLimit?:number):Promise<[string,number]> => {
+  //file-name#^blockref
+  //1         2 3
+
+  if(!linkParts.path) return [linkParts.original.trim(),0]; //filename not found
+  if(!file || !(file instanceof TFile)) return [linkParts.original.trim(),0];
+  const contents = await app.vault.read(file);
+  if(!linkParts.ref) { //no blockreference
+    return charCountLimit ? [contents.substr(0,charCountLimit).trim(),0] : [contents.trim(),0];
+  }
+  //const isParagraphRef = parts.value[2] ? true : false; //does the reference contain a ^ character?
+  //const id = parts.value[3]; //the block ID or heading text
+
+  const blocks = (await app.metadataCache.blockCache.getForFile({isCancelled: ()=>false},file)).blocks.filter((block:any)=>block.node.type!="comment");
+  if(!blocks) return [linkParts.original.trim(),0];
+  if(linkParts.isBlockRef) {
+    let para = blocks.filter((block:any)=>block.node.id == linkParts.ref)[0]?.node;
+    if(!para) return [linkParts.original.trim(),0];
+    if(["blockquote","listItem"].includes(para.type)) para = para.children[0]; //blockquotes are special, they have one child, which has the paragraph
+    const startPos = para.position.start.offset;
+    const lineNum = para.position.start.line;
+    const endPos = para.children[para.children.length-1]?.position.start.offset-1; //alternative: filter((c:any)=>c.type=="blockid")[0]
+    return [contents.substr(startPos,endPos-startPos).trim(),lineNum]
+  } else {
+    const headings = blocks.filter((block:any)=>block.display.search(/^#+\s/)===0);// startsWith("#"));
+    let startPos:number = null; 
+    let lineNum:number = 0;
+    let endPos:number = null;
+    for(let i=0;i<headings.length;i++) {
+      if(startPos && !endPos) {
+        endPos = headings[i].node.position.start.offset-1;
+        return [contents.substr(startPos,endPos-startPos).trim(),lineNum];
+      }
+      const c = headings[i].node.children[0];
+      const cc = c?.children;
+      if(!startPos && (c?.value === linkParts.ref || (cc?cc[0]?.value===linkParts.ref:false) ) ) {
+        startPos = headings[i].node.children[0]?.position.start.offset; //
+        lineNum = headings[i].node.children[0]?.position.start.line; //
+      }
+    }
+    if(startPos) return [contents.substr(startPos).trim(),lineNum];
+    return [linkParts.original.trim(),0];
   }
 }

@@ -54,9 +54,14 @@ import {
   InsertImageDialog
 } from "./InsertImageDialog";
 import {
+  InsertMDDialog
+} from "./InsertMDDialog";
+import {
   initExcalidrawAutomate,
   destroyExcalidrawAutomate,
-  ExcalidrawAutomate
+  ExcalidrawAutomate,
+  createSVG,
+  createPNG
 } from "./ExcalidrawAutomate";
 import { Prompt } from "./Prompt";
 import { around } from "monkey-around";
@@ -84,6 +89,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private openDialog: OpenFileDialog;
   private insertLinkDialog: InsertLinkDialog;
   private insertImageDialog: InsertImageDialog;
+  private insertMDDialog: InsertMDDialog;
   private activeExcalidrawView: ExcalidrawView = null;
   public lastActiveExcalidrawFilePath: string = null;
   public hover: {linkText: string, sourcePath: string} = {linkText: null, sourcePath: null};
@@ -238,7 +244,6 @@ export default class ExcalidrawPlugin extends Plugin {
       img.addClass(imgAttributes.style);
 
       const [scene,pos] = getJSON(content);
-      this.ea.reset();
 
       const theme = this.settings.previewMatchObsidianTheme 
                     ? (isObsidianThemeDark() ? "dark" : "light")
@@ -255,13 +260,34 @@ export default class ExcalidrawPlugin extends Plugin {
         if(width>=1200) scale = 3;
         if(width>=1800) scale = 4;
         if(width>=2400) scale = 5;
-        const png = await this.ea.createPNG(file.path,scale,exportSettings,loader,theme);
+        const png = await createPNG(
+          file.path,
+          scale,
+          exportSettings,
+          loader,
+          theme,
+          null,
+          null,
+          [],
+          this
+        );
         //const png = await getPNG(JSON_parse(scene),exportSettings, scale);
         if(!png) return null;
         img.src = URL.createObjectURL(png);
         return img;
       }
-      const svgSnapshot = (await this.ea.createSVG(file.path,true,exportSettings,loader,theme)).outerHTML;
+      const svgSnapshot = (
+        await createSVG(
+          file.path,
+          true,
+          exportSettings,
+          loader,
+          theme,
+          null,
+          null,
+          [],
+          this
+      )).outerHTML;
       let svg:SVGSVGElement = null;
       const el = document.createElement('div');
       el.innerHTML = svgSnapshot;
@@ -490,6 +516,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.openDialog = new OpenFileDialog(this.app, this);
     this.insertLinkDialog = new InsertLinkDialog(this.app);
     this.insertImageDialog = new InsertImageDialog(this);
+    this.insertMDDialog = new InsertMDDialog(this);
 
     this.addRibbonIcon(ICON_NAME, t("CREATE_NEW"), async (e) => {
       this.createDrawing(this.getNextDefaultFilename(), e[CTRL_OR_CMD]); //.ctrlKey||e.metaKey);
@@ -743,6 +770,24 @@ export default class ExcalidrawPlugin extends Plugin {
           const view = this.app.workspace.activeLeaf.view;
           if (view instanceof ExcalidrawView) {
             this.insertImageDialog.start(view);
+            return true;
+          }
+          else return false;
+        }
+      },
+    });
+
+    this.addCommand({
+      id: "insert-md",
+      name: t("INSERT_MD"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          const view = this.app.workspace.activeLeaf.view;
+          return (view instanceof ExcalidrawView);
+        } else {
+          const view = this.app.workspace.activeLeaf.view;
+          if (view instanceof ExcalidrawView) {
+            this.insertMDDialog.start(view);
             return true;
           }
           else return false;
@@ -1043,22 +1088,28 @@ export default class ExcalidrawPlugin extends Plugin {
       
       //save Excalidraw leaf and update embeds when switching to another leaf
       const activeLeafChangeEventHandler = async (leaf:WorkspaceLeaf) => {
-        const activeExcalidrawView = self.activeExcalidrawView;
-        const newActiveview:ExcalidrawView = (leaf.view instanceof ExcalidrawView) ? leaf.view : null;
-        self.activeExcalidrawView = newActiveview;
-        if(newActiveview) {
-          self.lastActiveExcalidrawFilePath = newActiveview.file?.path;
+        const previouslyActiveEV = self.activeExcalidrawView;
+        const newActiveviewEV:ExcalidrawView = (leaf.view instanceof ExcalidrawView) ? leaf.view : null;
+        self.activeExcalidrawView = newActiveviewEV;
+        if(newActiveviewEV) {
+          self.lastActiveExcalidrawFilePath = newActiveviewEV.file?.path;
         }
         
-        if(activeExcalidrawView && activeExcalidrawView != newActiveview) {
-          if(activeExcalidrawView.leaf != leaf) {
+        if(previouslyActiveEV && previouslyActiveEV != newActiveviewEV) {
+          if(previouslyActiveEV.leaf != leaf) {
             //if loading new view to same leaf then don't save. Excalidarw view will take care of saving anyway.
             //avoid double saving
-            await activeExcalidrawView.save(true); //this will update transclusions in the drawing
+            await previouslyActiveEV.save(true); //this will update transclusions in the drawing
           }
-          if(activeExcalidrawView.file) {
-            self.triggerEmbedUpdates(activeExcalidrawView.file.path);
+          if(previouslyActiveEV.file) {
+            self.triggerEmbedUpdates(previouslyActiveEV.file.path);
           }
+        }
+        
+        if(newActiveviewEV && (!previouslyActiveEV || previouslyActiveEV.leaf != leaf)) {
+          //the user switched to a new leaf
+          //timeout gives time to the view being exited to finish saving
+          if(newActiveviewEV.file) setTimeout(()=>newActiveviewEV.loadSceneFiles(),1000); //refresh embedded files
         }
       };
       self.registerEvent(

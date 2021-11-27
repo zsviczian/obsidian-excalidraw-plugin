@@ -24,6 +24,7 @@ export default {
   TOGGLE_LOCK: "Toggle Text Element edit RAW/PREVIEW",
   INSERT_LINK: "Insert link to file",
   INSERT_IMAGE: "Insert image from vault",
+  INSERT_MD: "Insert markdown file from vault",
   INSERT_LATEX: "Insert LaTeX formula (e.g. \\binom{n}{k} = \\frac{n!}{k!(n-k)!})",
   ENTER_LATEX: "Enter a valid LaTeX expression",
   
@@ -91,7 +92,7 @@ export default {
   ZOOM_TO_FIT_MAX_LEVEL_NAME: "Zoom to fit max ZOOM level",
   ZOOM_TO_FIT_MAX_LEVEL_DESC: "Set the maximum level to which zoom to fit will enlarge the drawing. Minimum is 0.5 (50%) and maximum is 10 (1000%).",
   LINKS_HEAD: "Links and transclusion",
-  LINKS_DESC: "CTRL/CMD + CLICK on Text Elements to open them as links. " + 
+  LINKS_DESC: "CTRL/CMD + CLICK on [[Text Elements]] to open them as links. " + 
               "If the selected text has more than one [[valid Obsidian links]], only the first will be opened. " + 
               "If the text starts as a valid web link (i.e. https:// or http://), then " +
               "the plugin will open it in a browser. " +
@@ -114,7 +115,7 @@ export default {
   URL_PREFIX_DESC:"In PREVIEW mode, if the Text Element contains a URL link, precede the text with these characters. " +
                   "You can override this setting for a specific drawing by adding \'" + FRONTMATTER_KEY_CUSTOM_URL_PREFIX + 
                   ': "🌐 "\' to the file\'s frontmatter.',
-  LINK_CTRL_CLICK_NAME: "CTRL/CMD + CLICK on text to open them as links",
+  LINK_CTRL_CLICK_NAME: "CTRL/CMD + CLICK on text with [[links]] or [](links) to open them",
   LINK_CTRL_CLICK_DESC: "You can turn this feature off if it interferes with default Excalidraw features you want to use. If " +
                         "this is turned off, only the link button in the title bar of the drawing pane will open links.",
   TRANSCLUSION_WRAP_NAME: "Overflow wrap behavior of transcluded text",
@@ -126,6 +127,22 @@ export default {
                                     "![[markdown page]] format.",
   GET_URL_TITLE_NAME: "Use iframely to resolve page title",
   GET_URL_TITLE_DESC: "Use the http://iframely.server.crestify.com/iframely?url= to get title of page when dropping a link into Excalidraw",   
+  MD_HEAD: "Markdown-embed settings",
+  MD_HEAD_DESC: "You can transclude formatted markdown documents into drawings as images CTRL/CMD drop from the file explorer or using "+
+                "the command palette action.",
+  MD_TRANSCLUDE_WIDTH_NAME: "Default width of a transcluded markdown document",
+  MD_TRANSCLUDE_WIDTH_DESC: "The width of the markdown page. This effects the word wrapping when transcluding longer paragraphs, and the width of " +
+                            "the image element. You can override the default width of " +
+                            "an embedded file using the [[filename#heading|WIDTHxMAXHEIGHT]] syntax in markdown view mode under embedded files.",
+  MD_TRANSCLUDE_HEIGHT_NAME: "Default maximum height of a transcluded markdown document",
+  MD_TRANSCLUDE_HEIGHT_DESC: "The embedded image will be as high as the markdown text requries, but not higher than this value. " +
+                             "You can override this value by editing the embedded image link in markdown view mode with the following syntax [[filename#^blockref|WIDTHxMAXHEIGHT]].",
+  MD_DEFAULT_FONT_NAME: "The default font typeface to use for embedded markdown files.",
+  MD_DEFAULT_FONT_DESC: 'Set this value to "Virgil" or "Cascadia" or the filename of a valid .ttf, .woff, or .woff2 font e.g. "MyFont.woff2" ' +
+                        'You can override this setting by adding the following frontmatter-key to the embedded markdown file: "excalidraw-font: font_or_filename"',
+  MD_DEFAULT_COLOR_NAME: "The default font color to use for embedded markdown files.",
+  MD_DEFAULT_COLOR_DESC: 'Set this to allowed css color names e.g. "steelblue" (https://www.w3schools.com/colors/colors_names.asp), or a valid hexadecimal color e.g. "#e67700". ' +
+                         'You can override this setting by adding the following frontmatter-key to the embedded markdown file: "excalidraw-font-color: color_name_or_rgbhex"',
   EMBED_HEAD: "Embed & Export",
   EMBED_PREVIEW_SVG_NAME: "Display SVG in markdown preview",
   EMBED_PREVIEW_SVG_DESC: "The default is to display drawings as SVG images in the markdown preview. Turning this feature off, the markdown preview will display the drawing as an embedded PNG image.",
@@ -186,6 +203,7 @@ export default {
   TYPE_FILENAME: "Type name of drawing to select.",
   SELECT_FILE_OR_TYPE_NEW: "Select existing drawing or type name of a new drawing then press Enter.",
   SELECT_TO_EMBED: "Select the drawing to insert into active document.",
+  SELECT_MD: "Select the markdown document you want to insert",
 
   //EmbeddedFileLoader.ts
   INFINITE_LOOP_WARNING: "EXCALIDRAW WARNING\nAborted loading embedded images due to infinite loop in file:\n",

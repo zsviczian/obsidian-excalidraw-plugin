@@ -34,7 +34,7 @@ import ExcalidrawPlugin from './main';
 import { repositionElementsToCursor} from './ExcalidrawAutomate';
 import { t } from "./lang/helpers";
 import { ExcalidrawData, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "./ExcalidrawData";
-import { checkAndCreateFolder, debug, download, embedFontsInSVG, errorlog, getIMGFilename, getNewOrAdjacentLeaf, getNewUniqueFilepath, getPNG, getSVG, isObsidianThemeDark, rotatedDimensions, scaleLoadedImage, splitFolderAndFilename, svgToBase64, viewportCoordsToSceneCoords } from "./Utils";
+import { checkAndCreateFolder, debug, download, embedFontsInSVG, errorlog, getIMGFilename, getLinkParts, getNewOrAdjacentLeaf, getNewUniqueFilepath, getPNG, getSVG, isObsidianThemeDark, rotatedDimensions, scaleLoadedImage, splitFolderAndFilename, svgToBase64, viewportCoordsToSceneCoords } from "./Utils";
 import { Prompt } from "./Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 import { updateEquation } from "./LaTeX";
@@ -56,7 +56,7 @@ export interface ExportSettings {
 
 const REG_LINKINDEX_INVALIDCHARS = /[<>:"\\|?*]/g;
 
-export const addFiles = (files:FileData[], view: ExcalidrawView,isDark?:boolean) => {
+export const addFiles = async (files:FileData[], view: ExcalidrawView,isDark?:boolean) => {
   if(!files || files.length === 0 || !view) return;
   const [dirty, scene] = scaleLoadedImage(view.getScene(),files); 
   if(isDark===undefined) isDark = scene.appState.theme;
@@ -68,7 +68,7 @@ export const addFiles = (files:FileData[], view: ExcalidrawView,isDark?:boolean)
       commitToHistory: false,
     });
   }
-  files.forEach((f:FileData)=>{
+  for(const f of files) {
     if(view.excalidrawData.hasFile(f.id)) {
       const embeddedFile = view.excalidrawData.getFile(f.id);
       embeddedFile.setImage(
@@ -83,7 +83,7 @@ export const addFiles = (files:FileData[], view: ExcalidrawView,isDark?:boolean)
       const latex = view.excalidrawData.getEquation(f.id).latex;
       view.excalidrawData.setEquation(f.id,{latex,isLoaded:true});
     }
-  });
+  };
   view.excalidrawAPI.addFiles(files);
 }
 
@@ -308,6 +308,25 @@ export default class ExcalidrawView extends TextFileView {
         }
         await this.save(true); //in case pasted images haven't been saved yet
         if(this.excalidrawData.hasFile(selectedImage.fileId)) {
+          if(ev.altKey) {
+            const ef = this.excalidrawData.getFile(selectedImage.fileId);
+            if(ef.file.extension==="md" && !this.plugin.isExcalidrawFile(ef.file)) {
+              const prompt = new Prompt(
+                this.app,
+                "Customize the link",
+                ef.linkParts.original,
+                '',
+                "Do not add [[square brackets]] around the filename!<br>Follow this format when editing your link:<br><mark>filename#^blockref|WIDTHxMAXHEIGHT</mark>"
+              );
+              prompt.openAndGetValue( async (link:string)=> {
+                if(!link) return;
+                ef.resetImage(this.file.path,link);
+                await this.save(true);
+                await this.loadSceneFiles();
+              });
+              return;
+            }
+          }
           linkText = this.excalidrawData.getFile(selectedImage.fileId).file.path;
         } 
       }
@@ -450,6 +469,8 @@ export default class ExcalidrawView extends TextFileView {
   // clear the view content  
   clear() {
     if(!this.excalidrawRef) return;
+    if(this.activeLoader) this.activeLoader.terminate=true;
+    this.nextLoader = null;
     this.excalidrawAPI.resetScene();
     this.excalidrawAPI.history.clear();
   }
@@ -494,20 +515,27 @@ export default class ExcalidrawView extends TextFileView {
   }
   
   private activeLoader:EmbeddedFilesLoader = null;
-  private async loadSceneFiles(isDark?:boolean) {
-    if(this.activeLoader) this.activeLoader.terminate=true;
+  private nextLoader:EmbeddedFilesLoader = null;
+  public async loadSceneFiles(isDark?:boolean) {
     const loader = new EmbeddedFilesLoader(this.plugin,isDark);
-    if(isDark !== undefined) this.excalidrawData.scene.appState.theme = isDark ? "dark" : "light";
-    this.activeLoader = loader;
-    //debug({where:"ExcalidrawView.loadSceneFiles",file:this.file.name,dataTheme:this.excalidrawData.scene.appState.theme,before:"loader.loadSceneFiles",isDark})
-    loader.loadSceneFiles(
-      this.excalidrawData,
-      this,
-      (files:FileData[], view:ExcalidrawView) => {
-        this.activeLoader = null;
-        if(!files || !view) return;
-        addFiles(files,view,isDark);
-    });
+    debug({where:"ExcalidrawView.loadSceneFiles",status:"loader created",file:this.file.name,loader:loader.uid});
+   
+    const runLoader = (l:EmbeddedFilesLoader) => {
+      this.nextLoader = null;
+      this.activeLoader = l;
+      debug({where:"ExcalidrawView.loadSceneFiles",status:"loader initiated",file:this.file.name,loader:l.uid});
+      if(isDark !== undefined) this.excalidrawData.scene.appState.theme = isDark ? "dark" : "light";
+      //debug({where:"ExcalidrawView.loadSceneFiles",file:this.file.name,dataTheme:this.excalidrawData.scene.appState.theme,before:"loader.loadSceneFiles",isDark})
+      l.loadSceneFiles(
+        this.excalidrawData,
+        (files:FileData[]) => {
+          if(!files) return;
+          addFiles(files,this,isDark);
+          this.activeLoader = null;
+          if(this.nextLoader) runLoader(this.nextLoader);
+      });
+    }
+    if(!this.activeLoader) runLoader(loader); else this.nextLoader=loader;
   }
 
   /**
@@ -1031,21 +1059,28 @@ export default class ExcalidrawView extends TextFileView {
             this.altKeyDown   = e.altKey;
            
             if(e[CTRL_OR_CMD] && !e.shiftKey && !e.altKey) { //.ctrlKey||e.metaKey) && !e.shiftKey && !e.altKey) { 
+              let linktext = "";
               const selectedElement = getTextElementAtPointer(currentPosition);
-              if(!selectedElement) return;
+              if(!selectedElement || !selectedElement.text) {
+                const selectedImgElement = getImageElementAtPointer(currentPosition)
+                if(!selectedImgElement || !selectedImgElement.fileId) return;
+                if(!this.excalidrawData.hasFile(selectedImgElement.fileId)) return;
+                const ef = this.excalidrawData.getFile(selectedImgElement.fileId);
+                const ref = ef.linkParts.ref ? "#"+(ef.linkParts.isBlockRef?"^":"")+ef.linkParts.ref:"";
+                linktext = this.excalidrawData.getFile(selectedImgElement.fileId).file.path+ref;
+              } else {
+                const text:string = (this.textMode == TextMode.parsed) 
+                ? this.excalidrawData.getRawText(selectedElement.id) 
+                : selectedElement.text;                
 
-              const text:string = (this.textMode == TextMode.parsed) 
-              ? this.excalidrawData.getRawText(selectedElement.id) 
-              : selectedElement.text;                
+                if(!text) return;
+                if(text.match(REG_LINKINDEX_HYPERLINK)) return;   
 
-              if(!text) return;
-              if(text.match(REG_LINKINDEX_HYPERLINK)) return;   
-
-              const parts = REGEX_LINK.getRes(text).next();  
-              if(!parts.value) return; 
-              let linktext = REGEX_LINK.getLink(parts); //parts.value[2] ? parts.value[2]:parts.value[6];
-
-              if(linktext.match(REG_LINKINDEX_HYPERLINK)) return;
+                const parts = REGEX_LINK.getRes(text).next();  
+                if(!parts.value) return; 
+                linktext = REGEX_LINK.getLink(parts); //parts.value[2] ? parts.value[2]:parts.value[6];
+                if(linktext.match(REG_LINKINDEX_HYPERLINK)) return;
+              }
 
               this.plugin.hover.linkText = linktext; 
               this.plugin.hover.sourcePath = this.file.path;

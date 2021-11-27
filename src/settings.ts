@@ -52,6 +52,10 @@ export interface ExcalidrawSettings {
   imageElementNotice: boolean, //1.4.0
   runWYSIWYGpatch: boolean, //1.4.9
   fixInfinitePreviewLoop: boolean, //1.4.10
+  mdSVGwidth: number,
+  mdSVGmaxHeight: number,
+  mdFont: string,
+  mdFontColor: string,
 }
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
@@ -100,7 +104,11 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   patchCommentBlock: true,
   imageElementNotice: true,
   runWYSIWYGpatch: true,
-  fixInfinitePreviewLoop: true
+  fixInfinitePreviewLoop: true,
+  mdSVGwidth: 500,
+  mdSVGmaxHeight: 800,
+  mdFont: "Virgil",
+  mdFontColor: "Black",
 }
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
@@ -297,8 +305,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     
 
     this.containerEl.createEl('h1', {text: t("LINKS_HEAD")});
-    this.containerEl.createEl('p',{
-      text: t("LINKS_DESC")});
+    this.containerEl.createEl('p',{text: t("LINKS_DESC")});
 
       new Setting(containerEl)
       .setName(t("ADJACENT_PANE_NAME")) 
@@ -396,6 +403,81 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           this.applySettingsUpdate();
         }));
   
+    this.containerEl.createEl('h1', {text: t("MD_HEAD")});
+    this.containerEl.createEl('p',{text: t("MD_HEAD_DESC")});
+    
+    new Setting(containerEl)
+      .setName(t("MD_TRANSCLUDE_WIDTH_NAME")) 
+      .setDesc(t("MD_TRANSCLUDE_WIDTH_DESC"))
+      .addText(text => text
+        .setPlaceholder('Enter a number e.g. 500')
+        .setValue(this.plugin.settings.mdSVGwidth.toString())
+        .onChange(async (value) => {
+          const intVal = parseInt(value);
+          if(isNaN(intVal) && value!=="") {
+            text.setValue(this.plugin.settings.mdSVGwidth.toString());
+            return;
+          } 
+          this.requestEmbedUpdate = true;
+          if(value === "") {
+            this.plugin.settings.mdSVGwidth = 500;
+            this.applySettingsUpdate(true);
+            return;
+          }
+          this.plugin.settings.mdSVGwidth = intVal;
+          this.requestReloadDrawings=true;
+          text.setValue(this.plugin.settings.mdSVGwidth.toString());
+          this.applySettingsUpdate(true);
+    }));  
+
+    new Setting(containerEl)
+      .setName(t("MD_TRANSCLUDE_HEIGHT_NAME")) 
+      .setDesc(t("MD_TRANSCLUDE_HEIGHT_DESC"))
+      .addText(text => text
+        .setPlaceholder('Enter a number e.g. 800')
+        .setValue(this.plugin.settings.mdSVGmaxHeight.toString())
+        .onChange(async (value) => {
+          const intVal = parseInt(value);
+          if(isNaN(intVal) && value!=="") {
+            text.setValue(this.plugin.settings.mdSVGmaxHeight.toString());
+            return;
+          } 
+          this.requestEmbedUpdate = true;
+          if(value === "") {
+            this.plugin.settings.mdSVGmaxHeight = 800;
+            this.applySettingsUpdate(true);
+            return;
+          }
+          this.plugin.settings.mdSVGmaxHeight = intVal;
+          this.requestReloadDrawings=true;
+          text.setValue(this.plugin.settings.mdSVGmaxHeight.toString());
+          this.applySettingsUpdate(true);
+    }));  
+
+    new Setting(containerEl)
+      .setName(t("MD_DEFAULT_FONT_NAME"))
+      .setDesc(t("MD_DEFAULT_FONT_DESC"))
+      .addText(text => text
+        .setPlaceholder("Virgil|Cascadia|Filename")
+        .setValue(this.plugin.settings.mdFont)
+        .onChange((value) => {
+          this.requestReloadDrawings=true;
+          this.plugin.settings.mdFont = value;
+          this.applySettingsUpdate(true);
+      }));
+
+    new Setting(containerEl)
+      .setName(t("MD_DEFAULT_COLOR_NAME"))
+      .setDesc(t("MD_DEFAULT_COLOR_DESC"))
+      .addText(text => text
+        .setPlaceholder("CSS Color-name|RGB-HEX")
+        .setValue(this.plugin.settings.mdFontColor)
+        .onChange((value) => {
+          this.requestReloadDrawings=true;
+          this.plugin.settings.mdFontColor = value;
+          this.applySettingsUpdate(true);
+      }));      
+
     this.containerEl.createEl('h1', {text: t("EMBED_HEAD")});
 
 

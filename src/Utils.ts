@@ -297,6 +297,28 @@ export function getIMGFilename(path:string,extension:string):string {
   return path.substring(0,path.lastIndexOf('.')) + '.' + extension;
 }
 
+export type LinkParts = {
+  original: string,
+  path: string,
+  isBlockRef: boolean,
+  ref: string,
+  width: number,
+  height: number
+}
+
+export const getLinkParts = (fname:string):LinkParts => {
+  const REG = /(^[^#\|]+)#?(\^)?([^\|]*)?\|?(\d*)x?(\d*)/;
+  const parts = fname.match(REG)
+  return {
+    original: fname,
+    path: parts[1],
+    isBlockRef: parts[2]==="^",
+    ref: parts[3],
+    width: parts[4]?parseInt(parts[4]):undefined,
+    height: parts[5]?parseInt(parts[5]):undefined
+  }
+}
+
 export const errorlog = (data:{}) => {
   console.log({plugin:"Excalidraw",...data});
 }
