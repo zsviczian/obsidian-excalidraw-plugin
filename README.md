@@ -11,7 +11,8 @@ Please upgrade to Obsidian v0.12.19 or higher to get the latest release.
 |[![3  Groups](https://user-images.githubusercontent.com/14358394/125160323-96f89580-e17c-11eb-9bce-8eb1067a51bb.jpg)](https://youtu.be/QOL1KF7-kdc)|[![4  Stencil](https://user-images.githubusercontent.com/14358394/125160332-9f50d080-e17c-11eb-98e9-fec60fe147d9.jpg)](https://youtu.be/aSgcbfspvfo)|[![5  embedding](https://user-images.githubusercontent.com/14358394/125160341-a546b180-e17c-11eb-9de8-d87fdc844c9c.jpg)](https://youtu.be/MaJ5jJwBRWs)|
 |[![6  Links](https://user-images.githubusercontent.com/14358394/125160346-aa0b6580-e17c-11eb-930b-4024807040d1.jpg)](https://youtu.be/MXzeCOEExNo)|[![7  Markdown](https://user-images.githubusercontent.com/14358394/125160354-b2fc3700-e17c-11eb-81af-9e71e461f6dd.jpg)](https://youtu.be/R0IAg0s-wQE)|[![8  Templates](https://user-images.githubusercontent.com/14358394/125160360-b8f21800-e17c-11eb-8bd8-79d4e3f6e92d.jpg)](https://youtu.be/ibdS7ykwpW4)|
 |[![9  Excalidraw Automate](https://user-images.githubusercontent.com/14358394/125160367-bdb6cc00-e17c-11eb-92f1-6f59faea85fd.jpg)](https://youtu.be/VRZVujfVab0)|[![10  Miscellaneous](https://user-images.githubusercontent.com/14358394/125160374-c3141680-e17c-11eb-8cc2-dfaffd903d15.jpg)](https://youtu.be/D1iBYo1_jjc)|[![Image Elements](https://user-images.githubusercontent.com/14358394/138607067-ccb62f92-48a4-4880-ac6e-68c1bf86ac2c.png)](https://www.youtube.com/watch?v=_c_0zpBJ4Xc&)|
-|[![LaTex Demo](https://user-images.githubusercontent.com/14358394/143732412-1c65227e-4381-406d-847a-b001ab3506ca.jpg)](https://youtu.be/r08wk-58DPk)|[![markdown embeds](https://user-images.githubusercontent.com/14358394/143732440-90bfa029-8615-462e-ada3-c903d71a82c9.jpg)](https://youtu.be/tsecSfnTMow)||
+|[![LaTex Demo](https://user-images.githubusercontent.com/14358394/143732412-1c65227e-4381-406d-847a-b001ab3506ca.jpg)](https://youtu.be/r08wk-58DPk)|[![markdown embeds](https://user-images.githubusercontent.com/14358394/143732440-90bfa029-8615-462e-ada3-c903d71a82c9.jpg)](https://youtu.be/tsecSfnTMow)|[![markdownAdvanced](https://user-images.githubusercontent.com/14358394/143783906-15cee494-c6d5-4495-a2ca-74634e4e7355.jpg)](https://youtu.be/K6qZkTz8GHs)|
+
 
 # Key features
 - The plugin aims to integrate Excalidraw seamlessly into Obsidian including Command Palette actions, File Explorer features, Option Menu commands, and the Ribbon Button.
@@ -63,9 +64,12 @@ Please upgrade to Obsidian v0.12.19 or higher to get the latest release.
   - Drag from the desired file from the Obsidian file explorer and hold down CTRL/CMD while dropping the file onto the canvas.
   - Use the command palette action: `Insert markdown file from vault`
   - Use custom woff, woff2 or TTF font to display the document, you can set the default font to use under Excalidraw Settings.
+  - You can set a custom css for rendering the snapshot images of your markdown documents. Setting the font-family in the css is currently not supported, it can only be set separately using the setting explained above. (for a demonstration watch this [video](https://youtu.be/K6qZkTz8GHs))
+    - To help with styling you can observe the SVG snapshot of the markdown document created by Excalidraw. Open Obsidian Developer Console (CTRL+Shift+i) and execute the following command: `ExcalidrawAutomate.mostRecentMarkdownSVG`
   - You can control appearance of the embedded markdown file on a file by file bases by adding the following front matter keys to your markdown document:
     - `excalidraw-font: Virgil|Cascadia|font_file_name.extension`
     - `excalidraw-font-color: css-color-name|#HEXcolor|any-other-html-standard-format`, you can find css color names [here](https://www.w3schools.com/colors/colors_names.asp).
+    - `excalidraw-css: "css-filename|css snippet"`
   - Switch to markdown view or use CTRL/CMD+ALT/OPT click on the image to edit properties of the embed: [[filename#^blockref|WIDTHxMAXHEIGHT]]
 - Includes full [QuickAdd](https://github.com/chhoumann/quickadd), [Templater](https://silentvoid13.github.io/Templater/) and [Dataview](https://blacksmithgu.github.io/obsidian-dataview/docs/api/intro/) support through ExcalidrawAutomate. Check out the [detailed help + examples](https://zsviczian.github.io/obsidian-excalidraw-plugin/). I also have a [YouTube ExcalidrawAutomate Playlist](https://www.youtube.com/playlist?list=PL6mqgtMZ4NP1IR4nXxSlMA4PA5E-qpyHZ) with lots of examples.
 - REQUIRES AN OBSIDIAN SYNC SUBSCRIPTION: Full drawing file history and synchronization between devices
