@@ -148,7 +148,7 @@ export default {
                "markdown file as well, just make sure the content is written using valid css syntax (e.g. 'md-embed-css.md') will work just as well. " +
                "The generated HTML that is embedded into the image is the same as normal rendered documents in Obsidian. " +
                "Setting the font-family in the css is currently not supported; it should be set separately using the setting above. " +
-               'You can override this css setting by adding the following frontmatter-key to the embedded markdown file: "excalidraw-css: css_file_in_valut".', 
+               'You can override this css setting by adding the following frontmatter-key to the embedded markdown file: "excalidraw-css: css_file_in_valut|css-snippet".', 
   EMBED_HEAD: "Embed & Export",
   EMBED_PREVIEW_SVG_NAME: "Display SVG in markdown preview",
   EMBED_PREVIEW_SVG_DESC: "The default is to display drawings as SVG images in the markdown preview. Turning this feature off, the markdown preview will display the drawing as an embedded PNG image.",
