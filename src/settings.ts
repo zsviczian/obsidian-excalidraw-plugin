@@ -56,6 +56,7 @@ export interface ExcalidrawSettings {
   mdSVGmaxHeight: number,
   mdFont: string,
   mdFontColor: string,
+  mdCSS: string,
 }
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
@@ -109,6 +110,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   mdSVGmaxHeight: 800,
   mdFont: "Virgil",
   mdFontColor: "Black",
+  mdCSS: ""
 }
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
@@ -477,6 +479,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           this.plugin.settings.mdFontColor = value;
           this.applySettingsUpdate(true);
       }));      
+
+    new Setting(containerEl)
+    .setName(t("MD_CSS_NAME"))
+    .setDesc(t("MD_CSS_DESC"))
+    .addText(text => text
+      .setPlaceholder("filename of css file in vault")
+      .setValue(this.plugin.settings.mdCSS)
+      .onChange((value) => {
+        this.requestReloadDrawings=true;
+        this.plugin.settings.mdCSS = value;
+        this.applySettingsUpdate(true);
+    }));
 
     this.containerEl.createEl('h1', {text: t("EMBED_HEAD")});
 

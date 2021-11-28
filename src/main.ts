@@ -460,6 +460,8 @@ export default class ExcalidrawPlugin extends Plugin {
       if(!this.settings.matchThemeTrigger) return;
       //@ts-ignore
       if(m[0]?.oldValue === m[0]?.target?.getAttribute("class")) return;
+      //@ts-ignore
+      if(m[0]?.oldValue?.includes("theme-dark") === m[0]?.target?.classList?.contains("theme-dark")) return;
       const theme = isObsidianThemeDark() ? "dark":"light";
       const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
       leaves.forEach((leaf:WorkspaceLeaf)=> {

@@ -143,6 +143,12 @@ export default {
   MD_DEFAULT_COLOR_NAME: "The default font color to use for embedded markdown files.",
   MD_DEFAULT_COLOR_DESC: 'Set this to allowed css color names e.g. "steelblue" (https://www.w3schools.com/colors/colors_names.asp), or a valid hexadecimal color e.g. "#e67700". ' +
                          'You can override this setting by adding the following frontmatter-key to the embedded markdown file: "excalidraw-font-color: color_name_or_rgbhex"',
+  MD_CSS_NAME: "CSS file",
+  MD_CSS_DESC: "Filename of the CSS to apply to markdown embeds. Provide the filename with extension (e.g. 'md-embed.css'). Nota bene, the filename may also be a plain " +
+               "markdown file as well, just make sure the content is written using valid css syntax (e.g. 'md-embed-css.md') will work just as well. " +
+               "The generated HTML that is embedded into the image is the same as normal rendered documents in Obsidian. " +
+               "Setting the font-family in the css is currently not supported; it should be set separately using the setting above. " +
+               'You can override this css setting by adding the following frontmatter-key to the embedded markdown file: "excalidraw-css: css_file_in_valut".', 
   EMBED_HEAD: "Embed & Export",
   EMBED_PREVIEW_SVG_NAME: "Display SVG in markdown preview",
   EMBED_PREVIEW_SVG_DESC: "The default is to display drawings as SVG images in the markdown preview. Turning this feature off, the markdown preview will display the drawing as an embedded PNG image.",

@@ -1,16 +1,14 @@
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
 import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/types";
-import { link } from "fs";
 import { App, MarkdownRenderer, Notice, TFile } from "obsidian";
-import { CASCADIA_FONT, fileid, FRONTMATTER_KEY_CSS, FRONTMATTER_KEY_FONT, FRONTMATTER_KEY_FONTCOLOR, IMAGE_TYPES, nanoid, VIRGIL_FONT } from "./constants";
+import { CASCADIA_FONT, fileid, FRONTMATTER_KEY_FONT, FRONTMATTER_KEY_FONTCOLOR, FRONTMATTER_KEY_MD_STYLE, IMAGE_TYPES, nanoid, VIRGIL_FONT } from "./constants";
 import { createSVG } from "./ExcalidrawAutomate";
 import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
-import ExcalidrawView, { ExportSettings } from "./ExcalidrawView";
+import { ExportSettings } from "./ExcalidrawView";
 import { t } from "./lang/helpers";
-import de from "./lang/locale/de";
 import { tex2dataURL } from "./LaTeX";
 import ExcalidrawPlugin from "./main";
-import {debug, errorlog, getImageSize, getLinkParts, LinkParts, svgToBase64 } from "./Utils";
+import {errorlog, getImageSize, getLinkParts, LinkParts, svgToBase64 } from "./Utils";
 
 export declare type MimeType = "image/svg+xml" | "image/png" | "image/jpeg" | "image/gif" | "application/octet-stream";
 export type FileData = BinaryFileData & {
@@ -282,12 +280,14 @@ const getSVGData = async (app: App, file: TFile): Promise<DataURL> => {
 }
 
 const convertMarkdownToSVG = async (plugin: ExcalidrawPlugin, file: TFile, linkParts: LinkParts): Promise<DataURL> => {
-  
-  //const text = await plugin.app.vault.cachedRead(file);
+  //1.
+  //get the markdown text
   const [text,line] = await getTransclusion(linkParts,plugin.app,file);
-  const fileCache = plugin.app.metadataCache.getFileCache(file);
   
+
+  //2.
   //get styles
+  const fileCache = plugin.app.metadataCache.getFileCache(file);
   let fontName:string;
   let fontDef:string;
   let font = plugin.settings.mdFont;
@@ -313,31 +313,93 @@ const convertMarkdownToSVG = async (plugin: ExcalidrawPlugin, file: TFile, linkP
   }
   
   const fontColor = fileCache?.frontmatter ? fileCache.frontmatter[FRONTMATTER_KEY_FONTCOLOR] : plugin.settings.mdFontColor;
-
-  //construct SVG
-  const div = createDiv();
-  div.setAttribute("xmlns","http://www.w3.org/1999/xhtml");
-  div.style.fontFamily = fontName;
-  if(fontColor) div.style.color = fontColor;
-  div.style.fontSize = "initial";
-  await MarkdownRenderer.renderMarkdown(text,div,file.path,plugin);
-  div.querySelectorAll(":scope > *[class^='frontmatter']").forEach((el)=>div.removeChild(el));
-  //brute force to swap <a> to <u> because links anyway don't work when the foreignObject is
-  //encapsulated in an img element. <a> does not render with an underline, <u> will.
-  const xml = (new XMLSerializer().serializeToString(div)).replaceAll("<a ","<u ").replaceAll("</a>","</u>");
-  let svgStyle = ' width="'+linkParts.width+'px" height="100%"';
+  
+  let style = fileCache?.frontmatter ? (fileCache.frontmatter[FRONTMATTER_KEY_MD_STYLE]??"") : "";
+  let frontmatterCSSisAfile = false;
+  if(style && style!="") {
+    const f = plugin.app.metadataCache.getFirstLinkpathDest(style,file.path);
+    if(f) {
+      style = await plugin.app.vault.read(f);
+      frontmatterCSSisAfile = true;
+    } 
+  }
+  if(!frontmatterCSSisAfile && plugin.settings.mdCSS && plugin.settings.mdCSS!="") {
+    const f = plugin.app.metadataCache.getFirstLinkpathDest(plugin.settings.mdCSS,file.path);
+    if(f) {
+      style += "\n"+await plugin.app.vault.read(f);
+    }
+  }
+  
+  //3.
+  //SVG helper functions
+  //the SVG will first have ~infinite height. After sizing this will be reduced
+  let svgStyle = ' width="'+linkParts.width+'px" height="100000"';
   let foreignObjectStyle = ' width="'+linkParts.width+'px" height="100%"';
 
-  const svg = () => '<svg xmlns="http://www.w3.org/2000/svg"'+svgStyle+'>' 
+  const svg = (xml:string,style?:string) => 
+    '<svg xmlns="http://www.w3.org/2000/svg"'+svgStyle+'>'
+    + (style?'<style>'+style+'</style>':'')
     + '<foreignObject x="0" y="0"'+foreignObjectStyle+'>' 
     + xml
     + '</foreignObject><defs><style>'
     + fontDef 
     + '</style></defs></svg>';
 
+  
+  //4.
+  //create document div - this will be the contents of the foreign object
+  const mdDIV = createDiv();
+  mdDIV.setAttribute("xmlns","http://www.w3.org/1999/xhtml");
+  mdDIV.setAttribute("class","excalidraw-md-host");
+  mdDIV.setAttribute("style",style);
+  mdDIV.style.fontFamily = fontName;
+  mdDIV.style.overflow = "auto";
+  mdDIV.style.display = "block";
+  if(fontColor) mdDIV.style.color = fontColor;
+
+  await MarkdownRenderer.renderMarkdown(text,mdDIV,file.path,plugin);
+  mdDIV.querySelectorAll(":scope > *[class^='frontmatter']").forEach((el)=>mdDIV.removeChild(el));
+
+  //this is a brute force approach to replace anchors with spans for better formatting
+  //mdDIV.innerHTML = mdDIV.innerHTML.replaceAll("<a ","<u ").replaceAll("</a>","</u>");
+
+
+  //5.1
+  //get SVG size. 
+  //First I need to create a fully self contained copy of the document to convert
+  //blank styles into inline styles using computedStyle
+  const iframeHost = document.body.createDiv();
+  iframeHost.style.display = "none";
+  const iframe = iframeHost.createEl("iframe");
+  const iframeDoc = iframe.contentWindow.document;
+  if(style) {
+    const styleEl = iframeDoc.createElement("style");
+    styleEl.type = "text/css";
+    styleEl.innerHTML = style;
+    iframeDoc.head.appendChild(styleEl);
+  }
+  const stylingDIV = iframeDoc.importNode(mdDIV,true)
+  iframeDoc.body.appendChild(stylingDIV);
+
+  iframeDoc.body.querySelectorAll("*").forEach((el:HTMLElement)=>{
+    const elementStyle = el.style;
+    const computedStyle = window.getComputedStyle(el);
+    let style = "";
+    for (const prop in elementStyle) {
+      if (elementStyle.hasOwnProperty(prop)) {
+        style += prop + ": " + computedStyle[prop] + ";";
+      }
+    }
+    el.setAttribute("style",style);
+  });
+
+  const xmlINiframe = (new XMLSerializer().serializeToString(stylingDIV))
+  document.body.removeChild(iframeHost);
+  
+  //5.2
   //get SVG size
   const parser = new DOMParser();
-  const doc = parser.parseFromString(svg(),"image/svg+xml");
+  const doc = parser.parseFromString(svg(xmlINiframe),"image/svg+xml");
   const svgEl = doc.firstElementChild;
   const host = createDiv();
   host.appendChild(svgEl);
@@ -349,7 +411,40 @@ const convertMarkdownToSVG = async (plugin: ExcalidrawPlugin, file: TFile, linkP
   //finalize SVG
   svgStyle = ' width="'+linkParts.width+'px" height="'+svgHeight+'px"';
   foreignObjectStyle = ' width="'+linkParts.width+'px" height="'+svgHeight+'px"';
-  return svgToBase64(svg()) as DataURL;
+  const xml = (new XMLSerializer().serializeToString(mdDIV))
+  const finalSVG = svg(xml,style);
+  plugin.ea.mostRecentMarkdownSVG = parser.parseFromString(finalSVG,"image/svg+xml").firstElementChild as SVGSVGElement;
+  return svgToBase64(finalSVG) as DataURL;
+}
+
+const styleSandbox = async (style:string,fontName:string,fontColor:string, text:string,path:string,plugin:ExcalidrawPlugin) => {
+  const host = document.body.createDiv();
+  host.style.display = "none";
+  const iframe = host.createEl("iframe");
+  const doc = iframe.contentWindow.document;
+  if(style) {
+    const styleEl = doc.createElement("style");
+    styleEl.type = "text/css";
+    styleEl.innerHTML = style;
+    doc.head.appendChild(styleEl);
+  }
+  const div = createDiv("div");
+  
+  doc.body.querySelectorAll("*").forEach((el:HTMLElement)=>{
+    const elementStyle = el.style;
+    const computedStyle = window.getComputedStyle(el);
+    let style = "";
+    for (const prop in elementStyle) {
+      if (elementStyle.hasOwnProperty(prop)) {
+        style += prop + ": " + computedStyle[prop] + ";";
+      }
+    }
+    el.setAttribute("style",style);
+  });
+
+  const xml = (new XMLSerializer().serializeToString(div))
+  document.body.removeChild(host);
+  return xml;
 }
 
 const getDataURL = async (file: ArrayBuffer,mimeType: string): Promise<DataURL> => {
