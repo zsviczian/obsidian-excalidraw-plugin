@@ -70,7 +70,7 @@ Please upgrade to Obsidian v0.12.19 or higher to get the latest release.
     - `excalidraw-font: Virgil|Cascadia|font_file_name.extension`
     - `excalidraw-font-color: css-color-name|#HEXcolor|any-other-html-standard-format`, you can find css color names [here](https://www.w3schools.com/colors/colors_names.asp).
     - `excalidraw-css: "css-filename|css snippet"`
-  - Switch to markdown view or use CTRL/CMD+ALT/OPT click on the image to edit properties of the embed: [[filename#^blockref|WIDTHxMAXHEIGHT]]
+  - Switch to markdown view or use CTRL/CMD+ALT/OPT click on the image to edit properties of the embed: `[[filename#^blockref|WIDTHxMAXHEIGHT]]`
 - Includes full [QuickAdd](https://github.com/chhoumann/quickadd), [Templater](https://silentvoid13.github.io/Templater/) and [Dataview](https://blacksmithgu.github.io/obsidian-dataview/docs/api/intro/) support through ExcalidrawAutomate. Check out the [detailed help + examples](https://zsviczian.github.io/obsidian-excalidraw-plugin/). I also have a [YouTube ExcalidrawAutomate Playlist](https://www.youtube.com/playlist?list=PL6mqgtMZ4NP1IR4nXxSlMA4PA5E-qpyHZ) with lots of examples.
 - REQUIRES AN OBSIDIAN SYNC SUBSCRIPTION: Full drawing file history and synchronization between devices
 - Multilanguage support: if you'd like to help out by translating the plugin, please get in contact with me.
