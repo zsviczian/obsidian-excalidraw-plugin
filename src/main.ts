@@ -155,8 +155,8 @@ export default class ExcalidrawPlugin extends Plugin {
 
     const self = this;
     this.loadMathJax();
-    process.env.REACT_APP_LIBRARY_URL = "https://libraries.excalidraw.com/";
-    process.env.REACT_APP_LIBRARY_BACKEND = "https://us-central1-excalidraw-room-persistence.cloudfunctions.net/libraries";
+//    process.env.REACT_APP_LIBRARY_URL = "https://libraries.excalidraw.com/";
+//    process.env.REACT_APP_LIBRARY_BACKEND = "https://us-central1-excalidraw-room-persistence.cloudfunctions.net/libraries";
   }
 
   private loadMathJax() {
@@ -489,8 +489,11 @@ export default class ExcalidrawPlugin extends Plugin {
   private experimentalFileTypeDisplay() {
     const insertFiletype = (el: HTMLElement) => {
       if(el.childElementCount != 1) return;
-      //@ts-ignore
-      if(this.isExcalidrawFile(this.app.vault.getAbstractFileByPath(el.attributes["data-path"].value))) {
+      const filename = el.getAttribute("data-path");
+      if(!filename) return;
+      const f = this.app.vault.getAbstractFileByPath(filename);
+      if(!f || !(f instanceof TFile)) return;
+      if(this.isExcalidrawFile(f)) {
         el.insertBefore(createDiv({cls:"nav-file-tag",text:this.settings.experimentalFileTag}),el.firstChild);
       }
     };   

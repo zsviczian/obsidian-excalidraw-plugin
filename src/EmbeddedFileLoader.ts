@@ -312,7 +312,7 @@ const convertMarkdownToSVG = async (plugin: ExcalidrawPlugin, file: TFile, linkP
       }
   }
   
-  const fontColor = fileCache?.frontmatter ? fileCache.frontmatter[FRONTMATTER_KEY_FONTCOLOR] : plugin.settings.mdFontColor;
+  const fontColor = fileCache?.frontmatter ? fileCache.frontmatter[FRONTMATTER_KEY_FONTCOLOR]??plugin.settings.mdFontColor:plugin.settings.mdFontColor;
   
   let style = fileCache?.frontmatter ? (fileCache.frontmatter[FRONTMATTER_KEY_MD_STYLE]??"") : "";
   let frontmatterCSSisAfile = false;
@@ -355,7 +355,7 @@ const convertMarkdownToSVG = async (plugin: ExcalidrawPlugin, file: TFile, linkP
   mdDIV.style.fontFamily = fontName;
   mdDIV.style.overflow = "auto";
   mdDIV.style.display = "block";
-  if(fontColor) mdDIV.style.color = fontColor;
+  if(fontColor && fontColor!="") mdDIV.style.color = fontColor;
 
   await MarkdownRenderer.renderMarkdown(text,mdDIV,file.path,plugin);
   mdDIV.querySelectorAll(":scope > *[class^='frontmatter']").forEach((el)=>mdDIV.removeChild(el));
@@ -415,36 +415,6 @@ const convertMarkdownToSVG = async (plugin: ExcalidrawPlugin, file: TFile, linkP
   const finalSVG = svg(xml,style);
   plugin.ea.mostRecentMarkdownSVG = parser.parseFromString(finalSVG,"image/svg+xml").firstElementChild as SVGSVGElement;
   return svgToBase64(finalSVG) as DataURL;
-}
-
-const styleSandbox = async (style:string,fontName:string,fontColor:string, text:string,path:string,plugin:ExcalidrawPlugin) => {
-  const host = document.body.createDiv();
-  host.style.display = "none";
-  const iframe = host.createEl("iframe");
-  const doc = iframe.contentWindow.document;
-  if(style) {
-    const styleEl = doc.createElement("style");
-    styleEl.type = "text/css";
-    styleEl.innerHTML = style;
-    doc.head.appendChild(styleEl);
-  }
-  const div = createDiv("div");
-  
-  doc.body.querySelectorAll("*").forEach((el:HTMLElement)=>{
-    const elementStyle = el.style;
-    const computedStyle = window.getComputedStyle(el);
-    let style = "";
-    for (const prop in elementStyle) {
-      if (elementStyle.hasOwnProperty(prop)) {
-        style += prop + ": " + computedStyle[prop] + ";";
-      }
-    }
-    el.setAttribute("style",style);
-  });
-
-  const xml = (new XMLSerializer().serializeToString(div))
-  document.body.removeChild(host);
-  return xml;
 }
 
 const getDataURL = async (file: ArrayBuffer,mimeType: string): Promise<DataURL> => {

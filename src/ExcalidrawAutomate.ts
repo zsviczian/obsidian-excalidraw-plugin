@@ -18,7 +18,7 @@ import {
   VIEW_TYPE_EXCALIDRAW,
   MAX_IMAGE_SIZE,
 } from "./constants";
-import { debug, embedFontsInSVG, errorlog, getPNG, getSVG, scaleLoadedImage, wrapText } from "./Utils";
+import { debug, embedFontsInSVG, errorlog, getPNG, getSVG, isObsidianThemeDark, scaleLoadedImage, wrapText } from "./Utils";
 import { AppState, DataURL } from "@zsviczian/excalidraw/types/types";
 import { EmbeddedFilesLoader, FileData, MimeType } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
@@ -77,15 +77,15 @@ export interface ExcalidrawAutomate {
   createSVG (
     templatePath?:string,
     embedFont?:boolean,
-    exportSettings?:ExportSettings,
-    loader?:EmbeddedFilesLoader,
+    exportSettings?:ExportSettings, //see ExcalidrawAutomate.getExportSettings(boolean,boolean) 
+    loader?:EmbeddedFilesLoader, //see ExcalidrawAutomate.getEmbeddedFilesLoader(boolean?)
     theme?:string
   ):Promise<SVGSVGElement>;
   createPNG (
     templatePath?:string,
     scale?:number,
-    exportSettings?:ExportSettings,
-    loader?:EmbeddedFilesLoader,
+    exportSettings?:ExportSettings, //see ExcalidrawAutomate.getExportSettings(boolean,boolean) 
+    loader?:EmbeddedFilesLoader, //see ExcalidrawAutomate.getEmbeddedFilesLoader(boolean?) 
     theme?:string
   ):Promise<any>;
   wrapText (text:string, lineLen:number):string;
@@ -169,6 +169,9 @@ export interface ExcalidrawAutomate {
     pointerPosition: {x:number, y:number} //the pointer position on canvas at the time of drop
   }):boolean;
   mostRecentMarkdownSVG:SVGSVGElement; //Markdown renderer will drop a copy of the most recent SVG here for debugging purposes
+  //utility functions to generate EmbeddedFilesLoaderand ExportSettings objects
+  getEmbeddedFilesLoader(isDark?:boolean):EmbeddedFilesLoader;
+  getExportSettings(withBackground:boolean,withTheme:boolean):ExportSettings;
 }
 
 declare let window: any;
@@ -358,9 +361,26 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
       templatePath?:string,
       embedFont:boolean = false,
       exportSettings?:ExportSettings,
-      loader:EmbeddedFilesLoader = new EmbeddedFilesLoader(this.plugin),
+      loader?:EmbeddedFilesLoader,
       theme?:string,
     ):Promise<SVGSVGElement> {
+      if(!theme) {
+        theme = this.plugin.settings.previewMatchObsidianTheme 
+        ? (isObsidianThemeDark() ? "dark" : "light")
+        : (!this.plugin.settings.exportWithTheme 
+            ? "light" 
+            : undefined);
+      }
+      if(theme && !exportSettings) {
+        exportSettings = {
+          withBackground: this.plugin.settings.exportBackground,
+          withTheme: true
+        }
+      }
+      if(!loader) {
+        const loader = new EmbeddedFilesLoader(this.plugin,theme?(theme==="dark"):undefined);
+      }
+
       return await createSVG(
         templatePath,
         embedFont,
@@ -377,9 +397,26 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
       templatePath?:string,
       scale:number=1,
       exportSettings?:ExportSettings,
-      loader:EmbeddedFilesLoader = new EmbeddedFilesLoader(this.plugin),
+      loader?:EmbeddedFilesLoader,
       theme?:string
     ) {
+      if(!theme) {
+        theme = this.plugin.settings.previewMatchObsidianTheme 
+        ? (isObsidianThemeDark() ? "dark" : "light")
+        : (!this.plugin.settings.exportWithTheme 
+            ? "light" 
+            : undefined);
+      }
+      if(theme && !exportSettings) {
+        exportSettings = {
+          withBackground: this.plugin.settings.exportBackground,
+          withTheme: true
+        }
+      }
+      if(!loader) {
+        const loader = new EmbeddedFilesLoader(this.plugin,theme?(theme==="dark"):undefined);
+      }
+
       return await createPNG(
         templatePath,
         scale,
@@ -750,6 +787,12 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
     },
     onDropHook:null,
     mostRecentMarkdownSVG:null,
+    getEmbeddedFilesLoader(isDark?:boolean):EmbeddedFilesLoader {
+      return new EmbeddedFilesLoader(this.plugin,isDark);
+    },
+    getExportSettings(withBackground:boolean,withTheme:boolean):ExportSettings{
+      return {withBackground,withTheme};
+    },
   };
   await initFonts();
   return window.ExcalidrawAutomate;
@@ -925,14 +968,15 @@ export async function createPNG(
   templatePath:string = undefined,
   scale:number=1,
   exportSettings:ExportSettings,
-  loader:EmbeddedFilesLoader = new EmbeddedFilesLoader(this.plugin),
+  loader:EmbeddedFilesLoader,
   forceTheme:string = undefined,
   canvasTheme: string = undefined,
   canvasBackgroundColor: string = undefined,
   automateElements: ExcalidrawElement[] = [],
   plugin: ExcalidrawPlugin,
 ) {
-  const template = templatePath ? (await getTemplate(this.plugin,templatePath,true,loader)) : null;
+  if(!loader) loader = new EmbeddedFilesLoader(plugin);
+  const template = templatePath ? (await getTemplate(plugin,templatePath,true,loader)) : null;
   let elements = template?.elements ?? [];
   elements = elements.concat(automateElements);
   return await getPNG(
@@ -959,13 +1003,14 @@ export async function createSVG(
   templatePath:string = undefined,
   embedFont:boolean = false,
   exportSettings:ExportSettings,
-  loader:EmbeddedFilesLoader = new EmbeddedFilesLoader(this.plugin),
+  loader:EmbeddedFilesLoader,
   forceTheme:string = undefined,
   canvasTheme: string = undefined,
   canvasBackgroundColor: string = undefined,
   automateElements: ExcalidrawElement[] = [],
   plugin: ExcalidrawPlugin,
 ):Promise<SVGSVGElement> {
+  if(!loader) loader = new EmbeddedFilesLoader(plugin);
   const template = templatePath ? (await getTemplate(plugin,templatePath,true,loader)) : null;
   let elements = template?.elements ?? [];
   elements = elements.concat(automateElements);

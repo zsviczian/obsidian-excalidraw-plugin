@@ -52,8 +52,20 @@ export interface ExcalidrawAutomate {
       }
     }
   ):Promise<string>;
-  createSVG (templatePath?:string, embedFont?:boolean):Promise<SVGSVGElement>;
-  createPNG (templatePath?:string):Promise<any>;
+  createSVG (
+    templatePath?:string,
+    embedFont?:boolean,
+    exportSettings?:ExportSettings, //see ExcalidrawAutomate.getExportSettings(boolean,boolean) 
+    loader?:EmbeddedFilesLoader, //see ExcalidrawAutomate.getEmbeddedFilesLoader(boolean?)
+    theme?:string
+  ):Promise<SVGSVGElement>;
+  createPNG (
+    templatePath?:string,
+    scale?:number,
+    exportSettings?:ExportSettings, //see ExcalidrawAutomate.getExportSettings(boolean,boolean) 
+    loader?:EmbeddedFilesLoader, //see ExcalidrawAutomate.getEmbeddedFilesLoader(boolean?) 
+    theme?:string
+  ):Promise<any>;
   wrapText (text:string, lineLen:number):string;
   addRect (topX:number, topY:number, width:number, height:number):string;
   addDiamond (topX:number, topY:number, width:number, height:number):string;
@@ -84,7 +96,7 @@ export interface ExcalidrawAutomate {
     }
   ):string ;
   addImage(topX:number, topY:number, imageFile: TFile):Promise<string>;
-  addLaTex(topX:number, topY:number, tex: string, color?:string):Promise<string>;
+  addLaTex(topX:number, topY:number, tex: string):Promise<string>;
   connectObjects (
     objectA: string, 
     connectionA: ConnectionPoint, 
@@ -134,6 +146,10 @@ export interface ExcalidrawAutomate {
     view: ExcalidrawView, //the excalidraw view receiving the drop
     pointerPosition: {x:number, y:number} //the pointer position on canvas at the time of drop
   }):boolean;
+  mostRecentMarkdownSVG:SVGSVGElement; //Markdown renderer will drop a copy of the most recent SVG here for debugging purposes
+  //utility functions to generate EmbeddedFilesLoaderand ExportSettings objects
+  getEmbeddedFilesLoader(isDark?:boolean):EmbeddedFilesLoader;
+  getExportSettings(withBackground:boolean,withTheme:boolean):ExportSettings;
 }
 ```
 
