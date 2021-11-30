@@ -129,7 +129,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     const plugin = this.plugin;
     this.applyDebounceTimer = window.setTimeout(() => {
       plugin.saveSettings();
-    }, 200);
+    }, 100);
     if(requestReloadDrawings) this.requestReloadDrawings = true;
   }
 

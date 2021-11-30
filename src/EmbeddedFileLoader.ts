@@ -288,18 +288,17 @@ const convertMarkdownToSVG = async (plugin: ExcalidrawPlugin, file: TFile, linkP
   //2.
   //get styles
   const fileCache = plugin.app.metadataCache.getFileCache(file);
-  let fontName:string;
   let fontDef:string;
-  let font = plugin.settings.mdFont;
+  let fontName = plugin.settings.mdFont;
   if (fileCache?.frontmatter && fileCache.frontmatter[FRONTMATTER_KEY_FONT]!=null) {
-    font = fileCache.frontmatter[FRONTMATTER_KEY_FONT];
+    fontName = fileCache.frontmatter[FRONTMATTER_KEY_FONT];
   }
-  switch(font){
-    case "Virgil":
-    case "": fontName = "Virgil";fontDef = VIRGIL_FONT; break;
-    case "Cascadia": fontName = "Cascadia";fontDef = CASCADIA_FONT; break;
+  switch(fontName){
+    case "Virgil": fontDef = VIRGIL_FONT; break;
+    case "Cascadia": fontDef = CASCADIA_FONT; break;
+    case "": fontDef = ""; break;
     default: 
-      const f = plugin.app.metadataCache.getFirstLinkpathDest(font,file.path);
+      const f = plugin.app.metadataCache.getFirstLinkpathDest(fontName,file.path);
       if(f) {
         const ab = await plugin.app.vault.readBinary(f);
         const mimeType=f.extension.startsWith("woff")?"application/font-woff":"font/truetype";
@@ -308,7 +307,7 @@ const convertMarkdownToSVG = async (plugin: ExcalidrawPlugin, file: TFile, linkP
         const split = fontDef.split(";base64,",2);
         fontDef = split[0]+";charset=utf-8;base64,"+split[1];
       } else {
-        fontName = "Virgil";fontDef = VIRGIL_FONT;
+        fontDef = "";
       }
   }
   
@@ -330,20 +329,24 @@ const convertMarkdownToSVG = async (plugin: ExcalidrawPlugin, file: TFile, linkP
     }
   }
   
+  
   //3.
   //SVG helper functions
   //the SVG will first have ~infinite height. After sizing this will be reduced
   let svgStyle = ' width="'+linkParts.width+'px" height="100000"';
   let foreignObjectStyle = ' width="'+linkParts.width+'px" height="100%"';
 
-  const svg = (xml:string,style?:string) => 
+  const svg = (xml:string,xmlFooter:string,style?:string) => 
     '<svg xmlns="http://www.w3.org/2000/svg"'+svgStyle+'>'
     + (style?'<style>'+style+'</style>':'')
     + '<foreignObject x="0" y="0"'+foreignObjectStyle+'>' 
-    + xml
-    + '</foreignObject><defs><style>'
-    + fontDef 
-    + '</style></defs></svg>';
+    + xml 
+    + xmlFooter //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/286#issuecomment-982179639
+    + '</foreignObject>' 
+    + (fontDef!=="" 
+      ? ('<defs><style>' + fontDef + '</style></defs>') 
+      : "")
+    + '</svg>';
 
   
   //4.
@@ -351,18 +354,14 @@ const convertMarkdownToSVG = async (plugin: ExcalidrawPlugin, file: TFile, linkP
   const mdDIV = createDiv();
   mdDIV.setAttribute("xmlns","http://www.w3.org/1999/xhtml");
   mdDIV.setAttribute("class","excalidraw-md-host");
-  mdDIV.setAttribute("style",style);
-  mdDIV.style.fontFamily = fontName;
+//  mdDIV.setAttribute("style",style);
+  if(fontName !== "") mdDIV.style.fontFamily = fontName;
   mdDIV.style.overflow = "auto";
   mdDIV.style.display = "block";
   if(fontColor && fontColor!="") mdDIV.style.color = fontColor;
 
   await MarkdownRenderer.renderMarkdown(text,mdDIV,file.path,plugin);
   mdDIV.querySelectorAll(":scope > *[class^='frontmatter']").forEach((el)=>mdDIV.removeChild(el));
-
-  //this is a brute force approach to replace anchors with spans for better formatting
-  //mdDIV.innerHTML = mdDIV.innerHTML.replaceAll("<a ","<u ").replaceAll("</a>","</u>");
-
 
   //5.1
   //get SVG size. 
@@ -380,6 +379,9 @@ const convertMarkdownToSVG = async (plugin: ExcalidrawPlugin, file: TFile, linkP
   }
   const stylingDIV = iframeDoc.importNode(mdDIV,true)
   iframeDoc.body.appendChild(stylingDIV);
+  const footerDIV = createDiv();
+  footerDIV.setAttribute("class","excalidraw-md-footer");
+  iframeDoc.body.appendChild(footerDIV);
 
   iframeDoc.body.querySelectorAll("*").forEach((el:HTMLElement)=>{
     const elementStyle = el.style;
@@ -394,25 +396,29 @@ const convertMarkdownToSVG = async (plugin: ExcalidrawPlugin, file: TFile, linkP
   });
 
   const xmlINiframe = (new XMLSerializer().serializeToString(stylingDIV))
+  const xmlFooter = (new XMLSerializer().serializeToString(footerDIV))
   document.body.removeChild(iframeHost);
   
   //5.2
   //get SVG size
   const parser = new DOMParser();
-  const doc = parser.parseFromString(svg(xmlINiframe),"image/svg+xml");
+  const doc = parser.parseFromString(svg(xmlINiframe,xmlFooter),"image/svg+xml");
   const svgEl = doc.firstElementChild;
   const host = createDiv();
   host.appendChild(svgEl);
   document.body.appendChild(host);
-  const height = svgEl.firstElementChild.firstElementChild.scrollHeight;
+  const footerHeight = svgEl.querySelector(".excalidraw-md-footer").scrollHeight;
+  const height = svgEl.querySelector(".excalidraw-md-host").scrollHeight + footerHeight;
   const svgHeight = height <= linkParts.height ? height : linkParts.height;
   document.body.removeChild(host);
 
   //finalize SVG
   svgStyle = ' width="'+linkParts.width+'px" height="'+svgHeight+'px"';
   foreignObjectStyle = ' width="'+linkParts.width+'px" height="'+svgHeight+'px"';
+  mdDIV.style.height = (svgHeight-footerHeight)+"px";
+  mdDIV.style.overflow = "hidden";
   const xml = (new XMLSerializer().serializeToString(mdDIV))
-  const finalSVG = svg(xml,style);
+  const finalSVG = svg(xml,'<div class="excalidraw-md-footer"></div>',style);
   plugin.ea.mostRecentMarkdownSVG = parser.parseFromString(finalSVG,"image/svg+xml").firstElementChild as SVGSVGElement;
   return svgToBase64(finalSVG) as DataURL;
 }

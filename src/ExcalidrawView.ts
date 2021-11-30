@@ -891,7 +891,7 @@ export default class ExcalidrawView extends TextFileView {
               );
               this.excalidrawData.setFile(images[k].id,embeddedFile);
             }
-            if(images[k].tex) {
+            if(images[k].latex) {
               this.excalidrawData.setEquation(
                 images[k].id,
                 {
