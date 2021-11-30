@@ -404,7 +404,19 @@ const convertMarkdownToSVG = async (plugin: ExcalidrawPlugin, file: TFile, linkP
   const host = createDiv();
   host.appendChild(svgEl);
   document.body.appendChild(host);
-  const height = svgEl.firstElementChild.firstElementChild.scrollHeight;
+  //adding padding and margin set for the foreignObject and mdDiv to the scrollHeight #286
+  const fo = svgEl.firstElementChild; //foreignObject
+  const div = fo.firstElementChild; 
+  const additionalHeight = 
+      (fo.paddingTop !==""     ? parseInt(fo.paddingTop):0) 
+    + (fo.paddingBottom !==""  ? parseInt(fo.paddingBottom):0)
+    + (fo.marginTop !==""      ? parseInt(fo.marginTop):0)
+    + (fo.marginBottom !==""   ? parseInt(fo.marrginBottom):0)
+    + (div.paddingTop !==""    ? parseInt(div.paddingTop):0) 
+    + (div.paddingBottom !=="" ? parseInt(div.paddingBottom):0)
+    + (div.marginTop !==""     ? parseInt(div.marginTop):0)
+    + (div.marginBottom !==""  ? parseInt(div.marrginBottom):0);
+  const height = svgEl.firstElementChild.firstElementChild.scrollHeight+additionalHeight;
   const svgHeight = height <= linkParts.height ? height : linkParts.height;
   document.body.removeChild(host);
 
