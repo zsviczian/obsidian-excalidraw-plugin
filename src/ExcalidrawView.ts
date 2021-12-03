@@ -861,7 +861,8 @@ export default class ExcalidrawView extends TextFileView {
           }
         };
 
-        const el: ExcalidrawElement[] = this.excalidrawAPI.getSceneElements();
+        const newIds = newElements.map((e)=>e.id);
+        const el: ExcalidrawElement[] = this.excalidrawAPI.getSceneElements().filter((e)=>!newIds.includes(e.id));
         let st: AppState = this.excalidrawAPI.getAppState();
 
         if(repositionToCursor) newElements = repositionElementsToCursor(newElements,currentPosition,true);
