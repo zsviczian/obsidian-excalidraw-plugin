@@ -118,9 +118,9 @@ export default {
   SYNC_EXCALIDRAW_DESC: "如果 *.excalidraw 文件的修改比 *.md 文件的修改更新" +
                         "，会根据 .excalidraw 文件更新 .md 文件中的绘图",
   COMPATIBILITY_MODE_NAME: "以旧格式创建新绘图",
-  COMPATIBILITY_MODE_DESC: "通过启用此功能图形，您可以使用功能区图标、命令面板操作、 "+
-                           "并且文件浏览器将仍旧保留 *.excalidraw 文件。 此设置还将" + 
-                           "关闭你打开旧格式绘图时的提醒消息",
+  COMPATIBILITY_MODE_DESC: "启用此功能后，你使用功能区图标、命令面板、"+
+                           "或文件浏览器创建的绘图都将是旧格式 *.excalidraw 文件。 此设置还将" + 
+                           "关闭你打开并编辑旧格式绘图文件时的提醒消息",
   EXPERIMENTAL_HEAD: "实验性特性",
   EXPERIMENTAL_DESC: "这些设置不会立即生效，只有在刷新文件资源管理器或重新启动 Obsidian 时才会生效。",
   FILETYPE_NAME: "在文件浏览器中给所有的 Excalidraw 文件加上 ✏️ 标识符",
