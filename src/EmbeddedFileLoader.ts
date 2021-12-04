@@ -48,9 +48,13 @@ export class EmbeddedFile {
     if(!this.linkParts.width) this.linkParts.width = this.plugin.settings.mdSVGwidth;
     if(!this.linkParts.height) this.linkParts.height = this.plugin.settings.mdSVGmaxHeight;
     this.file = this.plugin.app.metadataCache.getFirstLinkpathDest(this.linkParts.path,hostPath);
+    if(!this.file) {
+      new Notice("Excalidraw Warning: could not find image file: "+imgPath,5000);
+    }
   }
 
   private fileChanged():boolean {
+    if(!this.file) return false;
     return this.mtime !=this.file.stat.mtime;
   }
 

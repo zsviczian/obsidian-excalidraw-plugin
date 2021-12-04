@@ -58,6 +58,8 @@ const REG_LINKINDEX_INVALIDCHARS = /[<>:"\\|?*]/g;
 
 export const addFiles = async (files:FileData[], view: ExcalidrawView,isDark?:boolean) => {
   if(!files || files.length === 0 || !view) return;
+  files = files.filter((f)=>(f.size.height>0) && (f.size.width>0)); //height will be zero when file does not exisig in case of broken embedded file links
+  if(files.length === 0) return;
   const [dirty, scene] = scaleLoadedImage(view.getScene(),files); 
   if(isDark===undefined) isDark = scene.appState.theme;
   if(dirty) {
@@ -68,7 +70,6 @@ export const addFiles = async (files:FileData[], view: ExcalidrawView,isDark?:bo
       commitToHistory: false,
     });
   }
-  files = files.filter((f)=>(f.size.height>0) && (f.size.width>0));
   for(const f of files) {
     if(view.excalidrawData.hasFile(f.id)) {
       const embeddedFile = view.excalidrawData.getFile(f.id);
