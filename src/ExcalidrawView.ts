@@ -68,9 +68,11 @@ export const addFiles = async (files:FileData[], view: ExcalidrawView,isDark?:bo
       commitToHistory: false,
     });
   }
+  files = files.filter((f)=>(f.size.height>0) && (f.size.width>0));
   for(const f of files) {
     if(view.excalidrawData.hasFile(f.id)) {
       const embeddedFile = view.excalidrawData.getFile(f.id);
+
       embeddedFile.setImage(
         f.dataURL,
         f.mimeType,
@@ -862,7 +864,7 @@ export default class ExcalidrawView extends TextFileView {
         };
 
         const newIds = newElements.map((e)=>e.id);
-        const el: ExcalidrawElement[] = this.excalidrawAPI.getSceneElements().filter((e)=>!newIds.includes(e.id));
+        const el: ExcalidrawElement[] = this.excalidrawAPI.getSceneElements().filter((e:ExcalidrawElement)=>!newIds.includes(e.id));
         let st: AppState = this.excalidrawAPI.getAppState();
 
         if(repositionToCursor) newElements = repositionElementsToCursor(newElements,currentPosition,true);

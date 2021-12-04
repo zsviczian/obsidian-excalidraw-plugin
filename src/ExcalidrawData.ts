@@ -197,7 +197,7 @@ export class ExcalidrawData {
     res = data.matchAll(REG_FILEID_FILEPATH);
     while(!(parts = res.next()).done) {
       const embeddedFile = new EmbeddedFile(this.plugin,this.file.path,parts.value[2]);
-      this.setFile(parts.value[1] as FileId,embeddedFile);
+      if(embeddedFile.file) this.setFile(parts.value[1] as FileId,embeddedFile);
     }
 
     //Load Equations
@@ -641,6 +641,7 @@ export class ExcalidrawData {
   */
   public setFile(fileId:FileId, data:EmbeddedFile) {
     //always store absolute path because in case of paste, relative path may not resolve ok
+    if(!data || !data.file) return;
     this.files.set(fileId,data);
     this.plugin.filesMaster.set(
       fileId,
