@@ -1067,10 +1067,12 @@
   dependencies:
     "@types/estree" "*"
 
-"@zsviczian/excalidraw@0.10.0-obsidian-12":
-  "integrity" "sha512-0T6zCr/CTaTZxoh+hZKamSmph63WNnkxal1DUg7nVCjw02gz+Q6Y0qywJzy9B49K4r7CH4CewVqPmIFumUr5Kg=="
-  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.10.0-obsidian-12.tgz"
-  "version" "0.10.0-obsidian-12"
+"@zsviczian/excalidraw@0.10.0-obsidian-14":
+  "integrity" "sha512-+Rxdbpg7b92FEjgUJBGwV4QEYt1vupbWA09lVmiouv/n3hsEdcz4cjXV15+E8v3wMMOvxpTEsSP1d4SqUZ7XyA=="
+  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.10.0-obsidian-14.tgz"
+  "version" "0.10.0-obsidian-14"
+  dependencies:
+    "dotenv" "10.0.0"
 
 "abab@^1.0.3":
   "integrity" "sha1-X6rZwsB/YN12dw9xzwJbYqY8/U4="
@@ -3753,6 +3755,11 @@
   "integrity" "sha1-3vHxyl1gWdJKdm5YeULCEQbOEnU="
   "resolved" "https://registry.npmjs.org/dotenv-expand/-/dotenv-expand-4.2.0.tgz"
   "version" "4.2.0"
+
+"dotenv@10.0.0":
+  "integrity" "sha512-rlBi9d8jpv9Sf1klPjNfFAuWDjKLwTIJJ/VxtoTwIR6hnZxcEOQCZg2oIL3MWBYw5GpUDKOEnND7LXTbIpQ03Q=="
+  "resolved" "https://registry.npmjs.org/dotenv/-/dotenv-10.0.0.tgz"
+  "version" "10.0.0"
 
 "dotenv@4.0.0":
   "integrity" "sha1-hk7xN5rO1Vzm+V3r7NzhefegzR0="

@@ -22,6 +22,7 @@ import { debug, embedFontsInSVG, errorlog, getPNG, getSVG, isObsidianThemeDark, 
 import { AppState, DataURL } from "@zsviczian/excalidraw/types/types";
 import { EmbeddedFilesLoader, FileData, MimeType } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
+import { getCommonBoundingBox } from "@zsviczian/excalidraw";
 
 declare type ConnectionPoint = "top"|"bottom"|"left"|"right";
 
@@ -172,6 +173,7 @@ export interface ExcalidrawAutomate {
   //utility functions to generate EmbeddedFilesLoaderand ExportSettings objects
   getEmbeddedFilesLoader(isDark?:boolean):EmbeddedFilesLoader;
   getExportSettings(withBackground:boolean,withTheme:boolean):ExportSettings;
+  getBoundingBox(elements:ExcalidrawElement[]): {topX:number,topY:number,width:number,height:number};
 }
 
 declare let window: any;
@@ -793,6 +795,20 @@ export async function initExcalidrawAutomate(plugin: ExcalidrawPlugin):Promise<E
     getExportSettings(withBackground:boolean,withTheme:boolean):ExportSettings{
       return {withBackground,withTheme};
     },
+    getBoundingBox(elements:ExcalidrawElement[]): {
+      topX:number,
+      topY:number,
+      width:number,
+      height:number
+    } {
+      const bb = getCommonBoundingBox(elements);
+      return {
+        topX: bb.minX,
+        topY: bb.minY,
+        width: bb.maxX-bb.minX,
+        height: bb.maxY-bb.minY,
+      }
+    },
   };
   await initFonts();
   return window.ExcalidrawAutomate;
@@ -1051,15 +1067,18 @@ function estimateLineBound(points:any):[number,number,number,number] {
   return[minX,minY,maxX,maxY];
 }
 
-export function estimateElementBounds (element:ExcalidrawElement):[number,number,number,number] {
+/*export function estimateElementBounds (element:ExcalidrawElement):[number,number,number,number] {
   if(element.type=="line" || element.type=="arrow") {
     const [minX,minY,maxX,maxY] = estimateLineBound(element.points);
     return [minX+element.x,minY+element.y,maxX+element.x,maxY+element.y];
   }
   return[element.x,element.y,element.x+element.width,element.y+element.height];
-} 
+} */
 
 export function estimateBounds (elements:ExcalidrawElement[]):[number,number,number,number] {
+  const bb = getCommonBoundingBox(elements);
+  return [bb.minX,bb.minY,bb.maxX,bb.maxY];
+/*
   if(!elements.length) return [0,0,0,0];
   let minX = Infinity;
   let maxX = -Infinity;
@@ -1073,7 +1092,7 @@ export function estimateBounds (elements:ExcalidrawElement[]):[number,number,num
     maxX = Math.max(maxX, x2);
     maxY = Math.max(maxY, y2);
   });
-  return [minX,minY,maxX,maxY];
+  return [minX,minY,maxX,maxY];*/
 }
 
 export function repositionElementsToCursor (elements:ExcalidrawElement[],newPosition:{x:number, y:number},center:boolean=false):ExcalidrawElement[] {
