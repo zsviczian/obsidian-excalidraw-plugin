@@ -150,6 +150,7 @@ export interface ExcalidrawAutomate {
   //utility functions to generate EmbeddedFilesLoaderand ExportSettings objects
   getEmbeddedFilesLoader(isDark?:boolean):EmbeddedFilesLoader;
   getExportSettings(withBackground:boolean,withTheme:boolean):ExportSettings;
+  getBoundingBox(elements:ExcalidrawElement[]): {topX:number,topY:number,width:number,height:number};
 }
 ```
 

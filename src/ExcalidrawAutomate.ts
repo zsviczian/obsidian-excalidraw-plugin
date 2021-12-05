@@ -1067,32 +1067,9 @@ function estimateLineBound(points:any):[number,number,number,number] {
   return[minX,minY,maxX,maxY];
 }
 
-/*export function estimateElementBounds (element:ExcalidrawElement):[number,number,number,number] {
-  if(element.type=="line" || element.type=="arrow") {
-    const [minX,minY,maxX,maxY] = estimateLineBound(element.points);
-    return [minX+element.x,minY+element.y,maxX+element.x,maxY+element.y];
-  }
-  return[element.x,element.y,element.x+element.width,element.y+element.height];
-} */
-
 export function estimateBounds (elements:ExcalidrawElement[]):[number,number,number,number] {
   const bb = getCommonBoundingBox(elements);
   return [bb.minX,bb.minY,bb.maxX,bb.maxY];
-/*
-  if(!elements.length) return [0,0,0,0];
-  let minX = Infinity;
-  let maxX = -Infinity;
-  let minY = Infinity;
-  let maxY = -Infinity;
-
-  elements.forEach((element)=>{
-    const [x1,y1,x2,y2] = estimateElementBounds(element);
-    minX = Math.min(minX, x1);
-    minY = Math.min(minY, y1);
-    maxX = Math.max(maxX, x2);
-    maxY = Math.max(maxY, y2);
-  });
-  return [minX,minY,maxX,maxY];*/
 }
 
 export function repositionElementsToCursor (elements:ExcalidrawElement[],newPosition:{x:number, y:number},center:boolean=false):ExcalidrawElement[] {
