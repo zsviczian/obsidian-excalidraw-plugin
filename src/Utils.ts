@@ -20,11 +20,17 @@ declare module "obsidian" {
  * Splits a full path including a folderpath and a filename into separate folderpath and filename components
  * @param filepath 
  */
-export function splitFolderAndFilename(filepath: string):{folderpath: string, filename: string} {
+export function splitFolderAndFilename(filepath: string):{
+  folderpath: string, 
+  filename: string, 
+  basename: string
+} {
   const lastIndex = filepath.lastIndexOf("/");
+  const filename = lastIndex==-1 ? filepath : filepath.substr(lastIndex+1);
   return {
     folderpath: normalizePath(filepath.substr(0,lastIndex)), 
-    filename: lastIndex==-1 ? filepath : filepath.substr(lastIndex+1),
+    filename,
+    basename: filename.replace(/\.[^/.]+$/, "")
   };
 }
 

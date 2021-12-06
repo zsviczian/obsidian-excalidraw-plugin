@@ -56,6 +56,10 @@ export default {
                  "Template.md, the setting would be: Excalidraw/Template.md (or just Excalidraw/Template - you may ommit the .md file extension" + 
                  "If you are using Excalidraw in compatibility mode, then your template must be a legacy excalidraw file as well " + 
                  "such as Excalidraw/Template.excalidraw.",
+  SCRIPT_FOLDER_NAME: "Excalidraw Automate script folder",
+  SCRIPT_FOLDER_DESC: "The files you place in this folder will be treated as Excalidraw Automate scripts. " +
+                      "You can access these from Excalidraw via the Obsidian Command Palette. You can assign " +
+                      "hotkeys to your favorite scripts just like to any other Obsidian command.",
   AUTOSAVE_NAME: "Autosave",
   AUTOSAVE_DESC: "Automatically save the active drawing every 30 seconds. Save normally happens when you close Excalidraw or Obsidian, or move "+
                  "focus to another pane. In rare cases autosave may slightly disrupt your drawing flow. I created this feature with mobile " +

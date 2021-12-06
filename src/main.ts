@@ -15,7 +15,6 @@ import {
   ViewState,
   Notice,
   loadMathJax,
-  MarkdownRenderer,
 } from "obsidian";
 import { 
   BLANK_DRAWING,
@@ -37,7 +36,7 @@ import {
   CTRL_OR_CMD
 } from "./constants";
 import ExcalidrawView, {ExportSettings, TextMode} from "./ExcalidrawView";
-import {ExcalidrawData, getJSON, getMarkdownDrawingSection} from "./ExcalidrawData";
+import {getJSON, getMarkdownDrawingSection} from "./ExcalidrawData";
 import {
   ExcalidrawSettings, 
   DEFAULT_SETTINGS, 
@@ -69,9 +68,8 @@ import { t } from "./lang/helpers";
 import { checkAndCreateFolder, debug, download, embedFontsInSVG, getAttachmentsFolderAndFilePath, getIMGFilename, getIMGPathFromExcalidrawFile, getNewUniqueFilepath, getPNG, getSVG, isObsidianThemeDark, splitFolderAndFilename, svgToBase64 } from "./Utils";
 import { OneOffs } from "./OneOffs";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
-import { MATHJAX_DATAURL } from "./mathjax";
-import { config, disconnect } from "process";
 import { EmbeddedFilesLoader } from "./EmbeddedFileLoader";
+import { ScriptEngine } from "./Scripts";
 
 declare module "obsidian" {
   interface App {
@@ -103,6 +101,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public equationsMaster:Map<FileId,string> = null; //fileId, formula
   public mathjax: any = null;
   private mathjaxDiv: HTMLDivElement = null;
+  public scriptEngine: ScriptEngine;
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
@@ -133,7 +132,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.experimentalFileTypeDisplayToggle(this.settings.experimentalFileType);
     this.registerCommands();
     this.registerEventListeners();
-        
+
     //inspiration taken from kanban: 
     //https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/main.ts#L267
     this.registerMonkeyPatches();
@@ -153,10 +152,12 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.switchToExcalidarwAfterLoad()
 
-    const self = this;
     this.loadMathJax();
-//    process.env.REACT_APP_LIBRARY_URL = "https://libraries.excalidraw.com/";
-//    process.env.REACT_APP_LIBRARY_BACKEND = "https://us-central1-excalidraw-room-persistence.cloudfunctions.net/libraries";
+    
+    const self = this;
+    this.app.workspace.onLayoutReady(()=>{
+      this.scriptEngine = new ScriptEngine(self);
+    });
   }
 
   private loadMathJax() {
@@ -575,7 +576,7 @@ export default class ExcalidrawPlugin extends Plugin {
       this.app.workspace.on("file-menu", fileMenuHandlerConvertReplaceExtension)
     );
 
-    this.addCommand({
+    const c= this.addCommand({
       id: "excalidraw-download-lib",
       name: t("DOWNLOAD_LIBRARY"),
       callback: async () => {
@@ -853,7 +854,7 @@ export default class ExcalidrawPlugin extends Plugin {
         }
       },
     });
-
+    
     this.addCommand({
       id: "convert-to-excalidraw",
       name: t("CONVERT_NOTE_TO_EXCALIDRAW"),

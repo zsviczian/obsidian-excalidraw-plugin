@@ -13,6 +13,7 @@ import { debug } from './Utils';
 export interface ExcalidrawSettings {
   folder: string,
   templateFilePath: string,
+  scriptFolderPath: string,
   drawingFilenamePrefix: string,
   drawingFilenameDateTime: string,
   displaySVGInPreview: boolean,
@@ -62,6 +63,7 @@ export interface ExcalidrawSettings {
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   folder: 'Excalidraw',
   templateFilePath: 'Excalidraw/Template.excalidraw',
+  scriptFolderPath: 'Excalidraw/Scripts',
   drawingFilenamePrefix: 'Drawing ',
   drawingFilenameDateTime: 'YYYY-MM-DD HH.mm.ss',
   displaySVGInPreview: true,
@@ -146,6 +148,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       this.requestEmbedUpdate = true;
     }
     if(this.requestEmbedUpdate) this.plugin.triggerEmbedUpdates();
+    this.plugin.scriptEngine.updateScriptPath();
   }
 
   async display() {
@@ -188,6 +191,17 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           this.applySettingsUpdate();
         }));
 
+    new Setting(containerEl)
+      .setName(t("SCRIPT_FOLDER_NAME")) 
+      .setDesc(t("SCRIPT_FOLDER_DESC"))
+      .addText(text => text
+        .setPlaceholder('Excalidraw/Scripts')
+        .setValue(this.plugin.settings.scriptFolderPath)
+        .onChange(async (value) => {
+          this.plugin.settings.scriptFolderPath = value;
+          this.applySettingsUpdate();
+        }));
+        
     this.containerEl.createEl('h1', {text: t("FILENAME_HEAD")});
     containerEl.createDiv('',(el) => {
       el.innerHTML = t("FILENAME_DESC");
