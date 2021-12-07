@@ -744,7 +744,7 @@ export const getTransclusion = async (linkParts:LinkParts,app:App,file:TFile,cha
       }
       const c = headings[i].node.children[0];
       const cc = c?.children;
-      if(!startPos && (c?.value === linkParts.ref || (cc?cc[0]?.value===linkParts.ref:false) ) ) {
+      if(!startPos && (c?.value === linkParts.ref || c?.title === linkParts.ref || (cc?cc[0]?.value===linkParts.ref:false) ) ) {
         startPos = headings[i].node.children[0]?.position.start.offset; //
         lineNum = headings[i].node.children[0]?.position.start.line; //
       }
