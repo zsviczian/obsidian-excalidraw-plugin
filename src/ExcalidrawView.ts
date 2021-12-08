@@ -10,14 +10,12 @@ import {
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import Excalidraw, {
-  exportToSvg,
   getSceneVersion,
 } from "@zsviczian/excalidraw";
 import {
   ExcalidrawElement,
   ExcalidrawImageElement,
   ExcalidrawTextElement,
-  FileId,
 } from "@zsviczian/excalidraw/types/element/types";
 import {
   AppState,
@@ -34,7 +32,6 @@ import {
   TEXT_DISPLAY_RAW_ICON_NAME,
   TEXT_DISPLAY_PARSED_ICON_NAME,
   FULLSCREEN_ICON_NAME,
-  JSON_parse,
   IMAGE_TYPES,
   CTRL_OR_CMD,
 } from "./constants";
@@ -48,17 +45,15 @@ import {
 } from "./ExcalidrawData";
 import {
   checkAndCreateFolder,
-  debug,
+  //debug,
   download,
   embedFontsInSVG,
   errorlog,
   getIMGFilename,
-  getLinkParts,
   getNewOrAdjacentLeaf,
   getNewUniqueFilepath,
   getPNG,
   getSVG,
-  isObsidianThemeDark,
   rotatedDimensions,
   scaleLoadedImage,
   splitFolderAndFilename,

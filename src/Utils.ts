@@ -3,7 +3,6 @@ import {
   App,
   normalizePath,
   TAbstractFile,
-  TFile,
   TFolder,
   Vault,
   WorkspaceLeaf,
@@ -14,7 +13,6 @@ import { CASCADIA_FONT, VIRGIL_FONT } from "./constants";
 import ExcalidrawPlugin from "./main";
 import {
   ExcalidrawElement,
-  FileId,
 } from "@zsviczian/excalidraw/types/element/types";
 import { ExportSettings } from "./ExcalidrawView";
 
@@ -192,7 +190,7 @@ export const rotatedDimensions = (
   element: ExcalidrawElement,
 ): [number, number, number, number] => {
   if (element.angle === 0) {
-    [element.x, element.y, element.width, element.height];
+    return [element.x, element.y, element.width, element.height];
   }
   const centerX = element.x + element.width / 2;
   const centerY = element.y + element.height / 2;
