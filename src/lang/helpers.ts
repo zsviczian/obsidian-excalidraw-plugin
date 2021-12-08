@@ -56,7 +56,11 @@ const locale = localeMap[moment.locale()];
 
 export function t(str: keyof typeof en): string {
   if (!locale) {
-    errorlog({where:"helpers.t",message:"Error: Excalidraw locale not found", locale: moment.locale()});
+    errorlog({
+      where: "helpers.t",
+      message: "Error: Excalidraw locale not found",
+      locale: moment.locale(),
+    });
   }
 
   return (locale && locale[str]) || en[str];

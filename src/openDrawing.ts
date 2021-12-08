@@ -1,13 +1,7 @@
-import { 
-  App, 
-  FuzzySuggestModal, 
-  TFile 
-} from "obsidian";
-import ExcalidrawPlugin from './main';
-import {
-  EMPTY_MESSAGE,
-} from './constants';
-import {t} from './lang/helpers'
+import { App, FuzzySuggestModal, TFile } from "obsidian";
+import ExcalidrawPlugin from "./main";
+import { EMPTY_MESSAGE } from "./constants";
+import { t } from "./lang/helpers";
 
 export enum openDialogAction {
   openFile,
@@ -27,15 +21,20 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
     this.plugin = plugin;
     this.onNewPane = false;
     this.limit = 20;
-    this.setInstructions([{
-      command: t("TYPE_FILENAME"),
-      purpose: "",
-    }]);
-    
+    this.setInstructions([
+      {
+        command: t("TYPE_FILENAME"),
+        purpose: "",
+      },
+    ]);
+
     this.inputEl.onkeyup = (e) => {
-      if(e.key=="Enter" && this.action == openDialogAction.openFile) {
+      if (e.key == "Enter" && this.action == openDialogAction.openFile) {
         if (this.containerEl.innerText.includes(EMPTY_MESSAGE)) {
-          this.plugin.createDrawing(this.plugin.settings.folder+'/'+this.inputEl.value+'.excalidraw.md', this.onNewPane);
+          this.plugin.createDrawing(
+            `${this.plugin.settings.folder}/${this.inputEl.value}.excalidraw.md`,
+            this.onNewPane,
+          );
           this.close();
         }
       }
@@ -44,38 +43,39 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
 
   getItems(): TFile[] {
     const excalidrawFiles = this.app.vault.getFiles();
-    return (excalidrawFiles || []).filter((f:TFile) => this.plugin.isExcalidrawFile(f));
+    return (excalidrawFiles || []).filter((f: TFile) =>
+      this.plugin.isExcalidrawFile(f),
+    );
   }
 
   getItemText(item: TFile): string {
-    return item.path; 
+    return item.path;
   }
 
   onChooseItem(item: TFile, _evt: MouseEvent | KeyboardEvent): void {
-    switch(this.action) {
-      case(openDialogAction.openFile):
+    switch (this.action) {
+      case openDialogAction.openFile:
         this.plugin.openDrawing(item, this.onNewPane);
         break;
-      case(openDialogAction.insertLinkToDrawing):
+      case openDialogAction.insertLinkToDrawing:
         this.plugin.embedDrawing(item.path);
         break;
     }
   }
 
-  public start(action:openDialogAction, onNewPane: boolean): void {
+  public start(action: openDialogAction, onNewPane: boolean): void {
     this.action = action;
     this.onNewPane = onNewPane;
-    switch(action) {
-      case (openDialogAction.openFile):
+    switch (action) {
+      case openDialogAction.openFile:
         this.emptyStateText = EMPTY_MESSAGE;
         this.setPlaceholder(t("SELECT_FILE_OR_TYPE_NEW"));
         break;
-      case (openDialogAction.insertLinkToDrawing):
+      case openDialogAction.insertLinkToDrawing:
         this.emptyStateText = t("NO_MATCH");
         this.setPlaceholder(t("SELECT_TO_EMBED"));
         break;
     }
     this.open();
   }
-
 }
