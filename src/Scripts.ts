@@ -1,4 +1,4 @@
-import { App, normalizePath, TAbstractFile, TFile } from "obsidian";
+import { normalizePath, TAbstractFile, TFile } from "obsidian";
 import { VIEW_TYPE_EXCALIDRAW } from "./constants";
 import ExcalidrawView from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";

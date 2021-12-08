@@ -342,13 +342,12 @@ export async function initExcalidrawAutomate(
         }
         frontmatter = "---\n\n";
         for (const key of Object.keys(params.frontmatterKeys)) {
-          
           frontmatter += `${key}: ${
             //@ts-ignore
             params.frontmatterKeys[key] === ""
               ? '""'
-              //@ts-ignore
-              : params.frontmatterKeys[key]
+              : //@ts-ignore
+                params.frontmatterKeys[key]
           }\n`;
         }
         frontmatter += "\n---\n";
@@ -1227,26 +1226,24 @@ async function getTemplate(
     let scene = excalidrawData.scene;
     if (loadFiles) {
       //debug({where:"getTemplate",template:file.name,loader:loader.uid});
-      await loader.loadSceneFiles(
-        excalidrawData,
-        (fileArray: FileData[]) => { //, isDark: boolean) => {
-          if (!fileArray || fileArray.length === 0) {
-            return;
+      await loader.loadSceneFiles(excalidrawData, (fileArray: FileData[]) => {
+        //, isDark: boolean) => {
+        if (!fileArray || fileArray.length === 0) {
+          return;
+        }
+        for (const f of fileArray) {
+          if (f.hasSVGwithBitmap) {
+            hasSVGwithBitmap = true;
           }
-          for (const f of fileArray) {
-            if (f.hasSVGwithBitmap) {
-              hasSVGwithBitmap = true;
-            }
-            excalidrawData.scene.files[f.id] = {
-              mimeType: f.mimeType,
-              id: f.id,
-              dataURL: f.dataURL,
-              created: f.created,
-            };
-          }
-          scene = scaleLoadedImage(excalidrawData.scene, fileArray)[1];
-        },
-      );
+          excalidrawData.scene.files[f.id] = {
+            mimeType: f.mimeType,
+            id: f.id,
+            dataURL: f.dataURL,
+            created: f.created,
+          };
+        }
+        scene = scaleLoadedImage(excalidrawData.scene, fileArray)[1];
+      });
     }
 
     return {

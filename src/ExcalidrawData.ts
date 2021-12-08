@@ -438,9 +438,9 @@ export class ExcalidrawData {
     while (!(parts = res.next()).done) {
       if (REGEX_LINK.isTransclusion(parts)) {
         //transclusion //parts.value[1] || parts.value[4]
-        const contents = (await this.getTransclusion(
-          REGEX_LINK.getLink(parts),
-        ))[0];
+        const contents = (
+          await this.getTransclusion(REGEX_LINK.getLink(parts))
+        )[0];
         outString +=
           text.substring(position, parts.value.index) +
           wrapText(
@@ -607,11 +607,9 @@ export class ExcalidrawData {
           default:
             fname += ".png";
         }
-        const filepath = (await getAttachmentsFolderAndFilePath(
-          this.app,
-          this.file.path,
-          fname,
-        ))[1];
+        const filepath = (
+          await getAttachmentsFolderAndFilePath(this.app, this.file.path, fname)
+        )[1];
         const dataURL = scene.files[key].dataURL;
         await this.app.vault.createBinary(
           filepath,
