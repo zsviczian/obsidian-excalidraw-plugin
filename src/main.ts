@@ -11,7 +11,6 @@ import {
   Menu,
   MenuItem,
   TAbstractFile,
-  Tasks,
   ViewState,
   Notice,
   loadMathJax,
@@ -36,7 +35,7 @@ import {
   CTRL_OR_CMD,
 } from "./constants";
 import ExcalidrawView, { ExportSettings, TextMode } from "./ExcalidrawView";
-import { getJSON, getMarkdownDrawingSection } from "./ExcalidrawData";
+import { getMarkdownDrawingSection } from "./ExcalidrawData";
 import {
   ExcalidrawSettings,
   DEFAULT_SETTINGS,
@@ -58,17 +57,14 @@ import { around } from "monkey-around";
 import { t } from "./lang/helpers";
 import {
   checkAndCreateFolder,
-  debug,
   download,
   embedFontsInSVG,
   getAttachmentsFolderAndFilePath,
   getIMGFilename,
   getIMGPathFromExcalidrawFile,
   getNewUniqueFilepath,
-  getPNG,
-  getSVG,
   isObsidianThemeDark,
-  splitFolderAndFilename,
+  log,
   svgToBase64,
 } from "./Utils";
 import { OneOffs } from "./OneOffs";
@@ -192,7 +188,6 @@ export default class ExcalidrawPlugin extends Plugin {
     const doc = iframe.contentWindow.document;
     const script = doc.createElement("script");
     script.type = "text/javascript";
-    const self = this;
     script.onload = () => {
       const win = iframe.contentWindow;
       //@ts-ignore
@@ -253,7 +248,6 @@ export default class ExcalidrawPlugin extends Plugin {
         file = f;
       }
 
-      const content = await this.app.vault.read(file);
       const exportSettings: ExportSettings = {
         withBackground: this.settings.exportWithBackground,
         withTheme: this.settings.exportWithTheme,
@@ -264,10 +258,7 @@ export default class ExcalidrawPlugin extends Plugin {
         style += `height:${imgAttributes.fheight}px;`;
       }
       img.setAttribute("style", style);
-
       img.addClass(imgAttributes.style);
-
-      const [scene, pos] = getJSON(content);
 
       const theme = this.settings.previewMatchObsidianTheme
         ? isObsidianThemeDark()
@@ -376,7 +367,7 @@ export default class ExcalidrawPlugin extends Plugin {
           } //.ctrlKey||ev.metaKey);
         });
         el.addEventListener(RERENDER_EVENT, async (e) => {
-          e.stopPropagation;
+          e.stopPropagation();
           el.empty();
           const img = await getIMG({
             fname: el.getAttribute("src"),
@@ -448,7 +439,6 @@ export default class ExcalidrawPlugin extends Plugin {
       };
       let alt: string;
       let parts;
-      let div;
       let file: TFile;
       for (const drawing of embeddedItems) {
         attr.fname = drawing.getAttribute("src");
@@ -680,7 +670,7 @@ export default class ExcalidrawPlugin extends Plugin {
     const self = this;
     this.app.workspace.onLayoutReady(() => {
       document.querySelectorAll(".nav-file-title").forEach(insertFiletype); //apply filetype to files already displayed
-      this.fileExplorerObserver.observe(document.querySelector(".workspace"), {
+      self.fileExplorerObserver.observe(document.querySelector(".workspace"), {
         childList: true,
         subtree: true,
       });
@@ -702,7 +692,7 @@ export default class ExcalidrawPlugin extends Plugin {
         item
           .setTitle(t("CREATE_NEW"))
           .setIcon(ICON_NAME)
-          .onClick((evt) => {
+          .onClick(() => {
             let folderpath = file.path;
             if (file instanceof TFile) {
               folderpath = normalizePath(
@@ -725,7 +715,7 @@ export default class ExcalidrawPlugin extends Plugin {
     const fileMenuHandlerConvertKeepExtension = (menu: Menu, file: TFile) => {
       if (file instanceof TFile && file.extension == "excalidraw") {
         menu.addItem((item: MenuItem) => {
-          item.setTitle(t("CONVERT_FILE_KEEP_EXT")).onClick((evt) => {
+          item.setTitle(t("CONVERT_FILE_KEEP_EXT")).onClick(() => {
             this.convertSingleExcalidrawToMD(file, false, false);
           });
         });
@@ -742,7 +732,7 @@ export default class ExcalidrawPlugin extends Plugin {
     ) => {
       if (file instanceof TFile && file.extension == "excalidraw") {
         menu.addItem((item: MenuItem) => {
-          item.setTitle(t("CONVERT_FILE_REPLACE_EXT")).onClick((evt) => {
+          item.setTitle(t("CONVERT_FILE_REPLACE_EXT")).onClick(() => {
             this.convertSingleExcalidrawToMD(file, true, true);
           });
         });
@@ -756,7 +746,7 @@ export default class ExcalidrawPlugin extends Plugin {
       ),
     );
 
-    const c = this.addCommand({
+    this.addCommand({
       id: "excalidraw-download-lib",
       name: t("DOWNLOAD_LIBRARY"),
       callback: async () => {
@@ -863,13 +853,17 @@ export default class ExcalidrawPlugin extends Plugin {
         .format(this.settings.drawingFilenameDateTime)}${
         this.settings.compatibilityMode ? ".excalidraw" : ".excalidraw.md"
       }`;
-      const [folder, filepath] = await getAttachmentsFolderAndFilePath(
+      const fFp = await getAttachmentsFolderAndFilePath(
         this.app,
         activeView.file.path,
         filename,
       );
-      this.embedDrawing(filepath);
-      this.createDrawing(filename, inNewPane, folder === "" ? null : folder);
+      this.embedDrawing(fFp.filepath);
+      this.createDrawing(
+        filename,
+        inNewPane,
+        fFp.folder === "" ? null : fFp.folder,
+      );
     };
 
     this.addCommand({
@@ -1139,7 +1133,7 @@ export default class ExcalidrawPlugin extends Plugin {
       filename,
       normalizePath(file.path.substr(0, file.path.lastIndexOf(file.name))),
     );
-    console.log(fname);
+    log(fname);
     const result = await this.app.vault.create(
       fname,
       FRONTMATTER + (await this.exportSceneToMD(data)),
@@ -1366,7 +1360,7 @@ export default class ExcalidrawPlugin extends Plugin {
       self.registerEvent(self.app.vault.on("delete", deleteEventHandler));
 
       //save open drawings when user quits the application
-      const quitEventHandler = async (tasks: Tasks) => {
+      const quitEventHandler = async () => {
         const leaves = self.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
         for (let i = 0; i < leaves.length; i++) {
           await (leaves[i].view as ExcalidrawView).save(true);

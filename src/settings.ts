@@ -3,7 +3,6 @@ import { VIEW_TYPE_EXCALIDRAW } from "./constants";
 import ExcalidrawView from "./ExcalidrawView";
 import { t } from "./lang/helpers";
 import type ExcalidrawPlugin from "./main";
-import { debug } from "./Utils";
 
 export interface ExcalidrawSettings {
   folder: string;

@@ -69,7 +69,7 @@ export const REG_LINKINDEX_HYPERLINK = /^\w+:\/\//;
 
 const DRAWING_REG = /\n# Drawing\n[^`]*(```json\n)([\s\S]*?)```/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
 const DRAWING_REG_FALLBACK = /\n# Drawing\n(```json\n)?(.*)(```)?(%%)?/gm;
-export function getJSON(data: string): [string, number] {
+export function getJSON(data: string): { scene: string; pos: number } {
   let res = data.matchAll(DRAWING_REG);
 
   //In case the user adds a text element with the contents "# Drawing\n"
@@ -82,9 +82,12 @@ export function getJSON(data: string): [string, number] {
   }
   if (parts.value && parts.value.length > 1) {
     const result = parts.value[2];
-    return [result.substr(0, result.lastIndexOf("}") + 1), parts.value.index]; //this is a workaround in case sync merges two files together and one version is still an old version without the ```codeblock
+    return {
+      scene: result.substr(0, result.lastIndexOf("}") + 1),
+      pos: parts.value.index,
+    }; //this is a workaround in case sync merges two files together and one version is still an old version without the ```codeblock
   }
-  return [data, parts.value ? parts.value.index : 0];
+  return { scene: data, pos: parts.value ? parts.value.index : 0 };
 }
 
 export function getMarkdownDrawingSection(jsonString: string) {
@@ -163,12 +166,12 @@ export class ExcalidrawData {
     }
 
     //Load scene: Read the JSON string after "# Drawing"
-    const [scene, pos] = getJSON(data);
-    if (pos === -1) {
+    const sceneJSONandPOS = getJSON(data);
+    if (sceneJSONandPOS.pos === -1) {
       return false; //JSON not found
     }
     if (!this.scene) {
-      this.scene = JSON_parse(scene); //this is a workaround to address when files are mereged by sync and one version is still an old markdown without the codeblock ```
+      this.scene = JSON_parse(sceneJSONandPOS.scene); //this is a workaround to address when files are mereged by sync and one version is still an old markdown without the codeblock ```
     }
 
     if (!this.scene.files) {
@@ -179,7 +182,7 @@ export class ExcalidrawData {
       this.scene.appState.theme = isObsidianThemeDark() ? "dark" : "light";
     }
 
-    data = data.substring(0, pos);
+    data = data.substring(0, sceneJSONandPOS.pos);
 
     //The Markdown # Text Elements take priority over the JSON text elements. Assuming the scenario in which the link was updated due to filename changes
     //The .excalidraw JSON is modified to reflect the MD in case of difference
@@ -409,7 +412,9 @@ export class ExcalidrawData {
    * @param text
    * @returns [string,number] - the transcluded text, and the line number for the location of the text
    */
-  public async getTransclusion(link: string): Promise<[string, number]> {
+  public async getTransclusion(
+    link: string,
+  ): Promise<{ contents: string; lineNum: number }> {
     const linkParts = getLinkParts(link);
     const file = this.app.metadataCache.getFirstLinkpathDest(
       linkParts.path,
@@ -438,9 +443,8 @@ export class ExcalidrawData {
     while (!(parts = res.next()).done) {
       if (REGEX_LINK.isTransclusion(parts)) {
         //transclusion //parts.value[1] || parts.value[4]
-        const contents = (
-          await this.getTransclusion(REGEX_LINK.getLink(parts))
-        )[0];
+        const contents = (await this.getTransclusion(REGEX_LINK.getLink(parts)))
+          .contents;
         outString +=
           text.substring(position, parts.value.index) +
           wrapText(
@@ -609,7 +613,7 @@ export class ExcalidrawData {
         }
         const filepath = (
           await getAttachmentsFolderAndFilePath(this.app, this.file.path, fname)
-        )[1];
+        ).filepath;
         const dataURL = scene.files[key].dataURL;
         await this.app.vault.createBinary(
           filepath,
@@ -867,22 +871,22 @@ export const getTransclusion = async (
   app: App,
   file: TFile,
   charCountLimit?: number,
-): Promise<[string, number]> => {
+): Promise<{ contents: string; lineNum: number }> => {
   //file-name#^blockref
   //1         2 3
 
   if (!linkParts.path) {
-    return [linkParts.original.trim(), 0];
+    return { contents: linkParts.original.trim(), lineNum: 0 };
   } //filename not found
   if (!file || !(file instanceof TFile)) {
-    return [linkParts.original.trim(), 0];
+    return { contents: linkParts.original.trim(), lineNum: 0 };
   }
   const contents = await app.vault.read(file);
   if (!linkParts.ref) {
     //no blockreference
     return charCountLimit
-      ? [contents.substr(0, charCountLimit).trim(), 0]
-      : [contents.trim(), 0];
+      ? { contents: contents.substr(0, charCountLimit).trim(), lineNum: 0 }
+      : { contents: contents.trim(), lineNum: 0 };
   }
   //const isParagraphRef = parts.value[2] ? true : false; //does the reference contain a ^ character?
   //const id = parts.value[3]; //the block ID or heading text
@@ -894,13 +898,13 @@ export const getTransclusion = async (
     )
   ).blocks.filter((block: any) => block.node.type != "comment");
   if (!blocks) {
-    return [linkParts.original.trim(), 0];
+    return { contents: linkParts.original.trim(), lineNum: 0 };
   }
   if (linkParts.isBlockRef) {
     let para = blocks.filter((block: any) => block.node.id == linkParts.ref)[0]
       ?.node;
     if (!para) {
-      return [linkParts.original.trim(), 0];
+      return { contents: linkParts.original.trim(), lineNum: 0 };
     }
     if (["blockquote", "listItem"].includes(para.type)) {
       para = para.children[0];
@@ -909,7 +913,10 @@ export const getTransclusion = async (
     const lineNum = para.position.start.line;
     const endPos =
       para.children[para.children.length - 1]?.position.start.offset - 1; //alternative: filter((c:any)=>c.type=="blockid")[0]
-    return [contents.substr(startPos, endPos - startPos).trim(), lineNum];
+    return {
+      contents: contents.substr(startPos, endPos - startPos).trim(),
+      lineNum,
+    };
   }
   const headings = blocks.filter(
     (block: any) => block.display.search(/^#+\s/) === 0,
@@ -920,7 +927,10 @@ export const getTransclusion = async (
   for (let i = 0; i < headings.length; i++) {
     if (startPos && !endPos) {
       endPos = headings[i].node.position.start.offset - 1;
-      return [contents.substr(startPos, endPos - startPos).trim(), lineNum];
+      return {
+        contents: contents.substr(startPos, endPos - startPos).trim(),
+        lineNum,
+      };
     }
     const c = headings[i].node.children[0];
     const cc = c?.children;
@@ -935,7 +945,7 @@ export const getTransclusion = async (
     }
   }
   if (startPos) {
-    return [contents.substr(startPos).trim(), lineNum];
+    return { contents: contents.substr(startPos).trim(), lineNum };
   }
-  return [linkParts.original.trim(), 0];
+  return { contents: linkParts.original.trim(), lineNum: 0 };
 };

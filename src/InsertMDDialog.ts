@@ -1,6 +1,4 @@
 import { App, FuzzySuggestModal, TFile } from "obsidian";
-import { IMAGE_TYPES } from "./constants";
-import { ExcalidrawAutomate } from "./ExcalidrawAutomate";
 import ExcalidrawView from "./ExcalidrawView";
 import { t } from "./lang/helpers";
 import ExcalidrawPlugin from "./main";
@@ -35,7 +33,7 @@ export class InsertMDDialog extends FuzzySuggestModal<TFile> {
     return item.path;
   }
 
-  onChooseItem(item: TFile, _evt: MouseEvent | KeyboardEvent): void {
+  onChooseItem(item: TFile): void {
     const ea = this.plugin.ea;
     ea.reset();
     ea.setView(this.view);

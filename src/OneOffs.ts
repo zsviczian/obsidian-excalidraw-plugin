@@ -1,9 +1,9 @@
-import { App, Modal, Notice, TFile } from "obsidian";
+import { App, Modal, TFile } from "obsidian";
 import { FRONTMATTER_KEY } from "./constants";
 import { ExcalidrawData, getJSON } from "./ExcalidrawData";
 import { getTextMode, TextMode } from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
-import { errorlog } from "./Utils";
+import { errorlog, log } from "./Utils";
 
 export class OneOffs {
   private plugin: ExcalidrawPlugin;
@@ -19,7 +19,7 @@ export class OneOffs {
     }
     const plugin = this.plugin;
 
-    console.log(
+    log(
       `${window
         .moment()
         .format("HH:mm:ss")}: Excalidraw will patch drawings in 5 minutes`,
@@ -27,7 +27,7 @@ export class OneOffs {
     setTimeout(async () => {
       await plugin.loadSettings();
       if (!plugin.settings.patchCommentBlock) {
-        console.log(
+        log(
           `${window
             .moment()
             .format(
@@ -36,7 +36,7 @@ export class OneOffs {
         );
         return;
       }
-      console.log(
+      log(
         `${window
           .moment()
           .format("HH:mm:ss")}: Excalidraw is starting the patching process`,
@@ -59,22 +59,22 @@ export class OneOffs {
             "\n# Text Elements\n",
           );
           if (drawing.search("\n%%\n# Drawing\n") === -1) {
-            const [json, pos] = getJSON(drawing);
+            const sceneJSONandPOS = getJSON(drawing);
             drawing = `${drawing.substr(
               0,
-              pos,
-            )}\n%%\n# Drawing\n\`\`\`json\n${json}\n\`\`\`%%`;
+              sceneJSONandPOS.pos,
+            )}\n%%\n# Drawing\n\`\`\`json\n${sceneJSONandPOS.scene}\n\`\`\`%%`;
           }
           if (drawing !== orig_drawing) {
             i++;
-            console.log(`Excalidraw patched: ${f.path}`);
+            log(`Excalidraw patched: ${f.path}`);
             await plugin.app.vault.modify(f, drawing);
           }
         }
       }
       plugin.settings.patchCommentBlock = false;
       plugin.saveSettings();
-      console.log(
+      log(
         `${window
           .moment()
           .format("HH:mm:ss")}: Excalidraw patched in total ${i} files`,
@@ -128,7 +128,7 @@ export class OneOffs {
     }
     const plugin = this.plugin;
 
-    console.log(
+    log(
       `${window
         .moment()
         .format(
@@ -143,7 +143,7 @@ export class OneOffs {
           this.plugin.settings.fixInfinitePreviewLoop
         )
       ) {
-        console.log(
+        log(
           `${window
             .moment()
             .format(
@@ -152,7 +152,7 @@ export class OneOffs {
         );
         return;
       }
-      console.log(
+      log(
         `${window
           .moment()
           .format("HH:mm:ss")}: Excalidraw is starting the patching process`,
@@ -200,7 +200,7 @@ export class OneOffs {
 
               if (data !== newData) {
                 i++;
-                console.log(`Excalidraw patched: ${f.path}`);
+                log(`Excalidraw patched: ${f.path}`);
                 await plugin.app.vault.modify(f, newData);
               }
             }
@@ -216,7 +216,7 @@ export class OneOffs {
       plugin.settings.runWYSIWYGpatch = false;
       plugin.settings.fixInfinitePreviewLoop = false;
       plugin.saveSettings();
-      console.log(
+      log(
         `${window
           .moment()
           .format("HH:mm:ss")}: Excalidraw patched in total ${i} files`,
@@ -270,12 +270,12 @@ class MigrationPrompt extends Modal {
       text: "This message will only appear maximum 3 times in case you have *.excalidraw files in your Vault.",
     });
     const bConvert = div.createEl("button", { text: "CONVERT FILES" });
-    bConvert.onclick = (ev) => {
+    bConvert.onclick = () => {
       this.plugin.convertExcalidrawToMD();
       this.close();
     };
     const bCancel = div.createEl("button", { text: "CANCEL" });
-    bCancel.onclick = (ev) => {
+    bCancel.onclick = () => {
       this.close();
     };
   }
@@ -354,7 +354,7 @@ class ImageElementNotice extends Modal {
       el.style.textAlign = "right";
 
       const bOk = el.createEl("button", { text: "OK - Don't show this again" });
-      bOk.onclick = (ev) => {
+      bOk.onclick = () => {
         this.saveChanges = true;
         this.close();
       };
@@ -362,7 +362,7 @@ class ImageElementNotice extends Modal {
       const bCancel = el.createEl("button", {
         text: "CANCEL - Read next time",
       });
-      bCancel.onclick = (ev) => {
+      bCancel.onclick = () => {
         this.saveChanges = false;
         this.close();
       };

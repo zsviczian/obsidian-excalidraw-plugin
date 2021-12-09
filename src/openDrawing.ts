@@ -52,7 +52,7 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
     return item.path;
   }
 
-  onChooseItem(item: TFile, _evt: MouseEvent | KeyboardEvent): void {
+  onChooseItem(item: TFile): void {
     switch (this.action) {
       case openDialogAction.openFile:
         this.plugin.openDrawing(item, this.onNewPane);

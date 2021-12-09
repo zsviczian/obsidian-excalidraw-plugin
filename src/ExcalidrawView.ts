@@ -9,9 +9,7 @@ import {
 } from "obsidian";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import Excalidraw, {
-  getSceneVersion,
-} from "@zsviczian/excalidraw";
+import Excalidraw, { getSceneVersion } from "@zsviczian/excalidraw";
 import {
   ExcalidrawElement,
   ExcalidrawImageElement,
@@ -97,15 +95,15 @@ export const addFiles = async (
   if (files.length === 0) {
     return;
   }
-  const [dirty, scene] = scaleLoadedImage(view.getScene(), files);
+  const s = scaleLoadedImage(view.getScene(), files);
   if (isDark === undefined) {
-    isDark = scene.appState.theme;
+    isDark = s.scene.appState.theme;
   }
-  if (dirty) {
+  if (s.dirty) {
     //debug({where:"ExcalidrawView.addFiles",file:view.file.name,dataTheme:view.excalidrawData.scene.appState.theme,before:"updateScene",state:scene.appState})
     view.excalidrawAPI.updateScene({
-      elements: scene.elements,
-      appState: scene.appState,
+      elements: s.scene.elements,
+      appState: s.scene.appState,
       commitToHistory: false,
     });
   }
@@ -380,8 +378,7 @@ export default class ExcalidrawView extends TextFileView {
       }
 
       if (linkText.search("#") > -1) {
-        let t;
-        [t, lineNum] = await this.excalidrawData.getTransclusion(linkText);
+        lineNum = (await this.excalidrawData.getTransclusion(linkText)).lineNum;
         linkText = linkText.substring(0, linkText.search("#"));
       }
       if (linkText.match(REG_LINKINDEX_INVALIDCHARS)) {
@@ -461,7 +458,6 @@ export default class ExcalidrawView extends TextFileView {
     }
 
     try {
-      const f = view.file;
       if (ev.shiftKey && document.fullscreenElement === this.contentEl) {
         document.exitFullscreen();
         this.zoomToFit();
@@ -492,7 +488,7 @@ export default class ExcalidrawView extends TextFileView {
 
   onload() {
     //console.log("ExcalidrawView.onload()");
-    this.addAction(DISK_ICON_NAME, t("FORCE_SAVE"), async (ev) => {
+    this.addAction(DISK_ICON_NAME, t("FORCE_SAVE"), async () => {
       await this.save(false);
       this.plugin.triggerEmbedUpdates();
       this.loadSceneFiles();
@@ -501,12 +497,12 @@ export default class ExcalidrawView extends TextFileView {
     this.textIsRaw_Element = this.addAction(
       TEXT_DISPLAY_RAW_ICON_NAME,
       t("RAW"),
-      (ev) => this.changeTextMode(TextMode.parsed),
+      () => this.changeTextMode(TextMode.parsed),
     );
     this.textIsParsed_Element = this.addAction(
       TEXT_DISPLAY_PARSED_ICON_NAME,
       t("PARSED"),
-      (ev) => this.changeTextMode(TextMode.raw),
+      () => this.changeTextMode(TextMode.raw),
     );
 
     this.addAction("link", t("OPEN_LINK"), (ev) =>
@@ -533,7 +529,7 @@ export default class ExcalidrawView extends TextFileView {
     if (this.app.workspace.layoutReady) {
       (
         this.app.workspace.rootSplit as WorkspaceItem as WorkspaceItemExt
-      ).containerEl.addEventListener("scroll", (e) => {
+      ).containerEl.addEventListener("scroll", () => {
         if (this.refresh) {
           this.refresh();
         }
@@ -542,7 +538,7 @@ export default class ExcalidrawView extends TextFileView {
       this.app.workspace.onLayoutReady(async () =>
         (
           this.app.workspace.rootSplit as WorkspaceItem as WorkspaceItemExt
-        ).containerEl.addEventListener("scroll", (e) => {
+        ).containerEl.addEventListener("scroll", () => {
           if (this.refresh) {
             this.refresh();
           }
@@ -828,7 +824,7 @@ export default class ExcalidrawView extends TextFileView {
           item
             .setTitle(t("EXPORT_EXCALIDRAW"))
             .setIcon(ICON_NAME)
-            .onClick(async (ev) => {
+            .onClick(async () => {
               if (!this.getScene || !this.file) {
                 return;
               }
@@ -1016,7 +1012,10 @@ export default class ExcalidrawView extends TextFileView {
               height: this.contentEl.clientHeight,
             });
           } catch (err) {
-            console.log("Excalidraw React-Wrapper, onResize ", err);
+            errorlog({
+              where: "Excalidraw React-Wrapper, onResize",
+              error: err,
+            });
           }
         };
         window.addEventListener("resize", onResize);
@@ -1112,7 +1111,6 @@ export default class ExcalidrawView extends TextFileView {
         if (!excalidrawRef?.current) {
           return;
         }
-        const el: ExcalidrawElement[] = this.excalidrawAPI.getSceneElements();
         const st: AppState = this.excalidrawAPI.getAppState();
         const ea = this.plugin.ea;
         ea.reset();
@@ -1123,11 +1121,7 @@ export default class ExcalidrawView extends TextFileView {
           : st.currentItemFontFamily;
         ea.style.fontSize = st.currentItemFontSize;
         ea.style.textAlign = st.currentItemTextAlign;
-        const id: string = ea.addText(
-          currentPosition.x,
-          currentPosition.y,
-          text,
-        );
+        ea.addText(currentPosition.x, currentPosition.y, text);
         this.addElements(ea.getElements(), false, true);
       };
 
@@ -1535,7 +1529,7 @@ export default class ExcalidrawView extends TextFileView {
             //@ts-ignore
             mouseEvent = e.nativeEvent;
           },
-          onMouseOver: (e: MouseEvent) => {
+          onMouseOver: () => {
             clearHoverPreview();
           },
           onDragOver: (e: any) => {
@@ -1633,7 +1627,8 @@ export default class ExcalidrawView extends TextFileView {
               await this.plugin.saveSettings();
             })();
           },
-          onPaste: (data: ClipboardData, event: ClipboardEvent | null) => {
+          onPaste: (data: ClipboardData) => {
+            //, event: ClipboardEvent | null
             if (data.elements) {
               const self = this;
               setTimeout(() => self.save(false), 300);
@@ -1692,10 +1687,6 @@ export default class ExcalidrawView extends TextFileView {
                     (IMAGE_TYPES.contains(draggable.file.extension) ||
                       draggable.file.extension === "md")
                   ) {
-                    //this.plugin.isExcalidrawFile(draggable.file)
-                    const f = draggable.file;
-                    const topX = currentPosition.x;
-                    const topY = currentPosition.y;
                     const ea = this.plugin.ea;
                     ea.reset();
                     ea.setView(this);

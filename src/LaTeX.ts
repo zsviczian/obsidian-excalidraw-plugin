@@ -1,4 +1,4 @@
-import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/types";
+import { DataURL } from "@zsviczian/excalidraw/types/types";
 import ExcalidrawView from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
 import { FileData, MimeType } from "./EmbeddedFileLoader";

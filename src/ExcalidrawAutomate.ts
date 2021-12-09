@@ -1242,7 +1242,7 @@ async function getTemplate(
             created: f.created,
           };
         }
-        scene = scaleLoadedImage(excalidrawData.scene, fileArray)[1];
+        scene = scaleLoadedImage(excalidrawData.scene, fileArray).scene;
       });
     }
 

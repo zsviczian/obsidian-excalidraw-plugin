@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "cross-env NODE_ENV=development rollup --config rollup.config.js -w",
     "build": "cross-env NODE_ENV=production rollup --config rollup.config.js",
-    "test:code": "eslint --max-warnings=0 --ext .ts,.tsx ./src --fix"
+    "code:fix": "eslint --max-warnings=0 --ext .ts,.tsx ./src --fix"
   },
   "keywords": [],
   "author": "",

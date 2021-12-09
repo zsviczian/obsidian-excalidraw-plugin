@@ -11,9 +11,7 @@ import { Random } from "roughjs/bin/math";
 import { Zoom } from "@zsviczian/excalidraw/types/types";
 import { CASCADIA_FONT, VIRGIL_FONT } from "./constants";
 import ExcalidrawPlugin from "./main";
-import {
-  ExcalidrawElement,
-} from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
 import { ExportSettings } from "./ExcalidrawView";
 
 declare module "obsidian" {
@@ -291,7 +289,7 @@ export const getAttachmentsFolderAndFilePath = async (
   app: App,
   activeViewFilePath: string,
   newFileName: string,
-): Promise<[string, string]> => {
+): Promise<{ folder: string; filepath: string }> => {
   let folder = app.vault.getConfig("attachmentFolderPath");
   // folder == null: save to vault root
   // folder == "./" save to same folder as current file
@@ -308,7 +306,10 @@ export const getAttachmentsFolderAndFilePath = async (
     folder = "";
   }
   await checkAndCreateFolder(app.vault, folder);
-  return [folder, normalizePath(`${folder}/${newFileName}`)];
+  return {
+    folder,
+    filepath: normalizePath(`${folder}/${newFileName}`),
+  };
 };
 
 export const getSVG = async (
@@ -388,10 +389,13 @@ export const getImageSize = async (
   });
 };
 
-export const scaleLoadedImage = (scene: any, files: any): [boolean, any] => {
+export const scaleLoadedImage = (
+  scene: any,
+  files: any,
+): { dirty: boolean; scene: any } => {
   let dirty = false;
   if (!files || !scene) {
-    return [dirty, scene];
+    return { dirty, scene };
   }
   for (const f of files) {
     const [w_image, h_image] = [f.size.width, f.size.height];
@@ -411,7 +415,7 @@ export const scaleLoadedImage = (scene: any, files: any): [boolean, any] => {
           el.x += (w_old - w_new) / 2;
         }
       });
-    return [dirty, scene];
+    return { dirty, scene };
   }
 };
 
@@ -452,5 +456,6 @@ export const sleep = async (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
+export const log = console.log.bind(window.console);
 export const debug = console.log.bind(window.console);
 //export const debug = function(){};

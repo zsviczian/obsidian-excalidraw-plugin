@@ -28,7 +28,7 @@ export class InsertLinkDialog extends FuzzySuggestModal<TFile> {
     return item.path;
   }
 
-  onChooseItem(item: TFile, _evt: MouseEvent | KeyboardEvent): void {
+  onChooseItem(item: TFile): void {
     const filepath = this.app.metadataCache.fileToLinktext(
       item,
       this.drawingPath,

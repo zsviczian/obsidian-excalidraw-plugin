@@ -369,7 +369,7 @@ const convertMarkdownToSVG = async (
 ): Promise<DataURL> => {
   //1.
   //get the markdown text
-  const text = (await getTransclusion(linkParts, plugin.app, file))[0];
+  const text = (await getTransclusion(linkParts, plugin.app, file)).contents;
 
   //2.
   //get styles
