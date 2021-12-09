@@ -146,6 +146,7 @@ export interface ExcalidrawAutomate {
   deleteViewElements(el: ExcalidrawElement[]): boolean;
   getViewSelectedElement(): ExcalidrawElement;
   getViewSelectedElements(): ExcalidrawElement[];
+  copyViewElementsToEAforEditing(elements: ExcalidrawElement[]): void; //copies elements to elementsDict 
   viewToggleFullScreen(forceViewMode?: boolean): void;
   connectObjectWithViewSelectedElement(
     objectA: string,
@@ -969,6 +970,14 @@ export async function initExcalidrawAutomate(
       return current
         .getSceneElements()
         .filter((e: any) => selectedElementsKeys.includes(e.id));
+    },
+    copyViewElementsToEAforEditing(elements: ExcalidrawElement[]): void {
+      elements.forEach((el)=>{
+        this.elementsDict[el.id]={
+          version: el.version+1,
+          ...el
+        };
+      });
     },
     viewToggleFullScreen(forceViewMode: boolean = false): void {
       if (this.plugin.app.isMobile) {

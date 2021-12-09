@@ -4,7 +4,7 @@
     "inlineSourceMap": true,
     "inlineSources": true,
     "module": "ESNext",
-    "target": "es6",
+    "target": "es2017",
     "allowJs": true,
     "noImplicitAny": true,
     "moduleResolution": "node",
@@ -12,7 +12,7 @@
     "lib": [
       "dom",
       "scripthost",
-      "es2020",
+      "es2017",
       "esnext",
       "DOM.Iterable"
     ],

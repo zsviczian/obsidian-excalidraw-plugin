@@ -1,7 +1,8 @@
-import { normalizePath, TAbstractFile, TFile } from "obsidian";
+import { App, TAbstractFile, TFile } from "obsidian";
 import { VIEW_TYPE_EXCALIDRAW } from "./constants";
 import ExcalidrawView from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
+import GenericInputPrompt from "./Prompt";
 import { splitFolderAndFilename } from "./Utils";
 
 export class ScriptEngine {
@@ -19,7 +20,7 @@ export class ScriptEngine {
       if (!(file instanceof TFile)) {
         return;
       }
-      if (file.path !== this.scriptPath) {
+      if (!file.path.startsWith(this.scriptPath)) {
         return;
       }
       this.unloadScript(file.basename);
@@ -32,7 +33,7 @@ export class ScriptEngine {
       if (!(file instanceof TFile)) {
         return;
       }
-      if (file.path !== this.scriptPath) {
+      if (!file.path.startsWith(this.scriptPath)) {
         return;
       }
       this.loadScript(file);
@@ -45,7 +46,7 @@ export class ScriptEngine {
       if (!(file instanceof TFile)) {
         return;
       }
-      if (file.path !== this.scriptPath) {
+      if (file.path.startsWith(this.scriptPath)) {
         return;
       }
       this.unloadScript(splitFolderAndFilename(oldPath).basename);
@@ -70,7 +71,7 @@ export class ScriptEngine {
     const scripts = app.vault
       .getFiles()
       .filter(
-        (f: TFile) => f.path === normalizePath(`${this.scriptPath}/${f.name}`),
+        (f: TFile) => f.path.startsWith(this.scriptPath),
       );
     scripts.forEach((f) => this.loadScript(f));
   }
@@ -101,7 +102,7 @@ export class ScriptEngine {
     const scripts = app.vault
       .getFiles()
       .filter(
-        (f: TFile) => f.path === normalizePath(`${this.scriptPath}/${f.name}`),
+        (f: TFile) => f.path.startsWith(this.scriptPath),
       );
     scripts.forEach((f) => this.unloadScript(f.basename));
   }
@@ -123,13 +124,31 @@ export class ScriptEngine {
     }
     this.plugin.ea.reset();
     this.plugin.ea.setView(view);
-    const script = `ea=ExcalidrawAutomate;\n${await this.plugin.app.vault.read(
-      f,
-    )}`;
+    const script = await this.plugin.app.vault.read(f);
     if (!script) {
       return;
     }
+
+    //https://stackoverflow.com/questions/45381204/get-asyncfunction-constructor-in-typescript changed tsconfig to es2017
+    //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncFunction
     const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
-    return await new AsyncFunction(script)();
+
+    return await new AsyncFunction("ea", "utils", script)(this.plugin.ea, {
+      inputPrompt: (header: string, placeholder?: string, value?: string) =>
+        ScriptEngine.inputPrompt(this.plugin.app, header, placeholder, value)
+    });
+  }
+
+  public static async inputPrompt(
+    app: App,
+    header: string,
+    placeholder?: string,
+    value?: string,
+  ) {
+    try {
+      return await GenericInputPrompt.Prompt(app, header, placeholder, value);
+    } catch {
+      return undefined;
+    }
   }
 }

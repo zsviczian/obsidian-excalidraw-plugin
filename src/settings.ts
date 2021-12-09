@@ -1,4 +1,4 @@
-import { App, DropdownComponent, PluginSettingTab, Setting } from "obsidian";
+import { App, DropdownComponent, normalizePath, PluginSettingTab, Setting } from "obsidian";
 import { VIEW_TYPE_EXCALIDRAW } from "./constants";
 import ExcalidrawView from "./ExcalidrawView";
 import { t } from "./lang/helpers";
@@ -203,7 +203,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setPlaceholder("Excalidraw/Scripts")
           .setValue(this.plugin.settings.scriptFolderPath)
           .onChange(async (value) => {
-            this.plugin.settings.scriptFolderPath = value;
+            this.plugin.settings.scriptFolderPath =  normalizePath(value);
             this.applySettingsUpdate();
           }),
       );

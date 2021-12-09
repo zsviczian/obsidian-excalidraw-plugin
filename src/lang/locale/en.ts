@@ -76,8 +76,9 @@ export default {
   SCRIPT_FOLDER_NAME: "Excalidraw Automate script folder",
   SCRIPT_FOLDER_DESC:
     "The files you place in this folder will be treated as Excalidraw Automate scripts. " +
-    "You can access these from Excalidraw via the Obsidian Command Palette. You can assign " +
-    "hotkeys to your favorite scripts just like to any other Obsidian command.",
+    "You can access your scripts from Excalidraw via the Obsidian Command Palette. Assign " +
+    "hotkeys to your favorite scripts just like to any other Obsidian command. " + 
+    "The folder may not be the root folder of your Vault. ",
   AUTOSAVE_NAME: "Autosave",
   AUTOSAVE_DESC:
     "Automatically save the active drawing every 30 seconds. Save normally happens when you close Excalidraw or Obsidian, or move " +
