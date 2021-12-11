@@ -14,7 +14,7 @@ With a little work, using ExcalidrawAutomate you can generate simple mindmaps, b
 - [Utility Functions](API/utility.md)
 
 ## ExcalidrawAutomate Script Engine
-Besides Templater, QuickAdd and DataView, you can also create ExcalidrawAutomate "macros" using the Scripts Engine. 
+I recommend using the Scripts Engine for "Macro" like automation, when you want to automate a few simple steps, such as adding a box around a text element, or connecting two objects with an arrow, or setting line width or the grid to a custom value.  
 - [ExcalidrawAutomate Script Engine](ExcalidrawScriptsEngine.md).
 
 ## Examples
