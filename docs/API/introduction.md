@@ -21,7 +21,7 @@ The second line resets ExcalidrawAutomate to defaults. This is important as you 
 
 You can change the styling between adding different elements. My logic for separating element styling and creation is based on the assumption that you will probably set a stroke color, stroke style, stroke roughness, etc. and draw most of your elements using that. There would be no point in setting all these parameters each time you add an element.
 
-### Before we dive deeper, here are three a simple example Templater scripts
+### Before we dive deeper, here are three a simple example [Templater](https://github.com/SilentVoid13/Templater) scripts
 #### Create a new drawing with custom name, in a custom folder, using a template
 This simple script gives you significant additional flexibility over Excalidraw Plugin settings to name your drawings, place them into folders, and to apply templates.
 
