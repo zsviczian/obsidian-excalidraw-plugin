@@ -1,6 +1,6 @@
 # Excalidraw Automate How To
 
-Use ExcalidrawAutomate to create or manipulate Excalidraw drawings using Excalidraw Scripts (see settings), the [Templater](https://silentvoid13.github.io/Templater/docs/) or the [QuickAdd](https://github.com/chhoumann/quickadd) plugins, and to generate embedded SVG and PNG images using [DataviewJS](https://blacksmithgu.github.io/obsidian-dataview/docs/api/intro/)
+Use ExcalidrawAutomate to create or manipulate Excalidraw drawings using [ExcalidrawAutomate Script Engine](ExcalidrawScriptsEngine.md), the [Templater](https://silentvoid13.github.io/Templater/docs/) or the [QuickAdd](https://github.com/chhoumann/quickadd) plugins, and to generate embedded SVG and PNG images using [DataviewJS](https://blacksmithgu.github.io/obsidian-dataview/docs/api/intro/)
 
 With a little work, using ExcalidrawAutomate you can generate simple mindmaps, build a family tree, fill out SVG forms, create customized charts, or automate simple tasks (i.e. create macros) in Excalidraw.
 ![image](https://user-images.githubusercontent.com/14358394/117549619-bae41180-b03b-11eb-968d-c909e79a7524.png)
@@ -13,8 +13,9 @@ With a little work, using ExcalidrawAutomate you can generate simple mindmaps, b
 - [Adding Objects](API/objects.md)
 - [Utility Functions](API/utility.md)
 
-## Excalidraw Script Engine
-Besides Templater, QuickAdd and DataView, you can also create ExcalidrawAutomate "macros" using the Scripts Engine. See more detailed description [here](ExcalidrawScriptsEngine.md).
+## ExcalidrawAutomate Script Engine
+Besides Templater, QuickAdd and DataView, you can also create ExcalidrawAutomate "macros" using the Scripts Engine. 
+- [ExcalidrawAutomate Script Engine](ExcalidrawScriptsEngine.md).
 
 ## Examples
 - **Templater** 
