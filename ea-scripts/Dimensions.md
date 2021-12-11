@@ -1,0 +1,27 @@
+/*
+Currently there is no way to specify the exact location and size of objects in Excalidraw. You can bridge this gap with the following simple script. 
+
+See documentation for more details:
+https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html
+
+```javascript
+*/
+const elements = ea.getViewSelectedElements();
+if(elements.length === 0) return;
+const el = ea.getLargestElement(elements);
+const sizeIn = [el.x,el.y,el.width,el.height].join(",");
+let res = await utils.inputPrompt("x,y,width,height?",null,sizeIn);
+res = res.split(",");
+if(res.length !== 4) return;
+let size = [];
+for (v of res) {
+  const i = parseInt(v);
+  if(isNaN(i)) return;
+  size.push(i);
+}
+el.x = size[0];
+el.y = size[1];
+el.width = size[2];
+el.height = size[3];
+ea.copyViewElementsToEAforEditing([el]);
+ea.addElementsToView();

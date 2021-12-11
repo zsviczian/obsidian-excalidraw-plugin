@@ -64,3 +64,50 @@ ea.connectObjects(
 );
 ea.addElementsToView();
 ```
+
+### Set line width of selected elements
+This is helpful, for example, when you scale freedraw sketches and want to reduce or increase their line width.
+```javascript
+width = await utils.inputPrompt("Width?");
+const elements=ea.getViewSelectedElements();
+ea.copyViewElementsToEAforEditing(elements);
+ea.getElements().forEach((el)=>el.strokeWidth=width);
+ea.addElementsToView();
+```
+
+### Set grid size
+The default grid size in Excalidraw is 20. Currently there is no way to change the grid size via the user interface. 
+```javascript
+const grid = parseInt(await utils.inputPrompt("Grid size?",null,"20"));
+const api = ea.getExcalidrawAPI();
+let appState = api.getAppState();
+appState.gridSize = grid;
+api.updateScene({
+  appState,
+  commitToHistory:false
+});
+```
+
+### Set element dimensions and position
+Currently there is no way to specify the exact location and size of objects in Excalidraw. You can bridge this gap with the following simple script.
+```javascript
+const elements = ea.getViewSelectedElements();
+if(elements.length === 0) return;
+const el = ea.getLargestElement(elements);
+const sizeIn = [el.x,el.y,el.width,el.height].join(",");
+let res = await utils.inputPrompt("x,y,width,height?",null,sizeIn);
+res = res.split(",");
+if(res.length !== 4) return;
+let size = [];
+for (v of res) {
+  const i = parseInt(v);
+  if(isNaN(i)) return;
+  size.push(i);
+}
+el.x = size[0];
+el.y = size[1];
+el.width = size[2];
+el.height = size[3];
+ea.copyViewElementsToEAforEditing([el]);
+ea.addElementsToView();
+```

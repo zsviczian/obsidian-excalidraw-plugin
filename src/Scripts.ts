@@ -46,11 +46,14 @@ export class ScriptEngine {
       if (!(file instanceof TFile)) {
         return;
       }
-      if (file.path.startsWith(this.scriptPath)) {
-        return;
+      const oldFileIsScript = oldPath.startsWith(this.scriptPath);
+      const newFileIsScript = file.path.startsWith(this.scriptPath);
+      if(oldFileIsScript) {
+        this.unloadScript(splitFolderAndFilename(oldPath).basename);
       }
-      this.unloadScript(splitFolderAndFilename(oldPath).basename);
-      this.loadScript(file);
+      if(newFileIsScript) {
+        this.loadScript(file);
+      }
     };
     this.plugin.registerEvent(
       this.plugin.app.vault.on("rename", renameEventHandler),
@@ -77,7 +80,7 @@ export class ScriptEngine {
   loadScript(f: TFile) {
     this.plugin.addCommand({
       id: f.basename,
-      name: f.basename,
+      name: "(Script) " + f.basename,
       checkCallback: (checking: boolean) => {
         if (checking) {
           return (
