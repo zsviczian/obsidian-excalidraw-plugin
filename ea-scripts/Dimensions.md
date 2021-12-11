@@ -1,4 +1,6 @@
 /*
+Download this file and save to your Obsidian Vault, or open it in "Raw" and copy to Obsidian.
+
 Currently there is no way to specify the exact location and size of objects in Excalidraw. You can bridge this gap with the following simple script. 
 
 See documentation for more details:

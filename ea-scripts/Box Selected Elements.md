@@ -1,4 +1,6 @@
 /*
+Download this file and save to your Obsidian Vault, or open it in "Raw" and copy to Obsidian.
+
 This script will add an encapsulating box around the currently selected elements in Excalidraw.
 
 See documentation for more details:

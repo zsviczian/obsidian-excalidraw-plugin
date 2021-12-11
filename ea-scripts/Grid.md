@@ -1,4 +1,6 @@
 /*
+Download this file and save to your Obsidian Vault, or open it in "Raw" and copy to Obsidian.
+
 The default grid size in Excalidraw is 20. Currently there is no way to change the grid size via the user interface. This script offers a way to bridge this gap.
 
 See documentation for more details:
