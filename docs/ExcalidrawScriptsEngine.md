@@ -1,5 +1,6 @@
 # [◀ Excalidraw Automate How To](./readme.md)
 
+## Introduction
 Place your ExcalidrawAutomate Scripts into the folder defined in Excalidraw Settings. The Scripts folder may not be the root folder of your Vault.
 
 ![image](https://user-images.githubusercontent.com/14358394/145673547-b4f57d01-3643-40f9-abfd-14c3bfa5ab93.png)
@@ -16,9 +17,11 @@ This will allow you to assign hotkeys to your favorite scripts just like to any 
 
 ![image](https://user-images.githubusercontent.com/14358394/145673633-83b6c969-cead-429b-9721-fd047f980279.png)
 
+## Script development
 An Excalidraw script will automatically receive two objects:
-- The `ea` object, already initialized and set to the active view from which it was called.
-- The `utils` object, which currently supports a single function: `inputPrompt: (header: string, placeholder?: string, value?: string)`.
+- `ea`: The Script Enginge will initialize the `ea` object including setting the active view to the View from which the script was called.
+- `utils`: There is currently only a single function published on `utils`
+  - `inputPrompt: (header: string, placeholder?: string, value?: string)`. You need to await the result of inputPrompt. See the example below for details.
 
 ## Example Excalidraw Automate script
 
