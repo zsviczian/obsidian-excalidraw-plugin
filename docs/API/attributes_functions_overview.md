@@ -5,152 +5,173 @@ Here's the interface implemented by ExcalidrawAutomate:
 ```typescript
 export interface ExcalidrawAutomate {
   plugin: ExcalidrawPlugin;
-  elementsDict: {};
-  imagesDict: {};
+  elementsDict: {}; //contains the ExcalidrawElements currently edited in Automate indexed by el.id
+  imagesDict: {}; //the images files including DataURL, indexed by fileId
   style: {
-    strokeColor: string;
+    strokeColor: string; //https://www.w3schools.com/colors/default.asp
     backgroundColor: string;
-    angle: number;
-    fillStyle: FillStyle;
+    angle: number; //radian
+    fillStyle: FillStyle; //type FillStyle = "hachure" | "cross-hatch" | "solid"
     strokeWidth: number;
-    storkeStyle: StrokeStyle;
+    storkeStyle: StrokeStyle; //type StrokeStyle = "solid" | "dashed" | "dotted"
     roughness: number;
     opacity: number;
-    strokeSharpness: StrokeSharpness;
-    fontFamily: number;
+    strokeSharpness: StrokeSharpness; //type StrokeSharpness = "round" | "sharp"
+    fontFamily: number; //1: Virgil, 2:Helvetica, 3:Cascadia
     fontSize: number;
-    textAlign: string;
-    verticalAlign: string;
-    startArrowHead: string;
+    textAlign: string; //"left"|"right"|"center"
+    verticalAlign: string; //"top"|"bottom"|"middle" :for future use, has no effect currently
+    startArrowHead: string; //"triangle"|"dot"|"arrow"|"bar"|null
     endArrowHead: string;
-  }
-  canvas: {
-    theme: string, 
-    viewBackgroundColor: string, 
-    gridSize: number
   };
-  setFillStyle (val:number): void;
-  setStrokeStyle (val:number): void;
-  setStrokeSharpness (val:number): void;
-  setFontFamily (val:number): void;
-  setTheme (val:number): void;
-  addToGroup (objectIds:[]):string;
-  toClipboard (templatePath?:string): void;
-  getElements ():ExcalidrawElement[];
-  getElement (id:string):ExcalidrawElement;
-  create (
-    params?: {
-      filename?: string, 
-      foldername?:string, 
-      templatePath?:string, 
-      onNewPane?: boolean,
-      frontmatterKeys?:{
-        "excalidraw-plugin"?: "raw"|"parsed",
-        "excalidraw-link-prefix"?: string,
-        "excalidraw-link-brackets"?: boolean,
-        "excalidraw-url-prefix"?: string
-      }
-    }
-  ):Promise<string>;
-  createSVG (
-    templatePath?:string,
-    embedFont?:boolean,
-    exportSettings?:ExportSettings, //see ExcalidrawAutomate.getExportSettings(boolean,boolean) 
-    loader?:EmbeddedFilesLoader, //see ExcalidrawAutomate.getEmbeddedFilesLoader(boolean?)
-    theme?:string
-  ):Promise<SVGSVGElement>;
-  createPNG (
-    templatePath?:string,
-    scale?:number,
-    exportSettings?:ExportSettings, //see ExcalidrawAutomate.getExportSettings(boolean,boolean) 
-    loader?:EmbeddedFilesLoader, //see ExcalidrawAutomate.getEmbeddedFilesLoader(boolean?) 
-    theme?:string
-  ):Promise<any>;
-  wrapText (text:string, lineLen:number):string;
-  addRect (topX:number, topY:number, width:number, height:number):string;
-  addDiamond (topX:number, topY:number, width:number, height:number):string;
-  addEllipse (topX:number, topY:number, width:number, height:number):string;
-  addBlob (topX:number, topY:number, width:number, height:number):string;
-  addText (
-    topX:number, 
-    topY:number, 
-    text:string, 
+  canvas: {
+    theme: string; //"dark"|"light"
+    viewBackgroundColor: string;
+    gridSize: number;
+  };
+  setFillStyle(val: number): void; //0:"hachure", 1:"cross-hatch" 2:"solid"
+  setStrokeStyle(val: number): void; //0:"solid", 1:"dashed", 2:"dotted"
+  setStrokeSharpness(val: number): void; //0:"round", 1:"sharp"
+  setFontFamily(val: number): void; //1: Virgil, 2:Helvetica, 3:Cascadia
+  setTheme(val: number): void; //0:"light", 1:"dark"
+  addToGroup(objectIds: []): string;
+  toClipboard(templatePath?: string): void;
+  getElements(): ExcalidrawElement[]; //get all elements from ExcalidrawAutomate elementsDict
+  getElement(id: string): ExcalidrawElement; //get single element from ExcalidrawAutomate elementsDict
+  create(params?: { //create a drawing and save it to filename
+    filename?: string; //if null: default filename as defined in Excalidraw settings
+    foldername?: string; //if null: default folder as defined in Excalidraw settings
+    templatePath?: string;
+    onNewPane?: boolean;
+    frontmatterKeys?: {
+      "excalidraw-plugin"?: "raw" | "parsed";
+      "excalidraw-link-prefix"?: string;
+      "excalidraw-link-brackets"?: boolean;
+      "excalidraw-url-prefix"?: string;
+    };
+  }): Promise<string>;
+  createSVG(
+    templatePath?: string,
+    embedFont?: boolean,
+    exportSettings?: ExportSettings, //use ExcalidrawAutomate.getExportSettings(boolean,boolean)
+    loader?: EmbeddedFilesLoader, //use ExcalidrawAutomate.getEmbeddedFilesLoader(boolean?)
+    theme?: string,
+  ): Promise<SVGSVGElement>;
+  createPNG(
+    templatePath?: string,
+    scale?: number,
+    exportSettings?: ExportSettings, //use ExcalidrawAutomate.getExportSettings(boolean,boolean)
+    loader?: EmbeddedFilesLoader, //use ExcalidrawAutomate.getEmbeddedFilesLoader(boolean?)
+    theme?: string,
+  ): Promise<any>;
+  wrapText(text: string, lineLen: number): string;
+  addRect(topX: number, topY: number, width: number, height: number): string;
+  addDiamond(topX: number, topY: number, width: number, height: number): string;
+  addEllipse(topX: number, topY: number, width: number, height: number): string;
+  addBlob(topX: number, topY: number, width: number, height: number): string;
+  addText(
+    topX: number,
+    topY: number,
+    text: string,
     formatting?: {
-      wrapAt?:number, 
-      width?:number, 
-      height?:number,
-      textAlign?: string, 
-      box?: boolean|"box"|"blob"|"ellipse"|"diamond", 
-      boxPadding?: number
+      wrapAt?: number;
+      width?: number;
+      height?: number;
+      textAlign?: string;
+      box?: boolean | "box" | "blob" | "ellipse" | "diamond"; //if !null, text will be boxed
+      boxPadding?: number;
     },
-    id?:string
-  ):string;
-  addLine(points: [[x:number,y:number]]):string;
-  addArrow (
-    points: [[x:number,y:number]],
+    id?: string,
+  ): string;
+  addLine(points: [[x: number, y: number]]): string;
+  addArrow(
+    points: [[x: number, y: number]],
     formatting?: {
-      startArrowHead?:string,
-      endArrowHead?:string,
-      startObjectId?:string,
-      endObjectId?:string
-    }
-  ):string ;
-  addImage(topX:number, topY:number, imageFile: TFile):Promise<string>;
-  addLaTex(topX:number, topY:number, tex: string):Promise<string>;
-  connectObjects (
-    objectA: string, 
-    connectionA: ConnectionPoint, 
-    objectB: string, 
-    connectionB: ConnectionPoint, 
+      startArrowHead?: string;
+      endArrowHead?: string;
+      startObjectId?: string;
+      endObjectId?: string;
+    },
+  ): string;
+  addImage(topX: number, topY: number, imageFile: TFile): Promise<string>;
+  addLaTex(topX: number, topY: number, tex: string): Promise<string>;
+  connectObjects(
+    objectA: string,
+    connectionA: ConnectionPoint, //type ConnectionPoint = "top" | "bottom" | "left" | "right" | null
+    objectB: string,
+    connectionB: ConnectionPoint, //when passed null, Excalidraw will automatically decide 
     formatting?: {
-      numberOfPoints?: number,
-      startArrowHead?:string,
-      endArrowHead?:string, 
-      padding?: number
-    }
-  ):void;
-  clear (): void;
-  reset (): void;
-  isExcalidrawFile (f:TFile): boolean;  
+      numberOfPoints?: number; //points on the line. Default is 0 ie. line will only have a start and end point
+      startArrowHead?: string; //"triangle"|"dot"|"arrow"|"bar"|null
+      endArrowHead?: string; //"triangle"|"dot"|"arrow"|"bar"|null
+      padding?: number;
+    },
+  ): void;
+  clear(): void; //clear elementsDict and imagesDict only
+  reset(): void; //clear() + reset all style values to default
+  isExcalidrawFile(f: TFile): boolean; //returns true if MD file is an Excalidraw file
   //view manipulation
-  targetView: ExcalidrawView;
-  setView (view:ExcalidrawView|"first"|"active"):ExcalidrawView;
-  getExcalidrawAPI ():any;
-  getViewElements ():ExcalidrawElement[];
-  deleteViewElements (el: ExcalidrawElement[]):boolean;
-  getViewSelectedElement ():ExcalidrawElement;
-  getViewSelectedElements ():ExcalidrawElement[];
-  viewToggleFullScreen (forceViewMode?:boolean):void;
-  connectObjectWithViewSelectedElement (
-    objectA:string,
+  targetView: ExcalidrawView; //the view currently edited
+  setView(view: ExcalidrawView | "first" | "active"): ExcalidrawView; 
+  getExcalidrawAPI(): any; //https://github.com/excalidraw/excalidraw/tree/master/src/packages/excalidraw#ref
+  getViewElements(): ExcalidrawElement[]; //get elements in View
+  deleteViewElements(el: ExcalidrawElement[]): boolean;
+  getViewSelectedElement(): ExcalidrawElement; //get the selected element in the view, if more are selected, get the first
+  getViewSelectedElements(): ExcalidrawElement[];
+  copyViewElementsToEAforEditing(elements: ExcalidrawElement[]): void; //copies elements from view to elementsDict for editing
+  viewToggleFullScreen(forceViewMode?: boolean): void;
+  connectObjectWithViewSelectedElement( //connect an object to the selected element in the view
+    objectA: string, //see connectObjects
     connectionA: ConnectionPoint, 
-    connectionB: ConnectionPoint, 
+    connectionB: ConnectionPoint,
     formatting?: {
-      numberOfPoints?: number,
-      startArrowHead?:string,
-      endArrowHead?:string, 
-      padding?: number
-    }
-  ):boolean;
-  addElementsToView (repositionToCursor:boolean, save:boolean):Promise<boolean>;
-  onDropHook (data: {
-    ea: ExcalidrawAutomate, 
-    event: React.DragEvent<HTMLDivElement>,
-    draggable: any, //Obsidian draggable object
-    type: "file"|"text"|"unknown",
-    payload: {
-      files: TFile[], //TFile[] array of dropped files
-      text: string, //string 
+      numberOfPoints?: number;
+      startArrowHead?: string;
+      endArrowHead?: string;
+      padding?: number;
     },
-    excalidrawFile: TFile, //the file receiving the drop event
-    view: ExcalidrawView, //the excalidraw view receiving the drop
-    pointerPosition: {x:number, y:number} //the pointer position on canvas at the time of drop
-  }):boolean;
-  mostRecentMarkdownSVG:SVGSVGElement; //Markdown renderer will drop a copy of the most recent SVG here for debugging purposes
-  //utility functions to generate EmbeddedFilesLoaderand ExportSettings objects
-  getEmbeddedFilesLoader(isDark?:boolean):EmbeddedFilesLoader;
-  getExportSettings(withBackground:boolean,withTheme:boolean):ExportSettings;
-  getBoundingBox(elements:ExcalidrawElement[]): {topX:number,topY:number,width:number,height:number};
+  ): boolean;
+  addElementsToView( //Adds elements from elementsDict to the current view
+    repositionToCursor: boolean,
+    save: boolean,
+  ): Promise<boolean>;
+  onDropHook(data: { //if set Excalidraw will call this function onDrop events
+    ea: ExcalidrawAutomate;
+    event: React.DragEvent<HTMLDivElement>;
+    draggable: any; //Obsidian draggable object
+    type: "file" | "text" | "unknown";
+    payload: {
+      files: TFile[]; //TFile[] array of dropped files
+      text: string; //string
+    };
+    excalidrawFile: TFile; //the file receiving the drop event
+    view: ExcalidrawView; //the excalidraw view receiving the drop
+    pointerPosition: { x: number; y: number }; //the pointer position on canvas at the time of drop
+  }): boolean; //a return of true will stop the default onDrop processing in Excalidraw
+  mostRecentMarkdownSVG: SVGSVGElement; //Markdown renderer will drop a copy of the most recent SVG here for debugging purposes
+  getEmbeddedFilesLoader(isDark?: boolean): EmbeddedFilesLoader; //utility function to generate EmbeddedFilesLoader object
+  getExportSettings( //utility function to generate ExportSettings object
+    withBackground: boolean,
+    withTheme: boolean,
+  ): ExportSettings;
+  getBoundingBox(elements: ExcalidrawElement[]): { //get bounding box of elements
+    topX: number; //bounding box is the box encapsulating all of the elements completely
+    topY: number;
+    width: number;
+    height: number;
+  };
+  //elements grouped by the highest level groups
+  getMaximumGroups(elements: ExcalidrawElement[]): ExcalidrawElement[][]; 
+  //gets the largest element from a group. useful when a text element is grouped with a box, and you want to connect an arrow to the box
+  getLargestElement(elements: ExcalidrawElement[]): ExcalidrawElement;
+  // Returns 2 or 0 intersection points between line going through `a` and `b`
+  // and the `element`, in ascending order of distance from `a`.
+  intersectElementWithLine( 
+    element: ExcalidrawBindableElement,
+    a: readonly [number, number],
+    b: readonly [number, number],
+    gap?: number, //if given, element is inflated by this value
+  ): Point[];
 }
 ```
 

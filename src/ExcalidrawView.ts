@@ -1161,11 +1161,13 @@ export default class ExcalidrawView extends TextFileView {
           );
         }
         //debug({where:"ExcalidrawView.addElements",file:this.file.name,dataTheme:this.excalidrawData.scene.appState.theme,before:"updateScene",state:st})
+        const elements = el.concat(newElements);
         this.excalidrawAPI.updateScene({
-          elements: el.concat(newElements),
+          elements,
           appState: st,
           commitToHistory: true,
         });
+
         if (images) {
           const files: BinaryFileData[] = [];
           Object.keys(images).forEach((k) => {
@@ -1200,7 +1202,7 @@ export default class ExcalidrawView extends TextFileView {
           this.excalidrawAPI.addFiles(files);
         }
         if (save) {
-          this.save();
+          this.save(false);
         } else {
           this.dirty = this.file?.path;
         }

@@ -1,6 +1,6 @@
 # [◀ Excalidraw Automate How To](../readme.md)
 ## Introduction to the API
-You can access Excalidraw Automate via the ExcalidrawAutomate object. I recommend starting your Automate scripts with the following code:
+You can access Excalidraw Automate via the ExcalidrawAutomate object. I recommend starting Templater, DataView and QuickAdd scripts with the following code:
 
 *Use CTRL+Shift+V to paste code into Obsidian!*
 ```javascript
@@ -8,7 +8,9 @@ const ea = ExcalidrawAutomate;
 ea.reset();
 ```
 
-The first line creates a practical constant so you can avoid writing ExcalidrawAutomate 100x times.
+In case you are using the Excalidraw plugin's built in Scripting engine, the engine will take care of initializing the ea object. See [Excalidraw Script Engine](../ExcalidrawScriptsEngine.md) for more information.
+
+The first line creates a constant so you can avoid writing ExcalidrawAutomate 100x times.
 
 The second line resets ExcalidrawAutomate to defaults. This is important as you will not know which template you executed before, thus you won't know what state you left Excalidraw in.
 

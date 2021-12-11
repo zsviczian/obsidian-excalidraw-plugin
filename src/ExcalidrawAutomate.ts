@@ -4,6 +4,7 @@ import {
   StrokeStyle,
   StrokeSharpness,
   ExcalidrawElement,
+  ExcalidrawBindableElement,
 } from "@zsviczian/excalidraw/types/element/types";
 import { normalizePath, TFile } from "obsidian";
 import ExcalidrawView, { ExportSettings, TextMode } from "./ExcalidrawView";
@@ -24,51 +25,58 @@ import {
   scaleLoadedImage,
   wrapText,
 } from "./Utils";
-import { AppState } from "@zsviczian/excalidraw/types/types";
+import { AppState, Point } from "@zsviczian/excalidraw/types/types";
 import { EmbeddedFilesLoader, FileData } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
-import { getCommonBoundingBox } from "@zsviczian/excalidraw";
+import {
+  determineFocusDistance,
+  getCommonBoundingBox,
+  getMaximumGroups,
+  intersectElementWithLine,
+} from "@zsviczian/excalidraw";
+import { start } from "repl";
 
-declare type ConnectionPoint = "top" | "bottom" | "left" | "right";
+declare type ConnectionPoint = "top" | "bottom" | "left" | "right" | null;
+const GAP = 4;
 
 export interface ExcalidrawAutomate {
   plugin: ExcalidrawPlugin;
-  elementsDict: {};
-  imagesDict: {};
+  elementsDict: {}; //contains the ExcalidrawElements currently edited in Automate indexed by el.id
+  imagesDict: {}; //the images files including DataURL, indexed by fileId
   style: {
-    strokeColor: string;
+    strokeColor: string; //https://www.w3schools.com/colors/default.asp
     backgroundColor: string;
-    angle: number;
-    fillStyle: FillStyle;
+    angle: number; //radian
+    fillStyle: FillStyle; //type FillStyle = "hachure" | "cross-hatch" | "solid"
     strokeWidth: number;
-    storkeStyle: StrokeStyle;
+    storkeStyle: StrokeStyle; //type StrokeStyle = "solid" | "dashed" | "dotted"
     roughness: number;
     opacity: number;
-    strokeSharpness: StrokeSharpness;
-    fontFamily: number;
+    strokeSharpness: StrokeSharpness; //type StrokeSharpness = "round" | "sharp"
+    fontFamily: number; //1: Virgil, 2:Helvetica, 3:Cascadia
     fontSize: number;
-    textAlign: string;
-    verticalAlign: string;
-    startArrowHead: string;
+    textAlign: string; //"left"|"right"|"center"
+    verticalAlign: string; //"top"|"bottom"|"middle" :for future use, has no effect currently
+    startArrowHead: string; //"triangle"|"dot"|"arrow"|"bar"|null
     endArrowHead: string;
   };
   canvas: {
-    theme: string;
+    theme: string; //"dark"|"light"
     viewBackgroundColor: string;
     gridSize: number;
   };
-  setFillStyle(val: number): void;
-  setStrokeStyle(val: number): void;
-  setStrokeSharpness(val: number): void;
-  setFontFamily(val: number): void;
-  setTheme(val: number): void;
+  setFillStyle(val: number): void; //0:"hachure", 1:"cross-hatch" 2:"solid"
+  setStrokeStyle(val: number): void; //0:"solid", 1:"dashed", 2:"dotted"
+  setStrokeSharpness(val: number): void; //0:"round", 1:"sharp"
+  setFontFamily(val: number): void; //1: Virgil, 2:Helvetica, 3:Cascadia
+  setTheme(val: number): void; //0:"light", 1:"dark"
   addToGroup(objectIds: []): string;
   toClipboard(templatePath?: string): void;
-  getElements(): ExcalidrawElement[];
-  getElement(id: string): ExcalidrawElement;
-  create(params?: {
-    filename?: string;
-    foldername?: string;
+  getElements(): ExcalidrawElement[]; //get all elements from ExcalidrawAutomate elementsDict
+  getElement(id: string): ExcalidrawElement; //get single element from ExcalidrawAutomate elementsDict
+  create(params?: { //create a drawing and save it to filename
+    filename?: string; //if null: default filename as defined in Excalidraw settings
+    foldername?: string; //if null: default folder as defined in Excalidraw settings
     templatePath?: string;
     onNewPane?: boolean;
     frontmatterKeys?: {
@@ -81,15 +89,15 @@ export interface ExcalidrawAutomate {
   createSVG(
     templatePath?: string,
     embedFont?: boolean,
-    exportSettings?: ExportSettings, //see ExcalidrawAutomate.getExportSettings(boolean,boolean)
-    loader?: EmbeddedFilesLoader, //see ExcalidrawAutomate.getEmbeddedFilesLoader(boolean?)
+    exportSettings?: ExportSettings, //use ExcalidrawAutomate.getExportSettings(boolean,boolean)
+    loader?: EmbeddedFilesLoader, //use ExcalidrawAutomate.getEmbeddedFilesLoader(boolean?)
     theme?: string,
   ): Promise<SVGSVGElement>;
   createPNG(
     templatePath?: string,
     scale?: number,
-    exportSettings?: ExportSettings, //see ExcalidrawAutomate.getExportSettings(boolean,boolean)
-    loader?: EmbeddedFilesLoader, //see ExcalidrawAutomate.getEmbeddedFilesLoader(boolean?)
+    exportSettings?: ExportSettings, //use ExcalidrawAutomate.getExportSettings(boolean,boolean)
+    loader?: EmbeddedFilesLoader, //use ExcalidrawAutomate.getEmbeddedFilesLoader(boolean?)
     theme?: string,
   ): Promise<any>;
   wrapText(text: string, lineLen: number): string;
@@ -106,7 +114,7 @@ export interface ExcalidrawAutomate {
       width?: number;
       height?: number;
       textAlign?: string;
-      box?: boolean | "box" | "blob" | "ellipse" | "diamond";
+      box?: boolean | "box" | "blob" | "ellipse" | "diamond"; //if !null, text will be boxed
       boxPadding?: number;
     },
     id?: string,
@@ -125,32 +133,32 @@ export interface ExcalidrawAutomate {
   addLaTex(topX: number, topY: number, tex: string): Promise<string>;
   connectObjects(
     objectA: string,
-    connectionA: ConnectionPoint,
+    connectionA: ConnectionPoint, //type ConnectionPoint = "top" | "bottom" | "left" | "right" | null
     objectB: string,
-    connectionB: ConnectionPoint,
+    connectionB: ConnectionPoint, //when passed null, Excalidraw will automatically decide 
     formatting?: {
-      numberOfPoints?: number;
-      startArrowHead?: string;
-      endArrowHead?: string;
+      numberOfPoints?: number; //points on the line. Default is 0 ie. line will only have a start and end point
+      startArrowHead?: string; //"triangle"|"dot"|"arrow"|"bar"|null
+      endArrowHead?: string; //"triangle"|"dot"|"arrow"|"bar"|null
       padding?: number;
     },
   ): void;
-  clear(): void;
-  reset(): void;
-  isExcalidrawFile(f: TFile): boolean;
+  clear(): void; //clear elementsDict and imagesDict only
+  reset(): void; //clear() + reset all style values to default
+  isExcalidrawFile(f: TFile): boolean; //returns true if MD file is an Excalidraw file
   //view manipulation
-  targetView: ExcalidrawView;
-  setView(view: ExcalidrawView | "first" | "active"): ExcalidrawView;
-  getExcalidrawAPI(): any;
-  getViewElements(): ExcalidrawElement[];
+  targetView: ExcalidrawView; //the view currently edited
+  setView(view: ExcalidrawView | "first" | "active"): ExcalidrawView; 
+  getExcalidrawAPI(): any; //https://github.com/excalidraw/excalidraw/tree/master/src/packages/excalidraw#ref
+  getViewElements(): ExcalidrawElement[]; //get elements in View
   deleteViewElements(el: ExcalidrawElement[]): boolean;
-  getViewSelectedElement(): ExcalidrawElement;
+  getViewSelectedElement(): ExcalidrawElement; //get the selected element in the view, if more are selected, get the first
   getViewSelectedElements(): ExcalidrawElement[];
-  copyViewElementsToEAforEditing(elements: ExcalidrawElement[]): void; //copies elements to elementsDict 
+  copyViewElementsToEAforEditing(elements: ExcalidrawElement[]): void; //copies elements from view to elementsDict for editing
   viewToggleFullScreen(forceViewMode?: boolean): void;
-  connectObjectWithViewSelectedElement(
-    objectA: string,
-    connectionA: ConnectionPoint,
+  connectObjectWithViewSelectedElement( //connect an object to the selected element in the view
+    objectA: string, //see connectObjects
+    connectionA: ConnectionPoint, 
     connectionB: ConnectionPoint,
     formatting?: {
       numberOfPoints?: number;
@@ -159,11 +167,11 @@ export interface ExcalidrawAutomate {
       padding?: number;
     },
   ): boolean;
-  addElementsToView(
+  addElementsToView( //Adds elements from elementsDict to the current view
     repositionToCursor: boolean,
     save: boolean,
   ): Promise<boolean>;
-  onDropHook(data: {
+  onDropHook(data: { //if set Excalidraw will call this function onDrop events
     ea: ExcalidrawAutomate;
     event: React.DragEvent<HTMLDivElement>;
     draggable: any; //Obsidian draggable object
@@ -175,20 +183,31 @@ export interface ExcalidrawAutomate {
     excalidrawFile: TFile; //the file receiving the drop event
     view: ExcalidrawView; //the excalidraw view receiving the drop
     pointerPosition: { x: number; y: number }; //the pointer position on canvas at the time of drop
-  }): boolean;
+  }): boolean; //a return of true will stop the default onDrop processing in Excalidraw
   mostRecentMarkdownSVG: SVGSVGElement; //Markdown renderer will drop a copy of the most recent SVG here for debugging purposes
-  //utility functions to generate EmbeddedFilesLoaderand ExportSettings objects
-  getEmbeddedFilesLoader(isDark?: boolean): EmbeddedFilesLoader;
-  getExportSettings(
+  getEmbeddedFilesLoader(isDark?: boolean): EmbeddedFilesLoader; //utility function to generate EmbeddedFilesLoader object
+  getExportSettings( //utility function to generate ExportSettings object
     withBackground: boolean,
     withTheme: boolean,
   ): ExportSettings;
-  getBoundingBox(elements: ExcalidrawElement[]): {
-    topX: number;
+  getBoundingBox(elements: ExcalidrawElement[]): { //get bounding box of elements
+    topX: number; //bounding box is the box encapsulating all of the elements completely
     topY: number;
     width: number;
     height: number;
   };
+  //elements grouped by the highest level groups
+  getMaximumGroups(elements: ExcalidrawElement[]): ExcalidrawElement[][]; 
+  //gets the largest element from a group. useful when a text element is grouped with a box, and you want to connect an arrow to the box
+  getLargestElement(elements: ExcalidrawElement[]): ExcalidrawElement;
+  // Returns 2 or 0 intersection points between line going through `a` and `b`
+  // and the `element`, in ascending order of distance from `a`.
+  intersectElementWithLine( 
+    element: ExcalidrawBindableElement,
+    a: readonly [number, number],
+    b: readonly [number, number],
+    gap?: number, //if given, element is inflated by this value
+  ): Point[];
 }
 
 declare let window: any;
@@ -682,13 +701,13 @@ export async function initExcalidrawAutomate(
       const id = nanoid();
       //this.elementIds.push(id);
       this.elementsDict[id] = {
-        points: normalizeLinePoints(points, box),
+        points: normalizeLinePoints(points),
         lastCommittedPoint: null,
         startBinding: null,
         endBinding: null,
         startArrowhead: null,
         endArrowhead: null,
-        ...boxedElement(id, "line", box.x, box.y, box.w, box.h),
+        ...boxedElement(id, "line", points[0][0], points[0][1], box.w, box.h),
       };
       return id;
     },
@@ -703,23 +722,29 @@ export async function initExcalidrawAutomate(
     ): string {
       const box = getLineBox(points);
       const id = nanoid();
+      const startPoint = points[0];
+      const endPoint = points[points.length-1];
       //this.elementIds.push(id);
       this.elementsDict[id] = {
-        points: normalizeLinePoints(points, box),
+        points: normalizeLinePoints(points),
         lastCommittedPoint: null,
         startBinding: {
           elementId: formatting?.startObjectId,
-          focus: 0.1,
-          gap: 4,
+          focus: formatting?.startObjectId ? determineFocusDistance(this.getElement(formatting?.startObjectId),endPoint,startPoint):0.1,
+          gap: GAP,
         },
-        endBinding: { elementId: formatting?.endObjectId, focus: 0.1, gap: 4 },
+        endBinding: {
+          elementId: formatting?.endObjectId,
+          focus: formatting?.endObjectId ? determineFocusDistance(this.getElement(formatting?.endObjectId),startPoint,endPoint):0.1,
+          gap: GAP,
+        },
         startArrowhead: formatting?.startArrowHead
           ? formatting.startArrowHead
           : this.style.startArrowHead,
         endArrowhead: formatting?.endArrowHead
           ? formatting.endArrowHead
           : this.style.endArrowHead,
-        ...boxedElement(id, "arrow", box.x, box.y, box.w, box.h),
+        ...boxedElement(id, "arrow", points[0][0], points[0][1], box.w, box.h),
       };
       if (formatting?.startObjectId) {
         if (!this.elementsDict[formatting.startObjectId].boundElementIds) {
@@ -845,8 +870,51 @@ export async function initExcalidrawAutomate(
             return [(el.x + (el.x + el.width)) / 2, el.y - padding];
         }
       };
-      const [aX, aY] = getSidePoints(connectionA, this.elementsDict[objectA]);
-      const [bX, bY] = getSidePoints(connectionB, this.elementsDict[objectB]);
+      let aX;
+      let aY;
+      let bX;
+      let bY;
+      const elA = this.elementsDict[objectA];
+      const elB = this.elementsDict[objectB];
+      if (!connectionA || !connectionB) {
+        const aCenterX = elA.x + elA.width / 2;
+        const bCenterX = elB.x + elB.width / 2;
+        const aCenterY = elA.y + elA.height / 2;
+        const bCenterY = elB.y + elB.height / 2;
+        if (!connectionA) {
+          const intersect = intersectElementWithLine(
+            elA,
+            [bCenterX, bCenterY],
+            [aCenterX, aCenterY],
+            GAP,
+          );
+          if (intersect.length === 0) {
+            [aX, aY] = [aCenterX, aCenterY];
+          } else {
+            [aX, aY] = intersect[0];
+          }
+        }
+
+        if (!connectionB) {
+          const intersect = intersectElementWithLine(
+            elB,
+            [aCenterX, aCenterY],
+            [bCenterX, bCenterY],
+            GAP,
+          );
+          if (intersect.length === 0) {
+            [bX, bY] = [bCenterX, bCenterY];
+          } else {
+            [bX, bY] = intersect[0];
+          }
+        }
+      }
+      if (connectionA) {
+        [aX, aY] = getSidePoints(connectionA, this.elementsDict[objectA]);
+      }
+      if (connectionB) {
+        [bX, bY] = getSidePoints(connectionB, this.elementsDict[objectB]);
+      }
       const numAP = numberOfPoints + 2; //number of break points plus the beginning and the end
       const points = [];
       for (let i = 0; i < numAP; i++) {
@@ -972,10 +1040,10 @@ export async function initExcalidrawAutomate(
         .filter((e: any) => selectedElementsKeys.includes(e.id));
     },
     copyViewElementsToEAforEditing(elements: ExcalidrawElement[]): void {
-      elements.forEach((el)=>{
-        this.elementsDict[el.id]={
-          version: el.version+1,
-          ...el
+      elements.forEach((el) => {
+        this.elementsDict[el.id] = {
+          version: el.version + 1,
+          ...el,
         };
       });
     },
@@ -1031,7 +1099,7 @@ export async function initExcalidrawAutomate(
     },
     async addElementsToView(
       repositionToCursor: boolean = false,
-      save: boolean = false,
+      save: boolean = true,
     ): Promise<boolean> {
       if (!this.targetView || !this.targetView?._loaded) {
         errorMessage("targetView not set", "addElementsToView()");
@@ -1070,6 +1138,35 @@ export async function initExcalidrawAutomate(
         height: bb.maxY - bb.minY,
       };
     },
+    getMaximumGroups(elements: ExcalidrawElement[]): ExcalidrawElement[][] {
+      return getMaximumGroups(elements);
+    },
+    getLargestElement(elements: ExcalidrawElement[]): ExcalidrawElement {
+      if (!elements || elements.length === 0) {
+        return null;
+      }
+      let largestElement = elements[0];
+      const getSize = (el: ExcalidrawElement): Number => {
+        return el.height * el.width;
+      };
+      let largetstSize = getSize(elements[0]);
+      for (let i = 1; i < elements.length; i++) {
+        const size = getSize(elements[i]);
+        if (size > largetstSize) {
+          largetstSize = size;
+          largestElement = elements[i];
+        }
+      }
+      return largestElement;
+    },
+    intersectElementWithLine(
+      element: ExcalidrawBindableElement,
+      a: readonly [number, number],
+      b: readonly [number, number],
+      gap?: number,
+    ): Point[] {
+      return intersectElementWithLine(element, a, b, gap);
+    },
   };
   await initFonts();
   return window.ExcalidrawAutomate;
@@ -1081,11 +1178,12 @@ export function destroyExcalidrawAutomate() {
 
 function normalizeLinePoints(
   points: [[x: number, y: number]],
-  box: { x: number; y: number; w: number; h: number },
+  //box: { x: number; y: number; w: number; h: number },
 ) {
   const p = [];
+  const [x,y] = points[0];
   for (let i = 0; i < points.length; i++) {
-    p.push([points[i][0] - box.x, points[i][1] - box.y]);
+    p.push([points[i][0] - x, points[i][1] - y]);
   }
   return p;
 }
@@ -1360,16 +1458,17 @@ export async function createSVG(
 
 function estimateLineBound(points: any): [number, number, number, number] {
   let minX = Infinity;
-  let maxX = -Infinity;
   let minY = Infinity;
+  let maxX = -Infinity;
   let maxY = -Infinity;
-  points.forEach((p: any) => {
-    const [x, y] = p;
+
+  for (const [x, y] of points) {
     minX = Math.min(minX, x);
     minY = Math.min(minY, y);
     maxX = Math.max(maxX, x);
     maxY = Math.max(maxY, y);
-  });
+  }
+  
   return [minX, minY, maxX, maxY];
 }
 

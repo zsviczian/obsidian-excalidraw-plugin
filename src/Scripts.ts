@@ -70,9 +70,7 @@ export class ScriptEngine {
     this.scriptPath = this.plugin.settings.scriptFolderPath;
     const scripts = app.vault
       .getFiles()
-      .filter(
-        (f: TFile) => f.path.startsWith(this.scriptPath),
-      );
+      .filter((f: TFile) => f.path.startsWith(this.scriptPath));
     scripts.forEach((f) => this.loadScript(f));
   }
 
@@ -101,9 +99,7 @@ export class ScriptEngine {
     const app = this.plugin.app;
     const scripts = app.vault
       .getFiles()
-      .filter(
-        (f: TFile) => f.path.startsWith(this.scriptPath),
-      );
+      .filter((f: TFile) => f.path.startsWith(this.scriptPath));
     scripts.forEach((f) => this.unloadScript(f.basename));
   }
 
@@ -135,7 +131,7 @@ export class ScriptEngine {
 
     return await new AsyncFunction("ea", "utils", script)(this.plugin.ea, {
       inputPrompt: (header: string, placeholder?: string, value?: string) =>
-        ScriptEngine.inputPrompt(this.plugin.app, header, placeholder, value)
+        ScriptEngine.inputPrompt(this.plugin.app, header, placeholder, value),
     });
   }
 

@@ -1032,7 +1032,7 @@ export default class ExcalidrawPlugin extends Plugin {
             ea.reset();
             await ea.addLaTex(0, 0, formula);
             ea.setView(view);
-            ea.addElementsToView(true, true);
+            ea.addElementsToView(true, false);
           });
           return true;
         }
