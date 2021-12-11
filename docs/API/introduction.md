@@ -8,11 +8,11 @@ const ea = ExcalidrawAutomate;
 ea.reset();
 ```
 
-In case you are using the Excalidraw plugin's built in [Scripting Engine](../ExcalidrawScriptsEngine.md), the engine will take care of initializing the `ea` object.
-
 The first line creates a constant so you can avoid writing ExcalidrawAutomate 100x times.
 
 The second line resets ExcalidrawAutomate to defaults. This is important as you will not know which template you executed before, thus you won't know what state you left Excalidraw in.
+
+**⚠ Note:** In case you are using the Excalidraw plugin's built in [Scripting Engine](../ExcalidrawScriptsEngine.md), the engine will take care of initializing the `ea` object.
 
 ### Basic logic of using Excalidraw Automate
 1. Set the styling of the elements you want to draw
