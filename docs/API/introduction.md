@@ -8,7 +8,7 @@ const ea = ExcalidrawAutomate;
 ea.reset();
 ```
 
-In case you are using the Excalidraw plugin's built in Scripting engine, the engine will take care of initializing the ea object. See [Excalidraw Script Engine](../ExcalidrawScriptsEngine.md) for more information.
+In case you are using the Excalidraw plugin's built in [Scripting Engine](../ExcalidrawScriptsEngine.md), the engine will take care of initializing the ea object.
 
 The first line creates a constant so you can avoid writing ExcalidrawAutomate 100x times.
 
