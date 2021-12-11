@@ -1,6 +1,20 @@
-# [◀ Excalidraw Automate How To](../readme.md)
+# [◀ Excalidraw Automate How To](./readme.md)
 
-Place your ExcalidrawAutomate Scripts into the folder defined in Excalidraw Settings. EA scripts may be markdown files, but must contain valid JavaScript code. You will be able to access your scripts from Excalidraw via the Obsidian Command Palette. This will allow you to assign hotkeys to your favorite scripts just like to any other Obsidian command. The Scripts folder may not be the root folder of your Vault.
+Place your ExcalidrawAutomate Scripts into the folder defined in Excalidraw Settings. The Scripts folder may not be the root folder of your Vault.
+
+![image](https://user-images.githubusercontent.com/14358394/145673547-b4f57d01-3643-40f9-abfd-14c3bfa5ab93.png)
+
+EA scripts may be markdown files, plain text files, or .js files. The only requirement is that they must contain valid JavaScript code. 
+
+![image](https://user-images.githubusercontent.com/14358394/145673674-bb59f227-8eea-43dc-83b8-4d750e1920a8.png)
+
+You will be able to access your scripts from Excalidraw via the Obsidian Command Palette. 
+
+![image](https://user-images.githubusercontent.com/14358394/145673652-6b1713e2-edc8-4bc8-8246-3f8df8a4b273.png)
+
+This will allow you to assign hotkeys to your favorite scripts just like to any other Obsidian command. 
+
+![image](https://user-images.githubusercontent.com/14358394/145673633-83b6c969-cead-429b-9721-fd047f980279.png)
 
 An Excalidraw script will automatically receive two objects:
 - The `ea` object, already initialized and set to the active view from which it was called.
@@ -28,6 +42,7 @@ ea.addElementsToView(false);
 ```
 
 ### Connect selected elements with an arrow
+This script will connect two objects with an arrow. If either of the objects are a set of grouped elements (e.g. a text element grouped with an encapsulating rectangle), the script will identify these groups, and connect the arrow to the largest object in the group (assuming you want to connect the arrow to the box around the text element).
 ```javascript
 const elements = ea.getViewSelectedElements();
 ea.copyViewElementsToEAforEditing(elements);
