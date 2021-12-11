@@ -48,10 +48,10 @@ export class ScriptEngine {
       }
       const oldFileIsScript = oldPath.startsWith(this.scriptPath);
       const newFileIsScript = file.path.startsWith(this.scriptPath);
-      if(oldFileIsScript) {
+      if (oldFileIsScript) {
         this.unloadScript(splitFolderAndFilename(oldPath).basename);
       }
-      if(newFileIsScript) {
+      if (newFileIsScript) {
         this.loadScript(file);
       }
     };
@@ -80,7 +80,7 @@ export class ScriptEngine {
   loadScript(f: TFile) {
     this.plugin.addCommand({
       id: f.basename,
-      name: "(Script) " + f.basename,
+      name: `(Script) ${f.basename}`,
       checkCallback: (checking: boolean) => {
         if (checking) {
           return (

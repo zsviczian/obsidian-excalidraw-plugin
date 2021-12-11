@@ -34,7 +34,6 @@ import {
   getMaximumGroups,
   intersectElementWithLine,
 } from "@zsviczian/excalidraw";
-import { start } from "repl";
 
 declare type ConnectionPoint = "top" | "bottom" | "left" | "right" | null;
 const GAP = 4;
@@ -74,7 +73,8 @@ export interface ExcalidrawAutomate {
   toClipboard(templatePath?: string): void;
   getElements(): ExcalidrawElement[]; //get all elements from ExcalidrawAutomate elementsDict
   getElement(id: string): ExcalidrawElement; //get single element from ExcalidrawAutomate elementsDict
-  create(params?: { //create a drawing and save it to filename
+  create(params?: {
+    //create a drawing and save it to filename
     filename?: string; //if null: default filename as defined in Excalidraw settings
     foldername?: string; //if null: default folder as defined in Excalidraw settings
     templatePath?: string;
@@ -135,7 +135,7 @@ export interface ExcalidrawAutomate {
     objectA: string,
     connectionA: ConnectionPoint, //type ConnectionPoint = "top" | "bottom" | "left" | "right" | null
     objectB: string,
-    connectionB: ConnectionPoint, //when passed null, Excalidraw will automatically decide 
+    connectionB: ConnectionPoint, //when passed null, Excalidraw will automatically decide
     formatting?: {
       numberOfPoints?: number; //points on the line. Default is 0 ie. line will only have a start and end point
       startArrowHead?: string; //"triangle"|"dot"|"arrow"|"bar"|null
@@ -148,7 +148,7 @@ export interface ExcalidrawAutomate {
   isExcalidrawFile(f: TFile): boolean; //returns true if MD file is an Excalidraw file
   //view manipulation
   targetView: ExcalidrawView; //the view currently edited
-  setView(view: ExcalidrawView | "first" | "active"): ExcalidrawView; 
+  setView(view: ExcalidrawView | "first" | "active"): ExcalidrawView;
   getExcalidrawAPI(): any; //https://github.com/excalidraw/excalidraw/tree/master/src/packages/excalidraw#ref
   getViewElements(): ExcalidrawElement[]; //get elements in View
   deleteViewElements(el: ExcalidrawElement[]): boolean;
@@ -158,7 +158,7 @@ export interface ExcalidrawAutomate {
   viewToggleFullScreen(forceViewMode?: boolean): void;
   connectObjectWithViewSelectedElement( //connect an object to the selected element in the view
     objectA: string, //see connectObjects
-    connectionA: ConnectionPoint, 
+    connectionA: ConnectionPoint,
     connectionB: ConnectionPoint,
     formatting?: {
       numberOfPoints?: number;
@@ -171,7 +171,8 @@ export interface ExcalidrawAutomate {
     repositionToCursor: boolean,
     save: boolean,
   ): Promise<boolean>;
-  onDropHook(data: { //if set Excalidraw will call this function onDrop events
+  onDropHook(data: {
+    //if set Excalidraw will call this function onDrop events
     ea: ExcalidrawAutomate;
     event: React.DragEvent<HTMLDivElement>;
     draggable: any; //Obsidian draggable object
@@ -190,19 +191,20 @@ export interface ExcalidrawAutomate {
     withBackground: boolean,
     withTheme: boolean,
   ): ExportSettings;
-  getBoundingBox(elements: ExcalidrawElement[]): { //get bounding box of elements
+  getBoundingBox(elements: ExcalidrawElement[]): {
+    //get bounding box of elements
     topX: number; //bounding box is the box encapsulating all of the elements completely
     topY: number;
     width: number;
     height: number;
   };
   //elements grouped by the highest level groups
-  getMaximumGroups(elements: ExcalidrawElement[]): ExcalidrawElement[][]; 
+  getMaximumGroups(elements: ExcalidrawElement[]): ExcalidrawElement[][];
   //gets the largest element from a group. useful when a text element is grouped with a box, and you want to connect an arrow to the box
   getLargestElement(elements: ExcalidrawElement[]): ExcalidrawElement;
   // Returns 2 or 0 intersection points between line going through `a` and `b`
   // and the `element`, in ascending order of distance from `a`.
-  intersectElementWithLine( 
+  intersectElementWithLine(
     element: ExcalidrawBindableElement,
     a: readonly [number, number],
     b: readonly [number, number],
@@ -723,19 +725,31 @@ export async function initExcalidrawAutomate(
       const box = getLineBox(points);
       const id = nanoid();
       const startPoint = points[0];
-      const endPoint = points[points.length-1];
+      const endPoint = points[points.length - 1];
       //this.elementIds.push(id);
       this.elementsDict[id] = {
         points: normalizeLinePoints(points),
         lastCommittedPoint: null,
         startBinding: {
           elementId: formatting?.startObjectId,
-          focus: formatting?.startObjectId ? determineFocusDistance(this.getElement(formatting?.startObjectId),endPoint,startPoint):0.1,
+          focus: formatting?.startObjectId
+            ? determineFocusDistance(
+                this.getElement(formatting?.startObjectId),
+                endPoint,
+                startPoint,
+              )
+            : 0.1,
           gap: GAP,
         },
         endBinding: {
           elementId: formatting?.endObjectId,
-          focus: formatting?.endObjectId ? determineFocusDistance(this.getElement(formatting?.endObjectId),startPoint,endPoint):0.1,
+          focus: formatting?.endObjectId
+            ? determineFocusDistance(
+                this.getElement(formatting?.endObjectId),
+                startPoint,
+                endPoint,
+              )
+            : 0.1,
           gap: GAP,
         },
         startArrowhead: formatting?.startArrowHead
@@ -1181,7 +1195,7 @@ function normalizeLinePoints(
   //box: { x: number; y: number; w: number; h: number },
 ) {
   const p = [];
-  const [x,y] = points[0];
+  const [x, y] = points[0];
   for (let i = 0; i < points.length; i++) {
     p.push([points[i][0] - x, points[i][1] - y]);
   }
@@ -1468,7 +1482,7 @@ function estimateLineBound(points: any): [number, number, number, number] {
     maxX = Math.max(maxX, x);
     maxY = Math.max(maxY, y);
   }
-  
+
   return [minX, minY, maxX, maxY];
 }
 

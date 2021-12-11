@@ -5,6 +5,7 @@ import {
   FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS,
   FRONTMATTER_KEY_CUSTOM_URL_PREFIX,
   FRONTMATTER_KEY_DEFAULT_MODE,
+  fileid,
 } from "./constants";
 import { measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
@@ -19,6 +20,7 @@ import {
   wrapText,
 } from "./Utils";
 import {
+  ExcalidrawElement,
   ExcalidrawImageElement,
   FileId,
 } from "@zsviczian/excalidraw/types/element/types";
@@ -560,8 +562,9 @@ export class ExcalidrawData {
     return outString + getMarkdownDrawingSection(sceneJSONstring);
   }
 
-  private async syncFiles(scene: SceneDataWithFiles): Promise<boolean> {
+  private async syncFiles(): Promise<boolean> {
     let dirty = false;
+    const scene = this.scene as SceneDataWithFiles;
 
     //remove files and equations that no longer have a corresponding image element
     const fileIds = (
@@ -634,6 +637,36 @@ export class ExcalidrawData {
         this.setFile(key as FileId, embeddedFile);
       }
     }
+
+    //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/297
+    const equations = new Set<string>();
+    const duplicateEqs = new Set<string>();
+    for (const key of fileIds) {
+      if (this.hasEquation(key as FileId)) {
+        if (equations.has(key)) {
+          duplicateEqs.add(key);
+        } else {
+          equations.add(key);
+        }
+      }
+    }
+    if (duplicateEqs.size > 0) {
+      for (const key of duplicateEqs.keys()) {
+        const elements = this.scene.elements.filter(
+          (el: ExcalidrawElement) => el.type === "image" && el.fileId === key,
+        );
+        for (let i = 1; i < elements.length; i++) {
+          const newFileId = fileid() as FileId;
+          this.setEquation(newFileId, {
+            latex: this.getEquation(key as FileId).latex,
+            isLoaded: false,
+          });
+          elements[i].fileId = newFileId;
+          dirty = true;
+        }
+      }
+    }
+
     return dirty;
   }
 
@@ -641,7 +674,7 @@ export class ExcalidrawData {
     this.scene = newScene;
     let result = false;
     if (!this.compatibilityMode) {
-      result = await this.syncFiles(newScene);
+      result = await this.syncFiles();
       this.scene.files = {};
     }
     result =
