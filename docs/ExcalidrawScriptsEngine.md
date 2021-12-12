@@ -61,6 +61,8 @@ ea.addToGroup([id].concat(elements.map((el)=>el.id)));
 ea.addElementsToView(false);
 ```
 
+----
+
 ### Connect selected elements with an arrow
 
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-connect-elements.jpg)
@@ -85,6 +87,8 @@ ea.connectObjects(
 ea.addElementsToView();
 ```
 
+----
+
 ### Set line width of selected elements
 
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-stroke-width.jpg)
@@ -98,6 +102,8 @@ ea.copyViewElementsToEAforEditing(elements);
 ea.getElements().forEach((el)=>el.strokeWidth=width);
 ea.addElementsToView();
 ```
+
+----
 
 ### Set grid size
 
@@ -114,6 +120,8 @@ api.updateScene({
   commitToHistory:false
 });
 ```
+
+----
 
 ### Set element dimensions and position
 
@@ -142,6 +150,8 @@ ea.copyViewElementsToEAforEditing([el]);
 ea.addElementsToView();
 ```
 
+----
+
 ### Bullet points
 
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-bullet-point.jpg)
@@ -165,6 +175,8 @@ elements.forEach((el)=>{
 ea.addElementsToView();
 ```
 
+----
+
 ### Split text by lines
 **!!!Requires Excalidraw 1.5.1 or higher**
 
@@ -186,6 +198,8 @@ ea.addElementsToView();
 ea.deleteViewElements(elements);
 ```
 
+----
+
 ### Set Text Alignment
 
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-text-align.jpg)
@@ -200,6 +214,8 @@ elements.forEach((el)=>el.textAlign = align);
 ea.copyViewElementsToEAforEditing(elements);
 ea.addElementsToView();
 ```
+
+----
 
 ### Set Font Family
 
