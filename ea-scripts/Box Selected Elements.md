@@ -8,12 +8,18 @@ https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.h
 
 ```javascript
 */
-//const padding = parseInt (await utils.inputPrompt("padding?"));
+//uncomment if you want a prompt for custom padding
+//const padding = parseInt (await utils.inputPrompt("padding?","number","10"));
 const padding = 10
 elements = ea.getViewSelectedElements();
 const box = ea.getBoundingBox(elements);
-const rndColor = '#'+(Math.random()*0xFFFFFF<<0).toString(16).padStart(6,"0");
-ea.style.strokeColor = rndColor;
+color = ea
+        .getExcalidrawAPI()
+        .getAppState()
+        .currentItemStrokeColor;
+//uncomment for random color:
+//color = '#'+(Math.random()*0xFFFFFF<<0).toString(16).padStart(6,"0");
+ea.style.strokeColor = color;
 id = ea.addRect(
 	box.topX - padding,
 	box.topY - padding,

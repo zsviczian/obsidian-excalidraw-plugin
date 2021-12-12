@@ -28,11 +28,18 @@ An Excalidraw script will automatically receive two objects:
 ### Add box around selected elements
 This script will add an encapsulating box around the currently selected elements in Excalidraw
 ```javascript
-padding = parseInt (await utils.inputPrompt("padding?"));
+//uncomment if you want a prompt for custom padding
+//const padding = parseInt (await utils.inputPrompt("padding?","number","10"));
+const padding = 10
 elements = ea.getViewSelectedElements();
 const box = ea.getBoundingBox(elements);
-const rndColor = '#'+(Math.random()*0xFFFFFF<<0).toString(16).padStart(6,"0");
-ea.style.strokeColor = rndColor;
+color = ea
+        .getExcalidrawAPI()
+        .getAppState()
+        .currentItemStrokeColor;
+//uncomment if you want to set the stroke to a random color
+//color = '#'+(Math.random()*0xFFFFFF<<0).toString(16).padStart(6,"0");
+ea.style.strokeColor = color;
 id = ea.addRect(
 	box.topX - padding,
 	box.topY - padding,
@@ -68,7 +75,8 @@ ea.addElementsToView();
 ### Set line width of selected elements
 This is helpful, for example, when you scale freedraw sketches and want to reduce or increase their line width.
 ```javascript
-width = await utils.inputPrompt("Width?");
+let width = (ea.getViewSelectedElement().strokeWidth??1).toString();
+width = await utils.inputPrompt("Width?","number",width);
 const elements=ea.getViewSelectedElements();
 ea.copyViewElementsToEAforEditing(elements);
 ea.getElements().forEach((el)=>el.strokeWidth=width);
