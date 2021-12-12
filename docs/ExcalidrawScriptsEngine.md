@@ -172,7 +172,6 @@ ea.addElementsToView();
 
 Split lines of text into separate text elements for easier reorganization
 ```javascript
-*/
 elements = ea.getViewSelectedElements().filter((el)=>el.type==="text");
 elements.forEach((el)=>{
   ea.style.strokeColor = el.strokeColor;
