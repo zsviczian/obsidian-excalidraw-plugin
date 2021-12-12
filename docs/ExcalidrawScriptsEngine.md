@@ -185,3 +185,4 @@ elements.forEach((el)=>{
 });
 ea.addElementsToView();
 ea.deleteViewElements(elements);
+```
