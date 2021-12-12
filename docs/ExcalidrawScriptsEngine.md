@@ -26,6 +26,9 @@ An Excalidraw script will automatically receive two objects:
 ## Example Excalidraw Automate script
 
 ### Add box around selected elements
+
+![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-box-elements.jpg)
+
 This script will add an encapsulating box around the currently selected elements in Excalidraw
 ```javascript
 //uncomment if you want a prompt for custom padding
@@ -52,6 +55,9 @@ ea.addElementsToView(false);
 ```
 
 ### Connect selected elements with an arrow
+
+![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-connect-elements.jpg)
+
 This script will connect two objects with an arrow. If either of the objects are a set of grouped elements (e.g. a text element grouped with an encapsulating rectangle), the script will identify these groups, and connect the arrow to the largest object in the group (assuming you want to connect the arrow to the box around the text element).
 ```javascript
 const elements = ea.getViewSelectedElements();
@@ -73,6 +79,9 @@ ea.addElementsToView();
 ```
 
 ### Set line width of selected elements
+
+![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-stroke-width.jpg)
+
 This is helpful, for example, when you scale freedraw sketches and want to reduce or increase their line width.
 ```javascript
 let width = (ea.getViewSelectedElement().strokeWidth??1).toString();
@@ -84,6 +93,9 @@ ea.addElementsToView();
 ```
 
 ### Set grid size
+
+![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-grid.jpg)
+
 The default grid size in Excalidraw is 20. Currently there is no way to change the grid size via the user interface. 
 ```javascript
 const grid = parseInt(await utils.inputPrompt("Grid size?",null,"20"));
@@ -97,6 +109,9 @@ api.updateScene({
 ```
 
 ### Set element dimensions and position
+
+![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-dimensions.jpg)
+
 Currently there is no way to specify the exact location and size of objects in Excalidraw. You can bridge this gap with the following simple script.
 ```javascript
 const elements = ea.getViewSelectedElements();
@@ -117,5 +132,28 @@ el.y = size[1];
 el.width = size[2];
 el.height = size[3];
 ea.copyViewElementsToEAforEditing([el]);
+ea.addElementsToView();
+```
+
+### Bullet points
+
+![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-bullet-point.jpg)
+
+This script will add a small circle to the top left of each text element in the selection and add the text and the "bullet point" into a group.
+```javascript
+elements = ea.getViewSelectedElements().filter((el)=>el.type==="text");
+ea.copyViewElementsToEAforEditing(elements);
+const padding = 10;
+elements.forEach((el)=>{
+  ea.style.strokeColor = el.strokeColor;
+  const size = el.fontSize/2;
+  const ellipseId = ea.addEllipse(
+    el.x-padding-size,
+    el.y+size/2,
+    size,
+    size
+  );
+  ea.addToGroup([el.id,ellipseId]);
+});
 ea.addElementsToView();
 ```
