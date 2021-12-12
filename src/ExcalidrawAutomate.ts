@@ -1028,7 +1028,7 @@ export async function initExcalidrawAutomate(
         appState: st,
         commitToHistory: true,
       });
-      this.targetView.save();
+      //this.targetView.save();
       return true;
     },
     getViewSelectedElement(): any {

@@ -1427,7 +1427,7 @@ export default class ExcalidrawView extends TextFileView {
             if (
               document.fullscreenEnabled &&
               document.fullscreenElement == this.contentEl &&
-              e.keyCode == 27
+              e.keyCode === 27
             ) {
               document.exitFullscreen();
               this.zoomToFit();
@@ -1822,7 +1822,7 @@ export default class ExcalidrawView extends TextFileView {
                   await this.save(false);
                   //this callback function will only be invoked if quick parse fails, i.e. there is a transclusion in the raw text
                   //thus I only check if TextMode.parsed, text is always != with parseResult
-                  if (this.textMode == TextMode.parsed) {
+                  if (this.textMode === TextMode.parsed) {
                     this.excalidrawAPI.history.clear();
                   }
                   this.setupAutosaveTimer();
@@ -1831,7 +1831,7 @@ export default class ExcalidrawView extends TextFileView {
               if (parseResult) {
                 //there were no transclusions in the raw text, quick parse was successful
                 this.setupAutosaveTimer();
-                if (this.textMode == TextMode.raw) {
+                if (this.textMode === TextMode.raw) {
                   return;
                 } //text is displayed in raw, no need to clear the history, undo will not create problems
                 if (text == parseResult) {
@@ -1843,7 +1843,7 @@ export default class ExcalidrawView extends TextFileView {
               return;
             }
             this.setupAutosaveTimer();
-            if (this.textMode == TextMode.parsed) {
+            if (this.textMode === TextMode.parsed) {
               return this.excalidrawData.getParsedText(textElement.id);
             }
           },

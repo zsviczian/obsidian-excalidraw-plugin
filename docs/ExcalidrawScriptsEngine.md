@@ -20,8 +20,13 @@ This will allow you to assign hotkeys to your favorite scripts just like to any 
 ## Script development
 An Excalidraw script will automatically receive two objects:
 - `ea`: The Script Enginge will initialize the `ea` object including setting the active view to the View from which the script was called.
-- `utils`: There is currently only a single function published on `utils`
-  - `inputPrompt: (header: string, placeholder?: string, value?: string)`. You need to await the result of inputPrompt. See the example below for details.
+- `utils`: I have borrowed functions exposed on utils from [QuickAdd](https://github.com/chhoumann/quickadd/blob/master/docs/QuickAddAPI.md), though currently not all QuickAdd utility functions are implemented in Excalidraw. As of now, these are the available functions. See the example below for details.
+  - `inputPrompt: (header: string, placeholder?: string, value?: string)`
+    - Opens a prompt that asks for an input. Returns a string with the input.
+    - You need to await the result of inputPrompt. 
+  - `suggester: (displayItems: string[], actualItems: string[])`
+    - Opens a suggester. Displays the displayItems, but you map these the other values with actualItems. Returns the selected value.
+    - You need to await the result of suggester.
 
 ---------
 

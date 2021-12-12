@@ -2,7 +2,7 @@ import { App, TAbstractFile, TFile } from "obsidian";
 import { VIEW_TYPE_EXCALIDRAW } from "./constants";
 import ExcalidrawView from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
-import GenericInputPrompt from "./Prompt";
+import { GenericInputPrompt, GenericSuggester} from "./Prompt";
 import { splitFolderAndFilename } from "./Utils";
 
 export class ScriptEngine {
@@ -135,6 +135,8 @@ export class ScriptEngine {
     return await new AsyncFunction("ea", "utils", script)(this.plugin.ea, {
       inputPrompt: (header: string, placeholder?: string, value?: string) =>
         ScriptEngine.inputPrompt(this.plugin.app, header, placeholder, value),
+      suggester: (displayItems: string[], items: string[]) =>
+        ScriptEngine.suggester(this.plugin.app, displayItems, items),
     });
   }
 
@@ -150,4 +152,17 @@ export class ScriptEngine {
       return undefined;
     }
   }
+
+  public static async suggester(
+    app: App,
+    displayItems: string[], 
+    items: string[]
+  ) {
+    try {
+      return await GenericSuggester.Suggest(app, displayItems,items);
+    } catch {
+      return undefined;
+    }
+  }
+
 }
