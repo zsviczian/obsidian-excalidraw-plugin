@@ -137,7 +137,7 @@ export default class ExcalidrawView extends TextFileView {
   private refresh: Function = null;
   public excalidrawRef: React.MutableRefObject<any> = null;
   public excalidrawAPI: any = null;
-  private excalidrawWrapperRef: React.MutableRefObject<any> = null;
+  public excalidrawWrapperRef: React.MutableRefObject<any> = null;
   private justLoaded: boolean = false;
   private plugin: ExcalidrawPlugin;
   private dirty: string = null;
@@ -1807,6 +1807,10 @@ export default class ExcalidrawView extends TextFileView {
               this.setupAutosaveTimer();
               return;
             }
+            //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/299
+            setTimeout(() => {
+              this?.excalidrawWrapperRef?.current?.firstElementChild?.focus();
+            }, 50);
             //If the parsed text is different than the raw text, and if View is in TextMode.parsed
             //Then I need to clear the undo history to avoid overwriting raw text with parsed text and losing links
             if (

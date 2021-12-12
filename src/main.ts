@@ -14,6 +14,7 @@ import {
   ViewState,
   Notice,
   loadMathJax,
+  Scope,
 } from "obsidian";
 import {
   BLANK_DRAWING,
@@ -1266,6 +1267,7 @@ export default class ExcalidrawPlugin extends Plugin {
     );
   }
 
+  private popScope: Function = null;
   private registerEventListeners() {
     const self = this;
     this.app.workspace.onLayoutReady(async () => {
@@ -1374,6 +1376,7 @@ export default class ExcalidrawPlugin extends Plugin {
         const newActiveviewEV: ExcalidrawView =
           leaf.view instanceof ExcalidrawView ? leaf.view : null;
         self.activeExcalidrawView = newActiveviewEV;
+
         if (newActiveviewEV) {
           self.lastActiveExcalidrawFilePath = newActiveviewEV.file?.path;
         }
@@ -1412,6 +1415,24 @@ export default class ExcalidrawPlugin extends Plugin {
             }, 2000);
           } //refresh embedded files
         }
+
+        //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/300
+        if(self.popScope) {
+          self.popScope();
+          self.popScope = null;
+        }
+        if (newActiveviewEV) {
+          //@ts-ignore
+          const scope = new Scope(self.app.scope);
+          scope.register(["Mod"],"Enter",()=> true);
+          //@ts-ignore
+          self.app.keymap.pushScope(scope);
+          self.popScope = ()=>{
+            //@ts-ignore
+            self.app.keymap.popScope(scope)
+          };
+        }
+
       };
       self.registerEvent(
         self.app.workspace.on(
