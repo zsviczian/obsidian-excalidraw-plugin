@@ -23,7 +23,9 @@ An Excalidraw script will automatically receive two objects:
 - `utils`: There is currently only a single function published on `utils`
   - `inputPrompt: (header: string, placeholder?: string, value?: string)`. You need to await the result of inputPrompt. See the example below for details.
 
-## Example Excalidraw Automate script
+---------
+
+## Example Excalidraw Automate Scripts
 
 ### Add box around selected elements
 
