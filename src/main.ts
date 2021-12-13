@@ -1271,6 +1271,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private registerEventListeners() {
     const self = this;
     this.app.workspace.onLayoutReady(async () => {
+      
       //watch filename change to rename .svg, .png; to sync to .md; to update links
       const renameEventHandler = async (
         file: TAbstractFile,
@@ -1416,6 +1417,7 @@ export default class ExcalidrawPlugin extends Plugin {
           } //refresh embedded files
         }
 
+        
         //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/300
         if(self.popScope) {
           self.popScope();
@@ -1432,7 +1434,6 @@ export default class ExcalidrawPlugin extends Plugin {
             self.app.keymap.popScope(scope)
           };
         }
-
       };
       self.registerEvent(
         self.app.workspace.on(
@@ -1445,6 +1446,10 @@ export default class ExcalidrawPlugin extends Plugin {
 
   onunload() {
     destroyExcalidrawAutomate();
+    if(this.popScope) {
+      this.popScope();
+      this.popScope = null;
+    }
     this.observer.disconnect();
     this.themeObserver.disconnect();
     if (this.fileExplorerObserver) {
