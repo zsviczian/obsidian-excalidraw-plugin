@@ -32,6 +32,8 @@ An Excalidraw script will automatically receive two objects:
 
 ## Example Excalidraw Automate Scripts
 
+These scripts are available as downloadable `.md` files on GitHub in [this](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/ea-scripts) folder.
+
 ### Add box around selected elements
 
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-box-elements.jpg)
