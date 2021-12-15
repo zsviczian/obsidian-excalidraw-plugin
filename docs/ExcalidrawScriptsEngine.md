@@ -88,6 +88,25 @@ ea.addElementsToView();
 ```
 
 ----
+### Reverse selected arrows
+
+![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-reverse-arrow.jpg)
+
+Reverse the direction of **arrows** within the scope of selected elements.
+
+```javascript
+elements = ea.getViewSelectedElements().filter((el)=>el.type==="arrow");
+if(!elements || elements.length===0) return;
+elements.forEach((el)=>{
+	const start = el.startArrowhead;
+	el.startArrowhead = el.endArrowhead;
+	el.endArrowhead = start;
+});
+ea.copyViewElementsToEAforEditing(elements);
+ea.addElementsToView();
+```
+
+----
 
 ### Set line width of selected elements
 
