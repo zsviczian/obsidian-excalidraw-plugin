@@ -126,6 +126,7 @@ export function wrapText(
   text: string,
   lineLen: number,
   forceWrap: boolean = false,
+  tolerance: number = 0,
 ): string {
   if (!lineLen) {
     return text;
@@ -139,9 +140,10 @@ export function wrapText(
     return outstring.replace(/\n$/, "");
   }
 
-  //                       1                2            3        4
+  //  1                2            3                               4
   const reg = new RegExp(
-    `(.{1,${lineLen}})(\\s+|$\\n?)|([^\\s]+)(\\s+|$\\n?)`,
+    `(.{1,${lineLen}})(\\s+|$\\n?)|([^\\s]{1,${lineLen+tolerance}})(\\s+|$\\n?)?`,
+    //`(.{1,${lineLen}})(\\s+|$\\n?)|([^\\s]+)(\\s+|$\\n?)`,
     "gm",
   );
   const res = text.matchAll(reg);
@@ -150,17 +152,12 @@ export function wrapText(
     outstring += parts.value[1]
       ? parts.value[1].trimEnd()
       : parts.value[3].trimEnd();
-    const newLine1 = parts.value[2]?.includes("\n");
-    const newLine2 = parts.value[4]?.includes("\n");
-    if (newLine1) {
-      outstring += parts.value[2];
-    }
-    if (newLine2) {
-      outstring += parts.value[4];
-    }
-    if (!(newLine1 || newLine2)) {
-      outstring += "\n";
-    }
+    const newLine = 
+      (parts.value[2] ? parts.value[2].split("\n").length-1:0) +
+      (parts.value[4] ? parts.value[4].split("\n").length-1:0);
+    outstring += "\n".repeat(newLine);
+    if (newLine === 0) outstring += "\n";
+    
   }
   return outstring.replace(/\n$/, "");
 }

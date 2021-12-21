@@ -1,3 +1,10 @@
+/** 
+ ** About the various text fields of textElements
+ ** rawText vs. text vs. original text
+    text: The displyed text. This will have linebreaks if wrapped & will be the parsed text or the original-markup depending on Obsidian view mode
+    originalText: this is the text without added linebreaks for wrapping. This will be parsed or markup depending on view mode
+    rawText: text with original markdown markup and without the added linebreaks for wrapping
+ */
 import { App, TFile } from "obsidian";
 import {
   nanoid,
@@ -63,7 +70,9 @@ export const REGEX_LINK = {
       : parts.value[6];
   },
   getWrapLength: (parts: IteratorResult<RegExpMatchArray, any>): number => {
-    return parts.value[8];
+    const len = parseInt(parts.value[8]);
+    if(isNaN(len)) return null;
+    return len;
   },
 };
 
@@ -100,8 +109,27 @@ export function getMarkdownDrawingSection(jsonString: string) {
   )}${String.fromCharCode(96)}${String.fromCharCode(96)}\n%%`;
 }
 
+/**
+ * 
+ * @param text - TextElement.text
+ * @param originalText - TextElement.originalText
+ * @returns null if the textElement is not wrapped or the longest line in the text element
+ */
+const estimateMaxLineLen = (text:string,originalText:string):number => {
+  if(!originalText || !text) return null;
+  if(text === originalText) return null; //text will contain extra new line characters if wrapped
+  let maxLineLen = 0; //will be non-null if text is container bound and multi line
+  const splitText = text.split("\n");
+  for(const line of splitText)
+    if (line.length>maxLineLen) 
+      maxLineLen = line.length;
+  return maxLineLen;
+}
+
+const wrap = (text:string, lineLen:number) => lineLen?wrapText(text,lineLen,false,0):text;
+
 export class ExcalidrawData {
-  private textElements: Map<string, { raw: string; parsed: string }> = null;
+  private textElements: Map<string, { raw: string; parsed: string; wrapAt: number | null }> = null;
   public scene: any = null;
   private file: TFile = null;
   private app: App;
@@ -133,7 +161,7 @@ export class ExcalidrawData {
     textMode: TextMode,
   ): Promise<boolean> {
     this.loaded = false;
-    this.textElements = new Map<string, { raw: string; parsed: string }>();
+    this.textElements = new Map<string, { raw: string; parsed: string; wrapAt: number }>();
     if (this.file != file) {
       //this is a reload - files and equations will take care of reloading when needed
       this.files.clear();
@@ -208,9 +236,10 @@ export class ExcalidrawData {
     while (!(parts = res.next()).done) {
       const text = data.substring(position, parts.value.index);
       const id: string = parts.value[1];
-      this.textElements.set(id, { raw: text, parsed: await this.parse(text) });
-      //this will set the rawText field of text elements imported from files before 1.3.14, and from other instances of Excalidraw
       const textEl = this.scene.elements.filter((el: any) => el.id === id)[0];
+      let wrapAt = estimateMaxLineLen(textEl.text,textEl.originalText);
+      this.textElements.set(id, { raw: text, parsed: await this.parse(text), wrapAt });
+      //this will set the rawText field of text elements imported from files before 1.3.14, and from other instances of Excalidraw
       if (textEl && (!textEl.rawText || textEl.rawText === "")) {
         textEl.rawText = text;
       }
@@ -254,7 +283,7 @@ export class ExcalidrawData {
   public async loadLegacyData(data: string, file: TFile): Promise<boolean> {
     this.compatibilityMode = true;
     this.file = file;
-    this.textElements = new Map<string, { raw: string; parsed: string }>();
+    this.textElements = new Map<string, { raw: string; parsed: string; wrapAt: number }>();
     this.setShowLinkBrackets();
     this.setLinkPrefix();
     this.setUrlPrefix();
@@ -281,6 +310,7 @@ export class ExcalidrawData {
   public updateTextElement(
     sceneTextElement: any,
     newText: string,
+    newOriginalText: string,
     forceUpdate: boolean = false,
   ) {
     if (forceUpdate || newText != sceneTextElement.text) {
@@ -290,6 +320,7 @@ export class ExcalidrawData {
         sceneTextElement.fontFamily,
       );
       sceneTextElement.text = newText;
+      sceneTextElement.originalText = newOriginalText;
       sceneTextElement.width = measure.w;
       sceneTextElement.height = measure.h;
       sceneTextElement.baseline = measure.baseline;
@@ -305,27 +336,35 @@ export class ExcalidrawData {
   private async updateSceneTextElements(forceupdate: boolean = false) {
     //update text in scene based on textElements Map
     //first get scene text elements
-    const texts = this.scene.elements?.filter((el: any) => el.type == "text");
+    const texts = this.scene.elements?.filter((el: any) => el.type === "text");
     for (const te of texts) {
+      const originalText = (await this.getText(te.id,false)) ?? (te.originalText??te.text);
+      const wrapAt = this.textElements.get(te.id)?.wrapAt;
       this.updateTextElement(
         te,
-        (await this.getText(te.id)) ?? te.text,
+        wrap(originalText,wrapAt),
+        originalText,
         forceupdate,
       ); //(await this.getText(te.id))??te.text serves the case when the whole #Text Elements section is deleted by accident
     }
   }
 
-  private async getText(id: string): Promise<string> {
-    if (this.textMode == TextMode.parsed) {
-      if (!this.textElements.get(id).parsed) {
-        const raw = this.textElements.get(id).raw;
-        this.textElements.set(id, { raw, parsed: await this.parse(raw) });
+  private async getText(id: string, wrapResult: boolean = true): Promise<string> {
+    const t = this.textElements.get(id);
+    if(!t) return null;
+    if (this.textMode === TextMode.parsed) {
+      if (!t.parsed) {
+        this.textElements.set(id, {
+          raw: t.raw,
+          parsed: await this.parse(t.raw),
+          wrapAt: t.wrapAt
+        });
       }
       //console.log("parsed",this.textElements.get(id).parsed);
-      return this.textElements.get(id).parsed;
+      return wrapResult ? wrap(t.parsed,t.wrapAt) : t.parsed;
     }
     //console.log("raw",this.textElements.get(id).raw);
-    return this.textElements.get(id)?.raw;
+    return t.raw;
   }
 
   /**
@@ -353,15 +392,20 @@ export class ExcalidrawData {
       }
       if (te.id.length > 8 && this.textElements.has(te.id)) {
         //element was created with onBeforeTextSubmit
-        const element = this.textElements.get(te.id);
-        this.textElements.set(id, { raw: element.raw, parsed: element.parsed });
+        const t = this.textElements.get(te.id);
+        this.textElements.set(id, {
+          raw: t.raw,
+          parsed: t.parsed,
+          wrapAt: t.wrapAt
+        });
         this.textElements.delete(te.id); //delete the old ID from the Map
         dirty = true;
       } else if (!this.textElements.has(id)) {
         dirty = true;
         const raw = te.rawText && te.rawText !== "" ? te.rawText : te.text; //this is for compatibility with drawings created before the rawText change on ExcalidrawTextElement
-        this.textElements.set(id, { raw, parsed: null });
-        this.parseasync(id, raw);
+        const wrapAt = estimateMaxLineLen(te.text,te.originalText);
+        this.textElements.set(id, { raw, parsed: null, wrapAt });
+        this.parseasync(id, raw, wrapAt);
       }
     }
     if (dirty) {
@@ -380,24 +424,26 @@ export class ExcalidrawData {
     for (const key of this.textElements.keys()) {
       //find text element in the scene
       const el = this.scene.elements?.filter(
-        (el: any) => el.type == "text" && el.id == key,
+        (el: any) => el.type === "text" && el.id === key,
       );
-      if (el.length == 0) {
+      if (el.length === 0) {
         this.textElements.delete(key); //if no longer in the scene, delete the text element
       } else {
-        const text = await this.getText(key);
-        if (text != el[0].text) {
+        const text = await this.getText(key,false);
+        if (text !== (el[0].originalText??el[0].text)) {
+          const wrapAt = estimateMaxLineLen(el[0].text,el[0].originalText);
           this.textElements.set(key, {
-            raw: el[0].text,
-            parsed: await this.parse(el[0].text),
+            raw: el[0].originalText??el[0].text,
+            parsed: await this.parse(el[0].originalText??el[0].text),
+            wrapAt
           });
         }
       }
     }
   }
 
-  private async parseasync(key: string, raw: string) {
-    this.textElements.set(key, { raw, parsed: await this.parse(raw) });
+  private async parseasync(key: string, raw: string, wrapAt:number) {
+    this.textElements.set(key, { raw, parsed: await this.parse(raw), wrapAt });
   }
 
   private parseLinks(text: string, position: number, parts: any): string {
@@ -562,6 +608,10 @@ export class ExcalidrawData {
     return outString + getMarkdownDrawingSection(sceneJSONstring);
   }
 
+  /**
+   * deletes fileIds from Excalidraw data for files no longer in the scene
+   * @returns 
+   */
   private async syncFiles(): Promise<boolean> {
     let dirty = false;
     const scene = this.scene as SceneDataWithFiles;
@@ -703,37 +753,43 @@ export class ExcalidrawData {
     return this.textElements.get(id)?.raw;
   }
 
-  public getParsedText(id: string): string {
-    return this.textElements.get(id)?.parsed;
+  public getParsedText(id: string): [string,string] {
+    const t=this.textElements.get(id);
+    if(!t) return;
+    return [wrap(t.parsed,t.wrapAt),t.parsed];
   }
 
   public setTextElement(
     elementID: string,
     rawText: string,
+    rawOriginalText: string,
     updateScene: Function,
-  ): string {
-    const parseResult = this.quickParse(rawText); //will return the parsed result if raw text does not include transclusion
+  ): [string,string] {
+    const maxLineLen = estimateMaxLineLen(rawText,rawOriginalText);
+    const parseResult = this.quickParse(rawOriginalText); //will return the parsed result if raw text does not include transclusion
     if (parseResult) {
       //No transclusion
-      this.textElements.set(elementID, { raw: rawText, parsed: parseResult });
-      return parseResult;
+      this.textElements.set(elementID, { raw: rawOriginalText, parsed: parseResult, wrapAt:maxLineLen });
+      return [wrap(parseResult,maxLineLen), parseResult];
     }
     //transclusion needs to be resolved asynchornously
-    this.parse(rawText).then((parsedText: string) => {
-      this.textElements.set(elementID, { raw: rawText, parsed: parsedText });
+    this.parse(rawOriginalText).then((parsedText: string) => {
+      this.textElements.set(elementID, { raw: rawOriginalText, parsed: parsedText, wrapAt: maxLineLen });
       if (parsedText) {
-        updateScene(parsedText);
+        updateScene(wrap(parsedText,maxLineLen), parsedText);
       }
     });
-    return null;
+    return [null,null];
   }
 
   public async addTextElement(
     elementID: string,
     rawText: string,
+    rawOriginalText: string
   ): Promise<string> {
+    const maxLineLen = estimateMaxLineLen(rawText,rawOriginalText);
     const parseResult = await this.parse(rawText);
-    this.textElements.set(elementID, { raw: rawText, parsed: parseResult });
+    this.textElements.set(elementID, { raw: rawText, parsed: parseResult, wrapAt:maxLineLen });
     return parseResult;
   }
 
@@ -804,14 +860,14 @@ export class ExcalidrawData {
     return showLinkBrackets != this.showLinkBrackets;
   }
 
-  /*
-  // Files and equations copy/paste support
-  // This is not a complete solution, it assumes the source document is opened first
-  // at that time the fileId is stored in the master files/equations map
-  // when pasted the map is checked if the file already exists
-  // This will not work if pasting from one vault to another, but for the most common usecase 
-  // of copying an image or equation from one drawing to another within the same vault
-  // this is going to do the job
+  /** 
+   Files and equations copy/paste support
+   This is not a complete solution, it assumes the source document is opened first
+   at that time the fileId is stored in the master files/equations map
+   when pasted the map is checked if the file already exists
+   This will not work if pasting from one vault to another, but for the most common usecase 
+   of copying an image or equation from one drawing to another within the same vault
+   this is going to do the job
   */
   public setFile(fileId: FileId, data: EmbeddedFile) {
     //always store absolute path because in case of paste, relative path may not resolve ok

@@ -336,10 +336,11 @@ export default class ExcalidrawView extends TextFileView {
 
     if (selectedText?.id) {
       linkText =
-        this.textMode == TextMode.parsed
+        this.textMode === TextMode.parsed
           ? this.excalidrawData.getRawText(selectedText.id)
           : selectedText.text;
 
+      if(!linkText) return;
       linkText = linkText.replaceAll("\n", ""); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/187
       if (linkText.match(REG_LINKINDEX_HYPERLINK)) {
         window.open(linkText, "_blank");
@@ -566,7 +567,7 @@ export default class ExcalidrawView extends TextFileView {
 
   public async changeTextMode(textMode: TextMode, reload: boolean = true) {
     this.textMode = textMode;
-    if (textMode == TextMode.parsed) {
+    if (textMode === TextMode.parsed) {
       this.textIsRaw_Element.hide();
       this.textIsParsed_Element.show();
     } else {
@@ -1141,9 +1142,11 @@ export default class ExcalidrawView extends TextFileView {
             textElements[i].id,
             //@ts-ignore
             textElements[i].text,
+            //@ts-ignore
+            textElements[i].text //TODO: implement originalText support in ExcalidrawAutomate 
           );
           if (this.textMode == TextMode.parsed) {
-            this.excalidrawData.updateTextElement(textElements[i], parseResult);
+            this.excalidrawData.updateTextElement(textElements[i], parseResult, parseResult);
           }
         }
 
@@ -1304,7 +1307,7 @@ export default class ExcalidrawView extends TextFileView {
         const elementsWithLinks = elements.filter(
           (e: ExcalidrawTextElement) => {
             const text: string =
-              this.textMode == TextMode.parsed
+              this.textMode === TextMode.parsed
                 ? this.excalidrawData.getRawText(e.id)
                 : e.text;
             if (!text) {
@@ -1461,7 +1464,7 @@ export default class ExcalidrawView extends TextFileView {
                     .path + ref;
               } else {
                 const text: string =
-                  this.textMode == TextMode.parsed
+                  this.textMode === TextMode.parsed
                     ? this.excalidrawData.getRawText(selectedElement.id)
                     : selectedElement.text;
 
@@ -1799,13 +1802,14 @@ export default class ExcalidrawView extends TextFileView {
           onBeforeTextSubmit: (
             textElement: ExcalidrawTextElement,
             text: string,
+            originalText: string,
             isDeleted: boolean,
-          ) => {
+          ):[string,string] => {
             if (isDeleted) {
               this.excalidrawData.deleteTextElement(textElement.id);
               this.dirty = this.file?.path;
               this.setupAutosaveTimer();
-              return;
+              return [null,null];
             }
             //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/299
             setTimeout(() => {
@@ -1814,14 +1818,16 @@ export default class ExcalidrawView extends TextFileView {
             //If the parsed text is different than the raw text, and if View is in TextMode.parsed
             //Then I need to clear the undo history to avoid overwriting raw text with parsed text and losing links
             if (
-              text != textElement.text ||
+              text !== textElement.text ||
+              originalText !== textElement.originalText ||
               !this.excalidrawData.getRawText(textElement.id)
             ) {
               //the user made changes to the text or the text is missing from Excalidraw Data (recently copy/pasted)
               //setTextElement will attempt a quick parse (without processing transclusions)
-              const parseResult = this.excalidrawData.setTextElement(
+              const [parseResultWrapped,parseResultOriginal] = this.excalidrawData.setTextElement(
                 textElement.id,
                 text,
+                originalText,
                 async () => {
                   await this.save(false);
                   //this callback function will only be invoked if quick parse fails, i.e. there is a transclusion in the raw text
@@ -1832,24 +1838,25 @@ export default class ExcalidrawView extends TextFileView {
                   this.setupAutosaveTimer();
                 },
               );
-              if (parseResult) {
+              if (parseResultWrapped) {
                 //there were no transclusions in the raw text, quick parse was successful
                 this.setupAutosaveTimer();
                 if (this.textMode === TextMode.raw) {
-                  return;
+                  return [null,null];
                 } //text is displayed in raw, no need to clear the history, undo will not create problems
-                if (text == parseResult) {
-                  return;
+                if (text === parseResultWrapped) {
+                  return [null,null];
                 } //There were no links to parse, raw text and parsed text are equivalent
                 this.excalidrawAPI.history.clear();
-                return parseResult;
+                return [parseResultWrapped,parseResultOriginal];
               }
-              return;
+              return [null,null];
             }
             this.setupAutosaveTimer();
             if (this.textMode === TextMode.parsed) {
               return this.excalidrawData.getParsedText(textElement.id);
             }
+            return [null,null];
           },
         }),
       );
