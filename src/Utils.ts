@@ -142,7 +142,9 @@ export function wrapText(
 
   //  1                2            3                               4
   const reg = new RegExp(
-    `(.{1,${lineLen}})(\\s+|$\\n?)|([^\\s]{1,${lineLen+tolerance}})(\\s+|$\\n?)?`,
+    `(.{1,${lineLen}})(\\s+|$\\n?)|([^\\s]{1,${
+      lineLen + tolerance
+    }})(\\s+|$\\n?)?`,
     //`(.{1,${lineLen}})(\\s+|$\\n?)|([^\\s]+)(\\s+|$\\n?)`,
     "gm",
   );
@@ -152,12 +154,13 @@ export function wrapText(
     outstring += parts.value[1]
       ? parts.value[1].trimEnd()
       : parts.value[3].trimEnd();
-    const newLine = 
-      (parts.value[2] ? parts.value[2].split("\n").length-1:0) +
-      (parts.value[4] ? parts.value[4].split("\n").length-1:0);
+    const newLine =
+      (parts.value[2] ? parts.value[2].split("\n").length - 1 : 0) +
+      (parts.value[4] ? parts.value[4].split("\n").length - 1 : 0);
     outstring += "\n".repeat(newLine);
-    if (newLine === 0) outstring += "\n";
-    
+    if (newLine === 0) {
+      outstring += "\n";
+    }
   }
   return outstring.replace(/\n$/, "");
 }

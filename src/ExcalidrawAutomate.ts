@@ -694,7 +694,7 @@ export async function initExcalidrawAutomate(
         baseline,
         ...boxedElement(id, "text", topX, topY, width, height),
         containerId: boxId,
-        originalText: originalText,
+        originalText,
         rawText: originalText,
       };
       if (boxId && formatting?.box === "blob") {
@@ -702,8 +702,10 @@ export async function initExcalidrawAutomate(
       }
       if (boxId && formatting?.box !== "blob") {
         const box = this.elementsDict[boxId];
-        if(!box.boundElements) box.boundElements = [];
-        box.boundElements.push({type:"text",id});
+        if (!box.boundElements) {
+          box.boundElements = [];
+        }
+        box.boundElements.push({ type: "text", id });
       }
       return boxId ?? id;
     },
@@ -773,13 +775,19 @@ export async function initExcalidrawAutomate(
         if (!this.elementsDict[formatting.startObjectId].boundElements) {
           this.elementsDict[formatting.startObjectId].boundElements = [];
         }
-        this.elementsDict[formatting.startObjectId].boundElements.push({type: "arrow", id});
+        this.elementsDict[formatting.startObjectId].boundElements.push({
+          type: "arrow",
+          id,
+        });
       }
       if (formatting?.endObjectId) {
         if (!this.elementsDict[formatting.endObjectId].boundElements) {
           this.elementsDict[formatting.endObjectId].boundElements = [];
         }
-        this.elementsDict[formatting.endObjectId].boundElements.push({type: "arrow", id});
+        this.elementsDict[formatting.endObjectId].boundElements.push({
+          type: "arrow",
+          id,
+        });
       }
       return id;
     },

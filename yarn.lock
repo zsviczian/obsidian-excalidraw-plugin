@@ -1202,10 +1202,10 @@
     "@typescript-eslint/types" "5.6.0"
     "eslint-visitor-keys" "^3.0.0"
 
-"@zsviczian/excalidraw@0.10.0-obsidian-31":
-  "integrity" "sha512-COaR6EH0Nz0U87ZNTP82PYjAVzOtkFsx7kR6FP46rh/oEXWUlUc7b8W2Bffxve/utKKrOJNWgbNz5MhsHlASgA=="
-  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.10.0-obsidian-31.tgz"
-  "version" "0.10.0-obsidian-31"
+"@zsviczian/excalidraw@0.10.0-obsidian-33":
+  "integrity" "sha512-ych61N48QASpcU3YJGX5nCWmnsdku5vsm6RLp7eiE8HzAdGGDFTlbwYg6p+uBw7MeJIu9gQx2hET9Gnx79LFRg=="
+  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.10.0-obsidian-33.tgz"
+  "version" "0.10.0-obsidian-33"
   dependencies:
     "dotenv" "10.0.0"
 
