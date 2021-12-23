@@ -152,6 +152,10 @@ export default class ExcalidrawView extends TextFileView {
   private ctrlKeyDown = false;
   private shiftKeyDown = false;
   private altKeyDown = false;
+  
+  //https://stackoverflow.com/questions/27132796/is-there-any-javascript-event-fired-when-the-on-screen-keyboard-on-mobile-safari
+  private isEditingText: boolean = false;
+  private isEditingTextResetTimer:NodeJS.Timeout = null;
 
   id: string = (this.leaf as any).id;
 
@@ -484,6 +488,14 @@ export default class ExcalidrawView extends TextFileView {
     if (!this.excalidrawRef) {
       return;
     }
+    if(this.isEditingText) {
+      return;
+    }
+    //final fallback to prevent resizing when text element is in edit mode
+    //this is to prevent jumping text due to on-screen keyboard popup
+    if(this.excalidrawAPI?.getAppState()?.editingElement?.type==="text") {
+      return;
+    }
     this.zoomToFit(false);
   }
 
@@ -576,6 +588,7 @@ export default class ExcalidrawView extends TextFileView {
     }
     if (reload) {
       await this.save(false);
+      this.updateContainerSize();
       this.excalidrawAPI.history.clear(); //to avoid undo replacing links with parsed text
     }
   }
@@ -644,6 +657,9 @@ export default class ExcalidrawView extends TextFileView {
       this.activeLoader.terminate = true;
     }
     this.nextLoader = null;
+    /*ReactDOM.unmountComponentAtode(this.contentEl);
+    this.excalidrawRef = null;
+    this.excalidrawAPI = null;*/
     this.excalidrawAPI.resetScene();
     this.excalidrawAPI.history.clear();
   }
@@ -766,6 +782,7 @@ export default class ExcalidrawView extends TextFileView {
       }
       //debug({where:"ExcalidrawView.loadDrawing",file:this.file.name,before:"this.loadSceneFiles"});
       this.loadSceneFiles();
+      this.updateContainerSize(null,true)
     } else {
       this.instantiateExcalidraw({
         elements: excalidrawData.elements,
@@ -994,6 +1011,7 @@ export default class ExcalidrawView extends TextFileView {
           //console.log({where:"ExcalidrawView.React.ReadyPromise"});
           //debug({where:"ExcalidrawView.React.useEffect",file:this.file.name,before:"this.loadSceneFiles"});
           this.loadSceneFiles();
+          this.updateContainerSize(null,true);
         });
       }, [excalidrawRef]);
 
@@ -1143,18 +1161,12 @@ export default class ExcalidrawView extends TextFileView {
             //@ts-ignore
             textElements[i].text,
             //@ts-ignore
-            textElements[i].text //TODO: implement originalText support in ExcalidrawAutomate 
+            textElements[i].originalText, //TODO: implement originalText support in ExcalidrawAutomate
           );
           if (this.textMode == TextMode.parsed) {
             this.excalidrawData.updateTextElement(textElements[i], parseResult, parseResult);
           }
         }
-
-        const newIds = newElements.map((e) => e.id);
-        const el: ExcalidrawElement[] = this.excalidrawAPI
-          .getSceneElements()
-          .filter((e: ExcalidrawElement) => !newIds.includes(e.id));
-        const st: AppState = this.excalidrawAPI.getAppState();
 
         if (repositionToCursor) {
           newElements = repositionElementsToCursor(
@@ -1163,8 +1175,24 @@ export default class ExcalidrawView extends TextFileView {
             true,
           );
         }
+
+        const newIds = newElements.map((e) => e.id);
+        const el: ExcalidrawElement[] = this.excalidrawAPI.getSceneElements();
+        const removeList:string[] = [];
+
+        //need to update elements in scene.elements to maintain sequence of layers
+        for (let i=0;i<el.length;i++) {
+          const id = el[i].id;
+          if(newIds.includes(id)) {
+            el[i] = newElements.filter((ne)=>ne.id===id)[0];
+            removeList.push(id);
+          }
+        }
+        
+        const st: AppState = this.excalidrawAPI.getAppState();
+
         //debug({where:"ExcalidrawView.addElements",file:this.file.name,dataTheme:this.excalidrawData.scene.appState.theme,before:"updateScene",state:st})
-        const elements = el.concat(newElements);
+        const elements = el.concat(newElements.filter((e)=>!removeList.includes(e.id)));
         this.excalidrawAPI.updateScene({
           elements,
           appState: st,
@@ -1790,6 +1818,9 @@ export default class ExcalidrawView extends TextFileView {
               clearInterval(this.autosaveTimer);
               this.autosaveTimer = null;
             }
+            clearTimeout(this.isEditingTextResetTimer);
+            this.isEditingTextResetTimer = null;
+            this.isEditingText = true; //to prevent autoresize on mobile when keyboard pops up
             //if(this.textMode==TextMode.parsed) {
             const raw = this.excalidrawData.getRawText(textElement.id);
             if (!raw) {
@@ -1805,6 +1836,12 @@ export default class ExcalidrawView extends TextFileView {
             originalText: string,
             isDeleted: boolean,
           ):[string,string] => {
+
+            this.isEditingTextResetTimer = setTimeout(()=> {
+              this.isEditingText = false;
+              this.isEditingTextResetTimer = null;
+            },300); // to give time for the onscreen keyboard to disappear
+
             if (isDeleted) {
               this.excalidrawData.deleteTextElement(textElement.id);
               this.dirty = this.file?.path;
@@ -1812,9 +1849,12 @@ export default class ExcalidrawView extends TextFileView {
               return [null,null];
             }
             //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/299
-            setTimeout(() => {
+            setTimeout(() => {  
               this?.excalidrawWrapperRef?.current?.firstElementChild?.focus();
             }, 50);
+          
+            const containerId = textElement.containerId;
+
             //If the parsed text is different than the raw text, and if View is in TextMode.parsed
             //Then I need to clear the undo history to avoid overwriting raw text with parsed text and losing links
             if (
@@ -1830,6 +1870,7 @@ export default class ExcalidrawView extends TextFileView {
                 originalText,
                 async () => {
                   await this.save(false);
+                  //this.updateContainerSize(4,textElement.id,true); //not required, because save preventReload==false, it will reload and update container sizes
                   //this callback function will only be invoked if quick parse fails, i.e. there is a transclusion in the raw text
                   //thus I only check if TextMode.parsed, text is always != with parseResult
                   if (this.textMode === TextMode.parsed) {
@@ -1839,6 +1880,7 @@ export default class ExcalidrawView extends TextFileView {
                 },
               );
               if (parseResultWrapped) {
+                if(containerId) this.updateContainerSize(containerId,true);
                 //there were no transclusions in the raw text, quick parse was successful
                 this.setupAutosaveTimer();
                 if (this.textMode === TextMode.raw) {
@@ -1853,6 +1895,7 @@ export default class ExcalidrawView extends TextFileView {
               return [null,null];
             }
             this.setupAutosaveTimer();
+            if(containerId) this.updateContainerSize(containerId,true);
             if (this.textMode === TextMode.parsed) {
               return this.excalidrawData.getParsedText(textElement.id);
             }
@@ -1863,10 +1906,23 @@ export default class ExcalidrawView extends TextFileView {
 
       return React.createElement(React.Fragment, null, excalidrawDiv);
     });
-
     ReactDOM.render(reactElement, this.contentEl, () => {
       this.excalidrawWrapperRef.current.focus();
     });
+  }
+
+  private updateContainerSize(containerId?:string,delay:boolean=false) {
+    const api = this.excalidrawAPI;
+    const update = () => {
+      const containers = containerId 
+        ? api.getSceneElements().filter((el:ExcalidrawElement)=>el.id===containerId)
+        : api.getSceneElements().filter((el:ExcalidrawElement)=>el.boundElements?.map((e)=>e.type).includes("text"));
+      api.updateContainerSize(containers)
+    }
+    if(delay) 
+      setTimeout(() => update(), 50);
+    else 
+      update();
   }
 
   public zoomToFit(delay: boolean = true) {

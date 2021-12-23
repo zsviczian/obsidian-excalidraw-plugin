@@ -635,6 +635,7 @@ export async function initExcalidrawAutomate(
       id?: string,
     ): string {
       id = id ?? nanoid();
+      const originalText = text;
       text = formatting?.wrapAt ? this.wrapText(text, formatting.wrapAt) : text;
       const { w, h, baseline } = measureText(
         text,
@@ -645,7 +646,7 @@ export async function initExcalidrawAutomate(
       const height = formatting?.height ? formatting.height : h;
 
       let boxId: string = null;
-      const boxPadding = formatting?.boxPadding ?? 10;
+      const boxPadding = formatting?.boxPadding ?? 30;
       if (formatting?.box) {
         switch (formatting?.box) {
           case "ellipse":
@@ -692,9 +693,17 @@ export async function initExcalidrawAutomate(
         verticalAlign: ea.style.verticalAlign,
         baseline,
         ...boxedElement(id, "text", topX, topY, width, height),
+        containerId: boxId,
+        originalText: originalText,
+        rawText: originalText,
       };
-      if (boxId) {
+      if (boxId && formatting?.box === "blob") {
         this.addToGroup([id, boxId]);
+      }
+      if (boxId && formatting?.box !== "blob") {
+        const box = this.elementsDict[boxId];
+        if(!box.boundElements) box.boundElements = [];
+        box.boundElements.push({type:"text",id});
       }
       return boxId ?? id;
     },
@@ -761,16 +770,16 @@ export async function initExcalidrawAutomate(
         ...boxedElement(id, "arrow", points[0][0], points[0][1], box.w, box.h),
       };
       if (formatting?.startObjectId) {
-        if (!this.elementsDict[formatting.startObjectId].boundElementIds) {
-          this.elementsDict[formatting.startObjectId].boundElementIds = [];
+        if (!this.elementsDict[formatting.startObjectId].boundElements) {
+          this.elementsDict[formatting.startObjectId].boundElements = [];
         }
-        this.elementsDict[formatting.startObjectId].boundElementIds.push(id);
+        this.elementsDict[formatting.startObjectId].boundElements.push({type: "arrow", id});
       }
       if (formatting?.endObjectId) {
-        if (!this.elementsDict[formatting.endObjectId].boundElementIds) {
-          this.elementsDict[formatting.endObjectId].boundElementIds = [];
+        if (!this.elementsDict[formatting.endObjectId].boundElements) {
+          this.elementsDict[formatting.endObjectId].boundElements = [];
         }
-        this.elementsDict[formatting.endObjectId].boundElementIds.push(id);
+        this.elementsDict[formatting.endObjectId].boundElements.push({type: "arrow", id});
       }
       return id;
     },
@@ -1229,10 +1238,10 @@ function boxedElement(
     strokeSharpness: ea.style.strokeSharpness,
     seed: Math.floor(Math.random() * 100000),
     version: 1,
-    versionNounce: 1,
+    versionNonce: 1,
     isDeleted: false,
     groupIds: [] as any,
-    boundElementIds: [] as any,
+    boundElements: [] as any,
   };
 }
 

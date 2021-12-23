@@ -27,6 +27,7 @@ import {
   wrapText,
 } from "./Utils";
 import {
+  ExcalidrawBindableElement,
   ExcalidrawElement,
   ExcalidrawImageElement,
   FileId,
@@ -151,6 +152,22 @@ export class ExcalidrawData {
   }
 
   /**
+   * 1.5.4: for backward compatibility following the release of container bound text elements and the depreciation boundElementIds field 
+   */
+  private convert_boundElementIds_to_boundElements() {
+    if(!this.scene) return;
+    for(let i=0;i<this.scene.elements?.length;i++) {
+      if(this.scene.elements[i].boundElementIds) {
+        if(!this.scene.elements[i].boundElements) this.scene.elements[i].boundElements=[];
+        this.scene.elements[i].boundElements = 
+          this.scene.elements[i].boundElements.concat(this.scene.elements[i].boundElementIds.map((id:string) => ({ type: "arrow", id })));
+      }
+      if(this.scene.elements[i].type === "text" && !this.scene.elements[i].containerId) this.scene.elements[i].containerId = null; 
+      delete this.scene.elements[i].boundElementIds;
+    }
+  }
+
+  /**
    * Loads a new drawing
    * @param {TFile} file - the MD file containing the Excalidraw drawing
    * @returns {boolean} - true if file was loaded, false if there was an error
@@ -211,6 +228,8 @@ export class ExcalidrawData {
     if (this.plugin.settings.matchThemeAlways) {
       this.scene.appState.theme = isObsidianThemeDark() ? "dark" : "light";
     }
+
+    this.convert_boundElementIds_to_boundElements();
 
     data = data.substring(0, sceneJSONandPOS.pos);
 
@@ -291,6 +310,7 @@ export class ExcalidrawData {
     if (!this.scene.files) {
       this.scene.files = {}; //loading legacy scenes without the files element
     }
+    this.convert_boundElementIds_to_boundElements();
     if (this.plugin.settings.matchThemeAlways) {
       this.scene.appState.theme = isObsidianThemeDark() ? "dark" : "light";
     }

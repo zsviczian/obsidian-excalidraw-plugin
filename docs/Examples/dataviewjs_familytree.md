@@ -29,11 +29,11 @@ function crawl(subtasks) {
   return size;
 }
 
-const tasks = dv.page("Demo.md").file.tasks[0];
+const tasks = dv.page("FamilyTree.md").file.tasks[0];
 tasks["size"] = crawl(tasks.subtasks);
 
 const width = 300;
-const height = 100;
+const height = 150;
 const ea = ExcalidrawAutomate;
 ea.reset();
 
@@ -56,7 +56,7 @@ function buildMindmap(subtasks, depth, offset, parentObjectID) {
  
 }
 
-tasks["objectID"] = ea.addText(width*1.5,width,tasks.text,{box:true, textAlign:"center"});    
+tasks["objectID"] = ea.addText(width*1.5,height*(tasks.size-1),tasks.text,{box:true, textAlign:"center"});    
 buildMindmap(tasks.subtasks, 2, 0, tasks.objectID);
 
 ea.createSVG().then((svg)=>dv.span(svg.outerHTML));

@@ -444,7 +444,7 @@ export default class ExcalidrawPlugin extends Plugin {
       for (const drawing of embeddedItems) {
         attr.fname = drawing.getAttribute("src");
         file = this.app.metadataCache.getFirstLinkpathDest(
-          attr.fname,
+          attr.fname?.split("#")[0],
           ctx.sourcePath,
         );
         if (!file && ctx.frontmatter?.hasOwnProperty("excalidraw-plugin")) {
