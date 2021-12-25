@@ -12,7 +12,8 @@ export const nanoid = customAlphabet(
 );
 export const fileid = customAlphabet("1234567890abcdef", 40);
 export const REG_LINKINDEX_INVALIDCHARS = /[<>:"\\|?*]/g;
-export const REG_BLOCK_REF_CLEAN = /\.|\$|!|\?|;|\[|]|\^|#|\*|<|>|&|@|\||\\|"|:/g;
+export const REG_BLOCK_REF_CLEAN =
+  /,|\.|\$|!|\?|;|\[|]|\^|#|\*|<|>|&|@|\||\\|"|:/g;
 export const IMAGE_TYPES = ["jpeg", "jpg", "png", "gif", "svg"];
 export const MAX_IMAGE_SIZE = 500;
 export const FRONTMATTER_KEY = "excalidraw-plugin";

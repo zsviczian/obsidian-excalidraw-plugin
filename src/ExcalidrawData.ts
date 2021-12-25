@@ -1103,10 +1103,12 @@ export const getTransclusion = async (
     const cc = c?.children;
     if (
       !startPos &&
-      (c?.value?.replaceAll(REG_BLOCK_REF_CLEAN ,"") === linkParts.ref ||
-        c?.title?.replaceAll(REG_BLOCK_REF_CLEAN ,"") === linkParts.ref ||
-        dataHeading?.replaceAll(REG_BLOCK_REF_CLEAN ,"") === linkParts.ref ||
-        (cc ? cc[0]?.value?.replaceAll(REG_BLOCK_REF_CLEAN ,"") === linkParts.ref : false))
+      (c?.value?.replaceAll(REG_BLOCK_REF_CLEAN, "") === linkParts.ref ||
+        c?.title?.replaceAll(REG_BLOCK_REF_CLEAN, "") === linkParts.ref ||
+        dataHeading?.replaceAll(REG_BLOCK_REF_CLEAN, "") === linkParts.ref ||
+        (cc
+          ? cc[0]?.value?.replaceAll(REG_BLOCK_REF_CLEAN, "") === linkParts.ref
+          : false))
     ) {
       startPos = headings[i].node.children[0]?.position.start.offset; //
       lineNum = headings[i].node.children[0]?.position.start.line; //

@@ -82,8 +82,6 @@ export interface ExportSettings {
   withTheme: boolean;
 }
 
-
-
 export const addFiles = async (
   files: FileData[],
   view: ExcalidrawView,
@@ -1059,29 +1057,47 @@ export default class ExcalidrawView extends TextFileView {
         const selectedElement = this.excalidrawAPI
           .getSceneElements()
           .filter(
-            (el: any) =>
-              el.id ==
+            (el: ExcalidrawElement) =>
+              el.id ===
               Object.keys(
                 this.excalidrawAPI.getAppState().selectedElementIds,
               )[0],
           );
-        if (selectedElement.length == 0) {
+        if (selectedElement.length === 0) {
           return { id: null, text: null };
         }
-        if (selectedElement[0].type == "text") {
+
+        if (selectedElement[0].type === "text") {
           return { id: selectedElement[0].id, text: selectedElement[0].text };
         } //a text element was selected. Return text
-        if (selectedElement[0].groupIds.length == 0) {
+
+        const boundTextElements = selectedElement[0].boundElements?.filter(
+          (be: any) => be.type === "text",
+        );
+        if (boundTextElements?.length > 0) {
+          const textElement = this.excalidrawAPI
+            .getSceneElements()
+            .filter(
+              (el: ExcalidrawElement) => el.id === boundTextElements[0].id,
+            );
+          if (textElement.length > 0) {
+            return { id: textElement[0].id, text: textElement[0].text };
+          }
+        } //is a text container selected?
+
+        if (selectedElement[0].groupIds.length === 0) {
           return { id: null, text: null };
         } //is the selected element part of a group?
+
         const group = selectedElement[0].groupIds[0]; //if yes, take the first group it is part of
         const textElement = this.excalidrawAPI
           .getSceneElements()
           .filter((el: any) => el.groupIds?.includes(group))
-          .filter((el: any) => el.type == "text"); //filter for text elements of the group
-        if (textElement.length == 0) {
+          .filter((el: any) => el.type === "text"); //filter for text elements of the group
+        if (textElement.length === 0) {
           return { id: null, text: null };
         } //the group had no text element member
+
         return { id: selectedElement[0].id, text: selectedElement[0].text }; //return text element text
       };
 

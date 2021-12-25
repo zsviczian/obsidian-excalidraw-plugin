@@ -460,7 +460,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             );
             this.applySettingsUpdate(true);
           }),
-      );      
+      );
 
     new Setting(containerEl)
       .setName(t("GET_URL_TITLE_NAME"))
