@@ -48,7 +48,7 @@ export interface ExcalidrawAutomate {
     angle: number; //radian
     fillStyle: FillStyle; //type FillStyle = "hachure" | "cross-hatch" | "solid"
     strokeWidth: number;
-    storkeStyle: StrokeStyle; //type StrokeStyle = "solid" | "dashed" | "dotted"
+    strokeStyle: StrokeStyle; //type StrokeStyle = "solid" | "dashed" | "dotted"
     roughness: number;
     opacity: number;
     strokeSharpness: StrokeSharpness; //type StrokeSharpness = "round" | "sharp"
@@ -227,7 +227,7 @@ export async function initExcalidrawAutomate(
       angle: 0,
       fillStyle: "hachure",
       strokeWidth: 1,
-      storkeStyle: "solid",
+      strokeStyle: "solid",
       roughness: 1,
       opacity: 100,
       strokeSharpness: "sharp",
@@ -972,7 +972,7 @@ export async function initExcalidrawAutomate(
       this.style.angle = 0;
       this.style.fillStyle = "hachure";
       this.style.strokeWidth = 1;
-      this.style.storkeStyle = "solid";
+      this.style.strokeStyle = "solid";
       this.style.roughness = 1;
       this.style.opacity = 100;
       this.style.strokeSharpness = "sharp";
@@ -1240,7 +1240,7 @@ function boxedElement(
     backgroundColor: ea.style.backgroundColor,
     fillStyle: ea.style.fillStyle,
     strokeWidth: ea.style.strokeWidth,
-    storkeStyle: ea.style.storkeStyle,
+    strokeStyle: ea.style.strokeStyle,
     roughness: ea.style.roughness,
     opacity: ea.style.opacity,
     strokeSharpness: ea.style.strokeSharpness,
