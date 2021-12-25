@@ -13,7 +13,7 @@ export interface ExcalidrawAutomate {
     angle: number; //radian
     fillStyle: FillStyle; //type FillStyle = "hachure" | "cross-hatch" | "solid"
     strokeWidth: number;
-    storkeStyle: StrokeStyle; //type StrokeStyle = "solid" | "dashed" | "dotted"
+    strokeStyle: StrokeStyle; //type StrokeStyle = "solid" | "dashed" | "dotted"
     roughness: number;
     opacity: number;
     strokeSharpness: StrokeSharpness; //type StrokeSharpness = "round" | "sharp"
@@ -38,7 +38,8 @@ export interface ExcalidrawAutomate {
   toClipboard(templatePath?: string): void;
   getElements(): ExcalidrawElement[]; //get all elements from ExcalidrawAutomate elementsDict
   getElement(id: string): ExcalidrawElement; //get single element from ExcalidrawAutomate elementsDict
-  create(params?: { //create a drawing and save it to filename
+  create(params?: {
+    //create a drawing and save it to filename
     filename?: string; //if null: default filename as defined in Excalidraw settings
     foldername?: string; //if null: default folder as defined in Excalidraw settings
     templatePath?: string;
@@ -99,7 +100,7 @@ export interface ExcalidrawAutomate {
     objectA: string,
     connectionA: ConnectionPoint, //type ConnectionPoint = "top" | "bottom" | "left" | "right" | null
     objectB: string,
-    connectionB: ConnectionPoint, //when passed null, Excalidraw will automatically decide 
+    connectionB: ConnectionPoint, //when passed null, Excalidraw will automatically decide
     formatting?: {
       numberOfPoints?: number; //points on the line. Default is 0 ie. line will only have a start and end point
       startArrowHead?: string; //"triangle"|"dot"|"arrow"|"bar"|null
@@ -112,17 +113,18 @@ export interface ExcalidrawAutomate {
   isExcalidrawFile(f: TFile): boolean; //returns true if MD file is an Excalidraw file
   //view manipulation
   targetView: ExcalidrawView; //the view currently edited
-  setView(view: ExcalidrawView | "first" | "active"): ExcalidrawView; 
+  setView(view: ExcalidrawView | "first" | "active"): ExcalidrawView;
   getExcalidrawAPI(): any; //https://github.com/excalidraw/excalidraw/tree/master/src/packages/excalidraw#ref
   getViewElements(): ExcalidrawElement[]; //get elements in View
   deleteViewElements(el: ExcalidrawElement[]): boolean;
   getViewSelectedElement(): ExcalidrawElement; //get the selected element in the view, if more are selected, get the first
   getViewSelectedElements(): ExcalidrawElement[];
+  getViewFileForImageElement(el: ExcalidrawElement): TFile | null; //Returns the TFile file handle for the image element
   copyViewElementsToEAforEditing(elements: ExcalidrawElement[]): void; //copies elements from view to elementsDict for editing
   viewToggleFullScreen(forceViewMode?: boolean): void;
   connectObjectWithViewSelectedElement( //connect an object to the selected element in the view
     objectA: string, //see connectObjects
-    connectionA: ConnectionPoint, 
+    connectionA: ConnectionPoint,
     connectionB: ConnectionPoint,
     formatting?: {
       numberOfPoints?: number;
@@ -135,7 +137,8 @@ export interface ExcalidrawAutomate {
     repositionToCursor: boolean,
     save: boolean,
   ): Promise<boolean>;
-  onDropHook(data: { //if set Excalidraw will call this function onDrop events
+  onDropHook(data: {
+    //if set Excalidraw will call this function onDrop events
     ea: ExcalidrawAutomate;
     event: React.DragEvent<HTMLDivElement>;
     draggable: any; //Obsidian draggable object
@@ -154,19 +157,20 @@ export interface ExcalidrawAutomate {
     withBackground: boolean,
     withTheme: boolean,
   ): ExportSettings;
-  getBoundingBox(elements: ExcalidrawElement[]): { //get bounding box of elements
+  getBoundingBox(elements: ExcalidrawElement[]): {
+    //get bounding box of elements
     topX: number; //bounding box is the box encapsulating all of the elements completely
     topY: number;
     width: number;
     height: number;
   };
   //elements grouped by the highest level groups
-  getMaximumGroups(elements: ExcalidrawElement[]): ExcalidrawElement[][]; 
+  getMaximumGroups(elements: ExcalidrawElement[]): ExcalidrawElement[][];
   //gets the largest element from a group. useful when a text element is grouped with a box, and you want to connect an arrow to the box
   getLargestElement(elements: ExcalidrawElement[]): ExcalidrawElement;
   // Returns 2 or 0 intersection points between line going through `a` and `b`
   // and the `element`, in ascending order of distance from `a`.
-  intersectElementWithLine( 
+  intersectElementWithLine(
     element: ExcalidrawBindableElement,
     a: readonly [number, number],
     b: readonly [number, number],

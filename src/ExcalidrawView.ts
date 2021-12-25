@@ -1872,10 +1872,14 @@ export default class ExcalidrawView extends TextFileView {
               this.setupAutosaveTimer();
               return [null, null];
             }
+
+            //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/318
             //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/299
-            setTimeout(() => {
-              this?.excalidrawWrapperRef?.current?.firstElementChild?.focus();
-            }, 50);
+            if(!this.app.isMobile) {
+              setTimeout(() => {
+                this?.excalidrawWrapperRef?.current?.firstElementChild?.focus();
+              }, 50);
+            }
 
             const containerId = textElement.containerId;
 

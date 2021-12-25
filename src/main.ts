@@ -956,6 +956,42 @@ export default class ExcalidrawPlugin extends Plugin {
     });
 
     this.addCommand({
+      id: "delete-file",
+      name: t("DELETE_FILE"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          const view = this.app.workspace.activeLeaf.view;
+          return view instanceof ExcalidrawView;
+        }
+        const view = this.app.workspace.activeLeaf.view;
+        if (view instanceof ExcalidrawView) {
+          this.ea.reset();
+          this.ea.setView(view);
+          const el = this.ea.getViewSelectedElement();
+          if (el.type !== "image") {
+            new Notice(
+              "Please select an image or embedded markdown document",
+              4000,
+            );
+            return true;
+          }
+          const file = this.ea.getViewFileForImageElement(el);
+          if (!file) {
+            new Notice(
+              "Please select an image or embedded markdown document",
+              4000,
+            );
+            return true;
+          }
+          this.app.vault.delete(file);
+          this.ea.deleteViewElements([el]);
+          return true;
+        }
+        return false;
+      },
+    });
+
+    this.addCommand({
       id: "insert-link",
       hotkeys: [{ modifiers: ["Ctrl" || "Meta", "Shift"], key: "k" }],
       name: t("INSERT_LINK"),
@@ -1132,7 +1168,7 @@ export default class ExcalidrawPlugin extends Plugin {
     const fname = getNewUniqueFilepath(
       this.app.vault,
       filename,
-      normalizePath(file.path.substr(0, file.path.lastIndexOf(file.name))),
+      normalizePath(file.path.substring(0, file.path.lastIndexOf(file.name))),
     );
     log(fname);
     const result = await this.app.vault.create(
@@ -1147,8 +1183,8 @@ export default class ExcalidrawPlugin extends Plugin {
           normalizePath(oldIMGpath),
         );
         if (imgFile && imgFile instanceof TFile) {
-          const newIMGpath = fname.substr(0, fname.lastIndexOf(".md")) + ext;
-          this.app.vault.rename(imgFile, newIMGpath);
+          const newIMGpath = fname.substring(0, fname.lastIndexOf(".md")) + ext;
+          this.app.fileManager.renameFile(imgFile, newIMGpath);
         }
       });
     }
@@ -1292,7 +1328,7 @@ export default class ExcalidrawPlugin extends Plugin {
           );
           if (imgFile && imgFile instanceof TFile) {
             const newIMGpath = getIMGPathFromExcalidrawFile(file.path, ext);
-            await self.app.vault.rename(imgFile, newIMGpath);
+            await self.app.fileManager.renameFile(imgFile, newIMGpath);
           }
         });
       };

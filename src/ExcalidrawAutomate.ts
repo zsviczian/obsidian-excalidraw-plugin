@@ -154,6 +154,7 @@ export interface ExcalidrawAutomate {
   deleteViewElements(el: ExcalidrawElement[]): boolean;
   getViewSelectedElement(): ExcalidrawElement; //get the selected element in the view, if more are selected, get the first
   getViewSelectedElements(): ExcalidrawElement[];
+  getViewFileForImageElement(el: ExcalidrawElement): TFile | null; //Returns the TFile file handle for the image element
   copyViewElementsToEAforEditing(elements: ExcalidrawElement[]): void; //copies elements from view to elementsDict for editing
   viewToggleFullScreen(forceViewMode?: boolean): void;
   connectObjectWithViewSelectedElement( //connect an object to the selected element in the view
@@ -1069,6 +1070,22 @@ export async function initExcalidrawAutomate(
       return current
         .getSceneElements()
         .filter((e: any) => selectedElementsKeys.includes(e.id));
+    },
+    getViewFileForImageElement(el: ExcalidrawElement): TFile | null {
+      if (!this.targetView || !this.targetView?._loaded) {
+        errorMessage("targetView not set", "getViewSelectedElements()");
+        return null;
+      }
+      if (!el || el.type !== "image") {
+        errorMessage(
+          "Must provide an image element as input",
+          "getViewFileForImageElement()",
+        );
+        return null;
+      }
+      return (this.targetView as ExcalidrawView)?.excalidrawData?.getFile(
+        el.fileId,
+      )?.file;
     },
     copyViewElementsToEAforEditing(elements: ExcalidrawElement[]): void {
       elements.forEach((el) => {

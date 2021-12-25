@@ -29,6 +29,7 @@ export default {
   EXPORT_SVG: "Save as SVG next to the current file",
   EXPORT_PNG: "Save as PNG next to the current file",
   TOGGLE_LOCK: "Toggle Text Element edit RAW/PREVIEW",
+  DELETE_FILE: "Delete selected Image or Markdown file from Obsidian Vault",
   INSERT_LINK: "Insert link to file",
   INSERT_IMAGE: "Insert image from vault",
   INSERT_MD: "Insert markdown file from vault",
@@ -49,7 +50,7 @@ export default {
   TEXT_ELEMENT_EMPTY:
     "No ImageElement is selected or TextElement is empty, or [[valid-link|alias]] or [alias](valid-link) is not found",
   FILENAME_INVALID_CHARS:
-    'File name cannot contain any of the following characters: * " \\  < > : | ?',
+    'File name cannot contain any of the following characters: * " \\ < > : | ?',
   FILE_DOES_NOT_EXIST:
     "File does not exist. Hold down ALT (or ALT+SHIFT) and CLICK link button to create a new file.",
   FORCE_SAVE:
