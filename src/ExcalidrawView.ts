@@ -32,6 +32,7 @@ import {
   FULLSCREEN_ICON_NAME,
   IMAGE_TYPES,
   CTRL_OR_CMD,
+  REG_LINKINDEX_INVALIDCHARS,
 } from "./constants";
 import ExcalidrawPlugin from "./main";
 import { repositionElementsToCursor } from "./ExcalidrawAutomate";
@@ -81,7 +82,7 @@ export interface ExportSettings {
   withTheme: boolean;
 }
 
-const REG_LINKINDEX_INVALIDCHARS = /[<>:"\\|?*]/g;
+
 
 export const addFiles = async (
   files: FileData[],

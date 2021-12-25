@@ -13,6 +13,7 @@ import {
   FRONTMATTER_KEY_CUSTOM_URL_PREFIX,
   FRONTMATTER_KEY_DEFAULT_MODE,
   fileid,
+  REG_BLOCK_REF_CLEAN,
 } from "./constants";
 import { measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
@@ -1050,7 +1051,7 @@ export const getTransclusion = async (
   if (!linkParts.ref) {
     //no blockreference
     return charCountLimit
-      ? { contents: contents.substr(0, charCountLimit).trim(), lineNum: 0 }
+      ? { contents: contents.substring(0, charCountLimit).trim(), lineNum: 0 }
       : { contents: contents.trim(), lineNum: 0 };
   }
   //const isParagraphRef = parts.value[2] ? true : false; //does the reference contain a ^ character?
@@ -1079,7 +1080,7 @@ export const getTransclusion = async (
     const endPos =
       para.children[para.children.length - 1]?.position.start.offset - 1; //alternative: filter((c:any)=>c.type=="blockid")[0]
     return {
-      contents: contents.substr(startPos, endPos - startPos).trim(),
+      contents: contents.substring(startPos, endPos).trim(),
       lineNum,
     };
   }
@@ -1093,24 +1094,26 @@ export const getTransclusion = async (
     if (startPos && !endPos) {
       endPos = headings[i].node.position.start.offset - 1;
       return {
-        contents: contents.substr(startPos, endPos - startPos).trim(),
+        contents: contents.substring(startPos, endPos).trim(),
         lineNum,
       };
     }
     const c = headings[i].node.children[0];
+    const dataHeading = headings[i].node.data?.hProperties?.dataHeading;
     const cc = c?.children;
     if (
       !startPos &&
-      (c?.value === linkParts.ref ||
-        c?.title === linkParts.ref ||
-        (cc ? cc[0]?.value === linkParts.ref : false))
+      (c?.value?.replaceAll(REG_BLOCK_REF_CLEAN ,"") === linkParts.ref ||
+        c?.title?.replaceAll(REG_BLOCK_REF_CLEAN ,"") === linkParts.ref ||
+        dataHeading?.replaceAll(REG_BLOCK_REF_CLEAN ,"") === linkParts.ref ||
+        (cc ? cc[0]?.value?.replaceAll(REG_BLOCK_REF_CLEAN ,"") === linkParts.ref : false))
     ) {
       startPos = headings[i].node.children[0]?.position.start.offset; //
       lineNum = headings[i].node.children[0]?.position.start.line; //
     }
   }
   if (startPos) {
-    return { contents: contents.substr(startPos).trim(), lineNum };
+    return { contents: contents.substring(startPos).trim(), lineNum };
   }
   return { contents: linkParts.original.trim(), lineNum: 0 };
 };

@@ -9,7 +9,7 @@ import {
 } from "obsidian";
 import { Random } from "roughjs/bin/math";
 import { Zoom } from "@zsviczian/excalidraw/types/types";
-import { CASCADIA_FONT, VIRGIL_FONT } from "./constants";
+import { CASCADIA_FONT, REG_BLOCK_REF_CLEAN, VIRGIL_FONT } from "./constants";
 import ExcalidrawPlugin from "./main";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
 import { ExportSettings } from "./ExcalidrawView";
@@ -442,7 +442,7 @@ export const getLinkParts = (fname: string): LinkParts => {
     original: fname,
     path: parts[1],
     isBlockRef: parts[2] === "^",
-    ref: parts[3],
+    ref: parts[3]?.replaceAll(REG_BLOCK_REF_CLEAN ,""),
     width: parts[4] ? parseInt(parts[4]) : undefined,
     height: parts[5] ? parseInt(parts[5]) : undefined,
   };
