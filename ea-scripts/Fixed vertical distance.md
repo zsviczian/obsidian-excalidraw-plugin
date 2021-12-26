@@ -3,7 +3,7 @@
 
 Download this file and save to your Obsidian Vault including the first line, or open it in "Raw" and copy the entire contents to Obsidian.
 
-The script arranges the selected elements vertically at fixed spacing.
+The script arranges the selected elements vertically with a fixed spacing.
 
 When we create an architecture diagram or mind map, we often need to arrange a large number of elements in a fixed spacing. `Fixed spacing` and `Fixed vertical Distance` scripts can save us a lot of time.
 
