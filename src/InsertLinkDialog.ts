@@ -1,3 +1,4 @@
+import { time } from "console";
 import { App, FuzzySuggestModal, TFile } from "obsidian";
 import { t } from "./lang/helpers";
 
@@ -20,21 +21,25 @@ export class InsertLinkDialog extends FuzzySuggestModal<TFile> {
     this.emptyStateText = t("NO_MATCH");
   }
 
-  getItems(): TFile[] {
-    return this.app.vault.getFiles();
+  getItems(): any[] {
+    //@ts-ignore
+    return this.app.metadataCache.getLinkSuggestions();
   }
 
-  getItemText(item: TFile): string {
-    return item.path;
+  getItemText(item: any): string {
+    return item.path + (item.alias ? `|${item.alias}` : "");
   }
 
-  onChooseItem(item: TFile): void {
-    const filepath = this.app.metadataCache.fileToLinktext(
-      item,
-      this.drawingPath,
-      true,
-    );
-    this.addText(`[[${filepath}]]`);
+  onChooseItem(item: any): void {
+    let filepath = item.path;
+    if (item.file) {
+      filepath = this.app.metadataCache.fileToLinktext(
+        item.file,
+        this.drawingPath,
+        true,
+      );
+    }
+    this.addText(`[[${filepath + (item.alias ? `|${item.alias}` : "")}]]`);
   }
 
   public start(drawingPath: string, addText: Function) {

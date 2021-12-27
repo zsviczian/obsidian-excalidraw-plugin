@@ -10,6 +10,9 @@ export const nanoid = customAlphabet(
   "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
   8,
 );
+export const KEYCODE = {
+  ESC: 27,
+};
 export const fileid = customAlphabet("1234567890abcdef", 40);
 export const REG_LINKINDEX_INVALIDCHARS = /[<>:"\\|?*]/g;
 export const REG_BLOCK_REF_CLEAN =

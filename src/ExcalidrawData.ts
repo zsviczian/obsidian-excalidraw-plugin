@@ -127,6 +127,9 @@ const estimateMaxLineLen = (text: string, originalText: string): number => {
   } //text will contain extra new line characters if wrapped
   let maxLineLen = 0; //will be non-null if text is container bound and multi line
   const splitText = text.split("\n");
+  if (splitText.length === 1) {
+    return null;
+  }
   for (const line of splitText) {
     if (line.length > maxLineLen) {
       maxLineLen = line.length;
@@ -859,15 +862,18 @@ export class ExcalidrawData {
     elementID: string,
     rawText: string,
     rawOriginalText: string,
-  ): Promise<string> {
-    const maxLineLen = estimateMaxLineLen(rawText, rawOriginalText);
-    const parseResult = await this.parse(rawText);
+  ): Promise<[string, string]> {
+    let wrapAt: number = estimateMaxLineLen(rawText, rawOriginalText);
+    if (this.textElements.has(elementID)) {
+      wrapAt = this.textElements.get(elementID).wrapAt;
+    }
+    const parseResult = await this.parse(rawOriginalText);
     this.textElements.set(elementID, {
-      raw: rawText,
+      raw: rawOriginalText,
       parsed: parseResult,
-      wrapAt: maxLineLen,
+      wrapAt,
     });
-    return parseResult;
+    return [wrap(parseResult, wrapAt), parseResult];
   }
 
   public deleteTextElement(id: string) {

@@ -1058,8 +1058,8 @@ export async function initExcalidrawAutomate(
         errorMessage("targetView not set", "getViewSelectedElements()");
         return [];
       }
-      const current = this.targetView?.excalidrawRef?.current;
-      const selectedElements = current?.getAppState()?.selectedElementIds;
+      const excalidrawAPI = this.targetView?.excalidrawAPI;
+      const selectedElements = excalidrawAPI.getAppState()?.selectedElementIds;
       if (!selectedElements) {
         return [];
       }
@@ -1067,9 +1067,31 @@ export async function initExcalidrawAutomate(
       if (!selectedElementsKeys) {
         return [];
       }
-      return current
+      let elements:ExcalidrawElement[] = excalidrawAPI
         .getSceneElements()
         .filter((e: any) => selectedElementsKeys.includes(e.id));
+ 
+      const containerBoundTextElmenetsReferencedInElements = elements
+        .filter(
+          (el) =>
+            el.boundElements &&
+            el.boundElements.filter((be) => be.type === "text").length > 0,
+        )
+        .map(
+          (el) =>
+            el.boundElements
+              .filter((be) => be.type === "text")
+              .map((be) => be.id)[0],
+        );
+
+      const elementIDs = elements
+        .map((el) => el.id)
+        .concat(containerBoundTextElmenetsReferencedInElements);
+
+      return this.getViewElements().filter((el: ExcalidrawElement) =>
+        elementIDs.contains(el.id),
+      );
+      
     },
     getViewFileForImageElement(el: ExcalidrawElement): TFile | null {
       if (!this.targetView || !this.targetView?._loaded) {

@@ -33,6 +33,7 @@ import {
   IMAGE_TYPES,
   CTRL_OR_CMD,
   REG_LINKINDEX_INVALIDCHARS,
+  KEYCODE,
 } from "./constants";
 import ExcalidrawPlugin from "./main";
 import { repositionElementsToCursor } from "./ExcalidrawAutomate";
@@ -331,6 +332,71 @@ export default class ExcalidrawView extends TextFileView {
     return this.data;
   }
 
+  addFullscreenchangeEvent() {
+    //excalidrawWrapperRef.current
+    this.contentEl.onfullscreenchange = () => {
+      if (this.plugin.settings.zoomToFitOnResize) {
+        this.zoomToFit();
+      }
+      if (!this.isFullscreen()) {
+        this.clearFullscreenObserver();
+        this.contentEl.removeAttribute("style");
+      }
+    };
+  }
+
+  fullscreenModalObserver: MutationObserver = null;
+  gotoFullscreen() {
+    if (!this.excalidrawWrapperRef) {
+      return;
+    }
+    this.contentEl.requestFullscreen(); //{navigationUI: "hide"});
+    this.excalidrawWrapperRef.current.focus();
+    this.contentEl.setAttribute("style", "padding:0px;margin:0px;");
+
+    this.fullscreenModalObserver = new MutationObserver((m) => {
+      if (m.length !== 1) {
+        return;
+      }
+      if (!m[0].addedNodes || m[0].addedNodes.length !== 1) {
+        return;
+      }
+      const node: Node = m[0].addedNodes[0];
+      if (node.nodeType !== Node.ELEMENT_NODE) {
+        return;
+      }
+      const element = node as HTMLElement;
+      if (!element.classList.contains("modal-container")) {
+        return;
+      }
+      this.contentEl.appendChild(element);
+      element.querySelector("input").focus();
+    });
+
+    this.fullscreenModalObserver.observe(document.body, {
+      childList: true,
+      subtree: false,
+    });
+  }
+
+  clearFullscreenObserver() {
+    if (this.fullscreenModalObserver) {
+      this.fullscreenModalObserver.disconnect();
+      this.fullscreenModalObserver = null;
+    }
+  }
+
+  isFullscreen(): boolean {
+    return (
+      document.fullscreenEnabled &&
+      document.fullscreenElement === this.contentEl // excalidrawWrapperRef?.current
+    ); //this.contentEl;
+  }
+
+  exitFullscreen() {
+    document.exitFullscreen();
+  }
+
   async handleLinkClick(view: ExcalidrawView, ev: MouseEvent) {
     const selectedText = this.getSelectedTextElement();
     let file = null;
@@ -369,9 +435,8 @@ export default class ExcalidrawView extends TextFileView {
         search[0].view.setQuery(`tag:${tags.value[1]}`);
         this.app.workspace.revealLeaf(search[0]);
 
-        if (document.fullscreenElement === this.contentEl) {
-          document.exitFullscreen();
-          this.zoomToFit();
+        if (this.isFullscreen()) {
+          this.exitFullscreen();
         }
         return;
       }
@@ -464,9 +529,8 @@ export default class ExcalidrawView extends TextFileView {
     }
 
     try {
-      if (ev.shiftKey && document.fullscreenElement === this.contentEl) {
-        document.exitFullscreen();
-        this.zoomToFit();
+      if (ev.shiftKey && this.isFullscreen()) {
+        this.exitFullscreen();
       }
       const leaf = ev.shiftKey
         ? getNewOrAdjacentLeaf(this.plugin, view.leaf)
@@ -527,16 +591,8 @@ export default class ExcalidrawView extends TextFileView {
       this.addAction(
         FULLSCREEN_ICON_NAME,
         "Press ESC to exit fullscreen mode",
-        () => {
-          this.contentEl.requestFullscreen(); //{navigationUI: "hide"});
-          if (this.excalidrawWrapperRef) {
-            this.excalidrawWrapperRef.current.focus();
-          }
-        },
+        () => this.gotoFullscreen(),
       );
-      this.contentEl.onfullscreenchange = () => {
-        this.zoomToFit();
-      };
     }
 
     //this is to solve sliding panes bug
@@ -616,6 +672,10 @@ export default class ExcalidrawView extends TextFileView {
     if (this.autosaveTimer) {
       clearInterval(this.autosaveTimer);
       this.autosaveTimer = null;
+    }
+    if (this.fullscreenModalObserver) {
+      this.fullscreenModalObserver.disconnect();
+      this.fullscreenModalObserver = null;
     }
   }
 
@@ -1175,17 +1235,18 @@ export default class ExcalidrawView extends TextFileView {
 
         const textElements = newElements.filter((el) => el.type == "text");
         for (let i = 0; i < textElements.length; i++) {
-          const parseResult = await this.excalidrawData.addTextElement(
-            textElements[i].id,
-            //@ts-ignore
-            textElements[i].text,
-            //@ts-ignore
-            textElements[i].originalText, //TODO: implement originalText support in ExcalidrawAutomate
-          );
+          const [parseResultWrapped, parseResult] =
+            await this.excalidrawData.addTextElement(
+              textElements[i].id,
+              //@ts-ignore
+              textElements[i].text,
+              //@ts-ignore
+              textElements[i].rawText, //TODO: implement originalText support in ExcalidrawAutomate
+            );
           if (this.textMode == TextMode.parsed) {
             this.excalidrawData.updateTextElement(
               textElements[i],
-              parseResult,
+              parseResultWrapped,
               parseResult,
             );
           }
@@ -1480,13 +1541,8 @@ export default class ExcalidrawView extends TextFileView {
             if (e.target === excalidrawDiv.ref.current) {
               return;
             } //event should originate from the canvas
-            if (
-              document.fullscreenEnabled &&
-              document.fullscreenElement == this.contentEl &&
-              e.keyCode === 27
-            ) {
-              document.exitFullscreen();
-              this.zoomToFit();
+            if (this.isFullscreen() && e.keyCode === KEYCODE.ESC) {
+              this.exitFullscreen();
             }
 
             this.ctrlKeyDown = e[CTRL_OR_CMD]; //.ctrlKey||e.metaKey;
@@ -1550,7 +1606,7 @@ export default class ExcalidrawView extends TextFileView {
                 sourcePath: this.plugin.hover.sourcePath,
               });
               hoverPoint = currentPosition;
-              if (document.fullscreenElement === this.contentEl) {
+              if (this.isFullscreen()) {
                 const self = this;
                 setTimeout(() => {
                   const popover = document.body.querySelector("div.popover");
@@ -1875,7 +1931,7 @@ export default class ExcalidrawView extends TextFileView {
 
             //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/318
             //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/299
-            if(!this.app.isMobile) {
+            if (!this.app.isMobile) {
               setTimeout(() => {
                 this?.excalidrawWrapperRef?.current?.firstElementChild?.focus();
               }, 50);
@@ -1941,6 +1997,7 @@ export default class ExcalidrawView extends TextFileView {
     });
     ReactDOM.render(reactElement, this.contentEl, () => {
       this.excalidrawWrapperRef.current.focus();
+      this.addFullscreenchangeEvent();
     });
   }
 
@@ -1971,16 +2028,16 @@ export default class ExcalidrawView extends TextFileView {
     }
     const maxZoom = this.plugin.settings.zoomToFitMaxLevel;
     const current = this.excalidrawAPI;
-    const fullscreen = document.fullscreenElement == this.contentEl;
     const elements = current.getSceneElements();
     if (delay) {
       //time for the DOM to render, I am sure there is a more elegant solution
       setTimeout(
-        () => current.zoomToFit(elements, maxZoom, fullscreen ? 0 : 0.05),
+        () =>
+          current.zoomToFit(elements, maxZoom, this.isFullscreen() ? 0 : 0.05),
         100,
       );
     } else {
-      current.zoomToFit(elements, maxZoom, fullscreen ? 0 : 0.05);
+      current.zoomToFit(elements, maxZoom, this.isFullscreen() ? 0 : 0.05);
     }
   }
 }

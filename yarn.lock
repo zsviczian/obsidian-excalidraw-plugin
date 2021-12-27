@@ -920,6 +920,36 @@
     "@babel/helper-validator-identifier" "^7.14.9"
     "to-fast-properties" "^2.0.0"
 
+"@codemirror/rangeset@^0.19.5":
+  "integrity" "sha512-L3b+RIwIRKOJ3pJLOtpkxCUjGnxZKFyPb0CjYWKnVLuzEIaEExWWK7sp6rsejxOy8RjYzfCHlFhYB4UdQN7brw=="
+  "resolved" "https://registry.npmjs.org/@codemirror/rangeset/-/rangeset-0.19.5.tgz"
+  "version" "0.19.5"
+  dependencies:
+    "@codemirror/state" "^0.19.0"
+
+"@codemirror/state@^0.19.0", "@codemirror/state@^0.19.3", "@codemirror/state@^0.19.6":
+  "integrity" "sha512-sqIQZE9VqwQj7D4c2oz9mfLhlT1ElAzGB5lO1lE33BPyrdNy1cJyCIOecT4cn4VeJOFrnjOeu+IftZ3zqdFETw=="
+  "resolved" "https://registry.npmjs.org/@codemirror/state/-/state-0.19.6.tgz"
+  "version" "0.19.6"
+  dependencies:
+    "@codemirror/text" "^0.19.0"
+
+"@codemirror/text@^0.19.0":
+  "integrity" "sha512-Syu5Xc7tZzeUAM/y4fETkT0zgGr48rDG+w4U38bPwSIUr+L9S/7w2wDE1WGNzjaZPz12F6gb1gxWiSTg9ocLow=="
+  "resolved" "https://registry.npmjs.org/@codemirror/text/-/text-0.19.5.tgz"
+  "version" "0.19.5"
+
+"@codemirror/view@^0.19.31":
+  "integrity" "sha512-SLuLx9p0O1ZHXLehvl5MwSvUrQRcsNGemzTgJ0zRajmc3BBsNigI1PXxdo7tvBhO5DcAzRRBXoke9DZFUR6Qqg=="
+  "resolved" "https://registry.npmjs.org/@codemirror/view/-/view-0.19.37.tgz"
+  "version" "0.19.37"
+  dependencies:
+    "@codemirror/rangeset" "^0.19.5"
+    "@codemirror/state" "^0.19.3"
+    "@codemirror/text" "^0.19.0"
+    "style-mod" "^4.0.0"
+    "w3c-keyname" "^2.2.4"
+
 "@eslint/eslintrc@^1.0.5":
   "integrity" "sha512-BLxsnmK3KyPunz5wmCCpqy0YelEoxxGmH73Is+Z74oOTMtExcjkr3dDR6quwrjh1YspA8DH9gnX1o069KiS9AQ=="
   "resolved" "https://registry.npmjs.org/@eslint/eslintrc/-/eslintrc-1.0.5.tgz"
@@ -7441,11 +7471,13 @@
   dependencies:
     "isobject" "^3.0.1"
 
-"obsidian@^0.12.16":
-  "integrity" "sha512-YwwhYrmlv71A/ntTiGOyGaqr9ONhKPE1OKN1tcHovLJC0N/BRZ7XlGpzaN1T3BnAE5H8DmYLsAI3h67u6eJPGQ=="
-  "resolved" "https://registry.npmjs.org/obsidian/-/obsidian-0.12.16.tgz"
-  "version" "0.12.16"
+"obsidian@^0.13.11":
+  "integrity" "sha512-KxOvAh4CG5vzcukmHvyuK9hUIr6ZFlM9FQfGZEwrrEV8VG2/W2Tk5cWrg0VM7EkGE3QBmjX6owjIDIO8QDXVUQ=="
+  "resolved" "https://registry.npmjs.org/obsidian/-/obsidian-0.13.11.tgz"
+  "version" "0.13.11"
   dependencies:
+    "@codemirror/state" "^0.19.6"
+    "@codemirror/view" "^0.19.31"
     "@types/codemirror" "0.0.108"
     "moment" "2.29.1"
 
@@ -9736,6 +9768,11 @@
     "loader-utils" "^1.0.2"
     "schema-utils" "^0.3.0"
 
+"style-mod@^4.0.0":
+  "integrity" "sha512-OPhtyEjyyN9x3nhPsu76f52yUGXiZcgvsrFVtvTkyGRQJ0XK+GPc6ov1z+lRpbeabka+MYEQxOYRnt5nF30aMw=="
+  "resolved" "https://registry.npmjs.org/style-mod/-/style-mod-4.0.0.tgz"
+  "version" "4.0.0"
+
 "supports-color@^2.0.0":
   "integrity" "sha1-U10EXOa2Nj+kARcIRimZXp3zJMc="
   "resolved" "https://registry.npmjs.org/supports-color/-/supports-color-2.0.0.tgz"
@@ -10361,6 +10398,11 @@
   "integrity" "sha512-2ham8XPWTONajOR0ohOKOHXkm3+gaBmGut3SRuu75xLd/RRaY6vqgh8NBYYk7+RW3u5AtzPQZG8F10LHkl0lAQ=="
   "resolved" "https://registry.npmjs.org/vm-browserify/-/vm-browserify-1.1.2.tgz"
   "version" "1.1.2"
+
+"w3c-keyname@^2.2.4":
+  "integrity" "sha512-tOhfEwEzFLJzf6d1ZPkYfGj+FWhIpBux9ppoP3rlclw3Z0BZv3N7b7030Z1kYth+6rDuAsXUFr+d0VE6Ed1ikw=="
+  "resolved" "https://registry.npmjs.org/w3c-keyname/-/w3c-keyname-2.2.4.tgz"
+  "version" "2.2.4"
 
 "walker@~1.0.5":
   "integrity" "sha1-L3+bj9ENZ3JisYqITijRlhjgKPs="
