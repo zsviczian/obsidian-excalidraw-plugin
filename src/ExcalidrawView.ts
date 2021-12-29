@@ -184,7 +184,7 @@ export default class ExcalidrawView extends TextFileView {
     }
   }
 
-  public saveSVG(scene?: any) {
+  public async saveSVG(scene?: any) {
     if (!scene) {
       if (!this.getScene) {
         return false;
@@ -193,26 +193,24 @@ export default class ExcalidrawView extends TextFileView {
     }
     const filepath = getIMGFilename(this.file.path, "svg"); //.substring(0,this.file.path.lastIndexOf(this.compatibilityMode ? '.excalidraw':'.md')) + '.svg';
     const file = this.app.vault.getAbstractFileByPath(normalizePath(filepath));
-    (async () => {
-      const exportSettings: ExportSettings = {
-        withBackground: this.plugin.settings.exportWithBackground,
-        withTheme: this.plugin.settings.exportWithTheme,
-      };
-      const svg = await getSVG(scene, exportSettings);
-      if (!svg) {
-        return;
-      }
-      const serializer = new XMLSerializer();
-      const svgString = serializer.serializeToString(embedFontsInSVG(svg));
-      if (file && file instanceof TFile) {
-        await this.app.vault.modify(file, svgString);
-      } else {
-        await this.app.vault.create(filepath, svgString);
-      }
-    })();
+    const exportSettings: ExportSettings = {
+      withBackground: this.plugin.settings.exportWithBackground,
+      withTheme: this.plugin.settings.exportWithTheme,
+    };
+    const svg = await getSVG(scene, exportSettings);
+    if (!svg) {
+      return;
+    }
+    const serializer = new XMLSerializer();
+    const svgString = serializer.serializeToString(embedFontsInSVG(svg));
+    if (file && file instanceof TFile) {
+      await this.app.vault.modify(file, svgString);
+    } else {
+      await this.app.vault.create(filepath, svgString);
+    }
   }
 
-  public savePNG(scene?: any) {
+  public async savePNG(scene?: any) {
     if (!scene) {
       if (!this.getScene) {
         return false;
@@ -223,25 +221,23 @@ export default class ExcalidrawView extends TextFileView {
     const filepath = getIMGFilename(this.file.path, "png"); //this.file.path.substring(0,this.file.path.lastIndexOf(this.compatibilityMode ? '.excalidraw':'.md')) + '.png';
     const file = this.app.vault.getAbstractFileByPath(normalizePath(filepath));
 
-    (async () => {
-      const exportSettings: ExportSettings = {
-        withBackground: this.plugin.settings.exportWithBackground,
-        withTheme: this.plugin.settings.exportWithTheme,
-      };
-      const png = await getPNG(
-        scene,
-        exportSettings,
-        this.plugin.settings.pngExportScale,
-      );
-      if (!png) {
-        return;
-      }
-      if (file && file instanceof TFile) {
-        await this.app.vault.modifyBinary(file, await png.arrayBuffer());
-      } else {
-        await this.app.vault.createBinary(filepath, await png.arrayBuffer());
-      }
-    })();
+    const exportSettings: ExportSettings = {
+      withBackground: this.plugin.settings.exportWithBackground,
+      withTheme: this.plugin.settings.exportWithTheme,
+    };
+    const png = await getPNG(
+      scene,
+      exportSettings,
+      this.plugin.settings.pngExportScale,
+    );
+    if (!png) {
+      return;
+    }
+    if (file && file instanceof TFile) {
+      await this.app.vault.modifyBinary(file, await png.arrayBuffer());
+    } else {
+      await this.app.vault.createBinary(filepath, await png.arrayBuffer());
+    }
   }
 
   async save(preventReload: boolean = true) {
@@ -265,6 +261,18 @@ export default class ExcalidrawView extends TextFileView {
       await this.loadDrawing(false);
     }
     await super.save();
+
+    if (!this.autosaving) {
+      if (this.plugin.settings.autoexportSVG) {
+        await this.saveSVG();
+      }
+      if (this.plugin.settings.autoexportPNG) {
+        await this.savePNG();
+      }
+      if (!this.compatibilityMode && this.plugin.settings.autoexportExcalidraw) {
+        this.saveExcalidraw();
+      }
+    }
   }
 
   // get the new file content
@@ -288,18 +296,6 @@ export default class ExcalidrawView extends TextFileView {
         return this.data;
       }
 
-      if (!this.autosaving) {
-        if (this.plugin.settings.autoexportSVG) {
-          this.saveSVG(scene);
-        }
-        if (this.plugin.settings.autoexportPNG) {
-          this.savePNG(scene);
-        }
-        if (this.plugin.settings.autoexportExcalidraw) {
-          this.saveExcalidraw(scene);
-        }
-      }
-
       let header = this.data
         .substring(0, trimLocation)
         .replace(
@@ -319,14 +315,6 @@ export default class ExcalidrawView extends TextFileView {
       return header + this.excalidrawData.generateMD();
     }
     if (this.compatibilityMode) {
-      if (!this.autosaving) {
-        if (this.plugin.settings.autoexportSVG) {
-          this.saveSVG(scene);
-        }
-        if (this.plugin.settings.autoexportPNG) {
-          this.savePNG(scene);
-        }
-      }
       return JSON.stringify(scene, null, "\t");
     }
     return this.data;
@@ -1131,6 +1119,10 @@ export default class ExcalidrawView extends TextFileView {
           return { id: selectedElement[0].id, text: selectedElement[0].text };
         } //a text element was selected. Return text
 
+        if (selectedElement[0].type === "image") {
+          return { id: null, text: null };
+        }
+
         const boundTextElements = selectedElement[0].boundElements?.filter(
           (be: any) => be.type === "text",
         );
@@ -1191,6 +1183,11 @@ export default class ExcalidrawView extends TextFileView {
             fileId: selectedElement[0].fileId,
           };
         } //an image element was selected. Return fileId
+
+        if (selectedElement[0].type === "text") {
+          return { id: null, fileId: null };
+        }
+
         if (selectedElement[0].groupIds.length === 0) {
           return { id: null, fileId: null };
         } //is the selected element part of a group?
@@ -1202,7 +1199,7 @@ export default class ExcalidrawView extends TextFileView {
         if (imageElement.length === 0) {
           return { id: null, fileId: null };
         } //the group had no image element member
-        return { id: selectedElement[0].id, fileId: selectedElement[0].fileId }; //return image element fileId
+        return { id: imageElement[0].id, fileId: imageElement[0].fileId }; //return image element fileId
       };
 
       this.addText = (text: string, fontFamily?: 1 | 2 | 3) => {

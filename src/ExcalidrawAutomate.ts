@@ -431,7 +431,7 @@ export async function initExcalidrawAutomate(
         files: template?.files ?? {},
       };
 
-      return plugin.createDrawing(
+      return plugin.createAndOpenDrawing(
         params?.filename
           ? `${params.filename}.excalidraw.md`
           : this.plugin.getNextDefaultFilename(),
@@ -1503,7 +1503,7 @@ export async function createSVG(
   elements = elements.concat(automateElements);
   const svg = await getSVG(
     {
-      //createDrawing
+      //createAndOpenDrawing
       type: "excalidraw",
       version: 2,
       source: "https://excalidraw.com",

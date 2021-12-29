@@ -685,7 +685,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.insertMDDialog = new InsertMDDialog(this);
 
     this.addRibbonIcon(ICON_NAME, t("CREATE_NEW"), async (e) => {
-      this.createDrawing(this.getNextDefaultFilename(), e[CTRL_OR_CMD]); //.ctrlKey||e.metaKey);
+      this.createAndOpenDrawing(this.getNextDefaultFilename(), e[CTRL_OR_CMD]); //.ctrlKey||e.metaKey);
     });
 
     const fileMenuHandlerCreateNew = (menu: Menu, file: TFile) => {
@@ -700,7 +700,7 @@ export default class ExcalidrawPlugin extends Plugin {
                 file.path.substr(0, file.path.lastIndexOf(file.name)),
               );
             }
-            this.createDrawing(
+            this.createAndOpenDrawing(
               this.getNextDefaultFilename(),
               false,
               folderpath,
@@ -832,7 +832,7 @@ export default class ExcalidrawPlugin extends Plugin {
       id: "excalidraw-autocreate",
       name: t("NEW_IN_NEW_PANE"),
       callback: () => {
-        this.createDrawing(this.getNextDefaultFilename(), true);
+        this.createAndOpenDrawing(this.getNextDefaultFilename(), true);
       },
     });
 
@@ -840,7 +840,7 @@ export default class ExcalidrawPlugin extends Plugin {
       id: "excalidraw-autocreate-on-current",
       name: t("NEW_IN_ACTIVE_PANE"),
       callback: () => {
-        this.createDrawing(this.getNextDefaultFilename(), false);
+        this.createAndOpenDrawing(this.getNextDefaultFilename(), false);
       },
     });
 
@@ -859,12 +859,12 @@ export default class ExcalidrawPlugin extends Plugin {
         activeView.file.path,
         filename,
       );
-      this.embedDrawing(fFp.filepath);
-      this.createDrawing(
+      const file = await this.createDrawing(
         filename,
-        inNewPane,
         fFp.folder === "" ? null : fFp.folder,
       );
+      await this.embedDrawing(fFp.filepath);
+      this.openDrawing(file,inNewPane);
     };
 
     this.addCommand({
@@ -1502,26 +1502,18 @@ export default class ExcalidrawPlugin extends Plugin {
     //this.saveSettings();
   }
 
-  public embedDrawing(data: string) {
+  public async embedDrawing(data: string) {
     const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
     if (activeView) {
       const editor = activeView.editor;
-      switch (this.settings.embedType) {
-        case "excalidraw":
-          editor.replaceSelection(`![[${data}]]`);
-          break;
-        case "PNG":
-          editor.replaceSelection(
-            `![[${data.substr(0, data.lastIndexOf("."))}.png]] ([[${data}|*]])`,
-          );
-          break;
-        case "SVG":
-          editor.replaceSelection(
-            `![[${data.substr(0, data.lastIndexOf("."))}.svg]] ([[${data}|*]])`,
-          );
-          break;
+      if(this.settings.embedType === "excalidraw") {
+        editor.replaceSelection(`![[${data}]]`);
+        editor.focus();
+        return;
       }
-
+      const filename = data.substring(0, data.lastIndexOf("."))+"."+this.settings.embedType.toLowerCase();
+      await this.app.vault.create(filename,"");
+      editor.replaceSelection(`![[${filename}]]\n%%[[${data}|🖋 Edit in Excalidraw]]%%`);
       editor.focus();
     }
   }
@@ -1656,27 +1648,26 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public async createDrawing(
     filename: string,
-    onNewPane: boolean,
     foldername?: string,
     initData?: string,
-  ): Promise<string> {
+  ): Promise<TFile> {
     const folderpath = normalizePath(
       foldername ? foldername : this.settings.folder,
     );
     await checkAndCreateFolder(this.app.vault, folderpath); //create folder if it does not exist
-
     const fname = getNewUniqueFilepath(this.app.vault, filename, folderpath);
+    return await this.app.vault.create(fname, initData??await this.getBlankDrawing());
+  }
 
-    if (initData) {
-      this.openDrawing(await this.app.vault.create(fname, initData), onNewPane);
-      return fname;
-    }
-
-    this.openDrawing(
-      await this.app.vault.create(fname, await this.getBlankDrawing()),
-      onNewPane,
-    );
-    return fname;
+  public async createAndOpenDrawing(
+    filename: string,
+    onNewPane: boolean,
+    foldername?: string,
+    initData?: string,
+  ): Promise<string> {
+    const file = await this.createDrawing(filename,foldername,initData);
+    this.openDrawing(file, onNewPane);
+    return file.path;
   }
 
   public async setMarkdownView(leaf: WorkspaceLeaf) {
