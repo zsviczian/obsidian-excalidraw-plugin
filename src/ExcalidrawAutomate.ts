@@ -683,20 +683,21 @@ export async function initExcalidrawAutomate(
             );
         }
       }
-      const ea = window.ExcalidrawAutomate;
+      //const ea = window.ExcalidrawAutomate;
+      const isContainerBound = formatting?.box && formatting.box !== "blob";
       this.elementsDict[id] = {
         text,
-        fontSize: ea.style.fontSize,
-        fontFamily: ea.style.fontFamily,
+        fontSize: this.style.fontSize,
+        fontFamily: this.style.fontFamily,
         textAlign: formatting?.textAlign
           ? formatting.textAlign
-          : ea.style.textAlign,
-        verticalAlign: ea.style.verticalAlign,
+          : this.style.textAlign,
+        verticalAlign: this.style.verticalAlign,
         baseline,
         ...boxedElement(id, "text", topX, topY, width, height),
-        containerId: boxId,
-        originalText,
-        rawText: originalText,
+        containerId: isContainerBound ? boxId : null,
+        originalText: isContainerBound ? originalText : text,
+        rawText: isContainerBound ? originalText : text,
       };
       if (boxId && formatting?.box === "blob") {
         this.addToGroup([id, boxId]);
