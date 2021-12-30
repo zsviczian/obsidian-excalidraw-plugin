@@ -52,5 +52,5 @@ for (const line of lines) {
   }
 }
 
-ea.copyViewElementsToEAforEditing(elements);
+ea.copyViewElementsToEAforEditing(lines);
 ea.addElementsToView();
