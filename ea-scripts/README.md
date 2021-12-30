@@ -1,3 +1,13 @@
+# Excalidraw Script Engine scripts library
+See the [Excalidraw Script Engine](https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html) documentation for more details.
+
+## How to install
+Open the script you are interested in and save it to your Obsidian Vault including the first line `/*`, or open it in "Raw" and copy the entire contents to Obsidian.
+
+![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-download-raw.jpg)
+
+
+## List of available scripts
 |Title|Description|Icon|Contributor|
 |----|----|----|----|
 |[Box Selected Elements](Box%20Selected%20Elements.md)|This script will add an encapsulating box around the currently selected elements in Excalidraw.|![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-box-elements.jpg)|[@zsviczian](https://github.com/zsviczian)|
