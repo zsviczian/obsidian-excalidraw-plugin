@@ -1723,7 +1723,7 @@ export default class ExcalidrawPlugin extends Plugin {
     if (f.extension == "excalidraw") {
       return true;
     }
-    const fileCache = this.app.metadataCache.getFileCache(f);
+    const fileCache = f ? this.app.metadataCache.getFileCache(f) : null;
     return !!fileCache?.frontmatter && !!fileCache.frontmatter[FRONTMATTER_KEY];
   }
 }
