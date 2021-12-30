@@ -269,7 +269,10 @@ export default class ExcalidrawView extends TextFileView {
       if (this.plugin.settings.autoexportPNG) {
         await this.savePNG();
       }
-      if (!this.compatibilityMode && this.plugin.settings.autoexportExcalidraw) {
+      if (
+        !this.compatibilityMode &&
+        this.plugin.settings.autoexportExcalidraw
+      ) {
         this.saveExcalidraw();
       }
     }

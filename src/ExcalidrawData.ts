@@ -174,6 +174,7 @@ export class ExcalidrawData {
       return;
     }
     for (let i = 0; i < this.scene.elements?.length; i++) {
+      //convert .boundElementIds to boundElements
       if (this.scene.elements[i].boundElementIds) {
         if (!this.scene.elements[i].boundElements) {
           this.scene.elements[i].boundElements = [];
@@ -186,14 +187,16 @@ export class ExcalidrawData {
             id,
           })),
         );
+        delete this.scene.elements[i].boundElementIds;
       }
+
+      //add containerId to TextElements if missing
       if (
         this.scene.elements[i].type === "text" &&
         !this.scene.elements[i].containerId
       ) {
         this.scene.elements[i].containerId = null;
       }
-      delete this.scene.elements[i].boundElementIds;
     }
   }
 

@@ -1,4 +1,3 @@
-import { time } from "console";
 import { App, FuzzySuggestModal, TFile } from "obsidian";
 import { t } from "./lang/helpers";
 

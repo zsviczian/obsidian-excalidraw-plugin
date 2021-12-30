@@ -426,12 +426,26 @@ export default class ExcalidrawPlugin extends Plugin {
       el: HTMLElement,
       ctx: MarkdownPostProcessorContext,
     ) => {
+
+      //check to see if we are rendering in editing mode of live preview
+      //if yes, then there should be no .internal-embed containers
       const embeddedItems = el.querySelectorAll(".internal-embed");
       if (embeddedItems.length === 0) {
         tmpObsidianWYSIWYG(el, ctx);
         return;
       }
 
+      //If the file being processed is an excalidraw file,
+      //then I want to hide all embedded items as these will be 
+      //transcluded text element or some other transcluded content inside the Excalidraw file
+      //in reading mode these elements should be hidden
+      if (ctx.frontmatter?.hasOwnProperty("excalidraw-plugin")) {
+        el.style.display = "none";
+        return;
+      }
+
+      //if not, then we are processing a non-excalidraw file in reading mode
+      //in that cases embedded files will be displayed in an .internal-embed container
       const attr: imgElementAttributes = {
         fname: "",
         fheight: "",
@@ -441,25 +455,26 @@ export default class ExcalidrawPlugin extends Plugin {
       let alt: string;
       let parts;
       let file: TFile;
-      for (const drawing of embeddedItems) {
-        attr.fname = drawing.getAttribute("src");
+
+      //Iterating through all the containers to check which one is an excalidraw drawing
+      //This is a for loop instead of embeddedItems.forEach() because createImageDiv at the end
+      //is awaited, otherwise excalidraw images would not display in the Kanban plugin
+      for (const maybeDrawing of embeddedItems) {
+        //check to see if the file in the src attribute exists
+        attr.fname = maybeDrawing.getAttribute("src");
         file = this.app.metadataCache.getFirstLinkpathDest(
           attr.fname?.split("#")[0],
           ctx.sourcePath,
         );
-        if (!file && ctx.frontmatter?.hasOwnProperty("excalidraw-plugin")) {
-          attr.fname = ctx.sourcePath;
-          file = this.app.metadataCache.getFirstLinkpathDest(
-            attr.fname,
-            ctx.sourcePath,
-          );
-        }
+
+        //if the embeddedFile exits and it is an Excalidraw file
+        //then lets replace the .internal-embed with the generated PNG or SVG image
         if (file && file instanceof TFile && this.isExcalidrawFile(file)) {
-          attr.fwidth = drawing.getAttribute("width")
-            ? drawing.getAttribute("width")
+          attr.fwidth = maybeDrawing.getAttribute("width")
+            ? maybeDrawing.getAttribute("width")
             : this.settings.width;
-          attr.fheight = drawing.getAttribute("height");
-          alt = drawing.getAttribute("alt");
+          attr.fheight = maybeDrawing.getAttribute("height");
+          alt = maybeDrawing.getAttribute("alt");
           if (alt == attr.fname) {
             alt = "";
           } //when the filename starts with numbers followed by a space Obsidian recognizes the filename as alt-text
@@ -468,7 +483,7 @@ export default class ExcalidrawPlugin extends Plugin {
             //for some reason Obsidian renders ![]() in a DIV and ![[]] in a SPAN
             //also the alt-text of the DIV does not include the alt-text of the image
             //thus need to add an additional "|" character when its a SPAN
-            if (drawing.tagName.toLowerCase() == "span") {
+            if (maybeDrawing.tagName.toLowerCase() == "span") {
               alt = `|${alt}`;
             }
             //1:width, 2:height, 3:style  1      2      3
@@ -483,7 +498,7 @@ export default class ExcalidrawPlugin extends Plugin {
           attr.fname = file?.path;
           attr.file = file;
           const div = await createImageDiv(attr);
-          drawing.parentElement.replaceChild(div, drawing);
+          maybeDrawing.parentElement.replaceChild(div, maybeDrawing);
         }
       }
     };
@@ -864,7 +879,7 @@ export default class ExcalidrawPlugin extends Plugin {
         fFp.folder === "" ? null : fFp.folder,
       );
       await this.embedDrawing(fFp.filepath);
-      this.openDrawing(file,inNewPane);
+      this.openDrawing(file, inNewPane);
     };
 
     this.addCommand({
@@ -1506,14 +1521,19 @@ export default class ExcalidrawPlugin extends Plugin {
     const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
     if (activeView) {
       const editor = activeView.editor;
-      if(this.settings.embedType === "excalidraw") {
+      if (this.settings.embedType === "excalidraw") {
         editor.replaceSelection(`![[${data}]]`);
         editor.focus();
         return;
       }
-      const filename = data.substring(0, data.lastIndexOf("."))+"."+this.settings.embedType.toLowerCase();
-      await this.app.vault.create(filename,"");
-      editor.replaceSelection(`![[${filename}]]\n%%[[${data}|🖋 Edit in Excalidraw]]%%`);
+      const filename = `${data.substring(
+        0,
+        data.lastIndexOf("."),
+      )}.${this.settings.embedType.toLowerCase()}`;
+      await this.app.vault.create(filename, "");
+      editor.replaceSelection(
+        `![[${filename}]]\n%%[[${data}|🖋 Edit in Excalidraw]]%%`,
+      );
       editor.focus();
     }
   }
@@ -1656,7 +1676,10 @@ export default class ExcalidrawPlugin extends Plugin {
     );
     await checkAndCreateFolder(this.app.vault, folderpath); //create folder if it does not exist
     const fname = getNewUniqueFilepath(this.app.vault, filename, folderpath);
-    return await this.app.vault.create(fname, initData??await this.getBlankDrawing());
+    return await this.app.vault.create(
+      fname,
+      initData ?? (await this.getBlankDrawing()),
+    );
   }
 
   public async createAndOpenDrawing(
@@ -1665,7 +1688,7 @@ export default class ExcalidrawPlugin extends Plugin {
     foldername?: string,
     initData?: string,
   ): Promise<string> {
-    const file = await this.createDrawing(filename,foldername,initData);
+    const file = await this.createDrawing(filename, foldername, initData);
     this.openDrawing(file, onNewPane);
     return file.path;
   }

@@ -1068,10 +1068,10 @@ export async function initExcalidrawAutomate(
       if (!selectedElementsKeys) {
         return [];
       }
-      let elements:ExcalidrawElement[] = excalidrawAPI
+      const elements: ExcalidrawElement[] = excalidrawAPI
         .getSceneElements()
         .filter((e: any) => selectedElementsKeys.includes(e.id));
- 
+
       const containerBoundTextElmenetsReferencedInElements = elements
         .filter(
           (el) =>
@@ -1092,7 +1092,6 @@ export async function initExcalidrawAutomate(
       return this.getViewElements().filter((el: ExcalidrawElement) =>
         elementIDs.contains(el.id),
       );
-      
     },
     getViewFileForImageElement(el: ExcalidrawElement): TFile | null {
       if (!this.targetView || !this.targetView?._loaded) {
