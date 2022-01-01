@@ -22,7 +22,7 @@ if(textElements.length===0) {
 }
 
 metadata = "# Metadata\n" + textElements
-           .map((el)=>el.rawText.replaceAll(/%|^/g,"_")) //cleaning these characters for safety, might not be needed
+           .map((el)=>el.rawText.replaceAll(/%|\^/g,"_")) //cleaning these characters for safety, might not be needed
            .join("/n") + "\n";
 
 ea.deleteViewElements(textElements);
