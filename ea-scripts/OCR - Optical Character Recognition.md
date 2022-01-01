@@ -11,7 +11,7 @@ The script will
 
 ⚠ Don't forget to paste your token into the script after the first run. ⚠
 
-I recommend also installing the [Transfer TextElements to Excalidraw markdown metadata](Transfer%20TextElements%20to%20Excalidraw%20markdown%metadata.md) script as well.
+I recommend also installing the [Transfer TextElements to Excalidraw markdown metadata](Transfer%20TextElements%20to%20Excalidraw%20markdown%20metadata.md) script as well.
 
 The script is based on [@schlundd](https://github.com/schlundd)'s [Obsidian-OCR-Plugin](https://github.com/schlundd/obsidian-ocr-plugin)
 
