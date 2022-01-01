@@ -994,6 +994,10 @@ export class ExcalidrawData {
     }
     if (this.plugin.filesMaster.has(fileId)) {
       const fileMaster = this.plugin.filesMaster.get(fileId);
+      if(!this.app.vault.getAbstractFileByPath(fileMaster.path)) {
+        this.plugin.filesMaster.delete(fileId);
+        return true;
+      } // the file no longer exists
       const embeddedFile = new EmbeddedFile(
         this.plugin,
         this.file.path,
