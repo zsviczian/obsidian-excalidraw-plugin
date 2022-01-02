@@ -7,6 +7,7 @@ import {
 // English
 export default {
   // main.ts
+  INSTALL_SCRIPT: "Install this script",
   OPEN_AS_EXCALIDRAW: "Open as Excalidraw Drawing",
   TOGGLE_MODE: "Toggle between Excalidraw and Markdown mode",
   CONVERT_NOTE_TO_EXCALIDRAW: "Convert empty note to Excalidraw Drawing",
@@ -280,4 +281,7 @@ export default {
   //EmbeddedFileLoader.ts
   INFINITE_LOOP_WARNING:
     "EXCALIDRAW WARNING\nAborted loading embedded images due to infinite loop in file:\n",
+  
+  //ScriptInstallPrompt.ts
+  INSTAL_MODAL_TITLE: "Available ExcalidrawAutomate ScriptEngine Macros",
 };

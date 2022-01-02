@@ -24,6 +24,7 @@ import {
   VIEW_TYPE_EXCALIDRAW,
   ICON_NAME,
   DISK_ICON_NAME,
+  SCRIPTENGINE_ICON_NAME,
   PNG_ICON_NAME,
   SVG_ICON_NAME,
   FRONTMATTER_KEY,
@@ -68,6 +69,7 @@ import {
   EmbeddedFilesLoader,
   FileData,
 } from "./EmbeddedFileLoader";
+import { ScriptInstallPrompt } from "./ScriptInstallPrompt";
 
 export enum TextMode {
   parsed,
@@ -556,7 +558,10 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   onload() {
-    //console.log("ExcalidrawView.onload()");
+    this.addAction(SCRIPTENGINE_ICON_NAME, t("INSTALL_SCRIPT"), () => {
+      (new ScriptInstallPrompt(this.plugin)).open();
+    });
+
     this.addAction(DISK_ICON_NAME, t("FORCE_SAVE"), async () => {
       await this.save(false);
       this.plugin.triggerEmbedUpdates();

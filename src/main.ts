@@ -21,6 +21,8 @@ import {
   VIEW_TYPE_EXCALIDRAW,
   EXCALIDRAW_ICON,
   ICON_NAME,
+  SCRIPTENGINE_ICON,
+  SCRIPTENGINE_ICON_NAME,
   DISK_ICON,
   DISK_ICON_NAME,
   PNG_ICON,
@@ -34,6 +36,7 @@ import {
   nanoid,
   DARK_BLANK_DRAWING,
   CTRL_OR_CMD,
+  SCRIPT_INSTALL_CODEBLOCK,
 } from "./constants";
 import ExcalidrawView, { ExportSettings, TextMode } from "./ExcalidrawView";
 import { getMarkdownDrawingSection } from "./ExcalidrawData";
@@ -124,6 +127,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   async onload() {
     addIcon(ICON_NAME, EXCALIDRAW_ICON);
+    addIcon(SCRIPTENGINE_ICON_NAME,SCRIPTENGINE_ICON);
     addIcon(DISK_ICON_NAME, DISK_ICON);
     addIcon(PNG_ICON_NAME, PNG_ICON);
     addIcon(SVG_ICON_NAME, SVG_ICON);
@@ -141,6 +145,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.registerExtensions(["excalidraw"], VIEW_TYPE_EXCALIDRAW);
 
     this.addMarkdownPostProcessor();
+    this.registerInstallCodeblockProcessor();
     this.addThemeObserver();
     this.experimentalFileTypeDisplayToggle(this.settings.experimentalFileType);
     this.registerCommands();
@@ -218,6 +223,24 @@ export default class ExcalidrawPlugin extends Plugin {
         }
       }
     });
+  }
+
+  private registerInstallCodeblockProcessor() {
+    const codeblockProcessor = async (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext, plugin: ExcalidrawPlugin) => { 
+      el.createEl("button",null,(button)=>{
+        button.setText(t("INSTALL_SCRIPT"));
+        button.onclick = ()=>{console.log(source)}
+      });
+    }
+
+    this.registerMarkdownCodeBlockProcessor(SCRIPT_INSTALL_CODEBLOCK, async (source,el,ctx) => {
+      el.addEventListener(RERENDER_EVENT,async (e) => {
+        e.stopPropagation();
+        el.empty();
+        codeblockProcessor(source,el,ctx,this);
+      });
+      codeblockProcessor(source,el,ctx,this);
+    }); 
   }
 
   /**

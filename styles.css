@@ -95,3 +95,16 @@ li[data-testid] {
 	margin-bottom: 20px;
   
 }
+
+.excalidraw-scriptengine-install img {
+  width: 100%;
+  max-width:800px;
+}
+
+.excalidraw-scriptengine-install tr {
+  vertical-align: top;
+}
+
+.excalidraw-scriptengine-install td {
+  max-width: 140px;
+}

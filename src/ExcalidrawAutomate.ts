@@ -6,7 +6,7 @@ import {
   ExcalidrawElement,
   ExcalidrawBindableElement,
 } from "@zsviczian/excalidraw/types/element/types";
-import { normalizePath, TFile } from "obsidian";
+import { Component, MarkdownRenderer, normalizePath, TFile } from "obsidian";
 import ExcalidrawView, { ExportSettings, TextMode } from "./ExcalidrawView";
 import { ExcalidrawData } from "./ExcalidrawData";
 import {
@@ -39,6 +39,7 @@ declare type ConnectionPoint = "top" | "bottom" | "left" | "right" | null;
 const GAP = 4;
 
 export interface ExcalidrawAutomate {
+  renderMarkdown(markdown: string, el: HTMLElement, sourcePath: string, component: Component): Promise<void>;
   plugin: ExcalidrawPlugin;
   elementsDict: {}; //contains the ExcalidrawElements currently edited in Automate indexed by el.id
   imagesDict: {}; //the images files including DataURL, indexed by fileId
@@ -219,6 +220,9 @@ export async function initExcalidrawAutomate(
   plugin: ExcalidrawPlugin,
 ): Promise<ExcalidrawAutomate> {
   window.ExcalidrawAutomate = {
+    renderMarkdown(markdown: string, el: HTMLElement, sourcePath: string, component: Component): Promise<void> {
+      return MarkdownRenderer.renderMarkdown(markdown, el, sourcePath, component);
+    },
     plugin,
     elementsDict: {},
     imagesDict: {},
