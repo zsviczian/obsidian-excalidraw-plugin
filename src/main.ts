@@ -251,9 +251,10 @@ export default class ExcalidrawPlugin extends Plugin {
         const fname = decodedURI.substring(
           decodedURI.lastIndexOf("/") + 1,
         );
-        const path = `${
+        const folder = `${
           this.settings.scriptFolderPath
-        }/${SCRIPT_INSTALL_FOLDER}/${fname}`;
+        }/${SCRIPT_INSTALL_FOLDER}`;
+        const path = `${folder}/${fname}`;
         let f = this.app.vault.getAbstractFileByPath(path);
         button.setText(f?t("UPDATE_SCRIPT"):t("INSTALL_SCRIPT"));
         button.onclick = async () => {
@@ -262,6 +263,7 @@ export default class ExcalidrawPlugin extends Plugin {
             if(f) {
               await this.app.vault.modify(f as TFile,data);
             } else {
+              await checkAndCreateFolder(this.app.vault,folder);
               f = await this.app.vault.create(path,data);
               button.setText(t("UPDATE_SCRIPT"))
             }       
