@@ -96,9 +96,13 @@ li[data-testid] {
   
 }
 
-.excalidraw-scriptengine-install img {
+.excalidraw-scriptengine-install td>img {
   width: 100%;
   max-width:800px;
+}
+
+.excalidraw-scriptengine-install img.coffee {
+  width: 130px;
 }
 
 .excalidraw-scriptengine-install tr {
@@ -112,8 +116,13 @@ li[data-testid] {
 .excalidraw-scriptengine-install td.label {
   width: 11ch;
   font-weight: bold;
+  padding-right: 5px;
 }
 
 .excalidraw-scriptengine-install td.data {
   width: 100%;
+}
+
+.modal-content.excalidraw-scriptengine-install {
+  max-width: 130ch;
 }
