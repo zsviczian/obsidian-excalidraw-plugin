@@ -15,6 +15,7 @@ export class ScriptInstallPrompt extends Modal {
 
   async onOpen(): Promise<void> {
     this.contentEl.classList.add("excalidraw-scriptengine-install");
+    this.containerEl.classList.add("excalidraw-scriptengine-install");
     try {
       const source = await request({ url: URL });
       await MarkdownRenderer.renderMarkdown(
@@ -23,7 +24,7 @@ export class ScriptInstallPrompt extends Modal {
         "",
         this.plugin,
       );
-      this.contentEl.querySelectorAll("h2[data-heading").forEach((el) => {
+      this.contentEl.querySelectorAll("h1[data-heading],h2[data-heading]").forEach((el) => {
         el.setAttribute("id", el.getAttribute("data-heading"));
       });
       this.contentEl.querySelectorAll("ul>li>a.internal-link").forEach((el) => {
