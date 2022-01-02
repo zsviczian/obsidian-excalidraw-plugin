@@ -24,10 +24,10 @@ export class ScriptInstallPrompt extends Modal {
         "",
         this.plugin,
       );
-      this.contentEl.querySelectorAll("h1[data-heading],h2[data-heading]").forEach((el) => {
+      this.contentEl.querySelectorAll("h1[data-heading],h2[data-heading],h3[data-heading]").forEach((el) => {
         el.setAttribute("id", el.getAttribute("data-heading"));
       });
-      this.contentEl.querySelectorAll("ul>li>a.internal-link").forEach((el) => {
+      this.contentEl.querySelectorAll("a.internal-link").forEach((el) => {
         el.removeAttribute("target");
       });
     } catch (e) {
