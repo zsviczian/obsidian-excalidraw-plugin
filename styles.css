@@ -105,6 +105,11 @@ li[data-testid] {
   vertical-align: top;
 }
 
-.excalidraw-scriptengine-install td {
+.excalidraw-scriptengine-install td label {
   max-width: 140px;
+  font-weight: bold;
+}
+
+.excalidraw-scriptengine-install td data {
+  width: 100%;
 }
