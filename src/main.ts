@@ -227,7 +227,7 @@ export default class ExcalidrawPlugin extends Plugin {
       }
     });
   }
-
+ 
   private registerInstallCodeblockProcessor() {
     const codeblockProcessor = async (
       source: string,
