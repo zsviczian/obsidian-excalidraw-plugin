@@ -1,3 +1,4 @@
+import { sub } from "@zsviczian/excalidraw/types/ga";
 import { App, TAbstractFile, TFile } from "obsidian";
 import { VIEW_TYPE_EXCALIDRAW } from "./constants";
 import ExcalidrawView from "./ExcalidrawView";
@@ -78,9 +79,17 @@ export class ScriptEngine {
   }
 
   loadScript(f: TFile) {
+    let scriptName = f.basename;
+    const subpath = f.path.split(
+      `${this.plugin.settings.scriptFolderPath}/`,
+    )[1];
+    const lastSlash = subpath.lastIndexOf("/");
+    if (lastSlash > -1) {
+      scriptName = subpath.substring(0, lastSlash + 1) + f.basename;
+    }
     this.plugin.addCommand({
       id: f.basename,
-      name: `(Script) ${f.basename}`,
+      name: `(Script) ${scriptName}`,
       checkCallback: (checking: boolean) => {
         if (checking) {
           return (

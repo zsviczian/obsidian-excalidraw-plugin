@@ -558,8 +558,8 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   onload() {
-    this.addAction(SCRIPTENGINE_ICON_NAME, t("INSTALL_SCRIPT"), () => {
-      (new ScriptInstallPrompt(this.plugin)).open();
+    this.addAction(SCRIPTENGINE_ICON_NAME, t("INSTALL_SCRIPT_BUTTON"), () => {
+      new ScriptInstallPrompt(this.plugin).open();
     });
 
     this.addAction(DISK_ICON_NAME, t("FORCE_SAVE"), async () => {

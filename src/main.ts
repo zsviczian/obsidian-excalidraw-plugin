@@ -15,6 +15,7 @@ import {
   Notice,
   loadMathJax,
   Scope,
+  request,
 } from "obsidian";
 import {
   BLANK_DRAWING,
@@ -37,6 +38,7 @@ import {
   DARK_BLANK_DRAWING,
   CTRL_OR_CMD,
   SCRIPT_INSTALL_CODEBLOCK,
+  SCRIPT_INSTALL_FOLDER,
 } from "./constants";
 import ExcalidrawView, { ExportSettings, TextMode } from "./ExcalidrawView";
 import { getMarkdownDrawingSection } from "./ExcalidrawData";
@@ -63,6 +65,7 @@ import {
   checkAndCreateFolder,
   download,
   embedFontsInSVG,
+  errorlog,
   getAttachmentsFolderAndFilePath,
   getIMGFilename,
   getIMGPathFromExcalidrawFile,
@@ -127,7 +130,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   async onload() {
     addIcon(ICON_NAME, EXCALIDRAW_ICON);
-    addIcon(SCRIPTENGINE_ICON_NAME,SCRIPTENGINE_ICON);
+    addIcon(SCRIPTENGINE_ICON_NAME, SCRIPTENGINE_ICON);
     addIcon(DISK_ICON_NAME, DISK_ICON);
     addIcon(PNG_ICON_NAME, PNG_ICON);
     addIcon(SVG_ICON_NAME, SVG_ICON);
@@ -226,21 +229,65 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   private registerInstallCodeblockProcessor() {
-    const codeblockProcessor = async (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext, plugin: ExcalidrawPlugin) => { 
-      el.createEl("button",null,(button)=>{
-        button.setText(t("INSTALL_SCRIPT"));
-        button.onclick = ()=>{console.log(source)}
+    const codeblockProcessor = async (
+      source: string,
+      el: HTMLElement,
+      ctx: MarkdownPostProcessorContext,
+      plugin: ExcalidrawPlugin,
+    ) => {
+      source = source.trim();
+      el.createEl("button", null, (button) => {
+        button.addClass("mod-cta");
+        let decodedURI = source;
+        try{
+          decodedURI = decodeURI(source);
+        } catch(e) {
+          errorlog({
+            where:"ExcalidrawPlugin.registerInstallCodeblockProcessor.codeblockProcessor.onClick", 
+            source,
+            error:e,
+          });
+        }
+        const fname = decodedURI.substring(
+          decodedURI.lastIndexOf("/") + 1,
+        );
+        const path = `${
+          this.settings.scriptFolderPath
+        }/${SCRIPT_INSTALL_FOLDER}/${fname}`;
+        let f = this.app.vault.getAbstractFileByPath(path);
+        button.setText(f?t("UPDATE_SCRIPT"):t("INSTALL_SCRIPT"));
+        button.onclick = async () => {
+          try {
+            const data = await request({url:source});
+            if(f) {
+              await this.app.vault.modify(f as TFile,data);
+            } else {
+              f = await this.app.vault.create(path,data);
+              button.setText(t("UPDATE_SCRIPT"))
+            }       
+            new Notice(`Installed: ${(f as TFile).basename}`)
+          } catch (e) {
+            new Notice(`Error installing script: ${fname}`);
+            errorlog({
+              where:"ExcalidrawPlugin.registerInstallCodeblockProcessor.codeblockProcessor.onClick", 
+              error:e,
+            });
+          }
+        };
       });
-    }
+    };
 
-    this.registerMarkdownCodeBlockProcessor(SCRIPT_INSTALL_CODEBLOCK, async (source,el,ctx) => {
-      el.addEventListener(RERENDER_EVENT,async (e) => {
-        e.stopPropagation();
-        el.empty();
-        codeblockProcessor(source,el,ctx,this);
-      });
-      codeblockProcessor(source,el,ctx,this);
-    }); 
+    this.registerMarkdownCodeBlockProcessor(
+      SCRIPT_INSTALL_CODEBLOCK,
+      async (source, el, ctx) => {
+        el.addEventListener(RERENDER_EVENT, async (e) => {
+          e.stopPropagation();
+          el.empty();
+          codeblockProcessor(source, el, ctx, this);
+        });
+        codeblockProcessor(source, el, ctx, this);
+      },
+    );
   }
 
   /**
@@ -449,7 +496,6 @@ export default class ExcalidrawPlugin extends Plugin {
       el: HTMLElement,
       ctx: MarkdownPostProcessorContext,
     ) => {
-
       //check to see if we are rendering in editing mode of live preview
       //if yes, then there should be no .internal-embed containers
       const embeddedItems = el.querySelectorAll(".internal-embed");
@@ -459,7 +505,7 @@ export default class ExcalidrawPlugin extends Plugin {
       }
 
       //If the file being processed is an excalidraw file,
-      //then I want to hide all embedded items as these will be 
+      //then I want to hide all embedded items as these will be
       //transcluded text element or some other transcluded content inside the Excalidraw file
       //in reading mode these elements should be hidden
       if (ctx.frontmatter?.hasOwnProperty("excalidraw-plugin")) {

@@ -210,7 +210,9 @@ export class ExcalidrawData {
     file: TFile,
     textMode: TextMode,
   ): Promise<boolean> {
-    if(!file) return false;
+    if (!file) {
+      return false;
+    }
     this.loaded = false;
     this.textElements = new Map<
       string,
@@ -341,7 +343,9 @@ export class ExcalidrawData {
   }
 
   public async loadLegacyData(data: string, file: TFile): Promise<boolean> {
-    if(!file) return false;
+    if (!file) {
+      return false;
+    }
     this.compatibilityMode = true;
     this.file = file;
     this.textElements = new Map<
@@ -994,7 +998,7 @@ export class ExcalidrawData {
     }
     if (this.plugin.filesMaster.has(fileId)) {
       const fileMaster = this.plugin.filesMaster.get(fileId);
-      if(!this.app.vault.getAbstractFileByPath(fileMaster.path)) {
+      if (!this.app.vault.getAbstractFileByPath(fileMaster.path)) {
         this.plugin.filesMaster.delete(fileId);
         return true;
       } // the file no longer exists

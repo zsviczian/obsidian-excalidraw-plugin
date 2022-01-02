@@ -14,6 +14,7 @@ export const KEYCODE = {
   ESC: 27,
 };
 export const SCRIPT_INSTALL_CODEBLOCK = "excalidraw-script-install";
+export const SCRIPT_INSTALL_FOLDER = "Downloaded";
 export const fileid = customAlphabet("1234567890abcdef", 40);
 export const REG_LINKINDEX_INVALIDCHARS = /[<>:"\\|?*]/g;
 export const REG_BLOCK_REF_CLEAN =

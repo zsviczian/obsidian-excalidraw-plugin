@@ -8,6 +8,7 @@ import {
 export default {
   // main.ts
   INSTALL_SCRIPT: "Install this script",
+  UPDATE_SCRIPT: "Update this script",
   OPEN_AS_EXCALIDRAW: "Open as Excalidraw Drawing",
   TOGGLE_MODE: "Toggle between Excalidraw and Markdown mode",
   CONVERT_NOTE_TO_EXCALIDRAW: "Convert empty note to Excalidraw Drawing",
@@ -39,6 +40,7 @@ export default {
   ENTER_LATEX: "Enter a valid LaTeX expression",
 
   //ExcalidrawView.ts
+  INSTALL_SCRIPT_BUTTON: "Install or update Excalidraw Scripts",
   OPEN_AS_MD: "Open as Markdown",
   SAVE_AS_PNG: "Save as PNG into Vault (CTRL/CMD+CLICK to export)",
   SAVE_AS_SVG: "Save as SVG into Vault (CTRL/CMD+CLICK to export)",
@@ -281,7 +283,4 @@ export default {
   //EmbeddedFileLoader.ts
   INFINITE_LOOP_WARNING:
     "EXCALIDRAW WARNING\nAborted loading embedded images due to infinite loop in file:\n",
-  
-  //ScriptInstallPrompt.ts
-  INSTAL_MODAL_TITLE: "Available ExcalidrawAutomate ScriptEngine Macros",
 };

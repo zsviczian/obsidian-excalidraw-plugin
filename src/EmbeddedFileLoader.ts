@@ -370,8 +370,9 @@ const convertMarkdownToSVG = async (
   //1.
   //get the markdown text
   let text = (await getTransclusion(linkParts, plugin.app, file)).contents;
-  if(text==="") {
-    text = "# Empty markdown file\nCTRL+Click here to open the file for editing in the current active pane, or CTRL+SHIFT+Click to open it in an adjacent pane.";
+  if (text === "") {
+    text =
+      "# Empty markdown file\nCTRL+Click here to open the file for editing in the current active pane, or CTRL+SHIFT+Click to open it in an adjacent pane.";
   }
 
   //2.

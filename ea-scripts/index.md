@@ -1,3 +1,26 @@
+[<img src="https://user-images.githubusercontent.com/14358394/115450238-f39e8100-a21b-11eb-89d0-fa4b82cdbce8.png" width="130">](https://ko-fi.com/zsolt) 
+
+If you are enjoying the Excalidraw plugin then please support my work and enthusiasm by buying me a coffee on [https://ko-fi/zsolt](https://ko-fi.com/zsolt).
+
+---
+
+# Intorducing Excalidraw Automate Script Engine
+<iframe width="560" height="315" src="https://www.youtube.com/embed/hePJcObHIso" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+Script Engine scripts are installed in the `Downloaded` subfolder of the `Excalidraw Automate script folder` specified in plugin settings.
+
+In the `Command Palette` installed scripts are prefixed with `Downloaded/`, thus you can always know if you are executing a local script of your own, or one that you have downloaded from GitHub.
+
+## Attention developers and hobby hackers
+If you want to modify scripts, I recommend moving them to the `Excalidraw Automate script folder` or a different subfolder under the script folder. Scripts in the `Downloaded` folder will be overwritten when you click the `Update this script` button. Note also, that at this time, I do not check if the script file has been updated on GitHub, thus the `Update this script` button is always visible once you have installed a script, not only when an update is availble (hope to build this feature in the future).
+
+I would love to include your contribution in the script library. If you have a script of your own that you would like to share with the community, please open a [PR](https://github.com/zsviczian/obsidian-excalidraw-plugin/pulls) on GitHub. Be sure to include the following in your pull request
+- The [script file](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/ea-scripts) with a self explanetory name. The name of the file will be the name of the script in the Command Palette.
+- An [image](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/images) explaining the scripts purpose. Remember a picture speaks thousand words!
+- An update to this file [ea-scripts/index.md](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/index.md)
+
+---
+
 # List of available scripts
 - [[#Box Selected Elements]]
 - [[#Bullet Point]]
@@ -25,6 +48,7 @@
 - [[#Text Align]]
 - [[#Transfer TextElements to Excalidraw markdown metadata]]
 - [[#Zoom to Fit Selected Elements]]
+
 
 ## Box Selected Elements
 ```excalidraw-script-install
@@ -76,9 +100,9 @@ https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/E
 
 ## Expand rectangles horizontally keep text centered
 ```excalidraw-script-install
-https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Expand%20rectangles%20horizontally%20keep%20text20%centered.md
+https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Expand%20rectangles%20horizontally%20keep%20text%20centered.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/1-2-3'>@1-2-3</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Expand%20rectangles%20horizontally%20keep%20text20%centered.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script expands the width of the selected rectangles until they are all the same width and keep the text centered.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-expand-rectangles.gif'></td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/1-2-3'>@1-2-3</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Expand%20rectangles%20horizontally%20keep%20text%20centered.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script expands the width of the selected rectangles until they are all the same width and keep the text centered.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-expand-rectangles.gif'></td></tr></table>
 
 ## Expand rectangles horizontally
 ```excalidraw-script-install
@@ -132,7 +156,7 @@ https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/L
 ```excalidraw-script-install
 https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Modify%20background%20color%20opacity.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/1-2-3'>@1-2-3</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Modify%20background%20color%20opacity.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script changes the opacity of the background color of the selected boxes. The default background color in Excalidraw is so dark that the text is hard to read. You can lighten the color a bit by setting transparency. And you can tweak the transparency over and over again until you're happy with it. Although excalidraw has the opacity option in its native property Settings, it also changes the transparency of the border. Use this script to change only the opacity of the background color without affecting the border.<br><img src=''></td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/1-2-3'>@1-2-3</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Modify%20background%20color%20opacity.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script changes the opacity of the background color of the selected boxes. The default background color in Excalidraw is so dark that the text is hard to read. You can lighten the color a bit by setting transparency. And you can tweak the transparency over and over again until you're happy with it. Although excalidraw has the opacity option in its native property Settings, it also changes the transparency of the border. Use this script to change only the opacity of the background color without affecting the border.</td></tr></table>
 
 ## Modify stroke width of selected elements
 ```excalidraw-script-install
@@ -154,9 +178,9 @@ https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/R
 
 ## Set Link Alias
 ```excalidraw-script-install
-https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Set20%Link20%Alias.md
+https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Set%20Link20%Alias.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Set20%Link20%Alias.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Iterates all of the links in the selected TextElements and prompts the user to set or modify the alias for each link found.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-set-link-alias.jpg'></td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Set%20Link20%Alias.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Iterates all of the links in the selected TextElements and prompts the user to set or modify the alias for each link found.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-set-link-alias.jpg'></td></tr></table>
 
 ## Split text by lines
 ```excalidraw-script-install
@@ -180,4 +204,4 @@ https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/T
 ```excalidraw-script-install
 https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Zoom%20to%20Fit%20Selected%20Elements.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Zoom%20to%20Fit%20Selected%20Elements.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Similar to Excalidraw standard SHIFT+2 feature: Zoom to fit selected elements, but with the ability to zoom to 1000%. Inspiration: [#272](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/272)<br><img src=''></td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Zoom%20to%20Fit%20Selected%20Elements.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Similar to Excalidraw standard SHIFT+2 feature: Zoom to fit selected elements, but with the ability to zoom to 1000%. Inspiration: [#272](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/272)</td></tr></table>

@@ -153,6 +153,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     if (this.requestEmbedUpdate) {
       this.plugin.triggerEmbedUpdates();
     }
+    if (
+      this.plugin.settings.scriptFolderPath === "/" ||
+      this.plugin.settings.scriptFolderPath === ""
+    ) {
+      this.plugin.settings.scriptFolderPath = "Excalidraw/Scripts";
+      this.plugin.saveSettings();
+    }
     this.plugin.scriptEngine.updateScriptPath();
   }
 
