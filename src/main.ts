@@ -236,7 +236,31 @@ export default class ExcalidrawPlugin extends Plugin {
       plugin: ExcalidrawPlugin,
     ) => {
       source = source.trim();
-      el.createEl("button", null, (button) => {
+      el.createEl("button", null, async (button) => {
+        const setButtonText = (text:"CHECKING" | "INSTALL" | "UPTODATE" | "UPDATE" | "ERROR") => {
+          switch(text) {
+            case "CHECKING": 
+              button.setText(t("CHECKING_SCRIPT"));
+              button.style.backgroundColor = "var(--interactive-normal)";
+              break;
+            case "INSTALL":
+              button.setText(t("INSTALL_SCRIPT"));
+              button.style.backgroundColor = "var(--interactive-accent)";
+              break;
+            case "UPTODATE":
+              button.setText(t("UPTODATE_SCRIPT"));
+              button.style.backgroundColor = "var(--interactive-normal)";
+              break;
+            case "UPDATE":
+              button.setText(t("UPDATE_SCRIPT"));
+              button.style.backgroundColor = "var(--interactive-success)";
+              break;
+            case "ERROR":
+              button.setText(t("UNABLETOCHECK_SCRIPT"));
+              button.style.backgroundColor = "var(--interactive-normal)";
+              break;
+          }
+        }
         button.addClass("mod-cta");
         let decodedURI = source;
         try{
@@ -256,7 +280,7 @@ export default class ExcalidrawPlugin extends Plugin {
         }/${SCRIPT_INSTALL_FOLDER}`;
         const path = `${folder}/${fname}`;
         let f = this.app.vault.getAbstractFileByPath(path);
-        button.setText(f?t("UPDATE_SCRIPT"):t("INSTALL_SCRIPT"));
+        setButtonText(f?"CHECKING":"INSTALL");
         button.onclick = async () => {
           try {
             const data = await request({url:source});
@@ -265,7 +289,7 @@ export default class ExcalidrawPlugin extends Plugin {
             } else {
               await checkAndCreateFolder(this.app.vault,folder);
               f = await this.app.vault.create(path,data);
-              button.setText(t("UPDATE_SCRIPT"))
+              setButtonText("UPTODATE")
             }       
             new Notice(`Installed: ${(f as TFile).basename}`)
           } catch (e) {
@@ -276,6 +300,31 @@ export default class ExcalidrawPlugin extends Plugin {
             });
           }
         };
+        
+        //check modified date on github
+        //https://superuser.com/questions/1406875/how-to-get-the-latest-commit-date-of-a-file-from-a-given-github-reposotiry
+        if(!f || !(f instanceof TFile)) return;
+        const msgHead = "https://api.github.com/repos/zsviczian/obsidian-excalidraw-plugin/commits?path=ea-scripts%2F";
+        const msgTail = "&page=1&per_page=1";
+        const data = await request({
+          url: msgHead+encodeURI(fname)+msgTail,
+        });
+        if(!data) {
+          setButtonText("ERROR");
+          return;
+        }
+        const result = JSON.parse(data);
+        if(result.length===0 || !result[0]?.commit?.committer?.date) {
+          setButtonText("ERROR");
+          return;
+        }
+        //@ts-ignore
+        const mtime = (new Date(result[0].commit.committer.date))/1;
+        if(mtime > f.stat.mtime) {
+          setButtonText("UPDATE");
+          return;
+        }
+        setButtonText("UPTODATE");
       });
     };
 

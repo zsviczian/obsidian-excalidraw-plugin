@@ -13,9 +13,13 @@ https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.h
 
 ```javascript
 */
-//uncomment if you want a prompt for custom padding
-//const padding = parseInt (await utils.inputPrompt("padding?","number","10"));
-const padding = 10
+//uncomment if you don't want a prompt for custom padding
+//const padding = 10
+const padding = parseInt (await utils.inputPrompt("padding?","number","10"));
+if(isNaN(padding)) {
+  new Notice("The padding value provided is not a number");
+  return;
+}
 elements = ea.getViewSelectedElements();
 const box = ea.getBoundingBox(elements);
 color = ea

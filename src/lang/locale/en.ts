@@ -8,7 +8,10 @@ import {
 export default {
   // main.ts
   INSTALL_SCRIPT: "Install this script",
-  UPDATE_SCRIPT: "Update this script",
+  UPDATE_SCRIPT: "An update is available - Click to install",
+  CHECKING_SCRIPT: "Checking if a newer version is available - Click to reinstall now",
+  UNABLETOCHECK_SCRIPT: "Update check was unsuccessful - Click to reinstall now",
+  UPTODATE_SCRIPT: "Script is installed and up to date - Click to reinstall now",
   OPEN_AS_EXCALIDRAW: "Open as Excalidraw Drawing",
   TOGGLE_MODE: "Toggle between Excalidraw and Markdown mode",
   CONVERT_NOTE_TO_EXCALIDRAW: "Convert empty note to Excalidraw Drawing",
