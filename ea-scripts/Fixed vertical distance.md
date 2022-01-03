@@ -12,6 +12,9 @@ When we create an architecture diagram or mind map, we often need to arrange a l
 ```javascript
 */
 const spacing = parseInt (await utils.inputPrompt("spacing?","number","8"));
+if(isNaN(spacing)) {
+  return;
+}
 const elements=ea.getViewSelectedElements();
 const topGroups = ea.getMaximumGroups(elements);
 const groups = topGroups.sort((lha,rha) => lha[0].y - rha[0].y);
