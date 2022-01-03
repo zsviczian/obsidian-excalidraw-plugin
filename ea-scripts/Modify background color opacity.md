@@ -12,6 +12,9 @@ Although excalidraw has the opacity option in its native property Settings, it a
 ```javascript
 */
 const alpha = parseFloat(await utils.inputPrompt("Background color opacity?","number","0.6"));
+if(isNaN(alpha)) {
+  return;
+}
 const elements=ea.getViewSelectedElements().filter((el)=>["rectangle","ellipse","diamond","line","image"].includes(el.type));
 ea.copyViewElementsToEAforEditing(elements);
 ea.getElements().forEach((el)=>{
