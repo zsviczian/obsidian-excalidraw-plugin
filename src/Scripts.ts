@@ -24,7 +24,7 @@ export class ScriptEngine {
       if (!file.path.startsWith(this.scriptPath)) {
         return;
       }
-      this.unloadScript(file.basename);
+      this.unloadScript(this.getScriptName(file));
     };
     this.plugin.registerEvent(
       this.plugin.app.vault.on("delete", deleteEventHandler),
@@ -50,7 +50,7 @@ export class ScriptEngine {
       const oldFileIsScript = oldPath.startsWith(this.scriptPath);
       const newFileIsScript = file.path.startsWith(this.scriptPath);
       if (oldFileIsScript) {
-        this.unloadScript(splitFolderAndFilename(oldPath).basename);
+        this.unloadScript(this.getScriptName(oldPath));
       }
       if (newFileIsScript) {
         this.loadScript(file);
@@ -78,17 +78,31 @@ export class ScriptEngine {
     scripts.forEach((f) => this.loadScript(f));
   }
 
-  loadScript(f: TFile) {
-    let scriptName = f.basename;
-    const subpath = f.path.split(
+  getScriptName(f:TFile|string):string {
+    let basename = "";
+    let path = "";
+    if(f instanceof TFile) {
+      basename = f.basename;
+      path = f.path;
+    } else {
+      basename = splitFolderAndFilename(f).basename;
+      path = f;
+    }
+
+    const subpath = path.split(
       `${this.plugin.settings.scriptFolderPath}/`,
     )[1];
     const lastSlash = subpath.lastIndexOf("/");
     if (lastSlash > -1) {
-      scriptName = subpath.substring(0, lastSlash + 1) + f.basename;
+      return subpath.substring(0, lastSlash + 1) + basename;
     }
+    return basename;
+  }
+
+  loadScript(f: TFile) {
+    const scriptName = this.getScriptName(f);
     this.plugin.addCommand({
-      id: f.basename,
+      id: scriptName,
       name: `(Script) ${scriptName}`,
       checkCallback: (checking: boolean) => {
         if (checking) {
@@ -112,7 +126,9 @@ export class ScriptEngine {
     const scripts = app.vault
       .getFiles()
       .filter((f: TFile) => f.path.startsWith(this.scriptPath));
-    scripts.forEach((f) => this.unloadScript(f.basename));
+    scripts.forEach((f) => {
+      this.unloadScript(this.getScriptName(f));
+    });
   }
 
   unloadScript(basename: string) {

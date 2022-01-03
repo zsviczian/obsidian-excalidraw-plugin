@@ -16,7 +16,12 @@ https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.h
 const elements = ea.getViewSelectedElements();
 if(elements.length === 0) return;
 const el = ea.getLargestElement(elements);
-const sizeIn = [el.x,el.y,el.width,el.height].join(",");
+const sizeIn = [
+  Math.round(el.x),
+  Math.round(el.y),
+  Math.round(el.width),
+  Math.round(el.height)
+].join(",");
 let res = await utils.inputPrompt("x,y,width,height?",null,sizeIn);
 res = res.split(",");
 if(res.length !== 4) return;

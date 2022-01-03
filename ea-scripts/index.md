@@ -38,7 +38,7 @@ I would love to include your contribution in the script library. If you have a s
 - [[#Expand rectangles vertically keep text centered]]
 - [[#Expand rectangles vertically]]
 - [[#Fixed spacing]]
-- [[#Fixed-vertical distance]]
+- [[#Fixed vertical distance]]
 - [[#Font Family]]
 - [[#Grid]]
 - [[#Lighten background color]]

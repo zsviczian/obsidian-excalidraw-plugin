@@ -235,9 +235,30 @@ export default class ExcalidrawPlugin extends Plugin {
       ctx: MarkdownPostProcessorContext,
       plugin: ExcalidrawPlugin,
     ) => {
+
+      //Button next to the "List of available scripts" at the top
+      //In try/catch block because this approach is very error prone, depends on 
+      //MarkdownRenderer() and index.md structure, in case these are not as
+      //expected this code will break
+      let button2: HTMLButtonElement = null;
+      try {
+        const link:HTMLElement = el.parentElement.querySelector(`a[href="#${
+          el.previousElementSibling.getAttribute("data-heading")}"]`);
+        link.style.paddingRight = "10px";
+        button2 = link.parentElement.createEl("button",null,(b) => {
+          b.setText(t("UPDATE_SCRIPT"));
+          b.addClass("mod-cta");
+          b.style.backgroundColor = "var(--interactive-success)";
+          b.style.display = "none";
+        });
+      } catch(e) {
+        errorlog({where:"this.registerInstallCodeblockProcessor", source, error:e});
+      }
+
       source = source.trim();
       el.createEl("button", null, async (button) => {
         const setButtonText = (text:"CHECKING" | "INSTALL" | "UPTODATE" | "UPDATE" | "ERROR") => {
+          if(button2) button2.style.display = "none";
           switch(text) {
             case "CHECKING": 
               button.setText(t("CHECKING_SCRIPT"));
@@ -254,6 +275,7 @@ export default class ExcalidrawPlugin extends Plugin {
             case "UPDATE":
               button.setText(t("UPDATE_SCRIPT"));
               button.style.backgroundColor = "var(--interactive-success)";
+              if(button2) button2.style.display = null;
               break;
             case "ERROR":
               button.setText(t("UNABLETOCHECK_SCRIPT"));
@@ -289,8 +311,8 @@ export default class ExcalidrawPlugin extends Plugin {
             } else {
               await checkAndCreateFolder(this.app.vault,folder);
               f = await this.app.vault.create(path,data);
-              setButtonText("UPTODATE")
             }       
+            setButtonText("UPTODATE");
             new Notice(`Installed: ${(f as TFile).basename}`)
           } catch (e) {
             new Notice(`Error installing script: ${fname}`);
@@ -300,6 +322,7 @@ export default class ExcalidrawPlugin extends Plugin {
             });
           }
         };
+        if(button2) button2.onclick = button.onclick;
         
         //check modified date on github
         //https://superuser.com/questions/1406875/how-to-get-the-latest-commit-date-of-a-file-from-a-given-github-reposotiry
