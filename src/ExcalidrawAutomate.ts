@@ -39,12 +39,6 @@ declare type ConnectionPoint = "top" | "bottom" | "left" | "right" | null;
 const GAP = 4;
 
 export interface ExcalidrawAutomate {
-  renderMarkdown(
-    markdown: string,
-    el: HTMLElement,
-    sourcePath: string,
-    component: Component,
-  ): Promise<void>;
   plugin: ExcalidrawPlugin;
   elementsDict: {}; //contains the ExcalidrawElements currently edited in Automate indexed by el.id
   imagesDict: {}; //the images files including DataURL, indexed by fileId
@@ -217,6 +211,9 @@ export interface ExcalidrawAutomate {
     b: readonly [number, number],
     gap?: number, //if given, element is inflated by this value
   ): Point[];
+  activeScript: string;
+  getScriptSettings(): {};
+  setScriptSettings(settings:any):Promise<void>;
 }
 
 declare let window: any;
@@ -225,20 +222,7 @@ export async function initExcalidrawAutomate(
   plugin: ExcalidrawPlugin,
 ): Promise<ExcalidrawAutomate> {
   window.ExcalidrawAutomate = {
-    renderMarkdown(
-      markdown: string,
-      el: HTMLElement,
-      sourcePath: string,
-      component: Component,
-    ): Promise<void> {
-      return MarkdownRenderer.renderMarkdown(
-        markdown,
-        el,
-        sourcePath,
-        component,
-      );
-    },
-    plugin,
+    plugin: plugin,
     elementsDict: {},
     imagesDict: {},
     style: {
@@ -988,6 +972,7 @@ export async function initExcalidrawAutomate(
     },
     reset() {
       this.clear();
+      this.activeScript = null;
       this.style.strokeColor = "#000000";
       this.style.backgroundColor = "transparent";
       this.style.angle = 0;
@@ -1255,6 +1240,16 @@ export async function initExcalidrawAutomate(
       gap?: number,
     ): Point[] {
       return intersectElementWithLine(element, a, b, gap);
+    },
+    activeScript: null,
+    getScriptSettings(): {} {
+      if(!this.activeScript) return null;
+      return this.plugin.settings.scriptEngineSettings[this.activeScript];
+    },
+    async setScriptSettings(settings:any): Promise<void> {
+      if(!this.activeScript) return null;
+      this.plugin.settings.scriptEngineSettings[this.activeScript] = settings;
+      await this.plugin.saveSettings();
     },
   };
   await initFonts();

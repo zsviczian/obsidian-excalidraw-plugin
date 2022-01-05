@@ -153,16 +153,19 @@ export class ScriptEngine {
       return;
     }
 
+    this.plugin.ea.activeScript = this.getScriptName(f);
+
     //https://stackoverflow.com/questions/45381204/get-asyncfunction-constructor-in-typescript changed tsconfig to es2017
     //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncFunction
     const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
-
-    return await new AsyncFunction("ea", "utils", script)(this.plugin.ea, {
+    const result = await new AsyncFunction("ea", "utils", script)(this.plugin.ea, {
       inputPrompt: (header: string, placeholder?: string, value?: string) =>
         ScriptEngine.inputPrompt(this.plugin.app, header, placeholder, value),
       suggester: (displayItems: string[], items: string[]) =>
         ScriptEngine.suggester(this.plugin.app, displayItems, items),
     });
+    this.plugin.ea.activeScript = null;
+    return result;
   }
 
   public static async inputPrompt(

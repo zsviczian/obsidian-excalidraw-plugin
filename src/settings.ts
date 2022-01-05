@@ -58,6 +58,7 @@ export interface ExcalidrawSettings {
   mdFont: string;
   mdFontColor: string;
   mdCSS: string;
+  scriptEngineSettings: {};
 }
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
@@ -113,6 +114,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   mdFont: "Virgil",
   mdFontColor: "Black",
   mdCSS: "",
+  scriptEngineSettings: {},
 };
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
