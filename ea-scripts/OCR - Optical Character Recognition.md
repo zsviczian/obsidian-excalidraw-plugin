@@ -5,11 +5,11 @@ Download this file and save to your Obsidian Vault including the first line, or 
 
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-ocr.jpg)
 
+THIS SCRIPT REQUIRES EXCALIDRAW 1.5.15
+
 The script will 
   1) send the selected image file to [taskbone.com](https://taskbone.com) to exctract the text from the image, and
   2) will add the text to your drawing as a text element
-
-⚠ Don't forget to paste your token into the script after the first run. ⚠
 
 I recommend also installing the [Transfer TextElements to Excalidraw markdown metadata](Transfer%20TextElements%20to%20Excalidraw%20markdown%20metadata.md) script as well.
 
@@ -20,11 +20,14 @@ https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.h
 
 ```javascript
 */
-let token = ""; //paste token in-between the quotation marks "xxxxxxxxxx"
+const curVersion = app.plugins.manifests["obsidian-excalidraw-plugin"].version;
+if(curVersion < "1.5.15") new Notice("please update Excalidraw plugin to the latest version");
+
+let token = ea.getScriptSettings()?.token; 
 const BASE_URL = "https://ocr.taskbone.com";
 
 //get new token if token was not provided
-if (token==="") {
+if (!token) {
   const tokenResponse = await fetch(
 	BASE_URL + "/get-new-token", {
 	  method: 'post'
@@ -32,9 +35,7 @@ if (token==="") {
   if (tokenResponse.status === 200) {
     jsonResponse = await tokenResponse.json();
 	token = jsonResponse.token;
-	navigator.clipboard.writeText(token);
-	notice("Please update the ScriptEngine script with the Token.\n\nToken is on the clipboard and in Developer Console.");
-	console.log({token});
+	ea.setScriptSettings({token});
   } else {
 	notice(`Taskbone OCR Error: ${tokenResponse.status}\nPlease try again later.`);
 	return;

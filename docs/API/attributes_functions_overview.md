@@ -176,6 +176,11 @@ export interface ExcalidrawAutomate {
     b: readonly [number, number],
     gap?: number, //if given, element is inflated by this value
   ): Point[];
+  
+  //See OCR plugin for example on how to use scriptSettings
+  activeScript: string; //Set automatically by the ScriptEngine
+  getScriptSettings(): {}; //Returns script settings. Saves settings in plugin settings, under the activeScript key
+  setScriptSettings(settings:any):Promise<void>; //sets script settings.
 }
 ```
 

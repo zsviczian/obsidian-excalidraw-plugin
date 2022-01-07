@@ -35,6 +35,10 @@ img.excalidraw-svg-right {
   float: right;
 }
 
+.excalidraw-svg-center {
+  text-align: center;
+}
+
 img.excalidraw-svg-left {
   float: left;
 }

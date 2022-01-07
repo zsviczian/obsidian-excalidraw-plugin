@@ -2,6 +2,7 @@ import { exportToSvg, exportToBlob } from "@zsviczian/excalidraw";
 import {
   App,
   normalizePath,
+  Notice,
   TAbstractFile,
   TFolder,
   Vault,
@@ -24,6 +25,21 @@ declare module "obsidian" {
   interface Vault {
     getConfig(option: "attachmentFolderPath"): string;
   }
+}
+
+
+let versionUpdateChecked = false;
+export const checkExcalidrawVersion = async (app:App) => {
+  if(versionUpdateChecked) return;
+  versionUpdateChecked = true;
+  //@ts-ignore
+  const manifest = app.plugins.manifests["obsidian-excalidraw-plugin"];
+  //@ts-ignore
+  const latestVersion = await app.plugins.getLatestVersion("obsidian-excalidraw-plugin",manifest)
+  if(latestVersion>manifest.version) {
+    new Notice(`A newer version of Excalidraw is available in Community Plugins. You are using ${manifest.version}. The latest version is ${latestVersion}`);
+  }
+  setTimeout(()=>versionUpdateChecked=false,28800000);//reset after 8 hours
 }
 
 /**

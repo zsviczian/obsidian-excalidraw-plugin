@@ -46,6 +46,7 @@ import {
 } from "./ExcalidrawData";
 import {
   checkAndCreateFolder,
+  checkExcalidrawVersion,
   //debug,
   download,
   embedFontsInSVG,
@@ -723,6 +724,7 @@ export default class ExcalidrawView extends TextFileView {
 
   private isLoaded: boolean = false;
   async setViewData(data: string, clear: boolean = false) {
+    checkExcalidrawVersion(this.app);
     this.isLoaded = false;
     if (clear) {
       this.clear();

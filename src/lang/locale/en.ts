@@ -271,6 +271,10 @@ export default {
   FILETAG_NAME: "Set the type indicator for excalidraw.md files",
   FILETAG_DESC: "The text or emojii to display as type indicator.",
   INSERT_EMOJI: "Insert an emoji",
+  LIVEPREVIEW_NAME: "Immersive image embedding in live preview editing mode",
+  LIVEPREVIEW_DESC: "Turn this on to support image embedding styles such as ![[drawing|width|style]] in live preview editing mode. " +
+                    "The setting will not effect the currently open documents. You need close the open documents and re-open them for the change " +
+                    "to take effect.",
 
   //openDrawings.ts
   SELECT_FILE: "Select a file then press enter.",

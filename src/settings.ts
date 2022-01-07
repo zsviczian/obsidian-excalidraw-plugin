@@ -45,6 +45,7 @@ export interface ExcalidrawSettings {
   compatibilityMode: boolean;
   experimentalFileType: boolean;
   experimentalFileTag: string;
+  experimentalLivePreview: boolean;
   loadCount: number; //version 1.2 migration counter
   drawingOpenCount: number;
   library: string;
@@ -95,6 +96,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   syncExcalidraw: false,
   experimentalFileType: false,
   experimentalFileTag: "✏️",
+  experimentalLivePreview: true,
   compatibilityMode: false,
   loadCount: 0,
   drawingOpenCount: 0,
@@ -828,5 +830,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
+
+    new Setting(containerEl)
+      .setName(t("LIVEPREVIEW_NAME"))
+      .setDesc(t("LIVEPREVIEW_DESC"))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.experimentalLivePreview)
+          .onChange(async (value) => {
+            this.plugin.settings.experimentalLivePreview = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
   }
 }
