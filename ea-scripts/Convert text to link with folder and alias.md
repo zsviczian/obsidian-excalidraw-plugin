@@ -18,12 +18,15 @@ app.vault.getFiles().forEach((f)=>
 
 f = Array.from(folders);
 folder = await utils.suggester(f,f);
+folder = folder??""; //if exiting suggester with ESC
 folder = folder === "" ? folder : folder + "/";
 
 elements = ea.getViewSelectedElements().filter((el)=>el.type==="text");
 
 elements.forEach((el)=>{
   el.rawText = "[["+folder+el.rawText+"|"+el.rawText+"]]";
+  el.text = "[["+folder+el.text+"|"+el.text+"]]";
+  el.originalText = "[["+folder+el.originalText+"|"+el.originalText+"]]";
 })
 ea.copyViewElementsToEAforEditing(elements);
 ea.addElementsToView();

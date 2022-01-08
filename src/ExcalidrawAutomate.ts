@@ -211,7 +211,7 @@ export interface ExcalidrawAutomate {
     b: readonly [number, number],
     gap?: number, //if given, element is inflated by this value
   ): Point[];
-  
+
   //See OCR plugin for example on how to use scriptSettings
   activeScript: string; //Set automatically by the ScriptEngine
   getScriptSettings(): {}; //Returns script settings. Saves settings in plugin settings, under the activeScript key
@@ -1182,7 +1182,7 @@ export async function initExcalidrawAutomate(
         return false;
       }
       const elements = this.getElements();
-      return await this.targetView.addElements(
+      return  await this.targetView.addElements(
         elements,
         repositionToCursor,
         save,

@@ -345,7 +345,7 @@ export default class ExcalidrawView extends TextFileView {
       return;
     }
     this.contentEl.requestFullscreen(); //{navigationUI: "hide"});
-    this.excalidrawWrapperRef.current.focus();
+    this.excalidrawWrapperRef.current.firstElementChild?.focus();
     this.contentEl.setAttribute("style", "padding:0px;margin:0px;");
 
     this.fullscreenModalObserver = new MutationObserver((m) => {
@@ -837,7 +837,8 @@ export default class ExcalidrawView extends TextFileView {
         this.app.workspace.activeLeaf === this.leaf &&
         this.excalidrawWrapperRef
       ) {
-        this.excalidrawWrapperRef.current.focus();
+        //.firstElmentChild solves this issue: https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/346
+        this.excalidrawWrapperRef.current?.firstElementChild?.focus();
       }
       //debug({where:"ExcalidrawView.loadDrawing",file:this.file.name,before:"this.loadSceneFiles"});
       this.loadSceneFiles();
@@ -1326,7 +1327,7 @@ export default class ExcalidrawView extends TextFileView {
           this.excalidrawAPI.addFiles(files);
         }
         if (save) {
-          this.save(false);
+          await this.save(false); //preventReload=false will ensure that markdown links are paresed and displayed correctly
         } else {
           this.dirty = this.file?.path;
         }
@@ -2003,7 +2004,7 @@ export default class ExcalidrawView extends TextFileView {
       return React.createElement(React.Fragment, null, excalidrawDiv);
     });
     ReactDOM.render(reactElement, this.contentEl, () => {
-      this.excalidrawWrapperRef.current.focus();
+      this.excalidrawWrapperRef.current.firstElementChild?.focus();
       this.addFullscreenchangeEvent();
     });
   }
