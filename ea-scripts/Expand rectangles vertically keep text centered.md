@@ -72,4 +72,4 @@ for (var i = 0; i < topGroups.length; i++) {
 }
 
 ea.copyViewElementsToEAforEditing(elements);
-ea.addElementsToView();
+ea.addElementsToView(false, false);
