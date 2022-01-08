@@ -40,7 +40,7 @@ for (const el of ea.getElements()) {
     el.backgroundColor = "#" + rgbToHexString(newRgb);
   }
 }
-ea.addElementsToView();
+ea.addElementsToView(false, false);
 
 function rgbToHexString(args) {
   const integer =

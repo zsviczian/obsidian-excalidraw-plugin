@@ -34,4 +34,4 @@ for(var i=0; i<groups.length; i++) {
     }
 }
 ea.copyViewElementsToEAforEditing(elements);
-ea.addElementsToView();
+ea.addElementsToView(false, false);
