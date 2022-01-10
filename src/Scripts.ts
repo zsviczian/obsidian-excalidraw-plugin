@@ -65,13 +65,17 @@ export class ScriptEngine {
     if (this.scriptPath === this.plugin.settings.scriptFolderPath) {
       return;
     }
-    this.unloadScripts();
+    if(this.scriptPath) this.unloadScripts();
     this.loadScripts();
   }
 
   loadScripts() {
     const app = this.plugin.app;
     this.scriptPath = this.plugin.settings.scriptFolderPath;
+    if(!app.vault.getAbstractFileByPath(this.scriptPath)) {
+      this.scriptPath = null;
+      return;
+    }
     const scripts = app.vault
       .getFiles()
       .filter((f: TFile) => f.path.startsWith(this.scriptPath));
@@ -90,7 +94,7 @@ export class ScriptEngine {
     }
 
     const subpath = path.split(
-      `${this.plugin.settings.scriptFolderPath}/`,
+      `${this.scriptPath}/`,
     )[1];
     const lastSlash = subpath.lastIndexOf("/");
     if (lastSlash > -1) {

@@ -2,7 +2,7 @@ import { App, MarkdownRenderer, Modal, Notice, request } from "obsidian";
 import { Url } from "url";
 import { t } from "./lang/helpers";
 import ExcalidrawPlugin from "./main";
-import { errorlog } from "./Utils";
+import { errorlog, log } from "./Utils";
 
 const URL =
   "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/index.md";
@@ -18,6 +18,14 @@ export class ScriptInstallPrompt extends Modal {
     this.containerEl.classList.add("excalidraw-scriptengine-install");
     try {
       const source = await request({ url: URL });
+      if(!source) {
+        new Notice("Error opening the Excalidraw Script Store page. " +
+                   "Please double check that you can access the website. " + 
+                   "I've logged the link in developer console (press CTRL+SHIFT+i)",5000);
+        log(URL);
+        this.close();
+        return;
+      }
       await MarkdownRenderer.renderMarkdown(
         source,
         this.contentEl,

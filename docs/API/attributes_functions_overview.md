@@ -134,8 +134,13 @@ export interface ExcalidrawAutomate {
     },
   ): boolean;
   addElementsToView( //Adds elements from elementsDict to the current view
-    repositionToCursor: boolean,
-    save: boolean,
+    repositionToCursor?: boolean,  //default is false
+    save?: boolean, //default is true
+    //newElementsOnTop controls whether elements created with ExcalidrawAutomate
+    //are added at the bottom of the stack or the top of the stack of elements already in the view
+    //Note that elements copied to the view with copyViewElementsToEAforEditing retain their
+    //position in the stack of elements in the view even if modified using EA
+    newElementsOnTop?: boolean, //default is false, i.e. the new elements get to the bottom of the stack
   ): Promise<boolean>;
   onDropHook(data: {
     //if set Excalidraw will call this function onDrop events
@@ -176,7 +181,7 @@ export interface ExcalidrawAutomate {
     b: readonly [number, number],
     gap?: number, //if given, element is inflated by this value
   ): Point[];
-  
+
   //See OCR plugin for example on how to use scriptSettings
   activeScript: string; //Set automatically by the ScriptEngine
   getScriptSettings(): {}; //Returns script settings. Saves settings in plugin settings, under the activeScript key

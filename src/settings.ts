@@ -123,7 +123,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   plugin: ExcalidrawPlugin;
   private requestEmbedUpdate: boolean = false;
   private requestReloadDrawings: boolean = false;
-  private applyDebounceTimer: number = 0;
+  //private applyDebounceTimer: number = 0;
 
   constructor(app: App, plugin: ExcalidrawPlugin) {
     super(app, plugin);
@@ -131,17 +131,25 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   }
 
   applySettingsUpdate(requestReloadDrawings: boolean = false) {
-    clearTimeout(this.applyDebounceTimer);
+    /*clearTimeout(this.applyDebounceTimer);
     const plugin = this.plugin;
     this.applyDebounceTimer = window.setTimeout(() => {
       plugin.saveSettings();
-    }, 100);
+    }, 500);*/
     if (requestReloadDrawings) {
       this.requestReloadDrawings = true;
     }
   }
 
   async hide() {
+    this.plugin.settings.scriptFolderPath = normalizePath(this.plugin.settings.scriptFolderPath);
+    if (
+      this.plugin.settings.scriptFolderPath === "/" ||
+      this.plugin.settings.scriptFolderPath === ""
+    ) {
+      this.plugin.settings.scriptFolderPath = "Excalidraw/Scripts";
+    }
+    this.plugin.saveSettings();
     if (this.requestReloadDrawings) {
       const exs =
         this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
@@ -156,13 +164,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     }
     if (this.requestEmbedUpdate) {
       this.plugin.triggerEmbedUpdates();
-    }
-    if (
-      this.plugin.settings.scriptFolderPath === "/" ||
-      this.plugin.settings.scriptFolderPath === ""
-    ) {
-      this.plugin.settings.scriptFolderPath = "Excalidraw/Scripts";
-      this.plugin.saveSettings();
     }
     this.plugin.scriptEngine.updateScriptPath();
   }
@@ -220,7 +221,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setPlaceholder("Excalidraw/Scripts")
           .setValue(this.plugin.settings.scriptFolderPath)
           .onChange(async (value) => {
-            this.plugin.settings.scriptFolderPath = normalizePath(value);
+            this.plugin.settings.scriptFolderPath = value;
             this.applySettingsUpdate();
           }),
       );

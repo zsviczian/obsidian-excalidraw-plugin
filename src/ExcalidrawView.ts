@@ -1236,6 +1236,7 @@ export default class ExcalidrawView extends TextFileView {
         repositionToCursor: boolean = false,
         save: boolean = false,
         images: any,
+        newElementsOnTop: boolean = false,
       ): Promise<boolean> => {
         if (!excalidrawRef?.current) {
           return false;
@@ -1282,11 +1283,11 @@ export default class ExcalidrawView extends TextFileView {
         }
 
         const st: AppState = this.excalidrawAPI.getAppState();
-
-        //debug({where:"ExcalidrawView.addElements",file:this.file.name,dataTheme:this.excalidrawData.scene.appState.theme,before:"updateScene",state:st})
-        const elements = el.concat(
-          newElements.filter((e) => !removeList.includes(e.id)),
-        );
+        
+        const elements = 
+          newElementsOnTop 
+          ? el.concat(newElements.filter((e) => !removeList.includes(e.id)))
+          : (newElements.filter((e) => !removeList.includes(e.id))).concat(el);
         this.excalidrawAPI.updateScene({
           elements,
           appState: st,
