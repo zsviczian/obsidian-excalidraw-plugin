@@ -61,12 +61,19 @@ for (var i = 0; i < topGroups.length; i++) {
     const perRectDistance = distance / rects.length;
     for (var j = 0; j < rects.length; j++) {
       const rect = rects[j];
+      const rectLeft = rect.x;
+      const rectTop = rect.y;
+      const rectRight = rect.x + rect.width;
+      const rectBottom = rect.y + rect.height;
+      
       rect.x = rect.x + perRectDistance * j - perRectDistance / 2;
       rect.width += perRectDistance;
-    }
-    for (var j = 0; j < texts.length; j++) {
-      const text = texts[j];
-      text.x = text.x + perRectDistance * j;
+      
+      const textsWithRect = texts.filter(text => text.x >= rectLeft && text.x <= rectRight
+        && text.y >= rectTop && text.y <= rectBottom);
+      for(const text of textsWithRect) {
+        text.x = text.x + perRectDistance * j;
+      }
     }
   }
 }
