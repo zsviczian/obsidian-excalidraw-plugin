@@ -49,9 +49,7 @@ for (var i = 0; i < topGroups.length; i++) {
   const rects = topGroups[i]
     .filter((el) => el.type === "rectangle")
     .sort((lha, rha) => lha.y - rha.y);
-  const texts = topGroups[i]
-    .filter((el) => el.type === "text")
-    .sort((lha, rha) => lha.y - rha.y);
+
   const groupWith = groupHeights[i].height;
   if (groupWith < maxGroupHeight) {
     const distance = maxGroupHeight - groupWith;
@@ -60,10 +58,6 @@ for (var i = 0; i < topGroups.length; i++) {
       const rect = rects[j];
       rect.y = rect.y + perRectDistance * j;
       rect.height += perRectDistance;
-    }
-    for (var j = 0; j < texts.length; j++) {
-      const text = texts[j];
-      text.y = text.y + perRectDistance * j;
     }
   }
 }
