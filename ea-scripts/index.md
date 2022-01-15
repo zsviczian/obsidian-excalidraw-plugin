@@ -25,10 +25,12 @@ I would love to include your contribution in the script library. If you have a s
 ---
 
 # List of available scripts
+- [[#Box Each Selected Groups]]
 - [[#Box Selected Elements]]
 - [[#Bullet Point]]
 - [[#Connect elements]]
 - [[#Convert text to link with folder and alias]]
+- [[#Copy Selected Element Styles to Global]]
 - [[#Create new markdown file and embed into active drawing]]
 - [[#Darken background color]]
 - [[#Dimensions]]
@@ -52,6 +54,11 @@ I would love to include your contribution in the script library. If you have a s
 - [[#Transfer TextElements to Excalidraw markdown metadata]]
 - [[#Zoom to Fit Selected Elements]]
 
+## Box Each Selected Groups
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Box%20Each%20Selected%20Groups.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/1-2-3'>@1-2-3</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Box%20Each%20Selected%20Groups.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script will add encapsulating boxes around each of the currently selected groups in Excalidraw.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-box-each-selected-groups.png'></td></tr></table>
 
 ## Box Selected Elements
 ```excalidraw-script-install
@@ -76,6 +83,12 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Convert%20text%20to%20link%20with%20folder%20and%20alias.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Convert%20text%20to%20link%20with%20folder%20and%20alias.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Converts text elements to links pointing to a file in a selected folder and with the alias set as the original text. The script will prompt the user to select an existing folder from the vault.<br><code>original text</code> - <code>[[selected folder/original text|original text]]</code></td></tr></table>
+
+## Copy Selected Element Styles to Global
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Copy%20Selected%20Element%20Styles%20to%20Global.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/1-2-3'>@1-2-3</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Copy%20Selected%20Element%20Styles%20to%20Global.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script will copy styles of any selected element into Excalidraw's global styles.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-copy-selected-element-styles-to-global.png'></td></tr></table>
 
 ## Create new markdown file and embed into active drawing
 ```excalidraw-script-install
