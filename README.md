@@ -61,6 +61,7 @@ Please upgrade to Obsidian v0.12.19 or higher to get the latest release.
     - `excalidraw-link-prefix: "📍"` preview prefix for internal links
     - `excalidraw-url-prefix: "🌐"` preview prefix for external links
     - `excalidraw-link-brackets: true|false` whether or not to display brackets around links in preview
+    - `excalidraw-default-mode: view|zen` Open this document in view mode or zen mode by defult. Default view mode is excellent for presentation slides.
 - Embed complete markdown files into your drawings
   - Drag from the desired file from the Obsidian file explorer and hold down CTRL/CMD while dropping the file onto the canvas.
   - Use the command palette action: `Insert markdown file from vault`
