@@ -275,6 +275,15 @@ export default {
   LIVEPREVIEW_DESC: "Turn this on to support image embedding styles such as ![[drawing|width|style]] in live preview editing mode. " +
                     "The setting will not effect the currently open documents. You need close the open documents and re-open them for the change " +
                     "to take effect.",
+  ENABLE_FOURTH_FONT_NAME: "Enable fourth font option",
+  ENABLE_FOURTH_FONT_DESC: "By turning this on, you will see a fourth font button on the properties panel for text elements. " +
+                          "Files that use this fourth font will (partly) lose their paltform independence. " +
+                          "Depending on the cutom font set in settings, they will look differently when loaded in another vault, or at a later time. " +
+                          "Also the 4th font will display as system default font on excalidraw.com, or other Excalidraw versions.",
+  FOURTH_FONT_NAME: "Forth font file",
+  FOURTH_FONT_DESC: "Select a .ttf, .woff or .woff2 font file from your vault to use as the fourth font. " +
+                    "If no file is selected excalidraw will use the Virgil font by default.",
+              
 
   //openDrawings.ts
   SELECT_FILE: "Select a file then press enter.",

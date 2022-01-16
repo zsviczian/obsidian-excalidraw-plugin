@@ -312,7 +312,10 @@ const tmpObsidianWYSIWYG = async (
       if(hasHeight) 
         attr.fheight = internalEmbedDiv.getAttribute("height");
       const alt = internalEmbedDiv.getAttribute("alt");
-      const hasAttr = alt && alt!=="" && alt!==basename;
+      const hasAttr = alt 
+        && alt !== "" 
+        && alt !== basename
+        && alt !== internalEmbedDiv.getAttribute("src");
       if(hasAttr) {
         //1:width, 2:height, 3:style  1      2      3
         const parts = alt.match(/(\d*%?)x?(\d*%?)\|?(.*)/);

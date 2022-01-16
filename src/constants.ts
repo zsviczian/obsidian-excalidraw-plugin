@@ -1,5 +1,4 @@
 import { customAlphabet } from "nanoid";
-
 //This is only for backward compatibility because an early version of obsidian included an encoding to avoid fantom links from littering Obsidian graph view
 export function JSON_parse(x: string): any {
   return JSON.parse(x.replaceAll("&#91;", "["));

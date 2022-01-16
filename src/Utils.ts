@@ -3,13 +3,14 @@ import {
   App,
   normalizePath,
   Notice,
+  request,
   TAbstractFile,
   TFolder,
   Vault,
   WorkspaceLeaf,
 } from "obsidian";
 import { Random } from "roughjs/bin/math";
-import { Zoom } from "@zsviczian/excalidraw/types/types";
+import { DataURL, Zoom } from "@zsviczian/excalidraw/types/types";
 import { CASCADIA_FONT, REG_BLOCK_REF_CLEAN, VIRGIL_FONT } from "./constants";
 import ExcalidrawPlugin from "./main";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
@@ -34,13 +35,34 @@ export const checkExcalidrawVersion = async (app:App) => {
   versionUpdateChecked = true;
   //@ts-ignore
   const manifest = app.plugins.manifests["obsidian-excalidraw-plugin"];
-  //@ts-ignore
-  const latestVersion = await app.plugins.getLatestVersion("obsidian-excalidraw-plugin",manifest)
-  if(latestVersion>manifest.version) {
-    new Notice(`A newer version of Excalidraw is available in Community Plugins. You are using ${manifest.version}. The latest version is ${latestVersion}`);
+  
+  try {
+    const gitAPIrequest = async () => {
+      return JSON.parse(await request({
+        url: `https://api.github.com/repos/zsviczian/obsidian-excalidraw-plugin/releases?per_page=5&page=1`,
+      }))
+    }
+
+    const latestVersion = ((await gitAPIrequest())
+      .map((el:any) => {
+        return {
+          version: el.tag_name,
+          published: new Date(el.published_at),
+        };
+      })
+      .filter((el:any) => el.version.match(/^\d+\.\d+\.\d+$/))
+      .sort((el1:any,el2:any)=>el2.published-el1.published))[0].version;
+
+    if(latestVersion>manifest.version) {
+      new Notice(`A newer version of Excalidraw is available in Community Plugins.\n\nYou are using ${manifest.version}.\nThe latest is ${latestVersion}`);
+    }
+  } catch(e) {
+    errorlog({where:"Utils/checkExcalidrawVersion", error:e});
   }
   setTimeout(()=>versionUpdateChecked=false,28800000);//reset after 8 hours
 }
+
+
 
 /**
  * Splits a full path including a folderpath and a filename into separate folderpath and filename components
@@ -280,6 +302,53 @@ export const getNewOrAdjacentLeaf = (
   }
   return plugin.app.workspace.createLeafBySplit(leaf);
 };
+
+export const getDataURL = async (
+  file: ArrayBuffer,
+  mimeType: string,
+): Promise<DataURL> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataURL = reader.result as DataURL;
+      resolve(dataURL);
+    };
+    reader.onerror = (error) => reject(error);
+    reader.readAsDataURL(new Blob([new Uint8Array(file)], { type: mimeType }));
+  });
+};
+
+export const getFontDataURL = async (
+  app:App,
+  fontFileName: string,
+  sourcePath: string,
+  name?:string
+):Promise<{fontDef: string, fontName: string, dataURL: string}> => {
+  let fontDef:string = "";
+  let fontName = "";
+  let dataURL = "";
+  const f = app.metadataCache.getFirstLinkpathDest(
+    fontFileName,
+    sourcePath,
+  );
+  if (f) {
+    const ab = await app.vault.readBinary(f);
+    const mimeType = f.extension.startsWith("woff")
+      ? "application/font-woff"
+      : "font/truetype";
+    fontName = name??f.basename;
+    dataURL = await getDataURL(
+      ab,
+      mimeType,
+    );
+    fontDef = ` @font-face {font-family: "${fontName}";src: url("${
+      dataURL
+    }") format("${f.extension === "ttf" ? "truetype" : f.extension}");}`;
+    const split = fontDef.split(";base64,", 2);
+    fontDef = `${split[0]};charset=utf-8;base64,${split[1]}`;
+  } 
+  return {fontDef,fontName,dataURL};
+}
 
 export const svgToBase64 = (svg: string): string => {
   return `data:image/svg+xml;base64,${btoa(

@@ -39,6 +39,7 @@ import {
   CTRL_OR_CMD,
   SCRIPT_INSTALL_CODEBLOCK,
   SCRIPT_INSTALL_FOLDER,
+  VIRGIL_FONT,
 } from "./constants";
 import ExcalidrawView, { ExportSettings, TextMode } from "./ExcalidrawView";
 import { getMarkdownDrawingSection } from "./ExcalidrawData";
@@ -67,6 +68,7 @@ import {
   embedFontsInSVG,
   errorlog,
   getAttachmentsFolderAndFilePath,
+  getFontDataURL,
   getIMGFilename,
   getIMGPathFromExcalidrawFile,
   getNewUniqueFilepath,
@@ -120,6 +122,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public mathjax: any = null;
   private mathjaxDiv: HTMLDivElement = null;
   public scriptEngine: ScriptEngine;
+  public fourthFontDataURL: string = VIRGIL_FONT;
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
@@ -155,6 +158,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.experimentalFileTypeDisplayToggle(this.settings.experimentalFileType);
     this.registerCommands();
     this.registerEventListeners();
+    this.initializeFourthFont();
 
     //inspiration taken from kanban:
     //https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/main.ts#L267
@@ -183,6 +187,31 @@ export default class ExcalidrawPlugin extends Plugin {
     const self = this;
     this.app.workspace.onLayoutReady(() => {
       this.scriptEngine = new ScriptEngine(self);
+    });
+  }
+
+  public initializeFourthFont() {
+    this.app.workspace.onLayoutReady(async() => {
+      const font = (await getFontDataURL(this.app,this.settings.experimantalFourthFont,"","LocalFont")).dataURL;
+      this.fourthFontDataURL = font === "" ? VIRGIL_FONT : font;
+
+      const newStylesheet = document.createElement("style");
+      newStylesheet.id = "local-font-stylesheet";
+      newStylesheet.textContent = `
+        @font-face {
+          font-family: 'LocalFont';
+          src: url("${font}");
+          font-display: swap;
+        }
+      `;
+      // replace the old local font <style> element with the one we just created
+      const oldStylesheet = document.getElementById(newStylesheet.id);
+      document.head.appendChild(newStylesheet);
+      if (oldStylesheet) {
+        document.head.removeChild(oldStylesheet);
+      }
+      
+      await (document as any).fonts.load(`20px LocalFont`);
     });
   }
 
@@ -1097,10 +1126,32 @@ export default class ExcalidrawPlugin extends Plugin {
     );
   }
 
+  public ctrlKeyDown:boolean;
+  public shiftKeyDown:boolean;
+  public altKeyDown:boolean;
+  public onKeyUp:any; 
+  public onKeyDown:any;
+
   private popScope: Function = null;
   private registerEventListeners() {
     const self = this;
     this.app.workspace.onLayoutReady(async () => {
+
+      self.onKeyUp = (e:KeyboardEvent) => {
+        self.ctrlKeyDown = e[CTRL_OR_CMD]; 
+        self.shiftKeyDown = e.shiftKey;
+        self.altKeyDown = e.altKey;
+      }
+
+      self.onKeyDown = (e:KeyboardEvent) => {
+        this.ctrlKeyDown = e[CTRL_OR_CMD]; 
+        this.shiftKeyDown = e.shiftKey;
+        this.altKeyDown = e.altKey;
+      }
+
+      window.addEventListener("keydown",self.onKeyDown,false);
+      window.addEventListener("keyup",self.onKeyUp,false);
+
       //watch filename change to rename .svg, .png; to sync to .md; to update links
       const renameEventHandler = async (
         file: TAbstractFile,
@@ -1273,6 +1324,9 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   onunload() {
+    window.removeEventListener("keydown",this.onKeyDown,false);
+    window.removeEventListener("keyup",this.onKeyUp,false);
+
     destroyExcalidrawAutomate();
     if (this.popScope) {
       this.popScope();

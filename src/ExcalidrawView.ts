@@ -152,9 +152,9 @@ export default class ExcalidrawView extends TextFileView {
   private preventReload: boolean = true;
   public compatibilityMode: boolean = false;
   //store key state for view mode link resolution
-  private ctrlKeyDown = false;
+  /*private ctrlKeyDown = false;
   private shiftKeyDown = false;
-  private altKeyDown = false;
+  private altKeyDown = false;*/
 
   //https://stackoverflow.com/questions/27132796/is-there-any-javascript-event-fired-when-the-on-screen-keyboard-on-mobile-safari
   private isEditingText: boolean = false;
@@ -823,6 +823,11 @@ export default class ExcalidrawView extends TextFileView {
         ? om.zenModeEnabled
         : this.excalidrawAPI.getAppState().zenModeEnabled;
       //debug({where:"ExcalidrawView.loadDrawing",file:this.file.name,dataTheme:excalidrawData.appState.theme,before:"updateScene"})
+      this.excalidrawAPI.setLocalFont(
+        this.plugin.fourthFontDataURL,
+        this.plugin.settings.experimentalEnableFourthFont
+      );
+
       this.excalidrawAPI.updateScene({
         elements: excalidrawData.elements,
         appState: {
@@ -1070,6 +1075,11 @@ export default class ExcalidrawView extends TextFileView {
           this.excalidrawAPI = api;
           //console.log({where:"ExcalidrawView.React.ReadyPromise"});
           //debug({where:"ExcalidrawView.React.useEffect",file:this.file.name,before:"this.loadSceneFiles"});
+          this.excalidrawAPI.setLocalFont(
+            this.plugin.fourthFontDataURL,
+            this.plugin.settings.experimentalEnableFourthFont
+          );
+          
           this.loadSceneFiles();
           this.updateContainerSize(null, true);
         });
@@ -1517,8 +1527,8 @@ export default class ExcalidrawView extends TextFileView {
           const event = new MouseEvent("click", {
             ctrlKey: true,
             metaKey: true,
-            shiftKey: this.shiftKeyDown,
-            altKey: this.altKeyDown,
+            shiftKey: this.plugin.shiftKeyDown,
+            altKey: this.plugin.altKeyDown,
           });
           this.handleLinkClick(this, event);
           selectedTextElement = null;
@@ -1528,8 +1538,8 @@ export default class ExcalidrawView extends TextFileView {
           const event = new MouseEvent("click", {
             ctrlKey: true,
             metaKey: true,
-            shiftKey: this.shiftKeyDown,
-            altKey: this.altKeyDown,
+            shiftKey: this.plugin.shiftKeyDown,
+            altKey: this.plugin.altKeyDown,
           });
           this.handleLinkClick(this, event);
           selectedImageElement = null;
@@ -1537,6 +1547,73 @@ export default class ExcalidrawView extends TextFileView {
       };
 
       let mouseEvent: any = null;
+
+      const showHoverPreview = () => {
+        let linktext = "";
+        const selectedElement = getTextElementAtPointer(currentPosition);
+        if (!selectedElement || !selectedElement.text) {
+          const selectedImgElement =
+            getImageElementAtPointer(currentPosition);
+          if (!selectedImgElement || !selectedImgElement.fileId) {
+            return;
+          }
+          if (!this.excalidrawData.hasFile(selectedImgElement.fileId)) {
+            return;
+          }
+          const ef = this.excalidrawData.getFile(
+            selectedImgElement.fileId,
+          );
+          const ref = ef.linkParts.ref
+            ? `#${ef.linkParts.isBlockRef ? "^" : ""}${ef.linkParts.ref}`
+            : "";
+          linktext =
+            this.excalidrawData.getFile(selectedImgElement.fileId).file
+              .path + ref;
+        } else {
+          const text: string =
+            this.textMode === TextMode.parsed
+              ? this.excalidrawData.getRawText(selectedElement.id)
+              : selectedElement.text;
+
+          if (!text) {
+            return;
+          }
+          if (text.match(REG_LINKINDEX_HYPERLINK)) {
+            return;
+          }
+
+          const parts = REGEX_LINK.getRes(text).next();
+          if (!parts.value) {
+            return;
+          }
+          linktext = REGEX_LINK.getLink(parts); //parts.value[2] ? parts.value[2]:parts.value[6];
+          if (linktext.match(REG_LINKINDEX_HYPERLINK)) {
+            return;
+          }
+        }
+
+        this.plugin.hover.linkText = linktext;
+        this.plugin.hover.sourcePath = this.file.path;
+        hoverPreviewTarget = this.contentEl; //e.target;
+        this.app.workspace.trigger("hover-link", {
+          event: mouseEvent,
+          source: VIEW_TYPE_EXCALIDRAW,
+          hoverParent: hoverPreviewTarget,
+          targetEl: hoverPreviewTarget,
+          linktext: this.plugin.hover.linkText,
+          sourcePath: this.plugin.hover.sourcePath,
+        });
+        hoverPoint = currentPosition;
+        if (this.isFullscreen()) {
+          const self = this;
+          setTimeout(() => {
+            const popover = document.body.querySelector("div.popover");
+            if (popover) {
+              self.contentEl.append(popover);
+            }
+          }, 100);
+        }
+      }
 
       const excalidrawDiv = React.createElement(
         "div",
@@ -1554,83 +1631,20 @@ export default class ExcalidrawView extends TextFileView {
               this.exitFullscreen();
             }
 
+            /*
             this.ctrlKeyDown = e[CTRL_OR_CMD]; //.ctrlKey||e.metaKey;
             this.shiftKeyDown = e.shiftKey;
-            this.altKeyDown = e.altKey;
+            this.altKeyDown = e.altKey;*/
 
             if (e[CTRL_OR_CMD] && !e.shiftKey && !e.altKey) {
-              //.ctrlKey||e.metaKey) && !e.shiftKey && !e.altKey) {
-              let linktext = "";
-              const selectedElement = getTextElementAtPointer(currentPosition);
-              if (!selectedElement || !selectedElement.text) {
-                const selectedImgElement =
-                  getImageElementAtPointer(currentPosition);
-                if (!selectedImgElement || !selectedImgElement.fileId) {
-                  return;
-                }
-                if (!this.excalidrawData.hasFile(selectedImgElement.fileId)) {
-                  return;
-                }
-                const ef = this.excalidrawData.getFile(
-                  selectedImgElement.fileId,
-                );
-                const ref = ef.linkParts.ref
-                  ? `#${ef.linkParts.isBlockRef ? "^" : ""}${ef.linkParts.ref}`
-                  : "";
-                linktext =
-                  this.excalidrawData.getFile(selectedImgElement.fileId).file
-                    .path + ref;
-              } else {
-                const text: string =
-                  this.textMode === TextMode.parsed
-                    ? this.excalidrawData.getRawText(selectedElement.id)
-                    : selectedElement.text;
-
-                if (!text) {
-                  return;
-                }
-                if (text.match(REG_LINKINDEX_HYPERLINK)) {
-                  return;
-                }
-
-                const parts = REGEX_LINK.getRes(text).next();
-                if (!parts.value) {
-                  return;
-                }
-                linktext = REGEX_LINK.getLink(parts); //parts.value[2] ? parts.value[2]:parts.value[6];
-                if (linktext.match(REG_LINKINDEX_HYPERLINK)) {
-                  return;
-                }
-              }
-
-              this.plugin.hover.linkText = linktext;
-              this.plugin.hover.sourcePath = this.file.path;
-              hoverPreviewTarget = this.contentEl; //e.target;
-              this.app.workspace.trigger("hover-link", {
-                event: mouseEvent,
-                source: VIEW_TYPE_EXCALIDRAW,
-                hoverParent: hoverPreviewTarget,
-                targetEl: hoverPreviewTarget,
-                linktext: this.plugin.hover.linkText,
-                sourcePath: this.plugin.hover.sourcePath,
-              });
-              hoverPoint = currentPosition;
-              if (this.isFullscreen()) {
-                const self = this;
-                setTimeout(() => {
-                  const popover = document.body.querySelector("div.popover");
-                  if (popover) {
-                    self.contentEl.append(popover);
-                  }
-                }, 100);
-              }
+              showHoverPreview();
             }
           },
-          onKeyUp: (e: any) => {
+/*          onKeyUp: (e: any) => {
             this.ctrlKeyDown = e[CTRL_OR_CMD]; //.ctrlKey||e.metaKey;
             this.shiftKeyDown = e.shiftKey;
             this.altKeyDown = e.altKey;
-          },
+          },*/
           onClick: (e: MouseEvent): any => {
             if (!e[CTRL_OR_CMD]) {
               return;
@@ -1699,7 +1713,7 @@ export default class ExcalidrawView extends TextFileView {
               blockOnMouseButtonDown = true;
 
               //ctrl click
-              if (this.ctrlKeyDown) {
+              if (this.plugin.ctrlKeyDown) {
                 handleLinkClick();
                 return;
               }
@@ -1714,6 +1728,9 @@ export default class ExcalidrawView extends TextFileView {
             }
             if (p.button === "up") {
               blockOnMouseButtonDown = false;
+            }
+            if (this.plugin.ctrlKeyDown) {
+              showHoverPreview();
             }
           },
           onChange: (et: ExcalidrawElement[], st: AppState) => {

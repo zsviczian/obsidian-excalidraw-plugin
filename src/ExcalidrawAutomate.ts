@@ -52,7 +52,7 @@ export interface ExcalidrawAutomate {
     roughness: number;
     opacity: number;
     strokeSharpness: StrokeSharpness; //type StrokeSharpness = "round" | "sharp"
-    fontFamily: number; //1: Virgil, 2:Helvetica, 3:Cascadia
+    fontFamily: number; //1: Virgil, 2:Helvetica, 3:Cascadia, 4:LocalFont
     fontSize: number;
     textAlign: string; //"left"|"right"|"center"
     verticalAlign: string; //"top"|"bottom"|"middle" :for future use, has no effect currently
@@ -289,14 +289,17 @@ export async function initExcalidrawAutomate(
     setFontFamily(val: number) {
       switch (val) {
         case 1:
-          this.style.fontFamily = 1;
-          return getFontFamily(1);
+          this.style.fontFamily = 4;
+          return getFontFamily(4);
         case 2:
           this.style.fontFamily = 2;
           return getFontFamily(2);
-        default:
+        case 3:
           this.style.strokeSharpness = 3;
           return getFontFamily(3);
+        default:
+            this.style.strokeSharpness = 1;
+            return getFontFamily(1);
       }
     },
     setTheme(val: number) {
@@ -1333,6 +1336,8 @@ function getFontFamily(id: number) {
       return "Helvetica, Segoe UI Emoji";
     case 3:
       return "Cascadia, Segoe UI Emoji";
+    case 4:
+      return "LocalFont";
   }
 }
 

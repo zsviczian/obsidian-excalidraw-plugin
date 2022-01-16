@@ -17,7 +17,7 @@ export interface ExcalidrawAutomate {
     roughness: number;
     opacity: number;
     strokeSharpness: StrokeSharpness; //type StrokeSharpness = "round" | "sharp"
-    fontFamily: number; //1: Virgil, 2:Helvetica, 3:Cascadia
+    fontFamily: number; //1: Virgil, 2:Helvetica, 3:Cascadia, 4:LocalFont
     fontSize: number;
     textAlign: string; //"left"|"right"|"center"
     verticalAlign: string; //"top"|"bottom"|"middle" :for future use, has no effect currently

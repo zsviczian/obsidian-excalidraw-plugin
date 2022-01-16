@@ -4,6 +4,7 @@ import {
   normalizePath,
   PluginSettingTab,
   Setting,
+  TFile,
 } from "obsidian";
 import { VIEW_TYPE_EXCALIDRAW } from "./constants";
 import ExcalidrawView from "./ExcalidrawView";
@@ -46,6 +47,8 @@ export interface ExcalidrawSettings {
   experimentalFileType: boolean;
   experimentalFileTag: string;
   experimentalLivePreview: boolean;
+  experimentalEnableFourthFont: boolean;
+  experimantalFourthFont: string;
   loadCount: number; //version 1.2 migration counter
   drawingOpenCount: number;
   library: string;
@@ -97,6 +100,8 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   experimentalFileType: false,
   experimentalFileTag: "✏️",
   experimentalLivePreview: true,
+  experimentalEnableFourthFont: false,
+  experimantalFourthFont: "Virgil",
   compatibilityMode: false,
   loadCount: 0,
   drawingOpenCount: 0,
@@ -131,11 +136,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   }
 
   applySettingsUpdate(requestReloadDrawings: boolean = false) {
-    /*clearTimeout(this.applyDebounceTimer);
-    const plugin = this.plugin;
-    this.applyDebounceTimer = window.setTimeout(() => {
-      plugin.saveSettings();
-    }, 500);*/
     if (requestReloadDrawings) {
       this.requestReloadDrawings = true;
     }
@@ -542,18 +542,24 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName(t("MD_DEFAULT_FONT_NAME"))
-      .setDesc(t("MD_DEFAULT_FONT_DESC"))
-      .addText((text) =>
-        text
-          .setPlaceholder("Virgil|Cascadia|Filename")
-          .setValue(this.plugin.settings.mdFont)
+    .setName(t("MD_DEFAULT_FONT_NAME"))
+    .setDesc(t("MD_DEFAULT_FONT_DESC"))
+      .addDropdown(async (d: DropdownComponent) => {
+        d.addOption("Virgil", "Virgil");
+        d.addOption("Cascadia", "Cascadia");
+        this.app.vault.getFiles()
+          .filter((f)=>["ttf", "woff", "woff2"].contains(f.extension))
+          .forEach((f:TFile)=>{
+            d.addOption(f.path,f.name)
+          })
+        d.setValue(this.plugin.settings.mdFont)
           .onChange((value) => {
             this.requestReloadDrawings = true;
             this.plugin.settings.mdFont = value;
             this.applySettingsUpdate(true);
-          }),
-      );
+          });
+      });
+  
 
     new Setting(containerEl)
       .setName(t("MD_DEFAULT_COLOR_NAME"))
@@ -843,6 +849,38 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
+
+      new Setting(containerEl)
+      .setName(t("ENABLE_FOURTH_FONT_NAME"))
+      .setDesc(t("ENABLE_FOURTH_FONT_DESC"))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.experimentalEnableFourthFont)
+          .onChange(async (value) => {
+            this.requestReloadDrawings = true;
+            this.plugin.settings.experimentalEnableFourthFont = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+      new Setting(containerEl)
+      .setName(t("FOURTH_FONT_NAME"))
+      .setDesc(t("FOURTH_FONT_DESC"))
+        .addDropdown(async (d: DropdownComponent) => {
+          d.addOption("Virgil", "Virgil");
+          this.app.vault.getFiles()
+            .filter((f)=>["ttf", "woff", "woff2"].contains(f.extension))
+            .forEach((f:TFile)=>{
+              d.addOption(f.path,f.name)
+            })
+          d.setValue(this.plugin.settings.experimantalFourthFont)
+            .onChange((value) => {
+              this.requestReloadDrawings = true;
+              this.plugin.settings.experimantalFourthFont = value;
+              this.applySettingsUpdate(true);
+              this.plugin.initializeFourthFont();
+            });
+        });          
 
   }
 }

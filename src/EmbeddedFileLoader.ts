@@ -19,6 +19,8 @@ import { tex2dataURL } from "./LaTeX";
 import ExcalidrawPlugin from "./main";
 import {
   errorlog,
+  getDataURL,
+  getFontDataURL,
   getImageSize,
   getLinkParts,
   LinkParts,
@@ -397,25 +399,9 @@ const convertMarkdownToSVG = async (
       fontDef = "";
       break;
     default:
-      const f = plugin.app.metadataCache.getFirstLinkpathDest(
-        fontName,
-        file.path,
-      );
-      if (f) {
-        const ab = await plugin.app.vault.readBinary(f);
-        const mimeType = f.extension.startsWith("woff")
-          ? "application/font-woff"
-          : "font/truetype";
-        fontName = f.basename;
-        fontDef = ` @font-face {font-family: "${fontName}";src: url("${await getDataURL(
-          ab,
-          mimeType,
-        )}") format("${f.extension === "ttf" ? "truetype" : f.extension}");}`;
-        const split = fontDef.split(";base64,", 2);
-        fontDef = `${split[0]};charset=utf-8;base64,${split[1]}`;
-      } else {
-        fontDef = "";
-      }
+      const font = await getFontDataURL(plugin.app,fontName,file.path);
+      fontDef = font.fontDef;
+      fontName = font.fontName;
   }
 
   const fontColor = fileCache?.frontmatter
@@ -550,21 +536,6 @@ const convertMarkdownToSVG = async (
     "image/svg+xml",
   ).firstElementChild as SVGSVGElement;
   return svgToBase64(finalSVG) as DataURL;
-};
-
-const getDataURL = async (
-  file: ArrayBuffer,
-  mimeType: string,
-): Promise<DataURL> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataURL = reader.result as DataURL;
-      resolve(dataURL);
-    };
-    reader.onerror = (error) => reject(error);
-    reader.readAsDataURL(new Blob([new Uint8Array(file)], { type: mimeType }));
-  });
 };
 
 const generateIdFromFile = async (file: ArrayBuffer): Promise<FileId> => {
