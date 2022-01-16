@@ -123,7 +123,6 @@ export default class ExcalidrawPlugin extends Plugin {
   public mathjax: any = null;
   private mathjaxDiv: HTMLDivElement = null;
   public scriptEngine: ScriptEngine;
-  public fourthFontDataURL: string = VIRGIL_DATAURL;
   public fourthFontDef: string = VIRGIL_FONT;
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
@@ -194,14 +193,14 @@ export default class ExcalidrawPlugin extends Plugin {
   public initializeFourthFont() {
     this.app.workspace.onLayoutReady(async() => {
       const font = (await getFontDataURL(this.app,this.settings.experimantalFourthFont,"","LocalFont"));
-      this.fourthFontDataURL = font.dataURL === "" ? VIRGIL_DATAURL : font.dataURL;
+      const fourthFontDataURL = font.dataURL === "" ? VIRGIL_DATAURL : font.dataURL;
       this.fourthFontDef = font.fontDef
       const newStylesheet = document.createElement("style");
       newStylesheet.id = "local-font-stylesheet";
       newStylesheet.textContent = `
         @font-face {
           font-family: 'LocalFont';
-          src: url("${font}");
+          src: url("${fourthFontDataURL}");
           font-display: swap;
         }
       `;

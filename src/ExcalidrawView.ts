@@ -824,7 +824,6 @@ export default class ExcalidrawView extends TextFileView {
         : this.excalidrawAPI.getAppState().zenModeEnabled;
       //debug({where:"ExcalidrawView.loadDrawing",file:this.file.name,dataTheme:excalidrawData.appState.theme,before:"updateScene"})
       this.excalidrawAPI.setLocalFont(
-        this.plugin.fourthFontDataURL,
         this.plugin.settings.experimentalEnableFourthFont
       );
 
@@ -1076,7 +1075,6 @@ export default class ExcalidrawView extends TextFileView {
           //console.log({where:"ExcalidrawView.React.ReadyPromise"});
           //debug({where:"ExcalidrawView.React.useEffect",file:this.file.name,before:"this.loadSceneFiles"});
           this.excalidrawAPI.setLocalFont(
-            this.plugin.fourthFontDataURL,
             this.plugin.settings.experimentalEnableFourthFont
           );
           
