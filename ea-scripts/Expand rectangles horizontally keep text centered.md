@@ -18,8 +18,12 @@ const elements = ea.getViewSelectedElements();
 const topGroups = ea.getMaximumGroups(elements);
 
 const groupWidths = topGroups
-  .map((g) =>
-    g.reduce(
+  .map((g) => {
+    if(g.length === 1 && (g[0].type === 'arrow' || g[0].type === 'line')) {
+      // ignore individual lines
+      return { minLeft: 0, maxRight: 0 };
+    }
+    return g.reduce(
       (pre, cur, i) => {
         if (i === 0) {
           return {
@@ -39,8 +43,8 @@ const groupWidths = topGroups
         }
       },
       { minLeft: 0, maxRight: 0 }
-    )
-  )
+    );
+  })
   .map((r) => {
     r.width = r.maxRight - r.minLeft;
     return r;
