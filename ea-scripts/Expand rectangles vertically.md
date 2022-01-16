@@ -15,8 +15,12 @@ const elements = ea.getViewSelectedElements();
 const topGroups = ea.getMaximumGroups(elements);
 
 const groupHeights = topGroups
-  .map((g) =>
-    g.reduce(
+  .map((g) => {
+    if(g.length === 1 && (g[0].type === 'arrow' || g[0].type === 'line')) {
+      // ignore individual lines
+      return { minTop: 0, maxBottom: 0 };
+    }
+    return g.reduce(
       (pre, cur, i) => {
         if (i === 0) {
           return {
@@ -36,8 +40,8 @@ const groupHeights = topGroups
         }
       },
       { minTop: 0, maxBottom: 0 }
-    )
-  )
+    );
+  })
   .map((r) => {
     r.height = r.maxBottom - r.minTop;
     return r;
@@ -49,7 +53,7 @@ for (var i = 0; i < topGroups.length; i++) {
   const rects = topGroups[i]
     .filter((el) => el.type === "rectangle")
     .sort((lha, rha) => lha.y - rha.y);
-
+    
   const groupWith = groupHeights[i].height;
   if (groupWith < maxGroupHeight) {
     const distance = maxGroupHeight - groupWith;
