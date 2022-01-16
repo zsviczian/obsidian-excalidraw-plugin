@@ -40,6 +40,7 @@ import {
   SCRIPT_INSTALL_CODEBLOCK,
   SCRIPT_INSTALL_FOLDER,
   VIRGIL_FONT,
+  VIRGIL_DATAURL,
 } from "./constants";
 import ExcalidrawView, { ExportSettings, TextMode } from "./ExcalidrawView";
 import { getMarkdownDrawingSection } from "./ExcalidrawData";
@@ -122,8 +123,8 @@ export default class ExcalidrawPlugin extends Plugin {
   public mathjax: any = null;
   private mathjaxDiv: HTMLDivElement = null;
   public scriptEngine: ScriptEngine;
-  public fourthFontDataURL: string = VIRGIL_FONT;
-
+  public fourthFontDataURL: string = VIRGIL_DATAURL;
+  public fourthFontDef: string = VIRGIL_FONT;
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
     this.filesMaster = new Map<
@@ -192,9 +193,9 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public initializeFourthFont() {
     this.app.workspace.onLayoutReady(async() => {
-      const font = (await getFontDataURL(this.app,this.settings.experimantalFourthFont,"","LocalFont")).dataURL;
-      this.fourthFontDataURL = font === "" ? VIRGIL_FONT : font;
-
+      const font = (await getFontDataURL(this.app,this.settings.experimantalFourthFont,"","LocalFont"));
+      this.fourthFontDataURL = font.dataURL === "" ? VIRGIL_DATAURL : font.dataURL;
+      this.fourthFontDef = font.fontDef
       const newStylesheet = document.createElement("style");
       newStylesheet.id = "local-font-stylesheet";
       newStylesheet.textContent = `

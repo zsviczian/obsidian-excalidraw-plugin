@@ -205,7 +205,7 @@ export default class ExcalidrawView extends TextFileView {
       return;
     }
     const serializer = new XMLSerializer();
-    const svgString = serializer.serializeToString(embedFontsInSVG(svg));
+    const svgString = serializer.serializeToString(embedFontsInSVG(svg,this.plugin));
     if (file && file instanceof TFile) {
       await this.app.vault.modify(file, svgString);
     } else {
@@ -1012,7 +1012,7 @@ export default class ExcalidrawView extends TextFileView {
               if (!svg) {
                 return null;
               }
-              svg = embedFontsInSVG(svg);
+              svg = embedFontsInSVG(svg,this.plugin);
               download(
                 null,
                 svgToBase64(svg.outerHTML),

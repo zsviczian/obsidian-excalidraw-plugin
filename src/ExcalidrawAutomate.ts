@@ -1551,7 +1551,7 @@ export async function createSVG(
   if (template?.hasSVGwithBitmap) {
     svg.setAttribute("hasbitmap", "true");
   }
-  return embedFont ? embedFontsInSVG(svg) : svg;
+  return embedFont ? embedFontsInSVG(svg,plugin) : svg;
 }
 
 function estimateLineBound(points: any): [number, number, number, number] {

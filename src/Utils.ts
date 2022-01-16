@@ -448,17 +448,19 @@ export const getPNG = async (
   }
 };
 
-export const embedFontsInSVG = (svg: SVGSVGElement): SVGSVGElement => {
+export const embedFontsInSVG = (svg: SVGSVGElement, plugin: ExcalidrawPlugin): SVGSVGElement => {
   //replace font references with base64 fonts
   const includesVirgil =
     svg.querySelector("text[font-family^='Virgil']") != null;
   const includesCascadia =
     svg.querySelector("text[font-family^='Cascadia']") != null;
+  const includesLocalFont =
+    svg.querySelector("text[font-family^='LocalFont']") != null;
   const defs = svg.querySelector("defs");
-  if (defs && (includesCascadia || includesVirgil)) {
+  if (defs && (includesCascadia || includesVirgil || includesLocalFont)) {
     defs.innerHTML = `<style>${includesVirgil ? VIRGIL_FONT : ""}${
       includesCascadia ? CASCADIA_FONT : ""
-    }</style>`;
+    }${includesLocalFont ? plugin.fourthFontDef : ""}</style>`;
   }
   return svg;
 };

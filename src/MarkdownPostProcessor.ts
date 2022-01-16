@@ -127,7 +127,7 @@ const getIMG = async (
   if (!svg) {
     return null;
   }
-  svg = embedFontsInSVG(svg);
+  svg = embedFontsInSVG(svg,plugin);
   svg.removeAttribute("width");
   svg.removeAttribute("height");
   img.setAttribute("src", svgToBase64(svg.outerHTML));
