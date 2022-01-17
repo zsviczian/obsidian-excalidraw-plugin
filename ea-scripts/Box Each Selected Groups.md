@@ -36,8 +36,11 @@ if(isNaN(paddingLR) || isNaN(paddingTB)) {
 	return;
 }
 
-const elements = ea.getViewSelectedElements();
-const groups = ea.getMaximumGroups(elements);
+const selectedElements = ea.getViewSelectedElements();
+const groups = ea.getMaximumGroups(selectedElements);
+const allIndividualArrows = ea.getMaximumGroups(ea.getViewElements())
+	.reduce((result, group) => (group.length === 1 && (group[0].type === 'arrow' || group[0].type === 'line')) ? 
+			[...result, group[0]] : result, []);
 
 for(const elements of groups) {
 	if(elements.length === 1 && elements[0].type ==="arrow" || elements[0].type==="line") {
@@ -71,8 +74,79 @@ for(const elements of groups) {
 		box.width + 2*paddingLR,
 		box.height + 2*paddingTB
 	);
+
+	// Change the join point in the group to the new box
+	const elementsWithBounded = elements.filter(el => (el.boundElements || []).length > 0);
+	const boundedElementsCollection = elementsWithBounded.reduce((result, el) => [...result, ...el.boundElements], []);
+	for(const el of elementsWithBounded) {
+		el.boundElements = [];
+	}
+
+	const newRect = ea.getElement(id);
+	newRect.boundElements = boundedElementsCollection;
+
+    const elementIds = elements.map(el => el.id);
+
+	const startBindingLines = allIndividualArrows.filter(el => elementIds.includes((el.startBinding||{}).elementId));
+	for(startBindingLine of startBindingLines) {
+		startBindingLine.startBinding.elementId = id;
+		recalculateStartPointOfLine(startBindingLine, newRect);
+	}
+
+	const endBindingLines = allIndividualArrows.filter(el => elementIds.includes((el.endBinding||{}).elementId));
+	for(endBindingLine of endBindingLines) {
+		endBindingLine.endBinding.elementId = id;
+		recalculateEndPointOfLine(endBindingLine, newRect);
+	}
+
 	ea.copyViewElementsToEAforEditing(elements);
 	ea.addToGroup([id].concat(elements.map((el)=>el.id)));
 	ea.addElementsToView(false);
 	ea.reset();
+}
+
+function recalculateStartPointOfLine(line, el) {
+	const aX = el.x + el.width/2;
+    const bX = line.x + line.points[1][0];
+    const aY = el.y + el.height/2;
+    const bY = line.y + line.points[1][1];
+
+	line.startBinding.gap = 8;
+	line.startBinding.focus = 0;
+	const intersectA = ea.intersectElementWithLine(
+            	el,
+				[bX, bY],
+            	[aX, aY],
+            	line.startBinding.gap
+          	);
+
+    if(intersectA.length > 0) {
+		line.points[0] = [0, 0];
+		for(var i = 1; i<line.points.length; i++) {
+			line.points[i][0] -= intersectA[0][0] - line.x;
+			line.points[i][1] -= intersectA[0][1] - line.y;
+		}
+		line.x = intersectA[0][0];
+		line.y = intersectA[0][1];
+	}
+}
+
+function recalculateEndPointOfLine(line, el) {
+	const aX = el.x + el.width/2;
+    const bX = line.x + line.points[line.points.length-2][0];
+    const aY = el.y + el.height/2;
+    const bY = line.y + line.points[line.points.length-2][1];
+
+	line.endBinding.gap = 8;
+	line.endBinding.focus = 0;
+	const intersectA = ea.intersectElementWithLine(
+            	el,
+				[bX, bY],
+            	[aX, aY],
+            	line.endBinding.gap
+          	);
+
+    if(intersectA.length > 0) {
+    	line.points[line.points.length - 1] = [intersectA[0][0] - line.x, intersectA[0][1] - line.y];
+	}
 }
