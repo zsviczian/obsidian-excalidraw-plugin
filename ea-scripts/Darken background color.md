@@ -19,7 +19,7 @@ The color conversion method was copied from [color-convert](https://github.com/Q
 const elements = ea
   .getViewSelectedElements()
   .filter((el) =>
-    ["rectangle", "ellipse", "diamond", "image"].includes(el.type)
+    ["rectangle", "ellipse", "diamond", "image", "line"].includes(el.type)
   );
 ea.copyViewElementsToEAforEditing(elements);
 for (const el of ea.getElements()) {
