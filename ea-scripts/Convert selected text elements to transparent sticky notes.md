@@ -10,7 +10,7 @@ elements = ea.getViewSelectedElements()
 if(elements.length===0) return;
 ea.style.strokeColor = "transparent";
 ea.style.backgroundColor = "transparent"
-const padding = 5;
+const padding = 6;
 elements.forEach((el)=>{
   const id = ea.addRect(el.x-padding,el.y-padding,el.width+2*padding,el.height+2*padding);
   ea.getElement(id).boundElements=[{type:"text",id:el.id}];
