@@ -228,7 +228,7 @@ export class GenericSuggester extends FuzzySuggestModal<string> {
     private items: string[],
   ) {
     super(app);
-
+    this.limit =20;
     this.promise = new Promise<string>((resolve, reject) => {
       this.resolvePromise = resolve;
       this.rejectPromise = reject;

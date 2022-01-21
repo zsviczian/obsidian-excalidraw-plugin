@@ -6,7 +6,7 @@ import {
   ExcalidrawElement,
   ExcalidrawBindableElement,
 } from "@zsviczian/excalidraw/types/element/types";
-import { Component, MarkdownRenderer, normalizePath, TFile } from "obsidian";
+import { Component, MarkdownRenderer, normalizePath, TFile, WorkspaceLeaf } from "obsidian";
 import ExcalidrawView, { ExportSettings, TextMode } from "./ExcalidrawView";
 import { ExcalidrawData } from "./ExcalidrawData";
 import {
@@ -19,6 +19,7 @@ import {
   //debug,
   embedFontsInSVG,
   errorlog,
+  getNewOrAdjacentLeaf,
   getPNG,
   getSVG,
   isObsidianThemeDark,
@@ -221,6 +222,8 @@ export interface ExcalidrawAutomate {
   activeScript: string; //Set automatically by the ScriptEngine
   getScriptSettings(): {}; //Returns script settings. Saves settings in plugin settings, under the activeScript key
   setScriptSettings(settings:any):Promise<void>; //sets script settings.
+  openFileInNewOrAdjacentLeaf (file:TFile):WorkspaceLeaf;//Open a file in a new workspaceleaf or reuse an existing adjacent leaf depending on Excalidraw Plugin Settings
+  measureText(text:string):{ width: number, height: number }; //measure text size based on current style settings
 }
 
 declare let window: any;
@@ -1262,6 +1265,17 @@ export async function initExcalidrawAutomate(
       if(!this.activeScript) return null;
       this.plugin.settings.scriptEngineSettings[this.activeScript] = settings;
       await this.plugin.saveSettings();
+    },
+    openFileInNewOrAdjacentLeaf (file:TFile):WorkspaceLeaf {
+      if(!file || !(file instanceof TFile)) return null;
+      if(!this.targetView) return null;
+      const leaf = getNewOrAdjacentLeaf(this.plugin,this.targetView.leaf);
+      leaf.openFile(file);
+      return leaf;
+    },
+    measureText(text:string):{ width: number, height: number } {
+      const size = measureText(text,this.style.fontSize,this.style.fontFamily);
+      return {width: size.w, height: size.h};
     },
   };
   await initFonts();
