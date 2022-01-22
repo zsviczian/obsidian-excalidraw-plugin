@@ -13,9 +13,11 @@ import type ExcalidrawPlugin from "./main";
 
 export interface ExcalidrawSettings {
   folder: string;
+  embedUseExcalidrawFolder: boolean;
   templateFilePath: string;
   scriptFolderPath: string;
   drawingFilenamePrefix: string;
+  drawingEmbedPrefixWithFilename: boolean;
   drawingFilenameDateTime: string;
   displaySVGInPreview: boolean;
   previewMatchObsidianTheme: boolean;
@@ -67,9 +69,11 @@ export interface ExcalidrawSettings {
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   folder: "Excalidraw",
+  embedUseExcalidrawFolder: false,
   templateFilePath: "Excalidraw/Template.excalidraw",
   scriptFolderPath: "Excalidraw/Scripts",
   drawingFilenamePrefix: "Drawing ",
+  drawingEmbedPrefixWithFilename: true,
   drawingFilenameDateTime: "YYYY-MM-DD HH.mm.ss",
   displaySVGInPreview: true,
   previewMatchObsidianTheme: false,
@@ -201,6 +205,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
+      .setName(t("FOLDER_EMBED_NAME"))
+      .setDesc(t("FOLDER_EMBED_DESC"))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.embedUseExcalidrawFolder)
+          .onChange(async (value) => {
+            this.plugin.settings.embedUseExcalidrawFolder = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(containerEl)
       .setName(t("TEMPLATE_NAME"))
       .setDesc(t("TEMPLATE_DESC"))
       .addText((text) =>
@@ -256,6 +272,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             );
             text.setValue(this.plugin.settings.drawingFilenamePrefix);
             filenameEl.innerHTML = getFilenameSample();
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(containerEl)
+      .setName(t("FILENAME_PREFIX_EMBED_NAME"))
+      .setDesc(t("FILENAME_PREFIX_EMBED_DESC"))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.drawingEmbedPrefixWithFilename)
+          .onChange(async (value) => {
+            this.plugin.settings.drawingEmbedPrefixWithFilename = value;
             this.applySettingsUpdate();
           }),
       );

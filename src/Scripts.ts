@@ -1,6 +1,6 @@
 import { sub } from "@zsviczian/excalidraw/types/ga";
 import { App, TAbstractFile, TFile } from "obsidian";
-import { VIEW_TYPE_EXCALIDRAW } from "./constants";
+import { PLUGIN_ID, VIEW_TYPE_EXCALIDRAW } from "./constants";
 import ExcalidrawView from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
 import { GenericInputPrompt, GenericSuggester } from "./Prompt";
@@ -137,7 +137,7 @@ export class ScriptEngine {
 
   unloadScript(basename: string) {
     const app = this.plugin.app;
-    const commandId = `obsidian-excalidraw-plugin:${basename}`;
+    const commandId = `${PLUGIN_ID}:${basename}`;
     // @ts-ignore
     if (!app.commands.commands[commandId]) {
       return;

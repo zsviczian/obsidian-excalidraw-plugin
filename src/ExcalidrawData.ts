@@ -382,6 +382,11 @@ export class ExcalidrawData {
     newOriginalText: string,
     forceUpdate: boolean = false,
   ) {
+    //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/376
+    if (sceneTextElement.containerId) { 
+      return; //I leave the setting of text size to excalidraw, when text is in a container
+              //because text width is fixed to the container width
+    }
     if (forceUpdate || newText != sceneTextElement.text) {
       const measure = measureText(
         newText,

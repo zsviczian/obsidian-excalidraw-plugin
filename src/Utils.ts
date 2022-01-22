@@ -11,7 +11,7 @@ import {
 } from "obsidian";
 import { Random } from "roughjs/bin/math";
 import { DataURL, Zoom } from "@zsviczian/excalidraw/types/types";
-import { CASCADIA_FONT, REG_BLOCK_REF_CLEAN, VIRGIL_FONT } from "./constants";
+import { CASCADIA_FONT, REG_BLOCK_REF_CLEAN, VIRGIL_FONT,PLUGIN_ID } from "./constants";
 import ExcalidrawPlugin from "./main";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
 import { ExportSettings } from "./ExcalidrawView";
@@ -34,7 +34,7 @@ export const checkExcalidrawVersion = async (app:App) => {
   if(versionUpdateChecked) return;
   versionUpdateChecked = true;
   //@ts-ignore
-  const manifest = app.plugins.manifests["obsidian-excalidraw-plugin"];
+  const manifest = app.plugins.manifests[PLUGIN_ID];
   
   try {
     const gitAPIrequest = async () => {
@@ -393,7 +393,7 @@ export const getAttachmentsFolderAndFilePath = async (
   await checkAndCreateFolder(app.vault, folder);
   return {
     folder,
-    filepath: normalizePath(`${folder}/${newFileName}`),
+    filepath: normalizePath(folder===""?newFileName:`${folder}/${newFileName}`),
   };
 };
 

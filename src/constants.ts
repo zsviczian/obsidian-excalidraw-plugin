@@ -12,6 +12,7 @@ export const nanoid = customAlphabet(
 export const KEYCODE = {
   ESC: 27,
 };
+export const PLUGIN_ID = "obsidian-excalidraw-plugin";
 export const SCRIPT_INSTALL_CODEBLOCK = "excalidraw-script-install";
 export const SCRIPT_INSTALL_FOLDER = "Downloaded";
 export const fileid = customAlphabet("1234567890abcdef", 40);

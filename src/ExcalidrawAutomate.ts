@@ -14,6 +14,7 @@ import {
   nanoid,
   VIEW_TYPE_EXCALIDRAW,
   MAX_IMAGE_SIZE,
+  PLUGIN_ID,
 } from "./constants";
 import {
   //debug,
@@ -224,6 +225,10 @@ export interface ExcalidrawAutomate {
   setScriptSettings(settings:any):Promise<void>; //sets script settings.
   openFileInNewOrAdjacentLeaf (file:TFile):WorkspaceLeaf;//Open a file in a new workspaceleaf or reuse an existing adjacent leaf depending on Excalidraw Plugin Settings
   measureText(text:string):{ width: number, height: number }; //measure text size based on current style settings
+  //verifyMinimumPluginVersion returns true if plugin version is >= than required
+  //recommended use: 
+  //if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.20")) {new Notice("message");return;}
+  verifyMinimumPluginVersion(requiredVersion: string):boolean; 
 }
 
 declare let window: any;
@@ -1277,6 +1282,11 @@ export async function initExcalidrawAutomate(
       const size = measureText(text,this.style.fontSize,this.style.fontFamily);
       return {width: size.w, height: size.h};
     },
+    verifyMinimumPluginVersion(requiredVersion: string):boolean {
+      const manifest = this.plugin.app.plugins.manifests[PLUGIN_ID];
+      return manifest.version >= requiredVersion;
+      
+    }
   };
   await initFonts();
   return window.ExcalidrawAutomate;

@@ -186,6 +186,12 @@ export interface ExcalidrawAutomate {
   activeScript: string; //Set automatically by the ScriptEngine
   getScriptSettings(): {}; //Returns script settings. Saves settings in plugin settings, under the activeScript key
   setScriptSettings(settings:any):Promise<void>; //sets script settings.
+  openFileInNewOrAdjacentLeaf (file:TFile):WorkspaceLeaf;//Open a file in a new workspaceleaf or reuse an existing adjacent leaf depending on Excalidraw Plugin Settings
+  measureText(text:string):{ width: number, height: number }; //measure text size based on current style settings
+  //verifyMinimumPluginVersion returns true if plugin version is >= than required
+  //recommended use: 
+  //if(!(ea.verifyMinimumPluginVersion && ea.verifyMinimumPluginVersion("1.5.20"))) {new Notice("message");return;}
+  verifyMinimumPluginVersion(requiredVersion: string):boolean; 
 }
 ```
 

@@ -97,7 +97,6 @@ const getIMG = async (
       [],
       plugin,
     );
-    //const png = await getPNG(JSON_parse(scene),exportSettings, scale);
     if (!png) {
       return null;
     }

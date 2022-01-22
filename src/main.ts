@@ -672,21 +672,28 @@ export default class ExcalidrawPlugin extends Plugin {
       if (!activeView) {
         return;
       }
-      const filename = `${activeView.file.basename}_${window
-        .moment()
-        .format(this.settings.drawingFilenameDateTime)}${
-        this.settings.compatibilityMode ? ".excalidraw" : ".excalidraw.md"
-      }`;
-      const fFp = await getAttachmentsFolderAndFilePath(
-        this.app,
-        activeView.file.path,
-        filename,
-      );
+      const prefix = this.settings.drawingEmbedPrefixWithFilename
+                     ? `${activeView.file.basename}_`
+                     : "";
+      const date = window
+                   .moment()
+                   .format(this.settings.drawingFilenameDateTime)
+      const extension = this.settings.compatibilityMode 
+                        ? ".excalidraw" 
+                        : ".excalidraw.md";
+      const filename = prefix + date + extension; 
+      const folder = this.settings.embedUseExcalidrawFolder
+                     ? null
+                     : (await getAttachmentsFolderAndFilePath(
+                        this.app,
+                        activeView.file.path,
+                        filename,
+                       )).folder;
       const file = await this.createDrawing(
         filename,
-        fFp.folder === "" ? null : fFp.folder,
+        folder,
       );
-      await this.embedDrawing(fFp.filepath);
+      await this.embedDrawing(file.path);
       this.openDrawing(file, inNewPane);
     };
 

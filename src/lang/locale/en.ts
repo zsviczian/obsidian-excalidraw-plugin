@@ -73,6 +73,10 @@ export default {
   FOLDER_NAME: "Excalidraw folder",
   FOLDER_DESC:
     "Default location for new drawings. If empty, drawings will be created in the Vault root.",
+  FOLDER_EMBED_NAME: "Use Excalidraw folder when embedding a drawing into the active document",
+  FOLDER_EMBED_DESC: "Define which folder to place the newly inserted drawing into " +
+                     "when using the command palette action: 'Create a new drawing and embed into active document'. " +
+                     "ON: Use Excalidraw folder; OFF: use attachments folder defined in Obsidian settings",      
   TEMPLATE_NAME: "Excalidraw template file",
   TEMPLATE_DESC:
     "Full filepath to the Excalidraw template. " +
@@ -101,6 +105,10 @@ export default {
   FILENAME_SAMPLE: "The current file format is: <b>",
   FILENAME_PREFIX_NAME: "Filename prefix",
   FILENAME_PREFIX_DESC: "The first part of the filename",
+  FILENAME_PREFIX_EMBED_NAME: "Filename prefix for embedded files",
+  FILENAME_PREFIX_EMBED_DESC: "Name of the newly inserted drawing should start with the name of the active note "+
+                              "when using the command palette action: 'Create a new drawing and embed into active document'. " +
+                              "On: yes, Off: not",
   FILENAME_DATE_NAME: "Filename date",
   FILENAME_DATE_DESC: "The second part of the filename",
   /*SVG_IN_MD_NAME: "SVG Snapshot to markdown file",
