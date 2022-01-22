@@ -15,9 +15,9 @@ const spacing = parseInt (await utils.inputPrompt("spacing?","number","8"));
 if(isNaN(spacing)) {
   return;
 }
-const elements=ea.getViewSelectedElements()
+const elements=ea.getViewSelectedElements(); 
+const topGroups = ea.getMaximumGroups(elements)
     .filter(els => !(els.length === 1 && els[0].type ==="arrow")); // ignore individual arrows
-const topGroups = ea.getMaximumGroups(elements);
 const groups = topGroups.sort((lha,rha) => lha[0].y - rha[0].y);
 
 for(var i=0; i<groups.length; i++) {
