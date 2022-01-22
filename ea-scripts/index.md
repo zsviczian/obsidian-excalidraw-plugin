@@ -25,16 +25,15 @@ I would love to include your contribution in the script library. If you have a s
 ---
 
 # List of available scripts
+- [[#Add Connector Point]]
 - [[#Box Each Selected Groups]]
 - [[#Box Selected Elements]]
-- [[#Bullet Point]]
 - [[#Connect elements]]
 - [[#Convert selected text elements to transparent sticky notes]]
 - [[#Convert text to link with folder and alias]]
 - [[#Copy Selected Element Styles to Global]]
 - [[#Create new markdown file and embed into active drawing]]
 - [[#Darken background color]]
-- [[#Dimensions]]
 - [[#Elbow connectors]]
 - [[#Expand rectangles horizontally keep text centered]]
 - [[#Expand rectangles horizontally]]
@@ -42,19 +41,26 @@ I would love to include your contribution in the script library. If you have a s
 - [[#Expand rectangles vertically]]
 - [[#Fixed spacing]]
 - [[#Fixed vertical distance]]
-- [[#Font Family]]
-- [[#Grid]]
 - [[#Lighten background color]]
 - [[#Modify background color opacity]]
 - [[#Modify stroke width of selected elements]]
 - [[#Normalize Selected Arrows]]
 - [[#OCR - Optical Character Recognition]]
 - [[#Reverse arrows]]
+- [[#Set Dimensions]]
+- [[#Set Font Family]]
+- [[#Set Grid]]
 - [[#Set Link Alias]]
+- [[#Set Text Alignment]]
 - [[#Split text by lines]]
-- [[#Text Align]]
 - [[#Transfer TextElements to Excalidraw markdown metadata]]
 - [[#Zoom to Fit Selected Elements]]
+
+## Add Connector Point
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Add%20Connector%20Point.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Bullet%20Point.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script will add a small circle to the top left of each text element in the selection and add the text and the "connector point" to a group. You can use the connector points to link text elements with an arrow (in for example a Wardley Map).<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-bullet-point.jpg'></td></tr></table>
 
 ## Box Each Selected Groups
 ```excalidraw-script-install
@@ -67,12 +73,6 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Box%20Selected%20Elements.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Box%20Selected%20Elements.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script will add an encapsulating box around the currently selected elements in Excalidraw.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-box-elements.jpg'></td></tr></table>
-
-## Bullet Point
-```excalidraw-script-install
-https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Bullet%20Point.md
-```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Bullet%20Point.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script will add a small circle to the top left of each text element in the selection and add the text and the "bullet point" into a group.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-bullet-point.jpg'></td></tr></table>
 
 ## Connect elements
 ```excalidraw-script-install
@@ -109,12 +109,6 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Darken%20background%20color.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/1-2-3'>@1-2-3</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Darken%20background%20color.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script darkens the background color of the selected element by 2% at a time. You can use this script several times until you are satisfied. It is recommended to set a shortcut key for this script so that you can quickly try to DARKEN and LIGHTEN the color effect. In contrast to the `Modify background color opacity` script, the advantage is that the background color of the element is not affected by the canvas color, and the color value does not appear in a strange rgba() form.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/darken-lighten-background-color.png'></td></tr></table>
-
-## Dimensions
-```excalidraw-script-install
-https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Dimensions.md
-```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Dimensions.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Currently there is no way to specify the exact location and size of objects in Excalidraw. You can bridge this gap with the following simple script.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-dimensions.jpg'></td></tr></table>
 
 ## Elbow connectors
 ```excalidraw-script-install
@@ -158,18 +152,6 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/1-2-3'>@1-2-3</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Fixed%20vertical%20distance.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">The script arranges the selected elements vertically with a fixed spacing. When we create an architecture diagram or mind map, we often need to arrange a large number of elements in a fixed spacing. `Fixed spacing` and `Fixed vertical Distance` scripts can save us a lot of time.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-fixed-vertical-distance.png'></td></tr></table>
 
-## Font Family
-```excalidraw-script-install
-https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Font%20Family.md
-```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Font%20Family.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Sets font family of the text block (Virgil, Helvetica, Cascadia). Useful if you want to set a keyboard shortcut for selecting font family.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-font-family.jpg'></td></tr></table>
-
-## Grid
-```excalidraw-script-install
-https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Grid.md
-```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Grid.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">The default grid size in Excalidraw is 20. Currently there is no way to change the grid size via the user interface. This script offers a way to bridge this gap.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-grid.jpg'></td></tr></table>
-
 ## Lighten background color
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Lighten%20background%20color.md
@@ -206,23 +188,41 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Reverse%20arrows.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Reverse the direction of **arrows** within the scope of selected elements.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-reverse-arrow.jpg'></td></tr></table>
 
+## Set Dimensions
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Set%20Dimensions.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Dimensions.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Currently there is no way to specify the exact location and size of objects in Excalidraw. You can bridge this gap with the following simple script.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-dimensions.jpg'></td></tr></table>
+
+## Set Font Family
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Set%20Font%20Family.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Font%20Family.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Sets font family of the text block (Virgil, Helvetica, Cascadia). Useful if you want to set a keyboard shortcut for selecting font family.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-font-family.jpg'></td></tr></table>
+
+## Set Grid
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Set%20Grid.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Grid.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">The default grid size in Excalidraw is 20. Currently there is no way to change the grid size via the user interface. This script offers a way to bridge this gap.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-grid.jpg'></td></tr></table>
+
 ## Set Link Alias
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Set%20Link%20Alias.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Set%20Link%20Alias.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Iterates all of the links in the selected TextElements and prompts the user to set or modify the alias for each link found.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-set-link-alias.jpg'></td></tr></table>
 
+## Set Text Alignment
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Set%20Text%20Alignment.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Text%20Align.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Sets text alignment of text block (cetner, right, left). Useful if you want to set a keyboard shortcut for selecting text alignment.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-text-align.jpg'></td></tr></table>
+
 ## Split text by lines
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Split%20text%20by%20lines.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Split%20text%20by%20lines.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Split lines of text into separate text elements for easier reorganization<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-split-lines.jpg'></td></tr></table>
-
-## Text Align
-```excalidraw-script-install
-https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Text%20Align.md
-```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Text%20Align.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Sets text alignment of text block (cetner, right, left). Useful if you want to set a keyboard shortcut for selecting text alignment.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-text-align.jpg'></td></tr></table>
 
 ## Transfer TextElements to Excalidraw markdown metadata
 ```excalidraw-script-install
