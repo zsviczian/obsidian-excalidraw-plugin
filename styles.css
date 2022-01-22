@@ -129,6 +129,7 @@ li[data-testid] {
 
 .modal-content.excalidraw-scriptengine-install {
   max-width: 130ch;
+  user-select: text;
 }
 
 .excalidraw-scriptengine-install .modal {
