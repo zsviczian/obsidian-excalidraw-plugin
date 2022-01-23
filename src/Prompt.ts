@@ -5,6 +5,7 @@ import {
   TextComponent,
   FuzzyMatch,
   FuzzySuggestModal,
+  Instruction,
 } from "obsidian";
 
 export class Prompt extends Modal {
@@ -211,25 +212,43 @@ export class GenericInputPrompt extends Modal {
   }
 }
 
-export class GenericSuggester extends FuzzySuggestModal<string> {
-  private resolvePromise: (value: string) => void;
+export class GenericSuggester extends FuzzySuggestModal<any> {
+  private resolvePromise: (value: any) => void;
   private rejectPromise: (reason?: any) => void;
-  public promise: Promise<string>;
+  public promise: Promise<any>;
   private resolved: boolean;
 
-  public static Suggest(app: App, displayItems: string[], items: string[]) {
-    const newSuggester = new GenericSuggester(app, displayItems, items);
+  public static Suggest(
+    app: App,
+    displayItems: string[],
+    items: string[],
+    hint?: string,
+    instructions?: Instruction[],
+  ) {
+    const newSuggester = new GenericSuggester(
+      app,
+      displayItems,
+      items,
+      hint,
+      instructions,
+    );
     return newSuggester.promise;
   }
 
   public constructor(
     app: App,
     private displayItems: string[],
-    private items: string[],
+    private items: any[],
+    private hint?: string,
+    private instructions?: Instruction[],
   ) {
     super(app);
-    this.limit =20;
-    this.promise = new Promise<string>((resolve, reject) => {
+    this.limit = 20;
+    this.setPlaceholder(this.hint ?? "");
+    if (instructions) {
+      this.setInstructions(this.instructions);
+    }
+    this.promise = new Promise<any>((resolve, reject) => {
       this.resolvePromise = resolve;
       this.rejectPromise = reject;
     });
@@ -241,7 +260,7 @@ export class GenericSuggester extends FuzzySuggestModal<string> {
     return this.displayItems[this.items.indexOf(item)];
   }
 
-  getItems(): string[] {
+  getItems(): any[] {
     return this.items;
   }
 
@@ -250,16 +269,15 @@ export class GenericSuggester extends FuzzySuggestModal<string> {
     super.selectSuggestion(value, evt);
   }
 
-  onChooseItem(item: string): void {
+  onChooseItem(item: any): void {
     this.resolved = true;
     this.resolvePromise(item);
   }
 
   onClose() {
     super.onClose();
-
     if (!this.resolved) {
-      this.rejectPromise("no input given.");
+      this.rejectPromise(this.inputEl.value);
     }
   }
 }

@@ -26,9 +26,52 @@ An Excalidraw script will automatically receive two objects:
   - `inputPrompt: (header: string, placeholder?: string, value?: string)`
     - Opens a prompt that asks for an input. Returns a string with the input.
     - You need to await the result of inputPrompt. 
-  - `suggester: (displayItems: string[], actualItems: string[])`
-    - Opens a suggester. Displays the displayItems, but you map these the other values with actualItems. Returns the selected value.
+  - `suggester: (displayItems: string[], items: any[], hint?: string, instructions?:Instruction[])`
+    - Opens a suggester. Displays the displayItems and returns the corresponding item from items[].
     - You need to await the result of suggester.
+    - If the user cancels (ESC), suggester will return `undefined`
+    - Hint and instructions are optional.
+    ```typescript
+      interface Instruction {
+        command: string;
+        purpose: string;
+      }
+    ```
+  - Scripts may have settings. These settings are stored as part of plugin settings and may be also changed by the user via the Obsidian plugin settings window.
+    - You can access settings for the active script using `ea.getScriptSettings()` and store settings values with `ea.setScriptSettings(settings:any)`
+    - Rules for displaying script settings in plugin settings are:
+      - If the setting is a simple literal (boolean, number, string) these will be displayed as such in settings. The name of the setting will be the key for the value.
+    ```javascript
+    ea.setScriptSettings({ 
+      "value 1": true, 
+      "value 2": 1,
+      "value 3": "my string"
+    })
+    ```
+    ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/SimpleSettings.jpg)
+      - If the setting is an object and follows the below structure then a description and a valueset may also be added. Values may also be hidden from the user using the `hidden` key.
+      ```javascript
+      ea.setScriptSettings({
+        "value 1": {
+          "value": true,
+          "description": "This is the description for my boolean value"
+        },
+        "value 2": {
+          "value": 1,
+          "description": "This is the description for my numeric value"
+        },
+        "value 3": {
+          "value": "my string",
+          "description": "This is the description for my string value",
+          "valueset": ["allowed 1","allowed 2","allowed 3"]
+        },
+        "value 4": {
+          "value": "my value",
+          "hidden": true
+        }        
+      });
+      ```
+      ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/ComplexSettings.jpg)
 
 ---------
 
@@ -42,16 +85,41 @@ These scripts are available as downloadable `.md` files on GitHub in [this](http
 
 This script will add an encapsulating box around the currently selected elements in Excalidraw
 ```javascript
-//uncomment if you want a prompt for custom padding
-//const padding = parseInt (await utils.inputPrompt("padding?","number","10"));
-const padding = 10
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.21")) {
+  new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
+  return;
+}
+
+settings = ea.getScriptSettings();
+//check if settings exist. If not, set default values on first run
+if(!settings["Default padding"]) {
+	settings = {
+		"Prompt for padding?": true,
+	  "Default padding" : {
+			value: 10,
+		  description: "Padding between the bounding box of the selected elements, and the box the script creates"
+		}
+	};
+	ea.setScriptSettings(settings);
+}
+
+let padding = settings["Default padding"].value;
+
+if(settings["Prompt for padding?"]) {
+	padding = parseInt (await utils.inputPrompt("padding?","number",padding.toString()));
+}
+
+if(isNaN(padding)) {
+  new Notice("The padding value provided is not a number");
+  return;
+}
 elements = ea.getViewSelectedElements();
 const box = ea.getBoundingBox(elements);
 color = ea
         .getExcalidrawAPI()
         .getAppState()
         .currentItemStrokeColor;
-//uncomment if you want to set the stroke to a random color
+//uncomment for random color:
 //color = '#'+(Math.random()*0xFFFFFF<<0).toString(16).padStart(6,"0");
 ea.style.strokeColor = color;
 id = ea.addRect(
@@ -73,20 +141,76 @@ ea.addElementsToView(false);
 
 This script will connect two objects with an arrow. If either of the objects are a set of grouped elements (e.g. a text element grouped with an encapsulating rectangle), the script will identify these groups, and connect the arrow to the largest object in the group (assuming you want to connect the arrow to the box around the text element).
 ```javascript
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.21")) {
+  new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
+  return;
+}
+
+settings = ea.getScriptSettings();
+//set default values on first run
+if(!settings["Starting arrowhead"]) {
+	settings = {
+	  "Starting arrowhead" : {
+			value: "none",
+      valueset: ["none","arrow","triangle","bar","dot"]
+		},
+		"Ending arrowhead" : {
+			value: "triangle",
+      valueset: ["none","arrow","triangle","bar","dot"]
+		},
+		"Line points" : {
+			value: 1,
+      description: "Number of line points between start and end"
+		}
+	};
+	ea.setScriptSettings(settings);
+}
+
+const arrowStart = settings["Starting arrowhead"].value === "none" ? null : settings["Starting arrowhead"].value;
+const arrowEnd = settings["Ending arrowhead"].value === "none" ? null : settings["Ending arrowhead"].value;
+const linePoints = Math.floor(settings["Line points"].value);
+
 const elements = ea.getViewSelectedElements();
 ea.copyViewElementsToEAforEditing(elements);
-const groups = ea.getMaximumGroups(elements);
-if(groups.length !== 2) return;
+groups = ea.getMaximumGroups(elements);
+
+if(groups.length !== 2) {
+  //unfortunately getMaxGroups returns duplicated resultset for sticky notes
+  //needs additional filtering
+  cleanGroups=[];
+  idList = [];
+  for (group of groups) {
+    keep = true;
+    for(item of group) if(idList.contains(item.id)) keep = false;
+    if(keep) {
+      cleanGroups.push(group);
+      idList = idList.concat(group.map(el=>el.id))
+    }
+  }
+  if(cleanGroups.length !== 2) return;
+  groups = cleanGroups;
+}
+
 els = [ 
   ea.getLargestElement(groups[0]),
   ea.getLargestElement(groups[1])
 ];
+
+ea.style.strokeColor = els[0].strokeColor;
+ea.style.strokeWidth = els[0].strokeWidth;
+ea.style.strokeStyle = els[0].strokeStyle;
+ea.style.strokeSharpness = els[0].strokeSharpness;
+
 ea.connectObjects(
   els[0].id,
   null,
   els[1].id,
   null, 
-  {numberOfPoints:2}
+  {
+	endArrowHead: arrowEnd,
+	startArrowHead: arrowStart, 
+	numberOfPoints: linePoints
+  }
 );
 ea.addElementsToView();
 ```

@@ -21,16 +21,13 @@ export default {
   CONVERT_FILE_REPLACE_EXT: "*.excalidraw 格式 => *.md (兼容 Logseq) 格式",
   DOWNLOAD_LIBRARY: "导出 stencil 库为 *.excalidrawlib 文件",
   OPEN_EXISTING_NEW_PANE: "在新面板中打开已有的绘图",
-  OPEN_EXISTING_ACTIVE_PANE:
-    "在当前面板中打开已有的绘图",
+  OPEN_EXISTING_ACTIVE_PANE: "在当前面板中打开已有的绘图",
   TRANSCLUDE: "嵌入绘图到该文档",
   TRANSCLUDE_MOST_RECENT: "嵌入最近编辑的绘图到该文档",
   NEW_IN_NEW_PANE: "在新面板中新建绘图",
   NEW_IN_ACTIVE_PANE: "在当前面板中新建绘图",
-  NEW_IN_NEW_PANE_EMBED:
-    "在新面板中新建绘图，并嵌入到当前文档",
-  NEW_IN_ACTIVE_PANE_EMBED:
-    "在当前面板中新建绘图，并嵌入到当前文档",
+  NEW_IN_NEW_PANE_EMBED: "在新面板中新建绘图，并嵌入到当前文档",
+  NEW_IN_ACTIVE_PANE_EMBED: "在当前面板中新建绘图，并嵌入到当前文档",
   EXPORT_SVG: "导出 SVG 文件到当前目录",
   EXPORT_PNG: "导出 PNG 文件到当前目录",
   TOGGLE_LOCK: "切换文本元素的原文/预览模式",
@@ -38,16 +35,17 @@ export default {
   INSERT_LINK: "插入链接到该绘图",
   INSERT_IMAGE: "插入库文件夹里的图像到该绘图",
   INSERT_MD: "将库文件夹里的 Markdown 文件以图像形式嵌入到该绘图",
-  INSERT_LATEX:
-    "插入 LaTeX 公式到该绘图",
-  ENTER_LATEX: "输入 LaTeX 表达式（示例： \\binom{n}{k} = \\frac{n!}{k!(n-k)!} ）",
+  INSERT_LATEX: "插入 LaTeX 公式到该绘图",
+  ENTER_LATEX:
+    "输入 LaTeX 表达式（示例： \\binom{n}{k} = \\frac{n!}{k!(n-k)!} ）",
 
   //ExcalidrawView.ts
   INSTALL_SCRIPT_BUTTON: "安装或更新 Excalidraw 自动化脚本",
   OPEN_AS_MD: "打开为 Markdown 文件",
   SAVE_AS_PNG: "导出 PNG 到当前目录（按住 CTRL/CMD 指定导出位置）",
   SAVE_AS_SVG: "导出 SVG 到当前目录（按住 CTRL/CMD 指定导出位置）",
-  OPEN_LINK: "将所选文本作为链接打开 \n（按住 SHIFT 并点击此命令可在新面板打开）",
+  OPEN_LINK:
+    "将所选文本作为链接打开 \n（按住 SHIFT 并点击此命令可在新面板打开）",
   EXPORT_EXCALIDRAW: "导出为 .Excalidraw 文件",
   LINK_BUTTON_CLICK_NO_TEXT:
     "请选择一个含有内部链接或外部链接的图形或文本元素。\n" +
@@ -55,15 +53,12 @@ export default {
     "也可以在画布中按住 CTRL/CMD 并点击图形或文本元素！",
   TEXT_ELEMENT_EMPTY:
     "未选中图形或文本元素，或者元素不包含有效的链接（[[链接|缩写]] 或 [缩写](链接)）",
-  FILENAME_INVALID_CHARS:
-    '文件名不能含有以下符号： * " \\  < > : | ?',
+  FILENAME_INVALID_CHARS: '文件名不能含有以下符号： * " \\  < > : | ?',
   FILE_DOES_NOT_EXIST:
     "文件不存在。按住 ALT（或 ALT + SHIFT）并点击链接来创建新文件。",
-  FORCE_SAVE:
-    "强制保存并更新相邻面板。\n（注意：自动保存功能始终是开启的）",
+  FORCE_SAVE: "强制保存并更新相邻面板。\n（注意：自动保存功能始终是开启的）",
   RAW: "含链接的文本元素正以原文模式显示。\n点击切换到预览模式",
-  PARSED:
-    "含链接的文本元素正以预览模式显示。\n点击切换到原文模式",
+  PARSED: "含链接的文本元素正以预览模式显示。\n点击切换到原文模式",
   NOFILE: "Excalidraw（没有文件）",
   COMPATIBILITY_MODE:
     "*.excalidraw 文件以兼容模式打开。转换为新格式以获得完整的插件功能。",
@@ -71,8 +66,7 @@ export default {
 
   //settings.ts
   FOLDER_NAME: "Excalidraw 文件夹",
-  FOLDER_DESC:
-    "新绘图的默认位置。如果此处为空，将在库的根目录中创建绘图。",
+  FOLDER_DESC: "新绘图的默认位置。如果此处为空，将在库的根目录中创建绘图。",
   TEMPLATE_NAME: "Excalidraw 模板文件",
   TEMPLATE_DESC:
     "Excalidraw 模板文件的完整路径。" +
@@ -188,15 +182,13 @@ export default {
   MD_TRANSCLUDE_HEIGHT_DESC:
     "以图像形式嵌入到绘图中的 Markdown 文档产生的图像高度取决于文档内容的多少，但最大不会超过该值。" +
     "您可以将绘图打开为 Markdown 文件，用 [[文档名#^块引ID|宽度x最大高度]] 的形式，来单独为该嵌入的文档设定此项。",
-  MD_DEFAULT_FONT_NAME:
-    "以图像形式嵌入到绘图中的 Markdown 文档的默认字体",
+  MD_DEFAULT_FONT_NAME: "以图像形式嵌入到绘图中的 Markdown 文档的默认字体",
   MD_DEFAULT_FONT_DESC:
-    '可以设为 Virgil，Casadia 或其他 .ttf/.woff/.woff2 字体文件（如 MyFont.woff2）。' +
+    "可以设为 Virgil，Casadia 或其他 .ttf/.woff/.woff2 字体文件（如 MyFont.woff2）。" +
     '您可以在该 Markdown 文档的 Frontmatter 中添加形如 "excalidraw-font: 字体或文件名" 的键值对，来为其单独设定此项。',
-  MD_DEFAULT_COLOR_NAME:
-    "以图像形式嵌入到绘图中的 Markdown 文档的默认文本颜色",
+  MD_DEFAULT_COLOR_NAME: "以图像形式嵌入到绘图中的 Markdown 文档的默认文本颜色",
   MD_DEFAULT_COLOR_DESC:
-    '设为 css 颜色名，如 steelblue（参考 https://www.w3schools.com/colors/colors_names.asp），或者有效的 16 进制颜色值，例如 #e67700。</p>' +
+    "设为 css 颜色名，如 steelblue（参考 https://www.w3schools.com/colors/colors_names.asp），或者有效的 16 进制颜色值，例如 #e67700。</p>" +
     '您可以在该 Markdown 文档的 Frontmatter 中添加形如 "excalidraw-font-color: 颜色名或颜色值" 的键值对，来为其单独设定此项。',
   MD_CSS_NAME: "CSS 文件",
   MD_CSS_DESC:
@@ -229,15 +221,13 @@ export default {
   EXPORT_PNG_SCALE_NAME: "PNG 导出图像比例",
   EXPORT_PNG_SCALE_DESC: "导出的 PNG 图像的大小比例",
   EXPORT_BACKGROUND_NAME: "导出的图像包含背景",
-  EXPORT_BACKGROUND_DESC:
-    "如果关闭，将导出透明背景的图像。",
+  EXPORT_BACKGROUND_DESC: "如果关闭，将导出透明背景的图像。",
   EXPORT_THEME_NAME: "导出的图像包含主题",
   EXPORT_THEME_DESC:
     "导出与绘图的黑暗/明亮主题匹配的图像。" +
     "如果关闭，在黑暗主题下导出的图像将和明亮主题一样。",
   EXPORT_HEAD: "导出设置",
-  EXPORT_SYNC_NAME:
-    "保持 .SVG 和 .PNG 文件名与绘图文件同步",
+  EXPORT_SYNC_NAME: "保持 .SVG 和 .PNG 文件名与绘图文件同步",
   EXPORT_SYNC_DESC:
     "打开后，当绘图文件被重命名时，插件将同步更新同文件夹下的同名 .SVG 和 .PNG 文件。" +
     "当绘图文件被删除时，插件将自动删除同文件夹下的同名 .SVG 和 .PNG 文件。",
@@ -252,8 +242,7 @@ export default {
   COMPATIBILITY_HEAD: "兼容特性",
   EXPORT_EXCALIDRAW_NAME: "自动导出 Excalidraw 文件",
   EXPORT_EXCALIDRAW_DESC: "类似于自动导出 SVG，但导出格式为 *.Excalidraw",
-  SYNC_EXCALIDRAW_NAME:
-    "同步同一绘图的两种格式",
+  SYNC_EXCALIDRAW_NAME: "同步同一绘图的两种格式",
   SYNC_EXCALIDRAW_DESC:
     "如果 *.excalidraw 格式文件的修改日期比 *.md 格式文件更新，" +
     "则根据 .excalidraw 文件来更新 .md 文件中的绘图",
@@ -266,24 +255,26 @@ export default {
   EXPERIMENTAL_DESC:
     "这些设置不会立即生效，需要刷新文件资源管理器或者重新启动 Obsidian 才会生效。",
   FILETYPE_NAME: "在文件浏览器中为 Excalidraw 绘图文件添加类型标识符（如 ✏️）",
-  FILETYPE_DESC:
-    "可通过下一项设置来自定义类型标识符。",
+  FILETYPE_DESC: "可通过下一项设置来自定义类型标识符。",
   FILETAG_NAME: "设置 Excalidraw 绘图文件的类型标识符",
   FILETAG_DESC: "要显示为类型标识符的 emoji 或文本。",
   INSERT_EMOJI: "插入 emoji",
   LIVEPREVIEW_NAME: "在实时预览编辑模式中，嵌入到文档中的绘图以图像的方式渲染",
-  LIVEPREVIEW_DESC: "开启此项，则可在实时预览编辑模式中，用形如 ![[绘图|宽度|样式]] 的方式来嵌入绘图。" +
-                    "该选项不会在已打开的文档中立刻生效 —— " +
-                    "你需要重新打开此文档来使其生效。",
+  LIVEPREVIEW_DESC:
+    "开启此项，则可在实时预览编辑模式中，用形如 ![[绘图|宽度|样式]] 的方式来嵌入绘图。" +
+    "该选项不会在已打开的文档中立刻生效 —— " +
+    "你需要重新打开此文档来使其生效。",
   ENABLE_FOURTH_FONT_NAME: "为文本元素启用本地字体",
-  ENABLE_FOURTH_FONT_DESC: "开启此项后，文本元素的属性面板里会多出一个本地字体按钮。" +
-                          "使用了本地字体的绘图文件，将会失去一部分跨平台能力 —— " +
-                          "若将绘图文件移动到其他库中打开，显示效果可能会截然不同；" +
-                          "若在 excalidraw.com 或者其他版本的 Excalidraw 中打开，使用本地字体的文本会变回系统默认字体。",
+  ENABLE_FOURTH_FONT_DESC:
+    "开启此项后，文本元素的属性面板里会多出一个本地字体按钮。" +
+    "使用了本地字体的绘图文件，将会失去一部分跨平台能力 —— " +
+    "若将绘图文件移动到其他库中打开，显示效果可能会截然不同；" +
+    "若在 excalidraw.com 或者其他版本的 Excalidraw 中打开，使用本地字体的文本会变回系统默认字体。",
   FOURTH_FONT_NAME: "本地字体文件",
-  FOURTH_FONT_DESC: "选择库文件夹中的一个 .ttf, .woff 或 .woff2 字体文件作为本地字体文件。" +
-                    "若未选择文件，则使用默认的 Virgil 字体。",
-              
+  FOURTH_FONT_DESC:
+    "选择库文件夹中的一个 .ttf, .woff 或 .woff2 字体文件作为本地字体文件。" +
+    "若未选择文件，则使用默认的 Virgil 字体。",
+
   //openDrawings.ts
   SELECT_FILE: "选择一个文件后按回车。",
   NO_MATCH: "无法匹配到你所查询的文件。",

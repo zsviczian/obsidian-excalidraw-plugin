@@ -11,7 +11,12 @@ import {
 } from "obsidian";
 import { Random } from "roughjs/bin/math";
 import { DataURL, Zoom } from "@zsviczian/excalidraw/types/types";
-import { CASCADIA_FONT, REG_BLOCK_REF_CLEAN, VIRGIL_FONT,PLUGIN_ID } from "./constants";
+import {
+  CASCADIA_FONT,
+  REG_BLOCK_REF_CLEAN,
+  VIRGIL_FONT,
+  PLUGIN_ID,
+} from "./constants";
 import ExcalidrawPlugin from "./main";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
 import { ExportSettings } from "./ExcalidrawView";
@@ -28,41 +33,44 @@ declare module "obsidian" {
   }
 }
 
-
 let versionUpdateChecked = false;
-export const checkExcalidrawVersion = async (app:App) => {
-  if(versionUpdateChecked) return;
+export const checkExcalidrawVersion = async (app: App) => {
+  if (versionUpdateChecked) {
+    return;
+  }
   versionUpdateChecked = true;
   //@ts-ignore
   const manifest = app.plugins.manifests[PLUGIN_ID];
-  
+
   try {
     const gitAPIrequest = async () => {
-      return JSON.parse(await request({
-        url: `https://api.github.com/repos/zsviczian/obsidian-excalidraw-plugin/releases?per_page=5&page=1`,
-      }))
-    }
+      return JSON.parse(
+        await request({
+          url: `https://api.github.com/repos/zsviczian/obsidian-excalidraw-plugin/releases?per_page=5&page=1`,
+        }),
+      );
+    };
 
-    const latestVersion = ((await gitAPIrequest())
-      .map((el:any) => {
+    const latestVersion = (await gitAPIrequest())
+      .map((el: any) => {
         return {
           version: el.tag_name,
           published: new Date(el.published_at),
         };
       })
-      .filter((el:any) => el.version.match(/^\d+\.\d+\.\d+$/))
-      .sort((el1:any,el2:any)=>el2.published-el1.published))[0].version;
+      .filter((el: any) => el.version.match(/^\d+\.\d+\.\d+$/))
+      .sort((el1: any, el2: any) => el2.published - el1.published)[0].version;
 
-    if(latestVersion>manifest.version) {
-      new Notice(`A newer version of Excalidraw is available in Community Plugins.\n\nYou are using ${manifest.version}.\nThe latest is ${latestVersion}`);
+    if (latestVersion > manifest.version) {
+      new Notice(
+        `A newer version of Excalidraw is available in Community Plugins.\n\nYou are using ${manifest.version}.\nThe latest is ${latestVersion}`,
+      );
     }
-  } catch(e) {
-    errorlog({where:"Utils/checkExcalidrawVersion", error:e});
+  } catch (e) {
+    errorlog({ where: "Utils/checkExcalidrawVersion", error: e });
   }
-  setTimeout(()=>versionUpdateChecked=false,28800000);//reset after 8 hours
-}
-
-
+  setTimeout(() => (versionUpdateChecked = false), 28800000); //reset after 8 hours
+};
 
 /**
  * Splits a full path including a folderpath and a filename into separate folderpath and filename components
@@ -319,36 +327,30 @@ export const getDataURL = async (
 };
 
 export const getFontDataURL = async (
-  app:App,
+  app: App,
   fontFileName: string,
   sourcePath: string,
-  name?:string
-):Promise<{fontDef: string, fontName: string, dataURL: string}> => {
-  let fontDef:string = "";
+  name?: string,
+): Promise<{ fontDef: string; fontName: string; dataURL: string }> => {
+  let fontDef: string = "";
   let fontName = "";
   let dataURL = "";
-  const f = app.metadataCache.getFirstLinkpathDest(
-    fontFileName,
-    sourcePath,
-  );
+  const f = app.metadataCache.getFirstLinkpathDest(fontFileName, sourcePath);
   if (f) {
     const ab = await app.vault.readBinary(f);
     const mimeType = f.extension.startsWith("woff")
       ? "application/font-woff"
       : "font/truetype";
-    fontName = name??f.basename;
-    dataURL = await getDataURL(
-      ab,
-      mimeType,
-    );
-    fontDef = ` @font-face {font-family: "${fontName}";src: url("${
-      dataURL
-    }") format("${f.extension === "ttf" ? "truetype" : f.extension}");}`;
+    fontName = name ?? f.basename;
+    dataURL = await getDataURL(ab, mimeType);
+    fontDef = ` @font-face {font-family: "${fontName}";src: url("${dataURL}") format("${
+      f.extension === "ttf" ? "truetype" : f.extension
+    }");}`;
     const split = fontDef.split(";base64,", 2);
     fontDef = `${split[0]};charset=utf-8;base64,${split[1]}`;
-  } 
-  return {fontDef,fontName,dataURL};
-}
+  }
+  return { fontDef, fontName, dataURL };
+};
 
 export const svgToBase64 = (svg: string): string => {
   return `data:image/svg+xml;base64,${btoa(
@@ -393,7 +395,9 @@ export const getAttachmentsFolderAndFilePath = async (
   await checkAndCreateFolder(app.vault, folder);
   return {
     folder,
-    filepath: normalizePath(folder===""?newFileName:`${folder}/${newFileName}`),
+    filepath: normalizePath(
+      folder === "" ? newFileName : `${folder}/${newFileName}`,
+    ),
   };
 };
 
@@ -448,7 +452,10 @@ export const getPNG = async (
   }
 };
 
-export const embedFontsInSVG = (svg: SVGSVGElement, plugin: ExcalidrawPlugin): SVGSVGElement => {
+export const embedFontsInSVG = (
+  svg: SVGSVGElement,
+  plugin: ExcalidrawPlugin,
+): SVGSVGElement => {
   //replace font references with base64 fonts
   const includesVirgil =
     svg.querySelector("text[font-family^='Virgil']") != null;

@@ -9,9 +9,12 @@ export default {
   // main.ts
   INSTALL_SCRIPT: "Install this script",
   UPDATE_SCRIPT: "An update is available - Click to install",
-  CHECKING_SCRIPT: "Checking if a newer version is available - Click to reinstall now",
-  UNABLETOCHECK_SCRIPT: "Update check was unsuccessful - Click to reinstall now",
-  UPTODATE_SCRIPT: "Script is installed and up to date - Click to reinstall now",
+  CHECKING_SCRIPT:
+    "Checking if a newer version is available - Click to reinstall now",
+  UNABLETOCHECK_SCRIPT:
+    "Update check was unsuccessful - Click to reinstall now",
+  UPTODATE_SCRIPT:
+    "Script is installed and up to date - Click to reinstall now",
   OPEN_AS_EXCALIDRAW: "Open as Excalidraw Drawing",
   TOGGLE_MODE: "Toggle between Excalidraw and Markdown mode",
   CONVERT_NOTE_TO_EXCALIDRAW: "Convert empty note to Excalidraw Drawing",
@@ -73,10 +76,12 @@ export default {
   FOLDER_NAME: "Excalidraw folder",
   FOLDER_DESC:
     "Default location for new drawings. If empty, drawings will be created in the Vault root.",
-  FOLDER_EMBED_NAME: "Use Excalidraw folder when embedding a drawing into the active document",
-  FOLDER_EMBED_DESC: "Define which folder to place the newly inserted drawing into " +
-                     "when using the command palette action: 'Create a new drawing and embed into active document'. " +
-                     "ON: Use Excalidraw folder; OFF: use attachments folder defined in Obsidian settings",      
+  FOLDER_EMBED_NAME:
+    "Use Excalidraw folder when embedding a drawing into the active document",
+  FOLDER_EMBED_DESC:
+    "Define which folder to place the newly inserted drawing into " +
+    "when using the command palette action: 'Create a new drawing and embed into active document'. " +
+    "ON: Use Excalidraw folder; OFF: use attachments folder defined in Obsidian settings",
   TEMPLATE_NAME: "Excalidraw template file",
   TEMPLATE_DESC:
     "Full filepath to the Excalidraw template. " +
@@ -106,9 +111,10 @@ export default {
   FILENAME_PREFIX_NAME: "Filename prefix",
   FILENAME_PREFIX_DESC: "The first part of the filename",
   FILENAME_PREFIX_EMBED_NAME: "Filename prefix for embedded files",
-  FILENAME_PREFIX_EMBED_DESC: "Name of the newly inserted drawing should start with the name of the active note "+
-                              "when using the command palette action: 'Create a new drawing and embed into active document'. " +
-                              "On: yes, Off: not",
+  FILENAME_PREFIX_EMBED_DESC:
+    "Name of the newly inserted drawing should start with the name of the active note " +
+    "when using the command palette action: 'Create a new drawing and embed into active document'. " +
+    "On: yes, Off: not",
   FILENAME_DATE_NAME: "Filename date",
   FILENAME_DATE_DESC: "The second part of the filename",
   /*SVG_IN_MD_NAME: "SVG Snapshot to markdown file",
@@ -280,18 +286,21 @@ export default {
   FILETAG_DESC: "The text or emojii to display as type indicator.",
   INSERT_EMOJI: "Insert an emoji",
   LIVEPREVIEW_NAME: "Immersive image embedding in live preview editing mode",
-  LIVEPREVIEW_DESC: "Turn this on to support image embedding styles such as ![[drawing|width|style]] in live preview editing mode. " +
-                    "The setting will not effect the currently open documents. You need close the open documents and re-open them for the change " +
-                    "to take effect.",
+  LIVEPREVIEW_DESC:
+    "Turn this on to support image embedding styles such as ![[drawing|width|style]] in live preview editing mode. " +
+    "The setting will not effect the currently open documents. You need close the open documents and re-open them for the change " +
+    "to take effect.",
   ENABLE_FOURTH_FONT_NAME: "Enable fourth font option",
-  ENABLE_FOURTH_FONT_DESC: "By turning this on, you will see a fourth font button on the properties panel for text elements. " +
-                          "Files that use this fourth font will (partly) lose their paltform independence. " +
-                          "Depending on the cutom font set in settings, they will look differently when loaded in another vault, or at a later time. " +
-                          "Also the 4th font will display as system default font on excalidraw.com, or other Excalidraw versions.",
+  ENABLE_FOURTH_FONT_DESC:
+    "By turning this on, you will see a fourth font button on the properties panel for text elements. " +
+    "Files that use this fourth font will (partly) lose their paltform independence. " +
+    "Depending on the cutom font set in settings, they will look differently when loaded in another vault, or at a later time. " +
+    "Also the 4th font will display as system default font on excalidraw.com, or other Excalidraw versions.",
   FOURTH_FONT_NAME: "Forth font file",
-  FOURTH_FONT_DESC: "Select a .ttf, .woff or .woff2 font file from your vault to use as the fourth font. " +
-                    "If no file is selected excalidraw will use the Virgil font by default.",
-              
+  FOURTH_FONT_DESC:
+    "Select a .ttf, .woff or .woff2 font file from your vault to use as the fourth font. " +
+    "If no file is selected excalidraw will use the Virgil font by default.",
+  SCRIPT_SETTINGS_HEAD: "Settings for installed Scripts",
 
   //openDrawings.ts
   SELECT_FILE: "Select a file then press enter.",

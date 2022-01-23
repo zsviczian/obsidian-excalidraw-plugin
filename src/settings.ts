@@ -146,7 +146,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   }
 
   async hide() {
-    this.plugin.settings.scriptFolderPath = normalizePath(this.plugin.settings.scriptFolderPath);
+    this.plugin.settings.scriptFolderPath = normalizePath(
+      this.plugin.settings.scriptFolderPath,
+    );
     if (
       this.plugin.settings.scriptFolderPath === "/" ||
       this.plugin.settings.scriptFolderPath === ""
@@ -570,24 +572,23 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-    .setName(t("MD_DEFAULT_FONT_NAME"))
-    .setDesc(t("MD_DEFAULT_FONT_DESC"))
+      .setName(t("MD_DEFAULT_FONT_NAME"))
+      .setDesc(t("MD_DEFAULT_FONT_DESC"))
       .addDropdown(async (d: DropdownComponent) => {
         d.addOption("Virgil", "Virgil");
         d.addOption("Cascadia", "Cascadia");
-        this.app.vault.getFiles()
-          .filter((f)=>["ttf", "woff", "woff2"].contains(f.extension))
-          .forEach((f:TFile)=>{
-            d.addOption(f.path,f.name)
-          })
-        d.setValue(this.plugin.settings.mdFont)
-          .onChange((value) => {
-            this.requestReloadDrawings = true;
-            this.plugin.settings.mdFont = value;
-            this.applySettingsUpdate(true);
+        this.app.vault
+          .getFiles()
+          .filter((f) => ["ttf", "woff", "woff2"].contains(f.extension))
+          .forEach((f: TFile) => {
+            d.addOption(f.path, f.name);
           });
+        d.setValue(this.plugin.settings.mdFont).onChange((value) => {
+          this.requestReloadDrawings = true;
+          this.plugin.settings.mdFont = value;
+          this.applySettingsUpdate(true);
+        });
       });
-  
 
     new Setting(containerEl)
       .setName(t("MD_DEFAULT_COLOR_NAME"))
@@ -878,7 +879,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-      new Setting(containerEl)
+    new Setting(containerEl)
       .setName(t("ENABLE_FOURTH_FONT_NAME"))
       .setDesc(t("ENABLE_FOURTH_FONT_DESC"))
       .addToggle((toggle) =>
@@ -891,24 +892,200 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-      new Setting(containerEl)
+    new Setting(containerEl)
       .setName(t("FOURTH_FONT_NAME"))
       .setDesc(t("FOURTH_FONT_DESC"))
-        .addDropdown(async (d: DropdownComponent) => {
-          d.addOption("Virgil", "Virgil");
-          this.app.vault.getFiles()
-            .filter((f)=>["ttf", "woff", "woff2"].contains(f.extension))
-            .forEach((f:TFile)=>{
-              d.addOption(f.path,f.name)
-            })
-          d.setValue(this.plugin.settings.experimantalFourthFont)
-            .onChange((value) => {
-              this.requestReloadDrawings = true;
-              this.plugin.settings.experimantalFourthFont = value;
-              this.applySettingsUpdate(true);
-              this.plugin.initializeFourthFont();
-            });
-        });          
+      .addDropdown(async (d: DropdownComponent) => {
+        d.addOption("Virgil", "Virgil");
+        this.app.vault
+          .getFiles()
+          .filter((f) => ["ttf", "woff", "woff2"].contains(f.extension))
+          .forEach((f: TFile) => {
+            d.addOption(f.path, f.name);
+          });
+        d.setValue(this.plugin.settings.experimantalFourthFont).onChange(
+          (value) => {
+            this.requestReloadDrawings = true;
+            this.plugin.settings.experimantalFourthFont = value;
+            this.applySettingsUpdate(true);
+            this.plugin.initializeFourthFont();
+          },
+        );
+      });
 
+    if (Object.keys(this.plugin.settings.scriptEngineSettings).length > 0) {
+      const getValue = (scriptName: string, variableName: string): any => {
+        const variable =
+          //@ts-ignore
+          this.plugin.settings.scriptEngineSettings[scriptName][variableName];
+        switch (typeof variable) {
+          case "object":
+            return variable.value;
+          default:
+            return variable;
+        }
+      };
+
+      const setValue = (
+        scriptName: string,
+        variableName: string,
+        value: any,
+      ) => {
+        switch (
+          //@ts-ignore
+          typeof this.plugin.settings.scriptEngineSettings[scriptName][
+            variableName
+          ]
+        ) {
+          case "object":
+            //@ts-ignore
+            this.plugin.settings.scriptEngineSettings[scriptName][
+              variableName
+            ].value = value;
+            break;
+          default:
+            //@ts-ignore
+            this.plugin.settings.scriptEngineSettings[scriptName][
+              variableName
+            ] = value;
+        }
+      };
+
+      const addBooleanSetting = (
+        scriptName: string,
+        variableName: string,
+        description?: string,
+      ) => {
+        new Setting(containerEl)
+          .setName(variableName)
+          .setDesc(description ?? "")
+          .addToggle((toggle) =>
+            toggle
+              .setValue(getValue(scriptName, variableName))
+              .onChange(async (value) => {
+                setValue(scriptName, variableName, value);
+                this.applySettingsUpdate();
+              }),
+          );
+      };
+
+      const addStringSetting = (
+        scriptName: string,
+        variableName: string,
+        description?: string,
+        valueset?: any,
+      ) => {
+        if (
+          valueset &&
+          Object.prototype.toString.call(valueset) === "[object Array]" &&
+          valueset.length > 0
+        ) {
+          new Setting(containerEl)
+            .setName(variableName)
+            .setDesc(description ?? "")
+            .addDropdown((dropdown) => {
+              valueset.forEach((val: any) =>
+                dropdown.addOption(val.toString(), val.toString()),
+              );
+              dropdown
+                .setValue(getValue(scriptName, variableName))
+                .onChange(async (value) => {
+                  setValue(scriptName, variableName, value);
+                  this.applySettingsUpdate();
+                });
+            });
+        } else {
+          new Setting(containerEl)
+            .setName(variableName)
+            .setDesc(description ?? "")
+            .addText((text) =>
+              text
+                .setValue(getValue(scriptName, variableName))
+                .onChange(async (value) => {
+                  setValue(scriptName, variableName, value);
+                  this.applySettingsUpdate();
+                }),
+            );
+        }
+      };
+
+      const addNumberSetting = (
+        scriptName: string,
+        variableName: string,
+        description?: string,
+      ) => {
+        new Setting(containerEl)
+          .setName(variableName)
+          .setDesc(description ?? "")
+          .addText((text) =>
+            text
+              .setPlaceholder("Enter a number")
+              .setValue(getValue(scriptName, variableName).toString())
+              .onChange(async (value) => {
+                const numVal = parseFloat(value);
+                if (isNaN(numVal) && value !== "") {
+                  text.setValue(getValue(scriptName, variableName).toString());
+                  return;
+                }
+                setValue(scriptName, variableName, isNaN(numVal) ? 0 : numVal);
+                this.applySettingsUpdate();
+              }),
+          );
+      };
+
+      this.containerEl.createEl("h1", { text: t("SCRIPT_SETTINGS_HEAD") });
+      Object.keys(this.plugin.settings.scriptEngineSettings).forEach(
+        (scriptName: string) => {
+          const settings =
+            //@ts-ignore
+            this.plugin.settings.scriptEngineSettings[scriptName];
+          const values = Object.values(settings);
+          if (
+            values.length === 0 ||
+            (values.length > 0 &&
+              values
+                .map((val: any): number => (val.hidden ? 0 : 1))
+                .reduce((prev, cur) => prev + cur) === 0)
+          ) {
+            return;
+          }
+          this.containerEl.createEl("h3", { text: scriptName });
+          Object.keys(settings).forEach((variableName) => {
+            const variable = settings[variableName];
+            const item = variable.value ?? variable;
+            switch (typeof item) {
+              case "boolean":
+                if (!variable.hidden) {
+                  addBooleanSetting(
+                    scriptName,
+                    variableName,
+                    variable.description,
+                  );
+                }
+                break;
+              case "string":
+                if (!variable.hidden) {
+                  addStringSetting(
+                    scriptName,
+                    variableName,
+                    variable.description,
+                    variable.valueset,
+                  );
+                }
+                break;
+              case "number":
+                if (!variable.hidden) {
+                  addNumberSetting(
+                    scriptName,
+                    variableName,
+                    variable.description,
+                  );
+                }
+                break;
+            }
+          });
+        },
+      );
+    }
   }
 }

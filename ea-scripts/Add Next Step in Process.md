@@ -5,12 +5,56 @@ This script will prompt you for the title of the process step, then will create 
 
 ```javascript
 */
+
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.21")) {
+  new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
+  return;
+}
+
+settings = ea.getScriptSettings();
+//set default values on first run
+if(!settings["Starting arrowhead"]) {
+	settings = {
+	  "Starting arrowhead" : {
+			value: "none",
+      valueset: ["none","arrow","triangle","bar","dot"]
+		},
+		"Ending arrowhead" : {
+			value: "triangle",
+      valueset: ["none","arrow","triangle","bar","dot"]
+		},
+		"Line points" : {
+			value: 0,
+      description: "Number of line points between start and end"
+		},
+		"Gap between elements": {
+			value: 100
+		},
+		"Wrap text at (number of characters)": {
+			value: 25,
+		},
+		"Fix width": {
+			value: true,
+			description: "The object around the text should have fix width to fit the wrapped text"
+		}
+	};
+	ea.setScriptSettings(settings);
+}
+
+const arrowStart = settings["Starting arrowhead"].value === "none" ? null : settings["Starting arrowhead"].value;
+const arrowEnd = settings["Ending arrowhead"].value === "none" ? null : settings["Ending arrowhead"].value;
+const linePoints = Math.floor(settings["Line points"].value);
+const gapBetweenElements = Math.floor(settings["Gap between elements"].value);
+const wrapLineLen = Math.floor(settings["Wrap text at (number of characters)"].value);
+const fixWidth = settings["Fix width"];
+
 const textPadding = 10;
-const gapBetweenElements = 50;
-const wrapLineLen = 25;
 const text = await utils.inputPrompt("Text?");
 const elements = ea.getViewSelectedElements();
 const isFirst = (!elements || elements.length === 0);
+
+const width = ea.measureText("w".repeat(wrapLineLen)).width;
+console.log(width,fixWidth);
 
 if(!isFirst) {
   const fromElement = ea.getLargestElement(elements);
@@ -27,6 +71,7 @@ if(!isFirst) {
     ea.style.strokeSharpness = el.strokeSharpness;
   }
 
+
   const id = ea.addText(
     fromElement.x,
     fromElement.y+fromElement.height+gapBetweenElements,
@@ -35,7 +80,8 @@ if(!isFirst) {
       wrapAt: wrapLineLen,
       textAlign: "center",
       box: "rectangle",
-      boxPadding: textPadding
+      boxPadding: textPadding,
+      ...fixWidth?{width: width}:null
     }
   );
 
@@ -45,9 +91,9 @@ if(!isFirst) {
     id,
     null,
     {
-	  endArrowHead: "triangle",
-	  startArrowHead: null,
-	  numberOfPoints: 0
+	  endArrowHead: arrowEnd,
+	  startArrowHead: arrowStart,
+	  numberOfPoints: linePoints
     }
   );
   ea.addElementsToView(false);
@@ -60,7 +106,8 @@ if(!isFirst) {
       wrapAt: wrapLineLen,
       textAlign: "center",
       box: "rectangle",
-      boxPadding: textPadding
+      boxPadding: textPadding,
+		  ...fixWidth?{width: width}:null
     }
   );
   ea.addElementsToView(true);

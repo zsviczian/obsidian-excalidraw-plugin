@@ -6,7 +6,7 @@ import {
   ExcalidrawElement,
   ExcalidrawBindableElement,
 } from "@zsviczian/excalidraw/types/element/types";
-import { Component, MarkdownRenderer, normalizePath, TFile, WorkspaceLeaf } from "obsidian";
+import { normalizePath, TFile, WorkspaceLeaf } from "obsidian";
 import ExcalidrawView, { ExportSettings, TextMode } from "./ExcalidrawView";
 import { ExcalidrawData } from "./ExcalidrawData";
 import {
@@ -171,7 +171,7 @@ export interface ExcalidrawAutomate {
     },
   ): boolean;
   addElementsToView( //Adds elements from elementsDict to the current view
-    repositionToCursor?: boolean,  //default is false
+    repositionToCursor?: boolean, //default is false
     save?: boolean, //default is true
     //newElementsOnTop controls whether elements created with ExcalidrawAutomate
     //are added at the bottom of the stack or the top of the stack of elements already in the view
@@ -222,13 +222,13 @@ export interface ExcalidrawAutomate {
   //See OCR plugin for example on how to use scriptSettings
   activeScript: string; //Set automatically by the ScriptEngine
   getScriptSettings(): {}; //Returns script settings. Saves settings in plugin settings, under the activeScript key
-  setScriptSettings(settings:any):Promise<void>; //sets script settings.
-  openFileInNewOrAdjacentLeaf (file:TFile):WorkspaceLeaf;//Open a file in a new workspaceleaf or reuse an existing adjacent leaf depending on Excalidraw Plugin Settings
-  measureText(text:string):{ width: number, height: number }; //measure text size based on current style settings
+  setScriptSettings(settings: any): Promise<void>; //sets script settings.
+  openFileInNewOrAdjacentLeaf(file: TFile): WorkspaceLeaf; //Open a file in a new workspaceleaf or reuse an existing adjacent leaf depending on Excalidraw Plugin Settings
+  measureText(text: string): { width: number; height: number }; //measure text size based on current style settings
   //verifyMinimumPluginVersion returns true if plugin version is >= than required
-  //recommended use: 
+  //recommended use:
   //if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.20")) {new Notice("message");return;}
-  verifyMinimumPluginVersion(requiredVersion: string):boolean; 
+  verifyMinimumPluginVersion(requiredVersion: string): boolean;
 }
 
 declare let window: any;
@@ -237,7 +237,7 @@ export async function initExcalidrawAutomate(
   plugin: ExcalidrawPlugin,
 ): Promise<ExcalidrawAutomate> {
   window.ExcalidrawAutomate = {
-    plugin: plugin,
+    plugin,
     elementsDict: {},
     imagesDict: {},
     style: {
@@ -306,8 +306,8 @@ export async function initExcalidrawAutomate(
           this.style.strokeSharpness = 3;
           return getFontFamily(3);
         default:
-            this.style.strokeSharpness = 1;
-            return getFontFamily(1);
+          this.style.strokeSharpness = 1;
+          return getFontFamily(1);
       }
     },
     setTheme(val: number) {
@@ -1192,19 +1192,19 @@ export async function initExcalidrawAutomate(
     async addElementsToView(
       repositionToCursor: boolean = false,
       save: boolean = true,
-      newElementsOnTop: boolean = false
+      newElementsOnTop: boolean = false,
     ): Promise<boolean> {
       if (!this.targetView || !this.targetView?._loaded) {
         errorMessage("targetView not set", "addElementsToView()");
         return false;
       }
       const elements = this.getElements();
-      return  await this.targetView.addElements(
+      return await this.targetView.addElements(
         elements,
         repositionToCursor,
         save,
         this.imagesDict,
-        newElementsOnTop
+        newElementsOnTop,
       );
     },
     onDropHook: null,
@@ -1263,30 +1263,41 @@ export async function initExcalidrawAutomate(
     },
     activeScript: null,
     getScriptSettings(): {} {
-      if(!this.activeScript) return null;
-      return this.plugin.settings.scriptEngineSettings[this.activeScript];
+      if (!this.activeScript) {
+        return null;
+      }
+      return this.plugin.settings.scriptEngineSettings[this.activeScript] ?? {};
     },
-    async setScriptSettings(settings:any): Promise<void> {
-      if(!this.activeScript) return null;
+    async setScriptSettings(settings: any): Promise<void> {
+      if (!this.activeScript) {
+        return null;
+      }
       this.plugin.settings.scriptEngineSettings[this.activeScript] = settings;
       await this.plugin.saveSettings();
     },
-    openFileInNewOrAdjacentLeaf (file:TFile):WorkspaceLeaf {
-      if(!file || !(file instanceof TFile)) return null;
-      if(!this.targetView) return null;
-      const leaf = getNewOrAdjacentLeaf(this.plugin,this.targetView.leaf);
+    openFileInNewOrAdjacentLeaf(file: TFile): WorkspaceLeaf {
+      if (!file || !(file instanceof TFile)) {
+        return null;
+      }
+      if (!this.targetView) {
+        return null;
+      }
+      const leaf = getNewOrAdjacentLeaf(this.plugin, this.targetView.leaf);
       leaf.openFile(file);
       return leaf;
     },
-    measureText(text:string):{ width: number, height: number } {
-      const size = measureText(text,this.style.fontSize,this.style.fontFamily);
-      return {width: size.w, height: size.h};
+    measureText(text: string): { width: number; height: number } {
+      const size = measureText(
+        text,
+        this.style.fontSize,
+        this.style.fontFamily,
+      );
+      return { width: size.w, height: size.h };
     },
-    verifyMinimumPluginVersion(requiredVersion: string):boolean {
+    verifyMinimumPluginVersion(requiredVersion: string): boolean {
       const manifest = this.plugin.app.plugins.manifests[PLUGIN_ID];
       return manifest.version >= requiredVersion;
-      
-    }
+    },
   };
   await initFonts();
   return window.ExcalidrawAutomate;
@@ -1575,7 +1586,7 @@ export async function createSVG(
   if (template?.hasSVGwithBitmap) {
     svg.setAttribute("hasbitmap", "true");
   }
-  return embedFont ? embedFontsInSVG(svg,plugin) : svg;
+  return embedFont ? embedFontsInSVG(svg, plugin) : svg;
 }
 
 function estimateLineBound(points: any): [number, number, number, number] {

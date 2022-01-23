@@ -399,7 +399,7 @@ const convertMarkdownToSVG = async (
       fontDef = "";
       break;
     default:
-      const font = await getFontDataURL(plugin.app,fontName,file.path);
+      const font = await getFontDataURL(plugin.app, fontName, file.path);
       fontDef = font.fontDef;
       fontName = font.fontName;
   }

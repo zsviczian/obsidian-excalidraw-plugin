@@ -1,8 +1,4 @@
 /*
-![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-download-raw.jpg)
-
-Download this file and save to your Obsidian Vault including the first line, or open it in "Raw" and copy the entire contents to Obsidian.
-
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-ocr.jpg)
 
 THIS SCRIPT REQUIRES EXCALIDRAW 1.5.15
@@ -20,11 +16,18 @@ https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.h
 
 ```javascript
 */
-const curVersion = app.plugins.manifests["obsidian-excalidraw-plugin"].version;
-if(curVersion < "1.5.15") new Notice("please update Excalidraw plugin to the latest version");
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.21")) {
+  new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
+  return;
+}
 
-let token = ea.getScriptSettings()?.token; 
+let token = ea.getScriptSettings().token.value??ea.getScriptSettings().token; 
 const BASE_URL = "https://ocr.taskbone.com";
+
+//convert setting to 1.5.21 format
+if(token && !ea.getScriptSettings().token.value) {
+  ea.setScriptSettings({token: {value: token, hidden: true}});
+}
 
 //get new token if token was not provided
 if (!token) {
@@ -35,7 +38,7 @@ if (!token) {
   if (tokenResponse.status === 200) {
     jsonResponse = await tokenResponse.json();
 	token = jsonResponse.token;
-	ea.setScriptSettings({token});
+	ea.setScriptSettings({token: {value: token, hidden: true}});
   } else {
 	notice(`Taskbone OCR Error: ${tokenResponse.status}\nPlease try again later.`);
 	return;

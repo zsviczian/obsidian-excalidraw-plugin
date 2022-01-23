@@ -7,7 +7,6 @@ import {
   PluginManifest,
   MarkdownView,
   normalizePath,
-  MarkdownPostProcessorContext,
   Menu,
   MenuItem,
   TAbstractFile,
@@ -42,7 +41,7 @@ import {
   VIRGIL_FONT,
   VIRGIL_DATAURL,
 } from "./constants";
-import ExcalidrawView, { ExportSettings, TextMode } from "./ExcalidrawView";
+import ExcalidrawView, { TextMode } from "./ExcalidrawView";
 import { getMarkdownDrawingSection } from "./ExcalidrawData";
 import {
   ExcalidrawSettings,
@@ -57,8 +56,6 @@ import {
   initExcalidrawAutomate,
   destroyExcalidrawAutomate,
   ExcalidrawAutomate,
-  createSVG,
-  createPNG,
 } from "./ExcalidrawAutomate";
 import { Prompt } from "./Prompt";
 import { around } from "monkey-around";
@@ -66,23 +63,23 @@ import { t } from "./lang/helpers";
 import {
   checkAndCreateFolder,
   download,
-  embedFontsInSVG,
   errorlog,
   getAttachmentsFolderAndFilePath,
   getFontDataURL,
-  getIMGFilename,
   getIMGPathFromExcalidrawFile,
   getNewUniqueFilepath,
   isObsidianThemeDark,
   log,
-  splitFolderAndFilename,
-  svgToBase64,
 } from "./Utils";
 import { OneOffs } from "./OneOffs";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
-import { EmbeddedFilesLoader } from "./EmbeddedFileLoader";
 import { ScriptEngine } from "./Scripts";
-import { hoverEvent, initializeMarkdownPostProcessor, markdownPostProcessor, observer } from "./MarkdownPostProcessor";
+import {
+  hoverEvent,
+  initializeMarkdownPostProcessor,
+  markdownPostProcessor,
+  observer,
+} from "./MarkdownPostProcessor";
 
 declare module "obsidian" {
   interface App {
@@ -191,10 +188,16 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public initializeFourthFont() {
-    this.app.workspace.onLayoutReady(async() => {
-      const font = (await getFontDataURL(this.app,this.settings.experimantalFourthFont,"","LocalFont"));
-      const fourthFontDataURL = font.dataURL === "" ? VIRGIL_DATAURL : font.dataURL;
-      this.fourthFontDef = font.fontDef
+    this.app.workspace.onLayoutReady(async () => {
+      const font = await getFontDataURL(
+        this.app,
+        this.settings.experimantalFourthFont,
+        "",
+        "LocalFont",
+      );
+      const fourthFontDataURL =
+        font.dataURL === "" ? VIRGIL_DATAURL : font.dataURL;
+      this.fourthFontDef = font.fontDef;
       const newStylesheet = document.createElement("style");
       newStylesheet.id = "local-font-stylesheet";
       newStylesheet.textContent = `
@@ -210,7 +213,7 @@ export default class ExcalidrawPlugin extends Plugin {
       if (oldStylesheet) {
         document.head.removeChild(oldStylesheet);
       }
-      
+
       await (document as any).fonts.load(`20px LocalFont`);
     });
   }
@@ -258,40 +261,45 @@ export default class ExcalidrawPlugin extends Plugin {
       }
     });
   }
- 
-  private registerInstallCodeblockProcessor() {
-    const codeblockProcessor = async (
-      source: string,
-      el: HTMLElement,
-      ctx: MarkdownPostProcessorContext,
-      plugin: ExcalidrawPlugin,
-    ) => {
 
+  private registerInstallCodeblockProcessor() {
+    const codeblockProcessor = async (source: string, el: HTMLElement) => {
       //Button next to the "List of available scripts" at the top
-      //In try/catch block because this approach is very error prone, depends on 
+      //In try/catch block because this approach is very error prone, depends on
       //MarkdownRenderer() and index.md structure, in case these are not as
       //expected this code will break
       let button2: HTMLButtonElement = null;
       try {
-        const link:HTMLElement = el.parentElement.querySelector(`a[href="#${
-          el.previousElementSibling.getAttribute("data-heading")}"]`);
+        const link: HTMLElement = el.parentElement.querySelector(
+          `a[href="#${el.previousElementSibling.getAttribute(
+            "data-heading",
+          )}"]`,
+        );
         link.style.paddingRight = "10px";
-        button2 = link.parentElement.createEl("button",null,(b) => {
+        button2 = link.parentElement.createEl("button", null, (b) => {
           b.setText(t("UPDATE_SCRIPT"));
           b.addClass("mod-cta");
           b.style.backgroundColor = "var(--interactive-success)";
           b.style.display = "none";
         });
-      } catch(e) {
-        errorlog({where:"this.registerInstallCodeblockProcessor", source, error:e});
+      } catch (e) {
+        errorlog({
+          where: "this.registerInstallCodeblockProcessor",
+          source,
+          error: e,
+        });
       }
 
       source = source.trim();
       el.createEl("button", null, async (button) => {
-        const setButtonText = (text:"CHECKING" | "INSTALL" | "UPTODATE" | "UPDATE" | "ERROR") => {
-          if(button2) button2.style.display = "none";
-          switch(text) {
-            case "CHECKING": 
+        const setButtonText = (
+          text: "CHECKING" | "INSTALL" | "UPTODATE" | "UPDATE" | "ERROR",
+        ) => {
+          if (button2) {
+            button2.style.display = "none";
+          }
+          switch (text) {
+            case "CHECKING":
               button.setText(t("CHECKING_SCRIPT"));
               button.style.backgroundColor = "var(--interactive-normal)";
               break;
@@ -306,75 +314,80 @@ export default class ExcalidrawPlugin extends Plugin {
             case "UPDATE":
               button.setText(t("UPDATE_SCRIPT"));
               button.style.backgroundColor = "var(--interactive-success)";
-              if(button2) button2.style.display = null;
+              if (button2) {
+                button2.style.display = null;
+              }
               break;
             case "ERROR":
               button.setText(t("UNABLETOCHECK_SCRIPT"));
               button.style.backgroundColor = "var(--interactive-normal)";
               break;
           }
-        }
+        };
         button.addClass("mod-cta");
         let decodedURI = source;
-        try{
+        try {
           decodedURI = decodeURI(source);
-        } catch(e) {
+        } catch (e) {
           errorlog({
-            where:"ExcalidrawPlugin.registerInstallCodeblockProcessor.codeblockProcessor.onClick", 
+            where:
+              "ExcalidrawPlugin.registerInstallCodeblockProcessor.codeblockProcessor.onClick",
             source,
-            error:e,
+            error: e,
           });
         }
-        const fname = decodedURI.substring(
-          decodedURI.lastIndexOf("/") + 1,
-        );
-        const folder = `${
-          this.settings.scriptFolderPath
-        }/${SCRIPT_INSTALL_FOLDER}`;
+        const fname = decodedURI.substring(decodedURI.lastIndexOf("/") + 1);
+        const folder = `${this.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}`;
         const path = `${folder}/${fname}`;
         let f = this.app.vault.getAbstractFileByPath(path);
-        setButtonText(f?"CHECKING":"INSTALL");
+        setButtonText(f ? "CHECKING" : "INSTALL");
         button.onclick = async () => {
           try {
-            const data = await request({url:source});
-            if(f) {
-              await this.app.vault.modify(f as TFile,data);
+            const data = await request({ url: source });
+            if (f) {
+              await this.app.vault.modify(f as TFile, data);
             } else {
-              await checkAndCreateFolder(this.app.vault,folder);
-              f = await this.app.vault.create(path,data);
-            }       
+              await checkAndCreateFolder(this.app.vault, folder);
+              f = await this.app.vault.create(path, data);
+            }
             setButtonText("UPTODATE");
-            new Notice(`Installed: ${(f as TFile).basename}`)
+            new Notice(`Installed: ${(f as TFile).basename}`);
           } catch (e) {
             new Notice(`Error installing script: ${fname}`);
             errorlog({
-              where:"ExcalidrawPlugin.registerInstallCodeblockProcessor.codeblockProcessor.onClick", 
-              error:e,
+              where:
+                "ExcalidrawPlugin.registerInstallCodeblockProcessor.codeblockProcessor.onClick",
+              error: e,
             });
           }
         };
-        if(button2) button2.onclick = button.onclick;
-        
+        if (button2) {
+          button2.onclick = button.onclick;
+        }
+
         //check modified date on github
         //https://superuser.com/questions/1406875/how-to-get-the-latest-commit-date-of-a-file-from-a-given-github-reposotiry
-        if(!f || !(f instanceof TFile)) return;
-        const msgHead = "https://api.github.com/repos/zsviczian/obsidian-excalidraw-plugin/commits?path=ea-scripts%2F";
+        if (!f || !(f instanceof TFile)) {
+          return;
+        }
+        const msgHead =
+          "https://api.github.com/repos/zsviczian/obsidian-excalidraw-plugin/commits?path=ea-scripts%2F";
         const msgTail = "&page=1&per_page=1";
         const data = await request({
-          url: msgHead+encodeURI(fname)+msgTail,
+          url: msgHead + encodeURI(fname) + msgTail,
         });
-        if(!data) {
+        if (!data) {
           setButtonText("ERROR");
           return;
         }
         const result = JSON.parse(data);
-        if(result.length===0 || !result[0]?.commit?.committer?.date) {
+        if (result.length === 0 || !result[0]?.commit?.committer?.date) {
           setButtonText("ERROR");
           return;
         }
         //@ts-ignore
-        const mtime = (new Date(result[0].commit.committer.date))/1;
-        if(mtime > f.stat.mtime) {
+        const mtime = new Date(result[0].commit.committer.date) / 1;
+        if (mtime > f.stat.mtime) {
           setButtonText("UPDATE");
           return;
         }
@@ -384,13 +397,13 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.registerMarkdownCodeBlockProcessor(
       SCRIPT_INSTALL_CODEBLOCK,
-      async (source, el, ctx) => {
+      async (source, el) => {
         el.addEventListener(RERENDER_EVENT, async (e) => {
           e.stopPropagation();
           el.empty();
-          codeblockProcessor(source, el, ctx, this);
+          codeblockProcessor(source, el);
         });
-        codeblockProcessor(source, el, ctx, this);
+        codeblockProcessor(source, el);
       },
     );
   }
@@ -673,26 +686,25 @@ export default class ExcalidrawPlugin extends Plugin {
         return;
       }
       const prefix = this.settings.drawingEmbedPrefixWithFilename
-                     ? `${activeView.file.basename}_`
-                     : "";
+        ? `${activeView.file.basename}_`
+        : "";
       const date = window
-                   .moment()
-                   .format(this.settings.drawingFilenameDateTime)
-      const extension = this.settings.compatibilityMode 
-                        ? ".excalidraw" 
-                        : ".excalidraw.md";
-      const filename = prefix + date + extension; 
+        .moment()
+        .format(this.settings.drawingFilenameDateTime);
+      const extension = this.settings.compatibilityMode
+        ? ".excalidraw"
+        : ".excalidraw.md";
+      const filename = prefix + date + extension;
       const folder = this.settings.embedUseExcalidrawFolder
-                     ? null
-                     : (await getAttachmentsFolderAndFilePath(
-                        this.app,
-                        activeView.file.path,
-                        filename,
-                       )).folder;
-      const file = await this.createDrawing(
-        filename,
-        folder,
-      );
+        ? null
+        : (
+            await getAttachmentsFolderAndFilePath(
+              this.app,
+              activeView.file.path,
+              filename,
+            )
+          ).folder;
+      const file = await this.createDrawing(filename, folder);
       await this.embedDrawing(file.path);
       this.openDrawing(file, inNewPane);
     };
@@ -1133,31 +1145,30 @@ export default class ExcalidrawPlugin extends Plugin {
     );
   }
 
-  public ctrlKeyDown:boolean;
-  public shiftKeyDown:boolean;
-  public altKeyDown:boolean;
-  public onKeyUp:any; 
-  public onKeyDown:any;
+  public ctrlKeyDown: boolean;
+  public shiftKeyDown: boolean;
+  public altKeyDown: boolean;
+  public onKeyUp: any;
+  public onKeyDown: any;
 
   private popScope: Function = null;
   private registerEventListeners() {
     const self = this;
     this.app.workspace.onLayoutReady(async () => {
-
-      self.onKeyUp = (e:KeyboardEvent) => {
-        self.ctrlKeyDown = e[CTRL_OR_CMD]; 
+      self.onKeyUp = (e: KeyboardEvent) => {
+        self.ctrlKeyDown = e[CTRL_OR_CMD];
         self.shiftKeyDown = e.shiftKey;
         self.altKeyDown = e.altKey;
-      }
+      };
 
-      self.onKeyDown = (e:KeyboardEvent) => {
-        this.ctrlKeyDown = e[CTRL_OR_CMD]; 
+      self.onKeyDown = (e: KeyboardEvent) => {
+        this.ctrlKeyDown = e[CTRL_OR_CMD];
         this.shiftKeyDown = e.shiftKey;
         this.altKeyDown = e.altKey;
-      }
+      };
 
-      window.addEventListener("keydown",self.onKeyDown,false);
-      window.addEventListener("keyup",self.onKeyUp,false);
+      window.addEventListener("keydown", self.onKeyDown, false);
+      window.addEventListener("keyup", self.onKeyUp, false);
 
       //watch filename change to rename .svg, .png; to sync to .md; to update links
       const renameEventHandler = async (
@@ -1331,8 +1342,8 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   onunload() {
-    window.removeEventListener("keydown",this.onKeyDown,false);
-    window.removeEventListener("keyup",this.onKeyUp,false);
+    window.removeEventListener("keydown", this.onKeyDown, false);
+    window.removeEventListener("keyup", this.onKeyUp, false);
 
     destroyExcalidrawAutomate();
     if (this.popScope) {

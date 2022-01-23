@@ -1,9 +1,4 @@
 /*
-
-![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-download-raw.jpg)
-
-Download this file and save to your Obsidian Vault including the first line, or open it in "Raw" and copy the entire contents to Obsidian.
-
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-box-elements.jpg)
 
 This script will add an encapsulating box around the currently selected elements in Excalidraw.
@@ -13,9 +8,29 @@ https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.h
 
 ```javascript
 */
-//uncomment if you don't want a prompt for custom padding
-//const padding = 10
-const padding = parseInt (await utils.inputPrompt("padding?","number","10"));
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.21")) {
+  new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
+  return;
+}
+settings = ea.getScriptSettings();
+//set default values on first run
+if(!settings["Default padding"]) {
+	settings = {
+		"Prompt for padding?": true,
+	  "Default padding" : {
+			value: 10,
+		  description: "Padding between the bounding box of the selected elements, and the box the script creates"
+		}
+	};
+	ea.setScriptSettings(settings);
+}
+
+let padding = settings["Default padding"].value;
+
+if(settings["Prompt for padding?"]) {
+	padding = parseInt (await utils.inputPrompt("padding?","number",padding.toString()));
+}
+
 if(isNaN(padding)) {
   new Notice("The padding value provided is not a number");
   return;

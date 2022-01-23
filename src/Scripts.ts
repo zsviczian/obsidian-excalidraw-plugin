@@ -1,5 +1,4 @@
-import { sub } from "@zsviczian/excalidraw/types/ga";
-import { App, TAbstractFile, TFile } from "obsidian";
+import { App, Instruction, TAbstractFile, TFile } from "obsidian";
 import { PLUGIN_ID, VIEW_TYPE_EXCALIDRAW } from "./constants";
 import ExcalidrawView from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
@@ -65,14 +64,16 @@ export class ScriptEngine {
     if (this.scriptPath === this.plugin.settings.scriptFolderPath) {
       return;
     }
-    if(this.scriptPath) this.unloadScripts();
+    if (this.scriptPath) {
+      this.unloadScripts();
+    }
     this.loadScripts();
   }
 
   loadScripts() {
     const app = this.plugin.app;
     this.scriptPath = this.plugin.settings.scriptFolderPath;
-    if(!app.vault.getAbstractFileByPath(this.scriptPath)) {
+    if (!app.vault.getAbstractFileByPath(this.scriptPath)) {
       this.scriptPath = null;
       return;
     }
@@ -82,10 +83,10 @@ export class ScriptEngine {
     scripts.forEach((f) => this.loadScript(f));
   }
 
-  getScriptName(f:TFile|string):string {
+  getScriptName(f: TFile | string): string {
     let basename = "";
     let path = "";
-    if(f instanceof TFile) {
+    if (f instanceof TFile) {
       basename = f.basename;
       path = f.path;
     } else {
@@ -93,9 +94,7 @@ export class ScriptEngine {
       path = f;
     }
 
-    const subpath = path.split(
-      `${this.scriptPath}/`,
-    )[1];
+    const subpath = path.split(`${this.scriptPath}/`)[1];
     const lastSlash = subpath.lastIndexOf("/");
     if (lastSlash > -1) {
       return subpath.substring(0, lastSlash + 1) + basename;
@@ -162,12 +161,26 @@ export class ScriptEngine {
     //https://stackoverflow.com/questions/45381204/get-asyncfunction-constructor-in-typescript changed tsconfig to es2017
     //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncFunction
     const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
-    const result = await new AsyncFunction("ea", "utils", script)(this.plugin.ea, {
-      inputPrompt: (header: string, placeholder?: string, value?: string) =>
-        ScriptEngine.inputPrompt(this.plugin.app, header, placeholder, value),
-      suggester: (displayItems: string[], items: string[]) =>
-        ScriptEngine.suggester(this.plugin.app, displayItems, items),
-    });
+    const result = await new AsyncFunction("ea", "utils", script)(
+      this.plugin.ea,
+      {
+        inputPrompt: (header: string, placeholder?: string, value?: string) =>
+          ScriptEngine.inputPrompt(this.plugin.app, header, placeholder, value),
+        suggester: (
+          displayItems: string[],
+          items: any[],
+          hint?: string,
+          instructions?: Instruction[],
+        ) =>
+          ScriptEngine.suggester(
+            this.plugin.app,
+            displayItems,
+            items,
+            hint,
+            instructions,
+          ),
+      },
+    );
     this.plugin.ea.activeScript = null;
     return result;
   }
@@ -188,11 +201,19 @@ export class ScriptEngine {
   public static async suggester(
     app: App,
     displayItems: string[],
-    items: string[],
+    items: any[],
+    hint?: string,
+    instructions?: Instruction[],
   ) {
     try {
-      return await GenericSuggester.Suggest(app, displayItems, items);
-    } catch {
+      return await GenericSuggester.Suggest(
+        app,
+        displayItems,
+        items,
+        hint,
+        instructions,
+      );
+    } catch (e) {
       return undefined;
     }
   }

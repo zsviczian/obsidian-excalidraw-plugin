@@ -1,6 +1,4 @@
-import { App, MarkdownRenderer, Modal, Notice, request } from "obsidian";
-import { Url } from "url";
-import { t } from "./lang/helpers";
+import { MarkdownRenderer, Modal, Notice, request } from "obsidian";
 import ExcalidrawPlugin from "./main";
 import { errorlog, log } from "./Utils";
 
@@ -18,10 +16,13 @@ export class ScriptInstallPrompt extends Modal {
     this.containerEl.classList.add("excalidraw-scriptengine-install");
     try {
       const source = await request({ url: URL });
-      if(!source) {
-        new Notice("Error opening the Excalidraw Script Store page. " +
-                   "Please double check that you can access the website. " + 
-                   "I've logged the link in developer console (press CTRL+SHIFT+i)",5000);
+      if (!source) {
+        new Notice(
+          "Error opening the Excalidraw Script Store page. " +
+            "Please double check that you can access the website. " +
+            "I've logged the link in developer console (press CTRL+SHIFT+i)",
+          5000,
+        );
         log(URL);
         this.close();
         return;
@@ -32,9 +33,11 @@ export class ScriptInstallPrompt extends Modal {
         "",
         this.plugin,
       );
-      this.contentEl.querySelectorAll("h1[data-heading],h2[data-heading],h3[data-heading]").forEach((el) => {
-        el.setAttribute("id", el.getAttribute("data-heading"));
-      });
+      this.contentEl
+        .querySelectorAll("h1[data-heading],h2[data-heading],h3[data-heading]")
+        .forEach((el) => {
+          el.setAttribute("id", el.getAttribute("data-heading"));
+        });
       this.contentEl.querySelectorAll("a.internal-link").forEach((el) => {
         el.removeAttribute("target");
       });

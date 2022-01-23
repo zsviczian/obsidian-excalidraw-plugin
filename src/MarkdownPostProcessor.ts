@@ -1,11 +1,21 @@
-import { settings } from "cluster";
-import { MarkdownPostProcessorContext, MetadataCache, TFile, Vault } from "obsidian";
+import {
+  MarkdownPostProcessorContext,
+  MetadataCache,
+  TFile,
+  Vault,
+} from "obsidian";
 import { CTRL_OR_CMD, RERENDER_EVENT } from "./constants";
 import { EmbeddedFilesLoader } from "./EmbeddedFileLoader";
 import { createPNG, createSVG } from "./ExcalidrawAutomate";
 import { ExportSettings } from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
-import { embedFontsInSVG, getIMGFilename, isObsidianThemeDark, splitFolderAndFilename, svgToBase64 } from "./Utils";
+import {
+  embedFontsInSVG,
+  getIMGFilename,
+  isObsidianThemeDark,
+  splitFolderAndFilename,
+  svgToBase64,
+} from "./Utils";
 
 interface imgElementAttributes {
   file?: TFile;
@@ -19,13 +29,11 @@ let plugin: ExcalidrawPlugin;
 let vault: Vault;
 let metadataCache: MetadataCache;
 
-export const initializeMarkdownPostProcessor = (p:ExcalidrawPlugin) => {
+export const initializeMarkdownPostProcessor = (p: ExcalidrawPlugin) => {
   plugin = p;
   vault = p.app.vault;
   metadataCache = p.app.metadataCache;
-}
-
-
+};
 
 /**
  * Generates an img element with the drawing encoded as a base64 SVG or a PNG (depending on settings)
@@ -126,7 +134,7 @@ const getIMG = async (
   if (!svg) {
     return null;
   }
-  svg = embedFontsInSVG(svg,plugin);
+  svg = embedFontsInSVG(svg, plugin);
   svg.removeAttribute("width");
   svg.removeAttribute("height");
   img.setAttribute("src", svgToBase64(svg.outerHTML));
@@ -175,10 +183,8 @@ const createImageDiv = async (
   });
 };
 
-
-
 const processInternalEmbeds = async (
-  embeddedItems:NodeListOf<Element>|[HTMLElement],
+  embeddedItems: NodeListOf<Element> | [HTMLElement],
   ctx: MarkdownPostProcessorContext,
 ) => {
   //if not, then we are processing a non-excalidraw file in reading mode
@@ -238,8 +244,7 @@ const processInternalEmbeds = async (
       maybeDrawing.parentElement.replaceChild(div, maybeDrawing);
     }
   }
-}    
-
+};
 
 const tmpObsidianWYSIWYG = async (
   el: HTMLElement,
@@ -266,14 +271,11 @@ const tmpObsidianWYSIWYG = async (
     style: "excalidraw-svg",
   };
 
-  attr.file = metadataCache.getFirstLinkpathDest(
-    ctx.sourcePath,
-    "",
-  );
+  attr.file = metadataCache.getFirstLinkpathDest(ctx.sourcePath, "");
 
   el.empty();
 
-  if(!plugin.settings.experimentalLivePreview) {
+  if (!plugin.settings.experimentalLivePreview) {
     el.appendChild(await createImageDiv(attr));
     return;
   }
@@ -282,40 +284,46 @@ const tmpObsidianWYSIWYG = async (
   el.appendChild(div);
 
   //The timeout gives time for obsidian to attach el to the displayed document
-  //Once the element is attached, I can traverse up the dom tree to find .internal-embed 
+  //Once the element is attached, I can traverse up the dom tree to find .internal-embed
   //If internal embed is not found, it means the that the excalidraw.md file
   //is being rendered in "reading" mode. In that case, the image with the default width
   //specified in setting should be displayed
   //if .internal-embed is found, then contents is replaced with the image using the
   //alt, width, and height attributes of .internal-embed to size and style the image
-  setTimeout(async ()=>{
-    let internalEmbedDiv:HTMLElement = div;
-    while(!internalEmbedDiv.hasClass("internal-embed") && internalEmbedDiv.parentElement) {
+  setTimeout(async () => {
+    let internalEmbedDiv: HTMLElement = div;
+    while (
+      !internalEmbedDiv.hasClass("internal-embed") &&
+      internalEmbedDiv.parentElement
+    ) {
       internalEmbedDiv = internalEmbedDiv.parentElement;
     }
 
-    if(!internalEmbedDiv.hasClass("internal-embed")) {
+    if (!internalEmbedDiv.hasClass("internal-embed")) {
       el.empty();
       el.appendChild(await createImageDiv(attr));
       return;
     }
 
     internalEmbedDiv.empty();
-    
+
     const basename = splitFolderAndFilename(attr.fname).basename;
     const setAttr = () => {
-      const hasWidth = internalEmbedDiv.getAttribute("width")!=="";
-      const hasHeight = internalEmbedDiv.getAttribute("height")!=="";          
-      if(hasWidth) 
+      const hasWidth = internalEmbedDiv.getAttribute("width") !== "";
+      const hasHeight = internalEmbedDiv.getAttribute("height") !== "";
+      if (hasWidth) {
         attr.fwidth = internalEmbedDiv.getAttribute("width");
-      if(hasHeight) 
+      }
+      if (hasHeight) {
         attr.fheight = internalEmbedDiv.getAttribute("height");
+      }
       const alt = internalEmbedDiv.getAttribute("alt");
-      const hasAttr = alt 
-        && alt !== "" 
-        && alt !== basename
-        && alt !== internalEmbedDiv.getAttribute("src");
-      if(hasAttr) {
+      const hasAttr =
+        alt &&
+        alt !== "" &&
+        alt !== basename &&
+        alt !== internalEmbedDiv.getAttribute("src");
+      if (hasAttr) {
         //1:width, 2:height, 3:style  1      2      3
         const parts = alt.match(/(\d*%?)x?(\d*%?)\|?(.*)/);
         attr.fwidth = parts[1] ? parts[1] : plugin.settings.width;
@@ -324,40 +332,41 @@ const tmpObsidianWYSIWYG = async (
           attr.style = `excalidraw-svg${parts[3] ? `-${parts[3]}` : ""}`;
         }
       }
-      if(!hasWidth && !hasHeight && !hasAttr) {
+      if (!hasWidth && !hasHeight && !hasAttr) {
         attr.fheight = "";
         attr.fwidth = plugin.settings.width;
         attr.style = "excalidraw-svg";
       }
-    }
+    };
 
     const createImgElement = async () => {
       setAttr();
       const imgDiv = await createImageDiv(attr);
       internalEmbedDiv.appendChild(imgDiv);
-    }
+    };
     await createImgElement();
 
     //timer to avoid the image flickering when the user is typing
-    let timer:NodeJS.Timeout = null;
+    let timer: NodeJS.Timeout = null;
     const observer = new MutationObserver((m) => {
-      if(!["alt","width","height"].contains(m[0]?.attributeName)) {
+      if (!["alt", "width", "height"].contains(m[0]?.attributeName)) {
         return;
       }
-      if(timer) clearTimeout(timer);
+      if (timer) {
+        clearTimeout(timer);
+      }
       timer = setTimeout(() => {
         timer = null;
         setAttr();
         internalEmbedDiv.empty();
         createImgElement();
-      },500);
+      }, 500);
     });
     observer.observe(internalEmbedDiv, {
       attributes: true, //configure it to listen to attribute changes
     });
-  },300);
+  }, 300);
 };
-
 
 /**
  *
@@ -385,8 +394,7 @@ export const markdownPostProcessor = async (
     return;
   }
 
-  await processInternalEmbeds( embeddedItems,ctx);
-
+  await processInternalEmbeds(embeddedItems, ctx);
 };
 
 /**
@@ -448,8 +456,7 @@ export const observer = new MutationObserver(async (m) => {
   }
   if (
     //@ts-ignore
-    m[0].addedNodes[0].className !=
-    "popover hover-popover file-embed is-loaded"
+    m[0].addedNodes[0].className != "popover hover-popover file-embed is-loaded"
   ) {
     return;
   }

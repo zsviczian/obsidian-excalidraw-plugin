@@ -205,7 +205,9 @@ export default class ExcalidrawView extends TextFileView {
       return;
     }
     const serializer = new XMLSerializer();
-    const svgString = serializer.serializeToString(embedFontsInSVG(svg,this.plugin));
+    const svgString = serializer.serializeToString(
+      embedFontsInSVG(svg, this.plugin),
+    );
     if (file && file instanceof TFile) {
       await this.app.vault.modify(file, svgString);
     } else {
@@ -824,7 +826,7 @@ export default class ExcalidrawView extends TextFileView {
         : this.excalidrawAPI.getAppState().zenModeEnabled;
       //debug({where:"ExcalidrawView.loadDrawing",file:this.file.name,dataTheme:excalidrawData.appState.theme,before:"updateScene"})
       this.excalidrawAPI.setLocalFont(
-        this.plugin.settings.experimentalEnableFourthFont
+        this.plugin.settings.experimentalEnableFourthFont,
       );
 
       this.excalidrawAPI.updateScene({
@@ -1011,7 +1013,7 @@ export default class ExcalidrawView extends TextFileView {
               if (!svg) {
                 return null;
               }
-              svg = embedFontsInSVG(svg,this.plugin);
+              svg = embedFontsInSVG(svg, this.plugin);
               download(
                 null,
                 svgToBase64(svg.outerHTML),
@@ -1075,9 +1077,9 @@ export default class ExcalidrawView extends TextFileView {
           //console.log({where:"ExcalidrawView.React.ReadyPromise"});
           //debug({where:"ExcalidrawView.React.useEffect",file:this.file.name,before:"this.loadSceneFiles"});
           this.excalidrawAPI.setLocalFont(
-            this.plugin.settings.experimentalEnableFourthFont
+            this.plugin.settings.experimentalEnableFourthFont,
           );
-          
+
           this.loadSceneFiles();
           this.updateContainerSize(null, true);
         });
@@ -1291,11 +1293,10 @@ export default class ExcalidrawView extends TextFileView {
         }
 
         const st: AppState = this.excalidrawAPI.getAppState();
-        
-        const elements = 
-          newElementsOnTop 
+
+        const elements = newElementsOnTop
           ? el.concat(newElements.filter((e) => !removeList.includes(e.id)))
-          : (newElements.filter((e) => !removeList.includes(e.id))).concat(el);
+          : newElements.filter((e) => !removeList.includes(e.id)).concat(el);
         this.excalidrawAPI.updateScene({
           elements,
           appState: st,
@@ -1550,23 +1551,20 @@ export default class ExcalidrawView extends TextFileView {
         let linktext = "";
         const selectedElement = getTextElementAtPointer(currentPosition);
         if (!selectedElement || !selectedElement.text) {
-          const selectedImgElement =
-            getImageElementAtPointer(currentPosition);
+          const selectedImgElement = getImageElementAtPointer(currentPosition);
           if (!selectedImgElement || !selectedImgElement.fileId) {
             return;
           }
           if (!this.excalidrawData.hasFile(selectedImgElement.fileId)) {
             return;
           }
-          const ef = this.excalidrawData.getFile(
-            selectedImgElement.fileId,
-          );
+          const ef = this.excalidrawData.getFile(selectedImgElement.fileId);
           const ref = ef.linkParts.ref
             ? `#${ef.linkParts.isBlockRef ? "^" : ""}${ef.linkParts.ref}`
             : "";
           linktext =
-            this.excalidrawData.getFile(selectedImgElement.fileId).file
-              .path + ref;
+            this.excalidrawData.getFile(selectedImgElement.fileId).file.path +
+            ref;
         } else {
           const text: string =
             this.textMode === TextMode.parsed
@@ -1611,7 +1609,7 @@ export default class ExcalidrawView extends TextFileView {
             }
           }, 100);
         }
-      }
+      };
 
       const excalidrawDiv = React.createElement(
         "div",
@@ -1638,7 +1636,7 @@ export default class ExcalidrawView extends TextFileView {
               showHoverPreview();
             }
           },
-/*          onKeyUp: (e: any) => {
+          /*          onKeyUp: (e: any) => {
             this.ctrlKeyDown = e[CTRL_OR_CMD]; //.ctrlKey||e.metaKey;
             this.shiftKeyDown = e.shiftKey;
             this.altKeyDown = e.altKey;
