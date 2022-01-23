@@ -68,5 +68,5 @@ const id = ea.addText(
 );
 ea.copyViewElementsToEAforEditing(elements);
 ea.addToGroup(elements.map((e)=>e.id).concat([id]));
-ea.addElementsToView(false);
+ea.addElementsToView(false,true,true);
 ea.openFileInNewOrAdjacentLeaf(file);
