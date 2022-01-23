@@ -67,14 +67,14 @@ if(!isFirst) {
     ea.style.strokeColor = el.strokeColor;
     ea.style.fontSize    = el.fontSize;
     ea.style.fontFamily  = el.fontFamily;
-    ea.style.strokeWidth = el.strokeWidth;
-    ea.style.strokeStyle = el.strokeStyle;
-    ea.style.strokeSharpness = el.strokeSharpness;
   }
 
-	
+	textWidth = ea.measureText(text).width;
+
   id = ea.addText(
-    fromElement.x,
+    fixWidth 
+    ? fromElement.x+fromElement.width/2-width/2
+    : fromElement.x+fromElement.width/2-textWidth/2-textPadding,
     fromElement.y+fromElement.height+gapBetweenElements,
     text,
     {
@@ -98,6 +98,16 @@ if(!isFirst) {
 	  numberOfPoints: linePoints
     }
   );
+
+	const rect = ea.getElement(id);
+  rect.strokeColor = fromElement.strokeColor;
+  rect.strokeWidth = fromElement.strokeWidth;
+	rect.strokeStyle = fromElement.strokeStyle;
+	rect.roughness = fromElement.roughness;
+	rect.strokeSharpness = fromElement.strokeSharpness;
+	rect.backgroundColor = fromElement.backgroundColor;
+  rect.fillStyle = fromElement.fillStyle;
+
   await ea.addElementsToView(false);
 } else {
   id = ea.addText(
