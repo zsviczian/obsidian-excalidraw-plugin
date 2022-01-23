@@ -1,16 +1,9 @@
 /*
-![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-download-raw.jpg)
-
-Download this file and save to your Obsidian Vault including the first line, or open it in "Raw" and copy the entire contents to Obsidian.
-
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-normalize-selected-arrows.png)
 
 This script will reset the start and end positions of the selected arrows. The arrow will point to the center of the connected box and will have a gap of 8px from the box.
 
 Tips: If you are drawing a flowchart, you can use `Normalize Selected Arrows` script to correct the position of the start and end points of the arrows, then use `Elbow connectors` script, and you will get the perfect connecting line!
-
-See documentation for more details:
-https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html
 
 ```javascript
 */

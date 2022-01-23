@@ -54,7 +54,8 @@ const elements = ea.getViewSelectedElements();
 const isFirst = (!elements || elements.length === 0);
 
 const width = ea.measureText("w".repeat(wrapLineLen)).width;
-console.log(width,fixWidth);
+
+let id = "";
 
 if(!isFirst) {
   const fromElement = ea.getLargestElement(elements);
@@ -71,8 +72,8 @@ if(!isFirst) {
     ea.style.strokeSharpness = el.strokeSharpness;
   }
 
-
-  const id = ea.addText(
+	
+  id = ea.addText(
     fromElement.x,
     fromElement.y+fromElement.height+gapBetweenElements,
     text,
@@ -80,8 +81,9 @@ if(!isFirst) {
       wrapAt: wrapLineLen,
       textAlign: "center",
       box: "rectangle",
-      boxPadding: textPadding,
-      ...fixWidth?{width: width}:null
+      ...fixWidth
+      ? {width: width, boxPadding:0}
+      : {boxPadding: textPadding}
     }
   );
 
@@ -96,9 +98,9 @@ if(!isFirst) {
 	  numberOfPoints: linePoints
     }
   );
-  ea.addElementsToView(false);
+  await ea.addElementsToView(false);
 } else {
-  ea.addText(
+  id = ea.addText(
     0,
     0,
     text,
@@ -110,5 +112,11 @@ if(!isFirst) {
 		  ...fixWidth?{width: width}:null
     }
   );
-  ea.addElementsToView(true);
+  await ea.addElementsToView(true);
 }
+
+const API = ea.getExcalidrawAPI();
+st = API.getAppState();
+st.selectedElementIds = {};
+st.selectedElementIds[id] = true;
+API.updateScene({appState: st});
