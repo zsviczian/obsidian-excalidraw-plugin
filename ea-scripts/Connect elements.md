@@ -78,4 +78,4 @@ ea.connectObjects(
 	numberOfPoints: linePoints
   }
 );
-ea.addElementsToView();
+ea.addElementsToView(false,true,true);
