@@ -5,9 +5,10 @@ The script allows you to change the shape of selected Rectangles, Diamonds and E
 
 ```javascript
 */
+const shapesDispaly=["○ ellipse","□ rectangle","◇ diamond"];
 const shapes=["ellipse","rectangle","diamond"];
 elements = ea.getViewSelectedElements().filter(el=>shapes.contains(el.type));
-newShape = await utils.suggester(shapes, shapes);
+newShape = await utils.suggester(shapesDispaly, shapes);
 if(!newShape) return;
 
 elements.forEach(el=>el.type = newShape);
