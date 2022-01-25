@@ -20,7 +20,37 @@ https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.h
 
 ```javascript
 */
-const paddingStr = await utils.inputPrompt("padding?","string","8");
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.21")) {
+  new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
+  return;
+}
+settings = ea.getScriptSettings();
+//set default values on first run
+if(!settings["Default padding"]) {
+	settings = {
+	  "Prompt for padding?": true,
+	  "Default padding" : {
+			value: 10,
+		  description: "Padding between the bounding box of the selected elements, and the box the script creates"
+	  },
+	  "Remember last padding?": false
+	};
+	ea.setScriptSettings(settings);
+}
+
+let paddingStr = settings["Default padding"].value.toString();
+const rememberLastPadding = settings["Remember last padding?"];
+
+if(settings["Prompt for padding?"]) {
+	paddingStr = await utils.inputPrompt("padding?","string",paddingStr);
+}
+if(!paddingStr) {
+	return;
+}
+if(rememberLastPadding) {
+	settings["Default padding"].value = paddingStr;
+	ea.setScriptSettings(settings);
+}
 var paddingLR = 0;
 var paddingTB = 0;
 if(paddingStr.indexOf(',') > 0) {
@@ -41,7 +71,6 @@ const groups = ea.getMaximumGroups(selectedElements);
 const allIndividualArrows = ea.getMaximumGroups(ea.getViewElements())
 	.reduce((result, group) => (group.length === 1 && (group[0].type === 'arrow' || group[0].type === 'line')) ? 
 			[...result, group[0]] : result, []);
-
 for(const elements of groups) {
 	if(elements.length === 1 && elements[0].type ==="arrow" || elements[0].type==="line") {
 		// individual arrows or lines are not affected

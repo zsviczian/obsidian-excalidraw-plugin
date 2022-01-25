@@ -13,9 +13,38 @@ Although excalidraw has the opacity option in its native property Settings, it a
 
 ```javascript
 */
-const alpha = parseFloat(await utils.inputPrompt("Background color opacity?","number","0.6"));
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.21")) {
+  new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
+  return;
+}
+settings = ea.getScriptSettings();
+//set default values on first run
+if(!settings["Default opacity"]) {
+	settings = {
+	  "Prompt for opacity?": true,
+	  "Default opacity" : {
+		value: 0.6,
+		description: "Element's background color transparency"
+	  },
+	  "Remember last opacity?": false
+	};
+	ea.setScriptSettings(settings);
+}
+
+let opacityStr = settings["Default opacity"].value.toString();
+const rememberLastOpacity = settings["Remember last opacity?"];
+
+if(settings["Prompt for opacity?"]) {
+    opacityStr = await utils.inputPrompt("Background color opacity?","number",opacityStr);
+}
+
+const alpha = parseFloat(opacityStr);
 if(isNaN(alpha)) {
   return;
+}
+if(rememberLastOpacity) {
+	settings["Default opacity"].value = alpha;
+	ea.setScriptSettings(settings);
 }
 const elements=ea.getViewSelectedElements().filter((el)=>["rectangle","ellipse","diamond","line","image"].includes(el.type));
 ea.copyViewElementsToEAforEditing(elements);
