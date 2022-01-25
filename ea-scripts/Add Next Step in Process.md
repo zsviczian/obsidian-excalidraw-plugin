@@ -43,6 +43,11 @@ if(!settings["Starting arrowhead"]) {
 
 const arrowStart = settings["Starting arrowhead"].value === "none" ? null : settings["Starting arrowhead"].value;
 const arrowEnd = settings["Ending arrowhead"].value === "none" ? null : settings["Ending arrowhead"].value;
+
+// workaround until https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/388 is fixed
+if (!arrowEnd) ea.style.endArrowHead = null;
+if (!arrowStart) ea.style.startArrowHead = null;
+
 const linePoints = Math.floor(settings["Line points"].value);
 const gapBetweenElements = Math.floor(settings["Gap between elements"].value);
 const wrapLineLen = Math.floor(settings["Wrap text at (number of characters)"].value);
