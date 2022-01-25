@@ -21,7 +21,7 @@ if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.21")) {
   return;
 }
 
-let token = ea.getScriptSettings().token.value??ea.getScriptSettings().token; 
+let token = ea.getScriptSettings().token?.value??ea.getScriptSettings().token; 
 const BASE_URL = "https://ocr.taskbone.com";
 
 //convert setting to 1.5.21 format
