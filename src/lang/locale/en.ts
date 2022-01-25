@@ -316,4 +316,8 @@ export default {
   //EmbeddedFileLoader.ts
   INFINITE_LOOP_WARNING:
     "EXCALIDRAW WARNING\nAborted loading embedded images due to infinite loop in file:\n",
+
+  //Scripts.ts
+  SCRIPT_EXECUTION_ERROR:
+    "Script execution error. Please find error message on the developer console.",
 };

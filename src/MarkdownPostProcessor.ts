@@ -52,6 +52,9 @@ const getIMG = async (
     file = f;
   }
 
+  // https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/387
+  imgAttributes.style = imgAttributes.style.replaceAll(" ","-");
+  
   const exportSettings: ExportSettings = {
     withBackground: plugin.settings.exportWithBackground,
     withTheme: plugin.settings.exportWithTheme,
@@ -237,7 +240,6 @@ const processInternalEmbeds = async (
           attr.style = `excalidraw-svg${parts[3] ? `-${parts[3]}` : ""}`;
         }
       }
-
       attr.fname = file?.path;
       attr.file = file;
       const div = await createImageDiv(attr);

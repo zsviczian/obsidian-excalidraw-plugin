@@ -81,7 +81,8 @@ export const REGEX_LINK = {
 
 export const REG_LINKINDEX_HYPERLINK = /^\w+:\/\//;
 
-const DRAWING_REG = /\n# Drawing\n[^`]*(```json\n)([\s\S]*?)```/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
+//added \n at and of DRAWING_REG: https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/357
+const DRAWING_REG = /\n# Drawing\n[^`]*(```json\n)([\s\S]*?)```\n/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
 const DRAWING_REG_FALLBACK = /\n# Drawing\n(```json\n)?(.*)(```)?(%%)?/gm;
 export function getJSON(data: string): { scene: string; pos: number } {
   let res = data.matchAll(DRAWING_REG);
@@ -105,11 +106,7 @@ export function getJSON(data: string): { scene: string; pos: number } {
 }
 
 export function getMarkdownDrawingSection(jsonString: string) {
-  return `%%\n# Drawing\n${String.fromCharCode(96)}${String.fromCharCode(
-    96,
-  )}${String.fromCharCode(96)}json\n${jsonString}\n${String.fromCharCode(
-    96,
-  )}${String.fromCharCode(96)}${String.fromCharCode(96)}\n%%`;
+  return `%%\n# Drawing\n\x60\x60\x60json\n${jsonString}\n\x60\x60\x60\n%%`;
 }
 
 /**
@@ -382,11 +379,7 @@ export class ExcalidrawData {
     newOriginalText: string,
     forceUpdate: boolean = false,
   ) {
-    //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/376
-    if (sceneTextElement.containerId) {
-      return; //I leave the setting of text size to excalidraw, when text is in a container
-      //because text width is fixed to the container width
-    }
+    
     if (forceUpdate || newText != sceneTextElement.text) {
       const measure = measureText(
         newText,
@@ -395,7 +388,13 @@ export class ExcalidrawData {
       );
       sceneTextElement.text = newText;
       sceneTextElement.originalText = newOriginalText;
-      sceneTextElement.width = measure.w;
+
+      if (!sceneTextElement.containerId) {
+        //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/376
+        //I leave the setting of text width to excalidraw, when text is in a container
+        //because text width is fixed to the container width
+        sceneTextElement.width = measure.w;
+      }
       sceneTextElement.height = measure.h;
       sceneTextElement.baseline = measure.baseline;
     }

@@ -1,3 +1,4 @@
+import { borderTopRightRadius } from "html2canvas/dist/types/css/property-descriptors/border-radius";
 import {
   App,
   DropdownComponent,
@@ -913,7 +914,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         );
       });
 
-    if (Object.keys(this.plugin.settings.scriptEngineSettings).length > 0) {
+    const scripts = this.plugin.scriptEngine
+      .getListofScripts()
+      ?.map((f) => this.plugin.scriptEngine.getScriptName(f));
+    if (
+      Object.keys(this.plugin.settings.scriptEngineSettings).length > 0 &&
+      scripts
+    ) {
       const getValue = (scriptName: string, variableName: string): any => {
         const variable =
           //@ts-ignore
@@ -1034,8 +1041,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       };
 
       this.containerEl.createEl("h1", { text: t("SCRIPT_SETTINGS_HEAD") });
-      Object.keys(this.plugin.settings.scriptEngineSettings).forEach(
-        (scriptName: string) => {
+      Object.keys(this.plugin.settings.scriptEngineSettings)
+        .filter((s) => scripts.contains(s))
+        .forEach((scriptName: string) => {
           const settings =
             //@ts-ignore
             this.plugin.settings.scriptEngineSettings[scriptName];
@@ -1084,8 +1092,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
                 break;
             }
           });
-        },
-      );
+        });
     }
   }
 }

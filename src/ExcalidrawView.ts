@@ -1942,7 +1942,7 @@ export default class ExcalidrawView extends TextFileView {
             this.isEditingTextResetTimer = setTimeout(() => {
               this.isEditingText = false;
               this.isEditingTextResetTimer = null;
-            }, 300); // to give time for the onscreen keyboard to disappear
+            }, 1500); // to give time for the onscreen keyboard to disappear
 
             if (isDeleted) {
               this.excalidrawData.deleteTextElement(textElement.id);

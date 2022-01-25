@@ -786,10 +786,11 @@ export async function initExcalidrawAutomate(
             : 0.1,
           gap: GAP,
         },
-        startArrowhead: formatting?.startArrowHead
+        //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/388
+        startArrowhead: typeof (formatting?.startArrowHead) !== "undefined"
           ? formatting.startArrowHead
           : this.style.startArrowHead,
-        endArrowhead: formatting?.endArrowHead
+        endArrowhead: typeof (formatting?.endArrowHead) !== "undefined"
           ? formatting.endArrowHead
           : this.style.endArrowHead,
         ...boxedElement(id, "arrow", points[0][0], points[0][1], box.w, box.h),

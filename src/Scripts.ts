@@ -1,9 +1,10 @@
-import { App, Instruction, TAbstractFile, TFile } from "obsidian";
+import { App, Instruction, Notice, TAbstractFile, TFile } from "obsidian";
 import { PLUGIN_ID, VIEW_TYPE_EXCALIDRAW } from "./constants";
 import ExcalidrawView from "./ExcalidrawView";
+import { t } from "./lang/helpers";
 import ExcalidrawPlugin from "./main";
 import { GenericInputPrompt, GenericSuggester } from "./Prompt";
-import { splitFolderAndFilename } from "./Utils";
+import { errorlog, splitFolderAndFilename } from "./Utils";
 
 export class ScriptEngine {
   private plugin: ExcalidrawPlugin;
@@ -70,20 +71,23 @@ export class ScriptEngine {
     this.loadScripts();
   }
 
-  loadScripts() {
+  public getListofScripts(): TFile[] {
     const app = this.plugin.app;
     this.scriptPath = this.plugin.settings.scriptFolderPath;
     if (!app.vault.getAbstractFileByPath(this.scriptPath)) {
       this.scriptPath = null;
       return;
     }
-    const scripts = app.vault
+    return app.vault
       .getFiles()
       .filter((f: TFile) => f.path.startsWith(this.scriptPath));
-    scripts.forEach((f) => this.loadScript(f));
   }
 
-  getScriptName(f: TFile | string): string {
+  loadScripts() {
+    this.getListofScripts()?.forEach((f) => this.loadScript(f));
+  }
+
+  public getScriptName(f: TFile | string): string {
     let basename = "";
     let path = "";
     if (f instanceof TFile) {
@@ -161,9 +165,9 @@ export class ScriptEngine {
     //https://stackoverflow.com/questions/45381204/get-asyncfunction-constructor-in-typescript changed tsconfig to es2017
     //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncFunction
     const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
-    const result = await new AsyncFunction("ea", "utils", script)(
-      this.plugin.ea,
-      {
+    let result = null;
+    try {
+      result = await new AsyncFunction("ea", "utils", script)(this.plugin.ea, {
         inputPrompt: (header: string, placeholder?: string, value?: string) =>
           ScriptEngine.inputPrompt(this.plugin.app, header, placeholder, value),
         suggester: (
@@ -179,8 +183,11 @@ export class ScriptEngine {
             hint,
             instructions,
           ),
-      },
-    );
+      });
+    } catch (e) {
+      new Notice(t("SCRIPT_EXECUTION_ERROR"), 4000);
+      errorlog({ script: this.plugin.ea.activeScript, error: e });
+    }
     this.plugin.ea.activeScript = null;
     return result;
   }
