@@ -265,7 +265,16 @@ export default class ExcalidrawView extends TextFileView {
       //debug({where:"ExcalidrawView.save",file:this.file.name,dataTheme:this.excalidrawData.scene.appState.theme,before:"loadDrawing(false)"})
       await this.loadDrawing(false);
     }
+
+    //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/396
+    const bakfilepath= this.file.path+".bak";
+    if(await this.app.vault.adapter.exists(bakfilepath)) {
+      await this.app.vault.adapter.remove(bakfilepath);
+    }
+    await this.app.vault.adapter.copy(this.file.path,bakfilepath);
     await super.save();
+    await this.app.vault.adapter.remove(bakfilepath);
+
 
     if (!this.autosaving) {
       if (this.plugin.settings.autoexportSVG) {
@@ -763,8 +772,8 @@ export default class ExcalidrawView extends TextFileView {
               e.message === "Cannot read property 'index' of undefined"
                 ? "\n'# Drawing' section is likely missing"
                 : ""
-            }\nTry manually fixing the file or restoring an earlier version from sync history`,
-            8000,
+            }\n\nTry manually fixing the file or restoring an earlier version from sync history.\n\nYou may also look for .bak file with last working version in the same folder. Note the .bak file might not get synchronized, so look for .bak file on other devices as well.`,
+            10000,
           );
           this.setMarkdownView();
           return;

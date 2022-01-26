@@ -5,7 +5,7 @@
     originalText: this is the text without added linebreaks for wrapping. This will be parsed or markup depending on view mode
     rawText: text with original markdown markup and without the added linebreaks for wrapping
  */
-import { App, TFile } from "obsidian";
+import { App, Notice, TFile } from "obsidian";
 import {
   nanoid,
   FRONTMATTER_KEY_CUSTOM_PREFIX,
@@ -34,6 +34,7 @@ import {
 } from "@zsviczian/excalidraw/types/element/types";
 import { BinaryFiles, SceneData } from "@zsviczian/excalidraw/types/types";
 import { EmbeddedFile } from "./EmbeddedFileLoader";
+import { t } from "./lang/helpers";
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles };
 
@@ -248,15 +249,33 @@ export class ExcalidrawData {
       }
     }
 
-    //Load scene: Read the JSON string after "# Drawing"
-    const sceneJSONandPOS = getJSON(data);
-    if (sceneJSONandPOS.pos === -1) {
-      return false; //JSON not found
+    // https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/396
+    let sceneJSONandPOS = null;
+    const loadJSON = ():{ scene: string; pos: number } => {
+      //Load scene: Read the JSON string after "# Drawing"
+      const sceneJSONandPOS = getJSON(data);
+      if (sceneJSONandPOS.pos === -1) {
+        throw(new Error("Excalidraw JSON not found in the file"))
+      }
+      if (!this.scene) {
+        this.scene = JSON_parse(sceneJSONandPOS.scene); //this is a workaround to address when files are mereged by sync and one version is still an old markdown without the codeblock ```
+      }
+      return sceneJSONandPOS
     }
-    if (!this.scene) {
-      this.scene = JSON_parse(sceneJSONandPOS.scene); //this is a workaround to address when files are mereged by sync and one version is still an old markdown without the codeblock ```
+    try {
+      sceneJSONandPOS = loadJSON()
+    } catch(e) {
+      const bakfile = this.app.vault.getAbstractFileByPath(file.path+".bak");
+      if(bakfile && bakfile instanceof TFile) 
+      {
+        data = await this.app.vault.read(bakfile);
+        sceneJSONandPOS = loadJSON();
+        new Notice(t("LOAD_FROM_BACKUP"),4000);
+      } else {
+        throw(e);
+      }
     }
-
+    
     if (!this.scene.files) {
       this.scene.files = {}; //loading legacy scenes that do not yet have the files attribute.
     }
@@ -1142,3 +1161,4 @@ export const getTransclusion = async (
   }
   return { contents: linkParts.original.trim(), lineNum: 0 };
 };
+

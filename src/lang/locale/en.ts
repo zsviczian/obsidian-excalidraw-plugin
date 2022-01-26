@@ -57,7 +57,7 @@ export default {
     "SHIFT CLICK this button to open the link in a new pane.\n" +
     "CTRL/CMD CLICK the Image or TextElement on the canvas has the same effect!",
   TEXT_ELEMENT_EMPTY:
-    "No ImageElement is selected or TextElement is empty, or [[valid-link|alias]] or [alias](valid-link) is not found",
+    "No ImageElement is selected or TextElement is empty, or [[valid-link|alias]]</code> or <code>[alias](valid-link) is not found",
   FILENAME_INVALID_CHARS:
     'File name cannot contain any of the following characters: * " \\ < > : | ?',
   FILE_DOES_NOT_EXIST:
@@ -144,33 +144,33 @@ export default {
     "Set the maximum level to which zoom to fit will enlarge the drawing. Minimum is 0.5 (50%) and maximum is 10 (1000%).",
   LINKS_HEAD: "Links and transclusion",
   LINKS_DESC:
-    "CTRL/CMD + CLICK on [[Text Elements]] to open them as links. " +
-    "If the selected text has more than one [[valid Obsidian links]], only the first will be opened. " +
-    "If the text starts as a valid web link (i.e. https:// or http://), then " +
+    "CTRL/CMD + CLICK on <code>[[Text Elements]]</code> to open them as links. " +
+    "If the selected text has more than one <code>[[valid Obsidian links]]</code>, only the first will be opened. " +
+    "If the text starts as a valid web link (i.e. <code>https://</code> or <code>http://</code>), then " +
     "the plugin will open it in a browser. " +
-    "When Obsidian files change, the matching [[link]] in your drawings will also change. " +
-    "If you don't want text accidentally changing in your drawings use [[links|with aliases]].",
+    "When Obsidian files change, the matching <code>[[link]]</code> in your drawings will also change. " +
+    "If you don't want text accidentally changing in your drawings use <code>[[links|with aliases]]</code>.",
   ADJACENT_PANE_NAME: "Open in adjacent pane",
   ADJACENT_PANE_DESC:
     "When CTRL/CMD+SHIFT clicking a link in Excalidraw by default the plugin will open the link in a new pane. " +
     "Turning this setting on, Excalidraw will first look for an existing adjacent pane, and try to open the link there. " +
     "Excalidraw will first look too the right, then to the left, then down, then up. If no pane is found, Excalidraw will open " +
     "a new pane.",
-  LINK_BRACKETS_NAME: "Show [[brackets]] around links",
+  LINK_BRACKETS_NAME: "Show <code>[[brackets]]</code> around links",
   LINK_BRACKETS_DESC: `${
     "In PREVIEW mode, when parsing Text Elements, place brackets around links. " +
-    "You can override this setting for a specific drawing by adding '"
-  }${FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS}: true/false' to the file's frontmatter.`,
+    "You can override this setting for a specific drawing by adding <code>"
+  }${FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS}: true/false</code> to the file's frontmatter.`,
   LINK_PREFIX_NAME: "Link prefix",
   LINK_PREFIX_DESC: `${
     "In PREVIEW mode, if the Text Element contains a link, precede the text with these characters. " +
-    "You can override this setting for a specific drawing by adding '"
-  }${FRONTMATTER_KEY_CUSTOM_PREFIX}: "📍 "' to the file's frontmatter.`,
+    "You can override this setting for a specific drawing by adding <code>"
+  }${FRONTMATTER_KEY_CUSTOM_PREFIX}: "📍 "</code> to the file's frontmatter.`,
   URL_PREFIX_NAME: "URL prefix",
   URL_PREFIX_DESC: `${
     "In PREVIEW mode, if the Text Element contains a URL link, precede the text with these characters. " +
-    "You can override this setting for a specific drawing by adding '"
-  }${FRONTMATTER_KEY_CUSTOM_URL_PREFIX}: "🌐 "' to the file's frontmatter.`,
+    "You can override this setting for a specific drawing by adding <code>"
+  }${FRONTMATTER_KEY_CUSTOM_URL_PREFIX}: "🌐 "</code> to the file's frontmatter.`,
   LINK_CTRL_CLICK_NAME:
     "CTRL/CMD + CLICK on text with [[links]] or [](links) to open them",
   LINK_CTRL_CLICK_DESC:
@@ -187,7 +187,7 @@ export default {
     "![[markdown page]] format.",
   GET_URL_TITLE_NAME: "Use iframely to resolve page title",
   GET_URL_TITLE_DESC:
-    "Use the http://iframely.server.crestify.com/iframely?url= to get title of page when dropping a link into Excalidraw",
+    "Use the <code>http://iframely.server.crestify.com/iframely?url=</code> to get title of page when dropping a link into Excalidraw",
   MD_HEAD: "Markdown-embed settings",
   MD_HEAD_DESC:
     "You can transclude formatted markdown documents into drawings as images CTRL/CMD drop from the file explorer or using " +
@@ -196,17 +196,17 @@ export default {
   MD_TRANSCLUDE_WIDTH_DESC:
     "The width of the markdown page. This effects the word wrapping when transcluding longer paragraphs, and the width of " +
     "the image element. You can override the default width of " +
-    "an embedded file using the [[filename#heading|WIDTHxMAXHEIGHT]] syntax in markdown view mode under embedded files.",
+    "an embedded file using the <code>[[filename#heading|WIDTHxMAXHEIGHT]]</code> syntax in markdown view mode under embedded files.",
   MD_TRANSCLUDE_HEIGHT_NAME:
     "Default maximum height of a transcluded markdown document",
   MD_TRANSCLUDE_HEIGHT_DESC:
     "The embedded image will be as high as the markdown text requries, but not higher than this value. " +
-    "You can override this value by editing the embedded image link in markdown view mode with the following syntax [[filename#^blockref|WIDTHxMAXHEIGHT]].",
+    "You can override this value by editing the embedded image link in markdown view mode with the following syntax <code>[[filename#^blockref|WIDTHxMAXHEIGHT]]</code>.",
   MD_DEFAULT_FONT_NAME:
     "The default font typeface to use for embedded markdown files.",
   MD_DEFAULT_FONT_DESC:
-    'Set this value to "Virgil" or "Cascadia" or the filename of a valid .ttf, .woff, or .woff2 font e.g. "MyFont.woff2" ' +
-    'You can override this setting by adding the following frontmatter-key to the embedded markdown file: "excalidraw-font: font_or_filename"',
+    'Set this value to "Virgil" or "Cascadia" or the filename of a valid <code>.ttf</code>, <code>.woff</code>, or <code>.woff2</code> font e.g. <code>MyFont.woff2</code> ' +
+    'You can override this setting by adding the following frontmatter-key to the embedded markdown file: <code>excalidraw-font: font_or_filename</code>',
   MD_DEFAULT_COLOR_NAME:
     "The default font color to use for embedded markdown files.",
   MD_DEFAULT_COLOR_DESC:
@@ -232,8 +232,8 @@ export default {
   EMBED_WIDTH_NAME: "Default width of embedded (transcluded) image",
   EMBED_WIDTH_DESC:
     "Only relevant if embed type is excalidraw. Has no effect on PNG and SVG embeds. The default width of an embedded drawing. You can specify a custom " +
-    "width when embedding an image using the ![[drawing.excalidraw|100]] or " +
-    "[[drawing.excalidraw|100x100]] format.",
+    "width when embedding an image using the <code>![[drawing.excalidraw|100]]</code> or " +
+    "<code>[[drawing.excalidraw|100x100]]</code> format.",
   EMBED_TYPE_NAME: "Type of file to insert into the document",
   EMBED_TYPE_DESC:
     "When you embed an image into a document using the command palette this setting will specify if Excalidraw should embed the original excalidraw file " +
@@ -278,7 +278,12 @@ export default {
     "when you open a legacy file for editing.",
   EXPERIMENTAL_HEAD: "Experimental features",
   EXPERIMENTAL_DESC:
-    "These setting will not take effect immediately, only when the File Explorer is refreshed, or Obsidian restarted.",
+    "Some of these setting will not take effect immediately, only when the File Explorer is refreshed, or Obsidian restarted.",
+  FIELD_SUGGESTOR_NAME: "Enable Field Suggestor",
+  FIELD_SUGGESTOR_DESC: 'You can customize Excalidraw by adding special frontmatter tags to your drawings, or to markdown ' +
+                        'files embedded in Excalidraw drawings, for example <code>excalidraw-link-prefix: "😀"</code>.</br>The Field ' +
+                        'Suggestor will show an autocomplete menu with all available Excalidraw field options ' +
+                        'when you type <code>excalidraw-</code>.',
   FILETYPE_NAME: "Display type (✏️) for excalidraw.md files in File Explorer",
   FILETYPE_DESC:
     "Excalidraw files will receive an indicator using the emojii or text defined in the next setting.",
@@ -320,4 +325,7 @@ export default {
   //Scripts.ts
   SCRIPT_EXECUTION_ERROR:
     "Script execution error. Please find error message on the developer console.",
+
+  //ExcalidrawData.ts
+  LOAD_FROM_BACKUP: "Excalidraw file was corrupted. Loading from backup file.",
 };

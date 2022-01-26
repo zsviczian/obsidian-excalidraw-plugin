@@ -1,4 +1,3 @@
-import { borderTopRightRadius } from "html2canvas/dist/types/css/property-descriptors/border-radius";
 import {
   App,
   DropdownComponent,
@@ -52,6 +51,7 @@ export interface ExcalidrawSettings {
   experimentalLivePreview: boolean;
   experimentalEnableFourthFont: boolean;
   experimantalFourthFont: string;
+  fieldSuggestor: boolean;
   loadCount: number; //version 1.2 migration counter
   drawingOpenCount: number;
   library: string;
@@ -107,6 +107,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   experimentalLivePreview: true,
   experimentalEnableFourthFont: false,
   experimantalFourthFont: "Virgil",
+  fieldSuggestor: true,
   compatibilityMode: false,
   loadCount: 0,
   drawingOpenCount: 0,
@@ -128,6 +129,9 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   mdCSS: "",
   scriptEngineSettings: {},
 };
+
+const fragWithHTML = (html: string) =>
+  createFragment((frag) => (frag.createDiv().innerHTML = html));
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
   plugin: ExcalidrawPlugin;
@@ -196,7 +200,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("FOLDER_NAME"))
-      .setDesc(t("FOLDER_DESC"))
+      .setDesc(fragWithHTML(t("FOLDER_DESC")))
       .addText((text) =>
         text
           .setPlaceholder("Excalidraw")
@@ -209,7 +213,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("FOLDER_EMBED_NAME"))
-      .setDesc(t("FOLDER_EMBED_DESC"))
+      .setDesc(fragWithHTML(t("FOLDER_EMBED_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.embedUseExcalidrawFolder)
@@ -221,7 +225,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("TEMPLATE_NAME"))
-      .setDesc(t("TEMPLATE_DESC"))
+      .setDesc(fragWithHTML(t("TEMPLATE_DESC")))
       .addText((text) =>
         text
           .setPlaceholder("Excalidraw/Template")
@@ -234,7 +238,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("SCRIPT_FOLDER_NAME"))
-      .setDesc(t("SCRIPT_FOLDER_DESC"))
+      .setDesc(fragWithHTML(t("SCRIPT_FOLDER_DESC")))
       .addText((text) =>
         text
           .setPlaceholder("Excalidraw/Scripts")
@@ -263,7 +267,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("FILENAME_PREFIX_NAME"))
-      .setDesc(t("FILENAME_PREFIX_DESC"))
+      .setDesc(fragWithHTML(t("FILENAME_PREFIX_DESC")))
       .addText((text) =>
         text
           .setPlaceholder("Drawing ")
@@ -281,7 +285,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("FILENAME_PREFIX_EMBED_NAME"))
-      .setDesc(t("FILENAME_PREFIX_EMBED_DESC"))
+      .setDesc(fragWithHTML(t("FILENAME_PREFIX_EMBED_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.drawingEmbedPrefixWithFilename)
@@ -293,7 +297,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("FILENAME_DATE_NAME"))
-      .setDesc(t("FILENAME_DATE_DESC"))
+      .setDesc(fragWithHTML(t("FILENAME_DATE_DESC")))
       .addText((text) =>
         text
           .setPlaceholder("YYYY-MM-DD HH.mm.ss")
@@ -313,7 +317,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("MATCH_THEME_NAME"))
-      .setDesc(t("MATCH_THEME_DESC"))
+      .setDesc(fragWithHTML(t("MATCH_THEME_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.matchTheme)
@@ -325,7 +329,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("MATCH_THEME_ALWAYS_NAME"))
-      .setDesc(t("MATCH_THEME_ALWAYS_DESC"))
+      .setDesc(fragWithHTML(t("MATCH_THEME_ALWAYS_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.matchThemeAlways)
@@ -337,7 +341,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("MATCH_THEME_TRIGGER_NAME"))
-      .setDesc(t("MATCH_THEME_TRIGGER_DESC"))
+      .setDesc(fragWithHTML(t("MATCH_THEME_TRIGGER_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.matchThemeTrigger)
@@ -349,7 +353,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("DEFAULT_OPEN_MODE_NAME"))
-      .setDesc(t("DEFAULT_OPEN_MODE_DESC"))
+      .setDesc(fragWithHTML(t("DEFAULT_OPEN_MODE_DESC")))
       .addDropdown((dropdown) =>
         dropdown
           .addOption("normal", "Normal Mode")
@@ -364,7 +368,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("ZOOM_TO_FIT_NAME"))
-      .setDesc(t("ZOOM_TO_FIT_DESC"))
+      .setDesc(fragWithHTML(t("ZOOM_TO_FIT_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.zoomToFitOnResize)
@@ -378,7 +382,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("ZOOM_TO_FIT_MAX_LEVEL_NAME"))
-      .setDesc(t("ZOOM_TO_FIT_MAX_LEVEL_DESC"))
+      .setDesc(fragWithHTML(t("ZOOM_TO_FIT_MAX_LEVEL_DESC")))
       .addSlider((slider) =>
         slider
           .setLimits(0.5, 10, 0.5)
@@ -397,11 +401,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       });
 
     this.containerEl.createEl("h1", { text: t("LINKS_HEAD") });
-    this.containerEl.createEl("p", { text: t("LINKS_DESC") });
+    this.containerEl.createEl("span", undefined, (el)=>el.innerHTML = t("LINKS_DESC") );
 
     new Setting(containerEl)
       .setName(t("ADJACENT_PANE_NAME"))
-      .setDesc(t("ADJACENT_PANE_DESC"))
+      .setDesc(fragWithHTML(t("ADJACENT_PANE_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.openInAdjacentPane)
@@ -413,7 +417,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("LINK_BRACKETS_NAME"))
-      .setDesc(t("LINK_BRACKETS_DESC"))
+      .setDesc(fragWithHTML(t("LINK_BRACKETS_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.showLinkBrackets)
@@ -425,7 +429,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("LINK_PREFIX_NAME"))
-      .setDesc(t("LINK_PREFIX_DESC"))
+      .setDesc(fragWithHTML(t("LINK_PREFIX_DESC")))
       .addText((text) =>
         text
           .setPlaceholder(t("INSERT_EMOJI"))
@@ -438,7 +442,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("URL_PREFIX_NAME"))
-      .setDesc(t("URL_PREFIX_DESC"))
+      .setDesc(fragWithHTML(t("URL_PREFIX_DESC")))
       .addText((text) =>
         text
           .setPlaceholder(t("INSERT_EMOJI"))
@@ -451,7 +455,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("LINK_CTRL_CLICK_NAME"))
-      .setDesc(t("LINK_CTRL_CLICK_DESC"))
+      .setDesc(fragWithHTML(t("LINK_CTRL_CLICK_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.allowCtrlClick)
@@ -463,7 +467,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     const s = new Setting(containerEl)
       .setName(t("TRANSCLUSION_WRAP_NAME"))
-      .setDesc(t("TRANSCLUSION_WRAP_DESC"))
+      .setDesc(fragWithHTML(t("TRANSCLUSION_WRAP_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.forceWrap)
@@ -478,7 +482,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("PAGE_TRANSCLUSION_CHARCOUNT_NAME"))
-      .setDesc(t("PAGE_TRANSCLUSION_CHARCOUNT_DESC"))
+      .setDesc(fragWithHTML(t("PAGE_TRANSCLUSION_CHARCOUNT_DESC")))
       .addText((text) =>
         text
           .setPlaceholder("Enter a number")
@@ -507,7 +511,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("GET_URL_TITLE_NAME"))
-      .setDesc(t("GET_URL_TITLE_DESC"))
+      .setDesc(fragWithHTML(t("GET_URL_TITLE_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.iframelyAllowed)
@@ -522,7 +526,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("MD_TRANSCLUDE_WIDTH_NAME"))
-      .setDesc(t("MD_TRANSCLUDE_WIDTH_DESC"))
+      .setDesc(fragWithHTML(t("MD_TRANSCLUDE_WIDTH_DESC")))
       .addText((text) =>
         text
           .setPlaceholder("Enter a number e.g. 500")
@@ -548,7 +552,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("MD_TRANSCLUDE_HEIGHT_NAME"))
-      .setDesc(t("MD_TRANSCLUDE_HEIGHT_DESC"))
+      .setDesc(fragWithHTML(t("MD_TRANSCLUDE_HEIGHT_DESC")))
       .addText((text) =>
         text
           .setPlaceholder("Enter a number e.g. 800")
@@ -574,7 +578,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("MD_DEFAULT_FONT_NAME"))
-      .setDesc(t("MD_DEFAULT_FONT_DESC"))
+      .setDesc(fragWithHTML(t("MD_DEFAULT_FONT_DESC")))
       .addDropdown(async (d: DropdownComponent) => {
         d.addOption("Virgil", "Virgil");
         d.addOption("Cascadia", "Cascadia");
@@ -593,7 +597,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("MD_DEFAULT_COLOR_NAME"))
-      .setDesc(t("MD_DEFAULT_COLOR_DESC"))
+      .setDesc(fragWithHTML(t("MD_DEFAULT_COLOR_DESC")))
       .addText((text) =>
         text
           .setPlaceholder("CSS Color-name|RGB-HEX")
@@ -607,7 +611,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("MD_CSS_NAME"))
-      .setDesc(t("MD_CSS_DESC"))
+      .setDesc(fragWithHTML(t("MD_CSS_DESC")))
       .addText((text) =>
         text
           .setPlaceholder("filename of css file in vault")
@@ -623,7 +627,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("EMBED_PREVIEW_SVG_NAME"))
-      .setDesc(t("EMBED_PREVIEW_SVG_DESC"))
+      .setDesc(fragWithHTML(t("EMBED_PREVIEW_SVG_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.displaySVGInPreview)
@@ -635,7 +639,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("PREVIEW_MATCH_OBSIDIAN_NAME"))
-      .setDesc(t("PREVIEW_MATCH_OBSIDIAN_DESC"))
+      .setDesc(fragWithHTML(t("PREVIEW_MATCH_OBSIDIAN_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.previewMatchObsidianTheme)
@@ -647,7 +651,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("EMBED_WIDTH_NAME"))
-      .setDesc(t("EMBED_WIDTH_DESC"))
+      .setDesc(fragWithHTML(t("EMBED_WIDTH_DESC")))
       .addText((text) =>
         text
           .setPlaceholder("400")
@@ -663,7 +667,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("EMBED_TYPE_NAME"))
-      .setDesc(t("EMBED_TYPE_DESC"))
+      .setDesc(fragWithHTML(t("EMBED_TYPE_DESC")))
       .addDropdown(async (d: DropdownComponent) => {
         dropdown = d;
         dropdown.addOption("excalidraw", "excalidraw");
@@ -692,7 +696,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("EXPORT_PNG_SCALE_NAME"))
-      .setDesc(t("EXPORT_PNG_SCALE_DESC"))
+      .setDesc(fragWithHTML(t("EXPORT_PNG_SCALE_DESC")))
       .addSlider((slider) =>
         slider
           .setLimits(1, 5, 0.5)
@@ -712,7 +716,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("EXPORT_BACKGROUND_NAME"))
-      .setDesc(t("EXPORT_BACKGROUND_DESC"))
+      .setDesc(fragWithHTML(t("EXPORT_BACKGROUND_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.exportWithBackground)
@@ -725,7 +729,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("EXPORT_THEME_NAME"))
-      .setDesc(t("EXPORT_THEME_DESC"))
+      .setDesc(fragWithHTML(t("EXPORT_THEME_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.exportWithTheme)
@@ -740,7 +744,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("EXPORT_SYNC_NAME"))
-      .setDesc(t("EXPORT_SYNC_DESC"))
+      .setDesc(fragWithHTML(t("EXPORT_SYNC_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.keepInSync)
@@ -761,7 +765,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("EXPORT_SVG_NAME"))
-      .setDesc(t("EXPORT_SVG_DESC"))
+      .setDesc(fragWithHTML(t("EXPORT_SVG_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.autoexportSVG)
@@ -782,7 +786,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("EXPORT_PNG_NAME"))
-      .setDesc(t("EXPORT_PNG_DESC"))
+      .setDesc(fragWithHTML(t("EXPORT_PNG_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.autoexportPNG)
@@ -805,7 +809,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("COMPATIBILITY_MODE_NAME"))
-      .setDesc(t("COMPATIBILITY_MODE_DESC"))
+      .setDesc(fragWithHTML(t("COMPATIBILITY_MODE_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.compatibilityMode)
@@ -817,7 +821,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("EXPORT_EXCALIDRAW_NAME"))
-      .setDesc(t("EXPORT_EXCALIDRAW_DESC"))
+      .setDesc(fragWithHTML(t("EXPORT_EXCALIDRAW_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.autoexportExcalidraw)
@@ -829,7 +833,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("SYNC_EXCALIDRAW_NAME"))
-      .setDesc(t("SYNC_EXCALIDRAW_DESC"))
+      .setDesc(fragWithHTML(t("SYNC_EXCALIDRAW_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.syncExcalidraw)
@@ -843,8 +847,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.containerEl.createEl("p", { text: t("EXPERIMENTAL_DESC") });
 
     new Setting(containerEl)
+    .setName(t("FIELD_SUGGESTOR_NAME"))
+    .setDesc(fragWithHTML(t("FIELD_SUGGESTOR_DESC")))
+    .addToggle((toggle) =>
+      toggle.setValue(this.plugin.settings.fieldSuggestor).onChange(async (value) => {
+        this.plugin.settings.fieldSuggestor = value;
+        this.applySettingsUpdate();
+      })
+    );
+
+    new Setting(containerEl)
       .setName(t("FILETYPE_NAME"))
-      .setDesc(t("FILETYPE_DESC"))
+      .setDesc(fragWithHTML(t("FILETYPE_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.experimentalFileType)
@@ -857,7 +871,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("FILETAG_NAME"))
-      .setDesc(t("FILETAG_DESC"))
+      .setDesc(fragWithHTML(t("FILETAG_DESC")))
       .addText((text) =>
         text
           .setPlaceholder(t("INSERT_EMOJI"))
@@ -870,7 +884,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("LIVEPREVIEW_NAME"))
-      .setDesc(t("LIVEPREVIEW_DESC"))
+      .setDesc(fragWithHTML(t("LIVEPREVIEW_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.experimentalLivePreview)
@@ -882,7 +896,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("ENABLE_FOURTH_FONT_NAME"))
-      .setDesc(t("ENABLE_FOURTH_FONT_DESC"))
+      .setDesc(fragWithHTML(t("ENABLE_FOURTH_FONT_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.experimentalEnableFourthFont)
@@ -895,7 +909,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("FOURTH_FONT_NAME"))
-      .setDesc(t("FOURTH_FONT_DESC"))
+      .setDesc(fragWithHTML(t("FOURTH_FONT_DESC")))
       .addDropdown(async (d: DropdownComponent) => {
         d.addOption("Virgil", "Virgil");
         this.app.vault
