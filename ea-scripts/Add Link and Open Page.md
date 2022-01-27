@@ -11,23 +11,38 @@ if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.21")) {
   return;
 }
 
+const BLANK_DRAWING = ["---","","excalidraw-plugin: parsed","","---","==⚠ Switch to EXCALIDRAW VIEW in the MORE OPTIONS menu of this document. ⚠==","","","%%","# Drawing","\x60\x60\x60json",'{"type":"excalidraw","version":2,"source":"https://excalidraw.com","elements":[],"appState":{"gridSize":null,"viewBackgroundColor":"#ffffff"}}',"\x60\x60\x60","%%"].join("\n");
+
 settings = ea.getScriptSettings();
 //set default values on first run
 if(!settings["Link position"]) {
-	settings = {
-	  "Link position" : {
-			value: "below",
+  settings = {
+    "Link position" : {
+      value: "below",
       valueset: ["above","below"],
-		  description: "Add link below or above the selected object?"
-		},
-		"Link font size" : {
-			value: 12
-		}
-	};
-	ea.setScriptSettings(settings);
+      description: "Add link below or above the selected object?"
+    },
+	"Link font size" : {
+      value: 12
+    }
+  };
+  ea.setScriptSettings(settings);
 }
 
+if(!settings["New document should be an Excalidraw drawing"]) {
+  settings = {
+    "New document should be an Excalidraw drawing": {
+      value: false,
+      description: "When adding a new document, should the new document be a blank markdown document (toggle == off) or a blank Excalidraw drawing (toggle=on)?"
+	},
+    ...settings
+  };
+  ea.setScriptSettings(settings);
+}
+
+
 const below = settings["Link position"].value === "below";
+const newDocExcalidraw = settings["New document should be an Excalidraw drawing"].value;
 const fontSize = Math.floor(settings["Link font size"].value);
 
 elements = ea.getViewSelectedElements();
@@ -46,7 +61,8 @@ if(file) {
 } else {
   const prefix = ea.targetView.file.path.substring(0,ea.targetView.file.path.length-3);
   const timestamp = moment(Date.now()).format(ea.plugin.settings.drawingFilenameDateTime);
-  file = await app.vault.create(`${prefix} ${timestamp}.md`,"");
+  file = await app.vault.create(`${prefix} ${timestamp}.md`,newDocExcalidraw?BLANK_DRAWING:"");
+  if(newDocExcalidraw) await new Promise(r => setTimeout(r, 100)); //wait for metadata cache to update, so file opens as excalidraw
 }
 
 const filepath = app.metadataCache.fileToLinktext(file,ea.targetView.file.path,true);
