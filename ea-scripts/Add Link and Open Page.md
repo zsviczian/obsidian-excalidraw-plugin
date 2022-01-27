@@ -1,7 +1,7 @@
 /*
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-add-link-and-open.jpg)
 
-Prompt for a file in the vault. Add a link above or below (based on settings) the selected element, to the selected file. If no file is selected then the script creates a new file following the default filename defined for excalidraw embeds.
+Prompt for a file in the vault. Add a link above or below (based on settings) the selected element, to the selected file. If no file is selected then the script creates a new file following the default filename defined for excalidraw embeds. Creates empty markdown file by default, this can be changed to creating a drawing by default via settings.
 
 ```javascript
 */
