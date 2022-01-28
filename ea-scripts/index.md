@@ -43,6 +43,7 @@ I would love to include your contribution in the script library. If you have a s
 - [[#Expand rectangles vertically keep text centered]]
 - [[#Expand rectangles vertically]]
 - [[#Fixed horizontal distance between centers]]
+- [[#Fixed inner distance]]
 - [[#Fixed spacing]]
 - [[#Fixed vertical distance between centers]]
 - [[#Fixed vertical distance]]
@@ -168,6 +169,12 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Fixed%20horizontal%20distance%20between%20centers.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/1-2-3'>@1-2-3</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Fixed%20horizontal%20distance%20between%20centers.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script arranges the selected elements horizontally with a fixed center spacing.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-fixed-horizontal-distance-between-centers.png'></td></tr></table>
+
+## Fixed inner distance
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Fixed%20inner%20distance.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/1-2-3'>@1-2-3</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Fixed%20inner%20distance.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script arranges selected elements and groups with a fixed inner distance.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-fixed-inner-distance.png'></td></tr></table>
 
 ## Fixed spacing
 ```excalidraw-script-install
