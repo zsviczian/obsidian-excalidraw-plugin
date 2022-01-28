@@ -7,10 +7,13 @@ import {
   TFile,
 } from "obsidian";
 import { FRONTMATTER_KEYS_INFO } from "./constants";
+import { EXCALIDRAW_AUTOMATE_INFO } from "./ExcalidrawAutomateFieldSuggestor";
 import type ExcalidrawPlugin from "./main";
 
 export class FieldSuggestor extends EditorSuggest<string> {
   plugin: ExcalidrawPlugin;
+  suggestEA: boolean;
+  latestTriggerInfo: EditorSuggestTriggerInfo;
 
   constructor(plugin: ExcalidrawPlugin) {
     super(plugin.app);
@@ -20,20 +23,23 @@ export class FieldSuggestor extends EditorSuggest<string> {
   onTrigger(
     cursor: EditorPosition,
     editor: Editor,
-    _: TFile
+    _: TFile,
   ): EditorSuggestTriggerInfo | null {
     if (this.plugin.settings.fieldSuggestor) {
       const sub = editor.getLine(cursor.line).substring(0, cursor.ch);
-      const match = sub.match(/^excalidraw-(.*)$/)?.[1];
+      const match =
+        sub.match(/^excalidraw-(.*)$/)?.[1] ?? sub.match(/ea\.([\w\.]*)$/)?.[1];
       if (match !== undefined) {
-        return {
+        this.suggestEA = !sub.match(/^excalidraw-(.*)$/);
+        this.latestTriggerInfo = {
           end: cursor,
           start: {
-            ch: sub.lastIndexOf(match),
+            ch: cursor.ch-match.length,
             line: cursor.line,
           },
           query: match,
         };
+        return this.latestTriggerInfo;
       }
     }
     return null;
@@ -41,18 +47,24 @@ export class FieldSuggestor extends EditorSuggest<string> {
 
   getSuggestions = (context: EditorSuggestContext) => {
     const { query } = context;
-    return FRONTMATTER_KEYS_INFO.map((sug) => sug.field).filter((sug) =>
-      sug.includes(query)
+    const isEA = this.suggestEA;
+    const keys = isEA ? EXCALIDRAW_AUTOMATE_INFO : FRONTMATTER_KEYS_INFO;
+    return keys.map((sug) => sug.field).filter((sug) =>
+      sug.includes(query),
     );
   };
 
   renderSuggestion(suggestion: string, el: HTMLElement): void {
+    const isEA = this.suggestEA;
+    const text = suggestion.replace(isEA ? "ea." : "excalidraw-", "");
+    const keys = isEA ? EXCALIDRAW_AUTOMATE_INFO : FRONTMATTER_KEYS_INFO;
     el.createDiv({
-      text: suggestion.replace("BC-", ""),
-      cls: "BC-suggester-container",
+      text,
+      cls: "excalidraw-suggester-container",
       attr: {
-        "aria-label": FRONTMATTER_KEYS_INFO.find((f) => f.field === suggestion)?.desc,
+        "aria-label": keys.find((f) => f.field === suggestion)?.desc,
         "aria-label-position": "right",
+        "aria-label-classes": "excalidraw-suggester-label"
       },
     });
   }
@@ -60,14 +72,24 @@ export class FieldSuggestor extends EditorSuggest<string> {
   selectSuggestion(suggestion: string): void {
     const { context } = this;
     if (context) {
+      const isEA = this.suggestEA;
+      const keys = isEA ? EXCALIDRAW_AUTOMATE_INFO : FRONTMATTER_KEYS_INFO;
       const replacement = `${suggestion}${
-        FRONTMATTER_KEYS_INFO.find((f) => f.field === suggestion)?.after
+        keys.find((f) => f.field === suggestion)?.after
       }`;
       context.editor.replaceRange(
         replacement,
-        { ch: 0, line: context.start.line },
-        context.end
+        this.latestTriggerInfo.start,
+        this.latestTriggerInfo.end
       );
+      if (this.latestTriggerInfo.start.ch === this.latestTriggerInfo.end.ch) {
+        // Dirty hack to prevent the cursor being at the
+        // beginning of the word after completion, 
+        // Not sure what's the cause of this bug.
+        const cursor_pos = this.latestTriggerInfo.end;
+        cursor_pos.ch += replacement.length;
+        context.editor.setCursor(cursor_pos);
+    }
     }
   }
 }

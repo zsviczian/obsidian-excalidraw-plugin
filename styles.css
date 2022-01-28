@@ -135,3 +135,7 @@ li[data-testid] {
 .excalidraw-scriptengine-install .modal {
   max-height:90%;
 }
+
+.excalidraw-suggester-label {
+  text-align: left;
+}

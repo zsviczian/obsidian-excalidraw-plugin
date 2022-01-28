@@ -53,8 +53,8 @@ const getIMG = async (
   }
 
   // https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/387
-  imgAttributes.style = imgAttributes.style.replaceAll(" ","-");
-  
+  imgAttributes.style = imgAttributes.style.replaceAll(" ", "-");
+
   const exportSettings: ExportSettings = {
     withBackground: plugin.settings.exportWithBackground,
     withTheme: plugin.settings.exportWithTheme,

@@ -251,31 +251,30 @@ export class ExcalidrawData {
 
     // https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/396
     let sceneJSONandPOS = null;
-    const loadJSON = ():{ scene: string; pos: number } => {
+    const loadJSON = (): { scene: string; pos: number } => {
       //Load scene: Read the JSON string after "# Drawing"
       const sceneJSONandPOS = getJSON(data);
       if (sceneJSONandPOS.pos === -1) {
-        throw(new Error("Excalidraw JSON not found in the file"))
+        throw new Error("Excalidraw JSON not found in the file");
       }
       if (!this.scene) {
         this.scene = JSON_parse(sceneJSONandPOS.scene); //this is a workaround to address when files are mereged by sync and one version is still an old markdown without the codeblock ```
       }
-      return sceneJSONandPOS
-    }
+      return sceneJSONandPOS;
+    };
     try {
-      sceneJSONandPOS = loadJSON()
-    } catch(e) {
-      const bakfile = this.app.vault.getAbstractFileByPath(file.path+".bak");
-      if(bakfile && bakfile instanceof TFile) 
-      {
+      sceneJSONandPOS = loadJSON();
+    } catch (e) {
+      const bakfile = this.app.vault.getAbstractFileByPath(`${file.path}.bak`);
+      if (bakfile && bakfile instanceof TFile) {
         data = await this.app.vault.read(bakfile);
         sceneJSONandPOS = loadJSON();
-        new Notice(t("LOAD_FROM_BACKUP"),4000);
+        new Notice(t("LOAD_FROM_BACKUP"), 4000);
       } else {
-        throw(e);
+        throw e;
       }
     }
-    
+
     if (!this.scene.files) {
       this.scene.files = {}; //loading legacy scenes that do not yet have the files attribute.
     }
@@ -398,7 +397,6 @@ export class ExcalidrawData {
     newOriginalText: string,
     forceUpdate: boolean = false,
   ) {
-    
     if (forceUpdate || newText != sceneTextElement.text) {
       const measure = measureText(
         newText,
@@ -1161,4 +1159,3 @@ export const getTransclusion = async (
   }
   return { contents: linkParts.original.trim(), lineNum: 0 };
 };
-

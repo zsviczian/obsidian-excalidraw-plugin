@@ -158,7 +158,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.registerEventListeners();
     this.initializeFourthFont();
     this.registerEditorSuggest(new FieldSuggestor(this));
-    
+
     //inspiration taken from kanban:
     //https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/main.ts#L267
     this.registerMonkeyPatches();

@@ -206,7 +206,7 @@ export default {
     "The default font typeface to use for embedded markdown files.",
   MD_DEFAULT_FONT_DESC:
     'Set this value to "Virgil" or "Cascadia" or the filename of a valid <code>.ttf</code>, <code>.woff</code>, or <code>.woff2</code> font e.g. <code>MyFont.woff2</code> ' +
-    'You can override this setting by adding the following frontmatter-key to the embedded markdown file: <code>excalidraw-font: font_or_filename</code>',
+    "You can override this setting by adding the following frontmatter-key to the embedded markdown file: <code>excalidraw-font: font_or_filename</code>",
   MD_DEFAULT_COLOR_NAME:
     "The default font color to use for embedded markdown files.",
   MD_DEFAULT_COLOR_DESC:
@@ -280,10 +280,11 @@ export default {
   EXPERIMENTAL_DESC:
     "Some of these setting will not take effect immediately, only when the File Explorer is refreshed, or Obsidian restarted.",
   FIELD_SUGGESTOR_NAME: "Enable Field Suggestor",
-  FIELD_SUGGESTOR_DESC: 'You can customize Excalidraw by adding special frontmatter tags to your drawings, or to markdown ' +
-                        'files embedded in Excalidraw drawings, for example <code>excalidraw-link-prefix: "😀"</code>.</br>The Field ' +
-                        'Suggestor will show an autocomplete menu with all available Excalidraw field options ' +
-                        'when you type <code>excalidraw-</code>.',
+  FIELD_SUGGESTOR_DESC:
+    "You can customize Excalidraw by adding special frontmatter tags to your drawings, or to markdown " +
+    'files embedded in Excalidraw drawings, for example <code>excalidraw-link-prefix: "😀"</code>.</br>The Field ' +
+    "Suggestor will show an autocomplete menu with all available Excalidraw field options " +
+    "when you type <code>excalidraw-</code>.",
   FILETYPE_NAME: "Display type (✏️) for excalidraw.md files in File Explorer",
   FILETYPE_DESC:
     "Excalidraw files will receive an indicator using the emojii or text defined in the next setting.",

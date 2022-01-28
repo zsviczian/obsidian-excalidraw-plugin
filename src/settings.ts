@@ -401,7 +401,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       });
 
     this.containerEl.createEl("h1", { text: t("LINKS_HEAD") });
-    this.containerEl.createEl("span", undefined, (el)=>el.innerHTML = t("LINKS_DESC") );
+    this.containerEl.createEl(
+      "span",
+      undefined,
+      (el) => (el.innerHTML = t("LINKS_DESC")),
+    );
 
     new Setting(containerEl)
       .setName(t("ADJACENT_PANE_NAME"))
@@ -847,14 +851,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.containerEl.createEl("p", { text: t("EXPERIMENTAL_DESC") });
 
     new Setting(containerEl)
-    .setName(t("FIELD_SUGGESTOR_NAME"))
-    .setDesc(fragWithHTML(t("FIELD_SUGGESTOR_DESC")))
-    .addToggle((toggle) =>
-      toggle.setValue(this.plugin.settings.fieldSuggestor).onChange(async (value) => {
-        this.plugin.settings.fieldSuggestor = value;
-        this.applySettingsUpdate();
-      })
-    );
+      .setName(t("FIELD_SUGGESTOR_NAME"))
+      .setDesc(fragWithHTML(t("FIELD_SUGGESTOR_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.fieldSuggestor)
+          .onChange(async (value) => {
+            this.plugin.settings.fieldSuggestor = value;
+            this.applySettingsUpdate();
+          }),
+      );
 
     new Setting(containerEl)
       .setName(t("FILETYPE_NAME"))

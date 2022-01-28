@@ -34,7 +34,7 @@ export const FRONTMATTER_KEYS_INFO = [
   {
     field: FRONTMATTER_KEY,
     desc: "Denotes an excalidraw file. If key is not present, the file will not be recognized as an Excalidarw file. Valid values are 'parsed' and 'raw'",
-    after: ': parsed',
+    after: ": parsed",
     alt: true,
   },
   {
@@ -52,25 +52,25 @@ export const FRONTMATTER_KEYS_INFO = [
   {
     field: FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS,
     desc: "Set to true, if you want to display [[square brackets]] around the links in Text Elements",
-    after: ': true',
+    after: ": true",
     alt: true,
   },
   {
     field: FRONTMATTER_KEY_DEFAULT_MODE,
     desc: "Specifies how Excalidraw should open by default. Valid values are: view|zen",
-    after: ': view',
+    after: ": view",
     alt: true,
   },
   {
     field: FRONTMATTER_KEY_FONT,
     desc: "This key applies to Markdown Embeds. You can control the appearance of the embedded markdown file on a file by file bases by adding the this front matter keys to your markdown document. Valid values are: Virgil|Cascadia|font_file_name.extension",
-    after: ': Virgil',
+    after: ": Virgil",
     alt: true,
   },
   {
     field: FRONTMATTER_KEY_FONTCOLOR,
     desc: "This key applies to Markdown Embeds. You can control the appearance of the embedded markdown file on a file by file bases by adding the this front matter keys to your markdown document. Valid values are: css-color-name|#HEXcolor|any-other-html-standard-format",
-    after: ': SteelBlue',
+    after: ": SteelBlue",
     alt: true,
   },
   {

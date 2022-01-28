@@ -267,14 +267,13 @@ export default class ExcalidrawView extends TextFileView {
     }
 
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/396
-    const bakfilepath= this.file.path+".bak";
-    if(await this.app.vault.adapter.exists(bakfilepath)) {
+    const bakfilepath = `${this.file.path}.bak`;
+    if (await this.app.vault.adapter.exists(bakfilepath)) {
       await this.app.vault.adapter.remove(bakfilepath);
     }
-    await this.app.vault.adapter.copy(this.file.path,bakfilepath);
+    await this.app.vault.adapter.copy(this.file.path, bakfilepath);
     await super.save();
     await this.app.vault.adapter.remove(bakfilepath);
-
 
     if (!this.autosaving) {
       if (this.plugin.settings.autoexportSVG) {
