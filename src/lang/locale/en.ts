@@ -281,10 +281,8 @@ export default {
     "Some of these setting will not take effect immediately, only when the File Explorer is refreshed, or Obsidian restarted.",
   FIELD_SUGGESTOR_NAME: "Enable Field Suggestor",
   FIELD_SUGGESTOR_DESC:
-    "You can customize Excalidraw by adding special frontmatter tags to your drawings, or to markdown " +
-    'files embedded in Excalidraw drawings, for example <code>excalidraw-link-prefix: "😀"</code>.</br>The Field ' +
-    "Suggestor will show an autocomplete menu with all available Excalidraw field options " +
-    "when you type <code>excalidraw-</code>.",
+    "Field Suggestor borrowed from Breadcrumbs and Templater plugins. The Field Suggestor will show an autocomplete menu " +
+    "when you type <code>excalidraw-</code> or <code>ea.</code> with function description as hints on the individual items in the list.",
   FILETYPE_NAME: "Display type (✏️) for excalidraw.md files in File Explorer",
   FILETYPE_DESC:
     "Excalidraw files will receive an indicator using the emojii or text defined in the next setting.",

@@ -28,7 +28,7 @@ export class FieldSuggestor extends EditorSuggest<string> {
     if (this.plugin.settings.fieldSuggestor) {
       const sub = editor.getLine(cursor.line).substring(0, cursor.ch);
       const match =
-        sub.match(/^excalidraw-(.*)$/)?.[1] ?? sub.match(/ea\.([\w\.]*)$/)?.[1];
+        sub.match(/^excalidraw-(.*)$/)?.[1] ?? sub.match(/(^ea|\Wea)\.([\w\.]*)$/)?.[2];
       if (match !== undefined) {
         this.suggestEA = !sub.match(/^excalidraw-(.*)$/);
         this.latestTriggerInfo = {
@@ -46,11 +46,11 @@ export class FieldSuggestor extends EditorSuggest<string> {
   }
 
   getSuggestions = (context: EditorSuggestContext) => {
-    const { query } = context;
+    const query = context.query.toLowerCase();
     const isEA = this.suggestEA;
     const keys = isEA ? EXCALIDRAW_AUTOMATE_INFO : FRONTMATTER_KEYS_INFO;
     return keys.map((sug) => sug.field).filter((sug) =>
-      sug.includes(query),
+      sug.toLowerCase().includes(query),
     );
   };
 
