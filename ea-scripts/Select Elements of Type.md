@@ -21,23 +21,26 @@ if(elements.length === 0) {
 
 typeSet = new Set();
 elements.forEach(el=>typeSet.add(el.type));
-
-const elementType = await utils.suggester(
-  Array.from(typeSet).map((item) => { 
-	  switch(item) {
-			case "line": return "— line";
-			case "ellipse": return "○ ellipse";
-      case "rectangle": return "□ rectangle";
-      case "diamond": return "◇ diamond";
-      case "arrow": return "→ arrow";
-      case "freedraw": return "✎ freedraw";
-      case "image": return "🖼 image";
-      case "text": return "A text";
-      default: return item;
-    }
-	}),
-  Array.from(typeSet)
-);
+let elementType = Array.from(typeSet)[0];
+		
+if(typeSet.size > 1) {
+	elementType = await utils.suggester(
+	  Array.from(typeSet).map((item) => { 
+		  switch(item) {
+				case "line": return "— line";
+				case "ellipse": return "○ ellipse";
+	      case "rectangle": return "□ rectangle";
+	      case "diamond": return "◇ diamond";
+	      case "arrow": return "→ arrow";
+	      case "freedraw": return "✎ freedraw";
+	      case "image": return "🖼 image";
+	      case "text": return "A text";
+	      default: return item;
+	    }
+		}),
+	  Array.from(typeSet)
+	);
+} 
 
 if(!elementType) return;
 
