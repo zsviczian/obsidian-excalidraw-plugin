@@ -55,13 +55,13 @@ export const EXCALIDRAW_AUTOMATE_INFO = [
   },
   {
     field: "style.roughness",
-    desc: "[number]",
+    desc: "[number]\n\n0:Architect\n1:Artist\n2:Cartoonist",
     after: "",
     alt: true,
   },
   {
     field: "style.opacity",
-    desc: "[number]",
+    desc: "[number]\n\n100: Fully opaque\n0: Fully transparent",
     after: "",
     alt: true,
   },
@@ -140,6 +140,12 @@ export const EXCALIDRAW_AUTOMATE_INFO = [
   {
     field: "getElements",
     desc: "getElements(): ExcalidrawElement[];\n\nGet all elements from ExcalidrawAutomate elementsDict",
+    after: "",
+    alt: true,
+  },
+  {
+    field: "getElement",
+    desc: "getElement(id: string): ExcalidrawElement;\n\nGet single element from ExcalidrawAutomate elementsDict",
     after: "",
     alt: true,
   },
