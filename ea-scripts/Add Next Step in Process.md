@@ -6,7 +6,7 @@ This script will prompt you for the title of the process step, then will create 
 ```javascript
 */
 
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.21")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.24")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
@@ -130,8 +130,4 @@ if(!isFirst) {
   await ea.addElementsToView(true);
 }
 
-const API = ea.getExcalidrawAPI();
-st = API.getAppState();
-st.selectedElementIds = {};
-st.selectedElementIds[id] = true;
-API.updateScene({appState: st});
+ea.selectElementsInView([ea.getElement(id)]);

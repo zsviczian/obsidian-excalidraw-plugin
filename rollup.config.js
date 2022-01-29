@@ -5,7 +5,6 @@ import { env } from "process";
 import babel from '@rollup/plugin-babel';
 import replace from "@rollup/plugin-replace";
 import visualizer from "rollup-plugin-visualizer";
-import esbuild from 'rollup-plugin-esbuild';
 
 const isProd = (process.env.NODE_ENV === "production");
 console.log("Is production", isProd);
@@ -16,12 +15,10 @@ export default {
     dir: '.',
     sourcemap: 'inline',
     format: 'cjs',
-    exports: 'default'
+    exports: 'default',
   },
   external: ['obsidian'],
   plugins: [
-    typescript({inlineSources: !isProd}),
-    nodeResolve({ browser: true, preferBuiltins: true }),
     replace({
       preventAssignment: true,
       "process.env.NODE_ENV": JSON.stringify(env.NODE_ENV),
@@ -30,6 +27,8 @@ export default {
       exclude: "node_modules/**"
     }),
     commonjs(),
+    nodeResolve({ browser: true, preferBuiltins: true }),
+    typescript({inlineSources: !isProd}),
     visualizer(),
   ],
 };

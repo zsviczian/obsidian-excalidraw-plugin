@@ -16,7 +16,7 @@ https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.h
 
 ```javascript
 */
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.21")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.24")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
@@ -110,12 +110,8 @@ console.log({text});
 //add text element to drawing
 const id = ea.addText(selectedImageElement.x,selectedImageElement.y+selectedImageElement.height,text);
 await ea.addElementsToView();
-const API = ea.getExcalidrawAPI();
-st = API.getAppState();
-st.selectedElementIds = {};
-st.selectedElementIds[id] = true;
-API.updateScene({appState: st});
-API.zoomToFit(ea.getViewSelectedElements(),1);
+ea.selectElementsInView([ea.getElement(id)]);
+ea.getExcalidrawAPI().zoomToFit(ea.getViewSelectedElements(),1);
 
 //utility function
 function notice(message) {

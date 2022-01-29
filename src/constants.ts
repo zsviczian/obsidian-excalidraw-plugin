@@ -30,57 +30,6 @@ export const FRONTMATTER_KEY_FONT = "excalidraw-font";
 export const FRONTMATTER_KEY_FONTCOLOR = "excalidraw-font-color";
 export const FRONTMATTER_KEY_MD_STYLE = "excalidraw-css";
 
-export const FRONTMATTER_KEYS_INFO = [
-  {
-    field: FRONTMATTER_KEY,
-    desc: "Denotes an excalidraw file. If key is not present, the file will not be recognized as an Excalidarw file. Valid values are 'parsed' and 'raw'",
-    after: ": parsed",
-    alt: true,
-  },
-  {
-    field: FRONTMATTER_KEY_CUSTOM_PREFIX,
-    desc: "Set custom prefix to denote text element containing a valid internal link. Set to empty string if you do not want to show a prefix",
-    after: ': "📍"',
-    alt: true,
-  },
-  {
-    field: FRONTMATTER_KEY_CUSTOM_URL_PREFIX,
-    desc: "Set custom prefix to denote text element containing a valid external link. Set to empty string if you do not want to show a prefix",
-    after: ': "🌐"',
-    alt: true,
-  },
-  {
-    field: FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS,
-    desc: "Set to true, if you want to display [[square brackets]] around the links in Text Elements",
-    after: ": true",
-    alt: true,
-  },
-  {
-    field: FRONTMATTER_KEY_DEFAULT_MODE,
-    desc: "Specifies how Excalidraw should open by default. Valid values are: view|zen",
-    after: ": view",
-    alt: true,
-  },
-  {
-    field: FRONTMATTER_KEY_FONT,
-    desc: "This key applies to Markdown Embeds. You can control the appearance of the embedded markdown file on a file by file bases by adding the this front matter keys to your markdown document. Valid values are: Virgil|Cascadia|font_file_name.extension",
-    after: ": Virgil",
-    alt: true,
-  },
-  {
-    field: FRONTMATTER_KEY_FONTCOLOR,
-    desc: "This key applies to Markdown Embeds. You can control the appearance of the embedded markdown file on a file by file bases by adding the this front matter keys to your markdown document. Valid values are: css-color-name|#HEXcolor|any-other-html-standard-format",
-    after: ": SteelBlue",
-    alt: true,
-  },
-  {
-    field: FRONTMATTER_KEY_MD_STYLE,
-    desc: 'This key applies to Markdown Embeds. You can control the appearance of the embedded markdown file on a file by file bases by adding the this front matter keys to your markdown document. Valid values are: "css-filename|css snippet"',
-    after: ': ""',
-    alt: true,
-  },
-];
-
 export const VIEW_TYPE_EXCALIDRAW = "excalidraw";
 export const ICON_NAME = "excalidraw-icon";
 export const MAX_COLORS = 5;

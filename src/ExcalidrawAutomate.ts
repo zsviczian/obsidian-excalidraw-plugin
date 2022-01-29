@@ -36,6 +36,7 @@ import {
   getMaximumGroups,
   intersectElementWithLine,
 } from "@zsviczian/excalidraw";
+import { stringify } from "querystring";
 
 declare type ConnectionPoint = "top" | "bottom" | "left" | "right" | null;
 const GAP = 4;
@@ -229,6 +230,9 @@ export interface ExcalidrawAutomate {
   //recommended use:
   //if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.20")) {new Notice("message");return;}
   verifyMinimumPluginVersion(requiredVersion: string): boolean;
+  selectElementsInView(elements: ExcalidrawElement[]): void; //sets selection in view
+  generateElementId(): string; //returns an 8 character long random id
+  cloneElement(element: ExcalidrawElement): ExcalidrawElement; //Returns a clone of the element with a new id
 }
 
 declare let window: any;
@@ -1301,6 +1305,28 @@ export async function initExcalidrawAutomate(
       const manifest = this.plugin.app.plugins.manifests[PLUGIN_ID];
       return manifest.version >= requiredVersion;
     },
+    selectElementsInView(elements: ExcalidrawElement[]):void {
+      if (!this.targetView || !this.targetView?._loaded) {
+        errorMessage("targetView not set", "getViewSelectedElements()");
+        return;
+      }
+      if (!elements || elements.length===0) {
+        return;
+      }
+      const API = this.getExcalidrawAPI();
+      let st = API.getAppState();
+      st.selectedElementIds = {};
+      elements.forEach(el=>st.selectedElementIds[el.id] = true);
+      API.updateScene({appState: st});
+    },
+    generateElementId(): string {
+      return nanoid();
+    },
+    cloneElement(element: ExcalidrawElement): ExcalidrawElement{
+      const newEl = JSON.parse(JSON.stringify(element));
+      newEl.id = nanoid();
+      return newEl;
+    } 
   };
   await initFonts();
   return window.ExcalidrawAutomate;

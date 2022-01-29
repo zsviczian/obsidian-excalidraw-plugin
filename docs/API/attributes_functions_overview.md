@@ -134,7 +134,7 @@ export interface ExcalidrawAutomate {
     },
   ): boolean;
   addElementsToView( //Adds elements from elementsDict to the current view
-    repositionToCursor?: boolean,  //default is false
+    repositionToCursor?: boolean, //default is false
     save?: boolean, //default is true
     //newElementsOnTop controls whether elements created with ExcalidrawAutomate
     //are added at the bottom of the stack or the top of the stack of elements already in the view
@@ -185,13 +185,16 @@ export interface ExcalidrawAutomate {
   //See OCR plugin for example on how to use scriptSettings
   activeScript: string; //Set automatically by the ScriptEngine
   getScriptSettings(): {}; //Returns script settings. Saves settings in plugin settings, under the activeScript key
-  setScriptSettings(settings:any):Promise<void>; //sets script settings.
-  openFileInNewOrAdjacentLeaf (file:TFile):WorkspaceLeaf;//Open a file in a new workspaceleaf or reuse an existing adjacent leaf depending on Excalidraw Plugin Settings
-  measureText(text:string):{ width: number, height: number }; //measure text size based on current style settings
+  setScriptSettings(settings: any): Promise<void>; //sets script settings.
+  openFileInNewOrAdjacentLeaf(file: TFile): WorkspaceLeaf; //Open a file in a new workspaceleaf or reuse an existing adjacent leaf depending on Excalidraw Plugin Settings
+  measureText(text: string): { width: number; height: number }; //measure text size based on current style settings
   //verifyMinimumPluginVersion returns true if plugin version is >= than required
-  //recommended use: 
-  //if(!(ea.verifyMinimumPluginVersion && ea.verifyMinimumPluginVersion("1.5.20"))) {new Notice("message");return;}
-  verifyMinimumPluginVersion(requiredVersion: string):boolean; 
+  //recommended use:
+  //if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.20")) {new Notice("message");return;}
+  verifyMinimumPluginVersion(requiredVersion: string): boolean;
+  selectElementsInView(elements: ExcalidrawElement[]): void; //sets selection in view
+  generateElementId(): string; //returns an 8 character long random id
+  cloneElement(element: ExcalidrawElement): ExcalidrawElement; //Returns a clone of the element with a new id
 }
 ```
 
