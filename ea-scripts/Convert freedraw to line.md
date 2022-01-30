@@ -24,7 +24,8 @@ if(!settings["Point density"]) {
   ea.setScriptSettings(settings);
 }
 
-const setSize = parseInt(settings["Point density"].value[0]);
+const scale = settings["Point density"].value;
+const setSize = parseInt(scale.substring(0,scale.indexOf(":")));
 
 const elements = ea.getViewSelectedElements().filter(el=>el.type==="freedraw");
 if(elements.length === 0) {
@@ -59,4 +60,5 @@ elements.forEach((el)=>{
 });
 
 ea.deleteViewElements(elements);
-ea.addElementsToView(false,true,true);
+await ea.addElementsToView(false,true,true);
+ea.selectElementsInView(ea.getElements());

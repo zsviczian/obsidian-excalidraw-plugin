@@ -2122,10 +2122,10 @@
   "resolved" "https://registry.npmjs.org/@xtuc/long/-/long-4.2.2.tgz"
   "version" "4.2.2"
 
-"@zsviczian/excalidraw@0.10.0-obsidian-37":
-  "integrity" "sha512-FssxK/xkDzsltu81aMTLkWVd0Te9EMV7H74K6GINF2M688rTk1Up5DGKIwI1fX8Zl+OobpmEBErctLLsQmb5jQ=="
-  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.10.0-obsidian-37.tgz"
-  "version" "0.10.0-obsidian-37"
+"@zsviczian/excalidraw@0.10.0-obsidian-39":
+  "integrity" "sha512-8uUby+Wzt1lVGqG6231IKWssd1uL+ERBSqscjjI/15bIDrqdatwJIm4taSHjNjiasOTo8p/OjG/s2Aulkr4uug=="
+  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.10.0-obsidian-39.tgz"
+  "version" "0.10.0-obsidian-39"
   dependencies:
     "dotenv" "10.0.0"
 

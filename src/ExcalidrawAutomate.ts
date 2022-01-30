@@ -233,6 +233,7 @@ export interface ExcalidrawAutomate {
   selectElementsInView(elements: ExcalidrawElement[]): void; //sets selection in view
   generateElementId(): string; //returns an 8 character long random id
   cloneElement(element: ExcalidrawElement): ExcalidrawElement; //Returns a clone of the element with a new id
+  moveViewElementToZIndex(elementId:number, newZIndex:number): void; //Moves the element to a specific position in the z-index
 }
 
 declare let window: any;
@@ -1307,17 +1308,14 @@ export async function initExcalidrawAutomate(
     },
     selectElementsInView(elements: ExcalidrawElement[]):void {
       if (!this.targetView || !this.targetView?._loaded) {
-        errorMessage("targetView not set", "getViewSelectedElements()");
+        errorMessage("targetView not set", "selectElementsInView()");
         return;
       }
       if (!elements || elements.length===0) {
         return;
       }
       const API = this.getExcalidrawAPI();
-      let st = API.getAppState();
-      st.selectedElementIds = {};
-      elements.forEach(el=>st.selectedElementIds[el.id] = true);
-      API.updateScene({appState: st});
+      API.selectElements(elements);
     },
     generateElementId(): string {
       return nanoid();
@@ -1326,7 +1324,35 @@ export async function initExcalidrawAutomate(
       const newEl = JSON.parse(JSON.stringify(element));
       newEl.id = nanoid();
       return newEl;
-    } 
+    },
+    moveViewElementToZIndex(elementId:number, newZIndex:number): void {
+      if (!this.targetView || !this.targetView?._loaded) {
+        errorMessage("targetView not set", "moveViewElementToZIndex()");
+        return;
+      }     
+      const API = this.getExcalidrawAPI();
+      const elements = this.getViewElements();
+      const elementToMove = elements.filter((el:any)=>el.id===elementId);
+      if (elementToMove.length === 0) {
+        errorMessage(`Element (id: ${elementId}) not found`, "moveViewElementToZIndex");
+        return;
+      }
+      if (newZIndex >= elements.length) {
+        API.bringToFront(elementToMove);
+        return;
+      }
+      if (newZIndex < 0) {
+        API.sendToBack(elementToMove);
+        return;
+      }
+
+      const oldZIndex = elements.indexOf(elementToMove[0]);     
+      elements.splice(newZIndex, 0, elements.splice(oldZIndex, 1)[0]);
+      API.updateScene({
+        elements: elements,
+        commitToHistory: true,
+      });
+    }
   };
   await initFonts();
   return window.ExcalidrawAutomate;

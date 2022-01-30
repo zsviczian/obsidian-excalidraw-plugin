@@ -6,7 +6,7 @@ Use this script to set the background color of unclosed line objects by creating
 ```javascript
 */
 
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.24")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.26")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
@@ -47,6 +47,7 @@ if(elements.length === 0) {
 }
 
 ea.copyViewElementsToEAforEditing(elements);
+elementsToMove = [];
 
 elements.forEach((el)=>{
   const newEl = ea.cloneElement(el);
@@ -64,6 +65,16 @@ elements.forEach((el)=>{
 	]);
   newEl.points.push([0,0]);
 	if(shouldGroup) ea.addToGroup([el.id,newEl.id]);
+  elementsToMove.push({fillId: newEl.id, shapeId: el.id});
 });
 
-ea.addElementsToView();
+await ea.addElementsToView();
+elementsToMove.forEach((x)=>{
+  const viewElements = ea.getViewElements();
+  ea.moveViewElementToZIndex(
+		x.fillId,
+    viewElements.indexOf(viewElements.filter(el=>el.id === x.shapeId)[0])-1
+	)
+});
+
+ea.selectElementsInView(ea.getElements());
