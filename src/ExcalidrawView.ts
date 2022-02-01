@@ -519,6 +519,7 @@ export default class ExcalidrawView extends TextFileView {
           }
           linkText = this.excalidrawData.getFile(selectedImage.fileId).file
             .path;
+          file = this.excalidrawData.getFile(selectedImage.fileId).file;
         }
       }
     }
