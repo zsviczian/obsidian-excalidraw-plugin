@@ -62,7 +62,7 @@ import {
   svgToBase64,
   viewportCoordsToSceneCoords,
 } from "./Utils";
-import { Prompt } from "./Prompt";
+import { NewFileActions, Prompt } from "./Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 import { updateEquation } from "./LaTeX";
 import {
@@ -464,10 +464,6 @@ export default class ExcalidrawView extends TextFileView {
         linkText,
         view.file.path,
       );
-      if (!ev.altKey && !file) {
-        new Notice(t("FILE_DOES_NOT_EXIST"), 4000);
-        return;
-      }
     } else {
       const selectedImage = this.getSelectedImageElement();
       if (selectedImage?.id) {
@@ -526,7 +522,7 @@ export default class ExcalidrawView extends TextFileView {
         }
       }
     }
-
+    
     if (!linkText) {
       new Notice(t("LINK_BUTTON_CLICK_NO_TEXT"), 20000);
       return;
@@ -536,15 +532,15 @@ export default class ExcalidrawView extends TextFileView {
       if (ev.shiftKey && this.isFullscreen()) {
         this.exitFullscreen();
       }
+      if (!file) {
+        (new NewFileActions(this.plugin,linkText,ev.shiftKey,view)).open();
+        return;
+      }
       const leaf = ev.shiftKey
         ? getNewOrAdjacentLeaf(this.plugin, view.leaf)
         : view.leaf;
-      view.app.workspace.setActiveLeaf(leaf);
-      if (file) {
-        leaf.openFile(file, { eState: { line: lineNum - 1 } }); //if file exists open file and jump to reference
-      } else {
-        leaf.view.app.workspace.openLinkText(linkText, view.file.path);
-      }
+      leaf.openFile(file, { eState: { line: lineNum - 1 } }); //if file exists open file and jump to reference
+      view.app.workspace.setActiveLeaf(leaf,true,true);
     } catch (e) {
       new Notice(e, 4000);
     }

@@ -1459,7 +1459,7 @@ export default class ExcalidrawPlugin extends Plugin {
     );
   }
 
-  private async getBlankDrawing(): Promise<string> {
+  public async getBlankDrawing(): Promise<string> {
     const template = this.app.metadataCache.getFirstLinkpathDest(
       normalizePath(this.settings.templateFilePath),
       "",

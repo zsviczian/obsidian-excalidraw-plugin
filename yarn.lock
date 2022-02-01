@@ -1355,6 +1355,11 @@
     "schema-utils" "^3.0.0"
     "source-map" "^0.7.3"
 
+"@popperjs/core@^2.11.2":
+  "integrity" "sha512-92FRmppjjqz29VMJ2dn+xdyXZBrMlE42AV6Kq6BwjWV7CNUW1hs2FtxSNLQE+gJhaZ6AAmYuO9y8dshhcBl7vA=="
+  "resolved" "https://registry.npmjs.org/@popperjs/core/-/core-2.11.2.tgz"
+  "version" "2.11.2"
+
 "@rollup/plugin-babel@^5.2.0", "@rollup/plugin-babel@^5.3.0":
   "integrity" "sha512-9uIC8HZOnVLrLHxayq/PTzw+uS25E14KPUBh5ktF+18Mjo5yK0ToMMx6epY0uEgkjwJw0aBW4x2horYXh8juWw=="
   "resolved" "https://registry.npmjs.org/@rollup/plugin-babel/-/plugin-babel-5.3.0.tgz"

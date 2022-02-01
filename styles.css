@@ -135,3 +135,13 @@ li[data-testid] {
 .excalidraw-scriptengine-install .modal {
   max-height:90%;
 }
+
+.excalidraw-prompt-center {
+  text-align: center;
+}
+
+.excalidraw-prompt-center.filepath {
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 2em;
+}

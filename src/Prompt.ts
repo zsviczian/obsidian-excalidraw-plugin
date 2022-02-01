@@ -6,7 +6,11 @@ import {
   FuzzyMatch,
   FuzzySuggestModal,
   Instruction,
+  TFile,
 } from "obsidian";
+import ExcalidrawView from "./ExcalidrawView";
+import ExcalidrawPlugin from "./main";
+import { getNewOrAdjacentLeaf } from "./Utils";
 
 export class Prompt extends Modal {
   private promptEl: HTMLInputElement;
@@ -279,5 +283,133 @@ export class GenericSuggester extends FuzzySuggestModal<any> {
     if (!this.resolved) {
       this.rejectPromise(this.inputEl.value);
     }
+  }
+}
+
+class MigrationPrompt extends Modal {
+  private plugin: ExcalidrawPlugin;
+
+  constructor(app: App, plugin: ExcalidrawPlugin) {
+    super(app);
+    this.plugin = plugin;
+  }
+
+  onOpen(): void {
+    this.titleEl.setText("Welcome to Excalidraw 1.2");
+    this.createForm();
+  }
+
+  onClose(): void {
+    this.contentEl.empty();
+  }
+
+  createForm(): void {
+    const div = this.contentEl.createDiv();
+    //    div.addClass("excalidraw-prompt-div");
+    //    div.style.maxWidth = "600px";
+    div.createEl("p", {
+      text: "This version comes with tons of new features and possibilities. Please read the description in Community Plugins to find out more.",
+    });
+    div.createEl("p", { text: "" }, (el) => {
+      el.innerHTML =
+        "Drawings you've created with version 1.1.x need to be converted to take advantage of the new features. You can also continue to use them in compatibility mode. " +
+        "During conversion your old *.excalidraw files will be replaced with new *.excalidraw.md files.";
+    });
+    div.createEl("p", { text: "" }, (el) => {
+      //files manually follow one of two options:
+      el.innerHTML =
+        "To convert your drawings you have the following options:<br><ul>" +
+        "<li>Click <code>CONVERT FILES</code> now to convert all of your *.excalidraw files, or if you prefer to make a backup first, then click <code>CANCEL</code>.</li>" +
+        "<li>In the Command Palette select <code>Excalidraw: Convert *.excalidraw files to *.excalidraw.md files</code></li>" +
+        "<li>Right click an <code>*.excalidraw</code> file in File Explorer and select one of the following options to convert files one by one: <ul>" +
+        "<li><code>*.excalidraw => *.excalidraw.md</code></li>" +
+        "<li><code>*.excalidraw => *.md (Logseq compatibility)</code>. This option will retain the original *.excalidraw file next to the new Obsidian format. " +
+        "Make sure you also enable <code>Compatibility features</code> in Settings for a full solution.</li></ul></li>" +
+        "<li>Open a drawing in compatibility mode and select <code>Convert to new format</code> from the <code>Options Menu</code></li></ul>";
+    });
+    div.createEl("p", {
+      text: "This message will only appear maximum 3 times in case you have *.excalidraw files in your Vault.",
+    });
+    const bConvert = div.createEl("button", { text: "CONVERT FILES" });
+    bConvert.onclick = () => {
+      this.plugin.convertExcalidrawToMD();
+      this.close();
+    };
+    const bCancel = div.createEl("button", { text: "CANCEL" });
+    bCancel.onclick = () => {
+      this.close();
+    };
+  }
+}
+
+export class NewFileActions extends Modal {
+  constructor (
+    private plugin: ExcalidrawPlugin,
+    private path: string,
+    private newPane: boolean,
+    private view: ExcalidrawView,
+  ) {
+    super(plugin.app);
+  }
+
+  onOpen(): void {
+    this.createForm();
+  }
+
+  async onClose() {
+  }
+
+  openFile(file: TFile): void {
+    if(!file) return;
+    const leaf = this.newPane
+    ? getNewOrAdjacentLeaf(this.plugin, this.view.leaf)
+    : this.view.leaf;
+    leaf.openFile(file);
+    this.app.workspace.setActiveLeaf(leaf, true, true);
+  }
+
+  createForm(): void {
+    this.titleEl.setText("New File");  
+
+    this.contentEl.createDiv({
+      cls: "excalidraw-prompt-center",
+      text: "File does not exist. Do you want to create it?" 
+    });
+    this.contentEl.createDiv({
+      cls: "excalidraw-prompt-center filepath",
+      text: this.path
+    });
+
+    this.contentEl.createDiv({cls: "excalidraw-prompt-center"}, (el) => {
+      //files manually follow one of two options:
+      el.style.textAlign = "right";
+
+      const bMd = el.createEl("button", { text: "Create Markdown" });
+      bMd.onclick = async () => {
+        //@ts-ignore
+        const f = await this.app.fileManager.createNewMarkdownFileFromLinktext(this.path,this.viewFile);
+        this.openFile(f);
+        this.close();
+      };
+
+
+      const bEx = el.createEl("button", { text: "Create Excalidraw" });
+      bEx.onclick = async () => {
+        //@ts-ignore
+        const f = await this.app.fileManager.createNewMarkdownFileFromLinktext(this.path,this.viewFile)
+        if(!f) return;
+        await this.app.vault.modify(f,await this.plugin.getBlankDrawing());
+        await new Promise(r => setTimeout(r, 200)); //wait for metadata cache to update, so file opens as excalidraw
+        this.openFile(f);
+        this.close();
+      };
+
+      const bCancel = el.createEl("button", {
+        text: "Never Mind",
+      });
+      bCancel.onclick = () => {       
+        this.close();
+      };
+    });
   }
 }
