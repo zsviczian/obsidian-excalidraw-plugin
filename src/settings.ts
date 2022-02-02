@@ -39,6 +39,7 @@ export interface ExcalidrawSettings {
   pngExportScale: number;
   exportWithTheme: boolean;
   exportWithBackground: boolean;
+  exportPaddingSVG: number;
   keepInSync: boolean;
   autoexportSVG: boolean;
   autoexportPNG: boolean;
@@ -96,6 +97,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   pngExportScale: 1,
   exportWithTheme: true,
   exportWithBackground: true,
+  exportPaddingSVG: 10,
   keepInSync: false,
   autoexportSVG: false,
   autoexportPNG: false,
@@ -731,6 +733,28 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
+      let exportPadding: HTMLDivElement;
+
+      new Setting(containerEl)
+        .setName(t("EXPORT_SVG_PADDING_NAME"))
+        .setDesc(fragWithHTML(t("EXPORT_SVG_PADDING_DESC")))
+        .addSlider((slider) =>
+          slider
+            .setLimits(0,50,5)
+            .setValue(this.plugin.settings.exportPaddingSVG)
+            .onChange(async (value) => {
+              exportPadding.innerText = ` ${value.toString()}`;
+              this.plugin.settings.exportPaddingSVG = value;
+              this.applySettingsUpdate();
+            }),
+        )
+        .settingEl.createDiv("", (el) => {
+          exportPadding = el;
+          el.style.minWidth = "2.3em";
+          el.style.textAlign = "right";
+          el.innerText = ` ${this.plugin.settings.exportPaddingSVG.toString()}`;
+        });
+  
     new Setting(containerEl)
       .setName(t("EXPORT_THEME_NAME"))
       .setDesc(fragWithHTML(t("EXPORT_THEME_DESC")))

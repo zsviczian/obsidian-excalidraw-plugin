@@ -200,7 +200,11 @@ export default class ExcalidrawView extends TextFileView {
       withBackground: this.plugin.settings.exportWithBackground,
       withTheme: this.plugin.settings.exportWithTheme,
     };
-    const svg = await getSVG(scene, exportSettings);
+    const svg = await getSVG (
+      scene,
+      exportSettings,
+      this.plugin.settings.exportPaddingSVG,  
+    );
     if (!svg) {
       return;
     }
@@ -251,6 +255,9 @@ export default class ExcalidrawView extends TextFileView {
     }
     if (!this.isLoaded) {
       return;
+    }
+    if(!this.app.vault.getAbstractFileByPath(this.file.path)) {
+      return; //file was recently deleted
     }
     this.preventReload = preventReload;
     this.dirty = null;
@@ -1014,7 +1021,11 @@ export default class ExcalidrawView extends TextFileView {
                 withBackground: this.plugin.settings.exportWithBackground,
                 withTheme: this.plugin.settings.exportWithTheme,
               };
-              let svg = await getSVG(this.getScene(), exportSettings);
+              let svg = await getSVG (
+                this.getScene(),
+                exportSettings,
+                this.plugin.settings.exportPaddingSVG,
+              );
               if (!svg) {
                 return null;
               }

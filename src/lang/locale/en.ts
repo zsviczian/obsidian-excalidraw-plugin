@@ -245,6 +245,8 @@ export default {
   EXPORT_BACKGROUND_NAME: "Export image with background",
   EXPORT_BACKGROUND_DESC:
     "If turned off, the exported image will be transparent.",
+  EXPORT_SVG_PADDING_NAME: "SVG Padding",
+  EXPORT_SVG_PADDING_DESC: "The padding (in pixels) around the exported SVG image. If you have curved lines close to the edge of the image they might get cropped during SVG export. You can increase this value to avoid cropping.",
   EXPORT_THEME_NAME: "Export image with theme",
   EXPORT_THEME_DESC:
     "Export the image matching the dark/light theme of your drawing. If turned off, " +

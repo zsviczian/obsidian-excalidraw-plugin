@@ -1637,6 +1637,7 @@ export async function createSVG(
         exportSettings?.withBackground ?? plugin.settings.exportWithBackground,
       withTheme: exportSettings?.withTheme ?? plugin.settings.exportWithTheme,
     },
+    plugin.settings.exportPaddingSVG,
   );
   if (template?.hasSVGwithBitmap) {
     svg.setAttribute("hasbitmap", "true");

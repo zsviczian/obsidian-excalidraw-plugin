@@ -405,6 +405,7 @@ export const getAttachmentsFolderAndFilePath = async (
 export const getSVG = async (
   scene: any,
   exportSettings: ExportSettings,
+  padding: number,
 ): Promise<SVGSVGElement> => {
   try {
     return await exportToSvg({
@@ -417,7 +418,7 @@ export const getSVG = async (
         ...scene.appState,
       },
       files: scene.files,
-      exportPadding: 10,
+      exportPadding: padding,
     });
   } catch (error) {
     return null;

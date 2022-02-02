@@ -707,7 +707,8 @@ export default class ExcalidrawPlugin extends Plugin {
             )
           ).folder;
       const file = await this.createDrawing(filename, folder);
-      await this.embedDrawing(file.path);
+      const path = this.app.metadataCache.fileToLinktext(file,activeView.file.path,true)
+      await this.embedDrawing(path);
       this.openDrawing(file, inNewPane);
     };
 
