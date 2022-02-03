@@ -70,6 +70,7 @@ import {
   getNewUniqueFilepath,
   isObsidianThemeDark,
   log,
+  sleep,
 } from "./Utils";
 import { OneOffs } from "./OneOffs";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
@@ -661,7 +662,9 @@ export default class ExcalidrawPlugin extends Plugin {
             this.lastActiveExcalidrawFilePath != null
           );
         }
-        this.embedDrawing(this.lastActiveExcalidrawFilePath);
+        const file = this.app.vault.getAbstractFileByPath(this.lastActiveExcalidrawFilePath);
+        if(!(file instanceof TFile)) return false;
+        this.embedDrawing(file);
         return true;
       },
     });
@@ -707,8 +710,7 @@ export default class ExcalidrawPlugin extends Plugin {
             )
           ).folder;
       const file = await this.createDrawing(filename, folder);
-      const path = this.app.metadataCache.fileToLinktext(file,activeView.file.path,true)
-      await this.embedDrawing(path);
+      await this.embedDrawing(file);
       this.openDrawing(file, inNewPane);
     };
 
@@ -1250,16 +1252,19 @@ export default class ExcalidrawPlugin extends Plugin {
 
         //delete PNG and SVG files as well
         if (self.settings.keepInSync) {
-          [".svg", ".png", ".excalidraw"].forEach(async (ext: string) => {
-            const imgPath = getIMGPathFromExcalidrawFile(file.path, ext);
-            const imgFile = self.app.vault.getAbstractFileByPath(
-              normalizePath(imgPath),
-            );
-            if (imgFile && imgFile instanceof TFile) {
-              await self.app.vault.delete(imgFile);
-            }
-          });
+          setTimeout(()=>{
+            [".svg", ".png", ".excalidraw"].forEach(async (ext: string) => {
+              const imgPath = getIMGPathFromExcalidrawFile(file.path, ext);
+              const imgFile = self.app.vault.getAbstractFileByPath(
+                normalizePath(imgPath),
+              );
+              if (imgFile && imgFile instanceof TFile) {
+                await self.app.vault.delete(imgFile);
+              }
+            });
+          },500);
         }
+        
       };
       self.registerEvent(self.app.vault.on("delete", deleteEventHandler));
 
@@ -1371,20 +1376,31 @@ export default class ExcalidrawPlugin extends Plugin {
     //this.saveSettings();
   }
 
-  public async embedDrawing(data: string) {
+  public async embedDrawing(file: TFile) {
     const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-    if (activeView) {
+    if (activeView && activeView.file) {
+      const data = this.app.metadataCache.fileToLinktext(
+        file,
+        activeView.file.path,
+        this.settings.embedType === "excalidraw"
+      )
       const editor = activeView.editor;
       if (this.settings.embedType === "excalidraw") {
         editor.replaceSelection(`![[${data}]]`);
         editor.focus();
         return;
       }
-      const filename = `${data.substring(
-        0,
-        data.lastIndexOf("."),
-      )}.${this.settings.embedType.toLowerCase()}`;
-      await this.app.vault.create(filename, "");
+
+      const filename = getIMGPathFromExcalidrawFile(
+        data,"."+this.settings.embedType.toLowerCase()
+      );
+      const filepath = getIMGPathFromExcalidrawFile(
+        file.path,"."+this.settings.embedType.toLowerCase()
+      );
+     
+      await this.app.vault.create(filepath, "");
+      //await sleep(200);
+
       editor.replaceSelection(
         `![[${filename}]]\n%%[[${data}|🖋 Edit in Excalidraw]]%%`,
       );

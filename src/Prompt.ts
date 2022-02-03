@@ -10,7 +10,7 @@ import {
 } from "obsidian";
 import ExcalidrawView from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
-import { getNewOrAdjacentLeaf } from "./Utils";
+import { getNewOrAdjacentLeaf, sleep } from "./Utils";
 
 export class Prompt extends Modal {
   private promptEl: HTMLInputElement;
@@ -399,7 +399,7 @@ export class NewFileActions extends Modal {
         const f = await this.app.fileManager.createNewMarkdownFileFromLinktext(this.path,this.viewFile)
         if(!f) return;
         await this.app.vault.modify(f,await this.plugin.getBlankDrawing());
-        await new Promise(r => setTimeout(r, 200)); //wait for metadata cache to update, so file opens as excalidraw
+        await sleep(200); //wait for metadata cache to update, so file opens as excalidraw
         this.openFile(f);
         this.close();
       };
