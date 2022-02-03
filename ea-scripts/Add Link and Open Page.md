@@ -26,7 +26,7 @@ if(!settings["Link position"]) {
       value: 12
     }
   };
-  ea.setScriptSettings(settings);
+  await ea.setScriptSettings(settings);
 }
 
 if(!settings["New document should be an Excalidraw drawing"]) {
@@ -37,12 +37,24 @@ if(!settings["New document should be an Excalidraw drawing"]) {
 	},
     ...settings
   };
-  ea.setScriptSettings(settings);
+  await ea.setScriptSettings(settings);
+}
+
+if(!settings["Open link in active pane"]) {
+  settings = {
+    "Open link in active pane": {
+      value: false,
+      description: "Open the link in the current active pane (on) or a new pane (off)."
+	},
+    ...settings
+  };
+  await ea.setScriptSettings(settings);
 }
 
 
 const below = settings["Link position"].value === "below";
 const newDocExcalidraw = settings["New document should be an Excalidraw drawing"].value;
+const openInCurrentPane = settings["Open link in active pane"];
 const fontSize = Math.floor(settings["Link font size"].value);
 
 elements = ea.getViewSelectedElements();
@@ -53,15 +65,17 @@ if(elements.length === 0) {
 
 const files = app.vault.getFiles()
 const filePaths = files.map((f)=>f.path);
-file = await utils.suggester(filePaths,files,"Select file or press ESC to create a new document");
+file = await utils.suggester(filePaths,files,"Select file. To create a new document press ESC or tap outside this prompt");
 
 alias = null;
 if(file) {
   alias = file.basename;
-} else {
+} else { 
   const prefix = ea.targetView.file.path.substring(0,ea.targetView.file.path.length-3);
   const timestamp = moment(Date.now()).format(ea.plugin.settings.drawingFilenameDateTime);
-  file = await app.vault.create(`${prefix} ${timestamp}.md`,newDocExcalidraw?BLANK_DRAWING:"");
+	const filename = await utils.inputPrompt("Filename for new document","Leave empty to cancel",prefix + " " + timestamp);
+  if(!filename || filename === "") return;
+  file = await app.vault.create(`${filename}.md`,newDocExcalidraw?BLANK_DRAWING:"");
   if(newDocExcalidraw) await new Promise(r => setTimeout(r, 100)); //wait for metadata cache to update, so file opens as excalidraw
 }
 
@@ -84,5 +98,10 @@ const id = ea.addText(
 );
 ea.copyViewElementsToEAforEditing(elements);
 ea.addToGroup(elements.map((e)=>e.id).concat([id]));
-ea.addElementsToView(false,true,true);
+await ea.addElementsToView(false,true,true);
+if(openInCurrentPane) {
+	app.workspace.openLinkText(file.path,ea.targetView.file.path,false);
+  return;
+}
 ea.openFileInNewOrAdjacentLeaf(file);
+ea.selectElementsInView(ea.getElements());
