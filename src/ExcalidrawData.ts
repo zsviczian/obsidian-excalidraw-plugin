@@ -48,7 +48,7 @@ declare module "obsidian" {
 
 export const REGEX_LINK = {
   //![[link|alias]] [alias](link){num}
-  //      1  2     3           4        5      6  7     8  9
+  //      1   2    3           4             5         67         8  9
   EXPR: /(!)?(\[\[([^|\]]+)\|?([^\]]+)?]]|\[([^\]]*)]\(([^)]*)\))(\{(\d+)\})?/g, //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/187
   getRes: (text: string): IterableIterator<RegExpMatchArray> => {
     return text.matchAll(REGEX_LINK.EXPR);
@@ -311,11 +311,15 @@ export class ExcalidrawData {
       const id: string = parts.value[1];
       const textEl = this.scene.elements.filter((el: any) => el.id === id)[0];
       const wrapAt = estimateMaxLineLen(textEl.text, textEl.originalText);
+      const parseRes = await this.parse(text);
       this.textElements.set(id, {
         raw: text,
-        parsed: await this.parse(text),
+        parsed: parseRes.parsed,
         wrapAt,
       });
+      if (parseRes.link) {
+        textEl.link = parseRes.link;
+      }
       //this will set the rawText field of text elements imported from files before 1.3.14, and from other instances of Excalidraw
       if (textEl && (!textEl.rawText || textEl.rawText === "")) {
         textEl.rawText = text;
@@ -452,7 +456,7 @@ export class ExcalidrawData {
       if (!t.parsed) {
         this.textElements.set(id, {
           raw: t.raw,
-          parsed: await this.parse(t.raw),
+          parsed: (await this.parse(t.raw)).parsed,
           wrapAt: t.wrapAt,
         });
       }
@@ -530,7 +534,7 @@ export class ExcalidrawData {
           const wrapAt = estimateMaxLineLen(el[0].text, el[0].originalText);
           this.textElements.set(key, {
             raw: el[0].originalText ?? el[0].text,
-            parsed: await this.parse(el[0].originalText ?? el[0].text),
+            parsed: (await this.parse(el[0].originalText ?? el[0].text)).parsed,
             wrapAt,
           });
         }
@@ -539,7 +543,7 @@ export class ExcalidrawData {
   }
 
   private async parseasync(key: string, raw: string, wrapAt: number) {
-    this.textElements.set(key, { raw, parsed: await this.parse(raw), wrapAt });
+    this.textElements.set(key, { raw, parsed: (await this.parse(raw)).parsed, wrapAt });
   }
 
   private parseLinks(text: string, position: number, parts: any): string {
@@ -577,14 +581,27 @@ export class ExcalidrawData {
    * @param text
    * @returns
    */
-  private async parse(text: string): Promise<string> {
+  private async parse(text: string): Promise<{parsed: string,link: string}> {
     let outString = "";
+    let link = null;
     let position = 0;
     const res = REGEX_LINK.getRes(text);
     let linkIcon = false;
     let urlIcon = false;
     let parts;
+    if (text.match(REG_LINKINDEX_HYPERLINK)) {
+      link = text;
+      urlIcon = true;
+    }
     while (!(parts = res.next()).done) {
+      if (!link) {
+        const l = REGEX_LINK.getLink(parts);
+        if (l.match(REG_LINKINDEX_HYPERLINK)) {
+          link = l;
+        } else {
+          link=`[[${REGEX_LINK.getLink(parts)}]]`;
+        }
+      }
       if (REGEX_LINK.isTransclusion(parts)) {
         //transclusion //parts.value[1] || parts.value[4]
         const contents = (await this.getTransclusion(REGEX_LINK.getLink(parts)))
@@ -619,7 +636,7 @@ export class ExcalidrawData {
       outString = this.urlPrefix + outString;
     }
 
-    return outString;
+    return {parsed: outString, link};
   }
 
   /**
@@ -629,7 +646,7 @@ export class ExcalidrawData {
    * activity. Quick parse gets the job done synchronously if possible.
    * @param text
    */
-  private quickParse(text: string): string {
+  private quickParse(text: string): [string,string] {
     const hasTransclusion = (text: string): boolean => {
       const res = REGEX_LINK.getRes(text);
       let parts;
@@ -641,16 +658,22 @@ export class ExcalidrawData {
       return false;
     };
     if (hasTransclusion(text)) {
-      return null;
+      return [null,null];
     }
 
     let outString = "";
+    let link = null;
     let position = 0;
     const res = REGEX_LINK.getRes(text);
     let linkIcon = false;
     let urlIcon = false;
     let parts;
+    if (text.match(REG_LINKINDEX_HYPERLINK)) {
+      link = text;
+      urlIcon = true;
+    }
     while (!(parts = res.next()).done) {
+      if (!link) link=`[[${REGEX_LINK.getLink(parts)}]]`;
       const parsedLink = this.parseLinks(text, position, parts);
       if (parsedLink) {
         outString += parsedLink;
@@ -671,7 +694,7 @@ export class ExcalidrawData {
     if (urlIcon) {
       outString = this.urlPrefix + outString;
     }
-    return outString;
+    return [outString,link];
   }
 
   /**
@@ -849,12 +872,12 @@ export class ExcalidrawData {
     return this.textElements.get(id)?.raw;
   }
 
-  public getParsedText(id: string): [string, string] {
+  public getParsedText(id: string): [string, string, string] {
     const t = this.textElements.get(id);
     if (!t) {
-      return;
+      return [null, null, null];
     }
-    return [wrap(t.parsed, t.wrapAt), t.parsed];
+    return [wrap(t.parsed, t.wrapAt), t.parsed, null];
   }
 
   public setTextElement(
@@ -862,9 +885,9 @@ export class ExcalidrawData {
     rawText: string,
     rawOriginalText: string,
     updateScene: Function,
-  ): [string, string] {
+  ): [string, string, string] {
     const maxLineLen = estimateMaxLineLen(rawText, rawOriginalText);
-    const parseResult = this.quickParse(rawOriginalText); //will return the parsed result if raw text does not include transclusion
+    const [parseResult, link] = this.quickParse(rawOriginalText); //will return the parsed result if raw text does not include transclusion
     if (parseResult) {
       //No transclusion
       this.textElements.set(elementID, {
@@ -872,10 +895,11 @@ export class ExcalidrawData {
         parsed: parseResult,
         wrapAt: maxLineLen,
       });
-      return [wrap(parseResult, maxLineLen), parseResult];
+      return [wrap(parseResult, maxLineLen), parseResult, link];
     }
     //transclusion needs to be resolved asynchornously
-    this.parse(rawOriginalText).then((parsedText: string) => {
+    this.parse(rawOriginalText).then((parseRes) => {
+      const parsedText = parseRes.parsed;
       this.textElements.set(elementID, {
         raw: rawOriginalText,
         parsed: parsedText,
@@ -885,14 +909,14 @@ export class ExcalidrawData {
         updateScene(wrap(parsedText, maxLineLen), parsedText);
       }
     });
-    return [null, null];
+    return [null, null, null];
   }
 
   public async addTextElement(
     elementID: string,
     rawText: string,
     rawOriginalText: string,
-  ): Promise<[string, string]> {
+  ): Promise<[string, string, string]> {
     let wrapAt: number = estimateMaxLineLen(rawText, rawOriginalText);
     if (this.textElements.has(elementID)) {
       wrapAt = this.textElements.get(elementID).wrapAt;
@@ -900,10 +924,10 @@ export class ExcalidrawData {
     const parseResult = await this.parse(rawOriginalText);
     this.textElements.set(elementID, {
       raw: rawOriginalText,
-      parsed: parseResult,
+      parsed: parseResult.parsed,
       wrapAt,
     });
-    return [wrap(parseResult, wrapAt), parseResult];
+    return [wrap(parseResult.parsed, wrapAt), parseResult.parsed, parseResult.link];
   }
 
   public deleteTextElement(id: string) {

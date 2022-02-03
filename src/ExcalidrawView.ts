@@ -14,6 +14,7 @@ import {
   ExcalidrawElement,
   ExcalidrawImageElement,
   ExcalidrawTextElement,
+  NonDeletedExcalidrawElement,
 } from "@zsviczian/excalidraw/types/element/types";
 import {
   AppState,
@@ -35,6 +36,7 @@ import {
   CTRL_OR_CMD,
   REG_LINKINDEX_INVALIDCHARS,
   KEYCODE,
+  LOCAL_PROTOCOL,
 } from "./constants";
 import ExcalidrawPlugin from "./main";
 import { repositionElementsToCursor } from "./ExcalidrawAutomate";
@@ -1270,7 +1272,7 @@ export default class ExcalidrawView extends TextFileView {
 
         const textElements = newElements.filter((el) => el.type == "text");
         for (let i = 0; i < textElements.length; i++) {
-          const [parseResultWrapped, parseResult] =
+          const [parseResultWrapped, parseResult, link] =
             await this.excalidrawData.addTextElement(
               textElements[i].id,
               //@ts-ignore
@@ -1278,6 +1280,8 @@ export default class ExcalidrawView extends TextFileView {
               //@ts-ignore
               textElements[i].rawText, //TODO: implement originalText support in ExcalidrawAutomate
             );
+          //@ts-ignore  
+          if(link) textElements[i].link = link;
           if (this.textMode == TextMode.parsed) {
             this.excalidrawData.updateTextElement(
               textElements[i],
@@ -1563,44 +1567,46 @@ export default class ExcalidrawView extends TextFileView {
 
       let mouseEvent: any = null;
 
-      const showHoverPreview = () => {
-        let linktext = "";
-        const selectedElement = getTextElementAtPointer(currentPosition);
-        if (!selectedElement || !selectedElement.text) {
-          const selectedImgElement = getImageElementAtPointer(currentPosition);
-          if (!selectedImgElement || !selectedImgElement.fileId) {
-            return;
-          }
-          if (!this.excalidrawData.hasFile(selectedImgElement.fileId)) {
-            return;
-          }
-          const ef = this.excalidrawData.getFile(selectedImgElement.fileId);
-          const ref = ef.linkParts.ref
-            ? `#${ef.linkParts.isBlockRef ? "^" : ""}${ef.linkParts.ref}`
-            : "";
-          linktext =
-            this.excalidrawData.getFile(selectedImgElement.fileId).file.path +
-            ref;
-        } else {
-          const text: string =
-            this.textMode === TextMode.parsed
-              ? this.excalidrawData.getRawText(selectedElement.id)
-              : selectedElement.text;
+      const showHoverPreview = (linktext?:string) => {
+        if(!linktext) {
+          linktext = "";
+          const selectedElement = getTextElementAtPointer(currentPosition);
+          if (!selectedElement || !selectedElement.text) {
+            const selectedImgElement = getImageElementAtPointer(currentPosition);
+            if (!selectedImgElement || !selectedImgElement.fileId) {
+              return;
+            }
+            if (!this.excalidrawData.hasFile(selectedImgElement.fileId)) {
+              return;
+            }
+            const ef = this.excalidrawData.getFile(selectedImgElement.fileId);
+            const ref = ef.linkParts.ref
+              ? `#${ef.linkParts.isBlockRef ? "^" : ""}${ef.linkParts.ref}`
+              : "";
+            linktext =
+              this.excalidrawData.getFile(selectedImgElement.fileId).file.path +
+              ref;
+          } else {
+            const text: string =
+              this.textMode === TextMode.parsed
+                ? this.excalidrawData.getRawText(selectedElement.id)
+                : selectedElement.text;
 
-          if (!text) {
-            return;
-          }
-          if (text.match(REG_LINKINDEX_HYPERLINK)) {
-            return;
-          }
+            if (!text) {
+              return;
+            }
+            if (text.match(REG_LINKINDEX_HYPERLINK)) {
+              return;
+            }
 
-          const parts = REGEX_LINK.getRes(text).next();
-          if (!parts.value) {
-            return;
-          }
-          linktext = REGEX_LINK.getLink(parts); //parts.value[2] ? parts.value[2]:parts.value[6];
-          if (linktext.match(REG_LINKINDEX_HYPERLINK)) {
-            return;
+            const parts = REGEX_LINK.getRes(text).next();
+            if (!parts.value) {
+              return;
+            }
+            linktext = REGEX_LINK.getLink(parts); //parts.value[2] ? parts.value[2]:parts.value[6];
+            if (linktext.match(REG_LINKINDEX_HYPERLINK)) {
+              return;
+            }
           }
         }
 
@@ -1954,7 +1960,7 @@ export default class ExcalidrawView extends TextFileView {
             text: string,
             originalText: string,
             isDeleted: boolean,
-          ): [string, string] => {
+          ): [string, string, string] => {
             this.isEditingTextResetTimer = setTimeout(() => {
               this.isEditingText = false;
               this.isEditingTextResetTimer = null;
@@ -1964,7 +1970,7 @@ export default class ExcalidrawView extends TextFileView {
               this.excalidrawData.deleteTextElement(textElement.id);
               this.dirty = this.file?.path;
               this.setupAutosaveTimer();
-              return [null, null];
+              return [null, null, null];
             }
 
             //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/318
@@ -1986,7 +1992,7 @@ export default class ExcalidrawView extends TextFileView {
             ) {
               //the user made changes to the text or the text is missing from Excalidraw Data (recently copy/pasted)
               //setTextElement will attempt a quick parse (without processing transclusions)
-              const [parseResultWrapped, parseResultOriginal] =
+              const [parseResultWrapped, parseResultOriginal, link] =
                 this.excalidrawData.setTextElement(
                   textElement.id,
                   text,
@@ -2009,15 +2015,15 @@ export default class ExcalidrawView extends TextFileView {
                 //there were no transclusions in the raw text, quick parse was successful
                 this.setupAutosaveTimer();
                 if (this.textMode === TextMode.raw) {
-                  return [null, null];
+                  return [null, null, link];
                 } //text is displayed in raw, no need to clear the history, undo will not create problems
                 if (text === parseResultWrapped) {
-                  return [null, null];
+                  return [null, null, null];
                 } //There were no links to parse, raw text and parsed text are equivalent
                 this.excalidrawAPI.history.clear();
-                return [parseResultWrapped, parseResultOriginal];
+                return [parseResultWrapped, parseResultOriginal, link];
               }
-              return [null, null];
+              return [null, null, null];
             }
             this.setupAutosaveTimer();
             if (containerId) {
@@ -2026,8 +2032,70 @@ export default class ExcalidrawView extends TextFileView {
             if (this.textMode === TextMode.parsed) {
               return this.excalidrawData.getParsedText(textElement.id);
             }
-            return [null, null];
+            return [null, null, null];
           },
+          onLinkOpen: (link:string, event: MouseEvent): void => {
+            if(!link || link === "") return;
+            if(link.startsWith(LOCAL_PROTOCOL) || link.startsWith("[[")) {
+              (async () => {
+                const linkMatch = link.match(/(md:\/\/)?\[\[(?<link>.*?)\]\]/);
+                if(!linkMatch) return;
+                let linkText = linkMatch.groups["link"];
+
+                let lineNum = 0;
+                if (linkText.search("#") > -1) {
+                  lineNum = (await this.excalidrawData.getTransclusion(linkText)).lineNum;
+                  linkText = linkText.substring(0, linkText.search("#"));
+                }
+
+                if (linkText.match(REG_LINKINDEX_INVALIDCHARS)) {
+                  new Notice(t("FILENAME_INVALID_CHARS"), 4000);
+                  return;
+                }
+
+                const file = this.app.metadataCache.getFirstLinkpathDest(
+                  linkText,
+                  this.file.path,
+                );
+
+                if (event.shiftKey && this.isFullscreen()) {
+                  this.exitFullscreen();
+                }
+                if (!file) {
+                  (new NewFileActions(this.plugin,linkText,event.shiftKey,this)).open();
+                  return;
+                }
+                try {
+                  const leaf = (event.shiftKey || event[CTRL_OR_CMD])
+                    ? getNewOrAdjacentLeaf(this.plugin, this.leaf)
+                    : this.leaf;
+                  leaf.openFile(file); //if file exists open file and jump to reference
+                } catch (e) {
+                  new Notice(e, 4000);
+                }
+              })();
+              return;
+            }
+            window.open(link);
+          },
+          onLinkHover: (
+            element:NonDeletedExcalidrawElement,
+            event: React.PointerEvent<HTMLCanvasElement>
+          ): void => { 
+            if(element && event[CTRL_OR_CMD]){
+              const link = element.link;
+              if(!link || link === "") return;
+              if(link.startsWith(LOCAL_PROTOCOL) || link.startsWith("[[")) {
+                const linkMatch = link.match(/(md:\/\/)?\[\[(?<link>.*?)\]\]/);
+                if(!linkMatch) return;
+                let linkText = linkMatch.groups["link"]; 
+                if (linkText.search("#") > -1) {             
+                  linkText = linkText.substring(0, linkText.search("#"));
+                }  
+                showHoverPreview(linkText);
+              }
+            };
+          }
         }),
       );
 
