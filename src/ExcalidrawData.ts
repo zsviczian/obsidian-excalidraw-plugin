@@ -498,8 +498,7 @@ export class ExcalidrawData {
         id = nanoid();
         jsonString = jsonString.replaceAll(el.id, id); //brute force approach to replace all occurances (e.g. links, groups,etc.)
       }
-        this.elementLinks.set(id, el.link);
-      }
+      this.elementLinks.set(id, el.link);
     }
     this.scene = JSON.parse(jsonString);
     return true;   
