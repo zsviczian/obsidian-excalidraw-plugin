@@ -144,6 +144,7 @@ export class ExcalidrawData {
     string,
     { raw: string; parsed: string; wrapAt: number | null }
   > = null;
+  private elementLinks: Map<string, string> = null;
   public scene: any = null;
   private file: TFile = null;
   private app: App;
@@ -216,6 +217,7 @@ export class ExcalidrawData {
       string,
       { raw: string; parsed: string; wrapAt: number }
     >();
+    this.elementLinks = new Map<string, string>();
     if (this.file != file) {
       //this is a reload - files and equations will take care of reloading when needed
       this.files.clear();
@@ -310,21 +312,25 @@ export class ExcalidrawData {
       const text = data.substring(position, parts.value.index);
       const id: string = parts.value[1];
       const textEl = this.scene.elements.filter((el: any) => el.id === id)[0];
-      const wrapAt = estimateMaxLineLen(textEl.text, textEl.originalText);
-      const parseRes = await this.parse(text);
-      this.textElements.set(id, {
-        raw: text,
-        parsed: parseRes.parsed,
-        wrapAt,
-      });
-      if (parseRes.link) {
-        textEl.link = parseRes.link;
+      if(textEl.type !== "text") { //markdown link attached to elements
+        textEl.link = text;
+        this.elementLinks.set(id, text);
+      } else {
+        const wrapAt = estimateMaxLineLen(textEl.text, textEl.originalText);
+        const parseRes = await this.parse(text);
+        this.textElements.set(id, {
+          raw: text,
+          parsed: parseRes.parsed,
+          wrapAt,
+        });
+        if (parseRes.link) {
+          textEl.link = parseRes.link;
+        }
+        //this will set the rawText field of text elements imported from files before 1.3.14, and from other instances of Excalidraw
+        if (textEl && (!textEl.rawText || textEl.rawText === "")) {
+          textEl.rawText = text;
+        }
       }
-      //this will set the rawText field of text elements imported from files before 1.3.14, and from other instances of Excalidraw
-      if (textEl && (!textEl.rawText || textEl.rawText === "")) {
-        textEl.rawText = text;
-      }
-
       position = parts.value.index + BLOCKREF_LEN;
     }
 
@@ -356,6 +362,7 @@ export class ExcalidrawData {
     //Check to see if there are text elements in the JSON that were missed from the # Text Elements section
     //e.g. if the entire text elements section was deleted.
     this.findNewTextElementsInScene();
+    this.findNewElementLinksInScene(); //non-text element links
     await this.setTextMode(textMode, true);
     this.loaded = true;
     return true;
@@ -385,6 +392,7 @@ export class ExcalidrawData {
     this.files.clear();
     this.equations.clear();
     this.findNewTextElementsInScene();
+    this.findNewElementLinksInScene();
     await this.setTextMode(TextMode.raw, true); //legacy files are always displayed in raw mode.
     return true;
   }
@@ -467,6 +475,36 @@ export class ExcalidrawData {
     return t.raw;
   }
 
+  private findNewElementLinksInScene(): boolean {
+    const elements = this.scene.elements?.filter((el: any) => {
+      return el.type !== "text" &&
+        el.link &&
+        el.link.startsWith("[[") &&
+        !this.elementLinks.has(el.id);
+    });
+    if(elements.length === 0) {
+      return false;
+    }
+
+    let jsonString = JSON.stringify(this.scene);
+
+    let id: string; //will be used to hold the new 8 char long ID for textelements that don't yet appear under # Text Elements
+    for (const el of elements) {
+      id = el.id;
+      //replacing Excalidraw element IDs with my own nanoid, because default IDs may contain
+      //characters not recognized by Obsidian block references
+      //also Excalidraw IDs are inconveniently long
+      if (el.id.length > 8) {
+        id = nanoid();
+        jsonString = jsonString.replaceAll(el.id, id); //brute force approach to replace all occurances (e.g. links, groups,etc.)
+      }
+        this.elementLinks.set(id, el.link);
+      }
+    }
+    this.scene = JSON.parse(jsonString);
+    return true;   
+  }
+
   /**
    * check for textElements in Scene missing from textElements Map
    * @returns {boolean} - true if there were changes
@@ -474,7 +512,7 @@ export class ExcalidrawData {
   private findNewTextElementsInScene(): boolean {
     //console.log("Excalidraw.Data.findNewTextElementsInScene()");
     //get scene text elements
-    const texts = this.scene.elements?.filter((el: any) => el.type == "text");
+    const texts = this.scene.elements?.filter((el: any) => el.type === "text");
 
     let jsonString = JSON.stringify(this.scene);
 
@@ -514,6 +552,23 @@ export class ExcalidrawData {
     }
 
     return dirty;
+  }
+
+  private updateElementLinksFromScene() {
+    for (const key of this.elementLinks.keys()) {
+      //find element in the scene
+      const el = this.scene.elements?.filter(
+        (el: any) => el.type !== "text" &&
+        el.id === key &&
+        el.link &&
+        el.link.startsWith("[["),
+      );
+      if (el.length === 0) {
+        this.elementLinks.delete(key); //if no longer in the scene, delete the text element
+      } else {
+        this.elementLinks.set(key,el[0].link);
+      }
+    }
   }
 
   /**
@@ -707,6 +762,10 @@ export class ExcalidrawData {
       outString += `${this.textElements.get(key).raw} ^${key}\n\n`;
     }
 
+    for (const key of this.elementLinks.keys()) {
+      outString += `${this.elementLinks.get(key)} ^${key}\n\n`;
+    }
+
     outString +=
       this.equations.size > 0 || this.files.size > 0
         ? "\n# Embedded files\n"
@@ -846,11 +905,13 @@ export class ExcalidrawData {
       result = await this.syncFiles();
       this.scene.files = {};
     }
+    this.updateElementLinksFromScene();
     result =
       result ||
       this.setLinkPrefix() ||
       this.setUrlPrefix() ||
-      this.setShowLinkBrackets();
+      this.setShowLinkBrackets() ||
+      this.findNewElementLinksInScene();
     await this.updateTextElementsFromScene();
     return result || this.findNewTextElementsInScene();
   }
@@ -858,8 +919,12 @@ export class ExcalidrawData {
   public async updateScene(newScene: any) {
     //console.log("Excalidraw.Data.updateScene()");
     this.scene = JSON_parse(newScene);
+    this.updateElementLinksFromScene();
     const result =
-      this.setLinkPrefix() || this.setUrlPrefix() || this.setShowLinkBrackets();
+      this.setLinkPrefix() ||
+      this.setUrlPrefix() ||
+      this.setShowLinkBrackets() ||
+      this.findNewElementLinksInScene();
     await this.updateTextElementsFromScene();
     if (result || this.findNewTextElementsInScene()) {
       await this.updateSceneTextElements();
