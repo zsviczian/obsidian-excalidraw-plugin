@@ -1405,6 +1405,7 @@ function boxedElement(
     isDeleted: false,
     groupIds: [] as any,
     boundElements: [] as any,
+    link: null as string,
   };
 }
 

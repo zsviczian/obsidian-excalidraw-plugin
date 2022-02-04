@@ -653,7 +653,7 @@ export class ExcalidrawData {
         if (l.match(REG_LINKINDEX_HYPERLINK)) {
           link = l;
         } else {
-          link=`[[${REGEX_LINK.getLink(parts)}]]`;
+          link=`[[${l}]]`;
         }
       }
       if (REGEX_LINK.isTransclusion(parts)) {
@@ -727,7 +727,14 @@ export class ExcalidrawData {
       urlIcon = true;
     }
     while (!(parts = res.next()).done) {
-      if (!link) link=`[[${REGEX_LINK.getLink(parts)}]]`;
+      if (!link) { 
+        const l = REGEX_LINK.getLink(parts);
+        if (l.match(REG_LINKINDEX_HYPERLINK)) {
+          link = l;
+        } else {
+          link=`[[${l}]]`;
+        }
+      }
       const parsedLink = this.parseLinks(text, position, parts);
       if (parsedLink) {
         outString += parsedLink;

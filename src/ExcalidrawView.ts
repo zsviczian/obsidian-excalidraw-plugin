@@ -830,6 +830,7 @@ export default class ExcalidrawView extends TextFileView {
     const excalidrawData = this.excalidrawData.scene;
     this.justLoaded = justloaded;
     const om = this.excalidrawData.getOpenMode();
+    this.preventReload = false;
     if (this.excalidrawRef) {
       //isLoaded flags that a new file is being loaded, isLoaded will be true after loadDrawing completes
       const viewModeEnabled = !this.isLoaded
@@ -2034,8 +2035,11 @@ export default class ExcalidrawView extends TextFileView {
             }
             return [null, null, null];
           },
-          onLinkOpen: (link:string, event: MouseEvent): void => {
+          onLinkOpen: (element:ExcalidrawElement, e:any): void => {
+            if(!element) return;
+            const link = element.link;
             if(!link || link === "") return;
+            const event = e?.detail?.nativeEvent;
             if(link.startsWith(LOCAL_PROTOCOL) || link.startsWith("[[")) {
               (async () => {
                 const linkMatch = link.match(/(md:\/\/)?\[\[(?<link>.*?)\]\]/);
