@@ -26,7 +26,8 @@ I would love to include your contribution in the script library. If you have a s
 
 # List of available scripts
 - [[#Add Connector Point]]
-- [[#Add Link and Open Page]]
+- [[#Add Link to Existing File and Open]]
+- [[#Add Link to New Page and Open]]
 - [[#Add Next Step in Process]]
 - [[#Box Each Selected Groups]]
 - [[#Box Selected Elements]]
@@ -71,11 +72,17 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Add%20Connector%20Point.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script will add a small circle to the top left of each text element in the selection and add the text and the "connector point" to a group. You can use the connector points to link text elements with an arrow (in for example a Wardley Map).<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-bullet-point.jpg'></td></tr></table>
 
-## Add Link and Open Page
+## Add Link to Existing File and Open
 ```excalidraw-script-install
-https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Add%20Link%20and%20Open%20Page.md
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Add%20Link%20to%20Existing%20File%20and%20Open.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Add%20Link%20and%20Open%20Page.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Prompt for a file in the vault. Add a link above or below (based on settings) the selected element, to the selected file. If no file is selected then the script creates a new file following the default filename defined for excalidraw embeds. Creates empty markdown file by default, this can be changed to creating a drawing by default via settings.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-add-link-and-open.jpg'></td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Add%20Link%20to%20Existing%20File%20and%20Open.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Prompts for a file from the vault. Adds a link to the selected element pointing to the selected file. You can control in settings to open the file in the current active pane or an adjacent pane.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-add-link-and-open.jpg'></td></tr></table>
+
+## Add Link to New Page and Open
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Add%20Link%20to%20New%20Page%20and%20Open.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Add%20Link%20to%20New%20Page%20and%20Open.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Prompts for filename. Offers option to create and open a new Markdown or Excalidraw document. Adds link pointing to the new file, to the selected objects in the drawing. You can control in settings to open the file in the current active pane or an adjacent pane.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-add-link-to-new-page-and-pen.jpg'></td></tr></table>
 
 ## Add Next Step in Process
 ```excalidraw-script-install

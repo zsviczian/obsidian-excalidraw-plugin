@@ -451,8 +451,10 @@ export const EXCALIDRAW_AUTOMATE_INFO:SuggestorInfo[] = [
 export const EXCALIDRAW_SCRIPTENGINE_INFO:SuggestorInfo[] = [
   {
     field: "inputPrompt",
-    code: "inputPrompt: (header: string, placeholder?: string, value?: string);",
-    desc: "Opens a prompt that asks for an input.\nReturns a string with the input.\nYou need to await the result of inputPrompt.",
+    code: "inputPrompt: (header: string, placeholder?: string, value?: string, buttons?: [{caption:string, action:Function}]);",
+    desc: "Opens a prompt that asks for an input.\nReturns a string with the input.\nYou need to await the result of inputPrompt.\n" +
+          "buttons.action(input: string) => string\nThe button action function will receive the actual input string. If action returns null, input will be unchanged. If action returns a string, input will receive that value when the promise is resolved. " +
+          "example:\n<code>let fileType = '';\nconst filename = await utils.inputPrompt (\n  'Filename',\n  '',\n  '',\n,  [\n    {\n      caption: 'Markdown',\n      action: ()=>{fileType='md';return;}\n    },\n    {\n      caption: 'Excalidraw',\n      action: ()=>{fileType='ex';return;}\n    }\n  ]\n);</code>",
     after: "",
   },
   {

@@ -171,6 +171,8 @@ export default {
     "In PREVIEW mode, if the Text Element contains a URL link, precede the text with these characters. " +
     "You can override this setting for a specific drawing by adding <code>"
   }${FRONTMATTER_KEY_CUSTOM_URL_PREFIX}: "🌐 "</code> to the file's frontmatter.`,
+  HOVERPREVIEW_NAME: "Hover preview without CTRL/CMD key",
+  HOVERPREVIEW_DESC: "Toggle On: Hover preview for [[wiki links]] is shown immedately, without the need to hold the CTRL/CMD key.<br>Toggle Off: Hover preview is shown only when you hold the CTRL/CMD key while hovering the link.",  
   LINK_CTRL_CLICK_NAME:
     "CTRL/CMD + CLICK on text with [[links]] or [](links) to open them",
   LINK_CTRL_CLICK_DESC:

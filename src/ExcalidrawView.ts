@@ -2086,7 +2086,9 @@ export default class ExcalidrawView extends TextFileView {
             element:NonDeletedExcalidrawElement,
             event: React.PointerEvent<HTMLCanvasElement>
           ): void => { 
-            if(element && event[CTRL_OR_CMD]){
+            if(element && (this.plugin.settings.hoverPreviewWithoutCTRL || event[CTRL_OR_CMD])){
+              mouseEvent = event;
+              mouseEvent.ctrlKey = true;
               const link = element.link;
               if(!link || link === "") return;
               if(link.startsWith(LOCAL_PROTOCOL) || link.startsWith("[[")) {

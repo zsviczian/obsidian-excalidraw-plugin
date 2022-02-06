@@ -166,10 +166,10 @@ export class ScriptEngine {
     //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncFunction
     const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
     let result = null;
-    try {
+    //try {
       result = await new AsyncFunction("ea", "utils", script)(this.plugin.ea, {
-        inputPrompt: (header: string, placeholder?: string, value?: string) =>
-          ScriptEngine.inputPrompt(this.plugin.app, header, placeholder, value),
+        inputPrompt: (header: string, placeholder?: string, value?: string, buttons?: [{caption:string, action:Function}]) =>
+          ScriptEngine.inputPrompt(this.plugin.app, header, placeholder, value, buttons),
         suggester: (
           displayItems: string[],
           items: any[],
@@ -184,10 +184,10 @@ export class ScriptEngine {
             instructions,
           ),
       });
-    } catch (e) {
+    /*} catch (e) {
       new Notice(t("SCRIPT_EXECUTION_ERROR"), 4000);
       errorlog({ script: this.plugin.ea.activeScript, error: e });
-    }
+    }*/
     this.plugin.ea.activeScript = null;
     return result;
   }
@@ -197,9 +197,10 @@ export class ScriptEngine {
     header: string,
     placeholder?: string,
     value?: string,
+    buttons?: [{caption:string, action:Function}],
   ) {
     try {
-      return await GenericInputPrompt.Prompt(app, header, placeholder, value);
+      return await GenericInputPrompt.Prompt(app, header, placeholder, value, buttons);
     } catch {
       return undefined;
     }

@@ -32,6 +32,7 @@ export interface ExcalidrawSettings {
   showLinkBrackets: boolean;
   linkPrefix: string;
   urlPrefix: string;
+  hoverPreviewWithoutCTRL: boolean;
   allowCtrlClick: boolean; //if disabled only the link button in the view header will open links
   forceWrap: boolean;
   pageTransclusionCharLimit: number;
@@ -88,6 +89,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   zoomToFitMaxLevel: 2,
   linkPrefix: "📍",
   urlPrefix: "🌐",
+  hoverPreviewWithoutCTRL: false,
   openInAdjacentPane: false,
   showLinkBrackets: true,
   allowCtrlClick: true,
@@ -458,6 +460,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate(true);
           }),
       );
+
+    new Setting(containerEl)
+    .setName(t("HOVERPREVIEW_NAME"))
+    .setDesc(fragWithHTML(t("HOVERPREVIEW_DESC")))
+    .addToggle((toggle) =>
+      toggle
+        .setValue(this.plugin.settings.hoverPreviewWithoutCTRL)
+        .onChange(async (value) => {
+          this.plugin.settings.hoverPreviewWithoutCTRL = value;
+          this.applySettingsUpdate();
+        }),
+    );      
 
     new Setting(containerEl)
       .setName(t("LINK_CTRL_CLICK_NAME"))

@@ -75,6 +75,7 @@ export class GenericInputPrompt extends Modal {
   private didSubmit: boolean = false;
   private inputComponent: TextComponent;
   private input: string;
+  private buttons: [{caption: string, action:Function}];
   private readonly placeholder: string;
 
   public static Prompt(
@@ -82,12 +83,14 @@ export class GenericInputPrompt extends Modal {
     header: string,
     placeholder?: string,
     value?: string,
+    buttons?: [{caption: string, action: Function}],
   ): Promise<string> {
     const newPromptModal = new GenericInputPrompt(
       app,
       header,
       placeholder,
       value,
+      buttons,
     );
     return newPromptModal.waitForClose;
   }
@@ -97,10 +100,12 @@ export class GenericInputPrompt extends Modal {
     private header: string,
     placeholder?: string,
     value?: string,
+    buttons?: [{caption: string, action:Function}],
   ) {
     super(app);
     this.placeholder = placeholder;
     this.input = value;
+    this.buttons = buttons;
 
     this.waitForClose = new Promise<string>((resolve, reject) => {
       this.resolvePromise = resolve;
@@ -148,17 +153,34 @@ export class GenericInputPrompt extends Modal {
   ) {
     const btn = new ButtonComponent(container);
     btn.setButtonText(text).onClick(callback);
-
     return btn;
   }
 
   private createButtonBar(mainContentContainer: HTMLDivElement) {
     const buttonBarContainer: HTMLDivElement = mainContentContainer.createDiv();
-    this.createButton(
-      buttonBarContainer,
-      "Ok",
-      this.submitClickCallback,
-    ).setCta().buttonEl.style.marginRight = "0";
+    if(this.buttons && this.buttons.length>0) {
+      let b=null;
+      for(const button of this.buttons) {
+        const btn = new ButtonComponent(buttonBarContainer);
+        btn.setButtonText(button.caption).onClick((evt: MouseEvent) => {
+          const res = button.action(this.input);
+          if(res) {
+            this.input=res;
+          }
+          this.submit();
+        });
+        b = b??btn;
+      }
+      if(b){
+        b.setCta().buttonEl.style.marginRight = "0"; 
+      }
+    } else {
+      this.createButton(
+        buttonBarContainer,
+        "Ok",
+        this.submitClickCallback,
+      ).setCta().buttonEl.style.marginRight = "0"; 
+    }
     this.createButton(buttonBarContainer, "Cancel", this.cancelClickCallback);
 
     buttonBarContainer.style.display = "flex";
@@ -179,7 +201,6 @@ export class GenericInputPrompt extends Modal {
 
   private submit() {
     this.didSubmit = true;
-
     this.close();
   }
 

@@ -23,9 +23,29 @@ This will allow you to assign hotkeys to your favorite scripts just like to any 
 An Excalidraw script will automatically receive two objects:
 - `ea`: The Script Enginge will initialize the `ea` object including setting the active view to the View from which the script was called.
 - `utils`: I have borrowed functions exposed on utils from [QuickAdd](https://github.com/chhoumann/quickadd/blob/master/docs/QuickAddAPI.md), though currently not all QuickAdd utility functions are implemented in Excalidraw. As of now, these are the available functions. See the example below for details.
-  - `inputPrompt: (header: string, placeholder?: string, value?: string)`
+  - `inputPrompt: (header: string, placeholder?: string, value?: string, buttons?: [{caption:string, action:Function}])`
     - Opens a prompt that asks for an input. Returns a string with the input.
-    - You need to await the result of inputPrompt. 
+    - You need to await the result of inputPrompt.
+    - `buttons.action(input: string) => string`. The button action will receive the current input string. If action returns null, the input will be unchanged. If action returns a string, the inputPrompt will resolve to this value.
+```typescript
+let fileType = "";
+const filename = await utils.inputPrompt (
+  "Filename for new document",
+  "Placeholder",
+  "DefaultFilename.md",
+  [
+    {
+      caption: "Markdown",
+      action: ()=>{fileType="md";return;}
+		},
+    {
+      caption: "Excalidraw",
+      action: ()=>{fileType="ex";return;}
+    }
+  ]
+);
+
+```
   - `suggester: (displayItems: string[], items: any[], hint?: string, instructions?:Instruction[])`
     - Opens a suggester. Displays the displayItems and returns the corresponding item from items[].
     - You need to await the result of suggester.
