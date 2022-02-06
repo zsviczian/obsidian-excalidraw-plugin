@@ -54,6 +54,7 @@ I would love to include your contribution in the script library. If you have a s
 - [[#Normalize Selected Arrows]]
 - [[#OCR - Optical Character Recognition]]
 - [[#Reverse arrows]]
+- [[#Scribble Helper]]
 - [[#Select Elements of Type]]
 - [[#Set background color of unclosed line object by adding a shadow clone]]
 - [[#Set Dimensions]]
@@ -239,6 +240,12 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Reverse%20arrows.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Reverse%20arrows.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Reverse the direction of **arrows** within the scope of selected elements.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-reverse-arrow.jpg'></td></tr></table>
+
+## Scribble Helper
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Scribble%20Helper.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Scribble%20Helper.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">iOS scribble helper for better handwriting experience with text elements. If no elements are selected then the creates a text element at pointer position and you can use the edit box to modify the text with scribble. If a text element is selected then opens the input prompt where you can modify this text with scribble.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-scribble-helper.jpg'></td></tr></table>
 
 ## Select Elements of Type
 ```excalidraw-script-install
