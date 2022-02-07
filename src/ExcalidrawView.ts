@@ -277,12 +277,22 @@ export default class ExcalidrawView extends TextFileView {
 
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/396
     const bakfilepath = `${this.file.path}.bak`;
-    if (await this.app.vault.adapter.exists(bakfilepath)) {
-      await this.app.vault.adapter.remove(bakfilepath);
+    try {
+      if (await this.app.vault.adapter.exists(bakfilepath)) {
+        await this.app.vault.adapter.remove(bakfilepath);
+      }
+      await this.app.vault.adapter.copy(this.file.path, bakfilepath);
+    } catch(e) {
+      console.error({where: "ExcalidrawView.save copy bak", error: e});
     }
-    await this.app.vault.adapter.copy(this.file.path, bakfilepath);
+
     await super.save();
-    await this.app.vault.adapter.remove(bakfilepath);
+
+    try {
+      await this.app.vault.adapter.remove(bakfilepath);
+    } catch(e) {
+      console.error({where: "ExcalidrawView.save remove bak", error: e});
+    }
 
     if (!this.autosaving) {
       if (this.plugin.settings.autoexportSVG) {
@@ -665,7 +675,10 @@ export default class ExcalidrawView extends TextFileView {
 
   public setupAutosaveTimer() {
     const timer = async () => {
-      if (this.dirty && this.dirty == this.file?.path) {
+      if (this.dirty && 
+        this.dirty == this.file?.path &&
+        this.plugin.settings.autosave
+      ) {
         this.dirty = null;
         this.autosaving = true;
         if (this.excalidrawRef) {
@@ -677,7 +690,9 @@ export default class ExcalidrawView extends TextFileView {
     if (this.autosaveTimer) {
       clearInterval(this.autosaveTimer);
     } // clear previous timer if one exists
-    this.autosaveTimer = setInterval(timer, 20000);
+    if(this.plugin.settings.autosave) {
+      this.autosaveTimer = setInterval(timer, this.plugin.settings.autosaveInterval);
+    }
   }
 
   //save current drawing when user closes workspace leaf
@@ -2073,7 +2088,7 @@ export default class ExcalidrawView extends TextFileView {
                   const leaf = (event.shiftKey || event[CTRL_OR_CMD])
                     ? getNewOrAdjacentLeaf(this.plugin, this.leaf)
                     : this.leaf;
-                  leaf.openFile(file); //if file exists open file and jump to reference
+                  leaf.openFile(file, { eState: { line: lineNum - 1 } }); //if file exists open file and jump to reference
                 } catch (e) {
                   new Notice(e, 4000);
                 }

@@ -95,12 +95,13 @@ export default {
     "You can access your scripts from Excalidraw via the Obsidian Command Palette. Assign " +
     "hotkeys to your favorite scripts just like to any other Obsidian command. " +
     "The folder may not be the root folder of your Vault. ",
-  AUTOSAVE_NAME: "Autosave",
+  AUTOSAVE_NAME: "Enable Autosave",
   AUTOSAVE_DESC:
-    "Automatically save the active drawing every 30 seconds. Save normally happens when you close Excalidraw or Obsidian, or move " +
-    "focus to another pane. In rare cases autosave may slightly disrupt your drawing flow. I created this feature with mobile " +
-    "phones in mind (I only have experience with Android), where 'swiping out Obsidian to close it' led to some data loss, and because " +
-    "I wasn't able to force save on application termination on mobiles. If you use Excalidraw on a desktop this is likely not needed.",
+    "Automatically save the active drawing every 30 seconds, or 1, 2, 3, 4, or 5 minutes. Save normally happens when you close Excalidraw or Obsidian, or move " +
+    "focus to another pane. I created this feature with mobile " +
+    "phones and tablets in mind, where 'swiping out Obsidian to close it' led to some data loss.",
+    AUTOSAVE_INTERVAL_NAME: "Interval for autosave",
+    AUTOSAVE_INTERVAL_DESC: "The time interval between saves. Autosave will skip if there are no changes in the drawing.",    
   FILENAME_HEAD: "Filename",
   FILENAME_DESC:
     "<p>The auto-generated filename consists of a prefix and a date. " +

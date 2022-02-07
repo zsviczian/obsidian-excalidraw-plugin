@@ -16,6 +16,8 @@ export interface ExcalidrawSettings {
   embedUseExcalidrawFolder: boolean;
   templateFilePath: string;
   scriptFolderPath: string;
+  autosave: boolean;
+  autosaveInterval: number;
   drawingFilenamePrefix: string;
   drawingEmbedPrefixWithFilename: boolean;
   drawingFilenameDateTime: string;
@@ -75,6 +77,8 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   embedUseExcalidrawFolder: false,
   templateFilePath: "Excalidraw/Template.excalidraw",
   scriptFolderPath: "Excalidraw/Scripts",
+  autosave: true,
+  autosaveInterval: 30000,
   drawingFilenamePrefix: "Drawing ",
   drawingEmbedPrefixWithFilename: true,
   drawingFilenameDateTime: "YYYY-MM-DD HH.mm.ss",
@@ -253,7 +257,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    this.containerEl.createEl("h1", { text: t("FILENAME_HEAD") });
+    this.containerEl.createEl("h1", { text: t("FILENAME_HEAD") });   
     containerEl.createDiv("", (el) => {
       el.innerHTML = t("FILENAME_DESC");
     });
@@ -316,6 +320,39 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
+
+    let autosaveDropdown: DropdownComponent;
+
+    new Setting(containerEl)
+      .setName(t("AUTOSAVE_NAME"))
+      .setDesc(fragWithHTML(t("AUTOSAVE_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.autosave)
+          .onChange(async (value) => {
+            this.plugin.settings.autosave = value;
+            autosaveDropdown.setDisabled(!value);
+            this.applySettingsUpdate();
+          }),
+      );      
+
+    new Setting(containerEl)
+      .setName(t("AUTOSAVE_INTERVAL_NAME"))
+      .setDesc(fragWithHTML(t("AUTOSAVE_INTERVAL_DESC")))
+      .addDropdown(async (d: DropdownComponent) => {
+        autosaveDropdown = d;
+        d.addOption("30000", "30 seconds");
+        d.addOption("60000", "1 minute");
+        d.addOption("120000", "2 minutes");
+        d.addOption("180000", "3 minutes");
+        d.addOption("240000", "4 minutes");
+        d.addOption("300000", "5 minutes");
+        d.setValue(this.plugin.settings.autosaveInterval.toString())
+        .onChange((value) => {
+          this.plugin.settings.autosaveInterval = parseInt(value);
+          this.applySettingsUpdate(true);
+        });
+      });      
 
     this.containerEl.createEl("h1", { text: t("DISPLAY_HEAD") });
 

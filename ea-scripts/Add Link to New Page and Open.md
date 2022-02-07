@@ -67,7 +67,7 @@ if(file && fileType==="ex") {
 const link = `[[${app.metadataCache.fileToLinktext(file,ea.targetView.file.path,true)}]]`;
 
 ea.style.backgroundColor = "transparent";
-ea.style.strokeColor = "steelblue"
+ea.style.strokeColor = "rgba(70,130,180,0.05)"
 ea.style.strokeWidth = 2;
 ea.style.roughness = 0;
 
@@ -78,8 +78,8 @@ if(elements.lenght===1 && elements[0].type !== "text") {
   const b = ea.getBoundingBox(elements);
   const id = ea.addEllipse(b.topX+b.width-5, b.topY, 5, 5);
   ea.getElement(id).link = link;
-/*  ea.copyViewElementsToEAforEditing(elements);
-  ea.addToGroup(elements.map((e)=>e.id).concat([id]));*/
+  ea.copyViewElementsToEAforEditing(elements);
+  ea.addToGroup(elements.map((e)=>e.id).concat([id]));
 }
 await ea.addElementsToView(false,true,true);
 ea.selectElementsInView(ea.getElements());
