@@ -732,7 +732,6 @@ export default class ExcalidrawView extends TextFileView {
     }
     this.excalidrawData.scene.appState.theme =
       this.excalidrawAPI.getAppState().theme;
-    //debug({where:"ExcalidrawView.reload",file:this.file.name,dataTheme:this.excalidrawData.scene.appState.theme,before:"loadDrawing(false)"})
     await this.loadDrawing(false);
     this.dirty = null;
   }
@@ -746,9 +745,6 @@ export default class ExcalidrawView extends TextFileView {
       this.activeLoader.terminate = true;
     }
     this.nextLoader = null;
-    /*ReactDOM.unmountComponentAtode(this.contentEl);
-    this.excalidrawRef = null;
-    this.excalidrawAPI = null;*/
     this.excalidrawAPI.resetScene();
     this.excalidrawAPI.history.clear();
   }
@@ -799,7 +795,6 @@ export default class ExcalidrawView extends TextFileView {
           return;
         }
       }
-      //debug({where:"ExcalidrawView.setViewData",file:this.file.name,dataTheme:this.excalidrawData.scene.appState.theme,before:"loadDrawing(true)"})
       await this.loadDrawing(true);
       this.isLoaded = true;
     });
@@ -809,13 +804,10 @@ export default class ExcalidrawView extends TextFileView {
   private nextLoader: EmbeddedFilesLoader = null;
   public async loadSceneFiles() {
     const loader = new EmbeddedFilesLoader(this.plugin);
-    //debug({where:"ExcalidrawView.loadSceneFiles",status:"loader created",file:this.file.name,loader:loader.uid});
 
     const runLoader = (l: EmbeddedFilesLoader) => {
       this.nextLoader = null;
       this.activeLoader = l;
-      //debug({where:"ExcalidrawView.loadSceneFiles",status:"loader initiated",file:this.file.name,loader:l.uid});
-      //debug({where:"ExcalidrawView.loadSceneFiles",file:this.file.name,dataTheme:this.excalidrawData.scene.appState.theme,before:"loader.loadSceneFiles",isDark})
       l.loadSceneFiles(
         this.excalidrawData,
         (files: FileData[], isDark: boolean) => {
@@ -864,6 +856,7 @@ export default class ExcalidrawView extends TextFileView {
         appState: {
           zenModeEnabled,
           viewModeEnabled,
+          linkOpacity: this.plugin.settings.linkOpacity,
           ...excalidrawData.appState,
         },
         files: excalidrawData.files,
@@ -885,6 +878,7 @@ export default class ExcalidrawView extends TextFileView {
         appState: {
           zenModeEnabled: om.zenModeEnabled,
           viewModeEnabled: om.viewModeEnabled,
+          linkOpacity: this.plugin.settings.linkOpacity,
           ...excalidrawData.appState,
         },
         files: excalidrawData.files,

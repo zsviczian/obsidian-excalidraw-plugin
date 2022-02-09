@@ -174,6 +174,8 @@ export default {
   }${FRONTMATTER_KEY_CUSTOM_URL_PREFIX}: "🌐 "</code> to the file's frontmatter.`,
   HOVERPREVIEW_NAME: "Hover preview without CTRL/CMD key",
   HOVERPREVIEW_DESC: "Toggle On: Hover preview for [[wiki links]] is shown immedately, without the need to hold the CTRL/CMD key.<br>Toggle Off: Hover preview is shown only when you hold the CTRL/CMD key while hovering the link.",  
+  LINKOPACITY_NAME: "Opacity of link icon",
+  LINKOPACITY_DESC: "Opacity of the link indicator icon in the top right corner of an element. 1 is opaque, 0 is transparent.",
   LINK_CTRL_CLICK_NAME:
     "CTRL/CMD + CLICK on text with [[links]] or [](links) to open them",
   LINK_CTRL_CLICK_DESC:

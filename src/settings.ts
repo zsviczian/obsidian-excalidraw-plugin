@@ -35,6 +35,7 @@ export interface ExcalidrawSettings {
   linkPrefix: string;
   urlPrefix: string;
   hoverPreviewWithoutCTRL: boolean;
+  linkOpacity: number;
   allowCtrlClick: boolean; //if disabled only the link button in the view header will open links
   forceWrap: boolean;
   pageTransclusionCharLimit: number;
@@ -94,6 +95,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   linkPrefix: "📍",
   urlPrefix: "🌐",
   hoverPreviewWithoutCTRL: false,
+  linkOpacity: 1,
   openInAdjacentPane: false,
   showLinkBrackets: true,
   allowCtrlClick: true,
@@ -497,6 +499,27 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate(true);
           }),
       );
+    
+    let opacityText: HTMLDivElement;
+    new Setting(containerEl)
+      .setName(t("LINKOPACITY_NAME"))
+      .setDesc(fragWithHTML(t("LINKOPACITY_DESC")))
+      .addSlider((slider) =>
+        slider
+          .setLimits(0, 1, 0.05)
+          .setValue(this.plugin.settings.linkOpacity)
+          .onChange(async (value) => {
+            opacityText.innerText = ` ${value.toString()}`;
+            this.plugin.settings.linkOpacity = value;
+            this.applySettingsUpdate(true);
+          }),
+      )
+      .settingEl.createDiv("", (el) => {
+        opacityText = el;
+        el.style.minWidth = "2.3em";
+        el.style.textAlign = "right";
+        el.innerText = ` ${this.plugin.settings.linkOpacity.toString()}`;
+      });
 
     new Setting(containerEl)
     .setName(t("HOVERPREVIEW_NAME"))
