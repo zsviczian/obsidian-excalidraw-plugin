@@ -2045,6 +2045,7 @@ export default class ExcalidrawView extends TextFileView {
             return [null, null, null];
           },
           onLinkOpen: (element:ExcalidrawElement, e:any): void => {
+            e.preventDefault();
             if(!element) return;
             const link = element.link;
             if(!link || link === "") return;
