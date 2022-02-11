@@ -874,6 +874,25 @@ export default class ExcalidrawPlugin extends Plugin {
     });
 
     this.addCommand({
+      id: "tray-mode",
+      name: t("TRAY_MODE"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          const view = this.app.workspace.activeLeaf.view;
+          return view instanceof ExcalidrawView;
+        }
+        const view = this.app.workspace.activeLeaf.view;
+        if (view instanceof ExcalidrawView && view.excalidrawAPI) {
+          const st = view.excalidrawAPI.getAppState();
+          st.isMobile = !st.isMobile;
+          view.excalidrawAPI.updateScene({appState:st});
+          return true;
+        }
+        return false;
+      },
+    });
+
+    this.addCommand({
       id: "insert-md",
       name: t("INSERT_MD"),
       checkCallback: (checking: boolean) => {

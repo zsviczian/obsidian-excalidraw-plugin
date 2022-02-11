@@ -835,6 +835,16 @@ export default class ExcalidrawView extends TextFileView {
    */
   private async loadDrawing(justloaded: boolean) {
     const excalidrawData = this.excalidrawData.scene;
+    const appState = excalidrawData.appState as AppState;
+    if (appState.colorPalette?.canvasBackground && appState.colorPalette.canvasBackground.length !== 15) {
+      new Notice ("appState.colorPalette.canvasBackground must have exactly 15 colors");
+    }
+    if (appState.colorPalette?.elementBackground && appState.colorPalette.elementBackground.length !== 15) {
+      new Notice ("appState.colorPalette.elementBackground must have exactly 15 colors");
+    }
+    if (appState.colorPalette?.elementStroke && appState.colorPalette.elementStroke.length !== 15) {
+      new Notice ("appState.colorPalette.elementStroke must have exactly 15 colors");
+    }
     this.justLoaded = justloaded;
     const om = this.excalidrawData.getOpenMode();
     this.preventReload = false;
@@ -1416,6 +1426,7 @@ export default class ExcalidrawView extends TextFileView {
             currentItemLinearStrokeSharpness:
               st.currentItemLinearStrokeSharpness,
             gridSize: st.gridSize,
+            colorPalette: st.colorPalette,
           },
           files,
         };

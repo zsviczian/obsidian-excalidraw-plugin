@@ -1140,11 +1140,11 @@ export async function initExcalidrawAutomate(
       )?.file;
     },
     copyViewElementsToEAforEditing(elements: ExcalidrawElement[]): void {
-      elements.forEach((el) => {
-        this.elementsDict[el.id] = {
-          version: el.version + 1,
-          ...el,
-        };
+      elements.forEach((el:any) => {
+        el.version = el.version + 1;
+        el.updated = Date.now();
+        el.versionNonce = Math.floor(Math.random()*1000000000);
+        this.elementsDict[el.id] = el;
       });
     },
     viewToggleFullScreen(forceViewMode: boolean = false): void {
@@ -1401,7 +1401,8 @@ function boxedElement(
     strokeSharpness: ea.style.strokeSharpness,
     seed: Math.floor(Math.random() * 100000),
     version: 1,
-    versionNonce: 1,
+    versionNonce: Math.floor(Math.random()*1000000000),
+    updated: Date.now(),
     isDeleted: false,
     groupIds: [] as any,
     boundElements: [] as any,

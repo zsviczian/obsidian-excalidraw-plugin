@@ -44,6 +44,7 @@ export default {
   INSERT_LATEX:
     "Insert LaTeX formula (e.g. \\binom{n}{k} = \\frac{n!}{k!(n-k)!})",
   ENTER_LATEX: "Enter a valid LaTeX expression",
+  TRAY_MODE: "Toggle property-panel tray-mode",
 
   //ExcalidrawView.ts
   INSTALL_SCRIPT_BUTTON: "Install or update Excalidraw Scripts",

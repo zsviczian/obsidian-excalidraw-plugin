@@ -53,6 +53,7 @@ export class EmbeddedFile {
   public mimeType: MimeType = "application/octet-stream";
   public size: Size = { height: 0, width: 0 };
   public linkParts: LinkParts;
+  /*public isHyperlink: boolean = false;*/
 
   constructor(plugin: ExcalidrawPlugin, hostPath: string, imgPath: string) {
     this.plugin = plugin;
@@ -60,6 +61,12 @@ export class EmbeddedFile {
   }
 
   public resetImage(hostPath: string, imgPath: string) {
+    /*if(imgPath.startsWith("https://") || imgPath.startsWith("http://")) {
+      this.img=imgPath;
+      this.imgInverted=imgPath;
+      this.isHyperlink = true;
+      return;
+    }*/
     this.imgInverted = this.img = "";
     this.mtime = 0;
     this.linkParts = getLinkParts(imgPath);
@@ -133,6 +140,9 @@ export class EmbeddedFile {
   }
 
   public getImage(isDark: boolean) {
+    /*if(this.isHyperlink) {
+      return this.img;
+    }*/
     if (!this.file) {
       return "";
     }
