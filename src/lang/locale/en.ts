@@ -60,7 +60,7 @@ export default {
   TEXT_ELEMENT_EMPTY:
     "No ImageElement is selected or TextElement is empty, or [[valid-link|alias]]</code> or <code>[alias](valid-link) is not found",
   FILENAME_INVALID_CHARS:
-    'File name cannot contain any of the following characters: * " \\ < > : | ?',
+    'File name cannot contain any of the following characters: * " \\ < > : | ? #',
   FILE_DOES_NOT_EXIST:
     "File does not exist. Hold down ALT (or ALT+SHIFT) and CLICK link button to create a new file.",
   FORCE_SAVE:

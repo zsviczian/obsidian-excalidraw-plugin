@@ -1874,6 +1874,11 @@ export default class ExcalidrawView extends TextFileView {
             switch (draggable?.type) {
               case "file":
                 if (!onDropHook("file", [draggable.file], null)) {
+                  //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/422
+                  if(draggable.file.path.match(REG_LINKINDEX_INVALIDCHARS)) {
+                    new Notice(t("FILENAME_INVALID_CHARS"), 4000);
+                    return false;
+                  }
                   if (
                     event[CTRL_OR_CMD] && //.ctrlKey||event.metaKey)
                     (IMAGE_TYPES.contains(draggable.file.extension) ||

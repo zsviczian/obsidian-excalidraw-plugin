@@ -1,4 +1,5 @@
 import { App, FuzzySuggestModal, TFile } from "obsidian";
+import { REG_LINKINDEX_INVALIDCHARS } from "./constants";
 import { t } from "./lang/helpers";
 
 export class InsertLinkDialog extends FuzzySuggestModal<TFile> {
@@ -21,8 +22,9 @@ export class InsertLinkDialog extends FuzzySuggestModal<TFile> {
   }
 
   getItems(): any[] {
+    //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/422
     //@ts-ignore
-    return this.app.metadataCache.getLinkSuggestions();
+    return this.app.metadataCache.getLinkSuggestions().filter(x=>!x.path.match(REG_LINKINDEX_INVALIDCHARS));
   }
 
   getItemText(item: any): string {
