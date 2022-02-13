@@ -5,6 +5,7 @@ import {
   Notice,
   request,
   TAbstractFile,
+  TFile,
   TFolder,
   Vault,
   WorkspaceLeaf,
@@ -122,6 +123,11 @@ export function getIMGPathFromExcalidrawFile(
     excalidrawPath.substring(0, excalidrawPath.lastIndexOf(replaceExtension)) +
     newExtension
   );
+}
+
+export function getBakPath(file:TFile):string {
+  const re = new RegExp(`${file.name}$`,"g");
+  return file.path.replace(re,`.${file.name}`);
 }
 
 /**

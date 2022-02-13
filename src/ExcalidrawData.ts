@@ -21,6 +21,7 @@ import { JSON_parse } from "./constants";
 import { TextMode } from "./ExcalidrawView";
 import {
   getAttachmentsFolderAndFilePath,
+  getBakPath,
   getBinaryFileFromDataURL,
   getLinkParts,
   isObsidianThemeDark,
@@ -267,9 +268,8 @@ export class ExcalidrawData {
     try {
       sceneJSONandPOS = loadJSON();
     } catch (e) {
-      const bakfile = this.app.vault.getAbstractFileByPath(`${file.path}.bak`);
-      if (bakfile && bakfile instanceof TFile) {
-        data = await this.app.vault.read(bakfile);
+      if(await this.app.vault.adapter.exists(getBakPath(file))) {
+        data = await this.app.vault.adapter.read(getBakPath(file))
         sceneJSONandPOS = loadJSON();
         new Notice(t("LOAD_FROM_BACKUP"), 4000);
       } else {

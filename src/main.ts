@@ -884,8 +884,15 @@ export default class ExcalidrawPlugin extends Plugin {
         const view = this.app.workspace.activeLeaf.view;
         if (view instanceof ExcalidrawView && view.excalidrawAPI) {
           const st = view.excalidrawAPI.getAppState();
-          st.isMobile = !st.isMobile;
+          st.trayModeEnabled = !st.trayModeEnabled;
           view.excalidrawAPI.updateScene({appState:st});
+          //placed in an async function because I need to load settings first
+          //just in case settings were updated via sync
+          (async()=>{
+            await this.loadSettings();
+            this.settings.defaultTrayMode = st.trayModeEnabled;
+            this.saveSettings();
+          })();
           return true;
         }
         return false;
@@ -1505,8 +1512,19 @@ export default class ExcalidrawPlugin extends Plugin {
         (template.extension == "md" && !this.settings.compatibilityMode) ||
         (template.extension == "excalidraw" && this.settings.compatibilityMode)
       ) {
-        const data = await this.app.vault.read(template);
+        let data = await this.app.vault.read(template);
         if (data) {
+          if(this.settings.matchTheme) {
+            if(isObsidianThemeDark) {
+              if((data.match(/"theme"\s*:\s*"light"\s*,/g)||[]).length === 1) {
+                data = data.replace(/"theme"\s*:\s*"light"\s*,/,`"theme": "dark",`);
+              }
+            } else {
+              if((data.match(/"theme"\s*:\s*"dark"\s*,/g)||[]).length === 1) {
+                data = data.replace(/"theme"\s*:\s*"dark"\s*,/,`"theme": "light",`);
+              }
+            }
+          }
           return data;
         }
       }

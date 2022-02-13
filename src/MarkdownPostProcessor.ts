@@ -29,6 +29,12 @@ let plugin: ExcalidrawPlugin;
 let vault: Vault;
 let metadataCache: MetadataCache;
 
+const getDefaultWidth = (plugin: ExcalidrawPlugin):string => {
+  const width = parseInt(plugin.settings.width);
+  if(isNaN(width) || width === 0) return "400";
+  return plugin.settings.width;
+}
+
 export const initializeMarkdownPostProcessor = (p: ExcalidrawPlugin) => {
   plugin = p;
   vault = p.app.vault;
@@ -218,7 +224,7 @@ const processInternalEmbeds = async (
     if (file && file instanceof TFile && plugin.isExcalidrawFile(file)) {
       attr.fwidth = maybeDrawing.getAttribute("width")
         ? maybeDrawing.getAttribute("width")
-        : plugin.settings.width;
+        : getDefaultWidth(plugin);
       attr.fheight = maybeDrawing.getAttribute("height");
       alt = maybeDrawing.getAttribute("alt");
       if (alt == attr.fname) {
@@ -232,9 +238,9 @@ const processInternalEmbeds = async (
         if (maybeDrawing.tagName.toLowerCase() == "span") {
           alt = `|${alt}`;
         }
-        //1:width, 2:height, 3:style  1      2      3
+                          //1:width, 2:height, 3:style  1      2      3
         parts = alt.match(/[^\|]*\|?(\d*%?)x?(\d*%?)\|?(.*)/);
-        attr.fwidth = parts[1] ? parts[1] : plugin.settings.width;
+        attr.fwidth = parts[1] ? parts[1] : getDefaultWidth(plugin);
         attr.fheight = parts[2];
         if (parts[3] != attr.fname) {
           attr.style = `excalidraw-svg${parts[3] ? `-${parts[3]}` : ""}`;
@@ -269,7 +275,7 @@ const tmpObsidianWYSIWYG = async (
   const attr: imgElementAttributes = {
     fname: ctx.sourcePath,
     fheight: "",
-    fwidth: plugin.settings.width,
+    fwidth: getDefaultWidth(plugin),
     style: "excalidraw-svg",
   };
 
@@ -328,7 +334,7 @@ const tmpObsidianWYSIWYG = async (
       if (hasAttr) {
         //1:width, 2:height, 3:style  1      2      3
         const parts = alt.match(/(\d*%?)x?(\d*%?)\|?(.*)/);
-        attr.fwidth = parts[1] ? parts[1] : plugin.settings.width;
+        attr.fwidth = parts[1] ? parts[1] : getDefaultWidth(plugin);
         attr.fheight = parts[2];
         if (parts[3] != attr.fname) {
           attr.style = `excalidraw-svg${parts[3] ? `-${parts[3]}` : ""}`;
@@ -336,7 +342,7 @@ const tmpObsidianWYSIWYG = async (
       }
       if (!hasWidth && !hasHeight && !hasAttr) {
         attr.fheight = "";
-        attr.fwidth = plugin.settings.width;
+        attr.fwidth = getDefaultWidth(plugin);
         attr.style = "excalidraw-svg";
       }
     };

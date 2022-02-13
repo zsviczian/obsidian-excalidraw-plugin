@@ -71,6 +71,7 @@ export interface ExcalidrawSettings {
   mdFontColor: string;
   mdCSS: string;
   scriptEngineSettings: {};
+  defaultTrayMode: boolean;
 }
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
@@ -138,6 +139,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   mdFontColor: "Black",
   mdCSS: "",
   scriptEngineSettings: {},
+  defaultTrayMode: false,
 };
 
 const fragWithHTML = (html: string) =>

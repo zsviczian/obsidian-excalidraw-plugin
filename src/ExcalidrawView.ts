@@ -53,6 +53,7 @@ import {
   download,
   embedFontsInSVG,
   errorlog,
+  getBakPath,
   getIMGFilename,
   getNewOrAdjacentLeaf,
   getNewUniqueFilepath,
@@ -276,14 +277,14 @@ export default class ExcalidrawView extends TextFileView {
     }
 
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/396
-    const bakfilepath = `${this.file.path}.bak`;
+    const bakfilepath = getBakPath(this.file);
     try {
       if (await this.app.vault.adapter.exists(bakfilepath)) {
         await this.app.vault.adapter.remove(bakfilepath);
       }
       await this.app.vault.adapter.copy(this.file.path, bakfilepath);
     } catch(e) {
-      console.error({where: "ExcalidrawView.save copy bak", error: e});
+      console.error({where: "ExcalidrawView.save copy backup file", error: e});
     }
 
     await super.save();
@@ -291,7 +292,7 @@ export default class ExcalidrawView extends TextFileView {
     try {
       await this.app.vault.adapter.remove(bakfilepath);
     } catch(e) {
-      console.error({where: "ExcalidrawView.save remove bak", error: e});
+      console.error({where: "ExcalidrawView.save removing backup file", error: e});
     }
 
     if (!this.autosaving) {
@@ -788,7 +789,7 @@ export default class ExcalidrawView extends TextFileView {
               e.message === "Cannot read property 'index' of undefined"
                 ? "\n'# Drawing' section is likely missing"
                 : ""
-            }\n\nTry manually fixing the file or restoring an earlier version from sync history.\n\nYou may also look for .bak file with last working version in the same folder. Note the .bak file might not get synchronized, so look for .bak file on other devices as well.`,
+            }\n\nTry manually fixing the file or restoring an earlier version from sync history.\n\nYou may also look for the backup file with last working version in the same folder (same filename as your drawing, but starting with a dot. e.g. <code>drawing.md</code> => <code>.drawing.md</code>). Note the backup files do not get synchronized, so look for the backup file on other devices as well.`,
             10000,
           );
           this.setMarkdownView();
@@ -827,6 +828,15 @@ export default class ExcalidrawView extends TextFileView {
     } else {
       this.nextLoader = loader;
     }
+  }
+
+  setDefaultTrayMode() {
+    setTimeout(()=> {
+      if(!this.excalidrawAPI) return;
+      const st = this.excalidrawAPI.getAppState();
+      st.trayModeEnabled = this.plugin.settings.defaultTrayMode;
+      this.excalidrawAPI.updateScene({appState:st});
+    }, 500);
   }
 
   /**
@@ -882,6 +892,7 @@ export default class ExcalidrawView extends TextFileView {
       //debug({where:"ExcalidrawView.loadDrawing",file:this.file.name,before:"this.loadSceneFiles"});
       this.loadSceneFiles();
       this.updateContainerSize(null, true);
+      this.setDefaultTrayMode();
     } else {
       this.instantiateExcalidraw({
         elements: excalidrawData.elements,
@@ -1120,6 +1131,7 @@ export default class ExcalidrawView extends TextFileView {
 
           this.loadSceneFiles();
           this.updateContainerSize(null, true);
+          this.setDefaultTrayMode();
         });
       }, [excalidrawRef]);
 
@@ -1772,6 +1784,7 @@ export default class ExcalidrawView extends TextFileView {
               showHoverPreview();
             }
           },
+          autoFocus: true,
           onChange: (et: ExcalidrawElement[], st: AppState) => {
             viewModeEnabled = st.viewModeEnabled;
             if (this.justLoaded) {
@@ -1996,11 +2009,11 @@ export default class ExcalidrawView extends TextFileView {
 
             //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/318
             //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/299
-            if (!this.app.isMobile) {
+            /*if (!this.app.isMobile) {
               setTimeout(() => {
                 this?.excalidrawWrapperRef?.current?.firstElementChild?.focus();
               }, 50);
-            }
+            }*/
 
             const containerId = textElement.containerId;
 

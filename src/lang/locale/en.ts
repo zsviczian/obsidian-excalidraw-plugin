@@ -237,7 +237,7 @@ export default {
     "When Obsidian is in light mode, Excalidraw will render light mode as well. You may want to switch 'Export image with background' off for a more Obsidian-integrated look and feel.",
   EMBED_WIDTH_NAME: "Default width of embedded (transcluded) image",
   EMBED_WIDTH_DESC:
-    "Only relevant if embed type is excalidraw. Has no effect on PNG and SVG embeds. The default width of an embedded drawing. You can specify a custom " +
+    "The default width of an embedded drawing. This applies to live preview edit and reading mode, as well as to hover previews. You can specify a custom " +
     "width when embedding an image using the <code>![[drawing.excalidraw|100]]</code> or " +
     "<code>[[drawing.excalidraw|100x100]]</code> format.",
   EMBED_TYPE_NAME: "Type of file to insert into the document",

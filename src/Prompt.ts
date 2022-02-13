@@ -7,6 +7,7 @@ import {
   FuzzySuggestModal,
   Instruction,
   TFile,
+  Notice,
 } from "obsidian";
 import ExcalidrawView from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
@@ -405,20 +406,36 @@ export class NewFileActions extends Modal {
       //files manually follow one of two options:
       el.style.textAlign = "right";
 
+      const checks = ():boolean => {
+        if(!this.path || this.path === "") {
+          new Notice ("Error: Filename for new file may not be empty");
+          return false;
+        }
+        if(!this.view.file) {
+          new Notice ("Unknown error. It seems as if your drawing was closed or the drawing file is missing");
+          return false;
+        }
+        return true;
+      }
+
       const bMd = el.createEl("button", { text: "Create Markdown" });
       bMd.onclick = async () => {
+        if(!checks) return;
         //@ts-ignore
-        const f = await this.app.fileManager.createNewMarkdownFileFromLinktext(this.path,this.viewFile);
+        const f = await this.app.fileManager.createNewMarkdownFileFromLinktext(this.path,this.view.file);
         this.openFile(f);
         this.close();
       };
 
-
       const bEx = el.createEl("button", { text: "Create Excalidraw" });
       bEx.onclick = async () => {
+        if(!checks) return;
         //@ts-ignore
-        const f = await this.app.fileManager.createNewMarkdownFileFromLinktext(this.path,this.viewFile)
-        if(!f) return;
+        const f = await this.app.fileManager.createNewMarkdownFileFromLinktext(this.path,this.view.file)
+        if(!f) {
+          new Notice(`Error creating file: ${this.path}`);
+          return;
+        }
         await this.app.vault.modify(f,await this.plugin.getBlankDrawing());
         await sleep(200); //wait for metadata cache to update, so file opens as excalidraw
         this.openFile(f);

@@ -1,18 +1,18 @@
 {
   "name": "obsidian-excalidraw-plugin",
-  "version": "1.3.21",
+  "version": "1.6.9",
   "description": "This is an Obsidian.md plugin that lets you view and edit Excalidraw drawings",
   "main": "main.js",
   "scripts": {
     "dev": "cross-env NODE_ENV=development rollup --config rollup.config.js -w",
-    "build": "cross-env NODE_ENV=production rollup --config rollup.config.js",
+    "build": "cross-env NODE_ENV=production rollup --config rollup.config.js && terser main.js --compress toplevel=true,passes=2 --output main.js",
     "code:fix": "eslint --max-warnings=0 --ext .ts,.tsx ./src --fix"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@zsviczian/excalidraw": "0.10.0-obsidian-48",
+    "@zsviczian/excalidraw": "0.10.0-obsidian-49",
     "monkey-around": "^2.3.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
@@ -38,6 +38,7 @@
     "obsidian": "^0.13.21",
     "rollup": "^2.66.0",
     "rollup-plugin-visualizer": "^5.5.4",
+    "rollup-plugin-terser": "^7.0.2",
     "tslib": "^2.3.1",
     "typescript": "^4.5.5",
     "eslint-config-prettier": "8.3.0",

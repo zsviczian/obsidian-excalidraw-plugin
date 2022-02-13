@@ -2127,10 +2127,10 @@
   "resolved" "https://registry.npmjs.org/@xtuc/long/-/long-4.2.2.tgz"
   "version" "4.2.2"
 
-"@zsviczian/excalidraw@0.10.0-obsidian-48":
-  "integrity" "sha512-EC5TKr8uSwgd888xGDF1gjtx23sIjNSLUWs7uHV0dSlIm//xyq2vSmh2nOf9YH5KKP2MxR+LR6U2oF2Qs16WJQ=="
-  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.10.0-obsidian-48.tgz"
-  "version" "0.10.0-obsidian-48"
+"@zsviczian/excalidraw@0.10.0-obsidian-49":
+  "integrity" "sha512-32XoMHNyvzWOkkwBMzlS7L6ijabWxCmmA24Pvpn0PUkVQf9dy8OhDDtMHd7NmxD8zglnAXihlAMhTX/l+CLo3A=="
+  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.10.0-obsidian-49.tgz"
+  "version" "0.10.0-obsidian-49"
   dependencies:
     "dotenv" "10.0.0"
 
@@ -7482,7 +7482,7 @@
   dependencies:
     "glob" "^7.1.3"
 
-"rollup-plugin-terser@^7.0.0":
+"rollup-plugin-terser@^7.0.0", "rollup-plugin-terser@^7.0.2":
   "integrity" "sha512-w3iIaU4OxcF52UUXiZNsNeuXIMDvFrr+ZXK6bFZ0Q60qyVfq4uLptoS4bbq3paG3x216eQllFZX7zt6TIImguQ=="
   "resolved" "https://registry.npmjs.org/rollup-plugin-terser/-/rollup-plugin-terser-7.0.2.tgz"
   "version" "7.0.2"
