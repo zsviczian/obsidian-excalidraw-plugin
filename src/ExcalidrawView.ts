@@ -252,16 +252,31 @@ export default class ExcalidrawView extends TextFileView {
     }
   }
 
+  //Save is triggered by multiple threads when an Excalidraw pane is terminated
+  //- by the view itself
+  //- by the activeLeafChangeEventHandler change event handler
+  //- by monkeypatches on detach(next)
+  //This semaphore helps avoid collision of saves
+  private preventSave:boolean = false; //this.saving is taken by Obsidian. When I set this, nothing got saved at all.
   async save(preventReload: boolean = true) {
+    if(this.preventSave) {
+      return;
+    }
+    this.preventSave = true;
+
     if (!this.getScene) {
+      this.preventSave = false;
       return;
     }
     if (!this.isLoaded) {
+      this.preventSave = false;
       return;
     }
-    if(!this.app.vault.getAbstractFileByPath(this.file.path)) {
+    if(!this.file || !this.app.vault.getAbstractFileByPath(this.file.path)) {
+      this.preventSave = false;
       return; //file was recently deleted
     }
+
     this.preventReload = preventReload;
     this.dirty = null;
     const scene = this.getScene();
@@ -309,6 +324,7 @@ export default class ExcalidrawView extends TextFileView {
         this.saveExcalidraw();
       }
     }
+    this.preventSave = false;
   }
 
   // get the new file content
@@ -698,6 +714,10 @@ export default class ExcalidrawView extends TextFileView {
 
   //save current drawing when user closes workspace leaf
   async onunload() {
+    const tooltip = document.body.querySelector("body>div.excalidraw-tooltip,div.excalidraw-tooltip--visible");
+    if(tooltip) {
+      document.body.removeChild(tooltip);
+    }
     if (this.autosaveTimer) {
       clearInterval(this.autosaveTimer);
       this.autosaveTimer = null;
@@ -789,7 +809,7 @@ export default class ExcalidrawView extends TextFileView {
               e.message === "Cannot read property 'index' of undefined"
                 ? "\n'# Drawing' section is likely missing"
                 : ""
-            }\n\nTry manually fixing the file or restoring an earlier version from sync history.\n\nYou may also look for the backup file with last working version in the same folder (same filename as your drawing, but starting with a dot. e.g. <code>drawing.md</code> => <code>.drawing.md</code>). Note the backup files do not get synchronized, so look for the backup file on other devices as well.`,
+            }\n\nTry manually fixing the file or restoring an earlier version from sync history.\n\nYou may also look for the backup file with last working version in the same folder (same filename as your drawing, but starting with a dot. e.g. <code>drawing.md</code> => <code>.drawing.md.bak</code>). Note the backup files do not get synchronized, so look for the backup file on other devices as well.`,
             10000,
           );
           this.setMarkdownView();
@@ -2054,9 +2074,12 @@ export default class ExcalidrawView extends TextFileView {
                 //there were no transclusions in the raw text, quick parse was successful
                 this.setupAutosaveTimer();
                 if (this.textMode === TextMode.raw) {
-                  return [null, null, link];
+                  return [parseResultWrapped, parseResultOriginal, link];
                 } //text is displayed in raw, no need to clear the history, undo will not create problems
-                if (text === parseResultWrapped) {
+                if (text === parseResultWrapped) { 
+                  if(link) {//don't forget the case: link-prefix:"" && link-brackets:true
+                    return [parseResultWrapped, parseResultOriginal, link];
+                  }
                   return [null, null, null];
                 } //There were no links to parse, raw text and parsed text are equivalent
                 this.excalidrawAPI.history.clear();
@@ -2101,15 +2124,17 @@ export default class ExcalidrawView extends TextFileView {
                   this.file.path,
                 );
 
-                if (event.shiftKey && this.isFullscreen()) {
+                const useNewLeaf = event.shift || event[CTRL_OR_CMD];
+
+                if (useNewLeaf && this.isFullscreen()) {
                   this.exitFullscreen();
                 }
                 if (!file) {
-                  (new NewFileActions(this.plugin,linkText,event.shiftKey,this)).open();
+                  (new NewFileActions(this.plugin,linkText,useNewLeaf,this)).open();
                   return;
                 }
                 try {
-                  const leaf = (event.shiftKey || event[CTRL_OR_CMD])
+                  const leaf = useNewLeaf
                     ? getNewOrAdjacentLeaf(this.plugin, this.leaf)
                     : this.leaf;
                   leaf.openFile(file, { eState: { line: lineNum - 1 } }); //if file exists open file and jump to reference

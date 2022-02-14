@@ -418,11 +418,22 @@ export class NewFileActions extends Modal {
         return true;
       }
 
+      const createFile = async (data:string):Promise<TFile> => {
+        if(!this.path.includes("/")) {
+          const re = new RegExp(`${this.view.file.name}$`,"g");
+          this.path = this.view.file.path.replace(re,this.path)
+        }
+        if(!this.path.match(/\.md$/)) {
+          this.path = this.path+".md";
+        }
+        const f = await this.app.vault.create(this.path,data) 
+        return f;
+      }
+
       const bMd = el.createEl("button", { text: "Create Markdown" });
       bMd.onclick = async () => {
         if(!checks) return;
-        //@ts-ignore
-        const f = await this.app.fileManager.createNewMarkdownFileFromLinktext(this.path,this.view.file);
+        const f = await createFile("");
         this.openFile(f);
         this.close();
       };
@@ -430,13 +441,7 @@ export class NewFileActions extends Modal {
       const bEx = el.createEl("button", { text: "Create Excalidraw" });
       bEx.onclick = async () => {
         if(!checks) return;
-        //@ts-ignore
-        const f = await this.app.fileManager.createNewMarkdownFileFromLinktext(this.path,this.view.file)
-        if(!f) {
-          new Notice(`Error creating file: ${this.path}`);
-          return;
-        }
-        await this.app.vault.modify(f,await this.plugin.getBlankDrawing());
+        const f = await createFile(await this.plugin.getBlankDrawing());
         await sleep(200); //wait for metadata cache to update, so file opens as excalidraw
         this.openFile(f);
         this.close();

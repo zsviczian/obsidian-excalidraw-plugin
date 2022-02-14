@@ -83,9 +83,9 @@ export function splitFolderAndFilename(filepath: string): {
   basename: string;
 } {
   const lastIndex = filepath.lastIndexOf("/");
-  const filename = lastIndex == -1 ? filepath : filepath.substr(lastIndex + 1);
+  const filename = lastIndex == -1 ? filepath : filepath.substring(lastIndex + 1);
   return {
-    folderpath: normalizePath(filepath.substr(0, lastIndex)),
+    folderpath: normalizePath(filepath.substring(0, lastIndex)),
     filename,
     basename: filename.replace(/\.[^/.]+$/, ""),
   };
@@ -127,7 +127,7 @@ export function getIMGPathFromExcalidrawFile(
 
 export function getBakPath(file:TFile):string {
   const re = new RegExp(`${file.name}$`,"g");
-  return file.path.replace(re,`.${file.name}`);
+  return file.path.replace(re,`.${file.name}.bak`);
 }
 
 /**
