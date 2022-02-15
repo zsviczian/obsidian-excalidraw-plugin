@@ -53,4 +53,4 @@ for (const line of lines) {
 }
 
 ea.copyViewElementsToEAforEditing(lines);
-ea.addElementsToView();
+await ea.addElementsToView();

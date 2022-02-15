@@ -97,7 +97,7 @@ for (var i = 0; i < topGroups.length; i++) {
 }
 
 ea.copyViewElementsToEAforEditing(elements);
-ea.addElementsToView(false, false);
+await ea.addElementsToView(false, false);
 
 function recalculateStartPointOfLine(line, el) {
 	const aX = el.x + el.width/2;

@@ -123,4 +123,4 @@ else if(fromBorder === 'right') {
 }
 
 ea.copyViewElementsToEAforEditing(elements);
-ea.addElementsToView(false, false);
+await ea.addElementsToView(false, false);

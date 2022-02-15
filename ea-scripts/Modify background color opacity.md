@@ -64,7 +64,7 @@ ea.getElements().forEach((el)=>{
         }
     }
 });
-ea.addElementsToView(false, false);
+await ea.addElementsToView(false, false);
 
 function colorNameToHex(color) {
   const colors = {
