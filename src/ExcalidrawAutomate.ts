@@ -1140,12 +1140,13 @@ export async function initExcalidrawAutomate(
       )?.file;
     },
     copyViewElementsToEAforEditing(elements: ExcalidrawElement[]): void {
-      elements.forEach((el:any) => {
-        el.version = el.version + 1;
-        el.updated = Date.now();
-        el.versionNonce = Math.floor(Math.random()*1000000000);
-        this.elementsDict[el.id] = el;
-      });
+      elements.forEach((el) => {
+        this.elementsDict[el.id] = {
+          ...el,
+          version: el.version + 1,
+          updated: Date.now(),
+          versionNonce: Math.floor(Math.random()*1000000000),
+        };});
     },
     viewToggleFullScreen(forceViewMode: boolean = false): void {
       if (this.plugin.app.isMobile) {

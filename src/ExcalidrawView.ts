@@ -894,10 +894,10 @@ export default class ExcalidrawView extends TextFileView {
       this.excalidrawAPI.updateScene({
         elements: excalidrawData.elements,
         appState: {
+          ...excalidrawData.appState,
           zenModeEnabled,
           viewModeEnabled,
           linkOpacity: this.plugin.settings.linkOpacity,
-          ...excalidrawData.appState,
         },
         files: excalidrawData.files,
         commitToHistory: true,
@@ -917,10 +917,10 @@ export default class ExcalidrawView extends TextFileView {
       this.instantiateExcalidraw({
         elements: excalidrawData.elements,
         appState: {
+          ...excalidrawData.appState,
           zenModeEnabled: om.zenModeEnabled,
           viewModeEnabled: om.viewModeEnabled,
           linkOpacity: this.plugin.settings.linkOpacity,
-          ...excalidrawData.appState,
         },
         files: excalidrawData.files,
         libraryItems: await this.getLibrary(),
@@ -1364,14 +1364,11 @@ export default class ExcalidrawView extends TextFileView {
           }
         }
 
-        const st: AppState = this.excalidrawAPI.getAppState();
-
         const elements = newElementsOnTop
           ? el.concat(newElements.filter((e) => !removeList.includes(e.id)))
           : newElements.filter((e) => !removeList.includes(e.id)).concat(el);
         this.excalidrawAPI.updateScene({
           elements,
-          appState: st,
           commitToHistory: true,
         });
 
@@ -1390,6 +1387,7 @@ export default class ExcalidrawView extends TextFileView {
                 this.file.path,
                 images[k].file,
               );
+              const st: AppState = this.excalidrawAPI.getAppState();
               embeddedFile.setImage(
                 images[k].dataURL,
                 images[k].mimeType,
