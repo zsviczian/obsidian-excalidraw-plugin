@@ -130,9 +130,9 @@ for(const elements of groups) {
 
 	ea.copyViewElementsToEAforEditing(elements);
 	ea.addToGroup([id].concat(elements.map((el)=>el.id)));
-	ea.addElementsToView(false);
-	ea.reset();
 }
+
+await ea.addElementsToView(false);
 
 function recalculateStartPointOfLine(line, el) {
 	const aX = el.x + el.width/2;
