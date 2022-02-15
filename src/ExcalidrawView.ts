@@ -2018,6 +2018,7 @@ export default class ExcalidrawView extends TextFileView {
             originalText: string,
             isDeleted: boolean,
           ): [string, string, string] => {
+            this.isEditingText = true;
             this.isEditingTextResetTimer = setTimeout(() => {
               this.isEditingText = false;
               this.isEditingTextResetTimer = null;
@@ -2197,7 +2198,7 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   public zoomToFit(delay: boolean = true) {
-    if (!this.excalidrawRef) {
+    if (!this.excalidrawRef || this.isEditingText) {
       return;
     }
     const maxZoom = this.plugin.settings.zoomToFitMaxLevel;

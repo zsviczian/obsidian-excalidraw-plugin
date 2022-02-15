@@ -118,7 +118,7 @@ li[data-testid] {
 }
 
 .excalidraw-scriptengine-install td.label {
-  width: 11ch;
+  min-width: 11ch;
   font-weight: bold;
   padding-right: 5px;
 }
