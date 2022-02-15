@@ -53,6 +53,7 @@ I would love to include your contribution in the script library. If you have a s
 - [[#Modify background color opacity]]
 - [[#Normalize Selected Arrows]]
 - [[#OCR - Optical Character Recognition]]
+- [[#Organic Line]]
 - [[#Reverse arrows]]
 - [[#Scribble Helper]]
 - [[#Select Elements of Type]]
@@ -234,6 +235,12 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/OCR%20-%20Optical%20Character%20Recognition.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/OCR%20-%20Optical%20Character%20Recognition.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">REQUIRES EXCALIDRAW 1.5.15<br>The script will  1) send the selected image file to [taskbone.com](https://taskbone.com) to exctract the text from the image, and 2) will add the text to your drawing as a text element.<br><mark>⚠ Note that you will need to manually paste your token into the script after the first run! ⚠</mark><br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-ocr.jpg'><br><iframe width="560" height="315" src="https://www.youtube.com/embed/W2NMzR8s4eE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></td></tr></table>
+
+## Organic Line
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Organic%20Line.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Organic%20Line.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Converts selected freedraw lines such that pencil pressure will decrease from maximum to minimum from the beginning of the line to its end. The resulting line is placed at the back of the layers, under all other items. Helpful when drawing organic mindmaps.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-organic-line.jpg'></td></tr></table>
 
 ## Reverse arrows
 ```excalidraw-script-install
