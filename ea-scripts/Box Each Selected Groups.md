@@ -132,7 +132,7 @@ for(const elements of groups) {
 	ea.addToGroup([id].concat(elements.map((el)=>el.id)));
 }
 
-ea.addElementsToView(false);
+await ea.addElementsToView(false);
 
 function recalculateStartPointOfLine(line, el) {
 	const aX = el.x + el.width/2;
