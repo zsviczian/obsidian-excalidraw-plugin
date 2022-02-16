@@ -17,6 +17,7 @@ https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.h
 let repeatNum = parseInt(await utils.inputPrompt("repeat times?","number","5"));
 if(!repeatNum) {
     new Notice("Please enter a number.");
+    return;
 }
 
 const selectedElements = ea.getViewSelectedElements().sort((lha,rha) => 
@@ -27,10 +28,12 @@ const selectedElements = ea.getViewSelectedElements().sort((lha,rha) =>
 
 if(selectedElements.length !== 2) {
     new Notice("Please select 2 elements.");
+    return;
 }
 
 if(selectedElements[0].type !== selectedElements[1].type) {
     new Notice("The selected elements must be of the same type.");
+    return;
 }
 
 const xDistance = selectedElements[1].x - selectedElements[0].x;
