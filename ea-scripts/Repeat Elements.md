@@ -79,13 +79,26 @@ for(let i=0; i<repeatNum; i++) {
     ea.elementsDict[newEl.id] = newEl;
     newEl.x += xDistance * (i + 1);
     newEl.y += yDistance * (i + 1);
+    const originWidth = newEl.width;
+    const originHeight = newEl.height;
     const newWidth = newEl.width + widthDistance * (i + 1);
     const newHeight = newEl.height + heightDistance * (i + 1);
     if(newWidth >= 0 && newHeight >= 0) {
-        newEl.width = newWidth;
-        newEl.height = newHeight;
-        if(newEl.type === 'arrow' || newEl.type === 'line' && newEl.points.length === 2) {
-          newEl.points[1][0] += widthDistance * (i + 1);
+        if(newEl.type === 'arrow' || newEl.type === 'line' || newEl.type === 'freedraw') {
+          const minX = Math.min(...newEl.points.map(pt => pt[0]));
+          const minY = Math.min(...newEl.points.map(pt => pt[1]));
+          for(let j = 0; j < newEl.points.length; j++) {
+            if(newEl.points[j][0] > minX) {
+              newEl.points[j][0] = newEl.points[j][0] + ((newEl.points[j][0] - minX) / originWidth) * (newWidth - originWidth);
+            }
+            if(newEl.points[j][1] > minY) {
+              newEl.points[j][1] = newEl.points[j][1] + ((newEl.points[j][1] - minY) / originHeight) * (newHeight - originHeight);
+            }
+          }
+        }
+        else {
+          newEl.width = newWidth;
+          newEl.height = newHeight;
         }
     }
 
