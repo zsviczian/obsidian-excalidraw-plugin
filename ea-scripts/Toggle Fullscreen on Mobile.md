@@ -1,7 +1,7 @@
 /* 
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/ea-toggle-fullscreen.jpg)
 
-Hides Obsidian workspace leaf padding and header (based on option in settings, default is "hide header" = true) which will take Excalidraw to full screen.
+Hides Obsidian workspace leaf padding and header (based on option in settings, default is "hide header" = true) which will take Excalidraw to full screen. ⚠ Note that if the header is not visible, it will be very difficult to invoke the command palette to end full screen. Only hide the header if you have a keyboard or you've practiced opening command palette!
 
 ```javascript
 */
@@ -31,7 +31,7 @@ newStylesheet.textContent = `
   }
   ${hideHeader?`
   .view-header {
-    display: none !important;
+    height: 1px !important;
   }`:""}
   .status-bar {
     display: none !important;
