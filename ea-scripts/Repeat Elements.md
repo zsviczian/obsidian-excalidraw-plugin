@@ -84,10 +84,9 @@ for(let i=0; i<repeatNum; i++) {
     const newWidth = newEl.width + widthDistance * (i + 1);
     const newHeight = newEl.height + heightDistance * (i + 1);
     if(newWidth >= 0 && newHeight >= 0) {
-        const minX = Math.min(...newEl.points.map(pt => pt[0]));
-        const minY = Math.min(...newEl.points.map(pt => pt[1]));
-       
         if(newEl.type === 'arrow' || newEl.type === 'line' || newEl.type === 'freedraw') {
+          const minX = Math.min(...newEl.points.map(pt => pt[0]));
+          const minY = Math.min(...newEl.points.map(pt => pt[1]));
           for(let j = 0; j < newEl.points.length; j++) {
             if(newEl.points[j][0] > minX) {
               newEl.points[j][0] = newEl.points[j][0] + ((newEl.points[j][0] - minX) / originWidth) * (newWidth - originWidth);
