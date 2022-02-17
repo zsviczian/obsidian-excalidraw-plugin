@@ -15,7 +15,7 @@ settings = ea.getScriptSettings();
 if(!settings["Hide header"]) {
   settings = {
     "Hide header": {
-      value: true,
+      value: false,
 	},
     ...settings
   };
