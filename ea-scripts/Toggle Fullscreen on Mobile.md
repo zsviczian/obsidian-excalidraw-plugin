@@ -1,4 +1,6 @@
 /* 
+![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/ea-toggle-fullscreen.jpg)
+
 Hides Obsidian workspace leaf padding and header (based on option in settings, default is "hide header" = true) which will take Excalidraw to full screen.
 
 ```javascript
