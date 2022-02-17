@@ -19,8 +19,12 @@ if(!settings["Hide header"]) {
 	},
     ...settings
   };
-  ea.setScriptSettings(settings);
+  await ea.setScriptSettings(settings);
 }
+
+settings["Hide header"].description = "⚠ Note that if the header is not visible, it will be very difficult to invoke the command palette to end full screen. Only hide the header if you have a keyboard or you've practiced opening command palette!";
+await ea.setScriptSettings(settings);
+
 const hideHeader = settings["Hide header"].value;
 
 const newStylesheet = document.createElement("style");
