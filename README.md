@@ -28,7 +28,7 @@ Please upgrade to Obsidian v0.12.19 or higher to get the latest release.
   - Compatibility features to auto-export and keep in sync markdown excalidraw files and legacy .excalidraw files.
   - Experimental feature to add custom TAG to file explorer to mark drawing files.
   - Enable / disable autosave.
-- You can customize the size and position of the embedded images using the `![[image.excalidraw|100]]`, `![[image.excalidraw|100x100]]`, `![[image.excalidraw|100|left]]`, `![[image.excalidraw|right-wrap]]`, formatting options. `![[<filename.excalidraw>|<width>x<height>|<alignment>]]`. You can add your custom alignment via CSS. Any text that appears in `<alignment>` will be added to the rendered SVG element style and to the wrapper DIV element. Check below and styles.css for more insight.
+- You can customize the size and position of the embedded images using the `![[image.excalidraw|100]]`, `![[image.excalidraw|100x100]]`, `![[image.excalidraw|100|left]]`, `![[image.excalidraw|right-wrap]]`, formatting options. `![[<filename.excalidraw>|<width>x<height>|<alignment>]]`. You can add your custom alignment via CSS. Any text that appears in `<alignment>` will be added to the rendered SVG element style and to the wrapper DIV element. See [styles.css](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/styles.css) for more insight.
 - Supports hyperlinks e.g. `https://zsolt.blog`, `[Obsidian](https://obsidian.md)`, and internal links e.g. `[[My file in vault|Alias]]` in drawing text. 
   - Links will update when files are moved or renamed, if you have the Obsidian setting Files & Links/Automatically Update Internal Links enabled.
   - Links in drawings will show up in backlinks of documents
