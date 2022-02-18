@@ -45,7 +45,7 @@ export class InsertImageDialog extends FuzzySuggestModal<TFile> {
     ea.canvas.theme = this.view.excalidrawAPI.getAppState().theme;
     (async () => {
       await ea.addImage(0, 0, item);
-      ea.addElementsToView(true, false);
+      ea.addElementsToView(true, false, true);
     })();
   }
 

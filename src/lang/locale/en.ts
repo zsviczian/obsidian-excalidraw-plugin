@@ -98,7 +98,7 @@ export default {
     "The folder may not be the root folder of your Vault. ",
   AUTOSAVE_NAME: "Enable Autosave",
   AUTOSAVE_DESC:
-    "Automatically save the active drawing every 30 seconds, or 1, 2, 3, 4, or 5 minutes. Save normally happens when you close Excalidraw or Obsidian, or move " +
+    "Automatically save the active drawing, in case there are changes, every 15, 30 seconds, or 1, 2, 3, 4, or 5 minute. Save normally happens when you close Excalidraw or Obsidian, or move " +
     "focus to another pane. I created this feature with mobile " +
     "phones and tablets in mind, where 'swiping out Obsidian to close it' led to some data loss.",
     AUTOSAVE_INTERVAL_NAME: "Interval for autosave",

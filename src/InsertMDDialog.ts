@@ -39,7 +39,7 @@ export class InsertMDDialog extends FuzzySuggestModal<TFile> {
     ea.setView(this.view);
     (async () => {
       await ea.addImage(0, 0, item);
-      ea.addElementsToView(true, false);
+      ea.addElementsToView(true, false, true);
     })();
   }
 

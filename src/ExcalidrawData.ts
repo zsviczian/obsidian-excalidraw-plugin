@@ -21,7 +21,7 @@ import { JSON_parse } from "./constants";
 import { TextMode } from "./ExcalidrawView";
 import {
   getAttachmentsFolderAndFilePath,
-  getBakPath,
+  //getBakPath,
   getBinaryFileFromDataURL,
   getLinkParts,
   isObsidianThemeDark,
@@ -265,17 +265,17 @@ export class ExcalidrawData {
       }
       return sceneJSONandPOS;
     };
-    try {
+    //try {
       sceneJSONandPOS = loadJSON();
-    } catch (e) {
+    /*} catch (e) {
       if(await this.app.vault.adapter.exists(getBakPath(file))) {
         data = await this.app.vault.adapter.read(getBakPath(file))
         sceneJSONandPOS = loadJSON();
         new Notice(t("LOAD_FROM_BACKUP"), 4000);
       } else {
         throw e;
-      }
-    }
+      
+    }*/
 
     if (!this.scene.files) {
       this.scene.files = {}; //loading legacy scenes that do not yet have the files attribute.
@@ -909,7 +909,7 @@ export class ExcalidrawData {
     let result = false;
     if (!this.compatibilityMode) {
       result = await this.syncFiles();
-      this.scene.files = {};
+      this.scene.files = {}; //files contains the dataURLs of files. Once synced these are all saved to disk
     }
     this.updateElementLinksFromScene();
     result =

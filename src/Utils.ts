@@ -125,10 +125,10 @@ export function getIMGPathFromExcalidrawFile(
   );
 }
 
-export function getBakPath(file:TFile):string {
+/*export function getBakPath(file:TFile):string {
   const re = new RegExp(`${file.name}$`,"g");
   return file.path.replace(re,`.${file.name}.bak`);
-}
+}*/
 
 /**
  * Create new file, if file already exists find first unique filename by adding a number to the end of the filename

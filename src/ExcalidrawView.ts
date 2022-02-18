@@ -53,7 +53,7 @@ import {
   download,
   embedFontsInSVG,
   errorlog,
-  getBakPath,
+  //getBakPath,
   getIMGFilename,
   getNewOrAdjacentLeaf,
   getNewUniqueFilepath,
@@ -278,6 +278,7 @@ export default class ExcalidrawView extends TextFileView {
     }
 
     this.preventReload = preventReload;
+    const allowSave = (this.dirty !== null && this.dirty) || this.autosaving; //dirty == false when view.file == null;
     this.dirty = null;
     const scene = this.getScene();
 
@@ -287,12 +288,11 @@ export default class ExcalidrawView extends TextFileView {
       (await this.excalidrawData.syncElements(scene)) &&
       !this.autosaving
     ) {
-      //debug({where:"ExcalidrawView.save",file:this.file.name,dataTheme:this.excalidrawData.scene.appState.theme,before:"loadDrawing(false)"})
       await this.loadDrawing(false);
     }
 
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/396
-    const bakfilepath = getBakPath(this.file);
+    /*const bakfilepath = getBakPath(this.file);
     try {
       if (await this.app.vault.adapter.exists(bakfilepath)) {
         await this.app.vault.adapter.remove(bakfilepath);
@@ -300,15 +300,17 @@ export default class ExcalidrawView extends TextFileView {
       await this.app.vault.adapter.copy(this.file.path, bakfilepath);
     } catch(e) {
       console.error({where: "ExcalidrawView.save copy backup file", error: e});
+    }*/
+
+    if(allowSave) {
+      await super.save();
+      this.diskIcon.querySelector("svg").removeClass("excalidraw-dirty");
     }
-
-    await super.save();
-
-    try {
+    /*try {
       await this.app.vault.adapter.remove(bakfilepath);
     } catch(e) {
       console.error({where: "ExcalidrawView.save removing backup file", error: e});
-    }
+    }*/
 
     if (!this.autosaving) {
       if (this.plugin.settings.autoexportSVG) {
@@ -601,12 +603,13 @@ export default class ExcalidrawView extends TextFileView {
     this.zoomToFit(false);
   }
 
+  diskIcon: HTMLElement;
   onload() {
     this.addAction(SCRIPTENGINE_ICON_NAME, t("INSTALL_SCRIPT_BUTTON"), () => {
       new ScriptInstallPrompt(this.plugin).open();
     });
 
-    this.addAction(DISK_ICON_NAME, t("FORCE_SAVE"), async () => {
+    this.diskIcon = this.addAction(DISK_ICON_NAME, t("FORCE_SAVE"), async () => {
       await this.save(false);
       this.plugin.triggerEmbedUpdates();
       this.loadSceneFiles();
@@ -733,6 +736,7 @@ export default class ExcalidrawView extends TextFileView {
       this.preventReload = false;
       return;
     }
+    this.diskIcon.querySelector("svg").removeClass("excalidraw-dirty");
     if (this.compatibilityMode) {
       this.dirty = null;
       return;
@@ -780,6 +784,7 @@ export default class ExcalidrawView extends TextFileView {
     data = this.data = data.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
     this.app.workspace.onLayoutReady(async () => {
       this.dirty = null;
+      this.diskIcon.querySelector("svg").removeClass("excalidraw-dirty");
       this.compatibilityMode = this.file.extension === "excalidraw";
       await this.plugin.loadSettings();
       if (this.compatibilityMode) {
@@ -865,16 +870,6 @@ export default class ExcalidrawView extends TextFileView {
    */
   private async loadDrawing(justloaded: boolean) {
     const excalidrawData = this.excalidrawData.scene;
-    const appState = excalidrawData.appState as AppState;
-    if (appState.colorPalette?.canvasBackground && appState.colorPalette.canvasBackground.length !== 15) {
-      new Notice ("appState.colorPalette.canvasBackground must have exactly 15 colors");
-    }
-    if (appState.colorPalette?.elementBackground && appState.colorPalette.elementBackground.length !== 15) {
-      new Notice ("appState.colorPalette.elementBackground must have exactly 15 colors");
-    }
-    if (appState.colorPalette?.elementStroke && appState.colorPalette.elementStroke.length !== 15) {
-      new Notice ("appState.colorPalette.elementStroke must have exactly 15 colors");
-    }
     this.justLoaded = justloaded;
     const om = this.excalidrawData.getOpenMode();
     this.preventReload = false;
@@ -1102,11 +1097,12 @@ export default class ExcalidrawView extends TextFileView {
     return data?.library ? data.library : data?.libraryItems ?? [];
   }
 
+  previousSceneVersion = 0;
   private instantiateExcalidraw(initdata: any) {
     //console.log("ExcalidrawView.instantiateExcalidraw()");
     this.dirty = null;
+    this.diskIcon.querySelector("svg").removeClass("excalidraw-dirty");
     const reactElement = React.createElement(() => {
-      let previousSceneVersion = 0;
       let currentPosition = { x: 0, y: 0 };
       const excalidrawWrapperRef = React.useRef(null);
       const [dimensions, setDimensions] = React.useState({
@@ -1293,20 +1289,18 @@ export default class ExcalidrawView extends TextFileView {
         return { id: imageElement[0].id, fileId: imageElement[0].fileId }; //return image element fileId
       };
 
-      this.addText = (text: string, fontFamily?: 1 | 2 | 3) => {
+      this.addText = (text: string, fontFamily?: 1 | 2 | 3 | 4) => {
         if (!excalidrawRef?.current) {
           return;
         }
         const st: AppState = this.excalidrawAPI.getAppState();
         const ea = this.plugin.ea;
         ea.reset();
-        ea.style.strokeColor = st.currentItemStrokeColor;
-        ea.style.opacity = st.currentItemOpacity;
-        ea.style.fontFamily = fontFamily
-          ? fontFamily
-          : st.currentItemFontFamily;
-        ea.style.fontSize = st.currentItemFontSize;
-        ea.style.textAlign = st.currentItemTextAlign;
+        ea.style.strokeColor = st.currentItemStrokeColor??"black";
+        ea.style.opacity = st.currentItemOpacity??1;
+        ea.style.fontFamily = fontFamily??st.currentItemFontFamily??1;
+        ea.style.fontSize = st.currentItemFontSize??20;
+        ea.style.textAlign = st.currentItemTextAlign??"left";
         ea.addText(currentPosition.x, currentPosition.y, text);
         this.addElements(ea.getElements(), false, true);
       };
@@ -1410,6 +1404,7 @@ export default class ExcalidrawView extends TextFileView {
           await this.save(false); //preventReload=false will ensure that markdown links are paresed and displayed correctly
         } else {
           this.dirty = this.file?.path;
+          this.diskIcon.querySelector("svg").addClass("excalidraw-dirty");
         }
         return true;
       };
@@ -1808,20 +1803,21 @@ export default class ExcalidrawView extends TextFileView {
             if (this.justLoaded) {
               this.justLoaded = false;
               this.zoomToFit(false);
-              previousSceneVersion = getSceneVersion(et);
+              this.previousSceneVersion = getSceneVersion(et);
               return;
             }
             if (
-              st.editingElement == null &&
-              st.resizingElement == null &&
-              st.draggingElement == null &&
-              st.editingGroupId == null &&
-              st.editingLinearElement == null
+              st.editingElement === null &&
+              st.resizingElement === null &&
+              st.draggingElement === null &&
+              st.editingGroupId === null &&
+              st.editingLinearElement === null
             ) {
               const sceneVersion = getSceneVersion(et);
-              if (sceneVersion != previousSceneVersion) {
-                previousSceneVersion = sceneVersion;
+              if (sceneVersion !== this.previousSceneVersion) {
+                this.previousSceneVersion = sceneVersion;
                 this.dirty = this.file?.path;
+                this.diskIcon.querySelector("svg").addClass("excalidraw-dirty");
               }
             }
           },
@@ -1912,7 +1908,7 @@ export default class ExcalidrawView extends TextFileView {
                         currentPosition.y,
                         draggable.file,
                       );
-                      ea.addElementsToView(false, false);
+                      ea.addElementsToView(false, false, true);
                     })();
                     return false;
                   }
@@ -2027,6 +2023,7 @@ export default class ExcalidrawView extends TextFileView {
             if (isDeleted) {
               this.excalidrawData.deleteTextElement(textElement.id);
               this.dirty = this.file?.path;
+              this.diskIcon.querySelector("svg").addClass("excalidraw-dirty");
               this.setupAutosaveTimer();
               return [null, null, null];
             }

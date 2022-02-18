@@ -1168,14 +1168,9 @@ export async function initExcalidrawAutomate(
           commitToHistory: false,
         });
       }
-      if (
-        document.fullscreenElement ===
-        (this.targetView as ExcalidrawView).contentEl
-      ) {
-        document.exitFullscreen();
-      } else {
-        (this.targetView as ExcalidrawView).contentEl.requestFullscreen();
-      }
+      const view = this.targetView as ExcalidrawView;
+      if(view.isFullscreen()) view.exitFullscreen();
+      else view.gotoFullscreen();
     },
     connectObjectWithViewSelectedElement(
       objectA: string,
@@ -1445,6 +1440,9 @@ export function measureText(
   fontSize: number,
   fontFamily: number,
 ) {
+  //following odd error with mindmap on iPad while synchornizing with desktop.
+  if(!fontSize) fontSize = 20;
+  if(!fontFamily) fontFamily = 1;
   const line = document.createElement("div");
   const body = document.body;
   line.style.position = "absolute";

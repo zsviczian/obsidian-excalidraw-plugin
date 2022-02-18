@@ -145,3 +145,7 @@ li[data-testid] {
   font-weight: bold;
   margin-bottom: 2em;
 }
+
+.excalidraw-dirty {
+  color: red;
+}

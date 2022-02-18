@@ -942,7 +942,7 @@ export default class ExcalidrawPlugin extends Plugin {
             ea.reset();
             await ea.addLaTex(0, 0, formula);
             ea.setView(view);
-            ea.addElementsToView(true, false);
+            ea.addElementsToView(true, false, true);
           });
           return true;
         }
@@ -1295,13 +1295,14 @@ export default class ExcalidrawPlugin extends Plugin {
       self.registerEvent(self.app.vault.on("delete", deleteEventHandler));
 
       //save open drawings when user quits the application
-      const quitEventHandler = async () => {
+      //Removing because it is not guaranteed to run, and frequently gets terminated mid flight, causing file consistency issues
+      /*const quitEventHandler = async () => {
         const leaves = self.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
         for (let i = 0; i < leaves.length; i++) {
           await (leaves[i].view as ExcalidrawView).save(true);
         }
       };
-      self.registerEvent(self.app.workspace.on("quit", quitEventHandler));
+      self.registerEvent(self.app.workspace.on("quit", quitEventHandler));*/
 
       //save Excalidraw leaf and update embeds when switching to another leaf
       const activeLeafChangeEventHandler = async (leaf: WorkspaceLeaf) => {

@@ -80,7 +80,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   templateFilePath: "Excalidraw/Template.excalidraw",
   scriptFolderPath: "Excalidraw/Scripts",
   autosave: true,
-  autosaveInterval: 30000,
+  autosaveInterval: 15000,
   drawingFilenamePrefix: "Drawing ",
   drawingEmbedPrefixWithFilename: true,
   drawingFilenameDateTime: "YYYY-MM-DD HH.mm.ss",
@@ -345,6 +345,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("AUTOSAVE_INTERVAL_DESC")))
       .addDropdown(async (d: DropdownComponent) => {
         autosaveDropdown = d;
+        d.addOption("15000", "15 seconds");
         d.addOption("30000", "30 seconds");
         d.addOption("60000", "1 minute");
         d.addOption("120000", "2 minutes");
