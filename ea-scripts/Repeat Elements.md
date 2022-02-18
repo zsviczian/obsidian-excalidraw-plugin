@@ -6,7 +6,7 @@ Download this file and save to your Obsidian Vault including the first line, or 
 
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-repeat-elements.png)
 
-This script will detect the difference between 2 selected elements, including position, size, stroke and background color, and create several elements that repeat these differences based on the number of repetitions entered by the user.
+This script will detect the difference between 2 selected elements, including position, size, angle, stroke and background color, and create several elements that repeat these differences based on the number of repetitions entered by the user.
 
 See documentation for more details:
 https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html
@@ -40,6 +40,7 @@ const xDistance = selectedElements[1].x - selectedElements[0].x;
 const yDistance = selectedElements[1].y - selectedElements[0].y;
 const widthDistance = selectedElements[1].width - selectedElements[0].width;
 const heightDistance = selectedElements[1].height - selectedElements[0].height;
+const angleDistance = selectedElements[1].angle - selectedElements[0].angle;
 
 const bgColor1 = colorNameToHex(selectedElements[0].backgroundColor);
 const rgbBgColor1 = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(bgColor1);
@@ -79,6 +80,7 @@ for(let i=0; i<repeatNum; i++) {
     ea.elementsDict[newEl.id] = newEl;
     newEl.x += xDistance * (i + 1);
     newEl.y += yDistance * (i + 1);
+    newEl.angle += angleDistance * (i + 1);
     const originWidth = newEl.width;
     const originHeight = newEl.height;
     const newWidth = newEl.width + widthDistance * (i + 1);
