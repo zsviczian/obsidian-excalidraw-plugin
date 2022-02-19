@@ -5,8 +5,15 @@ Converts selected freedraw lines such that pencil pressure will decrease from ma
 
 ```javascript
 */
-const elements = ea.getViewSelectedElements().filter((el)=>["freedraw","line","arrow"].includes(el.type));
-if(elements.length === 0) return;
+let elements = ea.getViewSelectedElements().filter((el)=>["freedraw","line","arrow"].includes(el.type));
+if(elements.length === 0) {
+  elements = ea.getViewSelectedElements();
+  const len = elements.length;
+  if(len === 0 || ["freedraw","line","arrow"].includes(elements[len].type)) {
+    return;
+  }
+  elements = [elements[len]];
+} 
 elements.forEach((el)=>{
   el.simulatePressure = false;
   el.type = "freedraw";
@@ -16,5 +23,5 @@ elements.forEach((el)=>{
     el.pressures.push((len-i)/len);
 });
 ea.copyViewElementsToEAforEditing(elements);
-await ea.addElementsToView(false);
+await ea.addElementsToView(false,false);
 elements.forEach((el)=>ea.moveViewElementToZIndex(el.id,0));
