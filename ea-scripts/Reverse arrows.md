@@ -20,4 +20,4 @@ elements.forEach((el)=>{
 	el.endArrowhead = start;
 });
 ea.copyViewElementsToEAforEditing(elements);
-ea.addElementsToView();
+ea.addElementsToView(false,false);

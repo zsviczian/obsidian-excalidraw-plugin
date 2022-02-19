@@ -68,7 +68,7 @@ elements.forEach((el)=>{
   elementsToMove.push({fillId: newEl.id, shapeId: el.id});
 });
 
-await ea.addElementsToView();
+await ea.addElementsToView(false,false);
 elementsToMove.forEach((x)=>{
   const viewElements = ea.getViewElements();
   ea.moveViewElementToZIndex(

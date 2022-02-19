@@ -129,7 +129,7 @@ for(let i=0; i<repeatNum; i++) {
     }
 }
 
-await ea.addElementsToView(false, true, true);
+await ea.addElementsToView(false, false, true);
 
 function rgbToHexString(args) {
   const integer =

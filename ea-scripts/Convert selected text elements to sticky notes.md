@@ -48,4 +48,4 @@ elements.forEach((el)=>{
   el.containerId = id;
 });
 ea.copyViewElementsToEAforEditing(elements);
-ea.addElementsToView();
+ea.addElementsToView(false,false);

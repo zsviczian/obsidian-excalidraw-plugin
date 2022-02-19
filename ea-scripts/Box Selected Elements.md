@@ -52,4 +52,4 @@ id = ea.addRect(
 );
 ea.copyViewElementsToEAforEditing(elements);
 ea.addToGroup([id].concat(elements.map((el)=>el.id)));
-ea.addElementsToView(false);
+ea.addElementsToView(false,false);

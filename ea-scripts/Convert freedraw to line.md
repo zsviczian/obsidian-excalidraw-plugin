@@ -60,5 +60,5 @@ elements.forEach((el)=>{
 });
 
 ea.deleteViewElements(elements);
-await ea.addElementsToView(false,true,true);
+await ea.addElementsToView(false,false,true);
 ea.selectElementsInView(ea.getElements());

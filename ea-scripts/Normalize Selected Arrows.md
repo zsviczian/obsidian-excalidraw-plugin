@@ -25,7 +25,7 @@ for(const arrow of selectedIndividualArrows) {
 }
 
 ea.copyViewElementsToEAforEditing(selectedIndividualArrows);
-await ea.addElementsToView();
+await ea.addElementsToView(false,false);
 
 function recalculateStartPointOfLine(line, el, elB) {
 	const aX = el.x + el.width/2;

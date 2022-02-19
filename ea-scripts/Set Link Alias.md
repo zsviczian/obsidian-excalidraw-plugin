@@ -50,4 +50,4 @@ for(el of elements) { //doing for instead of .forEach due to await inputPrompt
 };
 
 ea.copyViewElementsToEAforEditing(elements);
-ea.addElementsToView();
+ea.addElementsToView(false,false);

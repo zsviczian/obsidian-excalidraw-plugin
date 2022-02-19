@@ -13,4 +13,4 @@ if(!newShape) return;
 
 elements.forEach(el=>el.type = newShape);
 ea.copyViewElementsToEAforEditing(elements);
-ea.addElementsToView();
+ea.addElementsToView(false,false);

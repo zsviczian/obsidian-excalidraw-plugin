@@ -23,5 +23,5 @@ elements.forEach((el)=>{
 	ea.addText(el.x,el.y+i*el.height/text.length,text[i]);
   }
 });
-ea.addElementsToView();
+ea.addElementsToView(false,false);
 ea.deleteViewElements(elements);

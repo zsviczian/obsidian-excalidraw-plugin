@@ -14,4 +14,4 @@ let align = ["left","right","center"];
 align = await utils.suggester(align,align);
 elements.forEach((el)=>el.textAlign = align);
 ea.copyViewElementsToEAforEditing(elements);
-ea.addElementsToView();
+ea.addElementsToView(false,false);

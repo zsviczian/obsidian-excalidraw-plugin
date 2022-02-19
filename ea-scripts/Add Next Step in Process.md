@@ -113,7 +113,7 @@ if(!isFirst) {
 	rect.backgroundColor = fromElement.backgroundColor;
   rect.fillStyle = fromElement.fillStyle;
 
-  await ea.addElementsToView(false);
+  await ea.addElementsToView(false,false);
 } else {
   id = ea.addText(
     0,
@@ -127,7 +127,7 @@ if(!isFirst) {
 		  ...fixWidth?{width: width}:null
     }
   );
-  await ea.addElementsToView(true);
+  await ea.addElementsToView(true,false);
 }
 
 ea.selectElementsInView([ea.getElement(id)]);

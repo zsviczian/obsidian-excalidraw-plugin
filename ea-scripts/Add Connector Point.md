@@ -22,4 +22,4 @@ elements.forEach((el)=>{
   );
   ea.addToGroup([el.id,ellipseId]);
 });
-ea.addElementsToView();
+ea.addElementsToView(false,false);

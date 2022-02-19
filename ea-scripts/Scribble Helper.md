@@ -21,9 +21,9 @@ if(elements.length === 1) {
   ea.getElements()[0].originalText = text;
   ea.getElements()[0].text = text;
   ea.getElements()[0].rawText = text;
-  await ea.addElementsToView(false,true);
+  await ea.addElementsToView(false,false);
   return;
 }
 
 ea.addText(0,0,text);
-await ea.addElementsToView(true, true, true);
+await ea.addElementsToView(true, false, true);

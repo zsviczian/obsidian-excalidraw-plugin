@@ -15,4 +15,4 @@ font = parseInt(await utils.suggester(font,["1","2","3"]));
 if (isNaN(font)) return;
 elements.forEach((el)=>el.fontFamily = font);
 ea.copyViewElementsToEAforEditing(elements);
-ea.addElementsToView();
+ea.addElementsToView(false,false);
