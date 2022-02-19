@@ -20,6 +20,8 @@ import ExcalidrawPlugin from "./main";
 import { JSON_parse } from "./constants";
 import { TextMode } from "./ExcalidrawView";
 import {
+  compress,
+  decompress,
   getAttachmentsFolderAndFilePath,
   //getBakPath,
   getBinaryFileFromDataURL,
@@ -86,8 +88,31 @@ export const REG_LINKINDEX_HYPERLINK = /^\w+:\/\//;
 //added \n at and of DRAWING_REG: https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/357
 const DRAWING_REG = /\n# Drawing\n[^`]*(```json\n)([\s\S]*?)```\n/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
 const DRAWING_REG_FALLBACK = /\n# Drawing\n(```json\n)?(.*)(```)?(%%)?/gm;
+const DRAWING_COMPRESSED_REG = /\n# Drawing\n[^`]*(```compressed\-json\n)([\s\S]*?)```\n/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
+const DRAWING_COMPRESSED_REG_FALLBACK = /\n# Drawing\n(```compressed\-json\n)?(.*)(```)?(%%)?/gm;
 export function getJSON(data: string): { scene: string; pos: number } {
-  let res = data.matchAll(DRAWING_REG);
+  let res;
+  if(data.match(/```compressed\-json\n/gm)) {
+    res = data.matchAll(DRAWING_COMPRESSED_REG);
+
+    //In case the user adds a text element with the contents "# Drawing\n"
+    let parts;
+    parts = res.next();
+    if (parts.done) {
+      //did not find a match
+      res = data.matchAll(DRAWING_COMPRESSED_REG_FALLBACK);
+      parts = res.next();
+    }
+    if (parts.value && parts.value.length > 1) {
+      const result = decompress(parts.value[2]);
+      return {
+        scene: result.substring(0, result.lastIndexOf("}") + 1),
+        pos: parts.value.index,
+      }; //this is a workaround in case sync merges two files together and one version is still an old version without the ```codeblock
+    }
+    return { scene: data, pos: parts.value ? parts.value.index : 0 };
+  } 
+  res = data.matchAll(DRAWING_REG);
 
   //In case the user adds a text element with the contents "# Drawing\n"
   let parts;
@@ -107,8 +132,10 @@ export function getJSON(data: string): { scene: string; pos: number } {
   return { scene: data, pos: parts.value ? parts.value.index : 0 };
 }
 
-export function getMarkdownDrawingSection(jsonString: string) {
-  return `%%\n# Drawing\n\x60\x60\x60json\n${jsonString}\n\x60\x60\x60\n%%`;
+export function getMarkdownDrawingSection(jsonString: string, compressed: boolean) {
+  return compressed
+    ? `%%\n# Drawing\n\x60\x60\x60compressed-json\n${compress(jsonString)}\n\x60\x60\x60\n%%`
+    : `%%\n# Drawing\n\x60\x60\x60json\n${jsonString}\n\x60\x60\x60\n%%`;
 }
 
 /**
@@ -372,12 +399,14 @@ export class ExcalidrawData {
     if (!file) {
       return false;
     }
+    this.loaded = false;
     this.compatibilityMode = true;
     this.file = file;
     this.textElements = new Map<
       string,
       { raw: string; parsed: string; wrapAt: number }
     >();
+    this.elementLinks = new Map<string, string>();
     this.setShowLinkBrackets();
     this.setLinkPrefix();
     this.setUrlPrefix();
@@ -394,6 +423,7 @@ export class ExcalidrawData {
     this.findNewTextElementsInScene();
     this.findNewElementLinksInScene();
     await this.setTextMode(TextMode.raw, true); //legacy files are always displayed in raw mode.
+    this.loaded = true;
     return true;
   }
 
@@ -762,6 +792,7 @@ export class ExcalidrawData {
    * Generate markdown file representation of excalidraw drawing
    * @returns markdown string
    */
+  disableCompression: boolean = false;
   generateMD(): string {
     let outString = "# Text Elements\n";
     for (const key of this.textElements.keys()) {
@@ -789,7 +820,10 @@ export class ExcalidrawData {
     outString += this.equations.size > 0 || this.files.size > 0 ? "\n" : "";
 
     const sceneJSONstring = JSON.stringify(this.scene, null, "\t");
-    return outString + getMarkdownDrawingSection(sceneJSONstring);
+    return outString + getMarkdownDrawingSection(
+      sceneJSONstring, 
+      this.disableCompression ? false: this.plugin.settings.compress
+    );
   }
 
   /**

@@ -446,6 +446,36 @@ export const EXCALIDRAW_AUTOMATE_INFO:SuggestorInfo[] = [
     desc: "Moves the element to a specific position in the z-index",
     after: "",
   },
+  {
+    field: "hexStringToRgb",
+    code: "hexStringToRgb(color: string):number[];",
+    desc: "Converts a HEX color to an RGB number array. #FF0000 to [255,0,0]",
+    after: "",
+  },
+  {
+    field: "rgbToHexString",
+    code: "rgbToHexString(color: number[]):string;",
+    desc: "Converts an RGB number array to a HEX string. [255,0,0] to #FF0000",
+    after: "",
+  },
+  {
+    field: "hslToRgb",
+    code: "hslToRgb(color: number[]):number[];",
+    desc: "Converts an HSL number array to an RGB number array. [0,100,50] to [255,0,0]",
+    after: "",
+  },
+  {
+    field: "rgbToHsl",
+    code: "rgbToHsl(color:number[]):number[];",
+    desc: "Converts an RGB number array to an HSL number array. [255,0,0] to [0,100,50]",
+    after: "",
+  },
+  {
+    field: "colorNameToHex",
+    code: "colorNameToHex(color:string):string;",
+    desc: "Converts a CSS color name to its HEX color equivalent. 'White' to #FFFFFF",
+    after: "",
+  },
 ];
 
 export const EXCALIDRAW_SCRIPTENGINE_INFO:SuggestorInfo[] = [

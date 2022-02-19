@@ -21,6 +21,7 @@ import {
 import ExcalidrawPlugin from "./main";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
 import { ExportSettings } from "./ExcalidrawView";
+import { compressToBase64, decompressFromBase64 } from "lz-string";
 
 declare module "obsidian" {
   interface Workspace {
@@ -548,6 +549,14 @@ export const getLinkParts = (fname: string): LinkParts => {
     width: parts[4] ? parseInt(parts[4]) : undefined,
     height: parts[5] ? parseInt(parts[5]) : undefined,
   };
+};
+
+export const compress = (data:string):string => {
+  return compressToBase64(data).replace(/(.{1024})/g, "$1\n");
+};
+
+export const decompress = (data:string):string => {
+  return decompressFromBase64(data.replaceAll("\n","").replaceAll("\r",""));
 };
 
 export const errorlog = (data: {}) => {

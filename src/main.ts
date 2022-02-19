@@ -1539,7 +1539,7 @@ export default class ExcalidrawPlugin extends Plugin {
       this.settings.matchTheme && isObsidianThemeDark()
         ? DARK_BLANK_DRAWING
         : BLANK_DRAWING;
-    return `${FRONTMATTER}\n${getMarkdownDrawingSection(blank)}`;
+    return `${FRONTMATTER}\n${getMarkdownDrawingSection(blank,this.settings.compress)}`;
   }
 
   /**
@@ -1570,7 +1570,7 @@ export default class ExcalidrawPlugin extends Plugin {
     }
     return (
       outString +
-      getMarkdownDrawingSection(JSON.stringify(JSON_parse(data), null, "\t"))
+      getMarkdownDrawingSection(JSON.stringify(JSON_parse(data), null, "\t"),this.settings.compress)
     );
   }
 

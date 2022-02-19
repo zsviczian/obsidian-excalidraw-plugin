@@ -16,6 +16,7 @@ export interface ExcalidrawSettings {
   embedUseExcalidrawFolder: boolean;
   templateFilePath: string;
   scriptFolderPath: string;
+  compress: boolean;
   autosave: boolean;
   autosaveInterval: number;
   drawingFilenamePrefix: string;
@@ -79,6 +80,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   embedUseExcalidrawFolder: false,
   templateFilePath: "Excalidraw/Template.excalidraw",
   scriptFolderPath: "Excalidraw/Scripts",
+  compress: false,
   autosave: true,
   autosaveInterval: 15000,
   drawingFilenamePrefix: "Drawing ",
@@ -257,6 +259,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.scriptFolderPath)
           .onChange(async (value) => {
             this.plugin.settings.scriptFolderPath = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(containerEl)
+      .setName(t("COMPRESS_NAME"))
+      .setDesc(fragWithHTML(t("COMPRESS_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.compress)
+          .onChange(async (value) => {
+            this.plugin.settings.compress = value;
             this.applySettingsUpdate();
           }),
       );

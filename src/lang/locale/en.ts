@@ -64,7 +64,7 @@ export default {
   FILE_DOES_NOT_EXIST:
     "File does not exist. Hold down ALT (or ALT+SHIFT) and CLICK link button to create a new file.",
   FORCE_SAVE:
-    "Force-save to update transclusions in adjacent panes.\n(Please note, that autosave is always on)",
+    "Force-save to update transclusions in adjacent panes.\n(Check autosave settings in plugin settings.)",
   RAW: "Change to PREVIEW mode (only effects text-elements with links or transclusions)",
   PARSED:
     "Change to RAW mode (only effects text-elements with links or transclusions)",
@@ -96,6 +96,16 @@ export default {
     "You can access your scripts from Excalidraw via the Obsidian Command Palette. Assign " +
     "hotkeys to your favorite scripts just like to any other Obsidian command. " +
     "The folder may not be the root folder of your Vault. ",
+  COMPRESS_NAME: "Compress Excalidraw JSON in Markdown",
+  COMPRESS_DESC: "By enabling this feature Excalidraw will store the drawing JSON in a Base64 compressed " +
+    "format using the <a href='https://pieroxy.net/blog/pages/lz-string/index.html'>LZ-String</a> algorithm. " +
+    "This will reduce the chance of Excalidraw JSON cluttering your search results in Obsidian. " +
+    "As a side effect, this will also reduce the filesize of Excalidraw drawings. " + 
+    "When you switch an Excalidraw drawing to Markdown view, using the options menu in Excalidraw, the file will " +
+    "be saved without compression, so that you can read and edit the JSON string. The drawing will be compressed again " +
+    "once you switch back to Excalidraw view. " +
+    "The setting only has effect 'point forward', meaning, existing drawings will not be effected by the setting " +
+    "until you open them and save them. ",
   AUTOSAVE_NAME: "Enable Autosave",
   AUTOSAVE_DESC:
     "Automatically save the active drawing, in case there are changes, every 15, 30 seconds, or 1, 2, 3, 4, or 5 minute. Save normally happens when you close Excalidraw or Obsidian, or move " +

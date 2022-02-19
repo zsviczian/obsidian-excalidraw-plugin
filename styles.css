@@ -149,3 +149,7 @@ li[data-testid] {
 .excalidraw-dirty {
   color: red;
 }
+
+.workspace-leaf-content .excalidraw-view {
+  padding: 0px 1px; /*1px so on ipad swipe in from left and right still works*/
+}

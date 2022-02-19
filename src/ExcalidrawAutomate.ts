@@ -15,6 +15,7 @@ import {
   VIEW_TYPE_EXCALIDRAW,
   MAX_IMAGE_SIZE,
   PLUGIN_ID,
+  COLOR_NAMES,
 } from "./constants";
 import {
   //debug,
@@ -36,7 +37,6 @@ import {
   getMaximumGroups,
   intersectElementWithLine,
 } from "@zsviczian/excalidraw";
-import { stringify } from "querystring";
 
 declare type ConnectionPoint = "top" | "bottom" | "left" | "right" | null;
 const GAP = 4;
@@ -234,6 +234,11 @@ export interface ExcalidrawAutomate {
   generateElementId(): string; //returns an 8 character long random id
   cloneElement(element: ExcalidrawElement): ExcalidrawElement; //Returns a clone of the element with a new id
   moveViewElementToZIndex(elementId:number, newZIndex:number): void; //Moves the element to a specific position in the z-index
+  hexStringToRgb(color: string):number[];
+  rgbToHexString(color: number[]):string;
+  hslToRgb(color: number[]):number[];
+  rgbToHsl(color:number[]):number[];  
+  colorNameToHex(color:string):string;
 }
 
 declare let window: any;
@@ -1348,6 +1353,108 @@ export async function initExcalidrawAutomate(
         elements: elements,
         commitToHistory: true,
       });
+    },
+    hexStringToRgb(color: string):number[] {
+      const res = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(color);
+      return [parseInt(res[1], 16), parseInt(res[2], 16), parseInt(res[3], 16)];
+    },
+    rgbToHexString(color: number[]):string {
+      const colorInt =
+        ((Math.round(color[0]) & 0xff) << 16) +
+        ((Math.round(color[1]) & 0xff) << 8) +
+        (Math.round(color[2]) & 0xff);
+      const colorStr = colorInt.toString(16).toLowerCase();
+      return "#"+"000000".substring(colorStr.length) + colorStr;
+    },
+    hslToRgb(color: number[]):number[] {
+      const h = color[0] / 360;
+      const s = color[1] / 100;
+      const l = color[2] / 100;
+      let t2;
+      let t3;
+      let val;
+
+      if (s === 0) {
+        val = l * 255;
+        return [val, val, val];
+      }
+
+      if (l < 0.5) {
+        t2 = l * (1 + s);
+      } else {
+        t2 = l + s - l * s;
+      }
+
+      const t1 = 2 * l - t2;
+
+      const rgb = [0, 0, 0];
+      for (let i = 0; i < 3; i++) {
+        t3 = h + (1 / 3) * -(i - 1);
+        if (t3 < 0) {
+          t3++;
+        }
+
+        if (t3 > 1) {
+          t3--;
+        }
+
+        if (6 * t3 < 1) {
+          val = t1 + (t2 - t1) * 6 * t3;
+        } else if (2 * t3 < 1) {
+          val = t2;
+        } else if (3 * t3 < 2) {
+          val = t1 + (t2 - t1) * (2 / 3 - t3) * 6;
+        } else {
+          val = t1;
+        }
+
+        rgb[i] = val * 255;
+      }
+      return rgb;
+    },
+    rgbToHsl(color:number[]):number[] {
+      const r = color[0] / 255;
+      const g = color[1] / 255;
+      const b = color[2] / 255;
+      const min = Math.min(r, g, b);
+      const max = Math.max(r, g, b);
+      const delta = max - min;
+      let h;
+      let s;
+
+      if (max === min) {
+        h = 0;
+      } else if (r === max) {
+        h = (g - b) / delta;
+      } else if (g === max) {
+        h = 2 + (b - r) / delta;
+      } else if (b === max) {
+        h = 4 + (r - g) / delta;
+      }
+
+      h = Math.min(h * 60, 360);
+
+      if (h < 0) {
+        h += 360;
+      }
+
+      const l = (min + max) / 2;
+
+      if (max === min) {
+        s = 0;
+      } else if (l <= 0.5) {
+        s = delta / (max + min);
+      } else {
+        s = delta / (2 - max - min);
+      }
+
+      return [h, s * 100, l * 100];
+    },
+    colorNameToHex(color:string):string {    
+      if (COLOR_NAMES.has(color.toLowerCase().trim())) {
+        return COLOR_NAMES.get(color.toLowerCase().trim());
+      }
+      return color.trim();
     }
   };
   await initFonts();

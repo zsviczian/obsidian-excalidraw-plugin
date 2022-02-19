@@ -6,6 +6,7 @@ import {
   WorkspaceItem,
   Notice,
   Menu,
+  MarkdownView,
 } from "obsidian";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -258,7 +259,7 @@ export default class ExcalidrawView extends TextFileView {
   //- by monkeypatches on detach(next)
   //This semaphore helps avoid collision of saves
   private preventSave:boolean = false; //this.saving is taken by Obsidian. When I set this, nothing got saved at all.
-  async save(preventReload: boolean = true) {
+  async save(preventReload: boolean = true, forcesave: boolean = false) {
     if(this.preventSave) {
       return;
     }
@@ -278,7 +279,7 @@ export default class ExcalidrawView extends TextFileView {
     }
 
     this.preventReload = preventReload;
-    const allowSave = (this.dirty !== null && this.dirty) || this.autosaving; //dirty == false when view.file == null;
+    const allowSave = (this.dirty !== null && this.dirty) || this.autosaving || forcesave; //dirty == false when view.file == null;
     this.dirty = null;
     const scene = this.getScene();
 
@@ -365,8 +366,12 @@ export default class ExcalidrawView extends TextFileView {
         header = header.replace(REG_IMG, "$1");
       }
       //end of remove
-
-      return header + this.excalidrawData.generateMD();
+      if(!this.excalidrawData.disableCompression) {
+        this.excalidrawData.disableCompression = this.isEditedAsMarkdownInOtherView();
+      }
+      const reuslt = header + this.excalidrawData.generateMD();
+      this.excalidrawData.disableCompression = false;
+      return reuslt;
     }
     if (this.compatibilityMode) {
       return JSON.stringify(scene, null, "\t");
@@ -610,7 +615,7 @@ export default class ExcalidrawView extends TextFileView {
     });
 
     this.diskIcon = this.addAction(DISK_ICON_NAME, t("FORCE_SAVE"), async () => {
-      await this.save(false);
+      await this.save(false, true);
       this.plugin.triggerEmbedUpdates();
       this.loadSceneFiles();
     });
@@ -659,6 +664,7 @@ export default class ExcalidrawView extends TextFileView {
       );
     }
     this.setupAutosaveTimer();
+    this.contentEl.addClass("excalidraw-view");
   }
 
   public setTheme(theme: string) {
@@ -695,7 +701,9 @@ export default class ExcalidrawView extends TextFileView {
 
   public setupAutosaveTimer() {
     const timer = async () => {
-      if (this.dirty && 
+      if (
+        this.isLoaded &&
+        this.dirty && 
         this.dirty == this.file?.path &&
         this.plugin.settings.autosave
       ) {
@@ -747,7 +755,8 @@ export default class ExcalidrawView extends TextFileView {
     if (!this.file) {
       return;
     }
-    if (file) {
+    const loadOnModifyTrigger = (file && file === this.file);
+    if (loadOnModifyTrigger) {
       this.data = await this.app.vault.cachedRead(file);
     }
     if (fullreload) {
@@ -757,7 +766,7 @@ export default class ExcalidrawView extends TextFileView {
     }
     this.excalidrawData.scene.appState.theme =
       this.excalidrawAPI.getAppState().theme;
-    await this.loadDrawing(false);
+    await this.loadDrawing(loadOnModifyTrigger);
     this.dirty = null;
   }
 
@@ -783,8 +792,6 @@ export default class ExcalidrawView extends TextFileView {
     }
     data = this.data = data.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
     this.app.workspace.onLayoutReady(async () => {
-      this.dirty = null;
-      this.diskIcon.querySelector("svg").removeClass("excalidraw-dirty");
       this.compatibilityMode = this.file.extension === "excalidraw";
       await this.plugin.loadSettings();
       if (this.compatibilityMode) {
@@ -794,7 +801,9 @@ export default class ExcalidrawView extends TextFileView {
         if (!this.plugin.settings.compatibilityMode) {
           new Notice(t("COMPATIBILITY_MODE"), 4000);
         }
+        this.excalidrawData.disableCompression = true;
       } else {
+        this.excalidrawData.disableCompression = false;
         const textMode = getTextMode(data);
         this.changeTextMode(textMode, false);
         try {
@@ -864,6 +873,7 @@ export default class ExcalidrawView extends TextFileView {
     }, 500);
   }
 
+  initialContainerSizeUpdate = false;
   /**
    *
    * @param justloaded - a flag to trigger zoom to fit after the drawing has been loaded
@@ -871,6 +881,9 @@ export default class ExcalidrawView extends TextFileView {
   private async loadDrawing(justloaded: boolean) {
     const excalidrawData = this.excalidrawData.scene;
     this.justLoaded = justloaded;
+    this.initialContainerSizeUpdate =justloaded;
+    this.dirty = null;
+    this.diskIcon.querySelector("svg").removeClass("excalidraw-dirty");
     const om = this.excalidrawData.getOpenMode();
     this.preventReload = false;
     if (this.excalidrawRef) {
@@ -922,6 +935,24 @@ export default class ExcalidrawView extends TextFileView {
       });
       //files are loaded on excalidrawRef readyPromise
     }
+    const isCompressed = this.data.match(/```compressed\-json\n/gm) !== null;
+
+    if(
+      !this.compatibilityMode && 
+      (this.plugin.settings.compress !== isCompressed) &&
+      !this.isEditedAsMarkdownInOtherView()
+    ) {
+      this.dirty = this.file?.path;
+      this.diskIcon.querySelector("svg").addClass("excalidraw-dirty");
+    }
+  }
+
+  isEditedAsMarkdownInOtherView():boolean {
+    //if the user is editing the same file in markdown mode, do not compress it
+    const leaves = this.app.workspace.getLeavesOfType("markdown");
+    return leaves
+      .filter(leaf => (leaf.view as MarkdownView).file === this.file)
+      .length > 0;
   }
 
   //Compatibility mode with .excalidraw files
@@ -961,6 +992,10 @@ export default class ExcalidrawView extends TextFileView {
             .setTitle(t("OPEN_AS_MD"))
             .setIcon("document")
             .onClick(async () => {
+              if(this.plugin.settings.compress === true) {
+                this.excalidrawData.disableCompression = true;
+                await this.save(true,true);
+              }
               this.setMarkdownView();
             });
         })
@@ -1814,7 +1849,10 @@ export default class ExcalidrawView extends TextFileView {
               st.editingLinearElement === null
             ) {
               const sceneVersion = getSceneVersion(et);
-              if (sceneVersion !== this.previousSceneVersion) {
+              if (
+                sceneVersion > 0 &&
+                sceneVersion !== this.previousSceneVersion
+              ) {
                 this.previousSceneVersion = sceneVersion;
                 this.dirty = this.file?.path;
                 this.diskIcon.querySelector("svg").addClass("excalidraw-dirty");
@@ -2185,7 +2223,13 @@ export default class ExcalidrawView extends TextFileView {
             .filter((el: ExcalidrawElement) =>
               el.boundElements?.map((e) => e.type).includes("text"),
             );
-      api.updateContainerSize(containers);
+      if(containers.length > 0) {
+        if(this.initialContainerSizeUpdate) { //updateContainerSize will bump scene version which will trigger a false autosave
+          this.justLoaded = true;             //after load, which will lead to a ping-pong between two syncronizing devices
+        }
+        api.updateContainerSize(containers);
+      }
+      this.initialContainerSizeUpdate = false;
     };
     if (delay) {
       setTimeout(() => update(), 50);

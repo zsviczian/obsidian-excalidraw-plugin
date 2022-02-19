@@ -1748,6 +1748,11 @@
   "resolved" "https://registry.npmjs.org/@types/json5/-/json5-0.0.29.tgz"
   "version" "0.0.29"
 
+"@types/lz-string@^1.3.34":
+  "integrity" "sha512-j6G1e8DULJx3ONf6NdR5JiR2ZY3K3PaaqiEuKYkLQO0Czfi1AzrtjfnfCROyWGeDd5IVMKCwsgSmMip9OWijow=="
+  "resolved" "https://registry.npmjs.org/@types/lz-string/-/lz-string-1.3.34.tgz"
+  "version" "1.3.34"
+
 "@types/mime@^1":
   "integrity" "sha512-YATxVxgRqNH6nHEIsvg6k2Boc1JHI9ZbH5iWFFv/MTkchz3b1ieGDa5T0a9RznNdI0KhVbdbWSN+KWWrQZRxTw=="
   "resolved" "https://registry.npmjs.org/@types/mime/-/mime-1.3.2.tgz"
@@ -5865,6 +5870,11 @@
   "version" "6.0.0"
   dependencies:
     "yallist" "^4.0.0"
+
+"lz-string@^1.4.4":
+  "integrity" "sha1-wNjq82BZ9wV5bh40SBHPTEmNOiY="
+  "resolved" "https://registry.npmjs.org/lz-string/-/lz-string-1.4.4.tgz"
+  "version" "1.4.4"
 
 "magic-string@^0.25.0", "magic-string@^0.25.7":
   "integrity" "sha512-4CrMT5DOHTDk4HYDlzmwu4FVCcIYI8gauveasrdCu2IKIFOJ3f0v/8MDGJCDL9oD2ppz/Av1b0Nj345H9M+XIA=="

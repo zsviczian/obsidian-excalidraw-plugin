@@ -195,6 +195,12 @@ export interface ExcalidrawAutomate {
   selectElementsInView(elements: ExcalidrawElement[]): void; //sets selection in view
   generateElementId(): string; //returns an 8 character long random id
   cloneElement(element: ExcalidrawElement): ExcalidrawElement; //Returns a clone of the element with a new id
+  moveViewElementToZIndex(elementId:number, newZIndex:number): void; //Moves the element to a specific position in the z-index
+  hexStringToRgb(color: string):number[];
+  rgbToHexString(color: number[]):string;
+  hslToRgb(color: number[]):number[];
+  rgbToHsl(color:number[]):number[];  
+  colorNameToHex(color:string):string;
 }
 ```
 
