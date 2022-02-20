@@ -45,6 +45,7 @@ export default {
     "Insert LaTeX formula (e.g. \\binom{n}{k} = \\frac{n!}{k!(n-k)!})",
   ENTER_LATEX: "Enter a valid LaTeX expression",
   TRAY_MODE: "Toggle property-panel tray-mode",
+  SEARCH: "Search for text in drawing",
 
   //ExcalidrawView.ts
   INSTALL_SCRIPT_BUTTON: "Install or update Excalidraw Scripts",
@@ -256,6 +257,8 @@ export default {
     "or a PNG or an SVG copy. You need to enable auto-export PNG / SVG (see below under Export Settings) for those image types to be available in the dropdown. For drawings that do not have a " +
     "a corresponding PNG or SVG readily available the command palette action will insert a broken link. You need to open the original drawing and initiate export manually. " +
     "This option will not autogenerate PNG/SVG files, but will simply reference the already existing files.",
+  EMBED_WIKILINK_NAME: "Embed SVG or PNG as Wiki link",
+  EMBED_WIKILINK_DESC: "Toggle ON: Excalidraw will embed a [[wiki link]]. Toggle OFF: Excalidraw will embed a [markdown](link).",
   EXPORT_PNG_SCALE_NAME: "PNG export image scale",
   EXPORT_PNG_SCALE_DESC: "The size-scale of the exported PNG image",
   EXPORT_BACKGROUND_NAME: "Export image with background",

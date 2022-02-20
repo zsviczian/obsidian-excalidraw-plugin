@@ -83,28 +83,58 @@ export const REGEX_LINK = {
   },
 };
 
-export const REG_LINKINDEX_HYPERLINK = /^\w+:\/\//;
-
 //added \n at and of DRAWING_REG: https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/357
 const DRAWING_REG = /\n# Drawing\n[^`]*(```json\n)([\s\S]*?)```\n/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
 const DRAWING_REG_FALLBACK = /\n# Drawing\n(```json\n)?(.*)(```)?(%%)?/gm;
-const DRAWING_COMPRESSED_REG = /\n# Drawing\n[^`]*(```compressed\-json\n)([\s\S]*?)```\n/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
-const DRAWING_COMPRESSED_REG_FALLBACK = /\n# Drawing\n(```compressed\-json\n)?(.*)(```)?(%%)?/gm;
+const DRAWING_COMPRESSED_REG = /(\n# Drawing\n[^`]*(?:```compressed\-json\n))([\s\S]*?)(```\n)/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
+const DRAWING_COMPRESSED_REG_FALLBACK = /(\n# Drawing\n(?:```compressed\-json\n)?)(.*)((```)?(%%)?)/gm;
+export const REG_LINKINDEX_HYPERLINK = /^\w+:\/\//;
+
+const isCompressedMD = (data:string):boolean => {
+  return data.match(/```compressed\-json\n/gm) !== null;
+}
+
+const getDecompressedScene = (data:string):[string,IteratorResult<RegExpMatchArray, any>] => {
+  let res = data.matchAll(DRAWING_COMPRESSED_REG);
+
+  //In case the user adds a text element with the contents "# Drawing\n"
+  let parts;
+  parts = res.next();
+  if (parts.done) {
+    //did not find a match
+    res = data.matchAll(DRAWING_COMPRESSED_REG_FALLBACK);
+    parts = res.next();
+  }
+  if (parts.value && parts.value.length > 1) {
+    return [decompress(parts.value[2]),parts];
+  }
+  return [null,parts];
+} 
+
+export const changeThemeOfExcalidrawMD = (data:string):string => {
+  const compressed = isCompressedMD(data);
+  let scene = compressed ? getDecompressedScene(data)[0] : data;
+  if(!scene) return data;
+  if(isObsidianThemeDark) {
+    if((scene.match(/"theme"\s*:\s*"light"\s*,/g)||[]).length === 1) {
+      scene = scene.replace(/"theme"\s*:\s*"light"\s*,/,`"theme": "dark",`);
+    }
+  } else {
+    if((scene.match(/"theme"\s*:\s*"dark"\s*,/g)||[]).length === 1) {
+      scene = scene.replace(/"theme"\s*:\s*"dark"\s*,/,`"theme": "light",`);
+    }
+  }
+  if(compressed) {
+    return data.replace(DRAWING_COMPRESSED_REG,`$1${compress(scene)}$3`);
+  }
+  return scene;
+}
+
 export function getJSON(data: string): { scene: string; pos: number } {
   let res;
-  if(data.match(/```compressed\-json\n/gm)) {
-    res = data.matchAll(DRAWING_COMPRESSED_REG);
-
-    //In case the user adds a text element with the contents "# Drawing\n"
-    let parts;
-    parts = res.next();
-    if (parts.done) {
-      //did not find a match
-      res = data.matchAll(DRAWING_COMPRESSED_REG_FALLBACK);
-      parts = res.next();
-    }
-    if (parts.value && parts.value.length > 1) {
-      const result = decompress(parts.value[2]);
+  if(isCompressedMD(data)) {
+    const [result,parts] = getDecompressedScene(data);
+    if(result) {
       return {
         scene: result.substring(0, result.lastIndexOf("}") + 1),
         pos: parts.value.index,

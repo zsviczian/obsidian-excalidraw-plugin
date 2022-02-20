@@ -146,6 +146,7 @@ export default class ExcalidrawView extends TextFileView {
   public excalidrawAPI: any = null;
   public excalidrawWrapperRef: React.MutableRefObject<any> = null;
   private justLoaded: boolean = false;
+  private preventAutozoomOnLoad: boolean = false;
   private plugin: ExcalidrawPlugin;
   private dirty: string = null;
   public autosaveTimer: any = null;
@@ -693,7 +694,7 @@ export default class ExcalidrawView extends TextFileView {
       this.textIsParsed_Element.hide();
     }
     if (reload) {
-      await this.save(false);
+      await this.save(false,true);
       this.updateContainerSize();
       this.excalidrawAPI.history.clear(); //to avoid undo replacing links with parsed text
     }
@@ -758,6 +759,7 @@ export default class ExcalidrawView extends TextFileView {
     const loadOnModifyTrigger = (file && file === this.file);
     if (loadOnModifyTrigger) {
       this.data = await this.app.vault.cachedRead(file);
+      this.preventAutozoomOnLoad = true;
     }
     if (fullreload) {
       await this.excalidrawData.loadData(this.data, this.file, this.textMode);
@@ -1837,7 +1839,8 @@ export default class ExcalidrawView extends TextFileView {
             viewModeEnabled = st.viewModeEnabled;
             if (this.justLoaded) {
               this.justLoaded = false;
-              this.zoomToFit(false);
+              if(!this.preventAutozoomOnLoad) this.zoomToFit(false);
+              this.preventAutozoomOnLoad = false;
               this.previousSceneVersion = getSceneVersion(et);
               return;
             }

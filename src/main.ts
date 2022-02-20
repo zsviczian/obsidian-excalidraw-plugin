@@ -15,6 +15,8 @@ import {
   loadMathJax,
   Scope,
   request,
+  MetadataCache,
+  FrontMatterCache,
 } from "obsidian";
 import {
   BLANK_DRAWING,
@@ -42,7 +44,7 @@ import {
   VIRGIL_DATAURL,
 } from "./constants";
 import ExcalidrawView, { TextMode } from "./ExcalidrawView";
-import { getMarkdownDrawingSection } from "./ExcalidrawData";
+import { changeThemeOfExcalidrawMD, getMarkdownDrawingSection } from "./ExcalidrawData";
 import {
   ExcalidrawSettings,
   DEFAULT_SETTINGS,
@@ -97,6 +99,7 @@ declare module "obsidian" {
 }
 
 export default class ExcalidrawPlugin extends Plugin {
+  private excalidrawFiles: Set<TFile> = new Set<TFile>();
   public excalidrawFileModes: { [file: string]: string } = {};
   private _loaded: boolean = false;
   public settings: ExcalidrawSettings;
@@ -758,6 +761,55 @@ export default class ExcalidrawPlugin extends Plugin {
     });
 
     this.addCommand({
+      id: "search-text",
+      name: t("SEARCH"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return (
+            this.app.workspace.activeLeaf.view.getViewType() ===
+            VIEW_TYPE_EXCALIDRAW
+          );
+        }
+        const view = this.app.workspace.activeLeaf.view;
+        if (view instanceof ExcalidrawView) {
+          (async ()=>{
+            const ea = this.ea;
+            ea.reset();
+            ea.setView(view);
+            const elements = ea.getViewElements().filter(el=>el.type==="text");
+            if(elements.length === 0) return;
+            let text = await ScriptEngine.inputPrompt(this.app,"Search for","use quotation marks for exact match","");
+            if(!text) return;
+            const res = text.matchAll(/"(.*?)"/g)
+            let query:string[] = [];
+            let parts;
+            while (!(parts = res.next()).done) {
+              query.push(parts.value[1]);
+            }
+            text = text.replaceAll(/"(.*?)"/g, "");
+            query = query.concat(text.split(" ").filter(s=>s.length!==0));
+            const match = elements
+              .filter((el:any)=>query
+                .some(q=>el
+                  .rawText
+                  .toLowerCase()
+                  .replaceAll("\n"," ")
+                  .match(q.toLowerCase())
+              ));
+            if(match.length === 0) {
+              new Notice("I could not find a matching text element");
+              return;
+            }
+            ea.selectElementsInView(match);
+            ea.getExcalidrawAPI().zoomToFit(match,this.settings.zoomToFitMaxLevel,0.05);
+          })();
+          return true;
+        }
+        return false;
+      },
+    });
+
+    this.addCommand({
       id: "export-png",
       name: t("EXPORT_PNG"),
       checkCallback: (checking: boolean) => {
@@ -1253,14 +1305,9 @@ export default class ExcalidrawPlugin extends Plugin {
         if (!(file instanceof TFile)) {
           return;
         }
-        const isExcalidarwFile =
-          //@ts-ignore
-          (file.unsafeCachedData &&
-            //@ts-ignore
-            file.unsafeCachedData.search(
-              /---[\r\n]+[\s\S]*excalidraw-plugin:\s*\w+[\r\n]+[\s\S]*---/gm,
-            ) > -1) ||
-          file.extension == "excalidraw";
+
+        const isExcalidarwFile = this.excalidrawFiles.has(file);
+        this.updateFileCache(file,undefined,true);
         if (!isExcalidarwFile) {
           return;
         }
@@ -1373,7 +1420,34 @@ export default class ExcalidrawPlugin extends Plugin {
           activeLeafChangeEventHandler,
         ),
       );
+      
+      const metaCache:MetadataCache = self.app.metadataCache;
+      //@ts-ignore
+      metaCache.getCachedFiles().forEach((filename:string) => {
+        const fm = metaCache.getCache(filename)?.frontmatter;
+        if ((fm && Object.keys(fm).contains(FRONTMATTER_KEY)) ||
+          filename.match(/\.excalidraw$/)
+        ) {
+          self.updateFileCache(
+            self.app.vault.getAbstractFileByPath(filename) as TFile, fm
+          );
+        }
+      });
+      this.registerEvent(metaCache.on("changed", (file, data, cache) => this.updateFileCache(file, cache?.frontmatter)));
     });
+  }
+
+  updateFileCache(file: TFile, frontmatter?: FrontMatterCache, deleted: boolean = false) {
+    if(frontmatter) {
+      const isExcalidrawFile = Object.keys(frontmatter).contains(FRONTMATTER_KEY);
+      this.excalidrawFiles.add(file);
+      return;
+    }
+    if(!deleted && file.extension==="excalidraw") {
+      this.excalidrawFiles.add(file);
+      return;
+    }
+    this.excalidrawFiles.delete(file);
   }
 
   onunload() {
@@ -1413,7 +1487,8 @@ export default class ExcalidrawPlugin extends Plugin {
       )
       const editor = activeView.editor;
       if (this.settings.embedType === "excalidraw") {
-        editor.replaceSelection(`![[${data}]]`);
+        editor.replaceSelection(this.settings.embedWikiLink
+          ? `![[${data}]]` : `![](${encodeURI(data)})`);
         editor.focus();
         return;
       }
@@ -1425,11 +1500,15 @@ export default class ExcalidrawPlugin extends Plugin {
         file.path,"."+this.settings.embedType.toLowerCase()
       );
      
-      await this.app.vault.create(filepath, "");
-      //await sleep(200);
-
+      const imgFile = this.app.vault.getAbstractFileByPath(filepath);
+      if(!imgFile) {
+        await this.app.vault.create(filepath, "");
+        await sleep(200);
+      }
       editor.replaceSelection(
-        `![[${filename}]]\n%%[[${data}|🖋 Edit in Excalidraw]]%%`,
+        this.settings.embedWikiLink
+        ? `![[${filename}]]\n%%[[${data}|🖋 Edit in Excalidraw]]%%`
+        : `![](${encodeURI(filename)})\n%%[🖋 Edit in Excalidraw](${encodeURI(data)})%%`,
       );
       editor.focus();
     }
@@ -1515,18 +1594,7 @@ export default class ExcalidrawPlugin extends Plugin {
       ) {
         let data = await this.app.vault.read(template);
         if (data) {
-          if(this.settings.matchTheme) {
-            if(isObsidianThemeDark) {
-              if((data.match(/"theme"\s*:\s*"light"\s*,/g)||[]).length === 1) {
-                data = data.replace(/"theme"\s*:\s*"light"\s*,/,`"theme": "dark",`);
-              }
-            } else {
-              if((data.match(/"theme"\s*:\s*"dark"\s*,/g)||[]).length === 1) {
-                data = data.replace(/"theme"\s*:\s*"dark"\s*,/,`"theme": "light",`);
-              }
-            }
-          }
-          return data;
+          return this.settings.matchTheme ? changeThemeOfExcalidrawMD(data) : data;
         }
       }
     }
@@ -1634,4 +1702,5 @@ export default class ExcalidrawPlugin extends Plugin {
     const fileCache = f ? this.app.metadataCache.getFileCache(f) : null;
     return !!fileCache?.frontmatter && !!fileCache.frontmatter[FRONTMATTER_KEY];
   }
+
 }

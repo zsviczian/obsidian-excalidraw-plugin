@@ -50,6 +50,7 @@ export interface ExcalidrawSettings {
   autoexportPNG: boolean;
   autoexportExcalidraw: boolean;
   embedType: "excalidraw" | "PNG" | "SVG";
+  embedWikiLink: boolean,
   syncExcalidraw: boolean;
   compatibilityMode: boolean;
   experimentalFileType: boolean;
@@ -114,6 +115,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   autoexportPNG: false,
   autoexportExcalidraw: false,
   embedType: "excalidraw",
+  embedWikiLink: true,
   syncExcalidraw: false,
   experimentalFileType: false,
   experimentalFileTag: "✏️",
@@ -789,6 +791,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           });
       });
 
+    new Setting(containerEl)
+      .setName(t("EMBED_WIKILINK_NAME"))
+      .setDesc(fragWithHTML(t("EMBED_WIKILINK_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.embedWikiLink)
+          .onChange(async (value) => {
+            this.plugin.settings.embedWikiLink = value;
+            this.applySettingsUpdate();
+          }),
+      );
+      
     let scaleText: HTMLDivElement;
 
     new Setting(containerEl)
