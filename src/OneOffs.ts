@@ -12,6 +12,7 @@ export class OneOffs {
     this.plugin = plugin;
   }
 
+  /*
   public patchCommentBlock() {
     //This is a once off cleanup process to remediate incorrectly placed comment %% before # Text Elements
     if (!this.plugin.settings.patchCommentBlock) {
@@ -368,4 +369,5 @@ class ImageElementNotice extends Modal {
       };
     });
   }
+  */
 }

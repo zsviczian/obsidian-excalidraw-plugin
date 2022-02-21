@@ -74,6 +74,8 @@ export interface ExcalidrawSettings {
   mdCSS: string;
   scriptEngineSettings: {};
   defaultTrayMode: boolean;
+  previousRelease: string;
+  showReleaseNotes: boolean;
 }
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
@@ -144,6 +146,8 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   mdCSS: "",
   scriptEngineSettings: {},
   defaultTrayMode: false,
+  previousRelease: "1.6.13",
+  showReleaseNotes: true,
 };
 
 const fragWithHTML = (html: string) =>
@@ -213,6 +217,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       },
     });
     coffeeImg.height = 45;
+
+    new Setting(containerEl)
+    .setName(t("RELEASE_NOTES_NAME"))
+    .setDesc(fragWithHTML(t("RELEASE_NOTES_DESC")))
+    .addToggle((toggle) =>
+      toggle
+        .setValue(this.plugin.settings.showReleaseNotes)
+        .onChange(async (value) => {
+          this.plugin.settings.showReleaseNotes = value;
+          this.applySettingsUpdate();
+        }),
+    );
 
     new Setting(containerEl)
       .setName(t("FOLDER_NAME"))
@@ -802,7 +818,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
-      
+
     let scaleText: HTMLDivElement;
 
     new Setting(containerEl)

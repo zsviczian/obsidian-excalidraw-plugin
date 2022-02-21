@@ -75,6 +75,9 @@ export default {
   CONVERT_FILE: "Convert to new format",
 
   //settings.ts
+  RELEASE_NOTES_NAME: "Display Release Notes after update",
+  RELEASE_NOTES_DESC: "<b>Toggle ON:</b> Display release notes each time you update Excalidraw to a newer version.<br>" +
+    "<b>Toggle OFF:</b> Silent mode. You can still read release notes on [GitHub](https://github.com/zsviczian/obsidian-excalidraw-plugin/releases).",
   FOLDER_NAME: "Excalidraw folder",
   FOLDER_DESC:
     "Default location for new drawings. If empty, drawings will be created in the Vault root.",

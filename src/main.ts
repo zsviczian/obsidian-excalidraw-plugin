@@ -74,7 +74,7 @@ import {
   log,
   sleep,
 } from "./Utils";
-import { OneOffs } from "./OneOffs";
+//import { OneOffs } from "./OneOffs";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
 import { ScriptEngine } from "./Scripts";
 import {
@@ -84,6 +84,7 @@ import {
   observer,
 } from "./MarkdownPostProcessor";
 import { FieldSuggestor } from "./FieldSuggestor";
+import { ReleaseNotes } from "./ReleaseNotes";
 
 declare module "obsidian" {
   interface App {
@@ -177,11 +178,14 @@ export default class ExcalidrawPlugin extends Plugin {
       }
     }
 
-    const patches = new OneOffs(this);
-    patches.migrationNotice();
-    patches.patchCommentBlock();
-    patches.wysiwygPatch();
-    patches.imageElementLaunchNotice();
+//    const patches = new OneOffs(this);
+    if(this.settings.showReleaseNotes) {
+      //@ts-ignore
+      const version:string = this.app.plugins.manifests["obsidian-excalidraw-plugin"].version;
+      if(version>this.settings.previousRelease) {
+        (new ReleaseNotes(this.app,this,version)).open();
+      }
+    }
 
     this.switchToExcalidarwAfterLoad();
 
