@@ -1425,7 +1425,7 @@ export default class ExcalidrawPlugin extends Plugin {
       //@ts-ignore
       metaCache.getCachedFiles().forEach((filename:string) => {
         const fm = metaCache.getCache(filename)?.frontmatter;
-        if ((fm && Object.keys(fm).contains(FRONTMATTER_KEY)) ||
+        if ((fm && typeof fm[FRONTMATTER_KEY] !== "undefined") ||
           filename.match(/\.excalidraw$/)
         ) {
           self.updateFileCache(
@@ -1438,8 +1438,7 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   updateFileCache(file: TFile, frontmatter?: FrontMatterCache, deleted: boolean = false) {
-    if(frontmatter) {
-      const isExcalidrawFile = Object.keys(frontmatter).contains(FRONTMATTER_KEY);
+    if(frontmatter && typeof frontmatter[FRONTMATTER_KEY] !== "undefined") {
       this.excalidrawFiles.add(file);
       return;
     }
