@@ -59,14 +59,14 @@ export interface ExcalidrawSettings {
   experimentalEnableFourthFont: boolean;
   experimantalFourthFont: string;
   fieldSuggestor: boolean;
-  loadCount: number; //version 1.2 migration counter
+  //loadCount: number; //version 1.2 migration counter
   drawingOpenCount: number;
   library: string;
   library2: {};
-  patchCommentBlock: boolean; //1.3.12
+  //patchCommentBlock: boolean; //1.3.12
   imageElementNotice: boolean; //1.4.0
-  runWYSIWYGpatch: boolean; //1.4.9
-  fixInfinitePreviewLoop: boolean; //1.4.10
+  //runWYSIWYGpatch: boolean; //1.4.9
+  //fixInfinitePreviewLoop: boolean; //1.4.10
   mdSVGwidth: number;
   mdSVGmaxHeight: number;
   mdFont: string;
@@ -126,7 +126,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   experimantalFourthFont: "Virgil",
   fieldSuggestor: true,
   compatibilityMode: false,
-  loadCount: 0,
+  //loadCount: 0,
   drawingOpenCount: 0,
   library: `deprecated`,
   library2: {
@@ -135,10 +135,10 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
     source: "https://excalidraw.com",
     libraryItems: [],
   },
-  patchCommentBlock: true,
+  //patchCommentBlock: true,
   imageElementNotice: true,
-  runWYSIWYGpatch: true,
-  fixInfinitePreviewLoop: true,
+  //runWYSIWYGpatch: true,
+  //fixInfinitePreviewLoop: true,
   mdSVGwidth: 500,
   mdSVGmaxHeight: 800,
   mdFont: "Virgil",

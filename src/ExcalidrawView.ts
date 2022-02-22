@@ -872,7 +872,7 @@ export default class ExcalidrawView extends TextFileView {
       const st = this.excalidrawAPI.getAppState();
       st.trayModeEnabled = this.plugin.settings.defaultTrayMode;
       this.excalidrawAPI.updateScene({appState:st});
-    }, 500);
+    }, 1000);
   }
 
   initialContainerSizeUpdate = false;
@@ -1934,6 +1934,8 @@ export default class ExcalidrawView extends TextFileView {
                     new Notice(t("FILENAME_INVALID_CHARS"), 4000);
                     return false;
                   }
+                  //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/468
+                  event[CTRL_OR_CMD]=event.shiftKey || event[CTRL_OR_CMD];
                   if (
                     event[CTRL_OR_CMD] && //.ctrlKey||event.metaKey)
                     (IMAGE_TYPES.contains(draggable.file.extension) ||

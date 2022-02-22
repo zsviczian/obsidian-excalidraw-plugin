@@ -154,23 +154,22 @@ li[data-testid] {
   padding: 0px 1px; /*1px so on ipad swipe in from left and right still works*/
 }
 
-.excalidraw-release-youtube { 
-  width: 100%; 
-  padding-top: 56.25%; 
+.excalidraw-videoWrapper {
+  max-width:600px
+}
+.excalidraw-videoWrapper div {
   position: relative;
-  clear: both;
-  text-align: center;
-  max-width: 560px;
+  padding-bottom: 56.25%;
+  height: 0;
+  margin: 0 auto;
 }
 
-.excalidraw-release-youtube iframe { 
-  position: absolute; 
-  top:0; 
-  left: 0; 
-  bottom: 0; 
-  right:0;
-  max-width: 560px;
-  max-height: 315px;
+.excalidraw-videoWrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .excalidraw-release {
