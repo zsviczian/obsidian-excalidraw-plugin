@@ -42,10 +42,13 @@ ea.style.strokeColor = strokeColor;
 ea.style.backgroundColor = backgroundColor;
 ea.style.fillStyle = fillStyle;
 const padding = 6;
+let boxes = [];
 elements.forEach((el)=>{
   const id = ea.addRect(el.x-padding,el.y-padding,el.width+2*padding,el.height+2*padding);
+  boxes.push(id);
   ea.getElement(id).boundElements=[{type:"text",id:el.id}];
   el.containerId = id;
 });
 ea.copyViewElementsToEAforEditing(elements);
-ea.addElementsToView(false,false);
+await ea.addElementsToView(false,false);
+ea.selectElementsInView(ea.getViewElements().filter(el=>boxes.includes(el.id)));
