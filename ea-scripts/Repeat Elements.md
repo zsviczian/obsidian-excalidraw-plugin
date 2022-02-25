@@ -42,33 +42,35 @@ const widthDistance = selectedElements[1].width - selectedElements[0].width;
 const heightDistance = selectedElements[1].height - selectedElements[0].height;
 const angleDistance = selectedElements[1].angle - selectedElements[0].angle;
 
-const bgColor1 = colorNameToHex(selectedElements[0].backgroundColor);
-const rgbBgColor1 = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(bgColor1);
-const bgColor2 = colorNameToHex(selectedElements[1].backgroundColor);
-const rgbBgColor2 = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(bgColor2);
+const bgColor1 = ea.colorNameToHex(selectedElements[0].backgroundColor);
+const rgbBgColor1 = parseColorString(bgColor1); 
+const bgColor2 = ea.colorNameToHex(selectedElements[1].backgroundColor);
+const rgbBgColor2 = parseColorString(bgColor2);
 let bgHDistance = 0;
 let bgSDistance = 0;
 let bgLDistance = 0;
+
 if(rgbBgColor1 && rgbBgColor2) {
-    const bgHsl1 = rgbToHsl([parseInt(rgbBgColor1[1], 16), parseInt(rgbBgColor1[2], 16), parseInt(rgbBgColor1[3], 16)]);
-    const bgHsl2 = rgbToHsl([parseInt(rgbBgColor2[1], 16), parseInt(rgbBgColor2[2], 16), parseInt(rgbBgColor2[3], 16)]);
-    
+    const bgHsl1 = ea.rgbToHsl([rgbBgColor1.value[0], rgbBgColor1.value[1], rgbBgColor1.value[2]]);
+    const bgHsl2 = ea.rgbToHsl([rgbBgColor2.value[0], rgbBgColor2.value[1], rgbBgColor2.value[2]]);
+
     bgHDistance = bgHsl2[0] - bgHsl1[0];
     bgSDistance = bgHsl2[1] - bgHsl1[1];
     bgLDistance = bgHsl2[2] - bgHsl1[2];
 }
 
-const strokeColor1 = colorNameToHex(selectedElements[0].strokeColor);
-const rgbStrokeColor1 = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(strokeColor1);
-const strokeColor2 = colorNameToHex(selectedElements[1].strokeColor);
-const rgbStrokeColor2 = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(strokeColor2);
+const strokeColor1 = ea.colorNameToHex(selectedElements[0].strokeColor);
+const rgbStrokeColor1 = parseColorString(strokeColor1);
+const strokeColor2 = ea.colorNameToHex(selectedElements[1].strokeColor);
+const rgbStrokeColor2 = parseColorString(strokeColor2);
 let strokeHDistance = 0;
 let strokeSDistance = 0;
 let strokeLDistance = 0;
+
 if(rgbStrokeColor1 && rgbStrokeColor2) {
-    const strokeHsl1 = rgbToHsl([parseInt(rgbStrokeColor1[1], 16), parseInt(rgbStrokeColor1[2], 16), parseInt(rgbStrokeColor1[3], 16)]);
-    const strokeHsl2 = rgbToHsl([parseInt(rgbStrokeColor2[1], 16), parseInt(rgbStrokeColor2[2], 16), parseInt(rgbStrokeColor2[3], 16)]);
-    
+    const strokeHsl1 = ea.rgbToHsl([rgbStrokeColor1.value[0], rgbStrokeColor1.value[1], rgbStrokeColor1.value[2]]); 
+    const strokeHsl2 = ea.rgbToHsl([rgbStrokeColor2.value[0], rgbStrokeColor2.value[1], rgbStrokeColor2.value[2]]);
+
     strokeHDistance = strokeHsl2[0] - strokeHsl1[0];
     strokeSDistance = strokeHsl2[1] - strokeHsl1[1];
     strokeLDistance = strokeHsl2[2] - strokeHsl1[2];
@@ -105,274 +107,261 @@ for(let i=0; i<repeatNum; i++) {
     }
 
     if(rgbBgColor1 && rgbBgColor2) {
-        const bgHsl2 = rgbToHsl([parseInt(rgbBgColor2[1], 16), parseInt(rgbBgColor2[2], 16), parseInt(rgbBgColor2[3], 16)]);
+        const bgHsl2 = ea.rgbToHsl([rgbBgColor2.value[0], rgbBgColor2.value[1], rgbBgColor2.value[2]]);
         const newBgH = bgHsl2[0] + bgHDistance * (i + 1);
         const newBgS = bgHsl2[1] + bgSDistance * (i + 1);
         const newBgL = bgHsl2[2] + bgLDistance * (i + 1);
         
         if(newBgH >= 0 && newBgH <= 360 && newBgS >= 0 && newBgS <= 100 && newBgL >= 0 && newBgL <= 100) {
-            const newBgRgb = hslToRgb([newBgH, newBgS, newBgL]);
-            newEl.backgroundColor = "#" + rgbToHexString(newBgRgb);
+            const newBgRgb = ea.hslToRgb([newBgH, newBgS, newBgL]);
+            newEl.backgroundColor = rgbColorToString(newBgRgb, rgbBgColor1.model);
         }
     }
 
     if(rgbStrokeColor1 && rgbStrokeColor2) {
-        const strokeHsl2 = rgbToHsl([parseInt(rgbStrokeColor2[1], 16), parseInt(rgbStrokeColor2[2], 16), parseInt(rgbStrokeColor2[3], 16)]);
+        const strokeHsl2 = ea.rgbToHsl([rgbStrokeColor2.value[0], rgbStrokeColor2.value[1], rgbStrokeColor2.value[2]]);
         const newStrokeH = strokeHsl2[0] + strokeHDistance * (i + 1);
         const newStrokeS = strokeHsl2[1] + strokeSDistance * (i + 1);
         const newStrokeL = strokeHsl2[2] + strokeLDistance * (i + 1);
         
         if(newStrokeH >= 0 && newStrokeH <= 360 && newStrokeS >= 0 && newStrokeS <= 100 && newStrokeL >= 0 && newStrokeL <= 100) {
-            const newStrokeRgb = hslToRgb([newStrokeH, newStrokeS, newStrokeL]);
-            newEl.strokeColor = "#" + rgbToHexString(newStrokeRgb);
+            const newStrokeRgb = ea.hslToRgb([newStrokeH, newStrokeS, newStrokeL]);
+            newEl.strokeColor = rgbColorToString(newStrokeRgb, rgbStrokeColor1.model);
         }
     }
 }
 
 await ea.addElementsToView(false, false, true);
 
-function rgbToHexString(args) {
-  const integer =
-    ((Math.round(args[0]) & 0xff) << 16) +
-    ((Math.round(args[1]) & 0xff) << 8) +
-    (Math.round(args[2]) & 0xff);
+function parseColorString(string) {
+	var prefix = string.substring(0, 3).toLowerCase();
+	var val;
+	var model;
+	switch (prefix) {
+		case 'hsl':
+			val = ea.hslToRgb(parseHslColorString(string));
+			model = 'hsl';
+			break;
+		case 'hwb':
+			val = hwbToRgb(parseHwbColorString(string));
+			model = 'hwb';
+			break;
+		default:
+			val = parseRgbColorString(string);
+			model = 'rgb';
+			break;
+	}
 
-  const string = integer.toString(16).toUpperCase();
-  return "000000".substring(string.length) + string;
+	if (!val) {
+		return null;
+	}
+
+	return {model: model, value: val};
+};
+
+function parseRgbColorString(string) {
+	if (!string) {
+		return null;
+	}
+  var colorNames={};
+
+	var abbr = /^#([a-f0-9]{3,4})$/i;
+	var hex = /^#([a-f0-9]{6})([a-f0-9]{2})?$/i;
+	var rgba = /^rgba?\(\s*([+-]?\d+)(?=[\s,])\s*(?:,\s*)?([+-]?\d+)(?=[\s,])\s*(?:,\s*)?([+-]?\d+)\s*(?:[,|\/]\s*([+-]?[\d\.]+)(%?)\s*)?\)$/;
+	var per = /^rgba?\(\s*([+-]?[\d\.]+)\%\s*,?\s*([+-]?[\d\.]+)\%\s*,?\s*([+-]?[\d\.]+)\%\s*(?:[,|\/]\s*([+-]?[\d\.]+)(%?)\s*)?\)$/;
+	var keyword = /^(\w+)$/;
+
+	var rgb = [0, 0, 0, 1];
+	var match;
+	var i;
+	var hexAlpha;
+
+	if (match = string.match(hex)) {
+		hexAlpha = match[2];
+		match = match[1];
+
+		for (i = 0; i < 3; i++) {
+			var i2 = i * 2;
+			rgb[i] = parseInt(match.slice(i2, i2 + 2), 16);
+		}
+
+		if (hexAlpha) {
+			rgb[3] = parseInt(hexAlpha, 16) / 255;
+		}
+	} else if (match = string.match(abbr)) {
+		match = match[1];
+		hexAlpha = match[3];
+
+		for (i = 0; i < 3; i++) {
+			rgb[i] = parseInt(match[i] + match[i], 16);
+		}
+
+		if (hexAlpha) {
+			rgb[3] = parseInt(hexAlpha + hexAlpha, 16) / 255;
+		}
+	} else if (match = string.match(rgba)) {
+		for (i = 0; i < 3; i++) {
+			rgb[i] = parseInt(match[i + 1], 0);
+		}
+
+		if (match[4]) {
+			if (match[5]) {
+				rgb[3] = parseFloat(match[4]) * 0.01;
+			} else {
+				rgb[3] = parseFloat(match[4]);
+			}
+		}
+	} else if (match = string.match(per)) {
+		for (i = 0; i < 3; i++) {
+			rgb[i] = Math.round(parseFloat(match[i + 1]) * 2.55);
+		}
+
+		if (match[4]) {
+			if (match[5]) {
+				rgb[3] = parseFloat(match[4]) * 0.01;
+			} else {
+				rgb[3] = parseFloat(match[4]);
+			}
+		}
+	} else if (match = string.match(keyword)) {
+		if (match[1] === 'transparent') {
+			return [0, 0, 0, 0];
+		}
+
+		if (!hasOwnProperty.call(colorNames, match[1])) {
+			return null;
+		}
+
+		rgb = colorNames[match[1]];
+		rgb[3] = 1;
+
+		return rgb;
+	} else {
+		return null;
+	}
+
+	for (i = 0; i < 3; i++) {
+		rgb[i] = clamp(rgb[i], 0, 255);
+	}
+	rgb[3] = clamp(rgb[3], 0, 1);
+
+	return rgb;
 }
 
-function hslToRgb(hsl) {
-  const h = hsl[0] / 360;
-  const s = hsl[1] / 100;
-  const l = hsl[2] / 100;
-  let t2;
-  let t3;
-  let val;
+function parseHslColorString(string) {
+	if (!string) {
+		return null;
+	}
 
-  if (s === 0) {
-    val = l * 255;
-    return [val, val, val];
-  }
+	var hsl = /^hsla?\(\s*([+-]?(?:\d{0,3}\.)?\d+)(?:deg)?\s*,?\s*([+-]?[\d\.]+)%\s*,?\s*([+-]?[\d\.]+)%\s*(?:[,|\/]\s*([+-]?(?=\.\d|\d)(?:0|[1-9]\d*)?(?:\.\d*)?(?:[eE][+-]?\d+)?)\s*)?\)$/;
+	var match = string.match(hsl);
 
-  if (l < 0.5) {
-    t2 = l * (1 + s);
-  } else {
-    t2 = l + s - l * s;
-  }
+	if (match) {
+		var alpha = parseFloat(match[4]);
+		var h = ((parseFloat(match[1]) % 360) + 360) % 360;
+		var s = clamp(parseFloat(match[2]), 0, 100);
+		var l = clamp(parseFloat(match[3]), 0, 100);
+		var a = clamp(isNaN(alpha) ? 1 : alpha, 0, 1);
 
-  const t1 = 2 * l - t2;
+		return [h, s, l, a];
+	}
 
-  const rgb = [0, 0, 0];
-  for (let i = 0; i < 3; i++) {
-    t3 = h + (1 / 3) * -(i - 1);
-    if (t3 < 0) {
-      t3++;
-    }
-
-    if (t3 > 1) {
-      t3--;
-    }
-
-    if (6 * t3 < 1) {
-      val = t1 + (t2 - t1) * 6 * t3;
-    } else if (2 * t3 < 1) {
-      val = t2;
-    } else if (3 * t3 < 2) {
-      val = t1 + (t2 - t1) * (2 / 3 - t3) * 6;
-    } else {
-      val = t1;
-    }
-
-    rgb[i] = val * 255;
-  }
-
-  return rgb;
+	return null;
 }
 
-function rgbToHsl(rgb) {
-  const r = rgb[0] / 255;
-  const g = rgb[1] / 255;
-  const b = rgb[2] / 255;
-  const min = Math.min(r, g, b);
-  const max = Math.max(r, g, b);
-  const delta = max - min;
-  let h;
-  let s;
+function parseHwbColorString(string) {
+	if (!string) {
+		return null;
+	}
 
-  if (max === min) {
-    h = 0;
-  } else if (r === max) {
-    h = (g - b) / delta;
-  } else if (g === max) {
-    h = 2 + (b - r) / delta;
-  } else if (b === max) {
-    h = 4 + (r - g) / delta;
-  }
+	var hwb = /^hwb\(\s*([+-]?\d{0,3}(?:\.\d+)?)(?:deg)?\s*,\s*([+-]?[\d\.]+)%\s*,\s*([+-]?[\d\.]+)%\s*(?:,\s*([+-]?(?=\.\d|\d)(?:0|[1-9]\d*)?(?:\.\d*)?(?:[eE][+-]?\d+)?)\s*)?\)$/;
+	var match = string.match(hwb);
 
-  h = Math.min(h * 60, 360);
+	if (match) {
+		var alpha = parseFloat(match[4]);
+		var h = ((parseFloat(match[1]) % 360) + 360) % 360;
+		var w = clamp(parseFloat(match[2]), 0, 100);
+		var b = clamp(parseFloat(match[3]), 0, 100);
+		var a = clamp(isNaN(alpha) ? 1 : alpha, 0, 1);
+		return [h, w, b, a];
+	}
 
-  if (h < 0) {
-    h += 360;
-  }
-
-  const l = (min + max) / 2;
-
-  if (max === min) {
-    s = 0;
-  } else if (l <= 0.5) {
-    s = delta / (max + min);
-  } else {
-    s = delta / (2 - max - min);
-  }
-
-  return [h, s * 100, l * 100];
+	return null;
 }
 
-function colorNameToHex(color) {
-  const colors = {
-    aliceblue: "#f0f8ff",
-    antiquewhite: "#faebd7",
-    aqua: "#00ffff",
-    aquamarine: "#7fffd4",
-    azure: "#f0ffff",
-    beige: "#f5f5dc",
-    bisque: "#ffe4c4",
-    black: "#000000",
-    blanchedalmond: "#ffebcd",
-    blue: "#0000ff",
-    blueviolet: "#8a2be2",
-    brown: "#a52a2a",
-    burlywood: "#deb887",
-    cadetblue: "#5f9ea0",
-    chartreuse: "#7fff00",
-    chocolate: "#d2691e",
-    coral: "#ff7f50",
-    cornflowerblue: "#6495ed",
-    cornsilk: "#fff8dc",
-    crimson: "#dc143c",
-    cyan: "#00ffff",
-    darkblue: "#00008b",
-    darkcyan: "#008b8b",
-    darkgoldenrod: "#b8860b",
-    darkgray: "#a9a9a9",
-    darkgreen: "#006400",
-    darkkhaki: "#bdb76b",
-    darkmagenta: "#8b008b",
-    darkolivegreen: "#556b2f",
-    darkorange: "#ff8c00",
-    darkorchid: "#9932cc",
-    darkred: "#8b0000",
-    darksalmon: "#e9967a",
-    darkseagreen: "#8fbc8f",
-    darkslateblue: "#483d8b",
-    darkslategray: "#2f4f4f",
-    darkturquoise: "#00ced1",
-    darkviolet: "#9400d3",
-    deeppink: "#ff1493",
-    deepskyblue: "#00bfff",
-    dimgray: "#696969",
-    dodgerblue: "#1e90ff",
-    firebrick: "#b22222",
-    floralwhite: "#fffaf0",
-    forestgreen: "#228b22",
-    fuchsia: "#ff00ff",
-    gainsboro: "#dcdcdc",
-    ghostwhite: "#f8f8ff",
-    gold: "#ffd700",
-    goldenrod: "#daa520",
-    gray: "#808080",
-    green: "#008000",
-    greenyellow: "#adff2f",
-    honeydew: "#f0fff0",
-    hotpink: "#ff69b4",
-    "indianred ": "#cd5c5c",
-    indigo: "#4b0082",
-    ivory: "#fffff0",
-    khaki: "#f0e68c",
-    lavender: "#e6e6fa",
-    lavenderblush: "#fff0f5",
-    lawngreen: "#7cfc00",
-    lemonchiffon: "#fffacd",
-    lightblue: "#add8e6",
-    lightcoral: "#f08080",
-    lightcyan: "#e0ffff",
-    lightgoldenrodyellow: "#fafad2",
-    lightgrey: "#d3d3d3",
-    lightgreen: "#90ee90",
-    lightpink: "#ffb6c1",
-    lightsalmon: "#ffa07a",
-    lightseagreen: "#20b2aa",
-    lightskyblue: "#87cefa",
-    lightslategray: "#778899",
-    lightsteelblue: "#b0c4de",
-    lightyellow: "#ffffe0",
-    lime: "#00ff00",
-    limegreen: "#32cd32",
-    linen: "#faf0e6",
-    magenta: "#ff00ff",
-    maroon: "#800000",
-    mediumaquamarine: "#66cdaa",
-    mediumblue: "#0000cd",
-    mediumorchid: "#ba55d3",
-    mediumpurple: "#9370d8",
-    mediumseagreen: "#3cb371",
-    mediumslateblue: "#7b68ee",
-    mediumspringgreen: "#00fa9a",
-    mediumturquoise: "#48d1cc",
-    mediumvioletred: "#c71585",
-    midnightblue: "#191970",
-    mintcream: "#f5fffa",
-    mistyrose: "#ffe4e1",
-    moccasin: "#ffe4b5",
-    navajowhite: "#ffdead",
-    navy: "#000080",
-    oldlace: "#fdf5e6",
-    olive: "#808000",
-    olivedrab: "#6b8e23",
-    orange: "#ffa500",
-    orangered: "#ff4500",
-    orchid: "#da70d6",
-    palegoldenrod: "#eee8aa",
-    palegreen: "#98fb98",
-    paleturquoise: "#afeeee",
-    palevioletred: "#d87093",
-    papayawhip: "#ffefd5",
-    peachpuff: "#ffdab9",
-    peru: "#cd853f",
-    pink: "#ffc0cb",
-    plum: "#dda0dd",
-    powderblue: "#b0e0e6",
-    purple: "#800080",
-    rebeccapurple: "#663399",
-    red: "#ff0000",
-    rosybrown: "#bc8f8f",
-    royalblue: "#4169e1",
-    saddlebrown: "#8b4513",
-    salmon: "#fa8072",
-    sandybrown: "#f4a460",
-    seagreen: "#2e8b57",
-    seashell: "#fff5ee",
-    sienna: "#a0522d",
-    silver: "#c0c0c0",
-    skyblue: "#87ceeb",
-    slateblue: "#6a5acd",
-    slategray: "#708090",
-    snow: "#fffafa",
-    springgreen: "#00ff7f",
-    steelblue: "#4682b4",
-    tan: "#d2b48c",
-    teal: "#008080",
-    thistle: "#d8bfd8",
-    tomato: "#ff6347",
-    turquoise: "#40e0d0",
-    violet: "#ee82ee",
-    wheat: "#f5deb3",
-    white: "#ffffff",
-    whitesmoke: "#f5f5f5",
-    yellow: "#ffff00",
-    yellowgreen: "#9acd32",
-  };
-  if (typeof colors[color.toLowerCase()] != "undefined")
-    return colors[color.toLowerCase()];
-  return color;
+function rgbColorToString(color, model) {
+  switch (model) {
+		case 'hsl':
+			return rgbColorToHslString(color);
+		case 'hwb':
+			return rgbColorToHwbString(color);
+		default:
+			return ea.rgbToHexString(color);
+	}
+}
+
+function rgbColorToHslString(rgb) {
+  var hsl = ea.rgbToHsl(rgb);
+  return 'hsl(' + hsl[0] + ', ' + hsl[1] + '%, ' + hsl[2] + '%)'
+};
+
+function rgbColorToHwbString(rgb) {
+	var hwb = rgbToHwb(rgb);
+
+	return 'hwb(' + hwb[0] + ', ' + hwb[1] + '%, ' + hwb[2] + '%)';
+};
+
+function rgbToHwb(rgb) {
+	const r = rgb[0];
+	const g = rgb[1];
+	let b = rgb[2];
+	const h = convert.rgb.hsl(rgb)[0];
+	const w = 1 / 255 * Math.min(r, Math.min(g, b));
+
+	b = 1 - 1 / 255 * Math.max(r, Math.max(g, b));
+
+	return [h, w * 100, b * 100];
+};
+
+function hwbToRgb(hwb) {
+	const h = hwb[0] / 360;
+	let wh = hwb[1] / 100;
+	let bl = hwb[2] / 100;
+	const ratio = wh + bl;
+	let f;
+
+	// Wh + bl cant be > 1
+	if (ratio > 1) {
+		wh /= ratio;
+		bl /= ratio;
+	}
+
+	const i = Math.floor(6 * h);
+	const v = 1 - bl;
+	f = 6 * h - i;
+
+	if ((i & 0x01) !== 0) {
+		f = 1 - f;
+	}
+
+	const n = wh + f * (v - wh); 
+	let r;
+	let g;
+	let b;
+	switch (i) {
+		default:
+		case 6:
+		case 0: r = v;  g = n;  b = wh; break;
+		case 1: r = n;  g = v;  b = wh; break;
+		case 2: r = wh; g = v;  b = n; break;
+		case 3: r = wh; g = n;  b = v; break;
+		case 4: r = n;  g = wh; b = v; break;
+		case 5: r = v;  g = wh; b = n; break;
+	}
+
+	return [r * 255, g * 255, b * 255];
+}
+
+function clamp(num, min, max) {
+	return Math.min(Math.max(min, num), max);
 }
