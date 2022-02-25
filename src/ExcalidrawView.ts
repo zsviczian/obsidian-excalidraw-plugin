@@ -75,6 +75,7 @@ import {
   FileData,
 } from "./EmbeddedFileLoader";
 import { ScriptInstallPrompt } from "./ScriptInstallPrompt";
+import { ObsidianMenu } from "./ObsidianMenu";
 
 export enum TextMode {
   parsed,
@@ -156,6 +157,7 @@ export default class ExcalidrawView extends TextFileView {
   private textIsRaw_Element: HTMLElement;
   private preventReload: boolean = true;
   public compatibilityMode: boolean = false;
+  private obsidianMenu: ObsidianMenu;
   //store key state for view mode link resolution
   /*private ctrlKeyDown = false;
   private shiftKeyDown = false;
@@ -170,6 +172,7 @@ export default class ExcalidrawView extends TextFileView {
   constructor(leaf: WorkspaceLeaf, plugin: ExcalidrawPlugin) {
     super(leaf);
     this.plugin = plugin;
+    this.obsidianMenu = new ObsidianMenu(plugin);
     this.excalidrawData = new ExcalidrawData(plugin);
   }
 
@@ -867,12 +870,14 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   setDefaultTrayMode() {
+    const om = this.excalidrawData.getOpenMode();
+    if(om.zenModeEnabled || om.viewModeEnabled) return;
     setTimeout(()=> {
       if(!this.excalidrawAPI) return;
       const st = this.excalidrawAPI.getAppState();
       st.trayModeEnabled = this.plugin.settings.defaultTrayMode;
       this.excalidrawAPI.updateScene({appState:st});
-    }, 1000);
+    }, 150);
   }
 
   initialContainerSizeUpdate = false;
@@ -887,7 +892,7 @@ export default class ExcalidrawView extends TextFileView {
     this.dirty = null;
     this.diskIcon.querySelector("svg").removeClass("excalidraw-dirty");
     const om = this.excalidrawData.getOpenMode();
-    this.preventReload = false;
+    this.preventReload = false;   
     if (this.excalidrawRef) {
       //isLoaded flags that a new file is being loaded, isLoaded will be true after loadDrawing completes
       const viewModeEnabled = !this.isLoaded
@@ -1147,6 +1152,7 @@ export default class ExcalidrawView extends TextFileView {
         height: undefined,
       });
 
+      
       //excalidrawRef readypromise based on
       //https://codesandbox.io/s/eexcalidraw-resolvable-promise-d0qg3?file=/src/App.js:167-760
       const resolvablePromise = () => {
@@ -1874,6 +1880,7 @@ export default class ExcalidrawView extends TextFileView {
               await this.plugin.saveSettings();
             })();
           },
+          renderTopRightUI: this.obsidianMenu.renderButton,
           onPaste: (data: ClipboardData) => {
             //, event: ClipboardEvent | null
             if (data.elements) {

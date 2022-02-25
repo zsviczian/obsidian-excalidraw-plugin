@@ -43,7 +43,7 @@ import {
   VIRGIL_FONT,
   VIRGIL_DATAURL,
 } from "./constants";
-import ExcalidrawView, { TextMode } from "./ExcalidrawView";
+import ExcalidrawView, { ExportSettings, TextMode } from "./ExcalidrawView";
 import { changeThemeOfExcalidrawMD, getMarkdownDrawingSection } from "./ExcalidrawData";
 import {
   ExcalidrawSettings,
@@ -70,6 +70,7 @@ import {
   getFontDataURL,
   getIMGPathFromExcalidrawFile,
   getNewUniqueFilepath,
+  getPNG,
   isObsidianThemeDark,
   log,
   sleep,
@@ -193,6 +194,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.switchToExcalidarwAfterLoad();
 
     this.loadMathJax();
+    //this.loadTesseract();
 
     const self = this;
     this.app.workspace.onLayoutReady(() => {
@@ -257,6 +259,15 @@ export default class ExcalidrawPlugin extends Plugin {
     //script.src = MATHJAX_DATAURL;
     doc.head.appendChild(script);
   }
+
+/*  private loadTesseract() {
+    //@ts-ignore
+    if(typeof Tesseract !== "undefined") return;
+    const script = window.document.createElement("script");
+    script.type = "text/javascript";
+    script.src = "https://unpkg.com/tesseract.js@v2.1.5/dist/tesseract.min.js";
+    document.head.appendChild(script);
+  }*/
 
   private switchToExcalidarwAfterLoad() {
     const self = this;
@@ -816,6 +827,55 @@ export default class ExcalidrawPlugin extends Plugin {
       },
     });
 
+/*    this.addCommand({
+      id: "ocr",
+      name: "Test OCR",//t("EXPORT_PNG"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return (
+            this.app.workspace.activeLeaf.view.getViewType() ===
+            //@ts-ignore
+            VIEW_TYPE_EXCALIDRAW && typeof Tesseract !== "undefined"
+          );
+        }
+        const view = this.app.workspace.activeLeaf.view;
+        if (view instanceof ExcalidrawView) {
+          //@ts-ignore
+          const worker = Tesseract.createWorker({logger: m => console.log(m)});
+          //@ts-ignore
+          Tesseract.setLogging(true);
+
+          const exportSettings: ExportSettings = {
+            withBackground: true,
+            withTheme: false,
+          };
+          const blobToBase64 = async (blob:any) => {
+            return new Promise((resolve, _) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result);
+              reader.readAsDataURL(blob);
+            });
+          }
+
+          (async () => {
+            const png = await getPNG(
+              view.getScene(),
+              exportSettings,
+              3,
+            );
+            await worker.load();
+            await worker.loadLanguage('https://https://raw.githubusercontent.com/thecodingone/trained-tesseract-handwriting-fonts/blob/master/eng.traineddata');
+            await worker.initialize('https://raw.githubusercontent.com/thecodingone/trained-tesseract-handwriting-fonts/blob/master/eng.traineddata');
+            const { data: { text } } = await worker.recognize(await blobToBase64(png));
+            console.log(text);
+            await worker.terminate();
+          })();
+          return true;
+        }
+        return false;
+      },
+    });*/
+
     this.addCommand({
       id: "export-png",
       name: t("EXPORT_PNG"),
@@ -933,18 +993,43 @@ export default class ExcalidrawPlugin extends Plugin {
     });
 
     this.addCommand({
+      id: "release-notes",
+      name: t("READ_RELEASE_NOTES"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          const view = this.app.workspace.activeLeaf.view;
+          return view instanceof ExcalidrawView;
+        }
+        //@ts-ignore
+        const version:string = this.app.plugins.manifests["obsidian-excalidraw-plugin"].version;
+        (new ReleaseNotes(this.app,this,version)).open();
+        return true;
+      }
+    })
+
+    this.addCommand({
       id: "tray-mode",
       name: t("TRAY_MODE"),
       checkCallback: (checking: boolean) => {
         if (checking) {
           const view = this.app.workspace.activeLeaf.view;
-          return view instanceof ExcalidrawView;
+          if(!(view instanceof ExcalidrawView) ||
+            !view.excalidrawRef
+          ) {
+            return false;
+          }
+          const st = view.excalidrawAPI.getAppState();
+          if(st.zenModeEnabled || st.viewModeEnabled) {
+            return false;
+          }
+          return true;
         }
         const view = this.app.workspace.activeLeaf.view;
         if (view instanceof ExcalidrawView && view.excalidrawAPI) {
           const st = view.excalidrawAPI.getAppState();
           st.trayModeEnabled = !st.trayModeEnabled;
           view.excalidrawAPI.updateScene({appState:st});
+          view.excalidrawAPI.refresh();
           //placed in an async function because I need to load settings first
           //just in case settings were updated via sync
           (async()=>{

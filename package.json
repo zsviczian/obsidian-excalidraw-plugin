@@ -19,7 +19,8 @@
     "react-scripts": "^5.0.0",
     "roughjs": "^4.5.2",
     "lz-string": "^1.4.4",
-    "@types/lz-string": "^1.3.34"
+    "@types/lz-string": "^1.3.34",
+    "clsx": "1.1.1"
   },
   "devDependencies": {
     "@babel/core": "^7.16.12",
