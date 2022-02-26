@@ -77,7 +77,6 @@ import {
 } from "./EmbeddedFileLoader";
 import { ScriptInstallPrompt } from "./ScriptInstallPrompt";
 import { ObsidianMenu, ToolsPanel } from "./ObsidianMenu";
-import { cleanAppStateForExport } from "@zsviczian/excalidraw/types/appState";
 
 export enum TextMode {
   parsed,
@@ -148,7 +147,7 @@ export default class ExcalidrawView extends TextFileView {
   public excalidrawRef: React.MutableRefObject<any> = null;
   public excalidrawAPI: any = null;
   public excalidrawWrapperRef: React.MutableRefObject<any> = null;
-  private toolsPanelRef: React.MutableRefObject<any> = null;
+  public toolsPanelRef: React.MutableRefObject<any> = null;
   private justLoaded: boolean = false;
   private preventAutozoomOnLoad: boolean = false;
   public plugin: ExcalidrawPlugin;
@@ -983,10 +982,7 @@ export default class ExcalidrawView extends TextFileView {
       this.loadSceneFiles();
       this.updateContainerSize(null, true);
       this.setDefaultTrayMode();
-      const st = this.excalidrawAPI?.getAppState();
-      this.toolsPanelRef?.current?.setTheme(st.theme);
-      this.toolsPanelRef?.current?.setExcalidrawViewMode(st.viewModeEnabled);
-      this.toolsPanelRef?.current?.setPreviewMode(this.compatibilityMode ? null : this.textMode === TextMode.parsed);
+      this.initializeToolsIconPanelAfterLoading();
     } else {
       this.instantiateExcalidraw({
         elements: excalidrawData.elements,
@@ -1019,6 +1015,16 @@ export default class ExcalidrawView extends TextFileView {
     return leaves
       .filter(leaf => (leaf.view as MarkdownView).file === this.file)
       .length > 0;
+  }
+
+  public initializeToolsIconPanelAfterLoading() {
+    const st = this.excalidrawAPI?.getAppState();
+    const panel = this.toolsPanelRef?.current;
+    if(!panel) return;
+    panel.setTheme(st.theme);
+    panel.setExcalidrawViewMode(st.viewModeEnabled);
+    panel.setPreviewMode(this.compatibilityMode ? null : this.textMode === TextMode.parsed);
+    panel.updateScriptIconMap(this.plugin.scriptEngine.scriptIconMap);
   }
 
   //Compatibility mode with .excalidraw files
@@ -1227,10 +1233,7 @@ export default class ExcalidrawView extends TextFileView {
           this.setDefaultTrayMode();
           this.excalidrawWrapperRef.current.firstElementChild?.focus();
           this.addFullscreenchangeEvent();
-          const st = api.getAppState();
-          this.toolsPanelRef?.current?.setTheme(st.theme);
-          this.toolsPanelRef?.current?.setExcalidrawViewMode(st.viewModeEnabled);
-          this.toolsPanelRef?.current?.setPreviewMode(this.compatibilityMode ? null : this.textMode === TextMode.parsed);
+          this.initializeToolsIconPanelAfterLoading();
         });
       }, [excalidrawRef]);
 

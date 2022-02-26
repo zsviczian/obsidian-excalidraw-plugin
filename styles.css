@@ -182,3 +182,11 @@ li[data-testid] {
 .excalidraw-release .modal {
   max-height:90%;
 }
+
+.excalidraw .Island .scrollbar {
+  --scrollbar-thumb-bg: silver;
+}
+
+.excalidraw .ToolIcon__icon img{
+  height: 1em;
+}

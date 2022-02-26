@@ -1,13 +1,17 @@
 import { AppState } from "@zsviczian/excalidraw/types/types";
 import clsx from "clsx";
-import { zIndex } from "html2canvas/dist/types/css/property-descriptors/z-index";
-import { Notice } from "obsidian";
+import { Notice, TFile } from "obsidian";
 import * as React from "react";
+import { SCRIPT_INSTALL_FOLDER } from "./constants";
 import { insertLaTeXToView, search } from "./ExcalidrawAutomate";
 import ExcalidrawView, { TextMode } from "./ExcalidrawView";
 import { t } from "./lang/helpers";
 import ExcalidrawPlugin from "./main";
+import { ScriptIconMap } from "./Scripts";
 import { getIMGFilename } from "./Utils";
+
+const dark = '<svg style="color:#ced4da;fill:#ced4da" ';
+const light = '<svg style="color:#212529;fill:#212529" ';
 
 type PanelProps = {
   visible: boolean;
@@ -24,6 +28,7 @@ type PanelState = {
   minimized: boolean;
   isFullscreen: boolean;
   isPreviewMode: boolean;
+  scriptIconMap: ScriptIconMap;
 }
 
 const TOOLS_PANEL_WIDTH = 228;
@@ -52,8 +57,15 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       minimized: false,
       isFullscreen: false,
       isPreviewMode: true,
+      scriptIconMap: {},
     }
   } 
+
+  updateScriptIconMap(scriptIconMap:ScriptIconMap) {
+    this.setState(()=>{
+      return {scriptIconMap}
+    });
+  }
 
   setPreviewMode(isPreviewMode: boolean) {
     this.setState(()=>{
@@ -62,7 +74,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       }
     })
   }
-
 
   setFullscreen(isFullscreen: boolean) {
     this.setState(()=>{
@@ -151,6 +162,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
   
   render () {
+    const downloadedScriptsRoot=`${this.props.view.plugin.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}/`
     return (
       <div
         ref={this.containerRef}
@@ -176,7 +188,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
             display: this.state.visible && !this.state.excalidrawViewMode ? "block":"none",
             height: "fit-content",
             maxHeight: "400px",
-            zIndex: 3
+            zIndex: 3,
           }}
         >
           <div
@@ -222,9 +234,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
             </svg>
           </div>
           <div 
-            className="Island App-menu__left"
+            className="Island App-menu__left scrollbar"
             style={{ 
-              maxHeight:"500px",
+              maxHeight:"350px",
               //@ts-ignore
               "--padding":2,
               display: this.state.minimized ? "none":"block",
@@ -237,6 +249,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                 <legend>Utility actions</legend>
                 <div className="buttonList buttonListIcon">
                   <ActionButton
+                    key={"search"}
                     title={t("SEARCH")}
                     action={()=> {
                       search(this.props.view);
@@ -244,6 +257,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     icon={ICONS.search}
                   />
                   <ActionButton
+                    key={"md"}
                     title={t("OPEN_AS_MD")}
                     action={()=> {
                       this.props.view.openAsMarkdown();
@@ -251,6 +265,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     icon={ICONS.switchToMarkdown}
                   />
                   <ActionButton
+                    key={"fullscreen"}
                     title={this.state.isFullscreen ? t("EXIT_FULLSCREEN") : t("GOTO_FULLSCREEN")}
                     action={()=> {
                       if(this.state.isFullscreen) {
@@ -263,6 +278,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   />
                   { this.state.isPreviewMode === null 
                     ? (<ActionButton
+                      key={"convert"}
                       title={t("CONVERT_FILE")}
                       action={()=> {
                         this.props.view.convertExcalidrawToMD();
@@ -270,6 +286,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                       icon={ICONS.convertFile}
                     />)
                     : (<ActionButton
+                        key={"viewmode"}
                         title={this.state.isPreviewMode ? t("PARSED"):t("RAW")}
                         action={()=> {
                           if(this.state.isPreviewMode) {
@@ -287,6 +304,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                 <legend>Export actions</legend>
                 <div className="buttonList buttonListIcon">
                   <ActionButton
+                    key={"lib"}
                     title={t("DOWNLOAD_LIBRARY")}
                     action={()=>{
                       this.props.view.plugin.exportLibrary();
@@ -294,6 +312,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     icon={ICONS.exportLibrary}
                   />
                   <ActionButton
+                    key={"svg"}
                     title={t("EXPORT_SVG")}
                     action={()=>{
                       this.props.view.saveSVG();
@@ -302,6 +321,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     icon={ICONS.exportSVG}
                   />
                   <ActionButton
+                    key={"png"}
                     title={t("EXPORT_PNG")}
                     action={()=>{
                       this.props.view.savePNG();
@@ -310,6 +330,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     icon={ICONS.exportPNG}
                   />
                   <ActionButton
+                    key={"excalidraw"}
                     title={t("EXPORT_EXCALIDRAW")}
                     action={()=>{
                       this.props.view.exportExcalidraw();
@@ -322,6 +343,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                 <legend>Insert actions</legend>
                 <div className="buttonList buttonListIcon">
                   <ActionButton
+                    key={"image"}
                     title={t("INSERT_IMAGE")}
                     action={()=> {
                       this.props.centerPointer();
@@ -331,6 +353,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     icon={ICONS.insertImage}
                   />
                   <ActionButton
+                    key={"insertMD"}
                     title={t("INSERT_MD")}
                     action={()=> {
                       this.props.centerPointer();
@@ -340,6 +363,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     icon={ICONS.insertMD}
                   />
                   <ActionButton
+                    key={"latex"}
                     title={t("INSERT_LATEX")}
                     action={()=> {
                       this.props.centerPointer();
@@ -348,6 +372,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     icon={ICONS.insertLaTeX}
                   />
                   <ActionButton
+                    key={"link"}
                     title={t("INSERT_LINK")}
                     action={()=> {
                       this.props.centerPointer();
@@ -360,6 +385,72 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   />
                 </div>
               </fieldset>
+              {this.state.scriptIconMap !== {} && 
+                Object.keys(this.state.scriptIconMap).filter(k=>!k.startsWith(downloadedScriptsRoot)).length !== 0
+                ? (<fieldset>
+                    <legend>User Scripts</legend>
+                    <div className="buttonList buttonListIcon">
+                      {Object.keys(this.state.scriptIconMap)
+                        .filter(k=>!k.startsWith(downloadedScriptsRoot))
+                        .sort()
+                        .map((key:string) =>
+                        <ActionButton
+                          key={key}
+                          title={this.state.scriptIconMap[key].name}
+                          action={()=> {
+                            const f = this.props.view.app.vault.getAbstractFileByPath(key);
+                            if(f && f instanceof TFile) {
+                              this.props.view.plugin.scriptEngine.executeScript(this.props.view,f);
+                            }
+                          }}
+                          icon={this.state.scriptIconMap[key].iconBase64 
+                            ? <img 
+                                src={`data:image/svg+xml,${encodeURIComponent(
+                                  this.state.theme==="dark"
+                                  ? this.state.scriptIconMap[key].iconBase64.replace("<svg ",dark)
+                                  : this.state.scriptIconMap[key].iconBase64.replace("<svg ",light)
+                                )}`}
+                              />
+                            : ICONS.cog}
+                        />
+                      )}
+                    </div>
+                  </fieldset>) 
+                : ""
+              }
+              {this.state.scriptIconMap !== {} && 
+                Object.keys(this.state.scriptIconMap).filter(k=>k.startsWith(downloadedScriptsRoot)).length !== 0
+                ? (<fieldset>
+                    <legend>Downloaded Scripts</legend>
+                    <div className="buttonList buttonListIcon">
+                      {Object.keys(this.state.scriptIconMap)
+                        .filter(k=>k.startsWith(downloadedScriptsRoot))
+                        .sort()
+                        .map((key:string) =>
+                        <ActionButton
+                          key={key}
+                          title={this.state.scriptIconMap[key].name.replace(SCRIPT_INSTALL_FOLDER+"/","")}
+                          action={()=> {
+                            const f = this.props.view.app.vault.getAbstractFileByPath(key);
+                            if(f && f instanceof TFile) {
+                              this.props.view.plugin.scriptEngine.executeScript(this.props.view,f);
+                            }
+                          }}
+                          icon={this.state.scriptIconMap[key].iconBase64 
+                          ? <img 
+                              src={`data:image/svg+xml,${encodeURIComponent(
+                                this.state.theme==="dark"
+                                ? this.state.scriptIconMap[key].iconBase64.replace("<svg ",dark)
+                                : this.state.scriptIconMap[key].iconBase64.replace("<svg ",light)
+                              )}`}
+                            />
+                          : ICONS.cog}
+                        />
+                      )}
+                    </div>
+                  </fieldset>) 
+                : ""
+              }
             </div>
           </div>
         </div>
@@ -372,6 +463,7 @@ type ButtonProps = {
   title: string;
   action: Function;
   icon: JSX.Element;
+  key: string;
 }
 
 type ButtonState = {
@@ -389,11 +481,16 @@ class ActionButton extends React.Component<ButtonProps, ButtonState> {
   render() {
     return (
       <button
-      style={{width:"fit-content"}}
-      className="ToolIcon_type_button ToolIcon_size_small ToolIcon_type_button--show ToolIcon"
-      title={this.props.title}
-      aria-label={this.props.title}
-      onClick={()=>this.props.action()}
+        key={this.props.key}
+        style={{
+          width:"fit-content",
+          padding:"2px",
+          margin:"4px"
+        }}
+        className="ToolIcon_type_button ToolIcon_size_small ToolIcon_type_button--show ToolIcon"
+        title={this.props.title}
+        aria-label={this.props.title}
+        onClick={()=>this.props.action()}
     >
       <div className="ToolIcon__icon" aria-hidden="true">
         {this.props.icon}
@@ -549,6 +646,11 @@ const ICONS = {
   convertFile: (
     <svg aria-hidden="true" focusable="false" role="img" viewBox="0 110 700 340" xmlns="http://www.w3.org/2000/svg">
       <path d="m593.95 239.4v-1.5742c-0.85547-1.8828-2.043-3.6016-3.5-5.0742l-52.5-52.5c-1.4688-1.457-3.1875-2.6445-5.0742-3.5h-1.5742c-1.4727-0.49219-3.0039-0.78516-4.5508-0.875h-124.25c-4.6406 0-9.0938 1.8438-12.375 5.125s-5.125 7.7344-5.125 12.375v87.5h-70v-105.88-1.0508c-0.089844-1.5469-0.38281-3.0781-0.875-4.5508v-1.5742c-0.85547-1.8828-2.043-3.6016-3.5-5.0742l-52.5-52.5c-1.4727-1.457-3.1914-2.6445-5.0742-3.5h-1.5742c-1.7031-0.875-3.5352-1.4688-5.4258-1.75h-123.55c-4.6406 0-9.0938 1.8438-12.375 5.125s-5.125 7.7344-5.125 12.375v245c0 4.6406 1.8438 9.0938 5.125 12.375s7.7344 5.125 12.375 5.125h175c4.6406 0 9.0938-1.8438 12.375-5.125s5.125-7.7344 5.125-12.375v-52.5h70v122.5c0 4.6406 1.8438 9.0938 5.125 12.375s7.7344 5.125 12.375 5.125h175c4.6406 0 9.0938-1.8438 12.375-5.125s5.125-7.7344 5.125-12.375v-192.5-1.0508c-0.14453-1.5547-0.5-3.0859-1.0508-4.5508zm-313.95 110.6h-140v-210h87.5v35c0 4.6406 1.8438 9.0938 5.125 12.375s7.7344 5.125 12.375 5.125h35v87.5h-52.5c-6.2539 0-12.031 3.3359-15.156 8.75s-3.125 12.086 0 17.5 8.9023 8.75 15.156 8.75h52.5zm140 70v-105h27.824l-5.0742 5.0742c-3.7031 3.1719-5.9141 7.7461-6.1055 12.617-0.1875 4.8711 1.668 9.6016 5.1133 13.051 3.4492 3.4453 8.1797 5.3008 13.051 5.1133 4.8711-0.19141 9.4453-2.4023 12.617-6.1055l35-35c3.2578-3.2773 5.0898-7.7148 5.0898-12.336 0-4.625-1.832-9.0586-5.0898-12.34l-35-35c-4.5078-3.8555-10.66-5.1719-16.348-3.4883-5.6875 1.6797-10.137 6.1289-11.816 11.816-1.6836 5.6914-0.37109 11.844 3.4883 16.348l5.0742 5.0742h-27.824v-69.824h87.5v35c0 4.6406 1.8438 9.0938 5.125 12.375s7.7344 5.125 12.375 5.125h35v157.5z"/>
+    </svg>
+  ),
+  cog: (
+    <svg aria-hidden="true" focusable="false" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+      <path d="M495.9 166.6C499.2 175.2 496.4 184.9 489.6 191.2L446.3 230.6C447.4 238.9 448 247.4 448 256C448 264.6 447.4 273.1 446.3 281.4L489.6 320.8C496.4 327.1 499.2 336.8 495.9 345.4C491.5 357.3 486.2 368.8 480.2 379.7L475.5 387.8C468.9 398.8 461.5 409.2 453.4 419.1C447.4 426.2 437.7 428.7 428.9 425.9L373.2 408.1C359.8 418.4 344.1 427 329.2 433.6L316.7 490.7C314.7 499.7 307.7 506.1 298.5 508.5C284.7 510.8 270.5 512 255.1 512C241.5 512 227.3 510.8 213.5 508.5C204.3 506.1 197.3 499.7 195.3 490.7L182.8 433.6C167 427 152.2 418.4 138.8 408.1L83.14 425.9C74.3 428.7 64.55 426.2 58.63 419.1C50.52 409.2 43.12 398.8 36.52 387.8L31.84 379.7C25.77 368.8 20.49 357.3 16.06 345.4C12.82 336.8 15.55 327.1 22.41 320.8L65.67 281.4C64.57 273.1 64 264.6 64 256C64 247.4 64.57 238.9 65.67 230.6L22.41 191.2C15.55 184.9 12.82 175.3 16.06 166.6C20.49 154.7 25.78 143.2 31.84 132.3L36.51 124.2C43.12 113.2 50.52 102.8 58.63 92.95C64.55 85.8 74.3 83.32 83.14 86.14L138.8 103.9C152.2 93.56 167 84.96 182.8 78.43L195.3 21.33C197.3 12.25 204.3 5.04 213.5 3.51C227.3 1.201 241.5 0 256 0C270.5 0 284.7 1.201 298.5 3.51C307.7 5.04 314.7 12.25 316.7 21.33L329.2 78.43C344.1 84.96 359.8 93.56 373.2 103.9L428.9 86.14C437.7 83.32 447.4 85.8 453.4 92.95C461.5 102.8 468.9 113.2 475.5 124.2L480.2 132.3C486.2 143.2 491.5 154.7 495.9 166.6V166.6zM256 336C300.2 336 336 300.2 336 255.1C336 211.8 300.2 175.1 256 175.1C211.8 175.1 176 211.8 176 255.1C176 300.2 211.8 336 256 336z"/>
     </svg>
   )
 }

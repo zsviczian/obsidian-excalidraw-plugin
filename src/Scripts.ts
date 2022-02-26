@@ -1,22 +1,35 @@
-import { App, Instruction, Notice, TAbstractFile, TFile } from "obsidian";
+import { App, Instruction, Notice, TAbstractFile, TFile, WorkspaceLeaf } from "obsidian";
+import { fileURLToPath } from "url";
 import { PLUGIN_ID, VIEW_TYPE_EXCALIDRAW } from "./constants";
 import ExcalidrawView from "./ExcalidrawView";
-import { t } from "./lang/helpers";
 import ExcalidrawPlugin from "./main";
 import { GenericInputPrompt, GenericSuggester } from "./Prompt";
-import { errorlog, splitFolderAndFilename } from "./Utils";
+import { getIMGFilename, splitFolderAndFilename } from "./Utils";
+
+export type ScriptIconMap = {[key:string]: {name:string,iconBase64:string}}
 
 export class ScriptEngine {
   private plugin: ExcalidrawPlugin;
   private scriptPath: string;
+  //https://stackoverflow.com/questions/60218638/how-to-force-re-render-if-map-value-changes
+  public scriptIconMap: ScriptIconMap;
 
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
+    this.scriptIconMap = {}; 
     this.loadScripts();
     this.registerEventHandlers();
   }
 
   registerEventHandlers() {
+    const handleSvgFileChange = (path:string) =>{
+      if(!path.endsWith(".svg")) return;
+      const scriptFile = this.plugin.app.vault.getAbstractFileByPath(getIMGFilename(path,"md"))
+      if(scriptFile && scriptFile instanceof TFile) {
+        this.unloadScript(this.getScriptName(scriptFile),scriptFile.path);
+        this.loadScript(scriptFile);
+      }
+    }
     const deleteEventHandler = async (file: TFile) => {
       if (!(file instanceof TFile)) {
         return;
@@ -24,7 +37,8 @@ export class ScriptEngine {
       if (!file.path.startsWith(this.scriptPath)) {
         return;
       }
-      this.unloadScript(this.getScriptName(file));
+      this.unloadScript(this.getScriptName(file),file.path);
+      handleSvgFileChange(file.path)
     };
     this.plugin.registerEvent(
       this.plugin.app.vault.on("delete", deleteEventHandler),
@@ -38,6 +52,7 @@ export class ScriptEngine {
         return;
       }
       this.loadScript(file);
+      handleSvgFileChange(file.path)
     };
     this.plugin.registerEvent(
       this.plugin.app.vault.on("create", createEventHandler),
@@ -50,10 +65,12 @@ export class ScriptEngine {
       const oldFileIsScript = oldPath.startsWith(this.scriptPath);
       const newFileIsScript = file.path.startsWith(this.scriptPath);
       if (oldFileIsScript) {
-        this.unloadScript(this.getScriptName(oldPath));
+        this.unloadScript(this.getScriptName(oldPath),oldPath);
+        handleSvgFileChange(oldPath)
       }
       if (newFileIsScript) {
         this.loadScript(file);
+        handleSvgFileChange(file.path);
       }
     };
     this.plugin.registerEvent(
@@ -80,7 +97,7 @@ export class ScriptEngine {
     }
     return app.vault
       .getFiles()
-      .filter((f: TFile) => f.path.startsWith(this.scriptPath));
+      .filter((f: TFile) => f.path.startsWith(this.scriptPath) && f.extension==="md");
   }
 
   loadScripts() {
@@ -106,8 +123,26 @@ export class ScriptEngine {
     return basename;
   }
 
+  async addScriptIconToMap(scriptPath:string, name: string) {
+    const svgFilePath = getIMGFilename(scriptPath,"svg");
+    const file = this.plugin.app.vault.getAbstractFileByPath(svgFilePath);
+    let iconBase64:string = null;
+    if(file && file instanceof TFile) {
+      const svgString = await this.plugin.app.vault.read(file);
+      //iconBase64 = `data:image/svg+xml,${encodeURIComponent(svgString)}`;
+      iconBase64 = svgString;
+    }
+    this.scriptIconMap = {
+      ...this.scriptIconMap
+    };
+    this.scriptIconMap[scriptPath] = {name,iconBase64};
+    this.updateToolPannels();
+  }
+
   loadScript(f: TFile) {
+    if(f.extension!=="md") return;
     const scriptName = this.getScriptName(f);
+    this.addScriptIconToMap(f.path,scriptName)
     this.plugin.addCommand({
       id: scriptName,
       name: `(Script) ${scriptName}`,
@@ -134,11 +169,16 @@ export class ScriptEngine {
       .getFiles()
       .filter((f: TFile) => f.path.startsWith(this.scriptPath));
     scripts.forEach((f) => {
-      this.unloadScript(this.getScriptName(f));
+      this.unloadScript(this.getScriptName(f),f.path);
     });
   }
 
-  unloadScript(basename: string) {
+  unloadScript(basename: string, path: string) {
+    if(!path.endsWith(".md")) return;
+    delete this.scriptIconMap[path];
+    this.scriptIconMap = {...this.scriptIconMap};
+    this.updateToolPannels();
+
     const app = this.plugin.app;
     const commandId = `${PLUGIN_ID}:${basename}`;
     // @ts-ignore
@@ -190,6 +230,14 @@ export class ScriptEngine {
     }*/
     this.plugin.ea.activeScript = null;
     return result;
+  }
+
+  private updateToolPannels() {
+    const leaves = this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+    leaves.forEach((leaf: WorkspaceLeaf) => {
+      const excalidrawView = leaf.view as ExcalidrawView;
+      excalidrawView.toolsPanelRef?.current?.updateScriptIconMap(this.scriptIconMap);
+    });
   }
 
   public static async inputPrompt(
