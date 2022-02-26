@@ -4,8 +4,8 @@ import commonjs from '@rollup/plugin-commonjs';
 import { env } from "process";
 import babel from '@rollup/plugin-babel';
 import replace from "@rollup/plugin-replace";
-import visualizer from "rollup-plugin-visualizer";
 import { terser } from "rollup-plugin-terser";
+import copy from 'rollup-plugin-copy'
 
 const isProd = (process.env.NODE_ENV === "production");
 console.log("Is production", isProd);
@@ -30,7 +30,6 @@ export default {
     commonjs(),
     nodeResolve({ browser: true, preferBuiltins: true }),
     typescript({inlineSources: !isProd}),
-    visualizer(),
     ...isProd ? [
       terser({toplevel: true, compress: {passes: 2}})
     ] : []

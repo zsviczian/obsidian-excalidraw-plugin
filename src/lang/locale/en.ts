@@ -352,4 +352,8 @@ export default {
 
   //ExcalidrawData.ts
   LOAD_FROM_BACKUP: "Excalidraw file was corrupted. Loading from backup file.",
+
+  //ObsidianMenu.tsx
+  GOTO_FULLSCREEN: "Goto fullscreen mode",
+  EXIT_FULLSCREEN: "Exit fullscreen mode",
 };

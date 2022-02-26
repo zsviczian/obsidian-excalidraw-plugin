@@ -5,7 +5,6 @@ import {
   Notice,
   request,
   TAbstractFile,
-  TFile,
   TFolder,
   Vault,
   WorkspaceLeaf,
@@ -552,7 +551,7 @@ export const getLinkParts = (fname: string): LinkParts => {
 };
 
 export const compress = (data:string):string => {
-  return compressToBase64(data).replace(/(.{1024})/g, "$1\n");
+  return compressToBase64(data).replace(/(.{64})/g, "$1\n\n");
 };
 
 export const decompress = (data:string):string => {

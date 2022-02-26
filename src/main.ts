@@ -58,6 +58,8 @@ import {
   initExcalidrawAutomate,
   destroyExcalidrawAutomate,
   ExcalidrawAutomate,
+  insertLaTeXToView,
+  search,
 } from "./ExcalidrawAutomate";
 import { Prompt } from "./Prompt";
 import { around } from "monkey-around";
@@ -106,9 +108,9 @@ export default class ExcalidrawPlugin extends Plugin {
   private _loaded: boolean = false;
   public settings: ExcalidrawSettings;
   private openDialog: OpenFileDialog;
-  private insertLinkDialog: InsertLinkDialog;
-  private insertImageDialog: InsertImageDialog;
-  private insertMDDialog: InsertMDDialog;
+  public insertLinkDialog: InsertLinkDialog;
+  public insertImageDialog: InsertImageDialog;
+  public insertMDDialog: InsertMDDialog;
   private activeExcalidrawView: ExcalidrawView = null;
   public lastActiveExcalidrawFilePath: string = null;
   public hover: { linkText: string; sourcePath: string } = {
@@ -610,39 +612,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.addCommand({
       id: "excalidraw-download-lib",
       name: t("DOWNLOAD_LIBRARY"),
-      callback: async () => {
-        if (this.app.isMobile) {
-          const prompt = new Prompt(
-            this.app,
-            "Please provide a filename",
-            "my-library",
-            "filename, leave blank to cancel action",
-          );
-          prompt.openAndGetValue(async (filename: string) => {
-            if (!filename) {
-              return;
-            }
-            filename = `${filename}.excalidrawlib`;
-            const folderpath = normalizePath(this.settings.folder);
-            await checkAndCreateFolder(this.app.vault, folderpath); //create folder if it does not exist
-            const fname = getNewUniqueFilepath(
-              this.app.vault,
-              filename,
-              folderpath,
-            );
-            this.app.vault.create(fname, this.settings.library);
-            new Notice(`Exported library to ${fname}`, 6000);
-          });
-          return;
-        }
-        download(
-          "data:text/plain;charset=utf-8",
-          encodeURIComponent(
-            JSON.stringify(this.settings.library2, null, "\t"),
-          ),
-          "my-obsidian-library.excalidrawlib",
-        );
-      },
+      callback: this.exportLibrary
     });
 
     this.addCommand({
@@ -790,37 +760,7 @@ export default class ExcalidrawPlugin extends Plugin {
         }
         const view = this.app.workspace.activeLeaf.view;
         if (view instanceof ExcalidrawView) {
-          (async ()=>{
-            const ea = this.ea;
-            ea.reset();
-            ea.setView(view);
-            const elements = ea.getViewElements().filter(el=>el.type==="text");
-            if(elements.length === 0) return;
-            let text = await ScriptEngine.inputPrompt(this.app,"Search for","use quotation marks for exact match","");
-            if(!text) return;
-            const res = text.matchAll(/"(.*?)"/g)
-            let query:string[] = [];
-            let parts;
-            while (!(parts = res.next()).done) {
-              query.push(parts.value[1]);
-            }
-            text = text.replaceAll(/"(.*?)"/g, "");
-            query = query.concat(text.split(" ").filter(s=>s.length!==0));
-            const match = elements
-              .filter((el:any)=>query
-                .some(q=>el
-                  .rawText
-                  .toLowerCase()
-                  .replaceAll("\n"," ")
-                  .match(q.toLowerCase())
-              ));
-            if(match.length === 0) {
-              new Notice("I could not find a matching text element");
-              return;
-            }
-            ea.selectElementsInView(match);
-            ea.getExcalidrawAPI().zoomToFit(match,this.settings.zoomToFitMaxLevel,0.05);
-          })();
+          search(view);
           return true;
         }
         return false;
@@ -902,7 +842,7 @@ export default class ExcalidrawPlugin extends Plugin {
       checkCallback: (checking: boolean) => {
         if (checking) {
           if (
-            this.app.workspace.activeLeaf.view.getViewType() ==
+            this.app.workspace.activeLeaf.view.getViewType() ===
             VIEW_TYPE_EXCALIDRAW
           ) {
             return !(this.app.workspace.activeLeaf.view as ExcalidrawView)
@@ -913,7 +853,7 @@ export default class ExcalidrawPlugin extends Plugin {
         const view = this.app.workspace.activeLeaf.view;
         if (view instanceof ExcalidrawView) {
           view.changeTextMode(
-            view.textMode == TextMode.parsed ? TextMode.raw : TextMode.parsed,
+            view.textMode === TextMode.parsed ? TextMode.raw : TextMode.parsed,
           );
           return true;
         }
@@ -1072,22 +1012,7 @@ export default class ExcalidrawPlugin extends Plugin {
         }
         const view = this.app.workspace.activeLeaf.view;
         if (view instanceof ExcalidrawView) {
-          const prompt = new Prompt(
-            this.app,
-            t("ENTER_LATEX"),
-            "",
-            "\\color{red}\\oint_S {E_n dA = \\frac{1}{{\\varepsilon _0 }}} Q_{inside}",
-          );
-          prompt.openAndGetValue(async (formula: string) => {
-            if (!formula) {
-              return;
-            }
-            const ea = this.ea;
-            ea.reset();
-            await ea.addLaTex(0, 0, formula);
-            ea.setView(view);
-            ea.addElementsToView(true, false, true);
-          });
+          insertLaTeXToView(view);
           return true;
         }
         return false;
@@ -1792,6 +1717,40 @@ export default class ExcalidrawPlugin extends Plugin {
     }
     const fileCache = f ? this.app.metadataCache.getFileCache(f) : null;
     return !!fileCache?.frontmatter && !!fileCache.frontmatter[FRONTMATTER_KEY];
+  }
+
+  public async exportLibrary() {
+    if (this.app.isMobile) {
+      const prompt = new Prompt(
+        this.app,
+        "Please provide a filename",
+        "my-library",
+        "filename, leave blank to cancel action",
+      );
+      prompt.openAndGetValue(async (filename: string) => {
+        if (!filename) {
+          return;
+        }
+        filename = `${filename}.excalidrawlib`;
+        const folderpath = normalizePath(this.settings.folder);
+        await checkAndCreateFolder(this.app.vault, folderpath); //create folder if it does not exist
+        const fname = getNewUniqueFilepath(
+          this.app.vault,
+          filename,
+          folderpath,
+        );
+        this.app.vault.create(fname, this.settings.library);
+        new Notice(`Exported library to ${fname}`, 6000);
+      });
+      return;
+    }
+    download(
+      "data:text/plain;charset=utf-8",
+      encodeURIComponent(
+        JSON.stringify(this.settings.library2, null, "\t"),
+      ),
+      "my-obsidian-library.excalidrawlib",
+    );
   }
 
 }

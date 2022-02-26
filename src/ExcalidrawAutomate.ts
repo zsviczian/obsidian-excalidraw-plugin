@@ -6,7 +6,7 @@ import {
   ExcalidrawElement,
   ExcalidrawBindableElement,
 } from "@zsviczian/excalidraw/types/element/types";
-import { normalizePath, TFile, WorkspaceLeaf } from "obsidian";
+import { normalizePath, Notice, TFile, WorkspaceLeaf } from "obsidian";
 import ExcalidrawView, { ExportSettings, TextMode } from "./ExcalidrawView";
 import { ExcalidrawData } from "./ExcalidrawData";
 import {
@@ -37,6 +37,9 @@ import {
   getMaximumGroups,
   intersectElementWithLine,
 } from "@zsviczian/excalidraw";
+import { Prompt } from "./Prompt";
+import { t } from "./lang/helpers";
+import { ScriptEngine } from "./Scripts";
 
 declare type ConnectionPoint = "top" | "bottom" | "left" | "right" | null;
 const GAP = 4;
@@ -1824,4 +1827,56 @@ function errorMessage(message: string, source: string) {
         message: "unknown error",
       });
   }
+}
+
+export const insertLaTeXToView = (view: ExcalidrawView) => {
+  const app = view.plugin.app;
+  const ea = view.plugin.ea;
+  const prompt = new Prompt(
+    app,
+    t("ENTER_LATEX"),
+    "",
+    "\\color{red}\\oint_S {E_n dA = \\frac{1}{{\\varepsilon _0 }}} Q_{inside}",
+  );
+  prompt.openAndGetValue(async (formula: string) => {
+    if (!formula) {
+      return;
+    }
+    ea.reset();
+    await ea.addLaTex(0, 0, formula);
+    ea.setView(view);
+    ea.addElementsToView(true, false, true);
+  });
+}
+
+export const search = async (view: ExcalidrawView) => {
+  const ea = view.plugin.ea;
+  ea.reset();
+  ea.setView(view);
+  const elements = ea.getViewElements().filter(el=>el.type==="text");
+  if(elements.length === 0) return;
+  let text = await ScriptEngine.inputPrompt(view.plugin.app,"Search for","use quotation marks for exact match","");
+  if(!text) return;
+  const res = text.matchAll(/"(.*?)"/g)
+  let query:string[] = [];
+  let parts;
+  while (!(parts = res.next()).done) {
+    query.push(parts.value[1]);
+  }
+  text = text.replaceAll(/"(.*?)"/g, "");
+  query = query.concat(text.split(" ").filter(s=>s.length!==0));
+  const match = elements
+    .filter((el:any)=>query
+      .some(q=>el
+        .rawText
+        .toLowerCase()
+        .replaceAll("\n"," ")
+        .match(q.toLowerCase())
+    ));
+  if(match.length === 0) {
+    new Notice("I could not find a matching text element");
+    return;
+  }
+  ea.selectElementsInView(match);
+  ea.getExcalidrawAPI().zoomToFit(match,view.plugin.settings.zoomToFitMaxLevel,0.05);
 }
