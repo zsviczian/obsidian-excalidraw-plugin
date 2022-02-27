@@ -201,3 +201,7 @@ li[data-testid] {
   width: 50px;
   display: inline-block;
 }
+
+.excalidraw-release p>a>img {
+  width: 100%
+}

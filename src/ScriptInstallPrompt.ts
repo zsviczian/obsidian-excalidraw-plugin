@@ -3,7 +3,7 @@ import ExcalidrawPlugin from "./Main";
 import { errorlog, log } from "./Utils";
 
 const URL =
-  "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/index-test.md";
+  "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/index-new.md";
 
 export class ScriptInstallPrompt extends Modal {
   constructor(private plugin: ExcalidrawPlugin) {

@@ -287,7 +287,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                         version,
                       ).open();
                     }}
-                    icon={ICONS.switchToMarkdown}
+                    icon={ICONS.releaseNotes}
                     view={this.props.view}
                   />
                   {this.state.isPreviewMode === null ? (
