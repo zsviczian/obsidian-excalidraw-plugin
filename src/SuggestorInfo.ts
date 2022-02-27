@@ -1,13 +1,22 @@
-import { FRONTMATTER_KEY, FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS, FRONTMATTER_KEY_CUSTOM_PREFIX, FRONTMATTER_KEY_CUSTOM_URL_PREFIX, FRONTMATTER_KEY_DEFAULT_MODE, FRONTMATTER_KEY_FONT, FRONTMATTER_KEY_FONTCOLOR, FRONTMATTER_KEY_MD_STYLE } from "./Constants";
+import {
+  FRONTMATTER_KEY,
+  FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS,
+  FRONTMATTER_KEY_CUSTOM_PREFIX,
+  FRONTMATTER_KEY_CUSTOM_URL_PREFIX,
+  FRONTMATTER_KEY_DEFAULT_MODE,
+  FRONTMATTER_KEY_FONT,
+  FRONTMATTER_KEY_FONTCOLOR,
+  FRONTMATTER_KEY_MD_STYLE,
+} from "./Constants";
 
 type SuggestorInfo = {
-  field: string,
-  code: string,
-  desc: string,
-  after: string
-}
+  field: string;
+  code: string;
+  desc: string;
+  after: string;
+};
 
-export const EXCALIDRAW_AUTOMATE_INFO:SuggestorInfo[] = [
+export const EXCALIDRAW_AUTOMATE_INFO: SuggestorInfo[] = [
   {
     field: "plugin",
     code: null,
@@ -161,7 +170,7 @@ export const EXCALIDRAW_AUTOMATE_INFO:SuggestorInfo[] = [
   {
     field: "create",
     code: 'create(params?: {filename?: string, foldername?: string, templatePath?: string, onNewPane?: boolean, frontmatterKeys?: { "excalidraw-plugin"?: "raw" | "parsed", "excalidraw-link-prefix"?: string, "excalidraw-link-brackets"?: boolean, "excalidraw-url-prefix"?: string,},}): Promise<string>;',
-    desc: 'Create a drawing and save it to filename.\nIf filename is null: default filename as defined in Excalidraw settings.\nIf folder is null: default folder as defined in Excalidraw settings\n',
+    desc: "Create a drawing and save it to filename.\nIf filename is null: default filename as defined in Excalidraw settings.\nIf folder is null: default folder as defined in Excalidraw settings\n",
     after: "",
   },
   {
@@ -209,7 +218,7 @@ export const EXCALIDRAW_AUTOMATE_INFO:SuggestorInfo[] = [
   {
     field: "addText",
     code: 'addText(topX: number, topY: number, text: string, formatting?: {wrapAt?: number; width?: number; height?: number; textAlign?: string; box?: boolean | "box" | "blob" | "ellipse" | "diamond"; boxPadding?: number;}, id?: string,): string;',
-    desc: 'If box is !null, then text will be boxed\nThe function returns the id of the TextElement. If the text element is boxed i.e. it is a sticky note, then the id of the container object',
+    desc: "If box is !null, then text will be boxed\nThe function returns the id of the TextElement. If the text element is boxed i.e. it is a sticky note, then the id of the container object",
     after: "",
   },
   {
@@ -238,7 +247,7 @@ export const EXCALIDRAW_AUTOMATE_INFO:SuggestorInfo[] = [
   },
   {
     field: "connectObjects",
-    code: 'connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, formatting?: {numberOfPoints?: number; startArrowHead?: string; endArrowHead?: string; padding?: number;},): void;',
+    code: "connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, formatting?: {numberOfPoints?: number; startArrowHead?: string; endArrowHead?: string; padding?: number;},): void;",
     desc: 'type ConnectionPoint = "top" | "bottom" | "left" | "right" | null\nWhen null is passed as ConnectionPoint then Excalidraw will automatically decide\nnumberOfPoints is the number of points on the line. Default is 0 i.e. line will only have a start and end point.\nArrowHead: "triangle"|"dot"|"arrow"|"bar"|null',
     after: "",
   },
@@ -335,7 +344,7 @@ export const EXCALIDRAW_AUTOMATE_INFO:SuggestorInfo[] = [
   {
     field: "onDropHook",
     code: 'onDropHook(data: {ea: ExcalidrawAutomate, event: React.DragEvent<HTMLDivElement>, draggable: any, type: "file" | "text" | "unknown", payload: {files: TFile[], text: string,}, excalidrawFile: TFile, view: ExcalidrawView, pointerPosition: { x: number, y: number},}): boolean;',
-    desc: 'If set Excalidraw will call this function onDrop events.\nA return of true will stop the default onDrop processing in Excalidraw.\n\ndraggable is the Obsidian draggable object\nfiles is the array of dropped files\nexcalidrawFile is the file receiving the drop event\nview is the excalidraw view receiving the drop.\npointerPosition is the pointer position on canvas at the time of drop.',
+    desc: "If set Excalidraw will call this function onDrop events.\nA return of true will stop the default onDrop processing in Excalidraw.\n\ndraggable is the Obsidian draggable object\nfiles is the array of dropped files\nexcalidrawFile is the file receiving the drop event\nview is the excalidraw view receiving the drop.\npointerPosition is the pointer position on canvas at the time of drop.",
     after: "",
   },
   {
@@ -418,7 +427,7 @@ export const EXCALIDRAW_AUTOMATE_INFO:SuggestorInfo[] = [
   },
   {
     field: "verifyMinimumPluginVersion",
-    code: 'verifyMinimumPluginVersion(requiredVersion: string): boolean;',
+    code: "verifyMinimumPluginVersion(requiredVersion: string): boolean;",
     desc: 'Returns true if plugin version is >= than required\nrecommended use:\n<code>if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.20")) {new Notice("message");return;}<code>',
     after: "",
   },
@@ -478,13 +487,14 @@ export const EXCALIDRAW_AUTOMATE_INFO:SuggestorInfo[] = [
   },
 ];
 
-export const EXCALIDRAW_SCRIPTENGINE_INFO:SuggestorInfo[] = [
+export const EXCALIDRAW_SCRIPTENGINE_INFO: SuggestorInfo[] = [
   {
     field: "inputPrompt",
     code: "inputPrompt: (header: string, placeholder?: string, value?: string, buttons?: [{caption:string, action:Function}]);",
-    desc: "Opens a prompt that asks for an input.\nReturns a string with the input.\nYou need to await the result of inputPrompt.\n" +
-          "buttons.action(input: string) => string\nThe button action function will receive the actual input string. If action returns null, input will be unchanged. If action returns a string, input will receive that value when the promise is resolved. " +
-          "example:\n<code>let fileType = '';\nconst filename = await utils.inputPrompt (\n  'Filename',\n  '',\n  '',\n,  [\n    {\n      caption: 'Markdown',\n      action: ()=>{fileType='md';return;}\n    },\n    {\n      caption: 'Excalidraw',\n      action: ()=>{fileType='ex';return;}\n    }\n  ]\n);</code>",
+    desc:
+      "Opens a prompt that asks for an input.\nReturns a string with the input.\nYou need to await the result of inputPrompt.\n" +
+      "buttons.action(input: string) => string\nThe button action function will receive the actual input string. If action returns null, input will be unchanged. If action returns a string, input will receive that value when the promise is resolved. " +
+      "example:\n<code>let fileType = '';\nconst filename = await utils.inputPrompt (\n  'Filename',\n  '',\n  '',\n,  [\n    {\n      caption: 'Markdown',\n      action: ()=>{fileType='md';return;}\n    },\n    {\n      caption: 'Excalidraw',\n      action: ()=>{fileType='ex';return;}\n    }\n  ]\n);</code>",
     after: "",
   },
   {
@@ -495,7 +505,7 @@ export const EXCALIDRAW_SCRIPTENGINE_INFO:SuggestorInfo[] = [
   },
 ];
 
-export const FRONTMATTER_KEYS_INFO:SuggestorInfo[] = [
+export const FRONTMATTER_KEYS_INFO: SuggestorInfo[] = [
   {
     field: "plugin",
     code: null,

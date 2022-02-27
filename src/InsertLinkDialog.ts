@@ -23,8 +23,11 @@ export class InsertLinkDialog extends FuzzySuggestModal<TFile> {
 
   getItems(): any[] {
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/422
-    //@ts-ignore
-    return this.app.metadataCache.getLinkSuggestions().filter(x=>!x.path.match(REG_LINKINDEX_INVALIDCHARS));
+    return this.app.metadataCache
+      //@ts-ignore
+      .getLinkSuggestions()
+      //@ts-ignore
+      .filter((x) => !x.path.match(REG_LINKINDEX_INVALIDCHARS));
   }
 
   getItemText(item: any): string {

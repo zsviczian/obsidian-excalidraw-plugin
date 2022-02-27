@@ -7,6 +7,7 @@ import { SCRIPT_INSTALL_FOLDER } from "./Constants";
 import { insertLaTeXToView, search } from "./ExcalidrawAutomate";
 import ExcalidrawView, { TextMode } from "./ExcalidrawView";
 import { t } from "./lang/helpers";
+import { ReleaseNotes } from "./ReleaseNotes";
 import { ScriptIconMap } from "./Scripts";
 import { getIMGFilename } from "./Utils";
 
@@ -17,19 +18,19 @@ type PanelProps = {
   visible: boolean;
   view: ExcalidrawView;
   centerPointer: Function;
-}
+};
 
 export type PanelState = {
   visible: boolean;
   top: number;
   left: number;
-  theme: "dark"|"light";
+  theme: "dark" | "light";
   excalidrawViewMode: boolean;
   minimized: boolean;
   isFullscreen: boolean;
   isPreviewMode: boolean;
   scriptIconMap: ScriptIconMap;
-}
+};
 
 const TOOLS_PANEL_WIDTH = 228;
 
@@ -58,36 +59,36 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       isFullscreen: false,
       isPreviewMode: true,
       scriptIconMap: {},
-    }
-  } 
+    };
+  }
 
-  updateScriptIconMap(scriptIconMap:ScriptIconMap) {
-    this.setState(()=>{
-      return {scriptIconMap}
+  updateScriptIconMap(scriptIconMap: ScriptIconMap) {
+    this.setState(() => {
+      return { scriptIconMap };
     });
   }
 
   setPreviewMode(isPreviewMode: boolean) {
-    this.setState(()=>{
+    this.setState(() => {
       return {
         isPreviewMode,
-      }
-    })
+      };
+    });
   }
 
   setFullscreen(isFullscreen: boolean) {
-    this.setState(()=>{
+    this.setState(() => {
       return {
         isFullscreen,
-      }
-    })
+      };
+    });
   }
 
   setExcalidrawViewMode(isViewModeEnabled: boolean) {
-    this.setState(()=>{
+    this.setState(() => {
       return {
         excalidrawViewMode: isViewModeEnabled,
-      }
+      };
     });
   }
 
@@ -95,41 +96,42 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     this.setTopCenter(isMobileOrZen);
     this.setState((prevState: PanelState) => {
       return {
-        visible: !prevState.visible
-      }
+        visible: !prevState.visible,
+      };
     });
   }
 
-  setTheme(theme:"dark"|"light") {
+  setTheme(theme: "dark" | "light") {
     this.setState((prevState: PanelState) => {
       return {
-        theme: theme
-      }
+        theme,
+      };
     });
   }
 
-  setTopCenter(isMobileOrZen:boolean) {
-    this.setState(()=>{
+  setTopCenter(isMobileOrZen: boolean) {
+    this.setState(() => {
       return {
-        left: (this.containerRef.current.clientWidth -
-                TOOLS_PANEL_WIDTH -
-                (isMobileOrZen?0:TOOLS_PANEL_WIDTH+4)
-              ) / 
-              2+this.containerRef.current.parentElement.offsetLeft +
-              (isMobileOrZen?0:TOOLS_PANEL_WIDTH+4),
-        top: 64 + this.containerRef.current.parentElement.offsetTop
-      }
-    })
+        left:
+          (this.containerRef.current.clientWidth -
+            TOOLS_PANEL_WIDTH -
+            (isMobileOrZen ? 0 : TOOLS_PANEL_WIDTH + 4)) /
+            2 +
+          this.containerRef.current.parentElement.offsetLeft +
+          (isMobileOrZen ? 0 : TOOLS_PANEL_WIDTH + 4),
+        top: 64 + this.containerRef.current.parentElement.offsetTop,
+      };
+    });
   }
 
-  updatePosition(deltaY:number=0, deltaX:number=0) {
-    this.setState(()=>{
+  updatePosition(deltaY: number = 0, deltaX: number = 0) {
+    this.setState(() => {
       const {
         offsetTop,
         offsetLeft,
         clientWidth: width,
-        clientHeight: height
-      } = this.containerRef.current.firstElementChild as HTMLElement
+        clientHeight: height,
+      } = this.containerRef.current.firstElementChild as HTMLElement;
 
       const top = offsetTop - deltaY;
       const left = offsetLeft - deltaX;
@@ -138,7 +140,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
         clientWidth: parentWidth,
         clientHeight: parentHeight,
         offsetTop: parentOffsetTop,
-        offsetLeft: parentOffsetLeft
+        offsetLeft: parentOffsetLeft,
       } = this.containerRef.current.parentElement;
 
       this.previousHeight = parentHeight;
@@ -147,152 +149,180 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       this.onRightEdge = left >= parentWidth - width + parentOffsetLeft;
 
       return {
-        top: top < parentOffsetTop
-          ? parentOffsetTop
-          : this.onBottomEdge
+        top:
+          top < parentOffsetTop
+            ? parentOffsetTop
+            : this.onBottomEdge
             ? parentHeight - height + parentOffsetTop
             : top,
-        left: left < parentOffsetLeft
-          ? parentOffsetLeft
-          : this.onRightEdge
+        left:
+          left < parentOffsetLeft
+            ? parentOffsetLeft
+            : this.onRightEdge
             ? parentWidth - width + parentOffsetLeft
-            : left
-      }
-    })
+            : left,
+      };
+    });
   }
-  
-  render () {
+
+  render() {
     return (
       <div
         ref={this.containerRef}
-        className={clsx(
-          "excalidraw",
-          {
-            "theme--dark": this.state.theme==="dark"
-          }
-        )}
+        className={clsx("excalidraw", {
+          "theme--dark": this.state.theme === "dark",
+        })}
         style={{
-          width:"100%",
-          height:"100%",
-          position:"absolute",
-          touchAction:"none"
+          width: "100%",
+          height: "100%",
+          position: "absolute",
+          touchAction: "none",
         }}
       >
         <div
           className="Island"
           style={{
-            top: this.state.top + "px",
-            left: this.state.left + "px",
-            width:TOOLS_PANEL_WIDTH+"px",
-            display: this.state.visible && !this.state.excalidrawViewMode ? "block":"none",
+            top: `${this.state.top}px`,
+            left: `${this.state.left}px`,
+            width: `${TOOLS_PANEL_WIDTH}px`,
+            display:
+              this.state.visible && !this.state.excalidrawViewMode
+                ? "block"
+                : "none",
             height: "fit-content",
             maxHeight: "400px",
             zIndex: 3,
           }}
         >
           <div
-           style={{
+            style={{
               height: "26px",
               width: "100%",
               cursor: "move",
             }}
-            onClick={(event: React.MouseEvent<HTMLDivElement, MouseEvent>)=>{
+            onClick={(event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
               event.preventDefault();
-              if(Math.abs(this.penDownX-this.pos3)>5 || Math.abs(this.penDownY-this.pos4)>5) return;
-              this.setState((prevState:PanelState)=>{
+              if (
+                Math.abs(this.penDownX - this.pos3) > 5 ||
+                Math.abs(this.penDownY - this.pos4) > 5
+              ) {
+                return;
+              }
+              this.setState((prevState: PanelState) => {
                 return {
-                  minimized: !prevState.minimized
-                }
-              })
+                  minimized: !prevState.minimized,
+                };
+              });
             }}
-            
-            onPointerDown={(event: React.PointerEvent)=> {
-              const onDrag = (e:PointerEvent) => {
+            onPointerDown={(event: React.PointerEvent) => {
+              const onDrag = (e: PointerEvent) => {
                 e.preventDefault();
                 this.pos1 = this.pos3 - e.clientX;
                 this.pos2 = this.pos4 - e.clientY;
                 this.pos3 = e.clientX;
-                this.pos4 = e.clientY;              
-                this.updatePosition(this.pos2,this.pos1)
-              }
+                this.pos4 = e.clientY;
+                this.updatePosition(this.pos2, this.pos1);
+              };
 
               const onPointerUp = () => {
-                document.removeEventListener("pointerup",onPointerUp)
-                document.removeEventListener("pointermove",onDrag)
-              }
+                document.removeEventListener("pointerup", onPointerUp);
+                document.removeEventListener("pointermove", onDrag);
+              };
 
               event.preventDefault();
               this.penDownX = this.pos3 = event.clientX;
               this.penDownY = this.pos4 = event.clientY;
-              document.addEventListener("pointerup",onPointerUp);
-              document.addEventListener("pointermove",onDrag);
+              document.addEventListener("pointerup", onPointerUp);
+              document.addEventListener("pointermove", onDrag);
             }}
           >
-            <svg aria-hidden="true" focusable="false" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 228 26">
-              <path stroke="var(--icon-fill-color)" strokeWidth="2" d="M40,7 h148 M40,13 h148 M40,19 h148"/>
+            <svg
+              aria-hidden="true"
+              focusable="false"
+              role="img"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 228 26"
+            >
+              <path
+                stroke="var(--icon-fill-color)"
+                strokeWidth="2"
+                d="M40,7 h148 M40,13 h148 M40,19 h148"
+              />
             </svg>
           </div>
-          <div 
+          <div
             className="Island App-menu__left scrollbar"
-            style={{ 
-              maxHeight:"350px",
+            style={{
+              maxHeight: "350px",
               //@ts-ignore
-              "--padding":2,
-              display: this.state.minimized ? "none":"block",
+              "--padding": 2,
+              display: this.state.minimized ? "none" : "block",
             }}
           >
-            <div 
-              className="panelColumn"
-            >
+            <div className="panelColumn">
               <fieldset>
                 <legend>Utility actions</legend>
                 <div className="buttonList buttonListIcon">
                   <ActionButton
                     key={"search"}
                     title={t("SEARCH")}
-                    action={()=> {
+                    action={() => {
                       search(this.props.view);
                     }}
                     icon={ICONS.search}
                     view={this.props.view}
                   />
                   <ActionButton
-                    key={"md"}
-                    title={t("OPEN_AS_MD")}
-                    action={()=> {
-                      this.props.view.openAsMarkdown();
+                    key={"release-notes"}
+                    title={t("READ_RELEASE_NOTES")}
+                    action={() => {
+                      const version: string =
+                      //@ts-ignore
+                        this.props.view.app.plugins.manifests[
+                          "obsidian-excalidraw-plugin"
+                        ].version;
+                      new ReleaseNotes(
+                        this.props.view.app,
+                        this.props.view.plugin,
+                        version,
+                      ).open();
                     }}
                     icon={ICONS.switchToMarkdown}
                     view={this.props.view}
                   />
-                  { this.state.isPreviewMode === null 
-                    ? (<ActionButton
+                  {this.state.isPreviewMode === null ? (
+                    <ActionButton
                       key={"convert"}
                       title={t("CONVERT_FILE")}
-                      action={()=> {
+                      action={() => {
                         this.props.view.convertExcalidrawToMD();
                       }}
                       icon={ICONS.convertFile}
                       view={this.props.view}
-                    />)
-                    : (<ActionButton
-                        key={"viewmode"}
-                        title={this.state.isPreviewMode ? t("PARSED"):t("RAW")}
-                        action={()=> {
-                          if(this.state.isPreviewMode) {
-                            this.props.view.changeTextMode(TextMode.raw);
-                          } else {
-                            this.props.view.changeTextMode(TextMode.parsed);
-                          }
-                        }}
-                        icon={this.state.isPreviewMode ? ICONS.rawMode : ICONS.parsedMode}
-                        view={this.props.view}
-                      />)
-                  }
+                    />
+                  ) : (
+                    <ActionButton
+                      key={"viewmode"}
+                      title={this.state.isPreviewMode ? t("PARSED") : t("RAW")}
+                      action={() => {
+                        if (this.state.isPreviewMode) {
+                          this.props.view.changeTextMode(TextMode.raw);
+                        } else {
+                          this.props.view.changeTextMode(TextMode.parsed);
+                        }
+                      }}
+                      icon={
+                        this.state.isPreviewMode
+                          ? ICONS.rawMode
+                          : ICONS.parsedMode
+                      }
+                      view={this.props.view}
+                    />
+                  )}
                   <ActionButton
                     key={"tray-mode"}
                     title={t("TRAY_MODE")}
-                    action={()=> {
+                    action={() => {
                       this.props.view.toggleTrayMode();
                     }}
                     icon={ICONS.trayMode}
@@ -300,17 +330,25 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   />
                   <ActionButton
                     key={"fullscreen"}
-                    title={this.state.isFullscreen ? t("EXIT_FULLSCREEN") : t("GOTO_FULLSCREEN")}
-                    action={()=> {
-                      if(this.state.isFullscreen) {
+                    title={
+                      this.state.isFullscreen
+                        ? t("EXIT_FULLSCREEN")
+                        : t("GOTO_FULLSCREEN")
+                    }
+                    action={() => {
+                      if (this.state.isFullscreen) {
                         this.props.view.exitFullscreen();
                       } else {
                         this.props.view.gotoFullscreen();
                       }
                     }}
-                    icon={this.state.isFullscreen ? ICONS.exitFullScreen : ICONS.gotoFullScreen}
+                    icon={
+                      this.state.isFullscreen
+                        ? ICONS.exitFullScreen
+                        : ICONS.gotoFullScreen
+                    }
                     view={this.props.view}
-                  />                  
+                  />
                 </div>
               </fieldset>
               <fieldset>
@@ -319,7 +357,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   <ActionButton
                     key={"lib"}
                     title={t("DOWNLOAD_LIBRARY")}
-                    action={()=>{
+                    action={() => {
                       this.props.view.plugin.exportLibrary();
                     }}
                     icon={ICONS.exportLibrary}
@@ -328,9 +366,14 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   <ActionButton
                     key={"svg"}
                     title={t("EXPORT_SVG")}
-                    action={()=>{
+                    action={() => {
                       this.props.view.saveSVG();
-                      new Notice("File saved: " + getIMGFilename(this.props.view.file.path, "svg"));
+                      new Notice(
+                        `File saved: ${getIMGFilename(
+                          this.props.view.file.path,
+                          "svg",
+                        )}`,
+                      );
                     }}
                     icon={ICONS.exportSVG}
                     view={this.props.view}
@@ -338,9 +381,14 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   <ActionButton
                     key={"png"}
                     title={t("EXPORT_PNG")}
-                    action={()=>{
+                    action={() => {
                       this.props.view.savePNG();
-                      new Notice("File saved: "+getIMGFilename(this.props.view.file.path, "png"));
+                      new Notice(
+                        `File saved: ${getIMGFilename(
+                          this.props.view.file.path,
+                          "png",
+                        )}`,
+                      );
                     }}
                     icon={ICONS.exportPNG}
                     view={this.props.view}
@@ -348,10 +396,19 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   <ActionButton
                     key={"excalidraw"}
                     title={t("EXPORT_EXCALIDRAW")}
-                    action={()=>{
+                    action={() => {
                       this.props.view.exportExcalidraw();
                     }}
                     icon={ICONS.exportExcalidraw}
+                    view={this.props.view}
+                  />
+                  <ActionButton
+                    key={"md"}
+                    title={t("OPEN_AS_MD")}
+                    action={() => {
+                      this.props.view.openAsMarkdown();
+                    }}
+                    icon={ICONS.switchToMarkdown}
                     view={this.props.view}
                   />
                 </div>
@@ -362,10 +419,11 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   <ActionButton
                     key={"image"}
                     title={t("INSERT_IMAGE")}
-                    action={()=> {
+                    action={() => {
                       this.props.centerPointer();
                       this.props.view.plugin.insertImageDialog.start(
-                        this.props.view)
+                        this.props.view,
+                      );
                     }}
                     icon={ICONS.insertImage}
                     view={this.props.view}
@@ -373,10 +431,11 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   <ActionButton
                     key={"insertMD"}
                     title={t("INSERT_MD")}
-                    action={()=> {
+                    action={() => {
                       this.props.centerPointer();
                       this.props.view.plugin.insertMDDialog.start(
-                        this.props.view)
+                        this.props.view,
+                      );
                     }}
                     icon={ICONS.insertMD}
                     view={this.props.view}
@@ -384,9 +443,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   <ActionButton
                     key={"latex"}
                     title={t("INSERT_LATEX")}
-                    action={()=> {
+                    action={() => {
                       this.props.centerPointer();
-                      insertLaTeXToView(this.props.view)
+                      insertLaTeXToView(this.props.view);
                     }}
                     icon={ICONS.insertLaTeX}
                     view={this.props.view}
@@ -394,11 +453,11 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   <ActionButton
                     key={"link"}
                     title={t("INSERT_LINK")}
-                    action={()=> {
+                    action={() => {
                       this.props.centerPointer();
                       this.props.view.plugin.insertLinkDialog.start(
-                        this.props.view.file.path, 
-                        this.props.view.addText
+                        this.props.view.file.path,
+                        this.props.view.addText,
                       );
                     }}
                     icon={ICONS.insertLink}
@@ -412,62 +471,80 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
-  private renderScriptButtons (isDownloaded:boolean) {
-    if(Object.keys(this.state.scriptIconMap).length === 0) {
-      return (""); 
+  private renderScriptButtons(isDownloaded: boolean) {
+    if (Object.keys(this.state.scriptIconMap).length === 0) {
+      return "";
     }
 
-    const downloadedScriptsRoot = 
-      `${this.props.view.plugin.settings
-      .scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}/`;
+    const downloadedScriptsRoot = `${this.props.view.plugin.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}/`;
 
-    const filterCondition = (key:string):boolean => isDownloaded 
-      ? key.startsWith(downloadedScriptsRoot)
-      : !key.startsWith(downloadedScriptsRoot);
+    const filterCondition = (key: string): boolean =>
+      isDownloaded
+        ? key.startsWith(downloadedScriptsRoot)
+        : !key.startsWith(downloadedScriptsRoot);
 
-    if(Object.keys(this.state.scriptIconMap)
-      .filter(k=>filterCondition(k)).length === 0
-    ){
-      return ("");
-    } 
-      
+    if (
+      Object.keys(this.state.scriptIconMap).filter((k) => filterCondition(k))
+        .length === 0
+    ) {
+      return "";
+    }
+
     return (
       <fieldset>
-        <legend>{isDownloaded?"Downloaded":"User"} Scripts</legend>
+        <legend>{isDownloaded ? "Downloaded" : "User"} Scripts</legend>
         <div className="buttonList buttonListIcon">
           {Object.keys(this.state.scriptIconMap)
-            .filter(k=>filterCondition(k))
+            .filter((k) => filterCondition(k))
             .sort()
-            .map((key:string) =>
-            <ActionButton
-              key={key}
-              title={isDownloaded
-                ? this.state.scriptIconMap[key].name.replace(SCRIPT_INSTALL_FOLDER+"/","")
-                : this.state.scriptIconMap[key].name
-              }
-              action={()=> {
-                const f = this.props.view.app.vault.getAbstractFileByPath(key);
-                if(f && f instanceof TFile) {
-                  this.props.view.plugin.scriptEngine.executeScript(this.props.view,f);
+            .map((key: string) => (
+              <ActionButton
+                key={key}
+                title={
+                  isDownloaded
+                    ? this.state.scriptIconMap[key].name.replace(
+                        `${SCRIPT_INSTALL_FOLDER}/`,
+                        "",
+                      )
+                    : this.state.scriptIconMap[key].name
                 }
-              }}
-              icon={this.state.scriptIconMap[key].svgString 
-              ? <img 
-                  src={`data:image/svg+xml,${encodeURIComponent(
-                    this.state.theme==="dark"
-                    ? this.state.scriptIconMap[key].svgString.replace("<svg ",dark)
-                    : this.state.scriptIconMap[key].svgString.replace("<svg ",light)
-                  )}`}
-                />
-              : ICONS.cog}
-              view={this.props.view}
-            />
-          )}
+                action={() => {
+                  const f =
+                    this.props.view.app.vault.getAbstractFileByPath(key);
+                  if (f && f instanceof TFile) {
+                    this.props.view.plugin.scriptEngine.executeScript(
+                      this.props.view,
+                      f,
+                    );
+                  }
+                }}
+                icon={
+                  this.state.scriptIconMap[key].svgString ? (
+                    <img
+                      src={`data:image/svg+xml,${encodeURIComponent(
+                        this.state.theme === "dark"
+                          ? this.state.scriptIconMap[key].svgString.replace(
+                              "<svg ",
+                              dark,
+                            )
+                          : this.state.scriptIconMap[key].svgString.replace(
+                              "<svg ",
+                              light,
+                            ),
+                      )}`}
+                    />
+                  ) : (
+                    ICONS.cog
+                  )
+                }
+                view={this.props.view}
+              />
+            ))}
         </div>
       </fieldset>
-    ) 
-  } 
+    );
+  }
 }

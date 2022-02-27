@@ -1,4 +1,11 @@
-import { App, Instruction, Notice, TAbstractFile, TFile, WorkspaceLeaf } from "obsidian";
+import {
+  App,
+  Instruction,
+  Notice,
+  TAbstractFile,
+  TFile,
+  WorkspaceLeaf,
+} from "obsidian";
 import { fileURLToPath } from "url";
 import { PLUGIN_ID, VIEW_TYPE_EXCALIDRAW } from "./Constants";
 import ExcalidrawView from "./ExcalidrawView";
@@ -6,7 +13,9 @@ import ExcalidrawPlugin from "./Main";
 import { GenericInputPrompt, GenericSuggester } from "./Prompt";
 import { getIMGFilename, splitFolderAndFilename } from "./Utils";
 
-export type ScriptIconMap = {[key:string]: {name:string,svgString:string}}
+export type ScriptIconMap = {
+  [key: string]: { name: string; svgString: string };
+};
 
 export class ScriptEngine {
   private plugin: ExcalidrawPlugin;
@@ -16,20 +25,24 @@ export class ScriptEngine {
 
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
-    this.scriptIconMap = {}; 
+    this.scriptIconMap = {};
     this.loadScripts();
     this.registerEventHandlers();
   }
 
   registerEventHandlers() {
-    const handleSvgFileChange = (path:string) =>{
-      if(!path.endsWith(".svg")) return;
-      const scriptFile = this.plugin.app.vault.getAbstractFileByPath(getIMGFilename(path,"md"))
-      if(scriptFile && scriptFile instanceof TFile) {
-        this.unloadScript(this.getScriptName(scriptFile),scriptFile.path);
+    const handleSvgFileChange = (path: string) => {
+      if (!path.endsWith(".svg")) {
+        return;
+      }
+      const scriptFile = this.plugin.app.vault.getAbstractFileByPath(
+        getIMGFilename(path, "md"),
+      );
+      if (scriptFile && scriptFile instanceof TFile) {
+        this.unloadScript(this.getScriptName(scriptFile), scriptFile.path);
         this.loadScript(scriptFile);
       }
-    }
+    };
     const deleteEventHandler = async (file: TFile) => {
       if (!(file instanceof TFile)) {
         return;
@@ -37,8 +50,8 @@ export class ScriptEngine {
       if (!file.path.startsWith(this.scriptPath)) {
         return;
       }
-      this.unloadScript(this.getScriptName(file),file.path);
-      handleSvgFileChange(file.path)
+      this.unloadScript(this.getScriptName(file), file.path);
+      handleSvgFileChange(file.path);
     };
     this.plugin.registerEvent(
       this.plugin.app.vault.on("delete", deleteEventHandler),
@@ -52,7 +65,7 @@ export class ScriptEngine {
         return;
       }
       this.loadScript(file);
-      handleSvgFileChange(file.path)
+      handleSvgFileChange(file.path);
     };
     this.plugin.registerEvent(
       this.plugin.app.vault.on("create", createEventHandler),
@@ -65,8 +78,8 @@ export class ScriptEngine {
       const oldFileIsScript = oldPath.startsWith(this.scriptPath);
       const newFileIsScript = file.path.startsWith(this.scriptPath);
       if (oldFileIsScript) {
-        this.unloadScript(this.getScriptName(oldPath),oldPath);
-        handleSvgFileChange(oldPath)
+        this.unloadScript(this.getScriptName(oldPath), oldPath);
+        handleSvgFileChange(oldPath);
       }
       if (newFileIsScript) {
         this.loadScript(file);
@@ -97,7 +110,10 @@ export class ScriptEngine {
     }
     return app.vault
       .getFiles()
-      .filter((f: TFile) => f.path.startsWith(this.scriptPath) && f.extension==="md");
+      .filter(
+        (f: TFile) =>
+          f.path.startsWith(this.scriptPath) && f.extension === "md",
+      );
   }
 
   loadScripts() {
@@ -123,23 +139,26 @@ export class ScriptEngine {
     return basename;
   }
 
-  async addScriptIconToMap(scriptPath:string, name: string) {
-    const svgFilePath = getIMGFilename(scriptPath,"svg");
+  async addScriptIconToMap(scriptPath: string, name: string) {
+    const svgFilePath = getIMGFilename(scriptPath, "svg");
     const file = this.plugin.app.vault.getAbstractFileByPath(svgFilePath);
-    const svgString:string = (file && file instanceof TFile)
-      ? await this.plugin.app.vault.read(file)
-      : null;
+    const svgString: string =
+      file && file instanceof TFile
+        ? await this.plugin.app.vault.read(file)
+        : null;
     this.scriptIconMap = {
-      ...this.scriptIconMap
+      ...this.scriptIconMap,
     };
-    this.scriptIconMap[scriptPath] = {name,svgString};
+    this.scriptIconMap[scriptPath] = { name, svgString };
     this.updateToolPannels();
   }
 
   loadScript(f: TFile) {
-    if(f.extension!=="md") return;
+    if (f.extension !== "md") {
+      return;
+    }
     const scriptName = this.getScriptName(f);
-    this.addScriptIconToMap(f.path,scriptName)
+    this.addScriptIconToMap(f.path, scriptName);
     this.plugin.addCommand({
       id: scriptName,
       name: `(Script) ${scriptName}`,
@@ -166,14 +185,16 @@ export class ScriptEngine {
       .getFiles()
       .filter((f: TFile) => f.path.startsWith(this.scriptPath));
     scripts.forEach((f) => {
-      this.unloadScript(this.getScriptName(f),f.path);
+      this.unloadScript(this.getScriptName(f), f.path);
     });
   }
 
   unloadScript(basename: string, path: string) {
-    if(!path.endsWith(".md")) return;
+    if (!path.endsWith(".md")) {
+      return;
+    }
     delete this.scriptIconMap[path];
-    this.scriptIconMap = {...this.scriptIconMap};
+    this.scriptIconMap = { ...this.scriptIconMap };
     this.updateToolPannels();
 
     const app = this.plugin.app;
@@ -204,23 +225,34 @@ export class ScriptEngine {
     const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
     let result = null;
     //try {
-      result = await new AsyncFunction("ea", "utils", script)(this.plugin.ea, {
-        inputPrompt: (header: string, placeholder?: string, value?: string, buttons?: [{caption:string, action:Function}]) =>
-          ScriptEngine.inputPrompt(this.plugin.app, header, placeholder, value, buttons),
-        suggester: (
-          displayItems: string[],
-          items: any[],
-          hint?: string,
-          instructions?: Instruction[],
-        ) =>
-          ScriptEngine.suggester(
-            this.plugin.app,
-            displayItems,
-            items,
-            hint,
-            instructions,
-          ),
-      });
+    result = await new AsyncFunction("ea", "utils", script)(this.plugin.ea, {
+      inputPrompt: (
+        header: string,
+        placeholder?: string,
+        value?: string,
+        buttons?: [{ caption: string; action: Function }],
+      ) =>
+        ScriptEngine.inputPrompt(
+          this.plugin.app,
+          header,
+          placeholder,
+          value,
+          buttons,
+        ),
+      suggester: (
+        displayItems: string[],
+        items: any[],
+        hint?: string,
+        instructions?: Instruction[],
+      ) =>
+        ScriptEngine.suggester(
+          this.plugin.app,
+          displayItems,
+          items,
+          hint,
+          instructions,
+        ),
+    });
     /*} catch (e) {
       new Notice(t("SCRIPT_EXECUTION_ERROR"), 4000);
       errorlog({ script: this.plugin.ea.activeScript, error: e });
@@ -230,10 +262,13 @@ export class ScriptEngine {
   }
 
   private updateToolPannels() {
-    const leaves = this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+    const leaves =
+      this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
     leaves.forEach((leaf: WorkspaceLeaf) => {
       const excalidrawView = leaf.view as ExcalidrawView;
-      excalidrawView.toolsPanelRef?.current?.updateScriptIconMap(this.scriptIconMap);
+      excalidrawView.toolsPanelRef?.current?.updateScriptIconMap(
+        this.scriptIconMap,
+      );
     });
   }
 
@@ -242,10 +277,16 @@ export class ScriptEngine {
     header: string,
     placeholder?: string,
     value?: string,
-    buttons?: [{caption:string, action:Function}],
+    buttons?: [{ caption: string; action: Function }],
   ) {
     try {
-      return await GenericInputPrompt.Prompt(app, header, placeholder, value, buttons);
+      return await GenericInputPrompt.Prompt(
+        app,
+        header,
+        placeholder,
+        value,
+        buttons,
+      );
     } catch {
       return undefined;
     }

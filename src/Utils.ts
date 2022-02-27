@@ -83,7 +83,8 @@ export function splitFolderAndFilename(filepath: string): {
   basename: string;
 } {
   const lastIndex = filepath.lastIndexOf("/");
-  const filename = lastIndex == -1 ? filepath : filepath.substring(lastIndex + 1);
+  const filename =
+    lastIndex == -1 ? filepath : filepath.substring(lastIndex + 1);
   return {
     folderpath: normalizePath(filepath.substring(0, lastIndex)),
     filename,
@@ -550,12 +551,12 @@ export const getLinkParts = (fname: string): LinkParts => {
   };
 };
 
-export const compress = (data:string):string => {
+export const compress = (data: string): string => {
   return compressToBase64(data).replace(/(.{64})/g, "$1\n\n");
 };
 
-export const decompress = (data:string):string => {
-  return decompressFromBase64(data.replaceAll("\n","").replaceAll("\r",""));
+export const decompress = (data: string): string => {
+  return decompressFromBase64(data.replaceAll("\n", "").replaceAll("\r", ""));
 };
 
 export const errorlog = (data: {}) => {

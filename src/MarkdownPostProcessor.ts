@@ -29,11 +29,13 @@ let plugin: ExcalidrawPlugin;
 let vault: Vault;
 let metadataCache: MetadataCache;
 
-const getDefaultWidth = (plugin: ExcalidrawPlugin):string => {
+const getDefaultWidth = (plugin: ExcalidrawPlugin): string => {
   const width = parseInt(plugin.settings.width);
-  if(isNaN(width) || width === 0) return "400";
+  if (isNaN(width) || width === 0) {
+    return "400";
+  }
   return plugin.settings.width;
-}
+};
 
 export const initializeMarkdownPostProcessor = (p: ExcalidrawPlugin) => {
   plugin = p;
@@ -238,7 +240,7 @@ const processInternalEmbeds = async (
         if (maybeDrawing.tagName.toLowerCase() == "span") {
           alt = `|${alt}`;
         }
-                          //1:width, 2:height, 3:style  1      2      3
+        //1:width, 2:height, 3:style  1      2      3
         parts = alt.match(/[^\|]*\|?(\d*%?)x?(\d*%?)\|?(.*)/);
         attr.fwidth = parts[1] ? parts[1] : getDefaultWidth(plugin);
         attr.fheight = parts[2];

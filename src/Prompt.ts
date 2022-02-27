@@ -76,7 +76,7 @@ export class GenericInputPrompt extends Modal {
   private didSubmit: boolean = false;
   private inputComponent: TextComponent;
   private input: string;
-  private buttons: [{caption: string, action:Function}];
+  private buttons: [{ caption: string; action: Function }];
   private readonly placeholder: string;
 
   public static Prompt(
@@ -84,7 +84,7 @@ export class GenericInputPrompt extends Modal {
     header: string,
     placeholder?: string,
     value?: string,
-    buttons?: [{caption: string, action: Function}],
+    buttons?: [{ caption: string; action: Function }],
   ): Promise<string> {
     const newPromptModal = new GenericInputPrompt(
       app,
@@ -101,7 +101,7 @@ export class GenericInputPrompt extends Modal {
     private header: string,
     placeholder?: string,
     value?: string,
-    buttons?: [{caption: string, action:Function}],
+    buttons?: [{ caption: string; action: Function }],
   ) {
     super(app);
     this.placeholder = placeholder;
@@ -159,28 +159,28 @@ export class GenericInputPrompt extends Modal {
 
   private createButtonBar(mainContentContainer: HTMLDivElement) {
     const buttonBarContainer: HTMLDivElement = mainContentContainer.createDiv();
-    if(this.buttons && this.buttons.length>0) {
-      let b=null;
-      for(const button of this.buttons) {
+    if (this.buttons && this.buttons.length > 0) {
+      let b = null;
+      for (const button of this.buttons) {
         const btn = new ButtonComponent(buttonBarContainer);
         btn.setButtonText(button.caption).onClick((evt: MouseEvent) => {
           const res = button.action(this.input);
-          if(res) {
-            this.input=res;
+          if (res) {
+            this.input = res;
           }
           this.submit();
         });
-        b = b??btn;
+        b = b ?? btn;
       }
-      if(b){
-        b.setCta().buttonEl.style.marginRight = "0"; 
+      if (b) {
+        b.setCta().buttonEl.style.marginRight = "0";
       }
     } else {
       this.createButton(
         buttonBarContainer,
         "Ok",
         this.submitClickCallback,
-      ).setCta().buttonEl.style.marginRight = "0"; 
+      ).setCta().buttonEl.style.marginRight = "0";
     }
     this.createButton(buttonBarContainer, "Cancel", this.cancelClickCallback);
 
@@ -365,7 +365,7 @@ class MigrationPrompt extends Modal {
 }
 
 export class NewFileActions extends Modal {
-  constructor (
+  constructor(
     private plugin: ExcalidrawPlugin,
     private path: string,
     private newPane: boolean,
@@ -378,61 +378,66 @@ export class NewFileActions extends Modal {
     this.createForm();
   }
 
-  async onClose() {
-  }
+  async onClose() {}
 
   openFile(file: TFile): void {
-    if(!file) return;
+    if (!file) {
+      return;
+    }
     const leaf = this.newPane
-    ? getNewOrAdjacentLeaf(this.plugin, this.view.leaf)
-    : this.view.leaf;
+      ? getNewOrAdjacentLeaf(this.plugin, this.view.leaf)
+      : this.view.leaf;
     leaf.openFile(file);
     this.app.workspace.setActiveLeaf(leaf, true, true);
   }
 
   createForm(): void {
-    this.titleEl.setText("New File");  
+    this.titleEl.setText("New File");
 
     this.contentEl.createDiv({
       cls: "excalidraw-prompt-center",
-      text: "File does not exist. Do you want to create it?" 
+      text: "File does not exist. Do you want to create it?",
     });
     this.contentEl.createDiv({
       cls: "excalidraw-prompt-center filepath",
-      text: this.path
+      text: this.path,
     });
 
-    this.contentEl.createDiv({cls: "excalidraw-prompt-center"}, (el) => {
+    this.contentEl.createDiv({ cls: "excalidraw-prompt-center" }, (el) => {
       //files manually follow one of two options:
       el.style.textAlign = "right";
 
-      const checks = ():boolean => {
-        if(!this.path || this.path === "") {
-          new Notice ("Error: Filename for new file may not be empty");
+      const checks = (): boolean => {
+        if (!this.path || this.path === "") {
+          new Notice("Error: Filename for new file may not be empty");
           return false;
         }
-        if(!this.view.file) {
-          new Notice ("Unknown error. It seems as if your drawing was closed or the drawing file is missing");
+        if (!this.view.file) {
+          new Notice(
+            "Unknown error. It seems as if your drawing was closed or the drawing file is missing",
+          );
           return false;
         }
         return true;
-      }
+      };
 
-      const createFile = async (data:string):Promise<TFile> => {
-        if(!this.path.includes("/")) {
-          const re = new RegExp(`${this.view.file.name}$`,"g");
-          this.path = this.view.file.path.replace(re,this.path)
+      const createFile = async (data: string): Promise<TFile> => {
+        if (!this.path.includes("/")) {
+          const re = new RegExp(`${this.view.file.name}$`, "g");
+          this.path = this.view.file.path.replace(re, this.path);
         }
-        if(!this.path.match(/\.md$/)) {
-          this.path = this.path+".md";
+        if (!this.path.match(/\.md$/)) {
+          this.path = `${this.path}.md`;
         }
-        const f = await this.app.vault.create(this.path,data) 
+        const f = await this.app.vault.create(this.path, data);
         return f;
-      }
+      };
 
       const bMd = el.createEl("button", { text: "Create Markdown" });
       bMd.onclick = async () => {
-        if(!checks) return;
+        if (!checks) {
+          return;
+        }
         const f = await createFile("");
         this.openFile(f);
         this.close();
@@ -440,7 +445,9 @@ export class NewFileActions extends Modal {
 
       const bEx = el.createEl("button", { text: "Create Excalidraw" });
       bEx.onclick = async () => {
-        if(!checks) return;
+        if (!checks) {
+          return;
+        }
         const f = await createFile(await this.plugin.getBlankDrawing());
         await sleep(200); //wait for metadata cache to update, so file opens as excalidraw
         this.openFile(f);
@@ -450,7 +457,7 @@ export class NewFileActions extends Modal {
       const bCancel = el.createEl("button", {
         text: "Never Mind",
       });
-      bCancel.onclick = () => {       
+      bCancel.onclick = () => {
         this.close();
       };
     });

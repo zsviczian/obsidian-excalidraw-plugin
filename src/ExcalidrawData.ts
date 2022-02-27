@@ -86,15 +86,19 @@ export const REGEX_LINK = {
 //added \n at and of DRAWING_REG: https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/357
 const DRAWING_REG = /\n# Drawing\n[^`]*(```json\n)([\s\S]*?)```\n/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
 const DRAWING_REG_FALLBACK = /\n# Drawing\n(```json\n)?(.*)(```)?(%%)?/gm;
-const DRAWING_COMPRESSED_REG = /(\n# Drawing\n[^`]*(?:```compressed\-json\n))([\s\S]*?)(```\n)/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
-const DRAWING_COMPRESSED_REG_FALLBACK = /(\n# Drawing\n(?:```compressed\-json\n)?)(.*)((```)?(%%)?)/gm;
+const DRAWING_COMPRESSED_REG =
+  /(\n# Drawing\n[^`]*(?:```compressed\-json\n))([\s\S]*?)(```\n)/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
+const DRAWING_COMPRESSED_REG_FALLBACK =
+  /(\n# Drawing\n(?:```compressed\-json\n)?)(.*)((```)?(%%)?)/gm;
 export const REG_LINKINDEX_HYPERLINK = /^\w+:\/\//;
 
-const isCompressedMD = (data:string):boolean => {
+const isCompressedMD = (data: string): boolean => {
   return data.match(/```compressed\-json\n/gm) !== null;
-}
+};
 
-const getDecompressedScene = (data:string):[string,IteratorResult<RegExpMatchArray, any>] => {
+const getDecompressedScene = (
+  data: string,
+): [string, IteratorResult<RegExpMatchArray, any>] => {
   let res = data.matchAll(DRAWING_COMPRESSED_REG);
 
   //In case the user adds a text element with the contents "# Drawing\n"
@@ -106,42 +110,42 @@ const getDecompressedScene = (data:string):[string,IteratorResult<RegExpMatchArr
     parts = res.next();
   }
   if (parts.value && parts.value.length > 1) {
-    return [decompress(parts.value[2]),parts];
+    return [decompress(parts.value[2]), parts];
   }
-  return [null,parts];
-} 
+  return [null, parts];
+};
 
-export const changeThemeOfExcalidrawMD = (data:string):string => {
+export const changeThemeOfExcalidrawMD = (data: string): string => {
   const compressed = isCompressedMD(data);
   let scene = compressed ? getDecompressedScene(data)[0] : data;
-  if(!scene) return data;
-  if(isObsidianThemeDark) {
-    if((scene.match(/"theme"\s*:\s*"light"\s*,/g)||[]).length === 1) {
-      scene = scene.replace(/"theme"\s*:\s*"light"\s*,/,`"theme": "dark",`);
-    }
-  } else {
-    if((scene.match(/"theme"\s*:\s*"dark"\s*,/g)||[]).length === 1) {
-      scene = scene.replace(/"theme"\s*:\s*"dark"\s*,/,`"theme": "light",`);
-    }
+  if (!scene) {
+    return data;
   }
-  if(compressed) {
-    return data.replace(DRAWING_COMPRESSED_REG,`$1${compress(scene)}$3`);
+  if (isObsidianThemeDark) {
+    if ((scene.match(/"theme"\s*:\s*"light"\s*,/g) || []).length === 1) {
+      scene = scene.replace(/"theme"\s*:\s*"light"\s*,/, `"theme": "dark",`);
+    }
+  } else if ((scene.match(/"theme"\s*:\s*"dark"\s*,/g) || []).length === 1) {
+    scene = scene.replace(/"theme"\s*:\s*"dark"\s*,/, `"theme": "light",`);
+  }
+  if (compressed) {
+    return data.replace(DRAWING_COMPRESSED_REG, `$1${compress(scene)}$3`);
   }
   return scene;
-}
+};
 
 export function getJSON(data: string): { scene: string; pos: number } {
   let res;
-  if(isCompressedMD(data)) {
-    const [result,parts] = getDecompressedScene(data);
-    if(result) {
+  if (isCompressedMD(data)) {
+    const [result, parts] = getDecompressedScene(data);
+    if (result) {
       return {
         scene: result.substring(0, result.lastIndexOf("}") + 1),
         pos: parts.value.index,
       }; //this is a workaround in case sync merges two files together and one version is still an old version without the ```codeblock
     }
     return { scene: data, pos: parts.value ? parts.value.index : 0 };
-  } 
+  }
   res = data.matchAll(DRAWING_REG);
 
   //In case the user adds a text element with the contents "# Drawing\n"
@@ -162,9 +166,14 @@ export function getJSON(data: string): { scene: string; pos: number } {
   return { scene: data, pos: parts.value ? parts.value.index : 0 };
 }
 
-export function getMarkdownDrawingSection(jsonString: string, compressed: boolean) {
+export function getMarkdownDrawingSection(
+  jsonString: string,
+  compressed: boolean,
+) {
   return compressed
-    ? `%%\n# Drawing\n\x60\x60\x60compressed-json\n${compress(jsonString)}\n\x60\x60\x60\n%%`
+    ? `%%\n# Drawing\n\x60\x60\x60compressed-json\n${compress(
+        jsonString,
+      )}\n\x60\x60\x60\n%%`
     : `%%\n# Drawing\n\x60\x60\x60json\n${jsonString}\n\x60\x60\x60\n%%`;
 }
 
@@ -323,7 +332,7 @@ export class ExcalidrawData {
       return sceneJSONandPOS;
     };
     //try {
-      sceneJSONandPOS = loadJSON();
+    sceneJSONandPOS = loadJSON();
     /*} catch (e) {
       if(await this.app.vault.adapter.exists(getBakPath(file))) {
         data = await this.app.vault.adapter.read(getBakPath(file))
@@ -369,7 +378,8 @@ export class ExcalidrawData {
       const text = data.substring(position, parts.value.index);
       const id: string = parts.value[1];
       const textEl = this.scene.elements.filter((el: any) => el.id === id)[0];
-      if(textEl.type !== "text") { //markdown link attached to elements
+      if (textEl.type !== "text") {
+        //markdown link attached to elements
         textEl.link = text;
         this.elementLinks.set(id, text);
       } else {
@@ -537,12 +547,14 @@ export class ExcalidrawData {
 
   private findNewElementLinksInScene(): boolean {
     const elements = this.scene.elements?.filter((el: any) => {
-      return el.type !== "text" &&
+      return (
+        el.type !== "text" &&
         el.link &&
         el.link.startsWith("[[") &&
-        !this.elementLinks.has(el.id);
+        !this.elementLinks.has(el.id)
+      );
     });
-    if(elements.length === 0) {
+    if (elements.length === 0) {
       return false;
     }
 
@@ -561,7 +573,7 @@ export class ExcalidrawData {
       this.elementLinks.set(id, el.link);
     }
     this.scene = JSON.parse(jsonString);
-    return true;   
+    return true;
   }
 
   /**
@@ -617,15 +629,16 @@ export class ExcalidrawData {
     for (const key of this.elementLinks.keys()) {
       //find element in the scene
       const el = this.scene.elements?.filter(
-        (el: any) => el.type !== "text" &&
-        el.id === key &&
-        el.link &&
-        el.link.startsWith("[["),
+        (el: any) =>
+          el.type !== "text" &&
+          el.id === key &&
+          el.link &&
+          el.link.startsWith("[["),
       );
       if (el.length === 0) {
         this.elementLinks.delete(key); //if no longer in the scene, delete the text element
       } else {
-        this.elementLinks.set(key,el[0].link);
+        this.elementLinks.set(key, el[0].link);
       }
     }
   }
@@ -657,7 +670,11 @@ export class ExcalidrawData {
   }
 
   private async parseasync(key: string, raw: string, wrapAt: number) {
-    this.textElements.set(key, { raw, parsed: (await this.parse(raw)).parsed, wrapAt });
+    this.textElements.set(key, {
+      raw,
+      parsed: (await this.parse(raw)).parsed,
+      wrapAt,
+    });
   }
 
   private parseLinks(text: string, position: number, parts: any): string {
@@ -695,7 +712,7 @@ export class ExcalidrawData {
    * @param text
    * @returns
    */
-  private async parse(text: string): Promise<{parsed: string,link: string}> {
+  private async parse(text: string): Promise<{ parsed: string; link: string }> {
     let outString = "";
     let link = null;
     let position = 0;
@@ -713,7 +730,7 @@ export class ExcalidrawData {
         if (l.match(REG_LINKINDEX_HYPERLINK)) {
           link = l;
         } else {
-          link=`[[${l}]]`;
+          link = `[[${l}]]`;
         }
       }
       if (REGEX_LINK.isTransclusion(parts)) {
@@ -750,7 +767,7 @@ export class ExcalidrawData {
       outString = this.urlPrefix + outString;
     }
 
-    return {parsed: outString, link};
+    return { parsed: outString, link };
   }
 
   /**
@@ -760,7 +777,7 @@ export class ExcalidrawData {
    * activity. Quick parse gets the job done synchronously if possible.
    * @param text
    */
-  private quickParse(text: string): [string,string] {
+  private quickParse(text: string): [string, string] {
     const hasTransclusion = (text: string): boolean => {
       const res = REGEX_LINK.getRes(text);
       let parts;
@@ -772,7 +789,7 @@ export class ExcalidrawData {
       return false;
     };
     if (hasTransclusion(text)) {
-      return [null,null];
+      return [null, null];
     }
 
     let outString = "";
@@ -787,12 +804,12 @@ export class ExcalidrawData {
       urlIcon = true;
     }
     while (!(parts = res.next()).done) {
-      if (!link) { 
+      if (!link) {
         const l = REGEX_LINK.getLink(parts);
         if (l.match(REG_LINKINDEX_HYPERLINK)) {
           link = l;
         } else {
-          link=`[[${l}]]`;
+          link = `[[${l}]]`;
         }
       }
       const parsedLink = this.parseLinks(text, position, parts);
@@ -815,7 +832,7 @@ export class ExcalidrawData {
     if (urlIcon) {
       outString = this.urlPrefix + outString;
     }
-    return [outString,link];
+    return [outString, link];
   }
 
   /**
@@ -850,9 +867,12 @@ export class ExcalidrawData {
     outString += this.equations.size > 0 || this.files.size > 0 ? "\n" : "";
 
     const sceneJSONstring = JSON.stringify(this.scene, null, "\t");
-    return outString + getMarkdownDrawingSection(
-      sceneJSONstring, 
-      this.disableCompression ? false: this.plugin.settings.compress
+    return (
+      outString +
+      getMarkdownDrawingSection(
+        sceneJSONstring,
+        this.disableCompression ? false : this.plugin.settings.compress,
+      )
     );
   }
 
@@ -1062,7 +1082,11 @@ export class ExcalidrawData {
       parsed: parseResult.parsed,
       wrapAt,
     });
-    return [wrap(parseResult.parsed, wrapAt), parseResult.parsed, parseResult.link];
+    return [
+      wrap(parseResult.parsed, wrapAt),
+      parseResult.parsed,
+      parseResult.link,
+    ];
   }
 
   public deleteTextElement(id: string) {

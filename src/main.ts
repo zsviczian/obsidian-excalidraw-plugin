@@ -44,7 +44,10 @@ import {
   VIRGIL_DATAURL,
 } from "./Constants";
 import ExcalidrawView, { ExportSettings, TextMode } from "./ExcalidrawView";
-import { changeThemeOfExcalidrawMD, getMarkdownDrawingSection } from "./ExcalidrawData";
+import {
+  changeThemeOfExcalidrawMD,
+  getMarkdownDrawingSection,
+} from "./ExcalidrawData";
 import {
   ExcalidrawSettings,
   DEFAULT_SETTINGS,
@@ -182,15 +185,20 @@ export default class ExcalidrawPlugin extends Plugin {
       }
     }
 
-//    const patches = new OneOffs(this);
-    if(this.settings.showReleaseNotes) {
+    //    const patches = new OneOffs(this);
+    if (this.settings.showReleaseNotes) {
       //I am repurposing imageElementNotice, if the value is true, this means the plugin was just newly installed to Obsidian.
       const obsidianJustInstalled = this.settings.imageElementNotice;
-      
-      //@ts-ignore
-      const version:string = this.app.plugins.manifests["obsidian-excalidraw-plugin"].version;
-      if(version>this.settings.previousRelease) {
-        (new ReleaseNotes(this.app,this,obsidianJustInstalled ? null:version)).open();
+
+      const version: string =
+        //@ts-ignore
+        this.app.plugins.manifests["obsidian-excalidraw-plugin"].version;
+      if (version > this.settings.previousRelease) {
+        new ReleaseNotes(
+          this.app,
+          this,
+          obsidianJustInstalled ? null : version,
+        ).open();
       }
     }
 
@@ -263,7 +271,7 @@ export default class ExcalidrawPlugin extends Plugin {
     doc.head.appendChild(script);
   }
 
-/*  private loadTesseract() {
+  /*  private loadTesseract() {
     //@ts-ignore
     if(typeof Tesseract !== "undefined") return;
     const script = window.document.createElement("script");
@@ -366,15 +374,18 @@ export default class ExcalidrawPlugin extends Plugin {
         const fname = decodedURI.substring(decodedURI.lastIndexOf("/") + 1);
         const folder = `${this.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}`;
         const scriptPath = `${folder}/${fname}`;
-        const svgPath = getIMGFilename(scriptPath,"svg");
+        const svgPath = getIMGFilename(scriptPath, "svg");
         let scriptFile = this.app.vault.getAbstractFileByPath(scriptPath);
         let svgFile = this.app.vault.getAbstractFileByPath(svgPath);
         setButtonText(scriptFile ? "CHECKING" : "INSTALL");
         button.onclick = async () => {
-
-          const download = async (url:string, file:TFile, localPath: string):Promise<TFile> => {
+          const download = async (
+            url: string,
+            file: TFile,
+            localPath: string,
+          ): Promise<TFile> => {
             const data = await request({ url });
-            if(!data || data.startsWith("404: Not Found")) {
+            if (!data || data.startsWith("404: Not Found")) {
               return null;
             }
             if (file) {
@@ -384,15 +395,23 @@ export default class ExcalidrawPlugin extends Plugin {
               file = await this.app.vault.create(localPath, data);
             }
             return file;
-          }
+          };
 
           try {
-            scriptFile = await download(source,scriptFile as TFile,scriptPath);
-            if(!scriptFile) {
+            scriptFile = await download(
+              source,
+              scriptFile as TFile,
+              scriptPath,
+            );
+            if (!scriptFile) {
               setButtonText("ERROR");
-              throw("File not found");
-            };
-            svgFile = await download(getIMGFilename(source,"svg"),svgFile as TFile,svgPath);
+              throw "File not found";
+            }
+            svgFile = await download(
+              getIMGFilename(source, "svg"),
+              svgFile as TFile,
+              svgPath,
+            );
             setButtonText("UPTODATE");
             new Notice(`Installed: ${(scriptFile as TFile).basename}`);
           } catch (e) {
@@ -414,7 +433,10 @@ export default class ExcalidrawPlugin extends Plugin {
           return;
         }
 
-        const checkModifyDate = async (gitFilename:string,file:TFile):Promise<"ERROR"|"UPDATE"|"UPTODATE"> => {
+        const checkModifyDate = async (
+          gitFilename: string,
+          file: TFile,
+        ): Promise<"ERROR" | "UPDATE" | "UPTODATE"> => {
           const msgHead =
             "https://api.github.com/repos/zsviczian/obsidian-excalidraw-plugin/commits?path=ea-scripts%2F";
           const msgTail = "&page=1&per_page=1";
@@ -437,27 +459,25 @@ export default class ExcalidrawPlugin extends Plugin {
             return "UPDATE";
           }
           return "UPTODATE";
-        }
+        };
 
-        const scriptButtonText = await checkModifyDate(fname,scriptFile);
+        const scriptButtonText = await checkModifyDate(fname, scriptFile);
         const svgButtonText = await checkModifyDate(
-          getIMGFilename(fname,"svg"),
-          !svgFile || !(svgFile instanceof TFile) 
-            ? null
-            : svgFile
+          getIMGFilename(fname, "svg"),
+          !svgFile || !(svgFile instanceof TFile) ? null : svgFile,
         );
 
         setButtonText(
           scriptButtonText === "UPTODATE" && svgButtonText === "UPTODATE"
-          ? "UPTODATE"
-          : scriptButtonText === "UPTODATE" && svgButtonText === "ERROR"
+            ? "UPTODATE"
+            : scriptButtonText === "UPTODATE" && svgButtonText === "ERROR"
             ? "UPTODATE"
             : scriptButtonText === "ERROR"
-              ? "ERROR"
-              : scriptButtonText==="UPDATE" || svgButtonText === "UPDATE"
-                ? "UPDATE"
-                : "UPTODATE"
-          )
+            ? "ERROR"
+            : scriptButtonText === "UPDATE" || svgButtonText === "UPDATE"
+            ? "UPDATE"
+            : "UPTODATE",
+        );
       });
     };
 
@@ -652,7 +672,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.addCommand({
       id: "excalidraw-download-lib",
       name: t("DOWNLOAD_LIBRARY"),
-      callback: this.exportLibrary
+      callback: this.exportLibrary,
     });
 
     this.addCommand({
@@ -693,8 +713,12 @@ export default class ExcalidrawPlugin extends Plugin {
             this.lastActiveExcalidrawFilePath != null
           );
         }
-        const file = this.app.vault.getAbstractFileByPath(this.lastActiveExcalidrawFilePath);
-        if(!(file instanceof TFile)) return false;
+        const file = this.app.vault.getAbstractFileByPath(
+          this.lastActiveExcalidrawFilePath,
+        );
+        if (!(file instanceof TFile)) {
+          return false;
+        }
         this.embedDrawing(file);
         return true;
       },
@@ -807,7 +831,7 @@ export default class ExcalidrawPlugin extends Plugin {
       },
     });
 
-/*    this.addCommand({
+    /*    this.addCommand({
       id: "ocr",
       name: "Test OCR",//t("EXPORT_PNG"),
       checkCallback: (checking: boolean) => {
@@ -980,12 +1004,13 @@ export default class ExcalidrawPlugin extends Plugin {
           const view = this.app.workspace.activeLeaf.view;
           return view instanceof ExcalidrawView;
         }
-        //@ts-ignore
-        const version:string = this.app.plugins.manifests["obsidian-excalidraw-plugin"].version;
-        (new ReleaseNotes(this.app,this,version)).open();
+        const version: string =
+          //@ts-ignore
+          this.app.plugins.manifests["obsidian-excalidraw-plugin"].version;
+        new ReleaseNotes(this.app, this, version).open();
         return true;
-      }
-    })
+      },
+    });
 
     this.addCommand({
       id: "tray-mode",
@@ -993,13 +1018,11 @@ export default class ExcalidrawPlugin extends Plugin {
       checkCallback: (checking: boolean) => {
         if (checking) {
           const view = this.app.workspace.activeLeaf.view;
-          if(!(view instanceof ExcalidrawView) ||
-            !view.excalidrawRef
-          ) {
+          if (!(view instanceof ExcalidrawView) || !view.excalidrawRef) {
             return false;
           }
           const st = view.excalidrawAPI.getAppState();
-          if(st.zenModeEnabled || st.viewModeEnabled) {
+          if (st.zenModeEnabled || st.viewModeEnabled) {
             return false;
           }
           return true;
@@ -1354,7 +1377,7 @@ export default class ExcalidrawPlugin extends Plugin {
         }
 
         const isExcalidarwFile = this.excalidrawFiles.has(file);
-        this.updateFileCache(file,undefined,true);
+        this.updateFileCache(file, undefined, true);
         if (!isExcalidarwFile) {
           return;
         }
@@ -1372,7 +1395,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
         //delete PNG and SVG files as well
         if (self.settings.keepInSync) {
-          setTimeout(()=>{
+          setTimeout(() => {
             [".svg", ".png", ".excalidraw"].forEach(async (ext: string) => {
               const imgPath = getIMGPathFromExcalidrawFile(file.path, ext);
               const imgFile = self.app.vault.getAbstractFileByPath(
@@ -1382,9 +1405,8 @@ export default class ExcalidrawPlugin extends Plugin {
                 await self.app.vault.delete(imgFile);
               }
             });
-          },500);
+          }, 500);
         }
-        
       };
       self.registerEvent(self.app.vault.on("delete", deleteEventHandler));
 
@@ -1467,29 +1489,39 @@ export default class ExcalidrawPlugin extends Plugin {
           activeLeafChangeEventHandler,
         ),
       );
-      
-      const metaCache:MetadataCache = self.app.metadataCache;
+
+      const metaCache: MetadataCache = self.app.metadataCache;
       //@ts-ignore
-      metaCache.getCachedFiles().forEach((filename:string) => {
+      metaCache.getCachedFiles().forEach((filename: string) => {
         const fm = metaCache.getCache(filename)?.frontmatter;
-        if ((fm && typeof fm[FRONTMATTER_KEY] !== "undefined") ||
+        if (
+          (fm && typeof fm[FRONTMATTER_KEY] !== "undefined") ||
           filename.match(/\.excalidraw$/)
         ) {
           self.updateFileCache(
-            self.app.vault.getAbstractFileByPath(filename) as TFile, fm
+            self.app.vault.getAbstractFileByPath(filename) as TFile,
+            fm,
           );
         }
       });
-      this.registerEvent(metaCache.on("changed", (file, data, cache) => this.updateFileCache(file, cache?.frontmatter)));
+      this.registerEvent(
+        metaCache.on("changed", (file, data, cache) =>
+          this.updateFileCache(file, cache?.frontmatter),
+        ),
+      );
     });
   }
 
-  updateFileCache(file: TFile, frontmatter?: FrontMatterCache, deleted: boolean = false) {
-    if(frontmatter && typeof frontmatter[FRONTMATTER_KEY] !== "undefined") {
+  updateFileCache(
+    file: TFile,
+    frontmatter?: FrontMatterCache,
+    deleted: boolean = false,
+  ) {
+    if (frontmatter && typeof frontmatter[FRONTMATTER_KEY] !== "undefined") {
       this.excalidrawFiles.add(file);
       return;
     }
-    if(!deleted && file.extension==="excalidraw") {
+    if (!deleted && file.extension === "excalidraw") {
       this.excalidrawFiles.add(file);
       return;
     }
@@ -1529,32 +1561,39 @@ export default class ExcalidrawPlugin extends Plugin {
       const data = this.app.metadataCache.fileToLinktext(
         file,
         activeView.file.path,
-        this.settings.embedType === "excalidraw"
-      )
+        this.settings.embedType === "excalidraw",
+      );
       const editor = activeView.editor;
       if (this.settings.embedType === "excalidraw") {
-        editor.replaceSelection(this.settings.embedWikiLink
-          ? `![[${data}]]` : `![](${encodeURI(data)})`);
+        editor.replaceSelection(
+          this.settings.embedWikiLink
+            ? `![[${data}]]`
+            : `![](${encodeURI(data)})`,
+        );
         editor.focus();
         return;
       }
 
       const filename = getIMGPathFromExcalidrawFile(
-        data,"."+this.settings.embedType.toLowerCase()
+        data,
+        `.${this.settings.embedType.toLowerCase()}`,
       );
       const filepath = getIMGPathFromExcalidrawFile(
-        file.path,"."+this.settings.embedType.toLowerCase()
+        file.path,
+        `.${this.settings.embedType.toLowerCase()}`,
       );
-     
+
       const imgFile = this.app.vault.getAbstractFileByPath(filepath);
-      if(!imgFile) {
+      if (!imgFile) {
         await this.app.vault.create(filepath, "");
         await sleep(200);
       }
       editor.replaceSelection(
         this.settings.embedWikiLink
-        ? `![[${filename}]]\n%%[[${data}|🖋 Edit in Excalidraw]]%%`
-        : `![](${encodeURI(filename)})\n%%[🖋 Edit in Excalidraw](${encodeURI(data)})%%`,
+          ? `![[${filename}]]\n%%[[${data}|🖋 Edit in Excalidraw]]%%`
+          : `![](${encodeURI(filename)})\n%%[🖋 Edit in Excalidraw](${encodeURI(
+              data,
+            )})%%`,
       );
       editor.focus();
     }
@@ -1638,9 +1677,11 @@ export default class ExcalidrawPlugin extends Plugin {
         (template.extension == "md" && !this.settings.compatibilityMode) ||
         (template.extension == "excalidraw" && this.settings.compatibilityMode)
       ) {
-        let data = await this.app.vault.read(template);
+        const data = await this.app.vault.read(template);
         if (data) {
-          return this.settings.matchTheme ? changeThemeOfExcalidrawMD(data) : data;
+          return this.settings.matchTheme
+            ? changeThemeOfExcalidrawMD(data)
+            : data;
         }
       }
     }
@@ -1653,7 +1694,10 @@ export default class ExcalidrawPlugin extends Plugin {
       this.settings.matchTheme && isObsidianThemeDark()
         ? DARK_BLANK_DRAWING
         : BLANK_DRAWING;
-    return `${FRONTMATTER}\n${getMarkdownDrawingSection(blank,this.settings.compress)}`;
+    return `${FRONTMATTER}\n${getMarkdownDrawingSection(
+      blank,
+      this.settings.compress,
+    )}`;
   }
 
   /**
@@ -1684,7 +1728,10 @@ export default class ExcalidrawPlugin extends Plugin {
     }
     return (
       outString +
-      getMarkdownDrawingSection(JSON.stringify(JSON_parse(data), null, "\t"),this.settings.compress)
+      getMarkdownDrawingSection(
+        JSON.stringify(JSON_parse(data), null, "\t"),
+        this.settings.compress,
+      )
     );
   }
 
@@ -1776,11 +1823,8 @@ export default class ExcalidrawPlugin extends Plugin {
     }
     download(
       "data:text/plain;charset=utf-8",
-      encodeURIComponent(
-        JSON.stringify(this.settings.library2, null, "\t"),
-      ),
+      encodeURIComponent(JSON.stringify(this.settings.library2, null, "\t")),
       "my-obsidian-library.excalidrawlib",
     );
   }
-
 }

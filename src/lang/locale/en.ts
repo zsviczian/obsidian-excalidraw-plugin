@@ -77,7 +77,8 @@ export default {
 
   //settings.ts
   RELEASE_NOTES_NAME: "Display Release Notes after update",
-  RELEASE_NOTES_DESC: "<b>Toggle ON:</b> Display release notes each time you update Excalidraw to a newer version.<br>" +
+  RELEASE_NOTES_DESC:
+    "<b>Toggle ON:</b> Display release notes each time you update Excalidraw to a newer version.<br>" +
     "<b>Toggle OFF:</b> Silent mode. You can still read release notes on [GitHub](https://github.com/zsviczian/obsidian-excalidraw-plugin/releases).",
   FOLDER_NAME: "Excalidraw folder",
   FOLDER_DESC:
@@ -102,10 +103,11 @@ export default {
     "hotkeys to your favorite scripts just like to any other Obsidian command. " +
     "The folder may not be the root folder of your Vault. ",
   COMPRESS_NAME: "Compress Excalidraw JSON in Markdown",
-  COMPRESS_DESC: "By enabling this feature Excalidraw will store the drawing JSON in a Base64 compressed " +
+  COMPRESS_DESC:
+    "By enabling this feature Excalidraw will store the drawing JSON in a Base64 compressed " +
     "format using the <a href='https://pieroxy.net/blog/pages/lz-string/index.html'>LZ-String</a> algorithm. " +
     "This will reduce the chance of Excalidraw JSON cluttering your search results in Obsidian. " +
-    "As a side effect, this will also reduce the filesize of Excalidraw drawings. " + 
+    "As a side effect, this will also reduce the filesize of Excalidraw drawings. " +
     "When you switch an Excalidraw drawing to Markdown view, using the options menu in Excalidraw, the file will " +
     "be saved without compression, so that you can read and edit the JSON string. The drawing will be compressed again " +
     "once you switch back to Excalidraw view. " +
@@ -116,8 +118,9 @@ export default {
     "Automatically save the active drawing, in case there are changes, every 15, 30 seconds, or 1, 2, 3, 4, or 5 minute. Save normally happens when you close Excalidraw or Obsidian, or move " +
     "focus to another pane. I created this feature with mobile " +
     "phones and tablets in mind, where 'swiping out Obsidian to close it' led to some data loss.",
-    AUTOSAVE_INTERVAL_NAME: "Interval for autosave",
-    AUTOSAVE_INTERVAL_DESC: "The time interval between saves. Autosave will skip if there are no changes in the drawing.",    
+  AUTOSAVE_INTERVAL_NAME: "Interval for autosave",
+  AUTOSAVE_INTERVAL_DESC:
+    "The time interval between saves. Autosave will skip if there are no changes in the drawing.",
   FILENAME_HEAD: "Filename",
   FILENAME_DESC:
     "<p>The auto-generated filename consists of a prefix and a date. " +
@@ -189,9 +192,11 @@ export default {
     "You can override this setting for a specific drawing by adding <code>"
   }${FRONTMATTER_KEY_CUSTOM_URL_PREFIX}: "🌐 "</code> to the file's frontmatter.`,
   HOVERPREVIEW_NAME: "Hover preview without CTRL/CMD key",
-  HOVERPREVIEW_DESC: "Toggle On: Hover preview for [[wiki links]] is shown immedately, without the need to hold the CTRL/CMD key.<br>Toggle Off: Hover preview is shown only when you hold the CTRL/CMD key while hovering the link.",  
+  HOVERPREVIEW_DESC:
+    "Toggle On: Hover preview for [[wiki links]] is shown immedately, without the need to hold the CTRL/CMD key.<br>Toggle Off: Hover preview is shown only when you hold the CTRL/CMD key while hovering the link.",
   LINKOPACITY_NAME: "Opacity of link icon",
-  LINKOPACITY_DESC: "Opacity of the link indicator icon in the top right corner of an element. 1 is opaque, 0 is transparent.",
+  LINKOPACITY_DESC:
+    "Opacity of the link indicator icon in the top right corner of an element. 1 is opaque, 0 is transparent.",
   LINK_CTRL_CLICK_NAME:
     "CTRL/CMD + CLICK on text with [[links]] or [](links) to open them",
   LINK_CTRL_CLICK_DESC:
@@ -262,14 +267,16 @@ export default {
     "a corresponding PNG or SVG readily available the command palette action will insert a broken link. You need to open the original drawing and initiate export manually. " +
     "This option will not autogenerate PNG/SVG files, but will simply reference the already existing files.",
   EMBED_WIKILINK_NAME: "Embed SVG or PNG as Wiki link",
-  EMBED_WIKILINK_DESC: "Toggle ON: Excalidraw will embed a [[wiki link]]. Toggle OFF: Excalidraw will embed a [markdown](link).",
+  EMBED_WIKILINK_DESC:
+    "Toggle ON: Excalidraw will embed a [[wiki link]]. Toggle OFF: Excalidraw will embed a [markdown](link).",
   EXPORT_PNG_SCALE_NAME: "PNG export image scale",
   EXPORT_PNG_SCALE_DESC: "The size-scale of the exported PNG image",
   EXPORT_BACKGROUND_NAME: "Export image with background",
   EXPORT_BACKGROUND_DESC:
     "If turned off, the exported image will be transparent.",
   EXPORT_SVG_PADDING_NAME: "SVG Padding",
-  EXPORT_SVG_PADDING_DESC: "The padding (in pixels) around the exported SVG image. If you have curved lines close to the edge of the image they might get cropped during SVG export. You can increase this value to avoid cropping.",
+  EXPORT_SVG_PADDING_DESC:
+    "The padding (in pixels) around the exported SVG image. If you have curved lines close to the edge of the image they might get cropped during SVG export. You can increase this value to avoid cropping.",
   EXPORT_THEME_NAME: "Export image with theme",
   EXPORT_THEME_DESC:
     "Export the image matching the dark/light theme of your drawing. If turned off, " +

@@ -5,13 +5,12 @@ import { env } from "process";
 import babel from '@rollup/plugin-babel';
 import replace from "@rollup/plugin-replace";
 import { terser } from "rollup-plugin-terser";
-import copy from 'rollup-plugin-copy'
 
 const isProd = (process.env.NODE_ENV === "production");
 console.log("Is production", isProd);
 
 export default {
-  input: 'src/main.ts',
+  input: 'src/Main.ts',
   output: {
     dir: '.',
     sourcemap: 'inline',

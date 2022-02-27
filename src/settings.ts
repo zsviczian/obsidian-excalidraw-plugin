@@ -50,7 +50,7 @@ export interface ExcalidrawSettings {
   autoexportPNG: boolean;
   autoexportExcalidraw: boolean;
   embedType: "excalidraw" | "PNG" | "SVG";
-  embedWikiLink: boolean,
+  embedWikiLink: boolean;
   syncExcalidraw: boolean;
   compatibilityMode: boolean;
   experimentalFileType: boolean;
@@ -219,16 +219,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     coffeeImg.height = 45;
 
     new Setting(containerEl)
-    .setName(t("RELEASE_NOTES_NAME"))
-    .setDesc(fragWithHTML(t("RELEASE_NOTES_DESC")))
-    .addToggle((toggle) =>
-      toggle
-        .setValue(this.plugin.settings.showReleaseNotes)
-        .onChange(async (value) => {
-          this.plugin.settings.showReleaseNotes = value;
-          this.applySettingsUpdate();
-        }),
-    );
+      .setName(t("RELEASE_NOTES_NAME"))
+      .setDesc(fragWithHTML(t("RELEASE_NOTES_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.showReleaseNotes)
+          .onChange(async (value) => {
+            this.plugin.settings.showReleaseNotes = value;
+            this.applySettingsUpdate();
+          }),
+      );
 
     new Setting(containerEl)
       .setName(t("FOLDER_NAME"))
@@ -293,7 +293,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    this.containerEl.createEl("h1", { text: t("FILENAME_HEAD") });   
+    this.containerEl.createEl("h1", { text: t("FILENAME_HEAD") });
     containerEl.createDiv("", (el) => {
       el.innerHTML = t("FILENAME_DESC");
     });
@@ -370,7 +370,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             autosaveDropdown.setDisabled(!value);
             this.applySettingsUpdate();
           }),
-      );      
+      );
 
     new Setting(containerEl)
       .setName(t("AUTOSAVE_INTERVAL_NAME"))
@@ -384,12 +384,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         d.addOption("180000", "3 minutes");
         d.addOption("240000", "4 minutes");
         d.addOption("300000", "5 minutes");
-        d.setValue(this.plugin.settings.autosaveInterval.toString())
-        .onChange((value) => {
-          this.plugin.settings.autosaveInterval = parseInt(value);
-          this.applySettingsUpdate(true);
-        });
-      });      
+        d.setValue(this.plugin.settings.autosaveInterval.toString()).onChange(
+          (value) => {
+            this.plugin.settings.autosaveInterval = parseInt(value);
+            this.applySettingsUpdate(true);
+          },
+        );
+      });
 
     this.containerEl.createEl("h1", { text: t("DISPLAY_HEAD") });
 
@@ -534,7 +535,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate(true);
           }),
       );
-    
+
     let opacityText: HTMLDivElement;
     new Setting(containerEl)
       .setName(t("LINKOPACITY_NAME"))
@@ -557,16 +558,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-    .setName(t("HOVERPREVIEW_NAME"))
-    .setDesc(fragWithHTML(t("HOVERPREVIEW_DESC")))
-    .addToggle((toggle) =>
-      toggle
-        .setValue(this.plugin.settings.hoverPreviewWithoutCTRL)
-        .onChange(async (value) => {
-          this.plugin.settings.hoverPreviewWithoutCTRL = value;
-          this.applySettingsUpdate();
-        }),
-    );      
+      .setName(t("HOVERPREVIEW_NAME"))
+      .setDesc(fragWithHTML(t("HOVERPREVIEW_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.hoverPreviewWithoutCTRL)
+          .onChange(async (value) => {
+            this.plugin.settings.hoverPreviewWithoutCTRL = value;
+            this.applySettingsUpdate();
+          }),
+      );
 
     new Setting(containerEl)
       .setName(t("LINK_CTRL_CLICK_NAME"))
@@ -854,28 +855,28 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-      let exportPadding: HTMLDivElement;
+    let exportPadding: HTMLDivElement;
 
-      new Setting(containerEl)
-        .setName(t("EXPORT_SVG_PADDING_NAME"))
-        .setDesc(fragWithHTML(t("EXPORT_SVG_PADDING_DESC")))
-        .addSlider((slider) =>
-          slider
-            .setLimits(0,50,5)
-            .setValue(this.plugin.settings.exportPaddingSVG)
-            .onChange(async (value) => {
-              exportPadding.innerText = ` ${value.toString()}`;
-              this.plugin.settings.exportPaddingSVG = value;
-              this.applySettingsUpdate();
-            }),
-        )
-        .settingEl.createDiv("", (el) => {
-          exportPadding = el;
-          el.style.minWidth = "2.3em";
-          el.style.textAlign = "right";
-          el.innerText = ` ${this.plugin.settings.exportPaddingSVG.toString()}`;
-        });
-  
+    new Setting(containerEl)
+      .setName(t("EXPORT_SVG_PADDING_NAME"))
+      .setDesc(fragWithHTML(t("EXPORT_SVG_PADDING_DESC")))
+      .addSlider((slider) =>
+        slider
+          .setLimits(0, 50, 5)
+          .setValue(this.plugin.settings.exportPaddingSVG)
+          .onChange(async (value) => {
+            exportPadding.innerText = ` ${value.toString()}`;
+            this.plugin.settings.exportPaddingSVG = value;
+            this.applySettingsUpdate();
+          }),
+      )
+      .settingEl.createDiv("", (el) => {
+        exportPadding = el;
+        el.style.minWidth = "2.3em";
+        el.style.textAlign = "right";
+        el.innerText = ` ${this.plugin.settings.exportPaddingSVG.toString()}`;
+      });
+
     new Setting(containerEl)
       .setName(t("EXPORT_THEME_NAME"))
       .setDesc(fragWithHTML(t("EXPORT_THEME_DESC")))

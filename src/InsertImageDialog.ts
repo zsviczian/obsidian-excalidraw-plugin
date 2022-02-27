@@ -28,7 +28,8 @@ export class InsertImageDialog extends FuzzySuggestModal<TFile> {
   getItems(): TFile[] {
     return (this.app.vault.getFiles() || []).filter(
       (f: TFile) =>
-        (IMAGE_TYPES.contains(f.extension) || this.plugin.isExcalidrawFile(f)) &&
+        (IMAGE_TYPES.contains(f.extension) ||
+          this.plugin.isExcalidrawFile(f)) &&
         //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/422
         !f.path.match(REG_LINKINDEX_INVALIDCHARS),
     );

@@ -236,12 +236,12 @@ export interface ExcalidrawAutomate {
   selectElementsInView(elements: ExcalidrawElement[]): void; //sets selection in view
   generateElementId(): string; //returns an 8 character long random id
   cloneElement(element: ExcalidrawElement): ExcalidrawElement; //Returns a clone of the element with a new id
-  moveViewElementToZIndex(elementId:number, newZIndex:number): void; //Moves the element to a specific position in the z-index
-  hexStringToRgb(color: string):number[];
-  rgbToHexString(color: number[]):string;
-  hslToRgb(color: number[]):number[];
-  rgbToHsl(color:number[]):number[];  
-  colorNameToHex(color:string):string;
+  moveViewElementToZIndex(elementId: number, newZIndex: number): void; //Moves the element to a specific position in the z-index
+  hexStringToRgb(color: string): number[];
+  rgbToHexString(color: number[]): string;
+  hslToRgb(color: number[]): number[];
+  rgbToHsl(color: number[]): number[];
+  colorNameToHex(color: string): string;
 }
 
 declare let window: any;
@@ -1153,8 +1153,9 @@ export async function initExcalidrawAutomate(
           ...el,
           version: el.version + 1,
           updated: Date.now(),
-          versionNonce: Math.floor(Math.random()*1000000000),
-        };});
+          versionNonce: Math.floor(Math.random() * 1000000000),
+        };
+      });
     },
     viewToggleFullScreen(forceViewMode: boolean = false): void {
       if (this.plugin.app.isMobile) {
@@ -1177,8 +1178,11 @@ export async function initExcalidrawAutomate(
         });
       }
       const view = this.targetView as ExcalidrawView;
-      if(view.isFullscreen()) view.exitFullscreen();
-      else view.gotoFullscreen();
+      if (view.isFullscreen()) {
+        view.exitFullscreen();
+      } else {
+        view.gotoFullscreen();
+      }
     },
     connectObjectWithViewSelectedElement(
       objectA: string,
@@ -1310,12 +1314,12 @@ export async function initExcalidrawAutomate(
       const manifest = this.plugin.app.plugins.manifests[PLUGIN_ID];
       return manifest.version >= requiredVersion;
     },
-    selectElementsInView(elements: ExcalidrawElement[]):void {
+    selectElementsInView(elements: ExcalidrawElement[]): void {
       if (!this.targetView || !this.targetView?._loaded) {
         errorMessage("targetView not set", "selectElementsInView()");
         return;
       }
-      if (!elements || elements.length===0) {
+      if (!elements || elements.length === 0) {
         return;
       }
       const API = this.getExcalidrawAPI();
@@ -1324,21 +1328,24 @@ export async function initExcalidrawAutomate(
     generateElementId(): string {
       return nanoid();
     },
-    cloneElement(element: ExcalidrawElement): ExcalidrawElement{
+    cloneElement(element: ExcalidrawElement): ExcalidrawElement {
       const newEl = JSON.parse(JSON.stringify(element));
       newEl.id = nanoid();
       return newEl;
     },
-    moveViewElementToZIndex(elementId:number, newZIndex:number): void {
+    moveViewElementToZIndex(elementId: number, newZIndex: number): void {
       if (!this.targetView || !this.targetView?._loaded) {
         errorMessage("targetView not set", "moveViewElementToZIndex()");
         return;
-      }     
+      }
       const API = this.getExcalidrawAPI();
       const elements = this.getViewElements();
-      const elementToMove = elements.filter((el:any)=>el.id===elementId);
+      const elementToMove = elements.filter((el: any) => el.id === elementId);
       if (elementToMove.length === 0) {
-        errorMessage(`Element (id: ${elementId}) not found`, "moveViewElementToZIndex");
+        errorMessage(
+          `Element (id: ${elementId}) not found`,
+          "moveViewElementToZIndex",
+        );
         return;
       }
       if (newZIndex >= elements.length) {
@@ -1350,26 +1357,26 @@ export async function initExcalidrawAutomate(
         return;
       }
 
-      const oldZIndex = elements.indexOf(elementToMove[0]);     
+      const oldZIndex = elements.indexOf(elementToMove[0]);
       elements.splice(newZIndex, 0, elements.splice(oldZIndex, 1)[0]);
       API.updateScene({
-        elements: elements,
+        elements,
         commitToHistory: true,
       });
     },
-    hexStringToRgb(color: string):number[] {
+    hexStringToRgb(color: string): number[] {
       const res = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(color);
       return [parseInt(res[1], 16), parseInt(res[2], 16), parseInt(res[3], 16)];
     },
-    rgbToHexString(color: number[]):string {
+    rgbToHexString(color: number[]): string {
       const colorInt =
         ((Math.round(color[0]) & 0xff) << 16) +
         ((Math.round(color[1]) & 0xff) << 8) +
         (Math.round(color[2]) & 0xff);
       const colorStr = colorInt.toString(16).toLowerCase();
-      return "#"+"000000".substring(colorStr.length) + colorStr;
+      return `#${"000000".substring(colorStr.length)}${colorStr}`;
     },
-    hslToRgb(color: number[]):number[] {
+    hslToRgb(color: number[]): number[] {
       const h = color[0] / 360;
       const s = color[1] / 100;
       const l = color[2] / 100;
@@ -1415,7 +1422,7 @@ export async function initExcalidrawAutomate(
       }
       return rgb;
     },
-    rgbToHsl(color:number[]):number[] {
+    rgbToHsl(color: number[]): number[] {
       const r = color[0] / 255;
       const g = color[1] / 255;
       const b = color[2] / 255;
@@ -1453,12 +1460,12 @@ export async function initExcalidrawAutomate(
 
       return [h, s * 100, l * 100];
     },
-    colorNameToHex(color:string):string {    
+    colorNameToHex(color: string): string {
       if (COLOR_NAMES.has(color.toLowerCase().trim())) {
         return COLOR_NAMES.get(color.toLowerCase().trim());
       }
       return color.trim();
-    }
+    },
   };
   await initFonts();
   return window.ExcalidrawAutomate;
@@ -1507,7 +1514,7 @@ function boxedElement(
     strokeSharpness: ea.style.strokeSharpness,
     seed: Math.floor(Math.random() * 100000),
     version: 1,
-    versionNonce: Math.floor(Math.random()*1000000000),
+    versionNonce: Math.floor(Math.random() * 1000000000),
     updated: Date.now(),
     isDeleted: false,
     groupIds: [] as any,
@@ -1551,8 +1558,12 @@ export function measureText(
   fontFamily: number,
 ) {
   //following odd error with mindmap on iPad while synchornizing with desktop.
-  if(!fontSize) fontSize = 20;
-  if(!fontFamily) fontFamily = 1;
+  if (!fontSize) {
+    fontSize = 20;
+  }
+  if (!fontFamily) {
+    fontFamily = 1;
+  }
   const line = document.createElement("div");
   const body = document.body;
   line.style.position = "absolute";
@@ -1847,36 +1858,46 @@ export const insertLaTeXToView = (view: ExcalidrawView) => {
     ea.setView(view);
     ea.addElementsToView(true, false, true);
   });
-}
+};
 
 export const search = async (view: ExcalidrawView) => {
   const ea = view.plugin.ea;
   ea.reset();
   ea.setView(view);
-  const elements = ea.getViewElements().filter(el=>el.type==="text");
-  if(elements.length === 0) return;
-  let text = await ScriptEngine.inputPrompt(view.plugin.app,"Search for","use quotation marks for exact match","");
-  if(!text) return;
-  const res = text.matchAll(/"(.*?)"/g)
-  let query:string[] = [];
+  const elements = ea.getViewElements().filter((el) => el.type === "text");
+  if (elements.length === 0) {
+    return;
+  }
+  let text = await ScriptEngine.inputPrompt(
+    view.plugin.app,
+    "Search for",
+    "use quotation marks for exact match",
+    "",
+  );
+  if (!text) {
+    return;
+  }
+  const res = text.matchAll(/"(.*?)"/g);
+  let query: string[] = [];
   let parts;
   while (!(parts = res.next()).done) {
     query.push(parts.value[1]);
   }
   text = text.replaceAll(/"(.*?)"/g, "");
-  query = query.concat(text.split(" ").filter(s=>s.length!==0));
-  const match = elements
-    .filter((el:any)=>query
-      .some(q=>el
-        .rawText
-        .toLowerCase()
-        .replaceAll("\n"," ")
-        .match(q.toLowerCase())
-    ));
-  if(match.length === 0) {
+  query = query.concat(text.split(" ").filter((s) => s.length !== 0));
+  const match = elements.filter((el: any) =>
+    query.some((q) =>
+      el.rawText.toLowerCase().replaceAll("\n", " ").match(q.toLowerCase()),
+    ),
+  );
+  if (match.length === 0) {
     new Notice("I could not find a matching text element");
     return;
   }
   ea.selectElementsInView(match);
-  ea.getExcalidrawAPI().zoomToFit(match,view.plugin.settings.zoomToFitMaxLevel,0.05);
-}
+  ea.getExcalidrawAPI().zoomToFit(
+    match,
+    view.plugin.settings.zoomToFitMaxLevel,
+    0.05,
+  );
+};

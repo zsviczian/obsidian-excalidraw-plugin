@@ -83,13 +83,13 @@ export class FieldSuggestor extends EditorSuggest<string> {
         ? EXCALIDRAW_SCRIPTENGINE_INFO
         : FRONTMATTER_KEYS_INFO;
     const value = keys.find((f) => f.field === suggestion);
-    el.createEl("b", { text});
+    el.createEl("b", { text });
     el.createEl("br");
-    if(value.code) {
-      el.createEl("code", { text: value.code }); 
+    if (value.code) {
+      el.createEl("code", { text: value.code });
     }
-    if(value.desc) {
-      el.createDiv("div",el=>el.innerHTML=value.desc);
+    if (value.desc) {
+      el.createDiv("div", (el) => (el.innerHTML = value.desc));
     }
   }
 
