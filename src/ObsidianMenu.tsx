@@ -162,7 +162,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
   
   render () {
-    const downloadedScriptsRoot=`${this.props.view.plugin.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}/`
     return (
       <div
         ref={this.containerRef}
@@ -255,6 +254,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                       search(this.props.view);
                     }}
                     icon={ICONS.search}
+                    view={this.props.view}
                   />
                   <ActionButton
                     key={"md"}
@@ -263,18 +263,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                       this.props.view.openAsMarkdown();
                     }}
                     icon={ICONS.switchToMarkdown}
-                  />
-                  <ActionButton
-                    key={"fullscreen"}
-                    title={this.state.isFullscreen ? t("EXIT_FULLSCREEN") : t("GOTO_FULLSCREEN")}
-                    action={()=> {
-                      if(this.state.isFullscreen) {
-                        this.props.view.exitFullscreen();
-                      } else {
-                        this.props.view.gotoFullscreen();
-                      }
-                    }}
-                    icon={this.state.isFullscreen ? ICONS.exitFullScreen : ICONS.gotoFullScreen}
+                    view={this.props.view}
                   />
                   { this.state.isPreviewMode === null 
                     ? (<ActionButton
@@ -284,6 +273,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                         this.props.view.convertExcalidrawToMD();
                       }}
                       icon={ICONS.convertFile}
+                      view={this.props.view}
                     />)
                     : (<ActionButton
                         key={"viewmode"}
@@ -296,8 +286,31 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                           }
                         }}
                         icon={this.state.isPreviewMode ? ICONS.rawMode : ICONS.parsedMode}
+                        view={this.props.view}
                       />)
                   }
+                  <ActionButton
+                    key={"tray-mode"}
+                    title={t("TRAY_MODE")}
+                    action={()=> {
+                      this.props.view.toggleTrayMode();
+                    }}
+                    icon={ICONS.trayMode}
+                    view={this.props.view}
+                  />
+                  <ActionButton
+                    key={"fullscreen"}
+                    title={this.state.isFullscreen ? t("EXIT_FULLSCREEN") : t("GOTO_FULLSCREEN")}
+                    action={()=> {
+                      if(this.state.isFullscreen) {
+                        this.props.view.exitFullscreen();
+                      } else {
+                        this.props.view.gotoFullscreen();
+                      }
+                    }}
+                    icon={this.state.isFullscreen ? ICONS.exitFullScreen : ICONS.gotoFullScreen}
+                    view={this.props.view}
+                  />                  
                 </div>
               </fieldset>
               <fieldset>
@@ -310,6 +323,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                       this.props.view.plugin.exportLibrary();
                     }}
                     icon={ICONS.exportLibrary}
+                    view={this.props.view}
                   />
                   <ActionButton
                     key={"svg"}
@@ -319,6 +333,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                       new Notice("File saved: " + getIMGFilename(this.props.view.file.path, "svg"));
                     }}
                     icon={ICONS.exportSVG}
+                    view={this.props.view}
                   />
                   <ActionButton
                     key={"png"}
@@ -328,6 +343,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                       new Notice("File saved: "+getIMGFilename(this.props.view.file.path, "png"));
                     }}
                     icon={ICONS.exportPNG}
+                    view={this.props.view}
                   />
                   <ActionButton
                     key={"excalidraw"}
@@ -336,6 +352,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                       this.props.view.exportExcalidraw();
                     }}
                     icon={ICONS.exportExcalidraw}
+                    view={this.props.view}
                   />
                 </div>
               </fieldset>
@@ -351,6 +368,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                         this.props.view)
                     }}
                     icon={ICONS.insertImage}
+                    view={this.props.view}
                   />
                   <ActionButton
                     key={"insertMD"}
@@ -361,6 +379,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                         this.props.view)
                     }}
                     icon={ICONS.insertMD}
+                    view={this.props.view}
                   />
                   <ActionButton
                     key={"latex"}
@@ -370,6 +389,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                       insertLaTeXToView(this.props.view)
                     }}
                     icon={ICONS.insertLaTeX}
+                    view={this.props.view}
                   />
                   <ActionButton
                     key={"link"}
@@ -382,88 +402,83 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                       );
                     }}
                     icon={ICONS.insertLink}
+                    view={this.props.view}
                   />
                 </div>
               </fieldset>
-              {this.state.scriptIconMap !== {} && 
-                Object.keys(this.state.scriptIconMap).filter(k=>!k.startsWith(downloadedScriptsRoot)).length !== 0
-                ? (<fieldset>
-                    <legend>User Scripts</legend>
-                    <div className="buttonList buttonListIcon">
-                      {Object.keys(this.state.scriptIconMap)
-                        .filter(k=>!k.startsWith(downloadedScriptsRoot))
-                        .sort()
-                        .map((key:string) =>
-                        <ActionButton
-                          key={key}
-                          title={this.state.scriptIconMap[key].name}
-                          action={()=> {
-                            const f = this.props.view.app.vault.getAbstractFileByPath(key);
-                            if(f && f instanceof TFile) {
-                              this.props.view.plugin.scriptEngine.executeScript(this.props.view,f);
-                            }
-                          }}
-                          icon={this.state.scriptIconMap[key].iconBase64 
-                            ? <img 
-                                src={`data:image/svg+xml,${encodeURIComponent(
-                                  this.state.theme==="dark"
-                                  ? this.state.scriptIconMap[key].iconBase64.replace("<svg ",dark)
-                                  : this.state.scriptIconMap[key].iconBase64.replace("<svg ",light)
-                                )}`}
-                              />
-                            : ICONS.cog}
-                        />
-                      )}
-                    </div>
-                  </fieldset>) 
-                : ""
-              }
-              {this.state.scriptIconMap !== {} && 
-                Object.keys(this.state.scriptIconMap).filter(k=>k.startsWith(downloadedScriptsRoot)).length !== 0
-                ? (<fieldset>
-                    <legend>Downloaded Scripts</legend>
-                    <div className="buttonList buttonListIcon">
-                      {Object.keys(this.state.scriptIconMap)
-                        .filter(k=>k.startsWith(downloadedScriptsRoot))
-                        .sort()
-                        .map((key:string) =>
-                        <ActionButton
-                          key={key}
-                          title={this.state.scriptIconMap[key].name.replace(SCRIPT_INSTALL_FOLDER+"/","")}
-                          action={()=> {
-                            const f = this.props.view.app.vault.getAbstractFileByPath(key);
-                            if(f && f instanceof TFile) {
-                              this.props.view.plugin.scriptEngine.executeScript(this.props.view,f);
-                            }
-                          }}
-                          icon={this.state.scriptIconMap[key].iconBase64 
-                          ? <img 
-                              src={`data:image/svg+xml,${encodeURIComponent(
-                                this.state.theme==="dark"
-                                ? this.state.scriptIconMap[key].iconBase64.replace("<svg ",dark)
-                                : this.state.scriptIconMap[key].iconBase64.replace("<svg ",light)
-                              )}`}
-                            />
-                          : ICONS.cog}
-                        />
-                      )}
-                    </div>
-                  </fieldset>) 
-                : ""
-              }
+              {this.renderScriptButtons(false)}
+              {this.renderScriptButtons(true)}
             </div>
           </div>
         </div>
       </div>
     )
   }
+
+  private renderScriptButtons (isDownloaded:boolean) {
+    if(this.state.scriptIconMap === {}) {
+      return (""); 
+    }
+
+    const downloadedScriptsRoot = 
+      `${this.props.view.plugin.settings
+      .scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}/`;
+
+    const filterCondition = (key:string):boolean => isDownloaded 
+      ? key.startsWith(downloadedScriptsRoot)
+      : !key.startsWith(downloadedScriptsRoot);
+
+    if(Object.keys(this.state.scriptIconMap)
+      .filter(k=>filterCondition(k)).length === 0
+    ){
+      return ("");
+    } 
+      
+    return (
+      <fieldset>
+        <legend>{isDownloaded?"Downloaded":"User"} Scripts</legend>
+        <div className="buttonList buttonListIcon">
+          {Object.keys(this.state.scriptIconMap)
+            .filter(k=>filterCondition(k))
+            .sort()
+            .map((key:string) =>
+            <ActionButton
+              key={key}
+              title={isDownloaded
+                ? this.state.scriptIconMap[key].name.replace(SCRIPT_INSTALL_FOLDER+"/","")
+                : this.state.scriptIconMap[key].name
+              }
+              action={()=> {
+                const f = this.props.view.app.vault.getAbstractFileByPath(key);
+                if(f && f instanceof TFile) {
+                  this.props.view.plugin.scriptEngine.executeScript(this.props.view,f);
+                }
+              }}
+              icon={this.state.scriptIconMap[key].svgString 
+              ? <img 
+                  src={`data:image/svg+xml,${encodeURIComponent(
+                    this.state.theme==="dark"
+                    ? this.state.scriptIconMap[key].svgString.replace("<svg ",dark)
+                    : this.state.scriptIconMap[key].svgString.replace("<svg ",light)
+                  )}`}
+                />
+              : ICONS.cog}
+              view={this.props.view}
+            />
+          )}
+        </div>
+      </fieldset>
+    ) 
+  }
+  
 }
 
 type ButtonProps = {
   title: string;
   action: Function;
   icon: JSX.Element;
-  key: string;
+  //key: string;
+  view: ExcalidrawView;
 }
 
 type ButtonState = {
@@ -471,6 +486,8 @@ type ButtonState = {
 }
 
 class ActionButton extends React.Component<ButtonProps, ButtonState> {
+  toastMessageTimeout:number = 0;
+
   constructor(props: ButtonProps) {
     super(props);
     this.state = {
@@ -481,7 +498,7 @@ class ActionButton extends React.Component<ButtonProps, ButtonState> {
   render() {
     return (
       <button
-        key={this.props.key}
+        /*key={this.props.key}*/
         style={{
           width:"fit-content",
           padding:"2px",
@@ -489,8 +506,20 @@ class ActionButton extends React.Component<ButtonProps, ButtonState> {
         }}
         className="ToolIcon_type_button ToolIcon_size_small ToolIcon_type_button--show ToolIcon"
         title={this.props.title}
-        aria-label={this.props.title}
-        onClick={()=>this.props.action()}
+        /*aria-label={this.props.title}*/
+        onClick={()=>{
+          if(this.toastMessageTimeout) {
+            window.clearTimeout(this.toastMessageTimeout);
+            this.toastMessageTimeout = 0;
+          }
+          this.props.action()
+        }}
+        onPointerDown={()=>{
+          this.toastMessageTimeout = window.setTimeout(()=>
+            this.props.view.excalidrawAPI?.setToastMessage(this.props.title)
+            ,300
+          )
+        }}
     >
       <div className="ToolIcon__icon" aria-hidden="true">
         {this.props.icon}
@@ -651,6 +680,11 @@ const ICONS = {
   cog: (
     <svg aria-hidden="true" focusable="false" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
       <path d="M495.9 166.6C499.2 175.2 496.4 184.9 489.6 191.2L446.3 230.6C447.4 238.9 448 247.4 448 256C448 264.6 447.4 273.1 446.3 281.4L489.6 320.8C496.4 327.1 499.2 336.8 495.9 345.4C491.5 357.3 486.2 368.8 480.2 379.7L475.5 387.8C468.9 398.8 461.5 409.2 453.4 419.1C447.4 426.2 437.7 428.7 428.9 425.9L373.2 408.1C359.8 418.4 344.1 427 329.2 433.6L316.7 490.7C314.7 499.7 307.7 506.1 298.5 508.5C284.7 510.8 270.5 512 255.1 512C241.5 512 227.3 510.8 213.5 508.5C204.3 506.1 197.3 499.7 195.3 490.7L182.8 433.6C167 427 152.2 418.4 138.8 408.1L83.14 425.9C74.3 428.7 64.55 426.2 58.63 419.1C50.52 409.2 43.12 398.8 36.52 387.8L31.84 379.7C25.77 368.8 20.49 357.3 16.06 345.4C12.82 336.8 15.55 327.1 22.41 320.8L65.67 281.4C64.57 273.1 64 264.6 64 256C64 247.4 64.57 238.9 65.67 230.6L22.41 191.2C15.55 184.9 12.82 175.3 16.06 166.6C20.49 154.7 25.78 143.2 31.84 132.3L36.51 124.2C43.12 113.2 50.52 102.8 58.63 92.95C64.55 85.8 74.3 83.32 83.14 86.14L138.8 103.9C152.2 93.56 167 84.96 182.8 78.43L195.3 21.33C197.3 12.25 204.3 5.04 213.5 3.51C227.3 1.201 241.5 0 256 0C270.5 0 284.7 1.201 298.5 3.51C307.7 5.04 314.7 12.25 316.7 21.33L329.2 78.43C344.1 84.96 359.8 93.56 373.2 103.9L428.9 86.14C437.7 83.32 447.4 85.8 453.4 92.95C461.5 102.8 468.9 113.2 475.5 124.2L480.2 132.3C486.2 143.2 491.5 154.7 495.9 166.6V166.6zM256 336C300.2 336 336 300.2 336 255.1C336 211.8 300.2 175.1 256 175.1C211.8 175.1 176 211.8 176 255.1C176 300.2 211.8 336 256 336z"/>
+    </svg>
+  ),
+  trayMode: (
+    <svg aria-hidden="true" focusable="false" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512">
+      <path d="M618.1 97.67c-13.02-4.375-27.45 .1562-35.72 11.16L464 266.7l-118.4-157.8c-8.266-11.03-22.64-15.56-35.72-11.16C296.8 102 288 114.2 288 128v256c0 17.69 14.33 32 32 32s32-14.31 32-32v-160l86.41 115.2c12.06 16.12 39.13 16.12 51.19 0L576 224v160c0 17.69 14.33 32 32 32s32-14.31 32-32v-256C640 114.2 631.2 102 618.1 97.67zM224 96.01H32c-17.67 0-32 14.31-32 32s14.33 32 32 32h64v223.1c0 17.69 14.33 31.99 32 31.99s32-14.3 32-31.99V160h64c17.67 0 32-14.31 32-32S241.7 96.01 224 96.01z"/>
     </svg>
   )
 }

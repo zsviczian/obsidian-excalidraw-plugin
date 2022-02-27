@@ -6,7 +6,7 @@ import ExcalidrawPlugin from "./main";
 import { GenericInputPrompt, GenericSuggester } from "./Prompt";
 import { getIMGFilename, splitFolderAndFilename } from "./Utils";
 
-export type ScriptIconMap = {[key:string]: {name:string,iconBase64:string}}
+export type ScriptIconMap = {[key:string]: {name:string,svgString:string}}
 
 export class ScriptEngine {
   private plugin: ExcalidrawPlugin;
@@ -126,16 +126,13 @@ export class ScriptEngine {
   async addScriptIconToMap(scriptPath:string, name: string) {
     const svgFilePath = getIMGFilename(scriptPath,"svg");
     const file = this.plugin.app.vault.getAbstractFileByPath(svgFilePath);
-    let iconBase64:string = null;
-    if(file && file instanceof TFile) {
-      const svgString = await this.plugin.app.vault.read(file);
-      //iconBase64 = `data:image/svg+xml,${encodeURIComponent(svgString)}`;
-      iconBase64 = svgString;
-    }
+    const svgString:string = (file && file instanceof TFile)
+      ? await this.plugin.app.vault.read(file)
+      : null;
     this.scriptIconMap = {
       ...this.scriptIconMap
     };
-    this.scriptIconMap[scriptPath] = {name,iconBase64};
+    this.scriptIconMap[scriptPath] = {name,svgString};
     this.updateToolPannels();
   }
 

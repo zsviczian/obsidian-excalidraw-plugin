@@ -70,6 +70,7 @@ import {
   errorlog,
   getAttachmentsFolderAndFilePath,
   getFontDataURL,
+  getIMGFilename,
   getIMGPathFromExcalidrawFile,
   getNewUniqueFilepath,
   getPNG,
@@ -364,20 +365,29 @@ export default class ExcalidrawPlugin extends Plugin {
         }
         const fname = decodedURI.substring(decodedURI.lastIndexOf("/") + 1);
         const folder = `${this.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}`;
-        const path = `${folder}/${fname}`;
-        let f = this.app.vault.getAbstractFileByPath(path);
-        setButtonText(f ? "CHECKING" : "INSTALL");
+        const scriptPath = `${folder}/${fname}`;
+        const svgPath = getIMGFilename(scriptPath,"svg");
+        let scriptFile = this.app.vault.getAbstractFileByPath(scriptPath);
+        let svgFile = this.app.vault.getAbstractFileByPath(svgPath);
+        setButtonText(scriptFile ? "CHECKING" : "INSTALL");
         button.onclick = async () => {
-          try {
-            const data = await request({ url: source });
-            if (f) {
-              await this.app.vault.modify(f as TFile, data);
+
+          const download = async (url:string, file:TFile, localPath: string):Promise<TFile> => {
+            const data = await request({ url });
+            if (file) {
+              await this.app.vault.modify(file as TFile, data);
             } else {
               await checkAndCreateFolder(this.app.vault, folder);
-              f = await this.app.vault.create(path, data);
+              file = await this.app.vault.create(localPath, data);
             }
+            return file;
+          }
+
+          try {
+            scriptFile = await download(source,scriptFile as TFile,scriptPath);
+            svgFile = await download(getIMGFilename(source,"svg"),svgFile as TFile,svgPath);
             setButtonText("UPTODATE");
-            new Notice(`Installed: ${(f as TFile).basename}`);
+            new Notice(`Installed: ${(scriptFile as TFile).basename}`);
           } catch (e) {
             new Notice(`Error installing script: ${fname}`);
             errorlog({
@@ -393,31 +403,54 @@ export default class ExcalidrawPlugin extends Plugin {
 
         //check modified date on github
         //https://superuser.com/questions/1406875/how-to-get-the-latest-commit-date-of-a-file-from-a-given-github-reposotiry
-        if (!f || !(f instanceof TFile)) {
+        if (!scriptFile || !(scriptFile instanceof TFile)) {
           return;
         }
-        const msgHead =
-          "https://api.github.com/repos/zsviczian/obsidian-excalidraw-plugin/commits?path=ea-scripts%2F";
-        const msgTail = "&page=1&per_page=1";
-        const data = await request({
-          url: msgHead + encodeURI(fname) + msgTail,
-        });
-        if (!data) {
-          setButtonText("ERROR");
-          return;
+
+        const checkModifyDate = async (gitFilename:string,file:TFile):Promise<"ERROR"|"UPDATE"|"UPTODATE"> => {
+          const msgHead =
+            "https://api.github.com/repos/zsviczian/obsidian-excalidraw-plugin/commits?path=ea-scripts%2F";
+          const msgTail = "&page=1&per_page=1";
+          const data = await request({
+            url: msgHead + encodeURI(gitFilename) + msgTail,
+          });
+          if (!data) {
+            //setButtonText("ERROR");
+            return "ERROR";
+          }
+          const result = JSON.parse(data);
+          if (result.length === 0 || !result[0]?.commit?.committer?.date) {
+            //setButtonText("ERROR");
+            return "ERROR";
+          }
+          //@ts-ignore
+          const mtime = new Date(result[0].commit.committer.date) / 1;
+          if (!file || mtime > file.stat.mtime) {
+            //setButtonText("UPDATE");
+            return "UPDATE";
+          }
+          return "UPTODATE";
         }
-        const result = JSON.parse(data);
-        if (result.length === 0 || !result[0]?.commit?.committer?.date) {
-          setButtonText("ERROR");
-          return;
-        }
-        //@ts-ignore
-        const mtime = new Date(result[0].commit.committer.date) / 1;
-        if (mtime > f.stat.mtime) {
-          setButtonText("UPDATE");
-          return;
-        }
-        setButtonText("UPTODATE");
+
+        const scriptButtonText = await checkModifyDate(fname,scriptFile);
+        const svgButtonText = await checkModifyDate(
+          getIMGFilename(fname,"svg"),
+          !svgFile || !(svgFile instanceof TFile) 
+            ? null
+            : svgFile
+        );
+
+        setButtonText(
+          scriptButtonText === "UPTODATE" && svgButtonText === "UPTODATE"
+          ? "UPTODATE"
+          : scriptButtonText === "UPTODATE" && svgButtonText === "ERROR"
+            ? "UPTODATE"
+            : scriptButtonText === "ERROR"
+              ? "ERROR"
+              : scriptButtonText==="UPDATE" || svgButtonText === "UPDATE"
+                ? "UPDATE"
+                : "UPTODATE"
+          )
       });
     };
 
@@ -966,17 +999,7 @@ export default class ExcalidrawPlugin extends Plugin {
         }
         const view = this.app.workspace.activeLeaf.view;
         if (view instanceof ExcalidrawView && view.excalidrawAPI) {
-          const st = view.excalidrawAPI.getAppState();
-          st.trayModeEnabled = !st.trayModeEnabled;
-          view.excalidrawAPI.updateScene({appState:st});
-          view.excalidrawAPI.refresh();
-          //placed in an async function because I need to load settings first
-          //just in case settings were updated via sync
-          (async()=>{
-            await this.loadSettings();
-            this.settings.defaultTrayMode = st.trayModeEnabled;
-            this.saveSettings();
-          })();
+          view.toggleTrayMode();
           return true;
         }
         return false;

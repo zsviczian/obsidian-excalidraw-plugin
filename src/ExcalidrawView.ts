@@ -446,12 +446,31 @@ export default class ExcalidrawView extends TextFileView {
     if (!this.excalidrawWrapperRef) {
       return;
     }
-    this.contentEl.requestFullscreen(); //{navigationUI: "hide"});
-    this.excalidrawWrapperRef.current.firstElementChild?.focus();
-    this.contentEl.setAttribute("style", "padding:0px;margin:0px;");
     if (this.toolsPanelRef && this.toolsPanelRef.current) {
       this.toolsPanelRef.current.setFullscreen(true);
     }
+    if(this.app.isMobile) {
+      const newStylesheet = document.createElement("style");
+      newStylesheet.id = "excalidraw-full-screen";
+      newStylesheet.textContent = `
+        .workspace-leaf-content .view-content {
+          padding: 0px !important;
+        }
+        .view-header {
+          height: 1px !important;
+        }
+        .status-bar {
+          display: none !important;
+        }`;
+      
+      const oldStylesheet = document.getElementById(newStylesheet.id);
+      if(oldStylesheet) document.head.removeChild(oldStylesheet);	
+      document.head.appendChild(newStylesheet); 
+      return;
+    }
+    this.contentEl.requestFullscreen(); //{navigationUI: "hide"});
+    this.excalidrawWrapperRef.current.firstElementChild?.focus();
+    this.contentEl.setAttribute("style", "padding:0px;margin:0px;");
 
     this.fullscreenModalObserver = new MutationObserver((m) => {
       if (m.length !== 1) {
@@ -493,10 +512,17 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   exitFullscreen() {
-    document.exitFullscreen();
     if (this.toolsPanelRef && this.toolsPanelRef.current) {
-      this.toolsPanelRef.current.setFullscreen(true);
+      this.toolsPanelRef.current.setFullscreen(false);
     }
+    if(this.app.isMobile) {
+      const oldStylesheet = document.getElementById("excalidraw-full-screen");
+      if(oldStylesheet) {
+        document.head.removeChild(oldStylesheet);	
+      } 
+      return;
+    }      
+    document.exitFullscreen();
   }
 
   async handleLinkClick(view: ExcalidrawView, ev: MouseEvent) {
@@ -2356,6 +2382,18 @@ export default class ExcalidrawView extends TextFileView {
     } else {
       current.zoomToFit(elements, maxZoom, this.isFullscreen() ? 0 : 0.05);
     }
+  }
+
+  public async toggleTrayMode() {
+    const st = this.excalidrawAPI.getAppState();
+    st.trayModeEnabled = !st.trayModeEnabled;
+    this.excalidrawAPI.updateScene({appState:st});
+    this.excalidrawAPI.refresh();
+
+    //just in case settings were updated via Obsidian sync
+    await this.plugin.loadSettings();
+    this.plugin.settings.defaultTrayMode = st.trayModeEnabled;
+    this.plugin.saveSettings();
   }
 }
 
