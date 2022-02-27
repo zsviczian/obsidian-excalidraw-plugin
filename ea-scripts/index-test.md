@@ -25,7 +25,7 @@ I would love to include your contribution in the script library. If you have a s
 ---
 
 # List of available scripts
-- [[#Add Connector Point]]
+- <img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Add%20Connector%20Point.svg">[[#Add Connector Point]]
 - [[#Add Link to Existing File and Open]]
 - [[#Add Link to New Page and Open]]
 - [[#Add Next Step in Process]]
