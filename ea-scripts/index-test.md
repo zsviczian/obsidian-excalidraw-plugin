@@ -66,7 +66,6 @@ I would love to include your contribution in the script library. If you have a s
 - <img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Set%20Stroke%20Width%20of%20Selected%20Elements.svg"/>[[#Set Stroke Width of Selected Elements]]
 - <img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Set%20Text%20Alignment.svg"/>[[#Set Text Alignment]]
 - <img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Split%20text%20by%20lines.svg"/>[[#Split text by lines]]
-- <img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Toggle%20Fullscreen%20on%20Mobile.svg"/>[[#Toggle Fullscreen on Mobile]]
 - <img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Transfer%20TextElements%20to%20Excalidraw%20markdown%20metadata.svg"/>[[#Transfer TextElements to Excalidraw markdown metadata]]
 - <img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Zoom%20to%20Fit%20Selected%20Elements.svg"/>[[#Zoom to Fit Selected Elements]]
 
@@ -315,12 +314,6 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Split%20text%20by%20lines.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Split%20text%20by%20lines.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Split lines of text into separate text elements for easier reorganization<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-split-lines.jpg'></td></tr></table>
-
-## Toggle Fullscreen on Mobile
-```excalidraw-script-install
-https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Toggle%20Fullscreen%20on%20Mobile.md
-```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Toggle%20Fullscreen%20on%20Mobile.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Hides Obsidian workspace leaf padding and header (based on option in settings, default is "hide header" = false) which will take Excalidraw to full screen. ⚠ Note that if the header is not visible, it will be very difficult to invoke the command palette to end full screen. Only hide the header if you have a keyboard or you've practiced opening command palette!<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/ea-toggle-fullscreen.jpg'></td></tr></table>
 
 ## Transfer TextElements to Excalidraw markdown metadata
 ```excalidraw-script-install
