@@ -16,8 +16,8 @@ import {
   REG_BLOCK_REF_CLEAN,
   VIRGIL_FONT,
   PLUGIN_ID,
-} from "./constants";
-import ExcalidrawPlugin from "./main";
+} from "./Constants";
+import ExcalidrawPlugin from "./Main";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
 import { ExportSettings } from "./ExcalidrawView";
 import { compressToBase64, decompressFromBase64 } from "lz-string";

@@ -1,5 +1,5 @@
 import { MarkdownRenderer, Modal, Notice, request } from "obsidian";
-import ExcalidrawPlugin from "./main";
+import ExcalidrawPlugin from "./Main";
 import { errorlog, log } from "./Utils";
 
 const URL =

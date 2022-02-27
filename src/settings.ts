@@ -6,10 +6,10 @@ import {
   Setting,
   TFile,
 } from "obsidian";
-import { VIEW_TYPE_EXCALIDRAW } from "./constants";
+import { VIEW_TYPE_EXCALIDRAW } from "./Constants";
 import ExcalidrawView from "./ExcalidrawView";
 import { t } from "./lang/helpers";
-import type ExcalidrawPlugin from "./main";
+import type ExcalidrawPlugin from "./Main";
 
 export interface ExcalidrawSettings {
   folder: string;

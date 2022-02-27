@@ -1,4 +1,4 @@
-import ExcalidrawPlugin from "./main";
+import ExcalidrawPlugin from "./Main";
 import {
   FillStyle,
   StrokeStyle,
@@ -16,7 +16,7 @@ import {
   MAX_IMAGE_SIZE,
   PLUGIN_ID,
   COLOR_NAMES,
-} from "./constants";
+} from "./Constants";
 import {
   //debug,
   embedFontsInSVG,

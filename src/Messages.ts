@@ -28,8 +28,18 @@ If you find this plugin valuable, please consider clicking the button below.
 
 
 ## Fixed
-- CMD+Drag does not work on Mac. You can now use SHIFT+Drag to embed an image or markdown document from the file Obsidian File Explorer into a scene.
-- If you hold down SHIFT while resizing a sticky note, the text size will scale, instead of text wrapping.
+- CMD+Drag from the Obsidian File Manager does not work on Mac. You can now use SHIFT+Drag to embed an image or markdown document into a scene. ([#468](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/468))
+- Excalidraw Compressed JSON is now cut to smaller chunks (64 characters per paragraph, instead of the earlier 1024 characters). This should address search performance issues. ([#484](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/484))
 
 ## New Features
+- I added the Obsidian Tools Panel
+  - Click the Obsidian button to access the pannel.
+  - The tools panel contains key plugin commands and user / downloaded Obsidian scripts.
+  - Drag the pannel with the handle at the top. Single click on the top to collapse the pannel.
+  - On Mobile press and hold the drag handle before dragging, to avoid activating the Obsidian slide in menus.
+  - On Mobile long touch individual buttons on the panel to access tooltips.
+  - Reinstall Excalidraw scripts to get the icons.
+- If you hold down SHIFT while resizing a sticky note, the text size will scale instead of text wrapping. ([Excalidraw tweet](https://twitter.com/aakansha1216/status/1496116528890417155?s=20&t=taXjA6I9Nd0T-C0wYBsG5g))
+- SVG export now includes links ([#4791](https://github.com/excalidraw/excalidraw/pull/4791))
+- Added fullscreen mode for Obsidian Mobile
 `};

@@ -1,8 +1,8 @@
 import { App, Instruction, Notice, TAbstractFile, TFile, WorkspaceLeaf } from "obsidian";
 import { fileURLToPath } from "url";
-import { PLUGIN_ID, VIEW_TYPE_EXCALIDRAW } from "./constants";
+import { PLUGIN_ID, VIEW_TYPE_EXCALIDRAW } from "./Constants";
 import ExcalidrawView from "./ExcalidrawView";
-import ExcalidrawPlugin from "./main";
+import ExcalidrawPlugin from "./Main";
 import { GenericInputPrompt, GenericSuggester } from "./Prompt";
 import { getIMGFilename, splitFolderAndFilename } from "./Utils";
 

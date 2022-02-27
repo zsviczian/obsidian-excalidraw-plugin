@@ -1,5 +1,5 @@
 import { App, MarkdownRenderer, Modal } from "obsidian";
-import ExcalidrawPlugin from "./main";
+import ExcalidrawPlugin from "./Main";
 import { FIRST_RUN, RELEASE_NOTES } from "./Messages"
 
 export class ReleaseNotes extends Modal {

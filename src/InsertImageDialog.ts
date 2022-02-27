@@ -1,9 +1,9 @@
 import { App, FuzzySuggestModal, TFile } from "obsidian";
 import { fileURLToPath } from "url";
-import { IMAGE_TYPES, REG_LINKINDEX_INVALIDCHARS } from "./constants";
+import { IMAGE_TYPES, REG_LINKINDEX_INVALIDCHARS } from "./Constants";
 import ExcalidrawView from "./ExcalidrawView";
 import { t } from "./lang/helpers";
-import ExcalidrawPlugin from "./main";
+import ExcalidrawPlugin from "./Main";
 
 export class InsertImageDialog extends FuzzySuggestModal<TFile> {
   public app: App;

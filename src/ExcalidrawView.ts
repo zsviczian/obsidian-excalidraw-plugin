@@ -39,8 +39,8 @@ import {
   REG_LINKINDEX_INVALIDCHARS,
   KEYCODE,
   LOCAL_PROTOCOL,
-} from "./constants";
-import ExcalidrawPlugin from "./main";
+} from "./Constants";
+import ExcalidrawPlugin from "./Main";
 import { repositionElementsToCursor } from "./ExcalidrawAutomate";
 import { t } from "./lang/helpers";
 import {

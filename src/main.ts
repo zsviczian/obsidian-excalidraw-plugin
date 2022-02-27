@@ -42,15 +42,15 @@ import {
   SCRIPT_INSTALL_FOLDER,
   VIRGIL_FONT,
   VIRGIL_DATAURL,
-} from "./constants";
+} from "./Constants";
 import ExcalidrawView, { ExportSettings, TextMode } from "./ExcalidrawView";
 import { changeThemeOfExcalidrawMD, getMarkdownDrawingSection } from "./ExcalidrawData";
 import {
   ExcalidrawSettings,
   DEFAULT_SETTINGS,
   ExcalidrawSettingTab,
-} from "./settings";
-import { openDialogAction, OpenFileDialog } from "./openDrawing";
+} from "./Settings";
+import { openDialogAction, OpenFileDialog } from "./OpenDrawing";
 import { InsertLinkDialog } from "./InsertLinkDialog";
 import { InsertImageDialog } from "./InsertImageDialog";
 import { InsertMDDialog } from "./InsertMDDialog";

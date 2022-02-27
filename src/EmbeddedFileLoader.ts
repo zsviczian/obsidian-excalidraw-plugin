@@ -10,13 +10,13 @@ import {
   IMAGE_TYPES,
   nanoid,
   VIRGIL_FONT,
-} from "./constants";
+} from "./Constants";
 import { createSVG } from "./ExcalidrawAutomate";
 import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
 import { ExportSettings } from "./ExcalidrawView";
 import { t } from "./lang/helpers";
 import { tex2dataURL } from "./LaTeX";
-import ExcalidrawPlugin from "./main";
+import ExcalidrawPlugin from "./Main";
 import {
   errorlog,
   getDataURL,

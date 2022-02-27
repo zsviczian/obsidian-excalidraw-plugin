@@ -1,10 +1,10 @@
 import { DataURL } from "@zsviczian/excalidraw/types/types";
 import ExcalidrawView from "./ExcalidrawView";
-import ExcalidrawPlugin from "./main";
+import ExcalidrawPlugin from "./Main";
 import { FileData, MimeType } from "./EmbeddedFileLoader";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
 import { getImageSize, sleep, svgToBase64 } from "./Utils";
-import { fileid } from "./constants";
+import { fileid } from "./Constants";
 import html2canvas from "html2canvas";
 
 declare let window: any;

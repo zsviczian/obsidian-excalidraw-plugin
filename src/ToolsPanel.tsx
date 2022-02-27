@@ -3,7 +3,7 @@ import { Notice, TFile } from "obsidian";
 import * as React from "react";
 import { ActionButton } from "./ActionButton";
 import { ICONS } from "./ActionIcons";
-import { SCRIPT_INSTALL_FOLDER } from "./constants";
+import { SCRIPT_INSTALL_FOLDER } from "./Constants";
 import { insertLaTeXToView, search } from "./ExcalidrawAutomate";
 import ExcalidrawView, { TextMode } from "./ExcalidrawView";
 import { t } from "./lang/helpers";

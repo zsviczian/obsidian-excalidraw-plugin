@@ -4,11 +4,11 @@ import {
   TFile,
   Vault,
 } from "obsidian";
-import { CTRL_OR_CMD, RERENDER_EVENT } from "./constants";
+import { CTRL_OR_CMD, RERENDER_EVENT } from "./Constants";
 import { EmbeddedFilesLoader } from "./EmbeddedFileLoader";
 import { createPNG, createSVG } from "./ExcalidrawAutomate";
 import { ExportSettings } from "./ExcalidrawView";
-import ExcalidrawPlugin from "./main";
+import ExcalidrawPlugin from "./Main";
 import {
   embedFontsInSVG,
   getIMGFilename,

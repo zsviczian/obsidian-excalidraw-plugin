@@ -6,11 +6,11 @@ import clsx from "clsx";
 import { Notice, TFile } from "obsidian";
 import * as React from "react";
 import { ICONS } from "./ActionIcons";
-import { SCRIPT_INSTALL_FOLDER } from "./constants";
+import { SCRIPT_INSTALL_FOLDER } from "./Constants";
 import { insertLaTeXToView, search } from "./ExcalidrawAutomate";
 import ExcalidrawView, { TextMode } from "./ExcalidrawView";
 import { t } from "./lang/helpers";
-import ExcalidrawPlugin from "./main";
+import ExcalidrawPlugin from "./Main";
 import { ScriptIconMap } from "./Scripts";
 import { getIMGFilename } from "./Utils";
 

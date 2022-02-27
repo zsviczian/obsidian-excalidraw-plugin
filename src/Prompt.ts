@@ -10,7 +10,7 @@ import {
   Notice,
 } from "obsidian";
 import ExcalidrawView from "./ExcalidrawView";
-import ExcalidrawPlugin from "./main";
+import ExcalidrawPlugin from "./Main";
 import { getNewOrAdjacentLeaf, sleep } from "./Utils";
 
 export class Prompt extends Modal {
