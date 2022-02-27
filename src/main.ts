@@ -374,6 +374,9 @@ export default class ExcalidrawPlugin extends Plugin {
 
           const download = async (url:string, file:TFile, localPath: string):Promise<TFile> => {
             const data = await request({ url });
+            if(!data || data.startsWith("404: Not Found")) {
+              return null;
+            }
             if (file) {
               await this.app.vault.modify(file as TFile, data);
             } else {
@@ -385,6 +388,10 @@ export default class ExcalidrawPlugin extends Plugin {
 
           try {
             scriptFile = await download(source,scriptFile as TFile,scriptPath);
+            if(!scriptFile) {
+              setButtonText("ERROR");
+              throw("File not found");
+            };
             svgFile = await download(getIMGFilename(source,"svg"),svgFile as TFile,svgPath);
             setButtonText("UPTODATE");
             new Notice(`Installed: ${(scriptFile as TFile).basename}`);

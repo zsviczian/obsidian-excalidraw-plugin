@@ -76,7 +76,8 @@ import {
   FileData,
 } from "./EmbeddedFileLoader";
 import { ScriptInstallPrompt } from "./ScriptInstallPrompt";
-import { ObsidianMenu, ToolsPanel } from "./ObsidianMenu";
+import { ObsidianMenu } from "./ObsidianMenu";
+import { ToolsPanel } from "./ToolsPanel";
 
 export enum TextMode {
   parsed,

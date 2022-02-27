@@ -190,3 +190,14 @@ li[data-testid] {
 .excalidraw .ToolIcon__icon img{
   height: 1em;
 }
+
+.excalidraw-scriptengine-install tbody>tr>td>div>img {
+  height:20px;
+  background-color: silver;
+  padding: 2px;
+}
+
+.excalidraw-scriptengine-install tbody>tr>td>div {
+  width: 50px;
+  display: inline-block;
+}
