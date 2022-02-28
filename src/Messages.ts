@@ -19,7 +19,7 @@ Since March 2021, I've spent most of my free time building this plugin. By now, 
 I am grateful to all of you who have already bought me a coffee. THANK YOU! This means a lot to me!
 
 I still have many-many ideas for making Obsidian Excalidraw better.
-I will continue to keep all the features of the plugin free. If, however, you'd like to contribute to the on-going development of the plugin, I am introducing a simple membership scheme, with Insider, Supporter and VIP tiers.
+I will continue to keep all the features of the plugin free. If, however, you'd like to contribute to the on-going development of the plugin, I am introducing a simple membership scheme, with Bronze, Silver and Gold tiers.
 If you find this plugin valuable, please consider clicking the button below.
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>

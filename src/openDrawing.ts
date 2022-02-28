@@ -1,5 +1,5 @@
 import { App, FuzzySuggestModal, TFile } from "obsidian";
-import ExcalidrawPlugin from "./Main";
+import ExcalidrawPlugin from "./main";
 import { EMPTY_MESSAGE } from "./Constants";
 import { t } from "./lang/helpers";
 

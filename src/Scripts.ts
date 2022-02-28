@@ -9,7 +9,7 @@ import {
 import { fileURLToPath } from "url";
 import { PLUGIN_ID, VIEW_TYPE_EXCALIDRAW } from "./Constants";
 import ExcalidrawView from "./ExcalidrawView";
-import ExcalidrawPlugin from "./Main";
+import ExcalidrawPlugin from "./main";
 import { GenericInputPrompt, GenericSuggester } from "./Prompt";
 import { getIMGFilename, splitFolderAndFilename } from "./Utils";
 

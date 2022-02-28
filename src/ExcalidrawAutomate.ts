@@ -1,4 +1,4 @@
-import ExcalidrawPlugin from "./Main";
+import ExcalidrawPlugin from "./main";
 import {
   FillStyle,
   StrokeStyle,

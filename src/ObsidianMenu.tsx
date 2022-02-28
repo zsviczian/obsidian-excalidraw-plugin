@@ -7,7 +7,7 @@ import { SCRIPT_INSTALL_FOLDER } from "./Constants";
 import { insertLaTeXToView, search } from "./ExcalidrawAutomate";
 import ExcalidrawView, { TextMode } from "./ExcalidrawView";
 import { t } from "./lang/helpers";
-import ExcalidrawPlugin from "./Main";
+import ExcalidrawPlugin from "./main";
 import { ScriptIconMap } from "./Scripts";
 import { getIMGFilename } from "./Utils";
 

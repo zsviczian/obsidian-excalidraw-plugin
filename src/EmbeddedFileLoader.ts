@@ -16,7 +16,7 @@ import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
 import { ExportSettings } from "./ExcalidrawView";
 import { t } from "./lang/helpers";
 import { tex2dataURL } from "./LaTeX";
-import ExcalidrawPlugin from "./Main";
+import ExcalidrawPlugin from "./main";
 import {
   errorlog,
   getDataURL,

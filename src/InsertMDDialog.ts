@@ -1,7 +1,7 @@
 import { App, FuzzySuggestModal, TFile } from "obsidian";
 import ExcalidrawView from "./ExcalidrawView";
 import { t } from "./lang/helpers";
-import ExcalidrawPlugin from "./Main";
+import ExcalidrawPlugin from "./main";
 
 export class InsertMDDialog extends FuzzySuggestModal<TFile> {
   public app: App;

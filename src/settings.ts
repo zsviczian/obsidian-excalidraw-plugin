@@ -9,7 +9,7 @@ import {
 import { VIEW_TYPE_EXCALIDRAW } from "./Constants";
 import ExcalidrawView from "./ExcalidrawView";
 import { t } from "./lang/helpers";
-import type ExcalidrawPlugin from "./Main";
+import type ExcalidrawPlugin from "./main";
 
 export interface ExcalidrawSettings {
   folder: string;

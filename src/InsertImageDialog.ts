@@ -3,7 +3,7 @@ import { fileURLToPath } from "url";
 import { IMAGE_TYPES, REG_LINKINDEX_INVALIDCHARS } from "./Constants";
 import ExcalidrawView from "./ExcalidrawView";
 import { t } from "./lang/helpers";
-import ExcalidrawPlugin from "./Main";
+import ExcalidrawPlugin from "./main";
 
 export class InsertImageDialog extends FuzzySuggestModal<TFile> {
   public app: App;

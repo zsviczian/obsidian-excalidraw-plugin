@@ -40,7 +40,7 @@ import {
   KEYCODE,
   LOCAL_PROTOCOL,
 } from "./Constants";
-import ExcalidrawPlugin from "./Main";
+import ExcalidrawPlugin from "./main";
 import { repositionElementsToCursor } from "./ExcalidrawAutomate";
 import { t } from "./lang/helpers";
 import {

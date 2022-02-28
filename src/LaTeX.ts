@@ -1,6 +1,6 @@
 import { DataURL } from "@zsviczian/excalidraw/types/types";
 import ExcalidrawView from "./ExcalidrawView";
-import ExcalidrawPlugin from "./Main";
+import ExcalidrawPlugin from "./main";
 import { FileData, MimeType } from "./EmbeddedFileLoader";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
 import { getImageSize, sleep, svgToBase64 } from "./Utils";

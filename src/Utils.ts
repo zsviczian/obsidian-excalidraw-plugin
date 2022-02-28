@@ -17,7 +17,7 @@ import {
   VIRGIL_FONT,
   PLUGIN_ID,
 } from "./Constants";
-import ExcalidrawPlugin from "./Main";
+import ExcalidrawPlugin from "./main";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
 import { ExportSettings } from "./ExcalidrawView";
 import { compressToBase64, decompressFromBase64 } from "lz-string";

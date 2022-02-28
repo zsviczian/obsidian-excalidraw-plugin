@@ -16,7 +16,7 @@ import {
   REG_BLOCK_REF_CLEAN,
 } from "./Constants";
 import { measureText } from "./ExcalidrawAutomate";
-import ExcalidrawPlugin from "./Main";
+import ExcalidrawPlugin from "./main";
 import { JSON_parse } from "./Constants";
 import { TextMode } from "./ExcalidrawView";
 import {

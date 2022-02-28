@@ -10,7 +10,7 @@ const isProd = (process.env.NODE_ENV === "production");
 console.log("Is production", isProd);
 
 export default {
-  input: 'src/Main.ts',
+  input: 'src/main.ts',
   output: {
     dir: '.',
     sourcemap: 'inline',

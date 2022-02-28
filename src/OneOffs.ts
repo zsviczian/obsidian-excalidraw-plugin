@@ -2,7 +2,7 @@ import { App, Modal, TFile } from "obsidian";
 import { FRONTMATTER_KEY } from "./Constants";
 import { ExcalidrawData, getJSON } from "./ExcalidrawData";
 import { getTextMode, TextMode } from "./ExcalidrawView";
-import ExcalidrawPlugin from "./Main";
+import ExcalidrawPlugin from "./main";
 import { errorlog, log } from "./Utils";
 
 export class OneOffs {
