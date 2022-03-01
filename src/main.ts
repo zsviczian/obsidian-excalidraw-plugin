@@ -1724,7 +1724,7 @@ export default class ExcalidrawPlugin extends Plugin {
         id = nanoid();
         data = data.replaceAll(te.id, id); //brute force approach to replace all occurances.
       }
-      outString += `${te.text} ^${id}\n\n`;
+      outString += `${te.originalText??te.text} ^${id}\n\n`;
     }
     return (
       outString +
