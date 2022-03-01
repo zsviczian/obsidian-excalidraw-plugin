@@ -683,7 +683,7 @@ export async function initExcalidrawAutomate(
       let boxId: string = null;
       const boxPadding = formatting?.boxPadding ?? 30;
       if (formatting?.box) {
-        switch (formatting?.box) {
+        switch (formatting.box) {
           case "ellipse":
             boxId = this.addEllipse(
               topX - boxPadding,
@@ -718,7 +718,7 @@ export async function initExcalidrawAutomate(
         }
       }
       //const ea = window.ExcalidrawAutomate;
-      const isContainerBound = formatting?.box && formatting.box !== "blob";
+      const isContainerBound = boxId && formatting.box !== "blob";
       this.elementsDict[id] = {
         text,
         fontSize: this.style.fontSize,
@@ -736,7 +736,7 @@ export async function initExcalidrawAutomate(
       if (boxId && formatting?.box === "blob") {
         this.addToGroup([id, boxId]);
       }
-      if (boxId && formatting?.box !== "blob") {
+      if (isContainerBound) {
         const box = this.elementsDict[boxId];
         if (!box.boundElements) {
           box.boundElements = [];
