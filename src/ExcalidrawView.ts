@@ -151,8 +151,14 @@ export default class ExcalidrawView extends TextFileView {
   public toolsPanelRef: React.MutableRefObject<any> = null;
 
   public semaphores: {
+    //capture the Excalidraw.onChange event that fires right after the canvas was loaded and
+    //- prevent the first onChange event to mark the file as dirty and cause as save right after load, causing sync issues in turn
+    //- trigger autozoom (in conjunction with preventAutozoomOnLoad)
     justLoaded: boolean,
-    preventAutozoomOnLoad: boolean,
+    //the onModified trigger in main.ts will fire when the Excalidraw file has changed (e.g. due to synch)
+    //when a drawing currently open receives a synch update, excalidraw reload() is triggered
+    //this flag will ensure the image that is open will not exdecute an autozoom command
+    preventAutozoomOnLoad: boolean, 
     autosaving: boolean,
     dirty: string,
     preventReload: boolean,
