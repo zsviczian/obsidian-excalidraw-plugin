@@ -5,6 +5,7 @@ import {
   PluginSettingTab,
   Setting,
   TFile,
+  WorkspaceLeaf,
 } from "obsidian";
 import { VIEW_TYPE_EXCALIDRAW } from "./Constants";
 import ExcalidrawView from "./ExcalidrawView";
@@ -369,6 +370,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.plugin.settings.autosave = value;
             autosaveDropdown.setDisabled(!value);
             this.applySettingsUpdate();
+            if(value) {
+              const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+              leaves.forEach((leaf: WorkspaceLeaf) => {
+                const excalidrawView = leaf.view as ExcalidrawView;
+                excalidrawView.setupAutosaveTimer();
+              });
+            }
           }),
       );
 
@@ -377,6 +385,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("AUTOSAVE_INTERVAL_DESC")))
       .addDropdown(async (d: DropdownComponent) => {
         autosaveDropdown = d;
+        d.setDisabled(!this.plugin.settings.autosave);
         d.addOption("15000", "15 seconds");
         d.addOption("30000", "30 seconds");
         d.addOption("60000", "1 minute");

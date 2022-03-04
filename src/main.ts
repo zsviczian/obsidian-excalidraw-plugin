@@ -1355,7 +1355,7 @@ export default class ExcalidrawPlugin extends Plugin {
         leaves.forEach((leaf: WorkspaceLeaf) => {
           const excalidrawView = leaf.view as ExcalidrawView;
           if (
-            excalidrawView.file &&
+            excalidrawView.file && 
             (excalidrawView.file.path === file.path ||
               (file.extension === "excalidraw" &&
                 `${file.path.substring(

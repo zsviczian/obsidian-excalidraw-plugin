@@ -235,7 +235,7 @@ export class ExcalidrawData {
   /**
    * 1.5.4: for backward compatibility following the release of container bound text elements and the depreciation boundElementIds field
    */
-  private convert_boundElementIds_to_boundElements() {
+  private initializeNonInitializedFields() {
     if (!this.scene) {
       return;
     }
@@ -263,6 +263,12 @@ export class ExcalidrawData {
       ) {
         this.scene.elements[i].containerId = null;
       }
+
+      //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/494
+      if(this.scene.elements[i].x===null) this.scene.elements[i].x=0;
+      if(this.scene.elements[i].y===null) this.scene.elements[i].y=0;
+      if(this.scene.elements[i].startBinding?.focus===null) this.scene.elements[i].startBinding.focus=0;
+      if(this.scene.elements[i].endBinding?.focus===null) this.scene.elements[i].endBinding.focus=0;
     }
   }
 
@@ -351,7 +357,7 @@ export class ExcalidrawData {
       this.scene.appState.theme = isObsidianThemeDark() ? "dark" : "light";
     }
 
-    this.convert_boundElementIds_to_boundElements();
+    this.initializeNonInitializedFields();
 
     data = data.substring(0, sceneJSONandPOS.pos);
 
@@ -454,7 +460,7 @@ export class ExcalidrawData {
     if (!this.scene.files) {
       this.scene.files = {}; //loading legacy scenes without the files element
     }
-    this.convert_boundElementIds_to_boundElements();
+    this.initializeNonInitializedFields();
     if (this.plugin.settings.matchThemeAlways) {
       this.scene.appState.theme = isObsidianThemeDark() ? "dark" : "light";
     }
