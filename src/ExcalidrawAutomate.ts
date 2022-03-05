@@ -1097,39 +1097,7 @@ export async function initExcalidrawAutomate(
         errorMessage("targetView not set", "getViewSelectedElements()");
         return [];
       }
-      const excalidrawAPI = this.targetView?.excalidrawAPI;
-      const selectedElements = excalidrawAPI.getAppState()?.selectedElementIds;
-      if (!selectedElements) {
-        return [];
-      }
-      const selectedElementsKeys = Object.keys(selectedElements);
-      if (!selectedElementsKeys) {
-        return [];
-      }
-      const elements: ExcalidrawElement[] = excalidrawAPI
-        .getSceneElements()
-        .filter((e: any) => selectedElementsKeys.includes(e.id));
-
-      const containerBoundTextElmenetsReferencedInElements = elements
-        .filter(
-          (el) =>
-            el.boundElements &&
-            el.boundElements.filter((be) => be.type === "text").length > 0,
-        )
-        .map(
-          (el) =>
-            el.boundElements
-              .filter((be) => be.type === "text")
-              .map((be) => be.id)[0],
-        );
-
-      const elementIDs = elements
-        .map((el) => el.id)
-        .concat(containerBoundTextElmenetsReferencedInElements);
-
-      return this.getViewElements().filter((el: ExcalidrawElement) =>
-        elementIDs.contains(el.id),
-      );
+      return this.targetView.getViewSelectedElements();
     },
     getViewFileForImageElement(el: ExcalidrawElement): TFile | null {
       if (!this.targetView || !this.targetView?._loaded) {
@@ -1885,19 +1853,6 @@ export const search = async (view: ExcalidrawView) => {
   }
   text = text.replaceAll(/"(.*?)"/g, "");
   query = query.concat(text.split(" ").filter((s) => s.length !== 0));
-  const match = elements.filter((el: any) =>
-    query.some((q) =>
-      el.rawText.toLowerCase().replaceAll("\n", " ").match(q.toLowerCase()),
-    ),
-  );
-  if (match.length === 0) {
-    new Notice("I could not find a matching text element");
-    return;
-  }
-  ea.selectElementsInView(match);
-  ea.getExcalidrawAPI().zoomToFit(
-    match,
-    view.plugin.settings.zoomToFitMaxLevel,
-    0.05,
-  );
+
+  ea.targetView.selectElementsMatchingQuery(elements,query);
 };

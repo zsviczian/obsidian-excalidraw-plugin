@@ -433,27 +433,22 @@ export default class ExcalidrawPlugin extends Plugin {
           return;
         }
 
-        const checkModifyDate = async (
+        const files = new Map<string,number>();
+        JSON.parse(
+          await request({
+            url:"https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/directory-info.json"
+          })
+        ).forEach((f:any)=>files.set(f.fname,f.mtime));
+              
+        const checkModifyDate = (
           gitFilename: string,
           file: TFile,
-        ): Promise<"ERROR" | "UPDATE" | "UPTODATE"> => {
-          const msgHead =
-            "https://api.github.com/repos/zsviczian/obsidian-excalidraw-plugin/commits?path=ea-scripts%2F";
-          const msgTail = "&page=1&per_page=1";
-          const data = await request({
-            url: msgHead + encodeURI(gitFilename) + msgTail,
-          });
-          if (!data) {
+        ): "ERROR" | "UPDATE" | "UPTODATE" => {
+          if(files.size===0 || !files.has(gitFilename)) {
             //setButtonText("ERROR");
             return "ERROR";
           }
-          const result = JSON.parse(data);
-          if (result.length === 0 || !result[0]?.commit?.committer?.date) {
-            //setButtonText("ERROR");
-            return "ERROR";
-          }
-          //@ts-ignore
-          const mtime = new Date(result[0].commit.committer.date) / 1;
+          const mtime = files.get(gitFilename);
           if (!file || mtime > file.stat.mtime) {
             //setButtonText("UPDATE");
             return "UPDATE";
@@ -461,8 +456,8 @@ export default class ExcalidrawPlugin extends Plugin {
           return "UPTODATE";
         };
 
-        const scriptButtonText = await checkModifyDate(fname, scriptFile);
-        const svgButtonText = await checkModifyDate(
+        const scriptButtonText = checkModifyDate(fname, scriptFile);
+        const svgButtonText = checkModifyDate(
           getIMGFilename(fname, "svg"),
           !svgFile || !(svgFile instanceof TFile) ? null : svgFile,
         );
@@ -973,6 +968,24 @@ export default class ExcalidrawPlugin extends Plugin {
         const view = this.app.workspace.activeLeaf.view;
         if (view instanceof ExcalidrawView) {
           this.insertLinkDialog.start(view.file.path, view.addText);
+          return true;
+        }
+        return false;
+      },
+    });
+
+    this.addCommand({
+      id: "insert-link-to-element",
+      hotkeys: [{ modifiers: ["Ctrl" || "Meta", "Shift"], key: "k" }],
+      name: t("INSERT_LINK_TO_ELEMENT"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          const view = this.app.workspace.activeLeaf.view;
+          return view instanceof ExcalidrawView;
+        }
+        const view = this.app.workspace.activeLeaf.view;
+        if (view instanceof ExcalidrawView) {
+          view.copyLinkToSelectedElementToClipboard();
           return true;
         }
         return false;

@@ -463,6 +463,15 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     icon={ICONS.insertLink}
                     view={this.props.view}
                   />
+                  <ActionButton
+                    key={"link-to-element"}
+                    title={t("INSERT_LINK_TO_ELEMENT")}
+                    action={() => {
+                      this.props.view.copyLinkToSelectedElementToClipboard();
+                    }}
+                    icon={ICONS.copyElementLink}
+                    view={this.props.view}
+                  />
                 </div>
               </fieldset>
               {this.renderScriptButtons(false)}

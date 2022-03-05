@@ -5,6 +5,7 @@ import {
   Notice,
   request,
   TAbstractFile,
+  TFile,
   TFolder,
   Vault,
   WorkspaceLeaf,
@@ -538,12 +539,12 @@ export type LinkParts = {
   height: number;
 };
 
-export const getLinkParts = (fname: string): LinkParts => {
-  const REG = /(^[^#\|]+)#?(\^)?([^\|]*)?\|?(\d*)x?(\d*)/;
+export const getLinkParts = (fname: string, file?:TFile): LinkParts => {
+  const REG = /(^[^#\|]*)#?(\^)?([^\|]*)?\|?(\d*)x?(\d*)/;
   const parts = fname.match(REG);
   return {
     original: fname,
-    path: parts[1],
+    path: file && parts[1] === "" ? file.path : parts[1],
     isBlockRef: parts[2] === "^",
     ref: parts[3]?.replaceAll(REG_BLOCK_REF_CLEAN, ""),
     width: parts[4] ? parseInt(parts[4]) : undefined,

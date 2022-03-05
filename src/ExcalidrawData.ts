@@ -700,13 +700,13 @@ export class ExcalidrawData {
   public async getTransclusion(
     link: string,
   ): Promise<{ contents: string; lineNum: number }> {
-    const linkParts = getLinkParts(link);
+    const linkParts = getLinkParts(link, this.file);
     const file = this.app.metadataCache.getFirstLinkpathDest(
       linkParts.path,
       this.file.path,
     );
     return await getTransclusion(
-      getLinkParts(link),
+      linkParts,
       this.app,
       file,
       this.plugin.settings.pageTransclusionCharLimit,
