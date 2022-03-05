@@ -1330,7 +1330,8 @@ export default class ExcalidrawView extends TextFileView {
     return data?.library ? data.library : data?.libraryItems ?? [];
   }
 
-  previousSceneVersion = 0;
+  private previousSceneVersion = 0;
+  private previousBackgroundColor = "";
   private instantiateExcalidraw(initdata: any) {
     //console.log("ExcalidrawView.instantiateExcalidraw()");
     this.semaphores.dirty = null;
@@ -2069,6 +2070,7 @@ export default class ExcalidrawView extends TextFileView {
               }
               this.semaphores.preventAutozoomOnLoad = false;
               this.previousSceneVersion = getSceneVersion(et);
+              this.previousBackgroundColor = st.viewBackgroundColor;
               return;
             }
             if (
@@ -2080,10 +2082,12 @@ export default class ExcalidrawView extends TextFileView {
             ) {
               const sceneVersion = getSceneVersion(et);
               if (
-                sceneVersion > 0 &&
-                sceneVersion !== this.previousSceneVersion
+                (sceneVersion > 0 &&
+                sceneVersion !== this.previousSceneVersion) ||
+                st.viewBackgroundColor !== this.previousBackgroundColor
               ) {
                 this.previousSceneVersion = sceneVersion;
+                this.previousBackgroundColor = st.viewBackgroundColor;
                 this.semaphores.dirty = this.file?.path;
                 this.diskIcon.querySelector("svg").addClass("excalidraw-dirty");
               }
