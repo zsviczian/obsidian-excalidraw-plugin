@@ -66,20 +66,30 @@ for (var i = 0; i < topGroups.length; i++) {
   if (groupWith < maxGroupWidth) {
     const distance = maxGroupWidth - groupWith;
     const perRectDistance = distance / rects.length;
+    const textsWithRectIndex = [];
     for (var j = 0; j < rects.length; j++) {
       const rect = rects[j];
       const rectLeft = rect.x;
       const rectTop = rect.y;
       const rectRight = rect.x + rect.width;
       const rectBottom = rect.y + rect.height;
-      
+
+      const textsWithRect = texts.filter(text => text.x >= rectLeft && text.x <= rectRight
+        && text.y >= rectTop && text.y <= rectBottom);
+
+      textsWithRectIndex[j] = textsWithRect;
+    }
+    for (var j = 0; j < rects.length; j++) {
+      const rect = rects[j];
       rect.x = rect.x + perRectDistance * j - perRectDistance / 2;
       rect.width += perRectDistance;
       
-      const textsWithRect = texts.filter(text => text.x >= rectLeft && text.x <= rectRight
-        && text.y >= rectTop && text.y <= rectBottom);
-      for(const text of textsWithRect) {
-        text.x = text.x + perRectDistance * j;
+      const textsWithRect = textsWithRectIndex[j];
+
+      if(textsWithRect) {
+        for(const text of textsWithRect) {
+          text.x = text.x + perRectDistance * j;
+        }
       }
 
       // recalculate the position of the points
