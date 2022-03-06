@@ -239,8 +239,14 @@ export default {
   MD_DEFAULT_COLOR_NAME:
     "The default font color to use for embedded markdown files.",
   MD_DEFAULT_COLOR_DESC:
-    'Set this to allowed css color names e.g. "steelblue" (https://www.w3schools.com/colors/colors_names.asp), or a valid hexadecimal color e.g. "#e67700". ' +
-    'You can override this setting by adding the following frontmatter-key to the embedded markdown file: "excalidraw-font-color: color_name_or_rgbhex"',
+    'Set this to any valid css color name e.g. "steelblue" (<a href="https://www.w3schools.com/colors/colors_names.asp">color names</a>), or a valid hexadecimal color e.g. "#e67700", ' +
+    'or any other valid css color string. You can override this setting by adding the following frontmatter-key to the embedded markdown file: <code>excalidraw-font-color: steelblue</code>',
+  MD_DEFAULT_BORDER_COLOR_NAME:
+    "The default border color to use for embedded markdown files.",
+  MD_DEFAULT_BORDER_COLOR_DESC:
+    'Set this to any valid css color name e.g. "steelblue" (<a href="https://www.w3schools.com/colors/colors_names.asp">color names</a>), or a valid hexadecimal color e.g. "#e67700", ' +
+    'or any other valid css color string. You can override this setting by adding the following frontmatter-key to the embedded markdown file: <code>excalidraw-border-color: gray</code>. ' +
+    "Leave empty if you don't want a border. ",
   MD_CSS_NAME: "CSS file",
   MD_CSS_DESC:
     "The filename of the CSS to apply to markdown embeds. Provide the filename with extension (e.g. 'md-embed.css'). The css file may also be a plain " +

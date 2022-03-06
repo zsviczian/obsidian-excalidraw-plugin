@@ -72,6 +72,7 @@ export interface ExcalidrawSettings {
   mdSVGmaxHeight: number;
   mdFont: string;
   mdFontColor: string;
+  mdBorderColor: string;
   mdCSS: string;
   scriptEngineSettings: {};
   defaultTrayMode: boolean;
@@ -144,6 +145,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   mdSVGmaxHeight: 800,
   mdFont: "Virgil",
   mdFontColor: "Black",
+  mdBorderColor: "Black",
   mdCSS: "",
   scriptEngineSettings: {},
   defaultTrayMode: false,
@@ -730,6 +732,20 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .onChange((value) => {
             this.requestReloadDrawings = true;
             this.plugin.settings.mdFontColor = value;
+            this.applySettingsUpdate(true);
+          }),
+      );
+
+    new Setting(containerEl)
+      .setName(t("MD_DEFAULT_BORDER_COLOR_NAME"))
+      .setDesc(fragWithHTML(t("MD_DEFAULT_BORDER_COLOR_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder("CSS Color-name|RGB-HEX")
+          .setValue(this.plugin.settings.mdBorderColor)
+          .onChange((value) => {
+            this.requestReloadDrawings = true;
+            this.plugin.settings.mdBorderColor = value;
             this.applySettingsUpdate(true);
           }),
       );

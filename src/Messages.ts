@@ -6,23 +6,63 @@ If you'd like to learn more, please subscribe to my YouTube channel: [Visual PKM
 Thank you & Enjoy!
 
 <div class="excalidraw-videoWrapper"><div>
-<iframe src="https://www.youtube.com/embed/sY4FoflGaiM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe src="https://www.youtube.com/embed/o0exK-xFP3k" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 </div></div>
 `;
 
 export const RELEASE_NOTES: { [k: string]: string } = {
   Intro: `I want to make it easier for you to keep up with all the updates.
 Going forward, after installing each release, you'll be prompted with a message summarizing the key new features and fixes.
-You can disable this in plugin-settings. The release change log is also available on [GitHub](https://github.com/zsviczian/obsidian-excalidraw-plugin/releases).
+You can disable this in plugin-settings. The release change-log is also available on [GitHub](https://github.com/zsviczian/obsidian-excalidraw-plugin/releases).
 
 Since March 2021, I've spent most of my free time building this plugin. By now, this means well over 100 workdays worth of my time (assuming 8-hour days).
 I am grateful to all of you who have already bought me a coffee. THANK YOU! This means a lot to me!
 
 I still have many-many ideas for making Obsidian Excalidraw better.
-I will continue to keep all the features of the plugin free. If, however, you'd like to contribute to the on-going development of the plugin, I am introducing a simple membership scheme, with Bronze, Silver and Gold tiers.
-If you find this plugin valuable, please consider clicking the button below.
+I will continue to keep all the features of the plugin free. If, however, you'd like to contribute to the on-going development of the plugin, I am introducing a simple membership scheme with Bronze, Silver and Gold tiers.
+If you find this plugin valuable, please consider supporting.
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
+`,
+"1.6.17": `
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/Etskjw7a5zo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+# Fixed
+- Freedraw shape's background color was missing in the SVG export. [#443](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/443)
+- In rare cases, when you only changed the background color of the drawing or edited the dimensions of an embedded markdown document, or changed an existing LaTeX formula, and then moved to another document in the vault, these changes did not get saved. [#503](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/503)
+- I resolved an Excalidraw Automate glitch with word wrapping in containers. EA generated containers with fixed line breaks. The same error also affected the conversion of drawings from the "legacy" Excalidraw.com file format.
+- When you allow/disable autosave in settings, this change will immediately take effect for all open Excalidraw workspace leaves. Until now autosave was activated only after you closed and reopened the Excalidraw view. [#502](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/502)
+- When you create a text element containing a ${String.fromCharCode(96,96,96)}[[markdown link]]${String.fromCharCode(96,96,96)} in raw mode, the new link was parsed nonetheless, and sometimes the link disappeared, leaving only the parsed text without the actual link. Creating links in raw-mode now works correctly.
+
+# New Features
+- The most recent 5 custom colors from the canvas are now added as color options to the element stroke and element background palette. [#4843](https://github.com/excalidraw/excalidraw/pull/4843)
+- Vertical text alignment for text in sticky notes  [#4852](https://github.com/excalidraw/excalidraw/pull/4852)
+- Markdown embeds into Excalidraw now receive default styling, including that of tables, blockquotes, and code blocks. I also added a new setting and corresponding frontmatter-key to set the border-color for the embedded markdown document. You can override plugin settings at the document level by adding ${String.fromCharCode(96,96,96)}excalidraw-border-color: steelblue${String.fromCharCode(96,96,96)} to the markdown document you want to embed into your drawing. Valid values are css-color-name|#HEXcolor|any-other-html-standard-format.
+- In Obsidian search, when the text you were searching for is found in an Excalidraw document, clicking the link in search-results will open the drawing with the matching text element selected and zoomed.
+- Excalidraw now supports linking to text elements on the canvas and linking to non-text objects. 
+1) You can reference text headings just the same as markdown headings in a document
+i.e. you have a text element that includes a valid markdown heading:
+${String.fromCharCode(96,96,96)}markdown
+# My Heading
+details...
+${String.fromCharCode(96,96,96)}
+or 
+${String.fromCharCode(96,96,96)}markdown
+text element text
+# my reference
+${String.fromCharCode(96,96,96)}
+You can reference these like this respectively: ${String.fromCharCode(96,96,96)}[[#My Heading|display alias]]${String.fromCharCode(96,96,96)} and ${String.fromCharCode(96,96,96)}[[#my reference|alias]]${String.fromCharCode(96,96,96)}
+
+![image](https://user-images.githubusercontent.com/14358394/156890231-5a23bcb3-40a4-4ad7-b366-74c328620159.png)
+
+2) You can also reference element ids similar to block references
+- Links take this form ${String.fromCharCode(96,96,96)}[[#^elementID|alias]]${String.fromCharCode(96,96,96)}
+- Linking is supported by a new action on the Obsidian Tools Panel
+![image](https://user-images.githubusercontent.com/14358394/156894011-6442c3d6-aaff-43a8-bd77-513e450484ba.png)
+
+[Release Notes on GitHub](https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.17)
 `,
   "1.6.16": `
 <div class="excalidraw-videoWrapper"><div>

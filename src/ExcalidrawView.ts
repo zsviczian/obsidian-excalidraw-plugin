@@ -7,7 +7,6 @@ import {
   Notice,
   Menu,
   MarkdownView,
-  ViewStateResult,
 } from "obsidian";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -52,7 +51,7 @@ import {
 import {
   checkAndCreateFolder,
   checkExcalidrawVersion,
-  debug,
+  //debug,
   download,
   embedFontsInSVG,
   errorlog,
@@ -374,8 +373,7 @@ export default class ExcalidrawView extends TextFileView {
 
     if (allowSave) {
       await super.save();
-      this.semaphores.dirty = null;
-      this.diskIcon.querySelector("svg").removeClass("excalidraw-dirty");
+      this.clearDirty();
     }
 
     if (!this.semaphores.autosaving) {
@@ -623,7 +621,7 @@ export default class ExcalidrawView extends TextFileView {
           ).latex;
           const prompt = new Prompt(this.app, t("ENTER_LATEX"), equation, "");
           prompt.openAndGetValue(async (formula: string) => {
-            if (!formula) {
+            if (!formula || formula === equation) {
               return;
             }
             this.excalidrawData.setEquation(selectedImage.fileId, {
@@ -638,6 +636,7 @@ export default class ExcalidrawView extends TextFileView {
               addFiles,
               this.plugin,
             );
+            this.setDirty();
           });
           return;
         }
@@ -657,12 +656,13 @@ export default class ExcalidrawView extends TextFileView {
                 "Do not add [[square brackets]] around the filename!<br>Follow this format when editing your link:<br><mark>filename#^blockref|WIDTHxMAXHEIGHT</mark>",
               );
               prompt.openAndGetValue(async (link: string) => {
-                if (!link) {
+                if (!link || ef.linkParts.original === link) {
                   return;
                 }
                 ef.resetImage(this.file.path, link);
                 await this.save(true);
                 await this.loadSceneFiles();
+                this.setDirty();
               });
               return;
             }
@@ -881,7 +881,7 @@ export default class ExcalidrawView extends TextFileView {
     }
     this.diskIcon.querySelector("svg").removeClass("excalidraw-dirty");
     if (this.compatibilityMode) {
-      this.semaphores.dirty = null;
+      this.clearDirty();
       return;
     }
     if (!this.excalidrawRef) {
@@ -903,7 +903,7 @@ export default class ExcalidrawView extends TextFileView {
     this.excalidrawData.scene.appState.theme =
       this.excalidrawAPI.getAppState().theme;
     await this.loadDrawing(loadOnModifyTrigger);
-    this.semaphores.dirty = null;
+    this.clearDirty();
   }
 
   zoomToElementId(id:string) {
@@ -1093,8 +1093,7 @@ export default class ExcalidrawView extends TextFileView {
     const excalidrawData = this.excalidrawData.scene;
     this.semaphores.justLoaded = justloaded;
     this.initialContainerSizeUpdate = justloaded;
-    this.semaphores.dirty = null;
-    this.diskIcon.querySelector("svg").removeClass("excalidraw-dirty");
+    this.clearDirty();
     const om = this.excalidrawData.getOpenMode();
     this.semaphores.preventReload = false;
     if (this.excalidrawRef) {
@@ -1154,8 +1153,7 @@ export default class ExcalidrawView extends TextFileView {
       this.plugin.settings.compress !== isCompressed &&
       !this.isEditedAsMarkdownInOtherView()
     ) {
-      this.semaphores.dirty = this.file?.path;
-      this.diskIcon.querySelector("svg").addClass("excalidraw-dirty");
+      this.setDirty();
     }
   }
 
@@ -1166,6 +1164,16 @@ export default class ExcalidrawView extends TextFileView {
       leaves.filter((leaf) => (leaf.view as MarkdownView).file === this.file)
         .length > 0
     );
+  }
+
+  public setDirty() {
+    this.semaphores.dirty = this.file?.path;
+    this.diskIcon.querySelector("svg").addClass("excalidraw-dirty");
+  }
+
+  public clearDirty() {
+    this.semaphores.dirty = null;
+    this.diskIcon.querySelector("svg").removeClass("excalidraw-dirty");
   }
 
   public initializeToolsIconPanelAfterLoading() {
@@ -1334,8 +1342,7 @@ export default class ExcalidrawView extends TextFileView {
   private previousBackgroundColor = "";
   private instantiateExcalidraw(initdata: any) {
     //console.log("ExcalidrawView.instantiateExcalidraw()");
-    this.semaphores.dirty = null;
-    this.diskIcon.querySelector("svg").removeClass("excalidraw-dirty");
+    this.clearDirty();
     const reactElement = React.createElement(() => {
       let currentPosition = { x: 0, y: 0 };
       const excalidrawWrapperRef = React.useRef(null);
@@ -1665,8 +1672,7 @@ export default class ExcalidrawView extends TextFileView {
         if (save) {
           await this.save(false); //preventReload=false will ensure that markdown links are paresed and displayed correctly
         } else {
-          this.semaphores.dirty = this.file?.path;
-          this.diskIcon.querySelector("svg").addClass("excalidraw-dirty");
+          this.setDirty();
         }
         return true;
       };
@@ -2088,8 +2094,7 @@ export default class ExcalidrawView extends TextFileView {
               ) {
                 this.previousSceneVersion = sceneVersion;
                 this.previousBackgroundColor = st.viewBackgroundColor;
-                this.semaphores.dirty = this.file?.path;
-                this.diskIcon.querySelector("svg").addClass("excalidraw-dirty");
+                this.setDirty();
               }
             }
           },
@@ -2300,8 +2305,7 @@ export default class ExcalidrawView extends TextFileView {
 
             if (isDeleted) {
               this.excalidrawData.deleteTextElement(textElement.id);
-              this.semaphores.dirty = this.file?.path;
-              this.diskIcon.querySelector("svg").addClass("excalidraw-dirty");
+              this.setDirty();
               return [null, null, null];
             }
 
@@ -2324,8 +2328,7 @@ export default class ExcalidrawView extends TextFileView {
             ) {
               //the user made changes to the text or the text is missing from Excalidraw Data (recently copy/pasted)
               //setTextElement will attempt a quick parse (without processing transclusions)
-              this.semaphores.dirty = this.file?.path;
-              this.diskIcon.querySelector("svg").addClass("excalidraw-dirty");
+              this.setDirty();
               const [parseResultWrapped, parseResultOriginal, link] =
                 this.excalidrawData.setTextElement(
                   textElement.id,

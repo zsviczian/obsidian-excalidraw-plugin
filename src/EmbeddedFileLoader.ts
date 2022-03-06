@@ -3,7 +3,9 @@ import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/types";
 import { App, MarkdownRenderer, Notice, TFile } from "obsidian";
 import {
   CASCADIA_FONT,
+  DEFAULT_MD_EMBED_CSS,
   fileid,
+  FRONTMATTER_KEY_BORDERCOLOR,
   FRONTMATTER_KEY_FONT,
   FRONTMATTER_KEY_FONTCOLOR,
   FRONTMATTER_KEY_MD_STYLE,
@@ -430,19 +432,28 @@ const convertMarkdownToSVG = async (
       frontmatterCSSisAfile = true;
     }
   }
-  if (
-    !frontmatterCSSisAfile &&
-    plugin.settings.mdCSS &&
-    plugin.settings.mdCSS != ""
-  ) {
-    const f = plugin.app.metadataCache.getFirstLinkpathDest(
-      plugin.settings.mdCSS,
-      file.path,
-    );
-    if (f) {
-      style += `\n${await plugin.app.vault.read(f)}`;
+  if(!frontmatterCSSisAfile) {
+    if (plugin.settings.mdCSS && plugin.settings.mdCSS !== "") {
+      const f = plugin.app.metadataCache.getFirstLinkpathDest(
+        plugin.settings.mdCSS,
+        file.path,
+      );
+      style += f 
+        ? `\n${await plugin.app.vault.read(f)}`
+        : DEFAULT_MD_EMBED_CSS;
+    } else {
+      style += DEFAULT_MD_EMBED_CSS;
     }
   }
+
+  const borderColor = fileCache?.frontmatter
+  ? fileCache.frontmatter[FRONTMATTER_KEY_BORDERCOLOR] ??
+    plugin.settings.mdBorderColor
+  : plugin.settings.mdBorderColor;
+  
+  if(borderColor && borderColor !== "" && !style.match(/svg/i)) {
+    style += `svg{border:2px solid;color:${borderColor};transform:scale(.95)}`;
+  }    
 
   //3.
   //SVG helper functions
@@ -470,9 +481,8 @@ const convertMarkdownToSVG = async (
   }
   mdDIV.style.overflow = "auto";
   mdDIV.style.display = "block";
-  if (fontColor && fontColor != "") {
-    mdDIV.style.color = fontColor;
-  }
+  mdDIV.style.color = (fontColor && fontColor !== "") 
+    ? fontColor : "initial";
 
   await MarkdownRenderer.renderMarkdown(text, mdDIV, file.path, plugin);
   mdDIV

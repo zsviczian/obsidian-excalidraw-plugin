@@ -539,13 +539,19 @@ export const FRONTMATTER_KEYS_INFO: SuggestorInfo[] = [
   {
     field: "font",
     code: null,
-    desc: "This key applies to Markdown Embeds. You can control the appearance of the embedded markdown file on a file by file bases by adding the this front matter keys to your markdown document. Valid values are: Virgil|Cascadia|font_file_name.extension",
+    desc: "This key applies to Markdown Embeds. You can control the appearance of the embedded markdown file on a file by file bases by adding the this frontmatter key to your markdown document. Valid values are: Virgil|Cascadia|font_file_name.extension",
     after: ": Virgil",
   },
   {
     field: "font-color",
     code: null,
-    desc: "This key applies to Markdown Embeds. You can control the appearance of the embedded markdown file on a file by file bases by adding the this front matter keys to your markdown document. Valid values are: css-color-name|#HEXcolor|any-other-html-standard-format",
+    desc: "This key applies to Markdown Embeds. You can control the appearance of the embedded markdown file on a file by file bases by adding the this frontmatter key to your markdown document. Valid values are: css-color-name|#HEXcolor|any-other-html-standard-format",
+    after: ": SteelBlue",
+  },
+  {
+    field: "border-color",
+    code: null,
+    desc: "This key applies to Markdown Embeds. You can control the appearance of the embedded markdown file on a file by file bases by adding the this frontmatter key to your markdown document. Valid values are: css-color-name|#HEXcolor|any-other-html-standard-format",
     after: ": SteelBlue",
   },
   {
