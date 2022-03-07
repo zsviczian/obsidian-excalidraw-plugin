@@ -1080,7 +1080,7 @@ export async function initExcalidrawAutomate(
       }
       const el: ExcalidrawElement[] = current.getSceneElements();
       const st: AppState = current.getAppState();
-      current.updateScene({
+      this.targetView.updateScene({
         elements: el.filter((e: ExcalidrawElement) => !elToDelete.includes(e)),
         appState: st,
         commitToHistory: true,
@@ -1136,8 +1136,8 @@ export async function initExcalidrawAutomate(
       }
       if (forceViewMode) {
         const ref = this.getExcalidrawAPI();
-        ref.updateScene({
-          elements: ref.getSceneElements(),
+        this.targetView.updateScene({
+          //elements: ref.getSceneElements(),
           appState: {
             viewModeEnabled: true,
             ...ref.appState,
@@ -1276,7 +1276,7 @@ export async function initExcalidrawAutomate(
         this.style.fontSize,
         this.style.fontFamily,
       );
-      return { width: size.w, height: size.h };
+      return { width: size.w??0, height: size.h??0 };
     },
     verifyMinimumPluginVersion(requiredVersion: string): boolean {
       const manifest = this.plugin.app.plugins.manifests[PLUGIN_ID];
@@ -1327,7 +1327,7 @@ export async function initExcalidrawAutomate(
 
       const oldZIndex = elements.indexOf(elementToMove[0]);
       elements.splice(newZIndex, 0, elements.splice(oldZIndex, 1)[0]);
-      API.updateScene({
+      this.targetView.updateScene({
         elements,
         commitToHistory: true,
       });

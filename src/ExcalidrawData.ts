@@ -236,39 +236,54 @@ export class ExcalidrawData {
    * 1.5.4: for backward compatibility following the release of container bound text elements and the depreciation boundElementIds field
    */
   private initializeNonInitializedFields() {
-    if (!this.scene) {
+    if (!this.scene || !this.scene.elements) {
       return;
     }
-    for (let i = 0; i < this.scene.elements?.length; i++) {
-      //convert .boundElementIds to boundElements
-      if (this.scene.elements[i].boundElementIds) {
-        if (!this.scene.elements[i].boundElements) {
-          this.scene.elements[i].boundElements = [];
+
+    const elements = this.scene.elements;
+    for (const el of elements) {
+      
+      if(el.boundElements) {
+        const map = new Map<string,string>();
+        el.boundElements.forEach((item:{id:string,type:string}) => {
+          map.set(item.id,item.type);
+        });
+        const boundElements = Array.from(map, ([id, type]) => ({ id, type }));
+        if(boundElements.length !== el.boundElements.length) {
+          el.boundElements = boundElements;
         }
-        this.scene.elements[i].boundElements = this.scene.elements[
-          i
-        ].boundElements.concat(
-          this.scene.elements[i].boundElementIds.map((id: string) => ({
+      }
+
+      //convert .boundElementIds to boundElements
+      if (el.boundElementIds) {
+        if (!el.boundElements) {
+          el.boundElements = [];
+        }
+        el.boundElements = el.boundElements.concat(
+          el.boundElementIds.map((id: string) => ({
             type: "arrow",
             id,
           })),
         );
-        delete this.scene.elements[i].boundElementIds;
+        delete el.boundElementIds;
       }
 
       //add containerId to TextElements if missing
       if (
-        this.scene.elements[i].type === "text" &&
-        !this.scene.elements[i].containerId
+        el.type === "text" &&
+        !el.containerId
       ) {
-        this.scene.elements[i].containerId = null;
+        el.containerId = null;
       }
 
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/494
-      if(this.scene.elements[i].x===null) this.scene.elements[i].x=0;
-      if(this.scene.elements[i].y===null) this.scene.elements[i].y=0;
-      if(this.scene.elements[i].startBinding?.focus===null) this.scene.elements[i].startBinding.focus=0;
-      if(this.scene.elements[i].endBinding?.focus===null) this.scene.elements[i].endBinding.focus=0;
+      if(el.x===null) el.x=0;
+      if(el.y===null) el.y=0;
+      if(el.startBinding?.focus===null) el.startBinding.focus=0;
+      if(el.endBinding?.focus===null) el.endBinding.focus=0;
+
+      //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/497
+      if(el.fontSize===null) el.fontSize=20;
     }
   }
 

@@ -113,7 +113,7 @@ export const addFiles = async (
   }
   if (s.dirty) {
     //debug({where:"ExcalidrawView.addFiles",file:view.file.name,dataTheme:view.excalidrawData.scene.appState.theme,before:"updateScene",state:scene.appState})
-    view.excalidrawAPI.updateScene({
+    view.updateScene({
       elements: s.scene.elements,
       appState: s.scene.appState,
       commitToHistory: false,
@@ -789,7 +789,7 @@ export default class ExcalidrawView extends TextFileView {
     const st: AppState = this.excalidrawAPI.getAppState();
     this.excalidrawData.scene.theme = theme;
     //debug({where:"ExcalidrawView.setTheme",file:this.file.name,dataTheme:this.excalidrawData.scene.appState.theme,before:"updateScene"});
-    this.excalidrawAPI.updateScene({
+    this.updateScene({
       appState: {
         ...st,
         theme,
@@ -985,6 +985,7 @@ export default class ExcalidrawView extends TextFileView {
     this.nextLoader = null;
     this.excalidrawAPI.resetScene();
     this.excalidrawAPI.history.clear();
+    this.previousSceneVersion = 0;
   }
 
   private isLoaded: boolean = false;
@@ -1079,7 +1080,7 @@ export default class ExcalidrawView extends TextFileView {
       }
       const st = this.excalidrawAPI.getAppState();
       st.trayModeEnabled = this.plugin.settings.defaultTrayMode;
-      this.excalidrawAPI.updateScene({ appState: st });
+      this.updateScene({ appState: st });
     }, 150);
   }
 
@@ -1109,7 +1110,7 @@ export default class ExcalidrawView extends TextFileView {
         this.plugin.settings.experimentalEnableFourthFont,
       );
 
-      this.excalidrawAPI.updateScene({
+      this.updateScene({
         elements: excalidrawData.elements,
         appState: {
           ...excalidrawData.appState,
@@ -1630,7 +1631,7 @@ export default class ExcalidrawView extends TextFileView {
         const elements = newElementsOnTop
           ? el.concat(newElements.filter((e) => !removeList.includes(e.id)))
           : newElements.filter((e) => !removeList.includes(e.id)).concat(el);
-        this.excalidrawAPI.updateScene({
+        this.updateScene({
           elements,
           commitToHistory: true,
         });
@@ -2074,7 +2075,9 @@ export default class ExcalidrawView extends TextFileView {
               if (!this.semaphores.preventAutozoomOnLoad) {
                 this.zoomToFit(false);
               }
-              this.semaphores.preventAutozoomOnLoad = false;
+              if(!this.initialContainerSizeUpdate) { //see comment @private updateContainerSize
+                this.semaphores.preventAutozoomOnLoad = false;
+              }
               this.previousSceneVersion = getSceneVersion(et);
               this.previousBackgroundColor = st.viewBackgroundColor;
               return;
@@ -2534,7 +2537,8 @@ export default class ExcalidrawView extends TextFileView {
       if (containers.length > 0) {
         if (this.initialContainerSizeUpdate) {
           //updateContainerSize will bump scene version which will trigger a false autosave
-          this.semaphores.justLoaded = true; //after load, which will lead to a ping-pong between two syncronizing devices
+          //after load, which will lead to a ping-pong between two syncronizing devices
+          this.semaphores.justLoaded = true;
         }
         api.updateContainerSize(containers);
       }
@@ -2569,7 +2573,7 @@ export default class ExcalidrawView extends TextFileView {
   public async toggleTrayMode() {
     const st = this.excalidrawAPI.getAppState();
     st.trayModeEnabled = !st.trayModeEnabled;
-    this.excalidrawAPI.updateScene({ appState: st });
+    this.updateScene({ appState: st });
     this.excalidrawAPI.refresh();
 
     //just in case settings were updated via Obsidian sync
@@ -2658,6 +2662,19 @@ export default class ExcalidrawView extends TextFileView {
     navigator.clipboard.writeText(`[[${this.file.path}#^${
       elements[0].id}${alias?`|${alias}`:``}]]`);
     new Notice(t("INSERT_LINK_TO_ELEMENT_READY"));
+  }
+
+  public updateScene(scene:{
+    elements?: ExcalidrawElement[],
+    appState?: any,
+    files?: any,
+    commitToHistory?: boolean,
+  }) {
+    if(!this.excalidrawAPI) return;
+    if(scene.elements) {
+      scene.elements = this.excalidrawAPI.restore(scene).elements;
+    }
+    this.excalidrawAPI.updateScene(scene);
   }
 }
 
