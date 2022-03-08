@@ -58,7 +58,8 @@ if(rememberLastDistance) {
 }
 const elements=ea.getViewSelectedElements();
 const topGroups = ea.getMaximumGroups(elements)
-    .filter(els => !(els.length === 1 && els[0].type ==="arrow")); // ignore individual arrows
+    .filter(els => !(els.length === 1 && els[0].type ==="arrow")) // ignore individual arrows
+    .filter(els => !(els.length === 1 && (els[0].containerId))); // ignore text in stickynote
 
 if(topGroups.length <= 1) {
   new Notice("At least 2 or more elements or groups should be selected.");
