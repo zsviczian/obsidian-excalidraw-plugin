@@ -74,10 +74,10 @@ export const REGEX_LINK = {
       ? parts.value[5]
       : parts.value[6];
   },
-  getWrapLength: (parts: IteratorResult<RegExpMatchArray, any>): number => {
+  getWrapLength: (parts: IteratorResult<RegExpMatchArray, any>, defaultWrap:number): number => {
     const len = parseInt(parts.value[8]);
     if (isNaN(len)) {
-      return null;
+      return defaultWrap > 0 ? defaultWrap : null;
     }
     return len;
   },
@@ -762,7 +762,7 @@ export class ExcalidrawData {
           text.substring(position, parts.value.index) +
           wrapText(
             contents,
-            REGEX_LINK.getWrapLength(parts),
+            REGEX_LINK.getWrapLength(parts,this.plugin.settings.wordWrappingDefault),
             this.plugin.settings.forceWrap,
           );
       } else {

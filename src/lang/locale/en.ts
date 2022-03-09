@@ -210,6 +210,11 @@ export default {
     "Number specifies the character count where the text should be wrapped. " +
     "Set the text wrapping behavior of transcluded text. Turn this ON to force-wrap " +
     "text (i.e. no overflow), or OFF to soft-wrap text (at the nearest whitespace).",
+  TRANSCLUSION_DEFAULT_WRAP_NAME: "Transclusion word wrap default",
+  TRANSCLUSION_DEFAULT_WRAP_DESC:
+    "You can set manually set/override word wrapping length using the `![[page#^block]]{NUMBER}` format. " +
+    "Normally you will not want to set a default, because if you transclude text inside a sticky note, then Excalidraw will automatically take care of word wrapping. " +
+    "Set this value to `0` if you do not want to set a default. ",
   PAGE_TRANSCLUSION_CHARCOUNT_NAME: "Page transclusion max char count",
   PAGE_TRANSCLUSION_CHARCOUNT_DESC:
     "The maximum number of characters to display from the page when transcluding an entire page with the " +

@@ -41,6 +41,7 @@ export interface ExcalidrawSettings {
   allowCtrlClick: boolean; //if disabled only the link button in the view header will open links
   forceWrap: boolean;
   pageTransclusionCharLimit: number;
+  wordWrappingDefault: number;
   iframelyAllowed: boolean;
   pngExportScale: number;
   exportWithTheme: boolean;
@@ -109,6 +110,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   allowCtrlClick: true,
   forceWrap: false,
   pageTransclusionCharLimit: 200,
+  wordWrappingDefault: 0,
   iframelyAllowed: true,
   pngExportScale: 1,
   exportWithTheme: true,
@@ -635,6 +637,35 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate(true);
           }),
       );
+
+    new Setting(containerEl)
+    .setName(t("TRANSCLUSION_DEFAULT_WRAP_NAME"))
+    .setDesc(fragWithHTML(t("TRANSCLUSION_DEFAULT_WRAP_DESC")))
+    .addText((text) =>
+      text
+        .setPlaceholder("Enter a number")
+        .setValue(this.plugin.settings.wordWrappingDefault.toString())
+        .onChange(async (value) => {
+          const intVal = parseInt(value);
+          if (isNaN(intVal) && value !== "") {
+            text.setValue(
+              this.plugin.settings.wordWrappingDefault.toString(),
+            );
+            return;
+          }
+          this.requestEmbedUpdate = true;
+          if (value === "") {
+            this.plugin.settings.wordWrappingDefault = 0;
+            this.applySettingsUpdate(true);
+            return;
+          }
+          this.plugin.settings.wordWrappingDefault = intVal;
+          text.setValue(
+            this.plugin.settings.wordWrappingDefault.toString(),
+          );
+          this.applySettingsUpdate(true);
+        }),
+    );
 
     new Setting(containerEl)
       .setName(t("GET_URL_TITLE_NAME"))

@@ -7,6 +7,7 @@ import {
   Notice,
   Menu,
   MarkdownView,
+  request,
 } from "obsidian";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -1120,7 +1121,7 @@ export default class ExcalidrawView extends TextFileView {
         },
         files: excalidrawData.files,
         commitToHistory: true,
-      });
+      },justloaded);
       if (
         this.app.workspace.activeLeaf === this.leaf &&
         this.excalidrawWrapperRef
@@ -1557,7 +1558,7 @@ export default class ExcalidrawView extends TextFileView {
         return { id: imageElement[0].id, fileId: imageElement[0].fileId }; //return image element fileId
       };
 
-      this.addText = (text: string, fontFamily?: 1 | 2 | 3 | 4) => {
+      this.addText = async (text: string, fontFamily?: 1 | 2 | 3 | 4):Promise<string> => {
         if (!excalidrawRef?.current) {
           return;
         }
@@ -1569,8 +1570,9 @@ export default class ExcalidrawView extends TextFileView {
         ea.style.fontFamily = fontFamily ?? st.currentItemFontFamily ?? 1;
         ea.style.fontSize = st.currentItemFontSize ?? 20;
         ea.style.textAlign = st.currentItemTextAlign ?? "left";
-        ea.addText(currentPosition.x, currentPosition.y, text);
-        this.addElements(ea.getElements(), false, true);
+        const id = ea.addText(currentPosition.x, currentPosition.y, text);
+        await this.addElements(ea.getElements(), false, true);
+        return id;
       };
 
       this.addElements = async (
@@ -2230,39 +2232,25 @@ export default class ExcalidrawView extends TextFileView {
                   this.plugin.settings.iframelyAllowed &&
                   text.match(/^https?:\/\/\S*$/)
                 ) {
-                  let linkAdded = false;
-                  const self = this;
-                  ajaxPromise({
-                    url: `http://iframely.server.crestify.com/iframely?url=${text}`,
-                  }).then(
-                    (res) => {
-                      if (!res || linkAdded) {
-                        return false;
-                      }
-                      linkAdded = true;
-                      const data = JSON.parse(res);
-                      if (!data || !data.meta?.title) {
-                        this.addText(text);
-                        return false;
-                      }
-                      this.addText(`[${data.meta.title}](${text})`);
+                  (async () => {
+                    const id = await this.addText(text);
+                    const url = `http://iframely.server.crestify.com/iframely?url=${text}`;
+                    const data = JSON.parse(await request({url}));
+                    if (!data || data.error || !data.meta?.title) {
                       return false;
-                    },
-                    () => {
-                      if (linkAdded) {
-                        return false;
-                      }
-                      linkAdded = true;
-                      self.addText(text);
-                    },
-                  );
-                  setTimeout(() => {
-                    if (linkAdded) {
-                      return;
                     }
-                    linkAdded = true;
-                    self.addText(text);
-                  }, 600);
+                    const ea = this.plugin.ea;
+                    ea.reset();
+                    ea.setView(this);
+                    const el = ea.getViewElements().filter((el)=>el.id===id);
+                    if(el.length===1) {
+                      //@ts-ignore
+                      el[0].text = el[0].originalText = el[0].rawText = `[${data.meta.title}](${text})`;
+                      ea.copyViewElementsToEAforEditing(el);
+                      ea.addElementsToView(false, false, false);
+                    }
+                    return false;
+                  })();
                   return false;
                 }
                 this.addText(text.replace(/(!\[\[.*#[^\]]*\]\])/g, "$1{40}"));
@@ -2669,9 +2657,9 @@ export default class ExcalidrawView extends TextFileView {
     appState?: any,
     files?: any,
     commitToHistory?: boolean,
-  }) {
+  }, restore: boolean = false) {
     if(!this.excalidrawAPI) return;
-    if(scene.elements) {
+    if(scene.elements && restore) {
       scene.elements = this.excalidrawAPI.restore(scene).elements;
     }
     this.excalidrawAPI.updateScene(scene);

@@ -43,7 +43,7 @@ import {
   VIRGIL_FONT,
   VIRGIL_DATAURL,
 } from "./Constants";
-import ExcalidrawView, { ExportSettings, TextMode } from "./ExcalidrawView";
+import ExcalidrawView, { TextMode } from "./ExcalidrawView";
 import {
   changeThemeOfExcalidrawMD,
   getMarkdownDrawingSection,
