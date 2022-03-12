@@ -52,7 +52,7 @@ import {
 import {
   checkAndCreateFolder,
   checkExcalidrawVersion,
-  //debug,
+  debug,
   download,
   embedFontsInSVG,
   errorlog,
@@ -162,7 +162,7 @@ export default class ExcalidrawView extends TextFileView {
     //the modifyEventHandler in main.ts will fire when an Excalidraw file has changed (e.g. due to sync)
     //when a drawing that is currently open in a view receives a sync update, excalidraw reload() is triggered
     //the preventAutozoomOnLoad flag will prevent the open drawing from autozooming when it is reloaded
-    preventAutozoomOnLoad: boolean, 
+    preventAutozoom: boolean, 
     
     autosaving: boolean, //flags that autosaving is in progress. Autosave is an async timer, the flag prevents collision with force save
     forceSaving: boolean, //flags that forcesaving is in progress. The flag prevents collision with autosaving
@@ -182,7 +182,7 @@ export default class ExcalidrawView extends TextFileView {
     saving: boolean, 
   } = {
     justLoaded: false,
-    preventAutozoomOnLoad: false,
+    preventAutozoom: false,
     autosaving: false,
     dirty: null,
     preventReload: true,
@@ -212,6 +212,11 @@ export default class ExcalidrawView extends TextFileView {
     super(leaf);
     this.plugin = plugin;
     this.excalidrawData = new ExcalidrawData(plugin);
+  }
+
+    preventAutozoom() {
+    this.semaphores.preventAutozoom=true;
+    setTimeout(()=>this.semaphores.preventAutozoom = false,2000)
   }
 
   public saveExcalidraw(scene?: any) {
@@ -894,7 +899,7 @@ export default class ExcalidrawView extends TextFileView {
     const loadOnModifyTrigger = file && file === this.file;
     if (loadOnModifyTrigger) {
       this.data = await this.app.vault.cachedRead(file);
-      this.semaphores.preventAutozoomOnLoad = true;
+      this.preventAutozoom();
     }
     if (fullreload) {
       await this.excalidrawData.loadData(this.data, this.file, this.textMode);
@@ -1029,7 +1034,7 @@ export default class ExcalidrawView extends TextFileView {
               e.message === "Cannot read property 'index' of undefined"
                 ? "\n'# Drawing' section is likely missing"
                 : ""
-            }\n\nTry manually fixing the file or restoring an earlier version from sync history.\n\nYou may also look for the backup file with last working version in the same folder (same filename as your drawing, but starting with a dot. e.g. <code>drawing.md</code> => <code>.drawing.md.bak</code>). Note the backup files do not get synchronized, so look for the backup file on other devices as well.`,
+            }\n\nTry manually fixing the file or restoring an earlier version from sync history.`,
             10000,
           );
           this.setMarkdownView();
@@ -1044,6 +1049,9 @@ export default class ExcalidrawView extends TextFileView {
   public activeLoader: EmbeddedFilesLoader = null;
   private nextLoader: EmbeddedFilesLoader = null;
   public async loadSceneFiles() {
+    if(!this.excalidrawAPI) {
+      return;
+    }
     const loader = new EmbeddedFilesLoader(this.plugin);
 
     const runLoader = (l: EmbeddedFilesLoader) => {
@@ -2074,11 +2082,8 @@ export default class ExcalidrawView extends TextFileView {
             viewModeEnabled = st.viewModeEnabled;
             if (this.semaphores.justLoaded) {
               this.semaphores.justLoaded = false;
-              if (!this.semaphores.preventAutozoomOnLoad) {
+              if (!this.semaphores.preventAutozoom) {
                 this.zoomToFit(false);
-              }
-              if(!this.initialContainerSizeUpdate) { //see comment @private updateContainerSize
-                this.semaphores.preventAutozoomOnLoad = false;
               }
               this.previousSceneVersion = getSceneVersion(et);
               this.previousBackgroundColor = st.viewBackgroundColor;

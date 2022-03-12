@@ -72,6 +72,8 @@ import {
   download,
   errorlog,
   getAttachmentsFolderAndFilePath,
+  getDrawingFilename,
+  getEmbedFilename,
   getFontDataURL,
   getIMGFilename,
   getIMGPathFromExcalidrawFile,
@@ -79,6 +81,7 @@ import {
   getPNG,
   isObsidianThemeDark,
   log,
+  setLeftHandedMode,
   sleep,
 } from "./Utils";
 //import { OneOffs } from "./OneOffs";
@@ -92,6 +95,7 @@ import {
 } from "./MarkdownPostProcessor";
 import { FieldSuggestor } from "./FieldSuggestor";
 import { ReleaseNotes } from "./ReleaseNotes";
+import { debug } from "./Utils";
 
 declare module "obsidian" {
   interface App {
@@ -602,7 +606,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.insertMDDialog = new InsertMDDialog(this);
 
     this.addRibbonIcon(ICON_NAME, t("CREATE_NEW"), async (e) => {
-      this.createAndOpenDrawing(this.getNextDefaultFilename(), e[CTRL_OR_CMD]); //.ctrlKey||e.metaKey);
+      this.createAndOpenDrawing(getDrawingFilename(this.settings), e[CTRL_OR_CMD]); //.ctrlKey||e.metaKey);
     });
 
     const fileMenuHandlerCreateNew = (menu: Menu, file: TFile) => {
@@ -618,7 +622,7 @@ export default class ExcalidrawPlugin extends Plugin {
               );
             }
             this.createAndOpenDrawing(
-              this.getNextDefaultFilename(),
+              getDrawingFilename(this.settings),
               false,
               folderpath,
             );
@@ -723,7 +727,7 @@ export default class ExcalidrawPlugin extends Plugin {
       id: "excalidraw-autocreate",
       name: t("NEW_IN_NEW_PANE"),
       callback: () => {
-        this.createAndOpenDrawing(this.getNextDefaultFilename(), true);
+        this.createAndOpenDrawing(getDrawingFilename(this.settings), true);
       },
     });
 
@@ -731,7 +735,7 @@ export default class ExcalidrawPlugin extends Plugin {
       id: "excalidraw-autocreate-on-current",
       name: t("NEW_IN_ACTIVE_PANE"),
       callback: () => {
-        this.createAndOpenDrawing(this.getNextDefaultFilename(), false);
+        this.createAndOpenDrawing(getDrawingFilename(this.settings), false);
       },
     });
 
@@ -740,16 +744,7 @@ export default class ExcalidrawPlugin extends Plugin {
       if (!activeView) {
         return;
       }
-      const prefix = this.settings.drawingEmbedPrefixWithFilename
-        ? `${activeView.file.basename}_`
-        : "";
-      const date = window
-        .moment()
-        .format(this.settings.drawingFilenameDateTime);
-      const extension = this.settings.compatibilityMode
-        ? ".excalidraw"
-        : ".excalidraw.md";
-      const filename = prefix + date + extension;
+      const filename = getEmbedFilename(activeView.file.basename, this.settings);
       const folder = this.settings.embedUseExcalidrawFolder
         ? null
         : (
@@ -825,6 +820,31 @@ export default class ExcalidrawPlugin extends Plugin {
         return false;
       },
     });
+
+    this.addCommand({
+      id: "fullscreen",
+      name: t("TOGGLE_FULLSCREEN"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return (
+            this.app.workspace.activeLeaf.view.getViewType() ===
+            VIEW_TYPE_EXCALIDRAW
+          );
+        }
+        const view = this.app.workspace.activeLeaf.view;
+        if (view instanceof ExcalidrawView) {
+          if (view.isFullscreen()) {
+            view.exitFullscreen();
+          } else {
+            view.gotoFullscreen();
+          }
+          return true;
+        }
+        return false;
+      },
+    });
+
+
 
     /*    this.addCommand({
       id: "ocr",
@@ -1171,7 +1191,7 @@ export default class ExcalidrawPlugin extends Plugin {
   ): Promise<TFile> {
     const data = await this.app.vault.read(file);
     const filename =
-      file.name.substr(0, file.name.lastIndexOf(".excalidraw")) +
+      file.name.substring(0, file.name.lastIndexOf(".excalidraw")) +
       (replaceExtension ? ".md" : ".excalidraw.md");
     const fname = getNewUniqueFilepath(
       this.app.vault,
@@ -1488,6 +1508,7 @@ export default class ExcalidrawPlugin extends Plugin {
           //@ts-ignore
           const scope = new Scope(self.app.scope);
           scope.register(["Mod"], "Enter", () => true);
+          
           //@ts-ignore
           self.app.keymap.pushScope(scope);
           self.popScope = () => {
@@ -1614,6 +1635,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    setLeftHandedMode(this.settings.isLeftHanded);
   }
 
   async saveSettings() {
@@ -1670,14 +1692,6 @@ export default class ExcalidrawPlugin extends Plugin {
       type: VIEW_TYPE_EXCALIDRAW,
       state: { file: drawingFile.path },
     });
-  }
-
-  private getNextDefaultFilename(): string {
-    return (
-      this.settings.drawingFilenamePrefix +
-      window.moment().format(this.settings.drawingFilenameDateTime) +
-      (this.settings.compatibilityMode ? ".excalidraw" : ".excalidraw.md")
-    );
   }
 
   public async getBlankDrawing(): Promise<string> {

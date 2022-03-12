@@ -308,7 +308,7 @@ export class EmbeddedFilesLoader {
     const entries = excalidrawData.getFileEntries();
     //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,isDark:this.isDark,sceneTheme:excalidrawData.scene.appState.theme});
     if (this.isDark === undefined) {
-      this.isDark = excalidrawData.scene.appState.theme === "dark";
+      this.isDark = excalidrawData?.scene?.appState?.theme === "dark";
     }
     let entry;
     const files: FileData[] = [];

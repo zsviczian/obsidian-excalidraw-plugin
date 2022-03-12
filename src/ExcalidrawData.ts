@@ -399,24 +399,26 @@ export class ExcalidrawData {
       const text = data.substring(position, parts.value.index);
       const id: string = parts.value[1];
       const textEl = this.scene.elements.filter((el: any) => el.id === id)[0];
-      if (textEl.type !== "text") {
-        //markdown link attached to elements
-        textEl.link = text;
-        this.elementLinks.set(id, text);
-      } else {
-        const wrapAt = estimateMaxLineLen(textEl.text, textEl.originalText);
-        const parseRes = await this.parse(text);
-        this.textElements.set(id, {
-          raw: text,
-          parsed: parseRes.parsed,
-          wrapAt,
-        });
-        if (parseRes.link) {
-          textEl.link = parseRes.link;
-        }
-        //this will set the rawText field of text elements imported from files before 1.3.14, and from other instances of Excalidraw
-        if (textEl && (!textEl.rawText || textEl.rawText === "")) {
-          textEl.rawText = text;
+      if (textEl) {
+        if (textEl.type !== "text") {
+          //markdown link attached to elements
+          textEl.link = text;
+          this.elementLinks.set(id, text);
+        } else {
+          const wrapAt = estimateMaxLineLen(textEl.text, textEl.originalText);
+          const parseRes = await this.parse(text);
+          this.textElements.set(id, {
+            raw: text,
+            parsed: parseRes.parsed,
+            wrapAt,
+          });
+          if (parseRes.link) {
+            textEl.link = parseRes.link;
+          }
+          //this will set the rawText field of text elements imported from files before 1.3.14, and from other instances of Excalidraw
+          if (textEl && (!textEl.rawText || textEl.rawText === "")) {
+            textEl.rawText = text;
+          }
         }
       }
       position = parts.value.index + BLOCKREF_LEN;

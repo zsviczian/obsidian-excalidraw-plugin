@@ -126,26 +126,32 @@ export default {
     "The time interval between saves. Autosave will skip if there are no changes in the drawing.",
   FILENAME_HEAD: "Filename",
   FILENAME_DESC:
-    "<p>The auto-generated filename consists of a prefix and a date. " +
-    "e.g.'Drawing 2021-05-24 12.58.07'.</p>" +
     "<p>Click this link for the <a href='https://momentjs.com/docs/#/displaying/format/'>" +
     "date and time format reference</a>.</p>",
-  FILENAME_SAMPLE: "The current file format is: <b>",
+  FILENAME_SAMPLE: "Filename for a new drawing is: ",
+  FILENAME_EMBED_SAMPLE: "Filename for a new embedded drawing is: ",
   FILENAME_PREFIX_NAME: "Filename prefix",
   FILENAME_PREFIX_DESC: "The first part of the filename",
-  FILENAME_PREFIX_EMBED_NAME: "Filename prefix for embedded files",
+  FILENAME_PREFIX_EMBED_NAME: "Filename prefix when embedding a new drawing into a markdown note",
   FILENAME_PREFIX_EMBED_DESC:
-    "Name of the newly inserted drawing should start with the name of the active note " +
-    "when using the command palette action: 'Create a new drawing and embed into active document'. " +
-    "On: yes, Off: not",
-  FILENAME_DATE_NAME: "Filename date",
-  FILENAME_DATE_DESC: "The second part of the filename",
+    "Should the filename of the newly inserted drawing start with the name of the active markdown note " +
+    "when using the command palette action: <code>Create a new drawing and embed into active document</code>? " +
+    "ON: Yes, OFF: Not",
+  FILENAME_POSTFIX_NAME: "Custom text after markdown Note's name when embedding",
+  FILENAME_POSTFIX_DESC: "Effects filename only when embedding into a markdown document. This is text will be inserted after the note's name, but before the date.",
+  FILENAME_DATE_NAME: "Filename Date",
+  FILENAME_DATE_DESC: "The last part of the filename. Leave empty if you do not want a date.",
+  FILENAME_EXCALIDRAW_EXTENSION_NAME: ".excalidraw.md or .md",
+  FILENAME_EXCALIDRAW_EXTENSION_DESC: "This setting does not apply if you use Excalidraw in compatibility mode, " +
+    "i.e. you are not using Excalidraw markdown files. Toggle ON = filename ends with .excalidraw.md, Toggle OFF = filename ends with .md",
   /*SVG_IN_MD_NAME: "SVG Snapshot to markdown file",
   SVG_IN_MD_DESC: "If the switch is 'on' Excalidraw will include an SVG snapshot in the markdown file. "+
                   "When SVG snapshots are saved to the Excalidraw.md file, drawings that include large png, jpg, gif images may take extreme long time to open in markdown view. " +
                   "On the other hand, SVG snapshots provide some level of platform independence and longevity to your drawings. Even if Excalidraw will no longer exist, the snapshot " +
                   "can be opened with an app that reads SVGs. In addition hover previews will be less resource intensive if SVG snapshots are enabled.",*/
   DISPLAY_HEAD: "Display",
+  LEFTHANDED_MODE_NAME: "Left-handed mode",
+  LEFTHANDED_MODE_DESC: "Currently only has effect in tray-mode. If turned on, the tray will be on the right side.",
   MATCH_THEME_NAME: "New drawing to match Obsidian theme",
   MATCH_THEME_DESC:
     "If theme is dark, new drawing will be created in dark mode. This does not apply when you use a template for new drawings. " +
@@ -377,4 +383,5 @@ export default {
   //ObsidianMenu.tsx
   GOTO_FULLSCREEN: "Goto fullscreen mode",
   EXIT_FULLSCREEN: "Exit fullscreen mode",
+  TOGGLE_FULLSCREEN: "Toggle fullscreen mode",
 };

@@ -11,6 +11,7 @@ import { VIEW_TYPE_EXCALIDRAW } from "./Constants";
 import ExcalidrawView from "./ExcalidrawView";
 import { t } from "./lang/helpers";
 import type ExcalidrawPlugin from "./main";
+import { getDrawingFilename, getEmbedFilename, setLeftHandedMode } from "./Utils";
 
 export interface ExcalidrawSettings {
   folder: string;
@@ -22,10 +23,13 @@ export interface ExcalidrawSettings {
   autosaveInterval: number;
   drawingFilenamePrefix: string;
   drawingEmbedPrefixWithFilename: boolean;
+  drawingFilnameEmbedPostfix: string;
   drawingFilenameDateTime: string;
+  useExcalidrawExtension: boolean;
   displaySVGInPreview: boolean;
   previewMatchObsidianTheme: boolean;
   width: string;
+  isLeftHanded: boolean;
   matchTheme: boolean;
   matchThemeAlways: boolean;
   matchThemeTrigger: boolean;
@@ -91,10 +95,13 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   autosaveInterval: 15000,
   drawingFilenamePrefix: "Drawing ",
   drawingEmbedPrefixWithFilename: true,
+  drawingFilnameEmbedPostfix: " ",
   drawingFilenameDateTime: "YYYY-MM-DD HH.mm.ss",
+  useExcalidrawExtension: true,
   displaySVGInPreview: true,
   previewMatchObsidianTheme: false,
   width: "400",
+  isLeftHanded: false,
   matchTheme: false,
   matchThemeAlways: false,
   matchThemeTrigger: false,
@@ -304,11 +311,12 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     });
 
     const getFilenameSample = () => {
-      return `${
-        t("FILENAME_SAMPLE") +
-        this.plugin.settings.drawingFilenamePrefix +
-        window.moment().format(this.plugin.settings.drawingFilenameDateTime)
-      }</b>`;
+      return t("FILENAME_SAMPLE") + "<a href='https://www.youtube.com/channel/UCC0gns4a9fhVkGkngvSumAQ' target='_blank'>" +
+        getDrawingFilename(this.plugin.settings) +
+        "</a></b><br>" + 
+        t("FILENAME_EMBED_SAMPLE") + "<a href='https://www.youtube.com/channel/UCC0gns4a9fhVkGkngvSumAQ' target='_blank'>" +
+        getEmbedFilename("{NOTE_NAME}",this.plugin.settings) +
+        "</a></b>";
     };
 
     const filenameEl = containerEl.createEl("p", { text: "" });
@@ -340,10 +348,29 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.drawingEmbedPrefixWithFilename)
           .onChange(async (value) => {
             this.plugin.settings.drawingEmbedPrefixWithFilename = value;
+            filenameEl.innerHTML = getFilenameSample();
             this.applySettingsUpdate();
           }),
       );
 
+    new Setting(containerEl)
+      .setName(t("FILENAME_POSTFIX_NAME"))
+      .setDesc(fragWithHTML(t("FILENAME_POSTFIX_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder("")
+          .setValue(this.plugin.settings.drawingFilnameEmbedPostfix)
+          .onChange(async (value) => {
+            this.plugin.settings.drawingFilnameEmbedPostfix = value.replaceAll(
+              /[<>:"/\\|?*]/g,
+              "_",
+            );
+            text.setValue(this.plugin.settings.drawingFilnameEmbedPostfix);
+            filenameEl.innerHTML = getFilenameSample();
+            this.applySettingsUpdate();
+          }),
+      );      
+      
     new Setting(containerEl)
       .setName(t("FILENAME_DATE_NAME"))
       .setDesc(fragWithHTML(t("FILENAME_DATE_DESC")))
@@ -357,6 +384,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               "_",
             );
             text.setValue(this.plugin.settings.drawingFilenameDateTime);
+            filenameEl.innerHTML = getFilenameSample();
+            this.applySettingsUpdate();
+          }),
+      );
+      
+      new Setting(containerEl)
+      .setName(t("FILENAME_EXCALIDRAW_EXTENSION_NAME"))
+      .setDesc(fragWithHTML(t("FILENAME_EXCALIDRAW_EXTENSION_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.useExcalidrawExtension)
+          .onChange(async (value) => {
+            this.plugin.settings.useExcalidrawExtension = value;
             filenameEl.innerHTML = getFilenameSample();
             this.applySettingsUpdate();
           }),
@@ -406,6 +446,20 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       });
 
     this.containerEl.createEl("h1", { text: t("DISPLAY_HEAD") });
+
+    new Setting(containerEl)
+      .setName(t("LEFTHANDED_MODE_NAME"))
+      .setDesc(fragWithHTML(t("LEFTHANDED_MODE_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.isLeftHanded)
+          .onChange(async (value) => {
+            this.plugin.settings.isLeftHanded = value;
+            setLeftHandedMode(value);
+            this.applySettingsUpdate();
+          }),
+      );
+
 
     new Setting(containerEl)
       .setName(t("MATCH_THEME_NAME"))
@@ -1021,6 +1075,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.compatibilityMode)
           .onChange(async (value) => {
             this.plugin.settings.compatibilityMode = value;
+            filenameEl.innerHTML = getFilenameSample();
             this.applySettingsUpdate();
           }),
       );

@@ -32,12 +32,12 @@ export class ActionButton extends React.Component<ButtonProps, ButtonState> {
         }}
         className="ToolIcon_type_button ToolIcon_size_small ToolIcon_type_button--show ToolIcon"
         title={this.props.title}
-        onClick={() => {
+        onClick={(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
           if (this.toastMessageTimeout) {
             window.clearTimeout(this.toastMessageTimeout);
             this.toastMessageTimeout = 0;
           }
-          this.props.action();
+          this.props.action(event);
         }}
         onPointerDown={() => {
           this.toastMessageTimeout = window.setTimeout(

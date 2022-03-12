@@ -22,6 +22,7 @@ import ExcalidrawPlugin from "./main";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
 import { ExportSettings } from "./ExcalidrawView";
 import { compressToBase64, decompressFromBase64 } from "lz-string";
+import { ExcalidrawSettings } from "./Settings";
 
 declare module "obsidian" {
   interface Workspace {
@@ -146,17 +147,48 @@ export function getNewUniqueFilepath(
   let fname = normalizePath(`${folderpath}/${filename}`);
   let file: TAbstractFile = vault.getAbstractFileByPath(fname);
   let i = 0;
+  const extension = filename.endsWith(".excalidraw.md") 
+    ? ".excalidraw.md"
+    : filename.slice(filename.lastIndexOf("."))
   while (file) {
     fname = normalizePath(
       `${folderpath}/${filename.slice(
         0,
-        filename.lastIndexOf("."),
-      )}_${i}${filename.slice(filename.lastIndexOf("."))}`,
+        filename.lastIndexOf(extension),
+      )}_${i}${extension}`,
     );
     i++;
     file = vault.getAbstractFileByPath(fname);
   }
   return fname;
+}
+
+export function getDrawingFilename(settings:ExcalidrawSettings):string {
+  return settings.drawingFilenamePrefix +
+    (settings.drawingFilenameDateTime !== ""
+      ? window.moment().format(settings.drawingFilenameDateTime)
+      : "") + 
+    (settings.compatibilityMode 
+      ? ".excalidraw"
+      : settings.useExcalidrawExtension
+        ? ".excalidraw.md"
+        : ".md")
+}
+
+export function getEmbedFilename(notename: string, settings:ExcalidrawSettings):string {
+  return (
+    settings.drawingEmbedPrefixWithFilename
+      ? notename
+      : "") +
+    settings.drawingFilnameEmbedPostfix +
+    (settings.drawingFilenameDateTime !== ""
+      ? window.moment().format(settings.drawingFilenameDateTime)
+      : "") + 
+    (settings.compatibilityMode 
+      ? ".excalidraw"
+      : settings.useExcalidrawExtension
+        ? ".excalidraw.md"
+        : ".md")
 }
 
 /**
@@ -522,6 +554,18 @@ export const scaleLoadedImage = (
     return { dirty, scene };
   }
 };
+
+export const setLeftHandedMode = (isLeftHanded: boolean) => {
+  const newStylesheet = document.createElement("style");
+  newStylesheet.id = "excalidraw-letf-handed";
+  newStylesheet.textContent = `.excalidraw .App-bottom-bar{justify-content:right;}`;
+  const oldStylesheet = document.getElementById(newStylesheet.id);
+  if (oldStylesheet) {
+    document.head.removeChild(oldStylesheet);
+  }
+  if(isLeftHanded)
+    document.head.appendChild(newStylesheet);
+}
 
 export const isObsidianThemeDark = () =>
   document.body.classList.contains("theme-dark");

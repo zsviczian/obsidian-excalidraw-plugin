@@ -92,7 +92,7 @@ export default {
     "例如 'Drawing 2021-05-24 12.58.07'。</p>" +
     "<p>可参考<a href='https://momentjs.com/docs/#/displaying/format/'>" +
     "日期和时间格式说明</a>来进行修改。</p>",
-  FILENAME_SAMPLE: "当前文件名的格式为：<b>",
+  FILENAME_SAMPLE: "当前文件名的格式为：",
   FILENAME_PREFIX_NAME: "文件名前缀",
   FILENAME_PREFIX_DESC: "文件名的第一部分",
   FILENAME_DATE_NAME: "文件名日期",

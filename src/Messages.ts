@@ -24,19 +24,39 @@ If you find this plugin valuable, please consider supporting.
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.6.18": `
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/4N6efq1DtH0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## Fixed
+- Modifying properties of a text element in tray mode. [496](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/496)
+- Friendly page aliases with iframely should work more reliably now.
+- I further improved resilience of loading from a damaged Excalidraw.md file.
+
+## New Features
+### From excalidraw.com
+- Added Eraser [4887](https://github.com/excalidraw/excalidraw/pull/4887)
+
+### Plugin
+- New setting for default transcluded-text line-wrap length. This is the default value for "wrapAt" in ${String.fromCharCode(96)}![[file#^block]]{wrapAt}${String.fromCharCode(96)}. Wrapping text using this feature will insert linebreaks in the transcluded text. An alternative approach is to transclude text inside sticky notes, in which case Excalidraw will automatically take care of text wrapping depending on the sticky note's width. [228](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/228)
+- New command palette action to toggle fullscreen mode, so you can assign a hotkey.
+- I added basic support for left-handed users. Enable it in plugin settings under the "Display" section. Currently, only affects the position of the tray in tray-mode. [510](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/510)
+- More flexible filename settings. ⚠ Due to the change, current settings may behave slightly differently compared to before. ⚠ [470](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/470)
+`,
 "1.6.17": `
 <div class="excalidraw-videoWrapper"><div>
 <iframe src="https://www.youtube.com/embed/Etskjw7a5zo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 </div></div>
 
-# Fixed
+## Fixed
 - Freedraw shape's background color was missing in the SVG export. [#443](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/443)
 - In rare cases, when you only changed the background color of the drawing or edited the dimensions of an embedded markdown document, or changed an existing LaTeX formula, and then moved to another document in the vault, these changes did not get saved. [#503](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/503)
 - I resolved an Excalidraw Automate glitch with word wrapping in containers. EA generated containers with fixed line breaks. The same error also affected the conversion of drawings from the "legacy" Excalidraw.com file format.
 - When you allow/disable autosave in settings, this change will immediately take effect for all open Excalidraw workspace leaves. Until now autosave was activated only after you closed and reopened the Excalidraw view. [#502](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/502)
 - When you create a text element containing a ${String.fromCharCode(96,96,96)}[[markdown link]]${String.fromCharCode(96,96,96)} in raw mode, the new link was parsed nonetheless, and sometimes the link disappeared, leaving only the parsed text without the actual link. Creating links in raw-mode now works correctly.
 
-# New Features
+## New Features
 - The most recent 5 custom colors from the canvas are now added as color options to the element stroke and element background palette. [#4843](https://github.com/excalidraw/excalidraw/pull/4843)
 - Vertical text alignment for text in sticky notes  [#4852](https://github.com/excalidraw/excalidraw/pull/4852)
 - Markdown embeds into Excalidraw now receive default styling, including that of tables, blockquotes, and code blocks. I also added a new setting and corresponding frontmatter-key to set the border-color for the embedded markdown document. You can override plugin settings at the document level by adding ${String.fromCharCode(96,96,96)}excalidraw-border-color: steelblue${String.fromCharCode(96,96,96)} to the markdown document you want to embed into your drawing. Valid values are css-color-name|#HEXcolor|any-other-html-standard-format.
