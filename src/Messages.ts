@@ -11,18 +11,14 @@ Thank you & Enjoy!
 `;
 
 export const RELEASE_NOTES: { [k: string]: string } = {
-  Intro: `I want to make it easier for you to keep up with all the updates.
-Going forward, after installing each release, you'll be prompted with a message summarizing the key new features and fixes.
-You can disable this in plugin-settings. The release change-log is also available on [GitHub](https://github.com/zsviczian/obsidian-excalidraw-plugin/releases).
+  Intro: `I want to help you keep up with all the updates. After installing each release, you'll be prompted with a summary of new features and fixes. You can disable these popup messages in plugin settings.
 
-Since March 2021, I've spent most of my free time building this plugin. By now, this means well over 100 workdays worth of my time (assuming 8-hour days).
-I am grateful to all of you who have already bought me a coffee. THANK YOU! This means a lot to me!
-
-I still have many-many ideas for making Obsidian Excalidraw better.
-I will continue to keep all the features of the plugin free. If, however, you'd like to contribute to the on-going development of the plugin, I am introducing a simple membership scheme with Bronze, Silver and Gold tiers.
-If you find this plugin valuable, please consider supporting.
+I develop this plugin as a hobby, spending most of my free time doing this. If you'd like to contribute to the on-going work, I have a simple membership scheme with Bronze, Silver and Gold tiers. Many of you have already bought me a coffee. THANK YOU! It really means a lot to me! If you find this plugin valuable, please consider supporting me.
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
+`,
+"1.6.19": `
+This is a minor update fixing left-handed mode on iOS, and deploying improvements to the new Excalidraw Eraser.
 `,
 "1.6.18": `
 <div class="excalidraw-videoWrapper"><div>
