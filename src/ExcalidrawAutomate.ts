@@ -36,6 +36,7 @@ import {
   getCommonBoundingBox,
   getMaximumGroups,
   intersectElementWithLine,
+  measureText,
 } from "@zsviczian/excalidraw";
 import { Prompt } from "./Prompt";
 import { t } from "./lang/helpers";
@@ -672,7 +673,7 @@ export async function initExcalidrawAutomate(
       id = id ?? nanoid();
       const originalText = text;
       text = formatting?.wrapAt ? this.wrapText(text, formatting.wrapAt) : text;
-      const { w, h, baseline } = measureText(
+      const { w, h, baseline } = _measureText(
         text,
         this.style.fontSize,
         this.style.fontFamily,
@@ -1271,7 +1272,7 @@ export async function initExcalidrawAutomate(
       return leaf;
     },
     measureText(text: string): { width: number; height: number } {
-      const size = measureText(
+      const size = _measureText(
         text,
         this.style.fontSize,
         this.style.fontFamily,
@@ -1520,7 +1521,7 @@ async function initFonts() {
   }
 }
 
-export function measureText(
+export function _measureText(
   newText: string,
   fontSize: number,
   fontFamily: number,
@@ -1532,32 +1533,8 @@ export function measureText(
   if (!fontFamily) {
     fontFamily = 1;
   }
-  const line = document.createElement("div");
-  const body = document.body;
-  line.style.position = "absolute";
-  line.style.whiteSpace = "pre";
-  line.style.font = `${fontSize.toString()}px ${getFontFamily(fontFamily)}`;
-  body.appendChild(line);
-  line.innerText = newText
-    .split("\n")
-    // replace empty lines with single space because leading/trailing empty
-    // lines would be stripped from computation
-    .map((x) => x || " ")
-    .join("\n");
-  const width = line.offsetWidth;
-  const height = line.offsetHeight;
-  // Now creating 1px sized item that will be aligned to baseline
-  // to calculate baseline shift
-  const span = document.createElement("span");
-  span.style.display = "inline-block";
-  span.style.overflow = "hidden";
-  span.style.width = "1px";
-  span.style.height = "1px";
-  line.appendChild(span);
-  // Baseline is important for positioning text on canvas
-  const baseline = span.offsetTop + span.offsetHeight;
-  document.body.removeChild(line);
-  return { w: width, h: height, baseline };
+  const metrics = measureText(newText,`${fontSize.toString()}px ${getFontFamily(fontFamily)}` as any);
+  return {w: metrics.width, h: metrics.height, baseline:metrics.baseline};
 }
 
 async function getTemplate(

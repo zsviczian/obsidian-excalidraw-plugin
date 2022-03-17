@@ -738,6 +738,7 @@ export default class ExcalidrawView extends TextFileView {
         this.plugin.triggerEmbedUpdates();
         this.loadSceneFiles();
         this.semaphores.forceSaving = false;
+        new Notice("Save successful",1000);
       },
     );
 
@@ -1078,21 +1079,6 @@ export default class ExcalidrawView extends TextFileView {
     }
   }
 
-  setDefaultTrayMode() {
-    const om = this.excalidrawData.getOpenMode();
-    if (om.zenModeEnabled || om.viewModeEnabled) {
-      return;
-    }
-    setTimeout(() => {
-      if (!this.excalidrawAPI) {
-        return;
-      }
-      const st = this.excalidrawAPI.getAppState();
-      st.trayModeEnabled = this.plugin.settings.defaultTrayMode;
-      this.updateScene({ appState: st });
-    }, 150);
-  }
-
   initialContainerSizeUpdate = false;
   /**
    *
@@ -1126,6 +1112,7 @@ export default class ExcalidrawView extends TextFileView {
           zenModeEnabled,
           viewModeEnabled,
           linkOpacity: this.plugin.settings.linkOpacity,
+          trayModeEnabled: this.plugin.settings.defaultTrayMode,
         },
         files: excalidrawData.files,
         commitToHistory: true,
@@ -1140,7 +1127,6 @@ export default class ExcalidrawView extends TextFileView {
       //debug({where:"ExcalidrawView.loadDrawing",file:this.file.name,before:"this.loadSceneFiles"});
       this.loadSceneFiles();
       this.updateContainerSize(null, true);
-      this.setDefaultTrayMode();
       this.initializeToolsIconPanelAfterLoading();
     } else {
       this.instantiateExcalidraw({
@@ -1150,6 +1136,7 @@ export default class ExcalidrawView extends TextFileView {
           zenModeEnabled: om.zenModeEnabled,
           viewModeEnabled: om.viewModeEnabled,
           linkOpacity: this.plugin.settings.linkOpacity,
+          trayModeEnabled: this.plugin.settings.defaultTrayMode,
         },
         files: excalidrawData.files,
         libraryItems: await this.getLibrary(),
@@ -1402,8 +1389,12 @@ export default class ExcalidrawView extends TextFileView {
             );
             this.loadSceneFiles();
             this.updateContainerSize(null, true);
-            this.setDefaultTrayMode();
             this.excalidrawWrapperRef.current.firstElementChild?.focus();
+            const om = this.excalidrawData.getOpenMode();
+/*            this.excalidrawAPI.setTrayMode(
+              !(om.zenModeEnabled || om.viewModeEnabled) &&
+              this.plugin.settings.defaultTrayMode,
+            );*/
             this.addFullscreenchangeEvent();
             this.initializeToolsIconPanelAfterLoading();
           },
@@ -2565,13 +2556,13 @@ export default class ExcalidrawView extends TextFileView {
 
   public async toggleTrayMode() {
     const st = this.excalidrawAPI.getAppState();
-    st.trayModeEnabled = !st.trayModeEnabled;
-    this.updateScene({ appState: st });
-    this.excalidrawAPI.refresh();
+    this.excalidrawAPI.updateScene({
+      appState: {trayModeEnabled: !st.trayModeEnabled}
+    })
 
     //just in case settings were updated via Obsidian sync
     await this.plugin.loadSettings();
-    this.plugin.settings.defaultTrayMode = st.trayModeEnabled;
+    this.plugin.settings.defaultTrayMode = !st.trayModeEnabled;
     this.plugin.saveSettings();
   }
 

@@ -15,7 +15,7 @@ import {
   fileid,
   REG_BLOCK_REF_CLEAN,
 } from "./Constants";
-import { measureText } from "./ExcalidrawAutomate";
+import { _measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
 import { JSON_parse } from "./Constants";
 import { TextMode } from "./ExcalidrawView";
@@ -380,7 +380,7 @@ export class ExcalidrawData {
     //The .excalidraw JSON is modified to reflect the MD in case of difference
     //Read the text elements into the textElements Map
     let position = data.search(/(^%%\n)?# Text Elements\n/m);
-    if (position == -1) {
+    if (position === -1) {
       await this.setTextMode(textMode, false);
       this.loaded = true;
       return true; //Text Elements header does not exist
@@ -503,7 +503,7 @@ export class ExcalidrawData {
     forceUpdate: boolean = false,
   ) {
     if (forceUpdate || newText != sceneTextElement.text) {
-      const measure = measureText(
+      const measure = _measureText(
         newText,
         sceneTextElement.fontSize,
         sceneTextElement.fontFamily,

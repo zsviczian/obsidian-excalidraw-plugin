@@ -558,7 +558,7 @@ export const scaleLoadedImage = (
 export const setLeftHandedMode = (isLeftHanded: boolean) => {
   const newStylesheet = document.createElement("style");
   newStylesheet.id = "excalidraw-letf-handed";
-  newStylesheet.textContent = `.excalidraw .App-bottom-bar{justify-content:right;}`;
+  newStylesheet.textContent = `.excalidraw .App-bottom-bar{justify-content:flex-end;}`;
   const oldStylesheet = document.getElementById(newStylesheet.id);
   if (oldStylesheet) {
     document.head.removeChild(oldStylesheet);
