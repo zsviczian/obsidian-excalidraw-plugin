@@ -7,6 +7,24 @@ Tips: If you are drawing a flowchart, you can use `Normalize Selected Arrows` sc
 
 ```javascript
 */
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.21")) {
+  new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
+  return;
+}
+settings = ea.getScriptSettings();
+//set default values on first run
+if(!settings["Gap"]) {
+	settings = {
+	  "Gap" : {
+			value: 8,
+		  description: "The value of the gap between the connection line and the element, which must be greater than 0. If you want the connector to be next to the element, set it to 1."
+		}
+	};
+	ea.setScriptSettings(settings);
+}
+
+let gapValue = settings["Gap"].value;
+
 const selectedIndividualArrows = ea.getMaximumGroups(ea.getViewSelectedElements())
 	.reduce((result, group) => (group.length === 1 && (group[0].type === 'arrow' || group[0].type === 'line')) ? 
 			[...result, group[0]] : result, []);
@@ -17,23 +35,23 @@ for(const arrow of selectedIndividualArrows) {
 	const endBindingEl = allElements.filter(el => el.id === (arrow.endBinding||{}).elementId)[0];
 
 	if(startBindingEl) {
-		recalculateStartPointOfLine(arrow, startBindingEl, endBindingEl);
+		recalculateStartPointOfLine(arrow, startBindingEl, endBindingEl, gapValue);
 	}
 	if(endBindingEl) {
-		recalculateEndPointOfLine(arrow, endBindingEl, startBindingEl);
+		recalculateEndPointOfLine(arrow, endBindingEl, startBindingEl, gapValue);
 	}
 }
 
 ea.copyViewElementsToEAforEditing(selectedIndividualArrows);
 await ea.addElementsToView(false,false);
 
-function recalculateStartPointOfLine(line, el, elB) {
+function recalculateStartPointOfLine(line, el, elB, gapValue) {
 	const aX = el.x + el.width/2;
     const bX = (line.points.length <=2 && elB) ? elB.x + elB.width/2 : line.x + line.points[1][0];
     const aY = el.y + el.height/2;
     const bY = (line.points.length <=2 && elB) ? elB.y + elB.height/2 : line.y + line.points[1][1];
 
-	line.startBinding.gap = 8;
+	line.startBinding.gap = gapValue;
 	line.startBinding.focus = 0;
 	const intersectA = ea.intersectElementWithLine(
             	el,
@@ -53,13 +71,13 @@ function recalculateStartPointOfLine(line, el, elB) {
 	}
 }
 
-function recalculateEndPointOfLine(line, el, elB) {
+function recalculateEndPointOfLine(line, el, elB, gapValue) {
 	const aX = el.x + el.width/2;
     const bX = (line.points.length <=2 && elB) ? elB.x + elB.width/2 : line.x + line.points[line.points.length-2][0];
     const aY = el.y + el.height/2;
     const bY = (line.points.length <=2 && elB) ? elB.y + elB.height/2 : line.y + line.points[line.points.length-2][1];
 
-	line.endBinding.gap = 8;
+	line.endBinding.gap = gapValue;
 	line.endBinding.focus = 0;
 	const intersectA = ea.intersectElementWithLine(
             	el,
