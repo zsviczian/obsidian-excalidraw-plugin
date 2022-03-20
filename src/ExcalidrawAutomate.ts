@@ -21,6 +21,7 @@ import {
   //debug,
   embedFontsInSVG,
   errorlog,
+  getDrawingFilename,
   getNewOrAdjacentLeaf,
   getPNG,
   getSVG,
@@ -317,10 +318,10 @@ export async function initExcalidrawAutomate(
           this.style.fontFamily = 2;
           return getFontFamily(2);
         case 3:
-          this.style.strokeSharpness = 3;
+          this.style.fontFamily = 3;
           return getFontFamily(3);
         default:
-          this.style.strokeSharpness = 1;
+          this.style.fontFamily = 1;
           return getFontFamily(1);
       }
     },
@@ -469,7 +470,7 @@ export async function initExcalidrawAutomate(
       return plugin.createAndOpenDrawing(
         params?.filename
           ? `${params.filename}.excalidraw.md`
-          : this.plugin.getNextDefaultFilename(),
+          : getDrawingFilename(this.plugin.settings),
         params?.onNewPane ? params.onNewPane : false,
         params?.foldername ? params.foldername : this.plugin.settings.folder,
         this.plugin.settings.compatibilityMode
