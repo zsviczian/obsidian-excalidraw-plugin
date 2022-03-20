@@ -45,7 +45,7 @@ ea.style.strokeColor = "rgba(70,130,180,0.05)"
 ea.style.strokeWidth = 2;
 ea.style.roughness = 0;
 
-if(elements.lenght===1 && elements[0].type !== "text") {
+if(elements.length===1 && elements[0].type !== "text") {
   ea.copyViewElementsToEAforEditing(elements);
 	ea.getElements()[0].link = link;
 } else {
