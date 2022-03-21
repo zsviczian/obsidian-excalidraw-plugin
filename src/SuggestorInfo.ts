@@ -560,4 +560,22 @@ export const FRONTMATTER_KEYS_INFO: SuggestorInfo[] = [
     desc: 'This key applies to Markdown Embeds. You can control the appearance of the embedded markdown file on a file by file bases by adding the this front matter keys to your markdown document. Valid values are: "css-filename|css snippet"',
     after: ': ""',
   },
+  {
+    field: "export-transparent",
+    code: null,
+    desc: "If this key is present it will override the default excalidraw embed and export setting. true == Transparent / false == with background",
+    after: ": true",
+  },
+  {
+    field: "export-dark",
+    code: null,
+    desc: "If this key is present it will override the default excalidraw embed and export setting. true == Dark mode / false == light mode",
+    after: ": true",
+  },
+  {
+    field: "export-svgpadding",
+    code: null,
+    desc: "If this key is present it will override the default excalidraw embed and export setting. This only affects export to SVG. Specify the export padding for the image.",
+    after: ": 0",
+  },
 ];
