@@ -25,7 +25,9 @@ import {
   getAttachmentsFolderAndFilePath,
   //getBakPath,
   getBinaryFileFromDataURL,
+  getExportTheme,
   getLinkParts,
+  hasExportTheme,
   isObsidianThemeDark,
   LinkParts,
   wrapText,
@@ -368,7 +370,9 @@ export class ExcalidrawData {
       this.scene.files = {}; //loading legacy scenes that do not yet have the files attribute.
     }
 
-    if (this.plugin.settings.matchThemeAlways) {
+    if(hasExportTheme(this.plugin,this.file)) {
+      this.scene.appState.theme = getExportTheme(this.plugin,this.file,"light");      
+    } else if (this.plugin.settings.matchThemeAlways) {
       this.scene.appState.theme = isObsidianThemeDark() ? "dark" : "light";
     }
 

@@ -25,6 +25,7 @@ export const FRONTMATTER_KEY = "excalidraw-plugin";
 export const FRONTMATTER_KEY_EXPORT_TRANSPARENT = "excalidraw-export-transparent";
 export const FRONTMATTER_KEY_EXPORT_DARK = "excalidraw-export-dark";
 export const FRONTMATTER_KEY_EXPORT_SVGPADDING = "excalidraw-export-svgpadding";
+export const FRONTMATTER_KEY_EXPORT_PNGSCALE = "excalidraw-export-pngscale";
 export const FRONTMATTER_KEY_CUSTOM_PREFIX = "excalidraw-link-prefix";
 export const FRONTMATTER_KEY_CUSTOM_URL_PREFIX = "excalidraw-url-prefix";
 export const FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS = "excalidraw-link-brackets";

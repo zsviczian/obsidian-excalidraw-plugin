@@ -17,6 +17,29 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.6.20": `
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/U2LkBRBk4LY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## Fixed
+- ${String.fromCharCode(96)}ExcalidrawAutomate.create()${String.fromCharCode(96)} threw an error [539](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/539)
+
+## New Features
+### From excalidraw.com
+- Bind/unbind text to/from container [4935](https://github.com/excalidraw/excalidraw/pull/4935)
+
+### Plugin
+Frontmatter tags to customize image export at a file level [519](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/519). If these keys are present they will override the default excalidraw embed and export settings.
+- ${String.fromCharCode(96)}excalidraw-export-transparent: true${String.fromCharCode(96)}
+  - true == Transparent / false == with background. 
+- ${String.fromCharCode(96)}excalidraw-export-dark${String.fromCharCode(96)}
+  - true == Dark mode / false == light mode.
+- ${String.fromCharCode(96)}excalidraw-export-svgpadding${String.fromCharCode(96)}
+  - This only affects export to SVG. Specify the export padding for the image
+- ${String.fromCharCode(96)}excalidraw-export-pngscale${String.fromCharCode(96)}
+  - This only affects export to PNG. Specify the export scale for the image. The typical range is between 0.5 and 5, but you can experiment with other values as well.
+`,
 "1.6.19": `
 This is a minor update fixing left-handed mode on iOS, and deploying improvements to the new Excalidraw Eraser.
 `,

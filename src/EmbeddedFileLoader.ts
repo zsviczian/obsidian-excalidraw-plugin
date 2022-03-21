@@ -22,9 +22,14 @@ import ExcalidrawPlugin from "./main";
 import {
   errorlog,
   getDataURL,
+  getExportTheme,
   getFontDataURL,
   getImageSize,
   getLinkParts,
+  getSVGPadding,
+  getWithBackground,
+  hasExportBackground,
+  hasExportTheme,
   LinkParts,
   svgToBase64,
 } from "./Utils";
@@ -216,20 +221,26 @@ export class EmbeddedFilesLoader {
 
     const getExcalidrawSVG = async (isDark: boolean) => {
       //debug({where:"EmbeddedFileLoader.getExcalidrawSVG",uid:this.uid,file:file.name});
+      const forceTheme = hasExportTheme(this.plugin,file)
+      ? getExportTheme(this.plugin,file,"light")
+      : undefined;
       const exportSettings: ExportSettings = {
-        withBackground: false,
-        withTheme: false,
+        withBackground: hasExportBackground(this.plugin,file)
+          ? getWithBackground(this.plugin,file)
+          : false,
+        withTheme: forceTheme?true:false,
       };
       const svg = await createSVG(
         file.path,
         true,
         exportSettings,
         this,
-        null,
+        forceTheme,
         null,
         null,
         [],
         this.plugin,
+        getSVGPadding(this.plugin,file)
       );
       //https://stackoverflow.com/questions/51154171/remove-css-filter-on-child-elements
       const imageList = svg.querySelectorAll(

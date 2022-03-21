@@ -56,13 +56,18 @@ import {
   download,
   embedFontsInSVG,
   errorlog,
+  getExportTheme,
   //getBakPath,
   getIMGFilename,
   getLinkParts,
   getNewOrAdjacentLeaf,
   getNewUniqueFilepath,
   getPNG,
+  getPNGScale,
   getSVG,
+  getSVGPadding,
+  getWithBackground,
+  hasExportTheme,
   rotatedDimensions,
   scaleLoadedImage,
   splitFolderAndFilename,
@@ -277,6 +282,26 @@ export default class ExcalidrawView extends TextFileView {
     );
   }
 
+  public async svg(scene: any): Promise<SVGSVGElement> {
+    const exportSettings: ExportSettings = {
+      withBackground: getWithBackground(this.plugin, this.file),
+      withTheme: true,
+    };
+    return await getSVG(
+      {
+        ...scene,
+        ...{
+          appState: {
+            ...scene.appState,
+            theme:getExportTheme( this.plugin, this.file,scene.appState.theme )
+          }
+        }
+      },
+      exportSettings,
+      getSVGPadding(this.plugin,this.file),
+    );
+  }
+
   public async saveSVG(scene?: any) {
     if (!scene) {
       if (!this.getScene) {
@@ -286,15 +311,8 @@ export default class ExcalidrawView extends TextFileView {
     }
     const filepath = getIMGFilename(this.file.path, "svg"); //.substring(0,this.file.path.lastIndexOf(this.compatibilityMode ? '.excalidraw':'.md')) + '.svg';
     const file = this.app.vault.getAbstractFileByPath(normalizePath(filepath));
-    const exportSettings: ExportSettings = {
-      withBackground: this.plugin.settings.exportWithBackground,
-      withTheme: this.plugin.settings.exportWithTheme,
-    };
-    const svg = await getSVG(
-      scene,
-      exportSettings,
-      this.plugin.settings.exportPaddingSVG,
-    );
+
+    const svg = await this.svg(scene);
     if (!svg) {
       return;
     }
@@ -309,6 +327,26 @@ export default class ExcalidrawView extends TextFileView {
     }
   }
 
+  public async png (scene: any): Promise<Blob> {
+    const exportSettings: ExportSettings = {
+      withBackground: getWithBackground(this.plugin, this.file),
+      withTheme: true,
+    };
+    return await getPNG(
+      {
+        ...scene,
+        ...{
+          appState: {
+            ...scene.appState,
+            theme:getExportTheme( this.plugin, this.file,scene.appState.theme )
+          }
+        }
+      },
+      exportSettings,
+      getPNGScale(this.plugin, this.file),
+    );
+  }
+
   public async savePNG(scene?: any) {
     if (!scene) {
       if (!this.getScene) {
@@ -320,15 +358,7 @@ export default class ExcalidrawView extends TextFileView {
     const filepath = getIMGFilename(this.file.path, "png"); //this.file.path.substring(0,this.file.path.lastIndexOf(this.compatibilityMode ? '.excalidraw':'.md')) + '.png';
     const file = this.app.vault.getAbstractFileByPath(normalizePath(filepath));
 
-    const exportSettings: ExportSettings = {
-      withBackground: this.plugin.settings.exportWithBackground,
-      withTheme: this.plugin.settings.exportWithTheme,
-    };
-    const png = await getPNG(
-      scene,
-      exportSettings,
-      this.plugin.settings.pngExportScale,
-    );
+    const png = await this.png(scene);
     if (!png) {
       return;
     }
@@ -792,6 +822,9 @@ export default class ExcalidrawView extends TextFileView {
   public setTheme(theme: string) {
     if (!this.excalidrawRef) {
       return;
+    }
+    if(this.file) { //if there is an export theme set, override the theme change
+      if(hasExportTheme(this.plugin,this.file)) return;
     }
     const st: AppState = this.excalidrawAPI.getAppState();
     this.excalidrawData.scene.theme = theme;
@@ -1268,16 +1301,7 @@ export default class ExcalidrawView extends TextFileView {
               return;
             }
             if (ev[CTRL_OR_CMD]) {
-              //.ctrlKey||ev.metaKey) {
-              const exportSettings: ExportSettings = {
-                withBackground: this.plugin.settings.exportWithBackground,
-                withTheme: this.plugin.settings.exportWithTheme,
-              };
-              const png = await getPNG(
-                this.getScene(),
-                exportSettings,
-                this.plugin.settings.pngExportScale,
-              );
+              const png = await this.png(this.getScene());
               if (!png) {
                 return;
               }
@@ -1302,16 +1326,7 @@ export default class ExcalidrawView extends TextFileView {
               return;
             }
             if (ev[CTRL_OR_CMD]) {
-              //.ctrlKey||ev.metaKey) {
-              const exportSettings: ExportSettings = {
-                withBackground: this.plugin.settings.exportWithBackground,
-                withTheme: this.plugin.settings.exportWithTheme,
-              };
-              let svg = await getSVG(
-                this.getScene(),
-                exportSettings,
-                this.plugin.settings.exportPaddingSVG,
-              );
+              let svg = await this.svg(this.getScene());
               if (!svg) {
                 return null;
               }

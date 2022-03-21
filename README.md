@@ -16,7 +16,7 @@ Please upgrade to Obsidian v0.12.19 or higher to get the latest release.
 |[![Script Engine](https://user-images.githubusercontent.com/14358394/145684531-8d9c2992-59ac-4ebc-804a-4cce1777ded2.jpg)](https://youtu.be/hePJcObHIso)|[![sticky notes thumbnail](https://user-images.githubusercontent.com/14358394/147283367-e5689385-ea51-4983-81a3-04d810d39f62.jpg)](https://youtu.be/NOuddK6xrr8)|[![plugin store](https://user-images.githubusercontent.com/14358394/147889174-6c306d0d-2d29-46cc-a53f-3f0013cf14de.jpg)](https://youtu.be/lzYdOQ6z8F0)|
 |[![fourtfont](https://user-images.githubusercontent.com/14358394/149659524-2a4e0a24-40c9-4e66-a6b1-c92f3b88ecd5.jpg)](https://youtu.be/eKFmrSQhFA4)|[![thumbnail](https://user-images.githubusercontent.com/14358394/151705333-54e9ffd2-0bd7-4d02-b99e-0bd4e4708d4d.jpg)](https://youtu.be/qbPIAZguJeo)|[![Thumbnail](https://user-images.githubusercontent.com/14358394/152585752-7eb0371f-0bab-40f6-a194-3b48e5811735.jpg)](https://youtu.be/2Y8OhkGiTHg)|
 |[![Thumbnail](https://user-images.githubusercontent.com/14358394/153676009-6f86b2d7-c248-49a2-b802-be21c6999e4f.jpg)](https://youtu.be/2v9TZmQNO8c)|[![Thumbnail](https://user-images.githubusercontent.com/14358394/154821232-a404b6cf-72fb-4ce4-9d53-619132dce491.jpg)](https://youtu.be/xHPGWR3m0c8)|[![Thumbnail](https://user-images.githubusercontent.com/14358394/156931428-b2269fd9-87bd-43ab-8558-5572f40dff93.jpg)](https://youtu.be/gMIKXyhS-dM)|
-|[![thumbnail](https://user-images.githubusercontent.com/14358394/156931461-0979b821-315a-41dd-86f1-31d169b7c127.jpg)](https://youtu.be/Etskjw7a5zo)| | |
+|[![thumbnail](https://user-images.githubusercontent.com/14358394/156931461-0979b821-315a-41dd-86f1-31d169b7c127.jpg)](https://youtu.be/Etskjw7a5zo)|[![Thumbnail](https://user-images.githubusercontent.com/14358394/158008902-12c6a851-237e-4edd-a631-d48e81c904b2.jpg)](https://youtu.be/4N6efq1DtH0)|[![thumbnail](https://user-images.githubusercontent.com/14358394/159369910-6371f08d-b5fa-454d-9c6c-948f7e7a7d26.jpg)](https://youtu.be/U2LkBRBk4LY)|
 
 # Key features
 - The plugin aims to integrate Excalidraw seamlessly into Obsidian including Command Palette actions, File Explorer features, Option Menu commands, and the Ribbon Button.
@@ -65,6 +65,11 @@ Please upgrade to Obsidian v0.12.19 or higher to get the latest release.
     - `excalidraw-url-prefix: "🌐"` preview prefix for external links
     - `excalidraw-link-brackets: true|false` whether or not to display brackets around links in preview
     - `excalidraw-default-mode: view|zen` Open this document in view mode or zen mode by defult. Default view mode is excellent for presentation slides.
+  - Frontmatter tags to customize image export at a file level [519](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/519). If these keys are present they will override the default excalidraw embed and export settings.
+    - `excalidraw-export-transparent: true`:  true == Transparent / false == with background. 
+    - `excalidraw-export-dark`: true == Dark mode / false == light mode.
+    - `excalidraw-export-svgpadding`: This only affects export to SVG. Specify the export padding for the image
+    - `excalidraw-export-pngscale`: This only affects export to PNG. Specify the export scale for the image. The typical range is between 0.5 and 5, but you can experiment with other values as well.
 - Embed complete markdown files into your drawings
   - Drag from the desired file from the Obsidian file explorer and hold down CTRL/CMD while dropping the file onto the canvas.
   - Use the command palette action: `Insert markdown file from vault`

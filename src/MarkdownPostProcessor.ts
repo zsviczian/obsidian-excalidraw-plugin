@@ -11,7 +11,11 @@ import { ExportSettings } from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
 import {
   embedFontsInSVG,
+  getExportTheme,
   getIMGFilename,
+  getSVGPadding,
+  getWithBackground,
+  hasExportTheme,
   isObsidianThemeDark,
   splitFolderAndFilename,
   svgToBase64,
@@ -63,9 +67,13 @@ const getIMG = async (
   // https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/387
   imgAttributes.style = imgAttributes.style.replaceAll(" ", "-");
 
+  const forceTheme = hasExportTheme(plugin,file)
+    ? getExportTheme(plugin,file,"light")
+    : undefined;
+
   const exportSettings: ExportSettings = {
-    withBackground: plugin.settings.exportWithBackground,
-    withTheme: plugin.settings.exportWithTheme,
+    withBackground: getWithBackground(plugin,file),
+    withTheme: forceTheme?true:plugin.settings.exportWithTheme,
   };
   const img = createEl("img");
   let style = `max-width:${imgAttributes.fwidth}px !important; width:100%;`;
@@ -75,13 +83,13 @@ const getIMG = async (
   img.setAttribute("style", style);
   img.addClass(imgAttributes.style);
 
-  const theme = plugin.settings.previewMatchObsidianTheme
+  const theme = forceTheme??(plugin.settings.previewMatchObsidianTheme
     ? isObsidianThemeDark()
       ? "dark"
       : "light"
     : !plugin.settings.exportWithTheme
     ? "light"
-    : undefined;
+    : undefined);
   if (theme) {
     exportSettings.withTheme = true;
   }
@@ -133,6 +141,7 @@ const getIMG = async (
       null,
       [],
       plugin,
+      getSVGPadding(plugin,file),
     )
   ).outerHTML;
   let svg: SVGSVGElement = null;

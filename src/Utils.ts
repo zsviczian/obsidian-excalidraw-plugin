@@ -20,6 +20,7 @@ import {
   FRONTMATTER_KEY_EXPORT_DARK,
   FRONTMATTER_KEY_EXPORT_TRANSPARENT,
   FRONTMATTER_KEY_EXPORT_SVGPADDING,
+  FRONTMATTER_KEY_EXPORT_PNGSCALE,
 } from "./Constants";
 import ExcalidrawPlugin from "./main";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
@@ -607,6 +608,19 @@ export const decompress = (data: string): string => {
   return decompressFromBase64(data.replaceAll("\n", "").replaceAll("\r", ""));
 };
 
+export const hasExportTheme = (plugin: ExcalidrawPlugin, file: TFile):boolean => {
+  if(file) {
+    const fileCache = plugin.app.metadataCache.getFileCache(file);
+    if (
+      fileCache?.frontmatter &&
+      fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_DARK] != null
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export const getExportTheme = (plugin: ExcalidrawPlugin, file: TFile, theme: string):string => {
   if(file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
@@ -618,8 +632,21 @@ export const getExportTheme = (plugin: ExcalidrawPlugin, file: TFile, theme: str
         ? "dark"
         : "light"
     }
-    return plugin.settings.exportWithTheme ? theme : "light";
   }
+  return plugin.settings.exportWithTheme ? theme : "light";
+}
+
+export const hasExportBackground = (plugin: ExcalidrawPlugin, file: TFile):boolean => {
+  if(file) {
+    const fileCache = plugin.app.metadataCache.getFileCache(file);
+    if (
+      fileCache?.frontmatter &&
+      fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_TRANSPARENT] != null
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 export const getWithBackground = (plugin: ExcalidrawPlugin, file: TFile):boolean => {
@@ -633,8 +660,8 @@ export const getWithBackground = (plugin: ExcalidrawPlugin, file: TFile):boolean
         ? false
         : true
     }
-    return plugin.settings.exportWithBackground;
   }
+  return plugin.settings.exportWithBackground;
 }
 
 export const getSVGPadding = (plugin: ExcalidrawPlugin, file: TFile):number => {
@@ -645,14 +672,29 @@ export const getSVGPadding = (plugin: ExcalidrawPlugin, file: TFile):number => {
       fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_SVGPADDING] != null
     ) {
       const val = parseInt(fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_SVGPADDING]);
-      if(val && !isNaN(val)) {
+      if(!isNaN(val)) {
         return val;
       }
     }
-    return plugin.settings.exportPaddingSVG;  
   }
+  return plugin.settings.exportPaddingSVG;  
 }
 
+export const getPNGScale = (plugin: ExcalidrawPlugin, file: TFile):number => {
+  if(file) {
+    const fileCache = plugin.app.metadataCache.getFileCache(file);
+    if (
+      fileCache?.frontmatter &&
+      fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_PNGSCALE] != null
+    ) {
+      const val = parseFloat(fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_PNGSCALE]);
+      if(!isNaN(val) && val>0) {
+        return val;
+      }
+    }
+  }
+  return plugin.settings.pngExportScale;  
+}
 
 export const errorlog = (data: {}) => {
   console.error({ plugin: "Excalidraw", ...data });
