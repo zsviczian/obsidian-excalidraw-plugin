@@ -119,7 +119,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public insertLinkDialog: InsertLinkDialog;
   public insertImageDialog: InsertImageDialog;
   public insertMDDialog: InsertMDDialog;
-  private activeExcalidrawView: ExcalidrawView = null;
+  public activeExcalidrawView: ExcalidrawView = null;
   public lastActiveExcalidrawFilePath: string = null;
   public hover: { linkText: string; sourcePath: string } = {
     linkText: null,
@@ -128,6 +128,9 @@ export default class ExcalidrawPlugin extends Plugin {
   private observer: MutationObserver;
   private themeObserver: MutationObserver;
   private fileExplorerObserver: MutationObserver;
+  private modalContainerObserver: MutationObserver;
+  private workspaceDrawerLeftObserver: MutationObserver;
+  private workspaceDrawerRightObserver: MutationObserver;
   public opencount: number = 0;
   public ea: ExcalidrawAutomate;
   //A master list of fileIds to facilitate copy / paste
@@ -1524,6 +1527,8 @@ export default class ExcalidrawPlugin extends Plugin {
         ),
       );
 
+      self.addFileSaveTriggerEventHandlers();
+
       const metaCache: MetadataCache = self.app.metadataCache;
       //@ts-ignore
       metaCache.getCachedFiles().forEach((filename: string) => {
@@ -1544,6 +1549,83 @@ export default class ExcalidrawPlugin extends Plugin {
         ),
       );
     });
+  }
+
+  addFileSaveTriggerEventHandlers() {
+    //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/551
+    const onClickEventSaveActiveDrawing = (e:PointerEvent) => {
+      if(
+        !this.activeExcalidrawView ||
+        !this.activeExcalidrawView.semaphores.dirty ||
+        //@ts-ignore
+        e.target?.className === "excalidraw__canvas"
+      ) {
+        return;
+      }
+      this.activeExcalidrawView.save();
+    }
+    this.registerEvent(
+      this.app.workspace.on("click",onClickEventSaveActiveDrawing)
+    );
+
+    const onFileMenuEventSaveActiveDrawing = () => {
+      if(
+        !this.activeExcalidrawView ||
+        !this.activeExcalidrawView.semaphores.dirty
+      ) {
+        return;
+      }
+      this.activeExcalidrawView.save();
+    }
+    this.registerEvent(
+      this.app.workspace.on("file-menu",onFileMenuEventSaveActiveDrawing)
+    );
+
+    //The user clicks settings, or "open another vault", or the command palette
+    this.modalContainerObserver = new MutationObserver(async (m: MutationRecord[]) => {
+      if (
+        m.length !== 1 ||
+        m[0].type !== "childList" ||
+        m[0].addedNodes.length !== 1 ||
+        !this.activeExcalidrawView ||
+        !this.activeExcalidrawView.semaphores.dirty
+      ) {
+        return;
+      } 
+      this.activeExcalidrawView.save();
+    });
+    this.modalContainerObserver.observe(document.body, {
+      childList: true,
+    });
+
+    //when the user activates the sliding drawers on Obsidian Mobile
+    const leftWorkspaceDrawer = document.querySelector(".workspace-drawer.mod-left");
+    const rightWorkspaceDrawer = document.querySelector(".workspace-drawer.mod-right");
+    if(leftWorkspaceDrawer || rightWorkspaceDrawer) {
+      const action = async (m: MutationRecord[]) => {
+        if(m[0].oldValue !== "display: none;" ||
+          !this.activeExcalidrawView ||
+          !this.activeExcalidrawView.semaphores.dirty
+        ) {
+          return;
+        } 
+        this.activeExcalidrawView.save();
+      };
+      const options = {
+        attributeOldValue: true,
+        attributeFilter: ["style"],
+      }
+
+      if(leftWorkspaceDrawer) {
+        this.workspaceDrawerLeftObserver = new MutationObserver(action);
+        this.workspaceDrawerLeftObserver.observe(leftWorkspaceDrawer, options);
+      }
+
+      if(rightWorkspaceDrawer) {
+        this.workspaceDrawerRightObserver = new MutationObserver(action);
+        this.workspaceDrawerRightObserver.observe(rightWorkspaceDrawer, options);
+      }
+    }
   }
 
   updateFileCache(
@@ -1573,6 +1655,13 @@ export default class ExcalidrawPlugin extends Plugin {
     }
     this.observer.disconnect();
     this.themeObserver.disconnect();
+    this.modalContainerObserver.disconnect();
+    if(this.workspaceDrawerLeftObserver) {
+      this.workspaceDrawerLeftObserver.disconnect();
+    }
+    if(this.workspaceDrawerRightObserver) {
+      this.workspaceDrawerRightObserver.disconnect();
+    }
     if (this.fileExplorerObserver) {
       this.fileExplorerObserver.disconnect();
     }
@@ -1636,6 +1725,8 @@ export default class ExcalidrawPlugin extends Plugin {
   public async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
     setLeftHandedMode(this.settings.isLeftHanded);
+    this.settings.autosave = true;
+    this.settings.autosaveInterval= 10000;
   }
 
   async saveSettings() {

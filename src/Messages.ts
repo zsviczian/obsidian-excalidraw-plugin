@@ -17,6 +17,13 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.6.21": `
+Before I move on to implementing further features, I spent this week with further stabilizing and debugging the plugin. Hopefully this will result in a smoother, better experince for you all.
+
+## Fixed
+- Links in drawings (e.g. text elements or embedded images) were sometimes not updating when the source file was moved or renamed in your Vault. The issue happend when you had the drawing and the linked file open in panes next to each other. This has led to broken links. ([#546](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/546))
+- To remove complexity and potential error, I have hidden the autosave settings. From now, autosave is now always enabled. Excalidraw will attempt to save your drawing every 10 seconds, or if you are actively engaged in drawing a shape at that very moment (e.g. you are busy with a freedraw line), then autosave will save the drawing at the earliest next opportunity. I imlemented further triggers to save the drawing when there are changes in the drawing and you click outside the drawing canvas. There was a rare error involving text elements, that when happened blocked saving of the file. This error is now properly handeled. Also from now, you will receive a warning message if for any reason save encountered problems. 
+- If you have two heading sections in your drawing, e.g. ${String.fromCharCode(96)}# Section abc${String.fromCharCode(96)} and ${String.fromCharCode(96)}# Section abc def${String.fromCharCode(96)}, then referencing ${String.fromCharCode(96)}[[#Section abc]]${String.fromCharCode(96)} in a link will highlight both text elements when clicking the link. These section references now work as expected. ([#530](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530))`,
 "1.6.20": `
 <div class="excalidraw-videoWrapper"><div>
 <iframe src="https://www.youtube.com/embed/U2LkBRBk4LY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

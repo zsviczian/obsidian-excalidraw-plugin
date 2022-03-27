@@ -406,7 +406,11 @@ export class ExcalidrawData {
       if (textEl) {
         if (textEl.type !== "text") {
           //markdown link attached to elements
-          textEl.link = text;
+          if(textEl.link!==text) {
+            textEl.link = text;
+            textEl.version++;
+            textEl.versionNonce++;
+          }
           this.elementLinks.set(id, text);
         } else {
           const wrapAt = estimateMaxLineLen(textEl.text, textEl.originalText);

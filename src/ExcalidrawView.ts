@@ -40,6 +40,7 @@ import {
   REG_LINKINDEX_INVALIDCHARS,
   KEYCODE,
   LOCAL_PROTOCOL,
+  REG_BLOCK_REF_CLEAN,
 } from "./Constants";
 import ExcalidrawPlugin from "./main";
 import { repositionElementsToCursor } from "./ExcalidrawAutomate";
@@ -109,7 +110,8 @@ export const addFiles = async (
   if (!files || files.length === 0 || !view) {
     return;
   }
-  files = files.filter((f) => f.size.height > 0 && f.size.width > 0); //height will be zero when file does not exisig in case of broken embedded file links
+  //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/544
+  files = files.filter((f) => f && f.size && f.size.height > 0 && f.size.width > 0); //height will be zero when file does not exisig in case of broken embedded file links
   if (files.length === 0) {
     return;
   }
@@ -144,6 +146,17 @@ export const addFiles = async (
   }
   view.excalidrawAPI.addFiles(files);
 };
+
+const warningUnknowSeriousError = () => {
+  new Notice(
+    "WARNING: Excalidraw ran into an unknown problem!!!\n\n" +
+    "There is a risk that your most recent changes cannot be saved.\n\n" +
+    "1) Please select your drawing using CTRL/CMD+A and make a copy with CTRL/CMD+C. " +
+    "2) Then create an empty drawing in a new pane by CTRL/CMD+clicking the Excalidraw ribbon button, " +
+    "3) and paste your work to the new document with CTRL/CMD+V.",
+    60000,
+  );
+}
 
 export default class ExcalidrawView extends TextFileView {
   public excalidrawData: ExcalidrawData;
@@ -190,7 +203,7 @@ export default class ExcalidrawView extends TextFileView {
     preventAutozoom: false,
     autosaving: false,
     dirty: null,
-    preventReload: true,
+    preventReload: false,
     isEditingText: false,
     saving: false,
     forceSaving: false,
@@ -389,42 +402,51 @@ export default class ExcalidrawView extends TextFileView {
       return; //file was recently deleted
     }
 
-    //reload() is triggered indirectly when saving by the modifyEventHandler in main.ts
-    //prevent reload is set here to override reload when not wanted: typically when the user is editing
-    //and we do not want to interrupt the flow by reloading the drawing into the canvas.
-    this.semaphores.preventReload = preventReload;
-    const allowSave =
-      (this.semaphores.dirty !== null && this.semaphores.dirty) ||
-      this.semaphores.autosaving || forcesave; //dirty == false when view.file == null;
-    const scene = this.getScene();
+    try {
+      const allowSave =
+        (this.semaphores.dirty !== null && this.semaphores.dirty) ||
+        this.semaphores.autosaving || forcesave; //dirty == false when view.file == null;
+      const scene = this.getScene();
 
-    if (this.compatibilityMode) {
-      await this.excalidrawData.syncElements(scene);
-    } else if (
-      (await this.excalidrawData.syncElements(scene)) &&
-      !this.semaphores.autosaving
-    ) {
-      await this.loadDrawing(false);
-    }
-
-    if (allowSave) {
-      await super.save();
-      this.clearDirty();
-    }
-
-    if (!this.semaphores.autosaving) {
-      if (this.plugin.settings.autoexportSVG) {
-        await this.saveSVG();
-      }
-      if (this.plugin.settings.autoexportPNG) {
-        await this.savePNG();
-      }
-      if (
-        !this.compatibilityMode &&
-        this.plugin.settings.autoexportExcalidraw
+      if (this.compatibilityMode) {
+        await this.excalidrawData.syncElements(scene);
+      } else if (
+        (await this.excalidrawData.syncElements(scene)) &&
+        !this.semaphores.autosaving
       ) {
-        this.saveExcalidraw();
+        await this.loadDrawing(false);
       }
+
+      if (allowSave) {
+        //reload() is triggered indirectly when saving by the modifyEventHandler in main.ts
+        //prevent reload is set here to override reload when not wanted: typically when the user is editing
+        //and we do not want to interrupt the flow by reloading the drawing into the canvas.
+        this.semaphores.preventReload = preventReload;      
+        await super.save();
+        this.clearDirty();
+      }
+
+      if (!this.semaphores.autosaving) {
+        if (this.plugin.settings.autoexportSVG) {
+          await this.saveSVG();
+        }
+        if (this.plugin.settings.autoexportPNG) {
+          await this.savePNG();
+        }
+        if (
+          !this.compatibilityMode &&
+          this.plugin.settings.autoexportExcalidraw
+        ) {
+          this.saveExcalidraw();
+        }
+      }
+    } catch(e) {
+      errorlog({
+        where:"ExcalidrawView.save",
+        fn:this.save,
+        error: e
+      });
+      warningUnknowSeriousError();
     }
     this.semaphores.saving = false;
   }
@@ -866,19 +888,31 @@ export default class ExcalidrawView extends TextFileView {
         this.plugin.settings.autosave &&
         !this.semaphores.forceSaving
       ) {
+        this.autosaveTimer = null;
         this.semaphores.autosaving = true;
         if (this.excalidrawRef) {
           await this.save();
         }
         this.semaphores.autosaving = false;
+        this.autosaveTimer = setTimeout(
+          timer,
+          this.plugin.settings.autosaveInterval,
+        );
+      } else {
+        this.autosaveTimer = setTimeout(
+          timer,
+          this.isLoaded && this.plugin.activeExcalidrawView === this
+            ? 1000 //try again in 1 second
+            : this.plugin.settings.autosaveInterval, 
+        );
       }
     };
     if (this.autosaveTimer) {
-      clearInterval(this.autosaveTimer);
+      clearTimeout(this.autosaveTimer);
       this.autosaveTimer = null;
     } // clear previous timer if one exists
     if (this.plugin.settings.autosave) {
-      this.autosaveTimer = setInterval(
+      this.autosaveTimer = setTimeout(
         timer,
         this.plugin.settings.autosaveInterval,
       );
@@ -932,7 +966,7 @@ export default class ExcalidrawView extends TextFileView {
     }
     const loadOnModifyTrigger = file && file === this.file;
     if (loadOnModifyTrigger) {
-      this.data = await this.app.vault.cachedRead(file);
+      this.data = await this.app.vault.read(file);
       this.preventAutozoom();
     }
     if (fullreload) {
@@ -1006,7 +1040,8 @@ export default class ExcalidrawView extends TextFileView {
         self.selectElementsMatchingQuery(
           elements,
           query,
-          !this.excalidrawAPI.getAppState().viewModeEnabled
+          !this.excalidrawAPI.getAppState().viewModeEnabled,
+          true
         );
       },300);
     }
@@ -1949,7 +1984,7 @@ export default class ExcalidrawView extends TextFileView {
           event: mouseEvent,
           source: VIEW_TYPE_EXCALIDRAW,
           hoverParent: hoverPreviewTarget,
-          targetEl: hoverPreviewTarget,
+          targetEl: null,//hoverPreviewTarget,
           linktext: this.plugin.hover.linkText,
           sourcePath: this.plugin.hover.sourcePath,
         });
@@ -2581,15 +2616,26 @@ export default class ExcalidrawView extends TextFileView {
     this.plugin.saveSettings();
   }
 
-  public selectElementsMatchingQuery(elements:ExcalidrawElement[], query:string[], selectResult:boolean = true) {
+  public selectElementsMatchingQuery(
+    elements:ExcalidrawElement[],
+    query:string[],
+    selectResult:boolean = true,
+    exactMatch: boolean = false //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530
+  ) {
     if(!elements || elements.length === 0 || !query || query.length === 0) {
       return;
     }
 
     const match = elements.filter((el: any) =>
-      query.some((q) =>
-        el.rawText.toLowerCase().replaceAll("\n", " ").match(q.toLowerCase()),
-      ),
+      query.some((q) => {
+        const text = el.rawText.toLowerCase().replaceAll("\n", " ").trim();
+        if(exactMatch) {
+          const m = text.match(/^#*(# .*)/);
+          if(!m || m.length!==2) return false;
+          return m[1] === q.toLowerCase();
+        }
+        return text.match(q.toLowerCase()); //to distinguish between "# frame" and "# frame 1"
+      })
     );
     if (match.length === 0) {
       new Notice("I could not find a matching text element");
@@ -2670,10 +2716,37 @@ export default class ExcalidrawView extends TextFileView {
     commitToHistory?: boolean,
   }, restore: boolean = false) {
     if(!this.excalidrawAPI) return;
-    if(scene.elements && restore) {
+    const shouldRestoreElements = scene.elements && restore;
+    if(shouldRestoreElements) {
       scene.elements = this.excalidrawAPI.restore(scene).elements;
     }
-    this.excalidrawAPI.updateScene(scene);
+    try {
+      this.excalidrawAPI.updateScene(scene);
+    } catch(e) {
+      errorlog({
+        where:"ExcalidrawView.updateScene 1st attempt",
+        fn:this.updateScene,
+        error: e,
+        scene: scene,
+        willDoSecondAttempt: !shouldRestoreElements
+      });
+      if(!shouldRestoreElements) { //second attempt
+        try {
+            scene.elements = this.excalidrawAPI.restore(scene).elements;
+            this.excalidrawAPI.updateScene(scene);
+        } catch (e) {
+          errorlog({
+            where:"ExcalidrawView.updateScene 2nd attempt",
+            fn:this.updateScene,
+            error: e,
+            scene: scene
+          });
+          warningUnknowSeriousError();
+        }
+      } else {
+        warningUnknowSeriousError();
+      }
+    }
   }
 }
 

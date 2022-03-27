@@ -402,7 +402,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    let autosaveDropdown: DropdownComponent;
+/*    let autosaveDropdown: DropdownComponent;
 
     new Setting(containerEl)
       .setName(t("AUTOSAVE_NAME"))
@@ -443,7 +443,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate(true);
           },
         );
-      });
+      });*/
 
     this.containerEl.createEl("h1", { text: t("DISPLAY_HEAD") });
 

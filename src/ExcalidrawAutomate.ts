@@ -727,7 +727,7 @@ export async function initExcalidrawAutomate(
         fontFamily: this.style.fontFamily,
         textAlign: formatting?.textAlign
           ? formatting.textAlign
-          : this.style.textAlign,
+          : (this.style.textAlign ?? "left"),
         verticalAlign: this.style.verticalAlign,
         baseline,
         ...boxedElement(id, "text", topX, topY, width, height),
