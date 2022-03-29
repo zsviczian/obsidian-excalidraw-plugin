@@ -475,7 +475,7 @@ export const observer = new MutationObserver(async (m) => {
   }
   if (
     //@ts-ignore
-    m[0].addedNodes[0].className != "popover hover-popover file-embed is-loaded"
+    !m[0].addedNodes[0].classNames != "popover hover-popover file-embed is-loaded"
   ) {
     return;
   }

@@ -1761,12 +1761,8 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public openDrawing(drawingFile: TFile, onNewPane: boolean) {
-    const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
     let leaf: WorkspaceLeaf = null;
 
-    if (leaves?.length > 0) {
-      leaf = leaves[0];
-    }
     if (!leaf) {
       leaf = this.app.workspace.activeLeaf;
     }

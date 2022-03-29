@@ -40,7 +40,6 @@ import {
   REG_LINKINDEX_INVALIDCHARS,
   KEYCODE,
   LOCAL_PROTOCOL,
-  REG_BLOCK_REF_CLEAN,
 } from "./Constants";
 import ExcalidrawPlugin from "./main";
 import { repositionElementsToCursor } from "./ExcalidrawAutomate";
@@ -198,6 +197,7 @@ export default class ExcalidrawView extends TextFileView {
     //- by monkeypatches on detach(next)
     //This semaphore helps avoid collision of saves
     saving: boolean, 
+    hoverSleep: boolean, //flag with timer to prevent hover preview from being triggered dozens of times
   } = {
     justLoaded: false,
     preventAutozoom: false,
@@ -207,6 +207,7 @@ export default class ExcalidrawView extends TextFileView {
     isEditingText: false,
     saving: false,
     forceSaving: false,
+    hoverSleep: false,
   }
   
   public plugin: ExcalidrawPlugin;
@@ -1977,6 +1978,19 @@ export default class ExcalidrawView extends TextFileView {
           }
         }
 
+        if(this.semaphores.hoverSleep) return;   
+        
+        const f = this.app.metadataCache.getFirstLinkpathDest(
+          linktext,
+          this.file.path,
+        );
+        if(!f) return;
+
+        if (document.querySelector(`div.popover-title[data-path="${f.path}"]`)) return;
+
+        this.semaphores.hoverSleep = true;
+        const self = this;
+        setTimeout(() => self.semaphores.hoverSleep = false, 500);
         this.plugin.hover.linkText = linktext;
         this.plugin.hover.sourcePath = this.file.path;
         hoverPreviewTarget = this.contentEl; //e.target;
@@ -1984,7 +1998,7 @@ export default class ExcalidrawView extends TextFileView {
           event: mouseEvent,
           source: VIEW_TYPE_EXCALIDRAW,
           hoverParent: hoverPreviewTarget,
-          targetEl: null,//hoverPreviewTarget,
+          targetEl: null, //hoverPreviewTarget,
           linktext: this.plugin.hover.linkText,
           sourcePath: this.plugin.hover.sourcePath,
         });
@@ -1992,12 +2006,14 @@ export default class ExcalidrawView extends TextFileView {
         if (this.isFullscreen()) {
           const self = this;
           setTimeout(() => {
-            const popover = document.body.querySelector("div.popover");
+            const popover = document.querySelector(`div.popover-title[data-path="${f.path}"]`)?.parentElement?.parentElement?.parentElement 
+              ?? document.body.querySelector("div.popover");
             if (popover) {
               self.contentEl.append(popover);
             }
-          }, 100);
+          }, 400);
         }
+        
       };
 
       const excalidrawDiv = React.createElement(

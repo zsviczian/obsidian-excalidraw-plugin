@@ -5,7 +5,7 @@
     originalText: this is the text without added linebreaks for wrapping. This will be parsed or markup depending on view mode
     rawText: text with original markdown markup and without the added linebreaks for wrapping
  */
-import { App, Notice, TFile } from "obsidian";
+import { App, TFile } from "obsidian";
 import {
   nanoid,
   FRONTMATTER_KEY_CUSTOM_PREFIX,
@@ -39,7 +39,6 @@ import {
 } from "@zsviczian/excalidraw/types/element/types";
 import { BinaryFiles, SceneData } from "@zsviczian/excalidraw/types/types";
 import { EmbeddedFile } from "./EmbeddedFileLoader";
-import { t } from "./lang/helpers";
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles };
 
