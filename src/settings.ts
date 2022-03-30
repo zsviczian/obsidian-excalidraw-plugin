@@ -34,6 +34,7 @@ export interface ExcalidrawSettings {
   matchThemeAlways: boolean;
   matchThemeTrigger: boolean;
   defaultMode: string;
+  defaultPenMode: "never"|"mobile"|"always";
   zoomToFitOnResize: boolean;
   zoomToFitMaxLevel: number;
   openInAdjacentPane: boolean;
@@ -106,6 +107,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   matchThemeAlways: false,
   matchThemeTrigger: false,
   defaultMode: "normal",
+  defaultPenMode: "never",
   zoomToFitOnResize: true,
   zoomToFitMaxLevel: 2,
   linkPrefix: "📍",
@@ -402,49 +404,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-/*    let autosaveDropdown: DropdownComponent;
-
-    new Setting(containerEl)
-      .setName(t("AUTOSAVE_NAME"))
-      .setDesc(fragWithHTML(t("AUTOSAVE_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.autosave)
-          .onChange(async (value) => {
-            this.plugin.settings.autosave = value;
-            autosaveDropdown.setDisabled(!value);
-            this.applySettingsUpdate();
-            if(value) {
-              const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
-              leaves.forEach((leaf: WorkspaceLeaf) => {
-                const excalidrawView = leaf.view as ExcalidrawView;
-                excalidrawView.setupAutosaveTimer();
-              });
-            }
-          }),
-      );
-
-    new Setting(containerEl)
-      .setName(t("AUTOSAVE_INTERVAL_NAME"))
-      .setDesc(fragWithHTML(t("AUTOSAVE_INTERVAL_DESC")))
-      .addDropdown(async (d: DropdownComponent) => {
-        autosaveDropdown = d;
-        d.setDisabled(!this.plugin.settings.autosave);
-        d.addOption("15000", "15 seconds");
-        d.addOption("30000", "30 seconds");
-        d.addOption("60000", "1 minute");
-        d.addOption("120000", "2 minutes");
-        d.addOption("180000", "3 minutes");
-        d.addOption("240000", "4 minutes");
-        d.addOption("300000", "5 minutes");
-        d.setValue(this.plugin.settings.autosaveInterval.toString()).onChange(
-          (value) => {
-            this.plugin.settings.autosaveInterval = parseInt(value);
-            this.applySettingsUpdate(true);
-          },
-        );
-      });*/
-
     this.containerEl.createEl("h1", { text: t("DISPLAY_HEAD") });
 
     new Setting(containerEl)
@@ -511,6 +470,21 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
+
+    new Setting(containerEl)
+      .setName(t("DEFAULT_PEN_MODE_NAME"))
+      .setDesc(fragWithHTML(t("DEFAULT_PEN_MODE_DESC")))
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("never", "Never")
+          .addOption("mobile", "On Obsidian Mobile")
+          .addOption("always", "Always")
+          .setValue(this.plugin.settings.defaultPenMode)
+          .onChange(async (value: "never"|"always"|"mobile") => {
+            this.plugin.settings.defaultPenMode = value;
+            this.applySettingsUpdate();
+          }),
+      );      
 
     new Setting(containerEl)
       .setName(t("ZOOM_TO_FIT_NAME"))

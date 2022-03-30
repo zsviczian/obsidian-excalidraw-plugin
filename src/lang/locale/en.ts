@@ -166,6 +166,8 @@ export default {
   DEFAULT_OPEN_MODE_DESC:
     "Specifies the mode how Excalidraw opens: Normal, Zen, or View mode. You may also set this behaviour on a file level by " +
     "adding the excalidraw-default-mode frontmatter key with a value of: normal,view, or zen to your document.",
+  DEFAULT_PEN_MODE_NAME: "Pen mode",
+  DEFAULT_PEN_MODE_DESC: "Should pen mode be automatically enabled when opening excalidraw?",
   ZOOM_TO_FIT_NAME: "Zoom to fit on view resize",
   ZOOM_TO_FIT_DESC: "Zoom to fit drawing when the pane is resized",
   ZOOM_TO_FIT_MAX_LEVEL_NAME: "Zoom to fit max ZOOM level",

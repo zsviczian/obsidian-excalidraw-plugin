@@ -412,8 +412,8 @@ export default class ExcalidrawView extends TextFileView {
       if (this.compatibilityMode) {
         await this.excalidrawData.syncElements(scene);
       } else if (
-        (await this.excalidrawData.syncElements(scene)) &&
-        !this.semaphores.autosaving
+        (await this.excalidrawData.syncElements(scene)) 
+        //&& !this.semaphores.autosaving
       ) {
         await this.loadDrawing(false);
       }
@@ -882,12 +882,14 @@ export default class ExcalidrawView extends TextFileView {
 
   public setupAutosaveTimer() {
     const timer = async () => {
+      const editing = this.excalidrawAPI?.getAppState().editingElement !== null;
       if (
         this.isLoaded &&
         this.semaphores.dirty &&
         this.semaphores.dirty == this.file?.path &&
         this.plugin.settings.autosave &&
-        !this.semaphores.forceSaving
+        !this.semaphores.forceSaving &&
+        !editing
       ) {
         this.autosaveTimer = null;
         this.semaphores.autosaving = true;
@@ -902,7 +904,8 @@ export default class ExcalidrawView extends TextFileView {
       } else {
         this.autosaveTimer = setTimeout(
           timer,
-          this.isLoaded && this.plugin.activeExcalidrawView === this
+          this.isLoaded && this.plugin.activeExcalidrawView === this &&
+          this.semaphores.dirty
             ? 1000 //try again in 1 second
             : this.plugin.settings.autosaveInterval, 
         );
@@ -1161,6 +1164,8 @@ export default class ExcalidrawView extends TextFileView {
     this.clearDirty();
     const om = this.excalidrawData.getOpenMode();
     this.semaphores.preventReload = false;
+    const penEnabled = this.plugin.settings.defaultPenMode === "always" ||
+      (this.plugin.settings.defaultPenMode === "mobile" && this.app.isMobile);
     if (this.excalidrawRef) {
       //isLoaded flags that a new file is being loaded, isLoaded will be true after loadDrawing completes
       const viewModeEnabled = !this.isLoaded
@@ -1182,6 +1187,8 @@ export default class ExcalidrawView extends TextFileView {
           viewModeEnabled,
           linkOpacity: this.plugin.settings.linkOpacity,
           trayModeEnabled: this.plugin.settings.defaultTrayMode,
+          penMode: penEnabled,
+          penDetected: penEnabled,
         },
         files: excalidrawData.files,
         commitToHistory: true,
@@ -1206,6 +1213,8 @@ export default class ExcalidrawView extends TextFileView {
           viewModeEnabled: om.viewModeEnabled,
           linkOpacity: this.plugin.settings.linkOpacity,
           trayModeEnabled: this.plugin.settings.defaultTrayMode,
+          penMode: penEnabled,
+          penDetected: penEnabled,
         },
         files: excalidrawData.files,
         libraryItems: await this.getLibrary(),
@@ -2325,22 +2334,14 @@ export default class ExcalidrawView extends TextFileView {
             return true;
           },
           onBeforeTextEdit: (textElement: ExcalidrawTextElement) => {
-            if (this.autosaveTimer) {
-              //stopping autosave to avoid autosave overwriting text while the user edits it
-              clearInterval(this.autosaveTimer);
-              this.autosaveTimer = null;
-            }
             clearTimeout(this.isEditingTextResetTimer);
             this.isEditingTextResetTimer = null;
             this.semaphores.isEditingText = true; //to prevent autoresize on mobile when keyboard pops up
-            //if(this.textMode==TextMode.parsed) {
             const raw = this.excalidrawData.getRawText(textElement.id);
             if (!raw) {
               return textElement.rawText;
             }
             return raw;
-            /*}
-            return null;*/
           },
           onBeforeTextSubmit: (
             textElement: ExcalidrawTextElement,
@@ -2354,21 +2355,11 @@ export default class ExcalidrawView extends TextFileView {
               this.isEditingTextResetTimer = null;
             }, 1500); // to give time for the onscreen keyboard to disappear
             
-            this.setupAutosaveTimer();
-
             if (isDeleted) {
               this.excalidrawData.deleteTextElement(textElement.id);
               this.setDirty();
               return [null, null, null];
             }
-
-            //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/318
-            //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/299
-            /*if (!this.app.isMobile) {
-              setTimeout(() => {
-                this?.excalidrawWrapperRef?.current?.firstElementChild?.focus();
-              }, 50);
-            }*/
 
             const containerId = textElement.containerId;
 

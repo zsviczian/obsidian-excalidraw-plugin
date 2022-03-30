@@ -17,6 +17,18 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.6.22": `
+## Fixed:
+- "Create a new drawing - IN THE CURRENT ACTIVE PANE - and embed into active document" did not work as intended when an Excalidraw pane was already open. [#559](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/559)
+- [Obsidian-hover-editor](https://github.com/nothingislost/obsidian-hover-editor) related improvements [#555](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/555):
+  - hovering triggered many hover preview windows in quick succession, and in some cases raised dozens of errors in the Developer Console
+  - hover-editors were not visible in Excalidraw fullscreen mode
+
+## Minor new features:
+- Activating the eraser with key "e" will toggle the active tool and back. So for example if you are drawing a freedraw shape, you can press "e" to delete a few strokes, then press "e" again to continue drawing. On desktop PCs many styluses allow you to configure the pen button to trigger keypress "e". 
+- New setting to enable penMode by default.
+- I increased the file size limit for images you paste into Excalidraw from 2MB to 20MB. You should however avoid very large images as they will impact the overall performance of the canvas. ([#557](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/557))
+`,
 "1.6.21": `
 Before I move on to implementing further features, I spent this week with further stabilizing and debugging the plugin. Hopefully this will result in a smoother, better experince for you all.
 

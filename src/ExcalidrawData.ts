@@ -628,23 +628,21 @@ export class ExcalidrawData {
         dirty = true;
         id = nanoid();
         jsonString = jsonString.replaceAll(te.id, id); //brute force approach to replace all occurances (e.g. links, groups,etc.)
-      }
-      if (te.id.length > 8 && this.textElements.has(te.id)) {
-        //element was created with onBeforeTextSubmit
-        const t = this.textElements.get(te.id);
-        this.textElements.set(id, {
-          raw: t.raw,
-          parsed: t.parsed,
-          wrapAt: t.wrapAt,
-        });
-        this.textElements.delete(te.id); //delete the old ID from the Map
-        dirty = true;
-      } else if (!this.textElements.has(id)) {
-        dirty = true;
-        const raw = te.rawText && te.rawText !== "" ? te.rawText : te.text; //this is for compatibility with drawings created before the rawText change on ExcalidrawTextElement
-        const wrapAt = estimateMaxLineLen(te.text, te.originalText);
-        this.textElements.set(id, { raw, parsed: null, wrapAt });
-        this.parseasync(id, raw, wrapAt);
+        if (this.textElements.has(te.id)) { //element was created with onBeforeTextSubmit
+          const t = this.textElements.get(te.id);
+          this.textElements.set(id, {
+            raw: t.raw,
+            parsed: t.parsed,
+            wrapAt: t.wrapAt,
+          });
+          this.textElements.delete(te.id); //delete the old ID from the Map
+        }
+        if (!this.textElements.has(id)) {
+          const raw = te.rawText && te.rawText !== "" ? te.rawText : te.text; //this is for compatibility with drawings created before the rawText change on ExcalidrawTextElement
+          const wrapAt = estimateMaxLineLen(te.text, te.originalText);
+          this.textElements.set(id, { raw, parsed: null, wrapAt });
+          this.parseasync(id, raw, wrapAt);
+        }
       }
     }
     if (dirty) {
