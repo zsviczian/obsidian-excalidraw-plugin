@@ -101,6 +101,12 @@ declare module "obsidian" {
   interface App {
     isMobile(): boolean;
   }
+  interface Keymap {
+    getRootScope(): Scope
+  }
+  interface Scope {
+    keys: any[]
+  }
   interface Workspace {
     on(
       name: "hover-link",
@@ -1508,16 +1514,10 @@ export default class ExcalidrawPlugin extends Plugin {
           self.popScope = null;
         }
         if (newActiveviewEV) {
-          //@ts-ignore
-          const scope = new Scope(self.app.scope);
-          scope.register(["Mod"], "Enter", () => true);
-          
-          //@ts-ignore
-          self.app.keymap.pushScope(scope);
-          self.popScope = () => {
-            //@ts-ignore
-            self.app.keymap.popScope(scope);
-          };
+          const scope = this.app.keymap.getRootScope();
+          const handler = scope.register(["Mod"], "Enter", () => true);
+          scope.keys.unshift(scope.keys.pop());  // Force our handler to the front of the list
+          self.popScope = () => scope.unregister(handler);
         }
       };
       self.registerEvent(
