@@ -1248,6 +1248,10 @@ export default class ExcalidrawView extends TextFileView {
 
   public clearDirty() {
     this.semaphores.dirty = null;
+    const el = this.excalidrawAPI?.getSceneElements();
+    if(el) {
+      this.previousSceneVersion = getSceneVersion(el);
+    }
     this.diskIcon.querySelector("svg").removeClass("excalidraw-dirty");
   }
 
@@ -2155,11 +2159,16 @@ export default class ExcalidrawView extends TextFileView {
               this.previousBackgroundColor = st.viewBackgroundColor;
               return;
             }
+            if(this.semaphores.dirty) {
+              return;
+            }
             if (
               st.editingElement === null &&
-              st.resizingElement === null &&
+              //Removed because of
+              //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/565
+              /*st.resizingElement === null && 
               st.draggingElement === null &&
-              st.editingGroupId === null &&
+              st.editingGroupId === null &&*/
               st.editingLinearElement === null
             ) {
               const sceneVersion = getSceneVersion(et);
@@ -2635,12 +2644,13 @@ export default class ExcalidrawView extends TextFileView {
 
     const match = elements.filter((el: any) =>
       query.some((q) => {
-        const text = el.rawText.toLowerCase().replaceAll("\n", " ").trim();
         if(exactMatch) {
+          const text = el.rawText.toLowerCase().split("\n")[0].trim();
           const m = text.match(/^#*(# .*)/);
           if(!m || m.length!==2) return false;
           return m[1] === q.toLowerCase();
         }
+        const text = el.rawText.toLowerCase().replaceAll("\n", " ").trim();
         return text.match(q.toLowerCase()); //to distinguish between "# frame" and "# frame 1"
       })
     );
