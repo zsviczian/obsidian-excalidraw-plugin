@@ -17,6 +17,16 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.6.23": `
+## Fixed:
+- I have received some user feedback about cases where the text separated from the sticky note. This version comes with a cleanup algorithm that will try to automatically resolve these issues.
+- Autosave did not notice changes in a very obscure case, when you opened a drawing, resized an element, and without deselecting the element you immediately closed the drawing. ([565](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/565))
+- CTRL+Enter to create a task did not work in hover-editor when opened from Excalidraw. Now it does! Thanks @pjeby! ([567](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/567))
+
+## New Features
+- If you have the [Obsidian-Latex](https://github.com/xldenis/obsidian-latex) plugin installed, from now Excalidraw will also process the ${String.fromCharCode(96)}preambles.sty${String.fromCharCode(96)} file. ( [563](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/563))
+- I added a new setting ${String.fromCharCode(96)}Embed & Export >> If found, use the already exported image for preview${String.fromCharCode(96)}. This setting works in conjunction with the ${String.fromCharCode(96)}Auto-export SVG/PNG${String.fromCharCode(96)} settings. If an exported image that matches the file name of the drawing is available, use that image instead of generating a preview image on the fly. This will result in faster previews especially when you have many embedded objects in the drawing, however, it may happen that your latest changes are not displayed and that the image will not automatically match your Obsidian theme in case you have changed the Obsidian theme since the export was created. This setting only applies to embedding images into markdown documents. For a number of reasons, the same approach cannot be used to expedite the loading of drawings with many embedded objects. See release notes for a [demo video](https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.22).
+`,
 "1.6.22": `
 ## Fixed:
 - "Create a new drawing - IN THE CURRENT ACTIVE PANE - and embed into active document" did not work as intended when an Excalidraw pane was already open. [#559](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/559)

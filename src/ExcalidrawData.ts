@@ -30,6 +30,7 @@ import {
   hasExportTheme,
   isObsidianThemeDark,
   LinkParts,
+  log,
   wrapText,
 } from "./Utils";
 import {
@@ -286,6 +287,58 @@ export class ExcalidrawData {
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/497
       if(el.fontSize===null) el.fontSize=20;
     }
+
+    //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/569
+    try {
+      //Fix text elements that point to a container, but the container does not point back
+      const textElWithOneWayLinkToContainer = elements.filter((textEl:any) =>
+        textEl.type === "text" &&
+        textEl.containerId &&
+        elements.some((container:any) =>
+          container.id === textEl.containerId &&
+          container.boundElements.length > 0 &&
+          container.boundElements.some((boundEl:any) =>
+            boundEl.type === "text" &&
+            boundEl.id !== textEl.id &&
+            boundEl.id.length > 8
+          )
+        )
+      );
+      //if(textElWithOneWayLinkToContainer.length>0) log({message: "cleanup", textElWithOneWayLinkToContainer});
+      textElWithOneWayLinkToContainer.forEach((textEl:any) => {
+        try {
+          const container = elements.filter((container:any) => 
+            container.id === textEl.containerId)[0];
+          const boundEl = container.boundElements.filter((boundEl:any) =>
+            !(boundEl.type === "text" &&
+            !elements.some((el:any) => el.id === boundEl.id))
+          );
+          container.boundElements = [{id: textEl.id, type:"text"}].concat(boundEl);
+        } catch(e) {}
+      });
+
+      //Remove from bound elements references that do not exist in the scene
+      const containers = elements.filter((container:any) => 
+        container.boundElements &&
+        container.boundElements.length > 0
+      );
+      containers.forEach((container:any) => {
+        const filteredBoundElements = container.boundElements.filter((boundEl:any) =>  
+          elements.some((el:any) => el.id === boundEl.id)
+        )
+        if(filteredBoundElements.length !== container.boundElements.length) {
+          //log({message: "cleanup",oldBound: container.boundElements, newBound: filteredBoundElements});
+          container.boundElements = filteredBoundElements;
+        }
+      })
+
+      //Clear the containerId for textElements if the referenced container does not exist in the scene
+      elements.filter((textEl:any) =>
+        textEl.type === "text" &&
+        textEl.containerId &&
+        !elements.some((container:any) => container.id === textEl.containerId)
+      ).forEach((textEl:any) => {textEl.containerId = null;});// log({message:"cleanup",textEl})});
+    } catch {}
   }
 
   /**
