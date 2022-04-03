@@ -3,9 +3,11 @@ import ExcalidrawView from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
 import { FileData, MimeType } from "./EmbeddedFileLoader";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
-import { getImageSize, sleep, svgToBase64 } from "./Utils";
+import { getImageSize, log, sleep, svgToBase64 } from "./Utils";
 import { fileid } from "./Constants";
 import html2canvas from "html2canvas";
+import { count } from "console";
+import { Notice } from "obsidian";
 
 declare let window: any;
 
@@ -42,15 +44,33 @@ export async function tex2dataURL(
   size: { height: number; width: number };
 }> {
   //if network is slow, or not available, or mathjax has not yet fully loaded
+  let counter = 0;
+  while(!plugin.mathjax && !plugin.mathjaxLoaderFinished && counter<10) {
+    log({where: "tex2dataURL", counter});
+    await sleep(100);
+    counter++;
+  }
+  
+  //it is not clear why this works, but it seems that after loading the plugin sometimes only the third attempt is successful.
   try {
     return await mathjaxSVG(tex, plugin);
   } catch (e) {
-    await sleep(200); //grace period for mathjax to load, if not, then we go for the slower fallback
+    await sleep(100);
     try {
       return await mathjaxSVG(tex, plugin);
     } catch (e) {
-      //fallback
-      return await mathjaxImage2html(tex);
+      await sleep(100);
+      try {
+        return await mathjaxSVG(tex, plugin);
+      } catch (e) {
+        if (plugin.mathjax) {
+          new Notice("Unknown error loading LaTeX. Using fallback solution. Try closing and reopening this drawing.");
+        } else {
+          new Notice("LaTeX support did not load. Using fallback solution. Try checking your network connection."); 
+        }
+        //fallback
+        return await mathjaxImage2html(tex);
+      }
     }
   }
 }

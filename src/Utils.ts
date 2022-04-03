@@ -27,6 +27,7 @@ import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
 import { ExportSettings } from "./ExcalidrawView";
 import { compressToBase64, decompressFromBase64 } from "lz-string";
 import { ExcalidrawSettings } from "./Settings";
+import { appendFile } from "fs";
 
 declare module "obsidian" {
   interface Workspace {
@@ -497,6 +498,17 @@ export const getPNG = async (
     return null;
   }
 };
+
+export const getQuickImagePreview = async (plugin:ExcalidrawPlugin, path: string, extension: "png"|"svg"):Promise<any> => {
+  if(!plugin.settings.displayExportedImageIfAvailable) return null;
+  const imagePath = getIMGFilename(path,extension);
+  const file = plugin.app.vault.getAbstractFileByPath(imagePath);
+  if(!file || !(file instanceof TFile)) return null;
+  switch (extension) {
+    case "png": return await plugin.app.vault.readBinary(file);
+    default: return await plugin.app.vault.read(file);
+  }
+}
 
 export const embedFontsInSVG = (
   svg: SVGSVGElement,

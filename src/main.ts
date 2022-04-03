@@ -13,7 +13,6 @@ import {
   ViewState,
   Notice,
   loadMathJax,
-  Scope,
   request,
   MetadataCache,
   FrontMatterCache,
@@ -78,7 +77,6 @@ import {
   getIMGFilename,
   getIMGPathFromExcalidrawFile,
   getNewUniqueFilepath,
-  getPNG,
   isObsidianThemeDark,
   log,
   setLeftHandedMode,
@@ -145,6 +143,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public equationsMaster: Map<FileId, string> = null; //fileId, formula
   public mathjax: any = null;
   private mathjaxDiv: HTMLDivElement = null;
+  public mathjaxLoaderFinished: boolean = false;
   public scriptEngine: ScriptEngine;
   public fourthFontDef: string = VIRGIL_FONT;
   constructor(app: App, manifest: PluginManifest) {
@@ -218,7 +217,6 @@ export default class ExcalidrawPlugin extends Plugin {
     this.switchToExcalidarwAfterLoad();
 
     this.loadMathJax();
-    //this.loadTesseract();
 
     const self = this;
     this.app.workspace.onLayoutReady(() => {
@@ -258,40 +256,50 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   private loadMathJax() {
-    //loading Obsidian MathJax as fallback
-    this.app.workspace.onLayoutReady(() => {
-      loadMathJax();
+    const self = this;
+    this.app.workspace.onLayoutReady(async () => {
+      //loading Obsidian MathJax as fallback
+      await loadMathJax();
+      try {
+        self.mathjaxDiv = document.body.createDiv();
+        self.mathjaxDiv.title = "Excalidraw MathJax Support";
+        self.mathjaxDiv.style.display = "none";
+
+        const iframe = self.mathjaxDiv.createEl("iframe");     
+        iframe.title = "Excalidraw MathJax Support";
+        const doc = iframe.contentWindow.document;
+
+        const script = doc.createElement("script");
+        script.type = "text/javascript";
+        script.onload = () => {
+          const win = iframe.contentWindow;
+          //@ts-ignore
+          win.MathJax.startup.pagePromise.then(async () => {
+            //https://github.com/xldenis/obsidian-latex/blob/master/main.ts
+            const file = self.app.vault.getAbstractFileByPath("preamble.sty");
+            const preamble:string = (file && file instanceof TFile) 
+              ? await self.app.vault.read(file)
+              : null;
+            try {
+              //@ts-ignore
+              if(preamble) await win.MathJax.tex2svg(preamble);
+            } catch(e) {
+              errorlog({where: self.loadMathJax, description: "Unexpected error while loading preamble.sty",error: e});
+            }
+            //@ts-ignore
+            self.mathjax = win.MathJax;
+            self.mathjaxLoaderFinished = true;
+          });
+        };
+        script.src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js";
+        //script.src = MATHJAX_DATAURL;
+        doc.head.appendChild(script);
+      } catch {
+        new Notice("Excalidraw: Error initializing LaTeX support");
+        self.mathjaxLoaderFinished = true;
+      }
     });
-
-    this.mathjaxDiv = document.body.createDiv();
-    this.mathjaxDiv.title = "Excalidraw MathJax Support";
-    this.mathjaxDiv.style.display = "none";
-    const iframe = this.mathjaxDiv.createEl("iframe");
-    const doc = iframe.contentWindow.document;
-    const script = doc.createElement("script");
-    script.type = "text/javascript";
-    script.onload = () => {
-      const win = iframe.contentWindow;
-      //@ts-ignore
-      win.MathJax.startup.pagePromise.then(() => {
-        //@ts-ignore
-        this.mathjax = win.MathJax;
-      });
-    };
-
-    script.src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js";
-    //script.src = MATHJAX_DATAURL;
-    doc.head.appendChild(script);
   }
-
-  /*  private loadTesseract() {
-    //@ts-ignore
-    if(typeof Tesseract !== "undefined") return;
-    const script = window.document.createElement("script");
-    script.type = "text/javascript";
-    script.src = "https://unpkg.com/tesseract.js@v2.1.5/dist/tesseract.min.js";
-    document.head.appendChild(script);
-  }*/
 
   private switchToExcalidarwAfterLoad() {
     const self = this;

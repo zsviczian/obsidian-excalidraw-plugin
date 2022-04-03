@@ -232,7 +232,7 @@ export default {
     "Use the <code>http://iframely.server.crestify.com/iframely?url=</code> to get title of page when dropping a link into Excalidraw",
   MD_HEAD: "Markdown-embed settings",
   MD_HEAD_DESC:
-    "You can transclude formatted markdown documents into drawings as images CTRL/CMD drop from the file explorer or using " +
+    "You can transclude formatted markdown documents into drawings as images CTRL(Shift on Mac) drop from the file explorer or using " +
     "the command palette action.",
   MD_TRANSCLUDE_WIDTH_NAME: "Default width of a transcluded markdown document",
   MD_TRANSCLUDE_WIDTH_DESC:
@@ -270,6 +270,13 @@ export default {
     "You can add one custom font beyond that using the setting above. " +
     'You can override this css setting by adding the following frontmatter-key to the embedded markdown file: "excalidraw-css: css_file_in_valut|css-snippet".',
   EMBED_HEAD: "Embed & Export",
+  EMBED_REUSE_EXPORTED_IMAGE_NAME: "If found, use the already exported image for preview",
+  EMBED_REUSE_EXPORTED_IMAGE_DESC:
+    "This setting works in conjunction with the Auto-export SVG/PNG setting. If an exported image that matches the file name of the drawing " +
+    "is available, use that image instead of generating a preview image on the fly. This will result in faster previews especially when you have many embedded objects in the drawing, however, "+
+    "it may happen that your latest changes are not displayed and that the image will not automatically match your Obsidian theme in case you have changed the "+
+    "Obsidian theme since the export was created. This setting only applies to embedding images into markdown documents. " +
+    "For a number of reasons, the same approach cannot be used to expedite the loading of drawings with many embedded objects. See demonstration <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.22' target='_blank'>here</a>.",
   EMBED_PREVIEW_SVG_NAME: "Display SVG in markdown preview",
   EMBED_PREVIEW_SVG_DESC:
     "The default is to display drawings as SVG images in the markdown preview. Turning this feature off, the markdown preview will display the drawing as an embedded PNG image.",

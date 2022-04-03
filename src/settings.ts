@@ -27,6 +27,7 @@ export interface ExcalidrawSettings {
   drawingFilenameDateTime: string;
   useExcalidrawExtension: boolean;
   displaySVGInPreview: boolean;
+  displayExportedImageIfAvailable: boolean;
   previewMatchObsidianTheme: boolean;
   width: string;
   isLeftHanded: boolean;
@@ -100,6 +101,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   drawingFilenameDateTime: "YYYY-MM-DD HH.mm.ss",
   useExcalidrawExtension: true,
   displaySVGInPreview: true,
+  displayExportedImageIfAvailable: false,
   previewMatchObsidianTheme: false,
   width: "400",
   isLeftHanded: false,
@@ -833,6 +835,20 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.displaySVGInPreview)
           .onChange(async (value) => {
             this.plugin.settings.displaySVGInPreview = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    
+
+    new Setting(containerEl)
+      .setName(t("EMBED_REUSE_EXPORTED_IMAGE_NAME"))
+      .setDesc(fragWithHTML(t("EMBED_REUSE_EXPORTED_IMAGE_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.displayExportedImageIfAvailable)
+          .onChange(async (value) => {
+            this.plugin.settings.displayExportedImageIfAvailable = value;
             this.applySettingsUpdate();
           }),
       );

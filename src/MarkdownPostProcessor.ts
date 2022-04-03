@@ -13,6 +13,7 @@ import {
   embedFontsInSVG,
   getExportTheme,
   getIMGFilename,
+  getQuickImagePreview,
   getSVGPadding,
   getWithBackground,
   hasExportTheme,
@@ -113,22 +114,29 @@ const getIMG = async (
     if (width >= 2400) {
       scale = 5;
     }
-    const png = await createPNG(
-      file.path,
-      scale,
-      exportSettings,
-      loader,
-      theme,
-      null,
-      null,
-      [],
-      plugin,
-    );
+
+    const png = (await getQuickImagePreview(plugin,file.path,"png")) 
+      ?? await createPNG(
+        file.path,
+        scale,
+        exportSettings,
+        loader,
+        theme,
+        null,
+        null,
+        [],
+        plugin,
+      );
     if (!png) {
       return null;
     }
     img.src = URL.createObjectURL(png);
     return img;
+  }
+  const quickSVG = await getQuickImagePreview(plugin,file.path,"svg");
+  if(quickSVG) {
+    img.setAttribute("src", svgToBase64(quickSVG));
+    return img;  
   }
   const svgSnapshot = (
     await createSVG(
