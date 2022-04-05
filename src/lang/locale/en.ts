@@ -82,7 +82,7 @@ export default {
   RELEASE_NOTES_NAME: "Display Release Notes after update",
   RELEASE_NOTES_DESC:
     "<b>Toggle ON:</b> Display release notes each time you update Excalidraw to a newer version.<br>" +
-    "<b>Toggle OFF:</b> Silent mode. You can still read release notes on [GitHub](https://github.com/zsviczian/obsidian-excalidraw-plugin/releases).",
+    "<b>Toggle OFF:</b> Silent mode. You can still read release notes on <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases'>GitHub</a>.",
   FOLDER_NAME: "Excalidraw folder",
   FOLDER_DESC:
     "Default location for new drawings. If empty, drawings will be created in the Vault root.",
@@ -96,7 +96,7 @@ export default {
   TEMPLATE_DESC:
     "Full filepath to the Excalidraw template. " +
     "E.g.: If your template is in the default Excalidraw folder and it's name is " +
-    "Template.md, the setting would be: Excalidraw/Template.md (or just Excalidraw/Template - you may ommit the .md file extension" +
+    "Template.md, the setting would be: Excalidraw/Template.md (or just Excalidraw/Template - you may ommit the .md file extension). " +
     "If you are using Excalidraw in compatibility mode, then your template must be a legacy excalidraw file as well " +
     "such as Excalidraw/Template.excalidraw.",
   SCRIPT_FOLDER_NAME: "Excalidraw Automate script folder",
