@@ -96,7 +96,7 @@ export default {
   TEMPLATE_DESC:
     "Full filepath to the Excalidraw template. " +
     "E.g.: If your template is in the default Excalidraw folder and it's name is " +
-    "Template.md, the setting would be: Excalidraw/Template.md (or just Excalidraw/Template - you may ommit the .md file extension" +
+    "Template.md, the setting would be: Excalidraw/Template.md (or just Excalidraw/Template - you may ommit the .md file extension). " +
     "If you are using Excalidraw in compatibility mode, then your template must be a legacy excalidraw file as well " +
     "such as Excalidraw/Template.excalidraw.",
   SCRIPT_FOLDER_NAME: "Excalidraw Automate script folder",
