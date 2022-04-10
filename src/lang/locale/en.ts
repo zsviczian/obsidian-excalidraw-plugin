@@ -364,7 +364,7 @@ export default {
   FOURTH_FONT_NAME: "Forth font file",
   FOURTH_FONT_DESC:
     "Select a .ttf, .woff or .woff2 font file from your vault to use as the fourth font. " +
-    "If no file is selected Excalidraw will use the Virgil font by default.",
+    "If no file is selected, Excalidraw will use the Virgil font by default.",
   SCRIPT_SETTINGS_HEAD: "Settings for installed Scripts",
 
   //openDrawings.ts
