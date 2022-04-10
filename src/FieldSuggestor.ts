@@ -6,14 +6,14 @@ import {
   EditorSuggestTriggerInfo,
   TFile,
 } from "obsidian";
-import { FRONTMATTER_KEYS_INFO } from "./SuggesterInfo";
+import { FRONTMATTER_KEYS_INFO } from "./SuggestorInfo";
 import {
   EXCALIDRAW_AUTOMATE_INFO,
   EXCALIDRAW_SCRIPTENGINE_INFO,
-} from "./SuggesterInfo";
+} from "./SuggestorInfo";
 import type ExcalidrawPlugin from "./main";
 
-export class FieldSuggester extends EditorSuggest<string> {
+export class FieldSuggestor extends EditorSuggest<string> {
   plugin: ExcalidrawPlugin;
   suggestType: "ea" | "excalidraw" | "utils";
   latestTriggerInfo: EditorSuggestTriggerInfo;
@@ -28,7 +28,7 @@ export class FieldSuggester extends EditorSuggest<string> {
     editor: Editor,
     _: TFile,
   ): EditorSuggestTriggerInfo | null {
-    if (this.plugin.settings.fieldSuggester) {
+    if (this.plugin.settings.fieldSuggestor) {
       const sub = editor.getLine(cursor.line).substring(0, cursor.ch);
       const match =
         sub.match(/^excalidraw-(.*)$/)?.[1] ??

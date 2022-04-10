@@ -66,7 +66,7 @@ export interface ExcalidrawSettings {
   experimentalLivePreview: boolean;
   experimentalEnableFourthFont: boolean;
   experimantalFourthFont: string;
-  fieldSuggester: boolean;
+  fieldSuggestor: boolean;
   //loadCount: number; //version 1.2 migration counter
   drawingOpenCount: number;
   library: string;
@@ -139,7 +139,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   experimentalLivePreview: true,
   experimentalEnableFourthFont: false,
   experimantalFourthFont: "Virgil",
-  fieldSuggester: true,
+  fieldSuggestor: true,
   compatibilityMode: false,
   //loadCount: 0,
   drawingOpenCount: 0,
@@ -1098,13 +1098,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.containerEl.createEl("p", { text: t("EXPERIMENTAL_DESC") });
 
     new Setting(containerEl)
-      .setName(t("FIELD_SUGGESTER_NAME"))
-      .setDesc(fragWithHTML(t("FIELD_SUGGESTER_DESC")))
+      .setName(t("FIELD_SUGGESTOR_NAME"))
+      .setDesc(fragWithHTML(t("FIELD_SUGGESTOR_DESC")))
       .addToggle((toggle) =>
         toggle
-          .setValue(this.plugin.settings.fieldSuggester)
+          .setValue(this.plugin.settings.fieldSuggestor)
           .onChange(async (value) => {
-            this.plugin.settings.fieldSuggester = value;
+            this.plugin.settings.fieldSuggestor = value;
             this.applySettingsUpdate();
           }),
       );

@@ -331,8 +331,8 @@ export default {
   EXPERIMENTAL_HEAD: "实验性功能",
   EXPERIMENTAL_DESC:
     "以下部分设置不会立即生效，需要刷新文件资源管理器或者重启 Obsidian 才会生效。",
-  FIELD_SUGGESTER_NAME: "开启 Field Suggester",
-  FIELD_SUGGESTER_DESC:
+  FIELD_SUGGESTOR_NAME: "开启 Field Suggestor",
+  FIELD_SUGGESTOR_DESC:
     "开启后，当您在编辑器中输入 <code>excalidraw-</code> 或者 <code>ea.</code> 时，会弹出一个带有函数说明的自动补全提示菜单。<br>" +
     "该功能借鉴了 Breadcrumbs 和 Templater 插件。",
   FILETYPE_NAME: "在文件浏览器中为 excalidraw.md 文件添加类型标识符（如 ✏️）",

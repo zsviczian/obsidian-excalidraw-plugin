@@ -9,14 +9,14 @@ import {
   FRONTMATTER_KEY_MD_STYLE,
 } from "./Constants";
 
-type SuggesterInfo = {
+type SuggestorInfo = {
   field: string;
   code: string;
   desc: string;
   after: string;
 };
 
-export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
+export const EXCALIDRAW_AUTOMATE_INFO: SuggestorInfo[] = [
   {
     field: "plugin",
     code: null,
@@ -487,7 +487,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
 ];
 
-export const EXCALIDRAW_SCRIPTENGINE_INFO: SuggesterInfo[] = [
+export const EXCALIDRAW_SCRIPTENGINE_INFO: SuggestorInfo[] = [
   {
     field: "inputPrompt",
     code: "inputPrompt: (header: string, placeholder?: string, value?: string, buttons?: [{caption:string, action:Function}]);",
@@ -505,7 +505,7 @@ export const EXCALIDRAW_SCRIPTENGINE_INFO: SuggesterInfo[] = [
   },
 ];
 
-export const FRONTMATTER_KEYS_INFO: SuggesterInfo[] = [
+export const FRONTMATTER_KEYS_INFO: SuggestorInfo[] = [
   {
     field: "plugin",
     code: null,

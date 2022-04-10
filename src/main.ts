@@ -91,7 +91,7 @@ import {
   markdownPostProcessor,
   observer,
 } from "./MarkdownPostProcessor";
-import { FieldSuggester } from "./FieldSuggester";
+import { FieldSuggestor } from "./FieldSuggestor";
 import { ReleaseNotes } from "./ReleaseNotes";
 import { debug } from "./Utils";
 
@@ -181,7 +181,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.registerCommands();
     this.registerEventListeners();
     this.initializeFourthFont();
-    this.registerEditorSuggest(new FieldSuggester(this));
+    this.registerEditorSuggest(new FieldSuggestor(this));
 
     //inspiration taken from kanban:
     //https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/main.ts#L267
