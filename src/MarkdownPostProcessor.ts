@@ -68,13 +68,13 @@ const getIMG = async (
   // https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/387
   imgAttributes.style = imgAttributes.style.replaceAll(" ", "-");
 
-  const forceTheme = hasExportTheme(plugin,file)
-    ? getExportTheme(plugin,file,"light")
+  const forceTheme = hasExportTheme(plugin, file)
+    ? getExportTheme(plugin, file, "light")
     : undefined;
 
   const exportSettings: ExportSettings = {
-    withBackground: getWithBackground(plugin,file),
-    withTheme: forceTheme?true:plugin.settings.exportWithTheme,
+    withBackground: getWithBackground(plugin, file),
+    withTheme: forceTheme ? true : plugin.settings.exportWithTheme,
   };
   const img = createEl("img");
   let style = `max-width:${imgAttributes.fwidth}px !important; width:100%;`;
@@ -84,13 +84,15 @@ const getIMG = async (
   img.setAttribute("style", style);
   img.addClass(imgAttributes.style);
 
-  const theme = forceTheme??(plugin.settings.previewMatchObsidianTheme
-    ? isObsidianThemeDark()
-      ? "dark"
-      : "light"
-    : !plugin.settings.exportWithTheme
-    ? "light"
-    : undefined);
+  const theme =
+    forceTheme ??
+    (plugin.settings.previewMatchObsidianTheme
+      ? isObsidianThemeDark()
+        ? "dark"
+        : "light"
+      : !plugin.settings.exportWithTheme
+      ? "light"
+      : undefined);
   if (theme) {
     exportSettings.withTheme = true;
   }
@@ -115,8 +117,9 @@ const getIMG = async (
       scale = 5;
     }
 
-    const png = (await getQuickImagePreview(plugin,file.path,"png")) 
-      ?? await createPNG(
+    const png =
+      (await getQuickImagePreview(plugin, file.path, "png")) ??
+      (await createPNG(
         file.path,
         scale,
         exportSettings,
@@ -126,17 +129,17 @@ const getIMG = async (
         null,
         [],
         plugin,
-      );
+      ));
     if (!png) {
       return null;
     }
     img.src = URL.createObjectURL(png);
     return img;
   }
-  const quickSVG = await getQuickImagePreview(plugin,file.path,"svg");
-  if(quickSVG) {
+  const quickSVG = await getQuickImagePreview(plugin, file.path, "svg");
+  if (quickSVG) {
     img.setAttribute("src", svgToBase64(quickSVG));
-    return img;  
+    return img;
   }
   const svgSnapshot = (
     await createSVG(
@@ -149,7 +152,7 @@ const getIMG = async (
       null,
       [],
       plugin,
-      getSVGPadding(plugin,file),
+      getSVGPadding(plugin, file),
     )
   ).outerHTML;
   let svg: SVGSVGElement = null;
@@ -483,7 +486,8 @@ export const observer = new MutationObserver(async (m) => {
   }
   if (
     //@ts-ignore
-    !m[0].addedNodes[0].classNames != "popover hover-popover file-embed is-loaded"
+    !m[0].addedNodes[0].classNames !=
+    "popover hover-popover file-embed is-loaded"
   ) {
     return;
   }

@@ -1,15 +1,8 @@
 import { AppState } from "@zsviczian/excalidraw/types/types";
 import clsx from "clsx";
-import { Notice, TFile } from "obsidian";
 import * as React from "react";
-import { ICONS } from "./ActionIcons";
-import { SCRIPT_INSTALL_FOLDER } from "./Constants";
-import { insertLaTeXToView, search } from "./ExcalidrawAutomate";
-import ExcalidrawView, { TextMode } from "./ExcalidrawView";
-import { t } from "./lang/helpers";
 import ExcalidrawPlugin from "./main";
-import { ScriptIconMap } from "./Scripts";
-import { getIMGFilename } from "./Utils";
+
 
 export class ObsidianMenu {
   plugin: ExcalidrawPlugin;

@@ -316,6 +316,12 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Split%20text%20by%20lines.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Split lines of text into separate text elements for easier reorganization<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-split-lines.jpg'></td></tr></table>
 
+## TheBrain-navigation
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/TheBrain-navigation.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/TheBrain-navigation.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">An Excalidraw based graph user interface for your Vault. Requires the <a href='https://github.com/SkepticMystic/breadcrumbs'>Breadcrumbs plugin</a> to be installed and configured as well. Generates a user interface similar to that of <a href='https://TheBrain.com'>TheBrain</a>. Watch this introduction to this script on <a href='https://youtu.be/J4T5KHERH_o'>YouTube</a>.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/TheBrain.jpg'></td></tr></table>
+
 ## Toggle Fullscreen on Mobile
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Toggle%20Fullscreen%20on%20Mobile.md

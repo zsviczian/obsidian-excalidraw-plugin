@@ -6,7 +6,7 @@ import {
   ExcalidrawElement,
   ExcalidrawBindableElement,
 } from "@zsviczian/excalidraw/types/element/types";
-import { normalizePath, Notice, TFile, WorkspaceLeaf } from "obsidian";
+import { normalizePath, TFile, WorkspaceLeaf } from "obsidian";
 import ExcalidrawView, { ExportSettings, TextMode } from "./ExcalidrawView";
 import { ExcalidrawData } from "./ExcalidrawData";
 import {
@@ -727,7 +727,7 @@ export async function initExcalidrawAutomate(
         fontFamily: this.style.fontFamily,
         textAlign: formatting?.textAlign
           ? formatting.textAlign
-          : (this.style.textAlign ?? "left"),
+          : this.style.textAlign ?? "left",
         verticalAlign: this.style.verticalAlign,
         baseline,
         ...boxedElement(id, "text", topX, topY, width, height),
@@ -1278,7 +1278,7 @@ export async function initExcalidrawAutomate(
         this.style.fontSize,
         this.style.fontFamily,
       );
-      return { width: size.w??0, height: size.h??0 };
+      return { width: size.w ?? 0, height: size.h ?? 0 };
     },
     verifyMinimumPluginVersion(requiredVersion: string): boolean {
       const manifest = this.plugin.app.plugins.manifests[PLUGIN_ID];
@@ -1534,8 +1534,11 @@ export function _measureText(
   if (!fontFamily) {
     fontFamily = 1;
   }
-  const metrics = measureText(newText,`${fontSize.toString()}px ${getFontFamily(fontFamily)}` as any);
-  return {w: metrics.width, h: metrics.height, baseline:metrics.baseline};
+  const metrics = measureText(
+    newText,
+    `${fontSize.toString()}px ${getFontFamily(fontFamily)}` as any,
+  );
+  return { w: metrics.width, h: metrics.height, baseline: metrics.baseline };
 }
 
 async function getTemplate(
@@ -1706,7 +1709,7 @@ export async function createSVG(
         exportSettings?.withBackground ?? plugin.settings.exportWithBackground,
       withTheme: exportSettings?.withTheme ?? plugin.settings.exportWithTheme,
     },
-    padding??plugin.settings.exportPaddingSVG,
+    padding ?? plugin.settings.exportPaddingSVG,
   );
   if (template?.hasSVGwithBitmap) {
     svg.setAttribute("hasbitmap", "true");
@@ -1833,5 +1836,5 @@ export const search = async (view: ExcalidrawView) => {
   text = text.replaceAll(/"(.*?)"/g, "");
   query = query.concat(text.split(" ").filter((s) => s.length !== 0));
 
-  ea.targetView.selectElementsMatchingQuery(elements,query);
+  ea.targetView.selectElementsMatchingQuery(elements, query);
 };

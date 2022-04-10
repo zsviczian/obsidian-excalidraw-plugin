@@ -45,12 +45,12 @@ export async function tex2dataURL(
 }> {
   //if network is slow, or not available, or mathjax has not yet fully loaded
   let counter = 0;
-  while(!plugin.mathjax && !plugin.mathjaxLoaderFinished && counter<10) {
-    log({where: "tex2dataURL", counter});
+  while (!plugin.mathjax && !plugin.mathjaxLoaderFinished && counter < 10) {
+    log({ where: "tex2dataURL", counter });
     await sleep(100);
     counter++;
   }
-  
+
   //it is not clear why this works, but it seems that after loading the plugin sometimes only the third attempt is successful.
   try {
     return await mathjaxSVG(tex, plugin);
@@ -64,9 +64,13 @@ export async function tex2dataURL(
         return await mathjaxSVG(tex, plugin);
       } catch (e) {
         if (plugin.mathjax) {
-          new Notice("Unknown error loading LaTeX. Using fallback solution. Try closing and reopening this drawing.");
+          new Notice(
+            "Unknown error loading LaTeX. Using fallback solution. Try closing and reopening this drawing.",
+          );
         } else {
-          new Notice("LaTeX support did not load. Using fallback solution. Try checking your network connection."); 
+          new Notice(
+            "LaTeX support did not load. Using fallback solution. Try checking your network connection.",
+          );
         }
         //fallback
         return await mathjaxImage2html(tex);

@@ -100,10 +100,10 @@ declare module "obsidian" {
     isMobile(): boolean;
   }
   interface Keymap {
-    getRootScope(): Scope
+    getRootScope(): Scope;
   }
   interface Scope {
-    keys: any[]
+    keys: any[];
   }
   interface Workspace {
     on(
@@ -265,7 +265,7 @@ export default class ExcalidrawPlugin extends Plugin {
         self.mathjaxDiv.title = "Excalidraw MathJax Support";
         self.mathjaxDiv.style.display = "none";
 
-        const iframe = self.mathjaxDiv.createEl("iframe");     
+        const iframe = self.mathjaxDiv.createEl("iframe");
         iframe.title = "Excalidraw MathJax Support";
         const doc = iframe.contentWindow.document;
 
@@ -277,14 +277,21 @@ export default class ExcalidrawPlugin extends Plugin {
           win.MathJax.startup.pagePromise.then(async () => {
             //https://github.com/xldenis/obsidian-latex/blob/master/main.ts
             const file = self.app.vault.getAbstractFileByPath("preamble.sty");
-            const preamble:string = (file && file instanceof TFile) 
-              ? await self.app.vault.read(file)
-              : null;
+            const preamble: string =
+              file && file instanceof TFile
+                ? await self.app.vault.read(file)
+                : null;
             try {
-              //@ts-ignore
-              if(preamble) await win.MathJax.tex2svg(preamble);
-            } catch(e) {
-              errorlog({where: self.loadMathJax, description: "Unexpected error while loading preamble.sty",error: e});
+              if (preamble) {
+                //@ts-ignore
+                await win.MathJax.tex2svg(preamble);
+              }
+            } catch (e) {
+              errorlog({
+                where: self.loadMathJax,
+                description: "Unexpected error while loading preamble.sty",
+                error: e,
+              });
             }
             //@ts-ignore
             self.mathjax = win.MathJax;
@@ -454,18 +461,18 @@ export default class ExcalidrawPlugin extends Plugin {
           return;
         }
 
-        const files = new Map<string,number>();
+        const files = new Map<string, number>();
         JSON.parse(
           await request({
-            url:"https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/directory-info.json"
-          })
-        ).forEach((f:any)=>files.set(f.fname,f.mtime));
-              
+            url: "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/directory-info.json",
+          }),
+        ).forEach((f: any) => files.set(f.fname, f.mtime));
+
         const checkModifyDate = (
           gitFilename: string,
           file: TFile,
         ): "ERROR" | "UPDATE" | "UPTODATE" => {
-          if(files.size===0 || !files.has(gitFilename)) {
+          if (files.size === 0 || !files.has(gitFilename)) {
             //setButtonText("ERROR");
             return "ERROR";
           }
@@ -623,7 +630,10 @@ export default class ExcalidrawPlugin extends Plugin {
     this.insertMDDialog = new InsertMDDialog(this);
 
     this.addRibbonIcon(ICON_NAME, t("CREATE_NEW"), async (e) => {
-      this.createAndOpenDrawing(getDrawingFilename(this.settings), e[CTRL_OR_CMD]); //.ctrlKey||e.metaKey);
+      this.createAndOpenDrawing(
+        getDrawingFilename(this.settings),
+        e[CTRL_OR_CMD],
+      ); //.ctrlKey||e.metaKey);
     });
 
     const fileMenuHandlerCreateNew = (menu: Menu, file: TFile) => {
@@ -761,7 +771,10 @@ export default class ExcalidrawPlugin extends Plugin {
       if (!activeView) {
         return;
       }
-      const filename = getEmbedFilename(activeView.file.basename, this.settings);
+      const filename = getEmbedFilename(
+        activeView.file.basename,
+        this.settings,
+      );
       const folder = this.settings.embedUseExcalidrawFolder
         ? null
         : (
@@ -860,8 +873,6 @@ export default class ExcalidrawPlugin extends Plugin {
         return false;
       },
     });
-
-
 
     /*    this.addCommand({
       id: "ocr",
@@ -1405,7 +1416,7 @@ export default class ExcalidrawPlugin extends Plugin {
         leaves.forEach((leaf: WorkspaceLeaf) => {
           const excalidrawView = leaf.view as ExcalidrawView;
           if (
-            excalidrawView.file && 
+            excalidrawView.file &&
             (excalidrawView.file.path === file.path ||
               (file.extension === "excalidraw" &&
                 `${file.path.substring(
@@ -1524,7 +1535,7 @@ export default class ExcalidrawPlugin extends Plugin {
         if (newActiveviewEV) {
           const scope = this.app.keymap.getRootScope();
           const handler = scope.register(["Mod"], "Enter", () => true);
-          scope.keys.unshift(scope.keys.pop());  // Force our handler to the front of the list
+          scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
           self.popScope = () => scope.unregister(handler);
         }
       };
@@ -1561,8 +1572,8 @@ export default class ExcalidrawPlugin extends Plugin {
 
   addFileSaveTriggerEventHandlers() {
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/551
-    const onClickEventSaveActiveDrawing = (e:PointerEvent) => {
-      if(
+    const onClickEventSaveActiveDrawing = (e: PointerEvent) => {
+      if (
         !this.activeExcalidrawView ||
         !this.activeExcalidrawView.semaphores.dirty ||
         //@ts-ignore
@@ -1571,67 +1582,77 @@ export default class ExcalidrawPlugin extends Plugin {
         return;
       }
       this.activeExcalidrawView.save();
-    }
+    };
     this.registerEvent(
-      this.app.workspace.on("click",onClickEventSaveActiveDrawing)
+      this.app.workspace.on("click", onClickEventSaveActiveDrawing),
     );
 
     const onFileMenuEventSaveActiveDrawing = () => {
-      if(
+      if (
         !this.activeExcalidrawView ||
         !this.activeExcalidrawView.semaphores.dirty
       ) {
         return;
       }
       this.activeExcalidrawView.save();
-    }
+    };
     this.registerEvent(
-      this.app.workspace.on("file-menu",onFileMenuEventSaveActiveDrawing)
+      this.app.workspace.on("file-menu", onFileMenuEventSaveActiveDrawing),
     );
 
     //The user clicks settings, or "open another vault", or the command palette
-    this.modalContainerObserver = new MutationObserver(async (m: MutationRecord[]) => {
-      if (
-        m.length !== 1 ||
-        m[0].type !== "childList" ||
-        m[0].addedNodes.length !== 1 ||
-        !this.activeExcalidrawView ||
-        !this.activeExcalidrawView.semaphores.dirty
-      ) {
-        return;
-      } 
-      this.activeExcalidrawView.save();
-    });
+    this.modalContainerObserver = new MutationObserver(
+      async (m: MutationRecord[]) => {
+        if (
+          m.length !== 1 ||
+          m[0].type !== "childList" ||
+          m[0].addedNodes.length !== 1 ||
+          !this.activeExcalidrawView ||
+          !this.activeExcalidrawView.semaphores.dirty
+        ) {
+          return;
+        }
+        this.activeExcalidrawView.save();
+      },
+    );
     this.modalContainerObserver.observe(document.body, {
       childList: true,
     });
 
     //when the user activates the sliding drawers on Obsidian Mobile
-    const leftWorkspaceDrawer = document.querySelector(".workspace-drawer.mod-left");
-    const rightWorkspaceDrawer = document.querySelector(".workspace-drawer.mod-right");
-    if(leftWorkspaceDrawer || rightWorkspaceDrawer) {
+    const leftWorkspaceDrawer = document.querySelector(
+      ".workspace-drawer.mod-left",
+    );
+    const rightWorkspaceDrawer = document.querySelector(
+      ".workspace-drawer.mod-right",
+    );
+    if (leftWorkspaceDrawer || rightWorkspaceDrawer) {
       const action = async (m: MutationRecord[]) => {
-        if(m[0].oldValue !== "display: none;" ||
+        if (
+          m[0].oldValue !== "display: none;" ||
           !this.activeExcalidrawView ||
           !this.activeExcalidrawView.semaphores.dirty
         ) {
           return;
-        } 
+        }
         this.activeExcalidrawView.save();
       };
       const options = {
         attributeOldValue: true,
         attributeFilter: ["style"],
-      }
+      };
 
-      if(leftWorkspaceDrawer) {
+      if (leftWorkspaceDrawer) {
         this.workspaceDrawerLeftObserver = new MutationObserver(action);
         this.workspaceDrawerLeftObserver.observe(leftWorkspaceDrawer, options);
       }
 
-      if(rightWorkspaceDrawer) {
+      if (rightWorkspaceDrawer) {
         this.workspaceDrawerRightObserver = new MutationObserver(action);
-        this.workspaceDrawerRightObserver.observe(rightWorkspaceDrawer, options);
+        this.workspaceDrawerRightObserver.observe(
+          rightWorkspaceDrawer,
+          options,
+        );
       }
     }
   }
@@ -1664,10 +1685,10 @@ export default class ExcalidrawPlugin extends Plugin {
     this.observer.disconnect();
     this.themeObserver.disconnect();
     this.modalContainerObserver.disconnect();
-    if(this.workspaceDrawerLeftObserver) {
+    if (this.workspaceDrawerLeftObserver) {
       this.workspaceDrawerLeftObserver.disconnect();
     }
-    if(this.workspaceDrawerRightObserver) {
+    if (this.workspaceDrawerRightObserver) {
       this.workspaceDrawerRightObserver.disconnect();
     }
     if (this.fileExplorerObserver) {
@@ -1734,7 +1755,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
     setLeftHandedMode(this.settings.isLeftHanded);
     this.settings.autosave = true;
-    this.settings.autosaveInterval= 10000;
+    this.settings.autosaveInterval = 10000;
   }
 
   async saveSettings() {
@@ -1846,7 +1867,7 @@ export default class ExcalidrawPlugin extends Plugin {
         id = nanoid();
         data = data.replaceAll(te.id, id); //brute force approach to replace all occurances.
       }
-      outString += `${te.originalText??te.text} ^${id}\n\n`;
+      outString += `${te.originalText ?? te.text} ^${id}\n\n`;
     }
     return (
       outString +

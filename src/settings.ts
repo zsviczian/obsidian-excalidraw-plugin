@@ -11,7 +11,11 @@ import { VIEW_TYPE_EXCALIDRAW } from "./Constants";
 import ExcalidrawView from "./ExcalidrawView";
 import { t } from "./lang/helpers";
 import type ExcalidrawPlugin from "./main";
-import { getDrawingFilename, getEmbedFilename, setLeftHandedMode } from "./Utils";
+import {
+  getDrawingFilename,
+  getEmbedFilename,
+  setLeftHandedMode,
+} from "./Utils";
 
 export interface ExcalidrawSettings {
   folder: string;
@@ -35,7 +39,7 @@ export interface ExcalidrawSettings {
   matchThemeAlways: boolean;
   matchThemeTrigger: boolean;
   defaultMode: string;
-  defaultPenMode: "never"|"mobile"|"always";
+  defaultPenMode: "never" | "mobile" | "always";
   zoomToFitOnResize: boolean;
   zoomToFitMaxLevel: number;
   openInAdjacentPane: boolean;
@@ -315,12 +319,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     });
 
     const getFilenameSample = () => {
-      return t("FILENAME_SAMPLE") + "<a href='https://www.youtube.com/channel/UCC0gns4a9fhVkGkngvSumAQ' target='_blank'>" +
-        getDrawingFilename(this.plugin.settings) +
-        "</a></b><br>" + 
-        t("FILENAME_EMBED_SAMPLE") + "<a href='https://www.youtube.com/channel/UCC0gns4a9fhVkGkngvSumAQ' target='_blank'>" +
-        getEmbedFilename("{NOTE_NAME}",this.plugin.settings) +
-        "</a></b>";
+      return `${t(
+        "FILENAME_SAMPLE",
+      )}<a href='https://www.youtube.com/channel/UCC0gns4a9fhVkGkngvSumAQ' target='_blank'>${getDrawingFilename(
+        this.plugin.settings,
+      )}</a></b><br>${t(
+        "FILENAME_EMBED_SAMPLE",
+      )}<a href='https://www.youtube.com/channel/UCC0gns4a9fhVkGkngvSumAQ' target='_blank'>${getEmbedFilename(
+        "{NOTE_NAME}",
+        this.plugin.settings,
+      )}</a></b>`;
     };
 
     const filenameEl = containerEl.createEl("p", { text: "" });
@@ -373,8 +381,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             filenameEl.innerHTML = getFilenameSample();
             this.applySettingsUpdate();
           }),
-      );      
-      
+      );
+
     new Setting(containerEl)
       .setName(t("FILENAME_DATE_NAME"))
       .setDesc(fragWithHTML(t("FILENAME_DATE_DESC")))
@@ -392,8 +400,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
-      
-      new Setting(containerEl)
+
+    new Setting(containerEl)
       .setName(t("FILENAME_EXCALIDRAW_EXTENSION_NAME"))
       .setDesc(fragWithHTML(t("FILENAME_EXCALIDRAW_EXTENSION_DESC")))
       .addToggle((toggle) =>
@@ -420,7 +428,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
-
 
     new Setting(containerEl)
       .setName(t("MATCH_THEME_NAME"))
@@ -482,11 +489,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .addOption("mobile", "On Obsidian Mobile")
           .addOption("always", "Always")
           .setValue(this.plugin.settings.defaultPenMode)
-          .onChange(async (value: "never"|"always"|"mobile") => {
+          .onChange(async (value: "never" | "always" | "mobile") => {
             this.plugin.settings.defaultPenMode = value;
             this.applySettingsUpdate();
           }),
-      );      
+      );
 
     new Setting(containerEl)
       .setName(t("ZOOM_TO_FIT_NAME"))
@@ -669,33 +676,31 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-    .setName(t("TRANSCLUSION_DEFAULT_WRAP_NAME"))
-    .setDesc(fragWithHTML(t("TRANSCLUSION_DEFAULT_WRAP_DESC")))
-    .addText((text) =>
-      text
-        .setPlaceholder("Enter a number")
-        .setValue(this.plugin.settings.wordWrappingDefault.toString())
-        .onChange(async (value) => {
-          const intVal = parseInt(value);
-          if (isNaN(intVal) && value !== "") {
-            text.setValue(
-              this.plugin.settings.wordWrappingDefault.toString(),
-            );
-            return;
-          }
-          this.requestEmbedUpdate = true;
-          if (value === "") {
-            this.plugin.settings.wordWrappingDefault = 0;
+      .setName(t("TRANSCLUSION_DEFAULT_WRAP_NAME"))
+      .setDesc(fragWithHTML(t("TRANSCLUSION_DEFAULT_WRAP_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder("Enter a number")
+          .setValue(this.plugin.settings.wordWrappingDefault.toString())
+          .onChange(async (value) => {
+            const intVal = parseInt(value);
+            if (isNaN(intVal) && value !== "") {
+              text.setValue(
+                this.plugin.settings.wordWrappingDefault.toString(),
+              );
+              return;
+            }
+            this.requestEmbedUpdate = true;
+            if (value === "") {
+              this.plugin.settings.wordWrappingDefault = 0;
+              this.applySettingsUpdate(true);
+              return;
+            }
+            this.plugin.settings.wordWrappingDefault = intVal;
+            text.setValue(this.plugin.settings.wordWrappingDefault.toString());
             this.applySettingsUpdate(true);
-            return;
-          }
-          this.plugin.settings.wordWrappingDefault = intVal;
-          text.setValue(
-            this.plugin.settings.wordWrappingDefault.toString(),
-          );
-          this.applySettingsUpdate(true);
-        }),
-    );
+          }),
+      );
 
     new Setting(containerEl)
       .setName(t("GET_URL_TITLE_NAME"))
@@ -838,8 +843,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
-
-    
 
     new Setting(containerEl)
       .setName(t("EMBED_REUSE_EXPORTED_IMAGE_NAME"))

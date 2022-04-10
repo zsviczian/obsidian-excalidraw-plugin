@@ -277,7 +277,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     title={t("READ_RELEASE_NOTES")}
                     action={() => {
                       const version: string =
-                      //@ts-ignore
+                        //@ts-ignore
                         this.props.view.app.plugins.manifests[
                           "obsidian-excalidraw-plugin"
                         ].version;

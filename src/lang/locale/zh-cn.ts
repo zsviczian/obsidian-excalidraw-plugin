@@ -9,12 +9,9 @@ export default {
   // main.ts
   INSTALL_SCRIPT: "安装此脚本",
   UPDATE_SCRIPT: "发现可用更新 - 点击安装",
-  CHECKING_SCRIPT:
-    "检查脚本更新 - 点击重新安装",
-  UNABLETOCHECK_SCRIPT:
-    "检查更新失败 - 点击重新安装",
-  UPTODATE_SCRIPT:
-    "已安装最新脚本 - 点击重新安装",
+  CHECKING_SCRIPT: "检查脚本更新 - 点击重新安装",
+  UNABLETOCHECK_SCRIPT: "检查更新失败 - 点击重新安装",
+  UPTODATE_SCRIPT: "已安装最新脚本 - 点击重新安装",
   OPEN_AS_EXCALIDRAW: "打开为 Excalidraw 绘图（Excalidraw 模式）",
   TOGGLE_MODE: "在 Excalidraw 和 Markdown 模式之间切换",
   CONVERT_NOTE_TO_EXCALIDRAW: "转换空白笔记为 Excalidraw 绘图",
@@ -24,16 +21,13 @@ export default {
   CONVERT_FILE_REPLACE_EXT: "*.excalidraw => *.md (兼容 Logseq)",
   DOWNLOAD_LIBRARY: "导出 stencil 库为 *.excalidrawlib 文件",
   OPEN_EXISTING_NEW_PANE: "打开已有的绘图（在新面板）",
-  OPEN_EXISTING_ACTIVE_PANE:
-    "打开已有的绘图（在当前面板）",
+  OPEN_EXISTING_ACTIVE_PANE: "打开已有的绘图（在当前面板）",
   TRANSCLUDE: "插入（嵌入）绘图到当前文档",
   TRANSCLUDE_MOST_RECENT: "插入（嵌入）最近编辑的绘图到当前文档",
   NEW_IN_NEW_PANE: "新建绘图（在新面板）",
   NEW_IN_ACTIVE_PANE: "新建绘图（在当前面板）",
-  NEW_IN_NEW_PANE_EMBED:
-    "新建绘图（在新面板），并插入（嵌入）到当前文档",
-  NEW_IN_ACTIVE_PANE_EMBED:
-    "新建绘图（在当前面板），并插入（嵌入）到当前文档",
+  NEW_IN_NEW_PANE_EMBED: "新建绘图（在新面板），并插入（嵌入）到当前文档",
+  NEW_IN_ACTIVE_PANE_EMBED: "新建绘图（在当前面板），并插入（嵌入）到当前文档",
   EXPORT_SVG: "导出 SVG 文件到当前目录",
   EXPORT_PNG: "导出 PNG 文件到当前目录",
   TOGGLE_LOCK: "切换文本元素的原文/预览模式",
@@ -44,8 +38,7 @@ export default {
   INSERT_LINK: "插入（链接）文件到当前绘图",
   INSERT_IMAGE: "插入（以图像形式嵌入）图像到当前绘图",
   INSERT_MD: "插入（以图像形式嵌入） Markdown 文档到当前绘图",
-  INSERT_LATEX:
-    "插入 LaTeX 公式",
+  INSERT_LATEX: "插入 LaTeX 公式",
   ENTER_LATEX: "输入 LaTeX 表达式",
   READ_RELEASE_NOTES: "阅读本插件的最新发行版本说明",
   TRAY_MODE: "切换绘图工具属性页的面板（Panel）/托盘（Tray）模式",
@@ -64,8 +57,7 @@ export default {
     "您也可以直接在画布中按住 CTRL/CMD 并点击图形或文本元素来打开链接。",
   TEXT_ELEMENT_EMPTY:
     "未选中图形或文本元素，或者元素不包含有效的链接（[[链接|别名]] 或 [别名](链接)）",
-  FILENAME_INVALID_CHARS:
-    '文件名不能含有以下符号： * " \\  < > : | ? #',
+  FILENAME_INVALID_CHARS: '文件名不能含有以下符号： * " \\  < > : | ? #',
   FILE_DOES_NOT_EXIST:
     "文件不存在。按住 ALT（或 ALT + SHIFT）并点击链接来创建新文件。",
   FORCE_SAVE:
@@ -84,10 +76,8 @@ export default {
     "<b>开启：</b>每次更新本插件后，显示最新发行版本的说明。<br>" +
     "<b>关闭：</b>您仍可以在 <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases'>GitHub</a> 上阅读更新说明。",
   FOLDER_NAME: "Excalidraw 文件夹",
-  FOLDER_DESC:
-    "新绘图的默认存储路径。若为空，将在库的根目录中创建新绘图。",
-  FOLDER_EMBED_NAME:
-    "将 Excalidraw 文件夹用于“新建绘图”命令创建的绘图",
+  FOLDER_DESC: "新绘图的默认存储路径。若为空，将在库的根目录中创建新绘图。",
+  FOLDER_EMBED_NAME: "将 Excalidraw 文件夹用于“新建绘图”命令创建的绘图",
   FOLDER_EMBED_DESC:
     "在命令面板中执行“新建绘图，并插入（嵌入）到当前文档”之类命令时，" +
     "新绘图的存储路径。<br>" +
@@ -138,11 +128,13 @@ export default {
     "则在命令面板中执行“新建绘图，并插入（嵌入）到当前文档”之类命令时，" +
     "创建的绘图文件名将以当前文档名作为开头。",
   FILENAME_POSTFIX_NAME: "“新建绘图”命令创建的绘图的文件名后缀",
-  FILENAME_POSTFIX_DESC: "介于文件名前缀和文件名日期之间的文本。仅对“新建绘图”命令创建的绘图生效。",
+  FILENAME_POSTFIX_DESC:
+    "介于文件名前缀和文件名日期之间的文本。仅对“新建绘图”命令创建的绘图生效。",
   FILENAME_DATE_NAME: "文件名日期",
   FILENAME_DATE_DESC: "文件名的最后一部分",
   FILENAME_EXCALIDRAW_EXTENSION_NAME: "文件扩展名（.excalidraw.md 或 .md）",
-  FILENAME_EXCALIDRAW_EXTENSION_DESC: "该选项在兼容模式（即非 Excalidraw 专用 Markdown 文件）下不会生效。<br>" +
+  FILENAME_EXCALIDRAW_EXTENSION_DESC:
+    "该选项在兼容模式（即非 Excalidraw 专用 Markdown 文件）下不会生效。<br>" +
     "<b>开启：</b>使用 .excalidraw.md 作为扩展名；<b>关闭：</b>使用 .md 作为扩展名。",
   /*SVG_IN_MD_NAME: "SVG Snapshot to markdown file",
   SVG_IN_MD_DESC: "If the switch is 'on' Excalidraw will include an SVG snapshot in the markdown file. "+
@@ -151,7 +143,8 @@ export default {
                   "can be opened with an app that reads SVGs. In addition hover previews will be less resource intensive if SVG snapshots are enabled.",*/
   DISPLAY_HEAD: "显示",
   LEFTHANDED_MODE_NAME: "左手模式",
-  LEFTHANDED_MODE_DESC: "目前只影响托盘模式下，绘图工具属性页的位置。若开启此项，则托盘处于右侧。",
+  LEFTHANDED_MODE_DESC:
+    "目前只影响托盘模式下，绘图工具属性页的位置。若开启此项，则托盘处于右侧。",
   MATCH_THEME_NAME: "使新建的绘图匹配 Obsidian 主题",
   MATCH_THEME_DESC:
     "如果 Obsidian 使用黑暗主题，新建的绘图文件也将使用黑暗主题。<br>" +
@@ -237,23 +230,19 @@ export default {
     "MD-Embed 图像的宽度。该选项会影响到折行，以及图像元素的宽度。<br>" +
     "您可为绘图中的某个 MD-Embed 单独设置此项，方法是将绘图切换至 Markdown 模式，" +
     "并修改相应的 <code>[[Embed文件名#标题|宽度x最大高度]]</code>。",
-  MD_TRANSCLUDE_HEIGHT_NAME:
-    "MD-Embed 的默认最大高度",
+  MD_TRANSCLUDE_HEIGHT_NAME: "MD-Embed 的默认最大高度",
   MD_TRANSCLUDE_HEIGHT_DESC:
     "MD-Embed 图像的高度取决于文档内容的多少，但最大不会超过该值。<br>" +
     "您可为绘图中的某个 MD-Embed 单独设置此项，方法是将绘图切换至 Markdown 模式，并修改相应的 <code>[[Embed文件名#^块引ID|宽度x最大高度]]</code>。",
-  MD_DEFAULT_FONT_NAME:
-    "MD-Embed 的默认字体",
+  MD_DEFAULT_FONT_NAME: "MD-Embed 的默认字体",
   MD_DEFAULT_FONT_DESC:
     "可以设为 <code>Virgil</code>，<code>Casadia</code> 或其他有效的 .ttf/.woff/.woff2 字体文件（如 <code>我的字体.woff2</code>）。<br>" +
     "您可为某个 MD-Embed 单独设置此项，方法是在其源文件的 Frontmatter 中添加形如 <code>excalidraw-font: 字体名或文件名</code> 的键值对。",
-  MD_DEFAULT_COLOR_NAME:
-    "MD-Embed 的默认文本颜色",
+  MD_DEFAULT_COLOR_NAME: "MD-Embed 的默认文本颜色",
   MD_DEFAULT_COLOR_DESC:
     "可以填写 HTML 颜色名，如 steelblue（参考 <a href='https://www.w3schools.com/colors/colors_names.asp'>HTML Color Names</a>），或者有效的 16 进制颜色值，例如 #e67700，或者任何其他有效的 CSS 颜色。<br>" +
     "您可为某个 MD-Embed 单独设置此项，方法是在其源文件的 Frontmatter 中添加形如 <code>excalidraw-font-color: steelblue</code> 的键值对。",
-  MD_DEFAULT_BORDER_COLOR_NAME:
-    "MD-Embed 的默认边框颜色",
+  MD_DEFAULT_BORDER_COLOR_NAME: "MD-Embed 的默认边框颜色",
   MD_DEFAULT_BORDER_COLOR_DESC:
     "可以填写 HTML 颜色名，如 steelblue（参考 <a href='https://www.w3schools.com/colors/colors_names.asp'>HTML Color Names</a>），或者有效的 16 进制颜色值，例如 #e67700，或者任何其他有效的 CSS 颜色。<br>" +
     "您可为某个 MD-Embed 单独设置此项，方法是在其源文件的 Frontmatter 中添加形如 <code>excalidraw-border-color: gray</code> 的键值对。<br>" +
@@ -292,8 +281,7 @@ export default {
   EXPORT_PNG_SCALE_NAME: "导出 PNG 图像的比例",
   EXPORT_PNG_SCALE_DESC: "导出的 PNG 图像的大小比例",
   EXPORT_BACKGROUND_NAME: "导出的图像包含背景",
-  EXPORT_BACKGROUND_DESC:
-    "如果关闭，将导出透明背景的图像。",
+  EXPORT_BACKGROUND_DESC: "如果关闭，将导出透明背景的图像。",
   EXPORT_SVG_PADDING_NAME: "导出 SVG 图像的边距",
   EXPORT_SVG_PADDING_DESC:
     "导出的 PNG 图像的空白边距（像素）。增加该值，可以避免在导出 SVG 图像时，过于靠近画布边缘的图形被裁掉。",
@@ -302,8 +290,7 @@ export default {
     "导出与绘图的黑暗/明亮主题匹配的图像。" +
     "如果关闭，在黑暗主题下导出的图像将和明亮主题一样。",
   EXPORT_HEAD: "导出设置",
-  EXPORT_SYNC_NAME:
-    "保持 .SVG 和 .PNG 文件名与绘图文件同步",
+  EXPORT_SYNC_NAME: "保持 .SVG 和 .PNG 文件名与绘图文件同步",
   EXPORT_SYNC_DESC:
     "打开后，当绘图文件被重命名时，插件将同步更新同文件夹下的同名 .SVG 和 .PNG 文件。" +
     "当绘图文件被删除时，插件将自动删除同文件夹下的同名 .SVG 和 .PNG 文件。",
@@ -317,9 +304,9 @@ export default {
   EXPORT_PNG_DESC: "和“自动导出 SVG 格式副本”类似，但是导出格式为 *.PNG。",
   COMPATIBILITY_HEAD: "兼容性设置",
   EXPORT_EXCALIDRAW_NAME: "自动导出 Excalidraw 格式副本",
-  EXPORT_EXCALIDRAW_DESC: "和“自动导出 SVG 格式副本”类似，但是导出格式为 *.excalidraw。",
-  SYNC_EXCALIDRAW_NAME:
-    "保持同一绘图的新旧格式文件内容一致",
+  EXPORT_EXCALIDRAW_DESC:
+    "和“自动导出 SVG 格式副本”类似，但是导出格式为 *.excalidraw。",
+  SYNC_EXCALIDRAW_NAME: "保持同一绘图的新旧格式文件内容一致",
   SYNC_EXCALIDRAW_DESC:
     "如果旧格式（*.excalidraw）绘图文件的修改日期比新格式（*.md）更新，" +
     "则根据旧格式文件的内容来更新新格式文件。",
@@ -336,8 +323,7 @@ export default {
     "开启后，当您在编辑器中输入 <code>excalidraw-</code> 或者 <code>ea.</code> 时，会弹出一个带有函数说明的自动补全提示菜单。<br>" +
     "该功能借鉴了 Breadcrumbs 和 Templater 插件。",
   FILETYPE_NAME: "在文件浏览器中为 excalidraw.md 文件添加类型标识符（如 ✏️）",
-  FILETYPE_DESC:
-    "可通过下一项设置来自定义类型标识符。",
+  FILETYPE_DESC: "可通过下一项设置来自定义类型标识符。",
   FILETAG_NAME: "excalidraw.md 文件的类型标识符",
   FILETAG_DESC: "要显示为类型标识符的 emoji 或文本。",
   INSERT_EMOJI: "插入 emoji",
@@ -364,8 +350,7 @@ export default {
   SELECT_FILE_TO_LINK: "选择要插入（链接）到当前绘图中的文件。",
   SELECT_DRAWING: "选择要插入（以图像形式嵌入）到当前绘图中的图像。",
   TYPE_FILENAME: "键入要选择的绘图名称。",
-  SELECT_FILE_OR_TYPE_NEW:
-    "选择已有绘图，或者新绘图的类型，然后按回车。",
+  SELECT_FILE_OR_TYPE_NEW: "选择已有绘图，或者新绘图的类型，然后按回车。",
   SELECT_TO_EMBED: "选择要插入（嵌入）到当前文档中的绘图。",
   SELECT_MD: "选择要插入（以图像形式嵌入）到当前绘图中的 Markdown 文档。",
 
@@ -374,8 +359,7 @@ export default {
     "EXCALIDRAW 警告\n停止加载嵌入的图像，因为此文件中存在死循环：\n",
 
   //Scripts.ts
-  SCRIPT_EXECUTION_ERROR:
-    "脚本运行错误。请在开发者控制台中查看错误信息。",
+  SCRIPT_EXECUTION_ERROR: "脚本运行错误。请在开发者控制台中查看错误信息。",
 
   //ExcalidrawData.ts
   LOAD_FROM_BACKUP: "Excalidraw 文件已损坏。尝试从备份文件中加载。",

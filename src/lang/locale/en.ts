@@ -38,7 +38,8 @@ export default {
   EXPORT_PNG: "Save as PNG next to the current file",
   TOGGLE_LOCK: "Toggle Text Element edit RAW/PREVIEW",
   DELETE_FILE: "Delete selected Image or Markdown file from Obsidian Vault",
-  INSERT_LINK_TO_ELEMENT: "Copy markdown link for selected element to clipboard",
+  INSERT_LINK_TO_ELEMENT:
+    "Copy markdown link for selected element to clipboard",
   INSERT_LINK_TO_ELEMENT_ERROR: "Select a single element in the scene",
   INSERT_LINK_TO_ELEMENT_READY: "Link is READY and available on the clipboard",
   INSERT_LINK: "Insert link to file",
@@ -62,8 +63,6 @@ export default {
     "Select a an ImageElement, or select a TextElement that contains an internal or external link.\n" +
     "SHIFT CLICK this button to open the link in a new pane.\n" +
     "CTRL/CMD CLICK the Image or TextElement on the canvas has the same effect!",
-  TEXT_ELEMENT_EMPTY:
-    "No ImageElement is selected or TextElement is empty, or [[valid-link|alias]]</code> or <code>[alias](valid-link) is not found",
   FILENAME_INVALID_CHARS:
     'File name cannot contain any of the following characters: * " \\ < > : | ? #',
   FILE_DOES_NOT_EXIST:
@@ -132,17 +131,22 @@ export default {
   FILENAME_EMBED_SAMPLE: "Filename for a new embedded drawing is: ",
   FILENAME_PREFIX_NAME: "Filename prefix",
   FILENAME_PREFIX_DESC: "The first part of the filename",
-  FILENAME_PREFIX_EMBED_NAME: "Filename prefix when embedding a new drawing into a markdown note",
+  FILENAME_PREFIX_EMBED_NAME:
+    "Filename prefix when embedding a new drawing into a markdown note",
   FILENAME_PREFIX_EMBED_DESC:
     "Should the filename of the newly inserted drawing start with the name of the active markdown note " +
     "when using the command palette action: <code>Create a new drawing and embed into active document</code>? " +
     "ON: Yes, OFF: Not",
-  FILENAME_POSTFIX_NAME: "Custom text after markdown Note's name when embedding",
-  FILENAME_POSTFIX_DESC: "Effects filename only when embedding into a markdown document. This is text will be inserted after the note's name, but before the date.",
+  FILENAME_POSTFIX_NAME:
+    "Custom text after markdown Note's name when embedding",
+  FILENAME_POSTFIX_DESC:
+    "Effects filename only when embedding into a markdown document. This is text will be inserted after the note's name, but before the date.",
   FILENAME_DATE_NAME: "Filename Date",
-  FILENAME_DATE_DESC: "The last part of the filename. Leave empty if you do not want a date.",
+  FILENAME_DATE_DESC:
+    "The last part of the filename. Leave empty if you do not want a date.",
   FILENAME_EXCALIDRAW_EXTENSION_NAME: ".excalidraw.md or .md",
-  FILENAME_EXCALIDRAW_EXTENSION_DESC: "This setting does not apply if you use Excalidraw in compatibility mode, " +
+  FILENAME_EXCALIDRAW_EXTENSION_DESC:
+    "This setting does not apply if you use Excalidraw in compatibility mode, " +
     "i.e. you are not using Excalidraw markdown files. Toggle ON = filename ends with .excalidraw.md, Toggle OFF = filename ends with .md",
   /*SVG_IN_MD_NAME: "SVG Snapshot to markdown file",
   SVG_IN_MD_DESC: "If the switch is 'on' Excalidraw will include an SVG snapshot in the markdown file. "+
@@ -151,7 +155,8 @@ export default {
                   "can be opened with an app that reads SVGs. In addition hover previews will be less resource intensive if SVG snapshots are enabled.",*/
   DISPLAY_HEAD: "Display",
   LEFTHANDED_MODE_NAME: "Left-handed mode",
-  LEFTHANDED_MODE_DESC: "Currently only has effect in tray-mode. If turned on, the tray will be on the right side.",
+  LEFTHANDED_MODE_DESC:
+    "Currently only has effect in tray-mode. If turned on, the tray will be on the right side.",
   MATCH_THEME_NAME: "New drawing to match Obsidian theme",
   MATCH_THEME_DESC:
     "If theme is dark, new drawing will be created in dark mode. This does not apply when you use a template for new drawings. " +
@@ -167,7 +172,8 @@ export default {
     "Specifies the mode how Excalidraw opens: Normal, Zen, or View mode. You may also set this behavior on a file level by " +
     "adding the excalidraw-default-mode frontmatter key with a value of: normal,view, or zen to your document.",
   DEFAULT_PEN_MODE_NAME: "Pen mode",
-  DEFAULT_PEN_MODE_DESC: "Should pen mode be automatically enabled when opening Excalidraw?",
+  DEFAULT_PEN_MODE_DESC:
+    "Should pen mode be automatically enabled when opening Excalidraw?",
   ZOOM_TO_FIT_NAME: "Zoom to fit on view resize",
   ZOOM_TO_FIT_DESC: "Zoom to fit drawing when the pane is resized",
   ZOOM_TO_FIT_MAX_LEVEL_NAME: "Zoom to fit max ZOOM level",
@@ -253,12 +259,12 @@ export default {
     "The default font color to use for embedded markdown files.",
   MD_DEFAULT_COLOR_DESC:
     'Set this to any valid css color name e.g. "steelblue" (<a href="https://www.w3schools.com/colors/colors_names.asp">color names</a>), or a valid hexadecimal color e.g. "#e67700", ' +
-    'or any other valid css color string. You can override this setting by adding the following frontmatter-key to the embedded markdown file: <code>excalidraw-font-color: steelblue</code>',
+    "or any other valid css color string. You can override this setting by adding the following frontmatter-key to the embedded markdown file: <code>excalidraw-font-color: steelblue</code>",
   MD_DEFAULT_BORDER_COLOR_NAME:
     "The default border color to use for embedded markdown files.",
   MD_DEFAULT_BORDER_COLOR_DESC:
     'Set this to any valid css color name e.g. "steelblue" (<a href="https://www.w3schools.com/colors/colors_names.asp">color names</a>), or a valid hexadecimal color e.g. "#e67700", ' +
-    'or any other valid css color string. You can override this setting by adding the following frontmatter-key to the embedded markdown file: <code>excalidraw-border-color: gray</code>. ' +
+    "or any other valid css color string. You can override this setting by adding the following frontmatter-key to the embedded markdown file: <code>excalidraw-border-color: gray</code>. " +
     "Leave empty if you don't want a border. ",
   MD_CSS_NAME: "CSS file",
   MD_CSS_DESC:
@@ -270,11 +276,12 @@ export default {
     "You can add one custom font beyond that using the setting above. " +
     'You can override this css setting by adding the following frontmatter-key to the embedded markdown file: "excalidraw-css: css_file_in_vault|css-snippet".',
   EMBED_HEAD: "Embed & Export",
-  EMBED_REUSE_EXPORTED_IMAGE_NAME: "If found, use the already exported image for preview",
+  EMBED_REUSE_EXPORTED_IMAGE_NAME:
+    "If found, use the already exported image for preview",
   EMBED_REUSE_EXPORTED_IMAGE_DESC:
     "This setting works in conjunction with the Auto-export SVG/PNG setting. If an exported image that matches the file name of the drawing " +
-    "is available, use that image instead of generating a preview image on the fly. This will result in faster previews especially when you have many embedded objects in the drawing, however, "+
-    "it may happen that your latest changes are not displayed and that the image will not automatically match your Obsidian theme in case you have changed the "+
+    "is available, use that image instead of generating a preview image on the fly. This will result in faster previews especially when you have many embedded objects in the drawing, however, " +
+    "it may happen that your latest changes are not displayed and that the image will not automatically match your Obsidian theme in case you have changed the " +
     "Obsidian theme since the export was created. This setting only applies to embedding images into markdown documents. " +
     "For a number of reasons, the same approach cannot be used to expedite the loading of drawings with many embedded objects. See demonstration <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.23' target='_blank'>here</a>.",
   EMBED_PREVIEW_SVG_NAME: "Display SVG in markdown preview",

@@ -27,7 +27,6 @@ import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
 import { ExportSettings } from "./ExcalidrawView";
 import { compressToBase64, decompressFromBase64 } from "lz-string";
 import { ExcalidrawSettings } from "./Settings";
-import { appendFile } from "fs";
 
 declare module "obsidian" {
   interface Workspace {
@@ -152,9 +151,9 @@ export function getNewUniqueFilepath(
   let fname = normalizePath(`${folderpath}/${filename}`);
   let file: TAbstractFile = vault.getAbstractFileByPath(fname);
   let i = 0;
-  const extension = filename.endsWith(".excalidraw.md") 
+  const extension = filename.endsWith(".excalidraw.md")
     ? ".excalidraw.md"
-    : filename.slice(filename.lastIndexOf("."))
+    : filename.slice(filename.lastIndexOf("."));
   while (file) {
     fname = normalizePath(
       `${folderpath}/${filename.slice(
@@ -168,32 +167,36 @@ export function getNewUniqueFilepath(
   return fname;
 }
 
-export function getDrawingFilename(settings:ExcalidrawSettings):string {
-  return settings.drawingFilenamePrefix +
+export function getDrawingFilename(settings: ExcalidrawSettings): string {
+  return (
+    settings.drawingFilenamePrefix +
     (settings.drawingFilenameDateTime !== ""
       ? window.moment().format(settings.drawingFilenameDateTime)
-      : "") + 
-    (settings.compatibilityMode 
+      : "") +
+    (settings.compatibilityMode
       ? ".excalidraw"
       : settings.useExcalidrawExtension
-        ? ".excalidraw.md"
-        : ".md")
+      ? ".excalidraw.md"
+      : ".md")
+  );
 }
 
-export function getEmbedFilename(notename: string, settings:ExcalidrawSettings):string {
+export function getEmbedFilename(
+  notename: string,
+  settings: ExcalidrawSettings,
+): string {
   return (
-    settings.drawingEmbedPrefixWithFilename
-      ? notename
-      : "") +
+    (settings.drawingEmbedPrefixWithFilename ? notename : "") +
     settings.drawingFilnameEmbedPostfix +
     (settings.drawingFilenameDateTime !== ""
       ? window.moment().format(settings.drawingFilenameDateTime)
-      : "") + 
-    (settings.compatibilityMode 
+      : "") +
+    (settings.compatibilityMode
       ? ".excalidraw"
       : settings.useExcalidrawExtension
-        ? ".excalidraw.md"
-        : ".md")
+      ? ".excalidraw.md"
+      : ".md")
+  );
 }
 
 /**
@@ -499,16 +502,26 @@ export const getPNG = async (
   }
 };
 
-export const getQuickImagePreview = async (plugin:ExcalidrawPlugin, path: string, extension: "png"|"svg"):Promise<any> => {
-  if(!plugin.settings.displayExportedImageIfAvailable) return null;
-  const imagePath = getIMGFilename(path,extension);
-  const file = plugin.app.vault.getAbstractFileByPath(imagePath);
-  if(!file || !(file instanceof TFile)) return null;
-  switch (extension) {
-    case "png": return await plugin.app.vault.readBinary(file);
-    default: return await plugin.app.vault.read(file);
+export const getQuickImagePreview = async (
+  plugin: ExcalidrawPlugin,
+  path: string,
+  extension: "png" | "svg",
+): Promise<any> => {
+  if (!plugin.settings.displayExportedImageIfAvailable) {
+    return null;
   }
-}
+  const imagePath = getIMGFilename(path, extension);
+  const file = plugin.app.vault.getAbstractFileByPath(imagePath);
+  if (!file || !(file instanceof TFile)) {
+    return null;
+  }
+  switch (extension) {
+    case "png":
+      return await plugin.app.vault.readBinary(file);
+    default:
+      return await plugin.app.vault.read(file);
+  }
+};
 
 export const embedFontsInSVG = (
   svg: SVGSVGElement,
@@ -579,9 +592,10 @@ export const setLeftHandedMode = (isLeftHanded: boolean) => {
   if (oldStylesheet) {
     document.head.removeChild(oldStylesheet);
   }
-  if(isLeftHanded)
+  if (isLeftHanded) {
     document.head.appendChild(newStylesheet);
-}
+  }
+};
 
 export const isObsidianThemeDark = () =>
   document.body.classList.contains("theme-dark");
@@ -599,7 +613,7 @@ export type LinkParts = {
   height: number;
 };
 
-export const getLinkParts = (fname: string, file?:TFile): LinkParts => {
+export const getLinkParts = (fname: string, file?: TFile): LinkParts => {
   const REG = /(^[^#\|]*)#?(\^)?([^\|]*)?\|?(\d*)x?(\d*)/;
   const parts = fname.match(REG);
   return {
@@ -620,8 +634,11 @@ export const decompress = (data: string): string => {
   return decompressFromBase64(data.replaceAll("\n", "").replaceAll("\r", ""));
 };
 
-export const hasExportTheme = (plugin: ExcalidrawPlugin, file: TFile):boolean => {
-  if(file) {
+export const hasExportTheme = (
+  plugin: ExcalidrawPlugin,
+  file: TFile,
+): boolean => {
+  if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
@@ -631,10 +648,14 @@ export const hasExportTheme = (plugin: ExcalidrawPlugin, file: TFile):boolean =>
     }
   }
   return false;
-}
+};
 
-export const getExportTheme = (plugin: ExcalidrawPlugin, file: TFile, theme: string):string => {
-  if(file) {
+export const getExportTheme = (
+  plugin: ExcalidrawPlugin,
+  file: TFile,
+  theme: string,
+): string => {
+  if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
@@ -642,14 +663,17 @@ export const getExportTheme = (plugin: ExcalidrawPlugin, file: TFile, theme: str
     ) {
       return fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_DARK]
         ? "dark"
-        : "light"
+        : "light";
     }
   }
   return plugin.settings.exportWithTheme ? theme : "light";
-}
+};
 
-export const hasExportBackground = (plugin: ExcalidrawPlugin, file: TFile):boolean => {
-  if(file) {
+export const hasExportBackground = (
+  plugin: ExcalidrawPlugin,
+  file: TFile,
+): boolean => {
+  if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
@@ -659,54 +683,62 @@ export const hasExportBackground = (plugin: ExcalidrawPlugin, file: TFile):boole
     }
   }
   return false;
-}
+};
 
-export const getWithBackground = (plugin: ExcalidrawPlugin, file: TFile):boolean => {
-  if(file) {
+export const getWithBackground = (
+  plugin: ExcalidrawPlugin,
+  file: TFile,
+): boolean => {
+  if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
       fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_TRANSPARENT] != null
     ) {
-      return fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_TRANSPARENT]
-        ? false
-        : true
+      return !fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_TRANSPARENT];
     }
   }
   return plugin.settings.exportWithBackground;
-}
+};
 
-export const getSVGPadding = (plugin: ExcalidrawPlugin, file: TFile):number => {
-  if(file) {
+export const getSVGPadding = (
+  plugin: ExcalidrawPlugin,
+  file: TFile,
+): number => {
+  if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
       fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_SVGPADDING] != null
     ) {
-      const val = parseInt(fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_SVGPADDING]);
-      if(!isNaN(val)) {
+      const val = parseInt(
+        fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_SVGPADDING],
+      );
+      if (!isNaN(val)) {
         return val;
       }
     }
   }
-  return plugin.settings.exportPaddingSVG;  
-}
+  return plugin.settings.exportPaddingSVG;
+};
 
-export const getPNGScale = (plugin: ExcalidrawPlugin, file: TFile):number => {
-  if(file) {
+export const getPNGScale = (plugin: ExcalidrawPlugin, file: TFile): number => {
+  if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
       fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_PNGSCALE] != null
     ) {
-      const val = parseFloat(fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_PNGSCALE]);
-      if(!isNaN(val) && val>0) {
+      const val = parseFloat(
+        fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_PNGSCALE],
+      );
+      if (!isNaN(val) && val > 0) {
         return val;
       }
     }
   }
-  return plugin.settings.pngExportScale;  
-}
+  return plugin.settings.pngExportScale;
+};
 
 export const errorlog = (data: {}) => {
   console.error({ plugin: "Excalidraw", ...data });

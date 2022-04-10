@@ -16,14 +16,14 @@ export class ReleaseNotes extends Modal {
   onOpen(): void {
     this.contentEl.classList.add("excalidraw-release");
     this.containerEl.classList.add(".excalidraw-release");
-    this.titleEl.setText(`Welcome to Excalidraw ${this.version??""}`);
+    this.titleEl.setText(`Welcome to Excalidraw ${this.version ?? ""}`);
     this.createForm();
   }
 
   async onClose() {
     this.contentEl.empty();
     await this.plugin.loadSettings();
-    this.plugin.settings.previousRelease = 
+    this.plugin.settings.previousRelease =
       //@ts-ignore
       this.app.plugins.manifests["obsidian-excalidraw-plugin"].version;
     await this.plugin.saveSettings();
@@ -31,7 +31,7 @@ export class ReleaseNotes extends Modal {
 
   async createForm() {
     let prevRelease = this.plugin.settings.previousRelease;
-    prevRelease = (this.version===prevRelease) ? "0" : prevRelease;
+    prevRelease = this.version === prevRelease ? "0" : prevRelease;
     const message = this.version
       ? Object.keys(RELEASE_NOTES)
           .filter((key) => key > prevRelease)
@@ -46,7 +46,6 @@ export class ReleaseNotes extends Modal {
       this.plugin,
     );
 
-    
     this.contentEl.createEl("p", { text: "" }, (el) => {
       //files manually follow one of two options:
       el.style.textAlign = "right";

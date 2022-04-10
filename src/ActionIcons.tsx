@@ -256,16 +256,34 @@ export const ICONS = {
     </svg>
   ),
   copyElementLink: (
-    <svg 
+    <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 260 260"
       aria-hidden="true"
       focusable="false"
-      role="img"      
+      role="img"
     >
-      <path stroke="var(--icon-fill-color)" fill="none" strokeLinecap="round" strokeWidth="8" d="M10 10h40m-40 0h40m0 0v40m0-40v40m0 0H10m40 0H10m0 0V10m0 40V10M210 10h40m-40 0h40m0 0v40m0-40v40m0 0h-40m40 0h-40m0 0V10m0 40V10M210 210h40m-40 0h40m0 0v40m0-40v40m0 0h-40m40 0h-40m0 0v-40m0 40v-40M10 210h40m-40 0h40m0 0v40m0-40v40m0 0H10m40 0H10m0 0v-40m0 40v-40M30 210V50m0 160V50M50 30h160M50 30h160M230 50v160m0-160v160M50 230h160m-160 0h160"/>
-      <path stroke="var(--icon-fill-color)" fill="none" strokeLinecap="round" strokeWidth="16" d="M110 90c-6.67 1.67-30 3.11-40 10-10 6.89-20 21.37-20 31.37S60 153.56 70 160c10 6.44 33.33 8.33 40 10m0-80c-6.67 1.67-30 3.11-40 10-10 6.89-20 21.37-20 31.37S60 153.56 70 160c10 6.44 33.33 8.33 40 10M150 90c6.67 1.67 30 3.11 40 10 10 6.89 20 21.37 20 31.37s-10 22.19-20 28.63c-10 6.44-33.33 8.33-40 10m0-80c6.67 1.67 30 3.11 40 10 10 6.89 20 21.37 20 31.37s-10 22.19-20 28.63c-10 6.44-33.33 8.33-40 10"/>
-      <path stroke="var(--icon-fill-color)" fill="none" strokeLinecap="round" strokeWidth="16" d="M89.868 130.198c13.36-.03 66.78-.17 80.13-.2m-80.13.2c13.36-.03 66.78-.17 80.13-.2"/>
+      <path
+        stroke="var(--icon-fill-color)"
+        fill="none"
+        strokeLinecap="round"
+        strokeWidth="8"
+        d="M10 10h40m-40 0h40m0 0v40m0-40v40m0 0H10m40 0H10m0 0V10m0 40V10M210 10h40m-40 0h40m0 0v40m0-40v40m0 0h-40m40 0h-40m0 0V10m0 40V10M210 210h40m-40 0h40m0 0v40m0-40v40m0 0h-40m40 0h-40m0 0v-40m0 40v-40M10 210h40m-40 0h40m0 0v40m0-40v40m0 0H10m40 0H10m0 0v-40m0 40v-40M30 210V50m0 160V50M50 30h160M50 30h160M230 50v160m0-160v160M50 230h160m-160 0h160"
+      />
+      <path
+        stroke="var(--icon-fill-color)"
+        fill="none"
+        strokeLinecap="round"
+        strokeWidth="16"
+        d="M110 90c-6.67 1.67-30 3.11-40 10-10 6.89-20 21.37-20 31.37S60 153.56 70 160c10 6.44 33.33 8.33 40 10m0-80c-6.67 1.67-30 3.11-40 10-10 6.89-20 21.37-20 31.37S60 153.56 70 160c10 6.44 33.33 8.33 40 10M150 90c6.67 1.67 30 3.11 40 10 10 6.89 20 21.37 20 31.37s-10 22.19-20 28.63c-10 6.44-33.33 8.33-40 10m0-80c6.67 1.67 30 3.11 40 10 10 6.89 20 21.37 20 31.37s-10 22.19-20 28.63c-10 6.44-33.33 8.33-40 10"
+      />
+      <path
+        stroke="var(--icon-fill-color)"
+        fill="none"
+        strokeLinecap="round"
+        strokeWidth="16"
+        d="M89.868 130.198c13.36-.03 66.78-.17 80.13-.2m-80.13.2c13.36-.03 66.78-.17 80.13-.2"
+      />
     </svg>
-  )
+  ),
 };

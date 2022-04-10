@@ -30,7 +30,6 @@ import {
   hasExportTheme,
   isObsidianThemeDark,
   LinkParts,
-  log,
   wrapText,
 } from "./Utils";
 import {
@@ -76,7 +75,10 @@ export const REGEX_LINK = {
       ? parts.value[5]
       : parts.value[6];
   },
-  getWrapLength: (parts: IteratorResult<RegExpMatchArray, any>, defaultWrap:number): number => {
+  getWrapLength: (
+    parts: IteratorResult<RegExpMatchArray, any>,
+    defaultWrap: number,
+  ): number => {
     const len = parseInt(parts.value[8]);
     if (isNaN(len)) {
       return defaultWrap > 0 ? defaultWrap : null;
@@ -244,14 +246,13 @@ export class ExcalidrawData {
 
     const elements = this.scene.elements;
     for (const el of elements) {
-      
-      if(el.boundElements) {
-        const map = new Map<string,string>();
-        el.boundElements.forEach((item:{id:string,type:string}) => {
-          map.set(item.id,item.type);
+      if (el.boundElements) {
+        const map = new Map<string, string>();
+        el.boundElements.forEach((item: { id: string; type: string }) => {
+          map.set(item.id, item.type);
         });
         const boundElements = Array.from(map, ([id, type]) => ({ id, type }));
-        if(boundElements.length !== el.boundElements.length) {
+        if (boundElements.length !== el.boundElements.length) {
           el.boundElements = boundElements;
         }
       }
@@ -271,73 +272,96 @@ export class ExcalidrawData {
       }
 
       //add containerId to TextElements if missing
-      if (
-        el.type === "text" &&
-        !el.containerId
-      ) {
+      if (el.type === "text" && !el.containerId) {
         el.containerId = null;
       }
 
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/494
-      if(el.x===null) el.x=0;
-      if(el.y===null) el.y=0;
-      if(el.startBinding?.focus===null) el.startBinding.focus=0;
-      if(el.endBinding?.focus===null) el.endBinding.focus=0;
+      if (el.x === null) {
+        el.x = 0;
+      }
+      if (el.y === null) {
+        el.y = 0;
+      }
+      if (el.startBinding?.focus === null) {
+        el.startBinding.focus = 0;
+      }
+      if (el.endBinding?.focus === null) {
+        el.endBinding.focus = 0;
+      }
 
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/497
-      if(el.fontSize===null) el.fontSize=20;
+      if (el.fontSize === null) {
+        el.fontSize = 20;
+      }
     }
 
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/569
     try {
       //Fix text elements that point to a container, but the container does not point back
-      const textElWithOneWayLinkToContainer = elements.filter((textEl:any) =>
-        textEl.type === "text" &&
-        textEl.containerId &&
-        elements.some((container:any) =>
-          container.id === textEl.containerId &&
-          container.boundElements.length > 0 &&
-          container.boundElements.some((boundEl:any) =>
-            boundEl.type === "text" &&
-            boundEl.id !== textEl.id &&
-            boundEl.id.length > 8
-          )
-        )
+      const textElWithOneWayLinkToContainer = elements.filter(
+        (textEl: any) =>
+          textEl.type === "text" &&
+          textEl.containerId &&
+          elements.some(
+            (container: any) =>
+              container.id === textEl.containerId &&
+              container.boundElements.length > 0 &&
+              container.boundElements.some(
+                (boundEl: any) =>
+                  boundEl.type === "text" &&
+                  boundEl.id !== textEl.id &&
+                  boundEl.id.length > 8,
+              ),
+          ),
       );
       //if(textElWithOneWayLinkToContainer.length>0) log({message: "cleanup", textElWithOneWayLinkToContainer});
-      textElWithOneWayLinkToContainer.forEach((textEl:any) => {
+      textElWithOneWayLinkToContainer.forEach((textEl: any) => {
         try {
-          const container = elements.filter((container:any) => 
-            container.id === textEl.containerId)[0];
-          const boundEl = container.boundElements.filter((boundEl:any) =>
-            !(boundEl.type === "text" &&
-            !elements.some((el:any) => el.id === boundEl.id))
+          const container = elements.filter(
+            (container: any) => container.id === textEl.containerId,
+          )[0];
+          const boundEl = container.boundElements.filter(
+            (boundEl: any) =>
+              !(
+                boundEl.type === "text" &&
+                !elements.some((el: any) => el.id === boundEl.id)
+              ),
           );
-          container.boundElements = [{id: textEl.id, type:"text"}].concat(boundEl);
-        } catch(e) {}
+          container.boundElements = [{ id: textEl.id, type: "text" }].concat(
+            boundEl,
+          );
+        } catch (e) {}
       });
 
       //Remove from bound elements references that do not exist in the scene
-      const containers = elements.filter((container:any) => 
-        container.boundElements &&
-        container.boundElements.length > 0
+      const containers = elements.filter(
+        (container: any) =>
+          container.boundElements && container.boundElements.length > 0,
       );
-      containers.forEach((container:any) => {
-        const filteredBoundElements = container.boundElements.filter((boundEl:any) =>  
-          elements.some((el:any) => el.id === boundEl.id)
-        )
-        if(filteredBoundElements.length !== container.boundElements.length) {
+      containers.forEach((container: any) => {
+        const filteredBoundElements = container.boundElements.filter(
+          (boundEl: any) => elements.some((el: any) => el.id === boundEl.id),
+        );
+        if (filteredBoundElements.length !== container.boundElements.length) {
           //log({message: "cleanup",oldBound: container.boundElements, newBound: filteredBoundElements});
           container.boundElements = filteredBoundElements;
         }
-      })
+      });
 
       //Clear the containerId for textElements if the referenced container does not exist in the scene
-      elements.filter((textEl:any) =>
-        textEl.type === "text" &&
-        textEl.containerId &&
-        !elements.some((container:any) => container.id === textEl.containerId)
-      ).forEach((textEl:any) => {textEl.containerId = null;});// log({message:"cleanup",textEl})});
+      elements
+        .filter(
+          (textEl: any) =>
+            textEl.type === "text" &&
+            textEl.containerId &&
+            !elements.some(
+              (container: any) => container.id === textEl.containerId,
+            ),
+        )
+        .forEach((textEl: any) => {
+          textEl.containerId = null;
+        }); // log({message:"cleanup",textEl})});
     } catch {}
   }
 
@@ -422,8 +446,12 @@ export class ExcalidrawData {
       this.scene.files = {}; //loading legacy scenes that do not yet have the files attribute.
     }
 
-    if(hasExportTheme(this.plugin,this.file)) {
-      this.scene.appState.theme = getExportTheme(this.plugin,this.file,"light");      
+    if (hasExportTheme(this.plugin, this.file)) {
+      this.scene.appState.theme = getExportTheme(
+        this.plugin,
+        this.file,
+        "light",
+      );
     } else if (this.plugin.settings.matchThemeAlways) {
       this.scene.appState.theme = isObsidianThemeDark() ? "dark" : "light";
     }
@@ -458,7 +486,7 @@ export class ExcalidrawData {
       if (textEl) {
         if (textEl.type !== "text") {
           //markdown link attached to elements
-          if(textEl.link!==text) {
+          if (textEl.link !== text) {
             textEl.link = text;
             textEl.version++;
             textEl.versionNonce++;
@@ -681,7 +709,8 @@ export class ExcalidrawData {
         dirty = true;
         id = nanoid();
         jsonString = jsonString.replaceAll(te.id, id); //brute force approach to replace all occurances (e.g. links, groups,etc.)
-        if (this.textElements.has(te.id)) { //element was created with onBeforeTextSubmit
+        if (this.textElements.has(te.id)) {
+          //element was created with onBeforeTextSubmit
           const t = this.textElements.get(te.id);
           this.textElements.set(id, {
             raw: t.raw,
@@ -822,7 +851,10 @@ export class ExcalidrawData {
           text.substring(position, parts.value.index) +
           wrapText(
             contents,
-            REGEX_LINK.getWrapLength(parts,this.plugin.settings.wordWrappingDefault),
+            REGEX_LINK.getWrapLength(
+              parts,
+              this.plugin.settings.wordWrappingDefault,
+            ),
             this.plugin.settings.forceWrap,
           );
       } else {

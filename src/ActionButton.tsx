@@ -1,5 +1,5 @@
 import * as React from "react";
-import ExcalidrawView, { TextMode } from "./ExcalidrawView";
+import ExcalidrawView from "./ExcalidrawView";
 
 type ButtonProps = {
   title: string;

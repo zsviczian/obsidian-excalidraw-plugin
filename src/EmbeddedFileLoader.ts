@@ -221,14 +221,14 @@ export class EmbeddedFilesLoader {
 
     const getExcalidrawSVG = async (isDark: boolean) => {
       //debug({where:"EmbeddedFileLoader.getExcalidrawSVG",uid:this.uid,file:file.name});
-      const forceTheme = hasExportTheme(this.plugin,file)
-      ? getExportTheme(this.plugin,file,"light")
-      : undefined;
+      const forceTheme = hasExportTheme(this.plugin, file)
+        ? getExportTheme(this.plugin, file, "light")
+        : undefined;
       const exportSettings: ExportSettings = {
-        withBackground: hasExportBackground(this.plugin,file)
-          ? getWithBackground(this.plugin,file)
+        withBackground: hasExportBackground(this.plugin, file)
+          ? getWithBackground(this.plugin, file)
           : false,
-        withTheme: forceTheme?true:false,
+        withTheme: !!forceTheme,
       };
       const svg = await createSVG(
         file.path,
@@ -240,7 +240,7 @@ export class EmbeddedFilesLoader {
         null,
         [],
         this.plugin,
-        getSVGPadding(this.plugin,file)
+        getSVGPadding(this.plugin, file),
       );
       //https://stackoverflow.com/questions/51154171/remove-css-filter-on-child-elements
       const imageList = svg.querySelectorAll(
@@ -443,28 +443,26 @@ const convertMarkdownToSVG = async (
       frontmatterCSSisAfile = true;
     }
   }
-  if(!frontmatterCSSisAfile) {
+  if (!frontmatterCSSisAfile) {
     if (plugin.settings.mdCSS && plugin.settings.mdCSS !== "") {
       const f = plugin.app.metadataCache.getFirstLinkpathDest(
         plugin.settings.mdCSS,
         file.path,
       );
-      style += f 
-        ? `\n${await plugin.app.vault.read(f)}`
-        : DEFAULT_MD_EMBED_CSS;
+      style += f ? `\n${await plugin.app.vault.read(f)}` : DEFAULT_MD_EMBED_CSS;
     } else {
       style += DEFAULT_MD_EMBED_CSS;
     }
   }
 
   const borderColor = fileCache?.frontmatter
-  ? fileCache.frontmatter[FRONTMATTER_KEY_BORDERCOLOR] ??
-    plugin.settings.mdBorderColor
-  : plugin.settings.mdBorderColor;
-  
-  if(borderColor && borderColor !== "" && !style.match(/svg/i)) {
+    ? fileCache.frontmatter[FRONTMATTER_KEY_BORDERCOLOR] ??
+      plugin.settings.mdBorderColor
+    : plugin.settings.mdBorderColor;
+
+  if (borderColor && borderColor !== "" && !style.match(/svg/i)) {
     style += `svg{border:2px solid;color:${borderColor};transform:scale(.95)}`;
-  }    
+  }
 
   //3.
   //SVG helper functions
@@ -492,8 +490,7 @@ const convertMarkdownToSVG = async (
   }
   mdDIV.style.overflow = "auto";
   mdDIV.style.display = "block";
-  mdDIV.style.color = (fontColor && fontColor !== "") 
-    ? fontColor : "initial";
+  mdDIV.style.color = fontColor && fontColor !== "" ? fontColor : "initial";
 
   await MarkdownRenderer.renderMarkdown(text, mdDIV, file.path, plugin);
   mdDIV
