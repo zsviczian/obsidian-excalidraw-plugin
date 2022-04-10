@@ -97,7 +97,7 @@ export default {
     "Full filepath to the Excalidraw template. " +
     "E.g.: If your template is in the default Excalidraw folder and it's name is " +
     "Template.md, the setting would be: Excalidraw/Template.md (or just Excalidraw/Template - you may ommit the .md file extension). " +
-    "If you are using Excalidraw in compatibility mode, then your template must be a legacy excalidraw file as well " +
+    "If you are using Excalidraw in compatibility mode, then your template must be a legacy Excalidraw file as well " +
     "such as Excalidraw/Template.excalidraw.",
   SCRIPT_FOLDER_NAME: "Excalidraw Automate script folder",
   SCRIPT_FOLDER_DESC:
@@ -167,7 +167,7 @@ export default {
     "Specifies the mode how Excalidraw opens: Normal, Zen, or View mode. You may also set this behaviour on a file level by " +
     "adding the excalidraw-default-mode frontmatter key with a value of: normal,view, or zen to your document.",
   DEFAULT_PEN_MODE_NAME: "Pen mode",
-  DEFAULT_PEN_MODE_DESC: "Should pen mode be automatically enabled when opening excalidraw?",
+  DEFAULT_PEN_MODE_DESC: "Should pen mode be automatically enabled when opening Excalidraw?",
   ZOOM_TO_FIT_NAME: "Zoom to fit on view resize",
   ZOOM_TO_FIT_DESC: "Zoom to fit drawing when the pane is resized",
   ZOOM_TO_FIT_MAX_LEVEL_NAME: "Zoom to fit max ZOOM level",
@@ -291,7 +291,7 @@ export default {
     "<code>[[drawing.excalidraw|100x100]]</code> format.",
   EMBED_TYPE_NAME: "Type of file to insert into the document",
   EMBED_TYPE_DESC:
-    "When you embed an image into a document using the command palette this setting will specify if Excalidraw should embed the original excalidraw file " +
+    "When you embed an image into a document using the command palette this setting will specify if Excalidraw should embed the original Excalidraw file " +
     "or a PNG or an SVG copy. You need to enable auto-export PNG / SVG (see below under Export Settings) for those image types to be available in the dropdown. For drawings that do not have a " +
     "a corresponding PNG or SVG readily available the command palette action will insert a broken link. You need to open the original drawing and initiate export manually. " +
     "This option will not autogenerate PNG/SVG files, but will simply reference the already existing files.",
@@ -320,8 +320,8 @@ export default {
   EXPORT_SVG_DESC:
     "Automatically create an SVG export of your drawing matching the title of your file. " +
     "The plugin will save the *.SVG file in the same folder as the drawing. " +
-    "Embed the .svg file into your documents instead of excalidraw making you embeds platform independent. " +
-    "While the auto-export switch is on, this file will get updated every time you edit the excalidraw drawing with the matching name.",
+    "Embed the .svg file into your documents instead of Excalidraw making you embeds platform independent. " +
+    "While the auto-export switch is on, this file will get updated every time you edit the Excalidraw drawing with the matching name.",
   EXPORT_PNG_NAME: "Auto-export PNG",
   EXPORT_PNG_DESC: "Same as the auto-export SVG, but for *.PNG",
   COMPATIBILITY_HEAD: "Compatibility features",
@@ -364,7 +364,7 @@ export default {
   FOURTH_FONT_NAME: "Forth font file",
   FOURTH_FONT_DESC:
     "Select a .ttf, .woff or .woff2 font file from your vault to use as the fourth font. " +
-    "If no file is selected excalidraw will use the Virgil font by default.",
+    "If no file is selected Excalidraw will use the Virgil font by default.",
   SCRIPT_SETTINGS_HEAD: "Settings for installed Scripts",
 
   //openDrawings.ts
