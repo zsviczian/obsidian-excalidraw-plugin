@@ -632,7 +632,7 @@ export default class ExcalidrawView extends TextFileView {
           .matchAll(/#([\p{Letter}\p{Emoji_Presentation}\p{Number}\/_-]+)/gu)
           .next();
         if (!tags.value || tags.value.length < 2) {
-          new Notice(t("TEXT_ELEMENT_EMPTY"), 4000);
+          //new Notice(t("TEXT_ELEMENT_EMPTY"), 4000);
           return;
         }
         const search = this.app.workspace.getLeavesOfType("search");
@@ -749,8 +749,7 @@ export default class ExcalidrawView extends TextFileView {
       const leaf = ev.shiftKey
         ? getNewOrAdjacentLeaf(this.plugin, view.leaf)
         : view.leaf;
-      leaf.openFile(file, subpath?{ eState: { subpath } }:undefined); //if file exists open file and jump to reference
-      //leaf.openFile(file, { eState: { line: lineNum - 1 } }); //if file exists open file and jump to reference
+      await leaf.openFile(file, subpath?{ eState: { subpath } }:undefined); //if file exists open file and jump to reference
       view.app.workspace.setActiveLeaf(leaf, true, true);
     } catch (e) {
       new Notice(e, 4000);
@@ -2425,7 +2424,7 @@ export default class ExcalidrawView extends TextFileView {
             }
             return [null, null, null];
           },
-          onLinkOpen: (element: ExcalidrawElement, e: any): void => {
+          onLinkOpen: async (element: ExcalidrawElement, e: any): Promise<void> => {
             e.preventDefault();
             if (!element) {
               return;
@@ -2443,17 +2442,11 @@ export default class ExcalidrawView extends TextFileView {
                 }
                 let linkText = linkMatch.groups.link;
 
-                //let lineNum = 0;
                 let subpath:string = null;
                 if (linkText.search("#") > -1) {
                   const linkParts = getLinkParts(linkText, this.file);
                   subpath = `#${linkParts.isBlockRef?"^":""}${linkParts.ref}`;
                   linkText = linkParts.path;
-                  
-                  //lineNum = (
-                  //  await this.excalidrawData.getTransclusion(linkText)
-                  //).lineNum;
-                  //linkText = linkText.substring(0, linkText.search("#"));
                 }
 
                 if (linkText.match(REG_LINKINDEX_INVALIDCHARS)) {
@@ -2466,7 +2459,7 @@ export default class ExcalidrawView extends TextFileView {
                   this.file.path,
                 );
 
-                const useNewLeaf = event.shift || event[CTRL_OR_CMD];
+                const useNewLeaf = event.shiftKey || event[CTRL_OR_CMD];
 
                 if (useNewLeaf && this.isFullscreen()) {
                   this.exitFullscreen();
@@ -2491,8 +2484,8 @@ export default class ExcalidrawView extends TextFileView {
                     const leaf = useNewLeaf
                       ? getNewOrAdjacentLeaf(this.plugin, this.leaf)
                       : this.leaf;
-                    leaf.openFile(file, subpath?{ eState: { subpath } }:undefined); //if file exists open file and jump to reference
-                    //leaf.openFile(file, { eState: { line: lineNum - 1 } }); //if file exists open file and jump to reference
+                    await leaf.openFile(file, subpath?{ eState: { subpath } }:undefined); //if file exists open file and jump to reference
+                    this.app.workspace.setActiveLeaf(leaf, true, true);
                   } catch (e) {
                     new Notice(e, 4000);
                   }
