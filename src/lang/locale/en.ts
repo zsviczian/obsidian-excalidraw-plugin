@@ -340,9 +340,9 @@ export default {
   EXPERIMENTAL_HEAD: "Experimental features",
   EXPERIMENTAL_DESC:
     "Some of these setting will not take effect immediately, only when the File Explorer is refreshed, or Obsidian restarted.",
-  FIELD_SUGGESTOR_NAME: "Enable Field Suggestor",
-  FIELD_SUGGESTOR_DESC:
-    "Field Suggestor borrowed from Breadcrumbs and Templater plugins. The Field Suggestor will show an autocomplete menu " +
+  FIELD_SUGGESTER_NAME: "Enable Field Suggester",
+  FIELD_SUGGESTER_DESC:
+    "Field Suggester borrowed from Breadcrumbs and Templater plugins. The Field Suggester will show an autocomplete menu " +
     "when you type <code>excalidraw-</code> or <code>ea.</code> with function description as hints on the individual items in the list.",
   FILETYPE_NAME: "Display type (✏️) for excalidraw.md files in File Explorer",
   FILETYPE_DESC:
