@@ -96,7 +96,7 @@ export default {
   TEMPLATE_DESC:
     "Full filepath to the Excalidraw template. " +
     "E.g.: If your template is in the default Excalidraw folder and it's name is " +
-    "Template.md, the setting would be: Excalidraw/Template.md (or just Excalidraw/Template - you may ommit the .md file extension). " +
+    "Template.md, the setting would be: Excalidraw/Template.md (or just Excalidraw/Template - you may omit the .md file extension). " +
     "If you are using Excalidraw in compatibility mode, then your template must be a legacy Excalidraw file as well " +
     "such as Excalidraw/Template.excalidraw.",
   SCRIPT_FOLDER_NAME: "Excalidraw Automate script folder",
@@ -164,7 +164,7 @@ export default {
     "If this option is enabled open Excalidraw pane will switch to light/dark mode when Obsidian theme changes. ",
   DEFAULT_OPEN_MODE_NAME: "Default mode when opening Excalidraw",
   DEFAULT_OPEN_MODE_DESC:
-    "Specifies the mode how Excalidraw opens: Normal, Zen, or View mode. You may also set this behaviour on a file level by " +
+    "Specifies the mode how Excalidraw opens: Normal, Zen, or View mode. You may also set this behavior on a file level by " +
     "adding the excalidraw-default-mode frontmatter key with a value of: normal,view, or zen to your document.",
   DEFAULT_PEN_MODE_NAME: "Pen mode",
   DEFAULT_PEN_MODE_DESC: "Should pen mode be automatically enabled when opening Excalidraw?",
@@ -204,7 +204,7 @@ export default {
   }${FRONTMATTER_KEY_CUSTOM_URL_PREFIX}: "🌐 "</code> to the file's frontmatter.`,
   HOVERPREVIEW_NAME: "Hover preview without CTRL/CMD key",
   HOVERPREVIEW_DESC:
-    "Toggle On: Hover preview for [[wiki links]] is shown immedately, without the need to hold the CTRL/CMD key.<br>Toggle Off: Hover preview is shown only when you hold the CTRL/CMD key while hovering the link.",
+    "Toggle On: Hover preview for [[wiki links]] is shown immediately, without the need to hold the CTRL/CMD key.<br>Toggle Off: Hover preview is shown only when you hold the CTRL/CMD key while hovering the link.",
   LINKOPACITY_NAME: "Opacity of link icon",
   LINKOPACITY_DESC:
     "Opacity of the link indicator icon in the top right corner of an element. 1 is opaque, 0 is transparent.",
@@ -242,7 +242,7 @@ export default {
   MD_TRANSCLUDE_HEIGHT_NAME:
     "Default maximum height of a transcluded markdown document",
   MD_TRANSCLUDE_HEIGHT_DESC:
-    "The embedded image will be as high as the markdown text requries, but not higher than this value. " +
+    "The embedded image will be as high as the markdown text requires, but not higher than this value. " +
     "You can override this value by editing the embedded image link in markdown view mode with the following syntax <code>[[filename#^blockref|WIDTHxMAXHEIGHT]]</code>.",
   MD_DEFAULT_FONT_NAME:
     "The default font typeface to use for embedded markdown files.",
@@ -346,9 +346,9 @@ export default {
     "when you type <code>excalidraw-</code> or <code>ea.</code> with function description as hints on the individual items in the list.",
   FILETYPE_NAME: "Display type (✏️) for excalidraw.md files in File Explorer",
   FILETYPE_DESC:
-    "Excalidraw files will receive an indicator using the emojii or text defined in the next setting.",
+    "Excalidraw files will receive an indicator using the emoji or text defined in the next setting.",
   FILETAG_NAME: "Set the type indicator for excalidraw.md files",
-  FILETAG_DESC: "The text or emojii to display as type indicator.",
+  FILETAG_DESC: "The text or emoji to display as type indicator.",
   INSERT_EMOJI: "Insert an emoji",
   LIVEPREVIEW_NAME: "Immersive image embedding in live preview editing mode",
   LIVEPREVIEW_DESC:
@@ -358,8 +358,8 @@ export default {
   ENABLE_FOURTH_FONT_NAME: "Enable fourth font option",
   ENABLE_FOURTH_FONT_DESC:
     "By turning this on, you will see a fourth font button on the properties panel for text elements. " +
-    "Files that use this fourth font will (partly) lose their paltform independence. " +
-    "Depending on the cutom font set in settings, they will look differently when loaded in another vault, or at a later time. " +
+    "Files that use this fourth font will (partly) lose their platform independence. " +
+    "Depending on the custom font set in settings, they will look differently when loaded in another vault, or at a later time. " +
     "Also the 4th font will display as system default font on excalidraw.com, or other Excalidraw versions.",
   FOURTH_FONT_NAME: "Forth font file",
   FOURTH_FONT_DESC:
