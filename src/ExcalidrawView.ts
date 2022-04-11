@@ -67,12 +67,11 @@ import {
   getSVGPadding,
   getWithBackground,
   hasExportTheme,
-  rotatedDimensions,
   scaleLoadedImage,
   svgToBase64,
   viewportCoordsToSceneCoords,
 } from "./utils/Utils";
-import { getNewOrAdjacentLeaf } from "./utils/ObsidianUtils";
+import { getNewOrAdjacentLeaf, getParentOfClass } from "./utils/ObsidianUtils";
 import { splitFolderAndFilename } from "./utils/FileUtils";
 import { NewFileActions, Prompt } from "./dialogs/Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
@@ -874,24 +873,15 @@ export default class ExcalidrawView extends TextFileView {
   private offsetLeft: number = 0;
   private offsetTop: number = 0;
   private addParentMoveObserver() {
-    const getParentOfClass = (element: HTMLElement, cssClass: string) => {
-      let parent = element.parentElement;
-      while (
-        parent &&
-        !(parent instanceof window.HTMLBodyElement) &&
-        !parent.classList.contains(cssClass)
-      ) {
-        parent = parent.parentElement;
-      }
-      return parent.classList.contains(cssClass) ? parent : null;
-    };
-
+    
     const parent =
       getParentOfClass(this.containerEl, "popover") ??
       getParentOfClass(this.containerEl, "workspace-leaf");
     if (!parent) {
       return;
     }
+
+    const inHoverEditorLeaf = parent.classList.contains("popover");
 
     this.offsetLeft = parent.offsetLeft;
     this.offsetTop = parent.offsetTop;
@@ -915,7 +905,7 @@ export default class ExcalidrawView extends TextFileView {
 
     this.parentMoveObserver.observe(parent, {
       attributeOldValue: true,
-      attributeFilter: parent.classList.contains("popover")
+      attributeFilter: inHoverEditorLeaf
         ? ["data-x", "data-y"]
         : ["class", "style"],
     });

@@ -5,11 +5,39 @@ import {
 import ExcalidrawPlugin from "../main";
 import { checkAndCreateFolder, splitFolderAndFilename } from "./FileUtils";
 
+export const getParentOfClass = (element: HTMLElement, cssClass: string):HTMLElement | null => {
+  let parent = element.parentElement;
+  while (
+    parent &&
+    !(parent instanceof window.HTMLBodyElement) &&
+    !parent.classList.contains(cssClass)
+  ) {
+    parent = parent.parentElement;
+  }
+  return parent.classList.contains(cssClass) ? parent : null;
+};
 
 export const getNewOrAdjacentLeaf = (
   plugin: ExcalidrawPlugin,
   leaf: WorkspaceLeaf
 ): WorkspaceLeaf => {
+  const inHoverEditorLeaf = leaf.view?.containerEl 
+    ? getParentOfClass(leaf.view.containerEl, "popover") !== null
+    : false;
+
+  if (inHoverEditorLeaf) {
+    const mainLeaves = app.workspace.getLayout().main.children.filter((c:any) => c.type === "leaf");
+    if(mainLeaves.length === 0) {
+      //@ts-ignore
+      return leafToUse = app.workspace.createLeafInParent(app.workspace.rootSplit);
+    }
+    const targetLeaf = app.workspace.getLeafById(mainLeaves[0].id);
+    if (plugin.settings.openInAdjacentPane) {
+      return targetLeaf;
+    }
+    return plugin.app.workspace.createLeafBySplit(targetLeaf);
+  }
+
   if (plugin.settings.openInAdjacentPane) {
     let leafToUse = plugin.app.workspace.getAdjacentLeafInDirection(
       leaf,
