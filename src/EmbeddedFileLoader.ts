@@ -32,7 +32,7 @@ import {
   hasExportTheme,
   LinkParts,
   svgToBase64,
-} from "./Utils";
+} from "./utils/Utils";
 
 export declare type MimeType =
   | "image/svg+xml"

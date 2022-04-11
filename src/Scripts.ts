@@ -1,17 +1,16 @@
 import {
   App,
   Instruction,
-  Notice,
   TAbstractFile,
   TFile,
   WorkspaceLeaf,
 } from "obsidian";
-import { fileURLToPath } from "url";
 import { PLUGIN_ID, VIEW_TYPE_EXCALIDRAW } from "./Constants";
 import ExcalidrawView from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
-import { GenericInputPrompt, GenericSuggester } from "./Prompt";
-import { getIMGFilename, splitFolderAndFilename } from "./Utils";
+import { GenericInputPrompt, GenericSuggester } from "./dialogs/Prompt";
+import { getIMGFilename } from "./utils/FileUtils";
+import { splitFolderAndFilename } from "./utils/FileUtils";
 
 export type ScriptIconMap = {
   [key: string]: { name: string; svgString: string };

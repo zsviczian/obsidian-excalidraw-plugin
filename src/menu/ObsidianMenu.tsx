@@ -1,7 +1,7 @@
 import { AppState } from "@zsviczian/excalidraw/types/types";
 import clsx from "clsx";
 import * as React from "react";
-import ExcalidrawPlugin from "./main";
+import ExcalidrawPlugin from "../main";
 
 
 export class ObsidianMenu {

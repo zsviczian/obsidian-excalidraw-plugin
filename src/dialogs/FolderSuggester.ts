@@ -11,7 +11,7 @@ import {
   SuggestModal,
   Scope,
 } from "obsidian";
-import { t } from "./lang/helpers";
+import { t } from "../lang/helpers";
 import { createPopper, Instance as PopperInstance } from "@popperjs/core";
 
 class Suggester<T> {

@@ -52,10 +52,10 @@ import {
   DEFAULT_SETTINGS,
   ExcalidrawSettingTab,
 } from "./Settings";
-import { openDialogAction, OpenFileDialog } from "./OpenDrawing";
-import { InsertLinkDialog } from "./InsertLinkDialog";
-import { InsertImageDialog } from "./InsertImageDialog";
-import { InsertMDDialog } from "./InsertMDDialog";
+import { openDialogAction, OpenFileDialog } from "./dialogs/OpenDrawing";
+import { InsertLinkDialog } from "./dialogs/InsertLinkDialog";
+import { InsertImageDialog } from "./dialogs/InsertImageDialog";
+import { InsertMDDialog } from "./dialogs/InsertMDDialog";
 import {
   initExcalidrawAutomate,
   destroyExcalidrawAutomate,
@@ -63,25 +63,26 @@ import {
   insertLaTeXToView,
   search,
 } from "./ExcalidrawAutomate";
-import { Prompt } from "./Prompt";
+import { Prompt } from "./dialogs/Prompt";
 import { around } from "monkey-around";
 import { t } from "./lang/helpers";
 import {
   checkAndCreateFolder,
   download,
-  errorlog,
-  getAttachmentsFolderAndFilePath,
   getDrawingFilename,
   getEmbedFilename,
-  getFontDataURL,
   getIMGFilename,
   getIMGPathFromExcalidrawFile,
   getNewUniqueFilepath,
-  isObsidianThemeDark,
+} from "./utils/FileUtils";
+import {
+  getFontDataURL,
+  errorlog,
   log,
   setLeftHandedMode,
   sleep,
-} from "./Utils";
+} from "./utils/Utils";
+import { getAttachmentsFolderAndFilePath, isObsidianThemeDark } from "./utils/ObsidianUtils";
 //import { OneOffs } from "./OneOffs";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
 import { ScriptEngine } from "./Scripts";
@@ -91,9 +92,9 @@ import {
   markdownPostProcessor,
   observer,
 } from "./MarkdownPostProcessor";
-import { FieldSuggester } from "./FieldSuggester";
-import { ReleaseNotes } from "./ReleaseNotes";
-import { debug } from "./Utils";
+import { FieldSuggester } from "./dialogs/FieldSuggester";
+import { ReleaseNotes } from "./dialogs/ReleaseNotes";
+import { debug } from "./utils/Utils";
 
 declare module "obsidian" {
   interface App {

@@ -22,16 +22,15 @@ import { TextMode } from "./ExcalidrawView";
 import {
   compress,
   decompress,
-  getAttachmentsFolderAndFilePath,
   //getBakPath,
   getBinaryFileFromDataURL,
   getExportTheme,
   getLinkParts,
   hasExportTheme,
-  isObsidianThemeDark,
   LinkParts,
   wrapText,
-} from "./Utils";
+} from "./utils/Utils";
+import { getAttachmentsFolderAndFilePath, isObsidianThemeDark } from "./utils/ObsidianUtils";
 import {
   ExcalidrawElement,
   ExcalidrawImageElement,

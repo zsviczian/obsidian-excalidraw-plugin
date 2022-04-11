@@ -11,7 +11,7 @@ import {
   EXCALIDRAW_AUTOMATE_INFO,
   EXCALIDRAW_SCRIPTENGINE_INFO,
 } from "./SuggesterInfo";
-import type ExcalidrawPlugin from "./main";
+import type ExcalidrawPlugin from "../main";
 
 export class FieldSuggester extends EditorSuggest<string> {
   plugin: ExcalidrawPlugin;

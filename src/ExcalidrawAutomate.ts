@@ -17,18 +17,17 @@ import {
   PLUGIN_ID,
   COLOR_NAMES,
 } from "./Constants";
+import { getDrawingFilename, } from "./utils/FileUtils";
 import {
   //debug,
   embedFontsInSVG,
   errorlog,
-  getDrawingFilename,
-  getNewOrAdjacentLeaf,
   getPNG,
   getSVG,
-  isObsidianThemeDark,
   scaleLoadedImage,
   wrapText,
-} from "./Utils";
+} from "./utils/Utils";
+import { getNewOrAdjacentLeaf, isObsidianThemeDark } from "./utils/ObsidianUtils";
 import { AppState, Point } from "@zsviczian/excalidraw/types/types";
 import { EmbeddedFilesLoader, FileData } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
@@ -39,7 +38,7 @@ import {
   intersectElementWithLine,
   measureText,
 } from "@zsviczian/excalidraw";
-import { Prompt } from "./Prompt";
+import { Prompt } from "./dialogs/Prompt";
 import { t } from "./lang/helpers";
 import { ScriptEngine } from "./Scripts";
 

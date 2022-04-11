@@ -9,9 +9,10 @@ import {
   TFile,
   Notice,
 } from "obsidian";
-import ExcalidrawView from "./ExcalidrawView";
-import ExcalidrawPlugin from "./main";
-import { getNewOrAdjacentLeaf, sleep } from "./Utils";
+import ExcalidrawView from "../ExcalidrawView";
+import ExcalidrawPlugin from "../main";
+import { sleep } from "../utils/Utils";
+import { getNewOrAdjacentLeaf } from "../utils/ObsidianUtils";
 
 export class Prompt extends Modal {
   private promptEl: HTMLInputElement;

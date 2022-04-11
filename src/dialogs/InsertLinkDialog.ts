@@ -1,6 +1,6 @@
 import { App, FuzzySuggestModal, TFile } from "obsidian";
-import { REG_LINKINDEX_INVALIDCHARS } from "./Constants";
-import { t } from "./lang/helpers";
+import { REG_LINKINDEX_INVALIDCHARS } from "../Constants";
+import { t } from "../lang/helpers";
 
 export class InsertLinkDialog extends FuzzySuggestModal<TFile> {
   public app: App;

@@ -5,7 +5,6 @@ import {
   PluginSettingTab,
   Setting,
   TFile,
-  WorkspaceLeaf,
 } from "obsidian";
 import { VIEW_TYPE_EXCALIDRAW } from "./Constants";
 import ExcalidrawView from "./ExcalidrawView";
@@ -14,8 +13,10 @@ import type ExcalidrawPlugin from "./main";
 import {
   getDrawingFilename,
   getEmbedFilename,
+} from "./utils/FileUtils";
+import {
   setLeftHandedMode,
-} from "./Utils";
+} from "./utils/Utils";
 
 export interface ExcalidrawSettings {
   folder: string;

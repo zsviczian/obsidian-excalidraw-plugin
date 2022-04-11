@@ -3,7 +3,7 @@ import ExcalidrawView from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
 import { FileData, MimeType } from "./EmbeddedFileLoader";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
-import { getImageSize, log, sleep, svgToBase64 } from "./Utils";
+import { getImageSize, log, sleep, svgToBase64 } from "./utils/Utils";
 import { fileid } from "./Constants";
 import html2canvas from "html2canvas";
 import { count } from "console";

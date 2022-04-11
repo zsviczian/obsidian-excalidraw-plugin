@@ -14,7 +14,6 @@ import * as ReactDOM from "react-dom";
 import Excalidraw, { getSceneVersion } from "@zsviczian/excalidraw";
 import {
   ExcalidrawElement,
-  ExcalidrawImageElement,
   ExcalidrawTextElement,
   NonDeletedExcalidrawElement,
 } from "@zsviczian/excalidraw/types/element/types";
@@ -51,17 +50,17 @@ import {
 } from "./ExcalidrawData";
 import {
   checkAndCreateFolder,
+  download,
+  getIMGFilename,
+  getNewUniqueFilepath,
+} from "./utils/FileUtils";
+import {
   checkExcalidrawVersion,
   //debug,
-  download,
   embedFontsInSVG,
   errorlog,
   getExportTheme,
-  //getBakPath,
-  getIMGFilename,
   getLinkParts,
-  getNewOrAdjacentLeaf,
-  getNewUniqueFilepath,
   getPNG,
   getPNGScale,
   getSVG,
@@ -70,11 +69,12 @@ import {
   hasExportTheme,
   rotatedDimensions,
   scaleLoadedImage,
-  splitFolderAndFilename,
   svgToBase64,
   viewportCoordsToSceneCoords,
-} from "./Utils";
-import { NewFileActions, Prompt } from "./Prompt";
+} from "./utils/Utils";
+import { getNewOrAdjacentLeaf } from "./utils/ObsidianUtils";
+import { splitFolderAndFilename } from "./utils/FileUtils";
+import { NewFileActions, Prompt } from "./dialogs/Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 import { updateEquation } from "./LaTeX";
 import {
@@ -82,10 +82,11 @@ import {
   EmbeddedFilesLoader,
   FileData,
 } from "./EmbeddedFileLoader";
-import { ScriptInstallPrompt } from "./ScriptInstallPrompt";
-import { ObsidianMenu } from "./ObsidianMenu";
-import { ToolsPanel } from "./ToolsPanel";
+import { ScriptInstallPrompt } from "./dialogs/ScriptInstallPrompt";
+import { ObsidianMenu } from "./menu/ObsidianMenu";
+import { ToolsPanel } from "./menu/ToolsPanel";
 import { ScriptEngine } from "./Scripts";
+import { getTextElementAtPointer, getImageElementAtPointer, getElementWithLinkAtPointer } from "./utils/GetElementAtPointer";
 
 export enum TextMode {
   parsed,
@@ -1564,13 +1565,10 @@ export default class ExcalidrawView extends TextFileView {
         excalidrawRef.current.readyPromise.then(
           (api: ExcalidrawImperativeAPI) => {
             this.excalidrawAPI = api;
-            //console.log({where:"ExcalidrawView.React.ReadyPromise"});
-            //debug({where:"ExcalidrawView.React.useEffect",file:this.file.name,before:"this.loadSceneFiles"});
             api.setLocalFont(this.plugin.settings.experimentalEnableFourthFont);
             this.loadSceneFiles();
             this.updateContainerSize(null, true);
             this.excalidrawWrapperRef.current.firstElementChild?.focus();
-            //const om = this.excalidrawData.getOpenMode();
             this.addFullscreenchangeEvent();
             this.initializeToolsIconPanelAfterLoading();
           },
@@ -1956,109 +1954,6 @@ export default class ExcalidrawView extends TextFileView {
         api.refresh();
       };
 
-      const getElementsAtPointer = (
-        pointer: any,
-        elements: ExcalidrawElement[],
-        type?: string,
-      ): ExcalidrawElement[] => {
-        return elements.filter((e: ExcalidrawElement) => {
-          if (type && e.type !== type) {
-            return false;
-          }
-          const [x, y, w, h] = rotatedDimensions(e);
-          return (
-            x <= pointer.x &&
-            x + w >= pointer.x &&
-            y <= pointer.y &&
-            y + h >= pointer.y
-          );
-        });
-      };
-
-      const getTextElementAtPointer = (pointer: any) => {
-        const api = this.excalidrawAPI;
-        if (!api) {
-          return { id: null, text: null };
-        }
-        const elements = getElementsAtPointer(
-          pointer,
-          api.getSceneElements(),
-          "text",
-        ) as ExcalidrawTextElement[];
-        if (elements.length == 0) {
-          return { id: null, text: null };
-        }
-        if (elements.length === 1) {
-          return { id: elements[0].id, text: elements[0].text };
-        }
-        //if more than 1 text elements are at the location, look for one that has a link
-        const elementsWithLinks = elements.filter(
-          (e: ExcalidrawTextElement) => {
-            const text: string =
-              this.textMode === TextMode.parsed
-                ? this.excalidrawData.getRawText(e.id)
-                : e.text;
-            if (!text) {
-              return false;
-            }
-            if (text.match(REG_LINKINDEX_HYPERLINK)) {
-              return true;
-            }
-            const parts = REGEX_LINK.getRes(text).next();
-            if (!parts.value) {
-              return false;
-            }
-            return true;
-          },
-        );
-        //if there are no text elements with links, return the first element without a link
-        if (elementsWithLinks.length == 0) {
-          return { id: elements[0].id, text: elements[0].text };
-        }
-        //if there are still multiple text elements with links on top of each other, return the first
-        return { id: elementsWithLinks[0].id, text: elementsWithLinks[0].text };
-      };
-
-      const getImageElementAtPointer = (pointer: any) => {
-        const api = this.excalidrawAPI;
-        if (!api) {
-          return;
-        }
-        const elements = getElementsAtPointer(
-          pointer,
-          api.getSceneElements(),
-          "image",
-        ) as ExcalidrawImageElement[];
-        if (elements.length === 0) {
-          return { id: null, fileId: null };
-        }
-        if (elements.length >= 1) {
-          return { id: elements[0].id, fileId: elements[0].fileId };
-        }
-        //if more than 1 image elements are at the location, return the first
-      };
-
-      const getElementWithLinkAtPointer = (pointer: any) => {
-        const api = this.excalidrawAPI;
-        if (!api) {
-          return;
-        }
-        const elements = (
-          getElementsAtPointer(
-            pointer,
-            api.getSceneElements(),
-          ) as ExcalidrawImageElement[]
-        ).filter((el) => el.link);
-
-        if (elements.length === 0) {
-          return { id: null, text: null };
-        }
-
-        if (elements.length >= 1) {
-          return { id: elements[0].id, text: elements[0].link };
-        }
-      };
-
       let hoverPoint = { x: 0, y: 0 };
       let hoverPreviewTarget: EventTarget = null;
       const clearHoverPreview = () => {
@@ -2102,7 +1997,7 @@ export default class ExcalidrawView extends TextFileView {
 
       let viewModeEnabled = false;
       const handleLinkClick = () => {
-        selectedTextElement = getTextElementAtPointer(currentPosition);
+        selectedTextElement = getTextElementAtPointer(currentPosition, this);
         if (selectedTextElement && selectedTextElement.id) {
           const event = new MouseEvent("click", {
             ctrlKey: true,
@@ -2113,7 +2008,7 @@ export default class ExcalidrawView extends TextFileView {
           this.handleLinkClick(this, event);
           selectedTextElement = null;
         }
-        selectedImageElement = getImageElementAtPointer(currentPosition);
+        selectedImageElement = getImageElementAtPointer(currentPosition, this);
         if (selectedImageElement && selectedImageElement.id) {
           const event = new MouseEvent("click", {
             ctrlKey: true,
@@ -2125,7 +2020,7 @@ export default class ExcalidrawView extends TextFileView {
           selectedImageElement = null;
         }
 
-        selectedElementWithLink = getElementWithLinkAtPointer(currentPosition);
+        selectedElementWithLink = getElementWithLinkAtPointer(currentPosition, this);
         if (selectedElementWithLink && selectedElementWithLink.id) {
           const event = new MouseEvent("click", {
             ctrlKey: true,
@@ -2143,10 +2038,10 @@ export default class ExcalidrawView extends TextFileView {
       const showHoverPreview = (linktext?: string) => {
         if (!linktext) {
           linktext = "";
-          const selectedElement = getTextElementAtPointer(currentPosition);
+          const selectedElement = getTextElementAtPointer(currentPosition, this);
           if (!selectedElement || !selectedElement.text) {
             const selectedImgElement =
-              getImageElementAtPointer(currentPosition);
+              getImageElementAtPointer(currentPosition, this);
             if (!selectedImgElement || !selectedImgElement.fileId) {
               return;
             }

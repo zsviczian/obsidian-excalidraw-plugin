@@ -1,9 +1,11 @@
 import { App, FuzzySuggestModal, TFile } from "obsidian";
-import ExcalidrawView from "./ExcalidrawView";
-import { t } from "./lang/helpers";
-import ExcalidrawPlugin from "./main";
+import { fileURLToPath } from "url";
+import { IMAGE_TYPES, REG_LINKINDEX_INVALIDCHARS } from "../Constants";
+import ExcalidrawView from "../ExcalidrawView";
+import { t } from "../lang/helpers";
+import ExcalidrawPlugin from "../main";
 
-export class InsertMDDialog extends FuzzySuggestModal<TFile> {
+export class InsertImageDialog extends FuzzySuggestModal<TFile> {
   public app: App;
   public plugin: ExcalidrawPlugin;
   private view: ExcalidrawView;
@@ -19,13 +21,17 @@ export class InsertMDDialog extends FuzzySuggestModal<TFile> {
         purpose: "",
       },
     ]);
-    this.setPlaceholder(t("SELECT_MD"));
+    this.setPlaceholder(t("SELECT_DRAWING"));
     this.emptyStateText = t("NO_MATCH");
   }
 
   getItems(): TFile[] {
     return (this.app.vault.getFiles() || []).filter(
-      (f: TFile) => f.extension === "md" && !this.plugin.isExcalidrawFile(f),
+      (f: TFile) =>
+        (IMAGE_TYPES.contains(f.extension) ||
+          this.plugin.isExcalidrawFile(f)) &&
+        //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/422
+        !f.path.match(REG_LINKINDEX_INVALIDCHARS),
     );
   }
 
@@ -37,6 +43,7 @@ export class InsertMDDialog extends FuzzySuggestModal<TFile> {
     const ea = this.plugin.ea;
     ea.reset();
     ea.setView(this.view);
+    ea.canvas.theme = this.view.excalidrawAPI.getAppState().theme;
     (async () => {
       await ea.addImage(0, 0, item);
       ea.addElementsToView(true, false, true);

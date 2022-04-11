@@ -9,18 +9,18 @@ import { EmbeddedFilesLoader } from "./EmbeddedFileLoader";
 import { createPNG, createSVG } from "./ExcalidrawAutomate";
 import { ExportSettings } from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
+import {getIMGFilename,} from "./utils/FileUtils";
 import {
   embedFontsInSVG,
   getExportTheme,
-  getIMGFilename,
   getQuickImagePreview,
   getSVGPadding,
   getWithBackground,
   hasExportTheme,
-  isObsidianThemeDark,
-  splitFolderAndFilename,
   svgToBase64,
-} from "./Utils";
+} from "./utils/Utils";
+import { isObsidianThemeDark } from "./utils/ObsidianUtils";
+import { splitFolderAndFilename } from "./utils/FileUtils";
 
 interface imgElementAttributes {
   file?: TFile;

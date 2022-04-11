@@ -1,14 +1,9 @@
 import { exportToSvg, exportToBlob } from "@zsviczian/excalidraw";
 import {
   App,
-  normalizePath,
   Notice,
   request,
-  TAbstractFile,
   TFile,
-  TFolder,
-  Vault,
-  WorkspaceLeaf,
 } from "obsidian";
 import { Random } from "roughjs/bin/math";
 import { DataURL, Zoom } from "@zsviczian/excalidraw/types/types";
@@ -21,12 +16,12 @@ import {
   FRONTMATTER_KEY_EXPORT_TRANSPARENT,
   FRONTMATTER_KEY_EXPORT_SVGPADDING,
   FRONTMATTER_KEY_EXPORT_PNGSCALE,
-} from "./Constants";
-import ExcalidrawPlugin from "./main";
+} from "../Constants";
+import ExcalidrawPlugin from "../main";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
-import { ExportSettings } from "./ExcalidrawView";
+import { ExportSettings } from "../ExcalidrawView";
 import { compressToBase64, decompressFromBase64 } from "lz-string";
-import { ExcalidrawSettings } from "./Settings";
+import { getIMGFilename } from "./FileUtils";
 
 declare module "obsidian" {
   interface Workspace {
@@ -79,138 +74,6 @@ export const checkExcalidrawVersion = async (app: App) => {
   setTimeout(() => (versionUpdateChecked = false), 28800000); //reset after 8 hours
 };
 
-/**
- * Splits a full path including a folderpath and a filename into separate folderpath and filename components
- * @param filepath
- */
-export function splitFolderAndFilename(filepath: string): {
-  folderpath: string;
-  filename: string;
-  basename: string;
-} {
-  const lastIndex = filepath.lastIndexOf("/");
-  const filename =
-    lastIndex == -1 ? filepath : filepath.substring(lastIndex + 1);
-  return {
-    folderpath: normalizePath(filepath.substring(0, lastIndex)),
-    filename,
-    basename: filename.replace(/\.[^/.]+$/, ""),
-  };
-}
-
-/**
- * Download data as file from Obsidian, to store on local device
- * @param encoding
- * @param data
- * @param filename
- */
-export function download(encoding: string, data: any, filename: string) {
-  const element = document.createElement("a");
-  element.setAttribute("href", (encoding ? `${encoding},` : "") + data);
-  element.setAttribute("download", filename);
-  element.style.display = "none";
-  document.body.appendChild(element);
-  element.click();
-  document.body.removeChild(element);
-}
-
-/**
- * Generates the image filename based on the excalidraw filename
- * @param excalidrawPath - Full filepath of ExclidrawFile
- * @param newExtension - extension of IMG file in ".extension" format
- * @returns
- */
-export function getIMGPathFromExcalidrawFile(
-  excalidrawPath: string,
-  newExtension: string,
-): string {
-  const isLegacyFile: boolean = excalidrawPath.endsWith(".excalidraw");
-  const replaceExtension: string = isLegacyFile ? ".excalidraw" : ".md";
-  return (
-    excalidrawPath.substring(0, excalidrawPath.lastIndexOf(replaceExtension)) +
-    newExtension
-  );
-}
-
-/*export function getBakPath(file:TFile):string {
-  const re = new RegExp(`${file.name}$`,"g");
-  return file.path.replace(re,`.${file.name}.bak`);
-}*/
-
-/**
- * Create new file, if file already exists find first unique filename by adding a number to the end of the filename
- * @param filename
- * @param folderpath
- * @returns
- */
-export function getNewUniqueFilepath(
-  vault: Vault,
-  filename: string,
-  folderpath: string,
-): string {
-  let fname = normalizePath(`${folderpath}/${filename}`);
-  let file: TAbstractFile = vault.getAbstractFileByPath(fname);
-  let i = 0;
-  const extension = filename.endsWith(".excalidraw.md")
-    ? ".excalidraw.md"
-    : filename.slice(filename.lastIndexOf("."));
-  while (file) {
-    fname = normalizePath(
-      `${folderpath}/${filename.slice(
-        0,
-        filename.lastIndexOf(extension),
-      )}_${i}${extension}`,
-    );
-    i++;
-    file = vault.getAbstractFileByPath(fname);
-  }
-  return fname;
-}
-
-export function getDrawingFilename(settings: ExcalidrawSettings): string {
-  return (
-    settings.drawingFilenamePrefix +
-    (settings.drawingFilenameDateTime !== ""
-      ? window.moment().format(settings.drawingFilenameDateTime)
-      : "") +
-    (settings.compatibilityMode
-      ? ".excalidraw"
-      : settings.useExcalidrawExtension
-      ? ".excalidraw.md"
-      : ".md")
-  );
-}
-
-export function getEmbedFilename(
-  notename: string,
-  settings: ExcalidrawSettings,
-): string {
-  return (
-    (settings.drawingEmbedPrefixWithFilename ? notename : "") +
-    settings.drawingFilnameEmbedPostfix +
-    (settings.drawingFilenameDateTime !== ""
-      ? window.moment().format(settings.drawingFilenameDateTime)
-      : "") +
-    (settings.compatibilityMode
-      ? ".excalidraw"
-      : settings.useExcalidrawExtension
-      ? ".excalidraw.md"
-      : ".md")
-  );
-}
-
-/**
- * Open or create a folderpath if it does not exist
- * @param folderpath
- */
-export async function checkAndCreateFolder(vault: Vault, folderpath: string) {
-  folderpath = normalizePath(folderpath);
-  const folder = vault.getAbstractFileByPath(folderpath);
-  if (folder && folder instanceof TFolder) {
-    return;
-  }
-  await vault.createFolder(folderpath);
-}
 
 const random = new Random(Date.now());
 export const randomInteger = () => Math.floor(random.next() * 2 ** 31);
@@ -331,35 +194,6 @@ export const viewportCoordsToSceneCoords = (
   return { x, y };
 };
 
-export const getNewOrAdjacentLeaf = (
-  plugin: ExcalidrawPlugin,
-  leaf: WorkspaceLeaf,
-): WorkspaceLeaf => {
-  if (plugin.settings.openInAdjacentPane) {
-    let leafToUse = plugin.app.workspace.getAdjacentLeafInDirection(
-      leaf,
-      "right",
-    );
-    if (!leafToUse) {
-      leafToUse = plugin.app.workspace.getAdjacentLeafInDirection(leaf, "left");
-    }
-    if (!leafToUse) {
-      leafToUse = plugin.app.workspace.getAdjacentLeafInDirection(
-        leaf,
-        "bottom",
-      );
-    }
-    if (!leafToUse) {
-      leafToUse = plugin.app.workspace.getAdjacentLeafInDirection(leaf, "top");
-    }
-    if (!leafToUse) {
-      leafToUse = plugin.app.workspace.createLeafBySplit(leaf);
-    }
-    return leafToUse;
-  }
-  return plugin.app.workspace.createLeafBySplit(leaf);
-};
-
 export const getDataURL = async (
   file: ArrayBuffer,
   mimeType: string,
@@ -419,35 +253,6 @@ export const getBinaryFileFromDataURL = (dataURL: string): ArrayBuffer => {
     bytes[i] = binary_string.charCodeAt(i);
   }
   return bytes.buffer;
-};
-
-export const getAttachmentsFolderAndFilePath = async (
-  app: App,
-  activeViewFilePath: string,
-  newFileName: string,
-): Promise<{ folder: string; filepath: string }> => {
-  let folder = app.vault.getConfig("attachmentFolderPath");
-  // folder == null: save to vault root
-  // folder == "./" save to same folder as current file
-  // folder == "folder" save to specific folder in vault
-  // folder == "./folder" save to specific subfolder of current active folder
-  if (folder && folder.startsWith("./")) {
-    // folder relative to current file
-    const activeFileFolder = `${
-      splitFolderAndFilename(activeViewFilePath).folderpath
-    }/`;
-    folder = normalizePath(activeFileFolder + folder.substring(2));
-  }
-  if (!folder) {
-    folder = "";
-  }
-  await checkAndCreateFolder(app.vault, folder);
-  return {
-    folder,
-    filepath: normalizePath(
-      folder === "" ? newFileName : `${folder}/${newFileName}`,
-    ),
-  };
 };
 
 export const getSVG = async (
@@ -596,13 +401,6 @@ export const setLeftHandedMode = (isLeftHanded: boolean) => {
     document.head.appendChild(newStylesheet);
   }
 };
-
-export const isObsidianThemeDark = () =>
-  document.body.classList.contains("theme-dark");
-
-export function getIMGFilename(path: string, extension: string): string {
-  return `${path.substring(0, path.lastIndexOf("."))}.${extension}`;
-}
 
 export type LinkParts = {
   original: string;
