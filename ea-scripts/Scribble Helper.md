@@ -1,7 +1,7 @@
 /*
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-scribble-helper.jpg)
 
-iOS scribble helper for better handwriting experience with text elements. If no elements are selected then the creates a text element at pointer position and you can use the edit box to modify the text with scribble. If a text element is selected then opens the input prompt where you can modify this text with scribble.
+iOS scribble helper for better handwriting experience with text elements. If no elements are selected then the script creates a text element at the pointer position and you can use the edit box to modify the text with scribble. If a text element is selected then the script opens the input prompt where you can modify this text with scribble.
 
 ```javascript
 */
