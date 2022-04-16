@@ -37,7 +37,7 @@ export class ReleaseNotes extends Modal {
           .filter((key) => key > prevRelease)
           .map((key: string) => `# ${key}\n${RELEASE_NOTES[key]}`)
           .slice(0, 6)
-          .join("\n\n")
+          .join("\n\n---\n")
       : FIRST_RUN;
     await MarkdownRenderer.renderMarkdown(
       message,

@@ -17,6 +17,17 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.6.25": `
+## Fixed
+- Pinch-zoom in view mode was broken ([#5001](https://github.com/excalidraw/excalidraw/pull/5001))
+- The add image button on iPad was not working ([#5038](https://github.com/excalidraw/excalidraw/pull/5038) & [#584](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/584))
+
+## New Features
+- If Excalidraw is open in a [hover-editor](https://github.com/nothingislost/obsidian-hover-editor) when opening a link in a new pane Excalidraw will now open the link in the main workspace and not by splitting the view inside the hover-editor. 
+- Excalidraw ScriptEngine settings
+  - Script Engine settings now render HTML descriptions
+  - If the ${String.fromCharCode(96)}height${String.fromCharCode(96)} property of a text setting is set, the corresponding text input field will be rendered as a textArea with the specified height.
+`,
   "1.6.24": `
 ## Fixed
 - Link fixes:

@@ -1185,6 +1185,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         );
       });
 
+    //-------------------------------------
+    //Script settings
+    //-------------------------------------
     const scripts = this.plugin.scriptEngine
       .getListofScripts()
       ?.map((f) => this.plugin.scriptEngine.getScriptName(f));
@@ -1192,6 +1195,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       Object.keys(this.plugin.settings.scriptEngineSettings).length > 0 &&
       scripts
     ) {
+      const textAreaHeight = (scriptName: string, variableName: string): any => {
+        const variable =
+          //@ts-ignore
+          this.plugin.settings.scriptEngineSettings[scriptName][variableName];
+        switch (typeof variable) {
+          case "object":
+            return variable.height;
+          default:
+            return null;
+        }
+      };
+
       const getValue = (scriptName: string, variableName: string): any => {
         const variable =
           //@ts-ignore
@@ -1236,7 +1251,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       ) => {
         new Setting(containerEl)
           .setName(variableName)
-          .setDesc(description ?? "")
+          .setDesc(fragWithHTML(description ?? ""))
           .addToggle((toggle) =>
             toggle
               .setValue(getValue(scriptName, variableName))
@@ -1260,7 +1275,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         ) {
           new Setting(containerEl)
             .setName(variableName)
-            .setDesc(description ?? "")
+            .setDesc(fragWithHTML(description ?? ""))
             .addDropdown((dropdown) => {
               valueset.forEach((val: any) =>
                 dropdown.addOption(val.toString(), val.toString()),
@@ -1273,17 +1288,33 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
                 });
             });
         } else {
-          new Setting(containerEl)
-            .setName(variableName)
-            .setDesc(description ?? "")
-            .addText((text) =>
-              text
-                .setValue(getValue(scriptName, variableName))
-                .onChange(async (value) => {
-                  setValue(scriptName, variableName, value);
-                  this.applySettingsUpdate();
-                }),
-            );
+          if(textAreaHeight(scriptName, variableName)) {
+            new Setting(containerEl)
+              .setName(variableName)
+              .setDesc(fragWithHTML(description ?? ""))
+              .addTextArea((text) => {
+                text.inputEl.style.minHeight = textAreaHeight(scriptName, variableName);
+                text.inputEl.style.minWidth = "400px";
+                text
+                  .setValue(getValue(scriptName, variableName))
+                  .onChange(async (value) => {
+                    setValue(scriptName, variableName, value);
+                    this.applySettingsUpdate();
+                  });
+              });
+          } else {
+            new Setting(containerEl)
+              .setName(variableName)
+              .setDesc(fragWithHTML(description ?? ""))
+              .addText((text) =>
+                text
+                  .setValue(getValue(scriptName, variableName))
+                  .onChange(async (value) => {
+                    setValue(scriptName, variableName, value);
+                    this.applySettingsUpdate();
+                  }),
+              );
+          }
         }
       };
 
@@ -1294,7 +1325,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       ) => {
         new Setting(containerEl)
           .setName(variableName)
-          .setDesc(description ?? "")
+          .setDesc(fragWithHTML(description ?? ""))
           .addText((text) =>
             text
               .setPlaceholder("Enter a number")

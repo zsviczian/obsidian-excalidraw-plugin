@@ -1,6 +1,6 @@
 /*
 
-An Excalidraw based graph user interface for your Vault. Requires the [Breadcrumbs plugin](https://github.com/SkepticMystic/breadcrumbs) to be installed and configured as well. Generates a user interface similar to that of [TheBrain](https://TheBrain.com).
+An Excalidraw based graph user interface for your Vault. Requires the [Dataview plugin](https://github.com/blacksmithgu/obsidian-dataview) to be installed. Generates a user interface similar to that of [TheBrain](https://TheBrain.com).
 
 Watch introduction to this script on [YouTube](https://youtu.be/J4T5KHERH_o).
 
@@ -9,13 +9,13 @@ Watch introduction to this script on [YouTube](https://youtu.be/J4T5KHERH_o).
 ```javascript
 */
 
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.6.24")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.6.25")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
 
-if(!BCAPI) {
-  new Notice("Breadcrumbs API not found! Install and activate the Breadcrumbs plugin",4000);
+if(!window.DataviewAPI) {
+  new Notice ("Some features will only work if you have the Dataview plugin installed and enabled", 4000);
   return;
 }
 
@@ -25,11 +25,12 @@ const removeEventHandler = () => {
   app.workspace.off(EVENT,window.brainGraphEventHandler);
   if(isBoolean(window.excalidrawView?.linksAlwaysOpenInANewPane)) {
     window.excalidrawView.linksAlwaysOpenInANewPane = false;
-    const ea = ExcalidrawAutomate;
-    ea.setView(window.excalidrawView);
-    if(ea.targetView?.getExcalidrawAPI) {
-      ea.getExcalidrawAPI().updateScene({appState:{viewModeEnabled:false}});
-    }
+  }
+  const ea = ExcalidrawAutomate;
+  ea.setView(window.excalidrawView);
+  if(ea.targetView?.excalidrawAPI) {
+    ea.getExcalidrawAPI().updateScene({appState:{viewModeEnabled:false}});
+    ea.targetView.semaphores.saving = false;
   }
   delete window.excalidrawView;
   delete window.excalidrawFile;
@@ -44,17 +45,20 @@ if(window.brainGraphEventHandler) {
   return;
 }
 
-//-------------------------------------------------------
-// Settings
-//-------------------------------------------------------
+debugger;
 
+//-------------------------------------------------------
+// Load Settings
+//-------------------------------------------------------
+let saveSettings = false;
 settings = ea.getScriptSettings();
 //set default values on first run
 if(!settings["Max number of nodes/domain"]) {
   settings = {
 	"Confirmation prompt at startup": {
 	  value: true,
-	  description: "Prompt me to confirm starting of the script because it will overwrite the current active drawing. " +
+	  description: "Prompt me to confirm starting of the script because " +
+	    "it will overwrite the current active drawing. " +
 	    "You can disable this warning by turning off this switch"
 	},
     "Max number of nodes/domain": {
@@ -63,15 +67,16 @@ if(!settings["Max number of nodes/domain"]) {
     },
     "Infer non-Breadcrumbs links": {
       value: true,
-      description: "Links on the page are children, backlinks to the page are parents. Breadcrumbs take priority."
+      description: "Links on the page are children, backlinks to the page are " +
+        "parents. Breadcrumbs take priority."
     },
     "Hide attachments": {
       value: true,
       description: "Hide attachments. Will only have an effect if Infer non-Breadcrumbs links is turned on."
     },
     "Font family": {
-    value: "Code",
-    valueset: ["Hand-drawn","Normal","Code","Fourth (custom) Font"]
+      value: "Code",
+      valueset: ["Hand-drawn","Normal","Code","Fourth (custom) Font"]
     },
     "Stroke roughness": {
       value: "Architect",
@@ -154,8 +159,52 @@ if(!settings["Max number of nodes/domain"]) {
       description: "Any legal HTML color (#000000, rgb, color-name, etc.)."
     }
   };
-};
-ea.setScriptSettings(settings);
+  saveSettings = true;
+}
+if(!settings["Display alias if available"]) {
+  settings["Display alias if available"] = {
+	value: true,
+	description: "Displays the page alias instead of the " +
+	  "filename if it is specified in the page's front matter. "
+  };
+  saveSettings = true;
+}
+if(!settings["Graph settings JSON"]) {
+  settings["Graph settings JSON"] = {
+    textArea: 15,
+	value: `{\n  "breadcrumbs": {\n    "down": ["children", "child"],\n    "up": ["parents", "parent"],\n    "jump": ["jump", "jumps"]\n  },\n  "tags": {\n    "#excalidraw": {\n      "nodeColor": "hsl(59, 80%, 77%)",\n	  "gateColor": "#fd7e14",\n	  "borderColor": "black",\n	  "backgroundColor": "rgba(50,50,50,0.5)",\n	  "prefix": "🎨 "\n    },\n    "#dnp": {\n      "prefix": "🗓 "\n    }\n  }\n}`,
+	description: `This may contain two elements:
+	<ol>
+	  <li>A specification of your breadcrumbs hierarchy. Note, that if you have the Breadcrumbs plugin installed and enabled then <code>TheBrain-navigation</code> script will take your hierarchy settings from Breadcrumbs. If Breadcrumbs is disabled, this specification will be used.</li>
+	  <li>Formatting of nodes based on page tags. You can specify special formatting rules for tags. If multiple tags are present on the page the first matching a specification will be used. You may provide partial specifications as well. e.g. if you only specify <code>prefix</code>, the other attributes will follow your default settings.</li>
+    </ol>
+	<div style="user-select: text;background: #202020; overflow:auto;width:auto;border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;"><pre style="margin: 0; line-height: 125%"><span style="color: #d0d0d0">{</span>
+  <span style="color: #6ab825; font-weight: bold">&quot;breadcrumbs&quot;</span><span style="color: #d0d0d0">:</span> <span style="color: #d0d0d0">{</span>
+    <span style="color: #6ab825; font-weight: bold">&quot;down&quot;</span><span style="color: #d0d0d0">:</span> <span style="color: #d0d0d0">[</span><span style="color: #ed9d13">&quot;children&quot;</span><span style="color: #d0d0d0">,</span> <span style="color: #ed9d13">&quot;child&quot;</span><span style="color: #d0d0d0">],</span>
+    <span style="color: #6ab825; font-weight: bold">&quot;up&quot;</span><span style="color: #d0d0d0">:</span> <span style="color: #d0d0d0">[</span><span style="color: #ed9d13">&quot;parents&quot;</span><span style="color: #d0d0d0">,</span> <span style="color: #ed9d13">&quot;parent&quot;</span><span style="color: #d0d0d0">],</span>
+    <span style="color: #6ab825; font-weight: bold">&quot;jump&quot;</span><span style="color: #d0d0d0">:</span> <span style="color: #d0d0d0">[</span><span style="color: #ed9d13">&quot;jump&quot;</span><span style="color: #d0d0d0">,</span> <span style="color: #ed9d13">&quot;jumps&quot;</span><span style="color: #d0d0d0">]</span>
+  <span style="color: #d0d0d0">},</span>
+  <span style="color: #6ab825; font-weight: bold">&quot;tags&quot;</span><span style="color: #d0d0d0">:</span> <span style="color: #d0d0d0">{</span>
+    <span style="color: #6ab825; font-weight: bold">&quot;#excalidraw&quot;</span><span style="color: #d0d0d0">:</span> <span style="color: #d0d0d0">{</span>
+      <span style="color: #6ab825; font-weight: bold">&quot;nodeColor&quot;</span><span style="color: #d0d0d0">:</span> <span style="color: #ed9d13">&quot;hsl(59, 80%, 77%)&quot;</span><span style="color: #d0d0d0">,</span>
+      <span style="color: #6ab825; font-weight: bold">&quot;gateColor&quot;</span><span style="color: #d0d0d0">:</span> <span style="color: #ed9d13">&quot;#fd7e14&quot;</span><span style="color: #d0d0d0">,</span>
+      <span style="color: #6ab825; font-weight: bold">&quot;borderColor&quot;</span><span style="color: #d0d0d0">:</span> <span style="color: #ed9d13">&quot;black&quot;</span><span style="color: #d0d0d0">,</span>
+      <span style="color: #6ab825; font-weight: bold">&quot;backgroundColor&quot;</span><span style="color: #d0d0d0">:</span> <span style="color: #ed9d13">&quot;rgba(50,50,50,0.5)&quot;</span><span style="color: #d0d0d0">,</span>
+      <span style="color: #6ab825; font-weight: bold">&quot;prefix&quot;</span><span style="color: #d0d0d0">:</span> <span style="color: #ed9d13">&quot;🎨 &quot;</span>
+    <span style="color: #d0d0d0">},</span>
+    <span style="color: #6ab825; font-weight: bold">&quot;#dnp&quot;</span><span style="color: #d0d0d0">:</span> <span style="color: #d0d0d0">{</span>
+      <span style="color: #6ab825; font-weight: bold">&quot;prefix&quot;</span><span style="color: #d0d0d0">:</span> <span style="color: #ed9d13">&quot;🗓 &quot;</span>
+    <span style="color: #d0d0d0">}</span>
+  <span style="color: #d0d0d0">}</span>
+<span style="color: #d0d0d0">}</span>
+</pre></div>`
+  };
+  saveSettings = true;
+}
+
+if(saveSettings) {
+  ea.setScriptSettings(settings);
+}
 
 const SHOW_CONFIRMATION_PROMPT = settings["Confirmation prompt at startup"].value;
 const MAX_ITEMS = Math.floor(settings["Max number of nodes/domain"].value)??40;
@@ -192,13 +241,49 @@ const OBSIDIAN_NODE_BG_COLOR = settings["Non-breadcrumbs-node background color"]
 const OBSIDIAN_NODE_COLOR = settings["Non-breadcrumbs-node color"].value;
 const VIRTUAL_NODE_BG_COLOR = settings["Virtual-node background color"].value;
 const VIRTUAL_NODE_COLOR = settings["Virtual-node color"].value;
+const USE_ALIAS = settings["Display alias if available"].value;
+let formattingJSON = {};
+try {
+  formattingJSON = JSON.parse(settings["Graph settings JSON"].value);
+} catch (e) {
+  new Notice("Error reading graph settings JSON, see developer console for more information",4000);
+  console.log(e);
+};
+const NODE_FORMATTING = formattingJSON?.tags??{};
+const FORMATTED_TAGS = new Set(Object.keys(NODE_FORMATTING));
+
+//-------------------------------------------------------
+// Load breadcrumbs hierarchies
+const HIERARCHIES = new Map();
+if(window.BCAPI) { //read breadcrumbs if available
+  const getHierarchyFields = (direction) => {
+    const values = new Set(direction);
+    direction.forEach(
+      d => BCAPI.plugin.settings.userHiers.forEach(
+        h => h[d].forEach(
+          x => values.add(x)
+        )
+      )
+    );
+    return Array.from(values);
+  }
+  HIERARCHIES.set("down",getHierarchyFields(["down"]));
+  HIERARCHIES.set("up",getHierarchyFields(["up"]));
+  HIERARCHIES.set("jump",getHierarchyFields(["prev","next"]));
+} else {
+  HIERARCHIES.set("down",formattingJSON?.breadcrumbs?.down??["down","child","children"]);
+  HIERARCHIES.set("up",formattingJSON?.breadcrumbs?.up??["up", "parent","parents"]);
+  HIERARCHIES.set("jump",formattingJSON?.breadcrumbs?.jump??["jump", "jumps", "next", "previous"]);
+}
 
 //-------------------------------------------------------
 // Initialization
 //-------------------------------------------------------
-
 if(SHOW_CONFIRMATION_PROMPT) {
-  const result = await utils.inputPrompt("This will overwrite the current active drawing","type: 'ok' to Continue");
+  const result = await utils.inputPrompt(
+    "This will overwrite the current active drawing",
+    "type: 'ok' to Continue"
+  );
   if(result !== "ok") return;
 }
 
@@ -222,7 +307,10 @@ ea.getExcalidrawAPI().updateScene({
 });
 
 ea.style.strokeColor = NODE_COLOR;
-ea.addText(0,0,"Open a document in another pane and click it to get started.\n\nIf you do not see the Breadcrumbs as expected,\ntry refreshing the index in BC matrix view.\n\nFor best experience enable 'Open in adjacent pane'\nin Excalidraw settings under 'Links and Transclusion'.", {textAlign:"center"});
+ea.addText(0,0,"Open a document in another pane and click it to get started.\n\n" +
+  "If you do not see the Breadcrumbs as expected,\ntry refreshing the index in BC matrix " +
+  "view.\n\nFor best experience enable 'Open in adjacent pane'\nin Excalidraw settings " +
+  "under 'Links and Transclusion'.", {textAlign:"center"});
 await ea.addElementsToView();
 ea.getExcalidrawAPI().zoomToFit();
 
@@ -236,19 +324,16 @@ new Notice("Brain Graph On");
 //-------------------------------------------------------
 // Supporting functions and classes
 //-------------------------------------------------------
-const getMatrixNeighbours = (node) => {
-  try {
-    return BCAPI.getMatrixNeighbours(node);
-  } catch {
-    return null
-  }
+const getFilenameFromPath = (path) => {
+  const mdFile = path.endsWith(".md");
+  const filename = path.substring(path.lastIndexOf("/")+1);
+  return mdFile ? filename.slice(0,-3) : filename;
 }
 
-const joinRealsAndImplieds = (data) => {
-  result = new Set();
-  data.reals.forEach(i=>result.add(i.to));
-  data.implieds.forEach(i=>result.add(i.to));
-  return Array.from(result);
+const getExtension = (path) => {
+  const lastDot = path.lastIndexOf(".");
+  if(lastDot === -1) return "md";
+  return path.slice(lastDot+1);
 }
 
 const distinct = (data) => Array.from(new Set(data));  
@@ -320,8 +405,27 @@ class Layout {
 
 class Node {
   constructor(spec) {
-    this.spec = spec;
-    const label = spec.file?.basename??spec.nodeTitle;
+    const dvPage = spec.file ? DataviewAPI?.page(spec.file.path) : null;
+
+	const formattingTag = (dvPage?.file?.tags?.values??[]).filter(t=>FORMATTED_TAGS.has(t))[0];
+	if(formattingTag) {
+      const format = NODE_FORMATTING[formattingTag];
+      spec.gateColor = format.gateColor ?? spec.gateColor;
+      spec.backgroundColor = format.backgroundColor ?? spec.backgroundColor;
+      spec.nodeColor = format.nodeColor ?? spec.nodeColor;
+      spec.borderColor = format.borderColor ?? spec.borderColor;
+      spec.prefix = format.prefix;
+	}
+	this.spec = spec;
+
+    const aliases = (spec.file && USE_ALIAS)
+      ? (dvPage?.file?.aliases?.values??[])
+      : [];
+    const label = (spec.prefix??"") + (aliases.length > 0 
+      ? aliases[0] 
+      : (spec.file
+        ? (spec.file.extension === "md" ? spec.file.basename : spec.file.name)
+        : spec.nodeTitle));
     this.label = label.length > spec.maxLabelLength
       ? label.substring(0,spec.maxLabelLength-1) + "..."
       : label;
@@ -386,18 +490,58 @@ class Node {
 }
 
 const addNodes = (nodesMap, root, nodes, layout, options) => {
-  nodes.forEach(nodeTitle => {
+  nodes.forEach(filePath => {
     const node = new Node({
-      nodeTitle,
-      file: app.metadataCache.getFirstLinkpathDest(nodeTitle,root.path),
+      nodeTitle: getFilenameFromPath(filePath),
+      file: app.vault.getAbstractFileByPath(filePath),
       hasChildren: false,
       hasParents: false,
       hasJumps: false,
       ...options
     });
-    nodesMap.set(nodeTitle,node);
+    nodesMap.set(filePath,node);
     layout.nodes.push(node);
   });
+}
+
+//-------------------------------------------------------
+// Breadcrumbs workaround to handle full filepath
+//-------------------------------------------------------
+const getPathOrSelf = (link,host) => {
+  return (app.metadataCache.getFirstLinkpathDest(link,host)?.path)??link;
+}
+
+const readDVField = (field,file) => {
+  const res = new Set();
+  if(field.values) {
+    field.values.forEach(l=>{
+      if(l.type === "file") res.add(getPathOrSelf(l.path,file.path));
+    });
+    return Array.from(res);
+  }
+  if(field.path) {
+    return [getPathOrSelf(field.path,file.path)];
+  }
+  const m = field.matchAll(/[^[]*\[\[([^#\]\|]*)[^\]]*]]/g);
+  while(!(r=m.next()).done) {
+	if(r.value[1]) {
+	  res.add(getPathOrSelf(r.value[1],file.path));
+	}
+  }
+  return Array.from(res);
+}
+
+const getDVFieldLinks = (page,dir,retSet=false) => {
+  const fields = HIERARCHIES.get(dir);
+  const links = new Set();
+  const processed = new Set();
+  fields.forEach(f => {
+    if(page[f] && !processed.has(f)) {
+      processed.add(f);
+      readDVField(page[f],page.file).forEach(l=>links.add(l))
+    };
+  });
+  return retSet ? links : Array.from(links);
 }
 
 //-------------------------------------------------------
@@ -406,73 +550,120 @@ const addNodes = (nodesMap, root, nodes, layout, options) => {
 window.brainGraphEventHandler = async (leaf) => {
   //sleep for 100ms
   await new Promise((resolve) => setTimeout(resolve, 100));
-
+  const tStart = Date.now();
+  
+  //-------------------------------------------------------
   //terminate event handler if view no longer exists or file has changed
   if(!window.excalidrawView?.file || window.excalidrawView.file.path !== window.excalidrawFile?.path) {
     removeEventHandler();
     return;
   }
+  
+  if(!leaf?.view?.file) return;
+  const rootFile = leaf.view.file;
+  
+  if (rootFile.path === window.excalidrawFile.path) return; //brainview drawing is active
 
-  //need to reinitialize ea because in the event handler ea provided by the script engine will no longer be available
+  if(window.lastfilePath && window.lastfilePath === rootFile.path) return; //don't reload the file if it has not changed
+  window.lastfilePath = rootFile.path;
+
+  //-------------------------------------------------------
+  //I must reinitialize ea because in the event handler the script engine ea will no longer be available
   ea = ExcalidrawAutomate;
   ea.reset();
   ea.setView(window.excalidrawView);
   ea.style.fontFamily = FONT_FAMILY;
   ea.style.roughness = STROKE_ROUGHNESS;
   ea.style.strokeSharpness = STROKE_SHARPNESS;
-  
-  if(!leaf?.view?.file) return;
-  const file = leaf.view.file;
-  
-  if (file.path === window.excalidrawFile.path) return; //brainview drawing is active
-
-  if(window.lastfilePath && window.lastfilePath === file.path) return; //don't reload the file if it has not changed
-  window.lastfilePath = file.path;
-
   ea.getExcalidrawAPI().updateScene({elements:[]});
-  const centralNodeTitle = file.extension === "md" ? file.basename : file.name;
-
   ea.style.verticalAlign = "middle";
   ea.style.strokeSharpness = "round";
   ea.style.fillStyle = "solid";
-  
-  const rootFile = app.metadataCache.getFirstLinkpathDest(centralNodeTitle,"")
-  const bc = getMatrixNeighbours(centralNodeTitle);
-  
-  const parents = bc ? joinRealsAndImplieds(bc.up).filter(n=>n!==centralNodeTitle).slice(0,MAX_ITEMS) : [];
-  const children = bc ? joinRealsAndImplieds(bc.down).filter(n=>n!==centralNodeTitle).slice(0,MAX_ITEMS) : [];
-  const jumps = bc ? distinct(
-    joinRealsAndImplieds(bc.next)
-      .concat(joinRealsAndImplieds(bc.prev))
-  ).filter(n=>n!==centralNodeTitle)
-  .slice(0,MAX_ITEMS) : [];
-  const siblings = bc ? joinRealsAndImplieds(bc.same).filter(n=>n!==centralNodeTitle).slice(0,MAX_ITEMS) : []; //see breadcrumbs settings to finetune siblings
 
-  bclinks = new Set(parents.concat(children).concat(jumps).concat(siblings).concat([centralNodeTitle]));
-  //adding links from the document, not explicitly declared as a breadcrumbs
-  //this code assumes unique filenames (like breadcrumbs, thus will not handle non unique files well)
+  //-------------------------------------------------------
+  //build list of nodes
+  const dvPage = DataviewAPI.page(rootFile.path); //workaround because 
+  const parentsSet = new Set(dvPage
+    ? getDVFieldLinks(dvPage,"up")
+      .filter(l=>l!==rootFile.path)
+    : []
+  );
+  
+  const childrenSet = new Set(dvPage
+    ? getDVFieldLinks(dvPage,"down")
+      .filter(l=>l!==rootFile.path)
+    : []
+  );
+
+  const jumpsSet = new Set(dvPage
+    ? getDVFieldLinks(dvPage,"jump")
+      .filter(l=>l!==rootFile.path)
+    : []
+  );
+
+  let backlinksSet = new Set(
+    Object.keys((app.metadataCache.getBacklinksForFile(rootFile)?.data)??{})
+    .map(l=>app.metadataCache.getFirstLinkpathDest(l,rootFile.path)?.path??l)
+  );
+
+  backlinksSet.forEach(l=>{
+    const page = DataviewAPI.page(l);
+    if(page) {
+      if(getDVFieldLinks(page,"down").contains(rootFile.path)) {
+        parentsSet.add(l);
+        return;
+      }
+      if(getDVFieldLinks(page,"up").contains(rootFile.path)) {
+        childrenSet.add(l);
+        return;
+      }
+      if(getDVFieldLinks(page,"jump").contains(rootFile.path)) {
+        jumpsSet.add(l);
+        return;
+      }      
+    }
+  })
+
+  const parents = Array.from(parentsSet).slice(0,MAX_ITEMS);
+  const children = Array.from(childrenSet).slice(0,MAX_ITEMS);
+  const jumps = Array.from(jumpsSet).slice(0,MAX_ITEMS);
+  
+  const siblings = distinct(
+    parents.map(p=>{
+      const page = DataviewAPI.page(p);
+      return page
+        ? getDVFieldLinks(page,"down")
+          .filter(l=>!parentsSet.has(l) && !childrenSet.has(l) && !jumpsSet.has(l) && l!==rootFile.path)
+        : [];
+    }).flat()
+  ).slice(0,MAX_ITEMS);
+  const siblingsSet = new Set(siblings);
+
+  //adding links from the document, not explicitly declared as a breadcrumb
   const forwardLinks = INCLUDE_OBSIDIAN_LINKS 
     ? distinct(app.metadataCache
-        .getLinks()[rootFile.path]?.map(l=>app.metadataCache.getFirstLinkpathDest(l.link,rootFile.path))
-        .filter(f=>f && (!HIDE_ATTACHMENTS || f.extension === "md"))
-        .map(f=>f.extension === "md" ? f.basename : f.name)
-        .filter(l=>!bclinks.has(l))??[].slice(0,MAX_ITEMS))
+        .getLinks()[rootFile.path]?.map(
+          l=>app.metadataCache.getFirstLinkpathDest(l.link.match(/[^#]*/)[0],rootFile.path)??l.link.match(/[^#]*/)[0]
+        ).filter(f=>f && (!HIDE_ATTACHMENTS || (f.extension??getExtension(f)) === "md"))
+        .map(f=>f.path??f)
+        .filter(l=>!parentsSet.has(l) && !childrenSet.has(l) && !jumpsSet.has(l) && l!==rootFile.path)
+        .slice(0,MAX_ITEMS)
+      )
     : [];
-  const forwardLinksSet = new Set(forwardLinks);
+  const forwardlinksSet = new Set(forwardLinks);
+  
   const backLinks = INCLUDE_OBSIDIAN_LINKS
-    ? distinct(Object
-        .keys(app.metadataCache.getBacklinksForFile(rootFile)?.data??{})
-        .map(l=>app.metadataCache.getFirstLinkpathDest(l,rootFile.path))
-        .filter(f=>f && f.path !== window.excalidrawFile.path && (!HIDE_ATTACHMENTS || f.extension === "md"))
-        .map(f=>f.extension === "md" ? f.basename : f.name)
-        .filter(l=>!bclinks.has(l) && !forwardLinksSet.has(l))
-        .slice(0,MAX_ITEMS))
-    : [];
-  const backLinksSet = new Set(backLinks);
+	? Array.from(backlinksSet)
+	  .filter(l=>!parentsSet.has(l) && !childrenSet.has(l) && !jumpsSet.has(l) && !forwardlinksSet.has(l) && l!==rootFile.path)
+	  .slice(0,MAX_ITEMS)
+	: [];
+  backlinksSet = new Set(backLinks);
 
+  //-------------------------------------------------------
+  // Generate layout and nodes
   const nodesMap = new Map();
   const linksMap = new Map();
-
+  
   const lCenter = new Layout({
     origoX: 0,
     origoY: 0,
@@ -544,7 +735,7 @@ window.brainGraphEventHandler = async (leaf) => {
     backgroundColor: CENTRAL_NODE_BG_COLOR,
     virtualNodeBGColor: VIRTUAL_NODE_BG_COLOR
   });
-  nodesMap.set(rootFile.basename,rootNode);
+  nodesMap.set(rootFile.path,rootNode);
   lCenter.nodes.push(rootNode);
 
   addNodes(
@@ -589,7 +780,6 @@ window.brainGraphEventHandler = async (leaf) => {
     }
   );
 
-
   addNodes(
     nodesMap,
     rootFile,
@@ -632,7 +822,6 @@ window.brainGraphEventHandler = async (leaf) => {
     }
   );
 
-
   addNodes(
     nodesMap,
     rootFile,
@@ -674,33 +863,116 @@ window.brainGraphEventHandler = async (leaf) => {
       virtualNodeBGColor: VIRTUAL_NODE_BG_COLOR
     }
   );
+  
+  //-------------------------------------------------------
+  // Generate links for all displayed nodes
+  const separator = "?"; //any character disallowed in filenames
+  Array.from(nodesMap.keys()).forEach(filePath => {
+    const node = nodesMap.get(filePath);
+	const dvPage = DataviewAPI.page(filePath);
 
-  Array.from(nodesMap.keys()).forEach(nodeTitle => {
-    const node = nodesMap.get(nodeTitle);
-    const bc = getMatrixNeighbours(nodeTitle);
-    const parent = forwardLinksSet.has(nodeTitle) ? [rootFile.basename] : [];
-    const parents = bc ? joinRealsAndImplieds(bc.up).concat(parent) : parent;
-    const child = backLinksSet.has(nodeTitle) ? [rootFile.basename] : []
-    const children = bc ? joinRealsAndImplieds(bc.down).concat(child) : child;
-    const jumps = bc ? distinct(joinRealsAndImplieds(bc.next).concat(joinRealsAndImplieds(bc.prev))) : [];
+    //-------------------------------------------------------
+    // Add links originating from node
+    const parent = forwardlinksSet.has(filePath) ? rootFile.path : null;
+    const parents = dvPage
+      ? (parent ? getDVFieldLinks(dvPage,"up",true).add(parent) : getDVFieldLinks(dvPage,"up",true))
+      : (parent ? new Set([parent]) : new Set());
+
+    const child = backlinksSet.has(filePath) ? rootFile.path : null
+    const children = dvPage
+      ? (child ? getDVFieldLinks(dvPage,"down", true).add(child) : getDVFieldLinks(dvPage,"down", true))
+      : (child ? new Set([child]) : new Set());
+
+    const jumps = dvPage
+      ? getDVFieldLinks(dvPage,"jump", true)
+      : new Set();
+    
     //siblings are left out in this case on purpose
-
-    node.spec.hasChildren = children.length>0;
-    node.spec.hasParents = parents.length>0;
-    node.spec.hasJumps = jumps.length>0;
 
     const addLinks = (nodes,relation) => nodes.forEach(n => {
       if(!nodesMap.has(n)) return;
-      if(linksMap.has(`${nodeTitle}/${n}`)) return;
-    linksMap.set(`${nodeTitle}/${n}`,relation);
-    linksMap.set(`${n}/${nodeTitle}`,null);
+      if(linksMap.has(filePath + separator + n)) return;
+      linksMap.set(filePath + separator + n,relation);
+      linksMap.set(n + separator + filePath,null);
     });
 
     addLinks(parents,["parent","child"]);
     addLinks(children, ["child","parent"]);
     addLinks(jumps, ["jump","jump"]);
+
+    //-------------------------------------------------------
+    //Set gate fill 
+    //- if node has outgoing links
+    node.spec.hasChildren = node.spec.hasChildren || children.size>0;
+    node.spec.hasParents = node.spec.hasParents || parents.size>0;
+    node.spec.hasJumps = node.spec.hasJumps || jumps.size>0;
+
+    //- of the nodes on the other end of outgoing links
+    //  this is required on top of backlinks, to handle
+    //  nodes for referenced but not yet created pages
+    parents.forEach(p=>{
+      const n = nodesMap.get(p);
+      if(n) n.spec.hasChildren = true;
+    });
+    
+    children.forEach(p=>{
+      const n = nodesMap.get(p);
+      if(n) n.spec.hasParents = true;
+    });
+
+    jumps.forEach(p=>{
+      const n = nodesMap.get(p);
+      if(n) n.spec.hasJumps = true;
+    });
+
+    //- if node has an incoming link from a node outside the visible graph
+	if(node.spec.file && !(node.spec.hasParents && node.spec.hasChildren && node.hasJumps)) {
+      const nodeBacklinks = new Set(
+        Object.keys((app.metadataCache.getBacklinksForFile(node.spec.file)?.data)??{})
+        .map(l=>app.metadataCache.getFirstLinkpathDest(l,filePath)?.path??l)
+      );
+
+      nodeBacklinks.forEach(l=>{
+        if(node.spec.hasParents && node.spec.hasChildren && node.hasJumps) return;
+        const page = DataviewAPI.page(l);
+        if(page) {
+          if(getDVFieldLinks(page,"down",true).has(filePath)) {
+            node.spec.hasParents = true;
+            return;
+          }
+          if(getDVFieldLinks(page,"up",true).has(filePath)) {
+            node.spec.hasChildren = true;
+            return;
+          }
+          if(getDVFieldLinks(page,"jump",true).has(filePath)) {
+            node.spec.hasJumps = true;
+            return;
+          }
+          if(INCLUDE_OBSIDIAN_LINKS) {
+            node.spec.hasParents = true;
+            return;
+          }
+        }
+      });
+    }
+    
+    if(!node.spec.hasChildren && INCLUDE_OBSIDIAN_LINKS && node.spec.file) {
+      const forwardLinks = app.metadataCache
+        .getLinks()[filePath]?.map(
+          l=>app.metadataCache.getFirstLinkpathDest(l.link.match(/[^#]*/)[0],rootFile.path)??l.link.match(/[^#]*/)[0]
+        ).filter(f=>f && (!HIDE_ATTACHMENTS || (f.extension??getExtension(f)) === "md"))
+        .map(f=>f.path??f)
+        .filter(l=>!parents.has(l) && !children.has(l) && !jumps.has(l) && l!==rootFile.path);        
+      if(forwardLinks.length > 0) {
+        node.spec.hasChildren = true;
+      }
+    }
   });
 
+  const calcTime = Date.now()-tStart;
+
+  //-------------------------------------------------------
+  // Render
   lCenter.render();
   lParents.render();
   lChildren.render();
@@ -716,7 +988,7 @@ window.brainGraphEventHandler = async (leaf) => {
   ea.style.strokeColor = LINK_COLOR;
   for([key,value] of linksMap) {
     if(value) {
-    const k=key.split("/");
+    const k=key.split(separator);
       const gate1 = getGate(k[0],value[0]);
       const gate2 = getGate(k[1],value[1]);
     ea.connectObjects(gate1, null, gate2, null, { startArrowHead: null, endArrowHead: null });
@@ -730,9 +1002,16 @@ window.brainGraphEventHandler = async (leaf) => {
     ).concat(elements.filter(el=>el.type!=="arrow"))
   })
   ea.getExcalidrawAPI().zoomToFit();
+
+  console.log(`Calc: ${calcTime}ms, Render: ${Date.now()-tStart-calcTime}ms`);
 }
 
+//-------------------------------------------------------
+// Initiate event listner and trigger plex if file is open
+//-------------------------------------------------------
 app.workspace.on(EVENT, window.brainGraphEventHandler);
+
+ea.targetView.semaphores.saving = true; //disable saving by setting this Excalidraw flag (not published API)
 
 const mdLeaf = app.workspace.getLeavesOfType("markdown");
 if(mdLeaf.length>0) {
