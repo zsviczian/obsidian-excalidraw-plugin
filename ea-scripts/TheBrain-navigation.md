@@ -1,5 +1,4 @@
 /*
-
 An Excalidraw based graph user interface for your Vault. Requires the [Dataview plugin](https://github.com/blacksmithgu/obsidian-dataview). Generates a graph view similar to that of [TheBrain](https://TheBrain.com) plex.
 
 Watch introduction to this script on [YouTube](https://youtu.be/plYobK-VufM).
@@ -405,10 +404,9 @@ class Layout {
 class Node {
   constructor(spec) {
     const dvPage = spec.file ? DataviewAPI?.page(spec.file.path) : null;
-
-	const formattingTag = (dvPage?.file?.tags?.values??[]).filter(t=>FORMATTED_TAGS.some(x=>x.startsWith(t)))[0];
-	if(formattingTag) {
-      const format = NODE_FORMATTING[formattingTag];
+	const tag = (dvPage?.file?.tags?.values??[]).filter(t=>FORMATTED_TAGS.some(x=>t.startsWith(x)))[0];
+	if(tag) {
+      const format = NODE_FORMATTING[FORMATTED_TAGS.filter(x=>tag.startsWith(x))[0]];
       spec.gateColor = format.gateColor ?? spec.gateColor;
       spec.backgroundColor = format.backgroundColor ?? spec.backgroundColor;
       spec.nodeColor = format.nodeColor ?? spec.nodeColor;
