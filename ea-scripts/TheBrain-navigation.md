@@ -9,7 +9,7 @@ Watch introduction to this script on [YouTube](https://youtu.be/plYobK-VufM).
 ```javascript
 */
 
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.6.24")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.6.25")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
