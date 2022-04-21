@@ -12,3 +12,7 @@ main.js
 stats.html
 hot-reload.bat
 data.json
+lib
+
+#VSCode
+.vscode

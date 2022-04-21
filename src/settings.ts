@@ -86,7 +86,17 @@ export interface ExcalidrawSettings {
   mdFontColor: string;
   mdBorderColor: string;
   mdCSS: string;
-  scriptEngineSettings: {};
+  scriptEngineSettings: {
+    [key:string]: {
+      [key:string]: {
+        value?:string,
+        hidden?: boolean,
+        description?: string,
+        valueset?: string[],
+        height?: number,
+      }
+    }
+  };
   defaultTrayMode: boolean;
   previousRelease: string;
   showReleaseNotes: boolean;

@@ -1,8 +1,7 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-    "inlineSourceMap": true,
-    "inlineSources": true,
+    "sourceMap": true,
     "module": "es2015",
     "target": "es2017",
     "allowJs": true,
