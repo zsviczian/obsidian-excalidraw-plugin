@@ -15,6 +15,7 @@ import {
   fileid,
   REG_BLOCK_REF_CLEAN,
   FRONTMATTER_KEY_LINKBUTTON_OPACITY,
+  FRONTMATTER_KEY_ONLOAD_SCRIPT,
 } from "./Constants";
 import { _measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
@@ -1265,6 +1266,17 @@ export class ExcalidrawData {
       opacity = fileCache.frontmatter[FRONTMATTER_KEY_LINKBUTTON_OPACITY];
     }
     return opacity; 
+  }
+
+  public getOnLoadScript(): string {
+    const fileCache = this.app.metadataCache.getFileCache(this.file);
+    if (
+      fileCache?.frontmatter &&
+      fileCache.frontmatter[FRONTMATTER_KEY_ONLOAD_SCRIPT] != null
+    ) {
+      return fileCache.frontmatter[FRONTMATTER_KEY_ONLOAD_SCRIPT];
+    }
+    return null; 
   }
 
   private setLinkPrefix(): boolean {

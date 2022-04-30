@@ -533,6 +533,12 @@ export const FRONTMATTER_KEYS_INFO: SuggesterInfo[] = [
     after: ": 0.5",
   },
   {
+    field: "onload-script",
+    code: null,
+    desc: "The value of this field will be executed as javascript code using the Script Engine environment. Use this to initiate custom actions or logic when loading your drawing.",
+    after: ': "new Notice(`Hello World!\\n\\nFile: ${ea.targetView.file.basename}`);"',
+  },
+  {
     field: "font",
     code: null,
     desc: "This key applies to Markdown Embeds. You can control the appearance of the embedded markdown file on a file by file bases by adding the this frontmatter key to your markdown document. Valid values are: Virgil|Cascadia|font_file_name.extension",

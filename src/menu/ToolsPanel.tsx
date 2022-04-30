@@ -520,13 +520,14 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                       )
                     : this.state.scriptIconMap[key].name
                 }
-                action={() => {
+                action={async () => {
                   const f =
                     this.props.view.app.vault.getAbstractFileByPath(key);
                   if (f && f instanceof TFile) {
                     this.props.view.plugin.scriptEngine.executeScript(
                       this.props.view,
-                      f,
+                      await this.props.view.plugin.app.vault.read(f),
+                      this.props.view.plugin.scriptEngine.getScriptName(f)
                     );
                   }
                 }}

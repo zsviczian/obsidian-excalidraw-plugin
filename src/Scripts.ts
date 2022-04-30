@@ -170,7 +170,12 @@ export class ScriptEngine {
         }
         const view = this.plugin.app.workspace.activeLeaf.view;
         if (view instanceof ExcalidrawView) {
-          this.executeScript(view, f);
+          (async()=>{
+            const script = await this.plugin.app.vault.read(f);
+            if(script) {
+              this.executeScript(view, script, scriptName);
+            }
+          })()
           return true;
         }
         return false;
@@ -206,18 +211,13 @@ export class ScriptEngine {
     delete app.commands.commands[commandId];
   }
 
-  async executeScript(view: ExcalidrawView, f: TFile) {
-    if (!view || !f) {
+  async executeScript(view: ExcalidrawView, script: string, title: string) {
+    if (!view || !script || !title) {
       return;
     }
     this.plugin.ea.reset();
     this.plugin.ea.setView(view);
-    const script = await this.plugin.app.vault.read(f);
-    if (!script) {
-      return;
-    }
-
-    this.plugin.ea.activeScript = this.getScriptName(f);
+    this.plugin.ea.activeScript = title;
 
     //https://stackoverflow.com/questions/45381204/get-asyncfunction-constructor-in-typescript changed tsconfig to es2017
     //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncFunction

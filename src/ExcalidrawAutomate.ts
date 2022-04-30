@@ -1555,6 +1555,15 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
   };
 
   /**
+   * Check if view is instance of ExcalidrawView
+   * @param view 
+   * @returns 
+   */
+  isExcalidrawView(view: any): boolean {
+    return view instanceof ExcalidrawView;
+  }
+
+  /**
    * sets selection in view
    * @param elements 
    * @returns 

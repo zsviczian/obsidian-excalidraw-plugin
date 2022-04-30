@@ -1234,6 +1234,10 @@ export default class ExcalidrawView extends TextFileView {
         }
       }
       await this.loadDrawing(true);
+      const script = this.excalidrawData.getOnLoadScript();
+      if(script) {
+        this.plugin.scriptEngine.executeScript(this,script,this.file.basename + "-onlaod-script");
+      }
       this.isLoaded = true;
     });
   }

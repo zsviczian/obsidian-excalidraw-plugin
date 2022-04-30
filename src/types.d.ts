@@ -198,6 +198,7 @@ export interface ExcalidrawAutomateInterface {
   //recommended use:
   //if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.20")) {new Notice("message");return;}
   verifyMinimumPluginVersion(requiredVersion: string): boolean;
+  isExcalidrawView(view: any): boolean;
   selectElementsInView(elements: ExcalidrawElement[]): void; //sets selection in view
   generateElementId(): string; //returns an 8 character long random id
   cloneElement(element: ExcalidrawElement): ExcalidrawElement; //Returns a clone of the element with a new id
