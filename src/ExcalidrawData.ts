@@ -1414,7 +1414,7 @@ export const getTransclusion = async (
   app: App,
   file: TFile,
   charCountLimit?: number,
-): Promise<{ contents: string; lineNum: number }> => {
+): Promise<{ contents: string; lineNum: number; leadingHashes?: string; }> => {
   //file-name#^blockref
   //1         2 3
 
@@ -1473,11 +1473,16 @@ export const getTransclusion = async (
       let j = i;
       while (j<headings.length && headings[j].node.depth>depth) {j++};
       if(j === headings.length && headings[j-1].node.depth > depth) {
-        return { contents: "#".repeat(depth)+" "+contents.substring(startPos).trim(), lineNum };    
+        return {
+          leadingHashes: "#".repeat(depth)+" ",
+          contents: contents.substring(startPos).trim(),
+          lineNum
+        };    
       }
       endPos = headings[i].node.position.start.offset - 1;
       return {
-        contents: "#".repeat(depth)+" "+contents.substring(startPos, endPos).trim(),
+        leadingHashes: "#".repeat(depth)+" ",
+        contents: contents.substring(startPos, endPos).trim(),
         lineNum,
       };
     }
@@ -1499,7 +1504,11 @@ export const getTransclusion = async (
     }
   }
   if (startPos) {
-    return { contents: "#".repeat(depth)+" "+contents.substring(startPos).trim(), lineNum };
+    return {
+      leadingHashes: "#".repeat(depth) + " ",
+      contents: contents.substring(startPos).trim(),
+      lineNum 
+    };
   }
   return { contents: linkParts.original.trim(), lineNum: 0 };
 };

@@ -25,15 +25,15 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 - Dropped images and links were not selectable with the selection tool until the file was saved. This is now fixed.
 - Display the linked block/section on link-hover instead of the full page. [#597](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/597)
 - Hover preview without CTRL/CMD works again. Requires configuration in plugin settings. [#595](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/595)
-- If you embed the same markdown document into a drawing multiple times, you can now display different sections of the documents in each embedded object. [#601](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/601).
+- If you embed the same markdown document into a drawing multiple times, you can now display different sections of the document in each embedded object. [#601](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/601).
 - If you make a copy of an equation and edit this copy, the original equation will remain unchanged [#593](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/593)
 
 ## New Features
-- When you drag files from dataview results onto the canvas the obsidian urls will be converted into wiki links.[#599](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/599)
-- I added one more frontmatter key: ${String.fromCharCode(96)}excalidraw-linkbutton-opacity: 0.5${String.fromCharCode(96)}. This sets the opacity of the blue link-button in the top right corner of the element, overriding the respective setting in plugin settings. Valid values are numbers between 0 and 1, where 0 means the button is fully transparent.
+- When you drag files from Dataview-results onto the canvas the obsidian:// urls will be converted into wiki links.[#599](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/599)
+- I added one more frontmatter key: ${String.fromCharCode(96)}excalidraw-linkbutton-opacity: ${String.fromCharCode(96)} This sets the opacity of the blue link-button in the top right corner of the element, overriding the respective setting in plugin settings. Valid values are numbers between 0 and 1, where 0 means the button is fully transparent.
 
 ## New Excalidraw Automate Features
-- As part of building the new ExcaliBrain plugin, I've added a number of integration features. See the GitHub [Release Notes](https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.26) for details.
+- As part of building the new [ExcaliBrain](https://youtu.be/O2s-h5VKCas) plugin, I've added a number of integration features. See the GitHub [Release Notes](https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.26) for details.
 `,
 "1.6.25": `
 ## Fixed

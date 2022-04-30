@@ -391,7 +391,8 @@ const convertMarkdownToSVG = async (
 ): Promise<DataURL> => {
   //1.
   //get the markdown text
-  let text = (await getTransclusion(linkParts, plugin.app, file)).contents;
+  const transclusion = await getTransclusion(linkParts, plugin.app, file);
+  let text = (transclusion.leadingHashes??"") + transclusion.contents;
   if (text === "") {
     text =
       "# Empty markdown file\nCTRL+Click here to open the file for editing in the current active pane, or CTRL+SHIFT+Click to open it in an adjacent pane.";
