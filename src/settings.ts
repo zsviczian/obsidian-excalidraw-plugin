@@ -539,7 +539,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         el.style.textAlign = "right";
         el.innerText = ` ${this.plugin.settings.zoomToFitMaxLevel.toString()}`;
       });
-
+ 
     this.containerEl.createEl("h1", { text: t("LINKS_HEAD") });
     this.containerEl.createEl(
       "span",

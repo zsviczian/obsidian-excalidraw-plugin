@@ -14,6 +14,7 @@ import {
   FRONTMATTER_KEY_DEFAULT_MODE,
   fileid,
   REG_BLOCK_REF_CLEAN,
+  FRONTMATTER_KEY_LINKBUTTON_OPACITY,
 } from "./Constants";
 import { _measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
@@ -1021,6 +1022,35 @@ export class ExcalidrawData {
       return false;
     }
 
+    //assing new fileId to duplicate equation and markdown files
+    //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/601
+    //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/593
+    //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/297
+    const processedIds = new Set<string>();
+    fileIds.forEach(fileId=>{
+      if(processedIds.has(fileId)) {
+        const file = this.files.get(fileId as FileId);
+        const equation = this.equations.get(fileId as FileId);
+        //images should have a single reference, but equations and markdown embeds should have as many as instances of the file in the scene
+        if(file && file.file.extension !== "md") {
+          return;
+        }
+        const newId = fileid();
+        //scene.files[newId] = {...scene.files[fileId]};
+        (scene.elements.filter((el:ExcalidrawImageElement)=>el.fileId === fileId)[0] as any).fileId = newId;
+        dirty = true;
+        processedIds.add(newId);
+        if(file) {
+           this.files.set(newId as FileId,new EmbeddedFile(this.plugin,this.file.path,file.linkParts.original))
+        }
+        if(equation) {
+          this.equations.set(newId as FileId, equation);
+        }
+      }
+      processedIds.add(fileId);
+    });
+
+
     for (const key of Object.keys(scene.files)) {
       if (!(this.hasFile(key as FileId) || this.hasEquation(key as FileId))) {
         dirty = true;
@@ -1069,7 +1099,7 @@ export class ExcalidrawData {
     }
 
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/297
-    const equations = new Set<string>();
+    /*const equations = new Set<string>();
     const duplicateEqs = new Set<string>();
     for (const key of fileIds) {
       if (this.hasEquation(key as FileId)) {
@@ -1095,7 +1125,7 @@ export class ExcalidrawData {
           dirty = true;
         }
       }
-    }
+    }*/
 
     return dirty;
   }
@@ -1223,6 +1253,18 @@ export class ExcalidrawData {
       default:
         return { viewModeEnabled: false, zenModeEnabled: false };
     }
+  }
+
+  public getLinkOpacity(): number {
+    const fileCache = this.app.metadataCache.getFileCache(this.file);
+    let opacity = this.plugin.settings.linkOpacity;
+    if (
+      fileCache?.frontmatter &&
+      fileCache.frontmatter[FRONTMATTER_KEY_LINKBUTTON_OPACITY] != null
+    ) {
+      opacity = fileCache.frontmatter[FRONTMATTER_KEY_LINKBUTTON_OPACITY];
+    }
+    return opacity; 
   }
 
   private setLinkPrefix(): boolean {
@@ -1425,11 +1467,17 @@ export const getTransclusion = async (
   let startPos: number = null;
   let lineNum: number = 0;
   let endPos: number = null;
+  let depth:number = 1;
   for (let i = 0; i < headings.length; i++) {
     if (startPos && !endPos) {
+      let j = i;
+      while (j<headings.length && headings[j].node.depth>depth) {j++};
+      if(j === headings.length && headings[j-1].node.depth > depth) {
+        return { contents: "#".repeat(depth)+" "+contents.substring(startPos).trim(), lineNum };    
+      }
       endPos = headings[i].node.position.start.offset - 1;
       return {
-        contents: contents.substring(startPos, endPos).trim(),
+        contents: "#".repeat(depth)+" "+contents.substring(startPos, endPos).trim(),
         lineNum,
       };
     }
@@ -1446,11 +1494,12 @@ export const getTransclusion = async (
           : false))
     ) {
       startPos = headings[i].node.children[0]?.position.start.offset; //
+      depth = headings[i].node.depth;
       lineNum = headings[i].node.children[0]?.position.start.line; //
     }
   }
   if (startPos) {
-    return { contents: contents.substring(startPos).trim(), lineNum };
+    return { contents: "#".repeat(depth)+" "+contents.substring(startPos).trim(), lineNum };
   }
   return { contents: linkParts.original.trim(), lineNum: 0 };
 };

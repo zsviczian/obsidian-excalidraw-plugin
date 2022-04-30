@@ -30,6 +30,7 @@ export const FRONTMATTER_KEY_EXPORT_PNGSCALE = "excalidraw-export-pngscale";
 export const FRONTMATTER_KEY_CUSTOM_PREFIX = "excalidraw-link-prefix";
 export const FRONTMATTER_KEY_CUSTOM_URL_PREFIX = "excalidraw-url-prefix";
 export const FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS = "excalidraw-link-brackets";
+export const FRONTMATTER_KEY_LINKBUTTON_OPACITY = "excalidraw-linkbutton-opacity";
 export const FRONTMATTER_KEY_DEFAULT_MODE = "excalidraw-default-mode";
 export const FRONTMATTER_KEY_FONT = "excalidraw-font";
 export const FRONTMATTER_KEY_FONTCOLOR = "excalidraw-font-color";

@@ -6,6 +6,7 @@ import {
   ExcalidrawElement,
   ExcalidrawBindableElement,
   FileId,
+  NonDeletedExcalidrawElement,
 } from "@zsviczian/excalidraw/types/element/types";
 import { normalizePath, TFile, WorkspaceLeaf } from "obsidian";
 import ExcalidrawView, { ExportSettings, TextMode } from "./ExcalidrawView";
@@ -17,6 +18,7 @@ import {
   MAX_IMAGE_SIZE,
   PLUGIN_ID,
   COLOR_NAMES,
+  fileid,
 } from "./Constants";
 import { getDrawingFilename, } from "./utils/FileUtils";
 import {
@@ -202,6 +204,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
           templatePath,
           false,
           new EmbeddedFilesLoader(this.plugin),
+          0
         )
       : null;
     let elements = template ? template.elements : [];
@@ -253,6 +256,11 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       "excalidraw-link-prefix"?: string;
       "excalidraw-link-brackets"?: boolean;
       "excalidraw-url-prefix"?: string;
+      "excalidraw-export-transparent"?: boolean;
+      "excalidraw-export-dark"?: boolean;
+      "excalidraw-export-svgpadding"?: number;
+      "excalidraw-export-pngscale"?: number;
+      "excalidraw-default-mode"?: "view" | "zen";
     };
   }): Promise<string> {
     const template = params?.templatePath
@@ -261,6 +269,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
           params.templatePath,
           true,
           new EmbeddedFilesLoader(this.plugin),
+          0
         )
       : null;
     let elements = template ? template.elements : [];
@@ -341,7 +350,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
 
     return this.plugin.createAndOpenDrawing(
       params?.filename
-        ? `${params.filename}.excalidraw.md`
+        ? params.filename + (params.filename.endsWith(".md") ? "": ".excalidraw.md")
         : getDrawingFilename(this.plugin.settings),
       params?.onNewPane ? params.onNewPane : false,
       params?.foldername ? params.foldername : this.plugin.settings.folder,
@@ -400,6 +409,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       this.canvas.viewBackgroundColor,
       this.getElements(),
       this.plugin,
+      0
     );
   };
 
@@ -451,6 +461,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       this.canvas.viewBackgroundColor,
       this.getElements(),
       this.plugin,
+      0
     );
   };
 
@@ -497,6 +508,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       groupIds: [] as any,
       boundElements: [] as any,
       link: null as string,
+      locked: false,
     };
   }
 
@@ -842,13 +854,14 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       this.plugin,
       this.canvas.theme === "dark",
     );
-    const image = await loader.getObsidianImage(imageFile);
+    const image = await loader.getObsidianImage(imageFile,0);
     if (!image) {
       return null;
     }
-    this.imagesDict[image.fileId] = {
+    const fileId = imageFile.extension === "md" ? fileid() as FileId : image.fileId;
+    this.imagesDict[fileId] = {
       mimeType: image.mimeType,
-      id: image.fileId,
+      id: fileId,
       dataURL: image.dataURL,
       created: image.created,
       file: imageFile.path,
@@ -869,7 +882,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       image.size.width,
       image.size.height,
     );
-    this.elementsDict[id].fileId = image.fileId;
+    this.elementsDict[id].fileId = fileId;
     this.elementsDict[id].scale = [1, 1];
     return id;
   };
@@ -1311,7 +1324,54 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
   };
 
   /**
-   * if set Excalidraw will call this function onDrop events
+   * Register instance of EA to use for hooks with TargetView
+   * By default ExcalidrawViews will check window.ExcalidrawAutomate for event hooks.
+   * Using this event you can set a different instance of Excalidraw Automate for hooks
+   */
+  registerThisAsViewEA() {
+    //@ts-ignore
+    if (!this.targetView || !this.targetView?._loaded) {
+      errorMessage("targetView not set", "addElementsToView()");
+      return false;
+    }
+    this.targetView.hookServer = this;
+  }
+
+
+  /**
+   * If set, this callback is triggered, when the user changes the view mode.
+   * You can use this callback in case you want to do something additional when the user switches to view mode and back.
+   */
+  onViewModeChangeHook: (isViewModeEnabled:boolean) => void = null;
+
+   /**
+   * If set, this callback is triggered, when the user hovers a link in the scene.
+   * You can use this callback in case you want to do something additional when the onLinkHover event occurs.
+   * This callback must return a boolean value.
+   * In case you want to prevent the excalidraw onLinkHover action you must return false, it will stop the native excalidraw onLinkHover management flow.
+   */
+  onLinkHoverHook: (
+    element: NonDeletedExcalidrawElement,
+    linkText: string,
+  ) => boolean = null;
+
+   /**
+   * If set, this callback is triggered, when the user click a link in the scene.
+   * You can use this callback in case you want to do something additional when the onLinkClick event occurs.
+   * This callback must return a boolean value.
+   * In case you want to prevent the excalidraw onLinkClick action you must return false, it will stop the native excalidraw onLinkClick management flow.
+   */
+  onLinkClickHook:(
+    element: ExcalidrawElement,
+    linkText: string,
+    event: MouseEvent
+  ) => boolean = null;
+
+  /**
+   * If set, this callback is triggered, when Excalidraw receives an onDrop event. 
+   * You can use this callback in case you want to do something additional when the onDrop event occurs.
+   * This callback must return a boolean value.
+   * In case you want to prevent the excalidraw onDrop action you must return false, it will stop the native excalidraw onDrop management flow.
    */
   onDropHook: (data: {
     ea: ExcalidrawAutomate;
@@ -1776,6 +1836,7 @@ async function getTemplate(
   fileWithPath: string,
   loadFiles: boolean = false,
   loader: EmbeddedFilesLoader,
+  depth: number
 ): Promise<{
   elements: any;
   appState: any;
@@ -1839,7 +1900,7 @@ async function getTemplate(
           };
         }
         scene = scaleLoadedImage(excalidrawData.scene, fileArray).scene;
-      });
+      }, depth);
     }
 
     return {
@@ -1869,12 +1930,13 @@ export async function createPNG(
   canvasBackgroundColor: string = undefined,
   automateElements: ExcalidrawElement[] = [],
   plugin: ExcalidrawPlugin,
+  depth: number
 ) {
   if (!loader) {
     loader = new EmbeddedFilesLoader(plugin);
   }
   const template = templatePath
-    ? await getTemplate(plugin, templatePath, true, loader)
+    ? await getTemplate(plugin, templatePath, true, loader, depth)
     : null;
   let elements = template?.elements ?? [];
   elements = elements.concat(automateElements);
@@ -1910,13 +1972,14 @@ export async function createSVG(
   canvasBackgroundColor: string = undefined,
   automateElements: ExcalidrawElement[] = [],
   plugin: ExcalidrawPlugin,
+  depth: number,
   padding?: number,
 ): Promise<SVGSVGElement> {
   if (!loader) {
     loader = new EmbeddedFilesLoader(plugin);
   }
   const template = templatePath
-    ? await getTemplate(plugin, templatePath, true, loader)
+    ? await getTemplate(plugin, templatePath, true, loader, depth)
     : null;
   let elements = template?.elements ?? [];
   elements = elements.concat(automateElements);

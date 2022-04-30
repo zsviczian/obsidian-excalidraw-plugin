@@ -210,7 +210,9 @@ export default {
   }${FRONTMATTER_KEY_CUSTOM_URL_PREFIX}: "🌐 "</code> to the file's frontmatter.`,
   HOVERPREVIEW_NAME: "Hover preview without CTRL/CMD key",
   HOVERPREVIEW_DESC:
-    "Toggle On: Hover preview for [[wiki links]] is shown immediately, without the need to hold the CTRL/CMD key.<br>Toggle Off: Hover preview is shown only when you hold the CTRL/CMD key while hovering the link.",
+    "<b>Toggle On</b>: In Exalidraw <u>view mode</u> the hover preview for [[wiki links]] will be shown immediately, without the need to hold the CTRL/CMD key. " +
+    "In Excalidraw <u>normal mode</u>, the preview will be shown immediately only when hovering the blue link icon in the top right of the element.<br> " +
+    "<b>Toggle Off</b>: Hover preview is shown only when you hold the CTRL/CMD key while hovering the link.",
   LINKOPACITY_NAME: "Opacity of link icon",
   LINKOPACITY_DESC:
     "Opacity of the link indicator icon in the top right corner of an element. 1 is opaque, 0 is transparent.",

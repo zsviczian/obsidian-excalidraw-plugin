@@ -162,7 +162,6 @@ export class EmbeddedFile {
 
 export class EmbeddedFilesLoader {
   private plugin: ExcalidrawPlugin;
-  private processedFiles: Map<string, number> = new Map<string, number>();
   private isDark: boolean;
   public terminate = false;
   public uid: string;
@@ -173,7 +172,7 @@ export class EmbeddedFilesLoader {
     this.uid = nanoid();
   }
 
-  public async getObsidianImage(inFile: TFile | EmbeddedFile): Promise<{
+  public async getObsidianImage(inFile: TFile | EmbeddedFile, depth: number): Promise<{
     mimeType: MimeType;
     fileId: FileId;
     dataURL: DataURL;
@@ -196,15 +195,7 @@ export class EmbeddedFilesLoader {
             width: this.plugin.settings.mdSVGwidth,
             height: this.plugin.settings.mdSVGmaxHeight,
           };
-    //to block infinite loop of recursive loading of images
-    const count = this.processedFiles.has(file.path)
-      ? this.processedFiles.get(file.path)
-      : 0;
-    if (file.extension === "md" && count > 2) {
-      new Notice(t("INFINITE_LOOP_WARNING") + file.path, 6000);
-      return null;
-    }
-    this.processedFiles.set(file.path, count + 1);
+
     let hasSVGwithBitmap = false;
     const app = this.plugin.app;
     const isExcalidrawFile = this.plugin.isExcalidrawFile(file);
@@ -240,6 +231,7 @@ export class EmbeddedFilesLoader {
         null,
         [],
         this.plugin,
+        depth+1,
         getSVGPadding(this.plugin, file),
       );
       //https://stackoverflow.com/questions/51154171/remove-css-filter-on-child-elements
@@ -315,7 +307,12 @@ export class EmbeddedFilesLoader {
   public async loadSceneFiles(
     excalidrawData: ExcalidrawData,
     addFiles: Function,
+    depth:number
   ) {
+    if(depth > 4) {
+      new Notice(t("INFINITE_LOOP_WARNING")+depth.toString(), 6000);
+      return;
+    }
     const entries = excalidrawData.getFileEntries();
     //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,isDark:this.isDark,sceneTheme:excalidrawData.scene.appState.theme});
     if (this.isDark === undefined) {
@@ -327,7 +324,7 @@ export class EmbeddedFilesLoader {
       const embeddedFile: EmbeddedFile = entry.value[1];
       if (!embeddedFile.isLoaded(this.isDark)) {
         //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"embedded Files are not loaded"});
-        const data = await this.getObsidianImage(embeddedFile);
+        const data = await this.getObsidianImage(embeddedFile, depth);
         if (data) {
           files.push({
             mimeType: data.mimeType,

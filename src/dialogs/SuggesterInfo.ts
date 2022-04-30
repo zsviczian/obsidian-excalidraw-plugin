@@ -526,6 +526,13 @@ export const FRONTMATTER_KEYS_INFO: SuggesterInfo[] = [
     after: ": view",
   },
   {
+    field: "linkbutton-opacity",
+    code: null,
+    desc: "The opacity of the blue link button in the top right of the element overriding the respective setting in plugin settings. "+
+      "Valid values are between 0 and 1, where 0 means the button is transparent.",
+    after: ": 0.5",
+  },
+  {
     field: "font",
     code: null,
     desc: "This key applies to Markdown Embeds. You can control the appearance of the embedded markdown file on a file by file bases by adding the this frontmatter key to your markdown document. Valid values are: Virgil|Cascadia|font_file_name.extension",

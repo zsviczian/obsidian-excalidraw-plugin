@@ -129,6 +129,7 @@ const getIMG = async (
         null,
         [],
         plugin,
+        0
       ));
     if (!png) {
       return null;
@@ -152,6 +153,7 @@ const getIMG = async (
       null,
       [],
       plugin,
+      0,
       getSVGPadding(plugin, file),
     )
   ).outerHTML;

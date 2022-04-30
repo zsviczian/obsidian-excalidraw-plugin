@@ -542,9 +542,7 @@ export const errorlog = (data: {}) => {
   console.error({ plugin: "Excalidraw", ...data });
 };
 
-export const sleep = async (ms: number) => {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-};
+export const sleep = async (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const log = console.log.bind(window.console);
 export const debug = console.log.bind(window.console);
