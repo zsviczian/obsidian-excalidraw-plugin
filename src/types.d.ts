@@ -1,4 +1,4 @@
-import { ExcalidrawBindableElement, ExcalidrawElement, FileId, FillStyle, StrokeSharpness, StrokeStyle } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawBindableElement, ExcalidrawElement, FileId, FillStyle, NonDeletedExcalidrawElement, StrokeSharpness, StrokeStyle } from "@zsviczian/excalidraw/types/element/types";
 import { Point } from "@zsviczian/excalidraw/types/types";
 import { TFile, WorkspaceLeaf } from "obsidian";
 import { EmbeddedFilesLoader } from "./EmbeddedFileLoader";
@@ -63,6 +63,7 @@ export interface ExcalidrawAutomateInterface {
     exportSettings?: ExportSettings, //use ExcalidrawAutomate.getExportSettings(boolean,boolean)
     loader?: EmbeddedFilesLoader, //use ExcalidrawAutomate.getEmbeddedFilesLoader(boolean?)
     theme?: string,
+    padding?: number
   ): Promise<SVGSVGElement>;
   createPNG(
     templatePath?: string,
@@ -148,6 +149,23 @@ export interface ExcalidrawAutomateInterface {
     //position in the stack of elements in the view even if modified using EA
     newElementsOnTop?: boolean, //default is false, i.e. the new elements get to the bottom of the stack
   ): Promise<boolean>;
+  registerThisAsViewEA():boolean;
+  deregisterThisAsViewEA():boolean;
+  onViewUnloadHook(view: ExcalidrawView): void;
+  onViewModeChangeHook(isViewModeEnabled:boolean, view: ExcalidrawView, ea: ExcalidrawAutomate): void;
+  onLinkHoverHook(
+    element: NonDeletedExcalidrawElement,
+    linkText: string,
+    view: ExcalidrawView,
+    ea: ExcalidrawAutomate
+  ):boolean;
+  onLinkClickHook(
+    element: ExcalidrawElement,
+    linkText: string,
+    event: MouseEvent,
+    view: ExcalidrawView,
+    ea: ExcalidrawAutomate
+  ): boolean;
   onDropHook(data: {
     //if set Excalidraw will call this function onDrop events
     ea: ExcalidrawAutomate;

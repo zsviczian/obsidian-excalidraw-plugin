@@ -376,6 +376,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     exportSettings?: ExportSettings, 
     loader?: EmbeddedFilesLoader,
     theme?: string,
+    padding?: number,
   ): Promise<SVGSVGElement> {
     if (!theme) {
       theme = this.plugin.settings.previewMatchObsidianTheme
@@ -409,7 +410,8 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       this.canvas.viewBackgroundColor,
       this.getElements(),
       this.plugin,
-      0
+      0,
+      padding
     );
   };
 
@@ -1327,22 +1329,42 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
    * Register instance of EA to use for hooks with TargetView
    * By default ExcalidrawViews will check window.ExcalidrawAutomate for event hooks.
    * Using this event you can set a different instance of Excalidraw Automate for hooks
+   * @returns true if successful
    */
-  registerThisAsViewEA() {
+  registerThisAsViewEA():boolean {
     //@ts-ignore
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "addElementsToView()");
       return false;
     }
-    this.targetView.hookServer = this;
+    this.targetView.setHookServer(this);
+    return true;
   }
 
+  /**
+   * Sets the targetView EA to window.ExcalidrawAutomate
+   * @returns true if successful
+   */
+  deregisterThisAsViewEA():boolean {
+    //@ts-ignore
+    if (!this.targetView || !this.targetView?._loaded) {
+      errorMessage("targetView not set", "addElementsToView()");
+      return false;
+    }
+    this.targetView.setHookServer(this);
+    return true;
+  }
+
+  /**
+   * If set, this callback is triggered when the user closes an Excalidraw view.
+   */
+  onViewUnloadHook: (view: ExcalidrawView) => void = null;
 
   /**
    * If set, this callback is triggered, when the user changes the view mode.
    * You can use this callback in case you want to do something additional when the user switches to view mode and back.
    */
-  onViewModeChangeHook: (isViewModeEnabled:boolean) => void = null;
+  onViewModeChangeHook: (isViewModeEnabled:boolean, view: ExcalidrawView, ea: ExcalidrawAutomate) => void = null;
 
    /**
    * If set, this callback is triggered, when the user hovers a link in the scene.
@@ -1353,6 +1375,8 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
   onLinkHoverHook: (
     element: NonDeletedExcalidrawElement,
     linkText: string,
+    view: ExcalidrawView,
+    ea: ExcalidrawAutomate
   ) => boolean = null;
 
    /**
@@ -1364,7 +1388,9 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
   onLinkClickHook:(
     element: ExcalidrawElement,
     linkText: string,
-    event: MouseEvent
+    event: MouseEvent,
+    view: ExcalidrawView,
+    ea: ExcalidrawAutomate
   ) => boolean = null;
 
   /**

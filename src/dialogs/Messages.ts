@@ -17,6 +17,10 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.6.27": `
+## New Features
+- While these new features are benefitial for all Excalidraw Automation projects, the current changes are mainly in support of the [ExcaliBrain](https://youtu.be/O2s-h5VKCas) integration. See detailed [Release Notes](https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.27) on GitHub.
+`,
 "1.6.26": `
 ## Fixed
 - Dragging multiple files onto the canvas will now correctly [#589](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/589)

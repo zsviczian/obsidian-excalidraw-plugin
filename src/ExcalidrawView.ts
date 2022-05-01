@@ -180,7 +180,7 @@ export default class ExcalidrawView extends TextFileView {
   public toolsPanelRef: React.MutableRefObject<any> = null;
   private parentMoveObserver: MutationObserver;
   public linksAlwaysOpenInANewPane: boolean = false; //override the need for SHIFT+CTRL+click
-  public hookServer: ExcalidrawAutomate;
+  private hookServer: ExcalidrawAutomate;
 
   public semaphores: {
     //The role of justLoaded is to capture the Excalidraw.onChange event that fires right after the canvas was loaded for the first time to
@@ -245,6 +245,16 @@ export default class ExcalidrawView extends TextFileView {
     this.excalidrawData = new ExcalidrawData(plugin);
     this.hookServer = plugin.ea;
   }
+
+  setHookServer(ea:ExcalidrawAutomate) {
+    if(ea) {
+      this.hookServer = ea;
+    } else {
+      this.hookServer = this.plugin.ea;
+    }
+  }
+
+  getHookServer = () => this.hookServer ?? this.plugin.ea;
 
   preventAutozoom() {
     this.semaphores.preventAutozoom = true;
@@ -643,15 +653,21 @@ export default class ExcalidrawView extends TextFileView {
       }
       linkText = linkText.replaceAll("\n", ""); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/187
 
-      if(this.hookServer?.onLinkClickHook) {
+      if(this.getHookServer().onLinkClickHook) {
         const id = selectedText.id??selectedElementWithLink.id;
         const el = this.excalidrawAPI.getSceneElements().filter((el:ExcalidrawElement)=>el.id === id)[0];
         try {
-          if(!this.hookServer.onLinkClickHook(el,linkText,ev)) {
+          if(!this.getHookServer().onLinkClickHook(
+            el,
+            linkText,
+            ev,
+            this,
+            this.getHookServer()
+          )) {
             return;
           }
         } catch (e) {
-          errorlog({where: "ExcalidrawView.handleLinkClick selectedText.id!==null", fn: this.hookServer.onLinkClickHook, error: e});
+          errorlog({where: "ExcalidrawView.handleLinkClick selectedText.id!==null", fn: this.getHookServer().onLinkClickHook, error: e});
         }
       }
 
@@ -768,15 +784,21 @@ export default class ExcalidrawView extends TextFileView {
       return;
     }
 
-    if(this.hookServer?.onLinkClickHook) {
+    if(this.getHookServer().onLinkClickHook) {
       const id = selectedImage.id??selectedText.id??selectedElementWithLink.id;
       const el = this.excalidrawAPI.getSceneElements().filter((el:ExcalidrawElement)=>el.id === id)[0];
       try {
-        if(!this.hookServer.onLinkClickHook(el,linkText,ev)) {
+        if(!this.getHookServer().onLinkClickHook(
+          el,
+          linkText,
+          ev,
+          this,
+          this.getHookServer()
+        )) {
           return;
         }
       } catch (e) {
-        errorlog({where: "ExcalidrawView.handleLinkClick selectedText.id===null", fn: this.hookServer.onLinkClickHook, error: e});
+        errorlog({where: "ExcalidrawView.handleLinkClick selectedText.id===null", fn: this.getHookServer().onLinkClickHook, error: e});
       }
     }
 
@@ -1041,6 +1063,13 @@ export default class ExcalidrawView extends TextFileView {
 
   //save current drawing when user closes workspace leaf
   async onunload() {
+    if(this.getHookServer().onViewUnloadHook) {
+      try {
+        this.getHookServer().onViewUnloadHook(this);
+      } catch(e) {
+        errorlog({where: "ExcalidrawView.onunload", fn: this.getHookServer().onViewUnloadHook, error: e});
+      }
+    }
     this.removeParentMoveObserver();
     this.removeSlidingPanesListner();
     const tooltip = document.body.querySelector(
@@ -1236,7 +1265,16 @@ export default class ExcalidrawView extends TextFileView {
       await this.loadDrawing(true);
       const script = this.excalidrawData.getOnLoadScript();
       if(script) {
-        this.plugin.scriptEngine.executeScript(this,script,this.file.basename + "-onlaod-script");
+        const self = this;
+        const scriptname = this.file.basename+ "-onlaod-script";
+        const runScript = () => {
+          if(!self.excalidrawAPI) { //need to wait for Excalidraw to initialize
+            setTimeout(runScript,200);
+            return;
+          }
+          self.plugin.scriptEngine.executeScript(self,script,scriptname);
+        }
+        runScript();
       }
       this.isLoaded = true;
     });
@@ -2107,13 +2145,18 @@ export default class ExcalidrawView extends TextFileView {
           }
         }
 
-        if(this.hookServer?.onLinkHoverHook) {
+        if(this.getHookServer().onLinkHoverHook) {
           try {
-            if(!this.hookServer.onLinkHoverHook(element,linktext)) {
+            if(!this.getHookServer().onLinkHoverHook(
+              element,
+              linktext,
+              this,
+              this.getHookServer()
+            )) {
               return;
             }
           } catch (e) {
-            errorlog({where: "ExcalidrawView.showHoverPreview", fn: this.hookServer.onLinkHoverHook, error: e});
+            errorlog({where: "ExcalidrawView.showHoverPreview", fn: this.getHookServer().onLinkHoverHook, error: e});
           }
         }
 
@@ -2356,11 +2399,11 @@ export default class ExcalidrawView extends TextFileView {
               files: TFile[],
               text: string,
             ): boolean => {
-              if (this.hookServer.onDropHook) {
+              if (this.getHookServer().onDropHook) {
                 try {
-                  return this.hookServer.onDropHook({
+                  return this.getHookServer().onDropHook({
                     //@ts-ignore
-                    ea: this.hookServer, //the ExcalidrawAutomate object
+                    ea: this.getHookServer(), //the ExcalidrawAutomate object
                     event, //React.DragEvent<HTMLDivElement>
                     draggable, //Obsidian draggable object
                     type, //"file"|"text"
@@ -2616,13 +2659,19 @@ export default class ExcalidrawView extends TextFileView {
               return;
             }
             const event = e?.detail?.nativeEvent;
-            if(this.hookServer?.onLinkClickHook) {
+            if(this.getHookServer().onLinkClickHook) {
               try {
-                if(!this.hookServer.onLinkClickHook(element,element.link,event)) {
+                if(!this.getHookServer().onLinkClickHook(
+                  element,
+                  element.link,
+                  event,
+                  this,
+                  this.getHookServer()
+                )) {
                   return;
                 }
               } catch (e) {
-                errorlog({where: "ExcalidrawView.onLinkOpen", fn: this.hookServer.onLinkClickHook, error: e});
+                errorlog({where: "ExcalidrawView.onLinkOpen", fn: this.getHookServer().onLinkClickHook, error: e});
               }
             }
             if (link.startsWith(LOCAL_PROTOCOL) || link.startsWith("[[")) {
@@ -2723,11 +2772,11 @@ export default class ExcalidrawView extends TextFileView {
             this.toolsPanelRef?.current?.setExcalidrawViewMode(
               isViewModeEnabled,
             );
-            if(this.hookServer?.onViewModeChangeHook) {
+            if(this.getHookServer().onViewModeChangeHook) {
               try {
-                this.hookServer.onViewModeChangeHook(isViewModeEnabled);
+                this.getHookServer().onViewModeChangeHook(isViewModeEnabled,this,this.getHookServer());
               } catch(e) {
-                errorlog({where: "ExcalidrawView.onViewModeChange", fn: this.hookServer.onViewModeChangeHook, error: e});
+                errorlog({where: "ExcalidrawView.onViewModeChange", fn: this.getHookServer().onViewModeChangeHook, error: e});
               }
               
             }
