@@ -229,6 +229,7 @@ export class ExcalidrawData {
   private files: Map<FileId, EmbeddedFile> = null; //fileId, path
   private equations: Map<FileId, { latex: string; isLoaded: boolean }> = null; //fileId, path
   private compatibilityMode: boolean = false;
+  selectedElementIds: {[key:string]:boolean} = {}; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/609
 
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
@@ -380,6 +381,7 @@ export class ExcalidrawData {
       return false;
     }
     this.loaded = false;
+    this.selectedElementIds = {};
     this.textElements = new Map<
       string,
       { raw: string; parsed: string; wrapAt: number }
@@ -552,6 +554,7 @@ export class ExcalidrawData {
       return false;
     }
     this.loaded = false;
+    this.selectedElementIds = {};
     this.compatibilityMode = true;
     this.file = file;
     this.textElements = new Map<
@@ -692,9 +695,10 @@ export class ExcalidrawData {
    * check for textElements in Scene missing from textElements Map
    * @returns {boolean} - true if there were changes
    */
-  private findNewTextElementsInScene(): boolean {
+  private findNewTextElementsInScene(selectedElementIds: {[key: string]: boolean} = {}): boolean {
     //console.log("Excalidraw.Data.findNewTextElementsInScene()");
     //get scene text elements
+    this.selectedElementIds = selectedElementIds;
     const texts = this.scene.elements?.filter((el: any) => el.type === "text");
 
     let jsonString = JSON.stringify(this.scene);
@@ -709,6 +713,10 @@ export class ExcalidrawData {
       if (te.id.length > 8) {
         dirty = true;
         id = nanoid();
+        if(this.selectedElementIds[te.id]) { //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/609
+          delete this.selectedElementIds[te.id];
+          this.selectedElementIds[id] = true;
+        }
         jsonString = jsonString.replaceAll(te.id, id); //brute force approach to replace all occurances (e.g. links, groups,etc.)
         if (this.textElements.has(te.id)) {
           //element was created with onBeforeTextSubmit
@@ -1131,7 +1139,7 @@ export class ExcalidrawData {
     return dirty;
   }
 
-  public async syncElements(newScene: any): Promise<boolean> {
+  public async syncElements(newScene: any, selectedElementIds?: {[key: string]: boolean}): Promise<boolean> {
     this.scene = newScene;
     let result = false;
     if (!this.compatibilityMode) {
@@ -1146,7 +1154,7 @@ export class ExcalidrawData {
       this.setShowLinkBrackets() ||
       this.findNewElementLinksInScene();
     await this.updateTextElementsFromScene();
-    return result || this.findNewTextElementsInScene();
+    return result || this.findNewTextElementsInScene(selectedElementIds);
   }
 
   public async updateScene(newScene: any) {

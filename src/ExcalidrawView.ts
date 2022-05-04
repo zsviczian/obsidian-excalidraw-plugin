@@ -39,6 +39,7 @@ import {
   REG_LINKINDEX_INVALIDCHARS,
   KEYCODE,
   LOCAL_PROTOCOL,
+  nanoid,
 } from "./Constants";
 import ExcalidrawPlugin from "./main";
 import { repositionElementsToCursor, ExcalidrawAutomate } from "./ExcalidrawAutomate";
@@ -67,6 +68,7 @@ import {
   getSVGPadding,
   getWithBackground,
   hasExportTheme,
+  log,
   scaleLoadedImage,
   svgToBase64,
   viewportCoordsToSceneCoords,
@@ -434,7 +436,7 @@ export default class ExcalidrawView extends TextFileView {
       if (this.compatibilityMode) {
         await this.excalidrawData.syncElements(scene);
       } else if (
-        await this.excalidrawData.syncElements(scene)
+        await this.excalidrawData.syncElements(scene, this.excalidrawAPI.getAppState().selectedElementIds)
         //&& !this.semaphores.autosaving
       ) {
         await this.loadDrawing(false);
@@ -1344,6 +1346,9 @@ export default class ExcalidrawView extends TextFileView {
           elements: excalidrawData.elements,
           appState: {
             ...excalidrawData.appState,
+            ...this.excalidrawData.selectedElementIds !== {} //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/609
+              ? this.excalidrawData.selectedElementIds
+              : {},
             zenModeEnabled,
             viewModeEnabled,
             linkOpacity: this.excalidrawData.getLinkOpacity(),
