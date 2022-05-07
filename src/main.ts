@@ -82,7 +82,7 @@ import {
   setLeftHandedMode,
   sleep,
 } from "./utils/Utils";
-import { getAttachmentsFolderAndFilePath, isObsidianThemeDark } from "./utils/ObsidianUtils";
+import { getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, isObsidianThemeDark } from "./utils/ObsidianUtils";
 //import { OneOffs } from "./OneOffs";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
 import { ScriptEngine } from "./Scripts";
@@ -1791,18 +1791,11 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public openDrawing(drawingFile: TFile, onNewPane: boolean) {
-    let leaf: WorkspaceLeaf = null;
+    
+    let leaf = this.app.workspace.activeLeaf;
 
-    if (!leaf) {
-      leaf = this.app.workspace.activeLeaf;
-    }
-
-    if (!leaf) {
-      leaf = this.app.workspace.getLeaf();
-    }
-
-    if (onNewPane) {
-      leaf = this.app.workspace.createLeafBySplit(leaf);
+    if (!leaf || onNewPane) {
+      leaf = getNewOrAdjacentLeaf(this, app.workspace.activeLeaf);
     }
 
     leaf.setViewState({

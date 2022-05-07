@@ -29,7 +29,7 @@ export const getNewOrAdjacentLeaf = (
     const mainLeaves = app.workspace.getLayout().main.children.filter((c:any) => c.type === "leaf");
     if(mainLeaves.length === 0) {
       //@ts-ignore
-      return leafToUse = app.workspace.createLeafInParent(app.workspace.rootSplit);
+      return app.workspace.createLeafInParent(app.workspace.rootSplit);
     }
     const targetLeaf = app.workspace.getLeafById(mainLeaves[0].id);
     if (plugin.settings.openInAdjacentPane) {

@@ -2545,6 +2545,16 @@ export default class ExcalidrawView extends TextFileView {
                   if(html) {
                     const path = html.match(/href="app:\/\/obsidian\.md\/(.*?)"/);
                     if(path.length === 2) {
+                      const link = decodeURIComponent(path[1]).split("#");
+                      const f = app.vault.getAbstractFileByPath(link[0]);
+                      if(f && f instanceof TFile) {
+                        const path = app.metadataCache.fileToLinktext(f,this.file.path);
+                        this.addText(`[[${
+                           path +
+                          (link.length>1 ? "#" + link[1] + "|" + path : "")
+                        }]]`);
+                        return;
+                      }
                       this.addText(`[[${decodeURIComponent(path[1])}]]`);
                       return false;  
                     }

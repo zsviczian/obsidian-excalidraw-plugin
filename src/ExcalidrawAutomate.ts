@@ -1380,7 +1380,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
   ) => boolean = null;
 
    /**
-   * If set, this callback is triggered, when the user click a link in the scene.
+   * If set, this callback is triggered, when the user clicks a link in the scene.
    * You can use this callback in case you want to do something additional when the onLinkClick event occurs.
    * This callback must return a boolean value.
    * In case you want to prevent the excalidraw onLinkClick action you must return false, it will stop the native excalidraw onLinkClick management flow.
