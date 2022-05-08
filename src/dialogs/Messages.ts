@@ -17,6 +17,15 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.6.28": `
+## New
+- When dropping a link from a DataView query into Excalidraw the link will honor your "New link format" preferences in Obsidian. It will add the "shortest path when possible", if that is your setting. If the link includes a block or section reference, then the link will automatically include an alias, such that only the filename is displayed (shortest path possible allowing) [#610](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/610)
+- If Excalidraw is in a Hover Editor and you open a link in another pane by CTRL+SHIFT+Click then the new page will open in the main workspace, and not in a split pane in the hover editor.
+
+## Fixed
+- New text elements get de-selected after auto-save [#609](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/609)
+- Update opacity of bound text when the opacity of the container is updated [#5142](https://github.com/excalidraw/excalidraw/pull/5142)
+- ExcalidrawAutomate: openFileInNewOrAdjacentLeaf() function. This also caused an error when clicking a link in Excalidraw in a hover window, when there were no leaves in the main workspace view.`,
 "1.6.27": `
 ## New Features
 - While these new features are benefitial for all Excalidraw Automation projects, the current changes are mainly in support of the [ExcaliBrain](https://youtu.be/O2s-h5VKCas) integration. See detailed [Release Notes](https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.27) on GitHub.
