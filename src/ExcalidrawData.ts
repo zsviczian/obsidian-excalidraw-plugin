@@ -218,21 +218,22 @@ export class ExcalidrawData {
   > = null;
   private elementLinks: Map<string, string> = null;
   public scene: any = null;
+  public deletedElements: ExcalidrawElement[] = [];
   private file: TFile = null;
   private app: App;
   private showLinkBrackets: boolean;
   private linkPrefix: string;
   private urlPrefix: string;
   private textMode: TextMode = TextMode.raw;
-  private plugin: ExcalidrawPlugin;
   public loaded: boolean = false;
   private files: Map<FileId, EmbeddedFile> = null; //fileId, path
   private equations: Map<FileId, { latex: string; isLoaded: boolean }> = null; //fileId, path
   private compatibilityMode: boolean = false;
   selectedElementIds: {[key:string]:boolean} = {}; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/609
 
-  constructor(plugin: ExcalidrawPlugin) {
-    this.plugin = plugin;
+  constructor(
+    private plugin: ExcalidrawPlugin,
+  ) {
     this.app = plugin.app;
     this.files = new Map<FileId, EmbeddedFile>();
     this.equations = new Map<FileId, { latex: string; isLoaded: boolean }>();
@@ -375,7 +376,7 @@ export class ExcalidrawData {
   public async loadData(
     data: string,
     file: TFile,
-    textMode: TextMode,
+    textMode: TextMode
   ): Promise<boolean> {
     if (!file) {
       return false;
@@ -433,17 +434,10 @@ export class ExcalidrawData {
       }
       return sceneJSONandPOS;
     };
-    //try {
     sceneJSONandPOS = loadJSON();
-    /*} catch (e) {
-      if(await this.app.vault.adapter.exists(getBakPath(file))) {
-        data = await this.app.vault.adapter.read(getBakPath(file))
-        sceneJSONandPOS = loadJSON();
-        new Notice(t("LOAD_FROM_BACKUP"), 4000);
-      } else {
-        throw e;
-      
-    }*/
+
+    this.deletedElements = this.scene.elements.filter((el:ExcalidrawElement)=>el.isDeleted);
+    this.scene.elements = this.scene.elements.filter((el:ExcalidrawElement)=>!el.isDeleted);
 
     if (!this.scene.files) {
       this.scene.files = {}; //loading legacy scenes that do not yet have the files attribute.
@@ -962,7 +956,7 @@ export class ExcalidrawData {
    * @returns markdown string
    */
   disableCompression: boolean = false;
-  generateMD(): string {
+  generateMD(deletedElements: ExcalidrawElement[] = []): string {
     let outString = "# Text Elements\n";
     for (const key of this.textElements.keys()) {
       outString += `${this.textElements.get(key).raw} ^${key}\n\n`;
@@ -988,7 +982,14 @@ export class ExcalidrawData {
     }
     outString += this.equations.size > 0 || this.files.size > 0 ? "\n" : "";
 
-    const sceneJSONstring = JSON.stringify(this.scene, null, "\t");
+    const sceneJSONstring = JSON.stringify({
+      type: this.scene.type,
+      version: this.scene.version,
+      source: this.scene.source, 
+      elements: this.scene.elements.concat(deletedElements),
+      appState: this.scene.appState,
+      files: this.scene.files
+    }, null, "\t");
     return (
       outString +
       getMarkdownDrawingSection(

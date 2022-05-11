@@ -46,6 +46,7 @@ import ExcalidrawView, { TextMode } from "./ExcalidrawView";
 import {
   changeThemeOfExcalidrawMD,
   getMarkdownDrawingSection,
+  ExcalidrawData
 } from "./ExcalidrawData";
 import {
   ExcalidrawSettings,
@@ -94,7 +95,7 @@ import {
 } from "./MarkdownPostProcessor";
 import { FieldSuggester } from "./dialogs/FieldSuggester";
 import { ReleaseNotes } from "./dialogs/ReleaseNotes";
-import { debug } from "./utils/Utils";
+import { getTextMode } from "lib/ExcalidrawView";
 
 declare module "obsidian" {
   interface App {
@@ -1414,7 +1415,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
       const modifyEventHandler = async (file: TFile) => {
         const leaves = self.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
-        leaves.forEach((leaf: WorkspaceLeaf) => {
+        leaves.forEach(async (leaf: WorkspaceLeaf) => {
           const excalidrawView = leaf.view as ExcalidrawView;
           if (
             excalidrawView.file &&
@@ -1425,8 +1426,14 @@ export default class ExcalidrawPlugin extends Plugin {
                   file.path.lastIndexOf(".excalidraw"),
                 )}.md` === excalidrawView.file.path))
           ) {
-            //debug({where:"ExcalidrawPlugin.modifyEventHandler",file:file.name,reloadfile:excalidrawView.file,before:"reload(true)"});
-            excalidrawView.reload(true, excalidrawView.file);
+            if(file.extension==="md") {
+              const inData = new ExcalidrawData(self);
+              const data = await app.vault.read(file);
+              inData.loadData(data,file,getTextMode(data));
+              excalidrawView.synchronizeWithData(inData);
+            } else {
+              excalidrawView.reload(true, excalidrawView.file);
+            }
           }
         });
       };

@@ -487,6 +487,9 @@ export default class ExcalidrawView extends TextFileView {
     if (!this.excalidrawData.loaded) {
       return this.data;
     }
+    //include deleted elements in save in case saving in markdown mode
+    //deleted elements are only used if sync modifies files while Excalidraw is open
+    //otherwise deleted elements are discarded when loading the scene
     const scene = this.getScene();
     if (!this.compatibilityMode) {
       let trimLocation = this.data.search(/(^%%\n)?# Text Elements\n/m);
@@ -502,7 +505,7 @@ export default class ExcalidrawView extends TextFileView {
         .replace(
           /excalidraw-plugin:\s.*\n/,
           `${FRONTMATTER_KEY}: ${
-            this.textMode == TextMode.raw ? "raw\n" : "parsed\n"
+            this.textMode === TextMode.raw ? "raw\n" : "parsed\n"
           }`,
         );
 
@@ -516,7 +519,9 @@ export default class ExcalidrawView extends TextFileView {
         this.excalidrawData.disableCompression =
           this.isEditedAsMarkdownInOtherView();
       }
-      const reuslt = header + this.excalidrawData.generateMD();
+      const reuslt = header + this.excalidrawData.generateMD(
+        this.excalidrawAPI.getSceneElementsIncludingDeleted() //will be concatenated to scene.elements
+      );
       this.excalidrawData.disableCompression = false;
       return reuslt;
     }
@@ -1312,6 +1317,39 @@ export default class ExcalidrawView extends TextFileView {
     } else {
       this.nextLoader = loader;
     }
+  }
+
+  public async synchronizeWithData(inData: ExcalidrawData) {
+    //check if saving, wait until not
+
+    const elements = this.excalidrawAPI.getSceneElements();
+
+    //remove delete elements
+    inData.deletedElements.forEach(el=>{
+
+    });
+
+    //update items with higher version number then in scene
+    inData.scene.elements.forEach((incomingElement:ExcalidrawElement)=>{
+      const sceneElement:ExcalidrawElement = elements.filter(
+        (element:ExcalidrawElement)=>element.id === incomingElement.id
+      )[0];
+      if(sceneElement && sceneElement.version < incomingElement.version) {
+        //update this.excalidrawData.textElements
+        //update this.excalidrawData.files
+        //update this.excalidrawData.equations
+        //update scene element
+        return;
+      }
+      if(!sceneElement) {
+        //add element
+        //add this.excalidrawData.textElements or
+        // this.excalidrawData.files or
+        // this.excalidrawData.equations
+      }
+    })
+
+    this.excalidrawAPI.updateScene({elements});
   }
 
   initialContainerSizeUpdate = false;
