@@ -520,7 +520,7 @@ export default class ExcalidrawView extends TextFileView {
           this.isEditedAsMarkdownInOtherView();
       }
       const reuslt = header + this.excalidrawData.generateMD(
-        this.excalidrawAPI.getSceneElementsIncludingDeleted() //will be concatenated to scene.elements
+        this.excalidrawAPI.getSceneElementsIncludingDeleted().filter((el:ExcalidrawElement)=>el.isDeleted) //will be concatenated to scene.elements
       );
       this.excalidrawData.disableCompression = false;
       return reuslt;
@@ -1321,35 +1321,91 @@ export default class ExcalidrawView extends TextFileView {
 
   public async synchronizeWithData(inData: ExcalidrawData) {
     //check if saving, wait until not
+    let counter = 0;
+    while(this.semaphores.saving && counter++<30) {
+      await sleep(100);
+    }
+    if(counter>=30) {
+      errorlog({
+        where:"ExcalidrawView.synchronizeWithData",
+        message:`Aborting sync with received file (${this.file.path}) because semaphores.saving remained true for ower 3 seconds`, 
+        "fn": this.synchronizeWithData
+      });
+      return;
+    }
+    this.semaphores.saving = true;
+    try {
+      new Notice("sync");
+      const deletedIds = inData.deletedElements.map(el=>el.id);
+      const sceneElements = this.excalidrawAPI.getSceneElements()
+        //remove deleted elements
+        .filter((el: ExcalidrawElement)=>!deletedIds.contains(el.id));
+      const sceneElementIds = sceneElements.map((el:ExcalidrawElement)=>el.id);
 
-    const elements = this.excalidrawAPI.getSceneElements();
+      //update items with higher version number then in scene
+      inData.scene.elements.forEach((
+        incomingElement:ExcalidrawElement,
+        idx: number,
+        inElements: ExcalidrawElement[]
+      )=>{
+        const sceneElement:ExcalidrawElement = sceneElements.filter(
+          (element:ExcalidrawElement)=>element.id === incomingElement.id
+        )[0];
+        if(sceneElement && sceneElement.version < incomingElement.version) {
+          
+          //update this.excalidrawData.textElements
+          //update this.excalidrawData.files
+          //update this.excalidrawData.equations
+          //update scene element
+          //place into sequence
+          const currentLayer = sceneElementIds.indexOf(incomingElement.id);
+          //remove current element from scene
+          const elToMove = sceneElements.splice(currentLayer,1);
+          if(idx === 0) {
+            sceneElements.splice(0,0,incomingElement);
+            if(currentLayer!== 0) {
+              sceneElementIds.splice(currentLayer,1);
+              sceneElementIds.splice(0,0,incomingElement.id);
+            } 
+          } else {
+            const prevId = inElements[idx-1].id;
+            const parentLayer = sceneElementIds.indexOf(prevId);
+            sceneElements.splice(parentLayer+1,0,incomingElement);
+            if(parentLayer!==currentLayer-1) {
+              sceneElementIds.splice(currentLayer,1)
+              sceneElementIds.splice(parentLayer+1,0,incomingElement.id);
+            }
+          }
+          return;
+        }
+        if(!sceneElement) {
+          
+          //add element
+          //add this.excalidrawData.textElements or
+          // this.excalidrawData.files or
+          // this.excalidrawData.equations
+          if(idx === 0) {
+            sceneElements.splice(0,0,incomingElement)
+          } else {
+            const prevId = inElements[idx-1].id;
+            const parentLayer = sceneElementIds.indexOf(prevId);
+            sceneElements.splice(parentLayer+1,0,incomingElement);
+          }
+        }
+        
 
-    //remove delete elements
-    inData.deletedElements.forEach(el=>{
-
-    });
-
-    //update items with higher version number then in scene
-    inData.scene.elements.forEach((incomingElement:ExcalidrawElement)=>{
-      const sceneElement:ExcalidrawElement = elements.filter(
-        (element:ExcalidrawElement)=>element.id === incomingElement.id
-      )[0];
-      if(sceneElement && sceneElement.version < incomingElement.version) {
-        //update this.excalidrawData.textElements
-        //update this.excalidrawData.files
-        //update this.excalidrawData.equations
-        //update scene element
-        return;
-      }
-      if(!sceneElement) {
-        //add element
-        //add this.excalidrawData.textElements or
-        // this.excalidrawData.files or
-        // this.excalidrawData.equations
-      }
-    })
-
-    this.excalidrawAPI.updateScene({elements});
+      })
+      this.previousSceneVersion = getSceneVersion(sceneElements);
+      this.excalidrawAPI.updateScene({elements: sceneElements});
+    } catch(e) {
+      errorlog({
+        where:"ExcalidrawView.synchronizeWithData",
+        message:`Error during sync with received file (${this.file.path})`, 
+        "fn": this.synchronizeWithData,
+        error: e
+      });
+    }
+    this.semaphores.saving = false;
   }
 
   initialContainerSizeUpdate = false;

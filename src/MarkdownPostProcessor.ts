@@ -36,7 +36,7 @@ let metadataCache: MetadataCache;
 
 const getDefaultWidth = (plugin: ExcalidrawPlugin): string => {
   const width = parseInt(plugin.settings.width);
-  if (isNaN(width) || width === 0) {
+  if (isNaN(width) || width === 0 || width === null) {
     return "400";
   }
   return plugin.settings.width;
@@ -341,8 +341,8 @@ const tmpObsidianWYSIWYG = async (
 
     const basename = splitFolderAndFilename(attr.fname).basename;
     const setAttr = () => {
-      const hasWidth = internalEmbedDiv.getAttribute("width") !== "";
-      const hasHeight = internalEmbedDiv.getAttribute("height") !== "";
+      const hasWidth = internalEmbedDiv.getAttribute("width") && (internalEmbedDiv.getAttribute("width") !== "");
+      const hasHeight = internalEmbedDiv.getAttribute("height") && (internalEmbedDiv.getAttribute("height") !== "");
       if (hasWidth) {
         attr.fwidth = internalEmbedDiv.getAttribute("width");
       }

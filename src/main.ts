@@ -42,7 +42,7 @@ import {
   VIRGIL_FONT,
   VIRGIL_DATAURL,
 } from "./Constants";
-import ExcalidrawView, { TextMode } from "./ExcalidrawView";
+import ExcalidrawView, { TextMode, getTextMode } from "./ExcalidrawView";
 import {
   changeThemeOfExcalidrawMD,
   getMarkdownDrawingSection,
@@ -95,7 +95,6 @@ import {
 } from "./MarkdownPostProcessor";
 import { FieldSuggester } from "./dialogs/FieldSuggester";
 import { ReleaseNotes } from "./dialogs/ReleaseNotes";
-import { getTextMode } from "lib/ExcalidrawView";
 
 declare module "obsidian" {
   interface App {
@@ -1426,6 +1425,10 @@ export default class ExcalidrawPlugin extends Plugin {
                   file.path.lastIndexOf(".excalidraw"),
                 )}.md` === excalidrawView.file.path))
           ) {
+            if(excalidrawView.semaphores.preventReload) {
+              excalidrawView.semaphores.preventReload = false;
+              return;
+            }
             if(file.extension==="md") {
               const inData = new ExcalidrawData(self);
               const data = await app.vault.read(file);
