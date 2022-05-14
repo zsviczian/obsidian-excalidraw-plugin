@@ -1432,7 +1432,7 @@ export default class ExcalidrawPlugin extends Plugin {
             if(file.extension==="md") {
               const inData = new ExcalidrawData(self);
               const data = await app.vault.read(file);
-              inData.loadData(data,file,getTextMode(data));
+              await inData.loadData(data,file,getTextMode(data));
               excalidrawView.synchronizeWithData(inData);
             } else {
               excalidrawView.reload(true, excalidrawView.file);

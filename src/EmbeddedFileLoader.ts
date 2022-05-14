@@ -60,6 +60,8 @@ export class EmbeddedFile {
   public mimeType: MimeType = "application/octet-stream";
   public size: Size = { height: 0, width: 0 };
   public linkParts: LinkParts;
+  private hostPath: string;
+  public attemptCounter: number = 0;
   /*public isHyperlink: boolean = false;*/
 
   constructor(plugin: ExcalidrawPlugin, hostPath: string, imgPath: string) {
@@ -77,6 +79,7 @@ export class EmbeddedFile {
     this.imgInverted = this.img = "";
     this.mtime = 0;
     this.linkParts = getLinkParts(imgPath);
+    this.hostPath = hostPath;
     if (!this.linkParts.path) {
       new Notice(`Excalidraw Error\nIncorrect embedded filename: ${imgPath}`);
       return;
@@ -92,16 +95,25 @@ export class EmbeddedFile {
       hostPath,
     );
     if (!this.file) {
-      new Notice(
-        `Excalidraw Warning: could not find image file: ${imgPath}`,
-        5000,
-      );
+      if(this.attemptCounter++ === 0) {
+        new Notice(
+          `Excalidraw Warning: could not find image file: ${imgPath}`,
+          5000,
+        );
+      }
     }
   }
 
   private fileChanged(): boolean {
     if (!this.file) {
-      return false;
+      this.file = this.plugin.app.metadataCache.getFirstLinkpathDest(
+        this.linkParts.path,
+        this.hostPath,
+      ); // maybe the file has synchronized in the mean time
+      if(!this.file) {
+        this.attemptCounter++;
+        return false;
+      }
     }
     return this.mtime != this.file.stat.mtime;
   }
@@ -135,7 +147,14 @@ export class EmbeddedFile {
 
   public isLoaded(isDark: boolean): boolean {
     if (!this.file) {
-      return true;
+      this.file = this.plugin.app.metadataCache.getFirstLinkpathDest(
+        this.linkParts.path,
+        this.hostPath,
+      ); // maybe the file has synchronized in the mean time
+      if(!this.file) {
+        this.attemptCounter++;
+        return true;
+      }
     }
     if (this.fileChanged()) {
       return false;

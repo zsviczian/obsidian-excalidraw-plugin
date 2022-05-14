@@ -439,7 +439,10 @@ export default class ExcalidrawView extends TextFileView {
         await this.excalidrawData.syncElements(scene, this.excalidrawAPI.getAppState().selectedElementIds)
         //&& !this.semaphores.autosaving
       ) {
-        await this.loadDrawing(false);
+        await this.loadDrawing(
+          false,
+          this.excalidrawAPI.getSceneElementsIncludingDeleted().filter((el:ExcalidrawElement)=>el.isDeleted)
+        );
       }
 
       if (allowSave) {
@@ -634,6 +637,13 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   async handleLinkClick(view: ExcalidrawView, ev: MouseEvent) {
+    const tooltip = document.body.querySelector(
+      "body>div.excalidraw-tooltip,div.excalidraw-tooltip--visible",
+    );
+    if (tooltip) {
+      document.body.removeChild(tooltip);
+    }
+
     const selectedText = this.getSelectedTextElement();
     const selectedImage = selectedText?.id
       ? null
@@ -1077,14 +1087,14 @@ export default class ExcalidrawView extends TextFileView {
         errorlog({where: "ExcalidrawView.onunload", fn: this.getHookServer().onViewUnloadHook, error: e});
       }
     }
-    this.removeParentMoveObserver();
-    this.removeSlidingPanesListner();
     const tooltip = document.body.querySelector(
       "body>div.excalidraw-tooltip,div.excalidraw-tooltip--visible",
     );
     if (tooltip) {
       document.body.removeChild(tooltip);
     }
+    this.removeParentMoveObserver();
+    this.removeSlidingPanesListner();
     if (this.autosaveTimer) {
       clearInterval(this.autosaveTimer);
       this.autosaveTimer = null;
@@ -1308,6 +1318,21 @@ export default class ExcalidrawView extends TextFileView {
           this.activeLoader = null;
           if (this.nextLoader) {
             runLoader(this.nextLoader);
+          } else {
+            //in case one or more files have not loaded retry later hoping that sync has delivered the file in the mean time.
+            this.excalidrawData.getFiles().some(ef=>{
+              if(ef && !ef.file && ef.attemptCounter<30) {
+                const self = this;
+                const currentFile = this.file.path;
+                setTimeout(async ()=>{
+                  if(self && self.excalidrawAPI && currentFile === self.file.path) {
+                    self.loadSceneFiles();
+                  }
+                },2000)
+                return true;
+              }
+              return false;
+            })
           }
         },0
       );
@@ -1334,13 +1359,48 @@ export default class ExcalidrawView extends TextFileView {
       return;
     }
     this.semaphores.saving = true;
+    let reloadFiles = false;
+
     try {
-      new Notice("sync");
       const deletedIds = inData.deletedElements.map(el=>el.id);
       const sceneElements = this.excalidrawAPI.getSceneElements()
         //remove deleted elements
         .filter((el: ExcalidrawElement)=>!deletedIds.contains(el.id));
       const sceneElementIds = sceneElements.map((el:ExcalidrawElement)=>el.id);
+
+      const manageMapChanges = (incomingElement: ExcalidrawElement ) => {
+        switch(incomingElement.type) {
+          case "text":
+            this.excalidrawData.textElements.set(
+              incomingElement.id,
+              inData.textElements.get(incomingElement.id)
+            );
+            break;
+          case "image":
+            if(inData.getFile(incomingElement.fileId)) {
+              this.excalidrawData.setFile(
+                incomingElement.fileId,
+                inData.getFile(incomingElement.fileId)
+              );
+              reloadFiles = true;
+            } else if (inData.getEquation(incomingElement.fileId)) {
+              this.excalidrawData.setEquation(
+                incomingElement.fileId,
+                inData.getEquation(incomingElement.fileId)
+              )
+              reloadFiles = true;
+            }
+          break;
+        }
+
+        if(inData.elementLinks.has(incomingElement.id)) {
+          this.excalidrawData.elementLinks.set(
+            incomingElement.id,
+            inData.elementLinks.get(incomingElement.id)
+          )
+        }
+
+      }
 
       //update items with higher version number then in scene
       inData.scene.elements.forEach((
@@ -1351,13 +1411,16 @@ export default class ExcalidrawView extends TextFileView {
         const sceneElement:ExcalidrawElement = sceneElements.filter(
           (element:ExcalidrawElement)=>element.id === incomingElement.id
         )[0];
-        if(sceneElement && sceneElement.version < incomingElement.version) {
-          
-          //update this.excalidrawData.textElements
-          //update this.excalidrawData.files
-          //update this.excalidrawData.equations
-          //update scene element
-          //place into sequence
+        if(
+          sceneElement && 
+          (sceneElement.version < incomingElement.version || 
+            //in case of competing versions of the truth, the incoming version will be honored
+            (sceneElement.version === incomingElement.version &&
+             JSON.stringify(sceneElement) !== JSON.stringify(incomingElement))
+          )
+        ) {
+          manageMapChanges(incomingElement);
+          //place into correct element layer sequence
           const currentLayer = sceneElementIds.indexOf(incomingElement.id);
           //remove current element from scene
           const elToMove = sceneElements.splice(currentLayer,1);
@@ -1379,24 +1442,27 @@ export default class ExcalidrawView extends TextFileView {
           return;
         }
         if(!sceneElement) {
-          
-          //add element
-          //add this.excalidrawData.textElements or
-          // this.excalidrawData.files or
-          // this.excalidrawData.equations
+          manageMapChanges(incomingElement);
+
           if(idx === 0) {
-            sceneElements.splice(0,0,incomingElement)
+            sceneElements.splice(0,0,incomingElement);
+            sceneElementIds.splice(0,0,incomingElement.id);
           } else {
             const prevId = inElements[idx-1].id;
             const parentLayer = sceneElementIds.indexOf(prevId);
             sceneElements.splice(parentLayer+1,0,incomingElement);
+            sceneElementIds.splice(parentLayer+1,0,incomingElement.id);
           }
         }
-        
-
       })
       this.previousSceneVersion = getSceneVersion(sceneElements);
+      //changing files could result in a race condition for sync. If at the end of sync there are differences
+      //set dirty will trigger an autosave
+      if(getSceneVersion(inData.scene.elements) !== this.previousSceneVersion) {
+        this.setDirty();
+      }
       this.excalidrawAPI.updateScene({elements: sceneElements});
+      if(reloadFiles) this.loadSceneFiles();
     } catch(e) {
       errorlog({
         where:"ExcalidrawView.synchronizeWithData",
@@ -1413,7 +1479,7 @@ export default class ExcalidrawView extends TextFileView {
    *
    * @param justloaded - a flag to trigger zoom to fit after the drawing has been loaded
    */
-  private async loadDrawing(justloaded: boolean) {
+  private async loadDrawing(justloaded: boolean, deletedElements?: ExcalidrawElement[]) {
     const excalidrawData = this.excalidrawData.scene;
     this.semaphores.justLoaded = justloaded;
     this.initialContainerSizeUpdate = justloaded;
@@ -1437,7 +1503,7 @@ export default class ExcalidrawView extends TextFileView {
 
       this.updateScene(
         {
-          elements: excalidrawData.elements,
+          elements: excalidrawData.elements.concat(deletedElements??[]), //need to preserve deleted elements during autosave if images, links, etc. are updated
           appState: {
             ...excalidrawData.appState,
             ...this.excalidrawData.selectedElementIds !== {} //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/609
@@ -2766,6 +2832,12 @@ export default class ExcalidrawView extends TextFileView {
             const link = element.link;
             if (!link || link === "") {
               return;
+            }
+            const tooltip = document.body.querySelector(
+              "body>div.excalidraw-tooltip,div.excalidraw-tooltip--visible",
+            );
+            if (tooltip) {
+              document.body.removeChild(tooltip);
             }
             const event = e?.detail?.nativeEvent;
             if(this.getHookServer().onLinkClickHook) {

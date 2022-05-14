@@ -1,4 +1,4 @@
-import { normalizePath, TAbstractFile, TFolder, Vault } from "obsidian";
+import { normalizePath, Notice, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
 import { ExcalidrawSettings } from "src/Settings";
 
 /**
@@ -125,6 +125,9 @@ export async function checkAndCreateFolder(vault: Vault, folderpath: string) {
   const folder = vault.getAbstractFileByPath(folderpath);
   if (folder && folder instanceof TFolder) {
     return;
+  }
+  if (folder && folder instanceof TFile) {
+    new Notice(`The folder cannot be created because it already exists as a file: ${folderpath}.`)
   }
   await vault.createFolder(folderpath);
 }

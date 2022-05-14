@@ -212,11 +212,11 @@ const wrap = (text: string, lineLen: number) =>
   lineLen ? wrapText(text, lineLen, false, 0) : text;
 
 export class ExcalidrawData {
-  private textElements: Map<
+  public textElements: Map<
     string,
     { raw: string; parsed: string; wrapAt: number | null }
   > = null;
-  private elementLinks: Map<string, string> = null;
+  public elementLinks: Map<string, string> = null;
   public scene: any = null;
   public deletedElements: ExcalidrawElement[] = [];
   private file: TFile = null;
@@ -635,23 +635,23 @@ export class ExcalidrawData {
     id: string,
     wrapResult: boolean = true,
   ): Promise<string> {
-    const t = this.textElements.get(id);
-    if (!t) {
+    const text = this.textElements.get(id);
+    if (!text) {
       return null;
     }
     if (this.textMode === TextMode.parsed) {
-      if (!t.parsed) {
+      if (!text.parsed) {
         this.textElements.set(id, {
-          raw: t.raw,
-          parsed: (await this.parse(t.raw)).parsed,
-          wrapAt: t.wrapAt,
+          raw: text.raw,
+          parsed: (await this.parse(text.raw)).parsed,
+          wrapAt: text.wrapAt,
         });
       }
       //console.log("parsed",this.textElements.get(id).parsed);
-      return wrapResult ? wrap(t.parsed, t.wrapAt) : t.parsed;
+      return wrapResult ? wrap(text.parsed, text.wrapAt) : text.parsed;
     }
     //console.log("raw",this.textElements.get(id).raw);
-    return t.raw;
+    return text.raw;
   }
 
   private findNewElementLinksInScene(): boolean {
@@ -714,11 +714,11 @@ export class ExcalidrawData {
         jsonString = jsonString.replaceAll(te.id, id); //brute force approach to replace all occurances (e.g. links, groups,etc.)
         if (this.textElements.has(te.id)) {
           //element was created with onBeforeTextSubmit
-          const t = this.textElements.get(te.id);
+          const text = this.textElements.get(te.id);
           this.textElements.set(id, {
-            raw: t.raw,
-            parsed: t.parsed,
-            wrapAt: t.wrapAt,
+            raw: text.raw,
+            parsed: text.parsed,
+            wrapAt: text.wrapAt,
           });
           this.textElements.delete(te.id); //delete the old ID from the Map
         }
@@ -1354,6 +1354,10 @@ export class ExcalidrawData {
       path: data.file.path,
       hasSVGwithBitmap: data.isSVGwithBitmap,
     });
+  }
+
+  public getFiles(): EmbeddedFile[] {
+    return Object.values(this.files);
   }
 
   public getFile(fileId: FileId): EmbeddedFile {

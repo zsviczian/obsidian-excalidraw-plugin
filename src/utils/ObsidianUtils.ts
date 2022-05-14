@@ -78,7 +78,7 @@ export const getAttachmentsFolderAndFilePath = async (
     const activeFileFolder = `${splitFolderAndFilename(activeViewFilePath).folderpath}/`;
     folder = normalizePath(activeFileFolder + folder.substring(2));
   }
-  if (!folder) {
+  if (!folder || folder === "/") {
     folder = "";
   }
   await checkAndCreateFolder(app.vault, folder);
