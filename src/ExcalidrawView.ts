@@ -903,28 +903,31 @@ export default class ExcalidrawView extends TextFileView {
     }
 
     const self = this;
-    this.app.workspace.onLayoutReady(() => {
-      self.addSlidingPanesListner();
+    this.app.workspace.onLayoutReady(async () => {
+      self.contentEl.addClass("excalidraw-view");
+      await self.addSlidingPanesListner(); //awaiting this because when using workspaces, onLayoutReady comes too early
       self.addParentMoveObserver();
     });
 
     this.setupAutosaveTimer();
-    this.contentEl.addClass("excalidraw-view");
   }
 
   //this is to solve sliding panes bug
   //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/9
   private slidingPanesListner: any;
-  private addSlidingPanesListner() {
+  private async addSlidingPanesListner() {
     const self = this;
     this.slidingPanesListner = () => {
       if (self.refresh) {
         self.refresh();
       }
     };
-    (
-      this.app.workspace.rootSplit as WorkspaceItem as WorkspaceItemExt
-    ).containerEl.addEventListener("scroll", this.slidingPanesListner);
+    let rootSplit = this.app.workspace.rootSplit as WorkspaceItem as WorkspaceItemExt;
+    while(!rootSplit) {
+      await sleep(50);
+      rootSplit = this.app.workspace.rootSplit as WorkspaceItem as WorkspaceItemExt;
+    }
+    rootSplit.containerEl.addEventListener("scroll", this.slidingPanesListner);
   }
 
   private removeSlidingPanesListner() {

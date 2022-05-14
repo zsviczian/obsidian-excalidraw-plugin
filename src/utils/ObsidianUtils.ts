@@ -14,7 +14,7 @@ export const getParentOfClass = (element: HTMLElement, cssClass: string):HTMLEle
   ) {
     parent = parent.parentElement;
   }
-  return parent.classList.contains(cssClass) ? parent : null;
+  return parent?.classList?.contains(cssClass) ? parent : null;
 };
 
 export const getNewOrAdjacentLeaf = (
