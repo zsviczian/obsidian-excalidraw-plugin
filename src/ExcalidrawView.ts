@@ -905,6 +905,7 @@ export default class ExcalidrawView extends TextFileView {
     const self = this;
     this.app.workspace.onLayoutReady(async () => {
       self.contentEl.addClass("excalidraw-view");
+      //https://github.com/zsviczian/excalibrain/issues/28
       await self.addSlidingPanesListner(); //awaiting this because when using workspaces, onLayoutReady comes too early
       self.addParentMoveObserver();
     });
