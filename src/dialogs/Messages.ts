@@ -17,6 +17,17 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.6.29": `
+## New
+- I implemented sync support inspired by the new [Obsidian Multiplayer Sync](https://youtu.be/ZyCPhbd51eo) feature (available in insider build v0.14.10). 
+  - To manage expectations, this is not real-time collaboration like on Excalidraw.com. Synchronization is delayed by the frequency of the autosave timer (every 10 secs) and the speed of Obsidian sync. Also if a file has conflicting versions, Obsidian sync may delay the delivery of the changed file.
+  - Even if you are not using multiplayer Obsidian Vaults, you may benefit from the improved synchronization, for example when using the freedraw tool on your tablet or phone, and in parallel editing the same drawing (e.g. typing text) on your desktop. I frequently do this in a mind-mapping scenario.
+  - If the same Excalidraw sketch is open on multiple devices then Excalidraw will try to merge changes into the open drawing, thus parallel modifications on different devices are possible. If the same element is edited by multiple parties at the same time, then the foreign (received) version will be honored and the local changes lost. 
+
+## Fixed:
+- Default embed width setting stopped working. [#622](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/622)
+- The link tooltip gets stuck on screen after Excalidraw closes [#621](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/621)
+- Layout error when using the Workspaces core plugin. [#28](https://github.com/zsviczian/excalibrain/issues/28)`,
 "1.6.28": `
 ## New
 - When dropping a link from a DataView query into Excalidraw the link will honor your "New link format" preferences in Obsidian. It will add the "shortest path when possible", if that is your setting. If the link includes a block or section reference, then the link will automatically include an alias, such that only the filename is displayed (shortest path possible allowing) [#610](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/610)
