@@ -5,7 +5,7 @@ The script allows you to change the shape and fill style of selected Rectangles,
 
 ```javascript
 */
-const fillStylesDispaly=["Dots","Zigzag","Zigzag-line", "Dashed", "Hachure", "Cross-hatch", "Solid"];
+const fillStylesDispaly=["Dots (⚠ VERY SLOW performance on large objects!)","Zigzag","Zigzag-line", "Dashed", "Hachure", "Cross-hatch", "Solid"];
 const fillStyles=["dots","zigzag","zigzag-line", "dashed", "hachure", "cross-hatch", "solid"];
 const fillShapes=["ellipse","rectangle","diamond", "freedraw", "line"];
 const boxShapesDispaly=["○ ellipse","□ rectangle","◇ diamond"];
