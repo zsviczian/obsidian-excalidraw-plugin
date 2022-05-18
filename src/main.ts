@@ -1429,6 +1429,12 @@ export default class ExcalidrawPlugin extends Plugin {
               excalidrawView.semaphores.preventReload = false;
               return;
             }
+            //if the user hasn't touched the file for 5 minutes, don't synchronize, reload.
+            //this is to avoid complex sync scenarios of multiple remote changes outside an active collaboration session
+            if(excalidrawView.lastSaveTimestamp + 300000 < Date.now()) {
+              excalidrawView.reload(true, excalidrawView.file);
+              return;
+            }           
             if(file.extension==="md") {
               const inData = new ExcalidrawData(self);
               const data = await app.vault.read(file);

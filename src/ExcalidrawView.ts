@@ -183,6 +183,7 @@ export default class ExcalidrawView extends TextFileView {
   private parentMoveObserver: MutationObserver;
   public linksAlwaysOpenInANewPane: boolean = false; //override the need for SHIFT+CTRL+click
   private hookServer: ExcalidrawAutomate;
+  public lastSaveTimestamp: number = 0; //used to validate if incoming file should sync with open file
 
   public semaphores: {
     //The role of justLoaded is to capture the Excalidraw.onChange event that fires right after the canvas was loaded for the first time to
@@ -451,6 +452,7 @@ export default class ExcalidrawView extends TextFileView {
         //and we do not want to interrupt the flow by reloading the drawing into the canvas.
         this.semaphores.preventReload = preventReload;
         await super.save();
+        this.lastSaveTimestamp = this.file.stat.mtime;
         this.clearDirty();
       }
 
@@ -1041,6 +1043,9 @@ export default class ExcalidrawView extends TextFileView {
         return;
       }
       const editing = api.getAppState().editingElement !== null;
+      //this will reset positioning of the cursor in case due to the popup keyboard,
+      //or the command palette, or some other unexpected reason the onResize would not fire...
+      this.refresh();
       if (
         this.isLoaded &&
         this.semaphores.dirty &&
@@ -1243,6 +1248,7 @@ export default class ExcalidrawView extends TextFileView {
     if (clear) {
       this.clear();
     }
+    this.lastSaveTimestamp = this.file.stat.mtime;
     data = this.data = data.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
     this.app.workspace.onLayoutReady(async () => {
       this.compatibilityMode = this.file.extension === "excalidraw";
@@ -2488,6 +2494,7 @@ export default class ExcalidrawView extends TextFileView {
               showHoverPreview();
             }
           },
+          libraryReturnUrl: "app://obsidian.md",
           autoFocus: true,
           onChange: (et: ExcalidrawElement[], st: AppState) => {
             viewModeEnabled = st.viewModeEnabled;

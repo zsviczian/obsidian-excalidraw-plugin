@@ -17,6 +17,11 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.6.30": `
+## Fixed
+- The load stencil library button stopped working after 1.6.29 due to an error in the core Excalidraw package. It is now fixed. [#625](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/625).
+- On iPad (probably other Obsidian mobile devices as well) after opening the command palette the positioning of the pointer was off. From now on, the pointer is automatically re-calibrated every 5 seconds.
+- I improved shared-vault collaboration sync. If the open file has not been saved for the last 5 minutes (i.e. you are not working on the drawing actively), and a newer remote version of the file is received via sync, then the remote file will simply overwrite the local file (i.e. the behavior of Excalidraw Obsidian prior to implementing Shared (Multiplayer) Vault Synchronization support in 1.6.29). This solution will support active collaboration when parties participating are actively editing the drawing, but also caters to the scenario when you open a drawing on one device (e.g. your desktop) and once you are finished editing you do not close the drawing, but simply put your PC to sleep... then later you edit the same drawing on your tablet. When you turn your desktop PC on the next time, the changes you've made on your tablet will be synchronized by Obsidian sync. In this case the changes from your tablet should be honored. If you have not edited the open drawing for more then 5 minutes (like in this scenario) there is no value in running the file comparison between the local version and the received one. This approach reduces the probability of running into sync conflicts.`,
 "1.6.29": `
 ## New
 - I implemented sync support inspired by the new [Obsidian Multiplayer Sync](https://youtu.be/ZyCPhbd51eo) feature (available in insider build v0.14.10). 
