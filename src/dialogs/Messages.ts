@@ -17,6 +17,12 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.6.31": `
+Minor update:
+
+## Fixes
+- Color picker hotkeys were not working. They are working again [627](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/627)
+- I updated MathJax (LaTeX) to the newest (3.2.1) release.`,
 "1.6.30": `
 ## Fixed
 - The load stencil library button stopped working after 1.6.29 due to an error in the core Excalidraw package. It is now fixed. [#625](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/625).

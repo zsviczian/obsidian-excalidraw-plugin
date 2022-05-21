@@ -273,6 +273,7 @@ export default class ExcalidrawPlugin extends Plugin {
         const script = doc.createElement("script");
         script.type = "text/javascript";
         script.onload = () => {
+          debugger;
           const win = iframe.contentWindow;
           //@ts-ignore
           win.MathJax.startup.pagePromise.then(async () => {
@@ -299,7 +300,7 @@ export default class ExcalidrawPlugin extends Plugin {
             self.mathjaxLoaderFinished = true;
           });
         };
-        script.src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js";
+        script.src = "https://cdn.jsdelivr.net/npm/mathjax@3.2.1/es5/tex-svg.js";
         //script.src = MATHJAX_DATAURL;
         doc.head.appendChild(script);
       } catch {

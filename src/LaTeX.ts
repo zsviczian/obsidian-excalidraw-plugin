@@ -3,7 +3,7 @@ import ExcalidrawView from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
 import { FileData, MimeType } from "./EmbeddedFileLoader";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
-import { getImageSize, log, sleep, svgToBase64 } from "./utils/Utils";
+import { errorlog, getImageSize, log, sleep, svgToBase64 } from "./utils/Utils";
 import { fileid } from "./Constants";
 import html2canvas from "html2canvas";
 import { count } from "console";
@@ -46,9 +46,12 @@ export async function tex2dataURL(
   //if network is slow, or not available, or mathjax has not yet fully loaded
   let counter = 0;
   while (!plugin.mathjax && !plugin.mathjaxLoaderFinished && counter < 10) {
-    log({ where: "tex2dataURL", counter });
     await sleep(100);
     counter++;
+  }
+
+  if(!plugin.mathjaxLoaderFinished) {
+    errorlog({where: "text2dataURL", fn: tex2dataURL, message:"mathjaxLoader not ready, using fallback. Try reloading Obsidian or restarting the Excalidraw plugin"});
   }
 
   //it is not clear why this works, but it seems that after loading the plugin sometimes only the third attempt is successful.
@@ -79,7 +82,7 @@ export async function tex2dataURL(
   }
 }
 
-async function mathjaxSVG(
+export async function mathjaxSVG(
   tex: string,
   plugin: ExcalidrawPlugin,
 ): Promise<{
