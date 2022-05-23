@@ -17,6 +17,12 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.6.32": `
+## Fixed
+- Filenames of embedded images and markdown documents did not get updated if the drawing was open in a work-pane while you changed the filename of the embedded file (image or markdown document) [632](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/632).
+- When you created a new text element and immediately dragged it, sometimes autosave interrupted the drag action and Excalidraw dropped the element you were dragging [630](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/630)
+- In some edge cases when you had the drawing open on your desktop and you also opened the same image on your tablet, Sync seemed to work in the background but the changes did not appear on the desktop until you closed and opened the drawing again. [629](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/629)
+- LaTeX support: Excalidraw must download a javascript library from one of the hosting sites for MathJax tex2svg. It seems that some people do not have access to the URL recommended in the first place by [MathJax](https://docs.mathjax.org/en/latest/web/start.html). If LaTeX formulas do not render correctly in Excalidraw, try changing the source server under Compatibility Settings in Excalidraw Plugin Settings. [628](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/628)`,
 "1.6.31": `
 Minor update:
 

@@ -346,6 +346,10 @@ export default {
     "By enabling this feature drawings you create with the ribbon icon, the command palette actions, " +
     "and the file explorer are going to be all legacy *.excalidraw files. This setting will also turn off the reminder message " +
     "when you open a legacy file for editing.",
+  MATHJAX_NAME: "MathJax (LaTeX) javascript library host",
+  MATHJAX_DESC: "If you are using LaTeX equiations in Excalidraw then the plugin needs to load a javascript library for that. " + 
+    "Some users are unable to access certain host servers. If you are experiencing issues try changing the host here. You may need to "+
+    "restart Obsidian after closing settings, for this change to take effect.",
   EXPERIMENTAL_HEAD: "Experimental features",
   EXPERIMENTAL_DESC:
     "Some of these setting will not take effect immediately, only when the File Explorer is refreshed, or Obsidian restarted.",

@@ -6,7 +6,6 @@ import { FileId } from "@zsviczian/excalidraw/types/element/types";
 import { errorlog, getImageSize, log, sleep, svgToBase64 } from "./utils/Utils";
 import { fileid } from "./Constants";
 import html2canvas from "html2canvas";
-import { count } from "console";
 import { Notice } from "obsidian";
 
 declare let window: any;

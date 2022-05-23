@@ -100,6 +100,7 @@ export interface ExcalidrawSettings {
   defaultTrayMode: boolean;
   previousRelease: string;
   showReleaseNotes: boolean;
+  mathjaxSourceURL: string;
 }
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
@@ -179,6 +180,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   defaultTrayMode: false,
   previousRelease: "1.6.13",
   showReleaseNotes: true,
+  mathjaxSourceURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.1/es5/tex-svg.js"
 };
 
 const fragWithHTML = (html: string) =>
@@ -188,6 +190,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   plugin: ExcalidrawPlugin;
   private requestEmbedUpdate: boolean = false;
   private requestReloadDrawings: boolean = false;
+  private reloadMathJax: boolean = false;
   //private applyDebounceTimer: number = 0;
 
   constructor(app: App, plugin: ExcalidrawPlugin) {
@@ -228,6 +231,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       this.plugin.triggerEmbedUpdates();
     }
     this.plugin.scriptEngine.updateScriptPath();
+    if(this.reloadMathJax) {
+      this.plugin.loadMathJax();
+    }
   }
 
   async display() {
@@ -1107,6 +1113,24 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
+
+    //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/628
+    new Setting(containerEl)
+      .setName(t("MATHJAX_NAME"))
+      .setDesc(t("MATHJAX_DESC"))
+      .addDropdown((dropdown) => {
+        dropdown
+          .addOption("https://cdn.jsdelivr.net/npm/mathjax@3.2.1/es5/tex-svg.js", "jsdelivr")
+          .addOption("https://unpkg.com/mathjax@3.2.1/es5/tex-svg.js", "unpkg")
+          .addOption("https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.1/es5/tex-svg-full.min.js","cdnjs")
+          .setValue(this.plugin.settings.mathjaxSourceURL)
+          .onChange((value)=> {
+            this.plugin.settings.mathjaxSourceURL = value;
+            this.reloadMathJax = true;
+            this.applySettingsUpdate();
+          })
+      })
+    
 
     this.containerEl.createEl("h1", { text: t("EXPERIMENTAL_HEAD") });
     this.containerEl.createEl("p", { text: t("EXPERIMENTAL_DESC") });

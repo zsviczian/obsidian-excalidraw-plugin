@@ -409,6 +409,7 @@ export default class ExcalidrawView extends TextFileView {
     }
   }
 
+  private preventReloadResetTimer: NodeJS.Timeout = null;
   async save(preventReload: boolean = true, forcesave: boolean = false) {
     //debug({where:"save", preventReload, forcesave, semaphores:this.semaphores});
     if (this.semaphores.saving) {
@@ -450,10 +451,23 @@ export default class ExcalidrawView extends TextFileView {
         //reload() is triggered indirectly when saving by the modifyEventHandler in main.ts
         //prevent reload is set here to override reload when not wanted: typically when the user is editing
         //and we do not want to interrupt the flow by reloading the drawing into the canvas.
+        if(this.preventReloadResetTimer) {
+          clearTimeout(this.preventReloadResetTimer);
+          this.preventReloadResetTimer = null;
+        }
+
         this.semaphores.preventReload = preventReload;
         await super.save();
         this.lastSaveTimestamp = this.file.stat.mtime;
         this.clearDirty();
+        
+        //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/629
+        //there were odd cases when preventReload semaphore did not get cleared and consequently a synchronized image
+        //did not update the open drawing
+        if(preventReload) {
+          const self = this;
+          this.preventReloadResetTimer = setTimeout(()=>self.semaphores.preventReload = false,2000);
+        }
       }
 
       if (!this.semaphores.autosaving) {
@@ -754,7 +768,7 @@ export default class ExcalidrawView extends TextFileView {
             latex: formula,
             isLoaded: false,
           });
-          await this.save(true);
+          await this.save(false);
           await updateEquation(
             formula,
             selectedImage.fileId,
@@ -766,7 +780,7 @@ export default class ExcalidrawView extends TextFileView {
         });
         return;
       }
-      await this.save(true); //in case pasted images haven't been saved yet
+      await this.save(false); //in case pasted images haven't been saved yet
       if (this.excalidrawData.hasFile(selectedImage.fileId)) {
         if (ev.altKey) {
           const ef = this.excalidrawData.getFile(selectedImage.fileId);
@@ -786,7 +800,7 @@ export default class ExcalidrawView extends TextFileView {
                 return;
               }
               ef.resetImage(this.file.path, link);
-              await this.save(true);
+              await this.save(false);
               await this.loadSceneFiles();
               this.setDirty();
             });
@@ -1042,7 +1056,8 @@ export default class ExcalidrawView extends TextFileView {
         warningUnknowSeriousError();
         return;
       }
-      const editing = api.getAppState().editingElement !== null;
+      const st = api.getAppState();
+      const editing = st.editingElement !== null;
       //this will reset positioning of the cursor in case due to the popup keyboard,
       //or the command palette, or some other unexpected reason the onResize would not fire...
       this.refresh();
@@ -1052,7 +1067,8 @@ export default class ExcalidrawView extends TextFileView {
         this.semaphores.dirty == this.file?.path &&
         this.plugin.settings.autosave &&
         !this.semaphores.forceSaving &&
-        !editing
+        !editing &&
+        st.draggingElement === null //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/630
       ) {
         this.autosaveTimer = null;
         this.semaphores.autosaving = true;
@@ -1450,8 +1466,7 @@ export default class ExcalidrawView extends TextFileView {
             }
           }
           return;
-        }
-        if(!sceneElement) {
+        } else if(!sceneElement) {
           manageMapChanges(incomingElement);
 
           if(idx === 0) {
@@ -1462,6 +1477,14 @@ export default class ExcalidrawView extends TextFileView {
             const parentLayer = sceneElementIds.indexOf(prevId);
             sceneElements.splice(parentLayer+1,0,incomingElement);
             sceneElementIds.splice(parentLayer+1,0,incomingElement.id);
+          }
+        } else if(sceneElement && incomingElement.type === "image") { //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/632
+          if(inData.getFile(incomingElement.fileId)) {
+            this.excalidrawData.setFile(
+              incomingElement.fileId,
+              inData.getFile(incomingElement.fileId)
+            );
+            reloadFiles = true;
           }
         }
       })
