@@ -17,6 +17,16 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.6.33": `
+# Fixed
+- Under some special circumstances when you embedded a drawing (guest) into another drawing (host), the host did not update when you modified the guest, until you closed Excalidraw completely and reopened the host. [#637](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/637)
+
+# New
+- ExcalidrawAutomate ${String.fromCharCode(96)}addLabelToLine${String.fromCharCode(96)} adds a text label to a line or arrow. Currently this function only works with simple straight 2-point (start & end) lines.
+${String.fromCharCode(96, 96, 96)}typescript
+addLabelToLine(lineId: string, label: string): string
+${String.fromCharCode(96, 96, 96)}
+- ExcalidrawAutomate ${String.fromCharCode(96)}ConnectObjects${String.fromCharCode(96)} now returns the ID of the arrow that was created.`,
 "1.6.32": `
 ## Fixed
 - Filenames of embedded images and markdown documents did not get updated if the drawing was open in a work-pane while you changed the filename of the embedded file (image or markdown document) [632](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/632).

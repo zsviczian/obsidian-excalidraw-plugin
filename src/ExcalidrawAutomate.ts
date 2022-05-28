@@ -1055,24 +1055,24 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     let angle = Math.atan2(line.points[1][1],line.points[1][0]);
 
     const size = this.measureText(label);
-    let delta = size.height/6;
+    //let delta = size.height/6;
 
     if(angle < 0) {
       if(angle < -Math.PI/2) {
         angle+= Math.PI;
-      } else {
+      } /*else {
         delta = -delta;
-      } 
+      } */
     } else {
       if(angle > Math.PI/2) {
         angle-= Math.PI;
-        delta = -delta;
+        //delta = -delta;
       }
     }
     this.style.angle = angle;
     const id = this.addText(
-      line.x+line.points[1][0]/2-size.width/2+delta,
-      line.y+line.points[1][1]/2-5*size.height/6,
+      line.x+line.points[1][0]/2-size.width/2,//+delta,
+      line.y+line.points[1][1]/2-size.height,//-5*size.height/6,
       label
     );
     this.style.angle = 0;
