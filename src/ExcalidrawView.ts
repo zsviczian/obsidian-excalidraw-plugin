@@ -1250,6 +1250,7 @@ export default class ExcalidrawView extends TextFileView {
     }
     if (this.activeLoader) {
       this.activeLoader.terminate = true;
+      this.activeLoader = null;
     }
     this.nextLoader = null;
     api.resetScene();

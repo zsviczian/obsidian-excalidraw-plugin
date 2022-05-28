@@ -236,10 +236,16 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "connectObjects",
-    code: "connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, formatting?: {numberOfPoints?: number; startArrowHead?: string; endArrowHead?: string; padding?: number;},): void;",
+    code: "connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, formatting?: {numberOfPoints?: number; startArrowHead?: string; endArrowHead?: string; padding?: number;},): string;",
     desc: 'type ConnectionPoint = "top" | "bottom" | "left" | "right" | null\nWhen null is passed as ConnectionPoint then Excalidraw will automatically decide\nnumberOfPoints is the number of points on the line. Default is 0 i.e. line will only have a start and end point.\nArrowHead: "triangle"|"dot"|"arrow"|"bar"|null',
     after: "",
   },
+  {
+    field: "addLabelToLine",
+    code: "addLabelToLine(lineId: string, label: string): string;",
+    desc: 'Adds a text label to a line or arrow. Currently only works with a simple straight 2-point (start & end) line',
+    after: "",
+  }, 
   {
     field: "clear",
     code: "clear(): void;",

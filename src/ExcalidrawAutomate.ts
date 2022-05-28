@@ -948,7 +948,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       endArrowHead?: "triangle"|"dot"|"arrow"|"bar"|null;
       padding?: number;
     },
-  ): void {
+  ): string {
     if (!(this.elementsDict[objectA] && this.elementsDict[objectB])) {
       return;
     }
@@ -1032,13 +1032,52 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
         aY + (i * (bY - aY)) / (numAP - 1),
       ]);
     }
-    this.addArrow(points, {
+    return this.addArrow(points, {
       startArrowHead: formatting?.startArrowHead,
       endArrowHead: formatting?.endArrowHead,
       startObjectId: objectA,
       endObjectId: objectB,
     });
   };
+
+  /**
+   * Adds a text label to a line or arrow. Currently only works with a straight (2 point - start & end - line)
+   * @param lineId id of the line or arrow object in elementsDict
+   * @param label the label text
+   * @returns undefined (if unsuccessful) or the id of the new text element
+   */
+  addLabelToLine(lineId: string, label: string): string {
+    const line = this.elementsDict[lineId];
+    if(!line || !["arrow","line"].includes(line.type) || line.points.length !== 2) {
+      return;
+    }
+
+    let angle = Math.atan2(line.points[1][1],line.points[1][0]);
+
+    const size = this.measureText(label);
+    let delta = size.height/6;
+
+    if(angle < 0) {
+      if(angle < -Math.PI/2) {
+        angle+= Math.PI;
+      } else {
+        delta = -delta;
+      } 
+    } else {
+      if(angle > Math.PI/2) {
+        angle-= Math.PI;
+        delta = -delta;
+      }
+    }
+    this.style.angle = angle;
+    const id = this.addText(
+      line.x+line.points[1][0]/2-size.width/2+delta,
+      line.y+line.points[1][1]/2-5*size.height/6,
+      label
+    );
+    this.style.angle = 0;
+    return id;
+  }
 
   /**
    * clear elementsDict and imagesDict only

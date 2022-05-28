@@ -114,7 +114,8 @@ export interface ExcalidrawAutomateInterface {
       endArrowHead?: string; //"triangle"|"dot"|"arrow"|"bar"|null
       padding?: number;
     },
-  ): void;
+  ): string;
+  addLabelToLine(lineId: string, label:string): string;
   clear(): void; //clear elementsDict and imagesDict only
   reset(): void; //clear() + reset all style values to default
   isExcalidrawFile(f: TFile): boolean; //returns true if MD file is an Excalidraw file
