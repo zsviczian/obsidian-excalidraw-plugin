@@ -17,6 +17,10 @@ Please upgrade to Obsidian v0.12.19 or higher to get the latest release.
 |[![fourtfont](https://user-images.githubusercontent.com/14358394/149659524-2a4e0a24-40c9-4e66-a6b1-c92f3b88ecd5.jpg)](https://youtu.be/eKFmrSQhFA4)|[![thumbnail](https://user-images.githubusercontent.com/14358394/151705333-54e9ffd2-0bd7-4d02-b99e-0bd4e4708d4d.jpg)](https://youtu.be/qbPIAZguJeo)|[![Thumbnail](https://user-images.githubusercontent.com/14358394/152585752-7eb0371f-0bab-40f6-a194-3b48e5811735.jpg)](https://youtu.be/2Y8OhkGiTHg)|
 |[![Thumbnail](https://user-images.githubusercontent.com/14358394/153676009-6f86b2d7-c248-49a2-b802-be21c6999e4f.jpg)](https://youtu.be/2v9TZmQNO8c)|[![Thumbnail](https://user-images.githubusercontent.com/14358394/154821232-a404b6cf-72fb-4ce4-9d53-619132dce491.jpg)](https://youtu.be/xHPGWR3m0c8)|[![Thumbnail](https://user-images.githubusercontent.com/14358394/156931428-b2269fd9-87bd-43ab-8558-5572f40dff93.jpg)](https://youtu.be/gMIKXyhS-dM)|
 |[![thumbnail](https://user-images.githubusercontent.com/14358394/156931461-0979b821-315a-41dd-86f1-31d169b7c127.jpg)](https://youtu.be/Etskjw7a5zo)|[![Thumbnail](https://user-images.githubusercontent.com/14358394/158008902-12c6a851-237e-4edd-a631-d48e81c904b2.jpg)](https://youtu.be/4N6efq1DtH0)|[![thumbnail](https://user-images.githubusercontent.com/14358394/159369910-6371f08d-b5fa-454d-9c6c-948f7e7a7d26.jpg)](https://youtu.be/U2LkBRBk4LY)|
+| [![6 strategies for linking your visual thoughts v4](https://user-images.githubusercontent.com/14358394/171635214-30533c45-94fa-436e-83a9-b2ec99f190e2.jpg)](https://youtu.be/qiKuqMcNWgU)| | |
+
+
+
 
 # Key features
 - The plugin aims to integrate Excalidraw seamlessly into Obsidian including Command Palette actions, File Explorer features, Option Menu commands, and the Ribbon Button.
@@ -100,3 +104,9 @@ Please also help spread the word by sharing about the Obsidian Excalidraw Plugin
 You can find me on Twitter [@zsviczian](https://twitter.com/zsviczian), and on my blog [zsolt.blog](https://zsolt.blog).
 
 [<img style="float:left" src="https://user-images.githubusercontent.com/14358394/115450238-f39e8100-a21b-11eb-89d0-fa4b82cdbce8.png" width="200">](https://ko-fi.com/zsolt)
+
+# Friends of Excalidraw
+If you enjoy Excalidraw, consider giving [ExcaliBrain](https://github.com/zsviczian/excalibrain) a try (also available via Obsidian Community Plugins).
+
+[![thumbnail](https://user-images.githubusercontent.com/14358394/169708346-9e41289d-9536-43ec-8f70-2d2ad2d369d6.png)](https://youtu.be/gOkniMkDPyM)
+
