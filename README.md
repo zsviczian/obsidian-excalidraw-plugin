@@ -87,14 +87,6 @@ Please upgrade to Obsidian v0.12.19 or higher to get the latest release.
 - REQUIRES AN OBSIDIAN SYNC SUBSCRIPTION: Full drawing file history and synchronization between devices
 - Multilanguage support: if you'd like to help out by translating the plugin, please get in contact with me.
 
-# Known issues
-- Mobile support
-  - Partially mitigated in 1.0.10 by the introduction of autosave: Your drawing will not be saved when you terminate the mobile app by closing the Obsidian task. 
-- Text elements "jumps off screen" when editing, if drawing is zoomed in and text element does not fit the visible screen area. I am working on a resolution.
-
-# Tips and tricks
-- [Ozan's Image in Editor Plugin](https://github.com/ozntel/oz-image-in-editor-obsidian). In a nice collaboration with Ozan, his Image-in-Editor plugin now supports Excalidraw. I recommend installing his plugin to display drawings also in Edit mode. 
-
 # Feedback, questions, ideas, problems
 Join the conversation about the Excalidraw plugin on [forum.obsidian.md](https://forum.obsidian.md/t/excalidraw-full-featured-sketching-plugin-in-obsidian)
 
