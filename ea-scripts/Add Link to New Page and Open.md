@@ -11,8 +11,6 @@ if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.6.1")) {
   return;
 }
 
-const BLANK_DRAWING = ["---","","excalidraw-plugin: parsed","","---","==⚠ Switch to EXCALIDRAW VIEW in the MORE OPTIONS menu of this document. ⚠==","","","%%","# Drawing","\x60\x60\x60json",'{"type":"excalidraw","version":2,"source":"https://excalidraw.com","elements":[],"appState":{"gridSize":null,"viewBackgroundColor":"#ffffff"}}',"\x60\x60\x60","%%"].join("\n");
-
 settings = ea.getScriptSettings();
 
 if(!settings["Open link in active pane"]) {
@@ -60,8 +58,9 @@ const filepath = activeFile.path.replace(activeFile.name,`${filename}.md`);
 
 const file = await app.fileManager.createNewMarkdownFileFromLinktext(filepath);
 if(file && fileType==="ex") {
-	await app.vault.modify(file,BLANK_DRAWING);
-	await new Promise(r => setTimeout(r, 100)); //wait for metadata cache to update, so file opens as excalidraw
+  const blank = await app.plugins.plugins["obsidian-excalidraw-plugin"].getBlankDrawing();
+  await app.vault.modify(file,blank);
+  await new Promise(r => setTimeout(r, 100)); //wait for metadata cache to update, so file opens as excalidraw
 }
 
 const link = `[[${app.metadataCache.fileToLinktext(file,ea.targetView.file.path,true)}]]`;
