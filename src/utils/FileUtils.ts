@@ -122,7 +122,9 @@ export function getEmbedFilename(
  */
 export async function checkAndCreateFolder(vault: Vault, folderpath: string) {
   folderpath = normalizePath(folderpath);
-  const folder = vault.getAbstractFileByPath(folderpath);
+  //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/658
+  //@ts-ignore
+  const folder = vault.getAbstractFileByPathInsensitive(folderpath);
   if (folder && folder instanceof TFolder) {
     return;
   }

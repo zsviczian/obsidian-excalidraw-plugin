@@ -83,7 +83,7 @@ import {
   setLeftHandedMode,
   sleep,
 } from "./utils/Utils";
-import { getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, isObsidianThemeDark } from "./utils/ObsidianUtils";
+import { getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark } from "./utils/ObsidianUtils";
 //import { OneOffs } from "./OneOffs";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
 import { ScriptEngine } from "./Scripts";
@@ -1592,6 +1592,7 @@ export default class ExcalidrawPlugin extends Plugin {
     });
   }
 
+  //Save the drawing if the user clicks outside the canvas
   addFileSaveTriggerEventHandlers() {
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/551
     const onClickEventSaveActiveDrawing = (e: PointerEvent) => {
@@ -1599,7 +1600,9 @@ export default class ExcalidrawPlugin extends Plugin {
         !this.activeExcalidrawView ||
         !this.activeExcalidrawView.semaphores.dirty ||
         //@ts-ignore
-        e.target?.className === "excalidraw__canvas"
+        e.target && (e.target.className === "excalidraw__canvas" ||
+        //@ts-ignore
+        getParentOfClass(e.target,"excalidraw-wrapper"))
       ) {
         return;
       }

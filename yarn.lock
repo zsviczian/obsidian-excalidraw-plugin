@@ -6362,10 +6362,10 @@
     "define-properties" "^1.1.3"
     "es-abstract" "^1.19.1"
 
-"obsidian@^0.14.6":
-  "integrity" "sha512-oXPJ8Zt10WhN19bk5l4mZuXRZbbdT1QoMgxGGJ0bB7UcJa0bozDzugS5L/QiV9gDoujpUPxDWNVahEel6r0Fpw=="
-  "resolved" "https://registry.npmjs.org/obsidian/-/obsidian-0.14.6.tgz"
-  "version" "0.14.6"
+"obsidian@^0.14.8":
+  "integrity" "sha512-CQz+B2HSbhGVEBwZBL3rPl29ruOBmEhCbBmW7PIILnnRh6fFFvYy3kZLHVTUidzvRGZnEW/mQ7n9LXeJCp2a/Q=="
+  "resolved" "https://registry.npmjs.org/obsidian/-/obsidian-0.14.8.tgz"
+  "version" "0.14.8"
   dependencies:
     "@codemirror/state" "^0.19.6"
     "@codemirror/view" "^0.19.31"
