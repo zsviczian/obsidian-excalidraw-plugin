@@ -17,6 +17,14 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.6.34": `
+With 0.15.1 Obsidian is implementing some exciting, but significant changes to how windows are managed. I need to make some heavy/invasive changes to Excalidraw to adapt. The next version of the Excalidraw Plugin will require Obsidian 0.15.1 or newer. If you are not signed up for Obsidian Insider Builds, you will need to wait few weeks until the new Obsidian version will be made public.
+
+# Fixed
+- Error saving when the attachments folder exists but with a different letter case (i.e. ATTACHMENTS instead of attachments) [658](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/658). I added more error tolerance. As a general rule, however, I recommend treating file paths as case-sensitive as some platforms like iOS or LINUX have case-sensitive filenames, and synchronizing your Vault to these platforms will cause you headaches in the future.
+- Text detached from the container if you immediately clicked the text-align buttons on the properties pane while still editing the text in the container for the very first time. [#657](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/657).
+- Can't add text to the second container if the first container has text and the second container is centered around the first one. [#5300](https://github.com/excalidraw/excalidraw/issues/5300)
+`,
 "1.6.33": `
 # Fixed
 - Under some special circumstances when you embedded a drawing (guest) into another drawing (host), the host did not update when you modified the guest, until you closed Excalidraw completely and reopened the host. [#637](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/637)

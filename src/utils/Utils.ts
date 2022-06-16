@@ -37,7 +37,7 @@ declare module "obsidian" {
 
 let versionUpdateChecked = false;
 export const checkExcalidrawVersion = async (app: App) => {
-  if (versionUpdateChecked) {
+  if (true || versionUpdateChecked) {
     return;
   }
   versionUpdateChecked = true;
