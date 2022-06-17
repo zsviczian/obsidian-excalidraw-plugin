@@ -1,4 +1,4 @@
-import { exportToSvg, exportToBlob } from "@zsviczian/excalidraw";
+import Excalidraw from "@zsviczian/excalidraw";
 import {
   App,
   Notice,
@@ -261,7 +261,7 @@ export const getSVG = async (
   padding: number,
 ): Promise<SVGSVGElement> => {
   try {
-    return await exportToSvg({
+    return await Excalidraw.exportToSvg({
       elements: scene.elements,
       appState: {
         exportBackground: exportSettings.withBackground,
@@ -284,7 +284,7 @@ export const getPNG = async (
   scale: number = 1,
 ) => {
   try {
-    return await exportToBlob({
+    return await Excalidraw.exportToBlob({
       elements: scene.elements,
       appState: {
         exportBackground: exportSettings.withBackground,

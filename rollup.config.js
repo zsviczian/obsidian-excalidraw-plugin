@@ -15,7 +15,7 @@ console.log("Is production", isProd);
 
 const BASE_CONFIG = {
   input: 'src/main.ts',
-  external: ['obsidian'],
+  external: ['obsidian'], // '@zsviczian/excalidraw', 'react', 'react-dom'],
 }
 
 const getRollupPlugins = (tsconfig, ...plugins) =>

@@ -11,7 +11,7 @@ import {
 } from "obsidian";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import Excalidraw, { getSceneVersion } from "@zsviczian/excalidraw";
+import Excalidraw from "@zsviczian/excalidraw";
 import {
   ExcalidrawElement,
   ExcalidrawTextElement,
@@ -881,9 +881,10 @@ export default class ExcalidrawView extends TextFileView {
 
   diskIcon: HTMLElement;
   onload() {
-    this.ownerDocument = this.containerEl.ownerDocument;
-    this.ownerWindow = this.ownerDocument.defaultView;
-
+    app.workspace.onLayoutReady(()=>{
+      this.ownerDocument = this.containerEl.ownerDocument;
+      this.ownerWindow = this.ownerDocument.defaultView;
+    });
     this.addAction(SCRIPTENGINE_ICON_NAME, t("INSTALL_SCRIPT_BUTTON"), () => {
       new ScriptInstallPrompt(this.plugin).open();
     });
@@ -1516,10 +1517,10 @@ export default class ExcalidrawView extends TextFileView {
           }
         }
       })
-      this.previousSceneVersion = getSceneVersion(sceneElements);
+      this.previousSceneVersion = Excalidraw.getSceneVersion(sceneElements);
       //changing files could result in a race condition for sync. If at the end of sync there are differences
       //set dirty will trigger an autosave
-      if(getSceneVersion(inData.scene.elements) !== this.previousSceneVersion) {
+      if(Excalidraw.getSceneVersion(inData.scene.elements) !== this.previousSceneVersion) {
         this.setDirty();
       }
       this.excalidrawAPI.updateScene({elements: sceneElements});
@@ -1643,7 +1644,7 @@ export default class ExcalidrawView extends TextFileView {
     this.semaphores.dirty = null;
     const el = api.getSceneElements();
     if (el) {
-      this.previousSceneVersion = getSceneVersion(el);
+      this.previousSceneVersion = Excalidraw.getSceneVersion(el);
     }
     this.diskIcon.querySelector("svg").removeClass("excalidraw-dirty");
   }
@@ -1893,6 +1894,9 @@ export default class ExcalidrawView extends TextFileView {
             });
             if (this.toolsPanelRef && this.toolsPanelRef.current) {
               this.toolsPanelRef.current.updatePosition();
+            }
+            if(this.ownerDocument !== document) {
+              this.refresh(); //because resizeobserver in Excalidraw does not seem to work when in Obsidian Window
             }
           } catch (err) {
             errorlog({
@@ -2554,7 +2558,7 @@ export default class ExcalidrawView extends TextFileView {
               if (!this.semaphores.preventAutozoom) {
                 this.zoomToFit(false);
               }
-              this.previousSceneVersion = getSceneVersion(et);
+              this.previousSceneVersion = Excalidraw.getSceneVersion(et);
               this.previousBackgroundColor = st.viewBackgroundColor;
               return;
             }
@@ -2570,7 +2574,7 @@ export default class ExcalidrawView extends TextFileView {
               st.editingGroupId === null &&*/
               st.editingLinearElement === null
             ) {
-              const sceneVersion = getSceneVersion(et);
+              const sceneVersion = Excalidraw.getSceneVersion(et);
               if (
                 (sceneVersion > 0 &&
                   sceneVersion !== this.previousSceneVersion) ||
@@ -2609,6 +2613,8 @@ export default class ExcalidrawView extends TextFileView {
             this.loadSceneFiles();
             toolsPanelRef?.current?.setTheme(newTheme);
           },
+          ownerDocument: this.ownerDocument,
+          ownerWindow: this.ownerWindow,
           onDrop: (event: React.DragEvent<HTMLDivElement>): boolean => {
             const api = this.excalidrawAPI;
             if (!api) {

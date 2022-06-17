@@ -34,13 +34,7 @@ import { getNewOrAdjacentLeaf, isObsidianThemeDark } from "./utils/ObsidianUtils
 import { AppState, Point } from "@zsviczian/excalidraw/types/types";
 import { EmbeddedFilesLoader, FileData } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
-import {
-  determineFocusDistance,
-  getCommonBoundingBox,
-  getMaximumGroups,
-  intersectElementWithLine,
-  measureText,
-} from "@zsviczian/excalidraw";
+import Excalidraw from "@zsviczian/excalidraw";
 import { Prompt } from "./dialogs/Prompt";
 import { t } from "./lang/helpers";
 import { ScriptEngine } from "./Scripts";
@@ -49,7 +43,9 @@ import { ConnectionPoint, ExcalidrawAutomateInterface } from "./types";
 const GAP = 4;
 
 declare global {
-  interface Window { ExcalidrawAutomate: ExcalidrawAutomateInterface; }
+  interface Window {
+    ExcalidrawAutomate: ExcalidrawAutomateInterface;
+  }
 }
 
 export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
@@ -787,7 +783,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       startBinding: {
         elementId: formatting?.startObjectId,
         focus: formatting?.startObjectId
-          ? determineFocusDistance(
+          ? Excalidraw.determineFocusDistance(
               this.getElement(formatting?.startObjectId) as ExcalidrawBindableElement,
               endPoint,
               startPoint,
@@ -798,7 +794,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       endBinding: {
         elementId: formatting?.endObjectId,
         focus: formatting?.endObjectId
-          ? determineFocusDistance(
+          ? Excalidraw.determineFocusDistance(
               this.getElement(formatting?.endObjectId) as ExcalidrawBindableElement,
               startPoint,
               endPoint,
@@ -990,7 +986,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       const aCenterY = elA.y + elA.height / 2;
       const bCenterY = elB.y + elB.height / 2;
       if (!connectionA) {
-        const intersect = intersectElementWithLine(
+        const intersect = Excalidraw.intersectElementWithLine(
           elA,
           [bCenterX, bCenterY],
           [aCenterX, aCenterY],
@@ -1004,7 +1000,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       }
 
       if (!connectionB) {
-        const intersect = intersectElementWithLine(
+        const intersect = Excalidraw.intersectElementWithLine(
           elB,
           [aCenterX, aCenterY],
           [bCenterX, bCenterY],
@@ -1485,7 +1481,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     width: number;
     height: number;
   } {
-    const bb = getCommonBoundingBox(elements);
+    const bb = Excalidraw.getCommonBoundingBox(elements);
     return {
       topX: bb.minX,
       topY: bb.minY,
@@ -1500,7 +1496,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
    * @returns 
    */
   getMaximumGroups(elements: ExcalidrawElement[]): ExcalidrawElement[][] {
-    return getMaximumGroups(elements);
+    return Excalidraw.getMaximumGroups(elements);
   };
 
   /**
@@ -1541,7 +1537,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     b: readonly [number, number],
     gap?: number,
   ): Point[] {
-    return intersectElementWithLine(element, a, b, gap);
+    return Excalidraw.intersectElementWithLine(element, a, b, gap);
   };
 
   /**
@@ -1897,7 +1893,7 @@ export function _measureText(
   if (!fontFamily) {
     fontFamily = 1;
   }
-  const metrics = measureText(
+  const metrics = Excalidraw.measureText(
     newText,
     `${fontSize.toString()}px ${getFontFamily(fontFamily)}` as any,
   );
@@ -2102,7 +2098,7 @@ function estimateLineBound(points: any): [number, number, number, number] {
 export function estimateBounds(
   elements: ExcalidrawElement[],
 ): [number, number, number, number] {
-  const bb = getCommonBoundingBox(elements);
+  const bb = Excalidraw.getCommonBoundingBox(elements);
   return [bb.minX, bb.minY, bb.maxX, bb.maxY];
 }
 

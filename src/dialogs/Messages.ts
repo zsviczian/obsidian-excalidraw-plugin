@@ -17,6 +17,9 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.7.0": `
+This is the first test version of Excalidraw Obsidian supporting Obsidian 0.15.0 popout windows. The current technical solution is not really sustainable, it's more of a working concept. I don't expect any real big issues with this version - on the contrary, this works much better with Obsidian 0.15.0 popout windows, but some of the features aren't working as expected in the Obsidian popouts yet. Also as a consequence of Obsidian 0.15.0 compatibility, multiple hover previews are no longer supported.
+`,
 "1.6.34": `
 With 0.15.1 Obsidian is implementing some exciting, but significant changes to how windows are managed. I need to make some heavy/invasive changes to Excalidraw to adapt. The next version of the Excalidraw Plugin will require Obsidian 0.15.1 or newer. If you are not signed up for Obsidian Insider Builds, you will need to wait few weeks until the new Obsidian version will be made public.
 

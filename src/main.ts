@@ -236,30 +236,29 @@ export default class ExcalidrawPlugin extends Plugin {
       const fourthFontDataURL =
         font.dataURL === "" ? VIRGIL_DATAURL : font.dataURL;
       this.fourthFontDef = font.fontDef;
-      const newStylesheet = document.createElement("style");
-      newStylesheet.id = "local-font-stylesheet";
-      newStylesheet.textContent = `
-        @font-face {
-          font-family: 'LocalFont';
-          src: url("${fourthFontDataURL}");
-          font-display: swap;
-        }
-      `;
       
       const visitedDocs = new Set<Document>();
       app.workspace.iterateAllLeaves((leaf)=>{
         const ownerDocument = leaf.view.containerEl.ownerDocument;   
-        if(!ownerDocument) return;    
+        if(!ownerDocument) return;        
         if(visitedDocs.has(ownerDocument)) return;
         visitedDocs.add(ownerDocument);
         // replace the old local font <style> element with the one we just created
+        const newStylesheet = document.createElement("style");
+        newStylesheet.id = "local-font-stylesheet";
+        newStylesheet.textContent = `
+          @font-face {
+            font-family: 'LocalFont';
+            src: url("${fourthFontDataURL}");
+            font-display: swap;
+          }
+        `;  
         const oldStylesheet = ownerDocument.getElementById(newStylesheet.id);
         ownerDocument.head.appendChild(newStylesheet);
         if (oldStylesheet) {
           ownerDocument.head.removeChild(oldStylesheet);
         }
-
-        (ownerDocument as any).fonts.load(`20px LocalFont`);
+        ownerDocument.fonts.load('20px LocalFont');
       })
     });
   }

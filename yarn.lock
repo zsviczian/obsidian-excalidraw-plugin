@@ -2199,10 +2199,10 @@
   dependencies:
     "@zerollup/ts-helpers" "^1.7.18"
 
-"@zsviczian/excalidraw@0.11.0-obsidian-20":
-  "integrity" "sha512-9r/F1q1K/uUFrDeJ81MrzD85deB77HioNkdVRU05IeAUSk7cSImvbKrtrCYefdx2jyICb5j/dY9/PKH8G/hbrA=="
-  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.11.0-obsidian-20.tgz"
-  "version" "0.11.0-obsidian-20"
+"@zsviczian/excalidraw@0.11.0-obsidian-22":
+  "integrity" "sha512-iPLFmLtNi6EH9RwxlKDoSRfPn5FcAn7jqf2e23L2e11K6wjQS/O8dzdn7bOeCsgW3WAbjiJko+8ol6fH9n/ocQ=="
+  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.11.0-obsidian-22.tgz"
+  "version" "0.11.0-obsidian-22"
   dependencies:
     "dotenv" "10.0.0"
 
