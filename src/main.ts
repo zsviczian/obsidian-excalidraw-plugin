@@ -245,14 +245,22 @@ export default class ExcalidrawPlugin extends Plugin {
           font-display: swap;
         }
       `;
-      // replace the old local font <style> element with the one we just created
-      const oldStylesheet = document.getElementById(newStylesheet.id);
-      document.head.appendChild(newStylesheet);
-      if (oldStylesheet) {
-        document.head.removeChild(oldStylesheet);
-      }
+      
+      const visitedDocs = new Set<Document>();
+      app.workspace.iterateAllLeaves((leaf)=>{
+        const ownerDocument = leaf.view.containerEl.ownerDocument;   
+        if(!ownerDocument) return;    
+        if(visitedDocs.has(ownerDocument)) return;
+        visitedDocs.add(ownerDocument);
+        // replace the old local font <style> element with the one we just created
+        const oldStylesheet = ownerDocument.getElementById(newStylesheet.id);
+        ownerDocument.head.appendChild(newStylesheet);
+        if (oldStylesheet) {
+          ownerDocument.head.removeChild(oldStylesheet);
+        }
 
-      await (document as any).fonts.load(`20px LocalFont`);
+        (ownerDocument as any).fonts.load(`20px LocalFont`);
+      })
     });
   }
 
@@ -1365,30 +1373,10 @@ export default class ExcalidrawPlugin extends Plugin {
     );
   }
 
-  public ctrlKeyDown: boolean;
-  public shiftKeyDown: boolean;
-  public altKeyDown: boolean;
-  public onKeyUp: any;
-  public onKeyDown: any;
-
   private popScope: Function = null;
   private registerEventListeners() {
     const self = this;
     this.app.workspace.onLayoutReady(async () => {
-      self.onKeyUp = (e: KeyboardEvent) => {
-        self.ctrlKeyDown = e[CTRL_OR_CMD];
-        self.shiftKeyDown = e.shiftKey;
-        self.altKeyDown = e.altKey;
-      };
-
-      self.onKeyDown = (e: KeyboardEvent) => {
-        this.ctrlKeyDown = e[CTRL_OR_CMD];
-        this.shiftKeyDown = e.shiftKey;
-        this.altKeyDown = e.altKey;
-      };
-
-      window.addEventListener("keydown", self.onKeyDown, false);
-      window.addEventListener("keyup", self.onKeyUp, false);
 
       //watch filename change to rename .svg, .png; to sync to .md; to update links
       const renameEventHandler = async (
@@ -1699,9 +1687,6 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   onunload() {
-    window.removeEventListener("keydown", this.onKeyDown, false);
-    window.removeEventListener("keyup", this.onKeyUp, false);
-
     destroyExcalidrawAutomate();
     if (this.popScope) {
       this.popScope();
@@ -1803,15 +1788,22 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public triggerEmbedUpdates(filepath?: string) {
-    const e = document.createEvent("Event");
-    e.initEvent(RERENDER_EVENT, true, false);
-    document
-      .querySelectorAll(
-        `div[class^='excalidraw-svg']${
-          filepath ? `[src='${filepath.replaceAll("'", "\\'")}']` : ""
-        }`,
-      )
-      .forEach((el) => el.dispatchEvent(e));
+    const visitedDocs = new Set<Document>();
+    app.workspace.iterateAllLeaves((leaf)=>{
+      const ownerDocument = leaf.view.containerEl.ownerDocument;
+      if(!ownerDocument) return;
+      if(visitedDocs.has(ownerDocument)) return;
+      visitedDocs.add(ownerDocument);
+      const e = ownerDocument.createEvent("Event");
+      e.initEvent(RERENDER_EVENT, true, false);
+      ownerDocument
+        .querySelectorAll(
+          `div[class^='excalidraw-svg']${
+            filepath ? `[src='${filepath.replaceAll("'", "\\'")}']` : ""
+          }`,
+        )
+        .forEach((el) => el.dispatchEvent(e));  
+    })
   }
 
   public openDrawing(drawingFile: TFile, onNewPane: boolean) {

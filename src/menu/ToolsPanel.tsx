@@ -225,15 +225,15 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
               };
 
               const onPointerUp = () => {
-                document.removeEventListener("pointerup", onPointerUp);
-                document.removeEventListener("pointermove", onDrag);
+                this.props.view.ownerDocument.removeEventListener("pointerup", onPointerUp);
+                this.props.view.ownerDocument.removeEventListener("pointermove", onDrag);
               };
 
               event.preventDefault();
               this.penDownX = this.pos3 = event.clientX;
               this.penDownY = this.pos4 = event.clientY;
-              document.addEventListener("pointerup", onPointerUp);
-              document.addEventListener("pointermove", onDrag);
+              this.props.view.ownerDocument.addEventListener("pointerup", onPointerUp);
+              this.props.view.ownerDocument.addEventListener("pointermove", onDrag);
             }}
           >
             <svg

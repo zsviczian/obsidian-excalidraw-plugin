@@ -39,7 +39,6 @@ import {
   REG_LINKINDEX_INVALIDCHARS,
   KEYCODE,
   LOCAL_PROTOCOL,
-  nanoid,
 } from "./Constants";
 import ExcalidrawPlugin from "./main";
 import { repositionElementsToCursor, ExcalidrawAutomate } from "./ExcalidrawAutomate";
@@ -184,6 +183,13 @@ export default class ExcalidrawView extends TextFileView {
   public linksAlwaysOpenInANewPane: boolean = false; //override the need for SHIFT+CTRL+click
   private hookServer: ExcalidrawAutomate;
   public lastSaveTimestamp: number = 0; //used to validate if incoming file should sync with open file
+  private onKeyUp: (e: KeyboardEvent) => void;
+  private onKeyDown:(e: KeyboardEvent) => void;
+  private ctrlKeyDown: boolean = false;
+  private shiftKeyDown: boolean = false;
+  private altKeyDown: boolean = false;
+  public ownerWindow: Window;
+  public ownerDocument: Document;
 
   public semaphores: {
     //The role of justLoaded is to capture the Excalidraw.onChange event that fires right after the canvas was loaded for the first time to
@@ -618,7 +624,7 @@ export default class ExcalidrawView extends TextFileView {
       element.querySelector("input").focus();
     });
 
-    this.fullscreenModalObserver.observe(document.body, {
+    this.fullscreenModalObserver.observe(this.ownerDocument.body, {
       childList: true,
       subtree: false,
     });
@@ -633,8 +639,8 @@ export default class ExcalidrawView extends TextFileView {
 
   isFullscreen(): boolean {
     return (
-      document.fullscreenEnabled &&
-      document.fullscreenElement === this.contentEl // excalidrawWrapperRef?.current
+      this.ownerDocument.fullscreenEnabled &&
+      this.ownerDocument.fullscreenElement === this.contentEl // excalidrawWrapperRef?.current
     ); //this.contentEl;
   }
 
@@ -649,15 +655,15 @@ export default class ExcalidrawView extends TextFileView {
       }
       return;
     }
-    document.exitFullscreen();
+    this.ownerDocument.exitFullscreen();
   }
 
   async handleLinkClick(view: ExcalidrawView, ev: MouseEvent) {
-    const tooltip = document.body.querySelector(
+    const tooltip = this.ownerDocument.body.querySelector(
       "body>div.excalidraw-tooltip,div.excalidraw-tooltip--visible",
     );
     if (tooltip) {
-      document.body.removeChild(tooltip);
+      this.ownerDocument.body.removeChild(tooltip);
     }
 
     const selectedText = this.getSelectedTextElement();
@@ -875,6 +881,9 @@ export default class ExcalidrawView extends TextFileView {
 
   diskIcon: HTMLElement;
   onload() {
+    this.ownerDocument = this.containerEl.ownerDocument;
+    this.ownerWindow = this.ownerDocument.defaultView;
+
     this.addAction(SCRIPTENGINE_ICON_NAME, t("INSTALL_SCRIPT_BUTTON"), () => {
       new ScriptInstallPrompt(this.plugin).open();
     });
@@ -924,6 +933,21 @@ export default class ExcalidrawView extends TextFileView {
       //https://github.com/zsviczian/excalibrain/issues/28
       await self.addSlidingPanesListner(); //awaiting this because when using workspaces, onLayoutReady comes too early
       self.addParentMoveObserver();
+
+      self.onKeyUp = (e: KeyboardEvent) => {
+        self.ctrlKeyDown = e[CTRL_OR_CMD];
+        self.shiftKeyDown = e.shiftKey;
+        self.altKeyDown = e.altKey;
+      };
+
+      self.onKeyDown = (e: KeyboardEvent) => {
+        this.ctrlKeyDown = e[CTRL_OR_CMD];
+        this.shiftKeyDown = e.shiftKey;
+        this.altKeyDown = e.altKey;
+      };
+
+      self.ownerWindow.addEventListener("keydown", self.onKeyDown, false);
+      self.ownerWindow.addEventListener("keyup", self.onKeyUp, false);
     });
 
     this.setupAutosaveTimer();
@@ -1105,6 +1129,9 @@ export default class ExcalidrawView extends TextFileView {
 
   //save current drawing when user closes workspace leaf
   async onunload() {
+    this.ownerWindow.removeEventListener("keydown", this.onKeyDown, false);
+    this.ownerWindow.removeEventListener("keyup", this.onKeyUp, false);
+
     if(this.getHookServer().onViewUnloadHook) {
       try {
         this.getHookServer().onViewUnloadHook(this);
@@ -1112,11 +1139,11 @@ export default class ExcalidrawView extends TextFileView {
         errorlog({where: "ExcalidrawView.onunload", fn: this.getHookServer().onViewUnloadHook, error: e});
       }
     }
-    const tooltip = document.body.querySelector(
+    const tooltip = this.ownerDocument.body.querySelector(
       "body>div.excalidraw-tooltip,div.excalidraw-tooltip--visible",
     );
     if (tooltip) {
-      document.body.removeChild(tooltip);
+      this.ownerDocument.body.removeChild(tooltip);
     }
     this.removeParentMoveObserver();
     this.removeSlidingPanesListner();
@@ -1874,8 +1901,8 @@ export default class ExcalidrawView extends TextFileView {
             });
           }
         };
-        window.addEventListener("resize", onResize);
-        return () => window.removeEventListener("resize", onResize);
+        this.ownerWindow.addEventListener("resize", onResize);
+        return () => this.ownerWindow.removeEventListener("resize", onResize);
       }, [excalidrawWrapperRef]);
 
       this.getSelectedTextElement = (): { id: string; text: string } => {
@@ -2218,7 +2245,7 @@ export default class ExcalidrawView extends TextFileView {
       const clearHoverPreview = () => {
         if (hoverPreviewTarget) {
           const event = new MouseEvent("click", {
-            view: window,
+            view: this.ownerWindow,
             bubbles: true,
             cancelable: true,
           });
@@ -2261,8 +2288,8 @@ export default class ExcalidrawView extends TextFileView {
           const event = new MouseEvent("click", {
             ctrlKey: true,
             metaKey: true,
-            shiftKey: this.plugin.shiftKeyDown,
-            altKey: this.plugin.altKeyDown,
+            shiftKey: this.shiftKeyDown,
+            altKey: this.altKeyDown,
           });
           this.handleLinkClick(this, event);
           selectedTextElement = null;
@@ -2273,8 +2300,8 @@ export default class ExcalidrawView extends TextFileView {
           const event = new MouseEvent("click", {
             ctrlKey: true,
             metaKey: true,
-            shiftKey: this.plugin.shiftKeyDown,
-            altKey: this.plugin.altKeyDown,
+            shiftKey: this.shiftKeyDown,
+            altKey: this.altKeyDown,
           });
           this.handleLinkClick(this, event);
           selectedImageElement = null;
@@ -2286,8 +2313,8 @@ export default class ExcalidrawView extends TextFileView {
           const event = new MouseEvent("click", {
             ctrlKey: true,
             metaKey: true,
-            shiftKey: this.plugin.shiftKeyDown,
-            altKey: this.plugin.altKeyDown,
+            shiftKey: this.shiftKeyDown,
+            altKey: this.altKeyDown,
           });
           this.handleLinkClick(this, event);
           selectedElementWithLink = null;
@@ -2372,7 +2399,7 @@ export default class ExcalidrawView extends TextFileView {
         }
 
         if (
-          document.querySelector(`div.popover-title[data-path="${f.path}"]`)
+          this.ownerDocument.querySelector(`div.popover-title[data-path="${f.path}"]`)
         ) {
           return;
         }
@@ -2387,7 +2414,7 @@ export default class ExcalidrawView extends TextFileView {
           event: mouseEvent,
           source: VIEW_TYPE_EXCALIDRAW,
           hoverParent: hoverPreviewTarget,
-          targetEl: null, //hoverPreviewTarget,
+          targetEl: hoverPreviewTarget, //null //0.15.0 hover editor!!
           linktext: this.plugin.hover.linkText,
           sourcePath: this.plugin.hover.sourcePath,
         });
@@ -2396,9 +2423,9 @@ export default class ExcalidrawView extends TextFileView {
           const self = this;
           setTimeout(() => {
             const popover =
-              document.querySelector(`div.popover-title[data-path="${f.path}"]`)
+              this.ownerDocument.querySelector(`div.popover-title[data-path="${f.path}"]`)
                 ?.parentElement?.parentElement?.parentElement ??
-              document.body.querySelector("div.popover");
+              this.ownerDocument.body.querySelector("div.popover");
             if (popover) {
               self.contentEl.append(popover);
             }
@@ -2495,7 +2522,7 @@ export default class ExcalidrawView extends TextFileView {
               blockOnMouseButtonDown = true;
 
               //ctrl click
-              if (this.plugin.ctrlKeyDown) {
+              if (this.ctrlKeyDown) {
                 handleLinkClick();
                 return;
               }
@@ -2511,7 +2538,7 @@ export default class ExcalidrawView extends TextFileView {
             if (p.button === "up") {
               blockOnMouseButtonDown = false;
             }
-            if (this.plugin.ctrlKeyDown || 
+            if (this.ctrlKeyDown || 
               (this.excalidrawAPI.getAppState().isViewModeEnabled && 
               this.plugin.settings.hoverPreviewWithoutCTRL)) {
               
@@ -2868,11 +2895,11 @@ export default class ExcalidrawView extends TextFileView {
             if (!link || link === "") {
               return;
             }
-            const tooltip = document.body.querySelector(
+            const tooltip = this.ownerDocument.body.querySelector(
               "body>div.excalidraw-tooltip,div.excalidraw-tooltip--visible",
             );
             if (tooltip) {
-              document.body.removeChild(tooltip);
+              this.ownerDocument.body.removeChild(tooltip);
             }
             const event = e?.detail?.nativeEvent;
             if(this.getHookServer().onLinkClickHook) {

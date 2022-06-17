@@ -37,7 +37,7 @@ declare module "obsidian" {
 
 let versionUpdateChecked = false;
 export const checkExcalidrawVersion = async (app: App) => {
-  if (true || versionUpdateChecked) {
+  if (versionUpdateChecked) {
     return;
   }
   versionUpdateChecked = true;
@@ -390,16 +390,23 @@ export const scaleLoadedImage = (
 };
 
 export const setLeftHandedMode = (isLeftHanded: boolean) => {
-  const newStylesheet = document.createElement("style");
-  newStylesheet.id = "excalidraw-letf-handed";
-  newStylesheet.textContent = `.excalidraw .App-bottom-bar{justify-content:flex-end;}`;
-  const oldStylesheet = document.getElementById(newStylesheet.id);
-  if (oldStylesheet) {
-    document.head.removeChild(oldStylesheet);
-  }
-  if (isLeftHanded) {
-    document.head.appendChild(newStylesheet);
-  }
+  const visitedDocs = new Set<Document>();
+  app.workspace.iterateAllLeaves((leaf) => {
+    const ownerDocument = leaf.view.containerEl.ownerDocument;
+    if(!ownerDocument) return;
+    if(visitedDocs.has(ownerDocument)) return;
+    visitedDocs.add(ownerDocument);
+    const newStylesheet = ownerDocument.createElement("style");
+    newStylesheet.id = "excalidraw-letf-handed";
+    newStylesheet.textContent = `.excalidraw .App-bottom-bar{justify-content:flex-end;}`;
+    const oldStylesheet = ownerDocument.getElementById(newStylesheet.id);
+    if (oldStylesheet) {
+      ownerDocument.head.removeChild(oldStylesheet);
+    }
+    if (isLeftHanded) {
+      ownerDocument.head.appendChild(newStylesheet);
+    }
+  })
 };
 
 export type LinkParts = {

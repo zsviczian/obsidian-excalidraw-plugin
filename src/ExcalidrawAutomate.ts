@@ -485,7 +485,6 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     w: number,
     h: number,
   ) {
-    const ea = window.ExcalidrawAutomate;
     return {
       id,
       type: eltype,
