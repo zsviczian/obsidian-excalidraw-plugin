@@ -239,12 +239,12 @@ export default class ExcalidrawPlugin extends Plugin {
       
       const visitedDocs = new Set<Document>();
       app.workspace.iterateAllLeaves((leaf)=>{
-        const ownerDocument = leaf.view.containerEl.ownerDocument;   
+        const ownerDocument = app.isMobile?document:leaf.view.containerEl.ownerDocument;   
         if(!ownerDocument) return;        
         if(visitedDocs.has(ownerDocument)) return;
         visitedDocs.add(ownerDocument);
         // replace the old local font <style> element with the one we just created
-        const newStylesheet = document.createElement("style");
+        const newStylesheet = ownerDocument.createElement("style");
         newStylesheet.id = "local-font-stylesheet";
         newStylesheet.textContent = `
           @font-face {
@@ -1711,9 +1711,23 @@ export default class ExcalidrawPlugin extends Plugin {
     if (this.mathjaxDiv) {
       document.body.removeChild(this.mathjaxDiv);
     }
-    //this.settings.drawingOpenCount += this.opencount;
-    //this.settings.loadCount++;
-    //this.saveSettings();
+
+    const visitedDocs = new Set<Document>();
+    app.workspace.iterateAllLeaves((leaf)=>{
+      const ownerDocument = app.isMobile?document:leaf.view.containerEl.ownerDocument;   
+      if(!ownerDocument) return;        
+      if(visitedDocs.has(ownerDocument)) return;
+      visitedDocs.add(ownerDocument);
+      
+      const el = ownerDocument.getElementById("excalidraw-script");
+      if(el) {
+        ownerDocument.body.removeChild(el);
+        const win = ownerDocument.defaultView;
+        delete win.React;
+        delete win.ReactDOM;
+        delete win.ExcalidrawLib;
+      }
+    })
   }
 
   public async embedDrawing(file: TFile) {
@@ -1789,7 +1803,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public triggerEmbedUpdates(filepath?: string) {
     const visitedDocs = new Set<Document>();
     app.workspace.iterateAllLeaves((leaf)=>{
-      const ownerDocument = leaf.view.containerEl.ownerDocument;
+      const ownerDocument = app.isMobile?document:leaf.view.containerEl.ownerDocument;
       if(!ownerDocument) return;
       if(visitedDocs.has(ownerDocument)) return;
       visitedDocs.add(ownerDocument);

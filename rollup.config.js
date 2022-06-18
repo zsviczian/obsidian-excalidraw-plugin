@@ -9,13 +9,35 @@ import copy from "rollup-plugin-copy";
 import ttypescript from "ttypescript";
 import typescript2 from "rollup-plugin-typescript2";
 import webWorker from "rollup-plugin-web-worker-loader";
+import fs from'fs';
+import LZString from 'lz-string';
+import postprocess from 'rollup-plugin-postprocess';
 
 const isProd = (process.env.NODE_ENV === "production");
 console.log("Is production", isProd);
 
+const excalidraw_pkg = isProd
+  ? fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/excalidraw.production.min.js", "utf8")
+  : fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/excalidraw.development.js", "utf8");
+const react_pkg = isProd
+  ? fs.readFileSync("./node_modules/react/umd/react.production.min.js", "utf8")
+  : fs.readFileSync("./node_modules/react/umd/react.development.js", "utf8");
+const reactdom_pkg = isProd
+  ? fs.readFileSync("./node_modules/react-dom/umd/react-dom.production.min.js", "utf8")
+  : fs.readFileSync("./node_modules/react-dom/umd/react-dom.development.js", "utf8");
+const lzstring_pkg = fs.readFileSync("./node_modules/lz-string/libs/lz-string.min.js", "utf8")
+
+const packageString = ';'+lzstring_pkg+'const EXCALIDRAW_PACKAGES = "' + LZString.compressToBase64(react_pkg + reactdom_pkg + excalidraw_pkg) +'";var ExcalidrawPackageLoader=(d=document)=>{if(!d.getElementById("excalidraw-script")){const script=d.createElement("script");script.type="text/javascript";script.id="excalidraw-script";script.text=LZString.decompressFromBase64(EXCALIDRAW_PACKAGES);d.body.appendChild(script);}};ExcalidrawPackageLoader();';
+
+/*fs.writeFileSync("packageloader.js",packageString,{
+  encoding: "utf8",
+  flag: "w",
+  mode: 0o666
+});*/
+
 const BASE_CONFIG = {
   input: 'src/main.ts',
-  external: ['obsidian'], // '@zsviczian/excalidraw', 'react', 'react-dom'],
+  external: ['obsidian', '@zsviczian/excalidraw', 'react', 'react-dom'],
 }
 
 const getRollupPlugins = (tsconfig, ...plugins) =>
@@ -30,7 +52,7 @@ const BUILD_CONFIG = {
   ...BASE_CONFIG,
   output: {
     dir: '.',
-    sourcemap: 'inline',
+    sourcemap: isProd?false:'inline',
     format: 'cjs',
     exports: 'default',
   },
@@ -43,11 +65,21 @@ const BUILD_CONFIG = {
       exclude: "node_modules/**"
     }),
     commonjs(),
-    nodeResolve({ browser: true, preferBuiltins: true }),
+    nodeResolve({ browser: true, preferBuiltins: false }),
     typescript({inlineSources: !isProd}),
     ...isProd ? [
-      terser({toplevel: true, compress: {passes: 2}})
-    ] : []
+      terser({toplevel: false, compress: {passes: 2}}),
+      //!postprocess: 
+      //  npm install brettz9/rollup-plugin-postprocess#update --save-dev
+      //  https://github.com/developit/rollup-plugin-postprocess/issues/10
+      postprocess([
+        [/,React=require\("react"\);/, packageString],
+      ])
+    ] : [
+      postprocess([
+        [/var React = require\('react'\);/, packageString],
+      ])
+    ],
   ],
 }
 

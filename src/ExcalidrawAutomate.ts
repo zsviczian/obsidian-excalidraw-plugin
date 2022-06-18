@@ -34,11 +34,24 @@ import { getNewOrAdjacentLeaf, isObsidianThemeDark } from "./utils/ObsidianUtils
 import { AppState, Point } from "@zsviczian/excalidraw/types/types";
 import { EmbeddedFilesLoader, FileData } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
-import Excalidraw from "@zsviczian/excalidraw";
+//import Excalidraw from "@zsviczian/excalidraw";
 import { Prompt } from "./dialogs/Prompt";
 import { t } from "./lang/helpers";
 import { ScriptEngine } from "./Scripts";
 import { ConnectionPoint, ExcalidrawAutomateInterface } from "./types";
+
+declare global {
+  interface Window {
+    ExcalidrawLib: any;
+  }
+}
+const {
+  determineFocusDistance,
+  intersectElementWithLine,
+  getCommonBoundingBox,
+  getMaximumGroups,
+  measureText,
+} = window.ExcalidrawLib;
 
 const GAP = 4;
 
@@ -783,7 +796,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       startBinding: {
         elementId: formatting?.startObjectId,
         focus: formatting?.startObjectId
-          ? Excalidraw.determineFocusDistance(
+          ? determineFocusDistance(
               this.getElement(formatting?.startObjectId) as ExcalidrawBindableElement,
               endPoint,
               startPoint,
@@ -794,7 +807,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       endBinding: {
         elementId: formatting?.endObjectId,
         focus: formatting?.endObjectId
-          ? Excalidraw.determineFocusDistance(
+          ? determineFocusDistance(
               this.getElement(formatting?.endObjectId) as ExcalidrawBindableElement,
               startPoint,
               endPoint,
@@ -986,7 +999,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       const aCenterY = elA.y + elA.height / 2;
       const bCenterY = elB.y + elB.height / 2;
       if (!connectionA) {
-        const intersect = Excalidraw.intersectElementWithLine(
+        const intersect = intersectElementWithLine(
           elA,
           [bCenterX, bCenterY],
           [aCenterX, aCenterY],
@@ -1000,7 +1013,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       }
 
       if (!connectionB) {
-        const intersect = Excalidraw.intersectElementWithLine(
+        const intersect = intersectElementWithLine(
           elB,
           [aCenterX, aCenterY],
           [bCenterX, bCenterY],
@@ -1481,7 +1494,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     width: number;
     height: number;
   } {
-    const bb = Excalidraw.getCommonBoundingBox(elements);
+    const bb = getCommonBoundingBox(elements);
     return {
       topX: bb.minX,
       topY: bb.minY,
@@ -1496,7 +1509,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
    * @returns 
    */
   getMaximumGroups(elements: ExcalidrawElement[]): ExcalidrawElement[][] {
-    return Excalidraw.getMaximumGroups(elements);
+    return getMaximumGroups(elements);
   };
 
   /**
@@ -1537,7 +1550,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     b: readonly [number, number],
     gap?: number,
   ): Point[] {
-    return Excalidraw.intersectElementWithLine(element, a, b, gap);
+    return intersectElementWithLine(element, a, b, gap);
   };
 
   /**
@@ -1893,7 +1906,7 @@ export function _measureText(
   if (!fontFamily) {
     fontFamily = 1;
   }
-  const metrics = Excalidraw.measureText(
+  const metrics = measureText(
     newText,
     `${fontSize.toString()}px ${getFontFamily(fontFamily)}` as any,
   );
@@ -2098,7 +2111,7 @@ function estimateLineBound(points: any): [number, number, number, number] {
 export function estimateBounds(
   elements: ExcalidrawElement[],
 ): [number, number, number, number] {
-  const bb = Excalidraw.getCommonBoundingBox(elements);
+  const bb = getCommonBoundingBox(elements);
   return [bb.minX, bb.minY, bb.maxX, bb.maxY];
 }
 

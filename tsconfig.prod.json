@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "sourceMap": false,
+    "module": "es2015",
+    "target": "es2017",
+    "allowJs": true,
+    "noImplicitAny": true,
+    "moduleResolution": "node",
+    "importHelpers": true,
+    "lib": [
+      "dom",
+      "scripthost",
+      "es2017",
+      "esnext",
+      "DOM.Iterable"
+    ],
+    "jsx": "react"
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx", "src/Dialogs/OpenDrawing.ts"
+  ]
+}

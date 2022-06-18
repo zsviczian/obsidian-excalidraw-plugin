@@ -2199,10 +2199,10 @@
   dependencies:
     "@zerollup/ts-helpers" "^1.7.18"
 
-"@zsviczian/excalidraw@0.11.0-obsidian-22":
-  "integrity" "sha512-iPLFmLtNi6EH9RwxlKDoSRfPn5FcAn7jqf2e23L2e11K6wjQS/O8dzdn7bOeCsgW3WAbjiJko+8ol6fH9n/ocQ=="
-  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.11.0-obsidian-22.tgz"
-  "version" "0.11.0-obsidian-22"
+"@zsviczian/excalidraw@0.11.0-obsidian-21-namedexport":
+  "integrity" "sha512-MXjqMMQoaM54HIgedGH14XBk0eBGTlHVzT2oNZxeOV45Aje0QNx6e2IU7iHEmHc1Gz9Tc3J7dBnvJX0bgXZo2g=="
+  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.11.0-obsidian-21-namedexport.tgz"
+  "version" "0.11.0-obsidian-21-namedexport"
   dependencies:
     "dotenv" "10.0.0"
 
@@ -7663,6 +7663,12 @@
     "fs-extra" "^8.1.0"
     "globby" "10.0.1"
     "is-plain-object" "^3.0.0"
+
+"rollup-plugin-postprocess@github:brettz9/rollup-plugin-postprocess#update":
+  "resolved" "git+ssh://git@github.com/brettz9/rollup-plugin-postprocess.git#f212c9b78acecd1ec3c01e703779d6f614561117"
+  "version" "1.0.2"
+  dependencies:
+    "magic-string" "^0.25.7"
 
 "rollup-plugin-terser@^7.0.0", "rollup-plugin-terser@^7.0.2":
   "integrity" "sha512-w3iIaU4OxcF52UUXiZNsNeuXIMDvFrr+ZXK6bFZ0Q60qyVfq4uLptoS4bbq3paG3x216eQllFZX7zt6TIImguQ=="

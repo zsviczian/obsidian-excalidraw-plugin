@@ -1,4 +1,4 @@
-import Excalidraw from "@zsviczian/excalidraw";
+//import Excalidraw from "@zsviczian/excalidraw";
 import {
   App,
   Notice,
@@ -22,6 +22,16 @@ import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
 import { ExportSettings } from "../ExcalidrawView";
 import { compressToBase64, decompressFromBase64 } from "lz-string";
 import { getIMGFilename } from "./FileUtils";
+
+declare global {
+  interface Window {
+    ExcalidrawLib: any;
+  }
+}
+const {
+  exportToSvg,
+  exportToBlob,
+} = window.ExcalidrawLib;
 
 declare module "obsidian" {
   interface Workspace {
@@ -261,7 +271,7 @@ export const getSVG = async (
   padding: number,
 ): Promise<SVGSVGElement> => {
   try {
-    return await Excalidraw.exportToSvg({
+    return await exportToSvg({
       elements: scene.elements,
       appState: {
         exportBackground: exportSettings.withBackground,
@@ -284,7 +294,7 @@ export const getPNG = async (
   scale: number = 1,
 ) => {
   try {
-    return await Excalidraw.exportToBlob({
+    return await exportToBlob({
       elements: scene.elements,
       appState: {
         exportBackground: exportSettings.withBackground,
@@ -392,7 +402,7 @@ export const scaleLoadedImage = (
 export const setLeftHandedMode = (isLeftHanded: boolean) => {
   const visitedDocs = new Set<Document>();
   app.workspace.iterateAllLeaves((leaf) => {
-    const ownerDocument = leaf.view.containerEl.ownerDocument;
+    const ownerDocument = app.isMobile?document:leaf.view.containerEl.ownerDocument;
     if(!ownerDocument) return;
     if(visitedDocs.has(ownerDocument)) return;
     visitedDocs.add(ownerDocument);

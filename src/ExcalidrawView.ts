@@ -9,9 +9,9 @@ import {
   MarkdownView,
   request,
 } from "obsidian";
-import * as React from "react";
-import * as ReactDOM from "react-dom";
-import Excalidraw from "@zsviczian/excalidraw";
+//import * as React from "react";
+//import * as ReactDOM from "react-dom";
+//import Excalidraw from "@zsviczian/excalidraw";
 import {
   ExcalidrawElement,
   ExcalidrawTextElement,
@@ -56,6 +56,7 @@ import {
 } from "./utils/FileUtils";
 import {
   checkExcalidrawVersion,
+  decompress,
   //debug,
   embedFontsInSVG,
   errorlog,
@@ -67,7 +68,6 @@ import {
   getSVGPadding,
   getWithBackground,
   hasExportTheme,
-  log,
   scaleLoadedImage,
   svgToBase64,
   viewportCoordsToSceneCoords,
@@ -87,6 +87,14 @@ import { ObsidianMenu } from "./menu/ObsidianMenu";
 import { ToolsPanel } from "./menu/ToolsPanel";
 import { ScriptEngine } from "./Scripts";
 import { getTextElementAtPointer, getImageElementAtPointer, getElementWithLinkAtPointer } from "./utils/GetElementAtPointer";
+
+declare global {
+  interface Window {
+    ExcalidrawLib: any;
+    React: any;
+    ReactDOM: any;
+  }
+}
 
 export enum TextMode {
   parsed,
@@ -192,6 +200,10 @@ export default class ExcalidrawView extends TextFileView {
   public ownerDocument: Document;
 
   public semaphores: {
+    viewunload: boolean;
+    //first time initialization of the view
+    scriptsReady: boolean;
+
     //The role of justLoaded is to capture the Excalidraw.onChange event that fires right after the canvas was loaded for the first time to
     //- prevent the first onChange event to mark the file as dirty and to consequently cause a save right after load, causing sync issues in turn
     //- trigger autozoom (in conjunction with preventAutozoomOnLoad)
@@ -220,6 +232,8 @@ export default class ExcalidrawView extends TextFileView {
     saving: boolean;
     hoverSleep: boolean; //flag with timer to prevent hover preview from being triggered dozens of times
   } = {
+    viewunload: false,
+    scriptsReady: false,
     justLoaded: false,
     preventAutozoom: false,
     autosaving: false,
@@ -476,7 +490,7 @@ export default class ExcalidrawView extends TextFileView {
         }
       }
 
-      if (!this.semaphores.autosaving) {
+      if (!this.semaphores.autosaving && !this.semaphores.viewunload) {
         if (this.plugin.settings.autoexportSVG) {
           await this.saveSVG();
         }
@@ -880,10 +894,15 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   diskIcon: HTMLElement;
+
   onload() {
     app.workspace.onLayoutReady(()=>{
-      this.ownerDocument = this.containerEl.ownerDocument;
+      const doc = app.isMobile?document:this.containerEl.ownerDocument;
+      this.ownerDocument = doc;
       this.ownerWindow = this.ownerDocument.defaultView;
+      //@ts-ignore
+      ExcalidrawPackageLoader(doc); //function added during build in rollup
+      this.semaphores.scriptsReady = true;
     });
     this.addAction(SCRIPTENGINE_ICON_NAME, t("INSTALL_SCRIPT_BUTTON"), () => {
       new ScriptInstallPrompt(this.plugin).open();
@@ -1129,7 +1148,8 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   //save current drawing when user closes workspace leaf
-  async onunload() {
+  onunload() {
+    this.semaphores.viewunload = true;
     this.ownerWindow.removeEventListener("keydown", this.onKeyDown, false);
     this.ownerWindow.removeEventListener("keyup", this.onKeyUp, false);
 
@@ -1517,10 +1537,11 @@ export default class ExcalidrawView extends TextFileView {
           }
         }
       })
-      this.previousSceneVersion = Excalidraw.getSceneVersion(sceneElements);
+      const getSceneVersion = this.ownerWindow.ExcalidrawLib.getSceneVersion;
+      this.previousSceneVersion = getSceneVersion(sceneElements);
       //changing files could result in a race condition for sync. If at the end of sync there are differences
       //set dirty will trigger an autosave
-      if(Excalidraw.getSceneVersion(inData.scene.elements) !== this.previousSceneVersion) {
+      if(getSceneVersion(inData.scene.elements) !== this.previousSceneVersion) {
         this.setDirty();
       }
       this.excalidrawAPI.updateScene({elements: sceneElements});
@@ -1644,7 +1665,8 @@ export default class ExcalidrawView extends TextFileView {
     this.semaphores.dirty = null;
     const el = api.getSceneElements();
     if (el) {
-      this.previousSceneVersion = Excalidraw.getSceneVersion(el);
+      const getSceneVersion = this.ownerWindow.ExcalidrawLib.getSceneVersion;
+      this.previousSceneVersion = getSceneVersion(el);
     }
     this.diskIcon.querySelector("svg").removeClass("excalidraw-dirty");
   }
@@ -1799,7 +1821,12 @@ export default class ExcalidrawView extends TextFileView {
 
   private previousSceneVersion = 0;
   private previousBackgroundColor = "";
-  private instantiateExcalidraw(initdata: any) {
+  private async instantiateExcalidraw(initdata: any) {
+    while(!this.semaphores.scriptsReady) {
+      await sleep(50);
+    }
+    const React = this.ownerWindow.React;
+    const ReactDOM = this.ownerWindow.ReactDOM;
     //console.log("ExcalidrawView.instantiateExcalidraw()");
     this.clearDirty();
     const reactElement = React.createElement(() => {
@@ -2436,7 +2463,8 @@ export default class ExcalidrawView extends TextFileView {
           }, 400);
         }
       };
-
+      const Excalidraw = this.ownerWindow.ExcalidrawLib.Excalidraw;
+      const getSceneVersion = this.ownerWindow.ExcalidrawLib.getSceneVersion;
       const excalidrawDiv = React.createElement(
         "div",
         {
@@ -2492,7 +2520,7 @@ export default class ExcalidrawView extends TextFileView {
           },
           onDragLeave: () => {},
         },
-        React.createElement(Excalidraw.default, {
+        React.createElement(Excalidraw, {
           ref: excalidrawRef,
           width: dimensions.width,
           height: dimensions.height,
@@ -2558,7 +2586,7 @@ export default class ExcalidrawView extends TextFileView {
               if (!this.semaphores.preventAutozoom) {
                 this.zoomToFit(false);
               }
-              this.previousSceneVersion = Excalidraw.getSceneVersion(et);
+              this.previousSceneVersion = getSceneVersion(et);
               this.previousBackgroundColor = st.viewBackgroundColor;
               return;
             }
@@ -2574,7 +2602,7 @@ export default class ExcalidrawView extends TextFileView {
               st.editingGroupId === null &&*/
               st.editingLinearElement === null
             ) {
-              const sceneVersion = Excalidraw.getSceneVersion(et);
+              const sceneVersion = getSceneVersion(et);
               if (
                 (sceneVersion > 0 &&
                   sceneVersion !== this.previousSceneVersion) ||
