@@ -23,15 +23,11 @@ import { ExportSettings } from "../ExcalidrawView";
 import { compressToBase64, decompressFromBase64 } from "lz-string";
 import { getIMGFilename } from "./FileUtils";
 
-declare global {
-  interface Window {
-    ExcalidrawLib: any;
-  }
-}
 const {
   exportToSvg,
   exportToBlob,
-} = window.ExcalidrawLib;
+//@ts-ignore
+} = excalidrawLib;
 
 declare module "obsidian" {
   interface Workspace {

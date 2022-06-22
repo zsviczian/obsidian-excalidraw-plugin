@@ -49,7 +49,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
 
   constructor(props: PanelProps) {
     super(props);
-    const react = props.view.ownerWindow.React;
+    const react = props.view.plugin.getPackage(props.view.ownerWindow).react;
     this.containerRef = react.createRef();
     this.state = {
       visible: props.visible,

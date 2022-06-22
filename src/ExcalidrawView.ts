@@ -88,14 +88,6 @@ import { ToolsPanel } from "./menu/ToolsPanel";
 import { ScriptEngine } from "./Scripts";
 import { getTextElementAtPointer, getImageElementAtPointer, getElementWithLinkAtPointer } from "./utils/GetElementAtPointer";
 
-declare global {
-  interface Window {
-    ExcalidrawLib: any;
-    React: any;
-    ReactDOM: any;
-  }
-}
-
 export enum TextMode {
   parsed,
   raw,
@@ -900,8 +892,7 @@ export default class ExcalidrawView extends TextFileView {
       const doc = app.isMobile?document:this.containerEl.ownerDocument;
       this.ownerDocument = doc;
       this.ownerWindow = this.ownerDocument.defaultView;
-      //@ts-ignore
-      ExcalidrawPackageLoader(doc); //function added during build in rollup
+      this.plugin.getPackage(this.ownerWindow);
       this.semaphores.scriptsReady = true;
     });
     this.addAction(SCRIPTENGINE_ICON_NAME, t("INSTALL_SCRIPT_BUTTON"), () => {
@@ -1537,7 +1528,7 @@ export default class ExcalidrawView extends TextFileView {
           }
         }
       })
-      const getSceneVersion = this.ownerWindow.ExcalidrawLib.getSceneVersion;
+      const getSceneVersion = this.plugin.getPackage(this.ownerWindow).excalidrawLib.getSceneVersion;
       this.previousSceneVersion = getSceneVersion(sceneElements);
       //changing files could result in a race condition for sync. If at the end of sync there are differences
       //set dirty will trigger an autosave
@@ -1665,7 +1656,7 @@ export default class ExcalidrawView extends TextFileView {
     this.semaphores.dirty = null;
     const el = api.getSceneElements();
     if (el) {
-      const getSceneVersion = this.ownerWindow.ExcalidrawLib.getSceneVersion;
+      const getSceneVersion = this.plugin.getPackage(this.ownerWindow).excalidrawLib.getSceneVersion;
       this.previousSceneVersion = getSceneVersion(el);
     }
     this.diskIcon.querySelector("svg").removeClass("excalidraw-dirty");
@@ -1825,8 +1816,8 @@ export default class ExcalidrawView extends TextFileView {
     while(!this.semaphores.scriptsReady) {
       await sleep(50);
     }
-    const React = this.ownerWindow.React;
-    const ReactDOM = this.ownerWindow.ReactDOM;
+    const React = this.plugin.getPackage(this.ownerWindow).react;
+    const ReactDOM = this.plugin.getPackage(this.ownerWindow).reactDOM;
     //console.log("ExcalidrawView.instantiateExcalidraw()");
     this.clearDirty();
     const reactElement = React.createElement(() => {
@@ -2463,8 +2454,8 @@ export default class ExcalidrawView extends TextFileView {
           }, 400);
         }
       };
-      const Excalidraw = this.ownerWindow.ExcalidrawLib.Excalidraw;
-      const getSceneVersion = this.ownerWindow.ExcalidrawLib.getSceneVersion;
+      const Excalidraw = this.plugin.getPackage(this.ownerWindow).excalidrawLib.Excalidraw;
+      const getSceneVersion = this.plugin.getPackage(this.ownerWindow).excalidrawLib.getSceneVersion;
       const excalidrawDiv = React.createElement(
         "div",
         {

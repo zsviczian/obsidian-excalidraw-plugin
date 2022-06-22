@@ -17,6 +17,21 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.7.2": `
+Due to some of the changes to the code, I highly recommend restarting Obsidian after installing this update to Excalidraw.
+
+# Fixed
+- Stability improvements
+- Opening links in new panes and creating new drawings from the file explorer works properly again
+
+# New feature
+- Two new command palette actions:
+  - Create a new drawing - IN A POPOUT WINDOW
+  - Create a new drawing - IN A POPOUT WINDOW - and embed into active document
+![image|600](https://user-images.githubusercontent.com/14358394/175137800-88789f5d-f8e8-4371-a356-84f443aa6a50.png)
+- Added setting to prefer opening the link in the popout window or in the main workspace.
+![image|800](https://user-images.githubusercontent.com/14358394/175076326-1c8eee53-e512-4025-aedb-07881a732c69.png)
+`,
 "1.7.1": `
 Support for Obsidian 0.15.0 popout windows. While there are no new features (apart from the popout window support) under the hood there were some major changes required to make this happen.
 `,

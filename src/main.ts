@@ -95,6 +95,9 @@ import {
 } from "./MarkdownPostProcessor";
 import { FieldSuggester } from "./dialogs/FieldSuggester";
 import { ReleaseNotes } from "./dialogs/ReleaseNotes";
+import { decompressFromBase64 } from "lz-string";
+import { Packages } from "./types";
+import * as React from "react";
 
 declare module "obsidian" {
   interface App {
@@ -114,6 +117,8 @@ declare module "obsidian" {
     ): EventRef;
   }
 }
+
+declare const EXCALIDRAW_PACKAGES:string;
 
 export default class ExcalidrawPlugin extends Plugin {
   private excalidrawFiles: Set<TFile> = new Set<TFile>();
@@ -147,6 +152,8 @@ export default class ExcalidrawPlugin extends Plugin {
   public mathjaxLoaderFinished: boolean = false;
   public scriptEngine: ScriptEngine;
   public fourthFontDef: string = VIRGIL_FONT;
+  private packageMap: WeakMap<Window,Packages> = new WeakMap<Window,Packages>();
+
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
     this.filesMaster = new Map<
@@ -154,6 +161,27 @@ export default class ExcalidrawPlugin extends Plugin {
       { path: string; hasSVGwithBitmap: boolean }
     >();
     this.equationsMaster = new Map<FileId, string>();
+  }
+
+
+
+  public getPackage(win:Window):Packages {
+    if(win===window) {
+      //@ts-ignore
+      return {react, reactDOM, excalidrawLib};
+    }
+    if(this.packageMap.has(win)) {
+      return this.packageMap.get(win);
+    }
+    
+    //@ts-ignore
+    const {react:r, reactDOM:rd, excalidrawLib:e} = win.eval.call(win,
+      `(function() {
+        ${decompressFromBase64(EXCALIDRAW_PACKAGES)};
+        return {react:React,reactDOM:ReactDOM,excalidrawLib:ExcalidrawLib};
+       })()`);
+    this.packageMap.set(win,{react:r, reactDOM:rd, excalidrawLib:e});
+    return {react:r, reactDOM:rd, excalidrawLib:e};
   }
 
   async onload() {
@@ -1677,21 +1705,10 @@ export default class ExcalidrawPlugin extends Plugin {
       document.body.removeChild(this.mathjaxDiv);
     }
 
-    const visitedDocs = new Set<Document>();
-    app.workspace.iterateAllLeaves((leaf)=>{
-      const ownerDocument = app.isMobile?document:leaf.view.containerEl.ownerDocument;   
-      if(!ownerDocument) return;        
-      if(visitedDocs.has(ownerDocument)) return;
-      visitedDocs.add(ownerDocument);
-      
-      const el = ownerDocument.getElementById("excalidraw-script");
-      if(el) {
-        ownerDocument.body.removeChild(el);
-        const win = ownerDocument.defaultView;
-        delete win.React;
-        delete win.ReactDOM;
-        delete win.ExcalidrawLib;
-      }
+    Object.values(this.packageMap).forEach((p:Packages)=>{
+      delete p.excalidrawLib;
+      delete p.reactDOM;
+      delete p.react;
     })
   }
 
@@ -1884,10 +1901,22 @@ export default class ExcalidrawPlugin extends Plugin {
     );
     await checkAndCreateFolder(this.app.vault, folderpath); //create folder if it does not exist
     const fname = getNewUniqueFilepath(this.app.vault, filename, folderpath);
-    return await this.app.vault.create(
+    const file = await this.app.vault.create(
       fname,
       initData ?? (await this.getBlankDrawing()),
     );
+    
+    //wait for metadata cache
+    let counter = 0;
+    while(file instanceof TFile && !this.isExcalidrawFile(file) && counter++<10) {
+      await sleep(50);
+    }
+    
+    if(counter > 10) {
+      errorlog({file, error: "new drawing not recognized as an excalidraw file", fn: this.createDrawing});
+    }
+
+    return file;
   }
 
   public async createAndOpenDrawing(

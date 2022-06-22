@@ -8,6 +8,12 @@ import ExcalidrawPlugin from "./main";
 
 export type ConnectionPoint = "top" | "bottom" | "left" | "right" | null;
 
+export type Packages = {
+  react: any,
+  reactDOM: any,
+  excalidrawLib: any
+}
+
 export interface ExcalidrawAutomateInterface {
   plugin: ExcalidrawPlugin;
   elementsDict: {[key:string]:any}; //contains the ExcalidrawElements currently edited in Automate indexed by el.id

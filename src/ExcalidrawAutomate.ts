@@ -40,18 +40,14 @@ import { t } from "./lang/helpers";
 import { ScriptEngine } from "./Scripts";
 import { ConnectionPoint, ExcalidrawAutomateInterface } from "./types";
 
-declare global {
-  interface Window {
-    ExcalidrawLib: any;
-  }
-}
 const {
   determineFocusDistance,
   intersectElementWithLine,
   getCommonBoundingBox,
   getMaximumGroups,
   measureText,
-} = window.ExcalidrawLib;
+  //@ts-ignore
+} = excalidrawLib;
 
 const GAP = 4;
 

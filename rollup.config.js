@@ -27,13 +27,18 @@ const reactdom_pkg = isProd
   : fs.readFileSync("./node_modules/react-dom/umd/react-dom.development.js", "utf8");
 const lzstring_pkg = fs.readFileSync("./node_modules/lz-string/libs/lz-string.min.js", "utf8")
 
-const packageString = ';'+lzstring_pkg+'const EXCALIDRAW_PACKAGES = "' + LZString.compressToBase64(react_pkg + reactdom_pkg + excalidraw_pkg) +'";var ExcalidrawPackageLoader=(d=document)=>{if(!d.getElementById("excalidraw-script")){const script=d.createElement("script");script.type="text/javascript";script.id="excalidraw-script";script.text=LZString.decompressFromBase64(EXCALIDRAW_PACKAGES);d.body.appendChild(script);}};ExcalidrawPackageLoader();';
+///const packageString = ';'+lzstring_pkg+'const EXCALIDRAW_PACKAGES = "' + LZString.compressToBase64(react_pkg + reactdom_pkg + excalidraw_pkg) +'";var ExcalidrawPackageLoader=(d=document)=>{if(!d.getElementById("excalidraw-script")){const script=d.createElement("script");script.type="text/javascript";script.id="excalidraw-script";script.text=LZString.decompressFromBase64(EXCALIDRAW_PACKAGES);d.body.appendChild(script);}};ExcalidrawPackageLoader();';
 
-/*fs.writeFileSync("packageloader.js",packageString,{
+const packageString = ';'+lzstring_pkg+'const EXCALIDRAW_PACKAGES = "' + LZString.compressToBase64(react_pkg + reactdom_pkg + excalidraw_pkg) + '";' +
+  'const {react, reactDOM, excalidrawLib} = window.eval.call(window, `(function() {' +
+  '${LZString.decompressFromBase64(EXCALIDRAW_PACKAGES)};\n' +
+  'return {react:React, reactDOM:ReactDOM, excalidrawLib: ExcalidrawLib};})();`);';
+
+fs.writeFileSync("testloader.js",packageString,{
   encoding: "utf8",
   flag: "w",
   mode: 0o666
-});*/
+});
 
 const BASE_CONFIG = {
   input: 'src/main.ts',
