@@ -995,7 +995,7 @@ export default class ExcalidrawView extends TextFileView {
     if (this.slidingPanesListner) {
       (
         this.app.workspace.rootSplit as WorkspaceItem as WorkspaceItemExt
-      ).containerEl.removeEventListener("scroll", this.slidingPanesListner);
+      ).containerEl?.removeEventListener("scroll", this.slidingPanesListner);
     }
   }
 
@@ -1150,8 +1150,8 @@ export default class ExcalidrawView extends TextFileView {
   //save current drawing when user closes workspace leaf
   onunload() {
     this.semaphores.viewunload = true;
-    this.ownerWindow.removeEventListener("keydown", this.onKeyDown, false);
-    this.ownerWindow.removeEventListener("keyup", this.onKeyUp, false);
+    this.ownerWindow?.removeEventListener("keydown", this.onKeyDown, false);
+    this.ownerWindow?.removeEventListener("keyup", this.onKeyUp, false);
 
     if(this.getHookServer().onViewUnloadHook) {
       try {
@@ -1160,11 +1160,11 @@ export default class ExcalidrawView extends TextFileView {
         errorlog({where: "ExcalidrawView.onunload", fn: this.getHookServer().onViewUnloadHook, error: e});
       }
     }
-    const tooltip = this.ownerDocument.body.querySelector(
+    const tooltip = this.containerEl?.ownerDocument?.body.querySelector(
       "body>div.excalidraw-tooltip,div.excalidraw-tooltip--visible",
     );
     if (tooltip) {
-      this.ownerDocument.body.removeChild(tooltip);
+      this.containerEl?.ownerDocument?.body.removeChild(tooltip);
     }
     this.removeParentMoveObserver();
     this.removeSlidingPanesListner();
@@ -1605,7 +1605,7 @@ export default class ExcalidrawView extends TextFileView {
         justloaded,
       );
       if (
-        this.app.workspace.activeLeaf === this.leaf &&
+        this.app.workspace.getActiveViewOfType(ExcalidrawView) === this.leaf.view &&
         this.excalidrawWrapperRef
       ) {
         //.firstElmentChild solves this issue: https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/346
@@ -1729,7 +1729,7 @@ export default class ExcalidrawView extends TextFileView {
     await this.save();
     this.plugin.openDrawing(
       await this.plugin.convertSingleExcalidrawToMD(this.file),
-      false,
+      "active-pane",
     );
   }
 
@@ -1933,7 +1933,7 @@ export default class ExcalidrawView extends TextFileView {
           }
         };
         this.ownerWindow.addEventListener("resize", onResize);
-        return () => this.ownerWindow.removeEventListener("resize", onResize);
+        return () => this.ownerWindow?.removeEventListener("resize", onResize);
       }, [excalidrawWrapperRef]);
 
       this.getSelectedTextElement = (): { id: string; text: string } => {

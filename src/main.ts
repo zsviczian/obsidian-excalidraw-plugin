@@ -15,7 +15,7 @@ import {
   loadMathJax,
   request,
   MetadataCache,
-  FrontMatterCache,
+  FrontMatterCache
 } from "obsidian";
 import {
   BLANK_DRAWING,
@@ -645,7 +645,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.addRibbonIcon(ICON_NAME, t("CREATE_NEW"), async (e) => {
       this.createAndOpenDrawing(
         getDrawingFilename(this.settings),
-        e[CTRL_OR_CMD],
+        e[CTRL_OR_CMD]?"new-pane":"active-pane",
       ); //.ctrlKey||e.metaKey);
     });
 
@@ -663,7 +663,7 @@ export default class ExcalidrawPlugin extends Plugin {
             }
             this.createAndOpenDrawing(
               getDrawingFilename(this.settings),
-              false,
+              "active-pane",
               folderpath,
             );
           });
@@ -735,7 +735,7 @@ export default class ExcalidrawPlugin extends Plugin {
       name: t("TRANSCLUDE"),
       checkCallback: (checking: boolean) => {
         if (checking) {
-          return this.app.workspace.activeLeaf.view.getViewType() == "markdown";
+          return Boolean(this.app.workspace.getActiveViewOfType(MarkdownView)) 
         }
         this.openDialog.start(openDialogAction.insertLinkToDrawing, false);
         return true;
@@ -748,7 +748,7 @@ export default class ExcalidrawPlugin extends Plugin {
       checkCallback: (checking: boolean) => {
         if (checking) {
           return (
-            this.app.workspace.activeLeaf.view.getViewType() == "markdown" &&
+            Boolean(this.app.workspace.getActiveViewOfType(MarkdownView)) &&
             this.lastActiveExcalidrawFilePath != null
           );
         }
@@ -767,7 +767,7 @@ export default class ExcalidrawPlugin extends Plugin {
       id: "excalidraw-autocreate",
       name: t("NEW_IN_NEW_PANE"),
       callback: () => {
-        this.createAndOpenDrawing(getDrawingFilename(this.settings), true);
+        this.createAndOpenDrawing(getDrawingFilename(this.settings), "new-pane");
       },
     });
 
@@ -775,11 +775,21 @@ export default class ExcalidrawPlugin extends Plugin {
       id: "excalidraw-autocreate-on-current",
       name: t("NEW_IN_ACTIVE_PANE"),
       callback: () => {
-        this.createAndOpenDrawing(getDrawingFilename(this.settings), false);
+        this.createAndOpenDrawing(getDrawingFilename(this.settings), "active-pane");
       },
     });
 
-    const insertDrawingToDoc = async (inNewPane: boolean) => {
+    this.addCommand({
+      id: "excalidraw-autocreate-popout",
+      name: t("NEW_IN_POPOUT_WINDOW"),
+      callback: () => {
+        this.createAndOpenDrawing(getDrawingFilename(this.settings), "popout-window");
+      },
+    });
+
+    const insertDrawingToDoc = async (
+      location: "active-pane"|"new-pane"|"popout-window"
+    ) => {
       const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
       if (!activeView) {
         return;
@@ -799,7 +809,7 @@ export default class ExcalidrawPlugin extends Plugin {
           ).folder;
       const file = await this.createDrawing(filename, folder);
       await this.embedDrawing(file);
-      this.openDrawing(file, inNewPane);
+      this.openDrawing(file, location);
     };
 
     this.addCommand({
@@ -807,9 +817,9 @@ export default class ExcalidrawPlugin extends Plugin {
       name: t("NEW_IN_NEW_PANE_EMBED"),
       checkCallback: (checking: boolean) => {
         if (checking) {
-          return this.app.workspace.activeLeaf.view.getViewType() == "markdown";
+          return Boolean(this.app.workspace.getActiveViewOfType(MarkdownView));
         }
-        insertDrawingToDoc(true);
+        insertDrawingToDoc("new-pane");
         return true;
       },
     });
@@ -819,12 +829,24 @@ export default class ExcalidrawPlugin extends Plugin {
       name: t("NEW_IN_ACTIVE_PANE_EMBED"),
       checkCallback: (checking: boolean) => {
         if (checking) {
-          return this.app.workspace.activeLeaf.view.getViewType() == "markdown";
+          return Boolean(this.app.workspace.getActiveViewOfType(MarkdownView));
         }
-        insertDrawingToDoc(false);
+        insertDrawingToDoc("active-pane");
         return true;
       },
     });
+
+    this.addCommand({
+      id: "excalidraw-autocreate-and-embed-popout",
+      name: t("NEW_IN_POPOUT_WINDOW_EMBED"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return Boolean(this.app.workspace.getActiveViewOfType(MarkdownView));
+        }
+        insertDrawingToDoc("popout-window");
+        return true;
+      },
+    });    
 
     this.addCommand({
       id: "export-svg",
@@ -832,12 +854,11 @@ export default class ExcalidrawPlugin extends Plugin {
       checkCallback: (checking: boolean) => {
         if (checking) {
           return (
-            this.app.workspace.activeLeaf.view.getViewType() ==
-            VIEW_TYPE_EXCALIDRAW
+            Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
           );
         }
-        const view = this.app.workspace.activeLeaf.view;
-        if (view instanceof ExcalidrawView) {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
           view.saveSVG();
           return true;
         }
@@ -851,12 +872,11 @@ export default class ExcalidrawPlugin extends Plugin {
       checkCallback: (checking: boolean) => {
         if (checking) {
           return (
-            this.app.workspace.activeLeaf.view.getViewType() ===
-            VIEW_TYPE_EXCALIDRAW
+            Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
           );
         }
-        const view = this.app.workspace.activeLeaf.view;
-        if (view instanceof ExcalidrawView) {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
           search(view);
           return true;
         }
@@ -870,12 +890,11 @@ export default class ExcalidrawPlugin extends Plugin {
       checkCallback: (checking: boolean) => {
         if (checking) {
           return (
-            this.app.workspace.activeLeaf.view.getViewType() ===
-            VIEW_TYPE_EXCALIDRAW
+            Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
           );
         }
-        const view = this.app.workspace.activeLeaf.view;
-        if (view instanceof ExcalidrawView) {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
           if (view.isFullscreen()) {
             view.exitFullscreen();
           } else {
@@ -887,67 +906,17 @@ export default class ExcalidrawPlugin extends Plugin {
       },
     });
 
-    /*    this.addCommand({
-      id: "ocr",
-      name: "Test OCR",//t("EXPORT_PNG"),
-      checkCallback: (checking: boolean) => {
-        if (checking) {
-          return (
-            this.app.workspace.activeLeaf.view.getViewType() ===
-            //@ts-ignore
-            VIEW_TYPE_EXCALIDRAW && typeof Tesseract !== "undefined"
-          );
-        }
-        const view = this.app.workspace.activeLeaf.view;
-        if (view instanceof ExcalidrawView) {
-          //@ts-ignore
-          const worker = Tesseract.createWorker({logger: m => console.log(m)});
-          //@ts-ignore
-          Tesseract.setLogging(true);
-
-          const exportSettings: ExportSettings = {
-            withBackground: true,
-            withTheme: false,
-          };
-          const blobToBase64 = async (blob:any) => {
-            return new Promise((resolve, _) => {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve(reader.result);
-              reader.readAsDataURL(blob);
-            });
-          }
-
-          (async () => {
-            const png = await getPNG(
-              view.getScene(),
-              exportSettings,
-              3,
-            );
-            await worker.load();
-            await worker.loadLanguage('https://https://raw.githubusercontent.com/thecodingone/trained-tesseract-handwriting-fonts/blob/master/eng.traineddata');
-            await worker.initialize('https://raw.githubusercontent.com/thecodingone/trained-tesseract-handwriting-fonts/blob/master/eng.traineddata');
-            const { data: { text } } = await worker.recognize(await blobToBase64(png));
-            console.log(text);
-            await worker.terminate();
-          })();
-          return true;
-        }
-        return false;
-      },
-    });*/
-
     this.addCommand({
       id: "export-png",
       name: t("EXPORT_PNG"),
       checkCallback: (checking: boolean) => {
         if (checking) {
           return (
-            this.app.workspace.activeLeaf.view.getViewType() ==
-            VIEW_TYPE_EXCALIDRAW
+            Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
           );
         }
-        const view = this.app.workspace.activeLeaf.view;
-        if (view instanceof ExcalidrawView) {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
           view.savePNG();
           return true;
         }
@@ -962,16 +931,15 @@ export default class ExcalidrawPlugin extends Plugin {
       checkCallback: (checking: boolean) => {
         if (checking) {
           if (
-            this.app.workspace.activeLeaf.view.getViewType() ===
-            VIEW_TYPE_EXCALIDRAW
+            Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
           ) {
-            return !(this.app.workspace.activeLeaf.view as ExcalidrawView)
+            return !(this.app.workspace.getActiveViewOfType(ExcalidrawView))
               .compatibilityMode;
           }
           return false;
         }
-        const view = this.app.workspace.activeLeaf.view;
-        if (view instanceof ExcalidrawView) {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
           view.changeTextMode(
             view.textMode === TextMode.parsed ? TextMode.raw : TextMode.parsed,
           );
@@ -986,11 +954,10 @@ export default class ExcalidrawPlugin extends Plugin {
       name: t("DELETE_FILE"),
       checkCallback: (checking: boolean) => {
         if (checking) {
-          const view = this.app.workspace.activeLeaf.view;
-          return view instanceof ExcalidrawView;
+          return Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
         }
-        const view = this.app.workspace.activeLeaf.view;
-        if (view instanceof ExcalidrawView) {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
           this.ea.reset();
           this.ea.setView(view);
           const el = this.ea.getViewSelectedElement();
@@ -1023,11 +990,10 @@ export default class ExcalidrawPlugin extends Plugin {
       name: t("INSERT_LINK"),
       checkCallback: (checking: boolean) => {
         if (checking) {
-          const view = this.app.workspace.activeLeaf.view;
-          return view instanceof ExcalidrawView;
+          return Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
         }
-        const view = this.app.workspace.activeLeaf.view;
-        if (view instanceof ExcalidrawView) {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
           this.insertLinkDialog.start(view.file.path, view.addText);
           return true;
         }
@@ -1041,11 +1007,10 @@ export default class ExcalidrawPlugin extends Plugin {
       name: t("INSERT_LINK_TO_ELEMENT"),
       checkCallback: (checking: boolean) => {
         if (checking) {
-          const view = this.app.workspace.activeLeaf.view;
-          return view instanceof ExcalidrawView;
+          return Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
         }
-        const view = this.app.workspace.activeLeaf.view;
-        if (view instanceof ExcalidrawView) {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
           view.copyLinkToSelectedElementToClipboard();
           return true;
         }
@@ -1058,11 +1023,10 @@ export default class ExcalidrawPlugin extends Plugin {
       name: t("INSERT_IMAGE"),
       checkCallback: (checking: boolean) => {
         if (checking) {
-          const view = this.app.workspace.activeLeaf.view;
-          return view instanceof ExcalidrawView;
+          return Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
         }
-        const view = this.app.workspace.activeLeaf.view;
-        if (view instanceof ExcalidrawView) {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
           this.insertImageDialog.start(view);
           return true;
         }
@@ -1075,8 +1039,7 @@ export default class ExcalidrawPlugin extends Plugin {
       name: t("READ_RELEASE_NOTES"),
       checkCallback: (checking: boolean) => {
         if (checking) {
-          const view = this.app.workspace.activeLeaf.view;
-          return view instanceof ExcalidrawView;
+          return Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
         }
         const version: string =
           //@ts-ignore
@@ -1091,8 +1054,8 @@ export default class ExcalidrawPlugin extends Plugin {
       name: t("TRAY_MODE"),
       checkCallback: (checking: boolean) => {
         if (checking) {
-          const view = this.app.workspace.activeLeaf.view;
-          if (!(view instanceof ExcalidrawView) || !view.excalidrawRef) {
+          const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+          if (!view || !view.excalidrawRef) {
             return false;
           }
           const st = view.excalidrawAPI.getAppState();
@@ -1101,8 +1064,8 @@ export default class ExcalidrawPlugin extends Plugin {
           }
           return true;
         }
-        const view = this.app.workspace.activeLeaf.view;
-        if (view instanceof ExcalidrawView && view.excalidrawAPI) {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view && view.excalidrawAPI) {
           view.toggleTrayMode();
           return true;
         }
@@ -1115,11 +1078,10 @@ export default class ExcalidrawPlugin extends Plugin {
       name: t("INSERT_MD"),
       checkCallback: (checking: boolean) => {
         if (checking) {
-          const view = this.app.workspace.activeLeaf.view;
-          return view instanceof ExcalidrawView;
+          return Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
         }
-        const view = this.app.workspace.activeLeaf.view;
-        if (view instanceof ExcalidrawView) {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
           this.insertMDDialog.start(view);
           return true;
         }
@@ -1132,13 +1094,10 @@ export default class ExcalidrawPlugin extends Plugin {
       name: t("INSERT_LATEX"),
       checkCallback: (checking: boolean) => {
         if (checking) {
-          return (
-            this.app.workspace.activeLeaf.view.getViewType() ==
-            VIEW_TYPE_EXCALIDRAW
-          );
+          return Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView));
         }
-        const view = this.app.workspace.activeLeaf.view;
-        if (view instanceof ExcalidrawView) {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
           insertLaTeXToView(view);
           return true;
         }
@@ -1158,25 +1117,30 @@ export default class ExcalidrawPlugin extends Plugin {
 
         if (checking) {
           if (
-            this.app.workspace.activeLeaf.view.getViewType() ==
-            VIEW_TYPE_EXCALIDRAW
+            Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
           ) {
-            return !(this.app.workspace.activeLeaf.view as ExcalidrawView)
+            return !(this.app.workspace.getActiveViewOfType(ExcalidrawView))
               .compatibilityMode;
           }
           return fileIsExcalidraw;
         }
 
-        const activeLeaf = this.app.workspace.activeLeaf;
-
-        if (activeLeaf?.view && activeLeaf.view instanceof ExcalidrawView) {
+        const excalidrawView = this.app.workspace.getActiveViewOfType(ExcalidrawView)
+        if (excalidrawView) {
+          const activeLeaf = excalidrawView.leaf;
           this.excalidrawFileModes[(activeLeaf as any).id || activeFile.path] =
             "markdown";
           this.setMarkdownView(activeLeaf);
-        } else if (fileIsExcalidraw) {
+          return;
+        }
+
+        const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView)
+        if (markdownView && fileIsExcalidraw) {
+          const activeLeaf = markdownView.leaf;
           this.excalidrawFileModes[(activeLeaf as any).id || activeFile.path] =
             VIEW_TYPE_EXCALIDRAW;
           this.setExcalidrawView(activeLeaf);
+          return;
         }
       },
     });
@@ -1186,9 +1150,9 @@ export default class ExcalidrawPlugin extends Plugin {
       name: t("CONVERT_NOTE_TO_EXCALIDRAW"),
       checkCallback: (checking) => {
         const activeFile = this.app.workspace.getActiveFile();
-        const activeLeaf = this.app.workspace.activeLeaf;
+        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
 
-        if (!activeFile || !activeLeaf) {
+        if (!activeFile || !activeView) {
           return false;
         }
 
@@ -1197,13 +1161,14 @@ export default class ExcalidrawPlugin extends Plugin {
         if (checking) {
           return isFileEmpty;
         }
+
         if (isFileEmpty) {
           (async () => {
             await this.app.vault.modify(
               activeFile,
               await this.getBlankDrawing(),
             );
-            this.setExcalidrawView(activeLeaf);
+            this.setExcalidrawView(activeView.leaf);
           })();
         }
       },
@@ -1819,12 +1784,20 @@ export default class ExcalidrawPlugin extends Plugin {
     })
   }
 
-  public openDrawing(drawingFile: TFile, onNewPane: boolean) {
-    
-    let leaf = this.app.workspace.activeLeaf;
-
-    if (!leaf || onNewPane) {
-      leaf = getNewOrAdjacentLeaf(this, app.workspace.activeLeaf);
+  public openDrawing(
+    drawingFile: TFile,
+    location: "active-pane"|"new-pane"|"popout-window"
+  ) {
+    let leaf: WorkspaceLeaf;
+    if(location === "popout-window") {
+      //@ts-ignore
+      leaf = app.workspace.openPopoutLeaf();
+    }
+    else {
+      leaf = this.app.workspace.getLeaf(false);
+      if ((leaf.view.getViewType() !== 'empty') && (location === "new-pane")) {
+        leaf = getNewOrAdjacentLeaf(this, leaf)    
+      }
     }
 
     leaf.setViewState({
@@ -1919,12 +1892,12 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public async createAndOpenDrawing(
     filename: string,
-    onNewPane: boolean,
+    location: "active-pane"|"new-pane"|"popout-window",
     foldername?: string,
     initData?: string,
   ): Promise<string> {
     const file = await this.createDrawing(filename, foldername, initData);
-    this.openDrawing(file, onNewPane);
+    this.openDrawing(file, location);
     return file.path;
   }
 

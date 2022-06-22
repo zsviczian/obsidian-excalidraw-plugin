@@ -227,8 +227,8 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
               };
 
               const onPointerUp = () => {
-                this.props.view.ownerDocument.removeEventListener("pointerup", onPointerUp);
-                this.props.view.ownerDocument.removeEventListener("pointermove", onDrag);
+                this.props.view.ownerDocument?.removeEventListener("pointerup", onPointerUp);
+                this.props.view.ownerDocument?.removeEventListener("pointermove", onDrag);
               };
 
               event.preventDefault();

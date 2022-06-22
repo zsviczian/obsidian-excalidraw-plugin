@@ -21,45 +21,38 @@ export const getNewOrAdjacentLeaf = (
   plugin: ExcalidrawPlugin,
   leaf: WorkspaceLeaf
 ): WorkspaceLeaf => {
-  const inHoverEditorLeaf = leaf.view?.containerEl 
-    ? getParentOfClass(leaf.view.containerEl, "popover") !== null
-    : false;
-
-  if (inHoverEditorLeaf) {
-    const mainLeaves = app.workspace.getLayout().main.children.filter((c:any) => c.type === "leaf");
-    if(mainLeaves.length === 0) {
-      //@ts-ignore
-      return app.workspace.createLeafInParent(app.workspace.rootSplit);
+  if(plugin.settings.openInMainWorkspace) {
+    leaf.view.navigation = false;
+    const mainLeaf = app.workspace.getLeaf(false)
+    leaf.view.navigation = true;
+    if(plugin.settings.openInAdjacentPane || mainLeaf.view.getViewType() === 'empty') {
+      return mainLeaf;
     }
-    const targetLeaf = app.workspace.getLeafById(mainLeaves[0].id);
-    if (plugin.settings.openInAdjacentPane) {
-      return targetLeaf;
-    }
-    return plugin.app.workspace.createLeafBySplit(targetLeaf);
+    return app.workspace.createLeafBySplit(mainLeaf);
   }
 
   if (plugin.settings.openInAdjacentPane) {
-    let leafToUse = plugin.app.workspace.getAdjacentLeafInDirection(
-      leaf,
-      "right"
-    );
-    if (!leafToUse) {
-      leafToUse = plugin.app.workspace.getAdjacentLeafInDirection(leaf, "left");
+    //if in popout window
+    if(leaf.view.containerEl.ownerDocument !== document) {
+      const popoutLeaves = new Set<WorkspaceLeaf>();  
+      app.workspace.iterateAllLeaves(l=>{
+        if(l !== leaf && l.view.navigation && l.view.containerEl.ownerDocument === leaf.view.containerEl.ownerDocument) {
+          popoutLeaves.add(l);
+        }
+      });
+      if(popoutLeaves.size === 0) {
+        return app.workspace.getLeaf(true);
+      }
+      return Array.from(popoutLeaves)[0];
     }
-    if (!leafToUse) {
-      leafToUse = plugin.app.workspace.getAdjacentLeafInDirection(
-        leaf,
-        "bottom"
-      );
-    }
-    if (!leafToUse) {
-      leafToUse = plugin.app.workspace.getAdjacentLeafInDirection(leaf, "top");
-    }
-    if (!leafToUse) {
-      leafToUse = plugin.app.workspace.createLeafBySplit(leaf);
-    }
-    return leafToUse;
+
+    leaf.view.navigation = false;
+    const leafToUse = app.workspace.getLeaf(false)
+    leaf.view.navigation = true;
+    return leafToUse
   }
+
+
   return plugin.app.workspace.createLeafBySplit(leaf);
 };
 

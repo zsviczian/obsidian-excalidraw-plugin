@@ -219,7 +219,7 @@ export class GenericInputPrompt extends Modal {
   }
 
   private removeInputListener() {
-    this.inputComponent.inputEl.removeEventListener(
+    this.inputComponent?.inputEl?.removeEventListener(
       "keydown",
       this.submitEnterCallback,
     );

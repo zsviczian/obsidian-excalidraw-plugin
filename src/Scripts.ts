@@ -163,13 +163,10 @@ export class ScriptEngine {
       name: `(Script) ${scriptName}`,
       checkCallback: (checking: boolean) => {
         if (checking) {
-          return (
-            this.plugin.app.workspace.activeLeaf.view.getViewType() ==
-            VIEW_TYPE_EXCALIDRAW
-          );
+          return Boolean(app.workspace.getActiveViewOfType(ExcalidrawView));
         }
-        const view = this.plugin.app.workspace.activeLeaf.view;
-        if (view instanceof ExcalidrawView) {
+        const view = app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
           (async()=>{
             const script = await this.plugin.app.vault.read(f);
             if(script) {

@@ -30,10 +30,12 @@ export default {
   TRANSCLUDE_MOST_RECENT: "Transclude (embed) the most recently edited drawing",
   NEW_IN_NEW_PANE: "Create a new drawing - IN A NEW PANE",
   NEW_IN_ACTIVE_PANE: "Create a new drawing - IN THE CURRENT ACTIVE PANE",
+  NEW_IN_POPOUT_WINDOW: "Create a new drawing - IN A POPOUT WINDOW",
   NEW_IN_NEW_PANE_EMBED:
     "Create a new drawing - IN A NEW PANE - and embed into active document",
   NEW_IN_ACTIVE_PANE_EMBED:
     "Create a new drawing - IN THE CURRENT ACTIVE PANE - and embed into active document",
+  NEW_IN_POPOUT_WINDOW_EMBED: "Create a new drawing - IN A POPOUT WINDOW - and embedd into active document",
   EXPORT_SVG: "Save as SVG next to the current file",
   EXPORT_PNG: "Save as PNG next to the current file",
   TOGGLE_LOCK: "Toggle Text Element edit RAW/PREVIEW",
@@ -189,10 +191,14 @@ export default {
     "If you don't want text accidentally changing in your drawings use <code>[[links|with aliases]]</code>.",
   ADJACENT_PANE_NAME: "Open in adjacent pane",
   ADJACENT_PANE_DESC:
-    "When CTRL/CMD+SHIFT clicking a link in Excalidraw by default the plugin will open the link in a new pane. " +
+    "When CTRL/CMD+SHIFT clicking a link in Excalidraw, by default the plugin will open the link in a new pane. " +
     "Turning this setting on, Excalidraw will first look for an existing adjacent pane, and try to open the link there. " +
-    "Excalidraw will first look too the right, then to the left, then down, then up. If no pane is found, Excalidraw will open " +
-    "a new pane.",
+    "Excalidraw will look for the adjacent pane based on your focus/navigation history, i.e. the workpane that was active before you " +
+    "activated Excalidraw.",
+  MAINWORKSPACE_PANE_NAME: "Open in main workspace",
+  MAINWORKSPACE_PANE_DESC:
+    "When CTRL/CMD+SHIFT clicking a link in Excalidraw, by default the plugin will open the link in a new pane in the current active window. " +
+    "Turning this setting on, Excalidraw will open the link in an existing or new pane in the main workspace. ",  
   LINK_BRACKETS_NAME: "Show <code>[[brackets]]</code> around links",
   LINK_BRACKETS_DESC: `${
     "In PREVIEW mode, when parsing Text Elements, place brackets around links. " +

@@ -361,7 +361,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       params?.filename
         ? params.filename + (params.filename.endsWith(".md") ? "": ".excalidraw.md")
         : getDrawingFilename(this.plugin.settings),
-      params?.onNewPane ? params.onNewPane : false,
+      (params?.onNewPane ? params.onNewPane : false)?"new-pane":"active-pane",
       params?.foldername ? params.foldername : this.plugin.settings.folder,
       this.plugin.settings.compatibilityMode
         ? JSON.stringify(scene, null, "\t")
@@ -1141,7 +1141,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
    */
   setView(view: ExcalidrawView | "first" | "active"): ExcalidrawView {
     if (view == "active") {
-      const v = this.plugin.app.workspace.activeLeaf.view;
+      const v = this.plugin.app.workspace.getActiveViewOfType(ExcalidrawView);
       if (!(v instanceof ExcalidrawView)) {
         return;
       }

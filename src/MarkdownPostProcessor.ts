@@ -198,7 +198,7 @@ const createImageDiv = async (
       if (src) {
         plugin.openDrawing(
           vault.getAbstractFileByPath(src) as TFile,
-          ev[CTRL_OR_CMD],
+          ev[CTRL_OR_CMD]?"new-pane":"active-pane",
         );
       } //.ctrlKey||ev.metaKey);
     });
@@ -514,7 +514,7 @@ export const observer = new MutationObserver(async (m) => {
       if (src) {
         plugin.openDrawing(
           vault.getAbstractFileByPath(src) as TFile,
-          ev[CTRL_OR_CMD],
+          ev[CTRL_OR_CMD]?"new-pane":"active-pane",
         );
       } //.ctrlKey||ev.metaKey);
     });
