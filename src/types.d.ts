@@ -6,12 +6,13 @@ import { ExcalidrawAutomate } from "./ExcalidrawAutomate";
 import ExcalidrawView, { ExportSettings } from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
 
+
 export type ConnectionPoint = "top" | "bottom" | "left" | "right" | null;
 
 export type Packages = {
   react: any,
   reactDOM: any,
-  excalidrawLib: any
+  excalidrawLib: any,
 }
 
 export interface ExcalidrawAutomateInterface {

@@ -119,6 +119,9 @@ declare module "obsidian" {
 }
 
 declare const EXCALIDRAW_PACKAGES:string;
+declare const react:any;
+declare const reactDOM:any;
+declare const excalidrawLib: any;
 declare const PLUGIN_VERSION:string;
 
 export default class ExcalidrawPlugin extends Plugin {
@@ -168,7 +171,6 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public getPackage(win:Window):Packages {
     if(win===window) {
-      //@ts-ignore
       return {react, reactDOM, excalidrawLib};
     }
     if(this.packageMap.has(win)) {

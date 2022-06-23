@@ -888,13 +888,12 @@ export default class ExcalidrawView extends TextFileView {
   diskIcon: HTMLElement;
 
   onload() {
-    //app.workspace.onLayoutReady(()=>{
-      const doc = app.isMobile?document:this.containerEl.ownerDocument;
-      this.ownerDocument = doc;
-      this.ownerWindow = this.ownerDocument.defaultView;
-      this.plugin.getPackage(this.ownerWindow);
-      this.semaphores.scriptsReady = true;
-    //});
+    const doc = app.isMobile?document:this.containerEl.ownerDocument;
+    this.ownerDocument = doc;
+    this.ownerWindow = this.ownerDocument.defaultView;
+    this.plugin.getPackage(this.ownerWindow);
+    this.semaphores.scriptsReady = true;
+
     this.addAction(SCRIPTENGINE_ICON_NAME, t("INSTALL_SCRIPT_BUTTON"), () => {
       new ScriptInstallPrompt(this.plugin).open();
     });
@@ -2454,8 +2453,12 @@ export default class ExcalidrawView extends TextFileView {
           }, 400);
         }
       };
-      const Excalidraw = this.plugin.getPackage(this.ownerWindow).excalidrawLib.Excalidraw;
-      const getSceneVersion = this.plugin.getPackage(this.ownerWindow).excalidrawLib.getSceneVersion;
+
+      const {
+        Excalidraw,
+        getSceneVersion,
+      } = this.plugin.getPackage(this.ownerWindow).excalidrawLib;
+
       const excalidrawDiv = React.createElement(
         "div",
         {

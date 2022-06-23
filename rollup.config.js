@@ -14,7 +14,6 @@ import LZString from 'lz-string';
 import postprocess from 'rollup-plugin-postprocess';
 
 const isProd = (process.env.NODE_ENV === "production");
-console.log("Is production", isProd);
 
 const excalidraw_pkg = isProd
   ? fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/excalidraw.production.min.js", "utf8")
@@ -71,15 +70,17 @@ const BUILD_CONFIG = {
     commonjs(),
     nodeResolve({ browser: true, preferBuiltins: false }),
     typescript({inlineSources: !isProd}),
-    ...isProd ? [
+    ...isProd 
+    ? [
       terser({toplevel: false, compress: {passes: 2}}),
-      //!postprocess: 
+      //!postprocess - the version available on npmjs does not work, need this update: 
       //  npm install brettz9/rollup-plugin-postprocess#update --save-dev
       //  https://github.com/developit/rollup-plugin-postprocess/issues/10
       postprocess([
         [/,React=require\("react"\);/, packageString],
       ])
-    ] : [
+    ] 
+    : [
       postprocess([
         [/var React = require\('react'\);/, packageString],
       ])
