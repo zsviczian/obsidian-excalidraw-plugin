@@ -23,6 +23,8 @@ import { ExportSettings } from "../ExcalidrawView";
 import { compressToBase64, decompressFromBase64 } from "lz-string";
 import { getIMGFilename } from "./FileUtils";
 
+declare const PLUGIN_VERSION:string;
+
 const {
   exportToSvg,
   exportToBlob,
@@ -47,8 +49,6 @@ export const checkExcalidrawVersion = async (app: App) => {
     return;
   }
   versionUpdateChecked = true;
-  //@ts-ignore
-  const manifest = app.plugins.manifests[PLUGIN_ID];
 
   try {
     const gitAPIrequest = async () => {
@@ -69,9 +69,9 @@ export const checkExcalidrawVersion = async (app: App) => {
       .filter((el: any) => el.version.match(/^\d+\.\d+\.\d+$/))
       .sort((el1: any, el2: any) => el2.published - el1.published)[0].version;
 
-    if (latestVersion > manifest.version) {
+    if (latestVersion > PLUGIN_VERSION) {
       new Notice(
-        `A newer version of Excalidraw is available in Community Plugins.\n\nYou are using ${manifest.version}.\nThe latest is ${latestVersion}`,
+        `A newer version of Excalidraw is available in Community Plugins.\n\nYou are using ${PLUGIN_VERSION}.\nThe latest is ${latestVersion}`,
       );
     }
   } catch (e) {

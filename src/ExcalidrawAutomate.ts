@@ -40,6 +40,8 @@ import { t } from "./lang/helpers";
 import { ScriptEngine } from "./Scripts";
 import { ConnectionPoint, ExcalidrawAutomateInterface } from "./types";
 
+declare const PLUGIN_VERSION:string;
+
 const {
   determineFocusDistance,
   intersectElementWithLine,
@@ -1618,9 +1620,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
    * @returns 
    */
   verifyMinimumPluginVersion(requiredVersion: string): boolean {
-    //@ts-ignore
-    const manifest = this.plugin.app.plugins.manifests[PLUGIN_ID];
-    return manifest.version >= requiredVersion;
+    return PLUGIN_VERSION >= requiredVersion;
   };
 
   /**

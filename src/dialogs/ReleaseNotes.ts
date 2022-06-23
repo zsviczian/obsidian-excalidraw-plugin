@@ -2,6 +2,8 @@ import { App, MarkdownRenderer, Modal } from "obsidian";
 import ExcalidrawPlugin from "../main";
 import { FIRST_RUN, RELEASE_NOTES } from "./Messages";
 
+declare const PLUGIN_VERSION:string;
+
 export class ReleaseNotes extends Modal {
   private plugin: ExcalidrawPlugin;
   private version: string;
@@ -23,9 +25,7 @@ export class ReleaseNotes extends Modal {
   async onClose() {
     this.contentEl.empty();
     await this.plugin.loadSettings();
-    this.plugin.settings.previousRelease =
-      //@ts-ignore
-      this.app.plugins.manifests["obsidian-excalidraw-plugin"].version;
+    this.plugin.settings.previousRelease = PLUGIN_VERSION
     await this.plugin.saveSettings();
   }
 

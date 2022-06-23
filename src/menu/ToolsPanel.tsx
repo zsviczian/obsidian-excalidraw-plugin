@@ -11,6 +11,7 @@ import { ReleaseNotes } from "../dialogs/ReleaseNotes";
 import { ScriptIconMap } from "../Scripts";
 import { getIMGFilename } from "../utils/FileUtils";
 
+declare const PLUGIN_VERSION:string;
 const dark = '<svg style="stroke:#ced4da;#212529;color:#ced4da;fill:#ced4da" ';
 const light = '<svg style="stroke:#212529;color:#212529;fill:#212529" ';
 
@@ -278,15 +279,10 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     key={"release-notes"}
                     title={t("READ_RELEASE_NOTES")}
                     action={() => {
-                      const version: string =
-                        //@ts-ignore
-                        this.props.view.app.plugins.manifests[
-                          "obsidian-excalidraw-plugin"
-                        ].version;
                       new ReleaseNotes(
                         this.props.view.app,
                         this.props.view.plugin,
-                        version,
+                        PLUGIN_VERSION,
                       ).open();
                     }}
                     icon={ICONS.releaseNotes}

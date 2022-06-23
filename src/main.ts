@@ -119,6 +119,7 @@ declare module "obsidian" {
 }
 
 declare const EXCALIDRAW_PACKAGES:string;
+declare const PLUGIN_VERSION:string;
 
 export default class ExcalidrawPlugin extends Plugin {
   private excalidrawFiles: Set<TFile> = new Set<TFile>();
@@ -216,29 +217,16 @@ export default class ExcalidrawPlugin extends Plugin {
     //https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/main.ts#L267
     this.registerMonkeyPatches();
 
-    if (!this.app.isMobile) {
-      const electron: string = process?.versions?.electron;
-      if (electron && electron?.startsWith("8.")) {
-        new Notice(
-          `You are running an older version of the electron Browser (${electron}). If Excalidraw does not start up, please reinstall Obsidian with the latest installer and try again.`,
-          10000,
-        );
-      }
-    }
-
     //    const patches = new OneOffs(this);
     if (this.settings.showReleaseNotes) {
       //I am repurposing imageElementNotice, if the value is true, this means the plugin was just newly installed to Obsidian.
       const obsidianJustInstalled = this.settings.imageElementNotice;
 
-      const version: string =
-        //@ts-ignore
-        this.app.plugins.manifests["obsidian-excalidraw-plugin"].version;
-      if (version > this.settings.previousRelease) {
+      if (PLUGIN_VERSION > this.settings.previousRelease) {
         new ReleaseNotes(
           this.app,
           this,
-          obsidianJustInstalled ? null : version,
+          obsidianJustInstalled ? null : PLUGIN_VERSION,
         ).open();
       }
     }
@@ -1069,10 +1057,7 @@ export default class ExcalidrawPlugin extends Plugin {
         if (checking) {
           return Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
         }
-        const version: string =
-          //@ts-ignore
-          this.app.plugins.manifests["obsidian-excalidraw-plugin"].version;
-        new ReleaseNotes(this.app, this, version).open();
+        new ReleaseNotes(this.app, this, PLUGIN_VERSION).open();
         return true;
       },
     });

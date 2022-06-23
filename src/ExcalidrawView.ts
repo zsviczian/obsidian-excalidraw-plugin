@@ -888,13 +888,13 @@ export default class ExcalidrawView extends TextFileView {
   diskIcon: HTMLElement;
 
   onload() {
-    app.workspace.onLayoutReady(()=>{
+    //app.workspace.onLayoutReady(()=>{
       const doc = app.isMobile?document:this.containerEl.ownerDocument;
       this.ownerDocument = doc;
       this.ownerWindow = this.ownerDocument.defaultView;
       this.plugin.getPackage(this.ownerWindow);
       this.semaphores.scriptsReady = true;
-    });
+    //});
     this.addAction(SCRIPTENGINE_ICON_NAME, t("INSTALL_SCRIPT_BUTTON"), () => {
       new ScriptInstallPrompt(this.plugin).open();
     });
