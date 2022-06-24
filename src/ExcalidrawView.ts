@@ -888,6 +888,8 @@ export default class ExcalidrawView extends TextFileView {
   diskIcon: HTMLElement;
 
   onload() {
+    //@ts-ignore
+    this.containerEl.onWindowMigrated(()=>this.leaf.rebuildView());
     const doc = app.isMobile?document:this.containerEl.ownerDocument;
     this.ownerDocument = doc;
     this.ownerWindow = this.ownerDocument.defaultView;

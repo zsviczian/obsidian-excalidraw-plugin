@@ -17,6 +17,9 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.7.3": `
+Obsidian 0.15.3 support for dragging and dropping work panes between Obsidian windows.
+`,
 "1.7.2": `
 Due to some of the changes to the code, I highly recommend restarting Obsidian after installing this update to Excalidraw.
 
