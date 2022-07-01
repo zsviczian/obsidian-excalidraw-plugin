@@ -888,8 +888,9 @@ export default class ExcalidrawView extends TextFileView {
   diskIcon: HTMLElement;
 
   onload() {
+    const apiMissing = Boolean(typeof this.containerEl.onWindowMigrated === "undefined")
     //@ts-ignore
-    this.containerEl.onWindowMigrated(()=>this.leaf.rebuildView());
+    if(!app.isMobile && !apiMissing) this.containerEl.onWindowMigrated(()=>this.leaf.rebuildView());
     const doc = app.isMobile?document:this.containerEl.ownerDocument;
     this.ownerDocument = doc;
     this.ownerWindow = this.ownerDocument.defaultView;
@@ -1725,7 +1726,7 @@ export default class ExcalidrawView extends TextFileView {
     );
   }
 
-  onMoreOptionsMenu(menu: Menu) {
+  onPaneMenu(menu: Menu, source: string): void {
     // Add a menu item to force the board to markdown view
     if (!this.compatibilityMode) {
       menu
@@ -1735,7 +1736,8 @@ export default class ExcalidrawView extends TextFileView {
             .setIcon("document")
             .onClick(() => {
               this.openAsMarkdown();
-            });
+            })
+            .setSection("pane");
         })
         .addItem((item) => {
           item
@@ -1743,13 +1745,15 @@ export default class ExcalidrawView extends TextFileView {
             .setIcon(ICON_NAME)
             .onClick(async () => {
               this.exportExcalidraw();
-            });
+            })
+            .setSection("pane");
         });
     } else {
       menu.addItem((item) => {
         item
           .setTitle(t("CONVERT_FILE"))
-          .onClick(() => this.convertExcalidrawToMD());
+          .onClick(() => this.convertExcalidrawToMD())
+          .setSection("pane");
       });
     }
     menu
@@ -1757,6 +1761,7 @@ export default class ExcalidrawView extends TextFileView {
         item
           .setTitle(t("SAVE_AS_PNG"))
           .setIcon(PNG_ICON_NAME)
+          .setSection("pane")
           .onClick(async (ev) => {
             if (!this.getScene || !this.file) {
               return;
@@ -1776,12 +1781,14 @@ export default class ExcalidrawView extends TextFileView {
               return;
             }
             this.savePNG();
-          });
+          })
+          .setSection("pane");
       })
       .addItem((item) => {
         item
           .setTitle(t("SAVE_AS_SVG"))
           .setIcon(SVG_ICON_NAME)
+          .setSection("pane")
           .onClick(async (ev) => {
             if (!this.getScene || !this.file) {
               return;
@@ -1803,7 +1810,7 @@ export default class ExcalidrawView extends TextFileView {
           });
       })
       .addSeparator();
-    super.onMoreOptionsMenu(menu);
+    super.onPaneMenu(menu, source);
   }
 
   async getLibrary() {

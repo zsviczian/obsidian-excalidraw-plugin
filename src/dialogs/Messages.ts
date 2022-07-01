@@ -17,6 +17,11 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.7.4": `
+- Obsidian 0.15.3 support for dragging and dropping work panes between Obsidian windows.
+- Addressed Obsidian changes effecting the more-options menu.
+- Addressed incompatibility with Obsidian Mobile 1.2.2.
+`,
 "1.7.3": `
 Obsidian 0.15.3 support for dragging and dropping work panes between Obsidian windows.
 `,

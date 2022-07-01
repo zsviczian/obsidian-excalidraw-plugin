@@ -1317,7 +1317,7 @@ export default class ExcalidrawPlugin extends Plugin {
     // Add a menu item to go back to Excalidraw view
     this.register(
       around(MarkdownView.prototype, {
-        onMoreOptionsMenu(next) {
+        onPaneMenu(next) {
           return function (menu: Menu) {
             const file = this.file;
             const cache = file
@@ -1337,6 +1337,7 @@ export default class ExcalidrawPlugin extends Plugin {
                 item
                   .setTitle(t("OPEN_AS_EXCALIDRAW"))
                   .setIcon(ICON_NAME)
+                  .setSection("pane")
                   .onClick(() => {
                     self.excalidrawFileModes[this.leaf.id || file.path] =
                       VIEW_TYPE_EXCALIDRAW;
@@ -1344,7 +1345,6 @@ export default class ExcalidrawPlugin extends Plugin {
                   });
               })
               .addSeparator();
-
             next.call(this, menu);
           };
         },
