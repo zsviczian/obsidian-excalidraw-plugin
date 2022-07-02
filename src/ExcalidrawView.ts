@@ -56,8 +56,7 @@ import {
 } from "./utils/FileUtils";
 import {
   checkExcalidrawVersion,
-  decompress,
-  //debug,
+  debug,
   embedFontsInSVG,
   errorlog,
   getExportTheme,
@@ -87,6 +86,7 @@ import { ObsidianMenu } from "./menu/ObsidianMenu";
 import { ToolsPanel } from "./menu/ToolsPanel";
 import { ScriptEngine } from "./Scripts";
 import { getTextElementAtPointer, getImageElementAtPointer, getElementWithLinkAtPointer } from "./utils/GetElementAtPointer";
+
 
 export enum TextMode {
   parsed,
@@ -441,10 +441,11 @@ export default class ExcalidrawView extends TextFileView {
     }
 
     try {
-      const allowSave =
+      const allowSave = Boolean (
         (this.semaphores.dirty !== null && this.semaphores.dirty) ||
         this.semaphores.autosaving ||
-        forcesave; //dirty == false when view.file == null;
+        forcesave
+      ); //dirty == false when view.file == null;
       const scene = this.getScene();
 
       if (this.compatibilityMode) {
@@ -788,7 +789,7 @@ export default class ExcalidrawView extends TextFileView {
             addFiles,
             this.plugin,
           );
-          this.setDirty();
+          this.setDirty(1);
         });
         return;
       }
@@ -814,7 +815,7 @@ export default class ExcalidrawView extends TextFileView {
               ef.resetImage(this.file.path, link);
               await this.save(false);
               await this.loadSceneFiles();
-              this.setDirty();
+              this.setDirty(2);
             });
             return;
           }
@@ -886,6 +887,14 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   diskIcon: HTMLElement;
+
+  excalidrawGetSceneVersion: (elements: ExcalidrawElement[]) => number;
+  getSceneVersion (elements: ExcalidrawElement[]):number {
+    if(!this.excalidrawGetSceneVersion) {
+      this.excalidrawGetSceneVersion = this.plugin.getPackage(this.ownerWindow).excalidrawLib.getSceneVersion;
+    }
+    return this.excalidrawGetSceneVersion(elements.filter(el=>!el.isDeleted));
+  }
 
   onload() {
     const apiMissing = Boolean(typeof this.containerEl.onWindowMigrated === "undefined")
@@ -1530,12 +1539,11 @@ export default class ExcalidrawView extends TextFileView {
           }
         }
       })
-      const getSceneVersion = this.plugin.getPackage(this.ownerWindow).excalidrawLib.getSceneVersion;
-      this.previousSceneVersion = getSceneVersion(sceneElements);
+      this.previousSceneVersion = this.getSceneVersion(sceneElements);
       //changing files could result in a race condition for sync. If at the end of sync there are differences
       //set dirty will trigger an autosave
-      if(getSceneVersion(inData.scene.elements) !== this.previousSceneVersion) {
-        this.setDirty();
+      if(this.getSceneVersion(inData.scene.elements) !== this.previousSceneVersion) {
+        this.setDirty(3);
       }
       this.excalidrawAPI.updateScene({elements: sceneElements});
       if(reloadFiles) this.loadSceneFiles();
@@ -1632,7 +1640,7 @@ export default class ExcalidrawView extends TextFileView {
       this.plugin.settings.compress !== isCompressed &&
       !this.isEditedAsMarkdownInOtherView()
     ) {
-      this.setDirty();
+      this.setDirty(4);
     }
   }
 
@@ -1645,7 +1653,8 @@ export default class ExcalidrawView extends TextFileView {
     );
   }
 
-  public setDirty() {
+  public setDirty(debug?:number) {
+    //console.log(debug);
     this.semaphores.dirty = this.file?.path;
     this.diskIcon.querySelector("svg").addClass("excalidraw-dirty");
   }
@@ -1658,8 +1667,7 @@ export default class ExcalidrawView extends TextFileView {
     this.semaphores.dirty = null;
     const el = api.getSceneElements();
     if (el) {
-      const getSceneVersion = this.plugin.getPackage(this.ownerWindow).excalidrawLib.getSceneVersion;
-      this.previousSceneVersion = getSceneVersion(el);
+      this.previousSceneVersion = this.getSceneVersion(el);
     }
     this.diskIcon.querySelector("svg").removeClass("excalidraw-dirty");
   }
@@ -2208,7 +2216,7 @@ export default class ExcalidrawView extends TextFileView {
         if (save) {
           await this.save(false); //preventReload=false will ensure that markdown links are paresed and displayed correctly
         } else {
-          this.setDirty();
+          this.setDirty(5);
         }
         return true;
       };
@@ -2465,7 +2473,6 @@ export default class ExcalidrawView extends TextFileView {
 
       const {
         Excalidraw,
-        getSceneVersion,
       } = this.plugin.getPackage(this.ownerWindow).excalidrawLib;
 
       const excalidrawDiv = React.createElement(
@@ -2589,7 +2596,7 @@ export default class ExcalidrawView extends TextFileView {
               if (!this.semaphores.preventAutozoom) {
                 this.zoomToFit(false);
               }
-              this.previousSceneVersion = getSceneVersion(et);
+              this.previousSceneVersion = this.getSceneVersion(et);
               this.previousBackgroundColor = st.viewBackgroundColor;
               return;
             }
@@ -2605,15 +2612,16 @@ export default class ExcalidrawView extends TextFileView {
               st.editingGroupId === null &&*/
               st.editingLinearElement === null
             ) {
-              const sceneVersion = getSceneVersion(et);
+              const sceneVersion = this.getSceneVersion(et);
               if (
-                (sceneVersion > 0 &&
+                ((sceneVersion > 0 || 
+                  (sceneVersion === 0 && et.length > 0)) && //Addressing the rare case when the last element is deleted from the scene
                   sceneVersion !== this.previousSceneVersion) ||
                 st.viewBackgroundColor !== this.previousBackgroundColor
               ) {
                 this.previousSceneVersion = sceneVersion;
                 this.previousBackgroundColor = st.viewBackgroundColor;
-                this.setDirty();
+                this.setDirty(6);
               }
             }
           },
@@ -2861,7 +2869,7 @@ export default class ExcalidrawView extends TextFileView {
 
             if (isDeleted) {
               this.excalidrawData.deleteTextElement(textElement.id);
-              this.setDirty();
+              this.setDirty(7);
               return [null, null, null];
             }
 
@@ -2876,7 +2884,7 @@ export default class ExcalidrawView extends TextFileView {
             ) {
               //the user made changes to the text or the text is missing from Excalidraw Data (recently copy/pasted)
               //setTextElement will attempt a quick parse (without processing transclusions)
-              this.setDirty();
+              this.setDirty(8);
               const [parseResultWrapped, parseResultOriginal, link] =
                 this.excalidrawData.setTextElement(
                   textElement.id,

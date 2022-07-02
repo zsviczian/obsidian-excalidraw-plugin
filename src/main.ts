@@ -82,6 +82,7 @@ import {
   log,
   setLeftHandedMode,
   sleep,
+  debug,
 } from "./utils/Utils";
 import { getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark } from "./utils/ObsidianUtils";
 //import { OneOffs } from "./OneOffs";
@@ -98,6 +99,7 @@ import { ReleaseNotes } from "./dialogs/ReleaseNotes";
 import { decompressFromBase64 } from "lz-string";
 import { Packages } from "./types";
 import * as React from "react";
+
 
 declare module "obsidian" {
   interface App {
@@ -148,7 +150,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public opencount: number = 0;
   public ea: ExcalidrawAutomate;
   //A master list of fileIds to facilitate copy / paste
-  public filesMaster: Map<FileId, { path: string; hasSVGwithBitmap: boolean }> =
+  public filesMaster: Map<FileId, { path: string; hasSVGwithBitmap: boolean; blockrefData: string }> =
     null; //fileId, path
   public equationsMaster: Map<FileId, string> = null; //fileId, formula
   public mathjax: any = null;
@@ -162,7 +164,7 @@ export default class ExcalidrawPlugin extends Plugin {
     super(app, manifest);
     this.filesMaster = new Map<
       FileId,
-      { path: string; hasSVGwithBitmap: boolean }
+      { path: string; hasSVGwithBitmap: boolean; blockrefData: string }
     >();
     this.equationsMaster = new Map<FileId, string>();
   }
@@ -1485,7 +1487,9 @@ export default class ExcalidrawPlugin extends Plugin {
           if (previouslyActiveEV.leaf != leaf) {
             //if loading new view to same leaf then don't save. Excalidarw view will take care of saving anyway.
             //avoid double saving
-            await previouslyActiveEV.save(true); //this will update transclusions in the drawing
+            if(previouslyActiveEV.semaphores.dirty) {
+              await previouslyActiveEV.save(true); //this will update transclusions in the drawing
+            }
           }
           if (previouslyActiveEV.file) {
             self.triggerEmbedUpdates(previouslyActiveEV.file.path);

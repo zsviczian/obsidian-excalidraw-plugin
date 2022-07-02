@@ -1039,10 +1039,12 @@ export class ExcalidrawData {
     const processedIds = new Set<string>();
     fileIds.forEach(fileId=>{
       if(processedIds.has(fileId)) {
-        const file = this.files.get(fileId as FileId);
-        const equation = this.equations.get(fileId as FileId);
+        const file = this.getFile(fileId);
+        //const file = this.files.get(fileId as FileId);
+        const equation = this.getEquation(fileId);
+        //const equation = this.equations.get(fileId as FileId);
         //images should have a single reference, but equations and markdown embeds should have as many as instances of the file in the scene
-        if(file && file.file.extension !== "md") {
+        if(file && (file.file.extension !== "md" || !this.plugin.isExcalidrawFile(file.file))) {
           return;
         }
         const newId = fileid();
@@ -1051,10 +1053,12 @@ export class ExcalidrawData {
         dirty = true;
         processedIds.add(newId);
         if(file) {
-           this.files.set(newId as FileId,new EmbeddedFile(this.plugin,this.file.path,file.linkParts.original))
+          this.setFile(newId as FileId,new EmbeddedFile(this.plugin,this.file.path,file.linkParts.original));
+           //this.files.set(newId as FileId,new EmbeddedFile(this.plugin,this.file.path,file.linkParts.original))
         }
         if(equation) {
-          this.equations.set(newId as FileId, equation);
+          this.setEquation(newId as FileId, {latex:equation.latex, isLoaded:false});
+          //this.equations.set(newId as FileId, equation);
         }
       }
       processedIds.add(fileId);
@@ -1350,8 +1354,13 @@ export class ExcalidrawData {
     if (!data.file) {
       return;
     }
+
+    const parts = data.linkParts.original.split("#");
     this.plugin.filesMaster.set(fileId, {
-      path: data.file.path,
+      path:data.file.path,
+      blockrefData: parts.length === 1
+        ? null
+        : parts[1],
       hasSVGwithBitmap: data.isSVGwithBitmap,
     });
   }
@@ -1361,7 +1370,19 @@ export class ExcalidrawData {
   }
 
   public getFile(fileId: FileId): EmbeddedFile {
-    return this.files.get(fileId);
+    let embeddedFile = this.files.get(fileId);
+    if(embeddedFile) return embeddedFile;
+    const masterFile = this.plugin.filesMaster.get(fileId);
+    if(!masterFile) return embeddedFile;
+    embeddedFile = new EmbeddedFile(
+      this.plugin,
+      this.file.path,
+      masterFile.blockrefData
+        ? masterFile.path + "#" + masterFile.blockrefData
+        : masterFile.path
+    );
+    this.files.set(fileId,embeddedFile);
+    return embeddedFile;
   }
 
   public getFileEntries() {
@@ -1380,15 +1401,17 @@ export class ExcalidrawData {
       return true;
     }
     if (this.plugin.filesMaster.has(fileId)) {
-      const fileMaster = this.plugin.filesMaster.get(fileId);
-      if (!this.app.vault.getAbstractFileByPath(fileMaster.path)) {
+      const masterFile = this.plugin.filesMaster.get(fileId);
+      if (!this.app.vault.getAbstractFileByPath(masterFile.path)) {
         this.plugin.filesMaster.delete(fileId);
         return true;
       } // the file no longer exists
       const embeddedFile = new EmbeddedFile(
         this.plugin,
         this.file.path,
-        fileMaster.path,
+        masterFile.blockrefData
+          ? masterFile.path + "#" + masterFile.blockrefData
+          : masterFile.path
       );
       this.files.set(fileId, embeddedFile);
       return true;
@@ -1405,7 +1428,12 @@ export class ExcalidrawData {
   }
 
   public getEquation(fileId: FileId): { latex: string; isLoaded: boolean } {
-    return this.equations.get(fileId);
+    let result = this.equations.get(fileId);
+    if(result) return result;
+    const latex = this.plugin.equationsMaster.get(fileId);
+    if(!latex) return result;
+    this.equations.set(fileId, {latex, isLoaded: false});
+    return {latex, isLoaded: false};
   }
 
   public getEquationEntries() {
@@ -1514,6 +1542,7 @@ export const getTransclusion = async (
     const c = headings[i].node.children[0];
     const dataHeading = headings[i].node.data?.hProperties?.dataHeading;
     const cc = c?.children;
+    //const refNoSpace = linkParts.ref.replaceAll(" ","");
     if (
       !startPos &&
       (c?.value?.replaceAll(REG_BLOCK_REF_CLEAN, "") === linkParts.ref ||
