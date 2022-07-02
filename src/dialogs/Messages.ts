@@ -17,6 +17,17 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.7.5": `
+# New
+- Deployed sidebar for libraries panel from excalidraw.com ([#5274](https://github.com/excalidraw/excalidraw/pull/5274)). You can dock the library to the right side depending on the screen real estate available (i.e. does not work on mobiles).
+
+# Fixed
+- When copying 2 identical images from one drawing to another, the second image got corrupted in the process ([#672]https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/672)).
+- When making a copy of an equation in a drawing and then without first closing/opening the file, immediately copying the new equation to another drawing, the equation did not get displayed until the file was closed and reopened.
+- Copying a markdown embed from one drawing to another, in the destination the markdown embed appeared without the section/block reference and without the width & height (i.e. these settings had to be done again)
+- Improved the parsing of section references in embeds. When you had ${String.fromCharCode(96)}&${String.fromCharCode(96)} in the section name in a markdown file, when embedding that markdown document into Excalidraw, the section reference did not work as expected ([#681 ](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/681)).
+- Improved the logic for autosave to better detect changes to the document, and to reduce too frequent export of ${String.fromCharCode(96)}.png${String.fromCharCode(96)} and/or ${String.fromCharCode(96)}.svg${String.fromCharCode(96)} files, when auto export is enabled in plugin settings.
+`,
 "1.7.4": `
 - Obsidian 0.15.3 support dragging and dropping work panes between Obsidian windows.
 - Addressed Obsidian changes affecting the more-options menu.

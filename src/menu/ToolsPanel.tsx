@@ -194,7 +194,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                 : "none",
             height: "fit-content",
             maxHeight: "400px",
-            zIndex: 3,
+            zIndex: 5,
           }}
         >
           <div
