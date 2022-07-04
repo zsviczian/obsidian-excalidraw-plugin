@@ -860,8 +860,8 @@ export default class ExcalidrawView extends TextFileView {
         ev.shiftKey || this.linksAlwaysOpenInANewPane
           ? getNewOrAdjacentLeaf(this.plugin, view.leaf)
           : view.leaf;
-      await leaf.openFile(file, subpath ? { eState: { subpath } } : undefined); //if file exists open file and jump to reference
-      view.app.workspace.setActiveLeaf(leaf, true, true);
+      await leaf.openFile(file, subpath ? { active: false, eState: { subpath } } : undefined); //if file exists open file and jump to reference
+      //view.app.workspace.setActiveLeaf(leaf, true, true); //0.15.4 ExcaliBrain focus issue
     } catch (e) {
       new Notice(e, 4000);
     }
@@ -3019,9 +3019,9 @@ export default class ExcalidrawView extends TextFileView {
                       : this.leaf;
                     await leaf.openFile(
                       file,
-                      subpath ? { eState: { subpath } } : undefined,
+                      subpath ? { active: false, eState: { subpath } } : {active:false},
                     ); //if file exists open file and jump to reference
-                    this.app.workspace.setActiveLeaf(leaf, true, true);
+                    //this.app.workspace.setActiveLeaf(leaf, true, true); //0.15.4 ExcaliBrain focus issue
                   } catch (e) {
                     new Notice(e, 4000);
                   }

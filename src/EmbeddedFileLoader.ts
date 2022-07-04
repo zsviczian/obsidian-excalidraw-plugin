@@ -510,6 +510,7 @@ const convertMarkdownToSVG = async (
   mdDIV.style.color = fontColor && fontColor !== "" ? fontColor : "initial";
 
   await MarkdownRenderer.renderMarkdown(text, mdDIV, file.path, plugin);
+
   mdDIV
     .querySelectorAll(":scope > *[class^='frontmatter']")
     .forEach((el) => mdDIV.removeChild(el));

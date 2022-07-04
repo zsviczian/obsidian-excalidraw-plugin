@@ -1594,7 +1594,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       return null;
     }
     const leaf = getNewOrAdjacentLeaf(this.plugin, this.targetView.leaf);
-    leaf.openFile(file);
+    leaf.openFile(file, {active: false});
     return leaf;
   };
 

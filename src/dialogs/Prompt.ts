@@ -388,8 +388,8 @@ export class NewFileActions extends Modal {
     const leaf = this.newPane
       ? getNewOrAdjacentLeaf(this.plugin, this.view.leaf)
       : this.view.leaf;
-    leaf.openFile(file);
-    this.app.workspace.setActiveLeaf(leaf, true, true);
+    leaf.openFile(file, {active:true});
+    //this.app.workspace.setActiveLeaf(leaf, true, true);
   }
 
   createForm(): void {

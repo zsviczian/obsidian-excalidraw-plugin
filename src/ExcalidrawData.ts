@@ -1044,7 +1044,7 @@ export class ExcalidrawData {
         const equation = this.getEquation(fileId);
         //const equation = this.equations.get(fileId as FileId);
         //images should have a single reference, but equations and markdown embeds should have as many as instances of the file in the scene
-        if(file && (file.file.extension !== "md" || !this.plugin.isExcalidrawFile(file.file))) {
+        if(file && (file.file.extension !== "md" || this.plugin.isExcalidrawFile(file.file))) {
           return;
         }
         const newId = fileid();
@@ -1532,7 +1532,7 @@ export const getTransclusion = async (
           lineNum
         };    
       }
-      endPos = headings[i].node.position.start.offset - 1;
+      endPos = headings[j].node.position.start.offset - 1;
       return {
         leadingHashes: "#".repeat(depth)+" ",
         contents: contents.substring(startPos, endPos).trim(),
