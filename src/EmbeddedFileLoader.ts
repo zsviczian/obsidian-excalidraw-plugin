@@ -34,6 +34,8 @@ import {
   svgToBase64,
 } from "./utils/Utils";
 
+const THEME_FILTER = "invert(100%) hue-rotate(180deg) saturate(1.25)";
+
 export declare type MimeType =
   | "image/svg+xml"
   | "image/png"
@@ -260,8 +262,7 @@ export class EmbeddedFilesLoader {
       if (imageList.length > 0) {
         hasSVGwithBitmap = true;
       }
-      if (hasSVGwithBitmap && isDark) {
-        const THEME_FILTER = "invert(100%) hue-rotate(180deg) saturate(1.25)";
+      if (hasSVGwithBitmap && isDark) { 
         imageList.forEach((i) => {
           const id = i.parentElement?.id;
           svg.querySelectorAll(`use[href='#${id}']`).forEach((u) => {
@@ -302,17 +303,20 @@ export class EmbeddedFilesLoader {
           mimeType = "application/octet-stream";
       }
     }
-    const dataURL =
+    let dataURL =
       excalidrawSVG ??
       (file.extension === "svg"
         ? await getSVGData(app, file)
         : file.extension === "md"
-        ? await convertMarkdownToSVG(this.plugin, file, linkParts)
+        ? null
         : await getDataURL(ab, mimeType));
-    const size = await getImageSize(
-      excalidrawSVG ??
-        (file.extension === "md" ? dataURL : app.vault.getResourcePath(file)),
-    );
+
+    if(!dataURL) {
+      const result = await this.convertMarkdownToSVG(this.plugin, file, linkParts);
+      dataURL = result.dataURL;
+      hasSVGwithBitmap = result.hasSVGwithBitmap;
+    }
+    const size = await getImageSize(dataURL);
     return {
       mimeType,
       fileId: await generateIdFromFile(ab),
@@ -396,192 +400,228 @@ export class EmbeddedFilesLoader {
       errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
     }
   }
+
+  private async convertMarkdownToSVG(
+    plugin: ExcalidrawPlugin,
+    file: TFile,
+    linkParts: LinkParts,
+  ): Promise<{dataURL: DataURL, hasSVGwithBitmap:boolean}> {
+    //1.
+    //get the markdown text
+    let hasSVGwithBitmap = false;
+    const transclusion = await getTransclusion(linkParts, plugin.app, file);
+    let text = (transclusion.leadingHashes??"") + transclusion.contents;
+    if (text === "") {
+      text =
+        "# Empty markdown file\nCTRL+Click here to open the file for editing in the current active pane, or CTRL+SHIFT+Click to open it in an adjacent pane.";
+    }
+  
+    //2.
+    //get styles
+    const fileCache = plugin.app.metadataCache.getFileCache(file);
+    let fontDef: string;
+    let fontName = plugin.settings.mdFont;
+    if (
+      fileCache?.frontmatter &&
+      fileCache.frontmatter[FRONTMATTER_KEY_FONT] != null
+    ) {
+      fontName = fileCache.frontmatter[FRONTMATTER_KEY_FONT];
+    }
+    switch (fontName) {
+      case "Virgil":
+        fontDef = VIRGIL_FONT;
+        break;
+      case "Cascadia":
+        fontDef = CASCADIA_FONT;
+        break;
+      case "":
+        fontDef = "";
+        break;
+      default:
+        const font = await getFontDataURL(plugin.app, fontName, file.path);
+        fontDef = font.fontDef;
+        fontName = font.fontName;
+    }
+  
+    const fontColor = fileCache?.frontmatter
+      ? fileCache.frontmatter[FRONTMATTER_KEY_FONTCOLOR] ??
+        plugin.settings.mdFontColor
+      : plugin.settings.mdFontColor;
+  
+    let style = fileCache?.frontmatter
+      ? fileCache.frontmatter[FRONTMATTER_KEY_MD_STYLE] ?? ""
+      : "";
+    let frontmatterCSSisAfile = false;
+    if (style && style != "") {
+      const f = plugin.app.metadataCache.getFirstLinkpathDest(style, file.path);
+      if (f) {
+        style = await plugin.app.vault.read(f);
+        frontmatterCSSisAfile = true;
+      }
+    }
+    if (!frontmatterCSSisAfile) {
+      if (plugin.settings.mdCSS && plugin.settings.mdCSS !== "") {
+        const f = plugin.app.metadataCache.getFirstLinkpathDest(
+          plugin.settings.mdCSS,
+          file.path,
+        );
+        style += f ? `\n${await plugin.app.vault.read(f)}` : DEFAULT_MD_EMBED_CSS;
+      } else {
+        style += DEFAULT_MD_EMBED_CSS;
+      }
+    }
+  
+    const borderColor = fileCache?.frontmatter
+      ? fileCache.frontmatter[FRONTMATTER_KEY_BORDERCOLOR] ??
+        plugin.settings.mdBorderColor
+      : plugin.settings.mdBorderColor;
+  
+    if (borderColor && borderColor !== "" && !style.match(/svg/i)) {
+      style += `svg{border:2px solid;color:${borderColor};transform:scale(.95)}`;
+    }
+  
+    //3.
+    //SVG helper functions
+    //the SVG will first have ~infinite height. After sizing this will be reduced
+    let svgStyle = ` width="${linkParts.width}px" height="100000"`;
+    let foreignObjectStyle = ` width="${linkParts.width}px" height="100%"`;
+  
+    const svg = (xml: string, xmlFooter: string, style?: string) =>
+      `<svg xmlns="http://www.w3.org/2000/svg"${svgStyle}>${
+        style ? `<style>${style}</style>` : ""
+      }<foreignObject x="0" y="0"${foreignObjectStyle}>${xml}${
+        xmlFooter //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/286#issuecomment-982179639
+      }</foreignObject>${
+        fontDef !== "" ? `<defs><style>${fontDef}</style></defs>` : ""
+      }</svg>`;
+  
+    //4.
+    //create document div - this will be the contents of the foreign object
+    const mdDIV = createDiv();
+    mdDIV.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+    mdDIV.setAttribute("class", "excalidraw-md-host");
+    //  mdDIV.setAttribute("style",style);
+    if (fontName !== "") {
+      mdDIV.style.fontFamily = fontName;
+    }
+    mdDIV.style.overflow = "auto";
+    mdDIV.style.display = "block";
+    mdDIV.style.color = fontColor && fontColor !== "" ? fontColor : "initial";
+  
+    await MarkdownRenderer.renderMarkdown(text, mdDIV, file.path, plugin);
+  
+    mdDIV
+      .querySelectorAll(":scope > *[class^='frontmatter']")
+      .forEach((el) => mdDIV.removeChild(el));
+  
+    const internalEmbeds = Array.from(mdDIV.querySelectorAll("span[class='internal-embed']"))
+    for(let i=0;i<internalEmbeds.length;i++) {
+      const el = internalEmbeds[i];
+      const src = el.getAttribute("src");
+      if(!src) return;
+      const width = el.getAttribute("width");
+      const height = el.getAttribute("height");
+      const f = app.metadataCache.getFirstLinkpathDest(src,file.path);
+      if(!f) return;
+      const embeddedFile = await this.getObsidianImage(f,1);
+      const img = createEl("img");
+      if(width) img.setAttribute("width", width);
+      if(height) img.setAttribute("height", height);
+      img.src = embeddedFile.dataURL;
+      el.replaceWith(img);  
+    }
+  
+    //5.1
+    //get SVG size.
+    //First I need to create a fully self contained copy of the document to convert
+    //blank styles into inline styles using computedStyle
+    const iframeHost = document.body.createDiv();
+    iframeHost.style.display = "none";
+    const iframe = iframeHost.createEl("iframe");
+    const iframeDoc = iframe.contentWindow.document;
+    if (style) {
+      const styleEl = iframeDoc.createElement("style");
+      styleEl.type = "text/css";
+      styleEl.innerHTML = style;
+      iframeDoc.head.appendChild(styleEl);
+    }
+    const stylingDIV = iframeDoc.importNode(mdDIV, true);
+    iframeDoc.body.appendChild(stylingDIV);
+    const footerDIV = createDiv();
+    footerDIV.setAttribute("class", "excalidraw-md-footer");
+    iframeDoc.body.appendChild(footerDIV);
+  
+    iframeDoc.body.querySelectorAll("*").forEach((el: HTMLElement) => {
+      const elementStyle = el.style;
+      const computedStyle = window.getComputedStyle(el);
+      let style = "";
+      for (const prop in elementStyle) {
+        if (elementStyle.hasOwnProperty(prop)) {
+          style += `${prop}: ${computedStyle[prop]};`;
+        }
+      }
+      el.setAttribute("style", style);
+    });
+  
+    const xmlINiframe = new XMLSerializer().serializeToString(stylingDIV);
+    const xmlFooter = new XMLSerializer().serializeToString(footerDIV);
+    document.body.removeChild(iframeHost);
+  
+    //5.2
+    //get SVG size
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(
+      svg(xmlINiframe, xmlFooter),
+      "image/svg+xml",
+    );
+    const svgEl = doc.firstElementChild;
+    const host = createDiv();
+    host.appendChild(svgEl);
+    document.body.appendChild(host);
+    const footerHeight = svgEl.querySelector(
+      ".excalidraw-md-footer",
+    ).scrollHeight;
+    const height =
+      svgEl.querySelector(".excalidraw-md-host").scrollHeight + footerHeight;
+    const svgHeight = height <= linkParts.height ? height : linkParts.height;
+    document.body.removeChild(host);
+  
+    //finalize SVG
+    svgStyle = ` width="${linkParts.width}px" height="${svgHeight}px"`;
+    foreignObjectStyle = ` width="${linkParts.width}px" height="${svgHeight}px"`;
+    mdDIV.style.height = `${svgHeight - footerHeight}px`;
+    mdDIV.style.overflow = "hidden";
+
+    const imageList = mdDIV.querySelectorAll(
+      "img:not([src^='data:image/svg+xml'])",
+    );
+    if (imageList.length > 0) {
+      hasSVGwithBitmap = true;
+    }
+    if (hasSVGwithBitmap && this.isDark) { 
+      imageList.forEach(img => {
+        if(img instanceof HTMLImageElement) {
+          img.style.filter = THEME_FILTER;
+        }
+      });
+    }
+
+    const xml = new XMLSerializer().serializeToString(mdDIV);
+    const finalSVG = svg(xml, '<div class="excalidraw-md-footer"></div>', style);
+    plugin.ea.mostRecentMarkdownSVG = parser.parseFromString(
+      finalSVG,
+      "image/svg+xml",
+    ).firstElementChild as SVGSVGElement;
+    return {
+      dataURL: svgToBase64(finalSVG) as DataURL,
+      hasSVGwithBitmap
+    };
+  };
 }
 
 const getSVGData = async (app: App, file: TFile): Promise<DataURL> => {
   const svg = await app.vault.read(file);
   return svgToBase64(svg) as DataURL;
-};
-
-const convertMarkdownToSVG = async (
-  plugin: ExcalidrawPlugin,
-  file: TFile,
-  linkParts: LinkParts,
-): Promise<DataURL> => {
-  //1.
-  //get the markdown text
-  const transclusion = await getTransclusion(linkParts, plugin.app, file);
-  let text = (transclusion.leadingHashes??"") + transclusion.contents;
-  if (text === "") {
-    text =
-      "# Empty markdown file\nCTRL+Click here to open the file for editing in the current active pane, or CTRL+SHIFT+Click to open it in an adjacent pane.";
-  }
-
-  //2.
-  //get styles
-  const fileCache = plugin.app.metadataCache.getFileCache(file);
-  let fontDef: string;
-  let fontName = plugin.settings.mdFont;
-  if (
-    fileCache?.frontmatter &&
-    fileCache.frontmatter[FRONTMATTER_KEY_FONT] != null
-  ) {
-    fontName = fileCache.frontmatter[FRONTMATTER_KEY_FONT];
-  }
-  switch (fontName) {
-    case "Virgil":
-      fontDef = VIRGIL_FONT;
-      break;
-    case "Cascadia":
-      fontDef = CASCADIA_FONT;
-      break;
-    case "":
-      fontDef = "";
-      break;
-    default:
-      const font = await getFontDataURL(plugin.app, fontName, file.path);
-      fontDef = font.fontDef;
-      fontName = font.fontName;
-  }
-
-  const fontColor = fileCache?.frontmatter
-    ? fileCache.frontmatter[FRONTMATTER_KEY_FONTCOLOR] ??
-      plugin.settings.mdFontColor
-    : plugin.settings.mdFontColor;
-
-  let style = fileCache?.frontmatter
-    ? fileCache.frontmatter[FRONTMATTER_KEY_MD_STYLE] ?? ""
-    : "";
-  let frontmatterCSSisAfile = false;
-  if (style && style != "") {
-    const f = plugin.app.metadataCache.getFirstLinkpathDest(style, file.path);
-    if (f) {
-      style = await plugin.app.vault.read(f);
-      frontmatterCSSisAfile = true;
-    }
-  }
-  if (!frontmatterCSSisAfile) {
-    if (plugin.settings.mdCSS && plugin.settings.mdCSS !== "") {
-      const f = plugin.app.metadataCache.getFirstLinkpathDest(
-        plugin.settings.mdCSS,
-        file.path,
-      );
-      style += f ? `\n${await plugin.app.vault.read(f)}` : DEFAULT_MD_EMBED_CSS;
-    } else {
-      style += DEFAULT_MD_EMBED_CSS;
-    }
-  }
-
-  const borderColor = fileCache?.frontmatter
-    ? fileCache.frontmatter[FRONTMATTER_KEY_BORDERCOLOR] ??
-      plugin.settings.mdBorderColor
-    : plugin.settings.mdBorderColor;
-
-  if (borderColor && borderColor !== "" && !style.match(/svg/i)) {
-    style += `svg{border:2px solid;color:${borderColor};transform:scale(.95)}`;
-  }
-
-  //3.
-  //SVG helper functions
-  //the SVG will first have ~infinite height. After sizing this will be reduced
-  let svgStyle = ` width="${linkParts.width}px" height="100000"`;
-  let foreignObjectStyle = ` width="${linkParts.width}px" height="100%"`;
-
-  const svg = (xml: string, xmlFooter: string, style?: string) =>
-    `<svg xmlns="http://www.w3.org/2000/svg"${svgStyle}>${
-      style ? `<style>${style}</style>` : ""
-    }<foreignObject x="0" y="0"${foreignObjectStyle}>${xml}${
-      xmlFooter //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/286#issuecomment-982179639
-    }</foreignObject>${
-      fontDef !== "" ? `<defs><style>${fontDef}</style></defs>` : ""
-    }</svg>`;
-
-  //4.
-  //create document div - this will be the contents of the foreign object
-  const mdDIV = createDiv();
-  mdDIV.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
-  mdDIV.setAttribute("class", "excalidraw-md-host");
-  //  mdDIV.setAttribute("style",style);
-  if (fontName !== "") {
-    mdDIV.style.fontFamily = fontName;
-  }
-  mdDIV.style.overflow = "auto";
-  mdDIV.style.display = "block";
-  mdDIV.style.color = fontColor && fontColor !== "" ? fontColor : "initial";
-
-  await MarkdownRenderer.renderMarkdown(text, mdDIV, file.path, plugin);
-
-  mdDIV
-    .querySelectorAll(":scope > *[class^='frontmatter']")
-    .forEach((el) => mdDIV.removeChild(el));
-
-  //5.1
-  //get SVG size.
-  //First I need to create a fully self contained copy of the document to convert
-  //blank styles into inline styles using computedStyle
-  const iframeHost = document.body.createDiv();
-  iframeHost.style.display = "none";
-  const iframe = iframeHost.createEl("iframe");
-  const iframeDoc = iframe.contentWindow.document;
-  if (style) {
-    const styleEl = iframeDoc.createElement("style");
-    styleEl.type = "text/css";
-    styleEl.innerHTML = style;
-    iframeDoc.head.appendChild(styleEl);
-  }
-  const stylingDIV = iframeDoc.importNode(mdDIV, true);
-  iframeDoc.body.appendChild(stylingDIV);
-  const footerDIV = createDiv();
-  footerDIV.setAttribute("class", "excalidraw-md-footer");
-  iframeDoc.body.appendChild(footerDIV);
-
-  iframeDoc.body.querySelectorAll("*").forEach((el: HTMLElement) => {
-    const elementStyle = el.style;
-    const computedStyle = window.getComputedStyle(el);
-    let style = "";
-    for (const prop in elementStyle) {
-      if (elementStyle.hasOwnProperty(prop)) {
-        style += `${prop}: ${computedStyle[prop]};`;
-      }
-    }
-    el.setAttribute("style", style);
-  });
-
-  const xmlINiframe = new XMLSerializer().serializeToString(stylingDIV);
-  const xmlFooter = new XMLSerializer().serializeToString(footerDIV);
-  document.body.removeChild(iframeHost);
-
-  //5.2
-  //get SVG size
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(
-    svg(xmlINiframe, xmlFooter),
-    "image/svg+xml",
-  );
-  const svgEl = doc.firstElementChild;
-  const host = createDiv();
-  host.appendChild(svgEl);
-  document.body.appendChild(host);
-  const footerHeight = svgEl.querySelector(
-    ".excalidraw-md-footer",
-  ).scrollHeight;
-  const height =
-    svgEl.querySelector(".excalidraw-md-host").scrollHeight + footerHeight;
-  const svgHeight = height <= linkParts.height ? height : linkParts.height;
-  document.body.removeChild(host);
-
-  //finalize SVG
-  svgStyle = ` width="${linkParts.width}px" height="${svgHeight}px"`;
-  foreignObjectStyle = ` width="${linkParts.width}px" height="${svgHeight}px"`;
-  mdDIV.style.height = `${svgHeight - footerHeight}px`;
-  mdDIV.style.overflow = "hidden";
-  const xml = new XMLSerializer().serializeToString(mdDIV);
-  const finalSVG = svg(xml, '<div class="excalidraw-md-footer"></div>', style);
-  plugin.ea.mostRecentMarkdownSVG = parser.parseFromString(
-    finalSVG,
-    "image/svg+xml",
-  ).firstElementChild as SVGSVGElement;
-  return svgToBase64(finalSVG) as DataURL;
 };
 
 const generateIdFromFile = async (file: ArrayBuffer): Promise<FileId> => {

@@ -6417,10 +6417,10 @@
     "define-properties" "^1.1.3"
     "es-abstract" "^1.19.1"
 
-"obsidian@^0.15.1":
-  "integrity" "sha512-zE6jq3F/iMJTZ5x3lmn7OClS2U+T4VGbAsLrPmyJtc3X2UEEBmXbU4EVrx2+PmjVbgPie/etPWZvP9ZGwfgdAw=="
-  "resolved" "https://registry.npmjs.org/obsidian/-/obsidian-0.15.1.tgz"
-  "version" "0.15.1"
+"obsidian@^0.15.3":
+  "integrity" "sha512-vibepMCZd8iicuZPdd1dAg3I/lP3UrqIUn0aeT/vuIHkghcxcUOvc/cKFrX4JpFVux8dBET03HWqwOR/WF1r/A=="
+  "resolved" "https://registry.npmjs.org/obsidian/-/obsidian-0.15.3.tgz"
+  "version" "0.15.3"
   dependencies:
     "@types/codemirror" "0.0.108"
     "moment" "2.29.3"

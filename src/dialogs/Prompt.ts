@@ -370,6 +370,7 @@ export class NewFileActions extends Modal {
     private plugin: ExcalidrawPlugin,
     private path: string,
     private newPane: boolean,
+    private newWindow: boolean,
     private view: ExcalidrawView,
   ) {
     super(plugin.app);
@@ -385,9 +386,12 @@ export class NewFileActions extends Modal {
     if (!file) {
       return;
     }
-    const leaf = this.newPane
-      ? getNewOrAdjacentLeaf(this.plugin, this.view.leaf)
-      : this.view.leaf;
+    const leaf = this.newWindow
+      //@ts-ignore
+      ? app.workspace.openPopoutLeaf()
+      : this.newPane
+        ? getNewOrAdjacentLeaf(this.plugin, this.view.leaf)
+        : this.view.leaf;
     leaf.openFile(file, {active:true});
     //this.app.workspace.setActiveLeaf(leaf, true, true);
   }

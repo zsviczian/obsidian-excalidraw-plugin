@@ -185,9 +185,12 @@ export default class ExcalidrawView extends TextFileView {
   public lastSaveTimestamp: number = 0; //used to validate if incoming file should sync with open file
   private onKeyUp: (e: KeyboardEvent) => void;
   private onKeyDown:(e: KeyboardEvent) => void;
+  //store key state for view mode link resolution
+  private metaKeyDown: boolean = false;
   private ctrlKeyDown: boolean = false;
   private shiftKeyDown: boolean = false;
   private altKeyDown: boolean = false;
+  //Obsidian 0.15.0
   public ownerWindow: Window;
   public ownerDocument: Document;
 
@@ -244,10 +247,6 @@ export default class ExcalidrawView extends TextFileView {
   private textIsRaw_Element: HTMLElement;
   public compatibilityMode: boolean = false;
   private obsidianMenu: ObsidianMenu;
-  //store key state for view mode link resolution
-  /*private ctrlKeyDown = false;
-  private shiftKeyDown = false;
-  private altKeyDown = false;*/
 
   //https://stackoverflow.com/questions/27132796/is-there-any-javascript-event-fired-when-the-on-screen-keyboard-on-mobile-safari
   private isEditingTextResetTimer: NodeJS.Timeout = null;
@@ -853,11 +852,14 @@ export default class ExcalidrawView extends TextFileView {
         this.exitFullscreen();
       }
       if (!file) {
-        new NewFileActions(this.plugin, linkText, ev.shiftKey, view).open();
+        new NewFileActions(this.plugin, linkText, ev.shiftKey, !app.isMobile && ev.metaKey, view).open();
         return;
       }
       const leaf =
-        ev.shiftKey || this.linksAlwaysOpenInANewPane
+        (!app.isMobile && ((ev.metaKey && this.linksAlwaysOpenInANewPane) || ev.metaKey))
+        //@ts-ignore
+        ? app.workspace.openPopoutLeaf()
+        : (ev.shiftKey || this.linksAlwaysOpenInANewPane)
           ? getNewOrAdjacentLeaf(this.plugin, view.leaf)
           : view.leaf;
       await leaf.openFile(file, subpath ? { active: false, eState: { subpath } } : undefined); //if file exists open file and jump to reference
@@ -960,12 +962,14 @@ export default class ExcalidrawView extends TextFileView {
         self.ctrlKeyDown = e[CTRL_OR_CMD];
         self.shiftKeyDown = e.shiftKey;
         self.altKeyDown = e.altKey;
+        self.metaKeyDown = e.metaKey;
       };
 
       self.onKeyDown = (e: KeyboardEvent) => {
         this.ctrlKeyDown = e[CTRL_OR_CMD];
         this.shiftKeyDown = e.shiftKey;
         this.altKeyDown = e.altKey;
+        this.metaKeyDown = e.metaKey;
       };
 
       self.ownerWindow.addEventListener("keydown", self.onKeyDown, false);
@@ -2325,7 +2329,7 @@ export default class ExcalidrawView extends TextFileView {
         if (selectedTextElement && selectedTextElement.id) {
           const event = new MouseEvent("click", {
             ctrlKey: true,
-            metaKey: true,
+            metaKey: this.metaKeyDown,
             shiftKey: this.shiftKeyDown,
             altKey: this.altKeyDown,
           });
@@ -2337,7 +2341,7 @@ export default class ExcalidrawView extends TextFileView {
         if (selectedImageElement && selectedImageElement.id) {
           const event = new MouseEvent("click", {
             ctrlKey: true,
-            metaKey: true,
+            metaKey: this.metaKeyDown,
             shiftKey: this.shiftKeyDown,
             altKey: this.altKeyDown,
           });
@@ -2350,7 +2354,7 @@ export default class ExcalidrawView extends TextFileView {
         if (selectedElementWithLink && selectedElementWithLink.id) {
           const event = new MouseEvent("click", {
             ctrlKey: true,
-            metaKey: true,
+            metaKey: this.metaKeyDown,
             shiftKey: this.shiftKeyDown,
             altKey: this.altKeyDown,
           });
@@ -2496,10 +2500,10 @@ export default class ExcalidrawView extends TextFileView {
             }
           },
           onClick: (e: MouseEvent): any => {
-            if (!e[CTRL_OR_CMD]) {
+            if (!(e[CTRL_OR_CMD]||e.metaKey)) {
               return;
-            } //.ctrlKey||e.metaKey)) return;
-            if (!this.plugin.settings.allowCtrlClick) {
+            } 
+            if (!this.plugin.settings.allowCtrlClick && !e.metaKey) {
               return;
             }
             if (
@@ -2564,7 +2568,7 @@ export default class ExcalidrawView extends TextFileView {
               blockOnMouseButtonDown = true;
 
               //ctrl click
-              if (this.ctrlKeyDown) {
+              if (this.ctrlKeyDown || this.metaKeyDown) {
                 handleLinkClick();
                 return;
               }
@@ -2992,7 +2996,8 @@ export default class ExcalidrawView extends TextFileView {
                 const useNewLeaf =
                   event.shiftKey ||
                   event[CTRL_OR_CMD] ||
-                  this.linksAlwaysOpenInANewPane;
+                  this.linksAlwaysOpenInANewPane ||
+                  event.metaKey;
 
                 if (useNewLeaf && this.isFullscreen()) {
                   this.exitFullscreen();
@@ -3002,6 +3007,7 @@ export default class ExcalidrawView extends TextFileView {
                     this.plugin,
                     linkText,
                     useNewLeaf,
+                    !app.isMobile && event.metaKey,
                     this,
                   ).open();
                   return;
@@ -3015,7 +3021,10 @@ export default class ExcalidrawView extends TextFileView {
                 } else {
                   try {
                     const leaf = useNewLeaf
-                      ? getNewOrAdjacentLeaf(this.plugin, this.leaf)
+                      ? (event.metaKey && !app.isMobile)
+                        //@ts-ignore
+                        ? app.workspace.openPopoutLeaf()
+                        : getNewOrAdjacentLeaf(this.plugin, this.leaf)
                       : this.leaf;
                     await leaf.openFile(
                       file,

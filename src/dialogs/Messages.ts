@@ -17,6 +17,44 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.7.7": `
+# New
+- Optimized for Obsidian 0.15.4
+- On a desktop, you can now use the META key when clicking on a link and it will open the link in a new popout Window.
+- ([#685](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/685)) Markdown embeds will now display correctly in Excalidraw even if they include photos and recursive markdown embeds. Unfortunately due to the limitations of Safari the inversion of colors on iPads in dark mode will not work well.
+See an 18 second long demo video [here](https://user-images.githubusercontent.com/14358394/177213263-2a7ef1ca-0614-4190-8955-e830ca6b424b.mp4).
+
+
+# Fixed
+- ([#683](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/683)) Copy/Paste Markdown embeds to create another instance of the embed, thus you can reference different sections of the document in your drawing (something I broke in 1.7.6)
+- ([#684](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/684)) Transclusions incorrectly did not pick up subsections of a section. To understand this change, imagine for example the following document:
+${String.fromCharCode(96, 96, 96)}markdown
+# A
+abc
+# B
+xyz
+## b1
+123
+## b2
+456
+# C
+${String.fromCharCode(96, 96, 96)}
+When you transclude ${String.fromCharCode(96)}![[document#B]]${String.fromCharCode(96)} you expect the following result
+${String.fromCharCode(96, 96, 96)}markdown
+B
+xyz
+
+b1
+123
+
+b2
+456
+${String.fromCharCode(96, 96, 96)}
+Until this fix you only got
+${String.fromCharCode(96, 96, 96)}markdown
+B
+xyz
+${String.fromCharCode(96, 96, 96)}`,
 "1.7.6": `
 This release is the same as 1.7.5 except for two minor fixes
 - a fix for ExcaliBrain, becuase 1.7.5 broke ExcaliBrain.
