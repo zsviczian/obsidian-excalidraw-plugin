@@ -6,7 +6,7 @@ With a little work, using Excalidraw Automate you can generate simple mindmaps, 
 
 You can access Excalidraw Automate via the ExcalidrawAutomate object. I recommend starting your Automate scripts with the following code.
 
-*Use CTRL+Shift+V to paste code into Obsidian!*
+*Use <kbd>CTRL+Shift+V</kbd> to paste code into Obsidian!*
 ```javascript
 const ea = ExcalidrawAutomate;
 ea.reset();
@@ -27,7 +27,7 @@ You can change styling between adding different elements. My logic for separatin
 #### Create a new drawing with custom name, in a custom folder, using a template
 This simple script gives you significant additional flexibility over Excalidraw Plugin settings to name your drawings, place them into folders, and to apply templates.
 
-*Use CTRL+Shift+V to paste code into Obsidian!*
+*Use <kbd>CTRL+Shift+V</kbd> to paste code into Obsidian!*
 ```javascript
 <%*
   const ea = ExcalidrawAutomate;
@@ -42,7 +42,7 @@ This simple script gives you significant additional flexibility over Excalidraw 
 ```
 
 #### Create a simple drawing
-*Use CTRL+Shift+V to paste code into Obsidian!*
+*Use <kbd>CTRL+Shift+V</kbd> to paste code into Obsidian!*
 ```javascript
 <%*
   const ea = ExcalidrawAutomate;
@@ -63,7 +63,7 @@ The script will generate the following drawing:
 
 ## Attributes and functions at a glance
 Here's the interface implemented by ExcalidrawAutomate:
-*Use CTRL+Shift+V to paste code into Obsidian!*
+*Use <kbd>CTRL+Shift+V</kbd> to paste code into Obsidian!*
 ```javascript
 ExcalidrawAutomate: {
   style: {
@@ -324,7 +324,7 @@ Returns a blob containing a PNG image of the generated drawing.
 ### Insert new drawing into currently edited document
 This template will prompt you for the title of the drawing. It will create a new drawing with the provided title, and in the folder of the document you were editing. It will then transclude the new drawing at the cursor location and open the new drawing in a new workspace leaf by splitting the current leaf.
 
-*Use CTRL+Shift+V to paste code into Obsidian!*
+*Use <kbd>CTRL+Shift+V</kbd> to paste code into Obsidian!*
 ```javascript
 <%*
   const defaultTitle = tp.date.now("HHmm")+' '+tp.file.title;
@@ -345,7 +345,7 @@ This template will prompt you for the title of the drawing. It will create a new
 ```
 
 ### Connect objects
-*Use CTRL+Shift+V to paste code into Obsidian!*
+*Use <kbd>CTRL+Shift+V</kbd> to paste code into Obsidian!*
 ```javascript
 <%*
   const ea = ExcalidrawAutomate;
@@ -362,7 +362,7 @@ This template will prompt you for the title of the drawing. It will create a new
 ### Using a template
 This example is similar to the first one, but rotated 90°, and using a template, plus specifying a filename and folder to save the drawing, and opening the new drawing in a new pane.
 
-*Use CTRL+Shift+V to paste code into Obsidian!*
+*Use <kbd>CTRL+Shift+V</kbd> to paste code into Obsidian!*
 ```javascript
 <%*
   const ea = ExcalidrawAutomate;
@@ -402,7 +402,7 @@ Example input:
 
 The script:
 
-*Use CTRL+Shift+V to paste code into Obsidian!*
+*Use <kbd>CTRL+Shift+V</kbd> to paste code into Obsidian!*
 ```javascript
 <%*
 const IDX = Object.freeze({"depth":0, "text":1, "parent":2, "size":3, "children": 4, "objectId":5});

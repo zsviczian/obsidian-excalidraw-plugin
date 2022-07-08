@@ -22,7 +22,7 @@ Example input:
 ```
 
 ### Templater script
-*Use CTRL+Shift+V to paste code into Obsidian!*
+*Use <kbd>CTRL+Shift+V</kbd> to paste code into Obsidian!*
 ```javascript
 <%*
 const IDX = Object.freeze({"depth":0, "text":1, "parent":2, "size":3, "children": 4, "objectId":5});
