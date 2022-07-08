@@ -51,8 +51,8 @@ Please upgrade to Obsidian v0.12.19 or higher to get the latest release.
 - Insert LaTeX formulas using the Command Palette action "Insert LaTeX formula". You can edit formulas either in Markdown view, or by <kbd>CTRL/CMD + Click</kbd> on the formula.
 - Drag & Drop support
   - You can drag files from the Obsidian file explorer and they will become links to those files in Excalidraw.
-  - Dragging image files (PNG, SVG, JPG, Excalidraw) from obsidian files explorer while pressing the <kbd>CTRL/CMD</kbd> button will embed the image into your drawing.
-  - You can drag and drop images from outside obsidian onto Excalidraw. These images will be embedded into your drawing and saved to Obsidian.
+  - Dragging image files (PNG, SVG, JPG, Excalidraw) from Obsidian's file explorer while pressing the <kbd>CTRL/CMD</kbd> button will embed the image into your drawing.
+  - You can drag and drop images from outside Obsidian onto Excalidraw. These images will be embedded into your drawing and saved to Obsidian.
   - You can drag and drop text from Markdown views onto Excalidraw.
   - You can drag and drop web addresses from your browser and they will become links.
 - Image support
