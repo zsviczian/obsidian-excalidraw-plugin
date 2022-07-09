@@ -1199,6 +1199,7 @@ export default class ExcalidrawView extends TextFileView {
       this.semaphores.preventReload = false;
       return;
     }
+    if (this.semaphores.saving) return;
     this.diskIcon.querySelector("svg").removeClass("excalidraw-dirty");
     if (this.compatibilityMode) {
       this.clearDirty();
@@ -2367,6 +2368,7 @@ export default class ExcalidrawView extends TextFileView {
       let mouseEvent: any = null;
 
       const showHoverPreview = (linktext?: string, element?: ExcalidrawElement) => {
+        if(!mouseEvent) return;
         if (!linktext) {
           if(!currentPosition) return;
           linktext = "";

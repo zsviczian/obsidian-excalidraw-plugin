@@ -1,6 +1,7 @@
+import { main } from "@popperjs/core";
 import {
   App,
-  normalizePath, WorkspaceLeaf
+  normalizePath, Notice, WorkspaceLeaf
 } from "obsidian";
 import ExcalidrawPlugin from "../main";
 import { checkAndCreateFolder, splitFolderAndFilename } from "./FileUtils";
@@ -22,9 +23,23 @@ export const getNewOrAdjacentLeaf = (
   leaf: WorkspaceLeaf
 ): WorkspaceLeaf => {
   if(plugin.settings.openInMainWorkspace) {
-    leaf.view.navigation = false;
-    const mainLeaf = app.workspace.getLeaf(false)
-    leaf.view.navigation = true;
+    let mainLeaf = app.workspace.getMostRecentLeaf();
+    if(!mainLeaf || mainLeaf === leaf || mainLeaf.view?.containerEl.ownerDocument !== document) {
+      mainLeaf = null;
+      app.workspace.iterateAllLeaves(l=>{
+        if(mainLeaf ||
+          !l.view?.navigation || 
+          l.view?.containerEl?.ownerDocument !== document ||
+          leaf === l
+        ) return;
+        mainLeaf = l;
+      })
+      if(!mainLeaf) {
+        leaf.view.navigation = false;
+        mainLeaf = app.workspace.getLeaf(false)
+        leaf.view.navigation = true;
+      }
+    }  
     if(plugin.settings.openInAdjacentPane || mainLeaf.view.getViewType() === 'empty') {
       return mainLeaf;
     }
@@ -44,6 +59,21 @@ export const getNewOrAdjacentLeaf = (
         return app.workspace.getLeaf(true);
       }
       return Array.from(popoutLeaves)[0];
+    }
+
+    const inHoverEditorLeaf = leaf.view?.containerEl 
+      ? getParentOfClass(leaf.view.containerEl, "popover") !== null
+      : false;
+    if(inHoverEditorLeaf) {
+      const leaves = new Set<WorkspaceLeaf>();
+      app.workspace.iterateAllLeaves(l=>{
+        //@ts-ignore
+        if(l!==leaf && leaf.containerEl.parentElement === l.containerEl.parentElement) leaves.add(l);
+      })
+      if(leaves.size === 0) {
+        return plugin.app.workspace.createLeafBySplit(leaf);      
+      }
+      return Array.from(leaves)[0];
     }
 
     leaf.view.navigation = false;

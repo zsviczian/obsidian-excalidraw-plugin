@@ -563,7 +563,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.openInAdjacentPane)
           .onChange(async (value) => {
             this.plugin.settings.openInAdjacentPane = value;
-            this.applySettingsUpdate(true);
+            this.applySettingsUpdate();
           }),
       );
 
@@ -576,7 +576,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.openInMainWorkspace)
           .onChange(async (value) => {
             this.plugin.settings.openInMainWorkspace = value;
-            this.applySettingsUpdate(true);
+            this.applySettingsUpdate();
           }),
       );
 

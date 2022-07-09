@@ -17,6 +17,11 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.7.8": `
+# Optimized for Obsidian 0.15.5
+- I reworked how the plugin treats the "More options" menu because the old approach was interfering with Obsidian
+- Did thorough testing of handling of work panes on link click. There are two settings (open in the adjacent pane, and open in the main workspace), and three broad scenarios (Excalidraw in a work pane in the main Obsidian window, Excalidraw in a hover editor, and Excalidraw in an Obsidian popout window). All should work correctly now.
+`,
 "1.7.7": `
 # New
 - Optimized for Obsidian 0.15.4

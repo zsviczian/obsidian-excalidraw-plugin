@@ -1259,8 +1259,52 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   private registerMonkeyPatches() {
-    const self = this;
+    this.registerEvent(
+      app.workspace.on("editor-menu", (menu, editor, view) => {
+        if(!view || !(view instanceof MarkdownView)) return;
+        const file = view.file;
+        const leaf = view.leaf;
+        if (!view.file) return;
+        const cache = this.app.metadataCache.getFileCache(file);
+        if (!cache?.frontmatter || !cache.frontmatter[FRONTMATTER_KEY]) return;
+        
+        menu.addItem(item => item
+          .setTitle(t("OPEN_AS_EXCALIDRAW"))
+          .setIcon(ICON_NAME)
+          .setSection("excalidraw")
+          .onClick(() => {
+            //@ts-ignore
+            this.excalidrawFileModes[leaf.id || file.path] = VIEW_TYPE_EXCALIDRAW;
+            this.setExcalidrawView(leaf);
+          }));
+        },
+      ),
+    );
 
+    this.registerEvent(      
+      app.workspace.on("file-menu", (menu, file, source, leaf) => {
+        if (!leaf || !(leaf.view instanceof MarkdownView)) return;
+        if (!(file instanceof TFile)) return;
+        const cache = this.app.metadataCache.getFileCache(file);
+        if (!cache?.frontmatter || !cache.frontmatter[FRONTMATTER_KEY]) return;
+        
+        menu.addItem(item => {
+          item
+          .setTitle(t("OPEN_AS_EXCALIDRAW"))
+          .setIcon(ICON_NAME)
+          .setSection("pane")
+          .onClick(() => {
+            //@ts-ignore
+            this.excalidrawFileModes[leaf.id || file.path] = VIEW_TYPE_EXCALIDRAW;
+            this.setExcalidrawView(leaf);
+          })});
+        //@ts-ignore
+        menu.items.unshift(menu.items.pop());
+        },
+      ),
+    );
+    
+    const self = this;
     // Monkey patch WorkspaceLeaf to open Excalidraw drawings with ExcalidrawView by default
     this.register(
       around(WorkspaceLeaf.prototype, {
@@ -1317,7 +1361,7 @@ export default class ExcalidrawPlugin extends Plugin {
     );
 
     // Add a menu item to go back to Excalidraw view
-    this.register(
+    /*this.register(
       around(MarkdownView.prototype, {
         onPaneMenu(next) {
           return function (menu: Menu) {
@@ -1351,7 +1395,7 @@ export default class ExcalidrawPlugin extends Plugin {
           };
         },
       }),
-    );
+    );*/
   }
 
   private popScope: Function = null;

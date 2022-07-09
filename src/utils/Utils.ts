@@ -359,7 +359,7 @@ export const getImageSize = async (
 ): Promise<{ height: number; width: number }> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => resolve({ height: img.height, width: img.width });
+    img.onload = () => resolve({ height: img.naturalHeight, width: img.naturalWidth });
     img.onerror = reject;
     img.src = src;
   });
