@@ -2,7 +2,7 @@
 ## Introduction to the API
 You can access Excalidraw Automate via the ExcalidrawAutomate object. I recommend starting Templater, DataView and QuickAdd scripts with the following code:
 
-*Use CTRL+Shift+V to paste code into Obsidian!*
+*Use <kbd>CTRL+Shift+V</kbd> to paste code into Obsidian!*
 ```javascript
 const ea = ExcalidrawAutomate;
 ea.reset();
@@ -25,7 +25,7 @@ You can change the styling between adding different elements. My logic for separ
 #### Create a new drawing with custom name, in a custom folder, using a template
 This simple script gives you significant additional flexibility over Excalidraw Plugin settings to name your drawings, place them into folders, and to apply templates.
 
-*Use CTRL+Shift+V to paste code into Obsidian!*
+*Use <kbd>CTRL+Shift+V</kbd> to paste code into Obsidian!*
 ```javascript
 <%*
   const ea = ExcalidrawAutomate;
@@ -40,7 +40,7 @@ This simple script gives you significant additional flexibility over Excalidraw 
 ```
 
 #### Create a simple drawing
-*Use CTRL+Shift+V to paste code into Obsidian!*
+*Use <kbd>CTRL+Shift+V</kbd> to paste code into Obsidian!*
 ```javascript
 <%*
   const ea = ExcalidrawAutomate;
@@ -62,7 +62,7 @@ The script will generate the following drawing:
 #### Add a TextElement in a box to an open Excalidraw View. 
 Position the new element under the currently selected element, with an arrow from the selected element to the added text.
 
-*Use CTRL+Shift+V to paste code into Obsidian!*
+*Use <kbd>CTRL+Shift+V</kbd> to paste code into Obsidian!*
 ```javascript
 <%*
   const ea = ExcalidrawAutomate;

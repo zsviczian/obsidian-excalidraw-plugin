@@ -19,7 +19,7 @@ The input file is `Demo.md` with the following contents:
 
 ### dataviewjs script
 The `dataviewjs` script looks like this: 
-*Use CTRL+Shift+V to paste code into Obsidian!*
+*Use <kbd>CTRL+Shift+V</kbd> to paste code into Obsidian!*
 ```javascript
 function crawl(subtasks) {
   let size = subtasks.length > 0 ? 0 : 1; //if no children then a leaf with size 1

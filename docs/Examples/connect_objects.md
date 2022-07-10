@@ -2,7 +2,7 @@
 ## Connect Objects
 This [Templater](https://github.com/SilentVoid13/Templater) template demonstrates how to connect two objects using ExcalidrawAutomate.
 
-*Use CTRL+Shift+V to paste code into Obsidian!*
+*Use <kbd>CTRL+Shift+V</kbd> to paste code into Obsidian!*
 ```javascript
 <%*
   const ea = ExcalidrawAutomate;

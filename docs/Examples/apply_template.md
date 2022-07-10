@@ -2,7 +2,7 @@
 ## Applying an Excalidraw Template to a New Drawing
 This example is similar to the one in the introduction, only rotated 90°, and using a template, plus specifying a filename and folder to save the drawing, and opening the new drawing in a new pane.
 
-*Use CTRL+Shift+V to paste code into Obsidian!*
+*Use <kbd>CTRL+Shift+V</kbd> to paste code into Obsidian!*
 ```javascript
 <%*
   const ea = ExcalidrawAutomate;

@@ -24,7 +24,7 @@ Please upgrade to Obsidian v0.12.19 or higher to get the latest release.
 
 # Key features
 - The plugin aims to integrate Excalidraw seamlessly into Obsidian including Command Palette actions, File Explorer features, Option Menu commands, and the Ribbon Button.
-- CTRL/CMD+Click on the ribbon button, or in the file explorer to create / open drawings in a new pane.
+- <kbd>CTRL/CMD+Click</kbd> on the ribbon button, or in the file explorer to create / open drawings in a new pane.
 - Settings will allow you to customize Excalidraw to your needs:
   - Default folder for new drawings and define custom filename pattern for new drawings.
   - Template for new drawings. The template will restore stroke properties. This means you can set up defaults in your template for stroke color, stroke width, opacity, font family, font size, fill style, stroke style, etc. This also applies to ExcalidrawAutomate.
@@ -42,17 +42,17 @@ Please upgrade to Obsidian v0.12.19 or higher to get the latest release.
     - `![[myfile#section]]` also works, this will transclude the section
     - you can also specify word wrapping for transcluded text by adding the max character count in curly brackets right after the transclusion e.g. `![[myfile#^blockref]]{40}` will wrap text at 40 characters.
   - For convenience you can also use the command palette to insert links into drawings
-  - CTRL/CMD + hover to bring up the Obsidian quick preview for the link. (On Mac it is CTRL+CMD+hover).
-  - CTRL/CMD + CLICK a text element to open it as a link.
-  - CTRL/CMD + ALT + CLICK to create the file (if it does not yet exist) and open it
-  - CTRL/CMD + SHIFT + CLICK to open the file in a new pane
-  - CTRL/CMD + ALT + SHIFT + CLICK to create the file (if it does not yet exist) and open it in a new pane
+  - <kbd>CTRL/CMD + hover</kbd> to bring up the Obsidian quick preview for the link. (On Mac it is <kbd>CTRL+CMD+hover</kbd>).
+  - <kbd>CTRL/CMD + CLICK</kbd> a text element to open it as a link.
+  - <kbd>CTRL/CMD + ALT + CLICK</kbd> to create the file (if it does not yet exist) and open it
+  - <kbd>CTRL/CMD + SHIFT + CLICK</kbd> to open the file in a new pane
+  - <kbd>CTRL/CMD + ALT + SHIFT + CLICK</kbd> to create the file (if it does not yet exist) and open it in a new pane
 - Using the block reference you can also reference & transclude text that appears on drawings, in other documents
-- Insert LaTeX formulas using the Command Palette action "Insert LaTeX formula". You can edit formulas either in Markdown view, or by CTRL/CMD + Click on the formula.
+- Insert LaTeX formulas using the Command Palette action "Insert LaTeX formula". You can edit formulas either in Markdown view, or by <kbd>CTRL/CMD + Click</kbd> on the formula.
 - Drag & Drop support
   - You can drag files from the Obsidian file explorer and they will become links to those files in Excalidraw.
-  - Dragging image files (PNG, SVG, JPG, Excalidraw) from obsidian files explorer while pressing the CTRL/CMD button will embed the image into your drawing.
-  - You can drag and drop images from outside obsidian onto Excalidraw. These images will be embedded into your drawing and saved to Obsidian.
+  - Dragging image files (PNG, SVG, JPG, Excalidraw) from Obsidian's file explorer while pressing the <kbd>CTRL/CMD</kbd> button will embed the image into your drawing.
+  - You can drag and drop images from outside Obsidian onto Excalidraw. These images will be embedded into your drawing and saved to Obsidian.
   - You can drag and drop text from Markdown views onto Excalidraw.
   - You can drag and drop web addresses from your browser and they will become links.
 - Image support
@@ -75,17 +75,17 @@ Please upgrade to Obsidian v0.12.19 or higher to get the latest release.
     - `excalidraw-export-svgpadding`: This only affects export to SVG. Specify the export padding for the image
     - `excalidraw-export-pngscale`: This only affects export to PNG. Specify the export scale for the image. The typical range is between 0.5 and 5, but you can experiment with other values as well.
 - Embed complete markdown files into your drawings
-  - Drag from the desired file from the Obsidian file explorer and hold down CTRL/CMD while dropping the file onto the canvas.
+  - Drag from the desired file from the Obsidian file explorer and hold down <kbd>CTRL/CMD</kbd> while dropping the file onto the canvas.
   - Use the command palette action: `Insert markdown file from vault`
   - Use custom woff, woff2 or TTF font to display the document, you can set the default font to use under Excalidraw Settings.
   - You can set a custom css for rendering the snapshot image of your markdown document. Only operating system standard fonts are supported as the font-family ([Win10](https://docs.microsoft.com/en-us/typography/fonts/windows_10_font_list), [Mac & iOS](https://developer.apple.com/fonts/system-fonts/)), plus you can set one additional custom font using the setting explained above. (for a demonstration watch this [video](https://youtu.be/K6qZkTz8GHs) and check out this [sample css](https://github.com/zsviczian/obsidian-excalidraw-plugin/discussions/281)).
-    - To help with styling you can observe the SVG snapshot of the markdown document created by Excalidraw. Open Obsidian Developer Console (CTRL+Shift+i) and execute the following command: `ExcalidrawAutomate.mostRecentMarkdownSVG`
+    - To help with styling you can observe the SVG snapshot of the markdown document created by Excalidraw. Open Obsidian Developer Console (<kbd>CTRL+Shift+i</kbd>) and execute the following command: `ExcalidrawAutomate.mostRecentMarkdownSVG`
   - You can control appearance of the embedded markdown file on a file by file bases by adding the following front matter keys to your markdown document:
     - `excalidraw-font: Virgil|Cascadia|font_file_name.extension`
     - `excalidraw-font-color: css-color-name|#HEXcolor|any-other-html-standard-format`, you can find css color names [here](https://www.w3schools.com/colors/colors_names.asp).
     - `excalidraw-border-color: css-color-name|#HEXcolor|any-other-html-standard-format`
     - `excalidraw-css: "css-filename|css snippet"`
-  - Switch to markdown view or use CTRL/CMD+ALT/OPT click on the image to edit properties of the embed: `[[filename#^blockref|WIDTHxMAXHEIGHT]]`
+  - Switch to markdown view or use <kbd>CTRL/CMD+ALT/OPT</kbd> click on the image to edit properties of the embed: `[[filename#^blockref|WIDTHxMAXHEIGHT]]`
 - Includes full [QuickAdd](https://github.com/chhoumann/quickadd), [Templater](https://silentvoid13.github.io/Templater/) and [Dataview](https://blacksmithgu.github.io/obsidian-dataview/docs/api/intro/) support through ExcalidrawAutomate. Check out the [detailed help + examples](https://zsviczian.github.io/obsidian-excalidraw-plugin/). I also have a [YouTube ExcalidrawAutomate Playlist](https://www.youtube.com/playlist?list=PL6mqgtMZ4NP1IR4nXxSlMA4PA5E-qpyHZ) with lots of examples.
   - Since 1.5.0 you can easily execute ExcalidrawAutomate macros and assign command palette shortcuts to them, using the ScriptEngine. You will find an intro video and a growing library of ready to install scripts [here](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/ea-scripts).
 - REQUIRES AN OBSIDIAN SYNC SUBSCRIPTION: Full drawing file history and synchronization between devices

@@ -2,7 +2,7 @@
 ## Insert new drawing into currently edited document
 This [Templater](https://github.com/SilentVoid13/Templater) template will prompt you for the title of the drawing. It will create a new drawing with the provided title, and in the folder of the document you were editing. It will then transclude the new drawing at the cursor location and open the new drawing in a new workspace leaf by splitting the current leaf.
 
-*Use CTRL+Shift+V to paste code into Obsidian!*
+*Use <kbd>CTRL+Shift+V</kbd> to paste code into Obsidian!*
 ```javascript
 <%*
   const defaultTitle = tp.date.now("HHmm")+' '+tp.file.title;
