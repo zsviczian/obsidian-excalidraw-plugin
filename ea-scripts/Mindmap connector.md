@@ -1,10 +1,8 @@
 /*
-![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-connect-elements.jpg)
 
-This script will connect two objects with an arrow. If either of the objects are a set of grouped elements (e.g. a text element grouped with an encapsulating rectangle), the script will identify these groups, and connect the arrow to the largest object in the group (assuming you want to connect the arrow to the box around the text element).
+![](https://github.com/xllowl/obsidian-excalidraw-plugin/blob/master/images/mindmap%20connector.png)
 
-See documentation for more details:
-https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html
+This script creates mindmap like lines(only right side available). The line will starts according to the creation time of the elements. So you may need to create the header element first.
 
 ```javascript
 */
@@ -21,7 +19,7 @@ if(!settings["Starting arrowhead"]) {
 			value: "none",
       valueset: ["none","arrow","triangle","bar","dot"]
 		},
-		"Ending arrowhead" : {
+		"Ending arrowhead" : {``
 			value: "none",
       valueset: ["none","arrow","triangle","bar","dot"]
 		},
