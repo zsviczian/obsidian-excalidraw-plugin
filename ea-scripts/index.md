@@ -50,6 +50,7 @@ I would love to include your contribution in the script library. If you have a s
 - [[#Fixed vertical distance between centers]]
 - [[#Fixed vertical distance]]
 - [[#Lighten background color]]
+- [[Mindmap connector]]
 - [[#Modify background color opacity]]
 - [[#Normalize Selected Arrows]]
 - [[#OCR - Optical Character Recognition]]
@@ -219,6 +220,12 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Lighten%20background%20color.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/1-2-3'>@1-2-3</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Lighten%20background%20color.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script lightens the background color of the selected element by 2% at a time. You can use this script several times until you are satisfied. It is recommended to set a shortcut key for this script so that you can quickly try to DARKEN and LIGHTEN the color effect.In contrast to the `Modify background color opacity` script, the advantage is that the background color of the element is not affected by the canvas color, and the color value does not appear in a strange rgba() form.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/darken-lighten-background-color.png'></td></tr></table>
+
+## Mindmap connector
+```excalidraw-script-install
+https://github.com/xllowl/obsidian-excalidraw-plugin/blob/master/ea-scripts/Mindmap%20connector.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/xllowl'>@xllowl</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/xllowl/obsidian-excalidraw-plugin/blob/master/ea-scripts/Mindmap%20connector.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script creates mindmap like lines(only right side available). The line will starts according to the creation time of the elements. So you may need to create the header element first.<br><img src='https://github.com/xllowl/obsidian-excalidraw-plugin/blob/master/images/mindmap%20connector.png'></td></tr></table>
 
 ## Modify background color opacity
 ```excalidraw-script-install
