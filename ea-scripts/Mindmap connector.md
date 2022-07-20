@@ -19,7 +19,7 @@ if(!settings["Starting arrowhead"]) {
 			value: "none",
       valueset: ["none","arrow","triangle","bar","dot"]
 		},
-		"Ending arrowhead" : {``
+		"Ending arrowhead" : {
 			value: "none",
       valueset: ["none","arrow","triangle","bar","dot"]
 		},
@@ -65,8 +65,8 @@ elsy=[];
 for (i = 0, len =groups.length; i < len; i++)
 {
 els.push(ea.getLargestElement(groups[i]));
-
-elsy.push(ea.getLargestElement(groups[i]).y)
+elsx.push(ea.getLargestElement(groups[i]).x);
+elsy.push(ea.getLargestElement(groups[i]).y);
 }
 /*
 els = [ 
@@ -83,17 +83,42 @@ var indexmaxy=elsy.indexOf(maxy);
 var miny = Math.min.apply(null, elsy);
 var indexminy = elsy.indexOf(miny);
 
+var maxx = Math.max.apply(null, elsx);
+var indexmaxx = elsx.indexOf(maxx);
+var minx = Math.min.apply(null, elsx);
+var indexminx = elsx.indexOf(minx);
+var s=0;
+if (indexminx==0)
+{
+  s=1; 
+}
+else if (indexminy == 0)
+{
+ s=0;
+}
 /*for(i = 1, len =groups.length; i < len; i++)
 { 
   elsx.push(els[i].x)
 } */
-ea.addLine([[els[0].x + els[0].width * 1.5, maxy + els[indexmaxy].height / 2], [els[0].x + els[0].width * 1.5, miny + els[indexminy].height / 2]]);
+if(s)
+{
+  ea.addLine([[els[0].x + els[0].width * 1.5, maxy + els[indexmaxy].height / 2], [els[0].x + els[0].width * 1.5, miny + els[indexminy].height / 2]]);
 for (i = 1, len = groups.length; i < len; i++)
 {
   ea.addLine([[els[i].x, els[i].y + els[i].height/2], [els[0].x + els[0].width * 1.5, els[i].y + els[i].height/2]]);
 }
-ea.addLine([[els[0].x+els[0].width, els[0].y + els[0].height / 2], [els[0].x + els[0].width * 1.5, els[0].y + els[0].height / 2]])
- //await ea.create();
+ea.addArrow([[els[0].x+els[0].width, els[0].y + els[0].height / 2], [els[0].x + els[0].width * 1.5, els[0].y + els[0].height / 2]],{ startArrowHead: "none", endArrowHead: "dot" })
+}
+
+else{
+  ea.addLine([[maxx + els[indexmaxx].width / 2, els[0].y + els[0].height * 2], [minx + els[indexminx].width / 2, els[0].y + els[0].height * 2]]);
+for (i = 1, len = groups.length; i < len; i++) {
+  ea.addLine([[els[i].x + els[i].width / 2, els[i].y], [els[i].x + els[i].width / 2, els[0].y + els[0].height * 2]]);
+}
+ea.addArrow([[els[0].x + els[0].width / 2, els[0].y + els[0].height], [els[0].x + els[0].width / 2, els[0].y + els[0].height * 2]], { startArrowHead: "none", endArrowHead: "dot" });
+}
+
+//await ea.create();
 /*
 ea.connectObjects(
   els[0].id,
