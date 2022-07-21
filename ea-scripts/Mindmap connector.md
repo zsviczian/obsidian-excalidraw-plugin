@@ -23,22 +23,16 @@ ea.style.strokeColor = els[0].strokeColor;
 ea.style.strokeWidth = els[0].strokeWidth;
 ea.style.strokeStyle = els[0].strokeStyle;
 ea.style.strokeSharpness = els[0].strokeSharpness;
-let maxy = Math.max.apply(null, elsy);
-let indexmaxy=elsy.indexOf(maxy);
-let miny = Math.min.apply(null, elsy);
-let indexminy = elsy.indexOf(miny);
+const maxy = Math.max.apply(null, elsy);
+const indexmaxy=elsy.indexOf(maxy);
+const miny = Math.min.apply(null, elsy);
+const indexminy = elsy.indexOf(miny);
 
-let maxx = Math.max.apply(null, elsx);
-let indexmaxx = elsx.indexOf(maxx);
-let minx = Math.min.apply(null, elsx);
-let indexminx = elsx.indexOf(minx);
-let s=0;
-if (indexminx==0) {
-  s=1; 
-}
-else if (indexminy == 0) {
-  s=0;
-}
+const maxx = Math.max.apply(null, elsx);
+const indexmaxx = elsx.indexOf(maxx);
+const minx = Math.min.apply(null, elsx);
+const indexminx = elsx.indexOf(minx);
+const s = !Boolean(indexminx);
 
 if(s) {
   ea.addLine(
