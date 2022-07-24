@@ -58,9 +58,9 @@ for (var i = 0; i < topGroups.length; i++) {
     .filter((el) => el.type === "rectangle")
     .sort((lha, rha) => lha.y - rha.y);
     
-  const groupWith = groupHeights[i].height;
-  if (groupWith < maxGroupHeight) {
-    const distance = maxGroupHeight - groupWith;
+  const groupWidth = groupHeights[i].height;
+  if (groupWidth < maxGroupHeight) {
+    const distance = maxGroupHeight - groupWidth;
     const perRectDistance = distance / rects.length;
     for (var j = 0; j < rects.length; j++) {
       const rect = rects[j];
