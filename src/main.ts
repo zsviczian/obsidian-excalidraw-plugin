@@ -159,6 +159,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public scriptEngine: ScriptEngine;
   public fourthFontDef: string = VIRGIL_FONT;
   private packageMap: WeakMap<Window,Packages> = new WeakMap<Window,Packages>();
+  public leafChangeTimeout: NodeJS.Timeout = null;
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
@@ -802,7 +803,10 @@ export default class ExcalidrawPlugin extends Plugin {
     this.addCommand({
       id: "excalidraw-autocreate-popout",
       name: t("NEW_IN_POPOUT_WINDOW"),
-      callback: () => {
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return !app.isMobile
+        }
         this.createAndOpenDrawing(getDrawingFilename(this.settings), "popout-window");
       },
     });
@@ -861,7 +865,7 @@ export default class ExcalidrawPlugin extends Plugin {
       name: t("NEW_IN_POPOUT_WINDOW_EMBED"),
       checkCallback: (checking: boolean) => {
         if (checking) {
-          return Boolean(this.app.workspace.getActiveViewOfType(MarkdownView));
+          return !app.isMobile && Boolean(this.app.workspace.getActiveViewOfType(MarkdownView));
         }
         insertDrawingToDoc("popout-window");
         return true;
@@ -1518,6 +1522,12 @@ export default class ExcalidrawPlugin extends Plugin {
 
       //save Excalidraw leaf and update embeds when switching to another leaf
       const activeLeafChangeEventHandler = async (leaf: WorkspaceLeaf) => {
+        //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/723
+        if(self.leafChangeTimeout) {
+          clearTimeout(this.leafChangeTimeout);
+        }
+        self.leafChangeTimeout = setTimeout(()=>{self.leafChangeTimeout = null;},1000);
+
         const previouslyActiveEV = self.activeExcalidrawView;
         const newActiveviewEV: ExcalidrawView =
           leaf.view instanceof ExcalidrawView ? leaf.view : null;

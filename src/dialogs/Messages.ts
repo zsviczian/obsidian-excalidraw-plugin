@@ -17,6 +17,25 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.7.9": `
+# New features and fixes from Excalidraw.com:
+- The right-click context menu is now scrollable on smaller screens ([#4030](https://github.com/excalidraw/excalidraw/pull/4030), [#5520](https://github.com/excalidraw/excalidraw/pull/5520))
+- Holding down the shift key while rotating an object will rotate it at discrete angles. Rotation is continuous without the SHIFT key. ([#5500](https://github.com/excalidraw/excalidraw/pull/5500))
+- Improved cursor alignment when resizing an element proportionally (maintain aspect ratio) by holding SHIFT during resizing. ([#5513](https://github.com/excalidraw/excalidraw/pull/5515))
+- Improved freedraw performance during editing (now has proper canvas caching), and no more blurry freedraw shapes when exporting on a higher scale. ([#5481](https://github.com/excalidraw/excalidraw/pull/5481))
+- Sidebar stencil library now correctly scrolls vertically ([#5459](https://github.com/excalidraw/excalidraw/pull/5459))
+
+# New in Obsidian:
+- Fullscreen mode on iPad. When there are multiple work panes open, clicking the fullscreen action in the Excalidraw Obsidian menu will hide the other work panes and make Excalidraw fullscreen.
+
+# Fixes in Obsidian:
+- Drag&Drop an image from a web browser into Excalidraw ([#697](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/697))
+- On Obsidian Mobile 1.3.0, when the drawing included an embedded image, switching from markdown-view to Excalidraw-view caused the drawing to disappear (it had to be recovered from backup or synchronization history).  ([#715](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/715))
+- When working on a mobile device (tablet and phone) and using two work panes (one for drawing and the other for editing a markdown document) if you switched focus from the drawing to the markdown document auto-zoom changed the zoom level of the drawing. ([#723](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/723)), ([#705](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/705))
+- Actions on the Command Palette to create a new drawing in a new pane or reusing an existing adjacent pane; on the main workspace or in the Hover Editor or Popout window, were not working well. See related settings in plugin settings under "Links and transclusions" ([#718](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/718))
+- There was a problem with links with section references when the header contained space characters ([#704](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/704))
+- I added additional controls to avoid the fantom warnings about a problem with saving the Excalidraw file. Hopefully, from now on, you'll see this error less frequently ([#701](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/701))
+`,
 "1.7.8": `
 # Optimized for Obsidian 0.15.5
 - I reworked how the plugin treats the "More options" menu because the old approach was interfering with Obsidian

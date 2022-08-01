@@ -18,70 +18,103 @@ export const getParentOfClass = (element: HTMLElement, cssClass: string):HTMLEle
   return parent?.classList?.contains(cssClass) ? parent : null;
 };
 
+
+/*
+| Setting                 |                                       Originating Leaf                                                       |
+|                         | Main Workspace                   | Hover Editor                           | Popout Window                    |
+| ----------------------- | -------------------------------- | -------------------------------------- | -------------------------------- |
+| InMain  && InAdjacent   | 1.1 Reuse Leaf in Main Workspace | 1.1 Reuse Leaf in Main Workspace       | 1.1 Reuse Leaf in Main Workspace |
+| InMain  && !InAdjacent  | 1.2 New Leaf in Main Workspace   | 1.2 New Leaf in Main Workspace         | 1.2 New Leaf in Main Workspace   |
+| !InMain && InAdjacent   | 1.1 Reuse Leaf in Main Workspace | 3   Reuse Leaf in Current Hover Editor | 4   Reuse Leaf in Current Popout |
+| !InMain && !InAdjacent  | 1.2 New Leaf in Main Workspace   | 2   New Leaf in Current Hover Editor   | 2   New Leaf in Current Popout   |
+*/
+
 export const getNewOrAdjacentLeaf = (
   plugin: ExcalidrawPlugin,
   leaf: WorkspaceLeaf
 ): WorkspaceLeaf => {
-  if(plugin.settings.openInMainWorkspace) {
+    //@ts-ignore
+    const leafId = leaf.id;
+    const layout = app.workspace.getLayout();
+    const leafLoc = 
+      layout.main && layout.main.children.filter((x:any)=>x.type==="leaf" && x.id ===leafId).length > 0
+      ? "main"
+      : layout.floating && layout.floating.children.filter((x:any)=>x.type==="leaf" && x.id ===leafId).length > 0
+        ? "popout"
+        : layout.left && layout.left.children.filter((x:any)=>x.type==="leaf" && x.id ===leafId).length > 0
+          ? "left"
+          : layout.right && layout.right.children.filter((x:any)=>x.type==="leaf" && x.id ===leafId).length > 0
+            ? "right"
+            : "hover";
+
+  const getMainLeaf = ():WorkspaceLeaf => {
     let mainLeaf = app.workspace.getMostRecentLeaf();
-    if(!mainLeaf || mainLeaf === leaf || mainLeaf.view?.containerEl.ownerDocument !== document) {
-      mainLeaf = null;
-      app.workspace.iterateAllLeaves(l=>{
+    if(mainLeaf && mainLeaf !== leaf && mainLeaf.view?.containerEl.ownerDocument === document) {
+      return mainLeaf;
+    }
+    mainLeaf = null;
+    app.workspace.getLayout().main.children
+      .filter((child:any)=>child.type==="leaf")
+      .forEach((listItem:any)=> {
+        const l = app.workspace.getLeafById(listItem.id);
         if(mainLeaf ||
           !l.view?.navigation || 
-          l.view?.containerEl?.ownerDocument !== document ||
           leaf === l
         ) return;
         mainLeaf = l;
-      })
-      if(!mainLeaf) {
-        leaf.view.navigation = false;
-        mainLeaf = app.workspace.getLeaf(false)
-        leaf.view.navigation = true;
-      }
-    }  
-    if(plugin.settings.openInAdjacentPane || mainLeaf.view.getViewType() === 'empty') {
-      return mainLeaf;
-    }
-    return app.workspace.createLeafBySplit(mainLeaf);
+    })
+    return mainLeaf;
   }
 
-  if (plugin.settings.openInAdjacentPane) {
-    //if in popout window
-    if(leaf.view.containerEl.ownerDocument !== document) {
-      const popoutLeaves = new Set<WorkspaceLeaf>();  
-      app.workspace.iterateAllLeaves(l=>{
-        if(l !== leaf && l.view.navigation && l.view.containerEl.ownerDocument === leaf.view.containerEl.ownerDocument) {
-          popoutLeaves.add(l);
-        }
-      });
-      if(popoutLeaves.size === 0) {
-        return app.workspace.getLeaf(true);
+  //1
+  if(plugin.settings.openInMainWorkspace || ["main","left","right"].contains(leafLoc)) {
+    //1.1
+    if(!plugin.settings.openInAdjacentPane) {
+      if(leafLoc === "main") {
+        return app.workspace.createLeafBySplit(leaf);
       }
-      return Array.from(popoutLeaves)[0];
+      const ml = getMainLeaf();
+      return ml
+        ? (ml.view.getViewType() === "empty" ? ml : app.workspace.createLeafBySplit(ml))
+        : app.workspace.getLeaf(true);
     }
 
-    const inHoverEditorLeaf = leaf.view?.containerEl 
-      ? getParentOfClass(leaf.view.containerEl, "popover") !== null
-      : false;
-    if(inHoverEditorLeaf) {
-      const leaves = new Set<WorkspaceLeaf>();
-      app.workspace.iterateAllLeaves(l=>{
-        //@ts-ignore
-        if(l!==leaf && leaf.containerEl.parentElement === l.containerEl.parentElement) leaves.add(l);
-      })
-      if(leaves.size === 0) {
-        return plugin.app.workspace.createLeafBySplit(leaf);      
-      }
-      return Array.from(leaves)[0];
-    }
-
-    leaf.view.navigation = false;
-    const leafToUse = app.workspace.getLeaf(false)
-    leaf.view.navigation = true;
-    return leafToUse
+    //1.2
+    const ml = getMainLeaf();
+    return ml ?? app.workspace.getLeaf(true);
   }
 
+  //2
+  if(!plugin.settings.openInAdjacentPane) {
+    return app.workspace.createLeafBySplit(leaf);
+  }
+
+  //3
+  if(leafLoc === "hover") {
+    const leaves = new Set<WorkspaceLeaf>();
+    app.workspace.iterateAllLeaves(l=>{
+      //@ts-ignore
+      if(l!==leaf && leaf.containerEl.parentElement === l.containerEl.parentElement) leaves.add(l);
+    })
+    if(leaves.size === 0) {
+      return plugin.app.workspace.createLeafBySplit(leaf);      
+    }
+    return Array.from(leaves)[0];  
+  }
+
+  //4
+  if(leafLoc === "popout") {
+    const popoutLeaves = new Set<WorkspaceLeaf>();  
+    app.workspace.iterateAllLeaves(l=>{
+      if(l !== leaf && l.view.navigation && l.view.containerEl.ownerDocument === leaf.view.containerEl.ownerDocument) {
+        popoutLeaves.add(l);
+      }
+    });
+    if(popoutLeaves.size === 0) {
+      return app.workspace.createLeafBySplit(leaf);
+    }
+    return Array.from(popoutLeaves)[0];
+  }
 
   return plugin.app.workspace.createLeafBySplit(leaf);
 };
