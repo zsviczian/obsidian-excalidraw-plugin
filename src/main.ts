@@ -83,6 +83,7 @@ import {
   setLeftHandedMode,
   sleep,
   debug,
+  isVersionNewerThanOther,
 } from "./utils/Utils";
 import { getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark } from "./utils/ObsidianUtils";
 //import { OneOffs } from "./OneOffs";
@@ -226,8 +227,8 @@ export default class ExcalidrawPlugin extends Plugin {
     if (this.settings.showReleaseNotes) {
       //I am repurposing imageElementNotice, if the value is true, this means the plugin was just newly installed to Obsidian.
       const obsidianJustInstalled = this.settings.imageElementNotice;
-
-      if (PLUGIN_VERSION > this.settings.previousRelease) {
+     
+      if (isVersionNewerThanOther(PLUGIN_VERSION, this.settings.previousRelease)) {
         new ReleaseNotes(
           this.app,
           this,

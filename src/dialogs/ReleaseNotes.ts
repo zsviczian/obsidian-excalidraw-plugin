@@ -1,4 +1,5 @@
 import { App, MarkdownRenderer, Modal } from "obsidian";
+import { isVersionNewerThanOther } from "src/utils/Utils";
 import ExcalidrawPlugin from "../main";
 import { FIRST_RUN, RELEASE_NOTES } from "./Messages";
 
@@ -11,7 +12,6 @@ export class ReleaseNotes extends Modal {
   constructor(app: App, plugin: ExcalidrawPlugin, version: string) {
     super(app);
     this.plugin = plugin;
-    //@ts-ignore
     this.version = version;
   }
 
@@ -31,10 +31,10 @@ export class ReleaseNotes extends Modal {
 
   async createForm() {
     let prevRelease = this.plugin.settings.previousRelease;
-    prevRelease = this.version === prevRelease ? "0" : prevRelease;
+    prevRelease = this.version === prevRelease ? "0.0.0" : prevRelease;
     const message = this.version
       ? Object.keys(RELEASE_NOTES)
-          .filter((key) => key > prevRelease)
+          .filter((key) => key === "Intro" || isVersionNewerThanOther(key,prevRelease))
           .map((key: string) => `# ${key}\n${RELEASE_NOTES[key]}`)
           .slice(0, 10)
           .join("\n\n---\n")

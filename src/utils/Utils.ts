@@ -69,7 +69,7 @@ export const checkExcalidrawVersion = async (app: App) => {
       .filter((el: any) => el.version.match(/^\d+\.\d+\.\d+$/))
       .sort((el1: any, el2: any) => el2.published - el1.published)[0].version;
 
-    if (latestVersion > PLUGIN_VERSION) {
+    if (isVersionNewerThanOther(latestVersion,PLUGIN_VERSION)) {
       new Notice(
         `A newer version of Excalidraw is available in Community Plugins.\n\nYou are using ${PLUGIN_VERSION}.\nThe latest is ${latestVersion}`,
       );
@@ -550,6 +550,21 @@ export const getPNGScale = (plugin: ExcalidrawPlugin, file: TFile): number => {
   }
   return plugin.settings.pngExportScale;
 };
+
+export const isVersionNewerThanOther = (version: string, otherVersion: string): boolean => {
+  const v = version.match(/(\d*)\.(\d*)\.(\d*)/);
+  const o = otherVersion.match(/(\d*)\.(\d*)\.(\d*)/);
+  
+  return Boolean(v && v.length === 4 && o && o.length === 4 &&
+    !(isNaN(parseInt(v[1])) || isNaN(parseInt(v[2])) || isNaN(parseInt(v[3]))) &&
+    !(isNaN(parseInt(o[1])) || isNaN(parseInt(o[2])) || isNaN(parseInt(o[3]))) && 
+    (
+      parseInt(v[1])>parseInt(o[1]) ||
+      (parseInt(v[1]) >= parseInt(o[1]) && parseInt(v[2]) > parseInt(o[2])) ||
+      (parseInt(v[1]) >= parseInt(o[1]) && parseInt(v[2]) >= parseInt(o[2]) && parseInt(v[3]) > parseInt(o[3]))
+    )
+  ) 
+}
 
 export const errorlog = (data: {}) => {
   console.error({ plugin: "Excalidraw", ...data });

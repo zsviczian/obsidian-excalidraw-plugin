@@ -17,6 +17,17 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.7.10": `
+# New from Excalidraw.com
+- Improved handling of arrows and lines. ([#5501](https://github.com/excalidraw/excalidraw/pull/5501))
+
+# Fixed
+- When opening a document in view-mode or zen-mode the panel buttons no longer flash up for a moment before switching to the desired mode. ([#479](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/479))
+- The "blinding white screen" no longer flashes up while loading the scene if the scene is dark ([#241](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/241))
+
+# Under the hood
+- Finalized migration to React 18 (no longer showing an error about React 17 compatibility mode in console log)
+`,
 "1.7.9": `
 # New features and fixes from Excalidraw.com:
 - The right-click context menu is now scrollable on smaller screens ([#4030](https://github.com/excalidraw/excalidraw/pull/4030), [#5520](https://github.com/excalidraw/excalidraw/pull/5520))

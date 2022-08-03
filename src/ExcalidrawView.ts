@@ -1942,24 +1942,6 @@ export default class ExcalidrawView extends TextFileView {
         excalidrawRef.current.readyPromise.then(
           (api: ExcalidrawImperativeAPI) => {
             this.excalidrawAPI = api;
-            // UpdateScene was added as a workaround here. In theory this is not required... however there was an odd error
-            // that I wasn't able to track down to its source
-            // https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/715
-            // For some reason, if the drawing includes files (image attachments), then on Obsidian Mobile switching to markdown
-            // view and back resulted in Excalidraw loading an empty file even though initialData contained the required info
-            // this did not happen on a desktop
-            // In theory this updateScene here is harmless, since it simply reloads the drawing that is already loaded with
-            // initial data.
-            this.updateScene(
-              {
-                elements: initdata.elements,
-                appState: initdata.appState,
-                files: initdata.files,
-                commitToHistory: false
-              },
-              true,
-            )
-            //
             api.setLocalFont(this.plugin.settings.experimentalEnableFourthFont);
             this.loadSceneFiles();
             this.updateContainerSize(null, true);
@@ -2628,6 +2610,7 @@ export default class ExcalidrawView extends TextFileView {
               saveToActiveFile: false,
             },
           },
+          initState: initdata?.appState,
           initialData: initdata,
           detectScroll: true,
           onPointerUpdate: (p: any) => {
@@ -3201,7 +3184,9 @@ export default class ExcalidrawView extends TextFileView {
 
       return React.createElement(React.Fragment, null, excalidrawDiv);
     });
-    ReactDOM.render(reactElement, this.contentEl, () => {});
+    const root = ReactDOM.createRoot(this.contentEl);
+    root.render(reactElement);
+    //ReactDOM.render(reactElement, this.contentEl, () => {});
   }
 
   private updateContainerSize(containerId?: string, delay: boolean = false) {

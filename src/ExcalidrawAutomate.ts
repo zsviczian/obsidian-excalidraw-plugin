@@ -27,6 +27,7 @@ import {
   errorlog,
   getPNG,
   getSVG,
+  isVersionNewerThanOther,
   scaleLoadedImage,
   wrapText,
 } from "./utils/Utils";
@@ -1620,7 +1621,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
    * @returns 
    */
   verifyMinimumPluginVersion(requiredVersion: string): boolean {
-    return PLUGIN_VERSION >= requiredVersion;
+    return PLUGIN_VERSION === requiredVersion || isVersionNewerThanOther(PLUGIN_VERSION,requiredVersion);
   };
 
   /**
