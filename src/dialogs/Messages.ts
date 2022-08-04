@@ -17,6 +17,11 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.7.11": `
+# Fixed
+- Markdown files embed into the Excalidraw canvas crashed when the embedded markdown file included a nested Markdown embed with a block reference (i.e. the markdown document you are dropping into Excalidraw included a quote you referenced from another file using a ${String.fromCharCode(96)}[[other-file#^blockref]]${String.fromCharCode(96)} block or section reference. 
+- Horizontal flipping of arrows and lines broke in 1.7.10. ([#726](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/726))
+`,
 "1.7.10": `
 # New from Excalidraw.com
 - Improved handling of arrows and lines. ([#5501](https://github.com/excalidraw/excalidraw/pull/5501))

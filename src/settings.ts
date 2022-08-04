@@ -581,7 +581,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName(t("LINK_BRACKETS_NAME"))
+      .setName(fragWithHTML(t("LINK_BRACKETS_NAME")))
       .setDesc(fragWithHTML(t("LINK_BRACKETS_DESC")))
       .addToggle((toggle) =>
         toggle

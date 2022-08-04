@@ -518,12 +518,13 @@ export class EmbeddedFilesLoader {
     for(let i=0;i<internalEmbeds.length;i++) {
       const el = internalEmbeds[i];
       const src = el.getAttribute("src");
-      if(!src) return;
+      if(!src) continue;
       const width = el.getAttribute("width");
       const height = el.getAttribute("height");
-      const f = app.metadataCache.getFirstLinkpathDest(src,file.path);
-      if(!f) return;
-      const embeddedFile = await this.getObsidianImage(f,1);
+      const ef = new EmbeddedFile(plugin,file.path,src);
+      //const f = app.metadataCache.getFirstLinkpathDest(src.split("#")[0],file.path);
+      if(!ef.file) continue;
+      const embeddedFile = await this.getObsidianImage(ef,1);
       const img = createEl("img");
       if(width) img.setAttribute("width", width);
       if(height) img.setAttribute("height", height);
