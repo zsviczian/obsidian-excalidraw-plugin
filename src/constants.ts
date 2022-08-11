@@ -38,6 +38,7 @@ export const FRONTMATTER_KEY_FONT = "excalidraw-font";
 export const FRONTMATTER_KEY_FONTCOLOR = "excalidraw-font-color";
 export const FRONTMATTER_KEY_BORDERCOLOR = "excalidraw-border-color";
 export const FRONTMATTER_KEY_MD_STYLE = "excalidraw-css";
+export const FRONTMATTER_KEY_AUTOEXPORT = "excalidraw-autoexport"
 export const LOCAL_PROTOCOL = "md://";
 export const VIEW_TYPE_EXCALIDRAW = "excalidraw";
 export const ICON_NAME = "excalidraw-icon";

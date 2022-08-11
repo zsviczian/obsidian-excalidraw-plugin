@@ -16,6 +16,7 @@ import {
   REG_BLOCK_REF_CLEAN,
   FRONTMATTER_KEY_LINKBUTTON_OPACITY,
   FRONTMATTER_KEY_ONLOAD_SCRIPT,
+  FRONTMATTER_KEY_AUTOEXPORT,
 } from "./Constants";
 import { _measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
@@ -49,6 +50,14 @@ declare module "obsidian" {
       getForFile(x: any, f: TAbstractFile): any;
     };
   }
+}
+
+export enum AutoexportPreference {
+  none,
+  both,
+  png,
+  svg,
+  inherit
 }
 
 export const REGEX_LINK = {
@@ -224,6 +233,7 @@ export class ExcalidrawData {
   private showLinkBrackets: boolean;
   private linkPrefix: string;
   private urlPrefix: string;
+  public autoexportPreference: AutoexportPreference = AutoexportPreference.inherit;
   private textMode: TextMode = TextMode.raw;
   public loaded: boolean = false;
   private files: Map<FileId, EmbeddedFile> = null; //fileId, path
@@ -401,6 +411,7 @@ export class ExcalidrawData {
     this.setShowLinkBrackets();
     this.setLinkPrefix();
     this.setUrlPrefix();
+    this.setAutoexportPreferences();
 
     this.scene = null;
 
@@ -1318,6 +1329,24 @@ export class ExcalidrawData {
       this.urlPrefix = this.plugin.settings.urlPrefix;
     }
     return urlPrefix != this.urlPrefix;
+  }
+
+  private setAutoexportPreferences() {
+    const fileCache = this.app.metadataCache.getFileCache(this.file);
+    if (
+      fileCache?.frontmatter &&
+      fileCache.frontmatter[FRONTMATTER_KEY_AUTOEXPORT] != null
+    ) {
+      switch ((fileCache.frontmatter[FRONTMATTER_KEY_AUTOEXPORT]).toLowerCase()) {
+        case "none": this.autoexportPreference = AutoexportPreference.none; break;
+        case "both": this.autoexportPreference = AutoexportPreference.both; break;
+        case "png": this.autoexportPreference = AutoexportPreference.png; break;
+        case "svg": this.autoexportPreference = AutoexportPreference.svg; break;
+        default: this.autoexportPreference = AutoexportPreference.inherit;
+      };
+    } else {
+      this.autoexportPreference = AutoexportPreference.inherit;
+    }
   }
 
   private setShowLinkBrackets(): boolean {

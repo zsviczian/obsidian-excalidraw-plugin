@@ -48,6 +48,7 @@ import {
   ExcalidrawData,
   REG_LINKINDEX_HYPERLINK,
   REGEX_LINK,
+  AutoexportPreference,
 } from "./ExcalidrawData";
 import {
   checkAndCreateFolder,
@@ -273,7 +274,7 @@ export default class ExcalidrawView extends TextFileView {
 
   preventAutozoom() {
     this.semaphores.preventAutozoom = true;
-    setTimeout(() => (this.semaphores.preventAutozoom = false), 2000);
+    setTimeout(() => (this.semaphores.preventAutozoom = false), 1500);
   }
 
   public saveExcalidraw(scene?: any) {
@@ -487,10 +488,17 @@ export default class ExcalidrawView extends TextFileView {
       }
 
       if (!this.semaphores.autosaving && !this.semaphores.viewunload) {
-        if (this.plugin.settings.autoexportSVG) {
+        const autoexportPreference = this.excalidrawData.autoexportPreference;
+        if (
+          (autoexportPreference === AutoexportPreference.inherit && this.plugin.settings.autoexportSVG) ||
+          autoexportPreference === AutoexportPreference.both || autoexportPreference === AutoexportPreference.svg
+        ) {
           await this.saveSVG();
         }
-        if (this.plugin.settings.autoexportPNG) {
+        if (
+          (autoexportPreference === AutoexportPreference.inherit && this.plugin.settings.autoexportPNG) ||
+          autoexportPreference === AutoexportPreference.both || autoexportPreference === AutoexportPreference.png
+        ) {
           await this.savePNG();
         }
         if (
@@ -1269,7 +1277,9 @@ export default class ExcalidrawView extends TextFileView {
     this.clearDirty();
   }
 
-  zoomToElementId(id: string) {
+  async zoomToElementId(id: string) {
+    let counter = 0;
+    while (!this.excalidrawAPI && counter++<100) await sleep(50); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/734
     const api = this.excalidrawAPI;
     if (!api) {
       return;
@@ -1280,10 +1290,8 @@ export default class ExcalidrawView extends TextFileView {
     if (elements.length === 0) {
       return;
     }
-    if (!api.getAppState().viewModeEnabled) {
-      api.selectElements(elements);
-    }
-    api.zoomToFit(elements, this.plugin.settings.zoomToFitMaxLevel, 0.05);
+    this.preventAutozoom();
+    this.zoomToElements(!api.getAppState().viewModeEnabled, elements);
   }
 
   setEphemeralState(state: any): void {
@@ -1322,7 +1330,10 @@ export default class ExcalidrawView extends TextFileView {
     }
 
     if (query) {
-      setTimeout(() => {
+      setTimeout(async () => {
+        let counter = 0;
+        while (!self.excalidrawAPI && counter++<100) await sleep(50); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/734
+    
         const api = self.excalidrawAPI;
         if (!api) {
           return;
@@ -1334,7 +1345,7 @@ export default class ExcalidrawView extends TextFileView {
           elements,
           query,
           !api.getAppState().viewModeEnabled,
-          true,
+          state.subpath && state.subpath.length>2 && state.subpath[1]!=="^",
         );
       }, 300);
     }
@@ -3276,7 +3287,7 @@ export default class ExcalidrawView extends TextFileView {
           return m[1] === q.toLowerCase();
         }
         const text = el.rawText.toLowerCase().replaceAll("\n", " ").trim();
-        return text.match(q.toLowerCase()); //to distinguish between "# frame" and "# frame 1"
+        return text.match(q.toLowerCase()); //to distinguish between "# frame" and "# frame 1" https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530
       }),
     );
     if (match.length === 0) {
@@ -3284,14 +3295,29 @@ export default class ExcalidrawView extends TextFileView {
       return;
     }
 
+    this.zoomToElements(selectResult,match);
+  }
+
+  public zoomToElements(
+    selectResult: boolean,
+    elements: ExcalidrawElement[]
+  ) {
     const api = this.excalidrawAPI;
-    if (!api) {
-      return;
-    }
-    if (selectResult) {
-      api.selectElements(match);
-    }
-    api.zoomToFit(match, this.plugin.settings.zoomToFitMaxLevel, 0.05);
+    if (!api) return;
+
+    const zoomLevel = this.plugin.settings.zoomToFitMaxLevel;
+    const ownerWindow = this.ownerWindow;
+    ownerWindow.requestAnimationFrame(async ()=>{
+      if (selectResult) {
+        api.selectElements(elements);
+        await sleep(100);
+      }
+      ownerWindow.requestAnimationFrame(()=> {
+        api.zoomToFit(elements, zoomLevel, 0.05);
+      });
+    });
+
+
   }
 
   public getViewSelectedElements(): ExcalidrawElement[] {

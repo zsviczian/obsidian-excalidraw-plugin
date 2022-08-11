@@ -17,6 +17,19 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.7.12": `
+# New from Excalidraw.com:
+- Showing a mid-point for lines and arrows. By touching the mid-point you can easily add an additional point to a two-point line. This is especially helpful when working on a tablet with touch input. ([#5534](https://github.com/excalidraw/excalidraw/pull/5534))
+- Lock angle when editing a line or an arrow with SHIFT pressed. Pressing SHIFT will restrict the edited point to snap to certain discrete angles. ([#5527](https://github.com/excalidraw/excalidraw/pull/5527))
+
+# Fixed:
+- Clicking Obsidian search-results pointing to an element on the canvas works again ([#734](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/734))
+- The feature to allow resizing and rotation of lines and arrows consisting of 3 or more points by showing the bounding box when selected is back ([#5554](https://github.com/excalidraw/excalidraw/pull/5554))
+
+# New
+- You can now use the following frontmatter key to allow/prevent automatic export of PNG/SVG images at a file level. This frontmatter will override export settings for the given file.  ([#732](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/732)
+${String.fromCharCode(96)}excalidraw-autoexport: none|both|svg|png${String.fromCharCode(96)}
+`,
 "1.7.11": `
 # Fixed
 - Markdown files embed into the Excalidraw canvas crashed when the embedded markdown file included a nested Markdown embed with a block reference (i.e. the markdown document you are dropping into Excalidraw included a quote you referenced from another file using a ${String.fromCharCode(96)}[[other-file#^blockref]]${String.fromCharCode(96)} block or section reference. 

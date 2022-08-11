@@ -592,4 +592,11 @@ export const FRONTMATTER_KEYS_INFO: SuggesterInfo[] = [
     desc: "If this key is present it will override the default excalidraw embed and export setting. This only affects export to PNG. Specify the export scale for the image. The typical range is between 0.5 and 5, but you can experiment with other values as well.",
     after: ": 1",
   },
+  {
+    field: "autoexport",
+    code: null,
+    desc: "Override autoexport settings for this file. Valid values are\nnone\nboth\npng\nsvg",
+    after: ": png",
+  },
+  
 ];

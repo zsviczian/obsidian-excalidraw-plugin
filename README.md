@@ -28,7 +28,7 @@ Please upgrade to Obsidian v0.12.19 or higher to get the latest release.
 - Settings will allow you to customize Excalidraw to your needs:
   - Default folder for new drawings and define custom filename pattern for new drawings.
   - Template for new drawings. The template will restore stroke properties. This means you can set up defaults in your template for stroke color, stroke width, opacity, font family, font size, fill style, stroke style, etc. This also applies to ExcalidrawAutomate.
-  - If portability is important to you: Auto-export SVG and/or PNG files including keep-in-sync feature so you can embed SVG/PNG into your documents instead of embedding excalidraw files.
+  - If portability is important to you: Auto-export SVG and/or PNG files including keep-in-sync feature so you can embed SVG/PNG into your documents instead of embedding excalidraw files. You can override export settings for an individual file by adding the `excalidraw-autoexport` frontmatter key. Valid values for this key are `none`, `both`, `png` and `svg`.
   - Specify the default width of embedded drawings.
   - Compatibility features to auto-export and keep in sync markdown excalidraw files and legacy .excalidraw files.
   - Experimental feature to add custom TAG to file explorer to mark drawing files.

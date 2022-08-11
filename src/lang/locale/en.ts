@@ -336,7 +336,9 @@ export default {
     "Automatically create an SVG export of your drawing matching the title of your file. " +
     "The plugin will save the *.SVG file in the same folder as the drawing. " +
     "Embed the .svg file into your documents instead of Excalidraw making you embeds platform independent. " +
-    "While the auto-export switch is on, this file will get updated every time you edit the Excalidraw drawing with the matching name.",
+    "While the auto-export switch is on, this file will get updated every time you edit the Excalidraw drawing with the matching name. " + 
+    "You can override this setting on a file level by adding the <code>excalidraw-autoexport</code> frontmatter key. Valid values for this key are " +
+    "<code>none</code>,<code>both</code>,<code>svg</code>, and <code>png</code>",
   EXPORT_PNG_NAME: "Auto-export PNG",
   EXPORT_PNG_DESC: "Same as the auto-export SVG, but for *.PNG",
   COMPATIBILITY_HEAD: "Compatibility features",
