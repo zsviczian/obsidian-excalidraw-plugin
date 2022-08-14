@@ -127,13 +127,14 @@ li[data-testid] {
   width: 100%;
 }
 
-.modal-content.excalidraw-scriptengine-install {
+.excalidraw-scriptengine-install .modal-content {
   max-width: 130ch;
   user-select: text;
 }
 
 .excalidraw-scriptengine-install .modal {
   max-height:90%;
+  width: auto;
 }
 
 .excalidraw-prompt-center {
@@ -172,15 +173,16 @@ li[data-testid] {
   height: 100%;
 }
 
-.excalidraw-release {
+.excalidraw-release .modal-content{
   padding-right: 5px;
   margin-right: -5px;
-  max-width: 130ch;
   user-select: text;
 }
 
 .excalidraw-release .modal {
-  max-height:90%;
+  max-height: 90%;
+  width: auto;
+  max-width: 130ch;
 }
 
 .excalidraw .Island .scrollbar {

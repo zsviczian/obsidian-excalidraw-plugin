@@ -1796,6 +1796,17 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   onPaneMenu(menu: Menu, source: string): void {
+    if(this.excalidrawAPI && this.getViewSelectedElements().some(el=>el.type==="text")) {
+      menu.addItem(item => {
+        item
+          .setTitle(t("OPEN_LINK"))
+          .setIcon("external-link")
+          .setSection("pane")
+          .onClick(evt => {
+            this.handleLinkClick(this, evt as MouseEvent);
+          });
+      })
+    }
     // Add a menu item to force the board to markdown view
     if (!this.compatibilityMode) {
       menu
@@ -1878,7 +1889,15 @@ export default class ExcalidrawView extends TextFileView {
             this.saveSVG();
           });
       })
-      .addSeparator();
+      .addItem(item => {
+        item
+          .setTitle(t("INSTALL_SCRIPT_BUTTON"))
+          .setIcon(SCRIPTENGINE_ICON_NAME)
+          .setSection("pane")
+          .onClick(()=>{
+            new ScriptInstallPrompt(this.plugin).open();
+          })
+      })
     super.onPaneMenu(menu, source);
   }
 
@@ -3323,7 +3342,7 @@ export default class ExcalidrawView extends TextFileView {
   public getViewSelectedElements(): ExcalidrawElement[] {
     const api = this.excalidrawAPI;
     if (!api) {
-      return;
+      return [];
     }
     const selectedElements = api.getAppState()?.selectedElementIds;
     if (!selectedElements) {

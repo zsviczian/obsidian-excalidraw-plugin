@@ -36,14 +36,22 @@ export const getNewOrAdjacentLeaf = (
     //@ts-ignore
     const leafId = leaf.id;
     const layout = app.workspace.getLayout();
+    const getLeaves = (l:any)=> l.children
+      .filter((c:any)=>c.type!=="leaf")
+      .map((c:any)=>getLeaves(c))
+      .flat()
+      .concat(l.children.filter((c:any)=>c.type==="leaf").map((c:any)=>c.id))
+    
+    const mainLeavesIds = getLeaves(layout.main);
+
     const leafLoc = 
-      layout.main && layout.main.children.filter((x:any)=>x.type==="leaf" && x.id ===leafId).length > 0
+      layout.main && mainLeavesIds.contains(leafId)
       ? "main"
-      : layout.floating && layout.floating.children.filter((x:any)=>x.type==="leaf" && x.id ===leafId).length > 0
+      : layout.floating && getLeaves(layout.floating).contains(leafId)
         ? "popout"
-        : layout.left && layout.left.children.filter((x:any)=>x.type==="leaf" && x.id ===leafId).length > 0
+        : layout.left && getLeaves(layout.left).contains(leafId)
           ? "left"
-          : layout.right && layout.right.children.filter((x:any)=>x.type==="leaf" && x.id ===leafId).length > 0
+          : layout.right && getLeaves(layout.right).contains(leafId)
             ? "right"
             : "hover";
 
@@ -53,10 +61,9 @@ export const getNewOrAdjacentLeaf = (
       return mainLeaf;
     }
     mainLeaf = null;
-    app.workspace.getLayout().main.children
-      .filter((child:any)=>child.type==="leaf")
-      .forEach((listItem:any)=> {
-        const l = app.workspace.getLeafById(listItem.id);
+    mainLeavesIds
+      .forEach((id:any)=> {
+        const l = app.workspace.getLeafById(id);
         if(mainLeaf ||
           !l.view?.navigation || 
           leaf === l

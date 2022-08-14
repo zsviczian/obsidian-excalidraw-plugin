@@ -17,6 +17,15 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.7.13": `
+## Fix from Excalidraw.com
+- Resize multiple elements from center ([#5560](https://github.com/excalidraw/excalidraw/pull/5560))
+
+## Obsidian 0.16.0 compatibility (getting ready, because 0.16.0 will be available to insiders soon)
+- ${String.fromCharCode(96)}Install or update Excalidraw Scripts${String.fromCharCode(96)} was only available via the page header button. Because the page header is hidden by default, the install script action is now available through the pane menu and through the command palette as well.
+- ${String.fromCharCode(96)}Open selected text as link${String.fromCharCode(96)} page header button is now also available via the pane menu
+- ${String.fromCharCode(96)}Open in Adjacent Pane${String.fromCharCode(96)} and ${String.fromCharCode(96)}Open in Main Workspace${String.fromCharCode(96)} Excalidraw plugin settings is fixed
+`,
 "1.7.12": `
 # New from Excalidraw.com:
 - Showing a mid-point for lines and arrows. By touching the mid-point you can easily add an additional point to a two-point line. This is especially helpful when working on a tablet with touch input. ([#5534](https://github.com/excalidraw/excalidraw/pull/5534))

@@ -16,8 +16,8 @@ export class ReleaseNotes extends Modal {
   }
 
   onOpen(): void {
-    this.contentEl.classList.add("excalidraw-release");
-    this.containerEl.classList.add(".excalidraw-release");
+    //this.contentEl.classList.add("excalidraw-release");
+    this.containerEl.classList.add("excalidraw-release");
     this.titleEl.setText(`Welcome to Excalidraw ${this.version ?? ""}`);
     this.createForm();
   }

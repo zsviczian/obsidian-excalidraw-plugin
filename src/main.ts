@@ -100,6 +100,7 @@ import { ReleaseNotes } from "./dialogs/ReleaseNotes";
 import { decompressFromBase64 } from "lz-string";
 import { Packages } from "./types";
 import * as React from "react";
+import { ScriptInstallPrompt } from "./dialogs/ScriptInstallPrompt";
 
 
 declare module "obsidian" {
@@ -971,6 +972,20 @@ export default class ExcalidrawPlugin extends Plugin {
           return true;
         }
         return false;
+      },
+    });
+
+    this.addCommand({
+      id: "scriptengine-store",
+      name: t("INSTALL_SCRIPT_BUTTON"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return (
+            Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
+          );
+        }
+        new ScriptInstallPrompt(this).open();
+        return true;
       },
     });
 
