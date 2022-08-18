@@ -566,6 +566,42 @@ export const isVersionNewerThanOther = (version: string, otherVersion: string): 
   ) 
 }
 
+export const getEmbeddedFilenameParts = (fname:string):{
+  filepath: string,
+  hasBlockref: boolean,
+  hasGroupref: boolean,
+  blockref: string,
+  hasSectionref: boolean,
+  sectionref: string,
+  linkpartReference: string,
+  linkpartAlias: string
+} => {
+  //                       0 1        23    4        5        6  7          8
+  const parts = fname?.match(/([^#\^]*)((#\^)(group_)?([^\|]*)|(#)([^\^\|]*))(.*)/);
+  if(!parts) {
+    return {
+      filepath: fname,
+      hasBlockref: false,
+      hasGroupref: false,
+      blockref: "",
+      hasSectionref: false,
+      sectionref: "",
+      linkpartReference: "",
+      linkpartAlias: ""
+    }
+  }
+  return {
+    filepath: parts[1],
+    hasBlockref: Boolean(parts[3]),
+    hasGroupref: Boolean(parts[4]),
+    blockref: parts[5],
+    hasSectionref: Boolean(parts[6]),
+    sectionref: parts[7],
+    linkpartReference: parts[2],
+    linkpartAlias: parts[8]
+  }
+}
+
 export const errorlog = (data: {}) => {
   console.error({ plugin: "Excalidraw", ...data });
 };

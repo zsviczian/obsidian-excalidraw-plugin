@@ -25,6 +25,7 @@ import {
   //debug,
   embedFontsInSVG,
   errorlog,
+  getEmbeddedFilenameParts,
   getPNG,
   getSVG,
   isVersionNewerThanOther,
@@ -1536,6 +1537,28 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
   };
 
   /**
+   * Gets the groupId for the group that contains all the elements, or null if such a group does not exist
+   * @param elements 
+   * @returns null or the groupId
+   */
+  getCommonGroupForElements(elements: ExcalidrawElement[]): string {
+    const groupId = elements.map(el=>el.groupIds).reduce((prev,cur)=>cur.filter(v=>prev.includes(v)));
+    return groupId.length > 0 ? groupId[0] : null;
+  }
+
+  /**
+   * Gets all the elements from elements[] that share one or more groupIds with element.
+   * @param element 
+   * @param elements - typically all the non-deleted elements in the scene 
+   * @returns 
+   */
+  getElementsInTheSameGroupWithElement(element: ExcalidrawElement, elements: ExcalidrawElement[]): ExcalidrawElement[] {
+    if(!element || !elements) return [];
+    if(element.groupIds.length === 0) return [element];
+    return elements.filter(el=>el.groupIds.some(id=>element.groupIds.includes(id)));
+  }
+
+  /**
    * @param element 
    * @param a 
    * @param b 
@@ -1925,7 +1948,8 @@ async function getTemplate(
 }> {
   const app = plugin.app;
   const vault = app.vault;
-  const templatePath = normalizePath(fileWithPath);
+  const filenameParts = getEmbeddedFilenameParts(fileWithPath);
+  const templatePath = normalizePath(filenameParts.filepath);
   const file = app.metadataCache.getFirstLinkpathDest(templatePath, "");
   let hasSVGwithBitmap = false;
   if (file && file instanceof TFile) {
@@ -1982,8 +2006,16 @@ async function getTemplate(
       }, depth);
     }
 
+    let groupElements:ExcalidrawElement[] = scene.elements;
+    if(filenameParts.hasGroupref) {
+      const el = scene.elements.filter((el: ExcalidrawElement) => el.id === filenameParts.blockref);
+      if(el.length > 0) {
+        groupElements = plugin.ea.getElementsInTheSameGroupWithElement(el[0],scene.elements)
+      }
+    }
+
     return {
-      elements: scene.elements,
+      elements: groupElements,
       appState: scene.appState,
       frontmatter: data.substring(0, trimLocation),
       files: scene.files,

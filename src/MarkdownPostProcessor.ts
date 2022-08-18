@@ -12,6 +12,7 @@ import ExcalidrawPlugin from "./main";
 import {getIMGFilename,} from "./utils/FileUtils";
 import {
   embedFontsInSVG,
+  getEmbeddedFilenameParts,
   getExportTheme,
   getQuickImagePreview,
   getSVGPadding,
@@ -58,12 +59,14 @@ const getIMG = async (
 ): Promise<HTMLElement> => {
   let file = imgAttributes.file;
   if (!imgAttributes.file) {
-    const f = vault.getAbstractFileByPath(imgAttributes.fname);
+    const f = vault.getAbstractFileByPath(imgAttributes.fname?.split("#")[0]);
     if (!(f && f instanceof TFile)) {
       return null;
     }
     file = f;
   }
+
+  const filenameParts = getEmbeddedFilenameParts(imgAttributes.fname);
 
   // https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/387
   imgAttributes.style = imgAttributes.style.replaceAll(" ", "-");
@@ -144,7 +147,9 @@ const getIMG = async (
   }
   const svgSnapshot = (
     await createSVG(
-      file.path,
+      filenameParts.hasGroupref
+        ? filenameParts.filepath + filenameParts.linkpartReference
+        : file.path,
       true,
       exportSettings,
       loader,
@@ -255,7 +260,7 @@ const processInternalEmbeds = async (
         : getDefaultWidth(plugin);
       attr.fheight = maybeDrawing.getAttribute("height");
       alt = maybeDrawing.getAttribute("alt");
-      if (alt == attr.fname) {
+      if (alt === attr.fname) {
         alt = "";
       } //when the filename starts with numbers followed by a space Obsidian recognizes the filename as alt-text
       attr.style = "excalidraw-svg";
@@ -274,7 +279,8 @@ const processInternalEmbeds = async (
           attr.style = `excalidraw-svg${parts[3] ? `-${parts[3]}` : ""}`;
         }
       }
-      attr.fname = file?.path;
+      const fnameParts = getEmbeddedFilenameParts(attr.fname);
+      attr.fname = file?.path + (fnameParts.hasBlockref?fnameParts.linkpartReference:"");
       attr.file = file;
       const div = await createImageDiv(attr);
       maybeDrawing.parentElement.replaceChild(div, maybeDrawing);
@@ -327,6 +333,12 @@ const tmpObsidianWYSIWYG = async (
   //if .internal-embed is found, then contents is replaced with the image using the
   //alt, width, and height attributes of .internal-embed to size and style the image
   setTimeout(async () => {
+    //wait for el to be attached to the displayed document
+    let counter = 0;
+    while(!el.parentElement && counter++<=50) await sleep(50);
+    if(!el.parentElement) return;
+
+
     let internalEmbedDiv: HTMLElement = div;
     while (
       !internalEmbedDiv.hasClass("internal-embed") &&
@@ -401,7 +413,7 @@ const tmpObsidianWYSIWYG = async (
     observer.observe(internalEmbedDiv, {
       attributes: true, //configure it to listen to attribute changes
     });
-  }, 300);
+  });
 };
 
 /**

@@ -88,6 +88,7 @@ import { ObsidianMenu } from "./menu/ObsidianMenu";
 import { ToolsPanel } from "./menu/ToolsPanel";
 import { ScriptEngine } from "./Scripts";
 import { getTextElementAtPointer, getImageElementAtPointer, getElementWithLinkAtPointer } from "./utils/GetElementAtPointer";
+import { execArgv } from "process";
 
 
 export enum TextMode {
@@ -1284,12 +1285,20 @@ export default class ExcalidrawView extends TextFileView {
     if (!api) {
       return;
     }
-    const elements = api
-      .getSceneElements()
-      .filter((el: ExcalidrawElement) => el.id === id);
-    if (elements.length === 0) {
-      return;
+    const sceneElements = api.getSceneElements();
+    let elements = sceneElements.filter((el: ExcalidrawElement) => el.id === id);
+    if(elements.length === 0) {
+      if(!id.startsWith("group_")) return;
+      id = id.split("group_")[1];
+      elements = sceneElements.filter((el: ExcalidrawElement) => el.id === id);
+      if(elements.length === 0) return;
+      const groupElements = this.plugin.ea.getElementsInTheSameGroupWithElement(elements[0],sceneElements)
+      if(groupElements.length>0) {
+        elements = groupElements;
+      }
+      if(elements.length === 0) return;
     }
+
     this.preventAutozoom();
     this.zoomToElements(!api.getAppState().viewModeEnabled, elements);
   }
@@ -2451,6 +2460,7 @@ export default class ExcalidrawView extends TextFileView {
 
       const showHoverPreview = (linktext?: string, element?: ExcalidrawElement) => {
         if(!mouseEvent) return;
+        if(this.excalidrawAPI?.getAppState()?.editingElement) return; //should not activate hover preview when element is being edited
         if (!linktext) {
           if(!currentPosition) return;
           linktext = "";
@@ -3380,10 +3390,14 @@ export default class ExcalidrawView extends TextFileView {
 
   public async copyLinkToSelectedElementToClipboard() {
     const elements = this.getViewSelectedElements();
-    if (elements.length !== 1) {
+    if (elements.length < 1) {
       new Notice(t("INSERT_LINK_TO_ELEMENT_ERROR"));
       return;
     }
+
+    const elementId = elements.length === 1 
+      ? elements[0].id
+      : this.plugin.ea.getLargestElement(elements).id;
     const alias = await ScriptEngine.inputPrompt(
       app,
       "Set link alias",
@@ -3391,7 +3405,7 @@ export default class ExcalidrawView extends TextFileView {
       "",
     );
     navigator.clipboard.writeText(
-      `[[${this.file.path}#^${elements[0].id}${alias ? `|${alias}` : ``}]]`,
+      `[[${this.file.path}#^${elementId}${alias ? `|${alias}` : ``}]]`,
     );
     new Notice(t("INSERT_LINK_TO_ELEMENT_READY"));
   }

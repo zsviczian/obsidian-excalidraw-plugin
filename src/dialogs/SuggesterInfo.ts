@@ -385,10 +385,16 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
-    field: "getLargestElement",
-    code: "getLargestElement(elements: ExcalidrawElement[]): ExcalidrawElement;",
-    desc: "Gets the largest element from a group. useful when a text element is grouped with a box, and you want to connect an arrow to the box",
+    field: "getCommonGroupForElements",
+    code: "getCommonGroupForElements(elements: ExcalidrawElement[]): string;",
+    desc: "Gets the groupId for the group that contains all the elements, or null if such a group does not exist",
     after: "",
+  },
+  {
+    field: "getElementsInTheSameGroupWithElement",
+    code: "getElementsInTheSameGroupWithElement(element: ExcalidrawElement, elements: ExcalidrawElement[]): ExcalidrawElement[];",
+    desc: "Gets all the elements from elements[] that share one or more groupIds with element.",
+    after: ""
   },
   {
     field: "activeScript",
