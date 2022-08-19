@@ -9,6 +9,7 @@ import {
   MarkdownView,
   request,
   Platform,
+  requireApiVersion,
 } from "obsidian";
 //import * as React from "react";
 //import * as ReactDOM from "react-dom";
@@ -42,7 +43,7 @@ import {
   LOCAL_PROTOCOL,
 } from "./Constants";
 import ExcalidrawPlugin from "./main";
-import { repositionElementsToCursor, ExcalidrawAutomate } from "./ExcalidrawAutomate";
+import { repositionElementsToCursor, ExcalidrawAutomate, getTextElementsMatchingQuery } from "./ExcalidrawAutomate";
 import { t } from "./lang/helpers";
 import {
   ExcalidrawData,
@@ -57,10 +58,12 @@ import {
   getNewUniqueFilepath,
 } from "./utils/FileUtils";
 import {
+  awaitNextAnimationFrame,
   checkExcalidrawVersion,
   debug,
   embedFontsInSVG,
   errorlog,
+  getEmbeddedFilenameParts,
   getExportTheme,
   getLinkParts,
   getPNG,
@@ -69,6 +72,7 @@ import {
   getSVGPadding,
   getWithBackground,
   hasExportTheme,
+  isVersionNewerThanOther,
   scaleLoadedImage,
   svgToBase64,
   viewportCoordsToSceneCoords,
@@ -89,6 +93,8 @@ import { ToolsPanel } from "./menu/ToolsPanel";
 import { ScriptEngine } from "./Scripts";
 import { getTextElementAtPointer, getImageElementAtPointer, getElementWithLinkAtPointer } from "./utils/GetElementAtPointer";
 import { execArgv } from "process";
+import { findLastIndex } from "@zsviczian/excalidraw/types/utils";
+import { fileOpen } from "@zsviczian/excalidraw/types/data/filesystem";
 
 
 export enum TextMode {
@@ -131,7 +137,7 @@ export const addFiles = async (
   }
   if (s.dirty) {
     //debug({where:"ExcalidrawView.addFiles",file:view.file.name,dataTheme:view.excalidrawData.scene.appState.theme,before:"updateScene",state:scene.appState})
-    view.updateScene({
+    await view.updateScene({
       elements: s.scene.elements,
       appState: s.scene.appState,
       commitToHistory: false,
@@ -315,7 +321,7 @@ export default class ExcalidrawView extends TextFileView {
         }
         filename = `${filename}.excalidraw`;
         const folderpath = splitFolderAndFilename(this.file.path).folderpath;
-        await checkAndCreateFolder(app.vault, folderpath); //create folder if it does not exist
+        await checkAndCreateFolder(folderpath); //create folder if it does not exist
         const fname = getNewUniqueFilepath(
           app.vault,
           filename,
@@ -1024,6 +1030,7 @@ export default class ExcalidrawView extends TextFileView {
     });
 
     this.setupAutosaveTimer();
+    super.onload();
   }
 
   //this is to solve sliding panes bug
@@ -1278,7 +1285,7 @@ export default class ExcalidrawView extends TextFileView {
     this.clearDirty();
   }
 
-  async zoomToElementId(id: string) {
+  async zoomToElementId(id: string, hasGroupref:boolean) {
     let counter = 0;
     while (!this.excalidrawAPI && counter++<100) await sleep(50); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/734
     const api = this.excalidrawAPI;
@@ -1286,17 +1293,14 @@ export default class ExcalidrawView extends TextFileView {
       return;
     }
     const sceneElements = api.getSceneElements();
+
     let elements = sceneElements.filter((el: ExcalidrawElement) => el.id === id);
-    if(elements.length === 0) {
-      if(!id.startsWith("group_")) return;
-      id = id.split("group_")[1];
-      elements = sceneElements.filter((el: ExcalidrawElement) => el.id === id);
-      if(elements.length === 0) return;
+    if(elements.length === 0) return;
+    if(hasGroupref) {
       const groupElements = this.plugin.ea.getElementsInTheSameGroupWithElement(elements[0],sceneElements)
       if(groupElements.length>0) {
         elements = groupElements;
       }
-      if(elements.length === 0) return;
     }
 
     this.preventAutozoom();
@@ -1325,16 +1329,13 @@ export default class ExcalidrawView extends TextFileView {
       ];
     }
 
-    if (state.subpath && state.subpath.length > 2) {
-      if (state.subpath[1] === "^") {
-        const id = state.subpath.substring(2);
-        setTimeout(() => self.zoomToElementId(id), 300);
-      } else {
-        query = [`# ${state.subpath.substring(1)}`];
-      }
+    const filenameParts = getEmbeddedFilenameParts(state.subpath);
+    if(filenameParts.hasBlockref) {
+      setTimeout(()=>self.zoomToElementId(filenameParts.blockref, filenameParts.hasGroupref),300);
     }
-
-    if (state.line && state.line > 0) {
+    if(filenameParts.hasSectionref) {
+      query = [`# ${filenameParts.sectionref}`]
+    } else if (state.line && state.line > 0) {
       query = [this.data.split("\n")[state.line - 1]];
     }
 
@@ -1347,14 +1348,14 @@ export default class ExcalidrawView extends TextFileView {
         if (!api) {
           return;
         }
-        const elements = api
-          .getSceneElements()
-          .filter((el: ExcalidrawElement) => el.type === "text");
+        const elements = api.getSceneElements();
+          
         self.selectElementsMatchingQuery(
           elements,
           query,
           !api.getAppState().viewModeEnabled,
-          state.subpath && state.subpath.length>2 && state.subpath[1]!=="^",
+          filenameParts.hasSectionref,
+          filenameParts.hasGroupref
         );
       }, 300);
     }
@@ -1615,7 +1616,7 @@ export default class ExcalidrawView extends TextFileView {
       if(this.getSceneVersion(inData.scene.elements) !== this.previousSceneVersion) {
         this.setDirty(3);
       }
-      this.excalidrawAPI.updateScene({elements: sceneElements});
+      await this.updateScene({elements: sceneElements});
       if(reloadFiles) this.loadSceneFiles();
     } catch(e) {
       errorlog({
@@ -1655,7 +1656,7 @@ export default class ExcalidrawView extends TextFileView {
       //debug({where:"ExcalidrawView.loadDrawing",file:this.file.name,dataTheme:excalidrawData.appState.theme,before:"updateScene"})
       api.setLocalFont(this.plugin.settings.experimentalEnableFourthFont);
 
-      this.updateScene(
+      await this.updateScene(
         {
           elements: excalidrawData.elements.concat(deletedElements??[]), //need to preserve deleted elements during autosave if images, links, etc. are updated
           appState: {
@@ -1727,6 +1728,12 @@ export default class ExcalidrawView extends TextFileView {
     //console.log(debug);
     this.semaphores.dirty = this.file?.path;
     this.diskIcon.querySelector("svg").addClass("excalidraw-dirty");
+    if(!app.isMobile) {
+      if(requireApiVersion("0.16.0")) {
+        //@ts-ignore
+        this.leaf.tabHeaderInnerTitleEl.style.color="var(--color-accent)"
+      }
+    }
   }
 
   public clearDirty() {
@@ -1740,6 +1747,12 @@ export default class ExcalidrawView extends TextFileView {
       this.previousSceneVersion = this.getSceneVersion(el);
     }
     this.diskIcon.querySelector("svg").removeClass("excalidraw-dirty");
+    if(!app.isMobile) {
+      if(requireApiVersion("0.16.0")) {
+        //@ts-ignore
+        this.leaf.tabHeaderInnerTitleEl.style.color=""
+      }
+    }
   }
 
   public initializeToolsIconPanelAfterLoading() {
@@ -1801,6 +1814,7 @@ export default class ExcalidrawView extends TextFileView {
     this.plugin.openDrawing(
       await this.plugin.convertSingleExcalidrawToMD(this.file),
       "active-pane",
+      true
     );
   }
 
@@ -2270,12 +2284,13 @@ export default class ExcalidrawView extends TextFileView {
         const elements = newElementsOnTop
           ? el.concat(newElements.filter((e) => !removeList.includes(e.id)))
           : newElements.filter((e) => !removeList.includes(e.id)).concat(el);
-        this.updateScene({
+        
+        await this.updateScene({
           elements,
           commitToHistory: true,
         });
 
-        if (images) {
+        if (images && images !== {}) {
           const files: BinaryFileData[] = [];
           Object.keys(images).forEach((k) => {
             files.push({
@@ -3140,7 +3155,7 @@ export default class ExcalidrawView extends TextFileView {
                       : this.leaf;
                     await leaf.openFile(
                       file,
-                      subpath ? { active: false, eState: { subpath } } : {active:false},
+                      subpath ? { active: false, eState: { subpath } } : {active:false}, //active false: to avoid taking the focus from ExcaliBrain
                     ); //if file exists open file and jump to reference
                     //app.workspace.setActiveLeaf(leaf, true, true); //0.15.4 ExcaliBrain focus issue
                   } catch (e) {
@@ -3300,28 +3315,24 @@ export default class ExcalidrawView extends TextFileView {
     query: string[],
     selectResult: boolean = true,
     exactMatch: boolean = false, //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530
+    selectGroup: boolean = false,
   ) {
-    if (!elements || elements.length === 0 || !query || query.length === 0) {
-      return;
-    }
-
-    const match = elements.filter((el: any) =>
-      query.some((q) => {
-        if (exactMatch) {
-          const text = el.rawText.toLowerCase().split("\n")[0].trim();
-          const m = text.match(/^#*(# .*)/);
-          if (!m || m.length !== 2) {
-            return false;
-          }
-          return m[1] === q.toLowerCase();
-        }
-        const text = el.rawText.toLowerCase().replaceAll("\n", " ").trim();
-        return text.match(q.toLowerCase()); //to distinguish between "# frame" and "# frame 1" https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530
-      }),
+    let match = getTextElementsMatchingQuery(
+      elements.filter((el: ExcalidrawElement) => el.type === "text"),
+      query,
+      exactMatch
     );
+
     if (match.length === 0) {
       new Notice("I could not find a matching text element");
       return;
+    }
+
+    if(selectGroup) {
+      const groupElements = this.plugin.ea.getElementsInTheSameGroupWithElement(match[0],elements)
+      if(groupElements.length>0) {
+        match = groupElements;
+      }
     }
 
     this.zoomToElements(selectResult,match);
@@ -3388,7 +3399,7 @@ export default class ExcalidrawView extends TextFileView {
       .filter((el: ExcalidrawElement) => elementIDs.contains(el.id));
   }
 
-  public async copyLinkToSelectedElementToClipboard() {
+  public async copyLinkToSelectedElementToClipboard(groupLink:boolean) {
     const elements = this.getViewSelectedElements();
     if (elements.length < 1) {
       new Notice(t("INSERT_LINK_TO_ELEMENT_ERROR"));
@@ -3405,12 +3416,12 @@ export default class ExcalidrawView extends TextFileView {
       "",
     );
     navigator.clipboard.writeText(
-      `[[${this.file.path}#^${elementId}${alias ? `|${alias}` : ``}]]`,
+      `[[${this.file.path}#^${groupLink?"group=":""}${elementId}${alias ? `|${alias}` : ``}]]`,
     );
     new Notice(t("INSERT_LINK_TO_ELEMENT_READY"));
   }
 
-  public updateScene(
+  public async updateScene(
     scene: {
       elements?: ExcalidrawElement[];
       appState?: any;
@@ -3428,6 +3439,7 @@ export default class ExcalidrawView extends TextFileView {
       scene.elements = api.restore(scene).elements;
     }
     try {
+      await awaitNextAnimationFrame(); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/747
       api.updateScene(scene);
     } catch (e) {
       errorlog({
@@ -3440,6 +3452,7 @@ export default class ExcalidrawView extends TextFileView {
       if (!shouldRestoreElements) {
         //second attempt
         try {
+          await awaitNextAnimationFrame(); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/747
           scene.elements = api.restore(scene).elements;
           api.updateScene(scene);
         } catch (e) {
@@ -3455,6 +3468,7 @@ export default class ExcalidrawView extends TextFileView {
         warningUnknowSeriousError();
       }
     }
+    await awaitNextAnimationFrame()
   }
 }
 

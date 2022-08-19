@@ -13,6 +13,7 @@ import ExcalidrawView from "../ExcalidrawView";
 import ExcalidrawPlugin from "../main";
 import { sleep } from "../utils/Utils";
 import { getNewOrAdjacentLeaf } from "../utils/ObsidianUtils";
+import { checkAndCreateFolder, splitFolderAndFilename } from "src/utils/FileUtils";
 
 export class Prompt extends Modal {
   private promptEl: HTMLInputElement;
@@ -434,6 +435,8 @@ export class NewFileActions extends Modal {
         if (!this.path.match(/\.md$/)) {
           this.path = `${this.path}.md`;
         }
+        const folderpath = splitFolderAndFilename(this.path).folderpath;
+        checkAndCreateFolder(folderpath);
         const f = await this.app.vault.create(this.path, data);
         return f;
       };

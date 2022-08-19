@@ -144,7 +144,7 @@ export const getAttachmentsFolderAndFilePath = async (
   if (!folder || folder === "/") {
     folder = "";
   }
-  await checkAndCreateFolder(app.vault, folder);
+  await checkAndCreateFolder(folder);
   return {
     folder,
     filepath: normalizePath(

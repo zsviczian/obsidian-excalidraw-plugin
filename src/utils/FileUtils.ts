@@ -120,7 +120,8 @@ export function getEmbedFilename(
  * Open or create a folderpath if it does not exist
  * @param folderpath
  */
-export async function checkAndCreateFolder(vault: Vault, folderpath: string) {
+export async function checkAndCreateFolder(folderpath: string) {
+  const vault = app.vault;
   folderpath = normalizePath(folderpath);
   //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/658
   //@ts-ignore

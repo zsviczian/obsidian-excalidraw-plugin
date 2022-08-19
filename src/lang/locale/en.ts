@@ -28,6 +28,7 @@ export default {
     "Open an existing drawing - IN THE CURRENT ACTIVE PANE",
   TRANSCLUDE: "Transclude (embed) a drawing",
   TRANSCLUDE_MOST_RECENT: "Transclude (embed) the most recently edited drawing",
+  TOGGLE_LEFTHANDED_MODE: "Toggle left-handed mode",
   NEW_IN_NEW_PANE: "Create a new drawing - IN A NEW PANE",
   NEW_IN_ACTIVE_PANE: "Create a new drawing - IN THE CURRENT ACTIVE PANE",
   NEW_IN_POPOUT_WINDOW: "Create a new drawing - IN A POPOUT WINDOW",
@@ -41,7 +42,11 @@ export default {
   TOGGLE_LOCK: "Toggle Text Element edit RAW/PREVIEW",
   DELETE_FILE: "Delete selected Image or Markdown file from Obsidian Vault",
   INSERT_LINK_TO_ELEMENT:
-    "Copy markdown link for selected element to clipboard",
+    "Copy markdown link for selected element to clipboard. CTRL/CMD+Click to copy group link.",
+  INSERT_LINK_TO_ELEMENT_GROUP:
+    "Copy markdown link for selected element group to clipboard.",
+  INSERT_LINK_TO_ELEMENT_NORMAL:
+    "Copy markdown link for selected element to clipboard.",
   INSERT_LINK_TO_ELEMENT_ERROR: "Select a single element in the scene",
   INSERT_LINK_TO_ELEMENT_READY: "Link is READY and available on the clipboard",
   INSERT_LINK: "Insert link to file",

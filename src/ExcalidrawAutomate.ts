@@ -1141,7 +1141,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
    */
   setView(view: ExcalidrawView | "first" | "active"): ExcalidrawView {
     if (view == "active") {
-      const v = this.plugin.app.workspace.getActiveViewOfType(ExcalidrawView);
+      const v = app.workspace.getActiveViewOfType(ExcalidrawView);
       if (!(v instanceof ExcalidrawView)) {
         return;
       }
@@ -1149,7 +1149,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     }
     if (view == "first") {
       const leaves =
-        this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+        app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
       if (!leaves || leaves.length == 0) {
         return;
       }
@@ -1283,7 +1283,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
    * @returns 
    */
   viewToggleFullScreen(forceViewMode: boolean = false): void {
-    if (this.plugin.app.isMobile) {
+    if (app.isMobile) {
       errorMessage("mobile not supported", "viewToggleFullScreen()");
       return;
     }
@@ -1618,7 +1618,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       return null;
     }
     const leaf = getNewOrAdjacentLeaf(this.plugin, this.targetView.leaf);
-    leaf.openFile(file, {active: false});
+    leaf.openFile(file, {active: true});
     return leaf;
   };
 
@@ -2008,7 +2008,9 @@ async function getTemplate(
 
     let groupElements:ExcalidrawElement[] = scene.elements;
     if(filenameParts.hasGroupref) {
-      const el = scene.elements.filter((el: ExcalidrawElement) => el.id === filenameParts.blockref);
+      const el = filenameParts.hasSectionref
+      ? getTextElementsMatchingQuery(scene.elements,["# "+filenameParts.sectionref],true)
+      : scene.elements.filter((el: ExcalidrawElement)=>el.id===filenameParts.blockref);
       if(el.length > 0) {
         groupElements = plugin.ea.getElementsInTheSameGroupWithElement(el[0],scene.elements)
       }
@@ -2094,6 +2096,7 @@ export async function createSVG(
     : null;
   let elements = template?.elements ?? [];
   elements = elements.concat(automateElements);
+  padding = padding ?? plugin.settings.exportPaddingSVG;
   const svg = await getSVG(
     {
       //createAndOpenDrawing
@@ -2113,8 +2116,29 @@ export async function createSVG(
         exportSettings?.withBackground ?? plugin.settings.exportWithBackground,
       withTheme: exportSettings?.withTheme ?? plugin.settings.exportWithTheme,
     },
-    padding ?? plugin.settings.exportPaddingSVG,
+    padding,
   );
+  const filenameParts = getEmbeddedFilenameParts(templatePath);
+  if(
+    !filenameParts.hasGroupref && 
+    (filenameParts.hasBlockref || filenameParts.hasSectionref)
+  ) {
+    let el = filenameParts.hasSectionref
+      ? getTextElementsMatchingQuery(elements,["# "+filenameParts.sectionref],true)
+      : elements.filter((el: ExcalidrawElement)=>el.id===filenameParts.blockref);
+    if(el.length>0) {
+      const containerId = el[0].containerId;
+      if(containerId) {
+        el = el.concat(elements.filter((el: ExcalidrawElement)=>el.id === containerId));
+      }
+      const elBB = plugin.ea.getBoundingBox(el);
+      const drawingBB = plugin.ea.getBoundingBox(elements);
+      svg.viewBox.baseVal.x = elBB.topX - drawingBB.topX;
+      svg.viewBox.baseVal.y = elBB.topY - drawingBB.topY;
+      svg.viewBox.baseVal.width = elBB.width + 2*padding; 
+      svg.viewBox.baseVal.height = elBB.height + 2*padding;
+    }
+  }
   if (template?.hasSVGwithBitmap) {
     svg.setAttribute("hasbitmap", "true");
   }
@@ -2242,3 +2266,35 @@ export const search = async (view: ExcalidrawView) => {
 
   ea.targetView.selectElementsMatchingQuery(elements, query);
 };
+
+/**
+ * 
+ * @param elements 
+ * @param query 
+ * @param exactMatch - when searching for section header exactMatch should be set to true
+ * @returns the elements matching the query
+ */
+export const getTextElementsMatchingQuery = (
+  elements: ExcalidrawElement[],
+  query: string[],
+  exactMatch: boolean = false, //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530
+): ExcalidrawElement[] => {
+  if (!elements || elements.length === 0 || !query || query.length === 0) {
+    return [];
+  }
+
+  return elements.filter((el: any) =>
+    el.type === "text" && 
+    query.some((q) => {
+      if (exactMatch) {
+        const text = el.rawText.toLowerCase().split("\n")[0].trim();
+        const m = text.match(/^#*(# .*)/);
+        if (!m || m.length !== 2) {
+          return false;
+        }
+        return m[1] === q.toLowerCase();
+      }
+      const text = el.rawText.toLowerCase().replaceAll("\n", " ").trim();
+      return text.match(q.toLowerCase()); //to distinguish between "# frame" and "# frame 1" https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530
+    }));
+}

@@ -22,6 +22,7 @@ import {
 } from "./utils/Utils";
 import { isObsidianThemeDark } from "./utils/ObsidianUtils";
 import { splitFolderAndFilename } from "./utils/FileUtils";
+import * as internal from "stream";
 
 interface imgElementAttributes {
   file?: TFile;
@@ -120,10 +121,18 @@ const getIMG = async (
       scale = 5;
     }
 
+    //In case of PNG I cannot change the viewBox to select the area of the element
+    //being referenced. For PNG only the group reference works
+    const quickPNG = !filenameParts.hasGroupref
+      ? await getQuickImagePreview(plugin, file.path, "png")
+      : undefined;
+
     const png =
-      (await getQuickImagePreview(plugin, file.path, "png")) ??
+      quickPNG ??
       (await createPNG(
-        file.path,
+        filenameParts.hasGroupref
+          ? filenameParts.filepath + filenameParts.linkpartReference
+          : file.path,
         scale,
         exportSettings,
         loader,
@@ -140,14 +149,17 @@ const getIMG = async (
     img.src = URL.createObjectURL(png);
     return img;
   }
-  const quickSVG = await getQuickImagePreview(plugin, file.path, "svg");
-  if (quickSVG) {
-    img.setAttribute("src", svgToBase64(quickSVG));
-    return img;
+
+  if(!(filenameParts.hasBlockref || filenameParts.hasSectionref)) {
+    const quickSVG = await getQuickImagePreview(plugin, file.path, "svg");
+    if (quickSVG) {
+      img.setAttribute("src", svgToBase64(quickSVG));
+      return img;
+    }
   }
   const svgSnapshot = (
     await createSVG(
-      filenameParts.hasGroupref
+      filenameParts.hasGroupref || filenameParts.hasBlockref || filenameParts.hasSectionref
         ? filenameParts.filepath + filenameParts.linkpartReference
         : file.path,
       true,
@@ -185,7 +197,7 @@ const createImageDiv = async (
   const img = await getIMG(attr);
   return createDiv(attr.style, (el) => {
     el.append(img);
-    el.setAttribute("src", attr.file.path);
+    el.setAttribute("src", attr.fname);
     if (attr.fwidth) {
       el.setAttribute("w", attr.fwidth);
     }
@@ -201,13 +213,17 @@ const createImageDiv = async (
       }
       const src = el.getAttribute("src");
       if (src) {
+        const srcParts = src.match(/([^#]*)(.*)/);
+        if(!srcParts) return;
         plugin.openDrawing(
-          vault.getAbstractFileByPath(src) as TFile,
+          vault.getAbstractFileByPath(srcParts[1]) as TFile,
           ev[CTRL_OR_CMD]
             ? "new-pane"
             : (ev.metaKey && !app.isMobile)
               ? "popout-window"
               : "active-pane",
+          true,
+          srcParts[2],
         );
       } //.ctrlKey||ev.metaKey);
     });
@@ -225,51 +241,56 @@ const createImageDiv = async (
   });
 };
 
-const processInternalEmbeds = async (
+const processReadingMode = async (
   embeddedItems: NodeListOf<Element> | [HTMLElement],
   ctx: MarkdownPostProcessorContext,
 ) => {
-  //if not, then we are processing a non-excalidraw file in reading mode
-  //in that cases embedded files will be displayed in an .internal-embed container
+  //We are processing a non-excalidraw file in reading mode
+  //Embedded files will be displayed in an .internal-embed container
+
+  //Iterating all the containers in the file to check which one is an excalidraw drawing
+  //This is a for loop instead of embeddedItems.forEach() because processInternalEmbed at the end
+  //is awaited, otherwise excalidraw images would not display in the Kanban plugin
+  for (const maybeDrawing of embeddedItems) {
+    //check to see if the file in the src attribute exists
+    const fname = maybeDrawing.getAttribute("src")?.split("#")[0];
+    if(!fname) continue;
+
+    const file = metadataCache.getFirstLinkpathDest(fname, ctx.sourcePath);
+
+    //if the embeddedFile exits and it is an Excalidraw file
+    //then lets replace the .internal-embed with the generated PNG or SVG image
+    if (file && file instanceof TFile && plugin.isExcalidrawFile(file)) {
+      maybeDrawing.parentElement.replaceChild(
+        await processInternalEmbed(maybeDrawing,file),
+        maybeDrawing
+      );
+    }
+  }
+};
+
+const processInternalEmbed = async (internalEmbedEl: Element, file: TFile ):Promise<HTMLDivElement> => {
   const attr: imgElementAttributes = {
     fname: "",
     fheight: "",
     fwidth: "",
     style: "",
   };
-  let alt: string;
-  let file: TFile;
 
-  //Iterating through all the containers to check which one is an excalidraw drawing
-  //This is a for loop instead of embeddedItems.forEach() because createImageDiv at the end
-  //is awaited, otherwise excalidraw images would not display in the Kanban plugin
-  for (const maybeDrawing of embeddedItems) {
-    //check to see if the file in the src attribute exists
-    attr.fname = maybeDrawing.getAttribute("src");
-    const fname = attr.fname?.split("#")[0]??"";
-    file = metadataCache.getFirstLinkpathDest(fname, ctx.sourcePath);
-
-    //if the embeddedFile exits and it is an Excalidraw file
-    //then lets replace the .internal-embed with the generated PNG or SVG image
-    if (file && file instanceof TFile && plugin.isExcalidrawFile(file)) {
-      attr.fwidth = maybeDrawing.getAttribute("width")
-        ? maybeDrawing.getAttribute("width")
-        : getDefaultWidth(plugin);
-      attr.fheight = maybeDrawing.getAttribute("height");
-      alt = maybeDrawing.getAttribute("alt");
-      if (alt === attr.fname) {
-        alt = "";
-      } //when the filename starts with numbers followed by a space Obsidian recognizes the filename as alt-text
-      attr.style = "excalidraw-svg";
-      processAltText(fname,alt,attr);
-      const fnameParts = getEmbeddedFilenameParts(attr.fname);
-      attr.fname = file?.path + (fnameParts.hasBlockref?fnameParts.linkpartReference:"");
-      attr.file = file;
-      const div = await createImageDiv(attr);
-      maybeDrawing.parentElement.replaceChild(div, maybeDrawing);
-    }
-  }
-};
+  const src = internalEmbedEl.getAttribute("src");
+  if(!src) return;
+  attr.fwidth = internalEmbedEl.getAttribute("width")
+  ? internalEmbedEl.getAttribute("width")
+  : getDefaultWidth(plugin);
+  attr.fheight = internalEmbedEl.getAttribute("height");
+  let alt = internalEmbedEl.getAttribute("alt");
+  attr.style = "excalidraw-svg";
+  processAltText(src.split("#")[0],alt,attr);
+  const fnameParts = getEmbeddedFilenameParts(src);
+  attr.fname = file?.path + (fnameParts.hasBlockref||fnameParts.hasSectionref?fnameParts.linkpartReference:"");
+  attr.file = file;
+  return await createImageDiv(attr);
+}
 
 const processAltText = (
   fname: string,
@@ -282,7 +303,14 @@ const processAltText = (
     attr.fwidth = parts[2] ?? attr.fwidth;
     attr.fheight = parts[3] ?? attr.fheight;
     if (parts[4] && !parts[4].startsWith(fname)) {
-      attr.style = `excalidraw-svg${parts[4] ? `-${parts[4]}` : ""}`;
+      attr.style = `excalidraw-svg${`-${parts[4]}`}`;
+    }
+    if (
+      (!parts[4] || parts[4]==="") &&
+      (!parts[2] || parts[2]==="") &&
+      parts[0] && parts[0] !== ""
+    ) {
+      attr.style = `excalidraw-svg${`-${parts[0]}`}`;
     }
   }
 }
@@ -300,44 +328,9 @@ const tmpObsidianWYSIWYG = async (
     return;
   }
 
-  //@ts-ignore
-  const dataHeading = el.firstChild?.getAttribute("data-heading");
-  const blockrefToUnrecognizedTarget = dataHeading?.startsWith("Unable to find section")
-  
-  if (!blockrefToUnrecognizedTarget && !el.querySelector(".frontmatter")) {
-    el.style.display = "none";
-    return;
-  }
-
-  let blockref = "";
-  if(blockrefToUnrecognizedTarget) {
-    const reg = new RegExp(`Unable to find section (.*) in ${file.basename}`);
-    const m = dataHeading.match(/Unable to find section (.*) in 1test/);
-    if(m && m.length>0) {
-      blockref = m[1];
-    }
-  }
-
-  const attr: imgElementAttributes = {
-    fname: ctx.sourcePath+blockref,
-    fheight: "",
-    fwidth: getDefaultWidth(plugin),
-    style: "excalidraw-svg",
-  };
-
-  attr.file = file;
-
   el.empty();
 
-  if (!plugin.settings.experimentalLivePreview) {
-    el.appendChild(await createImageDiv(attr));
-    return;
-  }
-
-  const div = createDiv();
-  el.appendChild(div);
-
-  //The timeout gives time for obsidian to attach el to the displayed document
+  //The timeout gives time for Obsidian to attach el to the displayed document
   //Once the element is attached, I can traverse up the dom tree to find .internal-embed
   //If internal embed is not found, it means the that the excalidraw.md file
   //is being rendered in "reading" mode. In that case, the image with the default width
@@ -350,8 +343,7 @@ const tmpObsidianWYSIWYG = async (
     while(!el.parentElement && counter++<=50) await sleep(50);
     if(!el.parentElement) return;
 
-
-    let internalEmbedDiv: HTMLElement = div;
+    let internalEmbedDiv: HTMLElement = el;
     while (
       !internalEmbedDiv.hasClass("internal-embed") &&
       internalEmbedDiv.parentElement
@@ -359,57 +351,39 @@ const tmpObsidianWYSIWYG = async (
       internalEmbedDiv = internalEmbedDiv.parentElement;
     }
 
+    const attr: imgElementAttributes = {
+      fname: ctx.sourcePath,
+      fheight: "",
+      fwidth: getDefaultWidth(plugin),
+      style: "excalidraw-svg",
+    };
+    
+    attr.file = file;
+
     if (!internalEmbedDiv.hasClass("internal-embed")) {
+      //We are processing the markdown preview of an actual Excalidraw file
+      //This could be in a hover preview of the file
+      //Or the file could be in markdown mode and the user switched markdown
+      //view of the drawing to reading mode
+      const mdPreviewSection = el.parentElement;
+      if(!mdPreviewSection.hasClass("markdown-preview-section")) return;
+      if(mdPreviewSection.hasAttribute("ready")) {
+        mdPreviewSection.removeChild(el);
+        return;
+      }
+      mdPreviewSection.setAttribute("ready","");
       el.empty();
-      el.appendChild(await createImageDiv(attr));
+      const imgDiv = await createImageDiv(attr);
+      el.appendChild(imgDiv);
       return;
     }
 
+    if(internalEmbedDiv.hasAttribute("ready")) return;
+    internalEmbedDiv.setAttribute("ready","");
+
     internalEmbedDiv.empty();
-
-    const basename = splitFolderAndFilename(attr.fname).basename;
-    const setAttr = () => {
-      const hasWidth = internalEmbedDiv.getAttribute("width") && (internalEmbedDiv.getAttribute("width") !== "");
-      const hasHeight = internalEmbedDiv.getAttribute("height") && (internalEmbedDiv.getAttribute("height") !== "");
-      if (hasWidth) {
-        attr.fwidth = internalEmbedDiv.getAttribute("width");
-      }
-      if (hasHeight) {
-        attr.fheight = internalEmbedDiv.getAttribute("height");
-      }
-
-      if (!hasWidth && !hasHeight) {
-        attr.fheight = "";
-        attr.fwidth = getDefaultWidth(plugin);
-        attr.style = "excalidraw-svg";
-      }
-
-      const alt = internalEmbedDiv.getAttribute("alt");
-      processAltText(basename,alt,attr);
-/*      const hasAttr =
-        alt &&
-        alt !== "" &&
-        alt !== basename &&
-        alt !== internalEmbedDiv.getAttribute("src") &&
-        !alt.startsWith(attr.file.name + " > ");
-      if (hasAttr) {
-        //1:width, 2:height, 3:style  1      2      3
-        const parts = alt.match(/(\d*%?)x?(\d*%?)\|?(.*)/);
-        attr.fwidth = parts[1] ? parts[1] : getDefaultWidth(plugin);
-        attr.fheight = parts[2];
-        if (parts[3] != attr.fname) {
-          attr.style = `excalidraw-svg${parts[3] ? `-${parts[3]}` : ""}`;
-        }
-      }*/
-
-    };
-
-    const createImgElement = async () => {
-      setAttr();
-      const imgDiv = await createImageDiv(attr);
-      internalEmbedDiv.appendChild(imgDiv);
-    };
-    await createImgElement();
+    const imgDiv = await processInternalEmbed(internalEmbedDiv,file);
+    internalEmbedDiv.appendChild(imgDiv);
 
     //timer to avoid the image flickering when the user is typing
     let timer: NodeJS.Timeout = null;
@@ -420,11 +394,11 @@ const tmpObsidianWYSIWYG = async (
       if (timer) {
         clearTimeout(timer);
       }
-      timer = setTimeout(() => {
+      timer = setTimeout(async () => {
         timer = null;
-        setAttr();
         internalEmbedDiv.empty();
-        createImgElement();
+        const imgDiv = await processInternalEmbed(internalEmbedDiv,file);
+        internalEmbedDiv.appendChild(imgDiv);    
       }, 500);
     });
     observer.observe(internalEmbedDiv, {
@@ -459,7 +433,7 @@ export const markdownPostProcessor = async (
     return;
   }
 
-  await processInternalEmbeds(embeddedItems, ctx);
+  await processReadingMode(embeddedItems, ctx);
 };
 
 /**

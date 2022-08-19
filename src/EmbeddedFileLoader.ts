@@ -92,7 +92,7 @@ export class EmbeddedFile {
     if (!this.linkParts.height) {
       this.linkParts.height = this.plugin.settings.mdSVGmaxHeight;
     }
-    this.file = this.plugin.app.metadataCache.getFirstLinkpathDest(
+    this.file = app.metadataCache.getFirstLinkpathDest(
       this.linkParts.path,
       hostPath,
     );
@@ -108,7 +108,7 @@ export class EmbeddedFile {
 
   private fileChanged(): boolean {
     if (!this.file) {
-      this.file = this.plugin.app.metadataCache.getFirstLinkpathDest(
+      this.file = app.metadataCache.getFirstLinkpathDest(
         this.linkParts.path,
         this.hostPath,
       ); // maybe the file has synchronized in the mean time
@@ -149,7 +149,7 @@ export class EmbeddedFile {
 
   public isLoaded(isDark: boolean): boolean {
     if (!this.file) {
-      this.file = this.plugin.app.metadataCache.getFirstLinkpathDest(
+      this.file = app.metadataCache.getFirstLinkpathDest(
         this.linkParts.path,
         this.hostPath,
       ); // maybe the file has synchronized in the mean time
@@ -218,7 +218,6 @@ export class EmbeddedFilesLoader {
           };
 
     let hasSVGwithBitmap = false;
-    const app = this.plugin.app;
     const isExcalidrawFile = this.plugin.isExcalidrawFile(file);
     if (
       !(

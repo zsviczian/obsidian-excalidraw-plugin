@@ -576,8 +576,8 @@ export const getEmbeddedFilenameParts = (fname:string):{
   linkpartReference: string,
   linkpartAlias: string
 } => {
-  //                       0 1        23    4        5        6  7          8
-  const parts = fname?.match(/([^#\^]*)((#\^)(group_)?([^\|]*)|(#)([^\^\|]*))(.*)/);
+  //                        0 1        23    4        5         6  7         8          9
+  const parts = fname?.match(/([^#\^]*)((#\^)(group=)?([^\|]*)|(#)(group=)?([^\^\|]*))(.*)/);
   if(!parts) {
     return {
       filepath: fname,
@@ -593,12 +593,12 @@ export const getEmbeddedFilenameParts = (fname:string):{
   return {
     filepath: parts[1],
     hasBlockref: Boolean(parts[3]),
-    hasGroupref: Boolean(parts[4]),
+    hasGroupref: Boolean(parts[4]) || Boolean(parts[7]),
     blockref: parts[5],
     hasSectionref: Boolean(parts[6]),
-    sectionref: parts[7],
+    sectionref: parts[8],
     linkpartReference: parts[2],
-    linkpartAlias: parts[8]
+    linkpartAlias: parts[9]
   }
 }
 
@@ -607,6 +607,7 @@ export const errorlog = (data: {}) => {
 };
 
 export const sleep = async (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+export const awaitNextAnimationFrame = async () => new Promise(requestAnimationFrame); 
 
 export const log = console.log.bind(window.console);
 export const debug = console.log.bind(window.console);

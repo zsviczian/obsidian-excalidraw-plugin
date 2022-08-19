@@ -55,7 +55,7 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
   onChooseItem(item: TFile): void {
     switch (this.action) {
       case openDialogAction.openFile:
-        this.plugin.openDrawing(item, this.onNewPane?"new-pane":"active-pane");
+        this.plugin.openDrawing(item, this.onNewPane?"new-pane":"active-pane",true);
         break;
       case openDialogAction.insertLinkToDrawing:
         this.plugin.embedDrawing(item);

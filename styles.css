@@ -138,7 +138,11 @@ li[data-testid] {
 }
 
 .excalidraw-prompt-center {
-  text-align: center;
+  text-align: center !important;
+}
+
+.excalidraw-prompt-center button {
+  margin: 0 10px;
 }
 
 .excalidraw-prompt-center.filepath {
