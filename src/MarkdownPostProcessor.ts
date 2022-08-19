@@ -238,7 +238,6 @@ const processInternalEmbeds = async (
     style: "",
   };
   let alt: string;
-  let parts;
   let file: TFile;
 
   //Iterating through all the containers to check which one is an excalidraw drawing
@@ -247,10 +246,8 @@ const processInternalEmbeds = async (
   for (const maybeDrawing of embeddedItems) {
     //check to see if the file in the src attribute exists
     attr.fname = maybeDrawing.getAttribute("src");
-    file = metadataCache.getFirstLinkpathDest(
-      attr.fname?.split("#")[0],
-      ctx.sourcePath,
-    );
+    const fname = attr.fname?.split("#")[0]??"";
+    file = metadataCache.getFirstLinkpathDest(fname, ctx.sourcePath);
 
     //if the embeddedFile exits and it is an Excalidraw file
     //then lets replace the .internal-embed with the generated PNG or SVG image
@@ -264,21 +261,7 @@ const processInternalEmbeds = async (
         alt = "";
       } //when the filename starts with numbers followed by a space Obsidian recognizes the filename as alt-text
       attr.style = "excalidraw-svg";
-      if (alt) {
-        //for some reason Obsidian renders ![]() in a DIV and ![[]] in a SPAN
-        //also the alt-text of the DIV does not include the alt-text of the image
-        //thus need to add an additional "|" character when its a SPAN
-        if (maybeDrawing.tagName.toLowerCase() == "span") {
-          alt = `|${alt}`;
-        }
-        //1:width, 2:height, 3:style  1      2      3
-        parts = alt.match(/[^\|]*\|?(\d*%?)x?(\d*%?)\|?(.*)/);
-        attr.fwidth = parts[1] ? parts[1] : getDefaultWidth(plugin);
-        attr.fheight = parts[2];
-        if (parts[3] != attr.fname) {
-          attr.style = `excalidraw-svg${parts[3] ? `-${parts[3]}` : ""}`;
-        }
-      }
+      processAltText(fname,alt,attr);
       const fnameParts = getEmbeddedFilenameParts(attr.fname);
       attr.fname = file?.path + (fnameParts.hasBlockref?fnameParts.linkpartReference:"");
       attr.file = file;
@@ -288,32 +271,61 @@ const processInternalEmbeds = async (
   }
 };
 
+const processAltText = (
+  fname: string,
+  alt:string,
+  attr: imgElementAttributes
+) => {
+  if (alt && !alt.startsWith(fname)) {
+    //2:width, 3:height, 4:style  12        3           4
+    const parts = alt.match(/[^\|\d]*\|?((\d*%?)x?(\d*%?))?\|?(.*)/);
+    attr.fwidth = parts[2] ?? attr.fwidth;
+    attr.fheight = parts[3] ?? attr.fheight;
+    if (parts[4] && !parts[4].startsWith(fname)) {
+      attr.style = `excalidraw-svg${parts[4] ? `-${parts[4]}` : ""}`;
+    }
+  }
+}
+
 const tmpObsidianWYSIWYG = async (
   el: HTMLElement,
   ctx: MarkdownPostProcessorContext,
 ) => {
-  if (!ctx.frontmatter) {
-    return;
-  }
-  if (!ctx.frontmatter.hasOwnProperty("excalidraw-plugin")) {
-    return;
-  }
+  const file = app.vault.getAbstractFileByPath(ctx.sourcePath);
+  if(!(file instanceof TFile)) return;
+  if(!plugin.isExcalidrawFile(file)) return;
+
   //@ts-ignore
   if (ctx.remainingNestLevel < 4) {
     return;
   }
-  if (!el.querySelector(".frontmatter")) {
+
+  //@ts-ignore
+  const dataHeading = el.firstChild?.getAttribute("data-heading");
+  const blockrefToUnrecognizedTarget = dataHeading?.startsWith("Unable to find section")
+  
+  if (!blockrefToUnrecognizedTarget && !el.querySelector(".frontmatter")) {
     el.style.display = "none";
     return;
   }
+
+  let blockref = "";
+  if(blockrefToUnrecognizedTarget) {
+    const reg = new RegExp(`Unable to find section (.*) in ${file.basename}`);
+    const m = dataHeading.match(/Unable to find section (.*) in 1test/);
+    if(m && m.length>0) {
+      blockref = m[1];
+    }
+  }
+
   const attr: imgElementAttributes = {
-    fname: ctx.sourcePath,
+    fname: ctx.sourcePath+blockref,
     fheight: "",
     fwidth: getDefaultWidth(plugin),
     style: "excalidraw-svg",
   };
 
-  attr.file = metadataCache.getFirstLinkpathDest(ctx.sourcePath, "");
+  attr.file = file;
 
   el.empty();
 
@@ -365,12 +377,21 @@ const tmpObsidianWYSIWYG = async (
       if (hasHeight) {
         attr.fheight = internalEmbedDiv.getAttribute("height");
       }
+
+      if (!hasWidth && !hasHeight) {
+        attr.fheight = "";
+        attr.fwidth = getDefaultWidth(plugin);
+        attr.style = "excalidraw-svg";
+      }
+
       const alt = internalEmbedDiv.getAttribute("alt");
-      const hasAttr =
+      processAltText(basename,alt,attr);
+/*      const hasAttr =
         alt &&
         alt !== "" &&
         alt !== basename &&
-        alt !== internalEmbedDiv.getAttribute("src");
+        alt !== internalEmbedDiv.getAttribute("src") &&
+        !alt.startsWith(attr.file.name + " > ");
       if (hasAttr) {
         //1:width, 2:height, 3:style  1      2      3
         const parts = alt.match(/(\d*%?)x?(\d*%?)\|?(.*)/);
@@ -379,12 +400,8 @@ const tmpObsidianWYSIWYG = async (
         if (parts[3] != attr.fname) {
           attr.style = `excalidraw-svg${parts[3] ? `-${parts[3]}` : ""}`;
         }
-      }
-      if (!hasWidth && !hasHeight && !hasAttr) {
-        attr.fheight = "";
-        attr.fwidth = getDefaultWidth(plugin);
-        attr.style = "excalidraw-svg";
-      }
+      }*/
+
     };
 
     const createImgElement = async () => {
@@ -425,7 +442,7 @@ export const markdownPostProcessor = async (
   el: HTMLElement,
   ctx: MarkdownPostProcessorContext,
 ) => {
-  //check to see if we are rendering in editing mode of live preview
+  //check to see if we are rendering in editing mode or live preview
   //if yes, then there should be no .internal-embed containers
   const embeddedItems = el.querySelectorAll(".internal-embed");
   if (embeddedItems.length === 0) {
