@@ -443,7 +443,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.isLeftHanded)
           .onChange(async (value) => {
             this.plugin.settings.isLeftHanded = value;
-            setLeftHandedMode(value);
+            //not clear why I need to do this. If I don't double apply the stylesheet changes 
+            //then the style won't be applied in the popout windows
+            setLeftHandedMode(value); 
+            setTimeout(()=>setLeftHandedMode(value));
             this.applySettingsUpdate();
           }),
       );

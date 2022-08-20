@@ -1554,7 +1554,21 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
    */
   getElementsInTheSameGroupWithElement(element: ExcalidrawElement, elements: ExcalidrawElement[]): ExcalidrawElement[] {
     if(!element || !elements) return [];
-    if(element.groupIds.length === 0) return [element];
+    const container = (element.type === "text" && element.containerId)
+      ? elements.filter(el=>el.id === element.containerId)
+      : [];
+    if(element.groupIds.length === 0) {
+      if(container.length === 1) return [element,container[0]];
+      return [element];
+    }
+
+    if(container.length === 1) {
+      return elements.filter(el=>
+        el.groupIds.some(id=>element.groupIds.includes(id)) ||
+        el === container[0]
+      );
+    }
+    
     return elements.filter(el=>el.groupIds.some(id=>element.groupIds.includes(id)));
   }
 

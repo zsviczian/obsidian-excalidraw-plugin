@@ -21,8 +21,6 @@ import {
   svgToBase64,
 } from "./utils/Utils";
 import { isObsidianThemeDark } from "./utils/ObsidianUtils";
-import { splitFolderAndFilename } from "./utils/FileUtils";
-import * as internal from "stream";
 
 interface imgElementAttributes {
   file?: TFile;
@@ -107,19 +105,15 @@ const getIMG = async (
 
   if (!plugin.settings.displaySVGInPreview) {
     const width = parseInt(imgAttributes.fwidth);
-    let scale = 1;
-    if (width >= 600) {
-      scale = 2;
-    }
-    if (width >= 1200) {
-      scale = 3;
-    }
-    if (width >= 1800) {
-      scale = 4;
-    }
-    if (width >= 2400) {
-      scale = 5;
-    }
+    const scale = width >= 2400
+      ? 5
+      : width >= 1800
+        ? 4
+        : width >= 1200
+          ? 3
+          : width >= 600
+            ? 2
+            : 1;
 
     //In case of PNG I cannot change the viewBox to select the area of the element
     //being referenced. For PNG only the group reference works
@@ -261,6 +255,12 @@ const processReadingMode = async (
     //if the embeddedFile exits and it is an Excalidraw file
     //then lets replace the .internal-embed with the generated PNG or SVG image
     if (file && file instanceof TFile && plugin.isExcalidrawFile(file)) {
+      if(isTextOnlyEmbed(maybeDrawing)) {
+        //legacy reference to a block or section as text
+        //should be embedded as legacy text
+        continue;
+      }
+  
       maybeDrawing.parentElement.replaceChild(
         await processInternalEmbed(maybeDrawing,file),
         maybeDrawing
@@ -315,6 +315,14 @@ const processAltText = (
   }
 }
 
+const isTextOnlyEmbed = (internalEmbedEl: Element):boolean => {
+  const src = internalEmbedEl.getAttribute("src");
+  if(!src) return true; //technically this does not mean this is a text only embed, but still should abort further processing
+  const fnameParts = getEmbeddedFilenameParts(src);
+  return !(fnameParts.hasArearef || fnameParts.hasGroupref) &&
+    (fnameParts.hasBlockref || fnameParts.hasSectionref)
+}
+
 const tmpObsidianWYSIWYG = async (
   el: HTMLElement,
   ctx: MarkdownPostProcessorContext,
@@ -327,8 +335,6 @@ const tmpObsidianWYSIWYG = async (
   if (ctx.remainingNestLevel < 4) {
     return;
   }
-
-  el.empty();
 
   //The timeout gives time for Obsidian to attach el to the displayed document
   //Once the element is attached, I can traverse up the dom tree to find .internal-embed
@@ -365,6 +371,7 @@ const tmpObsidianWYSIWYG = async (
       //This could be in a hover preview of the file
       //Or the file could be in markdown mode and the user switched markdown
       //view of the drawing to reading mode
+      el.empty();
       const mdPreviewSection = el.parentElement;
       if(!mdPreviewSection.hasClass("markdown-preview-section")) return;
       if(mdPreviewSection.hasAttribute("ready")) {
@@ -372,13 +379,22 @@ const tmpObsidianWYSIWYG = async (
         return;
       }
       mdPreviewSection.setAttribute("ready","");
-      el.empty();
       const imgDiv = await createImageDiv(attr);
       el.appendChild(imgDiv);
       return;
     }
 
-    if(internalEmbedDiv.hasAttribute("ready")) return;
+    if(isTextOnlyEmbed(internalEmbedDiv)) {
+      //legacy reference to a block or section as text
+      //should be embedded as legacy text
+      return;
+    }
+
+    el.empty();
+
+    if(internalEmbedDiv.hasAttribute("ready")) {  
+      return;
+    }
     internalEmbedDiv.setAttribute("ready","");
 
     internalEmbedDiv.empty();
@@ -416,6 +432,7 @@ export const markdownPostProcessor = async (
   el: HTMLElement,
   ctx: MarkdownPostProcessorContext,
 ) => {
+
   //check to see if we are rendering in editing mode or live preview
   //if yes, then there should be no .internal-embed containers
   const embeddedItems = el.querySelectorAll(".internal-embed");
@@ -428,7 +445,8 @@ export const markdownPostProcessor = async (
   //then I want to hide all embedded items as these will be
   //transcluded text element or some other transcluded content inside the Excalidraw file
   //in reading mode these elements should be hidden
-  if (ctx.frontmatter?.hasOwnProperty("excalidraw-plugin")) {
+  const excalidrawFile = Boolean(ctx.frontmatter?.hasOwnProperty("excalidraw-plugin"));
+  if (excalidrawFile) {
     el.style.display = "none";
     return;
   }

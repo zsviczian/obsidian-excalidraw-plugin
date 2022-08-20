@@ -1051,7 +1051,7 @@ export default class ExcalidrawPlugin extends Plugin {
         }
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
-          view.copyLinkToSelectedElementToClipboard(false);
+          view.copyLinkToSelectedElementToClipboard("");
           return true;
         }
         return false;
@@ -1067,7 +1067,23 @@ export default class ExcalidrawPlugin extends Plugin {
         }
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
-          view.copyLinkToSelectedElementToClipboard(true);
+          view.copyLinkToSelectedElementToClipboard("group=");
+          return true;
+        }
+        return false;
+      },
+    });
+
+    this.addCommand({
+      id: "insert-link-to-element-area",
+      name: t("INSERT_LINK_TO_ELEMENT_AREA"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
+        }
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
+          view.copyLinkToSelectedElementToClipboard("area=");
           return true;
         }
         return false;
@@ -1091,10 +1107,14 @@ export default class ExcalidrawPlugin extends Plugin {
         }
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         (async()=>{
-          await this.loadSettings();
-          this.settings.isLeftHanded = !this.settings.isLeftHanded;
+          const isLeftHanded = this.settings.isLeftHanded;
+          await this.loadSettings(false);
+          this.settings.isLeftHanded = !isLeftHanded;
           this.saveSettings();
-          setLeftHandedMode(this.settings.isLeftHanded);
+          //not clear why I need to do this. If I don't double apply the stylesheet changes 
+          //then the style won't be applied in the popout windows
+          setLeftHandedMode(!isLeftHanded);
+          setTimeout(()=>setLeftHandedMode(!isLeftHanded));
         })()
         return true;
       },
@@ -1822,9 +1842,9 @@ export default class ExcalidrawPlugin extends Plugin {
     }
   }
 
-  public async loadSettings() {
+  public async loadSettings(applyLefthandedMode:boolean = true) {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-    setLeftHandedMode(this.settings.isLeftHanded);
+    if(applyLefthandedMode) setLeftHandedMode(this.settings.isLeftHanded);
     this.settings.autosave = true;
     this.settings.autosaveInterval = 10000;
   }

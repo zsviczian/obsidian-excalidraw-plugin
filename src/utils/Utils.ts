@@ -395,6 +395,19 @@ export const scaleLoadedImage = (
   }
 };
 
+export const setDocLeftHandedMode = (isLeftHanded: boolean, ownerDocument:Document) => {
+  const newStylesheet = ownerDocument.createElement("style");
+  newStylesheet.id = "excalidraw-left-handed";
+  newStylesheet.textContent = `.excalidraw .App-bottom-bar{justify-content:flex-end;}`;
+  const oldStylesheet = ownerDocument.getElementById(newStylesheet.id);
+  if (oldStylesheet) {
+    ownerDocument.head.removeChild(oldStylesheet);
+  }
+  if (isLeftHanded) {
+    ownerDocument.head.appendChild(newStylesheet);
+  }
+}
+
 export const setLeftHandedMode = (isLeftHanded: boolean) => {
   const visitedDocs = new Set<Document>();
   app.workspace.iterateAllLeaves((leaf) => {
@@ -402,17 +415,8 @@ export const setLeftHandedMode = (isLeftHanded: boolean) => {
     if(!ownerDocument) return;
     if(visitedDocs.has(ownerDocument)) return;
     visitedDocs.add(ownerDocument);
-    const newStylesheet = ownerDocument.createElement("style");
-    newStylesheet.id = "excalidraw-letf-handed";
-    newStylesheet.textContent = `.excalidraw .App-bottom-bar{justify-content:flex-end;}`;
-    const oldStylesheet = ownerDocument.getElementById(newStylesheet.id);
-    if (oldStylesheet) {
-      ownerDocument.head.removeChild(oldStylesheet);
-    }
-    if (isLeftHanded) {
-      ownerDocument.head.appendChild(newStylesheet);
-    }
-  })
+    setDocLeftHandedMode(isLeftHanded,ownerDocument);
+  })  
 };
 
 export type LinkParts = {
@@ -570,19 +574,21 @@ export const getEmbeddedFilenameParts = (fname:string):{
   filepath: string,
   hasBlockref: boolean,
   hasGroupref: boolean,
+  hasArearef: boolean,
   blockref: string,
   hasSectionref: boolean,
   sectionref: string,
   linkpartReference: string,
   linkpartAlias: string
 } => {
-  //                        0 1        23    4        5         6  7         8          9
-  const parts = fname?.match(/([^#\^]*)((#\^)(group=)?([^\|]*)|(#)(group=)?([^\^\|]*))(.*)/);
+  //                        0 1        23    4              5         6  7             8          9
+  const parts = fname?.match(/([^#\^]*)((#\^)(group=|area=)?([^\|]*)|(#)(group=|area=)?([^\^\|]*))(.*)/);
   if(!parts) {
     return {
       filepath: fname,
       hasBlockref: false,
       hasGroupref: false,
+      hasArearef: false,
       blockref: "",
       hasSectionref: false,
       sectionref: "",
@@ -593,7 +599,8 @@ export const getEmbeddedFilenameParts = (fname:string):{
   return {
     filepath: parts[1],
     hasBlockref: Boolean(parts[3]),
-    hasGroupref: Boolean(parts[4]) || Boolean(parts[7]),
+    hasGroupref: (parts[4]==="group=") || (parts[7]==="group="),
+    hasArearef: (parts[4]==="area=") || (parts[7]==="area="),
     blockref: parts[5],
     hasSectionref: Boolean(parts[6]),
     sectionref: parts[8],

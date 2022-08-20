@@ -42,9 +42,11 @@ export default {
   TOGGLE_LOCK: "Toggle Text Element edit RAW/PREVIEW",
   DELETE_FILE: "Delete selected Image or Markdown file from Obsidian Vault",
   INSERT_LINK_TO_ELEMENT:
-    "Copy markdown link for selected element to clipboard. CTRL/CMD+Click to copy group link.",
+    "Copy markdown link for selected element to clipboard. CTRL/CMD+Click to copy group link. SHIFT+click to copy an area link.",
   INSERT_LINK_TO_ELEMENT_GROUP:
-    "Copy markdown link for selected element group to clipboard.",
+    "Copy 'group=' markdown link for selected element to clipboard.",
+  INSERT_LINK_TO_ELEMENT_AREA:
+    "Copy 'area=' markdown link for selected element to clipboard.",
   INSERT_LINK_TO_ELEMENT_NORMAL:
     "Copy markdown link for selected element to clipboard.",
   INSERT_LINK_TO_ELEMENT_ERROR: "Select a single element in the scene",

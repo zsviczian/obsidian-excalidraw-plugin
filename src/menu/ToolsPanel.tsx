@@ -465,7 +465,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     key={"link-to-element"}
                     title={t("INSERT_LINK_TO_ELEMENT")}
                     action={(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-                      this.props.view.copyLinkToSelectedElementToClipboard(e[CTRL_OR_CMD]);
+                      this.props.view.copyLinkToSelectedElementToClipboard(
+                        e[CTRL_OR_CMD] ? "group=" : (e.shiftKey ? "area=" : "")
+                      );
                     }}
                     icon={ICONS.copyElementLink}
                     view={this.props.view}
