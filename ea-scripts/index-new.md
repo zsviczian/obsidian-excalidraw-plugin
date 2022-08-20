@@ -6,7 +6,7 @@ If you are enjoying the Excalidraw plugin then please support my work and enthus
 
 Jump ahead to the [[#List of available scripts]]
 
-# Intorducing Excalidraw Automate Script Engine
+# Introducing Excalidraw Automate Script Engine
 <iframe width="560" height="315" src="https://www.youtube.com/embed/hePJcObHIso" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 Script Engine scripts are installed in the `Downloaded` subfolder of the `Excalidraw Automate script folder` specified in plugin settings.
