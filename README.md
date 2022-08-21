@@ -17,9 +17,7 @@ Please upgrade to Obsidian v0.12.19 or higher to get the latest release.
 |[![fourtfont](https://user-images.githubusercontent.com/14358394/149659524-2a4e0a24-40c9-4e66-a6b1-c92f3b88ecd5.jpg)](https://youtu.be/eKFmrSQhFA4)|[![thumbnail](https://user-images.githubusercontent.com/14358394/151705333-54e9ffd2-0bd7-4d02-b99e-0bd4e4708d4d.jpg)](https://youtu.be/qbPIAZguJeo)|[![Thumbnail](https://user-images.githubusercontent.com/14358394/152585752-7eb0371f-0bab-40f6-a194-3b48e5811735.jpg)](https://youtu.be/2Y8OhkGiTHg)|
 |[![Thumbnail](https://user-images.githubusercontent.com/14358394/153676009-6f86b2d7-c248-49a2-b802-be21c6999e4f.jpg)](https://youtu.be/2v9TZmQNO8c)|[![Thumbnail](https://user-images.githubusercontent.com/14358394/154821232-a404b6cf-72fb-4ce4-9d53-619132dce491.jpg)](https://youtu.be/xHPGWR3m0c8)|[![Thumbnail](https://user-images.githubusercontent.com/14358394/156931428-b2269fd9-87bd-43ab-8558-5572f40dff93.jpg)](https://youtu.be/gMIKXyhS-dM)|
 |[![thumbnail](https://user-images.githubusercontent.com/14358394/156931461-0979b821-315a-41dd-86f1-31d169b7c127.jpg)](https://youtu.be/Etskjw7a5zo)|[![Thumbnail](https://user-images.githubusercontent.com/14358394/158008902-12c6a851-237e-4edd-a631-d48e81c904b2.jpg)](https://youtu.be/4N6efq1DtH0)|[![thumbnail](https://user-images.githubusercontent.com/14358394/159369910-6371f08d-b5fa-454d-9c6c-948f7e7a7d26.jpg)](https://youtu.be/U2LkBRBk4LY)|
-| [![6 strategies for linking your visual thoughts v4](https://user-images.githubusercontent.com/14358394/171635214-30533c45-94fa-436e-83a9-b2ec99f190e2.jpg)](https://youtu.be/qiKuqMcNWgU)| | |
-
-
+| [![6 strategies for linking your visual thoughts v4](https://user-images.githubusercontent.com/14358394/171635214-30533c45-94fa-436e-83a9-b2ec99f190e2.jpg)](https://youtu.be/qiKuqMcNWgU)|[![Video thumbnail small](https://user-images.githubusercontent.com/14358394/185791706-3d9983ab-7cb1-4b27-a016-30c039d84e34.jpg)](https://youtu.be/yZQoJg2RCKI)| |
 
 
 # Key features
@@ -59,6 +57,12 @@ Please upgrade to Obsidian v0.12.19 or higher to get the latest release.
   - On iOS and Android you can add images from your camera by pressing the add image button in Excalidraw.
   - You can copy/paste images into your drawing. Images will be saved in your vault.
   - You can drag and drop images as explained above.
+- Block referencing parts of images
+  - When referencing an element on the canvas in a link pointing to an Excalidraw file using the elementId or the section header (i.e. a Text Element containing the `# <Section title>`) - e.g. `[[file#^elementID]]`, you can add the `group=` prefix, e.g. `[[file#^group=elementID]]` or the `area=` prefix, e.g. `[[file#area=Section heading]]`.
+    - If the `group=` prefix is found Excalidraw will select the group of elements in the same group as the element referenced by the elementID (block reference) or the section heading.
+    - If the `area=` prefix is found Excalidraw will insert a cutout of the image around the referenced element.
+    - Note that the `area=` selector is not supported when embedding Excalidraw as PNG into your markdown documents.
+    - Referencing the elementID of a text element without the `group=` or `area=` prefix will transclude the element as plain text. Referencing a non-Text Element (e.g. rectangle, ellipse, etc.) without the `group=` or `area=` prefix will result in an Obsidian error since these elementIds are not present in the Excalidraw markdown file as block references.
 - Since 1.2.0 Drawing files are stored in Markdown files
   - You can add tags to drawings
   - You can add metadata to the YAML front matter of drawings
