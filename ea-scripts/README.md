@@ -3,13 +3,28 @@ Click to watch the intro video:
 
 [![Script Engine](https://user-images.githubusercontent.com/14358394/145684531-8d9c2992-59ac-4ebc-804a-4cce1777ded2.jpg)](https://youtu.be/hePJcObHIso)
 
+> **Warning**
+> There is an easier way to install/manage scripts than what is shown in this video
+
 See the [Excalidraw Script Engine](https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html) documentation for more details.
 
 ## How to install scripts into your Obsidian Vault
+To install one of the built-in scripts:
+- Open up an excalidraw drawing in Obsidian
+- In the pane dropdown menu select "Install or update Excalidraw Scripts"
+- Click on one of the available scripts
+- Click on "Install this script" (note if the script is already installed you will instead see an option to update it)
+- Restart Obsidian so the script will be picked up
+
+Note: By default this will install the script into your vault in the `Excalidraw/Scripts/Downloaded` folder
+
+<details><summary>Manual installation of scripts</summary>
+
 Open the script you are interested in and save it to your Obsidian Vault including the first line `/*`, or open it in "Raw" and copy the entire contents to Obsidian.
 
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-download-raw.jpg)
 
+</details>
 
 ## List of available scripts
 |Title|Description|Icon|Contributor|
