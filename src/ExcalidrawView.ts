@@ -58,7 +58,6 @@ import {
   getNewUniqueFilepath,
 } from "./utils/FileUtils";
 import {
-  awaitNextAnimationFrame,
   checkExcalidrawVersion,
   debug,
   embedFontsInSVG,
@@ -236,6 +235,7 @@ export default class ExcalidrawView extends TextFileView {
     //This semaphore helps avoid collision of saves
     saving: boolean;
     hoverSleep: boolean; //flag with timer to prevent hover preview from being triggered dozens of times
+    wheelTimeout:NodeJS.Timeout; //used to avoid hover preview while zooming
   } = {
     viewunload: false,
     scriptsReady: false,
@@ -248,6 +248,7 @@ export default class ExcalidrawView extends TextFileView {
     saving: false,
     forceSaving: false,
     hoverSleep: false,
+    wheelTimeout: null,
   };
 
   public plugin: ExcalidrawPlugin;
@@ -952,6 +953,9 @@ export default class ExcalidrawView extends TextFileView {
     return this.excalidrawGetSceneVersion(elements.filter(el=>!el.isDeleted));
   }
 
+  wheelEvent: (ev:WheelEvent)=>void;
+  clearHoverPreview: Function;
+
   onload() {
     const apiMissing = Boolean(typeof this.containerEl.onWindowMigrated === "undefined")
     //@ts-ignore
@@ -961,6 +965,19 @@ export default class ExcalidrawView extends TextFileView {
     this.ownerWindow = this.ownerDocument.defaultView;
     this.plugin.getPackage(this.ownerWindow);
     this.semaphores.scriptsReady = true;
+    
+    this.wheelEvent = (ev:WheelEvent) => {
+      if(this.semaphores.wheelTimeout) clearTimeout(this.semaphores.wheelTimeout);
+      if(this.semaphores.hoverSleep && this.clearHoverPreview) this.clearHoverPreview();
+      this.semaphores.wheelTimeout = setTimeout(()=>{
+        clearTimeout(this.semaphores.wheelTimeout);
+        this.semaphores.wheelTimeout = null;
+      },1000);
+    }
+
+    this.containerEl.addEventListener("wheel", this.wheelEvent, {
+      passive: false,
+    });
 
     this.addAction(SCRIPTENGINE_ICON_NAME, t("INSTALL_SCRIPT_BUTTON"), () => {
       new ScriptInstallPrompt(this.plugin).open();
@@ -1220,6 +1237,7 @@ export default class ExcalidrawView extends TextFileView {
     this.semaphores.viewunload = true;
     this.ownerWindow?.removeEventListener("keydown", this.onKeyDown, false);
     this.ownerWindow?.removeEventListener("keyup", this.onKeyUp, false);
+    this.containerEl.removeEventListener("wheel", this.wheelEvent, false);
 
     if(this.getHookServer().onViewUnloadHook) {
       try {
@@ -2396,7 +2414,7 @@ export default class ExcalidrawView extends TextFileView {
 
       let hoverPoint = { x: 0, y: 0 };
       let hoverPreviewTarget: EventTarget = null;
-      const clearHoverPreview = () => {
+      this.clearHoverPreview = () => {
         if (hoverPreviewTarget) {
           const event = new MouseEvent("click", {
             view: this.ownerWindow,
@@ -2481,6 +2499,7 @@ export default class ExcalidrawView extends TextFileView {
       const showHoverPreview = (linktext?: string, element?: ExcalidrawElement) => {
         if(!mouseEvent) return;
         if(this.excalidrawAPI?.getAppState()?.editingElement) return; //should not activate hover preview when element is being edited
+        if(this.semaphores.wheelTimeout) return;
         if (!linktext) {
           if(!currentPosition) return;
           linktext = "";
@@ -2644,7 +2663,7 @@ export default class ExcalidrawView extends TextFileView {
             mouseEvent = e.nativeEvent;
           },
           onMouseOver: () => {
-            clearHoverPreview();
+            this.clearHoverPreview();
           },
           onDragOver: (e: any) => {
             const action = dropAction(e.dataTransfer);
@@ -2680,7 +2699,7 @@ export default class ExcalidrawView extends TextFileView {
               (Math.abs(hoverPoint.x - p.pointer.x) > 50 ||
                 Math.abs(hoverPoint.y - p.pointer.y) > 50)
             ) {
-              clearHoverPreview();
+              this.clearHoverPreview();
             }
             if (!viewModeEnabled) {
               return;
@@ -3244,9 +3263,11 @@ export default class ExcalidrawView extends TextFileView {
 
       return React.createElement(React.Fragment, null, excalidrawDiv);
     });
+    /**REACT 18
     const root = ReactDOM.createRoot(this.contentEl);
     root.render(reactElement);
-    //ReactDOM.render(reactElement, this.contentEl, () => {});
+    */
+    ReactDOM.render(reactElement, this.contentEl, () => {});
   }
 
   private updateContainerSize(containerId?: string, delay: boolean = false) {
@@ -3352,6 +3373,11 @@ export default class ExcalidrawView extends TextFileView {
 
     const zoomLevel = this.plugin.settings.zoomToFitMaxLevel;
     const ownerWindow = this.ownerWindow;
+    if (selectResult) {
+      api.selectElements(elements);
+    }
+    api.zoomToFit(elements, zoomLevel, 0.05);
+    /**REACT 18
     ownerWindow.requestAnimationFrame(async ()=>{
       if (selectResult) {
         api.selectElements(elements);
@@ -3361,8 +3387,7 @@ export default class ExcalidrawView extends TextFileView {
         api.zoomToFit(elements, zoomLevel, 0.05);
       });
     });
-
-
+    */
   }
 
   public getViewSelectedElements(): ExcalidrawElement[] {
@@ -3487,7 +3512,9 @@ export default class ExcalidrawView extends TextFileView {
         warningUnknowSeriousError();
       }
     }
+    /**REACT 18
     if(awaitFrame) await awaitNextAnimationFrame(); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/747
+    */
   }
 }
 

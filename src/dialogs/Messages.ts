@@ -17,6 +17,44 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.7.14": `
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/yZQoJg2RCKI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## New
+- The ${String.fromCharCode(96)}Copy markdown link for selected element to clipboard${String.fromCharCode(96)} action in the Obsidian menu is now more intelligent. If multiple elements are selected it will copy the Element Reference for the largest element. 
+- When referencing an element in a link pointing to an Excalidraw file using the elementId or the section header as the block reference e.g. ${String.fromCharCode(96)}[[file#^elementID]]${String.fromCharCode(96)}, you can now add the ${String.fromCharCode(96)}group=${String.fromCharCode(96)} prefix, e.g. ${String.fromCharCode(96)}[[file#^group=elementID]]${String.fromCharCode(96)} and the ${String.fromCharCode(96)}area=${String.fromCharCode(96)} prefix, e.g. ${String.fromCharCode(96)}[[file#area=Section heading]]${String.fromCharCode(96)}.
+  - If the ${String.fromCharCode(96)}group=${String.fromCharCode(96)} prefix is found, Excalidraw will select the group of elements in the same group as the element referenced by the elementID or heading section.
+  - If the ${String.fromCharCode(96)}area=${String.fromCharCode(96)} prefix is found, excalidraw will insert a cutout of the image around the referenced element.
+  - The ${String.fromCharCode(96)}area=${String.fromCharCode(96)} selector is not supported when embedding Excalidraw as PNG into your markdown documents.
+- I added "Toggle left-handed mode" to the Command Palette. The action is only visible if tray-mode is enabled. It will move the tray from left to right and back. [749](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/749)
+
+## Fixed
+- Zooming with CTRL+Wheel will no longer trigger hover preview.
+- When editing text in a text element CTRL+C will not launch the hover preview in case the mouse pointer is over the text element being edited. Hover preview will only show if the element is not in editing mode.
+- ExcalidrawAutomate did not reliably save changes. This caused issues for example in the "Add link to an existing file and open" script. [#747](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/747)
+- Create a new folder not working when clicking on a link in Erxcalidraw that points to a file that is in a folder that does not yet exist. [741](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/741)
+- Downgraded to React 17 due to various stability issues, including [#738](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/738) and [#747](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/747)
+
+# New in Excalidraw Automate
+- I added two new Excalidraw Automate functions
+${String.fromCharCode(96, 96, 96)}typescript
+/**
+ * Gets the groupId for the group that contains all the elements, or null if such a group does not exist
+ * @param elements 
+ * @returns null or the groupId
+*/
+getCommonGroupForElements(elements: ExcalidrawElement[]): string;
+
+/**
+ * Gets all the elements from elements[] that share one or more groupIds with element.
+ * @param element 
+ * @param elements - typically all the non-deleted elements in the scene 
+ * @returns 
+*/
+getElementsInTheSameGroupWithElement(element: ExcalidrawElement, elements: ExcalidrawElement[]): ExcalidrawElement[];
+${String.fromCharCode(96, 96, 96)}`,
 "1.7.13": `
 ## Fix from Excalidraw.com
 - Resize multiple elements from center ([#5560](https://github.com/excalidraw/excalidraw/pull/5560))

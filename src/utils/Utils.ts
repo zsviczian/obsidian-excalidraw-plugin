@@ -614,7 +614,12 @@ export const errorlog = (data: {}) => {
 };
 
 export const sleep = async (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-export const awaitNextAnimationFrame = async () => new Promise(requestAnimationFrame); 
+
+/**REACT 18 
+  //see also: https://github.com/zsviczian/obsidian-excalidraw-plugin/commit/b67d70c5196f30e2968f9da919d106ee66f2a5eb
+  //https://github.com/zsviczian/obsidian-excalidraw-plugin/commit/cc9d7828c7ee7755c1ef942519c43df32eae249f
+export const awaitNextAnimationFrame = async () => new Promise(requestAnimationFrame);
+*/
 
 export const log = console.log.bind(window.console);
 export const debug = console.log.bind(window.console);
