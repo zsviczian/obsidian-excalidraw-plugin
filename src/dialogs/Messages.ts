@@ -17,6 +17,10 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.7.15":`
+# Fixed
+- Canvas turns white when adding point for curved line [#760](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/760), [#738](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/738), [#5602](https://github.com/excalidraw/excalidraw/issues/5602)
+`,
 "1.7.14": `
 <div class="excalidraw-videoWrapper"><div>
 <iframe src="https://www.youtube.com/embed/yZQoJg2RCKI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

@@ -3240,6 +3240,7 @@ export default class ExcalidrawView extends TextFileView {
 
       const observer = React.useRef(
         new ResizeObserver((entries) => {
+          if(!toolsPanelRef || !toolsPanelRef.current) return;
           const { width, height } = entries[0].contentRect;
           const dx = toolsPanelRef.current.onRightEdge
             ? toolsPanelRef.current.previousWidth - width
@@ -3251,7 +3252,7 @@ export default class ExcalidrawView extends TextFileView {
         }),
       );
       React.useEffect(() => {
-        if (toolsPanelRef.current) {
+        if (toolsPanelRef?.current) {
           observer.current.observe(toolsPanelRef.current.containerRef.current);
         }
         return () => {
