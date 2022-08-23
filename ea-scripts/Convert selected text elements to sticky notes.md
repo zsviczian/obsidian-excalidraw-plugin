@@ -15,7 +15,7 @@ settings = ea.getScriptSettings();
 if(!settings["Border color"]) {
 	settings = {
 	  "Border color" : {
-			value: "#000000",
+			value: "transparent",
       description: "Any legal HTML color (#000000, rgb, color-name, etc.). Set to 'transparent' for transparent color."
 		},
 		"Background color" : {
