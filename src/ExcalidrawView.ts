@@ -3012,6 +3012,14 @@ export default class ExcalidrawView extends TextFileView {
             originalText: string,
             isDeleted: boolean,
           ): [string, string, string] => {
+            const FORBIDDEN_TEXT = `{"type":"excalidraw/clipboard","elements":[{"`;
+            if(text.startsWith(FORBIDDEN_TEXT)) {
+              return [
+                "PASTING EXCALIDRAW ELEMENTS AS A TEXT ELEMENT IS NOT ALLOWED",
+                "PASTING EXCALIDRAW ELEMENTS AS A TEXT ELEMENT IS NOT ALLOWED",
+                null
+              ];
+            }
             const api = this.excalidrawAPI;
             if (!api) {
               return [null, null, null];

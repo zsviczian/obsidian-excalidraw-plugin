@@ -17,6 +17,13 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.7.16":`
+# Fixed
+- Excalidraw canvas is empty after saving the drawing and re-opening it at a later time. If you accidentally paste Excalidraw elements from the clipboard as the contents of a text element, in certain situations this can corrupt the Excalidraw file and as a result, Excalidraw will load an empty-looking drawing the next time.  Changing to markdown view, these files can be repaired, however, to avoid accidental data loss, I have prevented pasting of excalidraw clipboard contents as text elements. [#768](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/768)
+
+# New
+- Add zoom % display in tray-mode [737](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/737)
+`,
 "1.7.15":`
 # Fixed
 - Canvas turns white when adding point for curved line [#760](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/760), [#738](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/738), [#5602](https://github.com/excalidraw/excalidraw/issues/5602)
