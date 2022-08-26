@@ -965,7 +965,7 @@ export default class ExcalidrawPlugin extends Plugin {
           return false;
         }
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
-        if (view) {
+        if (view && !view.compatibilityMode) {
           view.changeTextMode(
             view.textMode === TextMode.parsed ? TextMode.raw : TextMode.parsed,
           );

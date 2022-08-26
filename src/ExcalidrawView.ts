@@ -43,7 +43,7 @@ import {
   LOCAL_PROTOCOL,
 } from "./Constants";
 import ExcalidrawPlugin from "./main";
-import { repositionElementsToCursor, ExcalidrawAutomate, getTextElementsMatchingQuery } from "./ExcalidrawAutomate";
+import { repositionElementsToCursor, ExcalidrawAutomate, getTextElementsMatchingQuery, cloneElement } from "./ExcalidrawAutomate";
 import { t } from "./lang/helpers";
 import {
   ExcalidrawData,
@@ -92,14 +92,10 @@ import { ObsidianMenu } from "./menu/ObsidianMenu";
 import { ToolsPanel } from "./menu/ToolsPanel";
 import { ScriptEngine } from "./Scripts";
 import { getTextElementAtPointer, getImageElementAtPointer, getElementWithLinkAtPointer } from "./utils/GetElementAtPointer";
-import { execArgv } from "process";
-import { findLastIndex } from "@zsviczian/excalidraw/types/utils";
-import { fileOpen } from "@zsviczian/excalidraw/types/data/filesystem";
-
 
 export enum TextMode {
-  parsed,
-  raw,
+  parsed = "parsed",
+  raw = "raw",
 }
 
 interface WorkspaceItemExt extends WorkspaceItem {
@@ -256,6 +252,7 @@ export default class ExcalidrawView extends TextFileView {
   public textMode: TextMode = TextMode.raw;
   private textIsParsed_Element: HTMLElement;
   private textIsRaw_Element: HTMLElement;
+  private linkAction_Element: HTMLElement;
   public compatibilityMode: boolean = false;
   private obsidianMenu: ObsidianMenu;
 
@@ -1010,7 +1007,7 @@ export default class ExcalidrawView extends TextFileView {
       () => this.changeTextMode(TextMode.raw),
     );
 
-    this.addAction("link", t("OPEN_LINK"), (ev) =>
+    this.linkAction_Element = this.addAction("link", t("OPEN_LINK"), (ev) =>
       this.handleLinkClick(this, ev),
     );
 
@@ -1148,7 +1145,9 @@ export default class ExcalidrawView extends TextFileView {
     });
   }
 
+  private prevTextMode: TextMode;
   public async changeTextMode(textMode: TextMode, reload: boolean = true) {
+    if(this.compatibilityMode) return;
     this.textMode = textMode;
     if (textMode === TextMode.parsed) {
       this.textIsRaw_Element.hide();
@@ -1160,15 +1159,13 @@ export default class ExcalidrawView extends TextFileView {
     if (this.toolsPanelRef && this.toolsPanelRef.current) {
       this.toolsPanelRef.current.setPreviewMode(textMode === TextMode.parsed);
     }
-    if (reload) {
+    const api = this.excalidrawAPI;
+    if (api && reload) {
       await this.save(false, true);
-      this.updateContainerSize();
-      const api = this.excalidrawAPI;
-      if (!api) {
-        return;
-      }
+      this.updateContainerSize(null,true);
       api.history.clear(); //to avoid undo replacing links with parsed text
     }
+    this.prevTextMode = this.textMode;
   }
 
   public setupAutosaveTimer() {
@@ -1413,12 +1410,15 @@ export default class ExcalidrawView extends TextFileView {
       if (this.compatibilityMode) {
         this.textIsRaw_Element.hide();
         this.textIsParsed_Element.hide();
+        this.linkAction_Element.hide();
+        this.textMode = TextMode.raw;
         await this.excalidrawData.loadLegacyData(data, this.file);
         if (!this.plugin.settings.compatibilityMode) {
           new Notice(t("COMPATIBILITY_MODE"), 4000);
         }
         this.excalidrawData.disableCompression = true;
       } else {
+        this.linkAction_Element.show();
         this.excalidrawData.disableCompression = false;
         const textMode = getTextMode(data);
         this.changeTextMode(textMode, false);
@@ -2400,6 +2400,7 @@ export default class ExcalidrawView extends TextFileView {
             gridSize: st.gridSize,
             colorPalette: st.colorPalette,
           },
+          prevTextMode: this.prevTextMode,
           files,
         };
       };
@@ -3000,6 +3001,9 @@ export default class ExcalidrawView extends TextFileView {
             clearTimeout(this.isEditingTextResetTimer);
             this.isEditingTextResetTimer = null;
             this.semaphores.isEditingText = true; //to prevent autoresize on mobile when keyboard pops up
+            if(this.compatibilityMode) {
+              return textElement.originalText ?? textElement.text;
+            }
             const raw = this.excalidrawData.getRawText(textElement.id);
             if (!raw) {
               return textElement.rawText;
@@ -3053,14 +3057,26 @@ export default class ExcalidrawView extends TextFileView {
                   textElement.id,
                   text,
                   originalText,
-                  async () => {
-                    await this.save(false);
-                    //save preventReload==false, it will reload and update container sizes
+                  async (wrappedParsedText:string, parsedText:string) => {
                     //this callback function will only be invoked if quick parse fails, i.e. there is a transclusion in the raw text
-                    //thus I only check if TextMode.parsed, text is always != with parseResult
-                    if (this.textMode === TextMode.parsed) {
-                      api.history.clear();
+                    if(this.textMode === TextMode.raw) return;
+                    
+                    const elements = this.excalidrawAPI.getSceneElements();
+                    const el = elements.filter((el:ExcalidrawElement)=>el.id === textElement.id);
+                    if(el.length === 1) {
+                      const clone = cloneElement(el[0]);
+                      this.excalidrawData.updateTextElement(
+                        clone,
+                        wrappedParsedText,
+                        parsedText,
+                        true
+                      );
+                      elements[elements.indexOf(el[0])] = clone;
+                      await this.updateScene({elements});
+                      if(clone.containerId) this.updateContainerSize(clone.containerId);
                     }
+                    
+                    api.history.clear();                   
                   },
                 );
               if (parseResultWrapped) {
@@ -3280,6 +3296,7 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   private updateContainerSize(containerId?: string, delay: boolean = false) {
+    //console.log("updateContainerSize", containerId);
     const api = this.excalidrawAPI;
     if (!api) {
       return;

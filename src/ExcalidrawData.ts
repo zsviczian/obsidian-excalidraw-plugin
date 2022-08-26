@@ -588,6 +588,7 @@ export class ExcalidrawData {
   }
 
   public async setTextMode(textMode: TextMode, forceupdate: boolean = false) {
+    if(!this.scene) return;
     this.textMode = textMode;
     await this.updateSceneTextElements(forceupdate);
   }
@@ -701,6 +702,7 @@ export class ExcalidrawData {
    * @returns {boolean} - true if there were changes
    */
   private findNewTextElementsInScene(selectedElementIds: {[key: string]: boolean} = {}): boolean {
+    return false;
     //console.log("Excalidraw.Data.findNewTextElementsInScene()");
     //get scene text elements
     this.selectedElementIds = selectedElementIds;
@@ -781,11 +783,14 @@ export class ExcalidrawData {
         this.textElements.delete(key); //if no longer in the scene, delete the text element
       } else {
         const text = await this.getText(key, false);
+        const raw = this.scene.prevTextMode === TextMode.parsed
+          ? el[0].rawText
+          : (el[0].originalText ?? el[0].text);
         if (text !== (el[0].originalText ?? el[0].text)) {
           const wrapAt = estimateMaxLineLen(el[0].text, el[0].originalText);
           this.textElements.set(key, {
-            raw: el[0].originalText ?? el[0].text,
-            parsed: (await this.parse(el[0].originalText ?? el[0].text)).parsed,
+            raw,
+            parsed: (await this.parse(raw)).parsed,
             wrapAt,
           });
         }

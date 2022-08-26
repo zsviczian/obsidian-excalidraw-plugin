@@ -1268,12 +1268,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
    */
   copyViewElementsToEAforEditing(elements: ExcalidrawElement[]): void {
     elements.forEach((el) => {
-      this.elementsDict[el.id] = {
-        ...el,
-        version: el.version + 1,
-        updated: Date.now(),
-        versionNonce: Math.floor(Math.random() * 1000000000),
-      };
+      this.elementsDict[el.id] = cloneElement(el);
     });
   };
 
@@ -2311,4 +2306,13 @@ export const getTextElementsMatchingQuery = (
       const text = el.rawText.toLowerCase().replaceAll("\n", " ").trim();
       return text.match(q.toLowerCase()); //to distinguish between "# frame" and "# frame 1" https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530
     }));
+}
+
+export const cloneElement = (el: ExcalidrawElement):any => {
+  return {
+    ...el,
+    version: el.version + 1,
+    updated: Date.now(),
+    versionNonce: Math.floor(Math.random() * 1000000000),
+  }
 }
