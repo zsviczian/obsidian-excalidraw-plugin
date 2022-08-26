@@ -1397,7 +1397,7 @@ export default class ExcalidrawView extends TextFileView {
 
   private isLoaded: boolean = false;
   async setViewData(data: string, clear: boolean = false) {
-    checkExcalidrawVersion(app);
+    if(this.plugin.settings.showNewVersionNotification) checkExcalidrawVersion(app);
     this.isLoaded = false;
     if (clear) {
       this.clear();

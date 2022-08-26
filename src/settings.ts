@@ -101,6 +101,7 @@ export interface ExcalidrawSettings {
   defaultTrayMode: boolean;
   previousRelease: string;
   showReleaseNotes: boolean;
+  showNewVersionNotification: boolean;
   mathjaxSourceURL: string;
 }
 
@@ -182,6 +183,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   defaultTrayMode: false,
   previousRelease: "1.6.13",
   showReleaseNotes: true,
+  showNewVersionNotification: true,
   mathjaxSourceURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.1/es5/tex-svg.js"
 };
 
@@ -268,6 +270,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
+
+    new Setting(containerEl)
+    .setName(t("NEWVERSION_NOTIFICATION_NAME"))
+    .setDesc(fragWithHTML(t("NEWVERSION_NOTIFICATION_DESC")))
+    .addToggle((toggle) =>
+      toggle
+        .setValue(this.plugin.settings.showNewVersionNotification)
+        .onChange(async (value) => {
+          this.plugin.settings.showNewVersionNotification = value;
+          this.applySettingsUpdate();
+        }),
+    );
 
     new Setting(containerEl)
       .setName(t("FOLDER_NAME"))

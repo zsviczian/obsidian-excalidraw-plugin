@@ -91,6 +91,11 @@ export default {
   RELEASE_NOTES_DESC:
     "<b>Toggle ON:</b> Display release notes each time you update Excalidraw to a newer version.<br>" +
     "<b>Toggle OFF:</b> Silent mode. You can still read release notes on <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases'>GitHub</a>.",
+  NEWVERSION_NOTIFICATION_NAME: "Plugin update notification",
+  NEWVERSION_NOTIFICATION_DESC:
+      "<b>Toggle ON:</b> Show a notification when a new version of the plugin is avaiable.<br>" +
+      "<b>Toggle OFF:</b> Silent mode. You need to check for plugin updates in Community Plugins.",
+  
   FOLDER_NAME: "Excalidraw folder",
   FOLDER_DESC:
     "Default location for new drawings. If empty, drawings will be created in the Vault root.",
@@ -98,8 +103,8 @@ export default {
     "Use Excalidraw folder when embedding a drawing into the active document",
   FOLDER_EMBED_DESC:
     "Define which folder to place the newly inserted drawing into " +
-    "when using the command palette action: 'Create a new drawing and embed into active document'. " +
-    "ON: Use Excalidraw folder; OFF: use attachments folder defined in Obsidian settings",
+    "when using the command palette action: 'Create a new drawing and embed into active document'.<br>" +
+    "<b>Toggle ON:</b> Use Excalidraw folder<br><b>Toggle OFF:</b> use the attachments folder defined in Obsidian settings.",
   TEMPLATE_NAME: "Excalidraw template file",
   TEMPLATE_DESC:
     "Full filepath to the Excalidraw template. " +
@@ -123,7 +128,7 @@ export default {
     "be saved without compression, so that you can read and edit the JSON string. The drawing will be compressed again " +
     "once you switch back to Excalidraw view. " +
     "The setting only has effect 'point forward', meaning, existing drawings will not be effected by the setting " +
-    "until you open them and save them. ",
+    "until you open them and save them.<br><b>Toggle ON:</b> Compress drawing JSON<br><b>Toggle OFF:</b> Leave drawing JSON uncompressed",
   AUTOSAVE_NAME: "Enable Autosave",
   AUTOSAVE_DESC:
     "Automatically save the active drawing, in case there are changes, every 15, 30 seconds, or 1, 2, 3, 4, or 5 minute. Save normally happens when you close Excalidraw or Obsidian, or move " +
@@ -144,8 +149,8 @@ export default {
     "Filename prefix when embedding a new drawing into a markdown note",
   FILENAME_PREFIX_EMBED_DESC:
     "Should the filename of the newly inserted drawing start with the name of the active markdown note " +
-    "when using the command palette action: <code>Create a new drawing and embed into active document</code>? " +
-    "ON: Yes, OFF: Not",
+    "when using the command palette action: <code>Create a new drawing and embed into active document</code>?<br>" +
+    "<b>Toggle ON:</b> Yes, the filename of a new drawing should start with filename of the active document<br><b>Toggle OFF:</b> No, filename of a new drawing should not include the filename of the active document",
   FILENAME_POSTFIX_NAME:
     "Custom text after markdown Note's name when embedding",
   FILENAME_POSTFIX_DESC:
@@ -156,26 +161,25 @@ export default {
   FILENAME_EXCALIDRAW_EXTENSION_NAME: ".excalidraw.md or .md",
   FILENAME_EXCALIDRAW_EXTENSION_DESC:
     "This setting does not apply if you use Excalidraw in compatibility mode, " +
-    "i.e. you are not using Excalidraw markdown files. Toggle ON = filename ends with .excalidraw.md, Toggle OFF = filename ends with .md",
-  /*SVG_IN_MD_NAME: "SVG Snapshot to markdown file",
-  SVG_IN_MD_DESC: "If the switch is 'on' Excalidraw will include an SVG snapshot in the markdown file. "+
-                  "When SVG snapshots are saved to the Excalidraw.md file, drawings that include large png, jpg, gif images may take extreme long time to open in markdown view. " +
-                  "On the other hand, SVG snapshots provide some level of platform independence and longevity to your drawings. Even if Excalidraw will no longer exist, the snapshot " +
-                  "can be opened with an app that reads SVGs. In addition hover previews will be less resource intensive if SVG snapshots are enabled.",*/
+    "i.e. you are not using Excalidraw markdown files.<br><b>Toggle ON:</b> filename ends with .excalidraw.md<br><b>Toggle OFF:</b> filename ends with .md",
   DISPLAY_HEAD: "Display",
   LEFTHANDED_MODE_NAME: "Left-handed mode",
   LEFTHANDED_MODE_DESC:
-    "Currently only has effect in tray-mode. If turned on, the tray will be on the right side.",
+    "Currently only has effect in tray-mode. If turned on, the tray will be on the right side." +
+    "<br><b>Toggle ON:</b> Left-handed mode.<br><b>Toggle OFF:</b> Right-handed moded",
   MATCH_THEME_NAME: "New drawing to match Obsidian theme",
   MATCH_THEME_DESC:
     "If theme is dark, new drawing will be created in dark mode. This does not apply when you use a template for new drawings. " +
-    "Also this will not effect when you open an existing drawing. Those will follow the theme of the template/drawing respectively.",
+    "Also this will not effect when you open an existing drawing. Those will follow the theme of the template/drawing respectively." +
+    "<br><b>Toggle ON:</b> Follow Obsidian Theme<br><b>Toggle OFF:</b>Follow theme defined in your template",
   MATCH_THEME_ALWAYS_NAME: "Existing drawings to match Obsidian theme",
   MATCH_THEME_ALWAYS_DESC:
-    "If theme is dark, drawings will be opened in dark mode. If your theme is light, they will be opened in light mode. ",
+    "If theme is dark, drawings will be opened in dark mode. If your theme is light, they will be opened in light mode. " +
+    "<br><b>Toggle ON:</b> Match Obsidian theme<br><b>Toggle OFF:</b> Open with the same theme as last saved",
   MATCH_THEME_TRIGGER_NAME: "Excalidraw to follow when Obsidian Theme changes",
   MATCH_THEME_TRIGGER_DESC:
-    "If this option is enabled open Excalidraw pane will switch to light/dark mode when Obsidian theme changes. ",
+    "If this option is enabled open Excalidraw pane will switch to light/dark mode when Obsidian theme changes. " +
+    "<br><b>Toggle ON:</b> Follow theme changes<br><b>Toggle OFF:</b> Drawings are not effected by Obsidian theme changes",
   DEFAULT_OPEN_MODE_NAME: "Default mode when opening Excalidraw",
   DEFAULT_OPEN_MODE_DESC:
     "Specifies the mode how Excalidraw opens: Normal, Zen, or View mode. You may also set this behavior on a file level by " +
@@ -184,7 +188,8 @@ export default {
   DEFAULT_PEN_MODE_DESC:
     "Should pen mode be automatically enabled when opening Excalidraw?",
   ZOOM_TO_FIT_NAME: "Zoom to fit on view resize",
-  ZOOM_TO_FIT_DESC: "Zoom to fit drawing when the pane is resized",
+  ZOOM_TO_FIT_DESC: "Zoom to fit drawing when the pane is resized" +
+    "<br><b>Toggle ON:</b> Zoom to fit<br><b>Toggle OFF:</b> Auto zoom disabled",
   ZOOM_TO_FIT_MAX_LEVEL_NAME: "Zoom to fit max ZOOM level",
   ZOOM_TO_FIT_MAX_LEVEL_DESC:
     "Set the maximum level to which zoom to fit will enlarge the drawing. Minimum is 0.5 (50%) and maximum is 10 (1000%).",
@@ -301,7 +306,8 @@ export default {
     "For a number of reasons, the same approach cannot be used to expedite the loading of drawings with many embedded objects. See demonstration <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.23' target='_blank'>here</a>.",
   EMBED_PREVIEW_SVG_NAME: "Display SVG in markdown preview",
   EMBED_PREVIEW_SVG_DESC:
-    "The default is to display drawings as SVG images in the markdown preview. Turning this feature off, the markdown preview will display the drawing as an embedded PNG image.",
+    "<b>Toggle ON</b>: Embed drawing as an <a href='https://en.wikipedia.org/wiki/Scalable_Vector_Graphics' target='_blank'>SVG</a> image into the markdown preview.<br>" +
+    "<b>Toggle OFF</b>: Embedd drawing as a <a href='' target='_blank'>PNG</a> image. Note, that some of the <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>image block referencing features</a> do not work with PNG embeds.",
   PREVIEW_MATCH_OBSIDIAN_NAME: "Excalidraw preview to match Obsidian theme",
   PREVIEW_MATCH_OBSIDIAN_DESC:
     "Image preview in documents should match the Obsidian theme. If enabled, when Obsidian is in dark mode, Excalidraw images will render in dark mode. " +
