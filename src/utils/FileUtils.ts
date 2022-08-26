@@ -42,7 +42,7 @@ export function splitFolderAndFilename(filepath: string): {
  * @param newExtension - extension of IMG file in ".extension" format
  * @returns
  */
-export function getIMGPathFromExcalidrawFile(
+/*export function getIMGPathFromExcalidrawFile(
   excalidrawPath: string,
   newExtension: string,
 ): string {
@@ -52,6 +52,16 @@ export function getIMGPathFromExcalidrawFile(
     excalidrawPath.substring(0, excalidrawPath.lastIndexOf(replaceExtension)) +
     newExtension
   );
+}*/
+
+/**
+ * Generates the image filename based on the excalidraw filename
+ * @param path - path to the excalidraw file
+ * @param extension - extension without the preceeding "."
+ * @returns 
+ */
+export function getIMGFilename(path: string, extension: string): string {
+  return `${path.substring(0, path.lastIndexOf("."))}.${extension}`;
 }
 
 /**
@@ -135,6 +145,3 @@ export async function checkAndCreateFolder(folderpath: string) {
   await vault.createFolder(folderpath);
 }
 
-export function getIMGFilename(path: string, extension: string): string {
-  return `${path.substring(0, path.lastIndexOf("."))}.${extension}`;
-}

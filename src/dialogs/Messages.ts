@@ -17,15 +17,37 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.7.17":`
+## Fixed
+- Block transclusions sometimes got lost when switching between RAW mode and PREVIEW mode. [#769](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/769)
+
+## New
+- Added feature to disable "new Excalidraw version" notification [#770](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/770)
+- Added option to export both light- and dark-themed images at the same time. If this is enabled Excalidraw will create two files "filename.dark.png" and "filename.light.png" (or .svg depending on your other settings). See practical use case here: [Aadam's Notes](https://notes.aadam.dev/SBYNtPHqsTW9Ck1Kuoxsu/)
+- Added custom export padding for PNG images. Use the frontmatter key ${String.fromCharCode(96)}excalidraw-export-padding${String.fromCharCode(96)} to set the padding at a file level, or set padding for all your files in plugin settings. The new feature replaces the old "SVG Padding" option and applies to both SVG and PNG exports.
+
+## ExcalidrawAutomate
+- Added ${String.fromCharCode(96)}padding${String.fromCharCode(96)} to the createPNG function call.
+${String.fromCharCode(96, 96, 96)}typescript
+async createPNG(
+  templatePath?: string,
+  scale: number = 1,
+  exportSettings?: ExportSettings,
+  loader?: EmbeddedFilesLoader,
+  theme?: string,
+  padding?: number,
+)
+${String.fromCharCode(96, 96, 96)}
+`,
 "1.7.16":`
-# Fixed
+## Fixed
 - Excalidraw canvas is empty after saving the drawing and re-opening it at a later time. If you accidentally paste Excalidraw elements from the clipboard as the contents of a text element, in certain situations this can corrupt the Excalidraw file and as a result, Excalidraw will load an empty-looking drawing the next time.  Changing to markdown view, these files can be repaired, however, to avoid accidental data loss, I have prevented pasting of excalidraw clipboard contents as text elements. [#768](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/768)
 
-# New
+## New
 - Add zoom % display in tray-mode [737](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/737)
 `,
 "1.7.15":`
-# Fixed
+## Fixed
 - Canvas turns white when adding point for curved line [#760](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/760), [#738](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/738), [#5602](https://github.com/excalidraw/excalidraw/issues/5602)
 `,
 "1.7.14": `
@@ -48,7 +70,7 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 - Create a new folder not working when clicking on a link in Erxcalidraw that points to a file that is in a folder that does not yet exist. [741](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/741)
 - Downgraded to React 17 due to various stability issues, including [#738](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/738) and [#747](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/747)
 
-# New in Excalidraw Automate
+## New in Excalidraw Automate
 - I added two new Excalidraw Automate functions
 ${String.fromCharCode(96, 96, 96)}typescript
 /**
@@ -76,46 +98,46 @@ ${String.fromCharCode(96, 96, 96)}`,
 - ${String.fromCharCode(96)}Open in Adjacent Pane${String.fromCharCode(96)} and ${String.fromCharCode(96)}Open in Main Workspace${String.fromCharCode(96)} Excalidraw plugin settings is fixed
 `,
 "1.7.12": `
-# New from Excalidraw.com:
+## New from Excalidraw.com:
 - Showing a mid-point for lines and arrows. By touching the mid-point you can easily add an additional point to a two-point line. This is especially helpful when working on a tablet with touch input. ([#5534](https://github.com/excalidraw/excalidraw/pull/5534))
 - Lock angle when editing a line or an arrow with SHIFT pressed. Pressing SHIFT will restrict the edited point to snap to certain discrete angles. ([#5527](https://github.com/excalidraw/excalidraw/pull/5527))
 
-# Fixed:
+## Fixed:
 - Clicking Obsidian search-results pointing to an element on the canvas works again ([#734](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/734))
 - The feature to allow resizing and rotation of lines and arrows consisting of 3 or more points by showing the bounding box when selected is back ([#5554](https://github.com/excalidraw/excalidraw/pull/5554))
 
-# New
+## New
 - You can now use the following frontmatter key to allow/prevent automatic export of PNG/SVG images at a file level. This frontmatter will override export settings for the given file.  ([#732](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/732)
 ${String.fromCharCode(96)}excalidraw-autoexport: none|both|svg|png${String.fromCharCode(96)}
 `,
 "1.7.11": `
-# Fixed
+## Fixed
 - Markdown files embed into the Excalidraw canvas crashed when the embedded markdown file included a nested Markdown embed with a block reference (i.e. the markdown document you are dropping into Excalidraw included a quote you referenced from another file using a ${String.fromCharCode(96)}[[other-file#^blockref]]${String.fromCharCode(96)} block or section reference. 
 - Horizontal flipping of arrows and lines broke in 1.7.10. ([#726](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/726))
 `,
 "1.7.10": `
-# New from Excalidraw.com
+## New from Excalidraw.com
 - Improved handling of arrows and lines. ([#5501](https://github.com/excalidraw/excalidraw/pull/5501))
 
-# Fixed
+## Fixed
 - When opening a document in view-mode or zen-mode the panel buttons no longer flash up for a moment before switching to the desired mode. ([#479](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/479))
 - The "blinding white screen" no longer flashes up while loading the scene if the scene is dark ([#241](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/241))
 
-# Under the hood
+## Under the hood
 - Finalized migration to React 18 (no longer showing an error about React 17 compatibility mode in console log)
 `,
 "1.7.9": `
-# New features and fixes from Excalidraw.com:
+## New features and fixes from Excalidraw.com:
 - The right-click context menu is now scrollable on smaller screens ([#4030](https://github.com/excalidraw/excalidraw/pull/4030), [#5520](https://github.com/excalidraw/excalidraw/pull/5520))
 - Holding down the shift key while rotating an object will rotate it at discrete angles. Rotation is continuous without the SHIFT key. ([#5500](https://github.com/excalidraw/excalidraw/pull/5500))
 - Improved cursor alignment when resizing an element proportionally (maintain aspect ratio) by holding SHIFT during resizing. ([#5513](https://github.com/excalidraw/excalidraw/pull/5515))
 - Improved freedraw performance during editing (now has proper canvas caching), and no more blurry freedraw shapes when exporting on a higher scale. ([#5481](https://github.com/excalidraw/excalidraw/pull/5481))
 - Sidebar stencil library now correctly scrolls vertically ([#5459](https://github.com/excalidraw/excalidraw/pull/5459))
 
-# New in Obsidian:
+## New in Obsidian:
 - Fullscreen mode on iPad. When there are multiple work panes open, clicking the fullscreen action in the Excalidraw Obsidian menu will hide the other work panes and make Excalidraw fullscreen.
 
-# Fixes in Obsidian:
+## Fixes in Obsidian:
 - Drag&Drop an image from a web browser into Excalidraw ([#697](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/697))
 - On Obsidian Mobile 1.3.0, when the drawing included an embedded image, switching from markdown-view to Excalidraw-view caused the drawing to disappear (it had to be recovered from backup or synchronization history).  ([#715](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/715))
 - When working on a mobile device (tablet and phone) and using two work panes (one for drawing and the other for editing a markdown document) if you switched focus from the drawing to the markdown document auto-zoom changed the zoom level of the drawing. ([#723](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/723)), ([#705](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/705))

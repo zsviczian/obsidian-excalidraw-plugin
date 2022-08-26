@@ -62,6 +62,7 @@ export interface ExcalidrawSettings {
   keepInSync: boolean;
   autoexportSVG: boolean;
   autoexportPNG: boolean;
+  autoExportLightAndDark: boolean;
   autoexportExcalidraw: boolean;
   embedType: "excalidraw" | "PNG" | "SVG";
   embedWikiLink: boolean;
@@ -145,10 +146,11 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   pngExportScale: 1,
   exportWithTheme: true,
   exportWithBackground: true,
-  exportPaddingSVG: 10,
+  exportPaddingSVG: 10, //since 1.6.17, not only SVG but also PNG
   keepInSync: false,
   autoexportSVG: false,
   autoexportPNG: false,
+  autoExportLightAndDark: false,
   autoexportExcalidraw: false,
   embedType: "excalidraw",
   embedWikiLink: true,
@@ -1010,8 +1012,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     let exportPadding: HTMLDivElement;
 
     new Setting(containerEl)
-      .setName(t("EXPORT_SVG_PADDING_NAME"))
-      .setDesc(fragWithHTML(t("EXPORT_SVG_PADDING_DESC")))
+      .setName(t("EXPORT_PADDING_NAME"))
+      .setDesc(fragWithHTML(t("EXPORT_PADDING_DESC")))
       .addSlider((slider) =>
         slider
           .setLimits(0, 50, 5)
@@ -1103,6 +1105,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               removeDropdownOption("PNG");
             }
             this.plugin.settings.autoexportPNG = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(containerEl)
+      .setName(t("EXPORT_BOTH_DARK_AND_LIGHT_NAME"))
+      .setDesc(fragWithHTML(t("EXPORT_BOTH_DARK_AND_LIGHT_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.autoExportLightAndDark)
+          .onChange(async (value) => {
+            this.plugin.settings.autoExportLightAndDark = value;
             this.applySettingsUpdate();
           }),
       );

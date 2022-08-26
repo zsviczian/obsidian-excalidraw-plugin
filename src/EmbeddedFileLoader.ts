@@ -26,7 +26,7 @@ import {
   getFontDataURL,
   getImageSize,
   getLinkParts,
-  getSVGPadding,
+  getExportPadding,
   getWithBackground,
   hasExportBackground,
   hasExportTheme,
@@ -252,7 +252,7 @@ export class EmbeddedFilesLoader {
         [],
         this.plugin,
         depth+1,
-        getSVGPadding(this.plugin, file),
+        getExportPadding(this.plugin, file),
       );
       //https://stackoverflow.com/questions/51154171/remove-css-filter-on-child-elements
       const imageList = svg.querySelectorAll(

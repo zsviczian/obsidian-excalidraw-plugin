@@ -16,6 +16,7 @@ import {
   FRONTMATTER_KEY_EXPORT_TRANSPARENT,
   FRONTMATTER_KEY_EXPORT_SVGPADDING,
   FRONTMATTER_KEY_EXPORT_PNGSCALE,
+  FRONTMATTER_KEY_EXPORT_PADDING,
 } from "../Constants";
 import ExcalidrawPlugin from "../main";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
@@ -287,6 +288,7 @@ export const getSVG = async (
 export const getPNG = async (
   scene: any,
   exportSettings: ExportSettings,
+  padding: number,
   scale: number = 1,
 ) => {
   try {
@@ -300,6 +302,7 @@ export const getPNG = async (
         ...scene.appState,
       },
       files: scene.files,
+      exportPadding: padding,
       mimeType: "image/png",
       getDimensions: (width: number, height: number) => ({
         width: width * scale,
@@ -516,16 +519,25 @@ export const getWithBackground = (
   return plugin.settings.exportWithBackground;
 };
 
-export const getSVGPadding = (
+export const getExportPadding = (
   plugin: ExcalidrawPlugin,
   file: TFile,
 ): number => {
   if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
-    if (
-      fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_SVGPADDING] != null
-    ) {
+    if(!fileCache?.frontmatter) return plugin.settings.exportPaddingSVG;
+
+    if (fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_PADDING] != null) {
+      const val = parseInt(
+        fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_PADDING],
+      );
+      if (!isNaN(val)) {
+        return val;
+      }
+    }
+
+    //depricated. Retained for backward compatibility
+    if (fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_SVGPADDING] != null) {
       const val = parseInt(
         fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_SVGPADDING],
       );
@@ -533,6 +545,7 @@ export const getSVGPadding = (
         return val;
       }
     }
+    
   }
   return plugin.settings.exportPaddingSVG;
 };

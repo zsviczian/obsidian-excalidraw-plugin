@@ -15,7 +15,7 @@ import {
   getEmbeddedFilenameParts,
   getExportTheme,
   getQuickImagePreview,
-  getSVGPadding,
+  getExportPadding,
   getWithBackground,
   hasExportTheme,
   svgToBase64,
@@ -165,7 +165,7 @@ const getIMG = async (
       [],
       plugin,
       0,
-      getSVGPadding(plugin, file),
+      getExportPadding(plugin, file),
     )
   ).outerHTML;
   let svg: SVGSVGElement = null;

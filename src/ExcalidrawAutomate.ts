@@ -439,7 +439,8 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     exportSettings?: ExportSettings,
     loader?: EmbeddedFilesLoader,
     theme?: string,
-  ) {
+    padding?: number,
+  ): Promise<any> {
     if (!theme) {
       theme = this.plugin.settings.previewMatchObsidianTheme
         ? isObsidianThemeDark()
@@ -472,7 +473,8 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       this.canvas.viewBackgroundColor,
       this.getElements(),
       this.plugin,
-      0
+      0,
+      padding
     );
   };
 
@@ -2052,11 +2054,13 @@ export async function createPNG(
   canvasBackgroundColor: string = undefined,
   automateElements: ExcalidrawElement[] = [],
   plugin: ExcalidrawPlugin,
-  depth: number
+  depth: number,
+  padding?: number,
 ) {
   if (!loader) {
     loader = new EmbeddedFilesLoader(plugin);
   }
+  padding = padding ?? plugin.settings.exportPaddingSVG;
   const template = templatePath
     ? await getTemplate(plugin, templatePath, true, loader, depth)
     : null;
@@ -2080,6 +2084,7 @@ export async function createPNG(
         exportSettings?.withBackground ?? plugin.settings.exportWithBackground,
       withTheme: exportSettings?.withTheme ?? plugin.settings.exportWithTheme,
     },
+    padding,
     scale,
   );
 }

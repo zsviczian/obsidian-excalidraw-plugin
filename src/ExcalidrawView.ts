@@ -68,7 +68,7 @@ import {
   getPNG,
   getPNGScale,
   getSVG,
-  getSVGPadding,
+  getExportPadding,
   getWithBackground,
   hasExportTheme,
   isVersionNewerThanOther,
@@ -341,7 +341,7 @@ export default class ExcalidrawView extends TextFileView {
     );
   }
 
-  public async svg(scene: any): Promise<SVGSVGElement> {
+  public async svg(scene: any, theme?:string): Promise<SVGSVGElement> {
     const exportSettings: ExportSettings = {
       withBackground: getWithBackground(this.plugin, this.file),
       withTheme: true,
@@ -352,12 +352,12 @@ export default class ExcalidrawView extends TextFileView {
         ...{
           appState: {
             ...scene.appState,
-            theme: getExportTheme(this.plugin, this.file, scene.appState.theme),
+            theme: theme ?? getExportTheme(this.plugin, this.file, scene.appState.theme),
           },
         },
       },
       exportSettings,
-      getSVGPadding(this.plugin, this.file),
+      getExportPadding(this.plugin, this.file),
     );
   }
 
@@ -368,25 +368,35 @@ export default class ExcalidrawView extends TextFileView {
       }
       scene = this.getScene();
     }
-    const filepath = getIMGFilename(this.file.path, "svg"); //.substring(0,this.file.path.lastIndexOf(this.compatibilityMode ? '.excalidraw':'.md')) + '.svg';
-    const file = app.vault.getAbstractFileByPath(normalizePath(filepath));
 
-    const svg = await this.svg(scene);
-    if (!svg) {
-      return;
+    const exportImage = async (filepath:string, theme?:string) => {
+      const file = app.vault.getAbstractFileByPath(normalizePath(filepath));
+
+      const svg = await this.svg(scene,theme);
+      if (!svg) {
+        return;
+      }
+      const serializer = new XMLSerializer();
+      const svgString = serializer.serializeToString(
+        embedFontsInSVG(svg, this.plugin),
+      );
+      if (file && file instanceof TFile) {
+        await app.vault.modify(file, svgString);
+      } else {
+        await app.vault.create(filepath, svgString);
+      }
     }
-    const serializer = new XMLSerializer();
-    const svgString = serializer.serializeToString(
-      embedFontsInSVG(svg, this.plugin),
-    );
-    if (file && file instanceof TFile) {
-      await app.vault.modify(file, svgString);
+
+    if(this.plugin.settings.autoExportLightAndDark) {
+      await exportImage(getIMGFilename(this.file.path, "dark.svg"),"dark");
+      await exportImage(getIMGFilename(this.file.path, "light.svg"),"light");
     } else {
-      await app.vault.create(filepath, svgString);
+      await exportImage(getIMGFilename(this.file.path, "svg"));
     }
+    
   }
 
-  public async png(scene: any): Promise<Blob> {
+  public async png(scene: any, theme?:string): Promise<Blob> {
     const exportSettings: ExportSettings = {
       withBackground: getWithBackground(this.plugin, this.file),
       withTheme: true,
@@ -397,11 +407,12 @@ export default class ExcalidrawView extends TextFileView {
         ...{
           appState: {
             ...scene.appState,
-            theme: getExportTheme(this.plugin, this.file, scene.appState.theme),
+            theme: theme ?? getExportTheme(this.plugin, this.file, scene.appState.theme),
           },
         },
       },
       exportSettings,
+      getExportPadding(this.plugin, this.file),
       getPNGScale(this.plugin, this.file),
     );
   }
@@ -414,17 +425,25 @@ export default class ExcalidrawView extends TextFileView {
       scene = this.getScene();
     }
 
-    const filepath = getIMGFilename(this.file.path, "png"); //this.file.path.substring(0,this.file.path.lastIndexOf(this.compatibilityMode ? '.excalidraw':'.md')) + '.png';
-    const file = app.vault.getAbstractFileByPath(normalizePath(filepath));
+    const exportImage = async (filepath:string, theme?:string) => {
+      const file = app.vault.getAbstractFileByPath(normalizePath(filepath));
 
-    const png = await this.png(scene);
-    if (!png) {
-      return;
+      const png = await this.png(scene,theme);
+      if (!png) {
+        return;
+      }
+      if (file && file instanceof TFile) {
+        await app.vault.modifyBinary(file, await png.arrayBuffer());
+      } else {
+        await app.vault.createBinary(filepath, await png.arrayBuffer());
+      }
     }
-    if (file && file instanceof TFile) {
-      await app.vault.modifyBinary(file, await png.arrayBuffer());
+
+    if(this.plugin.settings.autoExportLightAndDark) {
+      await exportImage(getIMGFilename(this.file.path, "dark.png"),"dark");
+      await exportImage(getIMGFilename(this.file.path, "light.png"),"light");
     } else {
-      await app.vault.createBinary(filepath, await png.arrayBuffer());
+      await exportImage(getIMGFilename(this.file.path, "png"));
     }
   }
 
@@ -1146,8 +1165,11 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   private prevTextMode: TextMode;
+  private blockTextModeChange: boolean = false;
   public async changeTextMode(textMode: TextMode, reload: boolean = true) {
     if(this.compatibilityMode) return;
+    if(this.blockTextModeChange) return;
+    this.blockTextModeChange = true;
     this.textMode = textMode;
     if (textMode === TextMode.parsed) {
       this.textIsRaw_Element.hide();
@@ -1161,11 +1183,15 @@ export default class ExcalidrawView extends TextFileView {
     }
     const api = this.excalidrawAPI;
     if (api && reload) {
-      await this.save(false, true);
-      this.updateContainerSize(null,true);
+      await this.save();
+      this.preventAutozoom();
+      await this.excalidrawData.loadData(this.data, this.file, this.textMode);
+      this.excalidrawData.scene.appState.theme = api.getAppState().theme;
+      await this.loadDrawing(false);
       api.history.clear(); //to avoid undo replacing links with parsed text
     }
     this.prevTextMode = this.textMode;
+    this.blockTextModeChange = false;
   }
 
   public setupAutosaveTimer() {
@@ -3016,17 +3042,26 @@ export default class ExcalidrawView extends TextFileView {
             originalText: string,
             isDeleted: boolean,
           ): [string, string, string] => {
-            const FORBIDDEN_TEXT = `{"type":"excalidraw/clipboard","elements":[{"`;
-            if(text.startsWith(FORBIDDEN_TEXT)) {
-              return [
-                "PASTING EXCALIDRAW ELEMENTS AS A TEXT ELEMENT IS NOT ALLOWED",
-                "PASTING EXCALIDRAW ELEMENTS AS A TEXT ELEMENT IS NOT ALLOWED",
-                null
-              ];
-            }
             const api = this.excalidrawAPI;
             if (!api) {
               return [null, null, null];
+            }
+            const FORBIDDEN_TEXT = `{"type":"excalidraw/clipboard","elements":[{"`;
+            const WARNING = "PASTING EXCALIDRAW ELEMENTS AS A TEXT ELEMENT IS NOT ALLOWED";
+            if(text.startsWith(FORBIDDEN_TEXT)) {
+              setTimeout(async ()=>{
+                const elements = this.excalidrawAPI.getSceneElements();
+                const el = elements.filter((el:ExcalidrawElement)=>el.id === textElement.id);
+                if(el.length === 1) {
+                  const clone = cloneElement(el[0]);
+                  clone.rawText = WARNING;
+                  elements[elements.indexOf(el[0])] = clone;
+                  this.excalidrawData.setTextElement(clone.id,WARNING,WARNING,()=>{});
+                  await this.updateScene({elements});
+                  api.history.clear();
+                }
+              });
+              return [WARNING,WARNING,null];
             }
             this.semaphores.isEditingText = true;
             this.isEditingTextResetTimer = setTimeout(() => {
@@ -3076,7 +3111,7 @@ export default class ExcalidrawView extends TextFileView {
                       if(clone.containerId) this.updateContainerSize(clone.containerId);
                     }
                     
-                    api.history.clear();                   
+                    api.history.clear();
                   },
                 );
               if (parseResultWrapped) {
@@ -3334,7 +3369,7 @@ export default class ExcalidrawView extends TextFileView {
       return;
     }
     const maxZoom = this.plugin.settings.zoomToFitMaxLevel;
-    const elements = api.getSceneElements();
+    const elements = api.getSceneElements().filter((el:ExcalidrawElement)=>el.width<10000 && el.height<10000);
     if (delay) {
       //time for the DOM to render, I am sure there is a more elegant solution
       setTimeout(

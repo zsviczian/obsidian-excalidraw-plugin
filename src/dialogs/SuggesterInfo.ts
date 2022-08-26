@@ -587,9 +587,9 @@ export const FRONTMATTER_KEYS_INFO: SuggesterInfo[] = [
     after: ": true",
   },
   {
-    field: "export-svgpadding",
+    field: "export-padding",
     code: null,
-    desc: "If this key is present it will override the default excalidraw embed and export setting. This only affects export to SVG. Specify the export padding for the image.",
+    desc: "If this key is present it will override the default excalidraw embed and export setting. This only affects both SVG and PNG export. Specify the export padding for the image.",
     after: ": 5",
   },
   {

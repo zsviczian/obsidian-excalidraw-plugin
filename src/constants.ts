@@ -21,12 +21,14 @@ export const REG_BLOCK_REF_CLEAN =
   /[!"#$%&()*+,.:;<=>?@^`{|}~\/\[\]\\]/g; //https://discord.com/channels/686053708261228577/989603365606531104/1000128926619816048
   // /\+|\/|~|=|%|\(|\)|{|}|,|&|\.|\$|!|\?|;|\[|]|\^|#|\*|<|>|&|@|\||\\|"|:|\s/g;
 export const IMAGE_TYPES = ["jpeg", "jpg", "png", "gif", "svg"];
+export const EXPORT_TYPES = ["svg", "dark.svg", "light.svg", "png", "dark.png", "light.png"];
 export const MAX_IMAGE_SIZE = 500;
 export const FRONTMATTER_KEY = "excalidraw-plugin";
 export const FRONTMATTER_KEY_EXPORT_TRANSPARENT =
   "excalidraw-export-transparent";
 export const FRONTMATTER_KEY_EXPORT_DARK = "excalidraw-export-dark";
-export const FRONTMATTER_KEY_EXPORT_SVGPADDING = "excalidraw-export-svgpadding";
+export const FRONTMATTER_KEY_EXPORT_SVGPADDING = "excalidraw-export-svgpadding"; //depricated
+export const FRONTMATTER_KEY_EXPORT_PADDING = "excalidraw-export-padding";
 export const FRONTMATTER_KEY_EXPORT_PNGSCALE = "excalidraw-export-pngscale";
 export const FRONTMATTER_KEY_CUSTOM_PREFIX = "excalidraw-link-prefix";
 export const FRONTMATTER_KEY_CUSTOM_URL_PREFIX = "excalidraw-url-prefix";

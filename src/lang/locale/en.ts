@@ -331,9 +331,11 @@ export default {
   EXPORT_BACKGROUND_NAME: "Export image with background",
   EXPORT_BACKGROUND_DESC:
     "If turned off, the exported image will be transparent.",
-  EXPORT_SVG_PADDING_NAME: "SVG Padding",
-  EXPORT_SVG_PADDING_DESC:
-    "The padding (in pixels) around the exported SVG image. If you have curved lines close to the edge of the image they might get cropped during SVG export. You can increase this value to avoid cropping.",
+  EXPORT_PADDING_NAME: "Image Padding",
+  EXPORT_PADDING_DESC:
+    "The padding (in pixels) around the exported SVG or PNG image. " +
+    "If you have curved lines close to the edge of the image they might get cropped during image export. You can increase this value to avoid cropping. " +
+    "You can also override this setting at a file level by adding the <code>excalidraw-export-padding: 5<code> frontmatter key.",
   EXPORT_THEME_NAME: "Export image with theme",
   EXPORT_THEME_DESC:
     "Export the image matching the dark/light theme of your drawing. If turned off, " +
@@ -354,6 +356,9 @@ export default {
     "<code>none</code>,<code>both</code>,<code>svg</code>, and <code>png</code>",
   EXPORT_PNG_NAME: "Auto-export PNG",
   EXPORT_PNG_DESC: "Same as the auto-export SVG, but for *.PNG",
+  EXPORT_BOTH_DARK_AND_LIGHT_NAME: "Export both dark- and light-themed image",
+  EXPORT_BOTH_DARK_AND_LIGHT_DESC:  "When enabled, Excalidraw will export two files instead of one: filename.dark.png, filename.light.png and/or filename.dark.svg and filename.light.svg<br>"+
+    "Double files will be exported both if auto-export SVG or PNG (or both) are enabled, as well as when clicking export on a single image.",
   COMPATIBILITY_HEAD: "Compatibility features",
   EXPORT_EXCALIDRAW_NAME: "Auto-export Excalidraw",
   EXPORT_EXCALIDRAW_DESC: "Same as the auto-export SVG, but for *.Excalidraw",

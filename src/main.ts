@@ -41,6 +41,7 @@ import {
   SCRIPT_INSTALL_FOLDER,
   VIRGIL_FONT,
   VIRGIL_DATAURL,
+  EXPORT_TYPES,
 } from "./Constants";
 import ExcalidrawView, { TextMode, getTextMode } from "./ExcalidrawView";
 import {
@@ -73,7 +74,6 @@ import {
   getDrawingFilename,
   getEmbedFilename,
   getIMGFilename,
-  getIMGPathFromExcalidrawFile,
   getNewUniqueFilepath,
 } from "./utils/FileUtils";
 import {
@@ -84,6 +84,7 @@ import {
   sleep,
   debug,
   isVersionNewerThanOther,
+  getExportTheme,
 } from "./utils/Utils";
 import { getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark } from "./utils/ObsidianUtils";
 //import { OneOffs } from "./OneOffs";
@@ -1309,7 +1310,7 @@ export default class ExcalidrawPlugin extends Plugin {
       FRONTMATTER + (await this.exportSceneToMD(data)),
     );
     if (this.settings.keepInSync) {
-      [".svg", ".png"].forEach((ext: string) => {
+      EXPORT_TYPES.forEach((ext: string) => {
         const oldIMGpath =
           file.path.substring(0, file.path.lastIndexOf(".excalidraw")) + ext;
         const imgFile = this.app.vault.getAbstractFileByPath(
@@ -1462,13 +1463,13 @@ export default class ExcalidrawPlugin extends Plugin {
         if (!self.settings.keepInSync) {
           return;
         }
-        [".svg", ".png", ".excalidraw"].forEach(async (ext: string) => {
-          const oldIMGpath = getIMGPathFromExcalidrawFile(oldPath, ext);
+        [EXPORT_TYPES, "excalidraw"].flat().forEach(async (ext: string) => {
+          const oldIMGpath = getIMGFilename(oldPath, ext);
           const imgFile = app.vault.getAbstractFileByPath(
             normalizePath(oldIMGpath),
           );
           if (imgFile && imgFile instanceof TFile) {
-            const newIMGpath = getIMGPathFromExcalidrawFile(file.path, ext);
+            const newIMGpath = getIMGFilename(file.path, ext);
             await app.fileManager.renameFile(imgFile, newIMGpath);
           }
         });
@@ -1537,8 +1538,8 @@ export default class ExcalidrawPlugin extends Plugin {
         //delete PNG and SVG files as well
         if (self.settings.keepInSync) {
           setTimeout(() => {
-            [".svg", ".png", ".excalidraw"].forEach(async (ext: string) => {
-              const imgPath = getIMGPathFromExcalidrawFile(file.path, ext);
+            [EXPORT_TYPES, "excalidraw"].flat().forEach(async (ext: string) => {
+              const imgPath = getIMGFilename(file.path, ext);
               const imgFile = app.vault.getAbstractFileByPath(
                 normalizePath(imgPath),
               );
@@ -1801,42 +1802,67 @@ export default class ExcalidrawPlugin extends Plugin {
   public async embedDrawing(file: TFile) {
     const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
     if (activeView && activeView.file) {
-      const data = this.app.metadataCache.fileToLinktext(
+      const excalidrawRelativePath = this.app.metadataCache.fileToLinktext(
         file,
         activeView.file.path,
         this.settings.embedType === "excalidraw",
       );
       const editor = activeView.editor;
+
+      //embed Excalidraw
       if (this.settings.embedType === "excalidraw") {
         editor.replaceSelection(
           this.settings.embedWikiLink
-            ? `![[${data}]]`
-            : `![](${encodeURI(data)})`,
+            ? `![[${excalidrawRelativePath}]]`
+            : `![](${encodeURI(excalidrawRelativePath)})`,
         );
         editor.focus();
         return;
       }
 
-      const filename = getIMGPathFromExcalidrawFile(
-        data,
-        `.${this.settings.embedType.toLowerCase()}`,
-      );
-      const filepath = getIMGPathFromExcalidrawFile(
-        file.path,
-        `.${this.settings.embedType.toLowerCase()}`,
-      );
+      //embed image
+      let theme = this.settings.autoExportLightAndDark
+        ? getExportTheme (
+          this,
+          file,
+          this.settings.exportWithTheme
+            ? isObsidianThemeDark() ? "dark":"light"
+            : "light"
+          )
+        : "";
 
-      const imgFile = this.app.vault.getAbstractFileByPath(filepath);
+      theme = theme===""?"":theme+".";
+
+      const imageRelativePath = getIMGFilename(
+        excalidrawRelativePath,
+        theme+this.settings.embedType.toLowerCase(),
+      );
+      const imageFullpath = getIMGFilename(
+        file.path,
+        theme+this.settings.embedType.toLowerCase(),
+      );
+     
+      //will hold incorrect value if theme==="", however in that case it won't be used
+      const otherTheme = theme === "dark." ? "light.":"dark.";
+      const otherImageRelativePath = getIMGFilename(
+        excalidrawRelativePath,
+        otherTheme+this.settings.embedType.toLowerCase(),
+      );
+      
+
+      const imgFile = this.app.vault.getAbstractFileByPath(imageFullpath);
       if (!imgFile) {
-        await this.app.vault.create(filepath, "");
+        await this.app.vault.create(imageFullpath, "");
         await sleep(200);
       }
+
       editor.replaceSelection(
         this.settings.embedWikiLink
-          ? `![[${filename}]]\n%%[[${data}|🖋 Edit in Excalidraw]]%%`
-          : `![](${encodeURI(filename)})\n%%[🖋 Edit in Excalidraw](${encodeURI(
-              data,
-            )})%%`,
+          ? `![[${imageRelativePath}]]\n%%[[${excalidrawRelativePath}|🖋 Edit in Excalidraw]]${
+            otherImageRelativePath ? ", and the [["+otherImageRelativePath+"|"+otherTheme.split(".")[0]+" exported image]]":""}%%`
+          : `![](${encodeURI(imageRelativePath)})\n%%[🖋 Edit in Excalidraw](${encodeURI(
+            excalidrawRelativePath,
+            )})${otherImageRelativePath?", and the ["+otherTheme.split(".")[0]+" exported image]("+encodeURI(otherImageRelativePath)+")":""}%%`,
       );
       editor.focus();
     }
