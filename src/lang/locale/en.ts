@@ -36,7 +36,7 @@ export default {
     "Create a new drawing - IN A NEW PANE - and embed into active document",
   NEW_IN_ACTIVE_PANE_EMBED:
     "Create a new drawing - IN THE CURRENT ACTIVE PANE - and embed into active document",
-  NEW_IN_POPOUT_WINDOW_EMBED: "Create a new drawing - IN A POPOUT WINDOW - and embedd into active document",
+  NEW_IN_POPOUT_WINDOW_EMBED: "Create a new drawing - IN A POPOUT WINDOW - and embed into active document",
   EXPORT_SVG: "Save as SVG next to the current file",
   EXPORT_PNG: "Save as PNG next to the current file",
   TOGGLE_LOCK: "Toggle Text Element edit RAW/PREVIEW",
