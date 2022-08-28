@@ -2432,6 +2432,7 @@ export default class ExcalidrawView extends TextFileView {
       };
 
       this.refresh = () => {
+        if(this.contentEl.clientWidth === 0 || this.contentEl.clientHeight === 0) return;
         const api = this.excalidrawAPI;
         if (!excalidrawRef?.current || !api) {
           return;

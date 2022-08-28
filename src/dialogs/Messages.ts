@@ -17,6 +17,9 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.7.18":`
+## Critical fix
+- duplicating text elements, adding text elements from the library, and pasting excalidraw text elements results in a corrupted file!!`,
 "1.7.17":`
 ## Fixed
 - Block transclusions sometimes got lost when switching between RAW mode and PREVIEW mode. [#769](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/769)

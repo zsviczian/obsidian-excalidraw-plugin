@@ -702,7 +702,6 @@ export class ExcalidrawData {
    * @returns {boolean} - true if there were changes
    */
   private findNewTextElementsInScene(selectedElementIds: {[key: string]: boolean} = {}): boolean {
-    return false;
     //console.log("Excalidraw.Data.findNewTextElementsInScene()");
     //get scene text elements
     this.selectedElementIds = selectedElementIds;
@@ -741,7 +740,13 @@ export class ExcalidrawData {
           this.textElements.set(id, { raw, parsed: null, wrapAt });
           this.parseasync(id, raw, wrapAt);
         }
+      } else if (!this.textElements.has(te.id)) {
+        const raw = te.rawText && te.rawText !== "" ? te.rawText : te.text; //this is for compatibility with drawings created before the rawText change on ExcalidrawTextElement
+        const wrapAt = estimateMaxLineLen(te.text, te.originalText);
+        this.textElements.set(id, { raw, parsed: null, wrapAt });
+        this.parseasync(id, raw, wrapAt);
       }
+      
     }
     if (dirty) {
       //reload scene json in case it has changed
