@@ -7,21 +7,52 @@ This script arranges selected images into compact grid view, removing gaps in-be
 */
 
 try {
-  const els = ea.getViewSelectedElements();
+  let els = ea.getViewSelectedElements().filter(el => el.type == 'image');
+
+  new Notice(els.length);
+
+  if (els.length == 0) throw new Error('No image elements selected');
 
   const bounds = ea.getBoundingBox(els);
   const { topX, topY, width, height } = bounds;
   
-  const topLeftEl = els.reduce((prev, curr) => prev.x + prev.y < curr.x + curr.y ? prev : curr);
+  els.sort((a, b) => a.x + a.y < b.x + b.y);
 
-  const rows = width / topLeftEl.width;
+  const areaAvailable = width * height;
+
+  let elWidth = els[0].width;
+  let elHeight = els[0].height;
+
+  if (elWidth * elHeight > areaAvailable) {
+    while (elWidth * elHeight > areaAvailable) {
+      elWidth /= 1.1;
+      elHeight /= 1.1;
+    }  
+  } else if (elWidth * elHeight < areaAvailable) {
+    while (elWidth * elHeight > areaAvailable) {
+      elWidth *= 1.1;
+      elHeight *= 1.1;
+    }
+  }
+
+  const rows = (width - elWidth) / elWidth;
   
   let row = 0, column = 0;
-  for (let i = 0; i < els.length; i++) {
-    els[i].x = topX + (topLeftEl.width * row);
-    els[i].y = topY + (topLeftEl.height * column);
-    els[i].width = topLeftEl.width;
-    els[i].height = topLeftEl.height;
+  for (const element of els) {    
+    element.x = topX + (elWidth * row);
+    element.y = topY + (elHeight * column);
+    
+    if (element.width > elWidth) {
+      while (element.width >= elWidth) {
+        element.width /= 1.1;
+        element.height /= 1.1;
+      }  
+    } else if (element.width < elWidth) {
+      while (element.width <= elWidth) {
+        element.width *= 1.1;
+        element.height *= 1.1;  
+      }
+    }
 
     row++;
     if (row > rows) {
@@ -32,5 +63,5 @@ try {
 
   ea.addElementsToView(false, true, true);
 } catch (err) {
-  new Notice(err.toString())
+  _ = new Notice(err.toString())
 }
