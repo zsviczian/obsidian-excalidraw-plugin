@@ -16,7 +16,6 @@ import {
   nanoid,
   VIEW_TYPE_EXCALIDRAW,
   MAX_IMAGE_SIZE,
-  PLUGIN_ID,
   COLOR_NAMES,
   fileid,
 } from "./Constants";
@@ -41,6 +40,37 @@ import { Prompt } from "./dialogs/Prompt";
 import { t } from "./lang/helpers";
 import { ScriptEngine } from "./Scripts";
 import { ConnectionPoint, ExcalidrawAutomateInterface } from "./types";
+import CM, { ColorMaster, extendPlugins } from "colormaster";
+import HarmonyPlugin from "colormaster/plugins/harmony";
+import MixPlugin from "colormaster/plugins/mix"
+import A11yPlugin from "colormaster/plugins/accessibility"
+import NamePlugin from "colormaster/plugins/name"
+import LCHPlugin from "colormaster/plugins/lch";
+import LUVPlugin from "colormaster/plugins/luv";
+import LABPlugin from "colormaster/plugins/lab";
+import UVWPlugin from "colormaster/plugins/uvw";
+import XYZPlugin from "colormaster/plugins/xyz";
+import HWBPlugin from "colormaster/plugins/hwb";
+import HSVPlugin from "colormaster/plugins/hsv";
+import RYBPlugin from "colormaster/plugins/ryb";
+import CMYKPlugin from "colormaster/plugins/cmyk";
+import { TInput } from "colormaster/types";
+
+extendPlugins([
+  HarmonyPlugin,
+  MixPlugin,
+  A11yPlugin,
+  NamePlugin,
+  LCHPlugin,
+  LUVPlugin,
+  LABPlugin,
+  UVWPlugin,
+  XYZPlugin,
+  HWBPlugin,
+  HSVPlugin,
+  RYBPlugin,
+  CMYKPlugin
+]);
 
 declare const PLUGIN_VERSION:string;
 
@@ -1869,6 +1899,15 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     }
     return color.trim();
   };
+
+  /**
+   * https://github.com/lbragile/ColorMaster
+   * @param color 
+   * @returns 
+   */
+  getCM(color:TInput): ColorMaster {
+    return CM(color);
+  }
 };
 
 export async function initExcalidrawAutomate(
