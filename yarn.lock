@@ -3063,6 +3063,11 @@
   "resolved" "https://registry.npmjs.org/colorette/-/colorette-2.0.16.tgz"
   "version" "2.0.16"
 
+"colormaster@1.2.1":
+  "integrity" "sha512-+G9g1fOW+TC4+y5IWYI4f7mb+l+oEto/N3qJTFrJNaayFpidZUWhZJGxoSJjhNMIiTttcU1kf4XSyfxHyHkQYw=="
+  "resolved" "https://registry.npmjs.org/colormaster/-/colormaster-1.2.1.tgz"
+  "version" "1.2.1"
+
 "combined-stream@^1.0.8":
   "integrity" "sha512-FQN4MRfuJeHf7cBbBMJFXhKSDq+2kAArBlmRBvcvFE5BB1HZKXtSFASDhdlz9zOYwxh8lDdnvmMOe/+5cdoEdg=="
   "resolved" "https://registry.npmjs.org/combined-stream/-/combined-stream-1.0.8.tgz"

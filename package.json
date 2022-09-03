@@ -25,7 +25,8 @@
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-scripts": "^5.0.1",
-    "roughjs": "^4.5.2"
+    "roughjs": "^4.5.2",
+    "colormaster": "1.2.1"
   },
   "devDependencies": {
     "@babel/core": "^7.16.12",

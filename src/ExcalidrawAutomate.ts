@@ -16,7 +16,6 @@ import {
   nanoid,
   VIEW_TYPE_EXCALIDRAW,
   MAX_IMAGE_SIZE,
-  PLUGIN_ID,
   COLOR_NAMES,
   fileid,
 } from "./Constants";
@@ -29,6 +28,7 @@ import {
   getPNG,
   getSVG,
   isVersionNewerThanOther,
+  log,
   scaleLoadedImage,
   wrapText,
 } from "./utils/Utils";
@@ -41,6 +41,37 @@ import { Prompt } from "./dialogs/Prompt";
 import { t } from "./lang/helpers";
 import { ScriptEngine } from "./Scripts";
 import { ConnectionPoint, ExcalidrawAutomateInterface } from "./types";
+import CM, { ColorMaster, extendPlugins } from "colormaster";
+import HarmonyPlugin from "colormaster/plugins/harmony";
+import MixPlugin from "colormaster/plugins/mix"
+import A11yPlugin from "colormaster/plugins/accessibility"
+import NamePlugin from "colormaster/plugins/name"
+import LCHPlugin from "colormaster/plugins/lch";
+import LUVPlugin from "colormaster/plugins/luv";
+import LABPlugin from "colormaster/plugins/lab";
+import UVWPlugin from "colormaster/plugins/uvw";
+import XYZPlugin from "colormaster/plugins/xyz";
+import HWBPlugin from "colormaster/plugins/hwb";
+import HSVPlugin from "colormaster/plugins/hsv";
+import RYBPlugin from "colormaster/plugins/ryb";
+import CMYKPlugin from "colormaster/plugins/cmyk";
+import { TInput } from "colormaster/types";
+
+extendPlugins([
+  HarmonyPlugin,
+  MixPlugin,
+  A11yPlugin,
+  NamePlugin,
+  LCHPlugin,
+  LUVPlugin,
+  LABPlugin,
+  UVWPlugin,
+  XYZPlugin,
+  HWBPlugin,
+  HSVPlugin,
+  RYBPlugin,
+  CMYKPlugin
+]);
 
 declare const PLUGIN_VERSION:string;
 
@@ -1739,7 +1770,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
   };
 
   /**
-   * 
+   * Depricated. Use getCM / ColorMaster instead
    * @param color 
    * @returns 
    */
@@ -1749,113 +1780,33 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
   };
 
   /**
-   * 
+   * Depricated. Use getCM / ColorMaster instead
    * @param color 
    * @returns 
    */
   rgbToHexString(color: number[]): string {
-    const colorInt =
-      ((Math.round(color[0]) & 0xff) << 16) +
-      ((Math.round(color[1]) & 0xff) << 8) +
-      (Math.round(color[2]) & 0xff);
-    const colorStr = colorInt.toString(16).toLowerCase();
-    return `#${"000000".substring(colorStr.length)}${colorStr}`;
+    const cm = CM({r:color[0], g:color[1], b:color[2]});
+    return cm.stringHEX({alpha: false});
   };
 
   /**
-   * 
+   * Depricated. Use getCM / ColorMaster instead
    * @param color 
    * @returns 
    */
   hslToRgb(color: number[]): number[] {
-    const h = color[0] / 360;
-    const s = color[1] / 100;
-    const l = color[2] / 100;
-    let t2;
-    let t3;
-    let val;
-
-    if (s === 0) {
-      val = l * 255;
-      return [val, val, val];
-    }
-
-    if (l < 0.5) {
-      t2 = l * (1 + s);
-    } else {
-      t2 = l + s - l * s;
-    }
-
-    const t1 = 2 * l - t2;
-
-    const rgb = [0, 0, 0];
-    for (let i = 0; i < 3; i++) {
-      t3 = h + (1 / 3) * -(i - 1);
-      if (t3 < 0) {
-        t3++;
-      }
-
-      if (t3 > 1) {
-        t3--;
-      }
-
-      if (6 * t3 < 1) {
-        val = t1 + (t2 - t1) * 6 * t3;
-      } else if (2 * t3 < 1) {
-        val = t2;
-      } else if (3 * t3 < 2) {
-        val = t1 + (t2 - t1) * (2 / 3 - t3) * 6;
-      } else {
-        val = t1;
-      }
-
-      rgb[i] = val * 255;
-    }
-    return rgb;
+    const cm = CM({h:color[0], s:color[1], l:color[2]});
+    return [cm.red, cm.green, cm.blue];
   };
 
   /**
-   * 
+   * Depricated. Use getCM / ColorMaster instead
    * @param color 
    * @returns 
    */
   rgbToHsl(color: number[]): number[] {
-    const r = color[0] / 255;
-    const g = color[1] / 255;
-    const b = color[2] / 255;
-    const min = Math.min(r, g, b);
-    const max = Math.max(r, g, b);
-    const delta = max - min;
-    let h;
-    let s;
-
-    if (max === min) {
-      h = 0;
-    } else if (r === max) {
-      h = (g - b) / delta;
-    } else if (g === max) {
-      h = 2 + (b - r) / delta;
-    } else if (b === max) {
-      h = 4 + (r - g) / delta;
-    }
-
-    h = Math.min(h * 60, 360);
-
-    if (h < 0) {
-      h += 360;
-    }
-
-    const l = (min + max) / 2;
-
-    if (max === min) {
-      s = 0;
-    } else if (l <= 0.5) {
-      s = delta / (max + min);
-    } else {
-      s = delta / (2 - max - min);
-    }
-
-    return [h, s * 100, l * 100];
+    const cm = CM({r:color[0], g:color[1], b:color[2]});
+    return [cm.hue, cm.saturation, cm.lightness];
   };
 
   /**
@@ -1869,6 +1820,19 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     }
     return color.trim();
   };
+
+  /**
+   * https://github.com/lbragile/ColorMaster
+   * @param color 
+   * @returns 
+   */
+  getCM(color:TInput): ColorMaster {
+    if(!color) {
+      log("Creates a CM object. Visit https://github.com/lbragile/ColorMaster for documentation.");
+      return;
+    }
+    return CM(color);
+  }
 };
 
 export async function initExcalidrawAutomate(
