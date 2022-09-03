@@ -21,11 +21,12 @@ Please upgrade to Obsidian v0.12.19 or higher to get the latest release.
 
 
 # Key features
-- The plugin aims to integrate Excalidraw seamlessly into Obsidian including Command Palette actions, File Explorer features, Option Menu commands, and the Ribbon Button.
+- The plugin integrates Excalidraw seamlessly into Obsidian including Command Palette actions, File Explorer features, Option Menu commands, and the Ribbon Button.
 - <kbd>CTRL/CMD+Click</kbd> on the ribbon button, or in the file explorer to create / open drawings in a new pane.
 - Settings will allow you to customize Excalidraw to your needs:
   - Default folder for new drawings and define custom filename pattern for new drawings.
   - Template for new drawings. The template will restore stroke properties. This means you can set up defaults in your template for stroke color, stroke width, opacity, font family, font size, fill style, stroke style, etc. This also applies to ExcalidrawAutomate.
+    - Via the template you can customize the color palette used by Excalidraw. Switch to Markdown view. Scroll down to the bottom of the file and find `"AppState": {`. Find `"customColorPalette": {` at the end of the AppState section. You may specify the 3 palettes used in Excalidraw by adding any or all of the following 3 variables: `"canvasBackground":[], "elementBackground":[], "elementStroke": []`. Add a comma separated list of valid HTML colors (e.g. `#FF0000` for red) in the array for each of the variables. See my videos above for further help.
   - If portability is important to you: Auto-export SVG and/or PNG files including keep-in-sync feature so you can embed SVG/PNG into your documents instead of embedding excalidraw files. You can override export settings for an individual file by adding the `excalidraw-autoexport` frontmatter key. Valid values for this key are `none`, `both`, `png` and `svg`.
   - Specify the default width of embedded drawings.
   - Compatibility features to auto-export and keep in sync markdown excalidraw files and legacy .excalidraw files.
@@ -76,7 +77,7 @@ Please upgrade to Obsidian v0.12.19 or higher to get the latest release.
   - Frontmatter tags to customize image export at a file level [519](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/519). If these keys are present they will override the default excalidraw embed and export settings.
     - `excalidraw-export-transparent: true`:  true == Transparent / false == with background. 
     - `excalidraw-export-dark`: true == Dark mode / false == light mode.
-    - `excalidraw-export-svgpadding`: This only affects export to SVG. Specify the export padding for the image
+    - `excalidraw-export-padding`: Specify the export padding for the image
     - `excalidraw-export-pngscale`: This only affects export to PNG. Specify the export scale for the image. The typical range is between 0.5 and 5, but you can experiment with other values as well.
 - Embed complete markdown files into your drawings
   - Drag from the desired file from the Obsidian file explorer and hold down <kbd>CTRL/CMD</kbd> while dropping the file onto the canvas.
