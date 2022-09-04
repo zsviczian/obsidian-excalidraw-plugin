@@ -15,16 +15,30 @@ try {
     .getViewSelectedElements()
     .filter((el) => el.type == "text")
     .filter(
-      (el) => el.text.contains(contentUrl) || el.text.contains(githubUrl)
+      (el) => el.rawText.contains(contentUrl) || el.rawText.contains(githubUrl)
     );
 
   elements.forEach((linkElement) => {
-    let url = linkElement.text.substring(linkElement.text.indexOf(urlPrefix));
+    let url = '';
+
+    const linkRegexp = /\[(.+)\]\((.+)\)/gs;
+
+    const linkText = linkRegexp.exec(linkElement.rawText);
+    
+    if (linkText) {
+      url = linkText[2];
+    } else {
+      url = linkElement.text.substring(linkElement.text.indexOf(urlPrefix));
+    }
 
     if (url.startsWith(githubUrl)) {
       url = url.replace(githubUrl, contentUrl).replace("/blob", "");
     }
 
+    if (!url.startsWith(urlPrefix)) {
+      return new Notice(`"${url}" is not a valid link`);
+    }
+    
     fetch(url)
       .then((resp) => resp.text())
       .then((text) => {
@@ -40,9 +54,14 @@ try {
         );
 
         ea.addElementsToView(false, false);
+
+        // ea.addToGroup([linkElement.id, codeElementId]);
+
+        // ea.addElementsToView(false, true, true);
       })
       .catch((err) => new Notice(err.toString()));
   });
 } catch (err) {
   _ = new Notice(err.toString())
 }
+
