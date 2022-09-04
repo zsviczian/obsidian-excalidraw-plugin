@@ -1,7 +1,7 @@
 /*
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-set-background-color-of-unclosed-line.jpg)
 
-Use this script to set the background color of unclosed (i.e. open) line objects by creating a clone of the object. The script will set the stroke color of the clone to transparent and will add a straight line to close the object. Use settings to define the default background color, the fill style, and the strokeWidth of the clone. By default the clone will be grouped with the original object, you can disable this also in settings.
+Use this script to set the background color of unclosed (i.e. open) line and freedraw objects by creating a clone of the object. The script will set the stroke color of the clone to transparent and will add a straight line to close the object. Use settings to define the default background color, the fill style, and the strokeWidth of the clone. By default the clone will be grouped with the original object, you can disable this also in settings.
 
 ```javascript
 */
@@ -41,9 +41,9 @@ const backgroundColor = settings["Background Color"].value;
 const fillStyle = settings["Fill Style"].value;
 const shouldGroup = settings["Group 'shadow' with original"].value;
 
-const elements = ea.getViewSelectedElements().filter(el=>el.type==="line");
+const elements = ea.getViewSelectedElements().filter(el=>el.type==="line" || el.type==="freedraw");
 if(elements.length === 0) {
-	new Notice("No line object is selected");
+	new Notice("No line or freedraw object is selected");
 }
 
 ea.copyViewElementsToEAforEditing(elements);
