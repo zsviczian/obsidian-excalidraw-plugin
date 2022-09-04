@@ -17,6 +17,15 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.7.19":`
+# QoL improvements
+- Reintroduced the help button. I also added the help button to the Tray (in Tray Mode) and moved help to the canvas action panel (in non-TrayMode) because in Obsidian 0.16.0 the status bar hides the help icon.
+- Resetting the canvas with the "Reset Canvas" button will now preserve your custom color palette.
+- I updated the [Set background color of unlclosed line object](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Set%20background%20color%20of%20unclosed%20line%20object%20by%20adding%20a%20shadow%20clone.md) script. The script will now add background color to open freedraw objects as well. You no longer need to convert freedraw objects to lines before setting the background color. Check the Script Engine library to download the update.
+
+# New in Excalidraw Automate
+- I added the [ColorMaster](https://github.com/lbragile/ColorMaster#readme) library to ExcalidrawAutomate. You can get a CM object by calling ${String.fromCharCode(96)}ExcalidrawAutomate.getCM(<your color comes here>)${String.fromCharCode(96)}. Color master introduces many new ways to manipulate colors from script. I will publish scripts that make use of this new functionality including supporting videos on my YouTube channel in the coming days.
+`,
 "1.7.18":`
 ## Critical fix
 - duplicating text elements, adding text elements from the library, and pasting excalidraw text elements results in a corrupted file!!`,
