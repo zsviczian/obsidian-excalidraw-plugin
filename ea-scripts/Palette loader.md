@@ -21,7 +21,7 @@ if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.7.19")) {
 const api = ea.getExcalidrawAPI();
 let settings = ea.getScriptSettings();
 //set default values on first run
-if(true || !settings["Palette folder"]) {
+if(!settings["Palette folder"]) {
   settings = {
     "Palette folder" : {
       value: "Excalidraw/Palettes",
@@ -87,6 +87,7 @@ const loadPaletteFromPlainText = (data) => {
   data.replaceAll("\r","").split("\n").forEach(c=>{
     c = c.trim();
     if(c==="") return;
+    if(c.match(/[^hslrga-fA-F\(\d\.\,\%\s)#]/)) return;
     const cm = ea.getCM(c);
     if(cm) colors.push(cm.stringHEX({alpha: false}));
   })
