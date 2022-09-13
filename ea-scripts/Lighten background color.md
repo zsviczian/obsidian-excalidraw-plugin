@@ -38,7 +38,7 @@ const step = settings["Step size"].value;
 const elements = ea
   .getViewSelectedElements()
   .filter((el) =>
-    ["rectangle", "ellipse", "diamond", "image", "line", "freehand"].includes(el.type)
+    ["rectangle", "ellipse", "diamond", "image", "line", "freedraw"].includes(el.type)
   );
 ea.copyViewElementsToEAforEditing(elements);
 for (const el of ea.getElements()) {
