@@ -14,6 +14,11 @@ https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.h
 ```javascript
 */
 
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.7.19")) {
+  new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
+  return;
+}
+
 let repeatNum = parseInt(await utils.inputPrompt("repeat times?","number","5"));
 if(!repeatNum) {
     new Notice("Please enter a number.");
@@ -43,38 +48,25 @@ const heightDistance = selectedElements[1].height - selectedElements[0].height;
 const angleDistance = selectedElements[1].angle - selectedElements[0].angle;
 
 const bgColor1 = ea.colorNameToHex(selectedElements[0].backgroundColor);
-const rgbBgColor1 = parseColorString(bgColor1); 
+const cmBgColor1 = ea.getCM(bgColor1);
 const bgColor2 = ea.colorNameToHex(selectedElements[1].backgroundColor);
-const rgbBgColor2 = parseColorString(bgColor2);
-let bgHDistance = 0;
-let bgSDistance = 0;
-let bgLDistance = 0;
-
-if(rgbBgColor1 && rgbBgColor2) {
-    const bgHsl1 = ea.rgbToHsl([rgbBgColor1.value[0], rgbBgColor1.value[1], rgbBgColor1.value[2]]);
-    const bgHsl2 = ea.rgbToHsl([rgbBgColor2.value[0], rgbBgColor2.value[1], rgbBgColor2.value[2]]);
-
-    bgHDistance = bgHsl2[0] - bgHsl1[0];
-    bgSDistance = bgHsl2[1] - bgHsl1[1];
-    bgLDistance = bgHsl2[2] - bgHsl1[2];
-}
+let   cmBgColor2 = ea.getCM(bgColor2);
+const isBgTransparent = cmBgColor1.alpha === 0  || cmBgColor2.alpha === 0;
+const bgHDistance = cmBgColor2.hue - cmBgColor1.hue;
+const bgSDistance = cmBgColor2.saturation - cmBgColor1.saturation;
+const bgLDistance = cmBgColor2.lightness - cmBgColor1.lightness;
+const bgADistance = cmBgColor2.alpha - cmBgColor1.alpha;
 
 const strokeColor1 = ea.colorNameToHex(selectedElements[0].strokeColor);
-const rgbStrokeColor1 = parseColorString(strokeColor1);
+const cmStrokeColor1 = ea.getCM(strokeColor1);
 const strokeColor2 = ea.colorNameToHex(selectedElements[1].strokeColor);
-const rgbStrokeColor2 = parseColorString(strokeColor2);
-let strokeHDistance = 0;
-let strokeSDistance = 0;
-let strokeLDistance = 0;
+let   cmStrokeColor2 = ea.getCM(strokeColor2);
+const isStrokeTransparent = cmStrokeColor1.alpha === 0 || cmStrokeColor2.alpha ===0;
+const strokeHDistance = cmStrokeColor2.hue - cmStrokeColor1.hue;
+const strokeSDistance = cmStrokeColor2.saturation - cmStrokeColor1.saturation;
+const strokeLDistance = cmStrokeColor2.lightness - cmStrokeColor1.lightness;
+const strokeADistance = cmStrokeColor2.alpha - cmStrokeColor1.alpha;
 
-if(rgbStrokeColor1 && rgbStrokeColor2) {
-    const strokeHsl1 = ea.rgbToHsl([rgbStrokeColor1.value[0], rgbStrokeColor1.value[1], rgbStrokeColor1.value[2]]); 
-    const strokeHsl2 = ea.rgbToHsl([rgbStrokeColor2.value[0], rgbStrokeColor2.value[1], rgbStrokeColor2.value[2]]);
-
-    strokeHDistance = strokeHsl2[0] - strokeHsl1[0];
-    strokeSDistance = strokeHsl2[1] - strokeHsl1[1];
-    strokeLDistance = strokeHsl2[2] - strokeHsl1[2];
-}
 
 ea.copyViewElementsToEAforEditing(selectedElements);
 for(let i=0; i<repeatNum; i++) {
@@ -106,262 +98,19 @@ for(let i=0; i<repeatNum; i++) {
         }
     }
 
-    if(rgbBgColor1 && rgbBgColor2) {
-        const bgHsl2 = ea.rgbToHsl([rgbBgColor2.value[0], rgbBgColor2.value[1], rgbBgColor2.value[2]]);
-        const newBgH = bgHsl2[0] + bgHDistance * (i + 1);
-        const newBgS = bgHsl2[1] + bgSDistance * (i + 1);
-        const newBgL = bgHsl2[2] + bgLDistance * (i + 1);
-        
-        if(newBgH >= 0 && newBgH <= 360 && newBgS >= 0 && newBgS <= 100 && newBgL >= 0 && newBgL <= 100) {
-            const newBgRgb = ea.hslToRgb([newBgH, newBgS, newBgL]);
-            newEl.backgroundColor = rgbColorToString(newBgRgb, rgbBgColor1.model);
-        }
+    if(!isBgTransparent) {
+		cmBgColor2 = cmBgColor2.hueBy(bgHDistance).saturateBy(bgSDistance).lighterBy(bgLDistance).alphaBy(bgADistance);
+		newEl.backgroundColor = cmBgColor2.stringHEX();
+    } else {
+      newEl.backgroundColor = "transparent";
     }
 
-    if(rgbStrokeColor1 && rgbStrokeColor2) {
-        const strokeHsl2 = ea.rgbToHsl([rgbStrokeColor2.value[0], rgbStrokeColor2.value[1], rgbStrokeColor2.value[2]]);
-        const newStrokeH = strokeHsl2[0] + strokeHDistance * (i + 1);
-        const newStrokeS = strokeHsl2[1] + strokeSDistance * (i + 1);
-        const newStrokeL = strokeHsl2[2] + strokeLDistance * (i + 1);
-        
-        if(newStrokeH >= 0 && newStrokeH <= 360 && newStrokeS >= 0 && newStrokeS <= 100 && newStrokeL >= 0 && newStrokeL <= 100) {
-            const newStrokeRgb = ea.hslToRgb([newStrokeH, newStrokeS, newStrokeL]);
-            newEl.strokeColor = rgbColorToString(newStrokeRgb, rgbStrokeColor1.model);
-        }
+    if(!isStrokeTransparent) {
+		cmStrokeColor2 = cmStrokeColor2.hueBy(strokeHDistance).saturateBy(strokeSDistance).lighterBy(strokeLDistance).alphaBy(strokeADistance);
+		newEl.strokeColor = cmStrokeColor2.stringHEX();
+    } else {
+      newEl.strokeColor = "transparent";
     }
 }
 
 await ea.addElementsToView(false, false, true);
-
-function parseColorString(string) {
-	var prefix = string.substring(0, 3).toLowerCase();
-	var val;
-	var model;
-	switch (prefix) {
-		case 'hsl':
-			val = ea.hslToRgb(parseHslColorString(string));
-			model = 'hsl';
-			break;
-		case 'hwb':
-			val = hwbToRgb(parseHwbColorString(string));
-			model = 'hwb';
-			break;
-		default:
-			val = parseRgbColorString(string);
-			model = 'rgb';
-			break;
-	}
-
-	if (!val) {
-		return null;
-	}
-
-	return {model: model, value: val};
-};
-
-function parseRgbColorString(string) {
-	if (!string) {
-		return null;
-	}
-  var colorNames={};
-
-	var abbr = /^#([a-f0-9]{3,4})$/i;
-	var hex = /^#([a-f0-9]{6})([a-f0-9]{2})?$/i;
-	var rgba = /^rgba?\(\s*([+-]?\d+)(?=[\s,])\s*(?:,\s*)?([+-]?\d+)(?=[\s,])\s*(?:,\s*)?([+-]?\d+)\s*(?:[,|\/]\s*([+-]?[\d\.]+)(%?)\s*)?\)$/;
-	var per = /^rgba?\(\s*([+-]?[\d\.]+)\%\s*,?\s*([+-]?[\d\.]+)\%\s*,?\s*([+-]?[\d\.]+)\%\s*(?:[,|\/]\s*([+-]?[\d\.]+)(%?)\s*)?\)$/;
-	var keyword = /^(\w+)$/;
-
-	var rgb = [0, 0, 0, 1];
-	var match;
-	var i;
-	var hexAlpha;
-
-	if (match = string.match(hex)) {
-		hexAlpha = match[2];
-		match = match[1];
-
-		for (i = 0; i < 3; i++) {
-			var i2 = i * 2;
-			rgb[i] = parseInt(match.slice(i2, i2 + 2), 16);
-		}
-
-		if (hexAlpha) {
-			rgb[3] = parseInt(hexAlpha, 16) / 255;
-		}
-	} else if (match = string.match(abbr)) {
-		match = match[1];
-		hexAlpha = match[3];
-
-		for (i = 0; i < 3; i++) {
-			rgb[i] = parseInt(match[i] + match[i], 16);
-		}
-
-		if (hexAlpha) {
-			rgb[3] = parseInt(hexAlpha + hexAlpha, 16) / 255;
-		}
-	} else if (match = string.match(rgba)) {
-		for (i = 0; i < 3; i++) {
-			rgb[i] = parseInt(match[i + 1], 0);
-		}
-
-		if (match[4]) {
-			if (match[5]) {
-				rgb[3] = parseFloat(match[4]) * 0.01;
-			} else {
-				rgb[3] = parseFloat(match[4]);
-			}
-		}
-	} else if (match = string.match(per)) {
-		for (i = 0; i < 3; i++) {
-			rgb[i] = Math.round(parseFloat(match[i + 1]) * 2.55);
-		}
-
-		if (match[4]) {
-			if (match[5]) {
-				rgb[3] = parseFloat(match[4]) * 0.01;
-			} else {
-				rgb[3] = parseFloat(match[4]);
-			}
-		}
-	} else if (match = string.match(keyword)) {
-		if (match[1] === 'transparent') {
-			return [0, 0, 0, 0];
-		}
-
-		if (!hasOwnProperty.call(colorNames, match[1])) {
-			return null;
-		}
-
-		rgb = colorNames[match[1]];
-		rgb[3] = 1;
-
-		return rgb;
-	} else {
-		return null;
-	}
-
-	for (i = 0; i < 3; i++) {
-		rgb[i] = clamp(rgb[i], 0, 255);
-	}
-	rgb[3] = clamp(rgb[3], 0, 1);
-
-	return rgb;
-}
-
-function parseHslColorString(string) {
-	if (!string) {
-		return null;
-	}
-
-	var hsl = /^hsla?\(\s*([+-]?(?:\d{0,3}\.)?\d+)(?:deg)?\s*,?\s*([+-]?[\d\.]+)%\s*,?\s*([+-]?[\d\.]+)%\s*(?:[,|\/]\s*([+-]?(?=\.\d|\d)(?:0|[1-9]\d*)?(?:\.\d*)?(?:[eE][+-]?\d+)?)\s*)?\)$/;
-	var match = string.match(hsl);
-
-	if (match) {
-		var alpha = parseFloat(match[4]);
-		var h = ((parseFloat(match[1]) % 360) + 360) % 360;
-		var s = clamp(parseFloat(match[2]), 0, 100);
-		var l = clamp(parseFloat(match[3]), 0, 100);
-		var a = clamp(isNaN(alpha) ? 1 : alpha, 0, 1);
-
-		return [h, s, l, a];
-	}
-
-	return null;
-}
-
-function parseHwbColorString(string) {
-	if (!string) {
-		return null;
-	}
-
-	var hwb = /^hwb\(\s*([+-]?\d{0,3}(?:\.\d+)?)(?:deg)?\s*,\s*([+-]?[\d\.]+)%\s*,\s*([+-]?[\d\.]+)%\s*(?:,\s*([+-]?(?=\.\d|\d)(?:0|[1-9]\d*)?(?:\.\d*)?(?:[eE][+-]?\d+)?)\s*)?\)$/;
-	var match = string.match(hwb);
-
-	if (match) {
-		var alpha = parseFloat(match[4]);
-		var h = ((parseFloat(match[1]) % 360) + 360) % 360;
-		var w = clamp(parseFloat(match[2]), 0, 100);
-		var b = clamp(parseFloat(match[3]), 0, 100);
-		var a = clamp(isNaN(alpha) ? 1 : alpha, 0, 1);
-		return [h, w, b, a];
-	}
-
-	return null;
-}
-
-function rgbColorToString(color, model) {
-  switch (model) {
-		case 'hsl':
-			return rgbColorToHslString(color);
-		case 'hwb':
-			return rgbColorToHwbString(color);
-		default:
-			return ea.rgbToHexString(color);
-	}
-}
-
-function rgbColorToHslString(rgb) {
-  var hsl = ea.rgbToHsl(rgb);
-  return 'hsl(' + hsl[0] + ', ' + hsl[1] + '%, ' + hsl[2] + '%)'
-};
-
-function rgbColorToHwbString(rgb) {
-	var hwb = rgbToHwb(rgb);
-
-	return 'hwb(' + hwb[0] + ', ' + hwb[1] + '%, ' + hwb[2] + '%)';
-};
-
-function rgbToHwb(rgb) {
-	const r = rgb[0];
-	const g = rgb[1];
-	let b = rgb[2];
-	const h = convert.rgb.hsl(rgb)[0];
-	const w = 1 / 255 * Math.min(r, Math.min(g, b));
-
-	b = 1 - 1 / 255 * Math.max(r, Math.max(g, b));
-
-	return [h, w * 100, b * 100];
-};
-
-function hwbToRgb(hwb) {
-	const h = hwb[0] / 360;
-	let wh = hwb[1] / 100;
-	let bl = hwb[2] / 100;
-	const ratio = wh + bl;
-	let f;
-
-	// Wh + bl cant be > 1
-	if (ratio > 1) {
-		wh /= ratio;
-		bl /= ratio;
-	}
-
-	const i = Math.floor(6 * h);
-	const v = 1 - bl;
-	f = 6 * h - i;
-
-	if ((i & 0x01) !== 0) {
-		f = 1 - f;
-	}
-
-	const n = wh + f * (v - wh); 
-	let r;
-	let g;
-	let b;
-	switch (i) {
-		default:
-		case 6:
-		case 0: r = v;  g = n;  b = wh; break;
-		case 1: r = n;  g = v;  b = wh; break;
-		case 2: r = wh; g = v;  b = n; break;
-		case 3: r = wh; g = n;  b = v; break;
-		case 4: r = n;  g = wh; b = v; break;
-		case 5: r = v;  g = wh; b = n; break;
-	}
-
-	return [r * 255, g * 255, b * 255];
-}
-
-function clamp(num, min, max) {
-	return Math.min(Math.max(min, num), max);
-}
