@@ -1872,7 +1872,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
     if(applyLefthandedMode) setLeftHandedMode(this.settings.isLeftHanded);
     this.settings.autosave = true;
-    this.settings.autosaveInterval = 10000;
+    this.settings.autosaveInterval = app.isMobile?10000:15000; //more frequent on mobile because Obsidian may be killed on context switching
   }
 
   async saveSettings() {

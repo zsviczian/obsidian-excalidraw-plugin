@@ -17,6 +17,17 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.7.20":`
+# New from Excalidraw.com
+- support segment midpoints in line editor [#5641](https://github.com/excalidraw/excalidraw/pull/5641)
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://user-images.githubusercontent.com/11256141/187417807-3efeb673-6c96-4744-be0e-70119b0c6839.mp4" title="Demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+# Fixed
+- When editing a line or arrow and selecting a tool on the toolbar, the tool jumps back to the selection tool and you need to click again to select the tool [#5703](https://github.com/excalidraw/excalidraw/issues/5703)
+- Minor improvement of autosave, hopefully decreasing occasional lagging
+`,
 "1.7.19":`
 # QoL improvements
 - Reintroduced the help button. I also added the help button to the Tray (in Tray Mode) and moved help to the canvas action panel (in non-TrayMode) because in Obsidian 0.16.0 the status bar hides the help icon.

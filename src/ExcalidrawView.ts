@@ -518,13 +518,13 @@ export default class ExcalidrawView extends TextFileView {
           (autoexportPreference === AutoexportPreference.inherit && this.plugin.settings.autoexportSVG) ||
           autoexportPreference === AutoexportPreference.both || autoexportPreference === AutoexportPreference.svg
         ) {
-          await this.saveSVG();
+          this.saveSVG();
         }
         if (
           (autoexportPreference === AutoexportPreference.inherit && this.plugin.settings.autoexportPNG) ||
           autoexportPreference === AutoexportPreference.both || autoexportPreference === AutoexportPreference.png
         ) {
-          await this.savePNG();
+          this.savePNG();
         }
         if (
           !this.compatibilityMode &&
@@ -1219,15 +1219,17 @@ export default class ExcalidrawView extends TextFileView {
         this.semaphores.dirty == this.file?.path &&
         this.plugin.settings.autosave &&
         !this.semaphores.forceSaving &&
+        !this.semaphores.autosaving &&
         !editing &&
         st.draggingElement === null //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/630
       ) {
         this.autosaveTimer = null;
-        this.semaphores.autosaving = true;
         if (this.excalidrawRef) {
-          await this.save();
-        }
-        this.semaphores.autosaving = false;
+          this.semaphores.autosaving = true;
+          const self = this;
+          //changed from await to then to avoid lag during saving of large file
+          this.save().then(()=>self.semaphores.autosaving = false);
+        } 
         this.autosaveTimer = setTimeout(
           timer,
           this.plugin.settings.autosaveInterval,
