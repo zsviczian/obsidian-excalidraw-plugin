@@ -1,5 +1,7 @@
 /*
+
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/rename-image.png)
+
 Select an image on the canvas and run the script. You will be prompted to provide a new filename / filepath. This cuts down the time to name images you paste from the web or drag and drop from your file system.
 
 ```javascript
