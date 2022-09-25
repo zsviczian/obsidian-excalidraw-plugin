@@ -17,6 +17,31 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.7.21":`
+# New from Excalidraw.com
+- Image-mirroring in export preview and in exported SVG [#5700](https://github.com/excalidraw/excalidraw/pull/5700), [#811](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/811), [#617](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/617)
+
+# New 
+- Ctrl+s will force-save your drawing and update all your transclusions
+- Added setting to parse ${String.fromCharCode(96)}- [ ] ${String.fromCharCode(96)} and ${String.fromCharCode(96)}- [x] ${String.fromCharCode(96)} todo items. Parsing is disabled by default. This feature can be found under "Links and Transclusions" in Plugin Settings. [#819](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/819)
+
+![image](https://user-images.githubusercontent.com/14358394/192145020-94bdd115-d24f-47c7-86fe-1417c53980c4.png)
+
+<iframe src="https://user-images.githubusercontent.com/14358394/192151120-3c61c822-0352-4ba7-9900-b38078fb373c.mp4" title="Demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+- Added new scripts to the script library
+  - [Rename Image](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Rename%20Image.md)
+  - [Text Arch](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Text%20Arch.md)
+
+<iframe src="https://user-images.githubusercontent.com/14358394/192151105-78c0115b-4e30-4296-b647-e3c05851a48f.mp4" title="Demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+# Fixed
+- Fixed toast message to display script name on press and hold on mobile and iPad.
+- Fixed save error when the embedded image file is not found (i.e. it was moved, renamed, or deleted)
+
+`,
 "1.7.20":`
 # New from Excalidraw.com
 - support segment midpoints in line editor [#5641](https://github.com/excalidraw/excalidraw/pull/5641)

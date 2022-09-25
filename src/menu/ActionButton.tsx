@@ -42,7 +42,7 @@ export class ActionButton extends React.Component<ButtonProps, ButtonState> {
         onPointerDown={() => {
           this.toastMessageTimeout = window.setTimeout(
             () =>
-              this.props.view.excalidrawAPI?.setToastMessage(this.props.title),
+              this.props.view.excalidrawAPI?.setToast({message:this.props.title}),
             300,
           );
         }}

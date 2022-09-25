@@ -4,6 +4,7 @@ import {
   normalizePath,
   PluginSettingTab,
   Setting,
+  TextComponent,
   TFile,
 } from "obsidian";
 import { VIEW_TYPE_EXCALIDRAW } from "./Constants";
@@ -48,6 +49,9 @@ export interface ExcalidrawSettings {
   showLinkBrackets: boolean;
   linkPrefix: string;
   urlPrefix: string;
+  parseTODO: boolean;
+  todo: string;
+  done: string;
   hoverPreviewWithoutCTRL: boolean;
   linkOpacity: number;
   allowCtrlClick: boolean; //if disabled only the link button in the view header will open links
@@ -133,6 +137,9 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   zoomToFitMaxLevel: 2,
   linkPrefix: "📍",
   urlPrefix: "🌐",
+  parseTODO: false,
+  todo: "☐",
+  done: "🗹",
   hoverPreviewWithoutCTRL: false,
   linkOpacity: 1,
   openInAdjacentPane: false,
@@ -605,7 +612,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.showLinkBrackets)
-          .onChange(async (value) => {
+          .onChange(value => {
             this.plugin.settings.showLinkBrackets = value;
             this.applySettingsUpdate(true);
           }),
@@ -618,7 +625,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         text
           .setPlaceholder(t("INSERT_EMOJI"))
           .setValue(this.plugin.settings.linkPrefix)
-          .onChange((value) => {
+          .onChange(value => {
             this.plugin.settings.linkPrefix = value;
             this.applySettingsUpdate(true);
           }),
@@ -631,11 +638,60 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         text
           .setPlaceholder(t("INSERT_EMOJI"))
           .setValue(this.plugin.settings.urlPrefix)
-          .onChange(async (value) => {
+          .onChange(value => {
             this.plugin.settings.urlPrefix = value;
             this.applySettingsUpdate(true);
           }),
       );
+
+    let todoPrefixSetting:TextComponent, donePrefixSetting:TextComponent;
+    
+    new Setting(containerEl)
+      .setName(t("PARSE_TODO_NAME"))
+      .setDesc(fragWithHTML(t("PARSE_TODO_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.parseTODO)
+          .onChange(value => {
+            this.plugin.settings.parseTODO = value;
+            todoPrefixSetting.setDisabled(!value);
+            donePrefixSetting.setDisabled(!value);
+            this.applySettingsUpdate(true);
+          })
+      );
+
+    new Setting(containerEl)
+      .setName(t("TODO_NAME"))
+      .setDesc(fragWithHTML(t("TODO_DESC")))
+      .addText((text) => {
+        todoPrefixSetting = text;
+        text
+          .setPlaceholder(t("INSERT_EMOJI"))
+          .setValue(this.plugin.settings.todo)
+          .onChange(value => {
+            this.plugin.settings.todo = value;
+            this.applySettingsUpdate(true);
+          })
+        }
+      );
+    todoPrefixSetting.setDisabled(!this.plugin.settings.parseTODO);
+
+    new Setting(containerEl)
+      .setName(t("DONE_NAME"))
+      .setDesc(fragWithHTML(t("DONE_DESC")))
+      .setDisabled(!this.plugin.settings.parseTODO)
+      .addText((text) => {
+        donePrefixSetting = text;
+        text
+          .setPlaceholder(t("INSERT_EMOJI"))
+          .setValue(this.plugin.settings.done)
+          .onChange(value => {
+            this.plugin.settings.done = value;
+            this.applySettingsUpdate(true);
+          })
+        }
+      );
+    donePrefixSetting.setDisabled(!this.plugin.settings.parseTODO);
 
     let opacityText: HTMLDivElement;
     new Setting(containerEl)

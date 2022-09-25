@@ -77,7 +77,7 @@ export default {
   FILE_DOES_NOT_EXIST:
     "File does not exist. Hold down ALT (or ALT+SHIFT) and CLICK link button to create a new file.",
   FORCE_SAVE:
-    "Force-save to update transclusions in adjacent panes.\n(Check autosave settings in plugin settings.)",
+    "Save (will also update transclusions)",
   RAW: "Change to PREVIEW mode (only effects text-elements with links or transclusions)",
   PARSED:
     "Change to RAW mode (only effects text-elements with links or transclusions)",
@@ -226,6 +226,12 @@ export default {
     "In PREVIEW mode, if the Text Element contains a URL link, precede the text with these characters. " +
     "You can override this setting for a specific drawing by adding <code>"
   }${FRONTMATTER_KEY_CUSTOM_URL_PREFIX}: "🌐 "</code> to the file's frontmatter.`,
+  PARSE_TODO_NAME: "Parse todo",
+  PARSE_TODO_DESC: "Convert '- [ ] ' and '- [x] ' to checkpox and tick in the box.",
+  TODO_NAME: "Open TODO icon",
+  TODO_DESC: "Icon to use for open TODO items",
+  DONE_NAME: "Completed TODO icon",
+  DONE_DESC: "Icon to use for completed TODO items",
   HOVERPREVIEW_NAME: "Hover preview without CTRL/CMD key",
   HOVERPREVIEW_DESC:
     "<b>Toggle On</b>: In Exalidraw <u>view mode</u> the hover preview for [[wiki links]] will be shown immediately, without the need to hold the CTRL/CMD key. " +

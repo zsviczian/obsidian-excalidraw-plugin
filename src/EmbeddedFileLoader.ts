@@ -422,7 +422,7 @@ export class EmbeddedFilesLoader {
     let fontName = plugin.settings.mdFont;
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEY_FONT] != null
+      Boolean(fileCache.frontmatter[FRONTMATTER_KEY_FONT])
     ) {
       fontName = fileCache.frontmatter[FRONTMATTER_KEY_FONT];
     }
@@ -442,6 +442,13 @@ export class EmbeddedFilesLoader {
         fontName = font.fontName;
     }
   
+    if (
+      fileCache?.frontmatter && 
+      fileCache.frontmatter["banner"] !== null
+    ) {
+      text = text.replace(/banner:\s*.*/,""); //patch https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/814
+    }
+
     const fontColor = fileCache?.frontmatter
       ? fileCache.frontmatter[FRONTMATTER_KEY_FONTCOLOR] ??
         plugin.settings.mdFontColor

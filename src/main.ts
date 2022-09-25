@@ -15,7 +15,8 @@ import {
   loadMathJax,
   request,
   MetadataCache,
-  FrontMatterCache
+  FrontMatterCache,
+  Command
 } from "obsidian";
 import {
   BLANK_DRAWING,
@@ -163,6 +164,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public fourthFontDef: string = VIRGIL_FONT;
   private packageMap: WeakMap<Window,Packages> = new WeakMap<Window,Packages>();
   public leafChangeTimeout: NodeJS.Timeout = null;
+  private forceSaveCommand:Command;
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
@@ -361,6 +363,29 @@ export default class ExcalidrawPlugin extends Plugin {
       }
     });
   }
+
+  private forceSaveActiveView(checking:boolean):boolean {
+    if (checking) {
+      return Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView));
+    }
+    const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+    if (view) {
+      (async()=>{
+        if (view.semaphores.autosaving) {
+          return;
+        }
+        view.semaphores.forceSaving = true;
+        await view.save(false, true);
+        view.plugin.triggerEmbedUpdates();
+        view.loadSceneFiles();
+        view.semaphores.forceSaving = false;
+        new Notice("Save successful", 1000);
+      })();
+      return true;
+    }
+    return false;
+  }
+
 
   private registerInstallCodeblockProcessor() {
     const codeblockProcessor = async (source: string, el: HTMLElement) => {
@@ -950,6 +975,13 @@ export default class ExcalidrawPlugin extends Plugin {
         return false;
       },
     });
+
+    this.forceSaveCommand = this.addCommand({
+      id: "save",
+      hotkeys: [{modifiers: ["Ctrl"], key:"s"}], //See also Poposcope
+      name: t("FORCE_SAVE"),
+      checkCallback: (checking:boolean) => this.forceSaveActiveView(checking),
+    })
 
     this.addCommand({
       id: "toggle-lock",
@@ -1624,8 +1656,20 @@ export default class ExcalidrawPlugin extends Plugin {
         if (newActiveviewEV) {
           const scope = this.app.keymap.getRootScope();
           const handler = scope.register(["Mod"], "Enter", () => true);
+          const overridSaveShortcut = (
+            this.forceSaveCommand &&
+            this.forceSaveCommand.hotkeys[0].key === "s" &&
+            this.forceSaveCommand.hotkeys[0].modifiers.includes("Ctrl")
+          )
+          const self = this;
+          const saveHandler = overridSaveShortcut
+           ? scope.register(["Ctrl"], "s", () => self.forceSaveActiveView(false))
+           : undefined;
           scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
-          self.popScope = () => scope.unregister(handler);
+          self.popScope = () => {
+            scope.unregister(handler);
+            Boolean(saveHandler) && scope.unregister(saveHandler);
+          }
         }
       };
       self.registerEvent(

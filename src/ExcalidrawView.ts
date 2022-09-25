@@ -457,6 +457,12 @@ export default class ExcalidrawView extends TextFileView {
       return;
     }
     this.semaphores.saving = true;
+    
+    //if there were no changes to the file super save will not save 
+    //and consequently main.ts modifyEventHandler will not fire
+    //this.reload will not be called
+    //triggerReload is used to flag if there were no changes but file should be reloaded anyway
+    let triggerReload:boolean = false; 
 
     if (
       !this.getScene ||
@@ -500,6 +506,8 @@ export default class ExcalidrawView extends TextFileView {
 
         this.semaphores.preventReload = preventReload;
         await super.save();
+        triggerReload = (this.lastSaveTimestamp === this.file.stat.mtime) &&
+          !preventReload && forcesave;
         this.lastSaveTimestamp = this.file.stat.mtime;
         this.clearDirty();
         
@@ -512,7 +520,8 @@ export default class ExcalidrawView extends TextFileView {
         }
       }
 
-      if (!this.semaphores.autosaving && !this.semaphores.viewunload) {
+      // !triggerReload means file has not changed. No need to re-export
+      if (!triggerReload && !this.semaphores.autosaving && !this.semaphores.viewunload) {
         const autoexportPreference = this.excalidrawData.autoexportPreference;
         if (
           (autoexportPreference === AutoexportPreference.inherit && this.plugin.settings.autoexportSVG) ||
@@ -542,6 +551,9 @@ export default class ExcalidrawView extends TextFileView {
       warningUnknowSeriousError();
     }
     this.semaphores.saving = false;
+    if(triggerReload) {
+      this.reload(true, this.file);
+    }
   }
 
   // get the new file content
@@ -1003,9 +1015,15 @@ export default class ExcalidrawView extends TextFileView {
       DISK_ICON_NAME,
       t("FORCE_SAVE"),
       async () => {
-        if (this.semaphores.autosaving) {
+        if (this.semaphores.autosaving || this.semaphores.saving) {
+          new Notice("Force Save aborted because saving is in progress)")
           return;
         }
+        if(this.preventReloadResetTimer) {
+          clearTimeout(this.preventReloadResetTimer);
+          this.preventReloadResetTimer = null;
+        }
+        this.semaphores.preventReload = false;
         this.semaphores.forceSaving = true;
         await this.save(false, true);
         this.plugin.triggerEmbedUpdates();

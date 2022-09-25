@@ -854,6 +854,7 @@ export class ExcalidrawData {
     let linkIcon = false;
     let urlIcon = false;
     let parts;
+    text = this.parseCheckbox(text);
     if (text.match(REG_LINKINDEX_HYPERLINK)) {
       link = text;
       urlIcon = true;
@@ -869,8 +870,8 @@ export class ExcalidrawData {
       }
       if (REGEX_LINK.isTransclusion(parts)) {
         //transclusion //parts.value[1] || parts.value[4]
-        const contents = (await this.getTransclusion(REGEX_LINK.getLink(parts)))
-          .contents;
+        const contents = this.parseCheckbox((await this.getTransclusion(REGEX_LINK.getLink(parts)))
+          .contents);
         outString +=
           text.substring(position, parts.value.index) +
           wrapText(
@@ -907,6 +908,16 @@ export class ExcalidrawData {
     return { parsed: outString, link };
   }
 
+  private parseCheckbox(text:string):string {
+    return this.plugin.settings.parseTODO 
+      ? text
+        .replaceAll(/^- \[\s] /g,`${this.plugin.settings.todo} `)
+        .replaceAll(/\n- \[\s] /g,`\n${this.plugin.settings.todo} `)
+        .replaceAll(/^- \[[^\s]] /g,`${this.plugin.settings.done} `)
+        .replaceAll(/\n- \[[^\s]] /g,`\n${this.plugin.settings.done} `)
+      : text;
+  }
+
   /**
    * Does a quick parse of the raw text. Returns the parsed string if raw text does not include a transclusion.
    * Return null if raw text includes a transclusion.
@@ -936,6 +947,7 @@ export class ExcalidrawData {
     let linkIcon = false;
     let urlIcon = false;
     let parts;
+    text = this.parseCheckbox(text);
     if (text.match(REG_LINKINDEX_HYPERLINK)) {
       link = text;
       urlIcon = true;
@@ -1065,7 +1077,7 @@ export class ExcalidrawData {
         const equation = this.getEquation(fileId);
         //const equation = this.equations.get(fileId as FileId);
         //images should have a single reference, but equations and markdown embeds should have as many as instances of the file in the scene
-        if(file && (file.file.extension !== "md" || this.plugin.isExcalidrawFile(file.file))) {
+        if(file && file.file && (file.file.extension !== "md" || this.plugin.isExcalidrawFile(file.file))) {
           return;
         }
         const newId = fileid();
