@@ -17,6 +17,12 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.7.22":`
+# Fixed
+- Text size in sticky notes increased when opening the drawing and when editing a sticky note [#824](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/824)
+- ToDo rendering did not work properly when there were parsed links in the text
+- Horizontal text alignment in sticky notes did not honor text alignment setting when resizing text. The text was always aligned center even when text alignment was left or right. [#5720](https://github.com/excalidraw/excalidraw/issues/5720)
+`,
 "1.7.21":`
 # New from Excalidraw.com
 - Image-mirroring in export preview and in exported SVG [#5700](https://github.com/excalidraw/excalidraw/pull/5700), [#811](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/811), [#617](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/617)

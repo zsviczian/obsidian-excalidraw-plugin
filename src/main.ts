@@ -1611,8 +1611,8 @@ export default class ExcalidrawPlugin extends Plugin {
           self.lastActiveExcalidrawFilePath = newActiveviewEV.file?.path;
         }
 
-        if (previouslyActiveEV && previouslyActiveEV != newActiveviewEV) {
-          if (previouslyActiveEV.leaf != leaf) {
+        if (previouslyActiveEV && previouslyActiveEV !== newActiveviewEV) {
+          if (previouslyActiveEV.leaf !== leaf) {
             //if loading new view to same leaf then don't save. Excalidarw view will take care of saving anyway.
             //avoid double saving
             if(previouslyActiveEV.semaphores.dirty) {
@@ -1626,7 +1626,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
         if (
           newActiveviewEV &&
-          (!previouslyActiveEV || previouslyActiveEV.leaf != leaf)
+          (!previouslyActiveEV || previouslyActiveEV.leaf !== leaf)
         ) {
           //the user switched to a new leaf
           //timeout gives time to the view being exited to finish saving

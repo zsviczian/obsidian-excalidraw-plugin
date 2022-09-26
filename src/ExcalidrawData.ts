@@ -847,6 +847,7 @@ export class ExcalidrawData {
    * @returns
    */
   private async parse(text: string): Promise<{ parsed: string; link: string }> {
+    text = this.parseCheckbox(text);
     let outString = "";
     let link = null;
     let position = 0;
@@ -854,7 +855,6 @@ export class ExcalidrawData {
     let linkIcon = false;
     let urlIcon = false;
     let parts;
-    text = this.parseCheckbox(text);
     if (text.match(REG_LINKINDEX_HYPERLINK)) {
       link = text;
       urlIcon = true;
@@ -939,7 +939,7 @@ export class ExcalidrawData {
     if (hasTransclusion(text)) {
       return [null, null];
     }
-
+    text = this.parseCheckbox(text);
     let outString = "";
     let link = null;
     let position = 0;
@@ -947,7 +947,6 @@ export class ExcalidrawData {
     let linkIcon = false;
     let urlIcon = false;
     let parts;
-    text = this.parseCheckbox(text);
     if (text.match(REG_LINKINDEX_HYPERLINK)) {
       link = text;
       urlIcon = true;
