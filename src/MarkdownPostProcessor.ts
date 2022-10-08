@@ -351,11 +351,16 @@ const tmpObsidianWYSIWYG = async (
 
     let internalEmbedDiv: HTMLElement = el;
     while (
+      !internalEmbedDiv.hasClass("dataview") &&
+      !internalEmbedDiv.hasClass("cm-preview-code-block") &&
+      !internalEmbedDiv.hasClass("cm-embed-block") &&
       !internalEmbedDiv.hasClass("internal-embed") &&
       internalEmbedDiv.parentElement
     ) {
       internalEmbedDiv = internalEmbedDiv.parentElement;
     }
+     
+    if(!internalEmbedDiv.hasClass("internal-embed")) return; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/835
 
     const attr: imgElementAttributes = {
       fname: ctx.sourcePath,
