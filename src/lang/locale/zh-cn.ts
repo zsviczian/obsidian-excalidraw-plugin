@@ -9,10 +9,13 @@ export default {
   // main.ts
   INSTALL_SCRIPT: "安装此脚本",
   UPDATE_SCRIPT: "发现可用更新 - 点击安装",
-  CHECKING_SCRIPT: "检查脚本更新 - 点击重新安装",
-  UNABLETOCHECK_SCRIPT: "检查更新失败 - 点击重新安装",
-  UPTODATE_SCRIPT: "已安装最新脚本 - 点击重新安装",
-  OPEN_AS_EXCALIDRAW: "打开为 Excalidraw 绘图（Excalidraw 模式）",
+  CHECKING_SCRIPT:
+    "检查脚本更新 - 点击重新安装",
+  UNABLETOCHECK_SCRIPT:
+    "检查更新失败 - 点击重新安装",
+  UPTODATE_SCRIPT:
+    "已安装最新脚本 - 点击重新安装",
+  OPEN_AS_EXCALIDRAW: "打开为 Excalidraw 绘图",
   TOGGLE_MODE: "在 Excalidraw 和 Markdown 模式之间切换",
   CONVERT_NOTE_TO_EXCALIDRAW: "转换空白笔记为 Excalidraw 绘图",
   CONVERT_EXCALIDRAW: "转换 *.excalidraw 为 *.md 文件",
@@ -20,33 +23,47 @@ export default {
   CONVERT_FILE_KEEP_EXT: "*.excalidraw => *.excalidraw.md",
   CONVERT_FILE_REPLACE_EXT: "*.excalidraw => *.md (兼容 Logseq)",
   DOWNLOAD_LIBRARY: "导出 stencil 库为 *.excalidrawlib 文件",
-  OPEN_EXISTING_NEW_PANE: "打开已有的绘图（在新面板）",
-  OPEN_EXISTING_ACTIVE_PANE: "打开已有的绘图（在当前面板）",
-  TRANSCLUDE: "插入（嵌入）绘图到当前文档",
-  TRANSCLUDE_MOST_RECENT: "插入（嵌入）最近编辑的绘图到当前文档",
-  NEW_IN_NEW_PANE: "新建绘图（在新面板）",
-  NEW_IN_ACTIVE_PANE: "新建绘图（在当前面板）",
-  NEW_IN_NEW_PANE_EMBED: "新建绘图（在新面板），并插入（嵌入）到当前文档",
-  NEW_IN_ACTIVE_PANE_EMBED: "新建绘图（在当前面板），并插入（嵌入）到当前文档",
+  OPEN_EXISTING_NEW_PANE: "打开已有的绘图 - 于新面板",
+  OPEN_EXISTING_ACTIVE_PANE:
+    "打开已有的绘图 - 于当前面板",
+  TRANSCLUDE: "嵌入绘图（形如 ![[drawing]]）到当前文档",
+  TRANSCLUDE_MOST_RECENT: "嵌入最近编辑过的绘图（形如 ![[drawing]]）到当前文档",
+  TOGGLE_LEFTHANDED_MODE: "切换为左手模式",
+  NEW_IN_NEW_PANE: "新建绘图 - 于新面板",
+  NEW_IN_ACTIVE_PANE: "新建绘图 - 于当前面板",
+  NEW_IN_POPOUT_WINDOW: "新建绘图 - 于新窗口",
+  NEW_IN_NEW_PANE_EMBED:
+    "新建绘图 - 于新面板 - 并将其嵌入（形如 ![[drawing]]）到当前文档",
+  NEW_IN_ACTIVE_PANE_EMBED:
+    "新建绘图 - 于当前面板 - 并将其嵌入（形如 ![[drawing]]）到当前文档",
+  NEW_IN_POPOUT_WINDOW_EMBED: "新建绘图 - 于新窗口 - 并将其嵌入（形如 ![[drawing]]）到当前文档",
   EXPORT_SVG: "导出 SVG 文件到当前目录",
   EXPORT_PNG: "导出 PNG 文件到当前目录",
-  TOGGLE_LOCK: "切换文本元素的原文/预览模式",
-  DELETE_FILE: "删除所选的图像或以图像形式嵌入的 Markdown 文档（包括其源文件）",
-  INSERT_LINK_TO_ELEMENT: "复制所选元素（以链接形式）",
+  TOGGLE_LOCK: "切换文本元素为原文模式（RAW）/预览模式（PREVIEW）",
+  DELETE_FILE: "从库中删除所选图像（或 MD-Embed）的源文件",
+  INSERT_LINK_TO_ELEMENT:
+    "复制所选元素的内部链接。按住 CTRL/CMD 可复制元素所在分组的内部链接。按住 SHIFT 可复制元素周围区域的内部链接。",
+  INSERT_LINK_TO_ELEMENT_GROUP:
+    "复制所选元素所在分组的内部链接（形如 [[file#^group=elementID]]）",
+  INSERT_LINK_TO_ELEMENT_AREA:
+    "复制所选元素周围区域的内部链接（形如 [[file#^area=elementID]]）",
+  INSERT_LINK_TO_ELEMENT_NORMAL:
+    "复制所选元素的引用链接（形如 [[file#^elementID]]）",
   INSERT_LINK_TO_ELEMENT_ERROR: "未选择画布里的单个元素",
   INSERT_LINK_TO_ELEMENT_READY: "链接已生成并复制到剪贴板",
-  INSERT_LINK: "插入（链接）文件到当前绘图",
-  INSERT_IMAGE: "插入（以图像形式嵌入）图像到当前绘图",
-  INSERT_MD: "插入（以图像形式嵌入） Markdown 文档到当前绘图",
-  INSERT_LATEX: "插入 LaTeX 公式",
+  INSERT_LINK: "插入文件的内部链接（形如 [[drawing]]）到当前绘图",
+  INSERT_IMAGE: "插入图像（以图像形式嵌入）到当前绘图",
+  INSERT_MD: "插入 Markdown 文档（以图像形式嵌入）到当前绘图",
+  INSERT_LATEX:
+    "插入 LaTeX 公式到当前绘图",
   ENTER_LATEX: "输入 LaTeX 表达式",
   READ_RELEASE_NOTES: "阅读本插件的最新发行版本说明",
-  TRAY_MODE: "切换绘图工具属性页的面板（Panel）/托盘（Tray）模式",
+  TRAY_MODE: "切换绘图工具属性页为面板模式（Panel）/托盘模式（Tray）",
   SEARCH: "搜索文本",
 
   //ExcalidrawView.ts
   INSTALL_SCRIPT_BUTTON: "安装或更新 Excalidraw 自动化脚本",
-  OPEN_AS_MD: "打开为 Markdown 文件（Markdown 模式）",
+  OPEN_AS_MD: "打开为 Markdown 文件",
   SAVE_AS_PNG: "导出 PNG 到当前目录（按住 CTRL/CMD 设定导出路径）",
   SAVE_AS_SVG: "导出 SVG 到当前目录（按住 CTRL/CMD 设定导出路径）",
   OPEN_LINK: "打开所选元素里的链接 \n（按住 SHIFT 在新面板打开）",
@@ -55,13 +72,12 @@ export default {
     "请选择一个含有链接的图形或文本元素。\n" +
     "按住 SHIFT 并点击此按钮可在新面板中打开链接。\n" +
     "您也可以直接在画布中按住 CTRL/CMD 并点击图形或文本元素来打开链接。",
-  TEXT_ELEMENT_EMPTY:
-    "未选中图形或文本元素，或者元素不包含有效的链接（[[链接|别名]] 或 [别名](链接)）",
-  FILENAME_INVALID_CHARS: '文件名不能含有以下符号： * " \\  < > : | ? #',
+  FILENAME_INVALID_CHARS:
+    '文件名不能含有以下符号： * " \\  < > : | ? #',
   FILE_DOES_NOT_EXIST:
     "文件不存在。按住 ALT（或 ALT + SHIFT）并点击链接来创建新文件。",
   FORCE_SAVE:
-    "立刻保存该绘图，并更新其他嵌入了该绘图的面板。\n（详见插件设置中的定期保存选项）",
+    "立刻保存该绘图（并更新嵌入了该绘图的面板）。\n详见插件设置中的定期保存选项",
   RAW: "文本元素正以原文（RAW）模式显示链接。\n点击切换到预览（PREVIEW）模式",
   PARSED:
     "文本元素正以预览（PREVIEW）模式显示链接。\n点击切换到原文（RAW）模式",
@@ -75,13 +91,20 @@ export default {
   RELEASE_NOTES_DESC:
     "<b>开启：</b>每次更新本插件后，显示最新发行版本的说明。<br>" +
     "<b>关闭：</b>您仍可以在 <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases'>GitHub</a> 上阅读更新说明。",
+  NEWVERSION_NOTIFICATION_NAME: "通知插件更新",
+  NEWVERSION_NOTIFICATION_DESC:
+      "<b>开启：</b>当本插件存在可用更新时，显示通知。<br>" +
+      "<b>关闭：</b>您需要手动检查本插件的更新（设置 - 第三方插件 - 检查更新）。",
+  
   FOLDER_NAME: "Excalidraw 文件夹",
-  FOLDER_DESC: "新绘图的默认存储路径。若为空，将在库的根目录中创建新绘图。",
-  FOLDER_EMBED_NAME: "将 Excalidraw 文件夹用于“新建绘图”命令创建的绘图",
+  FOLDER_DESC:
+    "新绘图的默认存储路径。若为空，将在库的根目录中创建新绘图。",
+  FOLDER_EMBED_NAME:
+    "将 Excalidraw 文件夹用于“新建绘图”命令创建的绘图",
   FOLDER_EMBED_DESC:
-    "在命令面板中执行“新建绘图，并插入（嵌入）到当前文档”之类命令时，" +
+    "在命令面板中执行“新建绘图”系列命令时，" +
     "新绘图的存储路径。<br>" +
-    "<b>开启：</b>使用 Excalidraw 文件夹。 <b>关闭：</b>使用 Obsidian 设置的新附件默认位置。",
+    "<b>开启：</b>使用 Excalidraw 文件夹。 <br><b>关闭：</b>使用 Obsidian 设置的新附件默认位置。",
   TEMPLATE_NAME: "Excalidraw 模板文件",
   TEMPLATE_DESC:
     "Excalidraw 模板文件的完整路径。<br>" +
@@ -113,89 +136,107 @@ export default {
     "但是在手机或平板上通过滑动手势退出 Obsidian 时，可能无法顺利触发自动保存。因此我添加了定期保存功能作为弥补。",
   AUTOSAVE_INTERVAL_NAME: "定期保存的时间间隔",
   AUTOSAVE_INTERVAL_DESC:
-    "每隔多长时间执行一次保存。如果当前绘图没有发生改变，将不会进行定期保存。",
+    "每隔多长时间执行一次保存。如果当前绘图没有发生改变，将不会触发保存。",
   FILENAME_HEAD: "文件名",
   FILENAME_DESC:
     "<p>点击阅读" +
     "<a href='https://momentjs.com/docs/#/displaying/format/'>日期和时间格式参考</a>。</p>",
-  FILENAME_SAMPLE: "当前设置下，新绘图的文件名形如：",
-  FILENAME_EMBED_SAMPLE: "“新建绘图”命令创建的绘图的文件名形如：",
-  FILENAME_PREFIX_NAME: "文件名前缀",
-  FILENAME_PREFIX_DESC: "文件名的第一部分",
-  FILENAME_PREFIX_EMBED_NAME: "“新建绘图”命令创建的绘图的文件名前缀",
+  FILENAME_SAMPLE: "“新建绘图”系列命令创建的文件名形如：",
+  FILENAME_EMBED_SAMPLE: "“新建绘图并嵌入到当前文档”系列命令创建的文件名形如：",
+  FILENAME_PREFIX_NAME: "“新建绘图”系列命令创建的文件名前缀",
+  FILENAME_PREFIX_DESC: "执行“新建绘图”系列命令时，创建的绘图文件名的第一部分",
+  FILENAME_PREFIX_EMBED_NAME:
+    "“新建绘图并嵌入到当前文档”系列命令创建的文件名前缀",
   FILENAME_PREFIX_EMBED_DESC:
-    "若开启此项，" +
-    "则在命令面板中执行“新建绘图，并插入（嵌入）到当前文档”之类命令时，" +
-    "创建的绘图文件名将以当前文档名作为开头。",
-  FILENAME_POSTFIX_NAME: "“新建绘图”命令创建的绘图的文件名后缀",
+    "执行“新建绘图并嵌入到当前文档”系列命令时，" +
+    "创建的绘图文件名是否以当前文档名作为前缀？<br>" +
+    "<b>开启：</b>是<br><b>关闭：</b>否",
+  FILENAME_POSTFIX_NAME:
+    "“新建绘图并嵌入到当前文档”系列命令创建的文件名的中间部分",
   FILENAME_POSTFIX_DESC:
-    "介于文件名前缀和文件名日期之间的文本。仅对“新建绘图”命令创建的绘图生效。",
-  FILENAME_DATE_NAME: "文件名日期",
-  FILENAME_DATE_DESC: "文件名的最后一部分",
+    "介于文件名前缀和日期时间之间的文本。仅对“新建绘图并嵌入到当前文档”系列命令创建的绘图生效。",
+  FILENAME_DATE_NAME: "文件名里的日期时间",
+  FILENAME_DATE_DESC:
+    "文件名的最后一部分。允许留空。",
   FILENAME_EXCALIDRAW_EXTENSION_NAME: "文件扩展名（.excalidraw.md 或 .md）",
   FILENAME_EXCALIDRAW_EXTENSION_DESC:
     "该选项在兼容模式（即非 Excalidraw 专用 Markdown 文件）下不会生效。<br>" +
-    "<b>开启：</b>使用 .excalidraw.md 作为扩展名；<b>关闭：</b>使用 .md 作为扩展名。",
-  /*SVG_IN_MD_NAME: "SVG Snapshot to markdown file",
-  SVG_IN_MD_DESC: "If the switch is 'on' Excalidraw will include an SVG snapshot in the markdown file. "+
-                  "When SVG snapshots are saved to the Excalidraw.md file, drawings that include large png, jpg, gif images may take extreme long time to open in markdown view. " +
-                  "On the other hand, SVG snapshots provide some level of platform independence and longevity to your drawings. Even if Excalidraw will no longer exist, the snapshot " +
-                  "can be opened with an app that reads SVGs. In addition hover previews will be less resource intensive if SVG snapshots are enabled.",*/
+    "<b>开启：</b>使用 .excalidraw.md 作为扩展名。<br><b>关闭：</b>使用 .md 作为扩展名。",
   DISPLAY_HEAD: "显示",
   LEFTHANDED_MODE_NAME: "左手模式",
   LEFTHANDED_MODE_DESC:
-    "目前只影响托盘模式下，绘图工具属性页的位置。若开启此项，则托盘处于右侧。",
+    "目前只在托盘模式下生效。若开启此项，则托盘（绘图工具属性页）将位于右侧。" +
+    "<br><b>开启：</b>左手模式。<br><b>关闭：</b>右手模式。",
   MATCH_THEME_NAME: "使新建的绘图匹配 Obsidian 主题",
   MATCH_THEME_DESC:
     "如果 Obsidian 使用黑暗主题，新建的绘图文件也将使用黑暗主题。<br>" +
-    "但是若设置了模板，新建的绘图文件将跟随模板主题；另外，此功能不会作用于已有的绘图。",
+    "但是若设置了模板，新建的绘图文件将跟随模板主题；另外，此功能不会作用于已有的绘图。" +
+    "<br><b>开启：</b>跟随 Obsidian 主题风格。<br><b>关闭：</b>跟随模板主题风格。",
   MATCH_THEME_ALWAYS_NAME: "使已有的绘图匹配 Obsidian 主题",
   MATCH_THEME_ALWAYS_DESC:
-    "如果 Obsidian 使用黑暗主题，则绘图文件也将以黑暗主题打开；反之亦然。",
+    "如果 Obsidian 使用黑暗主题，则绘图文件也将以黑暗主题打开；反之亦然。" +
+    "<br><b>开启：</b>匹配 Obsidian 主题风格。<br><b>关闭：</b>采用上次保存时的主题风格。",
   MATCH_THEME_TRIGGER_NAME: "Excalidraw 主题跟随 Obsidian 主题变化",
   MATCH_THEME_TRIGGER_DESC:
-    "开启此项，则切换 Obsidian 的黑暗/明亮主题时，当前活动的 Excalidraw 面板的主题会随之改变。",
+    "开启此项，则切换 Obsidian 的黑暗/明亮主题时，已打开的 Excalidraw 面板的主题会随之改变。" +
+    "<br><b>开启：</b>跟随主题变化。<br><b>关闭：</b>不跟随主题变化。",
   DEFAULT_OPEN_MODE_NAME: "Excalidraw 的默认运行模式",
   DEFAULT_OPEN_MODE_DESC:
-    "设置 Excalidraw 的运行模式：普通模式，禅模式，或者阅读模式。<br>" +
-    "您可为某个绘图单独设置此项，方法是在其 Frontmatter 中添加形如 <code>excalidraw-default-mode: normal/zen/view</code> 的键值对。",
+    "设置 Excalidraw 的运行模式：普通模式（Normal）/禅模式（Zen）/阅读模式（View）。<br>" +
+    "您可为某个绘图单独设置此项，方法是在其 frontmatter 中添加形如 <code>excalidraw-default-mode: normal/zen/view</code> 的键值对。",
+  DEFAULT_PEN_MODE_NAME: "触控笔模式（Pen mode）",
+  DEFAULT_PEN_MODE_DESC:
+    "打开绘图时，是否自动开启触控笔模式？",
   ZOOM_TO_FIT_NAME: "自动缩放以适应面板调整",
-  ZOOM_TO_FIT_DESC: "调整面板大小时，自适应地缩放画布",
+  ZOOM_TO_FIT_DESC: "调整面板大小时，自适应地缩放画布" +
+    "<br><b>开启：</b>自动缩放。<br><b>关闭：</b>禁用自动缩放。",
   ZOOM_TO_FIT_MAX_LEVEL_NAME: "自动缩放的最高级别",
   ZOOM_TO_FIT_MAX_LEVEL_DESC:
     "自动缩放画布时，允许放大的最高级别。该值不能低于 0.5（50%）且不能超过 10（1000%）。",
-  LINKS_HEAD: "链接（Links） & 嵌入到绘图中的文档（Transclusion）",
+  LINKS_HEAD: "链接（Links） & 以文本形式嵌入到绘图中的文档（Transclusion）",
   LINKS_DESC:
-    "按住 CTRL/CMD 并点击包含 <code>[[链接]]</code> 的文本元素可以打开其中的链接。" +
-    "如果所选文本元素包含多个 <code>[[有效的 Obsidian 链接]]</code> ，只会打开第一个链接；" +
+    "按住 CTRL/CMD 并点击包含 <code>[[链接]]</code> 的文本元素可以打开其中的链接。<br>" +
+    "如果所选文本元素包含多个 <code>[[有效的内部链接]]</code> ，只会打开第一个链接；" +
     "如果所选文本元素包含有效的 URL 链接 (如 <code>https://</code> 或 <code>http://</code>)，" +
-    "插件会在浏览器中打开 URL 链接。<br>" +
-    "链接的源文件被重命名时，绘图中相应的 <code>[[链接]]</code> 也会同步更新。" +
-    "若您不愿绘图中的链接文本因此而变化，可用 <code>[[链接|别名]]</code> 来使用别名。",
+    "插件会在浏览器中打开链接。<br>" +
+    "链接的源文件被重命名时，绘图中相应的 <code>[[内部链接]]</code> 也会同步更新。" +
+    "若您不愿绘图中的链接外观因此而变化，可使用 <code>[[内部链接|别名]]</code>。",
   ADJACENT_PANE_NAME: "在相邻面板中打开",
   ADJACENT_PANE_DESC:
-    "按住 CTRL/CMD + SHIFT 并点击链接时，插件默认会在新面板中打开该链接。<br>" +
+    "按住 CTRL/CMD + SHIFT 并点击绘图里的内部链接时，插件默认会在新面板中打开该链接。<br>" +
     "若开启此项，Excalidraw 会先尝试寻找已有的相邻面板（按照右侧、左侧、上方、下方的顺序），" +
-    "并在其中打开链接。如果找不到，" +
-    "再在新面板中打开链接。",
+    "并在其中打开该链接。如果找不到，" +
+    "再在新面板中打开。",
+  MAINWORKSPACE_PANE_NAME: "在主工作区中打开",
+  MAINWORKSPACE_PANE_DESC:
+    "按住 CTRL/CMD + SHIFT 并点击绘图里的内部链接时，插件默认会在当前窗口的新面板中打开该链接。<br>" +
+    "若开启此项，Excalidraw 会在主工作区的面板中打开该链接。",  
   LINK_BRACKETS_NAME: "在链接的两侧显示 [[中括号]]",
   LINK_BRACKETS_DESC: `${
-    "文本元素处于预览模式时，在链接的两侧显示中括号。<br>" +
-    "您可为某个绘图单独设置此项，方法是在其 Frontmatter 中添加形如 <code>"
+    "文本元素处于预览模式时，在内部链接的两侧显示中括号。<br>" +
+    "您可为某个绘图单独设置此项，方法是在其 frontmatter 中添加形如 <code>"
   }${FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS}: true/false</code> 的键值对。`,
-  LINK_PREFIX_NAME: "链接的前缀",
+  LINK_PREFIX_NAME: "内部链接的前缀",
   LINK_PREFIX_DESC: `${
     "文本元素处于预览模式时，如果其中包含链接，则添加此前缀。<br>" +
-    "您可为某个绘图单独设置此项，方法是在其 Frontmatter 中添加形如 <code>"
+    "您可为某个绘图单独设置此项，方法是在其 frontmatter 中添加形如 <code>"
   }${FRONTMATTER_KEY_CUSTOM_PREFIX}: "📍 "</code> 的键值对。`,
-  URL_PREFIX_NAME: "URL 的前缀",
+  URL_PREFIX_NAME: "外部链接的前缀",
   URL_PREFIX_DESC: `${
-    "预览模式下，如果文本元素包含 URL 链接，则添加此前缀。<br>" +
-    "您可为某个绘图单独设置此项，方法是在其 Frontmatter 中添加形如 <code>"
+    "文本元素处于预览模式时，如果其中包含外部链接，则添加此前缀。<br>" +
+    "您可为某个绘图单独设置此项，方法是在其 frontmatter 中添加形如 <code>"
   }${FRONTMATTER_KEY_CUSTOM_URL_PREFIX}: "🌐 "</code> 的键值对。`,
-  HOVERPREVIEW_NAME: "鼠标悬停预览链接",
+  PARSE_TODO_NAME: "解析任务列表（Todo）",
+  PARSE_TODO_DESC: "将文本元素中的 <code>- [ ]</code> 和 <code>- [x]</code> 前缀显示为方框。",
+  TODO_NAME: "未完成的 Todo 项目",
+  TODO_DESC: "未完成的 Todo 项目的符号",
+  DONE_NAME: "已完成的 Todo 项目",
+  DONE_DESC: "已完成的 Todo 项目的符号",
+  HOVERPREVIEW_NAME: "鼠标悬停预览内部链接",
   HOVERPREVIEW_DESC:
-    "<b>开启：</b>鼠标悬停在 <code>[[链接]]</code> 上即可预览。<br><b>关闭：</b>鼠标悬停在 <code>[[链接]]</code> 上，并且按住 CTRL/CMD 时进行预览。",
+    "<b>开启：</b>在 Excalidraw <u>阅读模式（View）</u>下，鼠标悬停在 <code>[[内部链接]]</code> 上即可预览；" +
+    "而在<u>普通模式（Normal）</u>下, 鼠标悬停在内部链接右上角的蓝色标识上即可预览。<br> " +
+    "<b>关闭：</b>鼠标悬停在 <code>[[内部链接]]</code> 上，并且按住 CTRL/CMD 时进行预览。",
   LINKOPACITY_NAME: "链接标识的透明度",
   LINKOPACITY_DESC:
     "含有链接的元素，其右上角的链接标识的透明度。介于 0（全透明）到 1（不透明）之间。",
@@ -204,48 +245,52 @@ export default {
   LINK_CTRL_CLICK_DESC:
     "如果此功能影响到您使用某些原版 Excalidraw 功能，可将其关闭。" +
     "关闭后，您只能通过绘图面板标题栏中的链接按钮来打开链接。",
-  TRANSCLUSION_WRAP_NAME: "嵌入文档（Translusion）的折行方式",
+  TRANSCLUSION_WRAP_NAME: "Transclusion 的折行方式",
   TRANSCLUSION_WRAP_DESC:
     "中的 number 表示嵌入的文本溢出时，在第几个字符处进行折行。<br>" +
     "此开关控制具体的折行方式。若开启，则严格在 number 处折行，禁止溢出；" +
     "若关闭，则允许在 number 位置后最近的空格处折行。",
-  TRANSCLUSION_DEFAULT_WRAP_NAME: "嵌入文档（Translusion）的默认折行位置",
+  TRANSCLUSION_DEFAULT_WRAP_NAME: "Transclusion 的默认折行位置",
   TRANSCLUSION_DEFAULT_WRAP_DESC:
     "除了通过 <code>![[doc#^block]]{number}</code> 中的 number 来控制折行位置，您也可以在此设置 number 的默认值。<br>" +
     "一般设为 0 即可，表示不设置固定的默认值，这样当您需要嵌入文档到便签中时，" +
     "Excalidraw 能更好地帮您自动处理。",
-  PAGE_TRANSCLUSION_CHARCOUNT_NAME: "嵌入文档（Translusion）的最大显示字符数",
+  PAGE_TRANSCLUSION_CHARCOUNT_NAME: "Transclusion 的最大显示字符数",
   PAGE_TRANSCLUSION_CHARCOUNT_DESC:
-    "以 <code>![[Markdown 文档]]</code> 的形式将文档嵌入到绘图中时，" +
+    "以 <code>![[内部链接]]</code> 或 <code>![](内部链接)</code> 的形式将文档以文本形式嵌入到绘图中时，" +
     "该文档在绘图中可显示的最大字符数量。",
   GET_URL_TITLE_NAME: "使用 iframly 获取页面标题",
   GET_URL_TITLE_DESC:
     "拖放链接到 Excalidraw 时，使用 <code>http://iframely.server.crestify.com/iframely?url=</code> 来获取页面的标题。",
   MD_HEAD: "以图像形式嵌入到绘图中的 Markdown 文档（MD-Embed）",
   MD_HEAD_DESC:
-    "您可以将 Markdown 文档以图像（而非链接）的形式嵌入到绘图中，" +
-    "方法是按住 CTRL/CMD 并从文件管理器中把文档拖入绘图，或者使用命令面板里的相关命令。",
+    "您还可以将 Markdown 文档以图像形式（而非文本形式）嵌入到绘图中。" +
+    "方法是按住 CTRL/CMD 并从文件管理器中把文档拖入绘图，或者执行“以图像形式嵌入”系列命令。",
   MD_TRANSCLUDE_WIDTH_NAME: "MD-Embed 的默认宽度",
   MD_TRANSCLUDE_WIDTH_DESC:
-    "MD-Embed 图像的宽度。该选项会影响到折行，以及图像元素的宽度。<br>" +
+    "MD-Embed 的宽度。该选项会影响到折行，以及图像元素的宽度。<br>" +
     "您可为绘图中的某个 MD-Embed 单独设置此项，方法是将绘图切换至 Markdown 模式，" +
     "并修改相应的 <code>[[Embed文件名#标题|宽度x最大高度]]</code>。",
-  MD_TRANSCLUDE_HEIGHT_NAME: "MD-Embed 的默认最大高度",
+  MD_TRANSCLUDE_HEIGHT_NAME:
+    "MD-Embed 的默认最大高度",
   MD_TRANSCLUDE_HEIGHT_DESC:
-    "MD-Embed 图像的高度取决于文档内容的多少，但最大不会超过该值。<br>" +
+    "MD-Embed 的高度取决于 Markdown 文档内容的多少，但最大不会超过该值。<br>" +
     "您可为绘图中的某个 MD-Embed 单独设置此项，方法是将绘图切换至 Markdown 模式，并修改相应的 <code>[[Embed文件名#^块引ID|宽度x最大高度]]</code>。",
-  MD_DEFAULT_FONT_NAME: "MD-Embed 的默认字体",
+  MD_DEFAULT_FONT_NAME:
+    "MD-Embed 的默认字体",
   MD_DEFAULT_FONT_DESC:
     "可以设为 <code>Virgil</code>，<code>Casadia</code> 或其他有效的 .ttf/.woff/.woff2 字体文件（如 <code>我的字体.woff2</code>）。<br>" +
-    "您可为某个 MD-Embed 单独设置此项，方法是在其源文件的 Frontmatter 中添加形如 <code>excalidraw-font: 字体名或文件名</code> 的键值对。",
-  MD_DEFAULT_COLOR_NAME: "MD-Embed 的默认文本颜色",
+    "您可为某个 MD-Embed 单独设置此项，方法是在其源文件的 frontmatter 中添加形如 <code>excalidraw-font: 字体名或文件名</code> 的键值对。",
+  MD_DEFAULT_COLOR_NAME:
+    "MD-Embed 的默认文本颜色",
   MD_DEFAULT_COLOR_DESC:
     "可以填写 HTML 颜色名，如 steelblue（参考 <a href='https://www.w3schools.com/colors/colors_names.asp'>HTML Color Names</a>），或者有效的 16 进制颜色值，例如 #e67700，或者任何其他有效的 CSS 颜色。<br>" +
-    "您可为某个 MD-Embed 单独设置此项，方法是在其源文件的 Frontmatter 中添加形如 <code>excalidraw-font-color: steelblue</code> 的键值对。",
-  MD_DEFAULT_BORDER_COLOR_NAME: "MD-Embed 的默认边框颜色",
+    "您可为某个 MD-Embed 单独设置此项，方法是在其源文件的 frontmatter 中添加形如 <code>excalidraw-font-color: steelblue</code> 的键值对。",
+  MD_DEFAULT_BORDER_COLOR_NAME:
+    "MD-Embed 的默认边框颜色",
   MD_DEFAULT_BORDER_COLOR_DESC:
     "可以填写 HTML 颜色名，如 steelblue（参考 <a href='https://www.w3schools.com/colors/colors_names.asp'>HTML Color Names</a>），或者有效的 16 进制颜色值，例如 #e67700，或者任何其他有效的 CSS 颜色。<br>" +
-    "您可为某个 MD-Embed 单独设置此项，方法是在其源文件的 Frontmatter 中添加形如 <code>excalidraw-border-color: gray</code> 的键值对。<br>" +
+    "您可为某个 MD-Embed 单独设置此项，方法是在其源文件的 frontmatter 中添加形如 <code>excalidraw-border-color: gray</code> 的键值对。<br>" +
     "如果您不想要边框，请留空。",
   MD_CSS_NAME: "MD-Embed 的默认 CSS 样式表",
   MD_CSS_DESC:
@@ -255,58 +300,76 @@ export default {
     "<code>ExcalidrawAutomate.mostRecentMarkdownSVG</code> —— 这将显示 Excalidraw 最近生成的 SVG。<br>" +
     "此外，在 CSS 中不能任意地设置字体，您一般只能使用系统默认的标准字体（详见 README），" +
     "但可以通过上面的设置来额外添加一个自定义字体。<br>" +
-    "您可为某个 MD-Embed 单独设置此项，方法是在其源文件的 Frontmatter 中添加形如 <code>excalidraw-css: 库中的CSS文件或CSS片段</code> 的键值对。",
+    "您可为某个 MD-Embed 单独设置此项，方法是在其源文件的 frontmatter 中添加形如 <code>excalidraw-css: 库中的CSS文件或CSS片段</code> 的键值对。",
   EMBED_HEAD: "嵌入到文档中的绘图（Embed） & 导出",
-  EMBED_PREVIEW_SVG_NAME: "在 Markdown 阅读视图下显示 SVG 格式的预览图",
+  EMBED_REUSE_EXPORTED_IMAGE_NAME:
+    "将之前已导出的图像作为 Embed 的预览图（如果存在的话）",
+  EMBED_REUSE_EXPORTED_IMAGE_DESC:
+    "该选项与“自动导出 SVG/PNG 副本”选项配合使用。如果存在文件名相匹配的 SVG/PNG 副本，则将其作为 Embed 的预览图，而不再重新生成预览图。<br>" +
+    "该选项能够提高性能，尤其是当 Embed 中含有大量图像或 MD-Embed 时。" +
+    "但是，该选项也可能导致预览图无法立即响应你最新的修改，或者你对 Obsidian 主题风格的改变。<br>" +
+    "该选项仅作用于嵌入到文档中的绘图。" +
+    "由于种种原因，该技术无法用于加快绘图文件的打开速度。详见<a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.23' target='_blank'>此说明</a>。",
+  EMBED_PREVIEW_SVG_NAME: "生成 SVG 格式的 Embed 预览图",
   EMBED_PREVIEW_SVG_DESC:
-    "Obsidian 的 Markdown 阅读视图默认会将嵌入的绘图显示为 SVG 格式的预览图。若关闭此项，则显示为 PNG 格式。",
-  PREVIEW_MATCH_OBSIDIAN_NAME: "预览图匹配 Obsidian 主题",
+    "<b>开启：</b>在 Markdown 预览模式下，为 Embed 生成 <a href='https://en.wikipedia.org/wiki/Scalable_Vector_Graphics' target='_blank'>SVG</a> 格式的预览图。<br>" +
+    "<b>关闭：</b>为 Embed 生成 <a href='' target='_blank'>PNG</a> 格式的预览图。注意：PNG 格式预览图不支持某些 <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>绘图元素的块引用特性</a>。",
+  PREVIEW_MATCH_OBSIDIAN_NAME: "Embed 预览图匹配 Obsidian 主题",
   PREVIEW_MATCH_OBSIDIAN_DESC:
-    "开启此项，则当 Obsidian 处于黑暗模式时，预览图也会以黑暗模式渲染；" +
-    "当 Obsidian 处于明亮模式时，的预览图也会以明亮模式渲染。<br>您可能还需要关闭“导出的图像包含背景”开关，来获得与 Obsidian 更加协调的观感。",
-  EMBED_WIDTH_NAME: "预览图的默认宽度",
+    "开启此项，则当 Obsidian 处于黑暗模式时，Embed 的预览图也会以黑暗模式渲染；当 Obsidian 处于明亮模式时，预览图也会以明亮模式渲染。<br>" +
+    "您可能还需要关闭“导出的图像包含背景”开关，来获得与 Obsidian 更加协调的观感。",
+  EMBED_WIDTH_NAME: "Embed 预览图的默认宽度",
   EMBED_WIDTH_DESC:
-    "该选项同时作用于 Obsidian 实时预览模式下的编辑视图和阅读视图，以及鼠标悬停时的预览图。<br>" +
-    "您可为嵌入到文档中的某个绘图单独设置此项，" +
+    "该选项同时作用于 Obsidian 实时预览模式下的编辑视图和阅读视图，以及鼠标悬停时浮现的预览图。<br>" +
+    "您可为某个要嵌入到文档中的绘图（Embed）单独设置此项，" +
     "方法是修改相应的链接格式为形如 <code>![[drawing.excalidraw|100]]</code> 或 <code>[[drawing.excalidraw|100x100]]</code> 的格式。",
-  EMBED_TYPE_NAME: "“嵌入绘图到当前文档”命令的源文件类型",
+  EMBED_TYPE_NAME: "“嵌入绘图到当前文档”系列命令的源文件类型",
   EMBED_TYPE_DESC:
-    "在命令面板中执行“嵌入绘图到当前文档”之类命令时，要嵌入绘图文件，还是嵌入其 PNG 或 SVG 副本。<br>" +
-    "如果您想在该下拉框中选择 PNG 或 SVG 副本，需要先开启下方的“自动导出 PNG 格式副本”或“自动导出 SVG 格式副本”开关。" +
-    "若您选择了嵌入 PNG 或 SVG 副本，当绘图缺少对应的 PNG 或 SVG 副本时，该命令将会插入一条损坏的链接，您需要打开绘图文件并手动导出副本才能修复 —— " +
-    "该选项不会帮您自动生成 PNG/SVG 副本，而只会引用已经存在的 PNG/SVG 副本。",
-  EMBED_WIKILINK_NAME: "“嵌入绘图到当前文档”命令产生的链接类型",
+    "在命令面板中执行“嵌入绘图到当前文档”系列命令时，要嵌入绘图文件本身，还是嵌入其 PNG 或 SVG 副本。<br>" +
+    "如果您想选择 PNG 或 SVG 副本，需要先开启下方的“自动导出 PNG 副本”或“自动导出 SVG 副本”开关。<br>" +
+    "如果您选择了 PNG 或 SVG 副本，当副本不存在时，该命令将会插入一条损坏的链接，您需要打开绘图文件并手动导出副本才能修复 —— " +
+    "也就是说，该选项不会自动帮您生成 PNG/SVG 副本，而只会引用已有的 PNG/SVG 副本。",
+  EMBED_WIKILINK_NAME: "“嵌入绘图到当前文档”命令产生的内部链接类型",
   EMBED_WIKILINK_DESC:
     "<b>开启：</b>将产生 <code>![[Wiki 链接]]</code>。<b>关闭：</b>将产生 <code>![](Markdown 链接)</code>。",
-  EXPORT_PNG_SCALE_NAME: "导出 PNG 图像的比例",
+  EXPORT_PNG_SCALE_NAME: "导出的 PNG 图像的比例",
   EXPORT_PNG_SCALE_DESC: "导出的 PNG 图像的大小比例",
   EXPORT_BACKGROUND_NAME: "导出的图像包含背景",
-  EXPORT_BACKGROUND_DESC: "如果关闭，将导出透明背景的图像。",
-  EXPORT_SVG_PADDING_NAME: "导出 SVG 图像的边距",
-  EXPORT_SVG_PADDING_DESC:
-    "导出的 PNG 图像的空白边距（像素）。增加该值，可以避免在导出 SVG 图像时，过于靠近画布边缘的图形被裁掉。",
+  EXPORT_BACKGROUND_DESC:
+    "如果关闭，将导出透明背景的图像。",
+  EXPORT_PADDING_NAME: "导出的图像的空白边距",
+  EXPORT_PADDING_DESC:
+    "导出的 SVG/PNG 图像四周的空白边距（单位：像素）。<br>" +
+    "增加该值，可以避免在导出图像时，靠近图像边缘的图形被裁掉。<br>" +
+    "您可为某个绘图单独设置此项，方法是在其 frontmatter 中添加形如 <code>excalidraw-export-padding: 5<code> 的键值对。",
   EXPORT_THEME_NAME: "导出的图像包含主题",
   EXPORT_THEME_DESC:
     "导出与绘图的黑暗/明亮主题匹配的图像。" +
     "如果关闭，在黑暗主题下导出的图像将和明亮主题一样。",
   EXPORT_HEAD: "导出设置",
-  EXPORT_SYNC_NAME: "保持 .SVG 和 .PNG 文件名与绘图文件同步",
+  EXPORT_SYNC_NAME:
+    "保持 SVG/PNG 文件名与绘图文件同步",
   EXPORT_SYNC_DESC:
     "打开后，当绘图文件被重命名时，插件将同步更新同文件夹下的同名 .SVG 和 .PNG 文件。" +
     "当绘图文件被删除时，插件将自动删除同文件夹下的同名 .SVG 和 .PNG 文件。",
-  EXPORT_SVG_NAME: "自动导出 SVG 格式副本",
+  EXPORT_SVG_NAME: "自动导出 SVG 副本",
   EXPORT_SVG_DESC:
-    "自动导出和绘图文件同名的 SVG 格式副本。" +
+    "自动导出和绘图文件同名的 SVG 副本。" +
     "插件会将副本保存到绘图文件所在的文件夹中。" +
     "在文档中嵌入这个 SVG 文件，相比直接嵌入绘图文件，具有更强的跨平台能力。<br>" +
-    "此开关开启时，每次您编辑 Excalidraw 绘图，其 SVG 文件副本都会同步更新。",
-  EXPORT_PNG_NAME: "自动导出 PNG 格式副本",
-  EXPORT_PNG_DESC: "和“自动导出 SVG 格式副本”类似，但是导出格式为 *.PNG。",
+    "此开关开启时，每次您编辑 Excalidraw 绘图，其 SVG 文件副本都会同步更新。<br>" +
+    "您可为某个绘图单独设置此项，方法是在其 frontmatter 中添加形如 <code>excalidraw-autoexport: none/both/svg/png</code>" +
+    "的键值对",
+  EXPORT_PNG_NAME: "自动导出 PNG 副本",
+  EXPORT_PNG_DESC: "和“自动导出 SVG 副本”类似，但是导出格式为 *.PNG。",
+  EXPORT_BOTH_DARK_AND_LIGHT_NAME: "同时导出黑暗和明亮风格的图像",
+  EXPORT_BOTH_DARK_AND_LIGHT_DESC:  "若开启，Excalidraw 将导出两个文件：filename.dark.png（或 filename.dark.svg）和 filename.light.png（或 filename.light.svg）。<br>"+
+    "该选项可作用于“自动导出 SVG 副本”、“自动导出 PNG 副本”，以及其他的手动的导出命令。",
   COMPATIBILITY_HEAD: "兼容性设置",
-  EXPORT_EXCALIDRAW_NAME: "自动导出 Excalidraw 格式副本",
-  EXPORT_EXCALIDRAW_DESC:
-    "和“自动导出 SVG 格式副本”类似，但是导出格式为 *.excalidraw。",
-  SYNC_EXCALIDRAW_NAME: "保持同一绘图的新旧格式文件内容一致",
+  EXPORT_EXCALIDRAW_NAME: "自动导出 Excalidraw 旧格式副本",
+  EXPORT_EXCALIDRAW_DESC: "和“自动导出 SVG 副本”类似，但是导出格式为 *.excalidraw。",
+  SYNC_EXCALIDRAW_NAME:
+    "新旧格式绘图文件的内容保持同步",
   SYNC_EXCALIDRAW_DESC:
     "如果旧格式（*.excalidraw）绘图文件的修改日期比新格式（*.md）更新，" +
     "则根据旧格式文件的内容来更新新格式文件。",
@@ -315,15 +378,20 @@ export default {
     "开启此功能后，您通过功能区按钮、命令面板、" +
     "文件浏览器等创建的绘图都将是旧格式（*.excalidraw）。" +
     "此外，您打开旧格式绘图文件时将不再收到提醒消息。",
+  MATHJAX_NAME: "MathJax (LaTeX) 的 javascript 库服务器",
+  MATHJAX_DESC: "如果您在绘图中使用 LaTeX，插件需要从服务器获取并加载一个 javascript 库。" + 
+    "如果您的网络无法访问某些库服务器，可以尝试通过此选项更换库服务器。"+
+    "更改此选项后，您可能需要重启 Obsidian 来使其生效。",
   EXPERIMENTAL_HEAD: "实验性功能",
   EXPERIMENTAL_DESC:
     "以下部分设置不会立即生效，需要刷新文件资源管理器或者重启 Obsidian 才会生效。",
-  FIELD_SUGGESTER_NAME: "开启 Field Suggester",
+  FIELD_SUGGESTER_NAME: "开启字段建议",
   FIELD_SUGGESTER_DESC:
     "开启后，当您在编辑器中输入 <code>excalidraw-</code> 或者 <code>ea.</code> 时，会弹出一个带有函数说明的自动补全提示菜单。<br>" +
     "该功能借鉴了 Breadcrumbs 和 Templater 插件。",
   FILETYPE_NAME: "在文件浏览器中为 excalidraw.md 文件添加类型标识符（如 ✏️）",
-  FILETYPE_DESC: "可通过下一项设置来自定义类型标识符。",
+  FILETYPE_DESC:
+    "可通过下一项设置来自定义类型标识符。",
   FILETAG_NAME: "excalidraw.md 文件的类型标识符",
   FILETAG_DESC: "要显示为类型标识符的 emoji 或文本。",
   INSERT_EMOJI: "插入 emoji",
@@ -350,7 +418,8 @@ export default {
   SELECT_FILE_TO_LINK: "选择要插入（链接）到当前绘图中的文件。",
   SELECT_DRAWING: "选择要插入（以图像形式嵌入）到当前绘图中的图像。",
   TYPE_FILENAME: "键入要选择的绘图名称。",
-  SELECT_FILE_OR_TYPE_NEW: "选择已有绘图，或者新绘图的类型，然后按回车。",
+  SELECT_FILE_OR_TYPE_NEW:
+    "选择已有绘图，或者新绘图的类型，然后按回车。",
   SELECT_TO_EMBED: "选择要插入（嵌入）到当前文档中的绘图。",
   SELECT_MD: "选择要插入（以图像形式嵌入）到当前绘图中的 Markdown 文档。",
 
@@ -359,7 +428,8 @@ export default {
     "EXCALIDRAW 警告\n停止加载嵌入的图像，因为此文件中存在死循环：\n",
 
   //Scripts.ts
-  SCRIPT_EXECUTION_ERROR: "脚本运行错误。请在开发者控制台中查看错误信息。",
+  SCRIPT_EXECUTION_ERROR:
+    "脚本运行错误。请在开发者控制台中查看错误信息。",
 
   //ExcalidrawData.ts
   LOAD_FROM_BACKUP: "Excalidraw 文件已损坏。尝试从备份文件中加载。",
