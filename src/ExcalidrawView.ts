@@ -1726,7 +1726,7 @@ export default class ExcalidrawView extends TextFileView {
           elements: excalidrawData.elements.concat(deletedElements??[]), //need to preserve deleted elements during autosave if images, links, etc. are updated
           appState: {
             ...excalidrawData.appState,
-            ...this.excalidrawData.selectedElementIds !== {} //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/609
+            ...this.excalidrawData.selectedElementIds //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/609
               ? this.excalidrawData.selectedElementIds
               : {},
             zenModeEnabled,
@@ -2359,7 +2359,7 @@ export default class ExcalidrawView extends TextFileView {
           true
         );
 
-        if (images && images !== {}) {
+        if (images && Object.keys(images).length >0) {
           const files: BinaryFileData[] = [];
           Object.keys(images).forEach((k) => {
             files.push({
