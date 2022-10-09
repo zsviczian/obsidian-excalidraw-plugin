@@ -11,18 +11,19 @@ import {
   CASCADIA_FONT,
   REG_BLOCK_REF_CLEAN,
   VIRGIL_FONT,
-  PLUGIN_ID,
   FRONTMATTER_KEY_EXPORT_DARK,
   FRONTMATTER_KEY_EXPORT_TRANSPARENT,
   FRONTMATTER_KEY_EXPORT_SVGPADDING,
   FRONTMATTER_KEY_EXPORT_PNGSCALE,
   FRONTMATTER_KEY_EXPORT_PADDING,
+  CTRL_OR_CMD,
 } from "../Constants";
 import ExcalidrawPlugin from "../main";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
 import { ExportSettings } from "../ExcalidrawView";
 import { compressToBase64, decompressFromBase64 } from "lz-string";
 import { getIMGFilename } from "./FileUtils";
+
 
 declare const PLUGIN_VERSION:string;
 
@@ -627,6 +628,30 @@ export const errorlog = (data: {}) => {
 };
 
 export const sleep = async (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+type GenericEvent = KeyboardEvent | MouseEvent | React.DragEvent | React.PointerEvent | React.MouseEvent;
+
+export const isCtrlDown = (e:GenericEvent):boolean => {
+  https://stackoverflow.com/questions/44030187/correct-way-to-check-if-any-object-is-a-syntheticevent
+  return e instanceof Event
+    ? e[CTRL_OR_CMD]
+    : e.nativeEvent instanceof DragEvent
+      ? e[CTRL_OR_CMD] || isShiftDown(e) // React.DragEvent; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/468
+      : e[CTRL_OR_CMD];
+    
+}
+
+export const isShiftDown = (e:GenericEvent):boolean => {
+  return e.shiftKey;
+}
+
+export const isAltDown = (e:GenericEvent):boolean => {
+  return e.altKey;
+}
+
+export const isMetaDown = (e:GenericEvent):boolean => {
+  return e.metaKey;
+}
 
 /**REACT 18 
   //see also: https://github.com/zsviczian/obsidian-excalidraw-plugin/commit/b67d70c5196f30e2968f9da919d106ee66f2a5eb

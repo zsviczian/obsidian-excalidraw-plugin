@@ -37,7 +37,6 @@ import {
   JSON_parse,
   nanoid,
   DARK_BLANK_DRAWING,
-  CTRL_OR_CMD,
   SCRIPT_INSTALL_CODEBLOCK,
   SCRIPT_INSTALL_FOLDER,
   VIRGIL_FONT,
@@ -86,6 +85,7 @@ import {
   debug,
   isVersionNewerThanOther,
   getExportTheme,
+  isCtrlDown,
 } from "./utils/Utils";
 import { getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark } from "./utils/ObsidianUtils";
 //import { OneOffs } from "./OneOffs";
@@ -694,7 +694,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.addRibbonIcon(ICON_NAME, t("CREATE_NEW"), async (e) => {
       this.createAndOpenDrawing(
         getDrawingFilename(this.settings),
-        e[CTRL_OR_CMD]?"new-pane":"active-pane",
+        isCtrlDown(e) ? "new-pane" : "active-pane",
       ); //.ctrlKey||e.metaKey);
     });
 

@@ -37,7 +37,6 @@ import {
   TEXT_DISPLAY_PARSED_ICON_NAME,
   FULLSCREEN_ICON_NAME,
   IMAGE_TYPES,
-  CTRL_OR_CMD,
   REG_LINKINDEX_INVALIDCHARS,
   KEYCODE,
   LOCAL_PROTOCOL,
@@ -71,11 +70,13 @@ import {
   getExportPadding,
   getWithBackground,
   hasExportTheme,
-  isVersionNewerThanOther,
   scaleLoadedImage,
-  setDocLeftHandedMode,
   svgToBase64,
   viewportCoordsToSceneCoords,
+  isCtrlDown,
+  isShiftDown,
+  isAltDown,
+  isMetaDown,
 } from "./utils/Utils";
 import { getNewOrAdjacentLeaf, getParentOfClass } from "./utils/ObsidianUtils";
 import { splitFolderAndFilename } from "./utils/FileUtils";
@@ -191,10 +192,17 @@ export default class ExcalidrawView extends TextFileView {
   private onKeyUp: (e: KeyboardEvent) => void;
   private onKeyDown:(e: KeyboardEvent) => void;
   //store key state for view mode link resolution
-  private metaKeyDown: boolean = false;
-  private ctrlKeyDown: boolean = false;
-  private shiftKeyDown: boolean = false;
-  private altKeyDown: boolean = false;
+  private lastKeyboardEvent = new KeyboardEvent("keyboard", {
+    key: "",
+    code: "",
+    location: 0,
+    ctrlKey: false,
+    shiftKey: false,
+    altKey: false,
+    metaKey: false,
+    repeat: false
+  });
+
   //Obsidian 0.15.0
   public ownerWindow: Window;
   public ownerDocument: Document;
@@ -876,7 +884,7 @@ export default class ExcalidrawView extends TextFileView {
       }
       await this.save(false); //in case pasted images haven't been saved yet
       if (this.excalidrawData.hasFile(selectedImage.fileId)) {
-        if (ev.altKey) {
+        if (isAltDown(ev)) {
           const ef = this.excalidrawData.getFile(selectedImage.fileId);
           if (
             ef.file.extension === "md" &&
@@ -930,18 +938,18 @@ export default class ExcalidrawView extends TextFileView {
     }
 
     try {
-      if (ev.shiftKey && this.isFullscreen()) {
+      if (isShiftDown(ev) && this.isFullscreen()) {
         this.exitFullscreen();
       }
       if (!file) {
-        new NewFileActions(this.plugin, linkText, ev.shiftKey, !app.isMobile && ev.metaKey, view).open();
+        new NewFileActions(this.plugin, linkText, isShiftDown(ev), !app.isMobile && isMetaDown(ev), view).open();
         return;
       }
       const leaf =
-        (!app.isMobile && ((ev.metaKey && this.linksAlwaysOpenInANewPane) || ev.metaKey))
+        (!app.isMobile && ((isMetaDown(ev) && this.linksAlwaysOpenInANewPane) || isMetaDown(ev)))
         //@ts-ignore
         ? app.workspace.openPopoutLeaf()
-        : (ev.shiftKey || this.linksAlwaysOpenInANewPane)
+        : (isShiftDown(ev) || this.linksAlwaysOpenInANewPane)
           ? getNewOrAdjacentLeaf(this.plugin, view.leaf)
           : view.leaf;
       await leaf.openFile(file, subpath ? { active: false, eState: { subpath } } : undefined); //if file exists open file and jump to reference
@@ -1063,18 +1071,25 @@ export default class ExcalidrawView extends TextFileView {
       await self.addSlidingPanesListner(); //awaiting this because when using workspaces, onLayoutReady comes too early
       self.addParentMoveObserver();
 
+      const cloneEvent = (e: KeyboardEvent):KeyboardEvent => {
+        return new KeyboardEvent(e.type,{
+          key: e.key,
+          code: e.code,
+          location: e.location,
+          ctrlKey: e.ctrlKey,
+          shiftKey: e.shiftKey,
+          altKey: e.altKey,
+          metaKey: e.metaKey,
+          repeat: e.repeat
+        });
+      }
+
       self.onKeyUp = (e: KeyboardEvent) => {
-        self.ctrlKeyDown = e[CTRL_OR_CMD];
-        self.shiftKeyDown = e.shiftKey;
-        self.altKeyDown = e.altKey;
-        self.metaKeyDown = e.metaKey;
+        self.lastKeyboardEvent = cloneEvent(e);
       };
 
       self.onKeyDown = (e: KeyboardEvent) => {
-        this.ctrlKeyDown = e[CTRL_OR_CMD];
-        this.shiftKeyDown = e.shiftKey;
-        this.altKeyDown = e.altKey;
-        this.metaKeyDown = e.metaKey;
+        self.lastKeyboardEvent = cloneEvent(e);
       };
 
       self.ownerWindow.addEventListener("keydown", self.onKeyDown, false);
@@ -1934,7 +1949,7 @@ export default class ExcalidrawView extends TextFileView {
             if (!this.getScene || !this.file) {
               return;
             }
-            if (ev[CTRL_OR_CMD]) {
+            if (isCtrlDown(ev)) {
               const png = await this.png(this.getScene());
               if (!png) {
                 return;
@@ -1961,7 +1976,7 @@ export default class ExcalidrawView extends TextFileView {
             if (!this.getScene || !this.file) {
               return;
             }
-            if (ev[CTRL_OR_CMD]) {
+            if (isCtrlDown(ev)) {
               let svg = await this.svg(this.getScene());
               if (!svg) {
                 return null;
@@ -2676,7 +2691,7 @@ export default class ExcalidrawView extends TextFileView {
               this.exitFullscreen();
             }
 
-            if (e[CTRL_OR_CMD] && !e.shiftKey && !e.altKey) {
+            if (isCtrlDown(e) && !isShiftDown(e) && !isAltDown(e)) {
               showHoverPreview();
             }
           },
@@ -2684,10 +2699,10 @@ export default class ExcalidrawView extends TextFileView {
           //onClick: (e: MouseEvent): any => {
           //to onPointerDown so touch events also open links on the iPad (with a keyboard)
           onPointerDown: (e: PointerEvent) => {            
-            if (!(e[CTRL_OR_CMD]||e.metaKey)) {
+            if ( !(isCtrlDown(e) || isMetaDown(e)) ) {
               return;
             } 
-            if (!this.plugin.settings.allowCtrlClick && !e.metaKey) {
+            if (!this.plugin.settings.allowCtrlClick && !isMetaDown(e)) {
               return;
             }
             //added setTimeout when I changed onClick(e: MouseEvent) to onPointerDown() in 1.7.9. 
@@ -2892,7 +2907,7 @@ export default class ExcalidrawView extends TextFileView {
             };
 
             //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/468
-            event[CTRL_OR_CMD] = event.shiftKey || event[CTRL_OR_CMD];
+            //event[CTRL_OR_CMD] = event.shiftKey || event[CTRL_OR_CMD]; Moved logic to isCtrlDown in Utils
             switch (draggable?.type) {
               case "file":
                 if (!onDropHook("file", [draggable.file], null)) {
@@ -2902,7 +2917,7 @@ export default class ExcalidrawView extends TextFileView {
                     return false;
                   }
                   if (
-                    event[CTRL_OR_CMD] && 
+                    isCtrlDown(event) && 
                     (IMAGE_TYPES.contains(draggable.file.extension) ||
                       draggable.file.extension === "md")
                   ) {
@@ -2932,7 +2947,7 @@ export default class ExcalidrawView extends TextFileView {
               case "files":
                 if (!onDropHook("file", draggable.files, null)) {
                   (async () => {
-                    if (event[CTRL_OR_CMD]) {
+                    if (isCtrlDown(event)) {
                       const ea = this.plugin.ea;
                       ea.reset();
                       ea.setView(this);
@@ -3225,10 +3240,10 @@ export default class ExcalidrawView extends TextFileView {
                 );
 
                 const useNewLeaf =
-                  event.shiftKey ||
-                  event[CTRL_OR_CMD] ||
+                  isShiftDown(event) ||
+                  isCtrlDown(event) ||
                   this.linksAlwaysOpenInANewPane ||
-                  event.metaKey;
+                  isMetaDown(event);
 
                 if (useNewLeaf && this.isFullscreen()) {
                   this.exitFullscreen();
@@ -3238,7 +3253,7 @@ export default class ExcalidrawView extends TextFileView {
                     this.plugin,
                     linkText,
                     useNewLeaf,
-                    !app.isMobile && event.metaKey,
+                    !app.isMobile && isMetaDown(event),
                     this,
                   ).open();
                   return;
@@ -3252,7 +3267,7 @@ export default class ExcalidrawView extends TextFileView {
                 } else {
                   try {
                     const leaf = useNewLeaf
-                      ? (event.metaKey && !app.isMobile)
+                      ? (isMetaDown(event) && !app.isMobile)
                         //@ts-ignore
                         ? app.workspace.openPopoutLeaf()
                         : getNewOrAdjacentLeaf(this.plugin, this.leaf)
@@ -3278,7 +3293,7 @@ export default class ExcalidrawView extends TextFileView {
             if (
               element &&
               (this.plugin.settings.hoverPreviewWithoutCTRL ||
-                event[CTRL_OR_CMD])
+                isCtrlDown(event))
             ) {
               mouseEvent = event;
               mouseEvent.ctrlKey = true;

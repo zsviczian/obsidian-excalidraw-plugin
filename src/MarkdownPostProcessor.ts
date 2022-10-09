@@ -4,7 +4,7 @@ import {
   TFile,
   Vault,
 } from "obsidian";
-import { CTRL_OR_CMD, RERENDER_EVENT } from "./Constants";
+import { RERENDER_EVENT } from "./Constants";
 import { EmbeddedFilesLoader } from "./EmbeddedFileLoader";
 import { createPNG, createSVG } from "./ExcalidrawAutomate";
 import { ExportSettings } from "./ExcalidrawView";
@@ -19,6 +19,8 @@ import {
   getWithBackground,
   hasExportTheme,
   svgToBase64,
+  isCtrlDown,
+  isMetaDown,
 } from "./utils/Utils";
 import { isObsidianThemeDark } from "./utils/ObsidianUtils";
 
@@ -211,15 +213,15 @@ const createImageDiv = async (
         if(!srcParts) return;
         plugin.openDrawing(
           vault.getAbstractFileByPath(srcParts[1]) as TFile,
-          ev[CTRL_OR_CMD]
+          isCtrlDown(ev)
             ? "new-pane"
-            : (ev.metaKey && !app.isMobile)
+            : (isMetaDown(ev) && !app.isMobile)
               ? "popout-window"
               : "active-pane",
           true,
           srcParts[2],
         );
-      } //.ctrlKey||ev.metaKey);
+      } 
     });
     el.addEventListener(RERENDER_EVENT, async (e) => {
       e.stopPropagation();
@@ -544,13 +546,13 @@ export const observer = new MutationObserver(async (m) => {
       if (src) {
         plugin.openDrawing(
           vault.getAbstractFileByPath(src) as TFile,
-          ev[CTRL_OR_CMD]
+          isCtrlDown(ev)
             ? "new-pane"
-            : (ev.metaKey && !app.isMobile) 
+            : (isMetaDown(ev) && !app.isMobile) 
               ? "popout-window"
               : "active-pane",
         );
-      } //.ctrlKey||ev.metaKey);
+      } 
     });
   });
   node.appendChild(div);

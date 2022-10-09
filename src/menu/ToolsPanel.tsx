@@ -3,13 +3,14 @@ import { Notice, TFile } from "obsidian";
 import * as React from "react";
 import { ActionButton } from "./ActionButton";
 import { ICONS } from "./ActionIcons";
-import { SCRIPT_INSTALL_FOLDER, CTRL_OR_CMD } from "../Constants";
+import { SCRIPT_INSTALL_FOLDER } from "../Constants";
 import { insertLaTeXToView, search } from "../ExcalidrawAutomate";
 import ExcalidrawView, { TextMode } from "../ExcalidrawView";
 import { t } from "../lang/helpers";
 import { ReleaseNotes } from "../dialogs/ReleaseNotes";
 import { ScriptIconMap } from "../Scripts";
 import { getIMGFilename } from "../utils/FileUtils";
+import { isCtrlDown, isShiftDown } from "src/utils/Utils";
 
 declare const PLUGIN_VERSION:string;
 const dark = '<svg style="stroke:#ced4da;#212529;color:#ced4da;fill:#ced4da" ';
@@ -466,7 +467,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     title={t("INSERT_LINK_TO_ELEMENT")}
                     action={(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
                       this.props.view.copyLinkToSelectedElementToClipboard(
-                        e[CTRL_OR_CMD] ? "group=" : (e.shiftKey ? "area=" : "")
+                        isCtrlDown(e) ? "group=" : (isShiftDown(e) ? "area=" : "")
                       );
                     }}
                     icon={ICONS.copyElementLink}
