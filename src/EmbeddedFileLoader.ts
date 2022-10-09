@@ -1,6 +1,6 @@
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
 import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/types";
-import { App, MarkdownRenderer, Notice, TFile } from "obsidian";
+import { App, MarkdownRenderer, Notice, TFile, request } from "obsidian";
 import {
   CASCADIA_FONT,
   DEFAULT_MD_EMBED_CSS,
@@ -57,6 +57,7 @@ export type Size = {
 
 export class EmbeddedFile {
   public file: TFile = null;
+  public isHyperlink: boolean = false;
   public isSVGwithBitmap: boolean = false;
   private img: string = ""; //base64
   private imgInverted: string = ""; //base64
@@ -83,8 +84,12 @@ export class EmbeddedFile {
     }*/
     this.imgInverted = this.img = "";
     this.mtime = 0;
-    this.linkParts = getLinkParts(imgPath);
+    this.isHyperlink = imgPath.startsWith("http");
     this.hostPath = hostPath;
+    this.linkParts = getLinkParts(imgPath);
+
+    if(this.isHyperlink) return;
+    
     if (!this.linkParts.path) {
       new Notice(`Excalidraw Error\nIncorrect embedded filename: ${imgPath}`);
       return;
@@ -110,6 +115,7 @@ export class EmbeddedFile {
   }
 
   private fileChanged(): boolean {
+    if(this.isHyperlink) return false;
     if (!this.file) {
       this.file = app.metadataCache.getFirstLinkpathDest(
         this.linkParts.path,
@@ -130,13 +136,13 @@ export class EmbeddedFile {
     isDark: boolean,
     isSVGwithBitmap: boolean,
   ) {
-    if (!this.file) {
+    if (!this.isHyperlink && !this.file) {
       return;
     }
     if (this.fileChanged()) {
       this.imgInverted = this.img = "";
     }
-    this.mtime = this.file.stat.mtime;
+    this.mtime = this.file ? this.file.stat.mtime : 0;
     this.size = size;
     this.mimeType = mimeType;
     switch (isDark && isSVGwithBitmap) {
@@ -151,6 +157,13 @@ export class EmbeddedFile {
   }
 
   public isLoaded(isDark: boolean): boolean {
+    if(this.isHyperlink) {
+      if (this.isSVGwithBitmap && isDark) {
+        return this.imgInverted !== "";
+      }
+      return this.img !== "";
+    }
+
     if (!this.file) {
       this.file = app.metadataCache.getFirstLinkpathDest(
         this.linkParts.path,
@@ -171,10 +184,7 @@ export class EmbeddedFile {
   }
 
   public getImage(isDark: boolean) {
-    /*if(this.isHyperlink) {
-      return this.img;
-    }*/
-    if (!this.file) {
+    if (!this.isHyperlink && !this.file) {
       return "";
     }
     if (isDark && this.isSVGwithBitmap) {
@@ -196,6 +206,11 @@ export class EmbeddedFilesLoader {
     this.uid = nanoid();
   }
 
+  private async fetchFromURL(inFile: EmbeddedFile): Promise<string> {
+    if(!inFile.isHyperlink) return null;
+    return await request({url: inFile.linkParts.original});
+  }
+
   public async getObsidianImage(inFile: TFile | EmbeddedFile, depth: number): Promise<{
     mimeType: MimeType;
     fileId: FileId;
@@ -207,31 +222,6 @@ export class EmbeddedFilesLoader {
     if (!this.plugin || !inFile) {
       return null;
     }
-    const file: TFile = inFile instanceof EmbeddedFile ? inFile.file : inFile;
-    const linkParts =
-      inFile instanceof EmbeddedFile
-        ? inFile.linkParts
-        : {
-            original: file.path,
-            path: file.path,
-            isBlockRef: false,
-            ref: null,
-            width: this.plugin.settings.mdSVGwidth,
-            height: this.plugin.settings.mdSVGmaxHeight,
-          };
-
-    let hasSVGwithBitmap = false;
-    const isExcalidrawFile = this.plugin.isExcalidrawFile(file);
-    if (
-      !(
-        IMAGE_TYPES.contains(file.extension) ||
-        isExcalidrawFile ||
-        file.extension === "md"
-      )
-    ) {
-      return null;
-    }
-    const ab = await app.vault.readBinary(file);
 
     const getExcalidrawSVG = async (isDark: boolean) => {
       //debug({where:"EmbeddedFileLoader.getExcalidrawSVG",uid:this.uid,file:file.name});
@@ -279,6 +269,37 @@ export class EmbeddedFilesLoader {
       return dURL as DataURL;
     };
 
+    let dataURL: DataURL = inFile instanceof EmbeddedFile
+      ? await this.fetchFromURL(inFile) as DataURL
+      : null;
+
+    if(!dataURL) {
+    const file: TFile = inFile instanceof EmbeddedFile ? inFile.file : inFile;
+    const linkParts =
+      inFile instanceof EmbeddedFile
+        ? inFile.linkParts
+        : {
+            original: file.path,
+            path: file.path,
+            isBlockRef: false,
+            ref: null,
+            width: this.plugin.settings.mdSVGwidth,
+            height: this.plugin.settings.mdSVGmaxHeight,
+          };
+
+    let hasSVGwithBitmap = false;
+    const isExcalidrawFile = this.plugin.isExcalidrawFile(file);
+    if (
+      !(
+        IMAGE_TYPES.contains(file.extension) ||
+        isExcalidrawFile ||
+        file.extension === "md"
+      )
+    ) {
+      return null;
+    }
+    const ab = await app.vault.readBinary(file);
+
     const excalidrawSVG = isExcalidrawFile
       ? await getExcalidrawSVG(this.isDark)
       : null;
@@ -314,7 +335,7 @@ export class EmbeddedFilesLoader {
           mimeType = "application/octet-stream";
       }
     }
-    let dataURL =
+    dataURL =
       excalidrawSVG ??
       (file.extension === "svg"
         ? await getSVGData(app, file)
@@ -326,6 +347,7 @@ export class EmbeddedFilesLoader {
       const result = await this.convertMarkdownToSVG(this.plugin, file, linkParts);
       dataURL = result.dataURL;
       hasSVGwithBitmap = result.hasSVGwithBitmap;
+    }
     }
     const size = await getImageSize(dataURL);
     return {
