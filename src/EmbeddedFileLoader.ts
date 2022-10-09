@@ -41,6 +41,9 @@ export declare type MimeType =
   | "image/png"
   | "image/jpeg"
   | "image/gif"
+  | "image/webp"
+  | "image/bmp"
+  | "image/x-icon"
   | "application/octet-stream";
 export type FileData = BinaryFileData & {
   size: Size;
@@ -293,6 +296,15 @@ export class EmbeddedFilesLoader {
           break;
         case "gif":
           mimeType = "image/gif";
+          break;
+        case "webp":
+          mimeType = "image/webp";
+          break;
+        case "bmp":
+          mimeType = "image/bmp";
+          break;
+        case "ico":
+          mimeType = "image/x-icon"
           break;
         case "svg":
         case "md":

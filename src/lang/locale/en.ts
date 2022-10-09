@@ -259,6 +259,9 @@ export default {
   PAGE_TRANSCLUSION_CHARCOUNT_DESC:
     "The maximum number of characters to display from the page when transcluding an entire page with the " +
     "![[markdown page]] format.",
+  QUOTE_TRANSCLUSION_REMOVE_NAME: "Quote translusion: remove leading '> ' from each line",
+  QUOTE_TRANSCLUSION_REMOVE_DESC: "Remove the leading '> ' from each line of the transclusion. This will improve readibility of quotes in text only transclusions<br>" +
+    "<b>Toggle ON:</b> Remove leading '> '<br><b>Toggle OFF:</b> Do not remove leading '> ' (note it will still be removed from the first row due to Obsidian API functionality)",
   GET_URL_TITLE_NAME: "Use iframely to resolve page title",
   GET_URL_TITLE_DESC:
     "Use the <code>http://iframely.server.crestify.com/iframely?url=</code> to get title of page when dropping a link into Excalidraw",
