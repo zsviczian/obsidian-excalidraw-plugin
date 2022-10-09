@@ -7,6 +7,7 @@ import {
   ExcalidrawBindableElement,
   FileId,
   NonDeletedExcalidrawElement,
+  ExcalidrawImageElement,
 } from "@zsviczian/excalidraw/types/element/types";
 import { normalizePath, TFile, WorkspaceLeaf } from "obsidian";
 import ExcalidrawView, { ExportSettings, TextMode } from "./ExcalidrawView";
@@ -24,7 +25,9 @@ import {
   //debug,
   embedFontsInSVG,
   errorlog,
+  getDataURL,
   getEmbeddedFilenameParts,
+  getImageSize,
   getPNG,
   getSVG,
   isVersionNewerThanOther,
@@ -1214,7 +1217,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
   getViewElements(): ExcalidrawElement[] {
     //@ts-ignore
     if (!this.targetView || !this.targetView?._loaded) {
-      errorMessage("targetView not set", "getViewSelectedElements()");
+      errorMessage("targetView not set", "getViewElements()");
       return [];
     }
     const current = this.targetView?.excalidrawRef?.current;
@@ -1232,7 +1235,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
   deleteViewElements(elToDelete: ExcalidrawElement[]): boolean {
     //@ts-ignore
     if (!this.targetView || !this.targetView?._loaded) {
-      errorMessage("targetView not set", "getViewSelectedElements()");
+      errorMessage("targetView not set", "deleteViewElements()");
       return false;
     }
     const current = this.targetView?.excalidrawRef?.current;
@@ -1280,7 +1283,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
   getViewFileForImageElement(el: ExcalidrawElement): TFile | null {
     //@ts-ignore
     if (!this.targetView || !this.targetView?._loaded) {
-      errorMessage("targetView not set", "getViewSelectedElements()");
+      errorMessage("targetView not set", "getViewFileForImageElement()");
       return null;
     }
     if (!el || el.type !== "image") {
@@ -1677,6 +1680,30 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     );
     return { width: size.w ?? 0, height: size.h ?? 0 };
   };
+
+  /**
+   * Returns the size of the image element at 100% (i.e. the original size)
+   * @param imageElement an image element from the active scene on targetView
+   */
+  async getOriginalImageSize(imageElement: ExcalidrawImageElement): Promise<{width: number; height: number}> {
+    //@ts-ignore
+    if (!this.targetView || !this.targetView?._loaded) {
+      errorMessage("targetView not set", "getOriginalImageSize()");
+      return null;
+    }
+    if(!imageElement || imageElement.type !== "image") {
+      errorMessage("Please provide a single image element as input", "getOriginalImageSize()");
+      return null;
+    }
+    const ef = this.targetView.excalidrawData.getFile(imageElement.fileId);
+    if(!ef) {
+      errorMessage("Please provide a single image element as input", "getOriginalImageSize()");
+      return null;
+    }
+    const isDark = this.getExcalidrawAPI().getAppState().theme === "dark";
+    const dataURL = ef.getImage(isDark);
+    return await getImageSize(dataURL);
+  }
 
   /**
    * verifyMinimumPluginVersion returns true if plugin version is >= than required

@@ -89,7 +89,7 @@ import {
 } from "./utils/Utils";
 import { getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark } from "./utils/ObsidianUtils";
 //import { OneOffs } from "./OneOffs";
-import { FileId } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawImageElement, FileId } from "@zsviczian/excalidraw/types/element/types";
 import { ScriptEngine } from "./Scripts";
 import {
   hoverEvent,
@@ -1152,6 +1152,42 @@ export default class ExcalidrawPlugin extends Plugin {
         return true;
       },
     });
+
+    this.addCommand({
+      id: "reset-image-to-100",
+      name: t("RESET_IMG_TO_100"),
+      checkCallback: (checking:boolean) => {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if(!view) return false;
+        if(!view.excalidrawAPI) return false;
+        const els = view.getViewSelectedElements().filter(el=>el.type==="image");
+        if(els.length !== 1) {
+          if(checking) return false;
+          new Notice("Select a single image element and try again");
+          return false;
+        }
+        const el = els[0] as ExcalidrawImageElement;
+        const ef = view.excalidrawData.getFile(el.fileId);
+        if(!ef) {
+          if(checking) return false;
+          new Notice("Select a single image element and try again");
+          return false;
+        }
+        if(checking) return true;
+
+        (async () => {
+          const ea = new ExcalidrawAutomate(this,view);
+          const size = await ea.getOriginalImageSize(el);
+          if(size) {
+            ea.copyViewElementsToEAforEditing(els);
+            const eaEl = ea.getElement(el.id);
+            //@ts-ignore
+            eaEl.width = size.width; eaEl.height = size.height;
+            ea.addElementsToView(false,false,false);
+          }
+        })()
+      }
+    })
 
     this.addCommand({
       id: "insert-image",

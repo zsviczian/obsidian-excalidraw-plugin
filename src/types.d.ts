@@ -1,4 +1,4 @@
-import { ExcalidrawBindableElement, ExcalidrawElement, FileId, FillStyle, NonDeletedExcalidrawElement, StrokeSharpness, StrokeStyle } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawBindableElement, ExcalidrawElement, ExcalidrawImageElement, FileId, FillStyle, NonDeletedExcalidrawElement, StrokeSharpness, StrokeStyle } from "@zsviczian/excalidraw/types/element/types";
 import { Point } from "@zsviczian/excalidraw/types/types";
 import { TFile, WorkspaceLeaf } from "obsidian";
 import { EmbeddedFilesLoader } from "./EmbeddedFileLoader";
@@ -223,6 +223,7 @@ export interface ExcalidrawAutomateInterface {
   //verifyMinimumPluginVersion returns true if plugin version is >= than required
   //recommended use:
   //if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.20")) {new Notice("message");return;}
+  getOriginalImageSize(imageElement: ExcalidrawImageElement): Promise<{width: number; height: number}>;
   verifyMinimumPluginVersion(requiredVersion: string): boolean;
   isExcalidrawView(view: any): boolean;
   selectElementsInView(elements: ExcalidrawElement[]): void; //sets selection in view

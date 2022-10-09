@@ -60,6 +60,7 @@ export default {
   READ_RELEASE_NOTES: "Read latest release notes",
   TRAY_MODE: "Toggle property-panel tray-mode",
   SEARCH: "Search for text in drawing",
+  RESET_IMG_TO_100: "Set selected image element size to 100% of original",
 
   //ExcalidrawView.ts
   INSTALL_SCRIPT_BUTTON: "Install or update Excalidraw Scripts",
