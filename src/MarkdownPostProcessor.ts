@@ -360,7 +360,13 @@ const tmpObsidianWYSIWYG = async (
       internalEmbedDiv = internalEmbedDiv.parentElement;
     }
      
-    if(!internalEmbedDiv.hasClass("internal-embed")) return; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/835
+    if(
+      internalEmbedDiv.hasClass("dataview") ||
+      internalEmbedDiv.hasClass("cm-preview-code-block") ||
+      internalEmbedDiv.hasClass("cm-embed-block")
+    ) { 
+      return; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/835
+    }
 
     const attr: imgElementAttributes = {
       fname: ctx.sourcePath,

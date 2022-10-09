@@ -2024,7 +2024,7 @@ export default class ExcalidrawView extends TextFileView {
       let selectedTextElement: { id: string; text: string } = null;
       let selectedImageElement: { id: string; fileId: string } = null;
       let selectedElementWithLink: { id: string; text: string } = null;
-      let timestamp = 0;
+      let timestamp = Date.now();
       let blockOnMouseButtonDown = false;
 
       this.toolsPanelRef = toolsPanelRef;
@@ -2764,8 +2764,8 @@ export default class ExcalidrawView extends TextFileView {
               }
 
               //dobule click
-              const now = new Date().getTime();
-              if (now - timestamp < 600) {
+              const now = Date.now();
+              if ((now - timestamp) < 600 && (now - timestamp) > 40) {
                 handleLinkClick();
               }
               timestamp = now;

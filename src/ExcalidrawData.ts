@@ -1009,7 +1009,13 @@ export class ExcalidrawData {
     }
     if (this.files.size > 0) {
       for (const key of this.files.keys()) {
-        outString += `${key}: [[${this.files.get(key).linkParts.original}]]\n`;
+        const PATHREG = /(^[^#\|]*)/;
+        const ef = this.files.get(key);
+        //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/829
+        const path = ef.file
+          ? ef.linkParts.original.replace(PATHREG,app.metadataCache.fileToLinktext(ef.file,this.file.path))
+          : ef.linkParts.original;
+        outString += `${key}: [[${path}]]\n`;
       }
     }
     outString += this.equations.size > 0 || this.files.size > 0 ? "\n" : "";
@@ -1060,7 +1066,7 @@ export class ExcalidrawData {
     });
 
     //check if there are any images that need to be processed in the new scene
-    if (!scene.files || scene.files == {}) {
+    if (!scene.files || Object.keys(scene.files).length === 0) {
       return false;
     }
 
