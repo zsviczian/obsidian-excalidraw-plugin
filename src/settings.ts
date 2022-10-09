@@ -58,6 +58,7 @@ export interface ExcalidrawSettings {
   forceWrap: boolean;
   pageTransclusionCharLimit: number;
   wordWrappingDefault: number;
+  removeTransclusionQuoteSigns: boolean;
   iframelyAllowed: boolean;
   pngExportScale: number;
   exportWithTheme: boolean;
@@ -149,6 +150,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   forceWrap: false,
   pageTransclusionCharLimit: 200,
   wordWrappingDefault: 0,
+  removeTransclusionQuoteSigns: true,
   iframelyAllowed: true,
   pngExportScale: 1,
   exportWithTheme: true,
@@ -807,6 +809,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             text.setValue(this.plugin.settings.wordWrappingDefault.toString());
             this.applySettingsUpdate(true);
           }),
+      );
+
+    new Setting(containerEl)
+      .setName(t("QUOTE_TRANSCLUSION_REMOVE_NAME"))
+      .setDesc(fragWithHTML(t("QUOTE_TRANSCLUSION_REMOVE_DESC")))
+      .addToggle(toggle => 
+        toggle
+          .setValue(this.plugin.settings.removeTransclusionQuoteSigns)
+          .onChange(value => {
+            this.plugin.settings.removeTransclusionQuoteSigns = value;
+            this.requestEmbedUpdate = true;
+            this.applySettingsUpdate(true);
+          })
       );
 
     new Setting(containerEl)

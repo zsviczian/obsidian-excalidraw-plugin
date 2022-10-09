@@ -488,7 +488,7 @@ export class ExcalidrawData {
     let res = data.matchAll(/\s\^(.{8})[\n]+/g);
     let parts;
     while (!(parts = res.next()).done) {
-      const text = data.substring(position, parts.value.index);
+      let text = data.substring(position, parts.value.index);
       const id: string = parts.value[1];
       const textEl = this.scene.elements.filter((el: any) => el.id === id)[0];
       if (textEl) {
@@ -502,6 +502,13 @@ export class ExcalidrawData {
           this.elementLinks.set(id, text);
         } else {
           const wrapAt = estimateMaxLineLen(textEl.text, textEl.originalText);
+          //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/566
+          const elementLinkRes = text.matchAll(/^%%\*\*\*>>>text element-link:(\[\[[^<*\]]*]])<<<\*\*\*%%/gm); 
+          const elementLink = elementLinkRes.next();
+          if(!elementLink.done) {
+            text = text.replace(/^%%\*\*\*>>>text element-link:\[\[[^<*\]]*]]<<<\*\*\*%%/gm,"");
+            textEl.link = elementLink.value[1];
+          }
           const parseRes = await this.parse(text);
           this.textElements.set(id, {
             raw: text,
@@ -870,8 +877,14 @@ export class ExcalidrawData {
       }
       if (REGEX_LINK.isTransclusion(parts)) {
         //transclusion //parts.value[1] || parts.value[4]
-        const contents = this.parseCheckbox((await this.getTransclusion(REGEX_LINK.getLink(parts)))
-          .contents);
+        let contents = this
+          .parseCheckbox((await this.getTransclusion(REGEX_LINK.getLink(parts))).contents)
+          .replaceAll(/%%[^%]*%%/gm,""); //remove comments, consequence of https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/566
+        if(this.plugin.settings.removeTransclusionQuoteSigns) {
+          //remove leading > signs from transcluded quotations; the first > sign is not explicitlyl removed becuse 
+          //Obsidian app.metadataCache.blockCache returns the block position already discarding the first '> '
+          contents = contents.replaceAll(/\n\s*>\s?/gm,"\n"); 
+        }
         outString +=
           text.substring(position, parts.value.index) +
           wrapText(
@@ -991,7 +1004,15 @@ export class ExcalidrawData {
   generateMD(deletedElements: ExcalidrawElement[] = []): string {
     let outString = "# Text Elements\n";
     for (const key of this.textElements.keys()) {
-      outString += `${this.textElements.get(key).raw} ^${key}\n\n`;
+      //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/566
+      const element = this.scene.elements.filter((el:any)=>el.id===key);
+      let elementString = this.textElements.get(key).raw;
+      if(element && element.length===1 && element[0].link && element[0].rawText === element[0].originalText) {
+        if(element[0].link.match(/^\[\[[^\]]*]]$/g)) { //apply this only to markdown links
+          elementString = `%%***>>>text element-link:${element[0].link}<<<***%%` + elementString;
+        }
+      }
+      outString += `${elementString} ^${key}\n\n`;
     }
 
     for (const key of this.elementLinks.keys()) {
