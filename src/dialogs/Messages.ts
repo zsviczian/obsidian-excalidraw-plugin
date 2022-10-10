@@ -17,7 +17,7 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
-"1.7.23":`
+"1.7.24":`
 # New and improved
 - **Updated Chinese translation**. Thanks, @tswwe!
 - **Improved update for TextElement links**: Until now, when you attached a link to a file to a TextElement using the "Create Link" command, this link did not get updated when the file was renamed or moved. Only links created as markdown links in the TextElement text were updated. Now both approaches work. Keep in mind however, that if you have a link in the TextElemenet text, it will override the link attached to the text element using the create link command. [#566](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/566)
