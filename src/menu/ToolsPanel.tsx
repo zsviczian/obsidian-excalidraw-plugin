@@ -2,7 +2,7 @@ import clsx from "clsx";
 import { Notice, TFile } from "obsidian";
 import * as React from "react";
 import { ActionButton } from "./ActionButton";
-import { ICONS } from "./ActionIcons";
+import { ICONS, stringToSVG } from "./ActionIcons";
 import { SCRIPT_INSTALL_FOLDER, CTRL_OR_CMD } from "../Constants";
 import { insertLaTeXToView, search } from "../ExcalidrawAutomate";
 import ExcalidrawView, { TextMode } from "../ExcalidrawView";
@@ -257,6 +257,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
             className="Island App-menu__left scrollbar"
             style={{
               maxHeight: "350px",
+              backgroundColor: "transparent",
               //@ts-ignore
               "--padding": 2,
               display: this.state.minimized ? "none" : "block",
@@ -532,21 +533,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   }
                 }}
                 icon={
-                  this.state.scriptIconMap[key].svgString ? (
-                    <img
-                      src={`data:image/svg+xml,${encodeURIComponent(
-                        this.state.theme === "dark"
-                          ? this.state.scriptIconMap[key].svgString.replace(
-                              "<svg ",
-                              dark,
-                            )
-                          : this.state.scriptIconMap[key].svgString.replace(
-                              "<svg ",
-                              light,
-                            ),
-                      )}`}
-                    />
-                  ) : (
+                  this.state.scriptIconMap[key].svgString
+                  ? stringToSVG(this.state.scriptIconMap[key].svgString)
+                  : (
                     ICONS.cog
                   )
                 }

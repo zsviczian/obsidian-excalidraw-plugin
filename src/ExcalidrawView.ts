@@ -1441,7 +1441,7 @@ export default class ExcalidrawView extends TextFileView {
     this.previousSceneVersion = 0;
   }
 
-  private isLoaded: boolean = false;
+  public isLoaded: boolean = false;
   async setViewData(data: string, clear: boolean = false) {
     if(this.plugin.settings.showNewVersionNotification) checkExcalidrawVersion(app);
     this.isLoaded = false;
@@ -2784,6 +2784,15 @@ export default class ExcalidrawView extends TextFileView {
           libraryReturnUrl: "app://obsidian.md",
           autoFocus: true,
           onChange: (et: ExcalidrawElement[], st: AppState) => {
+            const canvasColorChangeHook = () => {
+              if(this.plugin.ea.onCanvasColorChangeHook) {
+                this.plugin.ea.onCanvasColorChangeHook(
+                  this.plugin.ea,
+                  this,
+                  st.viewBackgroundColor
+                )
+              }
+            }
             viewModeEnabled = st.viewModeEnabled;
             if (this.semaphores.justLoaded) {
               this.semaphores.justLoaded = false;
@@ -2792,6 +2801,7 @@ export default class ExcalidrawView extends TextFileView {
               }
               this.previousSceneVersion = this.getSceneVersion(et);
               this.previousBackgroundColor = st.viewBackgroundColor;
+              canvasColorChangeHook();
               return;
             }
             if (this.semaphores.dirty) {
@@ -2816,6 +2826,7 @@ export default class ExcalidrawView extends TextFileView {
                 this.previousSceneVersion = sceneVersion;
                 this.previousBackgroundColor = st.viewBackgroundColor;
                 this.setDirty(6);
+                canvasColorChangeHook();
               }
             }
           },

@@ -1492,6 +1492,15 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
   }) => boolean = null;
  
   /**
+   * If set, this callback is triggered whenever the active canvas color changes
+   */
+  onCanvasColorChangeHook: (
+    ea: ExcalidrawAutomate,
+    view: ExcalidrawView, //the excalidraw view 
+    color: string,
+  ) => void = null;
+
+  /**
    * utility function to generate EmbeddedFilesLoader object
    * @param isDark 
    * @returns 
@@ -1858,6 +1867,10 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       log("Creates a CM object. Visit https://github.com/lbragile/ColorMaster for documentation.");
       return;
     }
+    if(typeof color === "string") {
+      color = this.colorNameToHex(color);
+    }
+    
     return CM(color);
   }
 };

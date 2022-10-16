@@ -224,3 +224,7 @@ textarea.excalidraw-wysiwyg {
   box-shadow: none;
   border-radius: 0;  
 }
+
+.is-tablet .excalidraw button {
+  padding: initial;
+}

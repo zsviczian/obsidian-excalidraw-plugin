@@ -17,6 +17,31 @@ I develop this plugin as a hobby, spending most of my free time doing this. If y
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.7.25":`## Fixed
+- Tool buttons did not "stick" the first time you clicked them.
+- Tray (in tray mode) was higher when the help button was visible. The tray in tablet mode was too large and the help button was missing.
+- ExcalidrawAutomate ${String.fromCharCode(96)}getCM(color:TInput): ColorMaster;${String.fromCharCode(96)} function will now properly convert valid [css color names](https://www.w3schools.com/colors/colors_names.asp) to ColorMaster objects.
+- The downloaded script icons in the Excalidraw-Obsidian menu were not always correct
+- The obsidian mobile navigation bar at the bottom overlapped with Excalidraw
+
+## New
+- Created ExcalidrawAutomate hook for styling script when the canvas color changes. See sample [onCanvasColorChangeHook](https://gist.github.com/zsviczian/c7223c5b4af30d5c88a0cae05300305c) implementation following the link.
+
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/LtR04fNTKTM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+${String.fromCharCode(96, 96, 96)}typescript
+  /**
+   * If set, this callback is triggered whenever the active canvas color changes
+   */
+  onCanvasColorChangeHook: (
+    ea: ExcalidrawAutomate,
+    view: ExcalidrawView, //the Excalidraw view 
+    color: string,
+  ) => void = null;
+${String.fromCharCode(96, 96, 96)}
+`,
 "1.7.24":`
 # New and improved
 - **Updated Chinese translation**. Thanks, @tswwe!

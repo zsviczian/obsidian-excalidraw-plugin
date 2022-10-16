@@ -1634,7 +1634,7 @@ export default class ExcalidrawPlugin extends Plugin {
       const activeLeafChangeEventHandler = async (leaf: WorkspaceLeaf) => {
         //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/723
         if(self.leafChangeTimeout) {
-          clearTimeout(this.leafChangeTimeout);
+          clearTimeout(self.leafChangeTimeout);
         }
         self.leafChangeTimeout = setTimeout(()=>{self.leafChangeTimeout = null;},1000);
 
@@ -1646,6 +1646,25 @@ export default class ExcalidrawPlugin extends Plugin {
         if (newActiveviewEV) {
           self.lastActiveExcalidrawFilePath = newActiveviewEV.file?.path;
         }
+
+        //!Temporary hack
+        //https://discord.com/channels/686053708261228577/817515900349448202/1031101635784613968
+        if (app.isMobile && newActiveviewEV && !previouslyActiveEV) {
+          const navbar = document.querySelector("body>.app-container>.mobile-navbar");
+          if(navbar && navbar instanceof HTMLDivElement) {
+            navbar.style.position="relative";
+          }
+        }
+
+        if (app.isMobile && !newActiveviewEV && previouslyActiveEV) {
+          const navbar = document.querySelector("body>.app-container>.mobile-navbar");
+          if(navbar && navbar instanceof HTMLDivElement) {
+            navbar.style.position="";
+          }
+        }
+
+        //----------------------
+        //----------------------
 
         if (previouslyActiveEV && previouslyActiveEV !== newActiveviewEV) {
           if (previouslyActiveEV.leaf !== leaf) {
@@ -1684,20 +1703,32 @@ export default class ExcalidrawPlugin extends Plugin {
           } //refresh embedded files
         }
 
+        
+        if ( //@ts-ignore
+          newActiveviewEV && newActiveviewEV._loaded &&
+          newActiveviewEV.isLoaded && newActiveviewEV.excalidrawAPI &&
+          self.ea.onCanvasColorChangeHook
+        ) {
+          self.ea.onCanvasColorChangeHook(
+            self.ea,
+            newActiveviewEV,
+            newActiveviewEV.excalidrawAPI.getAppState().viewBackgroundColor
+          );
+        }
+
         //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/300
         if (self.popScope) {
           self.popScope();
           self.popScope = null;
         }
         if (newActiveviewEV) {
-          const scope = this.app.keymap.getRootScope();
+          const scope = self.app.keymap.getRootScope();
           const handler = scope.register(["Mod"], "Enter", () => true);
           const overridSaveShortcut = (
-            this.forceSaveCommand &&
-            this.forceSaveCommand.hotkeys[0].key === "s" &&
-            this.forceSaveCommand.hotkeys[0].modifiers.includes("Ctrl")
+            self.forceSaveCommand &&
+            self.forceSaveCommand.hotkeys[0].key === "s" &&
+            self.forceSaveCommand.hotkeys[0].modifiers.includes("Ctrl")
           )
-          const self = this;
           const saveHandler = overridSaveShortcut
            ? scope.register(["Ctrl"], "s", () => self.forceSaveActiveView(false))
            : undefined;

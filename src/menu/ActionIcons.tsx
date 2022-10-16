@@ -287,3 +287,15 @@ export const ICONS = {
     </svg>
   ),
 };
+
+export const stringToSVG = (svg: string) => {
+  svg = svg
+    .replace(/stroke\s*=\s*['"][^"']*['"]/g,"")
+    .replace(/width\s*=\s*['"][^"']*['"]/g,"")
+    .replace(/height\s*=\s*['"][^"']*['"]/g,"")
+    .replace("<svg ",`<svg style="stroke:var(--icon-fill-color);color:var(--icon-fill-color);fill:var(--icon-fill-color)" `)
+    
+    return (
+      <div dangerouslySetInnerHTML={{__html: svg}}></div>
+    )
+}
