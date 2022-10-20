@@ -362,7 +362,7 @@ export declare class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     * If set, this callback is triggered, when the user hovers a link in the scene.
     * You can use this callback in case you want to do something additional when the onLinkHover event occurs.
     * This callback must return a boolean value.
-    * In case you want to prevent the excalidraw onLinkHover action you must return false, it will stop the native excalidraw onLinkHover management flow.
+    * In case you want to prevent the excalidraw onLinkHover action you must return true, it will stop the native excalidraw onLinkHover management flow.
     */
     onLinkHoverHook: (element: NonDeletedExcalidrawElement, linkText: string, view: ExcalidrawView, ea: ExcalidrawAutomate) => boolean;
     /**
