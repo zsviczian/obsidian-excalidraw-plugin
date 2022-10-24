@@ -1579,15 +1579,15 @@ export const getTransclusion = async (
     if (!para) {
       return { contents: linkParts.original.trim(), lineNum: 0 };
     }
-    if (["blockquote", "listItem"].includes(para.type)) {
+    if (["blockquote"].includes(para.type)) {
       para = para.children[0];
     } //blockquotes are special, they have one child, which has the paragraph
     const startPos = para.position.start.offset;
     const lineNum = para.position.start.line;
-    const endPos =
-      para.children[para.children.length - 1]?.position.start.offset - 1; //alternative: filter((c:any)=>c.type=="blockid")[0]
+    const endPos = para.position.end.offset; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/853
+      //para.children[para.children.length - 1]?.position.start.offset - 1; //!not clear what the side effect of the #853 change is
     return {
-      contents: contents.substring(startPos, endPos).trim(),
+      contents: contents.substring(startPos, endPos).replaceAll(/ \^.*$/gm,"").trim(),
       lineNum,
     };
   }
@@ -1638,7 +1638,7 @@ export const getTransclusion = async (
     return {
       leadingHashes: "#".repeat(depth) + " ",
       contents: contents.substring(startPos).trim(),
-      lineNum 
+      lineNum
     };
   }
   return { contents: linkParts.original.trim(), lineNum: 0 };
