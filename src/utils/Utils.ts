@@ -383,19 +383,29 @@ export const scaleLoadedImage = (
       .filter((e: any) => e.type === "image" && e.fileId === f.id)
       .forEach((el: any) => {
         const [w_old, h_old] = [el.width, el.height];
-        const elementAspectRatio = w_old / h_old;
-        if (imageAspectRatio != elementAspectRatio) {
-          dirty = true;
-          const h_new = Math.sqrt((w_old * h_old * h_image) / w_image);
-          const w_new = Math.sqrt((w_old * h_old * w_image) / h_image);
-          el.height = h_new;
-          el.width = w_new;
-          el.y += (h_old - h_new) / 2;
-          el.x += (w_old - w_new) / 2;
+        if(f.shouldScale) {
+          const elementAspectRatio = w_old / h_old;
+          if (imageAspectRatio != elementAspectRatio) {
+            dirty = true;
+            const h_new = Math.sqrt((w_old * h_old * h_image) / w_image);
+            const w_new = Math.sqrt((w_old * h_old * w_image) / h_image);
+            el.height = h_new;
+            el.width = w_new;
+            el.y += (h_old - h_new) / 2;
+            el.x += (w_old - w_new) / 2;
+          }
+        } else {
+          if(w_old !== w_image || h_old !== h_image) {
+            dirty = true;
+            el.height = h_image;
+            el.width = w_image;
+            el.y += (h_old - h_image) / 2;
+            el.x += (w_old - w_image) / 2;            
+          }
         }
       });
-    return { dirty, scene };
   }
+  return { dirty, scene };
 };
 
 export const setDocLeftHandedMode = (isLeftHanded: boolean, ownerDocument:Document) => {
@@ -621,6 +631,9 @@ export const getEmbeddedFilenameParts = (fname:string):{
     linkpartAlias: parts[9]
   }
 }
+
+export const fragWithHTML = (html: string) =>
+  createFragment((frag) => (frag.createDiv().innerHTML = html));
 
 export const errorlog = (data: {}) => {
   console.error({ plugin: "Excalidraw", ...data });

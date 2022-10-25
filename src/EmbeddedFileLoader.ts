@@ -48,6 +48,7 @@ export declare type MimeType =
 export type FileData = BinaryFileData & {
   size: Size;
   hasSVGwithBitmap: boolean;
+  shouldScale: boolean; //true if image should maintain its area, false if image should display at 100% its size
 };
 
 export type Size = {
@@ -181,6 +182,14 @@ export class EmbeddedFile {
       return this.imgInverted;
     }
     return this.img; //images that are not SVGwithBitmap, only the light string is stored, since inverted and non-inverted are ===
+  }
+
+  /**
+   * 
+   * @returns true if image should scale such as the updated images has the same area as the previous images, false if the image should be displayed at 100%
+   */
+  public shouldScale() {
+    return !Boolean(this.linkParts && this.linkParts.original && this.linkParts.original.endsWith("|100%"));
   }
 }
 
@@ -367,6 +376,7 @@ export class EmbeddedFilesLoader {
             created: data.created,
             size: data.size,
             hasSVGwithBitmap: data.hasSVGwithBitmap,
+            shouldScale: embeddedFile.shouldScale()
           });
         }
       } else if (embeddedFile.isSVGwithBitmap) {
@@ -377,6 +387,7 @@ export class EmbeddedFilesLoader {
           created: embeddedFile.mtime,
           size: embeddedFile.size,
           hasSVGwithBitmap: embeddedFile.isSVGwithBitmap,
+          shouldScale: embeddedFile.shouldScale()
         });
       }
     }
@@ -395,6 +406,7 @@ export class EmbeddedFilesLoader {
             created: data.created,
             size: data.size,
             hasSVGwithBitmap: false,
+            shouldScale: true
           });
         }
       }

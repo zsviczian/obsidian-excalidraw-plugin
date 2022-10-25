@@ -17,12 +17,23 @@ export class InsertImageDialog extends FuzzySuggestModal<TFile> {
     this.limit = 20;
     this.setInstructions([
       {
-        command: t("SELECT_FILE"),
+        command: t("SELECT_FILE_WITH_OPTION_TO_SCALE"),
         purpose: "",
       },
     ]);
     this.setPlaceholder(t("SELECT_DRAWING"));
     this.emptyStateText = t("NO_MATCH");
+    this.inputEl.onkeyup = (e) => {
+      //@ts-ignore
+      if (e.key === "Enter" && e.altKey && this.chooser.values) {
+        this.onChooseItem(
+          //@ts-ignore
+          this.chooser.values[this.chooser.selectedItem].item,
+          new KeyboardEvent("keypress",{altKey: true})
+        );
+        this.close();
+      }
+    }
   }
 
   getItems(): TFile[] {
@@ -39,13 +50,13 @@ export class InsertImageDialog extends FuzzySuggestModal<TFile> {
     return item.path;
   }
 
-  onChooseItem(item: TFile): void {
+  onChooseItem(item: TFile, event: KeyboardEvent): void {
     const ea = this.plugin.ea;
     ea.reset();
     ea.setView(this.view);
     ea.canvas.theme = this.view.excalidrawAPI.getAppState().theme;
     (async () => {
-      await ea.addImage(0, 0, item);
+      await ea.addImage(0, 0, item, !event.altKey);
       ea.addElementsToView(true, false, true);
     })();
   }

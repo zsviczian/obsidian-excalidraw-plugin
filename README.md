@@ -53,8 +53,8 @@ Please upgrade to Obsidian v0.12.19 or higher to get the latest release.
 - Insert LaTeX formulas using the Command Palette action "Insert LaTeX formula". You can edit formulas either in Markdown view, or by <kbd>CTRL/CMD + Click</kbd> on the formula.
 - Drag & Drop support
   - You can drag files from the Obsidian file explorer and they will become links to those files in Excalidraw.
-  - Dragging image files (PNG, SVG, JPG, Excalidraw) from Obsidian's file explorer while pressing the <kbd>CTRL/CMD</kbd> button will embed the image into your drawing.
-  - You can drag and drop images from outside Obsidian onto Excalidraw. These images will be embedded into your drawing and saved to Obsidian.
+  - Dragging image files (PNG, SVG, JPG, ICO, GIF, WEBP, Excalidraw) from Obsidian's file explorer while pressing the <kbd>CTRL</kbd> (<kbd>SHIFT</kbd> on Mac) button will embed the image into your drawing.
+    - If in addition to <kbd>CTRL</kbd> or <kbd>SHIFT</kbd> you also hold down <kbd>ALT<kbd>, the image will be inserted at 100% of its size. ⚠ Note: this is a very niche feature with a very particular behavior that I built primarily for myself (even more so than other features in Excalidraw Obsidian - also built primarily for myself 😉)... This will reset your embedded image to 100% size every time you open the Excalidraw drawing, or in case you have embedded an Excalidraw drawing on your canvas inserted using this function, every time you update the embedded drawing, it will be scaled back to 100% size. This means that even if you resize the image on the drawing, it will reset to 100% the next time you open the file or you modify the original embedded object. This feature is useful when you decompose a drawing into separate Excalidraw files, but when combined onto a single canvas you want the individual pieces to maintain their actual sizes. I use this feature to construct Book-on-a-Page summaries from atomic drawings.
   - You can drag and drop text from Markdown views onto Excalidraw.
   - You can drag and drop web addresses from your browser and they will become links.
 - Image support

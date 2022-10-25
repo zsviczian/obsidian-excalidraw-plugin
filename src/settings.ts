@@ -16,6 +16,7 @@ import {
   getEmbedFilename,
 } from "./utils/FileUtils";
 import {
+  fragWithHTML,
   setLeftHandedMode,
 } from "./utils/Utils";
 
@@ -197,9 +198,6 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   showNewVersionNotification: true,
   mathjaxSourceURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.1/es5/tex-svg.js"
 };
-
-const fragWithHTML = (html: string) =>
-  createFragment((frag) => (frag.createDiv().innerHTML = html));
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
   plugin: ExcalidrawPlugin;

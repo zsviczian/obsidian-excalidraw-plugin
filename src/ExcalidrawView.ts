@@ -2926,6 +2926,7 @@ export default class ExcalidrawView extends TextFileView {
                         currentPosition.x,
                         currentPosition.y,
                         draggable.file,
+                        !event.altKey,
                       );
                       ea.addElementsToView(false, false, true);
                     })();
@@ -2955,6 +2956,7 @@ export default class ExcalidrawView extends TextFileView {
                             currentPosition.x + counter*50,
                             currentPosition.y + counter*50,
                             f,
+                            !event.altKey,
                           );
                           counter++;
                           await ea.addElementsToView(false, false, true);

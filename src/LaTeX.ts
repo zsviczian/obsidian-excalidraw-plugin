@@ -27,6 +27,7 @@ export const updateEquation = async (
       created: data.created,
       size: data.size,
       hasSVGwithBitmap: false,
+      shouldScale: true,
     });
     addFiles(files, view);
   }

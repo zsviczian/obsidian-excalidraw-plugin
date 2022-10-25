@@ -894,6 +894,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     topX: number,
     topY: number,
     imageFile: TFile,
+    scale: boolean = true, //true will scale the image to MAX_IMAGE_SIZE, false will insert image at 100% of its size
   ): Promise<string> {
     const id = nanoid();
     const loader = new EmbeddedFilesLoader(
@@ -910,11 +911,11 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       id: fileId,
       dataURL: image.dataURL,
       created: image.created,
-      file: imageFile.path,
+      file: imageFile.path + (scale ? "":"|100%"),
       hasSVGwithBitmap: image.hasSVGwithBitmap,
       latex: null,
     };
-    if (Math.max(image.size.width, image.size.height) > MAX_IMAGE_SIZE) {
+    if (scale && (Math.max(image.size.width, image.size.height) > MAX_IMAGE_SIZE)) {
       const scale =
         MAX_IMAGE_SIZE / Math.max(image.size.width, image.size.height);
       image.size.width = scale * image.size.width;

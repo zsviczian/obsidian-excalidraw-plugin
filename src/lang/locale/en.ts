@@ -52,7 +52,7 @@ export default {
   INSERT_LINK_TO_ELEMENT_ERROR: "Select a single element in the scene",
   INSERT_LINK_TO_ELEMENT_READY: "Link is READY and available on the clipboard",
   INSERT_LINK: "Insert link to file",
-  INSERT_IMAGE: "Insert image from vault",
+  INSERT_IMAGE: "Insert image or Excalidraw drawing from your vault",
   INSERT_MD: "Insert markdown file from vault",
   INSERT_LATEX:
     "Insert LaTeX formula (e.g. \\binom{n}{k} = \\frac{n!}{k!(n-k)!})",
@@ -418,9 +418,10 @@ export default {
 
   //openDrawings.ts
   SELECT_FILE: "Select a file then press enter.",
+  SELECT_FILE_WITH_OPTION_TO_SCALE: "Select a file then press ENTER, or ALT+ENTER to insert at 100% scale.",
   NO_MATCH: "No file matches your query.",
   SELECT_FILE_TO_LINK: "Select the file you want to insert the link for.",
-  SELECT_DRAWING: "Select the drawing you want to insert",
+  SELECT_DRAWING: "Select the image or drawing you want to insert",
   TYPE_FILENAME: "Type name of drawing to select.",
   SELECT_FILE_OR_TYPE_NEW:
     "Select existing drawing or type name of a new drawing then press Enter.",
