@@ -61,6 +61,8 @@ export default {
   TRAY_MODE: "Toggle property-panel tray-mode",
   SEARCH: "Search for text in drawing",
   RESET_IMG_TO_100: "Set selected image element size to 100% of original",
+  TEMPORARY_DISABLE_AUTOSAVE: "Disable autosave until next time Obsidian starts (only set this if you know what you are doing)",
+  TEMPORARY_ENABLE_AUTOSAVE: "Enable autosave",
 
   //ExcalidrawView.ts
   INSTALL_SCRIPT_BUTTON: "Install or update Excalidraw Scripts",

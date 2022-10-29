@@ -1256,7 +1256,8 @@ export default class ExcalidrawView extends TextFileView {
         this.autosaveTimer = setTimeout(
           timer,
           this.plugin.activeExcalidrawView === this &&
-            this.semaphores.dirty
+            this.semaphores.dirty &&
+            this.plugin.settings.autosave
             ? 1000 //try again in 1 second
             : this.plugin.settings.autosaveInterval,
         );
@@ -1266,12 +1267,10 @@ export default class ExcalidrawView extends TextFileView {
       clearTimeout(this.autosaveTimer);
       this.autosaveTimer = null;
     } // clear previous timer if one exists
-    if (this.plugin.settings.autosave) {
-      this.autosaveTimer = setTimeout(
-        timer,
-        this.plugin.settings.autosaveInterval,
-      );
-    }
+    this.autosaveTimer = setTimeout(
+      timer,
+      this.plugin.settings.autosaveInterval,
+    );
   }
 
   //save current drawing when user closes workspace leaf

@@ -103,6 +103,7 @@ import { decompressFromBase64 } from "lz-string";
 import { Packages } from "./types";
 import * as React from "react";
 import { ScriptInstallPrompt } from "./dialogs/ScriptInstallPrompt";
+import { check } from "prettier";
 
 
 declare module "obsidian" {
@@ -202,7 +203,8 @@ export default class ExcalidrawPlugin extends Plugin {
     addIcon(PNG_ICON_NAME, PNG_ICON);
     addIcon(SVG_ICON_NAME, SVG_ICON);
 
-    await this.loadSettings();
+    await this.loadSettings({reEnableAutosave:true});
+    
     this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
     this.ea = await initExcalidrawAutomate(this);
 
@@ -758,6 +760,28 @@ export default class ExcalidrawPlugin extends Plugin {
     );
 
     this.addCommand({
+      id: "excalidraw-disable-autosave",
+      name: t("TEMPORARY_DISABLE_AUTOSAVE"),
+      checkCallback: (checking) => {
+        if(!this.settings.autosave) return false; //already disabled
+        if(checking) return true;
+        this.settings.autosave = false;
+        return true;
+      }
+    })
+
+    this.addCommand({
+      id: "excalidraw-enable-autosave",
+      name: t("TEMPORARY_ENABLE_AUTOSAVE"),
+      checkCallback: (checking) => {
+        if(this.settings.autosave) return false; //already enabled
+        if(checking) return true;
+        this.settings.autosave = true;
+        return true;
+      }
+    })    
+
+    this.addCommand({
       id: "excalidraw-download-lib",
       name: t("DOWNLOAD_LIBRARY"),
       callback: this.exportLibrary,
@@ -1141,7 +1165,7 @@ export default class ExcalidrawPlugin extends Plugin {
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         (async()=>{
           const isLeftHanded = this.settings.isLeftHanded;
-          await this.loadSettings(false);
+          await this.loadSettings({applyLefthandedMode: false});
           this.settings.isLeftHanded = !isLeftHanded;
           this.saveSettings();
           //not clear why I need to do this. If I don't double apply the stylesheet changes 
@@ -1979,10 +2003,17 @@ export default class ExcalidrawPlugin extends Plugin {
     }
   }
 
-  public async loadSettings(applyLefthandedMode:boolean = true) {
+  public async loadSettings(opts: {
+    applyLefthandedMode?: boolean,
+    reEnableAutosave?: boolean
+  } = {applyLefthandedMode: true, reEnableAutosave: false}
+  ) {
+    if(typeof opts.applyLefthandedMode === "undefined") opts.applyLefthandedMode = true;
+    if(typeof opts.reEnableAutosave === "undefined") opts.reEnableAutosave = false;
+    console.log(opts);
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-    if(applyLefthandedMode) setLeftHandedMode(this.settings.isLeftHanded);
-    this.settings.autosave = true;
+    if(opts.applyLefthandedMode) setLeftHandedMode(this.settings.isLeftHanded);
+    if(opts.reEnableAutosave) this.settings.autosave = true;
     this.settings.autosaveInterval = app.isMobile?10000:15000; //more frequent on mobile because Obsidian may be killed on context switching
   }
 

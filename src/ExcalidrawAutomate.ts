@@ -25,7 +25,6 @@ import {
   //debug,
   embedFontsInSVG,
   errorlog,
-  getDataURL,
   getEmbeddedFilenameParts,
   getImageSize,
   getPNG,
