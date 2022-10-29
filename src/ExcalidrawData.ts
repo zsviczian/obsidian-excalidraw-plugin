@@ -1587,7 +1587,7 @@ export const getTransclusion = async (
     const endPos = para.position.end.offset; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/853
       //para.children[para.children.length - 1]?.position.start.offset - 1; //!not clear what the side effect of the #853 change is
     return {
-      contents: contents.substring(startPos, endPos).replaceAll(/ \^.*$/gm,"").trim(),
+      contents: contents.substring(startPos, endPos).replaceAll(/ \^\S*$|^\^\S*$/gm,"").trim(), //remove the block reference from the end of the line, or from the beginning of a new line
       lineNum,
     };
   }
