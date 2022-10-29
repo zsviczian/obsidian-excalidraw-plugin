@@ -1,6 +1,6 @@
 {
   "name": "obsidian-excalidraw-plugin",
-  "version": "1.7.25",
+  "version": "1.7.26",
   "description": "This is an Obsidian.md plugin that lets you view and edit Excalidraw drawings",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -49,7 +49,7 @@
     "eslint-plugin-prettier": "^4.0.0",
     "html2canvas": "^1.4.0",
     "nanoid": "^4.0.0",
-    "obsidian": "^0.15.4",
+    "obsidian": "^0.16.3",
     "prettier": "^2.5.1",
     "rollup": "^2.70.1",
     "rollup-plugin-copy": "^3.4.0",

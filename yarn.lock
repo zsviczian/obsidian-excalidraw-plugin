@@ -6206,10 +6206,10 @@
   dependencies:
     "minimist" "^1.2.5"
 
-"moment@2.29.3":
-  "integrity" "sha512-c6YRvhEo//6T2Jz/vVtYzqBzwvPT95JBQ+smCytzf7c50oMZRsR/a4w88aD34I+/QVSfnoAnSBFPJHItlOMJVw=="
-  "resolved" "https://registry.npmjs.org/moment/-/moment-2.29.3.tgz"
-  "version" "2.29.3"
+"moment@2.29.4":
+  "integrity" "sha512-5LC9SOxjSc2HF6vO2CyuTDNivEdoz2IvyJJGj6X8DJ0eFyfszE0QiEd+iXmBvUP3WHxSjFH/vIsA0EN00cgr8w=="
+  "resolved" "https://registry.npmjs.org/moment/-/moment-2.29.4.tgz"
+  "version" "2.29.4"
 
 "monkey-around@^2.3.0":
   "integrity" "sha512-QWcCUWjqE/MCk9cXlSKZ1Qc486LD439xw/Ak8Nt6l2PuL9+yrc9TJakt7OHDuOqPRYY4nTWBAEFKn32PE/SfXA=="
@@ -6420,13 +6420,13 @@
     "define-properties" "^1.1.3"
     "es-abstract" "^1.19.1"
 
-"obsidian@^0.15.4":
-  "integrity" "sha512-FE11CxxpVD6t/DBvjLvlT7q7YYW91ubTqPKIIp286LdnyLipS8Xi3Tif8i8ALPv87Vg9obKM43aWcPsYLxLllQ=="
-  "resolved" "https://registry.npmjs.org/obsidian/-/obsidian-0.15.4.tgz"
-  "version" "0.15.4"
+"obsidian@^0.16.3":
+  "integrity" "sha512-hal9qk1A0GMhHSeLr2/+o3OpLmImiP+Y+sx2ewP13ds76KXsziG96n+IPFT0mSkup1zSwhEu+DeRhmbcyCCXWw=="
+  "resolved" "https://registry.npmjs.org/obsidian/-/obsidian-0.16.3.tgz"
+  "version" "0.16.3"
   dependencies:
     "@types/codemirror" "0.0.108"
-    "moment" "2.29.3"
+    "moment" "2.29.4"
 
 "obuf@^1.0.0", "obuf@^1.1.2":
   "integrity" "sha512-PX1wu0AmAdPqOL1mWhqmlOd8kOIZQwGZw6rh7uby9fTc5lhaOWFLX3I6R1hrF9k3zUY40e6igsLGkDXK92LJNg=="

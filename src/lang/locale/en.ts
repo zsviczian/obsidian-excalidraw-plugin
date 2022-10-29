@@ -115,7 +115,7 @@ export default {
     "Template.md, the setting would be: Excalidraw/Template.md (or just Excalidraw/Template - you may omit the .md file extension). " +
     "If you are using Excalidraw in compatibility mode, then your template must be a legacy Excalidraw file as well " +
     "such as Excalidraw/Template.excalidraw.",
-  SCRIPT_FOLDER_NAME: "Excalidraw Automate script folder",
+  SCRIPT_FOLDER_NAME: "Excalidraw Automate script folder (CASE SeNSitiVE!)",
   SCRIPT_FOLDER_DESC:
     "The files you place in this folder will be treated as Excalidraw Automate scripts. " +
     "You can access your scripts from Excalidraw via the Obsidian Command Palette. Assign " +

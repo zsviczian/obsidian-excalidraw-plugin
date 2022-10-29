@@ -2010,7 +2010,6 @@ export default class ExcalidrawPlugin extends Plugin {
   ) {
     if(typeof opts.applyLefthandedMode === "undefined") opts.applyLefthandedMode = true;
     if(typeof opts.reEnableAutosave === "undefined") opts.reEnableAutosave = false;
-    console.log(opts);
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
     if(opts.applyLefthandedMode) setLeftHandedMode(this.settings.isLeftHanded);
     if(opts.reEnableAutosave) this.settings.autosave = true;
