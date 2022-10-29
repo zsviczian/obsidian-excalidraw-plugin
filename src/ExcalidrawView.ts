@@ -2796,7 +2796,7 @@ export default class ExcalidrawView extends TextFileView {
             if (this.semaphores.justLoaded) {
               this.semaphores.justLoaded = false;
               if (!this.semaphores.preventAutozoom) {
-                this.zoomToFit(false);
+                this.zoomToFit(false,true);
               }
               this.previousSceneVersion = this.getSceneVersion(et);
               this.previousBackgroundColor = st.viewBackgroundColor;
@@ -3396,13 +3396,17 @@ export default class ExcalidrawView extends TextFileView {
     }
   }
 
-  public zoomToFit(delay: boolean = true) {
+  public zoomToFit(delay: boolean = true, justLoaded: boolean = false) {
     const api = this.excalidrawAPI;
     if (!api || !this.excalidrawRef || this.semaphores.isEditingText) {
       return;
     }
     const maxZoom = this.plugin.settings.zoomToFitMaxLevel;
     const elements = api.getSceneElements().filter((el:ExcalidrawElement)=>el.width<10000 && el.height<10000);
+    if((app.isMobile && elements.length>1000) || elements.length>2500) {
+      if(justLoaded) api.scrollToContent();
+      return;
+    }
     if (delay) {
       //time for the DOM to render, I am sure there is a more elegant solution
       setTimeout(
