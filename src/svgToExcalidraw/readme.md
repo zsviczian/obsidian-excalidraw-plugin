@@ -1,0 +1,2 @@
+Original source https://github.com/excalidraw/svg-to-excalidraw. Last commit: https://github.com/excalidraw/svg-to-excalidraw/commit/6f6e4b7269c4194b56cf7517a8357ba73be12a3a
+Embedded into the project instead of using an import because compiled file size difference (smaller this way). Also the svg-to-excalidraw package has not been maintained for over a year, thus I don't expect to miss out on frequent updates

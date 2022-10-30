@@ -26,7 +26,9 @@
     "react-dom": "^17.0.2",
     "react-scripts": "^5.0.1",
     "roughjs": "^4.5.2",
-    "colormaster": "1.2.1"
+    "colormaster": "1.2.1",
+    "chroma-js": "^2.4.2",
+    "gl-matrix": "^3.4.3"
   },
   "devDependencies": {
     "@babel/core": "^7.16.12",
@@ -41,6 +43,7 @@
     "@rollup/plugin-replace": "^3.0.1",
     "@rollup/plugin-typescript": "^8.3.0",
     "@types/js-beautify": "^1.13.3",
+    "@types/chroma-js": "^2.1.4",
     "@types/node": "^15.12.4",
     "@types/react-dom": "^17.0.2",
     "@zerollup/ts-transform-paths": "^1.7.18",

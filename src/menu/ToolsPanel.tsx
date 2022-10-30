@@ -473,6 +473,15 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     icon={ICONS.copyElementLink}
                     view={this.props.view}
                   />
+                  <ActionButton
+                    key={"import-svg"}
+                    title={t("IMPORT_SVG")}
+                    action={(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+                      this.props.view.plugin.importSVGDialog.start(this.props.view);
+                    }}
+                    icon={ICONS.importSVG}
+                    view={this.props.view}
+                  />
                 </div>
               </fieldset>
               {this.renderScriptButtons(false)}

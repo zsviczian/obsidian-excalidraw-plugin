@@ -9,7 +9,7 @@ import {
   NonDeletedExcalidrawElement,
   ExcalidrawImageElement,
 } from "@zsviczian/excalidraw/types/element/types";
-import { normalizePath, TFile, WorkspaceLeaf } from "obsidian";
+import { normalizePath, Notice, TFile, WorkspaceLeaf } from "obsidian";
 import ExcalidrawView, { ExportSettings, TextMode } from "./ExcalidrawView";
 import { ExcalidrawData } from "./ExcalidrawData";
 import {
@@ -58,6 +58,7 @@ import HSVPlugin from "colormaster/plugins/hsv";
 import RYBPlugin from "colormaster/plugins/ryb";
 import CMYKPlugin from "colormaster/plugins/cmyk";
 import { TInput } from "colormaster/types";
+import {ConversionResult, svgToExcalidraw} from "./svgToExcalidraw/parser"
 
 extendPlugins([
   HarmonyPlugin,
@@ -1872,6 +1873,16 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     }
     
     return CM(color);
+  }
+
+  importSVG(svgString:string):boolean {
+    const res:ConversionResult =  svgToExcalidraw(svgString);
+    if(res.hasErrors) {
+      new Notice (`There were errors while parsing the given SVG:\n${[...res.errors].map((el) => el.innerHTML)}`);
+      return false;
+    }
+    this.copyViewElementsToEAforEditing(res.content);
+    return true;
   }
 };
 

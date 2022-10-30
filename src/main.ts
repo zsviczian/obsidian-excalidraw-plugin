@@ -58,6 +58,7 @@ import {
 import { openDialogAction, OpenFileDialog } from "./dialogs/OpenDrawing";
 import { InsertLinkDialog } from "./dialogs/InsertLinkDialog";
 import { InsertImageDialog } from "./dialogs/InsertImageDialog";
+import { ImportSVGDialog } from "./dialogs/ImportSVGDialog";
 import { InsertMDDialog } from "./dialogs/InsertMDDialog";
 import {
   initExcalidrawAutomate,
@@ -139,6 +140,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private openDialog: OpenFileDialog;
   public insertLinkDialog: InsertLinkDialog;
   public insertImageDialog: InsertImageDialog;
+  public importSVGDialog: ImportSVGDialog;
   public insertMDDialog: InsertMDDialog;
   public activeExcalidrawView: ExcalidrawView = null;
   public lastActiveExcalidrawFilePath: string = null;
@@ -166,6 +168,17 @@ export default class ExcalidrawPlugin extends Plugin {
   private packageMap: WeakMap<Window,Packages> = new WeakMap<Window,Packages>();
   public leafChangeTimeout: NodeJS.Timeout = null;
   private forceSaveCommand:Command;
+  public device: {
+    isDesktop: boolean,
+    isPhone: boolean,
+    isTablet: boolean,
+    isMobile: boolean,
+    isLinux: boolean,
+    isMacOS: boolean,
+    isWindows: boolean,
+    isIOS: boolean,
+    isAndroid: boolean
+  };
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
@@ -175,8 +188,6 @@ export default class ExcalidrawPlugin extends Plugin {
     >();
     this.equationsMaster = new Map<FileId, string>();
   }
-
-
 
   public getPackage(win:Window):Packages {
     if(win===window) {
@@ -197,6 +208,18 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   async onload() {
+    this.device = {
+      isDesktop: !document.body.hasClass("is-tablet") && !document.body.hasClass("is-mobile"),
+      isPhone: document.body.hasClass("is-phone"),
+      isTablet: document.body.hasClass("is-tablet"),
+      isMobile: document.body.hasClass("is-mobile"), //running Obsidian Mobile, need to also check isTablet
+      isLinux: document.body.hasClass("mod-linux") && ! document.body.hasClass("is-android"),
+      isMacOS: document.body.hasClass("mod-macos") && ! document.body.hasClass("is-ios"),
+      isWindows: document.body.hasClass("mod-windows"),
+      isIOS: document.body.hasClass("is-ios"),
+      isAndroid: document.body.hasClass("is-android")
+    }
+
     addIcon(ICON_NAME, EXCALIDRAW_ICON);
     addIcon(SCRIPTENGINE_ICON_NAME, SCRIPTENGINE_ICON);
     addIcon(DISK_ICON_NAME, DISK_ICON);
@@ -691,6 +714,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.openDialog = new OpenFileDialog(this.app, this);
     this.insertLinkDialog = new InsertLinkDialog(this.app);
     this.insertImageDialog = new InsertImageDialog(this);
+    this.importSVGDialog = new ImportSVGDialog(this);
     this.insertMDDialog = new InsertMDDialog(this);
 
     this.addRibbonIcon(ICON_NAME, t("CREATE_NEW"), async (e) => {
@@ -1223,6 +1247,22 @@ export default class ExcalidrawPlugin extends Plugin {
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
           this.insertImageDialog.start(view);
+          return true;
+        }
+        return false;
+      },
+    });
+
+    this.addCommand({
+      id: "import-svg",
+      name: t("IMPORT_SVG"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
+        }
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
+          this.importSVGDialog.start(view);
           return true;
         }
         return false;

@@ -306,7 +306,6 @@ export default class ExcalidrawView extends TextFileView {
     if (!this.getScene || !this.file) {
       return;
     }
-    //@ts-ignore
     if (app.isMobile) {
       const prompt = new Prompt(
         app,
@@ -651,7 +650,7 @@ export default class ExcalidrawView extends TextFileView {
     if (this.toolsPanelRef && this.toolsPanelRef.current) {
       this.toolsPanelRef.current.setFullscreen(true);
     }
-    if (app.isMobile) {
+    if (this.plugin.device.isPhone) {
       if(Platform.isIosApp) {
         this.restoreMobileLeaves();
         app.workspace.getLayout().main.children
@@ -735,7 +734,7 @@ export default class ExcalidrawView extends TextFileView {
     if (this.toolsPanelRef && this.toolsPanelRef.current) {
       this.toolsPanelRef.current.setFullscreen(false);
     }
-    if (app.isMobile) {
+    if (this.plugin.device.isPhone) {
       this.restoreMobileLeaves();
       const oldStylesheet = document.getElementById("excalidraw-full-screen");
       if (oldStylesheet) {
@@ -2354,7 +2353,7 @@ export default class ExcalidrawView extends TextFileView {
             elements,
             commitToHistory: true,
           },
-          false,
+          true, //set to true because svtToExcalidraw generates a legacy Excalidraw object 
           true
         );
 

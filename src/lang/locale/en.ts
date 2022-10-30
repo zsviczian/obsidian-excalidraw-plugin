@@ -53,6 +53,7 @@ export default {
   INSERT_LINK_TO_ELEMENT_READY: "Link is READY and available on the clipboard",
   INSERT_LINK: "Insert link to file",
   INSERT_IMAGE: "Insert image or Excalidraw drawing from your vault",
+  IMPORT_SVG: "Import an SVG file as Excalidraw strokes (limited SVG support, TEXT currently not supported)",
   INSERT_MD: "Insert markdown file from vault",
   INSERT_LATEX:
     "Insert LaTeX formula (e.g. \\binom{n}{k} = \\frac{n!}{k!(n-k)!})",
