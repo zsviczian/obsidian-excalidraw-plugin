@@ -35,7 +35,7 @@ export class ReleaseNotes extends Modal {
     const message = this.version
       ? Object.keys(RELEASE_NOTES)
           .filter((key) => key === "Intro" || isVersionNewerThanOther(key,prevRelease))
-          .map((key: string) => `# ${key}\n${RELEASE_NOTES[key]}`)
+          .map((key: string) => `${key==="Intro" ? "" : `# ${key}\n`}${RELEASE_NOTES[key]}`)
           .slice(0, 10)
           .join("\n\n---\n")
       : FIRST_RUN;

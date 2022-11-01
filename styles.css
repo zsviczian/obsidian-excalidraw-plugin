@@ -96,8 +96,7 @@ li[data-testid] {
 
 .ex-coffee-div {
 	text-align: center;
-	margin-bottom: 20px;
-  
+	margin-bottom: 10px;
 }
 
 .excalidraw-scriptengine-install td>img {
@@ -184,9 +183,8 @@ li[data-testid] {
 }
 
 .excalidraw-release .modal {
-  max-height: 90%;
-  width: auto;
-  max-width: 130ch;
+  max-height: 80%;
+  max-width: 100ch;
 }
 
 .excalidraw .Island .scrollbar {

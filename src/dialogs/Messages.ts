@@ -11,11 +11,22 @@ Thank you & Enjoy!
 `;
 
 export const RELEASE_NOTES: { [k: string]: string } = {
-  Intro: `I want to help you keep up with all the updates. After installing each release, you'll be prompted with a summary of new features and fixes. You can disable these popup messages in plugin settings.
+  Intro: `After each update you'll be prompted with the release notes. You can disable this in plugin settings.
 
-I develop this plugin as a hobby, spending most of my free time doing this. If you'd like to contribute to the on-going work, I have a simple membership scheme with Bronze, Silver and Gold tiers. Many of you have already bought me a coffee. THANK YOU! It really means a lot to me! If you find this plugin valuable, please consider supporting me.
+I develop this plugin as a hobby, spending my free time doing this. If you find it valuable, then please say THANK YOU or...
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
+`,
+"1.7.27":`## New
+- Import SVG drawing as an Excalidraw object. [#679](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/679)
+
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/vlC1-iBvIfo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## Fixed
+- Large drawings freeze on the iPad when opening the file. I implemented a workaround whereby Excalidraw will avoid zoom-to-fit drawings with over 1000 elements. [#863](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/863)
+- Reintroduced copy/paste to the context menu
 `,
 "1.7.26":`## Fixed
 - Transcluded block with a parent bullet does not embed sub-bullet [#853](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/853)
