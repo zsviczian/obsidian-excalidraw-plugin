@@ -224,8 +224,8 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "addImage",
-    code: "addImage(topX: number, topY: number, imageFile: TFile): Promise<string>;",
-    desc: null,
+    code: "addImage(topX: number, topY: number, imageFile: TFile, scale: boolean): Promise<string>;",
+    desc: "set scale to false if you want to embed the image at 100% of its original size. Default is true which will insert a scaled image",
     after: "",
   },
   {

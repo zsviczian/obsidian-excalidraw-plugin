@@ -22,6 +22,7 @@ import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
 import { ExportSettings } from "../ExcalidrawView";
 import { compressToBase64, decompressFromBase64 } from "lz-string";
 import { getIMGFilename } from "./FileUtils";
+import ExcalidrawScene from "lib/svgToExcalidraw/elements/ExcalidrawScene";
 
 declare const PLUGIN_VERSION:string;
 
@@ -85,7 +86,7 @@ const random = new Random(Date.now());
 export const randomInteger = () => Math.floor(random.next() * 2 ** 31);
 
 //https://macromates.com/blog/2006/wrapping-text-with-regular-expressions/
-export function wrapText(
+export function wrapTextAtCharLength(
   text: string,
   lineLen: number,
   forceWrap: boolean = false,
@@ -649,3 +650,19 @@ export const awaitNextAnimationFrame = async () => new Promise(requestAnimationF
 export const log = console.log.bind(window.console);
 export const debug = console.log.bind(window.console);
 //export const debug = function(){};
+
+
+export const getContainerElement = (
+  element:
+    | (ExcalidrawElement & { containerId: ExcalidrawElement["id"] | null })
+    | null,
+  scene: ExcalidrawScene,
+) => {
+  if (!element) {
+    return null;
+  }
+  if (element.containerId) {
+    return scene.elements.filter(el=>el.id === element.containerId)[0] ?? null;
+  }
+  return null;
+};

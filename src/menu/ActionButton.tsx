@@ -26,9 +26,9 @@ export class ActionButton extends React.Component<ButtonProps, ButtonState> {
     return (
       <button
         style={{
-          width: "fit-content",
-          padding: "2px",
-          margin: "4px",
+          //width: "fit-content",
+          //padding: "2px",
+          //margin: "4px",
         }}
         className="ToolIcon_type_button ToolIcon_size_small ToolIcon_type_button--show ToolIcon"
         title={this.props.title}

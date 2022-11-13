@@ -223,6 +223,65 @@ textarea.excalidraw-wysiwyg {
   border-radius: 0;  
 }
 
-.is-tablet .excalidraw button {
+.is-tablet .excalidraw button,
+.is-mobile .excalidraw button {
   padding: initial;
+  height: 1.8rem;
+}
+
+.excalidraw button,
+.ToolIcon button {
+  box-shadow: none;
+  justify-content: initial;
+}
+
+.excalidraw {
+  --default-button-size: 2rem !important;
+  --default-icon-size: 1rem !important;
+  --lg-button-size: 1.8rem !important;
+  --lg-icon-size: 1rem !important;
+}
+
+.excalidraw .tray-zoom {
+  pointer-events: initial;
+  padding-bottom: 0.05rem;
+  padding-top: 0.05rem;
+}
+
+.excalidraw-container.theme--dark {
+  background-color: #121212;
+  color: #fff;
+}
+
+/* https://discordapp.com/channels/686053708261228577/989603365606531104/1041266507256184863 */
+/*.workspace-leaf {
+	contain: none !important;
+}*/
+
+.color-picker-content {
+  overflow-y: auto;
+  max-height: 10rem;
+}
+
+.excalidraw .FixedSideContainer_side_top {
+  top: 0.3rem;
+}
+
+.excalidraw .ToolIcon__keybinding {
+  font-size: 0.5rem;
+}
+
+.Island > .Stack > .Stack {
+  padding:0.2rem;
+}
+
+label.color-input-container > input {
+  max-width: 8rem;
+}
+
+.excalidraw .FixedSideContainer_side_top {
+  left: 10px !important;
+  top: 10px !important;
+  right: 10px !important;
+  bottom: 10px !important;
 }

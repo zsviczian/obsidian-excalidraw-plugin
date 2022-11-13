@@ -27,11 +27,12 @@ import {
   decompress,
   //getBakPath,
   getBinaryFileFromDataURL,
+  getContainerElement,
   getExportTheme,
   getLinkParts,
   hasExportTheme,
   LinkParts,
-  wrapText,
+  wrapTextAtCharLength,
 } from "./utils/Utils";
 import { getAttachmentsFolderAndFilePath, isObsidianThemeDark } from "./utils/ObsidianUtils";
 import {
@@ -51,6 +52,13 @@ declare module "obsidian" {
     };
   }
 }
+
+const {
+  wrapText, 
+  getFontString, 
+  getMaxContainerWidth, 
+  //@ts-ignore
+} = excalidrawLib;
 
 export enum AutoexportPreference {
   none,
@@ -210,15 +218,16 @@ const estimateMaxLineLen = (text: string, originalText: string): number => {
     return null;
   }
   for (const line of splitText) {
-    if (line.length > maxLineLen) {
-      maxLineLen = line.length;
+    const l = line.trim();  
+    if (l.length > maxLineLen) {
+      maxLineLen = l.length;
     }
   }
   return maxLineLen;
 };
 
 const wrap = (text: string, lineLen: number) =>
-  lineLen ? wrapText(text, lineLen, false, 0) : text;
+  lineLen ? wrapTextAtCharLength(text, lineLen, false, 0) : text;
 
 export class ExcalidrawData {
   public textElements: Map<
@@ -638,12 +647,17 @@ export class ExcalidrawData {
     //first get scene text elements
     const texts = this.scene.elements?.filter((el: any) => el.type === "text");
     for (const te of texts) {
+      const container = getContainerElement(te,this.scene);
       const originalText =
-        (await this.getText(te.id, false)) ?? te.originalText ?? te.text;
+        (await this.getText(te.id)) ?? te.originalText ?? te.text;
       const wrapAt = this.textElements.get(te.id)?.wrapAt;
       this.updateTextElement(
         te,
-        wrap(originalText, wrapAt),
+        wrapAt ? wrapText(
+          originalText,
+          getFontString(te.fontSize,te.fontFamily),
+          getMaxContainerWidth(container)
+        ) : originalText,
         originalText,
         forceupdate,
       ); //(await this.getText(te.id))??te.text serves the case when the whole #Text Elements section is deleted by accident
@@ -652,7 +666,6 @@ export class ExcalidrawData {
 
   private async getText(
     id: string,
-    wrapResult: boolean = true,
   ): Promise<string> {
     const text = this.textElements.get(id);
     if (!text) {
@@ -667,7 +680,7 @@ export class ExcalidrawData {
         });
       }
       //console.log("parsed",this.textElements.get(id).parsed);
-      return wrapResult ? wrap(text.parsed, text.wrapAt) : text.parsed;
+      return text.parsed;
     }
     //console.log("raw",this.textElements.get(id).raw);
     return text.raw;
@@ -794,7 +807,7 @@ export class ExcalidrawData {
       if (el.length === 0) {
         this.textElements.delete(key); //if no longer in the scene, delete the text element
       } else {
-        const text = await this.getText(key, false);
+        const text = await this.getText(key);
         const raw = this.scene.prevTextMode === TextMode.parsed
           ? el[0].rawText
           : (el[0].originalText ?? el[0].text);
@@ -887,7 +900,7 @@ export class ExcalidrawData {
         }
         outString +=
           text.substring(position, parts.value.index) +
-          wrapText(
+          wrapTextAtCharLength(
             contents,
             REGEX_LINK.getWrapLength(
               parts,
@@ -1434,7 +1447,7 @@ export class ExcalidrawData {
 
     const parts = data.linkParts.original.split("#");
     this.plugin.filesMaster.set(fileId, {
-      path:data.file.path,
+      path:data.file.path + (data.shouldScale()?"":"|100%"),
       blockrefData: parts.length === 1
         ? null
         : parts[1],
@@ -1479,16 +1492,18 @@ export class ExcalidrawData {
     }
     if (this.plugin.filesMaster.has(fileId)) {
       const masterFile = this.plugin.filesMaster.get(fileId);
-      if (!this.app.vault.getAbstractFileByPath(masterFile.path)) {
+      const path = masterFile.path.split("|")[0].split("#")[0];
+      if (!this.app.vault.getAbstractFileByPath(path)) {
         this.plugin.filesMaster.delete(fileId);
         return true;
       } // the file no longer exists
+      const fixScale = masterFile.path.endsWith("100%");
       const embeddedFile = new EmbeddedFile(
         this.plugin,
         this.file.path,
-        masterFile.blockrefData
-          ? masterFile.path + "#" + masterFile.blockrefData
-          : masterFile.path
+        (masterFile.blockrefData
+          ? path + "#" + masterFile.blockrefData
+          : path) + (fixScale?"|100%":"")
       );
       this.files.set(fileId, embeddedFile);
       return true;

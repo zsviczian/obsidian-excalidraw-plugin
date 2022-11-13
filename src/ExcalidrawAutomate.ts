@@ -8,10 +8,11 @@ import {
   FileId,
   NonDeletedExcalidrawElement,
   ExcalidrawImageElement,
+  ExcalidrawTextElement,
 } from "@zsviczian/excalidraw/types/element/types";
 import { normalizePath, Notice, TFile, WorkspaceLeaf } from "obsidian";
 import ExcalidrawView, { ExportSettings, TextMode } from "./ExcalidrawView";
-import { ExcalidrawData } from "./ExcalidrawData";
+import { ExcalidrawData, getMarkdownDrawingSection } from "./ExcalidrawData";
 import {
   FRONTMATTER,
   nanoid,
@@ -32,7 +33,7 @@ import {
   isVersionNewerThanOther,
   log,
   scaleLoadedImage,
-  wrapText,
+  wrapTextAtCharLength,
 } from "./utils/Utils";
 import { getNewOrAdjacentLeaf, isObsidianThemeDark } from "./utils/ObsidianUtils";
 import { AppState, Point } from "@zsviczian/excalidraw/types/types";
@@ -123,6 +124,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     viewBackgroundColor: string;
     gridSize: number;
   };
+  colorPalette: {};
 
   constructor(plugin: ExcalidrawPlugin, view?: ExcalidrawView) {
     this.plugin = plugin;
@@ -387,9 +389,37 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
           template?.appState?.currentItemLinearStrokeSharpness ??
           this.style.strokeSharpness,
         gridSize: template?.appState?.gridSize ?? this.canvas.gridSize,
+        colorPalette: template?.appState?.colorPalette ?? this.colorPalette,
       },
       files: template?.files ?? {},
     };
+
+    const generateMD = ():string => {
+      const textElements = this.getElements().filter(el => el.type === "text") as ExcalidrawTextElement[];
+      let outString = "# Text Elements\n";
+      textElements.forEach(te=> {
+        outString += `${te.originalText ?? te.text} ^${te.id}\n\n`;
+      });
+
+      const elementsWithLinks = this.getElements().filter( el => el.type !== "text" && el.link)
+      elementsWithLinks.forEach(el=>{
+        outString += `${el.link} ^${el.id}\n\n`;
+      })
+  
+      outString += Object.keys(this.imagesDict).length > 0
+        ? "\n# Embedded files\n"
+        : "";
+        
+      Object.keys(this.imagesDict).forEach((key: FileId)=> {
+        const item = this.imagesDict[key];
+        if(item.latex) {
+          outString += `${key}: $$${item.latex}$$\n`;  
+        } else {
+          outString += `${key}: [[${item.file}]]\n`;
+        }
+      })
+      return outString;
+    }
 
     return this.plugin.createAndOpenDrawing(
       params?.filename
@@ -399,8 +429,8 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       params?.foldername ? params.foldername : this.plugin.settings.folder,
       this.plugin.settings.compatibilityMode
         ? JSON.stringify(scene, null, "\t")
-        : frontmatter +
-            (await this.plugin.exportSceneToMD(JSON.stringify(scene, null, "\t"))),
+        : frontmatter + generateMD() +
+          getMarkdownDrawingSection(JSON.stringify(scene, null, "\t"),this.plugin.settings.compress)
     );
   };
 
@@ -519,7 +549,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
    * @returns 
    */
   wrapText(text: string, lineLen: number): string {
-    return wrapText(text, lineLen, this.plugin.settings.forceWrap);
+    return wrapTextAtCharLength(text, lineLen, this.plugin.settings.forceWrap);
   };
 
   private boxedElement(

@@ -257,7 +257,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
             className="Island App-menu__left scrollbar"
             style={{
               maxHeight: "350px",
-              backgroundColor: "transparent",
+              width: "initial",
               //@ts-ignore
               "--padding": 2,
               display: this.state.minimized ? "none" : "block",

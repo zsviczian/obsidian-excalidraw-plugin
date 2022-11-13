@@ -92,6 +92,7 @@ import { ObsidianMenu } from "./menu/ObsidianMenu";
 import { ToolsPanel } from "./menu/ToolsPanel";
 import { ScriptEngine } from "./Scripts";
 import { getTextElementAtPointer, getImageElementAtPointer, getElementWithLinkAtPointer } from "./utils/GetElementAtPointer";
+import { MenuLinks } from "./menu/menuLinks";
 
 export enum TextMode {
   parsed = "parsed",
@@ -255,6 +256,7 @@ export default class ExcalidrawView extends TextFileView {
   private linkAction_Element: HTMLElement;
   public compatibilityMode: boolean = false;
   private obsidianMenu: ObsidianMenu;
+  private menuLinks: MenuLinks;
 
   //https://stackoverflow.com/questions/27132796/is-there-any-javascript-event-fired-when-the-on-screen-keyboard-on-mobile-safari
   private isEditingTextResetTimer: NodeJS.Timeout = null;
@@ -2013,6 +2015,8 @@ export default class ExcalidrawView extends TextFileView {
       let currentPosition = { x: 0, y: 0 };
       const excalidrawWrapperRef = React.useRef(null);
       const toolsPanelRef = React.useRef(null);
+      const menuLinksRef = React.useRef(null);
+
       const [dimensions, setDimensions] = React.useState({
         width: undefined,
         height: undefined,
@@ -2027,6 +2031,7 @@ export default class ExcalidrawView extends TextFileView {
 
       this.toolsPanelRef = toolsPanelRef;
       this.obsidianMenu = new ObsidianMenu(this.plugin, toolsPanelRef);
+      this.menuLinks = new MenuLinks(this.plugin, menuLinksRef);
 
       //excalidrawRef readypromise based on
       //https://codesandbox.io/s/eexcalidraw-resolvable-promise-d0qg3?file=/src/App.js:167-760
@@ -2730,7 +2735,7 @@ export default class ExcalidrawView extends TextFileView {
               loadScene: false,
               saveScene: false,
               saveAsScene: false,
-              export: { saveFileToDisk: false },
+              export: false,
               saveAsImage: false,
               saveToActiveFile: false,
             },
@@ -2781,6 +2786,8 @@ export default class ExcalidrawView extends TextFileView {
           },
           libraryReturnUrl: "app://obsidian.md",
           autoFocus: true,
+          hideWelcomeScreen: true,
+          renderMenuLinks: null, //this.menuLinks.render,
           onChange: (et: ExcalidrawElement[], st: AppState) => {
             const canvasColorChangeHook = () => {
               if(this.plugin.ea.onCanvasColorChangeHook) {
