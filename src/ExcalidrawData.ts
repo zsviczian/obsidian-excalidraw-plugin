@@ -655,7 +655,7 @@ export class ExcalidrawData {
         te,
         wrapAt ? wrapText(
           originalText,
-          getFontString(te.fontSize,te.fontFamily),
+          getFontString({fontSize: te.fontSize, fontFamily: te.fontFamily}),
           getMaxContainerWidth(container)
         ) : originalText,
         originalText,

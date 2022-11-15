@@ -79,7 +79,7 @@ const getIMG = async (
     withTheme: forceTheme ? true : plugin.settings.exportWithTheme,
   };
   const img = createEl("img");
-  let style = `max-width:${imgAttributes.fwidth}px !important; width:100%;`;
+  let style = `max-width:${imgAttributes.fwidth}px; width:100%;`; //removed !important https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/886
   if (imgAttributes.fheight) {
     style += `height:${imgAttributes.fheight}px;`;
   }
