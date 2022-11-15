@@ -193,7 +193,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   mdCSS: "",
   scriptEngineSettings: {},
   defaultTrayMode: false,
-  previousRelease: "1.6.13",
+  previousRelease: "0.0.0",
   showReleaseNotes: true,
   showNewVersionNotification: true,
   mathjaxSourceURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.1/es5/tex-svg.js"

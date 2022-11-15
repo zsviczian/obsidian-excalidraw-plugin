@@ -255,11 +255,8 @@ export default class ExcalidrawPlugin extends Plugin {
     //    const patches = new OneOffs(this);
     if (this.settings.showReleaseNotes) {
       //I am repurposing imageElementNotice, if the value is true, this means the plugin was just newly installed to Obsidian.
-      const obsidianJustInstalled = this.settings.imageElementNotice;
-      if(obsidianJustInstalled) {
-        this.settings.imageElementNotice = false;
-        await this.saveSettings();
-      }
+      const obsidianJustInstalled = this.settings.previousRelease === "0.0.0"
+
       if (isVersionNewerThanOther(PLUGIN_VERSION, this.settings.previousRelease)) {
         new ReleaseNotes(
           this.app,
