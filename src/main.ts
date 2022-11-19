@@ -105,6 +105,7 @@ import { Packages } from "./types";
 import * as React from "react";
 import { ScriptInstallPrompt } from "./dialogs/ScriptInstallPrompt";
 import { check } from "prettier";
+import Taskbone from "./ocr/Taskbone";
 
 
 declare module "obsidian" {
@@ -133,6 +134,7 @@ declare const excalidrawLib: any;
 declare const PLUGIN_VERSION:string;
 
 export default class ExcalidrawPlugin extends Plugin {
+  public taskbone: Taskbone;
   private excalidrawFiles: Set<TFile> = new Set<TFile>();
   public excalidrawFileModes: { [file: string]: string } = {};
   private _loaded: boolean = false;
@@ -274,6 +276,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.app.workspace.onLayoutReady(() => {
       this.scriptEngine = new ScriptEngine(self);
     });
+    this.taskbone = new Taskbone(this);
   }
 
   public initializeFourthFont() {
@@ -410,7 +413,6 @@ export default class ExcalidrawPlugin extends Plugin {
     }
     return false;
   }
-
 
   private registerInstallCodeblockProcessor() {
     const codeblockProcessor = async (source: string, el: HTMLElement) => {
@@ -960,6 +962,28 @@ export default class ExcalidrawPlugin extends Plugin {
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
           view.saveSVG();
+          return true;
+        }
+        return false;
+      },
+    });
+
+    this.addCommand({
+      id: "run-ocr",
+      name: t("RUN_OCR"),
+      checkCallback: (checking: boolean) => {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (checking) {
+          return (
+            Boolean(view)
+          );
+        }
+        if (view) {
+          if(!this.settings.taskboneEnabled) {
+            new Notice("Taskbone OCR is not enabled. Please go to plugins settings to enable it.",4000);
+            return true;
+          }
+          this.taskbone.getTextForView(view, false);
           return true;
         }
         return false;
@@ -2259,7 +2283,8 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public isExcalidrawFile(f: TFile) {
-    if (f.extension == "excalidraw") {
+    if(!f) return false;
+    if (f.extension === "excalidraw") {
       return true;
     }
     const fileCache = f ? this.app.metadataCache.getFileCache(f) : null;

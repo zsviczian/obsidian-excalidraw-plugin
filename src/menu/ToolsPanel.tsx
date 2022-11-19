@@ -10,6 +10,7 @@ import { t } from "../lang/helpers";
 import { ReleaseNotes } from "../dialogs/ReleaseNotes";
 import { ScriptIconMap } from "../Scripts";
 import { getIMGFilename } from "../utils/FileUtils";
+import { ScriptInstallPrompt } from "src/dialogs/ScriptInstallPrompt";
 
 declare const PLUGIN_VERSION:string;
 const dark = '<svg style="stroke:#ced4da;#212529;color:#ced4da;fill:#ced4da" ';
@@ -267,6 +268,15 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
               <fieldset>
                 <legend>Utility actions</legend>
                 <div className="buttonList buttonListIcon">
+                <ActionButton
+                    key={"scriptEngine"}
+                    title={t("INSTALL_SCRIPT_BUTTON")}
+                    action={() => {
+                      new ScriptInstallPrompt(this.props.view.plugin).open();
+                    }}
+                    icon={ICONS.scriptEngine}
+                    view={this.props.view}
+                  />
                   <ActionButton
                     key={"search"}
                     title={t("SEARCH")}
@@ -346,6 +356,19 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                         ? ICONS.exitFullScreen
                         : ICONS.gotoFullScreen
                     }
+                    view={this.props.view}
+                  />
+                  <ActionButton
+                    key={"ocr"}
+                    title={t("RUN_OCR")}
+                    action={(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+                      if(!this.props.view.plugin.settings.taskboneEnabled) {
+                        new Notice("Taskbone OCR is not enabled. Please go to plugins settings to enable it.",4000);
+                        return;
+                      }
+                      this.props.view.plugin.taskbone.getTextForView(this.props.view, e[CTRL_OR_CMD]);
+                    }}
+                    icon={ICONS.ocr}
                     view={this.props.view}
                   />
                 </div>

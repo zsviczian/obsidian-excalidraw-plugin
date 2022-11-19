@@ -59,6 +59,7 @@ export default {
     "Insert LaTeX formula (e.g. \\binom{n}{k} = \\frac{n!}{k!(n-k)!})",
   ENTER_LATEX: "Enter a valid LaTeX expression",
   READ_RELEASE_NOTES: "Read latest release notes",
+  RUN_OCR: "OCR: Grab text from freedraw text and pictures to clipboard",
   TRAY_MODE: "Toggle property-panel tray-mode",
   SEARCH: "Search for text in drawing",
   RESET_IMG_TO_100: "Set selected image element size to 100% of original",
@@ -418,6 +419,18 @@ export default {
     "Select a .ttf, .woff or .woff2 font file from your vault to use as the fourth font. " +
     "If no file is selected, Excalidraw will use the Virgil font by default.",
   SCRIPT_SETTINGS_HEAD: "Settings for installed Scripts",
+  TASKBONE_HEAD: "Taskbone Optical Character Recogntion",
+  TASKBONE_DESC: "This is an experimental integration of optical character recognition into Excalidraw. Please note, that taskbone is an independent external service not provided by Excalidraw, nor the Excalidraw-Obsidian plugin project. " +
+    "The OCR service will grab legible text from freedraw lines and embedded pictures on your canvas and place the recognized text in the frontmatter of your drawing as well as onto clipboard. " +
+    "Having the text in the frontmatter will enable you to search in Obsidian for the text contents of these. " +
+    "Note, that the process of extracting the text from the image is not done locally, but via an online API. The taskbone service stores the image on its servers only as long as necessary for the text extraction. However, if this is a dealbreaker, then please don't use this feature.",
+  TASKBONE_ENABLE_NAME: "Enable Taskbone",
+  TASKBONE_ENABLE_DESC: "By enabling this service your agree to the Taskbone <a href='https://www.taskbone.com/legal/terms/' target='_blank'>Terms and Conditaions</a> and the " +
+    "<a href='https://www.taskbone.com/legal/privacy/' target='_blank'>Privacy Policy</a>.",
+  TASKBONE_APIKEY_NAME: "Taskbone API Key",
+  TASKBONE_APIKEY_DESC: "Taskbone offers a free service with a reasonable number of scans per month. If you want to use this feature more frequently, or you want to supoprt " + 
+    "the developer of Taskbone (as you can imagine, there is no such thing as 'free', providing this awesome OCR service costs some money to the developer of Taskbone), you can " +
+    "purchase a paid API key from <a href='https://www.taskbone.com/' target='_blank'>taskbone.com</a>. In case you have purchased a key, simply overwrite this auto generated free-tier API-key with your paid key.",
 
   //openDrawings.ts
   SELECT_FILE: "Select a file then press enter.",

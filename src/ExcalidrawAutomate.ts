@@ -398,7 +398,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       const textElements = this.getElements().filter(el => el.type === "text") as ExcalidrawTextElement[];
       let outString = "# Text Elements\n";
       textElements.forEach(te=> {
-        outString += `${te.originalText ?? te.text} ^${te.id}\n\n`;
+        outString += `${te.rawText ?? (te.originalText ?? te.text)} ^${te.id}\n\n`;
       });
 
       const elementsWithLinks = this.getElements().filter( el => el.type !== "text" && el.link)
@@ -484,7 +484,8 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       this.getElements(),
       this.plugin,
       0,
-      padding
+      padding,
+      this.imagesDict
     );
   };
 
@@ -538,7 +539,8 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       this.getElements(),
       this.plugin,
       0,
-      padding
+      padding,
+      this.imagesDict,
     );
   };
 
@@ -2101,6 +2103,7 @@ export async function createPNG(
   plugin: ExcalidrawPlugin,
   depth: number,
   padding?: number,
+  imagesDict?: any,
 ) {
   if (!loader) {
     loader = new EmbeddedFilesLoader(plugin);
@@ -2111,6 +2114,13 @@ export async function createPNG(
     : null;
   let elements = template?.elements ?? [];
   elements = elements.concat(automateElements);
+  const files = imagesDict ?? {};
+  if(template?.files) {
+    Object.values(template.files).forEach((f:any)=>{
+      files[f.id]=f;
+    });
+  }
+  
   return await getPNG(
     {
       type: "excalidraw",
@@ -2122,7 +2132,7 @@ export async function createPNG(
         viewBackgroundColor:
           template?.appState?.viewBackgroundColor ?? canvasBackgroundColor,
       },
-      files: template?.files ?? {},
+      files,
     },
     {
       withBackground:
@@ -2146,6 +2156,7 @@ export async function createSVG(
   plugin: ExcalidrawPlugin,
   depth: number,
   padding?: number,
+  imagesDict?: any,
 ): Promise<SVGSVGElement> {
   if (!loader) {
     loader = new EmbeddedFilesLoader(plugin);
@@ -2156,6 +2167,12 @@ export async function createSVG(
   let elements = template?.elements ?? [];
   elements = elements.concat(automateElements);
   padding = padding ?? plugin.settings.exportPaddingSVG;
+  const files = imagesDict ?? {};
+  if(template?.files) {
+    Object.values(template.files).forEach((f:any)=>{
+      files[f.id]=f;
+    });
+  }
   const svg = await getSVG(
     {
       //createAndOpenDrawing
@@ -2168,7 +2185,7 @@ export async function createSVG(
         viewBackgroundColor:
           template?.appState?.viewBackgroundColor ?? canvasBackgroundColor,
       },
-      files: template?.files ?? {},
+      files,
     },
     {
       withBackground:

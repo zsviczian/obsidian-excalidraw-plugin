@@ -12,7 +12,7 @@
     "lib": [
       "dom",
       "scripthost",
-      "es2017",
+      "es2015",
       "esnext",
       "DOM.Iterable"
     ],

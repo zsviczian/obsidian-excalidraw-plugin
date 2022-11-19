@@ -110,6 +110,8 @@ export interface ExcalidrawSettings {
   showReleaseNotes: boolean;
   showNewVersionNotification: boolean;
   mathjaxSourceURL: string;
+  taskboneEnabled: boolean;
+  taskboneAPIkey: string;
 }
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
@@ -196,7 +198,9 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   previousRelease: "0.0.0",
   showReleaseNotes: true,
   showNewVersionNotification: true,
-  mathjaxSourceURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.1/es5/tex-svg.js"
+  mathjaxSourceURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.1/es5/tex-svg.js",
+  taskboneEnabled: false,
+  taskboneAPIkey: "",
 };
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
@@ -1333,6 +1337,44 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           },
         );
       });
+
+    this.containerEl.createEl("h2", { text: t("TASKBONE_HEAD") });
+    this.containerEl.createEl("p", { text: t("TASKBONE_DESC") });
+    let taskboneAPIKeyText: TextComponent;
+
+    new Setting(containerEl)
+    .setName(t("TASKBONE_ENABLE_NAME"))
+    .setDesc(fragWithHTML(t("TASKBONE_ENABLE_DESC")))
+    .addToggle((toggle) =>
+      toggle
+        .setValue(this.plugin.settings.taskboneEnabled)
+        .onChange(async (value) => {
+          taskboneAPIKeyText.setDisabled(!value);
+          this.plugin.settings.taskboneEnabled = value;
+          if(this.plugin.settings.taskboneAPIkey === "") {
+            const apiKey = await this.plugin.taskbone.initialize(false);
+            if(apiKey) {
+              taskboneAPIKeyText.setValue(apiKey);
+            }
+          }
+          this.applySettingsUpdate();
+        }),
+    );
+
+    new Setting(containerEl)
+    .setName(t("TASKBONE_APIKEY_NAME"))
+    .setDesc(fragWithHTML(t("TASKBONE_APIKEY_DESC")))
+    .addText((text) => {
+      taskboneAPIKeyText = text;
+      taskboneAPIKeyText
+        .setValue(this.plugin.settings.taskboneAPIkey)
+        .onChange(async (value) => {
+          this.plugin.settings.taskboneAPIkey = value;
+          this.applySettingsUpdate();
+        })
+        .setDisabled(!this.plugin.settings.taskboneEnabled);
+      }
+    );
 
     //-------------------------------------
     //Script settings
