@@ -5,6 +5,7 @@ import {log} from "../utils/Utils"
 import ExcalidrawView from "../ExcalidrawView"
 import FrontmatterEditor from "src/utils/Frontmatter";
 import { ExcalidrawImageElement } from "@zsviczian/excalidraw/types/element/types";
+import { bindingBorderTest } from "@zsviczian/excalidraw/types/element/collision";
 
 const TASKBONE_URL = "https://api.taskbone.com/"; //"https://excalidraw-preview.onrender.com/";
 const TASKBONE_OCR_FN = "execute?id=60f394af-85f6-40bc-9613-5d26dc283cbb";
@@ -60,6 +61,8 @@ export default class Taskbone {
       return;
     }
 
+    
+    
     ea.copyViewElementsToEAforEditing(viewElements);
     const files = view.getScene().files;
     viewElements.filter(el=>el.type==="image").forEach((el:ExcalidrawImageElement)=>{
@@ -78,7 +81,15 @@ export default class Taskbone {
         }
       }        
     })
-    const img = await ea.createPNG(undefined,1,undefined,undefined,view.excalidrawAPI.getAppState().theme,10);
+
+    const bb = ea.getBoundingBox(viewElements);
+    const size = (bb.width*bb.height);
+    const minRatio = Math.sqrt(360000/size);
+    const maxRatio = Math.sqrt(size/4000000);
+    const scale = minRatio > 1 ? minRatio : (maxRatio > 1 ? 1/maxRatio : 1);
+    console.log(scale);
+
+    const img = await ea.createPNG(undefined,scale,undefined,undefined,view.excalidrawAPI.getAppState().theme,10);
     const text = await this.getTextForImage(img); 
     if(text) {
       fe.setKey("taskbone-ocr",text);

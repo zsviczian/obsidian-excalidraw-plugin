@@ -912,6 +912,24 @@ export default class ExcalidrawView extends TextFileView {
   wheelEvent: (ev:WheelEvent)=>void;
   clearHoverPreview: Function;
 
+  public async forceSave() {
+    if (this.semaphores.autosaving || this.semaphores.saving) {
+      new Notice("Force Save aborted because saving is in progress)")
+      return;
+    }
+    if(this.preventReloadResetTimer) {
+      clearTimeout(this.preventReloadResetTimer);
+      this.preventReloadResetTimer = null;
+    }
+    this.semaphores.preventReload = false;
+    this.semaphores.forceSaving = true;
+    await this.save(false, true);
+    this.plugin.triggerEmbedUpdates();
+    this.loadSceneFiles();
+    this.semaphores.forceSaving = false;
+    new Notice("Save successful", 1000);
+  }
+
   onload() {
     const apiMissing = Boolean(typeof this.containerEl.onWindowMigrated === "undefined")
     //@ts-ignore
@@ -942,23 +960,7 @@ export default class ExcalidrawView extends TextFileView {
     this.diskIcon = this.addAction(
       DISK_ICON_NAME,
       t("FORCE_SAVE"),
-      async () => {
-        if (this.semaphores.autosaving || this.semaphores.saving) {
-          new Notice("Force Save aborted because saving is in progress)")
-          return;
-        }
-        if(this.preventReloadResetTimer) {
-          clearTimeout(this.preventReloadResetTimer);
-          this.preventReloadResetTimer = null;
-        }
-        this.semaphores.preventReload = false;
-        this.semaphores.forceSaving = true;
-        await this.save(false, true);
-        this.plugin.triggerEmbedUpdates();
-        this.loadSceneFiles();
-        this.semaphores.forceSaving = false;
-        new Notice("Save successful", 1000);
-      },
+      async () => this.forceSave(),
     );
 
     this.textIsRaw_Element = this.addAction(
@@ -1720,6 +1722,9 @@ export default class ExcalidrawView extends TextFileView {
     //console.log(debug);
     this.semaphores.dirty = this.file?.path;
     this.diskIcon.querySelector("svg").addClass("excalidraw-dirty");
+    if(this.toolsPanelRef?.current) {
+      this.toolsPanelRef.current.setDirty(true);
+    }
     if(!app.isMobile) {
       if(requireApiVersion("0.16.0")) {
         //@ts-ignore
@@ -1734,6 +1739,9 @@ export default class ExcalidrawView extends TextFileView {
       return;
     }
     this.semaphores.dirty = null;
+    if(this.toolsPanelRef?.current) {
+      this.toolsPanelRef.current.setDirty(false);
+    }
     const el = api.getSceneElements();
     if (el) {
       this.previousSceneVersion = this.getSceneVersion(el);

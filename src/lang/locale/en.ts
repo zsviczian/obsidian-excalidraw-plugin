@@ -459,4 +459,6 @@ export default {
   GOTO_FULLSCREEN: "Goto fullscreen mode",
   EXIT_FULLSCREEN: "Exit fullscreen mode",
   TOGGLE_FULLSCREEN: "Toggle fullscreen mode",
+  OPEN_LINK_CLICK: "Navigate to selected element link",
+  OPEN_LINK_PROPS: "Open markdown-embed properties or open link in new window"
 };

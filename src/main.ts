@@ -25,8 +25,6 @@ import {
   ICON_NAME,
   SCRIPTENGINE_ICON,
   SCRIPTENGINE_ICON_NAME,
-  DISK_ICON,
-  DISK_ICON_NAME,
   PNG_ICON,
   PNG_ICON_NAME,
   SVG_ICON,
@@ -224,7 +222,6 @@ export default class ExcalidrawPlugin extends Plugin {
 
     addIcon(ICON_NAME, EXCALIDRAW_ICON);
     addIcon(SCRIPTENGINE_ICON_NAME, SCRIPTENGINE_ICON);
-    addIcon(DISK_ICON_NAME, DISK_ICON);
     addIcon(PNG_ICON_NAME, PNG_ICON);
     addIcon(SVG_ICON_NAME, SVG_ICON);
 

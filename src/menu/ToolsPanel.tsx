@@ -2,7 +2,7 @@ import clsx from "clsx";
 import { Notice, TFile } from "obsidian";
 import * as React from "react";
 import { ActionButton } from "./ActionButton";
-import { ICONS, stringToSVG } from "./ActionIcons";
+import { ICONS, saveIcon, stringToSVG } from "./ActionIcons";
 import { SCRIPT_INSTALL_FOLDER, CTRL_OR_CMD } from "../Constants";
 import { insertLaTeXToView, search } from "../ExcalidrawAutomate";
 import ExcalidrawView, { TextMode } from "../ExcalidrawView";
@@ -29,6 +29,7 @@ export type PanelState = {
   theme: "dark" | "light";
   excalidrawViewMode: boolean;
   minimized: boolean;
+  isDirty: boolean;
   isFullscreen: boolean;
   isPreviewMode: boolean;
   scriptIconMap: ScriptIconMap;
@@ -60,6 +61,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       theme: "dark",
       excalidrawViewMode: false,
       minimized: false,
+      isDirty: false,
       isFullscreen: false,
       isPreviewMode: true,
       scriptIconMap: {},
@@ -84,6 +86,14 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     this.setState(() => {
       return {
         isFullscreen,
+      };
+    });
+  }
+
+  setDirty(isDirty: boolean) {
+    this.setState(()=> {
+      return {
+        isDirty,
       };
     });
   }
@@ -278,15 +288,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     view={this.props.view}
                   />
                   <ActionButton
-                    key={"search"}
-                    title={t("SEARCH")}
-                    action={() => {
-                      search(this.props.view);
-                    }}
-                    icon={ICONS.search}
-                    view={this.props.view}
-                  />
-                  <ActionButton
                     key={"release-notes"}
                     title={t("READ_RELEASE_NOTES")}
                     action={() => {
@@ -359,6 +360,15 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     view={this.props.view}
                   />
                   <ActionButton
+                    key={"search"}
+                    title={t("SEARCH")}
+                    action={() => {
+                      search(this.props.view);
+                    }}
+                    icon={ICONS.search}
+                    view={this.props.view}
+                  />
+                  <ActionButton
                     key={"ocr"}
                     title={t("RUN_OCR")}
                     action={(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
@@ -369,6 +379,45 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                       this.props.view.plugin.taskbone.getTextForView(this.props.view, e[CTRL_OR_CMD]);
                     }}
                     icon={ICONS.ocr}
+                    view={this.props.view}
+                  />
+                  <ActionButton
+                    key={"openLink"}
+                    title={t("OPEN_LINK_CLICK")}
+                    action={() => {
+                      const event = new MouseEvent("click", {
+                        ctrlKey: true,
+                        metaKey: false,
+                        shiftKey: false,
+                        altKey: false,
+                      });
+                      this.props.view.handleLinkClick(this.props.view, event);
+                    }}
+                    icon={ICONS.openLink}
+                    view={this.props.view}
+                  />
+                  <ActionButton
+                    key={"openLinkProperties"}
+                    title={t("OPEN_LINK_PROPS")}
+                    action={() => {
+                      const event = new MouseEvent("click", {
+                        ctrlKey: true,
+                        metaKey: false,
+                        shiftKey: true,
+                        altKey: true,
+                      });
+                      this.props.view.handleLinkClick(this.props.view, event);
+                    }}
+                    icon={ICONS.openLinkProperties}
+                    view={this.props.view}
+                  />
+                  <ActionButton
+                    key={"save"}
+                    title={t("FORCE_SAVE")}
+                    action={() => {
+                      this.props.view.forceSave();
+                    }}
+                    icon={saveIcon(this.state.isDirty)}
                     view={this.props.view}
                   />
                 </div>

@@ -210,6 +210,41 @@ export const ICONS = {
       </g>
     </svg>
   ),
+  openLink: (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="var(--icon-fill-color)"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v7"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <path d="m10 18 3-3-3-3"/>
+      <path d="M4 18v-1a2 2 0 0 1 2-2h6"/>
+    </svg>
+  ),
+  openLinkProperties: (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="var(--icon-fill-color)"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v7"/>
+      <polyline 
+        points="14 2 14 8 20 8"
+        fill="var(--icon-fill-color)"
+      />
+      <path d="m10 18 3-3-3-3"/>
+      <path d="M4 18v-1a2 2 0 0 1 2-2h6"/>
+    </svg>
+  ),
   //fa-brands fa-markdown
   switchToMarkdown: (
     <svg
@@ -409,12 +444,30 @@ export const ICONS = {
   )
 };
 
+export const saveIcon = (isDirty: boolean) => {
+  return (
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      viewBox="0 0 24 24"
+      fill="none" 
+      stroke={isDirty?"var(--color-accent)":"var(--icon-fill-color)"}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+      <polyline points="17 21 17 13 7 13 7 21"/>
+      <polyline points="7 3 7 8 15 8"/>
+    </svg>
+  )
+}
+
 export const stringToSVG = (svg: string) => {
   svg = svg
     .replace(/stroke\s*=\s*['"][^"']*['"]/g,"")
     .replace(/width\s*=\s*['"][^"']*['"]/g,"")
     .replace(/height\s*=\s*['"][^"']*['"]/g,"")
-    .replace("<svg ",`<svg style="stroke:var(--icon-fill-color);color:var(--icon-fill-color);fill:var(--icon-fill-color)" `)
+    .replace("<svg ",`<svg style="stroke:var(--icon-fill-color);color:var(--icon-fill-color);fill:var(--icon-fill-color);stroke-width:6;" `)
     
     return (
       <div dangerouslySetInnerHTML={{__html: svg}}></div>
