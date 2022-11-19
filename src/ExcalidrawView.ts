@@ -108,6 +108,9 @@ export interface ExportSettings {
   withTheme: boolean;
 }
 
+const HIDE = "excalidraw-hidden";
+const SHOW = "excalidraw-visible";
+
 export const addFiles = async (
   files: FileData[],
   view: ExcalidrawView,
@@ -612,22 +615,6 @@ export default class ExcalidrawView extends TextFileView {
     return this.data;
   }
 
-  addFullscreenchangeEvent() {
-    //excalidrawWrapperRef.current
-    this.contentEl.onfullscreenchange = () => {
-      if (this.plugin.settings.zoomToFitOnResize) {
-        this.zoomToFit();
-      }
-      if (!this.isFullscreen()) {
-        this.clearFullscreenObserver();
-        this.contentEl.removeAttribute("style");
-      }
-      if (this.toolsPanelRef && this.toolsPanelRef.current) {
-        this.toolsPanelRef.current.setFullscreen(this.isFullscreen());
-      }
-    };
-  }
-
   fullscreenModalObserver: MutationObserver = null;
   private hiddenMobileLeaves:[WorkspaceLeaf,string][] = [];
 
@@ -652,99 +639,37 @@ export default class ExcalidrawView extends TextFileView {
     if (this.toolsPanelRef && this.toolsPanelRef.current) {
       this.toolsPanelRef.current.setFullscreen(true);
     }
-    if (this.plugin.device.isPhone) {
-      if(Platform.isIosApp) {
-        this.restoreMobileLeaves();
-        app.workspace.getLayout().main.children
-          .filter((child:any)=>child.type==="leaf")
-          .forEach((listItem:any)=> {
-            const l = app.workspace.getLeafById(listItem.id);
-            if(l!==this.leaf) {
-              //@ts-ignore
-              this.hiddenMobileLeaves.push([l,l.containerEl.style.display]);
-              //@ts-ignore
-              l.containerEl.style.display = "none";
-            }
-        });
-      }
-      const newStylesheet = document.createElement("style");
-      newStylesheet.id = "excalidraw-full-screen";
-      newStylesheet.textContent = `
-        .workspace-leaf-content .view-content {
-          padding: 0px !important;
-        }
-        .view-header {
-          height: 1px !important;
-        }
-        .status-bar {
-          display: none !important;
-        }`;
 
-      const oldStylesheet = document.getElementById(newStylesheet.id);
-      if (oldStylesheet) {
-        document.head.removeChild(oldStylesheet);
+    const hide = (el:HTMLElement) => {
+      while(el && !el.hasClass("workspace-split")) {
+        el.addClass(SHOW);
+        el = el.parentElement;
       }
-      document.head.appendChild(newStylesheet);
-      //return;
+      if(el) el.addClass(SHOW);
+      const doc = this.ownerDocument;
+      doc.body.querySelectorAll(`div.workspace-split:not(.${SHOW})`).forEach(el=>el.addClass(HIDE));
+      doc.body.querySelector(`div.workspace-leaf-content.${SHOW} > .view-header`).addClass(HIDE);
+      doc.body.querySelectorAll(`div.workspace-tab-container.${SHOW} > div.workspace-leaf:not(.${SHOW})`).forEach(el=>el.addClass(HIDE));
+      doc.body.querySelectorAll(`div.workspace-tabs.${SHOW} > div.workspace-tab-header-container`).forEach(el=>el.addClass(HIDE));
+      doc.body.querySelectorAll(`div.workspace-split.${SHOW} > div.workspace-tabs:not(.${SHOW})`).forEach(el=>el.addClass(HIDE));
+      doc.body.querySelectorAll(`div.workspace-ribbon`).forEach(el=>el.addClass(HIDE));
     }
-    this.contentEl.requestFullscreen(); //{navigationUI: "hide"});
-    this.excalidrawWrapperRef.current.firstElementChild?.focus();
-    this.contentEl.setAttribute("style", "padding:0px;margin:0px;");
 
-    this.fullscreenModalObserver = new MutationObserver((m) => {
-      if (m.length !== 1) {
-        return;
-      }
-      if (!m[0].addedNodes || m[0].addedNodes.length !== 1) {
-        return;
-      }
-      const node: Node = m[0].addedNodes[0];
-      if (node.nodeType !== Node.ELEMENT_NODE) {
-        return;
-      }
-      const element = node as HTMLElement;
-      if (!element.classList.contains("modal-container")) {
-        return;
-      }
-      this.contentEl.appendChild(element);
-      element.querySelector("input").focus();
-    });
-
-    this.fullscreenModalObserver.observe(this.ownerDocument.body, {
-      childList: true,
-      subtree: false,
-    });
+    hide(this.contentEl);
   }
 
-  clearFullscreenObserver() {
-    if (this.fullscreenModalObserver) {
-      this.fullscreenModalObserver.disconnect();
-      this.fullscreenModalObserver = null;
-    }
-  }
 
   isFullscreen(): boolean {
-    return (
-      this.hiddenMobileLeaves.length > 0 || (
-      this.ownerDocument.fullscreenEnabled &&
-      this.ownerDocument.fullscreenElement === this.contentEl) // excalidrawWrapperRef?.current
-    ); //this.contentEl;
+    return Boolean(document.body.querySelector(".excalidraw-hidden"));
   }
 
   exitFullscreen() {
-    console.log("Exit Fullscreen");
     if (this.toolsPanelRef && this.toolsPanelRef.current) {
       this.toolsPanelRef.current.setFullscreen(false);
     }
-    if (this.plugin.device.isPhone) {
-      this.restoreMobileLeaves();
-      const oldStylesheet = document.getElementById("excalidraw-full-screen");
-      if (oldStylesheet) {
-        document.head.removeChild(oldStylesheet);
-      }
-      //return;
-    }
-    this.ownerDocument.exitFullscreen();
+    const doc = this.ownerDocument;
+    doc.querySelectorAll(".excalidraw-hidden").forEach(el=>el.removeClass(HIDE));
+    doc.querySelectorAll(".excalidraw-visible").forEach(el=>el.removeClass(SHOW));
   }
 
   async handleLinkClick(view: ExcalidrawView, ev: MouseEvent) {
@@ -2067,7 +1992,6 @@ export default class ExcalidrawView extends TextFileView {
             this.loadSceneFiles();
             this.updateContainerSize(null, true);
             this.excalidrawWrapperRef.current.firstElementChild?.focus();
-            this.addFullscreenchangeEvent();
             this.initializeToolsIconPanelAfterLoading();
           },
         );

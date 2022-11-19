@@ -285,3 +285,7 @@ label.color-input-container > input {
   right: 10px !important;
   bottom: 10px !important;
 }
+
+.excalidraw-hidden {
+  display: none !important;
+}
