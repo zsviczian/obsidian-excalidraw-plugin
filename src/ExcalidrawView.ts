@@ -653,6 +653,8 @@ export default class ExcalidrawView extends TextFileView {
       doc.body.querySelectorAll(`div.workspace-tabs.${SHOW} > div.workspace-tab-header-container`).forEach(el=>el.addClass(HIDE));
       doc.body.querySelectorAll(`div.workspace-split.${SHOW} > div.workspace-tabs:not(.${SHOW})`).forEach(el=>el.addClass(HIDE));
       doc.body.querySelectorAll(`div.workspace-ribbon`).forEach(el=>el.addClass(HIDE));
+      doc.body.querySelectorAll(`div.mobile-navbar`).forEach(el=>el.addClass(HIDE));
+      doc.body.querySelectorAll(`div.status-bar`).forEach(el=>el.addClass(HIDE));
     }
 
     hide(this.contentEl);

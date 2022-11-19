@@ -3,7 +3,7 @@
     "baseUrl": ".",
     "sourceMap": true,
     "module": "es2015",
-    "target": "es2017",
+    "target": "es2017", //script engine requires for async execution
     "allowJs": true,
     "noImplicitAny": true,
     "moduleResolution": "node",
