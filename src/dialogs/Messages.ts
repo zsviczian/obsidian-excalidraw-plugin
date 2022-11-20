@@ -17,6 +17,26 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.8.0": `
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/7gu4ETx7zro" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## New
+- Optical Character Recognition (OCR). Introducing the MVP (minimum viable product) release of the integration of [Taskbone](https://taskbone.com) OCR into Excalidraw. See the new scan button on the Obsidian tools panel.
+- New and improved full-screen mode
+  - Activate using the Obsidian tools panel, the Obsidian Command Palette, or the Alt+F11 shortcut
+  - The ESC key no longer closes full-screen
+  - Full-screen mode works properly on iOS as well
+- Improved Icon visibility on the Obsidian tools panel
+- Added 3 additional buttons to the tools panel
+  - Force save
+  - Open link (useful on Mobile devices). In the case of LaTeX equations, the button opens the equation properties.
+  - Open the link in a new pane. In the case of embedded markdown documents, the button opens the embed properties.
+
+## Fixed
+- The [deconstruct selected elements into a new drawing](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Deconstruct%20selected%20elements%20into%20new%20drawing.md) script now also correctly decomposes transcluded text elements.
+`,
 "1.7.30":`
 Fix:
 - Forcing the embedded image to always scale to 100% (a feature introduced in [1.7.26](https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.7.26)) scaled the embedded excalidraw drawings incorrectly on devices with a pixel ratio of 2 or 3 (e.g. iPads). This is now fixed, however, this fix might retrospectively impact drawings that use this feature. Sorry for that.

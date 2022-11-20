@@ -912,9 +912,9 @@ export default class ExcalidrawView extends TextFileView {
   wheelEvent: (ev:WheelEvent)=>void;
   clearHoverPreview: Function;
 
-  public async forceSave() {
+  public async forceSave(silent:boolean=false) {
     if (this.semaphores.autosaving || this.semaphores.saving) {
-      new Notice("Force Save aborted because saving is in progress)")
+      if(!silent) new Notice("Force Save aborted because saving is in progress)")
       return;
     }
     if(this.preventReloadResetTimer) {
@@ -927,7 +927,7 @@ export default class ExcalidrawView extends TextFileView {
     this.plugin.triggerEmbedUpdates();
     this.loadSceneFiles();
     this.semaphores.forceSaving = false;
-    new Notice("Save successful", 1000);
+    if(!silent) new Notice("Save successful", 1000);
   }
 
   onload() {

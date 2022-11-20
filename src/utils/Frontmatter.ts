@@ -24,7 +24,7 @@ export default class FrontmatterEditor {
 
   public setKey(key:string, value:string) {
     if(!this.initialized) return;
-    value = value.replaceAll("\r\n", "\n").replaceAll("\r", "\n").trim().split("\n").join("\n  ");
+    value = value.replaceAll("\r\n", "\n").replaceAll("\r", "\n").replaceAll(":",";").trim().split("\n").join(" ");
     if(this.hasKey(key)) {
       const reg = new RegExp(`^${key}:.*\\n(?:\\s\\s.*\\n)*`,"gm");
       this.frontmatterStr = 
@@ -32,7 +32,7 @@ export default class FrontmatterEditor {
         `\n${key}: ${value}`;
       return;
     }
-    this.frontmatterStr += this.frontmatterStr.trim()+`\n${key}: ${value}`;
+    this.frontmatterStr = this.frontmatterStr.trim()+`\n${key}: ${value}`;
   }
 
   get data() {

@@ -59,7 +59,7 @@ export default {
     "Insert LaTeX formula (e.g. \\binom{n}{k} = \\frac{n!}{k!(n-k)!})",
   ENTER_LATEX: "Enter a valid LaTeX expression",
   READ_RELEASE_NOTES: "Read latest release notes",
-  RUN_OCR: "OCR: Grab text from freedraw text and pictures to clipboard",
+  RUN_OCR: "OCR: Grab text from freedraw scribble and pictures to clipboard",
   TRAY_MODE: "Toggle property-panel tray-mode",
   SEARCH: "Search for text in drawing",
   RESET_IMG_TO_100: "Set selected image element size to 100% of original",

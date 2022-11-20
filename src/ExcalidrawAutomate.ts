@@ -1253,11 +1253,11 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       errorMessage("targetView not set", "getViewElements()");
       return [];
     }
-    const current = this.targetView?.excalidrawRef?.current;
-    if (!current) {
+    const api = this.targetView.excalidrawAPI;
+    if (!api) {
       return [];
     }
-    return current?.getSceneElements();
+    return api.getSceneElements();
   };
 
   /**
@@ -2072,6 +2072,14 @@ async function getTemplate(
       if(el.length > 0) {
         groupElements = plugin.ea.getElementsInTheSameGroupWithElement(el[0],scene.elements)
       }
+    }
+
+    if(filenameParts.hasTaskbone) {
+      groupElements = groupElements.filter( el => 
+        el.type==="freedraw" || 
+        ( el.type==="image" &&
+          !plugin.isExcalidrawFile(excalidrawData.getFile(el.fileId)?.file)
+        ));
     }
 
     return {

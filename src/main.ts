@@ -395,17 +395,7 @@ export default class ExcalidrawPlugin extends Plugin {
     }
     const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
     if (view) {
-      (async()=>{
-        if (view.semaphores.autosaving) {
-          return;
-        }
-        view.semaphores.forceSaving = true;
-        await view.save(false, true);
-        view.plugin.triggerEmbedUpdates();
-        view.loadSceneFiles();
-        view.semaphores.forceSaving = false;
-        new Notice("Save successful", 1000);
-      })();
+      view.forceSave();
       return true;
     }
     return false;

@@ -600,6 +600,7 @@ export const getEmbeddedFilenameParts = (fname:string):{
   filepath: string,
   hasBlockref: boolean,
   hasGroupref: boolean,
+  hasTaskbone: boolean,
   hasArearef: boolean,
   blockref: string,
   hasSectionref: boolean,
@@ -607,13 +608,14 @@ export const getEmbeddedFilenameParts = (fname:string):{
   linkpartReference: string,
   linkpartAlias: string
 } => {
-  //                        0 1        23    4              5         6  7             8          9
-  const parts = fname?.match(/([^#\^]*)((#\^)(group=|area=)?([^\|]*)|(#)(group=|area=)?([^\^\|]*))(.*)/);
+  //                        0 1        23    4                        5         6  7                      8          9
+  const parts = fname?.match(/([^#\^]*)((#\^)(group=|area=|taskbone)?([^\|]*)|(#)(group=|area=|taskbone)?([^\^\|]*))(.*)/);
   if(!parts) {
     return {
       filepath: fname,
       hasBlockref: false,
       hasGroupref: false,
+      hasTaskbone: false,
       hasArearef: false,
       blockref: "",
       hasSectionref: false,
@@ -626,6 +628,7 @@ export const getEmbeddedFilenameParts = (fname:string):{
     filepath: parts[1],
     hasBlockref: Boolean(parts[3]),
     hasGroupref: (parts[4]==="group=") || (parts[7]==="group="),
+    hasTaskbone: (parts[4]==="taskbone") || (parts[7]==="taskbone"),
     hasArearef: (parts[4]==="area=") || (parts[7]==="area="),
     blockref: parts[5],
     hasSectionref: Boolean(parts[6]),
