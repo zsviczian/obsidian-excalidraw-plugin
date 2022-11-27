@@ -1734,6 +1734,7 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   public clearDirty() {
+    if(this.semaphores.viewunload) return;
     const api = this.excalidrawAPI;
     if (!api) {
       return;
@@ -2224,7 +2225,7 @@ export default class ExcalidrawView extends TextFileView {
         ea.style.fontSize = st.currentItemFontSize ?? 20;
         ea.style.textAlign = st.currentItemTextAlign ?? "left";
         const id = ea.addText(currentPosition.x, currentPosition.y, text);
-        await this.addElements(ea.getElements(), false, save);
+        await this.addElements(ea.getElements(), false, save, undefined, true);
         return id;
       };
 
@@ -2378,6 +2379,9 @@ export default class ExcalidrawView extends TextFileView {
             currentItemStrokeSharpness: st.currentItemStrokeSharpness,
             currentItemStartArrowhead: st.currentItemStartArrowhead,
             currentItemEndArrowhead: st.currentItemEndArrowhead,
+            scrollX: st.scrollX,
+            scrollY: st.scrollY,
+            zoom: st.zoom,
             currentItemLinearStrokeSharpness:
               st.currentItemLinearStrokeSharpness,
             gridSize: st.gridSize,
@@ -2734,8 +2738,10 @@ export default class ExcalidrawView extends TextFileView {
             }
             viewModeEnabled = st.viewModeEnabled;
             if (this.semaphores.justLoaded) {
+              const elcount = this.excalidrawData?.scene?.elements?.length ?? 0;
+              if( elcount>0 && et.length===0 ) return;
               this.semaphores.justLoaded = false;
-              if (!this.semaphores.preventAutozoom) {
+              if (!this.semaphores.preventAutozoom && this.plugin.settings.zoomToFitOnOpen) {
                 this.zoomToFit(false,true);
               }
               this.previousSceneVersion = this.getSceneVersion(et);
@@ -2760,7 +2766,7 @@ export default class ExcalidrawView extends TextFileView {
                 ((sceneVersion > 0 || 
                   (sceneVersion === 0 && et.length > 0)) && //Addressing the rare case when the last element is deleted from the scene
                   sceneVersion !== this.previousSceneVersion) ||
-                st.viewBackgroundColor !== this.previousBackgroundColor
+                (st.viewBackgroundColor !== this.previousBackgroundColor && this.file === this.excalidrawData.file)
               ) {
                 this.previousSceneVersion = sceneVersion;
                 this.previousBackgroundColor = st.viewBackgroundColor;
@@ -3296,11 +3302,12 @@ export default class ExcalidrawView extends TextFileView {
 
       return React.createElement(React.Fragment, null, excalidrawDiv);
     });
-    /**REACT 18
+    //REACT 18
     const root = ReactDOM.createRoot(this.contentEl);
     root.render(reactElement);
-    */
+    /*REACT 17
     ReactDOM.render(reactElement, this.contentEl, () => {});
+    */
   }
 
   private updateContainerSize(containerId?: string, delay: boolean = false) {

@@ -237,7 +237,7 @@ export class ExcalidrawData {
   public elementLinks: Map<string, string> = null;
   public scene: any = null;
   public deletedElements: ExcalidrawElement[] = [];
-  private file: TFile = null;
+  public file: TFile = null;
   private app: App;
   private showLinkBrackets: boolean;
   private linkPrefix: string;

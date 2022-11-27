@@ -123,6 +123,7 @@ export default {
     "You can access your scripts from Excalidraw via the Obsidian Command Palette. Assign " +
     "hotkeys to your favorite scripts just like to any other Obsidian command. " +
     "The folder may not be the root folder of your Vault. ",
+  SAVING_HEAD: "Saving",
   COMPRESS_NAME: "Compress Excalidraw JSON in Markdown",
   COMPRESS_DESC:
     "By enabling this feature Excalidraw will store the drawing JSON in a Base64 compressed " +
@@ -134,15 +135,18 @@ export default {
     "once you switch back to Excalidraw view. " +
     "The setting only has effect 'point forward', meaning, existing drawings will not be effected by the setting " +
     "until you open them and save them.<br><b>Toggle ON:</b> Compress drawing JSON<br><b>Toggle OFF:</b> Leave drawing JSON uncompressed",
-  AUTOSAVE_NAME: "Enable Autosave",
-  AUTOSAVE_DESC:
-    "Automatically save the active drawing, in case there are changes, every 15, 30 seconds, or 1, 2, 3, 4, or 5 minute. Save normally happens when you close Excalidraw or Obsidian, or move " +
-    "focus to another pane. I created this feature with mobile " +
-    "phones and tablets in mind, where 'swiping out Obsidian to close it' led to some data loss.",
-  AUTOSAVE_INTERVAL_NAME: "Interval for autosave",
-  AUTOSAVE_INTERVAL_DESC:
-    "The time interval between saves. Autosave will skip if there are no changes in the drawing.",
-  FILENAME_HEAD: "Filename",
+  AUTOSAVE_INTERVAL_DESKTOP_NAME: "Interval for autosave on Desktop",
+  AUTOSAVE_INTERVAL_DESKTOP_DESC:
+    "The time interval between saves. Autosave will skip if there are no changes in the drawing. " +
+    "Excalidraw will also save the file when closing a workspace tab or navigating within Obsidian, but away from the active Excalidraw tab (i.e. clicking on the Obsidian ribbon or checking backlinks, etc.). " +
+    "Excalidraw will not be able to save your work when terminating Obsidian directly either by killing the Obsidian process, or clicking to close Obsidian altogether.",
+  AUTOSAVE_INTERVAL_MOBILE_NAME: "Interval for autosave on Mobile",
+  AUTOSAVE_INTERVAL_MOBILE_DESC:
+    "I recommend a more frequent interval for Mobiles. " +
+    "Excalidraw will also save the file when closing a workspace tab or navigating within Obsidian, but away from the active Excalidraw tab (i.e. tapping on the Obsidian ribbon or checking backlinks, etc.). " +
+    "Excalidraw will not be able to save your work when terminating Obsidian directly (i.e. swiping it away). Also note, that when you switch apps on a Mobile device, sometimes Android and iOS closes " +
+    "Obsidian in the background to save system resources. In such a case Excalidraw will not be able to save the latest changes.",
+FILENAME_HEAD: "Filename",
   FILENAME_DESC:
     "<p>Click this link for the <a href='https://momentjs.com/docs/#/displaying/format/'>" +
     "date and time format reference</a>.</p>",
@@ -195,6 +199,9 @@ export default {
   ZOOM_TO_FIT_NAME: "Zoom to fit on view resize",
   ZOOM_TO_FIT_DESC: "Zoom to fit drawing when the pane is resized" +
     "<br><b>Toggle ON:</b> Zoom to fit<br><b>Toggle OFF:</b> Auto zoom disabled",
+  ZOOM_TO_FIT_ONOPEN_NAME: "Zoom to fit on file open",
+  ZOOM_TO_FIT_ONOPEN_DESC: "Zoom to fit drawing when the drawing is first opened" +
+      "<br><b>Toggle ON:</b> Zoom to fit<br><b>Toggle OFF:</b> Auto zoom disabled",  
   ZOOM_TO_FIT_MAX_LEVEL_NAME: "Zoom to fit max ZOOM level",
   ZOOM_TO_FIT_MAX_LEVEL_DESC:
     "Set the maximum level to which zoom to fit will enlarge the drawing. Minimum is 0.5 (50%) and maximum is 10 (1000%).",

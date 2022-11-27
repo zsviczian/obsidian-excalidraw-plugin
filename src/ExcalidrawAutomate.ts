@@ -11,6 +11,7 @@ import {
   ExcalidrawTextElement,
 } from "@zsviczian/excalidraw/types/element/types";
 import { normalizePath, Notice, TFile, WorkspaceLeaf } from "obsidian";
+import * as obsidian_module from "obsidian";
 import ExcalidrawView, { ExportSettings, TextMode } from "./ExcalidrawView";
 import { ExcalidrawData, getMarkdownDrawingSection } from "./ExcalidrawData";
 import {
@@ -97,6 +98,12 @@ declare global {
 }
 
 export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
+  /**
+   * Utility function that returns the Obsidian Module object.
+   */
+  get obsidian() {
+    return obsidian_module;
+  };
   plugin: ExcalidrawPlugin;
   targetView: ExcalidrawView = null; //the view currently edited
   elementsDict: {[key:string]:any}; //contains the ExcalidrawElements currently edited in Automate indexed by el.id

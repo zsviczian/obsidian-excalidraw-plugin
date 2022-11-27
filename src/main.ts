@@ -1745,7 +1745,7 @@ export default class ExcalidrawPlugin extends Plugin {
           if (previouslyActiveEV.leaf !== leaf) {
             //if loading new view to same leaf then don't save. Excalidarw view will take care of saving anyway.
             //avoid double saving
-            if(previouslyActiveEV.semaphores.dirty) {
+            if(previouslyActiveEV.semaphores.dirty && !previouslyActiveEV.semaphores.viewunload) {
               await previouslyActiveEV.save(true); //this will update transclusions in the drawing
             }
           }
@@ -2064,7 +2064,9 @@ export default class ExcalidrawPlugin extends Plugin {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
     if(opts.applyLefthandedMode) setLeftHandedMode(this.settings.isLeftHanded);
     if(opts.reEnableAutosave) this.settings.autosave = true;
-    this.settings.autosaveInterval = app.isMobile?10000:15000; //more frequent on mobile because Obsidian may be killed on context switching
+    this.settings.autosaveInterval = app.isMobile
+    ? this.settings.autosaveIntervalMobile
+    : this.settings.autosaveIntervalDesktop;
   }
 
   async saveSettings() {

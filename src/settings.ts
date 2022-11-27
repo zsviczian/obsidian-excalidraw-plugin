@@ -28,6 +28,8 @@ export interface ExcalidrawSettings {
   compress: boolean;
   autosave: boolean;
   autosaveInterval: number;
+  autosaveIntervalDesktop: number;
+  autosaveIntervalMobile: number;
   drawingFilenamePrefix: string;
   drawingEmbedPrefixWithFilename: boolean;
   drawingFilnameEmbedPostfix: string;
@@ -43,6 +45,7 @@ export interface ExcalidrawSettings {
   matchThemeTrigger: boolean;
   defaultMode: string;
   defaultPenMode: "never" | "mobile" | "always";
+  zoomToFitOnOpen: boolean;
   zoomToFitOnResize: boolean;
   zoomToFitMaxLevel: number;
   openInAdjacentPane: boolean;
@@ -122,6 +125,8 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   compress: false,
   autosave: true,
   autosaveInterval: 15000,
+  autosaveIntervalDesktop: 15000,
+  autosaveIntervalMobile: 10000,
   drawingFilenamePrefix: "Drawing ",
   drawingEmbedPrefixWithFilename: true,
   drawingFilnameEmbedPostfix: " ",
@@ -137,6 +142,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   matchThemeTrigger: false,
   defaultMode: "normal",
   defaultPenMode: "never",
+  zoomToFitOnOpen: true,
   zoomToFitOnResize: true,
   zoomToFitMaxLevel: 2,
   linkPrefix: "📍",
@@ -347,6 +353,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
+    this.containerEl.createEl("h1", { text: t("SAVING_HEAD") });
+
     new Setting(containerEl)
       .setName(t("COMPRESS_NAME"))
       .setDesc(fragWithHTML(t("COMPRESS_DESC")))
@@ -357,7 +365,45 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.plugin.settings.compress = value;
             this.applySettingsUpdate();
           }),
-      );
+    );
+
+    new Setting(containerEl)
+    .setName(t("AUTOSAVE_INTERVAL_DESKTOP_NAME"))
+    .setDesc(fragWithHTML(t("AUTOSAVE_INTERVAL_DESKTOP_DESC")))
+    .addDropdown((dropdown) =>
+      dropdown
+        .addOption("15000", "Frequent (every 15 seconds)")
+        .addOption("60000", "Moderate (every 60 seconds)")
+        .addOption("300000", "Rare (every 5 minutes)")
+        .addOption("900000", "Practically never (every 15 minutes)")
+        .setValue(this.plugin.settings.autosaveIntervalDesktop.toString())
+        .onChange(async (value) => {
+          this.plugin.settings.autosaveIntervalDesktop = parseInt(value);
+          this.plugin.settings.autosaveInterval = app.isMobile
+            ? this.plugin.settings.autosaveIntervalMobile
+            : this.plugin.settings.autosaveIntervalDesktop;
+          this.applySettingsUpdate();
+        }),
+    );
+
+    new Setting(containerEl)
+    .setName(t("AUTOSAVE_INTERVAL_MOBILE_NAME"))
+    .setDesc(fragWithHTML(t("AUTOSAVE_INTERVAL_MOBILE_DESC")))
+    .addDropdown((dropdown) =>
+      dropdown
+        .addOption("10000", "Frequent (every 10 seconds)")
+        .addOption("30000", "Moderate (every 30 seconds)")
+        .addOption("60000", "Rare (every 1 minute)")
+        .addOption("300000", "Practically never (every 5 minutes)")
+        .setValue(this.plugin.settings.autosaveIntervalMobile.toString())
+        .onChange(async (value) => {
+          this.plugin.settings.autosaveIntervalMobile = parseInt(value);
+          this.plugin.settings.autosaveInterval = app.isMobile
+            ? this.plugin.settings.autosaveIntervalMobile
+            : this.plugin.settings.autosaveIntervalDesktop;
+          this.applySettingsUpdate();
+        }),
+    );
 
     this.containerEl.createEl("h1", { text: t("FILENAME_HEAD") });
     containerEl.createDiv("", (el) => {
@@ -540,6 +586,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.defaultPenMode)
           .onChange(async (value: "never" | "always" | "mobile") => {
             this.plugin.settings.defaultPenMode = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(containerEl)
+      .setName(t("ZOOM_TO_FIT_ONOPEN_NAME"))
+      .setDesc(fragWithHTML(t("ZOOM_TO_FIT_ONOPEN_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.zoomToFitOnOpen)
+          .onChange(async (value) => {
+            this.plugin.settings.zoomToFitOnOpen = value;
             this.applySettingsUpdate();
           }),
       );
