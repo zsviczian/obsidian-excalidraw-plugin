@@ -687,6 +687,7 @@ export class ExcalidrawData {
   }
 
   private findNewElementLinksInScene(): boolean {
+    let result = false;
     const elements = this.scene.elements?.filter((el: any) => {
       return (
         el.type !== "text" &&
@@ -696,25 +697,27 @@ export class ExcalidrawData {
       );
     });
     if (elements.length === 0) {
-      return false;
+      return result;
     }
 
     let jsonString = JSON.stringify(this.scene);
 
     let id: string; //will be used to hold the new 8 char long ID for textelements that don't yet appear under # Text Elements
+    
     for (const el of elements) {
       id = el.id;
       //replacing Excalidraw element IDs with my own nanoid, because default IDs may contain
       //characters not recognized by Obsidian block references
       //also Excalidraw IDs are inconveniently long
       if (el.id.length > 8) {
+        result = true;
         id = nanoid();
         jsonString = jsonString.replaceAll(el.id, id); //brute force approach to replace all occurances (e.g. links, groups,etc.)
       }
       this.elementLinks.set(id, el.link);
     }
     this.scene = JSON.parse(jsonString);
-    return true;
+    return result;
   }
 
   /**

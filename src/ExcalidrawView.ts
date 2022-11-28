@@ -1629,6 +1629,7 @@ export default class ExcalidrawView extends TextFileView {
    * @param justloaded - a flag to trigger zoom to fit after the drawing has been loaded
    */
   private async loadDrawing(justloaded: boolean, deletedElements?: ExcalidrawElement[]) {
+    if(this.semaphores.viewunload) return; //Obsidian going black after REACT 18 migration 
     const excalidrawData = this.excalidrawData.scene;
     this.semaphores.justLoaded = justloaded;
     this.initialContainerSizeUpdate = justloaded;
@@ -1722,7 +1723,7 @@ export default class ExcalidrawView extends TextFileView {
     //console.log(debug);
     this.semaphores.dirty = this.file?.path;
     this.diskIcon.querySelector("svg").addClass("excalidraw-dirty");
-    if(this.toolsPanelRef?.current) {
+    if(!this.semaphores.viewunload && this.toolsPanelRef?.current) {
       this.toolsPanelRef.current.setDirty(true);
     }
     if(!app.isMobile) {
@@ -1757,6 +1758,7 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   public initializeToolsIconPanelAfterLoading() {
+    if(this.semaphores.viewunload) return;
     const api = this.excalidrawAPI;
     if (!api) {
       return;
@@ -3255,9 +3257,11 @@ export default class ExcalidrawView extends TextFileView {
             }
           },
           onViewModeChange: (isViewModeEnabled: boolean) => {
-            this.toolsPanelRef?.current?.setExcalidrawViewMode(
-              isViewModeEnabled,
-            );
+            if(!this.semaphores.viewunload) {
+              this.toolsPanelRef?.current?.setExcalidrawViewMode(
+                isViewModeEnabled,
+              );
+            }
             if(this.getHookServer().onViewModeChangeHook) {
               try {
                 this.getHookServer().onViewModeChangeHook(isViewModeEnabled,this,this.getHookServer());
