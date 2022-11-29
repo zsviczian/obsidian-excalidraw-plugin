@@ -486,6 +486,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     desc: "Converts a CSS color name to its HEX color equivalent. 'White' to #FFFFFF",
     after: "",
   },
+  {
+    field: "obsidian",
+    code: "obsidian",
+    desc: "Access functions and objects available on the <a onclick='window.open(\"https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts\")'>Obsidian Module</a>",
+    after: "",
+  }
 ];
 
 export const EXCALIDRAW_SCRIPTENGINE_INFO: SuggesterInfo[] = [

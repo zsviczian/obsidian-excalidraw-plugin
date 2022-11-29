@@ -204,6 +204,7 @@ export default class ExcalidrawView extends TextFileView {
   public ownerDocument: Document;
 
   public semaphores: {
+    popoutUnload: boolean; //the unloaded Excalidraw view was the last leaf in the popout window
     viewunload: boolean;
     //first time initialization of the view
     scriptsReady: boolean;
@@ -237,6 +238,7 @@ export default class ExcalidrawView extends TextFileView {
     hoverSleep: boolean; //flag with timer to prevent hover preview from being triggered dozens of times
     wheelTimeout:NodeJS.Timeout; //used to avoid hover preview while zooming
   } = {
+    popoutUnload: false,
     viewunload: false,
     scriptsReady: false,
     justLoaded: false,
@@ -491,7 +493,7 @@ export default class ExcalidrawView extends TextFileView {
         await this.excalidrawData.syncElements(scene);
       } else if (
         await this.excalidrawData.syncElements(scene, this.excalidrawAPI.getAppState().selectedElementIds)
-        //&& !this.semaphores.autosaving
+        && !this.semaphores.popoutUnload //Obsidian going black after REACT 18 migration when closing last leaf on popout
       ) {
         await this.loadDrawing(
           false,
@@ -615,7 +617,6 @@ export default class ExcalidrawView extends TextFileView {
     return this.data;
   }
 
-  fullscreenModalObserver: MutationObserver = null;
   private hiddenMobileLeaves:[WorkspaceLeaf,string][] = [];
 
   restoreMobileLeaves() {
@@ -1207,6 +1208,7 @@ export default class ExcalidrawView extends TextFileView {
   onunload() {
     this.restoreMobileLeaves();
     this.semaphores.viewunload = true;
+    this.semaphores.popoutUnload = (this.ownerDocument !== document) && (this.ownerDocument.body.querySelectorAll(".workspace-tab-header").length === 0);
     this.ownerWindow?.removeEventListener("keydown", this.onKeyDown, false);
     this.ownerWindow?.removeEventListener("keyup", this.onKeyUp, false);
     this.containerEl.removeEventListener("wheel", this.wheelEvent, false);
@@ -1229,10 +1231,6 @@ export default class ExcalidrawView extends TextFileView {
     if (this.autosaveTimer) {
       clearInterval(this.autosaveTimer);
       this.autosaveTimer = null;
-    }
-    if (this.fullscreenModalObserver) {
-      this.fullscreenModalObserver.disconnect();
-      this.fullscreenModalObserver = null;
     }
   }
 
@@ -1372,8 +1370,9 @@ export default class ExcalidrawView extends TextFileView {
 
   public isLoaded: boolean = false;
   async setViewData(data: string, clear: boolean = false) {
-    if(this.plugin.settings.showNewVersionNotification) checkExcalidrawVersion(app);
     this.isLoaded = false;
+    if(!this.file) return;
+    if(this.plugin.settings.showNewVersionNotification) checkExcalidrawVersion(app);
     if (clear) {
       this.clear();
     }
@@ -1628,8 +1627,7 @@ export default class ExcalidrawView extends TextFileView {
    *
    * @param justloaded - a flag to trigger zoom to fit after the drawing has been loaded
    */
-  private async loadDrawing(justloaded: boolean, deletedElements?: ExcalidrawElement[]) {
-    if(this.semaphores.viewunload) return; //Obsidian going black after REACT 18 migration 
+  private async loadDrawing(justloaded: boolean, deletedElements?: ExcalidrawElement[]) { 
     const excalidrawData = this.excalidrawData.scene;
     this.semaphores.justLoaded = justloaded;
     this.initialContainerSizeUpdate = justloaded;
