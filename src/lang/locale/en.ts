@@ -98,7 +98,7 @@ export default {
     "<b>Toggle OFF:</b> Silent mode. You can still read release notes on <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases'>GitHub</a>.",
   NEWVERSION_NOTIFICATION_NAME: "Plugin update notification",
   NEWVERSION_NOTIFICATION_DESC:
-      "<b>Toggle ON:</b> Show a notification when a new version of the plugin is avaiable.<br>" +
+      "<b>Toggle ON:</b> Show a notification when a new version of the plugin is available.<br>" +
       "<b>Toggle OFF:</b> Silent mode. You need to check for plugin updates in Community Plugins.",
   
   FOLDER_NAME: "Excalidraw folder",
@@ -109,11 +109,11 @@ export default {
   FOLDER_EMBED_DESC:
     "Define which folder to place the newly inserted drawing into " +
     "when using the command palette action: 'Create a new drawing and embed into active document'.<br>" +
-    "<b>Toggle ON:</b> Use Excalidraw folder<br><b>Toggle OFF:</b> use the attachments folder defined in Obsidian settings.",
+    "<b>Toggle ON:</b> Use Excalidraw folder<br><b>Toggle OFF:</b> Use the attachments folder defined in Obsidian settings.",
   TEMPLATE_NAME: "Excalidraw template file",
   TEMPLATE_DESC:
     "Full filepath to the Excalidraw template. " +
-    "E.g.: If your template is in the default Excalidraw folder and it's name is " +
+    "E.g.: If your template is in the default Excalidraw folder and its name is " +
     "Template.md, the setting would be: Excalidraw/Template.md (or just Excalidraw/Template - you may omit the .md file extension). " +
     "If you are using Excalidraw in compatibility mode, then your template must be a legacy Excalidraw file as well " +
     "such as Excalidraw/Template.excalidraw.",
@@ -163,7 +163,7 @@ FILENAME_HEAD: "Filename",
   FILENAME_POSTFIX_NAME:
     "Custom text after markdown Note's name when embedding",
   FILENAME_POSTFIX_DESC:
-    "Effects filename only when embedding into a markdown document. This is text will be inserted after the note's name, but before the date.",
+    "Effects filename only when embedding into a markdown document. This text will be inserted after the note's name, but before the date.",
   FILENAME_DATE_NAME: "Filename Date",
   FILENAME_DATE_DESC:
     "The last part of the filename. Leave empty if you do not want a date.",
@@ -180,7 +180,7 @@ FILENAME_HEAD: "Filename",
   MATCH_THEME_DESC:
     "If theme is dark, new drawing will be created in dark mode. This does not apply when you use a template for new drawings. " +
     "Also this will not effect when you open an existing drawing. Those will follow the theme of the template/drawing respectively." +
-    "<br><b>Toggle ON:</b> Follow Obsidian Theme<br><b>Toggle OFF:</b>Follow theme defined in your template",
+    "<br><b>Toggle ON:</b> Follow Obsidian Theme<br><b>Toggle OFF:</b> Follow theme defined in your template",
   MATCH_THEME_ALWAYS_NAME: "Existing drawings to match Obsidian theme",
   MATCH_THEME_ALWAYS_DESC:
     "If theme is dark, drawings will be opened in dark mode. If your theme is light, they will be opened in light mode. " +
@@ -192,7 +192,7 @@ FILENAME_HEAD: "Filename",
   DEFAULT_OPEN_MODE_NAME: "Default mode when opening Excalidraw",
   DEFAULT_OPEN_MODE_DESC:
     "Specifies the mode how Excalidraw opens: Normal, Zen, or View mode. You may also set this behavior on a file level by " +
-    "adding the excalidraw-default-mode frontmatter key with a value of: normal,view, or zen to your document.",
+    "adding the excalidraw-default-mode frontmatter key with a value of: normal, view, or zen to your document.",
   DEFAULT_PEN_MODE_NAME: "Pen mode",
   DEFAULT_PEN_MODE_DESC:
     "Should pen mode be automatically enabled when opening Excalidraw?",
@@ -264,7 +264,7 @@ FILENAME_HEAD: "Filename",
     "text (i.e. no overflow), or OFF to soft-wrap text (at the nearest whitespace).",
   TRANSCLUSION_DEFAULT_WRAP_NAME: "Transclusion word wrap default",
   TRANSCLUSION_DEFAULT_WRAP_DESC:
-    "You can set manually set/override word wrapping length using the `![[page#^block]]{NUMBER}` format. " +
+    "You can manually set/override word wrapping length using the `![[page#^block]]{NUMBER}` format. " +
     "Normally you will not want to set a default, because if you transclude text inside a sticky note, then Excalidraw will automatically take care of word wrapping. " +
     "Set this value to `0` if you do not want to set a default. ",
   PAGE_TRANSCLUSION_CHARCOUNT_NAME: "Page transclusion max char count",
@@ -272,7 +272,7 @@ FILENAME_HEAD: "Filename",
     "The maximum number of characters to display from the page when transcluding an entire page with the " +
     "![[markdown page]] format.",
   QUOTE_TRANSCLUSION_REMOVE_NAME: "Quote translusion: remove leading '> ' from each line",
-  QUOTE_TRANSCLUSION_REMOVE_DESC: "Remove the leading '> ' from each line of the transclusion. This will improve readibility of quotes in text only transclusions<br>" +
+  QUOTE_TRANSCLUSION_REMOVE_DESC: "Remove the leading '> ' from each line of the transclusion. This will improve readability of quotes in text only transclusions<br>" +
     "<b>Toggle ON:</b> Remove leading '> '<br><b>Toggle OFF:</b> Do not remove leading '> ' (note it will still be removed from the first row due to Obsidian API functionality)",
   GET_URL_TITLE_NAME: "Use iframely to resolve page title",
   GET_URL_TITLE_DESC:
@@ -328,7 +328,7 @@ FILENAME_HEAD: "Filename",
   EMBED_PREVIEW_SVG_NAME: "Display SVG in markdown preview",
   EMBED_PREVIEW_SVG_DESC:
     "<b>Toggle ON</b>: Embed drawing as an <a href='https://en.wikipedia.org/wiki/Scalable_Vector_Graphics' target='_blank'>SVG</a> image into the markdown preview.<br>" +
-    "<b>Toggle OFF</b>: Embedd drawing as a <a href='' target='_blank'>PNG</a> image. Note, that some of the <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>image block referencing features</a> do not work with PNG embeds.",
+    "<b>Toggle OFF</b>: Embed drawing as a <a href='' target='_blank'>PNG</a> image. Note, that some of the <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>image block referencing features</a> do not work with PNG embeds.",
   PREVIEW_MATCH_OBSIDIAN_NAME: "Excalidraw preview to match Obsidian theme",
   PREVIEW_MATCH_OBSIDIAN_DESC:
     "Image preview in documents should match the Obsidian theme. If enabled, when Obsidian is in dark mode, Excalidraw images will render in dark mode. " +
