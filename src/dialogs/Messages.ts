@@ -17,6 +17,36 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.8.2":`
+Introducing the [Excalidraw Slideshow Script](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Slideshow.md) - available in the script store
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/HhRHFhWkmCk" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## Fixed
+- Obsidian tools panel gets misplaced after switching Obsidian workspace tabs
+
+## New in ExcalidrawAutomate
+- changed ${String.fromCharCode(96)}viewToggleFullScreen(forceViewMode: boolean = false): void${String.fromCharCode(96)}: the function will toggle view mode on when going to full screen and view mode off when terminating full screen.
+- new functions
+${String.fromCharCode(96, 96, 96)}typescript
+setViewModeEnabled(enabled: boolean):void;
+viewUpdateScene(
+    scene: {
+      elements?: ExcalidrawElement[];
+      appState?: AppState;
+      files?: BinaryFileData;
+      commitToHistory?: boolean;
+    },
+    restore: boolean = false,
+  ):void;
+viewZoomToElements(
+    selectElements: boolean,
+    elements: ExcalidrawElement[]
+  ):void;
+${String.fromCharCode(96, 96, 96)}
+
+`,
 "1.8.1": `
 ## New and fixes from Excalidraw.com
 - New text paste behavior. Pasting multiline text will generate separate text elements unless you hold down the shift button while pasting [#5786](https://github.com/excalidraw/excalidraw/pull/5786)
