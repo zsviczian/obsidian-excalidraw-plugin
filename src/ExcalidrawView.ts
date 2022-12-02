@@ -2035,10 +2035,10 @@ export default class ExcalidrawView extends TextFileView {
 
         const onResize = () => {
           try {
-            setDimensions({
-              width: this.contentEl.clientWidth,
-              height: this.contentEl.clientHeight,
-            });
+            const width = this.contentEl.clientWidth;
+            const height = this.contentEl.clientHeight;
+            if(width === 0 || height === 0) return;
+            setDimensions({ width, height });
             if (this.toolsPanelRef && this.toolsPanelRef.current) {
               this.toolsPanelRef.current.updatePosition();
             }
@@ -2288,13 +2288,12 @@ export default class ExcalidrawView extends TextFileView {
           ? el.concat(newElements.filter((e) => !removeList.includes(e.id)))
           : newElements.filter((e) => !removeList.includes(e.id)).concat(el);
         
-        await this.updateScene(
+        this.updateScene(
           {
             elements,
             commitToHistory: true,
           },
           true, //set to true because svtToExcalidraw generates a legacy Excalidraw object 
-          true
         );
 
         if (images && Object.keys(images).length >0) {
@@ -3282,6 +3281,7 @@ export default class ExcalidrawView extends TextFileView {
         new ResizeObserver((entries) => {
           if(!toolsPanelRef || !toolsPanelRef.current) return;
           const { width, height } = entries[0].contentRect;
+          if(width===0 || height ===0) return;
           const dx = toolsPanelRef.current.onRightEdge
             ? toolsPanelRef.current.previousWidth - width
             : 0;
@@ -3419,22 +3419,10 @@ export default class ExcalidrawView extends TextFileView {
     if (!api) return;
 
     const zoomLevel = this.plugin.settings.zoomToFitMaxLevel;
-    const ownerWindow = this.ownerWindow;
     if (selectResult) {
       api.selectElements(elements);
     }
     api.zoomToFit(elements, zoomLevel, 0.05);
-    /**REACT 18
-    ownerWindow.requestAnimationFrame(async ()=>{
-      if (selectResult) {
-        api.selectElements(elements);
-        await sleep(100);
-      }
-      ownerWindow.requestAnimationFrame(()=> {
-        api.zoomToFit(elements, zoomLevel, 0.05);
-      });
-    });
-    */
   }
 
   public getViewSelectedElements(): ExcalidrawElement[] {
@@ -3513,7 +3501,7 @@ export default class ExcalidrawView extends TextFileView {
     new Notice(t("INSERT_LINK_TO_ELEMENT_READY"));
   }
 
-  public async updateScene(
+  public updateScene(
     scene: {
       elements?: ExcalidrawElement[];
       appState?: any;
@@ -3521,7 +3509,6 @@ export default class ExcalidrawView extends TextFileView {
       commitToHistory?: boolean;
     },
     restore: boolean = false,
-    awaitFrame: boolean = false,
   ) {
     const api = this.excalidrawAPI;
     if (!api) {
@@ -3559,9 +3546,6 @@ export default class ExcalidrawView extends TextFileView {
         warningUnknowSeriousError();
       }
     }
-    /**REACT 18
-    if(awaitFrame) await awaitNextAnimationFrame(); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/747
-    */
   }
 }
 

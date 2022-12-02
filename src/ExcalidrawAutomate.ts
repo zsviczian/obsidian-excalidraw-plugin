@@ -37,7 +37,7 @@ import {
   wrapTextAtCharLength,
 } from "./utils/Utils";
 import { getNewOrAdjacentLeaf, isObsidianThemeDark } from "./utils/ObsidianUtils";
-import { AppState, Point } from "@zsviczian/excalidraw/types/types";
+import { AppState, BinaryFileData, Point } from "@zsviczian/excalidraw/types/types";
 import { EmbeddedFilesLoader, FileData } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
 //import Excalidraw from "@zsviczian/excalidraw";
@@ -1211,11 +1211,26 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
   };
 
   /**
-   * 
+   * sets the target view for EA. All the view operations and the access to Excalidraw API will be performend on this view
+   * if view is null or undefined, the function will first try setView("active"), then setView("first").
    * @param view 
-   * @returns 
+   * @returns targetView
    */
-  setView(view: ExcalidrawView | "first" | "active"): ExcalidrawView {
+  setView(view?: ExcalidrawView | "first" | "active"): ExcalidrawView {
+    if(!view) {
+      const v = app.workspace.getActiveViewOfType(ExcalidrawView);
+      if (v instanceof ExcalidrawView) {
+        this.targetView = v;
+      }
+      else {
+        const leaves =
+          app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+        if (!leaves || leaves.length == 0) {
+          return;
+        }
+        this.targetView = leaves[0].view as ExcalidrawView;
+      }
+    }
     if (view == "active") {
       const v = app.workspace.getActiveViewOfType(ExcalidrawView);
       if (!(v instanceof ExcalidrawView)) {
@@ -1348,34 +1363,84 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     });
   };
 
+  setViewModeEnabled(enabled: boolean): void {
+    //@ts-ignore
+    if (!this.targetView || !this.targetView?._loaded) {
+      errorMessage("targetView not set", "viewToggleFullScreen()");
+      return;
+    }
+    const view = this.targetView as ExcalidrawView;
+    view.updateScene({appState:{viewModeEnabled: enabled}});
+    view.toolsPanelRef?.current?.setExcalidrawViewMode(enabled);
+  }
+
+  /**
+   * This function gives you a more hands on access to Excalidraw.
+   * @param scene - The scene you want to load to Excalidraw
+   * @param restore - Use this if the scene includes legacy excalidraw file elements that need to be converted to the latest excalidraw data format (not a typical usecase)
+   * @returns 
+   */
+  viewUpdateScene (
+    scene: {
+      elements?: ExcalidrawElement[],
+      appState?: AppState,
+      files?: BinaryFileData,
+      commitToHistory?: boolean,
+    },
+    restore: boolean = false,
+  ):void {
+    //@ts-ignore
+    if (!this.targetView || !this.targetView?._loaded) {
+      errorMessage("targetView not set", "viewToggleFullScreen()");
+      return;
+    }
+    this.targetView.updateScene(scene,restore);
+  }
+
+  /**
+   * zoom tarteView to fit elements provided as input
+   * elements === [] will zoom to fit the entire scene
+   * selectElements toggles whether the elements should be in a selected state at the end of the operation
+   * @param selectElements 
+   * @param elements 
+   */
+  viewZoomToElements(
+    selectElements: boolean,
+    elements: ExcalidrawElement[]
+  ):void {
+    //@ts-ignore
+    if (!this.targetView || !this.targetView?._loaded) {
+      errorMessage("targetView not set", "viewToggleFullScreen()");
+      return;
+    }
+    this.targetView.zoomToElements(selectElements,elements);
+  }
+
   /**
    * 
    * @param forceViewMode 
    * @returns 
    */
   viewToggleFullScreen(forceViewMode: boolean = false): void {
-    if (app.isMobile) {
-      errorMessage("mobile not supported", "viewToggleFullScreen()");
-      return;
-    }
     //@ts-ignore
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "viewToggleFullScreen()");
       return;
     }
+    const view = this.targetView as ExcalidrawView;
+    const isFullscreen = view.isFullscreen();
     if (forceViewMode) {
-      const ref = this.getExcalidrawAPI();
-      this.targetView.updateScene({
+      view.updateScene({
         //elements: ref.getSceneElements(),
         appState: {
-          viewModeEnabled: true,
-          ...ref.appState,
+          viewModeEnabled: !isFullscreen,
         },
         commitToHistory: false,
       });
+      this.targetView.toolsPanelRef?.current?.setExcalidrawViewMode(!isFullscreen);
     }
-    const view = this.targetView as ExcalidrawView;
-    if (view.isFullscreen()) {
+    
+    if (isFullscreen) {
       view.exitFullscreen();
     } else {
       view.gotoFullscreen();

@@ -491,7 +491,25 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     code: "obsidian",
     desc: "Access functions and objects available on the <a onclick='window.open(\"https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts\")'>Obsidian Module</a>",
     after: "",
-  }
+  },
+  {
+    field: "setViewModeEnabled",
+    code: "setViewModeEnabled(enabled: boolean): void;",
+    desc: "Sets Excalidraw in the targetView to view-mode",
+    after: "",
+  },
+  {
+    field: "viewUpdateScene",
+    code: "viewUpdateScene(scene:{elements?:ExcalidrawElement[],appState?: AppState,files?: BinaryFileData,commitToHistory?: boolean,},restore:boolean=false):void",
+    desc: "Calls the ExcalidrawAPI updateScene function for the targetView. When restore=true, excalidraw will try to correct errors in the scene such as setting default values to missing element properties.",
+    after: "",
+  },
+  {
+    field: "viewZoomToElements",
+    code: "viewZoomToElements(selectElements: boolean,elements: ExcalidrawElement[]):void",
+    desc: "Zoom tarteView to fit elements provided as input. elements === [] will zoom to fit the entire scene. SelectElements toggles whether the elements should be in a selected state at the end of the operation.",
+    after: "",
+  },
 ];
 
 export const EXCALIDRAW_SCRIPTENGINE_INFO: SuggesterInfo[] = [
