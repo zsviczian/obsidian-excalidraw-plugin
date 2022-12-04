@@ -113,11 +113,20 @@ async function doAutoLayout() {
     "NETWORK_SIMPLEX",
   ];
 
+  const knownDirections = [
+    "UNDEFINED",
+    "RIGHT",
+    "LEFT",
+    "DOWN",
+    "UP"
+  ];
+
   let nodePlacementStrategy = "BRANDES_KOEPF";
   let componentComponentSpacing = "10";
   let nodeNodeSpacing = "100";
   let nodeNodeBetweenLayersSpacing = "100";
   let discoComponentLayoutAlgorithm = "org.eclipse.elk.layered";
+  let direction = "UNDEFINED";
 
   if (selectedAlgorithm === "org.eclipse.elk.layered") {
     nodePlacementStrategy = await utils.suggester(
@@ -125,6 +134,13 @@ async function doAutoLayout() {
       knownNodePlacementStrategy,
       "Node placement strategy"
     );
+
+    selectedDirection = await utils.suggester(
+      knownDirections,
+      knownDirections,
+      "Direction"
+    );
+    direction = selectedDirection??"UNDEFINED";
   } else if (selectedAlgorithm === "org.eclipse.elk.disco") {
     const componentLayoutAlgorithms = layoutAlgorithmsSimple.filter(al => al.id !== "org.eclipse.elk.disco");
     const selectedDiscoComponentLayoutAlgorithm = await utils.suggester(
@@ -173,6 +189,7 @@ async function doAutoLayout() {
     nodePlacementStrategy;
   layoutOptionsJson["org.eclipse.elk.disco.componentCompaction.componentLayoutAlgorithm"] = 
     discoComponentLayoutAlgorithm;
+  layoutOptionsJson["org.eclipse.elk.direction"] = direction;
 
   const graph = {
     id: "root",
