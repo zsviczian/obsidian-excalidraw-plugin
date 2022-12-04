@@ -14,7 +14,10 @@ if(elements.length === 0) {
   }
   elements = [elements[len]];
 } 
-elements.forEach((el)=>{
+
+ea.copyViewElementsToEAforEditing(elements);
+
+ea.getElements().forEach((el)=>{
   el.simulatePressure = false;
   el.type = "freedraw";
   el.pressures = [];
@@ -22,6 +25,8 @@ elements.forEach((el)=>{
   for(i=0;i<len;i++)
     el.pressures.push((len-i)/len);
 });
-ea.copyViewElementsToEAforEditing(elements);
-await ea.addElementsToView(false,false);
+
+await ea.addElementsToView(false,true);
 elements.forEach((el)=>ea.moveViewElementToZIndex(el.id,0));
+const ids=ea.getElements().map(el=>el.id);
+ea.selectElementsInView(ea.getViewElements().filter(el=>ids.contains(el.id)));
