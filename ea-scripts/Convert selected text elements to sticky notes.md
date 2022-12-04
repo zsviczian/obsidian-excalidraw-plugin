@@ -9,13 +9,12 @@ if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.5.21")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
-
-settings = ea.getScriptSettings();
+let settings = ea.getScriptSettings();
 //set default values on first run
 if(!settings["Border color"]) {
 	settings = {
 	  "Border color" : {
-			value: "transparent",
+			value: "#000000",
       description: "Any legal HTML color (#000000, rgb, color-name, etc.). Set to 'transparent' for transparent color."
 		},
 		"Background color" : {
@@ -28,27 +27,44 @@ if(!settings["Border color"]) {
 		  valueset: ["hachure","cross-hatch","solid"]
 		}
 	};
-	ea.setScriptSettings(settings);
+	await ea.setScriptSettings(settings);
 }
 
+if(!settings["Max sticky note width"]) {
+  settings["Max sticky note width"] = {
+    value: "600",
+    description: "Maximum width of new sticky note. If text is longer, it will be wrapped",
+	  valueset: ["400","600","800","1000","1200","1400","2000"]
+  }
+  await ea.setScriptSettings(settings);
+}
+const maxWidth = parseInt(settings["Max sticky note width"].value);
 const strokeColor = settings["Border color"].value;
 const backgroundColor = settings["Background color"].value;
 const fillStyle = settings["Background fill style"].value;
 
-elements = ea.getViewSelectedElements()
-             .filter((el)=>(el.type==="text")&&(el.containerId===null));
-if(elements.length===0) return;
+const elements = ea
+  .getViewSelectedElements()
+  .filter((el)=>(el.type==="text")&&(el.containerId===null));
+if(elements.length===0) {
+  new Notice("Please select a text element");
+  return;
+}
 ea.style.strokeColor = strokeColor;
 ea.style.backgroundColor = backgroundColor;
 ea.style.fillStyle = fillStyle;
 const padding = 6;
-let boxes = [];
-elements.forEach((el)=>{
-  const id = ea.addRect(el.x-padding,el.y-padding,el.width+2*padding,el.height+2*padding);
+const boxes = [];
+ea.copyViewElementsToEAforEditing(elements);
+ea.getElements().forEach((el)=>{
+  const width = el.width+2*padding;
+  const widthOK = width<=maxWidth;
+  const id = ea.addRect(el.x-padding,el.y-padding,widthOK?width:maxWidth,el.height+2*padding);
   boxes.push(id);
   ea.getElement(id).boundElements=[{type:"text",id:el.id}];
   el.containerId = id;
 });
-ea.copyViewElementsToEAforEditing(elements);
-await ea.addElementsToView(false,false);
-ea.selectElementsInView(ea.getViewElements().filter(el=>boxes.includes(el.id)));
+await ea.addElementsToView(false,true);
+const containers = ea.getViewElements().filter(el=>boxes.includes(el.id));
+ea.getExcalidrawAPI().updateContainerSize(containers);
+ea.selectElementsInView(containers);
