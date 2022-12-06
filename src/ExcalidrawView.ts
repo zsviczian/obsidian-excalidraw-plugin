@@ -2083,7 +2083,7 @@ export default class ExcalidrawView extends TextFileView {
           return { id: selectedElement[0].id, text: selectedElement[0].text };
         } //a text element was selected. Return text
 
-        if (selectedElement[0].type === "image") {
+        if (["image","arrow"].contains(selectedElement[0].type)) {
           return { id: null, text: null };
         }
 
@@ -3078,14 +3078,18 @@ export default class ExcalidrawView extends TextFileView {
                     const el = elements.filter((el:ExcalidrawElement)=>el.id === textElement.id);
                     if(el.length === 1) {
                       const clone = cloneElement(el[0]);
+                      const containerType = el[0].containerId
+                        ? api.getSceneElements().filter((e:ExcalidrawElement)=>e.id===el[0].containerId)?.[0]?.type
+                        : undefined;
                       this.excalidrawData.updateTextElement(
                         clone,
                         wrappedParsedText,
                         parsedText,
-                        true
+                        true,
+                        containerType
                       );
                       elements[elements.indexOf(el[0])] = clone;
-                      await this.updateScene({elements});
+                      this.updateScene({elements});
                       if(clone.containerId) this.updateContainerSize(clone.containerId);
                     }
                     
@@ -3322,11 +3326,11 @@ export default class ExcalidrawView extends TextFileView {
       const containers = containerId
         ? api
             .getSceneElements()
-            .filter((el: ExcalidrawElement) => el.id === containerId)
+            .filter((el: ExcalidrawElement) => el.id === containerId && el.type!=="arrow")
         : api
             .getSceneElements()
             .filter((el: ExcalidrawElement) =>
-              el.boundElements?.map((e) => e.type).includes("text"),
+              el.type!=="arrow" && el.boundElements?.map((e) => e.type).includes("text"),
             );
       if (containers.length > 0) {
         if (this.initialContainerSizeUpdate) {

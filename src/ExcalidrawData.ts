@@ -615,6 +615,7 @@ export class ExcalidrawData {
     newText: string,
     newOriginalText: string,
     forceUpdate: boolean = false,
+    containerType?: string,
   ) {
     if (forceUpdate || newText != sceneTextElement.text) {
       const measure = _measureText(
@@ -625,7 +626,7 @@ export class ExcalidrawData {
       sceneTextElement.text = newText;
       sceneTextElement.originalText = newOriginalText;
 
-      if (!sceneTextElement.containerId) {
+      if (!sceneTextElement.containerId || containerType==="arrow") {
         //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/376
         //I leave the setting of text width to excalidraw, when text is in a container
         //because text width is fixed to the container width
@@ -660,6 +661,7 @@ export class ExcalidrawData {
         ) : originalText,
         originalText,
         forceupdate,
+        container?.type,
       ); //(await this.getText(te.id))??te.text serves the case when the whole #Text Elements section is deleted by accident
     }
   }

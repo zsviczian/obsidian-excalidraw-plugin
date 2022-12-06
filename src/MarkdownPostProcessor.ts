@@ -198,7 +198,8 @@ const createImageDiv = async (
     if (attr.fheight) {
       el.setAttribute("h", attr.fheight);
     }
-    el.onClickEvent((ev) => {
+    let timer:NodeJS.Timeout;
+    const clickEvent = (ev:PointerEvent) => {
       if (
         ev.target instanceof Element &&
         ev.target.tagName.toLowerCase() != "img"
@@ -220,7 +221,15 @@ const createImageDiv = async (
           srcParts[2],
         );
       } //.ctrlKey||ev.metaKey);
+    };
+    el.addEventListener("pointerdown",(ev)=>{
+      timer = setTimeout(()=>clickEvent(ev),500);
     });
+    el.addEventListener("pointerup",()=>{
+      if(timer) clearTimeout(timer);
+      timer = null;
+    })
+    el.addEventListener("dblclick",clickEvent);
     el.addEventListener(RERENDER_EVENT, async (e) => {
       e.stopPropagation();
       el.empty();
