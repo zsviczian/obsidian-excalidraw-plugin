@@ -308,16 +308,8 @@ function loadELK(doAfterLoaded) {
 function normalizeSelectedArrows() {
   let gapValue = 2;
 
-  const selectedIndividualArrows = ea
-    .getMaximumGroups(ea.getViewSelectedElements())
-    .reduce(
-      (result, group) =>
-        group.length === 1 &&
-        (group[0].type === "arrow" || group[0].type === "line")
-          ? [...result, group[0]]
-          : result,
-      []
-    );
+  const selectedIndividualArrows = ea.getMaximumGroups(ea.getViewSelectedElements())
+    .reduce((result, g) => [...result, ...g.filter(el => el.type === 'arrow')], []);
 
   const allElements = ea.getViewElements();
   for (const arrow of selectedIndividualArrows) {
