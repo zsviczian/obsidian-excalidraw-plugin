@@ -26,8 +26,7 @@ if(!settings["Gap"]) {
 let gapValue = settings["Gap"].value;
 
 const selectedIndividualArrows = ea.getMaximumGroups(ea.getViewSelectedElements())
-	.reduce((result, group) => (group.length === 1 && (group[0].type === 'arrow' || group[0].type === 'line')) ? 
-			[...result, group[0]] : result, []);
+    .reduce((result, g) => [...result, ...g.filter(el => el.type === 'arrow')], []);
 
 const allElements = ea.getViewElements();
 for(const arrow of selectedIndividualArrows) {
