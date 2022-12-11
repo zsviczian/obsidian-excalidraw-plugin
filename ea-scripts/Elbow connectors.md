@@ -13,12 +13,49 @@ https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.h
 
 ```javascript
 */
+const selectedCenterConnectPoints = await utils.suggester(
+    ['Yes', 'No'],
+    [true, false],
+    "Center connect points?"
+  );
+const centerConnectPoints = selectedCenterConnectPoints??false;
+
+const allElements = ea.getViewElements();
 const elements = ea.getViewSelectedElements();
 
 const lines = elements.filter((el)=>el.type==="arrow" || el.type==="line");
 
 for (const line of lines) {
   if (line.points.length >= 3) {
+    if(centerConnectPoints) {
+      const startBindingEl = allElements.filter(el => el.id === (line.startBinding||{}).elementId)[0];
+	    const endBindingEl = allElements.filter(el => el.id === (line.endBinding||{}).elementId)[0];
+
+      if(startBindingEl) {
+        const startPointX = line.x +line.points[0][0];
+        if(startPointX >= startBindingEl.x && startPointX <= startBindingEl.x + startBindingEl.width) {
+          line.points[0][0] = startBindingEl.x + startBindingEl.width / 2 - line.x;
+        }
+
+        const startPointY = line.y +line.points[0][1];
+        if(startPointY >= startBindingEl.y && startPointY <= startBindingEl.y + startBindingEl.height) {
+          line.points[0][1] = startBindingEl.y + startBindingEl.height / 2 - line.y;
+        }
+      }
+
+      if(endBindingEl) {
+        const startPointX = line.x +line.points[line.points.length-1][0];
+        if(startPointX >= endBindingEl.x && startPointX <= endBindingEl.x + endBindingEl.width) {
+          line.points[line.points.length-1][0] = endBindingEl.x + endBindingEl.width / 2 - line.x;
+        }
+
+        const startPointY = line.y +line.points[line.points.length-1][1];
+        if(startPointY >= endBindingEl.y && startPointY <= endBindingEl.y + endBindingEl.height) {
+          line.points[line.points.length-1][1] = endBindingEl.y + endBindingEl.height / 2 - line.y;
+        }
+      }
+    }
+    
     for (var i = 0; i < line.points.length - 2; i++) {
       var p1;
       var p3;
