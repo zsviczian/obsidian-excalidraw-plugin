@@ -1,4 +1,4 @@
-import { ExcalidrawBindableElement, ExcalidrawElement, ExcalidrawImageElement, FileId, FillStyle, NonDeletedExcalidrawElement, StrokeSharpness, StrokeStyle } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawBindableElement, ExcalidrawElement, ExcalidrawImageElement, FileId, FillStyle, NonDeletedExcalidrawElement, RoundnessType, StrokeRoundness, StrokeStyle } from "@zsviczian/excalidraw/types/element/types";
 import { Point } from "@zsviczian/excalidraw/types/types";
 import { TFile, WorkspaceLeaf } from "obsidian";
 import { EmbeddedFilesLoader } from "./EmbeddedFileLoader";
@@ -28,7 +28,8 @@ export interface ExcalidrawAutomateInterface {
     strokeStyle: StrokeStyle; //type StrokeStyle = "solid" | "dashed" | "dotted"
     roughness: number;
     opacity: number;
-    strokeSharpness: StrokeSharpness; //type StrokeSharpness = "round" | "sharp"
+    strokeSharpness?: StrokeRoundness; //defaults to undefined, use strokeRoundess and roundess instead. Only kept for legacy script compatibility type StrokeRoundness = "round" | "sharp"
+    roundness: null | { type: RoundnessType; value?: number };
     fontFamily: number; //1: Virgil, 2:Helvetica, 3:Cascadia, 4:LocalFont
     fontSize: number;
     textAlign: string; //"left"|"right"|"center"

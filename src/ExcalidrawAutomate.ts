@@ -2,13 +2,14 @@ import ExcalidrawPlugin from "./main";
 import {
   FillStyle,
   StrokeStyle,
-  StrokeSharpness,
   ExcalidrawElement,
   ExcalidrawBindableElement,
   FileId,
   NonDeletedExcalidrawElement,
   ExcalidrawImageElement,
   ExcalidrawTextElement,
+  StrokeRoundness,
+  RoundnessType,
 } from "@zsviczian/excalidraw/types/element/types";
 import { normalizePath, Notice, TFile, WorkspaceLeaf } from "obsidian";
 import * as obsidian_module from "obsidian";
@@ -61,6 +62,7 @@ import RYBPlugin from "colormaster/plugins/ryb";
 import CMYKPlugin from "colormaster/plugins/cmyk";
 import { TInput } from "colormaster/types";
 import {ConversionResult, svgToExcalidraw} from "./svgToExcalidraw/parser"
+import { ROUNDNESS } from "./Constants";
 
 extendPlugins([
   HarmonyPlugin,
@@ -118,7 +120,8 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     strokeStyle: StrokeStyle; //type StrokeStyle = "solid" | "dashed" | "dotted"
     roughness: number;
     opacity: number;
-    strokeSharpness: StrokeSharpness; //type StrokeSharpness = "round" | "sharp"
+    strokeSharpness?: StrokeRoundness; //defaults to undefined, use strokeRoundess and roundess instead. Only kept for legacy script compatibility type StrokeRoundness = "round" | "sharp"
+    roundness: null | { type: RoundnessType; value?: number };
     fontFamily: number; //1: Virgil, 2:Helvetica, 3:Cascadia, 4:LocalFont
     fontSize: number;
     textAlign: string; //"left"|"right"|"center"
@@ -190,10 +193,12 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
   setStrokeSharpness(val: number) {
     switch (val) {
       case 0:
-        this.style.strokeSharpness = "round";
+        this.style.roundness = {
+          type: ROUNDNESS.LEGACY
+        }
         return "round";
       default:
-        this.style.strokeSharpness = "sharp";
+        this.style.roundness = null; //sharp
         return "sharp";
     }
   };
@@ -383,18 +388,17 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
           template?.appState?.currentItemFontSize ?? this.style.fontSize,
         currentItemTextAlign:
           template?.appState?.currentItemTextAlign ?? this.style.textAlign,
-        currentItemStrokeSharpness:
-          template?.appState?.currentItemStrokeSharpness ??
-          this.style.strokeSharpness,
         currentItemStartArrowhead:
           template?.appState?.currentItemStartArrowhead ??
           this.style.startArrowHead,
         currentItemEndArrowhead:
           template?.appState?.currentItemEndArrowhead ??
           this.style.endArrowHead,
-        currentItemLinearStrokeSharpness:
-          template?.appState?.currentItemLinearStrokeSharpness ??
-          this.style.strokeSharpness,
+        currentItemRoundness: //type StrokeRoundness = "round" | "sharp"
+          template?.appState?.currentItemLinearStrokeSharpness ?? //legacy compatibility
+          template?.appState?.currentItemStrokeSharpness ?? //legacy compatibility
+          template?.appState?.currentItemRoundness ??
+          this.style.roundness ? "round":"sharp",
         gridSize: template?.appState?.gridSize ?? this.canvas.gridSize,
         colorPalette: template?.appState?.colorPalette ?? this.colorPalette,
       },
@@ -584,7 +588,11 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       strokeStyle: this.style.strokeStyle,
       roughness: this.style.roughness,
       opacity: this.style.opacity,
-      strokeSharpness: this.style.strokeSharpness,
+      roundness: this.style.strokeSharpness
+        ? (this.style.strokeSharpness === "round"
+          ? {type: ROUNDNESS.LEGACY}
+          : null)
+        : this.style.roundness,
       seed: Math.floor(Math.random() * 100000),
       version: 1,
       versionNonce: Math.floor(Math.random() * 1000000000),
@@ -1186,7 +1194,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       strokeStyle: "solid",
       roughness: 1,
       opacity: 100,
-      strokeSharpness: "sharp",
+      roundness: null,
       fontFamily: 1,
       fontSize: 20,
       textAlign: "left",

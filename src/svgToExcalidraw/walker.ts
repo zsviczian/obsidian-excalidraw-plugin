@@ -25,6 +25,7 @@ import {
 import { getTransformMatrix, transformPoints } from "./transform";
 import { pointsOnPath } from "points-on-path";
 import { randomId, getWindingOrder } from "./utils";
+import { ROUNDNESS } from "../Constants";
 
 const SUPPORTED_TAGS = [
   "svg",
@@ -352,7 +353,7 @@ const walkers = {
       y: result[13],
       width: result[0],
       height: result[5],
-      strokeSharpness: isRound ? "round" : "sharp",
+      roundness: isRound ? {type:ROUNDNESS.LEGACY} : null,
     };
 
     scene.elements.push(rect);

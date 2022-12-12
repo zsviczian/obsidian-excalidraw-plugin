@@ -73,9 +73,9 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
-    field: "style.strokeSharpness",
-    code: "[string]",
-    desc: "'round' | 'sharp'",
+    field: "style.roundness",
+    code: "[null | { type: RoundnessType; value?: number };]",
+    desc: "set to null for 'sharp', else the stroke will be 'round'<br>type: 1==LEGACY,<br>2==PROPORTIONAL RADIUS,<br>3==ADAPTIVE RADIUS, value: adaptive factor defaults to 32",
     after: "",
   },
   {

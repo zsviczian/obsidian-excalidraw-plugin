@@ -1,4 +1,4 @@
-import { ExcalidrawElement, ExcalidrawLinearElement, ExcalidrawTextElement, FillStyle, GroupId, StrokeSharpness, StrokeStyle } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawElement, ExcalidrawLinearElement, ExcalidrawTextElement, FillStyle, GroupId, RoundnessType,  StrokeStyle } from "@zsviczian/excalidraw/types/element/types";
 
 export type PathCommand = {
   type: string;
@@ -53,7 +53,7 @@ type _ExcalidrawElementBase = Readonly<{
   fillStyle: FillStyle;
   strokeWidth: number;
   strokeStyle: StrokeStyle;
-  strokeSharpness: StrokeSharpness;
+  roundness: null | { type: RoundnessType; value?: number };
   roughness: number;
   opacity: number;
   width: number;

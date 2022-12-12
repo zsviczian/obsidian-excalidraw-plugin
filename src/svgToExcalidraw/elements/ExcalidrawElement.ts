@@ -1,6 +1,6 @@
 import { randomId, randomInteger } from "../utils";
 
-import { ExcalidrawLinearElement, FillStyle, GroupId, StrokeSharpness, StrokeStyle } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawLinearElement, FillStyle, GroupId, RoundnessType, StrokeStyle } from "@zsviczian/excalidraw/types/element/types";
 
 export type Point = [number, number];
 
@@ -13,7 +13,7 @@ export type ExcalidrawElementBase = {
   fillStyle: FillStyle;
   strokeWidth: number;
   strokeStyle: StrokeStyle;
-  strokeSharpness: StrokeSharpness;
+  roundness: null | { type: RoundnessType; value?: number };
   roughness: number;
   opacity: number;
   width: number;
@@ -71,7 +71,7 @@ export function createExElement(): ExcalidrawElementBase {
     fillStyle: "solid",
     strokeWidth: 1,
     strokeStyle: "solid",
-    strokeSharpness: "sharp",
+    roundness: null,
     roughness: 0,
     opacity: 100,
     width: 0,
