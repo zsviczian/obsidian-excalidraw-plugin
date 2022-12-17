@@ -16,7 +16,8 @@ import {
   request,
   MetadataCache,
   FrontMatterCache,
-  Command
+  Command,
+  requireApiVersion
 } from "obsidian";
 import {
   BLANK_DRAWING,
@@ -96,6 +97,7 @@ import {
   markdownPostProcessor,
   observer,
 } from "./MarkdownPostProcessor";
+
 import { FieldSuggester } from "./dialogs/FieldSuggester";
 import { ReleaseNotes } from "./dialogs/ReleaseNotes";
 import { decompressFromBase64 } from "lz-string";
@@ -104,6 +106,7 @@ import * as React from "react";
 import { ScriptInstallPrompt } from "./dialogs/ScriptInstallPrompt";
 import { check } from "prettier";
 import Taskbone from "./ocr/Taskbone";
+import { hoverEvent_Legacy, initializeMarkdownPostProcessor_Legacy, markdownPostProcessor_Legacy, observer_Legacy } from "./MarkdownPostProcessor_Legacy";
 
 
 declare module "obsidian" {
@@ -238,7 +241,11 @@ export default class ExcalidrawPlugin extends Plugin {
     //Compatibility mode with .excalidraw files
     this.registerExtensions(["excalidraw"], VIEW_TYPE_EXCALIDRAW);
 
-    this.addMarkdownPostProcessor();
+    if(requireApiVersion("1.1.6")) {
+      this.addMarkdownPostProcessor();
+    } else {
+      this.addLegacyMarkdownPostProcessor();
+    }
     this.registerInstallCodeblockProcessor();
     this.addThemeObserver();
     this.experimentalFileTypeDisplayToggle(this.settings.experimentalFileType);
@@ -605,6 +612,18 @@ export default class ExcalidrawPlugin extends Plugin {
 
     //monitoring for div.popover.hover-popover.file-embed.is-loaded to be added to the DOM tree
     this.observer = observer;
+    this.observer.observe(document, { childList: true, subtree: true });
+  }
+
+  private addLegacyMarkdownPostProcessor() {
+    initializeMarkdownPostProcessor_Legacy(this);
+    this.registerMarkdownPostProcessor(markdownPostProcessor_Legacy);
+
+    // internal-link quick preview
+    this.registerEvent(this.app.workspace.on("hover-link", hoverEvent_Legacy));
+
+    //monitoring for div.popover.hover-popover.file-embed.is-loaded to be added to the DOM tree
+    this.observer = observer_Legacy;
     this.observer.observe(document, { childList: true, subtree: true });
   }
 

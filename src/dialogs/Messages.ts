@@ -17,7 +17,7 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
-"1.8.5":`
+"1.8.6":`
 ## New from Excalidraw.com:
 - Better default radius for rectangles [#5553](https://github.com/excalidraw/excalidraw/pull/5553). Existing drawings will look unchanged, this applies only to new rectangles.
 ![image|200](https://user-images.githubusercontent.com/5153846/206264345-59fd7436-e87b-4bc9-ade8-9e6f6a6fd8c1.png)
@@ -34,8 +34,9 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 >          DEFAULT_ADAPTIVE_RADIUS = 32;
 
 ## New
-- Improved embedding into Obsidian Canvas
-- Improved embedding into Markdown documents
+- For Obsidian 1.1.6 and above
+  - Improved embedding into Obsidian Canvas
+  - Improved embedding into Markdown documents
 - Added setting under ${String.fromCharCode(96)}Display/Default mode when opening Excalidraw${String.fromCharCode(96)} to always open the drawing in view mode on Mobile, but in normal mode on desktop. [#939](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/939)
 
 ## Fixed

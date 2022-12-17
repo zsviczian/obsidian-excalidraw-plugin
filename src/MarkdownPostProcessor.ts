@@ -21,7 +21,6 @@ import {
   svgToBase64,
 } from "./utils/Utils";
 import { isObsidianThemeDark } from "./utils/ObsidianUtils";
-import { image } from "html2canvas/dist/types/css/types/image";
 
 interface imgElementAttributes {
   file?: TFile;
@@ -80,7 +79,7 @@ const getIMG = async (
     withTheme: forceTheme ? true : plugin.settings.exportWithTheme,
   };
   const img = createEl("img");
-  let style = `max-width:${imgAttributes.fwidth}px; width:100%;`; //removed !important https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/886
+  let style = `max-width:${imgAttributes.fwidth}${imgAttributes.fwidth.match(/\d$/) ? "px":""}; width:100%;`; //removed !important https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/886
   if (imgAttributes.fheight) {
     style += `height:${imgAttributes.fheight}px;`;
   }
@@ -399,15 +398,13 @@ const tmpObsidianWYSIWYG = async (
 
   const markdownEmbed = internalEmbedDiv.hasClass("markdown-embed");
   const markdownReadingView = internalEmbedDiv.hasClass("markdown-reading-view");
-  if (!internalEmbedDiv.hasClass("internal-embed") &&
-       ( markdownEmbed || markdownReadingView)
-  ) {
+  if (!internalEmbedDiv.hasClass("internal-embed") && (markdownEmbed || markdownReadingView)) {
     //We are processing the markdown preview of an actual Excalidraw file
     //the excalidraw file in markdown preview mode
     const isFrontmatterDiv = Boolean(el.querySelector(".frontmatter"));
     el.empty();
     if(!isFrontmatterDiv) {
-      containerEl.removeChild(el);
+      if(el.parentElement === containerEl) containerEl.removeChild(el);
       return;
     }
     internalEmbedDiv.empty();
