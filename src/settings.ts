@@ -565,9 +565,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("DEFAULT_OPEN_MODE_DESC")))
       .addDropdown((dropdown) =>
         dropdown
-          .addOption("normal", "Normal Mode")
-          .addOption("zen", "Zen Mode")
-          .addOption("view", "View Mode")
+          .addOption("normal", "Always in normal-mode")
+          .addOption("zen", "Always in zen-mode")
+          .addOption("view", "Always in view-mode")
+          .addOption("view-mobile", "Usually normal, but view-mode on Phone")
           .setValue(this.plugin.settings.defaultMode)
           .onChange(async (value) => {
             this.plugin.settings.defaultMode = value;

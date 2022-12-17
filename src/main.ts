@@ -2099,8 +2099,8 @@ export default class ExcalidrawPlugin extends Plugin {
       e.initEvent(RERENDER_EVENT, true, false);
       ownerDocument
         .querySelectorAll(
-          `div[class^='excalidraw-svg']${
-            filepath ? `[src='${filepath.replaceAll("'", "\\'")}']` : ""
+          `img[class^='excalidraw-svg']${
+            filepath ? `[fileSource='${filepath.replaceAll("'", "\\'")}']` : ""
           }`,
         )
         .forEach((el) => el.dispatchEvent(e));  

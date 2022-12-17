@@ -17,6 +17,33 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.8.5":`
+## New from Excalidraw.com:
+- Better default radius for rectangles [#5553](https://github.com/excalidraw/excalidraw/pull/5553). Existing drawings will look unchanged, this applies only to new rectangles.
+![image|200](https://user-images.githubusercontent.com/5153846/206264345-59fd7436-e87b-4bc9-ade8-9e6f6a6fd8c1.png)
+> [!attention]- ExcalidrawAutomate technical details
+> - ${String.fromCharCode(96)}strokeSharpness${String.fromCharCode(96)} is now deprecated
+> - use roundness instead
+>    - ${String.fromCharCode(96)}roundness === null${String.fromCharCode(96)} is legacy ${String.fromCharCode(96)}strokeSharpness = "sharp"${String.fromCharCode(96)}
+>    - ${String.fromCharCode(96)}roundness = { type: RoundnessType; value?: number }${String.fromCharCode(96)}
+>      - type: 1, LEGACY, type:2 PROPORTIONAL_RADIUS, type:3 ADAPTIVE_RADIUS: 3
+>      - value:
+>        - Radius represented as % of element's largest side (width/height).
+>          DEFAULT_PROPORTIONAL_RADIUS = 0.25;
+>        - Fixed radius for the ADAPTIVE_RADIUS algorithm. In pixels.
+>          DEFAULT_ADAPTIVE_RADIUS = 32;
+
+## New
+- Improved embedding into Obsidian Canvas
+- Improved embedding into Markdown documents
+- Added setting under ${String.fromCharCode(96)}Display/Default mode when opening Excalidraw${String.fromCharCode(96)} to always open the drawing in view mode on Mobile, but in normal mode on desktop. [#939](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/939)
+
+## Fixed
+- Zoom reset tooltip appears twice [#942](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/942)
+- Hid export library from library menu as it does not work due to Obsidian limitations. Use the command palette export library instead.
+- Arrow with label did not get exported and embedded correctly [#941](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/941)
+![image|200](https://user-images.githubusercontent.com/22638687/207845868-b352ddb1-7994-4f13-a0b2-f2e19bd72935.png)
+`,
 "1.8.4":`
 ## New from Excalidraw.com
 - Labels on Arrows!!! [#5723](https://github.com/excalidraw/excalidraw/pull/5723)

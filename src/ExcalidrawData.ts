@@ -1328,7 +1328,9 @@ export class ExcalidrawData {
 
   public getOpenMode(): { viewModeEnabled: boolean; zenModeEnabled: boolean } {
     const fileCache = this.app.metadataCache.getFileCache(this.file);
-    let mode = this.plugin.settings.defaultMode;
+    let mode = this.plugin.settings.defaultMode === "view-mobile"
+      ? (this.plugin.device.isPhone ? "view" : "normal")
+      : this.plugin.settings.defaultMode;
     if (
       fileCache?.frontmatter &&
       fileCache.frontmatter[FRONTMATTER_KEY_DEFAULT_MODE] != null

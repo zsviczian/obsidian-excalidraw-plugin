@@ -21,6 +21,7 @@ import {
   svgToBase64,
 } from "./utils/Utils";
 import { isObsidianThemeDark } from "./utils/ObsidianUtils";
+import { image } from "html2canvas/dist/types/css/types/image";
 
 interface imgElementAttributes {
   file?: TFile;
@@ -185,63 +186,77 @@ const getIMG = async (
   return img;
 };
 
+const createImgElement = async (
+  attr: imgElementAttributes,
+) :Promise<HTMLElement> => {
+  const img = await getIMG(attr);
+  img.setAttribute("fileSource", attr.fname);
+  if (attr.fwidth) {
+    img.setAttribute("w", attr.fwidth);
+  }
+  if (attr.fheight) {
+    img.setAttribute("h", attr.fheight);
+  }
+
+  let timer:NodeJS.Timeout;
+  const clickEvent = (ev:PointerEvent) => {
+    if (
+      ev.target instanceof Element &&
+      ev.target.tagName.toLowerCase() != "img"
+    ) {
+      return;
+    }
+    const src = img.getAttribute("fileSource");
+    if (src) {
+      const srcParts = src.match(/([^#]*)(.*)/);
+      if(!srcParts) return;
+      plugin.openDrawing(
+        vault.getAbstractFileByPath(srcParts[1]) as TFile,
+        ev[CTRL_OR_CMD]
+          ? "new-pane"
+          : (ev.metaKey && !app.isMobile)
+            ? "popout-window"
+            : "active-pane",
+        true,
+        srcParts[2],
+      );
+    } //.ctrlKey||ev.metaKey);
+  };
+  img.addEventListener("pointerdown",(ev)=>{
+    if(img?.parentElement?.hasClass("canvas-node-content")) return;
+    timer = setTimeout(()=>clickEvent(ev),500);
+  });
+  img.addEventListener("pointerup",()=>{
+    if(timer) clearTimeout(timer);
+    timer = null;
+  })
+  img.addEventListener("dblclick",clickEvent);
+  img.addEventListener(RERENDER_EVENT, async (e) => {
+    e.stopPropagation();
+    const parent = img.parentElement;
+    const imgMaxWidth = img.style.maxWidth;
+    const imgMaxHeigth = img.style.maxHeight;
+    const fileSource = img.getAttribute("fileSource");
+    const newImg = await createImgElement({
+      fname: fileSource,
+      fwidth: img.getAttribute("w"),
+      fheight: img.getAttribute("h"),
+      style: img.getAttribute("class"),
+    });
+    parent.empty();
+    newImg.style.maxHeight = imgMaxHeigth;
+    newImg.style.maxWidth = imgMaxWidth;
+    newImg.setAttribute("fileSource",fileSource);
+    parent.append(newImg);
+  });
+  return img;
+}
+
 const createImageDiv = async (
   attr: imgElementAttributes,
 ): Promise<HTMLDivElement> => {
-  const img = await getIMG(attr);
-  return createDiv(attr.style, (el) => {
-    el.append(img);
-    el.setAttribute("src", attr.fname);
-    if (attr.fwidth) {
-      el.setAttribute("w", attr.fwidth);
-    }
-    if (attr.fheight) {
-      el.setAttribute("h", attr.fheight);
-    }
-    let timer:NodeJS.Timeout;
-    const clickEvent = (ev:PointerEvent) => {
-      if (
-        ev.target instanceof Element &&
-        ev.target.tagName.toLowerCase() != "img"
-      ) {
-        return;
-      }
-      const src = el.getAttribute("src");
-      if (src) {
-        const srcParts = src.match(/([^#]*)(.*)/);
-        if(!srcParts) return;
-        plugin.openDrawing(
-          vault.getAbstractFileByPath(srcParts[1]) as TFile,
-          ev[CTRL_OR_CMD]
-            ? "new-pane"
-            : (ev.metaKey && !app.isMobile)
-              ? "popout-window"
-              : "active-pane",
-          true,
-          srcParts[2],
-        );
-      } //.ctrlKey||ev.metaKey);
-    };
-    el.addEventListener("pointerdown",(ev)=>{
-      timer = setTimeout(()=>clickEvent(ev),500);
-    });
-    el.addEventListener("pointerup",()=>{
-      if(timer) clearTimeout(timer);
-      timer = null;
-    })
-    el.addEventListener("dblclick",clickEvent);
-    el.addEventListener(RERENDER_EVENT, async (e) => {
-      e.stopPropagation();
-      el.empty();
-      const img = await getIMG({
-        fname: el.getAttribute("src"),
-        fwidth: el.getAttribute("w"),
-        fheight: el.getAttribute("h"),
-        style: el.getAttribute("class"),
-      });
-      el.append(img);
-    });
-  });
+  const img = await createImgElement(attr);
+  return createDiv(attr.style, (el) => el.append(img));
 };
 
 const processReadingMode = async (
@@ -345,101 +360,106 @@ const tmpObsidianWYSIWYG = async (
     return;
   }
 
-  //The timeout gives time for Obsidian to attach el to the displayed document
-  //Once the element is attached, I can traverse up the dom tree to find .internal-embed
-  //If internal embed is not found, it means the that the excalidraw.md file
-  //is being rendered in "reading" mode. In that case, the image with the default width
-  //specified in setting should be displayed
-  //if .internal-embed is found, then contents is replaced with the image using the
+  //internal-embed: Excalidraw is embedded into a markdown document
+  //markdown-reading-view: we are processing the markdown reading view of an actual Excalidraw file
+  //markdown-embed: we are processing the hover preview of a markdown file
   //alt, width, and height attributes of .internal-embed to size and style the image
-  setTimeout(async () => {
-    //wait for el to be attached to the displayed document
-    let counter = 0;
-    while(!el.parentElement && counter++<=50) await sleep(50);
-    if(!el.parentElement) return;
-
-    let internalEmbedDiv: HTMLElement = el;
-    while (
-      !internalEmbedDiv.hasClass("dataview") &&
-      !internalEmbedDiv.hasClass("cm-preview-code-block") &&
-      !internalEmbedDiv.hasClass("cm-embed-block") &&
-      !internalEmbedDiv.hasClass("internal-embed") &&
-      internalEmbedDiv.parentElement
-    ) {
-      internalEmbedDiv = internalEmbedDiv.parentElement;
-    }
-     
-    if(
-      internalEmbedDiv.hasClass("dataview") ||
-      internalEmbedDiv.hasClass("cm-preview-code-block") ||
-      internalEmbedDiv.hasClass("cm-embed-block")
-    ) { 
-      return; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/835
-    }
-
-    const attr: imgElementAttributes = {
-      fname: ctx.sourcePath,
-      fheight: "",
-      fwidth: getDefaultWidth(plugin),
-      style: "excalidraw-svg",
-    };
     
-    attr.file = file;
+  //@ts-ignore
+  const containerEl = ctx.containerEl;
+  let internalEmbedDiv: HTMLElement = containerEl;
+  while (
+    !internalEmbedDiv.hasClass("dataview") &&
+    !internalEmbedDiv.hasClass("cm-preview-code-block") &&
+    !internalEmbedDiv.hasClass("cm-embed-block") &&
+    !internalEmbedDiv.hasClass("internal-embed") &&
+    !internalEmbedDiv.hasClass("markdown-reading-view") &&
+    !internalEmbedDiv.hasClass("markdown-embed") &&
+    internalEmbedDiv.parentElement
+  ) {
+    internalEmbedDiv = internalEmbedDiv.parentElement;
+  }
+    
+  if(
+    internalEmbedDiv.hasClass("dataview") ||
+    internalEmbedDiv.hasClass("cm-preview-code-block") ||
+    internalEmbedDiv.hasClass("cm-embed-block")
+  ) { 
+    return; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/835
+  }
 
-    if (!internalEmbedDiv.hasClass("internal-embed")) {
-      //We are processing the markdown preview of an actual Excalidraw file
-      //This could be in a hover preview of the file
-      //Or the file could be in markdown mode and the user switched markdown
-      //view of the drawing to reading mode
-      el.empty();
-      const mdPreviewSection = el.parentElement;
-      if(!mdPreviewSection.hasClass("markdown-preview-section")) return;
-      if(mdPreviewSection.hasAttribute("ready")) {
-        mdPreviewSection.removeChild(el);
-        return;
-      }
-      mdPreviewSection.setAttribute("ready","");
-      const imgDiv = await createImageDiv(attr);
-      el.appendChild(imgDiv);
-      return;
-    }
+  const attr: imgElementAttributes = {
+    fname: ctx.sourcePath,
+    fheight: "",
+    fwidth: getDefaultWidth(plugin),
+    style: "excalidraw-svg",
+  };
+  
+  attr.file = file;
 
-    if(isTextOnlyEmbed(internalEmbedDiv)) {
-      //legacy reference to a block or section as text
-      //should be embedded as legacy text
-      return;
-    }
-
+  const markdownEmbed = internalEmbedDiv.hasClass("markdown-embed");
+  const markdownReadingView = internalEmbedDiv.hasClass("markdown-reading-view");
+  if (!internalEmbedDiv.hasClass("internal-embed") &&
+       ( markdownEmbed || markdownReadingView)
+  ) {
+    //We are processing the markdown preview of an actual Excalidraw file
+    //the excalidraw file in markdown preview mode
+    const isFrontmatterDiv = Boolean(el.querySelector(".frontmatter"));
     el.empty();
-
-    if(internalEmbedDiv.hasAttribute("ready")) {  
+    if(!isFrontmatterDiv) {
+      containerEl.removeChild(el);
       return;
     }
-    internalEmbedDiv.setAttribute("ready","");
-
     internalEmbedDiv.empty();
-    const imgDiv = await processInternalEmbed(internalEmbedDiv,file);
+    const imgDiv = await createImageDiv(attr);
+    if(markdownEmbed) {
+      internalEmbedDiv.addClass("markdown-embed");  
+      if(imgDiv.firstChild instanceof HTMLElement) {
+        imgDiv.firstChild.style.maxHeight = "100%";
+        imgDiv.firstChild.style.maxWidth = null;
+        internalEmbedDiv.appendChild(imgDiv.firstChild);
+        return;  
+      }
+    }
     internalEmbedDiv.appendChild(imgDiv);
+    return;
+  }
 
-    //timer to avoid the image flickering when the user is typing
-    let timer: NodeJS.Timeout = null;
-    const observer = new MutationObserver((m) => {
-      if (!["alt", "width", "height"].contains(m[0]?.attributeName)) {
-        return;
-      }
-      if (timer) {
-        clearTimeout(timer);
-      }
-      timer = setTimeout(async () => {
-        timer = null;
-        internalEmbedDiv.empty();
-        const imgDiv = await processInternalEmbed(internalEmbedDiv,file);
-        internalEmbedDiv.appendChild(imgDiv);    
-      }, 500);
-    });
-    observer.observe(internalEmbedDiv, {
-      attributes: true, //configure it to listen to attribute changes
-    });
+  if(isTextOnlyEmbed(internalEmbedDiv)) {
+    //legacy reference to a block or section as text
+    //should be embedded as legacy text
+    return;
+  }
+
+  el.empty();
+
+  if(internalEmbedDiv.hasAttribute("ready")) {  
+    return;
+  }
+  internalEmbedDiv.setAttribute("ready","");
+
+  internalEmbedDiv.empty();
+  const imgDiv = await processInternalEmbed(internalEmbedDiv,file);
+  internalEmbedDiv.appendChild(imgDiv);
+
+  //timer to avoid the image flickering when the user is typing
+  let timer: NodeJS.Timeout = null;
+  const observer = new MutationObserver((m) => {
+    if (!["alt", "width", "height"].contains(m[0]?.attributeName)) {
+      return;
+    }
+    if (timer) {
+      clearTimeout(timer);
+    }
+    timer = setTimeout(async () => {
+      timer = null;
+      internalEmbedDiv.empty();
+      const imgDiv = await processInternalEmbed(internalEmbedDiv,file);
+      internalEmbedDiv.appendChild(imgDiv);    
+    }, 500);
+  });
+  observer.observe(internalEmbedDiv, {
+    attributes: true, //configure it to listen to attribute changes
   });
 };
 
