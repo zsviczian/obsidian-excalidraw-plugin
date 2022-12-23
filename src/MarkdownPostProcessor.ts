@@ -55,6 +55,7 @@ export const initializeMarkdownPostProcessor = (p: ExcalidrawPlugin) => {
  */
 const getIMG = async (
   imgAttributes: imgElementAttributes,
+  onCanvas: boolean = false,
 ): Promise<HTMLElement> => {
   let file = imgAttributes.file;
   if (!imgAttributes.file) {
@@ -83,7 +84,7 @@ const getIMG = async (
   if (imgAttributes.fheight) {
     style += `height:${imgAttributes.fheight}px;`;
   }
-  img.setAttribute("style", style);
+  if(!onCanvas) img.setAttribute("style", style);
   img.addClass(imgAttributes.style);
 
   const theme =
@@ -187,8 +188,9 @@ const getIMG = async (
 
 const createImgElement = async (
   attr: imgElementAttributes,
+  onCanvas: boolean = false,
 ) :Promise<HTMLElement> => {
-  const img = await getIMG(attr);
+  const img = await getIMG(attr,onCanvas);
   img.setAttribute("fileSource", attr.fname);
   if (attr.fwidth) {
     img.setAttribute("w", attr.fwidth);
@@ -196,6 +198,8 @@ const createImgElement = async (
   if (attr.fheight) {
     img.setAttribute("h", attr.fheight);
   }
+  img.setAttribute("draggable","false");
+  img.setAttribute("onCanvas",onCanvas?"true":"false");
 
   let timer:NodeJS.Timeout;
   const clickEvent = (ev:PointerEvent) => {
@@ -236,15 +240,18 @@ const createImgElement = async (
     const imgMaxWidth = img.style.maxWidth;
     const imgMaxHeigth = img.style.maxHeight;
     const fileSource = img.getAttribute("fileSource");
+    const onCanvas = img.getAttribute("onCanvas") === "true";
     const newImg = await createImgElement({
       fname: fileSource,
       fwidth: img.getAttribute("w"),
       fheight: img.getAttribute("h"),
       style: img.getAttribute("class"),
-    });
+    }, onCanvas);
     parent.empty();
-    newImg.style.maxHeight = imgMaxHeigth;
-    newImg.style.maxWidth = imgMaxWidth;
+    if(!onCanvas) {
+      newImg.style.maxHeight = imgMaxHeigth;
+      newImg.style.maxWidth = imgMaxWidth;
+    }
     newImg.setAttribute("fileSource",fileSource);
     parent.append(newImg);
   });
@@ -253,8 +260,9 @@ const createImgElement = async (
 
 const createImageDiv = async (
   attr: imgElementAttributes,
+  onCanvas: boolean = false
 ): Promise<HTMLDivElement> => {
-  const img = await createImgElement(attr);
+  const img = await createImgElement(attr, onCanvas);
   return createDiv(attr.style, (el) => el.append(img));
 };
 
@@ -408,15 +416,20 @@ const tmpObsidianWYSIWYG = async (
       return;
     }
     internalEmbedDiv.empty();
-    const imgDiv = await createImageDiv(attr);
+    const onCanvas = internalEmbedDiv.hasClass("canvas-node-content");
+    const imgDiv = await createImageDiv(attr, onCanvas);
     if(markdownEmbed) {
-      internalEmbedDiv.addClass("markdown-embed");  
-      if(imgDiv.firstChild instanceof HTMLElement) {
+      if(onCanvas) {
+        internalEmbedDiv.removeClass("markdown-embed");
+        internalEmbedDiv.addClass("media-embed");
+        internalEmbedDiv.addClass("image-embed");
+      }
+      if(!onCanvas && imgDiv.firstChild instanceof HTMLElement) {
         imgDiv.firstChild.style.maxHeight = "100%";
         imgDiv.firstChild.style.maxWidth = null;
-        internalEmbedDiv.appendChild(imgDiv.firstChild);
-        return;  
       }
+      internalEmbedDiv.appendChild(imgDiv.firstChild);
+      return;
     }
     internalEmbedDiv.appendChild(imgDiv);
     return;

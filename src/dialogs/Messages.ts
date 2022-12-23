@@ -17,6 +17,22 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.8.7":`
+## New from Excalidraw.com
+- Support shrinking text containers to their original height when text is removed [#6025](https://github.com/excalidraw/excalidraw/pull/6025)
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://user-images.githubusercontent.com/14358394/209404092-579d54e9-7003-48ef-8b82-84be08ba6246.mp4" title="Demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## Fixed
+- removed the white background when editing arrow-label [#6033](https://github.com/excalidraw/excalidraw/pull/6033)
+- Minor style tweaks
+  - for embedding Excalidraw into Obsidian Canvas. e.g. dragging no longer accidentally creates an image copy of the drawing, and
+  - style tweaks on the Excalidraw canvas
+
+## New
+- If you set a different text color and sticky note border color, now if you change the border color, the text color will not be changed.
+`,
 "1.8.6":`
 ## New from Excalidraw.com:
 - Better default radius for rectangles [#5553](https://github.com/excalidraw/excalidraw/pull/5553). Existing drawings will look unchanged, this applies only to new rectangles.
