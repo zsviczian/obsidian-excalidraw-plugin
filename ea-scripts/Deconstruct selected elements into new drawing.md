@@ -67,5 +67,6 @@ setTimeout(async ()=>{
   ea.deleteViewElements(els);
   ea.clear();
   await ea.addImage(bb.topX,bb.topY,file,false);
-  ea.addElementsToView(false, true, true);
+  await ea.addElementsToView(false, true, true);
+  ea.getExcalidrawAPI().history.clear(); //to avoid undo/redo messing up the decomposition
 },1000);

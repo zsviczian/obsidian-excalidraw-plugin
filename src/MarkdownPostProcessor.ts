@@ -80,7 +80,7 @@ const getIMG = async (
     withTheme: forceTheme ? true : plugin.settings.exportWithTheme,
   };
   const img = createEl("img");
-  let style = `max-width:${imgAttributes.fwidth}${imgAttributes.fwidth.match(/\d$/) ? "px":""}; width:100%;`; //removed !important https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/886
+  let style = `max-width:${imgAttributes.fwidth}${imgAttributes.fwidth.match(/\d$/) ? "px":""}; `; //width:100%;`; //removed !important https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/886
   if (imgAttributes.fheight) {
     style += `height:${imgAttributes.fheight}px;`;
   }
@@ -180,8 +180,8 @@ const getIMG = async (
     return null;
   }
   svg = embedFontsInSVG(svg, plugin);
-  svg.removeAttribute("width");
-  svg.removeAttribute("height");
+  //svg.removeAttribute("width");
+  //svg.removeAttribute("height");
   img.setAttribute("src", svgToBase64(svg.outerHTML));
   return img;
 };

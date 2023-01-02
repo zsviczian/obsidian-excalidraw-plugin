@@ -36,8 +36,8 @@ if(!lineEl || !["line","arrow"].contains(lineEl.type)) {
 if(app.isMobile) {
   ea.viewToggleFullScreen(true);
 } else {
-  await contentEl.requestFullscreen();
-  await sleep(50);
+  await contentEl.webkitRequestFullscreen();
+  await sleep(500);
   ea.setViewModeEnabled(true);
 }
 const deltaWidth = () => contentEl.clientWidth-api.getAppState().width;
@@ -64,7 +64,7 @@ const slideCount = Math.floor(lineEl.points.length/2)-1;
 const getNextSlide = (forward) => {
   slide = forward
     ? slide < slideCount ? slide + 1  : 0
-	  : slide <= 0         ? slideCount : slide - 1;
+	: slide <= 0         ? slideCount : slide - 1;
 	return {pointA:lineEl.points[slide*2], pointB:lineEl.points[slide*2+1]}
 }
 
@@ -129,7 +129,7 @@ const navigate = async (dir) => {
     exitPresentation();
     return;
   }
-  if(slideNumberEl) slideNumberEl.innerText = (slide+1).toString();
+  if(slideNumberEl) slideNumberEl.innerText = `${slide+1}/${slideCount+1}`;
   const nextRect = getSlideRect(nextSlide);
   await scrollToNextRect(nextRect);
 }
