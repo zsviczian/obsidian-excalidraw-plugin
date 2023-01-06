@@ -39,6 +39,8 @@ export default {
   NEW_IN_POPOUT_WINDOW_EMBED: "Create a new drawing - IN A POPOUT WINDOW - and embed into active document",
   EXPORT_SVG: "Save as SVG next to the current file",
   EXPORT_PNG: "Save as PNG next to the current file",
+  EXPORT_SVG_WITH_SCENE: "Save as SVG with embedded Excalidraw Scene next to the current file",
+  EXPORT_PNG_WITH_SCENE: "Save as PNG with embedded Excalidraw Scene next to the current file",
   TOGGLE_LOCK: "Toggle Text Element edit RAW/PREVIEW",
   DELETE_FILE: "Delete selected Image or Markdown file from Obsidian Vault",
   INSERT_LINK_TO_ELEMENT:
@@ -69,8 +71,8 @@ export default {
   //ExcalidrawView.ts
   INSTALL_SCRIPT_BUTTON: "Install or update Excalidraw Scripts",
   OPEN_AS_MD: "Open as Markdown",
-  SAVE_AS_PNG: "Save as PNG into Vault (CTRL/CMD+CLICK to export)",
-  SAVE_AS_SVG: "Save as SVG into Vault (CTRL/CMD+CLICK to export)",
+  SAVE_AS_PNG: "Save as PNG into Vault (CTRL/CMD+CLICK to export; SHIFT to embed scene)",
+  SAVE_AS_SVG: "Save as SVG into Vault (CTRL/CMD+CLICK to export; SHIFT to embed scene)",
   OPEN_LINK: "Open selected text as link\n(SHIFT+CLICK to open in a new pane)",
   EXPORT_EXCALIDRAW: "Export to an .Excalidraw file",
   LINK_BUTTON_CLICK_NO_TEXT:

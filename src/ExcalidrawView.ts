@@ -347,7 +347,7 @@ export default class ExcalidrawView extends TextFileView {
     );
   }
 
-  public async svg(scene: any, theme?:string): Promise<SVGSVGElement> {
+  public async svg(scene: any, theme?:string, withBackground: boolean = false): Promise<SVGSVGElement> {
     const exportSettings: ExportSettings = {
       withBackground: getWithBackground(this.plugin, this.file),
       withTheme: true,
@@ -359,6 +359,7 @@ export default class ExcalidrawView extends TextFileView {
           appState: {
             ...scene.appState,
             theme: theme ?? getExportTheme(this.plugin, this.file, scene.appState.theme),
+            exportEmbedScene: withBackground,
           },
         },
       },
@@ -367,7 +368,7 @@ export default class ExcalidrawView extends TextFileView {
     );
   }
 
-  public async saveSVG(scene?: any) {
+  public async saveSVG(scene?: any, withBackground: boolean = false) {
     if (!scene) {
       if (!this.getScene) {
         return false;
@@ -378,7 +379,7 @@ export default class ExcalidrawView extends TextFileView {
     const exportImage = async (filepath:string, theme?:string) => {
       const file = app.vault.getAbstractFileByPath(normalizePath(filepath));
 
-      const svg = await this.svg(scene,theme);
+      const svg = await this.svg(scene,theme, withBackground);
       if (!svg) {
         return;
       }
@@ -402,7 +403,7 @@ export default class ExcalidrawView extends TextFileView {
     
   }
 
-  public async png(scene: any, theme?:string): Promise<Blob> {
+  public async png(scene: any, theme?:string, withBackground: boolean = false): Promise<Blob> {
     const exportSettings: ExportSettings = {
       withBackground: getWithBackground(this.plugin, this.file),
       withTheme: true,
@@ -414,6 +415,7 @@ export default class ExcalidrawView extends TextFileView {
           appState: {
             ...scene.appState,
             theme: theme ?? getExportTheme(this.plugin, this.file, scene.appState.theme),
+            exportEmbedScene: withBackground,
           },
         },
       },
@@ -423,7 +425,7 @@ export default class ExcalidrawView extends TextFileView {
     );
   }
 
-  public async savePNG(scene?: any) {
+  public async savePNG(scene?: any, withBackground: boolean = false) {
     if (!scene) {
       if (!this.getScene) {
         return false;
@@ -434,7 +436,7 @@ export default class ExcalidrawView extends TextFileView {
     const exportImage = async (filepath:string, theme?:string) => {
       const file = app.vault.getAbstractFileByPath(normalizePath(filepath));
 
-      const png = await this.png(scene,theme);
+      const png = await this.png(scene, theme, withBackground);
       if (!png) {
         return;
       }
@@ -1430,7 +1432,7 @@ export default class ExcalidrawView extends TextFileView {
             setTimeout(runScript,200);
             return;
           }
-          self.plugin.scriptEngine.executeScript(self,script,scriptname);
+          self.plugin.scriptEngine.executeScript(self,script,scriptname,this.file);
         }
         runScript();
       }
@@ -1871,7 +1873,7 @@ export default class ExcalidrawView extends TextFileView {
               return;
             }
             if (ev[CTRL_OR_CMD]) {
-              const png = await this.png(this.getScene());
+              const png = await this.png(this.getScene(),undefined,ev.shiftKey);
               if (!png) {
                 return;
               }
@@ -1884,7 +1886,8 @@ export default class ExcalidrawView extends TextFileView {
               };
               return;
             }
-            this.savePNG();
+            this.savePNG(undefined,ev.shiftKey);
+            new Notice(`PNG export is ready${ev.shiftKey?" with embedded scene":""}`);
           })
           .setSection("pane");
       })
@@ -1898,7 +1901,7 @@ export default class ExcalidrawView extends TextFileView {
               return;
             }
             if (ev[CTRL_OR_CMD]) {
-              let svg = await this.svg(this.getScene());
+              let svg = await this.svg(this.getScene(),undefined,ev.shiftKey);
               if (!svg) {
                 return null;
               }
@@ -1910,7 +1913,8 @@ export default class ExcalidrawView extends TextFileView {
               );
               return;
             }
-            this.saveSVG();
+            this.saveSVG(undefined,ev.shiftKey);
+            new Notice(`SVG export is ready${ev.shiftKey?" with embedded scene":""}`);
           });
       })
       .addItem(item => {
@@ -2383,6 +2387,8 @@ export default class ExcalidrawView extends TextFileView {
             currentItemRoundness: st.currentItemRoundness,
             gridSize: st.gridSize,
             colorPalette: st.colorPalette,
+            //@ts-ignore
+            currentStrokeOptions: st.currentStrokeOptions,
           },
           prevTextMode: this.prevTextMode,
           files,
@@ -3270,7 +3276,8 @@ export default class ExcalidrawView extends TextFileView {
               
             }
           },
-        }),
+        }//,React.createElement(Footer,{},React.createElement(customTextEditor.render)),
+        ),
         React.createElement(ToolsPanel, {
           ref: toolsPanelRef,
           visible: false,

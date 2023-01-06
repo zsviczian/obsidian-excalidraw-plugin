@@ -528,6 +528,12 @@ export const EXCALIDRAW_SCRIPTENGINE_INFO: SuggesterInfo[] = [
     desc: "Opens a suggester. Displays the displayItems and returns the corresponding item from items[]\nYou need to await the result of suggester.\nIf the user cancels (ESC), suggester will return undefined\nHint and instructions are optional\n\n<code>interface Instruction {command: string;purpose: string;}</code>",
     after: "",
   },
+  {
+    field: "scriptFile",
+    code: "scriptFile: TFile",
+    desc: "The TFile of the currently running script",
+    after: "",
+  },
 ];
 
 export const FRONTMATTER_KEYS_INFO: SuggesterInfo[] = [

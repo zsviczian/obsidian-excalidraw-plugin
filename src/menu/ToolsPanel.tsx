@@ -609,7 +609,8 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     this.props.view.plugin.scriptEngine.executeScript(
                       this.props.view,
                       await this.props.view.plugin.app.vault.read(f),
-                      this.props.view.plugin.scriptEngine.getScriptName(f)
+                      this.props.view.plugin.scriptEngine.getScriptName(f),
+                      f
                     );
                   }
                 }}

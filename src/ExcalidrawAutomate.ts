@@ -315,10 +315,14 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       "excalidraw-url-prefix"?: string;
       "excalidraw-export-transparent"?: boolean;
       "excalidraw-export-dark"?: boolean;
-      "excalidraw-export-svgpadding"?: number;
+      "excalidraw-export-padding"?: number;
       "excalidraw-export-pngscale"?: number;
       "excalidraw-default-mode"?: "view" | "zen";
+      "excalidraw-onload-script"?: string;
+      "excalidraw-linkbutton-opacity"?: number;
+      "excalidraw-autoexport"?: boolean;
     };
+    plaintext?: string; //text to insert above the `# Text Elements` section
   }): Promise<string> {
     const template = params?.templatePath
       ? await getTemplate(
@@ -406,8 +410,9 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     };
 
     const generateMD = ():string => {
+      let outString = params.plaintext ? params.plaintext + "\n\n" : "";
       const textElements = this.getElements().filter(el => el.type === "text") as ExcalidrawTextElement[];
-      let outString = "# Text Elements\n";
+      outString += "# Text Elements\n";
       textElements.forEach(te=> {
         outString += `${te.rawText ?? (te.originalText ?? te.text)} ^${te.id}\n\n`;
       });

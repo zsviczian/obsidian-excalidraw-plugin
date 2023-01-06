@@ -169,7 +169,7 @@ export class ScriptEngine {
           (async()=>{
             const script = await app.vault.read(f);
             if(script) {
-              this.executeScript(view, script, scriptName);
+              this.executeScript(view, script, scriptName,f);
             }
           })()
           return true;
@@ -205,7 +205,7 @@ export class ScriptEngine {
     delete app.commands.commands[commandId];
   }
 
-  async executeScript(view: ExcalidrawView, script: string, title: string) {
+  async executeScript(view: ExcalidrawView, script: string, title: string, file: TFile) {
     if (!view || !script || !title) {
       return;
     }
@@ -245,6 +245,7 @@ export class ScriptEngine {
           hint,
           instructions,
         ),
+      scriptFile: file
     });
     /*} catch (e) {
       new Notice(t("SCRIPT_EXECUTION_ERROR"), 4000);

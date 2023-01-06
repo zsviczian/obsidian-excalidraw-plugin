@@ -48,6 +48,7 @@ The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/),
 <a href="https://youtu.be/vlC1-iBvIfo" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/199207784-8bbe14e0-7d10-47d7-971d-20dce8dbd659.png" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;SVG import</a><br>
 <a href="https://youtu.be/7gu4ETx7zro" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/202916770-28f2fa64-1ba2-4b40-a7fe-d721b42634f7.png" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;OCR</a><br>
 <a href="https://youtu.be/U2LkBRBk4LY" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/159369910-6371f08d-b5fa-454d-9c6c-948f7e7a7d26.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Bind/unbind text from container, Frontmatter tags to customize export</a><br>
+<a href="https://youtu.be/uZz5MgzWXiM" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/211054371-8872e01a-77d6-4afc-a0c2-86a55410a8d3.png" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Custom pen support</a><br>
 </details>
 <details><summary>Quality of life improvements</summary>
 <a href="https://youtu.be/qbPIAZguJeo" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/151705333-54e9ffd2-0bd7-4d02-b99e-0bd4e4708d4d.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Mobile Support</a><br>
@@ -101,8 +102,7 @@ Settings will allow you to customize Excalidraw to your needs:
 - Experimental feature to add custom TAG to file explorer to mark drawing files.
 - Enable / disable autosave.
 
-### Embedded images
-
+### Embedding your drawings into markdown documents
 - You can customize the size and position of the embedded images using the
     - `![[image.excalidraw|100]]`,
     - `![[image.excalidraw|100x100]]`,
@@ -112,9 +112,10 @@ Settings will allow you to customize Excalidraw to your needs:
     - You can add your custom [alignment via CSS](https://www.scaler.com/topics/align-image-in-html/).
     - Any text that appears in `<alignment>` will be added to the rendered SVG element style and to the wrapper DIV element.
     - See [styles.css](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/styles.css) for more insight.
+- Excalidraw drawings do not display in Obsidian Publish. If you want to use Excalidraw in your published documents, you can configure in plugin settings, under `Embed & Export`, to automatically insert a PNG or SVG version of the drawing in your document when creating a new file. See `type of file to insert into document`
+    - Under `Export settings` you can also configure to automatically export a dark and light version of the image, in case your published site supports dark and light mode.
 
 ### Hyperlinks
-
 - Supports hyperlinks e.g.
     - `https://zsolt.blog`,
     - `[Obsidian](https://obsidian.md)`, and
@@ -136,12 +137,10 @@ Settings will allow you to customize Excalidraw to your needs:
 - Using the block reference you can also reference & transclude text that appears on drawings, in other documents
 
 ### LaTeX
-
 Insert LaTeX formulas using the Command Palette action "Insert LaTeX formula".
 You can edit formulas either in Markdown view, or by <kbd>CTRL/CMD + Click</kbd> on the formula.
 
 ### Drag & Drop support
-
 - You can drag files from the Obsidian file explorer and they will become links to those files in Excalidraw.
 - Dragging image files (PNG, SVG, JPG, ICO, GIF, WEBP, Excalidraw) from Obsidian's file explorer while pressing the
     <kbd>CTRL</kbd> (<kbd>SHIFT</kbd> on Mac) button will embed the image into your drawing.
@@ -161,13 +160,12 @@ You can edit formulas either in Markdown view, or by <kbd>CTRL/CMD + Click</kbd>
 - You can drag and drop web addresses from your browser and they will become links.
 
 ### Image support
-
 - On iOS and Android you can add images from your camera by pressing the add image button in Excalidraw.
 - You can copy/paste images into your drawing. Images will be saved in your vault.
 - You can drag and drop images as explained above.
 
 ### Block referencing parts of images
-
+For more details see this [video](https://youtu.be/yZQoJg2RCKI)
 - When referencing an element on the canvas in a link pointing to an Excalidraw file using
     - the elementId or the section header (i.e. a Text Element containing the `# <Section title>`)
         - e.g. `[[file#^elementID]]`,
@@ -186,7 +184,6 @@ You can edit formulas either in Markdown view, or by <kbd>CTRL/CMD + Click</kbd>
         references.
 
 ### Markdown
-
 - Since 1.2.0 Drawing files are stored in Markdown files
     - You can add tags to drawings
     - You can add metadata to the YAML front matter of drawings
@@ -204,7 +201,6 @@ You can edit formulas either in Markdown view, or by <kbd>CTRL/CMD + Click</kbd>
         - `excalidraw-export-pngscale`: This only affects export to PNG. Specify the export scale for the image. The typical range is between 0.5 and 5, but you can experiment with other values as well.
 
 ### Embed complete markdown files into your drawings
-
 - Drag from the desired file from the Obsidian file explorer and hold down <kbd>CTRL/CMD</kbd> while dropping the file onto the canvas.
 - Use the command palette action: `Insert markdown file from vault`
 - Use custom woff, woff2 or TTF font to display the document, you can set the default font to use under Excalidraw Settings.
@@ -228,8 +224,14 @@ You can edit formulas either in Markdown view, or by <kbd>CTRL/CMD + Click</kbd>
 - Switch to markdown view or use <kbd>CTRL/CMD+ALT/OPT</kbd> click on the image to edit properties of the embed:
     - `[[filename#^blockref|WIDTHxMAXHEIGHT]]`
 
-### Other
+### Custom Font, Custom Pen, OCR support, SVG import
+- In plugin settings you can add a custom 4th font. For more details see this [video](https://youtu.be/eKFmrSQhFA4)
+- The plugin includes OCR support using Taskbone OCR. For more details see this [video](https://youtu.be/7gu4ETx7zro)
+- You can convert SVG files into Excalidraw drawings (with some limitation). For more details see this [video](https://youtu.be/vlC1-iBvIfo)
+- You can define custom freedraw pens. See documentation [here](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Alternative%20Pens.md), [video](https://youtu.be/uZz5MgzWXiM)
 
+### Other
+- Left-handed mode
 - Includes full
     - [QuickAdd](https://github.com/chhoumann/quickadd),
     - [Templater](https://silentvoid13.github.io/Templater/) and

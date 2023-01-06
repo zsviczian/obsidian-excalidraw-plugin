@@ -975,6 +975,24 @@ export default class ExcalidrawPlugin extends Plugin {
     });
 
     this.addCommand({
+      id: "export-svg-scene",
+      name: t("EXPORT_SVG_WITH_SCENE"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return (
+            Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
+          );
+        }
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
+          view.saveSVG(undefined,true);
+          return true;
+        }
+        return false;
+      },
+    });
+
+    this.addCommand({
       id: "run-ocr",
       name: t("RUN_OCR"),
       checkCallback: (checking: boolean) => {
@@ -1048,6 +1066,24 @@ export default class ExcalidrawPlugin extends Plugin {
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
           view.savePNG();
+          return true;
+        }
+        return false;
+      },
+    });
+
+    this.addCommand({
+      id: "export-png-scene",
+      name: t("EXPORT_PNG_WITH_SCENE"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return (
+            Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
+          );
+        }
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
+          view.savePNG(undefined, true);
           return true;
         }
         return false;
