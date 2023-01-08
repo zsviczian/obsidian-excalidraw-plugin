@@ -144,6 +144,19 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
 
   /**
    * 
+   * @returns the last recorded pointer position on the Excalidraw canvas
+   */
+  public getViewLastPointerPosition(): {x:number, y:number} {
+    //@ts-ignore
+    if (!this.targetView || !this.targetView?._loaded) {
+      errorMessage("targetView not set", "getExcalidrawAPI()");
+      return null;
+    }
+    return this.targetView.currentPosition;
+  }
+
+  /**
+   * 
    * @returns 
    */
   public getAPI(view?:ExcalidrawView):ExcalidrawAutomate {
