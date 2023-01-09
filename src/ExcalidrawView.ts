@@ -93,6 +93,8 @@ import { ToolsPanel } from "./menu/ToolsPanel";
 import { ScriptEngine } from "./Scripts";
 import { getTextElementAtPointer, getImageElementAtPointer, getElementWithLinkAtPointer } from "./utils/GetElementAtPointer";
 import { MenuLinks } from "./menu/menuLinks";
+import { ICONS } from "./menu/ActionIcons";
+
 
 export enum TextMode {
   parsed = "parsed",
@@ -2627,6 +2629,7 @@ export default class ExcalidrawView extends TextFileView {
 
       const {
         Excalidraw,
+        MainMenu
       } = this.plugin.getPackage(this.ownerWindow).excalidrawLib;
 
       const excalidrawDiv = React.createElement(
@@ -3302,7 +3305,50 @@ export default class ExcalidrawView extends TextFileView {
             }
           },
         }//,React.createElement(Footer,{},React.createElement(customTextEditor.render)),
-        ),
+        ,React.createElement(
+          MainMenu,          
+          {},
+          React.createElement(MainMenu.DefaultItems.Help),
+          React.createElement(MainMenu.DefaultItems.ClearCanvas),
+          React.createElement(MainMenu.Separator),
+          React.createElement(
+            MainMenu.ItemLink,
+            {
+              icon: ICONS.YouTube,
+              href: "https://www.youtube.com/@VisualPKM",
+              ariaLabel: "Visual PKM YouTube Channel",
+            },"Visual PKM YouTube"
+          ),
+          React.createElement(
+            MainMenu.ItemLink,
+            {
+              icon: ICONS.Github,
+              href: "https://github.com/zsviczian/obsidian-excalidraw-plugin/#readme",
+              ariaLabel: "Find help on GitHub",
+            },"Find help on GitHub"
+          ),
+          React.createElement(
+            MainMenu.ItemLink,
+            {
+              icon: ICONS.heart,
+              href: "https://ko-fi.com/zsolt",
+              ariaLabel: "Donate to support Excalidraw",
+            },"Say thank you!"
+          ),
+          React.createElement(
+            MainMenu.ItemLink,
+            {
+              icon: ICONS.twitter,
+              href: "https://twitter.com/zsviczian",
+              ariaLabel: "Follow me on Twitter",
+            },"Find me on Twitter"
+          ),
+          React.createElement(MainMenu.Separator),
+          React.createElement(MainMenu.DefaultItems.ToggleTheme),
+          React.createElement(MainMenu.DefaultItems.ChangeCanvasBackground),
+
+          
+        )),
         React.createElement(ToolsPanel, {
           ref: toolsPanelRef,
           visible: false,
