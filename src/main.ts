@@ -424,7 +424,7 @@ export default class ExcalidrawPlugin extends Plugin {
         link.style.paddingRight = "10px";
         button2 = link.parentElement.createEl("button", null, (b) => {
           b.setText(t("UPDATE_SCRIPT"));
-          b.addClass("mod-cta");
+          b.addClass("mod-muted");
           b.style.backgroundColor = "var(--interactive-success)";
           b.style.display = "none";
         });
@@ -470,7 +470,7 @@ export default class ExcalidrawPlugin extends Plugin {
               break;
           }
         };
-        button.addClass("mod-cta");
+        button.addClass("mod-muted");
         let decodedURI = source;
         try {
           decodedURI = decodeURI(source);
@@ -484,9 +484,10 @@ export default class ExcalidrawPlugin extends Plugin {
         }
         const fname = decodedURI.substring(decodedURI.lastIndexOf("/") + 1);
         const folder = `${this.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}`;
-        const scriptPath = `${folder}/${fname}`;
+        const downloaded = app.vault.getFiles().filter(f=>f.path.startsWith(folder) && f.name === fname).sort((a,b)=>a.path>b.path?1:-1);
+        let scriptFile = downloaded[0]; 
+        const scriptPath = scriptFile?.path ?? `${folder}/${fname}`;
         const svgPath = getIMGFilename(scriptPath, "svg");
-        let scriptFile = this.app.vault.getAbstractFileByPath(scriptPath);
         let svgFile = this.app.vault.getAbstractFileByPath(svgPath);
         setButtonText(scriptFile ? "CHECKING" : "INSTALL");
         button.onclick = async () => {

@@ -15,7 +15,7 @@ export function get(el: Element, attr: string, backup?: string): string {
 
 export function getNum(el: Element, attr: string, backup?: number): number {
   const numVal = Number(get(el, attr));
-  return numVal === NaN ? backup || 0 : numVal;
+  return Number.isNaN(numVal) ? backup || 0 : numVal;
 }
 
 const presAttrs = {

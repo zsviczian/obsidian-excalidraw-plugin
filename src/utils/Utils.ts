@@ -672,3 +672,14 @@ export const getContainerElement = (
   }
   return null;
 };
+
+export const updateFrontmatterInString = (data:string, keyValuePairs: [string,string][]):string => {
+  if(!data) return data;
+  for(const kvp of keyValuePairs) {
+    const r = new RegExp(`${kvp[0]}:\\s.*\\n`,"g");
+    data = data.match(r) 
+      ? data.replaceAll(r,`${kvp[0]}: ${kvp[1]}\n`)
+      : data.replace(/^---\n/,`---\n${kvp[0]}: ${kvp[1]}\n`);
+  }
+  return data;
+}

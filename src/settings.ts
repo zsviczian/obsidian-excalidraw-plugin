@@ -200,7 +200,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   mdBorderColor: "Black",
   mdCSS: "",
   scriptEngineSettings: {},
-  defaultTrayMode: false,
+  defaultTrayMode: true,
   previousRelease: "0.0.0",
   showReleaseNotes: true,
   showNewVersionNotification: true,

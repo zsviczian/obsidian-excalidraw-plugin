@@ -67,6 +67,17 @@ button.ToolIcon_type_button[title="Export"] {
   flex-grow: 1;
 }
 
+.excalidraw-prompt-button {
+  width: 9em;
+}
+
+.excalidraw-prompt-buttons-div {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-evenly;
+}
+
 li[data-testid] {
   border: 0 !important;
   margin: 0 !important;
@@ -184,7 +195,7 @@ li[data-testid] {
 
 .excalidraw-release .modal {
   max-height: 80%;
-  max-width: 100ch;
+  max-width: 42em;
 }
 
 .excalidraw .Island .scrollbar {
@@ -288,4 +299,12 @@ label.color-input-container > input {
 
 .excalidraw-hidden {
   display: none !important;
+}
+
+.excalidraw .panelColumn .buttonList {
+  max-width: 13rem;
+}
+
+.excalidraw button {
+  width: initial;
 }

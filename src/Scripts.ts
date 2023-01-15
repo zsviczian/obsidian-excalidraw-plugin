@@ -13,7 +13,7 @@ import { getIMGFilename } from "./utils/FileUtils";
 import { splitFolderAndFilename } from "./utils/FileUtils";
 
 export type ScriptIconMap = {
-  [key: string]: { name: string; svgString: string };
+  [key: string]: { name: string; group: string; svgString: string };
 };
 
 export class ScriptEngine {
@@ -147,7 +147,8 @@ export class ScriptEngine {
     this.scriptIconMap = {
       ...this.scriptIconMap,
     };
-    this.scriptIconMap[scriptPath] = { name, svgString };
+    const splitname = splitFolderAndFilename(name)
+    this.scriptIconMap[scriptPath] = { name:splitname.filename, group: splitname.folderpath === "/" ? "" : splitname.folderpath, svgString };
     this.updateToolPannels();
   }
 

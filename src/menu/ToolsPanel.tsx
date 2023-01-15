@@ -3,7 +3,7 @@ import { Notice, TFile } from "obsidian";
 import * as React from "react";
 import { ActionButton } from "./ActionButton";
 import { ICONS, saveIcon, stringToSVG } from "./ActionIcons";
-import { SCRIPT_INSTALL_FOLDER, CTRL_OR_CMD } from "../Constants";
+import { SCRIPT_INSTALL_FOLDER, CTRL_OR_CMD, nanoid } from "../Constants";
 import { insertLaTeXToView, search } from "../ExcalidrawAutomate";
 import ExcalidrawView, { TextMode } from "../ExcalidrawView";
 import { t } from "../lang/helpers";
@@ -11,6 +11,7 @@ import { ReleaseNotes } from "../dialogs/ReleaseNotes";
 import { ScriptIconMap } from "../Scripts";
 import { getIMGFilename } from "../utils/FileUtils";
 import { ScriptInstallPrompt } from "src/dialogs/ScriptInstallPrompt";
+import { group } from "console";
 
 declare const PLUGIN_VERSION:string;
 const dark = '<svg style="stroke:#ced4da;#212529;color:#ced4da;fill:#ced4da" ';
@@ -584,48 +585,53 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       return "";
     }
 
+    const groups = new Set<string>();
+
+    Object.keys(this.state.scriptIconMap)
+      .filter((k) => filterCondition(k))
+      .forEach(k => groups.add(this.state.scriptIconMap[k].group))
+
+    const scriptlist = Array.from(groups).sort((a,b)=>a>b?1:-1);
+    scriptlist.push(scriptlist.shift());
     return (
-      <fieldset>
-        <legend>{isDownloaded ? "Downloaded" : "User"} Scripts</legend>
-        <div className="buttonList buttonListIcon">
-          {Object.keys(this.state.scriptIconMap)
-            .filter((k) => filterCondition(k))
-            .sort()
-            .map((key: string) => (
-              <ActionButton
-                key={key}
-                title={
-                  isDownloaded
-                    ? this.state.scriptIconMap[key].name.replace(
-                        `${SCRIPT_INSTALL_FOLDER}/`,
-                        "",
-                      )
-                    : this.state.scriptIconMap[key].name
-                }
-                action={async () => {
-                  const f =
-                    this.props.view.app.vault.getAbstractFileByPath(key);
-                  if (f && f instanceof TFile) {
-                    this.props.view.plugin.scriptEngine.executeScript(
-                      this.props.view,
-                      await this.props.view.plugin.app.vault.read(f),
-                      this.props.view.plugin.scriptEngine.getScriptName(f),
-                      f
-                    );
+      <>
+      {scriptlist.map(group => ( 
+        <fieldset>
+          <legend>{isDownloaded ? group : (group === "" ? "User" : "User/"+group)}</legend>
+          <div className="buttonList buttonListIcon">
+            {Object.entries(this.state.scriptIconMap)
+              .filter(([k,v])=>v.group === group)
+              .sort()
+              .map(([key,value])=>(
+                <ActionButton
+                  key={key}
+                  title={value.name}
+                  action={async () => {
+                    const f =
+                      this.props.view.app.vault.getAbstractFileByPath(key);
+                    if (f && f instanceof TFile) {
+                      this.props.view.plugin.scriptEngine.executeScript(
+                        this.props.view,
+                        await this.props.view.plugin.app.vault.read(f),
+                        this.props.view.plugin.scriptEngine.getScriptName(f),
+                        f
+                      );
+                    }
+                  }}
+                  icon={
+                    value.svgString
+                    ? stringToSVG(value.svgString)
+                    : (
+                      ICONS.cog
+                    )
                   }
-                }}
-                icon={
-                  this.state.scriptIconMap[key].svgString
-                  ? stringToSVG(this.state.scriptIconMap[key].svgString)
-                  : (
-                    ICONS.cog
-                  )
-                }
-                view={this.props.view}
-              />
-            ))}
-        </div>
-      </fieldset>
+                  view={this.props.view}
+                />
+              ))}
+          </div>
+        </fieldset>
+      ))}
+      </>
     );
   }
 }
