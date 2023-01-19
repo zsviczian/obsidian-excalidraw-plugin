@@ -45,6 +45,8 @@ export interface ExcalidrawSettings {
   matchThemeTrigger: boolean;
   defaultMode: string;
   defaultPenMode: "never" | "mobile" | "always";
+  allowPinchZoom: boolean;
+  allowWheelZoom: boolean;
   zoomToFitOnOpen: boolean;
   zoomToFitOnResize: boolean;
   zoomToFitMaxLevel: number;
@@ -142,6 +144,8 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   matchThemeTrigger: false,
   defaultMode: "normal",
   defaultPenMode: "never",
+  allowPinchZoom: false,
+  allowWheelZoom: false,
   zoomToFitOnOpen: true,
   zoomToFitOnResize: true,
   zoomToFitMaxLevel: 2,
@@ -587,6 +591,30 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.defaultPenMode)
           .onChange(async (value: "never" | "always" | "mobile") => {
             this.plugin.settings.defaultPenMode = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(containerEl)
+      .setName(t("DEFAULT_PINCHZOOM_NAME"))
+      .setDesc(fragWithHTML(t("DEFAULT_PINCHZOOM_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.allowPinchZoom)
+          .onChange(async (value) => {
+            this.plugin.settings.allowPinchZoom = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(containerEl)
+      .setName(t("DEFAULT_WHEELZOOM_NAME"))
+      .setDesc(fragWithHTML(t("DEFAULT_WHEELZOOM_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.allowWheelZoom)
+          .onChange(async (value) => {
+            this.plugin.settings.allowWheelZoom = value;
             this.applySettingsUpdate();
           }),
       );

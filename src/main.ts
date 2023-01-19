@@ -160,7 +160,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public opencount: number = 0;
   public ea: ExcalidrawAutomate;
   //A master list of fileIds to facilitate copy / paste
-  public filesMaster: Map<FileId, { path: string; hasSVGwithBitmap: boolean; blockrefData: string }> =
+  public filesMaster: Map<FileId, { isHyperlink: boolean; path: string; hasSVGwithBitmap: boolean; blockrefData: string }> =
     null; //fileId, path
   public equationsMaster: Map<FileId, string> = null; //fileId, formula
   public mathjax: any = null;
@@ -187,7 +187,7 @@ export default class ExcalidrawPlugin extends Plugin {
     super(app, manifest);
     this.filesMaster = new Map<
       FileId,
-      { path: string; hasSVGwithBitmap: boolean; blockrefData: string }
+      { isHyperlink: boolean; path: string; hasSVGwithBitmap: boolean; blockrefData: string }
     >();
     this.equationsMaster = new Map<FileId, string>();
   }

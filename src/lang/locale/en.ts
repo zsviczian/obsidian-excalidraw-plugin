@@ -198,6 +198,15 @@ FILENAME_HEAD: "Filename",
   DEFAULT_PEN_MODE_NAME: "Pen mode",
   DEFAULT_PEN_MODE_DESC:
     "Should pen mode be automatically enabled when opening Excalidraw?",
+
+  DEFAULT_PINCHZOOM_NAME: "Allow pinch zoom in pen mode",
+  DEFAULT_PINCHZOOM_DESC:
+    "Pinch zoom in pen mode is disabled by default to prevent unwanted accidental zooming with your palm. By enabling this setting you can allow pinch zoom in Pen mode.<br>Re-open drawings for the change to take effect.",
+
+  DEFAULT_WHEELZOOM_NAME: "Mouse wheel to zoom by default",
+  DEFAULT_WHEELZOOM_DESC:
+    "<b>Toggle on: </b>Mouse wheel to zoom; CTRL + mouse wheel to scroll</br><b>Toggle off: </b>CTRL + mouse wheel to zoom; Mouse wheel to scroll</br><br>Re-open drawings for the change to take effect.",
+    
   ZOOM_TO_FIT_NAME: "Zoom to fit on view resize",
   ZOOM_TO_FIT_DESC: "Zoom to fit drawing when the pane is resized" +
     "<br><b>Toggle ON:</b> Zoom to fit<br><b>Toggle OFF:</b> Auto zoom disabled",

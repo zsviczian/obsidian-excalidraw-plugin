@@ -1,5 +1,6 @@
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
 import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/types";
+import { EffectTarget } from "html2canvas/dist/types/render/effects";
 import { App, MarkdownRenderer, Notice, TFile } from "obsidian";
 import {
   CASCADIA_FONT,
@@ -68,7 +69,8 @@ export class EmbeddedFile {
   public linkParts: LinkParts;
   private hostPath: string;
   public attemptCounter: number = 0;
-  /*public isHyperlink: boolean = false;*/
+  public isHyperlink: boolean = false;
+  public hyperlink:DataURL;
 
   constructor(plugin: ExcalidrawPlugin, hostPath: string, imgPath: string) {
     this.plugin = plugin;
@@ -76,14 +78,15 @@ export class EmbeddedFile {
   }
 
   public resetImage(hostPath: string, imgPath: string) {
-    /*if(imgPath.startsWith("https://") || imgPath.startsWith("http://")) {
-      this.img=imgPath;
-      this.imgInverted=imgPath;
-      this.isHyperlink = true;
-      return;
-    }*/
     this.imgInverted = this.img = "";
     this.mtime = 0;
+
+    if(imgPath.startsWith("https://") || imgPath.startsWith("http://")){
+      this.isHyperlink = true;
+      this.hyperlink = imgPath as DataURL;
+      return;
+    };
+
     this.linkParts = getLinkParts(imgPath);
     this.hostPath = hostPath;
     if (!this.linkParts.path) {
@@ -111,6 +114,9 @@ export class EmbeddedFile {
   }
 
   private fileChanged(): boolean {
+    if(this.isHyperlink) {
+      return false;
+    }
     if (!this.file) {
       this.file = app.metadataCache.getFirstLinkpathDest(
         this.linkParts.path,
@@ -131,13 +137,13 @@ export class EmbeddedFile {
     isDark: boolean,
     isSVGwithBitmap: boolean,
   ) {
-    if (!this.file) {
+    if (!this.file && !this.isHyperlink) {
       return;
     }
     if (this.fileChanged()) {
       this.imgInverted = this.img = "";
     }
-    this.mtime = this.file.stat.mtime;
+    this.mtime = this.isHyperlink ? 0 : this.file.stat.mtime;
     this.size = size;
     this.mimeType = mimeType;
     switch (isDark && isSVGwithBitmap) {
@@ -152,18 +158,20 @@ export class EmbeddedFile {
   }
 
   public isLoaded(isDark: boolean): boolean {
-    if (!this.file) {
-      this.file = app.metadataCache.getFirstLinkpathDest(
-        this.linkParts.path,
-        this.hostPath,
-      ); // maybe the file has synchronized in the mean time
-      if(!this.file) {
-        this.attemptCounter++;
-        return true;
+    if(!this.isHyperlink) {  
+      if (!this.file) {
+        this.file = app.metadataCache.getFirstLinkpathDest(
+          this.linkParts.path,
+          this.hostPath,
+        ); // maybe the file has synchronized in the mean time
+        if(!this.file) {
+          this.attemptCounter++;
+          return true;
+        }
       }
-    }
-    if (this.fileChanged()) {
-      return false;
+      if (this.fileChanged()) {
+        return false;
+      }
     }
     if (this.isSVGwithBitmap && isDark) {
       return this.imgInverted !== "";
@@ -172,10 +180,12 @@ export class EmbeddedFile {
   }
 
   public getImage(isDark: boolean) {
+    //https://stackoverflow.com/questions/2068344/how-do-i-get-a-youtube-video-thumbnail-from-the-youtube-api
+    //https://img.youtube.com/vi/uZz5MgzWXiM/maxresdefault.jpg
     /*if(this.isHyperlink) {
       return this.img;
     }*/
-    if (!this.file) {
+    if (!this.file && !this.isHyperlink) {
       return "";
     }
     if (isDark && this.isSVGwithBitmap) {
@@ -189,7 +199,7 @@ export class EmbeddedFile {
    * @returns true if image should scale such as the updated images has the same area as the previous images, false if the image should be displayed at 100%
    */
   public shouldScale() {
-    return !Boolean(this.linkParts && this.linkParts.original && this.linkParts.original.endsWith("|100%"));
+    return this.isHyperlink || !Boolean(this.linkParts && this.linkParts.original && this.linkParts.original.endsWith("|100%"));
   }
 }
 
@@ -216,22 +226,27 @@ export class EmbeddedFilesLoader {
     if (!this.plugin || !inFile) {
       return null;
     }
+    const isHyperlink = inFile instanceof EmbeddedFile ? inFile.isHyperlink : false;
+    const hyperlink = inFile instanceof EmbeddedFile ? inFile.hyperlink : "";
     const file: TFile = inFile instanceof EmbeddedFile ? inFile.file : inFile;
     const linkParts =
-      inFile instanceof EmbeddedFile
-        ? inFile.linkParts
-        : {
-            original: file.path,
-            path: file.path,
-            isBlockRef: false,
-            ref: null,
-            width: this.plugin.settings.mdSVGwidth,
-            height: this.plugin.settings.mdSVGmaxHeight,
-          };
+      isHyperlink
+        ? null
+        : inFile instanceof EmbeddedFile
+          ? inFile.linkParts
+          : {
+              original: file.path,
+              path: file.path,
+              isBlockRef: false,
+              ref: null,
+              width: this.plugin.settings.mdSVGwidth,
+              height: this.plugin.settings.mdSVGmaxHeight,
+            };
 
     let hasSVGwithBitmap = false;
-    const isExcalidrawFile = this.plugin.isExcalidrawFile(file);
+    const isExcalidrawFile = !isHyperlink && this.plugin.isExcalidrawFile(file);
     if (
+      !isHyperlink &&
       !(
         IMAGE_TYPES.contains(file.extension) ||
         isExcalidrawFile ||
@@ -240,7 +255,9 @@ export class EmbeddedFilesLoader {
     ) {
       return null;
     }
-    const ab = await app.vault.readBinary(file);
+    const ab = isHyperlink
+      ? null
+      : await app.vault.readBinary(file);
 
     const getExcalidrawSVG = async (isDark: boolean) => {
       //debug({where:"EmbeddedFileLoader.getExcalidrawSVG",uid:this.uid,file:file.name});
@@ -292,8 +309,11 @@ export class EmbeddedFilesLoader {
       ? await getExcalidrawSVG(this.isDark)
       : null;
     let mimeType: MimeType = "image/svg+xml";
+    const extension = isHyperlink
+      ? hyperlink.substring(hyperlink.lastIndexOf(".")+1)
+      : file.extension;
     if (!isExcalidrawFile) {
-      switch (file.extension) {
+      switch (extension) {
         case "png":
           mimeType = "image/png";
           break;
@@ -324,12 +344,14 @@ export class EmbeddedFilesLoader {
       }
     }
     let dataURL =
-      excalidrawSVG ??
-      (file.extension === "svg"
-        ? await getSVGData(app, file)
-        : file.extension === "md"
-        ? null
-        : await getDataURL(ab, mimeType));
+      isHyperlink
+      ? (inFile instanceof EmbeddedFile ? inFile.hyperlink : null)
+      : excalidrawSVG ??
+        (file.extension === "svg"
+          ? await getSVGData(app, file)
+          : file.extension === "md"
+          ? null
+          : await getDataURL(ab, mimeType));
 
     if(!dataURL) {
       const result = await this.convertMarkdownToSVG(this.plugin, file, linkParts);
@@ -339,9 +361,11 @@ export class EmbeddedFilesLoader {
     const size = await getImageSize(dataURL);
     return {
       mimeType,
-      fileId: await generateIdFromFile(ab),
+      fileId: await generateIdFromFile(
+        isHyperlink? (new TextEncoder()).encode(dataURL as string) : ab
+      ),
       dataURL,
-      created: file.stat.mtime,
+      created: isHyperlink ? 0 : file.stat.mtime,
       hasSVGwithBitmap,
       size,
     };

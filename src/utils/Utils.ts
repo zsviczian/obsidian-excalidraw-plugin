@@ -22,7 +22,8 @@ import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
 import { ExportSettings } from "../ExcalidrawView";
 import { compressToBase64, decompressFromBase64 } from "lz-string";
 import { getIMGFilename } from "./FileUtils";
-import ExcalidrawScene from "lib/svgToExcalidraw/elements/ExcalidrawScene";
+import ExcalidrawScene from "../svgToExcalidraw/elements/ExcalidrawScene";
+import { IMAGE_TYPES } from "../Constants";
 
 declare const PLUGIN_VERSION:string;
 
@@ -682,4 +683,9 @@ export const updateFrontmatterInString = (data:string, keyValuePairs: [string,st
       : data.replace(/^---\n/,`---\n${kvp[0]}: ${kvp[1]}\n`);
   }
   return data;
+}
+
+export const hyperlinkIsImage = (data: string):boolean => {
+  if ( ! (data.startsWith("https://") || data.startsWith("http://")) ) return false;
+  return IMAGE_TYPES.contains(data.substring(data.lastIndexOf(".")+1));
 }

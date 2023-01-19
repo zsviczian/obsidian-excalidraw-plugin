@@ -81,6 +81,7 @@ import {
   svgToBase64,
   viewportCoordsToSceneCoords,
   updateFrontmatterInString,
+  hyperlinkIsImage,
 } from "./utils/Utils";
 import { getNewOrAdjacentLeaf, getParentOfClass } from "./utils/ObsidianUtils";
 import { splitFolderAndFilename } from "./utils/FileUtils";
@@ -102,7 +103,8 @@ import { ICONS, saveIcon } from "./menu/ActionIcons";
 //import { MainMenu } from "@zsviczian/excalidraw";
 //import {WelcomeScreen} from "@zsviczian/excalidraw";
 import { ExportDialog } from "./dialogs/ExportDialog";
-import { execPath } from "process";
+import { getEA } from "src";
+
 
 
 export enum TextMode {
@@ -890,8 +892,12 @@ export default class ExcalidrawView extends TextFileView {
       }
       await this.save(false); //in case pasted images haven't been saved yet
       if (this.excalidrawData.hasFile(selectedImage.fileId)) {
+        const ef = this.excalidrawData.getFile(selectedImage.fileId);
+        if(ef.isHyperlink) {
+          window.open(ef.hyperlink,"_blank");
+          return;
+        }
         if (ev.altKey) {
-          const ef = this.excalidrawData.getFile(selectedImage.fileId);
           if (
             ef.file.extension === "md" &&
             !this.plugin.isExcalidrawFile(ef.file)
@@ -915,8 +921,8 @@ export default class ExcalidrawView extends TextFileView {
             return;
           }
         }
-        linkText = this.excalidrawData.getFile(selectedImage.fileId).file.path;
-        file = this.excalidrawData.getFile(selectedImage.fileId).file;
+        linkText = ef.file.path;
+        file = ef.file;
       }
     }
 
@@ -1067,7 +1073,7 @@ export default class ExcalidrawView extends TextFileView {
     if (!app.isMobile) {
       this.addAction(
         FULLSCREEN_ICON_NAME,
-        "Press ESC to exit fullscreen mode",
+        "Use the action on the Excalidraw Obsidian Panel or the Command Palette to exti fullscreen mode. You can set up a hotkey for toggling fullscreen mode in Obsidian settings under Hotkeys.",
         () => this.gotoFullscreen(),
       );
     }
@@ -1756,6 +1762,8 @@ export default class ExcalidrawView extends TextFileView {
             trayModeEnabled: this.plugin.settings.defaultTrayMode,
             penMode: penEnabled,
             penDetected: penEnabled,
+            allowPinchZoom: this.plugin.settings.allowPinchZoom,
+            allowWheelZoom: this.plugin.settings.allowWheelZoom,
           },
           //files: excalidrawData.files,
           //commitToHistory: true,
@@ -1784,6 +1792,8 @@ export default class ExcalidrawView extends TextFileView {
           trayModeEnabled: this.plugin.settings.defaultTrayMode,
           penMode: penEnabled,
           penDetected: penEnabled,
+          allowPinchZoom: this.plugin.settings.allowPinchZoom,
+          allowWheelZoom: this.plugin.settings.allowWheelZoom,
         },
         files: excalidrawData.files,
         libraryItems: await this.getLibrary(),
@@ -2398,11 +2408,13 @@ export default class ExcalidrawView extends TextFileView {
               dataURL: images[k].dataURL,
               created: images[k].created,
             });
-            if (images[k].file) {
+            if (images[k].file || images[k].isHyperlink) {
               const embeddedFile = new EmbeddedFile(
                 this.plugin,
                 this.file.path,
-                images[k].file,
+                images[k].isHyperlink
+                  ? images[k].dataURL
+                  : images[k].file,
               );
               const st: AppState = api.getAppState();
               embeddedFile.setImage(
@@ -2478,6 +2490,7 @@ export default class ExcalidrawView extends TextFileView {
             colorPalette: st.colorPalette,
             //@ts-ignore
             currentStrokeOptions: st.currentStrokeOptions,
+            previousGridSize: st.previousGridSize,
           },
           prevTextMode: this.prevTextMode,
           files,
@@ -2596,6 +2609,7 @@ export default class ExcalidrawView extends TextFileView {
               return;
             }
             const ef = this.excalidrawData.getFile(selectedImgElement.fileId);
+            if(ef.isHyperlink) return; //web images don't have a preview
             const ref = ef.linkParts.ref
               ? `#${ef.linkParts.isBlockRef ? "^" : ""}${ef.linkParts.ref}`
               : "";
@@ -3024,6 +3038,14 @@ export default class ExcalidrawView extends TextFileView {
                 if (event.dataTransfer.types.includes("text/plain")) {
                   const text: string = event.dataTransfer.getData("text");
                   if (text && onDropHook("text", null, text)) {
+                    return false;
+                  }
+                  if(text && event[CTRL_OR_CMD] && hyperlinkIsImage(text)) {
+                    (async () => {
+                      const ea = getEA(this) as ExcalidrawAutomate;
+                      await ea.addImage(0,0,text);
+                      ea.addElementsToView(true,true,true);
+                    })();
                     return false;
                   }
                 }
@@ -3797,3 +3819,4 @@ export function getTextMode(data: string): TextMode {
     data.search("excalidraw-plugin: locked\n") > -1; //locked for backward compatibility
   return parsed ? TextMode.parsed : TextMode.raw;
 }
+

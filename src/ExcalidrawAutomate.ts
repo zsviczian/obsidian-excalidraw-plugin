@@ -39,7 +39,7 @@ import {
 } from "./utils/Utils";
 import { getNewOrAdjacentLeaf, isObsidianThemeDark } from "./utils/ObsidianUtils";
 import { AppState, BinaryFileData, Point } from "@zsviczian/excalidraw/types/types";
-import { EmbeddedFilesLoader, FileData } from "./EmbeddedFileLoader";
+import { EmbeddedFile, EmbeddedFilesLoader, FileData } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
 //import Excalidraw from "@zsviczian/excalidraw";
 import { Prompt } from "./dialogs/Prompt";
@@ -958,7 +958,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
   async addImage(
     topX: number,
     topY: number,
-    imageFile: TFile,
+    imageFile: TFile | string,
     scale: boolean = true, //true will scale the image to MAX_IMAGE_SIZE, false will insert image at 100% of its size
   ): Promise<string> {
     const id = nanoid();
@@ -966,17 +966,25 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       this.plugin,
       this.canvas.theme === "dark",
     );
-    const image = await loader.getObsidianImage(imageFile,0);
+    const image = (typeof imageFile === "string")
+      ? await loader.getObsidianImage(new EmbeddedFile(this.plugin, "", imageFile),0)
+      : await loader.getObsidianImage(imageFile,0);
+      
     if (!image) {
       return null;
     }
-    const fileId = imageFile.extension === "md" ? fileid() as FileId : image.fileId;
+    const fileId = typeof imageFile === "string"
+      ? image.fileId
+      : imageFile.extension === "md" ? fileid() as FileId : image.fileId;
     this.imagesDict[fileId] = {
       mimeType: image.mimeType,
       id: fileId,
       dataURL: image.dataURL,
       created: image.created,
-      file: imageFile.path + (scale ? "":"|100%"),
+      isHyperlink: typeof imageFile === "string",
+      file: typeof imageFile === "string"
+        ? null
+        : imageFile.path + (scale ? "":"|100%"),
       hasSVGwithBitmap: image.hasSVGwithBitmap,
       latex: null,
     };

@@ -551,6 +551,18 @@ export class ExcalidrawData {
       this.setFile(parts.value[1] as FileId, embeddedFile);
     }
 
+    //Load links
+    const REG_LINKID_FILEPATH = /([\w\d]*):\s*(https?:\/\/[^\s]*)\n/gm;
+    res = data.matchAll(REG_LINKID_FILEPATH);
+    while (!(parts = res.next()).done) {
+      const embeddedFile = new EmbeddedFile(
+        this.plugin,
+        null,
+        parts.value[2],
+      );
+      this.setFile(parts.value[1] as FileId, embeddedFile);
+    }
+
     //Load Equations
     const REG_FILEID_EQUATION = /([\w\d]*):\s*\$\$(.*)(\$\$\s*\n)/gm;
     res = data.matchAll(REG_FILEID_EQUATION);
@@ -1050,11 +1062,15 @@ export class ExcalidrawData {
       for (const key of this.files.keys()) {
         const PATHREG = /(^[^#\|]*)/;
         const ef = this.files.get(key);
-        //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/829
-        const path = ef.file
-          ? ef.linkParts.original.replace(PATHREG,app.metadataCache.fileToLinktext(ef.file,this.file.path))
-          : ef.linkParts.original;
-        outString += `${key}: [[${path}]]\n`;
+        if(ef.isHyperlink) {
+          outString += `${key}: ${ef.hyperlink}\n`;
+        } else {
+          //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/829
+          const path = ef.file
+            ? ef.linkParts.original.replace(PATHREG,app.metadataCache.fileToLinktext(ef.file,this.file.path))
+            : ef.linkParts.original;
+          outString += `${key}: [[${path}]]\n`;
+        }
       }
     }
     outString += this.equations.size > 0 || this.files.size > 0 ? "\n" : "";
@@ -1121,7 +1137,7 @@ export class ExcalidrawData {
         const equation = this.getEquation(fileId);
         //const equation = this.equations.get(fileId as FileId);
         //images should have a single reference, but equations and markdown embeds should have as many as instances of the file in the scene
-        if(file && file.file && (file.file.extension !== "md" || this.plugin.isExcalidrawFile(file.file))) {
+        if(file && (file.isHyperlink || (file.file && (file.file.extension !== "md" || this.plugin.isExcalidrawFile(file.file))))) {
           return;
         }
         const newId = fileid();
@@ -1448,12 +1464,23 @@ export class ExcalidrawData {
     }
     this.files.set(fileId, data);
 
+    if(data.isHyperlink) {
+      this.plugin.filesMaster.set(fileId, {
+        isHyperlink: true,
+        path: data.hyperlink,
+        blockrefData: null,
+        hasSVGwithBitmap: data.isSVGwithBitmap
+      });
+      return;
+    }
+
     if (!data.file) {
       return;
     }
 
     const parts = data.linkParts.original.split("#");
     this.plugin.filesMaster.set(fileId, {
+      isHyperlink: false,
       path:data.file.path + (data.shouldScale()?"":"|100%"),
       blockrefData: parts.length === 1
         ? null
@@ -1499,6 +1526,13 @@ export class ExcalidrawData {
     }
     if (this.plugin.filesMaster.has(fileId)) {
       const masterFile = this.plugin.filesMaster.get(fileId);
+      if(masterFile.isHyperlink) {
+        this.files.set(
+          fileId,
+          new EmbeddedFile(this.plugin,this.file.path,masterFile.path)
+        );
+        return true;
+      }
       const path = masterFile.path.split("|")[0].split("#")[0];
       if (!this.app.vault.getAbstractFileByPath(path)) {
         this.plugin.filesMaster.delete(fileId);
