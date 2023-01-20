@@ -392,7 +392,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                         shiftKey: false,
                         altKey: false,
                       });
-                      this.props.view.handleLinkClick(this.props.view, event);
+                      this.props.view.handleLinkClick(event);
                     }}
                     icon={ICONS.openLink}
                     view={this.props.view}
@@ -407,7 +407,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                         shiftKey: true,
                         altKey: true,
                       });
-                      this.props.view.handleLinkClick(this.props.view, event);
+                      this.props.view.handleLinkClick(event);
                     }}
                     icon={ICONS.openLinkProperties}
                     view={this.props.view}
