@@ -1,7 +1,9 @@
+//https://stackoverflow.com/questions/2068344/how-do-i-get-a-youtube-video-thumbnail-from-the-youtube-api
+//https://img.youtube.com/vi/uZz5MgzWXiM/maxresdefault.jpg
+
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
 import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/types";
-import { EffectTarget } from "html2canvas/dist/types/render/effects";
-import { App, MarkdownRenderer, Notice, TFile } from "obsidian";
+import { App, MarkdownRenderer, Notice, requestUrl, RequestUrlResponse, TFile } from "obsidian";
 import {
   CASCADIA_FONT,
   DEFAULT_MD_EMBED_CSS,
@@ -12,6 +14,7 @@ import {
   FRONTMATTER_KEY_MD_STYLE,
   IMAGE_TYPES,
   nanoid,
+  URLFETCHTIMEOUT,
   VIRGIL_FONT,
 } from "./Constants";
 import { createSVG } from "./ExcalidrawAutomate";
@@ -180,11 +183,6 @@ export class EmbeddedFile {
   }
 
   public getImage(isDark: boolean) {
-    //https://stackoverflow.com/questions/2068344/how-do-i-get-a-youtube-video-thumbnail-from-the-youtube-api
-    //https://img.youtube.com/vi/uZz5MgzWXiM/maxresdefault.jpg
-    /*if(this.isHyperlink) {
-      return this.img;
-    }*/
     if (!this.file && !this.isHyperlink) {
       return "";
     }
@@ -309,8 +307,11 @@ export class EmbeddedFilesLoader {
       ? await getExcalidrawSVG(this.isDark)
       : null;
     let mimeType: MimeType = "image/svg+xml";
+    const corelink = isHyperlink
+      ? hyperlink.split("?")[0]
+      : "";
     const extension = isHyperlink
-      ? hyperlink.substring(hyperlink.lastIndexOf(".")+1)
+      ? corelink.substring(corelink.lastIndexOf(".")+1)
       : file.extension;
     if (!isExcalidrawFile) {
       switch (extension) {
@@ -343,9 +344,25 @@ export class EmbeddedFilesLoader {
           mimeType = "application/octet-stream";
       }
     }
+    let response:RequestUrlResponse;
+    if(isHyperlink && inFile instanceof EmbeddedFile) {
+      try {
+        response = await Promise.race([
+          (async () => new Promise<RequestUrlResponse>((resolve) => setTimeout(()=>resolve(null), URLFETCHTIMEOUT)))(),
+          requestUrl({url: inFile.hyperlink, method: "get", contentType: mimeType, throw: false })
+        ])
+      } catch (e) {
+        errorlog({where: this.getObsidianImage, message: `URL did not load within timeout period of ${URLFETCHTIMEOUT}ms`, url: inFile.hyperlink});
+      }
+    }
+
     let dataURL =
       isHyperlink
-      ? (inFile instanceof EmbeddedFile ? inFile.hyperlink : null)
+      ? (
+          inFile instanceof EmbeddedFile
+            ? (response && response.status === 200 ? await getDataURL(response.arrayBuffer, mimeType) : inFile.hyperlink)
+            : null
+        )
       : excalidrawSVG ??
         (file.extension === "svg"
           ? await getSVGData(app, file)
@@ -353,27 +370,31 @@ export class EmbeddedFilesLoader {
           ? null
           : await getDataURL(ab, mimeType));
 
-    if(!dataURL) {
+    if(!isHyperlink && !dataURL) {
       const result = await this.convertMarkdownToSVG(this.plugin, file, linkParts);
       dataURL = result.dataURL;
       hasSVGwithBitmap = result.hasSVGwithBitmap;
     }
-    const size = await getImageSize(dataURL);
-    return {
-      mimeType,
-      fileId: await generateIdFromFile(
-        isHyperlink? (new TextEncoder()).encode(dataURL as string) : ab
-      ),
-      dataURL,
-      created: isHyperlink ? 0 : file.stat.mtime,
-      hasSVGwithBitmap,
-      size,
-    };
+    try{
+      const size = await getImageSize(dataURL);
+      return {
+        mimeType,
+        fileId: await generateIdFromFile(
+          isHyperlink? (new TextEncoder()).encode(dataURL as string) : ab
+        ),
+        dataURL,
+        created: isHyperlink ? 0 : file.stat.mtime,
+        hasSVGwithBitmap,
+        size,
+      };
+    } catch(e) {
+      return null;
+    }
   }
 
   public async loadSceneFiles(
     excalidrawData: ExcalidrawData,
-    addFiles: Function,
+    addFiles: (files: FileData[], isDark: boolean) => void,
     depth:number
   ) {
     if(depth > 4) {

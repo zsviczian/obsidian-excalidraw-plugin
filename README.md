@@ -69,9 +69,20 @@ The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/),
 
 ### Settings
 
-Settings will allow you to customize Excalidraw to your needs:
+Settings will allow you to customize Excalidraw to your needs. The plugin comes with tons of settings. I tried adding meaningful explanations to these settings, so please be patient and look for the setting, for most requests a setting already exists.
 
-- Default folder for new drawings and define custom filename pattern for new drawings.
+Plugin settings are grouped into the following sections:
+- **Basic settings**: such as default folders to use
+- **Saving**: compression and autosave timer
+- **Filename**: configure the automatically created Excalidraw filename
+- **Display**: settings that effect the handling of Excalidraw (e.g.: left-handed mode, theme settings, mouse wheel and pinch zoom settings, zoom to fit settings)
+- **Links and transclusions**: Settings that effect how links and embedded items behave on the Excalidraw canvas
+- **Markdown-embed settings**: These settings control how markdown documents from your Vault embedded into Excalidraw drawings will behave
+- **Embed & Export**: Settings that control how Excalidraw images are displayed when embedding them into markdown documents
+- **Auto-export Settings**: You can configure Excalidraw to create a PNG or SVG copy of your drawing each time it gets saved
+- **Compatibility features**: Check these settings if you edit the Excalidraw drawings outside Obsidian (e.g. in LogSeq, Visual Studio, on the web, etc.)
+- **Experimental features**: There are advanced features that are implemented as "clever" hacks. Features include defining a fourth font, adding a custom icon to distinguish Exalidraw files in the Obsidian file explorer, OCR settings, and more.
+- **Settings for installed Scripts**: Some of the scripts you install from the Script Library come with settings. Script settings are installed the first time you run the script. So to access settings for a script, install the script, run it for the first time, then look for the settings in plugin settings.
 
 #### Templates
 
@@ -163,6 +174,9 @@ You can edit formulas either in Markdown view, or by <kbd>CTRL/CMD + Click</kbd>
 - On iOS and Android you can add images from your camera by pressing the add image button in Excalidraw.
 - You can copy/paste images into your drawing. Images will be saved in your vault.
 - You can drag and drop images as explained above.
+- URL link to images on the web: You can drag images from a webpage to Excalidraw. If you hold down the CTRL button while dropping the image to Excalidraw, the image will not be saved to your vault. Excalidraw will load the image from the URL. Note, that if you do not have internet access, or these images are deleted from the internet, they will also disappear from your drawing.
+- If you page an image URL to excalidraw (simply click copy on the url, then click paste on the excalidraw canvas), the image will be inserted with a link to the image on the web. Again, the image won't be save to your vault, only the link.
+- If you drop a YouTube video link it will be convereted into a thumbnail photo with an element link pointing to the video.
 
 ### Block referencing parts of images
 For more details see this [video](https://youtu.be/yZQoJg2RCKI)
@@ -230,6 +244,10 @@ For more details see this [video](https://youtu.be/yZQoJg2RCKI)
 - You can convert SVG files into Excalidraw drawings (with some limitation). For more details see this [video](https://youtu.be/vlC1-iBvIfo)
 - You can define custom freedraw pens. See documentation [here](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Alternative%20Pens.md), [video](https://youtu.be/uZz5MgzWXiM)
 
+### Script Engine
+- Since 1.5.0 you can easily execute ExcalidrawAutomate macros and assign command palette shortcuts to them, using the ScriptEngine. You will find an intro video and a growing library of ready to install scripts [here](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/ea-scripts).
+- You can organize scripts into groups on the Obsidian Tools Panel in Excalidraw by moving scripts and accompanying SVG icon files to folders. See demo [video](https://youtu.be/wTtaXmRJ7wg?t=16).
+
 ### Other
 - Left-handed mode
 - Includes full
@@ -238,10 +256,6 @@ For more details see this [video](https://youtu.be/yZQoJg2RCKI)
     - [Dataview](https://blacksmithgu.github.io/obsidian-dataview/docs/api/intro/) support through ExcalidrawAutomate.
     - Check out the [detailed help + examples](https://zsviczian.github.io/obsidian-excalidraw-plugin/).
     - I also have a [YouTube ExcalidrawAutomate Playlist](https://www.youtube.com/playlist?list=PL6mqgtMZ4NP1IR4nXxSlMA4PA5E-qpyHZ) with lots of examples.
-    - Since 1.5.0 you can easily execute ExcalidrawAutomate macros and assign command palette
-      shortcuts to them, using the ScriptEngine. You will find an intro video and a growing library
-      of ready to install scripts
-      [here](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/ea-scripts).
 - REQUIRES AN OBSIDIAN SYNC SUBSCRIPTION: Full drawing file history and synchronization between devices
 - Multilanguage support: if you'd like to help out by translating the plugin, please get in contact with me.
 

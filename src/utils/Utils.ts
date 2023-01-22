@@ -3,6 +3,7 @@ import {
   App,
   Notice,
   request,
+  requestUrl,
   TFile,
 } from "obsidian";
 import { Random } from "roughjs/bin/math";
@@ -24,6 +25,7 @@ import { compressToBase64, decompressFromBase64 } from "lz-string";
 import { getIMGFilename } from "./FileUtils";
 import ExcalidrawScene from "../svgToExcalidraw/elements/ExcalidrawScene";
 import { IMAGE_TYPES } from "../Constants";
+import { dataURLToFile } from "@zsviczian/excalidraw/types/data/blob";
 
 declare const PLUGIN_VERSION:string;
 
@@ -685,7 +687,39 @@ export const updateFrontmatterInString = (data:string, keyValuePairs: [string,st
   return data;
 }
 
+const isHyperlink = (link:string) => link && !link.includes("\n") && !link.includes("\r") && link.match(/^https?:(\d*)?\/\/[^\s]*$/);
+
 export const hyperlinkIsImage = (data: string):boolean => {
-  if ( ! (data.startsWith("https://") || data.startsWith("http://")) ) return false;
-  return IMAGE_TYPES.contains(data.substring(data.lastIndexOf(".")+1));
+  if(!isHyperlink(data)) false;
+  const corelink = data.split("?")[0];
+  return IMAGE_TYPES.contains(corelink.substring(corelink.lastIndexOf(".")+1));
+}
+
+export const hyperlinkIsYouTubeLink = (link:string): boolean => 
+  isHyperlink(link) &&
+  (link.startsWith("https://youtu.be") || link.startsWith("https://www.youtube.com") || link.startsWith("https://youtube.com") || link.startsWith("https//www.youtu.be")) &&
+  link.match(/(youtu.be\/|v=)([^?\/\&]*)/)!==null
+
+export const getYouTubeThumbnailLink = async (youtubelink: string):Promise<string> => {
+  //https://stackoverflow.com/questions/2068344/how-do-i-get-a-youtube-video-thumbnail-from-the-youtube-api
+  //https://youtu.be/z8UkHGpykYU?t=60
+  //https://www.youtube.com/watch?v=z8UkHGpykYU&ab_channel=VerbaltoVisual
+  const parsed = youtubelink.match(/(youtu.be\/|v=)([^?\/\&]*)/);
+  if(!parsed || !parsed[2]) return null;
+  const videoId = parsed[2];
+  
+  let url = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
+  let response = await requestUrl({url, method: "get", contentType: "image/jpeg", throw: false });
+  if(response && response.status === 200) return url;
+
+  url = `https://i.ytimg.com/vi/${videoId}/hq720.jpg`;
+  response = await requestUrl({url, method: "get", contentType: "image/jpeg", throw: false });
+  if(response && response.status === 200) return url;
+
+  url = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
+  response = await requestUrl({url, method: "get", contentType: "image/jpeg", throw: false });
+  if(response && response.status === 200) return url;
+
+
+  return `https://i.ytimg.com/vi/${videoId}/default.jpg`;
 }

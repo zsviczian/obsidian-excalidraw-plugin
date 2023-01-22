@@ -17,6 +17,7 @@ export const ROUNDNESS = { //should at one point publish @zsviczian/excalidraw/t
   PROPORTIONAL_RADIUS: 2,
   ADAPTIVE_RADIUS: 3,
 } as const;
+export const URLFETCHTIMEOUT = 1000;
 export const PLUGIN_ID = "obsidian-excalidraw-plugin";
 export const SCRIPT_INSTALL_CODEBLOCK = "excalidraw-script-install";
 export const SCRIPT_INSTALL_FOLDER = "Downloaded";

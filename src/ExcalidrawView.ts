@@ -81,6 +81,8 @@ import {
   viewportCoordsToSceneCoords,
   updateFrontmatterInString,
   hyperlinkIsImage,
+  hyperlinkIsYouTubeLink,
+  getYouTubeThumbnailLink,
 } from "./utils/Utils";
 import { getNewOrAdjacentLeaf, getParentOfClass } from "./utils/ObsidianUtils";
 import { splitFolderAndFilename } from "./utils/FileUtils";
@@ -790,9 +792,27 @@ export default class ExcalidrawView extends TextFileView {
     return false;
   }
 
-  openExternalLink(link:string):boolean {
+  openExternalLink(link:string, element?: ExcalidrawElement):boolean {
     if (link.match(REG_LINKINDEX_HYPERLINK)) {
-      window.open(link, "_blank");
+
+      /*if(element) {
+        const sceneCoordsToViewportCoords = this.plugin.getPackage(this.ownerWindow).excalidrawLib.sceneCoordsToViewportCoords;
+        const top = sceneCoordsToViewportCoords({sceneX: element.x, sceneY:element.y}, this.excalidrawAPI.getAppState());
+        const bottom = sceneCoordsToViewportCoords({sceneX: element.x+element.width, sceneY:element.y+element.height}, this.excalidrawAPI.getAppState());
+        const iframe = createEl("iframe",{
+          attr: {
+            style: `position: absolute;top: ${top.y}px; left: ${top.x}px; width: ${bottom.x-top.x}px; height: ${bottom.y-top.y}px; margin: 0px; padding: 0px;z-index: 15; overflow: hidden; border: 0`,
+            frameborder: "0",
+            allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",
+            allowfullscreen: "true",
+            src: element.link,
+            scrolling: "no"
+          }
+        })
+        this.contentEl.appendChild(iframe);
+      } else {*/
+        window.open(link, "_blank");
+      //}
       return true;
     }
     return false;
@@ -1561,7 +1581,7 @@ export default class ExcalidrawView extends TextFileView {
         (files: FileData[], isDark: boolean) => {
           if (!files) {
             return;
-          }
+          }          
           addFiles(files, this, isDark);
           this.activeLoader = null;
           if (this.nextLoader) {
@@ -1936,6 +1956,21 @@ export default class ExcalidrawView extends TextFileView {
       "active-pane",
       true
     );
+  }
+
+  async addYouTubeThumbnail(link:string) {
+    const thumbnailLink = await getYouTubeThumbnailLink(link);
+    const ea = getEA(this) as ExcalidrawAutomate;
+    const id = await ea.addImage(0,0,thumbnailLink);
+    //@ts-ignore
+    ea.getElement(id).link = link;
+    ea.addElementsToView(true,true,true);
+  }
+
+  async addImageWithURL(link:string) {
+    const ea = getEA(this) as ExcalidrawAutomate;
+    await ea.addImage(0,0,link);
+    ea.addElementsToView(true,true,true);
   }
 
   onPaneMenu(menu: Menu, source: string): void {
@@ -2429,7 +2464,7 @@ export default class ExcalidrawView extends TextFileView {
                 this.plugin,
                 this.file.path,
                 images[k].isHyperlink
-                  ? images[k].dataURL
+                  ? images[k].hyperlink
                   : images[k].file,
               );
               const st: AppState = api.getAppState();
@@ -2630,8 +2665,7 @@ export default class ExcalidrawView extends TextFileView {
               ? `#${ef.linkParts.isBlockRef ? "^" : ""}${ef.linkParts.ref}`
               : "";
             linktext =
-              this.excalidrawData.getFile(selectedImgElement.fileId).file.path +
-              ref;
+              ef.file.path + ref;
           } else {
             element = this.excalidrawAPI.getSceneElements().filter((el:ExcalidrawElement)=>el.id === selectedElement.id)[0];
             const text: string =
@@ -2916,6 +2950,14 @@ export default class ExcalidrawView extends TextFileView {
             renderTopRightUI: this.obsidianMenu.renderButton,
             onPaste: (data: ClipboardData) => {
               //, event: ClipboardEvent | null
+              if(data && data.text && hyperlinkIsYouTubeLink(data.text)) {
+                this.addYouTubeThumbnail(data.text);
+                return false;
+              }
+              if(data && data.text && hyperlinkIsImage(data.text)) {
+                this.addImageWithURL(data.text);
+                return false;
+              }
               if (data.elements) {
                 const self = this;
                 setTimeout(() => self.save(false), 300);
@@ -3057,11 +3099,15 @@ export default class ExcalidrawView extends TextFileView {
                     return false;
                   }
                   if(text && event[CTRL_OR_CMD] && hyperlinkIsImage(text)) {
-                    (async () => {
-                      const ea = getEA(this) as ExcalidrawAutomate;
-                      await ea.addImage(0,0,text);
-                      ea.addElementsToView(true,true,true);
-                    })();
+                    this.addImageWithURL(text);
+                    return false;
+                  }
+                }
+                if(event.dataTransfer.types.includes("text/html")) {
+                  const html = event.dataTransfer.getData("text/html");
+                  const src = html.match(/src=["']([^"']*)["']/)
+                  if(src && event[CTRL_OR_CMD] && hyperlinkIsImage(src[1])) {
+                    this.addImageWithURL(src[1]);
                     return false;
                   }
                 }
@@ -3073,6 +3119,10 @@ export default class ExcalidrawView extends TextFileView {
                   return true;
                 }
                 if (!onDropHook("text", null, text)) {
+                  if(text && event[CTRL_OR_CMD] && hyperlinkIsYouTubeLink(text)) {
+                    this.addYouTubeThumbnail(text);
+                    return false;
+                  }
                   if (
                     this.plugin.settings.iframelyAllowed &&
                     text.match(/^https?:\/\/\S*$/)
@@ -3275,8 +3325,8 @@ export default class ExcalidrawView extends TextFileView {
 
               const event = e?.detail?.nativeEvent;
               if(this.handleLinkHookCall(element,element.link,event)) return;
-              if(this.openExternalLink(element.link)) return;
-
+              if(this.openExternalLink(element.link, !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey ? element : undefined)) return;
+              
               this.linkClick(
                 event,
                 null,
@@ -3564,6 +3614,26 @@ export default class ExcalidrawView extends TextFileView {
     } else {
       api.zoomToFit(elements, maxZoom, this.isFullscreen() ? 0 : 0.05);
     }
+  }
+
+  public updatePinchZoom() {
+    const api = this.excalidrawAPI;
+    if (!api) {
+      return false;
+    }
+    api.updateScene({
+      appState: { allowPinchZoom: this.plugin.settings.allowPinchZoom },
+    });
+  }
+
+  public updateWheelZoom() {
+    const api = this.excalidrawAPI;
+    if (!api) {
+      return false;
+    }
+    api.updateScene({
+      appState: { allowWheelZoom: this.plugin.settings.allowWheelZoom },
+    });
   }
 
   public async toggleTrayMode() {

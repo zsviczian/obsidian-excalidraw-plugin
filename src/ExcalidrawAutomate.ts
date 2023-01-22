@@ -982,6 +982,9 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       dataURL: image.dataURL,
       created: image.created,
       isHyperlink: typeof imageFile === "string",
+      hyperlink: typeof imageFile === "string"
+        ? imageFile
+        : null,
       file: typeof imageFile === "string"
         ? null
         : imageFile.path + (scale ? "":"|100%"),

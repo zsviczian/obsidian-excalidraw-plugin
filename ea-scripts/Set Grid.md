@@ -8,11 +8,17 @@ https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.h
 
 ```javascript
 */
-const grid = parseInt(await utils.inputPrompt("Grid size?",null,"20"));
-if(isNaN(grid)) return; //this is to avoid passing an illegal value to Excalidraw
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.8.11")) {
+  new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
+  return;
+}
+
 const api = ea.getExcalidrawAPI();
 let appState = api.getAppState();
+const grid = parseInt(await utils.inputPrompt("Grid size?",null,appState.previousGridSize?.toString()??"20"));
+if(isNaN(grid)) return; //this is to avoid passing an illegal value to Excalidraw
 appState.gridSize = grid;
+appState.previousGridSize = grid;
 api.updateScene({
   appState,
   commitToHistory:false

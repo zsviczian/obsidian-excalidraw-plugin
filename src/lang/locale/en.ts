@@ -7,42 +7,42 @@ import {
 // English
 export default {
   // main.ts
-  INSTALL_SCRIPT: "Install this script",
-  UPDATE_SCRIPT: "An update is available - Click to install",
+  INSTALL_SCRIPT: "Install the script",
+  UPDATE_SCRIPT: "Update available - Click to install",
   CHECKING_SCRIPT:
-    "Checking if a newer version is available - Click to reinstall now",
+    "Checking for newer version - Click to reinstall",
   UNABLETOCHECK_SCRIPT:
-    "Update check was unsuccessful - Click to reinstall now",
+    "Update check failed - Click to reinstall",
   UPTODATE_SCRIPT:
-    "Script is installed and up to date - Click to reinstall now",
+    "Script is up to date - Click to reinstall",
   OPEN_AS_EXCALIDRAW: "Open as Excalidraw Drawing",
   TOGGLE_MODE: "Toggle between Excalidraw and Markdown mode",
   CONVERT_NOTE_TO_EXCALIDRAW: "Convert empty note to Excalidraw Drawing",
   CONVERT_EXCALIDRAW: "Convert *.excalidraw to *.md files",
-  CREATE_NEW: "New Excalidraw drawing",
+  CREATE_NEW: "Create new drawing",
   CONVERT_FILE_KEEP_EXT: "*.excalidraw => *.excalidraw.md",
   CONVERT_FILE_REPLACE_EXT: "*.excalidraw => *.md (Logseq compatibility)",
   DOWNLOAD_LIBRARY: "Export stencil library as an *.excalidrawlib file",
-  OPEN_EXISTING_NEW_PANE: "Open an existing drawing - IN A NEW PANE",
+  OPEN_EXISTING_NEW_PANE: "Open existing drawing - IN A NEW PANE",
   OPEN_EXISTING_ACTIVE_PANE:
-    "Open an existing drawing - IN THE CURRENT ACTIVE PANE",
-  TRANSCLUDE: "Transclude (embed) a drawing",
-  TRANSCLUDE_MOST_RECENT: "Transclude (embed) the most recently edited drawing",
+    "Open existing drawing - IN THE CURRENT ACTIVE PANE",
+  TRANSCLUDE: "Embed a drawing",
+  TRANSCLUDE_MOST_RECENT: "Embed the most recently edited drawing",
   TOGGLE_LEFTHANDED_MODE: "Toggle left-handed mode",
-  NEW_IN_NEW_PANE: "Create a new drawing - IN A NEW PANE",
-  NEW_IN_ACTIVE_PANE: "Create a new drawing - IN THE CURRENT ACTIVE PANE",
-  NEW_IN_POPOUT_WINDOW: "Create a new drawing - IN A POPOUT WINDOW",
+  NEW_IN_NEW_PANE: "Create new drawing - IN A NEW PANE",
+  NEW_IN_ACTIVE_PANE: "Create new drawing - IN THE CURRENT ACTIVE PANE",
+  NEW_IN_POPOUT_WINDOW: "Create new drawing - IN A POPOUT WINDOW",
   NEW_IN_NEW_PANE_EMBED:
-    "Create a new drawing - IN A NEW PANE - and embed into active document",
+    "Create new drawing - IN A NEW PANE - and embed into active document",
   NEW_IN_ACTIVE_PANE_EMBED:
-    "Create a new drawing - IN THE CURRENT ACTIVE PANE - and embed into active document",
-  NEW_IN_POPOUT_WINDOW_EMBED: "Create a new drawing - IN A POPOUT WINDOW - and embed into active document",
-  EXPORT_SVG: "Save as SVG next to the current file",
-  EXPORT_PNG: "Save as PNG next to the current file",
-  EXPORT_SVG_WITH_SCENE: "Save as SVG with embedded Excalidraw Scene next to the current file",
-  EXPORT_PNG_WITH_SCENE: "Save as PNG with embedded Excalidraw Scene next to the current file",
-  TOGGLE_LOCK: "Toggle Text Element edit RAW/PREVIEW",
-  DELETE_FILE: "Delete selected Image or Markdown file from Obsidian Vault",
+    "Create new drawing - IN THE CURRENT ACTIVE PANE - and embed into active document",
+  NEW_IN_POPOUT_WINDOW_EMBED: "Create new drawing - IN A POPOUT WINDOW - and embed into active document",
+  EXPORT_SVG: "Save as SVG next to current file",
+  EXPORT_PNG: "Save as PNG next to current file",
+  EXPORT_SVG_WITH_SCENE: "Save as SVG with embedded Excalidraw Scene next to current file",
+  EXPORT_PNG_WITH_SCENE: "Save as PNG with embedded Excalidraw Scene next to current file",
+  TOGGLE_LOCK: "Toggle Text Element between edit RAW and PREVIEW",
+  DELETE_FILE: "Delete selected image or Markdown file from Obsidian Vault",
   INSERT_LINK_TO_ELEMENT:
     "Copy markdown link for selected element to clipboard. CTRL/CMD+Click to copy group link. SHIFT+click to copy an area link.",
   INSERT_LINK_TO_ELEMENT_GROUP:
@@ -201,11 +201,12 @@ FILENAME_HEAD: "Filename",
 
   DEFAULT_PINCHZOOM_NAME: "Allow pinch zoom in pen mode",
   DEFAULT_PINCHZOOM_DESC:
-    "Pinch zoom in pen mode is disabled by default to prevent unwanted accidental zooming with your palm. By enabling this setting you can allow pinch zoom in Pen mode.<br>Re-open drawings for the change to take effect.",
+    "Pinch zoom in pen mode when using the freedraw tool is disabled by default to prevent unwanted accidental zooming with your palm.<br>" +
+    "<b>Toggle on: </b>Enable pinch zoom in pen mode<br><b>Toggle off: </b>Disable pinch zoom in pen mode",
 
   DEFAULT_WHEELZOOM_NAME: "Mouse wheel to zoom by default",
   DEFAULT_WHEELZOOM_DESC:
-    "<b>Toggle on: </b>Mouse wheel to zoom; CTRL + mouse wheel to scroll</br><b>Toggle off: </b>CTRL + mouse wheel to zoom; Mouse wheel to scroll</br><br>Re-open drawings for the change to take effect.",
+    "<b>Toggle on: </b>Mouse wheel to zoom; CTRL + mouse wheel to scroll</br><b>Toggle off: </b>CTRL + mouse wheel to zoom; Mouse wheel to scroll",
     
   ZOOM_TO_FIT_NAME: "Zoom to fit on view resize",
   ZOOM_TO_FIT_DESC: "Zoom to fit drawing when the pane is resized" +
@@ -372,7 +373,7 @@ FILENAME_HEAD: "Filename",
   EXPORT_THEME_DESC:
     "Export the image matching the dark/light theme of your drawing. If turned off, " +
     "drawings created in dark mode will appear as they would in light mode.",
-  EXPORT_HEAD: "Export Settings",
+  EXPORT_HEAD: "Auto-export Settings",
   EXPORT_SYNC_NAME:
     "Keep the .SVG and/or .PNG filenames in sync with the drawing file",
   EXPORT_SYNC_DESC:

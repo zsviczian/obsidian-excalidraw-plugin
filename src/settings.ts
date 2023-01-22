@@ -603,6 +603,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.allowPinchZoom)
           .onChange(async (value) => {
             this.plugin.settings.allowPinchZoom = value;
+            app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
+              if (v.view instanceof ExcalidrawView) v.view.updatePinchZoom()
+            })
             this.applySettingsUpdate();
           }),
       );
@@ -615,6 +618,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.allowWheelZoom)
           .onChange(async (value) => {
             this.plugin.settings.allowWheelZoom = value;
+            app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
+              if (v.view instanceof ExcalidrawView) v.view.updateWheelZoom()
+            })
             this.applySettingsUpdate();
           }),
       );
@@ -1319,6 +1325,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
+  
+    this.containerEl.createEl("h1", { text: t("EXPERIMENTAL_HEAD") });
+    this.containerEl.createEl("p", { text: t("EXPERIMENTAL_DESC") });
 
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/628
     new Setting(containerEl)
@@ -1336,10 +1345,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           })
       })
-    
-
-    this.containerEl.createEl("h1", { text: t("EXPERIMENTAL_HEAD") });
-    this.containerEl.createEl("p", { text: t("EXPERIMENTAL_DESC") });
 
     new Setting(containerEl)
       .setName(t("FIELD_SUGGESTER_NAME"))
