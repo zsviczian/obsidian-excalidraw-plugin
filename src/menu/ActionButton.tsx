@@ -4,6 +4,7 @@ import ExcalidrawView from "../ExcalidrawView";
 type ButtonProps = {
   title: string;
   action: Function;
+  longpress?: Function;
   icon: JSX.Element;
   view: ExcalidrawView;
 };
@@ -14,6 +15,7 @@ type ButtonState = {
 
 export class ActionButton extends React.Component<ButtonProps, ButtonState> {
   toastMessageTimeout: number = 0;
+  longpressTimeout: number = 0;
 
   constructor(props: ButtonProps) {
     super(props);
@@ -36,15 +38,32 @@ export class ActionButton extends React.Component<ButtonProps, ButtonState> {
           if (this.toastMessageTimeout) {
             window.clearTimeout(this.toastMessageTimeout);
             this.toastMessageTimeout = 0;
+            this.props.action(event); //don't invoke the action on long press
           }
-          this.props.action(event);
+          if (this.longpressTimeout) {
+            window.clearTimeout(this.longpressTimeout);
+            this.longpressTimeout = 0;
+          }
         }}
-        onPointerDown={() => {
+        onPointerDown={(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
           this.toastMessageTimeout = window.setTimeout(
-            () =>
-              this.props.view.excalidrawAPI?.setToast({message:this.props.title}),
-            300,
+            () => {
+              this.props.view.excalidrawAPI?.setToast({message:this.props.title});
+              this.toastMessageTimeout = 0;
+            },
+            400,
           );
+          this.longpressTimeout = window.setTimeout(
+            () => {
+              if(this.props.longpress) {
+                this.props.longpress(event);
+              } else {
+                this.props.view.excalidrawAPI?.setToast({message:"Cannot pin this action"});
+              }
+              this.longpressTimeout = 0;
+            },
+            1500
+          )
         }}
       >
         <div className="ToolIcon__icon" aria-hidden="true">

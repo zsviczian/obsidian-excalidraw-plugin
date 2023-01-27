@@ -3,7 +3,7 @@ import { Notice, TFile } from "obsidian";
 import * as React from "react";
 import { ActionButton } from "./ActionButton";
 import { ICONS, saveIcon, stringToSVG } from "./ActionIcons";
-import { SCRIPT_INSTALL_FOLDER, CTRL_OR_CMD, nanoid } from "../Constants";
+import { SCRIPT_INSTALL_FOLDER, CTRL_OR_CMD, nanoid, VIEW_TYPE_EXCALIDRAW } from "../Constants";
 import { insertLaTeXToView, search } from "../ExcalidrawAutomate";
 import ExcalidrawView, { TextMode } from "../ExcalidrawView";
 import { t } from "../lang/helpers";
@@ -11,7 +11,7 @@ import { ReleaseNotes } from "../dialogs/ReleaseNotes";
 import { ScriptIconMap } from "../Scripts";
 import { getIMGFilename } from "../utils/FileUtils";
 import { ScriptInstallPrompt } from "src/dialogs/ScriptInstallPrompt";
-import { group } from "console";
+import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
 
 declare const PLUGIN_VERSION:string;
 const dark = '<svg style="stroke:#ced4da;#212529;color:#ced4da;fill:#ced4da" ';
@@ -607,16 +607,35 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   key={key}
                   title={value.name}
                   action={async () => {
-                    const f =
-                      this.props.view.app.vault.getAbstractFileByPath(key);
+                    const view = this.props.view;
+                    const plugin = view.plugin;
+                    const f = app.vault.getAbstractFileByPath(key);
                     if (f && f instanceof TFile) {
-                      this.props.view.plugin.scriptEngine.executeScript(
-                        this.props.view,
-                        await this.props.view.plugin.app.vault.read(f),
-                        this.props.view.plugin.scriptEngine.getScriptName(f),
+                      plugin.scriptEngine.executeScript(
+                        view,
+                        await app.vault.read(f),
+                        plugin.scriptEngine.getScriptName(f),
                         f
                       );
                     }
+                  }}
+                  longpress={async () => {
+                    const view = this.props.view; 
+                    const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
+                    const plugin = view.plugin;
+                    await plugin.loadSettings();
+                    const index = plugin.settings.pinnedScripts.indexOf(key)
+                    if(index > -1) {
+                      plugin.settings.pinnedScripts.splice(index,1);
+                      api?.setToast({message:`Pin removed: ${value.name}`});
+                    } else {
+                      plugin.settings.pinnedScripts.push(key);
+                      api?.setToast({message:`Pinned: ${value.name}`})
+                    }
+                    await plugin.saveSettings();
+                    app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
+                      if (v.view instanceof ExcalidrawView) v.view.updatePinnedScripts()
+                    })
                   }}
                   icon={
                     value.svgString

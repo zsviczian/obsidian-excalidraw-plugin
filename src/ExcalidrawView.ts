@@ -24,6 +24,7 @@ import {
   BinaryFileData,
   ExcalidrawImperativeAPI,
   LibraryItems,
+  PointerDownState,
 } from "@zsviczian/excalidraw/types/types";
 import {
   VIEW_TYPE_EXCALIDRAW,
@@ -1800,6 +1801,8 @@ export default class ExcalidrawView extends TextFileView {
             penDetected: penEnabled,
             allowPinchZoom: this.plugin.settings.allowPinchZoom,
             allowWheelZoom: this.plugin.settings.allowWheelZoom,
+            pinnedScripts: this.plugin.settings.pinnedScripts,
+            customPens: this.plugin.settings.customPens.slice(0,this.plugin.settings.numberOfCustomPens),
           },
           //files: excalidrawData.files,
           //commitToHistory: true,
@@ -1830,6 +1833,8 @@ export default class ExcalidrawView extends TextFileView {
           penDetected: penEnabled,
           allowPinchZoom: this.plugin.settings.allowPinchZoom,
           allowWheelZoom: this.plugin.settings.allowWheelZoom,
+          pinnedScripts: this.plugin.settings.pinnedScripts,
+          customPens: this.plugin.settings.customPens.slice(0,this.plugin.settings.numberOfCustomPens),
         },
         files: excalidrawData.files,
         libraryItems: await this.getLibrary(),
@@ -2102,7 +2107,7 @@ export default class ExcalidrawView extends TextFileView {
       let blockOnMouseButtonDown = false;
 
       this.toolsPanelRef = toolsPanelRef;
-      this.obsidianMenu = new ObsidianMenu(this.plugin, toolsPanelRef);
+      this.obsidianMenu = new ObsidianMenu(this.plugin, toolsPanelRef, this);
       this.menuLinks = new MenuLinks(this.plugin, menuLinksRef);
 
       //excalidrawRef readypromise based on
@@ -3616,8 +3621,30 @@ export default class ExcalidrawView extends TextFileView {
     }
   }
 
+  public updatePinnedScripts() {
+    const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
+    if (!api) {
+      return false;
+    }
+    api.updateScene({
+      appState: { pinnedScripts: this.plugin.settings.pinnedScripts },
+    });
+  }
+
+  public updatePinnedCustomPens() {
+    const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
+    if (!api) {
+      return false;
+    }
+    api.updateScene({
+      appState: { 
+        customPens: this.plugin.settings.customPens.slice(0,this.plugin.settings.numberOfCustomPens)
+      },
+    });
+  }
+
   public updatePinchZoom() {
-    const api = this.excalidrawAPI;
+    const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
     if (!api) {
       return false;
     }
@@ -3627,7 +3654,7 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   public updateWheelZoom() {
-    const api = this.excalidrawAPI;
+    const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
     if (!api) {
       return false;
     }
@@ -3637,7 +3664,7 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   public async toggleTrayMode() {
-    const api = this.excalidrawAPI;
+    const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
     if (!api) {
       return false;
     }

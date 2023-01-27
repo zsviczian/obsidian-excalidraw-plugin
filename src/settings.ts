@@ -11,10 +11,12 @@ import { VIEW_TYPE_EXCALIDRAW } from "./Constants";
 import ExcalidrawView from "./ExcalidrawView";
 import { t } from "./lang/helpers";
 import type ExcalidrawPlugin from "./main";
+import { PenStyle } from "./PenTypes";
 import {
   getDrawingFilename,
   getEmbedFilename,
 } from "./utils/FileUtils";
+import { PENS } from "./utils/Pens";
 import {
   fragWithHTML,
   setLeftHandedMode,
@@ -117,6 +119,9 @@ export interface ExcalidrawSettings {
   mathjaxSourceURL: string;
   taskboneEnabled: boolean;
   taskboneAPIkey: string;
+  pinnedScripts: string[];
+  customPens: PenStyle[];
+  numberOfCustomPens: number;
 }
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
@@ -211,12 +216,27 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   mathjaxSourceURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.1/es5/tex-svg.js",
   taskboneEnabled: false,
   taskboneAPIkey: "",
+  pinnedScripts: [],
+  customPens: [
+    {...PENS["default"]},
+    {...PENS["highlighter"]},
+    {...PENS["finetip"]},
+    {...PENS["fountain"]},
+    {...PENS["marker"]},
+    {...PENS["thick-thin"]},
+    {...PENS["thin-thick-thin"]},
+    {...PENS["default"]},
+    {...PENS["default"]},
+    {...PENS["default"]}
+  ],
+  numberOfCustomPens: 0,
 };
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
   plugin: ExcalidrawPlugin;
   private requestEmbedUpdate: boolean = false;
   private requestReloadDrawings: boolean = false;
+  private requestUpdatePinnedPens: boolean = false;
   private reloadMathJax: boolean = false;
   //private applyDebounceTimer: number = 0;
 
@@ -242,6 +262,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       this.plugin.settings.scriptFolderPath = "Excalidraw/Scripts";
     }
     this.plugin.saveSettings();
+    if (this.requestUpdatePinnedPens) {
+      app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
+        if (v.view instanceof ExcalidrawView) v.view.updatePinnedCustomPens()
+      })
+    }
     if (this.requestReloadDrawings) {
       const exs =
         app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
@@ -1326,6 +1351,67 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
   
+    this.containerEl.createEl("h1", { text: t("NONSTANDARD_HEAD") });
+    this.containerEl.createEl("p", { text: t("NONSTANDARD_DESC") });
+
+    new Setting(containerEl)
+      .setName(t("CUSTOM_PEN_NAME"))
+      .setDesc(t("CUSTOM_PEN_DESC"))
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("0","0")
+          .addOption("1","1")
+          .addOption("2","2")
+          .addOption("3","3")
+          .addOption("4","4")
+          .addOption("5","5")
+          .addOption("6","6")
+          .addOption("7","7")
+          .addOption("8","8")
+          .addOption("9","9")
+          .addOption("10","10")
+          .setValue(this.plugin.settings.numberOfCustomPens.toString())
+          .onChange((value)=>{
+            this.plugin.settings.numberOfCustomPens = parseInt(value);
+            this.requestUpdatePinnedPens = true;
+            this.applySettingsUpdate(false);
+          })
+      )
+
+    new Setting(containerEl)
+      .setName(t("ENABLE_FOURTH_FONT_NAME"))
+      .setDesc(fragWithHTML(t("ENABLE_FOURTH_FONT_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.experimentalEnableFourthFont)
+          .onChange(async (value) => {
+            this.requestReloadDrawings = true;
+            this.plugin.settings.experimentalEnableFourthFont = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(containerEl)
+      .setName(t("FOURTH_FONT_NAME"))
+      .setDesc(fragWithHTML(t("FOURTH_FONT_DESC")))
+      .addDropdown(async (d: DropdownComponent) => {
+        d.addOption("Virgil", "Virgil");
+        this.app.vault
+          .getFiles()
+          .filter((f) => ["ttf", "woff", "woff2"].contains(f.extension))
+          .forEach((f: TFile) => {
+            d.addOption(f.path, f.name);
+          });
+        d.setValue(this.plugin.settings.experimantalFourthFont).onChange(
+          (value) => {
+            this.requestReloadDrawings = true;
+            this.plugin.settings.experimantalFourthFont = value;
+            this.applySettingsUpdate(true);
+            this.plugin.initializeFourthFont();
+          },
+        );
+      });
+
     this.containerEl.createEl("h1", { text: t("EXPERIMENTAL_HEAD") });
     this.containerEl.createEl("p", { text: t("EXPERIMENTAL_DESC") });
 
@@ -1395,40 +1481,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
-
-    new Setting(containerEl)
-      .setName(t("ENABLE_FOURTH_FONT_NAME"))
-      .setDesc(fragWithHTML(t("ENABLE_FOURTH_FONT_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.experimentalEnableFourthFont)
-          .onChange(async (value) => {
-            this.requestReloadDrawings = true;
-            this.plugin.settings.experimentalEnableFourthFont = value;
-            this.applySettingsUpdate();
-          }),
-      );
-
-    new Setting(containerEl)
-      .setName(t("FOURTH_FONT_NAME"))
-      .setDesc(fragWithHTML(t("FOURTH_FONT_DESC")))
-      .addDropdown(async (d: DropdownComponent) => {
-        d.addOption("Virgil", "Virgil");
-        this.app.vault
-          .getFiles()
-          .filter((f) => ["ttf", "woff", "woff2"].contains(f.extension))
-          .forEach((f: TFile) => {
-            d.addOption(f.path, f.name);
-          });
-        d.setValue(this.plugin.settings.experimantalFourthFont).onChange(
-          (value) => {
-            this.requestReloadDrawings = true;
-            this.plugin.settings.experimantalFourthFont = value;
-            this.applySettingsUpdate(true);
-            this.plugin.initializeFourthFont();
-          },
-        );
-      });
 
     this.containerEl.createEl("h2", { text: t("TASKBONE_HEAD") });
     this.containerEl.createEl("p", { text: t("TASKBONE_DESC") });

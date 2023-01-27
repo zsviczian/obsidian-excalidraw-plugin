@@ -409,6 +409,10 @@ FILENAME_HEAD: "Filename",
   MATHJAX_DESC: "If you are using LaTeX equiations in Excalidraw then the plugin needs to load a javascript library for that. " + 
     "Some users are unable to access certain host servers. If you are experiencing issues try changing the host here. You may need to "+
     "restart Obsidian after closing settings, for this change to take effect.",
+  NONSTANDARD_HEAD: "Non-Excalidraw.com supported features",
+  NONSTANDARD_DESC: "These features are not available on excalidraw.com. When exporting the drawing to Excalidraw.com these features will appear different.",
+  CUSTOM_PEN_NAME: "Number of custom pens",
+  CUSTOM_PEN_DESC: "You will see these pens next to the Obsidian Menu on the canvas. You can customize the pens on the canvas by long-pressing the pen button.",
   EXPERIMENTAL_HEAD: "Experimental features",
   EXPERIMENTAL_DESC:
     "Some of these setting will not take effect immediately, only when the File Explorer is refreshed, or Obsidian restarted.",
