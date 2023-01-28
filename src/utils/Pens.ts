@@ -165,7 +165,7 @@ export const PENS:Record<PenType,PenStyle> = {
     strokeWidth: 0,
     roughness: null,
     penOptions: {
-      highlighter: false,
+      highlighter: true,
       constantPressure: true,
       hasOutline: false,
       outlineWidth: 1,
@@ -196,7 +196,7 @@ export const PENS:Record<PenType,PenStyle> = {
     strokeWidth: 0,
     roughness: null,
     penOptions: {
-      highlighter: false,
+      highlighter: true,
       constantPressure: true,
       hasOutline: false,
       outlineWidth: 1,

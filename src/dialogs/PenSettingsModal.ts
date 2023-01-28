@@ -3,6 +3,7 @@ import { ColorComponent, Modal, Setting, SliderComponent, ToggleComponent } from
 import { VIEW_TYPE_EXCALIDRAW } from "src/Constants";
 import ExcalidrawView from "src/ExcalidrawView";
 import ExcalidrawPlugin from "src/main";
+import { setPen } from "src/menu/ObsidianMenu";
 import { ExtendedFillStyle, PenStyle, PenType } from "src/PenTypes";
 import { PENS } from "src/utils/Pens";
 import { fragWithHTML, getExportPadding, getExportTheme, getPNGScale, getWithBackground } from "src/utils/Utils";
@@ -69,26 +70,8 @@ export class PenSettingsModal extends Modal {
       this.plugin.saveSettings();
       const pen = this.plugin.settings.customPens[this.pen]
       const api = this.view.excalidrawAPI;
-      const st = api.getAppState();
-      api.updateScene({
-        appState: {
-          currentStrokeOptions: pen.penOptions,
-          ...(!pen.strokeWidth || (pen.strokeWidth === 0)) ? null : {currentItemStrokeWidth: pen.strokeWidth},
-          ...pen.backgroundColor ? {currentItemBackgroundColor: pen.backgroundColor} : null,
-          ...pen.strokeColor ? {currentItemStrokeColor: pen.strokeColor} : null,
-          ...pen.fillStyle === "" ? null : {currentItemFillStyle: pen.fillStyle},
-          ...pen.roughness ? null : {currentItemRoughness: pen.roughness},
-          ...pen.freedrawOnly ? {resetCustomPen: {
-            currentItemStrokeWidth: st.currentItemStrokeWidth,
-            currentItemBackgroundColor: st.currentItemBackgroundColor,
-            currentItemStrokeColor: st.currentItemStrokeColor,
-            currentItemFillStyle: st.currentItemFillStyle,
-            currentItemRoughness: st.currentItemRoughness,
-          }} : {}
-        }
-      });
+      setPen(pen,api);
       api.setActiveTool({type:"freedraw"});
-      
     }
     
   }
@@ -134,10 +117,10 @@ export class PenSettingsModal extends Modal {
         )
     
     let scopeSetting: Setting;
-
+    
     scopeSetting = new Setting(ce)
       .setName(fragWithHTML(ps.freedrawOnly?"Stroke & fill applies to: <b>Freedraw only</b>":"Stroke & fill applies to: <b>All shapes</b>"))
-      .setDesc(fragWithHTML(`In practical terms <b>all shapes</b> means that if I set a blue pen with dashed fill, and after drawing a freedraw line I switch tools and draw a circle or an arrow, it will have the same blue line and dashed fill.<br>If on the other hand, the style <b>only applys to the freedraw line</b> then if I have a yellow highlighter, when I switch back to drawing a rectangle, a line or a text element those will follow the style before the highlighter (e.g. black text)`))
+      .setDesc(fragWithHTML(`<b>"All shapes"</b> means that if for example, you select a blue pen with dashed fill and then switch to a different tool (e.g. to a line, a circle, an arrow - i.e. not the freedraw tool), those will all have the same blue line and dashed fill.<br><b>"Only applies to the freedraw line"</b> means that if for example you are writing black text, and you select a custom pen (e.g. a yellow highlighter), then after using the highlighter you switch to another tool, the previous settings (e.g. black stroke color) will apply to the new shape.`))
       .addToggle(toggle =>
         toggle
           .setValue(ps.freedrawOnly)
@@ -154,7 +137,7 @@ export class PenSettingsModal extends Modal {
 
     strokeSetting = new Setting(ce)
       .setName(fragWithHTML(!Boolean(ps.strokeColor) ? "Stroke color: <b>Current</b>" : "Stroke color: <b>Preset color</b>"))
-      .setDesc("Use current stroke color of the canvas, or set a specific color for the pen")
+      .setDesc(fragWithHTML("Use <b>current</b> stroke color of the canvas, or set a specific <b>preset color</b> for the pen"))
       .addToggle(toggle => 
         toggle
           .setValue(!Boolean(ps.strokeColor))
@@ -166,6 +149,7 @@ export class PenSettingsModal extends Modal {
               delete ps.strokeColor;
             } else {
               if(!scComponent.getValue()) scComponent.setValue("#000000");
+              ps.strokeColor = scComponent.getValue();
             }
           })
         )
@@ -193,7 +177,7 @@ export class PenSettingsModal extends Modal {
 
     bSetting = new Setting(ce)
       .setName(fragWithHTML(!Boolean(ps.backgroundColor) ? "Background color: <b>Current</b>" : "Background color: <b>Preset color</b>"))
-      .setDesc("Toggle to use current background color on the canvas or a pre-set color")
+      .setDesc(fragWithHTML("Toggle to use the <b>current background color</b> of the canvas; or a <b>preset color</b>"))
       .addToggle(toggle => 
         toggle
           .setValue(!Boolean(ps.backgroundColor))
@@ -265,23 +249,23 @@ export class PenSettingsModal extends Modal {
 
     let rSetting: Setting;
     rSetting = new Setting(ce)
-      .setName(fragWithHTML(`Sloppiness: <b>${ps.roughness <0 ? "Not Set" : (ps.roughness<=0.5 ? "Architect (" : (ps.roughness <= 1.5 ? "Artist (" : "Cartoonist ("))}${ps.roughness >= 0 ? `${ps.roughness})`:""}</b>`))
+      .setName(fragWithHTML(`Sloppiness: <b>${ps.roughness === null ? "Not Set" : (ps.roughness<=0.5 ? "Architect (" : (ps.roughness <= 1.5 ? "Artist (" : "Cartoonist ("))}${ps.roughness === null ? "":`${ps.roughness})`}</b>`))
       .setDesc("Line sloppiness of the shape fill pattern")
       .addSlider(slider =>
         slider
           .setLimits(-0.5,3,0.5)
-          .setValue(ps.roughness === null ? 0.5 : ps.roughness)
+          .setValue(ps.roughness === null ? -0.5 : ps.roughness)
           .onChange(value => {
             this.dirty = true;
-            ps.roughness = value === 0.5 ? null : value;
-            rSetting.setName(fragWithHTML(`Sloppiness: <b>${ps.roughness <0 ? "Not Set" : (ps.roughness<=0.5 ? "Architect (" : (ps.roughness <= 1.5 ? "Artist (" : "Cartoonist ("))}${ps.roughness >= 0 ? `${ps.roughness})`:""}</b>`));
+            ps.roughness = value === -0.5 ? null : value;
+            rSetting.setName(fragWithHTML(`Sloppiness: <b>${ps.roughness === null ? "Not Set" : (ps.roughness<=0.5 ? "Architect (" : (ps.roughness <= 1.5 ? "Artist (" : "Cartoonist ("))}${ps.roughness === null ? "":`${ps.roughness})`}</b>`));
           })
       )
 
     let swSetting: Setting;
 
 		swSetting = new Setting(ce)
-		  .setName(fragWithHTML(`Stroke Width <b>${ps.strokeWidth === 0 ? "NOT SET" : ps.strokeWidth}</b>`))
+		  .setName(fragWithHTML(`Stroke Width <b>${ps.strokeWidth === 0 ? "Not Set" : ps.strokeWidth}</b>`))
       .addSlider(slider =>
         slider
           .setLimits(0,5,0.5)
@@ -289,7 +273,7 @@ export class PenSettingsModal extends Modal {
           .onChange(value => {
             this.dirty = true;
             ps.strokeWidth = value;
-            swSetting.setName(fragWithHTML(`Stroke Width <b>${ps.strokeWidth === 0 ? "NOT SET" : ps.strokeWidth}</b>`));
+            swSetting.setName(fragWithHTML(`Stroke Width <b>${ps.strokeWidth === 0 ? "Not Set" : ps.strokeWidth}</b>`));
           }) 
 		  )
 	
@@ -304,14 +288,18 @@ export class PenSettingsModal extends Modal {
           })
       )
 
+    let spSetting: Setting;
+
     new Setting(ce)
       .setName("Pressure sensitve pen?")
+      .setDesc(fragWithHTML(`<b>toggle on</b>: pressure sensitive<br><b>toggle off</b>: constant pressure`))
       .addToggle(toggle =>
         toggle
           .setValue(!ps.penOptions.constantPressure)
           .onChange(value => {
             this.dirty = true;
             ps.penOptions.constantPressure = !value;
+            spSetting.settingEl.style.display = ps.penOptions.constantPressure ? "none" : "";
           })
       )
 
@@ -353,11 +341,11 @@ export class PenSettingsModal extends Modal {
       .setDesc(fragWithHTML(`The effect of pressure on the stroke's size.<br>To create a stroke with a steady line, set the thinning option to 0.<br>To create a stroke that gets thinner with pressure instead of thicker, use a negative number for the thinning option.`))
       .addSlider(slider =>
         slider
-          .setLimits(-1,1,0.01)
+          .setLimits(-1,1,0.05)
           .setValue(ps.penOptions.options.thinning)
           .onChange(value=> {
             this.dirty;
-            tSetting.setName(fragWithHTML(`Thinnning <b>${ps.penOptions.options.thinning}</b>)`));
+            tSetting.setName(fragWithHTML(`Thinnning <b>${value}</b>`));
             ps.penOptions.options.thinning = value;
           })
         )
@@ -368,11 +356,11 @@ export class PenSettingsModal extends Modal {
       .setDesc(fragWithHTML(`How much to soften the stroke's edges.`))
       .addSlider(slider =>
         slider
-          .setLimits(0,1,0.01)
+          .setLimits(0,1,0.05)
           .setValue(ps.penOptions.options.smoothing)
           .onChange(value=> {
             this.dirty;
-            sSetting.setName(fragWithHTML(`Smoothing <b>${ps.penOptions.options.smoothing}</b>`));
+            sSetting.setName(fragWithHTML(`Smoothing <b>${value}</b>`));
             ps.penOptions.options.smoothing = value;
           })
         )
@@ -383,11 +371,11 @@ export class PenSettingsModal extends Modal {
       .setDesc(fragWithHTML(`	How much to streamline the stroke.`))
       .addSlider(slider =>
         slider
-          .setLimits(0,1,0.01)
+          .setLimits(0,1,0.05)
           .setValue(ps.penOptions.options.streamline)
           .onChange(value=> {
             this.dirty;
-            slSetting.setName(fragWithHTML(`Streamline <b>${ps.penOptions.options.streamline}</b>`));
+            slSetting.setName(fragWithHTML(`Streamline <b>${value}</b>`));
             ps.penOptions.options.streamline = value;
           })
         )
@@ -405,7 +393,7 @@ export class PenSettingsModal extends Modal {
         })
       )
 
-    new Setting(ce)
+    spSetting = new Setting(ce)
       .setName("Simulate Pressure")
       .setDesc("Whether to simulate pressure based on velocity.")
       .addDropdown(dropdown =>
@@ -429,6 +417,7 @@ export class PenSettingsModal extends Modal {
             }
           })
         )
+    spSetting.settingEl.style.display = ps.penOptions.constantPressure ? "none" : "";
 
     ce.createEl("h3",{text: "Start"});
     ce.createEl("p",{text: "Tapering options for the start of the line."})

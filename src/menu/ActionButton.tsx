@@ -48,7 +48,7 @@ export class ActionButton extends React.Component<ButtonProps, ButtonState> {
         onPointerDown={(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
           this.toastMessageTimeout = window.setTimeout(
             () => {
-              this.props.view.excalidrawAPI?.setToast({message:this.props.title});
+              this.props.view.excalidrawAPI?.setToast({message:this.props.title, duration: 3000, closable: true});
               this.toastMessageTimeout = 0;
             },
             400,
@@ -58,7 +58,7 @@ export class ActionButton extends React.Component<ButtonProps, ButtonState> {
               if(this.props.longpress) {
                 this.props.longpress(event);
               } else {
-                this.props.view.excalidrawAPI?.setToast({message:"Cannot pin this action"});
+                this.props.view.excalidrawAPI?.setToast({message:"Cannot pin this action", duration: 3000, closable: true});
               }
               this.longpressTimeout = 0;
             },

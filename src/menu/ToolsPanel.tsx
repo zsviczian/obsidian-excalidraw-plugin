@@ -627,10 +627,10 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     const index = plugin.settings.pinnedScripts.indexOf(key)
                     if(index > -1) {
                       plugin.settings.pinnedScripts.splice(index,1);
-                      api?.setToast({message:`Pin removed: ${value.name}`});
+                      api?.setToast({message:`Pin removed: ${value.name}`, duration: 3000, closable: true});
                     } else {
                       plugin.settings.pinnedScripts.push(key);
-                      api?.setToast({message:`Pinned: ${value.name}`})
+                      api?.setToast({message:`Pinned: ${value.name}`, duration: 3000, closable: true})
                     }
                     await plugin.saveSettings();
                     app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {

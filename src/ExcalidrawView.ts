@@ -2544,7 +2544,6 @@ export default class ExcalidrawView extends TextFileView {
             currentItemRoundness: st.currentItemRoundness,
             gridSize: st.gridSize,
             colorPalette: st.colorPalette,
-            //@ts-ignore
             currentStrokeOptions: st.currentStrokeOptions,
             previousGridSize: st.previousGridSize,
           },

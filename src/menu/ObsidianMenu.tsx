@@ -1,19 +1,56 @@
-import { ExcalidrawImageElement } from "@zsviczian/excalidraw/types/element/types";
 import { AppState, ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
 import clsx from "clsx";
-import { backgroundClip } from "html2canvas/dist/types/css/property-descriptors/background-clip";
 import { TFile } from "obsidian";
 import * as React from "react";
 import { VIEW_TYPE_EXCALIDRAW } from "src/Constants";
 import { PenSettingsModal } from "src/dialogs/PenSettingsModal";
-import { ReleaseNotes } from "src/dialogs/ReleaseNotes";
 import ExcalidrawView from "src/ExcalidrawView";
-import { t } from "src/lang/helpers";
+import { PenStyle } from "src/PenTypes";
 import { PENS } from "src/utils/Pens";
 import ExcalidrawPlugin from "../main";
 import { ICONS, penIcon, stringToSVG } from "./ActionIcons";
 
 declare const PLUGIN_VERSION:string;
+
+export const setPen = (pen: PenStyle, api: any) => {
+  const st = api.getAppState();
+  api.updateScene({
+    appState: {
+      currentStrokeOptions: pen.penOptions,
+      ...(!pen.strokeWidth || (pen.strokeWidth === 0)) ? null : {currentItemStrokeWidth: pen.strokeWidth},
+      ...pen.backgroundColor ? {currentItemBackgroundColor: pen.backgroundColor} : null,
+      ...pen.strokeColor ? {currentItemStrokeColor: pen.strokeColor} : null,
+      ...pen.fillStyle === "" ? null : {currentItemFillStyle: pen.fillStyle},
+      ...pen.roughness ? null : {currentItemRoughness: pen.roughness},
+      ...pen.freedrawOnly && !st.resetCustomPen //switching from custom pen to next custom pen
+        ? {
+          resetCustomPen: {
+            currentItemStrokeWidth:     st.currentItemStrokeWidth,
+            currentItemBackgroundColor: st.currentItemBackgroundColor,
+            currentItemStrokeColor:     st.currentItemStrokeColor,
+            currentItemFillStyle:       st.currentItemFillStyle,
+            currentItemRoughness:       st.currentItemRoughness,
+          }} 
+        : null,
+    }
+  })
+}
+
+export const resetStrokeOptions = (resetCustomPen:any, api: ExcalidrawImperativeAPI, clearCurrentStrokeOptions: boolean) => {
+  api.updateScene({
+    appState: {
+      ...resetCustomPen ? {
+        currentItemStrokeWidth:     resetCustomPen.currentItemStrokeWidth,
+        currentItemBackgroundColor: resetCustomPen.currentItemBackgroundColor,
+        currentItemStrokeColor:     resetCustomPen.currentItemStrokeColor,
+        currentItemFillStyle:       resetCustomPen.currentItemFillStyle,
+        currentItemRoughness:       resetCustomPen.currentItemRoughness,
+      }: null,
+      resetCustomPen: null,
+      ...clearCurrentStrokeOptions ? {currentStrokeOptions:null} : null,
+    }
+  });
+}
 
 export class ObsidianMenu {
   private clickTimestamp:number[];
@@ -47,7 +84,8 @@ export class ObsidianMenu {
             {ICONS.obsidian}
           </div>
         </label>
-        {appState.customPens?.map((key,index)=>{ //custom pens
+        { //Add custom pen buttons
+          appState.customPens?.map((key,index)=>{
           const pen = this.plugin.settings.customPens[index]
           //Reset stroke setting when changing to a different tool
           if( 
@@ -55,20 +93,7 @@ export class ObsidianMenu {
             appState.activeTool.type !== "freedraw" &&
             appState.currentStrokeOptions === pen.penOptions
           ) {
-            setTimeout(()=>{
-              const api = this.view.excalidrawAPI;
-              const st = appState.resetCustomPen;
-              api.updateScene({
-                appState: {
-                  currentItemStrokeWidth: st.currentItemStrokeWidth,
-                  currentItemBackgroundColor: st.currentItemBackgroundColor,
-                  currentItemStrokeColor: st.currentItemStrokeColor,
-                  currentItemFillStyle: st.currentItemFillStyle,
-                  currentItemRoughness: st.currentItemRoughness,
-                  resetCustomPen: null,
-                }
-              })
-            })
+            setTimeout(()=> resetStrokeOptions(appState.resetCustomPen, this.view.excalidrawAPI, false))
           }
           //if Pen settings are loaded, select custom pen when activating the freedraw element
           if (
@@ -76,28 +101,9 @@ export class ObsidianMenu {
             appState.activeTool.type === "freedraw" &&
             appState.currentStrokeOptions === pen.penOptions
           ) {
-            setTimeout(()=>{
-              const api = this.view.excalidrawAPI;
-              const st = api.getAppState();
-              api.updateScene({
-                appState: {
-                  currentStrokeOptions: pen.penOptions,
-                  ...pen.strokeWidth === 0 ? null : {currentItemStrokeWidth: pen.strokeWidth},
-                  ...pen.backgroundColor ? {currentItemBackgroundColor: pen.backgroundColor} : null,
-                  ...pen.strokeColor ? {currentItemStrokeColor: pen.strokeColor} : null,
-                  ...pen.fillStyle === "" ? null : {currentItemFillStyle: pen.fillStyle},
-                  ...pen.roughness ? null : {currentItemRoughness: pen.roughness},
-                  ...pen.freedrawOnly ? {resetCustomPen: {
-                    currentItemStrokeWidth: st.currentItemStrokeWidth,
-                    currentItemBackgroundColor: st.currentItemBackgroundColor,
-                    currentItemStrokeColor: st.currentItemStrokeColor,
-                    currentItemFillStyle: st.currentItemFillStyle,
-                    currentItemRoughness: st.currentItemRoughness,
-                  }} : {}
-                }
-              })
-            })
+            setTimeout(()=>setPen(pen,this.view.excalidrawAPI));
           }
+
           return (
             <label
               key={index}
@@ -124,44 +130,15 @@ export class ObsidianMenu {
                 
                 const api = this.view.excalidrawAPI;
                 const st = api.getAppState();
-                //single second click to reset freedraw to default
-                if(st.currentStrokeOptions === pen.penOptions) {
-                  const rcp = st.resetCustomPen;
-                  api.updateScene({
-                    appState: {
-                      ...rcp ? {
-                        currentItemStrokeWidth: rcp.currentItemStrokeWidth,
-                        currentItemBackgroundColor: rcp.currentItemBackgroundColor,
-                        currentItemStrokeColor: rcp.currentItemStrokeColor,
-                        currentItemFillStyle: rcp.currentItemFillStyle,
-                        currentItemRoughness: rcp.currentItemRoughness
-                      }:{},
-                      resetCustomPen: null,
-                      currentStrokeOptions: null,
-                    }
-                  })
 
+                //single second click to reset freedraw to default
+                if(st.currentStrokeOptions === pen.penOptions && st.activeTool.type === "freedraw") {
+                  resetStrokeOptions(st.resetCustomPen, api, true);
                   return;
                 }
 
                 //apply pen settings to canvas
-                api.updateScene({
-                  appState: {
-                    currentStrokeOptions: pen.penOptions,
-                    ...pen.strokeWidth === 0 ? null : {currentItemStrokeWidth: pen.strokeWidth},
-                    ...pen.backgroundColor ? {currentItemBackgroundColor: pen.backgroundColor} : null,
-                    ...pen.strokeColor ? {currentItemStrokeColor: pen.strokeColor} : null,
-                    ...pen.fillStyle === "" ? null : {currentItemFillStyle: pen.fillStyle},
-                    ...pen.roughness ? null : {currentItemRoughness: pen.roughness},
-                    ...pen.freedrawOnly ? {resetCustomPen: {
-                      currentItemStrokeWidth: st.currentItemStrokeWidth,
-                      currentItemBackgroundColor: st.currentItemBackgroundColor,
-                      currentItemStrokeColor: st.currentItemStrokeColor,
-                      currentItemFillStyle: st.currentItemFillStyle,
-                      currentItemRoughness: st.currentItemRoughness,
-                    }} : {}
-                  }
-                });
+                setPen(pen,api);
                 api.setActiveTool({type:"freedraw"});
               }}
             >
@@ -223,7 +200,7 @@ export class ObsidianMenu {
                       const index = this.plugin.settings.pinnedScripts.indexOf(key)
                       if(index > -1) {
                         this.plugin.settings.pinnedScripts.splice(index,1);
-                        this.view.excalidrawAPI?.setToast({message:`Pin removed: ${name}`});
+                        this.view.excalidrawAPI?.setToast({message:`Pin removed: ${name}`, duration: 3000, closable: true});
                       } 
                       await this.plugin.saveSettings();
                       app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
