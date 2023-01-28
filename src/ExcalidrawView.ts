@@ -1110,7 +1110,7 @@ export default class ExcalidrawView extends TextFileView {
     if (!app.isMobile) {
       this.addAction(
         FULLSCREEN_ICON_NAME,
-        "Use the action on the Excalidraw Obsidian Panel or the Command Palette to exti fullscreen mode. You can set up a hotkey for toggling fullscreen mode in Obsidian settings under Hotkeys.",
+        "Use the action on the Excalidraw Obsidian Panel or the Command Palette to exit fullscreen mode. You can set up a hotkey for toggling fullscreen mode in Obsidian settings under Hotkeys.",
         () => this.gotoFullscreen(),
       );
     }
