@@ -2,7 +2,7 @@
 
 format **the left to right** mind map
 
-![](https://raw.githubusercontent.com/pandoralink/my-drawing-bed/main/img/202301111712327.png)
+![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-mindmap-format-1.png)
 
 # tree
 
@@ -14,7 +14,7 @@ The element connecting node and node must be an **arrow** and  have the correct 
 
 The order of nodes in the Y axis or vertical direction is determined by **the creation time** of the arrow connecting it
 
-![](https://raw.githubusercontent.com/pandoralink/my-drawing-bed/main/img/202301111631728.png)
+![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-mindmap-format-2.png)
 
 So if you want to readjust the order, you can **delete arrows and reconnect them**
 
