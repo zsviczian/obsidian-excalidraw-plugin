@@ -308,3 +308,17 @@ label.color-input-container > input {
 .excalidraw button {
   width: initial;
 }
+
+.excalidraw input[type="color"] {
+  width: 1.65rem;
+  height: 1.65rem;
+}
+
+.excalidraw input[type="color"]::-webkit-color-swatch {
+    height: 1.65rem;
+}
+
+
+.excalidraw input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}

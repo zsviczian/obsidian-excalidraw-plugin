@@ -17,6 +17,18 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.8.12": `
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/OjNhjaH2KjI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+# New
+- Hand/Panning Tool, added by the Excalidraw.com team [#6141](https://github.com/excalidraw/excalidraw/pull/6141)
+- Configure custom pens, and pin to the sidebar for easy access [#986](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/986)
+- Added color picker. This allows you to pick colors not included in the palette, and to pick colors from any object displayed on screen.
+- Option to pin favorite scripts (downloaded and user scripts) to the sidebar
+- New Script in Script Library: [Mindmap format](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Mindmap%20format.md) by [pandoralink](https://github.com/zsviczian/obsidian-excalidraw-plugin/commits/master/ea-scripts/Mindmap%20format.md?author=pandoralink) 🙏🎉
+`,
 "1.8.11": `
 <div class="excalidraw-videoWrapper"><div>
 <iframe src="https://www.youtube.com/embed/rBarRfcSxNo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

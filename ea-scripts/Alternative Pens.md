@@ -11,6 +11,7 @@ It takes a bit of experimentation and skill to create a new pen, so be patient.
 3. Copy the following template to the markdown file.
 ```json
 {
+  "highlighter": true,
   "constantPressure": false,
   "hasOutline": true,
   "outlineWidth": 4,
@@ -19,11 +20,12 @@ It takes a bit of experimentation and skill to create a new pen, so be patient.
 ```
 4. If you don't want your pen to have an outline around your line, change `hasOutline` to `false`. You can also modify `outlineWidth` if you want a thinner or thicker outline around your line.
 5. If you want your pen to be pressure sensitive (when drawing with a mouse the pressure is simulated based on the speed of your hand) leave `constantPressure` as `false`. If you want a constant line width regardless of speed and pen pressure, change it to `true`.
-6. Go to https://perfect-freehand-example.vercel.app/ and configure your pen. 
-7. Click `Copy Options`.
-8. Go back to the pen file you created in step No.2 and replace the placeholder text with the options you just copied from perfect-freehand.
-9. Look for `easing` in the file and replace the function e.g. `(t) => t*t,` with the name of the function in brackets (in this example it would be `easeInQuad`). You will find the function name on the perfect-freehand website, only change the first letter to be lower case. 
-10. Test your pen in Excalidraw by clicking the `Alternative Pens` script and selecting your new pen.
+6. `highlighter` true will place the new line behind the existing strokes (i.e. like a highlighter pen). If `highlighter` is missing or it is set to `false` the new line will appear at the top of the existing strokes (the default behavior of Excalidraw pens).
+7. Go to https://perfect-freehand-example.vercel.app/ and configure your pen. 
+8. Click `Copy Options`.
+9. Go back to the pen file you created in step No.2 and replace the placeholder text with the options you just copied from perfect-freehand.
+10. Look for `easing` in the file and replace the function e.g. `(t) => t*t,` with the name of the function in brackets (in this example it would be `easeInQuad`). You will find the function name on the perfect-freehand website, only change the first letter to be lower case. 
+11. Test your pen in Excalidraw by clicking the `Alternative Pens` script and selecting your new pen.
 
 # Example pens
 My pens: https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/ea-scripts/pens

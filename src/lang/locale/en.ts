@@ -448,7 +448,7 @@ FILENAME_HEAD: "Filename",
     "Having the text in the frontmatter will enable you to search in Obsidian for the text contents of these. " +
     "Note, that the process of extracting the text from the image is not done locally, but via an online API. The taskbone service stores the image on its servers only as long as necessary for the text extraction. However, if this is a dealbreaker, then please don't use this feature.",
   TASKBONE_ENABLE_NAME: "Enable Taskbone",
-  TASKBONE_ENABLE_DESC: "By enabling this service your agree to the Taskbone <a href='https://www.taskbone.com/legal/terms/' target='_blank'>Terms and Conditaions</a> and the " +
+  TASKBONE_ENABLE_DESC: "By enabling this service your agree to the Taskbone <a href='https://www.taskbone.com/legal/terms/' target='_blank'>Terms and Conditions</a> and the " +
     "<a href='https://www.taskbone.com/legal/privacy/' target='_blank'>Privacy Policy</a>.",
   TASKBONE_APIKEY_NAME: "Taskbone API Key",
   TASKBONE_APIKEY_DESC: "Taskbone offers a free service with a reasonable number of scans per month. If you want to use this feature more frequently, or you want to supoprt " + 
