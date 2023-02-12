@@ -222,9 +222,21 @@ const createImageDiv = async (
         );
       } //.ctrlKey||ev.metaKey);
     };
-    el.addEventListener("pointerdown",(ev)=>{
-      timer = setTimeout(()=>clickEvent(ev),500);
+    //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1003
+    let pointerDownEvent:any;
+    img.addEventListener("pointermove",(ev)=>{
+      if(!timer) return;
+      if(Math.abs(ev.screenX-pointerDownEvent.screenX)>10 || Math.abs(ev.screenY-pointerDownEvent.screenY)>10) {
+        clearTimeout(timer);
+        timer = null;
+      }
     });
+    
+    img.addEventListener("pointerdown",(ev)=>{
+      timer = setTimeout(()=>clickEvent(ev),500);
+      pointerDownEvent = ev;
+    });
+
     el.addEventListener("pointerup",()=>{
       if(timer) clearTimeout(timer);
       timer = null;

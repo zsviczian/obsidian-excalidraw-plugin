@@ -1,12 +1,13 @@
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
-import { ColorComponent, Modal, Setting, SliderComponent, ToggleComponent } from "obsidian";
-import { VIEW_TYPE_EXCALIDRAW } from "src/Constants";
+import { ColorComponent, Modal, Setting, SliderComponent, TextComponent, ToggleComponent } from "obsidian";
+import { COLOR_NAMES, VIEW_TYPE_EXCALIDRAW } from "src/Constants";
 import ExcalidrawView from "src/ExcalidrawView";
 import ExcalidrawPlugin from "src/main";
 import { setPen } from "src/menu/ObsidianMenu";
 import { ExtendedFillStyle, PenStyle, PenType } from "src/PenTypes";
 import { PENS } from "src/utils/Pens";
 import { fragWithHTML, getExportPadding, getExportTheme, getPNGScale, getWithBackground } from "src/utils/Utils";
+import { __values } from "tslib";
 
 const EASINGFUNCTIONS: Record<string,string> = {
   linear: "linear",
@@ -77,6 +78,29 @@ export class PenSettingsModal extends Modal {
   }
 
   async createForm() {
+    const hexColor = (color:string):[string,string] => {
+      let opacity = "";
+      if(COLOR_NAMES.has(color)) {
+        return [COLOR_NAMES.get(color),opacity];
+      }
+      const style = new Option().style;
+      style.color = color;
+      if(!!style.color) {
+        const digits = style.color.match(/^[^\d]*(\d*)[^\d]*(\d*)[^\d]*(\d*)[^\d]*([\d\.]*)?/);
+        if(!digits) {
+          return [null,opacity]
+        }
+        opacity = digits[4]
+          ? (Math.round(parseFloat(digits[4])*255)<<0).toString(16).padStart(2,"0")
+          : "";
+        return [`#${
+          (parseInt(digits[1])<<0).toString(16).padStart(2,"0")}${
+          (parseInt(digits[2])<<0).toString(16).padStart(2,"0")}${
+          (parseInt(digits[3])<<0).toString(16).padStart(2,"0")}`,opacity]
+      }
+      return [null,opacity]
+    }
+
     const ps = this.plugin.settings.customPens[this.pen]
     const ce = this.contentEl;
     
@@ -132,8 +156,11 @@ export class PenSettingsModal extends Modal {
       )
 
     let scSetting: Setting;
-    let scComponent: ColorComponent;
+    let sccpComponent: ColorComponent;
+    let sctComponent: TextComponent;
     let strokeSetting: Setting;
+    let [sHex, sOpacity] = hexColor(ps.strokeColor);
+    let sChangeBounce:boolean = false;
 
     strokeSetting = new Setting(ce)
       .setName(fragWithHTML(!Boolean(ps.strokeColor) ? "Stroke color: <b>Current</b>" : "Stroke color: <b>Preset color</b>"))
@@ -148,34 +175,72 @@ export class PenSettingsModal extends Modal {
             if(value) {
               delete ps.strokeColor;
             } else {
-              if(!scComponent.getValue()) scComponent.setValue("#000000");
-              ps.strokeColor = scComponent.getValue();
+              if(!sctComponent.getValue()) {
+                [sHex,sOpacity] = hexColor("black");
+                sccpComponent.setValue(sHex)
+                sctComponent.setValue("black");
+              }
+              ps.strokeColor = sctComponent.getValue();
             }
           })
         )
     
     scSetting = new Setting(ce)
 		  .setName("Select stroke color")
-		  .addColorPicker(colorpicker => {
-        scComponent = colorpicker;
-        colorpicker
-          .setValue(ps.strokeColor??"#000000")
-          .onChange(value => {
+      .addButton(button=>
+        button
+          .setButtonText("Use Canvas Current")
+          .onClick(()=>{
+            const st = this.api.getAppState();
+            const color = st.resetCustomPen?.currentItemStrokeColor ?? st.currentItemStrokeColor;
+            [sHex,sOpacity] = hexColor(color);
+            ps.strokeColor = color;
+            this.dirty = true;
+            sctComponent.setValue(color);
+            sChangeBounce = true;
+            sccpComponent.setValue(sHex);
+          })
+        )
+      .addText(text => {
+        sctComponent = text;
+        text
+          .setValue(ps.strokeColor)
+          .onChange(value=> {
+            sChangeBounce = true;
             this.dirty = true;
             ps.strokeColor = value;
+            [sHex,sOpacity] = hexColor(value);
+            if(sHex) sccpComponent.setValue(sHex);
+          })
+      })
+		  .addColorPicker(colorpicker => {
+        sccpComponent = colorpicker;
+        colorpicker
+          .setValue(sHex ?? "#000000")
+          .onChange(value => {
+            if(sChangeBounce) {
+              sChangeBounce = false;
+              return;
+            }
+            this.dirty = true;
+            ps.strokeColor = value + sOpacity;
+            sctComponent.setValue(value + sOpacity);
           })
         } 
 		  )
 
     scSetting.settingEl.style.display = !Boolean(ps.strokeColor) ? "none" : "";    
 
-    let bSetting: Setting;
-    let bcSetting: Setting;
-    let bctSetting: Setting;
-    let bcComponent: ColorComponent;
-    let btComponent: ToggleComponent;
+    let bgSetting: Setting;
+    let bgcSetting: Setting;
+    let bgctSetting: Setting;
+    let bgcpComponent: ColorComponent;
+    let bgctComponent: TextComponent;
+    let bgtComponent: ToggleComponent;
+    let fsSetting: Setting;
+    let [bgHex, bgOpacity] = hexColor(ps.backgroundColor);
 
-    bSetting = new Setting(ce)
+    bgSetting = new Setting(ce)
       .setName(fragWithHTML(!Boolean(ps.backgroundColor) ? "Background color: <b>Current</b>" : "Background color: <b>Preset color</b>"))
       .setDesc(fragWithHTML("Toggle to use the <b>current background color</b> of the canvas; or a <b>preset color</b>"))
       .addToggle(toggle => 
@@ -183,52 +248,88 @@ export class PenSettingsModal extends Modal {
           .setValue(!Boolean(ps.backgroundColor))
           .onChange(value=> {
             this.dirty = true;
-            bSetting.setName(fragWithHTML(value ? "Background color: <b>Current</b>" : "Background color: <b>Preset color</b>"))
-            bctSetting.settingEl.style.display = value ? "none" : "";
-            bcSetting.settingEl.style.display = (value || ps.backgroundColor==="transparent") ? "none" : "";
+            bgSetting.setName(fragWithHTML(value ? "Background color: <b>Current</b>" : "Background color: <b>Preset color</b>"))
+            bgctSetting.settingEl.style.display = value ? "none" : "";
+            bgcSetting.settingEl.style.display = (value || ps.backgroundColor==="transparent") ? "none" : "";
             if(value) {
               delete ps.backgroundColor;
             } else {
-              if(!bcComponent.getValue()) bcComponent.setValue("#000000");
-              btComponent.setValue(false);
+              if(!bgctComponent.getValue()) {
+                [bgHex, bgOpacity] = hexColor("black");
+                bgcpComponent.setValue(bgHex);
+                bgctComponent.setValue("black");
+              }
+              bgtComponent.setValue(false);
             }
           })
         )
 
 
-    bctSetting = new Setting(ce)
+    bgctSetting = new Setting(ce)
       .setName(fragWithHTML(ps.backgroundColor==="transparent" ? "Background: <b>Transparent</b>" : "Color: <b>Preset color</b>"))
       .setDesc("Background has color or is transparent")
       .addToggle(toggle => {
-        btComponent = toggle;
+        bgtComponent = toggle;
         toggle
           .setValue(ps.backgroundColor==="transparent")
           .onChange(value => {
             this.dirty = true;
-            bcSetting.settingEl.style.display = value ? "none" : "";
-            bctSetting.setName(fragWithHTML(value ? "Background: <b>Transparent</b>" : "Color: <b>Preset color</b>"))
-            ps.backgroundColor = value ? "transparent" : bcComponent.getValue();
+            bgcSetting.settingEl.style.display = value ? "none" : "";
+            fsSetting.settingEl.style.display = value ? "none" : "";
+            bgctSetting.setName(fragWithHTML(value ? "Background: <b>Transparent</b>" : "Color: <b>Preset color</b>"))
+            ps.backgroundColor = value ? "transparent" : bgcpComponent.getValue();
           })
       }
     )
 		
-    bctSetting.settingEl.style.display = !Boolean(ps.backgroundColor) ? "none" : "";
-
-    bcSetting = new Setting(ce)
+    bgctSetting.settingEl.style.display = !Boolean(ps.backgroundColor) ? "none" : "";
+    let bgChangeBounce:boolean = false;
+    bgcSetting = new Setting(ce)
 		  .setName("Background color")
+      .addButton(button=>
+        button
+          .setButtonText("Use Canvas Current")
+          .onClick(()=>{
+            const st = this.api.getAppState();
+            const color = st.resetCustomPen?.currentItemBackgroundColor ?? st.currentItemBackgroundColor;
+            [bgHex,bgOpacity] = hexColor(color);
+            ps.backgroundColor = color;
+            this.dirty = true;
+            bgctComponent.setValue(color);
+            bgChangeBounce = true;
+            bgcpComponent.setValue(bgHex);
+          })
+        )
+      .addText(text => {
+        bgctComponent = text;
+        text
+          .setValue(ps.backgroundColor)
+          .onChange(value=> {
+            bgChangeBounce = true;
+            this.dirty = true;
+            ps.backgroundColor = value;
+            [bgHex,bgOpacity] = hexColor(value);
+            if(bgHex) bgcpComponent.setValue(bgHex);
+          })
+      })
 		  .addColorPicker(colorpicker => {
-        bcComponent = colorpicker;
+        bgcpComponent = colorpicker;
         colorpicker
-		      .setValue(ps.backgroundColor==="transparent"?"#000000":ps.backgroundColor)
+		      .setValue(bgHex ?? "#000000")
 		      .onChange(value => {
+            if(bgChangeBounce) {
+              bgChangeBounce = false;
+              return;
+            }
 		        this.dirty = true;
-		        ps.backgroundColor = value;
+		        ps.backgroundColor = value+bgOpacity;
+            bgctComponent.setValue(value+bgOpacity)
 		      }) 
         })
     
-    bcSetting.settingEl.style.display = (!Boolean(ps.backgroundColor) || ps.backgroundColor==="transparent") ? "none" : "";
+    bgcSetting.settingEl.style.display = (!Boolean(ps.backgroundColor) || ps.backgroundColor==="transparent") ? "none" : "";
 
-		new Setting(ce)
+		fsSetting = new Setting(ce)
 		  .setName("Fill Style")
 		  .addDropdown(dropdown =>
         dropdown
@@ -246,7 +347,8 @@ export class PenSettingsModal extends Modal {
             ps.fillStyle = value;
           }) 
 		  )
-
+    fsSetting.settingEl.style.display = (!Boolean(ps.backgroundColor) || ps.backgroundColor==="transparent") ? "none" : "";
+    
     let rSetting: Setting;
     rSetting = new Setting(ce)
       .setName(fragWithHTML(`Sloppiness: <b>${ps.roughness === null ? "Not Set" : (ps.roughness<=0.5 ? "Architect (" : (ps.roughness <= 1.5 ? "Artist (" : "Cartoonist ("))}${ps.roughness === null ? "":`${ps.roughness})`}</b>`))

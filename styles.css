@@ -167,6 +167,7 @@ li[data-testid] {
 
 .workspace-leaf-content .excalidraw-view {
   padding: 0px 1px; /*1px so on ipad swipe in from left and right still works*/
+  overflow: hidden;
 }
 
 .excalidraw-videoWrapper {
@@ -321,4 +322,8 @@ label.color-input-container > input {
 
 .excalidraw input[type="color"]::-webkit-color-swatch-wrapper {
   padding: 0;
+}
+
+.excalidraw-settings input {
+  min-width: 10em;
 }

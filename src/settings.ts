@@ -293,6 +293,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.requestEmbedUpdate = false;
     this.requestReloadDrawings = false;
     const { containerEl } = this;
+    containerEl.addClass("excalidraw-settings");
     this.containerEl.empty();
 
     const coffeeDiv = containerEl.createDiv("coffee");
