@@ -17,6 +17,10 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.8.14":`
+## Fixed
+- text element link gets deleted when the drawing is reloaded
+`,
 "1.8.13": `
 ## Fixed
 - When changing a text element in markdown mode, the change seem to have showed up when switching back to Excalidraw  mode, but then lost these changes when loading the file the next time.

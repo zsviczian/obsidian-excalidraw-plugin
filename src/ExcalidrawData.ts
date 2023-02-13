@@ -528,9 +528,6 @@ export class ExcalidrawData {
           if (parseRes.link) {
             textEl.link = parseRes.link;
           }
-          if(!parseRes.link && elementLink.done) {
-            textEl.link = null;
-          }          
           //this will set the rawText field of text elements imported from files before 1.3.14, and from other instances of Excalidraw
           if (textEl && (!textEl.rawText || textEl.rawText === "")) {
             textEl.rawText = text;
