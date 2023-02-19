@@ -12,8 +12,9 @@ import {
 import ExcalidrawView from "../ExcalidrawView";
 import ExcalidrawPlugin from "../main";
 import { sleep } from "../utils/Utils";
-import { getNewOrAdjacentLeaf } from "../utils/ObsidianUtils";
+import { getLeaf, getNewOrAdjacentLeaf } from "../utils/ObsidianUtils";
 import { checkAndCreateFolder, splitFolderAndFilename } from "src/utils/FileUtils";
+import { KeyEvent, PaneTarget } from "src/utils/ModifierkeyHelper";
 
 export class Prompt extends Modal {
   private promptEl: HTMLInputElement;
@@ -370,8 +371,7 @@ export class NewFileActions extends Modal {
   constructor(
     private plugin: ExcalidrawPlugin,
     private path: string,
-    private newPane: boolean,
-    private newWindow: boolean,
+    private keys: KeyEvent,
     private view: ExcalidrawView,
   ) {
     super(plugin.app);
@@ -387,14 +387,8 @@ export class NewFileActions extends Modal {
     if (!file) {
       return;
     }
-    const leaf = this.newWindow
-      //@ts-ignore
-      ? app.workspace.openPopoutLeaf()
-      : this.newPane
-        ? getNewOrAdjacentLeaf(this.plugin, this.view.leaf)
-        : this.view.leaf;
+    const leaf = getLeaf(this.plugin,this.view.leaf,this.keys)
     leaf.openFile(file, {active:true});
-    //this.app.workspace.setActiveLeaf(leaf, true, true);
   }
 
   createForm(): void {

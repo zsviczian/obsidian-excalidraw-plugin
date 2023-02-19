@@ -4,7 +4,7 @@ import {
   TFile,
   Vault,
 } from "obsidian";
-import { CTRL_OR_CMD, RERENDER_EVENT } from "./Constants";
+import { RERENDER_EVENT } from "./Constants";
 import { EmbeddedFilesLoader } from "./EmbeddedFileLoader";
 import { createPNG, createSVG } from "./ExcalidrawAutomate";
 import { ExportSettings } from "./ExcalidrawView";
@@ -21,6 +21,7 @@ import {
   svgToBase64,
 } from "./utils/Utils";
 import { isObsidianThemeDark } from "./utils/ObsidianUtils";
+import { isCTRL, isMETA, linkClickModifierType } from "./utils/ModifierkeyHelper";
 
 interface imgElementAttributes {
   file?: TFile;
@@ -212,11 +213,7 @@ const createImageDiv = async (
         if(!srcParts) return;
         plugin.openDrawing(
           vault.getAbstractFileByPath(srcParts[1]) as TFile,
-          ev[CTRL_OR_CMD]
-            ? "new-pane"
-            : (ev.metaKey && !app.isMobile)
-              ? "popout-window"
-              : "active-pane",
+          linkClickModifierType(ev),
           true,
           srcParts[2],
         );
@@ -571,11 +568,7 @@ export const observer_Legacy = new MutationObserver(async (m) => {
       if (src) {
         plugin.openDrawing(
           vault.getAbstractFileByPath(src) as TFile,
-          ev[CTRL_OR_CMD]
-            ? "new-pane"
-            : (ev.metaKey && !app.isMobile) 
-              ? "popout-window"
-              : "active-pane",
+          linkClickModifierType(ev)
         );
       } //.ctrlKey||ev.metaKey);
     });

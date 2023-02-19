@@ -38,7 +38,7 @@ import {
   wrapTextAtCharLength,
 } from "./utils/Utils";
 import { getNewOrAdjacentLeaf, isObsidianThemeDark } from "./utils/ObsidianUtils";
-import { AppState, BinaryFileData, Point } from "@zsviczian/excalidraw/types/types";
+import { AppState, BinaryFileData, DataURL, Point } from "@zsviczian/excalidraw/types/types";
 import { EmbeddedFile, EmbeddedFilesLoader, FileData } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
 //import Excalidraw from "@zsviczian/excalidraw";

@@ -126,7 +126,10 @@ Plugin settings are grouped into the following sections:
 - Excalidraw drawings do not display in Obsidian Publish. If you want to use Excalidraw in your published documents, you can configure in plugin settings, under `Embed & Export`, to automatically insert a PNG or SVG version of the drawing in your document when creating a new file. See `type of file to insert into document`
     - Under `Export settings` you can also configure to automatically export a dark and light version of the image, in case your published site supports dark and light mode.
 
-### Hyperlinks
+### Hyperlinks and Drag & Drop support
+![](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/images/excalidraw-modifiers.png)
+
+#### Hyperlinks
 - Supports hyperlinks e.g.
     - `https://zsolt.blog`,
     - `[Obsidian](https://obsidian.md)`, and
@@ -141,23 +144,11 @@ Plugin settings are grouped into the following sections:
         in curly brackets right after the transclusion e.g. `![[myfile#^blockref]]{40}` will wrap text at 40 characters.
 - For convenience you can also use the command palette to insert links into drawings
 - <kbd>CTRL/CMD + hover</kbd> to bring up the Obsidian quick preview for the link. (On Mac it is <kbd>CTRL+CMD+hover</kbd>).
-- <kbd>CTRL/CMD + CLICK</kbd> a text element to open it as a link.
-- <kbd>CTRL/CMD + ALT + CLICK</kbd> to create the file (if it does not yet exist) and open it
-- <kbd>CTRL/CMD + SHIFT + CLICK</kbd> to open the file in a new pane
-- <kbd>CTRL/CMD + ALT + SHIFT + CLICK</kbd> to create the file (if it does not yet exist) and open it in a new pane
 - Using the block reference you can also reference & transclude text that appears on drawings, in other documents
 
-### LaTeX
-Insert LaTeX formulas using the Command Palette action "Insert LaTeX formula".
-You can edit formulas either in Markdown view, or by <kbd>CTRL/CMD + Click</kbd> on the formula.
-
-### Drag & Drop support
-- You can drag files from the Obsidian file explorer and they will become links to those files in Excalidraw.
-- Dragging image files (PNG, SVG, JPG, ICO, GIF, WEBP, Excalidraw) from Obsidian's file explorer while pressing the
-    <kbd>CTRL</kbd> (<kbd>SHIFT</kbd> on Mac) button will embed the image into your drawing.
-    - If in addition to <kbd>CTRL</kbd> or <kbd>SHIFT</kbd> you also hold down <kbd>ALT</kbd>,
-        the image will be inserted at 100% of its size.
-    - Note: this is a very niche feature with a very particular behavior that I built primarily for myself
+#### Drag & Drop support
+- You can drag files from the Obsidian file explorer and they will become links to those files in Excalidraw. See table above for the varios modifier key combinations.
+- Note: anchoring an image to 100% of its size is a very niche feature with a very particular behavior that I built primarily for myself
     - (even more so than other features in Excalidraw Obsidian - also built primarily for myself 😉).
     - This will reset your embedded image to 100% size every time you open the Excalidraw drawing,
         or in case you have embedded an Excalidraw drawing on your canvas inserted using this function,
@@ -169,6 +160,11 @@ You can edit formulas either in Markdown view, or by <kbd>CTRL/CMD + Click</kbd>
         construct Book-on-a-Page summaries from atomic drawings.
 - You can drag and drop text from Markdown views onto Excalidraw.
 - You can drag and drop web addresses from your browser and they will become links.
+- You can drag and drop YouTube links and thumbnails and they will be YouTube links with thumbnails in Excalidraw
+
+### LaTeX
+Insert LaTeX formulas using the Command Palette action "Insert LaTeX formula".
+You can edit formulas either in Markdown view, or by <kbd>CTRL/CMD + Click</kbd> on the formula.
 
 ### Image support
 - On iOS and Android you can add images from your camera by pressing the add image button in Excalidraw.
@@ -215,7 +211,7 @@ For more details see this [video](https://youtu.be/yZQoJg2RCKI)
         - `excalidraw-export-pngscale`: This only affects export to PNG. Specify the export scale for the image. The typical range is between 0.5 and 5, but you can experiment with other values as well.
 
 ### Embed complete markdown files into your drawings
-- Drag from the desired file from the Obsidian file explorer and hold down <kbd>CTRL/CMD</kbd> while dropping the file onto the canvas.
+- Drag from the desired file from the Obsidian file explorer and hold down <kbd>SHIFT</kbd> while dropping the file onto the canvas.
 - Use the command palette action: `Insert markdown file from vault`
 - Use custom woff, woff2 or TTF font to display the document, you can set the default font to use under Excalidraw Settings.
 - You can set a custom css for rendering the snapshot image of your markdown document.
@@ -226,7 +222,7 @@ For more details see this [video](https://youtu.be/yZQoJg2RCKI)
     - (for a demonstration watch this [video](https://youtu.be/K6qZkTz8GHs) and check out this
     - [sample css](https://github.com/zsviczian/obsidian-excalidraw-plugin/discussions/281)).
     - To help with styling you can observe the SVG snapshot of the markdown document created by Excalidraw.
-        - Open Obsidian Developer Console (<kbd>CTRL+Shift+i</kbd>) and
+        - Open Obsidian Developer Console (<kbd>CTRL+Shift+i</kbd>/<kbd>CMD+OPT+i</kbd>) and
         - execute the following command: `ExcalidrawAutomate.mostRecentMarkdownSVG`
 - You can control appearance of the embedded markdown file on a file by file
   bases by adding the following front matter keys to your markdown document:
@@ -235,7 +231,7 @@ For more details see this [video](https://youtu.be/yZQoJg2RCKI)
         - you can find css color names [here](https://www.w3schools.com/colors/colors_names.asp).
     - `excalidraw-border-color: css-color-name|#HEXcolor|any-other-html-standard-format`
     - `excalidraw-css: "css-filename|css snippet"`
-- Switch to markdown view or use <kbd>CTRL/CMD+ALT/OPT</kbd> click on the image to edit properties of the embed:
+- Switch to markdown view or use <kbd>WIN+CTRL</kbd>/<kbd>CMD+CTRL</kbd> click on the image to edit properties of the embed:
     - `[[filename#^blockref|WIDTHxMAXHEIGHT]]`
 
 ### Custom Font, Custom Pen, OCR support, SVG import

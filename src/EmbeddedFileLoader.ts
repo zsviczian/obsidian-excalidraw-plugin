@@ -23,6 +23,7 @@ import { ExportSettings } from "./ExcalidrawView";
 import { t } from "./lang/helpers";
 import { tex2dataURL } from "./LaTeX";
 import ExcalidrawPlugin from "./main";
+import { getDataURLFromURL, getMimeType, getURLImageExtension } from "./utils/FileUtils";
 import {
   errorlog,
   getDataURL,
@@ -39,6 +40,15 @@ import {
 } from "./utils/Utils";
 
 const THEME_FILTER = "invert(100%) hue-rotate(180deg) saturate(1.25)";
+
+//An ugly workaround for the following situation.
+//File A is a markdown file that has an embedded Excalidraw file B
+//Later file A is embedded into file B as a Markdown embed
+//Because MarkdownRenderer.renderMarkdown does not take a depth parameter as input
+//EmbeddedFileLoader cannot track the recursion depth (as it can when Excalidraw drawings are embedded)
+//For this reason, the markdown TFile is added to the Watchdog when rendering starts
+//and getObsidianImage is aborted if the file is already in the Watchdog stack
+const  markdownRendererRecursionWatcthdog = new Set<TFile>();
 
 export declare type MimeType =
   | "image/svg+xml"
@@ -224,9 +234,15 @@ export class EmbeddedFilesLoader {
     if (!this.plugin || !inFile) {
       return null;
     }
+
     const isHyperlink = inFile instanceof EmbeddedFile ? inFile.isHyperlink : false;
     const hyperlink = inFile instanceof EmbeddedFile ? inFile.hyperlink : "";
     const file: TFile = inFile instanceof EmbeddedFile ? inFile.file : inFile;
+    if(file && markdownRendererRecursionWatcthdog.has(file)) {
+      new Notice(`Loading of ${file.path}. Please check if there is an inifinite loop of one file embedded in the other.`);
+      return null;
+    }
+
     const linkParts =
       isHyperlink
         ? null
@@ -307,60 +323,19 @@ export class EmbeddedFilesLoader {
       ? await getExcalidrawSVG(this.isDark)
       : null;
     let mimeType: MimeType = "image/svg+xml";
-    const corelink = isHyperlink
-      ? hyperlink.split("?")[0]
-      : "";
+
     const extension = isHyperlink
-      ? corelink.substring(corelink.lastIndexOf(".")+1)
+      ? getURLImageExtension(hyperlink)
       : file.extension;
     if (!isExcalidrawFile) {
-      switch (extension) {
-        case "png":
-          mimeType = "image/png";
-          break;
-        case "jpeg":
-          mimeType = "image/jpeg";
-          break;
-        case "jpg":
-          mimeType = "image/jpeg";
-          break;
-        case "gif":
-          mimeType = "image/gif";
-          break;
-        case "webp":
-          mimeType = "image/webp";
-          break;
-        case "bmp":
-          mimeType = "image/bmp";
-          break;
-        case "ico":
-          mimeType = "image/x-icon"
-          break;
-        case "svg":
-        case "md":
-          mimeType = "image/svg+xml";
-          break;
-        default:
-          mimeType = "application/octet-stream";
-      }
-    }
-    let response:RequestUrlResponse;
-    if(isHyperlink && inFile instanceof EmbeddedFile) {
-      try {
-        response = await Promise.race([
-          (async () => new Promise<RequestUrlResponse>((resolve) => setTimeout(()=>resolve(null), URLFETCHTIMEOUT)))(),
-          requestUrl({url: inFile.hyperlink, method: "get", contentType: mimeType, throw: false })
-        ])
-      } catch (e) {
-        errorlog({where: this.getObsidianImage, message: `URL did not load within timeout period of ${URLFETCHTIMEOUT}ms`, url: inFile.hyperlink});
-      }
+      mimeType = getMimeType(extension);
     }
 
     let dataURL =
       isHyperlink
       ? (
           inFile instanceof EmbeddedFile
-            ? (response && response.status === 200 ? await getDataURL(response.arrayBuffer, mimeType) : inFile.hyperlink)
+            ? await getDataURLFromURL(inFile.hyperlink, mimeType)
             : null
         )
       : excalidrawSVG ??
@@ -371,7 +346,9 @@ export class EmbeddedFilesLoader {
           : await getDataURL(ab, mimeType));
 
     if(!isHyperlink && !dataURL) {
-      const result = await this.convertMarkdownToSVG(this.plugin, file, linkParts);
+      markdownRendererRecursionWatcthdog.add(file);
+      const result = await this.convertMarkdownToSVG(this.plugin, file, linkParts, depth);
+      markdownRendererRecursionWatcthdog.delete(file);
       dataURL = result.dataURL;
       hasSVGwithBitmap = result.hasSVGwithBitmap;
     }
@@ -473,6 +450,7 @@ export class EmbeddedFilesLoader {
     plugin: ExcalidrawPlugin,
     file: TFile,
     linkParts: LinkParts,
+    depth: number,
   ): Promise<{dataURL: DataURL, hasSVGwithBitmap:boolean}> {
     //1.
     //get the markdown text
@@ -700,7 +678,7 @@ const getSVGData = async (app: App, file: TFile): Promise<DataURL> => {
   return svgToBase64(svg) as DataURL;
 };
 
-const generateIdFromFile = async (file: ArrayBuffer): Promise<FileId> => {
+export const generateIdFromFile = async (file: ArrayBuffer): Promise<FileId> => {
   let id: FileId;
   try {
     const hashBuffer = await window.crypto.subtle.digest("SHA-1", file);

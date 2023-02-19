@@ -1,8 +1,10 @@
 import {
+  DEVICE,
   FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS,
   FRONTMATTER_KEY_CUSTOM_PREFIX,
   FRONTMATTER_KEY_CUSTOM_URL_PREFIX,
 } from "src/Constants";
+import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/ModifierkeyHelper";
 
 // English
 export default {
@@ -29,13 +31,16 @@ export default {
   TRANSCLUDE: "Embed a drawing",
   TRANSCLUDE_MOST_RECENT: "Embed the most recently edited drawing",
   TOGGLE_LEFTHANDED_MODE: "Toggle left-handed mode",
-  NEW_IN_NEW_PANE: "Create new drawing - IN A NEW PANE",
-  NEW_IN_ACTIVE_PANE: "Create new drawing - IN THE CURRENT ACTIVE PANE",
+  NEW_IN_NEW_PANE: "Create new drawing - IN AN ADJACENT WINDOW",
+  NEW_IN_NEW_TAB: "Create new drawing - IN A NEW TAB",
+  NEW_IN_ACTIVE_PANE: "Create new drawing - IN THE CURRENT ACTIVE WINDOW",
   NEW_IN_POPOUT_WINDOW: "Create new drawing - IN A POPOUT WINDOW",
   NEW_IN_NEW_PANE_EMBED:
-    "Create new drawing - IN A NEW PANE - and embed into active document",
+    "Create new drawing - IN AN ADJACENT WINDOW - and embed into active document",
+  NEW_IN_NEW_TAB_EMBED:
+    "Create new drawing - IN A NEW TAB - and embed into active document",
   NEW_IN_ACTIVE_PANE_EMBED:
-    "Create new drawing - IN THE CURRENT ACTIVE PANE - and embed into active document",
+    "Create new drawing - IN THE CURRENT ACTIVE WINDOW - and embed into active document",
   NEW_IN_POPOUT_WINDOW_EMBED: "Create new drawing - IN A POPOUT WINDOW - and embed into active document",
   EXPORT_SVG: "Save as SVG next to current file",
   EXPORT_PNG: "Save as PNG next to current file",
@@ -44,7 +49,7 @@ export default {
   TOGGLE_LOCK: "Toggle Text Element between edit RAW and PREVIEW",
   DELETE_FILE: "Delete selected image or Markdown file from Obsidian Vault",
   INSERT_LINK_TO_ELEMENT:
-    "Copy markdown link for selected element to clipboard. CTRL/CMD+Click to copy group link. SHIFT+click to copy an area link.",
+    `Copy markdown link for selected element to clipboard. ${labelCTRL()}+CLICK to copy 'group=' link. ${labelSHIFT()}+CLICK to copy an 'area=' link. ${labelALT()}+CLICK to watch a help video.`,
   INSERT_LINK_TO_ELEMENT_GROUP:
     "Copy 'group=' markdown link for selected element to clipboard.",
   INSERT_LINK_TO_ELEMENT_AREA:
@@ -58,7 +63,7 @@ export default {
   IMPORT_SVG: "Import an SVG file as Excalidraw strokes (limited SVG support, TEXT currently not supported)",
   INSERT_MD: "Insert markdown file from vault",
   INSERT_LATEX:
-    "Insert LaTeX formula (e.g. \\binom{n}{k} = \\frac{n!}{k!(n-k)!})",
+    `Insert LaTeX formula (e.g. \\binom{n}{k} = \\frac{n!}{k!(n-k)!}). ${labelALT()}+CLICK to watch a help video.`,
   ENTER_LATEX: "Enter a valid LaTeX expression",
   READ_RELEASE_NOTES: "Read latest release notes",
   RUN_OCR: "OCR: Grab text from freedraw scribble and pictures to clipboard",
@@ -71,18 +76,14 @@ export default {
   //ExcalidrawView.ts
   INSTALL_SCRIPT_BUTTON: "Install or update Excalidraw Scripts",
   OPEN_AS_MD: "Open as Markdown",
-  SAVE_AS_PNG: "Save as PNG into Vault (CTRL/CMD+CLICK to export; SHIFT to embed scene)",
-  SAVE_AS_SVG: "Save as SVG into Vault (CTRL/CMD+CLICK to export; SHIFT to embed scene)",
+  SAVE_AS_PNG: `Save as PNG into Vault (${labelCTRL()}+CLICK to export; SHIFT to embed scene)`,
+  SAVE_AS_SVG: `Save as SVG into Vault (${labelCTRL()}+CLICK to export; SHIFT to embed scene)`,
   OPEN_LINK: "Open selected text as link\n(SHIFT+CLICK to open in a new pane)",
   EXPORT_EXCALIDRAW: "Export to an .Excalidraw file",
   LINK_BUTTON_CLICK_NO_TEXT:
-    "Select a an ImageElement, or select a TextElement that contains an internal or external link.\n" +
-    "SHIFT CLICK this button to open the link in a new pane.\n" +
-    "CTRL/CMD CLICK the Image or TextElement on the canvas has the same effect!",
+    "Select a an ImageElement, or select a TextElement that contains an internal or external link.\n",
   FILENAME_INVALID_CHARS:
     'File name cannot contain any of the following characters: * " \\ < > : | ? #',
-  FILE_DOES_NOT_EXIST:
-    "File does not exist. Hold down ALT (or ALT+SHIFT) and CLICK link button to create a new file.",
   FORCE_SAVE:
     "Save (will also update transclusions)",
   RAW: "Change to PREVIEW mode (only effects text-elements with links or transclusions)",
@@ -206,7 +207,7 @@ FILENAME_HEAD: "Filename",
 
   DEFAULT_WHEELZOOM_NAME: "Mouse wheel to zoom by default",
   DEFAULT_WHEELZOOM_DESC:
-    "<b>Toggle on: </b>Mouse wheel to zoom; CTRL + mouse wheel to scroll</br><b>Toggle off: </b>CTRL + mouse wheel to zoom; Mouse wheel to scroll",
+    `<b>Toggle on: </b>Mouse wheel to zoom; ${labelCTRL()} + mouse wheel to scroll</br><b>Toggle off: </b>${labelCTRL()} + mouse wheel to zoom; Mouse wheel to scroll`,
     
   ZOOM_TO_FIT_NAME: "Zoom to fit on view resize",
   ZOOM_TO_FIT_DESC: "Zoom to fit drawing when the pane is resized" +
@@ -219,7 +220,7 @@ FILENAME_HEAD: "Filename",
     "Set the maximum level to which zoom to fit will enlarge the drawing. Minimum is 0.5 (50%) and maximum is 10 (1000%).",
   LINKS_HEAD: "Links and transclusion",
   LINKS_DESC:
-    "CTRL/CMD + CLICK on <code>[[Text Elements]]</code> to open them as links. " +
+    `${labelCTRL()}+CLICK on <code>[[Text Elements]]</code> to open them as links. ` +
     "If the selected text has more than one <code>[[valid Obsidian links]]</code>, only the first will be opened. " +
     "If the text starts as a valid web link (i.e. <code>https://</code> or <code>http://</code>), then " +
     "the plugin will open it in a browser. " +
@@ -227,13 +228,13 @@ FILENAME_HEAD: "Filename",
     "If you don't want text accidentally changing in your drawings use <code>[[links|with aliases]]</code>.",
   ADJACENT_PANE_NAME: "Open in adjacent pane",
   ADJACENT_PANE_DESC:
-    "When CTRL/CMD+SHIFT clicking a link in Excalidraw, by default the plugin will open the link in a new pane. " +
+    `When ${labelCTRL()}+${labelSHIFT()} clicking a link in Excalidraw, by default the plugin will open the link in a new pane. ` +
     "Turning this setting on, Excalidraw will first look for an existing adjacent pane, and try to open the link there. " +
     "Excalidraw will look for the adjacent pane based on your focus/navigation history, i.e. the workpane that was active before you " +
     "activated Excalidraw.",
   MAINWORKSPACE_PANE_NAME: "Open in main workspace",
   MAINWORKSPACE_PANE_DESC:
-    "When CTRL/CMD+SHIFT clicking a link in Excalidraw, by default the plugin will open the link in a new pane in the current active window. " +
+    `When ${labelCTRL()}+${labelSHIFT()} clicking a link in Excalidraw, by default the plugin will open the link in a new pane in the current active window. ` +
     "Turning this setting on, Excalidraw will open the link in an existing or new pane in the main workspace. ",  
   LINK_BRACKETS_NAME: "Show <code>[[brackets]]</code> around links",
   LINK_BRACKETS_DESC: `${
@@ -256,16 +257,16 @@ FILENAME_HEAD: "Filename",
   TODO_DESC: "Icon to use for open TODO items",
   DONE_NAME: "Completed TODO icon",
   DONE_DESC: "Icon to use for completed TODO items",
-  HOVERPREVIEW_NAME: "Hover preview without CTRL/CMD key",
+  HOVERPREVIEW_NAME: `Hover preview without pressing the ${labelCTRL()} key`,
   HOVERPREVIEW_DESC:
-    "<b>Toggle On</b>: In Exalidraw <u>view mode</u> the hover preview for [[wiki links]] will be shown immediately, without the need to hold the CTRL/CMD key. " +
+    `<b>Toggle On</b>: In Exalidraw <u>view mode</u> the hover preview for [[wiki links]] will be shown immediately, without the need to hold the ${labelCTRL()} key. ` +
     "In Excalidraw <u>normal mode</u>, the preview will be shown immediately only when hovering the blue link icon in the top right of the element.<br> " +
-    "<b>Toggle Off</b>: Hover preview is shown only when you hold the CTRL/CMD key while hovering the link.",
+    `<b>Toggle Off</b>: Hover preview is shown only when you hold the ${labelCTRL()} key while hovering the link.`,
   LINKOPACITY_NAME: "Opacity of link icon",
   LINKOPACITY_DESC:
     "Opacity of the link indicator icon in the top right corner of an element. 1 is opaque, 0 is transparent.",
   LINK_CTRL_CLICK_NAME:
-    "CTRL/CMD + CLICK on text with [[links]] or [](links) to open them",
+    `${labelCTRL()}+CLICK on text with [[links]] or [](links) to open them`,
   LINK_CTRL_CLICK_DESC:
     "You can turn this feature off if it interferes with default Excalidraw features you want to use. If " +
     "this is turned off, only the link button in the title bar of the drawing pane will open links.",
@@ -291,7 +292,7 @@ FILENAME_HEAD: "Filename",
     "Use the <code>http://iframely.server.crestify.com/iframely?url=</code> to get title of page when dropping a link into Excalidraw",
   MD_HEAD: "Markdown-embed settings",
   MD_HEAD_DESC:
-    "You can transclude formatted markdown documents into drawings as images CTRL(Shift on Mac) drop from the file explorer or using " +
+    `You can transclude formatted markdown documents into drawings as images ${labelSHIFT()} drop from the file explorer or using ` +
     "the command palette action.",
   MD_TRANSCLUDE_WIDTH_NAME: "Default width of a transcluded markdown document",
   MD_TRANSCLUDE_WIDTH_DESC:
@@ -323,7 +324,7 @@ FILENAME_HEAD: "Filename",
   MD_CSS_DESC:
     "The filename of the CSS to apply to markdown embeds. Provide the filename with extension (e.g. 'md-embed.css'). The css file may also be a plain " +
     "markdown file (e.g. 'md-embed-css.md'), just make sure the content is written using valid css syntax. " +
-    "If you need to look at the HTML code you are applying the CSS to, then open Obsidian Developer Console (CTRL+SHIFT+i) and type in the following command: " +
+    `If you need to look at the HTML code you are applying the CSS to, then open Obsidian Developer Console (${DEVICE.isIOS || DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i"}) and type in the following command: ` +
     '"ExcalidrawAutomate.mostRecentMarkdownSVG". This will display the most recent SVG generated by Excalidraw. ' +
     "Setting the font-family in the css is has limitations. By default only your operating system's standard fonts are available (see README for details). " +
     "You can add one custom font beyond that using the setting above. " +
@@ -457,7 +458,7 @@ FILENAME_HEAD: "Filename",
 
   //openDrawings.ts
   SELECT_FILE: "Select a file then press enter.",
-  SELECT_FILE_WITH_OPTION_TO_SCALE: "Select a file then press ENTER, or ALT+ENTER to insert at 100% scale.",
+  SELECT_FILE_WITH_OPTION_TO_SCALE: `Select a file then press ENTER, or ${labelSHIFT()}+${labelMETA()}+ENTER to insert at 100% scale.`,
   NO_MATCH: "No file matches your query.",
   SELECT_FILE_TO_LINK: "Select the file you want to insert the link for.",
   SELECT_DRAWING: "Select the image or drawing you want to insert",

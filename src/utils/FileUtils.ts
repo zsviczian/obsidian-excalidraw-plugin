@@ -1,5 +1,9 @@
-import { normalizePath, Notice, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
+import { DataURL } from "@zsviczian/excalidraw/types/types";
+import { normalizePath, Notice, requestUrl, RequestUrlResponse, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
+import { URLFETCHTIMEOUT } from "src/Constants";
+import { MimeType } from "src/EmbeddedFileLoader";
 import { ExcalidrawSettings } from "src/Settings";
+import { errorlog, getDataURL } from "./Utils";
 
 /**
  * Splits a full path including a folderpath and a filename into separate folderpath and filename components
@@ -145,3 +149,41 @@ export async function checkAndCreateFolder(folderpath: string) {
   await vault.createFolder(folderpath);
 }
 
+export const getURLImageExtension = (url: string):string => {
+  const corelink = url.split("?")[0];
+  return corelink.substring(corelink.lastIndexOf(".")+1);
+} 
+
+export const getMimeType = (extension: string):MimeType => {
+  switch (extension) {
+    case "png":  return "image/png";
+    case "jpeg": return "image/jpeg";
+    case "jpg":  return "image/jpeg";
+    case "gif":  return "image/gif";
+    case "webp": return "image/webp";
+    case "bmp":  return "image/bmp";
+    case "ico":  return "image/x-icon";
+    case "svg":  return "image/svg+xml"; 
+    case "md":   return "image/svg+xml";
+    default:     return "application/octet-stream";
+  }
+}
+
+const getFileFromURL = async (url: string, mimeType: MimeType, timeout: number = URLFETCHTIMEOUT):Promise<RequestUrlResponse> => {
+  try {
+    return await Promise.race([
+      (async () => new Promise<RequestUrlResponse>((resolve) => setTimeout(()=>resolve(null), timeout)))(),
+      requestUrl({url: url, method: "get", contentType: mimeType, throw: false })
+    ])
+  } catch (e) {
+    errorlog({where: getFileFromURL, message: `URL did not load within timeout period of ${timeout}ms`, url: url});
+    return undefined;
+  }
+}
+
+export const getDataURLFromURL = async (url: string, mimeType: MimeType, timeout: number = URLFETCHTIMEOUT):Promise<DataURL> => {
+  const response = await getFileFromURL(url, mimeType, timeout);
+  return response && response.status === 200
+    ? await getDataURL(response.arrayBuffer, mimeType)
+    : url as DataURL;
+}

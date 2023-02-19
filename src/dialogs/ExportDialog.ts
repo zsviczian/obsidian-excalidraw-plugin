@@ -1,6 +1,7 @@
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
 import { Modal, Setting, SliderComponent, TFile } from "obsidian";
 import { getEA } from "src";
+import { DEVICE } from "src/Constants";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import ExcalidrawView from "src/ExcalidrawView";
 import ExcalidrawPlugin from "src/main";
@@ -149,7 +150,7 @@ export class ExportDialog extends Modal {
           })
         )
 
-    if(this.plugin.device.isDesktop) {
+    if(DEVICE.isDesktop) {
       const saveToMessage = () => this.saveToVault?"Save image to your Vault":"Export image outside your Vault";
       const saveToSetting = new Setting(this.contentEl)
         .setName(saveToMessage())
@@ -184,7 +185,7 @@ export class ExportDialog extends Modal {
       this.view.exportExcalidraw();
       this.close();
     };
-    if(this.plugin.device.isDesktop) {
+    if(DEVICE.isDesktop) {
       const bPNGClipboard = div.createEl("button", { text: "PNG to Clipboard", cls: "excalidraw-prompt-button" });
       bPNGClipboard.onclick = () => {
         this.view.exportPNGToClipboard();

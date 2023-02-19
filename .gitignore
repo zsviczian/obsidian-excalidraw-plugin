@@ -17,3 +17,4 @@ lib
 #VSCode
 .vscode
 yarn.lock
+.DS_Store

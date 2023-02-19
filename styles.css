@@ -327,3 +327,13 @@ label.color-input-container > input {
 .excalidraw-settings input {
   min-width: 10em;
 }
+
+div.excalidraw-draginfo {
+  position: absolute;
+  z-index: 1000;
+  color: var(--text-normal);
+  padding: 3px;
+  background: var(--color-base-40);
+  display: block;
+  border-radius: 5px;
+}

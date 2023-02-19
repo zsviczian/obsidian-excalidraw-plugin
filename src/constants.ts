@@ -4,7 +4,28 @@ export function JSON_parse(x: string): any {
   return JSON.parse(x.replaceAll("&#91;", "["));
 }
 export const isDarwin = /Mac|iPod|iPhone|iPad/.test(window.navigator.platform);
-export const CTRL_OR_CMD = isDarwin ? "metaKey" : "ctrlKey";
+export const DEVICE: {
+  isDesktop: boolean,
+  isPhone: boolean,
+  isTablet: boolean,
+  isMobile: boolean,
+  isLinux: boolean,
+  isMacOS: boolean,
+  isWindows: boolean,
+  isIOS: boolean,
+  isAndroid: boolean
+} = {
+  isDesktop: !document.body.hasClass("is-tablet") && !document.body.hasClass("is-mobile"),
+  isPhone: document.body.hasClass("is-phone"),
+  isTablet: document.body.hasClass("is-tablet"),
+  isMobile: document.body.hasClass("is-mobile"), //running Obsidian Mobile, need to also check isTablet
+  isLinux: document.body.hasClass("mod-linux") && ! document.body.hasClass("is-android"),
+  isMacOS: document.body.hasClass("mod-macos") && ! document.body.hasClass("is-ios"),
+  isWindows: document.body.hasClass("mod-windows"),
+  isIOS: document.body.hasClass("is-ios"),
+  isAndroid: document.body.hasClass("is-android")
+};
+
 export const nanoid = customAlphabet(
   "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
   8,

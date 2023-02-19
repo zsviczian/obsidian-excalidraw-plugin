@@ -17,6 +17,7 @@ import {
   FRONTMATTER_KEY_LINKBUTTON_OPACITY,
   FRONTMATTER_KEY_ONLOAD_SCRIPT,
   FRONTMATTER_KEY_AUTOEXPORT,
+  DEVICE,
 } from "./Constants";
 import { _measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
@@ -40,8 +41,8 @@ import {
   ExcalidrawImageElement,
   FileId,
 } from "@zsviczian/excalidraw/types/element/types";
-import { BinaryFiles, SceneData } from "@zsviczian/excalidraw/types/types";
-import { EmbeddedFile } from "./EmbeddedFileLoader";
+import { BinaryFiles, DataURL, SceneData } from "@zsviczian/excalidraw/types/types";
+import { EmbeddedFile, MimeType } from "./EmbeddedFileLoader";
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles };
 
@@ -1093,6 +1094,54 @@ export class ExcalidrawData {
     );
   }
 
+  public async saveDataURLtoVault(dataURL: DataURL, mimeType: MimeType, key: FileId) {
+    const scene = this.scene as SceneDataWithFiles;
+    let fname = `Pasted Image ${window
+      .moment()
+      .format("YYYYMMDDHHmmss_SSS")}`;
+  
+    switch (mimeType) {
+      case "image/png":
+        fname += ".png";
+        break;
+      case "image/jpeg":
+        fname += ".jpg";
+        break;
+      case "image/svg+xml":
+        fname += ".svg";
+        break;
+      case "image/gif":
+        fname += ".gif";
+        break;
+      default:
+        fname += ".png";
+    }
+    const filepath = (
+      await getAttachmentsFolderAndFilePath(this.app, this.file.path, fname)
+    ).filepath;
+
+    const file = await this.app.vault.createBinary(
+      filepath,
+      getBinaryFileFromDataURL(dataURL),
+    );
+
+    const embeddedFile = new EmbeddedFile(
+      this.plugin,
+      this.file.path,
+      filepath,
+    );
+
+    embeddedFile.setImage(
+      dataURL,
+      mimeType,
+      { height: 0, width: 0 },
+      scene.appState?.theme === "dark",
+      mimeType === "image/svg+xml", //this treat all SVGs as if they had embedded images REF:addIMAGE
+    );
+    this.setFile(key as FileId, embeddedFile);
+    return file;
+  }
+
   /**
    * deletes fileIds from Excalidraw data for files no longer in the scene
    * @returns
@@ -1162,47 +1211,11 @@ export class ExcalidrawData {
     for (const key of Object.keys(scene.files)) {
       if (!(this.hasFile(key as FileId) || this.hasEquation(key as FileId))) {
         dirty = true;
-        let fname = `Pasted Image ${window
-          .moment()
-          .format("YYYYMMDDHHmmss_SSS")}`;
-        const mimeType = scene.files[key].mimeType;
-        switch (mimeType) {
-          case "image/png":
-            fname += ".png";
-            break;
-          case "image/jpeg":
-            fname += ".jpg";
-            break;
-          case "image/svg+xml":
-            fname += ".svg";
-            break;
-          case "image/gif":
-            fname += ".gif";
-            break;
-          default:
-            fname += ".png";
-        }
-        const filepath = (
-          await getAttachmentsFolderAndFilePath(this.app, this.file.path, fname)
-        ).filepath;
-        const dataURL = scene.files[key].dataURL;
-        await this.app.vault.createBinary(
-          filepath,
-          getBinaryFileFromDataURL(dataURL),
+        await this.saveDataURLtoVault(
+          scene.files[key].dataURL,
+          scene.files[key].mimeType,
+          key as FileId
         );
-        const embeddedFile = new EmbeddedFile(
-          this.plugin,
-          this.file.path,
-          filepath,
-        );
-        embeddedFile.setImage(
-          dataURL,
-          mimeType,
-          { height: 0, width: 0 },
-          scene.appState?.theme === "dark",
-          mimeType === "image/svg+xml", //this treat all SVGs as if they had embedded images REF:addIMAGE
-        );
-        this.setFile(key as FileId, embeddedFile);
       }
     }
 
@@ -1346,7 +1359,7 @@ export class ExcalidrawData {
   public getOpenMode(): { viewModeEnabled: boolean; zenModeEnabled: boolean } {
     const fileCache = this.app.metadataCache.getFileCache(this.file);
     let mode = this.plugin.settings.defaultMode === "view-mobile"
-      ? (this.plugin.device.isPhone ? "view" : "normal")
+      ? (DEVICE.isPhone ? "view" : "normal")
       : this.plugin.settings.defaultMode;
     if (
       fileCache?.frontmatter &&

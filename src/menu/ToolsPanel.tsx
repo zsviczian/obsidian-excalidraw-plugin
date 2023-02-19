@@ -3,7 +3,7 @@ import { Notice, TFile } from "obsidian";
 import * as React from "react";
 import { ActionButton } from "./ActionButton";
 import { ICONS, saveIcon, stringToSVG } from "./ActionIcons";
-import { SCRIPT_INSTALL_FOLDER, CTRL_OR_CMD, nanoid, VIEW_TYPE_EXCALIDRAW } from "../Constants";
+import { DEVICE, SCRIPT_INSTALL_FOLDER, VIEW_TYPE_EXCALIDRAW } from "../Constants";
 import { insertLaTeXToView, search } from "../ExcalidrawAutomate";
 import ExcalidrawView, { TextMode } from "../ExcalidrawView";
 import { t } from "../lang/helpers";
@@ -12,6 +12,7 @@ import { ScriptIconMap } from "../Scripts";
 import { getIMGFilename } from "../utils/FileUtils";
 import { ScriptInstallPrompt } from "src/dialogs/ScriptInstallPrompt";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
+import { isALT, isCTRL, isSHIFT, mdPropModifier } from "src/utils/ModifierkeyHelper";
 
 declare const PLUGIN_VERSION:string;
 const dark = '<svg style="stroke:#ced4da;#212529;color:#ced4da;fill:#ced4da" ';
@@ -377,7 +378,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                         new Notice("Taskbone OCR is not enabled. Please go to plugins settings to enable it.",4000);
                         return;
                       }
-                      this.props.view.plugin.taskbone.getTextForView(this.props.view, e[CTRL_OR_CMD]);
+                      this.props.view.plugin.taskbone.getTextForView(this.props.view, isCTRL(e));
                     }}
                     icon={ICONS.ocr}
                     view={this.props.view}
@@ -385,12 +386,12 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   <ActionButton
                     key={"openLink"}
                     title={t("OPEN_LINK_CLICK")}
-                    action={() => {
+                    action={(e) => {
                       const event = new MouseEvent("click", {
-                        ctrlKey: true,
-                        metaKey: false,
-                        shiftKey: false,
-                        altKey: false,
+                        ctrlKey: e.ctrlKey || !(DEVICE.isIOS || DEVICE.isMacOS),
+                        metaKey: e.metaKey ||  (DEVICE.isIOS || DEVICE.isMacOS),
+                        shiftKey: e.shiftKey,
+                        altKey: e.altKey,
                       });
                       this.props.view.handleLinkClick(event);
                     }}
@@ -403,9 +404,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     action={() => {
                       const event = new MouseEvent("click", {
                         ctrlKey: true,
-                        metaKey: false,
-                        shiftKey: true,
-                        altKey: true,
+                        metaKey: true,
+                        shiftKey: false,
+                        altKey: false,
                       });
                       this.props.view.handleLinkClick(event);
                     }}
@@ -515,7 +516,11 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   <ActionButton
                     key={"latex"}
                     title={t("INSERT_LATEX")}
-                    action={() => {
+                    action={(e) => {
+                      if(isALT(e)) {
+                        this.props.view.openExternalLink("https://youtu.be/r08wk-58DPk");
+                        return;
+                      }
                       this.props.centerPointer();
                       insertLaTeXToView(this.props.view);
                     }}
@@ -539,8 +544,12 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     key={"link-to-element"}
                     title={t("INSERT_LINK_TO_ELEMENT")}
                     action={(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+                      if(isALT(e)) {
+                        this.props.view.openExternalLink("https://youtu.be/yZQoJg2RCKI");
+                        return;
+                      }
                       this.props.view.copyLinkToSelectedElementToClipboard(
-                        e[CTRL_OR_CMD] ? "group=" : (e.shiftKey ? "area=" : "")
+                        isCTRL(e) ? "group=" : (isSHIFT(e) ? "area=" : "")
                       );
                     }}
                     icon={ICONS.copyElementLink}

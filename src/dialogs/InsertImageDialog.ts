@@ -1,6 +1,7 @@
 import { App, FuzzySuggestModal, TFile } from "obsidian";
+import { isALT, scaleToFullsizeModifier } from "src/utils/ModifierkeyHelper";
 import { fileURLToPath } from "url";
-import { IMAGE_TYPES, REG_LINKINDEX_INVALIDCHARS } from "../Constants";
+import { DEVICE, IMAGE_TYPES, REG_LINKINDEX_INVALIDCHARS } from "../Constants";
 import ExcalidrawView from "../ExcalidrawView";
 import { t } from "../lang/helpers";
 import ExcalidrawPlugin from "../main";
@@ -25,11 +26,15 @@ export class InsertImageDialog extends FuzzySuggestModal<TFile> {
     this.emptyStateText = t("NO_MATCH");
     this.inputEl.onkeyup = (e) => {
       //@ts-ignore
-      if (e.key === "Enter" && e.altKey && this.chooser.values) {
+      if (e.key === "Enter" && scaleToFullsizeModifier(e) && this.chooser.values) {
         this.onChooseItem(
           //@ts-ignore
           this.chooser.values[this.chooser.selectedItem].item,
-          new KeyboardEvent("keypress",{altKey: true})
+          new KeyboardEvent("keypress",{
+            shiftKey: true,
+            metaKey: !(DEVICE.isIOS || DEVICE.isMacOS),
+            ctrlKey: (DEVICE.isIOS || DEVICE.isMacOS),
+          })
         );
         this.close();
       }
@@ -51,12 +56,11 @@ export class InsertImageDialog extends FuzzySuggestModal<TFile> {
   }
 
   onChooseItem(item: TFile, event: KeyboardEvent): void {
-    const ea = this.plugin.ea;
-    ea.reset();
-    ea.setView(this.view);
+    const ea = this.plugin.ea.getAPI(this.view);
     ea.canvas.theme = this.view.excalidrawAPI.getAppState().theme;
+    const scaleToFullsize = scaleToFullsizeModifier(event);
     (async () => {
-      await ea.addImage(0, 0, item, !event.altKey);
+      await ea.addImage(0, 0, item, !scaleToFullsize);
       ea.addElementsToView(true, false, true);
     })();
   }

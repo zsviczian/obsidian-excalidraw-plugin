@@ -36,7 +36,6 @@ import {
   JSON_parse,
   nanoid,
   DARK_BLANK_DRAWING,
-  CTRL_OR_CMD,
   SCRIPT_INSTALL_CODEBLOCK,
   SCRIPT_INSTALL_FOLDER,
   VIRGIL_FONT,
@@ -107,6 +106,7 @@ import { ScriptInstallPrompt } from "./dialogs/ScriptInstallPrompt";
 import { check } from "prettier";
 import Taskbone from "./ocr/Taskbone";
 import { hoverEvent_Legacy, initializeMarkdownPostProcessor_Legacy, markdownPostProcessor_Legacy, observer_Legacy } from "./MarkdownPostProcessor_Legacy";
+import { isCTRL, PaneTarget } from "./utils/ModifierkeyHelper";
 
 
 declare module "obsidian" {
@@ -171,17 +171,6 @@ export default class ExcalidrawPlugin extends Plugin {
   private packageMap: WeakMap<Window,Packages> = new WeakMap<Window,Packages>();
   public leafChangeTimeout: NodeJS.Timeout = null;
   private forceSaveCommand:Command;
-  public device: {
-    isDesktop: boolean,
-    isPhone: boolean,
-    isTablet: boolean,
-    isMobile: boolean,
-    isLinux: boolean,
-    isMacOS: boolean,
-    isWindows: boolean,
-    isIOS: boolean,
-    isAndroid: boolean
-  };
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
@@ -211,18 +200,6 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   async onload() {
-    this.device = {
-      isDesktop: !document.body.hasClass("is-tablet") && !document.body.hasClass("is-mobile"),
-      isPhone: document.body.hasClass("is-phone"),
-      isTablet: document.body.hasClass("is-tablet"),
-      isMobile: document.body.hasClass("is-mobile"), //running Obsidian Mobile, need to also check isTablet
-      isLinux: document.body.hasClass("mod-linux") && ! document.body.hasClass("is-android"),
-      isMacOS: document.body.hasClass("mod-macos") && ! document.body.hasClass("is-ios"),
-      isWindows: document.body.hasClass("mod-windows"),
-      isIOS: document.body.hasClass("is-ios"),
-      isAndroid: document.body.hasClass("is-android")
-    }
-
     addIcon(ICON_NAME, EXCALIDRAW_ICON);
     addIcon(SCRIPTENGINE_ICON_NAME, SCRIPTENGINE_ICON);
     addIcon(PNG_ICON_NAME, PNG_ICON);
@@ -729,7 +706,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.addRibbonIcon(ICON_NAME, t("CREATE_NEW"), async (e) => {
       this.createAndOpenDrawing(
         getDrawingFilename(this.settings),
-        e[CTRL_OR_CMD]?"new-pane":"active-pane",
+        isCTRL(e)?"new-pane":"active-pane",
       ); //.ctrlKey||e.metaKey);
     });
 
@@ -878,6 +855,14 @@ export default class ExcalidrawPlugin extends Plugin {
     });
 
     this.addCommand({
+      id: "excalidraw-autocreate-newtab",
+      name: t("NEW_IN_NEW_TAB"),
+      callback: () => {
+        this.createAndOpenDrawing(getDrawingFilename(this.settings), "new-tab");
+      },
+    });
+
+    this.addCommand({
       id: "excalidraw-autocreate-on-current",
       name: t("NEW_IN_ACTIVE_PANE"),
       callback: () => {
@@ -897,7 +882,7 @@ export default class ExcalidrawPlugin extends Plugin {
     });
 
     const insertDrawingToDoc = async (
-      location: "active-pane"|"new-pane"|"popout-window"
+      location: PaneTarget
     ) => {
       const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
       if (!activeView) {
@@ -929,6 +914,18 @@ export default class ExcalidrawPlugin extends Plugin {
           return Boolean(this.app.workspace.getActiveViewOfType(MarkdownView));
         }
         insertDrawingToDoc("new-pane");
+        return true;
+      },
+    });
+
+    this.addCommand({
+      id: "excalidraw-autocreate-and-embed-new-tab",
+      name: t("NEW_IN_NEW_TAB_EMBED"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return Boolean(this.app.workspace.getActiveViewOfType(MarkdownView));
+        }
+        insertDrawingToDoc("new-tab");
         return true;
       },
     });
@@ -2165,16 +2162,18 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public openDrawing(
     drawingFile: TFile,
-    location: "active-pane"|"new-pane"|"popout-window",
+    location: PaneTarget,
     active: boolean = false,
     subpath?: string
   ) {
     let leaf: WorkspaceLeaf;
     if(location === "popout-window") {
-      //@ts-ignore
       leaf = app.workspace.openPopoutLeaf();
     }
-    else {
+    if(location === "new-tab") {
+      leaf = app.workspace.getLeaf('tab');
+    }
+    if(!leaf) {
       leaf = this.app.workspace.getLeaf(false);
       if ((leaf.view.getViewType() !== 'empty') && (location === "new-pane")) {
         leaf = getNewOrAdjacentLeaf(this, leaf)    
@@ -2186,12 +2185,7 @@ export default class ExcalidrawPlugin extends Plugin {
       !subpath || subpath === "" 
         ? {active}
         : { active, eState: { subpath } }
-    );
-
-/*    leaf.setViewState({
-      type: VIEW_TYPE_EXCALIDRAW,
-      state: { file: drawingFile.path, eState: {subpath}},
-    });*/
+    )
   }
 
   public async getBlankDrawing(): Promise<string> {
@@ -2292,7 +2286,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public async createAndOpenDrawing(
     filename: string,
-    location: "active-pane"|"new-pane"|"popout-window",
+    location: PaneTarget,
     foldername?: string,
     initData?: string,
   ): Promise<string> {

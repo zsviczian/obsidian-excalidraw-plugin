@@ -24,7 +24,6 @@ import {
   BinaryFileData,
   ExcalidrawImperativeAPI,
   LibraryItems,
-  PointerDownState,
 } from "@zsviczian/excalidraw/types/types";
 import {
   VIEW_TYPE_EXCALIDRAW,
@@ -38,13 +37,13 @@ import {
   TEXT_DISPLAY_PARSED_ICON_NAME,
   FULLSCREEN_ICON_NAME,
   IMAGE_TYPES,
-  CTRL_OR_CMD,
   REG_LINKINDEX_INVALIDCHARS,
   KEYCODE,
   FRONTMATTER_KEY_EXPORT_PADDING,
   FRONTMATTER_KEY_EXPORT_PNGSCALE,
   FRONTMATTER_KEY_EXPORT_DARK,
   FRONTMATTER_KEY_EXPORT_TRANSPARENT,
+  DEVICE,
 } from "./Constants";
 import ExcalidrawPlugin from "./main";
 import { repositionElementsToCursor, ExcalidrawAutomate, getTextElementsMatchingQuery, cloneElement } from "./ExcalidrawAutomate";
@@ -58,8 +57,11 @@ import {
 import {
   checkAndCreateFolder,
   download,
+  getDataURLFromURL,
   getIMGFilename,
+  getMimeType,
   getNewUniqueFilepath,
+  getURLImageExtension,
 } from "./utils/FileUtils";
 import {
   checkExcalidrawVersion,
@@ -75,9 +77,7 @@ import {
   getExportPadding,
   getWithBackground,
   hasExportTheme,
-  isVersionNewerThanOther,
   scaleLoadedImage,
-  setDocLeftHandedMode,
   svgToBase64,
   viewportCoordsToSceneCoords,
   updateFrontmatterInString,
@@ -85,7 +85,7 @@ import {
   hyperlinkIsYouTubeLink,
   getYouTubeThumbnailLink,
 } from "./utils/Utils";
-import { getNewOrAdjacentLeaf, getParentOfClass } from "./utils/ObsidianUtils";
+import { getLeaf, getNewOrAdjacentLeaf, getParentOfClass } from "./utils/ObsidianUtils";
 import { splitFolderAndFilename } from "./utils/FileUtils";
 import { NewFileActions, Prompt } from "./dialogs/Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
@@ -94,6 +94,7 @@ import {
   EmbeddedFile,
   EmbeddedFilesLoader,
   FileData,
+  generateIdFromFile,
 } from "./EmbeddedFileLoader";
 import { ScriptInstallPrompt } from "./dialogs/ScriptInstallPrompt";
 import { ObsidianMenu } from "./menu/ObsidianMenu";
@@ -106,6 +107,7 @@ import { ICONS, saveIcon } from "./menu/ActionIcons";
 //import {WelcomeScreen} from "@zsviczian/excalidraw";
 import { ExportDialog } from "./dialogs/ExportDialog";
 import { getEA } from "src";
+import { externalDragModifierType, internalDragModifierType, isALT, isCTRL, isMETA, isSHIFT, linkClickModifierType, mdPropModifier, ModifierKeys } from "./utils/ModifierkeyHelper";
 
 type SelectedElementWithLink = { id: string; text: string };
 type SelectedImage = { id: string; fileId: FileId };
@@ -212,14 +214,12 @@ export default class ExcalidrawView extends TextFileView {
   private onKeyUp: (e: KeyboardEvent) => void;
   private onKeyDown:(e: KeyboardEvent) => void;
   //store key state for view mode link resolution
-  private metaKeyDown: boolean = false;
-  private ctrlKeyDown: boolean = false;
-  private shiftKeyDown: boolean = false;
-  private altKeyDown: boolean = false;
+  private modifierKeyDown: ModifierKeys = {shiftKey:false, metaKey: false, ctrlKey: false, altKey: false}
   public currentPosition: {x:number,y:number} = { x: 0, y: 0 };
   //Obsidian 0.15.0
   public ownerWindow: Window;
   public ownerDocument: Document;
+  private draginfoDiv: HTMLDivElement;
 
   public semaphores: {
     popoutUnload: boolean; //the unloaded Excalidraw view was the last leaf in the popout window
@@ -845,12 +845,13 @@ export default class ExcalidrawView extends TextFileView {
     selectedText: SelectedElementWithLink,
     selectedImage: SelectedImage,
     selectedElementWithLink: SelectedElementWithLink,
-    keys?: {shiftKey:boolean, ctrlKey: boolean, metaKey: boolean, altKey: boolean}
+    keys?: ModifierKeys
   ) {
     if(!selectedText) selectedText = {id:null, text: null};
     if(!selectedImage) selectedImage = {id:null, fileId: null};
     if(!selectedElementWithLink) selectedElementWithLink = {id:null, text:null};
     if(!keys) keys = {shiftKey: ev.shiftKey, ctrlKey: ev.ctrlKey, metaKey: ev.metaKey, altKey: ev.altKey};
+    const linkClickType = linkClickModifierType(keys);
 
     let file = null;
     let subpath: string = null;
@@ -929,7 +930,7 @@ export default class ExcalidrawView extends TextFileView {
           window.open(ef.hyperlink,"_blank");
           return;
         }
-        if (keys.altKey) {
+        if (linkClickType === "md-properties") {
           if (
             ef.file.extension === "md" &&
             !this.plugin.isExcalidrawFile(ef.file)
@@ -968,20 +969,18 @@ export default class ExcalidrawView extends TextFileView {
     if(this.handleLinkHookCall(el,linkText,ev)) return;
 
     try {
-      if (keys.shiftKey && this.isFullscreen()) {
+      if (linkClickType !== "active-pane" && this.isFullscreen()) {
         this.exitFullscreen();
       }
       if (!file) {
-        new NewFileActions(this.plugin, linkText, ev.shiftKey, !app.isMobile && ev.metaKey, this).open();
+        new NewFileActions(this.plugin, linkText, keys, this).open();
         return;
       }
-      const leaf =
-        (!app.isMobile && ((keys.metaKey && this.linksAlwaysOpenInANewPane) || keys.metaKey))
-        //@ts-ignore
-        ? app.workspace.openPopoutLeaf()
-        : (keys.shiftKey || this.linksAlwaysOpenInANewPane)
-          ? getNewOrAdjacentLeaf(this.plugin, this.leaf)
-          : this.leaf;
+      if(this.linksAlwaysOpenInANewPane) {
+        keys.ctrlKey = true;
+        keys.altKey = true;
+      }
+      const leaf = getLeaf(this.plugin,this.leaf,keys);
       await leaf.openFile(file, subpath ? { active: false, eState: { subpath } } : undefined); //if file exists open file and jump to reference
       //view.app.workspace.setActiveLeaf(leaf, true, true); //0.15.4 ExcaliBrain focus issue
     } catch (e) {
@@ -1123,17 +1122,21 @@ export default class ExcalidrawView extends TextFileView {
       self.addParentMoveObserver();
 
       self.onKeyUp = (e: KeyboardEvent) => {
-        self.ctrlKeyDown = e[CTRL_OR_CMD];
-        self.shiftKeyDown = e.shiftKey;
-        self.altKeyDown = e.altKey;
-        self.metaKeyDown = e.metaKey;
+        self.modifierKeyDown = {
+          shiftKey: e.shiftKey,
+          ctrlKey: e.ctrlKey,
+          altKey: e.altKey,
+          metaKey: e.metaKey
+        }
       };
 
       self.onKeyDown = (e: KeyboardEvent) => {
-        this.ctrlKeyDown = e[CTRL_OR_CMD];
-        this.shiftKeyDown = e.shiftKey;
-        this.altKeyDown = e.altKey;
-        this.metaKeyDown = e.metaKey;
+        this.modifierKeyDown = {
+          shiftKey: e.shiftKey,
+          ctrlKey: e.ctrlKey,
+          altKey: e.altKey,
+          metaKey: e.metaKey
+        }
       };
 
       self.ownerWindow.addEventListener("keydown", self.onKeyDown, false);
@@ -1978,6 +1981,38 @@ export default class ExcalidrawView extends TextFileView {
     ea.addElementsToView(true,true,true);
   }
 
+  async addImageSaveToVault(link:string) {
+    const ea = getEA(this) as ExcalidrawAutomate;
+    const mimeType = getMimeType(getURLImageExtension(link));
+    const dataURL = await getDataURLFromURL(link,mimeType,3000);
+    const fileId = await generateIdFromFile((new TextEncoder()).encode(dataURL as string))
+    const file = await this.excalidrawData.saveDataURLtoVault(dataURL,mimeType,fileId);
+    await ea.addImage(0,0,file);
+    ea.addElementsToView(true,true,true);
+  }
+
+  async addTextWithIframely(text:string) {
+    const id = await this.addText(text);
+    const url = `http://iframely.server.crestify.com/iframely?url=${text}`;
+    try {
+      const data = JSON.parse(await request({ url }));
+      if (!data || data.error || !data.meta?.title) {
+        return;
+      }
+      const ea = getEA(this) as ExcalidrawAutomate;
+      const el = ea
+        .getViewElements()
+        .filter((el) => el.id === id);
+      if (el.length === 1) {
+        //@ts-ignore
+        el[0].text = el[0].originalText = el[0].rawText =
+            `[${data.meta.title}](${text})`;
+        ea.copyViewElementsToEAforEditing(el);
+        ea.addElementsToView(false, false, false);
+      }
+    } catch(e) {};
+  }
+
   onPaneMenu(menu: Menu, source: string): void {
     if(this.excalidrawAPI && this.getViewSelectedElements().some(el=>el.type==="text")) {
       menu.addItem(item => {
@@ -2029,12 +2064,12 @@ export default class ExcalidrawView extends TextFileView {
             if (!this.getScene || !this.file) {
               return;
             }
-            if (ev[CTRL_OR_CMD]) {
-              this.exportPNG(ev.shiftKey);
+            if (isCTRL(ev)) {
+              this.exportPNG(isSHIFT(ev));
               return;
             }
-            this.savePNG(undefined,ev.shiftKey);
-            new Notice(`PNG export is ready${ev.shiftKey?" with embedded scene":""}`);
+            this.savePNG(undefined,isSHIFT(ev));
+            new Notice(`PNG export is ready${isSHIFT(ev)?" with embedded scene":""}`);
           })
           .setSection("pane");
       })
@@ -2047,12 +2082,12 @@ export default class ExcalidrawView extends TextFileView {
             if (!this.getScene || !this.file) {
               return;
             }
-            if (ev[CTRL_OR_CMD]) {
-              this.exportSVG(ev.shiftKey);
+            if (isCTRL(ev)) {
+              this.exportSVG(isSHIFT(ev));
               return;
             }
-            this.saveSVG(undefined,ev.shiftKey);
-            new Notice(`SVG export is ready${ev.shiftKey?" with embedded scene":""}`);
+            this.saveSVG(undefined,isSHIFT(ev));
+            new Notice(`SVG export is ready${isSHIFT(ev)?" with embedded scene":""}`);
           });
       })
       .addItem(item => {
@@ -2607,10 +2642,10 @@ export default class ExcalidrawView extends TextFileView {
         selectedTextElement = getTextElementAtPointer(this.currentPosition, this);
         if (selectedTextElement && selectedTextElement.id) {
           const event = new MouseEvent("click", {
-            ctrlKey: true,
-            metaKey: this.metaKeyDown,
-            shiftKey: this.shiftKeyDown,
-            altKey: this.altKeyDown,
+            ctrlKey: !(DEVICE.isIOS || DEVICE.isMacOS) || this.modifierKeyDown.ctrlKey,
+            metaKey:  (DEVICE.isIOS || DEVICE.isMacOS) || this.modifierKeyDown.metaKey,
+            shiftKey: this.modifierKeyDown.shiftKey,
+            altKey: this.modifierKeyDown.altKey,
           });
           this.handleLinkClick(event);
           selectedTextElement = null;
@@ -2619,10 +2654,10 @@ export default class ExcalidrawView extends TextFileView {
         selectedImageElement = getImageElementAtPointer(this.currentPosition, this);
         if (selectedImageElement && selectedImageElement.id) {
           const event = new MouseEvent("click", {
-            ctrlKey: true,
-            metaKey: this.metaKeyDown,
-            shiftKey: this.shiftKeyDown,
-            altKey: this.altKeyDown,
+            ctrlKey: !(DEVICE.isIOS || DEVICE.isMacOS) || this.modifierKeyDown.ctrlKey,
+            metaKey:  (DEVICE.isIOS || DEVICE.isMacOS) || this.modifierKeyDown.metaKey,
+            shiftKey: this.modifierKeyDown.shiftKey,
+            altKey: this.modifierKeyDown.altKey,
           });
           this.handleLinkClick(event);
           selectedImageElement = null;
@@ -2632,10 +2667,10 @@ export default class ExcalidrawView extends TextFileView {
         selectedElementWithLink = getElementWithLinkAtPointer(this.currentPosition, this);
         if (selectedElementWithLink && selectedElementWithLink.id) {
           const event = new MouseEvent("click", {
-            ctrlKey: true,
-            metaKey: this.metaKeyDown,
-            shiftKey: this.shiftKeyDown,
-            altKey: this.altKeyDown,
+            ctrlKey: !(DEVICE.isIOS || DEVICE.isMacOS) || this.modifierKeyDown.ctrlKey,
+            metaKey:  (DEVICE.isIOS || DEVICE.isMacOS) || this.modifierKeyDown.metaKey,
+            shiftKey: this.modifierKeyDown.shiftKey,
+            altKey: this.modifierKeyDown.altKey,
           });
           this.handleLinkClick(event);
           selectedElementWithLink = null;
@@ -2779,7 +2814,7 @@ export default class ExcalidrawView extends TextFileView {
               this.exitFullscreen();
             }
 
-            if (e[CTRL_OR_CMD] && !e.shiftKey && !e.altKey) {
+            if (isCTRL(e) && !isSHIFT(e) && !isALT(e)) {
               showHoverPreview();
             }
           },
@@ -2787,10 +2822,10 @@ export default class ExcalidrawView extends TextFileView {
           //onClick: (e: MouseEvent): any => {
           //to onPointerDown so touch events also open links on the iPad (with a keyboard)
           onPointerDown: (e: PointerEvent) => {            
-            if (!(e[CTRL_OR_CMD]||e.metaKey)) {
+            if (!(isCTRL(e)||isMETA(e))) {
               return;
             } 
-            if (!this.plugin.settings.allowCtrlClick && !e.metaKey) {
+            if (!this.plugin.settings.allowCtrlClick && !!isMETA(e)) {
               return;
             }
             //added setTimeout when I changed onClick(e: MouseEvent) to onPointerDown() in 1.7.9. 
@@ -2819,12 +2854,45 @@ export default class ExcalidrawView extends TextFileView {
           onDragOver: (e: any) => {
             const action = dropAction(e.dataTransfer);
             if (action) {
+              if(!this.draginfoDiv) {
+                this.draginfoDiv = createDiv({cls:"excalidraw-draginfo"});
+                this.ownerDocument.body.appendChild(this.draginfoDiv);
+              }
+              let msg: string = "";
+              if((app as any).dragManager.draggable) {
+                //drag from Obsidian file manager
+                switch (internalDragModifierType(e)) {
+                  case "image": msg = "Embed image";break;
+                  case "image-fullsize": msg = "Embed image @100%"; break;
+                  case "link": msg = "Insert link"; break;
+                }
+              } else if(e.dataTransfer.types.includes("Files")) {
+                //drag from OS file manager
+                msg = "External file"
+              } else {
+                //drag from Internet
+                switch (externalDragModifierType(e)) {
+                  case "image-import": msg = "Import image to Vault"; break;
+                  case "image-url": msg = "Insert image/thumbnail with URL"; break;
+                  case "insert-link": msg = "Insert link"; break;
+                }
+              }
+              if(this.draginfoDiv.innerText !== msg) this.draginfoDiv.innerText = msg;
+              const top = `${e.clientY-parseFloat(getComputedStyle(this.draginfoDiv).fontSize)*3}px`;
+              const left = `${e.clientX-this.draginfoDiv.clientWidth/2}px`;
+              if(this.draginfoDiv.style.top !== top) this.draginfoDiv.style.top = top;
+              if(this.draginfoDiv.style.left !== left) this.draginfoDiv.style.left = left;
               e.dataTransfer.dropEffect = action;
               e.preventDefault();
               return false;
             }
           },
-          onDragLeave: () => {},
+          onDragLeave: () => {
+            if(this.draginfoDiv) {
+              this.ownerDocument.body.removeChild(this.draginfoDiv);
+              delete this.draginfoDiv;
+            }
+          },
         },
         React.createElement(
           Excalidraw,
@@ -2865,7 +2933,7 @@ export default class ExcalidrawView extends TextFileView {
                 blockOnMouseButtonDown = true;
 
                 //ctrl click
-                if (this.ctrlKeyDown || this.metaKeyDown) {
+                if (isCTRL(this.modifierKeyDown) || isMETA(this.modifierKeyDown)) {
                   handleLinkClick();
                   return;
                 }
@@ -2881,7 +2949,7 @@ export default class ExcalidrawView extends TextFileView {
               if (p.button === "up") {
                 blockOnMouseButtonDown = false;
               }
-              if (this.ctrlKeyDown || 
+              if (isCTRL(this.modifierKeyDown) || 
                 (this.excalidrawAPI.getAppState().isViewModeEnabled && 
                 this.plugin.settings.hoverPreviewWithoutCTRL)) {
                 
@@ -2977,6 +3045,10 @@ export default class ExcalidrawView extends TextFileView {
             ownerDocument: this.ownerDocument,
             ownerWindow: this.ownerWindow,
             onDrop: (event: React.DragEvent<HTMLDivElement>): boolean => {
+              if(this.draginfoDiv) {
+                this.ownerDocument.body.removeChild(this.draginfoDiv);
+                delete this.draginfoDiv;
+              }
               const api = this.excalidrawAPI;
               if (!api) {
                 return false;
@@ -2986,8 +3058,10 @@ export default class ExcalidrawView extends TextFileView {
                 { clientX: event.clientX, clientY: event.clientY },
                 st,
               );
-
               const draggable = (app as any).dragManager.draggable;
+              const internalDragAction = internalDragModifierType(event);
+              const externalDragAction = externalDragModifierType(event);
+
               const onDropHook = (
                 type: "file" | "text" | "unknown",
                 files: TFile[],
@@ -3019,8 +3093,7 @@ export default class ExcalidrawView extends TextFileView {
                 }
               };
 
-              //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/468
-              event[CTRL_OR_CMD] = event.shiftKey || event[CTRL_OR_CMD];
+              //Obsidian internal drag event
               switch (draggable?.type) {
                 case "file":
                   if (!onDropHook("file", [draggable.file], null)) {
@@ -3030,7 +3103,7 @@ export default class ExcalidrawView extends TextFileView {
                       return false;
                     }
                     if (
-                      event[CTRL_OR_CMD] && 
+                      ["image", "image-fullsize"].contains(internalDragAction) && 
                       (IMAGE_TYPES.contains(draggable.file.extension) ||
                         draggable.file.extension === "md")
                     ) {
@@ -3043,12 +3116,13 @@ export default class ExcalidrawView extends TextFileView {
                           this.currentPosition.x,
                           this.currentPosition.y,
                           draggable.file,
-                          !event.altKey,
+                          !(internalDragAction==="image-fullsize"),
                         );
                         ea.addElementsToView(false, false, true);
                       })();
                       return false;
                     }
+                    //internalDragAction === "link"
                     this.addText(
                       `[[${app.metadataCache.fileToLinktext(
                         draggable.file,
@@ -3061,7 +3135,7 @@ export default class ExcalidrawView extends TextFileView {
                 case "files":
                   if (!onDropHook("file", draggable.files, null)) {
                     (async () => {
-                      if (event[CTRL_OR_CMD]) {
+                      if (["image", "image-fullsize"].contains(internalDragAction)) {
                         const ea = this.plugin.ea;
                         ea.reset();
                         ea.setView(this);
@@ -3073,7 +3147,7 @@ export default class ExcalidrawView extends TextFileView {
                               this.currentPosition.x + counter*50,
                               this.currentPosition.y + counter*50,
                               f,
-                              !event.altKey,
+                              !(internalDragAction==="image-fullsize"),
                             );
                             counter++;
                             await ea.addElementsToView(false, false, true);
@@ -3081,6 +3155,7 @@ export default class ExcalidrawView extends TextFileView {
                         }
                         return;
                       }
+                      //internalDragAction === "link"
                       for (const f of draggable.files) {
                         await this.addText(
                           `[[${app.metadataCache.fileToLinktext(
@@ -3096,63 +3171,100 @@ export default class ExcalidrawView extends TextFileView {
                   }
                   return false;
               }
+
+              //externalDragAction
               if (event.dataTransfer.types.includes("Files")) {
                 if (event.dataTransfer.types.includes("text/plain")) {
                   const text: string = event.dataTransfer.getData("text");
                   if (text && onDropHook("text", null, text)) {
                     return false;
                   }
-                  if(text && event[CTRL_OR_CMD] && hyperlinkIsImage(text)) {
+                  if(text && (externalDragAction === "image-url") && hyperlinkIsImage(text)) {
                     this.addImageWithURL(text);
                     return false;
                   }
+                  if(text && (externalDragAction === "insert-link")) {
+                    if (
+                      this.plugin.settings.iframelyAllowed &&
+                      text.match(/^https?:\/\/\S*$/)
+                    ) {
+                      this.addTextWithIframely(text);
+                      return false;
+                    } else {
+                      this.addText(text);
+                      return false;
+                    }
+                  }
                 }
+
                 if(event.dataTransfer.types.includes("text/html")) {
                   const html = event.dataTransfer.getData("text/html");
                   const src = html.match(/src=["']([^"']*)["']/)
-                  if(src && event[CTRL_OR_CMD] && hyperlinkIsImage(src[1])) {
+                  if(src && (externalDragAction === "image-url") && hyperlinkIsImage(src[1])) {
                     this.addImageWithURL(src[1]);
                     return false;
+                  }
+                  if(src && (externalDragAction === "insert-link")) {
+                    if (
+                      this.plugin.settings.iframelyAllowed &&
+                      src[1].match(/^https?:\/\/\S*$/)
+                    ) {
+                      this.addTextWithIframely(src[1]);
+                      return false;
+                    } else {
+                      this.addText(src[1]);
+                      return false;
+                    }
                   }
                 }
                 return true;
               }
-              if (event.dataTransfer.types.includes("text/plain")) {
-                const text: string = event.dataTransfer.getData("text");
-                if (!text) {
+
+              if (event.dataTransfer.types.includes("text/plain") || event.dataTransfer.types.includes("text/uri-list") || event.dataTransfer.types.includes("text/html")) {
+
+                const html = event.dataTransfer.getData("text/html");
+                const src = html.match(/src=["']([^"']*)["']/);
+                const htmlText = src ? src[1] : "";
+                const textText = event.dataTransfer.getData("text");
+                const uriText = event.dataTransfer.getData("text/uri-list");
+
+                let text: string = src ? htmlText : textText;
+                if (!text || text === "") {
+                  text = uriText
+                }
+                if (!text || text === "") {
                   return true;
                 }
                 if (!onDropHook("text", null, text)) {
-                  if(text && event[CTRL_OR_CMD] && hyperlinkIsYouTubeLink(text)) {
+                  if(text && (externalDragAction==="image-url") && hyperlinkIsYouTubeLink(text)) {
                     this.addYouTubeThumbnail(text);
+                    return false;
+                  }
+                  if(uriText && (externalDragAction==="image-url") && hyperlinkIsYouTubeLink(uriText)) {
+                    this.addYouTubeThumbnail(uriText);
+                    return false;
+                  }
+                  if(text && (externalDragAction==="image-url") && hyperlinkIsImage(text)) {
+                    this.addImageWithURL(text);
+                    return false;
+                  }
+                  if(uriText && (externalDragAction==="image-url") && hyperlinkIsImage(uriText)) {
+                    this.addImageWithURL(uriText);
+                    return false;
+                  }
+                  if(text && (externalDragAction==="image-import") && hyperlinkIsImage(text)) {
+                    this.addImageSaveToVault(text);
+                    return false;
+                  }
+                  if(uriText && (externalDragAction==="image-import") && hyperlinkIsImage(uriText)) {
+                    this.addImageSaveToVault(uriText);
                     return false;
                   }
                   if (
                     this.plugin.settings.iframelyAllowed &&
                     text.match(/^https?:\/\/\S*$/)
                   ) {
-                    (async () => {
-                      const id = await this.addText(text);
-                      const url = `http://iframely.server.crestify.com/iframely?url=${text}`;
-                      const data = JSON.parse(await request({ url }));
-                      if (!data || data.error || !data.meta?.title) {
-                        return false;
-                      }
-                      const ea = this.plugin.ea;
-                      ea.reset();
-                      ea.setView(this);
-                      const el = ea
-                        .getViewElements()
-                        .filter((el) => el.id === id);
-                      if (el.length === 1) {
-                        //@ts-ignore
-                        el[0].text = el[0].originalText = el[0].rawText =
-                            `[${data.meta.title}](${text})`;
-                        ea.copyViewElementsToEAforEditing(el);
-                        ea.addElementsToView(false, false, false);
-                      }
-                      return false;
-                    })();
+                    this.addTextWithIframely(text);
                     return false;
                   }
                   //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/599
@@ -3329,14 +3441,19 @@ export default class ExcalidrawView extends TextFileView {
 
               const event = e?.detail?.nativeEvent;
               if(this.handleLinkHookCall(element,element.link,event)) return;
-              if(this.openExternalLink(element.link, !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey ? element : undefined)) return;
-              
+              if(this.openExternalLink(element.link, !isSHIFT(event) && !isCTRL(event) && !isMETA(event) && !isALT(event) ? element : undefined)) return;
+
               this.linkClick(
                 event,
                 null,
                 null,
                 {id: element.id, text: element.link},
-                {shiftKey: event.ctrlKey??event.shiftKey, ctrlKey: event.ctrlKey, metaKey: event.metaKey, altKey: event.altKey}
+                {
+                  shiftKey: event.shitKey,
+                  ctrlKey: event.ctrlKey || !(DEVICE.isIOS || DEVICE.isMacOS),
+                  metaKey: event.metaKey ||  (DEVICE.isIOS || DEVICE.isMacOS),
+                  altKey: event.altKey
+                }
               );
               return;
             },
@@ -3347,10 +3464,11 @@ export default class ExcalidrawView extends TextFileView {
               if (
                 element &&
                 (this.plugin.settings.hoverPreviewWithoutCTRL ||
-                  event[CTRL_OR_CMD])
+                  isCTRL(event))
               ) {
                 mouseEvent = event;
-                mouseEvent.ctrlKey = true;
+                mouseEvent.ctrlKey = !(DEVICE.isIOS || DEVICE.isMacOS) || mouseEvent.ctrlKey;
+                mouseEvent.metaKey = (DEVICE.isIOS || DEVICE.isMacOS) || mouseEvent.metaKey;
                 const link = element.link;
                 if (!link || link === "") {
                   return;
@@ -3387,7 +3505,7 @@ export default class ExcalidrawView extends TextFileView {
             React.createElement(MainMenu.DefaultItems.ChangeCanvasBackground),
             React.createElement(MainMenu.DefaultItems.ToggleTheme),
             React.createElement(MainMenu.Separator),
-            !this.plugin.device.isPhone ? React.createElement(
+            !DEVICE.isPhone ? React.createElement(
               MainMenu.Item,
               {              
                 icon: ICONS.trayMode,

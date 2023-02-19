@@ -74,8 +74,6 @@ export default {
     "您也可以直接在画布中按住 CTRL/CMD 并点击图形或文本元素来打开链接。",
   FILENAME_INVALID_CHARS:
     '文件名不能含有以下符号： * " \\  < > : | ? #',
-  FILE_DOES_NOT_EXIST:
-    "文件不存在。按住 ALT（或 ALT + SHIFT）并点击链接来创建新文件。",
   FORCE_SAVE:
     "立刻保存该绘图（并更新嵌入了该绘图的面板）。\n详见插件设置中的定期保存选项",
   RAW: "文本元素正以原文（RAW）模式显示链接。\n点击切换到预览（PREVIEW）模式",

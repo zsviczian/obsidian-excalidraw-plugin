@@ -3,8 +3,8 @@ import ExcalidrawView from "../ExcalidrawView";
 
 type ButtonProps = {
   title: string;
-  action: Function;
-  longpress?: Function;
+  action: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
+  longpress?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
   icon: JSX.Element;
   view: ExcalidrawView;
 };
