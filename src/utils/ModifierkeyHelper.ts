@@ -45,3 +45,12 @@ export const internalDragModifierType = (ev: KeyEvent):InternalDragAction => {
   if(scaleToFullsizeModifier(ev)) return "image-fullsize";
   return "link";
 }
+
+export const emulateCTRLClickForLinks = (e:KeyEvent) => {
+  return {
+    shiftKey: e.shiftKey,
+    ctrlKey: e.ctrlKey || !(DEVICE.isIOS || DEVICE.isMacOS),
+    metaKey: e.metaKey ||  (DEVICE.isIOS || DEVICE.isMacOS),
+    altKey: e.altKey
+  }
+}

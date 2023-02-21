@@ -17,6 +17,20 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.8.16": `
+**!!! Modifier keys have changed, please review the table below !!!**
+[Click this to see the new shortcuts overview image](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/excalidraw-modifiers.png)
+
+## Fixed 
+- This version was extensively tested and developed on MacOS to remove usability issues.
+- New command palette action to create a new drawing in a new tab
+- Modifier keys to open links in the active window, splitting the current view to the right, in a new tab, or in a popout window now behave consistently both in Excalidraw and when clicking a drawing that is embedded in a markdown note.
+- Drag & Drop properly works from within Obsidian, from a web browser, and from the OS file explorer
+
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/9HlipSIzRhc" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+`,
 "1.8.14":`
 ## Fixed
 - text element link gets deleted when the drawing is reloaded

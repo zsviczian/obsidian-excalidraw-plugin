@@ -107,7 +107,7 @@ import { ICONS, saveIcon } from "./menu/ActionIcons";
 //import {WelcomeScreen} from "@zsviczian/excalidraw";
 import { ExportDialog } from "./dialogs/ExportDialog";
 import { getEA } from "src";
-import { externalDragModifierType, internalDragModifierType, isALT, isCTRL, isMETA, isSHIFT, linkClickModifierType, mdPropModifier, ModifierKeys } from "./utils/ModifierkeyHelper";
+import { emulateCTRLClickForLinks, externalDragModifierType, internalDragModifierType, isALT, isCTRL, isMETA, isSHIFT, linkClickModifierType, mdPropModifier, ModifierKeys } from "./utils/ModifierkeyHelper";
 
 type SelectedElementWithLink = { id: string; text: string };
 type SelectedImage = { id: string; fileId: FileId };
@@ -2866,7 +2866,7 @@ export default class ExcalidrawView extends TextFileView {
                   case "image-fullsize": msg = "Embed image @100%"; break;
                   case "link": msg = "Insert link"; break;
                 }
-              } else if(e.dataTransfer.types.includes("Files")) {
+              } else if(e.dataTransfer.types.length === 1 && e.dataTransfer.types.includes("Files")) {
                 //drag from OS file manager
                 msg = "External file"
               } else {
@@ -2878,7 +2878,7 @@ export default class ExcalidrawView extends TextFileView {
                 }
               }
               if(this.draginfoDiv.innerText !== msg) this.draginfoDiv.innerText = msg;
-              const top = `${e.clientY-parseFloat(getComputedStyle(this.draginfoDiv).fontSize)*3}px`;
+              const top = `${e.clientY-parseFloat(getComputedStyle(this.draginfoDiv).fontSize)*8}px`;
               const left = `${e.clientX-this.draginfoDiv.clientWidth/2}px`;
               if(this.draginfoDiv.style.top !== top) this.draginfoDiv.style.top = top;
               if(this.draginfoDiv.style.left !== left) this.draginfoDiv.style.left = left;
@@ -3448,12 +3448,7 @@ export default class ExcalidrawView extends TextFileView {
                 null,
                 null,
                 {id: element.id, text: element.link},
-                {
-                  shiftKey: event.shitKey,
-                  ctrlKey: event.ctrlKey || !(DEVICE.isIOS || DEVICE.isMacOS),
-                  metaKey: event.metaKey ||  (DEVICE.isIOS || DEVICE.isMacOS),
-                  altKey: event.altKey
-                }
+                emulateCTRLClickForLinks(event)
               );
               return;
             },

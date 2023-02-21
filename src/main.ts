@@ -41,6 +41,7 @@ import {
   VIRGIL_FONT,
   VIRGIL_DATAURL,
   EXPORT_TYPES,
+  DEVICE,
 } from "./Constants";
 import ExcalidrawView, { TextMode, getTextMode } from "./ExcalidrawView";
 import {
@@ -106,7 +107,7 @@ import { ScriptInstallPrompt } from "./dialogs/ScriptInstallPrompt";
 import { check } from "prettier";
 import Taskbone from "./ocr/Taskbone";
 import { hoverEvent_Legacy, initializeMarkdownPostProcessor_Legacy, markdownPostProcessor_Legacy, observer_Legacy } from "./MarkdownPostProcessor_Legacy";
-import { isCTRL, PaneTarget } from "./utils/ModifierkeyHelper";
+import { emulateCTRLClickForLinks, isCTRL, linkClickModifierType, PaneTarget } from "./utils/ModifierkeyHelper";
 
 
 declare module "obsidian" {
@@ -706,8 +707,8 @@ export default class ExcalidrawPlugin extends Plugin {
     this.addRibbonIcon(ICON_NAME, t("CREATE_NEW"), async (e) => {
       this.createAndOpenDrawing(
         getDrawingFilename(this.settings),
-        isCTRL(e)?"new-pane":"active-pane",
-      ); //.ctrlKey||e.metaKey);
+        linkClickModifierType(emulateCTRLClickForLinks(e)),
+      ); 
     });
 
     const fileMenuHandlerCreateNew = (menu: Menu, file: TFile) => {
@@ -715,7 +716,7 @@ export default class ExcalidrawPlugin extends Plugin {
         item
           .setTitle(t("CREATE_NEW"))
           .setIcon(ICON_NAME)
-          .onClick(() => {
+          .onClick((e) => {
             let folderpath = file.path;
             if (file instanceof TFile) {
               folderpath = normalizePath(
@@ -724,7 +725,7 @@ export default class ExcalidrawPlugin extends Plugin {
             }
             this.createAndOpenDrawing(
               getDrawingFilename(this.settings),
-              "active-pane",
+              linkClickModifierType(emulateCTRLClickForLinks(e)),
               folderpath,
             );
           });
@@ -2166,6 +2167,9 @@ export default class ExcalidrawPlugin extends Plugin {
     active: boolean = false,
     subpath?: string
   ) {
+    if(location === "md-properties") {
+      location = "new-tab";
+    }
     let leaf: WorkspaceLeaf;
     if(location === "popout-window") {
       leaf = app.workspace.openPopoutLeaf();
