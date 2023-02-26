@@ -1,20 +1,22 @@
 import {
+  DEVICE,
   FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS,
   FRONTMATTER_KEY_CUSTOM_PREFIX,
   FRONTMATTER_KEY_CUSTOM_URL_PREFIX,
 } from "src/Constants";
+import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/ModifierkeyHelper";
 
 // 简体中文
 export default {
   // main.ts
   INSTALL_SCRIPT: "安装此脚本",
-  UPDATE_SCRIPT: "发现可用更新 - 点击安装",
+  UPDATE_SCRIPT: "有可用更新 - 点击安装",
   CHECKING_SCRIPT:
-    "检查脚本更新 - 点击重新安装",
+    "检查更新中 - 点击重新安装",
   UNABLETOCHECK_SCRIPT:
     "检查更新失败 - 点击重新安装",
   UPTODATE_SCRIPT:
-    "已安装最新脚本 - 点击重新安装",
+    "脚本已是最新 - 点击重新安装",
   OPEN_AS_EXCALIDRAW: "打开为 Excalidraw 绘图",
   TOGGLE_MODE: "在 Excalidraw 和 Markdown 模式之间切换",
   CONVERT_NOTE_TO_EXCALIDRAW: "转换空白笔记为 Excalidraw 绘图",
@@ -30,58 +32,66 @@ export default {
   TRANSCLUDE_MOST_RECENT: "嵌入最近编辑过的绘图（形如 ![[drawing]]）到当前文档",
   TOGGLE_LEFTHANDED_MODE: "切换为左手模式",
   NEW_IN_NEW_PANE: "新建绘图 - 于新面板",
+  NEW_IN_NEW_TAB: "新建绘图 - 于新页签",
   NEW_IN_ACTIVE_PANE: "新建绘图 - 于当前面板",
   NEW_IN_POPOUT_WINDOW: "新建绘图 - 于新窗口",
   NEW_IN_NEW_PANE_EMBED:
     "新建绘图 - 于新面板 - 并将其嵌入（形如 ![[drawing]]）到当前文档",
+  NEW_IN_NEW_TAB_EMBED:
+    "新建绘图 - 于新页签 - 并将其嵌入（形如 ![[drawing]]）到当前文档",
   NEW_IN_ACTIVE_PANE_EMBED:
     "新建绘图 - 于当前面板 - 并将其嵌入（形如 ![[drawing]]）到当前文档",
   NEW_IN_POPOUT_WINDOW_EMBED: "新建绘图 - 于新窗口 - 并将其嵌入（形如 ![[drawing]]）到当前文档",
   EXPORT_SVG: "导出 SVG 文件到当前目录",
   EXPORT_PNG: "导出 PNG 文件到当前目录",
-  TOGGLE_LOCK: "切换文本元素为原文模式（RAW）/预览模式（PREVIEW）",
+  EXPORT_SVG_WITH_SCENE: "导出 SVG 文件（包含 Scene）到当前目录",
+  EXPORT_PNG_WITH_SCENE: "导出 PNG 文件（包含 Scene）到当前目录",
+  TOGGLE_LOCK: "文本元素：原文模式（RAW）⟺ 预览模式（PREVIEW）",
   DELETE_FILE: "从库中删除所选图像（或 MD-Embed）的源文件",
   INSERT_LINK_TO_ELEMENT:
-    "复制所选元素的内部链接。按住 CTRL/CMD 可复制元素所在分组的内部链接。按住 SHIFT 可复制元素周围区域的内部链接。",
+    `复制所选元素的内部链接（形如 [[file#^elementID]]）。\n按住 ${labelCTRL()} 可复制元素所在分组的内部链接（形如 [[file#^group=elementID]]）。\n按住 ${labelSHIFT()} 可复制所选元素周围区域的内部链接（形如 [[file#^area=elementID]]）。\n按住 ${labelALT()} 可观看视频演示。`,
   INSERT_LINK_TO_ELEMENT_GROUP:
     "复制所选元素所在分组的内部链接（形如 [[file#^group=elementID]]）",
   INSERT_LINK_TO_ELEMENT_AREA:
     "复制所选元素周围区域的内部链接（形如 [[file#^area=elementID]]）",
   INSERT_LINK_TO_ELEMENT_NORMAL:
-    "复制所选元素的引用链接（形如 [[file#^elementID]]）",
+    "复制所选元素的内部链接（形如 [[file#^elementID]]）",
   INSERT_LINK_TO_ELEMENT_ERROR: "未选择画布里的单个元素",
   INSERT_LINK_TO_ELEMENT_READY: "链接已生成并复制到剪贴板",
   INSERT_LINK: "插入文件的内部链接（形如 [[drawing]]）到当前绘图",
   INSERT_IMAGE: "插入图像（以图像形式嵌入）到当前绘图",
+  IMPORT_SVG: "插入 SVG 矢量图形到当前绘图（支持有限，尚不支持文本）",
   INSERT_MD: "插入 Markdown 文档（以图像形式嵌入）到当前绘图",
   INSERT_LATEX:
-    "插入 LaTeX 公式到当前绘图",
+    `插入 LaTeX 公式到当前绘图。按住 ${labelALT()} 可观看视频演示。`,
   ENTER_LATEX: "输入 LaTeX 表达式",
-  READ_RELEASE_NOTES: "阅读本插件的最新发行版本说明",
-  TRAY_MODE: "切换绘图工具属性页为面板模式（Panel）/托盘模式（Tray）",
+  READ_RELEASE_NOTES: "阅读本插件的更新说明",
+  RUN_OCR: "OCR 识别涂鸦和图片里的文本并复制到剪贴板",
+  TRAY_MODE: "绘图工具属性页：面板模式 ⟺ 托盘模式",
   SEARCH: "搜索文本",
+  RESET_IMG_TO_100: "重设图像元素的尺寸为 100%",
+  TEMPORARY_DISABLE_AUTOSAVE: "临时禁用自动保存功能，直到 Obsidian 退出（勿点，除非你清楚自己在干什么）",
+  TEMPORARY_ENABLE_AUTOSAVE: "恢复启用自动保存功能",
 
   //ExcalidrawView.ts
-  INSTALL_SCRIPT_BUTTON: "安装或更新 Excalidraw 自动化脚本",
+  INSTALL_SCRIPT_BUTTON: "安装或更新 Excalidraw 脚本",
   OPEN_AS_MD: "打开为 Markdown 文件",
-  SAVE_AS_PNG: "导出 PNG 到当前目录（按住 CTRL/CMD 设定导出路径）",
-  SAVE_AS_SVG: "导出 SVG 到当前目录（按住 CTRL/CMD 设定导出路径）",
+  SAVE_AS_PNG: `导出 PNG 到当前目录（按住 ${labelCTRL()} 设定导出路径；按住 SHIFT 在导出时包含 Scene）`,
+  SAVE_AS_SVG: `导出 SVG 到当前目录（按住 ${labelCTRL()} 设定导出路径；按住 SHIFT 在导出时包含 Scene）`,
   OPEN_LINK: "打开所选元素里的链接 \n（按住 SHIFT 在新面板打开）",
   EXPORT_EXCALIDRAW: "导出为 .Excalidraw 文件",
   LINK_BUTTON_CLICK_NO_TEXT:
-    "请选择一个含有链接的图形或文本元素。\n" +
-    "按住 SHIFT 并点击此按钮可在新面板中打开链接。\n" +
-    "您也可以直接在画布中按住 CTRL/CMD 并点击图形或文本元素来打开链接。",
+    "请选择一个含有链接的图形或文本元素。",
   FILENAME_INVALID_CHARS:
     '文件名不能含有以下符号： * " \\  < > : | ? #',
   FORCE_SAVE:
-    "立刻保存该绘图（并更新嵌入了该绘图的面板）。\n详见插件设置中的定期保存选项",
+    "保存绘图（并更新嵌入了该绘图的面板）",
   RAW: "文本元素正以原文（RAW）模式显示链接。\n点击切换到预览（PREVIEW）模式",
   PARSED:
     "文本元素正以预览（PREVIEW）模式显示链接。\n点击切换到原文（RAW）模式",
   NOFILE: "Excalidraw（没有文件）",
   COMPATIBILITY_MODE:
-    "*.excalidraw 文件以兼容模式打开。转换为新格式以获得完整的插件功能。",
+    "*.excalidraw 文件正以兼容模式打开。需要转换为新格式才能使用插件的全部功能。",
   CONVERT_FILE: "转换为新格式",
 
   //settings.ts
@@ -110,12 +120,13 @@ export default {
     "Template.md，则此项应设为 Excalidraw/Template.md（也可省略 .md 扩展名，即 Excalidraw/Template）。<br>" +
     "如果您在兼容模式下使用 Excalidraw，那么您的模板文件也必须是旧的 *.excalidraw 格式，" +
     "例如 Excalidraw/Template.excalidraw。",
-  SCRIPT_FOLDER_NAME: "Excalidraw 自动化脚本的文件夹",
+  SCRIPT_FOLDER_NAME: "Excalidraw 自动化脚本的文件夹（大小写敏感！）",
   SCRIPT_FOLDER_DESC:
     "此文件夹用于存放 Excalidraw 自动化脚本。" +
     "您可以在 Obsidian 命令面板中执行这些脚本，" +
     "还可以为喜欢的脚本分配快捷键，就像为其他 Obsidian 命令分配快捷键一样。<br>" +
     "该项不能设为库的根目录。",
+  SAVING_HEAD: "保存",
   COMPRESS_NAME: "压缩 Excalidraw JSON",
   COMPRESS_DESC:
     "Excalidraw 绘图文件默认将元素记录为 JSON 格式。开启此项，可将元素的 JSON 数据以 BASE64 编码" +
@@ -127,15 +138,18 @@ export default {
     "而当您切换回 Excalidraw 模式时，数据就会被再次编码。<br>" +
     "开启此项后，对于之前已存在的未压缩的绘图文件，" +
     "需要重新打开并保存它们才能生效。",
-  AUTOSAVE_NAME: "定期保存",
-  AUTOSAVE_DESC:
-    "定期保存当前绘图。此功能专为移动设备设计 —— " +
-    "在桌面端，当您关闭 Excalidraw 或 Obsidian，或者移动焦点到其他面板的时候，软件是会自动保存的；" +
-    "但是在手机或平板上通过滑动手势退出 Obsidian 时，可能无法顺利触发自动保存。因此我添加了定期保存功能作为弥补。",
-  AUTOSAVE_INTERVAL_NAME: "定期保存的时间间隔",
-  AUTOSAVE_INTERVAL_DESC:
-    "每隔多长时间执行一次保存。如果当前绘图没有发生改变，将不会触发保存。",
-  FILENAME_HEAD: "文件名",
+  AUTOSAVE_INTERVAL_DESKTOP_NAME: "桌面端定期保存时间间隔",
+  AUTOSAVE_INTERVAL_DESKTOP_DESC:
+    "每隔多长时间触发一次自动保存。但如果当前绘图没有发生改变，将不会触发自动保存。" +
+    "当 Obsidian 应用内的焦点离开活动文档（如关闭工作空间、点击菜单栏、切换到其他页签或面板等）的时候，会触发自动保存。" +
+    "直接退出 Obsidian 应用（不管是终结进程还是点关闭按钮）不会触发自动保存。",
+  AUTOSAVE_INTERVAL_MOBILE_NAME: "移动端定期保存时间间隔",
+  AUTOSAVE_INTERVAL_MOBILE_DESC:
+    "建议在移动端设置更短的自动保存时间间隔。" +
+    "当 Obsidian 应用内的焦点离开活动文档（如关闭工作空间、点击菜单栏、切换到其他页签或面板等）的时候，会触发自动保存。" +
+    "直接退出 Obsidian 应用（在应用切换器中划掉）不会触发自动保存。此外，当您切换到其他应用时，有时候" +
+    "系统会自动清理 Obsidian 后台以释放资源。这种情况下，Excalidraw 无法保存最新的变动。",
+FILENAME_HEAD: "文件名",
   FILENAME_DESC:
     "<p>点击阅读" +
     "<a href='https://momentjs.com/docs/#/displaying/format/'>日期和时间格式参考</a>。</p>",
@@ -185,15 +199,28 @@ export default {
   DEFAULT_PEN_MODE_NAME: "触控笔模式（Pen mode）",
   DEFAULT_PEN_MODE_DESC:
     "打开绘图时，是否自动开启触控笔模式？",
-  ZOOM_TO_FIT_NAME: "自动缩放以适应面板调整",
-  ZOOM_TO_FIT_DESC: "调整面板大小时，自适应地缩放画布" +
+
+  DEFAULT_PINCHZOOM_NAME: "允许在触控笔模式下进行双指缩放",
+  DEFAULT_PINCHZOOM_DESC:
+    "在触控笔模式下使用自由画笔工具时，双指缩放可能造成干扰。<br>" +
+    "<b>开启: </b>允许在触控笔模式下进行双指缩放<br><b>关闭： </b>禁止在触控笔模式下进行双指缩放",
+
+  DEFAULT_WHEELZOOM_NAME: "鼠标滚轮缩放页面",
+  DEFAULT_WHEELZOOM_DESC:
+    `<b>开启：</b>鼠标滚轮为缩放页面，${labelCTRL()}+鼠标滚轮为滚动页面</br><b>关闭：</b>鼠标滚轮为滚动页面，${labelCTRL()}+鼠标滚轮为缩放页面`,
+    
+  ZOOM_TO_FIT_NAME: "调节面板尺寸后自动缩放页面",
+  ZOOM_TO_FIT_DESC: "调节面板尺寸后，自适应地缩放页面" +
     "<br><b>开启：</b>自动缩放。<br><b>关闭：</b>禁用自动缩放。",
+  ZOOM_TO_FIT_ONOPEN_NAME: "打开绘图时自动缩放页面",
+  ZOOM_TO_FIT_ONOPEN_DESC: "打开绘图文件时，自适应地缩放页面" +
+      "<br><b>开启：</b>自动缩放。<br><b>关闭：</b>禁用自动缩放。",
   ZOOM_TO_FIT_MAX_LEVEL_NAME: "自动缩放的最高级别",
   ZOOM_TO_FIT_MAX_LEVEL_DESC:
     "自动缩放画布时，允许放大的最高级别。该值不能低于 0.5（50%）且不能超过 10（1000%）。",
   LINKS_HEAD: "链接（Links） & 以文本形式嵌入到绘图中的文档（Transclusion）",
   LINKS_DESC:
-    "按住 CTRL/CMD 并点击包含 <code>[[链接]]</code> 的文本元素可以打开其中的链接。<br>" +
+    `按住 ${labelCTRL()} 并点击包含 <code>[[链接]]</code> 的文本元素可以打开其中的链接。` +
     "如果所选文本元素包含多个 <code>[[有效的内部链接]]</code> ，只会打开第一个链接；" +
     "如果所选文本元素包含有效的 URL 链接 (如 <code>https://</code> 或 <code>http://</code>)，" +
     "插件会在浏览器中打开链接。<br>" +
@@ -201,45 +228,45 @@ export default {
     "若您不愿绘图中的链接外观因此而变化，可使用 <code>[[内部链接|别名]]</code>。",
   ADJACENT_PANE_NAME: "在相邻面板中打开",
   ADJACENT_PANE_DESC:
-    "按住 CTRL/CMD + SHIFT 并点击绘图里的内部链接时，插件默认会在新面板中打开该链接。<br>" +
+    `按住 ${labelCTRL()}+${labelSHIFT()} 并点击绘图里的内部链接时，插件默认会在新面板中打开该链接。<br>` +
     "若开启此项，Excalidraw 会先尝试寻找已有的相邻面板（按照右侧、左侧、上方、下方的顺序），" +
     "并在其中打开该链接。如果找不到，" +
     "再在新面板中打开。",
   MAINWORKSPACE_PANE_NAME: "在主工作区中打开",
   MAINWORKSPACE_PANE_DESC:
-    "按住 CTRL/CMD + SHIFT 并点击绘图里的内部链接时，插件默认会在当前窗口的新面板中打开该链接。<br>" +
+    `按住 ${labelCTRL()}+${labelSHIFT()} 并点击绘图里的内部链接时，插件默认会在当前窗口的新面板中打开该链接。<br>` +
     "若开启此项，Excalidraw 会在主工作区的面板中打开该链接。",  
-  LINK_BRACKETS_NAME: "在链接的两侧显示 [[中括号]]",
+  LINK_BRACKETS_NAME: "在链接的两侧显示 <code>[[中括号]]</code>",
   LINK_BRACKETS_DESC: `${
-    "文本元素处于预览模式时，在内部链接的两侧显示中括号。<br>" +
+    "文本元素处于预览（PREVIEW）模式时，在内部链接的两侧显示中括号。<br>" +
     "您可为某个绘图单独设置此项，方法是在其 frontmatter 中添加形如 <code>"
   }${FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS}: true/false</code> 的键值对。`,
   LINK_PREFIX_NAME: "内部链接的前缀",
   LINK_PREFIX_DESC: `${
-    "文本元素处于预览模式时，如果其中包含链接，则添加此前缀。<br>" +
+    "文本元素处于预览（PREVIEW）模式时，如果其中包含链接，则添加此前缀。<br>" +
     "您可为某个绘图单独设置此项，方法是在其 frontmatter 中添加形如 <code>"
   }${FRONTMATTER_KEY_CUSTOM_PREFIX}: "📍 "</code> 的键值对。`,
   URL_PREFIX_NAME: "外部链接的前缀",
   URL_PREFIX_DESC: `${
-    "文本元素处于预览模式时，如果其中包含外部链接，则添加此前缀。<br>" +
+    "文本元素处于预览（PREVIEW）模式时，如果其中包含外部链接，则添加此前缀。<br>" +
     "您可为某个绘图单独设置此项，方法是在其 frontmatter 中添加形如 <code>"
   }${FRONTMATTER_KEY_CUSTOM_URL_PREFIX}: "🌐 "</code> 的键值对。`,
-  PARSE_TODO_NAME: "解析任务列表（Todo）",
+  PARSE_TODO_NAME: "待办任务（Todo）",
   PARSE_TODO_DESC: "将文本元素中的 <code>- [ ]</code> 和 <code>- [x]</code> 前缀显示为方框。",
-  TODO_NAME: "未完成的 Todo 项目",
-  TODO_DESC: "未完成的 Todo 项目的符号",
-  DONE_NAME: "已完成的 Todo 项目",
-  DONE_DESC: "已完成的 Todo 项目的符号",
+  TODO_NAME: "未完成项目",
+  TODO_DESC: "未完成的待办项目的符号",
+  DONE_NAME: "已完成项目",
+  DONE_DESC: "已完成的待办项目的符号",
   HOVERPREVIEW_NAME: "鼠标悬停预览内部链接",
   HOVERPREVIEW_DESC:
-    "<b>开启：</b>在 Excalidraw <u>阅读模式（View）</u>下，鼠标悬停在 <code>[[内部链接]]</code> 上即可预览；" +
+    `<b>开启：</b>在 Excalidraw <u>阅读模式（View）</u>下，鼠标悬停在 <code>[[内部链接]]</code> 上即可预览；` +
     "而在<u>普通模式（Normal）</u>下, 鼠标悬停在内部链接右上角的蓝色标识上即可预览。<br> " +
-    "<b>关闭：</b>鼠标悬停在 <code>[[内部链接]]</code> 上，并且按住 CTRL/CMD 时进行预览。",
+    `<b>关闭：</b>鼠标悬停在 <code>[[内部链接]]</code> 上，并且按住 ${labelCTRL()} 才能预览。`,
   LINKOPACITY_NAME: "链接标识的透明度",
   LINKOPACITY_DESC:
     "含有链接的元素，其右上角的链接标识的透明度。介于 0（全透明）到 1（不透明）之间。",
   LINK_CTRL_CLICK_NAME:
-    "按住 CTRL/CMD 并点击含有 [[链接]] 或 [别名](链接) 的文本来打开链接",
+    `按住 ${labelCTRL()} 并点击含有 [[链接]] 或 [别名](链接) 的文本来打开链接`,
   LINK_CTRL_CLICK_DESC:
     "如果此功能影响到您使用某些原版 Excalidraw 功能，可将其关闭。" +
     "关闭后，您只能通过绘图面板标题栏中的链接按钮来打开链接。",
@@ -257,13 +284,16 @@ export default {
   PAGE_TRANSCLUSION_CHARCOUNT_DESC:
     "以 <code>![[内部链接]]</code> 或 <code>![](内部链接)</code> 的形式将文档以文本形式嵌入到绘图中时，" +
     "该文档在绘图中可显示的最大字符数量。",
+  QUOTE_TRANSCLUSION_REMOVE_NAME: "隐藏 Transclusion 行首的引用符号",
+  QUOTE_TRANSCLUSION_REMOVE_DESC: "不显示 Transclusion 中每一行行首的 > 符号，以提高纯文本 Transclusion 的可读性。<br>" +
+    "<b>开启：</b>隐藏 > 符号<br><b>关闭：</b>不隐藏 > 符号（注意，由于 Obsidian API 的原因，首行行首的 > 符号不会被隐藏）",
   GET_URL_TITLE_NAME: "使用 iframly 获取页面标题",
   GET_URL_TITLE_DESC:
     "拖放链接到 Excalidraw 时，使用 <code>http://iframely.server.crestify.com/iframely?url=</code> 来获取页面的标题。",
   MD_HEAD: "以图像形式嵌入到绘图中的 Markdown 文档（MD-Embed）",
   MD_HEAD_DESC:
     "您还可以将 Markdown 文档以图像形式（而非文本形式）嵌入到绘图中。" +
-    "方法是按住 CTRL/CMD 并从文件管理器中把文档拖入绘图，或者执行“以图像形式嵌入”系列命令。",
+    `方法是按住 ${labelCTRL()} 并从文件管理器中把文档拖入绘图，或者执行“以图像形式嵌入”系列命令。`,
   MD_TRANSCLUDE_WIDTH_NAME: "MD-Embed 的默认宽度",
   MD_TRANSCLUDE_WIDTH_DESC:
     "MD-Embed 的宽度。该选项会影响到折行，以及图像元素的宽度。<br>" +
@@ -380,6 +410,10 @@ export default {
   MATHJAX_DESC: "如果您在绘图中使用 LaTeX，插件需要从服务器获取并加载一个 javascript 库。" + 
     "如果您的网络无法访问某些库服务器，可以尝试通过此选项更换库服务器。"+
     "更改此选项后，您可能需要重启 Obsidian 来使其生效。",
+  NONSTANDARD_HEAD: "非 Excalidraw.com 官方支持的特性",
+  NONSTANDARD_DESC: "这些特性不受 Excalidraw.com 官方支持。当导出绘图到 Excalidraw.com 时，这些特性将会发生变化。",
+  CUSTOM_PEN_NAME: "自定义画笔的数量",
+  CUSTOM_PEN_DESC: "在画布上的 Obsidian 菜单旁边切换自定义画笔。长按画笔按钮可以修改其样式。",
   EXPERIMENTAL_HEAD: "实验性功能",
   EXPERIMENTAL_DESC:
     "以下部分设置不会立即生效，需要刷新文件资源管理器或者重启 Obsidian 才会生效。",
@@ -409,9 +443,22 @@ export default {
     "选择库文件夹中的一个 .ttf, .woff 或 .woff2 字体文件作为本地字体文件。" +
     "若未选择文件，则使用默认的 Virgil 字体。",
   SCRIPT_SETTINGS_HEAD: "已安装脚本的设置",
+  TASKBONE_HEAD: "Taskbone OCR（光学符号识别）",
+  TASKBONE_DESC: "这是一个将 OCR 融入 Excalidraw 的实验性功能。请注意，Taskbone 是一项独立的外部服务，而不是由 Excalidraw 或 Obsidian-excalidraw-plugin 项目提供的。" +
+    "OCR 能够对画布上用自由画笔工具写下的涂鸦或者嵌入的图像进行文本识别，并将识别出来的文本写入绘图文件的 frontmatter，同时复制到剪贴板。" +
+    "之所以要写入 frontmatter 是为了便于您在 Obsidian 中能够搜索到这些文本。" +
+    "注意，识别的过程不是在本地进行的，而是通过在线 API，图像会被上传到 taskbone 的服务器（仅用于识别目的）。如果您对此敏感，请不要使用这个功能。",
+  TASKBONE_ENABLE_NAME: "启用 Taskbone",
+  TASKBONE_ENABLE_DESC: "启用这个功能意味着你同意 Taskbone <a href='https://www.taskbone.com/legal/terms/' target='_blank'>条款及细则</a> 以及 " +
+    "<a href='https://www.taskbone.com/legal/privacy/' target='_blank'>隐私政策</a>.",
+  TASKBONE_APIKEY_NAME: "Taskbone API Key",
+  TASKBONE_APIKEY_DESC: "Taskbone 的免费 API key 提供了一定数量的每月识别次数。如果您非常频繁地使用此功能，或者想要支持 " + 
+    "Taskbone 的开发者（您懂的，没有人能用爱发电，Taskbone 开发者也需要投入资金才能持续运行这项 OCR 服务）您可以" +
+    "到 <a href='https://www.taskbone.com/' target='_blank'>taskbone.com</a> 购买一个商用 API key。购买后请将它填写到旁边这个文本框里，替换掉原本自动生成的免费 API key。",
 
   //openDrawings.ts
   SELECT_FILE: "选择一个文件后按回车。",
+  SELECT_FILE_WITH_OPTION_TO_SCALE: `选择一个文件后按回车，或者 ${labelSHIFT()}+${labelMETA()}+ENTER 以 100% 尺寸插入。`,
   NO_MATCH: "查询不到匹配的文件。",
   SELECT_FILE_TO_LINK: "选择要插入（链接）到当前绘图中的文件。",
   SELECT_DRAWING: "选择要插入（以图像形式嵌入）到当前绘图中的图像。",
@@ -436,4 +483,6 @@ export default {
   GOTO_FULLSCREEN: "进入全屏模式",
   EXIT_FULLSCREEN: "退出全屏模式",
   TOGGLE_FULLSCREEN: "切换全屏模式",
+  OPEN_LINK_CLICK: "打开所选的图形或文本元素里的链接",
+  OPEN_LINK_PROPS: "编辑所选 MD-Embed 的内部链接，或者打开所选的图形或文本元素里的链接"
 };
