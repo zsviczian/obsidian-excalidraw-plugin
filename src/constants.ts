@@ -1,5 +1,6 @@
 import { customAlphabet } from "nanoid";
 //This is only for backward compatibility because an early version of obsidian included an encoding to avoid fantom links from littering Obsidian graph view
+declare const PLUGIN_VERSION:string;
 export function JSON_parse(x: string): any {
   return JSON.parse(x.replaceAll("&#91;", "["));
 }
@@ -38,6 +39,7 @@ export const ROUNDNESS = { //should at one point publish @zsviczian/excalidraw/t
   PROPORTIONAL_RADIUS: 2,
   ADAPTIVE_RADIUS: 3,
 } as const;
+export const GITHUB_RELEASES = "https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/";
 export const URLFETCHTIMEOUT = 1000;
 export const PLUGIN_ID = "obsidian-excalidraw-plugin";
 export const SCRIPT_INSTALL_CODEBLOCK = "excalidraw-script-install";
@@ -74,9 +76,9 @@ export const MAX_COLORS = 5;
 export const COLOR_FREQ = 6;
 export const RERENDER_EVENT = "excalidraw-embed-rerender";
 export const BLANK_DRAWING =
-  '{"type":"excalidraw","version":2,"source":"https://excalidraw.com","elements":[],"appState":{"gridSize":null,"viewBackgroundColor":"#ffffff"}}';
+  `{"type":"excalidraw","version":2,"source":"${GITHUB_RELEASES+PLUGIN_VERSION}","elements":[],"appState":{"gridSize":null,"viewBackgroundColor":"#ffffff"}}`;
 export const DARK_BLANK_DRAWING =
-  '{"type":"excalidraw","version":2,"source":"https://excalidraw.com","elements":[],"appState":{"theme":"dark","gridSize":null,"viewBackgroundColor":"#ffffff"}}';
+  `{"type":"excalidraw","version":2,"source":"${GITHUB_RELEASES+PLUGIN_VERSION}","elements":[],"appState":{"theme":"dark","gridSize":null,"viewBackgroundColor":"#ffffff"}}`;
 export const FRONTMATTER = [
   "---",
   "",

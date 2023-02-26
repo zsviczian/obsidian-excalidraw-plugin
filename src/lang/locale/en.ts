@@ -81,7 +81,7 @@ export default {
   OPEN_LINK: "Open selected text as link\n(SHIFT+CLICK to open in a new pane)",
   EXPORT_EXCALIDRAW: "Export to an .Excalidraw file",
   LINK_BUTTON_CLICK_NO_TEXT:
-    "Select a an ImageElement, or select a TextElement that contains an internal or external link.\n",
+    "Select a ImageElement, or select a TextElement that contains an internal or external link.\n",
   FILENAME_INVALID_CHARS:
     'File name cannot contain any of the following characters: * " \\ < > : | ? #',
   FORCE_SAVE:

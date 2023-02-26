@@ -19,7 +19,7 @@ import {
   FRONTMATTER_KEY_AUTOEXPORT,
   DEVICE,
 } from "./Constants";
-import { _measureText } from "./ExcalidrawAutomate";
+import { verifyMinimumPluginVersion, _measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
 import { JSON_parse } from "./Constants";
 import { TextMode } from "./ExcalidrawView";
@@ -32,6 +32,7 @@ import {
   getExportTheme,
   getLinkParts,
   hasExportTheme,
+  isVersionNewerThanOther,
   LinkParts,
   wrapTextAtCharLength,
 } from "./utils/Utils";
@@ -267,6 +268,8 @@ export class ExcalidrawData {
       return;
     }
 
+    const saveVersion = this.scene.source.split("https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/")[1]??"1.8.16";
+
     const elements = this.scene.elements;
     for (const el of elements) {
       if (el.boundElements) {
@@ -357,12 +360,17 @@ export class ExcalidrawData {
         } catch (e) {}
       });
 
+      const ellipseAndRhombusContainerWrapping = !isVersionNewerThanOther(saveVersion,"1.8.16");
+
       //Remove from bound elements references that do not exist in the scene
       const containers = elements.filter(
         (container: any) =>
           container.boundElements && container.boundElements.length > 0,
       );
       containers.forEach((container: any) => {
+        if(ellipseAndRhombusContainerWrapping && !container.customData?.legacyTextWrap) {
+          container.customData = {...container.customData, legacyTextWrap: true};
+        }
         const filteredBoundElements = container.boundElements.filter(
           (boundEl: any) => elements.some((el: any) => el.id === boundEl.id),
         );

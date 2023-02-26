@@ -30,7 +30,7 @@ export function splitFolderAndFilename(filepath: string): {
  * @param data
  * @param filename
  */
- export function download(encoding: string, data: any, filename: string) {
+ export const download = (encoding: string, data: any, filename: string) => {
   const element = document.createElement("a");
   element.setAttribute("href", (encoding ? `${encoding},` : "") + data);
   element.setAttribute("download", filename);

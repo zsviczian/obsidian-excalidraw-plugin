@@ -139,7 +139,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
-    field: "toCliboard",
+    field: "toClipboard",
     code: "toClipboard(templatePath?: string): void;",
     desc: "Copies current elements using template to clipboard, ready to be pasted into an excalidraw canvas",
     after: "",

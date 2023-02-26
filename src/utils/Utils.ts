@@ -25,7 +25,6 @@ import { compressToBase64, decompressFromBase64 } from "lz-string";
 import { getIMGFilename } from "./FileUtils";
 import ExcalidrawScene from "../svgToExcalidraw/elements/ExcalidrawScene";
 import { IMAGE_TYPES } from "../Constants";
-import { dataURLToFile } from "@zsviczian/excalidraw/types/data/blob";
 
 declare const PLUGIN_VERSION:string;
 

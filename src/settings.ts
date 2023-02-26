@@ -7,7 +7,7 @@ import {
   TextComponent,
   TFile,
 } from "obsidian";
-import { VIEW_TYPE_EXCALIDRAW } from "./Constants";
+import { GITHUB_RELEASES, VIEW_TYPE_EXCALIDRAW } from "./Constants";
 import ExcalidrawView from "./ExcalidrawView";
 import { t } from "./lang/helpers";
 import type ExcalidrawPlugin from "./main";
@@ -124,6 +124,8 @@ export interface ExcalidrawSettings {
   numberOfCustomPens: number;
 }
 
+declare const PLUGIN_VERSION:string;
+
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   folder: "Excalidraw",
   embedUseExcalidrawFolder: false,
@@ -195,7 +197,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   library2: {
     type: "excalidrawlib",
     version: 2,
-    source: "https://excalidraw.com",
+    source: GITHUB_RELEASES+PLUGIN_VERSION,
     libraryItems: [],
   },
   //patchCommentBlock: true,

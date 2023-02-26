@@ -22,6 +22,7 @@ import {
   MAX_IMAGE_SIZE,
   COLOR_NAMES,
   fileid,
+  GITHUB_RELEASES,
 } from "./Constants";
 import { getDrawingFilename, } from "./utils/FileUtils";
 import {
@@ -374,7 +375,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     const scene = {
       type: "excalidraw",
       version: 2,
-      source: "https://excalidraw.com",
+      source: GITHUB_RELEASES+PLUGIN_VERSION,
       elements,
       appState: {
         theme: template?.appState?.theme ?? this.canvas.theme,
@@ -1864,7 +1865,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
    * @returns 
    */
   verifyMinimumPluginVersion(requiredVersion: string): boolean {
-    return PLUGIN_VERSION === requiredVersion || isVersionNewerThanOther(PLUGIN_VERSION,requiredVersion);
+    return verifyMinimumPluginVersion(requiredVersion);
   };
 
   /**
@@ -2242,7 +2243,7 @@ export async function createPNG(
     {
       type: "excalidraw",
       version: 2,
-      source: "https://excalidraw.com",
+      source: GITHUB_RELEASES+PLUGIN_VERSION,
       elements,
       appState: {
         theme: forceTheme ?? template?.appState?.theme ?? canvasTheme,
@@ -2295,7 +2296,7 @@ export async function createSVG(
       //createAndOpenDrawing
       type: "excalidraw",
       version: 2,
-      source: "https://excalidraw.com",
+      source: GITHUB_RELEASES+PLUGIN_VERSION,
       elements,
       appState: {
         theme: forceTheme ?? template?.appState?.theme ?? canvasTheme,
@@ -2499,4 +2500,8 @@ export const cloneElement = (el: ExcalidrawElement):any => {
     updated: Date.now(),
     versionNonce: Math.floor(Math.random() * 1000000000),
   }
+}
+
+export const verifyMinimumPluginVersion = (requiredVersion: string): boolean => {
+  return PLUGIN_VERSION === requiredVersion || isVersionNewerThanOther(PLUGIN_VERSION,requiredVersion);
 }

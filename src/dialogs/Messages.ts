@@ -17,6 +17,20 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.8.17": `
+## New from Excalidraw.com
+- Improved text wrapping in the ellipse and diamond shapes [6172](https://github.com/excalidraw/excalidraw/pull/6172)
+
+## New
+- Updated slideshow script
+
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/mQ2eLk_0TV4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## Fixed: 
+- "Save to..." in the Stencil Library menu now works as expected [#1032](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1032)
+`,
 "1.8.16": `
 **!!! Modifier keys have changed, please review the table below !!!**
 [Click this to see the new shortcuts overview image](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/excalidraw-modifiers.png)
