@@ -17,6 +17,11 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.8.18": `
+## Fixed
+- Text scaling issue introduced in 1.8.17
+- [#1043](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1043): Error handling when ${String.fromCharCode(96)}onCanvasColorChangeHook${String.fromCharCode(96)} is executed. This is used in the [Dynamic Styling Script](https://youtu.be/LtR04fNTKTM). 
+`,
 "1.8.17": `
 ## New from Excalidraw.com
 - Improved text wrapping in the ellipse and diamond shapes [6172](https://github.com/excalidraw/excalidraw/pull/6172)

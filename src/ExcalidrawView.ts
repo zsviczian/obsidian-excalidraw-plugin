@@ -2964,11 +2964,20 @@ export default class ExcalidrawView extends TextFileView {
             onChange: (et: ExcalidrawElement[], st: AppState) => {
               const canvasColorChangeHook = () => {
                 if(this.plugin.ea.onCanvasColorChangeHook) {
-                  this.plugin.ea.onCanvasColorChangeHook(
-                    this.plugin.ea,
-                    this,
-                    st.viewBackgroundColor
-                  )
+                  try {
+                    this.plugin.ea.onCanvasColorChangeHook(
+                      this.plugin.ea,
+                      this,
+                      st.viewBackgroundColor
+                    )
+                  } catch (e) {
+                    errorlog({
+                      where: canvasColorChangeHook,
+                      source: this.plugin.ea.onCanvasColorChangeHook,
+                      error: e,
+                      message: "ea.onCanvasColorChangeHook exception"
+                    })
+                  }
                 }
               }
               viewModeEnabled = st.viewModeEnabled;
