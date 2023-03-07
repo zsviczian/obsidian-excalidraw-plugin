@@ -17,6 +17,19 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.8.19": `
+## Fixed: Text wrapping issue in sticky notes
+
+I fixed an issue where text would wrap differently and words would disappear during text editing in sticky notes. You can check out the details on [GitHub #6318](https://github.com/excalidraw/excalidraw/issues/6331).
+
+I am aware of three additional issues related to container text editing that are still open. I apologize for any inconvenience caused by the recent change in how text size is calculated on Excalidraw.com, which has had a knock-on effect on Obsidian. I am actively working to address the following issues:
+
+- Pinch zooming while editing text in a text container [GitHub #6331](https://github.com/excalidraw/excalidraw/issues/6331)
+- Container text jumps on edit on Android with on-screen keyboard [GitHub #6330](https://github.com/excalidraw/excalidraw/issues/6330)
+- Shadow text when editing text containers without a keyboard on iOS [GitHub #6329](https://github.com/excalidraw/excalidraw/issues/6329)
+
+Thank you for your patience while I work on resolving these issues.
+`,
 "1.8.18": `
 ## Fixed
 - Text scaling issue introduced in 1.8.17
