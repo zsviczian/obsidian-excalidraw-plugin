@@ -12,6 +12,9 @@ export const getElementsAtPointer = (
     if (type && e.type !== type) {
       return false;
     }
+    if (e.locked) {
+      return false;
+    }
     const [x, y, w, h] = rotatedDimensions(e);
     return (
       x <= pointer.x &&

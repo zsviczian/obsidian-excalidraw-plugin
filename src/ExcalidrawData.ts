@@ -25,6 +25,7 @@ import { JSON_parse } from "./Constants";
 import { TextMode } from "./ExcalidrawView";
 import {
   compress,
+  debug,
   decompress,
   //getBakPath,
   getBinaryFileFromDataURL,
@@ -674,17 +675,21 @@ export class ExcalidrawData {
       const originalText =
         (await this.getText(te.id)) ?? te.originalText ?? te.text;
       const wrapAt = this.textElements.get(te.id)?.wrapAt;
-      this.updateTextElement(
-        te,
-        wrapAt ? wrapText(
+      try { //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1062
+        this.updateTextElement(
+          te,
+          wrapAt ? wrapText(
+            originalText,
+            getFontString({fontSize: te.fontSize, fontFamily: te.fontFamily}),
+            getMaxContainerWidth(container)
+          ) : originalText,
           originalText,
-          getFontString({fontSize: te.fontSize, fontFamily: te.fontFamily}),
-          getMaxContainerWidth(container)
-        ) : originalText,
-        originalText,
-        forceupdate,
-        container?.type,
-      ); //(await this.getText(te.id))??te.text serves the case when the whole #Text Elements section is deleted by accident
+          forceupdate,
+          container?.type,
+        ); //(await this.getText(te.id))??te.text serves the case when the whole #Text Elements section is deleted by accident
+      } catch(e) {
+        debug({where: "ExcalidrawData.updateSceneTextElements", fn: this.updateSceneTextElements, textElement: te});
+      }
     }
   }
 

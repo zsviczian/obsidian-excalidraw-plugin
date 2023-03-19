@@ -17,7 +17,6 @@ import {
   MetadataCache,
   FrontMatterCache,
   Command,
-  requireApiVersion
 } from "obsidian";
 import {
   BLANK_DRAWING,
@@ -41,7 +40,6 @@ import {
   VIRGIL_FONT,
   VIRGIL_DATAURL,
   EXPORT_TYPES,
-  DEVICE,
 } from "./Constants";
 import ExcalidrawView, { TextMode, getTextMode } from "./ExcalidrawView";
 import {
@@ -102,12 +100,9 @@ import { FieldSuggester } from "./dialogs/FieldSuggester";
 import { ReleaseNotes } from "./dialogs/ReleaseNotes";
 import { decompressFromBase64 } from "lz-string";
 import { Packages } from "./types";
-import * as React from "react";
 import { ScriptInstallPrompt } from "./dialogs/ScriptInstallPrompt";
-import { check } from "prettier";
 import Taskbone from "./ocr/Taskbone";
-import { hoverEvent_Legacy, initializeMarkdownPostProcessor_Legacy, markdownPostProcessor_Legacy, observer_Legacy } from "./MarkdownPostProcessor_Legacy";
-import { emulateCTRLClickForLinks, isCTRL, linkClickModifierType, PaneTarget } from "./utils/ModifierkeyHelper";
+import { emulateCTRLClickForLinks, linkClickModifierType, PaneTarget } from "./utils/ModifierkeyHelper";
 
 
 declare module "obsidian" {
@@ -219,11 +214,7 @@ export default class ExcalidrawPlugin extends Plugin {
     //Compatibility mode with .excalidraw files
     this.registerExtensions(["excalidraw"], VIEW_TYPE_EXCALIDRAW);
 
-    if(requireApiVersion("1.1.6")) {
-      this.addMarkdownPostProcessor();
-    } else {
-      this.addLegacyMarkdownPostProcessor();
-    }
+    this.addMarkdownPostProcessor();
     this.registerInstallCodeblockProcessor();
     this.addThemeObserver();
     this.experimentalFileTypeDisplayToggle(this.settings.experimentalFileType);
@@ -591,18 +582,6 @@ export default class ExcalidrawPlugin extends Plugin {
 
     //monitoring for div.popover.hover-popover.file-embed.is-loaded to be added to the DOM tree
     this.observer = observer;
-    this.observer.observe(document, { childList: true, subtree: true });
-  }
-
-  private addLegacyMarkdownPostProcessor() {
-    initializeMarkdownPostProcessor_Legacy(this);
-    this.registerMarkdownPostProcessor(markdownPostProcessor_Legacy);
-
-    // internal-link quick preview
-    this.registerEvent(this.app.workspace.on("hover-link", hoverEvent_Legacy));
-
-    //monitoring for div.popover.hover-popover.file-embed.is-loaded to be added to the DOM tree
-    this.observer = observer_Legacy;
     this.observer.observe(document, { childList: true, subtree: true });
   }
 
@@ -1852,7 +1831,10 @@ export default class ExcalidrawPlugin extends Plugin {
         }
         if (newActiveviewEV) {
           const scope = self.app.keymap.getRootScope();
-          const handler = scope.register(["Mod"], "Enter", () => true);
+          const handler_ctrlEnter = scope.register(["Mod"], "Enter", () => true);
+          scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
+          const handler_ctrlK = scope.register(["Mod"], "k", () => {console.log("keydown"); return true});
+          scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
           const overridSaveShortcut = (
             self.forceSaveCommand &&
             self.forceSaveCommand.hotkeys[0].key === "s" &&
@@ -1861,9 +1843,12 @@ export default class ExcalidrawPlugin extends Plugin {
           const saveHandler = overridSaveShortcut
            ? scope.register(["Ctrl"], "s", () => self.forceSaveActiveView(false))
            : undefined;
-          scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
+          if(saveHandler) {
+            scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
+          }
           self.popScope = () => {
-            scope.unregister(handler);
+            scope.unregister(handler_ctrlEnter);
+            scope.unregister(handler_ctrlK);
             Boolean(saveHandler) && scope.unregister(saveHandler);
           }
         }

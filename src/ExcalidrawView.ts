@@ -1572,6 +1572,12 @@ export default class ExcalidrawView extends TextFileView {
     });
   }
 
+  private getGridColor(bgColor: string):string {
+    const cm = this.plugin.ea.getCM(bgColor);
+    cm.isDark() ? cm.lighterBy(5) : cm.darkerBy(5);
+    return cm.stringHEX();
+  }
+
   public activeLoader: EmbeddedFilesLoader = null;
   private nextLoader: EmbeddedFilesLoader = null;
   public async loadSceneFiles() {
@@ -2112,6 +2118,8 @@ export default class ExcalidrawView extends TextFileView {
 
   private previousSceneVersion = 0;
   private previousBackgroundColor = "";
+  private colorChangeTimer:NodeJS.Timeout = null;
+  
   private async instantiateExcalidraw(
     initdata: {
       elements: any,
@@ -2963,6 +2971,7 @@ export default class ExcalidrawView extends TextFileView {
             autoFocus: true,
             onChange: (et: ExcalidrawElement[], st: AppState) => {
               const canvasColorChangeHook = () => {
+                this.updateScene({appState:{gridColor: this.getGridColor(st.viewBackgroundColor)}});
                 if(this.plugin.ea.onCanvasColorChangeHook) {
                   try {
                     this.plugin.ea.onCanvasColorChangeHook(
@@ -2993,6 +3002,17 @@ export default class ExcalidrawView extends TextFileView {
                 canvasColorChangeHook();
                 return;
               }
+              if(st.viewBackgroundColor !== this.previousBackgroundColor && this.file === this.excalidrawData.file) {
+                this.previousBackgroundColor = st.viewBackgroundColor;
+                this.setDirty(6);
+                if(this.colorChangeTimer) {
+                  clearTimeout(this.colorChangeTimer);
+                }
+                this.colorChangeTimer = setTimeout(()=>{
+                  canvasColorChangeHook();
+                  this.colorChangeTimer = null;
+                },50); //just enough time if the user is playing with color picker, the change is not too frequent.
+              }
               if (this.semaphores.dirty) {
                 return;
               }
@@ -3009,13 +3029,10 @@ export default class ExcalidrawView extends TextFileView {
                 if (
                   ((sceneVersion > 0 || 
                     (sceneVersion === 0 && et.length > 0)) && //Addressing the rare case when the last element is deleted from the scene
-                    sceneVersion !== this.previousSceneVersion) ||
-                  (st.viewBackgroundColor !== this.previousBackgroundColor && this.file === this.excalidrawData.file)
+                    sceneVersion !== this.previousSceneVersion)
                 ) {
                   this.previousSceneVersion = sceneVersion;
-                  this.previousBackgroundColor = st.viewBackgroundColor;
                   this.setDirty(6);
-                  canvasColorChangeHook();
                 }
               }
             },

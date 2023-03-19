@@ -17,6 +17,19 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.8.20": `
+## Fixed
+- Excalidraw froze Obsidian in certain rare situations [#1054](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1054)
+- File loading error [#1062](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1062)
+- Embedded images in markdown documents no longer have the line on the side. Image sizing works better. [#1059](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1059)
+- Locked elements will not show a hover preview [#1060](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1060)
+- CTRL/CMD + K correctly triggers add link [#1056](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1056)
+
+## New
+- Grid color adjusts to the view background color
+
+I'm sorry, but the sticky note editing issue on Android with the on-screen keyboard has still not been resolved. If you also experience this error, please help raise the priority with the core Excalidraw team by commenting on this issue: [#6330](https://github.com/excalidraw/excalidraw/issues/6330)
+`,
 "1.8.19": `
 ## Fixed: Text wrapping issue in sticky notes
 
