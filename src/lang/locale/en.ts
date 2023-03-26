@@ -175,6 +175,9 @@ FILENAME_HEAD: "Filename",
     "This setting does not apply if you use Excalidraw in compatibility mode, " +
     "i.e. you are not using Excalidraw markdown files.<br><b>Toggle ON:</b> filename ends with .excalidraw.md<br><b>Toggle OFF:</b> filename ends with .md",
   DISPLAY_HEAD: "Display",
+  DYNAMICSTYLE_NAME: "Dynamic styling",
+  DYNAMICSTYLE_DESC:
+    "Change Excalidraw UI colors to match the canvas color",
   LEFTHANDED_MODE_NAME: "Left-handed mode",
   LEFTHANDED_MODE_DESC:
     "Currently only has effect in tray-mode. If turned on, the tray will be on the right side." +

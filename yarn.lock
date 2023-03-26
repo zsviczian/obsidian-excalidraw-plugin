@@ -2272,10 +2272,10 @@
   dependencies:
     "@zerollup/ts-helpers" "^1.7.18"
 
-"@zsviczian/excalidraw@0.14.2-obsidian-2":
-  "integrity" "sha512-ij0HN4LRbBP1Snk6wzlSnOJuRDGDiTmxaC+xs7whr199kXpRp60a9d+vgv4rTH2NTCWF2yqttaBe5/SQ+OeNqg=="
-  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.14.2-obsidian-2.tgz"
-  "version" "0.14.2-obsidian-2"
+"@zsviczian/excalidraw@0.14.2-obsidian-3":
+  "integrity" "sha512-tgqZdTxpPoJAGnZa0ZMIi2sWcxjN729U68G/076R4Lhe2vesF88fkG2pcSyUQPdMKLhMf7X3wgVSjiM8Spif+g=="
+  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.14.2-obsidian-3.tgz"
+  "version" "0.14.2-obsidian-3"
 
 "abab@^2.0.3", "abab@^2.0.5":
   "integrity" "sha512-9IK9EadsbHo6jLWIpxpR6pL0sazTXV6+SQv25ZB+F7Bj9mJNaOc4nCRabwd5M/JwmUa8idz6Eci6eKfJryPs6Q=="

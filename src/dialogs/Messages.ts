@@ -17,6 +17,18 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.8.21": `
+## Quality of Life improvements
+- Dynamic Styling (see plugin settings / Display). When Dynamic Styling is enabled it fixes Excalidraw issues with the Minimal Theme
+- New "Invert Colors" script
+
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/fypDth_-8q0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+### Note
+The few of you, that are using the Dynamic Styling Templater script, please remove it and restart Obsidian.
+`,
 "1.8.20": `
 ## Fixed
 - Excalidraw froze Obsidian in certain rare situations [#1054](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1054)

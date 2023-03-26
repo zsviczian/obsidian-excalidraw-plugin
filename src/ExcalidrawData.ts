@@ -60,6 +60,7 @@ const {
   wrapText, 
   getFontString, 
   getMaxContainerWidth, 
+  getDefaultLineHeight,
   //@ts-ignore
 } = excalidrawLib;
 
@@ -645,6 +646,7 @@ export class ExcalidrawData {
         newText,
         sceneTextElement.fontSize,
         sceneTextElement.fontFamily,
+        sceneTextElement.lineHeight??getDefaultLineHeight(sceneTextElement.fontFamily),
       );
       sceneTextElement.text = newText;
       sceneTextElement.originalText = newOriginalText;

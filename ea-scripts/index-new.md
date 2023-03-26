@@ -56,6 +56,7 @@ I would love to include your contribution in the script library. If you have a s
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Fixed%20vertical%20distance.svg"/></div>|[[#Fixed vertical distance]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Folder%20Note%20Core%20-%20Make%20Current%20Drawing%20a%20Folder.svg"/></div>|[[#Folder Note Core - Make Current Drawing a Folder]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Grid%20Selected%20Images.svg"/></div>|[[#Grid selected images]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Invert%20colors.svg"/></div>|[[#Invert colors]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Lighten%20background%20color.svg"/></div>|[[#Lighten background color]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Mindmap%20connector.svg"/></div>|[[#Mindmap connector]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Mindmap%20format.svg"/></div>|[[#Mindmap format]]|
@@ -256,6 +257,12 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Grid%20Selected%20Images.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/7flash'>@7flash</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Grid%20Selected%20Images.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script arranges selected images into compact grid view, removing gaps in-between, resizing when necessary and breaking into multiple rows/columns.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-grid-selected-images.png'></td></tr></table>
+
+## Invert colors
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Invert%20colors.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Invert%20colors.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">The script inverts the colors on the canvas including the color palette in Element Properties.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-invert-colors.jpg'></td></tr></table>
 
 ## Lighten background color
 ```excalidraw-script-install

@@ -109,6 +109,7 @@ import { ICONS, saveIcon } from "./menu/ActionIcons";
 import { ExportDialog } from "./dialogs/ExportDialog";
 import { getEA } from "src";
 import { emulateCTRLClickForLinks, externalDragModifierType, internalDragModifierType, isALT, isCTRL, isMETA, isSHIFT, linkClickModifierType, mdPropModifier, ModifierKeys } from "./utils/ModifierkeyHelper";
+import { setDynamicStyle } from "./utils/DynamicStyling";
 
 declare const PLUGIN_VERSION:string;
 
@@ -197,6 +198,7 @@ const warningUnknowSeriousError = () => {
 };
 
 export default class ExcalidrawView extends TextFileView {
+  public excalidrawContainer: HTMLDivElement;
   private exportDialog: ExportDialog;
   public excalidrawData: ExcalidrawData;
   public getScene: Function = null;
@@ -2117,7 +2119,7 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   private previousSceneVersion = 0;
-  private previousBackgroundColor = "";
+  public previousBackgroundColor = "";
   private colorChangeTimer:NodeJS.Timeout = null;
   
   private async instantiateExcalidraw(
@@ -2189,7 +2191,8 @@ export default class ExcalidrawView extends TextFileView {
             api.setLocalFont(this.plugin.settings.experimentalEnableFourthFont);
             this.loadSceneFiles();
             this.updateContainerSize(null, true);
-            this.excalidrawWrapperRef.current.firstElementChild?.focus();
+            this.excalidrawContainer = this.excalidrawWrapperRef?.current?.firstElementChild;
+            this.excalidrawContainer?.focus();
             this.initializeToolsIconPanelAfterLoading();
           },
         );
@@ -2971,7 +2974,8 @@ export default class ExcalidrawView extends TextFileView {
             autoFocus: true,
             onChange: (et: ExcalidrawElement[], st: AppState) => {
               const canvasColorChangeHook = () => {
-                this.updateScene({appState:{gridColor: this.getGridColor(st.viewBackgroundColor)}});
+                setTimeout(()=>this.updateScene({appState:{gridColor: this.getGridColor(st.viewBackgroundColor)}}));
+                setDynamicStyle(this.plugin.ea,this,st.viewBackgroundColor,this.plugin.settings.dynamicStyling);
                 if(this.plugin.ea.onCanvasColorChangeHook) {
                   try {
                     this.plugin.ea.onCanvasColorChangeHook(
@@ -3070,6 +3074,7 @@ export default class ExcalidrawView extends TextFileView {
               this.excalidrawData.scene.appState.theme = newTheme;
               this.loadSceneFiles();
               toolsPanelRef?.current?.setTheme(newTheme);
+              setDynamicStyle(this.plugin.ea,this,this.previousBackgroundColor,this.plugin.settings.dynamicStyling);
             },
             ownerDocument: this.ownerDocument,
             ownerWindow: this.ownerWindow,

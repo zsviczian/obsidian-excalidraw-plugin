@@ -89,6 +89,7 @@ const {
   getCommonBoundingBox,
   getMaximumGroups,
   measureText,
+  getDefaultLineHeight,
   //@ts-ignore
 } = excalidrawLib;
 
@@ -784,6 +785,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       text,
       this.style.fontSize,
       this.style.fontFamily,
+      getDefaultLineHeight(this.style.fontFamily)
     );
     const width = formatting?.width ? formatting.width : w;
     const height = formatting?.height ? formatting.height : h;
@@ -839,6 +841,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       containerId: isContainerBound ? boxId : null,
       originalText: isContainerBound ? originalText : text,
       rawText: isContainerBound ? originalText : text,
+      lineHeight: getDefaultLineHeight(this.style.fontFamily),
     };
     if (boxId && formatting?.box === "blob") {
       this.addToGroup([id, boxId]);
@@ -1829,6 +1832,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       text,
       this.style.fontSize,
       this.style.fontFamily,
+      getDefaultLineHeight(this.style.fontFamily),
     );
     return { width: size.w ?? 0, height: size.h ?? 0 };
   };
@@ -2086,6 +2090,7 @@ export function _measureText(
   newText: string,
   fontSize: number,
   fontFamily: number,
+  lineHeight: number,
 ) {
   //following odd error with mindmap on iPad while synchornizing with desktop.
   if (!fontSize) {
@@ -2093,10 +2098,12 @@ export function _measureText(
   }
   if (!fontFamily) {
     fontFamily = 1;
+    lineHeight = getDefaultLineHeight(fontFamily);
   }
   const metrics = measureText(
     newText,
     `${fontSize.toString()}px ${getFontFamily(fontFamily)}` as any,
+    lineHeight
   );
   return { w: metrics.width, h: metrics.height, baseline: metrics.baseline };
 }

@@ -12,6 +12,8 @@ import ExcalidrawView from "./ExcalidrawView";
 import { t } from "./lang/helpers";
 import type ExcalidrawPlugin from "./main";
 import { PenStyle } from "./PenTypes";
+import { DynamicStyle } from "./types";
+import { setDynamicStyle } from "./utils/DynamicStyling";
 import {
   getDrawingFilename,
   getEmbedFilename,
@@ -41,6 +43,7 @@ export interface ExcalidrawSettings {
   displayExportedImageIfAvailable: boolean;
   previewMatchObsidianTheme: boolean;
   width: string;
+  dynamicStyling: DynamicStyle;
   isLeftHanded: boolean;
   matchTheme: boolean;
   matchThemeAlways: boolean;
@@ -145,6 +148,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   displayExportedImageIfAvailable: false,
   previewMatchObsidianTheme: false,
   width: "400",
+  dynamicStyling: "colorful",
   isLeftHanded: false,
   matchTheme: false,
   matchThemeAlways: false,
@@ -239,6 +243,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private requestEmbedUpdate: boolean = false;
   private requestReloadDrawings: boolean = false;
   private requestUpdatePinnedPens: boolean = false;
+  private requestUpdateDynamicStyling: boolean = false;
   private reloadMathJax: boolean = false;
   //private applyDebounceTimer: number = 0;
 
@@ -267,6 +272,14 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     if (this.requestUpdatePinnedPens) {
       app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
         if (v.view instanceof ExcalidrawView) v.view.updatePinnedCustomPens()
+      })
+    }
+    if (this.requestUpdateDynamicStyling) {
+      app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
+        if (v.view instanceof ExcalidrawView) {
+          setDynamicStyle(this.plugin.ea,v.view,v.view.previousBackgroundColor,this.plugin.settings.dynamicStyling);
+        }
+        
       })
     }
     if (this.requestReloadDrawings) {
@@ -539,6 +552,22 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
 
     this.containerEl.createEl("h1", { text: t("DISPLAY_HEAD") });
+
+    new Setting(containerEl)
+      .setName(t("DYNAMICSTYLE_NAME"))
+      .setDesc(fragWithHTML(t("DYNAMICSTYLE_DESC")))
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("none","Dynamic Styling OFF")
+          .addOption("colorful","Match color")
+          .addOption("gray","Gray, match tone")
+          .setValue(this.plugin.settings.dynamicStyling)
+          .onChange(async (value) => {
+            this.requestUpdateDynamicStyling = true;
+            this.plugin.settings.dynamicStyling = value as DynamicStyle;
+            this.applySettingsUpdate();
+          }),
+      );
 
     new Setting(containerEl)
       .setName(t("LEFTHANDED_MODE_NAME"))

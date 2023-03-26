@@ -15,6 +15,8 @@ export type Packages = {
   excalidrawLib: any,
 }
 
+export type DynamicStyle = "none" | "gray" | "colorful";
+
 export interface ExcalidrawAutomateInterface {
   plugin: ExcalidrawPlugin;
   elementsDict: {[key:string]:any}; //contains the ExcalidrawElements currently edited in Automate indexed by el.id
