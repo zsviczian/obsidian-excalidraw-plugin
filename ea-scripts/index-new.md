@@ -31,7 +31,7 @@ I would love to include your contribution in the script library. If you have a s
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Add%20Link%20to%20Existing%20File%20and%20Open.svg"/></div>|[[#Add Link to Existing File and Open]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Add%20Link%20to%20New%20Page%20and%20Open.svg"/></div>|[[#Add Link to New Page and Open]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Add%20Next%20Step%20in%20Process.svg"/></div>|[[#Add Next Step in Process]]|
-|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Alternative%20Pens.svg"/></div>|[[#Alternative Pens]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Auto%20Draw%20for%20Pen.svg"/></div>|[[#Auto Draw for Pen]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Auto%20Layout.svg"/></div>|[[#Auto Layout]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Box%20Each%20Selected%20Groups.svg"/></div>|[[#Box Each Selected Groups]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Box%20Selected%20Elements.svg"/></div>|[[#Box Selected Elements]]|
@@ -56,6 +56,7 @@ I would love to include your contribution in the script library. If you have a s
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Fixed%20vertical%20distance.svg"/></div>|[[#Fixed vertical distance]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Folder%20Note%20Core%20-%20Make%20Current%20Drawing%20a%20Folder.svg"/></div>|[[#Folder Note Core - Make Current Drawing a Folder]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Grid%20Selected%20Images.svg"/></div>|[[#Grid selected images]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Hardware%20Eraser%20Support.svg"/></div>|[[#Hardware Eraser Support]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Invert%20colors.svg"/></div>|[[#Invert colors]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Lighten%20background%20color.svg"/></div>|[[#Lighten background color]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Mindmap%20connector.svg"/></div>|[[#Mindmap connector]]|
@@ -82,8 +83,7 @@ I would love to include your contribution in the script library. If you have a s
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Text%20to%20Sticky%20Notes.svg"/></div>|[[#Text to Sticky Notes]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Uniform%20size.svg"/></div>|[[#Uniform Size]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Zoom%20to%20Fit%20Selected%20Elements.svg"/></div>|[[#Zoom to Fit Selected Elements]]|
-|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Hardware%20Eraser%20Support.svg"/></div>|[[#Hardware Eraser Support]]|
-|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Auto%20Draw%20for%20Pen.svg"/></div>|[[#Auto Draw for Pen]]|
+
 
 ## Add Connector Point
 ```excalidraw-script-install
@@ -115,6 +115,11 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Alternative%20Pens.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script will load pen presets overriding the default freedraw line in Excalidraw. Once you've downloaded this script, check the script description for a detailed how to guide.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-alternative-pens.jpg'></td></tr></table>
 
+## Auto Draw for Pen
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Auto%20Draw%20for%20Pen.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/threethan'>@threethan</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Auto%20Draw%20for%20Pen.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Automatically switches from select mode to drawing mode when hovering a pen, and then back.</td></tr></table>
 
 ## Auto Layout
 ```excalidraw-script-install
@@ -259,6 +264,12 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Grid%20Selected%20Images.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/7flash'>@7flash</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Grid%20Selected%20Images.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script arranges selected images into compact grid view, removing gaps in-between, resizing when necessary and breaking into multiple rows/columns.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-grid-selected-images.png'></td></tr></table>
+
+## Hardware Eraser Support
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Hardware%20Eraser%20Support.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/threethan'>@threethan</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Hardware%20Eraser%20Support.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Allows you to use inversion, aka hardware eraser, on supported pens.</td></tr></table>
 
 ## Invert colors
 ```excalidraw-script-install
@@ -415,16 +426,3 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Zoom%20to%20Fit%20Selected%20Elements.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Zoom%20to%20Fit%20Selected%20Elements.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Similar to Excalidraw standard <kbd>SHIFT+2</kbd> feature: Zoom to fit selected elements, but with the ability to zoom to 1000%. Inspiration: [#272](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/272)</td></tr></table>
-
-## Hardware Eraser Support
-```excalidraw-script-install
-https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Hardware%20Eraser%20Support.md
-```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/threethan'>@threethan</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Hardware%20Eraser%20Support.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Allows you to use inversion, aka hardware eraser, on supported pens.</td></tr></table>
-
-
-## Auto Draw for Pen
-```excalidraw-script-install
-https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Auto%20Draw%20for%20Pen.md
-```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/threethan'>@threethan</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Auto%20Draw%20for%20Pen.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Automatically switches from select mode to drawing mode when hovering a pen, and then back.</td></tr></table>

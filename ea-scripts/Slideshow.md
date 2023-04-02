@@ -16,7 +16,7 @@ const FRAME_SLEEP = 1; //milliseconds
 const EDIT_ZOOMOUT = 0.7; //70% of original slide zoom, set to a value between 1 and 0
 
 //utility & convenience functions
-const doc = ea.targetView.ownerDocument;
+const inPopoutWindow = ea.targetView.ownerDocument !== document;
 const win = ea.targetView.ownerWindow;
 const api = ea.getExcalidrawAPI();
 const contentEl = ea.targetView.contentEl;
@@ -53,8 +53,10 @@ const gotoFullscreen = async () => {
 	if(app.isMobile) {
 	  ea.viewToggleFullScreen(true);
 	} else {
-	  await contentEl.webkitRequestFullscreen();
-	  await sleep(500);
+	  if(!inPopoutWindow) {
+	    await contentEl.webkitRequestFullscreen();
+	    await sleep(500);
+	  }
 	  ea.setViewModeEnabled(true);
 	}
 	const deltaWidth = () => contentEl.clientWidth-api.getAppState().width;
@@ -311,8 +313,8 @@ const createNavigationPanel = () => {
 const keydownListener = (e) => {
   e.preventDefault();
   switch(e.key) {
-    case "escape":
-      if(app.isMobile) exitPresentation();
+    case "Escape":
+      if(app.isMobile || inPopoutWindow) exitPresentation();
       break;
     case "ArrowRight":
     case "ArrowDown": 
@@ -382,7 +384,7 @@ const onDrag = (e) => {
 }
 
 const initializeEventListners = () => {
-	doc.addEventListener('keydown',keydownListener);
+	win.addEventListener('keydown',keydownListener);
   controlPanelEl.addEventListener('pointerdown', pointerDown, false);
   win.addEventListener('pointerup', pointerUp, false);
 
@@ -391,7 +393,7 @@ const initializeEventListners = () => {
 	  ea.onLinkClickHook = null;
 	  controlPanelEl.parentElement?.removeChild(controlPanelEl);
 	  if(!app.isMobile) win.removeEventListener('fullscreenchange', fullscreenListener);
-	  doc.removeEventListener('keydown',keydownListener);
+	  win.removeEventListener('keydown',keydownListener);
 	  win.removeEventListener('pointerup',pointerUp);
 	  contentEl.querySelector(".layer-ui__wrapper")?.removeClass("excalidraw-hidden");
 	  delete window.removePresentationEventHandlers;
@@ -409,7 +411,7 @@ const initializeEventListners = () => {
 
 const exitPresentation = async (openForEdit = false) => {
   if(openForEdit) ea.targetView.preventAutozoom();
-  if(!app.isMobile) await doc.exitFullscreen();
+  if(!app.isMobile && !inPopoutWindow) await document.exitFullscreen();
   if(app.isMobile) {
     ea.viewToggleFullScreen(true);
   } else {
