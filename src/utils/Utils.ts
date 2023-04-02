@@ -688,6 +688,8 @@ export const updateFrontmatterInString = (data:string, keyValuePairs: [string,st
 
 const isHyperlink = (link:string) => link && !link.includes("\n") && !link.includes("\r") && link.match(/^https?:(\d*)?\/\/[^\s]*$/);
 
+export const isContainer = (el: ExcalidrawElement) => el.type!=="arrow" && el.boundElements?.map((e) => e.type).includes("text");
+
 export const hyperlinkIsImage = (data: string):boolean => {
   if(!isHyperlink(data)) false;
   const corelink = data.split("?")[0];

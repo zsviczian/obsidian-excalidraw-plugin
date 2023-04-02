@@ -1833,7 +1833,16 @@ export default class ExcalidrawPlugin extends Plugin {
           const scope = self.app.keymap.getRootScope();
           const handler_ctrlEnter = scope.register(["Mod"], "Enter", () => true);
           scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
-          const handler_ctrlK = scope.register(["Mod"], "k", () => {console.log("keydown"); return true});
+          const handler_ctrlK = scope.register(["Mod"], "k", () => {return true});
+          scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
+          const handler_ctrlF = scope.register(["Mod"], "f", () => {
+            const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+            if (view) {
+              search(view);
+              return true;
+            }
+            return false;
+          });
           scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
           const overridSaveShortcut = (
             self.forceSaveCommand &&
@@ -1849,6 +1858,7 @@ export default class ExcalidrawPlugin extends Plugin {
           self.popScope = () => {
             scope.unregister(handler_ctrlEnter);
             scope.unregister(handler_ctrlK);
+            scope.unregister(handler_ctrlF);
             Boolean(saveHandler) && scope.unregister(saveHandler);
           }
         }

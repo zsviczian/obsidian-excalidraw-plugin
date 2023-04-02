@@ -772,9 +772,11 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       wrapAt?: number;
       width?: number;
       height?: number;
-      textAlign?: string;
+      textAlign?: "left" | "center" | "right";
       box?: boolean | "box" | "blob" | "ellipse" | "diamond";
       boxPadding?: number;
+      boxStrokeColor?: string;
+      textVerticalAlign?: "top" | "middle" | "bottom";
     },
     id?: string,
   ): string {
@@ -792,6 +794,8 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
 
     let boxId: string = null;
     const boxPadding = formatting?.boxPadding ?? 30;
+    const strokeColor = this.style.strokeColor;
+    this.style.strokeColor = formatting?.boxStrokeColor ?? strokeColor;
     if (formatting?.box) {
       switch (formatting.box) {
         case "ellipse":
@@ -827,6 +831,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
           );
       }
     }
+    this.style.strokeColor = strokeColor;
     const isContainerBound = boxId && formatting.box !== "blob";
     this.elementsDict[id] = {
       text,
@@ -835,7 +840,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       textAlign: formatting?.textAlign
         ? formatting.textAlign
         : this.style.textAlign ?? "left",
-      verticalAlign: this.style.verticalAlign,
+      verticalAlign: formatting?.textVerticalAlign ?? this.style.verticalAlign,
       baseline,
       ...this.boxedElement(id, "text", topX, topY, width, height),
       containerId: isContainerBound ? boxId : null,
@@ -1637,6 +1642,19 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     pointerPosition: { x: number; y: number }; //the pointer position on canvas at the time of drop
   }) => boolean = null;
  
+  /**
+   * if set, this callback is triggered, when an Excalidraw file is opened
+   * You can use this callback in case you want to do something additional when the file is opened.
+   * This will run before the file level script defined in the `excalidraw-onload-script` frontmatter.
+   */
+
+  onFileOpenHook: (data: {
+    ea: ExcalidrawAutomate;
+    excalidrawFile: TFile; //the file being loaded
+    view: ExcalidrawView;
+  }) => Promise<void>;
+
+
   /**
    * If set, this callback is triggered whenever the active canvas color changes
    */

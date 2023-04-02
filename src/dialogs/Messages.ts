@@ -17,6 +17,48 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.8.22": `
+## Fixed
+- Styling of custom pen and script buttons in the side pannel was inverted.
+- Minor tweaks to dynamic styling. [see this video to understand dynamic styling](https://youtu.be/fypDth_-8q0)
+
+## New
+- New scripts by @threethan:
+  - [Auto Draw for Pen](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Auto%20Draw%20for%20Pen.md): Automatically switches between the select and draw tools, based on whether a pen is being used. Supports most pens including Apple Pencil.
+  - [Hardware Eraser Support](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Hardware%20Eraser%20Support.md): Adds support for pen inversion, a.k.a. the hardware eraser on the back of your pen. Supports Windows based styluses. Does not suppoprt Apple Pencil or S-Pen.
+- Added separate buttons to support copying link, area or group references to objects on the drawing. [#1063](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1063). See [this video](https://youtu.be/yZQoJg2RCKI) for more details on how this works.
+- Hover preview will no long trigger for image files (.png, .svg, .jpg, .gif, .webp, .bmp, .ico, .excalidraw)
+- Minor updates to the [Slideshow](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Slideshow.md) script. You can download the updated script from the Excalidraw script library.  The slideshow will now correctly run also when initiated in a popout window. When the drawing is in a popout window, the slideshow will not be full screen, but will only occupy the popout window. If you run the slideshow from the main Obsidian workspace, it will be displayed in full-screen mode.
+- Updated the Icon Library script to now include image keywords under each of the images to allow searching for keywords (CTRL/CMD+F). I've uploaded the new script to [here](https://gist.github.com/zsviczian/33ff695d5b990de1ebe8b82e541c26ad). If you need further information watch this [video](https://youtu.be/_OEljzZ33H8)
+
+## New in ExcalidrawAutomate
+- ${String.fromCharCode(96)}addText${String.fromCharCode(96)} ${String.fromCharCode(96)}formatting${String.fromCharCode(96)} parameter now accepts ${String.fromCharCode(96)}boxStrokeColor${String.fromCharCode(96)} and ${String.fromCharCode(96)}textVerticalAlign${String.fromCharCode(96)} values.
+${String.fromCharCode(96,96,96)}typescript
+addText(
+    topX: number,
+    topY: number,
+    text: string,
+    formatting?: {
+      wrapAt?: number;
+      width?: number;
+      height?: number;
+      textAlign?: "left" | "center" | "right";
+      box?: boolean | "box" | "blob" | "ellipse" | "diamond";
+      boxPadding?: number;
+      boxStrokeColor?: string;
+      textVerticalAlign?: "top" | "middle" | "bottom";
+    },
+    id?: string,
+  ): string;
+${String.fromCharCode(96,96,96)}
+- new ${String.fromCharCode(96)}onFileOpenHook${String.fromCharCode(96)}. If set, this callback is triggered, when an Excalidraw file is opened. You can use this callback in case you want to do something additional when the file is opened. This will run before the file level script defined in the ${String.fromCharCode(96)}excalidraw-onload-script${String.fromCharCode(96)} frontmatter is executed. Excalidraw will await the result of operations here.  Handle with care. If you change data such as the frontmatter of the underlying file, I haven't tested how it will behave.
+${String.fromCharCode(96,96,96)}typescript
+onFileOpenHook: (data: {
+  ea: ExcalidrawAutomate;
+  excalidrawFile: TFile; //the file being loaded
+  view: ExcalidrawView;
+}) => Promise<void>;
+${String.fromCharCode(96,96,96)}`,
 "1.8.21": `
 ## Quality of Life improvements
 - Dynamic Styling (see plugin settings / Display). When Dynamic Styling is enabled it fixes Excalidraw issues with the Minimal Theme

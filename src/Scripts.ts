@@ -272,7 +272,7 @@ export class ScriptEngine {
     header: string,
     placeholder?: string,
     value?: string,
-    buttons?: [{ caption: string; action: Function }],
+    buttons?: { caption: string; action: Function }[],
   ) {
     try {
       return await GenericInputPrompt.Prompt(

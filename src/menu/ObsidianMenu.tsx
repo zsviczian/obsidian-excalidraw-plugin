@@ -103,7 +103,7 @@ export class ObsidianMenu {
           <label
             key={index}
             className={clsx(
-              "ToolIcon ToolIcon_type_floating",
+              "ToolIcon",
               "ToolIcon_size_medium",
               {
                 "is-mobile": isMobile,
@@ -168,7 +168,7 @@ export class ObsidianMenu {
           <label
             key = {index}
             className={clsx(
-              "ToolIcon ToolIcon_type_floating",
+              "ToolIcon",
               "ToolIcon_size_medium",
               {
                 "is-mobile": isMobile,
@@ -226,7 +226,7 @@ export class ObsidianMenu {
       <>
         <label
           className={clsx(
-            "ToolIcon ToolIcon_type_floating",
+            "ToolIcon",
             "ToolIcon_size_medium",
             {
               "is-mobile": isMobile,

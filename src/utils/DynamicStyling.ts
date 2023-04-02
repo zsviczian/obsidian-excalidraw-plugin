@@ -55,10 +55,10 @@ export const setDynamicStyle = (
   const isGray = dynamicStyle === "gray";
   const gray1 = isGray
     ? isDark ? cmBlack().lighterBy(15) : cmBlack().darkerBy(15)
-    : isDark ? cmBG().lighterBy(15) : cmBG().darkerBy(15);
+    : isDark ? cmBG().lighterBy(15).mix({color:cmBlack(),ratio:0.6}) : cmBG().darkerBy(15).mix({color:cmBlack(),ratio:0.6});
   const gray2 = isGray
     ? isDark ? cmBlack().lighterBy(5) : cmBlack().darkerBy(5)
-    : isDark ? cmBG().lighterBy(5) : cmBG().darkerBy(5);
+    : isDark ? cmBG().lighterBy(5).mix({color:cmBlack(),ratio:0.6}) : cmBG().darkerBy(5).mix({color:cmBlack(),ratio:0.6});
   const text = cmBG().mix({color:isDark?lighter:darker, ratio:mixRatio});
 
   const str = (cm: ColorMaster) => cm.stringHEX({alpha:false});
@@ -91,7 +91,9 @@ export const setDynamicStyle = (
     `--h2-color: ${str(text)};` +
     `--h3-color: ${str(text)};` +
     `--h4-color: ${str(text)};` +
-    `color: ${str(text)};`;
+    `color: ${str(text)};` + 
+    `--select-highlight-color: ${str(gray1)};` + 
+    `--popup-bg-color: ${str(text)};`;
   
   view.excalidrawContainer?.setAttribute(
     "style",

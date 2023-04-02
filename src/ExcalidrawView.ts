@@ -85,8 +85,9 @@ import {
   hyperlinkIsImage,
   hyperlinkIsYouTubeLink,
   getYouTubeThumbnailLink,
+  isContainer,
 } from "./utils/Utils";
-import { getLeaf, getNewOrAdjacentLeaf, getParentOfClass } from "./utils/ObsidianUtils";
+import { getLeaf, getParentOfClass } from "./utils/ObsidianUtils";
 import { splitFolderAndFilename } from "./utils/FileUtils";
 import { NewFileActions, Prompt } from "./dialogs/Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
@@ -102,7 +103,6 @@ import { ObsidianMenu } from "./menu/ObsidianMenu";
 import { ToolsPanel } from "./menu/ToolsPanel";
 import { ScriptEngine } from "./Scripts";
 import { getTextElementAtPointer, getImageElementAtPointer, getElementWithLinkAtPointer } from "./utils/GetElementAtPointer";
-import { MenuLinks } from "./menu/menuLinks";
 import { ICONS, saveIcon } from "./menu/ActionIcons";
 //import { MainMenu } from "@zsviczian/excalidraw";
 //import {WelcomeScreen} from "@zsviczian/excalidraw";
@@ -110,6 +110,7 @@ import { ExportDialog } from "./dialogs/ExportDialog";
 import { getEA } from "src";
 import { emulateCTRLClickForLinks, externalDragModifierType, internalDragModifierType, isALT, isCTRL, isMETA, isSHIFT, linkClickModifierType, mdPropModifier, ModifierKeys } from "./utils/ModifierkeyHelper";
 import { setDynamicStyle } from "./utils/DynamicStyling";
+import { MenuLinks } from "./menu/MenuLinks";
 
 declare const PLUGIN_VERSION:string;
 
@@ -1557,6 +1558,19 @@ export default class ExcalidrawView extends TextFileView {
         }
       }
       await this.loadDrawing(true);
+
+      if(this.plugin.ea.onFileOpenHook) {
+        try {
+        await this.plugin.ea.onFileOpenHook({
+          ea: getEA(this),
+          excalidrawFile: this.file,
+          view: this, 
+        });
+        } catch(e) {
+          errorlog({ where: "ExcalidrawView.setViewData.onFileOpenHook", error: e });
+        }
+      }
+
       const script = this.excalidrawData.getOnLoadScript();
       if(script) {
         const self = this;
@@ -2444,7 +2458,7 @@ export default class ExcalidrawView extends TextFileView {
         images: any,
         newElementsOnTop: boolean = false,
       ): Promise<boolean> => {
-        const api = this.excalidrawAPI;
+        const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
         if (!excalidrawRef?.current || !api) {
           return false;
         }
@@ -2480,7 +2494,7 @@ export default class ExcalidrawView extends TextFileView {
         }
 
         const newIds = newElements.map((e) => e.id);
-        const el: ExcalidrawElement[] = api.getSceneElements();
+        const el: ExcalidrawElement[] = api.getSceneElements() as ExcalidrawElement[];
         const removeList: string[] = [];
 
         //need to update elements in scene.elements to maintain sequence of layers
@@ -2540,6 +2554,7 @@ export default class ExcalidrawView extends TextFileView {
           });
           api.addFiles(files);
         }
+        api.updateContainerSize(api.getSceneElements().filter(el => newIds.includes(el.id)).filter(isContainer));
         if (save) {
           await this.save(false); //preventReload=false will ensure that markdown links are paresed and displayed correctly
         } else {
@@ -2698,6 +2713,7 @@ export default class ExcalidrawView extends TextFileView {
         if(!mouseEvent) return;
         if(this.excalidrawAPI?.getAppState()?.editingElement) return; //should not activate hover preview when element is being edited
         if(this.semaphores.wheelTimeout) return;
+        //if link text is not provided, try to get it from the element
         if (!linktext) {
           if(!this.currentPosition) return;
           linktext = "";
@@ -2714,6 +2730,8 @@ export default class ExcalidrawView extends TextFileView {
             }
             const ef = this.excalidrawData.getFile(selectedImgElement.fileId);
             if(ef.isHyperlink) return; //web images don't have a preview
+            if(IMAGE_TYPES.contains(ef.file.extension)) return; //images don't have a preview
+            if(this.plugin.ea.isExcalidrawFile(ef.file)) return; //excalidraw files don't have a preview
             const ref = ef.linkParts.ref
               ? `#${ef.linkParts.isBlockRef ? "^" : ""}${ef.linkParts.ref}`
               : "";
@@ -3723,9 +3741,7 @@ export default class ExcalidrawView extends TextFileView {
             .filter((el: ExcalidrawElement) => el.id === containerId && el.type!=="arrow")
         : api
             .getSceneElements()
-            .filter((el: ExcalidrawElement) =>
-              el.type!=="arrow" && el.boundElements?.map((e) => e.type).includes("text"),
-            );
+            .filter(isContainer);
       if (containers.length > 0) {
         if (this.initialContainerSizeUpdate) {
           //updateContainerSize will bump scene version which will trigger a false autosave
@@ -3936,9 +3952,14 @@ export default class ExcalidrawView extends TextFileView {
       "Set link alias",
       "Leave empty if you do not want to set an alias",
       "",
+      [
+        {caption: "Link", action:()=>{prefix="";return}},
+        {caption: "Area", action:()=>{prefix="area="; return;}},
+        {caption: "Group", action:()=>{prefix="group="; return;}}
+      ]
     );
     navigator.clipboard.writeText(
-      `[[${this.file.path}#^${prefix}${elementId}${alias ? `|${alias}` : ``}]]`,
+      `${prefix.length>0?"!":""}[[${this.file.path}#^${prefix}${elementId}${alias ? `|${alias}` : ``}]]`,
     );
     new Notice(t("INSERT_LINK_TO_ELEMENT_READY"));
   }
