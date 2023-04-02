@@ -19,7 +19,7 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 `,
 "1.8.22": `
 ## Fixed
-- Styling of custom pen and script buttons in the side pannel was inverted.
+- Styling of custom pen and script buttons in the side panel was inverted.
 - Minor tweaks to dynamic styling. [see this video to understand dynamic styling](https://youtu.be/fypDth_-8q0)
 
 ## New
@@ -27,7 +27,7 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
   - [Auto Draw for Pen](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Auto%20Draw%20for%20Pen.md): Automatically switches between the select and draw tools, based on whether a pen is being used. Supports most pens including Apple Pencil.
   - [Hardware Eraser Support](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Hardware%20Eraser%20Support.md): Adds support for pen inversion, a.k.a. the hardware eraser on the back of your pen. Supports Windows based styluses. Does not suppoprt Apple Pencil or S-Pen.
 - Added separate buttons to support copying link, area or group references to objects on the drawing. [#1063](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1063). See [this video](https://youtu.be/yZQoJg2RCKI) for more details on how this works.
-- Hover preview will no long trigger for image files (.png, .svg, .jpg, .gif, .webp, .bmp, .ico, .excalidraw)
+- Hover preview will no longer trigger for image files (.png, .svg, .jpg, .gif, .webp, .bmp, .ico, .excalidraw)
 - Minor updates to the [Slideshow](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Slideshow.md) script. You can download the updated script from the Excalidraw script library.  The slideshow will now correctly run also when initiated in a popout window. When the drawing is in a popout window, the slideshow will not be full screen, but will only occupy the popout window. If you run the slideshow from the main Obsidian workspace, it will be displayed in full-screen mode.
 - Updated the Icon Library script to now include image keywords under each of the images to allow searching for keywords (CTRL/CMD+F). I've uploaded the new script to [here](https://gist.github.com/zsviczian/33ff695d5b990de1ebe8b82e541c26ad). If you need further information watch this [video](https://youtu.be/_OEljzZ33H8)
 
