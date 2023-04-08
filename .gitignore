@@ -18,3 +18,4 @@ lib
 .vscode
 yarn.lock
 .DS_Store
+.lock
