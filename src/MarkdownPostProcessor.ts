@@ -87,7 +87,8 @@ const getIMG = async (
   }
   if(!onCanvas) img.setAttribute("style", style);
   img.addClass(imgAttributes.style);
-
+  img.addClass("excalidraw-embedded-img");
+  
   const theme =
     forceTheme ??
     (plugin.settings.previewMatchObsidianTheme
@@ -317,6 +318,13 @@ const processInternalEmbed = async (internalEmbedEl: Element, file: TFile ):Prom
 
   const src = internalEmbedEl.getAttribute("src");
   if(!src) return;
+
+  //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1059
+  internalEmbedEl.removeClass("markdown-embed");
+  internalEmbedEl.removeClass("inline-embed");
+  internalEmbedEl.addClass("media-embed");
+  internalEmbedEl.addClass("image-embed");
+
   attr.fwidth = internalEmbedEl.getAttribute("width")
   ? internalEmbedEl.getAttribute("width")
   : getDefaultWidth(plugin);
@@ -426,11 +434,11 @@ const tmpObsidianWYSIWYG = async (
     const onCanvas = internalEmbedDiv.hasClass("canvas-node-content");
     const imgDiv = await createImageDiv(attr, onCanvas);
     if(markdownEmbed) {
-      if(onCanvas) {
-        internalEmbedDiv.removeClass("markdown-embed");
-        internalEmbedDiv.addClass("media-embed");
-        internalEmbedDiv.addClass("image-embed");
-      }
+      //display image on canvas without markdown frame
+      internalEmbedDiv.removeClass("markdown-embed");
+      internalEmbedDiv.removeClass("inline-embed");
+      internalEmbedDiv.addClass("media-embed");
+      internalEmbedDiv.addClass("image-embed");
       if(!onCanvas && imgDiv.firstChild instanceof HTMLElement) {
         imgDiv.firstChild.style.maxHeight = "100%";
         imgDiv.firstChild.style.maxWidth = null;

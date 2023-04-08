@@ -21,6 +21,10 @@
   display: none;
 }
 
+img.excalidraw-embedded-img {
+  width: 100%;
+}
+
 img.excalidraw-svg-right-wrap {
   float: right;
   margin: 0px 0px 20px 20px;

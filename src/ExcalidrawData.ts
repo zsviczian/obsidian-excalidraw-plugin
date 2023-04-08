@@ -19,12 +19,13 @@ import {
   FRONTMATTER_KEY_AUTOEXPORT,
   DEVICE,
 } from "./Constants";
-import { _measureText } from "./ExcalidrawAutomate";
+import { verifyMinimumPluginVersion, _measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
 import { JSON_parse } from "./Constants";
 import { TextMode } from "./ExcalidrawView";
 import {
   compress,
+  debug,
   decompress,
   //getBakPath,
   getBinaryFileFromDataURL,
@@ -32,6 +33,7 @@ import {
   getExportTheme,
   getLinkParts,
   hasExportTheme,
+  isVersionNewerThanOther,
   LinkParts,
   wrapTextAtCharLength,
 } from "./utils/Utils";
@@ -58,6 +60,7 @@ const {
   wrapText, 
   getFontString, 
   getMaxContainerWidth, 
+  getDefaultLineHeight,
   //@ts-ignore
 } = excalidrawLib;
 
@@ -267,6 +270,8 @@ export class ExcalidrawData {
       return;
     }
 
+    const saveVersion = this.scene.source.split("https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/")[1]??"1.8.16";
+
     const elements = this.scene.elements;
     for (const el of elements) {
       if (el.boundElements) {
@@ -357,12 +362,17 @@ export class ExcalidrawData {
         } catch (e) {}
       });
 
+      const ellipseAndRhombusContainerWrapping = !isVersionNewerThanOther(saveVersion,"1.8.16");
+
       //Remove from bound elements references that do not exist in the scene
       const containers = elements.filter(
         (container: any) =>
           container.boundElements && container.boundElements.length > 0,
       );
       containers.forEach((container: any) => {
+        if(ellipseAndRhombusContainerWrapping && !container.customData?.legacyTextWrap) {
+          container.customData = {...container.customData, legacyTextWrap: true};
+        }
         const filteredBoundElements = container.boundElements.filter(
           (boundEl: any) => elements.some((el: any) => el.id === boundEl.id),
         );
@@ -636,6 +646,7 @@ export class ExcalidrawData {
         newText,
         sceneTextElement.fontSize,
         sceneTextElement.fontFamily,
+        sceneTextElement.lineHeight??getDefaultLineHeight(sceneTextElement.fontFamily),
       );
       sceneTextElement.text = newText;
       sceneTextElement.originalText = newOriginalText;
@@ -666,17 +677,21 @@ export class ExcalidrawData {
       const originalText =
         (await this.getText(te.id)) ?? te.originalText ?? te.text;
       const wrapAt = this.textElements.get(te.id)?.wrapAt;
-      this.updateTextElement(
-        te,
-        wrapAt ? wrapText(
+      try { //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1062
+        this.updateTextElement(
+          te,
+          wrapAt ? wrapText(
+            originalText,
+            getFontString({fontSize: te.fontSize, fontFamily: te.fontFamily}),
+            getMaxContainerWidth(container)
+          ) : originalText,
           originalText,
-          getFontString({fontSize: te.fontSize, fontFamily: te.fontFamily}),
-          getMaxContainerWidth(container)
-        ) : originalText,
-        originalText,
-        forceupdate,
-        container?.type,
-      ); //(await this.getText(te.id))??te.text serves the case when the whole #Text Elements section is deleted by accident
+          forceupdate,
+          container?.type,
+        ); //(await this.getText(te.id))??te.text serves the case when the whole #Text Elements section is deleted by accident
+      } catch(e) {
+        debug({where: "ExcalidrawData.updateSceneTextElements", fn: this.updateSceneTextElements, textElement: te});
+      }
     }
   }
 

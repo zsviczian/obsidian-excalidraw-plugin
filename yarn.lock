@@ -2272,10 +2272,10 @@
   dependencies:
     "@zerollup/ts-helpers" "^1.7.18"
 
-"@zsviczian/excalidraw@0.14.1-obsidian":
-  "integrity" "sha512-bSc/JIH4v8tfr9SdPa9bkB7F2B+TnOuf3Dm1RYakmHjdcTPru4tG2zfGfC3glyP1zZDuR83ttidiJEgglCHwwQ=="
-  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.14.1-obsidian.tgz"
-  "version" "0.14.1-obsidian"
+"@zsviczian/excalidraw@0.14.2-obsidian-3":
+  "integrity" "sha512-tgqZdTxpPoJAGnZa0ZMIi2sWcxjN729U68G/076R4Lhe2vesF88fkG2pcSyUQPdMKLhMf7X3wgVSjiM8Spif+g=="
+  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.14.2-obsidian-3.tgz"
+  "version" "0.14.2-obsidian-3"
 
 "abab@^2.0.3", "abab@^2.0.5":
   "integrity" "sha512-9IK9EadsbHo6jLWIpxpR6pL0sazTXV6+SQv25ZB+F7Bj9mJNaOc4nCRabwd5M/JwmUa8idz6Eci6eKfJryPs6Q=="
@@ -3143,7 +3143,7 @@
   "resolved" "https://registry.npmjs.org/colorette/-/colorette-2.0.16.tgz"
   "version" "2.0.16"
 
-"colormaster@1.2.1":
+"colormaster@^1.2.1":
   "integrity" "sha512-+G9g1fOW+TC4+y5IWYI4f7mb+l+oEto/N3qJTFrJNaayFpidZUWhZJGxoSJjhNMIiTttcU1kf4XSyfxHyHkQYw=="
   "resolved" "https://registry.npmjs.org/colormaster/-/colormaster-1.2.1.tgz"
   "version" "1.2.1"

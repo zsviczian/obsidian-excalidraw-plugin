@@ -5,8 +5,7 @@ The script will convert your drawing into a slideshow presentation.
 
 ```javascript
 */
-
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.8.2")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.8.17")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
@@ -14,9 +13,10 @@ if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.8.2")) {
 //constants
 const STEPCOUNT = 100;
 const FRAME_SLEEP = 1; //milliseconds
+const EDIT_ZOOMOUT = 0.7; //70% of original slide zoom, set to a value between 1 and 0
 
 //utility & convenience functions
-const doc = ea.targetView.ownerDocument;
+const inPopoutWindow = ea.targetView.ownerDocument !== document;
 const win = ea.targetView.ownerWindow;
 const api = ea.getExcalidrawAPI();
 const contentEl = ea.targetView.contentEl;
@@ -26,34 +26,78 @@ const sleep = async (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 window.removePresentationEventHandlers?.();
 
 //check if line or arrow is selected, if not inform the user and terminate presentation
-const lineEl = ea.getViewSelectedElement();
+let lineEl = ea.getViewElements().filter(el=>["line","arrow"].contains(el.type) && el.customData?.slideshow)[0];
+const selectedEl = ea.getViewSelectedElement();
+let preventHideAction = false;
+if(lineEl && selectedEl && ["line","arrow"].contains(selectedEl.type)) {
+  api.setToast({
+    message:"Using selected line instead of hidden line. Note that there is a hidden presentation path for this drawing. Run the slideshow script without selecting any elements to access the hidden presentation path",
+    duration: 5000,
+    closable: true
+  })
+  preventHideAction = true;
+  lineEl = selectedEl;
+}
+if(!lineEl) lineEl = selectedEl;
 if(!lineEl || !["line","arrow"].contains(lineEl.type)) {
-  new Notice("Please select the line or arrow for the presentation path");
+  api.setToast({
+    message:"Please select the line or arrow for the presentation path",
+    duration: 3000,
+    closable: true
+  })
   return;
 }
 
 //goto fullscreen
-if(app.isMobile) {
-  ea.viewToggleFullScreen(true);
-} else {
-  await contentEl.webkitRequestFullscreen();
-  await sleep(500);
-  ea.setViewModeEnabled(true);
+const gotoFullscreen = async () => {
+	if(app.isMobile) {
+	  ea.viewToggleFullScreen(true);
+	} else {
+	  if(!inPopoutWindow) {
+	    await contentEl.webkitRequestFullscreen();
+	    await sleep(500);
+	  }
+	  ea.setViewModeEnabled(true);
+	}
+	const deltaWidth = () => contentEl.clientWidth-api.getAppState().width;
+	let watchdog = 0;
+	while (deltaWidth()>50 && watchdog++<20) await sleep(100); //wait for Excalidraw to resize to fullscreen
+	contentEl.querySelector(".layer-ui__wrapper").addClass("excalidraw-hidden");
 }
-const deltaWidth = () => contentEl.clientWidth-api.getAppState().width;
-let watchdog = 0;
-while (deltaWidth()>50 && watchdog++<20) await sleep(100); //wait for Excalidraw to resize to fullscreen
-contentEl.querySelector(".layer-ui__wrapper").addClass("excalidraw-hidden");
 
 //hide the arrow and save the arrow color before doing so
-const originalColor = {
-	strokeColor: lineEl.strokeColor,
-	backgroundColor: lineEl.backgroundColor
+const originalProps = lineEl.customData?.slideshow?.hidden
+  ? lineEl.customData.slideshow.originalProps
+  : {
+	  strokeColor: lineEl.strokeColor,
+	  backgroundColor: lineEl.backgroundColor,
+	  locked: lineEl.locked,
+  };
+let hidden = lineEl.customData?.slideshow?.hidden ?? false;
+
+const hideArrow = async (setToHidden) => {
+  ea.clear();
+  ea.copyViewElementsToEAforEditing(ea.getViewElements().filter(el=>el.id === lineEl.id));
+  const el = ea.getElement(lineEl.id);
+	el.strokeColor = "transparent";
+	el.backgroundColor = "transparent";
+  const customData = el.customData;
+	if(setToHidden && !preventHideAction) {
+    el.locked = true;
+		el.customData = {
+		  ...customData,
+		  slideshow: {
+			  originalProps,
+			  hidden: true
+		  }
+		}
+    hidden = true;
+	} else {
+    if(customData) delete el.customData.slideshow;
+    hidden = false;
+  }
+	await ea.addElementsToView();
 }
-ea.copyViewElementsToEAforEditing([lineEl]);
-ea.getElement(lineEl.id).strokeColor = "transparent";
-ea.getElement(lineEl.id).backgroundColor = "transparent";
-await ea.addElementsToView();
 
 //----------------------------
 //scroll-to-location functions
@@ -64,8 +108,11 @@ const slideCount = Math.floor(lineEl.points.length/2)-1;
 const getNextSlide = (forward) => {
   slide = forward
     ? slide < slideCount ? slide + 1  : 0
-	: slide <= 0         ? slideCount : slide - 1;
-	return {pointA:lineEl.points[slide*2], pointB:lineEl.points[slide*2+1]}
+    : slide <= 0         ? slideCount : slide - 1;
+	return {
+    pointA:lineEl.points[slide*2],
+    pointB:lineEl.points[slide*2+1]
+  }
 }
 
 const getSlideRect = ({pointA, pointB}) => {
@@ -91,22 +138,22 @@ const getSlideRect = ({pointA, pointB}) => {
 }
 
 let busy = false;
-const scrollToNextRect = async ({left,top,right,bottom,nextZoom}) => {
+const scrollToNextRect = async ({left,top,right,bottom,nextZoom},steps = STEPCOUNT) => {
   let watchdog = 0;
   while(busy && watchdog++<15) await(100);
   if(busy && watchdog >= 15) return;
   busy = true;
+  api.updateScene({appState:{shouldCacheIgnoreZoom:true}});
   const {scrollX, scrollY, zoom} = api.getAppState();
-  const zoomStep = (zoom.value-nextZoom)/STEPCOUNT;
-  const xStep = (left+scrollX)/STEPCOUNT;
-  const yStep = (top+scrollY)/STEPCOUNT;
-  for(i=1;i<=STEPCOUNT;i++) {
+  const zoomStep = (zoom.value-nextZoom)/steps;
+  const xStep = (left+scrollX)/steps;
+  const yStep = (top+scrollY)/steps;
+  for(i=1;i<=steps;i++) {
     api.updateScene({
       appState: {
         scrollX:scrollX-(xStep*i),
         scrollY:scrollY-(yStep*i),
         zoom:{value:zoom.value-zoomStep*i},
-        shouldCacheIgnoreZoom:true,
       }
     });
     await sleep(FRAME_SLEEP);
@@ -125,73 +172,149 @@ const navigate = async (dir) => {
     ? slide<=prevSlide
     : slide>=prevSlide;
   if(shouldExit) {
-    if(!app.isMobile) await doc.exitFullscreen();
     exitPresentation();
     return;
   }
   if(slideNumberEl) slideNumberEl.innerText = `${slide+1}/${slideCount+1}`;
   const nextRect = getSlideRect(nextSlide);
   await scrollToNextRect(nextRect);
+  if(settingsModal) {
+    slideNumberDropdown.setValue(`${slide}`.padStart(3,"0"));
+  }
+}
+
+//--------------------------
+// Settings Modal
+//--------------------------
+let settingsModal;
+let slideNumberDropdown;
+const presentationSettings = () => {
+	let dirty = false;
+	settingsModal = new ea.obsidian.Modal(app);
+
+	const getSlideNumberLabel = (i) => {
+		switch(i) {
+		  case 0: return "1 - Start";
+		  case slideCount: return `${i+1} - End`;
+		  default: return `${i+1}`;
+		}
+	}
+
+  const getSlidesList = () => {
+	  const options = {};
+	  for(i=0;i<=slideCount;i++) {
+	    options[`${i}`.padStart(3,"0")] = getSlideNumberLabel(i);
+	  }
+	  return options;
+	}
+
+	settingsModal.onOpen = () => {
+		settingsModal.contentEl.createEl("h1",{text: "Slideshow Actions"});
+    settingsModal.contentEl.createEl("p",{text: "To open this window double click presentation script icon or press ENTER during presentation."});
+		new ea.obsidian.Setting(settingsModal.contentEl)
+		  .setName("Jump to slide")
+		  .addDropdown(dropdown => {
+        slideNumberDropdown = dropdown;
+        dropdown
+          .addOptions(getSlidesList()) 
+          .setValue(`${slide}`.padStart(3,"0"))
+          .onChange(value => {
+            slide = parseInt(value)-1;
+            navigate("fwd");
+          })
+      })
+    
+    if(!preventHideAction) {
+      new ea.obsidian.Setting(settingsModal.contentEl)
+        .setName("Hide navigation arrow after slideshow")
+        .setDesc("Toggle on: arrow hidden, toggle off: arrow visible")
+        .addToggle(toggle => toggle
+          .setValue(hidden)
+          .onChange(value => hideArrow(value))
+        )  
+    }
+
+    new ea.obsidian.Setting(settingsModal.contentEl)
+		  .setName("Edit current slide")
+      .setDesc("Pressing 'e' during the presentation will open the current slide for editing.")
+		  .addButton(button => button
+		    .setButtonText("Edit")
+        .onClick(async ()=>{
+          await hideArrow(false);
+          exitPresentation(true);
+        })
+      )  
+	}
+	
+	settingsModal.onClose = () => {
+    setTimeout(()=>delete settingsModal);
+	}
+	
+	settingsModal.open();
+	contentEl.appendChild(settingsModal.containerEl);
 }
 
 //--------------------------------------
 //Slideshow control
 //--------------------------------------
-//create slideshow controlpanel container
-const top = contentEl.innerHeight; 
-const left = contentEl.innerWidth; 
-const containerEl = contentEl.createDiv({
-  cls: ["excalidraw","excalidraw-presentation-panel"],
-  attr: {
-    style: `
-      width: calc(var(--default-button-size)*3);
-      z-index:5;
-      position: absolute;
-      top:calc(${top}px - var(--default-button-size)*2);
-      left:calc(${left}px - var(--default-button-size)*3.5);`
-  }
-}); 
-const panelColumn = containerEl.createDiv({
-  cls: "panelColumn",
-});
+let controlPanelEl;
 let slideNumberEl;
-panelColumn.createDiv({
-  cls: ["Island", "buttonList"],
-  attr: {
-    style: `
-      height: calc(var(--default-button-size)*1.5);
-      width: 100%;
-      background: var(--island-bg-color);`,
-  }
-}, el=>{
-  el.createEl("button",{
-    text: "<",
+const createNavigationPanel = () => {
+  //create slideshow controlpanel container
+  const top = contentEl.innerHeight; 
+  const left = contentEl.innerWidth; 
+  controlPanelEl = contentEl.createDiv({
+    cls: ["excalidraw","excalidraw-presentation-panel"],
     attr: {
       style: `
-        margin-top: calc(var(--default-button-size)*0.25);
-        margin-left: calc(var(--default-button-size)*0.25);`
+        width: calc(var(--default-button-size)*3);
+        z-index:5;
+        position: absolute;
+        top:calc(${top}px - var(--default-button-size)*2);
+        left:calc(${left}px - var(--default-button-size)*3.5);`
     }
-  }, button => button .onclick = () => navigate("bkwd"));
-  el.createEl("button",{
-    text: ">",
-    attr: {
-      style: `
-        margin-top: calc(var(--default-button-size)*0.25);
-        margin-right: calc(var(--default-button-size)*0.25);`
-    }
-  }, button => button.onclick = () => navigate("fwd"));
-  slideNumberEl = el.createEl("span",{
-	  text: "1",
-	  cls: ["ToolIcon__keybinding"],
-  })
-});
+  });
+  const panelColumn = controlPanelEl.createDiv({
+    cls: "panelColumn",
+  });
+	panelColumn.createDiv({
+	  cls: ["Island", "buttonList"],
+	  attr: {
+	    style: `
+	      height: calc(var(--default-button-size)*1.5);
+	      width: 100%;
+	      background: var(--island-bg-color);`,
+	  }
+	}, el=>{
+	  el.createEl("button",{
+	    text: "<",
+	    attr: {
+	      style: `
+	        margin-top: calc(var(--default-button-size)*0.25);
+	        margin-left: calc(var(--default-button-size)*0.25);`
+	    }
+	  }, button => button .onclick = () => navigate("bkwd"));
+	  el.createEl("button",{
+	    text: ">",
+	    attr: {
+	      style: `
+	        margin-top: calc(var(--default-button-size)*0.25);
+	        margin-right: calc(var(--default-button-size)*0.25);`
+	    }
+	  }, button => button.onclick = () => navigate("fwd"));
+	  slideNumberEl = el.createEl("span",{
+		  text: "1",
+		  cls: ["ToolIcon__keybinding"],
+	  })
+	});
+}
 
 //keyboard navigation
 const keydownListener = (e) => {
   e.preventDefault();
   switch(e.key) {
-    case "escape":
-      if(app.isMobile) exitPresentation();
+    case "Escape":
+      if(app.isMobile || inPopoutWindow) exitPresentation();
       break;
     case "ArrowRight":
     case "ArrowDown": 
@@ -201,9 +324,25 @@ const keydownListener = (e) => {
     case "ArrowUp":
       navigate("bkwd");
       break;
-  }  
+    case "Enter":
+      presentationSettings();
+      break;
+    case "End":
+      slide = slideCount - 1;
+      navigate("fwd");
+      break;
+    case "Home":
+      slide = -1;
+      navigate("fwd");
+      break;
+    case "e": 
+      (async ()=>{
+        await hideArrow(false);
+        exitPresentation(true);
+      })()
+      break;
+  }
 }
-doc.addEventListener('keydown',keydownListener);
 
 //slideshow panel drag
 let pos1 = pos2 = pos3 = pos4 = 0;
@@ -214,19 +353,25 @@ const updatePosition = (deltaY = 0, deltaX = 0) => {
     offsetLeft,
     clientWidth: width,
     clientHeight: height,
-   } = containerEl;
-  containerEl.style.top = (offsetTop - deltaY) + 'px';
-  containerEl.style.left = (offsetLeft - deltaX) + 'px';
+   } = controlPanelEl;
+  controlPanelEl.style.top = (offsetTop - deltaY) + 'px';
+  controlPanelEl.style.left = (offsetLeft - deltaX) + 'px';
 }
    
 const pointerUp = () => {
   win.removeEventListener('pointermove', onDrag, true);
 }
 
+let dblClickTimer = 0;
 const pointerDown = (e) => {
+  const now = Date.now();
   pos3 = e.clientX;
   pos4 = e.clientY;
   win.addEventListener('pointermove', onDrag, true);
+  if(now-dblClickTimer < 400) {
+    presentationSettings();
+  }
+  dblClickTimer = now;
 }
 
 const onDrag = (e) => {
@@ -238,45 +383,108 @@ const onDrag = (e) => {
   updatePosition(pos2, pos1);
 }
 
-containerEl.addEventListener('pointerdown', pointerDown, false);
-win.addEventListener('pointerup', pointerUp, false);
+const initializeEventListners = () => {
+	win.addEventListener('keydown',keydownListener);
+  controlPanelEl.addEventListener('pointerdown', pointerDown, false);
+  win.addEventListener('pointerup', pointerUp, false);
 
-//event listners for terminating the presentation
-window.removePresentationEventHandlers = () => {
-  ea.onLinkClickHook = null;
-  containerEl.parentElement?.removeChild(containerEl);
-  if(!app.isMobile) win.removeEventListener('fullscreenchange', fullscreenListener);
-  doc.removeEventListener('keydown',keydownListener);
-  win.removeEventListener('pointerup',pointerUp);
-  contentEl.querySelector(".layer-ui__wrapper").removeClass("excalidraw-hidden");
-  delete window.removePresentationEventHandlers;
+	//event listners for terminating the presentation
+	window.removePresentationEventHandlers = () => {
+	  ea.onLinkClickHook = null;
+	  controlPanelEl.parentElement?.removeChild(controlPanelEl);
+	  if(!app.isMobile) win.removeEventListener('fullscreenchange', fullscreenListener);
+	  win.removeEventListener('keydown',keydownListener);
+	  win.removeEventListener('pointerup',pointerUp);
+	  contentEl.querySelector(".layer-ui__wrapper")?.removeClass("excalidraw-hidden");
+	  delete window.removePresentationEventHandlers;
+	}
+
+	ea.onLinkClickHook = () => {
+    exitPresentation();
+    return true;
+  };
+  
+  if(!app.isMobile) {
+    win.addEventListener('fullscreenchange', fullscreenListener);
+  }
 }
 
-const exitPresentation = () => {
-  window.removePresentationEventHandlers?.();
-  if(app.isMobile) ea.viewToggleFullScreen(true);
-  else ea.setViewModeEnabled(false);
+const exitPresentation = async (openForEdit = false) => {
+  if(openForEdit) ea.targetView.preventAutozoom();
+  if(!app.isMobile && !inPopoutWindow) await document.exitFullscreen();
+  if(app.isMobile) {
+    ea.viewToggleFullScreen(true);
+  } else {
+    ea.setViewModeEnabled(false);
+  }
+  if(settingsModal) settingsModal.close();
   ea.clear();
   ea.copyViewElementsToEAforEditing(ea.getViewElements().filter(el=>el.id === lineEl.id));
-  ea.getElement(lineEl.id).strokeColor = originalColor.strokeColor;
-  ea.getElement(lineEl.id).backgroundColor = originalColor.backgroundColor;
-  ea.addElementsToView();  
-  ea.selectElementsInView(ea.getElements());
+  const el = ea.getElement(lineEl.id);
+  if(!hidden) {
+    el.strokeColor = originalProps.strokeColor;
+    el.backgroundProps = originalProps.backgroundColor;
+    el.locked = openForEdit ? false : originalProps.locked;
+  }
+  await ea.addElementsToView();
+  ea.selectElementsInView([el]);
+  if(openForEdit) {
+    const nextSlide = getNextSlide(--slide);
+    let nextRect = getSlideRect(nextSlide);
+    const offsetW = (nextRect.right-nextRect.left)*(1-EDIT_ZOOMOUT)/2;
+    const offsetH = (nextRect.bottom-nextRect.top)*(1-EDIT_ZOOMOUT)/2
+    nextRect = {
+      left: nextRect.left-offsetW,
+      right: nextRect.right+offsetW,
+      top: nextRect.top-offsetH,
+      bottom: nextRect.bottom+offsetH,
+      nextZoom: nextRect.nextZoom*EDIT_ZOOMOUT > 0.1 ? nextRect.nextZoom*EDIT_ZOOMOUT : 0.1 //0.1 is the minimu zoom value
+    };
+    await scrollToNextRect(nextRect,1);
+    api.startLineEditor(
+      ea.getViewSelectedElement(),
+      [slide*2,slide*2+1]
+    );
+  }
+  window.removePresentationEventHandlers?.();
+  setTimeout(()=>{
+    //Resets pointer offsets. Ugly solution. 
+    //During testing offsets were wrong after presentation, but don't know why.
+    //This should solve it even if they are wrong.
+    ea.targetView.refresh(); 
+  })
 }
-
-ea.onLinkClickHook = () => {
-  exitPresentation();
-  return true;
-};
 
 const fullscreenListener = (e) => {
   e.preventDefault();
   exitPresentation();
 }
 
-if(!app.isMobile) {
-  win.addEventListener('fullscreenchange', fullscreenListener);
+
+//--------------------------
+// Start presentation or open presentation settings on double click
+//--------------------------
+const start = async () => {
+  await gotoFullscreen();
+  await hideArrow(hidden);
+  createNavigationPanel();
+  initializeEventListners();
+  //navigate to the first slide on start
+  setTimeout(()=>navigate("fwd"));
 }
 
-//navigate to the first slide on start
-setTimeout(()=>navigate("fwd"));
+const timestamp = Date.now();
+if(window.ExcalidrawSlideshow && (window.ExcalidrawSlideshow.script === utils.scriptFile.path) && (timestamp - window.ExcalidrawSlideshow.timestamp <400) ) {
+  if(window.ExcalidrawSlideshowStartTimer) {
+    clearTimeout(window.ExcalidrawSlideshowStartTimer);
+    delete window.ExcalidrawSlideshowStartTimer;
+  }
+  await start();
+  presentationSettings();
+} else {
+  window.ExcalidrawSlideshow = {
+    script: utils.scriptFile.path,
+    timestamp
+  };
+  window.ExcalidrawSlideshowStartTimer = setTimeout(start,500);
+}

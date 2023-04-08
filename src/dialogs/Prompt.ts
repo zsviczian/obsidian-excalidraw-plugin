@@ -79,7 +79,7 @@ export class GenericInputPrompt extends Modal {
   private didSubmit: boolean = false;
   private inputComponent: TextComponent;
   private input: string;
-  private buttons: [{ caption: string; action: Function }];
+  private buttons: { caption: string; action: Function }[];
   private readonly placeholder: string;
 
   public static Prompt(
@@ -87,7 +87,7 @@ export class GenericInputPrompt extends Modal {
     header: string,
     placeholder?: string,
     value?: string,
-    buttons?: [{ caption: string; action: Function }],
+    buttons?: { caption: string; action: Function }[],
   ): Promise<string> {
     const newPromptModal = new GenericInputPrompt(
       app,
@@ -104,7 +104,7 @@ export class GenericInputPrompt extends Modal {
     private header: string,
     placeholder?: string,
     value?: string,
-    buttons?: [{ caption: string; action: Function }],
+    buttons?: { caption: string; action: Function }[],
   ) {
     super(app);
     this.placeholder = placeholder;
@@ -166,6 +166,7 @@ export class GenericInputPrompt extends Modal {
       let b = null;
       for (const button of this.buttons) {
         const btn = new ButtonComponent(buttonBarContainer);
+        btn.buttonEl.style.marginLeft="5px";
         btn.setButtonText(button.caption).onClick((evt: MouseEvent) => {
           const res = button.action(this.input);
           if (res) {
@@ -176,7 +177,8 @@ export class GenericInputPrompt extends Modal {
         b = b ?? btn;
       }
       if (b) {
-        b.setCta().buttonEl.style.marginRight = "0";
+        b.setCta();
+        b.buttonEl.style.marginRight = "0";
       }
     } else {
       this.createButton(

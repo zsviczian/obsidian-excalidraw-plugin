@@ -17,7 +17,6 @@ import {
   MetadataCache,
   FrontMatterCache,
   Command,
-  requireApiVersion
 } from "obsidian";
 import {
   BLANK_DRAWING,
@@ -101,12 +100,9 @@ import { FieldSuggester } from "./dialogs/FieldSuggester";
 import { ReleaseNotes } from "./dialogs/ReleaseNotes";
 import { decompressFromBase64 } from "lz-string";
 import { Packages } from "./types";
-import * as React from "react";
 import { ScriptInstallPrompt } from "./dialogs/ScriptInstallPrompt";
-import { check } from "prettier";
 import Taskbone from "./ocr/Taskbone";
-import { hoverEvent_Legacy, initializeMarkdownPostProcessor_Legacy, markdownPostProcessor_Legacy, observer_Legacy } from "./MarkdownPostProcessor_Legacy";
-import { isCTRL, PaneTarget } from "./utils/ModifierkeyHelper";
+import { emulateCTRLClickForLinks, linkClickModifierType, PaneTarget } from "./utils/ModifierkeyHelper";
 
 
 declare module "obsidian" {
@@ -218,11 +214,7 @@ export default class ExcalidrawPlugin extends Plugin {
     //Compatibility mode with .excalidraw files
     this.registerExtensions(["excalidraw"], VIEW_TYPE_EXCALIDRAW);
 
-    if(requireApiVersion("1.1.6")) {
-      this.addMarkdownPostProcessor();
-    } else {
-      this.addLegacyMarkdownPostProcessor();
-    }
+    this.addMarkdownPostProcessor();
     this.registerInstallCodeblockProcessor();
     this.addThemeObserver();
     this.experimentalFileTypeDisplayToggle(this.settings.experimentalFileType);
@@ -593,18 +585,6 @@ export default class ExcalidrawPlugin extends Plugin {
     this.observer.observe(document, { childList: true, subtree: true });
   }
 
-  private addLegacyMarkdownPostProcessor() {
-    initializeMarkdownPostProcessor_Legacy(this);
-    this.registerMarkdownPostProcessor(markdownPostProcessor_Legacy);
-
-    // internal-link quick preview
-    this.registerEvent(this.app.workspace.on("hover-link", hoverEvent_Legacy));
-
-    //monitoring for div.popover.hover-popover.file-embed.is-loaded to be added to the DOM tree
-    this.observer = observer_Legacy;
-    this.observer.observe(document, { childList: true, subtree: true });
-  }
-
   private addThemeObserver() {
     this.themeObserver = new MutationObserver(async (m: MutationRecord[]) => {
       if (!this.settings.matchThemeTrigger) {
@@ -706,8 +686,8 @@ export default class ExcalidrawPlugin extends Plugin {
     this.addRibbonIcon(ICON_NAME, t("CREATE_NEW"), async (e) => {
       this.createAndOpenDrawing(
         getDrawingFilename(this.settings),
-        isCTRL(e)?"new-pane":"active-pane",
-      ); //.ctrlKey||e.metaKey);
+        linkClickModifierType(emulateCTRLClickForLinks(e)),
+      ); 
     });
 
     const fileMenuHandlerCreateNew = (menu: Menu, file: TFile) => {
@@ -715,7 +695,7 @@ export default class ExcalidrawPlugin extends Plugin {
         item
           .setTitle(t("CREATE_NEW"))
           .setIcon(ICON_NAME)
-          .onClick(() => {
+          .onClick((e) => {
             let folderpath = file.path;
             if (file instanceof TFile) {
               folderpath = normalizePath(
@@ -724,7 +704,7 @@ export default class ExcalidrawPlugin extends Plugin {
             }
             this.createAndOpenDrawing(
               getDrawingFilename(this.settings),
-              "active-pane",
+              linkClickModifierType(emulateCTRLClickForLinks(e)),
               folderpath,
             );
           });
@@ -1851,7 +1831,19 @@ export default class ExcalidrawPlugin extends Plugin {
         }
         if (newActiveviewEV) {
           const scope = self.app.keymap.getRootScope();
-          const handler = scope.register(["Mod"], "Enter", () => true);
+          const handler_ctrlEnter = scope.register(["Mod"], "Enter", () => true);
+          scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
+          const handler_ctrlK = scope.register(["Mod"], "k", () => {return true});
+          scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
+          const handler_ctrlF = scope.register(["Mod"], "f", () => {
+            const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+            if (view) {
+              search(view);
+              return true;
+            }
+            return false;
+          });
+          scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
           const overridSaveShortcut = (
             self.forceSaveCommand &&
             self.forceSaveCommand.hotkeys[0].key === "s" &&
@@ -1860,9 +1852,13 @@ export default class ExcalidrawPlugin extends Plugin {
           const saveHandler = overridSaveShortcut
            ? scope.register(["Ctrl"], "s", () => self.forceSaveActiveView(false))
            : undefined;
-          scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
+          if(saveHandler) {
+            scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
+          }
           self.popScope = () => {
-            scope.unregister(handler);
+            scope.unregister(handler_ctrlEnter);
+            scope.unregister(handler_ctrlK);
+            scope.unregister(handler_ctrlF);
             Boolean(saveHandler) && scope.unregister(saveHandler);
           }
         }
@@ -2166,6 +2162,9 @@ export default class ExcalidrawPlugin extends Plugin {
     active: boolean = false,
     subpath?: string
   ) {
+    if(location === "md-properties") {
+      location = "new-tab";
+    }
     let leaf: WorkspaceLeaf;
     if(location === "popout-window") {
       leaf = app.workspace.openPopoutLeaf();

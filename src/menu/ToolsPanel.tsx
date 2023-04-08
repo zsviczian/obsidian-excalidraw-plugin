@@ -50,7 +50,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   previousHeight: number = 0;
   onRightEdge: boolean = false;
   onBottomEdge: boolean = false;
-  private containerRef: React.RefObject<HTMLDivElement>;
+  public containerRef: React.RefObject<HTMLDivElement>;
 
   constructor(props: PanelProps) {
     super(props);

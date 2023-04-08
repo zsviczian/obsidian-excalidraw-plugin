@@ -22,6 +22,7 @@ import {
   MAX_IMAGE_SIZE,
   COLOR_NAMES,
   fileid,
+  GITHUB_RELEASES,
 } from "./Constants";
 import { getDrawingFilename, } from "./utils/FileUtils";
 import {
@@ -88,6 +89,7 @@ const {
   getCommonBoundingBox,
   getMaximumGroups,
   measureText,
+  getDefaultLineHeight,
   //@ts-ignore
 } = excalidrawLib;
 
@@ -374,7 +376,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     const scene = {
       type: "excalidraw",
       version: 2,
-      source: "https://excalidraw.com",
+      source: GITHUB_RELEASES+PLUGIN_VERSION,
       elements,
       appState: {
         theme: template?.appState?.theme ?? this.canvas.theme,
@@ -770,9 +772,11 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       wrapAt?: number;
       width?: number;
       height?: number;
-      textAlign?: string;
+      textAlign?: "left" | "center" | "right";
       box?: boolean | "box" | "blob" | "ellipse" | "diamond";
       boxPadding?: number;
+      boxStrokeColor?: string;
+      textVerticalAlign?: "top" | "middle" | "bottom";
     },
     id?: string,
   ): string {
@@ -783,12 +787,15 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       text,
       this.style.fontSize,
       this.style.fontFamily,
+      getDefaultLineHeight(this.style.fontFamily)
     );
     const width = formatting?.width ? formatting.width : w;
     const height = formatting?.height ? formatting.height : h;
 
     let boxId: string = null;
     const boxPadding = formatting?.boxPadding ?? 30;
+    const strokeColor = this.style.strokeColor;
+    this.style.strokeColor = formatting?.boxStrokeColor ?? strokeColor;
     if (formatting?.box) {
       switch (formatting.box) {
         case "ellipse":
@@ -824,6 +831,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
           );
       }
     }
+    this.style.strokeColor = strokeColor;
     const isContainerBound = boxId && formatting.box !== "blob";
     this.elementsDict[id] = {
       text,
@@ -832,12 +840,13 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       textAlign: formatting?.textAlign
         ? formatting.textAlign
         : this.style.textAlign ?? "left",
-      verticalAlign: this.style.verticalAlign,
+      verticalAlign: formatting?.textVerticalAlign ?? this.style.verticalAlign,
       baseline,
       ...this.boxedElement(id, "text", topX, topY, width, height),
       containerId: isContainerBound ? boxId : null,
       originalText: isContainerBound ? originalText : text,
       rawText: isContainerBound ? originalText : text,
+      lineHeight: getDefaultLineHeight(this.style.fontFamily),
     };
     if (boxId && formatting?.box === "blob") {
       this.addToGroup([id, boxId]);
@@ -1634,6 +1643,19 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
   }) => boolean = null;
  
   /**
+   * if set, this callback is triggered, when an Excalidraw file is opened
+   * You can use this callback in case you want to do something additional when the file is opened.
+   * This will run before the file level script defined in the `excalidraw-onload-script` frontmatter.
+   */
+
+  onFileOpenHook: (data: {
+    ea: ExcalidrawAutomate;
+    excalidrawFile: TFile; //the file being loaded
+    view: ExcalidrawView;
+  }) => Promise<void>;
+
+
+  /**
    * If set, this callback is triggered whenever the active canvas color changes
    */
   onCanvasColorChangeHook: (
@@ -1828,6 +1850,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       text,
       this.style.fontSize,
       this.style.fontFamily,
+      getDefaultLineHeight(this.style.fontFamily),
     );
     return { width: size.w ?? 0, height: size.h ?? 0 };
   };
@@ -1864,7 +1887,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
    * @returns 
    */
   verifyMinimumPluginVersion(requiredVersion: string): boolean {
-    return PLUGIN_VERSION === requiredVersion || isVersionNewerThanOther(PLUGIN_VERSION,requiredVersion);
+    return verifyMinimumPluginVersion(requiredVersion);
   };
 
   /**
@@ -2085,6 +2108,7 @@ export function _measureText(
   newText: string,
   fontSize: number,
   fontFamily: number,
+  lineHeight: number,
 ) {
   //following odd error with mindmap on iPad while synchornizing with desktop.
   if (!fontSize) {
@@ -2092,10 +2116,12 @@ export function _measureText(
   }
   if (!fontFamily) {
     fontFamily = 1;
+    lineHeight = getDefaultLineHeight(fontFamily);
   }
   const metrics = measureText(
     newText,
     `${fontSize.toString()}px ${getFontFamily(fontFamily)}` as any,
+    lineHeight
   );
   return { w: metrics.width, h: metrics.height, baseline: metrics.baseline };
 }
@@ -2242,7 +2268,7 @@ export async function createPNG(
     {
       type: "excalidraw",
       version: 2,
-      source: "https://excalidraw.com",
+      source: GITHUB_RELEASES+PLUGIN_VERSION,
       elements,
       appState: {
         theme: forceTheme ?? template?.appState?.theme ?? canvasTheme,
@@ -2295,7 +2321,7 @@ export async function createSVG(
       //createAndOpenDrawing
       type: "excalidraw",
       version: 2,
-      source: "https://excalidraw.com",
+      source: GITHUB_RELEASES+PLUGIN_VERSION,
       elements,
       appState: {
         theme: forceTheme ?? template?.appState?.theme ?? canvasTheme,
@@ -2499,4 +2525,8 @@ export const cloneElement = (el: ExcalidrawElement):any => {
     updated: Date.now(),
     versionNonce: Math.floor(Math.random() * 1000000000),
   }
+}
+
+export const verifyMinimumPluginVersion = (requiredVersion: string): boolean => {
+  return PLUGIN_VERSION === requiredVersion || isVersionNewerThanOther(PLUGIN_VERSION,requiredVersion);
 }

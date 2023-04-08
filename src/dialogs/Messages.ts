@@ -17,6 +17,119 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.8.22": `
+## Fixed
+- Styling of custom pen and script buttons in the side panel was inverted.
+- Minor tweaks to dynamic styling. [see this video to understand dynamic styling](https://youtu.be/fypDth_-8q0)
+
+## New
+- New scripts by @threethan:
+  - [Auto Draw for Pen](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Auto%20Draw%20for%20Pen.md): Automatically switches between the select and draw tools, based on whether a pen is being used. Supports most pens including Apple Pencil.
+  - [Hardware Eraser Support](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Hardware%20Eraser%20Support.md): Adds support for pen inversion, a.k.a. the hardware eraser on the back of your pen. Supports Windows based styluses. Does not suppoprt Apple Pencil or S-Pen.
+- Added separate buttons to support copying link, area or group references to objects on the drawing. [#1063](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1063). See [this video](https://youtu.be/yZQoJg2RCKI) for more details on how this works.
+- Hover preview will no longer trigger for image files (.png, .svg, .jpg, .gif, .webp, .bmp, .ico, .excalidraw)
+- Minor updates to the [Slideshow](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Slideshow.md) script. You can download the updated script from the Excalidraw script library.  The slideshow will now correctly run also when initiated in a popout window. When the drawing is in a popout window, the slideshow will not be full screen, but will only occupy the popout window. If you run the slideshow from the main Obsidian workspace, it will be displayed in full-screen mode.
+- Updated the Icon Library script to now include image keywords under each of the images to allow searching for keywords (CTRL/CMD+F). I've uploaded the new script to [here](https://gist.github.com/zsviczian/33ff695d5b990de1ebe8b82e541c26ad). If you need further information watch this [video](https://youtu.be/_OEljzZ33H8)
+
+## New in ExcalidrawAutomate
+- ${String.fromCharCode(96)}addText${String.fromCharCode(96)} ${String.fromCharCode(96)}formatting${String.fromCharCode(96)} parameter now accepts ${String.fromCharCode(96)}boxStrokeColor${String.fromCharCode(96)} and ${String.fromCharCode(96)}textVerticalAlign${String.fromCharCode(96)} values.
+${String.fromCharCode(96,96,96)}typescript
+addText(
+    topX: number,
+    topY: number,
+    text: string,
+    formatting?: {
+      wrapAt?: number;
+      width?: number;
+      height?: number;
+      textAlign?: "left" | "center" | "right";
+      box?: boolean | "box" | "blob" | "ellipse" | "diamond";
+      boxPadding?: number;
+      boxStrokeColor?: string;
+      textVerticalAlign?: "top" | "middle" | "bottom";
+    },
+    id?: string,
+  ): string;
+${String.fromCharCode(96,96,96)}
+- new ${String.fromCharCode(96)}onFileOpenHook${String.fromCharCode(96)}. If set, this callback is triggered, when an Excalidraw file is opened. You can use this callback in case you want to do something additional when the file is opened. This will run before the file level script defined in the ${String.fromCharCode(96)}excalidraw-onload-script${String.fromCharCode(96)} frontmatter is executed. Excalidraw will await the result of operations here.  Handle with care. If you change data such as the frontmatter of the underlying file, I haven't tested how it will behave.
+${String.fromCharCode(96,96,96)}typescript
+onFileOpenHook: (data: {
+  ea: ExcalidrawAutomate;
+  excalidrawFile: TFile; //the file being loaded
+  view: ExcalidrawView;
+}) => Promise<void>;
+${String.fromCharCode(96,96,96)}`,
+"1.8.21": `
+## Quality of Life improvements
+- Dynamic Styling (see plugin settings / Display). When Dynamic Styling is enabled it fixes Excalidraw issues with the Minimal Theme
+- New "Invert Colors" script
+
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/fypDth_-8q0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+### Note
+The few of you, that are using the Dynamic Styling Templater script, please remove it and restart Obsidian.
+`,
+"1.8.20": `
+## Fixed
+- Excalidraw froze Obsidian in certain rare situations [#1054](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1054)
+- File loading error [#1062](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1062)
+- Embedded images in markdown documents no longer have the line on the side. Image sizing works better. [#1059](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1059)
+- Locked elements will not show a hover preview [#1060](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1060)
+- CTRL/CMD + K correctly triggers add link [#1056](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1056)
+
+## New
+- Grid color adjusts to the view background color
+
+I'm sorry, but the sticky note editing issue on Android with the on-screen keyboard has still not been resolved. If you also experience this error, please help raise the priority with the core Excalidraw team by commenting on this issue: [#6330](https://github.com/excalidraw/excalidraw/issues/6330)
+`,
+"1.8.19": `
+## Fixed: Text wrapping issue in sticky notes
+
+I fixed an issue where text would wrap differently and words would disappear during text editing in sticky notes. You can check out the details on [GitHub #6318](https://github.com/excalidraw/excalidraw/issues/6331).
+
+I am aware of three additional issues related to container text editing that are still open. I apologize for any inconvenience caused by the recent change in how text size is calculated on Excalidraw.com, which has had a knock-on effect on Obsidian. I am actively working to address the following issues:
+
+- Pinch zooming while editing text in a text container [GitHub #6331](https://github.com/excalidraw/excalidraw/issues/6331)
+- Container text jumps on edit on Android with on-screen keyboard [GitHub #6330](https://github.com/excalidraw/excalidraw/issues/6330)
+- Shadow text when editing text containers without a keyboard on iOS [GitHub #6329](https://github.com/excalidraw/excalidraw/issues/6329)
+
+Thank you for your patience while I work on resolving these issues.
+`,
+"1.8.18": `
+## Fixed
+- Text scaling issue introduced in 1.8.17
+- [#1043](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1043): Error handling when ${String.fromCharCode(96)}onCanvasColorChangeHook${String.fromCharCode(96)} is executed. This is used in the [Dynamic Styling Script](https://youtu.be/LtR04fNTKTM). 
+`,
+"1.8.17": `
+## New from Excalidraw.com
+- Improved text wrapping in the ellipse and diamond shapes [6172](https://github.com/excalidraw/excalidraw/pull/6172)
+
+## New
+- Updated slideshow script
+
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/mQ2eLk_0TV4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## Fixed: 
+- "Save to..." in the Stencil Library menu now works as expected [#1032](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1032)
+`,
+"1.8.16": `
+**!!! Modifier keys have changed, please review the table below !!!**
+[Click this to see the new shortcuts overview image](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/excalidraw-modifiers.png)
+
+## Fixed 
+- This version was extensively tested and developed on MacOS to remove usability issues.
+- New command palette action to create a new drawing in a new tab
+- Modifier keys to open links in the active window, splitting the current view to the right, in a new tab, or in a popout window now behave consistently both in Excalidraw and when clicking a drawing that is embedded in a markdown note.
+- Drag & Drop properly works from within Obsidian, from a web browser, and from the OS file explorer
+
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/9HlipSIzRhc" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+`,
 "1.8.14":`
 ## Fixed
 - text element link gets deleted when the drawing is reloaded

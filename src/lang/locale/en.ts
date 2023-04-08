@@ -81,7 +81,7 @@ export default {
   OPEN_LINK: "Open selected text as link\n(SHIFT+CLICK to open in a new pane)",
   EXPORT_EXCALIDRAW: "Export to an .Excalidraw file",
   LINK_BUTTON_CLICK_NO_TEXT:
-    "Select a an ImageElement, or select a TextElement that contains an internal or external link.\n",
+    "Select a ImageElement, or select a TextElement that contains an internal or external link.\n",
   FILENAME_INVALID_CHARS:
     'File name cannot contain any of the following characters: * " \\ < > : | ? #',
   FORCE_SAVE:
@@ -175,6 +175,9 @@ FILENAME_HEAD: "Filename",
     "This setting does not apply if you use Excalidraw in compatibility mode, " +
     "i.e. you are not using Excalidraw markdown files.<br><b>Toggle ON:</b> filename ends with .excalidraw.md<br><b>Toggle OFF:</b> filename ends with .md",
   DISPLAY_HEAD: "Display",
+  DYNAMICSTYLE_NAME: "Dynamic styling",
+  DYNAMICSTYLE_DESC:
+    "Change Excalidraw UI colors to match the canvas color",
   LEFTHANDED_MODE_NAME: "Left-handed mode",
   LEFTHANDED_MODE_DESC:
     "Currently only has effect in tray-mode. If turned on, the tray will be on the right side." +
