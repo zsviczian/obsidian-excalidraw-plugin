@@ -27,7 +27,7 @@ export const setDynamicStyle = (
 
   const darker = "#202020";
   const lighter = "#fbfbfb";
-  const step = 5;
+  const step = 10;
   const mixRatio = 0.8;
 
   const invertColor = (c:string) => {
@@ -81,7 +81,7 @@ export const setDynamicStyle = (
     `--color-gray-30: ${str(gray1)};` +
     `--color-gray-80: ${str(gray1)};` +
     `--sidebar-border-color: ${str(gray1)};` +
-    `--color-primary-light: ${str(gray1)};` +
+    `--color-primary-light: ${str(accent().lighterBy(step))};` +
     `--button-hover-bg: ${str(gray1)};` +
     `--sidebar-bg-color: ${gray2.alphaTo(0.93).stringHEX()};` +
     `--sidebar-shadow: ${str(gray1)};` +
