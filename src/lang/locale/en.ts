@@ -413,6 +413,8 @@ FILENAME_HEAD: "Filename",
   MATHJAX_DESC: "If you are using LaTeX equiations in Excalidraw then the plugin needs to load a javascript library for that. " + 
     "Some users are unable to access certain host servers. If you are experiencing issues try changing the host here. You may need to "+
     "restart Obsidian after closing settings, for this change to take effect.",
+  LATEX_DEFAULT_NAME: "Default LaTeX formual for new equations",
+  LATEX_DEFAULT_DESC: "Leave empty if you don't want a default formula. You can add default formatting here such as <code>\\color{white}</code>.",
   NONSTANDARD_HEAD: "Non-Excalidraw.com supported features",
   NONSTANDARD_DESC: "These features are not available on excalidraw.com. When exporting the drawing to Excalidraw.com these features will appear different.",
   CUSTOM_PEN_NAME: "Number of custom pens",
@@ -486,6 +488,7 @@ FILENAME_HEAD: "Filename",
   GOTO_FULLSCREEN: "Goto fullscreen mode",
   EXIT_FULLSCREEN: "Exit fullscreen mode",
   TOGGLE_FULLSCREEN: "Toggle fullscreen mode",
+  TOGGLE_DISABLEBINDING: "Toggle to invert default binding behavior",
   OPEN_LINK_CLICK: "Navigate to selected element link",
   OPEN_LINK_PROPS: "Open markdown-embed properties or open link in new window"
 };

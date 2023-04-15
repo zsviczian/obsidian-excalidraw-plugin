@@ -103,6 +103,7 @@ import { Packages } from "./types";
 import { ScriptInstallPrompt } from "./dialogs/ScriptInstallPrompt";
 import Taskbone from "./ocr/Taskbone";
 import { emulateCTRLClickForLinks, linkClickModifierType, PaneTarget } from "./utils/ModifierkeyHelper";
+import { ColorMap } from "./EmbeddedFileLoader";
 
 
 declare module "obsidian" {
@@ -156,7 +157,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public opencount: number = 0;
   public ea: ExcalidrawAutomate;
   //A master list of fileIds to facilitate copy / paste
-  public filesMaster: Map<FileId, { isHyperlink: boolean; path: string; hasSVGwithBitmap: boolean; blockrefData: string }> =
+  public filesMaster: Map<FileId, { isHyperlink: boolean; path: string; hasSVGwithBitmap: boolean; blockrefData: string, colorMapJSON?: string}> =
     null; //fileId, path
   public equationsMaster: Map<FileId, string> = null; //fileId, formula
   public mathjax: any = null;
@@ -172,7 +173,7 @@ export default class ExcalidrawPlugin extends Plugin {
     super(app, manifest);
     this.filesMaster = new Map<
       FileId,
-      { isHyperlink: boolean; path: string; hasSVGwithBitmap: boolean; blockrefData: string }
+      { isHyperlink: boolean; path: string; hasSVGwithBitmap: boolean; blockrefData: string; colorMapJSON?: string }
     >();
     this.equationsMaster = new Map<FileId, string>();
   }
@@ -1026,6 +1027,24 @@ export default class ExcalidrawPlugin extends Plugin {
           } else {
             view.gotoFullscreen();
           }
+          return true;
+        }
+        return false;
+      },
+    });
+
+    this.addCommand({
+      id: "disable-binding",
+      name: t("TOGGLE_DISABLEBINDING"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return (
+            Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
+          );
+        }
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
+          view.toggleDisableBinding();
           return true;
         }
         return false;

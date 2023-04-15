@@ -14,7 +14,6 @@ import {
   FRONTMATTER_KEY_MD_STYLE,
   IMAGE_TYPES,
   nanoid,
-  URLFETCHTIMEOUT,
   VIRGIL_FONT,
 } from "./Constants";
 import { createSVG } from "./ExcalidrawAutomate";
@@ -70,6 +69,59 @@ export type Size = {
   width: number;
 };
 
+export interface ColorMap {
+  [color: string]: string;
+};
+
+/**
+ * Function takes an SVG and replaces all fill and stroke colors with the ones in the colorMap
+ * @param svg: SVGSVGElement
+ * @param colorMap: {[color: string]: string;} | null
+ * @returns svg with colors replaced
+ */
+const replaceSVGColors = (svg: SVGSVGElement | string, colorMap: ColorMap | null): SVGSVGElement | string => {
+  if(!colorMap) {
+    return svg;
+  }
+
+  if(typeof svg === 'string') {
+    // Replace colors in the SVG string
+    for (const [oldColor, newColor] of Object.entries(colorMap)) {
+      const fillRegex = new RegExp(`fill="${oldColor}"`, 'g');
+      svg = svg.replaceAll(fillRegex, `fill="${newColor}"`);
+      const strokeRegex = new RegExp(`stroke="${oldColor}"`, 'g');
+      svg = svg.replaceAll(strokeRegex, `stroke="${newColor}"`);
+    }
+    return svg;
+  }
+
+  // Modify the fill and stroke attributes of child nodes
+  const childNodes = (node: ChildNode) => {
+    if (node instanceof SVGElement) {
+      const oldFill = node.getAttribute('fill');
+      const oldStroke = node.getAttribute('stroke');
+
+      if (oldFill && colorMap[oldFill]) {
+        node.setAttribute('fill', colorMap[oldFill]);
+      }
+      if (oldStroke && colorMap[oldStroke]) {
+        node.setAttribute('stroke', colorMap[oldStroke]);
+      }
+    }
+    for(const child of node.childNodes) {
+      childNodes(child);
+    }
+  }
+
+  for (const child of svg.childNodes) {
+    childNodes(child);
+  }
+
+  return svg;
+}
+
+
+
 export class EmbeddedFile {
   public file: TFile = null;
   public isSVGwithBitmap: boolean = false;
@@ -84,10 +136,18 @@ export class EmbeddedFile {
   public attemptCounter: number = 0;
   public isHyperlink: boolean = false;
   public hyperlink:DataURL;
+  public colorMap: ColorMap | null = null;
 
-  constructor(plugin: ExcalidrawPlugin, hostPath: string, imgPath: string) {
+  constructor(plugin: ExcalidrawPlugin, hostPath: string, imgPath: string, colorMapJSON?: string) {
     this.plugin = plugin;
     this.resetImage(hostPath, imgPath);
+    if(this.file && (this.plugin.ea.isExcalidrawFile(this.file) || this.file.extension.toLowerCase() === "svg")) {
+      try {
+        this.colorMap = colorMapJSON ? JSON.parse(colorMapJSON) : null;
+      } catch (error) {
+        this.colorMap = null;
+      }
+    }
   }
 
   public resetImage(hostPath: string, imgPath: string) {
@@ -284,19 +344,23 @@ export class EmbeddedFilesLoader {
           : false,
         withTheme: !!forceTheme,
       };
-      const svg = await createSVG(
-        file.path,
-        true,
-        exportSettings,
-        this,
-        forceTheme,
-        null,
-        null,
-        [],
-        this.plugin,
-        depth+1,
-        getExportPadding(this.plugin, file),
-      );
+      const svg = replaceSVGColors(
+        await createSVG(
+          file.path,
+          true,
+          exportSettings,
+          this,
+          forceTheme,
+          null,
+          null,
+          [],
+          this.plugin,
+          depth+1,
+          getExportPadding(this.plugin, file),
+        ),
+        inFile instanceof EmbeddedFile ? inFile.colorMap : null
+      ) as SVGSVGElement;
+
       //https://stackoverflow.com/questions/51154171/remove-css-filter-on-child-elements
       const imageList = svg.querySelectorAll(
         "image:not([href^='data:image/svg'])",
@@ -340,7 +404,7 @@ export class EmbeddedFilesLoader {
         )
       : excalidrawSVG ??
         (file.extension === "svg"
-          ? await getSVGData(app, file)
+          ? await getSVGData(app, file, inFile instanceof EmbeddedFile ? inFile.colorMap : null)
           : file.extension === "md"
           ? null
           : await getDataURL(ab, mimeType));
@@ -673,8 +737,8 @@ export class EmbeddedFilesLoader {
   };
 }
 
-const getSVGData = async (app: App, file: TFile): Promise<DataURL> => {
-  const svg = await app.vault.read(file);
+const getSVGData = async (app: App, file: TFile, colorMap: ColorMap | null): Promise<DataURL> => {
+  const svg = replaceSVGColors(await app.vault.read(file), colorMap) as string;
   return svgToBase64(svg) as DataURL;
 };
 

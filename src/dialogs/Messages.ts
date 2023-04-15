@@ -17,6 +17,25 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.8.23": `
+## Fixes
+- Fixed palm rejection to prevent unwanted spikes when using the freedraw tool. ([#1065](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1065))
+- Fixed issue where images disappeared when zoomed in. ([#6417](https://github.com/excalidraw/excalidraw/pull/6417))
+- Autosave will now save the drawing when you change the theme from dark to light or vice versa. ([#1080](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1080))
+- Added padding to short LaTeX formulas to prevent cropping. ([#1053](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1053))
+
+## New Features
+- Added a new command palette action: Toggle to invert default binding behavior. This new feature allows you to switch between normal and inverted mode. In normal mode, arrows will bind to objects unless you hold the CTRL/CMD key while drawing the arrow or moving objects. In inverted mode, arrows will not bind to objects unless you hold the CTRL/CMD key while drawing the arrow or moving objects.
+- You can now set a template LaTeX formula in the plugin settings (under experimental features) to be used when creating a new LaTeX formula. ([#1090](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1090))
+- Redesigned the Image Export dialog. I hope dropdowns are now more intuitive than the toggles were.
+- Added the ability to export only the selected part of a drawing. See the Export dialog for more information.
+- Added a zigzag fill easter egg. See a demo of this feature [here](https://twitter.com/excalidraw/status/1645428942344445952?s=61&t=nivKLx2vgl6hdv2EbW4mZg).
+- Added a new expert function: recolor embedded Excalidraw and SVG images (not JPG, PNG, BMP, WEBP, GIF). See a demo of this feature here:
+
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/MIZ5hv-pSSs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+`,
 "1.8.22": `
 ## Fixed
 - Styling of custom pen and script buttons in the side panel was inverted.

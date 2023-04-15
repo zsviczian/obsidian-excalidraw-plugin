@@ -333,7 +333,7 @@ export default class ExcalidrawView extends TextFileView {
     }
   }
 
-  public async exportExcalidraw() {
+  public async exportExcalidraw(selectedOnly?: boolean) {
     if (!this.getScene || !this.file) {
       return;
     }
@@ -366,7 +366,7 @@ export default class ExcalidrawView extends TextFileView {
     }
     download(
       "data:text/plain;charset=utf-8",
-      encodeURIComponent(JSON.stringify(this.getScene(), null, "\t")),
+      encodeURIComponent(JSON.stringify(this.getScene(selectedOnly), null, "\t")),
       `${this.file.basename}.excalidraw`,
     );
   }
@@ -430,12 +430,12 @@ export default class ExcalidrawView extends TextFileView {
     } 
   }
 
-  public async exportSVG(embedScene?: boolean):Promise<void> {
+  public async exportSVG(embedScene?: boolean, selectedOnly?: boolean):Promise<void> {
     if (!this.getScene || !this.file) {
       return;
     }
 
-    let svg = await this.svg(this.getScene(),undefined,embedScene);
+    let svg = await this.svg(this.getScene(selectedOnly),undefined,embedScene);
     if (!svg) {
       return;
     }
@@ -503,12 +503,12 @@ export default class ExcalidrawView extends TextFileView {
     }
   }
 
-  public async exportPNGToClipboard(embedScene?:boolean) {
+  public async exportPNGToClipboard(embedScene?:boolean, selectedOnly?: boolean) {
     if (!this.getScene || !this.file) {
       return;
     }
 
-    const png = await this.png(this.getScene(), undefined, embedScene);
+    const png = await this.png(this.getScene(selectedOnly), undefined, embedScene);
     if (!png) {
       return;
     }
@@ -527,12 +527,12 @@ export default class ExcalidrawView extends TextFileView {
     ]);
   }
 
-  public async exportPNG(embedScene?:boolean):Promise<void> {
+  public async exportPNG(embedScene?:boolean, selectedOnly?: boolean):Promise<void> {
     if (!this.getScene || !this.file) {
       return;
     }
     
-    const png = await this.png(this.getScene(), undefined, embedScene);
+    const png = await this.png(this.getScene(selectedOnly), undefined, embedScene);
     if (!png) {
       return;
     }
@@ -723,6 +723,12 @@ export default class ExcalidrawView extends TextFileView {
       })
       this.hiddenMobileLeaves = [];
     }
+  }
+
+  toggleDisableBinding() {
+    const newState = !this.excalidrawAPI.getAppState().invertBindingBehaviour;
+    this.updateScene({appState: {invertBindingBehaviour:newState}});
+    new Notice(newState ? "Inverted Mode: Default arrow binding is now disabled. Use CTRL/CMD to temporarily enable binding when needed." : "Normal Mode: Arrow binding is now enabled. Use CTRL/CMD to temporarily disable binding when needed.");
   }
 
   gotoFullscreen() {
@@ -2134,6 +2140,7 @@ export default class ExcalidrawView extends TextFileView {
 
   private previousSceneVersion = 0;
   public previousBackgroundColor = "";
+  public previousTheme = "";
   private colorChangeTimer:NodeJS.Timeout = null;
   
   private async instantiateExcalidraw(
@@ -2563,14 +2570,14 @@ export default class ExcalidrawView extends TextFileView {
         return true;
       };
 
-      this.getScene = () => {
+      this.getScene = (selectedOnly?: boolean) => {
         const api = this.excalidrawAPI;
         if (!excalidrawRef?.current || !api) {
           return null;
         }
-        const el: ExcalidrawElement[] = api.getSceneElements();
+        const el: ExcalidrawElement[] = selectedOnly ? this.getViewSelectedElements() : api.getSceneElements();
         const st: AppState = api.getAppState();
-        const files = api.getFiles();
+        const files = {...api.getFiles()};
 
         if (files) {
           const imgIds = el
@@ -3021,8 +3028,13 @@ export default class ExcalidrawView extends TextFileView {
                 }
                 this.previousSceneVersion = this.getSceneVersion(et);
                 this.previousBackgroundColor = st.viewBackgroundColor;
+                this.previousTheme = st.theme;
                 canvasColorChangeHook();
                 return;
+              }
+              if(st.theme !== this.previousTheme && this.file === this.excalidrawData.file) {
+                this.previousTheme = st.theme;
+                this.setDirty(5);
               }
               if(st.viewBackgroundColor !== this.previousBackgroundColor && this.file === this.excalidrawData.file) {
                 this.previousBackgroundColor = st.viewBackgroundColor;

@@ -19,7 +19,7 @@ import {
   FRONTMATTER_KEY_AUTOEXPORT,
   DEVICE,
 } from "./Constants";
-import { verifyMinimumPluginVersion, _measureText } from "./ExcalidrawAutomate";
+import { _measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
 import { JSON_parse } from "./Constants";
 import { TextMode } from "./ExcalidrawView";
@@ -552,13 +552,14 @@ export class ExcalidrawData {
       data.indexOf("# Embedded files\n") + "# Embedded files\n".length,
     );
     //Load Embedded files
-    const REG_FILEID_FILEPATH = /([\w\d]*):\s*\[\[([^\]]*)]]\n/gm;
+    const REG_FILEID_FILEPATH = /([\w\d]*):\s*\[\[([^\]]*)]]\s?(\{[^}]*})?\n/gm;
     res = data.matchAll(REG_FILEID_FILEPATH);
     while (!(parts = res.next()).done) {
       const embeddedFile = new EmbeddedFile(
         this.plugin,
         this.file.path,
         parts.value[2],
+        parts.value[3],
       );
       this.setFile(parts.value[1] as FileId, embeddedFile);
     }
@@ -1086,7 +1087,8 @@ export class ExcalidrawData {
           const path = ef.file
             ? ef.linkParts.original.replace(PATHREG,app.metadataCache.fileToLinktext(ef.file,this.file.path))
             : ef.linkParts.original;
-          outString += `${key}: [[${path}]]\n`;
+          const colorMap = ef.colorMap ? " " + JSON.stringify(ef.colorMap) : "";
+          outString += `${key}: [[${path}]]${colorMap}\n`;
         }
       }
     }
@@ -1515,6 +1517,7 @@ export class ExcalidrawData {
         ? null
         : parts[1],
       hasSVGwithBitmap: data.isSVGwithBitmap,
+      colorMapJSON: data.colorMap ? JSON.stringify(data.colorMap) : null,
     });
   }
 
@@ -1573,7 +1576,8 @@ export class ExcalidrawData {
         this.file.path,
         (masterFile.blockrefData
           ? path + "#" + masterFile.blockrefData
-          : path) + (fixScale?"|100%":"")
+          : path) + (fixScale?"|100%":""),
+        masterFile.colorMapJSON
       );
       this.files.set(fileId, embeddedFile);
       return true;

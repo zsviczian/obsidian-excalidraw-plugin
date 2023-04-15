@@ -95,6 +95,9 @@ export async function mathjaxSVG(
   const eq = plugin.mathjax.tex2svg(tex, { display: true, scale: 4 });
   const svg = eq.querySelector("svg");
   if (svg) {
+    if(svg.width.baseVal.valueInSpecifiedUnits < 2) {
+      svg.width.baseVal.valueAsString = `${(svg.width.baseVal.valueInSpecifiedUnits+1).toFixed(3)}ex`;
+    }
     const dataURL = svgToBase64(svg.outerHTML);
     return {
       mimeType: "image/svg+xml",

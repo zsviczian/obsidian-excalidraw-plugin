@@ -2443,7 +2443,7 @@ export const insertLaTeXToView = (view: ExcalidrawView) => {
   const prompt = new Prompt(
     app,
     t("ENTER_LATEX"),
-    "",
+    view.plugin.settings.latexBoilerplate,
     "\\color{red}\\oint_S {E_n dA = \\frac{1}{{\\varepsilon _0 }}} Q_{inside}",
   );
   prompt.openAndGetValue(async (formula: string) => {

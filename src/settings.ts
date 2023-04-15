@@ -120,6 +120,7 @@ export interface ExcalidrawSettings {
   showReleaseNotes: boolean;
   showNewVersionNotification: boolean;
   mathjaxSourceURL: string;
+  latexBoilerplate: string;
   taskboneEnabled: boolean;
   taskboneAPIkey: string;
   pinnedScripts: string[];
@@ -220,6 +221,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   showReleaseNotes: true,
   showNewVersionNotification: true,
   mathjaxSourceURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.1/es5/tex-svg.js",
+  latexBoilerplate: "\\color{blue}",
   taskboneEnabled: false,
   taskboneAPIkey: "",
   pinnedScripts: [],
@@ -1463,6 +1465,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           })
       })
+
+    new Setting(containerEl)
+      .setName(t("LATEX_DEFAULT_NAME"))
+      .setDesc(fragWithHTML(t("LATEX_DEFAULT_DESC")))
+      .addText((text) =>
+        text
+          .setValue(this.plugin.settings.latexBoilerplate)
+          .onChange( (value) => {
+            this.plugin.settings.latexBoilerplate = value;
+            this.applySettingsUpdate();
+          }),
+      );
 
     new Setting(containerEl)
       .setName(t("FIELD_SUGGESTER_NAME"))
