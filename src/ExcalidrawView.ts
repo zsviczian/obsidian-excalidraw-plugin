@@ -3960,6 +3960,8 @@ export default class ExcalidrawView extends TextFileView {
     }
 
     const alias = await ScriptEngine.inputPrompt(
+      this,
+      this.plugin,
       app,
       "Set link alias",
       "Leave empty if you do not want to set an alias",

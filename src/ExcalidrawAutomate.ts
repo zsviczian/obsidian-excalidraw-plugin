@@ -755,6 +755,26 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
   };
 
   /**
+   * Refresh the size of a text element to fit its contents
+   * @param id - the id of the text element
+   */
+  refreshTextElementSize(id: string) {
+    const element = this.getElement(id);
+    if (element.type !== "text") {
+      return;
+    }
+    const { w, h, baseline } = _measureText(
+      element.text,
+      element.fontSize,
+      element.fontFamily,
+      getDefaultLineHeight(element.fontFamily)
+    );
+    // @ts-ignore
+    element.width = w; element.height = h; element.baseline = baseline;
+  }
+
+
+  /**
    * 
    * @param topX 
    * @param topY 
@@ -2466,6 +2486,8 @@ export const search = async (view: ExcalidrawView) => {
     return;
   }
   let text = await ScriptEngine.inputPrompt(
+    view,
+    view.plugin,
     view.plugin.app,
     "Search for",
     "use quotation marks for exact match",

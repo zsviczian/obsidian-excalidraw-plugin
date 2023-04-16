@@ -225,13 +225,21 @@ export class ScriptEngine {
         placeholder?: string,
         value?: string,
         buttons?: [{ caption: string; action: Function }],
+        lines?: number,
+        displayEditorButtons?: boolean,
+        customComponents?: (container: HTMLElement) => void,
       ) =>
         ScriptEngine.inputPrompt(
+          view,
+          this.plugin,
           app,
           header,
           placeholder,
           value,
           buttons,
+          lines,
+          displayEditorButtons,
+          customComponents,
         ),
       suggester: (
         displayItems: string[],
@@ -268,19 +276,29 @@ export class ScriptEngine {
   }
 
   public static async inputPrompt(
+    view: ExcalidrawView,
+    plugin: ExcalidrawPlugin,
     app: App,
     header: string,
     placeholder?: string,
     value?: string,
     buttons?: { caption: string; action: Function }[],
+    lines?: number,
+    displayEditorButtons?: boolean,
+    customComponents?: (container: HTMLElement) => void
   ) {
     try {
       return await GenericInputPrompt.Prompt(
+        view,
+        plugin,
         app,
         header,
         placeholder,
         value,
         buttons,
+        lines,
+        displayEditorButtons,
+        customComponents
       );
     } catch {
       return undefined;

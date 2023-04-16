@@ -205,6 +205,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "refreshTextElementSize",
+    code: 'refreshTextElementSize(id: string);',
+    desc: "Refreshes the size of the text element. Intended to be used when you copyViewElementsToEAforEditing() and then change the text in a text element and want to update the size of the text element to fit the modifid contents.",
+    after: "",
+  },
+  {
     field: "addText",
     code: 'addText(topX: number, topY: number, text: string, formatting?: {wrapAt?: number; width?: number; height?: number; textAlign?: "left" | "center" | "right"; textVerticalAlign: "top" | "middle" | "bottom"; box?: boolean | "box" | "blob" | "ellipse" | "diamond"; boxPadding?: number; boxStrokeColor?: string;}, id?: string,): string;',
     desc: "If box is !null, then text will be boxed\nThe function returns the id of the TextElement. If the text element is boxed i.e. it is a sticky note, then the id of the container object",
@@ -515,9 +521,11 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
 export const EXCALIDRAW_SCRIPTENGINE_INFO: SuggesterInfo[] = [
   {
     field: "inputPrompt",
-    code: "inputPrompt: (header: string, placeholder?: string, value?: string, buttons?: [{caption:string, action:Function}]);",
+    code: "inputPrompt: (header: string, placeholder?: string, value?: string, buttons?: [{caption:string, action:Function}], lines?: number, displayEditorButtons?: boolean, customComponents?: (container: HTMLElement) => void);",
     desc:
       "Opens a prompt that asks for an input.\nReturns a string with the input.\nYou need to await the result of inputPrompt.\n" +
+      "Editor buttons are text editing buttons like delete, enter, allcaps - these are only displayed if lines > 1 \n" +
+      "Custom components are components that you can add to the prompt. These will be displayed between the text input area and the buttons.\n" +
       "buttons.action(input: string) => string\nThe button action function will receive the actual input string. If action returns null, input will be unchanged. If action returns a string, input will receive that value when the promise is resolved. " +
       "example:\n<code>let fileType = '';\nconst filename = await utils.inputPrompt (\n  'Filename',\n  '',\n  '',\n,  [\n    {\n      caption: 'Markdown',\n      action: ()=>{fileType='md';return;}\n    },\n    {\n      caption: 'Excalidraw',\n      action: ()=>{fileType='ex';return;}\n    }\n  ]\n);</code>",
     after: "",

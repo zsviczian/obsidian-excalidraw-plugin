@@ -1,7 +1,7 @@
 /*
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-set-background-color-of-unclosed-line.jpg)
 
-Use this script to set the background color of unclosed (i.e. open) line and freedraw objects by creating a clone of the object. The script will set the stroke color of the clone to transparent and will add a straight line to close the object. Use settings to define the default background color, the fill style, and the strokeWidth of the clone. By default the clone will be grouped with the original object, you can disable this also in settings.
+Use this script to set the background color of unclosed (i.e. open) line, arrow and freedraw objects by creating a clone of the object. The script will set the stroke color of the clone to transparent and will add a straight line to close the object. Use settings to define the default background color, the fill style, and the strokeWidth of the clone. By default the clone will be grouped with the original object, you can disable this also in settings.
 
 ```javascript
 */
@@ -41,9 +41,9 @@ const backgroundColor = settings["Background Color"].value;
 const fillStyle = settings["Fill Style"].value;
 const shouldGroup = settings["Group 'shadow' with original"].value;
 
-const elements = ea.getViewSelectedElements().filter(el=>el.type==="line" || el.type==="freedraw");
+const elements = ea.getViewSelectedElements().filter(el=>el.type==="line" || el.type==="freedraw" || el.type==="arrow");
 if(elements.length === 0) {
-	new Notice("No line or freedraw object is selected");
+  new Notice("No line or freedraw object is selected");
 }
 
 ea.copyViewElementsToEAforEditing(elements);
@@ -52,19 +52,20 @@ elementsToMove = [];
 elements.forEach((el)=>{
   const newEl = ea.cloneElement(el);
   ea.elementsDict[newEl.id] = newEl;
-	newEl.roughness = 1;
-	if(!inheritStrokeWidth) newEl.strokeWidth = 2;
+  newEl.roughness = 1;
+  if(!inheritStrokeWidth) newEl.strokeWidth = 2;
   newEl.strokeColor = "transparent";
   newEl.backgroundColor = backgroundColor;
-	newEl.fillStyle = fillStyle;
-	const i = el.points.length-1;
-	newEl.points.push([ 
-    //adding an extra point close to the last point in case distance is long from last point to origin and there is a sharp bend. This will avoid a spike due to a tight curve.
-		el.points[i][0]*0.9,
+  newEl.fillStyle = fillStyle;
+  if (newEl.type === "arrow") newEl.type = "line";
+  const i = el.points.length-1;
+  newEl.points.push([ 
+  //adding an extra point close to the last point in case distance is long from last point to origin and there is a sharp bend. This will avoid a spike due to a tight curve.
+    el.points[i][0]*0.9,
     el.points[i][1]*0.9,
-	]);
+  ]);
   newEl.points.push([0,0]);
-	if(shouldGroup) ea.addToGroup([el.id,newEl.id]);
+  if(shouldGroup) ea.addToGroup([el.id,newEl.id]);
   elementsToMove.push({fillId: newEl.id, shapeId: el.id});
 });
 
@@ -72,9 +73,9 @@ await ea.addElementsToView(false,false);
 elementsToMove.forEach((x)=>{
   const viewElements = ea.getViewElements();
   ea.moveViewElementToZIndex(
-		x.fillId,
+    x.fillId,
     viewElements.indexOf(viewElements.filter(el=>el.id === x.shapeId)[0])-1
-	)
+  )
 });
 
 ea.selectElementsInView(ea.getElements());

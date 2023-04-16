@@ -156,6 +156,7 @@ export class ObsidianMenu {
   }
 
   renderPinnedScriptButtons = (isMobile: boolean, appState: AppState) => {
+    let prevClickTimestamp = 0;
     return (
       appState?.pinnedScripts?.map((key,index)=>{ //pinned scripts
         const scriptProp = this.plugin.scriptEngine.scriptIconMap[key];
@@ -192,24 +193,29 @@ export class ObsidianMenu {
               }
             }}
             onPointerDown={()=>{
-              longpressTimout = window.setTimeout(
-                () => {
-                  longpressTimout = 0;
-                  (async () =>{
-                    await this.plugin.loadSettings();
-                    const index = this.plugin.settings.pinnedScripts.indexOf(key)
-                    if(index > -1) {
-                      this.plugin.settings.pinnedScripts.splice(index,1);
-                      this.view.excalidrawAPI?.setToast({message:`Pin removed: ${name}`, duration: 3000, closable: true});
-                    } 
-                    await this.plugin.saveSettings();
-                    app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
-                      if (v.view instanceof ExcalidrawView) v.view.updatePinnedScripts()
-                    })
-                    })()
-                },
-                1500
-              )
+              const now = Date.now();
+              if(longpressTimout>0) window.clearTimeout(longpressTimout);
+              if(now-prevClickTimestamp >= 500) {
+                longpressTimout = window.setTimeout(
+                  () => {
+                    longpressTimout = 0;
+                    (async () =>{
+                      await this.plugin.loadSettings();
+                      const index = this.plugin.settings.pinnedScripts.indexOf(key)
+                      if(index > -1) {
+                        this.plugin.settings.pinnedScripts.splice(index,1);
+                        this.view.excalidrawAPI?.setToast({message:`Pin removed: ${name}`, duration: 3000, closable: true});
+                      } 
+                      await this.plugin.saveSettings();
+                      app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
+                        if (v.view instanceof ExcalidrawView) v.view.updatePinnedScripts()
+                      })
+                      })()
+                  },
+                  1500
+                )
+              }
+              prevClickTimestamp = now;
             }}
           >
             <div className="ToolIcon__icon" aria-label={name}>

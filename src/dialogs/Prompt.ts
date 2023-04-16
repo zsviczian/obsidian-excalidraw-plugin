@@ -8,13 +8,19 @@ import {
   Instruction,
   TFile,
   Notice,
+  TextAreaComponent,
+  ToggleComponent,
+  Setting,
 } from "obsidian";
 import ExcalidrawView from "../ExcalidrawView";
 import ExcalidrawPlugin from "../main";
 import { sleep } from "../utils/Utils";
 import { getLeaf, getNewOrAdjacentLeaf } from "../utils/ObsidianUtils";
 import { checkAndCreateFolder, splitFolderAndFilename } from "src/utils/FileUtils";
-import { KeyEvent, PaneTarget } from "src/utils/ModifierkeyHelper";
+import { KeyEvent, PaneTarget, isCTRL } from "src/utils/ModifierkeyHelper";
+import { t } from "lib/lang/helpers";
+import { CTRL_OR_CMD } from "lib/Constants";
+import { text } from "stream/consumers";
 
 export class Prompt extends Modal {
   private promptEl: HTMLInputElement;
@@ -73,43 +79,70 @@ export class Prompt extends Modal {
 
 export class GenericInputPrompt extends Modal {
   public waitForClose: Promise<string>;
-
+  private view: ExcalidrawView;
+  private plugin: ExcalidrawPlugin;
   private resolvePromise: (input: string) => void;
   private rejectPromise: (reason?: any) => void;
   private didSubmit: boolean = false;
-  private inputComponent: TextComponent;
+  private inputComponent: TextAreaComponent;
   private input: string;
   private buttons: { caption: string; action: Function }[];
+  private lines: number = 1;
+  private displayEditorButtons: boolean = false;
   private readonly placeholder: string;
+  private selectionStart: number = 0;
+  private selectionEnd: number = 0;
+  private selectionUpdateTimer: number = 0;
+  private customComponents: (container: HTMLElement) => void;
 
   public static Prompt(
+    view: ExcalidrawView,
+    plugin: ExcalidrawPlugin,
     app: App,
     header: string,
     placeholder?: string,
     value?: string,
     buttons?: { caption: string; action: Function }[],
+    lines?: number,
+    displayEditorButtons?: boolean,
+    customComponents?: (container: HTMLElement) => void,
   ): Promise<string> {
     const newPromptModal = new GenericInputPrompt(
+      view,
+      plugin,
       app,
       header,
       placeholder,
       value,
       buttons,
+      lines,
+      displayEditorButtons,
+      customComponents
     );
     return newPromptModal.waitForClose;
   }
 
   protected constructor(
+    view: ExcalidrawView,
+    plugin: ExcalidrawPlugin,
     app: App,
     private header: string,
     placeholder?: string,
     value?: string,
     buttons?: { caption: string; action: Function }[],
+    lines?: number,
+    displayEditorButtons?: boolean,
+    customComponents?: (container: HTMLElement) => void,
   ) {
     super(app);
+    this.view = view;
+    this.plugin = plugin;
     this.placeholder = placeholder;
     this.input = value;
     this.buttons = buttons;
+    this.lines = lines ?? 1;
+    this.displayEditorButtons = this.lines > 1 ? (displayEditorButtons ?? false) : false;
+    this.customComponents = customComponents;
 
     this.waitForClose = new Promise<string>((resolve, reject) => {
       this.resolvePromise = resolve;
@@ -117,6 +150,7 @@ export class GenericInputPrompt extends Modal {
     });
 
     this.display();
+    this.inputComponent.inputEl.focus();
     this.open();
   }
 
@@ -128,8 +162,9 @@ export class GenericInputPrompt extends Modal {
     this.inputComponent = this.createInputField(
       mainContentContainer,
       this.placeholder,
-      this.input,
+      this.input
     );
+    this.customComponents?.(mainContentContainer);
     this.createButtonBar(mainContentContainer);
   }
 
@@ -138,15 +173,38 @@ export class GenericInputPrompt extends Modal {
     placeholder?: string,
     value?: string,
   ) {
-    const textComponent = new TextComponent(container);
+    const textComponent = new TextAreaComponent(container);
 
     textComponent.inputEl.style.width = "100%";
+    textComponent.inputEl.style.height = `${this.lines*2}em`;
+    if(this.lines === 1) {
+      textComponent.inputEl.style.resize = "none";
+      textComponent.inputEl.style.overflow = "hidden";
+    }
     textComponent
       .setPlaceholder(placeholder ?? "")
       .setValue(value ?? "")
-      .onChange((value) => (this.input = value))
-      .inputEl.addEventListener("keydown", this.submitEnterCallback);
+      .onChange((value) => (this.input = value));
 
+    let i = 0;
+    const checkcaret = () => {
+      //timer is implemented because on iPad with pencil the button click generates an event on the textarea
+      this.selectionUpdateTimer = this.view.ownerWindow.setTimeout(() => {
+        this.selectionStart = this.inputComponent.inputEl.selectionStart;
+        this.selectionEnd = this.inputComponent.inputEl.selectionEnd;
+      }, 30);
+    }
+
+    textComponent.inputEl.addEventListener("keydown", this.keyDownCallback);
+    textComponent.inputEl.addEventListener('keyup', checkcaret); // Every character written
+    textComponent.inputEl.addEventListener('pointerup', checkcaret); // Click down
+    textComponent.inputEl.addEventListener('touchend', checkcaret); // Click down
+    textComponent.inputEl.addEventListener('input', checkcaret); // Other input events
+    textComponent.inputEl.addEventListener('paste', checkcaret); // Clipboard actions
+    textComponent.inputEl.addEventListener('cut', checkcaret);
+    textComponent.inputEl.addEventListener('select', checkcaret); // Some browsers support this event
+    textComponent.inputEl.addEventListener('selectionchange', checkcaret);// Some browsers support this event
+      
     return textComponent;
   }
 
@@ -154,18 +212,31 @@ export class GenericInputPrompt extends Modal {
     container: HTMLElement,
     text: string,
     callback: (evt: MouseEvent) => any,
+    tooltip: string = "",
+    margin: string = "5px",
   ) {
     const btn = new ButtonComponent(container);
+    btn.buttonEl.style.padding = "0.5em";
+    btn.buttonEl.style.marginLeft = margin;
+    btn.setTooltip(tooltip);
     btn.setButtonText(text).onClick(callback);
     return btn;
   }
 
   private createButtonBar(mainContentContainer: HTMLDivElement) {
     const buttonBarContainer: HTMLDivElement = mainContentContainer.createDiv();
+    buttonBarContainer.style.display = "flex";
+    buttonBarContainer.style.justifyContent = "space-between";
+    buttonBarContainer.style.marginTop = "1rem";
+
+    const editorButtonContainer: HTMLDivElement = buttonBarContainer.createDiv();
+
+    const actionButtonContainer: HTMLDivElement = buttonBarContainer.createDiv();
+
     if (this.buttons && this.buttons.length > 0) {
       let b = null;
       for (const button of this.buttons) {
-        const btn = new ButtonComponent(buttonBarContainer);
+        const btn = new ButtonComponent(actionButtonContainer);
         btn.buttonEl.style.marginLeft="5px";
         btn.setButtonText(button.caption).onClick((evt: MouseEvent) => {
           const res = button.action(this.input);
@@ -182,27 +253,80 @@ export class GenericInputPrompt extends Modal {
       }
     } else {
       this.createButton(
-        buttonBarContainer,
-        "Ok",
+        actionButtonContainer,
+        "✅",
         this.submitClickCallback,
       ).setCta().buttonEl.style.marginRight = "0";
     }
-    this.createButton(buttonBarContainer, "Cancel", this.cancelClickCallback);
+    this.createButton(actionButtonContainer, "❌", this.cancelClickCallback, "Cancel");
+    if(this.displayEditorButtons) {
+      this.createButton(editorButtonContainer, "⏎", ()=>this.insertStringBtnClickCallback("\n"), "Insert new line", "0");
+      this.createButton(editorButtonContainer, "⌫", this.delBtnClickCallback, "Delete");
+      this.createButton(editorButtonContainer, "⎵", ()=>this.insertStringBtnClickCallback(" "), "Insert space");
+      if(this.view) {
+        this.createButton(editorButtonContainer, "🔗", this.linkBtnClickCallback, "Insert markdown link to file");
+      }
+      this.createButton(editorButtonContainer, "🔠", this.uppercaseBtnClickCallback, "Uppercase");
+    }
+  }
 
-    buttonBarContainer.style.display = "flex";
-    buttonBarContainer.style.flexDirection = "row-reverse";
-    buttonBarContainer.style.justifyContent = "flex-start";
-    buttonBarContainer.style.marginTop = "1rem";
+  private linkBtnClickCallback = () => {
+    this.view.ownerWindow.clearTimeout(this.selectionUpdateTimer); //timer is implemented because on iPad with pencil the button click generates an event on the textarea
+    const addText = (text: string) => {
+      const newVal = this.inputComponent.inputEl.value.slice(0, this.selectionStart) + text + this.inputComponent.inputEl.value.slice(this.selectionStart);
+      this.inputComponent.inputEl.value = newVal;
+      this.input = this.inputComponent.inputEl.value;
+      this.inputComponent.inputEl.focus();
+      this.inputComponent.inputEl.setSelectionRange(this.selectionStart+text.length, this.selectionStart+text.length);
+    }
+    this.plugin.insertLinkDialog.start(this.view.file.path, addText);
+  }
+
+  private insertStringBtnClickCallback = (s: string) => {
+    this.view.ownerWindow.clearTimeout(this.selectionUpdateTimer); //timer is implemented because on iPad with pencil the button click generates an event on the textarea
+    const newVal = this.inputComponent.inputEl.value.slice(0, this.selectionStart) + s + this.inputComponent.inputEl.value.slice(this.selectionStart);
+    this.inputComponent.inputEl.value = newVal;
+    this.input = this.inputComponent.inputEl.value;
+    this.inputComponent.inputEl.focus();
+    this.inputComponent.inputEl.setSelectionRange(this.selectionStart+1, this.selectionStart+1);
+  }
+  
+  private delBtnClickCallback = () => {
+    this.view.ownerWindow.clearTimeout(this.selectionUpdateTimer); //timer is implemented because on iPad with pencil the button click generates an event on the textarea
+    if(this.input.length === 0) return;
+    const delStart = this.selectionEnd > this.selectionStart 
+      ? this.selectionStart
+      : this.selectionStart > 0 ? this.selectionStart-1 : 0;
+    const delEnd = this.selectionEnd;
+    const newVal = this.inputComponent.inputEl.value.slice(0, delStart ) + this.inputComponent.inputEl.value.slice(delEnd);
+    this.inputComponent.inputEl.value = newVal;
+    this.input = this.inputComponent.inputEl.value;
+    this.inputComponent.inputEl.focus();
+    this.inputComponent.inputEl.setSelectionRange(delStart, delStart);
+  }
+
+  private uppercaseBtnClickCallback = () => {
+    this.view.ownerWindow.clearTimeout(this.selectionUpdateTimer); //timer is implemented because on iPad with pencil the button click generates an event on the textarea
+    if(this.selectionEnd === this.selectionStart) return;
+    const newVal = this.inputComponent.inputEl.value.slice(0, this.selectionStart) + this.inputComponent.inputEl.value.slice(this.selectionStart, this.selectionEnd).toUpperCase() + this.inputComponent.inputEl.value.slice(this.selectionEnd);
+    this.inputComponent.inputEl.value = newVal;
+    this.input = this.inputComponent.inputEl.value;
+    this.inputComponent.inputEl.focus();
+    this.inputComponent.inputEl.setSelectionRange(this.selectionStart, this.selectionEnd);
   }
 
   private submitClickCallback = () => this.submit();
   private cancelClickCallback = () => this.cancel();
 
-  private submitEnterCallback = (evt: KeyboardEvent) => {
-    if (evt.key === "Enter") {
+  private keyDownCallback = (evt: KeyboardEvent) => {
+    if ((evt.key === "Enter" && this.lines === 1) || (isCTRL(evt) && evt.key === "Enter")) {
       evt.preventDefault();
       this.submit();
     }
+    if (this.displayEditorButtons && evt.key === "k" && isCTRL(evt)) {
+      evt.preventDefault();
+      this.linkBtnClickCallback();
+    } 
   };
 
   private submit() {
@@ -225,7 +349,7 @@ export class GenericInputPrompt extends Modal {
   private removeInputListener() {
     this.inputComponent?.inputEl?.removeEventListener(
       "keydown",
-      this.submitEnterCallback,
+      this.keyDownCallback,
     );
   }
 
