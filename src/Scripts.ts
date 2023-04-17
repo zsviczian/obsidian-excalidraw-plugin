@@ -8,7 +8,7 @@ import {
 import { PLUGIN_ID, VIEW_TYPE_EXCALIDRAW } from "./Constants";
 import ExcalidrawView from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
-import { GenericInputPrompt, GenericSuggester } from "./dialogs/Prompt";
+import { ButtonDefinition, GenericInputPrompt, GenericSuggester } from "./dialogs/Prompt";
 import { getIMGFilename } from "./utils/FileUtils";
 import { splitFolderAndFilename } from "./utils/FileUtils";
 
@@ -224,7 +224,7 @@ export class ScriptEngine {
         header: string,
         placeholder?: string,
         value?: string,
-        buttons?: [{ caption: string; action: Function }],
+        buttons?: ButtonDefinition[],
         lines?: number,
         displayEditorButtons?: boolean,
         customComponents?: (container: HTMLElement) => void,
@@ -282,7 +282,7 @@ export class ScriptEngine {
     header: string,
     placeholder?: string,
     value?: string,
-    buttons?: { caption: string; action: Function }[],
+    buttons?: ButtonDefinition[],
     lines?: number,
     displayEditorButtons?: boolean,
     customComponents?: (container: HTMLElement) => void

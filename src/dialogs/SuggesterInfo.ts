@@ -521,7 +521,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
 export const EXCALIDRAW_SCRIPTENGINE_INFO: SuggesterInfo[] = [
   {
     field: "inputPrompt",
-    code: "inputPrompt: (header: string, placeholder?: string, value?: string, buttons?: [{caption:string, action:Function}], lines?: number, displayEditorButtons?: boolean, customComponents?: (container: HTMLElement) => void);",
+    code: "inputPrompt: (header: string, placeholder?: string, value?: string, buttons?: {caption:string, tooltip?:string, action:Function}[], lines?: number, displayEditorButtons?: boolean, customComponents?: (container: HTMLElement) => void);",
     desc:
       "Opens a prompt that asks for an input.\nReturns a string with the input.\nYou need to await the result of inputPrompt.\n" +
       "Editor buttons are text editing buttons like delete, enter, allcaps - these are only displayed if lines > 1 \n" +

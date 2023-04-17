@@ -155,6 +155,8 @@ export class ObsidianMenu {
     )
   }
 
+  private longpressTimeout : { [key: number]: number } = {};
+
   renderPinnedScriptButtons = (isMobile: boolean, appState: AppState) => {
     let prevClickTimestamp = 0;
     return (
@@ -164,7 +166,7 @@ export class ObsidianMenu {
         const icon = scriptProp?.svgString
           ? stringToSVG(scriptProp.svgString)
           : ICONS.cog;
-        let longpressTimout = 0;
+        if(!this.longpressTimeout[index]) this.longpressTimeout[index] = 0;
         return (
           <label
             key = {index}
@@ -175,10 +177,10 @@ export class ObsidianMenu {
                 "is-mobile": isMobile,
               },
             )}
-            onClick={() => {
-              if(longpressTimout) {
-                window.clearTimeout(longpressTimout);
-                longpressTimout = 0;
+            onPointerUp={() => {
+              if(this.longpressTimeout[index]) {
+                window.clearTimeout(this.longpressTimeout[index]);
+                this.longpressTimeout[index] = 0;
                 (async ()=>{
                   const f = app.vault.getAbstractFileByPath(key);
                   if (f && f instanceof TFile) {
@@ -194,11 +196,14 @@ export class ObsidianMenu {
             }}
             onPointerDown={()=>{
               const now = Date.now();
-              if(longpressTimout>0) window.clearTimeout(longpressTimout);
+              if(this.longpressTimeout[index]>0) {
+                window.clearTimeout(this.longpressTimeout[index]);
+                this.longpressTimeout[index] = 0;
+              }
               if(now-prevClickTimestamp >= 500) {
-                longpressTimout = window.setTimeout(
+                this.longpressTimeout[index] = window.setTimeout(
                   () => {
-                    longpressTimout = 0;
+                    this.longpressTimeout[index] = 0;
                     (async () =>{
                       await this.plugin.loadSettings();
                       const index = this.plugin.settings.pinnedScripts.indexOf(key)

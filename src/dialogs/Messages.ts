@@ -17,6 +17,34 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.8.24": `
+## Updates from Excalidraw.com
+- fix: color picker keyboard handling not working
+- fix: center align text when bind to the container via context menu
+- fix: split "Edit selected shape" shortcut
+
+## Fixed
+- BUG: Area embed link of svg inside excalidraw embed entire svg instead of area [#1098](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1098)
+
+## New
+- I updated the [Scribble Helper](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Scribble%20Helper.md) script with tons of new features. I am still beta testing the script. I will release a demo video in the next few days.
+
+## New in Excalidraw Automate
+- I added many more configuration options for the scriptEngine utils.inputPrompt function. See [Scribble Helper](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Scribble%20Helper.md) for a demonstration of this new feature.
+${String.fromCharCode(96,96,96)}typescript
+  public static async inputPrompt(
+    view: ExcalidrawView,
+    plugin: ExcalidrawPlugin,
+    app: App,
+    header: string,
+    placeholder?: string,
+    value?: string,
+    buttons?: { caption: string; tooltip?:string; action: Function }[],
+    lines?: number,
+    displayEditorButtons?: boolean,
+    customComponents?: (container: HTMLElement) => void
+  )
+${String.fromCharCode(96,96,96)}`,
 "1.8.23": `
 ## Fixes
 - Fixed palm rejection to prevent unwanted spikes when using the freedraw tool. ([#1065](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1065))

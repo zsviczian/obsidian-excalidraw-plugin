@@ -182,8 +182,9 @@ const getIMG = async (
     return null;
   }
   svg = embedFontsInSVG(svg, plugin);
-  //svg.removeAttribute("width");
-  //svg.removeAttribute("height");
+  //need to remove width and height attributes to support area= embeds
+  svg.removeAttribute("width");
+  svg.removeAttribute("height");
   img.setAttribute("src", svgToBase64(svg.outerHTML));
   return img;
 };

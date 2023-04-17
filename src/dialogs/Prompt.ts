@@ -2,25 +2,21 @@ import {
   App,
   ButtonComponent,
   Modal,
-  TextComponent,
   FuzzyMatch,
   FuzzySuggestModal,
   Instruction,
   TFile,
   Notice,
   TextAreaComponent,
-  ToggleComponent,
-  Setting,
 } from "obsidian";
 import ExcalidrawView from "../ExcalidrawView";
 import ExcalidrawPlugin from "../main";
 import { sleep } from "../utils/Utils";
-import { getLeaf, getNewOrAdjacentLeaf } from "../utils/ObsidianUtils";
+import { getLeaf } from "../utils/ObsidianUtils";
 import { checkAndCreateFolder, splitFolderAndFilename } from "src/utils/FileUtils";
-import { KeyEvent, PaneTarget, isCTRL } from "src/utils/ModifierkeyHelper";
-import { t } from "lib/lang/helpers";
-import { CTRL_OR_CMD } from "lib/Constants";
-import { text } from "stream/consumers";
+import { KeyEvent, isCTRL } from "src/utils/ModifierkeyHelper";
+
+export type ButtonDefinition = { caption: string; tooltip?:string; action: Function };
 
 export class Prompt extends Modal {
   private promptEl: HTMLInputElement;
@@ -86,7 +82,7 @@ export class GenericInputPrompt extends Modal {
   private didSubmit: boolean = false;
   private inputComponent: TextAreaComponent;
   private input: string;
-  private buttons: { caption: string; action: Function }[];
+  private buttons: ButtonDefinition[];
   private lines: number = 1;
   private displayEditorButtons: boolean = false;
   private readonly placeholder: string;
@@ -102,7 +98,7 @@ export class GenericInputPrompt extends Modal {
     header: string,
     placeholder?: string,
     value?: string,
-    buttons?: { caption: string; action: Function }[],
+    buttons?: ButtonDefinition[],
     lines?: number,
     displayEditorButtons?: boolean,
     customComponents?: (container: HTMLElement) => void,
@@ -238,6 +234,7 @@ export class GenericInputPrompt extends Modal {
       for (const button of this.buttons) {
         const btn = new ButtonComponent(actionButtonContainer);
         btn.buttonEl.style.marginLeft="5px";
+        if(button.tooltip) btn.setTooltip(button.tooltip);
         btn.setButtonText(button.caption).onClick((evt: MouseEvent) => {
           const res = button.action(this.input);
           if (res) {
