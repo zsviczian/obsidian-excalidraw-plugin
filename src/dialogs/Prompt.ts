@@ -183,6 +183,7 @@ export class GenericInputPrompt extends Modal {
       .onChange((value) => (this.input = value));
 
     let i = 0;
+
     const checkcaret = () => {
       //timer is implemented because on iPad with pencil the button click generates an event on the textarea
       this.selectionUpdateTimer = this.view.ownerWindow.setTimeout(() => {
@@ -274,7 +275,10 @@ export class GenericInputPrompt extends Modal {
       this.inputComponent.inputEl.value = newVal;
       this.input = this.inputComponent.inputEl.value;
       this.inputComponent.inputEl.focus();
-      this.inputComponent.inputEl.setSelectionRange(this.selectionStart+text.length, this.selectionStart+text.length);
+      this.selectionStart = this.selectionStart+text.length;
+      this.selectionEnd = this.selectionStart+text.length;
+      this.inputComponent.inputEl.setSelectionRange(this.selectionStart, this.selectionStart);
+
     }
     this.plugin.insertLinkDialog.start(this.view.file.path, addText);
   }
@@ -285,7 +289,9 @@ export class GenericInputPrompt extends Modal {
     this.inputComponent.inputEl.value = newVal;
     this.input = this.inputComponent.inputEl.value;
     this.inputComponent.inputEl.focus();
-    this.inputComponent.inputEl.setSelectionRange(this.selectionStart+1, this.selectionStart+1);
+    this.selectionStart = this.selectionStart+1;
+    this.selectionEnd = this.selectionStart;
+    this.inputComponent.inputEl.setSelectionRange(this.selectionStart, this.selectionEnd);
   }
   
   private delBtnClickCallback = () => {
@@ -299,6 +305,8 @@ export class GenericInputPrompt extends Modal {
     this.inputComponent.inputEl.value = newVal;
     this.input = this.inputComponent.inputEl.value;
     this.inputComponent.inputEl.focus();
+    this.selectionStart = delStart;
+    this.selectionEnd = delStart;
     this.inputComponent.inputEl.setSelectionRange(delStart, delStart);
   }
 
