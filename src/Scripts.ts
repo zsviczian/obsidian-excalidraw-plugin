@@ -228,6 +228,7 @@ export class ScriptEngine {
         lines?: number,
         displayEditorButtons?: boolean,
         customComponents?: (container: HTMLElement) => void,
+        blockPointerInputOutsideModal?: boolean,
       ) =>
         ScriptEngine.inputPrompt(
           view,
@@ -240,6 +241,7 @@ export class ScriptEngine {
           lines,
           displayEditorButtons,
           customComponents,
+          blockPointerInputOutsideModal,
         ),
       suggester: (
         displayItems: string[],
@@ -285,7 +287,8 @@ export class ScriptEngine {
     buttons?: ButtonDefinition[],
     lines?: number,
     displayEditorButtons?: boolean,
-    customComponents?: (container: HTMLElement) => void
+    customComponents?: (container: HTMLElement) => void,
+    blockPointerInputOutsideModal?: boolean,
   ) {
     try {
       return await GenericInputPrompt.Prompt(
@@ -298,7 +301,8 @@ export class ScriptEngine {
         buttons,
         lines,
         displayEditorButtons,
-        customComponents
+        customComponents,
+        blockPointerInputOutsideModal,
       );
     } catch {
       return undefined;

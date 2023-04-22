@@ -1,16 +1,16 @@
 /*
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-scribble-helper.jpg)
 
-iOS scribble helper for better handwriting experience with text elements. If no elements are selected then the script creates a text element at the pointer position and you can use the edit box to modify the text with scribble. If a text element is selected then the script opens the input prompt where you can modify this text with scribble.
+Scribble Helper can improve handwriting and add links. It lets you create and edit text elements, including wrapped text and sticky notes, by double-tapping on the canvas. When you run the script, it creates an event handler that will activate the editor when you double-tap. If you select a text element on the canvas before running the script, it will open the editor for that element. If you use a pen, you can set it up to only activate Scribble Helper when you double-tap with the pen. The event handler is removed when you run the script a second time or switch to a different tab.
 
 ```javascript
 */
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.8.24")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.8.25")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
 
-//const helpLINK = "https://youtu.be/MIZ5hv-pSSs";
+const helpLINK = "https://youtu.be/BvYkOaly-QM";
 const DBLCLICKTIMEOUT = 300;
 const maxWidth = 600;
 const padding = 6;
@@ -84,21 +84,6 @@ let containerElements = ea.getViewSelectedElements()
   .filter(el=>["arrow","rectangle","ellipse","line","diamond"].contains(el.type));
 let selectedTextElements = ea.getViewSelectedElements().filter(el=>el.type==="text");
 
-let textLocationCache = {};
-//Address text jumping on mobile when keyboard is popping up
-//This should really be solved in the core product, but that is not yet happening
-const cacheTextElCoords = () => {
-  if(selectedTextElements.length === 1) {
-    textLocationCache.x = selectedTextElements[0].x;
-    textLocationCache.y = selectedTextElements[0].y;
-    return;
-  }
-  delete textLocationCache.x;
-  delete textLocationCache.y;
-}
-const isLocationCacheValid = () => !(typeof textLocationCache.x === "undefined");
-cacheTextElCoords();
-
 //-------------------------------------------
 // Functions to add and remove event listners
 //-------------------------------------------
@@ -124,7 +109,7 @@ if (win.ExcalidrawScribbleHelper?.eventHandler) {
   delete win.ExcalidrawScribbleHelper.eventHandler;
   delete win.ExcalidrawScribbleHelper.window;
   if(!(containerElements.length === 1 || selectedTextElements.length === 1)) {
-    new Notice ("Scribble Helper was stopped");
+    new Notice ("Scribble Helper was stopped",1000);
     return;
   }
   silent = true;
@@ -143,8 +128,8 @@ let timer = Date.now();
 let eventHandler = () => {};
 
 const customControls =  (container) => {
-  //const helpDIV = container.createDiv();
-  //helpDIV.innerHTML = `<a href="${helpLINK}" target="_blank">Click here for help</a>`;
+  const helpDIV = container.createDiv();
+  helpDIV.innerHTML = `<a href="${helpLINK}" target="_blank">Click here for help</a>`;
   const viewBackground = api.getAppState().viewBackgroundColor;
   const el1 = new ea.obsidian.Setting(container)
     .setName(`Text color`)
@@ -183,11 +168,13 @@ const customControls =  (container) => {
 eventHandler = async (evt) => {
   if(windowOpen) return;
   if(ea.targetView !== app.workspace.activeLeaf.view) removeEventHandler(eventHandler);
-  if(evt && (evt.ctrlKey || evt.altKey || evt.metaKey || evt.shiftKey)) return;
+  if(evt && evt.target && !evt.target.hasClass("excalidraw__canvas")) return;
+  if(evt && (evt.ctrlKey || evt.altKey || evt.metaKey || evt.shiftKey)) return;  
   const st = api.getAppState();
   win.ExcalidrawScribbleHelper.penDetected = st.penDetected;
-
-  if(st.editingElement) return; //don't trigger text editor when editing a line or arrow
+  
+  //don't trigger text editor when editing a line or arrow
+  if(st.editingElement && ["arrow","line"].contains(st.editingElment.type)) return; 
   
   if(typeof win.ExcalidrawScribbleHelper.penOnly === "undefined") {
     win.ExcalidrawScribbleHelper.penOnly = false;
@@ -277,20 +264,22 @@ eventHandler = async (evt) => {
   if(win.ExcalidrawScribbleHelper.action === "Wrap") actionButtons.push(actionButtons.shift());
 
   ea.style.strokeColor = st.currentItemStrokeColor ?? ea.style.strokeColor;
+  ea.style.roughness = st.currentItemRoughness ?? ea.style.roughness;
+  ea.setStrokeSharpness(st.currentItemRoundness === "round" ? 0 : st.currentItemRoundness)
   ea.style.backgroundColor = st.currentItemBackgroundColor ?? ea.style.backgroundColor;
   ea.style.fillStyle = st.currentItemFillStyle ?? ea.style.fillStyle;
   ea.style.fontFamily = st.currentItemFontFamily ?? ea.style.fontFamily;
   ea.style.fontSize = st.currentItemFontSize ?? ea.style.fontSize;
   ea.style.textAlign = (container && ["arrow","line"].contains(container.type))
     ? "center"
-    : st.currentItemTextAlign ?? ea.style.textAlign;
-  ea.style.verticalAlign = (container && ["arrow","line"].contains(container.type))
-    ? "middle"
-    : ea.style.verticalAlign;
+    : (container && ["rectangle","diamond","ellipse"].contains(container.type))
+      ? "center"
+      : st.currentItemTextAlign ?? "center";
+  ea.style.verticalAlign = "middle";
 
   windowOpen = true;
   const text = await utils.inputPrompt (
-    "Edit text", "", "", containerID?undefined:actionButtons, 5, true, customControls
+    "Edit text", "", "", containerID?undefined:actionButtons, 5, true, customControls, true
   );
   windowOpen = false;
 
@@ -307,6 +296,10 @@ eventHandler = async (evt) => {
   if(!container && (win.ExcalidrawScribbleHelper.action === "Wrap")) {
     ea.style.backgroundColor = "transparent";
     ea.style.strokeColor = "transparent";
+  }
+
+  if(!container && (win.ExcalidrawScribbleHelper.action === "Sticky")) {
+    textEl.textAlign = "center";
   }
 
   const boxes = [];
@@ -336,6 +329,9 @@ eventHandler = async (evt) => {
   boxes.push(containerID);
   container.boundElements=[{type:"text",id: textId}];
   textEl.containerId = containerID;
+  //ensuring the correct order of elements, first container, then text
+  delete ea.elementsDict[textEl.id];
+  ea.elementsDict[textEl.id] = textEl;
 
   await ea.addElementsToView(false,false,true);
   const containers = ea.getViewElements().filter(el=>boxes.includes(el.id));
@@ -350,14 +346,9 @@ const editExistingTextElement = async (elements) => {
   windowOpen = true;
   ea.copyViewElementsToEAforEditing(elements);
   const el = ea.getElements()[0];
-  //this is a hack to address jumping text
-  if(isLocationCacheValid()) {
-    el.x = textLocationCache.x;
-    el.y = textLocationCache.y;
-  }
   ea.style.strokeColor = el.strokeColor;
   const text = await utils.inputPrompt(
-    "Edit text","",elements[0].rawText,undefined,5,true,customControls
+    "Edit text","",elements[0].rawText,undefined,5,true,customControls,true
   ); 
   windowOpen = false;
   if(!text) return;
@@ -380,9 +371,10 @@ const editExistingTextElement = async (elements) => {
 //--------------
 if(!win.ExcalidrawScribbleHelper?.eventHandler) {
   if(!silent) new Notice(
-    "Double click the screen to create a new text element, " +
-    "or double click an element to add or edit text\nClick the script again or move to " +
-    "another Obsidian-tab to stop the script"
+    "To create a new text element,\ndouble-tap the screen.\n\n" +
+    "To edit text,\ndouble-tap an existing element.\n\n" +
+    "To stop the script,\ntap it again or switch to a different tab.",
+    5000
   );
   addEventHandler(eventHandler);
 }

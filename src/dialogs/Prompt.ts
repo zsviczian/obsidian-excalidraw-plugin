@@ -90,6 +90,7 @@ export class GenericInputPrompt extends Modal {
   private selectionEnd: number = 0;
   private selectionUpdateTimer: number = 0;
   private customComponents: (container: HTMLElement) => void;
+  private blockPointerInputOutsideModal: boolean = false;
 
   public static Prompt(
     view: ExcalidrawView,
@@ -102,6 +103,7 @@ export class GenericInputPrompt extends Modal {
     lines?: number,
     displayEditorButtons?: boolean,
     customComponents?: (container: HTMLElement) => void,
+    blockPointerInputOutsideModal?: boolean,
   ): Promise<string> {
     const newPromptModal = new GenericInputPrompt(
       view,
@@ -113,7 +115,8 @@ export class GenericInputPrompt extends Modal {
       buttons,
       lines,
       displayEditorButtons,
-      customComponents
+      customComponents,
+      blockPointerInputOutsideModal,
     );
     return newPromptModal.waitForClose;
   }
@@ -129,6 +132,7 @@ export class GenericInputPrompt extends Modal {
     lines?: number,
     displayEditorButtons?: boolean,
     customComponents?: (container: HTMLElement) => void,
+    blockPointerInputOutsideModal?: boolean,
   ) {
     super(app);
     this.view = view;
@@ -139,6 +143,7 @@ export class GenericInputPrompt extends Modal {
     this.lines = lines ?? 1;
     this.displayEditorButtons = this.lines > 1 ? (displayEditorButtons ?? false) : false;
     this.customComponents = customComponents;
+    this.blockPointerInputOutsideModal = blockPointerInputOutsideModal ?? false;
 
     this.waitForClose = new Promise<string>((resolve, reject) => {
       this.resolvePromise = resolve;
@@ -152,6 +157,12 @@ export class GenericInputPrompt extends Modal {
 
   private display() {
     this.contentEl.empty();
+    if(this.blockPointerInputOutsideModal) {
+      //@ts-ignore
+      const bgEl = this.bgEl;
+      bgEl.style.pointerEvents = this.blockPointerInputOutsideModal ? "none" : "auto";
+    }
+
     this.titleEl.textContent = this.header;
 
     const mainContentContainer: HTMLDivElement = this.contentEl.createDiv();
@@ -271,6 +282,9 @@ export class GenericInputPrompt extends Modal {
   private linkBtnClickCallback = () => {
     this.view.ownerWindow.clearTimeout(this.selectionUpdateTimer); //timer is implemented because on iPad with pencil the button click generates an event on the textarea
     const addText = (text: string) => {
+      const v = this.inputComponent.inputEl.value;
+      if(this.selectionStart>0 && v.slice(this.selectionStart-1, this.selectionStart) !== " ") text = " "+text;
+      if(this.selectionStart<v.length && v.slice(this.selectionStart, this.selectionStart+1) !== " ") text = text+" ";
       const newVal = this.inputComponent.inputEl.value.slice(0, this.selectionStart) + text + this.inputComponent.inputEl.value.slice(this.selectionStart);
       this.inputComponent.inputEl.value = newVal;
       this.input = this.inputComponent.inputEl.value;
@@ -360,7 +374,6 @@ export class GenericInputPrompt extends Modal {
 
   onOpen() {
     super.onOpen();
-
     this.inputComponent.inputEl.focus();
     this.inputComponent.inputEl.select();
   }

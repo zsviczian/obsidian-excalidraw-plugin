@@ -17,6 +17,23 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.8.25": `
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/BvYkOaly-QM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## New & improved
+- Multi-link support
+- Updated [Scribble Helper](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Scribble%20Helper.md) script for better handwritten text support. 
+  - Add links to text elements
+  - Creating wrapped text in transparent sticky notes
+  - Add text to arrows and lines
+  - Handwriting support on iOS via Scribble
+
+## Fixed
+  - The long-standing issue of jumping text
+  
+`,
 "1.8.24": `
 ## Updates from Excalidraw.com
 - fix: color picker keyboard handling not working

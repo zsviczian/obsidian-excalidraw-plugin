@@ -610,7 +610,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       opacity: this.style.opacity,
       roundness: this.style.strokeSharpness
         ? (this.style.strokeSharpness === "round"
-          ? {type: ROUNDNESS.LEGACY}
+          ? {type: ROUNDNESS.ADAPTIVE_RADIUS}
           : null)
         : this.style.roundness,
       seed: Math.floor(Math.random() * 100000),

@@ -15,6 +15,8 @@ export type Packages = {
   excalidrawLib: any,
 }
 
+export type ValueOf<T> = T[keyof T];
+
 export type DynamicStyle = "none" | "gray" | "colorful";
 
 export interface ExcalidrawAutomateInterface {

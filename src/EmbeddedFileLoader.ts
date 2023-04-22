@@ -37,6 +37,7 @@ import {
   LinkParts,
   svgToBase64,
 } from "./utils/Utils";
+import { ValueOf } from "./types";
 
 const THEME_FILTER = "invert(100%) hue-rotate(180deg) saturate(1.25)";
 
@@ -49,15 +50,27 @@ const THEME_FILTER = "invert(100%) hue-rotate(180deg) saturate(1.25)";
 //and getObsidianImage is aborted if the file is already in the Watchdog stack
 const  markdownRendererRecursionWatcthdog = new Set<TFile>();
 
-export declare type MimeType =
-  | "image/svg+xml"
+export const IMAGE_MIME_TYPES = {
+  svg: "image/svg+xml",
+  png: "image/png",
+  jpg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+  bmp: "image/bmp",
+  ico: "image/x-icon",
+  avif: "image/avif",
+  jfif: "image/jfif",
+} as const;
+
+export declare type MimeType = ValueOf<typeof IMAGE_MIME_TYPES> | "application/octet-stream";
+/*  | "image/svg+xml"
   | "image/png"
   | "image/jpeg"
   | "image/gif"
   | "image/webp"
   | "image/bmp"
   | "image/x-icon"
-  | "application/octet-stream";
+  | "application/octet-stream";*/
 export type FileData = BinaryFileData & {
   size: Size;
   hasSVGwithBitmap: boolean;

@@ -778,11 +778,13 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   removeLinkTooltip() {
+    //.classList.remove("excalidraw-tooltip--visible");document.querySelector(".excalidraw-tooltip",);
     const tooltip = this.ownerDocument.body.querySelector(
       "body>div.excalidraw-tooltip,div.excalidraw-tooltip--visible",
     );
     if (tooltip) {
-      this.ownerDocument.body.removeChild(tooltip);
+      tooltip.classList.remove("excalidraw-tooltip--visible")
+      //this.ownerDocument.body.removeChild(tooltip);
     }
   }
 
@@ -886,7 +888,19 @@ export default class ExcalidrawView extends TextFileView {
       if(this.handleLinkHookCall(el,linkText,ev)) return;
       if(this.openExternalLink(linkText)) return;
 
-      const parts = REGEX_LINK.getRes(linkText).next();
+      const partsArray = REGEX_LINK.getResList(linkText);
+      let parts = partsArray[0];      
+      if (partsArray.length > 1) {
+        parts = await ScriptEngine.suggester(
+          app,
+          partsArray.filter(p=>Boolean(p.value)).map(p => REGEX_LINK.getLink(p)),
+          partsArray.filter(p=>Boolean(p.value)),
+          "Select link to open"
+        );
+        if(!parts) return;
+      }
+
+      //parts = REGEX_LINK.getRes(linkText).next();
       if (!parts.value) {
         this.openTagSearch(linkText);
         return;
@@ -3497,21 +3511,30 @@ export default class ExcalidrawView extends TextFileView {
               if (!element) {
                 return;
               }
-              const link = element.link;
+              let link = element.link;
               if (!link || link === "") {
                 return;
               }
-              this.removeLinkTooltip();
+              setTimeout(()=>this.removeLinkTooltip(),500);
 
               const event = e?.detail?.nativeEvent;
               if(this.handleLinkHookCall(element,element.link,event)) return;
               if(this.openExternalLink(element.link, !isSHIFT(event) && !isCTRL(event) && !isMETA(event) && !isALT(event) ? element : undefined)) return;
 
+              //if element is type text and element has multiple links, then submit the element text to linkClick to trigger link suggester
+              if(element.type === "text") {
+                const linkText = element.rawText.replaceAll("\n", ""); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/187
+                const partsArray = REGEX_LINK.getResList(linkText);
+                if(partsArray.filter(p=>Boolean(p.value)).length > 1) {
+                  link = linkText;
+                }
+              }
+
               this.linkClick(
                 event,
                 null,
                 null,
-                {id: element.id, text: element.link},
+                {id: element.id, text: link},
                 emulateCTRLClickForLinks(event)
               );
               return;

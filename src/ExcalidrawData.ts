@@ -76,6 +76,15 @@ export const REGEX_LINK = {
   //![[link|alias]] [alias](link){num}
   //      1   2    3           4             5         67         8  9
   EXPR: /(!)?(\[\[([^|\]]+)\|?([^\]]+)?]]|\[([^\]]*)]\(([^)]*)\))(\{(\d+)\})?/g, //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/187
+  getResList: (text: string): IteratorResult<RegExpMatchArray, any>[] => {
+    const res = text.matchAll(REGEX_LINK.EXPR);
+    let parts: IteratorResult<RegExpMatchArray, any>;
+    const resultList = [];
+    while(!(parts = res.next()).done) {
+      resultList.push(parts);
+    }
+    return resultList;
+  },
   getRes: (text: string): IterableIterator<RegExpMatchArray> => {
     return text.matchAll(REGEX_LINK.EXPR);
   },
