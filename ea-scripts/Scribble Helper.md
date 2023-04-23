@@ -26,7 +26,7 @@ let prevZoomValue = api.getAppState().zoom.value; //used to avoid trigger on pin
 // -------------
 // Load settings
 // -------------
-const settings = ea.getScriptSettings();
+let settings = ea.getScriptSettings();
 //set default values on first-ever run of the script
 if(!settings["Default action"]) {
   settings = {
