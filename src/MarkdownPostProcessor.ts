@@ -21,7 +21,7 @@ import {
   svgToBase64,
 } from "./utils/Utils";
 import { isObsidianThemeDark } from "./utils/ObsidianUtils";
-import { isCTRL, isMETA, linkClickModifierType } from "./utils/ModifierkeyHelper";
+import { linkClickModifierType } from "./utils/ModifierkeyHelper";
 
 interface imgElementAttributes {
   file?: TFile;

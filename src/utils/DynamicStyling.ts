@@ -23,7 +23,9 @@ export const setDynamicStyle = (
     return;
   }
   const doc = view.ownerDocument;
-  const isLightTheme = view?.excalidrawData?.scene?.appState?.theme === "light";
+  const isLightTheme = 
+    view?.excalidrawAPI?.getAppState?.()?.theme === "light" ||
+    view?.excalidrawData?.scene?.appState?.theme === "light";
 
   const darker = "#202020";
   const lighter = "#fbfbfb";
@@ -43,11 +45,8 @@ export const setDynamicStyle = (
   const bgLightness = cmBG().lightness;  
   const isDark = cmBG().isDark();
   
-  const docStyle = doc.querySelector("body").style;
-  const accentColorString = `hsl(${
-    docStyle.getPropertyValue("--accent-h")},${
-    docStyle.getPropertyValue("--accent-s")},${
-    docStyle.getPropertyValue("--accent-l")})`;
+  //@ts-ignore
+  const accentColorString = app.getAccentColor();
   const accent = () => ea.getCM(accentColorString);
 
   const cmBlack = () => ea.getCM("#000000").lightnessTo(bgLightness);

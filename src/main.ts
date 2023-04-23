@@ -103,8 +103,6 @@ import { Packages } from "./types";
 import { ScriptInstallPrompt } from "./dialogs/ScriptInstallPrompt";
 import Taskbone from "./ocr/Taskbone";
 import { emulateCTRLClickForLinks, linkClickModifierType, PaneTarget } from "./utils/ModifierkeyHelper";
-import { ColorMap } from "./EmbeddedFileLoader";
-
 
 declare module "obsidian" {
   interface App {
@@ -495,6 +493,9 @@ export default class ExcalidrawPlugin extends Plugin {
               svgPath,
             );
             setButtonText("UPTODATE");
+            if(Object.keys(this.scriptEngine.scriptIconMap).length === 0) {
+              this.scriptEngine.loadScripts();
+            }
             new Notice(`Installed: ${(scriptFile as TFile).basename}`);
           } catch (e) {
             new Notice(`Error installing script: ${fname}`);

@@ -17,6 +17,13 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.8.26":`
+## Fixed
+- Dynamic styling did not pick up correctly
+  - the accent color with the default Obsidian theme
+  - the drawing theme color with the out of the box, default new drawing (not using a template)
+- The Obsidian tools panel did not pick up user scripts when installing your very first script. A reload of Obsidian was required.
+`,
 "1.8.25": `
 <div class="excalidraw-videoWrapper"><div>
 <iframe src="https://www.youtube.com/embed/BvYkOaly-QM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
