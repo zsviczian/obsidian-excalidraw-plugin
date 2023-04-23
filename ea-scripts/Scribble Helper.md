@@ -28,20 +28,21 @@ let prevZoomValue = api.getAppState().zoom.value; //used to avoid trigger on pin
 // -------------
 const settings = ea.getScriptSettings();
 //set default values on first-ever run of the script
+if(!settings["Default action"]) {
+settings = {
+  "Default action" : {
+    value: "Text",
+    valueset: ["Text","Sticky","Wrap"],
+    description: "What type of element should CTRL/CMD+ENTER create. TEXT: A regular text element. " +
+      "STICKY: A sticky note with border color and background color " +
+      "(using the current setting of the canvas). STICKY: A sticky note with transparent " +
+      "border and background color."
+  },
+};
+await ea.setScriptSettings(settings);
+}
+
 if(typeof win.ExcalidrawScribbleHelper.action === "undefined") {
-  if(!settings["Default action"]) {
-	settings = {
-	  "Default action" : {
-	    value: "Text",
-	    valueset: ["Text","Sticky","Wrap"],
-	    description: "What type of element should CTRL/CMD+ENTER create. TEXT: A regular text element. " +
-	      "STICKY: A sticky note with border color and background color " +
-	      "(using the current setting of the canvas). STICKY: A sticky note with transparent " +
-	      "border and background color."
-	  },
-	};
-	await ea.setScriptSettings(settings);
-  }
   win.ExcalidrawScribbleHelper.action = settings["Default action"].value;
 }
 
