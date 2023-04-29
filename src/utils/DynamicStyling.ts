@@ -86,13 +86,13 @@ export const setDynamicStyle = (
     `--sidebar-shadow: ${str(gray1)};` +
     `--popup-text-color: ${str(text)};` +
     `--code-normal: ${str(text)};` +
+    `--code-background: ${str(gray2)};` +
     `--h1-color: ${str(text)};` +
     `--h2-color: ${str(text)};` +
     `--h3-color: ${str(text)};` +
     `--h4-color: ${str(text)};` +
     `color: ${str(text)};` + 
-    `--select-highlight-color: ${str(gray1)};` + 
-    `--popup-bg-color: ${str(text)};`;
+    `--select-highlight-color: ${str(gray1)};`;
   
   view.excalidrawContainer?.setAttribute(
     "style",

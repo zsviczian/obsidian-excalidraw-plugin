@@ -411,7 +411,7 @@ const initializeEventListners = () => {
 
 const exitPresentation = async (openForEdit = false) => {
   if(openForEdit) ea.targetView.preventAutozoom();
-  if(!app.isMobile && !inPopoutWindow) await document.exitFullscreen();
+  if(!app.isMobile && !inPopoutWindow && document?.fullscreenElement) await document.exitFullscreen();
   if(app.isMobile) {
     ea.viewToggleFullScreen(true);
   } else {
