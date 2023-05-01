@@ -427,7 +427,7 @@ const exitPresentation = async (openForEdit = false) => {
     el.locked = openForEdit ? false : originalProps.locked;
   }
   await ea.addElementsToView();
-  ea.selectElementsInView([el]);
+  if(!hidden) ea.selectElementsInView([el]);
   if(openForEdit) {
     const nextSlide = getNextSlide(--slide);
     let nextRect = getSlideRect(nextSlide);
