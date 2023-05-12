@@ -59,7 +59,7 @@ declare module "obsidian" {
 const {
   wrapText, 
   getFontString, 
-  getMaxContainerWidth, 
+  getBoundTextMaxWidth, 
   getDefaultLineHeight,
   //@ts-ignore
 } = excalidrawLib;
@@ -693,7 +693,7 @@ export class ExcalidrawData {
           wrapAt ? wrapText(
             originalText,
             getFontString({fontSize: te.fontSize, fontFamily: te.fontFamily}),
-            getMaxContainerWidth(container)
+            getBoundTextMaxWidth(container)
           ) : originalText,
           originalText,
           forceupdate,
