@@ -1004,7 +1004,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     }
     const fileId = typeof imageFile === "string"
       ? image.fileId
-      : imageFile.extension === "md" ? fileid() as FileId : image.fileId;
+      : imageFile.extension === "md" || imageFile.extension.toLowerCase() === "pdf" ? fileid() as FileId : image.fileId;
     this.imagesDict[fileId] = {
       mimeType: image.mimeType,
       id: fileId,
@@ -1674,6 +1674,17 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     view: ExcalidrawView;
   }) => Promise<void>;
 
+
+  /**
+   * if set, this callback is triggered, when an Excalidraw file is created
+   * see also: https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1124
+   */
+  onFileCreateHook: (data: {
+    ea: ExcalidrawAutomate;
+    excalidrawFile: TFile; //the file being created
+    view: ExcalidrawView;
+  }) => Promise<void>;
+    
 
   /**
    * If set, this callback is triggered whenever the active canvas color changes

@@ -476,3 +476,91 @@ export class FolderSuggestionModal extends SuggestionModal<TFolder> {
     return this.folders;
   }
 }
+
+export class FileSuggestionModal extends SuggestionModal<TFile> {
+  text: TextComponent;
+  cache: CachedMetadata;
+  files: TFile[];
+  file: TFile;
+  constructor(app: App, input: TextComponent, items: TFile[]) {
+    super(app, input.inputEl, items);
+    this.limit = 20;
+    this.files = [...items];
+    this.text = input;
+    this.inputEl.addEventListener("input", () => this.getFile());
+  }
+
+  getFile() {
+    const v = this.inputEl.value;
+    const file = this.app.vault.getAbstractFileByPath(v);
+    if (file === this.file) {
+      return;
+    }
+    if (!(file instanceof TFile)) {
+      return;
+    }
+    this.file = file;
+
+    this.onInputChanged();
+  }
+
+  getSelectedItem() {
+    return this.file;
+  }
+
+  getItemText(item: TFile) {
+    return item.path;
+  }
+
+  onChooseItem(item: TFile) {
+    this.file = item;
+    this.text.setValue(item.path);
+    this.text.onChanged();
+  }
+
+  selectSuggestion({ item }: FuzzyMatch<TFile>) {
+    this.file = item;
+    this.text.setValue(item.path);
+    this.onClose();
+    this.text.onChanged();
+    this.close();
+  }
+  
+  renderSuggestion(result: FuzzyMatch<TFile>, el: HTMLElement) {
+    const { item, match: matches } = result || {};
+    const content = el.createDiv({
+      cls: "suggestion-content",
+    });
+    if (!item) {
+      content.setText(this.emptyStateText);
+      content.parentElement.addClass("is-selected");
+      return;
+    }
+
+    const pathLength = item.path.length - item.name.length;
+    const matchElements = matches.matches.map((m) => {
+      return createSpan("suggestion-highlight");
+    });
+    for (let i = pathLength; i < item.path.length; i++) {
+      const match = matches.matches.find((m) => m[0] === i);
+      if (match) {
+        const element = matchElements[matches.matches.indexOf(match)];
+        content.appendChild(element);
+        element.appendText(item.path.substring(match[0], match[1]));
+
+        i += match[1] - match[0] - 1;
+        continue;
+      }
+
+      content.appendText(item.path[i]);
+    }
+    el.createDiv({
+      cls: "suggestion-note",
+      text: item.path,
+    });
+  }
+
+  getItems() {
+    return this.files;
+  }
+}

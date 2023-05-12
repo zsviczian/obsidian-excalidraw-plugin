@@ -3,7 +3,7 @@
 
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
 import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/types";
-import { App, MarkdownRenderer, Notice, requestUrl, RequestUrlResponse, TFile } from "obsidian";
+import { App, MarkdownRenderer, Notice, TFile } from "obsidian";
 import {
   CASCADIA_FONT,
   DEFAULT_MD_EMBED_CSS,
@@ -22,7 +22,7 @@ import { ExportSettings } from "./ExcalidrawView";
 import { t } from "./lang/helpers";
 import { tex2dataURL } from "./LaTeX";
 import ExcalidrawPlugin from "./main";
-import { getDataURLFromURL, getMimeType, getURLImageExtension } from "./utils/FileUtils";
+import { blobToBase64, getDataURLFromURL, getMimeType, getPDFDoc, getURLImageExtension } from "./utils/FileUtils";
 import {
   errorlog,
   getDataURL,
@@ -63,14 +63,7 @@ export const IMAGE_MIME_TYPES = {
 } as const;
 
 export declare type MimeType = ValueOf<typeof IMAGE_MIME_TYPES> | "application/octet-stream";
-/*  | "image/svg+xml"
-  | "image/png"
-  | "image/jpeg"
-  | "image/gif"
-  | "image/webp"
-  | "image/bmp"
-  | "image/x-icon"
-  | "application/octet-stream";*/
+
 export type FileData = BinaryFileData & {
   size: Size;
   hasSVGwithBitmap: boolean;
@@ -285,6 +278,7 @@ export class EmbeddedFile {
 }
 
 export class EmbeddedFilesLoader {
+  private pdfDocsMap: Map<string, any> = new Map();
   private plugin: ExcalidrawPlugin;
   private isDark: boolean;
   public terminate = false;
@@ -296,7 +290,25 @@ export class EmbeddedFilesLoader {
     this.uid = nanoid();
   }
 
+  public emptyPDFDocsMap() {
+    this.pdfDocsMap.forEach((pdfDoc) => pdfDoc.destroy());
+    this.pdfDocsMap.clear();
+  }
+
   public async getObsidianImage(inFile: TFile | EmbeddedFile, depth: number): Promise<{
+    mimeType: MimeType;
+    fileId: FileId;
+    dataURL: DataURL;
+    created: number;
+    hasSVGwithBitmap: boolean;
+    size: { height: number; width: number };
+  }> {
+    const result = await this._getObsidianImage(inFile, depth);
+    this.emptyPDFDocsMap();
+    return result;
+  }
+  
+  private async _getObsidianImage(inFile: TFile | EmbeddedFile, depth: number): Promise<{
     mimeType: MimeType;
     fileId: FileId;
     dataURL: DataURL;
@@ -328,12 +340,15 @@ export class EmbeddedFilesLoader {
               ref: null,
               width: this.plugin.settings.mdSVGwidth,
               height: this.plugin.settings.mdSVGmaxHeight,
+              page: null,
             };
 
     let hasSVGwithBitmap = false;
     const isExcalidrawFile = !isHyperlink && this.plugin.isExcalidrawFile(file);
+    const isPDF = !isHyperlink && file.extension.toLowerCase() === "pdf";
+
     if (
-      !isHyperlink &&
+      !isHyperlink && !isPDF &&
       !(
         IMAGE_TYPES.contains(file.extension) ||
         isExcalidrawFile ||
@@ -342,7 +357,7 @@ export class EmbeddedFilesLoader {
     ) {
       return null;
     }
-    const ab = isHyperlink
+    const ab = isHyperlink || isPDF
       ? null
       : await app.vault.readBinary(file);
 
@@ -399,12 +414,19 @@ export class EmbeddedFilesLoader {
     const excalidrawSVG = isExcalidrawFile
       ? await getExcalidrawSVG(this.isDark)
       : null;
-    let mimeType: MimeType = "image/svg+xml";
+
+    const [pdfDataURL, pdfSize] = isPDF
+      ? await this.pdfToDataURL(file,linkParts)
+      : [null, null];
+
+    let mimeType: MimeType = isPDF
+      ? "image/png"
+      : "image/svg+xml";
 
     const extension = isHyperlink
       ? getURLImageExtension(hyperlink)
       : file.extension;
-    if (!isExcalidrawFile) {
+    if (!isExcalidrawFile && !isPDF) {
       mimeType = getMimeType(extension);
     }
 
@@ -415,7 +437,7 @@ export class EmbeddedFilesLoader {
             ? await getDataURLFromURL(inFile.hyperlink, mimeType)
             : null
         )
-      : excalidrawSVG ??
+      : excalidrawSVG ?? pdfDataURL ??
         (file.extension === "svg"
           ? await getSVGData(app, file, inFile instanceof EmbeddedFile ? inFile.colorMap : null)
           : file.extension === "md"
@@ -430,11 +452,11 @@ export class EmbeddedFilesLoader {
       hasSVGwithBitmap = result.hasSVGwithBitmap;
     }
     try{
-      const size = await getImageSize(dataURL);
+      const size = isPDF ? pdfSize : await getImageSize(dataURL);
       return {
         mimeType,
         fileId: await generateIdFromFile(
-          isHyperlink? (new TextEncoder()).encode(dataURL as string) : ab
+          isHyperlink || isPDF ? (new TextEncoder()).encode(dataURL as string) : ab
         ),
         dataURL,
         created: isHyperlink ? 0 : file.stat.mtime,
@@ -448,7 +470,7 @@ export class EmbeddedFilesLoader {
 
   public async loadSceneFiles(
     excalidrawData: ExcalidrawData,
-    addFiles: (files: FileData[], isDark: boolean) => void,
+    addFiles: (files: FileData[], isDark: boolean, final?: boolean) => void,
     depth:number
   ) {
     if(depth > 4) {
@@ -466,9 +488,9 @@ export class EmbeddedFilesLoader {
       const embeddedFile: EmbeddedFile = entry.value[1];
       if (!embeddedFile.isLoaded(this.isDark)) {
         //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"embedded Files are not loaded"});
-        const data = await this.getObsidianImage(embeddedFile, depth);
+        const data = await this._getObsidianImage(embeddedFile, depth);
         if (data) {
-          files.push({
+          const fileData = {
             mimeType: data.mimeType,
             id: entry.value[0],
             dataURL: data.dataURL,
@@ -476,10 +498,17 @@ export class EmbeddedFilesLoader {
             size: data.size,
             hasSVGwithBitmap: data.hasSVGwithBitmap,
             shouldScale: embeddedFile.shouldScale()
-          });
+          };
+          try  {
+            addFiles([fileData], this.isDark, false);
+          }
+          catch(e) {
+            errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
+          }
+          //files.push(fileData);
         }
       } else if (embeddedFile.isSVGwithBitmap) {
-        files.push({
+        const fileData = {
           mimeType: embeddedFile.mimeType,
           id: entry.value[0],
           dataURL: embeddedFile.getImage(this.isDark) as DataURL,
@@ -487,7 +516,14 @@ export class EmbeddedFilesLoader {
           size: embeddedFile.size,
           hasSVGwithBitmap: embeddedFile.isSVGwithBitmap,
           shouldScale: embeddedFile.shouldScale()
-        });
+        };
+        //files.push(fileData);
+        try  {
+          addFiles([fileData], this.isDark, false);
+        }
+        catch(e) {
+          errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
+        }
       }
     }
 
@@ -498,7 +534,7 @@ export class EmbeddedFilesLoader {
         const latex = equation.value[1].latex;
         const data = await tex2dataURL(latex, this.plugin);
         if (data) {
-          files.push({
+          const fileData = {
             mimeType: data.mimeType,
             id: equation.value[0],
             dataURL: data.dataURL,
@@ -506,20 +542,75 @@ export class EmbeddedFilesLoader {
             size: data.size,
             hasSVGwithBitmap: false,
             shouldScale: true
-          });
+          };
+          files.push(fileData);
         }
       }
     }
 
+    this.emptyPDFDocsMap();
     if (this.terminate) {
       return;
     }
     //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"add Files"});
     try {
       //in try block because by the time files are loaded the user may have closed the view
-      addFiles(files, this.isDark);
+      addFiles(files, this.isDark, true);
     } catch (e) {
       errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
+    }
+  }
+
+  private async pdfToDataURL(
+    file: TFile,
+    linkParts: LinkParts,
+  ): Promise<[DataURL,{width:number, height:number}]> {
+    try {
+      let width = 0, height = 0;
+      const pdfDoc = this.pdfDocsMap.get(file.path) ?? await getPDFDoc(file);
+      if(!this.pdfDocsMap.has(file.path)) {
+        this.pdfDocsMap.set(file.path, pdfDoc);
+      }
+      const pageNum = isNaN(linkParts.page) ? 1 : (linkParts.page??1);
+      const scale = this.plugin.settings.pdfScale;
+
+      // Render the page
+      const renderPage = async (num:number) => {
+        const canvas = createEl("canvas");
+        const ctx = canvas.getContext('2d');
+        
+        // Get page
+        const page = await pdfDoc.getPage(num);
+        // Set scale
+        const viewport = page.getViewport({ scale });
+        height = canvas.height = viewport.height;
+        width = canvas.width = viewport.width;
+
+        const renderCtx = {
+          canvasContext: ctx,
+          background: 'rgba(0,0,0,0)',
+          viewport
+        };
+
+        await page.render(renderCtx).promise;
+        return canvas;
+      };
+
+      const canvas = await renderPage(pageNum); 
+      if(canvas) {
+        const result: [DataURL,{width:number, height:number}] = [`data:image/png;base64,${await new Promise((resolve, reject) => {
+          canvas.toBlob(async (blob) => {
+            const dataURL = await blobToBase64(blob);
+            resolve(dataURL);
+          });
+        })}` as DataURL, {width, height}];
+        canvas.width = 0; //free memory iOS bug
+        canvas.height = 0;
+        return result;
+      }
+    } catch(e) {
+      console.log(e);
+      return [null,null];
     }
   }
 
@@ -654,7 +745,7 @@ export class EmbeddedFilesLoader {
       const ef = new EmbeddedFile(plugin,file.path,src);
       //const f = app.metadataCache.getFirstLinkpathDest(src.split("#")[0],file.path);
       if(!ef.file) continue;
-      const embeddedFile = await this.getObsidianImage(ef,1);
+      const embeddedFile = await this._getObsidianImage(ef,1);
       const img = createEl("img");
       if(width) img.setAttribute("width", width);
       if(height) img.setAttribute("height", height);

@@ -1,8 +1,8 @@
 import { DataURL } from "@zsviczian/excalidraw/types/types";
-import { normalizePath, Notice, requestUrl, RequestUrlResponse, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
+import { loadPdfJs, normalizePath, Notice, requestUrl, RequestUrlResponse, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
 import { URLFETCHTIMEOUT } from "src/Constants";
 import { MimeType } from "src/EmbeddedFileLoader";
-import { ExcalidrawSettings } from "src/Settings";
+import { ExcalidrawSettings } from "src/settings";
 import { errorlog, getDataURL } from "./Utils";
 
 /**
@@ -186,4 +186,22 @@ export const getDataURLFromURL = async (url: string, mimeType: MimeType, timeout
   return response && response.status === 200
     ? await getDataURL(response.arrayBuffer, mimeType)
     : url as DataURL;
+}
+
+export const blobToBase64 = async (blob: Blob): Promise<string> => {
+  const arrayBuffer = await blob.arrayBuffer()
+  const bytes = new Uint8Array(arrayBuffer)
+  var binary = '';
+  var len = bytes.byteLength;
+  for (var i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+export const getPDFDoc = async (f: TFile): Promise<any> => {
+  //@ts-ignore
+  if(typeof window.pdfjsLib === "undefined") await loadPdfJs();
+  //@ts-ignore
+  return await window.pdfjsLib.getDocument(app.vault.getResourcePath(f)).promise;
 }

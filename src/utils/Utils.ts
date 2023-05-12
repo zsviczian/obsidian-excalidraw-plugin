@@ -444,6 +444,7 @@ export type LinkParts = {
   ref: string;
   width: number;
   height: number;
+  page: number;
 };
 
 export const getLinkParts = (fname: string, file?: TFile): LinkParts => {
@@ -456,6 +457,7 @@ export const getLinkParts = (fname: string, file?: TFile): LinkParts => {
     ref: parts[3]?.replaceAll(REG_BLOCK_REF_CLEAN, ""),
     width: parts[4] ? parseInt(parts[4]) : undefined,
     height: parts[5] ? parseInt(parts[5]) : undefined,
+    page: parseInt(parts[3]?.match(/page=(\d*)/)?.[1])
   };
 };
 

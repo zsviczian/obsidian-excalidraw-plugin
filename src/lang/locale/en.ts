@@ -62,6 +62,7 @@ export default {
   INSERT_IMAGE: "Insert image or Excalidraw drawing from your vault",
   IMPORT_SVG: "Import an SVG file as Excalidraw strokes (limited SVG support, TEXT currently not supported)",
   INSERT_MD: "Insert markdown file from vault",
+  INSERT_PDF: "Insert PDF file from vault",
   INSERT_LATEX:
     `Insert LaTeX formula (e.g. \\binom{n}{k} = \\frac{n!}{k!(n-k)!}). ${labelALT()}+CLICK to watch a help video.`,
   ENTER_LATEX: "Enter a valid LaTeX expression",
@@ -472,6 +473,9 @@ FILENAME_HEAD: "Filename",
     "Select existing drawing or type name of a new drawing then press Enter.",
   SELECT_TO_EMBED: "Select the drawing to insert into active document.",
   SELECT_MD: "Select the markdown document you want to insert",
+  SELECT_PDF: "Select the PDF document you want to insert",
+  PDF_PAGES_HEADER: "Pages to load?",
+  PDF_PAGES_DESC: "Format: 1, 3-5, 7, 9-11",
 
   //EmbeddedFileLoader.ts
   INFINITE_LOOP_WARNING:

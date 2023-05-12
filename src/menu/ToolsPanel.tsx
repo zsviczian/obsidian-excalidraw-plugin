@@ -13,6 +13,7 @@ import { getIMGFilename } from "../utils/FileUtils";
 import { ScriptInstallPrompt } from "src/dialogs/ScriptInstallPrompt";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
 import { isALT, isCTRL, isSHIFT, mdPropModifier } from "src/utils/ModifierkeyHelper";
+import { InsertPDFModal } from "src/dialogs/InsertPDFModal";
 
 declare const PLUGIN_VERSION:string;
 const dark = '<svg style="stroke:#ced4da;#212529;color:#ced4da;fill:#ced4da" ';
@@ -501,6 +502,17 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     icon={ICONS.insertImage}
                     view={this.props.view}
                   />
+                  <ActionButton
+                    key={"pdf"}
+                    title={t("INSERT_PDF")}
+                    action={() => {
+                      this.props.centerPointer();
+                      const insertPDFModal = new InsertPDFModal(this.props.view.plugin, this.props.view);
+                      insertPDFModal.open();
+                    }}
+                    icon={ICONS.insertPDF}
+                    view={this.props.view}
+                  />                  
                   <ActionButton
                     key={"insertMD"}
                     title={t("INSERT_MD")}

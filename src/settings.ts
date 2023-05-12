@@ -126,6 +126,12 @@ export interface ExcalidrawSettings {
   pinnedScripts: string[];
   customPens: PenStyle[];
   numberOfCustomPens: number;
+  pdfScale: number;
+  pdfBorderBox: boolean;
+  pdfGapSize: number;
+  pdfLockAfterImport: boolean;
+  pdfNumColumns: number;
+  pdfImportScale: number;
 }
 
 declare const PLUGIN_VERSION:string;
@@ -238,6 +244,12 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
     {...PENS["default"]}
   ],
   numberOfCustomPens: 0,
+  pdfScale: 4,
+  pdfBorderBox: true,
+  pdfGapSize: 20,
+  pdfLockAfterImport: true,
+  pdfNumColumns: 1,
+  pdfImportScale: 0.3,
 };
 
 export class ExcalidrawSettingTab extends PluginSettingTab {

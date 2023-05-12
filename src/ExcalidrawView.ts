@@ -111,6 +111,8 @@ import { getEA } from "src";
 import { emulateCTRLClickForLinks, externalDragModifierType, internalDragModifierType, isALT, isCTRL, isMETA, isSHIFT, linkClickModifierType, mdPropModifier, ModifierKeys } from "./utils/ModifierkeyHelper";
 import { setDynamicStyle } from "./utils/DynamicStyling";
 import { MenuLinks } from "./menu/MenuLinks";
+import { InsertPDFModal } from "./dialogs/InsertPDFModal";
+import { get } from "http";
 
 declare const PLUGIN_VERSION:string;
 
@@ -160,7 +162,7 @@ export const addFiles = async (
   }
   if (s.dirty) {
     //debug({where:"ExcalidrawView.addFiles",file:view.file.name,dataTheme:view.excalidrawData.scene.appState.theme,before:"updateScene",state:scene.appState})
-    await view.updateScene({
+    view.updateScene({
       elements: s.scene.elements,
       appState: s.scene.appState,
       commitToHistory: false,
@@ -982,6 +984,9 @@ export default class ExcalidrawView extends TextFileView {
         }
         linkText = ef.file.path;
         file = ef.file;
+        if(file.extension.toLowerCase() === "pdf") {
+          subpath = ef.linkParts.original.match(/(#.*)$/)?.[1];
+        }
       }
     }
 
@@ -1627,11 +1632,12 @@ export default class ExcalidrawView extends TextFileView {
       this.activeLoader = l;
       l.loadSceneFiles(
         this.excalidrawData,
-        (files: FileData[], isDark: boolean) => {
+        (files: FileData[], isDark: boolean, final:boolean = true) => {
           if (!files) {
             return;
           }          
           addFiles(files, this, isDark);
+          if(!final) return;
           this.activeLoader = null;
           if (this.nextLoader) {
             runLoader(this.nextLoader);
@@ -2752,6 +2758,7 @@ export default class ExcalidrawView extends TextFileView {
             const ef = this.excalidrawData.getFile(selectedImgElement.fileId);
             if(ef.isHyperlink) return; //web images don't have a preview
             if(IMAGE_TYPES.contains(ef.file.extension)) return; //images don't have a preview
+            if(ef.file.extension.toLowerCase() === "pdf") return; //pdfs don't have a preview
             if(this.plugin.ea.isExcalidrawFile(ef.file)) return; //excalidraw files don't have a preview
             const ref = ef.linkParts.ref
               ? `#${ef.linkParts.isBlockRef ? "^" : ""}${ef.linkParts.ref}`
@@ -3183,21 +3190,25 @@ export default class ExcalidrawView extends TextFileView {
                     if (
                       ["image", "image-fullsize"].contains(internalDragAction) && 
                       (IMAGE_TYPES.contains(draggable.file.extension) ||
-                        draggable.file.extension === "md")
+                        draggable.file.extension === "md"  ||
+                        draggable.file.extension.toLowerCase() === "pdf" )
                     ) {
-                      const ea = this.plugin.ea;
-                      ea.reset();
-                      ea.setView(this);
-                      (async () => {
-                        ea.canvas.theme = api.getAppState().theme;
-                        await ea.addImage(
-                          this.currentPosition.x,
-                          this.currentPosition.y,
-                          draggable.file,
-                          !(internalDragAction==="image-fullsize"),
-                        );
-                        ea.addElementsToView(false, false, true);
-                      })();
+                      const ea = getEA(this);
+                      if(draggable.file.extension.toLowerCase() === "pdf") {
+                        const insertPDFModal = new InsertPDFModal(this.plugin, this);
+                        insertPDFModal.open(draggable.file);
+                      } else {
+                        (async () => {
+                          ea.canvas.theme = api.getAppState().theme;
+                          await ea.addImage(
+                            this.currentPosition.x,
+                            this.currentPosition.y,
+                            draggable.file,
+                            !(internalDragAction==="image-fullsize"),
+                          );
+                          ea.addElementsToView(false, false, true);
+                        })();
+                      }
                       return false;
                     }
                     //internalDragAction === "link"
@@ -3214,9 +3225,7 @@ export default class ExcalidrawView extends TextFileView {
                   if (!onDropHook("file", draggable.files, null)) {
                     (async () => {
                       if (["image", "image-fullsize"].contains(internalDragAction)) {
-                        const ea = this.plugin.ea;
-                        ea.reset();
-                        ea.setView(this);
+                        const ea = getEA(this);
                         ea.canvas.theme = api.getAppState().theme;
                         let counter:number = 0;
                         for (const f of draggable.files) {
@@ -3229,6 +3238,10 @@ export default class ExcalidrawView extends TextFileView {
                             );
                             counter++;
                             await ea.addElementsToView(false, false, true);
+                          }
+                          if (f.extension.toLowerCase() === "pdf") {
+                            const insertPDFModal = new InsertPDFModal(this.plugin, this);
+                            insertPDFModal.open(f);
                           }
                         }
                         return;

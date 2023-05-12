@@ -6,6 +6,7 @@ import ExcalidrawView, { ExportSettings } from "../ExcalidrawView"
 import FrontmatterEditor from "src/utils/Frontmatter";
 import { ExcalidrawElement, ExcalidrawImageElement } from "@zsviczian/excalidraw/types/element/types";
 import { EmbeddedFilesLoader } from "src/EmbeddedFileLoader";
+import { blobToBase64 } from "src/utils/FileUtils";
 
 const TASKBONE_URL = "https://api.taskbone.com/"; //"https://excalidraw-preview.onrender.com/";
 const TASKBONE_OCR_FN = "execute?id=60f394af-85f6-40bc-9613-5d26dc283cbb";
@@ -105,7 +106,7 @@ export default class Taskbone {
     if(this.apiKey === "") {
       await this.initialize();
     }
-    const base64Image = await this.blobToBase64(image);
+    const base64Image = await blobToBase64(image);
     const input = {
       records: [{
           image: base64Image
@@ -132,16 +133,5 @@ export default class Taskbone {
     return content.records[0].text;
   }
 
-
-  private async blobToBase64(blob: Blob): Promise<string> {
-    const arrayBuffer = await blob.arrayBuffer()
-    const bytes = new Uint8Array(arrayBuffer)
-    var binary = '';
-    var len = bytes.byteLength;
-    for (var i = 0; i < len; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    return btoa(binary);
-  }
 }
 

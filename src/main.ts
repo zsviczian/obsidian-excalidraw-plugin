@@ -51,7 +51,7 @@ import {
   ExcalidrawSettings,
   DEFAULT_SETTINGS,
   ExcalidrawSettingTab,
-} from "./Settings";
+} from "./settings";
 import { openDialogAction, OpenFileDialog } from "./dialogs/OpenDrawing";
 import { InsertLinkDialog } from "./dialogs/InsertLinkDialog";
 import { InsertImageDialog } from "./dialogs/InsertImageDialog";
@@ -103,6 +103,7 @@ import { Packages } from "./types";
 import { ScriptInstallPrompt } from "./dialogs/ScriptInstallPrompt";
 import Taskbone from "./ocr/Taskbone";
 import { emulateCTRLClickForLinks, linkClickModifierType, PaneTarget } from "./utils/ModifierkeyHelper";
+import { InsertPDFModal } from "./dialogs/InsertPDFModal";
 
 declare module "obsidian" {
   interface App {
@@ -885,7 +886,7 @@ export default class ExcalidrawPlugin extends Plugin {
           ).folder;
       const file = await this.createDrawing(filename, folder);
       await this.embedDrawing(file);
-      this.openDrawing(file, location, true);
+      this.openDrawing(file, location, true, undefined, true);
     };
 
     this.addCommand({
@@ -1379,6 +1380,23 @@ export default class ExcalidrawPlugin extends Plugin {
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
           this.insertMDDialog.start(view);
+          return true;
+        }
+        return false;
+      },
+    });
+
+    this.addCommand({
+      id: "insert-pdf",
+      name: t("INSERT_PDF"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
+        }
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
+          const insertPDFModal = new InsertPDFModal(this, view);
+          insertPDFModal.open();
           return true;
         }
         return false;
@@ -2180,7 +2198,8 @@ export default class ExcalidrawPlugin extends Plugin {
     drawingFile: TFile,
     location: PaneTarget,
     active: boolean = false,
-    subpath?: string
+    subpath?: string,
+    justCreated: boolean = false
   ) {
     if(location === "md-properties") {
       location = "new-tab";
@@ -2204,7 +2223,19 @@ export default class ExcalidrawPlugin extends Plugin {
       !subpath || subpath === "" 
         ? {active}
         : { active, eState: { subpath } }
-    )
+    ).then(()=>{
+      if(justCreated && this.ea.onFileCreateHook) {
+        try {
+          this.ea.onFileCreateHook({
+            ea: this.ea,
+            excalidrawFile: drawingFile,
+            view: leaf.view as ExcalidrawView,
+          });
+        } catch(e) {
+          console.error(e);
+        }
+      }
+    })
   }
 
   public async getBlankDrawing(): Promise<string> {
@@ -2310,7 +2341,7 @@ export default class ExcalidrawPlugin extends Plugin {
     initData?: string,
   ): Promise<string> {
     const file = await this.createDrawing(filename, foldername, initData);
-    this.openDrawing(file, location, true);
+    this.openDrawing(file, location, true, undefined, true);
     return file.path;
   }
 

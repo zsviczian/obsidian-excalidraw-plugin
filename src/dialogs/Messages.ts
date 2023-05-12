@@ -17,6 +17,27 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.0":`
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/nB4cOfn0xAs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## Fixed
+- Embedded images, markdowns, PDFs will load one by one, not in one go after a long wait
+
+## New
+- Embed PDF
+
+## New in ExcalidrawAutomate
+- onFileCreateHook: if set this hook is called whenever a new drawing is created using Excalidraw command palette menu actions. If the excalidraw file is created using Templater or other means, the trigger will not fire. [#1124](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1124)
+${String.fromCharCode(96,96,96)}typescript
+  onFileCreateHook: (data: {
+    ea: ExcalidrawAutomate;
+    excalidrawFile: TFile; //the file being created
+    view: ExcalidrawView;
+  }) => Promise<void>;
+  ${String.fromCharCode(96,96,96)}
+`,
 "1.8.26":`
 ## Fixed
 - Dynamic styling did not pick up correctly
