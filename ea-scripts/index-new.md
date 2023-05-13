@@ -65,6 +65,7 @@ I would love to include your contribution in the script library. If you have a s
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Normalize%20Selected%20Arrows.svg"/></div>|[[#Normalize Selected Arrows]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Organic%20Line.svg"/></div>|[[#Organic Line]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Palette%20loader.svg"/></div>|[[#Palette Loader]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/PDF%20Page%20Text%20to%20Clipboard.svg"/></div>|[[#PDF Page Text to Clipboard]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Rename%20Image.svg"/></div>|[[#Rename Image]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Repeat%20Elements.svg"/></div>|[[#Repeat Elements]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Reverse%20arrows.svg"/></div>|[[#Reverse arrows]]|
@@ -318,6 +319,12 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Palette%20loader.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Palette%20loader.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Design your palette at <a href="http://paletton.com/" target="_blank">paletton.com</a> Once you are happy with your colors, click Tables/Export in the bottom right of the screen. Then click "Color swatches/as Sketch Palette", and copy the contents of the page to a markdown file in the palette folder of your vault (default is Excalidraw/Palette)<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-sketch-palette-loader-1.jpg'></td></tr></table>
+
+## PDF Page Text to Clipboard
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/PDF%20Page%20Text%20to%20Clipboard.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/PDF%20Page%20Text%20to%20Clipboard.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Copies the text from the selected PDF page on the Excalidraw canvas to the clipboard.<br><iframe width="400" height="225" src="https://www.youtube.com/embed/Kwt_8WdOUT4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe><br><a href='https://youtu.be/Kwt_8WdOUT4' target='_blank'>Link to video on YouTube</a></td></tr></table>
 
 ## Rename Image
 ```excalidraw-script-install
