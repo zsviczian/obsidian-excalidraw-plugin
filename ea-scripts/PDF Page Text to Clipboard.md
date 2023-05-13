@@ -31,6 +31,7 @@ if(!text) {
 	return;
 }
 pdfDoc.destroy();
-
-window.navigator.clipboard.writeText(text.items.map(t=>t.str).join("\n"));
+window.navigator.clipboard.writeText(
+  text.items.reduce((acc, cur) => acc + cur.str.replace(/\x00/ug, '') + (cur.hasEOL ? "\n" : ""),"")
+);
 new Notice("Page text is available on the clipboard");
