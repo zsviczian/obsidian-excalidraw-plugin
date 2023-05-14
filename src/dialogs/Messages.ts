@@ -17,6 +17,17 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.1":`
+## Updates from Excalidraw.com
+- "Unlock all elements" - new action available via the context menu [#5894](https://github.com/excalidraw/excalidraw/pull/5894)
+- Minor improvements to improve the speed [#6560](https://github.com/excalidraw/excalidraw/pull/6560)
+- Retain Seed on Shift Paste [#6509](https://github.com/excalidraw/excalidraw/pull/6509)
+
+## New/Fixed
+- Clicking on the link handle (top right corner) will open the link in the same window
+- CTRL/CMD click on a link will open the link in a new tab and will focus on the new tab
+- Linking to parts of images. In some cases clicking search results, links, or backlinks did not focus on the right element according to the link.  Fixed.
+`,
 "1.9.0":`
 <div class="excalidraw-videoWrapper"><div>
 <iframe src="https://www.youtube.com/embed/nB4cOfn0xAs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

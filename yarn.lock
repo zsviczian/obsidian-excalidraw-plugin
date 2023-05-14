@@ -1896,11 +1896,6 @@
   "resolved" "https://registry.npmjs.org/@types/parse-json/-/parse-json-4.0.0.tgz"
   "version" "4.0.0"
 
-"@types/parse5@^6.0.3":
-  "integrity" "sha512-SuT16Q1K51EAVPz1K29DJ/sXjhSQ0zjvsypYJ6tlwVsRV9jwW5Adq2ch8Dq8kDBCkYnELS7N7VNCSB5nC56t/g=="
-  "resolved" "https://registry.npmjs.org/@types/parse5/-/parse5-6.0.3.tgz"
-  "version" "6.0.3"
-
 "@types/prettier@^2.1.5":
   "integrity" "sha512-QzSuZMBuG5u8HqYz01qtMdg/Jfctlnvj1z/lYnIDXs/golxw0fxtRAHd9KrzjR7Yxz1qVeI00o0kiO3PmVdJ9w=="
   "resolved" "https://registry.npmjs.org/@types/prettier/-/prettier-2.4.3.tgz"
@@ -2003,13 +1998,6 @@
   "version" "8.2.2"
   dependencies:
     "@types/node" "*"
-
-"@types/xmlserializer@^0.6.3":
-  "integrity" "sha512-C4sPQn2oNQmXwk6oI1sY5mHcd1MJNOH2IXk4QFqxGBI9hSjrAOTP8Th/LsXqEU+E96dfaNrH+ZBTXfOWEGXOWQ=="
-  "resolved" "https://registry.npmjs.org/@types/xmlserializer/-/xmlserializer-0.6.3.tgz"
-  "version" "0.6.3"
-  dependencies:
-    "@types/parse5" "^6.0.3"
 
 "@types/yargs-parser@*":
   "integrity" "sha512-7tFImggNeNBVMsn0vLrpn1H1uPrUBdnARPTpZoitY37ZrdJREzf7I16tMrlK3hen349gr1NYh8CmZQa7CTG6Aw=="
@@ -2284,10 +2272,10 @@
   dependencies:
     "@zerollup/ts-helpers" "^1.7.18"
 
-"@zsviczian/excalidraw@0.14.2-obsidian-5":
-  "integrity" "sha512-Wav3VDhapWY60lFHF6UPFAwPPn1lCoRW/eesll8w4Xt4jBmz61NVtnsAmJmCEovwzZnFZwfsJ633Fbh1VYStyA=="
-  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.14.2-obsidian-5.tgz"
-  "version" "0.14.2-obsidian-5"
+"@zsviczian/excalidraw@0.15.2-obsidian-2":
+  "integrity" "sha512-TrXKrCYSMZMjNWVxNorV7vty7vLphponHDjh4MOKXW+3YmFx91Spzmp7GXhPr1IBTUDgcW+U5KXWvU77uuFJmg=="
+  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.15.2-obsidian-2.tgz"
+  "version" "0.15.2-obsidian-2"
 
 "abab@^2.0.3", "abab@^2.0.5":
   "integrity" "sha512-9IK9EadsbHo6jLWIpxpR6pL0sazTXV6+SQv25ZB+F7Bj9mJNaOc4nCRabwd5M/JwmUa8idz6Eci6eKfJryPs6Q=="
@@ -9393,11 +9381,6 @@
   "integrity" "sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw=="
   "resolved" "https://registry.npmjs.org/xmlchars/-/xmlchars-2.2.0.tgz"
   "version" "2.2.0"
-
-"xmlserializer@^0.6.1":
-  "integrity" "sha512-FNb0eEqqUUbnuvxuHqNuKH8qCGKqxu+558Zi8UzOoQk8Z9LdvpONK+v7m3gpKVHrk5Aq+0nNLsKxu/6OYh7Umw=="
-  "resolved" "https://registry.npmjs.org/xmlserializer/-/xmlserializer-0.6.1.tgz"
-  "version" "0.6.1"
 
 "xtend@^4.0.2":
   "integrity" "sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ=="

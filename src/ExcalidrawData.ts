@@ -258,7 +258,7 @@ export class ExcalidrawData {
   public autoexportPreference: AutoexportPreference = AutoexportPreference.inherit;
   private textMode: TextMode = TextMode.raw;
   public loaded: boolean = false;
-  private files: Map<FileId, EmbeddedFile> = null; //fileId, path
+  public files: Map<FileId, EmbeddedFile> = null; //fileId, path
   private equations: Map<FileId, { latex: string; isLoaded: boolean }> = null; //fileId, path
   private compatibilityMode: boolean = false;
   selectedElementIds: {[key:string]:boolean} = {}; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/609
