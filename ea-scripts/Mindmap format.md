@@ -55,6 +55,8 @@ if (!settings["MindMap Format"]) {
   ea.setScriptSettings(settings);
 }
 
+const sceneElements = ea.getExcalidrawAPI().getSceneElements();
+
 // default X coordinate of the middle point of the arc
 const defaultDotX = Number(settings["curve length"].value);
 // The default length from the middle point of the arc on the X axis
@@ -137,9 +139,16 @@ const setTextXY = (rect, text) => {
 };
 
 const setChildrenXY = (parent, children, line, elementsMap) => {
-  children.x = parent.x + parent.width + line.points[2][0];
-  children.y =
-    parent.y + parent.height / 2 + line.points[2][1] - children.height / 2;
+  x = parent.x + parent.width + line.points[2][0];
+  y = parent.y + parent.height / 2 + line.points[2][1] - children.height / 2;
+  distX = children.x - x;
+  distY = children.y - y;
+
+  ea.getElementsInTheSameGroupWithElement(children, sceneElements).forEach((el) => {
+    el.x = el.x - distX;
+    el.y = el.y - distY;
+  });
+
   if (
     ["rectangle", "diamond", "ellipse"].includes(children.type) &&
     ![null, undefined].includes(children.boundElements)
