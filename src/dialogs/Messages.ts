@@ -17,6 +17,19 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.2":`
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/diBT5iaoAYo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## New
+- Excalidraw.com Color Picker redesign [#6216](https://github.com/excalidraw/excalidraw/pull/6216)
+- Updated palette loader script in the script library
+- New ExcalidrawAutomate API to load Elements and AppState from another Excalidraw file.
+${String.fromCharCode(96,96,96)}typescript
+async getSceneFromFile(file: TFile): Promise<{elements: ExcalidrawElement[]; appState: AppState;}>
+${String.fromCharCode(96,96,96)}
+`,
 "1.9.1":`
 ## Updates from Excalidraw.com
 - "Unlock all elements" - new action available via the context menu [#5894](https://github.com/excalidraw/excalidraw/pull/5894)

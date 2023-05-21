@@ -341,3 +341,7 @@ div.excalidraw-draginfo {
   display: block;
   border-radius: 5px;
 }
+
+.excalidraw [data-radix-popper-content-wrapper] {
+  position: absolute !important;
+}

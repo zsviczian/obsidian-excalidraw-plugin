@@ -39,7 +39,7 @@ import {
   wrapTextAtCharLength,
 } from "./utils/Utils";
 import { getNewOrAdjacentLeaf, isObsidianThemeDark } from "./utils/ObsidianUtils";
-import { AppState, BinaryFileData, DataURL, Point } from "@zsviczian/excalidraw/types/types";
+import { AppState, BinaryFileData, DataURL, ExcalidrawImperativeAPI, Point } from "@zsviczian/excalidraw/types/types";
 import { EmbeddedFile, EmbeddedFilesLoader, FileData } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
 //import Excalidraw from "@zsviczian/excalidraw";
@@ -288,6 +288,26 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       }),
     );
   };
+
+  /**
+   * @param file: TFile
+   * @returns ExcalidrawScene
+   */
+  async getSceneFromFile(file: TFile): Promise<{elements: ExcalidrawElement[]; appState: AppState;}> {
+    if(!file) {
+      errorMessage("file not found", "getScene()");
+      return null;
+    }
+    if(!this.isExcalidrawFile(file)) {
+      errorMessage("file is not an Excalidraw file", "getScene()");
+      return null;
+    }
+    const template = await getTemplate(this.plugin,file.path,false,new EmbeddedFilesLoader(this.plugin),0);
+    return {
+      elements: template.elements,
+      appState: template.appState
+    }
+  }
 
   /**
    * get all elements from ExcalidrawAutomate elementsDict
@@ -2463,7 +2483,7 @@ function errorMessage(message: string, source: string) {
       errorlog({
         where: "ExcalidrawAutomate",
         source,
-        message: "unknown error",
+        message: message??"unknown error",
       });
   }
 }

@@ -151,6 +151,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "getSceneFromFile",
+    code: "async getSceneFromFile(file: TFile): Promise<{elements: ExcalidrawElement[]; appState: AppState;}>;",
+    desc: "returns the elements and appState from a file, if the file is not an excalidraw file, it will return null",
+    after: "",
+  },
+  {
     field: "getElements",
     code: "getElements(): ExcalidrawElement[];",
     desc: "Get all elements from ExcalidrawAutomate elementsDict",
