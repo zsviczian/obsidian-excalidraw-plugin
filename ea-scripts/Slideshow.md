@@ -224,7 +224,7 @@ const presentationSettings = () => {
 
 	settingsModal.onOpen = () => {
 		settingsModal.contentEl.createEl("h1",{text: "Slideshow Actions"});
-    settingsModal.contentEl.createEl("p",{text: "To open this window double click presentation script icon or press ENTER during presentation."});
+    settingsModal.contentEl.createEl("p",{text: "To open this window CTRL/CMD + click the presentation script icon or press ENTER during presentation."});
     settingsModal.contentEl.createEl("p",{text: "If you don't want the presentation in fullscreen mode, hold down the ALT/OPT key when clicking the script button."});
 		new ea.obsidian.Setting(settingsModal.contentEl)
 		  .setName("Jump to slide")
