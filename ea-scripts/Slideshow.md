@@ -11,7 +11,8 @@ if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.8.17")) {
 }
 
 const statusBar = document.querySelector("div.status-bar");
-const altKey = ea.targetView.modifierKeyDown.altKey;
+const ctrlKey = ea.targetView.modifierKeyDown.ctrlKey || ea.targetView.modifierKeyDown.metaKey;
+const altKey = ea.targetView.modifierKeyDown.altKey || ctrlKey;
 
 //constants
 const STEPCOUNT = 100;
@@ -499,6 +500,15 @@ if(window.ExcalidrawSlideshow && (window.ExcalidrawSlideshow.script === utils.sc
   await start();
   presentationSettings();
 } else {
+  if(window.ExcalidrawSlideshowStartTimer) {
+    clearTimeout(window.ExcalidrawSlideshowStartTimer);
+    delete window.ExcalidrawSlideshowStartTimer;
+  }
+  if(ctrlKey) {
+    await start();
+    presentationSettings();
+		return;
+  }
   window.ExcalidrawSlideshow = {
     script: utils.scriptFile.path,
     timestamp
