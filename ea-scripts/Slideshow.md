@@ -10,13 +10,17 @@ if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.8.17")) {
   return;
 }
 
+const statusBar = document.querySelector("div.status-bar");
+const altKey = ea.targetView.modifierKeyDown.altKey;
+
 //constants
 const STEPCOUNT = 100;
+const TRANSITION_DELAY = 1500; //maximum time for transition between slides in milliseconds
 const FRAME_SLEEP = 1; //milliseconds
 const EDIT_ZOOMOUT = 0.7; //70% of original slide zoom, set to a value between 1 and 0
 
 //utility & convenience functions
-const inPopoutWindow = ea.targetView.ownerDocument !== document;
+const inPopoutWindow = altKey || ea.targetView.ownerDocument !== document;
 const win = ea.targetView.ownerWindow;
 const api = ea.getExcalidrawAPI();
 const contentEl = ea.targetView.contentEl;
@@ -139,6 +143,7 @@ const getSlideRect = ({pointA, pointB}) => {
 
 let busy = false;
 const scrollToNextRect = async ({left,top,right,bottom,nextZoom},steps = STEPCOUNT) => {
+  const startTimer = Date.now();
   let watchdog = 0;
   while(busy && watchdog++<15) await(100);
   if(busy && watchdog >= 15) return;
@@ -148,7 +153,8 @@ const scrollToNextRect = async ({left,top,right,bottom,nextZoom},steps = STEPCOU
   const zoomStep = (zoom.value-nextZoom)/steps;
   const xStep = (left+scrollX)/steps;
   const yStep = (top+scrollY)/steps;
-  for(i=1;i<=steps;i++) {
+  let i=1;
+  while(i<=steps) {
     api.updateScene({
       appState: {
         scrollX:scrollX-(xStep*i),
@@ -156,7 +162,14 @@ const scrollToNextRect = async ({left,top,right,bottom,nextZoom},steps = STEPCOU
         zoom:{value:zoom.value-zoomStep*i},
       }
     });
-    await sleep(FRAME_SLEEP);
+    const ellapsed = Date.now()-startTimer;
+    if(ellapsed > TRANSITION_DELAY) {
+      i = i<steps ? steps : steps+1;
+    } else {
+      const timeProgress = ellapsed / TRANSITION_DELAY;
+      i=Math.min(Math.round(steps*timeProgress),steps)
+      await sleep(FRAME_SLEEP);
+    }
   }
   api.updateScene({appState:{shouldCacheIgnoreZoom:false}});
   busy = false;
@@ -211,6 +224,7 @@ const presentationSettings = () => {
 	settingsModal.onOpen = () => {
 		settingsModal.contentEl.createEl("h1",{text: "Slideshow Actions"});
     settingsModal.contentEl.createEl("p",{text: "To open this window double click presentation script icon or press ENTER during presentation."});
+    settingsModal.contentEl.createEl("p",{text: "If you don't want the presentation in fullscreen mode, hold down the ALT/OPT key when clicking the script button."});
 		new ea.obsidian.Setting(settingsModal.contentEl)
 		  .setName("Jump to slide")
 		  .addDropdown(dropdown => {
@@ -311,6 +325,7 @@ const createNavigationPanel = () => {
 
 //keyboard navigation
 const keydownListener = (e) => {
+  if(ea.targetView.leaf !== app.workspace.activeLeaf) return;
   e.preventDefault();
   switch(e.key) {
     case "Escape":
@@ -410,6 +425,7 @@ const initializeEventListners = () => {
 }
 
 const exitPresentation = async (openForEdit = false) => {
+  statusBar.style.display = "inherit";
   if(openForEdit) ea.targetView.preventAutozoom();
   if(!app.isMobile && !inPopoutWindow && document?.fullscreenElement) await document.exitFullscreen();
   if(app.isMobile) {
@@ -471,6 +487,7 @@ const start = async () => {
   initializeEventListners();
   //navigate to the first slide on start
   setTimeout(()=>navigate("fwd"));
+  statusBar.style.display = "none";
 }
 
 const timestamp = Date.now();
