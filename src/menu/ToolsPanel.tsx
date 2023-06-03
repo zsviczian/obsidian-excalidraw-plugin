@@ -14,6 +14,7 @@ import { ScriptInstallPrompt } from "src/dialogs/ScriptInstallPrompt";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
 import { isALT, isCTRL, isSHIFT, mdPropModifier } from "src/utils/ModifierkeyHelper";
 import { InsertPDFModal } from "src/dialogs/InsertPDFModal";
+import { ExportDialog } from "src/dialogs/ExportDialog";
 
 declare const PLUGIN_VERSION:string;
 const dark = '<svg style="stroke:#ced4da;#212529;color:#ced4da;fill:#ced4da" ';
@@ -438,42 +439,17 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     view={this.props.view}
                   />
                   <ActionButton
-                    key={"svg"}
-                    title={t("EXPORT_SVG")}
+                    key={"exportIMG"}
+                    title={t("EXPORT_IMAGE")}
                     action={() => {
-                      this.props.view.saveSVG();
-                      new Notice(
-                        `File saved: ${getIMGFilename(
-                          this.props.view.file.path,
-                          "svg",
-                        )}`,
-                      );
+                      const view = this.props.view;
+                      if(!view.exportDialog) {
+                        view.exportDialog = new ExportDialog(view.plugin, view,view.file);
+                        view.exportDialog.createForm();
+                      }
+                      view.exportDialog.open();
                     }}
-                    icon={ICONS.exportSVG}
-                    view={this.props.view}
-                  />
-                  <ActionButton
-                    key={"png"}
-                    title={t("EXPORT_PNG")}
-                    action={() => {
-                      this.props.view.savePNG();
-                      new Notice(
-                        `File saved: ${getIMGFilename(
-                          this.props.view.file.path,
-                          "png",
-                        )}`,
-                      );
-                    }}
-                    icon={ICONS.exportPNG}
-                    view={this.props.view}
-                  />
-                  <ActionButton
-                    key={"excalidraw"}
-                    title={t("EXPORT_EXCALIDRAW")}
-                    action={() => {
-                      this.props.view.exportExcalidraw();
-                    }}
-                    icon={ICONS.exportExcalidraw}
+                    icon={ICONS.ExportImage}
                     view={this.props.view}
                   />
                   <ActionButton

@@ -17,6 +17,15 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.3":`
+## New from Excalidraw.com
+- Eyedropper tool. The eyedropper is triggered with "i". If you hold the ALT key  while clicking the color it will set the stroke color of the selected element, else the background color.
+- Flipping multiple elements
+- Improved stencil library rendering performance + the stencil library will remember the scroll position from the previous time it was open
+
+## Fixed
+- Replaced command palette and tab export SVG/PNG/Excalidraw actions with "export image" which will take the user to the export image dialog.
+`,
 "1.9.2":`
 <div class="excalidraw-videoWrapper"><div>
 <iframe src="https://www.youtube.com/embed/diBT5iaoAYo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

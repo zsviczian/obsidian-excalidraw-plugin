@@ -25,10 +25,6 @@ import {
   ICON_NAME,
   SCRIPTENGINE_ICON,
   SCRIPTENGINE_ICON_NAME,
-  PNG_ICON,
-  PNG_ICON_NAME,
-  SVG_ICON,
-  SVG_ICON_NAME,
   RERENDER_EVENT,
   FRONTMATTER_KEY,
   FRONTMATTER,
@@ -40,6 +36,8 @@ import {
   VIRGIL_FONT,
   VIRGIL_DATAURL,
   EXPORT_TYPES,
+  EXPORT_IMG_ICON_NAME,
+  EXPORT_IMG_ICON,
 } from "./Constants";
 import ExcalidrawView, { TextMode, getTextMode } from "./ExcalidrawView";
 import {
@@ -104,6 +102,7 @@ import { ScriptInstallPrompt } from "./dialogs/ScriptInstallPrompt";
 import Taskbone from "./ocr/Taskbone";
 import { emulateCTRLClickForLinks, linkClickModifierType, PaneTarget } from "./utils/ModifierkeyHelper";
 import { InsertPDFModal } from "./dialogs/InsertPDFModal";
+import { ExportDialog } from "./dialogs/ExportDialog";
 
 declare module "obsidian" {
   interface App {
@@ -198,8 +197,7 @@ export default class ExcalidrawPlugin extends Plugin {
   async onload() {
     addIcon(ICON_NAME, EXCALIDRAW_ICON);
     addIcon(SCRIPTENGINE_ICON_NAME, SCRIPTENGINE_ICON);
-    addIcon(PNG_ICON_NAME, PNG_ICON);
-    addIcon(SVG_ICON_NAME, SVG_ICON);
+    addIcon(EXPORT_IMG_ICON_NAME, EXPORT_IMG_ICON);
 
     await this.loadSettings({reEnableAutosave:true});
     
@@ -938,42 +936,6 @@ export default class ExcalidrawPlugin extends Plugin {
     });    
 
     this.addCommand({
-      id: "export-svg",
-      name: t("EXPORT_SVG"),
-      checkCallback: (checking: boolean) => {
-        if (checking) {
-          return (
-            Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
-          );
-        }
-        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
-        if (view) {
-          view.saveSVG();
-          return true;
-        }
-        return false;
-      },
-    });
-
-    this.addCommand({
-      id: "export-svg-scene",
-      name: t("EXPORT_SVG_WITH_SCENE"),
-      checkCallback: (checking: boolean) => {
-        if (checking) {
-          return (
-            Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
-          );
-        }
-        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
-        if (view) {
-          view.saveSVG(undefined,true);
-          return true;
-        }
-        return false;
-      },
-    });
-
-    this.addCommand({
       id: "run-ocr",
       name: t("RUN_OCR"),
       checkCallback: (checking: boolean) => {
@@ -1054,8 +1016,8 @@ export default class ExcalidrawPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: "export-png",
-      name: t("EXPORT_PNG"),
+      id: "export-image",
+      name: t("EXPORT_IMAGE"),
       checkCallback: (checking: boolean) => {
         if (checking) {
           return (
@@ -1064,25 +1026,11 @@ export default class ExcalidrawPlugin extends Plugin {
         }
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
-          view.savePNG();
-          return true;
-        }
-        return false;
-      },
-    });
-
-    this.addCommand({
-      id: "export-png-scene",
-      name: t("EXPORT_PNG_WITH_SCENE"),
-      checkCallback: (checking: boolean) => {
-        if (checking) {
-          return (
-            Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
-          );
-        }
-        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
-        if (view) {
-          view.savePNG(undefined, true);
+          if(!view.exportDialog) {
+            view.exportDialog = new ExportDialog(this, view,view.file);
+            view.exportDialog.createForm();
+          }
+          view.exportDialog.open();
           return true;
         }
         return false;

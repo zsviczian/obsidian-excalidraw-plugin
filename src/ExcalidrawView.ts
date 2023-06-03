@@ -30,8 +30,6 @@ import {
   ICON_NAME,
   DISK_ICON_NAME,
   SCRIPTENGINE_ICON_NAME,
-  PNG_ICON_NAME,
-  SVG_ICON_NAME,
   FRONTMATTER_KEY,
   TEXT_DISPLAY_RAW_ICON_NAME,
   TEXT_DISPLAY_PARSED_ICON_NAME,
@@ -45,6 +43,7 @@ import {
   FRONTMATTER_KEY_EXPORT_TRANSPARENT,
   DEVICE,
   GITHUB_RELEASES,
+  EXPORT_IMG_ICON_NAME,
 } from "./Constants";
 import ExcalidrawPlugin from "./main";
 import { repositionElementsToCursor, ExcalidrawAutomate, getTextElementsMatchingQuery, cloneElement } from "./ExcalidrawAutomate";
@@ -201,7 +200,7 @@ const warningUnknowSeriousError = () => {
 
 export default class ExcalidrawView extends TextFileView {
   public excalidrawContainer: HTMLDivElement;
-  private exportDialog: ExportDialog;
+  public exportDialog: ExportDialog;
   public excalidrawData: ExcalidrawData;
   public getScene: Function = null;
   public addElements: Function = null; //add elements to the active Excalidraw drawing
@@ -2129,15 +2128,6 @@ export default class ExcalidrawView extends TextFileView {
             })
             .setSection("pane");
         })
-        .addItem((item) => {
-          item
-            .setTitle(t("EXPORT_EXCALIDRAW"))
-            .setIcon(ICON_NAME)
-            .onClick(async () => {
-              this.exportExcalidraw();
-            })
-            .setSection("pane");
-        });
     } else {
       menu.addItem((item) => {
         item
@@ -2149,38 +2139,20 @@ export default class ExcalidrawView extends TextFileView {
     menu
       .addItem((item) => {
         item
-          .setTitle(t("SAVE_AS_PNG"))
-          .setIcon(PNG_ICON_NAME)
+          .setTitle(t("EXPORT_IMAGE"))
+          .setIcon(EXPORT_IMG_ICON_NAME)
           .setSection("pane")
           .onClick(async (ev) => {
             if (!this.getScene || !this.file) {
               return;
             }
-            if (isCTRL(ev)) {
-              this.exportPNG(isSHIFT(ev));
-              return;
+            if(!this.exportDialog) {
+              this.exportDialog = new ExportDialog(this.plugin, this,this.file);
+              this.exportDialog.createForm();
             }
-            this.savePNG(undefined,isSHIFT(ev));
-            new Notice(`PNG export is ready${isSHIFT(ev)?" with embedded scene":""}`);
+            this.exportDialog.open();
           })
           .setSection("pane");
-      })
-      .addItem((item) => {
-        item
-          .setTitle(t("SAVE_AS_SVG"))
-          .setIcon(SVG_ICON_NAME)
-          .setSection("pane")
-          .onClick(async (ev) => {
-            if (!this.getScene || !this.file) {
-              return;
-            }
-            if (isCTRL(ev)) {
-              this.exportSVG(isSHIFT(ev));
-              return;
-            }
-            this.saveSVG(undefined,isSHIFT(ev));
-            new Notice(`SVG export is ready${isSHIFT(ev)?" with embedded scene":""}`);
-          });
       })
       .addItem(item => {
         item
