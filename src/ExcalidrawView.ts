@@ -901,7 +901,7 @@ export default class ExcalidrawView extends TextFileView {
       }
 
       //parts = REGEX_LINK.getRes(linkText).next();
-      if (!parts.value) {
+      if (!parts?.value) {
         this.openTagSearch(linkText);
         return;
       }

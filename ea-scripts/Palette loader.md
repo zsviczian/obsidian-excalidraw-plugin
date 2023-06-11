@@ -223,7 +223,7 @@ const loadPalette = async () => {
   const oldPalette = api.getAppState().colorPalette;
 
   //You can only switch and repaint equal size palettes
-  let canRepaint = Object.keys(oldPalette).length === 3 &&
+  let canRepaint = Boolean(oldPalette) && Object.keys(oldPalette).length === 3 &&
     oldPalette.canvasBackground.length  === paletteSize &&
     oldPalette.elementBackground.length === paletteSize &&
     oldPalette.elementStroke.length     === paletteSize;
