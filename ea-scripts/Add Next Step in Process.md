@@ -106,7 +106,7 @@ if(!isFirst) {
     }
   );
 
-	if (previousRectElements.length>0) {
+  if (previousRectElements.length>0) {
     const rect = ea.getElement(id);
     rect.strokeColor = fromElement.strokeColor;
     rect.strokeWidth = fromElement.strokeWidth;
