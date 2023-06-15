@@ -592,8 +592,8 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     scriptlist.push(scriptlist.shift());
     return (
       <>
-      {scriptlist.map(group => ( 
-        <fieldset>
+      {scriptlist.map((group, index) => ( 
+        <fieldset key={`${group}-${index}`}>
           <legend>{isDownloaded ? group : (group === "" ? "User" : "User/"+group)}</legend>
           <div className="buttonList buttonListIcon">
             {Object.entries(this.state.scriptIconMap)
