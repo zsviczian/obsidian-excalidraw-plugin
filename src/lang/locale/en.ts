@@ -439,7 +439,7 @@ FILENAME_HEAD: "Filename",
     "Files that use this fourth font will (partly) lose their platform independence. " +
     "Depending on the custom font set in settings, they will look differently when loaded in another vault, or at a later time. " +
     "Also the 4th font will display as system default font on excalidraw.com, or other Excalidraw versions.",
-  FOURTH_FONT_NAME: "Forth font file",
+  FOURTH_FONT_NAME: "Fourth font file",
   FOURTH_FONT_DESC:
     "Select a .ttf, .woff or .woff2 font file from your vault to use as the fourth font. " +
     "If no file is selected, Excalidraw will use the Virgil font by default.",
