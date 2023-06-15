@@ -27,7 +27,7 @@ The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/),
 </details>
 <details><summary>The Script Engine Store - Excalidraw Automation</summary>
 <a href="https://youtu.be/hePJcObHIso" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/145684531-8d9c2992-59ac-4ebc-804a-4cce1777ded2.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Introducing the Script Engine</a><br>
-<a href="https://youtu.be/lzYdOQ6z8F0" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/147889174-6c306d0d-2d29-46cc-a53f-3f0013cf14de.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Script Enginge Store</a><br>
+<a href="https://youtu.be/lzYdOQ6z8F0" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/147889174-6c306d0d-2d29-46cc-a53f-3f0013cf14de.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Script Engine Store</a><br>
 </details>
 <details><summary>Working with colors</summary>
 <a href="https://youtu.be/6PLGHBH9VZ4" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/194773147-5418a0ab-6be5-4eb0-a8e4-d6af21b1b483.png" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Colors - Excalidraw Basics (Custom)</a><br>
@@ -44,7 +44,7 @@ The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/),
 </details>
 <details><summary>Powertools</summary>
 <a href="https://youtu.be/NOuddK6xrr8" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/147283367-e5689385-ea51-4983-81a3-04d810d39f62.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Sticky Notes (word wrapping)</a><br>
-<a href="https://youtu.be/eKFmrSQhFA4" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/149659524-2a4e0a24-40c9-4e66-a6b1-c92f3b88ecd5.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Fourt Font</a><br>
+<a href="https://youtu.be/eKFmrSQhFA4" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/149659524-2a4e0a24-40c9-4e66-a6b1-c92f3b88ecd5.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Fourth Font</a><br>
 <a href="https://youtu.be/vlC1-iBvIfo" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/199207784-8bbe14e0-7d10-47d7-971d-20dce8dbd659.png" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;SVG import</a><br>
 <a href="https://youtu.be/7gu4ETx7zro" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/202916770-28f2fa64-1ba2-4b40-a7fe-d721b42634f7.png" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;OCR</a><br>
 <a href="https://youtu.be/U2LkBRBk4LY" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/159369910-6371f08d-b5fa-454d-9c6c-948f7e7a7d26.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Bind/unbind text from container, Frontmatter tags to customize export</a><br>
