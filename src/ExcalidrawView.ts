@@ -9,6 +9,7 @@ import {
   MarkdownView,
   request,
   requireApiVersion,
+  WorkspaceSplit,
 } from "obsidian";
 //import * as React from "react";
 //import * as ReactDOM from "react-dom";
@@ -24,6 +25,7 @@ import {
   BinaryFileData,
   ExcalidrawImperativeAPI,
   LibraryItems,
+  UIAppState,
 } from "@zsviczian/excalidraw/types/types";
 import {
   VIEW_TYPE_EXCALIDRAW,
@@ -111,8 +113,19 @@ import { emulateCTRLClickForLinks, externalDragModifierType, internalDragModifie
 import { setDynamicStyle } from "./utils/DynamicStyling";
 import { MenuLinks } from "./menu/MenuLinks";
 import { InsertPDFModal } from "./dialogs/InsertPDFModal";
+import { CustomIFrame, renderWebView, useDefaultExcalidrawFrame } from "./customIFrame";
 
 declare const PLUGIN_VERSION:string;
+
+declare module "obsidian" {
+  interface Workspace {
+    floatingSplit: any;
+  }
+
+  interface WorkspaceSplit {
+    containerEl: HTMLDivElement;
+  }
+}
 
 type SelectedElementWithLink = { id: string; text: string };
 type SelectedImage = { id: string; fileId: FileId };
@@ -3610,7 +3623,35 @@ export default class ExcalidrawView extends TextFileView {
                 
               }
             },
-          },//,React.createElement(Footer,{},React.createElement(customTextEditor.render)),
+          iframeURLWhitelist: [/.*/],
+          renderCustomIFrame: (
+            element: NonDeletedExcalidrawElement,
+            radius: number,
+            appState: UIAppState,
+          ) => {
+            if(!this.file || !element || !element.link || element.link.length === 0 || useDefaultExcalidrawFrame(element)) {
+              return null;
+            }
+
+            if(element.link.match(REG_LINKINDEX_HYPERLINK)) {
+              return renderWebView(element.link, radius);
+            }
+          
+            const res = REGEX_LINK.getRes(element.link).next();
+            if(!res || (!res.value && res.done)) {
+              return null;
+            }
+          
+            let linkText = REGEX_LINK.getLink(res);
+          
+            if(linkText.match(REG_LINKINDEX_HYPERLINK)) {
+              return renderWebView(linkText, radius);
+            }
+            
+            return React.createElement(CustomIFrame, {element,radius,view:this, appState, linkText});
+          }
+
+        },//,React.createElement(Footer,{},React.createElement(customTextEditor.render)),
           React.createElement (
             MainMenu,          
             {},
