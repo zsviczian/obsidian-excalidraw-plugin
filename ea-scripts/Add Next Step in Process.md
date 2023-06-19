@@ -67,6 +67,7 @@ if(!isFirst) {
   ea.copyViewElementsToEAforEditing([fromElement]);
 
   const previousTextElements = elements.filter((el)=>el.type==="text");
+  const previousRectElements = elements.filter((el)=>el.type==="rectangle");
   if(previousTextElements.length>0) {
     const el = previousTextElements[0];
     ea.style.strokeColor = el.strokeColor;
@@ -85,7 +86,8 @@ if(!isFirst) {
     {
       wrapAt: wrapLineLen,
       textAlign: "center",
-      box: "rectangle",
+      textVerticalAlign: "middle",
+      box: previousRectElements.length > 0 ? "rectangle" : false,
       ...fixWidth
       ? {width: width, boxPadding:0}
       : {boxPadding: textPadding}
@@ -104,14 +106,19 @@ if(!isFirst) {
     }
   );
 
-	const rect = ea.getElement(id);
-  rect.strokeColor = fromElement.strokeColor;
-  rect.strokeWidth = fromElement.strokeWidth;
-	rect.strokeStyle = fromElement.strokeStyle;
-	rect.roughness = fromElement.roughness;
-	rect.strokeSharpness = fromElement.strokeSharpness;
-	rect.backgroundColor = fromElement.backgroundColor;
-  rect.fillStyle = fromElement.fillStyle;
+  if (previousRectElements.length>0) {
+    const rect = ea.getElement(id);
+    rect.strokeColor = fromElement.strokeColor;
+    rect.strokeWidth = fromElement.strokeWidth;
+    rect.strokeStyle = fromElement.strokeStyle;
+    rect.roughness = fromElement.roughness;
+    rect.roundness = fromElement.roundness;
+    rect.strokeSharpness = fromElement.strokeSharpness;
+    rect.backgroundColor = fromElement.backgroundColor;
+    rect.fillStyle = fromElement.fillStyle;
+    rect.width = fromElement.width;
+    rect.height = fromElement.height;
+  }
 
   await ea.addElementsToView(false,false);
 } else {
@@ -122,6 +129,7 @@ if(!isFirst) {
     {
       wrapAt: wrapLineLen,
       textAlign: "center",
+      textVerticalAlign: "middle",
       box: "rectangle",
       boxPadding: textPadding,
 		  ...fixWidth?{width: width}:null
