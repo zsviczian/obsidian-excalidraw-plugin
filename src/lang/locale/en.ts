@@ -59,6 +59,7 @@ export default {
   IMPORT_SVG: "Import an SVG file as Excalidraw strokes (limited SVG support, TEXT currently not supported)",
   INSERT_MD: "Insert markdown file from vault",
   INSERT_PDF: "Insert PDF file from vault",
+  UNIVERSAL_ADD_FILE: "Add a file from the Vault to the drawing",
   INSERT_LATEX:
     `Insert LaTeX formula (e.g. \\binom{n}{k} = \\frac{n!}{k!(n-k)!}). ${labelALT()}+CLICK to watch a help video.`,
   ENTER_LATEX: "Enter a valid LaTeX expression",

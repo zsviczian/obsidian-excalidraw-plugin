@@ -612,6 +612,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     y: number,
     w: number,
     h: number,
+    link: string | null = null,
   ) {
     return {
       id,
@@ -640,10 +641,32 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       isDeleted: false,
       groupIds: [] as any,
       boundElements: [] as any,
-      link: null as string,
+      link,
       locked: false,
     };
   }
+
+   /**
+   * 
+   * @param topX 
+   * @param topY 
+   * @param width 
+   * @param height 
+   * @returns 
+   */
+    addIFrame(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile): string {
+      const id = nanoid();
+      this.elementsDict[id] = this.boxedElement(
+        id,
+        "iframe",
+        topX,
+        topY,
+        width,
+        height,
+        url ? url : file ? `[[${file.path}]]` : "",
+      );
+      return id;
+    };
 
   /**
    * 

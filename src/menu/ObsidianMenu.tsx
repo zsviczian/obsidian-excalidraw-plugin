@@ -9,6 +9,7 @@ import { PenStyle } from "src/PenTypes";
 import { PENS } from "src/utils/Pens";
 import ExcalidrawPlugin from "../main";
 import { ICONS, penIcon, stringToSVG } from "./ActionIcons";
+import { UniversalInsertFileModal } from "src/dialogs/UniversalInsertFileModal";
 
 declare const PLUGIN_VERSION:string;
 
@@ -252,6 +253,23 @@ export class ObsidianMenu {
         >
           <div className="ToolIcon__icon" aria-hidden="true">
             {ICONS.obsidian}
+          </div>
+        </label>
+        <label
+          className={clsx(
+            "ToolIcon",
+            "ToolIcon_size_medium",
+            {
+              "is-mobile": isMobile,
+            },
+          )}
+          onClick={() => {
+            const insertFileModal = new UniversalInsertFileModal(this.plugin, this.view);
+            insertFileModal.open();
+          }}
+        >
+          <div className="ToolIcon__icon" aria-hidden="true">
+            {ICONS["add-file"]}
           </div>
         </label>
         {this.renderCustomPens(isMobile,appState)}

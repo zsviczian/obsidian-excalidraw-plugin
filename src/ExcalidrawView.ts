@@ -114,6 +114,7 @@ import { setDynamicStyle } from "./utils/DynamicStyling";
 import { MenuLinks } from "./menu/MenuLinks";
 import { InsertPDFModal } from "./dialogs/InsertPDFModal";
 import { CustomIFrame, renderWebView, useDefaultExcalidrawFrame } from "./customIFrame";
+import { insertIFrameToView, insertImageToView } from "./utils/ExcalidrawViewUtils";
 
 declare const PLUGIN_VERSION:string;
 
@@ -2951,6 +2952,7 @@ export default class ExcalidrawView extends TextFileView {
                   case "image": msg = "Embed image";break;
                   case "image-fullsize": msg = "Embed image @100%"; break;
                   case "link": msg = "Insert link"; break;
+                  case "iframe": msg = "Insert in interactive frame"; break;
                 }
               } else if(e.dataTransfer.types.length === 1 && e.dataTransfer.types.includes("Files")) {
                 //drag from OS file manager
@@ -2961,6 +2963,7 @@ export default class ExcalidrawView extends TextFileView {
                   case "image-import": msg = "Import image to Vault"; break;
                   case "image-url": msg = "Insert image/thumbnail with URL"; break;
                   case "insert-link": msg = "Insert link"; break;
+                  case "iframe": msg = "Insert in interactive frame"; break;
                 }
               }
               if(this.draginfoDiv.innerText !== msg) this.draginfoDiv.innerText = msg;
@@ -3173,6 +3176,7 @@ export default class ExcalidrawView extends TextFileView {
               const internalDragAction = internalDragModifierType(event);
               const externalDragAction = externalDragModifierType(event);
 
+              //Call Excalidraw Automate onDropHook
               const onDropHook = (
                 type: "file" | "text" | "unknown",
                 files: TFile[],
@@ -3204,39 +3208,47 @@ export default class ExcalidrawView extends TextFileView {
                 }
               };
 
-              //Obsidian internal drag event
+              //---------------------------------------------------------------------------------
+              // Obsidian internal drag event
+              //---------------------------------------------------------------------------------
               switch (draggable?.type) {
                 case "file":
                   if (!onDropHook("file", [draggable.file], null)) {
+                    const file:TFile = draggable.file;
                     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/422
-                    if (draggable.file.path.match(REG_LINKINDEX_INVALIDCHARS)) {
+                    if (file.path.match(REG_LINKINDEX_INVALIDCHARS)) {
                       new Notice(t("FILENAME_INVALID_CHARS"), 4000);
                       return false;
                     }
                     if (
                       ["image", "image-fullsize"].contains(internalDragAction) && 
-                      (IMAGE_TYPES.contains(draggable.file.extension) ||
-                        draggable.file.extension === "md"  ||
-                        draggable.file.extension.toLowerCase() === "pdf" )
+                      (IMAGE_TYPES.contains(file.extension) ||
+                        file.extension === "md"  ||
+                        file.extension.toLowerCase() === "pdf" )
                     ) {
-                      const ea = getEA(this);
-                      if(draggable.file.extension.toLowerCase() === "pdf") {
+                      if(file.extension.toLowerCase() === "pdf") {
                         const insertPDFModal = new InsertPDFModal(this.plugin, this);
-                        insertPDFModal.open(draggable.file);
+                        insertPDFModal.open(file);
                       } else {
-                        (async () => {
-                          ea.canvas.theme = api.getAppState().theme;
-                          await ea.addImage(
-                            this.currentPosition.x,
-                            this.currentPosition.y,
-                            draggable.file,
-                            !(internalDragAction==="image-fullsize"),
-                          );
-                          ea.addElementsToView(false, false, true);
-                        })();
+                        insertImageToView(
+                          getEA(this),
+                          this.currentPosition,
+                          file,
+                          !(internalDragAction==="image-fullsize")
+                        );
                       }
                       return false;
                     }
+                    
+                    if (internalDragAction === "iframe") {
+                      insertIFrameToView(
+                        getEA(this),
+                        this.currentPosition,
+                        file,
+                      )
+                      return false;
+                    }
+
                     //internalDragAction === "link"
                     this.addText(
                       `[[${app.metadataCache.fileToLinktext(
@@ -3272,6 +3284,28 @@ export default class ExcalidrawView extends TextFileView {
                         }
                         return;
                       }
+
+                      if (internalDragAction === "iframe") {
+                        const ea = getEA(this) as ExcalidrawAutomate;
+                        let column:number = 0;
+                        let row:number = 0;
+                        for (const f of draggable.files) {
+                          await insertIFrameToView(
+                            ea,
+                            {
+                              x:this.currentPosition.x + column*500,
+                              y:this.currentPosition.y + row*550
+                            },
+                            f,
+                          )
+                          column = (column + 1) % 3;
+                          if(column === 0) {
+                            row++;
+                          }
+                        }
+                        return false;
+                      }
+
                       //internalDragAction === "link"
                       for (const f of draggable.files) {
                         await this.addText(
@@ -3289,7 +3323,9 @@ export default class ExcalidrawView extends TextFileView {
                   return false;
               }
 
-              //externalDragAction
+              //---------------------------------------------------------------------------------
+              // externalDragAction
+              //---------------------------------------------------------------------------------
               if (event.dataTransfer.types.includes("Files")) {
                 if (event.dataTransfer.types.includes("text/plain")) {
                   const text: string = event.dataTransfer.getData("text");
@@ -3312,6 +3348,15 @@ export default class ExcalidrawView extends TextFileView {
                       return false;
                     }
                   }
+                  if(text && (externalDragAction === "iframe")) {
+                    insertIFrameToView(
+                      getEA(this),
+                      this.currentPosition,
+                      undefined,
+                      text,
+                    )
+                    return false;
+                  }
                 }
 
                 if(event.dataTransfer.types.includes("text/html")) {
@@ -3333,6 +3378,15 @@ export default class ExcalidrawView extends TextFileView {
                       return false;
                     }
                   }
+                  if(src && (externalDragAction === "iframe")) {
+                    insertIFrameToView(
+                      getEA(this),
+                      this.currentPosition,
+                      undefined,
+                      src[1],
+                    )
+                    return false;
+                  }
                 }
                 return true;
               }
@@ -3353,6 +3407,9 @@ export default class ExcalidrawView extends TextFileView {
                   return true;
                 }
                 if (!onDropHook("text", null, text)) {
+                  if(text && (externalDragAction==="iframe") && /^(http|https):\/\/[^\s/$.?#].[^\s]*$/.test(text)) {
+                    return true;
+                  }
                   if(text && (externalDragAction==="image-url") && hyperlinkIsYouTubeLink(text)) {
                     this.addYouTubeThumbnail(text);
                     return false;

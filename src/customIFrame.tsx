@@ -185,7 +185,7 @@ function RenderObsidianView(
       return;
     }
 
-    isActiveRef.current = appState.activeIFrameElement === element;
+    isActiveRef.current = appState.activeIFrame?.element === element && appState.activeIFrame?.state === "active";
   
     if(!isActiveRef.current) {
       //@ts-ignore
@@ -194,7 +194,7 @@ function RenderObsidianView(
       app.workspace.setActiveLeaf(view.leaf);
       return;
     }  
-  }, [appState.activeIFrameElement, element]);
+  }, [appState.activeIFrame, element]);
 
   return null;
 };
@@ -220,6 +220,19 @@ export const CustomIFrame: React.FC<{element: NonDeletedExcalidrawElement; radiu
         view={view}
         containerRef={containerRef}
         appState={appState}/>
+      {(appState.activeIFrame?.element === element && appState.activeIFrame?.state === "hover") && (<div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: `100%`,
+          height: `100%`,
+          background: `radial-gradient(
+            ellipse at center,
+            rgba(0, 0, 0, 0) 20%,
+            rgba(0, 0, 0, 0.6) 80%
+          )`,
+        }}/>)}
     </div>
   )
 }

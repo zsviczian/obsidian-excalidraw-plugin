@@ -103,6 +103,7 @@ import Taskbone from "./ocr/Taskbone";
 import { emulateCTRLClickForLinks, linkClickModifierType, PaneTarget } from "./utils/ModifierkeyHelper";
 import { InsertPDFModal } from "./dialogs/InsertPDFModal";
 import { ExportDialog } from "./dialogs/ExportDialog";
+import { UniversalInsertFileModal } from "./dialogs/UniversalInsertFileModal";
 
 declare module "obsidian" {
   interface App {
@@ -1345,6 +1346,23 @@ export default class ExcalidrawPlugin extends Plugin {
         if (view) {
           const insertPDFModal = new InsertPDFModal(this, view);
           insertPDFModal.open();
+          return true;
+        }
+        return false;
+      },
+    });
+
+    this.addCommand({
+      id: "universal-add-file",
+      name: t("UNIVERSAL_ADD_FILE"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
+        }
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
+          const insertFileModal = new UniversalInsertFileModal(this, view);
+          insertFileModal.open();
           return true;
         }
         return false;

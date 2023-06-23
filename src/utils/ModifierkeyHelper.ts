@@ -2,8 +2,8 @@ import { DEVICE, isDarwin } from "src/Constants";
 export type ModifierKeys = {shiftKey:boolean, ctrlKey: boolean, metaKey: boolean, altKey: boolean};
 export type KeyEvent = PointerEvent | MouseEvent | KeyboardEvent | React.DragEvent | React.PointerEvent | React.MouseEvent | ModifierKeys; 
 export type PaneTarget = "active-pane"|"new-pane"|"popout-window"|"new-tab"|"md-properties";
-export type ExternalDragAction = "insert-link"|"image-url"|"image-import";
-export type InternalDragAction = "link"|"image"|"image-fullsize";
+export type ExternalDragAction = "insert-link"|"image-url"|"image-import"|"iframe";
+export type InternalDragAction = "link"|"image"|"image-fullsize"|"iframe";
 
 export const labelCTRL = () => DEVICE.isIOS || DEVICE.isMacOS ? "CMD" : "CTRL";
 export const labelALT = () => DEVICE.isIOS || DEVICE.isMacOS ? "OPT" : "ALT";
@@ -31,6 +31,7 @@ export const linkClickModifierType = (ev: KeyEvent):PaneTarget => {
 }
 
 export const externalDragModifierType = (ev: KeyEvent):ExternalDragAction => {
+  if( isSHIFT(ev) &&  isCTRL(ev) && !isALT(ev) && !isMETA(ev)) return "iframe";
   if(!isSHIFT(ev) &&  isCTRL(ev) && !isALT(ev) && !isMETA(ev)) return "insert-link";
   if(!isSHIFT(ev) && !isCTRL(ev) && !isALT(ev) &&  isMETA(ev)) return "insert-link";
   if( isSHIFT(ev) && !isCTRL(ev) && !isALT(ev) && !isMETA(ev)) return "image-import";
@@ -40,6 +41,7 @@ export const externalDragModifierType = (ev: KeyEvent):ExternalDragAction => {
 
 //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/468
 export const internalDragModifierType = (ev: KeyEvent):InternalDragAction => {
+  if( isSHIFT(ev) &&  isCTRL(ev) && !isALT(ev) && !isMETA(ev)) return "iframe";
   if( isSHIFT(ev) && !isCTRL(ev) && !isALT(ev) && !isMETA(ev)) return "image";
   if(!isSHIFT(ev) &&  isCTRL(ev) && !isALT(ev) && !isMETA(ev)) return "image";
   if(scaleToFullsizeModifier(ev)) return "image-fullsize";
