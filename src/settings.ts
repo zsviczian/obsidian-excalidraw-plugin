@@ -45,6 +45,7 @@ export interface ExcalidrawSettings {
   width: string;
   dynamicStyling: DynamicStyle;
   isLeftHanded: boolean;
+  iframeMatchExcalidrawTheme: boolean;
   matchTheme: boolean;
   matchThemeAlways: boolean;
   matchThemeTrigger: boolean;
@@ -157,6 +158,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   width: "400",
   dynamicStyling: "colorful",
   isLeftHanded: false,
+  iframeMatchExcalidrawTheme: true,
   matchTheme: false,
   matchThemeAlways: false,
   matchThemeTrigger: false,
@@ -598,6 +600,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
+
+    new Setting(containerEl)
+      .setName(t("IFRAME_MATCH_THEME_NAME"))
+      .setDesc(fragWithHTML(t("IFRAME_MATCH_THEME_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.iframeMatchExcalidrawTheme)
+          .onChange(async (value) => {
+            this.plugin.settings.iframeMatchExcalidrawTheme = value;
+            this.applySettingsUpdate(true);
+          }),
+      );
+
 
     new Setting(containerEl)
       .setName(t("MATCH_THEME_NAME"))

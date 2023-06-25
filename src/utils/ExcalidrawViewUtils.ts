@@ -9,17 +9,20 @@ export const insertImageToView = async (
   position: { x: number, y: number },
   file: TFile,
   scale?: boolean,
-) => {
+):Promise<string> => {
   ea.clear();
+  ea.style.strokeColor = "transparent";
+  ea.style.backgroundColor = "transparent";
   const api = ea.getExcalidrawAPI();
   ea.canvas.theme = api.getAppState().theme;
-  await ea.addImage(
+  const id = await ea.addImage(
     position.x,
     position.y,
     file,
     scale,
   );
-  ea.addElementsToView(false, false, true);
+  await ea.addElementsToView(false, false, true);
+  return id;
 }
 
 export const insertIFrameToView = async (
@@ -27,12 +30,14 @@ export const insertIFrameToView = async (
   position: { x: number, y: number },
   file?: TFile,
   link?: string,
-) => {
+):Promise<string> => {
   ea.clear();
+  ea.style.strokeColor = "transparent";
+  ea.style.backgroundColor = "transparent";
   if(file && IMAGE_TYPES.contains(file.extension) || ea.isExcalidrawFile(file)) {
-    await insertImageToView(ea, position, file);
+    return await insertImageToView(ea, position, file);
   } else {
-    ea.addIFrame(
+    const id = ea.addIFrame(
       position.x,
       position.y,
       MAX_IMAGE_SIZE,
@@ -40,6 +45,7 @@ export const insertIFrameToView = async (
       link,
       file,
     );
-    ea.addElementsToView(false, false, true);
+    await ea.addElementsToView(false, false, true);
+    return id;
   }
 }

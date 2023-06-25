@@ -17,7 +17,9 @@ import {
   FRONTMATTER_KEY_LINKBUTTON_OPACITY,
   FRONTMATTER_KEY_ONLOAD_SCRIPT,
   FRONTMATTER_KEY_AUTOEXPORT,
+  FRONTMATTER_KEY_IFRAME_THEME,
   DEVICE,
+  IFRAME_THEME_FRONTMATTER_VALUES,
 } from "./Constants";
 import { _measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
@@ -254,6 +256,7 @@ export class ExcalidrawData {
   private app: App;
   private showLinkBrackets: boolean;
   private linkPrefix: string;
+  public iFrameTheme: "light" | "dark" | "auto" | "default" = "auto";
   private urlPrefix: string;
   public autoexportPreference: AutoexportPreference = AutoexportPreference.inherit;
   private textMode: TextMode = TextMode.raw;
@@ -441,6 +444,7 @@ export class ExcalidrawData {
     this.setLinkPrefix();
     this.setUrlPrefix();
     this.setAutoexportPreferences();
+    this.setIFrameThemePreference();
 
     this.scene = null;
 
@@ -620,6 +624,7 @@ export class ExcalidrawData {
     this.setShowLinkBrackets();
     this.setLinkPrefix();
     this.setUrlPrefix();
+    this.setIFrameThemePreference();
     this.scene = JSON.parse(data);
     if (!this.scene.files) {
       this.scene.files = {}; //loading legacy scenes without the files element
@@ -1303,6 +1308,7 @@ export class ExcalidrawData {
       this.setLinkPrefix() ||
       this.setUrlPrefix() ||
       this.setShowLinkBrackets() ||
+      this.setIFrameThemePreference() ||
       this.findNewElementLinksInScene();
     await this.updateTextElementsFromScene();
     if (result || this.findNewTextElementsInScene()) {
@@ -1471,6 +1477,23 @@ export class ExcalidrawData {
     } else {
       this.autoexportPreference = AutoexportPreference.inherit;
     }
+  }
+
+  private setIFrameThemePreference(): boolean {
+    const iFrameTheme = this.iFrameTheme;
+    const fileCache = this.app.metadataCache.getFileCache(this.file);
+    if (
+      fileCache?.frontmatter &&
+      fileCache.frontmatter[FRONTMATTER_KEY_IFRAME_THEME] != null
+    ) {
+      this.iFrameTheme = fileCache.frontmatter[FRONTMATTER_KEY_IFRAME_THEME].toLowerCase();
+      if (!IFRAME_THEME_FRONTMATTER_VALUES.includes(this.iFrameTheme)) {
+        this.iFrameTheme = "default";
+      }
+    } else {
+      this.iFrameTheme = this.plugin.settings.iframeMatchExcalidrawTheme ? "auto" : "default";
+    }
+    return iFrameTheme != this.iFrameTheme;
   }
 
   private setShowLinkBrackets(): boolean {

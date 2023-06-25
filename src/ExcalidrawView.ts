@@ -2951,7 +2951,9 @@ export default class ExcalidrawView extends TextFileView {
                 switch (internalDragModifierType(e)) {
                   case "image": msg = "Embed image";break;
                   case "image-fullsize": msg = "Embed image @100%"; break;
-                  case "link": msg = "Insert link"; break;
+                  case "link": msg = `Insert link\n${DEVICE.isMacOS || DEVICE.isIOS
+                    ? "try SHIFT and CTRL combinations for other drop actions" 
+                    : "try SHIFT, CTRL, ALT combinations for other drop actions"}`; break;
                   case "iframe": msg = "Insert in interactive frame"; break;
                 }
               } else if(e.dataTransfer.types.length === 1 && e.dataTransfer.types.includes("Files")) {
@@ -2961,7 +2963,9 @@ export default class ExcalidrawView extends TextFileView {
                 //drag from Internet
                 switch (externalDragModifierType(e)) {
                   case "image-import": msg = "Import image to Vault"; break;
-                  case "image-url": msg = "Insert image/thumbnail with URL"; break;
+                  case "image-url": msg = `Insert image/thumbnail with URL\n${DEVICE.isMacOS || DEVICE.isIOS
+                    ? "try SHIFT, OPT, CTRL combinations for other drop actions" 
+                    : "try SHIFT, CTRL, ALT combinations for other drop actions"}`; break;
                   case "insert-link": msg = "Insert link"; break;
                   case "iframe": msg = "Insert in interactive frame"; break;
                 }
@@ -3135,10 +3139,10 @@ export default class ExcalidrawView extends TextFileView {
             renderTopRightUI: this.obsidianMenu.renderButton,
             onPaste: (data: ClipboardData) => {
               //, event: ClipboardEvent | null
-              if(data && data.text && hyperlinkIsYouTubeLink(data.text)) {
+              /*if(data && data.text && hyperlinkIsYouTubeLink(data.text)) {
                 this.addYouTubeThumbnail(data.text);
                 return false;
-              }
+              }*/
               if(data && data.text && hyperlinkIsImage(data.text)) {
                 this.addImageWithURL(data.text);
                 return false;
@@ -3230,22 +3234,32 @@ export default class ExcalidrawView extends TextFileView {
                         const insertPDFModal = new InsertPDFModal(this.plugin, this);
                         insertPDFModal.open(file);
                       } else {
-                        insertImageToView(
-                          getEA(this),
-                          this.currentPosition,
-                          file,
-                          !(internalDragAction==="image-fullsize")
-                        );
+                        (async () => {
+                          const ea: ExcalidrawAutomate = getEA(this);
+                          ea.selectElementsInView([
+                            await insertImageToView(
+                              ea,
+                              this.currentPosition,
+                              file,
+                              !(internalDragAction==="image-fullsize")
+                            )
+                          ]);
+                        })();
                       }
                       return false;
                     }
                     
                     if (internalDragAction === "iframe") {
-                      insertIFrameToView(
-                        getEA(this),
-                        this.currentPosition,
-                        file,
-                      )
+                      (async () => {
+                        const ea: ExcalidrawAutomate = getEA(this);
+                        ea.selectElementsInView([
+                          await insertIFrameToView(
+                            ea,
+                            this.currentPosition,
+                            file,
+                          )
+                        ]);
+                      })();
                       return false;
                     }
 
@@ -3263,19 +3277,21 @@ export default class ExcalidrawView extends TextFileView {
                   if (!onDropHook("file", draggable.files, null)) {
                     (async () => {
                       if (["image", "image-fullsize"].contains(internalDragAction)) {
-                        const ea = getEA(this);
+                        const ea:ExcalidrawAutomate = getEA(this);
                         ea.canvas.theme = api.getAppState().theme;
                         let counter:number = 0;
+                        const ids:string[] = [];
                         for (const f of draggable.files) {
                           if ((IMAGE_TYPES.contains(f.extension) || f.extension === "md")) {
-                            await ea.addImage(
+                            ids.push(await ea.addImage(
                               this.currentPosition.x + counter*50,
                               this.currentPosition.y + counter*50,
                               f,
                               !(internalDragAction==="image-fullsize"),
-                            );
+                            ));
                             counter++;
                             await ea.addElementsToView(false, false, true);
+                            ea.selectElementsInView(ids);
                           }
                           if (f.extension.toLowerCase() === "pdf") {
                             const insertPDFModal = new InsertPDFModal(this.plugin, this);
@@ -3286,18 +3302,19 @@ export default class ExcalidrawView extends TextFileView {
                       }
 
                       if (internalDragAction === "iframe") {
-                        const ea = getEA(this) as ExcalidrawAutomate;
+                        const ea:ExcalidrawAutomate = getEA(this);
                         let column:number = 0;
                         let row:number = 0;
+                        const ids:string[] = [];
                         for (const f of draggable.files) {
-                          await insertIFrameToView(
+                          ids.push(await insertIFrameToView(
                             ea,
                             {
                               x:this.currentPosition.x + column*500,
                               y:this.currentPosition.y + row*550
                             },
                             f,
-                          )
+                          ));
                           column = (column + 1) % 3;
                           if(column === 0) {
                             row++;
@@ -3407,7 +3424,7 @@ export default class ExcalidrawView extends TextFileView {
                   return true;
                 }
                 if (!onDropHook("text", null, text)) {
-                  if(text && (externalDragAction==="iframe") && /^(http|https):\/\/[^\s/$.?#].[^\s]*$/.test(text)) {
+                  if(text && (externalDragAction==="iframe") && /^(blob:)?(http|https):\/\/[^\s/$.?#].[^\s]*$/.test(text)) {
                     return true;
                   }
                   if(text && (externalDragAction==="image-url") && hyperlinkIsYouTubeLink(text)) {
@@ -3686,26 +3703,34 @@ export default class ExcalidrawView extends TextFileView {
             radius: number,
             appState: UIAppState,
           ) => {
-            if(!this.file || !element || !element.link || element.link.length === 0 || useDefaultExcalidrawFrame(element)) {
-              return null;
-            }
+            try {
+              if(!this.file || !element || !element.link || element.link.length === 0 || useDefaultExcalidrawFrame(element)) {
+                return null;
+              }
 
-            if(element.link.match(REG_LINKINDEX_HYPERLINK)) {
-              return renderWebView(element.link, radius);
-            }
-          
-            const res = REGEX_LINK.getRes(element.link).next();
-            if(!res || (!res.value && res.done)) {
+              if(element.link.match(REG_LINKINDEX_HYPERLINK)) {
+                return renderWebView(element.link, radius);
+              }
+            
+              const res = REGEX_LINK.getRes(element.link).next();
+              if(!res || (!res.value && res.done)) {
+                return null;
+              }
+            
+              let linkText = REGEX_LINK.getLink(res);
+            
+              if(linkText.match(REG_LINKINDEX_HYPERLINK)) {
+                if(DEVICE.isDesktop) {
+                  return renderWebView(linkText, radius);
+                } else {
+                  return null;
+                }
+              }
+              
+              return React.createElement(CustomIFrame, {element,radius,view:this, appState, linkText});
+            } catch(e) {
               return null;
             }
-          
-            let linkText = REGEX_LINK.getLink(res);
-          
-            if(linkText.match(REG_LINKINDEX_HYPERLINK)) {
-              return renderWebView(linkText, radius);
-            }
-            
-            return React.createElement(CustomIFrame, {element,radius,view:this, appState, linkText});
           }
 
         },//,React.createElement(Footer,{},React.createElement(customTextEditor.render)),

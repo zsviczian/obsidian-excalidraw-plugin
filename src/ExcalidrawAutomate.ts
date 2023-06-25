@@ -655,6 +655,17 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
    * @returns 
    */
     addIFrame(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile): string {
+      //@ts-ignore
+      if (!this.targetView || !this.targetView?._loaded) {
+        errorMessage("targetView not set", "addIFrame()");
+        return null;
+      }
+
+      if (!url && !file) {
+        errorMessage("Either the url or the file must be set. If both are provided the URL takes precedence", "addIFrame()");
+        return null;
+      }
+
       const id = nanoid();
       this.elementsDict[id] = this.boxedElement(
         id,
@@ -663,7 +674,13 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
         topY,
         width,
         height,
-        url ? url : file ? `[[${file.path}]]` : "",
+        url ? url : file ? `[[${
+          app.metadataCache.fileToLinktext(
+            file,
+            this.targetView.file.path,
+            file.extension === "md",
+          )
+        }]]` : "",
       );
       return id;
     };
@@ -1978,7 +1995,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
    * @param elements 
    * @returns 
    */
-  selectElementsInView(elements: ExcalidrawElement[]): void {
+  selectElementsInView(elements: ExcalidrawElement[] | string[]): void {
     //@ts-ignore
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "selectElementsInView()");
@@ -1987,8 +2004,13 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     if (!elements || elements.length === 0) {
       return;
     }
-    const API = this.getExcalidrawAPI();
-    API.selectElements(elements);
+    const API: ExcalidrawImperativeAPI = this.getExcalidrawAPI();
+    if(typeof elements[0] === "string") {
+      const els = this.getViewElements().filter(el=>(elements as string[]).includes(el.id));
+      API.selectElements(els);
+    } else {
+      API.selectElements(elements as ExcalidrawElement[]);
+    }
   };
 
   /**

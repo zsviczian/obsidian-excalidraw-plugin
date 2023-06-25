@@ -247,6 +247,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "addImage",
+    code: "addIFrame(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile): string;",
+    desc: "Adds an iframe to the drawing. If url is not null then the iframe will be loaded from the url. The url maybe a markdown link to an note in the Vault or a weblink. If url is null then the iframe will be loaded from the file. Both the url and the file may not be null.",
+    after: "",
+  },
+  {
     field: "addLaTex",
     code: "addLaTex(topX: number, topY: number, tex: string): Promise<string>;",
     desc: null,
@@ -452,8 +458,8 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "selectElementsInView",
-    code: "selectElementsInView(elements: ExcalidrawElement[]):void;",
-    desc: "Elements provided will be set as selected in the targetView.",
+    code: "selectElementsInView(elements: ExcalidrawElement[] | string[]):void;",
+    desc: "You can supply a list of Excalidraw Elements or the string IDs of those elements. The elements provided will be set as selected in the targetView.",
     after: "",
   },
   {
@@ -655,5 +661,12 @@ export const FRONTMATTER_KEYS_INFO: SuggesterInfo[] = [
     desc: "Override autoexport settings for this file. Valid values are\nnone\nboth\npng\nsvg",
     after: ": png",
   },
+  {
+    field: "iframe-theme",
+    code: null,
+    desc: "Override iFrame theme plugin-settings for this file. 'match' will match the Excalidraw theme, 'default' will match the obsidian theme. Valid values are\ndark\nlight\nauto\ndefault",
+    after: ": auto",
+  },
+
   
 ];

@@ -9,9 +9,11 @@ import { getEA } from "src";
 import { InsertPDFModal } from "./InsertPDFModal";
 import {  ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
 import { MAX_IMAGE_SIZE } from "src/Constants";
+import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 
 const {
-  viewportCoordsToSceneCoords
+  viewportCoordsToSceneCoords,
+  sceneCoordsToViewportCoords
   //@ts-ignore
 } = excalidrawLib;
 
@@ -27,14 +29,33 @@ export class UniversalInsertFileModal extends Modal {
     const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
     const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
 
-    const centerX = containerRect.left + containerRect.width / 2 - MAX_IMAGE_SIZE / 2;
-    const centerY = containerRect.top + containerRect.height / 2 - MAX_IMAGE_SIZE / 2;
+    const curViewport = sceneCoordsToViewportCoords({
+      sceneX: view.currentPosition.x,
+      sceneY: view.currentPosition.y,},
+      appState);
 
-    const clientX = Math.max(0, Math.min(viewportWidth, centerX));
-    const clientY = Math.max(0, Math.min(viewportHeight, centerY));
-
-    this.center = viewportCoordsToSceneCoords ({clientX, clientY}, appState)
+    if (
+      curViewport.x >= containerRect.left + 150 &&
+      curViewport.y <= containerRect.right - 150 &&
+      curViewport.y >= containerRect.top + 150 &&
+      curViewport.y <= containerRect.bottom - 150
+    ) {
+      const sceneX = view.currentPosition.x - MAX_IMAGE_SIZE / 2;
+      const sceneY = view.currentPosition.y - MAX_IMAGE_SIZE / 2;
+      this.center = {x: sceneX, y: sceneY};
+    } else {
+      const centerX = containerRect.left + containerRect.width / 2;
+      const centerY = containerRect.top + containerRect.height / 2;
+  
+      const clientX = Math.max(0, Math.min(viewportWidth, centerX));
+      const clientY = Math.max(0, Math.min(viewportHeight, centerY));
+      
+      this.center = viewportCoordsToSceneCoords ({clientX, clientY}, appState);
+      this.center = {x: this.center.x - MAX_IMAGE_SIZE / 2, y: this.center.y - MAX_IMAGE_SIZE / 2};
+    }
   }
+
+  private onKeyDown: (evt: KeyboardEvent) => void;
 
   onOpen(): void {
     this.containerEl.classList.add("excalidraw-release");
@@ -135,30 +156,30 @@ export class UniversalInsertFileModal extends Modal {
     new Setting(ce)
       .addButton(button => {
         button
-          .setButtonText("As IFrame")
-          .setCta()
-          .onClick(() => {
+          .setButtonText("as iFrame")
+          .onClick(async () => {
             const path = app.metadataCache.fileToLinktext(
               file,
               this.view.file.path,
               file.extension === "md",
             )
-
-            insertIFrameToView (
-              getEA(this.view),
-              this.center,
-              //this.view.currentPosition,
-              undefined,
-              `[[${path}${sectionPicker.selectEl.value}]]`,
-            )
+            const ea:ExcalidrawAutomate = getEA(this.view);
+            ea.selectElementsInView(
+              [await insertIFrameToView (
+                ea,
+                this.center,
+                //this.view.currentPosition,
+                undefined,
+                `[[${path}${sectionPicker.selectEl.value}]]`,
+              )]
+            );
             this.close();
           })
         actionIFrame = button;
       })
       .addButton(button => {
         button
-          .setButtonText("As PDF")
-          .setCta()
+          .setButtonText("as Pdf")
           .onClick(() => {
             const insertPDFModal = new InsertPDFModal(this.plugin, this.view);
             insertPDFModal.open(file);
@@ -168,22 +189,64 @@ export class UniversalInsertFileModal extends Modal {
       })
       .addButton(button => {
         button
-          .setButtonText("As Image")
-          .setCta()
-          .onClick(() => {
-            insertImageToView (
-              getEA(this.view),
-              this.center,
-              //this.view.currentPosition,
-              file,
-              anchorTo100,
-            )
+          .setButtonText("as Image")
+          .onClick(async () => {
+            const ea:ExcalidrawAutomate = getEA(this.view);
+            ea.selectElementsInView(
+              [await insertImageToView (
+                ea,
+                this.center,
+                //this.view.currentPosition,
+                file,
+                ea.isExcalidrawFile(file) ? !anchorTo100 : undefined,
+              )]
+            );
             this.close();
           })
         actionImage = button;
       })
+    
+    this.view.ownerWindow.addEventListener("keydown", this.onKeyDown = (evt: KeyboardEvent) => {
+      const isVisible = (b: ButtonComponent) => b.buttonEl.style.display !== "none";
+      switch (evt.key) {
+        case "Escape": this.close(); return;
+        case "Enter":
+          if (isVisible(actionIFrame) && !isVisible(actionImage) && !isVisible(actionPDF)) {
+            actionIFrame.buttonEl.click();
+            return;
+          }
+          if (isVisible(actionImage) && !isVisible(actionIFrame) && !isVisible(actionPDF)) {
+            actionImage.buttonEl.click();
+            return;
+          }
+          if (isVisible(actionPDF) && !isVisible(actionIFrame) && !isVisible(actionImage)) {
+            actionPDF.buttonEl.click();
+            return;
+          }
+          return;
+        case "i":
+          if (isVisible(actionImage)) {
+            actionImage.buttonEl.click();
+          }
+          return;
+        case "p":
+          if (isVisible(actionPDF)) {
+            actionPDF.buttonEl.click();
+          }
+          return
+        case "f":
+          if (isVisible(actionIFrame)) {
+            actionIFrame.buttonEl.click();
+          }
+          return;
+      }
+    });
 
     search.inputEl.focus();
     updateForm();
+  }
+
+  onClose(): void {
+    this.view.ownerWindow.removeEventListener("keydown", this.onKeyDown);
   }
 }

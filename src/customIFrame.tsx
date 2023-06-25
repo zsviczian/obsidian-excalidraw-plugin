@@ -2,11 +2,10 @@ import { NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element
 import ExcalidrawView from "./ExcalidrawView";
 import { Notice, Workspace, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import * as React from "react";
-import { isObsidianThemeDark } from "./utils/ObsidianUtils";
-import { REGEX_LINK, REG_LINKINDEX_HYPERLINK } from "./ExcalidrawData";
+import { getParentOfClass, isObsidianThemeDark } from "./utils/ObsidianUtils";
 import { getLinkParts } from "./utils/Utils";
 import { DEVICE, REG_LINKINDEX_INVALIDCHARS } from "./Constants";
-import { UIAppState } from "@zsviczian/excalidraw/types/types";
+import { ExcalidrawImperativeAPI, UIAppState } from "@zsviczian/excalidraw/types/types";
 
 declare module "obsidian" {
   interface Workspace {
@@ -17,6 +16,41 @@ declare module "obsidian" {
     containerEl: HTMLDivElement;
   }
 }
+
+const KEYBOARD_EVENT_TYPES = [
+  "keydown",
+  "keyup",
+  "keypress"
+];
+
+const EXTENDED_EVENT_TYPES = [
+/*  "pointerdown",
+  "pointerup",
+  "pointermove",
+  "mousedown",
+  "mouseup",
+  "mousemove",
+  "mouseover",
+  "mouseout",
+  "mouseenter",
+  "mouseleave",
+  "dblclick",
+  "drag",
+  "dragend",
+  "dragenter",
+  "dragexit",
+  "dragleave",
+  "dragover",
+  "dragstart",
+  "drop",*/
+  "copy",
+  "cut",
+  "paste",
+  /*"wheel",
+  "touchstart",
+  "touchend",
+  "touchmove",*/
+];
 
 const YOUTUBE_REG =
   /^(?:http(?:s)?:\/\/)?(?:(?:w){3}.)?youtu(?:be|.be)?(?:\.com)?\/(?:embed\/|watch\?v=|shorts\/)?([a-zA-Z0-9_-]+)(?:\?t=|&t=)?([a-zA-Z0-9_-]+)?[^\s]*$/;
@@ -69,6 +103,19 @@ function RenderObsidianView(
   containerRef: React.RefObject<HTMLDivElement>;
   appState: UIAppState;
 }): JSX.Element {
+  
+  //This is definitely not the right solution, feels like sticking plaster
+  //patch disappearing content on mobile
+  const patchMobileView = () => {
+    if(DEVICE.isDesktop) return;
+    console.log("patching mobile view");
+    const parent = getParentOfClass(view.containerEl,"mod-top");
+    if(parent) {
+      if(!parent.hasClass("mod-visible")) {
+        parent.addClass("mod-visible");
+      }
+    }
+  }
 
   let subpath:string = null;
 
@@ -97,6 +144,29 @@ function RenderObsidianView(
   const isEditingRef = react.useRef(false);
   const isActiveRef = react.useRef(false);
 
+  const stopPropagation = react.useCallback((event:React.PointerEvent<HTMLElement>) => {
+    if(isActiveRef.current) {
+      event.stopPropagation(); // Stop the event from propagating up the DOM tree
+    }
+  }, [isActiveRef.current]);
+
+  react.useEffect(() => {
+    EXTENDED_EVENT_TYPES.forEach((type) => containerRef.current.removeEventListener(type, stopPropagation));
+    if(!containerRef?.current) {
+      return;
+    }
+
+    if(isActiveRef.current) {
+      EXTENDED_EVENT_TYPES.forEach((type) => containerRef.current.addEventListener(type, stopPropagation));
+    }
+
+    return () => {
+      if(!containerRef?.current) {
+        return;
+      }
+      EXTENDED_EVENT_TYPES.forEach((type) => containerRef.current.removeEventListener(type, stopPropagation));
+    }; //cleanup on unmount
+  }, [isActiveRef.current, containerRef.current]);
 
   react.useEffect(() => {
     if(!containerRef?.current) {
@@ -105,7 +175,6 @@ function RenderObsidianView(
 
     while(containerRef.current.hasChildNodes()) {
       containerRef.current.removeChild(containerRef.current.lastChild);
-
     }
 
     const doc = view.ownerDocument;
@@ -117,20 +186,32 @@ function RenderObsidianView(
     rootSplit.containerEl.style.height = '100%';
     rootSplit.containerEl.style.borderRadius = `${radius}px`;
     leafRef.current = app.workspace.createLeafInParent(rootSplit, 0);
-    //leafMap.set(element.id, leaf);
     const workspaceLeaf:HTMLDivElement = rootSplit.containerEl.querySelector("div.workspace-leaf");
     if(workspaceLeaf) workspaceLeaf.style.borderRadius = `${radius}px`;
-    leafRef.current.openFile(file, subpath ? { eState: { subpath }, state: {mode:"preview"} } : undefined);
-
+    (async () => {
+      await leafRef.current.openFile(file, subpath ? { eState: { subpath }, state: {mode:"preview"} } : undefined);
+      if (leafRef.current.view?.getViewType() === "canvas") {
+        leafRef.current.view.canvas?.setReadonly(true);
+      }
+      patchMobileView();
+    })();
     return () => {}; //cleanup on unmount
   }, [linkText, subpath]);
   
-  const handleClick = react.useCallback(() => {
+  const handleClick = react.useCallback((event: React.PointerEvent<HTMLElement>) => {
+    if(isActiveRef.current) {
+      event.stopPropagation();
+    }
+
     if (isActiveRef.current && !isEditingRef.current) {
       if (!leafRef.current?.view || leafRef.current.view.getViewType() !== 'markdown') {
         return;
       }
-      if(element.angle !== 0) {
+
+      const api:ExcalidrawImperativeAPI = view.excalidrawAPI;
+      const el = api.getSceneElements().filter(el=>el.id === element.id)[0];
+
+      if(!el || el.angle !== 0) {
         new Notice("Sorry, cannot edit rotated markdown documents");
         return;
       }
@@ -142,33 +223,28 @@ function RenderObsidianView(
       leafRef.current.view.setMode(modes['source']);
       app.workspace.setActiveLeaf(leafRef.current);
       isEditingRef.current = true;
+      patchMobileView();
     }
-  }, [leafRef.current, element]);
+  }, [leafRef.current, isActiveRef.current, element]);
 
   react.useEffect(() => {
     if(!containerRef?.current) {
       return;
     }
 
-    const stopPropagation = (event:KeyboardEvent) => {
-      event.stopPropagation(); // Stop the event from propagating up the DOM tree
-    }
-
-    containerRef.current.addEventListener("keydown", stopPropagation);
-    containerRef.current.addEventListener("keyup", stopPropagation);
-    containerRef.current.addEventListener("keypress", stopPropagation);
+    KEYBOARD_EVENT_TYPES.forEach((type) => containerRef.current.addEventListener(type, stopPropagation));
     containerRef.current.addEventListener("click", handleClick);
 
     return () => {
       if(!containerRef?.current) {
         return;
       }
-      containerRef.current.removeEventListener("keydown", stopPropagation);
-      containerRef.current.removeEventListener("keyup", stopPropagation);
-      containerRef.current.removeEventListener("keypress", stopPropagation);
+      KEYBOARD_EVENT_TYPES.forEach((type) => containerRef.current.removeEventListener(type, stopPropagation));
+      EXTENDED_EVENT_TYPES.forEach((type) => containerRef.current.removeEventListener(type, stopPropagation));
       containerRef.current.removeEventListener("click", handleClick);
     }; //cleanup on unmount
   }, []);
+
 
   react.useEffect(() => {
     if(!containerRef?.current) {
@@ -185,7 +261,7 @@ function RenderObsidianView(
       return;
     }
 
-    isActiveRef.current = appState.activeIFrame?.element === element && appState.activeIFrame?.state === "active";
+    isActiveRef.current = (appState.activeIFrame?.element.id === element.id) && (appState.activeIFrame?.state === "active");
   
     if(!isActiveRef.current) {
       //@ts-ignore
@@ -194,7 +270,7 @@ function RenderObsidianView(
       app.workspace.setActiveLeaf(view.leaf);
       return;
     }  
-  }, [appState.activeIFrame, element]);
+  }, [appState.activeIFrame?.element, appState.activeIFrame?.state, element.id]);
 
   return null;
 };
@@ -202,6 +278,14 @@ function RenderObsidianView(
 export const CustomIFrame: React.FC<{element: NonDeletedExcalidrawElement; radius: number; view: ExcalidrawView; appState: UIAppState; linkText: string}> = ({ element, radius, view, appState, linkText }) => {
   const react = view.plugin.getPackage(view.ownerWindow).react;
   const containerRef: React.RefObject<HTMLDivElement> = react.useRef(null);
+  const theme = view.excalidrawData.iFrameTheme === "dark"
+    ? "theme-dark"
+    : view.excalidrawData.iFrameTheme === "light" 
+      ? "theme-light"
+      : view.excalidrawData.iFrameTheme === "auto"
+        ? appState.theme === "dark" ? "theme-dark" : "theme-light"
+        : isObsidianThemeDark() ? "theme-dark" : "theme-light";
+
   return (
     <div
       ref={containerRef}
@@ -211,7 +295,7 @@ export const CustomIFrame: React.FC<{element: NonDeletedExcalidrawElement; radiu
         borderRadius: `${radius}px`,
         color: `var(--text-normal)`,
       }}
-      className={isObsidianThemeDark() ? "theme-dark" : "theme-light"}
+      className={theme}
     >
       <RenderObsidianView
         element={element}
@@ -222,9 +306,12 @@ export const CustomIFrame: React.FC<{element: NonDeletedExcalidrawElement; radiu
         appState={appState}/>
       {(appState.activeIFrame?.element === element && appState.activeIFrame?.state === "hover") && (<div
         style={{
+          content: "",
           position: "absolute",
           top: 0,
           left: 0,
+          right: 0,
+          bottom: 0,
           width: `100%`,
           height: `100%`,
           background: `radial-gradient(

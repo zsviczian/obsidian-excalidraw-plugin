@@ -31,7 +31,7 @@ export const linkClickModifierType = (ev: KeyEvent):PaneTarget => {
 }
 
 export const externalDragModifierType = (ev: KeyEvent):ExternalDragAction => {
-  if( isSHIFT(ev) &&  isCTRL(ev) && !isALT(ev) && !isMETA(ev)) return "iframe";
+  if( isSHIFT(ev) && !isCTRL(ev) && !isALT(ev) &&  isMETA(ev)) return "iframe";
   if(!isSHIFT(ev) &&  isCTRL(ev) && !isALT(ev) && !isMETA(ev)) return "insert-link";
   if(!isSHIFT(ev) && !isCTRL(ev) && !isALT(ev) &&  isMETA(ev)) return "insert-link";
   if( isSHIFT(ev) && !isCTRL(ev) && !isALT(ev) && !isMETA(ev)) return "image-import";
@@ -41,7 +41,8 @@ export const externalDragModifierType = (ev: KeyEvent):ExternalDragAction => {
 
 //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/468
 export const internalDragModifierType = (ev: KeyEvent):InternalDragAction => {
-  if( isSHIFT(ev) &&  isCTRL(ev) && !isALT(ev) && !isMETA(ev)) return "iframe";
+  if( !(DEVICE.isIOS || DEVICE.isMacOS) && isSHIFT(ev) &&  isCTRL(ev) && !isALT(ev) && !isMETA(ev)) return "iframe";
+  if( (DEVICE.isIOS || DEVICE.isMacOS) && !isSHIFT(ev) &&  !isCTRL(ev) && !isALT(ev) && isMETA(ev)) return "iframe";
   if( isSHIFT(ev) && !isCTRL(ev) && !isALT(ev) && !isMETA(ev)) return "image";
   if(!isSHIFT(ev) &&  isCTRL(ev) && !isALT(ev) && !isMETA(ev)) return "image";
   if(scaleToFullsizeModifier(ev)) return "image-fullsize";

@@ -1522,6 +1522,18 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   private registerMonkeyPatches() {
+    //@ts-ignore
+    if(!app.plugins?.plugins?.["obsidian-hover-editor"]) {
+      this.register( //stolen from hover editor
+        around(WorkspaceLeaf.prototype, {
+          getRoot(old) {
+            return function () {
+              const top = old.call(this);
+              return top.getRoot === this.getRoot ? top : top.getRoot();
+            };
+          }
+        }));
+    }
     this.registerEvent(
       app.workspace.on("editor-menu", (menu, editor, view) => {
         if(!view || !(view instanceof MarkdownView)) return;

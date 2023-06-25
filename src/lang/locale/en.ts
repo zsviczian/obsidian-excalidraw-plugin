@@ -59,7 +59,7 @@ export default {
   IMPORT_SVG: "Import an SVG file as Excalidraw strokes (limited SVG support, TEXT currently not supported)",
   INSERT_MD: "Insert markdown file from vault",
   INSERT_PDF: "Insert PDF file from vault",
-  UNIVERSAL_ADD_FILE: "Add a file from the Vault to the drawing",
+  UNIVERSAL_ADD_FILE: "Insert ANY file from your Vault to the active drawing",
   INSERT_LATEX:
     `Insert LaTeX formula (e.g. \\binom{n}{k} = \\frac{n!}{k!(n-k)!}). ${labelALT()}+CLICK to watch a help video.`,
   ENTER_LATEX: "Enter a valid LaTeX expression",
@@ -179,6 +179,10 @@ FILENAME_HEAD: "Filename",
   LEFTHANDED_MODE_DESC:
     "Currently only has effect in tray-mode. If turned on, the tray will be on the right side." +
     "<br><b>Toggle ON:</b> Left-handed mode.<br><b>Toggle OFF:</b> Right-handed moded",
+  IFRAME_MATCH_THEME_NAME: "IFrames (markdown embeds) to match Excalidraw theme",
+  IFRAME_MATCH_THEME_DESC:
+    "Set this to true if you are for example using Obsidian in dark mode but use excalidraw with a light background. " +
+    "With this setting the embedded Obsidian markdown document will match the Excalidraw theme (i.e. light colors if Excalidraw is in light mode). ",    
   MATCH_THEME_NAME: "New drawing to match Obsidian theme",
   MATCH_THEME_DESC:
     "If theme is dark, new drawing will be created in dark mode. This does not apply when you use a template for new drawings. " +

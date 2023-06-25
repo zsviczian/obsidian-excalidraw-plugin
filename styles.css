@@ -345,3 +345,11 @@ div.excalidraw-draginfo {
 .excalidraw [data-radix-popper-content-wrapper] {
   position: absolute !important;
 }
+
+.excalidraw__iframe-container .view-header {
+  display: none !important;
+}
+
+.excalidraw__iframe-container input {
+  background: initial;
+}

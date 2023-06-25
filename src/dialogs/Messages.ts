@@ -17,6 +17,24 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.5":`
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/ICpoyMv6KSs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## New
+- IFrame support: insert documents from your Obsidian Vault and insert youtube, Vimeo, and generally any website from the internet
+- Frame support: use frames to group items on your board
+
+## New in ExcalidrawAutomate
+- selectElementsInView now also accepts a list of element IDs
+- new addIFrame function that accepts an Obsidian file or a URL string
+${String.fromCharCode(96,96,96)}typescript
+selectElementsInView(elements: ExcalidrawElement[] | string[]): void;
+addIFrame(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile): string;
+${String.fromCharCode(96,96,96)}
+`,
+
 "1.9.3":`
 ## New from Excalidraw.com
 - Eyedropper tool. The eyedropper is triggered with "i". If you hold the ALT key  while clicking the color it will set the stroke color of the selected element, else the background color.
