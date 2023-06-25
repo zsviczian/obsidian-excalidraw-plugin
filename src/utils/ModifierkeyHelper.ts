@@ -31,11 +31,12 @@ export const linkClickModifierType = (ev: KeyEvent):PaneTarget => {
 }
 
 export const externalDragModifierType = (ev: KeyEvent):ExternalDragAction => {
-  if( isSHIFT(ev) && !isCTRL(ev) && !isALT(ev) &&  isMETA(ev)) return "iframe";
-  if(!isSHIFT(ev) &&  isCTRL(ev) && !isALT(ev) && !isMETA(ev)) return "insert-link";
-  if(!isSHIFT(ev) && !isCTRL(ev) && !isALT(ev) &&  isMETA(ev)) return "insert-link";
-  if( isSHIFT(ev) && !isCTRL(ev) && !isALT(ev) && !isMETA(ev)) return "image-import";
-  if(!isSHIFT(ev) && !isCTRL(ev) &&  isALT(ev) && !isMETA(ev)) return "image-import";
+  if(DEVICE.isWindows &&  isSHIFT(ev) &&  isCTRL(ev) && !isALT(ev) && !isMETA(ev)) return "iframe";
+  if(DEVICE.isMacOS   && !isSHIFT(ev) && !isCTRL(ev) &&  isALT(ev) && !isMETA(ev)) return "iframe";
+  if(DEVICE.isWindows && !isSHIFT(ev) &&  isCTRL(ev) && !isALT(ev) && !isMETA(ev)) return "insert-link";
+  if(DEVICE.isMacOS   &&  isSHIFT(ev) && !isCTRL(ev) &&  isALT(ev) && !isMETA(ev)) return "insert-link";
+  if(                     isSHIFT(ev) && !isCTRL(ev) && !isALT(ev) && !isMETA(ev)) return "image-import";
+  if(DEVICE.isWindows && !isSHIFT(ev) && !isCTRL(ev) &&  isALT(ev) && !isMETA(ev)) return "image-import";
   return "image-url";
 }
 

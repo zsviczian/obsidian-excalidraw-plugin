@@ -17,6 +17,15 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.6":`
+## Fixed
+- help shortcuts are really hard to see [#1176](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1179)
+- link icons not visible on elements after 1.9.5 release (reported on Discord)
+- PDFs in iFrames will now respect the ${String.fromCharCode(96)}[[document.pdf#page=155]]${String.fromCharCode(96)} format
+- Keyboard shortcuts were not working properly on external drop. Check [updated keyboard map](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/excalidraw-modifiers.png)
+
+<a href="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/excalidraw-modifiers.png"><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/excalidraw-modifiers.png" width="100%" alt="Keyboard map"/></a>
+`,
 "1.9.5":`
 <div class="excalidraw-videoWrapper"><div>
 <iframe src="https://www.youtube.com/embed/ICpoyMv6KSs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

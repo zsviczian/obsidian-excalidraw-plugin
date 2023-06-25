@@ -454,7 +454,7 @@ export const getLinkParts = (fname: string, file?: TFile): LinkParts => {
     original: fname,
     path: file && parts[1] === "" ? file.path : parts[1],
     isBlockRef: parts[2] === "^",
-    ref: parts[3]?.replaceAll(REG_BLOCK_REF_CLEAN, ""),
+    ref: parts[3]?.match(/^page=\d*$/i) ? parts[3] : parts[3]?.replaceAll(REG_BLOCK_REF_CLEAN, ""),
     width: parts[4] ? parseInt(parts[4]) : undefined,
     height: parts[5] ? parseInt(parts[5]) : undefined,
     page: parseInt(parts[3]?.match(/page=(\d*)/)?.[1])

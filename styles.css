@@ -353,3 +353,7 @@ div.excalidraw-draginfo {
 .excalidraw__iframe-container input {
   background: initial;
 }
+
+.excalidraw .HelpDialog__key {
+  background-color: var(--color-gray-80) !important;
+}
