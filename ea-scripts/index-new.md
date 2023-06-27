@@ -205,7 +205,7 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Excalidraw%20Collaboration%20Frame.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/1-2-3'>@1-2-3</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Excalidraw%20Collaboration%20Frame.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Creates a new Excalidraw.com collaboration room and places the link to the room on the clipboard.</td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/1-2-3'>@1-2-3</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Excalidraw%20Collaboration%20Frame.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Creates a new Excalidraw.com collaboration room and places the link to the room on the clipboard.<iframe width="400" height="225" src="https://www.youtube.com/embed/7isRfeAhEH4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></td></tr></table>
 
 ## Expand rectangles horizontally keep text centered
 ```excalidraw-script-install
