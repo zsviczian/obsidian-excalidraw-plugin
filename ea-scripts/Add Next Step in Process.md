@@ -67,7 +67,7 @@ if(!isFirst) {
   ea.copyViewElementsToEAforEditing([fromElement]);
 
   const previousTextElements = elements.filter((el)=>el.type==="text");
-  const previousRectElements = elements.filter((el)=>el.type==="rectangle");
+  const previousRectElements = elements.filter((el)=> ['ellipse', 'rectangle', 'diamond'].includes(el.type));
   if(previousTextElements.length>0) {
     const el = previousTextElements[0];
     ea.style.strokeColor = el.strokeColor;
@@ -78,7 +78,7 @@ if(!isFirst) {
 	textWidth = ea.measureText(text).width;
 
   id = ea.addText(
-    fixWidth 
+    fixWidth
     ? fromElement.x+fromElement.width/2-width/2
     : fromElement.x+fromElement.width/2-textWidth/2-textPadding,
     fromElement.y+fromElement.height+gapBetweenElements,
@@ -87,7 +87,7 @@ if(!isFirst) {
       wrapAt: wrapLineLen,
       textAlign: "center",
       textVerticalAlign: "middle",
-      box: previousRectElements.length > 0 ? "rectangle" : false,
+      box: previousRectElements.length > 0 ? previousRectElements[0].type : false,
       ...fixWidth
       ? {width: width, boxPadding:0}
       : {boxPadding: textPadding}
