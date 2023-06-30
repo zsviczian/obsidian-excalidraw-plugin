@@ -298,6 +298,7 @@ FILENAME_HEAD: "Filename",
   MD_HEAD_DESC:
     `You can transclude formatted markdown documents into drawings as images ${labelSHIFT()} drop from the file explorer or using ` +
     "the command palette action.",
+  
   MD_TRANSCLUDE_WIDTH_NAME: "Default width of a transcluded markdown document",
   MD_TRANSCLUDE_WIDTH_DESC:
     "The width of the markdown page. This effects the word wrapping when transcluding longer paragraphs, and the width of " +
@@ -334,6 +335,10 @@ FILENAME_HEAD: "Filename",
     "You can add one custom font beyond that using the setting above. " +
     'You can override this css setting by adding the following frontmatter-key to the embedded markdown file: "excalidraw-css: css_file_in_vault|css-snippet".',
   EMBED_HEAD: "Embed & Export",
+  EMBED_IMAGE_CACHE_NAME: "Cache images for embedding in markdown",
+  EMBED_IMAGE_CACHE_DESC: "Cache images for embedding in markdown. This will speed up the embedding process, but in case you compose images of several sub-component drawings, " +
+    "the embedded image in Markdown won't update until you open the drawing and save it to trigger an update of the cache.",
+  EMBED_IMAGE_CACHE_CLEAR: "Clear image cache",
   EMBED_REUSE_EXPORTED_IMAGE_NAME:
     "If found, use the already exported image for preview",
   EMBED_REUSE_EXPORTED_IMAGE_DESC:

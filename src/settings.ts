@@ -23,6 +23,8 @@ import {
   fragWithHTML,
   setLeftHandedMode,
 } from "./utils/Utils";
+import { image } from "html2canvas/dist/types/css/types/image";
+import { imageCache } from "./utils/ImageCache";
 
 export interface ExcalidrawSettings {
   folder: string;
@@ -40,6 +42,7 @@ export interface ExcalidrawSettings {
   drawingFilenameDateTime: string;
   useExcalidrawExtension: boolean;
   displaySVGInPreview: boolean;
+  allowImageCache: boolean;
   displayExportedImageIfAvailable: boolean;
   previewMatchObsidianTheme: boolean;
   width: string;
@@ -153,6 +156,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   drawingFilenameDateTime: "YYYY-MM-DD HH.mm.ss",
   useExcalidrawExtension: true,
   displaySVGInPreview: true,
+  allowImageCache: true,
   displayExportedImageIfAvailable: false,
   previewMatchObsidianTheme: false,
   width: "400",
@@ -1135,6 +1139,25 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     this.containerEl.createEl("h1", { text: t("EMBED_HEAD") });
 
+    new Setting(containerEl)
+      .setName(t("EMBED_IMAGE_CACHE_NAME"))
+      .setDesc(fragWithHTML(t("EMBED_IMAGE_CACHE_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.allowImageCache)
+          .onChange((value) => {
+            this.plugin.settings.allowImageCache = value;
+            this.applySettingsUpdate();
+          })
+      )
+      .addButton((button) =>
+        button
+          .setButtonText(t("EMBED_IMAGE_CACHE_CLEAR"))
+          .onClick(() => {
+            imageCache.clear();
+          })
+      );
+        
     new Setting(containerEl)
       .setName(t("EMBED_PREVIEW_SVG_NAME"))
       .setDesc(fragWithHTML(t("EMBED_PREVIEW_SVG_DESC")))

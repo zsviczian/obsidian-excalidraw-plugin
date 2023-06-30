@@ -1,6 +1,13 @@
-import { TFile } from "obsidian";
+import { Notice, TFile } from "obsidian";
+import ExcalidrawPlugin from "src/main";
+
+//@ts-ignore
+const DB_NAME = "Excalidraw " + app.appId;
+const STORE_NAME = "imageCache";
+
 
 type FileCacheData = { mtime: number; imageBase64: string };
+
 type ImageKey = {
   filepath: string;
   blockref: string;
@@ -10,31 +17,25 @@ type ImageKey = {
   scale: number;
 };
 
-const getKey = (key: ImageKey): string =>
-  JSON.stringify({
-    filepath: key.filepath,
-    blockref: key.blockref,
-    sectionref: key.sectionref,
-    isDark: key.isDark,
-    isSVG: key.isSVG,
-    scale: key.scale,
-  });
+const getKey = (key: ImageKey): string => `${key.filepath}#${key.blockref}#${key.sectionref}#${key.isDark?1:0}#${key.isSVG?1:0}#${key.scale}`;
 
 class ImageCache {
   private dbName: string;
   private storeName: string;
   private db: IDBDatabase | null;
   private isInitializing: boolean;
+  public plugin: ExcalidrawPlugin;
 
   constructor(dbName: string, storeName: string) {
     this.dbName = dbName;
     this.storeName = storeName;
     this.db = null;
     this.isInitializing = false;
+    this.plugin = null;
+    app.workspace.onLayoutReady(()=>this.initializeDB());
   }
 
-  public async initializeDB(): Promise<void> {
-    const start = Date.now();
+  private async initializeDB(): Promise<void> {
     if (this.isInitializing || this.db !== null) {
       return;
     }
@@ -62,9 +63,8 @@ class ImageCache {
         };
       });
       
-          // Pre-create the object store to reduce delay when accessing it later
+      // Pre-create the object store to reduce delay when accessing it later
       if (!this.db.objectStoreNames.contains(this.storeName)) {
-        console.log("Creating object store");
         const version = this.db.version + 1;
         this.db.close();
 
@@ -97,11 +97,11 @@ class ImageCache {
           };
         });
       }
-      //await this.purgeInvalidFiles();
+      await this.purgeInvalidFiles();
 
     } finally {
       this.isInitializing = false;
-      console.log(`Initialized Excalidraw Image Cache database in ${Date.now() - start}ms`);
+      console.log("Initialized Excalidraw Image Cache");
     } 
   }
 
@@ -117,24 +117,19 @@ class ImageCache {
       request.onsuccess = (event: Event) => {
         const cursor = (event.target as IDBRequest<IDBCursorWithValue | null>).result;
         if (cursor) {
-          const key: ImageKey = JSON.parse(cursor.key as string);
-          const fileExists = files.some((file: TFile) => {
-            return file.path.split("#")[0] === key.filepath;
-          });
-          if (!fileExists) {
-            cursor.delete();
-          } else {
-            const file = files.find((file: TFile) => file.path.split("#")[0] === key.filepath);
-            if (file && file.stat.mtime > cursor.value.mtime) {
-              deletePromises.push(
-                new Promise<void>((resolve, reject) => {
-                  const deleteRequest = store.delete(cursor.primaryKey);
-                  deleteRequest.onsuccess = () => resolve();
-                  deleteRequest.onerror = () =>
-                    reject(new Error(`Failed to delete file with key: ${key}`));
-                })
-              );
-            }
+          const key = cursor.key as string;
+          const filepath = key.split("#")[0];
+          const fileExists = files.some((f: TFile) => f.path === filepath);
+          const file = fileExists ? files.find((f: TFile) => f.path === filepath) : null;
+          if (!file || (file && file.stat.mtime > cursor.value.mtime)) {
+            deletePromises.push(
+              new Promise<void>((resolve, reject) => {
+                const deleteRequest = store.delete(cursor.primaryKey);
+                deleteRequest.onsuccess = () => resolve();
+                deleteRequest.onerror = () =>
+                  reject(new Error(`Failed to delete file with key: ${key}`));
+              })
+            );
           }
           cursor.continue();
         } else {
@@ -186,26 +181,6 @@ class ImageCache {
     });
   }
 
-  private async setCacheData(key: string, data: FileCacheData): Promise<void> {
-    const store = await this.getObjectStore("readwrite");
-    const request = store.put(data, key);
-
-    return new Promise<void>((resolve, reject) => {
-      request.onsuccess = () => {
-        resolve();
-      };
-
-      request.onerror = () => {
-        reject(new Error("Failed to store data in IndexedDB."));
-      };
-    });
-  }
-
-  private async deleteCacheData(key: string): Promise<void> {
-    const store = await this.getObjectStore("readwrite");
-    store.delete(key);
-  }
-
   public async isCached(key_: ImageKey): Promise<boolean> {
     const key = getKey(key_);
     return this.getCacheData(key).then((cachedData) => {
@@ -221,13 +196,11 @@ class ImageCache {
   }
 
   public isReady(): boolean {
-    return !!this.db && !this.isInitializing;
+    return !!this.db && !this.isInitializing && !!this.plugin && this.plugin.settings.allowImageCache;
   } 
 
   public async get(key_: ImageKey): Promise<string | undefined> {
-    const start = Date.now();
-    if (!this.db || this.isInitializing) {
-      console.log(`get from cache FAILED (not ready) in ${Date.now() - start}ms`);
+    if (!this.isReady()) {
       return null; // Database not initialized yet
     }
 
@@ -236,17 +209,14 @@ class ImageCache {
       const file = app.vault.getAbstractFileByPath(key_.filepath.split("#")[0]);
       if (!file || !(file instanceof TFile)) return undefined;
       if (cachedData && cachedData.mtime === file.stat.mtime) {
-        console.log(`get from cache SUCCEEDED in ${Date.now() - start}ms`);
         return cachedData.imageBase64;
       }
-      console.log(`get from cache FAILED in ${Date.now() - start}ms`);
       return undefined;
     });
   }
 
   public add(key_: ImageKey, imageBase64: string): void {
-    const start = Date.now();
-    if (!this.db || this.isInitializing) {
+    if (!this.isReady()) {
       return;  // Database not initialized yet
     }
 
@@ -258,43 +228,29 @@ class ImageCache {
     const store = transaction.objectStore(this.storeName);
     const key = getKey(key_)
     store.put(data, key);
-    console.log(`add to cache in ${Date.now() - start}ms`);
   }
 
-  delete(key_: ImageKey): Promise<void> {
-    const key = getKey(key_);
-    return this.deleteCacheData(key);
-  }
-}
+  public async clear(): Promise<void> {
+    // deliberately not checking isReady() here
+    if (!this.db || this.isInitializing) {
+      return; // Database not initialized yet
+    }
 
-const imageCache = new ImageCache("ExcalidrawImageDB", "ImageStore");
-imageCache.initializeDB();
+    const transaction = this.db.transaction(this.storeName, "readwrite");
+    const store = transaction.objectStore(this.storeName);
+    const request = store.clear();
 
-async function searchAndDeleteImages(filepath: string): Promise<void> {
-  const db = await imageCache.openDB();
-  const transaction = db.transaction("ImageStore", "readwrite");
-  const store = transaction.objectStore("ImageStore");
-  const request = store.openCursor();
-
-  return new Promise<void>((resolve, reject) => {
-    request.onsuccess = (event: Event) => {
-      const cursor = (event.target as IDBRequest<IDBCursorWithValue | null>).result;
-      if (cursor) {
-        const key: ImageKey = JSON.parse(cursor.key as string);
-        if (key.filepath === filepath) {
-          cursor.delete();
-        }
-        cursor.continue();
-      } else {
+    return new Promise<void>((resolve, reject) => {
+      request.onsuccess = () => {
+        new Notice("Image cache cleared.");
         resolve();
-      }
-    };
+      };
 
-    request.onerror = () => {
-      reject(new Error("Failed to search and delete images in IndexedDB."));
-    };
-  });
+      request.onerror = () => {
+        reject(new Error("Failed to clear data in IndexedDB."));
+      };
+    });
+  }
 }
 
-export { imageCache, searchAndDeleteImages };
-
+export const imageCache = new ImageCache(DB_NAME, STORE_NAME);

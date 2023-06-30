@@ -104,6 +104,8 @@ import { emulateCTRLClickForLinks, linkClickModifierType, PaneTarget } from "./u
 import { InsertPDFModal } from "./dialogs/InsertPDFModal";
 import { ExportDialog } from "./dialogs/ExportDialog";
 import { UniversalInsertFileModal } from "./dialogs/UniversalInsertFileModal";
+import { image } from "html2canvas/dist/types/css/types/image";
+import { imageCache } from "./utils/ImageCache";
 
 declare module "obsidian" {
   interface App {
@@ -201,6 +203,7 @@ export default class ExcalidrawPlugin extends Plugin {
     addIcon(EXPORT_IMG_ICON_NAME, EXPORT_IMG_ICON);
 
     await this.loadSettings({reEnableAutosave:true});
+    imageCache.plugin = this;
     
     this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
     this.ea = await initExcalidrawAutomate(this);
