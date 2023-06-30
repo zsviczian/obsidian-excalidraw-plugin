@@ -70,7 +70,7 @@ const getContainerForDocument = (doc:Document) => {
 };
 
 export const useDefaultExcalidrawFrame = (element: NonDeletedExcalidrawElement) => {
-  return element.link.match(YOUTUBE_REG) || element.link.match(VIMEO_REG) || element.link.match(TWITTER_REG);
+  return element.link.match(YOUTUBE_REG) || element.link.match(VIMEO_REG);
 }
 
 const leafMap = new Map<string, WorkspaceLeaf>();
@@ -78,6 +78,11 @@ const leafMap = new Map<string, WorkspaceLeaf>();
 export const renderWebView = (src: string, radius: number):JSX.Element =>{
   if(DEVICE.isIOS || DEVICE.isAndroid) {
     return null;
+  }
+
+  const twitterLink = src.match(TWITTER_REG);
+  if (twitterLink) {
+    src = `https://twitframe.com/show?url=${encodeURIComponent(src)}`;
   }
 
   return (

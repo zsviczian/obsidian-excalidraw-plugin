@@ -22,6 +22,7 @@ import {
 } from "./utils/Utils";
 import { isObsidianThemeDark } from "./utils/ObsidianUtils";
 import { linkClickModifierType } from "./utils/ModifierkeyHelper";
+import { imageCache } from "./utils/ImageCache";
 
 interface imgElementAttributes {
   file?: TFile;
@@ -106,6 +107,8 @@ const getIMG = async (
     theme ? theme === "dark" : undefined,
   );
 
+  const cacheReady = imageCache.isReady();
+
   if (!plugin.settings.displaySVGInPreview) {
     const width = parseInt(imgAttributes.fwidth);
     const scale = width >= 2400
@@ -118,12 +121,24 @@ const getIMG = async (
             ? 2
             : 1;
 
-    //In case of PNG I cannot change the viewBox to select the area of the element
-    //being referenced. For PNG only the group reference works
+    
+    const cacheKey = {...filenameParts, isDark: theme==="dark", isSVG: false, scale};
+
+    if(cacheReady) {      
+      const src = await imageCache.get(cacheKey);
+      //In case of PNG I cannot change the viewBox to select the area of the element
+      //being referenced. For PNG only the group reference works
+      if(src) {
+        img.src = src;
+        return img;
+      }
+    }
+
     const quickPNG = !filenameParts.hasGroupref
       ? await getQuickImagePreview(plugin, file.path, "png")
       : undefined;
 
+    
     const png =
       quickPNG ??
       (await createPNG(
@@ -144,13 +159,25 @@ const getIMG = async (
       return null;
     }
     img.src = URL.createObjectURL(png);
+    cacheReady && imageCache.add(cacheKey, img.src);
     return img;
   }
+
+  const cacheKey = {...filenameParts, isDark: theme==="dark", isSVG: false, scale:1};
+  if(cacheReady) {
+    const src = await imageCache.get(cacheKey);
+    if(src) {
+      img.setAttribute("src", src);
+      return img;
+    }
+  }
+
 
   if(!(filenameParts.hasBlockref || filenameParts.hasSectionref)) {
     const quickSVG = await getQuickImagePreview(plugin, file.path, "svg");
     if (quickSVG) {
       img.setAttribute("src", svgToBase64(quickSVG));
+      cacheReady && imageCache.add(cacheKey, img.src);
       return img;
     }
   }
@@ -186,6 +213,7 @@ const getIMG = async (
   svg.removeAttribute("width");
   svg.removeAttribute("height");
   img.setAttribute("src", svgToBase64(svg.outerHTML));
+  cacheReady && imageCache.add(cacheKey, img.src);
   return img;
 };
 
