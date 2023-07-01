@@ -8,7 +8,7 @@ if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.9.7")) {
 }
 
 const drawIO = app.plugins.plugins["drawio-obsidian"];
-if(!drawIO || !drawIO.?_loaded) {
+if(!drawIO || !drawIO?._loaded) {
   new Notice("Can't find the draw.io diagram plugin");
 }
 
