@@ -83,43 +83,47 @@ const getLeafLoc = (leaf: WorkspaceLeaf): ["main" | "popout" | "left" | "right" 
 export const getNewOrAdjacentLeaf = (
   plugin: ExcalidrawPlugin,
   leaf: WorkspaceLeaf
-): WorkspaceLeaf => {
+): WorkspaceLeaf | null => {
   const [leafLoc, mainLeavesIds] = getLeafLoc(leaf);
 
-  const getMainLeaf = ():WorkspaceLeaf => {
+  const getMostRecentOrAvailableLeafInMainWorkspace = (inDifferentTabGroup?: boolean):WorkspaceLeaf => {
     let mainLeaf = app.workspace.getMostRecentLeaf();
     if(mainLeaf && mainLeaf !== leaf && mainLeaf.view?.containerEl.ownerDocument === document) {
+      //Found a leaf in the main workspace that is not the originating leaf
       return mainLeaf;
     }
+    //Iterate all leaves in the main workspace and find the first one that is not the originating leaf
     mainLeaf = null;
     mainLeavesIds
       .forEach((id:any)=> {
         const l = app.workspace.getLeafById(id);
         if(mainLeaf ||
           !l.view?.navigation || 
-          leaf === l
+          leaf === l ||
+          //@ts-ignore
+          (inDifferentTabGroup && (l?.parent === leaf?.parent))
         ) return;
         mainLeaf = l;
     })
     return mainLeaf;
   }
 
-  //1
+  //1 - In Main Workspace
   if(plugin.settings.openInMainWorkspace || ["main","left","right"].contains(leafLoc)) {
-    //1.1
+    //1.1 - Create new leaf in main workspace
     if(!plugin.settings.openInAdjacentPane) {
       if(leafLoc === "main") {
         return app.workspace.createLeafBySplit(leaf);
       }
-      const ml = getMainLeaf();
+      const ml = getMostRecentOrAvailableLeafInMainWorkspace();
       return ml
         ? (ml.view.getViewType() === "empty" ? ml : app.workspace.createLeafBySplit(ml))
         : app.workspace.getLeaf(true);
     }
 
-    //1.2
-    const ml = getMainLeaf();
-    return ml ?? app.workspace.getLeaf(true);
+    //1.2 - Reuse leaf if it is adjacent
+    const ml = getMostRecentOrAvailableLeafInMainWorkspace(true);
+    return ml ?? app.workspace.createLeafBySplit(leaf); //app.workspace.getLeaf(true);
   }
 
   //2

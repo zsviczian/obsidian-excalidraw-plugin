@@ -230,11 +230,11 @@ FILENAME_HEAD: "Filename",
     "the plugin will open it in a browser. " +
     "When Obsidian files change, the matching <code>[[link]]</code> in your drawings will also change. " +
     "If you don't want text accidentally changing in your drawings use <code>[[links|with aliases]]</code>.",
-  ADJACENT_PANE_NAME: "Open in adjacent pane",
+  ADJACENT_PANE_NAME: "Reuse adjacent pane",
   ADJACENT_PANE_DESC:
     `When ${labelCTRL()}+${labelSHIFT()} clicking a link in Excalidraw, by default the plugin will open the link in a new pane. ` +
-    "Turning this setting on, Excalidraw will first look for an existing adjacent pane, and try to open the link there. " +
-    "Excalidraw will look for the adjacent pane based on your focus/navigation history, i.e. the workpane that was active before you " +
+    "Turning this setting on, Excalidraw will first look for an existing pane, and try to open the link there. " +
+    "Excalidraw will look for the other workspace pane based on your focus/navigation history, i.e. the workpane that was active before you " +
     "activated Excalidraw.",
   MAINWORKSPACE_PANE_NAME: "Open in main workspace",
   MAINWORKSPACE_PANE_DESC:

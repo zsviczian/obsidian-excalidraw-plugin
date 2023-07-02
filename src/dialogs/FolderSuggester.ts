@@ -196,7 +196,7 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
     // TODO: Figure out a better way to do this. Idea from Periodic Notes plugin
     this.app.keymap.pushScope(this.scope);
 
-    document.body.appendChild(this.suggestEl);
+    this.inputEl.ownerDocument.body.appendChild(this.suggestEl);
     this.popper = createPopper(this.inputEl, this.suggestEl, {
       placement: "bottom-start",
       modifiers: [

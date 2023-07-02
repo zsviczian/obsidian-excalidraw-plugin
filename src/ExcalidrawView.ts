@@ -1024,6 +1024,28 @@ export default class ExcalidrawView extends TextFileView {
         keys.altKey = true;
       }
       const leaf = getLeaf(this.plugin,this.leaf,keys);
+      
+      try {
+        //@ts-ignore
+        const drawIO = app.plugins.plugins["drawio-obsidian"];
+        if(drawIO && drawIO._loaded) {
+          if(file.extension === "svg") {
+            const svg = await this.app.vault.cachedRead(file);
+            if(/(&lt;|\<)(mxfile|mxgraph)/i.test(svg)) {
+              leaf.setViewState({
+                type: "diagram-edit",
+                state: {
+                  file: file.path
+                }
+              });
+              return;
+            }
+          }
+        }
+      } catch(e) {
+        console.error(e);
+      }
+        
       await leaf.openFile(file, subpath ? { active: !this.linksAlwaysOpenInANewPane, eState: { subpath } } : undefined); //if file exists open file and jump to reference
       //view.app.workspace.setActiveLeaf(leaf, true, true); //0.15.4 ExcaliBrain focus issue
     } catch (e) {

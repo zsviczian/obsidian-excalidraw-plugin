@@ -24,7 +24,7 @@ import {
   fileid,
   GITHUB_RELEASES,
 } from "./Constants";
-import { getDrawingFilename, } from "./utils/FileUtils";
+import { getDrawingFilename, getNewUniqueFilepath, } from "./utils/FileUtils";
 import {
   //debug,
   embedFontsInSVG,
@@ -38,7 +38,7 @@ import {
   scaleLoadedImage,
   wrapTextAtCharLength,
 } from "./utils/Utils";
-import { getNewOrAdjacentLeaf, isObsidianThemeDark } from "./utils/ObsidianUtils";
+import { getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, isObsidianThemeDark } from "./utils/ObsidianUtils";
 import { AppState, BinaryFileData, DataURL, ExcalidrawImperativeAPI, Point } from "@zsviczian/excalidraw/types/types";
 import { EmbeddedFile, EmbeddedFilesLoader, FileData } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
@@ -108,6 +108,16 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
   get obsidian() {
     return obsidian_module;
   };
+
+  async getAttachmentFilepath(filename: string): Promise<string> {
+    if (!this.targetView || !this.targetView?.file) {
+      errorMessage("targetView not set", "getAttachmentFolderAndFilePath()");
+      return null;
+    }
+    const folderAndPath = await getAttachmentsFolderAndFilePath(app,this.targetView.file.path, filename);
+    return getNewUniqueFilepath(app.vault, filename, folderAndPath.folder);
+  }
+
   plugin: ExcalidrawPlugin;
   targetView: ExcalidrawView = null; //the view currently edited
   elementsDict: {[key:string]:any}; //contains the ExcalidrawElements currently edited in Automate indexed by el.id
@@ -1049,6 +1059,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     topY: number,
     imageFile: TFile | string,
     scale: boolean = true, //true will scale the image to MAX_IMAGE_SIZE, false will insert image at 100% of its size
+    
   ): Promise<string> {
     const id = nanoid();
     const loader = new EmbeddedFilesLoader(

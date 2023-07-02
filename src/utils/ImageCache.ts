@@ -3,7 +3,8 @@ import ExcalidrawPlugin from "src/main";
 
 //@ts-ignore
 const DB_NAME = "Excalidraw " + app.appId;
-const STORE_NAME = "imageCache";
+const CACHE_STORE_NAME = "imageCache";
+const BACKUP_STORE = "drawingBAK";
 
 
 type FileCacheData = { mtime: number; imageBase64: string };
@@ -150,21 +151,6 @@ class ImageCache {
     return transaction.objectStore(this.storeName);
   }
 
-  public async openDB(): Promise<IDBDatabase> {
-    return new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open(this.dbName);
-
-      request.onerror = () => {
-        reject(new Error("Failed to open IndexedDB database."));
-      };
-
-      request.onsuccess = () => {
-        const db = request.result as IDBDatabase;
-        resolve(db);
-      };
-    });
-  }
-
   private async getCacheData(key: string): Promise<FileCacheData | null> {
     const store = await this.getObjectStore("readonly");
     const request = store.get(key);
@@ -178,20 +164,6 @@ class ImageCache {
       request.onerror = () => {
         reject(new Error("Failed to retrieve data from IndexedDB."));
       };
-    });
-  }
-
-  public async isCached(key_: ImageKey): Promise<boolean> {
-    const key = getKey(key_);
-    return this.getCacheData(key).then((cachedData) => {
-      if (cachedData) {
-        const file = app.vault.getAbstractFileByPath(key_.filepath.split("#")[0]);
-        if (!file || !(file instanceof TFile)) return false;
-        if (cachedData.mtime === file.stat.mtime) {
-          return true;
-        }
-      }
-      return false;
     });
   }
 
@@ -253,4 +225,4 @@ class ImageCache {
   }
 }
 
-export const imageCache = new ImageCache(DB_NAME, STORE_NAME);
+export const imageCache = new ImageCache(DB_NAME, CACHE_STORE_NAME);

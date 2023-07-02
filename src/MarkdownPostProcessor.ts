@@ -163,7 +163,7 @@ const getIMG = async (
     return img;
   }
 
-  const cacheKey = {...filenameParts, isDark: theme==="dark", isSVG: false, scale:1};
+  const cacheKey = {...filenameParts, isDark: theme==="dark", isSVG: true, scale:1};
   if(cacheReady) {
     const src = await imageCache.get(cacheKey);
     if(src) {
