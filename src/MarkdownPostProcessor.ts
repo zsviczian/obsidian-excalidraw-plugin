@@ -134,7 +134,7 @@ const getIMG = async (
       }
     }
 
-    const quickPNG = !filenameParts.hasGroupref
+    const quickPNG = !(filenameParts.hasGroupref || filenameParts.hasFrameref)
       ? await getQuickImagePreview(plugin, file.path, "png")
       : undefined;
 
@@ -142,7 +142,7 @@ const getIMG = async (
     const png =
       quickPNG ??
       (await createPNG(
-        filenameParts.hasGroupref
+        (filenameParts.hasGroupref || filenameParts.hasFrameref)
           ? filenameParts.filepath + filenameParts.linkpartReference
           : file.path,
         scale,
@@ -183,7 +183,7 @@ const getIMG = async (
   }
   const svgSnapshot = (
     await createSVG(
-      filenameParts.hasGroupref || filenameParts.hasBlockref || filenameParts.hasSectionref
+      filenameParts.hasGroupref || filenameParts.hasBlockref || filenameParts.hasSectionref || filenameParts.hasFrameref
         ? filenameParts.filepath + filenameParts.linkpartReference
         : file.path,
       true,
@@ -394,7 +394,7 @@ const isTextOnlyEmbed = (internalEmbedEl: Element):boolean => {
   const src = internalEmbedEl.getAttribute("src");
   if(!src) return true; //technically this does not mean this is a text only embed, but still should abort further processing
   const fnameParts = getEmbeddedFilenameParts(src);
-  return !(fnameParts.hasArearef || fnameParts.hasGroupref) &&
+  return !(fnameParts.hasArearef || fnameParts.hasGroupref || fnameParts.hasFrameref) &&
     (fnameParts.hasBlockref || fnameParts.hasSectionref)
 }
 

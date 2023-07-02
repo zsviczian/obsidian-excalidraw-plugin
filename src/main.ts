@@ -1173,6 +1173,22 @@ export default class ExcalidrawPlugin extends Plugin {
     });
 
     this.addCommand({
+      id: "insert-link-to-element-frame",
+      name: t("INSERT_LINK_TO_ELEMENT_FRAME"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
+        }
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
+          view.copyLinkToSelectedElementToClipboard("frame=");
+          return true;
+        }
+        return false;
+      },
+    });
+
+    this.addCommand({
       id: "insert-link-to-element-area",
       name: t("INSERT_LINK_TO_ELEMENT_AREA"),
       checkCallback: (checking: boolean) => {
@@ -1699,6 +1715,14 @@ export default class ExcalidrawPlugin extends Plugin {
               const data = await app.vault.read(file);
               await inData.loadData(data,file,getTextMode(data));
               excalidrawView.synchronizeWithData(inData);
+              if(excalidrawView.semaphores.dirty) {
+                if(excalidrawView.autosaveTimer && excalidrawView.autosaveFunction) {
+                  clearTimeout(excalidrawView.autosaveTimer);
+                }
+                if(excalidrawView.autosaveFunction) {
+                  excalidrawView.autosaveFunction();
+                }
+              }
             } else {
               excalidrawView.reload(true, excalidrawView.file);
             }
@@ -2344,7 +2368,7 @@ export default class ExcalidrawPlugin extends Plugin {
     );
   }
 
-  private async setExcalidrawView(leaf: WorkspaceLeaf) {
+  public async setExcalidrawView(leaf: WorkspaceLeaf) {
     await leaf.setViewState({
       type: VIEW_TYPE_EXCALIDRAW,
       state: leaf.view.getState(),

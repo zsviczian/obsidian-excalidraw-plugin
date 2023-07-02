@@ -1879,6 +1879,17 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
   }
 
   /**
+   * Gets all the elements from elements[] that are contained in the frame.
+   * @param element 
+   * @param elements - typically all the non-deleted elements in the scene 
+   * @returns 
+   */
+  getElementsInFrame(frameElement: ExcalidrawElement, elements: ExcalidrawElement[]): ExcalidrawElement[] {
+    if(!frameElement || !elements || frameElement.type !== "frame") return [];
+    return elements.filter(el=>el.frameId === frameElement.id);
+  } 
+
+  /**
    * @param element 
    * @param a 
    * @param b 
@@ -2315,6 +2326,13 @@ async function getTemplate(
         groupElements = plugin.ea.getElementsInTheSameGroupWithElement(el[0],scene.elements)
       }
     }
+    if(filenameParts.hasFrameref) {
+      const el = scene.elements.filter((el: ExcalidrawElement)=>el.id===filenameParts.blockref)
+      if(el.length === 1) {
+        groupElements = plugin.ea.getElementsInFrame(el[0],scene.elements)
+      }
+    }
+
 
     if(filenameParts.hasTaskbone) {
       groupElements = groupElements.filter( el => 
@@ -2446,7 +2464,7 @@ export async function createSVG(
   );
   const filenameParts = getEmbeddedFilenameParts(templatePath);
   if(
-    !filenameParts.hasGroupref && 
+    !(filenameParts.hasGroupref || filenameParts.hasFrameref) && 
     (filenameParts.hasBlockref || filenameParts.hasSectionref)
   ) {
     let el = filenameParts.hasSectionref
@@ -2568,7 +2586,7 @@ export const search = async (view: ExcalidrawView) => {
   const ea = view.plugin.ea;
   ea.reset();
   ea.setView(view);
-  const elements = ea.getViewElements().filter((el) => el.type === "text");
+  const elements = ea.getViewElements().filter((el) => el.type === "text" || el.type === "frame");
   if (elements.length === 0) {
     return;
   }
@@ -2623,6 +2641,38 @@ export const getTextElementsMatchingQuery = (
         return m[1] === q.toLowerCase();
       }
       const text = el.rawText.toLowerCase().replaceAll("\n", " ").trim();
+      return text.match(q.toLowerCase()); //to distinguish between "# frame" and "# frame 1" https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530
+    }));
+}
+
+/**
+ * 
+ * @param elements 
+ * @param query 
+ * @param exactMatch - when searching for section header exactMatch should be set to true
+ * @returns the elements matching the query
+ */
+export const getFrameElementsMatchingQuery = (
+  elements: ExcalidrawElement[],
+  query: string[],
+  exactMatch: boolean = false, //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530
+): ExcalidrawElement[] => {
+  if (!elements || elements.length === 0 || !query || query.length === 0) {
+    return [];
+  }
+
+  return elements.filter((el: any) =>
+    el.type === "frame" && 
+    query.some((q) => {
+      if (exactMatch) {
+        const text = el.name.toLowerCase().split("\n")[0].trim();
+        const m = text.match(/^#*(# .*)/);
+        if (!m || m.length !== 2) {
+          return false;
+        }
+        return m[1] === q.toLowerCase();
+      }
+      const text = el.name.toLowerCase().replaceAll("\n", " ").trim();
       return text.match(q.toLowerCase()); //to distinguish between "# frame" and "# frame 1" https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530
     }));
 }

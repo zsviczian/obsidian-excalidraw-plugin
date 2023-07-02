@@ -50,6 +50,8 @@ export default {
     "Copy 'group=' markdown link for selected element to clipboard.",
   INSERT_LINK_TO_ELEMENT_AREA:
     "Copy 'area=' markdown link for selected element to clipboard.",
+  INSERT_LINK_TO_ELEMENT_FRAME:
+    "Copy 'frame=' markdown link for selected element to clipboard.",
   INSERT_LINK_TO_ELEMENT_NORMAL:
     "Copy markdown link for selected element to clipboard.",
   INSERT_LINK_TO_ELEMENT_ERROR: "Select a single element in the scene",
@@ -90,6 +92,14 @@ export default {
   COMPATIBILITY_MODE:
     "*.excalidraw file opened in compatibility mode. Convert to new format for full plugin functionality.",
   CONVERT_FILE: "Convert to new format",
+  BACKUP_AVAILABLE: "There was an error loading your drawing. This could be because Obsidian terminated unexpectedly during a save operation (e.g. you 'swiped' Obsidian away on your mobile device in an unlucky moment). " +
+    "<br><br><b>GOOD NEWS</b>: There is a local backup available. Note however, if the last time you modified this drawing you were using Obsidian on different device (i.e. now you are on your desktop and you modified it on your tablet), that other device will likely have a more recent backup available. " + 
+    "Try opening the drawing on your other device first, and restoring the backup from that local backup. " + 
+    "<br><br>Would you like to load the backup?",
+  BACKUP_RESTORED: "Backup restored",
+  CACHE_NOT_READY: "I am sorry, but there was an error loading your file. The plugin has a backup cache, but it looks like as if you've just started Obsidian. Initialization of the Backup Cache " +
+    "can take up to a minute (or more depending on your device). You will be notified when the cache initialization is completed." +
+    "<br><br>Press OK to try again, or Cancel to manually correct your file or to come back later.",
 
   //settings.ts
   RELEASE_NOTES_NAME: "Display Release Notes after update",
@@ -338,7 +348,9 @@ FILENAME_HEAD: "Filename",
   EMBED_IMAGE_CACHE_NAME: "Cache images for embedding in markdown",
   EMBED_IMAGE_CACHE_DESC: "Cache images for embedding in markdown. This will speed up the embedding process, but in case you compose images of several sub-component drawings, " +
     "the embedded image in Markdown won't update until you open the drawing and save it to trigger an update of the cache.",
-  EMBED_IMAGE_CACHE_CLEAR: "Clear image cache",
+  EMBED_IMAGE_CACHE_CLEAR: "Purge Cache",
+  BACKUP_CACHE_CLEAR: "Purge Backups",
+  BACKUP_CACHE_CLEAR_CONFIRMATION: "This action will delete all Excalidraw drawing backups. Backups are used as a safety measure in case your drawing file gets damaged. Each time you open Obsidian the plugin automatically deletes backups for files that no longer exist in your Vault. Are you sure you want to clear all backups?",
   EMBED_REUSE_EXPORTED_IMAGE_NAME:
     "If found, use the already exported image for preview",
   EMBED_REUSE_EXPORTED_IMAGE_DESC:

@@ -25,6 +25,7 @@ import {
 } from "./utils/Utils";
 import { image } from "html2canvas/dist/types/css/types/image";
 import { imageCache } from "./utils/ImageCache";
+import { ConfirmationPrompt } from "./dialogs/Prompt";
 
 export interface ExcalidrawSettings {
   folder: string;
@@ -1154,7 +1155,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         button
           .setButtonText(t("EMBED_IMAGE_CACHE_CLEAR"))
           .onClick(() => {
-            imageCache.clear();
+            imageCache.clearImageCache();
+          })
+      )
+      .addButton((button) =>
+        button
+          .setButtonText(t("BACKUP_CACHE_CLEAR"))
+          .onClick(() => {
+            const confirmationPrompt = new ConfirmationPrompt(this.plugin,t("BACKUP_CACHE_CLEAR_CONFIRMATION"));
+            confirmationPrompt.waitForClose.then((confirmed) => {
+              if (confirmed) {
+                imageCache.clearBackupCache();
+              } 
+            });
           })
       );
         

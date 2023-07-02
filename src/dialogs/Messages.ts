@@ -17,6 +17,37 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.7":`
+## Fixed:
+
+- Fixed an issue where using the color picker shortcut would cause the UI to disappear in mobile view mode.
+- You can now add YouTube playlists to iframes.
+- Fixed a bug where the "Add any file" dropdown suggester opened in the main Obsidian workspace instead of the popout window when Excalidraw was running. ([#1179](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1191))
+- Made some improvements to the logic of opening in the adjacent pane, although it is still not perfect.
+- Fixed an issue where Obsidian sync would result in the loss of the last approximately 20 seconds of work. Excalidraw's handling of sync is now fixed. ([#1189](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1189))
+
+## New:
+
+- Introducing Image Cache: Excalidraw will now cache rendered images embedded in Markdown documents, which will enhance the markdown rendering experience.
+- Backup Cache: Excalidraw now stores a backup on your device when saving, in case the application is terminated during a save operation. If you are using sync, you can find the latest backup on the device you last used to edit your drawing.
+- Added ${String.fromCharCode(96)}frame=${String.fromCharCode(96)} parameter to image references. ([#1194](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1194)) For more details about this feature, check out this [YouTube video](https://youtu.be/yZQoJg2RCKI).
+- When an SVG image from Draw.io is embedded in Excalidraw, clicking the image will open the file in the [Diagram plugin](https://github.com/zapthedingbat/drawio-obsidian) (if available).
+- Added the [Create DrawIO file](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Create%20DrawIO%20file.md) Excalidraw Automate Script to the library, which allows you to create a new draw.io drawing and add it to the current Excalidraw canvas.
+
+## New in ExcalidrawAutomate
+
+${String.fromCharCode(96,96,96)}typescript
+async getAttachmentFilepath(filename: string): Promise<string>
+${String.fromCharCode(96,96,96)}
+
+This asynchronous function retrieves the filepath to a new file, taking into account the attachments preference settings in Obsidian. It creates the attachment folder if it doesn't already exist. The function returns the complete path to the file. If the provided filename already exists, the function will append '_[number]' before the extension to generate a unique filename.
+
+${String.fromCharCode(96,96,96)}typescript
+getElementsInFrame(frameElement: ExcalidrawElement, elements: ExcalidrawElement[]): ExcalidrawElement[];
+${String.fromCharCode(96,96,96)}
+
+This function returns the elements contained within a frame.
+`,
 "1.9.6":`
 ## Fixed
 - help shortcuts are really hard to see [#1176](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1179)

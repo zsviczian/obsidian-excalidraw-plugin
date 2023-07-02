@@ -455,62 +455,6 @@ export class GenericSuggester extends FuzzySuggestModal<any> {
   }
 }
 
-class MigrationPrompt extends Modal {
-  private plugin: ExcalidrawPlugin;
-
-  constructor(app: App, plugin: ExcalidrawPlugin) {
-    super(app);
-    this.plugin = plugin;
-  }
-
-  onOpen(): void {
-    this.titleEl.setText("Welcome to Excalidraw 1.2");
-    this.createForm();
-  }
-
-  onClose(): void {
-    this.contentEl.empty();
-  }
-
-  createForm(): void {
-    const div = this.contentEl.createDiv();
-    //    div.addClass("excalidraw-prompt-div");
-    //    div.style.maxWidth = "600px";
-    div.createEl("p", {
-      text: "This version comes with tons of new features and possibilities. Please read the description in Community Plugins to find out more.",
-    });
-    div.createEl("p", { text: "" }, (el) => {
-      el.innerHTML =
-        "Drawings you've created with version 1.1.x need to be converted to take advantage of the new features. You can also continue to use them in compatibility mode. " +
-        "During conversion your old *.excalidraw files will be replaced with new *.excalidraw.md files.";
-    });
-    div.createEl("p", { text: "" }, (el) => {
-      //files manually follow one of two options:
-      el.innerHTML =
-        "To convert your drawings you have the following options:<br><ul>" +
-        "<li>Click <code>CONVERT FILES</code> now to convert all of your *.excalidraw files, or if you prefer to make a backup first, then click <code>CANCEL</code>.</li>" +
-        "<li>In the Command Palette select <code>Excalidraw: Convert *.excalidraw files to *.excalidraw.md files</code></li>" +
-        "<li>Right click an <code>*.excalidraw</code> file in File Explorer and select one of the following options to convert files one by one: <ul>" +
-        "<li><code>*.excalidraw => *.excalidraw.md</code></li>" +
-        "<li><code>*.excalidraw => *.md (Logseq compatibility)</code>. This option will retain the original *.excalidraw file next to the new Obsidian format. " +
-        "Make sure you also enable <code>Compatibility features</code> in Settings for a full solution.</li></ul></li>" +
-        "<li>Open a drawing in compatibility mode and select <code>Convert to new format</code> from the <code>Options Menu</code></li></ul>";
-    });
-    div.createEl("p", {
-      text: "This message will only appear maximum 3 times in case you have *.excalidraw files in your Vault.",
-    });
-    const bConvert = div.createEl("button", { text: "CONVERT FILES" });
-    bConvert.onclick = () => {
-      this.plugin.convertExcalidrawToMD();
-      this.close();
-    };
-    const bCancel = div.createEl("button", { text: "CANCEL" });
-    bCancel.onclick = () => {
-      this.close();
-    };
-  }
-}
-
 export class NewFileActions extends Modal {
   constructor(
     private plugin: ExcalidrawPlugin,
@@ -607,5 +551,76 @@ export class NewFileActions extends Modal {
         this.close();
       };
     });
+  }
+}
+
+export class ConfirmationPrompt extends Modal {
+  public waitForClose: Promise<boolean>;
+  private resolvePromise: (value: boolean) => void;
+  private rejectPromise: (reason?: any) => void;
+  private didConfirm: boolean = false;
+  private readonly message: string;
+
+  constructor(private plugin: ExcalidrawPlugin, message: string) {
+    super(plugin.app);
+    this.message = message;
+    this.waitForClose = new Promise<boolean>((resolve, reject) => {
+      this.resolvePromise = resolve;
+      this.rejectPromise = reject;
+    });
+
+    this.display();
+    this.open();
+  }
+
+  private display() {
+    this.contentEl.empty();
+    this.titleEl.textContent = "Confirmation";
+
+    const messageEl = this.contentEl.createDiv();
+    messageEl.style.marginBottom = "1rem";
+    messageEl.innerHTML = this.message;
+
+    const buttonContainer = this.contentEl.createDiv();
+    buttonContainer.style.display = "flex";
+    buttonContainer.style.justifyContent = "flex-end";
+
+    const cancelButton = this.createButton(buttonContainer, "Cancel", this.cancelClickCallback);
+    cancelButton.buttonEl.style.marginRight = "0.5rem";
+
+    const confirmButton = this.createButton(buttonContainer, "OK", this.confirmClickCallback);
+    confirmButton.buttonEl.style.marginRight = "0";
+
+    cancelButton.buttonEl.focus();
+  }
+
+  private createButton(container: HTMLElement, text: string, callback: (evt: MouseEvent) => void) {
+    const button = new ButtonComponent(container);
+    button.setButtonText(text).onClick(callback);
+    return button;
+  }
+
+  private cancelClickCallback = () => {
+    this.didConfirm = false;
+    this.close();
+  };
+
+  private confirmClickCallback = () => {
+    this.didConfirm = true;
+    this.close();
+  };
+
+  onOpen() {
+    super.onOpen();
+    this.contentEl.querySelector("button")?.focus();
+  }
+
+  onClose() {
+    super.onClose();
+    if (!this.didConfirm) {
+      this.resolvePromise(false);
+    } else {
+      this.resolvePromise(true);
+    }
   }
 }
