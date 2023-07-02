@@ -3,11 +3,12 @@ import ExcalidrawPlugin from "src/main";
 
 //@ts-ignore
 const DB_NAME = "Excalidraw " + app.appId;
-const CACHE_STORE_NAME = "imageCache";
+const CACHE_STORE = "imageCache";
 const BACKUP_STORE = "drawingBAK";
 
-
 type FileCacheData = { mtime: number; imageBase64: string };
+type BackupData = string;
+type BackupKey = string;
 
 type ImageKey = {
   filepath: string;
@@ -22,14 +23,14 @@ const getKey = (key: ImageKey): string => `${key.filepath}#${key.blockref}#${key
 
 class ImageCache {
   private dbName: string;
-  private storeName: string;
+  private cacheStoreName: string;
   private db: IDBDatabase | null;
   private isInitializing: boolean;
   public plugin: ExcalidrawPlugin;
 
-  constructor(dbName: string, storeName: string) {
+  constructor(dbName: string, cacheStoreName: string) {
     this.dbName = dbName;
-    this.storeName = storeName;
+    this.cacheStoreName = cacheStoreName;
     this.db = null;
     this.isInitializing = false;
     this.plugin = null;
@@ -48,8 +49,8 @@ class ImageCache {
 
       request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
         const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(this.storeName)) {
-          db.createObjectStore(this.storeName);
+        if (!db.objectStoreNames.contains(this.cacheStoreName)) {
+          db.createObjectStore(this.cacheStoreName);
         }
       };
 
@@ -65,14 +66,14 @@ class ImageCache {
       });
       
       // Pre-create the object store to reduce delay when accessing it later
-      if (!this.db.objectStoreNames.contains(this.storeName)) {
+      if (!this.db.objectStoreNames.contains(this.cacheStoreName)) {
         const version = this.db.version + 1;
         this.db.close();
 
         const upgradeRequest = indexedDB.open(this.dbName, version);
         upgradeRequest.onupgradeneeded = (event: IDBVersionChangeEvent) => {
           const db = (event.target as IDBOpenDBRequest).result;
-          db.createObjectStore(this.storeName);
+          db.createObjectStore(this.cacheStoreName);
         };
 
         await new Promise<void>((resolve, reject) => {
@@ -98,7 +99,7 @@ class ImageCache {
           };
         });
       }
-      await this.purgeInvalidFiles();
+      await this.purgeInvalidCacheFiles();
 
     } finally {
       this.isInitializing = false;
@@ -106,9 +107,9 @@ class ImageCache {
     } 
   }
 
-  private async purgeInvalidFiles(): Promise<void> {
-    const transaction = this.db!.transaction(this.storeName, "readwrite");
-    const store = transaction.objectStore(this.storeName);
+  private async purgeInvalidCacheFiles(): Promise<void> {
+    const transaction = this.db!.transaction(this.cacheStoreName, "readwrite");
+    const store = transaction.objectStore(this.cacheStoreName);
     const files = app.vault.getFiles();
 
     const deletePromises: Promise<void>[] = [];
@@ -147,8 +148,8 @@ class ImageCache {
   }
 
   private async getObjectStore(mode: IDBTransactionMode): Promise<IDBObjectStore> {
-    const transaction = this.db!.transaction(this.storeName, mode);
-    return transaction.objectStore(this.storeName);
+    const transaction = this.db!.transaction(this.cacheStoreName, mode);
+    return transaction.objectStore(this.cacheStoreName);
   }
 
   private async getCacheData(key: string): Promise<FileCacheData | null> {
@@ -171,7 +172,7 @@ class ImageCache {
     return !!this.db && !this.isInitializing && !!this.plugin && this.plugin.settings.allowImageCache;
   } 
 
-  public async get(key_: ImageKey): Promise<string | undefined> {
+  public async getImageFromCache(key_: ImageKey): Promise<string | undefined> {
     if (!this.isReady()) {
       return null; // Database not initialized yet
     }
@@ -187,7 +188,7 @@ class ImageCache {
     });
   }
 
-  public add(key_: ImageKey, imageBase64: string): void {
+  public addImageToCache(key_: ImageKey, imageBase64: string): void {
     if (!this.isReady()) {
       return;  // Database not initialized yet
     }
@@ -196,8 +197,8 @@ class ImageCache {
     if (!file || !(file instanceof TFile)) return;
     const data: FileCacheData = { mtime: file.stat.mtime, imageBase64 };
 
-    const transaction = this.db.transaction(this.storeName, "readwrite");
-    const store = transaction.objectStore(this.storeName);
+    const transaction = this.db.transaction(this.cacheStoreName, "readwrite");
+    const store = transaction.objectStore(this.cacheStoreName);
     const key = getKey(key_)
     store.put(data, key);
   }
@@ -208,8 +209,8 @@ class ImageCache {
       return; // Database not initialized yet
     }
 
-    const transaction = this.db.transaction(this.storeName, "readwrite");
-    const store = transaction.objectStore(this.storeName);
+    const transaction = this.db.transaction(this.cacheStoreName, "readwrite");
+    const store = transaction.objectStore(this.cacheStoreName);
     const request = store.clear();
 
     return new Promise<void>((resolve, reject) => {
@@ -225,4 +226,4 @@ class ImageCache {
   }
 }
 
-export const imageCache = new ImageCache(DB_NAME, CACHE_STORE_NAME);
+export const imageCache = new ImageCache(DB_NAME, CACHE_STORE);

@@ -125,7 +125,7 @@ const getIMG = async (
     const cacheKey = {...filenameParts, isDark: theme==="dark", isSVG: false, scale};
 
     if(cacheReady) {      
-      const src = await imageCache.get(cacheKey);
+      const src = await imageCache.getImageFromCache(cacheKey);
       //In case of PNG I cannot change the viewBox to select the area of the element
       //being referenced. For PNG only the group reference works
       if(src) {
@@ -159,13 +159,13 @@ const getIMG = async (
       return null;
     }
     img.src = URL.createObjectURL(png);
-    cacheReady && imageCache.add(cacheKey, img.src);
+    cacheReady && imageCache.addImageToCache(cacheKey, img.src);
     return img;
   }
 
   const cacheKey = {...filenameParts, isDark: theme==="dark", isSVG: true, scale:1};
   if(cacheReady) {
-    const src = await imageCache.get(cacheKey);
+    const src = await imageCache.getImageFromCache(cacheKey);
     if(src) {
       img.setAttribute("src", src);
       return img;
@@ -177,7 +177,7 @@ const getIMG = async (
     const quickSVG = await getQuickImagePreview(plugin, file.path, "svg");
     if (quickSVG) {
       img.setAttribute("src", svgToBase64(quickSVG));
-      cacheReady && imageCache.add(cacheKey, img.src);
+      cacheReady && imageCache.addImageToCache(cacheKey, img.src);
       return img;
     }
   }
@@ -213,7 +213,7 @@ const getIMG = async (
   svg.removeAttribute("width");
   svg.removeAttribute("height");
   img.setAttribute("src", svgToBase64(svg.outerHTML));
-  cacheReady && imageCache.add(cacheKey, img.src);
+  cacheReady && imageCache.addImageToCache(cacheKey, img.src);
   return img;
 };
 
