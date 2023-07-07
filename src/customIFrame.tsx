@@ -2,7 +2,7 @@ import { NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element
 import ExcalidrawView from "./ExcalidrawView";
 import { Notice, Workspace, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import * as React from "react";
-import { getParentOfClass, isObsidianThemeDark } from "./utils/ObsidianUtils";
+import { ConstructableWorkspaceSplit, getContainerForDocument, getParentOfClass, isObsidianThemeDark } from "./utils/ObsidianUtils";
 import { getLinkParts } from "./utils/Utils";
 import { DEVICE, REG_LINKINDEX_INVALIDCHARS } from "./Constants";
 import { ExcalidrawImperativeAPI, UIAppState } from "@zsviczian/excalidraw/types/types";
@@ -57,17 +57,6 @@ const YOUTUBE_REG =
 const VIMEO_REG =
   /^(?:http(?:s)?:\/\/)?(?:(?:w){3}.)?(?:player\.)?vimeo\.com\/(?:video\/)?([^?\s]+)(?:\?.*)?$/;
 const TWITTER_REG = /^(?:http(?:s)?:\/\/)?(?:(?:w){3}.)?twitter.com/;
-
-type ConstructableWorkspaceSplit = new (ws: Workspace, dir: "horizontal"|"vertical") => WorkspaceSplit;
-
-const getContainerForDocument = (doc:Document) => {
-  if (doc !== document && app.workspace.floatingSplit) {
-    for (const container of app.workspace.floatingSplit.children) {
-      if (container.doc === doc) return container;
-    }
-  }
-  return app.workspace.rootSplit;
-};
 
 export const useDefaultExcalidrawFrame = (element: NonDeletedExcalidrawElement) => {
   return element.link.match(YOUTUBE_REG) || element.link.match(VIMEO_REG);
@@ -226,6 +215,8 @@ function RenderObsidianView(
         return;
       }
       leafRef.current.view.setMode(modes['source']);
+      //@ts-ignore
+      window.al = leafRef.current;
       app.workspace.setActiveLeaf(leafRef.current);
       isEditingRef.current = true;
       patchMobileView();
@@ -309,22 +300,6 @@ export const CustomIFrame: React.FC<{element: NonDeletedExcalidrawElement; radiu
         view={view}
         containerRef={containerRef}
         appState={appState}/>
-      {(appState.activeIFrame?.element === element && appState.activeIFrame?.state === "hover") && (<div
-        style={{
-          content: "",
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: `100%`,
-          height: `100%`,
-          background: `radial-gradient(
-            ellipse at center,
-            rgba(0, 0, 0, 0) 20%,
-            rgba(0, 0, 0, 0.6) 80%
-          )`,
-        }}/>)}
     </div>
   )
 }

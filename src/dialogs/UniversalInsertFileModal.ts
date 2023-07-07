@@ -192,12 +192,15 @@ export class UniversalInsertFileModal extends Modal {
           .setButtonText("as Image")
           .onClick(async () => {
             const ea:ExcalidrawAutomate = getEA(this.view);
+            const isMarkdown = file && file.extension === "md" && !ea.isExcalidrawFile(file);
             ea.selectElementsInView(
               [await insertImageToView (
                 ea,
                 this.center,
                 //this.view.currentPosition,
-                file,
+                isMarkdown && sectionPicker.selectEl.value && sectionPicker.selectEl.value !== ""
+                ? `${file.path}${sectionPicker.selectEl.value}`
+                : file,
                 ea.isExcalidrawFile(file) ? !anchorTo100 : undefined,
               )]
             );

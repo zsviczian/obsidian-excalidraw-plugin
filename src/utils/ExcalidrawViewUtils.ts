@@ -7,7 +7,7 @@ import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 export const insertImageToView = async (
   ea: ExcalidrawAutomate,
   position: { x: number, y: number },
-  file: TFile,
+  file: TFile | string,
   scale?: boolean,
 ):Promise<string> => {
   ea.clear();

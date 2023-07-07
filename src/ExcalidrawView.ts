@@ -93,10 +93,11 @@ import {
   hyperlinkIsYouTubeLink,
   getYouTubeThumbnailLink,
   isContainer,
+  fragWithHTML,
 } from "./utils/Utils";
 import { getLeaf, getParentOfClass } from "./utils/ObsidianUtils";
 import { splitFolderAndFilename } from "./utils/FileUtils";
-import { ConfirmationPrompt, NewFileActions, Prompt } from "./dialogs/Prompt";
+import { ConfirmationPrompt, GenericInputPrompt, NewFileActions, Prompt } from "./dialogs/Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 import { updateEquation } from "./LaTeX";
 import {
@@ -778,7 +779,14 @@ export default class ExcalidrawView extends TextFileView {
         el.addClass(SHOW);
         el = el.parentElement;
       }
-      if(el) el.addClass(SHOW);
+      if(el) {
+        el.addClass(SHOW);
+        el.querySelectorAll(`div.workspace-split:not(.${SHOW})`).forEach(el=>el.addClass(SHOW));
+        el.querySelector(`div.workspace-leaf-content.${SHOW} > .view-header`).addClass(SHOW);
+        el.querySelectorAll(`div.workspace-tab-container.${SHOW} > div.workspace-leaf:not(.${SHOW})`).forEach(el=>el.addClass(SHOW));
+        el.querySelectorAll(`div.workspace-tabs.${SHOW} > div.workspace-tab-header-container`).forEach(el=>el.addClass(SHOW));
+        el.querySelectorAll(`div.workspace-split.${SHOW} > div.workspace-tabs:not(.${SHOW})`).forEach(el=>el.addClass(SHOW));
+      }
       const doc = this.ownerDocument;
       doc.body.querySelectorAll(`div.workspace-split:not(.${SHOW})`).forEach(el=>el.addClass(HIDE));
       doc.body.querySelector(`div.workspace-leaf-content.${SHOW} > .view-header`).addClass(HIDE);
@@ -991,22 +999,28 @@ export default class ExcalidrawView extends TextFileView {
             ef.file.extension === "md" &&
             !this.plugin.isExcalidrawFile(ef.file)
           ) {
-            const prompt = new Prompt(
-              app,
-              "Customize the link",
-              ef.linkParts.original,
-              "",
-              "Do not add [[square brackets]] around the filename!<br>Follow this format when editing your link:<br><mark>filename#^blockref|WIDTHxMAXHEIGHT</mark>",
-            );
-            prompt.openAndGetValue(async (link: string) => {
+            const handler = async (link:string) => {
               if (!link || ef.linkParts.original === link) {
                 return;
               }
               ef.resetImage(this.file.path, link);
+              this.setDirty(2);
               await this.save(false);
               await this.loadSceneFiles();
-              this.setDirty(2);
-            });
+            }
+            GenericInputPrompt.Prompt(
+              this,
+              this.plugin,
+              app,
+              "Customize the link",
+              undefined,
+              ef.linkParts.original,
+              [{caption: "✅", action: handler}],
+              1,
+              false,
+              (container) => container.createEl("p",{text: fragWithHTML("Do not add [[square brackets]] around the filename!<br>Follow this format when editing your link:<br><mark>filename#^blockref|WIDTHxMAXHEIGHT</mark>")}),
+              false
+            ).then(handler, () => {});
             return;
           }
         }
@@ -3769,7 +3783,7 @@ export default class ExcalidrawView extends TextFileView {
                 
               }
             },
-          iframeURLWhitelist: [/.*/],
+          iframeURLWhitelist: [true],
           renderCustomIFrame: (
             element: NonDeletedExcalidrawElement,
             radius: number,

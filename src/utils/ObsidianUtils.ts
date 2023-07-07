@@ -1,7 +1,7 @@
 import { main } from "@popperjs/core";
 import {
   App,
-  normalizePath, Notice, WorkspaceLeaf
+  normalizePath, Notice, Workspace, WorkspaceLeaf, WorkspaceSplit
 } from "obsidian";
 import { DEVICE } from "src/Constants";
 import ExcalidrawPlugin from "../main";
@@ -189,3 +189,14 @@ export const getAttachmentsFolderAndFilePath = async (
 };
 
 export const isObsidianThemeDark = () => document.body.classList.contains("theme-dark");
+
+export type ConstructableWorkspaceSplit = new (ws: Workspace, dir: "horizontal"|"vertical") => WorkspaceSplit;
+
+export const getContainerForDocument = (doc:Document) => {
+  if (doc !== document && app.workspace.floatingSplit) {
+    for (const container of app.workspace.floatingSplit.children) {
+      if (container.doc === doc) return container;
+    }
+  }
+  return app.workspace.rootSplit;
+};

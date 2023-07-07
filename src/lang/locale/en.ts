@@ -100,6 +100,7 @@ export default {
   CACHE_NOT_READY: "I am sorry, but there was an error loading your file. The plugin has a backup cache, but it looks like as if you've just started Obsidian. Initialization of the Backup Cache " +
     "can take up to a minute (or more depending on your device). You will be notified when the cache initialization is completed." +
     "<br><br>Press OK to try again, or Cancel to manually correct your file or to come back later.",
+OBSIDIAN_TOOLS_PANEL: "Obsidian Tools Panel",
 
   //settings.ts
   RELEASE_NOTES_NAME: "Display Release Notes after update",

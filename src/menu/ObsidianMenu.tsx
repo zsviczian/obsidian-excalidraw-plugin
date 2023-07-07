@@ -10,6 +10,7 @@ import { PENS } from "src/utils/Pens";
 import ExcalidrawPlugin from "../main";
 import { ICONS, penIcon, stringToSVG } from "./ActionIcons";
 import { UniversalInsertFileModal } from "src/dialogs/UniversalInsertFileModal";
+import { t } from "src/lang/helpers";
 
 declare const PLUGIN_VERSION:string;
 
@@ -251,7 +252,7 @@ export class ObsidianMenu {
             );
           }}
         >
-          <div className="ToolIcon__icon" aria-hidden="true">
+          <div className="ToolIcon__icon" aria-label={t("OBSIDIAN_TOOLS_PANEL")}>
             {ICONS.obsidian}
           </div>
         </label>
@@ -268,7 +269,7 @@ export class ObsidianMenu {
             insertFileModal.open();
           }}
         >
-          <div className="ToolIcon__icon" aria-hidden="true">
+          <div className="ToolIcon__icon" aria-label={t("UNIVERSAL_ADD_FILE")}>
             {ICONS["add-file"]}
           </div>
         </label>
