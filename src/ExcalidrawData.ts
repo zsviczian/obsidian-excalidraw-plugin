@@ -20,6 +20,10 @@ import {
   FRONTMATTER_KEY_IFRAME_THEME,
   DEVICE,
   IFRAME_THEME_FRONTMATTER_VALUES,
+  getBoundTextMaxWidth,
+  getDefaultLineHeight,
+  getFontString,
+  wrapText,
 } from "./Constants";
 import { _measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
@@ -57,14 +61,6 @@ declare module "obsidian" {
     };
   }
 }
-
-const {
-  wrapText, 
-  getFontString, 
-  getBoundTextMaxWidth, 
-  getDefaultLineHeight,
-  //@ts-ignore
-} = excalidrawLib;
 
 export enum AutoexportPreference {
   none,

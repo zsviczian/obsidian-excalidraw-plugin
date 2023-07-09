@@ -357,3 +357,11 @@ div.excalidraw-draginfo {
 .excalidraw .HelpDialog__key {
   background-color: var(--color-gray-80) !important;
 }
+
+.excalidraw .iframe-menu {
+    width: fit-content;
+    height: fit-content;
+    position: absolute;
+    display: block;
+    z-index: var(--zIndex-layerUI);
+}

@@ -10,7 +10,7 @@ container.appendChild(node.contentEl)
 
 import { TFile, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import ExcalidrawView from "src/ExcalidrawView";
-import { getContainerForDocument, ConstructableWorkspaceSplit } from "./ObsidianUtils";
+import { getContainerForDocument, ConstructableWorkspaceSplit, isObsidianThemeDark } from "./ObsidianUtils";
 
 declare module "obsidian" {
   interface Workspace {
@@ -27,7 +27,7 @@ interface ObsidianCanvas {
   removeNode: Function;
 }
 
-interface ObsidianCanvasNode {
+export interface ObsidianCanvasNode {
   startEditing: Function;
   child: any;
 }
@@ -36,6 +36,8 @@ export class CanvasNodeFactory {
   leaf: WorkspaceLeaf;
   canvas: ObsidianCanvas;
   nodes = new Map<string, ObsidianCanvasNode>();
+  initialized: boolean = false;
+  public isInitialized = () => this.initialized;
 
   constructor(
     private view: ExcalidrawView,
@@ -54,31 +56,65 @@ export class CanvasNodeFactory {
     rootSplit.getRoot = () => app.workspace[doc === document ? 'rootSplit' : 'floatingSplit'];
     rootSplit.getContainer = () => getContainerForDocument(doc);
     this.leaf = app.workspace.createLeafInParent(rootSplit, 0);
-    this.canvas = canvasPlugin.views.canvas(this.leaf);
+    this.canvas = canvasPlugin.views.canvas(this.leaf).canvas;
+    this.initialized = true;
   }
 
-  public createFileNote(file: TFile, subpath: string, containerEl: HTMLDivElement, elementId: string) {
+  public createFileNote(file: TFile, subpath: string, containerEl: HTMLDivElement, elementId: string): ObsidianCanvasNode {
+    if(!this.initialized) return;
+    if(this.nodes.has(elementId)) {
+      this.canvas.removeNode(this.nodes.get(elementId));
+      this.nodes.delete(elementId);
+    }
     const node = this.canvas.createFileNode({pos: {x:0,y:0}, file, subpath, save: false});
     node.setFilePath(file.path,subpath);
     node.render();
     containerEl.style.background = "var(--background-primary)";
     containerEl.appendChild(node.contentEl)
     this.nodes.set(elementId, node);
+    return node;
   }
 
-  public startEditing(elementId: string, theme: string) {
-    const node = this.nodes.get(elementId);
-    if(!node) return;
+  public startEditing(node: ObsidianCanvasNode, theme: string) {
+    if (!this.initialized || !node) return;
     node.startEditing();
-    node.child.editor.containerEl.parentElement.parentElement.removeClass("theme-light");
-    node.child.editor.containerEl.parentElement.parentElement.removeClass("theme-dark");
-    node.child.editor.containerEl.parentElement.parentElement.addClass(theme);
-  }
+  
+    const obsidianTheme = isObsidianThemeDark() ? "theme-dark" : "theme-light";
+    if (obsidianTheme === theme) return;
+  
+    (async () => {
+      let counter = 0;
+      while (!node.child.editor?.containerEl?.parentElement?.parentElement && counter++ < 100) {
+        await sleep(25);
+      }
+      if (!node.child.editor?.containerEl?.parentElement?.parentElement) return;
+      node.child.editor.containerEl.parentElement.parentElement.classList.remove(obsidianTheme);
+      node.child.editor.containerEl.parentElement.parentElement.classList.add(theme);
+  
+      const observer = new MutationObserver((mutationsList) => {
+        for (const mutation of mutationsList) {
+          if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+            const targetElement = mutation.target as HTMLElement;
+            if (targetElement.classList.contains(obsidianTheme)) {
+              targetElement.classList.remove(obsidianTheme);
+              targetElement.classList.add(theme);
+            }
+          }
+        }
+      });
+  
+      observer.observe(node.child.editor.containerEl.parentElement.parentElement, { attributes: true });
+    })();
+  } 
 
-  public stopEditing(elementId: string) {
+  public stopEditing(node: ObsidianCanvasNode) {
+    if(!this.initialized || !node) return;
+    if(!node.child.editMode) return;
+    node.child.showPreview();
   }
 
   public purgeNodes() {
+    if(!this.initialized) return;
     this.nodes.forEach(node => {
       this.canvas.removeNode(node);      
     });

@@ -2131,7 +2131,7 @@ export default class ExcalidrawPlugin extends Plugin {
       const imgFile = this.app.vault.getAbstractFileByPath(imageFullpath);
       if (!imgFile) {
         await this.app.vault.create(imageFullpath, "");
-        await sleep(200);
+        await sleep(200); //wait for metadata cache to update
       }
 
       editor.replaceSelection(

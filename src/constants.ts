@@ -1,6 +1,24 @@
 import { customAlphabet } from "nanoid";
 //This is only for backward compatibility because an early version of obsidian included an encoding to avoid fantom links from littering Obsidian graph view
 declare const PLUGIN_VERSION:string;
+
+export const {
+  sceneCoordsToViewportCoords,
+  viewportCoordsToSceneCoords,
+  determineFocusDistance,
+  intersectElementWithLine,
+  getCommonBoundingBox,
+  getMaximumGroups,
+  measureText,
+  getDefaultLineHeight,
+  wrapText, 
+  getFontString, 
+  getBoundTextMaxWidth, 
+  exportToSvg,
+  exportToBlob,
+  //@ts-ignore
+} = excalidrawLib;
+
 export function JSON_parse(x: string): any {
   return JSON.parse(x.replaceAll("&#91;", "["));
 }
@@ -26,6 +44,17 @@ export const DEVICE: {
   isIOS: document.body.hasClass("is-ios"),
   isAndroid: document.body.hasClass("is-android")
 };
+
+export const ROOTELEMENTSIZE = (() => {
+  const tempElement = document.createElement('div');
+  tempElement.style.fontSize = '1rem';
+  tempElement.style.display = 'none'; // Hide the element
+  document.body.appendChild(tempElement);
+  const computedStyle = getComputedStyle(tempElement);
+  const pixelSize = parseFloat(computedStyle.fontSize);
+  document.body.removeChild(tempElement);
+  return pixelSize;
+})();
 
 export const nanoid = customAlphabet(
   "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
@@ -98,6 +127,45 @@ export const TEXT_DISPLAY_RAW_ICON_NAME = "presentation";
 export const FULLSCREEN_ICON_NAME = "fullscreen";
 export const EXIT_FULLSCREEN_ICON_NAME = "exit-fullscreen";
 export const SCRIPTENGINE_ICON_NAME = "ScriptEngine";
+
+export const KEYBOARD_EVENT_TYPES = [
+  "keydown",
+  "keyup",
+  "keypress"
+];
+
+export const EXTENDED_EVENT_TYPES = [
+/*  "pointerdown",
+  "pointerup",
+  "pointermove",
+  "mousedown",
+  "mouseup",
+  "mousemove",
+  "mouseover",
+  "mouseout",
+  "mouseenter",
+  "mouseleave",
+  "dblclick",
+  "drag",
+  "dragend",
+  "dragenter",
+  "dragexit",
+  "dragleave",
+  "dragover",
+  "dragstart",
+  "drop",*/
+  "copy",
+  "cut",
+  "paste",
+  /*"wheel",
+  "touchstart",
+  "touchend",
+  "touchmove",*/
+];
+
+export const TWITTER_REG = /^(?:http(?:s)?:\/\/)?(?:(?:w){3}.)?twitter.com/;
+
+
 export const COLOR_NAMES = new Map<string, string>();
 COLOR_NAMES.set("aliceblue", "#f0f8ff");
 COLOR_NAMES.set("antiquewhite", "#faebd7");

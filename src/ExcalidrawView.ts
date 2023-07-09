@@ -46,6 +46,7 @@ import {
   DEVICE,
   GITHUB_RELEASES,
   EXPORT_IMG_ICON_NAME,
+  viewportCoordsToSceneCoords,
 } from "./Constants";
 import ExcalidrawPlugin from "./main";
 import { 
@@ -87,7 +88,6 @@ import {
   hasExportTheme,
   scaleLoadedImage,
   svgToBase64,
-  viewportCoordsToSceneCoords,
   updateFrontmatterInString,
   hyperlinkIsImage,
   hyperlinkIsYouTubeLink,
@@ -117,9 +117,12 @@ import { getEA } from "src";
 import { emulateCTRLClickForLinks, externalDragModifierType, internalDragModifierType, isALT, isCTRL, isMETA, isSHIFT, linkClickModifierType, mdPropModifier, ModifierKeys } from "./utils/ModifierkeyHelper";
 import { setDynamicStyle } from "./utils/DynamicStyling";
 import { InsertPDFModal } from "./dialogs/InsertPDFModal";
-import { CustomIFrame, renderWebView, useDefaultExcalidrawFrame } from "./customIFrame";
+import { CustomIFrame, renderWebView } from "./customIFrame";
 import { insertIFrameToView, insertImageToView } from "./utils/ExcalidrawViewUtils";
 import { imageCache } from "./utils/ImageCache";
+import { CanvasNodeFactory } from "./utils/CanvasNodeFactory";
+import { IFrameMenu } from "./menu/IFrameActionsMenu";
+import { useDefaultExcalidrawFrame } from "./utils/CustomIFrameUtils";
 
 declare const PLUGIN_VERSION:string;
 
@@ -232,6 +235,7 @@ export default class ExcalidrawView extends TextFileView {
   public excalidrawAPI: any = null;
   public excalidrawWrapperRef: React.MutableRefObject<any> = null;
   public toolsPanelRef: React.MutableRefObject<any> = null;
+  public iframeMenuRef: React.MutableRefObject<any> = null;
   private parentMoveObserver: MutationObserver;
   public linksAlwaysOpenInANewPane: boolean = false; //override the need for SHIFT+CTRL+click (used by ExcaliBrain)
   private hookServer: ExcalidrawAutomate;
@@ -246,6 +250,8 @@ export default class ExcalidrawView extends TextFileView {
   public ownerWindow: Window;
   public ownerDocument: Document;
   private draginfoDiv: HTMLDivElement;
+  public canvasNodeFactory: CanvasNodeFactory;
+  private iFrameRefs = new Map<ExcalidrawElement["id"], HTMLIFrameElement | HTMLWebViewElement>();
 
   public semaphores: {
     popoutUnload: boolean; //the unloaded Excalidraw view was the last leaf in the popout window
@@ -305,6 +311,7 @@ export default class ExcalidrawView extends TextFileView {
   private linkAction_Element: HTMLElement;
   public compatibilityMode: boolean = false;
   private obsidianMenu: ObsidianMenu;
+  private iframeMenu: IFrameMenu;
 
   //https://stackoverflow.com/questions/27132796/is-there-any-javascript-event-fired-when-the-on-screen-keyboard-on-mobile-safari
   private isEditingTextResetTimer: NodeJS.Timeout = null;
@@ -316,6 +323,7 @@ export default class ExcalidrawView extends TextFileView {
     this.plugin = plugin;
     this.excalidrawData = new ExcalidrawData(plugin);
     this.hookServer = plugin.ea;
+    this.canvasNodeFactory = new CanvasNodeFactory(this);
   }
 
   setHookServer(ea:ExcalidrawAutomate) {
@@ -1211,6 +1219,7 @@ export default class ExcalidrawView extends TextFileView {
 
     const self = this;
     app.workspace.onLayoutReady(async () => {
+      this.canvasNodeFactory.initialize();
       self.contentEl.addClass("excalidraw-view");
       //https://github.com/zsviczian/excalibrain/issues/28
       await self.addSlidingPanesListner(); //awaiting this because when using workspaces, onLayoutReady comes too early
@@ -1622,6 +1631,9 @@ export default class ExcalidrawView extends TextFileView {
 
   // clear the view content
   clear() {
+    this.canvasNodeFactory.purgeNodes();
+    this.iFrameRefs.clear();
+    
     delete this.exportDialog;
     const api = this.excalidrawAPI;
     if (!this.excalidrawRef || !api) {
@@ -2296,6 +2308,7 @@ export default class ExcalidrawView extends TextFileView {
     const reactElement = React.createElement(() => {
       const excalidrawWrapperRef = React.useRef(null);
       const toolsPanelRef = React.useRef(null);
+      const iframeMenuRef = React.useRef(null);
 
       const [dimensions, setDimensions] = React.useState({
         width: undefined,
@@ -2310,8 +2323,10 @@ export default class ExcalidrawView extends TextFileView {
       let blockOnMouseButtonDown = false;
 
       this.toolsPanelRef = toolsPanelRef;
+      this.iframeMenuRef = iframeMenuRef;
       this.obsidianMenu = new ObsidianMenu(this.plugin, toolsPanelRef, this);
-
+      this.iframeMenu = new IFrameMenu(this, iframeMenuRef);
+      
       //excalidrawRef readypromise based on
       //https://codesandbox.io/s/eexcalidraw-resolvable-promise-d0qg3?file=/src/App.js:167-760
       const resolvablePromise = () => {
@@ -3222,7 +3237,8 @@ export default class ExcalidrawView extends TextFileView {
                 await this.plugin.saveSettings();
               })();
             },
-            renderTopRightUI: this.obsidianMenu.renderButton,
+            renderTopRightUI:  (isMobile: boolean, appState: AppState) => this.obsidianMenu.renderButton (isMobile, appState),
+            renderIFrameMenu: (appState: AppState) => this.iframeMenu.renderButtons(appState),
             onPaste: (data: ClipboardData) => {
               //, event: ClipboardEvent | null
               /*if(data && data.text && hyperlinkIsYouTubeLink(data.text)) {
@@ -3783,7 +3799,8 @@ export default class ExcalidrawView extends TextFileView {
                 
               }
             },
-          iframeURLWhitelist: [true],
+          validateIFrame: true,
+          renderWebview: DEVICE.isDesktop,
           renderCustomIFrame: (
             element: NonDeletedExcalidrawElement,
             radius: number,
@@ -3792,10 +3809,6 @@ export default class ExcalidrawView extends TextFileView {
             try {
               if(!this.file || !element || !element.link || element.link.length === 0 || useDefaultExcalidrawFrame(element)) {
                 return null;
-              }
-
-              if(element.link.match(REG_LINKINDEX_HYPERLINK)) {
-                return renderWebView(element.link, radius);
               }
             
               const res = REGEX_LINK.getRes(element.link).next();
@@ -3807,7 +3820,7 @@ export default class ExcalidrawView extends TextFileView {
             
               if(linkText.match(REG_LINKINDEX_HYPERLINK)) {
                 if(DEVICE.isDesktop) {
-                  return renderWebView(linkText, radius);
+                  return renderWebView(linkText, radius, this, element.id);
                 } else {
                   return null;
                 }
@@ -4330,6 +4343,16 @@ export default class ExcalidrawView extends TextFileView {
         warningUnknowSeriousError();
       }
     }
+  }
+
+  public updateIFrameRef(id: string, ref: HTMLIFrameElement | HTMLWebViewElement | null) {
+    if (ref) {
+      this.iFrameRefs.set(id, ref);
+    }
+  }
+
+  public getIFrameElementById(id: string): HTMLIFrameElement | HTMLWebViewElement | undefined {
+    return this.iFrameRefs.get(id);
   }
 }
 

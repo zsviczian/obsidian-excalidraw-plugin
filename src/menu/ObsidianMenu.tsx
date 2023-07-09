@@ -60,7 +60,7 @@ export class ObsidianMenu {
   constructor(
     private plugin: ExcalidrawPlugin,
     private toolsRef: React.MutableRefObject<any>,
-    private view: ExcalidrawView
+    private view: ExcalidrawView,
   ) {
     this.clickTimestamp = Array.from({length: Object.keys(PENS).length}, () => 0);
   }

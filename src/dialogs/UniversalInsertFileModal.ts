@@ -3,19 +3,14 @@ import ExcalidrawView from "../ExcalidrawView";
 import ExcalidrawPlugin from "../main";
 import {  Modal, Setting, TextComponent } from "obsidian";
 import { FileSuggestionModal } from "./FolderSuggester";
-import { IMAGE_TYPES, REG_BLOCK_REF_CLEAN } from "src/Constants";
+import { IMAGE_TYPES, REG_BLOCK_REF_CLEAN, sceneCoordsToViewportCoords, viewportCoordsToSceneCoords } from "src/Constants";
 import { insertIFrameToView, insertImageToView } from "src/utils/ExcalidrawViewUtils";
 import { getEA } from "src";
 import { InsertPDFModal } from "./InsertPDFModal";
 import {  ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
 import { MAX_IMAGE_SIZE } from "src/Constants";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
-
-const {
-  viewportCoordsToSceneCoords,
-  sceneCoordsToViewportCoords
-  //@ts-ignore
-} = excalidrawLib;
+import { ExcalidrawIFrameElement } from "@zsviczian/excalidraw/types/element/types";
 
 export class UniversalInsertFileModal extends Modal {
   private center: { x: number, y: number } = { x: 0, y: 0 };

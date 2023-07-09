@@ -1,3 +1,4 @@
+import { ArrowBigLeft, Globe, Minimize2, RotateCcw, Scan } from "lucide-react";
 import * as React from "react";
 import { PenStyle } from "src/PenTypes";
 
@@ -23,6 +24,35 @@ export const ICONS = {
         <path d="M19 16v6"></path>
         <path d="M22 19l-3 3l-3 -3"></path>
       </g>
+    </svg>
+  ),
+  Reload: (<RotateCcw />),
+  Globe: (<Globe />),
+  ZoomToSelectedElement: (<Scan />),
+  ZoomToSection: (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="var(--icon-fill-color)"
+      strokeWidth="1"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <text x="6" y="18" fontSize="22px">#</text>
+    </svg>
+  ),
+  ZoomToBlock: (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="var(--icon-fill-color)"
+      strokeWidth="1"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <text x="1" y="18" fontSize="22px">#^</text>
     </svg>
   ),
   Discord: (

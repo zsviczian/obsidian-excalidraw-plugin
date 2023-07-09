@@ -2272,10 +2272,10 @@
   dependencies:
     "@zerollup/ts-helpers" "^1.7.18"
 
-"@zsviczian/excalidraw@0.15.2-obsidian-4":
-  "integrity" "sha512-piFX8c6PXPZ1N5DdWZFaxQNfkVvaofizy2cPKFChHx5PDjhtlD8FXzQ7zztluYjFvCF5RpJ2OfJWaNKQ1vn+7A=="
-  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.15.2-obsidian-4.tgz"
-  "version" "0.15.2-obsidian-4"
+"@zsviczian/excalidraw@0.15.2-obsidian-6":
+  "integrity" "sha512-+Wz1yHkKEh5+OUmAfXtT9NNVpMoLxODt2H3lhIKz+kdtdITg3D65Z/sCBIKArjJKwIIgd0KeO327N4DkEAovWw=="
+  "resolved" "https://registry.npmjs.org/@zsviczian/excalidraw/-/excalidraw-0.15.2-obsidian-6.tgz"
+  "version" "0.15.2-obsidian-6"
 
 "abab@^2.0.3", "abab@^2.0.5":
   "integrity" "sha512-9IK9EadsbHo6jLWIpxpR6pL0sazTXV6+SQv25ZB+F7Bj9mJNaOc4nCRabwd5M/JwmUa8idz6Eci6eKfJryPs6Q=="
@@ -6172,6 +6172,11 @@
   dependencies:
     "yallist" "^4.0.0"
 
+"lucide-react@0.259.0":
+  "integrity" "sha512-dFBLc6jRDfcpD9NQ7NyFVa+YR3RHX6+bs+f/UiotvNPho+kd4WyeXWMCCchUf7i/pq3BAaHkbmtkbx/GxxHVUw=="
+  "resolved" "https://registry.npmjs.org/lucide-react/-/lucide-react-0.259.0.tgz"
+  "version" "0.259.0"
+
 "lz-string@^1.4.4":
   "integrity" "sha1-wNjq82BZ9wV5bh40SBHPTEmNOiY="
   "resolved" "https://registry.npmjs.org/lz-string/-/lz-string-1.4.4.tgz"
@@ -7613,7 +7618,7 @@
   optionalDependencies:
     "fsevents" "^2.3.2"
 
-"react@^17.0.2 || ^18.2.0", "react@^18.2.0", "react@>= 16":
+"react@^16.5.1 || ^17.0.0 || ^18.0.0", "react@^17.0.2 || ^18.2.0", "react@^18.2.0", "react@>= 16":
   "integrity" "sha512-/3IjMdb2L9QbBdWiW5e3P2/npwMBaU9mHCSCUzNln0ZCYbcfTsGbTJrU/kGemdH2IWmB2ioZ+zkxtmq6g09fGQ=="
   "resolved" "https://registry.npmjs.org/react/-/react-18.2.0.tgz"
   "version" "18.2.0"

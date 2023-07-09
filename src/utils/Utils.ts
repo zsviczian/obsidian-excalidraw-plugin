@@ -17,6 +17,8 @@ import {
   FRONTMATTER_KEY_EXPORT_SVGPADDING,
   FRONTMATTER_KEY_EXPORT_PNGSCALE,
   FRONTMATTER_KEY_EXPORT_PADDING,
+  exportToSvg,
+  exportToBlob,
 } from "../Constants";
 import ExcalidrawPlugin from "../main";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
@@ -27,12 +29,6 @@ import ExcalidrawScene from "../svgToExcalidraw/elements/ExcalidrawScene";
 import { IMAGE_TYPES } from "../Constants";
 
 declare const PLUGIN_VERSION:string;
-
-const {
-  exportToSvg,
-  exportToBlob,
-//@ts-ignore
-} = excalidrawLib;
 
 declare module "obsidian" {
   interface Workspace {
@@ -178,29 +174,6 @@ export const rotatedDimensions = (
     Math.abs(left - right),
     Math.abs(top - bottom),
   ];
-};
-
-export const viewportCoordsToSceneCoords = (
-  { clientX, clientY }: { clientX: number; clientY: number },
-  {
-    zoom,
-    offsetLeft,
-    offsetTop,
-    scrollX,
-    scrollY,
-  }: {
-    zoom: Zoom;
-    offsetLeft: number;
-    offsetTop: number;
-    scrollX: number;
-    scrollY: number;
-  },
-) => {
-  const invScale = 1 / zoom.value;
-  const x = (clientX - offsetLeft) * invScale - scrollX;
-  const y = (clientY - offsetTop) * invScale - scrollY;
-
-  return { x, y };
 };
 
 export const getDataURL = async (

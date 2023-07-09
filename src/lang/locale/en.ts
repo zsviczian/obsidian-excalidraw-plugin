@@ -512,5 +512,13 @@ FILENAME_HEAD: "Filename",
   TOGGLE_FULLSCREEN: "Toggle fullscreen mode",
   TOGGLE_DISABLEBINDING: "Toggle to invert default binding behavior",
   OPEN_LINK_CLICK: "Navigate to selected element link",
-  OPEN_LINK_PROPS: "Open markdown-embed properties or open link in new window"
+  OPEN_LINK_PROPS: "Open markdown-embed properties or open link in new window",
+
+  //IFrameActionsMenu.tsx
+  NARROW_TO_HEADING: "Narrow to heading...",
+  NARROW_TO_BLOCK: "Narrow to block...",
+  SHOW_ENTIRE_FILE: "Show entire file",
+  ZOOM_TO_FIT: "Zoom to fit",
+  RELOAD: "Reload original link",
+  OPEN_IN_BROWSER: "Open current link in browser",
 };

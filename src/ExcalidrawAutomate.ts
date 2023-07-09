@@ -23,6 +23,12 @@ import {
   COLOR_NAMES,
   fileid,
   GITHUB_RELEASES,
+  determineFocusDistance,
+  getCommonBoundingBox,
+  getDefaultLineHeight,
+  getMaximumGroups,
+  intersectElementWithLine,
+  measureText,
 } from "./Constants";
 import { getDrawingFilename, getNewUniqueFilepath, } from "./utils/FileUtils";
 import {
@@ -42,7 +48,6 @@ import { getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, isObsidianThemeD
 import { AppState, BinaryFileData, DataURL, ExcalidrawImperativeAPI, Point } from "@zsviczian/excalidraw/types/types";
 import { EmbeddedFile, EmbeddedFilesLoader, FileData } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
-//import Excalidraw from "@zsviczian/excalidraw";
 import { Prompt } from "./dialogs/Prompt";
 import { t } from "./lang/helpers";
 import { ScriptEngine } from "./Scripts";
@@ -82,16 +87,6 @@ extendPlugins([
 ]);
 
 declare const PLUGIN_VERSION:string;
-
-const {
-  determineFocusDistance,
-  intersectElementWithLine,
-  getCommonBoundingBox,
-  getMaximumGroups,
-  measureText,
-  getDefaultLineHeight,
-  //@ts-ignore
-} = excalidrawLib;
 
 const GAP = 4;
 
