@@ -23,13 +23,24 @@ declare module "obsidian" {
 //Vimeo and Youtube are rendered by Excalidraw because of the window messaging
 //required to control the video
 //--------------------------------------------------------------------------------
-export const renderWebView = (src: string, radius: number, view: ExcalidrawView, id: string):JSX.Element =>{
+export const renderWebView = (src: string, radius: number, view: ExcalidrawView, id: string, appState: UIAppState):JSX.Element =>{
   const twitterLink = src.match(TWITTER_REG);
   if (twitterLink) {
-    src = `https://twitframe.com/show?url=${encodeURIComponent(src)}`;
+    const tweetID = src.match(/.*\/(\d*)\?/)[1];
+    if (tweetID) {
+      const theme = view.excalidrawData.iFrameTheme === "dark"
+      ? "dark"
+      : view.excalidrawData.iFrameTheme === "light" 
+        ? "light"
+        : view.excalidrawData.iFrameTheme === "auto"
+          ? appState.theme === "dark" ? "dark" : "light"
+          : isObsidianThemeDark() ? "dark" : "light";
+      src =`https://platform.twitter.com/embed/Tweet.html?frame=false&hideCard=false&hideThread=false&id=${tweetID}&lang=en&theme=${theme}&width=550px`
+    //src = `https://twitframe.com/show?url=${encodeURIComponent(src)}`;
+    }
   }
 
-  if(DEVICE.isDesktop) {
+  if(DEVICE.isDesktop && !twitterLink) {
     return (
       <webview
         ref={(ref) => view.updateIFrameRef(id, ref)}

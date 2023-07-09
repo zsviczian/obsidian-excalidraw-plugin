@@ -3829,7 +3829,7 @@ export default class ExcalidrawView extends TextFileView {
 
               if(element.link.match(REG_LINKINDEX_HYPERLINK)) {
                 if(!useExcalidrawFrame) {
-                  return renderWebView(element.link, radius, this, element.id);
+                  return renderWebView(element.link, radius, this, element.id, appState);
                 } else {
                   return null;
                 }
@@ -3844,7 +3844,7 @@ export default class ExcalidrawView extends TextFileView {
             
               if(linkText.match(REG_LINKINDEX_HYPERLINK)) {
                 if(!useExcalidrawFrame) {
-                  return renderWebView(linkText, radius, this, element.id);
+                  return renderWebView(linkText, radius, this, element.id, appState);
                 } else {
                   return null;
                 }

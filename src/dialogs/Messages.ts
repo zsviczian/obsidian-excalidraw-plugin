@@ -17,6 +17,19 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.8":`
+## New Features
+- Zoom to heading and block in markdown frames.
+- Added an iframe menu that allows users to change heading/block zoom, center the element, and open it in the browser.
+- Replaced twitframe with platform.twitter for tweets. The "Read more" and "Reply" buttons now work. Embedded tweets will honor theme settings.
+
+## Bug Fixes
+- Fixed an issue where embedded markdown frames disappeared in fullscreen mode. [#1197](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1197)
+- Resolved a problem with the "Embed Markdown as Image" feature where changes to embed properties were not always honored. [#1201](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1201)
+- When inserting any file from the Vault and embedding a Markdown document as an image, the embed now correctly honors the section heading if specified. [#1200](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1200)
+- SVG and PNG autoexport now function properly when closing a popout window. [#1209](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1209)
+- Many other minor fixes
+`,
 "1.9.7":`
 ## Fixed:
 
