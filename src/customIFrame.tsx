@@ -147,13 +147,6 @@ function RenderObsidianView(
       containerRef.current.removeChild(containerRef.current.lastChild);
     }
 
-    if(isEditingRef.current) {
-      if(leafRef.current?.node) {
-        view.canvasNodeFactory.stopEditing(leafRef.current.node);
-      }
-      isEditingRef.current = false;
-    }
-
     const doc = view.ownerDocument;
     const rootSplit:WorkspaceSplit = new (WorkspaceSplit as ConstructableWorkspaceSplit)(app.workspace, "vertical");
     rootSplit.getRoot = () => app.workspace[doc === document ? 'rootSplit' : 'floatingSplit'];
@@ -170,20 +163,39 @@ function RenderObsidianView(
     if(subpath && view.canvasNodeFactory.isInitialized()) {
       leafRef.current.node = view.canvasNodeFactory.createFileNote(file, subpath, containerRef.current, element.id);
     } else {
-      containerRef.current.appendChild(rootSplit.containerEl);
-      const workspaceLeaf:HTMLDivElement = rootSplit.containerEl.querySelector("div.workspace-leaf");
-      if(workspaceLeaf) workspaceLeaf.style.borderRadius = `${radius}px`;
       (async () => {
         await leafRef.current.leaf.openFile(file, subpath ? { eState: { subpath }, state: {mode:"preview"} } : undefined);
-        if (leafRef.current.leaf.view?.getViewType() === "canvas") {
+        const viewType = leafRef.current.leaf.view?.getViewType();
+        if(viewType === "canvas") {
           leafRef.current.leaf.view.canvas?.setReadonly(true);
+        }
+        if ((viewType === "markdown") && view.canvasNodeFactory.isInitialized()) {
+          //I haven't found a better way of deciding if an .md file has its own view (e.g., kanban) or not
+          //This runs only when the file is added, thus should not be a major performance issue
+          await leafRef.current.leaf.setViewState({state: {file:null}})
+          leafRef.current.node = view.canvasNodeFactory.createFileNote(file, subpath, containerRef.current, element.id);
+          console.log(`Reloaded element ${element.id} for ${file.path} with subpath of ${subpath}`);
+        } else {
+          const workspaceLeaf:HTMLDivElement = rootSplit.containerEl.querySelector("div.workspace-leaf");
+          if(workspaceLeaf) workspaceLeaf.style.borderRadius = `${radius}px`;
+          containerRef.current.appendChild(rootSplit.containerEl);
         }
         patchMobileView(view);
       })();
     }
+    app.workspace.setActiveLeaf(view.leaf);
     return () => {}; //cleanup on unmount
-  }, [linkText, subpath, view, containerRef, app, radius, isEditingRef, leafRef]);
+  }, [linkText, subpath, view, containerRef, app, radius, leafRef]);
   
+  react.useEffect(() => {
+    if(isEditingRef.current) {
+      if(leafRef.current?.node) {
+        view.canvasNodeFactory.stopEditing(leafRef.current.node);
+      }
+      isEditingRef.current = false;
+    }
+  }, [isEditingRef.current, leafRef]);
+
 
   //--------------------------------------------------------------------------------
   //Switch to edit mode when markdown view is clicked
@@ -208,9 +220,6 @@ function RenderObsidianView(
           return;
         }
         leafRef.current.leaf.view.setMode(modes['source']);
-        //@ts-ignore
-        window.al = leafRef.current.leaf;
-        app.workspace.setActiveLeaf(leafRef.current.leaf);
         isEditingRef.current = true;
         patchMobileView(view);
       } else if (leafRef.current?.node) {
@@ -247,7 +256,6 @@ function RenderObsidianView(
         //@ts-ignore
         leafRef.current.leaf.view.setMode(modes["preview"]);
         isEditingRef.current = false;
-        app.workspace.setActiveLeaf(view.leaf);
         return;
       }  
     } else if (leafRef.current?.node) {

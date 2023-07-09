@@ -62,6 +62,7 @@ export class CanvasNodeFactory {
 
   public createFileNote(file: TFile, subpath: string, containerEl: HTMLDivElement, elementId: string): ObsidianCanvasNode {
     if(!this.initialized) return;
+    subpath = subpath ?? "";
     if(this.nodes.has(elementId)) {
       this.canvas.removeNode(this.nodes.get(elementId));
       this.nodes.delete(elementId);

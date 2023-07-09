@@ -3,7 +3,6 @@ import * as React from "react";
 import ExcalidrawView from "../ExcalidrawView";
 import { ExcalidrawIFrameElement } from "@zsviczian/excalidraw/types/element/types";
 import { AppState, ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
-import clsx from "clsx";
 import { ActionButton } from "./ActionButton";
 import { ICONS } from "./ActionIcons";
 import { t } from "src/lang/helpers";
@@ -12,7 +11,7 @@ import { REG_BLOCK_REF_CLEAN, ROOTELEMENTSIZE, nanoid, sceneCoordsToViewportCoor
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import { getEA } from "src";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK } from "src/ExcalidrawData";
-import { errorlog } from "src/utils/Utils";
+import { errorlog, rotatePoint } from "src/utils/Utils";
 import { processLinkText, useDefaultExcalidrawFrame } from "src/utils/CustomIFrameUtils";
 
 export class IFrameMenu {
@@ -66,7 +65,6 @@ export class IFrameMenu {
         const { x, y } = sceneCoordsToViewportCoords( { sceneX: element.x, sceneY: element.y }, appState);
         const top = `${y-2.5*ROOTELEMENTSIZE-appState.offsetTop}px`;
         const left = `${x-appState.offsetLeft}px`;
-        const isDark = appState?.theme === "dark";
         return (
           <div
             ref={this.containerRef}
@@ -168,21 +166,13 @@ export class IFrameMenu {
       const { x, y } = sceneCoordsToViewportCoords( { sceneX: element.x, sceneY: element.y }, appState);
       const top = `${y-2.5*ROOTELEMENTSIZE-appState.offsetTop}px`;
       const left = `${x-appState.offsetLeft}px`;
-      const isDark = appState?.theme === "dark";
       return (
         <div
           ref={this.containerRef}
-          className={clsx("excalidraw", {
-            "theme--dark": isDark,
-          })}
+          className="iframe-menu"
           style={{
             top,
             left,
-            width: "fit-content",
-            height: "100%",
-            position: "fixed",
-            display: "block",
-            zIndex: 10000,
           }}
         >  
           <div
