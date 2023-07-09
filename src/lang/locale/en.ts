@@ -85,9 +85,9 @@ export default {
     'File name cannot contain any of the following characters: * " \\ < > : | ? #',
   FORCE_SAVE:
     "Save (will also update transclusions)",
-  RAW: "Change to PREVIEW mode (only effects text-elements with links or transclusions)",
+  RAW: "Change to PREVIEW mode (only affects text-elements with links or transclusions)",
   PARSED:
-    "Change to RAW mode (only effects text-elements with links or transclusions)",
+    "Change to RAW mode (only affects text-elements with links or transclusions)",
   NOFILE: "Excalidraw (no file)",
   COMPATIBILITY_MODE:
     "*.excalidraw file opened in compatibility mode. Convert to new format for full plugin functionality.",
@@ -144,7 +144,7 @@ OBSIDIAN_TOOLS_PANEL: "Obsidian Tools Panel",
     "When you switch an Excalidraw drawing to Markdown view, using the options menu in Excalidraw, the file will " +
     "be saved without compression, so that you can read and edit the JSON string. The drawing will be compressed again " +
     "once you switch back to Excalidraw view. " +
-    "The setting only has effect 'point forward', meaning, existing drawings will not be effected by the setting " +
+    "The setting only has effect 'point forward', meaning, existing drawings will not be affected by the setting " +
     "until you open them and save them.<br><b>Toggle ON:</b> Compress drawing JSON<br><b>Toggle OFF:</b> Leave drawing JSON uncompressed",
   AUTOSAVE_INTERVAL_DESKTOP_NAME: "Interval for autosave on Desktop",
   AUTOSAVE_INTERVAL_DESKTOP_DESC:
@@ -174,7 +174,7 @@ FILENAME_HEAD: "Filename",
   FILENAME_POSTFIX_NAME:
     "Custom text after markdown Note's name when embedding",
   FILENAME_POSTFIX_DESC:
-    "Effects filename only when embedding into a markdown document. This text will be inserted after the note's name, but before the date.",
+    "Affects filename only when embedding into a markdown document. This text will be inserted after the note's name, but before the date.",
   FILENAME_DATE_NAME: "Filename Date",
   FILENAME_DATE_DESC:
     "The last part of the filename. Leave empty if you do not want a date.",
@@ -197,7 +197,7 @@ FILENAME_HEAD: "Filename",
   MATCH_THEME_NAME: "New drawing to match Obsidian theme",
   MATCH_THEME_DESC:
     "If theme is dark, new drawing will be created in dark mode. This does not apply when you use a template for new drawings. " +
-    "Also this will not effect when you open an existing drawing. Those will follow the theme of the template/drawing respectively." +
+    "Also this will not affect when you open an existing drawing. Those will follow the theme of the template/drawing respectively." +
     "<br><b>Toggle ON:</b> Follow Obsidian Theme<br><b>Toggle OFF:</b> Follow theme defined in your template",
   MATCH_THEME_ALWAYS_NAME: "Existing drawings to match Obsidian theme",
   MATCH_THEME_ALWAYS_DESC:
@@ -206,7 +206,7 @@ FILENAME_HEAD: "Filename",
   MATCH_THEME_TRIGGER_NAME: "Excalidraw to follow when Obsidian Theme changes",
   MATCH_THEME_TRIGGER_DESC:
     "If this option is enabled open Excalidraw pane will switch to light/dark mode when Obsidian theme changes. " +
-    "<br><b>Toggle ON:</b> Follow theme changes<br><b>Toggle OFF:</b> Drawings are not effected by Obsidian theme changes",
+    "<br><b>Toggle ON:</b> Follow theme changes<br><b>Toggle OFF:</b> Drawings are not affected by Obsidian theme changes",
   DEFAULT_OPEN_MODE_NAME: "Default mode when opening Excalidraw",
   DEFAULT_OPEN_MODE_DESC:
     "Specifies the mode how Excalidraw opens: Normal, Zen, or View mode. You may also set this behavior on a file level by " +
@@ -312,7 +312,7 @@ FILENAME_HEAD: "Filename",
   
   MD_TRANSCLUDE_WIDTH_NAME: "Default width of a transcluded markdown document",
   MD_TRANSCLUDE_WIDTH_DESC:
-    "The width of the markdown page. This effects the word wrapping when transcluding longer paragraphs, and the width of " +
+    "The width of the markdown page. This affects the word wrapping when transcluding longer paragraphs, and the width of " +
     "the image element. You can override the default width of " +
     "an embedded file using the <code>[[filename#heading|WIDTHxMAXHEIGHT]]</code> syntax in markdown view mode under embedded files.",
   MD_TRANSCLUDE_HEIGHT_NAME:
@@ -454,7 +454,7 @@ FILENAME_HEAD: "Filename",
   LIVEPREVIEW_NAME: "Immersive image embedding in live preview editing mode",
   LIVEPREVIEW_DESC:
     "Turn this on to support image embedding styles such as ![[drawing|width|style]] in live preview editing mode. " +
-    "The setting will not effect the currently open documents. You need close the open documents and re-open them for the change " +
+    "The setting will not affect the currently open documents. You need close the open documents and re-open them for the change " +
     "to take effect.",
   ENABLE_FOURTH_FONT_NAME: "Enable fourth font option",
   ENABLE_FOURTH_FONT_DESC:
