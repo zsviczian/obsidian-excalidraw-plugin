@@ -92,15 +92,10 @@ export default {
   COMPATIBILITY_MODE:
     "*.excalidraw file opened in compatibility mode. Convert to new format for full plugin functionality.",
   CONVERT_FILE: "Convert to new format",
-  BACKUP_AVAILABLE: "There was an error loading your drawing. This could be because Obsidian terminated unexpectedly during a save operation (e.g. you 'swiped' Obsidian away on your mobile device in an unlucky moment). " +
-    "<br><br><b>GOOD NEWS</b>: There is a local backup available. Note however, if the last time you modified this drawing you were using Obsidian on different device (i.e. now you are on your desktop and you modified it on your tablet), that other device will likely have a more recent backup available. " + 
-    "Try opening the drawing on your other device first, and restoring the backup from that local backup. " + 
-    "<br><br>Would you like to load the backup?",
+  BACKUP_AVAILABLE: "We encountered an error while loading your drawing. This might have occurred if Obsidian unexpectedly closed during a save operation. For example, if you accidentally closed Obsidian on your mobile device while saving.<br><br><b>GOOD NEWS:</b> Fortunately, a local backup is available. However, please note that if you last modified this drawing on a different device (e.g., tablet) and you are now on your desktop, that other device likely has a more recent backup.<br><br>I recommend trying to open the drawing on your other device first and restore the backup from its local storage.<br><br>Would you like to load the backup?",
   BACKUP_RESTORED: "Backup restored",
-  CACHE_NOT_READY: "I am sorry, but there was an error loading your file. The plugin has a backup cache, but it looks like as if you've just started Obsidian. Initialization of the Backup Cache " +
-    "can take up to a minute (or more depending on your device). You will be notified when the cache initialization is completed." +
-    "<br><br>Press OK to try again, or Cancel to manually correct your file or to come back later.",
-OBSIDIAN_TOOLS_PANEL: "Obsidian Tools Panel",
+  CACHE_NOT_READY: "I apologize for the inconvenience, but an error occurred while loading your file.<br><br><mark>Having a little patience can save you a lot of time...</mark><br><br>The plugin has a backup cache, but it appears that you have just started Obsidian. Initializing the Backup Cache may take some time, usually up to a minute or more depending on your device's performance. You will receive a notification in the top right corner when the cache initialization is complete.<br><br>Please press OK to attempt loading the file again and check if the cache has finished initializing. If you see a completely empty file behind this message, I recommend waiting until the backup cache is ready before proceeding. Alternatively, you can choose Cancel to manually correct your file.<br>",
+  OBSIDIAN_TOOLS_PANEL: "Obsidian Tools Panel",
 
   //settings.ts
   RELEASE_NOTES_NAME: "Display Release Notes after update",

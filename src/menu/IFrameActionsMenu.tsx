@@ -7,11 +7,10 @@ import { ActionButton } from "./ActionButton";
 import { ICONS } from "./ActionIcons";
 import { t } from "src/lang/helpers";
 import { ScriptEngine } from "src/Scripts";
-import { REG_BLOCK_REF_CLEAN, ROOTELEMENTSIZE, nanoid, sceneCoordsToViewportCoords } from "src/Constants";
+import { REG_BLOCK_REF_CLEAN, ROOTELEMENTSIZE, mutateElement, nanoid, sceneCoordsToViewportCoords } from "src/Constants";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import { getEA } from "src";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK } from "src/ExcalidrawData";
-import { errorlog, rotatePoint } from "src/utils/Utils";
 import { processLinkText, useDefaultExcalidrawFrame } from "src/utils/CustomIFrameUtils";
 
 export class IFrameMenu {
@@ -30,21 +29,47 @@ export class IFrameMenu {
       view.file.path,
       file.extension === "md",
     )
-    const ea:ExcalidrawAutomate = getEA(this.view);
-    ea.copyViewElementsToEAforEditing([element]);
-    (ea.getElement(element.id) as any).link = `[[${path}${subpath}]]`;
+    const link = `[[${path}${subpath}]]`;
+    mutateElement (element,{link});
+    view.excalidrawData.elementLinks.set(element.id, link);
     view.setDirty(99);
     view.updateScene({appState: {activeIFrame: null}});
-    ea.addElementsToView(false,true);
   }
+
+  private menuFadeTimeout: number = 0;
+  private menuElementId: string = null;
+  private handleMouseEnter () {
+    clearTimeout(this.menuFadeTimeout);
+    this.containerRef.current?.style.setProperty("opacity", "1");
+  };
+
+  private handleMouseLeave () {
+    const self = this;
+    this.menuFadeTimeout = window.setTimeout(() => {
+      self.containerRef.current?.style.setProperty("opacity", "0.2");
+    }, 5000);
+  };
+
 
   renderButtons(appState: AppState) {
     const view = this.view;
     const api = view?.excalidrawAPI as ExcalidrawImperativeAPI;
     if(!api) return null;
-    if(!appState.activeIFrame || appState.activeIFrame.state !== "active") return null;
+    if(!appState.activeIFrame || appState.activeIFrame.state !== "active" || appState.viewModeEnabled) {
+      this.menuElementId = null;
+      if(this.menuFadeTimeout) {
+        clearTimeout(this.menuFadeTimeout);
+        this.menuFadeTimeout = 0;
+      }
+      return null;
+    }
     const element = appState.activeIFrame?.element as ExcalidrawIFrameElement;
+    if(this.menuElementId !== element.id) {
+      this.menuElementId = element.id;
+      this.handleMouseLeave();
+    }
     let link = element.link;
+    if(!link) return null;
 
     const isExcalidrawiFrame = useDefaultExcalidrawFrame(element);
     let isObsidianiFrame = element.link?.match(REG_LINKINDEX_HYPERLINK);
@@ -72,7 +97,11 @@ export class IFrameMenu {
             style={{
               top,
               left,
+              opacity: 1,
             }}
+            onMouseEnter={()=>this.handleMouseEnter()}
+            onPointerDown={()=>this.handleMouseEnter()}
+            onMouseLeave={()=>this.handleMouseLeave()}
           >  
             <div
               className="Island"
@@ -173,7 +202,11 @@ export class IFrameMenu {
           style={{
             top,
             left,
+            opacity: 1,
           }}
+          onMouseEnter={()=>this.handleMouseEnter()}
+          onPointerDown={()=>this.handleMouseEnter()}
+          onMouseLeave={()=>this.handleMouseLeave()}
         >  
           <div
             className="Island"

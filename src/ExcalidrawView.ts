@@ -651,7 +651,8 @@ export default class ExcalidrawView extends TextFileView {
       }
 
       // !triggerReload means file has not changed. No need to re-export
-      if (!triggerReload && !this.semaphores.autosaving && !this.semaphores.viewunload) {
+      //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1209 (added popout unload to the condition)
+      if (!triggerReload && !this.semaphores.autosaving && (!this.semaphores.viewunload || this.semaphores.popoutUnload)) {
         const autoexportPreference = this.excalidrawData.autoexportPreference;
         if (
           (autoexportPreference === AutoexportPreference.inherit && this.plugin.settings.autoexportSVG) ||
@@ -1698,10 +1699,23 @@ export default class ExcalidrawView extends TextFileView {
           const leaf = this.leaf;
           (async () => {
             let confirmation:boolean = true;
+            let counter = 0;
+            const timestamp = Date.now();
             while (!imageCache.isReady() && confirmation) {
+              const message = `You've been now wating for <b>${Math.round((Date.now()-timestamp)/1000)}</b> seconds. `
               imageCache.initializationNotice = true;
-              const confirmationPrompt = new ConfirmationPrompt(plugin,t("CACHE_NOT_READY"));
+              const confirmationPrompt = new ConfirmationPrompt(plugin,
+                `${counter>0
+                  ? counter%4 === 0
+                    ? message + "The CACHE is still loading.<br><br>"
+                    : counter%4 === 1
+                      ? message + "Watch the top rigth corner for the notification.<br><br>"
+                      : counter%4 === 2
+                        ? message + "I really, really hope the backup will work for you! <br><br>"
+                        : message + "I am sorry, it is taking a while, there is not much I can do... <br><br>"
+                  : ""}${t("CACHE_NOT_READY")}`);
               confirmation = await confirmationPrompt.waitForClose
+              counter++;
             }
 
             const drawingBAK = await imageCache.getBAKFromCache(file.path);
@@ -3807,10 +3821,20 @@ export default class ExcalidrawView extends TextFileView {
             appState: UIAppState,
           ) => {
             try {
-              if(!this.file || !element || !element.link || element.link.length === 0 || useDefaultExcalidrawFrame(element)) {
+              const useExcalidrawFrame = useDefaultExcalidrawFrame(element);
+
+              if(!this.file || !element || !element.link || element.link.length === 0 || useExcalidrawFrame) {
                 return null;
               }
-            
+
+              if(element.link.match(REG_LINKINDEX_HYPERLINK)) {
+                if(!useExcalidrawFrame) {
+                  return renderWebView(element.link, radius, this, element.id);
+                } else {
+                  return null;
+                }
+              }
+
               const res = REGEX_LINK.getRes(element.link).next();
               if(!res || (!res.value && res.done)) {
                 return null;
@@ -3819,7 +3843,7 @@ export default class ExcalidrawView extends TextFileView {
               let linkText = REGEX_LINK.getLink(res);
             
               if(linkText.match(REG_LINKINDEX_HYPERLINK)) {
-                if(DEVICE.isDesktop) {
+                if(!useExcalidrawFrame) {
                   return renderWebView(linkText, radius, this, element.id);
                 } else {
                   return null;

@@ -161,6 +161,18 @@ function RenderObsidianView(
 
     //if subpath is defined, create a canvas node else create a workspace leaf
     if(subpath && view.canvasNodeFactory.isInitialized()) {
+      const keepontop = (app.workspace.activeLeaf === view.leaf) && DEVICE.isDesktop;
+      if (keepontop) {
+        //@ts-ignore
+        if(!view.ownerWindow.electronWindow.isAlwaysOnTop()) {
+          //@ts-ignore
+          view.ownerWindow.electronWindow.setAlwaysOnTop(true);
+          setTimeout(() => {
+            //@ts-ignore
+            view.ownerWindow.electronWindow.setAlwaysOnTop(false);
+          }, 150);
+        }
+      }
       leafRef.current.node = view.canvasNodeFactory.createFileNote(file, subpath, containerRef.current, element.id);
     } else {
       (async () => {
@@ -174,18 +186,17 @@ function RenderObsidianView(
           //This runs only when the file is added, thus should not be a major performance issue
           await leafRef.current.leaf.setViewState({state: {file:null}})
           leafRef.current.node = view.canvasNodeFactory.createFileNote(file, subpath, containerRef.current, element.id);
-          console.log(`Reloaded element ${element.id} for ${file.path} with subpath of ${subpath}`);
         } else {
           const workspaceLeaf:HTMLDivElement = rootSplit.containerEl.querySelector("div.workspace-leaf");
           if(workspaceLeaf) workspaceLeaf.style.borderRadius = `${radius}px`;
           containerRef.current.appendChild(rootSplit.containerEl);
         }
-        patchMobileView(view);
+        patchMobileView(view);  
       })();
     }
-    app.workspace.setActiveLeaf(view.leaf);
+
     return () => {}; //cleanup on unmount
-  }, [linkText, subpath, view, containerRef, app, radius, leafRef]);
+  }, [linkText, subpath, containerRef, radius]);
   
   react.useEffect(() => {
     if(isEditingRef.current) {
@@ -227,7 +238,7 @@ function RenderObsidianView(
         view.canvasNodeFactory.startEditing(leafRef.current.node, theme);
       }
     }
-  }, [leafRef.current?.leaf, element]);
+  }, [leafRef.current?.leaf, element.id]);
 
   //--------------------------------------------------------------------------------
   // Set isActiveRef and switch to preview mode when the iframe is not active
@@ -262,7 +273,21 @@ function RenderObsidianView(
       //Handle canvas node
       view.canvasNodeFactory.stopEditing(leafRef.current.node);
     }
-  }, [containerRef, leafRef, isActiveRef, appState, element, view, linkText, subpath, file, theme, isEditingRef, view.canvasNodeFactory]);
+  }, [
+    containerRef,
+    leafRef,
+    isActiveRef,
+    appState.activeIFrame?.element,
+    appState.activeIFrame?.state,
+    element,
+    view,
+    linkText,
+    subpath,
+    file,
+    theme,
+    isEditingRef,
+    view.canvasNodeFactory
+  ]);
 
   return null;
 };

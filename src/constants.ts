@@ -16,6 +16,7 @@ export const {
   getBoundTextMaxWidth, 
   exportToSvg,
   exportToBlob,
+  mutateElement,
   //@ts-ignore
 } = excalidrawLib;
 
