@@ -410,7 +410,7 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Slideshow.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Slideshow.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">The script will convert your drawing into a slideshow presentation.<br><iframe width="560" height="315" src="https://www.youtube.com/embed/HhRHFhWkmCk" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Slideshow.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">The script will convert your drawing into a slideshow presentation.<br><iframe width="560" height="315" src="https://www.youtube.com/embed/JwgtCrIVeEU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></td></tr></table>
 
 ## Split text by lines
 ```excalidraw-script-install

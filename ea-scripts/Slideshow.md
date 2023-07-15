@@ -1,5 +1,7 @@
 /*
-![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-slideshow-1.jpg)
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/JwgtCrIVeEU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-slideshow-2.jpg)
 The script will convert your drawing into a slideshow presentation.
 If you select an arrow or line element, the script will use that as the presentation path.
