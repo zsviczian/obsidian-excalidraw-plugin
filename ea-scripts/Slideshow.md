@@ -57,8 +57,13 @@ const sleep = async (ms) => new Promise((resolve) => ownerWindow.setTimeout(reso
 window.removePresentationEventHandlers?.();
 
 //1. check if line or arrow is selected, if not check if frames are available, if not inform the user and terminate presentation
-let presentationPathLineEl = ea.getViewElements().filter(el=>["line","arrow"].contains(el.type) && el.customData?.slideshow)[0];
-let frames = ea.getViewElements().filter(el=>el.type==="frame").sort((el1,el2)=>el1.name>el2.name?-1:1);
+let presentationPathLineEl = ea.getViewElements()
+  .filter(el=>["line","arrow"].contains(el.type) && el.customData?.slideshow)[0];
+let frames = ea.getViewElements()
+  .filter(el=>el.type==="frame")
+  .map((f,i)=>[f,i]) //because frame.name is null until set
+  .sort((el1,el2)=>((el1[0].name??`Frame ${el1[1]}`)>(el2[0].name??`Frame ${el2[1]}`))?1:-1)
+  .map(el=>el[0]); 
 let presentationPathType = "line"; // "frame"
 const selectedEl = ea.getViewSelectedElement();
 let shouldHideArrowAfterPresentation = true; //this controls if the hide arrow button is available in settings
