@@ -104,7 +104,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     return obsidian_module;
   };
 
-  async getAttachmentFilepath(filename: string): Promise<string> {
+  public async getAttachmentFilepath(filename: string): Promise<string> {
     if (!this.targetView || !this.targetView?.file) {
       errorMessage("targetView not set", "getAttachmentFolderAndFilePath()");
       return null;
@@ -114,7 +114,6 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
   }
 
   plugin: ExcalidrawPlugin;
-  targetView: ExcalidrawView = null; //the view currently edited
   elementsDict: {[key:string]:any}; //contains the ExcalidrawElements currently edited in Automate indexed by el.id
   imagesDict: {[key: FileId]: any}; //the images files including DataURL, indexed by fileId
   mostRecentMarkdownSVG:SVGSVGElement = null; //Markdown renderer will drop a copy of the most recent SVG here for debugging purposes
@@ -663,7 +662,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
  * @param height 
  * @returns 
  */
-  addEmbeddable(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile): string {
+  public addEmbeddable(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile): string {
     //@ts-ignore
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "addEmbeddable()");
@@ -827,7 +826,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
    * Refresh the size of a text element to fit its contents
    * @param id - the id of the text element
    */
-  refreshTextElementSize(id: string) {
+  public refreshTextElementSize(id: string) {
     const element = this.getElement(id);
     if (element.type !== "text") {
       return;
@@ -1058,7 +1057,6 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     topY: number,
     imageFile: TFile | string,
     scale: boolean = true, //true will scale the image to MAX_IMAGE_SIZE, false will insert image at 100% of its size
-    
   ): Promise<string> {
     const id = nanoid();
     const loader = new EmbeddedFilesLoader(
@@ -1345,7 +1343,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
   isExcalidrawFile(f: TFile): boolean {
     return this.plugin.isExcalidrawFile(f);
   };
-
+  targetView: ExcalidrawView = null; //the view currently edited
   /**
    * sets the target view for EA. All the view operations and the access to Excalidraw API will be performend on this view
    * if view is null or undefined, the function will first try setView("active"), then setView("first").
@@ -1499,6 +1497,37 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     });
   };
 
+  /**
+   * 
+   * @param forceViewMode 
+   * @returns 
+   */
+  viewToggleFullScreen(forceViewMode: boolean = false): void {
+    //@ts-ignore
+    if (!this.targetView || !this.targetView?._loaded) {
+      errorMessage("targetView not set", "viewToggleFullScreen()");
+      return;
+    }
+    const view = this.targetView as ExcalidrawView;
+    const isFullscreen = view.isFullscreen();
+    if (forceViewMode) {
+      view.updateScene({
+        //elements: ref.getSceneElements(),
+        appState: {
+          viewModeEnabled: !isFullscreen,
+        },
+        commitToHistory: false,
+      });
+      this.targetView.toolsPanelRef?.current?.setExcalidrawViewMode(!isFullscreen);
+    }
+    
+    if (isFullscreen) {
+      view.exitFullscreen();
+    } else {
+      view.gotoFullscreen();
+    }
+  };
+
   setViewModeEnabled(enabled: boolean): void {
     //@ts-ignore
     if (!this.targetView || !this.targetView?._loaded) {
@@ -1534,56 +1563,6 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
   }
 
   /**
-   * zoom tarteView to fit elements provided as input
-   * elements === [] will zoom to fit the entire scene
-   * selectElements toggles whether the elements should be in a selected state at the end of the operation
-   * @param selectElements 
-   * @param elements 
-   */
-  viewZoomToElements(
-    selectElements: boolean,
-    elements: ExcalidrawElement[]
-  ):void {
-    //@ts-ignore
-    if (!this.targetView || !this.targetView?._loaded) {
-      errorMessage("targetView not set", "viewToggleFullScreen()");
-      return;
-    }
-    this.targetView.zoomToElements(selectElements,elements);
-  }
-
-  /**
-   * 
-   * @param forceViewMode 
-   * @returns 
-   */
-  viewToggleFullScreen(forceViewMode: boolean = false): void {
-    //@ts-ignore
-    if (!this.targetView || !this.targetView?._loaded) {
-      errorMessage("targetView not set", "viewToggleFullScreen()");
-      return;
-    }
-    const view = this.targetView as ExcalidrawView;
-    const isFullscreen = view.isFullscreen();
-    if (forceViewMode) {
-      view.updateScene({
-        //elements: ref.getSceneElements(),
-        appState: {
-          viewModeEnabled: !isFullscreen,
-        },
-        commitToHistory: false,
-      });
-      this.targetView.toolsPanelRef?.current?.setExcalidrawViewMode(!isFullscreen);
-    }
-    
-    if (isFullscreen) {
-      view.exitFullscreen();
-    } else {
-      view.gotoFullscreen();
-    }
-  };
-
-  /**
    * connect an object to the selected element in the view
    * @param objectA ID of the element
    * @param connectionA 
@@ -1612,6 +1591,25 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     delete this.elementsDict[id];
     return true;
   };
+
+  /**
+   * zoom tarteView to fit elements provided as input
+   * elements === [] will zoom to fit the entire scene
+   * selectElements toggles whether the elements should be in a selected state at the end of the operation
+   * @param selectElements 
+   * @param elements 
+   */
+  viewZoomToElements(
+    selectElements: boolean,
+    elements: ExcalidrawElement[]
+  ):void {
+    //@ts-ignore
+    if (!this.targetView || !this.targetView?._loaded) {
+      errorMessage("targetView not set", "viewToggleFullScreen()");
+      return;
+    }
+    this.targetView.zoomToElements(selectElements,elements);
+  }
 
   /**
    * Adds elements from elementsDict to the current view
@@ -1737,7 +1735,6 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
    * You can use this callback in case you want to do something additional when the file is opened.
    * This will run before the file level script defined in the `excalidraw-onload-script` frontmatter.
    */
-
   onFileOpenHook: (data: {
     ea: ExcalidrawAutomate;
     excalidrawFile: TFile; //the file being loaded
@@ -1842,6 +1839,23 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
   };
 
   /**
+   * @param element 
+   * @param a 
+   * @param b 
+   * @param gap 
+   * @returns 2 or 0 intersection points between line going through `a` and `b`
+   *   and the `element`, in ascending order of distance from `a`.
+   */
+  intersectElementWithLine(
+    element: ExcalidrawBindableElement,
+    a: readonly [number, number],
+    b: readonly [number, number],
+    gap?: number,
+  ): Point[] {
+    return intersectElementWithLine(element, a, b, gap);
+  };
+
+  /**
    * Gets the groupId for the group that contains all the elements, or null if such a group does not exist
    * @param elements 
    * @returns null or the groupId
@@ -1887,23 +1901,6 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     if(!frameElement || !elements || frameElement.type !== "frame") return [];
     return elements.filter(el=>el.frameId === frameElement.id);
   } 
-
-  /**
-   * @param element 
-   * @param a 
-   * @param b 
-   * @param gap 
-   * @returns 2 or 0 intersection points between line going through `a` and `b`
-   *   and the `element`, in ascending order of distance from `a`.
-   */
-  intersectElementWithLine(
-    element: ExcalidrawBindableElement,
-    a: readonly [number, number],
-    b: readonly [number, number],
-    gap?: number,
-  ): Point[] {
-    return intersectElementWithLine(element, a, b, gap);
-  };
 
   /**
    * See OCR plugin for example on how to use scriptSettings

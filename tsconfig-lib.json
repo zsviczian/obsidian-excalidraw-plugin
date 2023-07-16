@@ -3,7 +3,7 @@
   "compilerOptions": {
     "declaration": true,
     "outDir": "lib",
-    "plugins": [{ "transform": "@zerollup/ts-transform-paths" }],
+    //"plugins": [{ "transform": "@zerollup/ts-transform-paths" }],
   },
   "include": ["src/**/*.ts"],
   "exclude": ["src/test/**/*", "lib/**/*"]

@@ -13,30 +13,30 @@ import fs from'fs';
 import LZString from 'lz-string';
 import postprocess from 'rollup-plugin-postprocess';
 
-const isProd = (process.env.NODE_ENV === "production");
+const isProd = (process.env.NODE_ENV === "production")
+const isLib = (process.env.NODE_ENV === "lib");
+console.log(`Running: ${process.env.NODE_ENV}`);
 
-const excalidraw_pkg = isProd
+const excalidraw_pkg = isLib ? "" : isProd
   ? fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/excalidraw.production.min.js", "utf8")
   : fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/excalidraw.development.js", "utf8");
-const react_pkg = isProd
+const react_pkg = isLib ? "" : isProd
   ? fs.readFileSync("./node_modules/react/umd/react.production.min.js", "utf8")
   : fs.readFileSync("./node_modules/react/umd/react.development.js", "utf8");
-const reactdom_pkg = isProd
+const reactdom_pkg = isLib ? "" : isProd
   ? fs.readFileSync("./node_modules/react-dom/umd/react-dom.production.min.js", "utf8")
   : fs.readFileSync("./node_modules/react-dom/umd/react-dom.development.js", "utf8");
-const lzstring_pkg = fs.readFileSync("./node_modules/lz-string/libs/lz-string.min.js", "utf8");
+const lzstring_pkg = isLib ? "" : fs.readFileSync("./node_modules/lz-string/libs/lz-string.min.js", "utf8");
 
-const manifestStr = fs.readFileSync("manifest.json", "utf-8");
-const manifest = JSON.parse(manifestStr);
-console.log(manifest.version);
+const manifestStr = isLib ? "" : fs.readFileSync("manifest.json", "utf-8");
+const manifest = isLib ? {} : JSON.parse(manifestStr);
+!isLib && console.log(manifest.version);
 
-const packageString = ';'+lzstring_pkg+'const EXCALIDRAW_PACKAGES = "' + LZString.compressToBase64(react_pkg + reactdom_pkg + excalidraw_pkg) + '";' +
+const packageString = isLib ? "" : ';'+lzstring_pkg+'const EXCALIDRAW_PACKAGES = "' + LZString.compressToBase64(react_pkg + reactdom_pkg + excalidraw_pkg) + '";' +
   'const {react, reactDOM, excalidrawLib} = window.eval.call(window, `(function() {' +
   '${LZString.decompressFromBase64(EXCALIDRAW_PACKAGES)};' +
   'return {react:React, reactDOM:ReactDOM, excalidrawLib: ExcalidrawLib};})();`);' +
   'const PLUGIN_VERSION="'+manifest.version+'";';
-
-
 
 const BASE_CONFIG = {
   input: 'src/main.ts',
