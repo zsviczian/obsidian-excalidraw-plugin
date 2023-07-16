@@ -4,13 +4,12 @@ import ExcalidrawPlugin from "../main";
 import {  Modal, Setting, TextComponent } from "obsidian";
 import { FileSuggestionModal } from "./FolderSuggester";
 import { IMAGE_TYPES, REG_BLOCK_REF_CLEAN, sceneCoordsToViewportCoords, viewportCoordsToSceneCoords } from "src/Constants";
-import { insertIFrameToView, insertImageToView } from "src/utils/ExcalidrawViewUtils";
+import { insertEmbeddableToView, insertImageToView } from "src/utils/ExcalidrawViewUtils";
 import { getEA } from "src";
 import { InsertPDFModal } from "./InsertPDFModal";
 import {  ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
 import { MAX_IMAGE_SIZE } from "src/Constants";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
-import { ExcalidrawIFrameElement } from "@zsviczian/excalidraw/types/element/types";
 
 export class UniversalInsertFileModal extends Modal {
   private center: { x: number, y: number } = { x: 0, y: 0 };
@@ -160,7 +159,7 @@ export class UniversalInsertFileModal extends Modal {
             )
             const ea:ExcalidrawAutomate = getEA(this.view);
             ea.selectElementsInView(
-              [await insertIFrameToView (
+              [await insertEmbeddableToView (
                 ea,
                 this.center,
                 //this.view.currentPosition,

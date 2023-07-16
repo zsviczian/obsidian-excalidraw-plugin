@@ -651,44 +651,48 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     };
   }
 
-   /**
-   * 
-   * @param topX 
-   * @param topY 
-   * @param width 
-   * @param height 
-   * @returns 
-   */
-    addIFrame(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile): string {
-      //@ts-ignore
-      if (!this.targetView || !this.targetView?._loaded) {
-        errorMessage("targetView not set", "addIFrame()");
-        return null;
-      }
+  //retained for backward compatibility
+  addIFrame(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile): string {
+    return this.addEmbeddable(topX, topY, width, height, url, file);
+  }
+  /**
+ * 
+ * @param topX 
+ * @param topY 
+ * @param width 
+ * @param height 
+ * @returns 
+ */
+  addEmbeddable(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile): string {
+    //@ts-ignore
+    if (!this.targetView || !this.targetView?._loaded) {
+      errorMessage("targetView not set", "addEmbeddable()");
+      return null;
+    }
 
-      if (!url && !file) {
-        errorMessage("Either the url or the file must be set. If both are provided the URL takes precedence", "addIFrame()");
-        return null;
-      }
+    if (!url && !file) {
+      errorMessage("Either the url or the file must be set. If both are provided the URL takes precedence", "addEmbeddable()");
+      return null;
+    }
 
-      const id = nanoid();
-      this.elementsDict[id] = this.boxedElement(
-        id,
-        "iframe",
-        topX,
-        topY,
-        width,
-        height,
-        url ? url : file ? `[[${
-          app.metadataCache.fileToLinktext(
-            file,
-            this.targetView.file.path,
-            file.extension === "md",
-          )
-        }]]` : "",
-      );
-      return id;
-    };
+    const id = nanoid();
+    this.elementsDict[id] = this.boxedElement(
+      id,
+      "embeddable",
+      topX,
+      topY,
+      width,
+      height,
+      url ? url : file ? `[[${
+        app.metadataCache.fileToLinktext(
+          file,
+          this.targetView.file.path,
+          file.extension === "md",
+        )
+      }]]` : "",
+    );
+    return id;
+  };
 
   /**
    * 

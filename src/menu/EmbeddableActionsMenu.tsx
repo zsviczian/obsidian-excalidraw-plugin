@@ -1,7 +1,7 @@
 import { TFile } from "obsidian";
 import * as React from "react";
 import ExcalidrawView from "../ExcalidrawView";
-import { ExcalidrawIFrameElement } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawEmbeddableElement } from "@zsviczian/excalidraw/types/element/types";
 import { AppState, ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
 import { ActionButton } from "./ActionButton";
 import { ICONS } from "./ActionIcons";
@@ -11,9 +11,9 @@ import { REG_BLOCK_REF_CLEAN, ROOTELEMENTSIZE, mutateElement, nanoid, sceneCoord
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import { getEA } from "src";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK } from "src/ExcalidrawData";
-import { processLinkText, useDefaultExcalidrawFrame } from "src/utils/CustomIFrameUtils";
+import { processLinkText, useDefaultExcalidrawFrame } from "src/utils/CustomEmbeddableUtils";
 
-export class IFrameMenu {
+export class EmbeddableMenu {
 
   constructor( 
     private view:ExcalidrawView,
@@ -21,7 +21,7 @@ export class IFrameMenu {
   ) {
   }
 
-  private updateElement = (subpath: string, element: ExcalidrawIFrameElement, file: TFile) => {
+  private updateElement = (subpath: string, element: ExcalidrawEmbeddableElement, file: TFile) => {
     if(!element) return;
     const view = this.view;
     const path = app.metadataCache.fileToLinktext(
@@ -33,7 +33,7 @@ export class IFrameMenu {
     mutateElement (element,{link});
     view.excalidrawData.elementLinks.set(element.id, link);
     view.setDirty(99);
-    view.updateScene({appState: {activeIFrame: null}});
+    view.updateScene({appState: {activeEmbeddable: null}});
   }
 
   private menuFadeTimeout: number = 0;
@@ -55,7 +55,7 @@ export class IFrameMenu {
     const view = this.view;
     const api = view?.excalidrawAPI as ExcalidrawImperativeAPI;
     if(!api) return null;
-    if(!appState.activeIFrame || appState.activeIFrame.state !== "active" || appState.viewModeEnabled) {
+    if(!appState.activeEmbeddable || appState.activeEmbeddable.state !== "active" || appState.viewModeEnabled) {
       this.menuElementId = null;
       if(this.menuFadeTimeout) {
         clearTimeout(this.menuFadeTimeout);
@@ -63,7 +63,7 @@ export class IFrameMenu {
       }
       return null;
     }
-    const element = appState.activeIFrame?.element as ExcalidrawIFrameElement;
+    const element = appState.activeEmbeddable?.element as ExcalidrawEmbeddableElement;
     if(this.menuElementId !== element.id) {
       this.menuElementId = element.id;
       this.handleMouseLeave();
@@ -93,7 +93,7 @@ export class IFrameMenu {
         return (
           <div
             ref={this.containerRef}
-            className="iframe-menu"
+            className="embeddable-menu"
             style={{
               top,
               left,
@@ -189,8 +189,8 @@ export class IFrameMenu {
     }
     if(isObsidianiFrame || isExcalidrawiFrame) {
       const iframe = isExcalidrawiFrame
-        ? api.getIFrameElementById(element.id)
-        : view.getIFrameElementById(element.id);
+        ? api.getHTMLIFrameElement(element.id)
+        : view.getEmbeddableElementById(element.id);
       if(!iframe || !iframe.contentWindow) return null;
       const { x, y } = sceneCoordsToViewportCoords( { sceneX: element.x, sceneY: element.y }, appState);
       const top = `${y-2.5*ROOTELEMENTSIZE-appState.offsetTop}px`;
@@ -198,7 +198,7 @@ export class IFrameMenu {
       return (
         <div
           ref={this.containerRef}
-          className="iframe-menu"
+          className="embeddable-menu"
           style={{
             top,
             left,

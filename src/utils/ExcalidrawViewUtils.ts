@@ -25,7 +25,7 @@ export const insertImageToView = async (
   return id;
 }
 
-export const insertIFrameToView = async (
+export const insertEmbeddableToView = async (
   ea: ExcalidrawAutomate,
   position: { x: number, y: number },
   file?: TFile,
@@ -37,7 +37,7 @@ export const insertIFrameToView = async (
   if(file && IMAGE_TYPES.contains(file.extension) || ea.isExcalidrawFile(file)) {
     return await insertImageToView(ea, position, file);
   } else {
-    const id = ea.addIFrame(
+    const id = ea.addEmbeddable(
       position.x,
       position.y,
       MAX_IMAGE_SIZE,

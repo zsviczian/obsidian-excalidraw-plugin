@@ -247,8 +247,8 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
-    field: "addIFrame",
-    code: "addIFrame(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile): string;",
+    field: "addEmbeddable",
+    code: "addEmbeddable(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile): string;",
     desc: "Adds an iframe to the drawing. If url is not null then the iframe will be loaded from the url. The url maybe a markdown link to an note in the Vault or a weblink. If url is null then the iframe will be loaded from the file. Both the url and the file may not be null.",
     after: "",
   },

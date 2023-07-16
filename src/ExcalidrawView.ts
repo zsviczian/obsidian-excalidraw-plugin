@@ -117,12 +117,12 @@ import { getEA } from "src";
 import { emulateCTRLClickForLinks, externalDragModifierType, internalDragModifierType, isALT, isCTRL, isMETA, isSHIFT, linkClickModifierType, mdPropModifier, ModifierKeys } from "./utils/ModifierkeyHelper";
 import { setDynamicStyle } from "./utils/DynamicStyling";
 import { InsertPDFModal } from "./dialogs/InsertPDFModal";
-import { CustomIFrame, renderWebView } from "./customIFrame";
-import { insertIFrameToView, insertImageToView } from "./utils/ExcalidrawViewUtils";
+import { CustomEmbeddable, renderWebView } from "./customEmbeddable";
+import { insertEmbeddableToView, insertImageToView } from "./utils/ExcalidrawViewUtils";
 import { imageCache } from "./utils/ImageCache";
 import { CanvasNodeFactory } from "./utils/CanvasNodeFactory";
-import { IFrameMenu } from "./menu/IFrameActionsMenu";
-import { useDefaultExcalidrawFrame } from "./utils/CustomIFrameUtils";
+import { EmbeddableMenu } from "./menu/EmbeddableActionsMenu";
+import { useDefaultExcalidrawFrame } from "./utils/CustomEmbeddableUtils";
 
 declare const PLUGIN_VERSION:string;
 
@@ -235,7 +235,7 @@ export default class ExcalidrawView extends TextFileView {
   public excalidrawAPI: any = null;
   public excalidrawWrapperRef: React.MutableRefObject<any> = null;
   public toolsPanelRef: React.MutableRefObject<any> = null;
-  public iframeMenuRef: React.MutableRefObject<any> = null;
+  public embeddableMenuRef: React.MutableRefObject<any> = null;
   private parentMoveObserver: MutationObserver;
   public linksAlwaysOpenInANewPane: boolean = false; //override the need for SHIFT+CTRL+click (used by ExcaliBrain)
   private hookServer: ExcalidrawAutomate;
@@ -251,7 +251,7 @@ export default class ExcalidrawView extends TextFileView {
   public ownerDocument: Document;
   private draginfoDiv: HTMLDivElement;
   public canvasNodeFactory: CanvasNodeFactory;
-  private iFrameRefs = new Map<ExcalidrawElement["id"], HTMLIFrameElement | HTMLWebViewElement>();
+  private embeddableRefs = new Map<ExcalidrawElement["id"], HTMLIFrameElement | HTMLWebViewElement>();
 
   public semaphores: {
     popoutUnload: boolean; //the unloaded Excalidraw view was the last leaf in the popout window
@@ -311,7 +311,7 @@ export default class ExcalidrawView extends TextFileView {
   private linkAction_Element: HTMLElement;
   public compatibilityMode: boolean = false;
   private obsidianMenu: ObsidianMenu;
-  private iframeMenu: IFrameMenu;
+  private embeddableMenu: EmbeddableMenu;
 
   //https://stackoverflow.com/questions/27132796/is-there-any-javascript-event-fired-when-the-on-screen-keyboard-on-mobile-safari
   private isEditingTextResetTimer: NodeJS.Timeout = null;
@@ -856,25 +856,7 @@ export default class ExcalidrawView extends TextFileView {
 
   openExternalLink(link:string, element?: ExcalidrawElement):boolean {
     if (link.match(REG_LINKINDEX_HYPERLINK)) {
-
-      /*if(element) {
-        const sceneCoordsToViewportCoords = this.plugin.getPackage(this.ownerWindow).excalidrawLib.sceneCoordsToViewportCoords;
-        const top = sceneCoordsToViewportCoords({sceneX: element.x, sceneY:element.y}, this.excalidrawAPI.getAppState());
-        const bottom = sceneCoordsToViewportCoords({sceneX: element.x+element.width, sceneY:element.y+element.height}, this.excalidrawAPI.getAppState());
-        const iframe = createEl("iframe",{
-          attr: {
-            style: `position: absolute;top: ${top.y}px; left: ${top.x}px; width: ${bottom.x-top.x}px; height: ${bottom.y-top.y}px; margin: 0px; padding: 0px;z-index: 15; overflow: hidden; border: 0`,
-            frameborder: "0",
-            allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",
-            allowfullscreen: "true",
-            src: element.link,
-            scrolling: "no"
-          }
-        })
-        this.contentEl.appendChild(iframe);
-      } else {*/
         window.open(link, "_blank");
-      //}
       return true;
     }
     return false;
@@ -1633,7 +1615,7 @@ export default class ExcalidrawView extends TextFileView {
   // clear the view content
   clear() {
     this.canvasNodeFactory.purgeNodes();
-    this.iFrameRefs.clear();
+    this.embeddableRefs.clear();
     
     delete this.exportDialog;
     const api = this.excalidrawAPI;
@@ -2322,7 +2304,7 @@ export default class ExcalidrawView extends TextFileView {
     const reactElement = React.createElement(() => {
       const excalidrawWrapperRef = React.useRef(null);
       const toolsPanelRef = React.useRef(null);
-      const iframeMenuRef = React.useRef(null);
+      const embeddableMenuRef = React.useRef(null);
 
       const [dimensions, setDimensions] = React.useState({
         width: undefined,
@@ -2337,9 +2319,9 @@ export default class ExcalidrawView extends TextFileView {
       let blockOnMouseButtonDown = false;
 
       this.toolsPanelRef = toolsPanelRef;
-      this.iframeMenuRef = iframeMenuRef;
+      this.embeddableMenuRef = embeddableMenuRef;
       this.obsidianMenu = new ObsidianMenu(this.plugin, toolsPanelRef, this);
-      this.iframeMenu = new IFrameMenu(this, iframeMenuRef);
+      this.embeddableMenu = new EmbeddableMenu(this, embeddableMenuRef);
       
       //excalidrawRef readypromise based on
       //https://codesandbox.io/s/eexcalidraw-resolvable-promise-d0qg3?file=/src/App.js:167-760
@@ -3069,7 +3051,7 @@ export default class ExcalidrawView extends TextFileView {
                   case "link": msg = `Insert link\n${DEVICE.isMacOS || DEVICE.isIOS
                     ? "try SHIFT and CTRL combinations for other drop actions" 
                     : "try SHIFT, CTRL, ALT combinations for other drop actions"}`; break;
-                  case "iframe": msg = "Insert in interactive frame"; break;
+                  case "embeddable": msg = "Insert in interactive frame"; break;
                 }
               } else if(e.dataTransfer.types.length === 1 && e.dataTransfer.types.includes("Files")) {
                 //drag from OS file manager
@@ -3082,7 +3064,7 @@ export default class ExcalidrawView extends TextFileView {
                     ? "try SHIFT, OPT, CTRL combinations for other drop actions" 
                     : "try SHIFT, CTRL, ALT combinations for other drop actions"}`; break;
                   case "insert-link": msg = "Insert link"; break;
-                  case "iframe": msg = "Insert in interactive frame"; break;
+                  case "embeddable": msg = "Insert in interactive frame"; break;
                 }
               }
               if(this.draginfoDiv.innerText !== msg) this.draginfoDiv.innerText = msg;
@@ -3252,7 +3234,7 @@ export default class ExcalidrawView extends TextFileView {
               })();
             },
             renderTopRightUI:  (isMobile: boolean, appState: AppState) => this.obsidianMenu.renderButton (isMobile, appState),
-            renderIFrameMenu: (appState: AppState) => this.iframeMenu.renderButtons(appState),
+            renderEmbeddableMenu: (appState: AppState) => this.embeddableMenu.renderButtons(appState),
             onPaste: (data: ClipboardData) => {
               //, event: ClipboardEvent | null
               /*if(data && data.text && hyperlinkIsYouTubeLink(data.text)) {
@@ -3365,11 +3347,11 @@ export default class ExcalidrawView extends TextFileView {
                       return false;
                     }
                     
-                    if (internalDragAction === "iframe") {
+                    if (internalDragAction === "embeddable") {
                       (async () => {
                         const ea: ExcalidrawAutomate = getEA(this);
                         ea.selectElementsInView([
-                          await insertIFrameToView(
+                          await insertEmbeddableToView(
                             ea,
                             this.currentPosition,
                             file,
@@ -3417,13 +3399,13 @@ export default class ExcalidrawView extends TextFileView {
                         return;
                       }
 
-                      if (internalDragAction === "iframe") {
+                      if (internalDragAction === "embeddable") {
                         const ea:ExcalidrawAutomate = getEA(this);
                         let column:number = 0;
                         let row:number = 0;
                         const ids:string[] = [];
                         for (const f of draggable.files) {
-                          ids.push(await insertIFrameToView(
+                          ids.push(await insertEmbeddableToView(
                             ea,
                             {
                               x:this.currentPosition.x + column*500,
@@ -3481,8 +3463,8 @@ export default class ExcalidrawView extends TextFileView {
                       return false;
                     }
                   }
-                  if(text && (externalDragAction === "iframe")) {
-                    insertIFrameToView(
+                  if(text && (externalDragAction === "embeddable")) {
+                    insertEmbeddableToView(
                       getEA(this),
                       this.currentPosition,
                       undefined,
@@ -3511,8 +3493,8 @@ export default class ExcalidrawView extends TextFileView {
                       return false;
                     }
                   }
-                  if(src && (externalDragAction === "iframe")) {
-                    insertIFrameToView(
+                  if(src && (externalDragAction === "embeddable")) {
+                    insertEmbeddableToView(
                       getEA(this),
                       this.currentPosition,
                       undefined,
@@ -3540,7 +3522,7 @@ export default class ExcalidrawView extends TextFileView {
                   return true;
                 }
                 if (!onDropHook("text", null, text)) {
-                  if(text && (externalDragAction==="iframe") && /^(blob:)?(http|https):\/\/[^\s/$.?#].[^\s]*$/.test(text)) {
+                  if(text && (externalDragAction==="embeddable") && /^(blob:)?(http|https):\/\/[^\s/$.?#].[^\s]*$/.test(text)) {
                     return true;
                   }
                   if(text && (externalDragAction==="image-url") && hyperlinkIsYouTubeLink(text)) {
@@ -3813,11 +3795,10 @@ export default class ExcalidrawView extends TextFileView {
                 
               }
             },
-          validateIFrame: true,
+          validateEmbeddable: true,
           renderWebview: DEVICE.isDesktop,
-          renderCustomIFrame: (
+          renderEmbeddable: (
             element: NonDeletedExcalidrawElement,
-            radius: number,
             appState: UIAppState,
           ) => {
             try {
@@ -3829,7 +3810,7 @@ export default class ExcalidrawView extends TextFileView {
 
               if(element.link.match(REG_LINKINDEX_HYPERLINK)) {
                 if(!useExcalidrawFrame) {
-                  return renderWebView(element.link, radius, this, element.id, appState);
+                  return renderWebView(element.link, this, element.id, appState);
                 } else {
                   return null;
                 }
@@ -3844,13 +3825,13 @@ export default class ExcalidrawView extends TextFileView {
             
               if(linkText.match(REG_LINKINDEX_HYPERLINK)) {
                 if(!useExcalidrawFrame) {
-                  return renderWebView(linkText, radius, this, element.id, appState);
+                  return renderWebView(linkText, this, element.id, appState);
                 } else {
                   return null;
                 }
               }
               
-              return React.createElement(CustomIFrame, {element,radius,view:this, appState, linkText});
+              return React.createElement(CustomEmbeddable, {element,view:this, appState, linkText});
             } catch(e) {
               return null;
             }
@@ -4369,14 +4350,14 @@ export default class ExcalidrawView extends TextFileView {
     }
   }
 
-  public updateIFrameRef(id: string, ref: HTMLIFrameElement | HTMLWebViewElement | null) {
+  public updateEmbeddableRef(id: string, ref: HTMLIFrameElement | HTMLWebViewElement | null) {
     if (ref) {
-      this.iFrameRefs.set(id, ref);
+      this.embeddableRefs.set(id, ref);
     }
   }
 
-  public getIFrameElementById(id: string): HTMLIFrameElement | HTMLWebViewElement | undefined {
-    return this.iFrameRefs.get(id);
+  public getEmbeddableElementById(id: string): HTMLIFrameElement | HTMLWebViewElement | undefined {
+    return this.embeddableRefs.get(id);
   }
 }
 

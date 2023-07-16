@@ -17,9 +17,9 @@ import {
   FRONTMATTER_KEY_LINKBUTTON_OPACITY,
   FRONTMATTER_KEY_ONLOAD_SCRIPT,
   FRONTMATTER_KEY_AUTOEXPORT,
-  FRONTMATTER_KEY_IFRAME_THEME,
+  FRONTMATTER_KEY_EMBEDDABLE_THEME,
   DEVICE,
-  IFRAME_THEME_FRONTMATTER_VALUES,
+  EMBEDDABLE_THEME_FRONTMATTER_VALUES,
   getBoundTextMaxWidth,
   getDefaultLineHeight,
   getFontString,
@@ -252,7 +252,7 @@ export class ExcalidrawData {
   private app: App;
   private showLinkBrackets: boolean;
   private linkPrefix: string;
-  public iFrameTheme: "light" | "dark" | "auto" | "default" = "auto";
+  public embeddableTheme: "light" | "dark" | "auto" | "default" = "auto";
   private urlPrefix: string;
   public autoexportPreference: AutoexportPreference = AutoexportPreference.inherit;
   private textMode: TextMode = TextMode.raw;
@@ -282,6 +282,10 @@ export class ExcalidrawData {
 
     const elements = this.scene.elements;
     for (const el of elements) {
+      if(el.type === "iframe") {
+        el.type = "embeddable";
+      }
+
       if (el.boundElements) {
         const map = new Map<string, string>();
         el.boundElements.forEach((item: { id: string; type: string }) => {
@@ -440,7 +444,7 @@ export class ExcalidrawData {
     this.setLinkPrefix();
     this.setUrlPrefix();
     this.setAutoexportPreferences();
-    this.setIFrameThemePreference();
+    this.setembeddableThemePreference();
 
     this.scene = null;
 
@@ -620,7 +624,7 @@ export class ExcalidrawData {
     this.setShowLinkBrackets();
     this.setLinkPrefix();
     this.setUrlPrefix();
-    this.setIFrameThemePreference();
+    this.setembeddableThemePreference();
     this.scene = JSON.parse(data);
     if (!this.scene.files) {
       this.scene.files = {}; //loading legacy scenes without the files element
@@ -1304,7 +1308,7 @@ export class ExcalidrawData {
       this.setLinkPrefix() ||
       this.setUrlPrefix() ||
       this.setShowLinkBrackets() ||
-      this.setIFrameThemePreference() ||
+      this.setembeddableThemePreference() ||
       this.findNewElementLinksInScene();
     await this.updateTextElementsFromScene();
     if (result || this.findNewTextElementsInScene()) {
@@ -1475,21 +1479,21 @@ export class ExcalidrawData {
     }
   }
 
-  private setIFrameThemePreference(): boolean {
-    const iFrameTheme = this.iFrameTheme;
+  private setembeddableThemePreference(): boolean {
+    const embeddableTheme = this.embeddableTheme;
     const fileCache = this.app.metadataCache.getFileCache(this.file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEY_IFRAME_THEME] != null
+      fileCache.frontmatter[FRONTMATTER_KEY_EMBEDDABLE_THEME] != null
     ) {
-      this.iFrameTheme = fileCache.frontmatter[FRONTMATTER_KEY_IFRAME_THEME].toLowerCase();
-      if (!IFRAME_THEME_FRONTMATTER_VALUES.includes(this.iFrameTheme)) {
-        this.iFrameTheme = "default";
+      this.embeddableTheme = fileCache.frontmatter[FRONTMATTER_KEY_EMBEDDABLE_THEME].toLowerCase();
+      if (!EMBEDDABLE_THEME_FRONTMATTER_VALUES.includes(this.embeddableTheme)) {
+        this.embeddableTheme = "default";
       }
     } else {
-      this.iFrameTheme = this.plugin.settings.iframeMatchExcalidrawTheme ? "auto" : "default";
+      this.embeddableTheme = this.plugin.settings.iframeMatchExcalidrawTheme ? "auto" : "default";
     }
-    return iFrameTheme != this.iFrameTheme;
+    return embeddableTheme != this.embeddableTheme;
   }
 
   private setShowLinkBrackets(): boolean {

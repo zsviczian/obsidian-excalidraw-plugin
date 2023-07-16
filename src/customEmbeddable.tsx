@@ -6,7 +6,7 @@ import { ConstructableWorkspaceSplit, getContainerForDocument, isObsidianThemeDa
 import { DEVICE, EXTENDED_EVENT_TYPES, KEYBOARD_EVENT_TYPES, TWITTER_REG } from "./Constants";
 import { ExcalidrawImperativeAPI, UIAppState } from "@zsviczian/excalidraw/types/types";
 import { ObsidianCanvasNode } from "./utils/CanvasNodeFactory";
-import { processLinkText, patchMobileView } from "./utils/CustomIFrameUtils";
+import { processLinkText, patchMobileView } from "./utils/CustomEmbeddableUtils";
 
 declare module "obsidian" {
   interface Workspace {
@@ -23,16 +23,16 @@ declare module "obsidian" {
 //Vimeo and Youtube are rendered by Excalidraw because of the window messaging
 //required to control the video
 //--------------------------------------------------------------------------------
-export const renderWebView = (src: string, radius: number, view: ExcalidrawView, id: string, appState: UIAppState):JSX.Element =>{
+export const renderWebView = (src: string, view: ExcalidrawView, id: string, appState: UIAppState):JSX.Element =>{
   const twitterLink = src.match(TWITTER_REG);
   if (twitterLink) {
     const tweetID = src.match(/.*\/(\d*)\?/)[1];
     if (tweetID) {
-      const theme = view.excalidrawData.iFrameTheme === "dark"
+      const theme = view.excalidrawData.embeddableTheme === "dark"
       ? "dark"
-      : view.excalidrawData.iFrameTheme === "light" 
+      : view.excalidrawData.embeddableTheme === "light" 
         ? "light"
-        : view.excalidrawData.iFrameTheme === "auto"
+        : view.excalidrawData.embeddableTheme === "auto"
           ? appState.theme === "dark" ? "dark" : "light"
           : isObsidianThemeDark() ? "dark" : "light";
       src =`https://platform.twitter.com/embed/Tweet.html?frame=false&hideCard=false&hideThread=false&id=${tweetID}&lang=en&theme=${theme}&width=550px`
@@ -43,29 +43,29 @@ export const renderWebView = (src: string, radius: number, view: ExcalidrawView,
   if(DEVICE.isDesktop && !twitterLink) {
     return (
       <webview
-        ref={(ref) => view.updateIFrameRef(id, ref)}
-        className="excalidraw__iframe"
+        ref={(ref) => view.updateEmbeddableRef(id, ref)}
+        className="excalidraw__embeddable"
         title="Excalidraw Embedded Content"
         allowFullScreen={true}
         src={src}
         style={{
           overflow: "hidden",
-          borderRadius: `${radius}px`,
+          borderRadius: "var(--embeddable-radius)",
         }}
       />
     );
   }
   return (
     <iframe
-      ref={(ref) => view.updateIFrameRef(id, ref)}
-      className="excalidraw__iframe"
+      ref={(ref) => view.updateEmbeddableRef(id, ref)}
+      className="excalidraw__embeddable"
       title="Excalidraw Embedded Content"
       allowFullScreen={true}
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
       src={src}
       style={{
         overflow: "hidden",
-        borderRadius: `${radius}px`,
+        borderRadius: "var(--embeddable-radius)",
       }}
     />
   );
@@ -75,10 +75,9 @@ export const renderWebView = (src: string, radius: number, view: ExcalidrawView,
 //Render WorkspaceLeaf or CanvasNode
 //--------------------------------------------------------------------------------
 function RenderObsidianView(
-  { element, linkText, radius, view, containerRef, appState, theme }:{
+  { element, linkText, view, containerRef, appState, theme }:{
   element: NonDeletedExcalidrawElement;
   linkText: string;
-  radius: number;
   view: ExcalidrawView;
   containerRef: React.RefObject<HTMLDivElement>;
   appState: UIAppState;
@@ -164,7 +163,7 @@ function RenderObsidianView(
     rootSplit.getContainer = () => getContainerForDocument(doc);
     rootSplit.containerEl.style.width = '100%';
     rootSplit.containerEl.style.height = '100%';
-    rootSplit.containerEl.style.borderRadius = `${radius}px`;
+    rootSplit.containerEl.style.borderRadius = "var(--embeddable-radius)";
     leafRef.current = {
       leaf: app.workspace.createLeafInParent(rootSplit, 0),
       node: null
@@ -199,7 +198,7 @@ function RenderObsidianView(
           leafRef.current.node = view.canvasNodeFactory.createFileNote(file, subpath, containerRef.current, element.id);
         } else {
           const workspaceLeaf:HTMLDivElement = rootSplit.containerEl.querySelector("div.workspace-leaf");
-          if(workspaceLeaf) workspaceLeaf.style.borderRadius = `${radius}px`;
+          if(workspaceLeaf) workspaceLeaf.style.borderRadius = "var(--embeddable-radius)";
           containerRef.current.appendChild(rootSplit.containerEl);
         }
         patchMobileView(view);  
@@ -207,7 +206,7 @@ function RenderObsidianView(
     }
 
     return () => {}; //cleanup on unmount
-  }, [linkText, subpath, containerRef, radius]);
+  }, [linkText, subpath, containerRef]);
   
   react.useEffect(() => {
     if(isEditingRef.current) {
@@ -260,7 +259,7 @@ function RenderObsidianView(
     }
 
     const previousIsActive = isActiveRef.current;
-    isActiveRef.current = (appState.activeIFrame?.element.id === element.id) && (appState.activeIFrame?.state === "active");
+    isActiveRef.current = (appState.activeEmbeddable?.element.id === element.id) && (appState.activeEmbeddable?.state === "active");
 
     if (previousIsActive === isActiveRef.current) {
       return;
@@ -288,8 +287,8 @@ function RenderObsidianView(
     containerRef,
     leafRef,
     isActiveRef,
-    appState.activeIFrame?.element,
-    appState.activeIFrame?.state,
+    appState.activeEmbeddable?.element,
+    appState.activeEmbeddable?.state,
     element,
     view,
     linkText,
@@ -303,14 +302,14 @@ function RenderObsidianView(
   return null;
 };
 
-export const CustomIFrame: React.FC<{element: NonDeletedExcalidrawElement; radius: number; view: ExcalidrawView; appState: UIAppState; linkText: string}> = ({ element, radius, view, appState, linkText }) => {
+export const CustomEmbeddable: React.FC<{element: NonDeletedExcalidrawElement; view: ExcalidrawView; appState: UIAppState; linkText: string}> = ({ element, view, appState, linkText }) => {
   const react = view.plugin.getPackage(view.ownerWindow).react;
   const containerRef: React.RefObject<HTMLDivElement> = react.useRef(null);
-  const theme = view.excalidrawData.iFrameTheme === "dark"
+  const theme = view.excalidrawData.embeddableTheme === "dark"
     ? "theme-dark"
-    : view.excalidrawData.iFrameTheme === "light" 
+    : view.excalidrawData.embeddableTheme === "light" 
       ? "theme-light"
-      : view.excalidrawData.iFrameTheme === "auto"
+      : view.excalidrawData.embeddableTheme === "auto"
         ? appState.theme === "dark" ? "theme-dark" : "theme-light"
         : isObsidianThemeDark() ? "theme-dark" : "theme-light";
 
@@ -320,7 +319,7 @@ export const CustomIFrame: React.FC<{element: NonDeletedExcalidrawElement; radiu
       style = {{
         width: `100%`,
         height: `100%`,
-        borderRadius: `${radius}px`,
+        borderRadius: "var(--embeddable-radius)",
         color: `var(--text-normal)`,
       }}
       className={theme}
@@ -328,7 +327,6 @@ export const CustomIFrame: React.FC<{element: NonDeletedExcalidrawElement; radiu
       <RenderObsidianView
         element={element}
         linkText={linkText}
-        radius={radius}
         view={view}
         containerRef={containerRef}
         appState={appState}

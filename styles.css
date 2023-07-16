@@ -346,11 +346,11 @@ div.excalidraw-draginfo {
   position: absolute !important;
 }
 
-.excalidraw__iframe-container .view-header {
+.excalidraw__embeddable-container .view-header {
   display: none !important;
 }
 
-.excalidraw__iframe-container input {
+.excalidraw__embeddable-container input {
   background: initial;
 }
 
@@ -358,7 +358,7 @@ div.excalidraw-draginfo {
   background-color: var(--color-gray-80) !important;
 }
 
-.excalidraw .iframe-menu {
+.excalidraw .embeddable-menu {
     width: fit-content;
     height: fit-content;
     position: absolute;
