@@ -27,6 +27,10 @@ import { compressToBase64, decompressFromBase64 } from "lz-string";
 import { getIMGFilename } from "./FileUtils";
 import ExcalidrawScene from "../svgToExcalidraw/elements/ExcalidrawScene";
 import { IMAGE_TYPES } from "../Constants";
+import { ExcalidrawAutomate } from "lib/ExcalidrawAutomate";
+import { getEA } from "src";
+import elements from "src/svgToExcalidraw/elements";
+import { generateEmbeddableLink } from "./CustomEmbeddableUtils";
 
 declare const PLUGIN_VERSION:string;
 
@@ -247,10 +251,17 @@ export const getSVG = async (
   exportSettings: ExportSettings,
   padding: number,
 ): Promise<SVGSVGElement> => {
-  
+  let elements:ExcalidrawElement[] = scene.elements;
+  if(elements.some(el => el.type === "embeddable")) {
+    elements = JSON.parse(JSON.stringify(elements));
+    elements.filter(el => el.type === "embeddable").forEach((el:any) => {
+      el.link = generateEmbeddableLink(el.link, scene.appState?.theme ?? "light");
+    });
+  }
+
   try {
     return await exportToSvg({
-      elements: scene.elements,
+      elements,
       appState: {
         exportBackground: exportSettings.withBackground,
         exportWithDarkMode: exportSettings.withTheme
