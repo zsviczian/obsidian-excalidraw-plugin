@@ -217,6 +217,11 @@ export const getFontDataURL = async (
   return { fontDef, fontName, dataURL };
 };
 
+export const base64StringToBlob = (base64String: string, mimeType: string): Blob => {
+  const buffer = Buffer.from(base64String, 'base64');
+  return new Blob([buffer], { type: mimeType });
+};
+
 export const svgToBase64 = (svg: string): string => {
   return `data:image/svg+xml;base64,${btoa(
     unescape(encodeURIComponent(svg.replaceAll("&nbsp;", " "))),
@@ -242,6 +247,7 @@ export const getSVG = async (
   exportSettings: ExportSettings,
   padding: number,
 ): Promise<SVGSVGElement> => {
+  
   try {
     return await exportToSvg({
       elements: scene.elements,

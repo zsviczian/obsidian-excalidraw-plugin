@@ -16,6 +16,7 @@ import {
 //import Excalidraw from "@zsviczian/excalidraw";
 import {
   ExcalidrawElement,
+  ExcalidrawEmbeddableElement,
   ExcalidrawTextElement,
   FileId,
   NonDeletedExcalidrawElement,
@@ -405,6 +406,7 @@ export default class ExcalidrawView extends TextFileView {
       withBackground: ed ? !ed.transparent : getWithBackground(this.plugin, this.file),
       withTheme: true,
     };
+
     return await getSVG(
       {
         ...scene,

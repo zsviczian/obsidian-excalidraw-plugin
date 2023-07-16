@@ -19,10 +19,11 @@ import {
   getWithBackground,
   hasExportTheme,
   svgToBase64,
+  base64StringToBlob,
 } from "./utils/Utils";
 import { isObsidianThemeDark } from "./utils/ObsidianUtils";
 import { linkClickModifierType } from "./utils/ModifierkeyHelper";
-import { imageCache } from "./utils/ImageCache";
+import { ImageKey, imageCache } from "./utils/ImageCache";
 
 interface imgElementAttributes {
   file?: TFile;
@@ -159,7 +160,7 @@ const getIMG = async (
       return null;
     }
     img.src = URL.createObjectURL(png);
-    cacheReady && imageCache.addImageToCache(cacheKey, img.src);
+    cacheReady && imageCache.addImageToCache(cacheKey, img.src, png);
     return img;
   }
 
@@ -172,13 +173,20 @@ const getIMG = async (
     }
   }
 
+  let svg: SVGSVGElement = null;
+  const el = document.createElement("div");
 
   if(!(filenameParts.hasBlockref || filenameParts.hasSectionref)) {
     const quickSVG = await getQuickImagePreview(plugin, file.path, "svg");
     if (quickSVG) {
-      img.setAttribute("src", svgToBase64(quickSVG));
-      cacheReady && imageCache.addImageToCache(cacheKey, img.src);
-      return img;
+      el.innerHTML = quickSVG;
+      const firstChild = el.firstChild;
+      if (firstChild instanceof SVGSVGElement) {
+        svg = firstChild;
+      }
+      if (svg) {
+        return addSVGToImgSrc(img, svg, cacheReady, cacheKey);
+      }
     }
   }
   const svgSnapshot = (
@@ -198,8 +206,8 @@ const getIMG = async (
       getExportPadding(plugin, file),
     )
   ).outerHTML;
-  let svg: SVGSVGElement = null;
-  const el = document.createElement("div");
+  
+  
   el.innerHTML = svgSnapshot;
   const firstChild = el.firstChild;
   if (firstChild instanceof SVGSVGElement) {
@@ -212,10 +220,17 @@ const getIMG = async (
   //need to remove width and height attributes to support area= embeds
   svg.removeAttribute("width");
   svg.removeAttribute("height");
-  img.setAttribute("src", svgToBase64(svg.outerHTML));
-  cacheReady && imageCache.addImageToCache(cacheKey, img.src);
-  return img;
+  return addSVGToImgSrc(img, svg, cacheReady, cacheKey);
 };
+
+const addSVGToImgSrc = (img: HTMLImageElement, svg: SVGSVGElement, cacheReady: boolean, cacheKey: ImageKey):HTMLImageElement => {
+  const svgString = new XMLSerializer().serializeToString(svg);
+  const blob = new Blob([svgString], { type: 'image/svg+xml' });
+  const blobUrl = URL.createObjectURL(blob);
+  img.setAttribute("src", blobUrl);
+  cacheReady && imageCache.addImageToCache(cacheKey, blobUrl, blob);
+  return img;
+}
 
 const createImgElement = async (
   attr: imgElementAttributes,

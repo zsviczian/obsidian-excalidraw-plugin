@@ -6,7 +6,7 @@ import { ConstructableWorkspaceSplit, getContainerForDocument, isObsidianThemeDa
 import { DEVICE, EXTENDED_EVENT_TYPES, KEYBOARD_EVENT_TYPES, TWITTER_REG } from "./Constants";
 import { ExcalidrawImperativeAPI, UIAppState } from "@zsviczian/excalidraw/types/types";
 import { ObsidianCanvasNode } from "./utils/CanvasNodeFactory";
-import { processLinkText, patchMobileView } from "./utils/CustomEmbeddableUtils";
+import { processLinkText, patchMobileView, generateEmbeddableLink } from "./utils/CustomEmbeddableUtils";
 
 declare module "obsidian" {
   interface Workspace {
@@ -26,18 +26,14 @@ declare module "obsidian" {
 export const renderWebView = (src: string, view: ExcalidrawView, id: string, appState: UIAppState):JSX.Element =>{
   const twitterLink = src.match(TWITTER_REG);
   if (twitterLink) {
-    const tweetID = src.match(/.*\/(\d*)\?/)[1];
-    if (tweetID) {
-      const theme = view.excalidrawData.embeddableTheme === "dark"
+    const theme = view.excalidrawData.embeddableTheme === "dark"
       ? "dark"
       : view.excalidrawData.embeddableTheme === "light" 
         ? "light"
         : view.excalidrawData.embeddableTheme === "auto"
           ? appState.theme === "dark" ? "dark" : "light"
           : isObsidianThemeDark() ? "dark" : "light";
-      src =`https://platform.twitter.com/embed/Tweet.html?frame=false&hideCard=false&hideThread=false&id=${tweetID}&lang=en&theme=${theme}&width=550px`
-    //src = `https://twitframe.com/show?url=${encodeURIComponent(src)}`;
-    }
+    src = generateEmbeddableLink(src, theme);  
   }
 
   if(DEVICE.isDesktop && !twitterLink) {

@@ -6,11 +6,11 @@ const DB_NAME = "Excalidraw " + app.appId;
 const CACHE_STORE = "imageCache";
 const BACKUP_STORE = "drawingBAK";
 
-type FileCacheData = { mtime: number; imageBase64: string };
+type FileCacheData = { mtime: number; blob: Blob };
 type BackupData = string;
 type BackupKey = string;
 
-type ImageKey = {
+export type ImageKey = {
   filepath: string;
   blockref: string;
   sectionref: string;
@@ -30,6 +30,7 @@ class ImageCache {
   private isInitializing: boolean;
   public plugin: ExcalidrawPlugin;
   public initializationNotice: boolean = false;
+  private obsidanURLCache = new Map<string, string>();
 
   constructor(dbName: string, cacheStoreName: string, backupStoreName: string) {
     this.dbName = dbName;
@@ -143,7 +144,7 @@ class ImageCache {
           const filepath = key.split("#")[0];
           const fileExists = files.some((f: TFile) => f.path === filepath);
           const file = fileExists ? files.find((f: TFile) => f.path === filepath) : null;
-          if (!file || (file && file.stat.mtime > cursor.value.mtime)) {
+          if (!file || (file && file.stat.mtime > cursor.value.mtime) || !cursor.value.blob) {
             deletePromises.push(
               new Promise<void>((resolve, reject) => {
                 const deleteRequest = store.delete(cursor.primaryKey);
@@ -252,14 +253,18 @@ class ImageCache {
     }
 
     const key = getKey(key_);
-    return this.getCacheData(key).then((cachedData) => {
-      const file = app.vault.getAbstractFileByPath(key_.filepath.split("#")[0]);
-      if (!file || !(file instanceof TFile)) return undefined;
-      if (cachedData && cachedData.mtime === file.stat.mtime) {
-        return cachedData.imageBase64;
+    const cachedData = await this.getCacheData(key);    
+    const file = app.vault.getAbstractFileByPath(key_.filepath.split("#")[0]);
+    if (!file || !(file instanceof TFile)) return undefined;
+    if (cachedData && cachedData.mtime === file.stat.mtime) {
+      if(this.obsidanURLCache.has(key)) {
+        return this.obsidanURLCache.get(key);
       }
-      return undefined;
-    });
+      const obsidianURL = URL.createObjectURL(cachedData.blob);
+      this.obsidanURLCache.set(key, obsidianURL);
+      return obsidianURL;
+    }
+    return undefined;
   }
 
   public async getBAKFromCache(filepath: string): Promise<BackupData | null> {
@@ -270,19 +275,19 @@ class ImageCache {
     return this.getBackupData(filepath);
   }
 
-  public addImageToCache(key_: ImageKey, imageBase64: string): void {
+  public addImageToCache(key_: ImageKey, obsidianURL: string, blob: Blob): void {
     if (!this.isReady()) {
       return; // Database not initialized yet
     }
 
     const file = app.vault.getAbstractFileByPath(key_.filepath.split("#")[0]);
     if (!file || !(file instanceof TFile)) return;
-    const data: FileCacheData = { mtime: file.stat.mtime, imageBase64 };
-
+    const data: FileCacheData = { mtime: file.stat.mtime, blob };
     const transaction = this.db.transaction(this.cacheStoreName, "readwrite");
     const store = transaction.objectStore(this.cacheStoreName);
     const key = getKey(key_);
     store.put(data, key);
+    this.obsidanURLCache.set(key, obsidianURL);
   }
 
   public async addBAKToCache(filepath: string, data: BackupData): Promise<void> {
