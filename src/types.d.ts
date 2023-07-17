@@ -203,6 +203,7 @@ export interface ExcalidrawAutomateInterface {
     //Note that elements copied to the view with copyViewElementsToEAforEditing retain their
     //position in the stack of elements in the view even if modified using EA
     newElementsOnTop?: boolean, //default is false, i.e. the new elements get to the bottom of the stack
+    shouldRestoreElements?: boolean, //restore elements - auto corrects broken, incomplete or old elements included in the update
   ): Promise<boolean>;
   //Register instance of EA to use for hooks with TargetView
   //By default ExcalidrawViews will check window.ExcalidrawAutomate for event hooks.

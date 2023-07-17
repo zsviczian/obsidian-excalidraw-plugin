@@ -1626,6 +1626,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     repositionToCursor: boolean = false,
     save: boolean = true,
     newElementsOnTop: boolean = false,
+    shouldRestoreElements: boolean = false, //restore elements - auto corrects broken, incomplete or old elements included in the update
   ): Promise<boolean> {
     //@ts-ignore
     if (!this.targetView || !this.targetView?._loaded) {
@@ -1639,6 +1640,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
       save,
       this.imagesDict,
       newElementsOnTop,
+      shouldRestoreElements,
     );
   };
 

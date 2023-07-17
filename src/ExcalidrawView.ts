@@ -2610,6 +2610,7 @@ export default class ExcalidrawView extends TextFileView {
         save: boolean = false,
         images: any,
         newElementsOnTop: boolean = false,
+        shouldRestoreElements: boolean = false,
       ): Promise<boolean> => {
         const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
         if (!excalidrawRef?.current || !api) {
@@ -2668,7 +2669,7 @@ export default class ExcalidrawView extends TextFileView {
             elements,
             commitToHistory: true,
           },
-          true, //set to true because svtToExcalidraw generates a legacy Excalidraw object 
+          shouldRestoreElements,
         );
 
         if (images && Object.keys(images).length >0) {

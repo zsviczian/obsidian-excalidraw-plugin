@@ -44,7 +44,7 @@ export class ImportSVGDialog extends FuzzySuggestModal<TFile> {
     const svg = await app.vault.read(item);
     if(!svg || svg === "") return;
     ea.importSVG(svg);
-    ea.addElementsToView(true, true, true);
+    ea.addElementsToView(true, true, true,true);
   }
 
   public start(view: ExcalidrawView) {
