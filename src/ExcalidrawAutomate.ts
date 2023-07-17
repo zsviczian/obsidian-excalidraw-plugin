@@ -1056,7 +1056,8 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     topX: number,
     topY: number,
     imageFile: TFile | string,
-    scale: boolean = true, //true will scale the image to MAX_IMAGE_SIZE, false will insert image at 100% of its size
+    scale: boolean = true, //default is true which will scale the image to MAX_IMAGE_SIZE, false will insert image at 100% of its size
+    anchor: boolean = true, //only has effect if scale is false. If anchor is true the image path will include |100%, if false the image will be inserted at 100%, but if resized by the user it won't pop back to 100% the next time Excalidraw is opened.
   ): Promise<string> {
     const id = nanoid();
     const loader = new EmbeddedFilesLoader(
@@ -1084,7 +1085,7 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
         : null,
       file: typeof imageFile === "string"
         ? null
-        : imageFile.path + (scale ? "":"|100%"),
+        : imageFile.path + (scale || !anchor ? "":"|100%"),
       hasSVGwithBitmap: image.hasSVGwithBitmap,
       latex: null,
     };
@@ -1620,13 +1621,14 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
    *   Note that elements copied to the view with copyViewElementsToEAforEditing retain their
    *   position in the stack of elements in the view even if modified using EA
    *   default is false, i.e. the new elements get to the bottom of the stack
+   * @param shouldRestoreElements - restore elements - auto-corrects broken, incomplete or old elements included in the update
    * @returns 
    */
   async addElementsToView(
     repositionToCursor: boolean = false,
     save: boolean = true,
     newElementsOnTop: boolean = false,
-    shouldRestoreElements: boolean = false, //restore elements - auto corrects broken, incomplete or old elements included in the update
+    shouldRestoreElements: boolean = false,
   ): Promise<boolean> {
     //@ts-ignore
     if (!this.targetView || !this.targetView?._loaded) {

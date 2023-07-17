@@ -140,7 +140,8 @@ export interface ExcalidrawAutomateInterface {
     topX: number,
     topY: number,
     imageFile: TFile | string,
-    scale: boolean, //true will scale the image to MAX_IMAGE_SIZE, false will insert image at 100% of its size
+    scale?: boolean, // default is true which will scale the image to MAX_IMAGE_SIZE, false will insert image at 100% of its size
+    anchor?: boolean, //default is true, and only has effect if scale is false. If anchor is true the image path will include |100%, if false the image will be inserted at 100%, but if resized by the user it won't pop back to 100% the next time Excalidraw is openned.
   ): Promise<string>;
   addLaTex(topX: number, topY: number, tex: string): Promise<string>;
   connectObjects(
