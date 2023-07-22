@@ -516,4 +516,21 @@ FILENAME_HEAD: "Filename",
   ZOOM_TO_FIT: "Zoom to fit",
   RELOAD: "Reload original link",
   OPEN_IN_BROWSER: "Open current link in browser",
+
+  //Prompts.ts
+  PROMPT_FILE_DOES_NOT_EXIST: "File does not exist. Do you want to create it?",
+  PROMPT_ERROR_NO_FILENAME: "Error: Filename for new file may not be empty",
+  PROMPT_ERROR_DRAWING_CLOSED: "Unknown error. It seems as if your drawing was closed or the drawing file is missing",
+  PROMPT_TITLE_NEW_FILE: "New File",
+  PROMPT_TITLE_CONFIRMATION: "Confirmation",
+  PROMPT_BUTTON_CREATE_EXCALIDRAW: "Create Excalidraw",
+  PROMPT_BUTTON_CREATE_MARKDOWN: "Create Markdown",
+  PROMPT_BUTTON_NEVERMIND: "Nevermind",
+  PROMPT_BUTTON_OK: "OK",
+  PROMPT_BUTTON_CANCEL: "Cancel",
+  PROMPT_BUTTON_INSERT_LINE: "Insert new line",
+  PROMPT_BUTTON_INSERT_SPACE: "Insert space",
+  PROMPT_BUTTON_INSERT_LINK: "Insert markdown link to file",
+  PROMPT_BUTTON_UPPERCASE: "Uppercase",
+  
 };

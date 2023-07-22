@@ -8,6 +8,7 @@ import ExcalidrawPlugin from "./main";
 import { ColorMaster } from "colormaster";
 import { TInput } from "colormaster/types";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
+import { PaneTarget } from "./utils/ModifierkeyHelper";
 
 
 export type ConnectionPoint = "top" | "bottom" | "left" | "right" | null;
@@ -25,6 +26,20 @@ export type DynamicStyle = "none" | "gray" | "colorful";
 export interface ExcalidrawAutomateInterface {
   get obsidian(): any; //returns the Obsidian Module
   getAttachmentFilepath(filename: string): Promise<string>;
+  newFilePrompt(
+    // Prompts the user with a dialog to select new file action.
+    // - create markdown file
+    // - create excalidraw file
+    // - cancel action
+    // The new file will be relative to this.targetView.file.path, unless parentFile is provided.
+    // If shouldOpenNewFile is true, the new file will be opened in a workspace leaf. 
+    // targetPane control which leaf will be used for the new file.
+    // Returns the TFile for the new file or null if the user cancelled the action.
+    newFileNameOrPath: string,
+    shouldOpenNewFile: boolean,
+    targetPane?: PaneTarget, //type PaneTarget = "active-pane"|"new-pane"|"popout-window"|"new-tab"|"md-properties";
+    parentFile?: TFile,
+  ): Promise<TFile | null>;
   plugin: ExcalidrawPlugin;
   elementsDict: {[key:string]:any}; //contains the ExcalidrawElements currently edited in Automate indexed by el.id
   imagesDict: {[key: FileId]: any}; //the images files including DataURL, indexed by fileId

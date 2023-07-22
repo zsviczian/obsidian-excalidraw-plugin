@@ -15,6 +15,29 @@ export const isALT = (e:KeyEvent) => e.altKey;
 export const isMETA = (e:KeyEvent) => DEVICE.isIOS || DEVICE.isMacOS ? e.ctrlKey : e.metaKey;
 export const isSHIFT = (e:KeyEvent) => e.shiftKey;
 
+export const setCTRL = (e:ModifierKeys, value: boolean): ModifierKeys => {
+  if(DEVICE.isIOS || DEVICE.isMacOS) 
+    e.metaKey = value;
+  else 
+    e.ctrlKey = value;
+  return e;
+}
+export const setALT = (e:ModifierKeys, value: boolean): ModifierKeys => {
+  e.altKey = value;
+  return e;
+}
+export const setMETA = (e:ModifierKeys, value: boolean): ModifierKeys => {
+  if(DEVICE.isIOS || DEVICE.isMacOS)
+    e.ctrlKey = value;
+  else
+    e.metaKey = value;
+  return e;
+}
+export const setSHIFT = (e:ModifierKeys, value: boolean): ModifierKeys => {
+  e.shiftKey = value;
+  return e;
+}
+
 export const mdPropModifier = (ev: KeyEvent): boolean => !isSHIFT(ev) && isCTRL(ev) && !isALT(ev) && isMETA(ev);
 export const scaleToFullsizeModifier = (ev: KeyEvent) => 
   ( isSHIFT(ev) && !isCTRL(ev) && !isALT(ev) &&  isMETA(ev)) ||
@@ -57,4 +80,32 @@ export const emulateCTRLClickForLinks = (e:KeyEvent) => {
     metaKey: e.metaKey ||  (DEVICE.isIOS || DEVICE.isMacOS),
     altKey: e.altKey
   }
+}
+
+export const emulateKeysForLinkClick = (action: PaneTarget): ModifierKeys => {
+  const ev = {shiftKey: false, ctrlKey: false, metaKey: false, altKey: false};
+  if(!action) return ev;
+  switch(action) {
+    case "active-pane": 
+      setCTRL(ev, true);
+      setSHIFT(ev, true);
+      break;
+    case "new-pane":
+      setCTRL(ev, true);
+      setALT(ev, true);
+      break;
+    case "popout-window":
+      setCTRL(ev, true);
+      setALT(ev, true);
+      setSHIFT(ev, true);
+      break;
+    case "new-tab":
+      setCTRL(ev, true);
+      break;
+    case "md-properties":
+      setCTRL(ev, true);
+      setMETA(ev, true);
+      break;
+  }
+  return ev;
 }

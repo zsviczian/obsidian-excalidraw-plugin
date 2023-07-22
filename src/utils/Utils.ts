@@ -27,9 +27,6 @@ import { compressToBase64, decompressFromBase64 } from "lz-string";
 import { getIMGFilename } from "./FileUtils";
 import ExcalidrawScene from "../svgToExcalidraw/elements/ExcalidrawScene";
 import { IMAGE_TYPES } from "../Constants";
-import { ExcalidrawAutomate } from "lib/ExcalidrawAutomate";
-import { getEA } from "src";
-import elements from "src/svgToExcalidraw/elements";
 import { generateEmbeddableLink } from "./CustomEmbeddableUtils";
 
 declare const PLUGIN_VERSION:string;

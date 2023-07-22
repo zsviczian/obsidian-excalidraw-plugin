@@ -48,7 +48,7 @@ import { getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, isObsidianThemeD
 import { AppState, BinaryFileData, DataURL, ExcalidrawImperativeAPI, Point } from "@zsviczian/excalidraw/types/types";
 import { EmbeddedFile, EmbeddedFilesLoader, FileData } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
-import { Prompt } from "./dialogs/Prompt";
+import { NewFileActions, Prompt } from "./dialogs/Prompt";
 import { t } from "./lang/helpers";
 import { ScriptEngine } from "./Scripts";
 import { ConnectionPoint, ExcalidrawAutomateInterface } from "./types";
@@ -70,6 +70,7 @@ import { TInput } from "colormaster/types";
 import {ConversionResult, svgToExcalidraw} from "./svgToExcalidraw/parser"
 import { ROUNDNESS } from "./Constants";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
+import { emulateKeysForLinkClick, KeyEvent, PaneTarget } from "./utils/ModifierkeyHelper";
 
 extendPlugins([
   HarmonyPlugin,
@@ -112,6 +113,44 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     }
     const folderAndPath = await getAttachmentsFolderAndFilePath(app,this.targetView.file.path, filename);
     return getNewUniqueFilepath(app.vault, filename, folderAndPath.folder);
+  }
+
+  /**
+   * Prompts the user with a dialog to select new file action.
+   * - create markdown file
+   * - create excalidraw file
+   * - cancel action
+   * The new file will be relative to this.targetView.file.path, unless parentFile is provided.
+   * If shouldOpenNewFile is true, the new file will be opened in a workspace leaf. 
+   * targetPane control which leaf will be used for the new file.
+   * Returns the TFile for the new file or null if the user cancelled the action.
+   * @param newFileNameOrPath 
+   * @param shouldOpenNewFile 
+   * @param targetPane //type PaneTarget = "active-pane"|"new-pane"|"popout-window"|"new-tab"|"md-properties";
+   * @param parentFile 
+   * @returns 
+   */
+  public async newFilePrompt(
+    newFileNameOrPath: string,
+    shouldOpenNewFile: boolean,
+    targetPane?: PaneTarget,
+    parentFile?: TFile,
+  ): Promise<TFile | null> {
+    if (!this.targetView || !this.targetView?.file) {
+      errorMessage("targetView not set", "newFileActions()");
+      return null;
+    }
+    const modifierKeys = emulateKeysForLinkClick(targetPane);
+    const newFilePrompt = new NewFileActions(
+      this.plugin,
+      newFileNameOrPath,
+      modifierKeys,
+      this.targetView,
+      shouldOpenNewFile,
+      parentFile
+    )
+    newFilePrompt.open();
+    return await newFilePrompt.waitForClose;
   }
 
   plugin: ExcalidrawPlugin;

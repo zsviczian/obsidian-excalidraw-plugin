@@ -15,6 +15,7 @@ import { sleep } from "../utils/Utils";
 import { getLeaf } from "../utils/ObsidianUtils";
 import { checkAndCreateFolder, splitFolderAndFilename } from "src/utils/FileUtils";
 import { KeyEvent, isCTRL } from "src/utils/ModifierkeyHelper";
+import { t } from "src/lang/helpers";
 
 export type ButtonDefinition = { caption: string; tooltip?:string; action: Function };
 
@@ -267,15 +268,15 @@ export class GenericInputPrompt extends Modal {
         this.submitClickCallback,
       ).setCta().buttonEl.style.marginRight = "0";
     }
-    this.createButton(actionButtonContainer, "❌", this.cancelClickCallback, "Cancel");
+    this.createButton(actionButtonContainer, "❌", this.cancelClickCallback, t("PROMPT_BUTTON_CANCEL"));
     if(this.displayEditorButtons) {
-      this.createButton(editorButtonContainer, "⏎", ()=>this.insertStringBtnClickCallback("\n"), "Insert new line", "0");
+      this.createButton(editorButtonContainer, "⏎", ()=>this.insertStringBtnClickCallback("\n"), t("PROMPT_BUTTON_INSERT_LINE"), "0");
       this.createButton(editorButtonContainer, "⌫", this.delBtnClickCallback, "Delete");
-      this.createButton(editorButtonContainer, "⎵", ()=>this.insertStringBtnClickCallback(" "), "Insert space");
+      this.createButton(editorButtonContainer, "⎵", ()=>this.insertStringBtnClickCallback(" "), t("PROMPT_BUTTON_INSERT_SPACE"));
       if(this.view) {
-        this.createButton(editorButtonContainer, "🔗", this.linkBtnClickCallback, "Insert markdown link to file");
+        this.createButton(editorButtonContainer, "🔗", this.linkBtnClickCallback, t("PROMPT_BUTTON_INSERT_LINK"));
       }
-      this.createButton(editorButtonContainer, "🔠", this.uppercaseBtnClickCallback, "Uppercase");
+      this.createButton(editorButtonContainer, "🔠", this.uppercaseBtnClickCallback, t("PROMPT_BUTTON_UPPERCASE"));
     }
   }
 
@@ -456,35 +457,51 @@ export class GenericSuggester extends FuzzySuggestModal<any> {
 }
 
 export class NewFileActions extends Modal {
+  public waitForClose: Promise<TFile|null>;
+  private resolvePromise: (file: TFile|null) => void;
+  private rejectPromise: (reason?: any) => void;
+  private newFile: TFile = null;
+
   constructor(
     private plugin: ExcalidrawPlugin,
     private path: string,
     private keys: KeyEvent,
     private view: ExcalidrawView,
+    private openNewFile: boolean = true,
+    private parentFile?: TFile,
   ) {
     super(plugin.app);
+    if(!parentFile) this.parentFile = view.file;
+    this.waitForClose = new Promise<TFile|null>((resolve, reject) => {
+      this.resolvePromise = resolve;
+      this.rejectPromise = reject;
+    });
   }
 
   onOpen(): void {
     this.createForm();
   }
 
-  async onClose() {}
-
   openFile(file: TFile): void {
-    if (!file) {
+    this.newFile = file;
+    if (!file || !this.openNewFile) {
       return;
     }
     const leaf = getLeaf(this.plugin,this.view.leaf,this.keys)
     leaf.openFile(file, {active:true});
   }
 
+  onClose() {
+    super.onClose();
+    this.resolvePromise(this.newFile);
+  }
+
   createForm(): void {
-    this.titleEl.setText("New File");
+    this.titleEl.setText(t("PROMPT_TITLE_NEW_FILE"));
 
     this.contentEl.createDiv({
       cls: "excalidraw-prompt-center",
-      text: "File does not exist. Do you want to create it?",
+      text: t("PROMPT_FILE_DOES_NOT_EXIST"),
     });
     this.contentEl.createDiv({
       cls: "excalidraw-prompt-center filepath",
@@ -497,12 +514,12 @@ export class NewFileActions extends Modal {
 
       const checks = (): boolean => {
         if (!this.path || this.path === "") {
-          new Notice("Error: Filename for new file may not be empty");
+          new Notice(t("PROMPT_ERROR_NO_FILENAME"));
           return false;
         }
-        if (!this.view.file) {
+        if (!this.parentFile) {
           new Notice(
-            "Unknown error. It seems as if your drawing was closed or the drawing file is missing",
+            t("PROMPT_ERROR_DRAWING_CLOSED"),
           );
           return false;
         }
@@ -511,8 +528,8 @@ export class NewFileActions extends Modal {
 
       const createFile = async (data: string): Promise<TFile> => {
         if (!this.path.includes("/")) {
-          const re = new RegExp(`${this.view.file.name}$`, "g");
-          this.path = this.view.file.path.replace(re, this.path);
+          const re = new RegExp(`${this.parentFile.name}$`, "g");
+          this.path = this.parentFile.path.replace(re, this.path);
         }
         if (!this.path.match(/\.md$/)) {
           this.path = `${this.path}.md`;
@@ -523,7 +540,7 @@ export class NewFileActions extends Modal {
         return f;
       };
 
-      const bMd = el.createEl("button", { text: "Create Markdown" });
+      const bMd = el.createEl("button", { text: t("PROMPT_BUTTON_CREATE_MARKDOWN") });
       bMd.onclick = async () => {
         if (!checks) {
           return;
@@ -533,7 +550,7 @@ export class NewFileActions extends Modal {
         this.close();
       };
 
-      const bEx = el.createEl("button", { text: "Create Excalidraw" });
+      const bEx = el.createEl("button", { text: t("PROMPT_BUTTON_CREATE_EXCALIDRAW") });
       bEx.onclick = async () => {
         if (!checks) {
           return;
@@ -545,7 +562,7 @@ export class NewFileActions extends Modal {
       };
 
       const bCancel = el.createEl("button", {
-        text: "Never Mind",
+        text: t("PROMPT_BUTTON_NEVERMIND"),
       });
       bCancel.onclick = () => {
         this.close();
@@ -575,7 +592,7 @@ export class ConfirmationPrompt extends Modal {
 
   private display() {
     this.contentEl.empty();
-    this.titleEl.textContent = "Confirmation";
+    this.titleEl.textContent = t("PROMPT_TITLE_CONFIRMATION");
 
     const messageEl = this.contentEl.createDiv();
     messageEl.style.marginBottom = "1rem";
@@ -585,10 +602,10 @@ export class ConfirmationPrompt extends Modal {
     buttonContainer.style.display = "flex";
     buttonContainer.style.justifyContent = "flex-end";
 
-    const cancelButton = this.createButton(buttonContainer, "Cancel", this.cancelClickCallback);
+    const cancelButton = this.createButton(buttonContainer, t("PROMPT_BUTTON_CANCEL"), this.cancelClickCallback);
     cancelButton.buttonEl.style.marginRight = "0.5rem";
 
-    const confirmButton = this.createButton(buttonContainer, "OK", this.confirmClickCallback);
+    const confirmButton = this.createButton(buttonContainer, t("PROMPT_BUTTON_OK"), this.confirmClickCallback);
     confirmButton.buttonEl.style.marginRight = "0";
 
     cancelButton.buttonEl.focus();

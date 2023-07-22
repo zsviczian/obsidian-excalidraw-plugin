@@ -504,12 +504,12 @@ export class ExcalidrawData {
         const prompt = new ConfirmationPrompt(
           this.plugin,
           "This file contains embedded frames " +
-          "that will be migrated to a newer version for compatibility with " +
+          "which will be migrated to a newer version for compatibility with " +
           "<a href='https://excalidraw.com'>excalidraw.com</a>.<br>🔄 If you're using Obsidian on " + 
-          "multiple devices, you may proceed now, but please before opening this " +
-          "converted file on those, update Excalidraw on them as well.<br>🔍 More info is available "+
+          "multiple devices, you may proceed now, but please, before opening this " +
+          "file on your other devices, update Excalidraw on those as well.<br>🔍 More info is available "+
           "<a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.9.9'>here</a>.<br>🌐 " +
-          "<a href='https://translate.google.com/?sl=en&tl=hu&text=This%20file%20contains%20embedded%20frames%20that%20will%20be%20migrated%20to%20a%20newer%20version%20for%20compatibility%20with%20excalidraw.com.%0A%0AIf%20you%27re%20using%20Obsidian%20on%20multiple%20devices%2C%20you%20may%20proceed%20now%2C%20but%20please%20before%20opening%20this%20converted%20file%20on%20those%2C%20update%20Excalidraw%20on%20them%20as%20well.%0A%0AMore%20info%20is%20available%20here%3A%20https%3A%2F%2Fgithub.com%2Fzsviczian%2Fobsidian-excalidraw-plugin%2Freleases%2Ftag%2F1.9.9%27%3Ehere%3C%2Fa%3E.&op=translate'>" +
+          "<a href='https://translate.google.com/?sl=en&tl=zh-CN&text=This%20file%20contains%20embedded%20frames%20which%20will%20be%20migrated%20to%20a%20newer%20version%20for%20compatibility%20with%20excalidraw.com.%0A%0AIf%20you%27re%20using%20Obsidian%20on%20multiple%20devices%2C%20you%20may%20proceed%20now%2C%20but%20please%2C%20before%20opening%20this%20file%20on%20your%20other%20devices%2C%20update%20Excalidraw%20on%20those%20as%20well.%0A%0AMore%20info%20is%20available%20here%3A%20https%3A%2F%2Fgithub.com%2Fzsviczian%2Fobsidian-excalidraw-plugin%2Freleases%2Ftag%2F1.9.9%27%3Ehere%3C%2Fa%3E.&op=translate'>" +
           "Translate</a>.",
         );
         prompt.contentEl.focus();
