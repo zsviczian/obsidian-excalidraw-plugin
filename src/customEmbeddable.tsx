@@ -3,7 +3,7 @@ import ExcalidrawView from "./ExcalidrawView";
 import { Notice, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import * as React from "react";
 import { ConstructableWorkspaceSplit, getContainerForDocument, isObsidianThemeDark } from "./utils/ObsidianUtils";
-import { DEVICE, EXTENDED_EVENT_TYPES, KEYBOARD_EVENT_TYPES, TWITTER_REG } from "./Constants";
+import { DEVICE, EXTENDED_EVENT_TYPES, KEYBOARD_EVENT_TYPES } from "./Constants";
 import { ExcalidrawImperativeAPI, UIAppState } from "@zsviczian/excalidraw/types/types";
 import { ObsidianCanvasNode } from "./utils/CanvasNodeFactory";
 import { processLinkText, patchMobileView, generateEmbeddableLink } from "./utils/CustomEmbeddableUtils";
@@ -24,7 +24,7 @@ declare module "obsidian" {
 //required to control the video
 //--------------------------------------------------------------------------------
 export const renderWebView = (src: string, view: ExcalidrawView, id: string, appState: UIAppState):JSX.Element =>{
-  const twitterLink = src.match(TWITTER_REG);
+  /*const twitterLink = src.match(TWITTER_REG);
   if (twitterLink) {
     const theme = view.excalidrawData.embeddableTheme === "dark"
       ? "dark"
@@ -34,9 +34,9 @@ export const renderWebView = (src: string, view: ExcalidrawView, id: string, app
           ? appState.theme === "dark" ? "dark" : "light"
           : isObsidianThemeDark() ? "dark" : "light";
     src = generateEmbeddableLink(src, theme);  
-  }
+  }*/
 
-  if(DEVICE.isDesktop && !twitterLink) {
+  if(DEVICE.isDesktop) {
     return (
       <webview
         ref={(ref) => view.updateEmbeddableRef(id, ref)}

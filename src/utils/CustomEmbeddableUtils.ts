@@ -1,12 +1,12 @@
 import { NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
-import { DEVICE, REG_LINKINDEX_INVALIDCHARS, TWITTER_REG } from "src/Constants";
+import { DEVICE, REG_LINKINDEX_INVALIDCHARS } from "src/Constants";
 import { getParentOfClass } from "./ObsidianUtils";
 import { TFile, WorkspaceLeaf } from "obsidian";
 import { getLinkParts } from "./Utils";
 import ExcalidrawView from "src/ExcalidrawView";
 
 export const useDefaultExcalidrawFrame = (element: NonDeletedExcalidrawElement) => {
-  return !element.link.startsWith("[") && !element.link.match(TWITTER_REG);
+  return !element.link.startsWith("["); // && !element.link.match(TWITTER_REG);
 }
 
 export const leafMap = new Map<string, WorkspaceLeaf>();
@@ -46,13 +46,13 @@ export const processLinkText = (linkText: string, view:ExcalidrawView): { subpat
 }
 
 export const generateEmbeddableLink = (src: string, theme: "light" | "dark"):string => {
-  const twitterLink = src.match(TWITTER_REG);
+/*  const twitterLink = src.match(TWITTER_REG);
   if (twitterLink) {
     const tweetID = src.match(/.*\/(\d*)\?/)[1];
     if (tweetID) {
       return `https://platform.twitter.com/embed/Tweet.html?frame=false&hideCard=false&hideThread=false&id=${tweetID}&lang=en&theme=${theme}&width=550px`;
       //src = `https://twitframe.com/show?url=${encodeURIComponent(src)}`;
     }
-  }
+  }*/
   return src;
 }

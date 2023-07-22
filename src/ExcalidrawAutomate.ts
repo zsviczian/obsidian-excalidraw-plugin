@@ -69,6 +69,7 @@ import CMYKPlugin from "colormaster/plugins/cmyk";
 import { TInput } from "colormaster/types";
 import {ConversionResult, svgToExcalidraw} from "./svgToExcalidraw/parser"
 import { ROUNDNESS } from "./Constants";
+import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 
 extendPlugins([
   HarmonyPlugin,
@@ -1734,6 +1735,23 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     pointerPosition: { x: number; y: number }; //the pointer position on canvas at the time of drop
   }) => boolean = null;
  
+  /**
+   * If set, this callback is triggered, when Excalidraw receives an onPaste event.
+   * You can use this callback in case you want to do something additional when the
+   * onPaste event occurs.
+   * This callback must return a boolean value.
+   * In case you want to prevent the excalidraw onPaste action you must return false,
+   * it will stop the native excalidraw onPaste management flow.
+   */
+   onPasteHook: (data: {
+    ea: ExcalidrawAutomate;
+    payload: ClipboardData;
+    event: ClipboardEvent;
+    excalidrawFile: TFile; //the file receiving the paste event
+    view: ExcalidrawView; //the excalidraw view receiving the paste
+    pointerPosition: { x: number; y: number }; //the pointer position on canvas
+   }) => boolean = null;
+
   /**
    * if set, this callback is triggered, when an Excalidraw file is opened
    * You can use this callback in case you want to do something additional when the file is opened.

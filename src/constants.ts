@@ -2,6 +2,8 @@ import { customAlphabet } from "nanoid";
 //This is only for backward compatibility because an early version of obsidian included an encoding to avoid fantom links from littering Obsidian graph view
 declare const PLUGIN_VERSION:string;
 
+export const ERROR_IFRAME_CONVERSION_CANCELED = "iframe conversion canceled";
+
 export const {
   sceneCoordsToViewportCoords,
   viewportCoordsToSceneCoords,
@@ -164,7 +166,7 @@ export const EXTENDED_EVENT_TYPES = [
   "touchmove",*/
 ];
 
-export const TWITTER_REG = /^(?:http(?:s)?:\/\/)?(?:(?:w){3}.)?twitter.com/;
+//export const TWITTER_REG = /^(?:http(?:s)?:\/\/)?(?:(?:w){3}.)?twitter.com/;
 
 
 export const COLOR_NAMES = new Map<string, string>();

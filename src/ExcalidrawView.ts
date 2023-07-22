@@ -48,6 +48,7 @@ import {
   GITHUB_RELEASES,
   EXPORT_IMG_ICON_NAME,
   viewportCoordsToSceneCoords,
+  ERROR_IFRAME_CONVERSION_CANCELED,
 } from "./Constants";
 import ExcalidrawPlugin from "./main";
 import { 
@@ -1678,6 +1679,10 @@ export default class ExcalidrawView extends TextFileView {
           }
         } catch (e) {
           errorlog({ where: "ExcalidrawView.setViewData", error: e });
+          if(e.message === ERROR_IFRAME_CONVERSION_CANCELED) {
+            this.setMarkdownView();
+            return;
+          } 
           const file = this.file;
           const plugin = this.plugin;
           const leaf = this.leaf;
@@ -3238,12 +3243,27 @@ export default class ExcalidrawView extends TextFileView {
             },
             renderTopRightUI:  (isMobile: boolean, appState: AppState) => this.obsidianMenu.renderButton (isMobile, appState),
             renderEmbeddableMenu: (appState: AppState) => this.embeddableMenu.renderButtons(appState),
-            onPaste: (data: ClipboardData) => {
+            onPaste: (
+              data: ClipboardData,
+              event: ClipboardEvent | null
+            ) => {
               //, event: ClipboardEvent | null
               /*if(data && data.text && hyperlinkIsYouTubeLink(data.text)) {
                 this.addYouTubeThumbnail(data.text);
                 return false;
               }*/
+              const ea = this.getHookServer();
+              if(data && ea.onPasteHook) {
+                const res = ea.onPasteHook({
+                  ea,
+                  payload: data,
+                  event,
+                  excalidrawFile: this.file,
+                  view: this,
+                  pointerPosition: this.currentPosition,
+                });
+                if(typeof res === "boolean" && res === false) return false;
+              }
               if(data && data.text && hyperlinkIsImage(data.text)) {
                 this.addImageWithURL(data.text);
                 return false;
