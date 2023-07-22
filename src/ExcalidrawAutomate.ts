@@ -1,4 +1,4 @@
-import ExcalidrawPlugin from "./main";
+import ExcalidrawPlugin from "src/main";
 import {
   FillStyle,
   StrokeStyle,
@@ -13,8 +13,8 @@ import {
 } from "@zsviczian/excalidraw/types/element/types";
 import { normalizePath, Notice, TFile, WorkspaceLeaf } from "obsidian";
 import * as obsidian_module from "obsidian";
-import ExcalidrawView, { ExportSettings, TextMode } from "./ExcalidrawView";
-import { ExcalidrawData, getMarkdownDrawingSection } from "./ExcalidrawData";
+import ExcalidrawView, { ExportSettings, TextMode } from "src/ExcalidrawView";
+import { ExcalidrawData, getMarkdownDrawingSection } from "src/ExcalidrawData";
 import {
   FRONTMATTER,
   nanoid,
@@ -29,8 +29,9 @@ import {
   getMaximumGroups,
   intersectElementWithLine,
   measureText,
-} from "./Constants";
-import { getDrawingFilename, getNewUniqueFilepath, } from "./utils/FileUtils";
+  DEVICE,
+} from "src/Constants";
+import { getDrawingFilename, getNewUniqueFilepath, } from "src/utils/FileUtils";
 import {
   //debug,
   embedFontsInSVG,
@@ -43,15 +44,15 @@ import {
   log,
   scaleLoadedImage,
   wrapTextAtCharLength,
-} from "./utils/Utils";
-import { getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, isObsidianThemeDark } from "./utils/ObsidianUtils";
-import { AppState, BinaryFileData, DataURL, ExcalidrawImperativeAPI, Point } from "@zsviczian/excalidraw/types/types";
-import { EmbeddedFile, EmbeddedFilesLoader, FileData } from "./EmbeddedFileLoader";
-import { tex2dataURL } from "./LaTeX";
-import { NewFileActions, Prompt } from "./dialogs/Prompt";
-import { t } from "./lang/helpers";
-import { ScriptEngine } from "./Scripts";
-import { ConnectionPoint, ExcalidrawAutomateInterface } from "./types";
+} from "src/utils/Utils";
+import { getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, isObsidianThemeDark } from "src/utils/ObsidianUtils";
+import { AppState, BinaryFileData,  ExcalidrawImperativeAPI, Point } from "@zsviczian/excalidraw/types/types";
+import { EmbeddedFile, EmbeddedFilesLoader, FileData } from "src/EmbeddedFileLoader";
+import { tex2dataURL } from "src/LaTeX";
+import { NewFileActions, Prompt } from "src/dialogs/Prompt";
+import { t } from "src/lang/helpers";
+import { ScriptEngine } from "src/Scripts";
+import { ConnectionPoint, DeviceType  } from "src/types";
 import CM, { ColorMaster, extendPlugins } from "colormaster";
 import HarmonyPlugin from "colormaster/plugins/harmony";
 import MixPlugin from "colormaster/plugins/mix"
@@ -67,10 +68,10 @@ import HSVPlugin from "colormaster/plugins/hsv";
 import RYBPlugin from "colormaster/plugins/ryb";
 import CMYKPlugin from "colormaster/plugins/cmyk";
 import { TInput } from "colormaster/types";
-import {ConversionResult, svgToExcalidraw} from "./svgToExcalidraw/parser"
-import { ROUNDNESS } from "./Constants";
+import {ConversionResult, svgToExcalidraw} from "src/svgToExcalidraw/parser"
+import { ROUNDNESS } from "src/Constants";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
-import { emulateKeysForLinkClick, KeyEvent, PaneTarget } from "./utils/ModifierkeyHelper";
+import { emulateKeysForLinkClick, KeyEvent, PaneTarget } from "src/utils/ModifierkeyHelper";
 
 extendPlugins([
   HarmonyPlugin,
@@ -92,13 +93,7 @@ declare const PLUGIN_VERSION:string;
 
 const GAP = 4;
 
-declare global {
-  interface Window {
-    ExcalidrawAutomate: ExcalidrawAutomateInterface;
-  }
-}
-
-export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
+export class ExcalidrawAutomate {
   /**
    * Utility function that returns the Obsidian Module object.
    */
@@ -106,6 +101,10 @@ export class ExcalidrawAutomate implements ExcalidrawAutomateInterface {
     return obsidian_module;
   };
 
+  get DEVICE():DeviceType {
+    return DEVICE;
+  }
+  
   public async getAttachmentFilepath(filename: string): Promise<string> {
     if (!this.targetView || !this.targetView?.file) {
       errorMessage("targetView not set", "getAttachmentFolderAndFilePath()");
@@ -2230,6 +2229,7 @@ export async function initExcalidrawAutomate(
 ): Promise<ExcalidrawAutomate> {
   await initFonts();
   const ea = new ExcalidrawAutomate(plugin);
+  //@ts-ignore
   window.ExcalidrawAutomate = ea;
   return ea;
 }

@@ -1,4 +1,6 @@
 import { customAlphabet } from "nanoid";
+import { DeviceType } from "./types";
+import { Platform } from "obsidian";
 //This is only for backward compatibility because an early version of obsidian included an encoding to avoid fantom links from littering Obsidian graph view
 declare const PLUGIN_VERSION:string;
 
@@ -26,17 +28,8 @@ export function JSON_parse(x: string): any {
   return JSON.parse(x.replaceAll("&#91;", "["));
 }
 export const isDarwin = /Mac|iPod|iPhone|iPad/.test(window.navigator.platform);
-export const DEVICE: {
-  isDesktop: boolean,
-  isPhone: boolean,
-  isTablet: boolean,
-  isMobile: boolean,
-  isLinux: boolean,
-  isMacOS: boolean,
-  isWindows: boolean,
-  isIOS: boolean,
-  isAndroid: boolean
-} = {
+
+export const DEVICE: DeviceType = {
   isDesktop: !document.body.hasClass("is-tablet") && !document.body.hasClass("is-mobile"),
   isPhone: document.body.hasClass("is-phone"),
   isTablet: document.body.hasClass("is-tablet"),
