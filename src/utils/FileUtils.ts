@@ -127,7 +127,7 @@ export function getEmbedFilename(
       : settings.useExcalidrawExtension
       ? ".excalidraw.md"
       : ".md")
-  );
+  ).trim();
 }
 
 /**

@@ -374,7 +374,7 @@ FILENAME_HEAD: "Filename",
     "or a PNG or an SVG copy. You need to enable auto-export PNG / SVG (see below under Export Settings) for those image types to be available in the dropdown. For drawings that do not have a " +
     "a corresponding PNG or SVG readily available the command palette action will insert a broken link. You need to open the original drawing and initiate export manually. " +
     "This option will not autogenerate PNG/SVG files, but will simply reference the already existing files.",
-  EMBED_WIKILINK_NAME: "Embed SVG or PNG as Wiki link",
+  EMBED_WIKILINK_NAME: "Embed Drawing using Wiki link",
   EMBED_WIKILINK_DESC:
     "Toggle ON: Excalidraw will embed a [[wiki link]]. Toggle OFF: Excalidraw will embed a [markdown](link).",
   EXPORT_PNG_SCALE_NAME: "PNG export image scale",

@@ -1,0 +1,3 @@
+// Magyar
+
+export default {};

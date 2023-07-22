@@ -109,3 +109,7 @@ export const emulateKeysForLinkClick = (action: PaneTarget): ModifierKeys => {
   }
   return ev;
 }
+
+export const anyModifierKeysPressed = (e: ModifierKeys): boolean => {
+  return e.shiftKey || e.ctrlKey || e.metaKey || e.altKey;
+}

@@ -1,15 +1,4 @@
-import { ExcalidrawBindableElement, ExcalidrawElement, ExcalidrawImageElement, FileId, FillStyle, NonDeletedExcalidrawElement, RoundnessType, StrokeRoundness, StrokeStyle } from "@zsviczian/excalidraw/types/element/types";
-import { AppState, BinaryFileData, ExcalidrawImperativeAPI, Point } from "@zsviczian/excalidraw/types/types";
-import { TFile, WorkspaceLeaf } from "obsidian";
-import { EmbeddedFilesLoader } from "./EmbeddedFileLoader";
 import { ExcalidrawAutomate } from "./ExcalidrawAutomate";
-import ExcalidrawView, { ExportSettings } from "./ExcalidrawView";
-import ExcalidrawPlugin from "./main";
-import { ColorMaster } from "colormaster";
-import { TInput } from "colormaster/types";
-import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
-import { PaneTarget } from "./utils/ModifierkeyHelper";
-
 
 export type ConnectionPoint = "top" | "bottom" | "left" | "right" | null;
 
@@ -34,3 +23,9 @@ export type DeviceType = {
   isIOS: boolean,
   isAndroid: boolean
 };
+
+declare global {
+  interface Window {
+      ExcalidrawAutomate: ExcalidrawAutomate;
+  }
+}

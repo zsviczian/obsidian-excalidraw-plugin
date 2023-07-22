@@ -45,7 +45,7 @@ import {
   scaleLoadedImage,
   wrapTextAtCharLength,
 } from "src/utils/Utils";
-import { getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, isObsidianThemeDark } from "src/utils/ObsidianUtils";
+import { getAttachmentsFolderAndFilePath, getLeaf, getNewOrAdjacentLeaf, isObsidianThemeDark } from "src/utils/ObsidianUtils";
 import { AppState, BinaryFileData,  ExcalidrawImperativeAPI, Point } from "@zsviczian/excalidraw/types/types";
 import { EmbeddedFile, EmbeddedFilesLoader, FileData } from "src/EmbeddedFileLoader";
 import { tex2dataURL } from "src/LaTeX";
@@ -150,6 +150,20 @@ export class ExcalidrawAutomate {
     )
     newFilePrompt.open();
     return await newFilePrompt.waitForClose;
+  }
+
+  /**
+   * Generates a new Obsidian Leaf following Excalidraw plugin settings such as open in Main Workspace or not, open in adjacent pane if avaialble, etc.
+   * @param origo // the currently active leaf, the origin of the new leaf
+   * @param targetPane //type PaneTarget = "active-pane"|"new-pane"|"popout-window"|"new-tab"|"md-properties";
+   * @returns 
+   */
+  public getLeaf (
+    origo: WorkspaceLeaf,
+    targetPane?: PaneTarget,
+  ): WorkspaceLeaf {
+    const modifierKeys = emulateKeysForLinkClick(targetPane??"new-tab");
+    return getLeaf(this.plugin,origo,modifierKeys);
   }
 
   plugin: ExcalidrawPlugin;

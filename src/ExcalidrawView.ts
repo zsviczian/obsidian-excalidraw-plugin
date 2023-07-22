@@ -116,7 +116,7 @@ import { getTextElementAtPointer, getImageElementAtPointer, getElementWithLinkAt
 import { ICONS, saveIcon } from "./menu/ActionIcons";
 import { ExportDialog } from "./dialogs/ExportDialog";
 import { getEA } from "src";
-import { emulateCTRLClickForLinks, externalDragModifierType, internalDragModifierType, isALT, isCTRL, isMETA, isSHIFT, linkClickModifierType, mdPropModifier, ModifierKeys } from "./utils/ModifierkeyHelper";
+import { anyModifierKeysPressed, emulateCTRLClickForLinks, emulateKeysForLinkClick, externalDragModifierType, internalDragModifierType, isALT, isCTRL, isMETA, isSHIFT, linkClickModifierType, mdPropModifier, ModifierKeys } from "./utils/ModifierkeyHelper";
 import { setDynamicStyle } from "./utils/DynamicStyling";
 import { InsertPDFModal } from "./dialogs/InsertPDFModal";
 import { CustomEmbeddable, renderWebView } from "./customEmbeddable";
@@ -1043,9 +1043,8 @@ export default class ExcalidrawView extends TextFileView {
         new NewFileActions(this.plugin, linkText, keys, this).open();
         return;
       }
-      if(this.linksAlwaysOpenInANewPane) {
-        keys.ctrlKey = true;
-        keys.altKey = true;
+      if(this.linksAlwaysOpenInANewPane && !anyModifierKeysPressed(keys)) {
+        keys = emulateKeysForLinkClick("new-pane");
       }
       const leaf = getLeaf(this.plugin,this.leaf,keys);
       

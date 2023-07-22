@@ -28,40 +28,65 @@ This will avoid any issues with converted files and let you enjoy the new featur
 
 Thank you for your understanding. If you have any questions, feel free to reach out.
 
+---
+
 ## Fixed:
 - PNG image caching resulting in broken images after Obsidian restarts
 - SVG export now displays embedded iframes with the correct embed link (note this feature only works when you open the SVGs in a browser outside Obsidian).
 
-## Updated / fixed / new in Excalidraw Automate
-- I updated the [ExcalidrawAutomateInterface](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/src/types.d.ts) type definition
-- Added new ExcalidrawAutomate function: ${String.fromCharCode(96)}  addEmbeddable(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile): string;${String.fromCharCode(96)}
+## Updated / fixed in Excalidraw Automate
+- I updated ${String.fromCharCode(96)}lib/ExcalidrawAutomate.d.ts${String.fromCharCode(96)} and published a new version of obsidian-excalidraw-plugin type library to npmjs.
+- Added new ExcalidrawAutomate functions: ${String.fromCharCode(96)} addEmbeddable()${String.fromCharCode(96)}, ${String.fromCharCode(96)}DEVICE${String.fromCharCode(96)}, ${String.fromCharCode(96)}newFilePrompt()${String.fromCharCode(96)}, and ${String.fromCharCode(96)}getLeaf()${String.fromCharCode(96)}
 - ${String.fromCharCode(96)}addImage${String.fromCharCode(96)} and ${String.fromCharCode(96)}addElementsToView${String.fromCharCode(96)} were extended with 1-1 additional optional parameter. As a result of ${String.fromCharCode(96)}shouldRestoreElements${String.fromCharCode(96)} defaulting to false, all elements in the scene will no longer be updated (iframes will not blink) when you add elements via script.
-- There is a new event hook: onPasteHook. This will be called whenever the user pastes something to the canvas. You can use this callback in case you want to do something additional when the onPaste event occurs. In case you want to prevent the Excalidraw default onPaste action you must return false
+- There is a new event hook: ${String.fromCharCode(96)}onPasteHook${String.fromCharCode(96)}. This will be called whenever the user pastes something to the canvas. You can use this callback if you want to do something additional during the onPaste event. In case you want to prevent the Excalidraw default onPaste action you must return false
 
 ${String.fromCharCode(96,96,96)}typescript
 async addImage(
   topX: number,
   topY: number,
   imageFile: TFile | string,
-  scale: boolean = true, //default is true which will scale the image to MAX_IMAGE_SIZE, false will insert image at 100% of its size
-  anchor: boolean = true, //only has an effect if "scale" is false. If "anchor" is true the image path will include |100%, if false the image will be inserted at 100%, but if resized by the user it won't pop back to 100% the next time Excalidraw is opened.
+  scale: boolean = true,
+  anchor: boolean = true,
 ): Promise<string>;
 
 async addElementsToView(
   repositionToCursor: boolean = false,
   save: boolean = true,
   newElementsOnTop: boolean = false,
-  shouldRestoreElements: boolean = false, //restore elements - auto-corrects broken, incomplete or old elements included in the update
+  shouldRestoreElements: boolean = false,
 ): Promise<boolean>;
 
  onPasteHook: (data: {
   ea: ExcalidrawAutomate;
   payload: ClipboardData;
   event: ClipboardEvent;
-  excalidrawFile: TFile; //the file receiving the paste event
-  view: ExcalidrawView; //the excalidraw view receiving the paste
-  pointerPosition: { x: number; y: number }; //the pointer position on canvas
+  excalidrawFile: TFile;
+  view: ExcalidrawView;
+  pointerPosition: { x: number; y: number };
  }) => boolean = null;
+
+addEmbeddable(
+  topX: number,
+  topY: number,
+  width: number,
+  height: number,
+  url?: string,
+  file?: TFile
+): string;
+
+get DEVICE(): DeviceType;
+
+newFilePrompt(
+  newFileNameOrPath: string,
+  shouldOpenNewFile: boolean,
+  targetPane?: PaneTarget,
+  parentFile?: TFile
+): Promise<TFile | null>;
+
+getLeaf(
+  origo: WorkspaceLeaf,
+  targetPane?: PaneTarget
+): WorkspaceLeaf;
 ${String.fromCharCode(96,96,96)}
 `,
 "1.9.8":`

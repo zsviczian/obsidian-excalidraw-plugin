@@ -176,7 +176,7 @@ function RenderObsidianView(
           setTimeout(() => {
             //@ts-ignore
             view.ownerWindow.electronWindow.setAlwaysOnTop(false);
-          }, 150);
+          }, 500);
         }
       }
       leafRef.current.node = view.canvasNodeFactory.createFileNote(file, subpath, containerRef.current, element.id);
