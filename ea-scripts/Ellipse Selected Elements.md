@@ -1,5 +1,5 @@
 /*
-![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-ellipse-elements.jpg)
+![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-ellipse-elements.png)
 
 This script will add an encapsulating ellipse around the currently selected elements in Excalidraw.
 

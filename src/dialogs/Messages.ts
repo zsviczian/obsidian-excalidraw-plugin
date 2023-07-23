@@ -17,6 +17,15 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.10":`
+## New
+- @mazurov added a new script: [Ellipse Selected Elements](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Ellipse%20Selected%20Elements.md)
+
+## Fixed
+- **Image Saving Error**: Previously, inserting an image from Firebase Storage or other URLs could result in an error that prevented the entire drawing from being saved. I have now improved the error handling and image fetching from the web, ensuring smooth image insertion and saving.  
+- **Text Search Bug**: There was an issue where text search failed when frames had default names like "Frame 1," "Frame 2," etc. This has been resolved, and now the text search works correctly in such cases. ([#1239](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1239))   
+- **Image Positioning Fix**: An annoying bug caused the image to jump after inserting it using the "Insert Image" command palette action. I've fixed this issue, and now the image behaves as expected when positioning it for the first time.
+`,
 "1.9.9":`
 ## ⚠️⚠️ IMPORTANT: PLEASE READ ⚠️⚠️
 
