@@ -24,7 +24,7 @@ import ExcalidrawPlugin from "../main";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
 import { ExportSettings } from "../ExcalidrawView";
 import { compressToBase64, decompressFromBase64 } from "lz-string";
-import { getIMGFilename } from "./FileUtils";
+import { getDataURLFromURL, getIMGFilename, getMimeType, getURLImageExtension } from "./FileUtils";
 import ExcalidrawScene from "../svgToExcalidraw/elements/ExcalidrawScene";
 import { IMAGE_TYPES } from "../Constants";
 import { generateEmbeddableLink } from "./CustomEmbeddableUtils";
@@ -229,11 +229,20 @@ export const svgToBase64 = (svg: string): string => {
   )}`;
 };
 
-export const getBinaryFileFromDataURL = (dataURL: string): ArrayBuffer => {
+export const getBinaryFileFromDataURL = async (dataURL: string): Promise<ArrayBuffer> => {
   if (!dataURL) {
     return null;
   }
+  if(dataURL.match(/^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i)) {
+    const hyperlink  = dataURL;
+    const extension = getURLImageExtension(hyperlink)
+    const mimeType = getMimeType(extension);
+    dataURL = await getDataURLFromURL(hyperlink, mimeType)
+  }
   const parts = dataURL.matchAll(/base64,(.*)/g).next();
+  if (!parts.value) {
+    return null;
+  }
   const binary_string = window.atob(parts.value[1]);
   const len = binary_string.length;
   const bytes = new Uint8Array(len);

@@ -1172,9 +1172,12 @@ export class ExcalidrawData {
       await getAttachmentsFolderAndFilePath(this.app, this.file.path, fname)
     ).filepath;
 
+    const arrayBuffer = await getBinaryFileFromDataURL(dataURL);
+    if(!arrayBuffer) return null;
+
     const file = await this.app.vault.createBinary(
       filepath,
-      getBinaryFileFromDataURL(dataURL),
+      arrayBuffer,
     );
 
     const embeddedFile = new EmbeddedFile(
@@ -1182,7 +1185,7 @@ export class ExcalidrawData {
       this.file.path,
       filepath,
     );
-
+    
     embeddedFile.setImage(
       dataURL,
       mimeType,

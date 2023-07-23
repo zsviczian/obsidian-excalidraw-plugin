@@ -96,6 +96,7 @@ export default {
   BACKUP_RESTORED: "Backup restored",
   CACHE_NOT_READY: "I apologize for the inconvenience, but an error occurred while loading your file.<br><br><mark>Having a little patience can save you a lot of time...</mark><br><br>The plugin has a backup cache, but it appears that you have just started Obsidian. Initializing the Backup Cache may take some time, usually up to a minute or more depending on your device's performance. You will receive a notification in the top right corner when the cache initialization is complete.<br><br>Please press OK to attempt loading the file again and check if the cache has finished initializing. If you see a completely empty file behind this message, I recommend waiting until the backup cache is ready before proceeding. Alternatively, you can choose Cancel to manually correct your file.<br>",
   OBSIDIAN_TOOLS_PANEL: "Obsidian Tools Panel",
+  ERROR_SAVING_IMAGE: "Unknown error occured while fetching the image. It could be that for some reason the image is not available or rejected the fetch request from Obsidian",
 
   //settings.ts
   RELEASE_NOTES_NAME: "Display Release Notes after update",

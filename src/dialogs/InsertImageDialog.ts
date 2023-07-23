@@ -61,7 +61,7 @@ export class InsertImageDialog extends FuzzySuggestModal<TFile> {
     const scaleToFullsize = scaleToFullsizeModifier(event);
     (async () => {
       await ea.addImage(0, 0, item, !scaleToFullsize);
-      ea.addElementsToView(true, false, true);
+      ea.addElementsToView(true, true, true);
     })();
   }
 

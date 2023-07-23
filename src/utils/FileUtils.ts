@@ -169,7 +169,38 @@ export const getMimeType = (extension: string):MimeType => {
   }
 }
 
-const getFileFromURL = async (url: string, mimeType: MimeType, timeout: number = URLFETCHTIMEOUT):Promise<RequestUrlResponse> => {
+
+// using fetch API
+const getFileFromURL = async (url: string, mimeType: MimeType, timeout: number = URLFETCHTIMEOUT): Promise<RequestUrlResponse> => {
+  try {
+    const response = await Promise.race([
+      fetch(url),
+      new Promise<Response>((resolve) => setTimeout(() => resolve(null), timeout))
+    ]);
+
+    if (!response) {
+      new Notice(`URL did not load within the timeout period of ${timeout}ms.\n\nTry force-saving again in a few seconds.\n\n${url}`,8000);
+      throw new Error(`URL did not load within the timeout period of ${timeout}ms`);
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+
+    return {
+      status: response.status,
+      headers: Object.fromEntries(response.headers.entries()),
+      arrayBuffer: arrayBuffer,
+      json: null,
+      text: null,
+    };
+  } catch (e) {
+    errorlog({ where: getFileFromURL, message: e.message, url: url });
+    return undefined;
+  }
+};
+
+// using Obsidian requestUrl (this failed on a firebase link)
+// https://firebasestorage.googleapis.com/v0/b/firescript-577a2.appspot.com/o/imgs%2Fapp%2FJSG%2FfTMP6WGQRC.png?alt=media&token=6d2993b4-e629-46b6-98d1-133af7448c49
+const getFileFromURLFallback = async (url: string, mimeType: MimeType, timeout: number = URLFETCHTIMEOUT):Promise<RequestUrlResponse> => {
   try {
     return await Promise.race([
       (async () => new Promise<RequestUrlResponse>((resolve) => setTimeout(()=>resolve(null), timeout)))(),
@@ -181,12 +212,15 @@ const getFileFromURL = async (url: string, mimeType: MimeType, timeout: number =
   }
 }
 
-export const getDataURLFromURL = async (url: string, mimeType: MimeType, timeout: number = URLFETCHTIMEOUT):Promise<DataURL> => {
-  const response = await getFileFromURL(url, mimeType, timeout);
+export const getDataURLFromURL = async (url: string, mimeType: MimeType, timeout: number = URLFETCHTIMEOUT): Promise<DataURL> => {
+  let response = await getFileFromURL(url, mimeType, timeout);
+  if(response && response.status !== 200) {
+    response = await getFileFromURLFallback(url, mimeType, timeout);
+  }
   return response && response.status === 200
     ? await getDataURL(response.arrayBuffer, mimeType)
     : url as DataURL;
-}
+};
 
 export const blobToBase64 = async (blob: Blob): Promise<string> => {
   const arrayBuffer = await blob.arrayBuffer()

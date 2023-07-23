@@ -871,6 +871,7 @@ export class ExcalidrawAutomate {
       [this.getElement(id)],
       { x: topX, y: topY },
       false,
+      this.getExcalidrawAPI(),
     )[0];
     return id;
   };
@@ -1688,7 +1689,7 @@ export class ExcalidrawAutomate {
       errorMessage("targetView not set", "addElementsToView()");
       return false;
     }
-    const elements = this.getElements();
+    const elements = this.getElements();    
     return await this.targetView.addElements(
       elements,
       repositionToCursor,
@@ -2587,6 +2588,7 @@ export function repositionElementsToCursor(
   elements: ExcalidrawElement[],
   newPosition: { x: number; y: number },
   center: boolean = false,
+  api: ExcalidrawImperativeAPI,
 ): ExcalidrawElement[] {
   const [x1, y1, x2, y2] = estimateBounds(elements);
   let [offsetX, offsetY] = [0, 0];
@@ -2604,7 +2606,8 @@ export function repositionElementsToCursor(
     element.x = element.x + offsetX;
     element.y = element.y + offsetY;
   });
-  return elements;
+  
+  return api.restore({elements}).elements;
 }
 
 function errorMessage(message: string, source: string) {
@@ -2743,18 +2746,20 @@ export const getFrameElementsMatchingQuery = (
         }
         return m[1] === q.toLowerCase();
       }
-      const text = el.name.toLowerCase().replaceAll("\n", " ").trim();
+      const text = el.name
+       ? el.name.toLowerCase().replaceAll("\n", " ").trim()
+       : "";
+
       return text.match(q.toLowerCase()); //to distinguish between "# frame" and "# frame 1" https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530
     }));
 }
 
 export const cloneElement = (el: ExcalidrawElement):any => {
-  return {
-    ...el,
-    version: el.version + 1,
-    updated: Date.now(),
-    versionNonce: Math.floor(Math.random() * 1000000000),
-  }
+  const newEl = JSON.parse(JSON.stringify(el));
+  newEl.version = el.version + 1;
+  newEl.updated = Date.now();
+  newEl.versionNonce = Math.floor(Math.random() * 1000000000);
+  return newEl;
 }
 
 export const verifyMinimumPluginVersion = (requiredVersion: string): boolean => {

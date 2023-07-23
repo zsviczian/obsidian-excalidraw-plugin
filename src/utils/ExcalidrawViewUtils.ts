@@ -21,7 +21,7 @@ export const insertImageToView = async (
     file,
     scale,
   );
-  await ea.addElementsToView(false, false, true);
+  await ea.addElementsToView(false, true, true);
   return id;
 }
 
@@ -45,7 +45,7 @@ export const insertEmbeddableToView = async (
       link,
       file,
     );
-    await ea.addElementsToView(false, false, true);
+    await ea.addElementsToView(false, true, true);
     return id;
   }
 }

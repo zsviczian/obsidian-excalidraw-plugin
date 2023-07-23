@@ -2194,6 +2194,10 @@ export default class ExcalidrawView extends TextFileView {
     const dataURL = await getDataURLFromURL(link,mimeType,3000);
     const fileId = await generateIdFromFile((new TextEncoder()).encode(dataURL as string))
     const file = await this.excalidrawData.saveDataURLtoVault(dataURL,mimeType,fileId);
+    if(!file) {
+      new Notice(t("ERROR_SAVING_IMAGE"));
+      return;
+    }
     await ea.addImage(0,0,file);
     ea.addElementsToView(true,true,true);
   }
@@ -2648,6 +2652,7 @@ export default class ExcalidrawView extends TextFileView {
             newElements,
             this.currentPosition,
             true,
+            api,
           );
         }
 
