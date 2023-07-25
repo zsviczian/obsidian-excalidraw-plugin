@@ -1020,6 +1020,43 @@ export default class ExcalidrawPlugin extends Plugin {
     });
 
     this.addCommand({
+      id: "disable-framerendering",
+      name: t("TOGGLE_FRAME_RENDERING"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return (
+            Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
+          );
+        }
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
+          view.toggleFrameRendering();
+          return true;
+        }
+        return false;
+      },
+    });
+
+    this.addCommand({
+      id: "disable-frameclipping",
+      name: t("TOGGLE_FRAME_CLIPPING"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return (
+            Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
+          );
+        }
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
+          view.toggleFrameClipping();
+          return true;
+        }
+        return false;
+      },
+    });
+
+
+    this.addCommand({
       id: "export-image",
       name: t("EXPORT_IMAGE"),
       checkCallback: (checking: boolean) => {

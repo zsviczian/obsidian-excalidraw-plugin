@@ -1,10 +1,13 @@
 import { customAlphabet } from "nanoid";
 import { DeviceType } from "./types";
 import { Platform } from "obsidian";
+import { ExcalidrawLib } from "./ExcalidrawLib";
 //This is only for backward compatibility because an early version of obsidian included an encoding to avoid fantom links from littering Obsidian graph view
 declare const PLUGIN_VERSION:string;
 
 export const ERROR_IFRAME_CONVERSION_CANCELED = "iframe conversion canceled";
+
+declare const excalidrawLib: typeof ExcalidrawLib;
 
 export const {
   sceneCoordsToViewportCoords,
@@ -21,7 +24,7 @@ export const {
   exportToSvg,
   exportToBlob,
   mutateElement,
-  //@ts-ignore
+  restore,
 } = excalidrawLib;
 
 export function JSON_parse(x: string): any {

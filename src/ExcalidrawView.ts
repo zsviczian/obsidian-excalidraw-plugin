@@ -9,7 +9,6 @@ import {
   MarkdownView,
   request,
   requireApiVersion,
-  WorkspaceSplit,
 } from "obsidian";
 //import * as React from "react";
 //import * as ReactDOM from "react-dom";
@@ -49,6 +48,7 @@ import {
   EXPORT_IMG_ICON_NAME,
   viewportCoordsToSceneCoords,
   ERROR_IFRAME_CONVERSION_CANCELED,
+  restore,
 } from "./Constants";
 import ExcalidrawPlugin from "./main";
 import { 
@@ -772,6 +772,18 @@ export default class ExcalidrawView extends TextFileView {
     const newState = !this.excalidrawAPI.getAppState().invertBindingBehaviour;
     this.updateScene({appState: {invertBindingBehaviour:newState}});
     new Notice(newState ? "Inverted Mode: Default arrow binding is now disabled. Use CTRL/CMD to temporarily enable binding when needed." : "Normal Mode: Arrow binding is now enabled. Use CTRL/CMD to temporarily disable binding when needed.");
+  }
+
+  toggleFrameRendering() {
+    const frameRenderingSt = (this.excalidrawAPI as ExcalidrawImperativeAPI).getAppState().frameRendering;
+    this.updateScene({appState: {frameRendering: {...frameRenderingSt, enabled: !frameRenderingSt.enabled}}});
+    new Notice(frameRenderingSt.enabled ? "Frame Rendering: Enabled" : "Frame Rendering: Disabled");
+  }
+
+  toggleFrameClipping() {
+    const frameRenderingSt = (this.excalidrawAPI as ExcalidrawImperativeAPI).getAppState().frameRendering;
+    this.updateScene({appState: {frameRendering: {...frameRenderingSt, clip: !frameRenderingSt.clip}}});
+    new Notice(frameRenderingSt.clip ? "Frame Clipping: Enabled" : "Frame Clipping: Disabled");
   }
 
   gotoFullscreen() {
@@ -2773,6 +2785,7 @@ export default class ExcalidrawView extends TextFileView {
             colorPalette: st.colorPalette,
             currentStrokeOptions: st.currentStrokeOptions,
             previousGridSize: st.previousGridSize,
+            frameRendering: st.frameRendering,
           },
           prevTextMode: this.prevTextMode,
           files,
@@ -4337,15 +4350,15 @@ export default class ExcalidrawView extends TextFileView {
       files?: any;
       commitToHistory?: boolean;
     },
-    restore: boolean = false,
+    shouldRestore: boolean = false,
   ) {
     const api = this.excalidrawAPI;
     if (!api) {
       return;
     }
-    const shouldRestoreElements = scene.elements && restore;
+    const shouldRestoreElements = scene.elements && shouldRestore;
     if (shouldRestoreElements) {
-      scene.elements = api.restore(scene).elements;
+      scene.elements = restore(scene, null, null).elements;
     }
     try {
       api.updateScene(scene);
@@ -4360,7 +4373,7 @@ export default class ExcalidrawView extends TextFileView {
       if (!shouldRestoreElements) {
         //second attempt
         try {
-          scene.elements = api.restore(scene).elements;
+          scene.elements = restore(scene, null, null).elements;
           api.updateScene(scene);
         } catch (e) {
           errorlog({

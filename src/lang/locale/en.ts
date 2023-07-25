@@ -507,6 +507,8 @@ FILENAME_HEAD: "Filename",
   EXIT_FULLSCREEN: "Exit fullscreen mode",
   TOGGLE_FULLSCREEN: "Toggle fullscreen mode",
   TOGGLE_DISABLEBINDING: "Toggle to invert default binding behavior",
+  TOGGLE_FRAME_RENDERING: "Toggle frame rendering",
+  TOGGLE_FRAME_CLIPPING: "Toggle frame clipping",
   OPEN_LINK_CLICK: "Navigate to selected element link",
   OPEN_LINK_PROPS: "Open markdown-embed properties or open link in new window",
 

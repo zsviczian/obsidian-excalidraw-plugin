@@ -50,8 +50,10 @@ const startFullscreen = !altKey;
 //For this reason event handlers are distributed between window and owner window depending on their role
 const ownerWindow = ea.targetView.ownerWindow;
 const excalidrawAPI = ea.getExcalidrawAPI();
+const frameRenderingOriginalState = excalidrawAPI.getAppState().frameRendering;
 const contentEl = ea.targetView.contentEl;
 const sleep = async (ms) => new Promise((resolve) => ownerWindow.setTimeout(resolve, ms));
+const getFrameName = (name, index) => name ?? `Frame ${(index+1).toString().padStart(2, '0')}`;
 
 //-------------------------------
 //clean up potential clutter from previous run
@@ -63,9 +65,10 @@ let presentationPathLineEl = ea.getViewElements()
   .filter(el=>["line","arrow"].contains(el.type) && el.customData?.slideshow)[0];
 let frames = ea.getViewElements()
   .filter(el=>el.type==="frame")
-  .map((f,i)=>[f,i]) //because frame.name is null until set
-  .sort((el1,el2)=>((el1[0].name??`Frame ${el1[1]}`)>(el2[0].name??`Frame ${el2[1]}`))?1:-1)
+  .map((frame,index)=>[frame,index]) //because frame.name is null until set
+  .sort((el1,el2)=> getFrameName(el1[0], el1[1]) > getFrameName(el2[0], el2[1]) ? -1:1)
   .map(el=>el[0]); 
+
 let presentationPathType = "line"; // "frame"
 const selectedEl = ea.getViewSelectedElement();
 let shouldHideArrowAfterPresentation = true; //this controls if the hide arrow button is available in settings
@@ -124,7 +127,16 @@ if(presentationPathType === "frame") {
 		  y2: frame.y + frame.height
 		});
 	}
-	excalidrawAPI.updateScene({appState:{shouldRenderFrames:false}});
+	if(frameRenderingOriginalState.enabled) {
+  	excalidrawAPI.updateScene({
+	    appState: {
+	      frameRendering: {
+	        ...frameRenderingOriginalState,
+	        enabled: false
+	      }
+	    }
+	  });
+	}
 }
 
 //---------------------------------------
@@ -406,7 +418,9 @@ const createPresentationNavigationPanel = () => {
     }, selectEl => {
 	    for (let i = 0; i < slides.length; i++) {
 	      const option = document.createElement("option");
-	      option.text = `Slide ${i + 1}/${slides.length}`;
+        option.text = (presentationPathType === "frame")
+          ? `${getFrameName(frames[i]?.name,i)}/${slides.length}`
+          : option.text = `Slide ${i + 1}/${slides.length}`;
 	      option.value = i + 1;
 	      selectEl.add(option);
 	    }
@@ -647,7 +661,16 @@ const exitPresentation = async (openForEdit = false) => {
 	    );
 	  }
 	} else {
-	  excalidrawAPI.updateScene({appState:{shouldRenderFrames:true}});
+	  if(frameRenderingOriginalState.enabled) {
+	  	excalidrawAPI.updateScene({
+		    appState: {
+		      frameRendering: {
+		        ...frameRenderingOriginalState,
+		        enabled: true
+		      }
+		    }
+		  });
+		}
 	}
   window.removePresentationEventHandlers?.();
   ownerWindow.setTimeout(()=>{

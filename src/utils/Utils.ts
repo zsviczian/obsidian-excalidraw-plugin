@@ -25,9 +25,10 @@ import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
 import { ExportSettings } from "../ExcalidrawView";
 import { compressToBase64, decompressFromBase64 } from "lz-string";
 import { getDataURLFromURL, getIMGFilename, getMimeType, getURLImageExtension } from "./FileUtils";
-import ExcalidrawScene from "../svgToExcalidraw/elements/ExcalidrawScene";
 import { IMAGE_TYPES } from "../Constants";
 import { generateEmbeddableLink } from "./CustomEmbeddableUtils";
+import Scene from "@zsviczian/excalidraw/types/scene/Scene";
+import ExcalidrawScene from "src/svgToExcalidraw/elements/ExcalidrawScene";
 
 declare const PLUGIN_VERSION:string;
 

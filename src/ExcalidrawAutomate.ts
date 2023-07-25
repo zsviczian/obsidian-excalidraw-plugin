@@ -30,6 +30,7 @@ import {
   intersectElementWithLine,
   measureText,
   DEVICE,
+  restore,
 } from "src/Constants";
 import { getDrawingFilename, getNewUniqueFilepath, } from "src/utils/FileUtils";
 import {
@@ -2607,7 +2608,7 @@ export function repositionElementsToCursor(
     element.y = element.y + offsetY;
   });
   
-  return api.restore({elements}).elements;
+  return restore({elements}, null, null).elements;
 }
 
 function errorMessage(message: string, source: string) {

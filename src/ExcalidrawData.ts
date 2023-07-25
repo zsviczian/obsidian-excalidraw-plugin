@@ -719,7 +719,7 @@ export class ExcalidrawData {
           wrapAt ? wrapText(
             originalText,
             getFontString({fontSize: te.fontSize, fontFamily: te.fontFamily}),
-            getBoundTextMaxWidth(container)
+            getBoundTextMaxWidth(container as any)
           ) : originalText,
           originalText,
           forceupdate,

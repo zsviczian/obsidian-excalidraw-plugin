@@ -1,5 +1,6 @@
 import { GITHUB_RELEASES } from "src/Constants";
 import { ExcalidrawGenericElement } from "./ExcalidrawElement";
+
 declare const PLUGIN_VERSION:string;
 
 class ExcalidrawScene {
