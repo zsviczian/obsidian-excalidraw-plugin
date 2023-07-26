@@ -18,6 +18,14 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
 "1.9.11":`
+# New
+- I added 2 new command palette actions: 1) to toggle frame clipping and 2) to toggle frame rendering.
+
+# Updated
+- I released a minor update to the slideshow script. Frame sequence (Frame 1, 2, 3, ...) will now be displayed in proper order. Frames will be hidden during the presentation (this was there before, but there was a change to excalidraw.com that broke this feature of the slideshow script).
+
+# Fixed: 
+- Excalidraw Automate error introduced with 1.9.10 - when elements are repositioned to cursor and no ExcalidrawView is active
 `,
 "1.9.10":`
 ## New
