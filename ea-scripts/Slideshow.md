@@ -63,11 +63,14 @@ window.removePresentationEventHandlers?.();
 //1. check if line or arrow is selected, if not check if frames are available, if not inform the user and terminate presentation
 let presentationPathLineEl = ea.getViewElements()
   .filter(el=>["line","arrow"].contains(el.type) && el.customData?.slideshow)[0];
-let frames = ea.getViewElements()
-  .filter(el=>el.type==="frame")
-  .map((frame,index)=>[frame,index]) //because frame.name is null until set
-  .sort((el1,el2)=> getFrameName(el1[0], el1[1]) > getFrameName(el2[0], el2[1]) ? -1:1)
-  .map(el=>el[0]); 
+
+const frameClones = [];
+ea.getViewElements().filter(el=>el.type==="frame").forEach(f=>frameClones.push(ea.cloneElement(f)));
+for(i=0;i<frameClones.length;i++) {
+  frameClones[i].name = getFrameName(frameClones[i].name,i);
+}
+let frames = frameClones
+  .sort((el1,el2)=> el1.name > el2.name ? 1:-1); 
 
 let presentationPathType = "line"; // "frame"
 const selectedEl = ea.getViewSelectedElement();
@@ -419,7 +422,7 @@ const createPresentationNavigationPanel = () => {
 	    for (let i = 0; i < slides.length; i++) {
 	      const option = document.createElement("option");
         option.text = (presentationPathType === "frame")
-          ? `${getFrameName(frames[i]?.name,i)}/${slides.length}`
+          ? `${frames[i].name}/${slides.length}`
           : option.text = `Slide ${i + 1}/${slides.length}`;
 	      option.value = i + 1;
 	      selectEl.add(option);
