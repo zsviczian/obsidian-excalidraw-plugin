@@ -1,6 +1,5 @@
 import { customAlphabet } from "nanoid";
 import { DeviceType } from "./types";
-import { Platform } from "obsidian";
 import { ExcalidrawLib } from "./ExcalidrawLib";
 //This is only for backward compatibility because an early version of obsidian included an encoding to avoid fantom links from littering Obsidian graph view
 declare const PLUGIN_VERSION:string;

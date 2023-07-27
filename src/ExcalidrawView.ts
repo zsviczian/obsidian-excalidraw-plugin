@@ -113,7 +113,7 @@ import { ObsidianMenu } from "./menu/ObsidianMenu";
 import { ToolsPanel } from "./menu/ToolsPanel";
 import { ScriptEngine } from "./Scripts";
 import { getTextElementAtPointer, getImageElementAtPointer, getElementWithLinkAtPointer } from "./utils/GetElementAtPointer";
-import { ICONS, saveIcon } from "./menu/ActionIcons";
+import { ICONS, LogoWrapper, saveIcon } from "./menu/ActionIcons";
 import { ExportDialog } from "./dialogs/ExportDialog";
 import { getEA } from "src";
 import { anyModifierKeysPressed, emulateCTRLClickForLinks, emulateKeysForLinkClick, externalDragModifierType, internalDragModifierType, isALT, isCTRL, isMETA, isSHIFT, linkClickModifierType, mdPropModifier, ModifierKeys } from "./utils/ModifierkeyHelper";
@@ -125,6 +125,7 @@ import { imageCache } from "./utils/ImageCache";
 import { CanvasNodeFactory } from "./utils/CanvasNodeFactory";
 import { EmbeddableMenu } from "./menu/EmbeddableActionsMenu";
 import { useDefaultExcalidrawFrame } from "./utils/CustomEmbeddableUtils";
+import { UniversalInsertFileModal } from "./dialogs/UniversalInsertFileModal";
 
 declare const PLUGIN_VERSION:string;
 
@@ -1081,7 +1082,10 @@ export default class ExcalidrawView extends TextFileView {
         console.error(e);
       }
         
-      await leaf.openFile(file, subpath ? { active: !this.linksAlwaysOpenInANewPane, eState: { subpath } } : undefined); //if file exists open file and jump to reference
+      await leaf.openFile(file, {
+        active: !this.linksAlwaysOpenInANewPane,
+        ...subpath ? { eState: { subpath } } : {}
+      }); //if file exists open file and jump to reference
       //view.app.workspace.setActiveLeaf(leaf, true, true); //0.15.4 ExcaliBrain focus issue
     } catch (e) {
       new Notice(e, 4000);
@@ -3654,8 +3658,31 @@ export default class ExcalidrawView extends TextFileView {
               if (!api) {
                 return [null, null, null];
               }
+
+              // 1. Set the isEditingText flag to true to prevent autoresize on mobile
+              // 1500ms is an empirical number, the onscreen keyboard usually disappears in 1-2 seconds
+              this.semaphores.isEditingText = true;
+              if(this.isEditingTextResetTimer) {
+                clearTimeout(this.isEditingTextResetTimer);
+              }
+              this.isEditingTextResetTimer = setTimeout(() => {
+                this.semaphores.isEditingText = false;
+                this.isEditingTextResetTimer = null;
+              }, 1500);
+
+              // 2. If the text element is deleted, remove it from ExcalidrawData
+              //    parsed textElements cache
+              if (isDeleted) {
+                this.excalidrawData.deleteTextElement(textElement.id);
+                this.setDirty(7);
+                return [null, null, null];
+              }
+
+              // 3. Check if the user accidently pasted Excalidraw data from the clipboard
+              //    as text. If so, update the parsed link in ExcalidrawData
+              //    textElements cache and update the text element in the scene with a warning.
               const FORBIDDEN_TEXT = `{"type":"excalidraw/clipboard","elements":[{"`;
-              const WARNING = "PASTING EXCALIDRAW ELEMENTS AS A TEXT ELEMENT IS NOT ALLOWED";
+              const WARNING = t("WARNING_PASTING_ELEMENT_AS_TEXT");
               if(text.startsWith(FORBIDDEN_TEXT)) {
                 setTimeout(()=>{
                   const elements = this.excalidrawAPI.getSceneElements();
@@ -3671,22 +3698,53 @@ export default class ExcalidrawView extends TextFileView {
                 });
                 return [WARNING,WARNING,null];
               }
-              this.semaphores.isEditingText = true;
-              this.isEditingTextResetTimer = setTimeout(() => {
-                this.semaphores.isEditingText = false;
-                this.isEditingTextResetTimer = null;
-              }, 1500); // to give time for the onscreen keyboard to disappear
-
-              if (isDeleted) {
-                this.excalidrawData.deleteTextElement(textElement.id);
-                this.setDirty(7);
-                return [null, null, null];
-              }
 
               const containerId = textElement.containerId;
 
-              //If the parsed text is different than the raw text, and if View is in TextMode.parsed
-              //Then I need to clear the undo history to avoid overwriting raw text with parsed text and losing links
+              const REG_TRANSCLUSION = /^!\[\[([^|\]]*)?.*?]]$|^!\[[^\]]*?]\((.*?)\)$/g;
+              // 4. Check if the text matches the transclusion pattern and if so,
+              //    check if the link in the transclusion can be resolved to a file in the vault
+              //    if the link can be resolved, check if the file is a markdown file but not an
+              //    Excalidraw file. If so, create a timeout to remove the text element from the
+              //    scene and invoke the UniversalInsertFileModal with the file.
+              const match = originalText.trim().matchAll(REG_TRANSCLUSION).next(); //reset the iterator
+              if(match?.value?.[0]) {                
+                const link = match.value[1] ?? match.value[2];
+                const file = app.metadataCache.getFirstLinkpathDest(link, this.file.path);
+                if(file && file instanceof TFile) {
+                  if (file.extension !== "md" || this.plugin.isExcalidrawFile(file))
+                  {
+                    setTimeout(async ()=>{
+                      const elements = this.excalidrawAPI.getSceneElements();
+                      const el = elements.filter((el:ExcalidrawElement)=>el.id === textElement.id) as ExcalidrawTextElement[];
+                      if(el.length === 1) {
+                        const center = {x: el[0].x, y: el[0].y };
+                        const clone = cloneElement(el[0]);
+                        clone.isDeleted = true;
+                        this.excalidrawData.deleteTextElement(clone.id);
+                        elements[elements.indexOf(el[0])] = clone;
+                        this.updateScene({elements});
+                        const ea:ExcalidrawAutomate = getEA(this);
+                        if(IMAGE_TYPES.contains(file.extension)) {
+                          ea.selectElementsInView([await insertImageToView (ea, center, file)]);
+                        } else if(file.extension !== "pdf") {
+                          ea.selectElementsInView([await insertEmbeddableToView (ea, center, file)]);
+                        } else {
+                          const modal = new UniversalInsertFileModal(this.plugin, this);
+                          modal.open(file, center);
+                        }
+                        this.setDirty();
+                      }
+                    });
+                    return [null, null, null];
+                  } else {
+                    new Notice(t("USE_INSERT_FILE_MODAL"),5000);
+                  }
+                }
+              }
+
+              // 5. Check if the user made changes to the text, or
+              //    the text is missing from ExcalidrawData textElements cache (recently copy/pasted)
               if (
                 text !== textElement.text ||
                 originalText !== textElement.originalText ||
@@ -3695,37 +3753,48 @@ export default class ExcalidrawView extends TextFileView {
                 //the user made changes to the text or the text is missing from Excalidraw Data (recently copy/pasted)
                 //setTextElement will attempt a quick parse (without processing transclusions)
                 this.setDirty(8);
+
+                // setTextElement will invoke this callback function in case quick parse was not possible, the parsed text contains transclusions
+                // in this case I need to update the scene asynchronously when parsing is complete
+                const callback = async (wrappedParsedText:string, parsedText:string) => {
+                  //this callback function will only be invoked if quick parse fails, i.e. there is a transclusion in the raw text
+                  if(this.textMode === TextMode.raw) return;
+                  
+                  const elements = this.excalidrawAPI.getSceneElements();
+                  const el = elements.filter((el:ExcalidrawElement)=>el.id === textElement.id);
+                  if(el.length === 1) {
+                    const clone = cloneElement(el[0]);
+                    const containerType = el[0].containerId
+                      ? api.getSceneElements().filter((e:ExcalidrawElement)=>e.id===el[0].containerId)?.[0]?.type
+                      : undefined;
+                    this.excalidrawData.updateTextElement(
+                      clone,
+                      wrappedParsedText,
+                      parsedText,
+                      true,
+                      containerType
+                    );
+                    elements[elements.indexOf(el[0])] = clone;
+                    this.updateScene({elements});
+                    if(clone.containerId) this.updateContainerSize(clone.containerId);
+                    this.setDirty();
+                  }
+                  api.history.clear();
+                };
+
                 const [parseResultWrapped, parseResultOriginal, link] =
                   this.excalidrawData.setTextElement(
                     textElement.id,
                     text,
                     originalText,
-                    async (wrappedParsedText:string, parsedText:string) => {
-                      //this callback function will only be invoked if quick parse fails, i.e. there is a transclusion in the raw text
-                      if(this.textMode === TextMode.raw) return;
-                      
-                      const elements = this.excalidrawAPI.getSceneElements();
-                      const el = elements.filter((el:ExcalidrawElement)=>el.id === textElement.id);
-                      if(el.length === 1) {
-                        const clone = cloneElement(el[0]);
-                        const containerType = el[0].containerId
-                          ? api.getSceneElements().filter((e:ExcalidrawElement)=>e.id===el[0].containerId)?.[0]?.type
-                          : undefined;
-                        this.excalidrawData.updateTextElement(
-                          clone,
-                          wrappedParsedText,
-                          parsedText,
-                          true,
-                          containerType
-                        );
-                        elements[elements.indexOf(el[0])] = clone;
-                        this.updateScene({elements});
-                        if(clone.containerId) this.updateContainerSize(clone.containerId);
-                      }
-                      
-                      api.history.clear();
-                    },
+                    callback,
                   );
+
+                // if quick parse was successful, 
+                //  - check if textElement is in a container and update the container size,
+                //    because the parsed text will have a different size than the raw text had
+                //  - depending on the textMode, return the text with markdown markup or the parsed text
+                // if quick parse was not successful return [null, null, null] to indicate that the no changes were made to the text element
                 if (parseResultWrapped) {
                   //there were no transclusions in the raw text, quick parse was successful
                   if (containerId) {
@@ -3746,6 +3815,7 @@ export default class ExcalidrawView extends TextFileView {
                 }
                 return [null, null, null];
               }
+              // even if the text did not change, container sizes might need to be updated 
               if (containerId) {
                 this.updateContainerSize(containerId, true);
               }
@@ -3782,7 +3852,7 @@ export default class ExcalidrawView extends TextFileView {
               }
 
               if (!event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey) {
-                event = {shiftKey: true, ctrlKey: false, metaKey: false, altKey: false};
+                event = emulateKeysForLinkClick("new-tab");
               }
               
               this.linkClick(
@@ -3790,7 +3860,7 @@ export default class ExcalidrawView extends TextFileView {
                 null,
                 null,
                 {id: element.id, text: link},
-                emulateCTRLClickForLinks(event)
+                event,
               );
               return;
             },
@@ -3954,7 +4024,13 @@ export default class ExcalidrawView extends TextFileView {
               WelcomeScreen.Center,
               {},
               React.createElement(
-                WelcomeScreen.Center.Logo
+                WelcomeScreen.Center.Logo,
+                {},
+                React.createElement(
+                  LogoWrapper,
+                  {},
+                  ICONS.ExcalidrawSword,
+                ),
               ),
               React.createElement(
                 WelcomeScreen.Center.Heading,

@@ -365,3 +365,15 @@ div.excalidraw-draginfo {
     display: block;
     z-index: var(--zIndex-layerUI);
 }
+
+.excalidraw .welcome-screen-center__logo svg {
+  width: 5rem !important;
+}
+
+.excalidraw-image-wrapper {
+  text-align: center;
+}
+
+.excalidraw-image-wrapper img {
+  margin: auto;
+}

@@ -13,6 +13,8 @@ import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 
 export class UniversalInsertFileModal extends Modal {
   private center: { x: number, y: number } = { x: 0, y: 0 };
+  private file: TFile;
+
   constructor(
     private plugin: ExcalidrawPlugin,
     private view: ExcalidrawView,
@@ -51,6 +53,12 @@ export class UniversalInsertFileModal extends Modal {
 
   private onKeyDown: (evt: KeyboardEvent) => void;
 
+  open(file?: TFile, center?: { x: number, y: number }) {
+    this.file = file;
+    this.center = center ?? this.center;
+    super.open();
+  }
+
   onOpen(): void {
     this.containerEl.classList.add("excalidraw-release");
     this.titleEl.setText(`Insert File From Vault`);
@@ -66,7 +74,7 @@ export class UniversalInsertFileModal extends Modal {
     let actionPDF: ButtonComponent;
     let sizeToggleSetting: Setting
     let anchorTo100: boolean = false;
-    let file: TFile;
+    let file = this.file;
 
     const updateForm = async () => {
       const ea = this.plugin.ea;
@@ -240,6 +248,10 @@ export class UniversalInsertFileModal extends Modal {
     });
 
     search.inputEl.focus();
+    if(file) {
+      search.setValue(file.path);
+      suggester.close();
+    }
     updateForm();
   }
 

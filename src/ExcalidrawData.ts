@@ -1346,7 +1346,12 @@ export class ExcalidrawData {
     return this.textElements.get(id)?.raw;
   }
 
-  public getParsedText(id: string): [string, string, string] {
+  /**
+   * returns parsed text with the correct line length
+   * @param id 
+   * @returns 
+   */
+  public getParsedText(id: string): [parseResultWrapped: string, parseResultOriginal: string, link: string] {
     const t = this.textElements.get(id);
     if (!t) {
       return [null, null, null];
@@ -1354,12 +1359,28 @@ export class ExcalidrawData {
     return [wrap(t.parsed, t.wrapAt), t.parsed, null];
   }
 
+  /**
+   * Attempts to quickparse (sycnhronously) the raw text.
+   * 
+   * If successful: 
+   *   - it will set the textElements cache with the parsed result, and
+   *   - return the parsed result as an array of 3 values: [parsedTextWrapped, parsedText, link]
+   * 
+   * If the text contains a transclusion:
+   *   - it will initiate the async parse, and
+   *   - it will return [null,null,null].
+   * @param elementID 
+   * @param rawText 
+   * @param rawOriginalText 
+   * @param updateSceneCallback 
+   * @returns [parseResultWrapped: string, parseResultOriginal: string, link: string]
+   */
   public setTextElement(
     elementID: string,
     rawText: string,
     rawOriginalText: string,
-    updateScene: Function,
-  ): [string, string, string] {
+    updateSceneCallback: Function,
+  ): [parseResultWrapped: string, parseResultOriginal: string, link: string] {
     const maxLineLen = estimateMaxLineLen(rawText, rawOriginalText);
     const [parseResult, link] = this.quickParse(rawOriginalText); //will return the parsed result if raw text does not include transclusion
     if (parseResult) {
@@ -1380,7 +1401,7 @@ export class ExcalidrawData {
         wrapAt: maxLineLen,
       });
       if (parsedText) {
-        updateScene(wrap(parsedText, maxLineLen), parsedText);
+        updateSceneCallback(wrap(parsedText, maxLineLen), parsedText);
       }
     });
     return [null, null, null];

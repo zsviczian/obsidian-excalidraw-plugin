@@ -165,8 +165,7 @@ function RenderObsidianView(
       node: null
     };
 
-    //if subpath is defined, create a canvas node else create a workspace leaf
-    if(subpath && view.canvasNodeFactory.isInitialized()) {
+    const setKeepOnTop = () => {
       const keepontop = (app.workspace.activeLeaf === view.leaf) && DEVICE.isDesktop;
       if (keepontop) {
         //@ts-ignore
@@ -179,15 +178,25 @@ function RenderObsidianView(
           }, 500);
         }
       }
+    }
+
+    //if subpath is defined, create a canvas node else create a workspace leaf
+    if(subpath && view.canvasNodeFactory.isInitialized()) {
+      setKeepOnTop();
       leafRef.current.node = view.canvasNodeFactory.createFileNote(file, subpath, containerRef.current, element.id);
     } else {
       (async () => {
-        await leafRef.current.leaf.openFile(file, subpath ? { eState: { subpath }, state: {mode:"preview"} } : undefined);
+        await leafRef.current.leaf.openFile(file, {
+          active: false,
+          state: {mode:"preview"},
+          ...subpath ? { eState: { subpath }}:{},
+        });
         const viewType = leafRef.current.leaf.view?.getViewType();
         if(viewType === "canvas") {
           leafRef.current.leaf.view.canvas?.setReadonly(true);
         }
         if ((viewType === "markdown") && view.canvasNodeFactory.isInitialized()) {
+          setKeepOnTop();
           //I haven't found a better way of deciding if an .md file has its own view (e.g., kanban) or not
           //This runs only when the file is added, thus should not be a major performance issue
           await leafRef.current.leaf.setViewState({state: {file:null}})

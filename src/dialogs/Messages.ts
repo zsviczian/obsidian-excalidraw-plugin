@@ -17,6 +17,19 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.12":`
+## New
+- If you create a Text Element that includes only a transclusion e.g.: ${String.fromCharCode(96)}![[My Image.png]]${String.fromCharCode(96)} then excalidraw will automatically replace the transclusion with the embedded image.
+- New Excalidraw splash screen icon contributed by Felix Häberle. 😍
+
+<div class="excalidraw-image-wrapper">
+<img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/excalidraw-sword-mini.png'/>
+</div>
+
+## Fixed
+- Popout windows behaved inconsistently losing focus at the time when a markdown file was embedded. Hopefully, this is now working as intended.
+- A number of small fixes that will also improve the ExcaliBrain experience
+`,
 "1.9.11":`
 # New
 - I added 2 new command palette actions: 1) to toggle frame clipping and 2) to toggle frame rendering.

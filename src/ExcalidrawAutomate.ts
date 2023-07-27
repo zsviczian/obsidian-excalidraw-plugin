@@ -740,7 +740,7 @@ export class ExcalidrawAutomate {
         app.metadataCache.fileToLinktext(
           file,
           this.targetView.file.path,
-          file.extension === "md",
+          false, //file.extension === "md", //changed this to false because embedable link navigation in ExcaliBrain
         )
       }]]` : "",
     );
