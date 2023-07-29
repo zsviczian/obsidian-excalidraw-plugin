@@ -832,7 +832,7 @@ export const stringToSVG = (svg: string) => {
     .replace(/stroke\s*=\s*['"][^"']*['"]/g,"")
     .replace(/[^-]width\s*=\s*['"][^"']*['"]/g,"")
     .replace(/[^-]height\s*=\s*['"][^"']*['"]/g,"")
-    .replace("<svg ",`<svg style="stroke:var(--icon-fill-color);color:var(--icon-fill-color);fill:var(--icon-fill-color);strokeWidth:6;" `)
+    .replace("<svg ",`<svg style="stroke:var(--icon-fill-color);color:var(--icon-fill-color);fill:var(--icon-fill-color);stroke-width:6;" `)
     
     return (
       <div dangerouslySetInnerHTML={{__html: svg}}></div>
