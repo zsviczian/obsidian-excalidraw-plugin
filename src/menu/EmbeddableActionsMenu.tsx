@@ -8,8 +8,6 @@ import { ICONS } from "./ActionIcons";
 import { t } from "src/lang/helpers";
 import { ScriptEngine } from "src/Scripts";
 import { REG_BLOCK_REF_CLEAN, ROOTELEMENTSIZE, mutateElement, nanoid, sceneCoordsToViewportCoords } from "src/Constants";
-import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
-import { getEA } from "src";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK } from "src/ExcalidrawData";
 import { processLinkText, useDefaultExcalidrawFrame } from "src/utils/CustomEmbeddableUtils";
 
@@ -55,7 +53,8 @@ export class EmbeddableMenu {
     const view = this.view;
     const api = view?.excalidrawAPI as ExcalidrawImperativeAPI;
     if(!api) return null;
-    if(!appState.activeEmbeddable || appState.activeEmbeddable.state !== "active" || appState.viewModeEnabled) {
+    const disableFrameButtons = appState.viewModeEnabled && !view.allowFrameButtonsInViewMode;
+    if(!appState.activeEmbeddable || appState.activeEmbeddable.state !== "active" || disableFrameButtons) {
       this.menuElementId = null;
       if(this.menuFadeTimeout) {
         clearTimeout(this.menuFadeTimeout);
@@ -90,6 +89,7 @@ export class EmbeddableMenu {
         const { x, y } = sceneCoordsToViewportCoords( { sceneX: element.x, sceneY: element.y }, appState);
         const top = `${y-2.5*ROOTELEMENTSIZE-appState.offsetTop}px`;
         const left = `${x-appState.offsetLeft}px`;
+        
         return (
           <div
             ref={this.containerRef}
@@ -107,6 +107,7 @@ export class EmbeddableMenu {
               className="Island"
               style={{
                 position: "relative",
+                display: "block",
               }}
             >
               <ActionButton
@@ -212,6 +213,7 @@ export class EmbeddableMenu {
             className="Island"
             style={{
               position: "relative",
+              display: "block",
             }}
           >
             {(iframe.src !== link) && !iframe.src.startsWith("https://www.youtube.com") && !iframe.src.startsWith("https://player.vimeo.com") && (

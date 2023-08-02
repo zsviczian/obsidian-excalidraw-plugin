@@ -35,7 +35,6 @@ import {
   FRONTMATTER_KEY,
   TEXT_DISPLAY_RAW_ICON_NAME,
   TEXT_DISPLAY_PARSED_ICON_NAME,
-  FULLSCREEN_ICON_NAME,
   IMAGE_TYPES,
   REG_LINKINDEX_INVALIDCHARS,
   KEYCODE,
@@ -241,6 +240,7 @@ export default class ExcalidrawView extends TextFileView {
   public embeddableMenuRef: React.MutableRefObject<any> = null;
   private parentMoveObserver: MutationObserver;
   public linksAlwaysOpenInANewPane: boolean = false; //override the need for SHIFT+CTRL+click (used by ExcaliBrain)
+  public allowFrameButtonsInViewMode: boolean = false;  //override for ExcaliBrain
   private hookServer: ExcalidrawAutomate;
   public lastSaveTimestamp: number = 0; //used to validate if incoming file should sync with open file
   private lastLoadedFile: TFile = null;
@@ -1209,14 +1209,6 @@ export default class ExcalidrawView extends TextFileView {
     this.linkAction_Element = this.addAction("link", t("OPEN_LINK"), (ev) =>
       this.handleLinkClick(ev),
     );
-
-    if (!app.isMobile) {
-      this.addAction(
-        FULLSCREEN_ICON_NAME,
-        "Use the action on the Excalidraw Obsidian Panel or the Command Palette to exit fullscreen mode. You can set up a hotkey for toggling fullscreen mode in Obsidian settings under Hotkeys.",
-        () => this.gotoFullscreen(),
-      );
-    }
 
     const self = this;
     app.workspace.onLayoutReady(async () => {

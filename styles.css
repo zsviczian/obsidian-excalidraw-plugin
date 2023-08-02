@@ -93,12 +93,16 @@ li[data-testid] {
   margin: 4px !important;
 }
 
-.excalidraw .popover {
+/* .excalidraw .popover {
   padding: 0 !important;
   border-color: transparent !important;
   border: 0 !important;
   box-shadow: 0 !important;
   background-color: transparent !important;
+} */
+
+.excalidraw .popover {
+  position: fixed !important;
 }
 
 .disable-zen-mode--visible {

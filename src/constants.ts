@@ -122,8 +122,8 @@ export const FRONTMATTER = [
 export const EMPTY_MESSAGE = "Hit enter to create a new drawing";
 export const TEXT_DISPLAY_PARSED_ICON_NAME = "quote-glyph";
 export const TEXT_DISPLAY_RAW_ICON_NAME = "presentation";
-export const FULLSCREEN_ICON_NAME = "fullscreen";
-export const EXIT_FULLSCREEN_ICON_NAME = "exit-fullscreen";
+/*export const FULLSCREEN_ICON_NAME = "fullscreen";
+export const EXIT_FULLSCREEN_ICON_NAME = "exit-fullscreen";*/
 export const SCRIPTENGINE_ICON_NAME = "ScriptEngine";
 
 export const KEYBOARD_EVENT_TYPES = [

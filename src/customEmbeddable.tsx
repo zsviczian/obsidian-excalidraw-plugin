@@ -24,18 +24,6 @@ declare module "obsidian" {
 //required to control the video
 //--------------------------------------------------------------------------------
 export const renderWebView = (src: string, view: ExcalidrawView, id: string, appState: UIAppState):JSX.Element =>{
-  /*const twitterLink = src.match(TWITTER_REG);
-  if (twitterLink) {
-    const theme = view.excalidrawData.embeddableTheme === "dark"
-      ? "dark"
-      : view.excalidrawData.embeddableTheme === "light" 
-        ? "light"
-        : view.excalidrawData.embeddableTheme === "auto"
-          ? appState.theme === "dark" ? "dark" : "light"
-          : isObsidianThemeDark() ? "dark" : "light";
-    src = generateEmbeddableLink(src, theme);  
-  }*/
-
   if(DEVICE.isDesktop) {
     return (
       <webview
@@ -206,7 +194,7 @@ function RenderObsidianView(
           if(workspaceLeaf) workspaceLeaf.style.borderRadius = "var(--embeddable-radius)";
           containerRef.current.appendChild(rootSplit.containerEl);
         }
-        patchMobileView(view);  
+        patchMobileView(view);
       })();
     }
 

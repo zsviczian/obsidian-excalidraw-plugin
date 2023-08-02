@@ -1,9 +1,19 @@
 import { RestoredDataState } from "@zsviczian/excalidraw/types/data/restore";
 import { ImportedDataState } from "@zsviczian/excalidraw/types/data/types";
 import { BoundingBox } from "@zsviczian/excalidraw/types/element/bounds";
-import { ExcalidrawBindableElement, ExcalidrawElement, ExcalidrawTextElement, FontFamilyValues, FontString, NonDeleted } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawBindableElement, ExcalidrawElement, ExcalidrawTextElement, FontFamilyValues, FontString, NonDeleted, Theme } from "@zsviczian/excalidraw/types/element/types";
 import { AppState, BinaryFiles, ExportOpts, Point, Zoom } from "@zsviczian/excalidraw/types/types";
 import { Mutable } from "@zsviczian/excalidraw/types/utility-types";
+
+type EmbeddedLink =
+  | ({
+      aspectRatio: { w: number; h: number };
+      warning?: string;
+    } & (
+      | { type: "video" | "generic"; link: string }
+      | { type: "document"; srcdoc: (theme: Theme) => string }
+    ))
+  | null;
 
 declare namespace ExcalidrawLib {
   type ElementUpdate<TElement extends ExcalidrawElement> = Omit<
@@ -113,4 +123,6 @@ declare namespace ExcalidrawLib {
     updates: ElementUpdate<TElement>,
     informMutation?: boolean,
   ): TElement;  
+
+  function getEmbedLink (link: string | null | undefined): EmbeddedLink;
 }
