@@ -73,9 +73,9 @@ export const SCRIPT_INSTALL_CODEBLOCK = "excalidraw-script-install";
 export const SCRIPT_INSTALL_FOLDER = "Downloaded";
 export const fileid = customAlphabet("1234567890abcdef", 40);
 export const REG_LINKINDEX_INVALIDCHARS = /[<>:"\\|?*#]/g;
-export const REG_BLOCK_REF_CLEAN =
-  /[!"#$%&()*+,.:;<=>?@^`{|}~\/\[\]\\]/g; //https://discord.com/channels/686053708261228577/989603365606531104/1000128926619816048
-  // /\+|\/|~|=|%|\(|\)|{|}|,|&|\.|\$|!|\?|;|\[|]|\^|#|\*|<|>|&|@|\||\\|"|:|\s/g;
+export const REG_BLOCK_REF_CLEAN = /[!"#$%&()*+,.:;<=>?@^`{|}~\/\[\]\\]/g; 
+// https://discord.com/channels/686053708261228577/989603365606531104/1000128926619816048
+// /\+|\/|~|=|%|\(|\)|{|}|,|&|\.|\$|!|\?|;|\[|]|\^|#|\*|<|>|&|@|\||\\|"|:|\s/g;
 export const IMAGE_TYPES = ["jpeg", "jpg", "png", "gif", "svg", "webp", "bmp", "ico"];
 export const EXPORT_TYPES = ["svg", "dark.svg", "light.svg", "png", "dark.png", "light.png"];
 export const MAX_IMAGE_SIZE = 500;

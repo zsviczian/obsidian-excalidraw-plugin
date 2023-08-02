@@ -30,6 +30,8 @@ interface ObsidianCanvas {
 export interface ObsidianCanvasNode {
   startEditing: Function;
   child: any;
+  isEditing: boolean;
+  file: TFile;
 }
 
 export class CanvasNodeFactory {

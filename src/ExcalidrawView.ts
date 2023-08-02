@@ -121,7 +121,7 @@ import { InsertPDFModal } from "./dialogs/InsertPDFModal";
 import { CustomEmbeddable, renderWebView } from "./customEmbeddable";
 import { insertEmbeddableToView, insertImageToView } from "./utils/ExcalidrawViewUtils";
 import { imageCache } from "./utils/ImageCache";
-import { CanvasNodeFactory } from "./utils/CanvasNodeFactory";
+import { CanvasNodeFactory, ObsidianCanvasNode } from "./utils/CanvasNodeFactory";
 import { EmbeddableMenu } from "./menu/EmbeddableActionsMenu";
 import { useDefaultExcalidrawFrame } from "./utils/CustomEmbeddableUtils";
 import { UniversalInsertFileModal } from "./dialogs/UniversalInsertFileModal";
@@ -255,6 +255,7 @@ export default class ExcalidrawView extends TextFileView {
   private draginfoDiv: HTMLDivElement;
   public canvasNodeFactory: CanvasNodeFactory;
   private embeddableRefs = new Map<ExcalidrawElement["id"], HTMLIFrameElement | HTMLWebViewElement>();
+  private embeddableLeafRefs = new Map<ExcalidrawElement["id"], any>();
 
   public semaphores: {
     popoutUnload: boolean; //the unloaded Excalidraw view was the last leaf in the popout window
@@ -1626,6 +1627,7 @@ export default class ExcalidrawView extends TextFileView {
   clear() {
     this.canvasNodeFactory.purgeNodes();
     this.embeddableRefs.clear();
+    this.embeddableLeafRefs.clear();
     
     delete this.exportDialog;
     const api = this.excalidrawAPI;
@@ -4466,6 +4468,42 @@ export default class ExcalidrawView extends TextFileView {
 
   public getEmbeddableElementById(id: string): HTMLIFrameElement | HTMLWebViewElement | undefined {
     return this.embeddableRefs.get(id);
+  }
+
+  public updateEmbeddableLeafRef(id: string, ref: any) {
+    if(ref) {
+      this.embeddableLeafRefs.set(id, ref);
+    }
+  }
+
+  public getEmbeddableLeafElementById(id: string): {leaf: WorkspaceLeaf; node?: ObsidianCanvasNode} | null {
+    const ref = this.embeddableLeafRefs.get(id);
+    if(!ref) {
+      return null;
+    }
+    return ref as {leaf: WorkspaceLeaf; node?: ObsidianCanvasNode};
+  }
+
+  getActiveEmbeddable = ():{leaf: WorkspaceLeaf; node?: ObsidianCanvasNode}|null => {
+    if(!this.excalidrawAPI) return null;
+    const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
+    const st = api.getAppState();
+    if(!st.activeEmbeddable || st.activeEmbeddable.state !== "active" ) return null;
+    return this.getEmbeddableLeafElementById(st.activeEmbeddable?.element?.id);
+  }
+
+  get editor(): any {
+    const embeddable = this.getActiveEmbeddable();
+    if(embeddable) {
+      if(embeddable.node && embeddable.node.isEditing) {
+        return embeddable.node.child.editor;
+      }
+      if(embeddable.leaf?.view instanceof MarkdownView) {
+        return embeddable.leaf.view.editor;
+      }
+    }
+    app.workspace.openLinkText
+    return null;
   }
 }
 

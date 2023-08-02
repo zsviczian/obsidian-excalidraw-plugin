@@ -726,3 +726,13 @@ export const getYouTubeThumbnailLink = async (youtubelink: string):Promise<strin
 
   return `https://i.ytimg.com/vi/${videoId}/default.jpg`;
 }
+
+export const isCallerFromTemplaterPlugin = (stackTrace:string) => {
+  const lines = stackTrace.split("\n");
+  for (const line of lines) {
+    if (line.trim().startsWith("at Templater.")) {
+      return true;
+    }
+  }
+  return false;
+}

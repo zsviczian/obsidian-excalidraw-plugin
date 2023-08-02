@@ -53,6 +53,7 @@ export class EmbeddableMenu {
     const view = this.view;
     const api = view?.excalidrawAPI as ExcalidrawImperativeAPI;
     if(!api) return null;
+    if(!view.file) return null;
     const disableFrameButtons = appState.viewModeEnabled && !view.allowFrameButtonsInViewMode;
     if(!appState.activeEmbeddable || appState.activeEmbeddable.state !== "active" || disableFrameButtons) {
       this.menuElementId = null;

@@ -11,7 +11,7 @@ import {
   StrokeRoundness,
   RoundnessType,
 } from "@zsviczian/excalidraw/types/element/types";
-import { normalizePath, Notice, TFile, WorkspaceLeaf } from "obsidian";
+import { normalizePath, Notice, OpenViewState, TFile, WorkspaceLeaf } from "obsidian";
 import * as obsidian_module from "obsidian";
 import ExcalidrawView, { ExportSettings, TextMode } from "src/ExcalidrawView";
 import { ExcalidrawData, getMarkdownDrawingSection } from "src/ExcalidrawData";
@@ -2010,10 +2010,11 @@ export class ExcalidrawAutomate {
 
   /**
    * Open a file in a new workspaceleaf or reuse an existing adjacent leaf depending on Excalidraw Plugin Settings
-   * @param file 
+   * @param file
+   * @param openState - if not provided {active: true} will be used
    * @returns 
    */
-  openFileInNewOrAdjacentLeaf(file: TFile): WorkspaceLeaf {
+  openFileInNewOrAdjacentLeaf(file: TFile, openState?: OpenViewState): WorkspaceLeaf {
     if (!file || !(file instanceof TFile)) {
       return null;
     }
@@ -2021,7 +2022,7 @@ export class ExcalidrawAutomate {
       return null;
     }
     const leaf = getNewOrAdjacentLeaf(this.plugin, this.targetView.leaf);
-    leaf.openFile(file, {active: true});
+    leaf.openFile(file, openState ?? {active: true});
     return leaf;
   };
 

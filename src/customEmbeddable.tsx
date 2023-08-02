@@ -195,6 +195,7 @@ function RenderObsidianView(
           containerRef.current.appendChild(rootSplit.containerEl);
         }
         patchMobileView(view);
+        view.updateEmbeddableLeafRef(element.id, leafRef.current);
       })();
     }
 

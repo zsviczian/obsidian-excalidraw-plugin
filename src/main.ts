@@ -17,6 +17,7 @@ import {
   MetadataCache,
   FrontMatterCache,
   Command,
+  Workspace,
 } from "obsidian";
 import {
   BLANK_DRAWING,
@@ -63,7 +64,7 @@ import {
   search,
 } from "./ExcalidrawAutomate";
 import { Prompt } from "./dialogs/Prompt";
-import { around } from "monkey-around";
+import { around, dedupe } from "monkey-around";
 import { t } from "./lang/helpers";
 import {
   checkAndCreateFolder,
@@ -82,6 +83,7 @@ import {
   debug,
   isVersionNewerThanOther,
   getExportTheme,
+  isCallerFromTemplaterPlugin,
 } from "./utils/Utils";
 import { getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark } from "./utils/ObsidianUtils";
 //import { OneOffs } from "./OneOffs";
@@ -1578,6 +1580,28 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   private registerMonkeyPatches() {
+    const key = "https://github.com/zsviczian/obsidian-excalidraw-plugin/issues";
+    this.register(
+      around(Workspace.prototype, {
+        getActiveViewOfType(old) {
+          return dedupe(key, old, function(...args) {        
+            const result = old && old.apply(this, args);
+            const maybeEAView = app?.workspace?.activeLeaf?.view;
+            if(!maybeEAView || !(maybeEAView instanceof ExcalidrawView)) return result;
+            const error = new Error();
+            const stackTrace = error.stack;
+            if(!isCallerFromTemplaterPlugin(stackTrace)) return result;
+            const leafOrNode = maybeEAView.getActiveEmbeddable();
+            if(leafOrNode) {
+              if(leafOrNode.node && leafOrNode.node.isEditing) {
+                return {file: leafOrNode.node.file, editor: leafOrNode.node.child.editor};
+              }
+            }
+            return result;
+        });
+       }
+      })
+    );
     //@ts-ignore
     if(!app.plugins?.plugins?.["obsidian-hover-editor"]) {
       this.register( //stolen from hover editor
