@@ -344,6 +344,9 @@ FILENAME_HEAD: "Filename",
     "You can add one custom font beyond that using the setting above. " +
     'You can override this css setting by adding the following frontmatter-key to the embedded markdown file: "excalidraw-css: css_file_in_vault|css-snippet".',
   EMBED_HEAD: "Embed & Export",
+  EMBED_CACHING: "Image caching",
+  EMBED_SIZING: "Image sizing",
+  EMBED_THEME_BACKGROUND: "Image theme and background color",
   EMBED_IMAGE_CACHE_NAME: "Cache images for embedding in markdown",
   EMBED_IMAGE_CACHE_DESC: "Cache images for embedding in markdown. This will speed up the embedding process, but in case you compose images of several sub-component drawings, " +
     "the embedded image in Markdown won't update until you open the drawing and save it to trigger an update of the cache.",
@@ -358,10 +361,15 @@ FILENAME_HEAD: "Filename",
     "it may happen that your latest changes are not displayed and that the image will not automatically match your Obsidian theme in case you have changed the " +
     "Obsidian theme since the export was created. This setting only applies to embedding images into markdown documents. " +
     "For a number of reasons, the same approach cannot be used to expedite the loading of drawings with many embedded objects. See demonstration <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.23' target='_blank'>here</a>.",
-  EMBED_PREVIEW_SVG_NAME: "Display SVG in markdown preview",
+  /*EMBED_PREVIEW_SVG_NAME: "Display SVG in markdown preview",
   EMBED_PREVIEW_SVG_DESC:
     "<b>Toggle ON</b>: Embed drawing as an <a href='https://en.wikipedia.org/wiki/Scalable_Vector_Graphics' target='_blank'>SVG</a> image into the markdown preview.<br>" +
-    "<b>Toggle OFF</b>: Embed drawing as a <a href='' target='_blank'>PNG</a> image. Note, that some of the <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>image block referencing features</a> do not work with PNG embeds.",
+    "<b>Toggle OFF</b>: Embed drawing as a <a href='' target='_blank'>PNG</a> image. Note, that some of the <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>image block referencing features</a> do not work with PNG embeds.",*/
+  EMBED_PREVIEW_IMAGETYPE_NAME: "Image type in markdown preview",
+  EMBED_PREVIEW_IMAGETYPE_DESC:
+    "<b>Native SVG</b>: High Image Quality. Embedded Websites, YouTube videos, Obsidian Links will work in the image. Embedded Obsidian pages will not<br>" +
+    "<b>SVG Image</b>: High Image Quality. Embedded elements only have placeholders, links don't work<br>" +
+    "<b>PNG Image</b>: Lower Image Quality, but in some cases better performance with large drawings. Some of the <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>image block referencing features</a> do not work with PNG embeds.", 
   PREVIEW_MATCH_OBSIDIAN_NAME: "Excalidraw preview to match Obsidian theme",
   PREVIEW_MATCH_OBSIDIAN_DESC:
     "Image preview in documents should match the Obsidian theme. If enabled, when Obsidian is in dark mode, Excalidraw images will render in dark mode. " +

@@ -31,6 +31,7 @@ import ExcalidrawPlugin from "./main";
 import { JSON_parse } from "./Constants";
 import { TextMode } from "./ExcalidrawView";
 import {
+  addAppendUpdateCustomData,
   compress,
   debug,
   decompress,
@@ -385,7 +386,8 @@ export class ExcalidrawData {
       );
       containers.forEach((container: any) => {
         if(ellipseAndRhombusContainerWrapping && !container.customData?.legacyTextWrap) {
-          container.customData = {...container.customData, legacyTextWrap: true};
+          addAppendUpdateCustomData(container, {legacyTextWrap: true});
+          //container.customData = {...container.customData, legacyTextWrap: true};
         }
         const filteredBoundElements = container.boundElements.filter(
           (boundEl: any) => elements.some((el: any) => el.id === boundEl.id),

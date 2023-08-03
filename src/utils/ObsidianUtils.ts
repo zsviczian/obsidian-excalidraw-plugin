@@ -1,14 +1,12 @@
-import { main } from "@popperjs/core";
 import {
   App,
-  normalizePath, Notice, Workspace, WorkspaceLeaf, WorkspaceSplit
+  normalizePath, Workspace, WorkspaceLeaf, WorkspaceSplit
 } from "obsidian";
-import { DEVICE } from "src/Constants";
 import ExcalidrawPlugin from "../main";
 import { checkAndCreateFolder, splitFolderAndFilename } from "./FileUtils";
-import { isALT, isCTRL, isMETA, isSHIFT, KeyEvent, linkClickModifierType, ModifierKeys } from "./ModifierkeyHelper";
+import { linkClickModifierType, ModifierKeys } from "./ModifierkeyHelper";
 
-export const getParentOfClass = (element: HTMLElement, cssClass: string):HTMLElement | null => {
+export const getParentOfClass = (element: Element, cssClass: string):HTMLElement | null => {
   let parent = element.parentElement;
   while (
     parent &&

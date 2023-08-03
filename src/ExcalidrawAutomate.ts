@@ -14,7 +14,7 @@ import {
 import { normalizePath, Notice, OpenViewState, TFile, WorkspaceLeaf } from "obsidian";
 import * as obsidian_module from "obsidian";
 import ExcalidrawView, { ExportSettings, TextMode } from "src/ExcalidrawView";
-import { ExcalidrawData, getMarkdownDrawingSection } from "src/ExcalidrawData";
+import { ExcalidrawData, getMarkdownDrawingSection, REGEX_LINK } from "src/ExcalidrawData";
 import {
   FRONTMATTER,
   nanoid,
@@ -31,6 +31,8 @@ import {
   measureText,
   DEVICE,
   restore,
+  REG_LINKINDEX_INVALIDCHARS,
+  THEME_FILTER,
 } from "src/Constants";
 import { getDrawingFilename, getNewUniqueFilepath, } from "src/utils/FileUtils";
 import {
@@ -39,6 +41,7 @@ import {
   errorlog,
   getEmbeddedFilenameParts,
   getImageSize,
+  getLinkParts,
   getPNG,
   getSVG,
   isVersionNewerThanOther,
@@ -73,6 +76,7 @@ import {ConversionResult, svgToExcalidraw} from "src/svgToExcalidraw/parser"
 import { ROUNDNESS } from "src/Constants";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 import { emulateKeysForLinkClick, KeyEvent, PaneTarget } from "src/utils/ModifierkeyHelper";
+import { Mutable } from "@zsviczian/excalidraw/types/utility-types";
 
 extendPlugins([
   HarmonyPlugin,
@@ -2323,7 +2327,8 @@ async function getTemplate(
   fileWithPath: string,
   loadFiles: boolean = false,
   loader: EmbeddedFilesLoader,
-  depth: number
+  depth: number,
+  convertMarkdownLinksToObsidianURLs: boolean = false,
 ): Promise<{
   elements: any;
   appState: any;
@@ -2346,7 +2351,11 @@ async function getTemplate(
     if (file.extension === "excalidraw") {
       await excalidrawData.loadLegacyData(data, file);
       return {
-        elements: excalidrawData.scene.elements,
+        elements: convertMarkdownLinksToObsidianURLs
+          ? updateElementLinksToObsidianLinks({
+            elements: excalidrawData.scene.elements,
+            hostFile: file,
+          }) : excalidrawData.scene.elements,
         appState: excalidrawData.scene.appState,
         frontmatter: "",
         files: excalidrawData.scene.files,
@@ -2417,7 +2426,11 @@ async function getTemplate(
     }
 
     return {
-      elements: groupElements,
+      elements: convertMarkdownLinksToObsidianURLs
+        ? updateElementLinksToObsidianLinks({
+          elements: groupElements,
+          hostFile: file,
+        }) : groupElements,
       appState: scene.appState,
       frontmatter: data.substring(0, trimLocation),
       files: scene.files,
@@ -2486,6 +2499,45 @@ export async function createPNG(
   );
 }
 
+const updateElementLinksToObsidianLinks = ({elements, hostFile}:{
+  elements: ExcalidrawElement[];
+  hostFile: TFile;
+}): ExcalidrawElement[] => {
+  return elements.map((el)=>{
+    if(el.link && el.link.startsWith("[")) {
+      const partsArray = REGEX_LINK.getResList(el.link)[0];
+      if(!partsArray?.value) return el;
+      let linkText = REGEX_LINK.getLink(partsArray);
+      if (linkText.search("#") > -1) {
+        const linkParts = getLinkParts(linkText, hostFile);
+        linkText = linkParts.path;
+      }
+      if (linkText.match(REG_LINKINDEX_INVALIDCHARS)) {
+        return el;
+      }
+      const file = app.metadataCache.getFirstLinkpathDest(
+        linkText,
+        hostFile.path,
+      );
+      if(!file) {
+        return el;
+      }
+      const link = app.getObsidianUrl(file);
+      const newElement: Mutable<ExcalidrawElement> = cloneElement(el);
+      newElement.link = link;
+      return newElement;
+    }
+    return el;
+  })
+}
+
+function addFilterToForeignObjects(svg:SVGSVGElement) {
+  const foreignObjects = svg.querySelectorAll("foreignObject");
+  foreignObjects.forEach((foreignObject) => {
+    foreignObject.setAttribute("filter", THEME_FILTER);
+  });
+}
+
 export async function createSVG(
   templatePath: string = undefined,
   embedFont: boolean = false,
@@ -2499,12 +2551,13 @@ export async function createSVG(
   depth: number,
   padding?: number,
   imagesDict?: any,
+  convertMarkdownLinksToObsidianURLs: boolean = false,
 ): Promise<SVGSVGElement> {
   if (!loader) {
     loader = new EmbeddedFilesLoader(plugin);
   }
   const template = templatePath
-    ? await getTemplate(plugin, templatePath, true, loader, depth)
+    ? await getTemplate(plugin, templatePath, true, loader, depth, convertMarkdownLinksToObsidianURLs)
     : null;
   let elements = template?.elements ?? [];
   elements = elements.concat(automateElements);
@@ -2515,6 +2568,10 @@ export async function createSVG(
       files[f.id]=f;
     });
   }
+
+  const theme = forceTheme ?? template?.appState?.theme ?? canvasTheme;
+  const withTheme = exportSettings?.withTheme ?? plugin.settings.exportWithTheme;
+
   const svg = await getSVG(
     {
       //createAndOpenDrawing
@@ -2523,7 +2580,7 @@ export async function createSVG(
       source: GITHUB_RELEASES+PLUGIN_VERSION,
       elements,
       appState: {
-        theme: forceTheme ?? template?.appState?.theme ?? canvasTheme,
+        theme,
         viewBackgroundColor:
           template?.appState?.viewBackgroundColor ?? canvasBackgroundColor,
       },
@@ -2532,10 +2589,13 @@ export async function createSVG(
     {
       withBackground:
         exportSettings?.withBackground ?? plugin.settings.exportWithBackground,
-      withTheme: exportSettings?.withTheme ?? plugin.settings.exportWithTheme,
+      withTheme,
     },
     padding,
   );
+
+  if (withTheme && theme === "dark") addFilterToForeignObjects(svg);
+
   const filenameParts = getEmbeddedFilenameParts(templatePath);
   if(
     !(filenameParts.hasGroupref || filenameParts.hasFrameref) && 

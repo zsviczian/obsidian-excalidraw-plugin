@@ -1,12 +1,14 @@
 import { Notice, TFile } from "obsidian";
 import ExcalidrawPlugin from "src/main";
+import { convertSVGStringToElement } from "./Utils";
+import { PreviewImageType } from "./UtilTypes";
 
 //@ts-ignore
 const DB_NAME = "Excalidraw " + app.appId;
 const CACHE_STORE = "imageCache";
 const BACKUP_STORE = "drawingBAK";
 
-type FileCacheData = { mtime: number; blob: Blob };
+type FileCacheData = { mtime: number; blob?: Blob; svg?: string};
 type BackupData = string;
 type BackupKey = string;
 
@@ -15,12 +17,18 @@ export type ImageKey = {
   blockref: string;
   sectionref: string;
   isDark: boolean;
-  isSVG: boolean;
+  previewImageType: PreviewImageType;
   scale: number;
 };
 
 const getKey = (key: ImageKey): string =>
-  `${key.filepath}#${key.blockref}#${key.sectionref}#${key.isDark ? 1 : 0}#${key.isSVG ? 1 : 0}#${key.scale}`;
+  `${key.filepath}#${key.blockref}#${key.sectionref}#${key.isDark ? 1 : 0}#${
+    key.previewImageType === PreviewImageType.SVGIMG
+      ? 1
+      : key.previewImageType === PreviewImageType.PNG
+        ? 0
+        : 2 
+  }#${key.scale}`; //key.isSVG ? 1 : 0
 
 class ImageCache {
   private dbName: string;
@@ -247,7 +255,7 @@ class ImageCache {
     return !!this.db && !this.isInitializing && !!this.plugin && this.plugin.settings.allowImageCache;
   }
 
-  public async getImageFromCache(key_: ImageKey): Promise<string | undefined> {
+  public async getImageFromCache(key_: ImageKey): Promise<string | SVGSVGElement | undefined> {
     if (!this.isReady()) {
       return null; // Database not initialized yet
     }
@@ -257,6 +265,9 @@ class ImageCache {
     const file = app.vault.getAbstractFileByPath(key_.filepath.split("#")[0]);
     if (!file || !(file instanceof TFile)) return undefined;
     if (cachedData && cachedData.mtime === file.stat.mtime) {
+      if(cachedData.svg) {
+        return convertSVGStringToElement(cachedData.svg);
+      }
       if(this.obsidanURLCache.has(key)) {
         return this.obsidanURLCache.get(key);
       }
@@ -275,19 +286,30 @@ class ImageCache {
     return this.getBackupData(filepath);
   }
 
-  public addImageToCache(key_: ImageKey, obsidianURL: string, blob: Blob): void {
+  public addImageToCache(key_: ImageKey, obsidianURL: string, image: Blob|SVGSVGElement): void {
     if (!this.isReady()) {
       return; // Database not initialized yet
     }
 
     const file = app.vault.getAbstractFileByPath(key_.filepath.split("#")[0]);
     if (!file || !(file instanceof TFile)) return;
-    const data: FileCacheData = { mtime: file.stat.mtime, blob };
+    
+
+    let svg: string = null;
+    let blob: Blob = null;
+    if(image instanceof SVGSVGElement) {
+      svg = image.outerHTML;
+    } else {
+     blob = image as Blob;
+    }
+    const data: FileCacheData = { mtime: file.stat.mtime, blob, svg};
     const transaction = this.db.transaction(this.cacheStoreName, "readwrite");
     const store = transaction.objectStore(this.cacheStoreName);
     const key = getKey(key_);
     store.put(data, key);
-    this.obsidanURLCache.set(key, obsidianURL);
+    if(Boolean(svg)) {
+      this.obsidanURLCache.set(key, obsidianURL);
+    }
   }
 
   public async addBAKToCache(filepath: string, data: BackupData): Promise<void> {

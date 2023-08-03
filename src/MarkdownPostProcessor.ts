@@ -18,12 +18,12 @@ import {
   getExportPadding,
   getWithBackground,
   hasExportTheme,
-  svgToBase64,
-  base64StringToBlob,
+  convertSVGStringToElement,
 } from "./utils/Utils";
-import { isObsidianThemeDark } from "./utils/ObsidianUtils";
+import { getParentOfClass, isObsidianThemeDark } from "./utils/ObsidianUtils";
 import { linkClickModifierType } from "./utils/ModifierkeyHelper";
 import { ImageKey, imageCache } from "./utils/ImageCache";
+import { FILENAMEPARTS, PreviewImageType } from "./utils/UtilTypes";
 
 interface imgElementAttributes {
   file?: TFile;
@@ -51,15 +51,196 @@ export const initializeMarkdownPostProcessor = (p: ExcalidrawPlugin) => {
   metadataCache = p.app.metadataCache;
 };
 
+const _getPNG = async ({imgAttributes,filenameParts,theme,cacheReady,img,file,exportSettings,loader}:{
+  imgAttributes: imgElementAttributes,
+  filenameParts: FILENAMEPARTS,
+  theme: string,
+  cacheReady: boolean,
+  img: HTMLImageElement,
+  file: TFile,
+  exportSettings: ExportSettings,
+  loader: EmbeddedFilesLoader,
+}):Promise<HTMLImageElement> => {
+  const width = parseInt(imgAttributes.fwidth);
+    const scale = width >= 2400
+      ? 5
+      : width >= 1800
+        ? 4
+        : width >= 1200
+          ? 3
+          : width >= 600
+            ? 2
+            : 1;
+  
+  const cacheKey = {...filenameParts, isDark: theme==="dark", previewImageType: PreviewImageType.PNG, scale};
+
+  if(cacheReady) {      
+    const src = await imageCache.getImageFromCache(cacheKey);
+    //In case of PNG I cannot change the viewBox to select the area of the element
+    //being referenced. For PNG only the group reference works
+    if(src && typeof src === "string") {
+      img.src = src;
+      return img;
+    }
+  }
+
+  const quickPNG = !(filenameParts.hasGroupref || filenameParts.hasFrameref)
+    ? await getQuickImagePreview(plugin, file.path, "png")
+    : undefined;
+
+  const png =
+    quickPNG ??
+    (await createPNG(
+      (filenameParts.hasGroupref || filenameParts.hasFrameref)
+        ? filenameParts.filepath + filenameParts.linkpartReference
+        : file.path,
+      scale,
+      exportSettings,
+      loader,
+      theme,
+      null,
+      null,
+      [],
+      plugin,
+      0
+    ));
+  if (!png) {
+    return null;
+  }
+  img.src = URL.createObjectURL(png);
+  cacheReady && imageCache.addImageToCache(cacheKey, img.src, png);
+  return img;
+}
+
+const setStyle = ({element,imgAttributes,onCanvas}:{
+  element: HTMLElement,
+  imgAttributes: imgElementAttributes,
+  onCanvas: boolean,
+}
+) => {
+  let style = `max-width:${imgAttributes.fwidth}${imgAttributes.fwidth.match(/\d$/) ? "px":""}; `; //width:100%;`; //removed !important https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/886
+  if (imgAttributes.fheight) {
+    style += `height:${imgAttributes.fheight}px;`;
+  }
+  if(!onCanvas) element.setAttribute("style", style);
+  element.addClass(imgAttributes.style);
+  element.addClass("excalidraw-embedded-img");
+}
+
+const _getSVGIMG = async ({filenameParts,theme,cacheReady,img,file,exportSettings,loader}:{
+  filenameParts: FILENAMEPARTS,
+  theme: string,
+  cacheReady: boolean,
+  img: HTMLImageElement,
+  file: TFile,
+  exportSettings: ExportSettings,
+  loader: EmbeddedFilesLoader,
+}):Promise<HTMLImageElement> => {
+  const cacheKey = {...filenameParts, isDark: theme==="dark", previewImageType: PreviewImageType.SVGIMG, scale:1};
+  if(cacheReady) {
+    const src = await imageCache.getImageFromCache(cacheKey);
+    if(src && typeof src === "string") {
+      img.setAttribute("src", src);
+      return img;
+    }
+  }
+
+  if(!(filenameParts.hasBlockref || filenameParts.hasSectionref)) {
+    const quickSVG = await getQuickImagePreview(plugin, file.path, "svg");
+    if (quickSVG) {
+      const svg = convertSVGStringToElement(quickSVG);
+      if (svg) {
+        return addSVGToImgSrc(img, svg, cacheReady, cacheKey);
+      }
+    }
+  }
+  
+  let svg = convertSVGStringToElement((
+    await createSVG(
+      filenameParts.hasGroupref || filenameParts.hasBlockref || filenameParts.hasSectionref || filenameParts.hasFrameref
+        ? filenameParts.filepath + filenameParts.linkpartReference
+        : file.path,
+      true,
+      exportSettings,
+      loader,
+      theme,
+      null,
+      null,
+      [],
+      plugin,
+      0,
+      getExportPadding(plugin, file),
+    )
+  ).outerHTML);
+  
+  if (!svg) {
+    return null;
+  }
+
+  svg = embedFontsInSVG(svg, plugin);
+  //need to remove width and height attributes to support area= embeds
+  svg.removeAttribute("width");
+  svg.removeAttribute("height");
+  return addSVGToImgSrc(img, svg, cacheReady, cacheKey);
+}
+
+const _getSVGNative = async ({filenameParts,theme,cacheReady,containerElement,file,exportSettings,loader}:{
+  filenameParts: FILENAMEPARTS,
+  theme: string,
+  cacheReady: boolean,
+  containerElement: HTMLDivElement,
+  file: TFile,
+  exportSettings: ExportSettings,
+  loader: EmbeddedFilesLoader,
+}):Promise<HTMLDivElement> => {
+  const cacheKey = {...filenameParts, isDark: theme==="dark", previewImageType: PreviewImageType.SVG, scale:1};
+  let maybeSVG;
+  if(cacheReady) {
+    maybeSVG = await imageCache.getImageFromCache(cacheKey);
+  }
+
+  const svg = maybeSVG && (maybeSVG instanceof SVGSVGElement)
+    ? maybeSVG
+    : convertSVGStringToElement((await createSVG(
+      filenameParts.hasGroupref || filenameParts.hasBlockref || filenameParts.hasSectionref || filenameParts.hasFrameref
+        ? filenameParts.filepath + filenameParts.linkpartReference
+        : file.path,
+      false,
+      exportSettings,
+      loader,
+      theme,
+      null,
+      null,
+      [],
+      plugin,
+      0,
+      getExportPadding(plugin, file),
+      undefined,
+      true
+    )).outerHTML);
+  
+  if (!svg) {
+    return null;
+  }
+
+  svg.removeAttribute("width");
+  svg.removeAttribute("height");
+  containerElement.append(svg);
+  cacheReady && imageCache.addImageToCache(cacheKey,"", svg);
+  return containerElement;
+}
+
 /**
- * Generates an img element with the drawing encoded as a base64 SVG or a PNG (depending on settings)
+ * Generates an IMG or DIV element
+ * - The IMG element will have the drawing encoded as a base64 SVG or a PNG (depending on settings)
+ * - The DIV element will have the drawing as an SVG element
  * @param parts {imgElementAttributes} - display properties of the image
  * @returns {Promise<HTMLElement>} - the IMG HTML element containing the image
  */
 const getIMG = async (
   imgAttributes: imgElementAttributes,
   onCanvas: boolean = false,
-): Promise<HTMLElement> => {
+): Promise<HTMLImageElement | HTMLDivElement> => {
   let file = imgAttributes.file;
   if (!imgAttributes.file) {
     const f = vault.getAbstractFileByPath(imgAttributes.fname?.split("#")[0]);
@@ -82,15 +263,7 @@ const getIMG = async (
     withBackground: getWithBackground(plugin, file),
     withTheme: forceTheme ? true : plugin.settings.exportWithTheme,
   };
-  const img = createEl("img");
-  let style = `max-width:${imgAttributes.fwidth}${imgAttributes.fwidth.match(/\d$/) ? "px":""}; `; //width:100%;`; //removed !important https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/886
-  if (imgAttributes.fheight) {
-    style += `height:${imgAttributes.fheight}px;`;
-  }
-  if(!onCanvas) img.setAttribute("style", style);
-  img.addClass(imgAttributes.style);
-  img.addClass("excalidraw-embedded-img");
-  
+
   const theme =
     forceTheme ??
     (plugin.settings.previewMatchObsidianTheme
@@ -109,118 +282,24 @@ const getIMG = async (
   );
 
   const cacheReady = imageCache.isReady();
-
-  if (!plugin.settings.displaySVGInPreview) {
-    const width = parseInt(imgAttributes.fwidth);
-    const scale = width >= 2400
-      ? 5
-      : width >= 1800
-        ? 4
-        : width >= 1200
-          ? 3
-          : width >= 600
-            ? 2
-            : 1;
-
-    
-    const cacheKey = {...filenameParts, isDark: theme==="dark", isSVG: false, scale};
-
-    if(cacheReady) {      
-      const src = await imageCache.getImageFromCache(cacheKey);
-      //In case of PNG I cannot change the viewBox to select the area of the element
-      //being referenced. For PNG only the group reference works
-      if(src) {
-        img.src = src;
-        return img;
-      }
-    }
-
-    const quickPNG = !(filenameParts.hasGroupref || filenameParts.hasFrameref)
-      ? await getQuickImagePreview(plugin, file.path, "png")
-      : undefined;
-
-    
-    const png =
-      quickPNG ??
-      (await createPNG(
-        (filenameParts.hasGroupref || filenameParts.hasFrameref)
-          ? filenameParts.filepath + filenameParts.linkpartReference
-          : file.path,
-        scale,
-        exportSettings,
-        loader,
-        theme,
-        null,
-        null,
-        [],
-        plugin,
-        0
-      ));
-    if (!png) {
-      return null;
-    }
-    img.src = URL.createObjectURL(png);
-    cacheReady && imageCache.addImageToCache(cacheKey, img.src, png);
-    return img;
-  }
-
-  const cacheKey = {...filenameParts, isDark: theme==="dark", isSVG: true, scale:1};
-  if(cacheReady) {
-    const src = await imageCache.getImageFromCache(cacheKey);
-    if(src) {
-      img.setAttribute("src", src);
-      return img;
-    }
-  }
-
-  let svg: SVGSVGElement = null;
-  const el = document.createElement("div");
-
-  if(!(filenameParts.hasBlockref || filenameParts.hasSectionref)) {
-    const quickSVG = await getQuickImagePreview(plugin, file.path, "svg");
-    if (quickSVG) {
-      el.innerHTML = quickSVG;
-      const firstChild = el.firstChild;
-      if (firstChild instanceof SVGSVGElement) {
-        svg = firstChild;
-      }
-      if (svg) {
-        return addSVGToImgSrc(img, svg, cacheReady, cacheKey);
-      }
-    }
-  }
-  const svgSnapshot = (
-    await createSVG(
-      filenameParts.hasGroupref || filenameParts.hasBlockref || filenameParts.hasSectionref || filenameParts.hasFrameref
-        ? filenameParts.filepath + filenameParts.linkpartReference
-        : file.path,
-      true,
-      exportSettings,
-      loader,
-      theme,
-      null,
-      null,
-      [],
-      plugin,
-      0,
-      getExportPadding(plugin, file),
-    )
-  ).outerHTML;
   
-  
-  el.innerHTML = svgSnapshot;
-  const firstChild = el.firstChild;
-  if (firstChild instanceof SVGSVGElement) {
-    svg = firstChild;
+  switch (plugin.settings.previewImageType) {
+    case PreviewImageType.PNG: {
+      const img = createEl("img");
+      setStyle({element:img,imgAttributes,onCanvas});
+      return _getPNG({imgAttributes,filenameParts,theme,cacheReady,img,file,exportSettings,loader});
+    }
+    case PreviewImageType.SVGIMG: {
+      const img = createEl("img");
+      setStyle({element:img,imgAttributes,onCanvas});
+      return _getSVGIMG({filenameParts,theme,cacheReady,img,file,exportSettings,loader});
+    }
+    case PreviewImageType.SVG:  {
+      const img = createEl("div");
+      setStyle({element:img,imgAttributes,onCanvas});
+      return _getSVGNative({filenameParts,theme,cacheReady,containerElement: img,file,exportSettings,loader});
+    }
   }
-  if (!svg) {
-    return null;
-  }
-  svg = embedFontsInSVG(svg, plugin);
-  //need to remove width and height attributes to support area= embeds
-  svg.removeAttribute("width");
-  svg.removeAttribute("height");
-  return addSVGToImgSrc(img, svg, cacheReady, cacheKey);
 };
 
 const addSVGToImgSrc = (img: HTMLImageElement, svg: SVGSVGElement, cacheReady: boolean, cacheKey: ImageKey):HTMLImageElement => {
@@ -236,26 +315,29 @@ const createImgElement = async (
   attr: imgElementAttributes,
   onCanvas: boolean = false,
 ) :Promise<HTMLElement> => {
-  const img = await getIMG(attr,onCanvas);
-  img.setAttribute("fileSource", attr.fname);
+  const imgOrDiv = await getIMG(attr,onCanvas);
+  imgOrDiv.setAttribute("fileSource", attr.fname);
   if (attr.fwidth) {
-    img.setAttribute("w", attr.fwidth);
+    imgOrDiv.setAttribute("w", attr.fwidth);
   }
   if (attr.fheight) {
-    img.setAttribute("h", attr.fheight);
+    imgOrDiv.setAttribute("h", attr.fheight);
   }
-  img.setAttribute("draggable","false");
-  img.setAttribute("onCanvas",onCanvas?"true":"false");
+  imgOrDiv.setAttribute("draggable","false");
+  imgOrDiv.setAttribute("onCanvas",onCanvas?"true":"false");
 
   let timer:NodeJS.Timeout;
   const clickEvent = (ev:PointerEvent) => {
-    if (
-      ev.target instanceof Element &&
-      ev.target.tagName.toLowerCase() != "img"
-    ) {
+    if(!(ev.target instanceof Element)) {
       return;
     }
-    const src = img.getAttribute("fileSource");
+    const containerElement = ev.target.hasClass("excalidraw-embedded-img")
+      ? ev.target
+      : getParentOfClass(ev.target, "excalidraw-embedded-img");
+    if (!containerElement) {
+      return;
+    }
+    const src = imgOrDiv.getAttribute("fileSource");
     if (src) {
       const srcParts = src.match(/([^#]*)(.*)/);
       if(!srcParts) return;
@@ -269,35 +351,41 @@ const createImgElement = async (
   };
   //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1003
   let pointerDownEvent:any;
-  img.addEventListener("pointermove",(ev)=>{
+  const eventElement = imgOrDiv as HTMLElement;
+  
+  /*plugin.settings.previewImageType === PreviewImageType.SVG
+    ? imgOrDiv.firstElementChild as HTMLElement
+    : imgOrDiv;*/
+
+  eventElement.addEventListener("pointermove",(ev)=>{
     if(!timer) return;
     if(Math.abs(ev.screenX-pointerDownEvent.screenX)>10 || Math.abs(ev.screenY-pointerDownEvent.screenY)>10) {
       clearTimeout(timer);
       timer = null;
     }
   });  
-  img.addEventListener("pointerdown",(ev)=>{
-    if(img?.parentElement?.hasClass("canvas-node-content")) return;
+  eventElement.addEventListener("pointerdown",(ev)=>{
+    if(imgOrDiv?.parentElement?.hasClass("canvas-node-content")) return;
     timer = setTimeout(()=>clickEvent(ev),500);
     pointerDownEvent = ev;
   });
-  img.addEventListener("pointerup",()=>{
+  eventElement.addEventListener("pointerup",()=>{
     if(timer) clearTimeout(timer);
     timer = null;
   })
-  img.addEventListener("dblclick",clickEvent);
-  img.addEventListener(RERENDER_EVENT, async (e) => {
+  eventElement.addEventListener("dblclick",clickEvent);
+  eventElement.addEventListener(RERENDER_EVENT, async (e) => {
     e.stopPropagation();
-    const parent = img.parentElement;
-    const imgMaxWidth = img.style.maxWidth;
-    const imgMaxHeigth = img.style.maxHeight;
-    const fileSource = img.getAttribute("fileSource");
-    const onCanvas = img.getAttribute("onCanvas") === "true";
+    const parent = imgOrDiv.parentElement;
+    const imgMaxWidth = imgOrDiv.style.maxWidth;
+    const imgMaxHeigth = imgOrDiv.style.maxHeight;
+    const fileSource = imgOrDiv.getAttribute("fileSource");
+    const onCanvas = imgOrDiv.getAttribute("onCanvas") === "true";
     const newImg = await createImgElement({
       fname: fileSource,
-      fwidth: img.getAttribute("w"),
-      fheight: img.getAttribute("h"),
-      style: img.getAttribute("class"),
+      fwidth: imgOrDiv.getAttribute("w"),
+      fheight: imgOrDiv.getAttribute("h"),
+      style: imgOrDiv.getAttribute("class"),
     }, onCanvas);
     parent.empty();
     if(!onCanvas) {
@@ -307,7 +395,7 @@ const createImgElement = async (
     newImg.setAttribute("fileSource",fileSource);
     parent.append(newImg);
   });
-  return img;
+  return imgOrDiv;
 }
 
 const createImageDiv = async (
@@ -655,3 +743,4 @@ export const observer = new MutationObserver(async (m) => {
   });
   node.appendChild(div);
 });
+

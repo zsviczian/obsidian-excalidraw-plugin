@@ -935,7 +935,7 @@ export default class ExcalidrawView extends TextFileView {
       if(this.openExternalLink(linkText)) return;
 
       const partsArray = REGEX_LINK.getResList(linkText);
-      let parts = partsArray[0];      
+      let parts = partsArray[0];
       if (partsArray.length > 1) {
         parts = await ScriptEngine.suggester(
           app,

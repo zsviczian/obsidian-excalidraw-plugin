@@ -29,3 +29,23 @@ declare global {
       ExcalidrawAutomate: ExcalidrawAutomate;
   }
 }
+
+declare module "obsidian" {
+  interface App {
+    isMobile(): boolean;
+    getObsidianUrl(file:TFile): string;
+  }
+  interface Keymap {
+    getRootScope(): Scope;
+  }
+  interface Scope {
+    keys: any[];
+  }
+  interface Workspace {
+    on(
+      name: "hover-link",
+      callback: (e: MouseEvent) => any,
+      ctx?: any,
+    ): EventRef;
+  }
+}

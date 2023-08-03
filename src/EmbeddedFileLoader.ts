@@ -14,6 +14,7 @@ import {
   FRONTMATTER_KEY_MD_STYLE,
   IMAGE_TYPES,
   nanoid,
+  THEME_FILTER,
   VIRGIL_FONT,
 } from "./Constants";
 import { createSVG } from "./ExcalidrawAutomate";
@@ -38,8 +39,6 @@ import {
   svgToBase64,
 } from "./utils/Utils";
 import { ValueOf } from "./types";
-
-const THEME_FILTER = "invert(100%) hue-rotate(180deg) saturate(1.25)";
 
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B

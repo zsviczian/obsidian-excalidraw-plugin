@@ -13,6 +13,7 @@ import { t } from "./lang/helpers";
 import type ExcalidrawPlugin from "./main";
 import { PenStyle } from "./PenTypes";
 import { DynamicStyle } from "./types";
+import { PreviewImageType } from "./utils/UtilTypes";
 import { setDynamicStyle } from "./utils/DynamicStyling";
 import {
   getDrawingFilename,
@@ -23,7 +24,6 @@ import {
   fragWithHTML,
   setLeftHandedMode,
 } from "./utils/Utils";
-import { image } from "html2canvas/dist/types/css/types/image";
 import { imageCache } from "./utils/ImageCache";
 import { ConfirmationPrompt } from "./dialogs/Prompt";
 
@@ -42,7 +42,8 @@ export interface ExcalidrawSettings {
   drawingFilnameEmbedPostfix: string;
   drawingFilenameDateTime: string;
   useExcalidrawExtension: boolean;
-  displaySVGInPreview: boolean;
+  displaySVGInPreview: boolean; //No longer used since 1.9.13
+  previewImageType: PreviewImageType; //Introduced with 1.9.13
   allowImageCache: boolean;
   displayExportedImageIfAvailable: boolean;
   previewMatchObsidianTheme: boolean;
@@ -156,7 +157,8 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   drawingFilnameEmbedPostfix: " ",
   drawingFilenameDateTime: "YYYY-MM-DD HH.mm.ss",
   useExcalidrawExtension: true,
-  displaySVGInPreview: true,
+  displaySVGInPreview: undefined,
+  previewImageType: undefined,
   allowImageCache: true,
   displayExportedImageIfAvailable: false,
   previewMatchObsidianTheme: false,
@@ -1141,85 +1143,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.containerEl.createEl("h1", { text: t("EMBED_HEAD") });
 
     new Setting(containerEl)
-      .setName(t("EMBED_IMAGE_CACHE_NAME"))
-      .setDesc(fragWithHTML(t("EMBED_IMAGE_CACHE_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.allowImageCache)
-          .onChange((value) => {
-            this.plugin.settings.allowImageCache = value;
-            this.applySettingsUpdate();
-          })
-      )
-      .addButton((button) =>
-        button
-          .setButtonText(t("EMBED_IMAGE_CACHE_CLEAR"))
-          .onClick(() => {
-            imageCache.clearImageCache();
-          })
-      )
-      .addButton((button) =>
-        button
-          .setButtonText(t("BACKUP_CACHE_CLEAR"))
-          .onClick(() => {
-            const confirmationPrompt = new ConfirmationPrompt(this.plugin,t("BACKUP_CACHE_CLEAR_CONFIRMATION"));
-            confirmationPrompt.waitForClose.then((confirmed) => {
-              if (confirmed) {
-                imageCache.clearBackupCache();
-              } 
-            });
-          })
-      );
-        
-    new Setting(containerEl)
-      .setName(t("EMBED_PREVIEW_SVG_NAME"))
-      .setDesc(fragWithHTML(t("EMBED_PREVIEW_SVG_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.displaySVGInPreview)
-          .onChange(async (value) => {
-            this.plugin.settings.displaySVGInPreview = value;
-            this.applySettingsUpdate();
-          }),
-      );
-
-    new Setting(containerEl)
-      .setName(t("EMBED_REUSE_EXPORTED_IMAGE_NAME"))
-      .setDesc(fragWithHTML(t("EMBED_REUSE_EXPORTED_IMAGE_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.displayExportedImageIfAvailable)
-          .onChange(async (value) => {
-            this.plugin.settings.displayExportedImageIfAvailable = value;
-            this.applySettingsUpdate();
-          }),
-      );
-
-    new Setting(containerEl)
-      .setName(t("PREVIEW_MATCH_OBSIDIAN_NAME"))
-      .setDesc(fragWithHTML(t("PREVIEW_MATCH_OBSIDIAN_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.previewMatchObsidianTheme)
-          .onChange(async (value) => {
-            this.plugin.settings.previewMatchObsidianTheme = value;
-            this.applySettingsUpdate();
-          }),
-      );
-
-    new Setting(containerEl)
-      .setName(t("EMBED_WIDTH_NAME"))
-      .setDesc(fragWithHTML(t("EMBED_WIDTH_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder("400")
-          .setValue(this.plugin.settings.width)
-          .onChange(async (value) => {
-            this.plugin.settings.width = value;
-            this.applySettingsUpdate();
-            this.requestEmbedUpdate = true;
-          }),
-      );
+    .setName(t("EMBED_PREVIEW_IMAGETYPE_NAME"))
+    .setDesc(fragWithHTML(t("EMBED_PREVIEW_IMAGETYPE_DESC")))
+    .addDropdown((dropdown) => dropdown
+      .addOption(PreviewImageType.PNG, "PNG Image")
+      .addOption(PreviewImageType.SVG, "Native SVG")
+      .addOption(PreviewImageType.SVGIMG, "SVG Image")
+      .setValue(this.plugin.settings.previewImageType)
+      .onChange((value) => {
+        this.plugin.settings.previewImageType = value as PreviewImageType;
+        this.applySettingsUpdate();
+      })
+    );
 
     let dropdown: DropdownComponent;
 
@@ -1249,6 +1184,67 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           });
       });
+
+    this.containerEl.createEl("h4", { text: t("EMBED_CACHING") });
+
+    new Setting(containerEl)
+      .setName(t("EMBED_IMAGE_CACHE_NAME"))
+      .setDesc(fragWithHTML(t("EMBED_IMAGE_CACHE_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.allowImageCache)
+          .onChange((value) => {
+            this.plugin.settings.allowImageCache = value;
+            this.applySettingsUpdate();
+          })
+      )
+      .addButton((button) =>
+        button
+          .setButtonText(t("EMBED_IMAGE_CACHE_CLEAR"))
+          .onClick(() => {
+            imageCache.clearImageCache();
+          })
+      )
+      .addButton((button) =>
+        button
+          .setButtonText(t("BACKUP_CACHE_CLEAR"))
+          .onClick(() => {
+            const confirmationPrompt = new ConfirmationPrompt(this.plugin,t("BACKUP_CACHE_CLEAR_CONFIRMATION"));
+            confirmationPrompt.waitForClose.then((confirmed) => {
+              if (confirmed) {
+                imageCache.clearBackupCache();
+              } 
+            });
+          })
+      );
+
+    new Setting(containerEl)
+      .setName(t("EMBED_REUSE_EXPORTED_IMAGE_NAME"))
+      .setDesc(fragWithHTML(t("EMBED_REUSE_EXPORTED_IMAGE_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.displayExportedImageIfAvailable)
+          .onChange(async (value) => {
+            this.plugin.settings.displayExportedImageIfAvailable = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    this.containerEl.createEl("h4", { text: t("EMBED_SIZING") });
+
+    new Setting(containerEl)
+      .setName(t("EMBED_WIDTH_NAME"))
+      .setDesc(fragWithHTML(t("EMBED_WIDTH_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder("400")
+          .setValue(this.plugin.settings.width)
+          .onChange(async (value) => {
+            this.plugin.settings.width = value;
+            this.applySettingsUpdate();
+            this.requestEmbedUpdate = true;
+          }),
+      );
 
     new Setting(containerEl)
       .setName(t("EMBED_WIKILINK_NAME"))
@@ -1284,19 +1280,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         el.innerText = ` ${this.plugin.settings.pngExportScale.toString()}`;
       });
 
-    new Setting(containerEl)
-      .setName(t("EXPORT_BACKGROUND_NAME"))
-      .setDesc(fragWithHTML(t("EXPORT_BACKGROUND_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.exportWithBackground)
-          .onChange(async (value) => {
-            this.plugin.settings.exportWithBackground = value;
-            this.applySettingsUpdate();
-            this.requestEmbedUpdate = true;
-          }),
-      );
-
     let exportPadding: HTMLDivElement;
 
     new Setting(containerEl)
@@ -1319,6 +1302,20 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         el.innerText = ` ${this.plugin.settings.exportPaddingSVG.toString()}`;
       });
 
+    this.containerEl.createEl("h4", { text: t("EMBED_THEME_BACKGROUND") });
+    new Setting(containerEl)
+    .setName(t("EXPORT_BACKGROUND_NAME"))
+    .setDesc(fragWithHTML(t("EXPORT_BACKGROUND_DESC")))
+    .addToggle((toggle) =>
+      toggle
+        .setValue(this.plugin.settings.exportWithBackground)
+        .onChange(async (value) => {
+          this.plugin.settings.exportWithBackground = value;
+          this.applySettingsUpdate();
+          this.requestEmbedUpdate = true;
+        }),
+    );
+
     new Setting(containerEl)
       .setName(t("EXPORT_THEME_NAME"))
       .setDesc(fragWithHTML(t("EXPORT_THEME_DESC")))
@@ -1329,6 +1326,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.plugin.settings.exportWithTheme = value;
             this.applySettingsUpdate();
             this.requestEmbedUpdate = true;
+          }),
+      );
+
+    new Setting(containerEl)
+      .setName(t("PREVIEW_MATCH_OBSIDIAN_NAME"))
+      .setDesc(fragWithHTML(t("PREVIEW_MATCH_OBSIDIAN_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.previewMatchObsidianTheme)
+          .onChange(async (value) => {
+            this.plugin.settings.previewMatchObsidianTheme = value;
+            this.applySettingsUpdate();
           }),
       );
 

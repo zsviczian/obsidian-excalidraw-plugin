@@ -66,6 +66,7 @@ export const ROUNDNESS = { //should at one point publish @zsviczian/excalidraw/t
   PROPORTIONAL_RADIUS: 2,
   ADAPTIVE_RADIUS: 3,
 } as const;
+export const THEME_FILTER = "invert(100%) hue-rotate(180deg) saturate(1.25)";
 export const GITHUB_RELEASES = "https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/";
 export const URLFETCHTIMEOUT = 3000;
 export const PLUGIN_ID = "obsidian-excalidraw-plugin";

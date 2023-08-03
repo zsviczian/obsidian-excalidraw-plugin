@@ -100,33 +100,14 @@ import { FieldSuggester } from "./dialogs/FieldSuggester";
 import { ReleaseNotes } from "./dialogs/ReleaseNotes";
 import { decompressFromBase64 } from "lz-string";
 import { Packages } from "./types";
+import { PreviewImageType } from "./utils/UtilTypes";
 import { ScriptInstallPrompt } from "./dialogs/ScriptInstallPrompt";
 import Taskbone from "./ocr/Taskbone";
 import { emulateCTRLClickForLinks, linkClickModifierType, PaneTarget } from "./utils/ModifierkeyHelper";
 import { InsertPDFModal } from "./dialogs/InsertPDFModal";
 import { ExportDialog } from "./dialogs/ExportDialog";
 import { UniversalInsertFileModal } from "./dialogs/UniversalInsertFileModal";
-import { image } from "html2canvas/dist/types/css/types/image";
 import { imageCache } from "./utils/ImageCache";
-
-declare module "obsidian" {
-  interface App {
-    isMobile(): boolean;
-  }
-  interface Keymap {
-    getRootScope(): Scope;
-  }
-  interface Scope {
-    keys: any[];
-  }
-  interface Workspace {
-    on(
-      name: "hover-link",
-      callback: (e: MouseEvent) => any,
-      ctx?: any,
-    ): EventRef;
-  }
-}
 
 declare const EXCALIDRAW_PACKAGES:string;
 declare const react:any;
@@ -2215,6 +2196,15 @@ export default class ExcalidrawPlugin extends Plugin {
     if(typeof opts.applyLefthandedMode === "undefined") opts.applyLefthandedMode = true;
     if(typeof opts.reEnableAutosave === "undefined") opts.reEnableAutosave = false;
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    if(!this.settings.previewImageType) { //migration 1.9.13
+      if(typeof this.settings.displaySVGInPreview === "undefined") {
+        this.settings.previewImageType = PreviewImageType.SVG;
+      } else {
+        this.settings.previewImageType = this.settings.displaySVGInPreview
+          ? PreviewImageType.SVGIMG
+          : PreviewImageType.PNG; 
+      }
+    }
     if(opts.applyLefthandedMode) setLeftHandedMode(this.settings.isLeftHanded);
     if(opts.reEnableAutosave) this.settings.autosave = true;
     this.settings.autosaveInterval = app.isMobile
@@ -2252,7 +2242,7 @@ export default class ExcalidrawPlugin extends Plugin {
       e.initEvent(RERENDER_EVENT, true, false);
       ownerDocument
         .querySelectorAll(
-          `img[class^='excalidraw-svg']${
+          `.excalidraw-embedded-img${
             filepath ? `[fileSource='${filepath.replaceAll("'", "\\'")}']` : ""
           }`,
         )

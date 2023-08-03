@@ -29,6 +29,9 @@ import { IMAGE_TYPES } from "../Constants";
 import { generateEmbeddableLink } from "./CustomEmbeddableUtils";
 import Scene from "@zsviczian/excalidraw/types/scene/Scene";
 import ExcalidrawScene from "src/svgToExcalidraw/elements/ExcalidrawScene";
+import { FILENAMEPARTS } from "./UtilTypes";
+import { Mutable } from "@zsviczian/excalidraw/types/utility-types";
+import { add } from "@zsviczian/excalidraw/types/ga";
 
 declare const PLUGIN_VERSION:string;
 
@@ -370,6 +373,16 @@ export const getImageSize = async (
   });
 };
 
+export const addAppendUpdateCustomData = (el: Mutable<ExcalidrawElement>, newData: any): ExcalidrawElement => {
+  if(!newData) return el;
+  if(!el.customData) el.customData = {};
+  for (const key in newData) {
+    if(typeof newData[key] === "undefined") continue;
+    el.customData[key] = newData[key];
+  }
+  return el;
+};
+
 export const scaleLoadedImage = (
   scene: any,
   files: any,
@@ -385,6 +398,10 @@ export const scaleLoadedImage = (
       .filter((e: any) => e.type === "image" && e.fileId === f.id)
       .forEach((el: any) => {
         const [w_old, h_old] = [el.width, el.height];
+        if(el.customData?.isAnchored && f.shouldScale || !el.customData?.isAnchored && !f.shouldScale) {
+          addAppendUpdateCustomData(el, f.shouldScale ? {isAnchored: false} : {isAnchored: true});
+          dirty = true;
+        }
         if(f.shouldScale) {
           const elementAspectRatio = w_old / h_old;
           if (imageAspectRatio != elementAspectRatio) {
@@ -402,7 +419,7 @@ export const scaleLoadedImage = (
             el.height = h_image;
             el.width = w_image;
             el.y += (h_old - h_image) / 2;
-            el.x += (w_old - w_image) / 2;            
+            el.x += (w_old - w_image) / 2;         
           }
         }
       });
@@ -445,11 +462,12 @@ export type LinkParts = {
 };
 
 export const getLinkParts = (fname: string, file?: TFile): LinkParts => {
+  //            1           2    3           4      5
   const REG = /(^[^#\|]*)#?(\^)?([^\|]*)?\|?(\d*)x?(\d*)/;
   const parts = fname.match(REG);
   return {
     original: fname,
-    path: file && parts[1] === "" ? file.path : parts[1],
+    path: file && (parts[1] === "") ? file.path : parts[1],
     isBlockRef: parts[2] === "^",
     ref: parts[3]?.match(/^page=\d*$/i) ? parts[3] : parts[3]?.replaceAll(REG_BLOCK_REF_CLEAN, ""),
     width: parts[4] ? parseInt(parts[4]) : undefined,
@@ -597,19 +615,7 @@ export const isVersionNewerThanOther = (version: string, otherVersion: string): 
   ) 
 }
 
-export const getEmbeddedFilenameParts = (fname:string):{
-  filepath: string,
-  hasBlockref: boolean,
-  hasGroupref: boolean,
-  hasTaskbone: boolean,
-  hasArearef: boolean,
-  hasFrameref: boolean,
-  blockref: string,
-  hasSectionref: boolean,
-  sectionref: string,
-  linkpartReference: string,
-  linkpartAlias: string
-} => {
+export const getEmbeddedFilenameParts = (fname:string): FILENAMEPARTS => {
   //                        0 1        23    4                               5         6  7                             8          9
   const parts = fname?.match(/([^#\^]*)((#\^)(group=|area=|frame=|taskbone)?([^\|]*)|(#)(group=|area=|frame=|taskbone)?([^\^\|]*))(.*)/);
   if(!parts) {
@@ -735,4 +741,14 @@ export const isCallerFromTemplaterPlugin = (stackTrace:string) => {
     }
   }
   return false;
+}
+
+export const convertSVGStringToElement = (svg: string): SVGSVGElement => {
+  const divElement = document.createElement("div");
+  divElement.innerHTML = svg;
+  const firstChild = divElement.firstChild;
+  if (firstChild instanceof SVGSVGElement) {
+    return firstChild;
+  }
+  return;
 }
