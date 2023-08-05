@@ -1164,6 +1164,9 @@ export class ExcalidrawAutomate {
     );
     this.elementsDict[id].fileId = fileId;
     this.elementsDict[id].scale = [1, 1];
+    if(!scale && anchor) {
+      this.elementsDict[id].customData = {isAnchored: true}
+    };
     return id;
   };
 
@@ -2504,7 +2507,7 @@ const updateElementLinksToObsidianLinks = ({elements, hostFile}:{
   hostFile: TFile;
 }): ExcalidrawElement[] => {
   return elements.map((el)=>{
-    if(el.link && el.link.startsWith("[")) {
+    if(el.type!=="embeddable" && el.link && el.link.startsWith("[")) {
       const partsArray = REGEX_LINK.getResList(el.link)[0];
       if(!partsArray?.value) return el;
       let linkText = REGEX_LINK.getLink(partsArray);

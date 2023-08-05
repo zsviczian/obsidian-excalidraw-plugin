@@ -1152,6 +1152,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setValue(this.plugin.settings.previewImageType)
       .onChange((value) => {
         this.plugin.settings.previewImageType = value as PreviewImageType;
+        this.requestEmbedUpdate=true;
         this.applySettingsUpdate();
       })
     );

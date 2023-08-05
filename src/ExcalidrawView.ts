@@ -1464,6 +1464,13 @@ export default class ExcalidrawView extends TextFileView {
       clearInterval(this.autosaveTimer);
       this.autosaveTimer = null;
     }
+    const path = this.file?.path;
+    const plugin = this.plugin;
+    if (path) {
+      setTimeout(() => {
+        plugin.triggerEmbedUpdates(path);
+      }, 300);
+    }
   }
 
   /**
@@ -3173,8 +3180,9 @@ export default class ExcalidrawView extends TextFileView {
             autoFocus: true,
             onChange: (et: ExcalidrawElement[], st: AppState) => {
               const canvasColorChangeHook = () => {
-                setTimeout(()=>this.updateScene({appState:{gridColor: this.getGridColor(st.viewBackgroundColor)}}));
-                setDynamicStyle(this.plugin.ea,this,st.viewBackgroundColor,this.plugin.settings.dynamicStyling);
+                const canvasColor = st.viewBackgroundColor === "transparent" ? "white" : st.viewBackgroundColor;
+                setTimeout(()=>this.updateScene({appState:{gridColor: this.getGridColor(canvasColor)}}));
+                setDynamicStyle(this.plugin.ea,this,canvasColor,this.plugin.settings.dynamicStyling);
                 if(this.plugin.ea.onCanvasColorChangeHook) {
                   try {
                     this.plugin.ea.onCanvasColorChangeHook(

@@ -6,7 +6,7 @@ import { ConstructableWorkspaceSplit, getContainerForDocument, isObsidianThemeDa
 import { DEVICE, EXTENDED_EVENT_TYPES, KEYBOARD_EVENT_TYPES } from "./Constants";
 import { ExcalidrawImperativeAPI, UIAppState } from "@zsviczian/excalidraw/types/types";
 import { ObsidianCanvasNode } from "./utils/CanvasNodeFactory";
-import { processLinkText, patchMobileView, generateEmbeddableLink } from "./utils/CustomEmbeddableUtils";
+import { processLinkText, patchMobileView } from "./utils/CustomEmbeddableUtils";
 
 declare module "obsidian" {
   interface Workspace {
@@ -172,6 +172,7 @@ function RenderObsidianView(
     if(subpath && view.canvasNodeFactory.isInitialized()) {
       setKeepOnTop();
       leafRef.current.node = view.canvasNodeFactory.createFileNote(file, subpath, containerRef.current, element.id);
+      view.updateEmbeddableLeafRef(element.id, leafRef.current);
     } else {
       (async () => {
         await leafRef.current.leaf.openFile(file, {

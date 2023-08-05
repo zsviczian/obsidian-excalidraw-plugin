@@ -17,6 +17,27 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.13":`
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/opLd1SqaH_I" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+# New
+- **Templater support**: You can now execute Templater scripts on an embedded Markdown document when the document is active for editing
+- **Interactive image-embeds**: I added a new image embed option "SVG Native". In "SVG Native" mode embedded items such as videos, webpages, and links (including links within the Vault) work.
+- **Anchored image resizing**: When you embed an Excalidraw drawing using the Anchor to 100% option, resizing the image will be disabled.
+
+# Fixed
+- when opening a new document in the Excalidraw view while a markdown document was open for editing in an embeddable, Excalidraw terminated with errors
+- shift-click to select multiple elements
+- dynamic styling when canvas background with transparent
+ 
+# New in ExcalidrawAutomate
+- added openState to the ${String.fromCharCode(96)}openFileInNewOrAdjacentLeaf${String.fromCharCode(96)}. For details see: [OpenViewState](https://github.com/obsidianmd/obsidian-api/blob/f86f95386d439c19d9a77831d5cac5748d80e7ec/obsidian.d.ts#L2686-L2695)
+${String.fromCharCode(96,96,96)}typescript
+openFileInNewOrAdjacentLeaf(file: TFile, openState?: OpenViewState): WorkspaceLeaf
+${String.fromCharCode(96,96,96)}
+`,
 "1.9.12":`
 ## New
 - If you create a Text Element that includes only a transclusion e.g.: ${String.fromCharCode(96)}![[My Image.png]]${String.fromCharCode(96)} then excalidraw will automatically replace the transclusion with the embedded image.
