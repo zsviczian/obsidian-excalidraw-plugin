@@ -75,6 +75,7 @@ I would love to include your contribution in the script library. If you have a s
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Reverse%20arrows.svg"/></div>|[[#Reverse arrows]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Scribble%20Helper.svg"/></div>|[[#Scribble Helper]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Select%20Elements%20of%20Type.svg"/></div>|[[#Select Elements of Type]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Select%20Similar%20Elements.svg"/></div>|[[#Select Similar Elements]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Set%20background%20color%20of%20unclosed%20line%20object%20by%20adding%20a%20shadow%20clone.svg"/></div>|[[#Set background color of unclosed line object by adding a shadow clone]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Set%20Dimensions.svg"/></div>|[[#Set Dimensions]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Set%20Font%20Family.svg"/></div>|[[#Set Font Family]]|
@@ -377,6 +378,12 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Select%20Elements%20of%20Type.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Select%20Elements%20of%20Type.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Prompts you with a list of the different element types in the active image. Only elements of the selected type will be selected on the canvas. If nothing is selected when running the script, then the script will process all the elements on the canvas. If some elements are selected when the script is executed, then the script will only process the selected elements.<br>The script is useful when, for example, you want to bring to front all the arrows, or want to change the color of all the text elements, etc.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-select-element-of-type.jpg'></td></tr></table>
+
+## Select Similar Elements
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Select%20Similar%20Elements.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Select%20Similar%20Elements.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script allows you to streamline your Obsidian-Excalidraw workflows by enabling the selection of elements based on similar properties. you can precisely define which attributes such as stroke color, fill style, font family, and more, should match for selection. It's perfect for large canvases where manual selection would be cumbersome. You can either run the script to find and select matching elements across the entire scene, or define a specific group of elements to apply the selection criteria within a defined timeframe. This script enhances control and efficiency in your Excalidraw experience.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-select-similar-elements.png'></td></tr></table>
 
 ## Set background color of unclosed line object by adding a shadow clone
 ```excalidraw-script-install
