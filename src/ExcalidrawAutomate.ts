@@ -11,7 +11,7 @@ import {
   StrokeRoundness,
   RoundnessType,
 } from "@zsviczian/excalidraw/types/element/types";
-import { normalizePath, Notice, OpenViewState, TFile, WorkspaceLeaf } from "obsidian";
+import { Editor, normalizePath, Notice, OpenViewState, TFile, WorkspaceLeaf } from "obsidian";
 import * as obsidian_module from "obsidian";
 import ExcalidrawView, { ExportSettings, TextMode } from "src/ExcalidrawView";
 import { ExcalidrawData, getMarkdownDrawingSection, REGEX_LINK } from "src/ExcalidrawData";
@@ -169,6 +169,23 @@ export class ExcalidrawAutomate {
   ): WorkspaceLeaf {
     const modifierKeys = emulateKeysForLinkClick(targetPane??"new-tab");
     return getLeaf(this.plugin,origo,modifierKeys);
+  }
+
+  public getActiveEmbeddableViewOrEditor (view?:ExcalidrawView): {view:any}|{file:TFile, editor:Editor}|null {
+    if (!this.targetView && !view) {
+      return null;
+    }
+    view = view ?? this.targetView;
+    const leafOrNode = view.getActiveEmbeddable();
+    if(leafOrNode) {
+      if(leafOrNode.node && leafOrNode.node.isEditing) {
+        return {file: leafOrNode.node.file, editor: leafOrNode.node.child.editor};
+      }
+      if(leafOrNode.leaf && leafOrNode.leaf.view) {
+        return {view: leafOrNode.leaf.view};
+      }
+    }
+    return null;
   }
 
   plugin: ExcalidrawPlugin;
