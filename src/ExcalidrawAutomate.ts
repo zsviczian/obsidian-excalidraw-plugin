@@ -171,6 +171,14 @@ export class ExcalidrawAutomate {
     return getLeaf(this.plugin,origo,modifierKeys);
   }
 
+  /**
+   * Returns the editor or leaf.view of the currently active embedded obsidian file.
+   * If view is not provided, ea.targetView is used.
+   * If the embedded file is a markdown document the function will return
+   * {file:TFile, editor:Editor} otherwise it will return {view:any}. You can check view type with view.getViewType();
+   * @param view 
+   * @returns 
+   */
   public getActiveEmbeddableViewOrEditor (view?:ExcalidrawView): {view:any}|{file:TFile, editor:Editor}|null {
     if (!this.targetView && !view) {
       return null;

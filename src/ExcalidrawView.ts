@@ -3302,7 +3302,8 @@ export default class ExcalidrawView extends TextFileView {
               this.excalidrawData.scene.appState.theme = newTheme;
               this.loadSceneFiles();
               toolsPanelRef?.current?.setTheme(newTheme);
-              setDynamicStyle(this.plugin.ea,this,this.previousBackgroundColor,this.plugin.settings.dynamicStyling);
+              //Timeout is to allow appState to update
+              setTimeout(()=>setDynamicStyle(this.plugin.ea,this,this.previousBackgroundColor,this.plugin.settings.dynamicStyling));
             },
             ownerDocument: this.ownerDocument,
             ownerWindow: this.ownerWindow,

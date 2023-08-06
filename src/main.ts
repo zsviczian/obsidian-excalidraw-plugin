@@ -80,7 +80,6 @@ import {
   log,
   setLeftHandedMode,
   sleep,
-  debug,
   isVersionNewerThanOther,
   getExportTheme,
   isCallerFromTemplaterPlugin,
@@ -152,6 +151,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private packageMap: WeakMap<Window,Packages> = new WeakMap<Window,Packages>();
   public leafChangeTimeout: NodeJS.Timeout = null;
   private forceSaveCommand:Command;
+  private removeEventLisnters:(()=>void)[] = [];
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
@@ -1995,9 +1995,10 @@ export default class ExcalidrawPlugin extends Plugin {
       }
       this.activeExcalidrawView.save();
     };
-    this.registerEvent(
-      this.app.workspace.on("click", onClickEventSaveActiveDrawing),
-    );
+    this.app.workspace.containerEl.addEventListener("click", onClickEventSaveActiveDrawing)
+    this.removeEventLisnters.push(() => {
+      this.app.workspace.containerEl.removeEventListener("click", onClickEventSaveActiveDrawing)
+    });
 
     const onFileMenuEventSaveActiveDrawing = () => {
       if (
@@ -2086,6 +2087,9 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   onunload() {
+    this.removeEventLisnters.forEach((removeEventListener) =>
+      removeEventListener(),
+    );
     destroyExcalidrawAutomate();
     if (this.popScope) {
       this.popScope();
