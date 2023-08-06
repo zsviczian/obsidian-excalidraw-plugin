@@ -367,9 +367,9 @@ FILENAME_HEAD: "Filename",
     "<b>Toggle OFF</b>: Embed drawing as a <a href='' target='_blank'>PNG</a> image. Note, that some of the <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>image block referencing features</a> do not work with PNG embeds.",*/
   EMBED_PREVIEW_IMAGETYPE_NAME: "Image type in markdown preview",
   EMBED_PREVIEW_IMAGETYPE_DESC:
-    "<b>Native SVG</b>: High Image Quality. Embedded Websites, YouTube videos, Obsidian Links will work in the image. Embedded Obsidian pages will not<br>" +
-    "<b>SVG Image</b>: High Image Quality. Embedded elements only have placeholders, links don't work<br>" +
-    "<b>PNG Image</b>: Lower Image Quality, but in some cases better performance with large drawings. Some of the <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>image block referencing features</a> do not work with PNG embeds.", 
+    "<b>Native SVG</b>: High Image Quality. Embedded Websites, YouTube videos, Obsidian Links, and external images embedded via a URL will all work. Embedded Obsidian pages will not<br>" +
+    "<b>SVG Image</b>: High Image Quality. Embedded elements and images embedded via URL only have placeholders, links don't work<br>" +
+    "<b>PNG Image</b>: Lower Image Quality, but in some cases better performance with large drawings. Embedded elements and images embedded via URL only have placeholders, links don't work. Also some of the <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>image block referencing features</a> do not work with PNG embeds.", 
   PREVIEW_MATCH_OBSIDIAN_NAME: "Excalidraw preview to match Obsidian theme",
   PREVIEW_MATCH_OBSIDIAN_DESC:
     "Image preview in documents should match the Obsidian theme. If enabled, when Obsidian is in dark mode, Excalidraw images will render in dark mode. " +

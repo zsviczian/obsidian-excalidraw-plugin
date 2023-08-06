@@ -1,7 +1,7 @@
 //https://stackoverflow.com/questions/2068344/how-do-i-get-a-youtube-video-thumbnail-from-the-youtube-api
 //https://img.youtube.com/vi/uZz5MgzWXiM/maxresdefault.jpg
 
-import { FileId } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawImageElement, FileId } from "@zsviczian/excalidraw/types/element/types";
 import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/types";
 import { App, MarkdownRenderer, Notice, TFile } from "obsidian";
 import {
@@ -39,6 +39,7 @@ import {
   svgToBase64,
 } from "./utils/Utils";
 import { ValueOf } from "./types";
+import { has } from "./svgToExcalidraw/attributes";
 
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B
@@ -60,6 +61,15 @@ export const IMAGE_MIME_TYPES = {
   avif: "image/avif",
   jfif: "image/jfif",
 } as const;
+
+type ImgData = {
+  mimeType: MimeType;
+  fileId: FileId;
+  dataURL: DataURL;
+  created: number;
+  hasSVGwithBitmap: boolean;
+  size: { height: number; width: number };
+};
 
 export declare type MimeType = ValueOf<typeof IMAGE_MIME_TYPES> | "application/octet-stream";
 
@@ -307,14 +317,7 @@ export class EmbeddedFilesLoader {
     return result;
   }
   
-  private async _getObsidianImage(inFile: TFile | EmbeddedFile, depth: number): Promise<{
-    mimeType: MimeType;
-    fileId: FileId;
-    dataURL: DataURL;
-    created: number;
-    hasSVGwithBitmap: boolean;
-    size: { height: number; width: number };
-  }> {
+  private async _getObsidianImage(inFile: TFile | EmbeddedFile, depth: number): Promise<ImgData> {
     if (!this.plugin || !inFile) {
       return null;
     }
@@ -481,7 +484,7 @@ export class EmbeddedFilesLoader {
     if (this.isDark === undefined) {
       this.isDark = excalidrawData?.scene?.appState?.theme === "dark";
     }
-    let entry;
+    let entry: IteratorResult<[FileId, EmbeddedFile]>;
     const files: FileData[] = [];
     while (!this.terminate && !(entry = entries.next()).done) {
       const embeddedFile: EmbeddedFile = entry.value[1];

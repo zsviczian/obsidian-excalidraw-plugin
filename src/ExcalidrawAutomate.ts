@@ -50,7 +50,7 @@ import {
   wrapTextAtCharLength,
 } from "src/utils/Utils";
 import { getAttachmentsFolderAndFilePath, getLeaf, getNewOrAdjacentLeaf, isObsidianThemeDark } from "src/utils/ObsidianUtils";
-import { AppState, BinaryFileData,  ExcalidrawImperativeAPI, Point } from "@zsviczian/excalidraw/types/types";
+import { AppState, BinaryFileData,  DataURL,  ExcalidrawImperativeAPI, Point } from "@zsviczian/excalidraw/types/types";
 import { EmbeddedFile, EmbeddedFilesLoader, FileData } from "src/EmbeddedFileLoader";
 import { tex2dataURL } from "src/LaTeX";
 import { NewFileActions, Prompt } from "src/dialogs/Prompt";
@@ -2474,6 +2474,11 @@ async function getTemplate(
   };
 }
 
+export const generatePlaceholderDataURL = (width: number, height: number): DataURL => {
+  const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="100%" height="100%" fill="#E7E7E7" /><text x="${width / 2}" y="${height / 2}" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="${Math.min(width, height) / 5}" fill="#888">Placeholder</text></svg>`;
+  return `data:image/svg+xml;base64,${btoa(svgString)}` as DataURL;
+};
+
 export async function createPNG(
   templatePath: string = undefined,
   scale: number = 1,
@@ -2500,7 +2505,9 @@ export async function createPNG(
   const files = imagesDict ?? {};
   if(template?.files) {
     Object.values(template.files).forEach((f:any)=>{
-      files[f.id]=f;
+      if(!f.dataURL.startsWith("http")) {
+        files[f.id]=f;
+      };
     });
   }
   

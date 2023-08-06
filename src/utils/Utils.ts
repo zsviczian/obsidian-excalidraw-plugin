@@ -7,10 +7,9 @@ import {
   TFile,
 } from "obsidian";
 import { Random } from "roughjs/bin/math";
-import { DataURL, Zoom } from "@zsviczian/excalidraw/types/types";
+import { BinaryFileData, DataURL} from "@zsviczian/excalidraw/types/types";
 import {
   CASCADIA_FONT,
-  REG_BLOCK_REF_CLEAN,
   VIRGIL_FONT,
   FRONTMATTER_KEY_EXPORT_DARK,
   FRONTMATTER_KEY_EXPORT_TRANSPARENT,
@@ -27,11 +26,10 @@ import { compressToBase64, decompressFromBase64 } from "lz-string";
 import { getDataURLFromURL, getIMGFilename, getMimeType, getURLImageExtension } from "./FileUtils";
 import { IMAGE_TYPES } from "../Constants";
 import { generateEmbeddableLink } from "./CustomEmbeddableUtils";
-import Scene from "@zsviczian/excalidraw/types/scene/Scene";
 import ExcalidrawScene from "src/svgToExcalidraw/elements/ExcalidrawScene";
 import { FILENAMEPARTS } from "./UtilTypes";
 import { Mutable } from "@zsviczian/excalidraw/types/utility-types";
-import { add } from "@zsviczian/excalidraw/types/ga";
+import { cleanBlockRef, cleanSectionHeading } from "./ObsidianUtils";
 
 declare const PLUGIN_VERSION:string;
 
@@ -287,6 +285,18 @@ export const getSVG = async (
   }
 };
 
+export function filterFiles(files: Record<ExcalidrawElement["id"], BinaryFileData>): Record<ExcalidrawElement["id"], BinaryFileData> {
+  let filteredFiles: Record<ExcalidrawElement["id"], BinaryFileData> = {};
+
+  Object.entries(files).forEach(([key, value]) => {
+    if (!value.dataURL.startsWith("http")) {
+      filteredFiles[key] = value;
+    }
+  });
+
+  return filteredFiles;
+}
+
 export const getPNG = async (
   scene: any,
   exportSettings: ExportSettings,
@@ -303,7 +313,7 @@ export const getPNG = async (
           : false,
         ...scene.appState,
       },
-      files: scene.files,
+      files: filterFiles(scene.files),
       exportPadding: padding,
       mimeType: "image/png",
       getDimensions: (width: number, height: number) => ({
@@ -465,11 +475,14 @@ export const getLinkParts = (fname: string, file?: TFile): LinkParts => {
   //            1           2    3           4      5
   const REG = /(^[^#\|]*)#?(\^)?([^\|]*)?\|?(\d*)x?(\d*)/;
   const parts = fname.match(REG);
+  const isBlockRef = parts[2] === "^";
   return {
     original: fname,
     path: file && (parts[1] === "") ? file.path : parts[1],
-    isBlockRef: parts[2] === "^",
-    ref: parts[3]?.match(/^page=\d*$/i) ? parts[3] : parts[3]?.replaceAll(REG_BLOCK_REF_CLEAN, ""),
+    isBlockRef,
+    ref: parts[3]?.match(/^page=\d*$/i)
+      ? parts[3]
+      : isBlockRef ? cleanBlockRef(parts[3]) : cleanSectionHeading(parts[3]),
     width: parts[4] ? parseInt(parts[4]) : undefined,
     height: parts[5] ? parseInt(parts[5]) : undefined,
     page: parseInt(parts[3]?.match(/page=(\d*)/)?.[1])

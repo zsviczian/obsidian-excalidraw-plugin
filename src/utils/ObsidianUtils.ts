@@ -5,6 +5,7 @@ import {
 import ExcalidrawPlugin from "../main";
 import { checkAndCreateFolder, splitFolderAndFilename } from "./FileUtils";
 import { linkClickModifierType, ModifierKeys } from "./ModifierkeyHelper";
+import { REG_BLOCK_REF_CLEAN, REG_SECTION_REF_CLEAN } from "src/Constants";
 
 export const getParentOfClass = (element: Element, cssClass: string):HTMLElement | null => {
   let parent = element.parentElement;
@@ -198,3 +199,19 @@ export const getContainerForDocument = (doc:Document) => {
   }
   return app.workspace.rootSplit;
 };
+
+export const cleanSectionHeading = (heading:string) => {
+  if(!heading) return heading;
+  return heading.replace(REG_SECTION_REF_CLEAN, "").replace(/\s+/g, " ").trim();
+}
+
+export const cleanBlockRef = (blockRef:string) => {
+  if(!blockRef) return blockRef;
+  return blockRef.replace(REG_BLOCK_REF_CLEAN, "").replace(/\s+/g, " ").trim();
+}
+
+//needed for backward compatibility
+export const legacyCleanBlockRef = (blockRef:string) => {
+  if(!blockRef) return blockRef;
+  return blockRef.replace(/[!"#$%&()*+,.:;<=>?@^`{|}~\/\[\]\\]/g, "").replace(/\s+/g, " ").trim();
+}

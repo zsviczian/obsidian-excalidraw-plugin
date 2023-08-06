@@ -7,9 +7,10 @@ import { ActionButton } from "./ActionButton";
 import { ICONS } from "./ActionIcons";
 import { t } from "src/lang/helpers";
 import { ScriptEngine } from "src/Scripts";
-import { REG_BLOCK_REF_CLEAN, ROOTELEMENTSIZE, mutateElement, nanoid, sceneCoordsToViewportCoords } from "src/Constants";
+import { ROOTELEMENTSIZE, mutateElement, nanoid, sceneCoordsToViewportCoords } from "src/Constants";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK } from "src/ExcalidrawData";
 import { processLinkText, useDefaultExcalidrawFrame } from "src/utils/CustomEmbeddableUtils";
+import { cleanSectionHeading } from "src/utils/ObsidianUtils";
 
 export class EmbeddableMenu {
 
@@ -119,7 +120,7 @@ export class EmbeddableMenu {
                     .getForFile({ isCancelled: () => false },file))
                     .blocks.filter((b: any) => b.display && b.node?.type === "heading");
                   const values = [""].concat(
-                    sections.map((b: any) => `#${b.display.replaceAll(REG_BLOCK_REF_CLEAN, "").trim()}`)
+                    sections.map((b: any) => `#${cleanSectionHeading(b.display)}`)
                   );
                   const display = [t("SHOW_ENTIRE_FILE")].concat(
                     sections.map((b: any) => b.display)

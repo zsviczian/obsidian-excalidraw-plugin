@@ -17,6 +17,19 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.14":`
+# Fixed
+- **Dynamic Styling**: Excalidraw ${String.fromCharCode(96)}Plugin Settings/Display/Dynamic Styling${String.fromCharCode(96)} did not handle theme changes correctly.
+- **Section References**: Section Headings that contained a dot (e.g. #2022.01.01) (or other special characters) did not work when focusing markdown embeds to a section. [#1262](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1262)
+- **PNG Export**: When using images from the web (i.e. based on URL and not a file from your Vault), embedding the Excalidraw file into a markdown document as PNG, or exporting as PNG failed. This is because due to browser cross-origin restrictions, Excalidraw is unable to access the image. In such cases, a placeholder will be included in the export, but the export will not fail, as until now.
+
+# New in ExcalidrawAutomate
+- ${String.fromCharCode(96)}getActiveEmbeddableViewOrEditor${String.fromCharCode(96)} will return the active editor and file in case of a markdown document or the active leaf.view for other files (e.g. PDF, MP4 player, Kanban, Canvas, etc) of the currently active embedded object. This function can be used by plugins to check if an editor is available and obtain the view or editor to perform their actions. Example: [package.json](https://github.com/zsviczian/excalibrain/blob/2056a021af7c3a53ed08203a77f6eae304ca6e39/package.json#L23), [Checking for EA](https://github.com/zsviczian/excalibrain/blob/2056a021af7c3a53ed08203a77f6eae304ca6e39/src/excalibrain-main.ts#L114-L127), and [Running the function](https://github.com/zsviczian/excalibrain/blob/2056a021af7c3a53ed08203a77f6eae304ca6e39/src/excalibrain-main.ts#L362-L399)
+
+${String.fromCharCode(96,96,96)}typescript
+public getActiveEmbeddableViewOrEditor (view?:ExcalidrawView): {view:any}|{file:TFile, editor:Editor}|null;
+${String.fromCharCode(96,96,96)}
+`,
 "1.9.13":`
 <div class="excalidraw-videoWrapper"><div>
 <iframe src="https://www.youtube.com/embed/opLd1SqaH_I" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

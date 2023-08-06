@@ -74,7 +74,11 @@ export const SCRIPT_INSTALL_CODEBLOCK = "excalidraw-script-install";
 export const SCRIPT_INSTALL_FOLDER = "Downloaded";
 export const fileid = customAlphabet("1234567890abcdef", 40);
 export const REG_LINKINDEX_INVALIDCHARS = /[<>:"\\|?*#]/g;
-export const REG_BLOCK_REF_CLEAN = /[!"#$%&()*+,.:;<=>?@^`{|}~\/\[\]\\]/g; 
+
+//taken from Obsidian source code
+export const REG_SECTION_REF_CLEAN = /([:#|^\\\r\n]|%%|\[\[|]])/g;
+export const REG_BLOCK_REF_CLEAN = /[!"#$%&()*+,.:;<=>?@^`{|}~\/\[\]\\\r\n]/g;
+//                                 /[!"#$%&()*+,.:;<=>?@^`{|}~\/\[\]\\]/g; 
 // https://discord.com/channels/686053708261228577/989603365606531104/1000128926619816048
 // /\+|\/|~|=|%|\(|\)|{|}|,|&|\.|\$|!|\?|;|\[|]|\^|#|\*|<|>|&|@|\||\\|"|:|\s/g;
 export const IMAGE_TYPES = ["jpeg", "jpg", "png", "gif", "svg", "webp", "bmp", "ico"];

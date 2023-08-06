@@ -13,7 +13,6 @@ import {
   FRONTMATTER_KEY_CUSTOM_URL_PREFIX,
   FRONTMATTER_KEY_DEFAULT_MODE,
   fileid,
-  REG_BLOCK_REF_CLEAN,
   FRONTMATTER_KEY_LINKBUTTON_OPACITY,
   FRONTMATTER_KEY_ONLOAD_SCRIPT,
   FRONTMATTER_KEY_AUTOEXPORT,
@@ -45,7 +44,7 @@ import {
   LinkParts,
   wrapTextAtCharLength,
 } from "./utils/Utils";
-import { getAttachmentsFolderAndFilePath, isObsidianThemeDark } from "./utils/ObsidianUtils";
+import { cleanBlockRef, cleanSectionHeading, getAttachmentsFolderAndFilePath, isObsidianThemeDark } from "./utils/ObsidianUtils";
 import {
   ExcalidrawElement,
   ExcalidrawImageElement,
@@ -1719,18 +1718,19 @@ export const getTransclusion = async (
   if (!linkParts.path) {
     return { contents: linkParts.original.trim(), lineNum: 0 };
   } //filename not found
+
   if (!file || !(file instanceof TFile)) {
     return { contents: linkParts.original.trim(), lineNum: 0 };
   }
+
   const contents = await app.vault.read(file);
+
   if (!linkParts.ref) {
     //no blockreference
     return charCountLimit
       ? { contents: contents.substring(0, charCountLimit).trim(), lineNum: 0 }
       : { contents: contents.trim(), lineNum: 0 };
   }
-  //const isParagraphRef = parts.value[2] ? true : false; //does the reference contain a ^ character?
-  //const id = parts.value[3]; //the block ID or heading text
 
   const blocks = (
     await app.metadataCache.blockCache.getForFile(
@@ -1741,6 +1741,7 @@ export const getTransclusion = async (
   if (!blocks) {
     return { contents: linkParts.original.trim(), lineNum: 0 };
   }
+
   if (linkParts.isBlockRef) {
     let para = blocks.filter((block: any) => block.node.id == linkParts.ref)[0]
       ?.node;
@@ -1759,6 +1760,7 @@ export const getTransclusion = async (
       lineNum,
     };
   }
+
   const headings = blocks.filter(
     (block: any) => block.display.search(/^#+\s/) === 0,
   ); // startsWith("#"));
@@ -1790,12 +1792,19 @@ export const getTransclusion = async (
     //const refNoSpace = linkParts.ref.replaceAll(" ","");
     if (
       !startPos &&
-      (c?.value?.replaceAll(REG_BLOCK_REF_CLEAN, "") === linkParts.ref ||
-        c?.title?.replaceAll(REG_BLOCK_REF_CLEAN, "") === linkParts.ref ||
-        dataHeading?.replaceAll(REG_BLOCK_REF_CLEAN, "") === linkParts.ref ||
+      ((cleanBlockRef(c?.value) === linkParts.ref ||
+        cleanBlockRef(c?.title) === linkParts.ref ||
+        cleanBlockRef(dataHeading) === linkParts.ref ||
         (cc
-          ? cc[0]?.value?.replaceAll(REG_BLOCK_REF_CLEAN, "") === linkParts.ref
-          : false))
+          ? cleanBlockRef(cc[0]?.value) === linkParts.ref
+          : false)) || 
+        (cleanSectionHeading(c?.value) === linkParts.ref ||
+         cleanSectionHeading(c?.title) === linkParts.ref ||
+         cleanSectionHeading(dataHeading) === linkParts.ref ||
+          (cc
+            ? cleanSectionHeading(cc[0]?.value) === linkParts.ref
+            : false))
+        )
     ) {
       startPos = headings[i].node.children[0]?.position.start.offset; //
       depth = headings[i].node.depth;
