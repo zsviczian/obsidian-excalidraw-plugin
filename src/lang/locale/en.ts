@@ -103,12 +103,12 @@ export default {
   //settings.ts
   RELEASE_NOTES_NAME: "Display Release Notes after update",
   RELEASE_NOTES_DESC:
-    "<b>Toggle ON:</b> Display release notes each time you update Excalidraw to a newer version.<br>" +
-    "<b>Toggle OFF:</b> Silent mode. You can still read release notes on <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases'>GitHub</a>.",
+    "<b><u>Toggle ON:</u></b> Display release notes each time you update Excalidraw to a newer version.<br>" +
+    "<b><u>Toggle OFF:</u></b> Silent mode. You can still read release notes on <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases'>GitHub</a>.",
   NEWVERSION_NOTIFICATION_NAME: "Plugin update notification",
   NEWVERSION_NOTIFICATION_DESC:
-      "<b>Toggle ON:</b> Show a notification when a new version of the plugin is available.<br>" +
-      "<b>Toggle OFF:</b> Silent mode. You need to check for plugin updates in Community Plugins.",
+      "<b><u>Toggle ON:</u></b> Show a notification when a new version of the plugin is available.<br>" +
+      "<b><u>Toggle OFF:</u></b> Silent mode. You need to check for plugin updates in Community Plugins.",
   
   FOLDER_NAME: "Excalidraw folder",
   FOLDER_DESC:
@@ -118,7 +118,7 @@ export default {
   FOLDER_EMBED_DESC:
     "Define which folder to place the newly inserted drawing into " +
     "when using the command palette action: 'Create a new drawing and embed into active document'.<br>" +
-    "<b>Toggle ON:</b> Use Excalidraw folder<br><b>Toggle OFF:</b> Use the attachments folder defined in Obsidian settings.",
+    "<b><u>Toggle ON:</u></b> Use Excalidraw folder<br><b><u>Toggle OFF:</u></b> Use the attachments folder defined in Obsidian settings.",
   TEMPLATE_NAME: "Excalidraw template file",
   TEMPLATE_DESC:
     "Full filepath to the Excalidraw template. " +
@@ -143,7 +143,7 @@ export default {
     "be saved without compression, so that you can read and edit the JSON string. The drawing will be compressed again " +
     "once you switch back to Excalidraw view. " +
     "The setting only has effect 'point forward', meaning, existing drawings will not be affected by the setting " +
-    "until you open them and save them.<br><b>Toggle ON:</b> Compress drawing JSON<br><b>Toggle OFF:</b> Leave drawing JSON uncompressed",
+    "until you open them and save them.<br><b><u>Toggle ON:</u></b> Compress drawing JSON<br><b><u>Toggle OFF:</u></b> Leave drawing JSON uncompressed",
   AUTOSAVE_INTERVAL_DESKTOP_NAME: "Interval for autosave on Desktop",
   AUTOSAVE_INTERVAL_DESKTOP_DESC:
     "The time interval between saves. Autosave will skip if there are no changes in the drawing. " +
@@ -168,7 +168,7 @@ FILENAME_HEAD: "Filename",
   FILENAME_PREFIX_EMBED_DESC:
     "Should the filename of the newly inserted drawing start with the name of the active markdown note " +
     "when using the command palette action: <code>Create a new drawing and embed into active document</code>?<br>" +
-    "<b>Toggle ON:</b> Yes, the filename of a new drawing should start with filename of the active document<br><b>Toggle OFF:</b> No, filename of a new drawing should not include the filename of the active document",
+    "<b><u>Toggle ON:</u></b> Yes, the filename of a new drawing should start with filename of the active document<br><b><u>Toggle OFF:</u></b> No, filename of a new drawing should not include the filename of the active document",
   FILENAME_POSTFIX_NAME:
     "Custom text after markdown Note's name when embedding",
   FILENAME_POSTFIX_DESC:
@@ -179,7 +179,7 @@ FILENAME_HEAD: "Filename",
   FILENAME_EXCALIDRAW_EXTENSION_NAME: ".excalidraw.md or .md",
   FILENAME_EXCALIDRAW_EXTENSION_DESC:
     "This setting does not apply if you use Excalidraw in compatibility mode, " +
-    "i.e. you are not using Excalidraw markdown files.<br><b>Toggle ON:</b> filename ends with .excalidraw.md<br><b>Toggle OFF:</b> filename ends with .md",
+    "i.e. you are not using Excalidraw markdown files.<br><b><u>Toggle ON:</u></b> filename ends with .excalidraw.md<br><b><u>Toggle OFF:</u></b> filename ends with .md",
   DISPLAY_HEAD: "Display",
   DYNAMICSTYLE_NAME: "Dynamic styling",
   DYNAMICSTYLE_DESC:
@@ -187,24 +187,25 @@ FILENAME_HEAD: "Filename",
   LEFTHANDED_MODE_NAME: "Left-handed mode",
   LEFTHANDED_MODE_DESC:
     "Currently only has effect in tray-mode. If turned on, the tray will be on the right side." +
-    "<br><b>Toggle ON:</b> Left-handed mode.<br><b>Toggle OFF:</b> Right-handed moded",
-  IFRAME_MATCH_THEME_NAME: "IFrames (markdown embeds) to match Excalidraw theme",
+    "<br><b><u>Toggle ON:</u></b> Left-handed mode.<br><b><u>Toggle OFF:</u></b> Right-handed moded",
+  IFRAME_MATCH_THEME_NAME: "Markdown embeds to match Excalidraw theme",
   IFRAME_MATCH_THEME_DESC:
-    "Set this to true if you are for example using Obsidian in dark mode but use excalidraw with a light background. " +
-    "With this setting the embedded Obsidian markdown document will match the Excalidraw theme (i.e. light colors if Excalidraw is in light mode). ",    
+    "<b><u>Toggle ON:</u></b> Set this to true if for example you are using Obsidian in dark-mode but use excalidraw with a light background. " +
+    "With this setting the embedded Obsidian markdown document will match the Excalidraw theme (i.e. light colors if Excalidraw is in light mode).<br>" +
+    "<b><u>Toggle OFF:</u></b> Set this to false if you want the embedded Obsidian markdown document to match the Obsidian theme (i.e. dark colors if Obsidian is in dark mode).",    
   MATCH_THEME_NAME: "New drawing to match Obsidian theme",
   MATCH_THEME_DESC:
     "If theme is dark, new drawing will be created in dark mode. This does not apply when you use a template for new drawings. " +
     "Also this will not affect when you open an existing drawing. Those will follow the theme of the template/drawing respectively." +
-    "<br><b>Toggle ON:</b> Follow Obsidian Theme<br><b>Toggle OFF:</b> Follow theme defined in your template",
+    "<br><b><u>Toggle ON:</u></b> Follow Obsidian Theme<br><b><u>Toggle OFF:</u></b> Follow theme defined in your template",
   MATCH_THEME_ALWAYS_NAME: "Existing drawings to match Obsidian theme",
   MATCH_THEME_ALWAYS_DESC:
     "If theme is dark, drawings will be opened in dark mode. If your theme is light, they will be opened in light mode. " +
-    "<br><b>Toggle ON:</b> Match Obsidian theme<br><b>Toggle OFF:</b> Open with the same theme as last saved",
+    "<br><b><u>Toggle ON:</u></b> Match Obsidian theme<br><b><u>Toggle OFF:</u></b> Open with the same theme as last saved",
   MATCH_THEME_TRIGGER_NAME: "Excalidraw to follow when Obsidian Theme changes",
   MATCH_THEME_TRIGGER_DESC:
     "If this option is enabled open Excalidraw pane will switch to light/dark mode when Obsidian theme changes. " +
-    "<br><b>Toggle ON:</b> Follow theme changes<br><b>Toggle OFF:</b> Drawings are not affected by Obsidian theme changes",
+    "<br><b><u>Toggle ON:</u></b> Follow theme changes<br><b><u>Toggle OFF:</u></b> Drawings are not affected by Obsidian theme changes",
   DEFAULT_OPEN_MODE_NAME: "Default mode when opening Excalidraw",
   DEFAULT_OPEN_MODE_DESC:
     "Specifies the mode how Excalidraw opens: Normal, Zen, or View mode. You may also set this behavior on a file level by " +
@@ -216,18 +217,18 @@ FILENAME_HEAD: "Filename",
   DEFAULT_PINCHZOOM_NAME: "Allow pinch zoom in pen mode",
   DEFAULT_PINCHZOOM_DESC:
     "Pinch zoom in pen mode when using the freedraw tool is disabled by default to prevent unwanted accidental zooming with your palm.<br>" +
-    "<b>Toggle on: </b>Enable pinch zoom in pen mode<br><b>Toggle off: </b>Disable pinch zoom in pen mode",
+    "<b><u>Toggle ON:</u></b> Enable pinch zoom in pen mode<br><b><u>Toggle OFF:</u></b>Disable pinch zoom in pen mode",
 
   DEFAULT_WHEELZOOM_NAME: "Mouse wheel to zoom by default",
   DEFAULT_WHEELZOOM_DESC:
-    `<b>Toggle on: </b>Mouse wheel to zoom; ${labelCTRL()} + mouse wheel to scroll</br><b>Toggle off: </b>${labelCTRL()} + mouse wheel to zoom; Mouse wheel to scroll`,
+    `<b><u>Toggle ON:</u></b> Mouse wheel to zoom; ${labelCTRL()} + mouse wheel to scroll</br><b><u>Toggle OFF:</u></b>${labelCTRL()} + mouse wheel to zoom; Mouse wheel to scroll`,
     
   ZOOM_TO_FIT_NAME: "Zoom to fit on view resize",
   ZOOM_TO_FIT_DESC: "Zoom to fit drawing when the pane is resized" +
-    "<br><b>Toggle ON:</b> Zoom to fit<br><b>Toggle OFF:</b> Auto zoom disabled",
+    "<br><b><u>Toggle ON:</u></b> Zoom to fit<br><b><u>Toggle OFF:</u></b> Auto zoom disabled",
   ZOOM_TO_FIT_ONOPEN_NAME: "Zoom to fit on file open",
   ZOOM_TO_FIT_ONOPEN_DESC: "Zoom to fit drawing when the drawing is first opened" +
-      "<br><b>Toggle ON:</b> Zoom to fit<br><b>Toggle OFF:</b> Auto zoom disabled",  
+      "<br><b><u>Toggle ON:</u></b> Zoom to fit<br><b><u>Toggle OFF:</u></b> Auto zoom disabled",  
   ZOOM_TO_FIT_MAX_LEVEL_NAME: "Zoom to fit max ZOOM level",
   ZOOM_TO_FIT_MAX_LEVEL_DESC:
     "Set the maximum level to which zoom to fit will enlarge the drawing. Minimum is 0.5 (50%) and maximum is 10 (1000%).",
@@ -272,9 +273,9 @@ FILENAME_HEAD: "Filename",
   DONE_DESC: "Icon to use for completed TODO items",
   HOVERPREVIEW_NAME: `Hover preview without pressing the ${labelCTRL()} key`,
   HOVERPREVIEW_DESC:
-    `<b>Toggle On</b>: In Exalidraw <u>view mode</u> the hover preview for [[wiki links]] will be shown immediately, without the need to hold the ${labelCTRL()} key. ` +
+    `<b><u>Toggle ON:</u></b> In Exalidraw <u>view mode</u> the hover preview for [[wiki links]] will be shown immediately, without the need to hold the ${labelCTRL()} key. ` +
     "In Excalidraw <u>normal mode</u>, the preview will be shown immediately only when hovering the blue link icon in the top right of the element.<br> " +
-    `<b>Toggle Off</b>: Hover preview is shown only when you hold the ${labelCTRL()} key while hovering the link.`,
+    `<b><u>Toggle OFF:</u></b> Hover preview is shown only when you hold the ${labelCTRL()} key while hovering the link.`,
   LINKOPACITY_NAME: "Opacity of link icon",
   LINKOPACITY_DESC:
     "Opacity of the link indicator icon in the top right corner of an element. 1 is opaque, 0 is transparent.",
@@ -299,7 +300,7 @@ FILENAME_HEAD: "Filename",
     "![[markdown page]] format.",
   QUOTE_TRANSCLUSION_REMOVE_NAME: "Quote translusion: remove leading '> ' from each line",
   QUOTE_TRANSCLUSION_REMOVE_DESC: "Remove the leading '> ' from each line of the transclusion. This will improve readability of quotes in text only transclusions<br>" +
-    "<b>Toggle ON:</b> Remove leading '> '<br><b>Toggle OFF:</b> Do not remove leading '> ' (note it will still be removed from the first row due to Obsidian API functionality)",
+    "<b><u>Toggle ON:</u></b> Remove leading '> '<br><b><u>Toggle OFF:</u></b> Do not remove leading '> ' (note it will still be removed from the first row due to Obsidian API functionality)",
   GET_URL_TITLE_NAME: "Use iframely to resolve page title",
   GET_URL_TITLE_DESC:
     "Use the <code>http://iframely.server.crestify.com/iframely?url=</code> to get title of page when dropping a link into Excalidraw",
@@ -363,13 +364,13 @@ FILENAME_HEAD: "Filename",
     "For a number of reasons, the same approach cannot be used to expedite the loading of drawings with many embedded objects. See demonstration <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.23' target='_blank'>here</a>.",
   /*EMBED_PREVIEW_SVG_NAME: "Display SVG in markdown preview",
   EMBED_PREVIEW_SVG_DESC:
-    "<b>Toggle ON</b>: Embed drawing as an <a href='https://en.wikipedia.org/wiki/Scalable_Vector_Graphics' target='_blank'>SVG</a> image into the markdown preview.<br>" +
-    "<b>Toggle OFF</b>: Embed drawing as a <a href='' target='_blank'>PNG</a> image. Note, that some of the <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>image block referencing features</a> do not work with PNG embeds.",*/
+    "<b><u>Toggle ON:</u></b> Embed drawing as an <a href='https://en.wikipedia.org/wiki/Scalable_Vector_Graphics' target='_blank'>SVG</a> image into the markdown preview.<br>" +
+    "<b><u>Toggle OFF:</u></b> Embed drawing as a <a href='' target='_blank'>PNG</a> image. Note, that some of the <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>image block referencing features</a> do not work with PNG embeds.",*/
   EMBED_PREVIEW_IMAGETYPE_NAME: "Image type in markdown preview",
   EMBED_PREVIEW_IMAGETYPE_DESC:
-    "<b>Native SVG</b>: High Image Quality. Embedded Websites, YouTube videos, Obsidian Links, and external images embedded via a URL will all work. Embedded Obsidian pages will not<br>" +
-    "<b>SVG Image</b>: High Image Quality. Embedded elements and images embedded via URL only have placeholders, links don't work<br>" +
-    "<b>PNG Image</b>: Lower Image Quality, but in some cases better performance with large drawings. Embedded elements and images embedded via URL only have placeholders, links don't work. Also some of the <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>image block referencing features</a> do not work with PNG embeds.", 
+    "<b><u>Native SVG</u></b>: High Image Quality. Embedded Websites, YouTube videos, Obsidian Links, and external images embedded via a URL will all work. Embedded Obsidian pages will not<br>" +
+    "<b><u>SVG Image</u></b>: High Image Quality. Embedded elements and images embedded via URL only have placeholders, links don't work<br>" +
+    "<b><u>PNG Image</u></b>: Lower Image Quality, but in some cases better performance with large drawings. Embedded elements and images embedded via URL only have placeholders, links don't work. Also some of the <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>image block referencing features</a> do not work with PNG embeds.", 
   PREVIEW_MATCH_OBSIDIAN_NAME: "Excalidraw preview to match Obsidian theme",
   PREVIEW_MATCH_OBSIDIAN_DESC:
     "Image preview in documents should match the Obsidian theme. If enabled, when Obsidian is in dark mode, Excalidraw images will render in dark mode. " +
@@ -387,7 +388,7 @@ FILENAME_HEAD: "Filename",
     "This option will not autogenerate PNG/SVG files, but will simply reference the already existing files.",
   EMBED_WIKILINK_NAME: "Embed Drawing using Wiki link",
   EMBED_WIKILINK_DESC:
-    "Toggle ON: Excalidraw will embed a [[wiki link]]. Toggle OFF: Excalidraw will embed a [markdown](link).",
+    "<b><u>Toggle ON:</u></b> Excalidraw will embed a [[wiki link]].<br><b><u>Toggle OFF:</u></b> Excalidraw will embed a [markdown](link).",
   EXPORT_PNG_SCALE_NAME: "PNG export image scale",
   EXPORT_PNG_SCALE_DESC: "The size-scale of the exported PNG image",
   EXPORT_BACKGROUND_NAME: "Export image with background",

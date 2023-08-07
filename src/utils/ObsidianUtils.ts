@@ -215,3 +215,14 @@ export const legacyCleanBlockRef = (blockRef:string) => {
   if(!blockRef) return blockRef;
   return blockRef.replace(/[!"#$%&()*+,.:;<=>?@^`{|}~\/\[\]\\]/g, "").replace(/\s+/g, " ").trim();
 }
+
+export const getAllWindowDocuments = (app:App):Document[] => {
+  const documents = new Set<Document>();
+  documents.add(document);
+  app.workspace.iterateAllLeaves(l=>{
+    if(l.view.containerEl.ownerDocument !== document) {
+      documents.add(l.view.containerEl.ownerDocument);
+    }
+  });
+  return Array.from(documents);
+}

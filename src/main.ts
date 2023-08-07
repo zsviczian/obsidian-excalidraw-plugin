@@ -107,6 +107,7 @@ import { InsertPDFModal } from "./dialogs/InsertPDFModal";
 import { ExportDialog } from "./dialogs/ExportDialog";
 import { UniversalInsertFileModal } from "./dialogs/UniversalInsertFileModal";
 import { imageCache } from "./utils/ImageCache";
+import { StylesManager } from "./utils/StylesManager";
 
 declare const EXCALIDRAW_PACKAGES:string;
 declare const react:any;
@@ -152,6 +153,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public leafChangeTimeout: NodeJS.Timeout = null;
   private forceSaveCommand:Command;
   private removeEventLisnters:(()=>void)[] = [];
+  private stylesManager:StylesManager;
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
@@ -211,6 +213,8 @@ export default class ExcalidrawPlugin extends Plugin {
     //inspiration taken from kanban:
     //https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/main.ts#L267
     this.registerMonkeyPatches();
+
+    this.stylesManager = new StylesManager(this);
 
     //    const patches = new OneOffs(this);
     if (this.settings.showReleaseNotes) {
@@ -1701,7 +1705,6 @@ export default class ExcalidrawPlugin extends Plugin {
   private registerEventListeners() {
     const self = this;
     this.app.workspace.onLayoutReady(async () => {
-
       //watch filename change to rename .svg, .png; to sync to .md; to update links
       const renameEventHandler = async (
         file: TAbstractFile,
