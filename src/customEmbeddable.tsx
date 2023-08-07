@@ -141,6 +141,8 @@ function RenderObsidianView(
       containerRef.current.removeChild(containerRef.current.lastChild);
     }
 
+    containerRef.current.parentElement.style.padding = "";
+
     const doc = view.ownerDocument;
     const rootSplit:WorkspaceSplit = new (WorkspaceSplit as ConstructableWorkspaceSplit)(app.workspace, "vertical");
     rootSplit.getRoot = () => app.workspace[doc === document ? 'rootSplit' : 'floatingSplit'];

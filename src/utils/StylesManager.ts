@@ -2,15 +2,17 @@ import { WorkspaceWindow } from "obsidian";
 import ExcalidrawPlugin from "src/main";
 import { getAllWindowDocuments } from "./ObsidianUtils";
 
-const STYLE_VARIABLES = ["--background-modifier-cover","--background-primary","--background-primary-alt","--background-secondary","--background-secondary-alt","--background-modifier-border","--text-normal","--text-muted","--text-accent","--text-accent-hover","--text-faint","--text-highlight-bg","--text-highlight-bg-active","--text-selection","--interactive-normal","--interactive-hover","--interactive-accent","--interactive-accent-hover","--scrollbar-bg","--scrollbar-thumb-bg","--scrollbar-active-thumb-bg"];
+const STYLE_VARIABLES = ["--background-modifier-cover","--background-primary-alt","--background-secondary","--background-secondary-alt","--background-modifier-border","--text-normal","--text-muted","--text-accent","--text-accent-hover","--text-faint","--text-highlight-bg","--text-highlight-bg-active","--text-selection","--interactive-normal","--interactive-hover","--interactive-accent","--interactive-accent-hover","--scrollbar-bg","--scrollbar-thumb-bg","--scrollbar-active-thumb-bg"];
 const EXCALIDRAW_CONTAINER_CLASS = "excalidraw__embeddable__outer";
 
 export class StylesManager {
   private stylesMap = new Map<Document,{light: HTMLStyleElement, dark: HTMLStyleElement}>();
   private styleLight: string;
   private styleDark: string;
+  private plugin: ExcalidrawPlugin;
 
   constructor(plugin: ExcalidrawPlugin) {
+    this.plugin = plugin;
     plugin.app.workspace.onLayoutReady(async () => {
       await this.harvestStyles();
       getAllWindowDocuments(plugin.app).forEach(doc => {
@@ -75,6 +77,9 @@ export class StylesManager {
       for (const variable of STYLE_VARIABLES) {
         allVariables[variable] = computedStyles.getPropertyValue(variable);
       }
+      const cm = this.plugin.ea.getCM(computedStyles.getPropertyValue("--background-primary"));
+      cm.alphaTo(0.9);
+      allVariables["--background-primary"] = cm.stringHEX();
       return Object.entries(allVariables)
         .map(([key, value]) => `${key}: ${value} !important;`)
         .join(" ");
