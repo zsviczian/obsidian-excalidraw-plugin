@@ -2090,6 +2090,7 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   onunload() {
+    this.stylesManager.unload();
     this.removeEventLisnters.forEach((removeEventListener) =>
       removeEventListener(),
     );

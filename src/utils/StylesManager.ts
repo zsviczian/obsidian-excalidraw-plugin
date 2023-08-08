@@ -31,7 +31,11 @@ export class StylesManager {
 
       plugin.registerEvent(
         plugin.app.workspace.on("window-open", (win: WorkspaceWindow, window: Window) => {
-          this.copyPropertiesToTheme(win.doc);
+          this.stylesMap.set(win.doc, {
+            light: document.head.querySelector(`style[id="excalidraw-embedded-light"]`),
+            dark: document.head.querySelector(`style[id="excalidraw-embedded-dark"]`)
+          });
+          //this.copyPropertiesToTheme(win.doc);
         }),
       )
 
@@ -41,6 +45,13 @@ export class StylesManager {
         }),
       )
     });
+  }
+
+  public unload() {
+    for (const [doc, styleTags] of this.stylesMap) {
+      doc.head.removeChild(styleTags.light);
+      doc.head.removeChild(styleTags.dark);
+    }
   }
 
   private async harvestStyles() {
@@ -100,11 +111,13 @@ export class StylesManager {
     } else {
       const lightStyleTag = doc.createElement("style");
       lightStyleTag.type = "text/css";
+      lightStyleTag.setAttribute("id", "excalidraw-embedded-light");
       lightStyleTag.innerHTML = `.${EXCALIDRAW_CONTAINER_CLASS} .theme-light {\n${this.styleLight}\n}`;
       doc.head.appendChild(lightStyleTag);
 
       const darkStyleTag = doc.createElement("style");
       darkStyleTag.type = "text/css";
+      darkStyleTag.setAttribute("id", "excalidraw-embedded-dark");
       darkStyleTag.innerHTML = `.${EXCALIDRAW_CONTAINER_CLASS} .theme-dark {\n${this.styleDark}\n}`;
       doc.head.appendChild(darkStyleTag);
 
