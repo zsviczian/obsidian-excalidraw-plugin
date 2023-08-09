@@ -382,3 +382,29 @@ div.excalidraw-draginfo {
 .excalidraw-image-wrapper img {
   margin: auto;
 }
+
+.modal-content.excalidraw-scriptengine-install .search-bar-wrapper {
+  position: sticky;
+  top: 1em;
+  margin-right: 1em;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: nowrap;
+  z-index: 10;
+  background: var(--background-secondary);
+  padding: 0.5em;
+  border-bottom: 1px solid var(--background-modifier-border);
+  float: right;
+  max-width: 28em;
+}
+
+.modal-content.excalidraw-scriptengine-install .hit-count {
+  margin-left: 0.5em;
+  white-space: nowrap;
+}
+
+.modal-content.excalidraw-scriptengine-install .active-highlight {
+  border: 2px solid var(--color-accent-2);
+  background-color: var(--color-accent);
+}
