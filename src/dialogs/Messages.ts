@@ -17,6 +17,13 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.15":`
+## New
+- There is now a search box in the Excliadraw Script Store. I categorized the scripts and added keywords to help easier navigation.
+
+## Fixed
+- The theme of the embedded Markdown document did not always honor plugin settings. With some themes, it worked, with others (including the default Obsidian theme, it didn't). 
+`,
 "1.9.14":`
 # Fixed
 - **Dynamic Styling**: Excalidraw ${String.fromCharCode(96)}Plugin Settings/Display/Dynamic Styling${String.fromCharCode(96)} did not handle theme changes correctly.
