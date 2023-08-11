@@ -17,6 +17,9 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.16":`
+I apologize for this extra release. I accidentally built 1.9.15 with an older excalidraw.com package version. Fixes and new features (like the improved grid) are now available again. Otherwise, this is the same as 1.9.15. Sorry for the inconvenience.
+`,
 "1.9.15":`
 ## New
 - There is now a search box in the Excliadraw Script Store. I categorized the scripts and added keywords to help easier navigation.
