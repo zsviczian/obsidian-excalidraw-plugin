@@ -89,6 +89,7 @@ I would love to include your contribution in the script library. If you have a s
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Set%20Dimensions.svg"/></div>|[[#Set Dimensions]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Set%20Grid.svg"/></div>|[[#Set Grid]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Set%20Stroke%20Width%20of%20Selected%20Elements.svg"/></div>|[[#Set Stroke Width of Selected Elements]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Toggle%20Grid.svg"/></div>|[[#Toggle Grid]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Uniform%20size.svg"/></div>|[[#Uniform Size]]|
 
 ## Linking and Embedding
@@ -493,6 +494,12 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Text%20Arch.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Text%20Arch.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Fit a text to the arch of a circle. The script will prompt you for the radius of the circle and then split your text to individual letters and place each letter to the arch defined by the radius. Setting a lower radius value will increase the arching of the text. Note that the arched-text will no longer be editable as a text element and it will no longer function as a markdown link. Emojis are currently not supported.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/text-arch.jpg'></td></tr></table>
+
+## Toggle Grid
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Toggle%20Grid.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/GColoy'>@GColoy</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Toggle%20Grid.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Toggles the grid on and off.<br> Especially useful when drawing with just a pen without a mouse or keyboard, as toggling the grid by left-clicking with the pen is sometimes quite tedious.</table>
 
 ## Text to Sticky Notes
 ```excalidraw-script-install
