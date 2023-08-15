@@ -11,20 +11,23 @@ if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.8.11")) {
   return;
 }
 const api = ea.getExcalidrawAPI();
-let appState = api.getAppState();
+let {gridSize, previousGridSize} = api.getAppState();
 
-if (!appState.previousGridSize) {
-  appState.previousGridSize = 20
+if (!previousGridSize) {
+  previousGridSize = 20
 }
-if (!appState.gridSize) {
-  appState.gridSize = appState.previousGridSize;
+if (!gridSize) {
+  gridSize = previousGridSize;
 }
 else
 {
-  appState.previousGridSize = appState.gridSize;
-  appState.gridSize = null;
+  previousGridSize = gridSize;
+  gridSize = null;
 }
-api.updateScene({
-  appState,
+ea.viewUpdateScene({
+  appState:{
+    gridSize,
+    previousGridSize
+  },
   commitToHistory:false
 });
