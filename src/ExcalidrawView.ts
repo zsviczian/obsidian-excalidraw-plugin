@@ -96,7 +96,7 @@ import {
   isContainer,
   fragWithHTML,
 } from "./utils/Utils";
-import { getLeaf, getParentOfClass } from "./utils/ObsidianUtils";
+import { getLeaf, getParentOfClass, obsidianPDFQuoteWithRef } from "./utils/ObsidianUtils";
 import { splitFolderAndFilename } from "./utils/FileUtils";
 import { ConfirmationPrompt, GenericInputPrompt, NewFileActions, Prompt } from "./dialogs/Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
@@ -2669,7 +2669,6 @@ export default class ExcalidrawView extends TextFileView {
             newElements,
             this.currentPosition,
             true,
-            api,
           );
         }
 
@@ -3270,11 +3269,6 @@ export default class ExcalidrawView extends TextFileView {
               data: ClipboardData,
               event: ClipboardEvent | null
             ) => {
-              //, event: ClipboardEvent | null
-              /*if(data && data.text && hyperlinkIsYouTubeLink(data.text)) {
-                this.addYouTubeThumbnail(data.text);
-                return false;
-              }*/
               const ea = this.getHookServer();
               if(data && ea.onPasteHook) {
                 const res = ea.onPasteHook({
@@ -3290,6 +3284,25 @@ export default class ExcalidrawView extends TextFileView {
               if(data && data.text && hyperlinkIsImage(data.text)) {
                 this.addImageWithURL(data.text);
                 return false;
+              }
+              if(data && data.text && !this.modifierKeyDown.shiftKey) {
+                const quoteWithRef = obsidianPDFQuoteWithRef(data.text);
+                if(quoteWithRef) {                  
+                  const ea = getEA(this) as ExcalidrawAutomate;
+                  const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
+                  const st = api.getAppState();
+                  ea.style.strokeColor = st.currentItemStrokeColor;
+                  ea.style.fontFamily = st.currentItemFontFamily;
+                  ea.style.fontSize = st.currentItemFontSize;
+                  const id = ea.addText(this.currentPosition.x, this.currentPosition.y, quoteWithRef.quote, {
+                    box: true,
+                    boxStrokeColor: "transparent",
+                    width: 500,
+                  })
+                  ea.elementsDict[id].link = quoteWithRef.link
+                  ea.addElementsToView(false,false);
+                  return false;
+                }
               }
               if (data.elements) {
                 const self = this;

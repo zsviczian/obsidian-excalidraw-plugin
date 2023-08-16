@@ -316,6 +316,9 @@ const createImgElement = async (
   onCanvas: boolean = false,
 ) :Promise<HTMLElement> => {
   const imgOrDiv = await getIMG(attr,onCanvas);
+  if(!imgOrDiv) {
+    return null;
+  }
   imgOrDiv.setAttribute("fileSource", attr.fname);
   if (attr.fwidth) {
     imgOrDiv.setAttribute("w", attr.fwidth);

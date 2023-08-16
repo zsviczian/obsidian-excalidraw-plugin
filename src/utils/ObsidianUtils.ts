@@ -19,8 +19,6 @@ export const getParentOfClass = (element: Element, cssClass: string):HTMLElement
   return parent?.classList?.contains(cssClass) ? parent : null;
 };
 
-
-
 export const getLeaf = (
   plugin: ExcalidrawPlugin,
   origo: WorkspaceLeaf,
@@ -225,4 +223,13 @@ export const getAllWindowDocuments = (app:App):Document[] => {
     }
   });
   return Array.from(documents);
+}
+
+export const obsidianPDFQuoteWithRef = (text:string):{quote: string, link: string} => {
+  const reg = /^> (.*)\n\n\[\[([^|\]]*)\|[^\]]*]]$/gm;
+  const match = reg.exec(text);
+  if(match) {
+    return {quote: match[1], link: match[2]};
+  }
+  return null;
 }

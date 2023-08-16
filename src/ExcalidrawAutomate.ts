@@ -901,7 +901,6 @@ export class ExcalidrawAutomate {
       [this.getElement(id)],
       { x: topX, y: topY },
       false,
-      this.getExcalidrawAPI(),
     )[0];
     return id;
   };
@@ -2685,7 +2684,6 @@ export function repositionElementsToCursor(
   elements: ExcalidrawElement[],
   newPosition: { x: number; y: number },
   center: boolean = false,
-  api: ExcalidrawImperativeAPI,
 ): ExcalidrawElement[] {
   const [x1, y1, x2, y2] = estimateBounds(elements);
   let [offsetX, offsetY] = [0, 0];

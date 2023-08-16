@@ -307,7 +307,7 @@ class ImageCache {
     const store = transaction.objectStore(this.cacheStoreName);
     const key = getKey(key_);
     store.put(data, key);
-    if(Boolean(svg)) {
+    if(!Boolean(svg)) {
       this.obsidanURLCache.set(key, obsidianURL);
     }
   }
