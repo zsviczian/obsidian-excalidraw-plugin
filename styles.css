@@ -408,3 +408,7 @@ div.excalidraw-draginfo {
   border: 2px solid var(--color-accent-2);
   background-color: var(--color-accent);
 }
+
+.excalidraw-svg svg a {
+  text-decoration: none;
+}

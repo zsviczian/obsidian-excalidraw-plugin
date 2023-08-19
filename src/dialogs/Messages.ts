@@ -17,6 +17,15 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.17":`
+## New 
+- Significant performance improvements from Excalidraw.com
+- When selecting a highlight in the Obsidian PDF editor and selecting "Copy as Quote" in the context menu, then paste this to Excalidraw, the text will arrive as a text element wrapped in a transparent sticky note with the link to the original highlight attached to the sticky note. You can override this behavior by SHIFT+CTRL/CMD pasting
+
+## Fixed
+- BUG: Image caching issue. Changes to the drawing do not reflect immediately in the note when re-opening the drawing [#1297](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1279)
+- Removed underline from links in NativeSVG embed.
+`,
 "1.9.16":`
 I apologize for this extra release. I accidentally built 1.9.15 with an older excalidraw.com package version. Fixes and new features (like the improved grid) are now available again. Otherwise, this is the same as 1.9.15. Sorry for the inconvenience.
 `,
