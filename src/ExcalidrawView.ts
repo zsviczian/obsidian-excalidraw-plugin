@@ -3291,15 +3291,24 @@ export default class ExcalidrawView extends TextFileView {
                   const ea = getEA(this) as ExcalidrawAutomate;
                   const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
                   const st = api.getAppState();
-                  ea.style.strokeColor = st.currentItemStrokeColor;
+                  const strokeC = st.currentItemStrokeColor;
+                  const viewC = st.viewBackgroundColor;
+                  ea.style.strokeColor = strokeC === "transparent"
+                    ? ea.getCM(viewC === "transparent" ? "white" : viewC)
+                        .invert()
+                        .stringHEX({alpha: false})
+                    : strokeC;
                   ea.style.fontFamily = st.currentItemFontFamily;
                   ea.style.fontSize = st.currentItemFontSize;
+                  const textDims = ea.measureText(quoteWithRef.quote);
+                  const textWidth = textDims.width + 2*30; //default padding
                   const id = ea.addText(this.currentPosition.x, this.currentPosition.y, quoteWithRef.quote, {
                     box: true,
                     boxStrokeColor: "transparent",
-                    width: 500,
+                    width: Math.min(500,textWidth),
+                    height: textDims.height + 2*30,
                   })
-                  ea.elementsDict[id].link = quoteWithRef.link
+                  ea.elementsDict[id].link = `[[${quoteWithRef.link}]]`;
                   ea.addElementsToView(false,false);
                   return false;
                 }
