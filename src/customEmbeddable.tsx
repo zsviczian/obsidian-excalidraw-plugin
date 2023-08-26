@@ -3,7 +3,7 @@ import ExcalidrawView from "./ExcalidrawView";
 import { Notice, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import * as React from "react";
 import { ConstructableWorkspaceSplit, getContainerForDocument, isObsidianThemeDark } from "./utils/ObsidianUtils";
-import { DEVICE, EXTENDED_EVENT_TYPES, KEYBOARD_EVENT_TYPES } from "./Constants";
+import { DEVICE, EXTENDED_EVENT_TYPES, KEYBOARD_EVENT_TYPES } from "./constants";
 import { ExcalidrawImperativeAPI, UIAppState } from "@zsviczian/excalidraw/types/types";
 import { ObsidianCanvasNode } from "./utils/CanvasNodeFactory";
 import { processLinkText, patchMobileView } from "./utils/CustomEmbeddableUtils";

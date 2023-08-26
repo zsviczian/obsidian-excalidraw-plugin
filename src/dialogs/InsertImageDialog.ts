@@ -1,7 +1,7 @@
 import { App, FuzzySuggestModal, TFile } from "obsidian";
 import { isALT, scaleToFullsizeModifier } from "src/utils/ModifierkeyHelper";
 import { fileURLToPath } from "url";
-import { DEVICE, IMAGE_TYPES, REG_LINKINDEX_INVALIDCHARS } from "../Constants";
+import { DEVICE, IMAGE_TYPES, REG_LINKINDEX_INVALIDCHARS } from "../constants";
 import ExcalidrawView from "../ExcalidrawView";
 import { t } from "../lang/helpers";
 import ExcalidrawPlugin from "../main";

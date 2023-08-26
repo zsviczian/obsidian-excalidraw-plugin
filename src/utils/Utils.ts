@@ -18,13 +18,13 @@ import {
   FRONTMATTER_KEY_EXPORT_PADDING,
   exportToSvg,
   exportToBlob,
-} from "../Constants";
+  IMAGE_TYPES
+} from "../constants";
 import ExcalidrawPlugin from "../main";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
 import { ExportSettings } from "../ExcalidrawView";
 import { compressToBase64, decompressFromBase64 } from "lz-string";
 import { getDataURLFromURL, getIMGFilename, getMimeType, getURLImageExtension } from "./FileUtils";
-import { IMAGE_TYPES } from "../Constants";
 import { generateEmbeddableLink } from "./CustomEmbeddableUtils";
 import ExcalidrawScene from "src/svgToExcalidraw/elements/ExcalidrawScene";
 import { FILENAMEPARTS } from "./UtilTypes";

@@ -39,7 +39,7 @@ import {
   EXPORT_TYPES,
   EXPORT_IMG_ICON_NAME,
   EXPORT_IMG_ICON,
-} from "./Constants";
+} from "./constants";
 import ExcalidrawView, { TextMode, getTextMode } from "./ExcalidrawView";
 import {
   changeThemeOfExcalidrawMD,

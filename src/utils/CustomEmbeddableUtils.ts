@@ -1,5 +1,5 @@
 import { NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
-import { DEVICE, REG_LINKINDEX_INVALIDCHARS } from "src/Constants";
+import { DEVICE, REG_LINKINDEX_INVALIDCHARS } from "src/constants";
 import { getParentOfClass } from "./ObsidianUtils";
 import { TFile, WorkspaceLeaf } from "obsidian";
 import { getLinkParts } from "./Utils";

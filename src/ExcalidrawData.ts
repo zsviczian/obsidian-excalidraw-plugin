@@ -24,10 +24,10 @@ import {
   getFontString,
   wrapText,
   ERROR_IFRAME_CONVERSION_CANCELED,
-} from "./Constants";
+  JSON_parse,
+} from "./constants";
 import { _measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
-import { JSON_parse } from "./Constants";
 import { TextMode } from "./ExcalidrawView";
 import {
   addAppendUpdateCustomData,

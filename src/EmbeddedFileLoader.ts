@@ -16,7 +16,7 @@ import {
   nanoid,
   THEME_FILTER,
   VIRGIL_FONT,
-} from "./Constants";
+} from "./constants";
 import { createSVG } from "./ExcalidrawAutomate";
 import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
 import { ExportSettings } from "./ExcalidrawView";

@@ -1,6 +1,6 @@
 import { App, FuzzySuggestModal, TFile } from "obsidian";
 import ExcalidrawPlugin from "../main";
-import { EMPTY_MESSAGE } from "../Constants";
+import { EMPTY_MESSAGE } from "../constants";
 import { t } from "../lang/helpers";
 
 export enum openDialogAction {

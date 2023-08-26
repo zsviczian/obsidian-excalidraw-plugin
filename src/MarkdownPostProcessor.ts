@@ -4,7 +4,7 @@ import {
   TFile,
   Vault,
 } from "obsidian";
-import { RERENDER_EVENT } from "./Constants";
+import { RERENDER_EVENT } from "./constants";
 import { EmbeddedFilesLoader } from "./EmbeddedFileLoader";
 import { createPNG, createSVG } from "./ExcalidrawAutomate";
 import { ExportSettings } from "./ExcalidrawView";

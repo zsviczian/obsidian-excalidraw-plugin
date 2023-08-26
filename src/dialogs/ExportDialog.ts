@@ -1,7 +1,7 @@
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
-import { Modal, Setting, SliderComponent, TFile } from "obsidian";
+import { Modal, Setting, TFile } from "obsidian";
 import { getEA } from "src";
-import { DEVICE } from "src/Constants";
+import { DEVICE } from "src/constants";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import ExcalidrawView from "src/ExcalidrawView";
 import ExcalidrawPlugin from "src/main";

@@ -1,7 +1,6 @@
 
-import { MAX_IMAGE_SIZE } from "src/Constants";
+import { MAX_IMAGE_SIZE, IMAGE_TYPES } from "src/constants";
 import { TFile } from "obsidian";
-import { IMAGE_TYPES } from "src/Constants";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 
 export const insertImageToView = async (

@@ -1,13 +1,15 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-    "sourceMap": false,
+    "sourceMap": true,
     "module": "es2015",
-    "target": "es2017",
+    "target": "es2017", //es2017 because script engine requires for async execution
     "allowJs": true,
     "noImplicitAny": true,
     "moduleResolution": "node",
+    "esModuleInterop": true,
     "importHelpers": true,
+    "resolveJsonModule": true,
     "lib": [
       "dom",
       "scripthost",

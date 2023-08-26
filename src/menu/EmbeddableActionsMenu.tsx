@@ -7,7 +7,7 @@ import { ActionButton } from "./ActionButton";
 import { ICONS } from "./ActionIcons";
 import { t } from "src/lang/helpers";
 import { ScriptEngine } from "src/Scripts";
-import { ROOTELEMENTSIZE, mutateElement, nanoid, sceneCoordsToViewportCoords } from "src/Constants";
+import { ROOTELEMENTSIZE, mutateElement, nanoid, sceneCoordsToViewportCoords } from "src/constants";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK } from "src/ExcalidrawData";
 import { processLinkText, useDefaultExcalidrawFrame } from "src/utils/CustomEmbeddableUtils";
 import { cleanSectionHeading } from "src/utils/ObsidianUtils";

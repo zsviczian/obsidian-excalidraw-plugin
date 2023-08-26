@@ -25,7 +25,7 @@ import {
 import { getTransformMatrix, transformPoints } from "./transform";
 import { pointsOnPath } from "points-on-path";
 import { randomId, getWindingOrder } from "./utils";
-import { ROUNDNESS } from "../Constants";
+import { ROUNDNESS } from "../constants";
 
 const SUPPORTED_TAGS = [
   "svg",

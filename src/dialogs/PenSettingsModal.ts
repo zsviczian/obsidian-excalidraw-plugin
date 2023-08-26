@@ -1,6 +1,6 @@
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
 import { ColorComponent, Modal, Setting, SliderComponent, TextComponent, ToggleComponent } from "obsidian";
-import { COLOR_NAMES, VIEW_TYPE_EXCALIDRAW } from "src/Constants";
+import { COLOR_NAMES, VIEW_TYPE_EXCALIDRAW } from "src/constants";
 import ExcalidrawView from "src/ExcalidrawView";
 import ExcalidrawPlugin from "src/main";
 import { setPen } from "src/menu/ObsidianMenu";

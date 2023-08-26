@@ -1,6 +1,6 @@
 import { DataURL } from "@zsviczian/excalidraw/types/types";
 import { loadPdfJs, normalizePath, Notice, requestUrl, RequestUrlResponse, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
-import { URLFETCHTIMEOUT } from "src/Constants";
+import { URLFETCHTIMEOUT } from "src/constants";
 import { MimeType } from "src/EmbeddedFileLoader";
 import { ExcalidrawSettings } from "src/settings";
 import { errorlog, getDataURL } from "./Utils";

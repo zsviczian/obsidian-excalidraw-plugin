@@ -5,7 +5,7 @@ import {
   TFile,
   WorkspaceLeaf,
 } from "obsidian";
-import { PLUGIN_ID, VIEW_TYPE_EXCALIDRAW } from "./Constants";
+import { PLUGIN_ID, VIEW_TYPE_EXCALIDRAW } from "./constants";
 import ExcalidrawView from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
 import { ButtonDefinition, GenericInputPrompt, GenericSuggester } from "./dialogs/Prompt";
@@ -261,10 +261,10 @@ export class ScriptEngine {
     /*} catch (e) {
       new Notice(t("SCRIPT_EXECUTION_ERROR"), 4000);
       errorlog({ script: this.plugin.ea.activeScript, error: e });
-    }*/
-    this.plugin.ea.activeScript = null;
-    return result;
-  }
+  }*/
+        this.plugin.ea.activeScript = null;
+        return result;
+}
 
   private updateToolPannels() {
     const leaves =

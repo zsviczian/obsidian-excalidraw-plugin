@@ -1,4 +1,4 @@
-The project runs with `node 16.10.0`. Some packages will throw dependency errors if you try to compile with a higher node version.
+The project runs with `node 18`. 
 
 After running `npm -i` you'll need to make two manual changes:
 

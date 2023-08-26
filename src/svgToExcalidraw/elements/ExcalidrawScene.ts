@@ -1,4 +1,4 @@
-import { GITHUB_RELEASES } from "src/Constants";
+import { GITHUB_RELEASES } from "src/constants";
 import { ExcalidrawGenericElement } from "./ExcalidrawElement";
 
 declare const PLUGIN_VERSION:string;

@@ -33,7 +33,7 @@ import {
   restore,
   REG_LINKINDEX_INVALIDCHARS,
   THEME_FILTER,
-} from "src/Constants";
+} from "src/constants";
 import { getDrawingFilename, getNewUniqueFilepath, } from "src/utils/FileUtils";
 import {
   //debug,
@@ -73,7 +73,7 @@ import RYBPlugin from "colormaster/plugins/ryb";
 import CMYKPlugin from "colormaster/plugins/cmyk";
 import { TInput } from "colormaster/types";
 import {ConversionResult, svgToExcalidraw} from "src/svgToExcalidraw/parser"
-import { ROUNDNESS } from "src/Constants";
+import { ROUNDNESS } from "src/constants";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 import { emulateKeysForLinkClick, KeyEvent, PaneTarget } from "src/utils/ModifierkeyHelper";
 import { Mutable } from "@zsviczian/excalidraw/types/utility-types";

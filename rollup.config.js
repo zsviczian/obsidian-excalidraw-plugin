@@ -1,4 +1,3 @@
-import typescript from '@rollup/plugin-typescript';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import { env } from "process";
@@ -6,7 +5,6 @@ import babel from '@rollup/plugin-babel';
 import replace from "@rollup/plugin-replace";
 import { terser } from "rollup-plugin-terser";
 import copy from "rollup-plugin-copy";
-import ttypescript from "ttypescript";
 import typescript2 from "rollup-plugin-typescript2";
 import webWorker from "rollup-plugin-web-worker-loader";
 import fs from'fs';
@@ -60,16 +58,24 @@ const BUILD_CONFIG = {
     exports: 'default',
   },
   plugins: [
+    typescript2({
+      tsconfig: isProd ? "tsconfig.json" : "tsconfig.dev.json",
+      inlineSources: !isProd
+    }),
     replace({
       preventAssignment: true,
       "process.env.NODE_ENV": JSON.stringify(env.NODE_ENV),
     }),
     babel({
+      presets: [['@babel/preset-env', {
+        targets: {
+          esmodules: true,
+        }
+      }]],
       exclude: "node_modules/**"
     }),
     commonjs(),
     nodeResolve({ browser: true, preferBuiltins: false }),
-    typescript({inlineSources: !isProd}),
     ...isProd 
     ? [
       terser({toplevel: false, compress: {passes: 2}}),
@@ -98,7 +104,7 @@ const LIB_CONFIG = {
     name: "Excalidraw (Library)",
   },
   plugins: getRollupPlugins(
-      { tsconfig: "tsconfig-lib.json", typescript: ttypescript },
+      { tsconfig: "tsconfig-lib.json"},
       copy({ targets: [{ src: "src/*.d.ts", dest: "lib/typings" }] })
   ),  
 }

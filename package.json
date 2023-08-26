@@ -11,7 +11,8 @@
     "dev": "cross-env NODE_ENV=development rollup --config rollup.config.js -w",
     "build": "cross-env NODE_ENV=production rollup --config rollup.config.js",
     "lib": "cross-env NODE_ENV=lib rollup --config rollup.config.js",
-    "code:fix": "eslint --max-warnings=0 --ext .ts,.tsx ./src --fix"
+    "code:fix": "eslint --max-warnings=0 --ext .ts,.tsx ./src --fix",
+    "madge": "madge --circular ."
   },
   "keywords": [],
   "author": "",
@@ -34,18 +35,18 @@
   },
   "devDependencies": {
     "@babel/core": "^7.22.9",
-    "@babel/preset-env": "^7.22.9",
+    "@babel/preset-env": "^7.22.10",
     "@babel/preset-react": "^7.22.5",
     "@excalidraw/eslint-config": "^1.0.3",
     "@excalidraw/prettier-config": "^1.0.2",
     "@rollup/plugin-babel": "^6.0.3",
     "@rollup/plugin-commonjs": "^24.1.0",
-    "@rollup/plugin-node-resolve": "^15.1.0",
+    "@rollup/plugin-node-resolve": "^15.2.1",
     "@rollup/plugin-replace": "^5.0.2",
     "@rollup/plugin-typescript": "^11.1.2",
     "@types/chroma-js": "^2.4.0",
     "@types/js-beautify": "^1.14.0",
-    "@types/node": "^20.4.8",
+    "@types/node": "^20.5.6",
     "@types/react-dom": "^18.2.7",
     "@zerollup/ts-transform-paths": "^1.7.18",
     "cross-env": "^7.0.3",
@@ -61,7 +62,7 @@
     "rollup-plugin-web-worker-loader": "^1.6.1",
     "tslib": "^2.6.1",
     "ttypescript": "^1.5.15",
-    "typescript": "^4.9.5"
+    "typescript": "^5.2.2"
   },
   "resolutions": {
     "@typescript-eslint/typescript-estree": "5.3.0"

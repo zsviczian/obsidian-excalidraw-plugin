@@ -7,7 +7,7 @@ import {
   TextComponent,
   TFile,
 } from "obsidian";
-import { GITHUB_RELEASES, VIEW_TYPE_EXCALIDRAW } from "./Constants";
+import { GITHUB_RELEASES, VIEW_TYPE_EXCALIDRAW } from "./constants";
 import ExcalidrawView from "./ExcalidrawView";
 import { t } from "./lang/helpers";
 import type ExcalidrawPlugin from "./main";

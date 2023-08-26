@@ -4,7 +4,7 @@ import ExcalidrawPlugin from "./main";
 import { FileData, MimeType } from "./EmbeddedFileLoader";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
 import { errorlog, getImageSize, log, sleep, svgToBase64 } from "./utils/Utils";
-import { fileid } from "./Constants";
+import { fileid } from "./constants";
 import html2canvas from "html2canvas";
 import { Notice } from "obsidian";
 

@@ -48,7 +48,7 @@ import {
   viewportCoordsToSceneCoords,
   ERROR_IFRAME_CONVERSION_CANCELED,
   restore,
-} from "./Constants";
+} from "./constants";
 import ExcalidrawPlugin from "./main";
 import { 
   repositionElementsToCursor,
@@ -114,7 +114,7 @@ import { ScriptEngine } from "./Scripts";
 import { getTextElementAtPointer, getImageElementAtPointer, getElementWithLinkAtPointer } from "./utils/GetElementAtPointer";
 import { ICONS, LogoWrapper, saveIcon } from "./menu/ActionIcons";
 import { ExportDialog } from "./dialogs/ExportDialog";
-import { getEA } from "src";
+import { getEA } from "src"
 import { anyModifierKeysPressed, emulateCTRLClickForLinks, emulateKeysForLinkClick, externalDragModifierType, internalDragModifierType, isALT, isCTRL, isMETA, isSHIFT, linkClickModifierType, mdPropModifier, ModifierKeys } from "./utils/ModifierkeyHelper";
 import { setDynamicStyle } from "./utils/DynamicStyling";
 import { InsertPDFModal } from "./dialogs/InsertPDFModal";
