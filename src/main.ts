@@ -18,6 +18,8 @@ import {
   FrontMatterCache,
   Command,
   Workspace,
+  Editor,
+  MarkdownFileInfo,
 } from "obsidian";
 import {
   BLANK_DRAWING,
@@ -86,7 +88,7 @@ import {
 } from "./utils/Utils";
 import { getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark } from "./utils/ObsidianUtils";
 //import { OneOffs } from "./OneOffs";
-import { ExcalidrawImageElement, FileId } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawElement, ExcalidrawImageElement, FileId } from "@zsviczian/excalidraw/types/element/types";
 import { ScriptEngine } from "./Scripts";
 import {
   hoverEvent,
@@ -1705,6 +1707,55 @@ export default class ExcalidrawPlugin extends Plugin {
   private registerEventListeners() {
     const self = this;
     this.app.workspace.onLayoutReady(async () => {
+      const onPasteHandler = (
+        evt: ClipboardEvent,
+        editor: Editor,
+        info: MarkdownView | MarkdownFileInfo
+      ) => {
+        if(evt.defaultPrevented) return
+        const data = evt.clipboardData.getData("text/plain");
+        if (!data) return;
+        if (data.startsWith(`{"type":"excalidraw/clipboard"`)) {
+          evt.preventDefault();
+          try {
+            const drawing = JSON.parse(data);
+            const hasOneTextElement = drawing.elements.filter((el:ExcalidrawElement)=>el.type==="text").length === 1;
+            if (!(hasOneTextElement || drawing.elements?.length === 1)) {
+              return;
+            }
+            const element = hasOneTextElement
+              ? drawing.elements.filter((el:ExcalidrawElement)=>el.type==="text")[0]
+              : drawing.elements[0];
+            if (element.type === "image") {
+              const fileinfo = self.filesMaster.get(element.fileId);
+              if(fileinfo && fileinfo.path) {
+                let path = fileinfo.path;
+                const sourceFile = info.file;
+                const imageFile = self.app.vault.getAbstractFileByPath(path);
+                if(sourceFile && imageFile && imageFile instanceof TFile) {
+                  path = self.app.metadataCache.fileToLinktext(imageFile,sourceFile.path);
+                }
+                //@ts-ignore
+                editor.insertText(self.getLink({path}));
+              }
+              return;
+            }
+            if (element.type === "text") {
+              //@ts-ignore
+              editor.insertText(element.text);
+              return;
+            }
+            if (element.link) {
+              //@ts-ignore
+              editor.insertText(`${element.link}`);
+              return;
+            }
+          } catch (e) {
+          }
+        }
+      };
+      self.registerEvent(self.app.workspace.on('editor-paste', onPasteHandler));
+
       //watch filename change to rename .svg, .png; to sync to .md; to update links
       const renameEventHandler = async (
         file: TAbstractFile,
@@ -2127,6 +2178,14 @@ export default class ExcalidrawPlugin extends Plugin {
     })
   }
 
+  public getLink(
+    { embed = true, path, alias }: { embed?: boolean; path: string; alias?: string }
+  ):string {
+    return this.settings.embedWikiLink
+      ? `${embed ? "!" : ""}[[${path}${alias ? `|${alias}` : ""}]]`
+      : `${embed ? "!" : ""}[${alias ?? ""}](${encodeURI(path)})`
+  }
+
   public async embedDrawing(file: TFile) {
     const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
     if (activeView && activeView.file) {
@@ -2140,9 +2199,7 @@ export default class ExcalidrawPlugin extends Plugin {
       //embed Excalidraw
       if (this.settings.embedType === "excalidraw") {
         editor.replaceSelection(
-          this.settings.embedWikiLink
-            ? `![[${excalidrawRelativePath}]]`
-            : `![](${encodeURI(excalidrawRelativePath)})`,
+          this.getLink({path: excalidrawRelativePath}),
         );
         editor.focus();
         return;

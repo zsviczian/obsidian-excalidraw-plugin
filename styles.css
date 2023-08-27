@@ -28,11 +28,13 @@
 .excalidraw-svg-right-wrap {
   float: right;
   margin: 0px 0px 20px 20px;
+  width: 100%;
 }
 
 .excalidraw-svg-left-wrap {
   float: left;
   margin: 0px 35px 20px 0px;
+  width: 100%;
 }
 
 .excalidraw-svg-right {
@@ -42,6 +44,7 @@
 .excalidraw-svg-center {
   text-align: center;
   margin: auto;
+  width: 100%;
 }
 
 .excalidraw-svg-left {
