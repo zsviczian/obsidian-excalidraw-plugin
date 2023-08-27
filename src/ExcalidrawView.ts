@@ -1782,10 +1782,12 @@ export default class ExcalidrawView extends TextFileView {
     });
   }
 
-  private getGridColor(bgColor: string):string {
+  private getGridColor(bgColor: string):{Bold: string, Regular: string} {
     const cm = this.plugin.ea.getCM(bgColor);
-    cm.isDark() ? cm.lighterBy(5) : cm.darkerBy(5);
-    return cm.stringHEX();
+    const isDark = cm.isDark();
+    const Regular = (isDark ? cm.lighterBy(5) : cm.darkerBy(5)).stringHEX();
+    const Bold = (isDark ? cm.lighterBy(10) : cm.darkerBy(10)).stringHEX();
+    return {Bold, Regular};
   }
 
   public activeLoader: EmbeddedFilesLoader = null;
