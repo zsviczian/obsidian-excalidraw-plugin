@@ -233,7 +233,11 @@ export class EmbeddableMenu {
               key={"Open"}
               title={t("OPEN_IN_BROWSER")}
               action={() => {
-                view.openExternalLink(iframe.src);
+                view.openExternalLink(
+                  !iframe.src.startsWith("https://www.youtube.com") && !iframe.src.startsWith("https://player.vimeo.com") 
+                  ? iframe.src
+                  : element.link
+                );
               }}
               icon={ICONS.Globe}
               view={view}

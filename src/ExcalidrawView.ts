@@ -48,6 +48,7 @@ import {
   viewportCoordsToSceneCoords,
   ERROR_IFRAME_CONVERSION_CANCELED,
   restore,
+  obsidianToExcalidrawMap,
 } from "./constants";
 import ExcalidrawPlugin from "./main";
 import { 
@@ -125,6 +126,7 @@ import { CanvasNodeFactory, ObsidianCanvasNode } from "./utils/CanvasNodeFactory
 import { EmbeddableMenu } from "./menu/EmbeddableActionsMenu";
 import { useDefaultExcalidrawFrame } from "./utils/CustomEmbeddableUtils";
 import { UniversalInsertFileModal } from "./dialogs/UniversalInsertFileModal";
+import { moment } from "obsidian";
 
 declare const PLUGIN_VERSION:string;
 
@@ -3179,6 +3181,7 @@ export default class ExcalidrawView extends TextFileView {
             },
             libraryReturnUrl: "app://obsidian.md",
             autoFocus: true,
+            langCode: obsidianToExcalidrawMap[moment.locale()]??"en-EN",
             onChange: (et: ExcalidrawElement[], st: AppState) => {
               const canvasColorChangeHook = () => {
                 const canvasColor = st.viewBackgroundColor === "transparent" ? "white" : st.viewBackgroundColor;
@@ -4155,12 +4158,8 @@ export default class ExcalidrawView extends TextFileView {
 
       return React.createElement(React.Fragment, null, excalidrawDiv);
     });
-    //REACT 18
     const root = ReactDOM.createRoot(this.contentEl);
     root.render(reactElement);
-    /*REACT 17
-    ReactDOM.render(reactElement, this.contentEl, () => {});
-    */
   }
 
   private updateContainerSize(containerId?: string, delay: boolean = false) {

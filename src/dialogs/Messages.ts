@@ -17,6 +17,21 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.18":`
+## New
+- Excalidraw now syncs with Obsidian's language settings, provided translations are available. [#1297](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1297)
+
+## Fixed
+- [#1285](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1285): Solved Obsidian crashes caused by copying images from Excalidraw into markdown notes. Going forward:
+  - Copying an image will paste its embed link,
+  - Copying a text element will paste the text,
+  - For all other elements with links, the link will be pasted.
+  - In all other cases nothing will be pasted.
+  
+- Resolved grid instability ([#1298](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1298)).
+- Fixed missing ${String.fromCharCode(96)}[[square brackets]]${String.fromCharCode(96)} in PDF section references, making the links functional.
+- Corrected the behavior of "Open current link in browser" for embedded YouTube and Vimeo frames. Clicking the globe button will now correctly open the links.
+`,
 "1.9.17":`
 ## New 
 - Significant performance improvements from Excalidraw.com

@@ -8,6 +8,60 @@ export const ERROR_IFRAME_CONVERSION_CANCELED = "iframe conversion canceled";
 
 declare const excalidrawLib: typeof ExcalidrawLib;
 
+export const obsidianToExcalidrawMap: { [key: string]: string } = {
+  'en': 'en-US',
+  'af': 'af-ZA', // Assuming South Africa for Afrikaans
+  'am': 'am-ET', // Assuming Ethiopia for Amharic
+  'ar': 'ar-SA',
+  'eu': 'eu-ES',
+  'be': 'be-BY', // Assuming Belarus for Belarusian
+  'bg': 'bg-BG',
+  'bn': 'bn-BD', // Assuming Bangladesh for Bengali
+  'ca': 'ca-ES',
+  'cs': 'cs-CZ',
+  'da': 'da-DK', // Assuming Denmark for Danish
+  'de': 'de-DE',
+  'el': 'el-GR',
+  'eo': 'eo-EO', // Esperanto doesn't have a country
+  'es': 'es-ES',
+  'fa': 'fa-IR',
+  'fi-fi': 'fi-FI',
+  'fr': 'fr-FR',
+  'gl': 'gl-ES',
+  'he': 'he-IL',
+  'hi': 'hi-IN',
+  'hu': 'hu-HU',
+  'id': 'id-ID',
+  'it': 'it-IT',
+  'ja': 'ja-JP',
+  'ko': 'ko-KR',
+  'lv': 'lv-LV',
+  'ml': 'ml-IN', // Assuming India for Malayalam
+  'ms': 'ms-MY', // Assuming Malaysia for Malay
+  'nl': 'nl-NL',
+  'no': 'nb-NO', // Using Norwegian Bokmål for Norwegian
+  'oc': 'oc-FR', // Assuming France for Occitan
+  'pl': 'pl-PL',
+  'pt': 'pt-PT',
+  'pt-BR': 'pt-BR',
+  'ro': 'ro-RO',
+  'ru': 'ru-RU',
+  'sr': 'sr-RS', // Assuming Serbia for Serbian
+  'se': 'sv-SE', // Assuming Swedish for 'se'
+  'sk': 'sk-SK',
+  'sq': 'sq-AL', // Assuming Albania for Albanian
+  'ta': 'ta-IN', // Assuming India for Tamil
+  'te': 'te-IN', // Assuming India for Telugu
+  'th': 'th-TH',
+  'tr': 'tr-TR',
+  'uk': 'uk-UA',
+  'ur': 'ur-PK', // Assuming Pakistan for Urdu
+  'vi': 'vi-VN',
+  'zh': 'zh-CN',
+  'zh-TW': 'zh-TW',
+};
+
+
 export const {
   sceneCoordsToViewportCoords,
   viewportCoordsToSceneCoords,

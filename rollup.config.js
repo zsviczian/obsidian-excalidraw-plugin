@@ -70,7 +70,7 @@ const BUILD_CONFIG = {
       presets: [['@babel/preset-env', {
         targets: {
           esmodules: true,
-        }
+        },
       }]],
       exclude: "node_modules/**"
     }),
