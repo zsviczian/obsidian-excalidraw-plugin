@@ -170,8 +170,8 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "create",
-    code: 'create(params?: {filename?: string, foldername?: string, templatePath?: string, onNewPane?: boolean, frontmatterKeys?: { "excalidraw-plugin"?: "raw" | "parsed", "excalidraw-link-prefix"?: string, "excalidraw-link-brackets"?: boolean, "excalidraw-url-prefix"?: string,},}): Promise<string>;',
-    desc: "Create a drawing and save it to filename.\nIf filename is null: default filename as defined in Excalidraw settings.\nIf folder is null: default folder as defined in Excalidraw settings\n",
+    code: 'create(params?: {filename?: string, foldername?: string, templatePath?: string, onNewPane?: boolean, silent?: boolean, frontmatterKeys?: { "excalidraw-plugin"?: "raw" | "parsed", "excalidraw-link-prefix"?: string, "excalidraw-link-brackets"?: boolean, "excalidraw-url-prefix"?: string,},}): Promise<string>;',
+    desc: "Create a drawing and save it to filename.\nIf filename is null: default filename as defined in Excalidraw settings.\nIf folder is null: default folder as defined in Excalidraw settings\nReturns the path to the created file",
     after: "",
   },
   {
