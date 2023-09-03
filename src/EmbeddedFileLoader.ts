@@ -102,9 +102,9 @@ const replaceSVGColors = (svg: SVGSVGElement | string, colorMap: ColorMap | null
   if(typeof svg === 'string') {
     // Replace colors in the SVG string
     for (const [oldColor, newColor] of Object.entries(colorMap)) {
-      const fillRegex = new RegExp(`fill="${oldColor}"`, 'g');
+      const fillRegex = new RegExp(`fill="${oldColor}"`, 'gi');
       svg = svg.replaceAll(fillRegex, `fill="${newColor}"`);
-      const strokeRegex = new RegExp(`stroke="${oldColor}"`, 'g');
+      const strokeRegex = new RegExp(`stroke="${oldColor}"`, 'gi');
       svg = svg.replaceAll(strokeRegex, `stroke="${newColor}"`);
     }
     return svg;
@@ -113,8 +113,8 @@ const replaceSVGColors = (svg: SVGSVGElement | string, colorMap: ColorMap | null
   // Modify the fill and stroke attributes of child nodes
   const childNodes = (node: ChildNode) => {
     if (node instanceof SVGElement) {
-      const oldFill = node.getAttribute('fill');
-      const oldStroke = node.getAttribute('stroke');
+      const oldFill = node.getAttribute('fill').toLocaleLowerCase();
+      const oldStroke = node.getAttribute('stroke').toLocaleLowerCase();
 
       if (oldFill && colorMap[oldFill]) {
         node.setAttribute('fill', colorMap[oldFill]);
@@ -158,7 +158,7 @@ export class EmbeddedFile {
     this.resetImage(hostPath, imgPath);
     if(this.file && (this.plugin.ea.isExcalidrawFile(this.file) || this.file.extension.toLowerCase() === "svg")) {
       try {
-        this.colorMap = colorMapJSON ? JSON.parse(colorMapJSON) : null;
+        this.colorMap = colorMapJSON ? JSON.parse(colorMapJSON.toLocaleLowerCase()) : null;
       } catch (error) {
         this.colorMap = null;
       }

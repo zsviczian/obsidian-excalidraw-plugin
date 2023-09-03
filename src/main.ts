@@ -2263,7 +2263,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
     if(!this.settings.previewImageType) { //migration 1.9.13
       if(typeof this.settings.displaySVGInPreview === "undefined") {
-        this.settings.previewImageType = PreviewImageType.SVG;
+        this.settings.previewImageType = PreviewImageType.SVGIMG;
       } else {
         this.settings.previewImageType = this.settings.displaySVGInPreview
           ? PreviewImageType.SVGIMG
