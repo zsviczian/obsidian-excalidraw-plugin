@@ -1,0 +1,17 @@
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <!-- svg-source:excalidraw -->
+  
+  <defs>
+    <style class="style-fonts">
+      @font-face {
+        font-family: "Virgil";
+        src: url("https://excalidraw.com/Virgil.woff2");
+      }
+      @font-face {
+        font-family: "Cascadia";
+        src: url("https://excalidraw.com/Cascadia.woff2");
+      }
+    </style>
+    
+  </defs>
+  <g stroke-linecap="round"><g transform="translate(0 0) rotate(0 60 60)" fill-rule="evenodd"><path d="M0 0 L120 0 L120 40 L80 40 L80 120 L40 120 L40 40 L0 40 L0 0" stroke="none" stroke-width="0" fill="red" fill-rule="evenodd"></path><path d="M0 0 C41.51 0, 83.02 0, 120 0 M0 0 C30.58 0, 61.16 0, 120 0 M120 0 C120 12.11, 120 24.22, 120 40 M120 0 C120 13.92, 120 27.84, 120 40 M120 40 C108.75 40, 97.49 40, 80 40 M120 40 C107.65 40, 95.29 40, 80 40 M80 40 C80 66.51, 80 93.01, 80 120 M80 40 C80 70.33, 80 100.66, 80 120 M80 120 C66.08 120, 52.16 120, 40 120 M80 120 C70.07 120, 60.13 120, 40 120 M40 120 C40 89.21, 40 58.42, 40 40 M40 120 C40 92.66, 40 65.33, 40 40 M40 40 C25.35 40, 10.71 40, 0 40 M40 40 C27.7 40, 15.4 40, 0 40 M0 40 C0 24.03, 0 8.05, 0 0 M0 40 C0 27.82, 0 15.65, 0 0 M0 0 C0 0, 0 0, 0 0 M0 0 C0 0, 0 0, 0 0" stroke="transparent" stroke-width="0.5" fill="none"></path></g></g><mask></mask><g stroke-linecap="round"><g transform="translate(110 10) rotate(0 -50 50)" fill-rule="evenodd"><path d="M0 0 L-100 0 L-100 20 L-60 20 L-60 100 L-40 100 L-40 20 L0 20 L0 0" stroke="none" stroke-width="0" fill="currentColor" fill-rule="evenodd"></path><path d="M0 0 C-23.27 0, -46.54 0, -100 0 M0 0 C-23.31 0, -46.62 0, -100 0 M-100 0 C-100 6.13, -100 12.26, -100 20 M-100 0 C-100 5.84, -100 11.69, -100 20 M-100 20 C-87.37 20, -74.74 20, -60 20 M-100 20 C-88.34 20, -76.68 20, -60 20 M-60 20 C-60 37.78, -60 55.56, -60 100 M-60 20 C-60 39.34, -60 58.68, -60 100 M-60 100 C-52.58 100, -45.17 100, -40 100 M-60 100 C-54.72 100, -49.43 100, -40 100 M-40 100 C-40 83.83, -40 67.67, -40 20 M-40 100 C-40 77.76, -40 55.51, -40 20 M-40 20 C-25.4 20, -10.8 20, 0 20 M-40 20 C-28.47 20, -16.93 20, 0 20 M0 20 C0 15.42, 0 10.84, 0 0 M0 20 C0 14.54, 0 9.08, 0 0 M0 0 C0 0, 0 0, 0 0 M0 0 C0 0, 0 0, 0 0" stroke="currentColor" stroke-width="0.5" fill="none"></path></g></g><mask></mask></svg>
