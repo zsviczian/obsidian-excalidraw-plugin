@@ -113,8 +113,8 @@ const replaceSVGColors = (svg: SVGSVGElement | string, colorMap: ColorMap | null
   // Modify the fill and stroke attributes of child nodes
   const childNodes = (node: ChildNode) => {
     if (node instanceof SVGElement) {
-      const oldFill = node.getAttribute('fill').toLocaleLowerCase();
-      const oldStroke = node.getAttribute('stroke').toLocaleLowerCase();
+      const oldFill = node.getAttribute('fill')?.toLocaleLowerCase();
+      const oldStroke = node.getAttribute('stroke')?.toLocaleLowerCase();
 
       if (oldFill && colorMap[oldFill]) {
         node.setAttribute('fill', colorMap[oldFill]);
