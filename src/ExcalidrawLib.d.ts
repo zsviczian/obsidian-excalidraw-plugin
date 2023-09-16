@@ -125,4 +125,12 @@ declare namespace ExcalidrawLib {
   ): TElement;  
 
   function getEmbedLink (link: string | null | undefined): EmbeddedLink;
+
+  function mermaidToExcalidraw(
+    mermaidDefinition: string,
+    opts: {fontSize: number},
+  ): Promise<{
+    elements: ExcalidrawElement[],
+    files:any
+  } | undefined>;
 }

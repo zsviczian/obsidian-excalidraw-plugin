@@ -33,6 +33,7 @@ import {
   restore,
   REG_LINKINDEX_INVALIDCHARS,
   THEME_FILTER,
+  mermaidToExcalidraw,
 } from "src/constants";
 import { getDrawingFilename, getNewUniqueFilepath, } from "src/utils/FileUtils";
 import {
@@ -1137,6 +1138,41 @@ export class ExcalidrawAutomate {
     }
     return id;
   };
+
+  /**
+   * Adds a mermaid diagram to ExcalidrawAutomate elements
+   * @param diagram 
+   * @returns the ids of the elements that were created
+   */
+  async addMermaid(
+    diagram: string,
+  ): Promise<string[]> {
+    const result = await mermaidToExcalidraw(diagram, {fontSize: this.style.fontSize});
+    const ids:string[] = [];
+    if(!result) return ids;
+
+    if(result?.elements) {
+      result.elements.forEach(el=>{
+        ids.push(el.id);
+        this.elementsDict[el.id] = el;
+      })
+    }
+
+    if(result?.files) {
+      for (const key in result.files) {
+        this.imagesDict[key as FileId] = {
+          ...result.files[key],
+          created: Date.now(),
+          isHyperlink: false,
+          hyperlink: null,
+          file: null,
+          hasSVGwithBitmap: false,
+          latex: null,
+        }
+      } 
+    }
+    return ids;
+  }
 
   /**
    * 
