@@ -1784,12 +1784,12 @@ export default class ExcalidrawView extends TextFileView {
     });
   }
 
-  private getGridColor(bgColor: string):{Bold: string, Regular: string} {
+  private getGridColor(bgColor: string, st: AppState):{Bold: string, Regular: string, MajorGridFrequency: number} {
     const cm = this.plugin.ea.getCM(bgColor);
     const isDark = cm.isDark();
-    const Regular = (isDark ? cm.lighterBy(5) : cm.darkerBy(5)).stringHEX();
-    const Bold = (isDark ? cm.lighterBy(10) : cm.darkerBy(10)).stringHEX();
-    return {Bold, Regular};
+    const Regular = (isDark ? cm.lighterBy(7) : cm.darkerBy(7)).stringHEX();
+    const Bold = (isDark ? cm.lighterBy(14) : cm.darkerBy(14)).stringHEX();
+    return {Bold, Regular, MajorGridFrequency:st.gridColor.MajorGridFrequency};
   }
 
   public activeLoader: EmbeddedFilesLoader = null;
@@ -2790,6 +2790,7 @@ export default class ExcalidrawView extends TextFileView {
             zoom: st.zoom,
             currentItemRoundness: st.currentItemRoundness,
             gridSize: st.gridSize,
+            gridColor: st.gridColor,
             colorPalette: st.colorPalette,
             currentStrokeOptions: st.currentStrokeOptions,
             previousGridSize: st.previousGridSize,
@@ -3185,7 +3186,7 @@ export default class ExcalidrawView extends TextFileView {
             onChange: (et: ExcalidrawElement[], st: AppState) => {
               const canvasColorChangeHook = () => {
                 const canvasColor = st.viewBackgroundColor === "transparent" ? "white" : st.viewBackgroundColor;
-                setTimeout(()=>this.updateScene({appState:{gridColor: this.getGridColor(canvasColor)}}));
+                setTimeout(()=>this.updateScene({appState:{gridColor: this.getGridColor(canvasColor, st)}}));
                 setDynamicStyle(this.plugin.ea,this,canvasColor,this.plugin.settings.dynamicStyling);
                 if(this.plugin.ea.onCanvasColorChangeHook) {
                   try {

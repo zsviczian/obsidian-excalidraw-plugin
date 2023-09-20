@@ -1505,7 +1505,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         d.addOption("Virgil", "Virgil");
         this.app.vault
           .getFiles()
-          .filter((f) => ["ttf", "woff", "woff2"].contains(f.extension))
+          .filter((f) => ["ttf", "woff", "woff2", "otf"].contains(f.extension))
           .forEach((f: TFile) => {
             d.addOption(f.path, f.name);
           });

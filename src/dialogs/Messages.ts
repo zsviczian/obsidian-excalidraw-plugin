@@ -17,6 +17,41 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.19":`
+## New
+- I added new features to the [Deconstruct Selected Elements](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Deconstruct%20selected%20elements%20into%20new%20drawing.md) script
+- I added a new script: [Text Aura](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Text%20Aura.md)
+- I updated the [Set Grid](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Set%20Grid.md) script. You can now set the Major/Minor tick frequency. [#1305](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1305)
+- The re-colorMap is now case-insensitive. The color map is a hidden feature. In Markdown View mode you can add a JSON map after the embedded SVG or Excalidraw image filename with a mapping of current colors to new colors.
+<img width="100%" src="https://github.com/zsviczian/obsidian-excalidraw-plugin/assets/14358394/1d985a59-a2d2-48a2-9cef-686bfbe9ef02"/>
+
+## New in ExcalidrawAutomate
+- I added the ${String.fromCharCode(96)}silent${String.fromCharCode(96)} switch. If this is true, the created file will not be opened.
+${String.fromCharCode(96,96,96)}typescript
+  async create(params?: {
+    filename?: string;
+    foldername?: string;
+    templatePath?: string;
+    onNewPane?: boolean;
+    silent?: boolean;
+    frontmatterKeys?: {
+      "excalidraw-plugin"?: "raw" | "parsed";
+      "excalidraw-link-prefix"?: string;
+      "excalidraw-link-brackets"?: boolean;
+      "excalidraw-url-prefix"?: string;
+      "excalidraw-export-transparent"?: boolean;
+      "excalidraw-export-dark"?: boolean;
+      "excalidraw-export-padding"?: number;
+      "excalidraw-export-pngscale"?: number;
+      "excalidraw-default-mode"?: "view" | "zen";
+      "excalidraw-onload-script"?: string;
+      "excalidraw-linkbutton-opacity"?: number;
+      "excalidraw-autoexport"?: boolean;
+    };
+    plaintext?: string; //text to insert above the ${String.fromCharCode(96)}# Text Elements${String.fromCharCode(96)} section
+  }): Promise<string>
+${String.fromCharCode(96,96,96)}
+`,
 "1.9.18":`
 ## New
 - Excalidraw now syncs with Obsidian's language settings, provided translations are available. [#1297](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1297)

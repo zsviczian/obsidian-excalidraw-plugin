@@ -78,6 +78,7 @@ export const {
   exportToBlob,
   mutateElement,
   restore,
+  mermaidToExcalidraw,
 } = excalidrawLib;
 
 export function JSON_parse(x: string): any {
