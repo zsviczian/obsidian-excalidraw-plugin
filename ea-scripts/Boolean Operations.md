@@ -138,6 +138,7 @@ function RankElement(element) {
   ]
   score += (backgroundRank.findIndex((fillStyle) => fillStyle == element.fillStyle) + 1) * 10;
   if (element.backgroundColor == "transparent") score -= 100;
+  if (element.points && getVectorLength(element.points[element.points.length - 1]) > 8) score -= 100; 
   if (score < 0) score = 0;
   score += element.opacity / 100;
   return score;
@@ -168,16 +169,18 @@ function drawPolygonHierachy(polygonHierachy) {
       ea.addLine(path);
       return;
     }
-    setBorderStyle();
-    const outerBorderId = ea.addLine(path);
+    const outerBorder = path;
     const innerPolygons = addInnerPolygons(polygon.innerPolygons);
     path = path.concat(innerPolygons.backgroundPath);
     path.push(polygon.path[0]);
     setInnerStyle();
     const backgroundId = ea.addLine(path);
+    setBorderStyle();
+    const outerBorderId = ea.addLine(outerBorder)
     const background = ea.getElement(backgroundId);
     background.isShadowCloneOf = outerBorderId;
-    const allIds = [innerPolygons.borderIds, outerBorderId, backgroundId].flat();
+    const innerBorderIds = innerPolygons.borderPaths.map(path => ea.addLine(path));
+    const allIds = [innerBorderIds, outerBorderId, backgroundId].flat();
     gatheredIds = gatheredIds.concat(allIds);
     ea.addToGroup(allIds);
   });
@@ -187,17 +190,17 @@ function drawPolygonHierachy(polygonHierachy) {
 function addInnerPolygons(polygonHierachy) {
   let firstPath = [];
   let secondPath = [];
-  let borderIds = [];
+  let borderPaths = [];
   polygonHierachy.forEach(polygon => {
     let path = polygon.path;
     path.push(polygon.path[0]);
-    borderIds.push(ea.addLine(path));
+    borderPaths.push(path);
     firstPath = firstPath.concat(path);
     secondPath.push(polygon.path[0]);
   });
   return {
     backgroundPath: firstPath.concat(secondPath), 
-    borderIds: borderIds
+    borderPaths: borderPaths
   };
 }
 
@@ -283,6 +286,10 @@ function pointInPolygon(point, polygon) {
   return inside;
 }
 
+
+function getVectorLength(vector) {
+  return Math.sqrt(vector[0]**2+vector[1]**2);
+}
 
 /**
  * Adds two Vectors together
