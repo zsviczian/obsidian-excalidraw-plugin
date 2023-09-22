@@ -1,24 +1,32 @@
 /*
 With This Script it is possible to make boolean Operations on Shapes.
 
+
 See documentation for more details:
 https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html
 
 ```javascript
 */
+const ShadowGroupMarker = "ShadowCloneOf-";
+
+
 const PolyBool = ea.getPolybool();
 const polyboolAction = await utils.suggester(["union (a + b)", "intersect (a && b)", "diffrence (a - b)", "reversed diffrence (b - a)", "xor"], [
   PolyBool.union, PolyBool.intersect, PolyBool.difference, PolyBool.differenceRev, PolyBool.xor
 ], "What would you like todo with the object");
 
 const elements = ea.getViewSelectedElements();
-const shadowClones = elements.filter(element => element.isShadowCloneOf);
+const shadowClones = elements.filter(element => element.groupIds.some(id => id.startsWith(ShadowGroupMarker)));
 shadowClones.forEach(shadowClone => {
-  const shadowCloneIndex = elements.findIndex(element => element.id = shadowClone.isShadowCloneOf);
+  let parentId = shadowClone.groupIds
+    .filter(id => id.startsWith(ShadowGroupMarker))[0]
+    .slice(ShadowGroupMarker.length);
+  const shadowCloneIndex = elements.findIndex(element => element.id == parentId);
   if (shadowCloneIndex == -1) return;
   elements[shadowCloneIndex].backgroundColor = shadowClone.backgroundColor;
+  elements[shadowCloneIndex].fillStyle = shadowClone.fillStyle;
 })
-const borderElements = elements.filter(element => !element.isShadowCloneOf);
+const borderElements = elements.filter(element => !element.groupIds.some(id => id.startsWith(ShadowGroupMarker)));
 groups = ea.getMaximumGroups(borderElements);
 groups = groups.map((group) => group.sort((a, b) => RankElement(b) - RankElement(a)));
 groups.sort((a, b) => RankElement(b[0]) - RankElement(a[0]));
@@ -45,7 +53,7 @@ const polygonHierachy = subordinateInnerPolygons(result.regions);
 drawPolygonHierachy(polygonHierachy);
 ea.deleteViewElements(elements);
 ea.addElementsToView(false,false,true);
-// return;
+return;
 
 
 
@@ -160,12 +168,11 @@ function drawPolygonHierachy(polygonHierachy) {
     ea.style.strokeColor = strokeColor;
   }
   
-  let gatheredIds = [];
   polygonHierachy.forEach(polygon => {
+    setFilledStyle();
     let path = polygon.path;
     path.push(polygon.path[0]);
     if (polygon.innerPolygons.length === 0) {
-      setFilledStyle();
       ea.addLine(path);
       return;
     }
@@ -177,14 +184,12 @@ function drawPolygonHierachy(polygonHierachy) {
     const backgroundId = ea.addLine(path);
     setBorderStyle();
     const outerBorderId = ea.addLine(outerBorder)
-    const background = ea.getElement(backgroundId);
-    background.isShadowCloneOf = outerBorderId;
     const innerBorderIds = innerPolygons.borderPaths.map(path => ea.addLine(path));
     const allIds = [innerBorderIds, outerBorderId, backgroundId].flat();
-    gatheredIds = gatheredIds.concat(allIds);
     ea.addToGroup(allIds);
+    const background = ea.getElement(backgroundId);
+    background.groupIds.push(ShadowGroupMarker + outerBorderId);
   });
-  ea.addToGroup(gatheredIds);
 }
 
 function addInnerPolygons(polygonHierachy) {
@@ -197,9 +202,10 @@ function addInnerPolygons(polygonHierachy) {
     borderPaths.push(path);
     firstPath = firstPath.concat(path);
     secondPath.push(polygon.path[0]);
+    drawPolygonHierachy(polygon.innerPolygons);
   });
   return {
-    backgroundPath: firstPath.concat(secondPath), 
+    backgroundPath: firstPath.concat(secondPath.reverse()), 
     borderPaths: borderPaths
   };
 }
