@@ -1,5 +1,10 @@
 /*
-With This Script it is possible to make boolean Operations on Shapes.
+With This Script it is possible to make boolean Operations on Shapes. 
+The style of the resulting shape will be the style of the highest ranking Element that was used. 
+The ranking of the elemtns is based on their background. The "denser" the background, the higher the ranking (the order of backgroundstyles is shown below). If they have the same background the opacity will decide. If thats also the same its decided by the order they were created.
+The ranking is also important for the diffrence operation, so a tranparent object for example will cut a hole into a solid object.
+![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-boolean-operations-showcase.png)
+![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-boolean-operations-element-ranking.png)
 
 
 See documentation for more details:
