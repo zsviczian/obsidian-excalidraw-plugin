@@ -78,6 +78,7 @@ import { ROUNDNESS } from "src/constants";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 import { emulateKeysForLinkClick, KeyEvent, PaneTarget } from "src/utils/ModifierkeyHelper";
 import { Mutable } from "@zsviczian/excalidraw/types/utility-types";
+import PolyBool from "polybooljs";
 
 extendPlugins([
   HarmonyPlugin,
@@ -2305,6 +2306,16 @@ export class ExcalidrawAutomate {
     }
     
     return CM(color);
+  }
+
+  /**
+   * Gets the class PolyBool from https://github.com/velipso/polybooljs
+   * @returns 
+   */
+  getPolyool() {
+    const defaultEpsilon = 0.0000000001;
+    PolyBool.epsilon(defaultEpsilon);
+    return PolyBool;
   }
 
   importSVG(svgString:string):boolean {

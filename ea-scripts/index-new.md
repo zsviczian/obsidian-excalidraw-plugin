@@ -112,6 +112,7 @@ I would love to include your contribution in the script library. If you have a s
 |    |     |
 |----|-----|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Auto%20Draw%20for%20Pen.svg"/></div>|[[#Auto Draw for Pen]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Boolean%20Operations.svg"/></div>|[[#Boolean Operations]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Copy%20Selected%20Element%20Styles%20to%20Global.svg"/></div>|[[#Copy Selected Element Styles to Global]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Hardware%20Eraser%20Support.svg"/></div>|[[#Hardware Eraser Support]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Palette%20loader.svg"/></div>|[[#Palette Loader]]|
@@ -178,6 +179,13 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Auto%20Layout.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/1-2-3'>@1-2-3</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Auto%20Layout.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script performs automatic layout for the selected top-level grouping objects. It is powered by <a href='https://github.com/kieler/elkjs'>elkjs</a> and needs to be connected to the Internet.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-auto-layout.png'></td></tr></table>
+
+## Boolean Operations
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Boolean%20Operations.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/GColoy'>@GColoy</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Boolean%20Operations.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">With This Script it is possible to make boolean Operations on Shapes.<br>The style of the resulting shape will be the style of the highest ranking Element that was used.<br>The ranking of the elemtns is based on their background. The "denser" the background, the higher the ranking (the order of backgroundstyles is shown below). If they have the same background the opacity will decide. If thats also the same its decided by the order they were created.<br>The ranking is also important for the diffrence operation, so a tranparent object for example will cut a hole into a solid object.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-boolean-operations-showcase.png'><br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-boolean-operations-element-ranking.png'></td></tr></table>
+
 
 ## Box Each Selected Groups
 ```excalidraw-script-install

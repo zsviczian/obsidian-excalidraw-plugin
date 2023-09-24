@@ -25,6 +25,7 @@
     "gl-matrix": "^3.4.3",
     "lz-string": "^1.5.0",
     "monkey-around": "^2.3.0",
+    "polybooljs": "^1.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "roughjs": "^4.5.2",
