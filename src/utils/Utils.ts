@@ -211,9 +211,8 @@ export const getFontDataURL = async (
       : "font/truetype";
     fontName = name ?? f.basename;
     dataURL = await getDataURL(ab, mimeType);
-    fontDef = ` @font-face {font-family: "${fontName}";src: url("${dataURL}") format("${
-      f.extension === "ttf" ? "truetype" : f.extension
-    }");}`;
+    fontDef = ` @font-face {font-family: "${fontName}";src: url("${dataURL}")}`;
+     //format("${f.extension === "ttf" ? "truetype" : f.extension}");}`;
     const split = fontDef.split(";base64,", 2);
     fontDef = `${split[0]};charset=utf-8;base64,${split[1]}`;
   }
@@ -352,11 +351,12 @@ export const getQuickImagePreview = async (
 export const embedFontsInSVG = (
   svg: SVGSVGElement,
   plugin: ExcalidrawPlugin,
+  localOnly: boolean = false,
 ): SVGSVGElement => {
-  //replace font references with base64 fonts
-  const includesVirgil =
+  //replace font references with base64 fonts)
+  const includesVirgil = !localOnly &&
     svg.querySelector("text[font-family^='Virgil']") != null;
-  const includesCascadia =
+  const includesCascadia = !localOnly &&
     svg.querySelector("text[font-family^='Cascadia']") != null;
   const includesLocalFont =
     svg.querySelector("text[font-family^='LocalFont']") != null;

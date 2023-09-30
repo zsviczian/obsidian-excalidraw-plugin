@@ -2312,7 +2312,7 @@ export class ExcalidrawAutomate {
    * Gets the class PolyBool from https://github.com/velipso/polybooljs
    * @returns 
    */
-  getPolyool() {
+  getPolyBool() {
     const defaultEpsilon = 0.0000000001;
     PolyBool.epsilon(defaultEpsilon);
     return PolyBool;

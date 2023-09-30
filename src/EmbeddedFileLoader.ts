@@ -1,7 +1,7 @@
 //https://stackoverflow.com/questions/2068344/how-do-i-get-a-youtube-video-thumbnail-from-the-youtube-api
 //https://img.youtube.com/vi/uZz5MgzWXiM/maxresdefault.jpg
 
-import { ExcalidrawImageElement, FileId } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawElement, ExcalidrawImageElement, FileId } from "@zsviczian/excalidraw/types/element/types";
 import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/types";
 import { App, MarkdownRenderer, Notice, TFile } from "obsidian";
 import {
@@ -40,6 +40,8 @@ import {
 } from "./utils/Utils";
 import { ValueOf } from "./types";
 import { has } from "./svgToExcalidraw/attributes";
+import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
+import { mermaidToExcalidraw } from "src/constants";
 
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B
@@ -317,6 +319,70 @@ export class EmbeddedFilesLoader {
     return result;
   }
   
+  private async getExcalidrawSVG ({
+    isDark,
+    file,
+    depth,
+    inFile,
+    hasSVGwithBitmap,
+    elements = [],
+  }: {
+    isDark: boolean;
+    file: TFile;
+    depth: number;
+    inFile: TFile | EmbeddedFile;
+    hasSVGwithBitmap: boolean;
+    elements?: ExcalidrawElement[];
+  }) : Promise<{dataURL: DataURL, hasSVGwithBitmap:boolean}> {
+    //debug({where:"EmbeddedFileLoader.getExcalidrawSVG",uid:this.uid,file:file.name});
+    const forceTheme = hasExportTheme(this.plugin, file)
+      ? getExportTheme(this.plugin, file, "light")
+      : undefined;
+    const exportSettings: ExportSettings = {
+      withBackground: hasExportBackground(this.plugin, file)
+        ? getWithBackground(this.plugin, file)
+        : false,
+      withTheme: !!forceTheme,
+    };
+    const svg = replaceSVGColors(
+      await createSVG(
+        file?.path,
+        true,
+        exportSettings,
+        this,
+        forceTheme,
+        null,
+        null,
+        elements,
+        this.plugin,
+        depth+1,
+        getExportPadding(this.plugin, file),
+      ),
+      inFile instanceof EmbeddedFile ? inFile.colorMap : null
+    ) as SVGSVGElement;
+
+    //https://stackoverflow.com/questions/51154171/remove-css-filter-on-child-elements
+    const imageList = svg.querySelectorAll(
+      "image:not([href^='data:image/svg'])",
+    );
+    if (imageList.length > 0) {
+      hasSVGwithBitmap = true;
+    }
+    if (hasSVGwithBitmap && isDark) { 
+      imageList.forEach((i) => {
+        const id = i.parentElement?.id;
+        svg.querySelectorAll(`use[href='#${id}']`).forEach((u) => {
+          u.setAttribute("filter", THEME_FILTER);
+        });
+      });
+    }
+    if (!hasSVGwithBitmap && svg.getAttribute("hasbitmap")) {
+      hasSVGwithBitmap = true;
+    }
+    const dURL = svgToBase64(svg.outerHTML) as DataURL;
+    return {dataURL: dURL as DataURL, hasSVGwithBitmap};
+  };
+
   private async _getObsidianImage(inFile: TFile | EmbeddedFile, depth: number): Promise<ImgData> {
     if (!this.plugin || !inFile) {
       return null;
@@ -363,59 +429,20 @@ export class EmbeddedFilesLoader {
       ? null
       : await app.vault.readBinary(file);
 
-    const getExcalidrawSVG = async (isDark: boolean) => {
-      //debug({where:"EmbeddedFileLoader.getExcalidrawSVG",uid:this.uid,file:file.name});
-      const forceTheme = hasExportTheme(this.plugin, file)
-        ? getExportTheme(this.plugin, file, "light")
-        : undefined;
-      const exportSettings: ExportSettings = {
-        withBackground: hasExportBackground(this.plugin, file)
-          ? getWithBackground(this.plugin, file)
-          : false,
-        withTheme: !!forceTheme,
-      };
-      const svg = replaceSVGColors(
-        await createSVG(
-          file.path,
-          true,
-          exportSettings,
-          this,
-          forceTheme,
-          null,
-          null,
-          [],
-          this.plugin,
-          depth+1,
-          getExportPadding(this.plugin, file),
-        ),
-        inFile instanceof EmbeddedFile ? inFile.colorMap : null
-      ) as SVGSVGElement;
+    let dURL: DataURL = null;
+    if (isExcalidrawFile) {
+      const res = await this.getExcalidrawSVG({
+        isDark: this.isDark,
+        file,
+        depth,
+        inFile,
+        hasSVGwithBitmap,
+      });
+      dURL = res.dataURL;
+      hasSVGwithBitmap = res.hasSVGwithBitmap;
+    }
 
-      //https://stackoverflow.com/questions/51154171/remove-css-filter-on-child-elements
-      const imageList = svg.querySelectorAll(
-        "image:not([href^='data:image/svg'])",
-      );
-      if (imageList.length > 0) {
-        hasSVGwithBitmap = true;
-      }
-      if (hasSVGwithBitmap && isDark) { 
-        imageList.forEach((i) => {
-          const id = i.parentElement?.id;
-          svg.querySelectorAll(`use[href='#${id}']`).forEach((u) => {
-            u.setAttribute("filter", THEME_FILTER);
-          });
-        });
-      }
-      if (!hasSVGwithBitmap && svg.getAttribute("hasbitmap")) {
-        hasSVGwithBitmap = true;
-      }
-      const dURL = svgToBase64(svg.outerHTML) as DataURL;
-      return dURL as DataURL;
-    };
-
-    const excalidrawSVG = isExcalidrawFile
-      ? await getExcalidrawSVG(this.isDark)
-      : null;
+    const excalidrawSVG = isExcalidrawFile ? dURL : null;
 
     const [pdfDataURL, pdfSize] = isPDF
       ? await this.pdfToDataURL(file,linkParts)
@@ -549,6 +576,59 @@ export class EmbeddedFilesLoader {
         }
       }
     }
+
+    if(shouldRenderMermaid()) {
+      const mermaidElements = getMermaidImageElements(excalidrawData.scene.elements);
+      for(const element of mermaidElements) {
+        if(this.terminate) {
+          continue;
+        }
+        const data = getMermaidText(element);
+        const result = await mermaidToExcalidraw(data, {fontSize: 20});
+        if(!result) {
+          continue;
+        }
+        if(result?.files) {
+          for (const key in result.files) {
+            const fileData = {
+              ...result.files[key],
+              id: element.fileId,
+              created: Date.now(),
+              hasSVGwithBitmap: false,
+              shouldScale: true,
+              size: await getImageSize(result.files[key].dataURL),
+            };
+            files.push(fileData);
+          }
+          continue;
+        }
+        if(result?.elements) {
+          //handle case that mermaidToExcalidraw has implemented this type of diagram in the mean time
+          const res = await this.getExcalidrawSVG({
+            isDark: this.isDark,
+            file: null,
+            depth,
+            inFile: null,
+            hasSVGwithBitmap: false,
+            elements: result.elements
+          });
+          if(res?.dataURL) {
+            const size = await getImageSize(res.dataURL);
+            const fileData:FileData = {
+              mimeType: "image/svg+xml",
+              id: element.fileId,
+              dataURL: res.dataURL,
+              created: Date.now(),
+              hasSVGwithBitmap: res.hasSVGwithBitmap,
+              size,
+              shouldScale: true,
+            };
+            files.push(fileData);
+          }
+          continue;
+        }  
+      }
+    };
 
     this.emptyPDFDocsMap();
     if (this.terminate) {

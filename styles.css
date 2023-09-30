@@ -415,3 +415,12 @@ div.excalidraw-draginfo {
 .excalidraw-svg svg a {
   text-decoration: none;
 }
+
+.excalidraw .Modal {
+  background-color: initial;
+  border: initial;
+  max-width: initial;
+  max-height: initial;
+  width: initial;
+  height: initial;
+}

@@ -5,7 +5,7 @@
     originalText: this is the text without added linebreaks for wrapping. This will be parsed or markup depending on view mode
     rawText: text with original markdown markup and without the added linebreaks for wrapping
  */
-import { App, TFile } from "obsidian";
+import { App, Notice, TFile } from "obsidian";
 import {
   nanoid,
   FRONTMATTER_KEY_CUSTOM_PREFIX,
@@ -52,7 +52,8 @@ import {
 } from "@zsviczian/excalidraw/types/element/types";
 import { BinaryFiles, DataURL, SceneData } from "@zsviczian/excalidraw/types/types";
 import { EmbeddedFile, MimeType } from "./EmbeddedFileLoader";
-import { ConfirmationPrompt, Prompt } from "./dialogs/Prompt";
+import { ConfirmationPrompt } from "./dialogs/Prompt";
+import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles };
 
@@ -261,6 +262,7 @@ export class ExcalidrawData {
   public loaded: boolean = false;
   public files: Map<FileId, EmbeddedFile> = null; //fileId, path
   private equations: Map<FileId, { latex: string; isLoaded: boolean }> = null; //fileId, path
+  private mermaids: Map<FileId, { mermaid: string; isLoaded: boolean }> = null; //fileId, path
   private compatibilityMode: boolean = false;
   selectedElementIds: {[key:string]:boolean} = {}; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/609
 
@@ -270,6 +272,7 @@ export class ExcalidrawData {
     this.app = plugin.app;
     this.files = new Map<FileId, EmbeddedFile>();
     this.equations = new Map<FileId, { latex: string; isLoaded: boolean }>();
+    this.mermaids = new Map<FileId, { mermaid: string; isLoaded: boolean }>();
   }
 
   /**
@@ -434,9 +437,10 @@ export class ExcalidrawData {
     >();
     this.elementLinks = new Map<string, string>();
     if (this.file != file) {
-      //this is a reload - files and equations will take care of reloading when needed
+      //this is a reload - files, equations and mermaids will take care of reloading when needed
       this.files.clear();
       this.equations.clear();
+      this.mermaids.clear();
     }
     this.file = file;
     this.compatibilityMode = false;
@@ -621,6 +625,16 @@ export class ExcalidrawData {
       });
     }
 
+    //Load Mermaids
+    const mermaidElements = getMermaidImageElements(this.scene.elements);
+    if(mermaidElements.length>0 && !shouldRenderMermaid()) {
+      new Notice ("Mermaid images are only supported in Obsidian 1.4.14 and above. Please update Obsidian to see the mermaid images in this drawing. Obsidian mobile 1.4.14 currently only avaiable to Obsidian insiders", 5000);
+    } else {
+      mermaidElements.forEach(el => 
+        this.setMermaid(el.fileId, {mermaid: getMermaidText(el), isLoaded: false})
+      );
+    }
+
     //Check to see if there are text elements in the JSON that were missed from the # Text Elements section
     //e.g. if the entire text elements section was deleted.
     this.findNewTextElementsInScene();
@@ -657,6 +671,7 @@ export class ExcalidrawData {
     }
     this.files.clear();
     this.equations.clear();
+    this.mermaids.clear();
     this.findNewTextElementsInScene();
     this.findNewElementLinksInScene();
     await this.setTextMode(TextMode.raw, true); //legacy files are always displayed in raw mode.
@@ -1103,6 +1118,7 @@ export class ExcalidrawData {
       outString += `${this.elementLinks.get(key)} ^${key}\n\n`;
     }
 
+    // deliberately not adding mermaids to here. It is enough to have the mermaidText in the image element's customData
     outString +=
       this.equations.size > 0 || this.files.size > 0
         ? "\n# Embedded files\n"
@@ -1226,6 +1242,13 @@ export class ExcalidrawData {
       }
     });
 
+    this.mermaids.forEach((value, key) => {
+      if (!fileIds.contains(key)) {
+        this.mermaids.delete(key);
+        dirty = true;
+      }
+    });
+
     //check if there are any images that need to be processed in the new scene
     if (!scene.files || Object.keys(scene.files).length === 0) {
       return false;
@@ -1239,25 +1262,25 @@ export class ExcalidrawData {
     fileIds.forEach(fileId=>{
       if(processedIds.has(fileId)) {
         const file = this.getFile(fileId);
-        //const file = this.files.get(fileId as FileId);
         const equation = this.getEquation(fileId);
-        //const equation = this.equations.get(fileId as FileId);
-        //images should have a single reference, but equations and markdown embeds should have as many as instances of the file in the scene
+        const mermaid = this.getMermaid(fileId);
+
+        //images should have a single reference, but equations, and markdown embeds should have as many as instances of the file in the scene
         if(file && (file.isHyperlink || (file.file && (file.file.extension !== "md" || this.plugin.isExcalidrawFile(file.file))))) {
           return;
         }
+        if(mermaid) {
+          return;
+        }
         const newId = fileid();
-        //scene.files[newId] = {...scene.files[fileId]};
         (scene.elements.filter((el:ExcalidrawImageElement)=>el.fileId === fileId)[0] as any).fileId = newId;
         dirty = true;
         processedIds.add(newId);
         if(file) {
           this.setFile(newId as FileId,new EmbeddedFile(this.plugin,this.file.path,file.linkParts.original));
-           //this.files.set(newId as FileId,new EmbeddedFile(this.plugin,this.file.path,file.linkParts.original))
         }
         if(equation) {
           this.setEquation(newId as FileId, {latex:equation.latex, isLoaded:false});
-          //this.equations.set(newId as FileId, equation);
         }
       }
       processedIds.add(fileId);
@@ -1265,7 +1288,8 @@ export class ExcalidrawData {
 
 
     for (const key of Object.keys(scene.files)) {
-      if (!(this.hasFile(key as FileId) || this.hasEquation(key as FileId))) {
+      const mermaidElements = getMermaidImageElements(scene.elements.filter((el:ExcalidrawImageElement)=>el.fileId === key));
+      if (!(this.hasFile(key as FileId) || this.hasEquation(key as FileId) || this.hasMermaid(key as FileId) || mermaidElements.length > 0)) {
         dirty = true;
         await this.saveDataURLtoVault(
           scene.files[key].dataURL,
@@ -1274,35 +1298,6 @@ export class ExcalidrawData {
         );
       }
     }
-
-    //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/297
-    /*const equations = new Set<string>();
-    const duplicateEqs = new Set<string>();
-    for (const key of fileIds) {
-      if (this.hasEquation(key as FileId)) {
-        if (equations.has(key)) {
-          duplicateEqs.add(key);
-        } else {
-          equations.add(key);
-        }
-      }
-    }
-    if (duplicateEqs.size > 0) {
-      for (const key of duplicateEqs.keys()) {
-        const elements = this.scene.elements.filter(
-          (el: ExcalidrawElement) => el.type === "image" && el.fileId === key,
-        );
-        for (let i = 1; i < elements.length; i++) {
-          const newFileId = fileid() as FileId;
-          this.setEquation(newFileId, {
-            latex: this.getEquation(key as FileId).latex,
-            isLoaded: false,
-          });
-          elements[i].fileId = newFileId;
-          dirty = true;
-        }
-      }
-    }*/
 
     return dirty;
   }
@@ -1558,7 +1553,7 @@ export class ExcalidrawData {
   }
 
   /** 
-   Files and equations copy/paste support
+   Files, equations and mermaid copy/paste support
    This is not a complete solution, it assumes the source document is opened first
    at that time the fileId is stored in the master files/equations map
    when pasted the map is checked if the file already exists
@@ -1663,6 +1658,9 @@ export class ExcalidrawData {
     return false;
   }
 
+  //--------------
+  //Equations
+  //--------------
   public setEquation(
     fileId: FileId,
     data: { latex: string; isLoaded: boolean },
@@ -1698,6 +1696,51 @@ export class ExcalidrawData {
     if (this.plugin.equationsMaster.has(fileId)) {
       this.equations.set(fileId, {
         latex: this.plugin.equationsMaster.get(fileId),
+        isLoaded: false,
+      });
+      return true;
+    }
+    return false;
+  }
+
+  //--------------
+  //Mermaids
+  //--------------
+  public setMermaid(
+    fileId: FileId,
+    data: { mermaid: string; isLoaded: boolean },
+  ) {
+    this.mermaids.set(fileId, { mermaid: data.mermaid, isLoaded: data.isLoaded });
+    this.plugin.mermaidsMaster.set(fileId, data.mermaid);
+  }
+
+  public getMermaid(fileId: FileId): { mermaid: string; isLoaded: boolean } {
+    let result = this.mermaids.get(fileId);
+    if(result) return result;
+    const mermaid = this.plugin.mermaidsMaster.get(fileId);
+    if(!mermaid) return result;
+    this.mermaids.set(fileId, {mermaid, isLoaded: false});
+    return {mermaid, isLoaded: false};
+  }
+
+  public getMermaidEntries() {
+    return this.mermaids.entries();
+  }
+
+  public deleteMermaid(fileId: FileId) {
+    this.mermaids.delete(fileId);
+    //deliberately not deleting from plugin.mermaidsMaster
+    //could be present in other drawings as well
+  }
+
+  //Image copy/paste support
+  public hasMermaid(fileId: FileId): boolean {
+    if (this.mermaids.has(fileId)) {
+      return true;
+    }
+    if (this.plugin.mermaidsMaster.has(fileId)) {
+      this.mermaids.set(fileId, {
+        mermaid: this.plugin.mermaidsMaster.get(fileId),
         isLoaded: false,
       });
       return true;

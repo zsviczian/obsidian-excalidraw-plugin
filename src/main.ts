@@ -20,6 +20,7 @@ import {
   Workspace,
   Editor,
   MarkdownFileInfo,
+  loadMermaid,
 } from "obsidian";
 import {
   BLANK_DRAWING,
@@ -146,6 +147,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public filesMaster: Map<FileId, { isHyperlink: boolean; path: string; hasSVGwithBitmap: boolean; blockrefData: string, colorMapJSON?: string}> =
     null; //fileId, path
   public equationsMaster: Map<FileId, string> = null; //fileId, formula
+  public mermaidsMaster: Map<FileId, string> = null; //fileId, mermaidText
   public mathjax: any = null;
   private mathjaxDiv: HTMLDivElement = null;
   public mathjaxLoaderFinished: boolean = false;
@@ -164,6 +166,7 @@ export default class ExcalidrawPlugin extends Plugin {
       { isHyperlink: boolean; path: string; hasSVGwithBitmap: boolean; blockrefData: string; colorMapJSON?: string }
     >();
     this.equationsMaster = new Map<FileId, string>();
+    this.mermaidsMaster = new Map<FileId, string>();
   }
 
   public getPackage(win:Window):Packages {
@@ -190,6 +193,7 @@ export default class ExcalidrawPlugin extends Plugin {
     addIcon(EXPORT_IMG_ICON_NAME, EXPORT_IMG_ICON);
 
     await this.loadSettings({reEnableAutosave:true});
+    await loadMermaid();
     imageCache.plugin = this;
     
     this.addSettingTab(new ExcalidrawSettingTab(this.app, this));

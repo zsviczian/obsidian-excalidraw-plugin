@@ -17,6 +17,49 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.20":`
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/QB2rKRxxYlg" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## Fixed
+- Fourth Font displays correctly in SVG embeds mode
+- The re-colorMap map (see [1.9.19](https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.9.19) for more info) did not work when either of the fill or stroke color properties of the image was missing.
+- Excalidraw Pasting with middle mouse button on Linux [#1338](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/1338) 🙏@Aeases 
+
+### Fixed by excalidraw.com
+- Excalidraw's native eyedropper fixes [#7019](https://github.com/excalidraw/excalidraw/pull/7019)
+
+## New
+- Now you can insert [Mermaid](https://mermaid.live/) diagrams as Excalidraw elements into your drawings (currently only the [Flowchart](https://mermaid.js.org/syntax/flowchart.html) type is supported, [other diagram types](https://mermaid.js.org/intro/#diagram-types) are inserted as Mermaid native images. 
+  - ⚠️**This feature requires Obsidian API v1.4.14 (the latest desktop version). On Obsidian mobile API v1.4.14 is only available to Obsidian insiders currently**
+  - If you want to contribute to the project please head over to [mermaid-to-excalidraw](https://github.com/excalidraw/mermaid-to-excalidraw) and help create the converters for the other diagram types.
+- The Fourth Font now also supports the OTF format
+- Disable snap-to-grid in grid mode by holding down the CTRL/CMD while drawing or moving an element [#6983](https://github.com/excalidraw/excalidraw/pull/6983)
+- I updated the Excalidraw logo in Obsidian. This affects the logo on the tab and the ribbon.
+
+### New from excalidraw.com
+- Elements alignment snapping. Hold down the CTRL/CMD button while moving an element to snap it to other objects. [#6256](https://github.com/excalidraw/excalidraw/pull/6256)
+
+### New in the script library
+- The amazing shape [Boolean Operations](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Boolean%20Operations.md) script created by 🙏@GColoy is available in the script library.
+
+### New in Excalidraw Automate
+- ${String.fromCharCode(96)}getPolyBool()${String.fromCharCode(96)} returns a [PolyBool](https://github.com/velipso/polybooljs) object
+- sample mermaid code:
+${String.fromCharCode(96,96,96)}js
+ea = ExcalidrawAutomate();
+ea.setView();
+await ea.addMermaid(
+  ${String.fromCharCode(96)}flowchart TD
+    A[Christmas] -->|Get money| B(Go shopping)
+    B --> C{Let me think}
+    C -->|One| D[Laptop]
+    C -->|Two| E[iPhone]
+    C -->|Three| F[fa:fa-car Car]${String.fromCharCode(96)}
+);
+ea.addElementsToView();
+${String.fromCharCode(96,96,96)}`,
 "1.9.19":`
 ## New
 - I added new features to the [Deconstruct Selected Elements](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Deconstruct%20selected%20elements%20into%20new%20drawing.md) script
