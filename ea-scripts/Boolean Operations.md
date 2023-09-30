@@ -18,13 +18,21 @@ if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.9.20")) {
 }
 const ShadowGroupMarker = "ShadowCloneOf-";
 
+const elements = ea.getViewSelectedElements().filter(
+  el=>["ellipse", "rectangle", "diamond"].includes(el.type) ||
+    el.groupIds.some(id => id.startsWith(ShadowGroupMarker)) ||
+    (["line", "arrow"].includes(el.type) && el.roundness === null)
+);
+if(elements.length === 0) {
+  new Notice ("Select ellipses, rectangles or diamonds");
+  return;
+}
 
-const PolyBool = ea.getPolybool();
+const PolyBool = ea.getPolyBool();
 const polyboolAction = await utils.suggester(["union (a + b)", "intersect (a && b)", "diffrence (a - b)", "reversed diffrence (b - a)", "xor"], [
   PolyBool.union, PolyBool.intersect, PolyBool.difference, PolyBool.differenceRev, PolyBool.xor
 ], "What would you like todo with the object");
 
-const elements = ea.getViewSelectedElements();
 const shadowClones = elements.filter(element => element.groupIds.some(id => id.startsWith(ShadowGroupMarker)));
 shadowClones.forEach(shadowClone => {
   let parentId = shadowClone.groupIds
