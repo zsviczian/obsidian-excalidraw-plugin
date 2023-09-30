@@ -15,7 +15,6 @@ import {
 //import Excalidraw from "@zsviczian/excalidraw";
 import {
   ExcalidrawElement,
-  ExcalidrawEmbeddableElement,
   ExcalidrawTextElement,
   FileId,
   NonDeletedExcalidrawElement,
@@ -116,7 +115,7 @@ import { getTextElementAtPointer, getImageElementAtPointer, getElementWithLinkAt
 import { ICONS, LogoWrapper, saveIcon } from "./menu/ActionIcons";
 import { ExportDialog } from "./dialogs/ExportDialog";
 import { getEA } from "src"
-import { anyModifierKeysPressed, emulateCTRLClickForLinks, emulateKeysForLinkClick, externalDragModifierType, internalDragModifierType, isALT, isCTRL, isMETA, isSHIFT, linkClickModifierType, mdPropModifier, ModifierKeys } from "./utils/ModifierkeyHelper";
+import { anyModifierKeysPressed, emulateKeysForLinkClick, externalDragModifierType, internalDragModifierType, isALT, isCTRL, isMETA, isSHIFT, linkClickModifierType, ModifierKeys } from "./utils/ModifierkeyHelper";
 import { setDynamicStyle } from "./utils/DynamicStyling";
 import { InsertPDFModal } from "./dialogs/InsertPDFModal";
 import { CustomEmbeddable, renderWebView } from "./customEmbeddable";
@@ -127,6 +126,7 @@ import { EmbeddableMenu } from "./menu/EmbeddableActionsMenu";
 import { useDefaultExcalidrawFrame } from "./utils/CustomEmbeddableUtils";
 import { UniversalInsertFileModal } from "./dialogs/UniversalInsertFileModal";
 import { moment } from "obsidian";
+import { shouldRenderMermaid } from "./utils/MermaidUtils";
 
 declare const PLUGIN_VERSION:string;
 
@@ -997,6 +997,13 @@ export default class ExcalidrawView extends TextFileView {
         });
         return;
       }
+      if (this.excalidrawData.hasMermaid(selectedImage.fileId)) {
+        if(shouldRenderMermaid) {
+          const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
+          api.setActiveTool({type: "mermaid"});
+        }
+        return;
+      }
       await this.save(false); //in case pasted images haven't been saved yet
       if (this.excalidrawData.hasFile(selectedImage.fileId)) {
         const ef = this.excalidrawData.getFile(selectedImage.fileId);
@@ -1021,7 +1028,7 @@ export default class ExcalidrawView extends TextFileView {
             GenericInputPrompt.Prompt(
               this,
               this.plugin,
-              app,
+              this.app,
               "Customize the link",
               undefined,
               ef.linkParts.original,
@@ -2037,7 +2044,7 @@ export default class ExcalidrawView extends TextFileView {
         //justloaded,
       );
       if (
-        app.workspace.getActiveViewOfType(ExcalidrawView) === this.leaf.view &&
+        this.app.workspace.getActiveViewOfType(ExcalidrawView) === this.leaf.view &&
         this.excalidrawWrapperRef
       ) {
         //.firstElmentChild solves this issue: https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/346
@@ -2896,7 +2903,8 @@ export default class ExcalidrawView extends TextFileView {
 
       const showHoverPreview = (linktext?: string, element?: ExcalidrawElement) => {
         if(!mouseEvent) return;
-        if(this.excalidrawAPI?.getAppState()?.editingElement) return; //should not activate hover preview when element is being edited
+        const st = this.excalidrawAPI?.getAppState();
+        if(st?.editingElement || st?.draggingElement) return; //should not activate hover preview when element is being edited or dragged
         if(this.semaphores.wheelTimeout) return;
         //if link text is not provided, try to get it from the element
         if (!linktext) {
@@ -3976,7 +3984,8 @@ export default class ExcalidrawView extends TextFileView {
             } catch(e) {
               return null;
             }
-          }
+          },
+          renderMermaid: shouldRenderMermaid()
 
         },//,React.createElement(Footer,{},React.createElement(customTextEditor.render)),
           React.createElement (
