@@ -3277,6 +3277,9 @@ export default class ExcalidrawView extends TextFileView {
                 await this.plugin.saveSettings();
               })();
             },
+
+            // TODO: Potentially better way to block middle mouse paste on linux:
+            //! onauxclick: (e: any) => {e.preventDefault()}, 
             renderTopRightUI:  (isMobile: boolean, appState: AppState) => this.obsidianMenu.renderButton (isMobile, appState),
             renderEmbeddableMenu: (appState: AppState) => this.embeddableMenu.renderButtons(appState),
             onPaste: (
@@ -3295,6 +3298,18 @@ export default class ExcalidrawView extends TextFileView {
                 });
                 if(typeof res === "boolean" && res === false) return false;
               }
+
+              // Disables Middle Mouse Button Paste Functionality on Linux
+              if(
+                !this.modifierKeyDown.ctrlKey 
+                && typeof event !== "undefined"
+                && event !== null 
+                && DEVICE.isLinux
+                ) {
+                console.debug("Prevented what is likely middle mouse button paste.")
+                return false
+              };
+
               if(data && data.text && hyperlinkIsImage(data.text)) {
                 this.addImageWithURL(data.text);
                 return false;
@@ -3333,6 +3348,9 @@ export default class ExcalidrawView extends TextFileView {
               }
               return true;
             },
+
+
+
             onThemeChange: async (newTheme: string) => {
               //debug({where:"ExcalidrawView.onThemeChange",file:this.file.name,before:"this.loadSceneFiles",newTheme});
               this.excalidrawData.scene.appState.theme = newTheme;
