@@ -17,6 +17,10 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.23":`
+## Fixed
+- Link navigation error in view mode introduced with 1.9.21 [#7120](https://github.com/excalidraw/excalidraw/pull/7120)
+`,
 "1.9.21":`
 ## Fixed:
 - When moving a group of objects on the grid, each object snapped separately resulting in a jumbled-up image [#7082](https://github.com/excalidraw/excalidraw/issues/7082)
