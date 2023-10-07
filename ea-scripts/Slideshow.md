@@ -10,7 +10,7 @@ If there are frames, the script will use the frames for the presentation. Frames
 
 ```javascript
 */
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.8.17")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.9.23")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
@@ -36,10 +36,13 @@ const SVG_LEFT_ARROW = ea.obsidian.getIcon("lucide-arrow-left").outerHTML;
 const SVG_EDIT = ea.obsidian.getIcon("lucide-pencil").outerHTML;
 const SVG_MAXIMIZE = ea.obsidian.getIcon("lucide-maximize").outerHTML;
 const SVG_MINIMIZE = ea.obsidian.getIcon("lucide-minimize").outerHTML;
+const SVG_LASER_ON = ea.obsidian.getIcon("lucide-hand").outerHTML;
+const SVG_LASER_OFF = ea.obsidian.getIcon("lucide-wand").outerHTML;
 
 //-------------------------------
 //utility & convenience functions
 //-------------------------------
+let isLaserOn = false;
 let slide = 0;
 let isFullscreen = false;
 const ownerDocument = ea.targetView.ownerDocument;
@@ -310,6 +313,9 @@ const scrollToNextRect = async ({left,top,right,bottom,nextZoom},steps = TRANSIT
     }
   }
   excalidrawAPI.updateScene({appState:{shouldCacheIgnoreZoom:false}});
+  if(isLaserOn) {
+    excalidrawAPI.setActiveTool({type: "laser"});
+  }
   busy = false;
 }
 
@@ -450,6 +456,22 @@ const createPresentationNavigationPanel = () => {
 	        margin: 0px auto;`
 	      }
 	    });
+	    
+	  el.createEl("button",{
+	    attr: {
+	      title: "Toggle Laser Pointer and Panning Mode"
+	    }
+	  }, button => {
+	    button.innerHTML = isLaserOn ? SVG_LASER_ON : SVG_LASER_OFF;
+	    button.onclick = () => {
+		    isLaserOn = !isLaserOn;
+		    excalidrawAPI.setActiveTool({
+		      type: isLaserOn ? "laser" : "selection"
+		    })
+		    button.innerHTML = isLaserOn ? SVG_LASER_ON : SVG_LASER_OFF;
+	    }
+	  });
+	  
  	  el.createEl("button",{
 	    attr: {
 	      title: "Toggle fullscreen. If you hold ALT/OPT when starting the presentation it will not go fullscreen."
@@ -630,6 +652,7 @@ const initializeEventListners = () => {
 // Exit presentation
 //----------------------------
 const exitPresentation = async (openForEdit = false) => {
+  isLaserOn = false;
   statusBarElement.style.display = "inherit";
   if(openForEdit) ea.targetView.preventAutozoom();
   await exitFullscreen();
@@ -680,7 +703,8 @@ const exitPresentation = async (openForEdit = false) => {
     //Resets pointer offsets. Ugly solution. 
     //During testing offsets were wrong after presentation, but don't know why.
     //This should solve it even if they are wrong.
-    ea.targetView.refresh(); 
+    ea.targetView.refresh();
+    excalidrawAPI.setActiveTool({type: "selection"});
   })
 }
 
