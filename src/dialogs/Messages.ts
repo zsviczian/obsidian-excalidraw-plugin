@@ -17,6 +17,15 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.21":`
+## Fixed:
+- When moving a group of objects on the grid, each object snapped separately resulting in a jumbled-up image [#7082](https://github.com/excalidraw/excalidraw/issues/7082)
+
+## New from Excalidraw.com:
+- 🎉 Laser Pointer. Press "K" to activate the laser pointer, or find it under more tools. In View-Mode double click/tap the canvas to toggle the laser pointer
+
+![image](https://github.com/zsviczian/obsidian-excalidraw-plugin/assets/14358394/d3fc079d-9428-4a93-9a9b-1947ce9b6b57)
+`,
 "1.9.20":`
 <div class="excalidraw-videoWrapper"><div>
 <iframe src="https://www.youtube.com/embed/QB2rKRxxYlg" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
