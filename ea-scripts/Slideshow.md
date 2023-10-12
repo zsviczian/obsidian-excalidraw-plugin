@@ -15,6 +15,8 @@ if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.9.23")) {
   return;
 }
 
+const hostLeaf = ea.targetView.leaf;
+const hostView = hostLeaf.view;
 const statusBarElement = document.querySelector("div.status-bar");
 const ctrlKey = ea.targetView.modifierKeyDown.ctrlKey || ea.targetView.modifierKeyDown.metaKey;
 const altKey = ea.targetView.modifierKeyDown.altKey || ctrlKey;
@@ -526,7 +528,8 @@ const createPresentationNavigationPanel = () => {
 // keyboard navigation
 //--------------------
 const keydownListener = (e) => {
-  if(ea.targetView.leaf !== app.workspace.activeLeaf) return;
+  if(hostLeaf !== app.workspace.activeLeaf) return;
+  if(hostLeaf.width === 0 && hostLeaf.height === 0) return;
   e.preventDefault();
   switch(e.key) {
     case "Escape":
@@ -652,6 +655,8 @@ const initializeEventListners = () => {
 // Exit presentation
 //----------------------------
 const exitPresentation = async (openForEdit = false) => {
+  //this is a hack, not sure why ea loses target view when other scripts are executed while the presentation is running
+  ea.targetView = hostView; 
   isLaserOn = false;
   statusBarElement.style.display = "inherit";
   if(openForEdit) ea.targetView.preventAutozoom();
@@ -703,7 +708,7 @@ const exitPresentation = async (openForEdit = false) => {
     //Resets pointer offsets. Ugly solution. 
     //During testing offsets were wrong after presentation, but don't know why.
     //This should solve it even if they are wrong.
-    ea.targetView.refresh();
+    hostView.refresh();
     excalidrawAPI.setActiveTool({type: "selection"});
   })
 }
