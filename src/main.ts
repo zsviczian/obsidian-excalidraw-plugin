@@ -56,6 +56,7 @@ import {
 } from "./settings";
 import { openDialogAction, OpenFileDialog } from "./dialogs/OpenDrawing";
 import { InsertLinkDialog } from "./dialogs/InsertLinkDialog";
+import { InsertCommandDialog } from "./dialogs/InsertCommandDialog";
 import { InsertImageDialog } from "./dialogs/InsertImageDialog";
 import { ImportSVGDialog } from "./dialogs/ImportSVGDialog";
 import { InsertMDDialog } from "./dialogs/InsertMDDialog";
@@ -126,6 +127,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public settings: ExcalidrawSettings;
   private openDialog: OpenFileDialog;
   public insertLinkDialog: InsertLinkDialog;
+  public insertCommandDialog: InsertCommandDialog;
   public insertImageDialog: InsertImageDialog;
   public importSVGDialog: ImportSVGDialog;
   public insertMDDialog: InsertMDDialog;
@@ -144,7 +146,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public opencount: number = 0;
   public ea: ExcalidrawAutomate;
   //A master list of fileIds to facilitate copy / paste
-  public filesMaster: Map<FileId, { isHyperlink: boolean; path: string; hasSVGwithBitmap: boolean; blockrefData: string, colorMapJSON?: string}> =
+  public filesMaster: Map<FileId, { isHyperLink: boolean; isLocalLink: boolean; path: string; hasSVGwithBitmap: boolean; blockrefData: string, colorMapJSON?: string}> =
     null; //fileId, path
   public equationsMaster: Map<FileId, string> = null; //fileId, formula
   public mermaidsMaster: Map<FileId, string> = null; //fileId, mermaidText
@@ -163,7 +165,7 @@ export default class ExcalidrawPlugin extends Plugin {
     super(app, manifest);
     this.filesMaster = new Map<
       FileId,
-      { isHyperlink: boolean; path: string; hasSVGwithBitmap: boolean; blockrefData: string; colorMapJSON?: string }
+      { isHyperLink: boolean; isLocalLink: boolean; path: string; hasSVGwithBitmap: boolean; blockrefData: string; colorMapJSON?: string }
     >();
     this.equationsMaster = new Map<FileId, string>();
     this.mermaidsMaster = new Map<FileId, string>();
@@ -194,7 +196,6 @@ export default class ExcalidrawPlugin extends Plugin {
 
     await this.loadSettings({reEnableAutosave:true});
     await loadMermaid();
-    imageCache.plugin = this;
     
     this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
     this.ea = await initExcalidrawAutomate(this);
@@ -243,6 +244,7 @@ export default class ExcalidrawPlugin extends Plugin {
     const self = this;
     this.app.workspace.onLayoutReady(() => {
       this.scriptEngine = new ScriptEngine(self);
+      imageCache.initializeDB(self);
     });
     this.taskbone = new Taskbone(this);
   }
@@ -677,6 +679,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private registerCommands() {
     this.openDialog = new OpenFileDialog(this.app, this);
     this.insertLinkDialog = new InsertLinkDialog(this.app);
+    this.insertCommandDialog = new InsertCommandDialog(this.app);
     this.insertImageDialog = new InsertImageDialog(this);
     this.importSVGDialog = new ImportSVGDialog(this);
     this.insertMDDialog = new InsertMDDialog(this);
@@ -1163,6 +1166,22 @@ export default class ExcalidrawPlugin extends Plugin {
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
           this.insertLinkDialog.start(view.file.path, view.addText);
+          return true;
+        }
+        return false;
+      },
+    });
+
+    this.addCommand({
+      id: "insert-command",
+      name: t("INSERT_COMMAND"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
+        }
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
+          this.insertCommandDialog.start(view.addText);
           return true;
         }
         return false;

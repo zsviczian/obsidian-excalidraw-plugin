@@ -23,7 +23,7 @@ import { ExportSettings } from "./ExcalidrawView";
 import { t } from "./lang/helpers";
 import { tex2dataURL } from "./LaTeX";
 import ExcalidrawPlugin from "./main";
-import { blobToBase64, getDataURLFromURL, getMimeType, getPDFDoc, getURLImageExtension } from "./utils/FileUtils";
+import { blobToBase64, getDataURLFromURL, getMimeType, getPDFDoc, getURLImageExtension, readLocalFileBinary } from "./utils/FileUtils";
 import {
   errorlog,
   getDataURL,
@@ -151,7 +151,8 @@ export class EmbeddedFile {
   public linkParts: LinkParts;
   private hostPath: string;
   public attemptCounter: number = 0;
-  public isHyperlink: boolean = false;
+  public isHyperLink: boolean = false;
+  public isLocalLink: boolean = false;
   public hyperlink:DataURL;
   public colorMap: ColorMap | null = null;
 
@@ -171,11 +172,17 @@ export class EmbeddedFile {
     this.imgInverted = this.img = "";
     this.mtime = 0;
 
-    if(imgPath.startsWith("https://") || imgPath.startsWith("http://")){
-      this.isHyperlink = true;
+    if(imgPath.startsWith("https://") || imgPath.startsWith("http://") || imgPath.startsWith("ftp://") || imgPath.startsWith("ftps://")) {
+      this.isHyperLink = true;
       this.hyperlink = imgPath as DataURL;
       return;
     };
+
+    if(imgPath.startsWith("file://")) {
+      this.isLocalLink = true;
+      this.hyperlink = imgPath as DataURL;
+      return;
+    }
 
     this.linkParts = getLinkParts(imgPath);
     this.hostPath = hostPath;
@@ -204,11 +211,11 @@ export class EmbeddedFile {
   }
 
   private fileChanged(): boolean {
-    if(this.isHyperlink) {
+    if(this.isHyperLink || this.isLocalLink) {
       return false;
     }
     if (!this.file) {
-      this.file = app.metadataCache.getFirstLinkpathDest(
+      this.file = this.plugin.app.metadataCache.getFirstLinkpathDest(
         this.linkParts.path,
         this.hostPath,
       ); // maybe the file has synchronized in the mean time
@@ -227,13 +234,13 @@ export class EmbeddedFile {
     isDark: boolean,
     isSVGwithBitmap: boolean,
   ) {
-    if (!this.file && !this.isHyperlink) {
+    if (!this.file && !this.isHyperLink && !this.isLocalLink) {
       return;
     }
     if (this.fileChanged()) {
       this.imgInverted = this.img = "";
     }
-    this.mtime = this.isHyperlink ? 0 : this.file.stat.mtime;
+    this.mtime = this.isHyperLink || this.isLocalLink ? 0 : this.file.stat.mtime;
     this.size = size;
     this.mimeType = mimeType;
     switch (isDark && isSVGwithBitmap) {
@@ -248,7 +255,7 @@ export class EmbeddedFile {
   }
 
   public isLoaded(isDark: boolean): boolean {
-    if(!this.isHyperlink) {  
+    if(!this.isHyperLink && !this.isLocalLink) {  
       if (!this.file) {
         this.file = app.metadataCache.getFirstLinkpathDest(
           this.linkParts.path,
@@ -270,7 +277,7 @@ export class EmbeddedFile {
   }
 
   public getImage(isDark: boolean) {
-    if (!this.file && !this.isHyperlink) {
+    if (!this.file && !this.isHyperLink && !this.isLocalLink) {
       return "";
     }
     if (isDark && this.isSVGwithBitmap) {
@@ -284,7 +291,7 @@ export class EmbeddedFile {
    * @returns true if image should scale such as the updated images has the same area as the previous images, false if the image should be displayed at 100%
    */
   public shouldScale() {
-    return this.isHyperlink || !Boolean(this.linkParts && this.linkParts.original && this.linkParts.original.endsWith("|100%"));
+    return this.isHyperLink || this.isLocalLink || !Boolean(this.linkParts && this.linkParts.original && this.linkParts.original.endsWith("|100%"));
   }
 }
 
@@ -388,7 +395,8 @@ export class EmbeddedFilesLoader {
       return null;
     }
 
-    const isHyperlink = inFile instanceof EmbeddedFile ? inFile.isHyperlink : false;
+    const isHyperLink = inFile instanceof EmbeddedFile ? inFile.isHyperLink : false;
+    const isLocalLink = inFile instanceof EmbeddedFile ? inFile.isLocalLink : false;
     const hyperlink = inFile instanceof EmbeddedFile ? inFile.hyperlink : "";
     const file: TFile = inFile instanceof EmbeddedFile ? inFile.file : inFile;
     if(file && markdownRendererRecursionWatcthdog.has(file)) {
@@ -397,7 +405,7 @@ export class EmbeddedFilesLoader {
     }
 
     const linkParts =
-      isHyperlink
+      isHyperLink
         ? null
         : inFile instanceof EmbeddedFile
           ? inFile.linkParts
@@ -412,11 +420,11 @@ export class EmbeddedFilesLoader {
             };
 
     let hasSVGwithBitmap = false;
-    const isExcalidrawFile = !isHyperlink && this.plugin.isExcalidrawFile(file);
-    const isPDF = !isHyperlink && file.extension.toLowerCase() === "pdf";
+    const isExcalidrawFile = !isHyperLink && !isLocalLink && this.plugin.isExcalidrawFile(file);
+    const isPDF = !isHyperLink && !isLocalLink && file.extension.toLowerCase() === "pdf";
 
     if (
-      !isHyperlink && !isPDF &&
+      !isHyperLink && !isPDF && !isLocalLink &&
       !(
         IMAGE_TYPES.contains(file.extension) ||
         isExcalidrawFile ||
@@ -425,9 +433,11 @@ export class EmbeddedFilesLoader {
     ) {
       return null;
     }
-    const ab = isHyperlink || isPDF
+    const ab = isHyperLink || isPDF
       ? null
-      : await app.vault.readBinary(file);
+      : isLocalLink
+        ? await readLocalFileBinary((inFile as EmbeddedFile).hyperlink.split("file://")[1])
+        : await app.vault.readBinary(file);
 
     let dURL: DataURL = null;
     if (isExcalidrawFile) {
@@ -452,7 +462,7 @@ export class EmbeddedFilesLoader {
       ? "image/png"
       : "image/svg+xml";
 
-    const extension = isHyperlink
+    const extension = isHyperLink || isLocalLink
       ? getURLImageExtension(hyperlink)
       : file.extension;
     if (!isExcalidrawFile && !isPDF) {
@@ -460,20 +470,20 @@ export class EmbeddedFilesLoader {
     }
 
     let dataURL =
-      isHyperlink
+      isHyperLink
       ? (
           inFile instanceof EmbeddedFile
             ? await getDataURLFromURL(inFile.hyperlink, mimeType)
             : null
         )
       : excalidrawSVG ?? pdfDataURL ??
-        (file.extension === "svg"
+        (file?.extension === "svg"
           ? await getSVGData(app, file, inFile instanceof EmbeddedFile ? inFile.colorMap : null)
-          : file.extension === "md"
+          : file?.extension === "md"
           ? null
           : await getDataURL(ab, mimeType));
 
-    if(!isHyperlink && !dataURL) {
+    if(!isHyperLink && !dataURL && !isLocalLink) {
       markdownRendererRecursionWatcthdog.add(file);
       const result = await this.convertMarkdownToSVG(this.plugin, file, linkParts, depth);
       markdownRendererRecursionWatcthdog.delete(file);
@@ -485,10 +495,10 @@ export class EmbeddedFilesLoader {
       return {
         mimeType,
         fileId: await generateIdFromFile(
-          isHyperlink || isPDF ? (new TextEncoder()).encode(dataURL as string) : ab
+          isHyperLink || isPDF ? (new TextEncoder()).encode(dataURL as string) : ab
         ),
         dataURL,
-        created: isHyperlink ? 0 : file.stat.mtime,
+        created: isHyperLink || isLocalLink ? 0 : file.stat.mtime,
         hasSVGwithBitmap,
         size,
       };

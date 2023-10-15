@@ -57,6 +57,7 @@ export default {
   INSERT_LINK_TO_ELEMENT_ERROR: "Select a single element in the scene",
   INSERT_LINK_TO_ELEMENT_READY: "Link is READY and available on the clipboard",
   INSERT_LINK: "Insert link to file",
+  INSERT_COMMAND: "Insert Obsidian Command as a link",
   INSERT_IMAGE: "Insert image or Excalidraw drawing from your vault",
   IMPORT_SVG: "Import an SVG file as Excalidraw strokes (limited SVG support, TEXT currently not supported)",
   INSERT_MD: "Insert markdown file from vault",
@@ -489,9 +490,12 @@ FILENAME_HEAD: "Filename",
 
   //openDrawings.ts
   SELECT_FILE: "Select a file then press enter.",
+  SELECT_COMMAND: "Select a command then press enter.",
   SELECT_FILE_WITH_OPTION_TO_SCALE: `Select a file then press ENTER, or ${labelSHIFT()}+${labelMETA()}+ENTER to insert at 100% scale.`,
   NO_MATCH: "No file matches your query.",
+  NO_MATCHING_COMMAND: "No command matches your query.",
   SELECT_FILE_TO_LINK: "Select the file you want to insert the link for.",
+  SELECT_COMMAND_PLACEHOLDER: "Select the command you want to insert the link for.",
   SELECT_DRAWING: "Select the image or drawing you want to insert",
   TYPE_FILENAME: "Type name of drawing to select.",
   SELECT_FILE_OR_TYPE_NEW:

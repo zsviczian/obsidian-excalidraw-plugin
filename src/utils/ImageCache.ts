@@ -1,4 +1,4 @@
-import { Notice, TFile } from "obsidian";
+import { App, Notice, TFile } from "obsidian";
 import ExcalidrawPlugin from "src/main";
 import { convertSVGStringToElement } from "./Utils";
 import { PreviewImageType } from "./UtilTypes";
@@ -36,7 +36,8 @@ class ImageCache {
   private backupStoreName: string;
   private db: IDBDatabase | null;
   private isInitializing: boolean;
-  public plugin: ExcalidrawPlugin;
+  private plugin: ExcalidrawPlugin;
+  private app: App;
   public initializationNotice: boolean = false;
   private obsidanURLCache = new Map<string, string>();
 
@@ -47,10 +48,11 @@ class ImageCache {
     this.db = null;
     this.isInitializing = false;
     this.plugin = null;
-    app.workspace.onLayoutReady(() => this.initializeDB());
   }
 
-  private async initializeDB(): Promise<void> {
+  public async initializeDB(plugin: ExcalidrawPlugin): Promise<void> {
+    this.plugin = plugin;
+    this.app = plugin.app;
     if (this.isInitializing || this.db !== null) {
       return;
     }
@@ -124,8 +126,8 @@ class ImageCache {
         });
       }
 
-      await this.purgeInvalidCacheFiles();
-      await this.purgeInvalidBackupFiles();
+      setTimeout(async ()=>this.purgeInvalidCacheFiles(), 60000);
+      setTimeout(async ()=>this.purgeInvalidBackupFiles(), 120000);
     } finally {
       this.isInitializing = false;
       if(this.initializationNotice) {
@@ -137,41 +139,48 @@ class ImageCache {
   }
 
   private async purgeInvalidCacheFiles(): Promise<void> {
-    const transaction = this.db!.transaction(this.cacheStoreName, "readwrite");
-    const store = transaction.objectStore(this.cacheStoreName);
-    const files = app.vault.getFiles();
-
-    const deletePromises: Promise<void>[] = [];
-
-    const request = store.openCursor();
     return new Promise<void>((resolve, reject) => {
+      const transaction = this.db!.transaction(this.cacheStoreName, "readwrite");
+      const store = transaction.objectStore(this.cacheStoreName);
+      const files = this.app.vault.getFiles();
+      const deletePromises: Promise<void>[] = [];
+      const request = store.openCursor();
       request.onsuccess = (event: Event) => {
         const cursor = (event.target as IDBRequest<IDBCursorWithValue | null>).result;
-        if (cursor) {
+        if(cursor) {
           const key = cursor.key as string;
           const filepath = key.split("#")[0];
           const fileExists = files.some((f: TFile) => f.path === filepath);
           const file = fileExists ? files.find((f: TFile) => f.path === filepath) : null;
-          if (!file || (file && file.stat.mtime > cursor.value.mtime) || !cursor.value.blob) {
+          if (!file || (file && file.stat.mtime > cursor.value.mtime) || (!cursor.value.blob && !cursor.value.svg)) {
             deletePromises.push(
-              new Promise<void>((resolve, reject) => {
+              new Promise<void>((innerResolve, innerReject) => {
                 const deleteRequest = store.delete(cursor.primaryKey);
-                deleteRequest.onsuccess = () => resolve();
-                deleteRequest.onerror = () =>
-                  reject(new Error(`Failed to delete file with key: ${key}`));
+                deleteRequest.onsuccess = () => innerResolve();
+                deleteRequest.onerror = (ev: Event) => {
+                  const error = deleteRequest.error;
+                  const errorMsg = `Failed to delete file with key: ${key}. Error: ${error.message}`
+                  innerReject(new Error(errorMsg));
+                }
               })
             );
           }
           cursor.continue();
         } else {
           Promise.all(deletePromises)
-            .then(() => resolve())
+            .then(() => {
+              transaction.commit();
+              resolve();
+            })
             .catch((error) => reject(error));
         }
       };
 
       request.onerror = () => {
-        reject(new Error("Failed to purge invalid files from IndexedDB."));
+        const error = request.error;
+        console.log(error);
+        const errorMsg = `Failed to purge invalid files from IndexedDB. Error: ${error.message}`
+        reject(new Error(errorMsg));
       };
     });
   }
@@ -179,12 +188,10 @@ class ImageCache {
   private async purgeInvalidBackupFiles(): Promise<void> {
     const transaction = this.db!.transaction(this.backupStoreName, "readwrite");
     const store = transaction.objectStore(this.backupStoreName);
-    const files = app.vault.getFiles();
-  
+    const files = this.app.vault.getFiles();
     const deletePromises: Promise<void>[] = [];
-  
     const request = store.openCursor();
-    return new Promise<void>((resolve, reject) => {
+    return await new Promise<void>((resolve, reject) => {
       request.onsuccess = (event: Event) => {
         const cursor = (event.target as IDBRequest<IDBCursorWithValue | null>).result;
         if (cursor) {
@@ -203,13 +210,19 @@ class ImageCache {
           cursor.continue();
         } else {
           Promise.all(deletePromises)
-            .then(() => resolve())
+            .then(() => {
+              transaction.commit();
+              resolve();
+            })
             .catch((error) => reject(error));
         }
       };
   
       request.onerror = () => {
-        reject(new Error("Failed to purge invalid backup files from IndexedDB."));
+        const error = request.error;
+        const errorMsg = `Failed to purge invalid backup files from IndexedDB. Error: ${error.message}`
+        console.log(error);
+        reject(new Error(errorMsg));
       };
     });
   }
@@ -262,7 +275,7 @@ class ImageCache {
 
     const key = getKey(key_);
     const cachedData = await this.getCacheData(key);    
-    const file = app.vault.getAbstractFileByPath(key_.filepath.split("#")[0]);
+    const file = this.app.vault.getAbstractFileByPath(key_.filepath.split("#")[0]);
     if (!file || !(file instanceof TFile)) return undefined;
     if (cachedData && cachedData.mtime === file.stat.mtime) {
       if(cachedData.svg) {
@@ -291,7 +304,7 @@ class ImageCache {
       return; // Database not initialized yet
     }
 
-    const file = app.vault.getAbstractFileByPath(key_.filepath.split("#")[0]);
+    const file = this.app.vault.getAbstractFileByPath(key_.filepath.split("#")[0]);
     if (!file || !(file instanceof TFile)) return;
     
 

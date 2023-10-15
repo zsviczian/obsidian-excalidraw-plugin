@@ -115,7 +115,7 @@ import { getTextElementAtPointer, getImageElementAtPointer, getElementWithLinkAt
 import { ICONS, LogoWrapper, saveIcon } from "./menu/ActionIcons";
 import { ExportDialog } from "./dialogs/ExportDialog";
 import { getEA } from "src"
-import { anyModifierKeysPressed, emulateKeysForLinkClick, externalDragModifierType, internalDragModifierType, isALT, isCTRL, isMETA, isSHIFT, linkClickModifierType, ModifierKeys } from "./utils/ModifierkeyHelper";
+import { anyModifierKeysPressed, emulateKeysForLinkClick, externalDragModifierType, internalDragModifierType, isALT, isCTRL, isMETA, isSHIFT, linkClickModifierType, localFileDragModifierType, ModifierKeys } from "./utils/ModifierkeyHelper";
 import { setDynamicStyle } from "./utils/DynamicStyling";
 import { InsertPDFModal } from "./dialogs/InsertPDFModal";
 import { CustomEmbeddable, renderWebView } from "./customEmbeddable";
@@ -127,6 +127,7 @@ import { useDefaultExcalidrawFrame } from "./utils/CustomEmbeddableUtils";
 import { UniversalInsertFileModal } from "./dialogs/UniversalInsertFileModal";
 import { moment } from "obsidian";
 import { shouldRenderMermaid } from "./utils/MermaidUtils";
+import { get } from "http";
 
 declare const PLUGIN_VERSION:string;
 
@@ -874,6 +875,12 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   openExternalLink(link:string, element?: ExcalidrawElement):boolean {
+    if (link.match(/cmd:\/\/.*/)) {
+      const cmd = link.replace("cmd://", "");
+      //@ts-ignore
+      this.app.commands.executeCommandById(cmd);
+      return true;
+    }
     if (link.match(REG_LINKINDEX_HYPERLINK)) {
         window.open(link, "_blank");
       return true;
@@ -973,28 +980,33 @@ export default class ExcalidrawView extends TextFileView {
     }
     if (selectedImage?.id) {
       if (this.excalidrawData.hasEquation(selectedImage.fileId)) {
-        const equation = this.excalidrawData.getEquation(
-          selectedImage.fileId,
-        ).latex;
-        const prompt = new Prompt(app, t("ENTER_LATEX"), equation, "");
-        prompt.openAndGetValue(async (formula: string) => {
-          if (!formula || formula === equation) {
-            return;
-          }
-          this.excalidrawData.setEquation(selectedImage.fileId, {
-            latex: formula,
-            isLoaded: false,
-          });
+        (async () => {
+          debugger;
           await this.save(false);
-          await updateEquation(
-            formula,
+          selectedImage.fileId = this.getScene().elements.filter((el:ExcalidrawElement)=>el.id === selectedImage.id)[0].fileId;
+          const equation = this.excalidrawData.getEquation(
             selectedImage.fileId,
-            this,
-            addFiles,
-            this.plugin,
-          );
-          this.setDirty(1);
-        });
+          ).latex;
+          const prompt = new Prompt(this.app, t("ENTER_LATEX"), equation, "");
+          prompt.openAndGetValue(async (formula: string) => {
+            if (!formula || formula === equation) {
+              return;
+            }
+            this.excalidrawData.setEquation(selectedImage.fileId, {
+              latex: formula,
+              isLoaded: false,
+            });
+            await this.save(false);
+            await updateEquation(
+              formula,
+              selectedImage.fileId,
+              this,
+              addFiles,
+              this.plugin,
+            );
+            this.setDirty(1);
+          });  
+        })();
         return;
       }
       if (this.excalidrawData.hasMermaid(selectedImage.fileId)) {
@@ -1007,7 +1019,7 @@ export default class ExcalidrawView extends TextFileView {
       await this.save(false); //in case pasted images haven't been saved yet
       if (this.excalidrawData.hasFile(selectedImage.fileId)) {
         const ef = this.excalidrawData.getFile(selectedImage.fileId);
-        if(ef.isHyperlink) {
+        if(ef.isHyperLink || ef.isLocalLink) {
           window.open(ef.hyperlink,"_blank");
           return;
         }
@@ -2717,11 +2729,11 @@ export default class ExcalidrawView extends TextFileView {
               dataURL: images[k].dataURL,
               created: images[k].created,
             });
-            if (images[k].file || images[k].isHyperlink) {
+            if (images[k].file || images[k].isHyperLink || images[k].isLocalLink) {
               const embeddedFile = new EmbeddedFile(
                 this.plugin,
                 this.file.path,
-                images[k].isHyperlink
+                images[k].isHyperLink && !images[k].isLocalLink
                   ? images[k].hyperlink
                   : images[k].file,
               );
@@ -2922,7 +2934,7 @@ export default class ExcalidrawView extends TextFileView {
               return;
             }
             const ef = this.excalidrawData.getFile(selectedImgElement.fileId);
-            if(ef.isHyperlink) return; //web images don't have a preview
+            if(ef.isHyperLink || ef.isLocalLink) return; //web images don't have a preview
             if(IMAGE_TYPES.contains(ef.file.extension)) return; //images don't have a preview
             if(ef.file.extension.toLowerCase() === "pdf") return; //pdfs don't have a preview
             if(this.plugin.ea.isExcalidrawFile(ef.file)) return; //excalidraw files don't have a preview
@@ -3097,7 +3109,11 @@ export default class ExcalidrawView extends TextFileView {
                 }
               } else if(e.dataTransfer.types.length === 1 && e.dataTransfer.types.includes("Files")) {
                 //drag from OS file manager
-                msg = "External file"
+                switch (localFileDragModifierType(e)) {
+                  case "image-import": msg = "Import image to Vault"; break;
+                  case "image-uri": msg = `Insert image with local URI`; break;
+                  case "insert-link": msg = "Insert link"; break;
+                }
               } else {
                 //drag from Internet
                 switch (externalDragModifierType(e)) {
@@ -3378,6 +3394,7 @@ export default class ExcalidrawView extends TextFileView {
               const draggable = (app as any).dragManager.draggable;
               const internalDragAction = internalDragModifierType(event);
               const externalDragAction = externalDragModifierType(event);
+              const localFileDragAction = localFileDragModifierType(event);
 
               //Call Excalidraw Automate onDropHook
               const onDropHook = (
@@ -3604,6 +3621,35 @@ export default class ExcalidrawView extends TextFileView {
                     return false;
                   }
                 }
+
+                if(event.dataTransfer.types.length >= 1 && localFileDragAction === "image-uri") {
+                  (async () => {
+                    for(let i=0;i<event.dataTransfer.files.length;i++) {
+                      //@ts-ignore
+                      const path = encodeURI(event.dataTransfer.files[i].path);
+                      const {x,y} = this.currentPosition;
+                      await insertImageToView(getEA(this), {x:x+i*300, y:y+i*300}, `file://${path}`);
+                    }
+                  })();
+                  return false;
+                }
+
+                if(event.dataTransfer.types.length >= 1 && localFileDragAction === "insert-link") {
+                  const ea = getEA(this) as ExcalidrawAutomate;
+                  for(let i=0;i<event.dataTransfer.files.length;i++) {
+                    //@ts-ignore
+                    const path = event.dataTransfer.files[i].path;
+                    const name = event.dataTransfer.files[i].name;
+                    const id = ea.addText(
+                      this.currentPosition.x+i*40,
+                      this.currentPosition.y+i*20,
+                      `📂 ${name}`);
+                    ea.getElement(id).link = `[${name}](file://${path})`;
+                  }
+                  ea.addElementsToView();
+                  return false;
+                }
+
                 return true;
               }
 

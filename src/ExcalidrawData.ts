@@ -604,7 +604,7 @@ export class ExcalidrawData {
     }
 
     //Load links
-    const REG_LINKID_FILEPATH = /([\w\d]*):\s*(https?:\/\/[^\s]*)\n/gm;
+    const REG_LINKID_FILEPATH = /([\w\d]*):\s*((?:https?|file|ftps?):\/\/[^\s]*)\n/gm;
     res = data.matchAll(REG_LINKID_FILEPATH);
     while (!(parts = res.next()).done) {
       const embeddedFile = new EmbeddedFile(
@@ -999,8 +999,9 @@ export class ExcalidrawData {
         if (parsedLink) {
           outString += parsedLink;
           if (!(urlIcon || linkIcon)) {
-            if (REGEX_LINK.getLink(parts).match(REG_LINKINDEX_HYPERLINK)) {
-              urlIcon = true;
+            const linkText = REGEX_LINK.getLink(parts);
+            if (linkText.match(REG_LINKINDEX_HYPERLINK)) {
+              urlIcon = !linkText.startsWith("cmd://"); //don't display the url icon for cmd:// links
             } else {
               linkIcon = true;
             }
@@ -1076,8 +1077,9 @@ export class ExcalidrawData {
       if (parsedLink) {
         outString += parsedLink;
         if (!(urlIcon || linkIcon)) {
-          if (REGEX_LINK.getLink(parts).match(REG_LINKINDEX_HYPERLINK)) {
-            urlIcon = true;
+          const linkText = REGEX_LINK.getLink(parts);
+          if (linkText.match(REG_LINKINDEX_HYPERLINK)) {
+            urlIcon = !linkText.startsWith("cmd://"); //don't display the url icon for cmd:// links
           } else {
             linkIcon = true;
           }
@@ -1132,7 +1134,7 @@ export class ExcalidrawData {
       for (const key of this.files.keys()) {
         const PATHREG = /(^[^#\|]*)/;
         const ef = this.files.get(key);
-        if(ef.isHyperlink) {
+        if(ef.isHyperLink || ef.isLocalLink) {
           outString += `${key}: ${ef.hyperlink}\n`;
         } else {
           //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/829
@@ -1266,14 +1268,18 @@ export class ExcalidrawData {
         const mermaid = this.getMermaid(fileId);
 
         //images should have a single reference, but equations, and markdown embeds should have as many as instances of the file in the scene
-        if(file && (file.isHyperlink || (file.file && (file.file.extension !== "md" || this.plugin.isExcalidrawFile(file.file))))) {
+        if(file && (file.isHyperLink || file.isLocalLink || (file.file && (file.file.extension !== "md" || this.plugin.isExcalidrawFile(file.file))))) {
           return;
         }
         if(mermaid) {
           return;
         }
         const newId = fileid();
-        (scene.elements.filter((el:ExcalidrawImageElement)=>el.fileId === fileId)[0] as any).fileId = newId;
+        (scene
+          .elements
+          .filter((el:ExcalidrawImageElement)=>el.fileId === fileId)
+          .sort((a,b)=>a.updated<b.updated ? 1 : -1)[0] as any)
+          .fileId = newId;
         dirty = true;
         processedIds.add(newId);
         if(file) {
@@ -1568,9 +1574,10 @@ export class ExcalidrawData {
     }
     this.files.set(fileId, data);
 
-    if(data.isHyperlink) {
+    if(data.isHyperLink || data.isLocalLink) {
       this.plugin.filesMaster.set(fileId, {
-        isHyperlink: true,
+        isHyperLink: data.isHyperLink,
+        isLocalLink: data.isLocalLink,
         path: data.hyperlink,
         blockrefData: null,
         hasSVGwithBitmap: data.isSVGwithBitmap
@@ -1584,7 +1591,8 @@ export class ExcalidrawData {
 
     const parts = data.linkParts.original.split("#");
     this.plugin.filesMaster.set(fileId, {
-      isHyperlink: false,
+      isHyperLink: false,
+      isLocalLink: false,
       path:data.file.path + (data.shouldScale()?"":"|100%"),
       blockrefData: parts.length === 1
         ? null
@@ -1631,7 +1639,7 @@ export class ExcalidrawData {
     }
     if (this.plugin.filesMaster.has(fileId)) {
       const masterFile = this.plugin.filesMaster.get(fileId);
-      if(masterFile.isHyperlink) {
+      if(masterFile.isHyperLink || masterFile.isLocalLink) {
         this.files.set(
           fileId,
           new EmbeddedFile(this.plugin,this.file.path,masterFile.path)

@@ -707,18 +707,18 @@ export const updateFrontmatterInString = (data:string, keyValuePairs: [string,st
   return data;
 }
 
-const isHyperlink = (link:string) => link && !link.includes("\n") && !link.includes("\r") && link.match(/^https?:(\d*)?\/\/[^\s]*$/);
+const isHyperLink = (link:string) => link && !link.includes("\n") && !link.includes("\r") && link.match(/^https?:(\d*)?\/\/[^\s]*$/);
 
 export const isContainer = (el: ExcalidrawElement) => el.type!=="arrow" && el.boundElements?.map((e) => e.type).includes("text");
 
 export const hyperlinkIsImage = (data: string):boolean => {
-  if(!isHyperlink(data)) false;
+  if(!isHyperLink(data)) false;
   const corelink = data.split("?")[0];
   return IMAGE_TYPES.contains(corelink.substring(corelink.lastIndexOf(".")+1));
 }
 
 export const hyperlinkIsYouTubeLink = (link:string): boolean => 
-  isHyperlink(link) &&
+  isHyperLink(link) &&
   (link.startsWith("https://youtu.be") || link.startsWith("https://www.youtube.com") || link.startsWith("https://youtube.com") || link.startsWith("https//www.youtu.be")) &&
   link.match(/(youtu.be\/|v=)([^?\/\&]*)/)!==null
 

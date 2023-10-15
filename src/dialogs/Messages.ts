@@ -17,6 +17,21 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.24":`
+## Fixed
+- Resolved some hidden Image and Backup Cache initialization errors.
+
+## New Features
+- Introducing the ${String.fromCharCode(96)}[[cmd://cmd-id]]${String.fromCharCode(96)} link type, along with a new Command Palette Action: ${String.fromCharCode(96)}Insert Obsidian Command as a link${String.fromCharCode(96)}. With this update, you can now add any command available on the Obsidian Command palette as a link in Excalidraw. When you click the link, the corresponding command will be executed. This feature opens up exciting possibilities for automating your drawings by creating Excalidraw Scripts and attaching them to elements.
+
+- I am thrilled to announce that you can now embed images directly from your local hard drive in Excalidraw. These files won't be moved into Obsidian. Please note, however, that these images won't be synchronized across your other devices. [#1365](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1365)
+
+Check out the [updated keyboard map](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/excalidraw-modifiers.png)
+
+<a href="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/excalidraw-modifiers.png"><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/excalidraw-modifiers.png" width="100%" alt="Keyboard map"/></a>
+
+Stay creative and productive with Excalidraw!
+`,
 "1.9.23":`
 ## Fixed
 - Link navigation error in view mode introduced with 1.9.21 [#7120](https://github.com/excalidraw/excalidraw/pull/7120)

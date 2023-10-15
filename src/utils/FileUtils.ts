@@ -286,3 +286,31 @@ export const getPDFDoc = async (f: TFile): Promise<any> => {
   //@ts-ignore
   return await window.pdfjsLib.getDocument(app.vault.getResourcePath(f)).promise;
 }
+
+export const readLocalFile = async (filePath:string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    //@ts-ignore
+    app.vault.adapter.fs.readFile(filePath, 'utf8', (err:any, data:any) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(data);
+      }
+    });
+  });
+}
+
+export const readLocalFileBinary = async (filePath:string): Promise<ArrayBuffer> => {
+  return new Promise((resolve, reject) => {
+    const path = decodeURI(filePath);
+    //@ts-ignore
+    app.vault.adapter.fs.readFile(path, (err, data) => {
+      if (err) {
+        reject(err);
+      } else {
+        const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+        resolve(arrayBuffer);
+      }
+    });
+  });
+}

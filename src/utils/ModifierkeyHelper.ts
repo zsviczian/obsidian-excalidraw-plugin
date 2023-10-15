@@ -3,6 +3,7 @@ export type ModifierKeys = {shiftKey:boolean, ctrlKey: boolean, metaKey: boolean
 export type KeyEvent = PointerEvent | MouseEvent | KeyboardEvent | React.DragEvent | React.PointerEvent | React.MouseEvent | ModifierKeys; 
 export type PaneTarget = "active-pane"|"new-pane"|"popout-window"|"new-tab"|"md-properties";
 export type ExternalDragAction = "insert-link"|"image-url"|"image-import"|"embeddable";
+export type LocalFileDragAction = "insert-link"|"image-uri"|"image-import";
 export type InternalDragAction = "link"|"image"|"image-fullsize"|"embeddable";
 
 export const labelCTRL = () => DEVICE.isIOS || DEVICE.isMacOS ? "CMD" : "CTRL";
@@ -62,6 +63,17 @@ export const externalDragModifierType = (ev: KeyEvent):ExternalDragAction => {
   if(DEVICE.isWindows && !isSHIFT(ev) && !isCTRL(ev) &&  isALT(ev) && !isMETA(ev)) return "image-import";
   return "image-url";
 }
+
+export const localFileDragModifierType = (ev: KeyEvent):LocalFileDragAction => {
+  if(DEVICE.isWindows &&  isSHIFT(ev) &&  isCTRL(ev) && !isALT(ev) && !isMETA(ev)) return "image-uri";
+  if(DEVICE.isMacOS   && !isSHIFT(ev) && !isCTRL(ev) &&  isALT(ev) && !isMETA(ev)) return "image-uri";
+  if(DEVICE.isWindows && !isSHIFT(ev) &&  isCTRL(ev) && !isALT(ev) && !isMETA(ev)) return "insert-link";
+  if(DEVICE.isMacOS   &&  isSHIFT(ev) && !isCTRL(ev) &&  isALT(ev) && !isMETA(ev)) return "insert-link";
+  if(                     isSHIFT(ev) && !isCTRL(ev) && !isALT(ev) && !isMETA(ev)) return "image-import";
+  if(DEVICE.isWindows && !isSHIFT(ev) && !isCTRL(ev) &&  isALT(ev) && !isMETA(ev)) return "image-import";
+  return "image-import";
+}
+
 
 //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/468
 export const internalDragModifierType = (ev: KeyEvent):InternalDragAction => {

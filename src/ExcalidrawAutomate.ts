@@ -402,7 +402,7 @@ export class ExcalidrawAutomate {
    * get all elements from ExcalidrawAutomate elementsDict
    * @returns elements from elemenetsDict
    */
-  getElements(): ExcalidrawElement[] {
+  getElements(): Mutable<ExcalidrawElement>[] {
     const elements = [];
     const elementIds = Object.keys(this.elementsDict);
     for (let i = 0; i < elementIds.length; i++) {
@@ -416,7 +416,7 @@ export class ExcalidrawAutomate {
    * @param id 
    * @returns 
    */
-  getElement(id: string): ExcalidrawElement {
+  getElement(id: string): Mutable<ExcalidrawElement> {
     return this.elementsDict[id];
   };
 
@@ -1164,7 +1164,7 @@ export class ExcalidrawAutomate {
         this.imagesDict[key as FileId] = {
           ...result.files[key],
           created: Date.now(),
-          isHyperlink: false,
+          isHyperLink: false,
           hyperlink: null,
           file: null,
           hasSVGwithBitmap: false,
@@ -1209,7 +1209,7 @@ export class ExcalidrawAutomate {
       id: fileId,
       dataURL: image.dataURL,
       created: image.created,
-      isHyperlink: typeof imageFile === "string",
+      isHyperLink: typeof imageFile === "string",
       hyperlink: typeof imageFile === "string"
         ? imageFile
         : null,
