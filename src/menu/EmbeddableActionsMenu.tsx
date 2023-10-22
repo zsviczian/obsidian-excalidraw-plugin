@@ -1,7 +1,7 @@
 import { TFile } from "obsidian";
 import * as React from "react";
 import ExcalidrawView from "../ExcalidrawView";
-import { ExcalidrawEmbeddableElement } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawElement, ExcalidrawEmbeddableElement } from "@zsviczian/excalidraw/types/element/types";
 import { AppState, ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
 import { ActionButton } from "./ActionButton";
 import { ICONS } from "./ActionIcons";
@@ -23,6 +23,9 @@ export class EmbeddableMenu {
   private updateElement = (subpath: string, element: ExcalidrawEmbeddableElement, file: TFile) => {
     if(!element) return;
     const view = this.view;
+    const app = view.app;
+    element = view.excalidrawAPI.getSceneElements().find((e:ExcalidrawElement) => e.id === element.id);
+    if(!element) return;
     const path = app.metadataCache.fileToLinktext(
       file,
       view.file.path,
@@ -52,6 +55,7 @@ export class EmbeddableMenu {
 
   renderButtons(appState: AppState) {
     const view = this.view;
+    const app = view.app;
     const api = view?.excalidrawAPI as ExcalidrawImperativeAPI;
     if(!api) return null;
     if(!view.file) return null;

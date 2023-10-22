@@ -249,7 +249,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "addEmbeddable",
     code: "addEmbeddable(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile): string;",
-    desc: "Adds an iframe to the drawing. If url is not null then the iframe will be loaded from the url. The url maybe a markdown link to an note in the Vault or a weblink. If url is null then the iframe will be loaded from the file. Both the url and the file may not be null.",
+    desc: "Adds an iframe/webview (depending on content and platform) to the drawing. If url is not null then the iframe/webview will be loaded from the url. The url maybe a markdown link to an note in the Vault or a weblink. If url is null then the iframe/webview will be loaded from the file. Both the url and the file may not be null.",
     after: "",
   },
   {
@@ -538,6 +538,18 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     field: "viewZoomToElements",
     code: "viewZoomToElements(selectElements: boolean,elements: ExcalidrawElement[]):void",
     desc: "Zoom tarteView to fit elements provided as input. elements === [] will zoom to fit the entire scene. SelectElements toggles whether the elements should be in a selected state at the end of the operation.",
+    after: "",
+  },
+  {
+    field: "compressToBase64",
+    code: "compressToBase64(str: string):string",
+    desc: "Compresses String to a Base64 string using LZString",
+    after: "",
+  },
+  {
+    field: "decompressFromBase64",
+    code: "decompressFromBase64(str: string):string",
+    desc: "Decompresses a base 64 compressed string using LZString",
     after: "",
   },
 ];

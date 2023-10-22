@@ -30,7 +30,7 @@ export const setDynamicStyle = (
   const darker = "#101010";
   const lighter = "#f0f0f0";
   const step = 10;
-  const mixRatio = 0.8;
+  const mixRatio = 0.9;
 
   const invertColor = (c:string) => {
     const cm = ea.getCM(c);
@@ -43,27 +43,36 @@ export const setDynamicStyle = (
     : invertColor(color);
 
   const bgLightness = cmBG().lightness;  
-  const isDark = cmBG().isDark();
-  
+  const isDark = cmBG().darkerBy(step).isDark();
+  const isGray = dynamicStyle === "gray";
+
   //@ts-ignore
-  const accentColorString = app.getAccentColor();
-  const accent = () => ea.getCM(accentColorString);
+  const accentColorString = view.app.getAccentColor();
+  const accent = () => isGray
+    ? ea.getCM(accentColorString)
+    : ea.getCM(accentColorString).mix({color:cmBG(),ratio:0.2});
 
   const cmBlack = () => ea.getCM("#000000").lightnessTo(bgLightness);
 
-  const isGray = dynamicStyle === "gray";
+  
   const gray1 = isGray
-    ? isDark ? cmBlack().lighterBy(15) : cmBlack().darkerBy(15)
-    : isDark ? cmBG().lighterBy(15).mix({color:cmBlack(),ratio:0.6}) : cmBG().darkerBy(15).mix({color:cmBlack(),ratio:0.6});
+    ? isDark ? cmBlack().lighterBy(10) : cmBlack().darkerBy(10)
+    : isDark ? cmBG().lighterBy(10).mix({color:cmBlack(),ratio:0.5}) : cmBG().darkerBy(10).mix({color:cmBlack(),ratio:0.5});
   const gray2 = isGray
-    ? isDark ? cmBlack().lighterBy(5) : cmBlack().darkerBy(5)
-    : isDark ? cmBG().lighterBy(5).mix({color:cmBlack(),ratio:0.6}) : cmBG().darkerBy(5).mix({color:cmBlack(),ratio:0.6});
+    ? isDark ? cmBlack().lighterBy(4) : cmBlack().darkerBy(4)
+    : isDark ? cmBG().lighterBy(4).mix({color:cmBlack(),ratio:0.5}) : cmBG().darkerBy(4).mix({color:cmBlack(),ratio:0.5});
   const text = cmBG().mix({color:isDark?lighter:darker, ratio:mixRatio});
 
   const str = (cm: ColorMaster) => cm.stringHEX({alpha:false});
   const style = `--color-primary: ${str(accent())};` +
-    `--color-primary-darker: ${str(accent().darkerBy(step))};` +
-    `--color-primary-darkest: ${str(accent().darkerBy(step))};` +
+    `--color-surface-low: ${str(gray1)};` +
+    `--color-surface-mid: ${str(gray1)};` +
+    `--color-surface-lowest: ${str(gray2)};` +
+    `--color-surface-high: ${str(gray1.lighterBy(step))};` +
+    `--color-on-primary-container: ${str(!isDark?accent().darkerBy(15):accent().lighterBy(15))};` +
+    `--color-surface-primary-container: ${str(isDark?accent().darkerBy(step):accent().lighterBy(step))};` +
+    //`--color-primary-darker: ${str(accent().darkerBy(step))};` +
+    //`--color-primary-darkest: ${str(accent().darkerBy(step))};` +
     `--button-gray-1: ${str(gray1)};` +
     `--button-gray-2: ${str(gray2)};` +
     `--input-border-color: ${str(gray1)};` +
@@ -75,9 +84,11 @@ export const setDynamicStyle = (
     `--text-primary-color: ${str(text)};` +
     `--overlay-bg-color: ${gray2.alphaTo(0.6).stringHEX()};` +
     `--popup-bg-color: ${str(gray1)};` +
-    `--color-gray-100: ${str(text)};` +
-    `--color-gray-40: ${str(text)};` +
-    `--color-gray-30: ${str(gray1)};` +
+    `--color-on-surface: ${str(text)};` +
+    //`--color-gray-100: ${str(text)};` +
+    //`--color-gray-40: ${str(text)};` +
+    `--color-surface-highlight: ${str(gray1)};` +
+    //`--color-gray-30: ${str(gray1)};` +
     `--color-gray-80: ${str(gray1)};` +
     `--sidebar-border-color: ${str(gray1)};` +
     `--color-primary-light: ${str(accent().lighterBy(step))};` +

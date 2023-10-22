@@ -158,7 +158,7 @@ export class UniversalInsertFileModal extends Modal {
     new Setting(ce)
       .addButton(button => {
         button
-          .setButtonText("as iFrame")
+          .setButtonText("as Embeddable")
           .onClick(async () => {
             const path = app.metadataCache.fileToLinktext(
               file,

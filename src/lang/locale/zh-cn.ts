@@ -61,7 +61,7 @@ export default {
   IMPORT_SVG: "从 SVG 文件导入图形元素到当前绘图中（暂不支持文本元素）",
   INSERT_MD: "插入 Markdown 文档（以图像形式嵌入）到当前绘图中",
   INSERT_PDF: "插入 PDF 文档（以图像形式嵌入）到当前绘图中",
-  UNIVERSAL_ADD_FILE: "插入任意文件（以 iFrame 形式嵌入）到当前绘图中",
+  UNIVERSAL_ADD_FILE: "插入任意文件（以 Embeddable 形式嵌入）到当前绘图中",
   INSERT_LATEX:
     `插入 LaTeX 公式到当前绘图。按住 ${labelALT()} 可观看视频演示。`,
   ENTER_LATEX: "输入 LaTeX 表达式",

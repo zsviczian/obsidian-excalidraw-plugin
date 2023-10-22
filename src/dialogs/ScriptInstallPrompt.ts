@@ -1,6 +1,6 @@
 import { MarkdownRenderer, Modal, Notice, request } from "obsidian";
 import ExcalidrawPlugin from "../main";
-import { errorlog, log } from "../utils/Utils";
+import { errorlog, escapeRegExp, log } from "../utils/Utils";
 
 const URL =
   "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/index-new.md";
@@ -134,7 +134,7 @@ export class ScriptInstallPrompt extends Modal {
 
       let lastIndex = 0;
       let match;
-      const regex = new RegExp(searchTerm, 'gi');
+      const regex = new RegExp(escapeRegExp(searchTerm), 'gi');
 
       // Iterate over all matches in the text node
       while ((match = regex.exec(nodeContent)) !== null) {

@@ -17,6 +17,29 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.25":`
+## Fixed
+- Fixed issues with creating Markdown or Excalidraw files for non-existing documents [#1385](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1385)
+- Resolved a bug where changing the section/block filter after duplicating a markdown embeddable now works correctly on the first attempt [#1387](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1387)
+
+## New
+- Easily create a markdown file and embed it as an embedded frame with a single click when clicking a link pointing to a non-existent file.
+![image](https://github.com/zsviczian/obsidian-excalidraw-plugin/assets/14358394/4b9de54d-2382-4a52-b500-918ba2a60133)
+- Offline LaTeX support. The MathJax package is now included in the plugin, eliminating the need for an internet connection. [#1383](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1383), [#936](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/936), [#1289](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1289)
+
+## Minor Updates from excalidraw.com
+- Improved the laser pointer in dark mode.
+- Removed bound arrows from frames.
+- Enhanced fill rendering.
+- Maintained the z-order of elements added to frames.
+
+## New in ExcalidrawAutomate
+- Introduced two LZString functions in ExcalidrawAutomate:
+${String.fromCharCode(96,96,96)}typescript
+compressToBase64(str:string):string;
+decompressFromBase64(str:string):string;
+${String.fromCharCode(96,96,96)}
+`,
 "1.9.24":`
 ## Fixed
 - Resolved some hidden Image and Backup Cache initialization errors.

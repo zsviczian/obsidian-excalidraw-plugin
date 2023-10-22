@@ -21,6 +21,7 @@ import {
   Editor,
   MarkdownFileInfo,
   loadMermaid,
+  moment,
 } from "obsidian";
 import {
   BLANK_DRAWING,
@@ -42,6 +43,7 @@ import {
   EXPORT_TYPES,
   EXPORT_IMG_ICON_NAME,
   EXPORT_IMG_ICON,
+  LOCALE,
 } from "./constants";
 import ExcalidrawView, { TextMode, getTextMode } from "./ExcalidrawView";
 import {
@@ -112,6 +114,7 @@ import { ExportDialog } from "./dialogs/ExportDialog";
 import { UniversalInsertFileModal } from "./dialogs/UniversalInsertFileModal";
 import { imageCache } from "./utils/ImageCache";
 import { StylesManager } from "./utils/StylesManager";
+import { MATHJAX_SOURCE_LZCOMPRESSED } from "./constMathJaxSource";
 
 declare const EXCALIDRAW_PACKAGES:string;
 declare const react:any;
@@ -169,6 +172,10 @@ export default class ExcalidrawPlugin extends Plugin {
     >();
     this.equationsMaster = new Map<FileId, string>();
     this.mermaidsMaster = new Map<FileId, string>();
+  }
+
+  get locale() {
+    return LOCALE;
   }
 
   public getPackage(win:Window):Packages {
@@ -313,10 +320,10 @@ export default class ExcalidrawPlugin extends Plugin {
           //@ts-ignore
           win.MathJax.startup.pagePromise.then(async () => {
             //https://github.com/xldenis/obsidian-latex/blob/master/main.ts
-            const file = app.vault.getAbstractFileByPath("preamble.sty");
+            const file = this.app.vault.getAbstractFileByPath("preamble.sty");
             const preamble: string =
               file && file instanceof TFile
-                ? await app.vault.read(file)
+                ? await this.app.vault.read(file)
                 : null;
             try {
               if (preamble) {
@@ -335,7 +342,7 @@ export default class ExcalidrawPlugin extends Plugin {
             self.mathjaxLoaderFinished = true;
           });
         };
-        script.src = self.settings.mathjaxSourceURL; // "https://cdn.jsdelivr.net/npm/mathjax@3.2.1/es5/tex-svg.js";
+        script.src = "data:text/javascript;base64," + decompressFromBase64(MATHJAX_SOURCE_LZCOMPRESSED); //self.settings.mathjaxSourceURL; // "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js";
         //script.src = MATHJAX_DATAURL;
         doc.head.appendChild(script);
       } catch {

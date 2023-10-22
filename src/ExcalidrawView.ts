@@ -125,9 +125,7 @@ import { CanvasNodeFactory, ObsidianCanvasNode } from "./utils/CanvasNodeFactory
 import { EmbeddableMenu } from "./menu/EmbeddableActionsMenu";
 import { useDefaultExcalidrawFrame } from "./utils/CustomEmbeddableUtils";
 import { UniversalInsertFileModal } from "./dialogs/UniversalInsertFileModal";
-import { moment } from "obsidian";
 import { shouldRenderMermaid } from "./utils/MermaidUtils";
-import { get } from "http";
 
 declare const PLUGIN_VERSION:string;
 
@@ -987,8 +985,9 @@ export default class ExcalidrawView extends TextFileView {
           const equation = this.excalidrawData.getEquation(
             selectedImage.fileId,
           ).latex;
-          const prompt = new Prompt(this.app, t("ENTER_LATEX"), equation, "");
-          prompt.openAndGetValue(async (formula: string) => {
+          GenericInputPrompt.Prompt(this,this.plugin,this.app,t("ENTER_LATEX"),undefined,equation, undefined, 3).then(async (formula: string) => {
+//          const prompt = new Prompt(this.app, t("ENTER_LATEX"), equation, "");
+//          prompt.openAndGetValue(async (formula: string) => {
             if (!formula || formula === equation) {
               return;
             }
@@ -1075,7 +1074,13 @@ export default class ExcalidrawView extends TextFileView {
         this.exitFullscreen();
       }
       if (!file) {
-        new NewFileActions(this.plugin, linkText, keys, this).open();
+        new NewFileActions({
+          plugin: this.plugin,
+          path: linkText,
+          keys,
+          view: this,
+          sourceElement: el
+        }).open();
         return;
       }
       if(this.linksAlwaysOpenInANewPane && !anyModifierKeysPressed(keys)) {
@@ -3206,7 +3211,7 @@ export default class ExcalidrawView extends TextFileView {
             },
             libraryReturnUrl: "app://obsidian.md",
             autoFocus: true,
-            langCode: obsidianToExcalidrawMap[moment.locale()]??"en-EN",
+            langCode: obsidianToExcalidrawMap[this.plugin.locale]??"en-EN",
             onChange: (et: ExcalidrawElement[], st: AppState) => {
               const canvasColorChangeHook = () => {
                 const canvasColor = st.viewBackgroundColor === "transparent" ? "white" : st.viewBackgroundColor;

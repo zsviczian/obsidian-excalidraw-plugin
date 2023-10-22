@@ -25,6 +25,7 @@ import ru from "./locale/ru";
 import tr from "./locale/tr";
 import zhCN from "./locale/zh-cn";
 import zhTW from "./locale/zh-tw";
+import { LOCALE } from "src/constants";
 
 const localeMap: { [k: string]: Partial<typeof en> } = {
   ar,
@@ -52,16 +53,9 @@ const localeMap: { [k: string]: Partial<typeof en> } = {
   "zh-tw": zhTW,
 };
 
-const locale = localeMap[moment.locale()];
+const locale = localeMap[LOCALE];
 
 export function t(str: keyof typeof en): string {
-  if (!locale) {
-    errorlog({
-      where: "helpers.t",
-      message: "Error: Excalidraw locale not found",
-      locale: moment.locale(),
-    });
-  }
 
   return (locale && locale[str]) || en[str];
 }

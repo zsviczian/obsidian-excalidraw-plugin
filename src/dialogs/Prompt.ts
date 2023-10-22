@@ -11,11 +11,14 @@ import {
 } from "obsidian";
 import ExcalidrawView from "../ExcalidrawView";
 import ExcalidrawPlugin from "../main";
-import { sleep } from "../utils/Utils";
+import { escapeRegExp, sleep } from "../utils/Utils";
 import { getLeaf } from "../utils/ObsidianUtils";
 import { checkAndCreateFolder, splitFolderAndFilename } from "src/utils/FileUtils";
 import { KeyEvent, isCTRL } from "src/utils/ModifierkeyHelper";
 import { t } from "src/lang/helpers";
+import { ExcalidrawElement, getEA } from "src";
+import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
+import { MAX_IMAGE_SIZE } from "src/constants";
 
 export type ButtonDefinition = { caption: string; tooltip?:string; action: Function };
 
@@ -461,22 +464,44 @@ export class NewFileActions extends Modal {
   private resolvePromise: (file: TFile|null) => void;
   private rejectPromise: (reason?: any) => void;
   private newFile: TFile = null;
+  private plugin: ExcalidrawPlugin;
+  private path: string;
+  private keys: KeyEvent;
+  private view: ExcalidrawView;
+  private openNewFile: boolean;
+  private parentFile: TFile;
+  private sourceElement: ExcalidrawElement;
 
-  constructor(
-    private plugin: ExcalidrawPlugin,
-    private path: string,
-    private keys: KeyEvent,
-    private view: ExcalidrawView,
-    private openNewFile: boolean = true,
-    private parentFile?: TFile,
-  ) {
+  constructor({
+    plugin,
+    path,
+    keys,
+    view,
+    openNewFile = true,
+    parentFile,
+    sourceElement,
+  }: {
+    plugin: ExcalidrawPlugin;
+    path: string;
+    keys: KeyEvent;
+    view: ExcalidrawView;
+    openNewFile?: boolean;
+    parentFile?: TFile;
+    sourceElement?: ExcalidrawElement;
+  }) {
     super(plugin.app);
+    this.plugin = plugin;
+    this.path = path;
+    this.keys = keys;
+    this.view = view;
+    this.openNewFile = openNewFile;
+    this.sourceElement = sourceElement;
     if(!parentFile) this.parentFile = view.file;
     this.waitForClose = new Promise<TFile|null>((resolve, reject) => {
       this.resolvePromise = resolve;
       this.rejectPromise = reject;
     });
-  }
+  } 
 
   onOpen(): void {
     this.createForm();
@@ -528,7 +553,7 @@ export class NewFileActions extends Modal {
 
       const createFile = async (data: string): Promise<TFile> => {
         if (!this.path.includes("/")) {
-          const re = new RegExp(`${this.parentFile.name}$`, "g");
+          const re = new RegExp(`${escapeRegExp(this.parentFile.name)}$`, "g");
           this.path = this.parentFile.path.replace(re, this.path);
         }
         if (!this.path.match(/\.md$/)) {
@@ -540,7 +565,31 @@ export class NewFileActions extends Modal {
         return f;
       };
 
-      const bMd = el.createEl("button", { text: t("PROMPT_BUTTON_CREATE_MARKDOWN") });
+      if(this.sourceElement) {
+        const bEmbedMd = el.createEl("button", {
+          text: t("PROMPT_BUTTON_EMBED_MARKDOWN"),
+          attr: {"aria-label": t("PROMPT_BUTTON_EMBED_MARKDOWN_ARIA")},
+        });
+        bEmbedMd.onclick = async () => {
+          if (!checks) {
+            return;
+          }
+          const f = await createFile("");
+          if(f) {
+            const ea:ExcalidrawAutomate = getEA(this.view);
+            ea.copyViewElementsToEAforEditing([this.sourceElement]);
+            ea.getElement(this.sourceElement.id).isDeleted = true;
+            ea.addEmbeddable(this.sourceElement.x, this.sourceElement.y,MAX_IMAGE_SIZE, MAX_IMAGE_SIZE, undefined,f);
+            ea.addElementsToView();
+          }
+          this.close();
+        };
+      }
+
+      const bMd = el.createEl("button", {
+        text: t("PROMPT_BUTTON_CREATE_MARKDOWN"),
+        attr: {"aria-label": t("PROMPT_BUTTON_CREATE_MARKDOWN_ARIA")},
+      });
       bMd.onclick = async () => {
         if (!checks) {
           return;
@@ -550,7 +599,10 @@ export class NewFileActions extends Modal {
         this.close();
       };
 
-      const bEx = el.createEl("button", { text: t("PROMPT_BUTTON_CREATE_EXCALIDRAW") });
+      const bEx = el.createEl("button", {
+        text: t("PROMPT_BUTTON_CREATE_EXCALIDRAW"),
+        attr: {"aria-label": t("PROMPT_BUTTON_CREATE_EXCALIDRAW_ARIA")},
+      });
       bEx.onclick = async () => {
         if (!checks) {
           return;

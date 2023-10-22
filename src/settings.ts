@@ -125,7 +125,7 @@ export interface ExcalidrawSettings {
   previousRelease: string;
   showReleaseNotes: boolean;
   showNewVersionNotification: boolean;
-  mathjaxSourceURL: string;
+  //mathjaxSourceURL: string;
   latexBoilerplate: string;
   taskboneEnabled: boolean;
   taskboneAPIkey: string;
@@ -235,7 +235,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   previousRelease: "0.0.0",
   showReleaseNotes: true,
   showNewVersionNotification: true,
-  mathjaxSourceURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.1/es5/tex-svg.js",
+  //mathjaxSourceURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.1/es5/tex-svg.js",
   latexBoilerplate: "\\color{blue}",
   taskboneEnabled: false,
   taskboneAPIkey: "",
@@ -1523,7 +1523,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.containerEl.createEl("p", { text: t("EXPERIMENTAL_DESC") });
 
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/628
-    new Setting(containerEl)
+    /*new Setting(containerEl)
       .setName(t("MATHJAX_NAME"))
       .setDesc(t("MATHJAX_DESC"))
       .addDropdown((dropdown) => {
@@ -1537,7 +1537,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.reloadMathJax = true;
             this.applySettingsUpdate();
           })
-      })
+      })*/
 
     new Setting(containerEl)
       .setName(t("LATEX_DEFAULT_NAME"))

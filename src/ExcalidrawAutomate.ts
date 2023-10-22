@@ -54,7 +54,7 @@ import { getAttachmentsFolderAndFilePath, getLeaf, getNewOrAdjacentLeaf, isObsid
 import { AppState, BinaryFileData,  DataURL,  ExcalidrawImperativeAPI, Point } from "@zsviczian/excalidraw/types/types";
 import { EmbeddedFile, EmbeddedFilesLoader, FileData } from "src/EmbeddedFileLoader";
 import { tex2dataURL } from "src/LaTeX";
-import { NewFileActions, Prompt } from "src/dialogs/Prompt";
+import { GenericInputPrompt, NewFileActions, Prompt } from "src/dialogs/Prompt";
 import { t } from "src/lang/helpers";
 import { ScriptEngine } from "src/Scripts";
 import { ConnectionPoint, DeviceType  } from "src/types";
@@ -79,6 +79,7 @@ import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 import { emulateKeysForLinkClick, KeyEvent, PaneTarget } from "src/utils/ModifierkeyHelper";
 import { Mutable } from "@zsviczian/excalidraw/types/utility-types";
 import PolyBool from "polybooljs";
+import { compressToBase64, decompressFromBase64 } from "lz-string";
 
 extendPlugins([
   HarmonyPlugin,
@@ -121,6 +122,14 @@ export class ExcalidrawAutomate {
     return getNewUniqueFilepath(app.vault, filename, folderAndPath.folder);
   }
 
+  public compressToBase64(str:string):string {
+    return compressToBase64(str);
+  }
+
+  public decompressFromBase64(str:string):string {
+    return decompressFromBase64(str);
+  }
+
   /**
    * Prompts the user with a dialog to select new file action.
    * - create markdown file
@@ -147,14 +156,14 @@ export class ExcalidrawAutomate {
       return null;
     }
     const modifierKeys = emulateKeysForLinkClick(targetPane);
-    const newFilePrompt = new NewFileActions(
-      this.plugin,
-      newFileNameOrPath,
-      modifierKeys,
-      this.targetView,
-      shouldOpenNewFile,
-      parentFile
-    )
+    const newFilePrompt = new NewFileActions({
+      plugin: this.plugin,
+      path: newFileNameOrPath,
+      keys: modifierKeys,
+      view: this.targetView,
+      openNewFile: shouldOpenNewFile,
+      parentFile: parentFile
+    })
     newFilePrompt.open();
     return await newFilePrompt.waitForClose;
   }
@@ -2791,13 +2800,16 @@ function errorMessage(message: string, source: string) {
 export const insertLaTeXToView = (view: ExcalidrawView) => {
   const app = view.plugin.app;
   const ea = view.plugin.ea;
-  const prompt = new Prompt(
+  GenericInputPrompt.Prompt(
+    view,
+    view.plugin,
     app,
     t("ENTER_LATEX"),
-    view.plugin.settings.latexBoilerplate,
     "\\color{red}\\oint_S {E_n dA = \\frac{1}{{\\varepsilon _0 }}} Q_{inside}",
-  );
-  prompt.openAndGetValue(async (formula: string) => {
+    view.plugin.settings.latexBoilerplate,
+    undefined,
+    3
+  ).then(async (formula: string) => {
     if (!formula) {
       return;
     }

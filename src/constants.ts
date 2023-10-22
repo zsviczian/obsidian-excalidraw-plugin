@@ -1,12 +1,15 @@
 import { customAlphabet } from "nanoid";
 import { DeviceType } from "./types";
 import { ExcalidrawLib } from "./ExcalidrawLib";
+import { moment } from "obsidian";
 //This is only for backward compatibility because an early version of obsidian included an encoding to avoid fantom links from littering Obsidian graph view
 declare const PLUGIN_VERSION:string;
 
 export const ERROR_IFRAME_CONVERSION_CANCELED = "iframe conversion canceled";
 
 declare const excalidrawLib: typeof ExcalidrawLib;
+
+export const LOCALE = moment.locale();
 
 export const obsidianToExcalidrawMap: { [key: string]: string } = {
   'en': 'en-US',
