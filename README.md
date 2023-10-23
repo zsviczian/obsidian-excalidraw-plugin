@@ -4,7 +4,7 @@ The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/),
 
 ## Video Walkthrough
 
-<a href="https://youtu.be/o0exK-xFP3k" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/156931370-aa4d88de-c4a8-46cc-aeb2-dc09aa0bea39.jpg" width="300"/></a><br>
+<a href="https://youtu.be/o0exK-xFP3k" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/156931370-aa4d88de-c4a8-46cc-aeb2-dc09aa0bea39.jpg" width="300"/></a> 
 <a href="https://youtu.be/QKnQgSjJVuc" target="_blank"><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/thumbnail-getting-started.jpg" width="300"/></a>
 
 
