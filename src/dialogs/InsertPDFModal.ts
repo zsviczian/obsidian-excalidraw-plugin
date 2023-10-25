@@ -303,6 +303,7 @@ export class InsertPDFModal extends Modal {
                 topX,
                 topY,
                 this.pdfFile.path + `#page=${page}`,
+                false,
                 false);
               const imgEl = ea.getElement(imageID) as any;
               imgEl.width = imgWidth;

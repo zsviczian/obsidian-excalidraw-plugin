@@ -17,6 +17,16 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.26":`
+## Fixes and improvements from Excalidraw.com
+- Freedraw shape selection issue, when fill-pattern is not solid [#7193](https://github.com/excalidraw/excalidraw/pull/7193)
+- Actions panel UX improvement [#6850](https://github.com/excalidraw/excalidraw/pull/6850)
+
+## Fixed in plugin
+- After inserting PDF pages as image the size of inserted images were incorrectly anchored preventing resizing of pages. The fix does not solve the issue with already imported pages, but pages you import in the future will not be anchored. 
+- Mobile toolbar flashes up on tab change on desktop
+- Toolbar buttons are active on the first click after opening a drawing. This addresses the "hand" issue raised here: [#1344](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1344)
+`,
 "1.9.25":`
 ## Fixed
 - Fixed issues with creating Markdown or Excalidraw files for non-existing documents [#1385](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1385)

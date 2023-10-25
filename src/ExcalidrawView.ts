@@ -2123,7 +2123,7 @@ export default class ExcalidrawView extends TextFileView {
     if(!this.semaphores.viewunload && this.toolsPanelRef?.current) {
       this.toolsPanelRef.current.setDirty(true);
     }
-    if(!app.isMobile) {
+    if(!this.app.isMobile) {
       if(requireApiVersion("0.16.0")) {
         //@ts-ignore
         this.leaf.tabHeaderInnerTitleEl.style.color="var(--color-accent)"
@@ -2413,6 +2413,18 @@ export default class ExcalidrawView extends TextFileView {
               this.onAfterLoadScene();
               this.excalidrawContainer = this.excalidrawWrapperRef?.current?.firstElementChild;
               this.excalidrawContainer?.focus();
+              //there is a race condition that I was unable to uncover
+              //for some reason app.render in the Excalidraw package does not render the
+              //style attribute with the below value
+              //this works on Excalidraw.com, also if I debug in ready promoise, then it works
+              //the effect of not having ui-pointerEvents enabled is you need to click twice
+              //for excalidraw to react at first. 
+              //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1344
+              setTimeout(() => {
+                if(!this.excalidrawContainer.hasAttribute("style")) {
+                  this.excalidrawContainer.setAttribute("style","--ui-pointerEvents:all");
+                }
+              });
             });
           },
         );
