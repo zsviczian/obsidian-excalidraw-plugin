@@ -26,6 +26,7 @@ import {
 } from "./utils/Utils";
 import { imageCache } from "./utils/ImageCache";
 import { ConfirmationPrompt } from "./dialogs/Prompt";
+import de from "./lang/locale/de";
 
 export interface ExcalidrawSettings {
   folder: string;
@@ -327,6 +328,22 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   }
 
   async display() {
+    let detailsEl: HTMLElement;
+
+    const addIframe = (link:string, startAt?: number) => {
+      const wrapper = detailsEl.createDiv({cls: "excalidraw-videoWrapper settings"})
+      wrapper.createEl("iframe", {
+        attr: {
+          allowfullscreen: true,
+          allow: "encrypted-media;picture-in-picture",
+          frameborder: "0",
+          title: "YouTube video player",
+          src: "https://www.youtube.com/embed/" + link + (startAt ? "?start=" + startAt : ""),
+          sandbox: "allow-forms allow-presentation allow-same-origin allow-scripts allow-modals",
+        },
+      });
+
+    }
     await this.plugin.loadSettings(); //in case sync loaded changed settings in the background
     this.requestEmbedUpdate = false;
     this.requestReloadDrawings = false;
@@ -346,7 +363,17 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     });
     coffeeImg.height = 45;
 
-    new Setting(containerEl)
+    // ------------------------------------------------
+    // Saving
+    // ------------------------------------------------  
+    containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
+    containerEl.createDiv({ text: t("BASIC_DESC"), cls: "setting-item-description" });
+    detailsEl = this.containerEl.createEl("details");
+    detailsEl.createEl("summary", { 
+      text: t("BASIC_HEAD"),
+      cls: "excalidraw-setting-h1",
+    });
+    new Setting(detailsEl)
       .setName(t("RELEASE_NOTES_NAME"))
       .setDesc(fragWithHTML(t("RELEASE_NOTES_DESC")))
       .addToggle((toggle) =>
@@ -358,7 +385,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
     .setName(t("NEWVERSION_NOTIFICATION_NAME"))
     .setDesc(fragWithHTML(t("NEWVERSION_NOTIFICATION_DESC")))
     .addToggle((toggle) =>
@@ -370,7 +397,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         }),
     );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("FOLDER_NAME"))
       .setDesc(fragWithHTML(t("FOLDER_DESC")))
       .addText((text) =>
@@ -383,7 +410,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("FOLDER_EMBED_NAME"))
       .setDesc(fragWithHTML(t("FOLDER_EMBED_DESC")))
       .addToggle((toggle) =>
@@ -395,7 +422,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("TEMPLATE_NAME"))
       .setDesc(fragWithHTML(t("TEMPLATE_DESC")))
       .addText((text) =>
@@ -407,8 +434,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
+    addIframe("jgUpYznHP9A",216);
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("SCRIPT_FOLDER_NAME"))
       .setDesc(fragWithHTML(t("SCRIPT_FOLDER_DESC")))
       .addText((text) =>
@@ -421,9 +449,20 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    this.containerEl.createEl("h1", { text: t("SAVING_HEAD") });
 
-    new Setting(containerEl)
+    // ------------------------------------------------
+    // Saving
+    // ------------------------------------------------  
+    containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
+    containerEl.createDiv({ text: t("SAVING_DESC"), cls: "setting-item-description"  });
+    detailsEl = this.containerEl.createEl("details");
+    const savingDetailsEl = detailsEl;
+    detailsEl.createEl("summary", { 
+      text: t("SAVING_HEAD"),
+      cls: "excalidraw-setting-h1",
+    });
+
+    new Setting(detailsEl)
       .setName(t("COMPRESS_NAME"))
       .setDesc(fragWithHTML(t("COMPRESS_DESC")))
       .addToggle((toggle) =>
@@ -435,7 +474,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
     );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
     .setName(t("AUTOSAVE_INTERVAL_DESKTOP_NAME"))
     .setDesc(fragWithHTML(t("AUTOSAVE_INTERVAL_DESKTOP_DESC")))
     .addDropdown((dropdown) =>
@@ -454,7 +493,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         }),
     );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
     .setName(t("AUTOSAVE_INTERVAL_MOBILE_NAME"))
     .setDesc(fragWithHTML(t("AUTOSAVE_INTERVAL_MOBILE_DESC")))
     .addDropdown((dropdown) =>
@@ -473,8 +512,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         }),
     );
 
-    this.containerEl.createEl("h1", { text: t("FILENAME_HEAD") });
-    containerEl.createDiv("", (el) => {
+    detailsEl = savingDetailsEl.createEl("details");
+    detailsEl.createEl("summary", { 
+      text: t("FILENAME_HEAD"),
+      cls: "excalidraw-setting-h3",
+    });
+
+    detailsEl.createDiv("", (el) => {
       el.innerHTML = t("FILENAME_DESC");
     });
 
@@ -491,10 +535,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       )}</a></b>`;
     };
 
-    const filenameEl = containerEl.createEl("p", { text: "" });
+    const filenameEl = detailsEl.createEl("p", { text: "" });
     filenameEl.innerHTML = getFilenameSample();
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("FILENAME_PREFIX_NAME"))
       .setDesc(fragWithHTML(t("FILENAME_PREFIX_DESC")))
       .addText((text) =>
@@ -512,7 +556,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("FILENAME_PREFIX_EMBED_NAME"))
       .setDesc(fragWithHTML(t("FILENAME_PREFIX_EMBED_DESC")))
       .addToggle((toggle) =>
@@ -525,7 +569,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("FILENAME_POSTFIX_NAME"))
       .setDesc(fragWithHTML(t("FILENAME_POSTFIX_DESC")))
       .addText((text) =>
@@ -543,7 +587,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("FILENAME_DATE_NAME"))
       .setDesc(fragWithHTML(t("FILENAME_DATE_DESC")))
       .addText((text) =>
@@ -561,7 +605,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("FILENAME_EXCALIDRAW_EXTENSION_NAME"))
       .setDesc(fragWithHTML(t("FILENAME_EXCALIDRAW_EXTENSION_DESC")))
       .addToggle((toggle) =>
@@ -574,25 +618,36 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    this.containerEl.createEl("h1", { text: t("DISPLAY_HEAD") });
 
-    new Setting(containerEl)
-      .setName(t("DYNAMICSTYLE_NAME"))
-      .setDesc(fragWithHTML(t("DYNAMICSTYLE_DESC")))
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOption("none","Dynamic Styling OFF")
-          .addOption("colorful","Match color")
-          .addOption("gray","Gray, match tone")
-          .setValue(this.plugin.settings.dynamicStyling)
-          .onChange(async (value) => {
-            this.requestUpdateDynamicStyling = true;
-            this.plugin.settings.dynamicStyling = value as DynamicStyle;
-            this.applySettingsUpdate();
-          }),
-      );
 
-    new Setting(containerEl)
+    // ------------------------------------------------
+    // Display
+    // ------------------------------------------------
+    containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
+    containerEl.createDiv({ text: t("DISPLAY_DESC"), cls: "setting-item-description"  });
+    detailsEl = this.containerEl.createEl("details");
+    const displayDetailsEl = detailsEl;
+    detailsEl.createEl("summary", { 
+      text: t("DISPLAY_HEAD"),
+      cls: "excalidraw-setting-h1",
+    });
+
+    new Setting(detailsEl)
+    .setName(t("DEFAULT_PEN_MODE_NAME"))
+    .setDesc(fragWithHTML(t("DEFAULT_PEN_MODE_DESC")))
+    .addDropdown((dropdown) =>
+      dropdown
+        .addOption("never", "Never")
+        .addOption("mobile", "On Obsidian Mobile")
+        .addOption("always", "Always")
+        .setValue(this.plugin.settings.defaultPenMode)
+        .onChange(async (value: "never" | "always" | "mobile") => {
+          this.plugin.settings.defaultPenMode = value;
+          this.applySettingsUpdate();
+        }),
+    );
+
+    new Setting(detailsEl)
       .setName(t("LEFTHANDED_MODE_NAME"))
       .setDesc(fragWithHTML(t("LEFTHANDED_MODE_DESC")))
       .addToggle((toggle) =>
@@ -607,8 +662,32 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
+      addIframe("H8Njp7ZXYag",999);
 
-    new Setting(containerEl)
+      detailsEl = displayDetailsEl.createEl("details");
+      detailsEl.createEl("summary", { 
+        text: t("THEME_HEAD"),
+        cls: "excalidraw-setting-h3",
+      });
+      
+      new Setting(detailsEl)
+        .setName(t("DYNAMICSTYLE_NAME"))
+        .setDesc(fragWithHTML(t("DYNAMICSTYLE_DESC")))
+        .addDropdown((dropdown) =>
+          dropdown
+            .addOption("none","Dynamic Styling OFF")
+            .addOption("colorful","Match color")
+            .addOption("gray","Gray, match tone")
+            .setValue(this.plugin.settings.dynamicStyling)
+            .onChange(async (value) => {
+              this.requestUpdateDynamicStyling = true;
+              this.plugin.settings.dynamicStyling = value as DynamicStyle;
+              this.applySettingsUpdate();
+            }),
+        );
+      addIframe("fypDth_-8q0");
+  
+      new Setting(detailsEl)
       .setName(t("IFRAME_MATCH_THEME_NAME"))
       .setDesc(fragWithHTML(t("IFRAME_MATCH_THEME_DESC")))
       .addToggle((toggle) =>
@@ -619,9 +698,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate(true);
           }),
       );
+      addIframe("ICpoyMv6KSs");
 
-
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("MATCH_THEME_NAME"))
       .setDesc(fragWithHTML(t("MATCH_THEME_DESC")))
       .addToggle((toggle) =>
@@ -633,7 +712,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("MATCH_THEME_ALWAYS_NAME"))
       .setDesc(fragWithHTML(t("MATCH_THEME_ALWAYS_DESC")))
       .addToggle((toggle) =>
@@ -645,7 +724,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("MATCH_THEME_TRIGGER_NAME"))
       .setDesc(fragWithHTML(t("MATCH_THEME_TRIGGER_DESC")))
       .addToggle((toggle) =>
@@ -657,7 +736,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("DEFAULT_OPEN_MODE_NAME"))
       .setDesc(fragWithHTML(t("DEFAULT_OPEN_MODE_DESC")))
       .addDropdown((dropdown) =>
@@ -673,22 +752,12 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
-      .setName(t("DEFAULT_PEN_MODE_NAME"))
-      .setDesc(fragWithHTML(t("DEFAULT_PEN_MODE_DESC")))
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOption("never", "Never")
-          .addOption("mobile", "On Obsidian Mobile")
-          .addOption("always", "Always")
-          .setValue(this.plugin.settings.defaultPenMode)
-          .onChange(async (value: "never" | "always" | "mobile") => {
-            this.plugin.settings.defaultPenMode = value;
-            this.applySettingsUpdate();
-          }),
-      );
-
-    new Setting(containerEl)
+    detailsEl = displayDetailsEl.createEl("details");
+    detailsEl.createEl("summary", { 
+      text: t("ZOOM_HEAD"),
+      cls: "excalidraw-setting-h3",
+    });
+    new Setting(detailsEl)
       .setName(t("DEFAULT_PINCHZOOM_NAME"))
       .setDesc(fragWithHTML(t("DEFAULT_PINCHZOOM_DESC")))
       .addToggle((toggle) =>
@@ -702,8 +771,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
+    addIframe("rBarRfcSxNo",107);
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("DEFAULT_WHEELZOOM_NAME"))
       .setDesc(fragWithHTML(t("DEFAULT_WHEELZOOM_DESC")))
       .addToggle((toggle) =>
@@ -718,7 +788,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("ZOOM_TO_FIT_ONOPEN_NAME"))
       .setDesc(fragWithHTML(t("ZOOM_TO_FIT_ONOPEN_DESC")))
       .addToggle((toggle) =>
@@ -730,7 +800,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("ZOOM_TO_FIT_NAME"))
       .setDesc(fragWithHTML(t("ZOOM_TO_FIT_DESC")))
       .addToggle((toggle) =>
@@ -744,7 +814,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     let zoomText: HTMLDivElement;
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("ZOOM_TO_FIT_MAX_LEVEL_NAME"))
       .setDesc(fragWithHTML(t("ZOOM_TO_FIT_MAX_LEVEL_DESC")))
       .addSlider((slider) =>
@@ -763,15 +833,27 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         el.style.textAlign = "right";
         el.innerText = ` ${this.plugin.settings.zoomToFitMaxLevel.toString()}`;
       });
- 
-    this.containerEl.createEl("h1", { text: t("LINKS_HEAD") });
-    this.containerEl.createEl(
+
+
+
+    // ------------------------------------------------
+    // Links and Transclusions
+    // ------------------------------------------------
+    containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
+    containerEl.createDiv({ text: t("LINKS_HEAD_DESC"), cls: "setting-item-description" });
+    detailsEl = this.containerEl.createEl("details");
+    detailsEl.createEl("summary", { 
+      text: t("LINKS_HEAD"),
+      cls: "excalidraw-setting-h1",
+    });
+
+    detailsEl.createEl(
       "span",
       undefined,
       (el) => (el.innerHTML = t("LINKS_DESC")),
     );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("ADJACENT_PANE_NAME"))
       .setDesc(fragWithHTML(t("ADJACENT_PANE_DESC")))
       .addToggle((toggle) =>
@@ -784,7 +866,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
 
     
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("MAINWORKSPACE_PANE_NAME"))
       .setDesc(fragWithHTML(t("MAINWORKSPACE_PANE_DESC")))
       .addToggle((toggle) =>
@@ -796,7 +878,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(fragWithHTML(t("LINK_BRACKETS_NAME")))
       .setDesc(fragWithHTML(t("LINK_BRACKETS_DESC")))
       .addToggle((toggle) =>
@@ -808,7 +890,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("LINK_PREFIX_NAME"))
       .setDesc(fragWithHTML(t("LINK_PREFIX_DESC")))
       .addText((text) =>
@@ -821,7 +903,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("URL_PREFIX_NAME"))
       .setDesc(fragWithHTML(t("URL_PREFIX_DESC")))
       .addText((text) =>
@@ -836,7 +918,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     let todoPrefixSetting:TextComponent, donePrefixSetting:TextComponent;
     
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("PARSE_TODO_NAME"))
       .setDesc(fragWithHTML(t("PARSE_TODO_DESC")))
       .addToggle((toggle) =>
@@ -850,7 +932,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           })
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("TODO_NAME"))
       .setDesc(fragWithHTML(t("TODO_DESC")))
       .addText((text) => {
@@ -866,7 +948,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
     todoPrefixSetting.setDisabled(!this.plugin.settings.parseTODO);
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("DONE_NAME"))
       .setDesc(fragWithHTML(t("DONE_DESC")))
       .setDisabled(!this.plugin.settings.parseTODO)
@@ -884,7 +966,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     donePrefixSetting.setDisabled(!this.plugin.settings.parseTODO);
 
     let opacityText: HTMLDivElement;
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("LINKOPACITY_NAME"))
       .setDesc(fragWithHTML(t("LINKOPACITY_DESC")))
       .addSlider((slider) =>
@@ -904,7 +986,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         el.innerText = ` ${this.plugin.settings.linkOpacity.toString()}`;
       });
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("HOVERPREVIEW_NAME"))
       .setDesc(fragWithHTML(t("HOVERPREVIEW_DESC")))
       .addToggle((toggle) =>
@@ -916,7 +998,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("LINK_CTRL_CLICK_NAME"))
       .setDesc(fragWithHTML(t("LINK_CTRL_CLICK_DESC")))
       .addToggle((toggle) =>
@@ -928,7 +1010,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    const s = new Setting(containerEl)
+    const s = new Setting(detailsEl)
       .setName(t("TRANSCLUSION_WRAP_NAME"))
       .setDesc(fragWithHTML(t("TRANSCLUSION_WRAP_DESC")))
       .addToggle((toggle) =>
@@ -943,7 +1025,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       "TRANSCLUSION_WRAP_DESC",
     )}`;
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("PAGE_TRANSCLUSION_CHARCOUNT_NAME"))
       .setDesc(fragWithHTML(t("PAGE_TRANSCLUSION_CHARCOUNT_DESC")))
       .addText((text) =>
@@ -972,7 +1054,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("TRANSCLUSION_DEFAULT_WRAP_NAME"))
       .setDesc(fragWithHTML(t("TRANSCLUSION_DEFAULT_WRAP_DESC")))
       .addText((text) =>
@@ -999,7 +1081,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("QUOTE_TRANSCLUSION_REMOVE_NAME"))
       .setDesc(fragWithHTML(t("QUOTE_TRANSCLUSION_REMOVE_DESC")))
       .addToggle(toggle => 
@@ -1012,7 +1094,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           })
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("GET_URL_TITLE_NAME"))
       .setDesc(fragWithHTML(t("GET_URL_TITLE_DESC")))
       .addToggle((toggle) =>
@@ -1024,125 +1106,22 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    this.containerEl.createEl("h1", { text: t("MD_HEAD") });
-    this.containerEl.createEl("p", { text: t("MD_HEAD_DESC") });
 
-    new Setting(containerEl)
-      .setName(t("MD_TRANSCLUDE_WIDTH_NAME"))
-      .setDesc(fragWithHTML(t("MD_TRANSCLUDE_WIDTH_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder("Enter a number e.g. 500")
-          .setValue(this.plugin.settings.mdSVGwidth.toString())
-          .onChange(async (value) => {
-            const intVal = parseInt(value);
-            if (isNaN(intVal) && value !== "") {
-              text.setValue(this.plugin.settings.mdSVGwidth.toString());
-              return;
-            }
-            this.requestEmbedUpdate = true;
-            if (value === "") {
-              this.plugin.settings.mdSVGwidth = 500;
-              this.applySettingsUpdate(true);
-              return;
-            }
-            this.plugin.settings.mdSVGwidth = intVal;
-            this.requestReloadDrawings = true;
-            text.setValue(this.plugin.settings.mdSVGwidth.toString());
-            this.applySettingsUpdate(true);
-          }),
-      );
 
-    new Setting(containerEl)
-      .setName(t("MD_TRANSCLUDE_HEIGHT_NAME"))
-      .setDesc(fragWithHTML(t("MD_TRANSCLUDE_HEIGHT_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder("Enter a number e.g. 800")
-          .setValue(this.plugin.settings.mdSVGmaxHeight.toString())
-          .onChange(async (value) => {
-            const intVal = parseInt(value);
-            if (isNaN(intVal) && value !== "") {
-              text.setValue(this.plugin.settings.mdSVGmaxHeight.toString());
-              return;
-            }
-            this.requestEmbedUpdate = true;
-            if (value === "") {
-              this.plugin.settings.mdSVGmaxHeight = 800;
-              this.applySettingsUpdate(true);
-              return;
-            }
-            this.plugin.settings.mdSVGmaxHeight = intVal;
-            this.requestReloadDrawings = true;
-            text.setValue(this.plugin.settings.mdSVGmaxHeight.toString());
-            this.applySettingsUpdate(true);
-          }),
-      );
 
-    new Setting(containerEl)
-      .setName(t("MD_DEFAULT_FONT_NAME"))
-      .setDesc(fragWithHTML(t("MD_DEFAULT_FONT_DESC")))
-      .addDropdown(async (d: DropdownComponent) => {
-        d.addOption("Virgil", "Virgil");
-        d.addOption("Cascadia", "Cascadia");
-        this.app.vault
-          .getFiles()
-          .filter((f) => ["ttf", "woff", "woff2"].contains(f.extension))
-          .forEach((f: TFile) => {
-            d.addOption(f.path, f.name);
-          });
-        d.setValue(this.plugin.settings.mdFont).onChange((value) => {
-          this.requestReloadDrawings = true;
-          this.plugin.settings.mdFont = value;
-          this.applySettingsUpdate(true);
-        });
-      });
-
-    new Setting(containerEl)
-      .setName(t("MD_DEFAULT_COLOR_NAME"))
-      .setDesc(fragWithHTML(t("MD_DEFAULT_COLOR_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder("CSS Color-name|RGB-HEX")
-          .setValue(this.plugin.settings.mdFontColor)
-          .onChange((value) => {
-            this.requestReloadDrawings = true;
-            this.plugin.settings.mdFontColor = value;
-            this.applySettingsUpdate(true);
-          }),
-      );
-
-    new Setting(containerEl)
-      .setName(t("MD_DEFAULT_BORDER_COLOR_NAME"))
-      .setDesc(fragWithHTML(t("MD_DEFAULT_BORDER_COLOR_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder("CSS Color-name|RGB-HEX")
-          .setValue(this.plugin.settings.mdBorderColor)
-          .onChange((value) => {
-            this.requestReloadDrawings = true;
-            this.plugin.settings.mdBorderColor = value;
-            this.applySettingsUpdate(true);
-          }),
-      );
-
-    new Setting(containerEl)
-      .setName(t("MD_CSS_NAME"))
-      .setDesc(fragWithHTML(t("MD_CSS_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder("filename of css file in vault")
-          .setValue(this.plugin.settings.mdCSS)
-          .onChange((value) => {
-            this.requestReloadDrawings = true;
-            this.plugin.settings.mdCSS = value;
-            this.applySettingsUpdate(true);
-          }),
-      );
-
-    this.containerEl.createEl("h1", { text: t("EMBED_HEAD") });
-
-    new Setting(containerEl)
+    // ------------------------------------------------
+    // Embed and Export
+    // ------------------------------------------------
+    containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
+    containerEl.createDiv({ text: t("EMBED_DESC"), cls: "setting-item-description"  });
+    detailsEl = this.containerEl.createEl("details");
+    const embedDetailsEl = detailsEl;
+    detailsEl.createEl("summary", { 
+      text: t("EMBED_HEAD"),
+      cls: "excalidraw-setting-h1",
+    });
+    
+    new Setting(detailsEl)
     .setName(t("EMBED_PREVIEW_IMAGETYPE_NAME"))
     .setDesc(fragWithHTML(t("EMBED_PREVIEW_IMAGETYPE_DESC")))
     .addDropdown((dropdown) => dropdown
@@ -1156,10 +1135,12 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         this.applySettingsUpdate();
       })
     );
+    addIframe("yZQoJg2RCKI");
+    addIframe("opLd1SqaH_I",8);
 
     let dropdown: DropdownComponent;
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("EMBED_TYPE_NAME"))
       .setDesc(fragWithHTML(t("EMBED_TYPE_DESC")))
       .addDropdown(async (d: DropdownComponent) => {
@@ -1186,9 +1167,25 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           });
       });
 
-    this.containerEl.createEl("h4", { text: t("EMBED_CACHING") });
+    new Setting(detailsEl)
+    .setName(t("EMBED_WIKILINK_NAME"))
+    .setDesc(fragWithHTML(t("EMBED_WIKILINK_DESC")))
+    .addToggle((toggle) =>
+      toggle
+        .setValue(this.plugin.settings.embedWikiLink)
+        .onChange(async (value) => {
+          this.plugin.settings.embedWikiLink = value;
+          this.applySettingsUpdate();
+        }),
+    );
 
-    new Setting(containerEl)
+    detailsEl = embedDetailsEl.createEl("details");
+    detailsEl.createEl("summary", { 
+      text: t("EMBED_CACHING"),
+      cls: "excalidraw-setting-h3",
+    });
+
+    new Setting(detailsEl)
       .setName(t("EMBED_IMAGE_CACHE_NAME"))
       .setDesc(fragWithHTML(t("EMBED_IMAGE_CACHE_DESC")))
       .addToggle((toggle) =>
@@ -1219,7 +1216,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           })
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("EMBED_REUSE_EXPORTED_IMAGE_NAME"))
       .setDesc(fragWithHTML(t("EMBED_REUSE_EXPORTED_IMAGE_DESC")))
       .addToggle((toggle) =>
@@ -1231,9 +1228,20 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    this.containerEl.createEl("h4", { text: t("EMBED_SIZING") });
+    detailsEl = embedDetailsEl.createEl("details");
+    const exportDetailsEl = detailsEl;
+    detailsEl.createEl("summary", { 
+      text: t("EXPORT_SUBHEAD"),
+      cls: "excalidraw-setting-h3",
+    });
+    addIframe("wTtaXmRJ7wg",171);
+    detailsEl = exportDetailsEl.createEl("details");
+    detailsEl.createEl("summary", { 
+      text: t("EMBED_SIZING"),
+      cls: "excalidraw-setting-h4",
+    });
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("EMBED_WIDTH_NAME"))
       .setDesc(fragWithHTML(t("EMBED_WIDTH_DESC")))
       .addText((text) =>
@@ -1247,21 +1255,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
-      .setName(t("EMBED_WIKILINK_NAME"))
-      .setDesc(fragWithHTML(t("EMBED_WIKILINK_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.embedWikiLink)
-          .onChange(async (value) => {
-            this.plugin.settings.embedWikiLink = value;
-            this.applySettingsUpdate();
-          }),
-      );
-
     let scaleText: HTMLDivElement;
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("EXPORT_PNG_SCALE_NAME"))
       .setDesc(fragWithHTML(t("EXPORT_PNG_SCALE_DESC")))
       .addSlider((slider) =>
@@ -1282,8 +1278,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       });
 
     let exportPadding: HTMLDivElement;
-
-    new Setting(containerEl)
+    
+    new Setting(detailsEl)
       .setName(t("EXPORT_PADDING_NAME"))
       .setDesc(fragWithHTML(t("EXPORT_PADDING_DESC")))
       .addSlider((slider) =>
@@ -1303,8 +1299,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         el.innerText = ` ${this.plugin.settings.exportPaddingSVG.toString()}`;
       });
 
-    this.containerEl.createEl("h4", { text: t("EMBED_THEME_BACKGROUND") });
-    new Setting(containerEl)
+    detailsEl = exportDetailsEl.createEl("details");
+    detailsEl.createEl("summary", { 
+      text: t("EMBED_THEME_BACKGROUND"),
+      cls: "excalidraw-setting-h4",
+    });
+    
+    new Setting(detailsEl)
     .setName(t("EXPORT_BACKGROUND_NAME"))
     .setDesc(fragWithHTML(t("EXPORT_BACKGROUND_DESC")))
     .addToggle((toggle) =>
@@ -1317,7 +1318,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         }),
     );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("EXPORT_THEME_NAME"))
       .setDesc(fragWithHTML(t("EXPORT_THEME_DESC")))
       .addToggle((toggle) =>
@@ -1330,7 +1331,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("PREVIEW_MATCH_OBSIDIAN_NAME"))
       .setDesc(fragWithHTML(t("PREVIEW_MATCH_OBSIDIAN_DESC")))
       .addToggle((toggle) =>
@@ -1342,9 +1343,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    this.containerEl.createEl("h1", { text: t("EXPORT_HEAD") });
+    detailsEl = exportDetailsEl.createEl("details");
+    detailsEl.createEl("summary", { 
+      text: t("EXPORT_HEAD"),
+      cls: "excalidraw-setting-h4",
+    });
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("EXPORT_SYNC_NAME"))
       .setDesc(fragWithHTML(t("EXPORT_SYNC_DESC")))
       .addToggle((toggle) =>
@@ -1365,7 +1370,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       }
     };
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("EXPORT_SVG_NAME"))
       .setDesc(fragWithHTML(t("EXPORT_SVG_DESC")))
       .addToggle((toggle) =>
@@ -1386,7 +1391,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("EXPORT_PNG_NAME"))
       .setDesc(fragWithHTML(t("EXPORT_PNG_DESC")))
       .addToggle((toggle) =>
@@ -1407,7 +1412,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("EXPORT_BOTH_DARK_AND_LIGHT_NAME"))
       .setDesc(fragWithHTML(t("EXPORT_BOTH_DARK_AND_LIGHT_DESC")))
       .addToggle((toggle) =>
@@ -1419,49 +1424,179 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    this.containerEl.createEl("h1", { text: t("COMPATIBILITY_HEAD") });
-
-    new Setting(containerEl)
-      .setName(t("COMPATIBILITY_MODE_NAME"))
-      .setDesc(fragWithHTML(t("COMPATIBILITY_MODE_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.compatibilityMode)
-          .onChange(async (value) => {
-            this.plugin.settings.compatibilityMode = value;
-            filenameEl.innerHTML = getFilenameSample();
-            this.applySettingsUpdate();
-          }),
-      );
-
-    new Setting(containerEl)
-      .setName(t("EXPORT_EXCALIDRAW_NAME"))
-      .setDesc(fragWithHTML(t("EXPORT_EXCALIDRAW_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.autoexportExcalidraw)
-          .onChange(async (value) => {
-            this.plugin.settings.autoexportExcalidraw = value;
-            this.applySettingsUpdate();
-          }),
-      );
-
-    new Setting(containerEl)
-      .setName(t("SYNC_EXCALIDRAW_NAME"))
-      .setDesc(fragWithHTML(t("SYNC_EXCALIDRAW_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.syncExcalidraw)
-          .onChange(async (value) => {
-            this.plugin.settings.syncExcalidraw = value;
-            this.applySettingsUpdate();
-          }),
-      );
+    detailsEl = embedDetailsEl.createEl("details");
+    detailsEl.createEl("summary", { 
+      text: t("PDF_TO_IMAGE"),
+      cls: "excalidraw-setting-h3",
+    });
   
-    this.containerEl.createEl("h1", { text: t("NONSTANDARD_HEAD") });
-    this.containerEl.createEl("p", { text: t("NONSTANDARD_DESC") });
+    addIframe("nB4cOfn0xAs");
+    new Setting(detailsEl)
+      .setName(t("PDF_TO_IMAGE_SCALE_NAME"))
+      .setDesc(fragWithHTML(t("PDF_TO_IMAGE_SCALE_DESC")))
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("0.5", "0.5")
+          .addOption("1", "1")
+          .addOption("2", "2")
+          .addOption("3", "3")
+          .addOption("4", "4")
+          .addOption("5", "5")
+          .addOption("6", "6")
+          .setValue(`${this.plugin.settings.pdfScale}`)
+          .onChange((value) => {
+            this.plugin.settings.pdfScale = parseFloat(value);
+            this.applySettingsUpdate();
+          }),
+        );
+      
 
-    new Setting(containerEl)
+    // ------------------------------------------------
+    // Markdown embedding settings
+    // ------------------------------------------------
+    containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
+    containerEl.createDiv({ text: t("MD_HEAD_DESC"), cls: "setting-item-description"  });
+    detailsEl = this.containerEl.createEl("details");
+    detailsEl.createEl("summary", { 
+      text: t("MD_HEAD"),
+      cls: "excalidraw-setting-h1",
+    });
+
+
+    new Setting(detailsEl)
+      .setName(t("MD_TRANSCLUDE_WIDTH_NAME"))
+      .setDesc(fragWithHTML(t("MD_TRANSCLUDE_WIDTH_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder("Enter a number e.g. 500")
+          .setValue(this.plugin.settings.mdSVGwidth.toString())
+          .onChange(async (value) => {
+            const intVal = parseInt(value);
+            if (isNaN(intVal) && value !== "") {
+              text.setValue(this.plugin.settings.mdSVGwidth.toString());
+              return;
+            }
+            this.requestEmbedUpdate = true;
+            if (value === "") {
+              this.plugin.settings.mdSVGwidth = 500;
+              this.applySettingsUpdate(true);
+              return;
+            }
+            this.plugin.settings.mdSVGwidth = intVal;
+            this.requestReloadDrawings = true;
+            text.setValue(this.plugin.settings.mdSVGwidth.toString());
+            this.applySettingsUpdate(true);
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("MD_TRANSCLUDE_HEIGHT_NAME"))
+      .setDesc(fragWithHTML(t("MD_TRANSCLUDE_HEIGHT_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder("Enter a number e.g. 800")
+          .setValue(this.plugin.settings.mdSVGmaxHeight.toString())
+          .onChange(async (value) => {
+            const intVal = parseInt(value);
+            if (isNaN(intVal) && value !== "") {
+              text.setValue(this.plugin.settings.mdSVGmaxHeight.toString());
+              return;
+            }
+            this.requestEmbedUpdate = true;
+            if (value === "") {
+              this.plugin.settings.mdSVGmaxHeight = 800;
+              this.applySettingsUpdate(true);
+              return;
+            }
+            this.plugin.settings.mdSVGmaxHeight = intVal;
+            this.requestReloadDrawings = true;
+            text.setValue(this.plugin.settings.mdSVGmaxHeight.toString());
+            this.applySettingsUpdate(true);
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("MD_DEFAULT_FONT_NAME"))
+      .setDesc(fragWithHTML(t("MD_DEFAULT_FONT_DESC")))
+      .addDropdown(async (d: DropdownComponent) => {
+        d.addOption("Virgil", "Virgil");
+        d.addOption("Cascadia", "Cascadia");
+        this.app.vault
+          .getFiles()
+          .filter((f) => ["ttf", "woff", "woff2"].contains(f.extension))
+          .forEach((f: TFile) => {
+            d.addOption(f.path, f.name);
+          });
+        d.setValue(this.plugin.settings.mdFont).onChange((value) => {
+          this.requestReloadDrawings = true;
+          this.plugin.settings.mdFont = value;
+          this.applySettingsUpdate(true);
+        });
+      });
+
+    new Setting(detailsEl)
+      .setName(t("MD_DEFAULT_COLOR_NAME"))
+      .setDesc(fragWithHTML(t("MD_DEFAULT_COLOR_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder("CSS Color-name|RGB-HEX")
+          .setValue(this.plugin.settings.mdFontColor)
+          .onChange((value) => {
+            this.requestReloadDrawings = true;
+            this.plugin.settings.mdFontColor = value;
+            this.applySettingsUpdate(true);
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("MD_DEFAULT_BORDER_COLOR_NAME"))
+      .setDesc(fragWithHTML(t("MD_DEFAULT_BORDER_COLOR_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder("CSS Color-name|RGB-HEX")
+          .setValue(this.plugin.settings.mdBorderColor)
+          .onChange((value) => {
+            this.requestReloadDrawings = true;
+            this.plugin.settings.mdBorderColor = value;
+            this.applySettingsUpdate(true);
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("MD_CSS_NAME"))
+      .setDesc(fragWithHTML(t("MD_CSS_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder("filename of css file in vault")
+          .setValue(this.plugin.settings.mdCSS)
+          .onChange((value) => {
+            this.requestReloadDrawings = true;
+            this.plugin.settings.mdCSS = value;
+            this.applySettingsUpdate(true);
+          }),
+      );
+
+
+
+    // ------------------------------------------------
+    // Non-excalidraw.com supported features
+    // ------------------------------------------------
+    containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
+    containerEl.createDiv({ text: t("NONSTANDARD_DESC"), cls: "setting-item-description"  });
+    detailsEl = this.containerEl.createEl("details");
+    const nonstandardDetailsEl = detailsEl;
+    detailsEl.createEl("summary", { 
+      text: t("NONSTANDARD_HEAD"),
+      cls: "excalidraw-setting-h1",
+    });
+
+    detailsEl = nonstandardDetailsEl.createEl("details");
+    detailsEl.createEl("summary", { 
+      text: t("CUSTOM_PEN_HEAD"),
+      cls: "excalidraw-setting-h3",
+    });
+    addIframe("OjNhjaH2KjI",69);
+    new Setting(detailsEl)
       .setName(t("CUSTOM_PEN_NAME"))
       .setDesc(t("CUSTOM_PEN_DESC"))
       .addDropdown((dropdown) =>
@@ -1484,8 +1619,14 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate(false);
           })
       )
-
-    new Setting(containerEl)
+    
+    detailsEl = nonstandardDetailsEl.createEl("details");
+    detailsEl.createEl("summary", { 
+      text: t("CUSTOM_FONT_HEAD"),
+      cls: "excalidraw-setting-h3",
+    });
+    addIframe("eKFmrSQhFA4");
+    new Setting(detailsEl)
       .setName(t("ENABLE_FOURTH_FONT_NAME"))
       .setDesc(fragWithHTML(t("ENABLE_FOURTH_FONT_DESC")))
       .addToggle((toggle) =>
@@ -1497,8 +1638,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
+    
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("FOURTH_FONT_NAME"))
       .setDesc(fragWithHTML(t("FOURTH_FONT_DESC")))
       .addDropdown(async (d: DropdownComponent) => {
@@ -1519,11 +1661,21 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         );
       });
 
-    this.containerEl.createEl("h1", { text: t("EXPERIMENTAL_HEAD") });
-    this.containerEl.createEl("p", { text: t("EXPERIMENTAL_DESC") });
-
+    
+    // ------------------------------------------------
+    // Experimental features
+    // ------------------------------------------------
+    containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
+    containerEl.createDiv( { text: t("EXPERIMENTAL_DESC"), cls: "setting-item-description"  });
+    detailsEl = containerEl.createEl("details");
+    const experimentalDetailsEl = detailsEl;
+    detailsEl.createEl("summary", { 
+      text: t("EXPERIMENTAL_HEAD"),
+      cls: "excalidraw-setting-h1",
+    });
+  
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/628
-    /*new Setting(containerEl)
+    /*new Setting(detailsEl)
       .setName(t("MATHJAX_NAME"))
       .setDesc(t("MATHJAX_DESC"))
       .addDropdown((dropdown) => {
@@ -1539,7 +1691,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           })
       })*/
 
-    new Setting(containerEl)
+    addIframe("r08wk-58DPk");
+    new Setting(detailsEl)
       .setName(t("LATEX_DEFAULT_NAME"))
       .setDesc(fragWithHTML(t("LATEX_DEFAULT_DESC")))
       .addText((text) =>
@@ -1551,7 +1704,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("FIELD_SUGGESTER_NAME"))
       .setDesc(fragWithHTML(t("FIELD_SUGGESTER_DESC")))
       .addToggle((toggle) =>
@@ -1563,7 +1716,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("FILETYPE_NAME"))
       .setDesc(fragWithHTML(t("FILETYPE_DESC")))
       .addToggle((toggle) =>
@@ -1576,7 +1729,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("FILETAG_NAME"))
       .setDesc(fragWithHTML(t("FILETAG_DESC")))
       .addText((text) =>
@@ -1589,7 +1742,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
       .setName(t("LIVEPREVIEW_NAME"))
       .setDesc(fragWithHTML(t("LIVEPREVIEW_DESC")))
       .addToggle((toggle) =>
@@ -1601,11 +1754,17 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    this.containerEl.createEl("h2", { text: t("TASKBONE_HEAD") });
-    this.containerEl.createEl("p", { text: t("TASKBONE_DESC") });
+    detailsEl = experimentalDetailsEl.createEl("details");
+    detailsEl.createEl("summary", { 
+      text: t("TASKBONE_HEAD"),
+      cls: "excalidraw-setting-h3",
+    });
+
+    detailsEl.createDiv( { text: t("TASKBONE_DESC"), cls: "setting-item-description"  });
     let taskboneAPIKeyText: TextComponent;
 
-    new Setting(containerEl)
+    addIframe("7gu4ETx7zro");
+    new Setting(detailsEl)
     .setName(t("TASKBONE_ENABLE_NAME"))
     .setDesc(fragWithHTML(t("TASKBONE_ENABLE_DESC")))
     .addToggle((toggle) =>
@@ -1624,7 +1783,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         }),
     );
 
-    new Setting(containerEl)
+    new Setting(detailsEl)
     .setName(t("TASKBONE_APIKEY_NAME"))
     .setDesc(fragWithHTML(t("TASKBONE_APIKEY_DESC")))
     .addText((text) => {
@@ -1638,6 +1797,58 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .setDisabled(!this.plugin.settings.taskboneEnabled);
       }
     );
+
+
+
+    // ------------------------------------------------
+    // Compatibility
+    // ------------------------------------------------
+    containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
+    containerEl.createDiv( { text: t("COMPATIBILITY_DESC"), cls: "setting-item-description"  });
+    detailsEl = this.containerEl.createEl("details");
+    detailsEl.createEl("summary", { 
+      text: t("COMPATIBILITY_HEAD"),
+      cls: "excalidraw-setting-h1",
+    });
+
+    new Setting(detailsEl)
+      .setName(t("COMPATIBILITY_MODE_NAME"))
+      .setDesc(fragWithHTML(t("COMPATIBILITY_MODE_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.compatibilityMode)
+          .onChange(async (value) => {
+            this.plugin.settings.compatibilityMode = value;
+            filenameEl.innerHTML = getFilenameSample();
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("EXPORT_EXCALIDRAW_NAME"))
+      .setDesc(fragWithHTML(t("EXPORT_EXCALIDRAW_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.autoexportExcalidraw)
+          .onChange(async (value) => {
+            this.plugin.settings.autoexportExcalidraw = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("SYNC_EXCALIDRAW_NAME"))
+      .setDesc(fragWithHTML(t("SYNC_EXCALIDRAW_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.syncExcalidraw)
+          .onChange(async (value) => {
+            this.plugin.settings.syncExcalidraw = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+
 
     //-------------------------------------
     //Script settings
@@ -1703,7 +1914,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         variableName: string,
         description?: string,
       ) => {
-        new Setting(containerEl)
+        new Setting(detailsEl)
           .setName(variableName)
           .setDesc(fragWithHTML(description ?? ""))
           .addToggle((toggle) =>
@@ -1727,7 +1938,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           Object.prototype.toString.call(valueset) === "[object Array]" &&
           valueset.length > 0
         ) {
-          new Setting(containerEl)
+          new Setting(detailsEl)
             .setName(variableName)
             .setDesc(fragWithHTML(description ?? ""))
             .addDropdown((dropdown) => {
@@ -1743,7 +1954,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             });
         } else {
           if(textAreaHeight(scriptName, variableName)) {
-            new Setting(containerEl)
+            new Setting(detailsEl)
               .setName(variableName)
               .setDesc(fragWithHTML(description ?? ""))
               .addTextArea((text) => {
@@ -1757,7 +1968,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
                   });
               });
           } else {
-            new Setting(containerEl)
+            new Setting(detailsEl)
               .setName(variableName)
               .setDesc(fragWithHTML(description ?? ""))
               .addText((text) =>
@@ -1777,7 +1988,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         variableName: string,
         description?: string,
       ) => {
-        new Setting(containerEl)
+        new Setting(detailsEl)
           .setName(variableName)
           .setDesc(fragWithHTML(description ?? ""))
           .addText((text) =>
@@ -1796,7 +2007,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           );
       };
 
-      this.containerEl.createEl("h1", { text: t("SCRIPT_SETTINGS_HEAD") });
+      containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
+      containerEl.createDiv( { text: t("SCRIPT_SETTINGS_DESC"), cls: "setting-item-description"  });
+      detailsEl = this.containerEl.createEl("details");
+      const scriptDetailsEl = detailsEl;
+      detailsEl.createEl("summary", { 
+        text: t("SCRIPT_SETTINGS_HEAD"),
+        cls: "excalidraw-setting-h1",
+      });
+
+      addIframe("H8Njp7ZXYag",52);
       Object.keys(this.plugin.settings.scriptEngineSettings)
         .filter((s) => scripts.contains(s))
         .forEach((scriptName: string) => {
@@ -1813,7 +2033,12 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           ) {
             return;
           }
-          this.containerEl.createEl("h3", { text: scriptName });
+          detailsEl = scriptDetailsEl.createEl("details");
+          detailsEl.createEl("summary", { 
+            text: scriptName,
+            cls: "excalidraw-setting-h3",
+          });
+
           Object.keys(settings).forEach((variableName) => {
             const variable = settings[variableName];
             const item = variable.value ?? variable;

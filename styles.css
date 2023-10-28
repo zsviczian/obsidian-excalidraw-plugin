@@ -183,13 +183,22 @@ li[data-testid] {
 }
 
 .excalidraw-videoWrapper {
-  max-width:600px
+  max-width:600px;
 }
-.excalidraw-videoWrapper div {
+.excalidraw-videoWrapper.settings {
+  max-width:340px;
+}
+
+.excalidraw-videoWrapper div{
   position: relative;
   padding-bottom: 56.25%;
   height: 0;
   margin: 0 auto;
+}
+
+.excalidraw-videoWrapper.settings iframe {
+  position: relative;
+  margin-bottom: 1rem;
 }
 
 .excalidraw-videoWrapper iframe {
@@ -423,4 +432,47 @@ div.excalidraw-draginfo {
   max-height: initial;
   width: initial;
   height: initial;
+}
+
+summary.excalidraw-setting-h1 {
+  font-variant: var(--h1-variant);
+  letter-spacing: -0.015em;
+  line-height: var(--h1-line-height);
+  font-size: var(--h1-size);
+  color: var(--h1-color);
+  font-weight: var(--h1-weight);
+  font-style: var(--h1-style);
+  font-family: var(--h1-font);
+  /*margin-block-start: var(--p-spacing);*/
+  margin-block-end: var(--p-spacing);
+}
+
+summary.excalidraw-setting-h3 {
+  font-variant: var(--h3-variant);
+  letter-spacing: -0.015em;
+  line-height: var(--h3-line-height);
+  font-size: var(--h3-size);
+  color: var(--h3-color);
+  font-weight: var(--h3-weight);
+  font-style: var(--h3-style);
+  font-family: var(--h3-font);
+  margin-block-start: var(--p-spacing);
+  margin-block-end: var(--p-spacing);
+}
+
+summary.excalidraw-setting-h4 {
+  font-variant: var(--h4-variant);
+  letter-spacing: -0.015em;
+  line-height: var(--h4-line-height);
+  font-size: var(--h4-size);
+  color: var(--h4-color);
+  font-weight: var(--h4-weight);
+  font-style: var(--h4-style);
+  font-family: var(--h4-font);
+  margin-block-start: var(--p-spacing);
+  margin-block-end: var(--p-spacing);
+}
+
+hr.excalidraw-setting-hr {
+  margin: 1rem 0rem 0rem 0rem;
 }

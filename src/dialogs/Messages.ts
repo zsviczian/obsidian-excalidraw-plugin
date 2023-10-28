@@ -17,6 +17,15 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.27": `
+## New
+- Restructured plugin settings, added additional comments and relevant videos
+- Added setting to change PDF to Image resolution/scale. This has an effect when embedding PDF pages to Excalidraw. A lower value will result in less-sharp pages, but better overall performance. Also, larger pages (higher scale value) were not accepted by Excalidraw.com when copying from Obsidian due to the 2MB image file limit.  Find the "PDF to Image" setting under "Embedding Excalidraw into your Notes and Exporting" setting. [#1393](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1393)
+
+## Fixed
+- When multiple Excalidraw Scripts were executed parallel a race condition occurred causing scripts to override each other
+- I implemented a partial fix to "text detaching from figures when dragging them" [#1400](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1400)
+- Regression: extra thin stroke removed with 1.9.26 [#1399](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1399)`,
 "1.9.26":`
 ## Fixes and improvements from Excalidraw.com
 - Freedraw shape selection issue, when fill-pattern is not solid [#7193](https://github.com/excalidraw/excalidraw/pull/7193)

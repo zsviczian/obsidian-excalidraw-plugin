@@ -293,8 +293,18 @@ export class ExcalidrawData {
 
       if (el.boundElements) {
         const map = new Map<string, string>();
+        let alreadyHasText:boolean = false;
         el.boundElements.forEach((item: { id: string; type: string }) => {
-          map.set(item.id, item.type);
+          if(item.type === "text") {
+            if(!alreadyHasText) {
+              map.set(item.id, item.type);
+              alreadyHasText = true;
+            } else {
+              elements.find((el:ExcalidrawElement)=>el.id===item.id).containerId = null;
+            }
+          } else {
+            map.set(item.id, item.type);
+          }
         });
         const boundElements = Array.from(map, ([id, type]) => ({ id, type }));
         if (boundElements.length !== el.boundElements.length) {

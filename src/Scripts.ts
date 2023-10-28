@@ -11,6 +11,7 @@ import ExcalidrawPlugin from "./main";
 import { ButtonDefinition, GenericInputPrompt, GenericSuggester } from "./dialogs/Prompt";
 import { getIMGFilename } from "./utils/FileUtils";
 import { splitFolderAndFilename } from "./utils/FileUtils";
+import { getEA } from "src";
 
 export type ScriptIconMap = {
   [key: string]: { name: string; group: string; svgString: string };
@@ -199,27 +200,26 @@ export class ScriptEngine {
 
     const commandId = `${PLUGIN_ID}:${basename}`;
     // @ts-ignore
-    if (!app.commands.commands[commandId]) {
+    if (!this.plugin.app.commands.commands[commandId]) {
       return;
     }
     // @ts-ignore
-    delete app.commands.commands[commandId];
+    delete this.plugin.app.commands.commands[commandId];
   }
 
   async executeScript(view: ExcalidrawView, script: string, title: string, file: TFile) {
     if (!view || !script || !title) {
       return;
     }
-    this.plugin.ea.reset();
-    this.plugin.ea.setView(view);
-    this.plugin.ea.activeScript = title;
+    const ea = getEA(view);
+    ea.activeScript = title;
 
     //https://stackoverflow.com/questions/45381204/get-asyncfunction-constructor-in-typescript changed tsconfig to es2017
     //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncFunction
     const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
     let result = null;
     //try {
-    result = await new AsyncFunction("ea", "utils", script)(this.plugin.ea, {
+    result = await new AsyncFunction("ea", "utils", script)(ea, {
       inputPrompt: (
         header: string,
         placeholder?: string,
@@ -233,7 +233,7 @@ export class ScriptEngine {
         ScriptEngine.inputPrompt(
           view,
           this.plugin,
-          app,
+          this.plugin.app,
           header,
           placeholder,
           value,
@@ -262,7 +262,7 @@ export class ScriptEngine {
       new Notice(t("SCRIPT_EXECUTION_ERROR"), 4000);
       errorlog({ script: this.plugin.ea.activeScript, error: e });
   }*/
-        this.plugin.ea.activeScript = null;
+        ea.activeScript = null;
         return result;
 }
 

@@ -111,6 +111,8 @@ export default {
       "<b><u>Toggle ON:</u></b> Show a notification when a new version of the plugin is available.<br>" +
       "<b><u>Toggle OFF:</u></b> Silent mode. You need to check for plugin updates in Community Plugins.",
   
+  BASIC_HEAD: "Basic",
+  BASIC_DESC: `In the "Basic" settings, you can configure options such as displaying release notes after updates, receiving plugin update notifications, setting the default location for new drawings, specifying the Excalidraw folder for embedding drawings into active documents, defining an Excalidraw template file, and designating an Excalidraw Automate script folder for managing automation scripts.`,
   FOLDER_NAME: "Excalidraw folder",
   FOLDER_DESC:
     "Default location for new drawings. If empty, drawings will be created in the Vault root.",
@@ -134,6 +136,7 @@ export default {
     "hotkeys to your favorite scripts just like to any other Obsidian command. " +
     "The folder may not be the root folder of your Vault. ",
   SAVING_HEAD: "Saving",
+  SAVING_DESC: "In the 'Saving' section of Excalidraw Settings, you can configure how your drawings are saved. This includes options for compressing Excalidraw JSON in Markdown, setting autosave intervals for both desktop and mobile, defining filename formats, and choosing whether to use the .excalidraw.md or .md file extension. ",
   COMPRESS_NAME: "Compress Excalidraw JSON in Markdown",
   COMPRESS_DESC:
     "By enabling this feature Excalidraw will store the drawing JSON in a Base64 compressed " +
@@ -181,7 +184,8 @@ FILENAME_HEAD: "Filename",
   FILENAME_EXCALIDRAW_EXTENSION_DESC:
     "This setting does not apply if you use Excalidraw in compatibility mode, " +
     "i.e. you are not using Excalidraw markdown files.<br><b><u>Toggle ON:</u></b> filename ends with .excalidraw.md<br><b><u>Toggle OFF:</u></b> filename ends with .md",
-  DISPLAY_HEAD: "Display",
+  DISPLAY_HEAD: "Excalidraw appearance and behavior",
+  DISPLAY_DESC: "In the 'appearance and behavior' section of Excalidraw Settings, you can fine-tune how Excalidraw appears and behaves. This includes options for dynamic styling, left-handed mode, matching Excalidraw and Obsidian themes, default modes, and more.",
   DYNAMICSTYLE_NAME: "Dynamic styling",
   DYNAMICSTYLE_DESC:
     "Change Excalidraw UI colors to match the canvas color",
@@ -214,7 +218,8 @@ FILENAME_HEAD: "Filename",
   DEFAULT_PEN_MODE_NAME: "Pen mode",
   DEFAULT_PEN_MODE_DESC:
     "Should pen mode be automatically enabled when opening Excalidraw?",
-
+  THEME_HEAD: "Theme and styling",
+  ZOOM_HEAD: "Zoom",
   DEFAULT_PINCHZOOM_NAME: "Allow pinch zoom in pen mode",
   DEFAULT_PINCHZOOM_DESC:
     "Pinch zoom in pen mode when using the freedraw tool is disabled by default to prevent unwanted accidental zooming with your palm.<br>" +
@@ -233,7 +238,8 @@ FILENAME_HEAD: "Filename",
   ZOOM_TO_FIT_MAX_LEVEL_NAME: "Zoom to fit max ZOOM level",
   ZOOM_TO_FIT_MAX_LEVEL_DESC:
     "Set the maximum level to which zoom to fit will enlarge the drawing. Minimum is 0.5 (50%) and maximum is 10 (1000%).",
-  LINKS_HEAD: "Links and transclusion",
+  LINKS_HEAD: "Links, transclusion and TODOs",
+  LINKS_HEAD_DESC: "In the 'Links, transclusion and TODOs' section of Excalidraw Settings, you can configure how Excalidraw handles links, transclusions, and TODO items. This includes options for opening links, managing panes, displaying links with brackets, customizing link prefixes, handling TODO items, and more. ",
   LINKS_DESC:
     `${labelCTRL()}+CLICK on <code>[[Text Elements]]</code> to open them as links. ` +
     "If the selected text has more than one <code>[[valid Obsidian links]]</code>, only the first will be opened. " +
@@ -305,11 +311,12 @@ FILENAME_HEAD: "Filename",
   GET_URL_TITLE_NAME: "Use iframely to resolve page title",
   GET_URL_TITLE_DESC:
     "Use the <code>http://iframely.server.crestify.com/iframely?url=</code> to get title of page when dropping a link into Excalidraw",
-  MD_HEAD: "Markdown-embed settings",
-  MD_HEAD_DESC:
-    `You can transclude formatted markdown documents into drawings as images ${labelSHIFT()} drop from the file explorer or using ` +
-    "the command palette action.",
-  
+  PDF_TO_IMAGE: "PDF to Image",
+  PDF_TO_IMAGE_SCALE_NAME: "PDF to Image conversion scale",
+  PDF_TO_IMAGE_SCALE_DESC: "Sets the resolution of the image that is generated from the PDF page. Higher resolution will result in bigger images in memory and consequently a higher load on your system (slower performance), but sharper imagee. " +
+    "Additionally, if you want to copy PDF pages (as images) to Excalidraw.com, the bigger image size may result in exceeding the 2MB limit on Excalidraw.com.",
+  MD_HEAD: "Embed markdown into Excalidraw as image",
+  MD_HEAD_DESC: `In the "Embed markdown as image settings," you can configure various options for how markdown documents are embedded as images within Excalidraw. These settings allow you to control the default width and maximum height of embedded markdown files, choose the font typeface, font color, and border color for embedded markdown content. Additionally, you can specify a custom CSS file to style the embedded markdown content. Note you can also embed markdown documents as interactive frames. The color setting of frames is under the Display Settings section.`,
   MD_TRANSCLUDE_WIDTH_NAME: "Default width of a transcluded markdown document",
   MD_TRANSCLUDE_WIDTH_DESC:
     "The width of the markdown page. This affects the word wrapping when transcluding longer paragraphs, and the width of " +
@@ -345,8 +352,11 @@ FILENAME_HEAD: "Filename",
     "Setting the font-family in the css is has limitations. By default only your operating system's standard fonts are available (see README for details). " +
     "You can add one custom font beyond that using the setting above. " +
     'You can override this css setting by adding the following frontmatter-key to the embedded markdown file: "excalidraw-css: css_file_in_vault|css-snippet".',
-  EMBED_HEAD: "Embed & Export",
+  EMBED_HEAD: "Embedding Excalidraw into your Notes and Exporting",
+  EMBED_DESC: `In the "Embed & Export" settings, you can configure how images and Excalidraw drawings are embedded and exported within your documents. Key settings include choosing the image type for markdown preview (such as Native SVG or PNG), specifying the type of file to insert into the document (original Excalidraw, PNG, or SVG), and managing image caching for embedding in markdown. You can also control image sizing, whether to embed drawings using wiki links or markdown links, and adjust settings related to image themes, background colors, and Obsidian integration. 
+    Additionally, there are settings for auto-export, which automatically generates SVG and/or PNG files to match the title of your Excalidraw drawings, keeping them in sync with file renames and deletions.`,
   EMBED_CACHING: "Image caching",
+  EXPORT_SUBHEAD: "Export Settings",
   EMBED_SIZING: "Image sizing",
   EMBED_THEME_BACKGROUND: "Image theme and background color",
   EMBED_IMAGE_CACHE_NAME: "Cache images for embedding in markdown",
@@ -424,6 +434,7 @@ FILENAME_HEAD: "Filename",
   EXPORT_BOTH_DARK_AND_LIGHT_DESC:  "When enabled, Excalidraw will export two files instead of one: filename.dark.png, filename.light.png and/or filename.dark.svg and filename.light.svg<br>"+
     "Double files will be exported both if auto-export SVG or PNG (or both) are enabled, as well as when clicking export on a single image.",
   COMPATIBILITY_HEAD: "Compatibility features",
+  COMPATIBILITY_DESC: "You should only enable these features if you have a strong reason for wanting to work with excalidraw.com files instead of markdown files. Many of the plugin features are not supported on legacy files. Typical usecase would be if you use set your vault up on top of a Visual Studio Code project folder and you have .excalidraw drawings you want to access from Visual Studio Code as well. Another usecase might be using Excalidraw in Logseq and Obsidian in parallel.",
   EXPORT_EXCALIDRAW_NAME: "Auto-export Excalidraw",
   EXPORT_EXCALIDRAW_DESC: "Same as the auto-export SVG, but for *.Excalidraw",
   SYNC_EXCALIDRAW_NAME:
@@ -433,6 +444,7 @@ FILENAME_HEAD: "Filename",
     "then update the drawing in the .md file based on the .excalidraw file",
   COMPATIBILITY_MODE_NAME: "New drawings as legacy files",
   COMPATIBILITY_MODE_DESC:
+    "⚠️ Enable this only if you know what you are doing. In 99.9% of the cases you DO NOT want this on. " +
     "By enabling this feature drawings you create with the ribbon icon, the command palette actions, " +
     "and the file explorer are going to be all legacy *.excalidraw files. This setting will also turn off the reminder message " +
     "when you open a legacy file for editing.",
@@ -443,12 +455,13 @@ FILENAME_HEAD: "Filename",
   LATEX_DEFAULT_NAME: "Default LaTeX formual for new equations",
   LATEX_DEFAULT_DESC: "Leave empty if you don't want a default formula. You can add default formatting here such as <code>\\color{white}</code>.",
   NONSTANDARD_HEAD: "Non-Excalidraw.com supported features",
-  NONSTANDARD_DESC: "These features are not available on excalidraw.com. When exporting the drawing to Excalidraw.com these features will appear different.",
+  NONSTANDARD_DESC: `These settings in the "Non-Excalidraw.com Supported Features" section provide customization options beyond the default Excalidraw.com features. These features are not available on excalidraw.com. When exporting the drawing to Excalidraw.com these features will appear different.
+    You can configure the number of custom pens displayed next to the Obsidian Menu on the canvas, allowing you to choose from a range of options. Additionally, you can enable a fourth font option, which adds a fourth font button to the properties panel for text elements. `,
+  CUSTOM_PEN_HEAD: "Custom pens",
   CUSTOM_PEN_NAME: "Number of custom pens",
   CUSTOM_PEN_DESC: "You will see these pens next to the Obsidian Menu on the canvas. You can customize the pens on the canvas by long-pressing the pen button.",
-  EXPERIMENTAL_HEAD: "Experimental features",
-  EXPERIMENTAL_DESC:
-    "Some of these setting will not take effect immediately, only when the File Explorer is refreshed, or Obsidian restarted.",
+  EXPERIMENTAL_HEAD: "Miscellaneous features",
+  EXPERIMENTAL_DESC: `These miscellaneous features in Excalidraw include options for setting default LaTeX formulas for new equations, enabling a Field Suggester for autocompletion, displaying type indicators for Excalidraw files, enabling immersive image embedding in live preview editing mode, and experimenting with Taskbone Optical Character Recognition for text extraction from images and drawings. Users can also enter a Taskbone API key for extended usage of the OCR service.`,
   FIELD_SUGGESTER_NAME: "Enable Field Suggester",
   FIELD_SUGGESTER_DESC:
     "Field Suggester borrowed from Breadcrumbs and Templater plugins. The Field Suggester will show an autocomplete menu " +
@@ -464,6 +477,7 @@ FILENAME_HEAD: "Filename",
     "Turn this on to support image embedding styles such as ![[drawing|width|style]] in live preview editing mode. " +
     "The setting will not affect the currently open documents. You need close the open documents and re-open them for the change " +
     "to take effect.",
+  CUSTOM_FONT_HEAD: "Fourth font",
   ENABLE_FOURTH_FONT_NAME: "Enable fourth font option",
   ENABLE_FOURTH_FONT_DESC:
     "By turning this on, you will see a fourth font button on the properties panel for text elements. " +
@@ -475,6 +489,7 @@ FILENAME_HEAD: "Filename",
     "Select a .ttf, .woff or .woff2 font file from your vault to use as the fourth font. " +
     "If no file is selected, Excalidraw will use the Virgil font by default.",
   SCRIPT_SETTINGS_HEAD: "Settings for installed Scripts",
+  SCRIPT_SETTINGS_DESC: "Some of the Excalidraw Automate Scripts include settings. Settings are organized by script. Settings will only become visible in this list after you have executed the newly downloaded script once.",
   TASKBONE_HEAD: "Taskbone Optical Character Recogntion",
   TASKBONE_DESC: "This is an experimental integration of optical character recognition into Excalidraw. Please note, that taskbone is an independent external service not provided by Excalidraw, nor the Excalidraw-Obsidian plugin project. " +
     "The OCR service will grab legible text from freedraw lines and embedded pictures on your canvas and place the recognized text in the frontmatter of your drawing as well as onto clipboard. " +
