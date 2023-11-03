@@ -15,6 +15,7 @@ import {
 //import Excalidraw from "@zsviczian/excalidraw";
 import {
   ExcalidrawElement,
+  ExcalidrawImageElement,
   ExcalidrawTextElement,
   FileId,
   NonDeletedExcalidrawElement,
@@ -126,6 +127,7 @@ import { EmbeddableMenu } from "./menu/EmbeddableActionsMenu";
 import { useDefaultExcalidrawFrame } from "./utils/CustomEmbeddableUtils";
 import { UniversalInsertFileModal } from "./dialogs/UniversalInsertFileModal";
 import { shouldRenderMermaid } from "./utils/MermaidUtils";
+import { link } from "fs";
 
 declare const PLUGIN_VERSION:string;
 
@@ -873,7 +875,7 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   openExternalLink(link:string, element?: ExcalidrawElement):boolean {
-    if (link.match(/cmd:\/\/.*/)) {
+    if (link.match(/^cmd:\/\/.*/)) {
       const cmd = link.replace("cmd://", "");
       //@ts-ignore
       this.app.commands.executeCommandById(cmd);
@@ -899,12 +901,52 @@ export default class ExcalidrawView extends TextFileView {
     }
     //@ts-ignore
     search[0].view.setQuery(`tag:${tags.value[1]}`);
-    app.workspace.revealLeaf(search[0]);
+    this.app.workspace.revealLeaf(search[0]);
 
     if (this.isFullscreen()) {
       this.exitFullscreen();
     }
     return;
+  }
+
+  async linkPrompt(linkText:string):Promise<[file:TFile, linkText:string, subpath: string]> {
+    const partsArray = REGEX_LINK.getResList(linkText);
+    let subpath: string = null;
+    let file: TFile = null;
+    let parts = partsArray[0];
+      if (partsArray.length > 1) {
+        parts = await ScriptEngine.suggester(
+          this.app,
+          partsArray.filter(p=>Boolean(p.value)).map(p => REGEX_LINK.getLink(p)),
+          partsArray.filter(p=>Boolean(p.value)),
+          "Select link to open"
+        );
+        if(!parts) return;
+      }
+    if(!parts) return;
+    
+    if (!parts.value) {
+      this.openTagSearch(linkText);
+      return;
+    }
+
+    linkText = REGEX_LINK.getLink(parts);
+    if(this.openExternalLink(linkText)) return;
+
+    if (linkText.search("#") > -1) {
+      const linkParts = getLinkParts(linkText, this.file);
+      subpath = `#${linkParts.isBlockRef ? "^" : ""}${linkParts.ref}`;
+      linkText = linkParts.path;
+    }
+    if (linkText.match(REG_LINKINDEX_INVALIDCHARS)) {
+      new Notice(t("FILENAME_INVALID_CHARS"), 4000);
+      return;
+    }
+    file = this.app.metadataCache.getFirstLinkpathDest(
+      linkText,
+      this.file.path,
+    );
+    return [file, linkText, subpath];
   }
 
   async linkClick(
@@ -941,47 +983,17 @@ export default class ExcalidrawView extends TextFileView {
       if(this.handleLinkHookCall(el,linkText,ev)) return;
       if(this.openExternalLink(linkText)) return;
 
-      const partsArray = REGEX_LINK.getResList(linkText);
-      let parts = partsArray[0];
-      if (partsArray.length > 1) {
-        parts = await ScriptEngine.suggester(
-          app,
-          partsArray.filter(p=>Boolean(p.value)).map(p => REGEX_LINK.getLink(p)),
-          partsArray.filter(p=>Boolean(p.value)),
-          "Select link to open"
-        );
-        if(!parts) return;
-      }
-
-      //parts = REGEX_LINK.getRes(linkText).next();
-      if (!parts?.value) {
-        this.openTagSearch(linkText);
-        return;
-      }
-
-      linkText = REGEX_LINK.getLink(parts);
-      if(this.openExternalLink(linkText)) return;
-
-      if (linkText.search("#") > -1) {
-        const linkParts = getLinkParts(linkText, this.file);
-        subpath = `#${linkParts.isBlockRef ? "^" : ""}${linkParts.ref}`;
-        linkText = linkParts.path;
-      }
-      if (linkText.match(REG_LINKINDEX_INVALIDCHARS)) {
-        new Notice(t("FILENAME_INVALID_CHARS"), 4000);
-        return;
-      }
-      file = this.app.metadataCache.getFirstLinkpathDest(
-        linkText,
-        this.file.path,
-      );
+      const result = await this.linkPrompt(linkText);
+      if(!result) return;
+      [file, linkText, subpath] = result;
     }
     if (selectedImage?.id) {
+      const imageElement = this.getScene().elements.find((el:ExcalidrawElement)=>el.id === selectedImage.id) as ExcalidrawImageElement;
       if (this.excalidrawData.hasEquation(selectedImage.fileId)) {
         (async () => {
           debugger;
           await this.save(false);
-          selectedImage.fileId = this.getScene().elements.filter((el:ExcalidrawElement)=>el.id === selectedImage.id)[0].fileId;
+          selectedImage.fileId = imageElement.fileId;
           const equation = this.excalidrawData.getEquation(
             selectedImage.fileId,
           ).latex;
@@ -1018,11 +1030,7 @@ export default class ExcalidrawView extends TextFileView {
       await this.save(false); //in case pasted images haven't been saved yet
       if (this.excalidrawData.hasFile(selectedImage.fileId)) {
         const ef = this.excalidrawData.getFile(selectedImage.fileId);
-        if(ef.isHyperLink || ef.isLocalLink) {
-          window.open(ef.hyperlink,"_blank");
-          return;
-        }
-        if (linkClickType === "md-properties") {
+        if (!ef.isHyperLink && !ef.isLocalLink && linkClickType === "md-properties") {
           if (
             ef.file.extension === "md" &&
             !this.plugin.isExcalidrawFile(ef.file)
@@ -1052,11 +1060,20 @@ export default class ExcalidrawView extends TextFileView {
             return;
           }
         }
-        linkText = ef.file.path;
-        file = ef.file;
-        if(file.extension.toLowerCase() === "pdf") {
-          subpath = ef.linkParts.original.match(/(#.*)$/)?.[1];
-        }
+
+        const linkString = (ef.isHyperLink || ef.isLocalLink
+          ? `[](${ef.hyperlink}) `
+          : `[[${ef.linkParts.original}]] `
+        ) + (imageElement.link
+          ? (imageElement.link.match(/$cmd:\/\/.*/) || imageElement.link.match(REG_LINKINDEX_HYPERLINK))
+            ? `[](${imageElement.link})`
+            : imageElement.link
+          : "");
+        
+        const result = await this.linkPrompt(linkString);
+        if(!result) return;
+        [file, linkText, subpath] = result;
+        
       }
     }
 
@@ -2413,18 +2430,6 @@ export default class ExcalidrawView extends TextFileView {
               this.onAfterLoadScene();
               this.excalidrawContainer = this.excalidrawWrapperRef?.current?.firstElementChild;
               this.excalidrawContainer?.focus();
-              //there is a race condition that I was unable to uncover
-              //for some reason app.render in the Excalidraw package does not render the
-              //style attribute with the below value
-              //this works on Excalidraw.com, also if I debug in ready promoise, then it works
-              //the effect of not having ui-pointerEvents enabled is you need to click twice
-              //for excalidraw to react at first. 
-              //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1344
-              setTimeout(() => {
-                if(!this.excalidrawContainer.hasAttribute("style")) {
-                  this.excalidrawContainer.setAttribute("style","--ui-pointerEvents:all");
-                }
-              });
             });
           },
         );
@@ -2867,13 +2872,13 @@ export default class ExcalidrawView extends TextFileView {
           if (files[0] == this.file) {
             files.shift();
             (
-              app as any
+              this.app as any
             ).dragManager.draggable.title = `${files.length} files`;
           }
         }
         if (
           ["file", "files"].includes(
-            (app as any).dragManager.draggable?.type,
+            (this.app as any).dragManager.draggable?.type,
           )
         ) {
           return "link";
@@ -2930,6 +2935,19 @@ export default class ExcalidrawView extends TextFileView {
 
       let mouseEvent: any = null;
 
+      const getLinkTextFromLink = (text: string): string => {
+        if (!text) return;
+        if (text.match(REG_LINKINDEX_HYPERLINK)) return;
+
+        const parts = REGEX_LINK.getRes(text).next();
+        if (!parts.value) return;
+
+        const linktext = REGEX_LINK.getLink(parts); //parts.value[2] ? parts.value[2]:parts.value[6];
+        if (linktext.match(REG_LINKINDEX_HYPERLINK)) return;
+
+        return linktext;
+      }
+
       const showHoverPreview = (linktext?: string, element?: ExcalidrawElement) => {
         if(!mouseEvent) return;
         const st = this.excalidrawAPI?.getAppState();
@@ -2943,7 +2961,7 @@ export default class ExcalidrawView extends TextFileView {
           if (!selectedElement || !selectedElement.text) {
             const selectedImgElement =
               getImageElementAtPointer(this.currentPosition, this);
-            element = this.excalidrawAPI.getSceneElements().filter((el:ExcalidrawElement)=>el.id === selectedImgElement.id)[0];
+            element = this.excalidrawAPI.getSceneElements().find((el:ExcalidrawElement)=>el.id === selectedImgElement.id);
             if (!selectedImgElement || !selectedImgElement.fileId) {
               return;
             }
@@ -2951,15 +2969,21 @@ export default class ExcalidrawView extends TextFileView {
               return;
             }
             const ef = this.excalidrawData.getFile(selectedImgElement.fileId);
-            if(ef.isHyperLink || ef.isLocalLink) return; //web images don't have a preview
-            if(IMAGE_TYPES.contains(ef.file.extension)) return; //images don't have a preview
-            if(ef.file.extension.toLowerCase() === "pdf") return; //pdfs don't have a preview
-            if(this.plugin.ea.isExcalidrawFile(ef.file)) return; //excalidraw files don't have a preview
-            const ref = ef.linkParts.ref
-              ? `#${ef.linkParts.isBlockRef ? "^" : ""}${ef.linkParts.ref}`
-              : "";
-            linktext =
-              ef.file.path + ref;
+            if (
+              (ef.isHyperLink || ef.isLocalLink) || //web images don't have a preview
+              (IMAGE_TYPES.contains(ef.file.extension)) || //images don't have a preview
+              (ef.file.extension.toLowerCase() === "pdf") || //pdfs don't have a preview
+              (this.plugin.ea.isExcalidrawFile(ef.file)) 
+            ) {//excalidraw files don't have a preview
+              linktext = getLinkTextFromLink(element.link);
+              if(!linktext) return;
+            } else {
+              const ref = ef.linkParts.ref
+                ? `#${ef.linkParts.isBlockRef ? "^" : ""}${ef.linkParts.ref}`
+                : "";
+              linktext =
+                ef.file.path + ref;
+            }
           } else {
             element = this.excalidrawAPI.getSceneElements().filter((el:ExcalidrawElement)=>el.id === selectedElement.id)[0];
             const text: string =
@@ -2967,21 +2991,8 @@ export default class ExcalidrawView extends TextFileView {
                 ? this.excalidrawData.getRawText(selectedElement.id)
                 : selectedElement.text;
 
-            if (!text) {
-              return;
-            }
-            if (text.match(REG_LINKINDEX_HYPERLINK)) {
-              return;
-            }
-
-            const parts = REGEX_LINK.getRes(text).next();
-            if (!parts.value) {
-              return;
-            }
-            linktext = REGEX_LINK.getLink(parts); //parts.value[2] ? parts.value[2]:parts.value[6];
-            if (linktext.match(REG_LINKINDEX_HYPERLINK)) {
-              return;
-            }
+            linktext = getLinkTextFromLink(text);
+            if(!linktext) return;
           }
         }
 

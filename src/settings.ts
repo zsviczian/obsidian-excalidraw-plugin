@@ -136,9 +136,17 @@ export interface ExcalidrawSettings {
   pdfScale: number;
   pdfBorderBox: boolean;
   pdfGapSize: number;
+  pdfGroupPages: boolean;
   pdfLockAfterImport: boolean;
   pdfNumColumns: number;
+  pdfNumRows: number;
+  pdfDirection: "down" | "right";
   pdfImportScale: number;
+  laserSettings: {
+    DECAY_TIME: number,
+    DECAY_LENGTH: number,
+    COLOR: string,
+  };
 }
 
 declare const PLUGIN_VERSION:string;
@@ -257,9 +265,17 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   pdfScale: 4,
   pdfBorderBox: true,
   pdfGapSize: 20,
+  pdfGroupPages: false,
   pdfLockAfterImport: true,
   pdfNumColumns: 1,
+  pdfNumRows: 1,
+  pdfDirection: "right",
   pdfImportScale: 0.3,
+  laserSettings: {
+    DECAY_LENGTH: 50,
+    DECAY_TIME: 1000,
+    COLOR: "#ff0000",
+  }
 };
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
@@ -834,6 +850,64 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         el.innerText = ` ${this.plugin.settings.zoomToFitMaxLevel.toString()}`;
       });
 
+    
+    detailsEl = displayDetailsEl.createEl("details");
+    detailsEl.createEl("summary", { 
+      text: t("LASER_HEAD"),
+      cls: "excalidraw-setting-h3",
+    });
+    new Setting(detailsEl)
+      .setName(t("LASER_COLOR"))
+      .addColorPicker((colorPicker) =>
+        colorPicker
+          .setValue(this.plugin.settings.laserSettings.COLOR)
+          .onChange(async (value) => {
+            this.plugin.settings.laserSettings.COLOR = value;
+            this.applySettingsUpdate();
+          }),
+      );
+    
+    let decayTime: HTMLDivElement;
+    new Setting(detailsEl)
+      .setName(t("LASER_DECAY_TIME_NAME"))
+      .setDesc(fragWithHTML(t("LASER_DECAY_TIME_DESC")))
+      .addSlider((slider) =>
+        slider
+          .setLimits(500, 20000, 500)
+          .setValue(this.plugin.settings.laserSettings.DECAY_TIME)
+          .onChange(async (value) => {
+            decayTime.innerText = ` ${value.toString()}`;
+            this.plugin.settings.laserSettings.DECAY_TIME = value;
+            this.applySettingsUpdate();
+          }),
+      )
+      .settingEl.createDiv("", (el) => {
+        decayTime = el;
+        el.style.minWidth = "3em";
+        el.style.textAlign = "right";
+        el.innerText = ` ${this.plugin.settings.laserSettings.DECAY_TIME.toString()}`;
+      });
+
+      let decayLength: HTMLDivElement;
+      new Setting(detailsEl)
+        .setName(t("LASER_DECAY_LENGTH_NAME"))
+        .setDesc(fragWithHTML(t("LASER_DECAY_LENGTH_DESC")))
+        .addSlider((slider) =>
+          slider
+            .setLimits(25, 2000, 25)
+            .setValue(this.plugin.settings.laserSettings.DECAY_LENGTH)
+            .onChange(async (value) => {
+              decayLength.innerText = ` ${value.toString()}`;
+              this.plugin.settings.laserSettings.DECAY_LENGTH = value;
+              this.applySettingsUpdate();
+            }),
+        )
+        .settingEl.createDiv("", (el) => {
+          decayLength = el;
+          el.style.minWidth = "3em";
+          el.style.textAlign = "right";
+          el.innerText = ` ${this.plugin.settings.laserSettings.DECAY_LENGTH.toString()}`;
+        });
 
 
     // ------------------------------------------------

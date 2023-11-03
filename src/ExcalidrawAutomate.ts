@@ -109,6 +109,10 @@ export class ExcalidrawAutomate {
     return obsidian_module;
   };
 
+  get LASERPOINTER() {
+    return this.plugin.settings.laserSettings;
+  }
+
   get DEVICE():DeviceType {
     return DEVICE;
   }

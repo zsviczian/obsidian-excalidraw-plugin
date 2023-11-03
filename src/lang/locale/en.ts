@@ -238,6 +238,12 @@ FILENAME_HEAD: "Filename",
   ZOOM_TO_FIT_MAX_LEVEL_NAME: "Zoom to fit max ZOOM level",
   ZOOM_TO_FIT_MAX_LEVEL_DESC:
     "Set the maximum level to which zoom to fit will enlarge the drawing. Minimum is 0.5 (50%) and maximum is 10 (1000%).",
+  LASER_HEAD: "Laser pointer",
+  LASER_COLOR: "Laser pointer color",
+  LASER_DECAY_TIME_NAME: "Laser pointer decay time",
+  LASER_DECAY_TIME_DESC: "Laser pointer decay time in milliseconds. Default is 1000 (i.e. 1 second).",
+  LASER_DECAY_LENGTH_NAME: "Laser pointer decay length.",
+  LASER_DECAY_LENGTH_DESC: "Laser pointer decay length in line points. Default is 50.",
   LINKS_HEAD: "Links, transclusion and TODOs",
   LINKS_HEAD_DESC: "In the 'Links, transclusion and TODOs' section of Excalidraw Settings, you can configure how Excalidraw handles links, transclusions, and TODO items. This includes options for opening links, managing panes, displaying links with brackets, customizing link prefixes, handling TODO items, and more. ",
   LINKS_DESC:

@@ -39,7 +39,6 @@ import {
   svgToBase64,
 } from "./utils/Utils";
 import { ValueOf } from "./types";
-import { has } from "./svgToExcalidraw/attributes";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
 import { mermaidToExcalidraw } from "src/constants";
 
@@ -594,7 +593,7 @@ export class EmbeddedFilesLoader {
           continue;
         }
         const data = getMermaidText(element);
-        const result = await mermaidToExcalidraw(data, {fontSize: 20});
+        const result = await mermaidToExcalidraw(data, {fontSize: 20}, true);
         if(!result) {
           continue;
         }

@@ -11,7 +11,10 @@ import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
 export class InsertPDFModal extends Modal {
   private borderBox: boolean = true;
   private gapSize:number = 20;
+  private groupPages: boolean = false;
+  private direction: "down" | "right" = "right";
   private numColumns: number = 1;
+  private numRows: number = 1;
   private lockAfterImport: boolean = true;
   private pagesToImport:number[] = [];
   private pageDimensions: {width: number, height: number} = {width: 0, height: 0};
@@ -20,7 +23,6 @@ export class InsertPDFModal extends Modal {
   private pdfDoc: any;
   private pdfFile: TFile;
   private dirty: boolean = false;
-
 
   constructor(
     private plugin: ExcalidrawPlugin,
@@ -47,7 +49,10 @@ export class InsertPDFModal extends Modal {
       this.plugin.settings.pdfImportScale = this.importScale;
       this.plugin.settings.pdfBorderBox = this.borderBox;
       this.plugin.settings.pdfGapSize = this.gapSize;
+      this.plugin.settings.pdfGroupPages = this.groupPages;
       this.plugin.settings.pdfNumColumns = this.numColumns;
+      this.plugin.settings.pdfNumRows = this.numRows;
+      this.plugin.settings.pdfDirection = this.direction;
       this.plugin.settings.pdfLockAfterImport = this.lockAfterImport;
       this.plugin.saveSettings();
     }
@@ -111,7 +116,10 @@ export class InsertPDFModal extends Modal {
     await this.plugin.loadSettings();
     this.borderBox = this.plugin.settings.pdfBorderBox;
     this.gapSize = this.plugin.settings.pdfGapSize;
+    this.groupPages = this.plugin.settings.pdfGroupPages;
     this.numColumns = this.plugin.settings.pdfNumColumns;
+    this.numRows = this.plugin.settings.pdfNumRows;
+    this.direction = this.plugin.settings.pdfDirection;
     this.lockAfterImport = this.plugin.settings.pdfLockAfterImport;
     this.importScale = this.plugin.settings.pdfImportScale;
 
@@ -211,7 +219,18 @@ export class InsertPDFModal extends Modal {
           this.borderBox = value;
           this.dirty = true;
         }))
-    
+
+    new Setting(ce)
+      .setName("Group pages")
+      .setDesc("This will group all pages into a single group. This is recommended if you are locking the pages after import, because the group will be easier to unlock later rather than unlocking one by one.")
+      .addToggle(toggle => toggle
+        .setValue(this.groupPages)
+        .onChange((value) => {
+          this.groupPages = value
+          this.dirty = true;
+        }))
+  
+        
     new Setting(ce)
       .setName("Lock pages on canvas after import")
       .addToggle(toggle => toggle
@@ -221,8 +240,38 @@ export class InsertPDFModal extends Modal {
           this.dirty = true;
         }))
 
-    let columnsText: HTMLDivElement;
+    let numColumnsSetting: Setting;
+    let numRowsSetting: Setting;
+    const colRowVisibility = () => {
+      switch(this.direction) {
+        case "down":
+          numColumnsSetting.settingEl.style.display = "none";
+          numRowsSetting.settingEl.style.display = "";
+          break;
+        case "right":
+          numColumnsSetting.settingEl.style.display = "";
+          numRowsSetting.settingEl.style.display = "none";
+          break;
+      }
+    }
+    
     new Setting(ce)
+      .setName("Import direction")
+      .addDropdown(dropdown => dropdown
+        .addOptions({
+          "down": "Top > Down",
+          "right": "Left > Right"
+        })
+        .setValue(this.direction)
+        .onChange(value => {
+          this.direction = value as "down" | "right";
+          colRowVisibility();
+          this.dirty = true;
+        }))
+
+    let columnsText: HTMLDivElement;
+    numColumnsSetting = new Setting(ce);
+    numColumnsSetting
       .setName("Number of columns")
       .addSlider(slider => slider
         .setLimits(1, 100, 1)
@@ -238,6 +287,26 @@ export class InsertPDFModal extends Modal {
         el.style.textAlign = "right";
         el.innerText = ` ${this.numColumns.toString()}`;
       });
+
+    let rowsText: HTMLDivElement;
+    numRowsSetting = new Setting(ce);
+    numRowsSetting
+      .setName("Number of rows")
+      .addSlider(slider => slider
+        .setLimits(1, 100, 1)
+        .setValue(this.numRows)
+        .onChange(value => {
+          this.numRows = value;
+          rowsText.innerText = ` ${value.toString()}`;
+          this.dirty = true;
+        }))
+      .settingEl.createDiv("", (el) => {
+        rowsText = el;
+        el.style.minWidth = "2.3em";
+        el.style.textAlign = "right";
+        el.innerText = ` ${this.numRows.toString()}`;
+      });
+    colRowVisibility();
 
     let gapSizeText: HTMLDivElement;
     new Setting(ce)
@@ -256,7 +325,7 @@ export class InsertPDFModal extends Modal {
         el.style.textAlign = "right";
         el.innerText = ` ${this.gapSize.toString()}`;
       });
-  
+
     const importSizeSetting = new Setting(ce)
       .setName("Imported page size")
       .setDesc(`${this.pageDimensions.width*this.importScale} x ${this.pageDimensions.height*this.importScale}`)
@@ -311,9 +380,21 @@ export class InsertPDFModal extends Modal {
               if(this.lockAfterImport) imgEl.locked = true;
 
               ea.addToGroup([boxID,imageID]);
-
-              column = (column + 1) % this.numColumns;
-              if(column === 0) row++;
+              
+              switch(this.direction) {
+                case "right":
+                  column = (column + 1) % this.numColumns;
+                  if(column === 0) row++;
+                  break;
+                case "down":
+                  row = (row + 1) % this.numRows;
+                  if(row === 0) column++;
+                  break;
+              }
+            }
+            if(this.groupPages) {
+              const ids = ea.getElements().map(el => el.id);
+              ea.addToGroup(ids);
             }
             await ea.addElementsToView(true,true,false);
             const api = ea.getExcalidrawAPI() as ExcalidrawImperativeAPI;

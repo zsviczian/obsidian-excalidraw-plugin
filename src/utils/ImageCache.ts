@@ -1,7 +1,7 @@
 import { App, Notice, TFile } from "obsidian";
 import ExcalidrawPlugin from "src/main";
 import { convertSVGStringToElement } from "./Utils";
-import { PreviewImageType } from "./UtilTypes";
+import { FILENAMEPARTS, PreviewImageType } from "./UtilTypes";
 
 //@ts-ignore
 const DB_NAME = "Excalidraw " + app.appId;
@@ -19,10 +19,11 @@ export type ImageKey = {
   isDark: boolean;
   previewImageType: PreviewImageType;
   scale: number;
-};
+} & FILENAMEPARTS;
 
 const getKey = (key: ImageKey): string =>
-  `${key.filepath}#${key.blockref}#${key.sectionref}#${key.isDark ? 1 : 0}#${
+  `${key.filepath}#${key.blockref??""}#${key.sectionref??""}#${key.isDark ? 1 : 0}#${
+    key.hasGroupref}#${key.hasArearef}#${key.hasFrameref}#${key.hasSectionref}#${
     key.previewImageType === PreviewImageType.SVGIMG
       ? 1
       : key.previewImageType === PreviewImageType.PNG
@@ -149,10 +150,11 @@ class ImageCache {
         const cursor = (event.target as IDBRequest<IDBCursorWithValue | null>).result;
         if(cursor) {
           const key = cursor.key as string;
+          const isLegacyKey = key.replaceAll(/[^#]/g,"").length < 9; // introduced hasGroupref, etc. in 1.9.28
           const filepath = key.split("#")[0];
           const fileExists = files.some((f: TFile) => f.path === filepath);
           const file = fileExists ? files.find((f: TFile) => f.path === filepath) : null;
-          if (!file || (file && file.stat.mtime > cursor.value.mtime) || (!cursor.value.blob && !cursor.value.svg)) {
+          if (isLegacyKey || !file || (file && file.stat.mtime > cursor.value.mtime) || (!cursor.value.blob && !cursor.value.svg)) {
             deletePromises.push(
               new Promise<void>((innerResolve, innerReject) => {
                 const deleteRequest = store.delete(cursor.primaryKey);

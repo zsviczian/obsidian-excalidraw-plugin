@@ -129,6 +129,7 @@ declare namespace ExcalidrawLib {
   function mermaidToExcalidraw(
     mermaidDefinition: string,
     opts: {fontSize: number},
+    forceSVG?: boolean,
   ): Promise<{
     elements: ExcalidrawElement[],
     files:any
