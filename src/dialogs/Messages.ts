@@ -17,6 +17,23 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"1.9.28":`
+## Fixed & Improved
+- Fixed an issue where the toolbar lost focus, requiring two clicks. This caused a problem when the hand tool was activated from ExcalidrawAutomate script when opening a drawing, causing buttons to stop working. [#1344](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1344)
+- Resolved a caching issue affecting image area-links and group-links, making them work inconsistently. For more details, refer to the discussion on [Discord](https://discord.com/channels/1026825302900494357/1169311900308361318).
+- Improved frame colors with Dynamic Coloring.
+- Added support for multiline LaTeX formulas. [#1403](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1403)
+- Fixed the issue of Chinese characters overlapping in MathJax. [#1406](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1406)
+
+## New
+- Added support for Mermaid to Excalidraw **Sequence Diagrams**.
+- If an image contains an element link, clicking on the image will now open the link chooser, allowing you to decide whether to open the image or follow the element link.
+- When hovering over an image that also has an element link, the hover preview will display the contents of the link.
+- You can now choose to **import PDFs** in columns instead of rows. Additionally, you have the option to group all pages after import, which will improve the unlocking experience if you also lock pages on import.
+- Introduced configuration options for the **Laser Tool**, including pointer color, decay length, and time. ([#1408](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1408), [#1220](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1220))
+
+![image](https://github.com/zsviczian/obsidian-excalidraw-plugin/assets/14358394/c0cad40a-1afc-42af-b41b-f912dd8a4e78)
+`,
 "1.9.27": `
 ## New
 - Restructured plugin settings, added additional comments and relevant videos

@@ -991,7 +991,6 @@ export default class ExcalidrawView extends TextFileView {
       const imageElement = this.getScene().elements.find((el:ExcalidrawElement)=>el.id === selectedImage.id) as ExcalidrawImageElement;
       if (this.excalidrawData.hasEquation(selectedImage.fileId)) {
         (async () => {
-          debugger;
           await this.save(false);
           selectedImage.fileId = imageElement.fileId;
           const equation = this.excalidrawData.getEquation(
@@ -3841,10 +3840,9 @@ export default class ExcalidrawView extends TextFileView {
               const match = originalText.trim().matchAll(REG_TRANSCLUSION).next(); //reset the iterator
               if(match?.value?.[0]) {                
                 const link = match.value[1] ?? match.value[2];
-                const file = app.metadataCache.getFirstLinkpathDest(link, this.file.path);
+                const file = this.app.metadataCache.getFirstLinkpathDest(link, this.file.path);
                 if(file && file instanceof TFile) {
-                  if (file.extension !== "md" || this.plugin.isExcalidrawFile(file))
-                  {
+                  if (file.extension !== "md" || this.plugin.isExcalidrawFile(file)) {
                     setTimeout(async ()=>{
                       const elements = this.excalidrawAPI.getSceneElements();
                       const el = elements.filter((el:ExcalidrawElement)=>el.id === textElement.id) as ExcalidrawTextElement[];
