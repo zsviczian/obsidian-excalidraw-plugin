@@ -62,7 +62,7 @@ export default {
   IMPORT_SVG: "Import an SVG file as Excalidraw strokes (limited SVG support, TEXT currently not supported)",
   INSERT_MD: "Insert markdown file from vault",
   INSERT_PDF: "Insert PDF file from vault",
-  UNIVERSAL_ADD_FILE: "Insert ANY file from your Vault to the active drawing",
+  UNIVERSAL_ADD_FILE: "Insert ANY file",
   INSERT_LATEX:
     `Insert LaTeX formula (e.g. \\binom{n}{k} = \\frac{n!}{k!(n-k)!}). ${labelALT()}+CLICK to watch a help video.`,
   ENTER_LATEX: "Enter a valid LaTeX expression",
@@ -100,6 +100,7 @@ export default {
   ERROR_SAVING_IMAGE: "Unknown error occured while fetching the image. It could be that for some reason the image is not available or rejected the fetch request from Obsidian",
   WARNING_PASTING_ELEMENT_AS_TEXT: "PASTING EXCALIDRAW ELEMENTS AS A TEXT ELEMENT IS NOT ALLOWED",
   USE_INSERT_FILE_MODAL: "Use 'Insert Any File' to embed a markdown note",
+  CONVERT_TO_MARKDOWN: "Convert to file...",
 
   //settings.ts
   RELEASE_NOTES_NAME: "Display Release Notes after update",
@@ -255,13 +256,13 @@ FILENAME_HEAD: "Filename",
     "If you don't want text accidentally changing in your drawings use <code>[[links|with aliases]]</code>.",
   ADJACENT_PANE_NAME: "Reuse adjacent pane",
   ADJACENT_PANE_DESC:
-    `When ${labelCTRL()}+${labelSHIFT()} clicking a link in Excalidraw, by default the plugin will open the link in a new pane. ` +
+    `When ${labelCTRL()}+${labelALT()} clicking a link in Excalidraw, by default the plugin will open the link in a new pane. ` +
     "Turning this setting on, Excalidraw will first look for an existing pane, and try to open the link there. " +
     "Excalidraw will look for the other workspace pane based on your focus/navigation history, i.e. the workpane that was active before you " +
     "activated Excalidraw.",
   MAINWORKSPACE_PANE_NAME: "Open in main workspace",
   MAINWORKSPACE_PANE_DESC:
-    `When ${labelCTRL()}+${labelSHIFT()} clicking a link in Excalidraw, by default the plugin will open the link in a new pane in the current active window. ` +
+    `When ${labelCTRL()}+${labelALT()} clicking a link in Excalidraw, by default the plugin will open the link in a new pane in the current active window. ` +
     "Turning this setting on, Excalidraw will open the link in an existing or new pane in the main workspace. ",  
   LINK_BRACKETS_NAME: "Show <code>[[brackets]]</code> around links",
   LINK_BRACKETS_DESC: `${
@@ -279,7 +280,7 @@ FILENAME_HEAD: "Filename",
     "You can override this setting for a specific drawing by adding <code>"
   }${FRONTMATTER_KEY_CUSTOM_URL_PREFIX}: "🌐 "</code> to the file's frontmatter.`,
   PARSE_TODO_NAME: "Parse todo",
-  PARSE_TODO_DESC: "Convert '- [ ] ' and '- [x] ' to checkpox and tick in the box.",
+  PARSE_TODO_DESC: "Convert '- [ ] ' and '- [x] ' to checkbox and tick in the box.",
   TODO_NAME: "Open TODO icon",
   TODO_DESC: "Icon to use for open TODO items",
   DONE_NAME: "Completed TODO icon",
@@ -433,7 +434,11 @@ FILENAME_HEAD: "Filename",
     "Embed the .svg file into your documents instead of Excalidraw making you embeds platform independent. " +
     "While the auto-export switch is on, this file will get updated every time you edit the Excalidraw drawing with the matching name. " + 
     "You can override this setting on a file level by adding the <code>excalidraw-autoexport</code> frontmatter key. Valid values for this key are " +
-    "<code>none</code>,<code>both</code>,<code>svg</code>, and <code>png</code>",
+    "<code>none</code>,<code>all</code>,<code>svg</code>, <code>png</code>, <code>svg.md</code>. For backwards compatibility <code>both</code> also works and will export both SVG and PNG files.",
+  EXPORT_SVG_MD_NAME: "Auto-export SVG as a markdown file",
+  EXPORT_SVG_MD_DESC: 
+    "Similar to autoexport SVG. This is a hack to Automatically create an SVG export of your drawings. Filename will be <<your drawing>>.svg.md" +
+    "Embed the .svg.md file into your documents instead of Excalidraw and your drawings will show up in Obsidian publish with working links and embedded videos.",
   EXPORT_PNG_NAME: "Auto-export PNG",
   EXPORT_PNG_DESC: "Same as the auto-export SVG, but for *.PNG",
   EXPORT_BOTH_DARK_AND_LIGHT_NAME: "Export both dark- and light-themed image",
@@ -545,7 +550,7 @@ FILENAME_HEAD: "Filename",
   TOGGLE_DISABLEBINDING: "Toggle to invert default binding behavior",
   TOGGLE_FRAME_RENDERING: "Toggle frame rendering",
   TOGGLE_FRAME_CLIPPING: "Toggle frame clipping",
-  OPEN_LINK_CLICK: "Navigate to selected element link",
+  OPEN_LINK_CLICK: "Open Link",
   OPEN_LINK_PROPS: "Open markdown-embed properties or open link in new window",
 
   //IFrameActionsMenu.tsx

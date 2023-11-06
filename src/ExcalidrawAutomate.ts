@@ -1556,11 +1556,7 @@ export class ExcalidrawAutomate {
       errorMessage("targetView not set", "getViewElements()");
       return [];
     }
-    const api = this.targetView.excalidrawAPI;
-    if (!api) {
-      return [];
-    }
-    return api.getSceneElements();
+    return this.targetView.getViewElements();
   };
 
   /**

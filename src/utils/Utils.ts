@@ -2,6 +2,7 @@
 import {
   App,
   Notice,
+  parseFrontMatterEntry,
   request,
   requestUrl,
   TFile,
@@ -30,6 +31,7 @@ import ExcalidrawScene from "src/svgToExcalidraw/elements/ExcalidrawScene";
 import { FILENAMEPARTS } from "./UtilTypes";
 import { Mutable } from "@zsviczian/excalidraw/types/utility-types";
 import { cleanBlockRef, cleanSectionHeading } from "./ObsidianUtils";
+
 
 declare const PLUGIN_VERSION:string;
 
@@ -594,6 +596,21 @@ export const getExportPadding = (
   }
   return plugin.settings.exportPaddingSVG;
 };
+
+export const getFileCSSClasses = (
+  plugin: ExcalidrawPlugin,
+  file: TFile,
+): string[] => {
+  if (file) {
+    const fileCache = plugin.app.metadataCache.getFileCache(file);
+    if(!fileCache?.frontmatter) return [];
+    const x = parseFrontMatterEntry(fileCache.frontmatter, "cssclasses");
+    if (Array.isArray(x)) return x
+    if (typeof x === "string") return Array.from(new Set(x.split(/[, ]+/).filter(Boolean)));
+    return [];
+  }
+  return [];
+}
 
 export const getPNGScale = (plugin: ExcalidrawPlugin, file: TFile): number => {
   if (file) {

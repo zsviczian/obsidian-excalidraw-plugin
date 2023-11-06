@@ -92,7 +92,7 @@ import {
 } from "./utils/Utils";
 import { getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark } from "./utils/ObsidianUtils";
 //import { OneOffs } from "./OneOffs";
-import { ExcalidrawElement, ExcalidrawImageElement, FileId } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawElement, ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/element/types";
 import { ScriptEngine } from "./Scripts";
 import {
   hoverEvent,
@@ -115,6 +115,7 @@ import { UniversalInsertFileModal } from "./dialogs/UniversalInsertFileModal";
 import { imageCache } from "./utils/ImageCache";
 import { StylesManager } from "./utils/StylesManager";
 import { MATHJAX_SOURCE_LZCOMPRESSED } from "./constMathJaxSource";
+import { getEA } from "src";
 
 declare const EXCALIDRAW_PACKAGES:string;
 declare const react:any;
@@ -1242,6 +1243,22 @@ export default class ExcalidrawPlugin extends Plugin {
     });
 
     this.addCommand({
+      id: "convert-text2MD",
+      name: t("CONVERT_TO_MARKDOWN"),
+      checkCallback: (checking: boolean) => {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView)
+        if(!view) return false;
+        const selectedTextElements = view.getViewSelectedElements().filter(el=>el.type === "text");
+        if(selectedTextElements.length !==1 ) return false;
+        const selectedTextElement = selectedTextElements[0] as ExcalidrawTextElement;
+        const containerElement = (view.getViewElements() as ExcalidrawElement[]).find(el=>el.id === selectedTextElement.containerId);
+        if(containerElement && containerElement.type === "arrow") return false;
+        if(checking) return true;
+        view.convertTextElementToMarkdown(selectedTextElement, containerElement);
+      }
+    })
+
+    this.addCommand({
       id: "insert-link",
       hotkeys: [{ modifiers: ["Ctrl" || "Meta", "Shift"], key: "k" }],
       name: t("INSERT_LINK"),
@@ -1251,7 +1268,7 @@ export default class ExcalidrawPlugin extends Plugin {
         }
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
-          this.insertLinkDialog.start(view.file.path, view.addText);
+          this.insertLinkDialog.start(view.file.path, view.addLink);
           return true;
         }
         return false;

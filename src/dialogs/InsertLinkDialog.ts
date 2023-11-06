@@ -45,7 +45,7 @@ export class InsertLinkDialog extends FuzzySuggestModal<TFile> {
         true,
       );
     }
-    this.addText(`[[${filepath + (item.alias ? `|${item.alias}` : "")}]]`);
+    this.addText(`[[${filepath + (item.alias ? `|${item.alias}` : "")}]]`, filepath, item.alias);
   }
 
   public start(drawingPath: string, addText: Function) {
