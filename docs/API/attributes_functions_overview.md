@@ -4,7 +4,7 @@ Here's the interface implemented by ExcalidrawAutomate:
 
 You can find the source file here: [ExcalidrawAutomate.d.ts](ExcalidrawAutomate.d.ts).
 
-```typescript
+```javascript
 /// <reference types="react" />
 import ExcalidrawPlugin from "src/main";
 import { FillStyle, StrokeStyle, ExcalidrawElement, ExcalidrawBindableElement, FileId, NonDeletedExcalidrawElement, ExcalidrawImageElement, StrokeRoundness, RoundnessType } from "@zsviczian/excalidraw/types/element/types";
