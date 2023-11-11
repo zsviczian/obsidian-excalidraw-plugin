@@ -9,6 +9,7 @@ import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/Modifierke
 // English
 export default {
   // main.ts
+  PUBLISH_SVG_CHECK: "Obsidian Publish: Find SVGs that are out of date",
   INSTALL_SCRIPT: "Install the script",
   UPDATE_SCRIPT: "Update available - Click to install",
   CHECKING_SCRIPT:
@@ -434,11 +435,7 @@ FILENAME_HEAD: "Filename",
     "Embed the .svg file into your documents instead of Excalidraw making you embeds platform independent. " +
     "While the auto-export switch is on, this file will get updated every time you edit the Excalidraw drawing with the matching name. " + 
     "You can override this setting on a file level by adding the <code>excalidraw-autoexport</code> frontmatter key. Valid values for this key are " +
-    "<code>none</code>,<code>all</code>,<code>svg</code>, <code>png</code>, <code>svg.md</code>. For backwards compatibility <code>both</code> also works and will export both SVG and PNG files.",
-  EXPORT_SVG_MD_NAME: "Auto-export SVG as a markdown file",
-  EXPORT_SVG_MD_DESC: 
-    "Similar to autoexport SVG. This is a hack to Automatically create an SVG export of your drawings. Filename will be <<your drawing>>.svg.md" +
-    "Embed the .svg.md file into your documents instead of Excalidraw and your drawings will show up in Obsidian publish with working links and embedded videos.",
+    "<code>none</code>,<code>both</code>,<code>svg</code>, and <code>png</code>.",
   EXPORT_PNG_NAME: "Auto-export PNG",
   EXPORT_PNG_DESC: "Same as the auto-export SVG, but for *.PNG",
   EXPORT_BOTH_DARK_AND_LIGHT_NAME: "Export both dark- and light-themed image",

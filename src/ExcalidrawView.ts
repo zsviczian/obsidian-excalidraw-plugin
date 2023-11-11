@@ -373,9 +373,9 @@ export default class ExcalidrawView extends TextFileView {
     if (!this.getScene || !this.file) {
       return;
     }
-    if (app.isMobile) {
+    if (this.app.isMobile) {
       const prompt = new Prompt(
-        app,
+        this.app,
         "Please provide filename",
         this.file.basename,
         "filename, leave blank to cancel action",
@@ -388,11 +388,11 @@ export default class ExcalidrawView extends TextFileView {
         const folderpath = splitFolderAndFilename(this.file.path).folderpath;
         await checkAndCreateFolder(folderpath); //create folder if it does not exist
         const fname = getNewUniqueFilepath(
-          app.vault,
+          this.app.vault,
           filename,
           folderpath,
         );
-        app.vault.create(
+        this.app.vault.create(
           fname,
           JSON.stringify(this.getScene(), null, "\t"),
         );
@@ -430,6 +430,7 @@ export default class ExcalidrawView extends TextFileView {
       },
       exportSettings,
       ed ? ed.padding : getExportPadding(this.plugin, this.file),
+      this.file,
     );
   }
 
@@ -442,7 +443,7 @@ export default class ExcalidrawView extends TextFileView {
     }
 
     const exportImage = async (filepath:string, theme?:string) => {
-      const file = app.vault.getAbstractFileByPath(normalizePath(filepath));
+      const file = this.app.vault.getAbstractFileByPath(normalizePath(filepath));
 
       const svg = await this.svg(scene,theme, embedScene);
       if (!svg) {
@@ -453,9 +454,9 @@ export default class ExcalidrawView extends TextFileView {
         embedFontsInSVG(svg, this.plugin),
       );
       if (file && file instanceof TFile) {
-        await app.vault.modify(file, svgString);
+        await this.app.vault.modify(file, svgString);
       } else {
-        await app.vault.create(filepath, svgString);
+        await this.app.vault.create(filepath, svgString);
       }
     }
 
@@ -519,16 +520,16 @@ export default class ExcalidrawView extends TextFileView {
     }
 
     const exportImage = async (filepath:string, theme?:string) => {
-      const file = app.vault.getAbstractFileByPath(normalizePath(filepath));
+      const file = this.app.vault.getAbstractFileByPath(normalizePath(filepath));
 
       const png = await this.png(scene, theme, embedScene);
       if (!png) {
         return;
       }
       if (file && file instanceof TFile) {
-        await app.vault.modifyBinary(file, await png.arrayBuffer());
+        await this.app.vault.modifyBinary(file, await png.arrayBuffer());
       } else {
-        await app.vault.createBinary(filepath, await png.arrayBuffer());
+        await this.app.vault.createBinary(filepath, await png.arrayBuffer());
       }
     }
 

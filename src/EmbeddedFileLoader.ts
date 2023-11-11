@@ -105,8 +105,12 @@ const replaceSVGColors = (svg: SVGSVGElement | string, colorMap: ColorMap | null
     for (const [oldColor, newColor] of Object.entries(colorMap)) {
       const fillRegex = new RegExp(`fill="${oldColor}"`, 'gi');
       svg = svg.replaceAll(fillRegex, `fill="${newColor}"`);
+      const fillStyleRegex = new RegExp(`fill:${oldColor}`, 'gi');
+      svg = svg.replaceAll(fillStyleRegex, `fill:${newColor}`);
       const strokeRegex = new RegExp(`stroke="${oldColor}"`, 'gi');
       svg = svg.replaceAll(strokeRegex, `stroke="${newColor}"`);
+      const strokeStyleRegex = new RegExp(`stroke:${oldColor}`, 'gi');
+      svg = svg.replaceAll(strokeStyleRegex, `stroke:${newColor}`);
     }
     return svg;
   }

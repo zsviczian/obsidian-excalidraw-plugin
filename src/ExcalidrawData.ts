@@ -1149,7 +1149,7 @@ export class ExcalidrawData {
         } else {
           //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/829
           const path = ef.file
-            ? ef.linkParts.original.replace(PATHREG,app.metadataCache.fileToLinktext(ef.file,this.file.path))
+            ? ef.linkParts.original.replace(PATHREG,this.app.metadataCache.fileToLinktext(ef.file,this.file.path))
             : ef.linkParts.original;
           const colorMap = ef.colorMap ? " " + JSON.stringify(ef.colorMap) : "";
           outString += `${key}: [[${path}]]${colorMap}\n`;

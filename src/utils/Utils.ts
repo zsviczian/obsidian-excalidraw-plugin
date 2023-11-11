@@ -31,6 +31,7 @@ import ExcalidrawScene from "src/svgToExcalidraw/elements/ExcalidrawScene";
 import { FILENAMEPARTS } from "./UtilTypes";
 import { Mutable } from "@zsviczian/excalidraw/types/utility-types";
 import { cleanBlockRef, cleanSectionHeading } from "./ObsidianUtils";
+import { updateElementLinksToObsidianLinks } from "src/ExcalidrawAutomate";
 
 
 declare const PLUGIN_VERSION:string;
@@ -259,6 +260,7 @@ export const getSVG = async (
   scene: any,
   exportSettings: ExportSettings,
   padding: number,
+  srcFile: TFile|null, //if set, will replace markdown links with obsidian links
 ): Promise<SVGSVGElement> => {
   let elements:ExcalidrawElement[] = scene.elements;
   if(elements.some(el => el.type === "embeddable")) {
@@ -269,8 +271,13 @@ export const getSVG = async (
   }
 
   try {
-    return await exportToSvg({
-      elements,
+    const svg = await exportToSvg({
+      elements: srcFile
+        ? updateElementLinksToObsidianLinks({
+            elements,
+            hostFile: srcFile,
+        })
+        : elements,
       appState: {
         exportBackground: exportSettings.withBackground,
         exportWithDarkMode: exportSettings.withTheme
@@ -281,6 +288,10 @@ export const getSVG = async (
       files: scene.files,
       exportPadding: padding,
     });
+    if(svg) {
+      svg.addClass("excalidraw-svg");
+    }
+    return svg;
   } catch (error) {
     return null;
   }
@@ -784,3 +795,17 @@ export const convertSVGStringToElement = (svg: string): SVGSVGElement => {
 }
 
 export const escapeRegExp = (str:string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+
+export const addIframe = (containerEl: HTMLElement, link:string, startAt?: number) => {
+  const wrapper = containerEl.createDiv({cls: "excalidraw-videoWrapper settings"})
+  wrapper.createEl("iframe", {
+    attr: {
+      allowfullscreen: true,
+      allow: "encrypted-media;picture-in-picture",
+      frameborder: "0",
+      title: "YouTube video player",
+      src: "https://www.youtube.com/embed/" + link + (startAt ? "?start=" + startAt : ""),
+      sandbox: "allow-forms allow-presentation allow-same-origin allow-scripts allow-modals",
+    },
+  });
+}

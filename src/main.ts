@@ -116,6 +116,7 @@ import { imageCache } from "./utils/ImageCache";
 import { StylesManager } from "./utils/StylesManager";
 import { MATHJAX_SOURCE_LZCOMPRESSED } from "./constMathJaxSource";
 import { getEA } from "src";
+import { PublishOutOfDateFilesDialog } from "./dialogs/PublishOutOfDateFiles";
 
 declare const EXCALIDRAW_PACKAGES:string;
 declare const react:any;
@@ -836,6 +837,21 @@ export default class ExcalidrawPlugin extends Plugin {
         fileMenuHandlerConvertReplaceExtension,
       ),
     );
+
+    this.addCommand({
+      id: "excalidraw-publish-svg-check",
+      name: t("PUBLISH_SVG_CHECK"),
+      checkCallback: (checking: boolean) => {
+        const publish = app.internalPlugins.plugins["publish"].instance;
+        if (!publish) {
+          return false;
+        }
+        if (checking) {
+          return true;
+        }
+        (new PublishOutOfDateFilesDialog(this)).open();
+      }
+    })
 
     this.addCommand({
       id: "excalidraw-disable-autosave",
@@ -1966,7 +1982,7 @@ export default class ExcalidrawPlugin extends Plugin {
         }
 
         //close excalidraw view where this file is open
-        const leaves = app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
         for (let i = 0; i < leaves.length; i++) {
           if ((leaves[i].view as ExcalidrawView).file.path == file.path) {
             await leaves[i].setViewState({

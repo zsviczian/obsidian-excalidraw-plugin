@@ -32,6 +32,7 @@ declare global {
 
 declare module "obsidian" {
   interface App {
+    internalPlugins: any;
     isMobile(): boolean;
     getObsidianUrl(file:TFile): string;
   }

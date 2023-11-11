@@ -2599,12 +2599,12 @@ export async function createPNG(
   );
 }
 
-const updateElementLinksToObsidianLinks = ({elements, hostFile}:{
+export const updateElementLinksToObsidianLinks = ({elements, hostFile}:{
   elements: ExcalidrawElement[];
   hostFile: TFile;
 }): ExcalidrawElement[] => {
   return elements.map((el)=>{
-    if(el.type!=="embeddable" && el.link && el.link.startsWith("[")) {
+    if(el.link && el.link.startsWith("[")) {
       const partsArray = REGEX_LINK.getResList(el.link)[0];
       if(!partsArray?.value) return el;
       let linkText = REGEX_LINK.getLink(partsArray);
@@ -2692,6 +2692,7 @@ export async function createSVG(
       withTheme,
     },
     padding,
+    null,
   );
 
   if (withTheme && theme === "dark") addFilterToForeignObjects(svg);
