@@ -38,13 +38,15 @@ import {
   DARK_BLANK_DRAWING,
   SCRIPT_INSTALL_CODEBLOCK,
   SCRIPT_INSTALL_FOLDER,
-  VIRGIL_FONT,
-  VIRGIL_DATAURL,
   EXPORT_TYPES,
   EXPORT_IMG_ICON_NAME,
   EXPORT_IMG_ICON,
   LOCALE,
 } from "./constants";
+import {
+  VIRGIL_FONT,
+  VIRGIL_DATAURL,
+} from "./constFonts";
 import ExcalidrawView, { TextMode, getTextMode } from "./ExcalidrawView";
 import {
   changeThemeOfExcalidrawMD,
@@ -693,7 +695,7 @@ export default class ExcalidrawPlugin extends Plugin {
       const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
       leaves.forEach((leaf: WorkspaceLeaf) => {
         const excalidrawView = leaf.view as ExcalidrawView;
-        if (excalidrawView.file && excalidrawView.excalidrawRef) {
+        if (excalidrawView.file && excalidrawView.excalidrawAPI) {
           excalidrawView.setTheme(theme);
         }
       });
@@ -1488,7 +1490,7 @@ export default class ExcalidrawPlugin extends Plugin {
       checkCallback: (checking: boolean) => {
         if (checking) {
           const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
-          if (!view || !view.excalidrawRef) {
+          if (!view || !view.excalidrawAPI) {
             return false;
           }
           const st = view.excalidrawAPI.getAppState();

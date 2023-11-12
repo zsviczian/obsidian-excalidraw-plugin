@@ -238,7 +238,7 @@ export default class ExcalidrawView extends TextFileView {
   public addText: Function = null;
   public addLink: Function = null;
   private refresh: Function = null;
-  public excalidrawRef: React.MutableRefObject<any> = null;
+  //public excalidrawRef: React.MutableRefObject<any> = null;
   public excalidrawAPI: any = null;
   public excalidrawWrapperRef: React.MutableRefObject<any> = null;
   public toolsPanelRef: React.MutableRefObject<any> = null;
@@ -1165,7 +1165,7 @@ export default class ExcalidrawView extends TextFileView {
     const api = this.excalidrawAPI;
     if (
       !this.plugin.settings.zoomToFitOnResize ||
-      !this.excalidrawRef ||
+      !this.excalidrawAPI ||
       this.semaphores.isEditingText ||
       !api
     ) {
@@ -1369,7 +1369,7 @@ export default class ExcalidrawView extends TextFileView {
 
   public setTheme(theme: string) {
     const api = this.excalidrawAPI;
-    if (!this.excalidrawRef || !api) {
+    if (!api) {
       return;
     }
     if (this.file) {
@@ -1451,7 +1451,7 @@ export default class ExcalidrawView extends TextFileView {
         st.draggingElement === null //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/630
       ) {
         this.autosaveTimer = null;
-        if (this.excalidrawRef) {
+        if (this.excalidrawAPI) {
           this.semaphores.autosaving = true;
           const self = this;
           //changed from await to then to avoid lag during saving of large file
@@ -1544,7 +1544,7 @@ export default class ExcalidrawView extends TextFileView {
       return;
     }
     const api = this.excalidrawAPI;
-    if (!this.excalidrawRef || !this.file || !api) {
+    if (!this.file || !api) {
       return;
     }
     const loadOnModifyTrigger = file && file === this.file;
@@ -1686,7 +1686,7 @@ export default class ExcalidrawView extends TextFileView {
     
     delete this.exportDialog;
     const api = this.excalidrawAPI;
-    if (!this.excalidrawRef || !api) {
+    if (!api) {
       return;
     }
     if (this.activeLoader) {
@@ -2110,7 +2110,7 @@ export default class ExcalidrawView extends TextFileView {
         files: excalidrawData.files,
         libraryItems: await this.getLibrary(),
       });
-      //files are loaded on excalidrawRef readyPromise
+      //files are loaded when excalidrawAPI is mounted
     }
     const isCompressed = this.data.match(/```compressed\-json\n/gm) !== null;
 
@@ -2448,6 +2448,8 @@ export default class ExcalidrawView extends TextFileView {
       this.obsidianMenu = new ObsidianMenu(this.plugin, toolsPanelRef, this);
       this.embeddableMenu = new EmbeddableMenu(this, embeddableMenuRef);
       
+      
+      /*
       //excalidrawRef readypromise based on
       //https://codesandbox.io/s/eexcalidraw-resolvable-promise-d0qg3?file=/src/App.js:167-760
       const resolvablePromise = () => {
@@ -2473,8 +2475,19 @@ export default class ExcalidrawView extends TextFileView {
         }),
         [],
       );
+      */
 
-      React.useEffect(() => {
+      const setExcalidrawAPI = (api: ExcalidrawImperativeAPI) => {
+        this.excalidrawAPI = api;
+        api.setLocalFont(this.plugin.settings.experimentalEnableFourthFont);
+        setTimeout(() => {
+          this.onAfterLoadScene();
+          this.excalidrawContainer = this.excalidrawWrapperRef?.current?.firstElementChild;
+          this.excalidrawContainer?.focus();
+        });
+      };
+
+/*      React.useEffect(() => {
         excalidrawRef.current.readyPromise.then(
           (api: ExcalidrawImperativeAPI) => {
             this.excalidrawAPI = api;
@@ -2486,14 +2499,14 @@ export default class ExcalidrawView extends TextFileView {
             });
           },
         );
-      }, [excalidrawRef]);
+      }, [excalidrawRef]);*/
 
-      this.excalidrawRef = excalidrawRef;
+//      this.excalidrawRef = excalidrawRef;
       this.excalidrawWrapperRef = excalidrawWrapperRef;
 
       const setCurrentPositionToCenter = () => {
         const api = this.excalidrawAPI;
-        if (!excalidrawRef || !excalidrawRef.current || !api) {
+        if (!api) {
           return;
         }
         const st = api.getAppState();
@@ -2538,7 +2551,7 @@ export default class ExcalidrawView extends TextFileView {
 
       this.getSelectedTextElement = (): SelectedElementWithLink => {
         const api = this.excalidrawAPI;
-        if (!excalidrawRef?.current || !api) {
+        if (!api) {
           return { id: null, text: null };
         }
         if (api.getAppState().viewModeEnabled) {
@@ -2720,7 +2733,7 @@ export default class ExcalidrawView extends TextFileView {
         save: boolean = true
       ): Promise<string> => {
         const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
-        if (!excalidrawRef?.current || !api) {
+        if (!api) {
           return;
         }
         const st: AppState = api.getAppState();
@@ -2763,7 +2776,7 @@ export default class ExcalidrawView extends TextFileView {
         shouldRestoreElements: boolean = false,
       ): Promise<boolean> => {
         const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
-        if (!excalidrawRef?.current || !api) {
+        if (!api) {
           return false;
         }
         const textElements = newElements.filter((el) => el.type == "text");
@@ -2869,7 +2882,7 @@ export default class ExcalidrawView extends TextFileView {
 
       this.getScene = (selectedOnly?: boolean) => {
         const api = this.excalidrawAPI;
-        if (!excalidrawRef?.current || !api) {
+        if (!api) {
           return null;
         }
         const el: ExcalidrawElement[] = selectedOnly ? this.getViewSelectedElements() : api.getSceneElements();
@@ -2925,7 +2938,7 @@ export default class ExcalidrawView extends TextFileView {
       this.refresh = () => {
         if(this.contentEl.clientWidth === 0 || this.contentEl.clientHeight === 0) return;
         const api = this.excalidrawAPI;
-        if (!excalidrawRef?.current || !api) {
+        if (!api) {
           return;
         }
         api.refresh();
@@ -4431,7 +4444,7 @@ export default class ExcalidrawView extends TextFileView {
         React.createElement(
           Excalidraw,
           {
-            ref: excalidrawRef,
+            excalidrawAPI: ((api: ExcalidrawImperativeAPI) =>{setExcalidrawAPI(api)}),
             width: dimensions.width,
             height: dimensions.height,
             UIOptions:
@@ -4522,7 +4535,7 @@ export default class ExcalidrawView extends TextFileView {
     const modalContainer = document.body.querySelector("div.modal-container");
     if(modalContainer) return; //do not autozoom when the command palette or other modal container is envoked on iPad
     const api = this.excalidrawAPI;
-    if (!api || !this.excalidrawRef || this.semaphores.isEditingText || this.semaphores.preventAutozoom) {
+    if (!api || this.semaphores.isEditingText || this.semaphores.preventAutozoom) {
       return;
     }
     const maxZoom = this.plugin.settings.zoomToFitMaxLevel;

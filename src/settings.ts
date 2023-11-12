@@ -1582,6 +1582,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .addDropdown(async (d: DropdownComponent) => {
         d.addOption("Virgil", "Virgil");
         d.addOption("Cascadia", "Cascadia");
+        d.addOption("Assistant", "Assistant");
         this.app.vault
           .getFiles()
           .filter((f) => ["ttf", "woff", "woff2"].contains(f.extension))

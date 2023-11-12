@@ -5,7 +5,11 @@ import { ExcalidrawElement, ExcalidrawImageElement, FileId } from "@zsviczian/ex
 import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/types";
 import { App, MarkdownRenderer, Notice, TFile } from "obsidian";
 import {
+  ASSISTANT_FONT,
   CASCADIA_FONT,
+  VIRGIL_FONT,
+} from "./constFonts";
+import {  
   DEFAULT_MD_EMBED_CSS,
   fileid,
   FRONTMATTER_KEY_BORDERCOLOR,
@@ -15,7 +19,6 @@ import {
   IMAGE_TYPES,
   nanoid,
   THEME_FILTER,
-  VIRGIL_FONT,
 } from "./constants";
 import { createSVG } from "./ExcalidrawAutomate";
 import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
@@ -742,6 +745,9 @@ export class EmbeddedFilesLoader {
         break;
       case "Cascadia":
         fontDef = CASCADIA_FONT;
+        break;
+      case "Assistant": 
+        fontDef = ASSISTANT_FONT;
         break;
       case "":
         fontDef = "";

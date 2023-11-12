@@ -1570,12 +1570,12 @@ export class ExcalidrawAutomate {
       errorMessage("targetView not set", "deleteViewElements()");
       return false;
     }
-    const current = this.targetView?.excalidrawRef?.current;
-    if (!current) {
+    const api = this.targetView?.excalidrawAPI as ExcalidrawImperativeAPI;
+    if (!api) {
       return false;
     }
-    const el: ExcalidrawElement[] = current.getSceneElements();
-    const st: AppState = current.getAppState();
+    const el: ExcalidrawElement[] = api.getSceneElements() as ExcalidrawElement[];
+    const st: AppState = api.getAppState();
     this.targetView.updateScene({
       elements: el.filter((e: ExcalidrawElement) => !elToDelete.includes(e)),
       appState: st,

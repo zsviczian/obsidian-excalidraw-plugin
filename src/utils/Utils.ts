@@ -10,8 +10,11 @@ import {
 import { Random } from "roughjs/bin/math";
 import { BinaryFileData, DataURL} from "@zsviczian/excalidraw/types/types";
 import {
+  ASSISTANT_FONT,
   CASCADIA_FONT,
   VIRGIL_FONT,
+} from "src/constFonts";
+import {
   FRONTMATTER_KEY_EXPORT_DARK,
   FRONTMATTER_KEY_EXPORT_TRANSPARENT,
   FRONTMATTER_KEY_EXPORT_SVGPADDING,
@@ -371,12 +374,15 @@ export const embedFontsInSVG = (
     svg.querySelector("text[font-family^='Virgil']") != null;
   const includesCascadia = !localOnly &&
     svg.querySelector("text[font-family^='Cascadia']") != null;
+  const includesAssistant = !localOnly &&
+    svg.querySelector("text[font-family^='Assistant']") != null;
   const includesLocalFont =
     svg.querySelector("text[font-family^='LocalFont']") != null;
   const defs = svg.querySelector("defs");
-  if (defs && (includesCascadia || includesVirgil || includesLocalFont)) {
+  if (defs && (includesCascadia || includesVirgil || includesLocalFont || includesAssistant)) {
     defs.innerHTML = `<style>${includesVirgil ? VIRGIL_FONT : ""}${
-      includesCascadia ? CASCADIA_FONT : ""
+      includesCascadia ? CASCADIA_FONT : ""}${
+      includesAssistant ? ASSISTANT_FONT : ""
     }${includesLocalFont ? plugin.fourthFontDef : ""}</style>`;
   }
   return svg;
