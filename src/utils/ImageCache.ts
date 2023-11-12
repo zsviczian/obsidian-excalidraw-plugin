@@ -270,27 +270,42 @@ class ImageCache {
     return !!this.db && !this.isInitializing && !!this.plugin && this.plugin.settings.allowImageCache;
   }
 
+  private fullyInitialized = false;
+
   public async getImageFromCache(key_: ImageKey): Promise<string | SVGSVGElement | undefined> {
     if (!this.isReady()) {
       return null; // Database not initialized yet
     }
 
     const key = getKey(key_);
-    const cachedData = await this.getCacheData(key);    
-    const file = this.app.vault.getAbstractFileByPath(key_.filepath.split("#")[0]);
-    if (!file || !(file instanceof TFile)) return undefined;
-    if (cachedData && cachedData.mtime === file.stat.mtime) {
-      if(cachedData.svg) {
-        return convertSVGStringToElement(cachedData.svg);
+
+    try {
+      const cachedData = this.fullyInitialized
+      ? await this.getCacheData(key)
+      : await Promise.race([
+          this.getCacheData(key),
+          new Promise<undefined>((_,reject) => setTimeout(() => reject(undefined), 100))
+        ]);
+      this.fullyInitialized = true;
+      if(!cachedData) return undefined;
+
+      const file = this.app.vault.getAbstractFileByPath(key_.filepath.split("#")[0]);
+      if (!file || !(file instanceof TFile)) return undefined;
+      if (cachedData && cachedData.mtime === file.stat.mtime) {
+        if(cachedData.svg) {
+          return convertSVGStringToElement(cachedData.svg);
+        }
+        if(this.obsidanURLCache.has(key)) {
+          return this.obsidanURLCache.get(key);
+        }
+        const obsidianURL = URL.createObjectURL(cachedData.blob);
+        this.obsidanURLCache.set(key, obsidianURL);
+        return obsidianURL;
       }
-      if(this.obsidanURLCache.has(key)) {
-        return this.obsidanURLCache.get(key);
-      }
-      const obsidianURL = URL.createObjectURL(cachedData.blob);
-      this.obsidanURLCache.set(key, obsidianURL);
-      return obsidianURL;
+      return undefined;
+    } catch(e) {
+      return undefined;
     }
-    return undefined;
   }
 
   public async getBAKFromCache(filepath: string): Promise<BackupData | null> {
