@@ -288,7 +288,7 @@ let busy = false;
 const scrollToNextRect = async ({left,top,right,bottom,nextZoom},steps = TRANSITION_STEP_COUNT) => {
   const startTimer = Date.now();
   let watchdog = 0;
-  while(busy && watchdog++<15) await(100);
+  while(busy && watchdog++<15) await sleep(100);
   if(busy && watchdog >= 15) return;
   busy = true;
   excalidrawAPI.updateScene({appState:{shouldCacheIgnoreZoom:true}});
