@@ -9,7 +9,7 @@ import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/Modifierke
 // English
 export default {
   // main.ts
-  PUBLISH_SVG_CHECK: "Obsidian Publish: Find SVGs that are out of date",
+  PUBLISH_SVG_CHECK: "Obsidian Publish: Find SVG and PNG exports that are out of date",
   INSTALL_SCRIPT: "Install the script",
   UPDATE_SCRIPT: "Update available - Click to install",
   CHECKING_SCRIPT:

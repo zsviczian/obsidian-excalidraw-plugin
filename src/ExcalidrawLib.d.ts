@@ -1,7 +1,7 @@
 import { RestoredDataState } from "@zsviczian/excalidraw/types/data/restore";
 import { ImportedDataState } from "@zsviczian/excalidraw/types/data/types";
 import { BoundingBox } from "@zsviczian/excalidraw/types/element/bounds";
-import { ExcalidrawBindableElement, ExcalidrawElement, ExcalidrawTextElement, FontFamilyValues, FontString, NonDeleted, Theme } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawBindableElement, ExcalidrawElement, ExcalidrawFrameElement, ExcalidrawTextElement, FontFamilyValues, FontString, NonDeleted, NonDeletedExcalidrawElement, Theme } from "@zsviczian/excalidraw/types/element/types";
 import { AppState, BinaryFiles, ExportOpts, Point, Zoom } from "@zsviczian/excalidraw/types/types";
 import { Mutable } from "@zsviczian/excalidraw/types/utility-types";
 
@@ -44,6 +44,7 @@ declare namespace ExcalidrawLib {
     appState?: AppState;
     files?: any;
     exportPadding?: number;
+    exportingFrame: ExcalidrawFrameElement | null | undefined;
     renderEmbeddables?: boolean;
   }): Promise<SVGSVGElement>;
 

@@ -290,6 +290,8 @@ export const getSVG = async (
       },
       files: scene.files,
       exportPadding: padding,
+      exportingFrame: null,
+      renderEmbeddables: true,
     });
     if(svg) {
       svg.addClass("excalidraw-svg");
@@ -802,8 +804,8 @@ export const convertSVGStringToElement = (svg: string): SVGSVGElement => {
 
 export const escapeRegExp = (str:string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 
-export const addIframe = (containerEl: HTMLElement, link:string, startAt?: number) => {
-  const wrapper = containerEl.createDiv({cls: "excalidraw-videoWrapper settings"})
+export const addIframe = (containerEl: HTMLElement, link:string, startAt?: number, style:string = "settings") => {
+  const wrapper = containerEl.createDiv({cls: `excalidraw-videoWrapper ${style}`})
   wrapper.createEl("iframe", {
     attr: {
       allowfullscreen: true,

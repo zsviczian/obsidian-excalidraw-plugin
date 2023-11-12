@@ -21,7 +21,7 @@ const haveLinkedFilesChanged = (depth: number, mtime: number, path: string, sour
   return false;
 }
 
-const listOfOutOfSyncSVGExports = async(plugin: ExcalidrawPlugin, recursive: boolean):Promise<TFile[]> => {
+const listOfOutOfSyncImgExports = async(plugin: ExcalidrawPlugin, recursive: boolean, statusEl: HTMLParagraphElement):Promise<TFile[]> => {
   const app = plugin.app;
 
   const publish = app.internalPlugins.plugins["publish"].instance;
@@ -29,13 +29,15 @@ const listOfOutOfSyncSVGExports = async(plugin: ExcalidrawPlugin, recursive: boo
   const list = await app.internalPlugins.plugins["publish"].instance.apiList();
   if(!list || !list.files) return;
   const outOfSyncFiles = new Set<TFile>();
-  list.files.filter((f:any)=>f.path.endsWith(".svg")).forEach((f:any)=>{
+  const allFiles = list.files.filter((f:any)=>(f.path.endsWith(".svg") || f.path.endsWith(".png")))
+  const totalCount = allFiles.length;
+  allFiles.forEach((f:any, idx:number)=>{
     const maybeExcalidraFilePath = getIMGFilename(f.path,"md");
-    const svgFile = app.vault.getAbstractFileByPath(f.path);
+    const imgFile = app.vault.getAbstractFileByPath(f.path);
     const excalidrawFile = app.vault.getAbstractFileByPath(maybeExcalidraFilePath);
-    if(!excalidrawFile || !svgFile || !(excalidrawFile instanceof TFile) || !(svgFile instanceof TFile)) return;
-    console.log(excalidrawFile, {mtimeEx: excalidrawFile.stat.mtime, mtimeSVG: svgFile.stat.mtime});
-    if(excalidrawFile.stat.mtime <= svgFile.stat.mtime) {
+    statusEl.innerText = `Status: ${idx+1}/${totalCount} ${imgFile ? imgFile.name : f.path}`;
+    if(!excalidrawFile || !imgFile || !(excalidrawFile instanceof TFile) || !(imgFile instanceof TFile)) return;
+    if(excalidrawFile.stat.mtime <= imgFile.stat.mtime) {
       if(!recursive) return;
       if(!haveLinkedFilesChanged(0, excalidrawFile.stat.mtime, excalidrawFile.path, new Set<string>(), plugin)) return;
     }
@@ -64,10 +66,13 @@ export class PublishOutOfDateFilesDialog extends Modal {
     detailsEl.createEl("summary", { 
       text: "Video about Obsidian Publish support",
     });
-    addIframe(detailsEl, "OX5_UYjXEvc");
+    detailsEl.createEl("br");
+    addIframe(detailsEl, "OX5_UYjXEvc", undefined, "");
 
     const p = this.contentEl.createEl("p",{text: "Collecting data..."});
-    const files = await listOfOutOfSyncSVGExports(this.plugin, recursive);
+    const statusEl = this.contentEl.createEl("p", {text: "Status: "});
+    const files = await listOfOutOfSyncImgExports(this.plugin, recursive, statusEl);
+    statusEl.style.display = "none";
 
     if(!files || files.length === 0) {
       p.innerText = "No out of date files found.";
