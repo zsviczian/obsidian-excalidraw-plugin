@@ -21,7 +21,6 @@ import {
   Editor,
   MarkdownFileInfo,
   loadMermaid,
-  moment,
 } from "obsidian";
 import {
   BLANK_DRAWING,
@@ -92,7 +91,7 @@ import {
   getExportTheme,
   isCallerFromTemplaterPlugin,
 } from "./utils/Utils";
-import { getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark } from "./utils/ObsidianUtils";
+import { extractSVGPNGFileName, getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark } from "./utils/ObsidianUtils";
 //import { OneOffs } from "./OneOffs";
 import { ExcalidrawElement, ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/element/types";
 import { ScriptEngine } from "./Scripts";
@@ -117,7 +116,6 @@ import { UniversalInsertFileModal } from "./dialogs/UniversalInsertFileModal";
 import { imageCache } from "./utils/ImageCache";
 import { StylesManager } from "./utils/StylesManager";
 import { MATHJAX_SOURCE_LZCOMPRESSED } from "./constMathJaxSource";
-import { getEA } from "src";
 import { PublishOutOfDateFilesDialog } from "./dialogs/PublishOutOfDateFiles";
 
 declare const EXCALIDRAW_PACKAGES:string;
@@ -854,6 +852,37 @@ export default class ExcalidrawPlugin extends Plugin {
         (new PublishOutOfDateFilesDialog(this)).open();
       }
     })
+
+    this.addCommand({
+      id: "open-image-excalidraw-source",
+      name: t("OPEN_IMAGE_SOURCE"),
+      checkCallback: (checking: boolean) => {
+        const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if(!view) return false;
+        if(view.leaf !== this.app.workspace.activeLeaf) return false;
+        const editor = view.editor;
+        if(!editor) return false;
+        const cursor = editor.getCursor();
+        const line = editor.getLine(cursor.line);
+        const fname = extractSVGPNGFileName(line);
+        if(!fname) return false;
+        const imgFile = this.app.metadataCache.getFirstLinkpathDest(fname, view.file.path);
+        if(!imgFile) return false;
+        const excalidrawFname = getIMGFilename(imgFile.path, "md");
+        let excalidrawFile = this.app.metadataCache.getFirstLinkpathDest(excalidrawFname, view.file.path);
+        if(!excalidrawFile) {
+          if(excalidrawFname.endsWith(".dark.md")) {
+            excalidrawFile = this.app.metadataCache.getFirstLinkpathDest(excalidrawFname.replace(/\.dark\.md$/,".md"), view.file.path);
+          }
+          if(excalidrawFname.endsWith(".light.md")) {
+            excalidrawFile = this.app.metadataCache.getFirstLinkpathDest(excalidrawFname.replace(/\.light\.md$/,".md"), view.file.path);
+          }
+          if(!excalidrawFile) return false;
+        }
+        if(checking) return true;
+        this.openDrawing(excalidrawFile, "new-tab", true);
+      }
+    });
 
     this.addCommand({
       id: "excalidraw-disable-autosave",
@@ -2362,7 +2391,9 @@ export default class ExcalidrawPlugin extends Plugin {
           )
         : "";
 
-      theme = theme===""?"":theme+".";
+      theme = (theme === "")
+       ? ""
+       : theme + ".";
 
       const imageRelativePath = getIMGFilename(
         excalidrawRelativePath,
@@ -2374,12 +2405,13 @@ export default class ExcalidrawPlugin extends Plugin {
       );
      
       //will hold incorrect value if theme==="", however in that case it won't be used
-      const otherTheme = theme === "dark." ? "light.":"dark.";
-      const otherImageRelativePath = getIMGFilename(
-        excalidrawRelativePath,
-        otherTheme+this.settings.embedType.toLowerCase(),
-      );
-      
+      const otherTheme = theme === "dark." ? "light." : "dark.";
+      const otherImageRelativePath = theme === "" 
+        ? null
+        : getIMGFilename(
+            excalidrawRelativePath,
+            otherTheme+this.settings.embedType.toLowerCase(),
+          );
 
       const imgFile = this.app.vault.getAbstractFileByPath(imageFullpath);
       if (!imgFile) {
@@ -2387,13 +2419,21 @@ export default class ExcalidrawPlugin extends Plugin {
         await sleep(200); //wait for metadata cache to update
       }
 
+      const inclCom = this.settings.embedMarkdownCommentLinks;
+
       editor.replaceSelection(
         this.settings.embedWikiLink
-          ? `![[${imageRelativePath}]]\n%%[[${excalidrawRelativePath}|🖋 Edit in Excalidraw]]${
-            otherImageRelativePath ? ", and the [["+otherImageRelativePath+"|"+otherTheme.split(".")[0]+" exported image]]":""}%%`
-          : `![](${encodeURI(imageRelativePath)})\n%%[🖋 Edit in Excalidraw](${encodeURI(
-            excalidrawRelativePath,
-            )})${otherImageRelativePath?", and the ["+otherTheme.split(".")[0]+" exported image]("+encodeURI(otherImageRelativePath)+")":""}%%`,
+          ? `![[${imageRelativePath}]]\n` +
+            (inclCom
+              ? `%%[[${excalidrawRelativePath}|🖋 Edit in Excalidraw]]${
+                otherImageRelativePath
+                  ? ", and the [["+otherImageRelativePath+"|"+otherTheme.split(".")[0]+" exported image]]"
+                  : ""
+                }%%`
+              : "")
+          : `![](${encodeURI(imageRelativePath)})\n` + 
+            (inclCom ? `%%[🖋 Edit in Excalidraw](${encodeURI(excalidrawRelativePath,
+              )})${otherImageRelativePath?", and the ["+otherTheme.split(".")[0]+" exported image]("+encodeURI(otherImageRelativePath)+")":""}%%` : ""),
       );
       editor.focus();
     }

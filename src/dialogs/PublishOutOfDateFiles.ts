@@ -67,8 +67,7 @@ export class PublishOutOfDateFilesDialog extends Modal {
       text: "Video about Obsidian Publish support",
     });
     detailsEl.createEl("br");
-    addIframe(detailsEl, "OX5_UYjXEvc", undefined, "");
-
+    addIframe(detailsEl, "JC1E-jeiWhI");
     const p = this.contentEl.createEl("p",{text: "Collecting data..."});
     const statusEl = this.contentEl.createEl("p", {text: "Status: "});
     const files = await listOfOutOfSyncImgExports(this.plugin, recursive, statusEl);

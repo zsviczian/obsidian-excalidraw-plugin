@@ -17,6 +17,30 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.0.0":`
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/JC1E-jeiWhI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## New
+- Added support for applying CSS classes in frontmatter. Now, when embedding Excalidraw drawings into Obsidian Canvas, you can use [Canvas Candy](https://tfthacker.com/canvas-candy) classes. For instance, ${String.fromCharCode(96)}cssclasses: cc-border-none${String.fromCharCode(96)} removes the canvas node border around the drawing.
+- Introduced new context menu actions:
+  - Navigate to link or embedded image.
+  - Add any file from the vault to the canvas.
+  - Convert the selected text element or sticky note to an embedded markdown file.
+  - Add a link from the Vault to the selected element.
+- Frames are now rendered in exported images.
+- SVG Export includes the ${String.fromCharCode(96)}.excalidraw-svg${String.fromCharCode(96)} class, enabling post-processing of SVGs using publish.js when using custom domains with Obsidian Publish. Also, added a command palette action ${String.fromCharCode(96)}Obsidian Publish: Find SVG and PNG exports that are out of date${String.fromCharCode(96)}.
+- Added a new Command palette action to open the corresponding Excalidraw file based on the embedded SVG or PNG file. ${String.fromCharCode(96)}Open Excalidraw Drawing${String.fromCharCode(96)} [Issue #1411](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1411)
+
+## Fixed and Improved
+- Resolved issue with the Mermaid Timeline graph displaying all black. [Issue #1424](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1424)
+- Enabled toggling pen mode off after activation by a pen touch.
+- Now you are able to unlock elements on mobile; previously, locked elements couldn't be selected.
+- Fixed the disabled ${String.fromCharCode(96)}complete line button${String.fromCharCode(96)} for multipoint lines on mobile.
+![Mobile Editing Image](https://github.com/zsviczian/obsidian-excalidraw-plugin/assets/14358394/e7051c75-818f-4800-ba16-ac276e229184)
+
+`,
 "1.9.28":`
 ## Fixed & Improved
 - Fixed an issue where the toolbar lost focus, requiring two clicks. This caused a problem when the hand tool was activated from ExcalidrawAutomate script when opening a drawing, causing buttons to stop working. [#1344](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1344)

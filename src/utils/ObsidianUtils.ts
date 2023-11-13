@@ -1,6 +1,6 @@
 import {
   App,
-  normalizePath, Workspace, WorkspaceLeaf, WorkspaceSplit
+  normalizePath, parseFrontMatterEntry, TFile, Workspace, WorkspaceLeaf, WorkspaceSplit
 } from "obsidian";
 import ExcalidrawPlugin from "../main";
 import { checkAndCreateFolder, splitFolderAndFilename } from "./FileUtils";
@@ -232,4 +232,25 @@ export const obsidianPDFQuoteWithRef = (text:string):{quote: string, link: strin
     return {quote: match[1], link: match[2]};
   }
   return null;
+}
+
+export const extractSVGPNGFileName = (text:string) => {
+  const regex = /\[\[([^\]|#^]+\.(?:svg|png))(?:[^\]]+)?\]\]|\[[^\]]+\]\(([^\)]+\.(?:svg|png))\)/;
+  const match = text.match(regex);
+  return match ? (match[1] || match[2]) : null;
+}
+
+export const getFileCSSClasses = (
+  file: TFile,
+): string[] => {
+  if (file) {
+    const plugin = window.ExcalidrawAutomate.plugin;
+    const fileCache = plugin.app.metadataCache.getFileCache(file);
+    if(!fileCache?.frontmatter) return [];
+    const x = parseFrontMatterEntry(fileCache.frontmatter, "cssclasses");
+    if (Array.isArray(x)) return x
+    if (typeof x === "string") return Array.from(new Set(x.split(/[, ]+/).filter(Boolean)));
+    return [];
+  }
+  return [];
 }

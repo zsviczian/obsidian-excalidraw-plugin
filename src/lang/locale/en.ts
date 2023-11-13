@@ -10,6 +10,7 @@ import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/Modifierke
 export default {
   // main.ts
   PUBLISH_SVG_CHECK: "Obsidian Publish: Find SVG and PNG exports that are out of date",
+  OPEN_IMAGE_SOURCE: "Open Excalidraw drawing",
   INSTALL_SCRIPT: "Install the script",
   UPDATE_SCRIPT: "Update available - Click to install",
   CHECKING_SCRIPT:
@@ -405,6 +406,11 @@ FILENAME_HEAD: "Filename",
     "or a PNG or an SVG copy. You need to enable auto-export PNG / SVG (see below under Export Settings) for those image types to be available in the dropdown. For drawings that do not have a " +
     "a corresponding PNG or SVG readily available the command palette action will insert a broken link. You need to open the original drawing and initiate export manually. " +
     "This option will not autogenerate PNG/SVG files, but will simply reference the already existing files.",
+  EMBED_MARKDOWN_COMMENT_NAME: "Embed link to drawing as comment",
+  EMBED_MARKDOWN_COMMENT_DESC: 
+    "Embed the link to the original Excalidraw file as a markdown link under the image, e.g.:<code>%%[[drawing.excalidraw]]%%</code>.<br>" +
+    "Instead of adding a markdown comment you may also select the embedded SVG or PNG line and use the command palette action: " +
+    "'<code>Excalidraw: Open Excalidraw drawing</code>' to open the drawing.",
   EMBED_WIKILINK_NAME: "Embed Drawing using Wiki link",
   EMBED_WIKILINK_DESC:
     "<b><u>Toggle ON:</u></b> Excalidraw will embed a [[wiki link]].<br><b><u>Toggle OFF:</u></b> Excalidraw will embed a [markdown](link).",

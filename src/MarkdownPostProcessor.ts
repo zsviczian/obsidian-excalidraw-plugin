@@ -19,13 +19,11 @@ import {
   getWithBackground,
   hasExportTheme,
   convertSVGStringToElement,
-  getFileCSSClasses,
 } from "./utils/Utils";
-import { getParentOfClass, isObsidianThemeDark } from "./utils/ObsidianUtils";
+import { getParentOfClass, isObsidianThemeDark, getFileCSSClasses } from "./utils/ObsidianUtils";
 import { linkClickModifierType } from "./utils/ModifierkeyHelper";
 import { ImageKey, imageCache } from "./utils/ImageCache";
 import { FILENAMEPARTS, PreviewImageType } from "./utils/UtilTypes";
-import { css } from "chroma-js";
 
 interface imgElementAttributes {
   file?: TFile;
@@ -401,7 +399,7 @@ const createImgElement = async (
     newImg.setAttribute("fileSource",fileSource);
     parent.append(newImg);
   });
-  const cssClasses = getFileCSSClasses(plugin, attr.file);
+  const cssClasses = getFileCSSClasses(attr.file);
   cssClasses.forEach((cssClass) => imgOrDiv.addClass(cssClass));
   return imgOrDiv;
 }

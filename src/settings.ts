@@ -89,6 +89,7 @@ export interface ExcalidrawSettings {
   autoExportLightAndDark: boolean;
   autoexportExcalidraw: boolean;
   embedType: "excalidraw" | "PNG" | "SVG";
+  embedMarkdownCommentLinks: boolean;
   embedWikiLink: boolean;
   syncExcalidraw: boolean;
   compatibilityMode: boolean;
@@ -212,6 +213,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   autoExportLightAndDark: false,
   autoexportExcalidraw: false,
   embedType: "excalidraw",
+  embedMarkdownCommentLinks: true,
   embedWikiLink: true,
   syncExcalidraw: false,
   experimentalFileType: false,
@@ -1200,7 +1202,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     addIframe(detailsEl, "opLd1SqaH_I",8);
 
     let dropdown: DropdownComponent;
-
+    let embedComment: Setting;
     new Setting(detailsEl)
       .setName(t("EMBED_TYPE_NAME"))
       .setDesc(fragWithHTML(t("EMBED_TYPE_DESC")))
@@ -1224,9 +1226,24 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .onChange(async (value) => {
             //@ts-ignore
             this.plugin.settings.embedType = value;
+            embedComment.settingEl.style.display = value === "excalidraw" ? "none":"";
             this.applySettingsUpdate();
           });
       });
+    
+    embedComment = new Setting(detailsEl)
+      .setName(t("EMBED_MARKDOWN_COMMENT_NAME"))
+      .setDesc(fragWithHTML(t("EMBED_MARKDOWN_COMMENT_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.embedMarkdownCommentLinks)
+          .onChange(async (value) => {
+            this.plugin.settings.embedMarkdownCommentLinks = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    embedComment.settingEl.style.display = this.plugin.settings.embedType === "excalidraw" ? "none":"";
 
     new Setting(detailsEl)
     .setName(t("EMBED_WIKILINK_NAME"))
