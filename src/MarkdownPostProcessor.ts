@@ -30,7 +30,7 @@ interface imgElementAttributes {
   fname: string; //Excalidraw filename
   fwidth: string; //Display width of image
   fheight: string; //Display height of image
-  style: string; //css style to apply to IMG element
+  style: string[]; //css style to apply to IMG element
 }
 
 let plugin: ExcalidrawPlugin;
@@ -123,8 +123,10 @@ const setStyle = ({element,imgAttributes,onCanvas}:{
     style += `height:${imgAttributes.fheight}px;`;
   }
   if(!onCanvas) element.setAttribute("style", style);
-  element.addClass(imgAttributes.style);
-  element.addClass("excalidraw-embedded-img");
+  element.classList.add(...Array.from(imgAttributes.style))
+  if(!element.hasClass("excalidraw-embedded-img")) {
+    element.addClass("excalidraw-embedded-img");
+  }
 }
 
 const _getSVGIMG = async ({filenameParts,theme,cacheReady,img,file,exportSettings,loader}:{
@@ -254,7 +256,7 @@ const getIMG = async (
   const filenameParts = getEmbeddedFilenameParts(imgAttributes.fname);
 
   // https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/387
-  imgAttributes.style = imgAttributes.style.replaceAll(" ", "-");
+  imgAttributes.style = imgAttributes.style.map(s=>s.replaceAll(" ", "-"));
 
   const forceTheme = hasExportTheme(plugin, file)
     ? getExportTheme(plugin, file, "light")
@@ -389,7 +391,7 @@ const createImgElement = async (
       fname: fileSource,
       fwidth: imgOrDiv.getAttribute("w"),
       fheight: imgOrDiv.getAttribute("h"),
-      style: imgOrDiv.getAttribute("class"),
+      style: [...Array.from(imgOrDiv.classList)],
     }, onCanvas);
     parent.empty();
     if(!onCanvas) {
@@ -400,7 +402,10 @@ const createImgElement = async (
     parent.append(newImg);
   });
   const cssClasses = getFileCSSClasses(attr.file);
-  cssClasses.forEach((cssClass) => imgOrDiv.addClass(cssClass));
+  cssClasses.forEach((cssClass) => {
+    if(imgOrDiv.hasClass(cssClass)) return;
+    imgOrDiv.addClass(cssClass);
+  });
   return imgOrDiv;
 }
 
@@ -409,7 +414,7 @@ const createImageDiv = async (
   onCanvas: boolean = false
 ): Promise<HTMLDivElement> => {
   const img = await createImgElement(attr, onCanvas);
-  return createDiv(attr.style, (el) => el.append(img));
+  return createDiv(attr.style.join(" "), (el) => el.append(img));
 };
 
 const processReadingMode = async (
@@ -451,7 +456,7 @@ const processInternalEmbed = async (internalEmbedEl: Element, file: TFile ):Prom
     fname: "",
     fheight: "",
     fwidth: "",
-    style: "",
+    style: [],
   };
 
   const src = internalEmbedEl.getAttribute("src");
@@ -468,7 +473,7 @@ const processInternalEmbed = async (internalEmbedEl: Element, file: TFile ):Prom
   : getDefaultWidth(plugin);
   attr.fheight = internalEmbedEl.getAttribute("height");
   let alt = internalEmbedEl.getAttribute("alt");
-  attr.style = "excalidraw-svg";
+  attr.style = ["excalidraw-svg"];
   processAltText(src.split("#")[0],alt,attr);
   const fnameParts = getEmbeddedFilenameParts(src);
   attr.fname = file?.path + (fnameParts.hasBlockref||fnameParts.hasSectionref?fnameParts.linkpartReference:"");
@@ -487,14 +492,14 @@ const processAltText = (
     attr.fwidth = parts[2] ?? attr.fwidth;
     attr.fheight = parts[3] ?? attr.fheight;
     if (parts[4] && !parts[4].startsWith(fname)) {
-      attr.style = `excalidraw-svg${`-${parts[4]}`}`;
+      attr.style = [`excalidraw-svg${`-${parts[4]}`}`];
     }
     if (
       (!parts[4] || parts[4]==="") &&
       (!parts[2] || parts[2]==="") &&
       parts[0] && parts[0] !== ""
     ) {
-      attr.style = `excalidraw-svg${`-${parts[0]}`}`;
+      attr.style = [`excalidraw-svg${`-${parts[0]}`}`];
     }
   }
 }
@@ -552,7 +557,7 @@ const tmpObsidianWYSIWYG = async (
     fname: ctx.sourcePath,
     fheight: "",
     fwidth: getDefaultWidth(plugin),
-    style: "excalidraw-svg",
+    style: ["excalidraw-svg"],
   };
   
   attr.file = file;
@@ -731,7 +736,7 @@ export const observer = new MutationObserver(async (m) => {
     fname: file.path,
     fwidth: "300",
     fheight: null,
-    style: "excalidraw-svg",
+    style: ["excalidraw-svg"],
   });
   const div = createDiv("", async (el) => {
     el.appendChild(img);

@@ -371,10 +371,6 @@ div.excalidraw-draginfo {
   background: initial;
 }
 
-.excalidraw .HelpDialog__key {
-  background-color: var(--color-gray-80) !important;
-}
-
 .excalidraw .embeddable-menu {
     width: fit-content;
     height: fit-content;
