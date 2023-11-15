@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="499.96875"
+   height="351.21875"
+   fill="currentColor"
+   class="bi bi-youtube"
+   viewBox="0 0 15.999 11.239"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="Set youtube start time.svg"
+   inkscape:version="1.3 (1:1.3+202307231459+0e150ed6c4)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="2.352"
+     inkscape:cx="250.21259"
+     inkscape:cy="187.5"
+     inkscape:window-width="3370"
+     inkscape:window-height="1376"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1" />
+  <path
+     d="M 8.051,0 H 8.14 c 0.822,0.003 4.987,0.033 6.11,0.335 a 2.01,2.01 0 0 1 1.415,1.42 c 0.101,0.38 0.172,0.883 0.22,1.402 l 0.01,0.104 0.022,0.26 0.008,0.104 c 0.065,0.914 0.073,1.77 0.074,1.957 v 0.075 c -0.001,0.194 -0.01,1.108 -0.082,2.06 L 15.909,7.822 15.9,7.926 c -0.05,0.572 -0.124,1.14 -0.235,1.558 a 2.007,2.007 0 0 1 -1.415,1.42 c -1.16,0.312 -5.569,0.334 -6.18,0.335 H 7.928 c -0.309,0 -1.587,-0.006 -2.927,-0.052 L 4.831,11.181 4.744,11.177 4.573,11.17 4.402,11.163 C 3.292,11.114 2.235,11.035 1.748,10.903 A 2.007,2.007 0 0 1 0.333,9.484 C 0.222,9.067 0.148,8.498 0.098,7.926 L 0.09,7.821 0.082,7.717 A 31.4,31.4 0 0 1 0,5.681 V 5.558 C 0.002,5.343 0.01,4.6 0.064,3.78 L 0.071,3.677 0.074,3.625 0.082,3.521 0.104,3.261 0.114,3.157 C 0.162,2.638 0.233,2.134 0.334,1.755 A 2.007,2.007 0 0 1 1.749,0.335 C 2.236,0.205 3.293,0.125 4.403,0.075 L 4.573,0.068 4.745,0.062 4.831,0.059 5.002,0.052 A 99.788,99.788 0 0 1 7.858,10e-4 H 8.051 Z M 6.4,3.21 V 8.028 L 10.557,5.62 Z"
+     id="path1" />
+</svg>
