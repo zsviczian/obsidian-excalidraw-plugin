@@ -463,10 +463,10 @@ FILENAME_HEAD: "Filename",
     "and the file explorer are going to be all legacy *.excalidraw files. This setting will also turn off the reminder message " +
     "when you open a legacy file for editing.",
   MATHJAX_NAME: "MathJax (LaTeX) javascript library host",
-  MATHJAX_DESC: "If you are using LaTeX equiations in Excalidraw then the plugin needs to load a javascript library for that. " + 
-    "Some users are unable to access certain host servers. If you are experiencing issues try changing the host here. You may need to "+
+  MATHJAX_DESC: "If you are using LaTeX equations in Excalidraw, then the plugin needs to load a javascript library for that. " + 
+    "Some users are unable to access certain host servers. If you are experiencing issues, try changing the host here. You may need to "+
     "restart Obsidian after closing settings, for this change to take effect.",
-  LATEX_DEFAULT_NAME: "Default LaTeX formual for new equations",
+  LATEX_DEFAULT_NAME: "Default LaTeX formula for new equations",
   LATEX_DEFAULT_DESC: "Leave empty if you don't want a default formula. You can add default formatting here such as <code>\\color{white}</code>.",
   NONSTANDARD_HEAD: "Non-Excalidraw.com supported features",
   NONSTANDARD_DESC: `These settings in the "Non-Excalidraw.com Supported Features" section provide customization options beyond the default Excalidraw.com features. These features are not available on excalidraw.com. When exporting the drawing to Excalidraw.com these features will appear different.
