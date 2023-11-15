@@ -1,5 +1,8 @@
-This script allows you to set the starting time of a YouTube video or shorts in seconds, minutes and hours by editing the link of the chosen YouTube video on your canvas. It adds "?t=" followed by the specified time in seconds.
 /*
+![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/Set%20Youtube%20Start%20Time.png)
+
+This script allows you to set the starting time of a YouTube video or shorts in seconds, minutes and hours by editing the link of the chosen YouTube video on your canvas. It adds "?t=" followed by the specified time in seconds.
+
 ```javascript
 */
 const selectedElement = ea.getViewSelectedElement();
