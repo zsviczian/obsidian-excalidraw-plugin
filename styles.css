@@ -345,7 +345,7 @@ label.color-input-container > input {
   padding: 0;
 }
 
-.excalidraw-settings input {
+.excalidraw-settings input:not([type="color"]) {
   min-width: 10em;
 }
 
