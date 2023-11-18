@@ -80,6 +80,7 @@ import { emulateKeysForLinkClick, KeyEvent, PaneTarget } from "src/utils/Modifie
 import { Mutable } from "@zsviczian/excalidraw/types/utility-types";
 import PolyBool from "polybooljs";
 import { compressToBase64, decompressFromBase64 } from "lz-string";
+import { EmbeddableMDCustomProps } from "./dialogs/EmbeddableSettings";
 
 extendPlugins([
   HarmonyPlugin,
@@ -725,6 +726,7 @@ export class ExcalidrawAutomate {
     w: number,
     h: number,
     link: string | null = null,
+    scale?: [number, number],
   ) {
     return {
       id,
@@ -755,6 +757,7 @@ export class ExcalidrawAutomate {
       boundElements: [] as any,
       link,
       locked: false,
+      ...scale ? {scale} : {},
     };
   }
 
@@ -770,7 +773,15 @@ export class ExcalidrawAutomate {
  * @param height 
  * @returns 
  */
-  public addEmbeddable(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile): string {
+  public addEmbeddable(
+    topX: number,
+    topY: number,
+    width: number,
+    height: number,
+    url?: string,
+    file?: TFile,
+    embeddableCustomData?: EmbeddableMDCustomProps,
+  ): string {
     //@ts-ignore
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "addEmbeddable()");
@@ -797,7 +808,9 @@ export class ExcalidrawAutomate {
           false, //file.extension === "md", //changed this to false because embedable link navigation in ExcaliBrain
         )
       }]]` : "",
+      [1,1],
     );
+    this.elementsDict[id].customData = {mdProps: embeddableCustomData ?? this.plugin.settings.embeddableMarkdownDefaults};
     return id;
   };
 

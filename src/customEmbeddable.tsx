@@ -1,4 +1,4 @@
-import { NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
+import {  NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
 import ExcalidrawView from "./ExcalidrawView";
 import { Notice, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import * as React from "react";
@@ -7,6 +7,7 @@ import { DEVICE, EXTENDED_EVENT_TYPES, KEYBOARD_EVENT_TYPES } from "./constants"
 import { ExcalidrawImperativeAPI, UIAppState } from "@zsviczian/excalidraw/types/types";
 import { ObsidianCanvasNode } from "./utils/CanvasNodeFactory";
 import { processLinkText, patchMobileView } from "./utils/CustomEmbeddableUtils";
+import { EmbeddableMDCustomProps } from "./dialogs/EmbeddableSettings";
 
 declare module "obsidian" {
   interface Workspace {
@@ -17,6 +18,14 @@ declare module "obsidian" {
     containerEl: HTMLDivElement;
   }
 }
+
+const getTheme = (view: ExcalidrawView, theme:string): string => view.excalidrawData.embeddableTheme === "dark"
+  ? "theme-dark"
+  : view.excalidrawData.embeddableTheme === "light" 
+    ? "theme-light"
+    : view.excalidrawData.embeddableTheme === "auto"
+      ? theme === "dark" ? "theme-dark" : "theme-light"
+      : isObsidianThemeDark() ? "theme-dark" : "theme-light";
 
 //--------------------------------------------------------------------------------
 //Render webview for anything other than Vimeo and Youtube
@@ -59,13 +68,15 @@ export const renderWebView = (src: string, view: ExcalidrawView, id: string, app
 //Render WorkspaceLeaf or CanvasNode
 //--------------------------------------------------------------------------------
 function RenderObsidianView(
-  { element, linkText, view, containerRef, appState, theme }:{
+  { mdProps, element, linkText, view, containerRef, activeEmbeddable, theme, canvasColor }:{
+  mdProps: EmbeddableMDCustomProps;
   element: NonDeletedExcalidrawElement;
   linkText: string;
   view: ExcalidrawView;
   containerRef: React.RefObject<HTMLDivElement>;
-  appState: UIAppState;
+  activeEmbeddable: {element: NonDeletedExcalidrawElement; state: string};
   theme: string;
+  canvasColor: string;
 }): JSX.Element {
   
   const { subpath, file } = processLinkText(linkText, view);
@@ -79,8 +90,19 @@ function RenderObsidianView(
   const leafRef = react.useRef<{leaf: WorkspaceLeaf; node?: ObsidianCanvasNode} | null>(null);
   const isEditingRef = react.useRef(false);
   const isActiveRef = react.useRef(false);
+  const themeRef = react.useRef(theme);
+  const elementRef = react.useRef(element);
 
+  // Update themeRef when theme changes
+  react.useEffect(() => {
+    themeRef.current = theme;
+  }, [theme]);
 
+  // Update elementRef when element changes
+  react.useEffect(() => {
+    elementRef.current = element;
+  }, [element]);
+ 
   //--------------------------------------------------------------------------------
   //block propagation of events to the parent if the iframe element is active
   //--------------------------------------------------------------------------------
@@ -192,6 +214,7 @@ function RenderObsidianView(
           //This runs only when the file is added, thus should not be a major performance issue
           await leafRef.current.leaf.setViewState({state: {file:null}})
           leafRef.current.node = view.canvasNodeFactory.createFileNote(file, subpath, containerRef.current, element.id);
+          setColors(containerRef.current, element, mdProps, canvasColor);
         } else {
           const workspaceLeaf:HTMLDivElement = rootSplit.containerEl.querySelector("div.workspace-leaf");
           if(workspaceLeaf) workspaceLeaf.style.borderRadius = "var(--embeddable-radius)";
@@ -205,9 +228,69 @@ function RenderObsidianView(
     return () => {}; //cleanup on unmount
   }, [linkText, subpath, containerRef]);
   
+  const setColors = (canvasNode: HTMLDivElement, element: NonDeletedExcalidrawElement, mdProps: EmbeddableMDCustomProps, canvas: string) => {
+    if(!mdProps) return;
+    if (!leafRef.current?.hasOwnProperty("node")) return;
+
+    const canvasNodeContainer = containerRef.current?.firstElementChild as HTMLElement;
+    
+    if(mdProps.useObsidianDefaults) {
+      canvasNode?.style.removeProperty("--canvas-background");
+      canvasNodeContainer?.style.removeProperty("background-color");
+      canvasNode?.style.removeProperty("--canvas-border");
+      canvasNodeContainer?.style.removeProperty("border-color");
+      return;
+    }
+
+    const ea = view.plugin.ea;
+    if(mdProps.backgroundMatchElement) {
+      const opacity = (mdProps?.backgroundOpacity ?? 50)/100;
+      const color = element?.backgroundColor 
+        ? ea.getCM(element.backgroundColor).alphaTo(opacity).stringHEX()
+        : "transparent";
+      canvasNode?.style.setProperty("--canvas-background", color);
+      canvasNodeContainer?.style.setProperty("background-color", color);
+    } else if (!(mdProps?.backgroundMatchElement ?? true )) {
+      const color = mdProps.backgroundMatchCanvas
+        ? ea.getCM(canvasColor).alphaTo((mdProps.backgroundOpacity??100)/100).stringHEX()
+        : ea.getCM(mdProps.backgroundColor).alphaTo((mdProps.backgroundOpacity??100)/100).stringHEX();
+      containerRef.current?.style.setProperty("--canvas-background", color);
+      canvasNodeContainer?.style.setProperty("background-color", color);
+    }
+
+    if(mdProps.borderMatchElement) {
+      const opacity = (mdProps?.borderOpacity ?? 50)/100;
+      const color = element?.strokeColor
+      ? ea.getCM(element?.strokeColor).alphaTo(opacity).stringHEX()
+      : "transparent";
+      canvasNode?.style.setProperty("--canvas-border", color);
+      canvasNodeContainer?.style.setProperty("border-color", color);
+    } else if(!(mdProps?.borderMatchElement ?? true)) {
+      const color = ea.getCM(mdProps.borderColor).alphaTo((mdProps.borderOpacity??100)/100).stringHEX();
+      canvasNode?.style.setProperty("--canvas-border", color);
+      canvasNodeContainer?.style.setProperty("border-color", color);
+    }
+  }
+
+  react.useEffect(() => {
+    if(!containerRef.current) {
+      return;
+    }
+    const element = elementRef.current;
+    const canvasNode = containerRef.current;
+    if(!canvasNode.hasClass("canvas-node")) return;
+    setColors(canvasNode, element, mdProps, canvasColor);
+  }, [
+    mdProps,
+    elementRef.current,
+    containerRef.current,
+    canvasColor,
+  ])
+
   react.useEffect(() => {
     if(isEditingRef.current) {
       if(leafRef.current?.node) {
+        containerRef.current?.addClasses(["is-editing", "is-focused"]);
         view.canvasNodeFactory.stopEditing(leafRef.current.node);
       }
       isEditingRef.current = false;
@@ -242,10 +325,12 @@ function RenderObsidianView(
         patchMobileView(view);
       } else if (leafRef.current?.node) {
         //Handle canvas node
-        view.canvasNodeFactory.startEditing(leafRef.current.node, theme);
+        const newTheme = getTheme(view, themeRef.current);
+        containerRef.current?.addClasses(["is-editing", "is-focused"]);
+        view.canvasNodeFactory.startEditing(leafRef.current.node, newTheme);
       }
     }
-  }, [leafRef.current?.leaf, element.id]);
+  }, [leafRef.current?.leaf, element.id, view, themeRef.current]);
 
   //--------------------------------------------------------------------------------
   // Set isActiveRef and switch to preview mode when the iframe is not active
@@ -256,7 +341,7 @@ function RenderObsidianView(
     }
 
     const previousIsActive = isActiveRef.current;
-    isActiveRef.current = (appState.activeEmbeddable?.element.id === element.id) && (appState.activeEmbeddable?.state === "active");
+    isActiveRef.current = (activeEmbeddable?.element.id === element.id) && (activeEmbeddable?.state === "active");
 
     if (previousIsActive === isActiveRef.current) {
       return;
@@ -278,20 +363,17 @@ function RenderObsidianView(
       }  
     } else if (leafRef.current?.node) {
       //Handle canvas node
+      containerRef.current?.removeClasses(["is-editing", "is-focused"]);
       view.canvasNodeFactory.stopEditing(leafRef.current.node);
     }
   }, [
     containerRef,
     leafRef,
     isActiveRef,
-    appState.activeEmbeddable?.element,
-    appState.activeEmbeddable?.state,
+    activeEmbeddable?.element,
+    activeEmbeddable?.state,
     element,
     view,
-    linkText,
-    subpath,
-    file,
-    theme,
     isEditingRef,
     view.canvasNodeFactory
   ]);
@@ -299,16 +381,12 @@ function RenderObsidianView(
   return null;
 };
 
+
 export const CustomEmbeddable: React.FC<{element: NonDeletedExcalidrawElement; view: ExcalidrawView; appState: UIAppState; linkText: string}> = ({ element, view, appState, linkText }) => {
   const react = view.plugin.getPackage(view.ownerWindow).react;
   const containerRef: React.RefObject<HTMLDivElement> = react.useRef(null);
-  const theme = view.excalidrawData.embeddableTheme === "dark"
-    ? "theme-dark"
-    : view.excalidrawData.embeddableTheme === "light" 
-      ? "theme-light"
-      : view.excalidrawData.embeddableTheme === "auto"
-        ? appState.theme === "dark" ? "theme-dark" : "theme-light"
-        : isObsidianThemeDark() ? "theme-dark" : "theme-light";
+  const theme = getTheme(view, appState.theme);
+  const mdProps: EmbeddableMDCustomProps = element.customData?.mdProps || null;
 
   return (
     <div
@@ -319,15 +397,19 @@ export const CustomEmbeddable: React.FC<{element: NonDeletedExcalidrawElement; v
         borderRadius: "var(--embeddable-radius)",
         color: `var(--text-normal)`,
       }}
-      className={theme}
+      className={`${theme} canvas-node ${
+        mdProps?.filenameVisible ? "" : "excalidraw-mdEmbed-hideFilename"}`}
     >
       <RenderObsidianView
+        mdProps={mdProps}
         element={element}
         linkText={linkText}
         view={view}
         containerRef={containerRef}
-        appState={appState}
-        theme={theme}/>
+        activeEmbeddable={appState.activeEmbeddable}
+        theme={appState.theme}
+        canvasColor={appState.viewBackgroundColor}
+      />
     </div>
   )
 }

@@ -28,6 +28,8 @@ import {
 import { imageCache } from "./utils/ImageCache";
 import { ConfirmationPrompt } from "./dialogs/Prompt";
 import de from "./lang/locale/de";
+import { EmbeddableMDCustomProps } from "./dialogs/EmbeddableSettings";
+import { EmbeddalbeMDFileCustomDataSettingsComponent } from "./dialogs/EmbeddableMDFileCustomDataSettingsComponent";
 
 export interface ExcalidrawSettings {
   folder: string;
@@ -149,6 +151,8 @@ export interface ExcalidrawSettings {
     DECAY_LENGTH: number,
     COLOR: string,
   };
+  embeddableMarkdownDefaults: EmbeddableMDCustomProps;
+  canvasImmersiveEmbed: boolean,
 }
 
 declare const PLUGIN_VERSION:string;
@@ -278,7 +282,19 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
     DECAY_LENGTH: 50,
     DECAY_TIME: 1000,
     COLOR: "#ff0000",
-  }
+  },
+  embeddableMarkdownDefaults: {
+    useObsidianDefaults: false,
+    backgroundMatchCanvas: false,
+    backgroundMatchElement: true,
+    backgroundColor: "#fff",
+    backgroundOpacity: 60,
+    borderMatchElement: true,
+    borderColor: "#fff",
+    borderOpacity: 0,
+    filenameVisible: false,
+  },
+  canvasImmersiveEmbed: true,
 };
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
@@ -1259,6 +1275,24 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     detailsEl = embedDetailsEl.createEl("details");
     detailsEl.createEl("summary", { 
+      text: t("EMBED_CANVAS"),
+      cls: "excalidraw-setting-h3",
+    });
+
+    new Setting(detailsEl)
+      .setName(t("EMBED_CANVAS_NAME"))
+      .setDesc(fragWithHTML(t("EMBED_CANVAS_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.canvasImmersiveEmbed)
+          .onChange(async (value) => {
+            this.plugin.settings.canvasImmersiveEmbed = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    detailsEl = embedDetailsEl.createEl("details");
+    detailsEl.createEl("summary", { 
       text: t("EMBED_CACHING"),
       cls: "excalidraw-setting-h3",
     });
@@ -1500,9 +1534,22 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.plugin.settings.autoExportLightAndDark = value;
             this.applySettingsUpdate();
           }),
-      );
+      );      
 
-    detailsEl = embedDetailsEl.createEl("details");
+    // ------------------------------------------------
+    // Embedding settings
+    // ------------------------------------------------   
+    containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
+    containerEl.createDiv({ text: t("EMBED_TOEXCALIDRAW_DESC"), cls: "setting-item-description"  });
+
+    detailsEl = this.containerEl.createEl("details");
+    const embedFilesDetailsEl = detailsEl;
+    detailsEl.createEl("summary", { 
+      text: t("EMBED_TOEXCALIDRAW_HEAD"),
+      cls: "excalidraw-setting-h1",
+    });
+
+    detailsEl = embedFilesDetailsEl.createEl("details");
     detailsEl.createEl("summary", { 
       text: t("PDF_TO_IMAGE"),
       cls: "excalidraw-setting-h3",
@@ -1527,18 +1574,26 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
         );
-      
 
-    // ------------------------------------------------
-    // Markdown embedding settings
-    // ------------------------------------------------
-    containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
-    containerEl.createDiv({ text: t("MD_HEAD_DESC"), cls: "setting-item-description"  });
-    detailsEl = this.containerEl.createEl("details");
+    detailsEl = embedFilesDetailsEl.createEl("details");
+    detailsEl.createEl("summary", { 
+      text: t("MD_EMBED_CUSTOMDATA_HEAD_NAME"),
+      cls: "excalidraw-setting-h3",
+    });
+    detailsEl.createEl("span", {text: t("MD_EMBED_CUSTOMDATA_HEAD_DESC")});
+
+    new EmbeddalbeMDFileCustomDataSettingsComponent(
+      detailsEl,
+      this.plugin.settings.embeddableMarkdownDefaults,
+      this.applySettingsUpdate,
+    ).render();
+
+    detailsEl = embedFilesDetailsEl.createEl("details");
     detailsEl.createEl("summary", { 
       text: t("MD_HEAD"),
-      cls: "excalidraw-setting-h1",
+      cls: "excalidraw-setting-h3",
     });
+
 
 
     new Setting(detailsEl)

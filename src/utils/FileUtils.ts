@@ -314,3 +314,8 @@ export const readLocalFileBinary = async (filePath:string): Promise<ArrayBuffer>
     });
   });
 }
+
+export const getPathWithoutExtension = (f:TFile): string => {
+  if(!f) return null;
+  return f.path.substring(0, f.path.lastIndexOf("."));
+}

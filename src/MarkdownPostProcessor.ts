@@ -127,6 +127,12 @@ const setStyle = ({element,imgAttributes,onCanvas}:{
   if(!element.hasClass("excalidraw-embedded-img")) {
     element.addClass("excalidraw-embedded-img");
   }
+  if(
+    window.ExcalidrawAutomate.plugin.settings.canvasImmersiveEmbed &&
+    !element.hasClass("excalidraw-canvas-immersive")
+  ) {
+    element.addClass("excalidraw-canvas-immersive");
+  }
 }
 
 const _getSVGIMG = async ({filenameParts,theme,cacheReady,img,file,exportSettings,loader}:{
@@ -406,6 +412,15 @@ const createImgElement = async (
     if(imgOrDiv.hasClass(cssClass)) return;
     imgOrDiv.addClass(cssClass);
   });
+  if(window.ExcalidrawAutomate.plugin.settings.canvasImmersiveEmbed) {
+    if(!imgOrDiv.hasClass("excalidraw-canvas-immersive")) {
+      imgOrDiv.addClass("excalidraw-canvas-immersive");
+    }
+  } else {
+    if(imgOrDiv.hasClass("excalidraw-canvas-immersive")) {
+      imgOrDiv.removeClass("excalidraw-canvas-immersive");
+    }
+  }
   return imgOrDiv;
 }
 

@@ -472,3 +472,20 @@ summary.excalidraw-setting-h4 {
 hr.excalidraw-setting-hr {
   margin: 1rem 0rem 0rem 0rem;
 }
+
+.excalidraw-mdEmbed-hideFilename .mod-header {
+  display: none;
+}
+
+.canvas-node:not(.is-editing):has(.excalidraw-canvas-immersive) {
+  ::-webkit-scrollbar,
+  ::-webkit-scrollbar-horizontal {
+    display: none;
+  }
+  background-color: transparent !important;
+}
+
+.canvas-node:not(.is-editing) .canvas-node-container:has(.excalidraw-canvas-immersive) {
+  border:       unset;
+  box-shadow:   unset;
+}

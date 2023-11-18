@@ -72,8 +72,9 @@ export class CanvasNodeFactory {
     const node = this.canvas.createFileNode({pos: {x:0,y:0}, file, subpath, save: false});
     node.setFilePath(file.path,subpath);
     node.render();
-    containerEl.style.background = "var(--background-primary)";
-    containerEl.appendChild(node.contentEl)
+    //containerEl.style.background = "var(--background-primary)";
+    node.containerEl.querySelector(".canvas-node-content-blocker")?.remove();
+    containerEl.appendChild(node.containerEl)
     this.nodes.set(elementId, node);
     return node;
   }

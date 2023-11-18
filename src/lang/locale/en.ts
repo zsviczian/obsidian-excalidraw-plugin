@@ -10,6 +10,7 @@ import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/Modifierke
 export default {
   // main.ts
   PUBLISH_SVG_CHECK: "Obsidian Publish: Find SVG and PNG exports that are out of date",
+  EMBEDDABLE_PROPERTIES: "Embeddable Properties",
   OPEN_IMAGE_SOURCE: "Open Excalidraw drawing",
   INSTALL_SCRIPT: "Install the script",
   UPDATE_SCRIPT: "Update available - Click to install",
@@ -324,8 +325,11 @@ FILENAME_HEAD: "Filename",
   PDF_TO_IMAGE_SCALE_NAME: "PDF to Image conversion scale",
   PDF_TO_IMAGE_SCALE_DESC: "Sets the resolution of the image that is generated from the PDF page. Higher resolution will result in bigger images in memory and consequently a higher load on your system (slower performance), but sharper imagee. " +
     "Additionally, if you want to copy PDF pages (as images) to Excalidraw.com, the bigger image size may result in exceeding the 2MB limit on Excalidraw.com.",
+  EMBED_TOEXCALIDRAW_HEAD: "Embed files into Excalidraw",
+  EMBED_TOEXCALIDRAW_DESC: "In the Embed Files section of Excalidraw Settings, you can configure how various files are embedded into Excalidraw. This includes options for embedding interactive markdown files, PDFs, and markdown files as images.",
   MD_HEAD: "Embed markdown into Excalidraw as image",
-  MD_HEAD_DESC: `In the "Embed markdown as image settings," you can configure various options for how markdown documents are embedded as images within Excalidraw. These settings allow you to control the default width and maximum height of embedded markdown files, choose the font typeface, font color, and border color for embedded markdown content. Additionally, you can specify a custom CSS file to style the embedded markdown content. Note you can also embed markdown documents as interactive frames. The color setting of frames is under the Display Settings section.`,
+  MD_EMBED_CUSTOMDATA_HEAD_NAME: "Interactive Markdown Files",
+  MD_EMBED_CUSTOMDATA_HEAD_DESC: `These settings will only effect future embeds. Current embeds remain unchanged. The theme setting of embedded frames is under the "Excalidraw appearance and behavior" section.`,
   MD_TRANSCLUDE_WIDTH_NAME: "Default width of a transcluded markdown document",
   MD_TRANSCLUDE_WIDTH_DESC:
     "The width of the markdown page. This affects the word wrapping when transcluding longer paragraphs, and the width of " +
@@ -364,6 +368,11 @@ FILENAME_HEAD: "Filename",
   EMBED_HEAD: "Embedding Excalidraw into your Notes and Exporting",
   EMBED_DESC: `In the "Embed & Export" settings, you can configure how images and Excalidraw drawings are embedded and exported within your documents. Key settings include choosing the image type for markdown preview (such as Native SVG or PNG), specifying the type of file to insert into the document (original Excalidraw, PNG, or SVG), and managing image caching for embedding in markdown. You can also control image sizing, whether to embed drawings using wiki links or markdown links, and adjust settings related to image themes, background colors, and Obsidian integration. 
     Additionally, there are settings for auto-export, which automatically generates SVG and/or PNG files to match the title of your Excalidraw drawings, keeping them in sync with file renames and deletions.`,
+  EMBED_CANVAS: "Obsidian Canvas support",
+  EMBED_CANVAS_NAME: "Immersive embedding",
+  EMBED_CANVAS_DESC: 
+    "Hide canvas node border and background when embedding an Excalidraw drawing to Canvas. " +
+    "Note that for a full transparent background for your image, you will still need to configure Excalidraw to export images with transparent background.",
   EMBED_CACHING: "Image caching",
   EXPORT_SUBHEAD: "Export Settings",
   EMBED_SIZING: "Image sizing",
@@ -563,6 +572,27 @@ FILENAME_HEAD: "Filename",
   ZOOM_TO_FIT: "Zoom to fit",
   RELOAD: "Reload original link",
   OPEN_IN_BROWSER: "Open current link in browser",
+  PROPERTIES: "Properties",
+
+  //EmbeddableSettings.tsx
+  ES_TITLE: "Element Settings",
+  ES_RENAME: "Rename File",
+  ES_ZOOM: "Embedded Content Zoom",
+  ES_YOUTUBE_START: "YouTube Start Time",
+  ES_YOUTUBE_START_DESC: "ss, mm:ss, hh:mm:ss",
+  ES_YOUTUBE_START_INVALID: "The YouTube Start Time is invalid. Please check the format and try again",
+  ES_FILENAME_VISIBLE: "Filename Visible",
+  ES_BACKGROUND_HEAD: "Embedded note background color",
+  ES_BACKGROUND_MATCH_ELEMENT: "Match Element Background Color",
+  ES_BACKGROUND_MATCH_CANVAS: "Match Canvas Background Color",
+  ES_BACKGROUND_COLOR: "Background Color",
+  ES_BORDER_HEAD: "Embedded note border color",
+  ES_BORDER_COLOR: "Border Color",
+  ES_BORDER_MATCH_ELEMENT: "Match Element Border Color",
+  ES_BACKGROUND_OPACITY: "Background Transparency",
+  ES_BORDER_OPACITY: "Border Transparency",
+  ES_EMBEDDABLE_SETTINGS: "Embeddable Markdown Settings",
+  ES_USE_OBSIDIAN_DEFAULTS: "Use Obsidian Defaults",
 
   //Prompts.ts
   PROMPT_FILE_DOES_NOT_EXIST: "File does not exist. Do you want to create it?",

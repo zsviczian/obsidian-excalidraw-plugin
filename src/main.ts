@@ -93,7 +93,7 @@ import {
 } from "./utils/Utils";
 import { extractSVGPNGFileName, getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark } from "./utils/ObsidianUtils";
 //import { OneOffs } from "./OneOffs";
-import { ExcalidrawElement, ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawElement, ExcalidrawEmbeddableElement, ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/element/types";
 import { ScriptEngine } from "./Scripts";
 import {
   hoverEvent,
@@ -117,6 +117,7 @@ import { imageCache } from "./utils/ImageCache";
 import { StylesManager } from "./utils/StylesManager";
 import { MATHJAX_SOURCE_LZCOMPRESSED } from "./constMathJaxSource";
 import { PublishOutOfDateFilesDialog } from "./dialogs/PublishOutOfDateFiles";
+import { EmbeddableSettings } from "./dialogs/EmbeddableSettings";
 
 declare const EXCALIDRAW_PACKAGES:string;
 declare const react:any;
@@ -850,6 +851,24 @@ export default class ExcalidrawPlugin extends Plugin {
           return true;
         }
         (new PublishOutOfDateFilesDialog(this)).open();
+      }
+    })
+
+    this.addCommand({
+      id: "excalidraw-embeddable-poroperties",
+      name: t("EMBEDDABLE_PROPERTIES"),
+      checkCallback: (checking: boolean) => {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if(!view) return false;
+        if(!view.excalidrawAPI) return false;
+        const els = view.getViewSelectedElements().filter(el=>el.type==="embeddable") as ExcalidrawEmbeddableElement[];
+        if(els.length !== 1) {
+          if(checking) return false;
+          new Notice("Select a single embeddable element and try again");
+          return false;
+        }
+        if(checking) return true;
+        new EmbeddableSettings(view.plugin,view,null,els[0]).open();
       }
     })
 

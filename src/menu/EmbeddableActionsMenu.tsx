@@ -11,6 +11,7 @@ import { ROOTELEMENTSIZE, mutateElement, nanoid, sceneCoordsToViewportCoords } f
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK } from "src/ExcalidrawData";
 import { processLinkText, useDefaultExcalidrawFrame } from "src/utils/CustomEmbeddableUtils";
 import { cleanSectionHeading } from "src/utils/ObsidianUtils";
+import { EmbeddableSettings } from "src/dialogs/EmbeddableSettings";
 
 export class EmbeddableMenu {
 
@@ -91,7 +92,8 @@ export class EmbeddableMenu {
 
       if(!isObsidianiFrame) {
         const { subpath, file } = processLinkText(link, view);
-        if(!file || file.extension!=="md") return null;
+        if(!file) return;
+        const isMD = file.extension==="md";
         const { x, y } = sceneCoordsToViewportCoords( { sceneX: element.x, sceneY: element.y }, appState);
         const top = `${y-2.5*ROOTELEMENTSIZE-appState.offsetTop}px`;
         const left = `${x-appState.offsetLeft}px`;
@@ -116,69 +118,73 @@ export class EmbeddableMenu {
                 display: "block",
               }}
             >
-              <ActionButton
-                key={"MarkdownSection"}
-                title={t("NARROW_TO_HEADING")}
-                action={async () => {
-                  const sections = (await app.metadataCache.blockCache
-                    .getForFile({ isCancelled: () => false },file))
-                    .blocks.filter((b: any) => b.display && b.node?.type === "heading");
-                  const values = [""].concat(
-                    sections.map((b: any) => `#${cleanSectionHeading(b.display)}`)
-                  );
-                  const display = [t("SHOW_ENTIRE_FILE")].concat(
-                    sections.map((b: any) => b.display)
-                  );
-                  const newSubpath = await ScriptEngine.suggester(
-                    app, display, values, "Select section from document"
-                  );
-                  if(!newSubpath && newSubpath!=="") return;
-                  if (newSubpath !== subpath) {
-                    this.updateElement(newSubpath, element, file);
-                  }
-                }}
-                icon={ICONS.ZoomToSection}
-                view={view}
-              />
-              <ActionButton
-                key={"MarkdownBlock"}
-                title={t("NARROW_TO_BLOCK")}
-                action={async () => {
-                  if(!file) return;
-                  const paragrphs = (await app.metadataCache.blockCache
-                    .getForFile({ isCancelled: () => false },file))
-                    .blocks.filter((b: any) => b.display && b.node?.type === "paragraph");
-                  const values = ["entire-file"].concat(paragrphs);
-                  const display = [t("SHOW_ENTIRE_FILE")].concat(
-                    paragrphs.map((b: any) => `${b.node?.id ? `#^${b.node.id}: ` : ``}${b.display.trim()}`));
-    
-                  const selectedBlock = await ScriptEngine.suggester(
-                    app, display, values, "Select section from document"
-                  );
-                  if(!selectedBlock) return;
+              {isMD && (
+                <ActionButton
+                  key={"MarkdownSection"}
+                  title={t("NARROW_TO_HEADING")}
+                  action={async () => {
+                    const sections = (await app.metadataCache.blockCache
+                      .getForFile({ isCancelled: () => false },file))
+                      .blocks.filter((b: any) => b.display && b.node?.type === "heading");
+                    const values = [""].concat(
+                      sections.map((b: any) => `#${cleanSectionHeading(b.display)}`)
+                    );
+                    const display = [t("SHOW_ENTIRE_FILE")].concat(
+                      sections.map((b: any) => b.display)
+                    );
+                    const newSubpath = await ScriptEngine.suggester(
+                      app, display, values, "Select section from document"
+                    );
+                    if(!newSubpath && newSubpath!=="") return;
+                    if (newSubpath !== subpath) {
+                      this.updateElement(newSubpath, element, file);
+                    }
+                  }}
+                  icon={ICONS.ZoomToSection}
+                  view={view}
+                />
+              )}
+              {isMD && (
+                <ActionButton
+                  key={"MarkdownBlock"}
+                  title={t("NARROW_TO_BLOCK")}
+                  action={async () => {
+                    if(!file) return;
+                    const paragrphs = (await app.metadataCache.blockCache
+                      .getForFile({ isCancelled: () => false },file))
+                      .blocks.filter((b: any) => b.display && b.node?.type === "paragraph");
+                    const values = ["entire-file"].concat(paragrphs);
+                    const display = [t("SHOW_ENTIRE_FILE")].concat(
+                      paragrphs.map((b: any) => `${b.node?.id ? `#^${b.node.id}: ` : ``}${b.display.trim()}`));
+      
+                    const selectedBlock = await ScriptEngine.suggester(
+                      app, display, values, "Select section from document"
+                    );
+                    if(!selectedBlock) return;
 
-                  if(selectedBlock==="entire-file") {
-                    if(subpath==="") return;
-                    this.updateElement("", element, file);
-                    return;
-                  }
-              
-                  let blockID = selectedBlock.node.id;
-                  if(blockID && (`#^${blockID}` === subpath)) return;
-                  if (!blockID) {
-                    const offset = selectedBlock.node?.position?.end?.offset;
-                    if(!offset) return;
-                    blockID = nanoid();
-                    const fileContents = await app.vault.cachedRead(file);
-                    if(!fileContents) return;
-                    await app.vault.modify(file, fileContents.slice(0, offset) + ` ^${blockID}` + fileContents.slice(offset));
-                    await sleep(200); //wait for cache to update
-                  }
-                  this.updateElement(`#^${blockID}`, element, file);
-                }}
-                icon={ICONS.ZoomToBlock}
-                view={view}
-              />
+                    if(selectedBlock==="entire-file") {
+                      if(subpath==="") return;
+                      this.updateElement("", element, file);
+                      return;
+                    }
+                
+                    let blockID = selectedBlock.node.id;
+                    if(blockID && (`#^${blockID}` === subpath)) return;
+                    if (!blockID) {
+                      const offset = selectedBlock.node?.position?.end?.offset;
+                      if(!offset) return;
+                      blockID = nanoid();
+                      const fileContents = await app.vault.cachedRead(file);
+                      if(!fileContents) return;
+                      await app.vault.modify(file, fileContents.slice(0, offset) + ` ^${blockID}` + fileContents.slice(offset));
+                      await sleep(200); //wait for cache to update
+                    }
+                    this.updateElement(`#^${blockID}`, element, file);
+                  }}
+                  icon={ICONS.ZoomToBlock}
+                  view={view}
+                />
+              )}
               <ActionButton
                 key={"ZoomToElement"}
                 title={t("ZOOM_TO_FIT")}
@@ -187,6 +193,16 @@ export class EmbeddableMenu {
                   api.zoomToFit([element], view.plugin.settings.zoomToFitMaxLevel, 0.1);
                 }}
                 icon={ICONS.ZoomToSelectedElement}
+                view={view}
+              />
+              <ActionButton
+                key={"Properties"}
+                title={t("PROPERTIES")}
+                action={() => {
+                  if(!element) return;
+                  new EmbeddableSettings(view.plugin,view,file,element).open();
+                }}
+                icon={ICONS.Properties}
                 view={view}
               />
             </div>
@@ -254,6 +270,16 @@ export class EmbeddableMenu {
                 api.zoomToFit([element], view.plugin.settings.zoomToFitMaxLevel, 0.1);
               }}
               icon={ICONS.ZoomToSelectedElement}
+              view={view}
+            />
+            <ActionButton
+              key={"Properties"}
+              title={t("PROPERTIES")}
+              action={() => {
+                if(!element) return;
+                new EmbeddableSettings(view.plugin,view,null,element).open();
+              }}
+              icon={ICONS.Properties}
               view={view}
             />
           </div>
