@@ -50,7 +50,8 @@ import ExcalidrawView, { TextMode, getTextMode } from "./ExcalidrawView";
 import {
   changeThemeOfExcalidrawMD,
   getMarkdownDrawingSection,
-  ExcalidrawData
+  ExcalidrawData,
+  REGEX_LINK
 } from "./ExcalidrawData";
 import {
   ExcalidrawSettings,
@@ -118,6 +119,10 @@ import { StylesManager } from "./utils/StylesManager";
 import { MATHJAX_SOURCE_LZCOMPRESSED } from "./constMathJaxSource";
 import { PublishOutOfDateFilesDialog } from "./dialogs/PublishOutOfDateFiles";
 import { EmbeddableSettings } from "./dialogs/EmbeddableSettings";
+import { processLinkText } from "./utils/CustomEmbeddableUtils";
+import { getEA } from "src";
+import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
+import { Mutable } from "@zsviczian/excalidraw/types/utility-types";
 
 declare const EXCALIDRAW_PACKAGES:string;
 declare const react:any;
@@ -868,7 +873,41 @@ export default class ExcalidrawPlugin extends Plugin {
           return false;
         }
         if(checking) return true;
-        new EmbeddableSettings(view.plugin,view,null,els[0]).open();
+        const getFile = (el:ExcalidrawEmbeddableElement):TFile => {
+          const res = REGEX_LINK.getRes(el.link).next();
+          if(!res || (!res.value && res.done)) {
+            return null;
+          }
+          const link = REGEX_LINK.getLink(res);
+          const { file } = processLinkText(link, view);
+          return file;
+        }
+        new EmbeddableSettings(view.plugin,view,getFile(els[0]),els[0]).open();
+      }
+    })
+
+    this.addCommand({
+      id: "excalidraw-embeddables-relative-scale",
+      name: t("EMBEDDABLE_RELATIVE_ZOOM"),
+      checkCallback: (checking: boolean) => {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if(!view) return false;
+        if(!view.excalidrawAPI) return false;
+        const els = view.getViewSelectedElements().filter(el=>el.type==="embeddable") as ExcalidrawEmbeddableElement[];
+        if(els.length === 0) {
+          if(checking) return false;
+          new Notice("Select at least one embeddable element and try again");
+          return false;
+        }
+        if(checking) return true;
+        const ea = getEA(view) as ExcalidrawAutomate;
+        const api = ea.getExcalidrawAPI() as ExcalidrawImperativeAPI;
+        ea.copyViewElementsToEAforEditing(els);
+        const scale = 1/api.getAppState().zoom.value;
+        ea.getElements().forEach((el: Mutable<ExcalidrawEmbeddableElement>)=>{
+          el.scale = [scale,scale];
+        })
+        ea.addElementsToView();
       }
     })
 
@@ -1644,10 +1683,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
         const excalidrawView = this.app.workspace.getActiveViewOfType(ExcalidrawView)
         if (excalidrawView) {
-          const activeLeaf = excalidrawView.leaf;
-          this.excalidrawFileModes[(activeLeaf as any).id || activeFile.path] =
-            "markdown";
-          this.setMarkdownView(activeLeaf);
+          excalidrawView.openAsMarkdown();
           return;
         }
 
@@ -2088,14 +2124,14 @@ export default class ExcalidrawPlugin extends Plugin {
 
         //!Temporary hack
         //https://discord.com/channels/686053708261228577/817515900349448202/1031101635784613968
-        if (app.isMobile && newActiveviewEV && !previouslyActiveEV) {
+        if (this.app.isMobile && newActiveviewEV && !previouslyActiveEV) {
           const navbar = document.querySelector("body>.app-container>.mobile-navbar");
           if(navbar && navbar instanceof HTMLDivElement) {
             navbar.style.position="relative";
           }
         }
 
-        if (app.isMobile && !newActiveviewEV && previouslyActiveEV) {
+        if (this.app.isMobile && !newActiveviewEV && previouslyActiveEV) {
           const navbar = document.querySelector("body>.app-container>.mobile-navbar");
           if(navbar && navbar instanceof HTMLDivElement) {
             navbar.style.position="";

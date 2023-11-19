@@ -17,6 +17,28 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.0.2":`
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/502swdqvZ2A" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## Fixed
+- Resolved an issue where the Command Palette's "Toggle between Excalidraw and Markdown mode" failed to uncompress the Excalidraw JSON for editing.
+
+## New
+- Scaling feature for embedded objects (markdown documents, pdfs, YouTube, etc.): Hold down the SHIFT key while resizing elements to adjust their size.
+- Expanded support for Canvas Candy. Regardless of Canvas Candy, you can apply CSS classes to embedded markdown documents for transparency, shape adjustments, text orientation, and more.
+- Added new functionalities to the active embeddable top-left menu:
+  - Document Properties (cog icon)
+    - File renaming
+    - Basic styling options for embedded markdown documents
+    - Setting YouTube start time
+  - Zoom to full screen for PDFs
+- Improved immersive embedding of Excalidraw into Obsidian Canvas.
+- Introduced new Command Palette Actions:
+  - Embeddable Properties
+  - Scaling selected embeddable elements to 100% relative to the current canvas zoom.
+`,
 "2.0.1":`
 <div class="excalidraw-videoWrapper"><div>
 <iframe src="https://www.youtube.com/embed/xmqiBTrlbEM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

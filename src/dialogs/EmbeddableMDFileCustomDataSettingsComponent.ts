@@ -109,7 +109,7 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
       
       bgSetting.settingEl.style.display = (this.mdCustomData.backgroundMatchElement || this.mdCustomData.backgroundMatchCanvas) ? "none" : "";
       const opacity = (value:number):DocumentFragment => {
-        return fragWithHTML(`Current transparency is <b>${value}%</b>`);
+        return fragWithHTML(`Current opacity is <b>${value}%</b>`);
       }
 
       const bgOpacitySetting = new Setting(contentEl)

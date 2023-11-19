@@ -12,9 +12,12 @@ export const getYouTubeStartAt = (url: string): string => {
     const hours = Math.floor(time / 3600);
     const minutes = Math.floor((time - hours * 3600) / 60);
     const seconds = time - hours * 3600 - minutes * 60;
+    if(hours === 0 && minutes === 0 && seconds === 0) return "";
+    if(hours === 0 && minutes === 0) return `${String(seconds).padStart(2, '0')}`;
+    if(hours === 0) return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   }
-  return "00:00:00";
+  return "";
 };
 
 export const isValidYouTubeStart = (value: string): boolean => {
@@ -26,7 +29,9 @@ export const isValidYouTubeStart = (value: string): boolean => {
 export const updateYouTubeStartTime = (link: string, startTime: string): string => {
   const match = link.match(REG_YOUTUBE);
   if (match?.[2]) {
-    const startTimeParam = `t=${timeStringToSeconds(startTime)}`;
+    const startTimeParam = startTime === ""
+      ? ``  
+      : `t=${timeStringToSeconds(startTime)}`;
     let updatedLink = link;
     if (match[3]) {
       // If start time already exists, update it

@@ -10,6 +10,8 @@ import { getNewUniqueFilepath, getPathWithoutExtension, splitFolderAndFilename }
 import { addAppendUpdateCustomData, fragWithHTML } from "src/utils/Utils";
 import { getYouTubeStartAt, isValidYouTubeStart, isYouTube, updateYouTubeStartTime } from "src/utils/YoutTubeUtils";
 import { EmbeddalbeMDFileCustomDataSettingsComponent } from "./EmbeddableMDFileCustomDataSettingsComponent";
+import { isCTRL } from "src/utils/ModifierkeyHelper";
+import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
 
 export type EmbeddableMDCustomProps = {
   useObsidianDefaults: boolean;
@@ -31,6 +33,7 @@ export class EmbeddableSettings extends Modal {
   private youtubeStart: string = null;
   private isMDFile: boolean;
   private mdCustomData: EmbeddableMDCustomProps;
+  private onKeyDown: (ev: KeyboardEvent) => void;
 
   constructor(
     private plugin: ExcalidrawPlugin,
@@ -60,12 +63,12 @@ export class EmbeddableSettings extends Modal {
 
   onOpen(): void {
     this.containerEl.classList.add("excalidraw-release");
-    this.titleEl.setText(t("ES_TITLE"));
+    //this.titleEl.setText(t("ES_TITLE"));
     this.createForm();
   }
 
   onClose() {
-
+    this.containerEl.removeEventListener("keydown",this.onKeyDown);
   }
 
   async createForm() {
@@ -85,11 +88,21 @@ export class EmbeddableSettings extends Modal {
     }
 
     const zoomValue = ():DocumentFragment => {
-      return fragWithHTML(`Current zoom is <b>${Math.round(this.zoomValue*100)}%</b>`);
-    } 
+      return fragWithHTML(`${t("ES_ZOOM_100_RELATIVE_DESC")}<br>Current zoom is <b>${Math.round(this.zoomValue*100)}%</b>`);
+    }
+
     const zoomSetting = new Setting(this.contentEl)
       .setName(t("ES_ZOOM"))
       .setDesc(zoomValue())
+      .addButton(button =>
+        button
+          .setButtonText(t("ES_ZOOM_100"))
+          .onClick(() => {
+            const api = this.view.excalidrawAPI as ExcalidrawImperativeAPI;
+            this.zoomValue = 1/api.getAppState().zoom.value;
+            zoomSetting.setDesc(zoomValue());
+          })
+      )
       .addSlider(slider => 
         slider
           .setLimits(10,400,5)
@@ -117,64 +130,87 @@ export class EmbeddableSettings extends Modal {
       this.contentEl.createEl("h3",{text: t("ES_EMBEDDABLE_SETTINGS")});
       new EmbeddalbeMDFileCustomDataSettingsComponent(this.contentEl,this.mdCustomData).render();
     }
+  
+    new Setting(this.contentEl)
+    .addButton(button =>
+      button
+        .setButtonText(t("PROMPT_BUTTON_CANCEL"))
+        .setTooltip("ESC")
+        .onClick(() => {
+          this.close();
+        })
+    )
+    .addButton(button =>
+      button
+        .setButtonText(t("PROMPT_BUTTON_OK"))
+        .setTooltip("CTRL/Opt+Enter")
+        .setCta()
+        .onClick(()=>this.applySettings())
+    )
 
-    const div = this.contentEl.createDiv({cls: "excalidraw-prompt-buttons-div"});
-    const bOk = div.createEl("button", { text: t("PROMPT_BUTTON_OK"), cls: "excalidraw-prompt-button"});
-    bOk.onclick = async () => {
-      let dirty = false;
-      const el = this.ea.getElement(this.element.id) as Mutable<ExcalidrawEmbeddableElement>;
-      if(this.updatedFilepath) {
-        const newPathWithExt = `${this.updatedFilepath}.${this.file.extension}`;
-        if(newPathWithExt !== this.file.path) {
-          const fnparts = splitFolderAndFilename(newPathWithExt);
-          const newPath = getNewUniqueFilepath(
-            this.app.vault,
-            fnparts.folderpath,
-            fnparts.filename,
-          );
-          await this.app.vault.rename(this.file,newPath);
-          el.link = this.element.link.replace(
-            /(\[\[)([^#\]]*)([^\]]*]])/,`$1${
-              this.plugin.app.metadataCache.fileToLinktext(
-                this.file,this.view.file.path,true)
-            }$3`);
-          dirty = true;
-        }
-      }
-      if(this.isYouTube && this.youtubeStart !== getYouTubeStartAt(this.element.link)) {
-        dirty = true;
-        if(isValidYouTubeStart(this.youtubeStart)) {
-          el.link = updateYouTubeStartTime(el.link,this.youtubeStart);
-        } else {
-          new Notice(t("ES_YOUTUBE_START_INVALID"));
-        }
-      }
-      if(
-        this.isMDFile && (
-          this.mdCustomData.backgroundColor !== this.element.customData?.backgroundColor ||
-          this.mdCustomData.borderColor !== this.element.customData?.borderColor ||
-          this.mdCustomData.backgroundOpacity !== this.element.customData?.backgroundOpacity ||
-          this.mdCustomData.borderOpacity !== this.element.customData?.borderOpacity ||
-          this.mdCustomData.filenameVisible !== this.element.customData?.filenameVisible)
-      ) {
-        addAppendUpdateCustomData(el,{mdProps: this.mdCustomData});
-        dirty = true;
-      }
 
-      if(this.zoomValue !== this.element.scale[0]) {
-        dirty = true;
-        
-        el.scale = [this.zoomValue,this.zoomValue];
+    const onKeyDown = (ev: KeyboardEvent) => {
+      if(isCTRL(ev) && ev.key === "Enter") {
+        this.applySettings();
       }
-      if(dirty) {
-        this.ea.addElementsToView();
-      }
-      this.close();
-    };
-    const bCancel = div.createEl("button", { text: t("PROMPT_BUTTON_CANCEL"), cls: "excalidraw-prompt-button" });
-    bCancel.onclick = () => {
-      this.close();
-    };
+    }
+
+    this.onKeyDown = onKeyDown;
+    this.containerEl.ownerDocument.addEventListener("keydown",onKeyDown);
   }
+
+ 
+
+  private async applySettings() {
+    let dirty = false;
+    const el = this.ea.getElement(this.element.id) as Mutable<ExcalidrawEmbeddableElement>;
+    if(this.updatedFilepath) {
+      const newPathWithExt = `${this.updatedFilepath}.${this.file.extension}`;
+      if(newPathWithExt !== this.file.path) {
+        const fnparts = splitFolderAndFilename(newPathWithExt);
+        const newPath = getNewUniqueFilepath(
+          this.app.vault,
+          fnparts.folderpath,
+          fnparts.filename,
+        );
+        await this.app.vault.rename(this.file,newPath);
+        el.link = this.element.link.replace(
+          /(\[\[)([^#\]]*)([^\]]*]])/,`$1${
+            this.plugin.app.metadataCache.fileToLinktext(
+              this.file,this.view.file.path,true)
+          }$3`);
+        dirty = true;
+      }
+    }
+    if(this.isYouTube && this.youtubeStart !== getYouTubeStartAt(this.element.link)) {
+      dirty = true;
+      if(this.youtubeStart === "" || isValidYouTubeStart(this.youtubeStart)) {
+        el.link = updateYouTubeStartTime(el.link,this.youtubeStart);
+      } else {
+        new Notice(t("ES_YOUTUBE_START_INVALID"));
+      }
+    }
+    if(
+      this.isMDFile && (
+        this.mdCustomData.backgroundColor !== this.element.customData?.backgroundColor ||
+        this.mdCustomData.borderColor !== this.element.customData?.borderColor ||
+        this.mdCustomData.backgroundOpacity !== this.element.customData?.backgroundOpacity ||
+        this.mdCustomData.borderOpacity !== this.element.customData?.borderOpacity ||
+        this.mdCustomData.filenameVisible !== this.element.customData?.filenameVisible)
+    ) {
+      addAppendUpdateCustomData(el,{mdProps: this.mdCustomData});
+      dirty = true;
+    }
+
+    if(this.zoomValue !== this.element.scale[0]) {
+      dirty = true;
+      
+      el.scale = [this.zoomValue,this.zoomValue];
+    }
+    if(dirty) {
+      this.ea.addElementsToView();
+    }
+    this.close();
+  };
 }
 

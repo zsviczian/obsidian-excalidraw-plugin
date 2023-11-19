@@ -228,7 +228,7 @@ function RenderObsidianView(
     return () => {}; //cleanup on unmount
   }, [linkText, subpath, containerRef]);
   
-  const setColors = (canvasNode: HTMLDivElement, element: NonDeletedExcalidrawElement, mdProps: EmbeddableMDCustomProps, canvas: string) => {
+  const setColors = (canvasNode: HTMLDivElement, element: NonDeletedExcalidrawElement, mdProps: EmbeddableMDCustomProps, canvasColor: string) => {
     if(!mdProps) return;
     if (!leafRef.current?.hasOwnProperty("node")) return;
 
@@ -246,13 +246,17 @@ function RenderObsidianView(
     if(mdProps.backgroundMatchElement) {
       const opacity = (mdProps?.backgroundOpacity ?? 50)/100;
       const color = element?.backgroundColor 
-        ? ea.getCM(element.backgroundColor).alphaTo(opacity).stringHEX()
+        ? (element.backgroundColor.toLowerCase() === "transparent"
+          ? "transparent"
+          : ea.getCM(element.backgroundColor).alphaTo(opacity).stringHEX())
         : "transparent";
       canvasNode?.style.setProperty("--canvas-background", color);
       canvasNodeContainer?.style.setProperty("background-color", color);
     } else if (!(mdProps?.backgroundMatchElement ?? true )) {
       const color = mdProps.backgroundMatchCanvas
-        ? ea.getCM(canvasColor).alphaTo((mdProps.backgroundOpacity??100)/100).stringHEX()
+        ? (canvasColor.toLowerCase() === "transparent"
+          ? "transparent"
+          : ea.getCM(canvasColor).alphaTo((mdProps.backgroundOpacity??100)/100).stringHEX())
         : ea.getCM(mdProps.backgroundColor).alphaTo((mdProps.backgroundOpacity??100)/100).stringHEX();
       containerRef.current?.style.setProperty("--canvas-background", color);
       canvasNodeContainer?.style.setProperty("background-color", color);
@@ -261,8 +265,10 @@ function RenderObsidianView(
     if(mdProps.borderMatchElement) {
       const opacity = (mdProps?.borderOpacity ?? 50)/100;
       const color = element?.strokeColor
-      ? ea.getCM(element?.strokeColor).alphaTo(opacity).stringHEX()
-      : "transparent";
+        ? (element.strokeColor.toLowerCase() === "transparent"
+          ? "transparent"
+          : ea.getCM(element.strokeColor).alphaTo(opacity).stringHEX())
+        : "transparent";
       canvasNode?.style.setProperty("--canvas-border", color);
       canvasNodeContainer?.style.setProperty("border-color", color);
     } else if(!(mdProps?.borderMatchElement ?? true)) {
@@ -398,7 +404,7 @@ export const CustomEmbeddable: React.FC<{element: NonDeletedExcalidrawElement; v
         color: `var(--text-normal)`,
       }}
       className={`${theme} canvas-node ${
-        mdProps?.filenameVisible ? "" : "excalidraw-mdEmbed-hideFilename"}`}
+        mdProps?.filenameVisible && !mdProps.useObsidianDefaults ? "" : "excalidraw-mdEmbed-hideFilename"}`}
     >
       <RenderObsidianView
         mdProps={mdProps}

@@ -190,7 +190,7 @@ export class EmbeddableMenu {
                 title={t("ZOOM_TO_FIT")}
                 action={() => {
                   if(!element) return;
-                  api.zoomToFit([element], view.plugin.settings.zoomToFitMaxLevel, 0.1);
+                  api.zoomToFit([element], 30, 0.1);
                 }}
                 icon={ICONS.ZoomToSelectedElement}
                 view={view}
