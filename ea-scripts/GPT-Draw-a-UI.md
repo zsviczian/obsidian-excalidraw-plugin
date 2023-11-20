@@ -1,5 +1,7 @@
 /*
-Based on https://github.com/SawyerHood/draw-a-ui
+Inspired by https://github.com/SawyerHood/draw-a-ui
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/y3kHl_6Ll4w" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-draw-a-ui.jpg)
 ```js*/
@@ -195,5 +197,7 @@ const folder = await checkAndCreateFolder(FOLDER);
 const filepath = getNewUniqueFilepath(FILENAME,folder.path);
 const file = await app.vault.create(filepath,htmlContent);
 const url = app.vault.adapter.getFilePath(file.path).toString();
-ea.addEmbeddable(0,0,600,800,url);
-ea.addElementsToView(true,true);
+const bb = ea.getBoundingBox(ea.getViewSelectedElements());
+ea.addEmbeddable(bb.topX+bb.width+40,bb.topY,600,800,url);
+await ea.addElementsToView(true,true);
+ea.viewZoomToElements([]);
