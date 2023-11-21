@@ -1,5 +1,5 @@
 /*
-Inspired by https://github.com/SawyerHood/draw-a-ui
+Based on https://github.com/SawyerHood/draw-a-ui
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/y3kHl_6Ll4w" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
@@ -45,7 +45,7 @@ if(OPENAI_API_KEY==="") {
 const systemPrompt = `You are an expert tailwind developer. A user will provide you with a
  low-fidelity wireframe of an application and you will return 
  a single html file that uses tailwind to create the website.
- Use creative license to make the application more fleshed out. 
+ Use creative license to make the application more fleshed out. Write the necessary javascript code. 
  If you need to insert an image, use placehold.co to create a placeholder image.
  Respond only with the html file.`;
 
@@ -105,41 +105,41 @@ const blobToBase64 = async (blob) => {
 }
 
 const getRequestObjFromSelectedElements = async (view) => {
-  await view.forceSave(true);
-  const viewElements = ea.getViewSelectedElements();
-  if(viewElements.length === 0) {
-    new Notice ("Aborting because there is nothing selected.",4000);
-    return;
-  }
-  const bb = ea.getBoundingBox(viewElements);
-  const size = (bb.width*bb.height);
-  const minRatio = Math.sqrt(360000/size);
-  const maxRatio = Math.sqrt(size/16000000);
-  const scale = minRatio > 1 
-    ? minRatio
-    : (
-        maxRatio > 1 
-        ? 1/maxRatio
-        : 1
+    await view.forceSave(true);
+    const viewElements = ea.getViewSelectedElements();
+    if(viewElements.length === 0) {
+      new Notice ("Aborting because there is nothing selected.",4000);
+      return;
+    }
+    const bb = ea.getBoundingBox(viewElements);
+    const size = (bb.width*bb.height);
+    const minRatio = Math.sqrt(360000/size);
+    const maxRatio = Math.sqrt(size/16000000);
+    const scale = minRatio > 1 
+      ? minRatio
+      : (
+          maxRatio > 1 
+          ? 1/maxRatio
+          : 1
+        );
+	
+    const loader = ea.getEmbeddedFilesLoader(false);
+    const exportSettings = {
+      withBackground: true,
+      withTheme: true,
+    };
+
+    const img =
+      await ea.createPNG(
+        view.file.path,
+        scale,
+        exportSettings,
+        loader,
+        "light",
       );
-
-  const loader = ea.getEmbeddedFilesLoader(false);
-  const exportSettings = {
-    withBackground: true,
-    withTheme: true,
-  };
-
-  const img =
-    await ea.createPNG(
-      view.file.path,
-      scale,
-      exportSettings,
-      loader,
-      "light",
-    );
-  const dataURL = `data:image/png;base64,${await blobToBase64(img)}`;
-  return { json: async () => ({ image: dataURL }) }
-}
+    const dataURL = `data:image/png;base64,${await blobToBase64(img)}`;
+    return { json: async () => ({ image: dataURL }) }
+  }
 
 const extractHTMLFromString = (result) => {
   if(!result) return null;
@@ -199,5 +199,5 @@ const file = await app.vault.create(filepath,htmlContent);
 const url = app.vault.adapter.getFilePath(file.path).toString();
 const bb = ea.getBoundingBox(ea.getViewSelectedElements());
 ea.addEmbeddable(bb.topX+bb.width+40,bb.topY,600,800,url);
-await ea.addElementsToView(true,true);
+await ea.addElementsToView(false,true);
 ea.viewZoomToElements([]);
