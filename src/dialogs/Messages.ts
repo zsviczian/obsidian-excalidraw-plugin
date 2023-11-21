@@ -17,6 +17,13 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.0.3":`
+## Fixed
+- Mermaid to Excalidraw stopped working after installing the Obsidian 1.5.0 insider build. [#1450](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1450)
+- CTRL+Click on a Mermaid diagram did not open the Mermaid editor.
+- Embed color settings were not honored when the embedded markdown was focused on a section or block.
+- Scrollbars were visible when the embeddable was set to transparent (set background color to match element background, and set element background color to "transparent").
+`,
 "2.0.2":`
 <div class="excalidraw-videoWrapper"><div>
 <iframe src="https://www.youtube.com/embed/502swdqvZ2A" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

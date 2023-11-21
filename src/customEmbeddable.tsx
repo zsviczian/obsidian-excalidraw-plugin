@@ -250,15 +250,22 @@ function RenderObsidianView(
           ? "transparent"
           : ea.getCM(element.backgroundColor).alphaTo(opacity).stringHEX())
         : "transparent";
+      
+      color === "transparent" ? canvasNode?.addClass("transparent") : canvasNode?.removeClass("transparent");        
       canvasNode?.style.setProperty("--canvas-background", color);
+      canvasNode?.style.setProperty("--background-primary", color);
       canvasNodeContainer?.style.setProperty("background-color", color);
     } else if (!(mdProps?.backgroundMatchElement ?? true )) {
+      const opacity = (mdProps.backgroundOpacity??100)/100;
       const color = mdProps.backgroundMatchCanvas
         ? (canvasColor.toLowerCase() === "transparent"
           ? "transparent"
-          : ea.getCM(canvasColor).alphaTo((mdProps.backgroundOpacity??100)/100).stringHEX())
+          : ea.getCM(canvasColor).alphaTo(opacity).stringHEX())
         : ea.getCM(mdProps.backgroundColor).alphaTo((mdProps.backgroundOpacity??100)/100).stringHEX();
-      containerRef.current?.style.setProperty("--canvas-background", color);
+      
+      color === "transparent" ? canvasNode?.addClass("transparent") : canvasNode?.removeClass("transparent");
+      canvasNode?.style.setProperty("--canvas-background", color);
+      canvasNode?.style.setProperty("--background-primary", color);
       canvasNodeContainer?.style.setProperty("background-color", color);
     }
 
@@ -270,10 +277,12 @@ function RenderObsidianView(
           : ea.getCM(element.strokeColor).alphaTo(opacity).stringHEX())
         : "transparent";
       canvasNode?.style.setProperty("--canvas-border", color);
+      canvasNode?.style.setProperty("--canvas-color", color);
       canvasNodeContainer?.style.setProperty("border-color", color);
     } else if(!(mdProps?.borderMatchElement ?? true)) {
       const color = ea.getCM(mdProps.borderColor).alphaTo((mdProps.borderOpacity??100)/100).stringHEX();
       canvasNode?.style.setProperty("--canvas-border", color);
+      canvasNode?.style.setProperty("--canvas-color", color);
       canvasNodeContainer?.style.setProperty("border-color", color);
     }
   }

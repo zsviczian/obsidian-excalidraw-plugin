@@ -127,7 +127,7 @@ import { CanvasNodeFactory, ObsidianCanvasNode } from "./utils/CanvasNodeFactory
 import { EmbeddableMenu } from "./menu/EmbeddableActionsMenu";
 import { useDefaultExcalidrawFrame } from "./utils/CustomEmbeddableUtils";
 import { UniversalInsertFileModal } from "./dialogs/UniversalInsertFileModal";
-import { shouldRenderMermaid } from "./utils/MermaidUtils";
+import { getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
 import { nanoid } from "nanoid";
 
 declare const PLUGIN_VERSION:string;
@@ -1024,13 +1024,14 @@ export default class ExcalidrawView extends TextFileView {
         })();
         return;
       }
-      if (this.excalidrawData.hasMermaid(selectedImage.fileId)) {
+      if (this.excalidrawData.hasMermaid(selectedImage.fileId) || getMermaidText(imageElement)) {
         if(shouldRenderMermaid) {
           const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
-          api.setActiveTool({type: "mermaid"});
+          api.updateScene({appState: { openDialog: "mermaid" }});
         }
         return;
       }
+      
       await this.save(false); //in case pasted images haven't been saved yet
       if (this.excalidrawData.hasFile(selectedImage.fileId)) {
         const ef = this.excalidrawData.getFile(selectedImage.fileId);

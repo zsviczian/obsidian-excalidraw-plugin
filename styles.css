@@ -477,6 +477,13 @@ hr.excalidraw-setting-hr {
   display: none;
 }
 
+.excalidraw__embeddable-container .canvas-node:not(.is-editing).transparent {
+  ::-webkit-scrollbar,
+  ::-webkit-scrollbar-horizontal {
+    display: none;
+  }
+}
+
 .canvas-node:not(.is-editing):has(.excalidraw-canvas-immersive) {
   ::-webkit-scrollbar,
   ::-webkit-scrollbar-horizontal {
@@ -489,3 +496,4 @@ hr.excalidraw-setting-hr {
   border:       unset;
   box-shadow:   unset;
 }
+

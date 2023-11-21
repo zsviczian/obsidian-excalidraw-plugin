@@ -1235,11 +1235,8 @@ export class ExcalidrawData {
     const scene = this.scene as SceneDataWithFiles;
 
     //remove files and equations that no longer have a corresponding image element
-    const fileIds = (
-      scene.elements.filter(
-        (e) => e.type === "image",
-      ) as ExcalidrawImageElement[]
-    ).map((e) => e.fileId);
+    const images = scene.elements.filter((e) => e.type === "image") as ExcalidrawImageElement[];
+    const fileIds = (images).map((e) => e.fileId);
     this.files.forEach((value, key) => {
       if (!fileIds.contains(key)) {
         this.files.delete(key);
@@ -1261,21 +1258,25 @@ export class ExcalidrawData {
       }
     });
 
+    
     //check if there are any images that need to be processed in the new scene
     if (!scene.files || Object.keys(scene.files).length === 0) {
       return false;
     }
+
 
     //assing new fileId to duplicate equation and markdown files
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/601
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/593
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/297
     const processedIds = new Set<string>();
-    fileIds.forEach(fileId=>{
+    fileIds.forEach((fileId,idx)=>{
       if(processedIds.has(fileId)) {
         const file = this.getFile(fileId);
         const equation = this.getEquation(fileId);
         const mermaid = this.getMermaid(fileId);
+
+
 
         //images should have a single reference, but equations, and markdown embeds should have as many as instances of the file in the scene
         if(file && (file.isHyperLink || file.isLocalLink || (file.file && (file.file.extension !== "md" || this.plugin.isExcalidrawFile(file.file))))) {
@@ -1284,6 +1285,12 @@ export class ExcalidrawData {
         if(mermaid) {
           return;
         }
+
+        if(getMermaidText(images[idx])) {
+          this.setMermaid(fileId, {mermaid: getMermaidText(images[idx]), isLoaded: true});
+          return;
+        }
+
         const newId = fileid();
         (scene
           .elements
