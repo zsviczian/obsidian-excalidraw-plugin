@@ -111,6 +111,7 @@ const getRequestObjFromSelectedElements = async (view) => {
       new Notice ("Aborting because there is nothing selected.",4000);
       return;
     }
+    ea.copyViewElementsToEAforEditing(viewElements);
     const bb = ea.getBoundingBox(viewElements);
     const size = (bb.width*bb.height);
     const minRatio = Math.sqrt(360000/size);
@@ -131,13 +132,14 @@ const getRequestObjFromSelectedElements = async (view) => {
 
     const img =
       await ea.createPNG(
-        view.file.path,
+        null,
         scale,
         exportSettings,
         loader,
         "light",
       );
     const dataURL = `data:image/png;base64,${await blobToBase64(img)}`;
+    ea.clear();
     return { json: async () => ({ image: dataURL }) }
   }
 
