@@ -11,6 +11,8 @@ export class StylesManager {
   private styleDark: string;
   private plugin: ExcalidrawPlugin;
 
+  
+
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
     plugin.app.workspace.onLayoutReady(async () => {

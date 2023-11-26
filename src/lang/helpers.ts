@@ -25,7 +25,7 @@ import ru from "./locale/ru";
 import tr from "./locale/tr";
 import zhCN from "./locale/zh-cn";
 import zhTW from "./locale/zh-tw";
-import { LOCALE } from "src/constants";
+import { LOCALE } from "src/constants/constants";
 
 const localeMap: { [k: string]: Partial<typeof en> } = {
   ar,

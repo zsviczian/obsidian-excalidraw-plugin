@@ -2,7 +2,7 @@ import { AppState, ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/t
 import clsx from "clsx";
 import { TFile } from "obsidian";
 import * as React from "react";
-import { VIEW_TYPE_EXCALIDRAW } from "src/constants";
+import { VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
 import { PenSettingsModal } from "src/dialogs/PenSettingsModal";
 import ExcalidrawView from "src/ExcalidrawView";
 import { PenStyle } from "src/PenTypes";

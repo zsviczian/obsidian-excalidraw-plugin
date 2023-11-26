@@ -8,7 +8,7 @@ import {
   ASSISTANT_FONT,
   CASCADIA_FONT,
   VIRGIL_FONT,
-} from "./constFonts";
+} from "./constants/constFonts";
 import {  
   DEFAULT_MD_EMBED_CSS,
   fileid,
@@ -19,7 +19,7 @@ import {
   IMAGE_TYPES,
   nanoid,
   THEME_FILTER,
-} from "./constants";
+} from "./constants/constants";
 import { createSVG } from "./ExcalidrawAutomate";
 import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
 import { ExportSettings } from "./ExcalidrawView";
@@ -43,7 +43,7 @@ import {
 } from "./utils/Utils";
 import { ValueOf } from "./types";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
-import { mermaidToExcalidraw } from "src/constants";
+import { mermaidToExcalidraw } from "src/constants/constants";
 
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B

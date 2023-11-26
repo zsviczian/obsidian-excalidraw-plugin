@@ -25,7 +25,7 @@ import {
   wrapText,
   ERROR_IFRAME_CONVERSION_CANCELED,
   JSON_parse,
-} from "./constants";
+} from "./constants/constants";
 import { _measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
 import { TextMode } from "./ExcalidrawView";
@@ -287,7 +287,7 @@ export class ExcalidrawData {
 
     const elements = this.scene.elements;
     for (const el of elements) {
-      if(el.type === "iframe") {
+      if(el.type === "iframe" && !el.customData) {
         el.type = "embeddable";
       }
 
@@ -515,7 +515,7 @@ export class ExcalidrawData {
     }
 
     //once off migration of legacy scenes
-    if(this.scene?.elements?.some((el:any)=>el.type==="iframe")) {
+    if(this.scene?.elements?.some((el:any)=>el.type==="iframe" && !el.customData)) {
         const prompt = new ConfirmationPrompt(
           this.plugin,
           "This file contains embedded frames " +

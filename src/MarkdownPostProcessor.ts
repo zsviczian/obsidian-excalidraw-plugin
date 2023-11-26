@@ -4,7 +4,7 @@ import {
   TFile,
   Vault,
 } from "obsidian";
-import { RERENDER_EVENT } from "./constants";
+import { RERENDER_EVENT } from "./constants/constants";
 import { EmbeddedFilesLoader } from "./EmbeddedFileLoader";
 import { createPNG, createSVG } from "./ExcalidrawAutomate";
 import { ExportSettings } from "./ExcalidrawView";
@@ -24,6 +24,7 @@ import { getParentOfClass, isObsidianThemeDark, getFileCSSClasses } from "./util
 import { linkClickModifierType } from "./utils/ModifierkeyHelper";
 import { ImageKey, imageCache } from "./utils/ImageCache";
 import { FILENAMEPARTS, PreviewImageType } from "./utils/UtilTypes";
+import { CustomMutationObserver, isDebugMode } from "./utils/DebugHelper";
 
 interface imgElementAttributes {
   file?: TFile;
@@ -627,7 +628,7 @@ const tmpObsidianWYSIWYG = async (
 
   //timer to avoid the image flickering when the user is typing
   let timer: NodeJS.Timeout = null;
-  const observer = new MutationObserver((m) => {
+  const markdownObserverFn: MutationCallback = (m) => {
     if (!["alt", "width", "height"].contains(m[0]?.attributeName)) {
       return;
     }
@@ -640,7 +641,10 @@ const tmpObsidianWYSIWYG = async (
       const imgDiv = await processInternalEmbed(internalEmbedDiv,file);
       internalEmbedDiv.appendChild(imgDiv);    
     }, 500);
-  });
+  }
+  const observer = isDebugMode
+    ? new CustomMutationObserver(markdownObserverFn, "markdowPostProcessorObserverFn")
+    : new MutationObserver(markdownObserverFn);
   observer.observe(internalEmbedDiv, {
     attributes: true, //configure it to listen to attribute changes
   });
@@ -692,11 +696,14 @@ export const hoverEvent = (e: any) => {
 };
 
 //monitoring for div.popover.hover-popover.file-embed.is-loaded to be added to the DOM tree
-export const observer = new MutationObserver(async (m) => {
-  if (m.length == 0) {
+const legacyExcalidrawPopoverObserverFn: MutationCallback = async (m) => {
+  if (m.length === 0) {
     return;
   }
   if (!plugin.hover.linkText) {
+    return;
+  }
+  if (!plugin.hover.linkText.endsWith("excalidraw")) {
     return;
   }
   const file = metadataCache.getFirstLinkpathDest(
@@ -735,9 +742,7 @@ export const observer = new MutationObserver(async (m) => {
     return;
   }
   if (
-    //@ts-ignore
-    !m[0].addedNodes[0].classNames !=
-    "popover hover-popover file-embed is-loaded"
+    (m[0].addedNodes[0] as HTMLElement).className !== "popover hover-popover"
   ) {
     return;
   }
@@ -768,5 +773,9 @@ export const observer = new MutationObserver(async (m) => {
     });
   });
   node.appendChild(div);
-});
+};
+
+export const observer = isDebugMode
+  ? new CustomMutationObserver(legacyExcalidrawPopoverObserverFn, "legacyExcalidrawPopoverObserverFn")
+  : new MutationObserver(legacyExcalidrawPopoverObserverFn);
 

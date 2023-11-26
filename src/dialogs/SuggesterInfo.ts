@@ -183,7 +183,13 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "createPNG",
     code: "createPNG(templatePath?: string, scale?: number, exportSettings?: ExportSettings, loader?: EmbeddedFilesLoader, theme?: string,padding?: number): Promise<any>;",
-    desc: "Use ExcalidrawAutomate.getExportSettings(boolean,boolean) to create an ExportSettings object.\nUse ExcalidrawAutomate.getEmbeddedFilesLoader(boolean?) to create an EmbeddedFilesLoader object.",
+    desc: "Create an image based on the objects in ea.getElements(). The elements in ea will be merged with the elements from the provided template file - if any. Use ExcalidrawAutomate.getExportSettings(boolean,boolean) to create an ExportSettings object.\nUse ExcalidrawAutomate.getEmbeddedFilesLoader(boolean?) to create an EmbeddedFilesLoader object.",
+    after: "",
+  },
+  {
+    field: "createPNGBase64",
+    code: "craetePNGBase64(templatePath?: string, scale?: number, exportSettings?: ExportSettings, loader?: EmbeddedFilesLoader, theme?: string,padding?: number): Promise<string>;",
+    desc: "The same as createPNG but returns a base64 encoded string instead of a file.",
     after: "",
   },
   {
@@ -253,9 +259,15 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "addMermaid",
+    code: "async addMermaid(diagram: string, groupElements: boolean = true,): Promise<string[]>;",
+    desc: "Creates a mermaid diagram and returns the ids of the created elements as a string[]. The elements will be added to ea. To add them to the canvas you'll need to use addElementsToView. Depending on the diagram type the result will be either a single SVG image, or a number of excalidraw elements.",
+    after: "",
+  },
+  {
     field: "addLaTex",
-    code: "addLaTex(topX: number, topY: number, tex: string): Promise<string>;",
-    desc: null,
+    code: "async addLaTex(topX: number, topY: number, tex: string): Promise<string>;",
+    desc: "This is an async function, you need to avait the results. Adds a LaTex element to the drawing. The tex string is the LaTex code. The function returns the id of the created element.",
     after: "",
   },
   {
@@ -338,8 +350,8 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "copyViewElementsToEAforEditing",
-    code: "copyViewElementsToEAforEditing(elements: ExcalidrawElement[]): void;",
-    desc: "Copies elements from view to elementsDict for editing",
+    code: "copyViewElementsToEAforEditing(elements: ExcalidrawElement[], copyImages: boolean = false): void;",
+    desc: "Copies elements from view to elementsDict for editing. If copyImages is true, then relevant entries from scene.files will also be copied. This is required if you want to generate a PNG for a subset of the elements in the drawing (e.g. for AI generation)",
     after: "",
   },
   {
@@ -520,6 +532,43 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     field: "getAttachmentFilepath",
     code: "async getAttachmentFilepath(filename: string): Promise<string>",
     desc: "This asynchronous function should be awaited. It retrieves the filepath to a new file, taking into account the attachments preference settings in Obsidian. If the attachment folder doesn't exist, it creates it. The function returns the complete path to the file. If the provided filename already exists, the function will append '_[number]' before the extension to generate a unique filename.",
+    after: "",
+  },
+  {
+    field: "checkAndCreateFolder",
+    code: "async checkAndCreateFolder(folderpath: string): Promise<TFolder>",
+    desc: "Checks if the folder exists, if not, creates it.",
+    after: "",
+  },
+  {
+    field: "getNewUniqueFilepath",
+    code: "getNewUniqueFilepath(filename: string, folderpath: string): string",
+    desc: "Checks if the filepath already exists, if so, returns a new filepath with a number appended to the filename else returns the filepath as provided.",
+    after: "",
+  },
+  {
+    field: "extractCodeBlocks",
+    code: "extractCodeBlocks(markdown: string): { data: string, type: string }[]",
+    desc: "Grabs the codeblock content from the supplied markdown string. Returns an array of dictionaries with the codeblock content and type",
+    after: "",
+  },
+  {
+    field: "postOpenAI",
+    code: "async postOpenAI(requst: AIRequest): Promise<RequestUrlResponse>",
+    desc:
+      "This asynchronous function should be awaited. It posts the supplied request to the OpenAI API and returns the response.<br>" +
+      "The response is a dictionary with the following keys:<br><code>{image, text, instruction, systemPrompt}</code><br>"+
+      "<b>image</b> should be a dataURL - use ea.createPNGBase64()<br>"+
+      "<b>systemPrompt</b>: if <code>undefined</code> the message to OpenAI will not include a system prompt<br>"+
+      "<b>text</b> is the actual user prompt, a request must have either an image or a text<br>"+
+      "<b>instruction</b> is a user prompt sent as a separate element in the message - I use it to reinforce the type of response I am seeing (e.g. mermaid in a codeblock)<br>"+
+      "RequestUrlResponse is defined in the <a onclick='window.open(\"https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts\")'>Obsidian API</a>",
+    after: "",
+  },
+  {
+    field: "convertStringToDataURL",
+    code: 'async convertStringToDataURL (data:string, type: string = "text/html"):Promise<string>',
+    desc: "Converts a string to a DataURL.",
     after: "",
   },
   {

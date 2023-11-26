@@ -1,12 +1,12 @@
 import { NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
-import { DEVICE, REG_LINKINDEX_INVALIDCHARS } from "src/constants";
+import { DEVICE, REG_LINKINDEX_INVALIDCHARS } from "src/constants/constants";
 import { getParentOfClass } from "./ObsidianUtils";
 import { TFile, WorkspaceLeaf } from "obsidian";
 import { getLinkParts } from "./Utils";
 import ExcalidrawView from "src/ExcalidrawView";
 
 export const useDefaultExcalidrawFrame = (element: NonDeletedExcalidrawElement) => {
-  return !element.link.startsWith("["); // && !element.link.match(TWITTER_REG);
+  return !(element.link.startsWith("[") || element.link.startsWith("file:") || element.link.startsWith("data:")); // && !element.link.match(TWITTER_REG);
 }
 
 export const leafMap = new Map<string, WorkspaceLeaf>();

@@ -5,7 +5,7 @@ import {
 import ExcalidrawPlugin from "../main";
 import { checkAndCreateFolder, splitFolderAndFilename } from "./FileUtils";
 import { linkClickModifierType, ModifierKeys } from "./ModifierkeyHelper";
-import { REG_BLOCK_REF_CLEAN, REG_SECTION_REF_CLEAN } from "src/constants";
+import { REG_BLOCK_REF_CLEAN, REG_SECTION_REF_CLEAN } from "src/constants/constants";
 
 export const getParentOfClass = (element: Element, cssClass: string):HTMLElement | null => {
   let parent = element.parentElement;

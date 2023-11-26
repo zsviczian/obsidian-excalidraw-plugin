@@ -41,11 +41,11 @@ import {
   EXPORT_IMG_ICON_NAME,
   EXPORT_IMG_ICON,
   LOCALE,
-} from "./constants";
+} from "./constants/constants";
 import {
   VIRGIL_FONT,
   VIRGIL_DATAURL,
-} from "./constFonts";
+} from "./constants/constFonts";
 import ExcalidrawView, { TextMode, getTextMode } from "./ExcalidrawView";
 import {
   changeThemeOfExcalidrawMD,
@@ -116,13 +116,14 @@ import { ExportDialog } from "./dialogs/ExportDialog";
 import { UniversalInsertFileModal } from "./dialogs/UniversalInsertFileModal";
 import { imageCache } from "./utils/ImageCache";
 import { StylesManager } from "./utils/StylesManager";
-import { MATHJAX_SOURCE_LZCOMPRESSED } from "./constMathJaxSource";
+import { MATHJAX_SOURCE_LZCOMPRESSED } from "./constants/constMathJaxSource";
 import { PublishOutOfDateFilesDialog } from "./dialogs/PublishOutOfDateFiles";
 import { EmbeddableSettings } from "./dialogs/EmbeddableSettings";
 import { processLinkText } from "./utils/CustomEmbeddableUtils";
 import { getEA } from "src";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
 import { Mutable } from "@zsviczian/excalidraw/types/utility-types";
+import { CustomMutationObserver, durationTreshold, isDebugMode } from "./utils/DebugHelper";
 
 declare const EXCALIDRAW_PACKAGES:string;
 declare const react:any;
@@ -148,12 +149,12 @@ export default class ExcalidrawPlugin extends Plugin {
     linkText: null,
     sourcePath: null,
   };
-  private observer: MutationObserver;
-  private themeObserver: MutationObserver;
-  private fileExplorerObserver: MutationObserver;
-  private modalContainerObserver: MutationObserver;
-  private workspaceDrawerLeftObserver: MutationObserver;
-  private workspaceDrawerRightObserver: MutationObserver;
+  private observer: MutationObserver | CustomMutationObserver;
+  private themeObserver: MutationObserver | CustomMutationObserver;
+  private fileExplorerObserver: MutationObserver | CustomMutationObserver;
+  private modalContainerObserver: MutationObserver | CustomMutationObserver;
+  private workspaceDrawerLeftObserver: MutationObserver | CustomMutationObserver;
+  private workspaceDrawerRightObserver: MutationObserver  | CustomMutationObserver;
   public opencount: number = 0;
   public ea: ExcalidrawAutomate;
   //A master list of fileIds to facilitate copy / paste
@@ -203,6 +204,38 @@ export default class ExcalidrawPlugin extends Plugin {
     return {react:r, reactDOM:rd, excalidrawLib:e};
   }
 
+  public registerEvent(event: any) {
+    if(!isDebugMode) {
+      super.registerEvent(event);
+      return;
+    }
+
+    const originalHandler = event.fn;
+
+    // Wrap the original event handler
+    const wrappedHandler = async (...args: any[]) => {
+      const startTime = performance.now(); // Get start time
+  
+      // Invoke the original event handler
+      const result = await originalHandler(...args);
+  
+      const endTime = performance.now(); // Get end time
+      const executionTime = endTime - startTime;
+  
+      if(executionTime > durationTreshold) {
+        console.log(`Excalidraw Event '${event.name}' took ${executionTime}ms to execute`);
+      }
+  
+      return result;
+    };
+  
+    // Replace the original event handler with the wrapped one
+    event.fn = wrappedHandler;
+  
+    // Register the modified event
+    super.registerEvent(event);
+  }
+
   async onload() {
     addIcon(ICON_NAME, EXCALIDRAW_ICON);
     addIcon(SCRIPTENGINE_ICON_NAME, SCRIPTENGINE_ICON);
@@ -228,6 +261,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.experimentalFileTypeDisplayToggle(this.settings.experimentalFileType);
     this.registerCommands();
     this.registerEventListeners();
+    this.runStartupScript();
     this.initializeFourthFont();
     this.registerEditorSuggest(new FieldSuggester(this));
 
@@ -379,65 +413,6 @@ export default class ExcalidrawPlugin extends Plugin {
       }
     });
   }
-
-/*  public loadMathJax() {
-    const self = this;
-    this.app.workspace.onLayoutReady(async () => {
-      //loading Obsidian MathJax as fallback
-      await loadMathJax();
-      //@ts-ignore
-      try {
-        if(self.mathjaxDiv) {
-          document.body.removeChild(self.mathjaxDiv);
-          self.mathjax = null;
-          self.mathjaxLoaderFinished = false;
-        }
-        self.mathjaxDiv = document.body.createDiv();
-        self.mathjaxDiv.title = "Excalidraw MathJax Support";
-        self.mathjaxDiv.style.display = "none";
-
-        const iframe = self.mathjaxDiv.createEl("iframe");
-        iframe.title = "Excalidraw MathJax Support";
-        const doc = iframe.contentWindow.document;
-
-        const script = doc.createElement("script");
-        script.type = "text/javascript";
-        script.onload = () => {
-          const win = iframe.contentWindow;
-          //@ts-ignore
-          win.MathJax.startup.pagePromise.then(async () => {
-            //https://github.com/xldenis/obsidian-latex/blob/master/main.ts
-            const file = this.app.vault.getAbstractFileByPath("preamble.sty");
-            const preamble: string =
-              file && file instanceof TFile
-                ? await this.app.vault.read(file)
-                : null;
-            try {
-              if (preamble) {
-                //@ts-ignore
-                await win.MathJax.tex2svg(preamble);
-              }
-            } catch (e) {
-              errorlog({
-                where: self.loadMathJax,
-                description: "Unexpected error while loading preamble.sty",
-                error: e,
-              });
-            }
-            //@ts-ignore
-            self.mathjax = win.MathJax;
-            self.mathjaxLoaderFinished = true;
-          });
-        };
-        script.src = "data:text/javascript;base64," + decompressFromBase64(MATHJAX_SOURCE_LZCOMPRESSED); //self.settings.mathjaxSourceURL; // "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js";
-        //script.src = MATHJAX_DATAURL;
-        doc.head.appendChild(script);
-      } catch {
-        new Notice("Excalidraw: Error initializing LaTeX support");
-        self.mathjaxLoaderFinished = true;
-      }
-    });
-  }*/
 
   private switchToExcalidarwAfterLoad() {
     const self = this;
@@ -668,19 +643,22 @@ export default class ExcalidrawPlugin extends Plugin {
    * Displays a transcluded .excalidraw image in markdown preview mode
    */
   private addMarkdownPostProcessor() {
-    initializeMarkdownPostProcessor(this);
-    this.registerMarkdownPostProcessor(markdownPostProcessor);
+    const self = this;
+    this.app.workspace.onLayoutReady(() => {
+      initializeMarkdownPostProcessor(self);
+      self.registerMarkdownPostProcessor(markdownPostProcessor);
 
-    // internal-link quick preview
-    this.registerEvent(this.app.workspace.on("hover-link", hoverEvent));
+      // internal-link quick preview
+      self.registerEvent(self.app.workspace.on("hover-link", hoverEvent));
 
-    //monitoring for div.popover.hover-popover.file-embed.is-loaded to be added to the DOM tree
-    this.observer = observer;
-    this.observer.observe(document, { childList: true, subtree: true });
+      //monitoring for div.popover.hover-popover.file-embed.is-loaded to be added to the DOM tree
+      self.observer = observer;
+      self.observer.observe(document.body, { childList: true, subtree: false });
+    });
   }
 
   private addThemeObserver() {
-    this.themeObserver = new MutationObserver(async (m: MutationRecord[]) => {
+    const themeObserverFn:MutationCallback = async (m: MutationRecord[]) => {
       if (!this.settings.matchThemeTrigger) {
         return;
       }
@@ -703,7 +681,12 @@ export default class ExcalidrawPlugin extends Plugin {
           excalidrawView.setTheme(theme);
         }
       });
-    });
+    };
+
+    this.themeObserver = isDebugMode
+      ? new CustomMutationObserver(themeObserverFn, "themeObserver")
+      : new MutationObserver(themeObserverFn);
+  
     this.themeObserver.observe(document.body, {
       attributeOldValue: true,
       attributeFilter: ["class"],
@@ -748,25 +731,32 @@ export default class ExcalidrawPlugin extends Plugin {
       }
     };
 
-    this.fileExplorerObserver = new MutationObserver((m) => {
-      const mutationsWithNodes = m.filter((v) => v.addedNodes.length > 0);
-      mutationsWithNodes.forEach((mu) => {
-        mu.addedNodes.forEach((n) => {
-          if (!(n instanceof Element)) {
+    const fileExplorerObserverFn:MutationCallback = (mutationsList) => {
+      const mutationsWithNodes = mutationsList.filter((mutation) => mutation.addedNodes.length > 0);
+      mutationsWithNodes.forEach((mutationNode) => {
+        mutationNode.addedNodes.forEach((node) => {
+          if (!(node instanceof Element)) {
             return;
           }
-          n.querySelectorAll(".nav-file-title").forEach(insertFiletype);
+          node.querySelectorAll(".nav-file-title").forEach(insertFiletype);
         });
       });
-    });
+    };
+
+    this.fileExplorerObserver = isDebugMode
+      ? new CustomMutationObserver(fileExplorerObserverFn, "fileExplorerObserver")
+      : new MutationObserver(fileExplorerObserverFn);
 
     const self = this;
     this.app.workspace.onLayoutReady(() => {
       document.querySelectorAll(".nav-file-title").forEach(insertFiletype); //apply filetype to files already displayed
-      self.fileExplorerObserver.observe(document.querySelector(".workspace"), {
-        childList: true,
-        subtree: true,
-      });
+      const container = document.querySelector(".nav-files-container");
+      if (container) {
+        self.fileExplorerObserver.observe(container, {
+          childList: true,
+          subtree: true,
+        });
+      }
     });
   }
 
@@ -1931,6 +1921,30 @@ export default class ExcalidrawPlugin extends Plugin {
     );
   }
 
+  private runStartupScript() {
+    if(!this.settings.startupScriptPath || this.settings.startupScriptPath === "") {
+      return;
+    }
+    const self = this;
+    this.app.workspace.onLayoutReady(async () => {
+      const path = self.settings.startupScriptPath.endsWith(".md")
+        ? self.settings.startupScriptPath
+        : `${self.settings.startupScriptPath}.md`;
+      const f = self.app.vault.getAbstractFileByPath(path);
+      if (!f || !(f instanceof TFile)) {
+        new Notice(`Startup script not found: ${path}`);
+        return;
+      }
+      const script = await self.app.vault.read(f);
+      const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
+      try {
+       await new AsyncFunction("ea", script)(self.ea);
+      } catch (e) {
+        new Notice(`Error running startup script: ${e}`);
+      }
+    });
+  }
+
   private popScope: Function = null;
   private registerEventListeners() {
     const self = this;
@@ -2296,20 +2310,22 @@ export default class ExcalidrawPlugin extends Plugin {
     );
 
     //The user clicks settings, or "open another vault", or the command palette
-    this.modalContainerObserver = new MutationObserver(
-      async (m: MutationRecord[]) => {
-        if (
-          m.length !== 1 ||
-          m[0].type !== "childList" ||
-          m[0].addedNodes.length !== 1 ||
-          !this.activeExcalidrawView ||
-          !this.activeExcalidrawView.semaphores.dirty
-        ) {
-          return;
-        }
-        this.activeExcalidrawView.save();
-      },
-    );
+    const modalContainerObserverFn: MutationCallback = async (m: MutationRecord[]) => {
+      if (
+        (m.length !== 1) ||
+        (m[0].type !== "childList") ||
+        (m[0].addedNodes.length !== 1) ||
+        (!this.activeExcalidrawView) ||
+        (!this.activeExcalidrawView.semaphores.dirty)
+      ) {
+        return;
+      }
+      this.activeExcalidrawView.save();
+    };
+
+    this.modalContainerObserver = isDebugMode
+      ? new CustomMutationObserver(modalContainerObserverFn, "modalContainerObserver")
+      : new MutationObserver(modalContainerObserverFn);
     this.modalContainerObserver.observe(document.body, {
       childList: true,
     });
@@ -2338,12 +2354,16 @@ export default class ExcalidrawPlugin extends Plugin {
       };
 
       if (leftWorkspaceDrawer) {
-        this.workspaceDrawerLeftObserver = new MutationObserver(action);
+        this.workspaceDrawerLeftObserver = isDebugMode
+          ? new CustomMutationObserver(action, "slidingDrawerLeftObserver")
+          : new MutationObserver(action);
         this.workspaceDrawerLeftObserver.observe(leftWorkspaceDrawer, options);
       }
 
       if (rightWorkspaceDrawer) {
-        this.workspaceDrawerRightObserver = new MutationObserver(action);
+        this.workspaceDrawerRightObserver = isDebugMode
+          ? new CustomMutationObserver(action, "slidingDrawerRightObserver")
+          : new MutationObserver(action);
         this.workspaceDrawerRightObserver.observe(
           rightWorkspaceDrawer,
           options,

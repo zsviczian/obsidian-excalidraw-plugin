@@ -3,7 +3,7 @@ import {
   FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS,
   FRONTMATTER_KEY_CUSTOM_PREFIX,
   FRONTMATTER_KEY_CUSTOM_URL_PREFIX,
-} from "src/constants";
+} from "src/constants/constants";
 import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/ModifierkeyHelper";
 
 // English
@@ -140,6 +140,25 @@ export default {
     "You can access your scripts from Excalidraw via the Obsidian Command Palette. Assign " +
     "hotkeys to your favorite scripts just like to any other Obsidian command. " +
     "The folder may not be the root folder of your Vault. ",
+  AI_HEAD: "AI Settings - Experimental",
+  AI_DESC: `In the "AI" settings, you can configure options for using OpenAI's GPT API. ` +
+    `While the OpenAI API is in beta, its use is strictly limited — as such we require you use your own API key. ` +
+    `You can create an OpenAI account, add a small credit (5 USD minimum), and generate your own API key. ` +
+    `Once API key is set, you can use the AI tools in Excalidraw.`,
+  AI_OPENAI_TOKEN_NAME: "OpenAI API key",
+  AI_OPENAI_TOKEN_DESC:
+    "You can get your OpenAI API key from your <a href='https://platform.openai.com/api-keys'>OpenAI account</a>.",
+  AI_OPENAI_TOKEN_PLACEHOLDER: "Enter your OpenAI API key here",
+  AI_OPENAI_DEFAULT_MODEL_NAME: "Default AI model",
+  AI_OPENAI_DEFAULT_MODEL_DESC:
+    "The default AI model to use when generating text. This is a freetext field, so you can enter any valid OpenAI model name. " +
+    "Find out more about the available models on the <a href='https://platform.openai.com/docs/models'>OpenAI website</a>.",
+  AI_OPENAI_DEFAULT_MODEL_PLACEHOLDER: "Enter your default AI model here",
+  AI_OPENAI_DEFAULT_VISION_MODEL_NAME: "Default AI vision model",
+  AI_OPENAI_DEFAULT_VISION_MODEL_DESC:
+    "The default AI vision model to use when generating text from images. This is a freetext field, so you can enter any valid OpenAI model name. " +
+    "Find out more about the available models on the <a href='https://platform.openai.com/docs/models'>OpenAI website</a>.",
+  AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER: "Enter your default AI vision model here",
   SAVING_HEAD: "Saving",
   SAVING_DESC: "In the 'Saving' section of Excalidraw Settings, you can configure how your drawings are saved. This includes options for compressing Excalidraw JSON in Markdown, setting autosave intervals for both desktop and mobile, defining filename formats, and choosing whether to use the .excalidraw.md or .md file extension. ",
   COMPRESS_NAME: "Compress Excalidraw JSON in Markdown",
@@ -486,10 +505,23 @@ FILENAME_HEAD: "Filename",
   CUSTOM_PEN_DESC: "You will see these pens next to the Obsidian Menu on the canvas. You can customize the pens on the canvas by long-pressing the pen button.",
   EXPERIMENTAL_HEAD: "Miscellaneous features",
   EXPERIMENTAL_DESC: `These miscellaneous features in Excalidraw include options for setting default LaTeX formulas for new equations, enabling a Field Suggester for autocompletion, displaying type indicators for Excalidraw files, enabling immersive image embedding in live preview editing mode, and experimenting with Taskbone Optical Character Recognition for text extraction from images and drawings. Users can also enter a Taskbone API key for extended usage of the OCR service.`,
+  EA_HEAD: "Excalidraw Automate",
+  EA_DESC: 
+    "ExcalidrawAutomate is a scripting and automation API for Excalidraw. Unfortunately, the documentation of the API is sparse. " +
+    "I recommend reading the <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/API/ExcalidrawAutomate.d.ts'>ExcalidrawAutomate.d.ts</a> file, " +
+    "visiting the <a href='https://zsviczian.github.io/obsidian-excalidraw-plugin/'>ExcalidrawAutomate How-to</a> page - though the information " +
+    "here has not been updated for a long while -, and finally to enable the field suggester below. The field suggester will show you the available " +
+    "functions, their parameters and short description as you type. The field suggester is the most up-to-date documentation of the API.",
   FIELD_SUGGESTER_NAME: "Enable Field Suggester",
   FIELD_SUGGESTER_DESC:
     "Field Suggester borrowed from Breadcrumbs and Templater plugins. The Field Suggester will show an autocomplete menu " +
     "when you type <code>excalidraw-</code> or <code>ea.</code> with function description as hints on the individual items in the list.",
+  STARTUP_SCRIPT_NAME: "Startup script",
+  STARTUP_SCRIPT_DESC:
+    "If set, excalidraw will execute the script at plugin startup. This is useful if you want to set any of the Excalidraw Automate hooks. The startup script is a markdown file " +
+    "that should contain the javascript code you want to execute when Excalidraw starts.",
+  STARTUP_SCRIPT_BUTTON: "Create startup script",
+  STARTUP_SCRIPT_EXISTS: "Startup script file already exists",
   FILETYPE_NAME: "Display type (✏️) for excalidraw.md files in File Explorer",
   FILETYPE_DESC:
     "Excalidraw files will receive an indicator using the emoji or text defined in the next setting.",
@@ -574,6 +606,7 @@ FILENAME_HEAD: "Filename",
   RELOAD: "Reload original link",
   OPEN_IN_BROWSER: "Open current link in browser",
   PROPERTIES: "Properties",
+  COPYCODE: "Copy source to clipboard",
 
   //EmbeddableSettings.tsx
   ES_TITLE: "Embeddable Element Settings",

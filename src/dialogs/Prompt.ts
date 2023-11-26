@@ -18,7 +18,7 @@ import { KeyEvent, isCTRL } from "src/utils/ModifierkeyHelper";
 import { t } from "src/lang/helpers";
 import { ExcalidrawElement, getEA } from "src";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
-import { MAX_IMAGE_SIZE } from "src/constants";
+import { MAX_IMAGE_SIZE } from "src/constants/constants";
 
 export type ButtonDefinition = { caption: string; tooltip?:string; action: Function };
 

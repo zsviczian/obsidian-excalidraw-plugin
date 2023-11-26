@@ -3,7 +3,7 @@ import ExcalidrawView from "../ExcalidrawView";
 import ExcalidrawPlugin from "../main";
 import {  Modal, Setting, TextComponent } from "obsidian";
 import { FileSuggestionModal } from "./FolderSuggester";
-import { IMAGE_TYPES, sceneCoordsToViewportCoords, viewportCoordsToSceneCoords, MAX_IMAGE_SIZE } from "src/constants";
+import { IMAGE_TYPES, sceneCoordsToViewportCoords, viewportCoordsToSceneCoords, MAX_IMAGE_SIZE } from "src/constants/constants";
 import { insertEmbeddableToView, insertImageToView } from "src/utils/ExcalidrawViewUtils";
 import { getEA } from "src";
 import { InsertPDFModal } from "./InsertPDFModal";

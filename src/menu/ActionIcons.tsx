@@ -1,4 +1,4 @@
-import { Cog, Globe, RotateCcw, Scan, Settings } from "lucide-react";
+import { Copy, Globe, RotateCcw, Scan, Settings } from "lucide-react";
 import * as React from "react";
 import { PenStyle } from "src/PenTypes";
 
@@ -27,6 +27,7 @@ export const ICONS = {
     </svg>
   ),
   Reload: (<RotateCcw />),
+  Copy: (<Copy /> ),
   Globe: (<Globe />),
   ZoomToSelectedElement: (<Scan />),
   Properties: (<Settings />),

@@ -1,6 +1,6 @@
 import { DataURL } from "@zsviczian/excalidraw/types/types";
 import { loadPdfJs, normalizePath, Notice, requestUrl, RequestUrlResponse, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
-import { URLFETCHTIMEOUT } from "src/constants";
+import { URLFETCHTIMEOUT } from "src/constants/constants";
 import { MimeType } from "src/EmbeddedFileLoader";
 import { ExcalidrawSettings } from "src/settings";
 import { errorlog, getDataURL } from "./Utils";
@@ -134,7 +134,7 @@ export function getEmbedFilename(
  * Open or create a folderpath if it does not exist
  * @param folderpath
  */
-export async function checkAndCreateFolder(folderpath: string) {
+export async function checkAndCreateFolder(folderpath: string):Promise<TFolder> {
   const vault = app.vault;
   folderpath = normalizePath(folderpath);
   //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/658
@@ -146,7 +146,7 @@ export async function checkAndCreateFolder(folderpath: string) {
   if (folder && folder instanceof TFile) {
     new Notice(`The folder cannot be created because it already exists as a file: ${folderpath}.`)
   }
-  await vault.createFolder(folderpath);
+  return await vault.createFolder(folderpath);
 }
 
 export const getURLImageExtension = (url: string):string => {

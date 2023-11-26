@@ -6,7 +6,7 @@ import { DynamicStyle } from "src/types";
 import { cloneElement } from "src/ExcalidrawAutomate";
 import { ExcalidrawFrameElement } from "@zsviczian/excalidraw/types/element/types";
 import { addAppendUpdateCustomData } from "./Utils";
-import { mutateElement } from "src/constants";
+import { mutateElement } from "src/constants/constants";
 
 export const setDynamicStyle = (
   ea: ExcalidrawAutomate,

@@ -1,4 +1,4 @@
-import { DEVICE, isDarwin } from "src/constants";
+import { DEVICE, isDarwin } from "src/constants/constants";
 export type ModifierKeys = {shiftKey:boolean, ctrlKey: boolean, metaKey: boolean, altKey: boolean};
 export type KeyEvent = PointerEvent | MouseEvent | KeyboardEvent | React.DragEvent | React.PointerEvent | React.MouseEvent | ModifierKeys; 
 export type PaneTarget = "active-pane"|"new-pane"|"popout-window"|"new-tab"|"md-properties";

@@ -1,7 +1,5 @@
 /*
-Based on https://github.com/SawyerHood/draw-a-ui
-
-<iframe width="560" height="315" src="https://www.youtube.com/embed/y3kHl_6Ll4w" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/A1vrSGBbWgo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-draw-a-ui.jpg)
 ```js*/
@@ -32,7 +30,7 @@ const instructions = {
 
 const defaultSystemPrompts = {
   "Wireframe to code": `You are an expert tailwind developer. A user will provide you with a low-fidelity wireframe of an application and you will return a single html file that uses tailwind to create the website. Use creative license to make the application more fleshed out. Write the necessary javascript code. If you need to insert an image, use placehold.co to create a placeholder image.`,
-  "Challenge my thinking": `The user will provide you with a screenshot of a whiteboard covering ideas about a subject. Your task is to understand the topic of the whiteboard, to give it a title, and then to identify ideas, web links, images, and any additional content that challenges, disputes, contradicts what is on the whiteboard, plus ideas that extend, add, builds on, and takes the thinking of the user further.`
+  "Challenge my thinking": `The user will provide you with a screenshot of a whiteboard. Your task is to generate a mermaid graph based on the whiteboard and return the resulting mermaid code in a codeblock. The whiteboard will cover ideas about a subject. On the mindmap identify ideas that challenge, dispute, and contradict what is on the whiteboard, as well as also include ideas that extend, add-to, build-on, and takes the thinking of the user further. Use the graph diagram type. Return a single message containing only the mermaid diagram in a codeblock. Avoid the use of () parenthesis in the mermaid script.`
 }
 
 const OPENAI_API_KEY = ea.plugin.settings.openAIAPIToken;
@@ -65,7 +63,7 @@ const getRequestObjFromSelectedElements = async (view) => {
       new Notice ("Aborting because there is nothing selected.",4000);
       return;
     }
-    ea.copyViewElementsToEAforEditing(viewElements);
+    ea.copyViewElementsToEAforEditing(viewElements, true);
     const bb = ea.getBoundingBox(viewElements);
     const size = (bb.width*bb.height);
     const minRatio = Math.sqrt(360000/size);
@@ -226,7 +224,7 @@ configModal.onOpen = () => {
         dirty = true;
         agentTask = value;
         textArea.setValue(allSystemPrompts[value]);
-        promptTitle.setValue(value);
+        //promptTitle.setValue(value);
       });
    })
 

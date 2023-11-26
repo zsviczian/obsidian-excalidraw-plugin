@@ -5,7 +5,7 @@ import {
   TFile,
   WorkspaceLeaf,
 } from "obsidian";
-import { PLUGIN_ID, VIEW_TYPE_EXCALIDRAW } from "./constants";
+import { PLUGIN_ID, VIEW_TYPE_EXCALIDRAW } from "./constants/constants";
 import ExcalidrawView from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
 import { ButtonDefinition, GenericInputPrompt, GenericSuggester } from "./dialogs/Prompt";
@@ -43,6 +43,7 @@ export class ScriptEngine {
         this.loadScript(scriptFile);
       }
     };
+
     const deleteEventHandler = async (file: TFile) => {
       if (!(file instanceof TFile)) {
         return;
@@ -104,7 +105,7 @@ export class ScriptEngine {
   public getListofScripts(): TFile[] {
     this.scriptPath = this.plugin.settings.scriptFolderPath;
     if (!app.vault.getAbstractFileByPath(this.scriptPath)) {
-      this.scriptPath = null;
+      //this.scriptPath = null;
       return;
     }
     return app.vault

@@ -17,6 +17,22 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.0.4":`
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/A1vrSGBbWgo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## New
+- ExcaliAI
+- You can now add ${String.fromCharCode(96)}ex-md-font-hand-drawn${String.fromCharCode(96)} or ${String.fromCharCode(96)}ex-md-font-hand-drawn${String.fromCharCode(96)} to the ${String.fromCharCode(96)}cssclasses:${String.fromCharCode(96)} frontmatter property in embedded markdown nodes and their font face will match the respective Excalidraw fonts.
+
+## Fixed
+- Adding a script for the very first time (when the script folder did not yet exist) did not show up in the tools panel. Required an Obsidian restart. 
+- Performance improvements
+
+## New and updated In Excalidraw Automate
+- Added many new functions and some features to existing functions. See the [release notes](https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/2.0.3) for details
+`,
 "2.0.3":`
 ## Fixed
 - Mermaid to Excalidraw stopped working after installing the Obsidian 1.5.0 insider build. [#1450](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1450)

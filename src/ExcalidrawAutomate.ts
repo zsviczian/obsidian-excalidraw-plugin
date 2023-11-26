@@ -11,7 +11,7 @@ import {
   StrokeRoundness,
   RoundnessType,
 } from "@zsviczian/excalidraw/types/element/types";
-import { Editor, normalizePath, Notice, OpenViewState, TFile, WorkspaceLeaf } from "obsidian";
+import { Editor, normalizePath, Notice, OpenViewState, RequestUrlResponse, TFile, TFolder, WorkspaceLeaf } from "obsidian";
 import * as obsidian_module from "obsidian";
 import ExcalidrawView, { ExportSettings, TextMode } from "src/ExcalidrawView";
 import { ExcalidrawData, getMarkdownDrawingSection, REGEX_LINK } from "src/ExcalidrawData";
@@ -34,8 +34,8 @@ import {
   REG_LINKINDEX_INVALIDCHARS,
   THEME_FILTER,
   mermaidToExcalidraw,
-} from "src/constants";
-import { getDrawingFilename, getNewUniqueFilepath, } from "src/utils/FileUtils";
+} from "src/constants/constants";
+import { blobToBase64, checkAndCreateFolder, getDrawingFilename, getNewUniqueFilepath, } from "src/utils/FileUtils";
 import {
   //debug,
   embedFontsInSVG,
@@ -74,13 +74,19 @@ import RYBPlugin from "colormaster/plugins/ryb";
 import CMYKPlugin from "colormaster/plugins/cmyk";
 import { TInput } from "colormaster/types";
 import {ConversionResult, svgToExcalidraw} from "src/svgToExcalidraw/parser"
-import { ROUNDNESS } from "src/constants";
+import { ROUNDNESS } from "src/constants/constants";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 import { emulateKeysForLinkClick, KeyEvent, PaneTarget } from "src/utils/ModifierkeyHelper";
 import { Mutable } from "@zsviczian/excalidraw/types/utility-types";
 import PolyBool from "polybooljs";
 import { compressToBase64, decompressFromBase64 } from "lz-string";
 import { EmbeddableMDCustomProps } from "./dialogs/EmbeddableSettings";
+import {
+  AIRequest,
+  postOpenAI as _postOpenAI,
+  extractCodeBlocks as _extractCodeBlocks,
+} from "./utils/AIUtils";
+import ExcalidrawScene from "./svgToExcalidraw/elements/ExcalidrawScene";
 
 extendPlugins([
   HarmonyPlugin,
@@ -117,7 +123,73 @@ export class ExcalidrawAutomate {
   get DEVICE():DeviceType {
     return DEVICE;
   }
+
+  /**
+   * Post's an AI request to the OpenAI API and returns the response.
+   * @param request 
+   * @returns 
+   */
+  public async postOpenAI (request: AIRequest): Promise<RequestUrlResponse> {
+    return await _postOpenAI(request);
+  } 
+
+  /**
+   * Grabs the codeblock contents from the supplied markdown string.
+   * @param markdown 
+   * @param codeblockType 
+   * @returns an array of dictionaries with the codeblock contents and type
+   */
+  public extractCodeBlocks(markdown: string): { data: string, type: string }[] {
+    return _extractCodeBlocks(markdown);
+  }
+
+  /**
+   * converts a string to a DataURL
+   * @param htmlString 
+   * @returns dataURL
+   */
+  public async convertStringToDataURL (data:string, type: string = "text/html"):Promise<string> {
+    // Create a blob from the HTML string
+    const blob = new Blob([data], { type });
   
+    // Read the blob as Data URL
+    const base64String = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if(typeof reader.result === "string") {
+          const base64String = reader.result.split(',')[1];
+          resolve(base64String);
+        } else {
+          resolve(null);
+        }
+      };
+      reader.readAsDataURL(blob);
+    });
+    if(base64String) {
+      return `data:${type};base64,${base64String}`;
+    }
+    return "about:blank";
+  }
+
+  /**
+   * Checks if the folder exists, if not, creates it.
+   * @param folderpath
+   * @returns 
+   */
+  public async checkAndCreateFolder(folderpath: string): Promise<TFolder> {
+    return await checkAndCreateFolder(folderpath);
+  }
+
+  /**
+   * Checks if the filepath already exists, if so, returns a new filepath with a number appended to the filename.
+   * @param filename 
+   * @param folderpath 
+   * @returns 
+   */
+  public getNewUniqueFilepath(filename: string, folderpath: string): string {
+    return getNewUniqueFilepath(app.vault, filename, folderpath);
+  }
+
   public async getAttachmentFilepath(filename: string): Promise<string> {
     if (!this.targetView || !this.targetView?.file) {
       errorMessage("targetView not set", "getAttachmentFolderAndFilePath()");
@@ -653,6 +725,7 @@ export class ExcalidrawAutomate {
     );
   };
 
+  
   /**
    * 
    * @param templatePath 
@@ -707,6 +780,28 @@ export class ExcalidrawAutomate {
       this.imagesDict,
     );
   };
+
+  /**
+   * Wrapper for createPNG() that returns a base64 encoded string
+   * @param templatePath 
+   * @param scale 
+   * @param exportSettings 
+   * @param loader 
+   * @param theme 
+   * @param padding 
+   * @returns 
+   */
+  async createPNGBase64(
+    templatePath?: string,
+    scale: number = 1,
+    exportSettings?: ExportSettings,
+    loader?: EmbeddedFilesLoader,
+    theme?: string,
+    padding?: number,
+  ): Promise<string> {
+    const png = await this.createPNG(templatePath,scale,exportSettings,loader,theme,padding);
+    return `data:image/png;base64,${await blobToBase64(png)}`
+  }
 
   /**
    * 
@@ -1168,11 +1263,13 @@ export class ExcalidrawAutomate {
 
   /**
    * Adds a mermaid diagram to ExcalidrawAutomate elements
-   * @param diagram 
+   * @param diagram string containing the mermaid diagram
+   * @param groupElements default is trud. If true, the elements will be grouped
    * @returns the ids of the elements that were created
    */
   async addMermaid(
     diagram: string,
+    groupElements: boolean = true,
   ): Promise<string[]> {
     const result = await mermaidToExcalidraw(diagram, {fontSize: this.style.fontSize});
     const ids:string[] = [];
@@ -1197,6 +1294,10 @@ export class ExcalidrawAutomate {
           latex: null,
         }
       } 
+    }
+
+    if(groupElements && result?.elements && ids.length > 1) {
+      this.addToGroup(ids);
     }
     return ids;
   }
@@ -1647,10 +1748,26 @@ export class ExcalidrawAutomate {
    * copies elements from view to elementsDict for editing
    * @param elements 
    */
-  copyViewElementsToEAforEditing(elements: ExcalidrawElement[]): void {
-    elements.forEach((el) => {
-      this.elementsDict[el.id] = cloneElement(el);
-    });
+  copyViewElementsToEAforEditing(elements: ExcalidrawElement[], copyImages: boolean = false): void {
+    if(copyImages && elements.some(el=>el.type === "image")) {
+      //@ts-ignore
+      if (!this.targetView || !this.targetView?._loaded) {
+        errorMessage("targetView not set", "copyViewElementsToEAforEditing()");
+        return;
+      }
+      const sceneFiles = this.targetView.getScene().files;
+      elements.forEach((el) => {
+        this.elementsDict[el.id] = cloneElement(el);
+        if(el.type === "image") {
+          this.imagesDict[el.fileId] = sceneFiles?.[el.fileId];
+        }
+      });
+
+    } else {
+      elements.forEach((el) => {
+        this.elementsDict[el.id] = cloneElement(el);
+      });
+    }
   };
 
   /**

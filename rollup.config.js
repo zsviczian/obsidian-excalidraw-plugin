@@ -78,7 +78,10 @@ const BUILD_CONFIG = {
     nodeResolve({ browser: true, preferBuiltins: false }),
     ...isProd 
     ? [
-      terser({toplevel: false, compress: {passes: 2}}),
+      terser({
+        toplevel: false,
+        compress: {passes: 2}
+      }),
       //!postprocess - the version available on npmjs does not work, need this update: 
       //  npm install brettz9/rollup-plugin-postprocess#update --save-dev
       //  https://github.com/developit/rollup-plugin-postprocess/issues/10

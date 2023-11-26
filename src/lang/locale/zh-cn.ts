@@ -3,7 +3,7 @@ import {
   FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS,
   FRONTMATTER_KEY_CUSTOM_PREFIX,
   FRONTMATTER_KEY_CUSTOM_URL_PREFIX,
-} from "src/constants";
+} from "src/constants/constants";
 import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/ModifierkeyHelper";
 
 // 简体中文

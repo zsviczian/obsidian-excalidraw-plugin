@@ -9,6 +9,7 @@ import {
   MarkdownView,
   request,
   requireApiVersion,
+  requestUrl,
 } from "obsidian";
 //import * as React from "react";
 //import * as ReactDOM from "react-dom";
@@ -50,7 +51,7 @@ import {
   restore,
   obsidianToExcalidrawMap,
   MAX_IMAGE_SIZE,
-} from "./constants";
+} from "./constants/constants";
 import ExcalidrawPlugin from "./main";
 import { 
   repositionElementsToCursor,
@@ -129,6 +130,8 @@ import { useDefaultExcalidrawFrame } from "./utils/CustomEmbeddableUtils";
 import { UniversalInsertFileModal } from "./dialogs/UniversalInsertFileModal";
 import { getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
 import { nanoid } from "nanoid";
+import { CustomMutationObserver, isDebugMode } from "./utils/DebugHelper";
+import { extractCodeBlocks, postOpenAI } from "./utils/AIUtils";
 
 declare const PLUGIN_VERSION:string;
 
@@ -243,7 +246,7 @@ export default class ExcalidrawView extends TextFileView {
   public excalidrawWrapperRef: React.MutableRefObject<any> = null;
   public toolsPanelRef: React.MutableRefObject<any> = null;
   public embeddableMenuRef: React.MutableRefObject<any> = null;
-  private parentMoveObserver: MutationObserver;
+  private parentMoveObserver: MutationObserver | CustomMutationObserver;
   public linksAlwaysOpenInANewPane: boolean = false; //override the need for SHIFT+CTRL+click (used by ExcaliBrain)
   public allowFrameButtonsInViewMode: boolean = false;  //override for ExcaliBrain
   private hookServer: ExcalidrawAutomate;
@@ -1027,7 +1030,7 @@ export default class ExcalidrawView extends TextFileView {
       if (this.excalidrawData.hasMermaid(selectedImage.fileId) || getMermaidText(imageElement)) {
         if(shouldRenderMermaid) {
           const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
-          api.updateScene({appState: { openDialog: "mermaid" }});
+          api.updateScene({appState: {openDialog: { name: "ttd", tab: "mermaid" }}})
         }
         return;
       }
@@ -1337,22 +1340,23 @@ export default class ExcalidrawView extends TextFileView {
     this.offsetLeft = parent.offsetLeft;
     this.offsetTop = parent.offsetTop;
     const self = this;
-    this.parentMoveObserver = new MutationObserver(
-      async (m: MutationRecord[]) => {
-        const target = m[0].target;
-        if (!(target instanceof HTMLElement)) {
-          return;
+    const observerFn = async (m: MutationRecord[]) => {
+      const target = m[0].target;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+      const { offsetLeft, offsetTop } = target;
+      if (offsetLeft !== self.offsetLeft || offsetTop != self.offsetTop) {
+        if (self.refresh) {
+          self.refresh();
         }
-        const { offsetLeft, offsetTop } = target;
-        if (offsetLeft !== self.offsetLeft || offsetTop != self.offsetTop) {
-          if (self.refresh) {
-            self.refresh();
-          }
-          self.offsetLeft = offsetLeft;
-          self.offsetTop = offsetTop;
-        }
-      },
-    );
+        self.offsetLeft = offsetLeft;
+        self.offsetTop = offsetTop;
+      }
+    };
+    this.parentMoveObserver = isDebugMode
+      ? new CustomMutationObserver(observerFn, "parentMoveObserver")
+      : new MutationObserver(observerFn)
 
     this.parentMoveObserver.observe(parent, {
       attributeOldValue: true,
@@ -2140,7 +2144,7 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   public setDirty(debug?:number) {
-    //console.log(debug);
+    if(isDebugMode) console.log(debug);
     this.semaphores.dirty = this.file?.path;
     this.diskIcon.querySelector("svg").addClass("excalidraw-dirty");
     if(!this.semaphores.viewunload && this.toolsPanelRef?.current) {
@@ -3155,7 +3159,9 @@ export default class ExcalidrawView extends TextFileView {
       const {
         Excalidraw,
         MainMenu,
-        WelcomeScreen
+        WelcomeScreen,
+        TTDDialogTrigger,
+        TTDDialog,
       } = this.plugin.getPackage(this.ownerWindow).excalidrawLib;
 
       const onKeyDown = (e: any) => {
@@ -3337,7 +3343,7 @@ export default class ExcalidrawView extends TextFileView {
         }
         if(st.theme !== this.previousTheme && this.file === this.excalidrawData.file) {
           this.previousTheme = st.theme;
-          this.setDirty(5);
+          this.setDirty(5.1);
         }
         if(st.viewBackgroundColor !== this.previousBackgroundColor && this.file === this.excalidrawData.file) {
           this.previousBackgroundColor = st.viewBackgroundColor;
@@ -3369,7 +3375,7 @@ export default class ExcalidrawView extends TextFileView {
               sceneVersion !== this.previousSceneVersion)
           ) {
             this.previousSceneVersion = sceneVersion;
-            this.setDirty(6);
+            this.setDirty(6.1);
           }
         }
       }
@@ -3923,7 +3929,7 @@ export default class ExcalidrawView extends TextFileView {
                     const modal = new UniversalInsertFileModal(this.plugin, this);
                     modal.open(file, center);
                   }
-                  this.setDirty();
+                  this.setDirty(9);
                 }
               });
               return [null, null, null];
@@ -3967,7 +3973,7 @@ export default class ExcalidrawView extends TextFileView {
               elements[elements.indexOf(el[0])] = clone;
               this.updateScene({elements});
               if(clone.containerId) this.updateContainerSize(clone.containerId);
-              this.setDirty();
+              this.setDirty(8.1);
             }
             api.history.clear();
           };
@@ -4203,7 +4209,8 @@ export default class ExcalidrawView extends TextFileView {
           
         }
       }
-
+      
+      const self = this;
       const renderEmbeddable = (
         element: NonDeletedExcalidrawElement,
         appState: UIAppState,
@@ -4211,13 +4218,13 @@ export default class ExcalidrawView extends TextFileView {
         try {
           const useExcalidrawFrame = useDefaultExcalidrawFrame(element);
 
-          if(!this.file || !element || !element.link || element.link.length === 0 || useExcalidrawFrame) {
+          if(!self.file || !element || !element.link || element.link.length === 0 || useExcalidrawFrame) {
             return null;
           }
 
-          if(element.link.match(REG_LINKINDEX_HYPERLINK)) {
+          if(element.link.match(REG_LINKINDEX_HYPERLINK) || element.link.startsWith("data:")) {
             if(!useExcalidrawFrame) {
-              return renderWebView(element.link, this, element.id, appState);
+              return renderWebView(element.link, self, element.id, appState);
             } else {
               return null;
             }
@@ -4232,13 +4239,13 @@ export default class ExcalidrawView extends TextFileView {
         
           if(linkText.match(REG_LINKINDEX_HYPERLINK)) {
             if(!useExcalidrawFrame) {
-              return renderWebView(linkText, this, element.id, appState);
+              return renderWebView(linkText, self, element.id, appState);
             } else {
               return null;
             }
           }
           
-          return React.createElement(CustomEmbeddable, {element,view:this, appState, linkText});
+          return React.createElement(CustomEmbeddable, {element,view:self, appState, linkText});
         } catch(e) {
           return null;
         }
@@ -4314,6 +4321,66 @@ export default class ExcalidrawView extends TextFileView {
         React.createElement(MainMenu.DefaultItems.ClearCanvas),
       );
       
+      const ttdDialog = () => React.createElement(
+        TTDDialog,
+        {
+          onTextSubmit: async (input:string) => {
+            try {
+              const response = await postOpenAI({
+                systemPrompt: "The user will provide you with a text prompt. Your task is to generate a mermaid graph based on the prompt. Use the graph, sequence-diagram or flowchart type based on what best fits the request. Return a single message containing only the mermaid diagram in a codeblock. Avoid the use of () parenthesis in the mermaid script.",
+                text: input,
+                instruction: "Return a single message containing only the mermaid diagram in a codeblock.",
+              })
+
+              if(!response) {
+                return {
+                  error: new Error("Request failed"),
+                };
+              }
+
+              const json = response.json;
+              if (isDebugMode) console.log(response);
+
+              if (json?.error) {
+                console.log(response);
+                return {
+                  error: new Error(json.error.message),
+                };
+              }
+
+              if(!json?.choices?.[0]?.message?.content) {
+                console.log(response);
+                return {
+                  error: new Error("Generation failed... see console log for details"),
+                };
+              }
+
+              let generatedResponse = extractCodeBlocks(json.choices[0]?.message?.content)[0]?.data;
+
+              if(!generatedResponse) {
+                console.log(response);
+                return {
+                  error: new Error("Generation failed... see console log for details"),
+                };
+              }
+
+              if(generatedResponse.startsWith("mermaid")) {
+                generatedResponse = generatedResponse.replace(/^mermaid/,"").trim();
+              }
+              
+              return { generatedResponse, rateLimit:100, rateLimitRemaining:100 };
+            } catch (err: any) {
+              throw new Error("Request failed");
+            }
+          },
+        }
+      );
+
+      const ttdDialogTrigger = () => React.createElement(
+        TTDDialogTrigger,
+        {},
+      )
+
       const renderWelcomeScreen = () => React.createElement(
         WelcomeScreen,
         {},
@@ -4467,6 +4534,7 @@ export default class ExcalidrawView extends TextFileView {
             libraryReturnUrl: "app://obsidian.md",
             autoFocus: true,
             langCode: obsidianToExcalidrawMap[this.plugin.locale]??"en-EN",
+            aiEnabled: true,
             onChange,
             onLibraryChange,
             // TODO: Potentially better way to block middle mouse paste on linux:
@@ -4491,6 +4559,8 @@ export default class ExcalidrawView extends TextFileView {
           },//,React.createElement(Footer,{},React.createElement(customTextEditor.render)),
           renderCustomActionsMenu(),
           renderWelcomeScreen(),
+          ttdDialog(),
+          ttdDialogTrigger(),
         ),
         renderToolsPanel(),
       )

@@ -7,7 +7,7 @@ import { ActionButton } from "./ActionButton";
 import { ICONS } from "./ActionIcons";
 import { t } from "src/lang/helpers";
 import { ScriptEngine } from "src/Scripts";
-import { ROOTELEMENTSIZE, mutateElement, nanoid, sceneCoordsToViewportCoords } from "src/constants";
+import { ROOTELEMENTSIZE, mutateElement, nanoid, sceneCoordsToViewportCoords } from "src/constants/constants";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK } from "src/ExcalidrawData";
 import { processLinkText, useDefaultExcalidrawFrame } from "src/utils/CustomEmbeddableUtils";
 import { cleanSectionHeading } from "src/utils/ObsidianUtils";
@@ -78,17 +78,21 @@ export class EmbeddableMenu {
     if(!link) return null;
 
     const isExcalidrawiFrame = useDefaultExcalidrawFrame(element);
-    let isObsidianiFrame = element.link?.match(REG_LINKINDEX_HYPERLINK);
+    let isObsidianiFrame = Boolean(element.link?.match(REG_LINKINDEX_HYPERLINK));
   
     if(!isExcalidrawiFrame && !isObsidianiFrame) {
-      const res = REGEX_LINK.getRes(element.link).next();
-      if(!res || (!res.value && res.done)) {
-        return null;
+      if(link.startsWith("data:text/html")) {
+        isObsidianiFrame = true;
+      } else {
+        const res = REGEX_LINK.getRes(element.link).next();
+        if(!res || (!res.value && res.done)) {
+          return null;
+        }
+    
+        link = REGEX_LINK.getLink(res);
+    
+        isObsidianiFrame = Boolean(link.match(REG_LINKINDEX_HYPERLINK));
       }
-  
-      link = REGEX_LINK.getLink(res);
-  
-      isObsidianiFrame = link.match(REG_LINKINDEX_HYPERLINK);
 
       if(!isObsidianiFrame) {
         const { subpath, file } = processLinkText(link, view);
@@ -282,6 +286,18 @@ export class EmbeddableMenu {
               icon={ICONS.Properties}
               view={view}
             />
+            {link?.startsWith("data:text/html") && (
+              <ActionButton
+                key={"CopyCode"}
+                title={t("COPYCODE")}
+                action={() => {
+                  if(!element) return;
+                  navigator.clipboard.writeText(atob(link.split(",")[1]));
+                }}
+                icon={ICONS.Copy}
+                view={view}
+              />
+            )}
           </div>
         </div>  
       );

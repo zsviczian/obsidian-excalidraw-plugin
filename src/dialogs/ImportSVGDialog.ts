@@ -1,5 +1,5 @@
 import { App, FuzzySuggestModal, TFile } from "obsidian";
-import { REG_LINKINDEX_INVALIDCHARS } from "../constants";
+import { REG_LINKINDEX_INVALIDCHARS } from "../constants/constants";
 import ExcalidrawView from "../ExcalidrawView";
 import { t } from "../lang/helpers";
 import ExcalidrawPlugin from "../main";

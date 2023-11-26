@@ -11,6 +11,7 @@ container.appendChild(node.contentEl)
 import { TFile, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import ExcalidrawView from "src/ExcalidrawView";
 import { getContainerForDocument, ConstructableWorkspaceSplit, isObsidianThemeDark } from "./ObsidianUtils";
+import { CustomMutationObserver, isDebugMode } from "./DebugHelper";
 
 declare module "obsidian" {
   interface Workspace {
@@ -94,8 +95,8 @@ export class CanvasNodeFactory {
       if (!node.child.editor?.containerEl?.parentElement?.parentElement) return;
       node.child.editor.containerEl.parentElement.parentElement.classList.remove(obsidianTheme);
       node.child.editor.containerEl.parentElement.parentElement.classList.add(theme);
-  
-      const observer = new MutationObserver((mutationsList) => {
+      
+      const nodeObserverFn: MutationCallback = (mutationsList) => {
         for (const mutation of mutationsList) {
           if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
             const targetElement = mutation.target as HTMLElement;
@@ -105,7 +106,10 @@ export class CanvasNodeFactory {
             }
           }
         }
-      });
+      };
+      const observer = isDebugMode
+        ? new CustomMutationObserver(nodeObserverFn, "CanvasNodeFactory")
+        : new MutationObserver(nodeObserverFn);
   
       observer.observe(node.child.editor.containerEl.parentElement.parentElement, { attributes: true });
     })();

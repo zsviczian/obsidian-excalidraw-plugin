@@ -497,3 +497,10 @@ hr.excalidraw-setting-hr {
   box-shadow:   unset;
 }
 
+.excalidraw .canvas-node .ex-md-font-hand-drawn {
+  --font-text: "Virgil";
+}
+
+.excalidraw .canvas-node .ex-md-font-code {
+  --font-text: "Cascadia";
+}

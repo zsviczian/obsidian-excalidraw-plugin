@@ -2,12 +2,13 @@ import {
   App,
   DropdownComponent,
   normalizePath,
+  Notice,
   PluginSettingTab,
   Setting,
   TextComponent,
   TFile,
 } from "obsidian";
-import { GITHUB_RELEASES, VIEW_TYPE_EXCALIDRAW } from "./constants";
+import { GITHUB_RELEASES, VIEW_TYPE_EXCALIDRAW } from "./constants/constants";
 import ExcalidrawView from "./ExcalidrawView";
 import { t } from "./lang/helpers";
 import type ExcalidrawPlugin from "./main";
@@ -27,9 +28,9 @@ import {
 } from "./utils/Utils";
 import { imageCache } from "./utils/ImageCache";
 import { ConfirmationPrompt } from "./dialogs/Prompt";
-import de from "./lang/locale/de";
 import { EmbeddableMDCustomProps } from "./dialogs/EmbeddableSettings";
 import { EmbeddalbeMDFileCustomDataSettingsComponent } from "./dialogs/EmbeddableMDFileCustomDataSettingsComponent";
+import { startupScript } from "./constants/starutpscript";
 
 export interface ExcalidrawSettings {
   folder: string;
@@ -153,6 +154,10 @@ export interface ExcalidrawSettings {
   };
   embeddableMarkdownDefaults: EmbeddableMDCustomProps;
   canvasImmersiveEmbed: boolean,
+  startupScriptPath: string,
+  openAIAPIToken: string,
+  openAIDefaultTextModel: string,
+  openAIDefaultVisionModel: string,
 }
 
 declare const PLUGIN_VERSION:string;
@@ -295,6 +300,10 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
     filenameVisible: false,
   },
   canvasImmersiveEmbed: true,
+  startupScriptPath: "",
+  openAIAPIToken: "",
+  openAIDefaultTextModel: "gpt-3.5-turbo-1106",
+  openAIDefaultVisionModel: "gpt-4-vision-preview",
 };
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
@@ -640,6 +649,56 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
 
 
+    //------------------------------------------------
+    // AI Settings
+    //------------------------------------------------
+    containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
+    containerEl.createDiv({ text: t("AI_DESC"), cls: "setting-item-description"  });
+    detailsEl = this.containerEl.createEl("details");
+    const aiDetailsEl = detailsEl;
+    detailsEl.createEl("summary", { 
+      text: t("AI_HEAD"),
+      cls: "excalidraw-setting-h1",
+    });
+
+    new Setting(detailsEl)
+      .setName(t("AI_OPENAI_TOKEN_NAME"))
+      .setDesc(fragWithHTML(t("AI_OPENAI_TOKEN_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder(t("AI_OPENAI_TOKEN_PLACEHOLDER"))
+          .setValue(this.plugin.settings.openAIAPIToken)
+          .onChange(async (value) => {
+            this.plugin.settings.openAIAPIToken = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("AI_OPENAI_DEFAULT_MODEL_NAME"))
+      .setDesc(fragWithHTML(t("AI_OPENAI_DEFAULT_MODEL_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder(t("AI_OPENAI_DEFAULT_MODEL_PLACEHOLDER"))
+          .setValue(this.plugin.settings.openAIDefaultTextModel)
+          .onChange(async (value) => {
+            this.plugin.settings.openAIDefaultTextModel = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("AI_OPENAI_DEFAULT_VISION_MODEL_NAME"))
+      .setDesc(fragWithHTML(t("AI_OPENAI_DEFAULT_VISION_MODEL_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder(t("AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER"))
+          .setValue(this.plugin.settings.openAIDefaultVisionModel)
+          .onChange(async (value) => {
+            this.plugin.settings.openAIDefaultVisionModel = value;
+            this.applySettingsUpdate();
+          }),
+      );
 
     // ------------------------------------------------
     // Display
@@ -1808,23 +1867,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h1",
     });
   
-    //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/628
-    /*new Setting(detailsEl)
-      .setName(t("MATHJAX_NAME"))
-      .setDesc(t("MATHJAX_DESC"))
-      .addDropdown((dropdown) => {
-        dropdown
-          .addOption("https://cdn.jsdelivr.net/npm/mathjax@3.2.1/es5/tex-svg.js", "jsdelivr")
-          .addOption("https://unpkg.com/mathjax@3.2.1/es5/tex-svg.js", "unpkg")
-          .addOption("https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.1/es5/tex-svg-full.min.js","cdnjs")
-          .setValue(this.plugin.settings.mathjaxSourceURL)
-          .onChange((value)=> {
-            this.plugin.settings.mathjaxSourceURL = value;
-            this.reloadMathJax = true;
-            this.applySettingsUpdate();
-          })
-      })*/
-
     addIframe(detailsEl, "r08wk-58DPk");
     new Setting(detailsEl)
       .setName(t("LATEX_DEFAULT_NAME"))
@@ -1834,18 +1876,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.latexBoilerplate)
           .onChange( (value) => {
             this.plugin.settings.latexBoilerplate = value;
-            this.applySettingsUpdate();
-          }),
-      );
-
-    new Setting(detailsEl)
-      .setName(t("FIELD_SUGGESTER_NAME"))
-      .setDesc(fragWithHTML(t("FIELD_SUGGESTER_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.fieldSuggester)
-          .onChange(async (value) => {
-            this.plugin.settings.fieldSuggester = value;
             this.applySettingsUpdate();
           }),
       );
@@ -1932,6 +1962,68 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       }
     );
 
+    // ------------------------------------------------
+    // ExcalidrawAutomate
+    // ------------------------------------------------
+    containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
+    containerEl.createDiv( { cls: "setting-item-description"  }, (el)=>{
+      el.innerHTML = t("EA_DESC");
+    });
+    detailsEl = containerEl.createEl("details");
+    const eaDetailsEl = detailsEl;
+    detailsEl.createEl("summary", { 
+      text: t("EA_HEAD"),
+      cls: "excalidraw-setting-h1",
+    });
+
+    new Setting(detailsEl)
+    .setName(t("FIELD_SUGGESTER_NAME"))
+    .setDesc(fragWithHTML(t("FIELD_SUGGESTER_DESC")))
+    .addToggle((toggle) =>
+      toggle
+        .setValue(this.plugin.settings.fieldSuggester)
+        .onChange(async (value) => {
+          this.plugin.settings.fieldSuggester = value;
+          this.applySettingsUpdate();
+        }),
+    );
+
+        //STARTUP_SCRIPT_NAME
+        //STARTUP_SCRIPT_BUTTON
+    let startupScriptPathText: TextComponent;
+    new Setting(detailsEl)
+      .setName(t("STARTUP_SCRIPT_NAME"))
+      .setDesc(fragWithHTML(t("STARTUP_SCRIPT_DESC")))
+      .addText((text) => {
+        startupScriptPathText = text;
+        text
+          .setValue(this.plugin.settings.startupScriptPath)
+          .onChange( (value) => {
+            this.plugin.settings.startupScriptPath = value;
+            this.applySettingsUpdate();
+          });
+        })
+      .addButton((button) =>
+        button
+          .setButtonText(t("STARTUP_SCRIPT_BUTTON"))
+          .onClick(async () => {
+            if(this.plugin.settings.startupScriptPath === "") {
+              this.plugin.settings.startupScriptPath = normalizePath(normalizePath(this.plugin.settings.folder) + "/ExcalidrawStartup");
+              startupScriptPathText.setValue(this.plugin.settings.startupScriptPath);
+              this.applySettingsUpdate();
+            }
+            const startupPath = normalizePath(this.plugin.settings.startupScriptPath.endsWith(".md")
+              ? this.plugin.settings.startupScriptPath
+              : this.plugin.settings.startupScriptPath + ".md");
+            const f = this.app.vault.getAbstractFileByPath(startupPath);
+            if(f) {
+              new Notice(t("STARTUP_SCRIPT_EXISTS"));
+              return;
+            }
+            const newFile = await this.app.vault.create(startupPath, startupScript());
+            this.app.workspace.openLinkText(newFile.path,"",true);
+          })
+      );
 
 
     // ------------------------------------------------
@@ -2094,6 +2186,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               .addTextArea((text) => {
                 text.inputEl.style.minHeight = textAreaHeight(scriptName, variableName);
                 text.inputEl.style.minWidth = "400px";
+                text.inputEl.style.width = "100%";
                 text
                   .setValue(getValue(scriptName, variableName))
                   .onChange(async (value) => {

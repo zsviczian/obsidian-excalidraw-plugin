@@ -13,7 +13,7 @@ import {
   ASSISTANT_FONT,
   CASCADIA_FONT,
   VIRGIL_FONT,
-} from "src/constFonts";
+} from "src/constants/constFonts";
 import {
   FRONTMATTER_KEY_EXPORT_DARK,
   FRONTMATTER_KEY_EXPORT_TRANSPARENT,
@@ -23,7 +23,7 @@ import {
   exportToSvg,
   exportToBlob,
   IMAGE_TYPES
-} from "../constants";
+} from "../constants/constants";
 import ExcalidrawPlugin from "../main";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
 import { ExportSettings } from "../ExcalidrawView";

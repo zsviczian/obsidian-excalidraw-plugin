@@ -1,5 +1,5 @@
 
-import { MAX_IMAGE_SIZE, IMAGE_TYPES } from "src/constants";
+import { MAX_IMAGE_SIZE, IMAGE_TYPES } from "src/constants/constants";
 import { TFile } from "obsidian";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 
