@@ -145,7 +145,7 @@ const run = async () => {
         <h3>${error}</h3>
       </body></html>`);
     new Notice (error);
-    ea.getElement(id).src = errorDataURL;
+    ea.getElement(id).link = errorDataURL;
     ea.addElementsToView(false,true);
   }
 
