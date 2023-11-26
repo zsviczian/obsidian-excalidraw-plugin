@@ -129,7 +129,7 @@ const setStyle = ({element,imgAttributes,onCanvas}:{
     element.addClass("excalidraw-embedded-img");
   }
   if(
-    window.ExcalidrawAutomate.plugin.settings.canvasImmersiveEmbed &&
+    window?.ExcalidrawAutomate?.plugin?.settings?.canvasImmersiveEmbed &&
     !element.hasClass("excalidraw-canvas-immersive")
   ) {
     element.addClass("excalidraw-canvas-immersive");
@@ -413,7 +413,7 @@ const createImgElement = async (
     if(imgOrDiv.hasClass(cssClass)) return;
     imgOrDiv.addClass(cssClass);
   });
-  if(window.ExcalidrawAutomate.plugin.settings.canvasImmersiveEmbed) {
+  if(window?.ExcalidrawAutomate?.plugin?.settings?.canvasImmersiveEmbed) {
     if(!imgOrDiv.hasClass("excalidraw-canvas-immersive")) {
       imgOrDiv.addClass("excalidraw-canvas-immersive");
     }

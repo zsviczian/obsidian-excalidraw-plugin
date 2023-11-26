@@ -244,7 +244,8 @@ export const getFileCSSClasses = (
   file: TFile,
 ): string[] => {
   if (file) {
-    const plugin = window.ExcalidrawAutomate.plugin;
+    const plugin = window?.ExcalidrawAutomate?.plugin;
+    if(!plugin) return [];
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if(!fileCache?.frontmatter) return [];
     const x = parseFrontMatterEntry(fileCache.frontmatter, "cssclasses");
