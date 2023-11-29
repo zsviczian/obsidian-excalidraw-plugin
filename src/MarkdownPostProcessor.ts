@@ -775,7 +775,7 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = async (m) => {
   node.appendChild(div);
 };
 
-export const observer = isDebugMode
+export const legacyExcalidrawPopoverObserver = isDebugMode
   ? new CustomMutationObserver(legacyExcalidrawPopoverObserverFn, "legacyExcalidrawPopoverObserverFn")
   : new MutationObserver(legacyExcalidrawPopoverObserverFn);
 

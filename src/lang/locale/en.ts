@@ -520,7 +520,8 @@ FILENAME_HEAD: "Filename",
   STARTUP_SCRIPT_DESC:
     "If set, excalidraw will execute the script at plugin startup. This is useful if you want to set any of the Excalidraw Automate hooks. The startup script is a markdown file " +
     "that should contain the javascript code you want to execute when Excalidraw starts.",
-  STARTUP_SCRIPT_BUTTON: "Create startup script",
+  STARTUP_SCRIPT_BUTTON_CREATE: "Create startup script",
+  STARTUP_SCRIPT_BUTTON_OPEN: "Open startup script",
   STARTUP_SCRIPT_EXISTS: "Startup script file already exists",
   FILETYPE_NAME: "Display type (✏️) for excalidraw.md files in File Explorer",
   FILETYPE_DESC:

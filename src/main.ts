@@ -100,7 +100,7 @@ import {
   hoverEvent,
   initializeMarkdownPostProcessor,
   markdownPostProcessor,
-  observer,
+  legacyExcalidrawPopoverObserver,
 } from "./MarkdownPostProcessor";
 
 import { FieldSuggester } from "./dialogs/FieldSuggester";
@@ -124,6 +124,7 @@ import { getEA } from "src";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
 import { Mutable } from "@zsviczian/excalidraw/types/utility-types";
 import { CustomMutationObserver, durationTreshold, isDebugMode } from "./utils/DebugHelper";
+import { create } from "domain";
 
 declare const EXCALIDRAW_PACKAGES:string;
 declare const react:any;
@@ -149,7 +150,7 @@ export default class ExcalidrawPlugin extends Plugin {
     linkText: null,
     sourcePath: null,
   };
-  private observer: MutationObserver | CustomMutationObserver;
+  private legacyExcalidrawPopoverObserver: MutationObserver | CustomMutationObserver;
   private themeObserver: MutationObserver | CustomMutationObserver;
   private fileExplorerObserver: MutationObserver | CustomMutationObserver;
   private modalContainerObserver: MutationObserver | CustomMutationObserver;
@@ -171,6 +172,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private forceSaveCommand:Command;
   private removeEventLisnters:(()=>void)[] = [];
   private stylesManager:StylesManager;
+  private textMeasureDiv:HTMLDivElement = null;
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
@@ -246,6 +248,9 @@ export default class ExcalidrawPlugin extends Plugin {
     
     this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
     this.ea = await initExcalidrawAutomate(this);
+    this.textMeasureDiv = document.createElement("div");
+    this.textMeasureDiv.setAttribute("id", "excalidraw-measure-text");
+    document.body.appendChild(this.textMeasureDiv);
 
     this.registerView(
       VIEW_TYPE_EXCALIDRAW,
@@ -309,12 +314,7 @@ export default class ExcalidrawPlugin extends Plugin {
         font.dataURL === "" ? VIRGIL_DATAURL : font.dataURL;
       this.fourthFontDef = font.fontDef;
       
-      const visitedDocs = new Set<Document>();
-      app.workspace.iterateAllLeaves((leaf)=>{
-        const ownerDocument = app.isMobile?document:leaf.view.containerEl.ownerDocument;   
-        if(!ownerDocument) return;        
-        if(visitedDocs.has(ownerDocument)) return;
-        visitedDocs.add(ownerDocument);
+      this.getOpenObsidianDocuments().forEach((ownerDocument) => {
         // replace the old local font <style> element with the one we just created
         const newStylesheet = ownerDocument.createElement("style");
         newStylesheet.id = "local-font-stylesheet";
@@ -333,6 +333,17 @@ export default class ExcalidrawPlugin extends Plugin {
         ownerDocument.fonts.load('20px LocalFont');
       })
     });
+  }
+
+  private getOpenObsidianDocuments(): Document[] {
+    const visitedDocs = new Set<Document>();
+    this.app.workspace.iterateAllLeaves((leaf)=>{
+      const ownerDocument = this.app.isMobile?document:leaf.view.containerEl.ownerDocument;   
+      if(!ownerDocument) return;        
+      if(visitedDocs.has(ownerDocument)) return;
+      visitedDocs.add(ownerDocument);
+    });
+    return Array.from(visitedDocs);
   }
 
   private removeMathJax() {
@@ -651,10 +662,19 @@ export default class ExcalidrawPlugin extends Plugin {
       // internal-link quick preview
       self.registerEvent(self.app.workspace.on("hover-link", hoverEvent));
 
-      //monitoring for div.popover.hover-popover.file-embed.is-loaded to be added to the DOM tree
-      self.observer = observer;
-      self.observer.observe(document.body, { childList: true, subtree: false });
+      //only add the legacy file observer if there are legacy files in the vault
+      if(this.app.vault.getFiles().some(f=>f.extension === "excalidraw")) {
+        self.enableLegacyFilePopoverObserver();
+      }
     });
+  }
+
+  public enableLegacyFilePopoverObserver() {
+    if(!this.legacyExcalidrawPopoverObserver) {
+      //monitoring for div.popover.hover-popover.file-embed.is-loaded to be added to the DOM tree
+      this.legacyExcalidrawPopoverObserver = legacyExcalidrawPopoverObserver;
+      this.legacyExcalidrawPopoverObserver.observe(document.body, { childList: true, subtree: false });
+    }
   }
 
   private addThemeObserver() {
@@ -673,13 +693,16 @@ export default class ExcalidrawPlugin extends Plugin {
       ) {
         return;
       }
-      const theme = isObsidianThemeDark() ? "dark" : "light";
-      const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
-      leaves.forEach((leaf: WorkspaceLeaf) => {
-        const excalidrawView = leaf.view as ExcalidrawView;
-        if (excalidrawView.file && excalidrawView.excalidrawAPI) {
-          excalidrawView.setTheme(theme);
-        }
+      const self = this;
+      setTimeout(()=>{ //run async to avoid blocking the UI
+        const theme = isObsidianThemeDark() ? "dark" : "light";
+        const leaves = self.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+        leaves.forEach((leaf: WorkspaceLeaf) => {
+          const excalidrawView = leaf.view as ExcalidrawView;
+          if (excalidrawView.file && excalidrawView.excalidrawAPI) {
+            excalidrawView.setTheme(theme);
+          }
+        });
       });
     };
 
@@ -775,24 +798,26 @@ export default class ExcalidrawPlugin extends Plugin {
       ); 
     });
 
+    const createNewAction = (e: MouseEvent | KeyboardEvent, file: TFile) => {
+      let folderpath = file.path;
+      if (file instanceof TFile) {
+        folderpath = normalizePath(
+          file.path.substr(0, file.path.lastIndexOf(file.name)),
+        );
+      }
+      this.createAndOpenDrawing(
+        getDrawingFilename(this.settings),
+        linkClickModifierType(emulateCTRLClickForLinks(e)),
+        folderpath,
+      );
+    }
+
     const fileMenuHandlerCreateNew = (menu: Menu, file: TFile) => {
       menu.addItem((item: MenuItem) => {
         item
           .setTitle(t("CREATE_NEW"))
           .setIcon(ICON_NAME)
-          .onClick((e) => {
-            let folderpath = file.path;
-            if (file instanceof TFile) {
-              folderpath = normalizePath(
-                file.path.substr(0, file.path.lastIndexOf(file.name)),
-              );
-            }
-            this.createAndOpenDrawing(
-              getDrawingFilename(this.settings),
-              linkClickModifierType(emulateCTRLClickForLinks(e)),
-              folderpath,
-            );
-          });
+          .onClick((e) => {createNewAction(e, file)});
       });
     };
 
@@ -2389,6 +2414,7 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   onunload() {
+    document.body.removeChild(this.textMeasureDiv);
     this.stylesManager.unload();
     this.removeEventLisnters.forEach((removeEventListener) =>
       removeEventListener(),
@@ -2398,7 +2424,9 @@ export default class ExcalidrawPlugin extends Plugin {
       this.popScope();
       this.popScope = null;
     }
-    this.observer.disconnect();
+    if(this.legacyExcalidrawPopoverObserver) {
+      this.legacyExcalidrawPopoverObserver.disconnect();
+    }
     this.themeObserver.disconnect();
     this.modalContainerObserver.disconnect();
     if (this.workspaceDrawerLeftObserver) {

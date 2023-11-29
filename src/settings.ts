@@ -1,5 +1,6 @@
 import {
   App,
+  ButtonComponent,
   DropdownComponent,
   normalizePath,
   Notice,
@@ -1988,9 +1989,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         }),
     );
 
-        //STARTUP_SCRIPT_NAME
-        //STARTUP_SCRIPT_BUTTON
+    //STARTUP_SCRIPT_NAME
+    //STARTUP_SCRIPT_BUTTON
     let startupScriptPathText: TextComponent;
+    let startupScriptButton: ButtonComponent;
+    const scriptExists = () => {
+      const startupPath = normalizePath(this.plugin.settings.startupScriptPath.endsWith(".md")
+              ? this.plugin.settings.startupScriptPath
+              : this.plugin.settings.startupScriptPath + ".md");
+      return Boolean(this.app.vault.getAbstractFileByPath(startupPath));
+    }
     new Setting(detailsEl)
       .setName(t("STARTUP_SCRIPT_NAME"))
       .setDesc(fragWithHTML(t("STARTUP_SCRIPT_DESC")))
@@ -2000,12 +2008,14 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.startupScriptPath)
           .onChange( (value) => {
             this.plugin.settings.startupScriptPath = value;
+            startupScriptButton.setButtonText(scriptExists() ? t("STARTUP_SCRIPT_BUTTON_OPEN") : t("STARTUP_SCRIPT_BUTTON_CREATE"));
             this.applySettingsUpdate();
           });
         })
-      .addButton((button) =>
-        button
-          .setButtonText(t("STARTUP_SCRIPT_BUTTON"))
+      .addButton((button) => {
+        startupScriptButton = button;
+        startupScriptButton
+          .setButtonText(scriptExists() ? t("STARTUP_SCRIPT_BUTTON_OPEN") : t("STARTUP_SCRIPT_BUTTON_CREATE"))
           .onClick(async () => {
             if(this.plugin.settings.startupScriptPath === "") {
               this.plugin.settings.startupScriptPath = normalizePath(normalizePath(this.plugin.settings.folder) + "/ExcalidrawStartup");
@@ -2015,15 +2025,15 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             const startupPath = normalizePath(this.plugin.settings.startupScriptPath.endsWith(".md")
               ? this.plugin.settings.startupScriptPath
               : this.plugin.settings.startupScriptPath + ".md");
-            const f = this.app.vault.getAbstractFileByPath(startupPath);
-            if(f) {
-              new Notice(t("STARTUP_SCRIPT_EXISTS"));
-              return;
+            let f = this.app.vault.getAbstractFileByPath(startupPath);
+            if(!f) {
+              f = await this.app.vault.create(startupPath, startupScript());  
             }
-            const newFile = await this.app.vault.create(startupPath, startupScript());
-            this.app.workspace.openLinkText(newFile.path,"",true);
+            startupScriptButton.setButtonText(t("STARTUP_SCRIPT_BUTTON_OPEN"));
+            this.app.workspace.openLinkText(f.path,"",true);
+            this.hide();
           })
-      );
+      });
 
 
     // ------------------------------------------------

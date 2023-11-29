@@ -1722,6 +1722,7 @@ export default class ExcalidrawView extends TextFileView {
       this.compatibilityMode = this.file.extension === "excalidraw";
       await this.plugin.loadSettings();
       if (this.compatibilityMode) {
+        this.plugin.enableLegacyFilePopoverObserver();
         this.textIsRaw_Element.hide();
         this.textIsParsed_Element.hide();
         this.linkAction_Element.hide();
@@ -3133,7 +3134,7 @@ export default class ExcalidrawView extends TextFileView {
         this.plugin.hover.linkText = linktext;
         this.plugin.hover.sourcePath = this.file.path;
         hoverPreviewTarget = this.contentEl; //e.target;
-        app.workspace.trigger("hover-link", {
+        this.app.workspace.trigger("hover-link", {
           event: mouseEvent,
           source: VIEW_TYPE_EXCALIDRAW,
           hoverParent: hoverPreviewTarget,
@@ -3305,28 +3306,29 @@ export default class ExcalidrawView extends TextFileView {
         }
       }
 
-      const onChange = (et: ExcalidrawElement[], st: AppState) => {
-        const canvasColorChangeHook = () => {
-          const canvasColor = st.viewBackgroundColor === "transparent" ? "white" : st.viewBackgroundColor;
-          setTimeout(()=>this.updateScene({appState:{gridColor: this.getGridColor(canvasColor, st)}}));
-          setDynamicStyle(this.plugin.ea,this,canvasColor,this.plugin.settings.dynamicStyling);
-          if(this.plugin.ea.onCanvasColorChangeHook) {
-            try {
-              this.plugin.ea.onCanvasColorChangeHook(
-                this.plugin.ea,
-                this,
-                st.viewBackgroundColor
-              )
-            } catch (e) {
-              errorlog({
-                where: canvasColorChangeHook,
-                source: this.plugin.ea.onCanvasColorChangeHook,
-                error: e,
-                message: "ea.onCanvasColorChangeHook exception"
-              })
-            }
+      const canvasColorChangeHook = (st: AppState) => {
+        const canvasColor = st.viewBackgroundColor === "transparent" ? "white" : st.viewBackgroundColor;
+        setTimeout(()=>this.updateScene({appState:{gridColor: this.getGridColor(canvasColor, st)}}));
+        setDynamicStyle(this.plugin.ea,this,canvasColor,this.plugin.settings.dynamicStyling);
+        if(this.plugin.ea.onCanvasColorChangeHook) {
+          try {
+            this.plugin.ea.onCanvasColorChangeHook(
+              this.plugin.ea,
+              this,
+              st.viewBackgroundColor
+            )
+          } catch (e) {
+            errorlog({
+              where: canvasColorChangeHook,
+              source: this.plugin.ea.onCanvasColorChangeHook,
+              error: e,
+              message: "ea.onCanvasColorChangeHook exception"
+            })
           }
         }
+      }
+
+      const onChange = (et: ExcalidrawElement[], st: AppState) => {
         viewModeEnabled = st.viewModeEnabled;
         if (this.semaphores.justLoaded) {
           const elcount = this.excalidrawData?.scene?.elements?.length ?? 0;
@@ -3338,7 +3340,7 @@ export default class ExcalidrawView extends TextFileView {
           this.previousSceneVersion = this.getSceneVersion(et);
           this.previousBackgroundColor = st.viewBackgroundColor;
           this.previousTheme = st.theme;
-          canvasColorChangeHook();
+          canvasColorChangeHook(st);
           return;
         }
         if(st.theme !== this.previousTheme && this.file === this.excalidrawData.file) {
@@ -3352,7 +3354,7 @@ export default class ExcalidrawView extends TextFileView {
             clearTimeout(this.colorChangeTimer);
           }
           this.colorChangeTimer = setTimeout(()=>{
-            canvasColorChangeHook();
+            canvasColorChangeHook(st);
             this.colorChangeTimer = null;
           },50); //just enough time if the user is playing with color picker, the change is not too frequent.
         }
@@ -4122,6 +4124,7 @@ export default class ExcalidrawView extends TextFileView {
       } 
 
       const onContextMenu = (elements: readonly ExcalidrawElement[], appState: AppState, onClose: (callback?: () => void) => void) => {
+        console.log("contextMenu");
         const contextMenuActions = [];
         const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
 
@@ -4462,7 +4465,7 @@ export default class ExcalidrawView extends TextFileView {
           view: this,
           centerPointer: setCurrentPositionToCenter,
         }
-      )
+      );
 
       const observer = React.useRef(
         new ResizeObserver((entries) => {
@@ -4555,7 +4558,8 @@ export default class ExcalidrawView extends TextFileView {
             validateEmbeddable: true,
             renderWebview: DEVICE.isDesktop,
             renderEmbeddable,
-            renderMermaid: shouldRenderMermaid()
+            renderMermaid: shouldRenderMermaid(),
+            obsidianHostPlugin: this.plugin,
           },//,React.createElement(Footer,{},React.createElement(customTextEditor.render)),
           renderCustomActionsMenu(),
           renderWelcomeScreen(),

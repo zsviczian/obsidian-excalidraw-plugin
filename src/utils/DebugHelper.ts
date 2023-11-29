@@ -1,5 +1,5 @@
 export const isDebugMode = false;
-export const durationTreshold = 0.05; //ms
+export const durationTreshold = 0; //0.05; //ms
 
 export class CustomMutationObserver {
   private originalCallback: MutationCallback;
