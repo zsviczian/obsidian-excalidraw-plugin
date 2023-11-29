@@ -145,7 +145,7 @@ const run = async () => {
         <h3>${error}</h3>
       </body></html>`);
     new Notice (error);
-    ea.getElement(id).src = errorDataURL;
+    ea.getElement(id).link = errorDataURL;
     ea.addElementsToView(false,true);
   }
 
@@ -154,7 +154,7 @@ const run = async () => {
     return;
   }
   
-  console.log(result);
+  console.log(result, result.json);
   let content = ea.extractCodeBlocks(result.json.choices[0]?.message?.content)[0]?.data;
 
   if(!content) {
@@ -162,42 +162,47 @@ const run = async () => {
     return;
   }
 
-  switch(outputType) {
-    case "html":
-      ea.getElement(id).link = await ea.convertStringToDataURL(content);
-      ea.addElementsToView(false,true);
-      break;
-    case "mermaid":
-      if(content.startsWith("mermaid")) {
-        content = content.replace(/^mermaid/,"").trim();
-      }
-      ea.getElement(id).isDeleted = true;
-      try {
-        await ea.addMermaid(content);
-      } catch (e) {
-        ea.addText(0,0,content);
-      }
-      ea.targetView.currentPosition = {x: bb.topX+bb.width+100, y: bb.topY-bb.height-100};
-      await ea.addElementsToView(true, false);
-      ea.clear();
-      if(content.startsWith("graph LR") || content.startsWith("graph TD")) {
+  try {
+    switch(outputType) {
+      case "html":
+        ea.getElement(id).link = await ea.convertStringToDataURL(content);
+        ea.addElementsToView(false,true);
+        break;
+      case "mermaid":
+        if(content.startsWith("mermaid")) {
+          content = content.replace(/^mermaid/,"").trim();
+        }
+        ea.getElement(id).isDeleted = true;
         try {
-          if(content.startsWith("graph LR") || content.startsWith("flowchart LR")) {
-            content = content.replaceAll("graph LR", "graph TD");
-            content = content.replaceAll("flowchart LR", "flowchart TD");
-            await ea.addMermaid(content);
-          } else if (content.startsWith("graph TD") || content.startsWith("flowchart TD")) {
-            content = content.replaceAll("graph TD", "graph LR");
-            content = content.replaceAll("flowchart TD", "flowchart LR");
-            await ea.addMermaid(content);
-          }
+          await ea.addMermaid(content);
         } catch (e) {
           ea.addText(0,0,content);
         }
-        ea.targetView.currentPosition = {x: bb.topX-100, y: bb.topY + 100};
-        ea.addElementsToView(true, true);
-      }
-      break;
+        ea.targetView.currentPosition = {x: bb.topX+bb.width+100, y: bb.topY-bb.height-100};
+        await ea.addElementsToView(true, false);
+        ea.clear();
+        if(content.startsWith("graph LR") || content.startsWith("graph TD")) {
+          try {
+            if(content.startsWith("graph LR") || content.startsWith("flowchart LR")) {
+              content = content.replaceAll("graph LR", "graph TD");
+              content = content.replaceAll("flowchart LR", "flowchart TD");
+              await ea.addMermaid(content);
+            } else if (content.startsWith("graph TD") || content.startsWith("flowchart TD")) {
+              content = content.replaceAll("graph TD", "graph LR");
+              content = content.replaceAll("flowchart TD", "flowchart LR");
+              await ea.addMermaid(content);
+            }
+          } catch (e) {
+            ea.addText(0,0,content);
+          }
+          ea.targetView.currentPosition = {x: bb.topX-100, y: bb.topY + 100};
+          ea.addElementsToView(true, true);
+        }
+        break;
+    }
+  } catch(e) {
+    await errorMessage();
+    return;
   }
 }
 
