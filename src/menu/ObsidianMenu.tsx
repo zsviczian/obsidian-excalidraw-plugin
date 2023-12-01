@@ -265,6 +265,7 @@ export class ObsidianMenu {
             },
           )}
           onClick={() => {
+            this.view.setCurrentPositionToCenter();
             const insertFileModal = new UniversalInsertFileModal(this.plugin, this.view);
             insertFileModal.open();
           }}

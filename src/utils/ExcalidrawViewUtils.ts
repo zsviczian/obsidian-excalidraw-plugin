@@ -2,6 +2,7 @@
 import { MAX_IMAGE_SIZE, IMAGE_TYPES } from "src/constants/constants";
 import { TFile } from "obsidian";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
+import { REGEX_LINK, REG_LINKINDEX_HYPERLINK } from "src/ExcalidrawData";
 
 export const insertImageToView = async (
   ea: ExcalidrawAutomate,
@@ -47,4 +48,17 @@ export const insertEmbeddableToView = async (
     await ea.addElementsToView(false, true, true);
     return id;
   }
+}
+
+export const getLinkTextFromLink = (text: string): string => {
+  if (!text) return;
+  if (text.match(REG_LINKINDEX_HYPERLINK)) return;
+
+  const parts = REGEX_LINK.getRes(text).next();
+  if (!parts.value) return;
+
+  const linktext = REGEX_LINK.getLink(parts); //parts.value[2] ? parts.value[2]:parts.value[6];
+  if (linktext.match(REG_LINKINDEX_HYPERLINK)) return;
+
+  return linktext;
 }

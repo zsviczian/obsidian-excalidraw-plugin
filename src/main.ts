@@ -1394,7 +1394,7 @@ export default class ExcalidrawPlugin extends Plugin {
         }
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
-          this.insertLinkDialog.start(view.file.path, view.addLink);
+          this.insertLinkDialog.start(view.file.path, (markdownlink: string, path:string, alias:string) => view.addLink(markdownlink, path, alias));
           return true;
         }
         return false;
@@ -1410,7 +1410,7 @@ export default class ExcalidrawPlugin extends Plugin {
         }
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
-          this.insertCommandDialog.start(view.addText);
+          this.insertCommandDialog.start((text: string, fontFamily?: 1 | 2 | 3 | 4, save?: boolean) => view.addText(text, fontFamily, save));
           return true;
         }
         return false;

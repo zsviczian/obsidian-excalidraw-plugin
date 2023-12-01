@@ -60,6 +60,7 @@ export class InsertImageDialog extends FuzzySuggestModal<TFile> {
     ea.canvas.theme = this.view.excalidrawAPI.getAppState().theme;
     const scaleToFullsize = scaleToFullsizeModifier(event);
     (async () => {
+      //this.view.currentPosition = this.position;
       await ea.addImage(0, 0, item, !scaleToFullsize);
       ea.addElementsToView(true, true, true);
     })();

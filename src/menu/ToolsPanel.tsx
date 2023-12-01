@@ -9,10 +9,9 @@ import ExcalidrawView, { TextMode } from "../ExcalidrawView";
 import { t } from "../lang/helpers";
 import { ReleaseNotes } from "../dialogs/ReleaseNotes";
 import { ScriptIconMap } from "../Scripts";
-import { getIMGFilename } from "../utils/FileUtils";
 import { ScriptInstallPrompt } from "src/dialogs/ScriptInstallPrompt";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
-import { isALT, isCTRL, isSHIFT, mdPropModifier } from "src/utils/ModifierkeyHelper";
+import { isALT, isCTRL, isSHIFT } from "src/utils/ModifierkeyHelper";
 import { InsertPDFModal } from "src/dialogs/InsertPDFModal";
 import { ExportDialog } from "src/dialogs/ExportDialog";
 
@@ -522,7 +521,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                       this.props.centerPointer();
                       this.props.view.plugin.insertLinkDialog.start(
                         this.props.view.file.path,
-                        this.props.view.addText,
+                        (text: string, fontFamily?: 1 | 2 | 3 | 4, save?: boolean) => this.props.view.addText (text, fontFamily, save),
                       );
                     }}
                     icon={ICONS.insertLink}
