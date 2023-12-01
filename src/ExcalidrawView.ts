@@ -132,6 +132,7 @@ import { getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
 import { nanoid } from "nanoid";
 import { CustomMutationObserver, isDebugMode } from "./utils/DebugHelper";
 import { extractCodeBlocks, postOpenAI } from "./utils/AIUtils";
+import { on } from "events";
 
 declare const PLUGIN_VERSION:string;
 
@@ -2432,11 +2433,14 @@ export default class ExcalidrawView extends TextFileView {
     const ReactDOM = this.plugin.getPackage(this.ownerWindow).reactDOM;
     //console.log("ExcalidrawView.instantiateExcalidraw()");
     this.clearDirty();
+
+
+
     const reactElement = React.createElement(() => {
       const excalidrawWrapperRef = React.useRef(null);
       const toolsPanelRef = React.useRef(null);
       const embeddableMenuRef = React.useRef(null);
-
+      
       const [dimensions, setDimensions] = React.useState({
         width: undefined,
         height: undefined,

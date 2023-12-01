@@ -11,8 +11,8 @@ export const getParentOfClass = (element: Element, cssClass: string):HTMLElement
   let parent = element.parentElement;
   while (
     parent &&
-    !(parent instanceof window.HTMLBodyElement) &&
-    !parent.classList.contains(cssClass)
+    !parent.classList.contains(cssClass) &&
+    !(parent instanceof window.HTMLBodyElement)
   ) {
     parent = parent.parentElement;
   }

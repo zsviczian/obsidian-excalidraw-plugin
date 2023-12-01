@@ -677,22 +677,22 @@ export default class ExcalidrawPlugin extends Plugin {
     }
   }
 
-  private addThemeObserver() {
-    const themeObserverFn:MutationCallback = async (m: MutationRecord[]) => {
-      if (!this.settings.matchThemeTrigger) {
-        return;
-      }
-      //@ts-ignore
-      if (m[0]?.oldValue === m[0]?.target?.getAttribute("class")) {
-        return;
-      }
-      if (
-        m[0]?.oldValue?.includes("theme-dark") ===
-        //@ts-ignore
-        m[0]?.target?.classList?.contains("theme-dark")
-      ) {
-        return;
-      }
+  public addThemeObserver() {
+    if(this.themeObserver) return;
+    const { matchThemeTrigger } = this.settings;
+    if (!matchThemeTrigger) return;
+
+    const themeObserverFn:MutationCallback = async (mutations: MutationRecord[]) => {
+      const { matchThemeTrigger } = this.settings;
+      if (!matchThemeTrigger) return;
+
+      const bodyClassList = document.body.classList;
+      const mutation = mutations[0];
+      if (mutation?.oldValue === bodyClassList.value) return;
+      
+      const darkClass = bodyClassList.contains('theme-dark');
+      if (mutation?.oldValue?.includes('theme-dark') === darkClass) return;
+
       const self = this;
       setTimeout(()=>{ //run async to avoid blocking the UI
         const theme = isObsidianThemeDark() ? "dark" : "light";
@@ -714,6 +714,12 @@ export default class ExcalidrawPlugin extends Plugin {
       attributeOldValue: true,
       attributeFilter: ["class"],
     });
+  }
+
+  public removeThemeObserver() {
+    if(!this.themeObserver) return;
+    this.themeObserver.disconnect();
+    this.themeObserver = null;
   }
 
   public experimentalFileTypeDisplayToggle(enabled: boolean) {
@@ -2158,7 +2164,10 @@ export default class ExcalidrawPlugin extends Plugin {
         self.activeExcalidrawView = newActiveviewEV;
 
         if (newActiveviewEV) {
+          self.addModalContainerObserver();
           self.lastActiveExcalidrawFilePath = newActiveviewEV.file?.path;
+        } else {
+          self.removeModalContainerObserver();
         }
 
         //!Temporary hack
@@ -2334,26 +2343,7 @@ export default class ExcalidrawPlugin extends Plugin {
       this.app.workspace.on("file-menu", onFileMenuEventSaveActiveDrawing),
     );
 
-    //The user clicks settings, or "open another vault", or the command palette
-    const modalContainerObserverFn: MutationCallback = async (m: MutationRecord[]) => {
-      if (
-        (m.length !== 1) ||
-        (m[0].type !== "childList") ||
-        (m[0].addedNodes.length !== 1) ||
-        (!this.activeExcalidrawView) ||
-        (!this.activeExcalidrawView.semaphores.dirty)
-      ) {
-        return;
-      }
-      this.activeExcalidrawView.save();
-    };
-
-    this.modalContainerObserver = isDebugMode
-      ? new CustomMutationObserver(modalContainerObserverFn, "modalContainerObserver")
-      : new MutationObserver(modalContainerObserverFn);
-    this.modalContainerObserver.observe(document.body, {
-      childList: true,
-    });
+    this.addModalContainerObserver();
 
     //when the user activates the sliding drawers on Obsidian Mobile
     const leftWorkspaceDrawer = document.querySelector(
@@ -2397,6 +2387,45 @@ export default class ExcalidrawPlugin extends Plugin {
     }
   }
 
+  private activeViewDoc: Document;
+  private addModalContainerObserver() {
+    if(!this.activeExcalidrawView) return;
+    if(this.modalContainerObserver) {
+      if(this.activeViewDoc === this.activeExcalidrawView.ownerDocument) {
+        return;
+      }
+      this.removeModalContainerObserver();
+    }
+    //The user clicks settings, or "open another vault", or the command palette
+    const modalContainerObserverFn: MutationCallback = async (m: MutationRecord[]) => {
+      if (
+        (m.length !== 1) ||
+        (m[0].type !== "childList") ||
+        (m[0].addedNodes.length !== 1) ||
+        (!this.activeExcalidrawView) ||
+        (!this.activeExcalidrawView.semaphores.dirty)
+      ) {
+        return;
+      }
+      this.activeExcalidrawView.save();
+    };
+
+    this.modalContainerObserver = isDebugMode
+      ? new CustomMutationObserver(modalContainerObserverFn, "modalContainerObserver")
+      : new MutationObserver(modalContainerObserverFn);
+    this.activeViewDoc = this.activeExcalidrawView.ownerDocument;
+    this.modalContainerObserver.observe(this.activeViewDoc.body, {
+      childList: true,
+    });    
+  }
+
+  private removeModalContainerObserver() {
+    if(!this.modalContainerObserver) return;
+    this.modalContainerObserver.disconnect();
+    this.activeViewDoc = null;
+    this.modalContainerObserver = null;
+  }
+
   updateFileCache(
     file: TFile,
     frontmatter?: FrontMatterCache,
@@ -2427,8 +2456,8 @@ export default class ExcalidrawPlugin extends Plugin {
     if(this.legacyExcalidrawPopoverObserver) {
       this.legacyExcalidrawPopoverObserver.disconnect();
     }
-    this.themeObserver.disconnect();
-    this.modalContainerObserver.disconnect();
+    this.removeThemeObserver();
+    this.removeModalContainerObserver();
     if (this.workspaceDrawerLeftObserver) {
       this.workspaceDrawerLeftObserver.disconnect();
     }

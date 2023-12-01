@@ -813,6 +813,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.matchThemeTrigger)
           .onChange(async (value) => {
             this.plugin.settings.matchThemeTrigger = value;
+            if(value) {
+              this.plugin.addThemeObserver();
+            } else {
+              this.plugin.removeThemeObserver();
+            }
             this.applySettingsUpdate();
           }),
       );

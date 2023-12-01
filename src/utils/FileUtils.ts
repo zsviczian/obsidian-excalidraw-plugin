@@ -172,14 +172,18 @@ export const getMimeType = (extension: string):MimeType => {
 // using fetch API
 const getFileFromURL = async (url: string, mimeType: MimeType, timeout: number = URLFETCHTIMEOUT): Promise<RequestUrlResponse> => {
   try {
+    const timeoutPromise = new Promise<Response>((resolve) =>
+      setTimeout(() => resolve(null), timeout)
+    );
+    
     const response = await Promise.race([
       fetch(url),
-      new Promise<Response>((resolve) => setTimeout(() => resolve(null), timeout))
+      timeoutPromise,
     ]);
 
     if (!response) {
-      new Notice(`URL did not load within the timeout period of ${timeout}ms.\n\nTry force-saving again in a few seconds.\n\n${url}`,8000);
-      throw new Error(`URL did not load within the timeout period of ${timeout}ms`);
+      errorlog({ where: getFileFromURL, message: `URL did not load within the timeout period of ${timeout}ms.\n\nTry force-saving again in a few seconds.\n\n${url}`, url: url });
+      return null;
     }
 
     const arrayBuffer = await response.arrayBuffer();
@@ -192,8 +196,8 @@ const getFileFromURL = async (url: string, mimeType: MimeType, timeout: number =
       text: null,
     };
   } catch (e) {
-    errorlog({ where: getFileFromURL, message: e.message, url: url });
-    return undefined;
+    //errorlog({ where: getFileFromURL, message: e.message, url: url });
+    return null;
   }
 };
 
@@ -201,19 +205,23 @@ const getFileFromURL = async (url: string, mimeType: MimeType, timeout: number =
 // https://firebasestorage.googleapis.com/v0/b/firescript-577a2.appspot.com/o/imgs%2Fapp%2FJSG%2FfTMP6WGQRC.png?alt=media&token=6d2993b4-e629-46b6-98d1-133af7448c49
 const getFileFromURLFallback = async (url: string, mimeType: MimeType, timeout: number = URLFETCHTIMEOUT):Promise<RequestUrlResponse> => {
   try {
+    const timeoutPromise = new Promise<RequestUrlResponse | null>((resolve) =>
+      setTimeout(() => resolve(null), timeout)
+    );
+
     return await Promise.race([
-      (async () => new Promise<RequestUrlResponse>((resolve) => setTimeout(()=>resolve(null), timeout)))(),
+      timeoutPromise,
       requestUrl({url: url, method: "get", contentType: mimeType, throw: false })
     ])
   } catch (e) {
-    errorlog({where: getFileFromURL, message: `URL did not load within timeout period of ${timeout}ms`, url: url});
-    return undefined;
+    errorlog({where: getFileFromURLFallback, message: `URL did not load within timeout period of ${timeout}ms`, url: url});
+    return null;
   }
 }
 
 export const getDataURLFromURL = async (url: string, mimeType: MimeType, timeout: number = URLFETCHTIMEOUT): Promise<DataURL> => {
   let response = await getFileFromURL(url, mimeType, timeout);
-  if(response && response.status !== 200) {
+  if(!response || response?.status !== 200) {
     response = await getFileFromURLFallback(url, mimeType, timeout);
   }
   return response && response.status === 200
