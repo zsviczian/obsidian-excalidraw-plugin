@@ -29,7 +29,7 @@ try {
       elHeight /= 1.1;
     }  
   } else if (elWidth * elHeight < areaAvailable) {
-    while (elWidth * elHeight > areaAvailable) {
+    while (elWidth * elHeight < areaAvailable) {
       elWidth *= 1.1;
       elHeight *= 1.1;
     }
