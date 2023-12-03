@@ -279,9 +279,9 @@ export const getDataURLFromURL = async (
 export const blobToBase64 = async (blob: Blob): Promise<string> => {
   const arrayBuffer = await blob.arrayBuffer()
   const bytes = new Uint8Array(arrayBuffer)
-  var binary = '';
-  var len = bytes.byteLength;
-  for (var i = 0; i < len; i++) {
+  let binary = '';
+  let len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
     binary += String.fromCharCode(bytes[i]);
   }
   return btoa(binary);
