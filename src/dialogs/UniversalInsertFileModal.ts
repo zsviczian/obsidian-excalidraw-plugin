@@ -3,7 +3,7 @@ import ExcalidrawView from "../ExcalidrawView";
 import ExcalidrawPlugin from "../main";
 import {  Modal, Setting, TextComponent } from "obsidian";
 import { FileSuggestionModal } from "./FolderSuggester";
-import { IMAGE_TYPES, sceneCoordsToViewportCoords, viewportCoordsToSceneCoords, MAX_IMAGE_SIZE } from "src/constants/constants";
+import { IMAGE_TYPES, sceneCoordsToViewportCoords, viewportCoordsToSceneCoords, MAX_IMAGE_SIZE, ANIMATED_IMAGE_TYPES } from "src/constants/constants";
 import { insertEmbeddableToView, insertImageToView } from "src/utils/ExcalidrawViewUtils";
 import { getEA } from "src";
 import { InsertPDFModal } from "./InsertPDFModal";
@@ -80,6 +80,7 @@ export class UniversalInsertFileModal extends Modal {
       const ea = this.plugin.ea;
       const isMarkdown = file && file.extension === "md" && !ea.isExcalidrawFile(file);
       const isImage = file && (IMAGE_TYPES.contains(file.extension) || ea.isExcalidrawFile(file));
+      const isAnimatedImage = file && ANIMATED_IMAGE_TYPES.contains(file.extension);
       const isIFrame = file && !isImage;
       const isPDF = file && file.extension === "pdf";
       const isExcalidraw = file && ea.isExcalidrawFile(file);
@@ -116,7 +117,7 @@ export class UniversalInsertFileModal extends Modal {
         actionImage.buttonEl.style.display = "none";
       }
 
-      if (isIFrame) {
+      if (isIFrame || isAnimatedImage) {
         actionIFrame.buttonEl.style.display = "block";
       } else {
         actionIFrame.buttonEl.style.display = "none";

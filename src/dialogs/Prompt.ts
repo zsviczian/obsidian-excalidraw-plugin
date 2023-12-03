@@ -14,7 +14,7 @@ import ExcalidrawPlugin from "../main";
 import { escapeRegExp, sleep } from "../utils/Utils";
 import { getLeaf } from "../utils/ObsidianUtils";
 import { checkAndCreateFolder, splitFolderAndFilename } from "src/utils/FileUtils";
-import { KeyEvent, isCTRL } from "src/utils/ModifierkeyHelper";
+import { KeyEvent, isWinCTRLorMacCMD } from "src/utils/ModifierkeyHelper";
 import { t } from "src/lang/helpers";
 import { ExcalidrawElement, getEA } from "src";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
@@ -342,11 +342,11 @@ export class GenericInputPrompt extends Modal {
   private cancelClickCallback = () => this.cancel();
 
   private keyDownCallback = (evt: KeyboardEvent) => {
-    if ((evt.key === "Enter" && this.lines === 1) || (isCTRL(evt) && evt.key === "Enter")) {
+    if ((evt.key === "Enter" && this.lines === 1) || (isWinCTRLorMacCMD(evt) && evt.key === "Enter")) {
       evt.preventDefault();
       this.submit();
     }
-    if (this.displayEditorButtons && evt.key === "k" && isCTRL(evt)) {
+    if (this.displayEditorButtons && evt.key === "k" && isWinCTRLorMacCMD(evt)) {
       evt.preventDefault();
       this.linkBtnClickCallback();
     } 

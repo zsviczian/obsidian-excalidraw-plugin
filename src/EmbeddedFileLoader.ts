@@ -396,6 +396,15 @@ export class EmbeddedFilesLoader {
     return {dataURL: dURL as DataURL, hasSVGwithBitmap};
   };
 
+  //this is a fix for backward compatibility - I messed up with generating the local link
+  private getLocalPath(path: string) {
+    const localPath = path.split("file://")[1]
+    if(localPath.startsWith("/")) {
+      return localPath.substring(1);
+    }
+    return localPath;
+  }
+
   private async _getObsidianImage(inFile: TFile | EmbeddedFile, depth: number): Promise<ImgData> {
     if (!this.plugin || !inFile) {
       return null;
@@ -442,7 +451,7 @@ export class EmbeddedFilesLoader {
     const ab = isHyperLink || isPDF
       ? null
       : isLocalLink
-        ? await readLocalFileBinary((inFile as EmbeddedFile).hyperlink.split("file://")[1])
+        ? await readLocalFileBinary(this.getLocalPath((inFile as EmbeddedFile).hyperlink))
         : await app.vault.readBinary(file);
 
     let dURL: DataURL = null;
@@ -535,7 +544,7 @@ export class EmbeddedFilesLoader {
         //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"embedded Files are not loaded"});
         const data = await this._getObsidianImage(embeddedFile, depth);
         if (data) {
-          const fileData = {
+          const fileData: FileData = {
             mimeType: data.mimeType,
             id: entry.value[0],
             dataURL: data.dataURL,

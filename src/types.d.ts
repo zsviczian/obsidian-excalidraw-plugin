@@ -49,4 +49,13 @@ declare module "obsidian" {
       ctx?: any,
     ): EventRef;
   }
+  interface DataAdapter {
+    url: {
+      pathToFileURL(path: string): URL;
+    },
+    basePath: string;
+  }
+  interface Editor {
+    insertText(data: string): void;
+  }
 }

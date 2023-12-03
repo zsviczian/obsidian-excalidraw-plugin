@@ -80,6 +80,7 @@ import {
   getDrawingFilename,
   getEmbedFilename,
   getIMGFilename,
+  getLink,
   getNewUniqueFilepath,
 } from "./utils/FileUtils";
 import {
@@ -791,7 +792,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   private registerCommands() {
     this.openDialog = new OpenFileDialog(this.app, this);
-    this.insertLinkDialog = new InsertLinkDialog(this.app);
+    this.insertLinkDialog = new InsertLinkDialog(this);
     this.insertCommandDialog = new InsertCommandDialog(this.app);
     this.insertImageDialog = new InsertImageDialog(this);
     this.importSVGDialog = new ImportSVGDialog(this);
@@ -1978,7 +1979,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   private popScope: Function = null;
   private registerEventListeners() {
-    const self = this;
+    const self: ExcalidrawPlugin = this;
     this.app.workspace.onLayoutReady(async () => {
       const onPasteHandler = (
         evt: ClipboardEvent,
@@ -2008,18 +2009,15 @@ export default class ExcalidrawPlugin extends Plugin {
                 if(sourceFile && imageFile && imageFile instanceof TFile) {
                   path = self.app.metadataCache.fileToLinktext(imageFile,sourceFile.path);
                 }
-                //@ts-ignore
-                editor.insertText(self.getLink({path}));
+                editor.insertText(getLink(self, {path}));
               }
               return;
             }
             if (element.type === "text") {
-              //@ts-ignore
               editor.insertText(element.text);
               return;
             }
             if (element.link) {
-              //@ts-ignore
               editor.insertText(`${element.link}`);
               return;
             }
@@ -2485,14 +2483,6 @@ export default class ExcalidrawPlugin extends Plugin {
     })
   }
 
-  public getLink(
-    { embed = true, path, alias }: { embed?: boolean; path: string; alias?: string }
-  ):string {
-    return this.settings.embedWikiLink
-      ? `${embed ? "!" : ""}[[${path}${alias ? `|${alias}` : ""}]]`
-      : `${embed ? "!" : ""}[${alias ?? ""}](${encodeURI(path)})`
-  }
-
   public async embedDrawing(file: TFile) {
     const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
     if (activeView && activeView.file) {
@@ -2506,7 +2496,7 @@ export default class ExcalidrawPlugin extends Plugin {
       //embed Excalidraw
       if (this.settings.embedType === "excalidraw") {
         editor.replaceSelection(
-          this.getLink({path: excalidrawRelativePath}),
+          getLink(this, {path: excalidrawRelativePath}),
         );
         editor.focus();
         return;

@@ -73,6 +73,7 @@ import {
   download,
   getDataURLFromURL,
   getIMGFilename,
+  getInternalLinkOrFileURLLink,
   getMimeType,
   getNewUniqueFilepath,
   getURLImageExtension,
@@ -119,7 +120,7 @@ import { getTextElementAtPointer, getImageElementAtPointer, getElementWithLinkAt
 import { ICONS, LogoWrapper, saveIcon } from "./menu/ActionIcons";
 import { ExportDialog } from "./dialogs/ExportDialog";
 import { getEA } from "src"
-import { anyModifierKeysPressed, emulateKeysForLinkClick, externalDragModifierType, internalDragModifierType, isALT, isCTRL, isMETA, isSHIFT, linkClickModifierType, localFileDragModifierType, ModifierKeys } from "./utils/ModifierkeyHelper";
+import { anyModifierKeysPressed, emulateKeysForLinkClick, webbrowserDragModifierType, internalDragModifierType, isWinALTorMacOPT, isWinCTRLorMacCMD, isWinMETAorMacCTRL, isSHIFT, linkClickModifierType, localFileDragModifierType, ModifierKeys, modifierKeyTooltipMessages } from "./utils/ModifierkeyHelper";
 import { setDynamicStyle } from "./utils/DynamicStyling";
 import { InsertPDFModal } from "./dialogs/InsertPDFModal";
 import { CustomEmbeddable, renderWebView } from "./customEmbeddable";
@@ -3041,16 +3042,16 @@ export default class ExcalidrawView extends TextFileView {
     if (this.isFullscreen() && event.keyCode === KEYCODE.ESC) {
       this.exitFullscreen();
     }
-    if (isCTRL(event) && !isSHIFT(event) && !isALT(event)) {
+    if (isWinCTRLorMacCMD(event) && !isSHIFT(event) && !isWinALTorMacOPT(event)) {
       this.showHoverPreview();
     }
   };
 
   private onPointerDown(e: PointerEvent) {
-    if (!(isCTRL(e)||isMETA(e))) {
+    if (!(isWinCTRLorMacCMD(e)||isWinMETAorMacCTRL(e))) {
       return;
     } 
-    if (!this.plugin.settings.allowCtrlClick && !!isMETA(e)) {
+    if (!this.plugin.settings.allowCtrlClick && !!isWinMETAorMacCTRL(e)) {
       return;
     }
     //added setTimeout when I changed onClick(e: MouseEvent) to onPointerDown() in 1.7.9. 
@@ -3081,31 +3082,18 @@ export default class ExcalidrawView extends TextFileView {
       let msg: string = "";
       if((this.app as any).dragManager.draggable) {
         //drag from Obsidian file manager
-        switch (internalDragModifierType(e)) {
-          case "image": msg = "Embed image";break;
-          case "image-fullsize": msg = "Embed image @100%"; break;
-          case "link": msg = `Insert link\n${DEVICE.isMacOS || DEVICE.isIOS
-            ? "try SHIFT and CTRL combinations for other drop actions" 
-            : "try SHIFT, CTRL, ALT combinations for other drop actions"}`; break;
-          case "embeddable": msg = "Insert in interactive frame"; break;
-        }
+        msg = modifierKeyTooltipMessages().InternalDragAction[internalDragModifierType(e)];
       } else if(e.dataTransfer.types.length === 1 && e.dataTransfer.types.includes("Files")) {
         //drag from OS file manager
-        switch (localFileDragModifierType(e)) {
-          case "image-import": msg = "Import image to Vault"; break;
-          case "image-uri": msg = `Insert image with local URI`; break;
-          case "insert-link": msg = "Insert link"; break;
-        }
+        msg = modifierKeyTooltipMessages().LocalFileDragAction[localFileDragModifierType(e)];
       } else {
         //drag from Internet
-        switch (externalDragModifierType(e)) {
-          case "image-import": msg = "Import image to Vault"; break;
-          case "image-url": msg = `Insert image/thumbnail with URL\n${DEVICE.isMacOS || DEVICE.isIOS
-            ? "try SHIFT, OPT, CTRL combinations for other drop actions" 
-            : "try SHIFT, CTRL, ALT combinations for other drop actions"}`; break;
-          case "insert-link": msg = "Insert link"; break;
-          case "embeddable": msg = "Insert in interactive frame"; break;
-        }
+        msg = modifierKeyTooltipMessages().WebBrowserDragAction[webbrowserDragModifierType(e)];
+      }
+      if(!e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        msg += DEVICE.isMacOS || DEVICE.isIOS
+        ? "\nTry SHIFT, OPT, CTRL combinations for other drop actions" 
+        : "\nTry SHIFT, CTRL, ALT combinations for other drop actions";
       }
       if(this.draginfoDiv.innerText !== msg) this.draginfoDiv.innerText = msg;
       const top = `${e.clientY-parseFloat(getComputedStyle(this.draginfoDiv).fontSize)*8}px`;
@@ -3147,7 +3135,7 @@ export default class ExcalidrawView extends TextFileView {
       this.blockOnMouseButtonDown = true;
 
       //ctrl click
-      if (isCTRL(this.modifierKeyDown) || isMETA(this.modifierKeyDown)) {
+      if (isWinCTRLorMacCMD(this.modifierKeyDown) || isWinMETAorMacCTRL(this.modifierKeyDown)) {
         this.identifyElementClicked();
         return;
       }
@@ -3163,7 +3151,7 @@ export default class ExcalidrawView extends TextFileView {
     if (p.button === "up") {
       this.blockOnMouseButtonDown = false;
     }
-    if (isCTRL(this.modifierKeyDown) || 
+    if (isWinCTRLorMacCMD(this.modifierKeyDown) || 
       (this.excalidrawAPI.getAppState().isViewModeEnabled && 
       this.plugin.settings.hoverPreviewWithoutCTRL)) {
       
@@ -3349,7 +3337,7 @@ export default class ExcalidrawView extends TextFileView {
     );
     const draggable = (app as any).dragManager.draggable;
     const internalDragAction = internalDragModifierType(event);
-    const externalDragAction = externalDragModifierType(event);
+    const externalDragAction = webbrowserDragModifierType(event);
     const localFileDragAction = localFileDragModifierType(event);
 
     //Call Excalidraw Automate onDropHook
@@ -3525,7 +3513,7 @@ export default class ExcalidrawView extends TextFileView {
           this.addImageWithURL(text);
           return false;
         }
-        if(text && (externalDragAction === "insert-link")) {
+        if(text && (externalDragAction === "link")) {
           if (
             this.plugin.settings.iframelyAllowed &&
             text.match(/^https?:\/\/\S*$/)
@@ -3555,7 +3543,7 @@ export default class ExcalidrawView extends TextFileView {
           this.addImageWithURL(src[1]);
           return false;
         }
-        if(src && (externalDragAction === "insert-link")) {
+        if(src && (externalDragAction === "link")) {
           if (
             this.plugin.settings.iframelyAllowed &&
             src[1].match(/^https?:\/\/\S*$/)
@@ -3577,30 +3565,57 @@ export default class ExcalidrawView extends TextFileView {
           return false;
         }
       }
-
-      if(event.dataTransfer.types.length >= 1 && localFileDragAction === "image-uri") {
-        (async () => {
-          for(let i=0;i<event.dataTransfer.files.length;i++) {
-            //@ts-ignore
-            const path = encodeURI(event.dataTransfer.files[i].path);
-            const {x,y} = this.currentPosition;
-            await insertImageToView(getEA(this), {x:x+i*300, y:y+i*300}, `file://${path}`);
+      
+      if (event.dataTransfer.types.length >= 1 && ["image-url","image-import","embeddable"].contains(localFileDragAction)) {
+        for(let i=0;i<event.dataTransfer.files.length;i++) {
+          //@ts-ignore
+          const path = event.dataTransfer.files[i].path;
+          if(!path) return true; //excalidarw to continue processing
+          const link = getInternalLinkOrFileURLLink(path, this.plugin, event.dataTransfer.files[i].name, this.file);
+          const {x,y} = this.currentPosition;
+          const pos = {x:x+i*300, y:y+i*300};
+          if(link.isInternal) {
+            if(localFileDragAction === "embeddable") {
+              insertEmbeddableToView(getEA(this), pos, link.file);
+            } else {
+              insertImageToView(getEA(this), pos, link.file);
+            }
+          } else {
+            const extension = getURLImageExtension(link.url);
+            if(
+              localFileDragAction === "image-import" &&
+              (IMAGE_TYPES.contains(extension) || extension === "excalidraw")
+            ) {
+              return true; //excalidarw to continue processing
+            }
+            if(localFileDragAction === "embeddable" || !IMAGE_TYPES.contains(extension)) {
+              insertEmbeddableToView(getEA(this), pos, null, link.url);
+              if(localFileDragAction !== "embeddable") {
+                new Notice("Not imported to Vault. Embedded with local URI");
+              }
+            } else {
+              insertImageToView(getEA(this), pos, link.url);
+            }
           }
-        })();
+        };
         return false;
       }
 
-      if(event.dataTransfer.types.length >= 1 && localFileDragAction === "insert-link") {
+      if(event.dataTransfer.types.length >= 1 && localFileDragAction === "link") {
         const ea = getEA(this) as ExcalidrawAutomate;
         for(let i=0;i<event.dataTransfer.files.length;i++) {
           //@ts-ignore
           const path = event.dataTransfer.files[i].path;
           const name = event.dataTransfer.files[i].name;
+          if(!path || !name) return true; //excalidarw to continue processing
+          const link = getInternalLinkOrFileURLLink(path, this.plugin, name, this.file);
           const id = ea.addText(
             this.currentPosition.x+i*40,
             this.currentPosition.y+i*20,
-            `📂 ${name}`);
-          ea.getElement(id).link = `[${name}](file://${path})`;
+            link.isInternal ? link.link :`📂 ${name}`);
+          if(!link.isInternal) {
+            ea.getElement(id).link = link.link;
+          }
         }
         ea.addElementsToView();
         return false;
@@ -3898,7 +3913,7 @@ export default class ExcalidrawView extends TextFileView {
 
     let event = e?.detail?.nativeEvent;
     if(this.handleLinkHookCall(element,element.link,event)) return;
-    if(this.openExternalLink(element.link, !isSHIFT(event) && !isCTRL(event) && !isMETA(event) && !isALT(event) ? element : undefined)) return;
+    if(this.openExternalLink(element.link, !isSHIFT(event) && !isWinCTRLorMacCMD(event) && !isWinMETAorMacCTRL(event) && !isWinALTorMacOPT(event) ? element : undefined)) return;
 
     //if element is type text and element has multiple links, then submit the element text to linkClick to trigger link suggester
     if(element.type === "text") {
@@ -3927,7 +3942,7 @@ export default class ExcalidrawView extends TextFileView {
     if (
       element &&
       (this.plugin.settings.hoverPreviewWithoutCTRL ||
-        isCTRL(event))
+        isWinCTRLorMacCMD(event))
     ) {
       this.lastMouseEvent = event;
       this.lastMouseEvent.ctrlKey = !(DEVICE.isIOS || DEVICE.isMacOS) || this.lastMouseEvent.ctrlKey;

@@ -504,3 +504,31 @@ hr.excalidraw-setting-hr {
 .excalidraw .canvas-node .ex-md-font-code {
   --font-text: "Cascadia";
 }
+
+.excalidraw__embeddable-container .workspace-leaf,
+.excalidraw__embeddable-container .workspace-leaf .view-content {
+  ::-webkit-scrollbar,
+  ::-webkit-scrollbar-horizontal {
+    display: none;
+  }
+  background-color: transparent !important;
+}
+
+.excalidraw__embeddable-container .workspace-leaf-content .view-content {
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+
+.excalidraw__embeddable-container .workspace-leaf .view-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.excalidraw__embeddable-container  .workspace-leaf-content .image-container,
+.excalidraw__embeddable-container .workspace-leaf-content .audio-container,
+.excalidraw__embeddable-container .workspace-leaf-content .video-container {
+  display: flex;
+}

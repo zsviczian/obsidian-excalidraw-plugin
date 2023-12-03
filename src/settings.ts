@@ -3,7 +3,6 @@ import {
   ButtonComponent,
   DropdownComponent,
   normalizePath,
-  Notice,
   PluginSettingTab,
   Setting,
   TextComponent,
@@ -32,6 +31,8 @@ import { ConfirmationPrompt } from "./dialogs/Prompt";
 import { EmbeddableMDCustomProps } from "./dialogs/EmbeddableSettings";
 import { EmbeddalbeMDFileCustomDataSettingsComponent } from "./dialogs/EmbeddableMDFileCustomDataSettingsComponent";
 import { startupScript } from "./constants/starutpscript";
+import { ModifierKeySet, ModifierSetType } from "./utils/ModifierkeyHelper";
+import { ModifierKeySettingsComponent } from "./dialogs/ModifierKeySettings";
 
 export interface ExcalidrawSettings {
   folder: string;
@@ -159,6 +160,10 @@ export interface ExcalidrawSettings {
   openAIAPIToken: string,
   openAIDefaultTextModel: string,
   openAIDefaultVisionModel: string,
+  modifierKeyConfig: {
+    Mac: Record<ModifierSetType, ModifierKeySet>,
+    Win: Record<ModifierSetType, ModifierKeySet>,
+  }
 }
 
 declare const PLUGIN_VERSION:string;
@@ -305,6 +310,86 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   openAIAPIToken: "",
   openAIDefaultTextModel: "gpt-3.5-turbo-1106",
   openAIDefaultVisionModel: "gpt-4-vision-preview",
+  modifierKeyConfig: {
+    Mac: {
+      LocalFileDragAction:{
+        defaultAction: "image-import",
+        rules: [
+          { shift: false, ctrl_cmd: false, alt_opt: false, meta_ctrl: false, result: "image-import" },
+          { shift: true , ctrl_cmd: false, alt_opt: true , meta_ctrl: false, result: "link" },
+          { shift: true , ctrl_cmd: false, alt_opt: false, meta_ctrl: false, result: "image-url" },
+          { shift: false, ctrl_cmd: false, alt_opt: true , meta_ctrl: false, result: "embeddable" },
+        ],
+      },
+      WebBrowserDragAction: {
+        defaultAction: "image-url",
+        rules: [
+          { shift: false, ctrl_cmd: false, alt_opt: false, meta_ctrl: false, result: "image-url" },
+          { shift: true , ctrl_cmd: false, alt_opt: true , meta_ctrl: false, result: "link" },
+          { shift: false, ctrl_cmd: false, alt_opt: true , meta_ctrl: false, result: "embeddable" },
+          { shift: true , ctrl_cmd: false, alt_opt: false, meta_ctrl: false, result: "image-import" },
+        ],
+      },
+      InternalDragAction: {
+        defaultAction: "link",
+        rules: [
+          { shift: false, ctrl_cmd: false, alt_opt: false, meta_ctrl: false, result: "link" },
+          { shift: false, ctrl_cmd: false, alt_opt: false, meta_ctrl: true , result: "embeddable" },
+          { shift: true , ctrl_cmd: false, alt_opt: false, meta_ctrl: false, result: "image" },
+          { shift: true , ctrl_cmd: false, alt_opt: false, meta_ctrl: true , result: "image-fullsize" },
+        ],
+      },
+      LinkClickAction: {
+        defaultAction: "new-tab",
+        rules: [
+          { shift: false, ctrl_cmd: false, alt_opt: false, meta_ctrl: false, result: "active-pane" },
+          { shift: false, ctrl_cmd: true , alt_opt: false, meta_ctrl: false, result: "new-tab" },
+          { shift: false, ctrl_cmd: true , alt_opt: true , meta_ctrl: false, result: "new-pane" },
+          { shift: true , ctrl_cmd: true , alt_opt: true , meta_ctrl: false, result: "popout-window" },
+          { shift: false, ctrl_cmd: true , alt_opt: false, meta_ctrl: true , result: "md-properties" },
+        ],
+      },
+    },
+    Win: {
+      LocalFileDragAction:{
+        defaultAction: "image-import",
+        rules: [
+          { shift: false, ctrl_cmd: false, alt_opt: false, meta_ctrl: false, result: "image-import" },
+          { shift: false, ctrl_cmd: true , alt_opt: false, meta_ctrl: false, result: "link" },
+          { shift: true , ctrl_cmd: false, alt_opt: false, meta_ctrl: false, result: "image-url" },
+          { shift: true , ctrl_cmd: true , alt_opt: false, meta_ctrl: false, result: "embeddable" },
+        ],
+      },
+      WebBrowserDragAction: {
+        defaultAction: "image-url",
+        rules: [
+          { shift: false, ctrl_cmd: false, alt_opt: false, meta_ctrl: false, result: "image-url" },
+          { shift: false, ctrl_cmd: true , alt_opt: false, meta_ctrl: false, result: "link" },
+          { shift: true , ctrl_cmd: true , alt_opt: false, meta_ctrl: false, result: "embeddable" },
+          { shift: true , ctrl_cmd: false, alt_opt: false, meta_ctrl: false, result: "image-import" },
+        ],
+      },
+      InternalDragAction: {
+        defaultAction: "link",
+        rules: [
+          { shift: false, ctrl_cmd: false, alt_opt: false, meta_ctrl: false, result: "link" },
+          { shift: true , ctrl_cmd: true , alt_opt: false, meta_ctrl: false, result: "embeddable" },
+          { shift: true , ctrl_cmd: false, alt_opt: false, meta_ctrl: false, result: "image" },
+          { shift: false, ctrl_cmd: true , alt_opt: true , meta_ctrl: false, result: "image-fullsize" },
+        ],
+      },
+      LinkClickAction: {
+        defaultAction: "new-tab",
+        rules: [
+          { shift: false, ctrl_cmd: false, alt_opt: false, meta_ctrl: false, result: "active-pane" },
+          { shift: false, ctrl_cmd: true , alt_opt: false, meta_ctrl: false, result: "new-tab" },
+          { shift: false, ctrl_cmd: true , alt_opt: true , meta_ctrl: false, result: "new-pane" },
+          { shift: true , ctrl_cmd: true , alt_opt: true , meta_ctrl: false, result: "popout-window" },
+          { shift: false, ctrl_cmd: true , alt_opt: false, meta_ctrl: true , result: "md-properties" },
+        ],
+      },
+    },
+  }
 };
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
@@ -979,6 +1064,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           el.innerText = ` ${this.plugin.settings.laserSettings.DECAY_LENGTH.toString()}`;
         });
 
+    detailsEl = displayDetailsEl.createEl("details");
+    detailsEl.createEl("summary", { 
+      text: t("DRAG_MODIFIER_NAME"),
+      cls: "excalidraw-setting-h3",
+    });
+    detailsEl.createDiv({ text: t("DRAG_MODIFIER_DESC"), cls: "setting-item-description" });
+
+    new ModifierKeySettingsComponent(
+      detailsEl,
+      this.plugin.settings.modifierKeyConfig,
+      this.applySettingsUpdate,
+    ).render();
 
     // ------------------------------------------------
     // Links and Transclusions

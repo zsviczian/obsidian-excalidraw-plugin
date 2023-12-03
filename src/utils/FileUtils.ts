@@ -1,19 +1,22 @@
 import { DataURL } from "@zsviczian/excalidraw/types/types";
 import { loadPdfJs, normalizePath, Notice, requestUrl, RequestUrlResponse, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
 import { URLFETCHTIMEOUT } from "src/constants/constants";
-import { MimeType } from "src/EmbeddedFileLoader";
+import { IMAGE_MIME_TYPES, MimeType } from "src/EmbeddedFileLoader";
 import { ExcalidrawSettings } from "src/settings";
 import { errorlog, getDataURL } from "./Utils";
+import ExcalidrawPlugin from "src/main";
 
 /**
  * Splits a full path including a folderpath and a filename into separate folderpath and filename components
  * @param filepath
  */
+type ImageExtension = keyof typeof IMAGE_MIME_TYPES;
 
 export function splitFolderAndFilename(filepath: string): {
   folderpath: string;
   filename: string;
   basename: string;
+  extension: string;
 } {
   const lastIndex = filepath.lastIndexOf("/");
   const filename = lastIndex == -1 ? filepath : filepath.substring(lastIndex + 1);
@@ -21,6 +24,7 @@ export function splitFolderAndFilename(filepath: string): {
     folderpath: normalizePath(filepath.substring(0, lastIndex)),
     filename,
     basename: filename.replace(/\.[^/.]+$/, ""),
+    extension: filename.substring(filename.lastIndexOf(".") + 1),
   };
 }
 
@@ -155,15 +159,10 @@ export const getURLImageExtension = (url: string):string => {
 } 
 
 export const getMimeType = (extension: string):MimeType => {
+  if(IMAGE_MIME_TYPES.hasOwnProperty(extension)) {
+    return IMAGE_MIME_TYPES[extension as ImageExtension];
+  };
   switch (extension) {
-    case "png":  return "image/png";
-    case "jpeg": return "image/jpeg";
-    case "jpg":  return "image/jpeg";
-    case "gif":  return "image/gif";
-    case "webp": return "image/webp";
-    case "bmp":  return "image/bmp";
-    case "ico":  return "image/x-icon";
-    case "svg":  return "image/svg+xml"; 
     case "md":   return "image/svg+xml";
     default:     return "application/octet-stream";
   }
@@ -326,4 +325,40 @@ export const readLocalFileBinary = async (filePath:string): Promise<ArrayBuffer>
 export const getPathWithoutExtension = (f:TFile): string => {
   if(!f) return null;
   return f.path.substring(0, f.path.lastIndexOf("."));
+}
+
+const VAULT_BASE_URL = app.vault.adapter.url.pathToFileURL(app.vault.adapter.basePath).toString();
+export const getInternalLinkOrFileURLLink = (
+  path: string, plugin:ExcalidrawPlugin, alias?: string, sourceFile?: TFile
+  ):{link: string, isInternal: boolean, file?: TFile, url?: string} => {
+  const vault = plugin.app.vault;
+  const fileURLString = vault.adapter.url.pathToFileURL(path).toString();
+  if (fileURLString.startsWith(VAULT_BASE_URL)) {
+    const internalPath = normalizePath(fileURLString.substring(VAULT_BASE_URL.length));
+    const file = vault.getAbstractFileByPath(internalPath);
+    if(file && file instanceof TFile) {
+      const link = plugin.app.metadataCache.fileToLinktext(
+        file,
+        sourceFile?.path,
+        true,
+      );
+      return {link: getLink(plugin, { embed: false, path: link, alias}), isInternal: true, file};
+   };
+  }
+  return {link: `[${alias??""}](${fileURLString})`, isInternal: false, url: fileURLString};
+}
+
+/**
+ * get markdown or wiki link
+ * @param plugin 
+ * @param param1: { embed = true, path, alias } 
+ * @returns 
+ */
+export const getLink = ( 
+  plugin: ExcalidrawPlugin,
+  { embed = true, path, alias }: { embed?: boolean; path: string; alias?: string }
+):string => {
+  return plugin.settings.embedWikiLink
+    ? `${embed ? "!" : ""}[[${path}${alias ? `|${alias}` : ""}]]`
+    : `${embed ? "!" : ""}[${alias ?? ""}](${encodeURI(path)})`
 }

@@ -10,7 +10,7 @@ import { getNewUniqueFilepath, getPathWithoutExtension, splitFolderAndFilename }
 import { addAppendUpdateCustomData, fragWithHTML } from "src/utils/Utils";
 import { getYouTubeStartAt, isValidYouTubeStart, isYouTube, updateYouTubeStartTime } from "src/utils/YoutTubeUtils";
 import { EmbeddalbeMDFileCustomDataSettingsComponent } from "./EmbeddableMDFileCustomDataSettingsComponent";
-import { isCTRL } from "src/utils/ModifierkeyHelper";
+import { isWinCTRLorMacCMD } from "src/utils/ModifierkeyHelper";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
 
 export type EmbeddableMDCustomProps = {
@@ -32,6 +32,8 @@ export class EmbeddableSettings extends Modal {
   private isYouTube: boolean;
   private youtubeStart: string = null;
   private isMDFile: boolean;
+  private notExcalidrawIsInternal: boolean;
+  private isLocalURI: boolean;
   private mdCustomData: EmbeddableMDCustomProps;
   private onKeyDown: (ev: KeyboardEvent) => void;
 
@@ -46,7 +48,9 @@ export class EmbeddableSettings extends Modal {
     this.ea.copyViewElementsToEAforEditing([this.element]);
     this.zoomValue = element.scale[0];
     this.isYouTube = isYouTube(this.element.link);
-    this.isMDFile = this.file && this.file.extension === "md" && !this.view.plugin.isExcalidrawFile(this.file)
+    this.notExcalidrawIsInternal = this.file && !this.view.plugin.isExcalidrawFile(this.file)
+    this.isMDFile = this.file && this.file.extension === "md" && !this.view.plugin.isExcalidrawFile(this.file);
+    this.isLocalURI = this.element.link.startsWith("file://");
     if(isYouTube) this.youtubeStart = getYouTubeStartAt(this.element.link);
 
     this.mdCustomData = element.customData?.mdProps ?? view.plugin.settings.embeddableMarkdownDefaults;
@@ -126,9 +130,9 @@ export class EmbeddableSettings extends Modal {
         )
     }
 
-    if(this.isMDFile) {
+    if(this.isMDFile  || this.notExcalidrawIsInternal) {
       this.contentEl.createEl("h3",{text: t("ES_EMBEDDABLE_SETTINGS")});
-      new EmbeddalbeMDFileCustomDataSettingsComponent(this.contentEl,this.mdCustomData).render();
+      new EmbeddalbeMDFileCustomDataSettingsComponent(this.contentEl,this.mdCustomData, undefined, this.isMDFile).render();
     }
   
     new Setting(this.contentEl)
@@ -150,7 +154,7 @@ export class EmbeddableSettings extends Modal {
 
 
     const onKeyDown = (ev: KeyboardEvent) => {
-      if(isCTRL(ev) && ev.key === "Enter") {
+      if(isWinCTRLorMacCMD(ev) && ev.key === "Enter") {
         this.applySettings();
       }
     }

@@ -1,15 +1,17 @@
 import { App, FuzzySuggestModal, TFile } from "obsidian";
 import { REG_LINKINDEX_INVALIDCHARS } from "../constants/constants";
 import { t } from "../lang/helpers";
+import ExcalidrawPlugin from "src/main";
+import { getLink } from "src/utils/FileUtils";
 
 export class InsertLinkDialog extends FuzzySuggestModal<TFile> {
   public app: App;
   private addText: Function;
   private drawingPath: string;
 
-  constructor(app: App) {
-    super(app);
-    this.app = app;
+  constructor(private plugin: ExcalidrawPlugin) {
+    super(plugin.app);
+    this.app = plugin.app;
     this.limit = 20;
     this.setInstructions([
       {
@@ -45,7 +47,8 @@ export class InsertLinkDialog extends FuzzySuggestModal<TFile> {
         true,
       );
     }
-    this.addText(`[[${filepath + (item.alias ? `|${item.alias}` : "")}]]`, filepath, item.alias);
+    const link = getLink(this.plugin,{embed: false, path: filepath, alias: item.alias});
+    this.addText(getLink(this.plugin,{embed: false, path: filepath, alias: item.alias}), filepath, item.alias);
   }
 
   public start(drawingPath: string, addText: Function) {

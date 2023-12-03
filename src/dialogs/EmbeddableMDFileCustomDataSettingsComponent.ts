@@ -8,6 +8,7 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
     private contentEl: HTMLElement,
     private mdCustomData: EmbeddableMDCustomProps,
     private update?: Function,
+    private isMDFile: boolean = true,
   ) { 
     if(!update) this.update = () => {};
   }
@@ -33,16 +34,17 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
     detailsDIV.style.display = this.mdCustomData.useObsidianDefaults ? "none" : "block";
 
     const contentEl = detailsDIV
-    new Setting(contentEl)
-        .setName(t("ES_FILENAME_VISIBLE"))
-        .addToggle(toggle => 
-          toggle
-            .setValue(this.mdCustomData.filenameVisible)
-            .onChange(value => {
-              this.mdCustomData.filenameVisible = value;
-            })
-        );
-      
+    if(this.isMDFile) {
+      new Setting(contentEl)
+          .setName(t("ES_FILENAME_VISIBLE"))
+          .addToggle(toggle => 
+            toggle
+              .setValue(this.mdCustomData.filenameVisible)
+              .onChange(value => {
+                this.mdCustomData.filenameVisible = value;
+              })
+          );
+      }
       contentEl.createEl("h4",{text: t("ES_BACKGROUND_HEAD")});
       
       let bgSetting: Setting;  
@@ -126,50 +128,52 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
             })
         );
       
-      contentEl.createEl("h4",{text: t("ES_BORDER_HEAD")});
-      let borderSetting: Setting;
+      if(this.isMDFile) {
+        contentEl.createEl("h4",{text: t("ES_BORDER_HEAD")});
+        let borderSetting: Setting;
 
-      new Setting(contentEl)
-        .setName(t("ES_BORDER_MATCH_ELEMENT"))
-        .addToggle(toggle => 
-          toggle
-            .setValue(this.mdCustomData.borderMatchElement)
-            .onChange(value => {
-              this.mdCustomData.borderMatchElement = value;
-              if(value) {
-                borderSetting.settingEl.style.display = "none";
-              } else {
-                borderSetting.settingEl.style.display = "";
-              }
-              this.update();
-            })
+        new Setting(contentEl)
+          .setName(t("ES_BORDER_MATCH_ELEMENT"))
+          .addToggle(toggle => 
+            toggle
+              .setValue(this.mdCustomData.borderMatchElement)
+              .onChange(value => {
+                this.mdCustomData.borderMatchElement = value;
+                if(value) {
+                  borderSetting.settingEl.style.display = "none";
+                } else {
+                  borderSetting.settingEl.style.display = "";
+                }
+                this.update();
+              })
+          );
+
+        borderSetting = new Setting(contentEl)
+          .setName(t("ES_BORDER_COLOR"))
+          .addColorPicker(colorPicker =>
+            colorPicker
+              .setValue(this.mdCustomData.borderColor)
+              .onChange((value) => {
+                this.mdCustomData.borderColor = value;
+                this.update();
+              })
+          );
+
+        borderSetting.settingEl.style.display = this.mdCustomData.borderMatchElement ? "none" : "";
+
+        const borderOpacitySetting = new Setting(contentEl)
+          .setName(t("ES_BORDER_OPACITY"))
+          .setDesc(opacity(this.mdCustomData.borderOpacity))
+          .addSlider(slider => 
+            slider
+              .setLimits(0,100,5)
+              .setValue(this.mdCustomData.borderOpacity)
+              .onChange(value => {
+                this.mdCustomData.borderOpacity = value;
+                borderOpacitySetting.setDesc(opacity(value));
+                this.update();
+          })
         );
-
-      borderSetting = new Setting(contentEl)
-        .setName(t("ES_BORDER_COLOR"))
-        .addColorPicker(colorPicker =>
-          colorPicker
-            .setValue(this.mdCustomData.borderColor)
-            .onChange((value) => {
-              this.mdCustomData.borderColor = value;
-              this.update();
-            })
-        );
-
-      borderSetting.settingEl.style.display = this.mdCustomData.borderMatchElement ? "none" : "";
-
-      const borderOpacitySetting = new Setting(contentEl)
-        .setName(t("ES_BORDER_OPACITY"))
-        .setDesc(opacity(this.mdCustomData.borderOpacity))
-        .addSlider(slider => 
-          slider
-            .setLimits(0,100,5)
-            .setValue(this.mdCustomData.borderOpacity)
-            .onChange(value => {
-              this.mdCustomData.borderOpacity = value;
-              borderOpacitySetting.setDesc(opacity(value));
-              this.update();
-            })
-        );
+      }
   }
 } 

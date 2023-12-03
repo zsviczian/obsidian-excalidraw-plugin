@@ -11,7 +11,7 @@ import { ReleaseNotes } from "../dialogs/ReleaseNotes";
 import { ScriptIconMap } from "../Scripts";
 import { ScriptInstallPrompt } from "src/dialogs/ScriptInstallPrompt";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
-import { isALT, isCTRL, isSHIFT } from "src/utils/ModifierkeyHelper";
+import { isWinALTorMacOPT, isWinCTRLorMacCMD, isSHIFT } from "src/utils/ModifierkeyHelper";
 import { InsertPDFModal } from "src/dialogs/InsertPDFModal";
 import { ExportDialog } from "src/dialogs/ExportDialog";
 
@@ -379,7 +379,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                         new Notice("Taskbone OCR is not enabled. Please go to plugins settings to enable it.",4000);
                         return;
                       }
-                      this.props.view.plugin.taskbone.getTextForView(this.props.view, isCTRL(e));
+                      this.props.view.plugin.taskbone.getTextForView(this.props.view, isWinCTRLorMacCMD(e));
                     }}
                     icon={ICONS.ocr}
                     view={this.props.view}
@@ -504,7 +504,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     key={"latex"}
                     title={t("INSERT_LATEX")}
                     action={(e) => {
-                      if(isALT(e)) {
+                      if(isWinALTorMacOPT(e)) {
                         this.props.view.openExternalLink("https://youtu.be/r08wk-58DPk");
                         return;
                       }
@@ -531,12 +531,12 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     key={"link-to-element"}
                     title={t("INSERT_LINK_TO_ELEMENT")}
                     action={(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-                      if(isALT(e)) {
+                      if(isWinALTorMacOPT(e)) {
                         this.props.view.openExternalLink("https://youtu.be/yZQoJg2RCKI");
                         return;
                       }
                       this.props.view.copyLinkToSelectedElementToClipboard(
-                        isCTRL(e) ? "group=" : (isSHIFT(e) ? "area=" : "")
+                        isWinCTRLorMacCMD(e) ? "group=" : (isSHIFT(e) ? "area=" : "")
                       );
                     }}
                     icon={ICONS.copyElementLink}

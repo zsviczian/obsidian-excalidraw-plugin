@@ -17,6 +17,23 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.0.5":`
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/kp1K7GRrE6E" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+# Fixed
+- Scaled-resizing a sticky note (SHIFT+resize) caused Excalidraw to choke on slower devices
+- Improved plugin performance focusing on minimizing Excalidraw's effect on Obsidian overall
+- Images embedded with a URL often did not show up in image exports, hopefully, the issue will less frequently occur in the future.
+- Local file URL now follows Obsidian standard - making it easier to navigate in Markdown view mode.
+
+# New
+- In plugin settings, under "Startup Script", the button now opens the startup script if it already exists.
+- Partial support for animated GIFs (will not show up in image exports, but can be added as interactive embeddables)
+- Configurable modifier keys for link click action and drag&drop actions.
+- Improved support for drag&drop from your local drive and embedding of files external to Excalidraw.
+`,
 "2.0.4":`
 <div class="excalidraw-videoWrapper"><div>
 <iframe src="https://www.youtube.com/embed/A1vrSGBbWgo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

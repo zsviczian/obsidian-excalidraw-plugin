@@ -400,6 +400,7 @@ const createImgElement = async (
       fheight: imgOrDiv.getAttribute("h"),
       style: [...Array.from(imgOrDiv.classList)],
     }, onCanvas);
+    if(!newImg) return;
     parent.empty();
     if(!onCanvas) {
       newImg.style.maxHeight = imgMaxHeigth;

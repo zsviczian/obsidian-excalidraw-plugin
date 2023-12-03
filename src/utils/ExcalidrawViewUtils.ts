@@ -1,5 +1,5 @@
 
-import { MAX_IMAGE_SIZE, IMAGE_TYPES } from "src/constants/constants";
+import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES } from "src/constants/constants";
 import { TFile } from "obsidian";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK } from "src/ExcalidrawData";
@@ -34,7 +34,7 @@ export const insertEmbeddableToView = async (
   ea.clear();
   ea.style.strokeColor = "transparent";
   ea.style.backgroundColor = "transparent";
-  if(file && IMAGE_TYPES.contains(file.extension) || ea.isExcalidrawFile(file)) {
+  if(file && (IMAGE_TYPES.contains(file.extension) || ea.isExcalidrawFile(file)) && !ANIMATED_IMAGE_TYPES.contains(file.extension)) {
     return await insertImageToView(ea, position, file);
   } else {
     const id = ea.addEmbeddable(

@@ -277,6 +277,12 @@ FILENAME_HEAD: "Filename",
     "the plugin will open it in a browser. " +
     "When Obsidian files change, the matching <code>[[link]]</code> in your drawings will also change. " +
     "If you don't want text accidentally changing in your drawings use <code>[[links|with aliases]]</code>.",
+  DRAG_MODIFIER_NAME: "Link Click and Drag&Drop Modifier Keys",
+  DRAG_MODIFIER_DESC: "Modifier key behavior when clicking links and dragging and dropping elements. " +
+    "Excalidraw will not validate your configuration... pay attention to avoid conflicting settings. " +
+    "These settings are different for Apple and non-Apple. If you use Obsidian on multiple platforms, you'll need to make the settings separately. "+
+    "The toggles follow the order of " +
+    (DEVICE.isIOS || DEVICE.isMacOS ? "SHIFT, CMD, OPT, CONTROL." : "SHIFT, CTRL, ALT, META (Windows key)."),
   ADJACENT_PANE_NAME: "Reuse adjacent pane",
   ADJACENT_PANE_DESC:
     `When ${labelCTRL()}+${labelALT()} clicking a link in Excalidraw, by default the plugin will open the link in a new pane. ` +
@@ -650,5 +656,11 @@ FILENAME_HEAD: "Filename",
   PROMPT_BUTTON_INSERT_SPACE: "Insert space",
   PROMPT_BUTTON_INSERT_LINK: "Insert markdown link to file",
   PROMPT_BUTTON_UPPERCASE: "Uppercase",
-  
+
+  //ModifierKeySettings
+  WEB_BROWSER_DRAG_ACTION: "Web Browser Drag Action",
+  LOCAL_FILE_DRAG_ACTION: "OS Local File Drag Action",
+  INTERNAL_DRAG_ACTION: "Obsidian Internal Drag Action",
+  PANE_TARGET: "Link click behavior",
+  DEFAULT_ACTION_DESC: "In case none of the combinations apply the default action for this group is: ",
 };
