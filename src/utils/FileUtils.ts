@@ -1,6 +1,6 @@
 import { DataURL } from "@zsviczian/excalidraw/types/types";
 import { loadPdfJs, normalizePath, Notice, requestUrl, RequestUrlResponse, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
-import { URLFETCHTIMEOUT } from "src/constants/constants";
+import { DEVICE, URLFETCHTIMEOUT } from "src/constants/constants";
 import { IMAGE_MIME_TYPES, MimeType } from "src/EmbeddedFileLoader";
 import { ExcalidrawSettings } from "src/settings";
 import { errorlog, getDataURL } from "./Utils";
@@ -295,6 +295,7 @@ export const getPDFDoc = async (f: TFile): Promise<any> => {
 }
 
 export const readLocalFile = async (filePath:string): Promise<string> => {
+  if (!DEVICE.isDesktop) return null;
   return new Promise((resolve, reject) => {
     //@ts-ignore
     app.vault.adapter.fs.readFile(filePath, 'utf8', (err:any, data:any) => {
@@ -308,6 +309,7 @@ export const readLocalFile = async (filePath:string): Promise<string> => {
 }
 
 export const readLocalFileBinary = async (filePath:string): Promise<ArrayBuffer> => {
+  if (!DEVICE.isDesktop) return null;
   return new Promise((resolve, reject) => {
     const path = decodeURI(filePath);
     //@ts-ignore
@@ -327,10 +329,18 @@ export const getPathWithoutExtension = (f:TFile): string => {
   return f.path.substring(0, f.path.lastIndexOf("."));
 }
 
-const VAULT_BASE_URL = app.vault.adapter.url.pathToFileURL(app.vault.adapter.basePath).toString();
+debugger;
+const VAULT_BASE_URL = DEVICE.isDesktop
+  ? app.vault.adapter.url.pathToFileURL(app.vault.adapter.basePath).toString()
+  : "";
 export const getInternalLinkOrFileURLLink = (
   path: string, plugin:ExcalidrawPlugin, alias?: string, sourceFile?: TFile
-  ):{link: string, isInternal: boolean, file?: TFile, url?: string} => {
+):{link: string, isInternal: boolean, file?: TFile, url?: string} => {
+  if(!DEVICE.isDesktop) {
+    //I've not tested this... don't even know if external drag and drop works on mobile
+    //Added this for safety
+    return {link: `[${alias??""}](${path})`, isInternal: false, url: path};  
+  }
   const vault = plugin.app.vault;
   const fileURLString = vault.adapter.url.pathToFileURL(path).toString();
   if (fileURLString.startsWith(VAULT_BASE_URL)) {
@@ -343,7 +353,7 @@ export const getInternalLinkOrFileURLLink = (
         true,
       );
       return {link: getLink(plugin, { embed: false, path: link, alias}), isInternal: true, file};
-   };
+    };
   }
   return {link: `[${alias??""}](${fileURLString})`, isInternal: false, url: fileURLString};
 }

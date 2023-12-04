@@ -928,7 +928,10 @@ export default class ExcalidrawView extends TextFileView {
       if (partsArray.length > 1) {
         parts = await ScriptEngine.suggester(
           this.app,
-          partsArray.filter(p=>Boolean(p.value)).map(p => REGEX_LINK.getLink(p)),
+          partsArray.filter(p=>Boolean(p.value)).map(p => {
+            const alias = REGEX_LINK.getAliasOrLink(p);
+            return alias === "100%" ? REGEX_LINK.getLink(p) : alias;
+          }),
           partsArray.filter(p=>Boolean(p.value)),
           "Select link to open"
         );
@@ -1074,6 +1077,19 @@ export default class ExcalidrawView extends TextFileView {
           }
         }
 
+        let secondOrderLinks: string = " ";
+        
+        const backlinks = this.app.metadataCache?.getBacklinksForFile(ef.file)?.data;
+        if(backlinks) {
+          const linkPaths = Object.keys(backlinks)
+            .filter(path => (path !== this.file.path) && (path !== ef.file.path))
+            .map(path => {
+              const filepathParts = splitFolderAndFilename(path);
+              return `[[${path}|Second Order Link: ${filepathParts.basename}]]`;
+            });
+          secondOrderLinks += linkPaths.join(" ");
+        }
+
         const linkString = (ef.isHyperLink || ef.isLocalLink
           ? `[](${ef.hyperlink}) `
           : `[[${ef.linkParts.original}]] `
@@ -1083,7 +1099,7 @@ export default class ExcalidrawView extends TextFileView {
             : imageElement.link
           : "");
         
-        const result = await this.linkPrompt(linkString);
+        const result = await this.linkPrompt(linkString + secondOrderLinks);
         if(!result) return;
         [file, linkText, subpath] = result;
         

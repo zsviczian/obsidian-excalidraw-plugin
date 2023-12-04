@@ -79,14 +79,13 @@ import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 import { emulateKeysForLinkClick, KeyEvent, PaneTarget } from "src/utils/ModifierkeyHelper";
 import { Mutable } from "@zsviczian/excalidraw/types/utility-types";
 import PolyBool from "polybooljs";
-import { compressToBase64, decompressFromBase64 } from "lz-string";
+//import { compressToBase64, decompressFromBase64 } from "lz-string";
 import { EmbeddableMDCustomProps } from "./dialogs/EmbeddableSettings";
 import {
   AIRequest,
   postOpenAI as _postOpenAI,
   extractCodeBlocks as _extractCodeBlocks,
 } from "./utils/AIUtils";
-import ExcalidrawScene from "./svgToExcalidraw/elements/ExcalidrawScene";
 
 extendPlugins([
   HarmonyPlugin,
@@ -105,6 +104,7 @@ extendPlugins([
 ]);
 
 declare const PLUGIN_VERSION:string;
+declare var LZString: any;
 
 const GAP = 4;
 
@@ -200,11 +200,11 @@ export class ExcalidrawAutomate {
   }
 
   public compressToBase64(str:string):string {
-    return compressToBase64(str);
+    return LZString.compressToBase64(str);
   }
 
   public decompressFromBase64(str:string):string {
-    return decompressFromBase64(str);
+    return LZString.decompressFromBase64(str);
   }
 
   /**

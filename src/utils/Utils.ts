@@ -27,7 +27,7 @@ import {
 import ExcalidrawPlugin from "../main";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
 import { ExportSettings } from "../ExcalidrawView";
-import { compressToBase64, decompressFromBase64 } from "lz-string";
+//import { compressToBase64, decompressFromBase64 } from "lz-string";
 import { getDataURLFromURL, getIMGFilename, getMimeType, getURLImageExtension } from "./FileUtils";
 import { generateEmbeddableLink } from "./CustomEmbeddableUtils";
 import ExcalidrawScene from "src/svgToExcalidraw/elements/ExcalidrawScene";
@@ -38,6 +38,7 @@ import { updateElementLinksToObsidianLinks } from "src/ExcalidrawAutomate";
 
 
 declare const PLUGIN_VERSION:string;
+declare var LZString: any;
 
 declare module "obsidian" {
   interface Workspace {
@@ -515,11 +516,11 @@ export const getLinkParts = (fname: string, file?: TFile): LinkParts => {
 };
 
 export const compress = (data: string): string => {
-  return compressToBase64(data).replace(/(.{64})/g, "$1\n\n");
+  return LZString.compressToBase64(data).replace(/(.{64})/g, "$1\n\n");
 };
 
 export const decompress = (data: string): string => {
-  return decompressFromBase64(data.replaceAll("\n", "").replaceAll("\r", ""));
+  return LZString.decompressFromBase64(data.replaceAll("\n", "").replaceAll("\r", ""));
 };
 
 export const hasExportTheme = (

@@ -25,16 +25,22 @@ const reactdom_pkg = isLib ? "" : isProd
   ? fs.readFileSync("./node_modules/react-dom/umd/react-dom.production.min.js", "utf8")
   : fs.readFileSync("./node_modules/react-dom/umd/react-dom.development.js", "utf8");
 const lzstring_pkg = isLib ? "" : fs.readFileSync("./node_modules/lz-string/libs/lz-string.min.js", "utf8");
+const mathjax_pkg = isLib ? "" : fs.readFileSync("./node_modules/mathjax-full/es5/tex-svg-full.js", "utf8");
 
 const manifestStr = isLib ? "" : fs.readFileSync("manifest.json", "utf-8");
 const manifest = isLib ? {} : JSON.parse(manifestStr);
 !isLib && console.log(manifest.version);
 
-const packageString = isLib ? "" : ';'+lzstring_pkg+'const EXCALIDRAW_PACKAGES = "' + LZString.compressToBase64(react_pkg + reactdom_pkg + excalidraw_pkg) + '";' +
-  'const {react, reactDOM, excalidrawLib} = window.eval.call(window, `(function() {' +
-  '${LZString.decompressFromBase64(EXCALIDRAW_PACKAGES)};' +
-  'return {react:React, reactDOM:ReactDOM, excalidrawLib: ExcalidrawLib};})();`);' +
-  'const PLUGIN_VERSION="'+manifest.version+'";';
+const packageString = isLib 
+  ? "" 
+  : ';' + lzstring_pkg +
+    'const MATHJAX_SOURCE_LZCOMPRESSED = "' +
+    LZString.compressToBase64(btoa(unescape(encodeURIComponent(mathjax_pkg.replaceAll("MathJax","ExcalidrawMathJax"))))) + '";' +
+    'const EXCALIDRAW_PACKAGES = "' + LZString.compressToBase64(react_pkg + reactdom_pkg + excalidraw_pkg) + '";' +
+    'const {react, reactDOM, excalidrawLib} = window.eval.call(window, `(function() {' +
+    '${LZString.decompressFromBase64(EXCALIDRAW_PACKAGES)};' +
+    'return {react:React, reactDOM:ReactDOM, excalidrawLib: ExcalidrawLib};})();`);' +
+    'const PLUGIN_VERSION="'+manifest.version+'";';
 
 const BASE_CONFIG = {
   input: 'src/main.ts',

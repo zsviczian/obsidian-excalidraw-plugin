@@ -106,7 +106,7 @@ import {
 
 import { FieldSuggester } from "./dialogs/FieldSuggester";
 import { ReleaseNotes } from "./dialogs/ReleaseNotes";
-import { decompressFromBase64 } from "lz-string";
+//import { decompressFromBase64 } from "lz-string";
 import { Packages } from "./types";
 import { PreviewImageType } from "./utils/UtilTypes";
 import { ScriptInstallPrompt } from "./dialogs/ScriptInstallPrompt";
@@ -117,7 +117,7 @@ import { ExportDialog } from "./dialogs/ExportDialog";
 import { UniversalInsertFileModal } from "./dialogs/UniversalInsertFileModal";
 import { imageCache } from "./utils/ImageCache";
 import { StylesManager } from "./utils/StylesManager";
-import { MATHJAX_SOURCE_LZCOMPRESSED } from "./constants/constMathJaxSource";
+//import { MATHJAX_SOURCE_LZCOMPRESSED } from "./constants/constMathJaxSource";
 import { PublishOutOfDateFilesDialog } from "./dialogs/PublishOutOfDateFiles";
 import { EmbeddableSettings } from "./dialogs/EmbeddableSettings";
 import { processLinkText } from "./utils/CustomEmbeddableUtils";
@@ -132,6 +132,8 @@ declare const react:any;
 declare const reactDOM:any;
 declare const excalidrawLib: any;
 declare const PLUGIN_VERSION:string;
+declare const MATHJAX_SOURCE_LZCOMPRESSED:string;
+declare var LZString: any;
 
 export default class ExcalidrawPlugin extends Plugin {
   public taskbone: Taskbone;
@@ -200,7 +202,7 @@ export default class ExcalidrawPlugin extends Plugin {
     //@ts-ignore
     const {react:r, reactDOM:rd, excalidrawLib:e} = win.eval.call(win,
       `(function() {
-        ${decompressFromBase64(EXCALIDRAW_PACKAGES)};
+        ${LZString.decompressFromBase64(EXCALIDRAW_PACKAGES)};
         return {react:React,reactDOM:ReactDOM,excalidrawLib:ExcalidrawLib};
        })()`);
     this.packageMap.set(win,{react:r, reactDOM:rd, excalidrawLib:e});
@@ -416,7 +418,7 @@ export default class ExcalidrawPlugin extends Plugin {
             self.mathjaxLoaderFinished = true;
           });
         };
-        script.src = "data:text/javascript;base64," + decompressFromBase64(MATHJAX_SOURCE_LZCOMPRESSED); //self.settings.mathjaxSourceURL; // "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js";
+        script.src = "data:text/javascript;base64," + LZString.decompressFromBase64(MATHJAX_SOURCE_LZCOMPRESSED); //self.settings.mathjaxSourceURL; // "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js";
         //script.src = MATHJAX_DATAURL;
         document.head.appendChild(script);
       } catch {

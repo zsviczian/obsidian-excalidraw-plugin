@@ -58,4 +58,7 @@ declare module "obsidian" {
   interface Editor {
     insertText(data: string): void;
   }
+  interface MetadataCache {
+    getBacklinksForFile(file: TFile): any;
+  }
 }
