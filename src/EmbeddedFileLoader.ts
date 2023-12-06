@@ -586,7 +586,7 @@ export class EmbeddedFilesLoader {
     while (!this.terminate && !(equation = equations.next()).done) {
       if (!excalidrawData.getEquation(equation.value[0]).isLoaded) {
         const latex = equation.value[1].latex;
-        const data = await tex2dataURL(latex, this.plugin);
+        const data = await tex2dataURL(latex);
         if (data) {
           const fileData = {
             mimeType: data.mimeType,

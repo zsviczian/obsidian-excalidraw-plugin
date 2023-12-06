@@ -329,7 +329,6 @@ export const getPathWithoutExtension = (f:TFile): string => {
   return f.path.substring(0, f.path.lastIndexOf("."));
 }
 
-debugger;
 const VAULT_BASE_URL = DEVICE.isDesktop
   ? app.vault.adapter.url.pathToFileURL(app.vault.adapter.basePath).toString()
   : "";

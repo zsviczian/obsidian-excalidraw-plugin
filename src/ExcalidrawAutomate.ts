@@ -1377,7 +1377,7 @@ export class ExcalidrawAutomate {
    */
   async addLaTex(topX: number, topY: number, tex: string): Promise<string> {
     const id = nanoid();
-    const image = await tex2dataURL(tex, this.plugin);
+    const image = await tex2dataURL(tex);
     if (!image) {
       return null;
     }

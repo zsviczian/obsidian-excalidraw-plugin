@@ -12,7 +12,6 @@ import {
   TAbstractFile,
   ViewState,
   Notice,
-  loadMathJax,
   request,
   MetadataCache,
   FrontMatterCache,
@@ -117,7 +116,6 @@ import { ExportDialog } from "./dialogs/ExportDialog";
 import { UniversalInsertFileModal } from "./dialogs/UniversalInsertFileModal";
 import { imageCache } from "./utils/ImageCache";
 import { StylesManager } from "./utils/StylesManager";
-//import { MATHJAX_SOURCE_LZCOMPRESSED } from "./constants/constMathJaxSource";
 import { PublishOutOfDateFilesDialog } from "./dialogs/PublishOutOfDateFiles";
 import { EmbeddableSettings } from "./dialogs/EmbeddableSettings";
 import { processLinkText } from "./utils/CustomEmbeddableUtils";
@@ -132,7 +130,6 @@ declare const react:any;
 declare const reactDOM:any;
 declare const excalidrawLib: any;
 declare const PLUGIN_VERSION:string;
-declare const MATHJAX_SOURCE_LZCOMPRESSED:string;
 declare var LZString: any;
 
 export default class ExcalidrawPlugin extends Plugin {
@@ -166,8 +163,6 @@ export default class ExcalidrawPlugin extends Plugin {
     null; //fileId, path
   public equationsMaster: Map<FileId, string> = null; //fileId, formula
   public mermaidsMaster: Map<FileId, string> = null; //fileId, mermaidText
-  public mathjax: any = null;
-  public mathjaxLoaderFinished: boolean = false;
   public scriptEngine: ScriptEngine;
   public fourthFontDef: string = VIRGIL_FONT;
   private packageMap: WeakMap<Window,Packages> = new WeakMap<Window,Packages>();
@@ -295,8 +290,6 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.switchToExcalidarwAfterLoad();
 
-    this.loadMathJax();
-
     const self = this;
     this.app.workspace.onLayoutReady(() => {
       this.scriptEngine = new ScriptEngine(self);
@@ -347,85 +340,6 @@ export default class ExcalidrawPlugin extends Plugin {
       visitedDocs.add(ownerDocument);
     });
     return Array.from(visitedDocs);
-  }
-
-  private removeMathJax() {
-    if("ExcalidrawMathJax" in window) {
-      delete window.ExcalidrawMathJax;
-    }
-    const scriptElement = document.getElementById("ExcalidrawMathJax");
-    if(scriptElement) {
-      scriptElement.parentNode.removeChild(scriptElement);
-    }
-  }
-
-  public loadMathJax() {
-    const self = this;
-    this.app.workspace.onLayoutReady(async () => {
-      //loading Obsidian MathJax as fallback
-      await loadMathJax();
-      //@ts-ignore
-      const backup = window.MathJax;
-      try {
-        this.removeMathJax();
-        const script = document.createElement("script");
-        script.setAttribute("id","ExcalidrawMathJax");
-        script.type = "text/javascript";
-        script.onload = () => {
-          //@ts-ignore
-          window.ExcalidrawMathJax.startup.pagePromise.then(async () => {
-
-            // Set the 'all' package to load all MathJax modules
-            const mathJaxConfig = {
-              tex: {
-                packages: { '[+]': ['all'] }, //this is required because during runtime loading fails due to the renaming of the package
-                // Add any other configurations you need here
-              },
-            };
-
-            // Set the MathJax configuration
-            //@ts-ignore
-            window.ExcalidrawMathJax = {
-              //@ts-ignore
-              ...window.ExcalidrawMathJax,
-              options: {
-                //@ts-ignore
-                ...window.ExcalidrawMathJax.options,
-                ...mathJaxConfig,
-              },
-            };
-            
-            //https://github.com/xldenis/obsidian-latex/blob/master/main.ts
-            const file = this.app.vault.getAbstractFileByPath("preamble.sty");
-            const preamble: string =
-              file && file instanceof TFile
-                ? await this.app.vault.read(file)
-                : null;
-            try {
-              if (preamble) {
-                //@ts-ignore
-                await window.ExcalidrawMathJax.tex2svg(preamble);
-              }
-            } catch (e) {
-              errorlog({
-                where: self.loadMathJax,
-                description: "Unexpected error while loading preamble.sty",
-                error: e,
-              });
-            }
-            //@ts-ignore
-            self.mathjax = window.ExcalidrawMathJax;
-            self.mathjaxLoaderFinished = true;
-          });
-        };
-        script.src = "data:text/javascript;base64," + LZString.decompressFromBase64(MATHJAX_SOURCE_LZCOMPRESSED); //self.settings.mathjaxSourceURL; // "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js";
-        //script.src = MATHJAX_DATAURL;
-        document.head.appendChild(script);
-      } catch {
-        new Notice("Excalidraw: Error initializing LaTeX support");
-        self.mathjaxLoaderFinished = true;
-      }
-    });
   }
 
   private switchToExcalidarwAfterLoad() {
@@ -2472,11 +2386,6 @@ export default class ExcalidrawPlugin extends Plugin {
     excalidrawLeaves.forEach((leaf) => {
       this.setMarkdownView(leaf);
     });
-
-    this.removeMathJax();
-/*    if (this.mathjaxDiv) {
-      document.body.removeChild(this.mathjaxDiv);
-    }*/
 
     Object.values(this.packageMap).forEach((p:Packages)=>{
       delete p.excalidrawLib;

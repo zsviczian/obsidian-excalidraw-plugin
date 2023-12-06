@@ -1,14 +1,19 @@
 import { DataURL } from "@zsviczian/excalidraw/types/types";
+import {mathjax} from "mathjax-full/js/mathjax";
+import {TeX} from 'mathjax-full/js/input/tex.js';
+import {SVG} from 'mathjax-full/js/output/svg.js';
+import {LiteAdaptor, liteAdaptor} from 'mathjax-full/js/adaptors/liteAdaptor.js';
+import {RegisterHTMLHandler} from 'mathjax-full/js/handlers/html.js';
+import {AllPackages} from 'mathjax-full/js/input/tex/AllPackages.js';
+
 import ExcalidrawView from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
 import { FileData, MimeType } from "./EmbeddedFileLoader";
 import { FileId } from "@zsviczian/excalidraw/types/element/types";
-import { errorlog, getImageSize, log, sleep, svgToBase64 } from "./utils/Utils";
+import { getImageSize, svgToBase64 } from "./utils/Utils";
 import { fileid } from "./constants/constants";
-import html2canvas from "html2canvas";
-import { Notice } from "obsidian";
-
-declare let window: any;
+import { TFile } from "obsidian";
+import { MathDocument } from "mathjax-full/js/core/MathDocument";
 
 export const updateEquation = async (
   equation: string,
@@ -17,7 +22,7 @@ export const updateEquation = async (
   addFiles: Function,
   plugin: ExcalidrawPlugin,
 ) => {
-  const data = await tex2dataURL(equation, plugin);
+  const data = await tex2dataURL(equation);
   if (data) {
     const files: FileData[] = [];
     files.push({
@@ -33,9 +38,23 @@ export const updateEquation = async (
   }
 };
 
+let adaptor: LiteAdaptor;
+let input: TeX<unknown, unknown, unknown>;
+let output: SVG<unknown, unknown, unknown>;
+let html: MathDocument<any, any, any>;
+let preamble: string;
+
+//https://github.com/xldenis/obsidian-latex/blob/master/main.ts
+const loadPreamble = async  () => {
+  const file = app.vault.getAbstractFileByPath("preamble.sty");
+  preamble = file && file instanceof TFile
+    ? await app.vault.read(file)
+    : null;
+};
+
 export async function tex2dataURL(
   tex: string,
-  plugin: ExcalidrawPlugin,
+  scale: number = 4 // Default scale value, adjust as needed
 ): Promise<{
   mimeType: MimeType;
   fileId: FileId;
@@ -43,102 +62,41 @@ export async function tex2dataURL(
   created: number;
   size: { height: number; width: number };
 }> {
-  //if network is slow, or not available, or mathjax has not yet fully loaded
-  let counter = 0;
-  while (!plugin.mathjax && !plugin.mathjaxLoaderFinished && counter < 10) {
-    await sleep(100);
-    counter++;
+  if(!adaptor) {
+    await loadPreamble();
+    adaptor = liteAdaptor();
+    RegisterHTMLHandler(adaptor);
+    input = new TeX({
+      packages: AllPackages,
+      ...Boolean(preamble) ? {
+        inlineMath: [['$', '$']],
+        displayMath: [['$$', '$$']]
+      } : {},
+    });
+    output = new SVG({ fontCache: "local" });
+    html = mathjax.document("", { InputJax: input, OutputJax: output });
   }
-
-  if(!plugin.mathjaxLoaderFinished) {
-    errorlog({where: "text2dataURL", fn: tex2dataURL, message:"mathjaxLoader not ready, using fallback. Try reloading Obsidian or restarting the Excalidraw plugin"});
-  }
-
-  //it is not clear why this works, but it seems that after loading the plugin sometimes only the third attempt is successful.
   try {
-    return await mathjaxSVG(tex, plugin);
-  } catch (e) {
-    await sleep(100);
-    try {
-      return await mathjaxSVG(tex, plugin);
-    } catch (e) {
-      await sleep(100);
-      try {
-        return await mathjaxSVG(tex, plugin);
-      } catch (e) {
-        if (plugin.mathjax) {
-          new Notice(
-            "Unknown error loading LaTeX. Using fallback solution. Try closing and reopening this drawing.",
-          );
-        } else {
-          new Notice(
-            "LaTeX support did not load. Using fallback solution. Try checking your network connection.",
-          );
-        }
-        //fallback
-        return await mathjaxImage2html(tex);
+    const node = html.convert(
+      Boolean(preamble) ? `${preamble}${tex}` : tex,
+      { display: true, scale }
+    );
+    const svg = new DOMParser().parseFromString(adaptor.innerHTML(node), "image/svg+xml").firstChild as SVGSVGElement;
+    if (svg) {
+      if(svg.width.baseVal.valueInSpecifiedUnits < 2) {
+        svg.width.baseVal.valueAsString = `${(svg.width.baseVal.valueInSpecifiedUnits+1).toFixed(3)}ex`;
       }
+      const dataURL = svgToBase64(svg.outerHTML);
+      return {
+        mimeType: "image/svg+xml",
+        fileId: fileid() as FileId,
+        dataURL: dataURL as DataURL,
+        created: Date.now(),
+        size: await getImageSize(dataURL),
+      };
     }
-  }
-}
-
-export async function mathjaxSVG(
-  tex: string,
-  plugin: ExcalidrawPlugin,
-): Promise<{
-  mimeType: MimeType;
-  fileId: FileId;
-  dataURL: DataURL;
-  created: number;
-  size: { height: number; width: number };
-}> {
-  const eq = plugin.mathjax.tex2svg(tex, { display: true, scale: 4 });
-  const svg = eq.querySelector("svg");
-  if (svg) {
-    if(svg.width.baseVal.valueInSpecifiedUnits < 2) {
-      svg.width.baseVal.valueAsString = `${(svg.width.baseVal.valueInSpecifiedUnits+1).toFixed(3)}ex`;
-    }
-    const dataURL = svgToBase64(svg.outerHTML);
-    return {
-      mimeType: "image/svg+xml",
-      fileId: fileid() as FileId,
-      dataURL: dataURL as DataURL,
-      created: Date.now(),
-      size: await getImageSize(dataURL),
-    };
+  } catch (e) {
+    console.error(e);
   }
   return null;
-}
-
-async function mathjaxImage2html(tex: string): Promise<{
-  mimeType: MimeType;
-  fileId: FileId;
-  dataURL: DataURL;
-  created: number;
-  size: { height: number; width: number };
-}> {
-  const div = document.body.createDiv();
-  div.style.display = "table"; //this will ensure div fits width of formula exactly
-  //@ts-ignore
-
-  const eq = window.MathJax.tex2chtml(tex, { display: true, scale: 4 }); //scale to ensure good resolution
-  eq.style.margin = "3px";
-  eq.style.color = "black";
-
-  //ipad support - removing mml as that was causing phantom double-image blur.
-  const el = eq.querySelector("mjx-assistive-mml");
-  if (el) {
-    el.parentElement.removeChild(el);
-  }
-  div.appendChild(eq);
-  window.MathJax.typeset();
-  const canvas = await html2canvas(div, { backgroundColor: null }); //transparent
-  document.body.removeChild(div);
-  return {
-    mimeType: "image/png",
-    fileId: fileid() as FileId,
-    dataURL: canvas.toDataURL() as DataURL,
-    created: Date.now(),
-    size: { height: canvas.height, width: canvas.width },
-  };
 }

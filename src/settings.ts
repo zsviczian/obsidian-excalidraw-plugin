@@ -398,7 +398,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private requestReloadDrawings: boolean = false;
   private requestUpdatePinnedPens: boolean = false;
   private requestUpdateDynamicStyling: boolean = false;
-  private reloadMathJax: boolean = false;
+  //private reloadMathJax: boolean = false;
   //private applyDebounceTimer: number = 0;
 
   constructor(app: App, plugin: ExcalidrawPlugin) {
@@ -452,9 +452,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       this.plugin.triggerEmbedUpdates();
     }
     this.plugin.scriptEngine.updateScriptPath();
-    if(this.reloadMathJax) {
+/*    if(this.reloadMathJax) {
       this.plugin.loadMathJax();
-    }
+    }*/
   }
 
   async display() {
