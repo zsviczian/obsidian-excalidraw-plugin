@@ -1,8 +1,6 @@
-//import Excalidraw from "@zsviczian/excalidraw";
 import {
   App,
   Notice,
-  parseFrontMatterEntry,
   request,
   requestUrl,
   TFile,
@@ -27,7 +25,6 @@ import {
 import ExcalidrawPlugin from "../main";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
 import { ExportSettings } from "../ExcalidrawView";
-//import { compressToBase64, decompressFromBase64 } from "lz-string";
 import { getDataURLFromURL, getIMGFilename, getMimeType, getURLImageExtension } from "./FileUtils";
 import { generateEmbeddableLink } from "./CustomEmbeddableUtils";
 import ExcalidrawScene from "src/svgToExcalidraw/elements/ExcalidrawScene";

@@ -93,7 +93,6 @@ import {
   isCallerFromTemplaterPlugin,
 } from "./utils/Utils";
 import { extractSVGPNGFileName, getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark } from "./utils/ObsidianUtils";
-//import { OneOffs } from "./OneOffs";
 import { ExcalidrawElement, ExcalidrawEmbeddableElement, ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/element/types";
 import { ScriptEngine } from "./Scripts";
 import {
@@ -105,7 +104,6 @@ import {
 
 import { FieldSuggester } from "./dialogs/FieldSuggester";
 import { ReleaseNotes } from "./dialogs/ReleaseNotes";
-//import { decompressFromBase64 } from "lz-string";
 import { Packages } from "./types";
 import { PreviewImageType } from "./utils/UtilTypes";
 import { ScriptInstallPrompt } from "./dialogs/ScriptInstallPrompt";

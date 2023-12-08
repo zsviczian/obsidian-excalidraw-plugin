@@ -17,6 +17,58 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.0.8":`
+## New
+- Mermaid Class Diagrams [#7381](https://github.com/excalidraw/excalidraw/pull/7381)
+- New Scripts:
+  - Repeat Texts contributed by @soraliu [#1425](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/1425)
+  - Relative Font Size Cycle [#1474](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1474)
+- New setting to configure the URL used to reach the OpenAI API - for setting an OpenAI API compatible local LLM URL.
+
+## Fixed
+- web images with jpeg extension were not displayed. [#1486](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1486)
+- MathJax was causing errors on the file in the active editor when starting Obsidian or starting the Excalidraw Plugin. I reworked the MathJax implementation from the ground up. [#1484](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1484), [#1473](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1473)
+- Enhanced performance for resizing sticky notes (resize + ALT) on slower devices when centrally adjusting their size.
+
+## New in ExcalidrawAutomate:
+- New ArrowHead types. Currently only available programmatically and when converting Mermaid Class Diagrams into Excalidraw Objects:
+${String.fromCharCode(96,96,96)}ts
+  addArrow(
+    points: [x: number, y: number][],
+    formatting?: {
+      startArrowHead?: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null;
+      endArrowHead?: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null;
+      startObjectId?: string;
+      endObjectId?: string;
+    },
+  ): string;
+  
+  connectObjects(
+    objectA: string,
+    connectionA: ConnectionPoint | null,
+    objectB: string,
+    connectionB: ConnectionPoint | null,
+    formatting?: {
+      numberOfPoints?: number;
+      startArrowHead?: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null;
+      endArrowHead?: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null;
+      padding?: number;
+    },
+  ): string;
+
+  connectObjectWithViewSelectedElement(
+    objectA: string,
+    connectionA: ConnectionPoint | null,
+    connectionB: ConnectionPoint | null,
+    formatting?: {
+      numberOfPoints?: number;
+      startArrowHead?: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null;
+      endArrowHead?: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null;
+      padding?: number;
+    },
+  ): boolean;
+${String.fromCharCode(96,96,96)}
+`,
 "2.0.7":`
 <div class="excalidraw-videoWrapper"><div>
 <iframe src="https://www.youtube.com/embed/kp1K7GRrE6E" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

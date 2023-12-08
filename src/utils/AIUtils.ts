@@ -39,7 +39,7 @@ export type AIRequest = {
 
 export const postOpenAI = async (request: AIRequest) : Promise<RequestUrlResponse> => {
   const plugin: ExcalidrawPlugin = window.ExcalidrawAutomate.plugin;
-  const { openAIAPIToken, openAIDefaultTextModel, openAIDefaultVisionModel} = plugin.settings;
+  const { openAIAPIToken, openAIDefaultTextModel, openAIDefaultVisionModel, openAIURL} = plugin.settings;
   const { image, text, instruction, systemPrompt } = request;
   const requestType = image ? "image" : "text";
   let body: GPTCompletionRequest;
@@ -88,7 +88,7 @@ export const postOpenAI = async (request: AIRequest) : Promise<RequestUrlRespons
 
   try {
     const resp = await requestUrl ({
-      url: "https://api.openai.com/v1/chat/completions",
+      url: openAIURL,
       method: "post",
       contentType: "application/json",
       body: JSON.stringify(body),

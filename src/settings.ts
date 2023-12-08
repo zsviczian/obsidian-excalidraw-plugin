@@ -160,6 +160,7 @@ export interface ExcalidrawSettings {
   openAIAPIToken: string,
   openAIDefaultTextModel: string,
   openAIDefaultVisionModel: string,
+  openAIURL: string,
   modifierKeyConfig: {
     Mac: Record<ModifierSetType, ModifierKeySet>,
     Win: Record<ModifierSetType, ModifierKeySet>,
@@ -310,6 +311,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   openAIAPIToken: "",
   openAIDefaultTextModel: "gpt-3.5-turbo-1106",
   openAIDefaultVisionModel: "gpt-4-vision-preview",
+  openAIURL: "https://api.openai.com/v1/chat/completions",
   modifierKeyConfig: {
     Mac: {
       LocalFileDragAction:{
@@ -782,6 +784,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.openAIDefaultVisionModel)
           .onChange(async (value) => {
             this.plugin.settings.openAIDefaultVisionModel = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("AI_OPENAI_DEFAULT_API_URL_NAME"))
+      .setDesc(fragWithHTML(t("AI_OPENAI_DEFAULT_API_URL_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder("https://api.openai.com/v1/chat/completions")
+          .setValue(this.plugin.settings.openAIURL)
+          .onChange(async (value) => {
+            this.plugin.settings.openAIURL = value;
             this.applySettingsUpdate();
           }),
       );

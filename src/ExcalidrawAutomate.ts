@@ -79,7 +79,6 @@ import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
 import { emulateKeysForLinkClick, KeyEvent, PaneTarget } from "src/utils/ModifierkeyHelper";
 import { Mutable } from "@zsviczian/excalidraw/types/utility-types";
 import PolyBool from "polybooljs";
-//import { compressToBase64, decompressFromBase64 } from "lz-string";
 import { EmbeddableMDCustomProps } from "./dialogs/EmbeddableSettings";
 import {
   AIRequest,
@@ -303,7 +302,7 @@ export class ExcalidrawAutomate {
     fontSize: number;
     textAlign: string; //"left"|"right"|"center"
     verticalAlign: string; //"top"|"bottom"|"middle" :for future use, has no effect currently
-    startArrowHead: string; //"triangle"|"dot"|"arrow"|"bar"|null
+    startArrowHead: string; //"arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null
     endArrowHead: string;
   };
   canvas: {
@@ -1194,8 +1193,8 @@ export class ExcalidrawAutomate {
   addArrow(
     points: [x: number, y: number][],
     formatting?: {
-      startArrowHead?: string;
-      endArrowHead?: string;
+      startArrowHead?: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null;
+      endArrowHead?: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null;
       startObjectId?: string;
       endObjectId?: string;
     },
@@ -1411,8 +1410,8 @@ export class ExcalidrawAutomate {
    * @param connectionB when passed null, Excalidraw will automatically decide
    * @param formatting 
    *   numberOfPoints: points on the line. Default is 0 ie. line will only have a start and end point
-   *   startArrowHead: "triangle"|"dot"|"arrow"|"bar"|null
-   *   endArrowHead: "triangle"|"dot"|"arrow"|"bar"|null
+   *   startArrowHead: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null
+   *   endArrowHead:   "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null
    *   padding:
    * @returns 
    */
@@ -1423,8 +1422,8 @@ export class ExcalidrawAutomate {
     connectionB: ConnectionPoint | null,
     formatting?: {
       numberOfPoints?: number;
-      startArrowHead?: "triangle"|"dot"|"arrow"|"bar"|null;
-      endArrowHead?: "triangle"|"dot"|"arrow"|"bar"|null;
+      startArrowHead?: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null;
+      endArrowHead?: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null;
       padding?: number;
     },
   ): string {
@@ -1849,8 +1848,8 @@ export class ExcalidrawAutomate {
     connectionB: ConnectionPoint | null,
     formatting?: {
       numberOfPoints?: number;
-      startArrowHead?: "triangle"|"dot"|"arrow"|"bar"|null;
-      endArrowHead?: "triangle"|"dot"|"arrow"|"bar"|null;
+      startArrowHead?: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null;
+      endArrowHead?: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null;
       padding?: number;
     },
   ): boolean {

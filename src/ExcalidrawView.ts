@@ -4245,7 +4245,7 @@ export default class ExcalidrawView extends TextFileView {
         onTextSubmit: async (input:string) => {
           try {
             const response = await postOpenAI({
-              systemPrompt: "The user will provide you with a text prompt. Your task is to generate a mermaid graph based on the prompt. Use the graph, sequence-diagram or flowchart type based on what best fits the request. Return a single message containing only the mermaid diagram in a codeblock. Avoid the use of () parenthesis in the mermaid script.",
+              systemPrompt: "The user will provide you with a text prompt. Your task is to generate a mermaid diagram based on the prompt. Use the graph, sequenceDiagram, flowchart or classDiagram types based on what best fits the request. Return a single message containing only the mermaid diagram in a codeblock. Avoid the use of `()` parenthesis in the mermaid script.",
               text: input,
               instruction: "Return a single message containing only the mermaid diagram in a codeblock.",
             })

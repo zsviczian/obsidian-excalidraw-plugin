@@ -158,6 +158,10 @@ export default {
   AI_OPENAI_DEFAULT_VISION_MODEL_DESC:
     "The default AI vision model to use when generating text from images. This is a freetext field, so you can enter any valid OpenAI model name. " +
     "Find out more about the available models on the <a href='https://platform.openai.com/docs/models'>OpenAI website</a>.",
+  AI_OPENAI_DEFAULT_API_URL_NAME: "OpenAI API URL",
+  AI_OPENAI_DEFAULT_API_URL_DESC:
+    "The default OpenAI API URL. This is a freetext field, so you can enter any valid OpenAI API compatible URL. " +
+    "Excalidraw will use this URL when posting API requests to OpenAI. I am not doing any error handling on this field, so make sure you enter a valid URL and only change this if you know what you are doing. ",
   AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER: "Enter your default AI vision model here",
   SAVING_HEAD: "Saving",
   SAVING_DESC: "In the 'Saving' section of Excalidraw Settings, you can configure how your drawings are saved. This includes options for compressing Excalidraw JSON in Markdown, setting autosave intervals for both desktop and mobile, defining filename formats, and choosing whether to use the .excalidraw.md or .md file extension. ",

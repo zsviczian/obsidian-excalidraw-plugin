@@ -58,6 +58,7 @@ export const IMAGE_MIME_TYPES = {
   svg: "image/svg+xml",
   png: "image/png",
   jpg: "image/jpeg",
+  jpeg: "image/jpeg",
   gif: "image/gif",
   webp: "image/webp",
   bmp: "image/bmp",
