@@ -76,6 +76,7 @@ export const postOpenAI = async (request: AIRequest) : Promise<RequestUrlRespons
                 type: "image_url",
                 image_url: image,
               },
+              ...(text ? [text] : []),
               ...(instruction ? [instruction] : []), //"Turn this into a single html file using tailwind.",
             ],
           },
