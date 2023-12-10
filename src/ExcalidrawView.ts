@@ -4531,6 +4531,7 @@ export default class ExcalidrawView extends TextFileView {
           renderCustomActionsMenu(),
           renderWelcomeScreen(),
           ttdDialog(),
+          ttdDialog(),
           ttdDialogTrigger(),
         ),
         renderToolsPanel(),

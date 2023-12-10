@@ -17,6 +17,9 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.0.9":`
+This release is very minor, and I apologize for the frequent updates in a short span. I chose not to delay this fix for 1-2 weeks, waiting for my larger release. The WireframeToAI feature wasn't working in 2.0.8, but now it does.
+`,
 "2.0.8":`
 ## New
 - Mermaid Class Diagrams [#7381](https://github.com/excalidraw/excalidraw/pull/7381)
