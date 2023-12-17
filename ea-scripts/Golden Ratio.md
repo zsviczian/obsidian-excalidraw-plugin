@@ -5,6 +5,10 @@ The script performs two different functions depending on the elements selected i
 
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/golden-ratio.jpg)
 
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/2SHn_ruax-s" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+
 Gravitational point of spiral: $$\left[x,y\right]=\left[ x + \frac{{\text{width} \cdot \phi^2}}{{\phi^2 + 1}}\;, \; y + \frac{{\text{height} \cdot \phi^2}}{{\phi^2 + 1}} \right]$$
 Dimensions of inner rectangles in case of Double Spiral: $$[width, height] = \left[\frac{width\cdot(\phi^2+1)}{2\phi^2}\;, \;\frac{height\cdot(\phi^2+1)}{2\phi^2}\right]$$
 
@@ -50,10 +54,10 @@ if(!rect || rect.type !== "rectangle") {
 }
 ea.copyViewElementsToEAforEditing([rect]);
 rect = ea.getElement(rect.id);
-ids.push(rect.id);
 ea.style.strokeColor = rect.strokeColor;
 ea.style.strokeWidth = rect.strokeWidth;
 ea.style.roughness = rect.roughness;
+ea.style.angle = rect.angle;
 let {x,y,width,height} = rect;
 
 // --------------------------------------------
@@ -103,6 +107,63 @@ let updateStyle = settings["Update Style"];
 let boldSpiral = settings["Bold Spiral"];
 
 // --------------------------------------------
+// Rotation
+// --------------------------------------------
+let centerX, centerY;
+const rotatePointAndAddToElementList = (elementID) => {
+    ids.push(elementID);
+    const line = ea.getElement(elementID);
+    
+    // Calculate the initial position of the line's center
+    const lineCenterX = line.x + line.width / 2;
+    const lineCenterY = line.y + line.height / 2;
+
+    // Calculate the difference between the line's center and the rectangle's center
+    const diffX = lineCenterX - (rect.x + rect.width / 2);
+    const diffY = lineCenterY - (rect.y + rect.height / 2);
+
+    // Apply the rotation to the difference
+    const cosTheta = Math.cos(rect.angle);
+    const sinTheta = Math.sin(rect.angle);
+    const rotatedX = diffX * cosTheta - diffY * sinTheta;
+    const rotatedY = diffX * sinTheta + diffY * cosTheta;
+
+    // Calculate the new position of the line's center with respect to the rectangle's center
+    const newLineCenterX = rotatedX + (rect.x + rect.width / 2);
+    const newLineCenterY = rotatedY + (rect.y + rect.height / 2);
+
+    // Update the line's coordinates by adjusting for the change in the center
+    line.x += newLineCenterX - lineCenterX;
+    line.y += newLineCenterY - lineCenterY;
+}
+
+const rotatePointsWithinRectangle = (points) => {
+    const centerX = rect.x + rect.width / 2;
+    const centerY = rect.y + rect.height / 2;
+
+    const cosTheta = Math.cos(rect.angle);
+    const sinTheta = Math.sin(rect.angle);
+
+    const rotatedPoints = points.map(([x, y]) => {
+        // Translate the point relative to the rectangle's center
+        const translatedX = x - centerX;
+        const translatedY = y - centerY;
+
+        // Apply the rotation to the translated coordinates
+        const rotatedX = translatedX * cosTheta - translatedY * sinTheta;
+        const rotatedY = translatedX * sinTheta + translatedY * cosTheta;
+
+        // Translate back to the original coordinate system
+        const finalX = rotatedX + centerX;
+        const finalY = rotatedY + centerY;
+
+        return [finalX, finalY];
+    });
+
+    return rotatedPoints;
+}
+
+// --------------------------------------------
 // Grid
 // --------------------------------------------
 const calculateGoldenSum = (baseOfGoldenGrid, pow) => {
@@ -143,7 +204,7 @@ const horizontal = (direction, scenario) => {
         ? x + offset
         : x + width - offset;
 
-    ids.push(
+    rotatePointAndAddToElementList(
       ea.addLine([
         [x2, y],
         [x2, y + height],
@@ -167,7 +228,7 @@ const vertical = (direction, scenario) => {
         ? y + offset
         : y + height - offset;
 
-    ids.push(
+    rotatePointAndAddToElementList(
       ea.addLine([
         [x, y2],
         [x+width, y2],
@@ -328,15 +389,18 @@ const drawSpiral = () => {
     width = nextW;
     height = nextH;
     switch(linePhase) {
-      case 0: ids.push(ea.addLine([[x,y],[x,y+height]]));break;
-      case 1: ids.push(ea.addLine([[x,y],[x+width,y]]));break;
-      case 2: ids.push(ea.addLine([[x+width,y],[x+width,y+height]]));break;
-      case 3: ids.push(ea.addLine([[x,y+height],[x+width,y+height]]));break;
+      case 0: rotatePointAndAddToElementList(ea.addLine([[x,y],[x,y+height]]));break;
+      case 1: rotatePointAndAddToElementList(ea.addLine([[x,y],[x+width,y]]));break;
+      case 2: rotatePointAndAddToElementList(ea.addLine([[x+width,y],[x+width,y+height]]));break;
+      case 3: rotatePointAndAddToElementList(ea.addLine([[x,y+height],[x+width,y+height]]));break;
     }
   }
   const strokeWidth = ea.style.strokeWidth;
-  ea.style.strokeWidth = strokeWidth * (boldSpiral ? 3 : 1)
-  ids.push(ea.addLine(spiralPoints));
+  ea.style.strokeWidth = strokeWidth * (boldSpiral ? 3 : 1);
+  const angle = ea.style.angle;
+  ea.style.angle = 0;
+  ids.push(ea.addLine(rotatePointsWithinRectangle(spiralPoints)));
+  ea.style.angle = angle;
   ea.style.strokeWidth = strokeWidth;
 }
 
@@ -350,6 +414,8 @@ const updateAspectRatio = () => {
     case "adjust-height": rect.height = rect.width/phi; break;
   }
   ({x,y,width,height} = rect);
+  centerX = x + width/2;
+  centerY = y + height/2;
 }
 // --------------------------------------------
 // UI
@@ -374,21 +440,24 @@ draw = async () => {
         y2 = height - hInner + y;
         width = wInner;
         height = hInner;
-        ids.push(ea.addRect(x,y,width,height));
+        rotatePointAndAddToElementList(ea.addRect(x,y,width,height));
         spiralOrientation = "bottom-right";
         drawSpiral();
         x = x2;
         y = y2;
         width = wInner;
         height = hInner;
-        ids.push(ea.addRect(x,y,width,height));
+        rotatePointAndAddToElementList(ea.addRect(x,y,width,height));
         spiralOrientation = "top-left";
         drawSpiral();
+        spiralOrientation = "double";
       } else {
         drawSpiral();
       }
       break;
   }
+  ea.addToGroup(ids);
+  ids.push(rect.id);
   ea.addToGroup(ids);
   lockElements && ea.getElements().forEach(el=>{el.locked = true;});
   await ea.addElementsToView(false,false,!sendToBack);
