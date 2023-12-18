@@ -164,7 +164,8 @@ export interface ExcalidrawSettings {
   modifierKeyConfig: {
     Mac: Record<ModifierSetType, ModifierKeySet>,
     Win: Record<ModifierSetType, ModifierKeySet>,
-  }
+  },
+  slidingPanesSupport: boolean;
 }
 
 declare const PLUGIN_VERSION:string;
@@ -391,7 +392,8 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
         ],
       },
     },
-  }
+  },
+  slidingPanesSupport: false,
 };
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
