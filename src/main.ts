@@ -44,6 +44,9 @@ import {
 import {
   VIRGIL_FONT,
   VIRGIL_DATAURL,
+  CASCADIA_FONT,
+  ASSISTANT_FONT,
+  FONTS_STYLE_ID,
 } from "./constants/constFonts";
 import ExcalidrawView, { TextMode, getTextMode } from "./ExcalidrawView";
 import {
@@ -263,7 +266,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.registerCommands();
     this.registerEventListeners();
     this.runStartupScript();
-    this.initializeFourthFont();
+    this.initializeFonts();
     this.registerEditorSuggest(new FieldSuggester(this));
 
     //inspiration taken from kanban:
@@ -296,7 +299,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.taskbone = new Taskbone(this);
   }
 
-  public initializeFourthFont() {
+  public initializeFonts() {
     this.app.workspace.onLayoutReady(async () => {
       const font = await getFontDataURL(
         this.app,
@@ -309,26 +312,35 @@ export default class ExcalidrawPlugin extends Plugin {
       this.fourthFontDef = font.fontDef;
       
       this.getOpenObsidianDocuments().forEach((ownerDocument) => {
-        // replace the old local font <style> element with the one we just created
-        const newStylesheet = ownerDocument.createElement("style");
-        newStylesheet.id = "local-font-stylesheet";
-        newStylesheet.textContent = `
-          @font-face {
-            font-family: 'LocalFont';
-            src: url("${fourthFontDataURL}");
-            font-display: swap;
-          }
-        `;  
-        const oldStylesheet = ownerDocument.getElementById(newStylesheet.id);
-        ownerDocument.head.appendChild(newStylesheet);
-        if (oldStylesheet) {
-          ownerDocument.head.removeChild(oldStylesheet);
-        }
-        ownerDocument.fonts.load('20px LocalFont');
+        this.addFonts([
+          `@font-face{font-family:'LocalFont';src:url("${fourthFontDataURL}");font-display: swap;`,
+        ],ownerDocument);
       })
     });
   }
 
+  public addFonts(declarations: string[],ownerDocument:Document = document) {
+    // replace the old local font <style> element with the one we just created
+    const newStylesheet = ownerDocument.createElement("style");
+    newStylesheet.id = FONTS_STYLE_ID;
+    newStylesheet.textContent = declarations.join("");
+    const oldStylesheet = ownerDocument.getElementById(FONTS_STYLE_ID);
+    ownerDocument.head.appendChild(newStylesheet);
+    if (oldStylesheet) {
+      ownerDocument.head.removeChild(oldStylesheet);
+    }
+    ownerDocument.fonts.load('20px LocalFont');
+  }
+
+  public removeFonts() {
+    this.getOpenObsidianDocuments().forEach((ownerDocument) => {
+      const oldStylesheet = ownerDocument.getElementById(FONTS_STYLE_ID);
+      if (oldStylesheet) {
+        ownerDocument.head.removeChild(oldStylesheet);
+      }
+    })
+  }
+  
   private getOpenObsidianDocuments(): Document[] {
     const visitedDocs = new Set<Document>();
     this.app.workspace.iterateAllLeaves((leaf)=>{
@@ -1969,7 +1981,7 @@ export default class ExcalidrawPlugin extends Plugin {
       self.registerEvent(app.vault.on("rename", renameEventHandler));
 
       const modifyEventHandler = async (file: TFile) => {
-        const leaves = app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
         leaves.forEach(async (leaf: WorkspaceLeaf) => {
           const excalidrawView = leaf.view as ExcalidrawView;
           if (
@@ -2338,6 +2350,8 @@ export default class ExcalidrawPlugin extends Plugin {
     this.modalContainerObserver = null;
   }
 
+  //managing my own list of Excalidraw files because in the onDelete event handler
+  //the file object is already gone from metadataCache, thus I can't check if it was an Excalidraw file
   updateFileCache(
     file: TFile,
     frontmatter?: FrontMatterCache,
@@ -2357,6 +2371,7 @@ export default class ExcalidrawPlugin extends Plugin {
   onunload() {
     document.body.removeChild(this.textMeasureDiv);
     this.stylesManager.unload();
+    this.removeFonts();
     this.removeEventLisnters.forEach((removeEventListener) =>
       removeEventListener(),
     );

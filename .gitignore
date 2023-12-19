@@ -13,6 +13,7 @@ stats.html
 hot-reload.bat
 data.json
 lib
+dist
 
 #VSCode
 .vscode

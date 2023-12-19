@@ -10,7 +10,9 @@ import webWorker from "rollup-plugin-web-worker-loader";
 import fs from'fs';
 import LZString from 'lz-string';
 import postprocess from 'rollup-plugin-postprocess';
+import cssnano from 'cssnano';
 
+const DIST_FOLDER = 'dist'; 
 const isProd = (process.env.NODE_ENV === "production")
 const isLib = (process.env.NODE_ENV === "lib");
 console.log(`Running: ${process.env.NODE_ENV}`);
@@ -25,6 +27,21 @@ const reactdom_pkg = isLib ? "" : isProd
   ? fs.readFileSync("./node_modules/react-dom/umd/react-dom.production.min.js", "utf8")
   : fs.readFileSync("./node_modules/react-dom/umd/react-dom.development.js", "utf8");
 const lzstring_pkg = isLib ? "" : fs.readFileSync("./node_modules/lz-string/libs/lz-string.min.js", "utf8");
+if(!isLib) {
+  const excalidraw_styles = isProd
+    ? fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/styles.production.css", "utf8")
+    : fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/styles.development.css", "utf8");
+  const plugin_styles = fs.readFileSync("./styles.css", "utf8")
+  const styles = plugin_styles + excalidraw_styles;
+  cssnano() 
+    .process(styles) // Process the CSS
+    .then(result => {
+      fs.writeFileSync(`./${DIST_FOLDER}/styles.css`, result.css);
+    })
+    .catch(error => {
+      console.error('Error while processing CSS:', error);
+    });
+}
 
 const manifestStr = isLib ? "" : fs.readFileSync("manifest.json", "utf-8");
 const manifest = isLib ? {} : JSON.parse(manifestStr);
@@ -55,7 +72,8 @@ const getRollupPlugins = (tsconfig, ...plugins) =>
 const BUILD_CONFIG = {
   ...BASE_CONFIG,
   output: {
-    dir: '.',
+    dir: DIST_FOLDER,
+    entryFileNames: 'main.js',
     sourcemap: isProd?false:'inline',
     format: 'cjs',
     exports: 'default',
@@ -97,6 +115,12 @@ const BUILD_CONFIG = {
         [/var React = require\('react'\);/, packageString],
       ])
     ],
+    copy({
+      targets: [
+        { src: 'manifest.json', dest: DIST_FOLDER },
+      ],
+      verbose: true, // Optional: To display copied files in the console
+    }),
   ],
 }
 
