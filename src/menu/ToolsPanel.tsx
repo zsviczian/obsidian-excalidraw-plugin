@@ -10,7 +10,7 @@ import { t } from "../lang/helpers";
 import { ReleaseNotes } from "../dialogs/ReleaseNotes";
 import { ScriptIconMap } from "../Scripts";
 import { ScriptInstallPrompt } from "src/dialogs/ScriptInstallPrompt";
-import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
+import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { isWinALTorMacOPT, isWinCTRLorMacCMD, isSHIFT } from "src/utils/ModifierkeyHelper";
 import { InsertPDFModal } from "src/dialogs/InsertPDFModal";
 import { ExportDialog } from "src/dialogs/ExportDialog";

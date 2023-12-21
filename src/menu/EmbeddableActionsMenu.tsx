@@ -1,8 +1,8 @@
 import { TFile } from "obsidian";
 import * as React from "react";
 import ExcalidrawView from "../ExcalidrawView";
-import { ExcalidrawElement, ExcalidrawEmbeddableElement } from "@zsviczian/excalidraw/types/element/types";
-import { AppState, ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
+import { ExcalidrawElement, ExcalidrawEmbeddableElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { AppState, ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ActionButton } from "./ActionButton";
 import { ICONS } from "./ActionIcons";
 import { t } from "src/lang/helpers";

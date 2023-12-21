@@ -263,7 +263,7 @@ export class ScriptEngine {
       new Notice(t("SCRIPT_EXECUTION_ERROR"), 4000);
       errorlog({ script: this.plugin.ea.activeScript, error: e });
   }*/
-        ea.activeScript = null;
+        //ea.activeScript = null;
         return result;
 }
 

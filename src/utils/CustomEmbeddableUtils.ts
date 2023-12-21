@@ -1,4 +1,4 @@
-import { NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
+import { NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { DEVICE, REG_LINKINDEX_INVALIDCHARS } from "src/constants/constants";
 import { getParentOfClass } from "./ObsidianUtils";
 import { TFile, WorkspaceLeaf } from "obsidian";

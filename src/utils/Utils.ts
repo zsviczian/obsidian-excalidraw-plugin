@@ -6,7 +6,7 @@ import {
   TFile,
 } from "obsidian";
 import { Random } from "roughjs/bin/math";
-import { BinaryFileData, DataURL} from "@zsviczian/excalidraw/types/types";
+import { BinaryFileData, DataURL} from "@zsviczian/excalidraw/types/excalidraw/types";
 import {
   ASSISTANT_FONT,
   CASCADIA_FONT,
@@ -23,13 +23,13 @@ import {
   IMAGE_TYPES
 } from "../constants/constants";
 import ExcalidrawPlugin from "../main";
-import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { ExportSettings } from "../ExcalidrawView";
 import { getDataURLFromURL, getIMGFilename, getMimeType, getURLImageExtension } from "./FileUtils";
 import { generateEmbeddableLink } from "./CustomEmbeddableUtils";
 import ExcalidrawScene from "src/svgToExcalidraw/elements/ExcalidrawScene";
 import { FILENAMEPARTS } from "./UtilTypes";
-import { Mutable } from "@zsviczian/excalidraw/types/utility-types";
+import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { cleanBlockRef, cleanSectionHeading, getFileCSSClasses } from "./ObsidianUtils";
 import { updateElementLinksToObsidianLinks } from "src/ExcalidrawAutomate";
 

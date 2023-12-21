@@ -17,6 +17,28 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.0.11":`
+## Fixed
+- Resolved an Obsidian performance issue caused by simultaneous installations of Excalidraw and the Minimal theme. Optimized Excalidraw CSS loading into Obsidian since April 2021, resulting in noticeable performance improvements. ([#1456](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1456))
+- Removed default support for the [Sliding Panes Plugin](https://github.com/deathau/sliding-panes-obsidian) due to compatibility issues with Obsidian Workspaces. Obsidian's "Stack Tabs" feature now supersedes Sliding Panes. To re-enable sliding panes support, navigate to Compatibility Features in Plugin Settings.
+- Sometimes images referenced with URLs did not show in exported scenes and when embedding Excalidraw into a markdown note. I hope all that is now resolved.
+- ExcalidrawAutomate scripts sometimes were not able to save their settings.
+
+## New
+- Introduced an "Easter Egg" feature in font-size properties:
+  - Hold SHIFT while selecting font size to use scaled sizes (S, M, L, XL) based on the current canvas zoom, ensuring consistent sizes within zoom ranges.
+  - Hold ALT/OPT while selecting font size to use values based on the golden mean (s:16, m:26, l:42, xl:68). ALT+SHIFT scales font sizes based on canvas zoom.
+  - Scaled sizes are sticky; new text elements adjust font sizes relative to the canvas zoom. Deselect SHIFT to disable this feature.
+  - For more on the Golden Scale, watch [The Golden Opportunity](https://youtu.be/2SHn_ruax-s).
+- Added two new Command Palette Actions:
+  - "Decompress current Excalidraw File" in Markdown View mode helps repair corrupted, compressed Excalidraw files manually.
+  - "Save image from URL to local file" saves referenced URL images to your Vault, replacing images in the drawing.
+- Updated the ExcaliAI script to generate images using ExcaliAI.
+
+## New in ExcalidrawAutomate
+- Added additional documentation about functions to ea.suggester.
+- Added ea.help(). You can use this function from Developer Console to print help information about functions. Usage: ${String.fromCharCode(96)}ea.help(ea.functionName)${String.fromCharCode(96)} or ${String.fromCharCode(96)}ea.help('propertyName')${String.fromCharCode(96)} - notice property name is in quotes.
+`,
 "2.0.10":`
 One more minor tweak to support an updated ExcaliAI script - now available in the script store.
 `,

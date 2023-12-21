@@ -9,6 +9,8 @@ import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/Modifierke
 // English
 export default {
   // main.ts
+  CONVERT_URL_TO_FILE: "Save image from URL to local file",
+  UNZIP_CURRENT_FILE: "Decompress current Excalidraw file",
   PUBLISH_SVG_CHECK: "Obsidian Publish: Find SVG and PNG exports that are out of date",
   EMBEDDABLE_PROPERTIES: "Embeddable Properties",
   EMBEDDABLE_RELATIVE_ZOOM: "Scale selected embeddable elements to 100% relative to the current canvas zoom",
@@ -153,7 +155,14 @@ export default {
   AI_OPENAI_DEFAULT_MODEL_DESC:
     "The default AI model to use when generating text. This is a freetext field, so you can enter any valid OpenAI model name. " +
     "Find out more about the available models on the <a href='https://platform.openai.com/docs/models'>OpenAI website</a>.",
-  AI_OPENAI_DEFAULT_MODEL_PLACEHOLDER: "Enter your default AI model here",
+  AI_OPENAI_DEFAULT_MODEL_PLACEHOLDER: "Enter your default AI model here. e.g.: gpt-3.5-turbo-1106",
+  AI_OPENAI_DEFAULT_IMAGE_MODEL_NAME: "Default Image Generation AI model",
+  AI_OPENAI_DEFAULT_IMAGE_MODEL_DESC:
+    "The default AI model to use when generating images. Image editing and variations are only supported by dall-e-2 at this time by OpenAI, " +
+    "for this reason dall-e-2 will automatically be used in such cases regardless of this setting.<br>" +
+    "This is a freetext field, so you can enter any valid OpenAI model name. " +
+    "Find out more about the available models on the <a href='https://platform.openai.com/docs/models'>OpenAI website</a>.",
+  AI_OPENAI_DEFAULT_IMAGE_MODEL_PLACEHOLDER: "Enter your default Image Generation AI model here e.g.: dall-e-3",
   AI_OPENAI_DEFAULT_VISION_MODEL_NAME: "Default AI vision model",
   AI_OPENAI_DEFAULT_VISION_MODEL_DESC:
     "The default AI vision model to use when generating text from images. This is a freetext field, so you can enter any valid OpenAI model name. " +
@@ -162,7 +171,8 @@ export default {
   AI_OPENAI_DEFAULT_API_URL_DESC:
     "The default OpenAI API URL. This is a freetext field, so you can enter any valid OpenAI API compatible URL. " +
     "Excalidraw will use this URL when posting API requests to OpenAI. I am not doing any error handling on this field, so make sure you enter a valid URL and only change this if you know what you are doing. ",
-  AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER: "Enter your default AI vision model here",
+  AI_OPENAI_DEFAULT_IMAGE_API_URL_NAME: "OpenAI Image Generation API URL",
+  AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER: "Enter your default AI vision model here. e.g.: gpt-4-vision-preview",
   SAVING_HEAD: "Saving",
   SAVING_DESC: "In the 'Saving' section of Excalidraw Settings, you can configure how your drawings are saved. This includes options for compressing Excalidraw JSON in Markdown, setting autosave intervals for both desktop and mobile, defining filename formats, and choosing whether to use the .excalidraw.md or .md file extension. ",
   COMPRESS_NAME: "Compress Excalidraw JSON in Markdown",
@@ -488,6 +498,13 @@ FILENAME_HEAD: "Filename",
     "Double files will be exported both if auto-export SVG or PNG (or both) are enabled, as well as when clicking export on a single image.",
   COMPATIBILITY_HEAD: "Compatibility features",
   COMPATIBILITY_DESC: "You should only enable these features if you have a strong reason for wanting to work with excalidraw.com files instead of markdown files. Many of the plugin features are not supported on legacy files. Typical usecase would be if you use set your vault up on top of a Visual Studio Code project folder and you have .excalidraw drawings you want to access from Visual Studio Code as well. Another usecase might be using Excalidraw in Logseq and Obsidian in parallel.",
+  SLIDING_PANES_NAME: "Sliding panes plugin support",
+  SLIDING_PANES_DESC:
+    "Need to restart Obsidian for this change to take effect.<br>" +
+    "If you use the <a href='https://github.com/deathau/sliding-panes-obsidian' target='_blank'>Sliding Panes plugin</a> " +
+    "you can enable this setting to make Excalidraw drawings work with the Sliding Panes plugin.<br>" +
+    "Note, that Excalidraw Sliding Panes support causes compatibility issues with Obsidian Workspaces.<br>" +
+    "Note also, that the 'Stack Tabs' feature is now available in Obsidian, providing native support for most of the Sliding Panes functionality.",
   EXPORT_EXCALIDRAW_NAME: "Auto-export Excalidraw",
   EXPORT_EXCALIDRAW_DESC: "Same as the auto-export SVG, but for *.Excalidraw",
   SYNC_EXCALIDRAW_NAME:

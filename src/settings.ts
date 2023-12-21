@@ -160,7 +160,11 @@ export interface ExcalidrawSettings {
   openAIAPIToken: string,
   openAIDefaultTextModel: string,
   openAIDefaultVisionModel: string,
+  openAIDefaultImageGenerationModel: string,
   openAIURL: string,
+  openAIImageGenerationURL: string,
+  openAIImageEditsURL: string,
+  openAIImageVariationURL: string,
   modifierKeyConfig: {
     Mac: Record<ModifierSetType, ModifierKeySet>,
     Win: Record<ModifierSetType, ModifierKeySet>,
@@ -312,7 +316,11 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   openAIAPIToken: "",
   openAIDefaultTextModel: "gpt-3.5-turbo-1106",
   openAIDefaultVisionModel: "gpt-4-vision-preview",
+  openAIDefaultImageGenerationModel: "dall-e-3",
   openAIURL: "https://api.openai.com/v1/chat/completions",
+  openAIImageGenerationURL: "https://api.openai.com/v1/images/generations",
+  openAIImageEditsURL: "https://api.openai.com/v1/images/edits",
+  openAIImageVariationURL: "https://api.openai.com/v1/images/variations",
   modifierKeyConfig: {
     Mac: {
       LocalFileDragAction:{
@@ -522,7 +530,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("FOLDER_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("Excalidraw")
+          .setPlaceholder("e.g.: Excalidraw")
           .setValue(this.plugin.settings.folder)
           .onChange(async (value) => {
             this.plugin.settings.folder = value;
@@ -547,7 +555,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("TEMPLATE_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("Excalidraw/Template")
+          .setPlaceholder("e.g.: Excalidraw/Template")
           .setValue(this.plugin.settings.templateFilePath)
           .onChange(async (value) => {
             this.plugin.settings.templateFilePath = value;
@@ -561,7 +569,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("SCRIPT_FOLDER_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("Excalidraw/Scripts")
+          .setPlaceholder("e.g.: Excalidraw/Scripts")
           .setValue(this.plugin.settings.scriptFolderPath)
           .onChange(async (value) => {
             this.plugin.settings.scriptFolderPath = value;
@@ -663,7 +671,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("FILENAME_PREFIX_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("Drawing ")
+          .setPlaceholder("e.g.: Drawing ")
           .setValue(this.plugin.settings.drawingFilenamePrefix)
           .onChange(async (value) => {
             this.plugin.settings.drawingFilenamePrefix = value.replaceAll(
@@ -791,11 +799,24 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
 
     new Setting(detailsEl)
+      .setName(t("AI_OPENAI_DEFAULT_IMAGE_MODEL_NAME"))
+      .setDesc(fragWithHTML(t("AI_OPENAI_DEFAULT_IMAGE_MODEL_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder(t("AI_OPENAI_DEFAULT_IMAGE_MODEL_PLACEHOLDER"))
+          .setValue(this.plugin.settings.openAIDefaultImageGenerationModel)
+          .onChange(async (value) => {
+            this.plugin.settings.openAIDefaultImageGenerationModel = value;
+            this.applySettingsUpdate();
+          }),
+      );
+      
+    new Setting(detailsEl)
       .setName(t("AI_OPENAI_DEFAULT_API_URL_NAME"))
       .setDesc(fragWithHTML(t("AI_OPENAI_DEFAULT_API_URL_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("https://api.openai.com/v1/chat/completions")
+          .setPlaceholder("e.g.: https://api.openai.com/v1/chat/completions")
           .setValue(this.plugin.settings.openAIURL)
           .onChange(async (value) => {
             this.plugin.settings.openAIURL = value;
@@ -1537,7 +1558,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("EMBED_WIDTH_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("400")
+          .setPlaceholder("e.g.: 400")
           .setValue(this.plugin.settings.width)
           .onChange(async (value) => {
             this.plugin.settings.width = value;
@@ -2165,6 +2186,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       text: t("COMPATIBILITY_HEAD"),
       cls: "excalidraw-setting-h1",
     });
+
+    new Setting(detailsEl)
+      .setName(t("SLIDING_PANES_NAME"))
+      .setDesc(fragWithHTML(t("SLIDING_PANES_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.slidingPanesSupport)
+          .onChange((value) => {
+            this.plugin.settings.slidingPanesSupport = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
 
     new Setting(detailsEl)
       .setName(t("COMPATIBILITY_MODE_NAME"))

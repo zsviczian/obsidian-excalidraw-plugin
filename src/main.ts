@@ -40,6 +40,7 @@ import {
   EXPORT_IMG_ICON_NAME,
   EXPORT_IMG_ICON,
   LOCALE,
+  fileid,
 } from "./constants/constants";
 import {
   VIRGIL_FONT,
@@ -53,7 +54,8 @@ import {
   changeThemeOfExcalidrawMD,
   getMarkdownDrawingSection,
   ExcalidrawData,
-  REGEX_LINK
+  REGEX_LINK,
+  getExcalidrawMarkdownHeaderSection
 } from "./ExcalidrawData";
 import {
   ExcalidrawSettings,
@@ -94,9 +96,10 @@ import {
   isVersionNewerThanOther,
   getExportTheme,
   isCallerFromTemplaterPlugin,
+  decompress,
 } from "./utils/Utils";
 import { extractSVGPNGFileName, getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark } from "./utils/ObsidianUtils";
-import { ExcalidrawElement, ExcalidrawEmbeddableElement, ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawElement, ExcalidrawEmbeddableElement, ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { ScriptEngine } from "./Scripts";
 import {
   hoverEvent,
@@ -121,10 +124,10 @@ import { PublishOutOfDateFilesDialog } from "./dialogs/PublishOutOfDateFiles";
 import { EmbeddableSettings } from "./dialogs/EmbeddableSettings";
 import { processLinkText } from "./utils/CustomEmbeddableUtils";
 import { getEA } from "src";
-import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
-import { Mutable } from "@zsviczian/excalidraw/types/utility-types";
+import { BinaryFileData, DataURL, ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { CustomMutationObserver, durationTreshold, isDebugMode } from "./utils/DebugHelper";
-import { create } from "domain";
+import de from "./lang/locale/de";
 
 declare const EXCALIDRAW_PACKAGES:string;
 declare const react:any;
@@ -791,6 +794,86 @@ export default class ExcalidrawPlugin extends Plugin {
         fileMenuHandlerConvertReplaceExtension,
       ),
     );
+
+    this.addCommand({
+      id: "excalidraw-convert-image-from-url-to-local-file",
+      name: t("CONVERT_URL_TO_FILE"),
+      checkCallback: (checking: boolean) => {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if(!view) return false;
+        if(!view.excalidrawAPI) return false;
+        const els = view.getViewSelectedElements().filter(el=>el.type==="image");
+        if(els.length !== 1) {
+          if(checking) return false;
+          new Notice("Select a single image element and try again");
+          return false;
+        }
+        const el = els[0] as ExcalidrawImageElement;
+        const imageFile = view.excalidrawData.getFile(el.fileId);
+        if(!imageFile.isHyperLink) return false;
+        if(checking) return true;
+        const imageDataURL = imageFile.getImage(false);
+        if(!imageDataURL) {
+          new Notice("Image not found");
+          return false;
+        }
+        const ea = getEA(view) as ExcalidrawAutomate;
+        ea.copyViewElementsToEAforEditing([el]);
+        const eaEl = ea.getElement(el.id) as Mutable<ExcalidrawImageElement>;
+        eaEl.fileId = fileid() as FileId;
+        if(!eaEl.link) {eaEl.link = imageFile.hyperlink};
+        const files: BinaryFileData[] = [];
+        files.push({
+          mimeType: imageFile.mimeType,
+          id: eaEl.fileId,
+          dataURL: imageFile.getImage(false) as DataURL,
+          created: imageFile.mtime,
+        });
+        const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
+        api.addFiles(files);
+        ea.addElementsToView(false,true);
+      },
+    });
+
+    this.addCommand({
+      id: "excalidraw-unzip-file",
+      name: t("UNZIP_CURRENT_FILE"),
+      checkCallback: (checking: boolean) => {
+        const activeFile = this.app.workspace.getActiveFile();
+        if (!activeFile) {
+          return false;
+        }
+        const fileIsExcalidraw = this.isExcalidrawFile(activeFile);
+        if (!fileIsExcalidraw) {
+          return false;
+        }
+
+        const excalidrawView = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (excalidrawView) {
+          return false;
+        }
+
+        if (checking) {
+          return true;
+        }
+
+        (async () => {
+          const data = await this.app.vault.read(activeFile);
+          const parts = data.split("%%\n# Drawing\n```compressed-json\n");
+          if(parts.length!==2) return;
+          const header = parts[0] + "%%\n# Drawing\n```json\n";
+          const compressed = parts[1].split("\n```\n%%");
+          if(compressed.length!==2) return;
+          const decompressed = decompress(compressed[0]);
+          if(!decompressed) {
+            new Notice("The compressed string is corrupted. Unable to decompress data.");
+            return;
+          }
+          await this.app.vault.modify(activeFile,header + decompressed + "\n```\n%%");
+        })();
+
+      }
+    })
 
     this.addCommand({
       id: "excalidraw-publish-svg-check",

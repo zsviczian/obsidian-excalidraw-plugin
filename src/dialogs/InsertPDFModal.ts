@@ -6,7 +6,7 @@ import {  Modal, Setting, TextComponent } from "obsidian";
 import { FileSuggestionModal } from "./FolderSuggester";
 import { getEA } from "src";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
-import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
+import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 
 export class InsertPDFModal extends Modal {
   private borderBox: boolean = true;

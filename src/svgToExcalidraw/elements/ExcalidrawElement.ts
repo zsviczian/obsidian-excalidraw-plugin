@@ -1,6 +1,6 @@
 import { randomId, randomInteger } from "../utils";
 
-import { ExcalidrawLinearElement, FillStyle, GroupId, RoundnessType, StrokeStyle } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawLinearElement, FillStyle, GroupId, RoundnessType, StrokeStyle } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 
 export type Point = [number, number];
 

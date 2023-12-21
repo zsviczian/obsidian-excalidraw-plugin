@@ -1,4 +1,4 @@
-import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
+import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Modal, Setting, TFile } from "obsidian";
 import { getEA } from "src";
 import { DEVICE } from "src/constants/constants";

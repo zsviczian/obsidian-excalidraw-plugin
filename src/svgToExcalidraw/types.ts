@@ -1,4 +1,4 @@
-import { ExcalidrawElement, ExcalidrawLinearElement, ExcalidrawTextElement, FillStyle, GroupId, RoundnessType,  StrokeStyle } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawElement, ExcalidrawLinearElement, ExcalidrawTextElement, FillStyle, GroupId, RoundnessType,  StrokeStyle } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 
 export type PathCommand = {
   type: string;

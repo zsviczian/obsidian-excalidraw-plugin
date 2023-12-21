@@ -5,7 +5,17 @@ type SuggesterInfo = {
   after: string;
 };
 
+const hyperlink = (url: string, text: string) => {
+  return `<a onclick='window.open("${url}")'>${text}</a>`;
+}
+
 export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
+  {
+    field: "help",
+    code: "help(target: Function | string)",
+    desc: "Utility function that provides help about ExcalidrawAutomate functions and properties. I recommend calling this function from Developer Console to print out help to the console.",
+    after: "",
+  },
   {
     field: "plugin",
     code: null,
@@ -27,13 +37,13 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "style.strokeColor",
     code: "[string]",
-    desc: "A valid css color. See <a onclick='window.open(\"https://www.w3schools.com/colors/default.asp\")'>W3 School Colors</a> for more.",
+    desc: `A valid css color. See ${hyperlink("https://www.w3schools.com/colors/default.asp", "W3 School Colors")} for more.`,
     after: "",
   },
   {
     field: "style.backgroundColor",
     code: "[string]",
-    desc: "A valid css color. See <a onclick='window.open(\"https://www.w3schools.com/colors/default.asp\")'>W3 School Colors</a> for more.",
+    desc: `A valid css color. See ${hyperlink("https://www.w3schools.com/colors/default.asp","W3 School Colors")} for more.`,
     after: "",
   },
   {
@@ -123,7 +133,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "canvas.viewBackgroundColor",
     code: "[string]",
-    desc: "A valid css color.\nSee <a onclick='window.open(\"https://www.w3schools.com/colors/default.asp\")'>W3 School Colors</a> for more.",
+    desc: `A valid css color.\nSee ${hyperlink("https://www.w3schools.com/colors/default.asp","W3 School Colors")} for more.`,
     after: "",
   },
   {
@@ -170,25 +180,25 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "create",
-    code: 'create(params?: {filename?: string, foldername?: string, templatePath?: string, onNewPane?: boolean, silent?: boolean, frontmatterKeys?: { "excalidraw-plugin"?: "raw" | "parsed", "excalidraw-link-prefix"?: string, "excalidraw-link-brackets"?: boolean, "excalidraw-url-prefix"?: string,},}): Promise<string>;',
+    code: 'async create(params?: {filename?: string, foldername?: string, templatePath?: string, onNewPane?: boolean, silent?: boolean, frontmatterKeys?: { "excalidraw-plugin"?: "raw" | "parsed", "excalidraw-link-prefix"?: string, "excalidraw-link-brackets"?: boolean, "excalidraw-url-prefix"?: string,},}): Promise<string>;',
     desc: "Create a drawing and save it to filename.\nIf filename is null: default filename as defined in Excalidraw settings.\nIf folder is null: default folder as defined in Excalidraw settings\nReturns the path to the created file",
     after: "",
   },
   {
     field: "createSVG",
-    code: "createSVG(templatePath?: string, embedFont?: boolean, exportSettings?: ExportSettings, loader?: EmbeddedFilesLoader, theme?: string,): Promise<SVGSVGElement>;",
+    code: "async createSVG(templatePath?: string, embedFont?: boolean, exportSettings?: ExportSettings, loader?: EmbeddedFilesLoader, theme?: string,): Promise<SVGSVGElement>;",
     desc: "Use ExcalidrawAutomate.getExportSettings(boolean,boolean) to create an ExportSettings object.\nUse ExcalidrawAutomate.getEmbeddedFilesLoader(boolean?) to create an EmbeddedFilesLoader object.",
     after: "",
   },
   {
     field: "createPNG",
-    code: "createPNG(templatePath?: string, scale?: number, exportSettings?: ExportSettings, loader?: EmbeddedFilesLoader, theme?: string,padding?: number): Promise<any>;",
+    code: "async createPNG(templatePath?: string, scale?: number, exportSettings?: ExportSettings, loader?: EmbeddedFilesLoader, theme?: string,padding?: number): Promise<any>;",
     desc: "Create an image based on the objects in ea.getElements(). The elements in ea will be merged with the elements from the provided template file - if any. Use ExcalidrawAutomate.getExportSettings(boolean,boolean) to create an ExportSettings object.\nUse ExcalidrawAutomate.getEmbeddedFilesLoader(boolean?) to create an EmbeddedFilesLoader object.",
     after: "",
   },
   {
     field: "createPNGBase64",
-    code: "craetePNGBase64(templatePath?: string, scale?: number, exportSettings?: ExportSettings, loader?: EmbeddedFilesLoader, theme?: string,padding?: number): Promise<string>;",
+    code: "async craetePNGBase64(templatePath?: string, scale?: number, exportSettings?: ExportSettings, loader?: EmbeddedFilesLoader, theme?: string,padding?: number): Promise<string>;",
     desc: "The same as createPNG but returns a base64 encoded string instead of a file.",
     after: "",
   },
@@ -248,7 +258,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "addImage",
-    code: "addImage(topX: number, topY: number, imageFile: TFile, scale?: boolean, anchor?: boolean): Promise<string>;",
+    code: "async addImage(topX: number, topY: number, imageFile: TFile, scale?: boolean, anchor?: boolean): Promise<string>;",
     desc: "set scale to false if you want to embed the image at 100% of its original size. Default is true which will insert a scaled image. anchor will only be evaluated if scale is false. anchor true will add |100% to the end of the filename, resulting in an image that will always pop back to 100% when the source file is updated or when the Excalidraw file is reopened. ",
     after: "",
   },
@@ -260,8 +270,11 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "addMermaid",
-    code: "async addMermaid(diagram: string, groupElements: boolean = true,): Promise<string[]>;",
-    desc: "Creates a mermaid diagram and returns the ids of the created elements as a string[]. The elements will be added to ea. To add them to the canvas you'll need to use addElementsToView. Depending on the diagram type the result will be either a single SVG image, or a number of excalidraw elements.",
+    code: "async addMermaid(diagram: string, groupElements: boolean = true,): Promise<string[]|string>;",
+    desc: "Creates a mermaid diagram and returns the ids of the created elements as a string[]. " +
+      "The elements will be added to ea. To add them to the canvas you'll need to use addElementsToView. " +
+      "Depending on the diagram type the result will be either a single SVG image, or a number of excalidraw elements.<br>" +
+      "If there is an error, the function returns a string with the error message.",
     after: "",
   },
   {
@@ -315,7 +328,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "getExcalidrawAPI",
     code: "getExcalidrawAPI(): any;",
-    desc: "<a onclick='window.open(\"https://github.com/excalidraw/excalidraw/tree/master/src/packages/excalidraw#ref\")'>Excalidraw API</a>",
+    desc: `${hyperlink("https://github.com/excalidraw/excalidraw/tree/master/src/packages/excalidraw#ref","Excalidraw API")}`,
     after: "",
   },
   {
@@ -368,7 +381,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "addElementsToView",
-    code: "addElementsToView(repositionToCursor?: boolean, save?: boolean, newElementsOnTop?: boolean,shouldRestoreElements?: boolean,): Promise<boolean>;",
+    code: "async addElementsToView(repositionToCursor?: boolean, save?: boolean, newElementsOnTop?: boolean,shouldRestoreElements?: boolean,): Promise<boolean>;",
     desc: "Adds elements from elementsDict to the current view\nrepositionToCursor: default is false\nsave: default is true\nnewElementsOnTop: default is false, i.e. the new elements get to the bottom of the stack\nnewElementsOnTop controls whether elements created with ExcalidrawAutomate are added at the bottom of the stack or the top of the stack of elements already in the view\nNote that elements copied to the view with copyViewElementsToEAforEditing retain their position in the stack of elements in the view even if modified using EA",
     after: "",
   },
@@ -435,19 +448,19 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "activeScript",
     code: "activeScript: string;",
-    desc: "Mandatory to set before calling the get and set ScriptSettings functions. Set automatically by the ScriptEngine\nSee for more details: <a onclick='window.open(\"https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html\")'>Script Engine Help</a>",
+    desc: `Mandatory to set before calling the get and set ScriptSettings functions. Set automatically by the ScriptEngine\nSee for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html","Script Engine Help")}`,
     after: "",
   },
   {
     field: "getScriptSettings",
     code: "getScriptSettings(): {};",
-    desc: "Returns script settings. Saves settings in plugin settings, under the activeScript key. See for more details: <a onclick='window.open(\"https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html\")'>Script Engine Help</a>",
+    desc: `Returns script settings. Saves settings in plugin settings, under the activeScript key. See for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html","Script Engine Help")}`,
     after: "",
   },
   {
     field: "setScriptSettings",
-    code: "setScriptSettings(settings: any): Promise<void>;",
-    desc: "Sets script settings.\nSee for more details: <a onclick='window.open(\"https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html\")'>Script Engine Help</a>",
+    code: "async setScriptSettings(settings: any): Promise<void>;",
+    desc: `Sets script settings.\nSee for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html","Script Engine Help")}`,
     after: "",
   },
   {
@@ -525,13 +538,68 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "obsidian",
     code: "obsidian",
-    desc: "Access functions and objects available on the <a onclick='window.open(\"https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts\")'>Obsidian Module</a>",
+    desc: `Access functions and objects available on the ${hyperlink("https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts","Obsidian Module")}`,
     after: "",
   },
   {
     field: "getAttachmentFilepath",
     code: "async getAttachmentFilepath(filename: string): Promise<string>",
-    desc: "This asynchronous function should be awaited. It retrieves the filepath to a new file, taking into account the attachments preference settings in Obsidian. If the attachment folder doesn't exist, it creates it. The function returns the complete path to the file. If the provided filename already exists, the function will append '_[number]' before the extension to generate a unique filename.",
+    desc: "This asynchronous function should be awaited. It retrieves the filepath to a new file, taking into account the attachments preference settings in Obsidian. If the attachment folder doesn't exist, it creates it. The function returns the complete path to the file. If the provided filename already exists, the function will append '_[number]' before the extension to generate a unique filename." +
+      "Prompts the user with a dialog to select new file action.<br>" +
+      " - create markdown file<br>" +
+      " - create excalidraw file<br>" +
+      " - cancel action<br>" +
+      "The new file will be relative to this.targetView.file.path, unless parentFile is provided. " +
+      "If shouldOpenNewFile is true, the new file will be opened in a workspace leaf. " +
+      "targetPane controls which leaf will be used for the new file.<br>" +
+      "Returns the TFile for the new file or null if the user cancelled the action.<br>" + 
+      '<code>type PaneTarget = "active-pane"|"new-pane"|"popout-window"|"new-tab"|"md-properties";</code>',
+    after: "",
+  },
+  {
+    field: "getActiveEmbeddableViewOrEditor",
+    code: "getActiveEmbeddableViewOrEditor(view?: ExcalidrawView);",
+    desc: "Returns the editor or leaf.view of the currently active embedded obsidian file.<br>" +
+    "If view is not provided, ea.targetView is used.<br>" +
+    "If the embedded file is a markdown document the function will return<br>" +
+    "<code>{file:TFile, editor:Editor}</code> otherwise it will return {view:any}. You can check view type with view.getViewType();",
+    after: "",
+  },
+  {
+    field: "getViewLastPointerPosition",
+    code: "getViewLastPointerPosition(): {x: number, y: number};",
+    desc: "@returns the last recorded pointer position on the Excalidraw canvas",
+    after: "",
+  },
+  {
+    field: "getleaf",
+    code: "getLeaf(origo: WorkspaceLeaf, targetPane?: PaneTarget): WorkspaceLeaf;",
+    desc: "Generates a new Obsidian Leaf following Excalidraw plugin settings such as open in Main Workspace or not, open in adjacent pane if avaialble, etc.<br>" +
+      "@param origo: the currently active leaf, the origin of the new leaf<br>" + 
+      '@param targetPane: <code>type PaneTarget = "active-pane"|"new-pane"|"popout-window"|"new-tab"|"md-properties";',
+    after: "",
+  },
+  {
+    field: "newFilePrompt",
+    code: "async newFilePrompt(newFileNameOrPath: string, shouldOpenNewFile: boolean, targetPane?: PaneTarget, parentFile?: TFile): Promise<TFile | null>;",
+    desc: "",
+    after: "",
+  },
+  {
+    field: "DEVICE",
+    code: "get DEVICE(): DeviceType;",
+    desc: "Returns the current device type. Possible values are: <br>" +
+      "<code>type DeviceType = {<br>" +
+      "  isDesktop: boolean,<br>" +
+      "  isPhone: boolean,<br>" +
+      "  isTablet: boolean,<br>" +
+      "  isMobile: boolean,<br>" +
+      "  isLinux: boolean,<br>" +
+      "  isMacOS: boolean,<br>" +
+      "  isWindows: boolean,<br>" +
+      "  isIOS: boolean,<br>" +
+      "  isAndroid: boolean<br>" +
+      "};",
     after: "",
   },
   {
@@ -557,12 +625,14 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     code: "async postOpenAI(requst: AIRequest): Promise<RequestUrlResponse>",
     desc:
       "This asynchronous function should be awaited. It posts the supplied request to the OpenAI API and returns the response.<br>" +
-      "The response is a dictionary with the following keys:<br><code>{image, text, instruction, systemPrompt}</code><br>"+
+      "The response is a dictionary with the following keys:<br><code>{image, text, instruction, systemPrompt, responseType}</code><br>"+
       "<b>image</b> should be a dataURL - use ea.createPNGBase64()<br>"+
       "<b>systemPrompt</b>: if <code>undefined</code> the message to OpenAI will not include a system prompt<br>"+
       "<b>text</b> is the actual user prompt, a request must have either an image or a text<br>"+
       "<b>instruction</b> is a user prompt sent as a separate element in the message - I use it to reinforce the type of response I am seeing (e.g. mermaid in a codeblock)<br>"+
-      "RequestUrlResponse is defined in the <a onclick='window.open(\"https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts\")'>Obsidian API</a>",
+      `<b>imageGenerationProperties</b> if provided then the dall-e model will be used. <code> imageGenerationProperties?: {size?: string, quality?: "standard" | "hd"; n?: number; mask?: string; }</code><br>` +
+      "Different openAI models accept different parameters fr size, quality, n and mask. Consult the API documenation for more information.<br>" +
+      `RequestUrlResponse is defined in the ${hyperlink("https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts","Obsidian API")}`,
     after: "",
   },
   {

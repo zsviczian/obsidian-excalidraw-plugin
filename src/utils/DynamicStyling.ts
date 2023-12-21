@@ -1,10 +1,10 @@
-import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
+import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ColorMaster } from "colormaster";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import ExcalidrawView from "src/ExcalidrawView";
 import { DynamicStyle } from "src/types";
 import { cloneElement } from "src/ExcalidrawAutomate";
-import { ExcalidrawFrameElement } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawFrameElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { addAppendUpdateCustomData } from "./Utils";
 import { mutateElement } from "src/constants/constants";
 

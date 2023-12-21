@@ -10,7 +10,7 @@ import {
   ExcalidrawTextElement,
   StrokeRoundness,
   RoundnessType,
-} from "@zsviczian/excalidraw/types/element/types";
+} from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { Editor, normalizePath, Notice, OpenViewState, RequestUrlResponse, TFile, TFolder, WorkspaceLeaf } from "obsidian";
 import * as obsidian_module from "obsidian";
 import ExcalidrawView, { ExportSettings, TextMode } from "src/ExcalidrawView";
@@ -51,7 +51,7 @@ import {
   wrapTextAtCharLength,
 } from "src/utils/Utils";
 import { getAttachmentsFolderAndFilePath, getLeaf, getNewOrAdjacentLeaf, isObsidianThemeDark } from "src/utils/ObsidianUtils";
-import { AppState, BinaryFileData,  DataURL,  ExcalidrawImperativeAPI, Point } from "@zsviczian/excalidraw/types/types";
+import { AppState, BinaryFileData,  DataURL,  ExcalidrawImperativeAPI, Point } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddedFile, EmbeddedFilesLoader, FileData } from "src/EmbeddedFileLoader";
 import { tex2dataURL } from "src/LaTeX";
 import { GenericInputPrompt, NewFileActions, Prompt } from "src/dialogs/Prompt";
@@ -75,9 +75,9 @@ import CMYKPlugin from "colormaster/plugins/cmyk";
 import { TInput } from "colormaster/types";
 import {ConversionResult, svgToExcalidraw} from "src/svgToExcalidraw/parser"
 import { ROUNDNESS } from "src/constants/constants";
-import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
+import { ClipboardData } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
 import { emulateKeysForLinkClick, KeyEvent, PaneTarget } from "src/utils/ModifierkeyHelper";
-import { Mutable } from "@zsviczian/excalidraw/types/utility-types";
+import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import PolyBool from "polybooljs";
 import { EmbeddableMDCustomProps } from "./dialogs/EmbeddableSettings";
 import {
@@ -85,6 +85,7 @@ import {
   postOpenAI as _postOpenAI,
   extractCodeBlocks as _extractCodeBlocks,
 } from "./utils/AIUtils";
+import { EXCALIDRAW_AUTOMATE_INFO } from "./dialogs/SuggesterInfo";
 
 extendPlugins([
   HarmonyPlugin,
@@ -121,6 +122,41 @@ export class ExcalidrawAutomate {
 
   get DEVICE():DeviceType {
     return DEVICE;
+  }
+
+  public help(target: Function | string) {
+    if (!target) {
+      console.log("Usage: ea.help(ea.functionName) or ea.help('propertyName')");
+      return;
+    }
+  
+    let funcInfo;
+  
+    if (typeof target === 'function') {
+      funcInfo = EXCALIDRAW_AUTOMATE_INFO.find((info) => info.field === target.name);
+    } else if (typeof target === 'string') {
+      funcInfo = EXCALIDRAW_AUTOMATE_INFO.find((info) => info.field === target);
+    }
+  
+    if(!funcInfo) {
+      console.log("Usage: ea.help(ea.functionName) or\nea.help('propertyName') - notice property name is in quotes");
+      return;
+    }
+
+    if (funcInfo.desc) {
+      const formattedDesc = funcInfo.desc
+        .replaceAll("<br>", "\n")
+        .replace(/<code>(.*?)<\/code>/g, '%c\u200b$1%c') // Zero-width space
+        .replace(/<b>(.*?)<\/b>/g, '%c\u200b$1%c')      // Zero-width space
+        .replace(/<a onclick='window\.open\("(.*?)"\)'>(.*?)<\/a>/g, (_, href, text) => `%c\u200b${text}%c\u200b (link: ${href})`); // Zero-width non-joiner
+  
+      const styles = Array.from({ length: (formattedDesc.match(/%c/g) || []).length }, (_, i) => i % 2 === 0 ? 'color: #007bff;' : '');
+  
+      console.log(`Declaration: ${funcInfo.code}`);
+      console.log(`Description: ${formattedDesc}`, ...styles);
+    } else {
+      console.log("Description not available for this function.");
+    }
   }
 
   /**
@@ -1264,15 +1300,16 @@ export class ExcalidrawAutomate {
    * Adds a mermaid diagram to ExcalidrawAutomate elements
    * @param diagram string containing the mermaid diagram
    * @param groupElements default is trud. If true, the elements will be grouped
-   * @returns the ids of the elements that were created
+   * @returns the ids of the elements that were created or null if there was an error
    */
   async addMermaid(
     diagram: string,
     groupElements: boolean = true,
-  ): Promise<string[]> {
+  ): Promise<string[]|string> {
     const result = await mermaidToExcalidraw(diagram, {fontSize: this.style.fontSize});
     const ids:string[] = [];
-    if(!result) return ids;
+    if(!result) return null;
+    if(result?.error) return result.error;
 
     if(result?.elements) {
       result.elements.forEach(el=>{

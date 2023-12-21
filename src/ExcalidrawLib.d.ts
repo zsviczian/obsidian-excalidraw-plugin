@@ -1,9 +1,9 @@
-import { RestoredDataState } from "@zsviczian/excalidraw/types/data/restore";
-import { ImportedDataState } from "@zsviczian/excalidraw/types/data/types";
-import { BoundingBox } from "@zsviczian/excalidraw/types/element/bounds";
-import { ExcalidrawBindableElement, ExcalidrawElement, ExcalidrawFrameElement, ExcalidrawTextElement, FontFamilyValues, FontString, NonDeleted, NonDeletedExcalidrawElement, Theme } from "@zsviczian/excalidraw/types/element/types";
-import { AppState, BinaryFiles, ExportOpts, Point, Zoom } from "@zsviczian/excalidraw/types/types";
-import { Mutable } from "@zsviczian/excalidraw/types/utility-types";
+import { RestoredDataState } from "@zsviczian/excalidraw/types/excalidraw/data/restore";
+import { ImportedDataState } from "@zsviczian/excalidraw/types/excalidraw/data/types";
+import { BoundingBox } from "@zsviczian/excalidraw/types/excalidraw/element/bounds";
+import { ExcalidrawBindableElement, ExcalidrawElement, ExcalidrawFrameElement, ExcalidrawTextElement, FontFamilyValues, FontString, NonDeleted, NonDeletedExcalidrawElement, Theme } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { AppState, BinaryFiles, ExportOpts, Point, Zoom } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 
 type EmbeddedLink =
   | ({
@@ -132,7 +132,8 @@ declare namespace ExcalidrawLib {
     opts: {fontSize: number},
     forceSVG?: boolean,
   ): Promise<{
-    elements: ExcalidrawElement[],
-    files:any
+    elements?: ExcalidrawElement[];
+    files?: any;
+    error?: string;
   } | undefined>;
 }

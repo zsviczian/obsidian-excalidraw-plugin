@@ -1,5 +1,5 @@
-import { ExcalidrawEmbeddableElement } from "@zsviczian/excalidraw/types/element/types";
-import { Mutable } from "@zsviczian/excalidraw/types/utility-types";
+import { ExcalidrawEmbeddableElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { Modal, Notice, Setting, TFile, ToggleComponent } from "obsidian";
 import { getEA } from "src";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
@@ -11,7 +11,7 @@ import { addAppendUpdateCustomData, fragWithHTML } from "src/utils/Utils";
 import { getYouTubeStartAt, isValidYouTubeStart, isYouTube, updateYouTubeStartTime } from "src/utils/YoutTubeUtils";
 import { EmbeddalbeMDFileCustomDataSettingsComponent } from "./EmbeddableMDFileCustomDataSettingsComponent";
 import { isWinCTRLorMacCMD } from "src/utils/ModifierkeyHelper";
-import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
+import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 
 export type EmbeddableMDCustomProps = {
   useObsidianDefaults: boolean;

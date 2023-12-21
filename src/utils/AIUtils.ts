@@ -1,3 +1,4 @@
+import { AnyARecord } from "dns";
 import { Notice, RequestUrlResponse, requestUrl } from "obsidian";
 import ExcalidrawPlugin from "src/main";
 
@@ -7,9 +8,9 @@ type MessageContent =
 
 export type GPTCompletionRequest = {
   model: string;
-  messages: {
-    role: "system" | "user" | "assistant" | "function";
-    content: MessageContent;
+  messages?: {
+    role?: "system" | "user" | "assistant" | "function";
+    content?: MessageContent;
     name?: string | undefined;
   }[];
   functions?: any[] | undefined;
@@ -28,6 +29,11 @@ export type GPTCompletionRequest = {
       }
     | undefined;
   stop?: (string[] | string) | undefined;
+  size?: string;
+  quality?: "standard" | "hd";
+  prompt?: string;
+  image?: string;
+  mask?: string;
 };
 
 export type AIRequest = {
@@ -35,31 +41,100 @@ export type AIRequest = {
   text?: string;
   instruction?: string;
   systemPrompt?: string;
+  imageGenerationProperties?: {
+    size?: string; //depends on model
+    quality?: "standard" | "hd"; //depends on model
+    n?: number; //dall-e-3 only accepts 1
+    mask?: string; //dall-e-2 only (image editing)
+  };
 };
 
-export const postOpenAI = async (request: AIRequest) : Promise<RequestUrlResponse> => {
+const handleImageEditPrompt = async (request: AIRequest) : Promise<RequestUrlResponse> => {
   const plugin: ExcalidrawPlugin = window.ExcalidrawAutomate.plugin;
-  const { openAIAPIToken, openAIDefaultTextModel, openAIDefaultVisionModel, openAIURL} = plugin.settings;
-  const { image, text, instruction, systemPrompt } = request;
-  const requestType = image ? "image" : "text";
+  const {
+    openAIAPIToken,
+    openAIImageEditsURL,
+  } = plugin.settings;
+  const { image, text, imageGenerationProperties} = request;
+
+  const body = new FormData();
+  body.append("model", "dall-e-2");
+  text.trim() !== "" && body.append("prompt", text);
+
+  if (image) {
+    const imageFile = await fetch(image)
+      .then((res) => res.blob())
+      .then((blob) => new File([blob], 'image.png', { type: 'image/png' }));
+    body.append('image', imageFile);
+  }
+
+  if (imageGenerationProperties.mask) {
+    const maskFile = await fetch(imageGenerationProperties.mask)
+      .then((res) => res.blob())
+      .then((blob) => new File([blob], 'mask.png', { type: 'image/png' }));
+    body.append('mask', maskFile);
+  }
+
+  Boolean(image) && body.append("image", image);
+
+  imageGenerationProperties.size && body.append("size", imageGenerationProperties.size);
+  imageGenerationProperties.n && body.append("n", String(imageGenerationProperties.n));
+
+  try {
+    //https://platform.openai.com/docs/api-reference/images
+    const resp = await fetch(
+       openAIImageEditsURL,
+      {
+        method: "post",
+        body,
+        headers: {
+          //"Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${openAIAPIToken}`,
+        },
+        //mode: 'no-cors'
+      }
+    );
+    if(!resp) return null;
+    return {
+      status: resp.status,
+      headers: resp.headers as any,
+      text: null,
+      json: await resp.json(),
+      arrayBuffer: null,
+    };
+  } catch (e) {
+    console.log(e);
+  }
+  return null;
+}
+
+const handleGenericPrompt = async (request: AIRequest) : Promise<RequestUrlResponse> => {
+  const plugin: ExcalidrawPlugin = window.ExcalidrawAutomate.plugin;
+  const {
+    openAIAPIToken,
+    openAIDefaultTextModel,
+    openAIDefaultVisionModel,
+    openAIURL,
+    openAIImageGenerationURL,
+    openAIDefaultImageGenerationModel,
+  } = plugin.settings;
+  const { image, text, instruction, systemPrompt, imageGenerationProperties} = request;
+  const isImageGeneration = Boolean(imageGenerationProperties);
+    const requestType = isImageGeneration ? "dall-e" : (image ? "image" : "text");
   let body: GPTCompletionRequest;
 
-  if(openAIAPIToken === "") {
-    new Notice("OpenAI API Token is not set. Please set it in plugin settings.");
-    return null;
-  }
   switch (requestType) {
     case "text":
       body = {
         model: openAIDefaultTextModel,
         max_tokens: 4096,
         messages: [
-          ...(systemPrompt ? [{role: "system" as const,content: systemPrompt}] : []),
+          ...(systemPrompt && systemPrompt.trim() !=="" ? [{role: "system" as const,content: systemPrompt}] : []),
           {
             role: "user",
             content: text,
           },
-          ...(instruction ? [{role: "user" as const,content: instruction}] : [])
+          ...(instruction && instruction.trim() !=="" ? [{role: "user" as const,content: instruction}] : []),
         ],
       };          
       break;
@@ -68,7 +143,7 @@ export const postOpenAI = async (request: AIRequest) : Promise<RequestUrlRespons
         model: openAIDefaultVisionModel,
         max_tokens: 4096,
         messages: [
-          ...(systemPrompt ? [{role: "system" as const,content: [systemPrompt]}] : []),
+          ...(systemPrompt && systemPrompt.trim() !=="" ? [{role: "system" as const,content: systemPrompt}] : []),
           {
             role: "user",
             content: [
@@ -77,19 +152,27 @@ export const postOpenAI = async (request: AIRequest) : Promise<RequestUrlRespons
                 image_url: image,
               },
               ...(text ? [text] : []),
-              ...(instruction ? [instruction] : []), //"Turn this into a single html file using tailwind.",
+              ...(instruction && instruction.trim() !== "" ? [instruction] : []),
             ],
-          },
+          }
         ],
       };                
+      break;
+    case "dall-e":
+      body = {
+        model: openAIDefaultImageGenerationModel,
+        prompt: text,
+        ...imageGenerationProperties
+      };
       break;
     default:
       return null;
   }
 
   try {
+    //https://platform.openai.com/docs/api-reference/images
     const resp = await requestUrl ({
-      url: openAIURL,
+      url:  isImageGeneration ? openAIImageGenerationURL : openAIURL,
       method: "post",
       contentType: "application/json",
       body: JSON.stringify(body),
@@ -104,6 +187,26 @@ export const postOpenAI = async (request: AIRequest) : Promise<RequestUrlRespons
     console.log(e);
   }
   return null;
+}
+
+
+export const postOpenAI = async (request: AIRequest) : Promise<RequestUrlResponse> => {
+  const plugin: ExcalidrawPlugin = window.ExcalidrawAutomate.plugin;
+  const { openAIAPIToken } = plugin.settings;
+  const { image, imageGenerationProperties} = request;
+  const isImageGeneration = Boolean(imageGenerationProperties);
+  const isImageVariationOrEditing = isImageGeneration && (Boolean(imageGenerationProperties.mask) || Boolean(image));
+
+  if(openAIAPIToken === "") {
+    new Notice("OpenAI API Token is not set. Please set it in plugin settings.");
+    return null;
+  }
+
+  if(isImageVariationOrEditing) {
+    return await handleImageEditPrompt(request);
+  }
+  return await handleGenericPrompt(request);
+
 }
 
 /**

@@ -1,15 +1,15 @@
 /// <reference types="react" />
 import ExcalidrawPlugin from "src/main";
-import { FillStyle, StrokeStyle, ExcalidrawElement, ExcalidrawBindableElement, FileId, NonDeletedExcalidrawElement, ExcalidrawImageElement, StrokeRoundness, RoundnessType } from "@zsviczian/excalidraw/types/element/types";
+import { FillStyle, StrokeStyle, ExcalidrawElement, ExcalidrawBindableElement, FileId, NonDeletedExcalidrawElement, ExcalidrawImageElement, StrokeRoundness, RoundnessType } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { Editor, OpenViewState, TFile, WorkspaceLeaf } from "obsidian";
 import * as obsidian_module from "obsidian";
 import ExcalidrawView, { ExportSettings } from "src/ExcalidrawView";
-import { AppState, BinaryFileData, DataURL, ExcalidrawImperativeAPI, Point } from "@zsviczian/excalidraw/types/types";
+import { AppState, BinaryFileData, DataURL, ExcalidrawImperativeAPI, Point } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddedFilesLoader } from "src/EmbeddedFileLoader";
 import { ConnectionPoint, DeviceType } from "src/types";
 import { ColorMaster } from "colormaster";
 import { TInput } from "colormaster/types";
-import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
+import { ClipboardData } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
 import { PaneTarget } from "src/utils/ModifierkeyHelper";
 export declare class ExcalidrawAutomate {
     /**

@@ -20,7 +20,7 @@ import {
   ExcalidrawTextElement,
   FileId,
   NonDeletedExcalidrawElement,
-} from "@zsviczian/excalidraw/types/element/types";
+} from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import {
   AppState,
   BinaryFileData,
@@ -28,7 +28,7 @@ import {
   Gesture,
   LibraryItems,
   UIAppState,
-} from "@zsviczian/excalidraw/types/types";
+} from "@zsviczian/excalidraw/types/excalidraw/types";
 import {
   VIEW_TYPE_EXCALIDRAW,
   ICON_NAME,
@@ -67,6 +67,7 @@ import {
   REG_LINKINDEX_HYPERLINK,
   REGEX_LINK,
   AutoexportPreference,
+  getExcalidrawMarkdownHeaderSection,
 } from "./ExcalidrawData";
 import {
   checkAndCreateFolder,
@@ -104,7 +105,7 @@ import {
 import { getLeaf, getParentOfClass, obsidianPDFQuoteWithRef } from "./utils/ObsidianUtils";
 import { splitFolderAndFilename } from "./utils/FileUtils";
 import { ConfirmationPrompt, GenericInputPrompt, NewFileActions, Prompt } from "./dialogs/Prompt";
-import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
+import { ClipboardData } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
 import { updateEquation } from "./LaTeX";
 import {
   EmbeddedFile,
@@ -724,14 +725,6 @@ export default class ExcalidrawView extends TextFileView {
     //deleted elements are only used if sync modifies files while Excalidraw is open
     //otherwise deleted elements are discarded when loading the scene
     if (!this.compatibilityMode) {
-      let trimLocation = this.data.search(/(^%%\n)?# Text Elements\n/m);
-      if (trimLocation == -1) {
-        trimLocation = this.data.search(/(%%\n)?# Drawing\n/);
-      }
-      if (trimLocation == -1) {
-        return this.data;
-      }
-
       const keys:[string,string][] = this.exportDialog?.dirty && this.exportDialog?.saveSettings
         ? [
             [FRONTMATTER_KEY_EXPORT_PADDING, this.exportDialog.padding.toString()],
@@ -748,13 +741,8 @@ export default class ExcalidrawView extends TextFileView {
         this.exportDialog.dirty = false;
       }
 
-      let header = updateFrontmatterInString(this.data.substring(0, trimLocation),keys);
-      //this should be removed at a later time. Left it here to remediate 1.4.9 mistake
-      const REG_IMG = /(^---[\w\W]*?---\n)(!\[\[.*?]]\n(%%\n)?)/m; //(%%\n)? because of 1.4.8-beta... to be backward compatible with anyone who installed that version
-      if (header.match(REG_IMG)) {
-        header = header.replace(REG_IMG, "$1");
-      }
-      //end of remove
+      const header = getExcalidrawMarkdownHeaderSection(this.data, keys);
+
       if (!this.excalidrawData.disableCompression) {
         this.excalidrawData.disableCompression =
           this.isEditedAsMarkdownInOtherView();

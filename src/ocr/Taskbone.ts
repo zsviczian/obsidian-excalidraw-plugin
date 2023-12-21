@@ -4,7 +4,7 @@ import ExcalidrawPlugin from "../main"
 import {log} from "../utils/Utils"
 import ExcalidrawView, { ExportSettings } from "../ExcalidrawView"
 import FrontmatterEditor from "src/utils/Frontmatter";
-import { ExcalidrawElement, ExcalidrawImageElement } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawElement, ExcalidrawImageElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { EmbeddedFilesLoader } from "src/EmbeddedFileLoader";
 import { blobToBase64 } from "src/utils/FileUtils";
 

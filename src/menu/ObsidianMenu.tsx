@@ -1,4 +1,4 @@
-import { AppState, ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
+import { AppState, ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import clsx from "clsx";
 import { TFile } from "obsidian";
 import * as React from "react";

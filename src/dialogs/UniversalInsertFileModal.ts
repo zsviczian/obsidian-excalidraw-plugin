@@ -7,7 +7,7 @@ import { IMAGE_TYPES, sceneCoordsToViewportCoords, viewportCoordsToSceneCoords, 
 import { insertEmbeddableToView, insertImageToView } from "src/utils/ExcalidrawViewUtils";
 import { getEA } from "src";
 import { InsertPDFModal } from "./InsertPDFModal";
-import {  ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
+import {  ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import { cleanSectionHeading } from "src/utils/ObsidianUtils";
 

@@ -42,6 +42,7 @@ import {
   hasExportTheme,
   isVersionNewerThanOther,
   LinkParts,
+  updateFrontmatterInString,
   wrapTextAtCharLength,
 } from "./utils/Utils";
 import { cleanBlockRef, cleanSectionHeading, getAttachmentsFolderAndFilePath, isObsidianThemeDark } from "./utils/ObsidianUtils";
@@ -49,8 +50,8 @@ import {
   ExcalidrawElement,
   ExcalidrawImageElement,
   FileId,
-} from "@zsviczian/excalidraw/types/element/types";
-import { BinaryFiles, DataURL, SceneData } from "@zsviczian/excalidraw/types/types";
+} from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { BinaryFiles, DataURL, SceneData } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddedFile, MimeType } from "./EmbeddedFileLoader";
 import { ConfirmationPrompt } from "./dialogs/Prompt";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
@@ -122,7 +123,7 @@ export const REGEX_LINK = {
 //added \n at and of DRAWING_REG: https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/357
 const DRAWING_REG = /\n# Drawing\n[^`]*(```json\n)([\s\S]*?)```\n/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
 const DRAWING_REG_FALLBACK = /\n# Drawing\n(```json\n)?(.*)(```)?(%%)?/gm;
-const DRAWING_COMPRESSED_REG =
+export const DRAWING_COMPRESSED_REG =
   /(\n# Drawing\n[^`]*(?:```compressed\-json\n))([\s\S]*?)(```\n)/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
 const DRAWING_COMPRESSED_REG_FALLBACK =
   /(\n# Drawing\n(?:```compressed\-json\n)?)(.*)((```)?(%%)?)/gm;
@@ -242,6 +243,26 @@ const estimateMaxLineLen = (text: string, originalText: string): number => {
 
 const wrap = (text: string, lineLen: number) =>
   lineLen ? wrapTextAtCharLength(text, lineLen, false, 0) : text;
+
+export const getExcalidrawMarkdownHeaderSection = (data:string, keys:[string,string][]):string => {
+  let trimLocation = data.search(/(^%%\n)?# Text Elements\n/m);
+  if (trimLocation == -1) {
+    trimLocation = data.search(/(%%\n)?# Drawing\n/);
+  }
+  if (trimLocation == -1) {
+    return data;
+  }
+
+  let header = updateFrontmatterInString(data.substring(0, trimLocation),keys);
+  //this should be removed at a later time. Left it here to remediate 1.4.9 mistake
+  const REG_IMG = /(^---[\w\W]*?---\n)(!\[\[.*?]]\n(%%\n)?)/m; //(%%\n)? because of 1.4.8-beta... to be backward compatible with anyone who installed that version
+  if (header.match(REG_IMG)) {
+    header = header.replace(REG_IMG, "$1");
+  }
+  //end of remove
+  return header;
+}
+
 
 export class ExcalidrawData {
   public textElements: Map<

@@ -1,10 +1,10 @@
-import {  NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element/types";
+import {  NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import ExcalidrawView from "./ExcalidrawView";
 import { Notice, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import * as React from "react";
 import { ConstructableWorkspaceSplit, getContainerForDocument, isObsidianThemeDark } from "./utils/ObsidianUtils";
 import { DEVICE, EXTENDED_EVENT_TYPES, KEYBOARD_EVENT_TYPES } from "./constants/constants";
-import { ExcalidrawImperativeAPI, UIAppState } from "@zsviczian/excalidraw/types/types";
+import { ExcalidrawImperativeAPI, UIAppState } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ObsidianCanvasNode } from "./utils/CanvasNodeFactory";
 import { processLinkText, patchMobileView } from "./utils/CustomEmbeddableUtils";
 import { EmbeddableMDCustomProps } from "./dialogs/EmbeddableSettings";

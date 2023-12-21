@@ -1,4 +1,4 @@
-import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/types";
+import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ColorComponent, Modal, Setting, SliderComponent, TextComponent, ToggleComponent } from "obsidian";
 import { COLOR_NAMES, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
 import ExcalidrawView from "src/ExcalidrawView";

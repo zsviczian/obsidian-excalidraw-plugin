@@ -1,4 +1,4 @@
-import { ExcalidrawElement, ExcalidrawImageElement, ExcalidrawTextElement } from "@zsviczian/excalidraw/types/element/types";
+import { ExcalidrawElement, ExcalidrawImageElement, ExcalidrawTextElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK } from "src/ExcalidrawData";
 import ExcalidrawView, { TextMode } from "src/ExcalidrawView";
 import { rotatedDimensions } from "./Utils";

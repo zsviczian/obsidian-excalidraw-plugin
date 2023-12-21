@@ -1,4 +1,4 @@
-import { DataURL } from "@zsviczian/excalidraw/types/types";
+import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import {mathjax} from "mathjax-full/js/mathjax";
 import {TeX} from 'mathjax-full/js/input/tex.js';
 import {SVG} from 'mathjax-full/js/output/svg.js';
@@ -9,7 +9,7 @@ import {AllPackages} from 'mathjax-full/js/input/tex/AllPackages.js';
 import ExcalidrawView from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
 import { FileData, MimeType } from "./EmbeddedFileLoader";
-import { FileId } from "@zsviczian/excalidraw/types/element/types";
+import { FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { getImageSize, svgToBase64 } from "./utils/Utils";
 import { fileid } from "./constants/constants";
 import { TFile } from "obsidian";
