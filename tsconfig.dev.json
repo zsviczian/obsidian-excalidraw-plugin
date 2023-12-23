@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-    "sourceMap": true,
+    "sourceMap": false,
     "module": "ES2015",
     "target": "es2017", //es2017 because script engine requires for async execution
     "allowJs": true,
@@ -17,7 +17,8 @@
       "esnext",
       "DOM.Iterable"
     ],
-    "jsx": "react"
+    "jsx": "react",
+    "inlineSourceMap": true
   },
   "include": [
     "**/*.ts",

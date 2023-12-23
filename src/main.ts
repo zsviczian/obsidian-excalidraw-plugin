@@ -801,37 +801,10 @@ export default class ExcalidrawPlugin extends Plugin {
       checkCallback: (checking: boolean) => {
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if(!view) return false;
-        if(!view.excalidrawAPI) return false;
-        const els = view.getViewSelectedElements().filter(el=>el.type==="image");
-        if(els.length !== 1) {
-          if(checking) return false;
-          new Notice("Select a single image element and try again");
-          return false;
-        }
-        const el = els[0] as ExcalidrawImageElement;
-        const imageFile = view.excalidrawData.getFile(el.fileId);
-        if(!imageFile.isHyperLink) return false;
+        const img = view.getSingleSelectedImageWithURL();
+        if(!img) return false;
         if(checking) return true;
-        const imageDataURL = imageFile.getImage(false);
-        if(!imageDataURL) {
-          new Notice("Image not found");
-          return false;
-        }
-        const ea = getEA(view) as ExcalidrawAutomate;
-        ea.copyViewElementsToEAforEditing([el]);
-        const eaEl = ea.getElement(el.id) as Mutable<ExcalidrawImageElement>;
-        eaEl.fileId = fileid() as FileId;
-        if(!eaEl.link) {eaEl.link = imageFile.hyperlink};
-        const files: BinaryFileData[] = [];
-        files.push({
-          mimeType: imageFile.mimeType,
-          id: eaEl.fileId,
-          dataURL: imageFile.getImage(false) as DataURL,
-          created: imageFile.mtime,
-        });
-        const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
-        api.addFiles(files);
-        ea.addElementsToView(false,true);
+        view.convertImageElWithURLToLocalFile(img);
       },
     });
 

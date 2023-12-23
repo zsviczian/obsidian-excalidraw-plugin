@@ -33,7 +33,8 @@ const getTheme = (view: ExcalidrawView, theme:string): string => view.excalidraw
 //required to control the video
 //--------------------------------------------------------------------------------
 export const renderWebView = (src: string, view: ExcalidrawView, id: string, appState: UIAppState):JSX.Element =>{
-  if(DEVICE.isDesktop) {
+  const isDataURL = src.startsWith("data:");
+  if(DEVICE.isDesktop && !isDataURL) {
     return (
       <webview
         ref={(ref) => view.updateEmbeddableRef(id, ref)}
@@ -55,11 +56,12 @@ export const renderWebView = (src: string, view: ExcalidrawView, id: string, app
       title="Excalidraw Embedded Content"
       allowFullScreen={true}
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-      src={src}
+      src={isDataURL ? null : src}
       style={{
         overflow: "hidden",
         borderRadius: "var(--embeddable-radius)",
       }}
+      srcDoc={isDataURL ? atob(src.split(',')[1]) : null}
     />
   );
 }

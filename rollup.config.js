@@ -74,14 +74,14 @@ const BUILD_CONFIG = {
   output: {
     dir: DIST_FOLDER,
     entryFileNames: 'main.js',
-    sourcemap: isProd?false:'inline',
+    //sourcemap: isProd?false:'inline',
     format: 'cjs',
     exports: 'default',
   },
   plugins: [
     typescript2({
       tsconfig: isProd ? "tsconfig.json" : "tsconfig.dev.json",
-      inlineSources: !isProd
+      //inlineSources: !isProd
     }),
     replace({
       preventAssignment: true,

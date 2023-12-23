@@ -3,10 +3,9 @@
 
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-draw-a-ui.jpg)
 ```js*/
-let previewImg, previewDiv;
 let dirty=false;
 
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.0.11")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.0.12")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
@@ -27,41 +26,58 @@ const outputTypes = {
   "image-gen": {
     instruction: "Return a single message with the generated image prompt in a codeblock",
     blocktype: "image"
+  },
+  "image-edit": {
+    instruction: "",
+    blocktype: "image"
   }
 }
 
 const systemPrompts = {
   "Challenge my thinking": {
     prompt: `Your task is to interpret a screenshot of a whiteboard, translating its ideas into a Mermaid graph. The whiteboard will encompass thoughts on a subject. Within the mind map, distinguish ideas that challenge, dispute, or contradict the whiteboard content. Additionally, include concepts that expand, complement, or advance the user's thinking. Utilize the Mermaid graph diagram type and present the resulting Mermaid diagram within a code block. Ensure the Mermaid script excludes the use of parentheses ().`,
-    type: "mermaid"
+    type: "mermaid",
+    help: "Translate your image and optional text prompt into a Mermaid mindmap. If there are conversion errors, edit the Mermaid script under 'More Tools'."
   },
   "Convert sketch to shapes": {
     prompt: `Given an image featuring various geometric shapes drawn by the user, your objective is to analyze the input and generate SVG code that accurately represents these shapes. Your output will be the SVG code enclosed in an HTML code block.`,
-    type: "svg"
+    type: "svg",
+    help: "Convert selected scribbles into shapes; works better with fewer shapes. Experimental and may not produce good drawings."
   },
-  "Excalidraw sketch": {
+  "Create a simple Excalidraw icon": {
     prompt: `Given a description of an SVG image from the user, your objective is to generate the corresponding SVG code. Avoid incorporating textual elements within the generated SVG. Your output should be the resulting SVG code enclosed in an HTML code block.`,
-    type: "svg"
+    type: "svg",
+    help: "Convert text prompts into simple icons inserted as Excalidraw elements. Expect only a text prompt. Experimental and may not produce good drawings."
+  },
+  "Edit an image": {
+    prompt: null,
+    type: "image-edit",
+    help: "Image elements will be used as the Image. Shapes on top of the image will be the Mask. Use the prompt to instruct Dall-e about the changes. Dall-e-2 model will be used."
   },
   "Generate an image from image and prompt": {
     prompt: "Your task involves receiving an image and a textual prompt from the user. Your goal is to craft a detailed, accurate, and descriptive narrative of the image, tailored for effective image generation. Utilize the user-provided text prompt to inform and guide your depiction of the image. Ensure the resulting image remains text-free.",
-    type: "image-gen"
+    type: "image-gen",
+    help: "Generate an image based on the drawing and prompt using ChatGPT-Vision and Dall-e. Provide a contextual text-prompt for accurate interpretation."
   },
   "Generate an image from prompt": {
     prompt: null,
-    type: "image-gen"
+    type: "image-gen",
+    help: "Send only the text prompt to OpenAI. Provide a detailed description; OpenAI will enrich your prompt automatically. To avoid it, start your prompt like this 'DO NOT add any detail, just use it AS-IS:'"
   },
   "Generate an image to illustrate a quote": {
     prompt: "Your task involves transforming a user-provided quote into a detailed and imaginative illustration. Craft a visual representation that captures the essence of the quote and resonates well with a broad audience. If the Author's name is provided, aim to establish a connection between the illustration and the Author. This can be achieved by referencing a well-known story from the Author, situating the image in the Author's era or setting, or employing other creative methods of association. Additionally, provide preferences for styling, such as the chosen medium and artistic direction, to guide the image creation process. Ensure the resulting image remains text-free. Your task output should comprise a descriptive and detailed narrative aimed at facilitating the creation of a captivating illustration from the quote.",
-    type: "image-gen"
+    type: "image-gen",
+    help: "ExcaliAI will create an image prompt to illustrate your text input - a quote - with GPT, then generate an image using Dall-e. In case you include the Author's name, GPT will try to generate an image that in some way references the Author."
   },
   "Visual brainstorm": {
     prompt: "Your objective is to interpret a screenshot of a whiteboard, creating an image aimed at sparking further thoughts on the subject. The whiteboard will present diverse ideas about a specific topic. Your generated image should achieve one of two purposes: highlighting concepts that challenge, dispute, or contradict the whiteboard content, or introducing ideas that expand, complement, or enrich the user's thinking. You have the option to include multiple tiles in the resulting image, resembling a sequence akin to a comic strip. Ensure that the image remains devoid of text.",
-    type: "image-gen"
+    type: "image-gen",
+    help: "Use ChatGPT Visions and Dall-e to create an image based on your text prompt and image to spark new ideas."
   },
   "Wireframe to code": {
     prompt: `You are an expert tailwind developer. A user will provide you with a low-fidelity wireframe of an application and you will return a single html file that uses tailwind to create the website. Use creative license to make the application more fleshed out. Write the necessary javascript code. If you need to insert an image, use placehold.co to create a placeholder image.`,
-    type: "html"
+    type: "html",
+    help: "Use GPT Visions to interpret the wireframe and generate a web application. YOu may copy the resulting code from the active embeddable's top left menu."
   },
 }
 
@@ -85,23 +101,30 @@ if(!OPENAI_API_KEY || OPENAI_API_KEY === "") {
   return;
 }
 
-const imageModel = ea.plugin.settings.openAIDefaultImageGenerationModel;
 let userPrompt = settings["User Prompt"] ?? "";
 let agentTask = settings["Agent's Task"];
 let imageSize = settings["Image Size"]??"1024x1024";
-const validSizes = imageModel === "dall-e-2"
-  ? [`256x256`, `512x512`, `1024x1024`]
-  : (imageModel === "dall-e-3"
-    ? [`1024x1024`, `1792x1024`, `1024x1792`]
-    : [`1024x1024`])
-if(!validSizes.includes(imageSize)) {
-  imageSize = "1024x1024";
-  dirty = true;
-}
 
 if(!systemPrompts.hasOwnProperty(agentTask)) {
   agentTask = Object.keys(systemPrompts)[0];
 }
+let imageModel, valideSizes;
+
+const setImageModelAndSizes = () => {
+  imageModel = systemPrompts[agentTask].type === "image-edit"
+    ? "dall-e-2"
+    : ea.plugin.settings.openAIDefaultImageGenerationModel;
+  validSizes = imageModel === "dall-e-2"
+    ? [`256x256`, `512x512`, `1024x1024`]
+    : (imageModel === "dall-e-3"
+      ? [`1024x1024`, `1792x1024`, `1024x1792`]
+      : [`1024x1024`])
+  if(!validSizes.includes(imageSize)) {
+    imageSize = "1024x1024";
+    dirty = true;
+  }
+}
+setImageModelAndSizes();
 
 // --------------------------------------
 // Generate Image Blob From Selected Excalidraw Elements
@@ -120,51 +143,114 @@ const calculateImageScale = (elements) => {
       );
 }
 
-const generateCanvasDataURL = async (view, makeSquare=false) => {
+const createMask = async (dataURL) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      for (let i = 0; i < data.length; i += 4) {
+        // If opaque (alpha > 0), make it transparent
+        if (data[i + 3] > 0) {
+          data[i + 3] = 0; // Set alpha to 0 (transparent)
+        } else if (data[i + 3] === 0) {
+          // If fully transparent, make it red
+          data[i] = 255; // Red
+          data[i + 1] = 0; // Green
+          data[i + 2] = 0; // Blue
+          data[i + 3] = 255; // make it opaque
+        }
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+      const maskDataURL = canvas.toDataURL();
+
+      resolve(maskDataURL);
+    };
+
+    img.onerror = error => {
+      reject(error);
+    };
+
+    img.src = dataURL;
+  });
+}
+
+//https://platform.openai.com/docs/api-reference/images/createEdit
+//dall-e-2 image edit only works on square images
+//if targetDalleImageEdit === true then the image and the mask will be returned in two separate dataURLs
+let squareBB;
+
+const generateCanvasDataURL = async (view, targetDalleImageEdit=false) => {
+  let PADDING = 5;
   await view.forceSave(true); //to ensure recently embedded PNG and other images are saved to file
   const viewElements = ea.getViewSelectedElements();
   if(viewElements.length === 0) {
-    return;
+    return {imageDataURL: null, maskDataURL: null} ;
   }
   ea.copyViewElementsToEAforEditing(viewElements, true); //copying the images objects over to EA for PNG generation
   
-  if(makeSquare) {
-    const bb = ea.getBoundingBox(viewElements);
+  let maskDataURL;
+  const loader = ea.getEmbeddedFilesLoader(false);
+  let scale = calculateImageScale(ea.getElements());
+  const bb = ea.getBoundingBox(viewElements);
+  if(ea.getElements()
+    .filter(el=>el.type==="image")
+    .some(el=>Math.round(el.width) === Math.round(bb.width) && Math.round(el.height) === Math.round(bb.height))
+  ) { PADDING = 0; }
+  
+  let exportSettings = {withBackground: true, withTheme: true};
+  
+  if(targetDalleImageEdit) {
+    PADDING = 0;  
     const strokeColor = ea.style.strokeColor;
     const backgroundColor = ea.style.backgroundColor;
     ea.style.backgroundColor = "transparent";
     ea.style.strokeColor = "transparent";
-    //deliberately not adding a rect if width === height
+    let rectID;
     if(bb.height > bb.width) {
-      ea.addRect(bb.topX-(bb.height-bb.width)/2, bb.topY,bb.height, bb.height);
+      rectID = ea.addRect(bb.topX-(bb.height-bb.width)/2, bb.topY,bb.height, bb.height);
     }
     if(bb.width > bb.height) {
-      ea.addRect(bb.topX, bb.topY-(bb.width-bb.height)/2,bb.width, bb.width);
+      rectID = ea.addRect(bb.topX, bb.topY-(bb.width-bb.height)/2,bb.width, bb.width);
     }
+    if(bb.height === bb.width) {
+      rectID = ea.addRect(bb.topX, bb.topY, bb.width, bb.height);
+    }
+    const rect = ea.getElement(rectID);
+    squareBB = {topX: rect.x-PADDING, topY: rect.y-PADDING, width: rect.width + 2*PADDING, height: rect.height + 2*PADDING};
     ea.style.strokeColor = strokeColor;
     ea.style.backgroundColor = backgroundColor;
-  }
-  const scale = calculateImageScale(ea.getElements());
+    ea.getElements().filter(el=>el.type === "image").forEach(el=>{el.isDeleted = true});
 
-  const loader = ea.getEmbeddedFilesLoader(false);
-  const exportSettings = {
-    withBackground: true,
-    withTheme: true,
-  };
-
-  const dataURL =
-    await ea.createPNGBase64(
-      null,
-      scale,
-      exportSettings,
-      loader,
-      "light",
+    dalleWidth = parseInt(imageSize.split("x")[0]);
+    scale = dalleWidth/squareBB.width;
+    exportSettings = {withBackground: false, withTheme: true};
+    maskDataURL= await ea.createPNGBase64(
+      null, scale, exportSettings, loader, "light", PADDING
     );
+    maskDataURL = await createMask(maskDataURL)
+    ea.getElements().filter(el=>el.type === "image").forEach(el=>{el.isDeleted = false});
+    ea.getElements().filter(el=>el.type !== "image" && el.id !== rectID).forEach(el=>{el.isDeleted = true});
+  }
+
+  const imageDataURL = await ea.createPNGBase64(
+    null, scale, exportSettings, loader, "light", PADDING
+  );
   ea.clear();
-  return dataURL;
+  return {imageDataURL, maskDataURL};
 }
 
-let imageDataURL = await generateCanvasDataURL(ea.targetView);
+let {imageDataURL, maskDataURL} = await generateCanvasDataURL(ea.targetView, systemPrompts[agentTask].type === "image-edit");
 
 // --------------------------------------
 // Support functions - embeddable spinner and error
@@ -242,6 +328,7 @@ const generateImage = async(text, spinnerID, bb) => {
       n:1,
     },
   };
+  
   const result = await ea.postOpenAI(requestObject);
   console.log({result, json:result?.json});
   
@@ -257,8 +344,8 @@ const generateImage = async(text, spinnerID, bb) => {
   const revisedPrompt = result.json.data[0].revised_prompt;
   if(revisedPrompt) {
     ea.style.fontSize = 16;
-    const rectID = ea.addText(imageEl.x, imageEl.y + imageEl.height + 50, revisedPrompt, {
-      width: imageEl.width,
+    const rectID = ea.addText(imageEl.x+15, imageEl.y + imageEl.height + 50, revisedPrompt, {
+      width: imageEl.width-30,
       textAlign: "center",
       textVerticalAlign: "top",
       box: true,
@@ -285,12 +372,17 @@ const run = async (text) => {
   const systemPrompt = systemPrompts[agentTask];
   const outputType = outputTypes[systemPrompt.type];
   const isImageGenRequest = outputType.blocktype === "image";
-  
-  const requestObject = {
-    ...imageDataURL ? {image: imageDataURL} : {},
-    ...(text && text.trim() !== "") ? {text} : {},
-    systemPrompt: systemPrompt.prompt,
-    instruction: outputType.instruction,
+  const isImageEditRequest = systemPrompt.type === "image-edit";
+
+  if(isImageEditRequest) {
+    if(!text) {
+      new Notice("You must provide a text prompt with instructions for how the image should be modified");
+      return;
+    }
+    if(!imageDataURL || !maskDataURL) {
+      new Notice("You must provide an image and a mask");
+      return;
+    }
   }
   
   //place spinner next to selected elements
@@ -312,11 +404,29 @@ const run = async (text) => {
     isEACompleted = true;
   });
 
-  if(isImageGenRequest && !systemPrompt.prompt) {
+  if(isImageGenRequest && !systemPrompt.prompt && !isImageEditRequest) {
     generateImage(text,spinnerID,bb);
     return;
   }
-
+  
+  const requestObject = isImageEditRequest
+  ? {
+      ...imageDataURL ? {image: imageDataURL} : {},
+      ...(text && text.trim() !== "") ? {text} : {},
+      imageGenerationProperties: {
+        size: imageSize, 
+        //quality: "standard", //not supported by dall-e-2
+        n:1,
+        mask: maskDataURL,
+      },
+    }
+  : {
+      ...imageDataURL ? {image: imageDataURL} : {},
+      ...(text && text.trim() !== "") ? {text} : {},
+      systemPrompt: systemPrompt.prompt,
+      instruction: outputType.instruction,
+    }
+  
   //Get result from GPT
   const result = await ea.postOpenAI(requestObject);
   console.log({result, json:result?.json});
@@ -330,7 +440,25 @@ const run = async (text) => {
     await errorMessage(spinnerID, "Unexpected issue with ExcalidrawAutomate");
     return;
   }
-  
+
+  if(isImageEditRequest) {   
+    if(!result?.json?.data?.[0]?.url) {
+      await errorMessage(spinnerID, result?.json?.error?.message);
+      return;
+    }
+    
+    const spinner = ea.getElement(spinnerID)
+    spinner.isDeleted = true;
+    const imageID = await ea.addImage(spinner.x, spinner.y, result.json.data[0].url);    
+    await ea.addElementsToView(false, true, true);
+    ea.getExcalidrawAPI().setToast({
+      message: IMAGE_WARNING,
+      duration: 15000,
+      closable: true
+    });
+    return;
+  }
+
   if(!result?.json?.hasOwnProperty("choices")) {
     await errorMessage(spinnerID, result?.json?.error?.message);
     return;
@@ -389,8 +517,27 @@ const run = async (text) => {
 // --------------------------------------
 // User Interface
 // --------------------------------------
+let previewDiv;
 const fragWithHTML = (html) => createFragment((frag) => (frag.createDiv().innerHTML = html));
-const isImageGenerationTask = () => systemPrompts[agentTask].type === "image-gen";
+const isImageGenerationTask = () => systemPrompts[agentTask].type === "image-gen" || systemPrompts[agentTask].type === "image-edit";
+const addPreviewImage = () => {
+  if(!previewDiv) return;
+  previewDiv.empty();
+  previewDiv.createEl("img",{
+    attr: {
+      style: `max-width: 100%;max-height: 30vh;`,
+      src: imageDataURL,
+    }
+  });
+  if(maskDataURL) {
+    previewDiv.createEl("img",{
+      attr: {
+        style: `max-width: 100%;max-height: 30vh;`,
+        src: maskDataURL,
+      }
+    });
+  }
+}
 
 const configModal = new ea.obsidian.Modal(app);
 configModal.modalEl.style.width="100%";
@@ -400,19 +547,32 @@ configModal.onOpen = async () => {
   const contentEl = configModal.contentEl;
   contentEl.createEl("h1", {text: "ExcaliAI"});
 
-  let systemPromptTextArea, systemPromptDiv, imageSizeSetting;
+  let systemPromptTextArea, systemPromptDiv, imageSizeSetting, imageSizeSettingDropdown, helpEl;
   
   new ea.obsidian.Setting(contentEl)
-    .setName("Select Prompt")
+    .setName("What would you like to do?")
     .addDropdown(dropdown=>{
       Object.keys(systemPrompts).forEach(key=>dropdown.addOption(key,key));
       dropdown
       .setValue(agentTask)
-      .onChange(value => {
+      .onChange(async (value) => {
         dirty = true;
+        const prevTask = agentTask;
         agentTask = value;
+        if(
+          (systemPrompts[prevTask].type === "image-edit" && systemPrompts[value].type !== "image-edit") || 
+          (systemPrompts[prevTask].type !== "image-edit" && systemPrompts[value].type === "image-edit")
+        ) {
+          ({imageDataURL, maskDataURL} = await generateCanvasDataURL(ea.targetView, systemPrompts[value].type === "image-edit"));
+          addPreviewImage();
+          setImageModelAndSizes();
+          while (imageSizeSettingDropdown.selectEl.options.length > 0) { imageSizeSettingDropdown.selectEl.remove(0); }
+          validSizes.forEach(size=>imageSizeSettingDropdown.addOption(size,size));
+          imageSizeSettingDropdown.setValue(imageSize);
+        }
         imageSizeSetting.settingEl.style.display = isImageGenerationTask() ? "" : "none";
         const prompt = systemPrompts[value].prompt;
+        helpEl.innerHTML = `<b>Help: </b>` + systemPrompts[value].help;
         if(prompt) {
           systemPromptDiv.style.display = "";
           systemPromptTextArea.setValue(systemPrompts[value].prompt);
@@ -421,6 +581,9 @@ configModal.onOpen = async () => {
         }
       });
    })
+
+  helpEl = contentEl.createEl("p");
+  helpEl.innerHTML = `<b>Help: </b>` + systemPrompts[agentTask].help;
 
   systemPromptDiv = contentEl.createDiv();
   systemPromptDiv.createEl("h4", {text: "Customize System Prompt"});
@@ -461,12 +624,17 @@ configModal.onOpen = async () => {
     .setDesc(fragWithHTML("<mark>⚠️ Important ⚠️</mark>: " + IMAGE_WARNING))
     .addDropdown(dropdown=>{
       validSizes.forEach(size=>dropdown.addOption(size,size));
+      imageSizeSettingDropdown = dropdown;
       dropdown
-      .setValue(imageSize)
-      .onChange(value => {
-        dirty = true;
-        imageSize = value;
-      });
+        .setValue(imageSize)
+        .onChange(async (value) => {
+          dirty = true;
+          imageSize = value;
+          if(systemPrompts[agentTask].type === "image-edit") {
+            ({imageDataURL, maskDataURL} = await generateCanvasDataURL(ea.targetView, true));
+            addPreviewImage();
+          }
+        });
    })
    imageSizeSetting.settingEl.style.display = isImageGenerationTask() ? "" : "none";
   
@@ -476,14 +644,9 @@ configModal.onOpen = async () => {
         style: "text-align: center;",
       }
     });
-    previewImg = previewDiv.createEl("img",{
-      attr: {
-        style: `max-width: 100%;max-height: 30vh;`,
-        src: imageDataURL,
-      }
-    });
+    addPreviewImage();
   } else {
-    contentEl.createEl("h4", {text: "No elements are selected"});
+    contentEl.createEl("h4", {text: "No elements are selected from your canvas"});
     contentEl.createEl("span", {text: "Because there are no Excalidraw elements selected on the canvas, only the text prompt will be sent to OpenAI."});
   }
   

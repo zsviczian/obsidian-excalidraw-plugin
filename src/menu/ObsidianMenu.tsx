@@ -2,7 +2,7 @@ import { AppState, ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/e
 import clsx from "clsx";
 import { TFile } from "obsidian";
 import * as React from "react";
-import { VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
+import { DEVICE, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
 import { PenSettingsModal } from "src/dialogs/PenSettingsModal";
 import ExcalidrawView from "src/ExcalidrawView";
 import { PenStyle } from "src/PenTypes";
@@ -142,7 +142,7 @@ export class ObsidianMenu {
           >
             <div
               className="ToolIcon__icon"
-              aria-label={pen.type}
+              aria-label={DEVICE.isDesktop ? pen.type : undefined}
               style={{
                 ...appState.activeTool.type === "freedraw" && appState.currentStrokeOptions === pen.penOptions
                   ? {background: "var(--color-primary)"}
@@ -225,7 +225,10 @@ export class ObsidianMenu {
               prevClickTimestamp = now;
             }}
           >
-            <div className="ToolIcon__icon" aria-label={name}>
+            <div
+              className="ToolIcon__icon"
+              aria-label={DEVICE.isDesktop ? name : undefined}
+            >
               {icon}
             </div>
           </label>

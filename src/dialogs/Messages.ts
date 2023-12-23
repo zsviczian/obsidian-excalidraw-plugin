@@ -17,6 +17,20 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.0.12":`
+## Fixed
+- Stencil library not working [#1516](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1516), [#1517](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1517)
+- The new convert image from URL to Local File feature did not work in two situations:
+  - When the embedded image is downloaded from a very slow server (e.g. OpenAIs temp image server)
+  - On Android
+- The postToOpenAI function did not work in all situations on Android.
+- ExcaliAI wireframe to code did not display correctly on Android
+- Tooltips kept popping up on Android.
+
+## New
+- Added "Save image from URL to local file" to the right-click context menu
+- Further [ExcaliAI](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/ExcaliAI.md) improvements including support for image editing with image mask
+`,
 "2.0.11":`
 ## Fixed
 - Resolved an Obsidian performance issue caused by simultaneous installations of Excalidraw and the Minimal theme. Optimized Excalidraw CSS loading into Obsidian since April 2021, resulting in noticeable performance improvements. ([#1456](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1456))

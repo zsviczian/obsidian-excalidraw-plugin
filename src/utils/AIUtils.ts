@@ -1,4 +1,4 @@
-import { AnyARecord } from "dns";
+import { DEVICE } from "../constants/constants";
 import { Notice, RequestUrlResponse, requestUrl } from "obsidian";
 import ExcalidrawPlugin from "src/main";
 
@@ -62,20 +62,14 @@ const handleImageEditPrompt = async (request: AIRequest) : Promise<RequestUrlRes
   text.trim() !== "" && body.append("prompt", text);
 
   if (image) {
-    const imageFile = await fetch(image)
-      .then((res) => res.blob())
-      .then((blob) => new File([blob], 'image.png', { type: 'image/png' }));
-    body.append('image', imageFile);
+    const imageBlob = await fetch(image).then((res) => res.blob());
+    body.append('image', imageBlob, 'image.png');
   }
 
   if (imageGenerationProperties.mask) {
-    const maskFile = await fetch(imageGenerationProperties.mask)
-      .then((res) => res.blob())
-      .then((blob) => new File([blob], 'mask.png', { type: 'image/png' }));
-    body.append('mask', maskFile);
+    const maskBlob = await fetch(imageGenerationProperties.mask).then((res) => res.blob());
+    body.append('mask', maskBlob, 'masik.png');
   }
-
-  Boolean(image) && body.append("image", image);
 
   imageGenerationProperties.size && body.append("size", imageGenerationProperties.size);
   imageGenerationProperties.n && body.append("n", String(imageGenerationProperties.n));
@@ -88,10 +82,8 @@ const handleImageEditPrompt = async (request: AIRequest) : Promise<RequestUrlRes
         method: "post",
         body,
         headers: {
-          //"Content-Type": "multipart/form-data",
           Authorization: `Bearer ${openAIAPIToken}`,
         },
-        //mode: 'no-cors'
       }
     );
     if(!resp) return null;
@@ -171,6 +163,33 @@ const handleGenericPrompt = async (request: AIRequest) : Promise<RequestUrlRespo
 
   try {
     //https://platform.openai.com/docs/api-reference/images
+    const resp = await fetch (isImageGeneration ? openAIImageGenerationURL : openAIURL, {
+      method: "post",
+      //@ts-ignore
+      contentType: "application/json",
+      body: JSON.stringify(body),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${openAIAPIToken}`,
+      }
+    });
+    if(!resp) return null;
+    return {
+      status: resp.status,
+      headers: resp.headers as any,
+      text: null,
+      json: await resp.json(),
+      arrayBuffer: null,
+    };
+  } catch (e) {
+    console.log(e);
+  }
+  return null;
+
+  /*
+  //does not seem to work on Android :(
+  try {
+    //https://platform.openai.com/docs/api-reference/images
     const resp = await requestUrl ({
       url:  isImageGeneration ? openAIImageGenerationURL : openAIURL,
       method: "post",
@@ -186,7 +205,7 @@ const handleGenericPrompt = async (request: AIRequest) : Promise<RequestUrlRespo
   } catch (e) {
     console.log(e);
   }
-  return null;
+  return null;*/
 }
 
 

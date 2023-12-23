@@ -176,7 +176,7 @@ const getFileFromURL = async (url: string, mimeType: MimeType, timeout: number =
     );
     
     const response = await Promise.race([
-      fetch(url, { mode: 'no-cors' }),
+      fetch(url, { mode: 'no-cors' }), //cors error cannot be caught
       timeoutPromise,
     ]);
 
@@ -210,7 +210,7 @@ const getFileFromURLFallback = async (url: string, mimeType: MimeType, timeout: 
 
     return await Promise.race([
       timeoutPromise,
-      requestUrl({url: url, method: "get", contentType: mimeType, throw: false }),
+      requestUrl({url: url, throw: false }), //if method: "get" is added it won't load images on Android, contentType: mimeType,
     ])
   } catch (e) {
     errorlog({where: getFileFromURLFallback, message: `URL did not load within timeout period of ${timeout}ms`, url: url});

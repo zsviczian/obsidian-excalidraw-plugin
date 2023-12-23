@@ -24,6 +24,7 @@ import {
 import {
   AppState,
   BinaryFileData,
+  DataURL,
   ExcalidrawImperativeAPI,
   Gesture,
   LibraryItems,
@@ -52,6 +53,7 @@ import {
   restore,
   obsidianToExcalidrawMap,
   MAX_IMAGE_SIZE,
+  fileid,
 } from "./constants/constants";
 import ExcalidrawPlugin from "./main";
 import { 
@@ -135,6 +137,7 @@ import { getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
 import { nanoid } from "nanoid";
 import { CustomMutationObserver, isDebugMode } from "./utils/DebugHelper";
 import { extractCodeBlocks, postOpenAI } from "./utils/AIUtils";
+import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 
 declare const PLUGIN_VERSION:string;
 
@@ -3985,6 +3988,52 @@ export default class ExcalidrawView extends TextFileView {
     }
   }
 
+  public getSingleSelectedImageWithURL(): {imageEl: ExcalidrawImageElement, embeddedFile: EmbeddedFile}  {
+    if(!this.excalidrawAPI) return null;
+    const els = this.getViewSelectedElements().filter(el=>el.type==="image");
+    if(els.length !== 1) {
+      return null;
+    }
+    const el = els[0] as ExcalidrawImageElement;
+    const imageFile = this.excalidrawData.getFile(el.fileId);
+    if(!imageFile.isHyperLink) return null;
+    return {imageEl: el, embeddedFile: imageFile};
+  }
+
+  public async convertImageElWithURLToLocalFile(data: {imageEl: ExcalidrawImageElement, embeddedFile: EmbeddedFile}) {
+    const {imageEl, embeddedFile} = data;
+    const imageDataURL = embeddedFile.getImage(false);
+    if(!imageDataURL && !imageDataURL.startsWith("data:")) {
+      new Notice("Image not found");
+      return false;
+    }
+    const ea = getEA(this) as ExcalidrawAutomate;
+    ea.copyViewElementsToEAforEditing([imageEl]);
+    const eaEl = ea.getElement(imageEl.id) as Mutable<ExcalidrawImageElement>;
+    eaEl.fileId = fileid() as FileId;
+    if(!eaEl.link) {eaEl.link = embeddedFile.hyperlink};
+    let dataURL = embeddedFile.getImage(false);
+    if(!dataURL.startsWith("data:")) {
+      new Notice("Attempting to download image from URL. This may take a long while. The operation will time out after max 1 minute");
+      dataURL = await getDataURLFromURL(dataURL, embeddedFile.mimeType, 30000);
+      if(!dataURL.startsWith("data:")) {
+        new Notice("Failed. Could not download image!");
+        return false;
+      }
+    }
+    const files: BinaryFileData[] = [];
+    files.push({
+      mimeType: embeddedFile.mimeType,
+      id: eaEl.fileId,
+      dataURL: dataURL as DataURL,
+      created: embeddedFile.mtime,
+    });
+    const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
+    api.addFiles(files);
+    await ea.addElementsToView(false,true);
+    new Notice("Image successfully converted to local file");
+  }
+
   private async instantiateExcalidraw(
     initdata: {
       elements: any,
@@ -4084,6 +4133,19 @@ export default class ExcalidrawView extends TextFileView {
               ),
             ]);  
           }
+        }
+
+        const img = this.getSingleSelectedImageWithURL();
+        if(img) {
+          contextMenuActions.push([
+            renderContextMenuAction(
+              t("CONVERT_URL_TO_FILE"),
+              () => {
+                this.convertImageElWithURLToLocalFile(img);
+              },
+              onClose
+            ),
+          ]);  
         }
 
         contextMenuActions.push([

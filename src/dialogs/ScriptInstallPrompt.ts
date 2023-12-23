@@ -88,7 +88,8 @@ export class ScriptInstallPrompt extends Modal {
         this.close();
         return;
       }
-      await MarkdownRenderer.renderMarkdown(
+      await MarkdownRenderer.render(
+        this.plugin.app,
         source,
         this.contentDiv,
         "",
