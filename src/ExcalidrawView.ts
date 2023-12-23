@@ -3996,7 +3996,7 @@ export default class ExcalidrawView extends TextFileView {
     }
     const el = els[0] as ExcalidrawImageElement;
     const imageFile = this.excalidrawData.getFile(el.fileId);
-    if(!imageFile.isHyperLink) return null;
+    if(!imageFile?.isHyperLink) return null;
     return {imageEl: el, embeddedFile: imageFile};
   }
 

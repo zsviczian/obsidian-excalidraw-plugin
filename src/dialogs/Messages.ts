@@ -17,6 +17,10 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.0.13":`
+## Fixed
+- Excalidraw crashes if you paste an image and right-click on canvas immediately after pasting.
+`,
 "2.0.12":`
 ## Fixed
 - Stencil library not working [#1516](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1516), [#1517](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1517)
