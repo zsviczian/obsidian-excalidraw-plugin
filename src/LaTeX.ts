@@ -86,13 +86,16 @@ export async function tex2dataURL(
       if(svg.width.baseVal.valueInSpecifiedUnits < 2) {
         svg.width.baseVal.valueAsString = `${(svg.width.baseVal.valueInSpecifiedUnits+1).toFixed(3)}ex`;
       }
+      const img = svgToBase64(svg.outerHTML);
+      svg.width.baseVal.valueAsString = (svg.width.baseVal.valueInSpecifiedUnits * 100).toFixed(3);
+      svg.height.baseVal.valueAsString = (svg.height.baseVal.valueInSpecifiedUnits * 100).toFixed(3);
       const dataURL = svgToBase64(svg.outerHTML);
       return {
         mimeType: "image/svg+xml",
         fileId: fileid() as FileId,
         dataURL: dataURL as DataURL,
         created: Date.now(),
-        size: await getImageSize(dataURL),
+        size: await getImageSize(img),
       };
     }
   } catch (e) {
