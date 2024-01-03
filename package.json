@@ -1,6 +1,6 @@
 {
   "name": "obsidian-excalidraw-plugin",
-  "version": "1.9.15",
+  "version": "2.0.14",
   "description": "This is an Obsidian.md plugin that lets you view and edit Excalidraw drawings",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -18,7 +18,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@zsviczian/excalidraw": "0.17.1-obsidian-8",
+    "@zsviczian/excalidraw": "0.17.1-obsidian-9",
     "chroma-js": "^2.4.2",
     "clsx": "^2.0.0",
     "colormaster": "^1.2.1",

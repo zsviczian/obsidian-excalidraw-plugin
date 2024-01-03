@@ -17,6 +17,17 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.0.14":`
+## New
+- Stylus button now activates the eraser function. Note: This feature is supported for styluses that comply with industry-standard button events. Unfortunately, Samsung SPEN and Apple Pencil do not support this functionality.
+
+## Fixed
+- Improved handwriting quality. I have resolved the long-standing issue of closing the loop when ends of the line are close, making an "u" into an "o" ([#1529](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1529) and [#6303](https://github.com/excalidraw/excalidraw/issues/6303)).
+- Improved Excalidraw's full-screen mode behavior. Access it via the Obsidian Command Palette or the full-screen button on the Obsidian Tools Panel ([#1528](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1528)).
+- Fixed color picker overlapping with the Obsidian mobile toolbar on Obsidian-Mobile.
+- Corrected display issues with alternative font sizes (Fibonacci and Zoom relative) in the element properties panel when editing a text element (refer to [2.0.11 Release Notes](https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/2.0.11) for details about the font-size Easter Egg).
+- Resolved the issue where Excalidraw SVG exports containing LaTeX were not loading correctly into Inkscape ([#1519](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/1519)). Thanks to 🙏@HyunggyuJang for the contribution.
+`,
 "2.0.13":`
 ## Fixed
 - Excalidraw crashes if you paste an image and right-click on canvas immediately after pasting.

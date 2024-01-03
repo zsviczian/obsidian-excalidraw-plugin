@@ -806,27 +806,37 @@ export default class ExcalidrawView extends TextFileView {
     }
 
     const hide = (el:HTMLElement) => {
-      while(el && !el.hasClass("workspace-split")) {
+      let tmpEl = el;
+      while(tmpEl && !tmpEl.hasClass("workspace-split")) {
         el.addClass(SHOW);
-        el = el.parentElement;
+        el = tmpEl;
+        tmpEl = el.parentElement;
       }
       if(el) {
         el.addClass(SHOW);
-        el.querySelectorAll(`div.workspace-split:not(.${SHOW})`).forEach(el=>el.addClass(SHOW));
+        el.querySelectorAll(`div.workspace-split:not(.${SHOW})`).forEach(node=>{
+          if(node !== el) node.addClass(SHOW);
+        });
         el.querySelector(`div.workspace-leaf-content.${SHOW} > .view-header`).addClass(SHOW);
-        el.querySelectorAll(`div.workspace-tab-container.${SHOW} > div.workspace-leaf:not(.${SHOW})`).forEach(el=>el.addClass(SHOW));
-        el.querySelectorAll(`div.workspace-tabs.${SHOW} > div.workspace-tab-header-container`).forEach(el=>el.addClass(SHOW));
-        el.querySelectorAll(`div.workspace-split.${SHOW} > div.workspace-tabs:not(.${SHOW})`).forEach(el=>el.addClass(SHOW));
+        el.querySelectorAll(`div.workspace-tab-container.${SHOW} > div.workspace-leaf:not(.${SHOW})`).forEach(node=>node.addClass(SHOW));
+        el.querySelectorAll(`div.workspace-tabs.${SHOW} > div.workspace-tab-header-container`).forEach(node=>node.addClass(SHOW));
+        el.querySelectorAll(`div.workspace-split.${SHOW} > div.workspace-tabs:not(.${SHOW})`).forEach(node=>node.addClass(SHOW));
       }
       const doc = this.ownerDocument;
-      doc.body.querySelectorAll(`div.workspace-split:not(.${SHOW})`).forEach(el=>el.addClass(HIDE));
+      doc.body.querySelectorAll(`div.workspace-split:not(.${SHOW})`).forEach(node=>{
+        if(node !== tmpEl) {
+          node.addClass(HIDE);
+        } else {
+          node.addClass(SHOW);
+        }
+      });
       doc.body.querySelector(`div.workspace-leaf-content.${SHOW} > .view-header`).addClass(HIDE);
-      doc.body.querySelectorAll(`div.workspace-tab-container.${SHOW} > div.workspace-leaf:not(.${SHOW})`).forEach(el=>el.addClass(HIDE));
-      doc.body.querySelectorAll(`div.workspace-tabs.${SHOW} > div.workspace-tab-header-container`).forEach(el=>el.addClass(HIDE));
-      doc.body.querySelectorAll(`div.workspace-split.${SHOW} > div.workspace-tabs:not(.${SHOW})`).forEach(el=>el.addClass(HIDE));
-      doc.body.querySelectorAll(`div.workspace-ribbon`).forEach(el=>el.addClass(HIDE));
-      doc.body.querySelectorAll(`div.mobile-navbar`).forEach(el=>el.addClass(HIDE));
-      doc.body.querySelectorAll(`div.status-bar`).forEach(el=>el.addClass(HIDE));
+      doc.body.querySelectorAll(`div.workspace-tab-container.${SHOW} > div.workspace-leaf:not(.${SHOW})`).forEach(node=>node.addClass(HIDE));
+      doc.body.querySelectorAll(`div.workspace-tabs.${SHOW} > div.workspace-tab-header-container`).forEach(node=>node.addClass(HIDE));
+      doc.body.querySelectorAll(`div.workspace-split.${SHOW} > div.workspace-tabs:not(.${SHOW})`).forEach(node=>node.addClass(HIDE));
+      doc.body.querySelectorAll(`div.workspace-ribbon`).forEach(node=>node.addClass(HIDE));
+      doc.body.querySelectorAll(`div.mobile-navbar`).forEach(node=>node.addClass(HIDE));
+      doc.body.querySelectorAll(`div.status-bar`).forEach(node=>node.addClass(HIDE));
     }
 
     hide(this.contentEl);
