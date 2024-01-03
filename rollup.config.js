@@ -50,10 +50,10 @@ const manifest = isLib ? {} : JSON.parse(manifestStr);
 const packageString = isLib 
   ? "" 
   : ';' + lzstring_pkg +
-    'const EXCALIDRAW_PACKAGES = "' + LZString.compressToBase64(react_pkg + reactdom_pkg + excalidraw_pkg) + '";' +
+    '\nconst EXCALIDRAW_PACKAGES = "' + LZString.compressToBase64(react_pkg + reactdom_pkg + excalidraw_pkg) + '";\n' +
     'const {react, reactDOM, excalidrawLib} = window.eval.call(window, `(function() {' +
     '${LZString.decompressFromBase64(EXCALIDRAW_PACKAGES)};' +
-    'return {react:React, reactDOM:ReactDOM, excalidrawLib: ExcalidrawLib};})();`);' +
+    'return {react:React, reactDOM:ReactDOM, excalidrawLib: ExcalidrawLib};})();`);\n' +
     'const PLUGIN_VERSION="'+manifest.version+'";';
 
 const BASE_CONFIG = {
