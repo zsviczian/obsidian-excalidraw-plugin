@@ -804,6 +804,10 @@ export const FRONTMATTER_KEYS_INFO: SuggesterInfo[] = [
     desc: "Override iFrame theme plugin-settings for this file. 'match' will match the Excalidraw theme, 'default' will match the obsidian theme. Valid values are\ndark\nlight\nauto\ndefault",
     after: ": auto",
   },
-
-  
+  {
+    field: "mask",
+    code: null,
+    desc: "If this key is present the drawing will be handled as a mask to crop an image.",
+    after: ": true",
+  },
 ];

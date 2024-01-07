@@ -97,12 +97,12 @@ import {
   hasExportTheme,
   scaleLoadedImage,
   svgToBase64,
-  updateFrontmatterInString,
   hyperlinkIsImage,
   hyperlinkIsYouTubeLink,
   getYouTubeThumbnailLink,
   isContainer,
   fragWithHTML,
+  isMaskFile,
 } from "./utils/Utils";
 import { getLeaf, getParentOfClass, obsidianPDFQuoteWithRef } from "./utils/ObsidianUtils";
 import { splitFolderAndFilename } from "./utils/FileUtils";
@@ -138,6 +138,8 @@ import { nanoid } from "nanoid";
 import { CustomMutationObserver, isDebugMode } from "./utils/DebugHelper";
 import { extractCodeBlocks, postOpenAI } from "./utils/AIUtils";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
+import no from "./lang/locale/no";
+import { carveOutImage } from "./utils/CarveOut";
 
 declare const PLUGIN_VERSION:string;
 
@@ -166,6 +168,7 @@ interface WorkspaceItemExt extends WorkspaceItem {
 export interface ExportSettings {
   withBackground: boolean;
   withTheme: boolean;
+  isMask: boolean;
 }
 
 const HIDE = "excalidraw-hidden";
@@ -426,6 +429,7 @@ export default class ExcalidrawView extends TextFileView {
     const exportSettings: ExportSettings = {
       withBackground: ed ? !ed.transparent : getWithBackground(this.plugin, this.file),
       withTheme: true,
+      isMask: isMaskFile(this.plugin, this.file),
     };
 
     return await getSVG(
@@ -504,6 +508,7 @@ export default class ExcalidrawView extends TextFileView {
     const exportSettings: ExportSettings = {
       withBackground: ed ? !ed.transparent : getWithBackground(this.plugin, this.file),
       withTheme: true,
+      isMask: isMaskFile(this.plugin, this.file),
     };
     return await getPNG(
       {
@@ -1736,6 +1741,19 @@ export default class ExcalidrawView extends TextFileView {
     this.isLoaded = false;
     if(!this.file) return;
     if(this.plugin.settings.showNewVersionNotification) checkExcalidrawVersion(app);
+    if(isMaskFile(this.plugin,this.file)) {
+      const notice = new Notice(t("MASK_FILE_NOTICE"), 5000);
+      //add click and hold event listner to the notice
+      let noticeTimeout:NodeJS.Timeout = null;
+      notice.noticeEl.addEventListener("pointerdown", (ev:MouseEvent) => {
+        noticeTimeout = setTimeout(()=>{
+          window.open("https://youtu.be/uHFd0XoHRxE");
+        },1000);
+      })
+      notice.noticeEl.addEventListener("pointerup", (ev:TouchEvent) => {
+        clearTimeout(noticeTimeout);
+      })
+    }
     if (clear) {
       this.clear();
     }

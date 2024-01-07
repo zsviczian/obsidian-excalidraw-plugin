@@ -17,6 +17,19 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.0.15":`
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/uHFd0XoHRxE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## New
+- Crop and Mask Images in Excalidraw, Canvas, and Markdown. (Inspired by @bonecast [#4566](https://github.com/excalidraw/excalidraw/issues/4566))
+- Draw metadata around images but hide it on the export.
+
+## Fixed
+- Freedraw closed circles (2nd attempt)
+- Interactive Markdown embeddable border-color (setting did not have an effect)
+`,
 "2.0.14":`
 ## New
 - Stylus button now activates the eraser function. Note: This feature is supported for styluses that comply with industry-standard button events. Unfortunately, Samsung SPEN and Apple Pencil do not support this functionality.

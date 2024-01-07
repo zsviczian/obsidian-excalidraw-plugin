@@ -10,10 +10,11 @@ import {
   ExcalidrawTextElement,
   StrokeRoundness,
   RoundnessType,
+  ExcalidrawFrameElement,
 } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { Editor, normalizePath, Notice, OpenViewState, RequestUrlResponse, TFile, TFolder, WorkspaceLeaf } from "obsidian";
 import * as obsidian_module from "obsidian";
-import ExcalidrawView, { ExportSettings, TextMode } from "src/ExcalidrawView";
+import ExcalidrawView, { ExportSettings, TextMode, getTextMode } from "src/ExcalidrawView";
 import { ExcalidrawData, getMarkdownDrawingSection, REGEX_LINK } from "src/ExcalidrawData";
 import {
   FRONTMATTER,
@@ -86,6 +87,7 @@ import {
   extractCodeBlocks as _extractCodeBlocks,
 } from "./utils/AIUtils";
 import { EXCALIDRAW_AUTOMATE_INFO } from "./dialogs/SuggesterInfo";
+import { CropImage } from "./utils/CropImage";
 
 extendPlugins([
   HarmonyPlugin,
@@ -567,6 +569,7 @@ export class ExcalidrawAutomate {
       "excalidraw-onload-script"?: string;
       "excalidraw-linkbutton-opacity"?: number;
       "excalidraw-autoexport"?: boolean;
+      "excalidraw-mask"?: boolean;
     };
     plaintext?: string; //text to insert above the `# Text Elements` section
   }): Promise<string> {
@@ -678,7 +681,11 @@ export class ExcalidrawAutomate {
         if(item.latex) {
           outString += `${key}: $$${item.latex}$$\n`;  
         } else {
-          outString += `${key}: [[${item.file}]]\n`;
+          if(item.file) {
+            outString += `${key}: [[${item.file}]]\n`;
+          } else {
+            outString += `${key}: ${item.hyperlink}\n`;
+          }
         }
       })
       return outString;
@@ -704,6 +711,14 @@ export class ExcalidrawAutomate {
       );
     }
   };
+
+  getCropImageObject(): CropImage {
+    const scene = this.targetView.getScene();
+    return new CropImage(
+      scene.elements,
+      scene.files,
+      );
+  }
 
   /**
    * 
@@ -735,6 +750,7 @@ export class ExcalidrawAutomate {
       exportSettings = {
         withBackground: this.plugin.settings.exportWithBackground,
         withTheme: true,
+        isMask: false,
       };
     }
     if (!loader) {
@@ -791,6 +807,7 @@ export class ExcalidrawAutomate {
       exportSettings = {
         withBackground: this.plugin.settings.exportWithBackground,
         withTheme: true,
+        isMask: false,
       };
     }
     if (!loader) {
@@ -943,6 +960,29 @@ export class ExcalidrawAutomate {
     this.elementsDict[id].customData = {mdProps: embeddableCustomData ?? this.plugin.settings.embeddableMarkdownDefaults};
     return id;
   };
+
+  /**
+   * 
+   * @param topX 
+   * @param topY 
+   * @param width 
+   * @param height 
+   * @param name: the display name of the frame
+   * @returns 
+   */
+  addFrame(topX: number, topY: number, width: number, height: number, name?: string): string {
+    const id = this.addRect(topX, topY, width, height);
+    const frame = this.getElement(id) as Mutable<ExcalidrawFrameElement>;
+    frame.type = "frame";
+    frame.backgroundColor = "transparent";
+    frame.strokeColor = "#000";
+    frame.strokeStyle = "solid";
+    frame.strokeWidth = 2;
+    frame.roughness = 0;
+    frame.roundness = null;
+    if(name) frame.name = name;
+    return id;
+  }
 
   /**
    * 
@@ -1795,10 +1835,31 @@ export class ExcalidrawAutomate {
       elements.forEach((el) => {
         this.elementsDict[el.id] = cloneElement(el);
         if(el.type === "image") {
-          this.imagesDict[el.fileId] = sceneFiles?.[el.fileId];
+          const ef = this.targetView.excalidrawData.getFile(el.fileId);
+          const equation = this.targetView.excalidrawData.getEquation(el.fileId);
+          const sceneFile = sceneFiles?.[el.fileId];
+          this.imagesDict[el.fileId] = {
+            mimeType: sceneFile.mimeType,
+            id: el.fileId,
+            dataURL: sceneFile.dataURL,
+            created: sceneFile.created,
+            ...ef ? {
+              isHyperLink: ef.isHyperLink,
+              hyperlink: ef.hyperlink,
+              file: ef.file,
+              hasSVGwithBitmap: ef.isSVGwithBitmap,
+              latex: null,
+            } : {},
+            ...equation ? {
+              file: null,
+              isHyperLink: false,
+              hyperlink: null,
+              hasSVGwithBitmap: false,
+              latex: equation.latex,
+            } : {},
+          };
         }
       });
-
     } else {
       elements.forEach((el) => {
         this.elementsDict[el.id] = cloneElement(el);
@@ -2109,8 +2170,9 @@ export class ExcalidrawAutomate {
   getExportSettings(
     withBackground: boolean,
     withTheme: boolean,
+    isMask: boolean = false,
   ): ExportSettings {
-    return { withBackground, withTheme };
+    return { withBackground, withTheme, isMask };
   };
 
   /**
@@ -2622,13 +2684,11 @@ async function getTemplate(
       };
     }
 
-    const parsed =
-      data.search("excalidraw-plugin: parsed\n") > -1 ||
-      data.search("excalidraw-plugin: locked\n") > -1; //locked for backward compatibility
+    const textMode = getTextMode(data);
     await excalidrawData.loadData(
       data,
       file,
-      parsed ? TextMode.parsed : TextMode.raw,
+      textMode,
     );
 
     let trimLocation = data.search("# Text Elements\n");
@@ -2759,6 +2819,7 @@ export async function createPNG(
       withBackground:
         exportSettings?.withBackground ?? plugin.settings.exportWithBackground,
       withTheme: exportSettings?.withTheme ?? plugin.settings.exportWithTheme,
+      isMask: exportSettings?.isMask ?? false,
     },
     padding,
     scale,
@@ -2856,6 +2917,7 @@ export async function createSVG(
       withBackground:
         exportSettings?.withBackground ?? plugin.settings.exportWithBackground,
       withTheme,
+      isMask: exportSettings?.isMask ?? false,
     },
     padding,
     null,

@@ -76,11 +76,13 @@ export default {
   RUN_OCR: "OCR: Grab text from freedraw scribble and pictures to clipboard",
   TRAY_MODE: "Toggle property-panel tray-mode",
   SEARCH: "Search for text in drawing",
+  CROP_IMAGE: "Crop image and mask images",
   RESET_IMG_TO_100: "Set selected image element size to 100% of original",
   TEMPORARY_DISABLE_AUTOSAVE: "Disable autosave until next time Obsidian starts (only set this if you know what you are doing)",
   TEMPORARY_ENABLE_AUTOSAVE: "Enable autosave",
 
   //ExcalidrawView.ts
+  MASK_FILE_NOTICE: "This is a mask file. It is used to crop images and mask out parts of the image. Press and hold notice to open the help video.",
   INSTALL_SCRIPT_BUTTON: "Install or update Excalidraw Scripts",
   OPEN_AS_MD: "Open as Markdown",
   EXPORT_IMAGE: `Export Image`,

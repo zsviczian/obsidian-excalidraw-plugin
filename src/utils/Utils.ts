@@ -20,7 +20,8 @@ import {
   FRONTMATTER_KEY_EXPORT_PADDING,
   exportToSvg,
   exportToBlob,
-  IMAGE_TYPES
+  IMAGE_TYPES,
+  FRONTMATTER_KEY_MASK
 } from "../constants/constants";
 import ExcalidrawPlugin from "../main";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
@@ -32,6 +33,7 @@ import { FILENAMEPARTS } from "./UtilTypes";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { cleanBlockRef, cleanSectionHeading, getFileCSSClasses } from "./ObsidianUtils";
 import { updateElementLinksToObsidianLinks } from "src/ExcalidrawAutomate";
+import { CropImage } from "./CropImage";
 
 
 declare const PLUGIN_VERSION:string;
@@ -271,26 +273,34 @@ export const getSVG = async (
     });
   }
 
+  elements = srcFile
+    ? updateElementLinksToObsidianLinks({
+        elements,
+        hostFile: srcFile,
+    })
+    : elements;
+
   try {
-    const svg = await exportToSvg({
-      elements: srcFile
-        ? updateElementLinksToObsidianLinks({
-            elements,
-            hostFile: srcFile,
-        })
-        : elements,
-      appState: {
-        exportBackground: exportSettings.withBackground,
-        exportWithDarkMode: exportSettings.withTheme
-          ? scene.appState?.theme != "light"
-          : false,
-        ...scene.appState,
-      },
-      files: scene.files,
-      exportPadding: padding,
-      exportingFrame: null,
-      renderEmbeddables: true,
-    });
+    let svg: SVGSVGElement;
+    if(exportSettings.isMask) {
+      const cropObject = new CropImage(elements, scene.files);
+      svg = await cropObject.getCroppedSVG();
+    } else {
+      svg = await exportToSvg({
+        elements,
+        appState: {
+          exportBackground: exportSettings.withBackground,
+          exportWithDarkMode: exportSettings.withTheme
+            ? scene.appState?.theme != "light"
+            : false,
+          ...scene.appState,
+        },
+        files: scene.files,
+        exportPadding: padding,
+        exportingFrame: null,
+        renderEmbeddables: true,
+      });
+    }
     if(svg) {
       svg.addClass("excalidraw-svg");
       if(srcFile instanceof TFile) {
@@ -321,8 +331,13 @@ export const getPNG = async (
   exportSettings: ExportSettings,
   padding: number,
   scale: number = 1,
-) => {
+): Promise<Blob> => {
   try {
+    if(exportSettings.isMask) {
+      const cropObject = new CropImage(scene.elements, scene.files);
+      return await cropObject.getCroppedPNG();
+    }
+
     return await exportToBlob({
       elements: scene.elements,
       appState: {
@@ -384,10 +399,15 @@ export const embedFontsInSVG = (
     svg.querySelector("text[font-family^='LocalFont']") != null;
   const defs = svg.querySelector("defs");
   if (defs && (includesCascadia || includesVirgil || includesLocalFont || includesAssistant)) {
-    defs.innerHTML = `<style>${includesVirgil ? VIRGIL_FONT : ""}${
+    let style = defs.querySelector("style");
+    if (!style) {
+      style = document.createElement("style");
+      defs.appendChild(style);
+    }
+    style.innerHTML = `${includesVirgil ? VIRGIL_FONT : ""}${
       includesCascadia ? CASCADIA_FONT : ""}${
       includesAssistant ? ASSISTANT_FONT : ""
-    }${includesLocalFont ? plugin.fourthFontDef : ""}</style>`;
+    }${includesLocalFont ? plugin.fourthFontDef : ""}`;
   }
   return svg;
 };
@@ -518,6 +538,22 @@ export const compress = (data: string): string => {
 
 export const decompress = (data: string): string => {
   return LZString.decompressFromBase64(data.replaceAll("\n", "").replaceAll("\r", ""));
+};
+
+export const isMaskFile = (
+  plugin: ExcalidrawPlugin,
+  file: TFile,
+): boolean => {
+  if (file) {
+    const fileCache = plugin.app.metadataCache.getFileCache(file);
+    if (
+      fileCache?.frontmatter &&
+      fileCache.frontmatter[FRONTMATTER_KEY_MASK] != null
+    ) {
+      return Boolean(fileCache.frontmatter[FRONTMATTER_KEY_MASK]);
+    }
+  }
+  return false;
 };
 
 export const hasExportTheme = (

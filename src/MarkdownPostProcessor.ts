@@ -19,6 +19,7 @@ import {
   getWithBackground,
   hasExportTheme,
   convertSVGStringToElement,
+  isMaskFile,
 } from "./utils/Utils";
 import { getParentOfClass, isObsidianThemeDark, getFileCSSClasses } from "./utils/ObsidianUtils";
 import { linkClickModifierType } from "./utils/ModifierkeyHelper";
@@ -272,6 +273,7 @@ const getIMG = async (
   const exportSettings: ExportSettings = {
     withBackground: getWithBackground(plugin, file),
     withTheme: forceTheme ? true : plugin.settings.exportWithTheme,
+    isMask: isMaskFile(plugin, file),
   };
 
   const theme =

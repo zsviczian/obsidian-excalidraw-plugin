@@ -146,6 +146,7 @@ export const MAX_IMAGE_SIZE = 500;
 export const FRONTMATTER_KEY = "excalidraw-plugin";
 export const FRONTMATTER_KEY_EXPORT_TRANSPARENT =
   "excalidraw-export-transparent";
+export const FRONTMATTER_KEY_MASK = "excalidraw-mask";
 export const FRONTMATTER_KEY_EXPORT_DARK = "excalidraw-export-dark";
 export const FRONTMATTER_KEY_EXPORT_SVGPADDING = "excalidraw-export-svgpadding"; //depricated
 export const FRONTMATTER_KEY_EXPORT_PADDING = "excalidraw-export-padding";

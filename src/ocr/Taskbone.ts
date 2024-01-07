@@ -75,6 +75,7 @@ export default class Taskbone {
     const exportSettings: ExportSettings = {
       withBackground: true,
       withTheme: true,
+      isMask: false,
     };
 
     const img =

@@ -40,6 +40,7 @@ import {
   hasExportTheme,
   LinkParts,
   svgToBase64,
+  isMaskFile,
 } from "./utils/Utils";
 import { ValueOf } from "./types";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
@@ -357,6 +358,7 @@ export class EmbeddedFilesLoader {
         ? getWithBackground(this.plugin, file)
         : false,
       withTheme: !!forceTheme,
+      isMask: isMaskFile(this.plugin,file),
     };
     const svg = replaceSVGColors(
       await createSVG(

@@ -533,3 +533,17 @@ hr.excalidraw-setting-hr {
 .excalidraw__embeddable-container .workspace-leaf-content .video-container {
   display: flex;
 }
+
+.excalidraw__embeddable-container .canvas-node-container {
+  border: 2px solid var(--canvas-color);
+}
+
+.excalidraw__embeddable-container .canvas-node {
+  --shadow-border-themed-inset: inset 0 0 0 1px rgb(var(--canvas-color));;
+  --shadow-border-themed: 0 0 0 2px rgb(var(--canvas-color));
+}
+
+.excalidraw__embeddable-container .canvas-node.is-selected.is-themed .canvas-node-container,
+.excalidraw__embeddable-container .canvas-node.is-focused.is-themed .canvas-node-container {
+  border-color: var(--canvas-color);
+}

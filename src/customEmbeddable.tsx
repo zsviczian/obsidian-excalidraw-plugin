@@ -280,12 +280,12 @@ function RenderObsidianView(
         : "transparent";
       canvasNode?.style.setProperty("--canvas-border", color);
       canvasNode?.style.setProperty("--canvas-color", color);
-      canvasNodeContainer?.style.setProperty("border-color", color);
+      //canvasNodeContainer?.style.setProperty("border-color", color);
     } else if(!(mdProps?.borderMatchElement ?? true)) {
       const color = ea.getCM(mdProps.borderColor).alphaTo((mdProps.borderOpacity??100)/100).stringHEX();
       canvasNode?.style.setProperty("--canvas-border", color);
       canvasNode?.style.setProperty("--canvas-color", color);
-      canvasNodeContainer?.style.setProperty("border-color", color);
+      //canvasNodeContainer?.style.setProperty("border-color", color);
     }
   }
 

@@ -40,13 +40,11 @@ import {
   EXPORT_IMG_ICON_NAME,
   EXPORT_IMG_ICON,
   LOCALE,
-  fileid,
+  IMAGE_TYPES,
 } from "./constants/constants";
 import {
   VIRGIL_FONT,
   VIRGIL_DATAURL,
-  CASCADIA_FONT,
-  ASSISTANT_FONT,
   FONTS_STYLE_ID,
 } from "./constants/constFonts";
 import ExcalidrawView, { TextMode, getTextMode } from "./ExcalidrawView";
@@ -55,7 +53,6 @@ import {
   getMarkdownDrawingSection,
   ExcalidrawData,
   REGEX_LINK,
-  getExcalidrawMarkdownHeaderSection
 } from "./ExcalidrawData";
 import {
   ExcalidrawSettings,
@@ -86,6 +83,8 @@ import {
   getIMGFilename,
   getLink,
   getNewUniqueFilepath,
+  getURLImageExtension,
+  splitFolderAndFilename,
 } from "./utils/FileUtils";
 import {
   getFontDataURL,
@@ -124,10 +123,10 @@ import { PublishOutOfDateFilesDialog } from "./dialogs/PublishOutOfDateFiles";
 import { EmbeddableSettings } from "./dialogs/EmbeddableSettings";
 import { processLinkText } from "./utils/CustomEmbeddableUtils";
 import { getEA } from "src";
-import { BinaryFileData, DataURL, ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { CustomMutationObserver, durationTreshold, isDebugMode } from "./utils/DebugHelper";
-import de from "./lang/locale/de";
+import { carveOutImage, createImageCropperFile, CROPPED_PREFIX } from "./utils/CarveOut";
 
 declare const EXCALIDRAW_PACKAGES:string;
 declare const react:any;
@@ -1528,6 +1527,131 @@ export default class ExcalidrawPlugin extends Plugin {
             ea.addElementsToView(false,false,false);
           }
         })()
+      }
+    })
+
+    this.addCommand({
+      id: "crop-image",
+      name: t("CROP_IMAGE"),
+      checkCallback: (checking:boolean) => {
+        const excalidrawView = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
+        const canvasView:any = this.app.workspace.activeLeaf?.view;
+        const isCanvas = canvasView && canvasView.getViewType() === "canvas";
+        if(!excalidrawView && !markdownView && !isCanvas) return false;
+
+        if(excalidrawView) {
+          if(!excalidrawView.excalidrawAPI) return false;
+          const els = excalidrawView.getViewSelectedElements().filter(el=>el.type==="image");
+          if(els.length !== 1) {
+            if(checking) return false;
+            new Notice("Select a single image element and try again");
+            return false;
+          }
+          const el = els[0] as ExcalidrawImageElement;
+          if(el.type !== "image") return false;
+          
+          if(checking) {
+            excalidrawView.save();
+            return true;
+          }
+
+          const ef = excalidrawView.excalidrawData.getFile(el.fileId);
+          if(!ef) {
+            if(checking) return false;
+            new Notice("Select a single image element and try again");
+            return false;
+          }
+          
+
+          (async () => {
+            const ea = new ExcalidrawAutomate(this,excalidrawView);
+            carveOutImage(ea, el);
+          })();
+        }
+
+        const carveout = async (isFile: boolean, sourceFile: TFile, imageFile: TFile, imageURL: string, replacer: Function) => {
+          const ea = getEA() as ExcalidrawAutomate;
+          const imageID = await ea.addImage(0 , 0, isFile ? imageFile : imageURL, false, false);
+          if(!imageID) {
+            new Notice(`Can't load image\n\n${imageURL}`);
+            return;
+          }
+          
+          let fname = "";
+          let imageLink = "";
+          if(isFile) {
+            fname = CROPPED_PREFIX + imageFile.basename + ".md";
+            imageLink = `[[${imageFile.path}]]`;
+          } else {
+            imageLink = imageURL;
+            const imagename = imageURL.match(/^.*\/([^?]*)\??.*$/)?.[1];
+            fname = CROPPED_PREFIX + imagename.substring(0,imagename.lastIndexOf(".")) + ".md";
+          }
+          
+          const { folderpath } = isFile 
+            ? splitFolderAndFilename(imageFile.path) 
+            : {folderpath: ((await getAttachmentsFolderAndFilePath(this.app, sourceFile.path, fname)).folder)};
+          const newPath = await createImageCropperFile(ea,imageID,imageLink,folderpath,fname);
+          if(!newPath) return;
+          const newFile = this.app.vault.getAbstractFileByPath(newPath);
+          if(!newFile || !(newFile instanceof TFile)) return;
+          const link = this.app.metadataCache.fileToLinktext(newFile,sourceFile.path, true);
+          replacer(link, newFile);
+        }
+
+        if(isCanvas) {
+          const selectedNodes:any = [];
+          canvasView.canvas.nodes.forEach((node:any) => {
+            if(node.nodeEl.hasClass("is-focused")) selectedNodes.push(node);
+          })
+          if(selectedNodes.length !== 1) return false;
+          const node = selectedNodes[0];
+          let extension = "";
+          if(node.file) {
+            extension = node.file.extension;
+          }
+          if(node.url) {
+            extension = getURLImageExtension(node.url);
+          }
+          if(!IMAGE_TYPES.contains(extension)) return false;
+          if(checking) return true;
+
+          const replacer = (link:string, file: TFile) => {
+            if(node.file) {
+              node.setFile(file);
+            }
+            if(node.url) {
+              node.canvas.createFileNode({pos:{x:node.x + 20,y: node.y+20}, file});
+            }
+          }
+          carveout(Boolean(node.file), canvasView.file, node.file, node.url, replacer);
+        }
+
+        if (markdownView) {
+          const editor = markdownView.editor;
+          const cursor = editor.getCursor();
+          const line = editor.getLine(cursor.line);
+          const parts = REGEX_LINK.getResList(line);
+          if(parts.length === 0) return false;
+          const imgpath = REGEX_LINK.getLink(parts[0]);
+          const imageFile = this.app.metadataCache.getFirstLinkpathDest(imgpath, markdownView.file.path);
+          const isFile = (imageFile && imageFile instanceof TFile);
+          let imagepath = isFile ? imageFile.path : "";
+          let extension = isFile ? imageFile.extension : "";
+          if(imgpath.match(/^https?|file/)) {
+            imagepath = imgpath;
+            extension = getURLImageExtension(imgpath);
+          }
+          if(imagepath === "") return false;
+          if(!IMAGE_TYPES.contains(extension)) return false;
+          if(checking) return true;
+          const replacer = (link:string) => {
+            const lineparts = line.split(parts[0].value[0]) 
+            editor.setLine(cursor.line,lineparts[0] + getLink(this ,{embed: true, path:link}) +lineparts[1]);
+          }
+          carveout(isFile, markdownView.file, imageFile, imagepath, replacer);
+        }
       }
     })
 

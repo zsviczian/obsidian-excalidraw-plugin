@@ -551,6 +551,16 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     icon={ICONS.importSVG}
                     view={this.props.view}
                   />
+                  <ActionButton
+                    key={"import-svg"}
+                    title={t("CROP_IMAGE")}
+                    action={(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+                      // @ts-ignore
+                      this.props.view.app.commands.executeCommandById("obsidian-excalidraw-plugin:crop-image")
+                    }}
+                    icon={ICONS.Crop}
+                    view={this.props.view}
+                  />
                 </div>
               </fieldset>
               {this.renderScriptButtons(false)}
