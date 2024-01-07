@@ -3,7 +3,9 @@ import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { getEA } from "src";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import { splitFolderAndFilename } from "./FileUtils";
-import { TFile } from "obsidian";
+import { Notice, TFile } from "obsidian";
+import ExcalidrawView from "src/ExcalidrawView";
+import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 
 export const CROPPED_PREFIX = "cropped_";
 
@@ -41,24 +43,24 @@ export const carveOutImage = async (sourceEA: ExcalidrawAutomate, viewImageEl: E
   const attachmentPath = await sourceEA.getAttachmentFilepath(fname + ".md");
   const {folderpath: foldername, filename} = splitFolderAndFilename(attachmentPath);
 
-  const newPath = await createImageCropperFile(targetEA, newImage.id, imageLink, foldername, filename);
+  const file = await createImageCropperFile(targetEA, newImage.id, imageLink, foldername, filename);
+  if(!file) return;
 
-  setTimeout(async ()=>{
-    const file = sourceEA.plugin.app.metadataCache.getFirstLinkpathDest(newPath,"")
-    sourceEA.clear();
-    sourceEA.copyViewElementsToEAforEditing([viewImageEl]);
-    const sourceImageEl = sourceEA.getElement(viewImageEl.id) as Mutable<ExcalidrawImageElement>;
-    sourceImageEl.isDeleted = true;
+  sourceEA.clear();
+  sourceEA.copyViewElementsToEAforEditing([viewImageEl]);
+  const sourceImageEl = sourceEA.getElement(viewImageEl.id) as Mutable<ExcalidrawImageElement>;
+  sourceImageEl.isDeleted = true;
 
-    const replacingImageID = await sourceEA.addImage(sourceImageEl.x, sourceImageEl.y, file, true);
-    const replacingImage = sourceEA.getElement(replacingImageID) as Mutable<ExcalidrawImageElement>;
-    replacingImage.width = sourceImageEl.width;
-    replacingImage.height = sourceImageEl.height;
-    sourceEA.addElementsToView(false, true, true);
-  },1000);
+  const replacingImageID = await sourceEA.addImage(sourceImageEl.x, sourceImageEl.y, file, true);
+  const replacingImage = sourceEA.getElement(replacingImageID) as Mutable<ExcalidrawImageElement>;
+  replacingImage.width = sourceImageEl.width;
+  replacingImage.height = sourceImageEl.height;
+  sourceEA.addElementsToView(false, true, true);
 }
 
-export const createImageCropperFile = async (targetEA: ExcalidrawAutomate, imageID: string, imageLink:string, foldername: string, filename: string): Promise<string> => {
+export const createImageCropperFile = async (targetEA: ExcalidrawAutomate, imageID: string, imageLink:string, foldername: string, filename: string): Promise<TFile> => {
+  const workspace = targetEA.plugin.app.workspace;
+  const vault = targetEA.plugin.app.vault;
   const newImage = targetEA.getElement(imageID) as Mutable<ExcalidrawImageElement>;
   const { width, height } = newImage;
   newImage.opacity = 100;
@@ -89,7 +91,7 @@ export const createImageCropperFile = async (targetEA: ExcalidrawAutomate, image
     }
   }
 
-  return await targetEA.create ({
+  const newPath = await targetEA.create ({
     filename,
     foldername,
     onNewPane: true,
@@ -100,4 +102,57 @@ export const createImageCropperFile = async (targetEA: ExcalidrawAutomate, image
       "excalidraw-export-transparent": true,
     }
   });
+
+  //console.log({newPath});
+
+  //wait for file to be created/indexed by Obsidian
+  let file = vault.getAbstractFileByPath(newPath);
+  let counter = 0;
+  while(!file && counter < 50) {
+    await sleep(100);
+    file = vault.getAbstractFileByPath(newPath);
+    counter++;
+  }
+  //console.log({counter, file});
+  if(!file || !(file instanceof TFile)) {
+    new Notice("File not found. NewExcalidraw Drawing is taking too long to create. Please try again.");
+    return;
+  }
+
+  //wait for the new ExcalidrawView to open and initialize
+  counter = 0;
+  let newView = workspace.getActiveViewOfType(ExcalidrawView) as ExcalidrawView;
+  while(
+    (workspace.getActiveFile() !== file ||
+     newView?.file !== file ||
+     !newView?.isLoaded ||
+     !Boolean(newView?.excalidrawAPI)) &&
+    counter < 100
+  ) {
+    await sleep(100);
+    newView = workspace.getActiveViewOfType(ExcalidrawView) as ExcalidrawView;
+    counter++;
+  }
+  //console.log({counter});
+  if(newView?.file !== file || !newView?.isLoaded ||!Boolean(newView?.excalidrawAPI)) {
+    new Notice("View did not initialize. NewExcalidraw Drawing is taking too long to open. Please try again.");
+    return;
+  }
+
+  //wait for the image to load to the new view
+  const api = newView.excalidrawAPI as ExcalidrawImperativeAPI;
+  counter = 0;
+  while(Object.keys(api.getFiles()).length === 0 && counter < 100) {
+    await sleep(100);
+    counter++;
+  }
+
+  if(Object.keys(api.getFiles()).length === 0) {
+    new Notice("Image did not load to the view. NewExcalidraw Drawing is taking too long to load. Please try again.");
+    return;
+  }
+
+  //console.log({counter, path: workspace.getActiveFile()?.path, newView, files: api.getFiles()});
+
+  return file;
 }

@@ -189,6 +189,14 @@ export default class ExcalidrawPlugin extends Plugin {
     return LOCALE;
   }
 
+  get window(): Window {
+    return window;
+  };
+
+  get document(): Document {
+    return document;
+  };
+
   public getPackage(win:Window):Packages {
     if(win===window) {
       return {react, reactDOM, excalidrawLib};
@@ -1551,20 +1559,20 @@ export default class ExcalidrawPlugin extends Plugin {
           const el = els[0] as ExcalidrawImageElement;
           if(el.type !== "image") return false;
           
-          if(checking) {
-            excalidrawView.save();
-            return true;
-          }
-
-          const ef = excalidrawView.excalidrawData.getFile(el.fileId);
-          if(!ef) {
-            if(checking) return false;
-            new Notice("Select a single image element and try again");
-            return false;
-          }
-          
+          if(checking) return true;
 
           (async () => {
+            let ef = excalidrawView.excalidrawData.getFile(el.fileId);
+
+            if(!ef) {
+              await excalidrawView.save();
+              await sleep(500);
+              ef = excalidrawView.excalidrawData.getFile(el.fileId);
+              if(!ef) {             
+                new Notice("Select a single image element and try again");
+                return false;
+              }
+            }
             const ea = new ExcalidrawAutomate(this,excalidrawView);
             carveOutImage(ea, el);
           })();
@@ -1592,10 +1600,8 @@ export default class ExcalidrawPlugin extends Plugin {
           const { folderpath } = isFile 
             ? splitFolderAndFilename(imageFile.path) 
             : {folderpath: ((await getAttachmentsFolderAndFilePath(this.app, sourceFile.path, fname)).folder)};
-          const newPath = await createImageCropperFile(ea,imageID,imageLink,folderpath,fname);
-          if(!newPath) return;
-          const newFile = this.app.vault.getAbstractFileByPath(newPath);
-          if(!newFile || !(newFile instanceof TFile)) return;
+          const newFile = await createImageCropperFile(ea,imageID,imageLink,folderpath,fname);
+          if(!newFile) return;
           const link = this.app.metadataCache.fileToLinktext(newFile,sourceFile.path, true);
           replacer(link, newFile);
         }

@@ -552,7 +552,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     view={this.props.view}
                   />
                   <ActionButton
-                    key={"import-svg"}
+                    key={"crop-image"}
                     title={t("CROP_IMAGE")}
                     action={(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
                       // @ts-ignore

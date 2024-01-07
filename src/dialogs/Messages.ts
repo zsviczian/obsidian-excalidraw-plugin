@@ -17,6 +17,11 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.0.16":`
+## Fixed
+- Image cropping did not work consistently with large image files on lower-powered devices [#1538](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1538). 
+- Mermaid editor was not working when Excalidraw was open in an Obsidian popout window [#1503](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1503)
+`,
 "2.0.15":`
 <div class="excalidraw-videoWrapper"><div>
 <iframe src="https://www.youtube.com/embed/uHFd0XoHRxE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

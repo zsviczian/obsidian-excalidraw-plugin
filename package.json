@@ -18,7 +18,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@zsviczian/excalidraw": "0.17.1-obsidian-10",
+    "@zsviczian/excalidraw": "0.17.1-obsidian-11",
     "chroma-js": "^2.4.2",
     "clsx": "^2.0.0",
     "colormaster": "^1.2.1",
