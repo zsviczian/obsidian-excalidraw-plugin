@@ -9,6 +9,12 @@ import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/Modifierke
 // 简体中文
 export default {
   // main.ts
+  CONVERT_URL_TO_FILE: "从 URL 下载图像到本地",
+  UNZIP_CURRENT_FILE: "解压当前 Excalidraw 文件",
+  PUBLISH_SVG_CHECK: "Obsidian Publish: 搜索过期的 SVG 和 PNG 导出文件",
+  EMBEDDABLE_PROPERTIES: "Embeddable 元素设置",
+  EMBEDDABLE_RELATIVE_ZOOM: "使元素的缩放等级等于当前画布的缩放等级",
+  OPEN_IMAGE_SOURCE: "打开 Excalidraw 绘图文件",
   INSTALL_SCRIPT: "安装此脚本",
   UPDATE_SCRIPT: "有可用更新 - 点击安装",
   CHECKING_SCRIPT:
@@ -43,7 +49,7 @@ export default {
     "新建绘图 - 于当前面板 - 并将其嵌入（形如 ![[drawing]]）到当前 Markdown 文档中",
   NEW_IN_POPOUT_WINDOW_EMBED: "新建绘图 - 于新窗口 - 并将其嵌入（形如 ![[drawing]]）到当前 Markdown 文档中",
   TOGGLE_LOCK: "文本元素：原文模式（RAW）⟺ 预览模式（PREVIEW）",
-  DELETE_FILE: "从库中删除所选图像或 MD-Embed 的源文件",
+  DELETE_FILE: "从库中删除所选图像（或以图像形式嵌入绘图中的 Markdown）的源文件",
   INSERT_LINK_TO_ELEMENT:
     `复制所选元素为内部链接（形如 [[file#^id]] ）。\n按住 ${labelCTRL()} 可复制元素所在分组为内部链接（形如 [[file#^group=id]] ）。\n按住 ${labelSHIFT()} 可复制所选元素所在区域为内部链接（形如 [[file#^area=id]] ）。\n按住 ${labelALT()} 可观看视频演示。`,
   INSERT_LINK_TO_ELEMENT_GROUP:
@@ -57,23 +63,26 @@ export default {
   INSERT_LINK_TO_ELEMENT_ERROR: "未选择画布里的单个元素",
   INSERT_LINK_TO_ELEMENT_READY: "链接已生成并复制到剪贴板",
   INSERT_LINK: "插入任意文件（以内部链接形式嵌入，形如 [[drawing]] ）到当前绘图中",
+  INSERT_COMMAND: "插入 Obsidian 命令（以内部链接形式嵌入）到当前绘图中",
   INSERT_IMAGE: "插入图像或 Excalidraw 绘图（以图像形式嵌入）到当前绘图中",
   IMPORT_SVG: "从 SVG 文件导入图形元素到当前绘图中（暂不支持文本元素）",
   INSERT_MD: "插入 Markdown 文档（以图像形式嵌入）到当前绘图中",
   INSERT_PDF: "插入 PDF 文档（以图像形式嵌入）到当前绘图中",
-  UNIVERSAL_ADD_FILE: "插入任意文件（以 Embeddable 形式嵌入）到当前绘图中",
+  UNIVERSAL_ADD_FILE: "插入任意文件（以交互形式嵌入，或者以图像形式嵌入）到当前绘图中",
   INSERT_LATEX:
-    `插入 LaTeX 公式到当前绘图。按住 ${labelALT()} 可观看视频演示。`,
+    `插入 LaTeX 公式到当前绘图`,
   ENTER_LATEX: "输入 LaTeX 表达式",
   READ_RELEASE_NOTES: "阅读本插件的更新说明",
   RUN_OCR: "OCR：识别涂鸦和图片里的文本并复制到剪贴板",
   TRAY_MODE: "绘图工具属性页：面板模式 ⟺ 托盘模式",
   SEARCH: "搜索文本",
+  CROP_IMAGE: "裁剪与蒙版",
   RESET_IMG_TO_100: "重设图像元素的尺寸为 100%",
   TEMPORARY_DISABLE_AUTOSAVE: "临时禁用自动保存功能，直到本次 Obsidian 退出（小白慎用！）",
   TEMPORARY_ENABLE_AUTOSAVE: "启用自动保存功能",
 
   //ExcalidrawView.ts
+  MASK_FILE_NOTICE: "这是一个蒙版图像。长按本提示来观看视频讲解。",
   INSTALL_SCRIPT_BUTTON: "安装或更新 Excalidraw 脚本",
   OPEN_AS_MD: "打开为 Markdown 文档",
   EXPORT_IMAGE: `导出为图像`,
@@ -98,7 +107,8 @@ export default {
   OBSIDIAN_TOOLS_PANEL: "Obsidian 工具面板",
   ERROR_SAVING_IMAGE: "获取图像时发生未知错误",
   WARNING_PASTING_ELEMENT_AS_TEXT: "你不能将 Excalidraw 元素粘贴为文本元素！",
-  USE_INSERT_FILE_MODAL: "使用“插入任意文件（以 iFrame 形式嵌入）”功能来嵌入 Markdown 文档",
+  USE_INSERT_FILE_MODAL: "使用“插入任意文件”功能来嵌入 Markdown 文档",
+  CONVERT_TO_MARKDOWN: "转存为 Markdown 文档（并嵌入为 MD-Embeddable）",
 
   //settings.ts
   RELEASE_NOTES_NAME: "显示更新说明",
@@ -110,6 +120,8 @@ export default {
       "<b>开启：</b>当本插件存在可用更新时，显示通知。<br>" +
       "<b>关闭：</b>您需要手动检查本插件的更新（设置 - 第三方插件 - 检查更新）。",
   
+  BASIC_HEAD: "基本",
+  BASIC_DESC: `包括：更新说明，更新提示，新绘图文件、模板文件、脚本文件的存储路径等的设置。`,
   FOLDER_NAME: "Excalidraw 文件夹",
   FOLDER_DESC:
     "新绘图的默认存储路径。若为空，将在库的根目录中创建新绘图。",
@@ -118,10 +130,10 @@ export default {
   FOLDER_EMBED_DESC:
     "在命令面板中执行“新建绘图”系列命令时，" +
     "新建的绘图文件的存储路径。<br>" +
-    "<b>开启：</b>使用 Excalidraw 文件夹。 <br><b>关闭：</b>使用 Obsidian 设置的新附件默认位置。",
+    "<b>开启：</b>使用上面的 Excalidraw 文件夹。 <br><b>关闭：</b>使用 Obsidian 设置的新附件默认位置。",
   TEMPLATE_NAME: "Excalidraw 模板文件",
   TEMPLATE_DESC:
-    "Excalidraw 模板文件的完整路径。<br>" +
+    "Excalidraw 模板文件的存储路径。<br>" +
     "如果您的模板在默认的 Excalidraw 文件夹中且文件名是 " +
     "Template.md，则此项应设为 Excalidraw/Template.md（也可省略 .md 扩展名，即 Excalidraw/Template）。<br>" +
     "如果您在兼容模式下使用 Excalidraw，那么您的模板文件也必须是旧的 *.excalidraw 格式，" +
@@ -132,7 +144,39 @@ export default {
     "您可以在 Obsidian 命令面板中执行这些脚本，" +
     "还可以为喜欢的脚本分配快捷键，就像为其他 Obsidian 命令分配快捷键一样。<br>" +
     "该项不能设为库的根目录。",
+  AI_HEAD: "AI（实验性）",
+  AI_DESC: `OpenAI GPT API 的设置。 ` +
+    `目前 OpenAI API 还处于测试中，您需要在自己的。` +
+    `OpenAI 账户中充值至少 5 美元后才能生成 API key，` +
+    `然后就可以在 Excalidraw 中配置并使用 AI。`,
+  AI_OPENAI_TOKEN_NAME: "OpenAI API key",
+  AI_OPENAI_TOKEN_DESC:
+    "您可以访问您的<a href='https://platform.openai.com/api-keys'> OpenAI 账户</a>来获取自己的 OpenAI API key。",
+  AI_OPENAI_TOKEN_PLACEHOLDER: "OpenAI API key",
+  AI_OPENAI_DEFAULT_MODEL_NAME: "默认的文本 AI 模型",
+  AI_OPENAI_DEFAULT_MODEL_DESC:
+    "使用哪个 AI 模型来生成文本。请填写有效的 OpenAI 模型名称。" +
+    "您可访问<a href='https://platform.openai.com/docs/models'> OpenAI 网站</a>了解更多模型信息。",
+  AI_OPENAI_DEFAULT_MODEL_PLACEHOLDER: "gpt-3.5-turbo-1106",
+  AI_OPENAI_DEFAULT_IMAGE_MODEL_NAME: "默认的图像 AI 模型",
+  AI_OPENAI_DEFAULT_IMAGE_MODEL_DESC:
+    "使用哪个 AI 模型来生成图像（在编辑和调整图像时会强制使用 dall-e-2 模型，" +
+    "因为目前只有该模型支持编辑和调整图像）。" +
+    "请填写有效的 OpenAI 模型名称。" +
+    "您可访问<a href='https://platform.openai.com/docs/models'>OpenAI 网站</a>了解更多模型信息。",
+  AI_OPENAI_DEFAULT_IMAGE_MODEL_PLACEHOLDER: "dall-e-3",
+  AI_OPENAI_DEFAULT_VISION_MODEL_NAME: "默认的 AI 视觉模型",
+  AI_OPENAI_DEFAULT_VISION_MODEL_DESC:
+    "根据文本生成图像时，使用哪个 AI 视觉模型。请填写有效的 OpenAI 模型名称。" +
+    "您可访问<a href='https://platform.openai.com/docs/models'> OpenAI 网站</a>了解更多模型信息。",
+  AI_OPENAI_DEFAULT_API_URL_NAME: "OpenAI API URL",
+  AI_OPENAI_DEFAULT_API_URL_DESC:
+    "默认的 OpenAI API URL。请填写有效的 OpenAI API URL。" +
+    "Excalidraw 会通过该 URL 发送 API 请求给 OpenAI。我没有对此选项做任何错误处理，请谨慎修改。",
+  AI_OPENAI_DEFAULT_IMAGE_API_URL_NAME: "OpenAI Image Generation API URL",
+  AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER: "gpt-4-vision-preview",
   SAVING_HEAD: "保存",
+  SAVING_DESC: "包括：压缩，自动保存的时间间隔，文件的命名格式和扩展名等的设置。",
   COMPRESS_NAME: "压缩 Excalidraw JSON",
   COMPRESS_DESC:
     "Excalidraw 绘图文件默认将元素记录为 JSON 格式。开启此项，可将元素的 JSON 数据以 BASE64 编码" +
@@ -180,19 +224,20 @@ FILENAME_HEAD: "文件名",
   FILENAME_EXCALIDRAW_EXTENSION_DESC:
     "该选项在兼容模式（即非 Excalidraw 专用 Markdown 文件）下不会生效。<br>" +
     "<b>开启：</b>使用 .excalidraw.md 作为扩展名。<br><b>关闭：</b>使用 .md 作为扩展名。",
-  DISPLAY_HEAD: "显示",
+  DISPLAY_HEAD: "界面 & 行为",
+  DISPLAY_DESC: "包括：左手模式，主题匹配，缩放，激光笔工具，修饰键等的设置。",
   DYNAMICSTYLE_NAME: "动态样式",
   DYNAMICSTYLE_DESC:
-    "根据画布颜色调节 Excalidraw 界面颜色",
+    "根据画布颜色自动调节 Excalidraw 界面颜色",
   LEFTHANDED_MODE_NAME: "左手模式",
   LEFTHANDED_MODE_DESC:
     "目前只在托盘模式下生效。若开启此项，则托盘（绘图工具属性页）将位于右侧。" +
     "<br><b>开启：</b>左手模式。<br><b>关闭：</b>右手模式。",
-  IFRAME_MATCH_THEME_NAME: "使 MD-Embed 匹配 Excalidraw 主题",
+  IFRAME_MATCH_THEME_NAME: "使 Embeddable 匹配 Excalidraw 主题",
   IFRAME_MATCH_THEME_DESC:
-    "<b>开启：</b>当你的 Obsidian 和 Excalidraw 一个使用黑暗主题、一个使用明亮主题时，" +
-    "开启此项，MD-Embed 将会匹配 Excalidraw 主题。<br>" +
-    "<b>关闭：</b>如果你想要 MD-Embed 匹配 Obsidian 主题，请关闭此项。",    
+    "<b>开启：</b>当 Obsidian 和 Excalidraw 一个使用黑暗主题、一个使用明亮主题时，" +
+    "开启此项后，以交互形式嵌入到绘图中的元素（Embeddable） 将会匹配 Excalidraw 主题。<br>" +
+    "<b>关闭：</b>如果您想要 Embeddable 匹配 Obsidian 主题，请关闭此项。",    
   MATCH_THEME_NAME: "使新建的绘图匹配 Obsidian 主题",
   MATCH_THEME_DESC:
     "如果 Obsidian 使用黑暗主题，新建的绘图文件也将使用黑暗主题。<br>" +
@@ -213,7 +258,8 @@ FILENAME_HEAD: "文件名",
   DEFAULT_PEN_MODE_NAME: "触控笔模式（Pen mode）",
   DEFAULT_PEN_MODE_DESC:
     "打开绘图时，是否自动开启触控笔模式？",
-
+  THEME_HEAD: "主题和样式",
+  ZOOM_HEAD: "缩放",
   DEFAULT_PINCHZOOM_NAME: "允许在触控笔模式下进行双指缩放",
   DEFAULT_PINCHZOOM_DESC:
     "在触控笔模式下使用自由画笔工具时，双指缩放可能造成干扰。<br>" +
@@ -232,7 +278,14 @@ FILENAME_HEAD: "文件名",
   ZOOM_TO_FIT_MAX_LEVEL_NAME: "自动缩放的最高级别",
   ZOOM_TO_FIT_MAX_LEVEL_DESC:
     "自动缩放画布时，允许放大的最高级别。该值不能低于 0.5（50%）且不能超过 10（1000%）。",
-  LINKS_HEAD: "链接（Links） & 以内部链接形式嵌入到绘图中的 Markdown 文档（Transclusion）",
+  LASER_HEAD: "激光笔工具（More Tools > Laser pointer）",
+  LASER_COLOR: "激光笔颜色",
+  LASER_DECAY_TIME_NAME: "激光笔消失时间",
+  LASER_DECAY_TIME_DESC: "单位是毫秒，默认是 1000（即 1 秒）。",
+  LASER_DECAY_LENGTH_NAME: "激光笔轨迹长度",
+  LASER_DECAY_LENGTH_DESC: "默认是 50。",
+  LINKS_HEAD: "链接 & 以内部链接形式嵌入到绘图中的 Markdown 文档（MD-Transclusion）& 待办任务（Todo）",
+  LINKS_HEAD_DESC: "包括：链接的打开和显示，MD-Transclusion 的显示，Todo 的显示等设置。",
   LINKS_DESC:
     `按住 ${labelCTRL()} 并点击包含 <code>[[链接]]</code> 的文本元素可以打开其中的链接。` +
     "如果所选文本元素包含多个 <code>[[有效的内部链接]]</code> ，只会打开第一个链接；" +
@@ -240,6 +293,12 @@ FILENAME_HEAD: "文件名",
     "插件会在浏览器中打开链接。<br>" +
     "链接的源文件被重命名时，绘图中相应的 <code>[[内部链接]]</code> 也会同步更新。" +
     "若您不愿绘图中的链接外观因此而变化，可使用 <code>[[内部链接|别名]]</code>。",
+  DRAG_MODIFIER_NAME: "修饰键",
+  DRAG_MODIFIER_DESC: "在您按住点击链接或拖放元素时，可以触发某些行为。您可以为这些行为添加修饰键。" +
+    "Excalidraw 不会检查您的设置是否合理，因此请谨慎设置，避免冲突。" +
+    "以下选项在苹果和非苹果设备上区别很大，如果您在多个硬件平台上使用 Obsidian，需要分别进行设置。"+
+    "选项里的 4 个开关依次代表 " +
+    (DEVICE.isIOS || DEVICE.isMacOS ? "SHIFT, CMD, OPT, CONTROL." : "SHIFT, CTRL, ALT, META (Win 键)。"),
   ADJACENT_PANE_NAME: "在相邻面板中打开",
   ADJACENT_PANE_DESC:
     `按住 ${labelCTRL()}+${labelSHIFT()} 并点击绘图里的内部链接时，插件默认会在新面板中打开该链接。<br>` +
@@ -284,31 +343,35 @@ FILENAME_HEAD: "文件名",
   LINK_CTRL_CLICK_DESC:
     "如果此功能影响到您使用某些原版 Excalidraw 功能，可将其关闭。" +
     "关闭后，您只能通过绘图面板标题栏中的链接按钮来打开链接。",
-  TRANSCLUSION_WRAP_NAME: "Transclusion 的折行方式",
+  TRANSCLUSION_WRAP_NAME: "MD-Transclusion 的折行方式",
   TRANSCLUSION_WRAP_DESC:
     "中的 number 表示嵌入的文本溢出时，在第几个字符处进行折行。<br>" +
     "此开关控制具体的折行方式。若开启，则严格在 number 处折行，禁止溢出；" +
     "若关闭，则允许在 number 位置后最近的空格处折行。",
-  TRANSCLUSION_DEFAULT_WRAP_NAME: "Transclusion 的默认折行位置",
+  TRANSCLUSION_DEFAULT_WRAP_NAME: "MD-Transclusion 的默认折行位置",
   TRANSCLUSION_DEFAULT_WRAP_DESC:
     "除了通过 <code>![[doc#^block]]{number}</code> 中的 number 来控制折行位置，您也可以在此设置 number 的默认值。<br>" +
     "一般设为 0 即可，表示不设置固定的默认值，这样当您需要嵌入文档到便签中时，" +
     "Excalidraw 能更好地帮您自动处理。",
-  PAGE_TRANSCLUSION_CHARCOUNT_NAME: "Transclusion 的最大显示字符数",
+  PAGE_TRANSCLUSION_CHARCOUNT_NAME: "MD-Transclusion 的最大显示字符数",
   PAGE_TRANSCLUSION_CHARCOUNT_DESC:
     "以 <code>![[内部链接]]</code> 或 <code>![](内部链接)</code> 的形式将文档以文本形式嵌入到绘图中时，" +
     "该文档在绘图中可显示的最大字符数量。",
-  QUOTE_TRANSCLUSION_REMOVE_NAME: "隐藏 Transclusion 行首的引用符号",
-  QUOTE_TRANSCLUSION_REMOVE_DESC: "不显示 Transclusion 中每一行行首的 > 符号，以提高纯文本 Transclusion 的可读性。<br>" +
+  QUOTE_TRANSCLUSION_REMOVE_NAME: "隐藏 MD-Transclusion 行首的引用符号",
+  QUOTE_TRANSCLUSION_REMOVE_DESC: "不显示 MD-Transclusion 中每一行行首的 > 符号，以提高纯文本 MD-Transclusion 的可读性。<br>" +
     "<b>开启：</b>隐藏 > 符号<br><b>关闭：</b>不隐藏 > 符号（注意，由于 Obsidian API 的原因，首行行首的 > 符号不会被隐藏）",
   GET_URL_TITLE_NAME: "使用 iframly 获取页面标题",
   GET_URL_TITLE_DESC:
     "拖放链接到 Excalidraw 时，使用 <code>http://iframely.server.crestify.com/iframely?url=</code> 来获取页面的标题。",
+  PDF_TO_IMAGE: "以图像形式嵌入到绘图中的 PDF 文档",
+  PDF_TO_IMAGE_SCALE_NAME: "分辨率",
+  PDF_TO_IMAGE_SCALE_DESC: "分辨率越高，图像越清晰，但内存占用也越大。" +
+    "此外，如果您想要复制这些图像到 Excalidraw.com，可能会超出其 2MB 大小的限制。",
+  EMBED_TOEXCALIDRAW_HEAD: "嵌入到绘图中的文件",
+  EMBED_TOEXCALIDRAW_DESC: "包括：以图像形式嵌入到绘图中的 PDF 文档、以交互形式嵌入到绘图中的 Markdown 文档（MD-Embeddable）、以图像形式嵌入的 Markdown 文档（MD-Embed）等。",
   MD_HEAD: "以图像形式嵌入到绘图中的 Markdown 文档（MD-Embed）",
-  MD_HEAD_DESC:
-    "除了 Transclusion，您还可以将 Markdown 文档以图像形式嵌入到绘图中。" +
-    `方法是按住 ${labelCTRL()} 并从文件管理器中把文档拖入绘图，或者执行“以图像形式嵌入”系列命令。`,
-
+  MD_EMBED_CUSTOMDATA_HEAD_NAME: "以交互形式嵌入到绘图中的 Markdown 文档（MD-Embeddable）",
+  MD_EMBED_CUSTOMDATA_HEAD_DESC: `这些选项不会影响到已存在的 MD-Embeddable。MD-Embeddable 的主题风格在“显示 & 行为”小节设置。`,
   MD_TRANSCLUDE_WIDTH_NAME: "MD-Embed 的默认宽度",
   MD_TRANSCLUDE_WIDTH_DESC:
     "MD-Embed 的宽度。该选项会影响到折行，以及图像元素的宽度。<br>" +
@@ -344,16 +407,24 @@ FILENAME_HEAD: "文件名",
     "此外，在 CSS 中不能任意地设置字体，您一般只能使用系统默认的标准字体（详见 README），" +
     "但可以通过上面的设置来额外添加一个自定义字体。<br>" +
     "您可为某个 MD-Embed 单独设置此项，方法是在其源文件的 frontmatter 中添加形如 <code>excalidraw-css: 库中的CSS文件或CSS片段</code> 的键值对。",
-  EMBED_HEAD: "嵌入到 Markdown 文档中的绘图 & 导出",
-  EMBED_CACHING: "启用预览图",
-  EMBED_SIZING: "预览图的尺寸",
-  EMBED_THEME_BACKGROUND: "预览图的主题和背景色",
-  EMBED_IMAGE_CACHE_NAME: "为嵌入到 Markdown 文档中的绘图创建预览图",
-  EMBED_IMAGE_CACHE_DESC: "为嵌入到文档中的绘图创建预览图。可提高下次嵌入的速度。" +
+  EMBED_HEAD: "嵌入到 Markdown 文档中的绘图",
+  EMBED_DESC: `包括：嵌入到 Markdown 文档中的绘图的预览图类型（SVG、PNG）、源文件类型（Excalidraw 绘图文件、SVG、PNG）、缓存、图像大小、图像主题，以及嵌入的语法等。
+    此外，还有自动导出 SVG 或 PNG 文件并保持与绘图文件状态同步的设置。`,
+  EMBED_CANVAS: "Obsidian 白板支持",
+  EMBED_CANVAS_NAME: "沉浸式嵌入",
+  EMBED_CANVAS_DESC: 
+    "当嵌入绘图到 Obsidian 白板中时，隐藏元素的边界和背景。" +
+    "注意：如果想要背景完全透明，您依然需要在 Excalidraw 中设置“导出的图像不包含背景”。",
+  EMBED_CACHING: "预览图缓存",
+  EXPORT_SUBHEAD: "导出",
+  EMBED_SIZING: "图像尺寸",
+  EMBED_THEME_BACKGROUND: "图像的主题和背景色",
+  EMBED_IMAGE_CACHE_NAME: "为嵌入到 Markdown 文档中的绘图创建预览图缓存",
+  EMBED_IMAGE_CACHE_DESC: "可提高下次嵌入的速度。" +
     "但如果绘图中又嵌入了子绘图，当子绘图改变时，您需要打开子绘图并手动保存，才能够更新父绘图的预览图。",
-  EMBED_IMAGE_CACHE_CLEAR: "清除预览图",
+  EMBED_IMAGE_CACHE_CLEAR: "清除缓存",
   BACKUP_CACHE_CLEAR: "清除备份",
-  BACKUP_CACHE_CLEAR_CONFIRMATION: "该操作将删除所有绘图文件的备份。备份是绘图文件损坏时的一种补救手段。每次您打开 Obsidian 时，本插件会自动清理无用的备份。您确定要删除所有备份吗？",
+  BACKUP_CACHE_CLEAR_CONFIRMATION: "该操作将删除所有绘图文件的备份。备份是绘图文件损坏时的一种补救手段。每次您打开 Obsidian 时，本插件会自动清理无用的备份。您确定要现在删除所有备份吗？",
   EMBED_REUSE_EXPORTED_IMAGE_NAME:
     "将之前已导出的图像作为预览图",
   EMBED_REUSE_EXPORTED_IMAGE_DESC:
@@ -368,7 +439,7 @@ FILENAME_HEAD: "文件名",
     "<b>关闭：</b>为嵌入到 Markdown 文档中的绘图生成 <a href='' target='_blank'>PNG</a> 格式的预览图。注意：PNG 格式预览图不支持某些 <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>绘图元素的块引用特性</a>。",*/
   EMBED_PREVIEW_IMAGETYPE_NAME: "预览图的格式",
   EMBED_PREVIEW_IMAGETYPE_DESC:
-    "<b>原始 SVG：</b>高品质、可交互。<br>" +
+    "<b>Native SVG：</b>高品质、可交互。<br>" +
     "<b>SVG：</b>高品质、不可交互。<br>" +
     "<b>PNG：</b>高性能、<a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>不可交互</a>。", 
   PREVIEW_MATCH_OBSIDIAN_NAME: "预览图匹配 Obsidian 主题",
@@ -386,6 +457,11 @@ FILENAME_HEAD: "文件名",
     "如果您想选择 PNG 或 SVG 副本，需要先开启下方的“自动导出 PNG 副本”或“自动导出 SVG 副本”。<br>" +
     "如果您选择了 PNG 或 SVG 副本，当副本不存在时，该命令将会插入一条损坏的链接，您需要打开绘图文件并手动导出副本才能修复 —— " +
     "也就是说，该选项不会自动帮您生成 PNG/SVG 副本，而只会引用已有的 PNG/SVG 副本。",
+  EMBED_MARKDOWN_COMMENT_NAME: "Embed link to drawing as comment",
+  EMBED_MARKDOWN_COMMENT_DESC: 
+    "Embed the link to the original Excalidraw file as a markdown link under the image, e.g.:<code>%%[[drawing.excalidraw]]%%</code>.<br>" +
+    "Instead of adding a markdown comment you may also select the embedded SVG or PNG line and use the command palette action: " +
+    "'<code>Excalidraw: Open Excalidraw drawing</code>' to open the drawing.",
   EMBED_WIKILINK_NAME: "“嵌入绘图到当前 Markdown 文档中”系列命令产生的内部链接类型",
   EMBED_WIKILINK_DESC:
     "<b>开启：</b>将产生 <code>![[Wiki 链接]]</code>。<b>关闭：</b>将产生 <code>![](Markdown 链接)</code>。",
@@ -423,6 +499,14 @@ FILENAME_HEAD: "文件名",
   EXPORT_BOTH_DARK_AND_LIGHT_DESC:  "若开启，Excalidraw 将导出两个文件：filename.dark.png（或 filename.dark.svg）和 filename.light.png（或 filename.light.svg）。<br>"+
     "该选项可作用于“自动导出 SVG 副本”、“自动导出 PNG 副本”，以及其他的手动的导出命令。",
   COMPATIBILITY_HEAD: "兼容性设置",
+  COMPATIBILITY_DESC: "如果没有特殊原因（例如您想同时在 VSCode / Logseq 和 Obsidian 中使用 Excalidraw），建议您使用 markdown 格式的绘图文件，而不是旧的 excalidraw.com 格式，因为本插件的很多功能在旧格式中无法使用。",
+  SLIDING_PANES_NAME: "Sliding panes 插件支持",
+  SLIDING_PANES_DESC:
+    "设置此项后需要重启 Obsidian 才能生效。<br>" +
+    "如果您使用 <a href='https://github.com/deathau/sliding-panes-obsidian' target='_blank'>Sliding Panes 插件</a>，" +
+    "您可以开启此项来使 Excalidraw 绘图兼容此插件。<br>" +
+    "注意，开启后会产生一些与 Obsidian 工作空间的兼容性问题。<br>" +
+    "另外，Obsidian 现在已经原生支持 Stack Tabs（堆叠标签），基本实现了 Sliding Panes 插件的功能。",
   EXPORT_EXCALIDRAW_NAME: "自动导出 Excalidraw 旧格式副本",
   EXPORT_EXCALIDRAW_DESC: "和“自动导出 SVG 副本”类似，但是导出格式为 *.excalidraw。",
   SYNC_EXCALIDRAW_NAME:
@@ -432,6 +516,7 @@ FILENAME_HEAD: "文件名",
     "则根据旧格式文件的内容来更新新格式文件。",
   COMPATIBILITY_MODE_NAME: "以旧格式创建新绘图",
   COMPATIBILITY_MODE_DESC:
+    "⚠️ 慎用！99.9% 的情况下您不需要开启此项。" +
     "开启此功能后，您通过功能区按钮、命令面板、" +
     "文件浏览器等创建的绘图都将是旧格式（*.excalidraw）。" +
     "此外，您打开旧格式绘图文件时将不再收到警告消息。",
@@ -442,16 +527,31 @@ FILENAME_HEAD: "文件名",
   LATEX_DEFAULT_NAME: "插入 LaTeX 时的默认表达式",
   LATEX_DEFAULT_DESC: "允许留空。允许使用类似 <code>\\color{white}</code> 的格式化表达式。",
   NONSTANDARD_HEAD: "非 Excalidraw.com 官方支持的特性",
-  NONSTANDARD_DESC: "这些特性不受 Excalidraw.com 官方支持。当导出绘图到 Excalidraw.com 时，这些特性将会发生变化。",
-  CUSTOM_PEN_NAME: "自定义画笔的数量",
-  CUSTOM_PEN_DESC: "在画布上的 Obsidian 菜单旁边切换自定义画笔。长按画笔按钮可以修改其样式。",
-  EXPERIMENTAL_HEAD: "实验性功能",
-  EXPERIMENTAL_DESC:
-    "以下部分设置不会立即生效，需要刷新文件资源管理器或者重启 Obsidian 才会生效。",
+  NONSTANDARD_DESC: `这些特性不受 Excalidraw.com 官方支持。如果以 Excalidraw.com 格式导出绘图，这些特性将会发生不可预知的变化。
+    包括：自定义画笔工具的数量，自定义字体等。`,
+  CUSTOM_PEN_HEAD: "自定义画笔",
+  CUSTOM_PEN_NAME: "自定义画笔工具的数量",
+  CUSTOM_PEN_DESC: "在画布上的 Obsidian 菜单按钮旁边切换自定义画笔。长按画笔按钮可以修改其样式。",
+  EXPERIMENTAL_HEAD: "杂项",
+  EXPERIMENTAL_DESC: `包括：默认的 LaTeX 公式，字段建议，绘图文件的类型标识符，OCR 等设置。`,
+  EA_HEAD: "Excalidraw 自动化",
+  EA_DESC: 
+    "ExcalidrawAutomate 是用于 Excalidraw 自动化脚本的 API，但是目前说明文档还不够完善，" +
+    "建议阅读 <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/API/ExcalidrawAutomate.d.ts'>ExcalidrawAutomate.d.ts</a> 文件源码，" +
+    "参考 <a href='https://zsviczian.github.io/obsidian-excalidraw-plugin/'>ExcalidrawAutomate How-to</a> 网页（不过该网页" +
+    "有一段时间未更新了），并开启下方的字段建议。字段建议功能能够在您键入时提示可用的" +
+    "函数及相应的参数，而且附带描述，相当于最新的“文档”。",
   FIELD_SUGGESTER_NAME: "开启字段建议",
   FIELD_SUGGESTER_DESC:
     "开启后，当您在编辑器中输入 <code>excalidraw-</code> 或者 <code>ea.</code> 时，会弹出一个带有函数说明的自动补全提示菜单。<br>" +
     "该功能借鉴了 Breadcrumbs 和 Templater 插件。",
+  STARTUP_SCRIPT_NAME: "起动脚本",
+  STARTUP_SCRIPT_DESC:
+    "插件启动时将自动执行该脚本。可用于为您的 Excalidraw 自动化脚本设置钩子。" +
+    "起动脚本请用 javascript 代码编写，并保存为 Markdown 格式。",
+  STARTUP_SCRIPT_BUTTON_CREATE: "创建起动脚本",
+  STARTUP_SCRIPT_BUTTON_OPEN: "打开起动脚本",
+  STARTUP_SCRIPT_EXISTS: "起动脚本已存在",
   FILETYPE_NAME: "在文件浏览器中为 excalidraw.md 文件添加类型标识符（如 ✏️）",
   FILETYPE_DESC:
     "可通过下一项设置来自定义类型标识符。",
@@ -463,6 +563,7 @@ FILENAME_HEAD: "文件名",
     "开启此项，则可在 Obsidian 实时预览模式的编辑视图下，用形如 <code>![[绘图|宽度|样式]]</code> 的语法来嵌入绘图。<br>" +
     "该选项不会在已打开的文档中立刻生效 —— " +
     "你需要重新打开此文档来使其生效。",
+  CUSTOM_FONT_HEAD: "自定义字体",
   ENABLE_FOURTH_FONT_NAME: "为文本元素启用本地字体",
   ENABLE_FOURTH_FONT_DESC:
     "开启此项后，文本元素的属性面板里会多出一个本地字体按钮。<br>" +
@@ -474,13 +575,14 @@ FILENAME_HEAD: "文件名",
     "选择库文件夹中的一个 .ttf, .woff 或 .woff2 字体文件作为本地字体文件。" +
     "若未选择文件，则使用默认的 Virgil 字体。",
   SCRIPT_SETTINGS_HEAD: "已安装脚本的设置",
+  SCRIPT_SETTINGS_DESC: "有些 Excalidraw 自动化脚本包含设置项，当执行这些脚本时，它们会在该列表下添加设置项。",
   TASKBONE_HEAD: "Taskbone OCR（光学符号识别）",
   TASKBONE_DESC: "这是一个将 OCR 融入 Excalidraw 的实验性功能。请注意，Taskbone 是一项独立的外部服务，而不是由 Excalidraw 或 Obsidian-excalidraw-plugin 项目提供的。" +
     "OCR 能够对画布上用自由画笔工具写下的涂鸦或者嵌入的图像进行文本识别，并将识别出来的文本写入绘图文件的 frontmatter，同时复制到剪贴板。" +
     "之所以要写入 frontmatter 是为了便于您在 Obsidian 中能够搜索到这些文本。" +
     "注意，识别的过程不是在本地进行的，而是通过在线 API，图像会被上传到 taskbone 的服务器（仅用于识别目的）。如果您介意，请不要使用这个功能。",
   TASKBONE_ENABLE_NAME: "启用 Taskbone",
-  TASKBONE_ENABLE_DESC: "启用这个功能意味着你同意 Taskbone <a href='https://www.taskbone.com/legal/terms/' target='_blank'>条款及细则</a> 以及 " +
+  TASKBONE_ENABLE_DESC: "启用意味着您同意 Taskbone <a href='https://www.taskbone.com/legal/terms/' target='_blank'>条款及细则</a> 以及 " +
     "<a href='https://www.taskbone.com/legal/privacy/' target='_blank'>隐私政策</a>.",
   TASKBONE_APIKEY_NAME: "Taskbone API Key",
   TASKBONE_APIKEY_DESC: "Taskbone 的免费 API key 提供了一定数量的每月识别次数。如果您非常频繁地使用此功能，或者想要支持 " + 
@@ -489,9 +591,12 @@ FILENAME_HEAD: "文件名",
 
   //openDrawings.ts
   SELECT_FILE: "选择一个文件后按回车。",
+  SELECT_COMMAND: "选择一个命令后按回车。",
   SELECT_FILE_WITH_OPTION_TO_SCALE: `选择一个文件后按回车，或者 ${labelSHIFT()}+${labelMETA()}+ENTER 以 100% 尺寸插入。`,
   NO_MATCH: "查询不到匹配的文件。",
+  NO_MATCHING_COMMAND: "查询不到匹配的命令。",
   SELECT_FILE_TO_LINK: "选择要插入（以内部链接形式嵌入）到当前绘图中的文件。",
+  SELECT_COMMAND_PLACEHOLDER: "选择要插入到当前绘图中的命令。",
   SELECT_DRAWING: "选择要插入（以图像形式嵌入）到当前绘图中的图像或绘图文件。",
   TYPE_FILENAME: "键入要选择的绘图名称。",
   SELECT_FILE_OR_TYPE_NEW:
@@ -528,8 +633,32 @@ FILENAME_HEAD: "文件名",
   NARROW_TO_BLOCK: "缩放至块",
   SHOW_ENTIRE_FILE: "显示全部",
   ZOOM_TO_FIT: "缩放至合适大小",
-  RELOAD: "重载",
+  RELOAD: "重载链接",
   OPEN_IN_BROWSER: "在浏览器中打开",
+  PROPERTIES: "属性",
+  COPYCODE: "复制源文件",
+
+  //EmbeddableSettings.tsx
+  ES_TITLE: "Embeddable 元素设置",
+  ES_RENAME: "重命名",
+  ES_ZOOM: "缩放",
+  ES_YOUTUBE_START: "YouTube 起始时间",
+  ES_YOUTUBE_START_DESC: "ss, mm:ss, hh:mm:ss",
+  ES_YOUTUBE_START_INVALID: "YouTube 起始时间无效。请检查格式并重试",
+  ES_FILENAME_VISIBLE: "显示文件名",
+  ES_BACKGROUND_HEAD: "背景色",
+  ES_BACKGROUND_MATCH_ELEMENT: "匹配元素背景色",
+  ES_BACKGROUND_MATCH_CANVAS: "匹配画布背景色",
+  ES_BACKGROUND_COLOR: "背景色",
+  ES_BORDER_HEAD: "边框颜色",
+  ES_BORDER_COLOR: "边框颜色",
+  ES_BORDER_MATCH_ELEMENT: "匹配元素边框颜色",
+  ES_BACKGROUND_OPACITY: "背景透明度",
+  ES_BORDER_OPACITY: "边框透明度",
+  ES_EMBEDDABLE_SETTINGS: "MD-Embeddable 设置",
+  ES_USE_OBSIDIAN_DEFAULTS: "使用 Obsidian 默认设置",
+  ES_ZOOM_100_RELATIVE_DESC: "使元素的缩放等级等于当前画布的缩放等级",
+  ES_ZOOM_100: "Relative 100%",
 
   //Prompts.ts
   PROMPT_FILE_DOES_NOT_EXIST: "文件不存在。要创建吗？",
@@ -538,7 +667,11 @@ FILENAME_HEAD: "文件名",
   PROMPT_TITLE_NEW_FILE: "新建文件",
   PROMPT_TITLE_CONFIRMATION: "确认",
   PROMPT_BUTTON_CREATE_EXCALIDRAW: "创建 Excalidraw 绘图",
+  PROMPT_BUTTON_CREATE_EXCALIDRAW_ARIA: "创建 Excalidraw 绘图并在新页签中打开",
   PROMPT_BUTTON_CREATE_MARKDOWN: "创建 Markdown 文档",
+  PROMPT_BUTTON_CREATE_MARKDOWN_ARIA: "创建 Markdown 文档并在新页签中打开",
+  PROMPT_BUTTON_EMBED_MARKDOWN: "嵌入",
+  PROMPT_BUTTON_EMBED_MARKDOWN_ARIA: "将所选元素替换为 MD-Embeddable",
   PROMPT_BUTTON_NEVERMIND: "算了",
   PROMPT_BUTTON_OK: "OK",
   PROMPT_BUTTON_CANCEL: "取消",
@@ -547,4 +680,10 @@ FILENAME_HEAD: "文件名",
   PROMPT_BUTTON_INSERT_LINK: "插入内部链接",
   PROMPT_BUTTON_UPPERCASE: "大写",
   
+  //ModifierKeySettings
+  WEB_BROWSER_DRAG_ACTION: "从浏览器拖进来时",
+  LOCAL_FILE_DRAG_ACTION: "从本地文件系统拖进来时",
+  INTERNAL_DRAG_ACTION: "在 Obsidian 内部拖放时",
+  PANE_TARGET: "点击链接时",
+  DEFAULT_ACTION_DESC: "无修饰键时的行为：",
 };
