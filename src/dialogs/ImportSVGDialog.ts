@@ -3,6 +3,8 @@ import { REG_LINKINDEX_INVALIDCHARS } from "../constants/constants";
 import ExcalidrawView from "../ExcalidrawView";
 import { t } from "../lang/helpers";
 import ExcalidrawPlugin from "../main";
+import { getEA } from "src";
+import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 
 export class ImportSVGDialog extends FuzzySuggestModal<TFile> {
   public app: App;
@@ -38,12 +40,11 @@ export class ImportSVGDialog extends FuzzySuggestModal<TFile> {
 
   async onChooseItem(item: TFile, event: KeyboardEvent): Promise<void> {
     if(!item) return;
-    const ea = this.plugin.ea;
-    ea.reset();
-    ea.setView(this.view);
+    const ea = getEA(this.view) as ExcalidrawAutomate;
     const svg = await app.vault.read(item);
     if(!svg || svg === "") return;
     ea.importSVG(svg);
+    ea.addToGroup(ea.getElements().map(el=>el.id));
     ea.addElementsToView(true, true, true,true);
   }
 

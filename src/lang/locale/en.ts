@@ -66,6 +66,7 @@ export default {
   INSERT_COMMAND: "Insert Obsidian Command as a link",
   INSERT_IMAGE: "Insert image or Excalidraw drawing from your vault",
   IMPORT_SVG: "Import an SVG file as Excalidraw strokes (limited SVG support, TEXT currently not supported)",
+  IMPORT_SVG_CONTEXTMENU: "Convert SVG to strokes - with limitations",
   INSERT_MD: "Insert markdown file from vault",
   INSERT_PDF: "Insert PDF file from vault",
   UNIVERSAL_ADD_FILE: "Insert ANY file",

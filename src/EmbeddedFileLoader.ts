@@ -350,6 +350,7 @@ export class EmbeddedFilesLoader {
     elements?: ExcalidrawElement[];
   }) : Promise<{dataURL: DataURL, hasSVGwithBitmap:boolean}> {
     //debug({where:"EmbeddedFileLoader.getExcalidrawSVG",uid:this.uid,file:file.name});
+    const isMask = isMaskFile(this.plugin, file);
     const forceTheme = hasExportTheme(this.plugin, file)
       ? getExportTheme(this.plugin, file, "light")
       : undefined;
@@ -358,7 +359,7 @@ export class EmbeddedFilesLoader {
         ? getWithBackground(this.plugin, file)
         : false,
       withTheme: !!forceTheme,
-      isMask: isMaskFile(this.plugin,file),
+      isMask,
     };
     const svg = replaceSVGColors(
       await createSVG(

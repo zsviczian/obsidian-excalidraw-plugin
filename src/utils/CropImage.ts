@@ -91,13 +91,17 @@ export class CropImage {
     return {style, mask:maskSVG.innerHTML};
   }
 
-  private async getImageSVG() {
+  private async getImage() {
     const exportSettings:ExportSettings = {
       withBackground: false,
       withTheme: false,
       isMask: false,
     }
-
+    const images = Object.values(this.imageEA.imagesDict);
+    if(images.length === 1) {
+      return images[0].dataURL;
+    }
+    return await this.imageEA.createPNGBase64(null,1,exportSettings,null,null,0);
     const imageSVG = await this.imageEA.createSVG(null,false,exportSettings,null,null,0);
     const svgData = new XMLSerializer().serializeToString(imageSVG);
     return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgData)))}`;
@@ -111,12 +115,14 @@ export class CropImage {
       return;
     }
     const maskID = nanoid();
+    const imageID = nanoid();
     const {viewBox, vbWidth, vbHeight, width, height} = this.getViewBoxAndSize();
     const parser = new DOMParser();
     const {style, mask} = await this.getMaskSVG();
     const svgString = `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="${viewBox}" width="${vbWidth}" height="${vbHeight}">\n` +
+      `<symbol id="${imageID}"><image width="100%" height="100%" href="${await this.getImage()}"/></symbol>\n` +
       `<defs>${style}\n<mask id="${maskID}" x="0" y="0" width="${width}" height="${height}" maskUnits="userSpaceOnUse">\n${mask}\n</mask>\n</defs>\n` +
-      `<image x="0" y="0" width="${width}" height="${height}" mask="url(#${maskID})" mask-type="alpha" href="${await this.getImageSVG()}"/>\n</svg>`;
+      `<use x="0" y="0" width="${width}" height="${height}" mask="url(#${maskID})" mask-type="alpha" href="#${imageID}"/>\n</svg>`;
     return parser.parseFromString(
       svgString,
       "image/svg+xml",

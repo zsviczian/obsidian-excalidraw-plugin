@@ -25,6 +25,8 @@ export const carveOutImage = async (sourceEA: ExcalidrawAutomate, viewImageEl: E
   newImage.y = 0;
   newImage.width = width;
   newImage.height = height;
+  const scale = newImage.scale;
+  newImage.scale = [1,1];
 
   const ef = sourceEA.targetView.excalidrawData.getFile(viewImageEl.fileId);
   let imageLink = "";
@@ -46,6 +48,7 @@ export const carveOutImage = async (sourceEA: ExcalidrawAutomate, viewImageEl: E
   const file = await createImageCropperFile(targetEA, newImage.id, imageLink, foldername, filename);
   if(!file) return;
 
+  //console.log(await app.vault.read(file));
   sourceEA.clear();
   sourceEA.copyViewElementsToEAforEditing([viewImageEl]);
   const sourceImageEl = sourceEA.getElement(viewImageEl.id) as Mutable<ExcalidrawImageElement>;
@@ -55,6 +58,7 @@ export const carveOutImage = async (sourceEA: ExcalidrawAutomate, viewImageEl: E
   const replacingImage = sourceEA.getElement(replacingImageID) as Mutable<ExcalidrawImageElement>;
   replacingImage.width = sourceImageEl.width;
   replacingImage.height = sourceImageEl.height;
+  replacingImage.scale = scale;
   sourceEA.addElementsToView(false, true, true);
 }
 
@@ -108,7 +112,7 @@ export const createImageCropperFile = async (targetEA: ExcalidrawAutomate, image
   //wait for file to be created/indexed by Obsidian
   let file = vault.getAbstractFileByPath(newPath);
   let counter = 0;
-  while(!file && counter < 50) {
+  while((!file || !targetEA.isExcalidrawFile(file as TFile)) && counter < 50) {
     await sleep(100);
     file = vault.getAbstractFileByPath(newPath);
     counter++;
@@ -119,6 +123,7 @@ export const createImageCropperFile = async (targetEA: ExcalidrawAutomate, image
     return;
   }
 
+  /*
   //wait for the new ExcalidrawView to open and initialize
   counter = 0;
   let newView = workspace.getActiveViewOfType(ExcalidrawView) as ExcalidrawView;
@@ -151,7 +156,7 @@ export const createImageCropperFile = async (targetEA: ExcalidrawAutomate, image
     new Notice("Image did not load to the view. NewExcalidraw Drawing is taking too long to load. Please try again.");
     return;
   }
-
+*/
   //console.log({counter, path: workspace.getActiveFile()?.path, newView, files: api.getFiles()});
 
   return file;

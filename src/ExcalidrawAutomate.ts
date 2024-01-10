@@ -682,7 +682,11 @@ export class ExcalidrawAutomate {
           outString += `${key}: $$${item.latex}$$\n`;  
         } else {
           if(item.file) {
-            outString += `${key}: [[${item.file}]]\n`;
+            if(item.file instanceof TFile) {
+              outString += `${key}: [[${item.file.path}]]\n`;
+            } else {
+              outString += `${key}: [[${item.file}]]\n`;
+            }
           } else {
             outString += `${key}: ${item.hyperlink}\n`;
           }

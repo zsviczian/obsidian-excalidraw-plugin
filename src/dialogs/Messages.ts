@@ -17,6 +17,16 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.0.17":`
+## Fixed
+- Image cropping now supports dark mode
+- Image cropping/carve out was not working reliably in some cases [#1546](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1546)
+- Masking a mirrored image resulted in an off-positioned mask
+
+## New
+- Context menu action to convert SVG to Excalidraw strokes
+- Updated Chinese translation (Thank you @tswwe)
+`,
 "2.0.16":`
 ## Fixed
 - Image cropping did not work consistently with large image files on lower-powered devices [#1538](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1538). 

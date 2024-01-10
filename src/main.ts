@@ -808,8 +808,8 @@ export default class ExcalidrawPlugin extends Plugin {
       checkCallback: (checking: boolean) => {
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if(!view) return false;
-        const img = view.getSingleSelectedImageWithURL();
-        if(!img) return false;
+        const img = view.getSingleSelectedImage();
+        if(!img || !img.embeddedFile?.isHyperLink) return false;
         if(checking) return true;
         view.convertImageElWithURLToLocalFile(img);
       },

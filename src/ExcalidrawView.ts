@@ -4014,9 +4014,9 @@ export default class ExcalidrawView extends TextFileView {
       }
       
     }
-  }
+  }  
 
-  public getSingleSelectedImageWithURL(): {imageEl: ExcalidrawImageElement, embeddedFile: EmbeddedFile}  {
+  public getSingleSelectedImage(): {imageEl: ExcalidrawImageElement, embeddedFile: EmbeddedFile}  {
     if(!this.excalidrawAPI) return null;
     const els = this.getViewSelectedElements().filter(el=>el.type==="image");
     if(els.length !== 1) {
@@ -4024,7 +4024,6 @@ export default class ExcalidrawView extends TextFileView {
     }
     const el = els[0] as ExcalidrawImageElement;
     const imageFile = this.excalidrawData.getFile(el.fileId);
-    if(!imageFile?.isHyperLink) return null;
     return {imageEl: el, embeddedFile: imageFile};
   }
 
@@ -4163,17 +4162,36 @@ export default class ExcalidrawView extends TextFileView {
           }
         }
 
-        const img = this.getSingleSelectedImageWithURL();
-        if(img) {
+        const img = this.getSingleSelectedImage();
+        if(img &&  img.embeddedFile?.isHyperLink) {
           contextMenuActions.push([
             renderContextMenuAction(
               t("CONVERT_URL_TO_FILE"),
               () => {
-                this.convertImageElWithURLToLocalFile(img);
+                setTimeout(()=>this.convertImageElWithURLToLocalFile(img));
               },
               onClose
             ),
           ]);  
+        }
+
+        if(img && img.embeddedFile && img.embeddedFile.mimeType === "image/svg+xml") {
+          contextMenuActions.push([
+            renderContextMenuAction(
+              t("IMPORT_SVG_CONTEXTMENU"),
+              () => {
+                const base64Content = img.embeddedFile.getImage(false).split(',')[1];
+                // Decoding the base64 content
+                const svg = atob(base64Content);
+                if(!svg || svg === "") return;
+                const ea = getEA(this) as ExcalidrawAutomate;
+                ea.importSVG(svg);
+                ea.addToGroup(ea.getElements().map(el=>el.id));
+                ea.addElementsToView(true, true, true,true);
+              },
+              onClose
+            ),
+          ]);
         }
 
         contextMenuActions.push([
