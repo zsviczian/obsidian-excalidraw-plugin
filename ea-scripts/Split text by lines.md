@@ -18,7 +18,7 @@ elements.forEach((el)=>{
   ea.style.strokeColor = el.strokeColor;
   ea.style.fontFamily  = el.fontFamily;
   ea.style.fontSize    = el.fontSize;
-  const text = el.text.split("\n");
+  const text = el.rawText.split("\n");
   for(i=0;i<text.length;i++) {
 	ea.addText(el.x,el.y+i*el.height/text.length,text[i]);
   }
