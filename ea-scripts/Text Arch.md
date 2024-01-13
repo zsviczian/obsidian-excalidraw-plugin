@@ -46,4 +46,4 @@ for(i=0;i<el.text.length;i++) {
   objectIDs.push(ea.addText(x,y,character));
 }
 ea.addToGroup(objectIDs);
-ea.addElementsToView(true);
+ea.addElementsToView(true, false, true);

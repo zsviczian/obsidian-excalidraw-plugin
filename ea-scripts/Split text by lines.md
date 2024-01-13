@@ -20,8 +20,8 @@ elements.forEach((el)=>{
   ea.style.fontSize    = el.fontSize;
   const text = el.rawText.split("\n");
   for(i=0;i<text.length;i++) {
-	ea.addText(el.x,el.y+i*el.height/text.length,text[i]);
+	ea.addText(el.x,el.y+i*el.height/text.length,text[i].trim());
   }
 });
-ea.addElementsToView(false,false);
+ea.addElementsToView(false,false,true);
 ea.deleteViewElements(elements);
