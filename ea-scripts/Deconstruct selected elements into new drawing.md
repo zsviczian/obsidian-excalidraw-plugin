@@ -166,15 +166,21 @@ const newPath = await ea.create ({
   silent: !window.ExcalidrawDeconstructElements.openDeconstructedImage
 });
 
-setTimeout(async ()=>{
-  const file = app.metadataCache.getFirstLinkpathDest(newPath,"");
-  ea.deleteViewElements(els);
-  ea.clear();
-  await ea.addImage(bb.topX,bb.topY,file,false, shouldAnchor);
-  await ea.addElementsToView(false, true, true);
-  ea.getExcalidrawAPI().history.clear(); //to avoid undo/redo messing up the decomposition
-},1000);
+let f = app.vault.getAbstractFileByPath(newPath);
+let counter = 0;
+while((!f || !ea.isExcalidrawFile(f)) && counter++<100) {
+  await sleep(50);
+  f = app.vault.getAbstractFileByPath(newPath);
+}
 
+if(!f || !ea.isExcalidrawFile(f)) {
+  new Notice("Something went wrong");
+  return;
+}
+ea.getElements().forEach(el=>el.isDeleted = true);
+await ea.addImage(bb.topX,bb.topY,f,false, shouldAnchor);
+await ea.addElementsToView(false, true, true);
+ea.getExcalidrawAPI().history.clear();
 if(!window.ExcalidrawDeconstructElements.openDeconstructedImage) {
   new Notice("Deconstruction ready");
 }
