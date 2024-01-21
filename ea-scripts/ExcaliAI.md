@@ -77,7 +77,7 @@ const systemPrompts = {
   "Wireframe to code": {
     prompt: `You are an expert tailwind developer. A user will provide you with a low-fidelity wireframe of an application and you will return a single html file that uses tailwind to create the website. Use creative license to make the application more fleshed out. Write the necessary javascript code. If you need to insert an image, use placehold.co to create a placeholder image.`,
     type: "html",
-    help: "Use GPT Visions to interpret the wireframe and generate a web application. YOu may copy the resulting code from the active embeddable's top left menu."
+    help: "Use GPT Visions to interpret the wireframe and generate a web application. You may copy the resulting code from the active embeddable's top left menu."
   },
 }
 
