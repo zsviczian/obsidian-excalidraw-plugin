@@ -26,7 +26,9 @@ export const carveOutImage = async (sourceEA: ExcalidrawAutomate, viewImageEl: E
   newImage.width = width;
   newImage.height = height;
   const scale = newImage.scale;
+  const angle = newImage.angle;
   newImage.scale = [1,1];
+  newImage.angle = 0;
 
   const ef = sourceEA.targetView.excalidrawData.getFile(viewImageEl.fileId);
   let imageLink = "";
@@ -59,6 +61,7 @@ export const carveOutImage = async (sourceEA: ExcalidrawAutomate, viewImageEl: E
   replacingImage.width = sourceImageEl.width;
   replacingImage.height = sourceImageEl.height;
   replacingImage.scale = scale;
+  replacingImage.angle = angle;
   sourceEA.addElementsToView(false, true, true);
 }
 

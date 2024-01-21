@@ -127,6 +127,7 @@ import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { CustomMutationObserver, durationTreshold, isDebugMode } from "./utils/DebugHelper";
 import { carveOutImage, createImageCropperFile, CROPPED_PREFIX } from "./utils/CarveOut";
+import { ExcalidrawConfig } from "./utils/ExcalidrawConfig";
 
 declare const EXCALIDRAW_PACKAGES:string;
 declare const react:any;
@@ -136,6 +137,7 @@ declare const PLUGIN_VERSION:string;
 declare var LZString: any;
 
 export default class ExcalidrawPlugin extends Plugin {
+  public excalidrawConfig: ExcalidrawConfig;
   public taskbone: Taskbone;
   private excalidrawFiles: Set<TFile> = new Set<TFile>();
   public excalidrawFileModes: { [file: string]: string } = {};
@@ -253,6 +255,7 @@ export default class ExcalidrawPlugin extends Plugin {
     addIcon(EXPORT_IMG_ICON_NAME, EXPORT_IMG_ICON);
 
     await this.loadSettings({reEnableAutosave:true});
+    this.excalidrawConfig = new ExcalidrawConfig(this);
     await loadMermaid();
     
     this.addSettingTab(new ExcalidrawSettingTab(this.app, this));

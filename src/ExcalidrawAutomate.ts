@@ -46,6 +46,7 @@ import {
   getLinkParts,
   getPNG,
   getSVG,
+  isMaskFile,
   isVersionNewerThanOther,
   log,
   scaleLoadedImage,
@@ -86,7 +87,7 @@ import {
   postOpenAI as _postOpenAI,
   extractCodeBlocks as _extractCodeBlocks,
 } from "./utils/AIUtils";
-import { EXCALIDRAW_AUTOMATE_INFO } from "./dialogs/SuggesterInfo";
+import { EXCALIDRAW_AUTOMATE_INFO, EXCALIDRAW_SCRIPTENGINE_INFO } from "./dialogs/SuggesterInfo";
 import { CropImage } from "./utils/CropImage";
 
 extendPlugins([
@@ -128,7 +129,7 @@ export class ExcalidrawAutomate {
 
   public help(target: Function | string) {
     if (!target) {
-      console.log("Usage: ea.help(ea.functionName) or ea.help('propertyName')");
+      console.log("Usage: ea.help(ea.functionName) or ea.help('propertyName') or ea.help('utils.functionName') - notice property name and utils function name is in quotes");
       return;
     }
   
@@ -137,11 +138,17 @@ export class ExcalidrawAutomate {
     if (typeof target === 'function') {
       funcInfo = EXCALIDRAW_AUTOMATE_INFO.find((info) => info.field === target.name);
     } else if (typeof target === 'string') {
-      funcInfo = EXCALIDRAW_AUTOMATE_INFO.find((info) => info.field === target);
+      let stringTarget:string = target;
+      stringTarget = stringTarget.startsWith("utils.") ? stringTarget.substring(6) : stringTarget;
+      stringTarget = stringTarget.startsWith("ea.") ? stringTarget.substring(3) : stringTarget;
+      funcInfo = EXCALIDRAW_AUTOMATE_INFO.find((info) => info.field === stringTarget);
+      if(!funcInfo) {
+        funcInfo = EXCALIDRAW_SCRIPTENGINE_INFO.find((info) => info.field === stringTarget);
+      }
     }
   
     if(!funcInfo) {
-      console.log("Usage: ea.help(ea.functionName) or\nea.help('propertyName') - notice property name is in quotes");
+      console.log("Usage: ea.help(ea.functionName) or ea.help('propertyName') or ea.help('utils.functionName') - notice property name and utils function name is in quotes");
       return;
     }
 
@@ -319,6 +326,17 @@ export class ExcalidrawAutomate {
       }
     }
     return null;
+  }
+
+  public isExcalidrawMaskFile(file?:TFile): boolean {
+    if(file) {
+      return this.isExcalidrawFile(file) && isMaskFile(this.plugin, file);
+    }
+    if (!this.targetView || !this.targetView?.file) {
+      errorMessage("targetView not set", "isMaskFile()");
+      return null;
+    }
+    return isMaskFile(this.plugin, this.targetView.file);
   }
 
   plugin: ExcalidrawPlugin;
@@ -716,13 +734,13 @@ export class ExcalidrawAutomate {
     }
   };
 
-  getCropImageObject(): CropImage {
+/*  getCropImageObject(): CropImage {
     const scene = this.targetView.getScene();
     return new CropImage(
       scene.elements,
       scene.files,
       );
-  }
+  }*/
 
   /**
    * 
@@ -996,8 +1014,8 @@ export class ExcalidrawAutomate {
    * @param height 
    * @returns 
    */
-  addRect(topX: number, topY: number, width: number, height: number): string {
-    const id = nanoid();
+  addRect(topX: number, topY: number, width: number, height: number, id?: string): string {
+    if(!id) id = nanoid();
     this.elementsDict[id] = this.boxedElement(
       id,
       "rectangle",
@@ -1022,8 +1040,9 @@ export class ExcalidrawAutomate {
     topY: number,
     width: number,
     height: number,
+    id?: string,
   ): string {
-    const id = nanoid();
+    if(!id) id = nanoid();
     this.elementsDict[id] = this.boxedElement(
       id,
       "diamond",
@@ -1048,8 +1067,9 @@ export class ExcalidrawAutomate {
     topY: number,
     width: number,
     height: number,
+    id?: string,
   ): string {
-    const id = nanoid();
+    if(!id) id = nanoid();
     this.elementsDict[id] = this.boxedElement(
       id,
       "ellipse",
@@ -1069,7 +1089,7 @@ export class ExcalidrawAutomate {
    * @param height 
    * @returns 
    */
-  addBlob(topX: number, topY: number, width: number, height: number): string {
+  addBlob(topX: number, topY: number, width: number, height: number, id?: string): string {
     const b = height * 0.5; //minor axis of the ellipsis
     const a = width * 0.5; //major axis of the ellipsis
     const sx = a / 9;
@@ -1108,7 +1128,7 @@ export class ExcalidrawAutomate {
       }
       return p;
     };
-    const id = this.addLine(scale(p));
+    id = this.addLine(scale(p), id);
     this.elementsDict[id] = repositionElementsToCursor(
       [this.getElement(id)],
       { x: topX, y: topY },
@@ -1249,9 +1269,9 @@ export class ExcalidrawAutomate {
    * @param points 
    * @returns 
    */
-  addLine(points: [[x: number, y: number]]): string {
+  addLine(points: [[x: number, y: number]], id?: string): string {
     const box = getLineBox(points);
-    const id = nanoid();
+    id = id ?? nanoid();
     this.elementsDict[id] = {
       points: normalizeLinePoints(points),
       lastCommittedPoint: null,
@@ -1278,9 +1298,10 @@ export class ExcalidrawAutomate {
       startObjectId?: string;
       endObjectId?: string;
     },
+    id?: string,
   ): string {
     const box = getLineBox(points);
-    const id = nanoid();
+    id = id ?? nanoid();
     const startPoint = points[0];
     const endPoint = points[points.length - 1];
     this.elementsDict[id] = {

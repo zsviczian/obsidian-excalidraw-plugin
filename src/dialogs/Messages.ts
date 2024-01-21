@@ -17,6 +17,27 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.0.18":`
+## New
+
+<div style="text-align: center;">
+  <a data-tooltip-position="top" aria-label="https://youtube.com/shorts/ST6h4uaXmnY" rel="noopener" class="external-link" href="https://youtube.com/shorts/ST6h4uaXmnY" target="_blank">
+    <img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/vintage-mask.png" referrerpolicy="no-referrer" style="width: 150px; margin: 0 auto;">
+  </a>
+</div>
+
+- [Crop Vintage Mask Script](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Crop%20Vintage%20Mask.md) adds rounded corner mask to cropped images. Install it from the script library.
+- Advanced Setting: Modify image zoom memory limit for sharper zoom. See under "Non-Excalidraw.com Supported Features" in settings.
+- Laser Pointer will not activate on double-click in ExcaliBrain
+
+## Fixed
+- Resolved cropping issue with rotated images.
+
+## New in ExcalidrawAutomate
+- You can now specify elementId to add functions: addLine, addArrow, addRect, etc.
+- ea.help() now provides help on Script Engine utils functions as well
+- ea.isExcalidrawMask(file?:TFile) will return true if the currently open view or the supplied file is an Excalidraw Mask file.
+`,
 "2.0.17":`
 ## Fixed
 - Image cropping now supports dark mode

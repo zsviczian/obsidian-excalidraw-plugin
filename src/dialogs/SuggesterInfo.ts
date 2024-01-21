@@ -17,6 +17,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field:"isExcalidrawMaskFile",
+    code:"isExcalidrawMaskFile(file?:TFile): boolean;",
+    desc:"Returns true if the file is an Excalidraw Mask file. If file is not provided, the function will use ea.targetView.file",
+    after:"",
+  },
+  {
     field: "plugin",
     code: null,
     desc: "The ExcalidrawPlugin object",
@@ -210,25 +216,25 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "addRect",
-    code: "addRect(topX: number, topY: number, width: number, height: number): string;",
+    code: "addRect(topX: number, topY: number, width: number, height: number, id?:string): string;",
     desc: null,
     after: "",
   },
   {
     field: "addDiamond",
-    code: "addDiamond(topX: number, topY: number, width: number, height: number): string;",
+    code: "addDiamond(topX: number, topY: number, width: number, height: number, id?:string): string;",
     desc: null,
     after: "",
   },
   {
     field: "addEllipse",
-    code: "addEllipse(topX: number, topY: number, width: number, height: number): string;",
+    code: "addEllipse(topX: number, topY: number, width: number, height: number, id?:string): string;",
     desc: null,
     after: "",
   },
   {
     field: "addBlob",
-    code: "addBlob(topX: number, topY: number, width: number, height: number): string;",
+    code: "addBlob(topX: number, topY: number, width: number, height: number, id?: string): string;",
     desc: null,
     after: "",
   },
@@ -246,13 +252,13 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "addLine",
-    code: "addLine(points: [[x: number, y: number]]): string;",
+    code: "addLine(points: [[x: number, y: number]], id?:string): string;",
     desc: null,
     after: "",
   },
   {
     field: "addArrow",
-    code: "addArrow(points: [[x: number, y: number]], formatting?: { startArrowHead?: string; endArrowHead?: string; startObjectId?: string; endObjectId?: string;},): string;",
+    code: "addArrow(points: [[x: number, y: number]], formatting?: { startArrowHead?: string; endArrowHead?: string; startObjectId?: string; endObjectId?: string;}, id?:string): string;",
     desc: `valid values for startArrowHead and endArrowHead are: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null`,
     after: "",
   },

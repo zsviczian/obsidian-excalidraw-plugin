@@ -530,6 +530,11 @@ FILENAME_HEAD: "Filename",
   NONSTANDARD_HEAD: "Non-Excalidraw.com supported features",
   NONSTANDARD_DESC: `These settings in the "Non-Excalidraw.com Supported Features" section provide customization options beyond the default Excalidraw.com features. These features are not available on excalidraw.com. When exporting the drawing to Excalidraw.com these features will appear different.
     You can configure the number of custom pens displayed next to the Obsidian Menu on the canvas, allowing you to choose from a range of options. Additionally, you can enable a fourth font option, which adds a fourth font button to the properties panel for text elements. `,
+  RENDER_TWEAK_HEAD: "Rendering tweaks",
+  MAX_IMAGE_ZOOM_IN_NAME: "Maximum image zoom in resolution",
+  MAX_IMAGE_ZOOM_IN_DESC: "To save on memory and because Apple Safari (Obsidian on iOS) has some hard-coded limitations, Excalidraw.com limits the max resolution of images and large objects when zooming in. You can override this limitation using a multiplicator. " +
+    "This means you are multiplying the limit set by default in Excalidraw, the larger the multiplier the better the image zoom in resolution will be, and the more memory it will consume. " +
+    "I recommend playing with multiple values for this setting. You know you've hit the wall, when zooming in to a larger PNG image suddenly the image disappears from view. The default value is 1. The setting has no effect on iOS.",
   CUSTOM_PEN_HEAD: "Custom pens",
   CUSTOM_PEN_NAME: "Number of custom pens",
   CUSTOM_PEN_DESC: "You will see these pens next to the Obsidian Menu on the canvas. You can customize the pens on the canvas by long-pressing the pen button.",

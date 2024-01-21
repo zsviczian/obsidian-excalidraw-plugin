@@ -170,6 +170,7 @@ export interface ExcalidrawSettings {
     Win: Record<ModifierSetType, ModifierKeySet>,
   },
   slidingPanesSupport: boolean;
+  areaZoomLimit: number;
 }
 
 declare const PLUGIN_VERSION:string;
@@ -402,6 +403,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
     },
   },
   slidingPanesSupport: false,
+  areaZoomLimit: 1,
 };
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
@@ -1922,6 +1924,35 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     detailsEl.createEl("summary", { 
       text: t("NONSTANDARD_HEAD"),
       cls: "excalidraw-setting-h1",
+    });
+
+    detailsEl = nonstandardDetailsEl.createEl("details");
+    detailsEl.createEl("summary", { 
+      text: t("RENDER_TWEAK_HEAD"),
+      cls: "excalidraw-setting-h3",
+    });
+    
+    let areaZoomText: HTMLDivElement;
+
+    new Setting(detailsEl)
+    .setName(t("MAX_IMAGE_ZOOM_IN_NAME"))
+    .setDesc(fragWithHTML(t("MAX_IMAGE_ZOOM_IN_DESC")))
+    .addSlider((slider) =>
+      slider
+        .setLimits(1, 10, 0.5)
+        .setValue(this.plugin.settings.areaZoomLimit)
+        .onChange(async (value) => {
+          areaZoomText.innerText = ` ${value.toString()}`;
+          this.plugin.settings.areaZoomLimit = value;
+          this.applySettingsUpdate();
+          this.plugin.excalidrawConfig.updateValues();
+        }),
+    )
+    .settingEl.createDiv("", (el) => {
+      areaZoomText = el;
+      el.style.minWidth = "2.3em";
+      el.style.textAlign = "right";
+      el.innerText = ` ${this.plugin.settings.areaZoomLimit.toString()}`;
     });
 
     detailsEl = nonstandardDetailsEl.createEl("details");
