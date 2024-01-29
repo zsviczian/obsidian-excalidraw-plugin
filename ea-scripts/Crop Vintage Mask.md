@@ -18,7 +18,8 @@ if(frames.length !== 1) {
   return;
 }
 const frame = frames[0];
-const frameId = frame.id;
+ea.copyViewElementsToEAforEditing(ea.getViewElements().filter(el=>el.frameId === frame.id));
+const frameId = ea.generateElementId();
 ea.style.fillStyle = "solid";
 ea.style.roughness = 0;
 ea.style.strokeColor = "transparent";
@@ -38,18 +39,25 @@ if (blackEl && !whiteEl) {
 } else
 if (!blackEl && whiteEl) {
   ea.style.backgroundColor = "black";
-  ea.addRect(frame.x-10,frame.y-10,frame.width+20,frame.height+20, "allblack");
+  ea.addRect(frame.x-2,frame.y-2,frame.width+4,frame.height+4, "allblack");
   ea.copyViewElementsToEAforEditing([whiteEl]);
 } else {
   ea.style.backgroundColor = "black";
-  ea.addRect(frame.x-10,frame.y-10,frame.width+20,frame.height+20, "allblack");
+  ea.addRect(frame.x-2,frame.y-2,frame.width+4,frame.height+4, "allblack");
   ea.style.backgroundColor = "white";
   ea.addRect(frame.x,frame.y,frame.width,frame.height, "whiteovr");
 }
 blackEl = ea.getElement("allblack");
 whiteEl = ea.getElement("whiteovr");
-blackEl.frameId = frameId;
-whiteEl.frameId = frameId;
+
+//this "magic" is required to ensure the frame element is above in sequence of the new rectangle elements
+ea.getElements().forEach(el=>{el.frameId = frameId});
+ea.copyViewElementsToEAforEditing(ea.getViewElements().filter(el=>el.id === frame.id));
+const newFrame = ea.getElement(frame.id); 
+newFrame.id = frameId;
+ea.elementsDict[frameId] = newFrame;
+ea.copyViewElementsToEAforEditing(ea.getViewElements().filter(el=>el.id === frame.id));
+ea.getElement(frame.id).isDeleted = true;
 
 let curve = await utils.inputPrompt(
   "Set roundess",
@@ -64,4 +72,4 @@ if(isNaN(curve) || curve < 0) {
   return;
 }
 whiteEl.roundness = {type: 3, value: curve};
-ea.addElementsToView(false, true, true);
+ea.addElementsToView(false,false,true);
