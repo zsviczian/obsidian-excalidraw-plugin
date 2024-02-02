@@ -11,14 +11,17 @@ import {
 } from "obsidian";
 import ExcalidrawView from "../ExcalidrawView";
 import ExcalidrawPlugin from "../main";
-import { escapeRegExp, sleep } from "../utils/Utils";
+import { escapeRegExp, getLinkParts, sleep } from "../utils/Utils";
 import { getLeaf } from "../utils/ObsidianUtils";
 import { checkAndCreateFolder, splitFolderAndFilename } from "src/utils/FileUtils";
 import { KeyEvent, isWinCTRLorMacCMD } from "src/utils/ModifierkeyHelper";
 import { t } from "src/lang/helpers";
 import { ExcalidrawElement, getEA } from "src";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
-import { MAX_IMAGE_SIZE } from "src/constants/constants";
+import { MAX_IMAGE_SIZE, REG_LINKINDEX_INVALIDCHARS } from "src/constants/constants";
+import { REGEX_LINK } from "src/ExcalidrawData";
+import { ScriptEngine } from "src/Scripts";
+import { openExternalLink, openTagSearch } from "src/utils/ExcalidrawViewUtils";
 
 export type ButtonDefinition = { caption: string; tooltip?:string; action: Function };
 
@@ -692,4 +695,47 @@ export class ConfirmationPrompt extends Modal {
       this.resolvePromise(true);
     }
   }
+}
+
+export const linkPrompt = async (linkText:string, app: App, view?: ExcalidrawView):Promise<[file:TFile, linkText:string, subpath: string]> => {
+  const partsArray = REGEX_LINK.getResList(linkText);
+  let subpath: string = null;
+  let file: TFile = null;
+  let parts = partsArray[0];
+    if (partsArray.length > 1) {
+      parts = await ScriptEngine.suggester(
+        app,
+        partsArray.filter(p=>Boolean(p.value)).map(p => {
+          const alias = REGEX_LINK.getAliasOrLink(p);
+          return alias === "100%" ? REGEX_LINK.getLink(p) : alias;
+        }),
+        partsArray.filter(p=>Boolean(p.value)),
+        "Select link to open"
+      );
+      if(!parts) return;
+    }
+  if(!parts) return;
+  
+  if (!parts.value) {
+    openTagSearch(linkText, app);
+    return;
+  }
+
+  linkText = REGEX_LINK.getLink(parts);
+  if(openExternalLink(linkText, app)) return;
+
+  if (linkText.search("#") > -1) {
+    const linkParts = getLinkParts(linkText, view ? view.file : undefined);
+    subpath = `#${linkParts.isBlockRef ? "^" : ""}${linkParts.ref}`;
+    linkText = linkParts.path;
+  }
+  if (linkText.match(REG_LINKINDEX_INVALIDCHARS)) {
+    new Notice(t("FILENAME_INVALID_CHARS"), 4000);
+    return;
+  }
+  file = app.metadataCache.getFirstLinkpathDest(
+    linkText,
+    view ? view.file.path : "",
+  );
+  return [file, linkText, subpath];
 }

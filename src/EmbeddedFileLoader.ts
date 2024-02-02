@@ -12,13 +12,10 @@ import {
 import {  
   DEFAULT_MD_EMBED_CSS,
   fileid,
-  FRONTMATTER_KEY_BORDERCOLOR,
-  FRONTMATTER_KEY_FONT,
-  FRONTMATTER_KEY_FONTCOLOR,
-  FRONTMATTER_KEY_MD_STYLE,
   IMAGE_TYPES,
   nanoid,
   THEME_FILTER,
+  FRONTMATTER_KEYS,
 } from "./constants/constants";
 import { createSVG } from "./ExcalidrawAutomate";
 import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
@@ -748,9 +745,9 @@ export class EmbeddedFilesLoader {
     let fontName = plugin.settings.mdFont;
     if (
       fileCache?.frontmatter &&
-      Boolean(fileCache.frontmatter[FRONTMATTER_KEY_FONT])
+      Boolean(fileCache.frontmatter[FRONTMATTER_KEYS["font"].name])
     ) {
-      fontName = fileCache.frontmatter[FRONTMATTER_KEY_FONT];
+      fontName = fileCache.frontmatter[FRONTMATTER_KEYS["font"].name];
     }
     switch (fontName) {
       case "Virgil":
@@ -779,12 +776,12 @@ export class EmbeddedFilesLoader {
     }
 
     const fontColor = fileCache?.frontmatter
-      ? fileCache.frontmatter[FRONTMATTER_KEY_FONTCOLOR] ??
+      ? fileCache.frontmatter[FRONTMATTER_KEYS["font-color"].name] ??
         plugin.settings.mdFontColor
       : plugin.settings.mdFontColor;
   
     let style = fileCache?.frontmatter
-      ? fileCache.frontmatter[FRONTMATTER_KEY_MD_STYLE] ?? ""
+      ? fileCache.frontmatter[FRONTMATTER_KEYS["md-css"].name] ?? ""
       : "";
     let frontmatterCSSisAfile = false;
     if (style && style != "") {
@@ -807,7 +804,7 @@ export class EmbeddedFilesLoader {
     }
   
     const borderColor = fileCache?.frontmatter
-      ? fileCache.frontmatter[FRONTMATTER_KEY_BORDERCOLOR] ??
+      ? fileCache.frontmatter[FRONTMATTER_KEYS["border-color"].name] ??
         plugin.settings.mdBorderColor
       : plugin.settings.mdBorderColor;
   

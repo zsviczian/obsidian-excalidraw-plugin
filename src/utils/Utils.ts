@@ -13,15 +13,10 @@ import {
   VIRGIL_FONT,
 } from "src/constants/constFonts";
 import {
-  FRONTMATTER_KEY_EXPORT_DARK,
-  FRONTMATTER_KEY_EXPORT_TRANSPARENT,
-  FRONTMATTER_KEY_EXPORT_SVGPADDING,
-  FRONTMATTER_KEY_EXPORT_PNGSCALE,
-  FRONTMATTER_KEY_EXPORT_PADDING,
   exportToSvg,
   exportToBlob,
   IMAGE_TYPES,
-  FRONTMATTER_KEY_MASK
+  FRONTMATTER_KEYS,
 } from "../constants/constants";
 import ExcalidrawPlugin from "../main";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
@@ -548,9 +543,9 @@ export const isMaskFile = (
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEY_MASK] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["mask"].name] != null
     ) {
-      return Boolean(fileCache.frontmatter[FRONTMATTER_KEY_MASK]);
+      return Boolean(fileCache.frontmatter[FRONTMATTER_KEYS["mask"].name]);
     }
   }
   return false;
@@ -564,7 +559,7 @@ export const hasExportTheme = (
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_DARK] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["export-dark"].name] != null
     ) {
       return true;
     }
@@ -581,9 +576,9 @@ export const getExportTheme = (
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_DARK] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["export-dark"].name] != null
     ) {
-      return fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_DARK]
+      return fileCache.frontmatter[FRONTMATTER_KEYS["export-dark"].name]
         ? "dark"
         : "light";
     }
@@ -599,7 +594,7 @@ export const hasExportBackground = (
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_TRANSPARENT] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["export-transparent"].name] != null
     ) {
       return true;
     }
@@ -615,9 +610,9 @@ export const getWithBackground = (
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_TRANSPARENT] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["export-transparent"].name] != null
     ) {
-      return !fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_TRANSPARENT];
+      return !fileCache.frontmatter[FRONTMATTER_KEYS["export-transparent"].name];
     }
   }
   return plugin.settings.exportWithBackground;
@@ -631,9 +626,9 @@ export const getExportPadding = (
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if(!fileCache?.frontmatter) return plugin.settings.exportPaddingSVG;
 
-    if (fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_PADDING] != null) {
+    if (fileCache.frontmatter[FRONTMATTER_KEYS["export-padding"].name] != null) {
       const val = parseInt(
-        fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_PADDING],
+        fileCache.frontmatter[FRONTMATTER_KEYS["export-padding"].name],
       );
       if (!isNaN(val)) {
         return val;
@@ -641,9 +636,9 @@ export const getExportPadding = (
     }
 
     //depricated. Retained for backward compatibility
-    if (fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_SVGPADDING] != null) {
+    if (fileCache.frontmatter[FRONTMATTER_KEYS["export-svgpadding"].name] != null) {
       const val = parseInt(
-        fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_SVGPADDING],
+        fileCache.frontmatter[FRONTMATTER_KEYS["export-svgpadding"].name],
       );
       if (!isNaN(val)) {
         return val;
@@ -659,10 +654,10 @@ export const getPNGScale = (plugin: ExcalidrawPlugin, file: TFile): number => {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_PNGSCALE] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["export-pngscale"].name] != null
     ) {
       const val = parseFloat(
-        fileCache.frontmatter[FRONTMATTER_KEY_EXPORT_PNGSCALE],
+        fileCache.frontmatter[FRONTMATTER_KEYS["export-pngscale"].name],
       );
       if (!isNaN(val) && val > 0) {
         return val;

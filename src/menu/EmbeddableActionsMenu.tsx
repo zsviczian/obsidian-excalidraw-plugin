@@ -12,6 +12,7 @@ import { REGEX_LINK, REG_LINKINDEX_HYPERLINK } from "src/ExcalidrawData";
 import { processLinkText, useDefaultExcalidrawFrame } from "src/utils/CustomEmbeddableUtils";
 import { cleanSectionHeading } from "src/utils/ObsidianUtils";
 import { EmbeddableSettings } from "src/dialogs/EmbeddableSettings";
+import { openExternalLink } from "src/utils/ExcalidrawViewUtils";
 
 export class EmbeddableMenu {
 
@@ -257,10 +258,11 @@ export class EmbeddableMenu {
               key={"Open"}
               title={t("OPEN_IN_BROWSER")}
               action={() => {
-                view.openExternalLink(
+                openExternalLink(
                   !iframe.src.startsWith("https://www.youtube.com") && !iframe.src.startsWith("https://player.vimeo.com") 
-                  ? iframe.src
-                  : element.link
+                    ? iframe.src
+                    : element.link,
+                  view.app
                 );
               }}
               icon={ICONS.Globe}

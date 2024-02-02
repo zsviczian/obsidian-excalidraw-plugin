@@ -143,26 +143,29 @@ export const IMAGE_TYPES = ["jpeg", "jpg", "png", "gif", "svg", "webp", "bmp", "
 export const ANIMATED_IMAGE_TYPES = ["gif", "webp", "apng", "svg"];
 export const EXPORT_TYPES = ["svg", "dark.svg", "light.svg", "png", "dark.png", "light.png"];
 export const MAX_IMAGE_SIZE = 500;
-export const FRONTMATTER_KEY = "excalidraw-plugin";
-export const FRONTMATTER_KEY_EXPORT_TRANSPARENT =
-  "excalidraw-export-transparent";
-export const FRONTMATTER_KEY_MASK = "excalidraw-mask";
-export const FRONTMATTER_KEY_EXPORT_DARK = "excalidraw-export-dark";
-export const FRONTMATTER_KEY_EXPORT_SVGPADDING = "excalidraw-export-svgpadding"; //depricated
-export const FRONTMATTER_KEY_EXPORT_PADDING = "excalidraw-export-padding";
-export const FRONTMATTER_KEY_EXPORT_PNGSCALE = "excalidraw-export-pngscale";
-export const FRONTMATTER_KEY_CUSTOM_PREFIX = "excalidraw-link-prefix";
-export const FRONTMATTER_KEY_CUSTOM_URL_PREFIX = "excalidraw-url-prefix";
-export const FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS = "excalidraw-link-brackets";
-export const FRONTMATTER_KEY_ONLOAD_SCRIPT = "excalidraw-onload-script";
-export const FRONTMATTER_KEY_LINKBUTTON_OPACITY = "excalidraw-linkbutton-opacity";
-export const FRONTMATTER_KEY_DEFAULT_MODE = "excalidraw-default-mode";
-export const FRONTMATTER_KEY_FONT = "excalidraw-font";
-export const FRONTMATTER_KEY_FONTCOLOR = "excalidraw-font-color";
-export const FRONTMATTER_KEY_BORDERCOLOR = "excalidraw-border-color";
-export const FRONTMATTER_KEY_MD_STYLE = "excalidraw-css";
-export const FRONTMATTER_KEY_AUTOEXPORT = "excalidraw-autoexport"
-export const FRONTMATTER_KEY_EMBEDDABLE_THEME = "excalidraw-iframe-theme";
+
+export const FRONTMATTER_KEYS:{[key:string]: {name: string, type: string, depricated?:boolean}} = {
+  "plugin": {name: "excalidraw-plugin", type: "text"},
+  "export-transparent": {name: "excalidraw-export-transparent", type: "checkbox"},
+  "mask": {name: "excalidraw-mask", type: "checkbox"},
+  "export-dark": {name: "excalidraw-export-dark", type: "checkbox"},
+  "export-svgpadding": {name: "excalidraw-export-svgpadding", type: "number", depricated: true},
+  "export-padding": {name: "excalidraw-export-padding", type: "number"},
+  "export-pngscale": {name: "excalidraw-export-pngscale", type: "number"},
+  "link-prefix": {name: "excalidraw-link-prefix", type: "text"},
+  "url-prefix": {name: "excalidraw-url-prefix", type: "text"},
+  "link-brackets": {name: "excalidraw-link-brackets", type: "checkbox"},
+  "onload-script": {name: "excalidraw-onload-script", type: "text"},
+  "linkbutton-opacity": {name: "excalidraw-linkbutton-opacity", type: "number"},
+  "default-mode": {name: "excalidraw-default-mode", type: "text"},
+  "font": {name: "excalidraw-font", type: "text"},
+  "font-color": {name: "excalidraw-font-color", type: "text"},
+  "border-color": {name: "excalidraw-border-color", type: "text"},
+  "md-css": {name: "excalidraw-css", type: "text"},
+  "autoexport": {name: "excalidraw-autoexport", type: "checkbox"},
+  "iframe-theme": {name: "excalidraw-iframe-theme", type: "text"}, 
+};
+
 export const EMBEDDABLE_THEME_FRONTMATTER_VALUES = ["light", "dark", "auto", "dafault"];
 export const VIEW_TYPE_EXCALIDRAW = "excalidraw";
 export const ICON_NAME = "excalidraw-icon";
@@ -176,7 +179,7 @@ export const DARK_BLANK_DRAWING =
 export const FRONTMATTER = [
   "---",
   "",
-  `${FRONTMATTER_KEY}: parsed`,
+  `${FRONTMATTER_KEYS["plugin"].name}: parsed`,
   "tags: [excalidraw]",
   "",
   "---",

@@ -1,8 +1,6 @@
 import {
   DEVICE,
-  FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS,
-  FRONTMATTER_KEY_CUSTOM_PREFIX,
-  FRONTMATTER_KEY_CUSTOM_URL_PREFIX,
+  FRONTMATTER_KEYS,
 } from "src/constants/constants";
 import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/ModifierkeyHelper";
 
@@ -78,6 +76,7 @@ export default {
   TRAY_MODE: "Toggle property-panel tray-mode",
   SEARCH: "Search for text in drawing",
   CROP_IMAGE: "Crop and mask image",
+  INSERT_ACTIVE_PDF_PAGE_AS_IMAGE: "Insert active PDF page as image",
   RESET_IMG_TO_100: "Set selected image element size to 100% of original",
   TEMPORARY_DISABLE_AUTOSAVE: "Disable autosave until next time Obsidian starts (only set this if you know what you are doing)",
   TEMPORARY_ENABLE_AUTOSAVE: "Enable autosave",
@@ -126,6 +125,13 @@ export default {
   FOLDER_NAME: "Excalidraw folder",
   FOLDER_DESC:
     "Default location for new drawings. If empty, drawings will be created in the Vault root.",
+  CROP_PREFIX_NAME: "Crop file prefix",
+  CROP_PREFIX_DESC:
+    "The first part of the filename for new drawings created when cropping an image. " +
+    "If empty the default 'cropped_' will be used.",  
+  CROP_FOLDER_NAME: "Crop file folder",
+  CROP_FOLDER_DESC:
+    "Default location for new drawings created when cropping an image. If empty, drawings will be created following the Vault attachments settings.",
   FOLDER_EMBED_NAME:
     "Use Excalidraw folder when embedding a drawing into the active document",
   FOLDER_EMBED_DESC:
@@ -314,17 +320,17 @@ FILENAME_HEAD: "Filename",
   LINK_BRACKETS_DESC: `${
     "In PREVIEW mode, when parsing Text Elements, place brackets around links. " +
     "You can override this setting for a specific drawing by adding <code>"
-  }${FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS}: true/false</code> to the file's frontmatter.`,
+  }${FRONTMATTER_KEYS["link-brackets"].name}: true/false</code> to the file's frontmatter.`,
   LINK_PREFIX_NAME: "Link prefix",
   LINK_PREFIX_DESC: `${
     "In PREVIEW mode, if the Text Element contains a link, precede the text with these characters. " +
     "You can override this setting for a specific drawing by adding <code>"
-  }${FRONTMATTER_KEY_CUSTOM_PREFIX}: "📍 "</code> to the file's frontmatter.`,
+  }${FRONTMATTER_KEYS["link-prefix"].name}: "📍 "</code> to the file's frontmatter.`,
   URL_PREFIX_NAME: "URL prefix",
   URL_PREFIX_DESC: `${
     "In PREVIEW mode, if the Text Element contains a URL link, precede the text with these characters. " +
     "You can override this setting for a specific drawing by adding <code>"
-  }${FRONTMATTER_KEY_CUSTOM_URL_PREFIX}: "🌐 "</code> to the file's frontmatter.`,
+  }${FRONTMATTER_KEYS["url-prefix"].name}: "🌐 "</code> to the file's frontmatter.`,
   PARSE_TODO_NAME: "Parse todo",
   PARSE_TODO_DESC: "Convert '- [ ] ' and '- [x] ' to checkbox and tick in the box.",
   TODO_NAME: "Open TODO icon",

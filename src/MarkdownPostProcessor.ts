@@ -1,6 +1,7 @@
 import {
   MarkdownPostProcessorContext,
   MetadataCache,
+  PaneType,
   TFile,
   Vault,
 } from "obsidian";
@@ -26,6 +27,8 @@ import { linkClickModifierType } from "./utils/ModifierkeyHelper";
 import { ImageKey, imageCache } from "./utils/ImageCache";
 import { FILENAMEPARTS, PreviewImageType } from "./utils/UtilTypes";
 import { CustomMutationObserver, isDebugMode } from "./utils/DebugHelper";
+import { getExcalidrawFileForwardLinks } from "./utils/ExcalidrawViewUtils";
+import { linkPrompt } from "./dialogs/Prompt";
 
 interface imgElementAttributes {
   file?: TFile;
@@ -356,12 +359,31 @@ const createImgElement = async (
     if (src) {
       const srcParts = src.match(/([^#]*)(.*)/);
       if(!srcParts) return;
-      plugin.openDrawing(
-        vault.getAbstractFileByPath(srcParts[1]) as TFile,
-        linkClickModifierType(ev),
-        true,
-        srcParts[2],
-      );
+        const f = vault.getAbstractFileByPath(srcParts[1]) as TFile;
+        const linkModifier = linkClickModifierType(ev);
+        if (plugin.isExcalidrawFile(f) && isMaskFile(plugin, f)) {
+          (async () => {
+              const linkString = `[[${f.path}${srcParts[2]?"#"+srcParts[2]:""}]] ${getExcalidrawFileForwardLinks(plugin.app, f)}`;
+              const result = await linkPrompt(linkString, plugin.app);
+              if(!result) return;
+              const [file, linkText, subpath] = result;
+              if(plugin.isExcalidrawFile(file)) {
+                plugin.openDrawing(file,linkModifier, true, subpath);
+                return;
+              }
+              let paneType: boolean | PaneType = false;
+              switch(linkModifier) {
+                case "active-pane": paneType = false; break;
+                case "new-pane": paneType = "split"; break;
+                case "popout-window": paneType = "window"; break;
+                case "new-tab": paneType = "tab"; break;
+                case "md-properties": paneType = "tab"; break;
+              }
+              plugin.app.workspace.openLinkText(linkText,"",paneType,subpath ? {eState: {subpath}} : {});
+          })()
+          return;
+        }
+      plugin.openDrawing(f,linkModifier,true,srcParts[2]);
     } //.ctrlKey||ev.metaKey);
   };
   //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1003

@@ -89,6 +89,7 @@ import {
 } from "./utils/AIUtils";
 import { EXCALIDRAW_AUTOMATE_INFO, EXCALIDRAW_SCRIPTENGINE_INFO } from "./dialogs/SuggesterInfo";
 import { CropImage } from "./utils/CropImage";
+import { has } from "./svgToExcalidraw/attributes";
 
 extendPlugins([
   HarmonyPlugin,
@@ -588,6 +589,7 @@ export class ExcalidrawAutomate {
       "excalidraw-linkbutton-opacity"?: number;
       "excalidraw-autoexport"?: boolean;
       "excalidraw-mask"?: boolean;
+      "cssclasses"?: string;
     };
     plaintext?: string; //text to insert above the `# Text Elements` section
   }): Promise<string> {
@@ -706,7 +708,16 @@ export class ExcalidrawAutomate {
               outString += `${key}: [[${item.file}]]\n`;
             }
           } else {
-            outString += `${key}: ${item.hyperlink}\n`;
+            const hyperlinkSplit = item.hyperlink.split("#");
+            const file = this.plugin.app.vault.getAbstractFileByPath(hyperlinkSplit[0]);
+            if(file && file instanceof TFile) {
+              const hasFileRef = hyperlinkSplit.length === 2
+              outString += hasFileRef
+                ? `${key}: [[${file.path}#${hyperlinkSplit[1]}]]\n`
+                : `${key}: [[${file.path}]]\n`;
+            } else {
+              outString += `${key}: ${item.hyperlink}\n`;
+            }
           }
         }
       })
@@ -1413,7 +1424,7 @@ export class ExcalidrawAutomate {
   async addImage(
     topX: number,
     topY: number,
-    imageFile: TFile | string,
+    imageFile: TFile | string, //string may also be an Obsidian filepath with a reference such as folder/path/my.pdf#page=2
     scale: boolean = true, //default is true which will scale the image to MAX_IMAGE_SIZE, false will insert image at 100% of its size
     anchor: boolean = true, //only has effect if scale is false. If anchor is true the image path will include |100%, if false the image will be inserted at 100%, but if resized by the user it won't pop back to 100% the next time Excalidraw is opened.
   ): Promise<string> {
@@ -1861,6 +1872,7 @@ export class ExcalidrawAutomate {
         this.elementsDict[el.id] = cloneElement(el);
         if(el.type === "image") {
           const ef = this.targetView.excalidrawData.getFile(el.fileId);
+          const imageWithRef = ef && ef.file && ef.linkParts && ef.linkParts.ref;
           const equation = this.targetView.excalidrawData.getEquation(el.fileId);
           const sceneFile = sceneFiles?.[el.fileId];
           this.imagesDict[el.fileId] = {
@@ -1869,9 +1881,9 @@ export class ExcalidrawAutomate {
             dataURL: sceneFile.dataURL,
             created: sceneFile.created,
             ...ef ? {
-              isHyperLink: ef.isHyperLink,
-              hyperlink: ef.hyperlink,
-              file: ef.file,
+              isHyperLink: ef.isHyperLink || imageWithRef,
+              hyperlink: imageWithRef ? `${ef.file.path}#${ef.linkParts.ref}` : ef.hyperlink,
+              file: imageWithRef ? null : ef.file,
               hasSVGwithBitmap: ef.isSVGwithBitmap,
               latex: null,
             } : {},

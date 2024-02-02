@@ -35,6 +35,9 @@ declare module "obsidian" {
     internalPlugins: any;
     isMobile(): boolean;
     getObsidianUrl(file:TFile): string;
+    metadataTypeManager: {
+      setType(name:string, type:string): void;
+    };
   }
   interface Keymap {
     getRootScope(): Scope;
@@ -60,5 +63,6 @@ declare module "obsidian" {
   }
   interface MetadataCache {
     getBacklinksForFile(file: TFile): any;
+    getLinks(): { [id: string]: Array<{ link: string; displayText: string; original: string; position: any }> };
   }
 }

@@ -98,7 +98,7 @@ export const setDynamicStyle = (
     [`--color-gray-50`]: str(text), //frame
     [`--color-surface-highlight`]: str(gray1()),
     //[`--color-gray-30`]: str(gray1),
-    [`--color-gray-80`]: str(isDark?text.lighterBy(15):text.darkerBy(15)), //frame
+    [`--color-gray-80`]: str(isDark?text.darkerBy(40):text.lighterBy(40)), //frame
     [`--sidebar-border-color`]: str(gray1()),
     [`--color-primary-light`]: str(accent().lighterBy(step)),
     [`--button-hover-bg`]: str(gray1()),
@@ -130,7 +130,7 @@ export const setDynamicStyle = (
     const frameColor = {
       stroke: str(isDark?gray2().lighterBy(15):gray2().darkerBy(15)),
       fill: str((isDark?gray2().lighterBy(30):gray2().darkerBy(30)).alphaTo(0.2)),
-      nameColor: str(isDark?gray2().lighterBy(40):gray2().darkerBy(40)),
+      nameColor: str(isDark?gray2().lighterBy(50):gray2().darkerBy(50)),
     }
     const scene = api.getSceneElements();
     scene.filter(el=>el.type==="frame").forEach((e:ExcalidrawFrameElement)=>{

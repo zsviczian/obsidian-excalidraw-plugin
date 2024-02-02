@@ -33,9 +33,11 @@ import { EmbeddalbeMDFileCustomDataSettingsComponent } from "./dialogs/Embeddabl
 import { startupScript } from "./constants/starutpscript";
 import { ModifierKeySet, ModifierSetType } from "./utils/ModifierkeyHelper";
 import { ModifierKeySettingsComponent } from "./dialogs/ModifierKeySettings";
+import { CROPPED_PREFIX } from "./utils/CarveOut";
 
 export interface ExcalidrawSettings {
   folder: string;
+  cropFolder: string;
   embedUseExcalidrawFolder: boolean;
   templateFilePath: string;
   scriptFolderPath: string;
@@ -49,6 +51,7 @@ export interface ExcalidrawSettings {
   drawingFilnameEmbedPostfix: string;
   drawingFilenameDateTime: string;
   useExcalidrawExtension: boolean;
+  cropPrefix: string;
   displaySVGInPreview: boolean; //No longer used since 1.9.13
   previewImageType: PreviewImageType; //Introduced with 1.9.13
   allowImageCache: boolean;
@@ -177,6 +180,7 @@ declare const PLUGIN_VERSION:string;
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   folder: "Excalidraw",
+  cropFolder: "",
   embedUseExcalidrawFolder: false,
   templateFilePath: "Excalidraw/Template.excalidraw",
   scriptFolderPath: "Excalidraw/Scripts",
@@ -190,6 +194,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   drawingFilnameEmbedPostfix: " ",
   drawingFilenameDateTime: "YYYY-MM-DD HH.mm.ss",
   useExcalidrawExtension: true,
+  cropPrefix: CROPPED_PREFIX,
   displaySVGInPreview: undefined,
   previewImageType: undefined,
   allowImageCache: true,
@@ -553,6 +558,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
 
     new Setting(detailsEl)
+      .setName(t("CROP_FOLDER_NAME"))
+      .setDesc(fragWithHTML(t("CROP_FOLDER_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder("e.g.: Excalidraw/Cropped")
+          .setValue(this.plugin.settings.cropFolder)
+          .onChange(async (value) => {
+            this.plugin.settings.cropFolder = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
       .setName(t("TEMPLATE_NAME"))
       .setDesc(fragWithHTML(t("TEMPLATE_DESC")))
       .addText((text) =>
@@ -749,6 +767,22 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
 
 
+    new Setting(detailsEl)
+      .setName(t("CROP_PREFIX_NAME"))
+      .setDesc(fragWithHTML(t("CROP_PREFIX_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder("e.g.: Cropped_ ")
+          .setValue(this.plugin.settings.cropPrefix)
+          .onChange(async (value) => {
+            this.plugin.settings.cropPrefix = value.replaceAll(
+              /[<>:"/\\|?*]/g,
+              "_",
+            );
+            text.setValue(this.plugin.settings.cropPrefix);
+            this.applySettingsUpdate();
+          }),
+      );
     //------------------------------------------------
     // AI Settings
     //------------------------------------------------

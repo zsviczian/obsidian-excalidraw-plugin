@@ -5,6 +5,9 @@ import { IMAGE_MIME_TYPES, MimeType } from "src/EmbeddedFileLoader";
 import { ExcalidrawSettings } from "src/settings";
 import { errorlog, getDataURL } from "./Utils";
 import ExcalidrawPlugin from "src/main";
+import ExcalidrawView from "src/ExcalidrawView";
+import { CROPPED_PREFIX } from "./CarveOut";
+import { getAttachmentsFolderAndFilePath } from "./ObsidianUtils";
 
 /**
  * Splits a full path including a folderpath and a filename into separate folderpath and filename components
@@ -370,4 +373,17 @@ export const getLink = (
   return plugin.settings.embedWikiLink
     ? `${embed ? "!" : ""}[[${path}${alias ? `|${alias}` : ""}]]`
     : `${embed ? "!" : ""}[${alias ?? ""}](${encodeURI(path)})`
+}
+
+export const getCropFileNameAndFolder = async (plugin: ExcalidrawPlugin, hostPath: string, baseNewFileName: string):Promise<{folderpath: string, filename: string}> => {
+  let prefix = plugin.settings.cropPrefix;
+  if(!prefix || prefix.trim() === "") prefix = CROPPED_PREFIX;
+  const filename = prefix + baseNewFileName + ".md";
+  if(!plugin.settings.cropFolder || plugin.settings.cropFolder.trim() === "") {
+    const folderpath = (await getAttachmentsFolderAndFilePath(plugin.app, hostPath, filename)).folder;
+    return {folderpath, filename};
+  }
+  const folderpath = normalizePath(plugin.settings.cropFolder);
+  await checkAndCreateFolder(folderpath);
+  return {folderpath, filename};
 }

@@ -162,6 +162,19 @@ export class InsertPDFModal extends Modal {
       numPagesMessage.innerHTML = `There are <b>${numPages}</b> pages in the selected document.`;
     }
 
+    let pageRangesTextComponent: TextComponent
+    let importPagesMessage: HTMLParagraphElement;
+
+    const rangeOnChange = (value:string) => {
+      const pages = this.createPageListFromString(value);
+      if(pages.length > 15) {
+        importPagesMessage.innerHTML = `You are importing <b>${pages.length}</b> pages. ⚠️ This may take a while. ⚠️`;
+      } else {
+        importPagesMessage.innerHTML = `You are importing <b>${pages.length}</b> pages.`;
+      }
+      importButtonMessages();
+    }
+
     const setFile = async (file: TFile) => {
       if(this.pdfDoc) await this.pdfDoc.destroy();
       this.pdfDoc = null;
@@ -171,6 +184,8 @@ export class InsertPDFModal extends Modal {
         this.pdfFile = file;
         if(this.pdfDoc) {
           numPages = this.pdfDoc.numPages;
+          pageRangesTextComponent.setValue(`1-${numPages}`);
+          rangeOnChange(`1-${numPages}`);
           importButtonMessages();
           numPagesMessages();
           this.getPageDimensions(this.pdfDoc);
@@ -190,23 +205,14 @@ export class InsertPDFModal extends Modal {
     
     numPagesMessage = ce.createEl("p", {text: ""});
     numPagesMessages();
-    let importPagesMessage: HTMLParagraphElement;
-    let pageRangesTextComponent: TextComponent
     new Setting(ce)
       .setName("Pages to import")
+      .setDesc("e.g.: 1,3-5,7,9-10")
       .addText(text => {
         pageRangesTextComponent = text;
         text
-          .setPlaceholder("e.g.: 1,3-5,7,9-10")
-          .onChange((value) => {
-            const pages = this.createPageListFromString(value);
-            if(pages.length > 15) {
-              importPagesMessage.innerHTML = `You are importing <b>${pages.length}</b> pages. ⚠️ This may take a while. ⚠️`;
-            } else {
-              importPagesMessage.innerHTML = `You are importing <b>${pages.length}</b> pages.`;
-            }
-            importButtonMessages();
-          })
+          .setValue("")
+          .onChange((value) => rangeOnChange(value))
         text.inputEl.style.width = "100%";
       })
     importPagesMessage = ce.createEl("p", {text: ""});

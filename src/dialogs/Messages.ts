@@ -17,6 +17,28 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.0.19":`
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/4wp6vLiIdGM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## Fixed
+- When updating Excalidraw, some open drawings weren't automatically reopening. I hope I got this fixed (note this change will only have an effect when you receive the update after this).
+- In dark mode, the frame header is challenging to see when modified [#1568](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1568).
+
+## New
+- Crop PDF pages:
+  - Available in Excalidraw, Markdown Notes, and on the Canvas.
+  - Crop the active page from the embedded PDF viewer and insert the cropped image into the current view, both in Excalidraw and on Canvas.
+- New Command Palette Action: "Insert active PDF page as image." This action is functional in Excalidraw. If an embedded Obsidian-PDF-viewer is present, executing this command will insert the active page as an image into the Excalidraw scene.
+- Two new settings introduced:
+  - "Basic" section allows setting the folder for crop files.
+  - "Saving/filename" section enables setting the prefix for crop files.
+- PDF import now defaults to importing all pages.
+- Rounded corners now available for images.
+- Second-order links now encompass forward links from embedded Excalidraw Files.
+- Clicking a cropped file in a markdown note or on Canvas will prompt to open the original file, not just the cropper.
+`,
 "2.0.18":`
 ## New
 

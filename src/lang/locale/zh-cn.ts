@@ -1,8 +1,6 @@
 import {
   DEVICE,
-  FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS,
-  FRONTMATTER_KEY_CUSTOM_PREFIX,
-  FRONTMATTER_KEY_CUSTOM_URL_PREFIX,
+  FRONTMATTER_KEYS,
 } from "src/constants/constants";
 import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/ModifierkeyHelper";
 
@@ -313,17 +311,17 @@ FILENAME_HEAD: "文件名",
   LINK_BRACKETS_DESC: `${
     "文本元素处于预览（PREVIEW）模式时，在内部链接的两侧显示中括号。<br>" +
     "您可为某个绘图单独设置此项，方法是在其 frontmatter 中添加形如 <code>"
-  }${FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS}: true/false</code> 的键值对。`,
+  }${FRONTMATTER_KEYS["link-brackets"].name}: true/false</code> 的键值对。`,
   LINK_PREFIX_NAME: "内部链接的前缀",
   LINK_PREFIX_DESC: `${
     "文本元素处于预览（PREVIEW）模式时，如果其中包含链接，则添加此前缀。<br>" +
     "您可为某个绘图单独设置此项，方法是在其 frontmatter 中添加形如 <code>"
-  }${FRONTMATTER_KEY_CUSTOM_PREFIX}: "📍 "</code> 的键值对。`,
+  }${FRONTMATTER_KEYS["link-prefix"].name}: "📍 "</code> 的键值对。`,
   URL_PREFIX_NAME: "外部链接的前缀",
   URL_PREFIX_DESC: `${
     "文本元素处于预览（PREVIEW）模式时，如果其中包含外部链接，则添加此前缀。<br>" +
     "您可为某个绘图单独设置此项，方法是在其 frontmatter 中添加形如 <code>"
-  }${FRONTMATTER_KEY_CUSTOM_URL_PREFIX}: "🌐 "</code> 的键值对。`,
+  }${FRONTMATTER_KEYS["url-prefix"].name}: "🌐 "</code> 的键值对。`,
   PARSE_TODO_NAME: "待办任务（Todo）",
   PARSE_TODO_DESC: "将文本元素中的 <code>- [ ]</code> 和 <code>- [x]</code> 前缀显示为方框。",
   TODO_NAME: "未完成项目",

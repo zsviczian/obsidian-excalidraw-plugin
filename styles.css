@@ -547,3 +547,13 @@ hr.excalidraw-setting-hr {
 .excalidraw__embeddable-container .canvas-node.is-focused.is-themed .canvas-node-container {
   border-color: var(--canvas-color);
 }
+
+img.excalidraw-cropped-pdfpage,
+.excalidraw-cropped-pdfpage svg {
+  background-color: white;
+}
+
+.excalidraw .pdf-toolbar,
+.excalidraw .pdf-container {
+  width: 100%;
+}

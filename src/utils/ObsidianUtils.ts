@@ -1,6 +1,6 @@
 import {
   App,
-  normalizePath, parseFrontMatterEntry, TFile, Workspace, WorkspaceLeaf, WorkspaceSplit
+  normalizePath, parseFrontMatterEntry, TFile, View, Workspace, WorkspaceLeaf, WorkspaceSplit
 } from "obsidian";
 import ExcalidrawPlugin from "../main";
 import { checkAndCreateFolder, splitFolderAndFilename } from "./FileUtils";
@@ -255,3 +255,6 @@ export const getFileCSSClasses = (
   }
   return [];
 }
+
+//@ts-ignore
+export const getActivePDFPageNumberFromPDFView = (view: View): number => view?.viewer?.child?.pdfViewer?.page;

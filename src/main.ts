@@ -29,7 +29,7 @@ import {
   SCRIPTENGINE_ICON,
   SCRIPTENGINE_ICON_NAME,
   RERENDER_EVENT,
-  FRONTMATTER_KEY,
+  FRONTMATTER_KEYS,
   FRONTMATTER,
   JSON_parse,
   nanoid,
@@ -78,6 +78,7 @@ import { t } from "./lang/helpers";
 import {
   checkAndCreateFolder,
   download,
+  getCropFileNameAndFolder,
   getDrawingFilename,
   getEmbedFilename,
   getIMGFilename,
@@ -97,7 +98,7 @@ import {
   isCallerFromTemplaterPlugin,
   decompress,
 } from "./utils/Utils";
-import { extractSVGPNGFileName, getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark } from "./utils/ObsidianUtils";
+import { extractSVGPNGFileName, getActivePDFPageNumberFromPDFView, getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark } from "./utils/ObsidianUtils";
 import { ExcalidrawElement, ExcalidrawEmbeddableElement, ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { ScriptEngine } from "./Scripts";
 import {
@@ -126,7 +127,7 @@ import { getEA } from "src";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { CustomMutationObserver, durationTreshold, isDebugMode } from "./utils/DebugHelper";
-import { carveOutImage, createImageCropperFile, CROPPED_PREFIX } from "./utils/CarveOut";
+import { carveOutImage, carveOutPDF, createImageCropperFile, CROPPED_PREFIX } from "./utils/CarveOut";
 import { ExcalidrawConfig } from "./utils/ExcalidrawConfig";
 
 declare const EXCALIDRAW_PACKAGES:string;
@@ -248,7 +249,7 @@ export default class ExcalidrawPlugin extends Plugin {
     // Register the modified event
     super.registerEvent(event);
   }
-
+  
   async onload() {
     addIcon(ICON_NAME, EXCALIDRAW_ICON);
     addIcon(SCRIPTENGINE_ICON_NAME, SCRIPTENGINE_ICON);
@@ -281,6 +282,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.runStartupScript();
     this.initializeFonts();
     this.registerEditorSuggest(new FieldSuggester(this));
+    this.setPropertyTypes();
 
     //inspiration taken from kanban:
     //https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/main.ts#L267
@@ -310,6 +312,17 @@ export default class ExcalidrawPlugin extends Plugin {
       imageCache.initializeDB(self);
     });
     this.taskbone = new Taskbone(this);
+  }
+
+  private setPropertyTypes() {
+    const app = this.app;
+    this.app.workspace.onLayoutReady(() => {
+      Object.keys(FRONTMATTER_KEYS).forEach((key) => {
+        if(FRONTMATTER_KEYS[key].depricated === true) return;
+        const {name, type} = FRONTMATTER_KEYS[key];
+        app.metadataTypeManager.setType(name,type);
+      });
+    });
   }
 
   public initializeFonts() {
@@ -1542,6 +1555,44 @@ export default class ExcalidrawPlugin extends Plugin {
     })
 
     this.addCommand({
+      id: "insert-active-pdfpage",
+      name: t("INSERT_ACTIVE_PDF_PAGE_AS_IMAGE"),
+      checkCallback: (checking:boolean) => {
+        const excalidrawView = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if(!excalidrawView) return false;
+        const embeddables = excalidrawView.getViewSelectedElements().filter(el=>el.type==="embeddable");
+        if(embeddables.length !== 1) {
+          if(checking) return false;
+          new Notice("Select a single PDF embeddable and try again");
+          return false;
+        }
+        const isPDF = excalidrawView.getEmbeddableLeafElementById(embeddables[0].id)?.leaf?.view?.getViewType() === "pdf"
+        if(!isPDF) return false;
+        const page = getActivePDFPageNumberFromPDFView(excalidrawView.getEmbeddableLeafElementById(embeddables[0].id)?.leaf?.view);
+        if(!page) return false;
+        if(checking) return true;
+
+        const embeddableEl = embeddables[0] as ExcalidrawEmbeddableElement;
+        const ea = new ExcalidrawAutomate(this,excalidrawView);
+        //@ts-ignore
+        const pdfFile: TFile = excalidrawView.getEmbeddableLeafElementById(embeddableEl.id)?.leaf?.view?.file;
+        (async () => {
+          const imgID = await ea.addImage(embeddableEl.x + embeddableEl.width + 10, embeddableEl.y, `${pdfFile?.path}#page=${page}`, false, false);
+          const imgEl = ea.getElement(imgID) as Mutable<ExcalidrawImageElement>;
+          const imageAspectRatio = imgEl.width / imgEl.height;
+          if(imageAspectRatio > 1) {
+            imgEl.width = embeddableEl.width;
+            imgEl.height = embeddableEl.width / imageAspectRatio;
+          } else {
+            imgEl.height = embeddableEl.height;
+            imgEl.width = embeddableEl.height * imageAspectRatio;
+          }
+          ea.addElementsToView(false, true, true);
+        })()
+      }
+    })
+
+    this.addCommand({
       id: "crop-image",
       name: t("CROP_IMAGE"),
       checkCallback: (checking:boolean) => {
@@ -1553,57 +1604,81 @@ export default class ExcalidrawPlugin extends Plugin {
 
         if(excalidrawView) {
           if(!excalidrawView.excalidrawAPI) return false;
-          const els = excalidrawView.getViewSelectedElements().filter(el=>el.type==="image");
-          if(els.length !== 1) {
+          const embeddables = excalidrawView.getViewSelectedElements().filter(el=>el.type==="embeddable");
+          const imageEls = excalidrawView.getViewSelectedElements().filter(el=>el.type==="image");
+          const isPDF = (imageEls.length === 0 && embeddables.length === 1 && excalidrawView.getEmbeddableLeafElementById(embeddables[0].id)?.leaf?.view?.getViewType() === "pdf")
+          const isImage = (imageEls.length === 1 && embeddables.length === 0)
+
+          if(!isPDF && !isImage) {
             if(checking) return false;
-            new Notice("Select a single image element and try again");
+            new Notice("Select a single image element or single PDF embeddable and try again");
             return false;
           }
-          const el = els[0] as ExcalidrawImageElement;
-          if(el.type !== "image") return false;
-          
+
+          //@ts-ignore
+          const page = isPDF ? getActivePDFPageNumberFromPDFView(excalidrawView.getEmbeddableLeafElementById(embeddables[0].id)?.leaf?.view) : undefined;
+          if(isPDF && !page) {
+            return false;
+          }
+
           if(checking) return true;
 
+          if(isPDF) {
+            const embeddableEl = embeddables[0] as ExcalidrawEmbeddableElement;
+            const ea = new ExcalidrawAutomate(this,excalidrawView);
+            //@ts-ignore
+            const pdfFile: TFile = excalidrawView.getEmbeddableLeafElementById(embeddableEl.id)?.leaf?.view?.file;
+            carveOutPDF(ea, embeddableEl, `${pdfFile?.path}#page=${page}`, pdfFile);
+            return;
+          }
+
+          const imageEl = imageEls[0] as ExcalidrawImageElement;
           (async () => {
-            let ef = excalidrawView.excalidrawData.getFile(el.fileId);
+            let ef = excalidrawView.excalidrawData.getFile(imageEl.fileId);
 
             if(!ef) {
               await excalidrawView.save();
               await sleep(500);
-              ef = excalidrawView.excalidrawData.getFile(el.fileId);
+              ef = excalidrawView.excalidrawData.getFile(imageEl.fileId);
               if(!ef) {             
                 new Notice("Select a single image element and try again");
                 return false;
               }
             }
             const ea = new ExcalidrawAutomate(this,excalidrawView);
-            carveOutImage(ea, el);
+            carveOutImage(ea, imageEl);
           })();
         }
 
-        const carveout = async (isFile: boolean, sourceFile: TFile, imageFile: TFile, imageURL: string, replacer: Function) => {
+        const carveout = async (isFile: boolean, sourceFile: TFile, imageFile: TFile, imageURL: string, replacer: Function, ref?: string) => {
           const ea = getEA() as ExcalidrawAutomate;
-          const imageID = await ea.addImage(0 , 0, isFile ? imageFile : imageURL, false, false);
+          const imageID = await ea.addImage(
+            0, 0,
+            isFile
+              ? ((isFile && imageFile.extension === "pdf" && ref) ? `${imageFile.path}#${ref}` : imageFile)
+              : imageURL,
+            false, false
+          );
           if(!imageID) {
             new Notice(`Can't load image\n\n${imageURL}`);
             return;
           }
           
-          let fname = "";
+          let fnBase = "";
           let imageLink = "";
           if(isFile) {
-            fname = CROPPED_PREFIX + imageFile.basename + ".md";
-            imageLink = `[[${imageFile.path}]]`;
+            fnBase = imageFile.basename;
+            imageLink = ref
+              ? `[[${imageFile.path}#${ref}]]`
+              : `[[${imageFile.path}]]`;
           } else {
             imageLink = imageURL;
             const imagename = imageURL.match(/^.*\/([^?]*)\??.*$/)?.[1];
-            fname = CROPPED_PREFIX + imagename.substring(0,imagename.lastIndexOf(".")) + ".md";
+            fnBase = imagename.substring(0,imagename.lastIndexOf("."));
           }
           
-          const { folderpath } = isFile 
-            ? splitFolderAndFilename(imageFile.path) 
-            : {folderpath: ((await getAttachmentsFolderAndFilePath(this.app, sourceFile.path, fname)).folder)};
-          const newFile = await createImageCropperFile(ea,imageID,imageLink,folderpath,fname);
+          const {folderpath, filename} = await getCropFileNameAndFolder(this,sourceFile.path,fnBase)
+          const newFile = await createImageCropperFile(ea,imageID,imageLink,folderpath,filename);
           if(!newFile) return;
           const link = this.app.metadataCache.fileToLinktext(newFile,sourceFile.path, true);
           replacer(link, newFile);
@@ -1617,24 +1692,29 @@ export default class ExcalidrawPlugin extends Plugin {
           if(selectedNodes.length !== 1) return false;
           const node = selectedNodes[0];
           let extension = "";
+          let isExcalidraw = false;
           if(node.file) {
             extension = node.file.extension;
+            isExcalidraw = this.isExcalidrawFile(node.file);
           }
           if(node.url) {
             extension = getURLImageExtension(node.url);
           }
-          if(!IMAGE_TYPES.contains(extension)) return false;
+          const page = extension === "pdf" ? getActivePDFPageNumberFromPDFView(node?.child) : undefined;
+          if(!page && !IMAGE_TYPES.contains(extension) && !isExcalidraw) return false;
           if(checking) return true;
 
           const replacer = (link:string, file: TFile) => {
             if(node.file) {
-              node.setFile(file);
+              (node.file.extension === "pdf")
+                ? node.canvas.createFileNode({pos:{x:node.x + node.width + 10,y: node.y}, file})
+                : node.setFile(file);
             }
             if(node.url) {
               node.canvas.createFileNode({pos:{x:node.x + 20,y: node.y+20}, file});
             }
           }
-          carveout(Boolean(node.file), canvasView.file, node.file, node.url, replacer);
+          carveout(Boolean(node.file), canvasView.file, node.file, node.url, replacer, page ? `page=${page}` : undefined);
         }
 
         if (markdownView) {
@@ -1644,8 +1724,14 @@ export default class ExcalidrawPlugin extends Plugin {
           const parts = REGEX_LINK.getResList(line);
           if(parts.length === 0) return false;
           const imgpath = REGEX_LINK.getLink(parts[0]);
-          const imageFile = this.app.metadataCache.getFirstLinkpathDest(imgpath, markdownView.file.path);
+          const imagePathParts = imgpath.split("#");
+          const hasRef = imagePathParts.length === 2;
+          const imageFile = this.app.metadataCache.getFirstLinkpathDest(
+            hasRef ? imagePathParts[0] : imgpath,
+            markdownView.file.path
+          );
           const isFile = (imageFile && imageFile instanceof TFile);
+          const isExcalidraw = isFile ? this.isExcalidrawFile(imageFile) : false;
           let imagepath = isFile ? imageFile.path : "";
           let extension = isFile ? imageFile.extension : "";
           if(imgpath.match(/^https?|file/)) {
@@ -1653,13 +1739,21 @@ export default class ExcalidrawPlugin extends Plugin {
             extension = getURLImageExtension(imgpath);
           }
           if(imagepath === "") return false;
-          if(!IMAGE_TYPES.contains(extension)) return false;
+          if(extension !== "pdf" && !IMAGE_TYPES.contains(extension) && !isExcalidraw) return false;
           if(checking) return true;
+          const ref = imagePathParts[1];
           const replacer = (link:string) => {
             const lineparts = line.split(parts[0].value[0]) 
-            editor.setLine(cursor.line,lineparts[0] + getLink(this ,{embed: true, path:link}) +lineparts[1]);
+            const pdfLink = isFile && ref 
+              ? "\n" + getLink(this ,{
+                  embed: false,
+                  alias: `${imageFile.basename}, ${ref.replace("="," ")}`,
+                  path:`${imageFile.path}#${ref}`
+                }) 
+              : "";
+            editor.setLine(cursor.line,lineparts[0] + getLink(this ,{embed: true, path:link}) + pdfLink + lineparts[1]);
           }
-          carveout(isFile, markdownView.file, imageFile, imagepath, replacer);
+          carveout(isFile, markdownView.file, imageFile, imagepath, replacer, ref);
         }
       }
     })
@@ -1973,7 +2067,7 @@ export default class ExcalidrawPlugin extends Plugin {
         const leaf = view.leaf;
         if (!view.file) return;
         const cache = this.app.metadataCache.getFileCache(file);
-        if (!cache?.frontmatter || !cache.frontmatter[FRONTMATTER_KEY]) return;
+        if (!cache?.frontmatter || !cache.frontmatter[FRONTMATTER_KEYS["plugin"].name]) return;
         
         menu.addItem(item => item
           .setTitle(t("OPEN_AS_EXCALIDRAW"))
@@ -1993,7 +2087,7 @@ export default class ExcalidrawPlugin extends Plugin {
         if (!leaf || !(leaf.view instanceof MarkdownView)) return;
         if (!(file instanceof TFile)) return;
         const cache = this.app.metadataCache.getFileCache(file);
-        if (!cache?.frontmatter || !cache.frontmatter[FRONTMATTER_KEY]) return;
+        if (!cache?.frontmatter || !cache.frontmatter[FRONTMATTER_KEYS["plugin"].name]) return;
         
         menu.addItem(item => {
           item
@@ -2047,7 +2141,7 @@ export default class ExcalidrawPlugin extends Plugin {
               // Then check for the excalidraw frontMatterKey
               const cache = app.metadataCache.getCache(state.state.file);
 
-              if (cache?.frontmatter && cache.frontmatter[FRONTMATTER_KEY]) {
+              if (cache?.frontmatter && cache.frontmatter[FRONTMATTER_KEYS["plugin"].name]) {
                 // If we have it, force the view type to excalidraw
                 const newState = {
                   ...state,
@@ -2405,7 +2499,7 @@ export default class ExcalidrawPlugin extends Plugin {
       metaCache.getCachedFiles().forEach((filename: string) => {
         const fm = metaCache.getCache(filename)?.frontmatter;
         if (
-          (fm && typeof fm[FRONTMATTER_KEY] !== "undefined") ||
+          (fm && typeof fm[FRONTMATTER_KEYS["plugin"].name] !== "undefined") ||
           filename.match(/\.excalidraw$/)
         ) {
           self.updateFileCache(
@@ -2546,7 +2640,7 @@ export default class ExcalidrawPlugin extends Plugin {
     frontmatter?: FrontMatterCache,
     deleted: boolean = false,
   ) {
-    if (frontmatter && typeof frontmatter[FRONTMATTER_KEY] !== "undefined") {
+    if (frontmatter && typeof frontmatter[FRONTMATTER_KEYS["plugin"].name] !== "undefined") {
       this.excalidrawFiles.add(file);
       return;
     }
@@ -2558,6 +2652,15 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   onunload() {
+    const excalidrawLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+    excalidrawLeaves.forEach(async (leaf) => {
+      const ev: ExcalidrawView = leaf.view as ExcalidrawView;
+      console.log(ev.file.name, ev.semaphores.dirty);
+      await this.setMarkdownView(leaf);
+      //@ts-ignore
+      console.log(leaf?.view?.file);
+    });
+
     document.body.removeChild(this.textMeasureDiv);
     this.stylesManager.unload();
     this.removeFonts();
@@ -2583,12 +2686,6 @@ export default class ExcalidrawPlugin extends Plugin {
     if (this.fileExplorerObserver) {
       this.fileExplorerObserver.disconnect();
     }
-    const excalidrawLeaves =
-      this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
-    excalidrawLeaves.forEach((leaf) => {
-      this.setMarkdownView(leaf);
-    });
-
     Object.values(this.packageMap).forEach((p:Packages)=>{
       delete p.excalidrawLib;
       delete p.reactDOM;
@@ -2890,10 +2987,12 @@ export default class ExcalidrawPlugin extends Plugin {
   public async setMarkdownView(leaf: WorkspaceLeaf) {
     const state = leaf.view.getState();
 
-    await leaf.setViewState({
+    //Note v2.0.19: I have absolutely no idea why I thought this is necessary. Removing this.
+    //This was added in 1.4.2 but there is no hint in Release notes why.
+    /*await leaf.setViewState({
       type: VIEW_TYPE_EXCALIDRAW,
       state: { file: null },
-    });
+    });*/
 
     await leaf.setViewState(
       {
@@ -2919,7 +3018,7 @@ export default class ExcalidrawPlugin extends Plugin {
       return true;
     }
     const fileCache = f ? this.app.metadataCache.getFileCache(f) : null;
-    return !!fileCache?.frontmatter && !!fileCache.frontmatter[FRONTMATTER_KEY];
+    return !!fileCache?.frontmatter && !!fileCache.frontmatter[FRONTMATTER_KEYS["plugin"].name];
   }
 
   public async exportLibrary() {

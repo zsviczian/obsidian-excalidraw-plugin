@@ -186,8 +186,23 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "create",
-    code: 'async create(params?: {filename?: string, foldername?: string, templatePath?: string, onNewPane?: boolean, silent?: boolean, frontmatterKeys?: { "excalidraw-plugin"?: "raw" | "parsed", "excalidraw-link-prefix"?: string, "excalidraw-link-brackets"?: boolean, "excalidraw-url-prefix"?: string,},}): Promise<string>;',
-    desc: "Create a drawing and save it to filename.\nIf filename is null: default filename as defined in Excalidraw settings.\nIf folder is null: default folder as defined in Excalidraw settings\nReturns the path to the created file",
+    code: 'async create(params?: {filename?: string, foldername?: string, templatePath?: string, onNewPane?: boolean, silent?: boolean, frontmatterKeys?: {},}): Promise<string>;',
+    desc: "Create a drawing and save it to filename.\nIf filename is null: default filename as defined in Excalidraw settings.\nIf folder is null: default folder as defined in Excalidraw settings\nReturns the path to the created file.\n" +
+    'frontmatterKeys: {\n' +
+    '  "excalidraw-plugin"?: "raw" | "parsed";\n' +
+    '  "excalidraw-link-prefix"?: string;\n' +
+    '  "excalidraw-link-brackets"?: boolean;\n' +
+    '  "excalidraw-url-prefix"?: string;\n' +
+    '  "excalidraw-export-transparent"?: boolean;\n' +
+    '  "excalidraw-export-dark"?: boolean;\n' +
+    '  "excalidraw-export-padding"?: number;\n' +
+    '  "excalidraw-export-pngscale"?: number;\n' +
+    '  "excalidraw-default-mode"?: "view" | "zen";\n' +
+    '  "excalidraw-onload-script"?: string;\n' +
+    '  "excalidraw-linkbutton-opacity"?: number;\n' +
+    '  "excalidraw-autoexport"?: boolean;\n' +
+    '  "excalidraw-mask"?: boolean;\n' +
+    '  "cssclasses"?: string;\n}',
     after: "",
   },
   {
@@ -264,8 +279,8 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "addImage",
-    code: "async addImage(topX: number, topY: number, imageFile: TFile, scale?: boolean, anchor?: boolean): Promise<string>;",
-    desc: "set scale to false if you want to embed the image at 100% of its original size. Default is true which will insert a scaled image. anchor will only be evaluated if scale is false. anchor true will add |100% to the end of the filename, resulting in an image that will always pop back to 100% when the source file is updated or when the Excalidraw file is reopened. ",
+    code: "async addImage(topX: number, topY: number, imageFile: TFile|string, scale?: boolean, anchor?: boolean): Promise<string>;",
+    desc: "imageFile may be a TFile or a string that contains a hyperlink. imageFile may also be an obsidian filepath including a reference eg.: 'path/my.pdf#page=3'\nSet scale to false if you want to embed the image at 100% of its original size. Default is true which will insert a scaled image.\nanchor will only be evaluated if scale is false. anchor true will add |100% to the end of the filename, resulting in an image that will always pop back to 100% when the source file is updated or when the Excalidraw file is reopened.",
     after: "",
   },
   {

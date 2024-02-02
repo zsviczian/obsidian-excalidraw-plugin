@@ -1,8 +1,8 @@
-import { ExcalidrawFrameElement, ExcalidrawImageElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { ExcalidrawEmbeddableElement, ExcalidrawFrameElement, ExcalidrawImageElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { getEA } from "src";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
-import { splitFolderAndFilename } from "./FileUtils";
+import { getCropFileNameAndFolder, splitFolderAndFilename } from "./FileUtils";
 import { Notice, TFile } from "obsidian";
 import ExcalidrawView from "src/ExcalidrawView";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
@@ -34,20 +34,20 @@ export const carveOutImage = async (sourceEA: ExcalidrawAutomate, viewImageEl: E
   let imageLink = "";
   let fname = "";
   if(ef.file) {
-    fname = CROPPED_PREFIX + ef.file.basename;
-    imageLink = `[[${ef.file.path}]]`;
+    fname = ef.file.basename;
+    const ref = ef.linkParts?.ref ? `#${ef.linkParts.ref}` : ``;
+    imageLink = `[[${ef.file.path}${ref}]]`;
   } else {
     const imagename = ef.hyperlink?.match(/^.*\/([^?]*)\??.*$/)?.[1];
     imageLink = ef.hyperlink;
     fname = viewImageEl
-      ? CROPPED_PREFIX + imagename.substring(0,imagename.lastIndexOf("."))
-      : CROPPED_PREFIX + "_image";
+      ? imagename.substring(0,imagename.lastIndexOf("."))
+      : "_image";
   }
 
-  const attachmentPath = await sourceEA.getAttachmentFilepath(fname + ".md");
-  const {folderpath: foldername, filename} = splitFolderAndFilename(attachmentPath);
+  const {folderpath, filename} = await getCropFileNameAndFolder(sourceEA.plugin,sourceEA.targetView.file.path,fname);
 
-  const file = await createImageCropperFile(targetEA, newImage.id, imageLink, foldername, filename);
+  const file = await createImageCropperFile(targetEA, newImage.id, imageLink, folderpath, filename);
   if(!file) return;
 
   //console.log(await app.vault.read(file));
@@ -65,13 +65,57 @@ export const carveOutImage = async (sourceEA: ExcalidrawAutomate, viewImageEl: E
   sourceEA.addElementsToView(false, true, true);
 }
 
+export const carveOutPDF = async (sourceEA: ExcalidrawAutomate, embeddableEl: ExcalidrawEmbeddableElement, pdfPathWithPage: string, pdfFile: TFile) => {
+  if(!embeddableEl || !pdfPathWithPage || !sourceEA?.targetView) return;
+
+  const targetEA = getEA(sourceEA.targetView) as ExcalidrawAutomate;
+  
+  const {height, width} = embeddableEl;
+
+  if(!height || !width || height === 0 || width === 0) return;
+
+  const imageId = await targetEA.addImage(0,0, pdfPathWithPage);
+  const newImage = targetEA.getElement(imageId) as Mutable<ExcalidrawImageElement>;
+  newImage.x = 0;
+  newImage.y = 0;
+  newImage.width = width;
+  newImage.height = height;
+  const angle = embeddableEl.angle;
+
+  const fname = pdfFile.basename;
+  const imageLink = `[[${pdfPathWithPage}]]`;
+
+  const {folderpath, filename} = await getCropFileNameAndFolder(sourceEA.plugin,sourceEA.targetView.file.path,fname);
+
+  const file = await createImageCropperFile(targetEA, newImage.id, imageLink, folderpath, filename);
+  if(!file) return;
+
+  //console.log(await app.vault.read(file));
+  sourceEA.clear();
+  const replacingImageID = await sourceEA.addImage(embeddableEl.x + embeddableEl.width + 10, embeddableEl.y, file, true);
+  const replacingImage = sourceEA.getElement(replacingImageID) as Mutable<ExcalidrawImageElement>;
+  const imageAspectRatio = replacingImage.width / replacingImage.height;
+  if(imageAspectRatio > 1) {
+    replacingImage.width = embeddableEl.width;
+    replacingImage.height = replacingImage.width / imageAspectRatio;
+  } else {
+    replacingImage.height = embeddableEl.height;
+    replacingImage.width = replacingImage.height * imageAspectRatio;
+  }
+  replacingImage.angle = angle;
+  sourceEA.addElementsToView(false, true, true);
+}
+
+
 export const createImageCropperFile = async (targetEA: ExcalidrawAutomate, imageID: string, imageLink:string, foldername: string, filename: string): Promise<TFile> => {
-  const workspace = targetEA.plugin.app.workspace;
   const vault = targetEA.plugin.app.vault;
   const newImage = targetEA.getElement(imageID) as Mutable<ExcalidrawImageElement>;
   const { width, height } = newImage;
+  const isPDF = imageLink.match(/\[\[([^#]*)#.*]]/)?.[1]?.endsWith(".pdf");
+
   newImage.opacity = 100;
   newImage.locked = true;
+  newImage.link = imageLink;
 
   const frameID = targetEA.addFrame(0,0,width,height,"Adjust frame to crop image. Add elements for mask: White shows, Black hides.");
   const frame = targetEA.getElement(frameID) as Mutable<ExcalidrawFrameElement>;
@@ -87,7 +131,7 @@ export const createImageCropperFile = async (targetEA: ExcalidrawAutomate, image
   targetEA.style.roughness = 0;
   targetEA.style.roundness = null;
   targetEA.canvas.theme = "light";
-  targetEA.canvas.viewBackgroundColor = "#3d3d3d";
+  targetEA.canvas.viewBackgroundColor = isPDF ? "#5d5d5d" : "#3d3d3d";
 
   const templateFile = app.vault.getAbstractFileByPath(targetEA.plugin.settings.templateFilePath);
   if(templateFile && templateFile instanceof TFile) {
@@ -107,6 +151,7 @@ export const createImageCropperFile = async (targetEA: ExcalidrawAutomate, image
       "excalidraw-export-dark": false,
       "excalidraw-export-padding": 0,
       "excalidraw-export-transparent": true,
+      ...isPDF ? {"cssclasses": "excalidraw-cropped-pdfpage"} : {},
     }
   });
 

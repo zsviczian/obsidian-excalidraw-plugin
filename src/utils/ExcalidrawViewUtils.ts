@@ -1,8 +1,11 @@
 
 import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES } from "src/constants/constants";
-import { TFile } from "obsidian";
+import { App, TFile } from "obsidian";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK } from "src/ExcalidrawData";
+import ExcalidrawView from "src/ExcalidrawView";
+import { ExcalidrawElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { getLinkParts } from "./Utils";
 
 export const insertImageToView = async (
   ea: ExcalidrawAutomate,
@@ -61,4 +64,56 @@ export const getLinkTextFromLink = (text: string): string => {
   if (linktext.match(REG_LINKINDEX_HYPERLINK)) return;
 
   return linktext;
+}
+
+export const openTagSearch = (link:string, app: App, view?: ExcalidrawView) => {
+  const tags = link
+    .matchAll(/#([\p{Letter}\p{Emoji_Presentation}\p{Number}\/_-]+)/gu)
+    .next();
+  if (!tags.value || tags.value.length < 2) {
+    return;
+  }
+  const search = app.workspace.getLeavesOfType("search");
+  if (search.length == 0) {
+    return;
+  }
+  //@ts-ignore
+  search[0].view.setQuery(`tag:${tags.value[1]}`);
+  app.workspace.revealLeaf(search[0]);
+
+  if (view && view.isFullscreen()) {
+    view.exitFullscreen();
+  }
+  return;
+}
+
+export const openExternalLink = (link:string, app: App, element?: ExcalidrawElement):boolean => {
+  if (link.match(/^cmd:\/\/.*/)) {
+    const cmd = link.replace("cmd://", "");
+    //@ts-ignore
+    app.commands.executeCommandById(cmd);
+    return true;
+  }
+  if (link.match(REG_LINKINDEX_HYPERLINK)) {
+      window.open(link, "_blank");
+    return true;
+  }
+  return false;
+}
+
+export const getExcalidrawFileForwardLinks = (app: App, excalidrawFile: TFile):string => {
+  let secondOrderLinks = "";
+  const forwardLinks = app.metadataCache.getLinks()[excalidrawFile.path];
+  if(forwardLinks && forwardLinks.length > 0) {
+    const linkset = new Set<string>();
+    forwardLinks.forEach(link => {
+      const linkparts = getLinkParts(link.link);
+      const f = app.metadataCache.getFirstLinkpathDest(linkparts.path, excalidrawFile.path);
+      if(f && f.path !== excalidrawFile.path) {
+        linkset.add(`[[${f.path}${linkparts.ref?"#"+linkparts.ref:""}|Second Order Link: ${f.basename}]]`);
+      }
+    });
+    secondOrderLinks = [...linkset].join(" ");             
+  }
+  return secondOrderLinks;
 }

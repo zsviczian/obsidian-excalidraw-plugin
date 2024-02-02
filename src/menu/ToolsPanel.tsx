@@ -14,6 +14,7 @@ import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/
 import { isWinALTorMacOPT, isWinCTRLorMacCMD, isSHIFT } from "src/utils/ModifierkeyHelper";
 import { InsertPDFModal } from "src/dialogs/InsertPDFModal";
 import { ExportDialog } from "src/dialogs/ExportDialog";
+import { openExternalLink } from "src/utils/ExcalidrawViewUtils";
 
 declare const PLUGIN_VERSION:string;
 const dark = '<svg style="stroke:#ced4da;#212529;color:#ced4da;fill:#ced4da" ';
@@ -505,7 +506,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     title={t("INSERT_LATEX")}
                     action={(e) => {
                       if(isWinALTorMacOPT(e)) {
-                        this.props.view.openExternalLink("https://youtu.be/r08wk-58DPk");
+                        openExternalLink("https://youtu.be/r08wk-58DPk", this.props.view.app);
                         return;
                       }
                       this.props.centerPointer();
@@ -532,7 +533,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     title={t("INSERT_LINK_TO_ELEMENT")}
                     action={(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
                       if(isWinALTorMacOPT(e)) {
-                        this.props.view.openExternalLink("https://youtu.be/yZQoJg2RCKI");
+                        openExternalLink("https://youtu.be/yZQoJg2RCKI", this.props.view.app);
                         return;
                       }
                       this.props.view.copyLinkToSelectedElementToClipboard(

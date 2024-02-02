@@ -35,16 +35,12 @@ import {
   ICON_NAME,
   DISK_ICON_NAME,
   SCRIPTENGINE_ICON_NAME,
-  FRONTMATTER_KEY,
   TEXT_DISPLAY_RAW_ICON_NAME,
   TEXT_DISPLAY_PARSED_ICON_NAME,
   IMAGE_TYPES,
   REG_LINKINDEX_INVALIDCHARS,
   KEYCODE,
-  FRONTMATTER_KEY_EXPORT_PADDING,
-  FRONTMATTER_KEY_EXPORT_PNGSCALE,
-  FRONTMATTER_KEY_EXPORT_DARK,
-  FRONTMATTER_KEY_EXPORT_TRANSPARENT,
+  FRONTMATTER_KEYS,
   DEVICE,
   GITHUB_RELEASES,
   EXPORT_IMG_ICON_NAME,
@@ -106,7 +102,7 @@ import {
 } from "./utils/Utils";
 import { getLeaf, getParentOfClass, obsidianPDFQuoteWithRef } from "./utils/ObsidianUtils";
 import { splitFolderAndFilename } from "./utils/FileUtils";
-import { ConfirmationPrompt, GenericInputPrompt, NewFileActions, Prompt } from "./dialogs/Prompt";
+import { ConfirmationPrompt, GenericInputPrompt, NewFileActions, Prompt, linkPrompt } from "./dialogs/Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
 import { updateEquation } from "./LaTeX";
 import {
@@ -127,7 +123,7 @@ import { anyModifierKeysPressed, emulateKeysForLinkClick, webbrowserDragModifier
 import { setDynamicStyle } from "./utils/DynamicStyling";
 import { InsertPDFModal } from "./dialogs/InsertPDFModal";
 import { CustomEmbeddable, renderWebView } from "./customEmbeddable";
-import { getLinkTextFromLink, insertEmbeddableToView, insertImageToView } from "./utils/ExcalidrawViewUtils";
+import { getExcalidrawFileForwardLinks, getLinkTextFromLink, insertEmbeddableToView, insertImageToView, openExternalLink, openTagSearch } from "./utils/ExcalidrawViewUtils";
 import { imageCache } from "./utils/ImageCache";
 import { CanvasNodeFactory, ObsidianCanvasNode } from "./utils/CanvasNodeFactory";
 import { EmbeddableMenu } from "./menu/EmbeddableActionsMenu";
@@ -735,14 +731,14 @@ export default class ExcalidrawView extends TextFileView {
     if (!this.compatibilityMode) {
       const keys:[string,string][] = this.exportDialog?.dirty && this.exportDialog?.saveSettings
         ? [
-            [FRONTMATTER_KEY_EXPORT_PADDING, this.exportDialog.padding.toString()],
-            [FRONTMATTER_KEY_EXPORT_PNGSCALE, this.exportDialog.scale.toString()],
-            [FRONTMATTER_KEY_EXPORT_DARK, this.exportDialog.theme === "dark" ? "true" : "false"],
-            [FRONTMATTER_KEY_EXPORT_TRANSPARENT, this.exportDialog.transparent ? "true" : "false"],
-            [FRONTMATTER_KEY, this.textMode === TextMode.raw ? "raw" : "parsed"]
+            [FRONTMATTER_KEYS["export-padding"].name, this.exportDialog.padding.toString()],
+            [FRONTMATTER_KEYS["export-pngscale"].name, this.exportDialog.scale.toString()],
+            [FRONTMATTER_KEYS["export-dark"].name, this.exportDialog.theme === "dark" ? "true" : "false"],
+            [FRONTMATTER_KEYS["export-transparent"].name, this.exportDialog.transparent ? "true" : "false"],
+            [FRONTMATTER_KEYS["plugin"].name, this.textMode === TextMode.raw ? "raw" : "parsed"]
           ]
         : [
-            [FRONTMATTER_KEY, this.textMode === TextMode.raw ? "raw" : "parsed"]
+            [FRONTMATTER_KEYS["plugin"].name, this.textMode === TextMode.raw ? "raw" : "parsed"]
           ];
 
       if(this.exportDialog?.dirty) {
@@ -891,84 +887,6 @@ export default class ExcalidrawView extends TextFileView {
     return false;
   }
 
-  openExternalLink(link:string, element?: ExcalidrawElement):boolean {
-    if (link.match(/^cmd:\/\/.*/)) {
-      const cmd = link.replace("cmd://", "");
-      //@ts-ignore
-      this.app.commands.executeCommandById(cmd);
-      return true;
-    }
-    if (link.match(REG_LINKINDEX_HYPERLINK)) {
-        window.open(link, "_blank");
-      return true;
-    }
-    return false;
-  }
-
-  openTagSearch(link:string) {
-    const tags = link
-      .matchAll(/#([\p{Letter}\p{Emoji_Presentation}\p{Number}\/_-]+)/gu)
-      .next();
-    if (!tags.value || tags.value.length < 2) {
-      return;
-    }
-    const search = app.workspace.getLeavesOfType("search");
-    if (search.length == 0) {
-      return;
-    }
-    //@ts-ignore
-    search[0].view.setQuery(`tag:${tags.value[1]}`);
-    this.app.workspace.revealLeaf(search[0]);
-
-    if (this.isFullscreen()) {
-      this.exitFullscreen();
-    }
-    return;
-  }
-
-  async linkPrompt(linkText:string):Promise<[file:TFile, linkText:string, subpath: string]> {
-    const partsArray = REGEX_LINK.getResList(linkText);
-    let subpath: string = null;
-    let file: TFile = null;
-    let parts = partsArray[0];
-      if (partsArray.length > 1) {
-        parts = await ScriptEngine.suggester(
-          this.app,
-          partsArray.filter(p=>Boolean(p.value)).map(p => {
-            const alias = REGEX_LINK.getAliasOrLink(p);
-            return alias === "100%" ? REGEX_LINK.getLink(p) : alias;
-          }),
-          partsArray.filter(p=>Boolean(p.value)),
-          "Select link to open"
-        );
-        if(!parts) return;
-      }
-    if(!parts) return;
-    
-    if (!parts.value) {
-      this.openTagSearch(linkText);
-      return;
-    }
-
-    linkText = REGEX_LINK.getLink(parts);
-    if(this.openExternalLink(linkText)) return;
-
-    if (linkText.search("#") > -1) {
-      const linkParts = getLinkParts(linkText, this.file);
-      subpath = `#${linkParts.isBlockRef ? "^" : ""}${linkParts.ref}`;
-      linkText = linkParts.path;
-    }
-    if (linkText.match(REG_LINKINDEX_INVALIDCHARS)) {
-      new Notice(t("FILENAME_INVALID_CHARS"), 4000);
-      return;
-    }
-    file = this.app.metadataCache.getFirstLinkpathDest(
-      linkText,
-      this.file.path,
-    );
-    return [file, linkText, subpath];
-  }
-
   async linkClick(
     ev: MouseEvent | null,
     selectedText: SelectedElementWithLink,
@@ -1003,9 +921,9 @@ export default class ExcalidrawView extends TextFileView {
       const id = selectedText.id??selectedElementWithLink.id;
       const el = this.excalidrawAPI.getSceneElements().filter((el:ExcalidrawElement)=>el.id === id)[0];
       if(this.handleLinkHookCall(el,linkText,ev)) return;
-      if(this.openExternalLink(linkText)) return;
+      if(openExternalLink(linkText, this.app)) return;
 
-      const result = await this.linkPrompt(linkText);
+      const result = await linkPrompt(linkText, this.app, this);
       if(!result) return;
       [file, linkText, subpath] = result;
     }
@@ -1096,6 +1014,10 @@ export default class ExcalidrawView extends TextFileView {
           secondOrderLinks += linkPaths.join(" ");
         }
 
+        if(this.plugin.isExcalidrawFile(ef.file)) {
+          secondOrderLinks += getExcalidrawFileForwardLinks(this.app, ef.file);             
+        }
+
         const linkString = (ef.isHyperLink || ef.isLocalLink
           ? `[](${ef.hyperlink}) `
           : `[[${ef.linkParts.original}]] `
@@ -1105,10 +1027,9 @@ export default class ExcalidrawView extends TextFileView {
             : imageElement.link
           : "");
         
-        const result = await this.linkPrompt(linkString + secondOrderLinks);
+        const result = await linkPrompt(linkString + secondOrderLinks, this.app, this);
         if(!result) return;
         [file, linkText, subpath] = result;
-        
       }
     }
 
@@ -1142,7 +1063,7 @@ export default class ExcalidrawView extends TextFileView {
       
       try {
         //@ts-ignore
-        const drawIO = app.plugins.plugins["drawio-obsidian"];
+        const drawIO = this.app.plugins.plugins["drawio-obsidian"];
         if(drawIO && drawIO._loaded) {
           if(file.extension === "svg") {
             const svg = await this.app.vault.cachedRead(file);
@@ -3951,7 +3872,7 @@ export default class ExcalidrawView extends TextFileView {
 
     let event = e?.detail?.nativeEvent;
     if(this.handleLinkHookCall(element,element.link,event)) return;
-    if(this.openExternalLink(element.link, !isSHIFT(event) && !isWinCTRLorMacCMD(event) && !isWinMETAorMacCTRL(event) && !isWinALTorMacOPT(event) ? element : undefined)) return;
+    if(openExternalLink(element.link, this.app, !isSHIFT(event) && !isWinCTRLorMacCMD(event) && !isWinMETAorMacCTRL(event) && !isWinALTorMacOPT(event) ? element : undefined)) return;
 
     //if element is type text and element has multiple links, then submit the element text to linkClick to trigger link suggester
     if(element.type === "text") {
@@ -5021,7 +4942,6 @@ export default class ExcalidrawView extends TextFileView {
         return embeddable.leaf.view.editor;
       }
     }
-    app.workspace.openLinkText
     return null;
   }
 }

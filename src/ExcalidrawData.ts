@@ -8,15 +8,7 @@
 import { App, Notice, TFile } from "obsidian";
 import {
   nanoid,
-  FRONTMATTER_KEY_CUSTOM_PREFIX,
-  FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS,
-  FRONTMATTER_KEY_CUSTOM_URL_PREFIX,
-  FRONTMATTER_KEY_DEFAULT_MODE,
   fileid,
-  FRONTMATTER_KEY_LINKBUTTON_OPACITY,
-  FRONTMATTER_KEY_ONLOAD_SCRIPT,
-  FRONTMATTER_KEY_AUTOEXPORT,
-  FRONTMATTER_KEY_EMBEDDABLE_THEME,
   DEVICE,
   EMBEDDABLE_THEME_FRONTMATTER_VALUES,
   getBoundTextMaxWidth,
@@ -25,6 +17,7 @@ import {
   wrapText,
   ERROR_IFRAME_CONVERSION_CANCELED,
   JSON_parse,
+  FRONTMATTER_KEYS,
 } from "./constants/constants";
 import { _measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
@@ -1480,9 +1473,9 @@ export class ExcalidrawData {
       : this.plugin.settings.defaultMode;
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEY_DEFAULT_MODE] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["default-mode"].name] != null
     ) {
-      mode = fileCache.frontmatter[FRONTMATTER_KEY_DEFAULT_MODE];
+      mode = fileCache.frontmatter[FRONTMATTER_KEYS["default-mode"].name];
     }
 
     switch (mode) {
@@ -1500,9 +1493,9 @@ export class ExcalidrawData {
     let opacity = this.plugin.settings.linkOpacity;
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEY_LINKBUTTON_OPACITY] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["linkbutton-opacity"].name] != null
     ) {
-      opacity = fileCache.frontmatter[FRONTMATTER_KEY_LINKBUTTON_OPACITY];
+      opacity = fileCache.frontmatter[FRONTMATTER_KEYS["linkbutton-opacity"].name];
     }
     return opacity; 
   }
@@ -1511,9 +1504,9 @@ export class ExcalidrawData {
     const fileCache = this.app.metadataCache.getFileCache(this.file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEY_ONLOAD_SCRIPT] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["onload-script"].name] != null
     ) {
-      return fileCache.frontmatter[FRONTMATTER_KEY_ONLOAD_SCRIPT];
+      return fileCache.frontmatter[FRONTMATTER_KEYS["onload-script"].name];
     }
     return null; 
   }
@@ -1523,9 +1516,9 @@ export class ExcalidrawData {
     const fileCache = this.app.metadataCache.getFileCache(this.file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEY_CUSTOM_PREFIX] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["link-prefix"].name] != null
     ) {
-      this.linkPrefix = fileCache.frontmatter[FRONTMATTER_KEY_CUSTOM_PREFIX];
+      this.linkPrefix = fileCache.frontmatter[FRONTMATTER_KEYS["link-prefix"].name];
     } else {
       this.linkPrefix = this.plugin.settings.linkPrefix;
     }
@@ -1537,9 +1530,9 @@ export class ExcalidrawData {
     const fileCache = this.app.metadataCache.getFileCache(this.file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEY_CUSTOM_URL_PREFIX] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["url-prefix"].name] != null
     ) {
-      this.urlPrefix = fileCache.frontmatter[FRONTMATTER_KEY_CUSTOM_URL_PREFIX];
+      this.urlPrefix = fileCache.frontmatter[FRONTMATTER_KEYS["url-prefix"].name];
     } else {
       this.urlPrefix = this.plugin.settings.urlPrefix;
     }
@@ -1550,9 +1543,9 @@ export class ExcalidrawData {
     const fileCache = this.app.metadataCache.getFileCache(this.file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEY_AUTOEXPORT] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["autoexport"].name] != null
     ) {
-      switch ((fileCache.frontmatter[FRONTMATTER_KEY_AUTOEXPORT]).toLowerCase()) {
+      switch ((fileCache.frontmatter[FRONTMATTER_KEYS["autoexport"].name]).toLowerCase()) {
         case "none": this.autoexportPreference = AutoexportPreference.none; break;
         case "both": this.autoexportPreference = AutoexportPreference.both; break;
         case "png": this.autoexportPreference = AutoexportPreference.png; break;
@@ -1569,9 +1562,9 @@ export class ExcalidrawData {
     const fileCache = this.app.metadataCache.getFileCache(this.file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEY_EMBEDDABLE_THEME] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["iframe-theme"].name] != null
     ) {
-      this.embeddableTheme = fileCache.frontmatter[FRONTMATTER_KEY_EMBEDDABLE_THEME].toLowerCase();
+      this.embeddableTheme = fileCache.frontmatter[FRONTMATTER_KEYS["iframe-theme"].name].toLowerCase();
       if (!EMBEDDABLE_THEME_FRONTMATTER_VALUES.includes(this.embeddableTheme)) {
         this.embeddableTheme = "default";
       }
@@ -1586,10 +1579,10 @@ export class ExcalidrawData {
     const fileCache = this.app.metadataCache.getFileCache(this.file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["link-brackets"].name] != null
     ) {
       this.showLinkBrackets =
-        fileCache.frontmatter[FRONTMATTER_KEY_CUSTOM_LINK_BRACKETS] != false;
+        fileCache.frontmatter[FRONTMATTER_KEYS["link-brackets"].name] != false;
     } else {
       this.showLinkBrackets = this.plugin.settings.showLinkBrackets;
     }
