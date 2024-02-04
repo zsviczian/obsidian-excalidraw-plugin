@@ -17,6 +17,10 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.0.20":`
+## Fixed in ExcalidrawAutomate
+- Regression: ${String.fromCharCode(96)}ea.getMaximumGroups(elements)${String.fromCharCode(96)} stopped working after the 2.0.19 update. [#1576](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1576)
+`,
 "2.0.19":`
 <div class="excalidraw-videoWrapper"><div>
 <iframe src="https://www.youtube.com/embed/4wp6vLiIdGM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
