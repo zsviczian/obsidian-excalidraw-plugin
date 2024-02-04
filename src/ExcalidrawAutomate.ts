@@ -38,6 +38,7 @@ import {
 } from "src/constants/constants";
 import { blobToBase64, checkAndCreateFolder, getDrawingFilename, getNewUniqueFilepath, } from "src/utils/FileUtils";
 import {
+  arrayToMap,
   //debug,
   embedFontsInSVG,
   errorlog,
@@ -2239,7 +2240,7 @@ export class ExcalidrawAutomate {
    * @returns 
    */
   getMaximumGroups(elements: ExcalidrawElement[]): ExcalidrawElement[][] {
-    return getMaximumGroups(elements);
+    return getMaximumGroups(elements, arrayToMap(elements));
   };
 
   /**
