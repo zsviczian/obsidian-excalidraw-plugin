@@ -631,7 +631,7 @@ modal.onOpen = async () => {
     .addDropdown(dropdown=>dropdown
       .addOption("none","None")
       .addOption("top-down","Top down")
-      .addOption("bottom-up","Bootom up")
+      .addOption("bottom-up","Bottom up")
       .addOption("center-out","Center out")
       .addOption("center-in","Center in")
       .setValue(vDirection)

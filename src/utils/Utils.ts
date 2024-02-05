@@ -635,7 +635,7 @@ export const getExportPadding = (
       }
     }
 
-    //depricated. Retained for backward compatibility
+    //deprecated. Retained for backward compatibility
     if (fileCache.frontmatter[FRONTMATTER_KEYS["export-svgpadding"].name] != null) {
       const val = parseInt(
         fileCache.frontmatter[FRONTMATTER_KEYS["export-svgpadding"].name],

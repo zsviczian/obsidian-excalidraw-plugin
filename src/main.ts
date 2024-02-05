@@ -2932,7 +2932,7 @@ export default class ExcalidrawPlugin extends Plugin {
       //also Excalidraw IDs are inconveniently long
       if (te.id.length > 8) {
         id = nanoid();
-        data = data.replaceAll(te.id, id); //brute force approach to replace all occurances.
+        data = data.replaceAll(te.id, id); //brute force approach to replace all occurrences.
       }
       outString += `${te.originalText ?? te.text} ^${id}\n\n`;
     }

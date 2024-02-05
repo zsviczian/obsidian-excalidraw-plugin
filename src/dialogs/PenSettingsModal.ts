@@ -393,7 +393,7 @@ export class PenSettingsModal extends Modal {
     let spSetting: Setting;
 
     new Setting(ce)
-      .setName("Pressure sensitve pen?")
+      .setName("Pressure sensitive pen?")
       .setDesc(fragWithHTML(`<b>toggle on</b>: pressure sensitive<br><b>toggle off</b>: constant pressure`))
       .addToggle(toggle =>
         toggle

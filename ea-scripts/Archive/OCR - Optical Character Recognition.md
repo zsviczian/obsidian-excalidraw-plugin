@@ -4,7 +4,7 @@
 THIS SCRIPT REQUIRES EXCALIDRAW 1.5.15
 
 The script will 
-  1) send the selected image file to [taskbone.com](https://taskbone.com) to exctract the text from the image, and
+  1) send the selected image file to [taskbone.com](https://taskbone.com) to extract the text from the image, and
   2) will add the text to your drawing as a text element
 
 I recommend also installing the [Transfer TextElements to Excalidraw markdown metadata](Transfer%20TextElements%20to%20Excalidraw%20markdown%20metadata.md) script as well.

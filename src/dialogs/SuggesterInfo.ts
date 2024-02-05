@@ -595,7 +595,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "getleaf",
     code: "getLeaf(origo: WorkspaceLeaf, targetPane?: PaneTarget): WorkspaceLeaf;",
-    desc: "Generates a new Obsidian Leaf following Excalidraw plugin settings such as open in Main Workspace or not, open in adjacent pane if avaialble, etc.<br>" +
+    desc: "Generates a new Obsidian Leaf following Excalidraw plugin settings such as open in Main Workspace or not, open in adjacent pane if available, etc.<br>" +
       "@param origo: the currently active leaf, the origin of the new leaf<br>" + 
       '@param targetPane: <code>type PaneTarget = "active-pane"|"new-pane"|"popout-window"|"new-tab"|"md-properties";',
     after: "",
@@ -643,7 +643,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "postOpenAI",
-    code: "async postOpenAI(requst: AIRequest): Promise<RequestUrlResponse>",
+    code: "async postOpenAI(request: AIRequest): Promise<RequestUrlResponse>",
     desc:
       "This asynchronous function should be awaited. It posts the supplied request to the OpenAI API and returns the response.<br>" +
       "The response is a dictionary with the following keys:<br><code>{image, text, instruction, systemPrompt, responseType}</code><br>"+

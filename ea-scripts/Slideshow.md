@@ -305,11 +305,11 @@ const scrollToNextRect = async ({left,top,right,bottom,nextZoom},steps = TRANSIT
         zoom:{value:zoom.value-zoomStep*i},
       }
     });
-    const ellapsed = Date.now()-startTimer;
-    if(ellapsed > TRANSITION_DELAY) {
+    const elapsed = Date.now()-startTimer;
+    if(elapsed > TRANSITION_DELAY) {
       i = i<steps ? steps : steps+1;
     } else {
-      const timeProgress = ellapsed / TRANSITION_DELAY;
+      const timeProgress = elapsed / TRANSITION_DELAY;
       i=Math.min(Math.round(steps*timeProgress),steps)
       await sleep(FRAME_SLEEP);
     }

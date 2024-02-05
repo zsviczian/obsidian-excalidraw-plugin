@@ -22,7 +22,7 @@ Places the generated drawing to the clipboard. Useful when you don't want to cre
 ```typescript
 getElements():ExcalidrawElement[];
 ```
-Returns the elements in ExcalidrawAutomate as an array of ExcalidrawElements. This format is usefull when working with ExcalidrawRef.
+Returns the elements in ExcalidrawAutomate as an array of ExcalidrawElements. This format is useful when working with ExcalidrawRef.
 
 ### getElement()
 ```typescript
@@ -156,7 +156,7 @@ You first need to set the view calling `setView()`.
 
 Gets the array of selected elements in the scene. Returns [] if no elements are selected.
 
-Note: you can call `getExcalidrawAPI().getSceneElements()` to retreive all the elements in the scene.
+Note: you can call `getExcalidrawAPI().getSceneElements()` to retrieve all the elements in the scene.
 
 #### viewToggleFullScreen()
 ```typescript
@@ -178,7 +178,7 @@ Same as `connectObjects()`, but ObjectB is the currently selected element in the
 async addElementsToView(repositionToCursor:boolean=false, save:boolean=false):Promise<boolean>
 ```
 Adds elements created with ExcalidrawAutomate to the target ExcalidrawView.
-`repositionToCursor` dafault is false
+`repositionToCursor` default is false
 - true: the elements will be moved such that the center point of the elements will be aligned with the current position of the pointer on ExcalidrawView. You can point and place elements to a desired location in your drawing using this switch.
 - false: elements will be positioned as defined by the x&y coordinates of each element.
 
@@ -204,7 +204,7 @@ onDropHook (data: {
 ```
 
 Callback function triggered when an draggable item is dropped on Excalidraw.
-The function should return a boolean value. True if the drop was handled by the hook and futher native processing should be stopped, and false if Excalidraw should continue with the processing of the drop.
+The function should return a boolean value. True if the drop was handled by the hook and further native processing should be stopped, and false if Excalidraw should continue with the processing of the drop.
 type of drop can be one of:
 - "file" if a file from Obsidian file explorer is dropped onto Excalidraw. In this case payload.files will contain the list of files dropped.
 - "text" if a link (e.g. url, or wiki link) or other text is dropped. In this case payload.text will contain the received string
