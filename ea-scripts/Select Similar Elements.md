@@ -19,7 +19,7 @@ if(!config && (elements.length !==1)) {
   }
 }
 
-const {angle, backgroundColor, fillStyle, fontFamily, fontSize, height, width, opacity, roughness, roundness, strokeColor, strokeStyle, strokeWidth, type, startArrowhead, endArrowhead} = ea.getViewSelectedElement();
+const {angle, backgroundColor, fillStyle, fontFamily, fontSize, height, width, opacity, roughness, roundness, strokeColor, strokeStyle, strokeWidth, type, startArrowhead, endArrowhead, fileId} = ea.getViewSelectedElement();
 
 const fragWithHTML = (html) => createFragment((frag) => (frag.createDiv().innerHTML = html));
   
@@ -43,7 +43,8 @@ const run = () => {
     ((typeof config.strokeWidth === "undefined") || (el.strokeWidth === config.strokeWidth)) &&
     ((typeof config.type === "undefined") || (el.type === config.type)) &&
     ((typeof config.startArrowhead === "undefined") || (el.startArrowhead === config.startArrowhead)) &&
-    ((typeof config.endArrowhead === "undefined") || (el.endArrowhead === config.endArrowhead))
+    ((typeof config.endArrowhead === "undefined") || (el.endArrowhead === config.endArrowhead)) &&
+    ((typeof config.fileId === "undefined") || (el.fileId === config.fileId))
   )
   ea.selectElementsInView(selectedElements);
   delete window.ExcalidrawSelectConfig;
@@ -97,6 +98,7 @@ const selectAttributesToCopy = () => {
 	  {name: "End arrowhead", key: "endArrowhead"},
 	  {name: "Height", key: "height"},
 	  {name: "Width", key: "width"},
+	  {name: "ImageID", key: "fileId"},
 	];
   
 	attributes.forEach(attr => {
