@@ -1,8 +1,8 @@
 /*
 With This Script it is possible to make boolean Operations on Shapes. 
 The style of the resulting shape will be the style of the highest ranking Element that was used. 
-The ranking of the elemtns is based on their background. The "denser" the background, the higher the ranking (the order of backgroundstyles is shown below). If they have the same background the opacity will decide. If thats also the same its decided by the order they were created.
-The ranking is also important for the diffrence operation, so a tranparent object for example will cut a hole into a solid object.
+The ranking of the elements is based on their background. The "denser" the background, the higher the ranking (the order of backgroundstyles is shown below). If they have the same background the opacity will decide. If thats also the same its decided by the order they were created.
+The ranking is also important for the difference operation, so a transparent object for example will cut a hole into a solid object.
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-boolean-operations-showcase.png)
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-boolean-operations-element-ranking.png)
 
@@ -29,7 +29,7 @@ if(elements.length === 0) {
 }
 
 const PolyBool = ea.getPolyBool();
-const polyboolAction = await utils.suggester(["union (a + b)", "intersect (a && b)", "diffrence (a - b)", "reversed diffrence (b - a)", "xor"], [
+const polyboolAction = await utils.suggester(["union (a + b)", "intersect (a && b)", "difference (a - b)", "reversed difference (b - a)", "xor"], [
   PolyBool.union, PolyBool.intersect, PolyBool.difference, PolyBool.differenceRev, PolyBool.xor
 ], "What would you like todo with the object");
 

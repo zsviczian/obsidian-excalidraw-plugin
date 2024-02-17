@@ -155,12 +155,12 @@ export class EmbeddableMenu {
                   title={t("NARROW_TO_BLOCK")}
                   action={async () => {
                     if(!file) return;
-                    const paragrphs = (await app.metadataCache.blockCache
+                    const paragraphs = (await app.metadataCache.blockCache
                       .getForFile({ isCancelled: () => false },file))
                       .blocks.filter((b: any) => b.display && b.node?.type === "paragraph");
-                    const values = ["entire-file"].concat(paragrphs);
+                    const values = ["entire-file"].concat(paragraphs);
                     const display = [t("SHOW_ENTIRE_FILE")].concat(
-                      paragrphs.map((b: any) => `${b.node?.id ? `#^${b.node.id}: ` : ``}${b.display.trim()}`));
+                      paragraphs.map((b: any) => `${b.node?.id ? `#^${b.node.id}: ` : ``}${b.display.trim()}`));
       
                     const selectedBlock = await ScriptEngine.suggester(
                       app, display, values, "Select section from document"

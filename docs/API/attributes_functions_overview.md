@@ -42,7 +42,7 @@ export declare class ExcalidrawAutomate {
      */
     newFilePrompt(newFileNameOrPath: string, shouldOpenNewFile: boolean, targetPane?: PaneTarget, parentFile?: TFile): Promise<TFile | null>;
     /**
-     * Generates a new Obsidian Leaf following Excalidraw plugin settings such as open in Main Workspace or not, open in adjacent pane if avaialble, etc.
+     * Generates a new Obsidian Leaf following Excalidraw plugin settings such as open in Main Workspace or not, open in adjacent pane if available, etc.
      * @param origo // the currently active leaf, the origin of the new leaf
      * @param targetPane //type PaneTarget = "active-pane"|"new-pane"|"popout-window"|"new-tab"|"md-properties";
      * @returns
@@ -155,7 +155,7 @@ export declare class ExcalidrawAutomate {
     }>;
     /**
      * get all elements from ExcalidrawAutomate elementsDict
-     * @returns elements from elemenetsDict
+     * @returns elements from elementsDict
      */
     getElements(): ExcalidrawElement[];
     /**
@@ -705,25 +705,25 @@ export declare class ExcalidrawAutomate {
      */
     moveViewElementToZIndex(elementId: number, newZIndex: number): void;
     /**
-     * Depricated. Use getCM / ColorMaster instead
+     * Deprecated. Use getCM / ColorMaster instead
      * @param color
      * @returns
      */
     hexStringToRgb(color: string): number[];
     /**
-     * Depricated. Use getCM / ColorMaster instead
+     * Deprecated. Use getCM / ColorMaster instead
      * @param color
      * @returns
      */
     rgbToHexString(color: number[]): string;
     /**
-     * Depricated. Use getCM / ColorMaster instead
+     * Deprecated. Use getCM / ColorMaster instead
      * @param color
      * @returns
      */
     hslToRgb(color: number[]): number[];
     /**
-     * Depricated. Use getCM / ColorMaster instead
+     * Deprecated. Use getCM / ColorMaster instead
      * @param color
      * @returns
      */

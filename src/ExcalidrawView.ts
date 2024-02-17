@@ -1724,14 +1724,14 @@ export default class ExcalidrawView extends TextFileView {
             let counter = 0;
             const timestamp = Date.now();
             while (!imageCache.isReady() && confirmation) {
-              const message = `You've been now wating for <b>${Math.round((Date.now()-timestamp)/1000)}</b> seconds. `
+              const message = `You've been now waiting for <b>${Math.round((Date.now()-timestamp)/1000)}</b> seconds. `
               imageCache.initializationNotice = true;
               const confirmationPrompt = new ConfirmationPrompt(plugin,
                 `${counter>0
                   ? counter%4 === 0
                     ? message + "The CACHE is still loading.<br><br>"
                     : counter%4 === 1
-                      ? message + "Watch the top rigth corner for the notification.<br><br>"
+                      ? message + "Watch the top right corner for the notification.<br><br>"
                       : counter%4 === 2
                         ? message + "I really, really hope the backup will work for you! <br><br>"
                         : message + "I am sorry, it is taking a while, there is not much I can do... <br><br>"
@@ -4579,7 +4579,7 @@ export default class ExcalidrawView extends TextFileView {
       if (containers.length > 0) {
         if (this.initialContainerSizeUpdate) {
           //updateContainerSize will bump scene version which will trigger a false autosave
-          //after load, which will lead to a ping-pong between two syncronizing devices
+          //after load, which will lead to a ping-pong between two synchronizing devices
           this.semaphores.justLoaded = true;
         }
         api.updateContainerSize(containers);

@@ -292,7 +292,7 @@ export class ExcalidrawAutomate {
   }
 
   /**
-   * Generates a new Obsidian Leaf following Excalidraw plugin settings such as open in Main Workspace or not, open in adjacent pane if avaialble, etc.
+   * Generates a new Obsidian Leaf following Excalidraw plugin settings such as open in Main Workspace or not, open in adjacent pane if available, etc.
    * @param origo // the currently active leaf, the origin of the new leaf
    * @param targetPane //type PaneTarget = "active-pane"|"new-pane"|"popout-window"|"new-tab"|"md-properties";
    * @returns 
@@ -543,7 +543,7 @@ export class ExcalidrawAutomate {
 
   /**
    * get all elements from ExcalidrawAutomate elementsDict
-   * @returns elements from elemenetsDict
+   * @returns elements from elementsDict
    */
   getElements(): Mutable<ExcalidrawElement>[] {
     const elements = [];
@@ -2515,7 +2515,7 @@ export class ExcalidrawAutomate {
   };
 
   /**
-   * Depricated. Use getCM / ColorMaster instead
+   * Deprecated. Use getCM / ColorMaster instead
    * @param color 
    * @returns 
    */
@@ -2525,7 +2525,7 @@ export class ExcalidrawAutomate {
   };
 
   /**
-   * Depricated. Use getCM / ColorMaster instead
+   * Deprecated. Use getCM / ColorMaster instead
    * @param color 
    * @returns 
    */
@@ -2535,7 +2535,7 @@ export class ExcalidrawAutomate {
   };
 
   /**
-   * Depricated. Use getCM / ColorMaster instead
+   * Deprecated. Use getCM / ColorMaster instead
    * @param color 
    * @returns 
    */
@@ -2545,7 +2545,7 @@ export class ExcalidrawAutomate {
   };
 
   /**
-   * Depricated. Use getCM / ColorMaster instead
+   * Deprecated. Use getCM / ColorMaster instead
    * @param color 
    * @returns 
    */
@@ -3052,7 +3052,7 @@ function errorMessage(message: string, source: string) {
       errorlog({
         where: "ExcalidrawAutomate",
         source,
-        message: "this function is not avalable on Obsidian Mobile",
+        message: "this function is not available on Obsidian Mobile",
       });
       break;
     default:

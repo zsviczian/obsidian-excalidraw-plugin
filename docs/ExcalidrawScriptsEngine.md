@@ -21,7 +21,7 @@ This will allow you to assign hotkeys to your favorite scripts just like to any 
 
 ## Script development
 An Excalidraw script will automatically receive two objects:
-- `ea`: The Script Enginge will initialize the `ea` object including setting the active view to the View from which the script was called.
+- `ea`: The Script Engine will initialize the `ea` object including setting the active view to the View from which the script was called.
 - `utils`: I have borrowed functions exposed on utils from [QuickAdd](https://github.com/chhoumann/quickadd/blob/master/docs/QuickAddAPI.md), though currently not all QuickAdd utility functions are implemented in Excalidraw. As of now, these are the available functions. See the example below for details.
   - `inputPrompt: (header: string, placeholder?: string, value?: string, buttons?: [{caption:string, action:Function}])`
     - Opens a prompt that asks for an input. Returns a string with the input.

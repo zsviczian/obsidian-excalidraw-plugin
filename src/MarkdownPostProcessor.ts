@@ -775,7 +775,7 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = async (m) => {
   node.empty();
 
   //this div will be on top of original DIV. By stopping the propagation of the click
-  //I prevent the default Obsidian feature of openning the link in the native app
+  //I prevent the default Obsidian feature of opening the link in the native app
   const img = await getIMG({
     file,
     fname: file.path,

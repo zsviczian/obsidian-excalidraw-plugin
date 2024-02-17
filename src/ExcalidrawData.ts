@@ -819,7 +819,7 @@ export class ExcalidrawData {
       if (el.id.length > 8) {
         result = true;
         id = nanoid();
-        jsonString = jsonString.replaceAll(el.id, id); //brute force approach to replace all occurances (e.g. links, groups,etc.)
+        jsonString = jsonString.replaceAll(el.id, id); //brute force approach to replace all occurrences (e.g. links, groups,etc.)
       }
       this.elementLinks.set(id, el.link);
     }
@@ -853,7 +853,7 @@ export class ExcalidrawData {
           delete this.selectedElementIds[te.id];
           this.selectedElementIds[id] = true;
         }
-        jsonString = jsonString.replaceAll(te.id, id); //brute force approach to replace all occurances (e.g. links, groups,etc.)
+        jsonString = jsonString.replaceAll(te.id, id); //brute force approach to replace all occurrences (e.g. links, groups,etc.)
         if (this.textElements.has(te.id)) {
           //element was created with onBeforeTextSubmit
           const text = this.textElements.get(te.id);

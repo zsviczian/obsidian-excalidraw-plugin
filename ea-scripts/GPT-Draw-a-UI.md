@@ -464,7 +464,7 @@ const run = async (text) => {
     return;
   }
 
-  //exctract codeblock and display result
+  //extract codeblock and display result
   let content = ea.extractCodeBlocks(result.json.choices[0]?.message?.content)[0]?.data;
 
   if(!content) {

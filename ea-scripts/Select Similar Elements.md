@@ -167,7 +167,7 @@ const selectAttributesToCopy = () => {
 	});
 
 
-	//Add Toggle for the rest of the attirbutes. Organize attributes into a logical sequence or groups by adding
+	//Add Toggle for the rest of the attributes. Organize attributes into a logical sequence or groups by adding
 	//configModal.contentEl.createEl("h") or similar to the code
 
     new ea.obsidian.Setting(configModal.contentEl)

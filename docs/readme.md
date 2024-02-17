@@ -8,7 +8,7 @@ With a little work, using ExcalidrawAutomate you can generate simple mindmaps, b
 ## API documentation
 - **start here** [Introduction to the API](API/introduction.md)
 - [Overview of Attributes and Functions](API/attributes_functions_overview.md)
-- [Element Sytle](API/element_style.md)
+- [Element Style](API/element_style.md)
 - [Canvas Style](API/canvas_style.md)
 - [Adding Objects](API/objects.md)
 - [Utility Functions](API/utility.md)
