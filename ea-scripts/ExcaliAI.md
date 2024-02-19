@@ -27,6 +27,10 @@ const outputTypes = {
     instruction: "Return a single message with the generated image prompt in a codeblock",
     blocktype: "image"
   },
+    "image-gen-silent": {
+    instruction: "Return a single message with the generated image prompt in a codeblock",
+    blocktype: "image-silent"
+  },
   "image-edit": {
     instruction: "",
     blocktype: "image"
@@ -49,6 +53,12 @@ const systemPrompts = {
     type: "svg",
     help: "Convert text prompts into simple icons inserted as Excalidraw elements. Expect only a text prompt. Experimental and may not produce good drawings."
   },
+  
+  "Create a stick figure": {
+    prompt: "You will receive a prompt from the user. Your task involves drawing a simple stick figure or a scene involving a few stick figures based on the user's prompt. Create the stickfigure based on the following style description. DO NOT add any detail, just use it AS-IS: Create a simple stick figure character with a large round head and a face in the style of sketchy caricatures. The stick figure should have a rudimentary body composed of straight lines representing the arms and legs. Hands and toes should be should be represented with round shapes, do not add details such as fingers or toes. Use fine lines, smooth curves, rounded shapes. The stick figure should retain a playful and childlike simplicity, reminiscent of a doodle someone might draw on the corner of a notebook page. Create a black and white drawing, a hand-drawn figure on white background.",
+    type: "image-gen",
+    help: "Send only the text prompt to OpenAI. Provide a detailed description; OpenAI will enrich your prompt automatically. To avoid it, start your prompt like this 'DO NOT add any detail, just use it AS-IS:'"
+  },
   "Edit an image": {
     prompt: null,
     type: "image-edit",
@@ -69,6 +79,11 @@ const systemPrompts = {
     type: "image-gen",
     help: "ExcaliAI will create an image prompt to illustrate your text input - a quote - with GPT, then generate an image using Dall-e. In case you include the Author's name, GPT will try to generate an image that in some way references the Author."
   },
+   "Generate 4 icon-variants based on input image": {
+    prompt: "Given a simple sketch and an optional text prompt from the user, your task is to generate a descriptive narrative tailored for effective image generation, capturing the style of the sketch. Utilize the text prompt to guide the description. Your objective is to instruct DALL-E to create a collage of four minimalist black and white hand-drawn pencil sketches in a 2x2 matrix format. Each sketch should convert the user's sketch into simple artistic SVG icons with transparent backgrounds. Ensure the resulting images remain text-free, maintaining a minimalist, easy-to-understand style, and omit framing borders. Only include a pencil in the drawing if it is explicitely metioned in the user prompt or included in the sketch.",
+    type: "image-gen-silent",
+    help: "Generate a collage of 4 icons based on the drawing using ChatGPT-Vision and Dall-e. You may provide a contextual text-prompt to improve accuracy of interpretation."
+  }, 
   "Visual brainstorm": {
     prompt: "Your objective is to interpret a screenshot of a whiteboard, creating an image aimed at sparking further thoughts on the subject. The whiteboard will present diverse ideas about a specific topic. Your generated image should achieve one of two purposes: highlighting concepts that challenge, dispute, or contradict the whiteboard content, or introducing ideas that expand, complement, or enrich the user's thinking. You have the option to include multiple tiles in the resulting image, resembling a sequence akin to a comic strip. Ensure that the image remains devoid of text.",
     type: "image-gen",
@@ -77,7 +92,7 @@ const systemPrompts = {
   "Wireframe to code": {
     prompt: `You are an expert tailwind developer. A user will provide you with a low-fidelity wireframe of an application and you will return a single html file that uses tailwind to create the website. Use creative license to make the application more fleshed out. Write the necessary javascript code. If you need to insert an image, use placehold.co to create a placeholder image.`,
     type: "html",
-    help: "Use GPT Visions to interpret the wireframe and generate a web application. You may copy the resulting code from the active embeddable's top left menu."
+    help: "Use GPT Visions to interpret the wireframe and generate a web application. YOu may copy the resulting code from the active embeddable's top left menu."
   },
 }
 
@@ -319,7 +334,7 @@ const setMermaidDataToStorage = (mermaidDefinition) => {
 // --------------------------------------
 // Submit Prompt
 // --------------------------------------
-const generateImage = async(text, spinnerID, bb) => {
+const generateImage = async(text, spinnerID, bb, silent=false) => {
   const requestObject = {
     text,
     imageGenerationProperties: {
@@ -342,7 +357,7 @@ const generateImage = async(text, spinnerID, bb) => {
   const imageID = await ea.addImage(spinner.x, spinner.y, result.json.data[0].url);
   const imageEl = ea.getElement(imageID);
   const revisedPrompt = result.json.data[0].revised_prompt;
-  if(revisedPrompt) {
+  if(revisedPrompt && !silent) {
     ea.style.fontSize = 16;
     const rectID = ea.addText(imageEl.x+15, imageEl.y + imageEl.height + 50, revisedPrompt, {
       width: imageEl.width-30,
@@ -356,6 +371,7 @@ const generateImage = async(text, spinnerID, bb) => {
   }
   
   await ea.addElementsToView(false, true, true);
+  if(silent) return;
   ea.getExcalidrawAPI().setToast({
     message: IMAGE_WARNING,
     duration: 15000,
@@ -371,7 +387,7 @@ const run = async (text) => {
 
   const systemPrompt = systemPrompts[agentTask];
   const outputType = outputTypes[systemPrompt.type];
-  const isImageGenRequest = outputType.blocktype === "image";
+  const isImageGenRequest = outputType.blocktype === "image" || outputType.blocktype === "image-silent";
   const isImageEditRequest = systemPrompt.type === "image-edit";
 
   if(isImageEditRequest) {
@@ -464,7 +480,7 @@ const run = async (text) => {
     return;
   }
 
-  //extract codeblock and display result
+  //exctract codeblock and display result
   let content = ea.extractCodeBlocks(result.json.choices[0]?.message?.content)[0]?.data;
 
   if(!content) {
@@ -473,7 +489,7 @@ const run = async (text) => {
   }
 
   if(isImageGenRequest) {
-    generateImage(content,spinnerID,bb);
+    generateImage(content,spinnerID,bb,outputType.blocktype === "image-silent");
     return;
   }
   
@@ -519,7 +535,7 @@ const run = async (text) => {
 // --------------------------------------
 let previewDiv;
 const fragWithHTML = (html) => createFragment((frag) => (frag.createDiv().innerHTML = html));
-const isImageGenerationTask = () => systemPrompts[agentTask].type === "image-gen" || systemPrompts[agentTask].type === "image-edit";
+const isImageGenerationTask = () => systemPrompts[agentTask].type === "image-gen" || systemPrompts[agentTask].type === "image-gen-silent" || systemPrompts[agentTask].type === "image-edit";
 const addPreviewImage = () => {
   if(!previewDiv) return;
   previewDiv.empty();
