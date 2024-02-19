@@ -100,7 +100,7 @@ import {
   fragWithHTML,
   isMaskFile,
 } from "./utils/Utils";
-import { getLeaf, getParentOfClass, obsidianPDFQuoteWithRef } from "./utils/ObsidianUtils";
+import { getLeaf, getParentOfClass, obsidianPDFQuoteWithRef, openLeaf } from "./utils/ObsidianUtils";
 import { splitFolderAndFilename } from "./utils/FileUtils";
 import { ConfirmationPrompt, GenericInputPrompt, NewFileActions, Prompt, linkPrompt } from "./dialogs/Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
@@ -1059,7 +1059,6 @@ export default class ExcalidrawView extends TextFileView {
       if(this.linksAlwaysOpenInANewPane && !anyModifierKeysPressed(keys)) {
         keys = emulateKeysForLinkClick("new-pane");
       }
-      const leaf = getLeaf(this.plugin,this.leaf,keys);
       
       try {
         //@ts-ignore
@@ -1068,6 +1067,7 @@ export default class ExcalidrawView extends TextFileView {
           if(file.extension === "svg") {
             const svg = await this.app.vault.cachedRead(file);
             if(/(&lt;|\<)(mxfile|mxgraph)/i.test(svg)) {
+              const leaf = getLeaf(this.plugin,this.leaf,keys);
               leaf.setViewState({
                 type: "diagram-edit",
                 state: {
@@ -1081,11 +1081,17 @@ export default class ExcalidrawView extends TextFileView {
       } catch(e) {
         console.error(e);
       }
-        
-      await leaf.openFile(file, {
-        active: !this.linksAlwaysOpenInANewPane,
-        ...subpath ? { eState: { subpath } } : {}
+      
+      const {leaf, promise} = openLeaf({
+        plugin: this.plugin,
+        fnGetLeaf: () => getLeaf(this.plugin,this.leaf,keys),
+        file,
+        openState: {
+          active: !this.linksAlwaysOpenInANewPane,
+          ...subpath ? { eState: { subpath } } : {}
+        }
       }); //if file exists open file and jump to reference
+      await promise;
       //view.app.workspace.setActiveLeaf(leaf, true, true); //0.15.4 ExcaliBrain focus issue
     } catch (e) {
       new Notice(e, 4000);
@@ -2407,7 +2413,7 @@ export default class ExcalidrawView extends TextFileView {
         this.selectedTextElement = null;
         return retval;
       }
-      return { id: null, text: null };
+      //return { id: null, text: null };
     }
     const selectedElement = api
       .getSceneElements()
@@ -2468,7 +2474,7 @@ export default class ExcalidrawView extends TextFileView {
         this.selectedImageElement = null;
         return retval;
       }
-      return { id: null, fileId: null };
+      //return { id: null, fileId: null };
     }
     const selectedElement = api
       .getSceneElements()
@@ -2515,7 +2521,7 @@ export default class ExcalidrawView extends TextFileView {
         this.selectedElementWithLink = null;
         return retval;
       }
-      return { id: null, text: null };
+      //return { id: null, text: null };
     }
     const selectedElement = api
       .getSceneElements()
@@ -4065,11 +4071,61 @@ export default class ExcalidrawView extends TextFileView {
         ]);
       }
 
+      if(appState.viewModeEnabled) {
+        const isLaserOn = appState.activeTool?.type === "laser";
+        contextMenuActions.push([
+          renderContextMenuAction(
+            isLaserOn ? t("LASER_OFF") : t("LASER_ON"),
+            () => {
+              api.setActiveTool({type: isLaserOn ? "selection" : "laser"});
+            },
+            onClose
+          ),
+        ]);  
+      }
+
       if(!appState.viewModeEnabled) {
         const selectedTextElements = this.getViewSelectedElements().filter(el=>el.type === "text");
         if(selectedTextElements.length===1) {
           const selectedTextElement = selectedTextElements[0] as ExcalidrawTextElement;
+          this.excalidrawData.getParsedText(selectedTextElement.id);
           const containerElement = (this.getViewElements() as ExcalidrawElement[]).find(el=>el.id === selectedTextElement.containerId);
+          
+          //if the text element in the container no longer has a link associated with it...
+          if(
+            containerElement &&
+            selectedTextElement.link &&
+            this.excalidrawData.getParsedText(selectedTextElement.id)[1] === selectedTextElement.rawText
+          ) {
+            contextMenuActions.push([
+              renderContextMenuAction(
+                t("REMOVE_LINK"),
+                () => {
+                  const ea = getEA(this) as ExcalidrawAutomate;
+                  ea.copyViewElementsToEAforEditing([selectedTextElement]);
+                  const el = ea.getElement(selectedTextElement.id) as Mutable<ExcalidrawTextElement>;
+                  el.link = null;
+                  ea.addElementsToView(false);
+                },
+                onClose
+              ),
+            ]);
+          }
+
+          if(containerElement) {
+            contextMenuActions.push([
+              renderContextMenuAction(
+                t("SELECT_TEXTELEMENT_ONLY"),
+                () => {
+                  setTimeout(()=>
+                    (this.excalidrawAPI as ExcalidrawImperativeAPI).selectElements([selectedTextElement])
+                  );
+                },
+                onClose
+              ),
+            ]);            
+          }
+
           if(!containerElement || (containerElement && containerElement.type !== "arrow")) {
             contextMenuActions.push([
               renderContextMenuAction(

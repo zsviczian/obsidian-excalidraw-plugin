@@ -12,7 +12,7 @@ import {
 import ExcalidrawView from "../ExcalidrawView";
 import ExcalidrawPlugin from "../main";
 import { escapeRegExp, getLinkParts, sleep } from "../utils/Utils";
-import { getLeaf } from "../utils/ObsidianUtils";
+import { getLeaf, openLeaf } from "../utils/ObsidianUtils";
 import { checkAndCreateFolder, splitFolderAndFilename } from "src/utils/FileUtils";
 import { KeyEvent, isWinCTRLorMacCMD } from "src/utils/ModifierkeyHelper";
 import { t } from "src/lang/helpers";
@@ -499,7 +499,7 @@ export class NewFileActions extends Modal {
     this.view = view;
     this.openNewFile = openNewFile;
     this.sourceElement = sourceElement;
-    if(!parentFile) this.parentFile = view.file;
+    this.parentFile = parentFile ?? view.file;
     this.waitForClose = new Promise<TFile|null>((resolve, reject) => {
       this.resolvePromise = resolve;
       this.rejectPromise = reject;
@@ -515,8 +515,12 @@ export class NewFileActions extends Modal {
     if (!file || !this.openNewFile) {
       return;
     }
-    const leaf = getLeaf(this.plugin,this.view.leaf,this.keys)
-    leaf.openFile(file, {active:true});
+    openLeaf({
+      plugin: this.plugin,
+      fnGetLeaf: () => getLeaf(this.plugin,this.view.leaf,this.keys),
+      file,
+      openState: { active: true },
+    });
   }
 
   onClose() {

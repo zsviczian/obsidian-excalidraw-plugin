@@ -72,6 +72,7 @@ export interface ExcalidrawSettings {
   zoomToFitOnResize: boolean;
   zoomToFitMaxLevel: number;
   openInAdjacentPane: boolean;
+  focusOnFileTab: boolean;
   openInMainWorkspace: boolean;
   showLinkBrackets: boolean;
   linkPrefix: string;
@@ -222,6 +223,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   hoverPreviewWithoutCTRL: false,
   linkOpacity: 1,
   openInAdjacentPane: false,
+  focusOnFileTab: false,
   openInMainWorkspace: true,
   showLinkBrackets: true,
   allowCtrlClick: true,
@@ -1179,7 +1181,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
-
+    
+    new Setting(detailsEl)
+      .setName(t("FOCUS_ON_OPEN_TAB_NAME"))
+      .setDesc(fragWithHTML(t("FOCUS_ON_OPEN_TAB_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.focusOnFileTab)
+          .onChange(async (value) => {
+            this.plugin.settings.focusOnFileTab = value;
+            this.applySettingsUpdate();
+          }),
+      );
     
     new Setting(detailsEl)
       .setName(t("MAINWORKSPACE_PANE_NAME"))

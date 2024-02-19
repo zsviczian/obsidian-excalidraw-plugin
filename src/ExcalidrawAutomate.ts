@@ -53,7 +53,7 @@ import {
   scaleLoadedImage,
   wrapTextAtCharLength,
 } from "src/utils/Utils";
-import { getAttachmentsFolderAndFilePath, getLeaf, getNewOrAdjacentLeaf, isObsidianThemeDark } from "src/utils/ObsidianUtils";
+import { getAttachmentsFolderAndFilePath, getLeaf, getNewOrAdjacentLeaf, isObsidianThemeDark, openLeaf } from "src/utils/ObsidianUtils";
 import { AppState, BinaryFileData,  DataURL,  ExcalidrawImperativeAPI, Point } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddedFile, EmbeddedFilesLoader, FileData } from "src/EmbeddedFileLoader";
 import { tex2dataURL } from "src/LaTeX";
@@ -2374,8 +2374,13 @@ export class ExcalidrawAutomate {
     if (!this.targetView) {
       return null;
     }
-    const leaf = getNewOrAdjacentLeaf(this.plugin, this.targetView.leaf);
-    leaf.openFile(file, openState ?? {active: true});
+
+    const {leaf, promise} = openLeaf({
+      plugin: this.plugin,
+      fnGetLeaf: () => getNewOrAdjacentLeaf(this.plugin, this.targetView.leaf),
+      file,
+      openState: openState ?? {active: true}
+    });
     return leaf;
   };
 

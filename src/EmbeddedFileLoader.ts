@@ -528,7 +528,8 @@ export class EmbeddedFilesLoader {
     addFiles: (files: FileData[], isDark: boolean, final?: boolean) => void,
     depth:number
   ) {
-    if(depth > 4) {
+    
+    if(depth > 7) {
       new Notice(t("INFINITE_LOOP_WARNING")+depth.toString(), 6000);
       return;
     }

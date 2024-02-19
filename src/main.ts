@@ -98,7 +98,7 @@ import {
   isCallerFromTemplaterPlugin,
   decompress,
 } from "./utils/Utils";
-import { extractSVGPNGFileName, getActivePDFPageNumberFromPDFView, getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark } from "./utils/ObsidianUtils";
+import { extractSVGPNGFileName, getActivePDFPageNumberFromPDFView, getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark, openLeaf } from "./utils/ObsidianUtils";
 import { ExcalidrawElement, ExcalidrawEmbeddableElement, ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { ScriptEngine } from "./Scripts";
 import {
@@ -2840,29 +2840,37 @@ export default class ExcalidrawPlugin extends Plugin {
     subpath?: string,
     justCreated: boolean = false
   ) {
-    if(location === "md-properties") {
-      location = "new-tab";
-    }
-    let leaf: WorkspaceLeaf;
-    if(location === "popout-window") {
-      leaf = app.workspace.openPopoutLeaf();
-    }
-    if(location === "new-tab") {
-      leaf = app.workspace.getLeaf('tab');
-    }
-    if(!leaf) {
-      leaf = this.app.workspace.getLeaf(false);
-      if ((leaf.view.getViewType() !== 'empty') && (location === "new-pane")) {
-        leaf = getNewOrAdjacentLeaf(this, leaf)    
+
+    const fnGetLeaf = ():WorkspaceLeaf => {
+      if(location === "md-properties") {
+        location = "new-tab";
       }
+      let leaf: WorkspaceLeaf;
+      if(location === "popout-window") {
+        leaf = app.workspace.openPopoutLeaf();
+      }
+      if(location === "new-tab") {
+        leaf = app.workspace.getLeaf('tab');
+      }
+      if(!leaf) {
+        leaf = this.app.workspace.getLeaf(false);
+        if ((leaf.view.getViewType() !== 'empty') && (location === "new-pane")) {
+          leaf = getNewOrAdjacentLeaf(this, leaf)    
+        }
+      }
+      return leaf;
     }
 
-    leaf.openFile(
-      drawingFile, 
-      !subpath || subpath === "" 
+    const {leaf, promise} = openLeaf({
+      plugin: this,
+      fnGetLeaf: () => fnGetLeaf(),
+      file: drawingFile,
+      openState:!subpath || subpath === "" 
         ? {active}
         : { active, eState: { subpath } }
-    ).then(()=>{
+    });
+
+    promise.then(()=>{
       if(justCreated && this.ea.onFileCreateHook) {
         try {
           this.ea.onFileCreateHook({

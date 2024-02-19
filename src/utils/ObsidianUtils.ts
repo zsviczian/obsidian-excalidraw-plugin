@@ -1,6 +1,6 @@
 import {
   App,
-  normalizePath, parseFrontMatterEntry, TFile, View, Workspace, WorkspaceLeaf, WorkspaceSplit
+  normalizePath, OpenViewState, parseFrontMatterEntry, TFile, View, Workspace, WorkspaceLeaf, WorkspaceSplit
 } from "obsidian";
 import ExcalidrawPlugin from "../main";
 import { checkAndCreateFolder, splitFolderAndFilename } from "./FileUtils";
@@ -258,3 +258,34 @@ export const getFileCSSClasses = (
 
 //@ts-ignore
 export const getActivePDFPageNumberFromPDFView = (view: View): number => view?.viewer?.child?.pdfViewer?.page;
+
+export const openLeaf = ({
+  plugin,
+  fnGetLeaf,
+  file,
+  openState
+}:{
+  plugin: ExcalidrawPlugin,
+  fnGetLeaf: ()=>WorkspaceLeaf,
+  file: TFile,
+  openState?: OpenViewState
+}) : {
+  leaf: WorkspaceLeaf
+  promise: Promise<void>
+ } => {
+  let leaf:WorkspaceLeaf = null;
+  if (plugin.settings.focusOnFileTab) {
+    plugin.app.workspace.iterateAllLeaves((l) => {
+      if(leaf) return;
+      //@ts-ignore
+      if (l?.view?.file === file) {
+        plugin.app.workspace.setActiveLeaf(l,{focus: true});
+        leaf = l;
+      }
+    });
+    if(leaf) return {leaf, promise: Promise.resolve()};
+  }
+  leaf = fnGetLeaf();
+  const promise = leaf.openFile(file, openState);
+  return {leaf, promise};
+}

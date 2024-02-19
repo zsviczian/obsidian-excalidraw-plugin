@@ -109,6 +109,10 @@ export default {
   WARNING_PASTING_ELEMENT_AS_TEXT: "PASTING EXCALIDRAW ELEMENTS AS A TEXT ELEMENT IS NOT ALLOWED",
   USE_INSERT_FILE_MODAL: "Use 'Insert Any File' to embed a markdown note",
   CONVERT_TO_MARKDOWN: "Convert to file...",
+  SELECT_TEXTELEMENT_ONLY: "Select text element only (not container)",
+  REMOVE_LINK: "Remove text element link",
+  LASER_ON: "Enable laser pointer",
+  LASER_OFF: "Disable laser pointer",
 
   //settings.ts
   RELEASE_NOTES_NAME: "Display Release Notes after update",
@@ -306,6 +310,9 @@ FILENAME_HEAD: "Filename",
     "These settings are different for Apple and non-Apple. If you use Obsidian on multiple platforms, you'll need to make the settings separately. "+
     "The toggles follow the order of " +
     (DEVICE.isIOS || DEVICE.isMacOS ? "SHIFT, CMD, OPT, CONTROL." : "SHIFT, CTRL, ALT, META (Windows key)."),
+  FOCUS_ON_EXISTING_TAB: "Focus on Existing Tab",
+  FOCUS_ON_EXISTING_TAB_DESC: "When opening a link, Excalidraw will focus on the existing tab if the file is already open. " +
+    "Enabling this setting overrides 'Reuse Adjacent Pane' when the file is already open.",
   ADJACENT_PANE_NAME: "Reuse adjacent pane",
   ADJACENT_PANE_DESC:
     `When ${labelCTRL()}+${labelALT()} clicking a link in Excalidraw, by default the plugin will open the link in a new pane. ` +

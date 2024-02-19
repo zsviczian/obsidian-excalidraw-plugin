@@ -17,6 +17,45 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.0.21":`
+## New/changed
+**"Focus on Existing Tab"**
+- New Setting: Disabled by default.
+  - Prevents multiple instances of the same drawing from opening when clicking on links within Excalidraw.
+  - Overrides the "Reuse Adjacent Pane" option when the file is already open.
+  - Accessible under "Links, Transclusions, and TODOs" in plugin settings.
+
+**Enhanced Context Menu Functions for Text Containers**
+- Two new context menu functions added for containers with a text element:
+  - Right-click to select the text element only, allowing independent color changes from the container.
+  - Remove orphaned element links when the text element has a link but no longer includes a link in the text.
+
+**Improved Laser Pointer Activation**
+- Laser pointer activation on double tap in view mode removed due to interference with link navigation and other features.
+- When the drawing is in "view" mode, laser pointer activation now available via long-press/right-click context menu.
+- Alternatively, activate the laser pointer with "k" if you have a keyboard.
+
+## Fixed
+- **Older iOS and Android webview support**: Rebuilt all packages and dependencies with Node 18, hoping to address (sorry I can't reproduce/test these issues myself) compatibility issues with older iPad OS versions, up to 15.7. [#1525](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1525), and Android [1598](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1598)
+- **Double-click navigation**: Fixed the issue where double-clicking an embedded image did not navigate to the link in view mode.
+- **ExcaliBrain new file creation**: Resolved the issue with new file creation from ExcaliBrain. [#201](https://github.com/zsviczian/excalibrain/issues/201)
+- **Canvas immersive style**: Removed Canvas immersive embedding style support from the Excalidraw stylesheet to address performance issues experienced by some users with various Obsidian themes. If you require this feature, you can add a CSS snippet with the provided code.
+
+${String.fromCharCode(96,96,96)}css
+.canvas-node:not(.is-editing):has(.excalidraw-canvas-immersive) {
+  ::-webkit-scrollbar,
+  ::-webkit-scrollbar-horizontal {
+    display: none;
+  }
+  background-color: transparent !important;
+}
+
+.canvas-node:not(.is-editing) .canvas-node-container:has(.excalidraw-canvas-immersive) {
+  border:       unset;
+  box-shadow:   unset;
+}
+${String.fromCharCode(96,96,96)}
+`,
 "2.0.20":`
 ## Fixed in ExcalidrawAutomate
 - Regression: ${String.fromCharCode(96)}ea.getMaximumGroups(elements)${String.fromCharCode(96)} stopped working after the 2.0.19 update. [#1576](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1576)
