@@ -17,6 +17,11 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.0.22":`
+## Fixed
+- BUG: Unable to load obsidian excalidraw plugin on ipad 15.x or older [#1525](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1525)
+- BUG: ea.help does not display help if only function signature is available [#1601](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1601)
+`,
 "2.0.21":`
 ## New/changed
 **"Focus on Existing Tab"**

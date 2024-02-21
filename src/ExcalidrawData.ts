@@ -314,7 +314,10 @@ export class ExcalidrawData {
               map.set(item.id, item.type);
               alreadyHasText = true;
             } else {
-              elements.find((el:ExcalidrawElement)=>el.id===item.id).containerId = null;
+              const elementToClean = elements.find((el:ExcalidrawElement)=>el.id===item.id);
+              if(elementToClean) { //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1600
+                elementToClean.containerId = null;
+              }
             }
           } else {
             map.set(item.id, item.type);

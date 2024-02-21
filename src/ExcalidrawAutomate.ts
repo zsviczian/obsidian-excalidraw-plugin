@@ -154,7 +154,13 @@ export class ExcalidrawAutomate {
       return;
     }
 
+    let isMissing = true;
+    if (funcInfo.code) {
+      isMissing = false;
+      console.log(`Declaration: ${funcInfo.code}`);
+    }
     if (funcInfo.desc) {
+      isMissing = false;
       const formattedDesc = funcInfo.desc
         .replaceAll("<br>", "\n")
         .replace(/<code>(.*?)<\/code>/g, '%c\u200b$1%c') // Zero-width space
@@ -162,10 +168,9 @@ export class ExcalidrawAutomate {
         .replace(/<a onclick='window\.open\("(.*?)"\)'>(.*?)<\/a>/g, (_, href, text) => `%c\u200b${text}%c\u200b (link: ${href})`); // Zero-width non-joiner
   
       const styles = Array.from({ length: (formattedDesc.match(/%c/g) || []).length }, (_, i) => i % 2 === 0 ? 'color: #007bff;' : '');
-  
-      console.log(`Declaration: ${funcInfo.code}`);
       console.log(`Description: ${formattedDesc}`, ...styles);
-    } else {
+    } 
+    if (isMissing) {
       console.log("Description not available for this function.");
     }
   }

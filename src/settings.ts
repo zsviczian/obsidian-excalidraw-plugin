@@ -1183,8 +1183,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
     
     new Setting(detailsEl)
-      .setName(t("FOCUS_ON_OPEN_TAB_NAME"))
-      .setDesc(fragWithHTML(t("FOCUS_ON_OPEN_TAB_DESC")))
+      .setName(t("FOCUS_ON_EXISTING_TAB_NAME"))
+      .setDesc(fragWithHTML(t("FOCUS_ON_EXISTING_TAB_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.focusOnFileTab)
