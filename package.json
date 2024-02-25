@@ -19,7 +19,7 @@
   "license": "MIT",
   "dependencies": {
     "@popperjs/core": "^2.11.8",
-    "@zsviczian/excalidraw": "0.17.1-obsidian-15",
+    "@zsviczian/excalidraw": "0.17.1-obsidian-16",
     "chroma-js": "^2.4.2",
     "clsx": "^2.0.0",
     "colormaster": "^1.2.1",

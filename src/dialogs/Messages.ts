@@ -17,6 +17,25 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.0.23":`
+## New
+- Additional arrowheads (Circle, Circle Outline, Diamond, Diamond Outline, Triangle Outline) are now available via element properties.
+- Setting under "Links and Transclusions" to show/hide second-order links
+
+## Fixed
+- some styling issues with dynamic styles (e.g.: text color of context menu)
+
+## New in ExcalidrawAutomate
+- Excalidraw Publish Support: New hook to modify the link in the exported SVGs. This is useful when you want to export SVGs to your website. If set, this callback is triggered whenever a drawing is exported to SVG. The string returned by the hook will replace the link in the exported SVG. The hook is only executed if the link is to a file internal to Obsidian. [1605](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1605)
+${String.fromCharCode(96,96,96)}js
+onUpdateElementLinkForExportHook: (data: {
+*    originalLink: string,
+*    obsidianLink: string,
+*    linkedFile: TFile | null,
+*    hostFile: TFile,
+*  }) => string = null;
+${String.fromCharCode(96,96,96)}
+`,
 "2.0.22":`
 ## Fixed
 - BUG: Unable to load obsidian excalidraw plugin on ipad 15.x or older [#1525](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1525)

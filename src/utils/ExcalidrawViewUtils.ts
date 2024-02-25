@@ -101,7 +101,7 @@ export const openExternalLink = (link:string, app: App, element?: ExcalidrawElem
   return false;
 }
 
-export const getExcalidrawFileForwardLinks = (app: App, excalidrawFile: TFile):string => {
+export const getExcalidrawFileForwardLinks = (app: App, excalidrawFile: TFile, secondOrderLinksSet: Set<string>):string => {
   let secondOrderLinks = "";
   const forwardLinks = app.metadataCache.getLinks()[excalidrawFile.path];
   if(forwardLinks && forwardLinks.length > 0) {
@@ -110,6 +110,8 @@ export const getExcalidrawFileForwardLinks = (app: App, excalidrawFile: TFile):s
       const linkparts = getLinkParts(link.link);
       const f = app.metadataCache.getFirstLinkpathDest(linkparts.path, excalidrawFile.path);
       if(f && f.path !== excalidrawFile.path) {
+        if(secondOrderLinksSet.has(f.path)) return;
+        secondOrderLinksSet.add(f.path);
         linkset.add(`[[${f.path}${linkparts.ref?"#"+linkparts.ref:""}|Second Order Link: ${f.basename}]]`);
       }
     });

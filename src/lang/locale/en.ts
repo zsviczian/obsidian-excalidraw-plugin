@@ -313,6 +313,10 @@ FILENAME_HEAD: "Filename",
   FOCUS_ON_EXISTING_TAB_NAME: "Focus on Existing Tab",
   FOCUS_ON_EXISTING_TAB_DESC: "When opening a link, Excalidraw will focus on the existing tab if the file is already open. " +
     "Enabling this setting overrides 'Reuse Adjacent Pane' when the file is already open.",
+  SECOND_ORDER_LINKS_NAME: "Show second-order links",
+  SECOND_ORDER_LINKS_DESC: "Show links when clicking on a link in Excalidraw. Second-order link are backlinks pointing to the link being clicked. " +
+    "When using image icons to connect similar notes, second order links allow you to get to related notes in one click instead of two. " +
+    "See <a href='https://youtube.com/shorts/O_1ls9c6wBY?feature=share'>YT Short</a> to understand.",
   ADJACENT_PANE_NAME: "Reuse adjacent pane",
   ADJACENT_PANE_DESC:
     `When ${labelCTRL()}+${labelALT()} clicking a link in Excalidraw, by default the plugin will open the link in a new pane. ` +

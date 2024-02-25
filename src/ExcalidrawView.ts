@@ -1004,18 +1004,21 @@ export default class ExcalidrawView extends TextFileView {
         let secondOrderLinks: string = " ";
         
         const backlinks = this.app.metadataCache?.getBacklinksForFile(ef.file)?.data;
-        if(backlinks) {
+        const secondOrderLinksSet = new Set<string>();
+        if(backlinks && this.plugin.settings.showSecondOrderLinks) {
           const linkPaths = Object.keys(backlinks)
             .filter(path => (path !== this.file.path) && (path !== ef.file.path))
             .map(path => {
               const filepathParts = splitFolderAndFilename(path);
+              if(secondOrderLinksSet.has(path)) return "";
+              secondOrderLinksSet.add(path);
               return `[[${path}|Second Order Link: ${filepathParts.basename}]]`;
             });
           secondOrderLinks += linkPaths.join(" ");
         }
 
-        if(this.plugin.isExcalidrawFile(ef.file)) {
-          secondOrderLinks += getExcalidrawFileForwardLinks(this.app, ef.file);             
+        if(this.plugin.settings.showSecondOrderLinks && this.plugin.isExcalidrawFile(ef.file)) {
+          secondOrderLinks += getExcalidrawFileForwardLinks(this.app, ef.file, secondOrderLinksSet);             
         }
 
         const linkString = (ef.isHyperLink || ef.isLocalLink

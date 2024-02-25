@@ -2196,6 +2196,19 @@ export class ExcalidrawAutomate {
   ) => void = null;
 
   /**
+   * If set, this callback is triggered whenever a drawing is exported to SVG.
+   * The string returned will replace the link in the exported SVG.
+   * The hook is only executed if the link is to a file internal to Obsidian
+   * see: https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1605
+   */
+  onUpdateElementLinkForExportHook: (data: {
+    originalLink: string,
+    obsidianLink: string,
+    linkedFile: TFile | null,
+    hostFile: TFile,
+  }) => string = null;
+
+  /**
    * utility function to generate EmbeddedFilesLoader object
    * @param isDark 
    * @returns 
@@ -2897,7 +2910,15 @@ export const updateElementLinksToObsidianLinks = ({elements, hostFile}:{
       if(!file) {
         return el;
       }
-      const link = app.getObsidianUrl(file);
+      let link = app.getObsidianUrl(file);
+      if(window.ExcalidrawAutomate?.onUpdateElementLinkForExportHook) {
+        link = window.ExcalidrawAutomate.onUpdateElementLinkForExportHook({
+          originalLink: el.link,
+          obsidianLink: link,
+          linkedFile: file,
+          hostFile: hostFile
+       });
+      }
       const newElement: Mutable<ExcalidrawElement> = cloneElement(el);
       newElement.link = link;
       return newElement;

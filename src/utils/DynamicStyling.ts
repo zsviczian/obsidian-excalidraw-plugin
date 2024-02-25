@@ -98,7 +98,6 @@ export const setDynamicStyle = (
     [`--color-gray-50`]: str(text), //frame
     [`--color-surface-highlight`]: str(gray1()),
     //[`--color-gray-30`]: str(gray1),
-    [`--color-gray-80`]: str(isDark?text.darkerBy(40):text.lighterBy(40)), //frame
     [`--sidebar-border-color`]: str(gray1()),
     [`--color-primary-light`]: str(accent().lighterBy(step)),
     [`--button-hover-bg`]: str(gray1()),
@@ -113,6 +112,7 @@ export const setDynamicStyle = (
     [`--h4-color`]: str(text),
     [`color`]: str(text), 
     [`--select-highlight-color`]: str(gray1()),
+    [`--color-gray-80`]: str(isDark?text.darkerBy(40):text.lighterBy(40)), //frame
   };
   
     const styleString = Object.keys(styleObject)

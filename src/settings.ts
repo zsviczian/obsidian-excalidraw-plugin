@@ -72,6 +72,7 @@ export interface ExcalidrawSettings {
   zoomToFitOnResize: boolean;
   zoomToFitMaxLevel: number;
   openInAdjacentPane: boolean;
+  showSecondOrderLinks: boolean;
   focusOnFileTab: boolean;
   openInMainWorkspace: boolean;
   showLinkBrackets: boolean;
@@ -223,6 +224,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   hoverPreviewWithoutCTRL: false,
   linkOpacity: 1,
   openInAdjacentPane: false,
+  showSecondOrderLinks: true,
   focusOnFileTab: false,
   openInMainWorkspace: true,
   showLinkBrackets: true,
@@ -1168,6 +1170,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       "span",
       undefined,
       (el) => (el.innerHTML = t("LINKS_DESC")),
+    );
+
+    new Setting(detailsEl)
+    .setName(t("SECOND_ORDER_LINKS_NAME"))
+    .setDesc(fragWithHTML(t("SECOND_ORDER_LINKS_DESC")))
+    .addToggle((toggle) =>
+      toggle
+        .setValue(this.plugin.settings.showSecondOrderLinks)
+        .onChange(async (value) => {
+          this.plugin.settings.showSecondOrderLinks = value;
+          this.applySettingsUpdate();
+        }),
     );
 
     new Setting(detailsEl)
