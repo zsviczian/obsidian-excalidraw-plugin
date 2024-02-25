@@ -33,8 +33,20 @@ const invertColor = (color) => {
 	}
 }
 
-const invertPaletteColors = (palette) => Object.keys(palette).forEach(key => palette[key] = invertColor(palette[key]));
-Object.keys(colorPalette).forEach(key => invertPaletteColors(colorPalette[key]));
+function invertColorsRecursively(obj) {
+  if (typeof obj === 'string') {
+    return invertColor(obj);
+  } else if (Array.isArray(obj)) {
+    return obj.map(item => invertColorsRecursively(item));
+  } else if (typeof obj === 'object' && obj !== null) {
+    const result = {};
+    Object.keys(obj).forEach(key => result[key] = invertColorsRecursively(obj[key]));
+    return result;
+  } else {
+    return obj;
+  }
+}
+colorPalette = invertColorsRecursively(colorPalette);
 
 ea.copyViewElementsToEAforEditing(ea.getViewElements());
 ea.getElements().forEach(el=>{
