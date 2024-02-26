@@ -50,6 +50,14 @@ const getDefaultWidth = (plugin: ExcalidrawPlugin): string => {
   return plugin.settings.width;
 };
 
+const getDefaultHeight = (plugin: ExcalidrawPlugin): string => {
+  const height = parseInt(plugin.settings.height);
+  if (isNaN(height) || height === 0 || height === null) {
+    return null;
+  }
+  return plugin.settings.height;
+};
+
 export const initializeMarkdownPostProcessor = (p: ExcalidrawPlugin) => {
   plugin = p;
   vault = p.app.vault;
@@ -512,7 +520,9 @@ const processInternalEmbed = async (internalEmbedEl: Element, file: TFile ):Prom
   attr.fwidth = internalEmbedEl.getAttribute("width")
   ? internalEmbedEl.getAttribute("width")
   : getDefaultWidth(plugin);
-  attr.fheight = internalEmbedEl.getAttribute("height");
+  attr.fheight = internalEmbedEl.getAttribute("height")
+  ? internalEmbedEl.getAttribute("height")
+  : getDefaultHeight(plugin);
   let alt = internalEmbedEl.getAttribute("alt");
   attr.style = ["excalidraw-svg"];
   processAltText(src.split("#")[0],alt,attr);
@@ -596,7 +606,7 @@ const tmpObsidianWYSIWYG = async (
 
   const attr: imgElementAttributes = {
     fname: ctx.sourcePath,
-    fheight: "",
+    fheight: getDefaultHeight(plugin),
     fwidth: getDefaultWidth(plugin),
     style: ["excalidraw-svg"],
   };

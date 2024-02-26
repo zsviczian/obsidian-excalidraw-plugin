@@ -1629,6 +1629,20 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.requestEmbedUpdate = true;
           }),
       );
+    
+      new Setting(detailsEl)
+      .setName(t("EMBED_HEIGHT_NAME"))
+      .setDesc(fragWithHTML(t("EMBED_HEIGHT_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder("e.g.: 400")
+          .setValue(this.plugin.settings.height)
+          .onChange(async (value) => {
+            this.plugin.settings.height = value;
+            this.applySettingsUpdate();
+            this.requestEmbedUpdate = true;
+          }),
+      );
 
     let scaleText: HTMLDivElement;
 
