@@ -469,6 +469,11 @@ FILENAME_HEAD: "Filename",
     "The default width of an embedded drawing. This applies to live preview edit and reading mode, as well as to hover previews. You can specify a custom " +
     "width when embedding an image using the <code>![[drawing.excalidraw|100]]</code> or " +
     "<code>[[drawing.excalidraw|100x100]]</code> format.",
+  EMBED_HEIGHT_NAME: "Default height of embedded (transcluded) image",
+  EMBED_HEIGHT_DESC:
+    "The default height of an embedded drawing. This applies to live preview edit and reading mode, as well as to hover previews. You can specify a custom " +
+    "height when embedding an image using the <code>![[drawing.excalidraw|100]]</code> or " +
+    "<code>[[drawing.excalidraw|100x100]]</code> format.",
   EMBED_TYPE_NAME: "Type of file to insert into the document",
   EMBED_TYPE_DESC:
     "When you embed an image into a document using the command palette this setting will specify if Excalidraw should embed the original Excalidraw file " +

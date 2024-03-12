@@ -563,7 +563,7 @@ export class EmbeddedFilesLoader {
           }
           //files.push(fileData);
         }
-      } else if (embeddedFile.isSVGwithBitmap) {
+      } /*else if (embeddedFile.isSVGwithBitmap) {
         const fileData = {
           mimeType: embeddedFile.mimeType,
           id: entry.value[0],
@@ -580,7 +580,7 @@ export class EmbeddedFilesLoader {
         catch(e) {
           errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
         }
-      }
+      }*/
     }
 
     let equation;

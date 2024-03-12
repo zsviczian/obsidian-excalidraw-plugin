@@ -45,9 +45,18 @@ let metadataCache: MetadataCache;
 const getDefaultWidth = (plugin: ExcalidrawPlugin): string => {
   const width = parseInt(plugin.settings.width);
   if (isNaN(width) || width === 0 || width === null) {
+    if(getDefaultHeight(plugin)!=="") return "";
     return "400";
   }
   return plugin.settings.width;
+};
+
+const getDefaultHeight = (plugin: ExcalidrawPlugin): string => {
+  const height = parseInt(plugin.settings.height);
+  if (isNaN(height) || height === 0 || height === null) {
+    return "";
+  }
+  return plugin.settings.height;
 };
 
 export const initializeMarkdownPostProcessor = (p: ExcalidrawPlugin) => {
@@ -123,9 +132,14 @@ const setStyle = ({element,imgAttributes,onCanvas}:{
   onCanvas: boolean,
 }
 ) => {
-  let style = `max-width:${imgAttributes.fwidth}${imgAttributes.fwidth.match(/\d$/) ? "px":""}; `; //width:100%;`; //removed !important https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/886
+  let style = "";
+  if(imgAttributes.fwidth) {
+    style = `max-width:${imgAttributes.fwidth}${imgAttributes.fwidth.match(/\d$/) ? "px":""}; `; //width:100%;`; //removed !important https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/886
+  } else {
+    style = "width: fit-content;"
+  }
   if (imgAttributes.fheight) {
-    style += `height:${imgAttributes.fheight}px;`;
+    style += `${imgAttributes.fwidth?"min-":"max-"}height:${imgAttributes.fheight}px;`;
   }
   if(!onCanvas) element.setAttribute("style", style);
   element.classList.add(...Array.from(imgAttributes.style))
@@ -363,7 +377,7 @@ const createImgElement = async (
         const linkModifier = linkClickModifierType(ev);
         if (plugin.isExcalidrawFile(f) && isMaskFile(plugin, f)) {
           (async () => {
-              const linkString = `[[${f.path}${srcParts[2]?"#"+srcParts[2]:""}]] ${getExcalidrawFileForwardLinks(plugin.app, f)}`;
+              const linkString = `[[${f.path}${srcParts[2]?"#"+srcParts[2]:""}]] ${getExcalidrawFileForwardLinks(plugin.app, f, new Set<string>())}`;
               const result = await linkPrompt(linkString, plugin.app);
               if(!result) return;
               const [file, linkText, subpath] = result;
@@ -510,9 +524,11 @@ const processInternalEmbed = async (internalEmbedEl: Element, file: TFile ):Prom
   internalEmbedEl.addClass("image-embed");
 
   attr.fwidth = internalEmbedEl.getAttribute("width")
-  ? internalEmbedEl.getAttribute("width")
-  : getDefaultWidth(plugin);
-  attr.fheight = internalEmbedEl.getAttribute("height");
+    ? internalEmbedEl.getAttribute("width")
+    : getDefaultWidth(plugin);
+  attr.fheight = internalEmbedEl.getAttribute("height")
+    ? internalEmbedEl.getAttribute("height")
+    : getDefaultHeight(plugin);
   let alt = internalEmbedEl.getAttribute("alt");
   attr.style = ["excalidraw-svg"];
   processAltText(src.split("#")[0],alt,attr);
@@ -596,7 +612,7 @@ const tmpObsidianWYSIWYG = async (
 
   const attr: imgElementAttributes = {
     fname: ctx.sourcePath,
-    fheight: "",
+    fheight: getDefaultHeight(plugin),
     fwidth: getDefaultWidth(plugin),
     style: ["excalidraw-svg"],
   };
@@ -609,8 +625,21 @@ const tmpObsidianWYSIWYG = async (
     //We are processing the markdown preview of an actual Excalidraw file
     //the excalidraw file in markdown preview mode
     const isFrontmatterDiv = Boolean(el.querySelector(".frontmatter"));
-    el.empty();
-    if(!isFrontmatterDiv) {
+    let areaPreview = false;
+    if(Boolean(ctx.frontmatter)) {
+      el.empty();
+    } else {
+      const warningEl = el.querySelector("div>h3[data-heading^='Unable to find section #^");
+      if(warningEl) {
+        const ref = warningEl.getAttr("data-heading").match(/Unable to find section (#\^(?:group=|area=|frame=)[^ ]*)/)?.[1];
+        if(ref) {
+          attr.fname = file.path + ref;
+          areaPreview = true;
+        }
+      }
+
+    }
+    if(!isFrontmatterDiv && !areaPreview) {
       if(el.parentElement === containerEl) containerEl.removeChild(el);
       return;
     }

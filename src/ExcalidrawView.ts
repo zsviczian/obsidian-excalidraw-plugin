@@ -50,6 +50,7 @@ import {
   obsidianToExcalidrawMap,
   MAX_IMAGE_SIZE,
   fileid,
+  sceneCoordsToViewportCoords,
 } from "./constants/constants";
 import ExcalidrawPlugin from "./main";
 import { 
@@ -134,8 +135,6 @@ import { nanoid } from "nanoid";
 import { CustomMutationObserver, isDebugMode } from "./utils/DebugHelper";
 import { extractCodeBlocks, postOpenAI } from "./utils/AIUtils";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
-import no from "./lang/locale/no";
-import { carveOutImage } from "./utils/CarveOut";
 
 declare const PLUGIN_VERSION:string;
 
@@ -261,6 +260,7 @@ export default class ExcalidrawView extends TextFileView {
   public canvasNodeFactory: CanvasNodeFactory;
   private embeddableRefs = new Map<ExcalidrawElement["id"], HTMLIFrameElement | HTMLWebViewElement>();
   private embeddableLeafRefs = new Map<ExcalidrawElement["id"], any>();
+//  private scrollYBeforeKeyboard: number = null;
 
   public semaphores: {
     popoutUnload: boolean; //the unloaded Excalidraw view was the last leaf in the popout window
@@ -4471,6 +4471,7 @@ export default class ExcalidrawView extends TextFileView {
         height: undefined,
       });
 
+
       React.useEffect(() => {
         this.toolsPanelRef = toolsPanelRef;
         this.embeddableMenuRef = embeddableMenuRef;
@@ -4478,6 +4479,7 @@ export default class ExcalidrawView extends TextFileView {
         this.embeddableMenu = new EmbeddableMenu(this, embeddableMenuRef);
         this.excalidrawWrapperRef = excalidrawWrapperRef;
       }, []);
+
 
       React.useEffect(() => {
         setDimensions({
@@ -4490,7 +4492,54 @@ export default class ExcalidrawView extends TextFileView {
             const width = this.contentEl.clientWidth;
             const height = this.contentEl.clientHeight;
             if(width === 0 || height === 0) return;
+            
+            //this is an aweful hack to prevent the keyboard pushing the canvas out of view.
+            //The issue is that contrary to Excalidraw.com where the page is simply pushed up, in 
+            //Obsidian the leaf has a fixed top. As a consequence the top of excalidrawWrapperDiv does not get pushed out of view
+            //but shirnks. But the text area is positioned relative to excalidrawWrapperDiv and consequently does not fit, which
+            //the distorts the whole layout.
+            //I hope to grow up one day and clean up this mess of a workaround, that resets the top of excalidrawWrapperDiv
+            //to a negative value, and manually scrolls back elements that were scrolled off screen
+            //I tried updating setDimensions with the value for top... but setting top and height using setDimensions did not do the trick
+            //I found that adding and removing this style solves the issue.
+            //...again, just aweful, but works.
+            const st = this.excalidrawAPI.getAppState();
+            const isKeyboardOutEvent = st.editingElement?.type === "text";
+            const isKeyboardBackEvent = this.semaphores.isEditingText && !isKeyboardOutEvent;
+            if(isKeyboardOutEvent) {
+              const self = this;
+                const appToolHeight = (self.contentEl.querySelector(".Island.App-toolbar") as HTMLElement)?.clientHeight ?? 0;
+                const editingElViewY = sceneCoordsToViewportCoords({sceneX:0, sceneY:st.editingElement.y}, st).y;
+                const scrollViewY = sceneCoordsToViewportCoords({sceneX:0, sceneY:-st.scrollY}, st).y;
+                const delta = editingElViewY - scrollViewY;
+                const isElementAboveKeyboard = height > (delta + appToolHeight*2)
+                const excalidrawWrapper = this.excalidrawWrapperRef.current;
+                console.log({isElementAboveKeyboard});
+                if(excalidrawWrapper && !isElementAboveKeyboard) {
+                  excalidrawWrapper.style.top = `${-(st.height - height)}px`;
+                  excalidrawWrapper.style.height = `${st.height}px`;
+                  self.excalidrawContainer?.querySelector(".App-bottom-bar")?.scrollIntoView();
+                  //@ts-ignore
+                  self.headerEl?.scrollIntoView();
+                }
+            }
+            if(isKeyboardBackEvent) {
+              const excalidrawWrapper = this.excalidrawWrapperRef.current;
+              const appButtonBar = this.excalidrawContainer?.querySelector(".App-bottom-bar");
+              //@ts-ignore
+              const headerEl = this.headerEl;
+              if(excalidrawWrapper) {
+                excalidrawWrapper.style.top = "";
+                excalidrawWrapper.style.height = "";
+                appButtonBar?.scrollIntoView();
+                headerEl?.scrollIntoView();
+              }
+            }
+            //end of aweful hack
+
+
             setDimensions({ width, height });
+            
             if (this.toolsPanelRef && this.toolsPanelRef.current) {
               this.toolsPanelRef.current.updatePosition();
             }

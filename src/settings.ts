@@ -58,6 +58,7 @@ export interface ExcalidrawSettings {
   displayExportedImageIfAvailable: boolean;
   previewMatchObsidianTheme: boolean;
   width: string;
+  height: string;
   dynamicStyling: DynamicStyle;
   isLeftHanded: boolean;
   iframeMatchExcalidrawTheme: boolean;
@@ -203,6 +204,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   displayExportedImageIfAvailable: false,
   previewMatchObsidianTheme: false,
   width: "400",
+  height: "",
   dynamicStyling: "colorful",
   isLeftHanded: false,
   iframeMatchExcalidrawTheme: true,
@@ -1625,6 +1627,20 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.width)
           .onChange(async (value) => {
             this.plugin.settings.width = value;
+            this.applySettingsUpdate();
+            this.requestEmbedUpdate = true;
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("EMBED_HEIGHT_NAME"))
+      .setDesc(fragWithHTML(t("EMBED_HEIGHT_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder("e.g.: 400")
+          .setValue(this.plugin.settings.height)
+          .onChange(async (value) => {
+            this.plugin.settings.height = value;
             this.applySettingsUpdate();
             this.requestEmbedUpdate = true;
           }),

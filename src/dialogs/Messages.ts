@@ -17,6 +17,20 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.0.24":`
+Quality of Life Fixes!
+
+## Fixed
+- Text editing issue on mobile devices with an on-screen keyboard is now fixed 🥳. Previously, Excalidraw's UI fell apart when the keyboard was activated, and often even after you stopped editing, the canvas positioning was off. I hope to have solved the issue (we'll see after your testing and feedback!). This is one of those cases that seems insignificant but took enormous effort. It took me 2.5 full days of net time to figure out the root cause and the solution (this is not an exaggeration).
+- Tool buttons did not get selected on the first click.
+- Images flicker on Forced Save.
+- Hover preview fixes:
+  - ${String.fromCharCode(96)}area=${String.fromCharCode(96)}, ${String.fromCharCode(96)}group=${String.fromCharCode(96)}, ${String.fromCharCode(96)}frame=${String.fromCharCode(96)} references now display the part of the image as expected in hover preview (showed an empty preview until now).
+  - Block and section references to notes on the "back side of the drawing" now correctly show up in hover preview (showed an empty preview until now).
+
+## New
+- Default height setting in Plugin Settings. Thanks @leoccyao! [#1612](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/1612)
+`,
 "2.0.23":`
 ## New
 - Additional arrowheads (Circle, Circle Outline, Diamond, Diamond Outline, Triangle Outline) are now available via element properties.
