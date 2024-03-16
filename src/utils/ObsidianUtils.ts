@@ -169,9 +169,7 @@ export const getAttachmentsFolderAndFilePath = async (
   // folder == "folder" save to specific folder in vault
   // folder == "./folder" save to specific subfolder of current active folder
   if (folder && folder.startsWith("./")) {
-    // folder relative to current file
-    const activeFileFolder = `${splitFolderAndFilename(activeViewFilePath).folderpath}/`;
-    folder = normalizePath(activeFileFolder + folder.substring(2));
+    folder = getCurrentActiveDirectory(activeViewFilePath, folder);
   }
   if (!folder || folder === "/") {
     folder = "";
@@ -183,6 +181,15 @@ export const getAttachmentsFolderAndFilePath = async (
       folder === "" ? newFileName : `${folder}/${newFileName}`
     ),
   };
+};
+
+export const getCurrentActiveDirectory =(
+    activeViewFilePath: string,
+    folder: string
+) : string => {
+    // folder relative to current file
+    const activeFileFolder = `${splitFolderAndFilename(activeViewFilePath).folderpath}/`;
+    return normalizePath(activeFileFolder + folder.substring(2));
 };
 
 export const isObsidianThemeDark = () => document.body.classList.contains("theme-dark");
