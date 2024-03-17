@@ -9,7 +9,7 @@ Select some elements in the scene. The script will take these elements and move 
 
 ```javascript
 */
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.9.19")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.0.25")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
@@ -17,11 +17,11 @@ if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.9.19")) {
 // -------------------------------
 // Utility variables and functions
 // -------------------------------
-const excalidrawTemplate = app.metadataCache.getFirstLinkpathDest(ea.plugin.settings.templateFilePath,"");
+const excalidrawTemplates = ea.getListOfTemplateFiles();
 if(typeof window.ExcalidrawDeconstructElements === "undefined") {
 	window.ExcalidrawDeconstructElements = {
 	  openDeconstructedImage: true,
-	  templatePath: excalidrawTemplate?.path??""
+	  templatePath: excalidrawTemplates?.[0].path??""
 	};
 }
 
@@ -49,7 +49,7 @@ const templates = settings["Templates"]
   .value
   .split(",")
   .map(p=>app.metadataCache.getFirstLinkpathDest(p.trim(),""))
-  .concat(excalidrawTemplate)
+  .concat(excalidrawTemplates)
   .filter(f=>Boolean(f))
   .sort((a,b) => a.basename.localeCompare(b.basename));
 
