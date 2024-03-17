@@ -99,7 +99,7 @@ import {
   isCallerFromTemplaterPlugin,
   decompress,
 } from "./utils/Utils";
-import { extractSVGPNGFileName, getActivePDFPageNumberFromPDFView, getAttachmentsFolderAndFilePath, getCurrentActiveDirectory, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark, openLeaf } from "./utils/ObsidianUtils";
+import { extractSVGPNGFileName, getActivePDFPageNumberFromPDFView, getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark, openLeaf } from "./utils/ObsidianUtils";
 import { ExcalidrawElement, ExcalidrawEmbeddableElement, ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { ScriptEngine } from "./Scripts";
 import {
@@ -1094,7 +1094,7 @@ export default class ExcalidrawPlugin extends Plugin {
         this.settings,
       );
       const folder = this.settings.embedUseExcalidrawFolder
-        ? (this.settings.folder && this.settings.folder.startsWith("./")) ? getCurrentActiveDirectory(activeView.file.path, this.settings.folder) : null
+        ? null
         : (
             await getAttachmentsFolderAndFilePath(
               this.app,
@@ -1102,7 +1102,6 @@ export default class ExcalidrawPlugin extends Plugin {
               filename,
             )
           ).folder;
-
       const file = await this.createDrawing(filename, folder);
       await this.embedDrawing(file);
       this.openDrawing(file, location, true, undefined, true);
