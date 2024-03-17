@@ -128,7 +128,7 @@ export default {
   BASIC_DESC: `In the "Basic" settings, you can configure options such as displaying release notes after updates, receiving plugin update notifications, setting the default location for new drawings, specifying the Excalidraw folder for embedding drawings into active documents, defining an Excalidraw template file, and designating an Excalidraw Automate script folder for managing automation scripts.`,
   FOLDER_NAME: "Excalidraw folder",
   FOLDER_DESC:
-    "Default location for new drawings. If empty, drawings will be created in the Vault root.",
+    "Default folder location for new drawings at vault root. <ul><li>If \"./\", drawings will be saved in same folder as the current file.</li> <li>If \"./{folder}\", drawings will be saved to the folder specified in the same folder as the current.</li> <li>If empty, drawings will be created in the Vault root.</li></ul>",
   CROP_PREFIX_NAME: "Crop file prefix",
   CROP_PREFIX_DESC:
     "The first part of the filename for new drawings created when cropping an image. " +
