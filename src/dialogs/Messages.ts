@@ -20,7 +20,7 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 "2.0.25":`
 # New - a small change that opens big opportunities
 - You can now set a folder as the Excalidraw Template in settings (See under Basic). If a folder is provided, Excalidraw will treat drawings in that folder as templates and will prompt you to select the template to use for new drawings.
-- I updated the <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Deconstruct%20selected%20elements%20into%20new%20drawing.md">Deconstruct Selected Elements into new Drawing</a> scripot to accomodate the new template setting.
+- I updated the <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Deconstruct%20selected%20elements%20into%20new%20drawing.md">Deconstruct Selected Elements into new Drawing</a> script to accommodate the new template setting.
 `,
 "2.0.24":`
 Quality of Life Fixes!
