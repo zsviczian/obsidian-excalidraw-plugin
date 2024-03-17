@@ -72,7 +72,7 @@ import {
   insertLaTeXToView,
   search,
 } from "./ExcalidrawAutomate";
-import { Prompt } from "./dialogs/Prompt";
+import { Prompt, templatePromt } from "./dialogs/Prompt";
 import { around, dedupe } from "monkey-around";
 import { t } from "./lang/helpers";
 import {
@@ -83,6 +83,7 @@ import {
   getEmbedFilename,
   getIMGFilename,
   getLink,
+  getListOfTemplateFiles,
   getNewUniqueFilepath,
   getURLImageExtension,
   splitFolderAndFilename,
@@ -2886,20 +2887,20 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public async getBlankDrawing(): Promise<string> {
-    const template = this.app.metadataCache.getFirstLinkpathDest(
-      normalizePath(this.settings.templateFilePath),
-      "",
-    );
-    if (template && template instanceof TFile) {
-      if (
-        (template.extension == "md" && !this.settings.compatibilityMode) ||
-        (template.extension == "excalidraw" && this.settings.compatibilityMode)
-      ) {
-        const data = await this.app.vault.read(template);
-        if (data) {
-          return this.settings.matchTheme
-            ? changeThemeOfExcalidrawMD(data)
-            : data;
+    const templates = getListOfTemplateFiles(this);
+    if(templates) {
+      const template = await templatePromt(templates, this.app);
+      if (template && template instanceof TFile) {
+        if (
+          (template.extension == "md" && !this.settings.compatibilityMode) ||
+          (template.extension == "excalidraw" && this.settings.compatibilityMode)
+        ) {
+          const data = await this.app.vault.read(template);
+          if (data) {
+            return this.settings.matchTheme
+              ? changeThemeOfExcalidrawMD(data)
+              : data;
+          }
         }
       }
     }

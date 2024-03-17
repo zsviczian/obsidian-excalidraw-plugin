@@ -142,13 +142,16 @@ export default {
     "Define which folder to place the newly inserted drawing into " +
     "when using the command palette action: 'Create a new drawing and embed into active document'.<br>" +
     "<b><u>Toggle ON:</u></b> Use Excalidraw folder<br><b><u>Toggle OFF:</u></b> Use the attachments folder defined in Obsidian settings.",
-  TEMPLATE_NAME: "Excalidraw template file",
+  TEMPLATE_NAME: "Excalidraw template file or folder",
   TEMPLATE_DESC:
-    "Full filepath to the Excalidraw template. " +
-    "E.g.: If your template is in the default Excalidraw folder and its name is " +
+    "Full filepath or folderpath to the Excalidraw template.<br>" +
+    "<b>Template File:</b>E.g.: If your template is in the default Excalidraw folder and its name is " +
     "Template.md, the setting would be: Excalidraw/Template.md (or just Excalidraw/Template - you may omit the .md file extension). " +
     "If you are using Excalidraw in compatibility mode, then your template must be a legacy Excalidraw file as well " +
-    "such as Excalidraw/Template.excalidraw.",
+    "such as Excalidraw/Template.excalidraw. <br><b>Template Folder:</b> You can also set a folder as your template. " +
+    "In this case you will be prompted which tempalte to use when creating a new drawing.<br>" +
+    "<b>Pro Tip:</b> If you are using the Obsidian Templater plugin, you can add Templater code to your different Excalidraw " +
+    "templates to automate configuration of your drawings.",
   SCRIPT_FOLDER_NAME: "Excalidraw Automate script folder (CASE SeNSitiVE!)",
   SCRIPT_FOLDER_DESC:
     "The files you place in this folder will be treated as Excalidraw Automate scripts. " +
@@ -707,6 +710,7 @@ FILENAME_HEAD: "Filename",
   PROMPT_BUTTON_INSERT_SPACE: "Insert space",
   PROMPT_BUTTON_INSERT_LINK: "Insert markdown link to file",
   PROMPT_BUTTON_UPPERCASE: "Uppercase",
+  PROMPT_SELECT_TEMPLATE: "Select a template",
 
   //ModifierKeySettings
   WEB_BROWSER_DRAG_ACTION: "Web Browser Drag Action",

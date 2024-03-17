@@ -36,7 +36,7 @@ import {
   THEME_FILTER,
   mermaidToExcalidraw,
 } from "src/constants/constants";
-import { blobToBase64, checkAndCreateFolder, getDrawingFilename, getNewUniqueFilepath, } from "src/utils/FileUtils";
+import { blobToBase64, checkAndCreateFolder, getDrawingFilename, getListOfTemplateFiles, getNewUniqueFilepath, } from "src/utils/FileUtils";
 import {
   arrayToMap,
   //debug,
@@ -239,6 +239,14 @@ export class ExcalidrawAutomate {
    */
   public getNewUniqueFilepath(filename: string, folderpath: string): string {
     return getNewUniqueFilepath(app.vault, filename, folderpath);
+  }
+
+  /**
+   * 
+   * @returns the Excalidraw Template files or null.
+   */
+  public getListOfTemplateFiles(): TFile[] | null {
+    return getListOfTemplateFiles(this.plugin);
   }
 
   public async getAttachmentFilepath(filename: string): Promise<string> {

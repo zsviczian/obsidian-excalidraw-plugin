@@ -5,7 +5,6 @@ import { IMAGE_MIME_TYPES, MimeType } from "src/EmbeddedFileLoader";
 import { ExcalidrawSettings } from "src/settings";
 import { errorlog, getDataURL } from "./Utils";
 import ExcalidrawPlugin from "src/main";
-import ExcalidrawView from "src/ExcalidrawView";
 import { CROPPED_PREFIX } from "./CarveOut";
 import { getAttachmentsFolderAndFilePath } from "./ObsidianUtils";
 
@@ -386,4 +385,26 @@ export const getCropFileNameAndFolder = async (plugin: ExcalidrawPlugin, hostPat
   const folderpath = normalizePath(plugin.settings.cropFolder);
   await checkAndCreateFolder(folderpath);
   return {folderpath, filename};
+}
+
+export const getListOfTemplateFiles = (plugin: ExcalidrawPlugin):TFile[] | null => {
+  const normalizedTemplatePath = normalizePath(plugin.settings.templateFilePath);
+  const template = plugin.app.vault.getAbstractFileByPath(normalizedTemplatePath);
+  if(template && template instanceof TFolder) {
+    return plugin.app.vault.getFiles()
+      .filter(f=>f.path.startsWith(template.path))
+      .filter(f=>plugin.isExcalidrawFile(f))
+      .sort((a,b)=>a.path.localeCompare(b.path))
+  }
+  if(template && template instanceof TFile) {
+    return [template];
+  }
+  const templateFile = plugin.app.metadataCache.getFirstLinkpathDest(
+    normalizedTemplatePath,
+    "",
+  );
+  if(templateFile) {
+    return [templateFile];
+  }
+  return null;
 }

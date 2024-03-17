@@ -8,6 +8,7 @@ import {
   TFile,
   Notice,
   TextAreaComponent,
+  TFolder,
 } from "obsidian";
 import ExcalidrawView from "../ExcalidrawView";
 import ExcalidrawPlugin from "../main";
@@ -701,7 +702,7 @@ export class ConfirmationPrompt extends Modal {
   }
 }
 
-export const linkPrompt = async (linkText:string, app: App, view?: ExcalidrawView):Promise<[file:TFile, linkText:string, subpath: string]> => {
+export const linkPrompt = async (linkText:string, app: App, view?: ExcalidrawView, message: string = "Select link to open"):Promise<[file:TFile, linkText:string, subpath: string]> => {
   const partsArray = REGEX_LINK.getResList(linkText);
   let subpath: string = null;
   let file: TFile = null;
@@ -714,7 +715,7 @@ export const linkPrompt = async (linkText:string, app: App, view?: ExcalidrawVie
           return alias === "100%" ? REGEX_LINK.getLink(p) : alias;
         }),
         partsArray.filter(p=>Boolean(p.value)),
-        "Select link to open"
+        message,
       );
       if(!parts) return;
     }
@@ -742,4 +743,17 @@ export const linkPrompt = async (linkText:string, app: App, view?: ExcalidrawVie
     view ? view.file.path : "",
   );
   return [file, linkText, subpath];
+}
+
+
+
+export const templatePromt = async (files: TFile[], app: App): Promise<TFile> => {
+  if(files.length === 1) return files[0];
+  const [f,_,__] = await linkPrompt(
+    files.map(f=>`[[${f.path}|${f.name}]]`).join(" "),
+    app,
+    undefined,
+    t("PROMPT_SELECT_TEMPLATE")
+  );
+  return f;
 }

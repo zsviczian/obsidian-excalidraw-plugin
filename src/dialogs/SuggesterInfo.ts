@@ -563,6 +563,14 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "getListOfTemplateFiles",
+    code: "getListOfTemplateFiles(): TFile[] | null",
+    desc: "Returns a list of files in the template folder. " +
+      "If the Excalidraw Template is set as a single file, it returns a single element in the list. " +
+      "If no template is set, it returns null.",
+    after: "",
+  },
+  {
     field: "getAttachmentFilepath",
     code: "async getAttachmentFilepath(filename: string): Promise<string>",
     desc: "This asynchronous function should be awaited. It retrieves the filepath to a new file, taking into account the attachments preference settings in Obsidian. If the attachment folder doesn't exist, it creates it. The function returns the complete path to the file. If the provided filename already exists, the function will append '_[number]' before the extension to generate a unique filename." +

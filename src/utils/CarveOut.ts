@@ -2,7 +2,7 @@ import { ExcalidrawEmbeddableElement, ExcalidrawFrameElement, ExcalidrawImageEle
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { getEA } from "src";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
-import { getCropFileNameAndFolder, splitFolderAndFilename } from "./FileUtils";
+import { getCropFileNameAndFolder, getListOfTemplateFiles, splitFolderAndFilename } from "./FileUtils";
 import { Notice, TFile } from "obsidian";
 import ExcalidrawView from "src/ExcalidrawView";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
@@ -133,7 +133,8 @@ export const createImageCropperFile = async (targetEA: ExcalidrawAutomate, image
   targetEA.canvas.theme = "light";
   targetEA.canvas.viewBackgroundColor = isPDF ? "#5d5d5d" : "#3d3d3d";
 
-  const templateFile = app.vault.getAbstractFileByPath(targetEA.plugin.settings.templateFilePath);
+  const templates = getListOfTemplateFiles(targetEA.plugin);
+  const templateFile = templates && templates.length > 0 ? templates[0] : null;
   if(templateFile && templateFile instanceof TFile) {
     const {appState} = await targetEA.getSceneFromFile(templateFile);
     if(appState) {
