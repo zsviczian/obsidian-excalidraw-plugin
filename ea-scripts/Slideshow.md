@@ -1,12 +1,21 @@
 /*
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/JwgtCrIVeEU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+# About the slideshow script
+The script will convert your drawing into a slideshow presentation.
+![Slideshow 3.0](https://www.youtube.com/JwgtCrIVeEU)
 
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-slideshow-2.jpg)
-The script will convert your drawing into a slideshow presentation.
-If you select an arrow or line element, the script will use that as the presentation path.
-If you select nothing, but the file has a hidden presentation path, the script will use that for determining the slide sequence.
-If there are frames, the script will use the frames for the presentation. Frames are played in alphabetical order of their titles.
+## Presentation options
+- If you select an arrow or line element, the script will use that as the presentation path.
+- If you select nothing, but the file has a hidden presentation path, the script will use that for determining the slide sequence.
+- If there are frames, the script will use the frames for the presentation. Frames are played in alphabetical order of their titles.
+# Keyboard shortcuts and modifier keys
+**Forward**: Arrow Down, Arrow Right, or SPACE
+**Backward**: Arrow Up, Arrow Left
+**Finish presentation**: Backspace, ESC (not supported on Mac)
+
+**Run presentation in a window**: Hold down the ALT/OPT modifier key when clicking the presentation script button
+**Continue presentation**: Hold down the SHIFT when clicking the presentation script button. Also works in combination with ALT/OPT. Only works within the same Obsidian session. I have two use cases in mind for this: 1) When you are designing your presentation you may want to test how a slide looks. You can get back to where you left off by starting the presentation with SHIFT. 2) During presentation you want to show something additional. You stop the presentation, show the additional thing you wanted, now you want to continue from where you left off. 
 
 ```javascript
 */
@@ -20,7 +29,9 @@ const hostView = hostLeaf.view;
 const statusBarElement = document.querySelector("div.status-bar");
 const ctrlKey = ea.targetView.modifierKeyDown.ctrlKey || ea.targetView.modifierKeyDown.metaKey;
 const altKey = ea.targetView.modifierKeyDown.altKey || ctrlKey;
-
+const shiftKey = ea.targetView.modifierKeyDown.shiftKey;
+const shouldStartWithLastSlide = shiftKey && window.ExcalidrawSlideshow &&
+      (window.ExcalidrawSlideshow.script === utils.scriptFile.path) && (typeof window.ExcalidrawSlideshow.slide === "number")
 //-------------------------------
 //constants
 //-------------------------------
@@ -45,10 +56,11 @@ const SVG_LASER_OFF = ea.obsidian.getIcon("lucide-wand").outerHTML;
 //utility & convenience functions
 //-------------------------------
 let isLaserOn = false;
-let slide = 0;
+let slide = shouldStartWithLastSlide ? window.ExcalidrawSlideshow.slide : 0;
 let isFullscreen = false;
 const ownerDocument = ea.targetView.ownerDocument;
 const startFullscreen = !altKey;
+
 //The plugin and Obsidian App run in the window object
 //When Excalidraw is open in a popout window, the Excalidraw component will run in the ownerWindow
 //and in this case ownerWindow !== window
@@ -256,7 +268,7 @@ const getNavigationRect = ({ x1, y1, x2, y2 }) => {
   const { width, height } = excalidrawAPI.getAppState();
   const ratioX = width / Math.abs(x1 - x2);
   const ratioY = height / Math.abs(y1 - y2);
-  let ratio = Math.min(Math.max(ratioX, ratioY), 10);
+  let ratio = Math.min(Math.max(ratioX, ratioY), 30);
 
   const scaledWidth = Math.abs(x1 - x2) * ratio;
   const scaledHeight = Math.abs(y1 - y2) * ratio;
@@ -305,11 +317,11 @@ const scrollToNextRect = async ({left,top,right,bottom,nextZoom},steps = TRANSIT
         zoom:{value:zoom.value-zoomStep*i},
       }
     });
-    const elapsed = Date.now()-startTimer;
-    if(elapsed > TRANSITION_DELAY) {
+    const ellapsed = Date.now()-startTimer;
+    if(ellapsed > TRANSITION_DELAY) {
       i = i<steps ? steps : steps+1;
     } else {
-      const timeProgress = elapsed / TRANSITION_DELAY;
+      const timeProgress = ellapsed / TRANSITION_DELAY;
       i=Math.min(Math.round(steps*timeProgress),steps)
       await sleep(FRAME_SLEEP);
     }
@@ -336,6 +348,9 @@ const navigate = async (dir) => {
   }
   if(selectSlideDropdown) selectSlideDropdown.value = slide+1;
   await scrollToNextRect(nextRect);
+  if(window.ExcalidrawSlideshow && (typeof window.ExcalidrawSlideshow.slide === "number")) {
+    window.ExcalidrawSlideshow.slide = slide;
+  }
 }
 
 const navigateToSlide = (slideNumber) => {
@@ -532,9 +547,11 @@ const keydownListener = (e) => {
   if(hostLeaf.width === 0 && hostLeaf.height === 0) return;
   e.preventDefault();
   switch(e.key) {
+    case "Backspace":
     case "Escape":
       exitPresentation();
       break;
+    case "Space":
     case "ArrowRight":
     case "ArrowDown": 
       navigate("fwd");
@@ -743,7 +760,8 @@ if(window.ExcalidrawSlideshow && (window.ExcalidrawSlideshow.script === utils.sc
   }
   window.ExcalidrawSlideshow = {
     script: utils.scriptFile.path,
-    timestamp
+    timestamp,
+    slide: 0
   };
   window.ExcalidrawSlideshowStartTimer = window.setTimeout(start,500);
 }
