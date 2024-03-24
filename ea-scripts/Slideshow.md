@@ -15,7 +15,9 @@ The script will convert your drawing into a slideshow presentation.
 **Finish presentation**: Backspace, ESC (not supported on Mac)
 
 **Run presentation in a window**: Hold down the ALT/OPT modifier key when clicking the presentation script button
-**Continue presentation**: Hold down the SHIFT when clicking the presentation script button. Also works in combination with ALT/OPT. Only works within the same Obsidian session. I have two use cases in mind for this: 1) When you are designing your presentation you may want to test how a slide looks. You can get back to where you left off by starting the presentation with SHIFT. 2) During presentation you want to show something additional. You stop the presentation, show the additional thing you wanted, now you want to continue from where you left off. 
+**Continue presentation**: Hold down SHIFT when clicking the presentation script button. (The feature also works in combination with the ALT/OPT modifier to start the presentation in a window). The feature will only resume while you are within the same Obsidian session (i.e. if you restart Obsidian, slideshow will no longer remember where you were). I have two use cases in mind for this feature: 
+1) When you are designing your presentation you may want to test how a slide looks. Using this feature you can get back to where you left off by starting the presentation with SHIFT.
+2) During presentation you may want to exit presentation mode to show something additional to your audience. You stop the presentation, show the additional thing you wanted, now you want to continue from where you left off. Hold down SHIFT when clicking the slideshow button.
 
 ```javascript
 */
