@@ -12,7 +12,7 @@ The script will convert your drawing into a slideshow presentation.
 # Keyboard shortcuts and modifier keys
 **Forward**: Arrow Down, Arrow Right, or SPACE
 **Backward**: Arrow Up, Arrow Left
-**Finish presentation**: Backspace, ESC (not supported on Mac)
+**Finish presentation**: Backspace, ESC (I had issues with ESC not working in full screen presentation mode on Mac)
 
 **Run presentation in a window**: Hold down the ALT/OPT modifier key when clicking the presentation script button
 **Continue presentation**: Hold down SHIFT when clicking the presentation script button. (The feature also works in combination with the ALT/OPT modifier to start the presentation in a window). The feature will only resume while you are within the same Obsidian session (i.e. if you restart Obsidian, slideshow will no longer remember where you were). I have two use cases in mind for this feature: 
