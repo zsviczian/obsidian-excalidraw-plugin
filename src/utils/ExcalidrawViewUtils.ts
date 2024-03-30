@@ -4,7 +4,7 @@ import { App, TFile } from "obsidian";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK } from "src/ExcalidrawData";
 import ExcalidrawView from "src/ExcalidrawView";
-import { ExcalidrawElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { ExcalidrawElement, ExcalidrawFrameElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { getLinkParts } from "./Utils";
 
 export const insertImageToView = async (
@@ -118,4 +118,15 @@ export const getExcalidrawFileForwardLinks = (app: App, excalidrawFile: TFile, s
     secondOrderLinks = [...linkset].join(" ");             
   }
   return secondOrderLinks;
+}
+
+export const getFrameBasedOnFrameNameOrId = (frameName: string, elements: ExcalidrawElement[]): ExcalidrawFrameElement | null => {
+  const frames = elements
+    .filter((el: ExcalidrawElement)=>el.type==="frame")
+    .map((el: ExcalidrawFrameElement, idx: number)=>{
+      return {el: el, id: el.id, name: el.name ?? `Frame ${String(idx+1).padStart(2,"0")}`};
+    })
+    .filter((item:any) => item.id === frameName || item.name === frameName)
+    .map((item:any)=>item.el as ExcalidrawFrameElement);
+  return frames.length === 1 ? frames[0] : null;
 }

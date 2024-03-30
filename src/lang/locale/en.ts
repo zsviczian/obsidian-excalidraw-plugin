@@ -23,7 +23,7 @@ export default {
     "Script is up to date - Click to reinstall",
   OPEN_AS_EXCALIDRAW: "Open as Excalidraw Drawing",
   TOGGLE_MODE: "Toggle between Excalidraw and Markdown mode",
-  CONVERT_NOTE_TO_EXCALIDRAW: "Convert empty note to Excalidraw Drawing",
+  CONVERT_NOTE_TO_EXCALIDRAW: "Convert markdown note to Excalidraw Drawing",
   CONVERT_EXCALIDRAW: "Convert *.excalidraw to *.md files",
   CREATE_NEW: "Create new drawing",
   CONVERT_FILE_KEEP_EXT: "*.excalidraw => *.excalidraw.md",
@@ -68,6 +68,7 @@ export default {
   INSERT_MD: "Insert markdown file from vault",
   INSERT_PDF: "Insert PDF file from vault",
   UNIVERSAL_ADD_FILE: "Insert ANY file",
+  INSERT_CARD: "Add back-of-note card",
   INSERT_LATEX:
     `Insert LaTeX formula (e.g. \\binom{n}{k} = \\frac{n!}{k!(n-k)!}). ${labelALT()}+CLICK to watch a help video.`,
   ENTER_LATEX: "Enter a valid LaTeX expression",
@@ -76,6 +77,7 @@ export default {
   TRAY_MODE: "Toggle property-panel tray-mode",
   SEARCH: "Search for text in drawing",
   CROP_IMAGE: "Crop and mask image",
+  ANNOTATE_IMAGE : "Annotate image in Excalidraw",
   INSERT_ACTIVE_PDF_PAGE_AS_IMAGE: "Insert active PDF page as image",
   RESET_IMG_TO_100: "Set selected image element size to 100% of original",
   TEMPORARY_DISABLE_AUTOSAVE: "Disable autosave until next time Obsidian starts (only set this if you know what you are doing)",
@@ -133,9 +135,16 @@ export default {
   CROP_PREFIX_DESC:
     "The first part of the filename for new drawings created when cropping an image. " +
     "If empty the default 'cropped_' will be used.",  
+  ANNOTATE_PREFIX_NAME: "Annotation file prefix",
+  ANNOTATE_PREFIX_DESC:
+    "The first part of the filename for new drawings created when annotating an image. " +
+    "If empty the default 'annotated_' will be used.",
   CROP_FOLDER_NAME: "Crop file folder",
   CROP_FOLDER_DESC:
     "Default location for new drawings created when cropping an image. If empty, drawings will be created following the Vault attachments settings.",
+  ANNOTATE_FOLDER_NAME: "Image annotation file folder",
+  ANNOTATE_FOLDER_DESC:
+    "Default location for new drawings created when annotating an image. If empty, drawings will be created following the Vault attachments settings.",
   FOLDER_EMBED_NAME:
     "Use Excalidraw folder when embedding a drawing into the active document",
   FOLDER_EMBED_DESC:
@@ -313,6 +322,11 @@ FILENAME_HEAD: "Filename",
     "These settings are different for Apple and non-Apple. If you use Obsidian on multiple platforms, you'll need to make the settings separately. "+
     "The toggles follow the order of " +
     (DEVICE.isIOS || DEVICE.isMacOS ? "SHIFT, CMD, OPT, CONTROL." : "SHIFT, CTRL, ALT, META (Windows key)."),
+  LONG_PRESS_DESKTOP_NAME: "Long press to open desktop",
+  LONG_PRESS_DESKTOP_DESC: "Long press delay in milliseconds to open an Excalidraw Drawing embedded in a Markdown file. ",
+  LONG_PRESS_MOBILE_NAME: "Long press to open mobile",
+  LONG_PRESS_MOBILE_DESC: "Long press delay in milliseconds to open an Excalidraw Drawing embedded in a Markdown file. ",
+
   FOCUS_ON_EXISTING_TAB_NAME: "Focus on Existing Tab",
   FOCUS_ON_EXISTING_TAB_DESC: "When opening a link, Excalidraw will focus on the existing tab if the file is already open. " +
     "Enabling this setting overrides 'Reuse Adjacent Pane' when the file is already open.",
@@ -637,6 +651,13 @@ FILENAME_HEAD: "Filename",
   SELECT_PDF: "Select the PDF document you want to insert",
   PDF_PAGES_HEADER: "Pages to load?",
   PDF_PAGES_DESC: "Format: 1, 3-5, 7, 9-11",
+
+  //SelectCard.ts
+  TYPE_SECTION: "Type section name to select.",
+  SELECT_SECTION_OR_TYPE_NEW:
+    "Select existing section or type name of a new section then press Enter.",
+  INVALID_SECTION_NAME: "Invalid section name.",
+  EMPTY_SECTION_MESSAGE: "Hit enter to create a new Section",
 
   //EmbeddedFileLoader.ts
   INFINITE_LOOP_WARNING:

@@ -18,6 +18,9 @@ import {
   ERROR_IFRAME_CONVERSION_CANCELED,
   JSON_parse,
   FRONTMATTER_KEYS,
+  MD_TEXTELEMENTS,
+  MD_DRAWING,
+  MD_ELEMENTLINKS,
 } from "./constants/constants";
 import { _measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
@@ -201,10 +204,10 @@ export function getMarkdownDrawingSection(
   compressed: boolean,
 ) {
   return compressed
-    ? `%%\n# Drawing\n\x60\x60\x60compressed-json\n${compress(
+    ? `# Drawing\n\x60\x60\x60compressed-json\n${compress(
         jsonString,
       )}\n\x60\x60\x60\n%%`
-    : `%%\n# Drawing\n\x60\x60\x60json\n${jsonString}\n\x60\x60\x60\n%%`;
+    : `# Drawing\n\x60\x60\x60json\n${jsonString}\n\x60\x60\x60\n%%`;
 }
 
 /**
@@ -237,13 +240,35 @@ const estimateMaxLineLen = (text: string, originalText: string): number => {
 const wrap = (text: string, lineLen: number) =>
   lineLen ? wrapTextAtCharLength(text, lineLen, false, 0) : text;
 
-export const getExcalidrawMarkdownHeaderSection = (data:string, keys:[string,string][]):string => {
-  let trimLocation = data.search(/(^%%\n)?# Text Elements\n/m);
-  if (trimLocation == -1) {
-    trimLocation = data.search(/(%%\n)?# Drawing\n/);
+const RE_TEXTELEMENTS = new RegExp(`^(%%\n)?${MD_TEXTELEMENTS}(?:\n|$)`, "m");
+
+//The issue is that when editing in markdown embeds the user can delete the last enter causing two sections
+//to collide. This is particularly problematic when the user is editing the lest section before # Text Elements
+const RE_TEXTELEMENTS_FALLBACK_1 = new RegExp(`(.*)%%\n${MD_TEXTELEMENTS}(?:\n|$)`, "m");
+const RE_TEXTELEMENTS_FALLBACK_2 = new RegExp(`(.*)${MD_TEXTELEMENTS}(?:\n|$)`, "m");
+
+
+const RE_DRAWING = new RegExp(`(%%\n)?${MD_DRAWING}\n`);
+
+export const getExcalidrawMarkdownHeaderSection = (data:string, keys?:[string,string][]):string => {
+  let trimLocation = data.search(RE_TEXTELEMENTS);
+  if(trimLocation === -1) {
+    const res = data.match(RE_TEXTELEMENTS_FALLBACK_1);
+    if(res && Boolean(res[1])) {
+      trimLocation = res.index + res[1].length;
+    }
   }
-  if (trimLocation == -1) {
-    return data;
+  if(trimLocation === -1) {
+    const res = data.match(RE_TEXTELEMENTS_FALLBACK_2);
+    if(res && Boolean(res[1])) {
+      trimLocation = res.index + res[1].length;
+    }
+  }  
+  if (trimLocation === -1) {
+    trimLocation = data.search(RE_DRAWING);
+  }
+  if (trimLocation === -1) {
+    return data.endsWith("\n") ? data : (data + "\n");
   }
 
   let header = updateFrontmatterInString(data.substring(0, trimLocation),keys);
@@ -253,7 +278,7 @@ export const getExcalidrawMarkdownHeaderSection = (data:string, keys:[string,str
     header = header.replace(REG_IMG, "$1");
   }
   //end of remove
-  return header;
+  return header.endsWith("\n") ? header : (header + "\n");
 }
 
 
@@ -278,6 +303,7 @@ export class ExcalidrawData {
   private equations: Map<FileId, { latex: string; isLoaded: boolean }> = null; //fileId, path
   private mermaids: Map<FileId, { mermaid: string; isLoaded: boolean }> = null; //fileId, path
   private compatibilityMode: boolean = false;
+  private textElementCommentedOut: boolean = false;
   selectedElementIds: {[key:string]:boolean} = {}; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/609
 
   constructor(
@@ -557,22 +583,37 @@ export class ExcalidrawData {
     //The Markdown # Text Elements take priority over the JSON text elements. Assuming the scenario in which the link was updated due to filename changes
     //The .excalidraw JSON is modified to reflect the MD in case of difference
     //Read the text elements into the textElements Map
-    let position = data.search(/(^%%\n)?# Text Elements\n/m);
+    let position = data.search(RE_TEXTELEMENTS);
     if (position === -1) {
       await this.setTextMode(textMode, false);
       this.loaded = true;
       return true; //Text Elements header does not exist
     }
-    position += data.match(/((^%%\n)?# Text Elements\n)/m)[0].length;
-
-    data = data.substring(position);
+    const textElementsMatch = data.match(new RegExp(`^((%%\n)?${MD_TEXTELEMENTS}(?:\n|$))`, "m"))[0]
+    position += textElementsMatch.length;
+    
+    data = data.slice(position);
+    this.textElementCommentedOut = textElementsMatch.startsWith("%%\n");
     position = 0;
+    let parts;
+    
+    //load element links
+    const elementLinkMap = new Map<string,string>();
+    const elementLinksData = data.substring(
+      data.indexOf(`${MD_ELEMENTLINKS}\n`) + `${MD_ELEMENTLINKS}\n`.length,
+    );
+    //Load Embedded files
+    const RE_ELEMENT_LINKS = /^(.{8}):\s*(\[\[[^\]]*]])$/gm;
+    const linksRes = elementLinksData.matchAll(RE_ELEMENT_LINKS);
+    while (!(parts = linksRes.next()).done) {
+      elementLinkMap.set(parts.value[1], parts.value[2]);
+    }
 
     //iterating through all the text elements in .md
     //Text elements always contain the raw value
     const BLOCKREF_LEN: number = " ^12345678\n\n".length;
+    const RE_TEXT_ELEMENT_LINK = /^%%\*\*\*>>>text element-link:(\[\[[^<*\]]*]])<<<\*\*\*%%/gm;
     let res = data.matchAll(/\s\^(.{8})[\n]+/g);
-    let parts;
     while (!(parts = res.next()).done) {
       let text = data.substring(position, parts.value.index);
       const id: string = parts.value[1];
@@ -580,6 +621,7 @@ export class ExcalidrawData {
       if (textEl) {
         if (textEl.type !== "text") {
           //markdown link attached to elements
+          //legacy fileformat support as of 2.0.26
           if (textEl.link !== text) {
             textEl.link = text;
             textEl.version++;
@@ -589,12 +631,16 @@ export class ExcalidrawData {
         } else {
           const wrapAt = estimateMaxLineLen(textEl.text, textEl.originalText);
           //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/566
-          const elementLinkRes = text.matchAll(/^%%\*\*\*>>>text element-link:(\[\[[^<*\]]*]])<<<\*\*\*%%/gm); 
+          const elementLinkRes = text.matchAll(RE_TEXT_ELEMENT_LINK); 
           const elementLink = elementLinkRes.next();
           if(!elementLink.done) {
-            text = text.replace(/^%%\*\*\*>>>text element-link:\[\[[^<*\]]*]]<<<\*\*\*%%/gm,"");
+            text = text.replace(RE_TEXT_ELEMENT_LINK,"");
             textEl.link = elementLink.value[1];
-          } 
+          }
+          if(elementLinkMap.has(id)) {
+            textEl.link = elementLinkMap.get(id);
+            elementLinkMap.delete(id);
+          }
           const parseRes = await this.parse(text);
           textEl.rawText = text;
           this.textElements.set(id, {
@@ -614,54 +660,68 @@ export class ExcalidrawData {
       position = parts.value.index + BLOCKREF_LEN;
     }
 
-    data = data.substring(
-      data.indexOf("# Embedded files\n") + "# Embedded files\n".length,
-    );
-    //Load Embedded files
-    const REG_FILEID_FILEPATH = /([\w\d]*):\s*\[\[([^\]]*)]]\s?(\{[^}]*})?\n/gm;
-    res = data.matchAll(REG_FILEID_FILEPATH);
-    while (!(parts = res.next()).done) {
-      const embeddedFile = new EmbeddedFile(
-        this.plugin,
-        this.file.path,
-        parts.value[2],
-        parts.value[3],
+    //In theory only non-text elements should be left in the elementLinkMap
+    //new file format from 2.0.26
+    for (const [id, link] of elementLinkMap) {
+      const textEl = this.scene.elements.filter((el: any) => el.id === id)[0];
+      if (textEl) {
+        textEl.link = link;
+        textEl.version++;
+        textEl.versionNonce++;
+        this.elementLinks.set(id, link);
+      }
+    }
+
+    const indexOfEmbeddedFiles = data.indexOf("# Embedded files\n");
+    if(indexOfEmbeddedFiles>-1) {
+      data = data.substring(
+        indexOfEmbeddedFiles + "# Embedded files\n".length,
       );
-      this.setFile(parts.value[1] as FileId, embeddedFile);
-    }
+      //Load Embedded files
+      const REG_FILEID_FILEPATH = /([\w\d]*):\s*\[\[([^\]]*)]]\s?(\{[^}]*})?\n/gm;
+      res = data.matchAll(REG_FILEID_FILEPATH);
+      while (!(parts = res.next()).done) {
+        const embeddedFile = new EmbeddedFile(
+          this.plugin,
+          this.file.path,
+          parts.value[2],
+          parts.value[3],
+        );
+        this.setFile(parts.value[1] as FileId, embeddedFile);
+      }
 
-    //Load links
-    const REG_LINKID_FILEPATH = /([\w\d]*):\s*((?:https?|file|ftps?):\/\/[^\s]*)\n/gm;
-    res = data.matchAll(REG_LINKID_FILEPATH);
-    while (!(parts = res.next()).done) {
-      const embeddedFile = new EmbeddedFile(
-        this.plugin,
-        null,
-        parts.value[2],
-      );
-      this.setFile(parts.value[1] as FileId, embeddedFile);
-    }
+      //Load links
+      const REG_LINKID_FILEPATH = /([\w\d]*):\s*((?:https?|file|ftps?):\/\/[^\s]*)\n/gm;
+      res = data.matchAll(REG_LINKID_FILEPATH);
+      while (!(parts = res.next()).done) {
+        const embeddedFile = new EmbeddedFile(
+          this.plugin,
+          null,
+          parts.value[2],
+        );
+        this.setFile(parts.value[1] as FileId, embeddedFile);
+      }
 
-    //Load Equations
-    const REG_FILEID_EQUATION = /([\w\d]*):\s*\$\$([\s\S]*?)(\$\$\s*\n)/gm;
-    res = data.matchAll(REG_FILEID_EQUATION);
-    while (!(parts = res.next()).done) {
-      this.setEquation(parts.value[1] as FileId, {
-        latex: parts.value[2],
-        isLoaded: false,
-      });
-    }
+      //Load Equations
+      const REG_FILEID_EQUATION = /([\w\d]*):\s*\$\$([\s\S]*?)(\$\$\s*\n)/gm;
+      res = data.matchAll(REG_FILEID_EQUATION);
+      while (!(parts = res.next()).done) {
+        this.setEquation(parts.value[1] as FileId, {
+          latex: parts.value[2],
+          isLoaded: false,
+        });
+      }
 
-    //Load Mermaids
-    const mermaidElements = getMermaidImageElements(this.scene.elements);
-    if(mermaidElements.length>0 && !shouldRenderMermaid()) {
-      new Notice ("Mermaid images are only supported in Obsidian 1.4.14 and above. Please update Obsidian to see the mermaid images in this drawing. Obsidian mobile 1.4.14 currently only avaiable to Obsidian insiders", 5000);
-    } else {
-      mermaidElements.forEach(el => 
-        this.setMermaid(el.fileId, {mermaid: getMermaidText(el), isLoaded: false})
-      );
+      //Load Mermaids
+      const mermaidElements = getMermaidImageElements(this.scene.elements);
+      if(mermaidElements.length>0 && !shouldRenderMermaid()) {
+        new Notice ("Mermaid images are only supported in Obsidian 1.4.14 and above. Please update Obsidian to see the mermaid images in this drawing. Obsidian mobile 1.4.14 currently only avaiable to Obsidian insiders", 5000);
+      } else {
+        mermaidElements.forEach(el => 
+          this.setMermaid(el.fileId, {mermaid: getMermaidText(el), isLoaded: false})
+        );
+      }
     }
-
     //Check to see if there are text elements in the JSON that were missed from the # Text Elements section
     //e.g. if the entire text elements section was deleted.
     this.findNewTextElementsInScene();
@@ -1130,27 +1190,37 @@ export class ExcalidrawData {
    */
   disableCompression: boolean = false;
   generateMD(deletedElements: ExcalidrawElement[] = []): string {
-    let outString = "# Text Elements\n";
+    let outString = this.textElementCommentedOut ? "%%\n" : "";
+    outString += `${MD_TEXTELEMENTS}\n`;
+    const textElementLinks = new Map<string, string>();
     for (const key of this.textElements.keys()) {
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/566
       const element = this.scene.elements.filter((el:any)=>el.id===key);
       let elementString = this.textElements.get(key).raw;
       if(element && element.length===1 && element[0].link && element[0].rawText === element[0].originalText) {
         if(element[0].link.match(/^\[\[[^\]]*]]$/g)) { //apply this only to markdown links
-          elementString = `%%***>>>text element-link:${element[0].link}<<<***%%` + elementString;
+          textElementLinks.set(key, element[0].link);
+          //elementString = `%%***>>>text element-link:${element[0].link}<<<***%%` + elementString;
         }
       }
       outString += `${elementString} ^${key}\n\n`;
     }
 
-    for (const key of this.elementLinks.keys()) {
-      outString += `${this.elementLinks.get(key)} ^${key}\n\n`;
+    if (this.elementLinks.size > 0  || textElementLinks.size > 0) {
+      outString += `${MD_ELEMENTLINKS}\n`;
+      for (const key of this.elementLinks.keys()) {
+        outString += `${key}: ${this.elementLinks.get(key)}\n`;
+      }
+      for (const key of textElementLinks.keys()) {
+        outString += `${key}: ${textElementLinks.get(key)}\n`;
+      }
+      outString += "\n";
     }
 
     // deliberately not adding mermaids to here. It is enough to have the mermaidText in the image element's customData
     outString +=
       this.equations.size > 0 || this.files.size > 0
-        ? "\n# Embedded files\n"
+        ? "# Embedded files\n"
         : "";
     if (this.equations.size > 0) {
       for (const key of this.equations.keys()) {
@@ -1185,6 +1255,7 @@ export class ExcalidrawData {
     }, null, "\t");
     return (
       outString +
+      (this.textElementCommentedOut ? "" : "%%\n") +
       getMarkdownDrawingSection(
         sceneJSONstring,
         this.disableCompression ? false : this.plugin.settings.compress,

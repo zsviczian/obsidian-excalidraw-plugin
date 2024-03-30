@@ -80,8 +80,11 @@ export class CanvasNodeFactory {
     return node;
   }
 
-  public startEditing(node: ObsidianCanvasNode, theme: string) {
+  public async startEditing(node: ObsidianCanvasNode, theme: string) {
     if (!this.initialized || !node) return;
+    if (node.file === this.view.file) {
+      await this.view.setEmbeddableIsEditingSelf();
+    }
     node.startEditing();
   
     const obsidianTheme = isObsidianThemeDark() ? "theme-dark" : "theme-light";
@@ -118,6 +121,9 @@ export class CanvasNodeFactory {
   public stopEditing(node: ObsidianCanvasNode) {
     if(!this.initialized || !node) return;
     if(!node.child.editMode) return;
+    if(node.file === this.view.file) {
+      this.view.clearEmbeddableIsEditingSelf();
+    }
     node.child.showPreview();
   }
 

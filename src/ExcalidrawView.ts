@@ -51,6 +51,7 @@ import {
   MAX_IMAGE_SIZE,
   fileid,
   sceneCoordsToViewportCoords,
+  MD_EX_SECTIONS,
 } from "./constants/constants";
 import ExcalidrawPlugin from "./main";
 import { 
@@ -101,7 +102,7 @@ import {
   fragWithHTML,
   isMaskFile,
 } from "./utils/Utils";
-import { getLeaf, getParentOfClass, obsidianPDFQuoteWithRef, openLeaf } from "./utils/ObsidianUtils";
+import { cleanSectionHeading, getLeaf, getParentOfClass, obsidianPDFQuoteWithRef, openLeaf } from "./utils/ObsidianUtils";
 import { splitFolderAndFilename } from "./utils/FileUtils";
 import { ConfirmationPrompt, GenericInputPrompt, NewFileActions, Prompt, linkPrompt } from "./dialogs/Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
@@ -124,7 +125,7 @@ import { anyModifierKeysPressed, emulateKeysForLinkClick, webbrowserDragModifier
 import { setDynamicStyle } from "./utils/DynamicStyling";
 import { InsertPDFModal } from "./dialogs/InsertPDFModal";
 import { CustomEmbeddable, renderWebView } from "./customEmbeddable";
-import { getExcalidrawFileForwardLinks, getLinkTextFromLink, insertEmbeddableToView, insertImageToView, openExternalLink, openTagSearch } from "./utils/ExcalidrawViewUtils";
+import { getExcalidrawFileForwardLinks, getFrameBasedOnFrameNameOrId, getLinkTextFromLink, insertEmbeddableToView, insertImageToView, openExternalLink, openTagSearch } from "./utils/ExcalidrawViewUtils";
 import { imageCache } from "./utils/ImageCache";
 import { CanvasNodeFactory, ObsidianCanvasNode } from "./utils/CanvasNodeFactory";
 import { EmbeddableMenu } from "./menu/EmbeddableActionsMenu";
@@ -135,6 +136,7 @@ import { nanoid } from "nanoid";
 import { CustomMutationObserver, isDebugMode } from "./utils/DebugHelper";
 import { extractCodeBlocks, postOpenAI } from "./utils/AIUtils";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
+import { SelectCard } from "./dialogs/SelectCard";
 
 declare const PLUGIN_VERSION:string;
 
@@ -263,6 +265,8 @@ export default class ExcalidrawView extends TextFileView {
 //  private scrollYBeforeKeyboard: number = null;
 
   public semaphores: {
+    //flag to prevent overwriting the changes the user makes in an embeddable view editing the back side of the drawing
+    embeddableIsEditingSelf: boolean;
     popoutUnload: boolean; //the unloaded Excalidraw view was the last leaf in the popout window
     viewunload: boolean;
     //first time initialization of the view
@@ -297,6 +301,7 @@ export default class ExcalidrawView extends TextFileView {
     hoverSleep: boolean; //flag with timer to prevent hover preview from being triggered dozens of times
     wheelTimeout:NodeJS.Timeout; //used to avoid hover preview while zooming
   } = {
+    embeddableIsEditingSelf: false,
     popoutUnload: false,
     viewunload: false,
     scriptsReady: false,
@@ -598,10 +603,48 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   private preventReloadResetTimer: NodeJS.Timeout = null;
+
+  public setPreventReload() {
+    this.semaphores.preventReload = true;
+    const self = this;
+    this.preventReloadResetTimer = setTimeout(()=>self.semaphores.preventReload = false,2000);
+  }
+
+  public clearPreventReloadTimer() {
+    if(this.preventReloadResetTimer) {
+      clearTimeout(this.preventReloadResetTimer);
+      this.preventReloadResetTimer = null;
+    }
+  }
+
+  private editingSelfResetTimer: NodeJS.Timeout = null;
+  public async setEmbeddableIsEditingSelf() {
+    this.clearEmbeddableIsEditingSelfTimer();
+    await this.forceSave(true);
+    this.semaphores.embeddableIsEditingSelf = true;
+  }
+
+  public clearEmbeddableIsEditingSelfTimer () {
+    if(this.editingSelfResetTimer) {
+      clearTimeout(this.editingSelfResetTimer);
+      this.editingSelfResetTimer = null;
+    }
+  }
+
+  public clearEmbeddableIsEditingSelf() {
+    const self = this;
+    this.clearEmbeddableIsEditingSelfTimer();
+    this.editingSelfResetTimer = setTimeout(()=>self.semaphores.embeddableIsEditingSelf = false,2000);
+  }
+
   async save(preventReload: boolean = true, forcesave: boolean = false) {
     if(!this.isLoaded) {
       return;
     }
+    if (this.semaphores.embeddableIsEditingSelf) {
+      return;
+    }
+    //console.log("saving - embeddable not editing")
     //debug({where:"save", preventReload, forcesave, semaphores:this.semaphores});
     if (this.semaphores.saving) {
       return;
@@ -648,10 +691,8 @@ export default class ExcalidrawView extends TextFileView {
         //reload() is triggered indirectly when saving by the modifyEventHandler in main.ts
         //prevent reload is set here to override reload when not wanted: typically when the user is editing
         //and we do not want to interrupt the flow by reloading the drawing into the canvas.
-        if(this.preventReloadResetTimer) {
-          clearTimeout(this.preventReloadResetTimer);
-          this.preventReloadResetTimer = null;
-        }
+
+        this.clearPreventReloadTimer();
 
         this.semaphores.preventReload = preventReload;
         await super.save();
@@ -669,8 +710,7 @@ export default class ExcalidrawView extends TextFileView {
         //there were odd cases when preventReload semaphore did not get cleared and consequently a synchronized image
         //did not update the open drawing
         if(preventReload) {
-          const self = this;
-          this.preventReloadResetTimer = setTimeout(()=>self.semaphores.preventReload = false,2000);
+          this.setPreventReload();
         }
       }
 
@@ -729,13 +769,14 @@ export default class ExcalidrawView extends TextFileView {
     //deleted elements are only used if sync modifies files while Excalidraw is open
     //otherwise deleted elements are discarded when loading the scene
     if (!this.compatibilityMode) {
+
       const keys:[string,string][] = this.exportDialog?.dirty && this.exportDialog?.saveSettings
         ? [
             [FRONTMATTER_KEYS["export-padding"].name, this.exportDialog.padding.toString()],
             [FRONTMATTER_KEYS["export-pngscale"].name, this.exportDialog.scale.toString()],
             [FRONTMATTER_KEYS["export-dark"].name, this.exportDialog.theme === "dark" ? "true" : "false"],
             [FRONTMATTER_KEYS["export-transparent"].name, this.exportDialog.transparent ? "true" : "false"],
-            [FRONTMATTER_KEYS["plugin"].name, this.textMode === TextMode.raw ? "raw" : "parsed"]
+            [FRONTMATTER_KEYS["plugin"].name, this.textMode === TextMode.raw ? "raw" : "parsed"],
           ]
         : [
             [FRONTMATTER_KEYS["plugin"].name, this.textMode === TextMode.raw ? "raw" : "parsed"]
@@ -1411,9 +1452,11 @@ export default class ExcalidrawView extends TextFileView {
         this.plugin.settings.autosave &&
         !this.semaphores.forceSaving &&
         !this.semaphores.autosaving &&
+        !this.semaphores.embeddableIsEditingSelf &&
         !editing &&
         st.draggingElement === null //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/630
       ) {
+        //console.log("autosave");
         this.autosaveTimer = null;
         if (this.excalidrawAPI) {
           this.semaphores.autosaving = true;
@@ -1486,7 +1529,7 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   /**
-   * reload is triggered by the modifyEventHandler in main.ts when ever an excalidraw drawing that is currently open
+   * reload is triggered by the modifyEventHandler in main.ts whenever an excalidraw drawing that is currently open
    * in a workspace leaf is modified. There can be two reasons for the file change:
    * - The user saves the drawing in the active view (either force-save or autosave)
    * - The file is modified by some other process, typically as a result of background sync, or because the drawing is open
@@ -1496,6 +1539,26 @@ export default class ExcalidrawView extends TextFileView {
    * @returns
    */
   public async reload(fullreload: boolean = false, file?: TFile) {
+    const loadOnModifyTrigger = file && file === this.file;
+
+    //once you've finished editing the embeddable, the first time the file
+    //reloads will be because of the embeddable changed the file,
+    //there is a 2000 ms time window allowed for this, but typically this will
+    //happen within 100 ms. When this happens the timer is cleared and the
+    //next time reload triggers the file will be reloaded as normal.
+    if (this.semaphores.embeddableIsEditingSelf) {
+      //console.log("reload - embeddable is editing")
+      if(this.editingSelfResetTimer) {
+        this.clearEmbeddableIsEditingSelfTimer();
+        this.semaphores.embeddableIsEditingSelf = false;
+      }
+      if(loadOnModifyTrigger) {
+        this.data = await this.app.vault.read(this.file);
+      }
+      return;
+    }
+    //console.log("reload - embeddable is not editing")
+
     if (this.semaphores.preventReload) {
       this.semaphores.preventReload = false;
       return;
@@ -1511,9 +1574,9 @@ export default class ExcalidrawView extends TextFileView {
     if (!this.file || !api) {
       return;
     }
-    const loadOnModifyTrigger = file && file === this.file;
+    
     if (loadOnModifyTrigger) {
-      this.data = await app.vault.read(file);
+      this.data = await this.app.vault.read(file);
       this.preventAutozoom();
     }
     if (fullreload) {
@@ -1536,7 +1599,14 @@ export default class ExcalidrawView extends TextFileView {
     const sceneElements = api.getSceneElements();
 
     let elements = sceneElements.filter((el: ExcalidrawElement) => el.id === id);
-    if(elements.length === 0) return;
+    if(elements.length === 0) {
+      const frame = getFrameBasedOnFrameNameOrId(id, sceneElements);
+      if (frame) {
+        elements = [frame];
+      } else {
+        return;
+      }
+    }
     if(hasGroupref) {
       const groupElements = this.plugin.ea.getElementsInTheSameGroupWithElement(elements[0],sceneElements)
       if(groupElements.length>0) {
@@ -1865,6 +1935,10 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   public async synchronizeWithData(inData: ExcalidrawData) {
+    if(this.semaphores.embeddableIsEditingSelf) {
+      return;
+    }
+    //console.log("synchronizeWithData - embeddable is not editing");
     //check if saving, wait until not
     let counter = 0;
     while(this.semaphores.saving && counter++<30) {
@@ -3957,6 +4031,16 @@ export default class ExcalidrawView extends TextFileView {
     return {imageEl: el, embeddedFile: imageFile};
   }
 
+  public async insertBackOfTheNoteCard() {
+    const sections = (await this.app.metadataCache.blockCache
+      .getForFile({ isCancelled: () => false },this.file))
+      .blocks.filter((b: any) => b.display && b.node?.type === "heading")
+      .filter((b: any) => !MD_EX_SECTIONS.includes(b.display))
+      .map((b: any) => cleanSectionHeading(b.display));
+    const selectCardDialog = new SelectCard(this.app,this,sections);
+    selectCardDialog.start(); 
+  }
+
   public async convertImageElWithURLToLocalFile(data: {imageEl: ExcalidrawImageElement, embeddedFile: EmbeddedFile}) {
     const {imageEl, embeddedFile} = data;
     const imageDataURL = embeddedFile.getImage(false);
@@ -4173,6 +4257,16 @@ export default class ExcalidrawView extends TextFileView {
             ),
           ]);
         }
+
+        contextMenuActions.push([
+          renderContextMenuAction(
+            t("INSERT_CARD"),
+            () => {
+              this.insertBackOfTheNoteCard();
+            },
+            onClose
+          ),
+        ]);
 
         contextMenuActions.push([
           renderContextMenuAction(
@@ -4514,7 +4608,7 @@ export default class ExcalidrawView extends TextFileView {
                 const delta = editingElViewY - scrollViewY;
                 const isElementAboveKeyboard = height > (delta + appToolHeight*2)
                 const excalidrawWrapper = this.excalidrawWrapperRef.current;
-                console.log({isElementAboveKeyboard});
+                //console.log({isElementAboveKeyboard});
                 if(excalidrawWrapper && !isElementAboveKeyboard) {
                   excalidrawWrapper.style.top = `${-(st.height - height)}px`;
                   excalidrawWrapper.style.height = `${st.height}px`;
@@ -5024,15 +5118,15 @@ export default class ExcalidrawView extends TextFileView {
     }
   }
 
-  public getEmbeddableLeafElementById(id: string): {leaf: WorkspaceLeaf; node?: ObsidianCanvasNode} | null {
+  public getEmbeddableLeafElementById(id: string): {leaf: WorkspaceLeaf; node?: ObsidianCanvasNode; editNode?: Function} | null {
     const ref = this.embeddableLeafRefs.get(id);
     if(!ref) {
       return null;
     }
-    return ref as {leaf: WorkspaceLeaf; node?: ObsidianCanvasNode};
+    return ref as {leaf: WorkspaceLeaf; node?: ObsidianCanvasNode; editNode?: Function};
   }
 
-  getActiveEmbeddable = ():{leaf: WorkspaceLeaf; node?: ObsidianCanvasNode}|null => {
+  getActiveEmbeddable = ():{leaf: WorkspaceLeaf; node?: ObsidianCanvasNode; editNode?: Function}|null => {
     if(!this.excalidrawAPI) return null;
     const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
     const st = api.getAppState();

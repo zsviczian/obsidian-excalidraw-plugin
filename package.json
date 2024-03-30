@@ -19,7 +19,7 @@
   "license": "MIT",
   "dependencies": {
     "@popperjs/core": "^2.11.8",
-    "@zsviczian/excalidraw": "0.17.1-obsidian-17",
+    "@zsviczian/excalidraw": "0.17.1-obsidian-18",
     "chroma-js": "^2.4.2",
     "clsx": "^2.0.0",
     "colormaster": "^1.2.1",
@@ -31,7 +31,8 @@
     "polybooljs": "^1.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "roughjs": "^4.5.2"
+    "roughjs": "^4.5.2",
+    "js-yaml": "^4.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.22.9",
@@ -49,6 +50,7 @@
     "@types/node": "^20.10.5",
     "@types/react": "^18.2.45",
     "@types/react-dom": "^18.2.18",
+    "@types/js-yaml": "^4.0.9",
     "@zerollup/ts-transform-paths": "^1.7.18",
     "cross-env": "^7.0.3",
     "cssnano": "^6.0.2",

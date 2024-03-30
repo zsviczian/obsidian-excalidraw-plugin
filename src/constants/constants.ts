@@ -4,6 +4,13 @@ import { ExcalidrawLib } from "../ExcalidrawLib";
 import { moment } from "obsidian";
 //This is only for backward compatibility because an early version of obsidian included an encoding to avoid fantom links from littering Obsidian graph view
 declare const PLUGIN_VERSION:string;
+export const MD_TEXTELEMENTS = "# Text Elements";
+export const MD_JSON_START = "```json\n";
+export const MD_JSON_END = "```";
+export const MD_DRAWING = "# Drawing";
+export const MD_ELEMENTLINKS = "# Element Links";
+export const MD_EMBEDFILES = "# Embed files";
+export const MD_EX_SECTIONS = [MD_TEXTELEMENTS, MD_DRAWING, MD_ELEMENTLINKS, MD_EMBEDFILES];
 
 export const ERROR_IFRAME_CONVERSION_CANCELED = "iframe conversion canceled";
 
@@ -162,8 +169,9 @@ export const FRONTMATTER_KEYS:{[key:string]: {name: string, type: string, depric
   "font-color": {name: "excalidraw-font-color", type: "text"},
   "border-color": {name: "excalidraw-border-color", type: "text"},
   "md-css": {name: "excalidraw-css", type: "text"},
-  "autoexport": {name: "excalidraw-autoexport", type: "checkbox"},
-  "iframe-theme": {name: "excalidraw-iframe-theme", type: "text"}, 
+  "autoexport": {name: "excalidraw-autoexport", type: "text"},
+  "iframe-theme": {name: "excalidraw-iframe-theme", type: "text"},
+  "open-as-markdown": {name: "excalidraw-open-md", type: "checkbox"},
 };
 
 export const EMBEDDABLE_THEME_FRONTMATTER_VALUES = ["light", "dark", "auto", "dafault"];

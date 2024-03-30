@@ -7,12 +7,14 @@ import { ActionButton } from "./ActionButton";
 import { ICONS } from "./ActionIcons";
 import { t } from "src/lang/helpers";
 import { ScriptEngine } from "src/Scripts";
-import { ROOTELEMENTSIZE, mutateElement, nanoid, sceneCoordsToViewportCoords } from "src/constants/constants";
+import { MD_EX_SECTIONS, ROOTELEMENTSIZE, mutateElement, nanoid, sceneCoordsToViewportCoords } from "src/constants/constants";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK } from "src/ExcalidrawData";
 import { processLinkText, useDefaultExcalidrawFrame } from "src/utils/CustomEmbeddableUtils";
 import { cleanSectionHeading } from "src/utils/ObsidianUtils";
 import { EmbeddableSettings } from "src/dialogs/EmbeddableSettings";
 import { openExternalLink } from "src/utils/ExcalidrawViewUtils";
+import { getEA } from "src";
+import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 
 export class EmbeddableMenu {
 
@@ -34,10 +36,13 @@ export class EmbeddableMenu {
       file.extension === "md",
     )
     const link = `[[${path}${subpath}]]`;
-    mutateElement (element,{link});
+    const ea = getEA(view) as ExcalidrawAutomate;
+    ea.copyViewElementsToEAforEditing([element]);
+    ea.getElement(element.id).link = link;
+    //mutateElement (element,{link});
+    //view.setDirty(99);
     view.excalidrawData.elementLinks.set(element.id, link);
-    view.setDirty(99);
-    view.updateScene({appState: {activeEmbeddable: null}});
+    ea.addElementsToView(false, true, true);
   }
 
   private menuFadeTimeout: number = 0;
@@ -99,6 +104,7 @@ export class EmbeddableMenu {
         const { subpath, file } = processLinkText(link, view);
         if(!file) return;
         const isMD = file.extension==="md";
+        const isExcalidrawFile = view.plugin.isExcalidrawFile(file);
         const { x, y } = sceneCoordsToViewportCoords( { sceneX: element.x, sceneY: element.y }, appState);
         const top = `${y-2.5*ROOTELEMENTSIZE-appState.offsetTop}px`;
         const left = `${x-appState.offsetLeft}px`;
@@ -128,15 +134,23 @@ export class EmbeddableMenu {
                   key={"MarkdownSection"}
                   title={t("NARROW_TO_HEADING")}
                   action={async () => {
+                    view.updateScene({appState: {activeEmbeddable: null}});
                     const sections = (await app.metadataCache.blockCache
                       .getForFile({ isCancelled: () => false },file))
-                      .blocks.filter((b: any) => b.display && b.node?.type === "heading");
-                    const values = [""].concat(
-                      sections.map((b: any) => `#${cleanSectionHeading(b.display)}`)
-                    );
-                    const display = [t("SHOW_ENTIRE_FILE")].concat(
-                      sections.map((b: any) => b.display)
-                    );
+                      .blocks.filter((b: any) => b.display && b.node?.type === "heading")
+                      .filter((b: any) => !isExcalidrawFile || !MD_EX_SECTIONS.includes(b.display));
+                    let values, display;
+                    if(isExcalidrawFile) {
+                      values = sections.map((b: any) => `#${cleanSectionHeading(b.display)}`);
+                      display = sections.map((b: any) => b.display);
+                    } else {
+                      values = [""].concat(
+                        sections.map((b: any) => `#${cleanSectionHeading(b.display)}`)
+                      );
+                      display = [t("SHOW_ENTIRE_FILE")].concat(
+                        sections.map((b: any) => b.display)
+                      );
+                    }
                     const newSubpath = await ScriptEngine.suggester(
                       app, display, values, "Select section from document"
                     );
@@ -149,12 +163,13 @@ export class EmbeddableMenu {
                   view={view}
                 />
               )}
-              {isMD && (
+              {isMD && !isExcalidrawFile && (
                 <ActionButton
                   key={"MarkdownBlock"}
                   title={t("NARROW_TO_BLOCK")}
                   action={async () => {
                     if(!file) return;
+                    view.updateScene({appState: {activeEmbeddable: null}});
                     const paragraphs = (await app.metadataCache.blockCache
                       .getForFile({ isCancelled: () => false },file))
                       .blocks.filter((b: any) => b.display && b.node?.type === "paragraph");

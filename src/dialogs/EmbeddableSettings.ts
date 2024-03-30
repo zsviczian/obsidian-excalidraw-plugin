@@ -49,7 +49,7 @@ export class EmbeddableSettings extends Modal {
     this.zoomValue = element.scale[0];
     this.isYouTube = isYouTube(this.element.link);
     this.notExcalidrawIsInternal = this.file && !this.view.plugin.isExcalidrawFile(this.file)
-    this.isMDFile = this.file && this.file.extension === "md" && !this.view.plugin.isExcalidrawFile(this.file);
+    this.isMDFile = this.file && this.file.extension === "md"; // && !this.view.plugin.isExcalidrawFile(this.file);
     this.isLocalURI = this.element.link.startsWith("file://");
     if(isYouTube) this.youtubeStart = getYouTubeStartAt(this.element.link);
 
@@ -212,7 +212,12 @@ export class EmbeddableSettings extends Modal {
       el.scale = [this.zoomValue,this.zoomValue];
     }
     if(dirty) {
-      this.ea.addElementsToView();
+      (async() => {
+        await this.ea.addElementsToView();
+        //@ts-ignore
+        this.ea.viewUpdateScene({appState: {}});
+      })();
+
     }
     this.close();
   };

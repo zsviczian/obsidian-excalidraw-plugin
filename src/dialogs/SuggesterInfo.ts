@@ -822,6 +822,12 @@ export const FRONTMATTER_KEYS_INFO: SuggesterInfo[] = [
     after: ": 1",
   },
   {
+    field: "open-md",
+    code: null,
+    desc: "If this key is present the file will be opened as a markdown file in the editor",
+    after: ": true",
+  },
+  {
     field: "autoexport",
     code: null,
     desc: "Override autoexport settings for this file. Valid values are\nnone\nboth\npng\nsvg",

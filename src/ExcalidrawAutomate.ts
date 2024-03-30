@@ -35,6 +35,8 @@ import {
   REG_LINKINDEX_INVALIDCHARS,
   THEME_FILTER,
   mermaidToExcalidraw,
+  MD_TEXTELEMENTS,
+  MD_DRAWING,
 } from "src/constants/constants";
 import { blobToBase64, checkAndCreateFolder, getDrawingFilename, getListOfTemplateFiles, getNewUniqueFilepath, } from "src/utils/FileUtils";
 import {
@@ -53,7 +55,7 @@ import {
   scaleLoadedImage,
   wrapTextAtCharLength,
 } from "src/utils/Utils";
-import { getAttachmentsFolderAndFilePath, getLeaf, getNewOrAdjacentLeaf, isObsidianThemeDark, openLeaf } from "src/utils/ObsidianUtils";
+import { getAttachmentsFolderAndFilePath, getLeaf, getNewOrAdjacentLeaf, isObsidianThemeDark, mergeMarkdownFiles, openLeaf } from "src/utils/ObsidianUtils";
 import { AppState, BinaryFileData,  DataURL,  ExcalidrawImperativeAPI, Point } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddedFile, EmbeddedFilesLoader, FileData } from "src/EmbeddedFileLoader";
 import { tex2dataURL } from "src/LaTeX";
@@ -91,6 +93,7 @@ import {
 import { EXCALIDRAW_AUTOMATE_INFO, EXCALIDRAW_SCRIPTENGINE_INFO } from "./dialogs/SuggesterInfo";
 import { CropImage } from "./utils/CropImage";
 import { has } from "./svgToExcalidraw/attributes";
+import { getFrameBasedOnFrameNameOrId } from "./utils/ExcalidrawViewUtils";
 
 extendPlugins([
   HarmonyPlugin,
@@ -603,6 +606,7 @@ export class ExcalidrawAutomate {
       "excalidraw-linkbutton-opacity"?: number;
       "excalidraw-autoexport"?: boolean;
       "excalidraw-mask"?: boolean;
+      "excalidraw-open-md"?: boolean;
       "cssclasses"?: string;
     };
     plaintext?: string; //text to insert above the `# Text Elements` section
@@ -640,6 +644,12 @@ export class ExcalidrawAutomate {
       frontmatter = template?.frontmatter
         ? template.frontmatter
         : FRONTMATTER;
+    }
+
+    frontmatter += params.plaintext ? params.plaintext + "\n\n" : "";
+    if(template?.frontmatter && params?.frontmatterKeys) {
+      //the frontmatter tags supplyed to create take priority
+      frontmatter = mergeMarkdownFiles(template.frontmatter,frontmatter);
     }
 
     const scene = {
@@ -694,9 +704,8 @@ export class ExcalidrawAutomate {
     };
 
     const generateMD = ():string => {
-      let outString = params.plaintext ? params.plaintext + "\n\n" : "";
       const textElements = this.getElements().filter(el => el.type === "text") as ExcalidrawTextElement[];
-      outString += "# Text Elements\n";
+      let outString = `${MD_TEXTELEMENTS}\n`;
       textElements.forEach(te=> {
         outString += `${te.rawText ?? (te.originalText ?? te.text)} ^${te.id}\n\n`;
       });
@@ -735,7 +744,7 @@ export class ExcalidrawAutomate {
           }
         }
       })
-      return outString;
+      return outString + "\n%%\n";
     }
 
     const filename = params?.filename
@@ -758,14 +767,6 @@ export class ExcalidrawAutomate {
       );
     }
   };
-
-/*  getCropImageObject(): CropImage {
-    const scene = this.targetView.getScene();
-    return new CropImage(
-      scene.elements,
-      scene.files,
-      );
-  }*/
 
   /**
    * 
@@ -2760,9 +2761,9 @@ async function getTemplate(
       textMode,
     );
 
-    let trimLocation = data.search("# Text Elements\n");
+    let trimLocation = data.search(new RegExp(`^${MD_TEXTELEMENTS}$`,"m"));
     if (trimLocation == -1) {
-      trimLocation = data.search("# Drawing\n");
+      trimLocation = data.search(`${MD_DRAWING}\n`);
     }
 
     let scene = excalidrawData.scene;
@@ -2798,9 +2799,10 @@ async function getTemplate(
       }
     }
     if(filenameParts.hasFrameref) {
-      const el = scene.elements.filter((el: ExcalidrawElement)=>el.id===filenameParts.blockref)
-      if(el.length === 1) {
-        groupElements = plugin.ea.getElementsInFrame(el[0],scene.elements)
+      const el = getFrameBasedOnFrameNameOrId(filenameParts.blockref,scene.elements);     
+      
+      if(el) {
+        groupElements = plugin.ea.getElementsInFrame(el,scene.elements)
       }
     }
 

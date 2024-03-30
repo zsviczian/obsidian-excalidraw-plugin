@@ -1,11 +1,11 @@
 import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { loadPdfJs, normalizePath, Notice, requestUrl, RequestUrlResponse, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
-import { DEVICE, URLFETCHTIMEOUT } from "src/constants/constants";
+import { App, loadPdfJs, normalizePath, Notice, requestUrl, RequestUrlResponse, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
+import { DEVICE, FRONTMATTER_KEYS, URLFETCHTIMEOUT } from "src/constants/constants";
 import { IMAGE_MIME_TYPES, MimeType } from "src/EmbeddedFileLoader";
 import { ExcalidrawSettings } from "src/settings";
 import { errorlog, getDataURL } from "./Utils";
 import ExcalidrawPlugin from "src/main";
-import { CROPPED_PREFIX } from "./CarveOut";
+import { ANNOTATED_PREFIX, CROPPED_PREFIX } from "./CarveOut";
 import { getAttachmentsFolderAndFilePath } from "./ObsidianUtils";
 
 /**
@@ -387,6 +387,19 @@ export const getCropFileNameAndFolder = async (plugin: ExcalidrawPlugin, hostPat
   return {folderpath, filename};
 }
 
+export const getAnnotationFileNameAndFolder = async (plugin: ExcalidrawPlugin, hostPath: string, baseNewFileName: string):Promise<{folderpath: string, filename: string}> => {
+  let prefix = plugin.settings.annotatePrefix;
+  if(!prefix || prefix.trim() === "") prefix = ANNOTATED_PREFIX;
+  const filename = prefix + baseNewFileName + ".md";
+  if(!plugin.settings.annotateFolder || plugin.settings.annotateFolder.trim() === "") {
+    const folderpath = (await getAttachmentsFolderAndFilePath(plugin.app, hostPath, filename)).folder;
+    return {folderpath, filename};
+  }
+  const folderpath = normalizePath(plugin.settings.annotateFolder);
+  await checkAndCreateFolder(folderpath);
+  return {folderpath, filename};
+}
+
 export const getListOfTemplateFiles = (plugin: ExcalidrawPlugin):TFile[] | null => {
   const normalizedTemplatePath = normalizePath(plugin.settings.templateFilePath);
   const template = plugin.app.vault.getAbstractFileByPath(normalizedTemplatePath);
@@ -407,4 +420,12 @@ export const getListOfTemplateFiles = (plugin: ExcalidrawPlugin):TFile[] | null 
     return [templateFile];
   }
   return null;
+}
+
+export const fileShouldDefaultAsExcalidraw = (path:string, app:App):boolean => {
+  if(!path) return false;
+  const cache = app.metadataCache.getCache(path);
+  return cache?.frontmatter &&
+    cache.frontmatter[FRONTMATTER_KEYS["plugin"].name] &&
+    !Boolean(cache.frontmatter[FRONTMATTER_KEYS["open-as-markdown"].name]);
 }

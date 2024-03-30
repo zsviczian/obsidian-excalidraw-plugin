@@ -1,11 +1,13 @@
 import {
   App,
+  FrontMatterCache,
   normalizePath, OpenViewState, parseFrontMatterEntry, TFile, View, Workspace, WorkspaceLeaf, WorkspaceSplit
 } from "obsidian";
 import ExcalidrawPlugin from "../main";
 import { checkAndCreateFolder, splitFolderAndFilename } from "./FileUtils";
 import { linkClickModifierType, ModifierKeys } from "./ModifierkeyHelper";
 import { REG_BLOCK_REF_CLEAN, REG_SECTION_REF_CLEAN } from "src/constants/constants";
+import yaml from "js-yaml";
 
 export const getParentOfClass = (element: Element, cssClass: string):HTMLElement | null => {
   let parent = element.parentElement;
@@ -289,3 +291,49 @@ export const openLeaf = ({
   const promise = leaf.openFile(file, openState);
   return {leaf, promise};
 }
+
+export const mergeMarkdownFiles = (template: string, target: string): string => {
+  // Extract frontmatter from the template
+  const templateFrontmatterEnd = template.indexOf('---', 4); // Find end of frontmatter
+  const templateFrontmatter = template.substring(4, templateFrontmatterEnd).trim();
+  const templateContent = template.substring(templateFrontmatterEnd + 3); // Skip frontmatter and ---
+  
+  // Parse template frontmatter
+  const templateFrontmatterObj: FrontMatterCache = yaml.load(templateFrontmatter) || {};
+
+  // Extract frontmatter from the target if it exists
+  let targetFrontmatterObj: FrontMatterCache = {};
+  let targetContent = '';
+  if (target.includes('---')) {
+    const targetFrontmatterEnd = target.indexOf('---', 4); // Find end of frontmatter
+    const targetFrontmatter = target.substring(4, targetFrontmatterEnd).trim();
+    targetContent = target.substring(targetFrontmatterEnd + 3); // Skip frontmatter and ---
+
+    // Parse target frontmatter
+    targetFrontmatterObj = yaml.load(targetFrontmatter) || {};
+  } else {
+    // If target doesn't have frontmatter, consider the entire content as target content
+    targetContent = target.trim();
+  }
+
+  // Merge frontmatter with target values taking precedence
+  const mergedFrontmatter: FrontMatterCache = { ...templateFrontmatterObj };
+
+  // Merge arrays by combining and removing duplicates
+  for (const key in targetFrontmatterObj) {
+    if (Array.isArray(targetFrontmatterObj[key]) && Array.isArray(mergedFrontmatter[key])) {
+      const combinedArray = [...new Set([...mergedFrontmatter[key], ...targetFrontmatterObj[key]])];
+      mergedFrontmatter[key] = combinedArray;
+    } else {
+      mergedFrontmatter[key] = targetFrontmatterObj[key];
+    }
+  }
+
+  // Convert merged frontmatter back to YAML
+  const mergedFrontmatterYaml = yaml.dump(mergedFrontmatter);
+
+  // Concatenate frontmatter and content
+  const mergedMarkdown = `---\n${mergedFrontmatterYaml}---\n${targetContent}\n\n${templateContent.trim()}\n`;
+
+  return mergedMarkdown;
+};

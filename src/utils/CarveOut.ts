@@ -4,10 +4,9 @@ import { getEA } from "src";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import { getCropFileNameAndFolder, getListOfTemplateFiles, splitFolderAndFilename } from "./FileUtils";
 import { Notice, TFile } from "obsidian";
-import ExcalidrawView from "src/ExcalidrawView";
-import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 
 export const CROPPED_PREFIX = "cropped_";
+export const ANNOTATED_PREFIX = "annotated_";
 
 export const carveOutImage = async (sourceEA: ExcalidrawAutomate, viewImageEl: ExcalidrawImageElement) => {
   if(!viewImageEl?.fileId) return;

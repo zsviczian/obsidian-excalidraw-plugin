@@ -17,6 +17,41 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.0.26":`
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/tHUcD4rWIuY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## New
+- Minor updates from [Excalidraw.com](https://excalidraw.com). The key change is text measurements that should result in consistent text sizing between desktop and mobile devices.
+- Now you can embed the markdown section of an Excalidraw note to your drawing. Simply select ${String.fromCharCode(96)}Insert ANY file${String.fromCharCode(96)}, choose the drawing, and select the relevant heading section to embed.
+  - This also works with "back-of-the-drawing" markdown sections. Use the context menu ${String.fromCharCode(96)}Add back-of-note Card${String.fromCharCode(96)}. The action is also available on the Command Palette and in the Excalidraw-Obsidian Tools Panel.
+- Editing an embedded markdown note is now easier. Just press Enter when the element is selected. [#1650](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1650)
+- The crosshair cursor is now hidden when the freedraw tool is active and using a pen. [#1659](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1659)
+- ${String.fromCharCode(96)}Convert markdown note to Excalidraw Drawing${String.fromCharCode(96)} now converts an existing markdown note (not just empty notes) into a drawing. The original markdown note will be on the "back side of the drawing".
+- Introducing ${String.fromCharCode(96)}Annotate image in Excalidraw${String.fromCharCode(96)}, which works very similarly to ${String.fromCharCode(96)}Crop and mask image${String.fromCharCode(96)}. You can replace an image in a markdown note or on the Obsidian Canvas with an Excalidraw drawing containing that image. You will be able to annotate the image in Excalidraw.
+- Now you can reference frames in images embedded in markdown and canvas with frame names e.g. ${String.fromCharCode(96)}![[drawing#^frame=Frame 01]]${String.fromCharCode(96)}
+- Excalidraw file format change:
+  - New frontmatter switch ${String.fromCharCode(96)}excalidraw-open-md${String.fromCharCode(96)}: If set to true, the file by default will open as a markdown file. You can switch to Excalidraw View Mode via the command palette action or by right-clicking the tab.
+  - Easter Egg: If you add a comment in front of ${String.fromCharCode(96)}# Text Elements${String.fromCharCode(96)}, then the entire Excalidraw data: markdown and JSON will be commented out, thus invisible when exporting to the web. If you remove the comment from before ${String.fromCharCode(96)}# Text Elements${String.fromCharCode(96)}, then only the JSON will be commented out.
+
+Before:
+${String.fromCharCode(96,96,96)}markdown
+#1657 
+%%
+# Text Elements
+...
+# Drawing
+${String.fromCharCode(96,96,96)}
+
+After:
+${String.fromCharCode(96,96,96)}markdown
+# Text Elements
+....
+%%
+# Drawing
+${String.fromCharCode(96,96,96)}
+`,
 "2.0.25":`
 # New - a small change that opens big opportunities
 - You can now set a folder as the Excalidraw Template in settings (See under Basic). If a folder is provided, Excalidraw will treat drawings in that folder as templates and will prompt you to select the template to use for new drawings.

@@ -5,7 +5,7 @@ import {
   TFile,
   Vault,
 } from "obsidian";
-import { RERENDER_EVENT } from "./constants/constants";
+import { DEVICE, RERENDER_EVENT } from "./constants/constants";
 import { EmbeddedFilesLoader } from "./EmbeddedFileLoader";
 import { createPNG, createSVG } from "./ExcalidrawAutomate";
 import { ExportSettings } from "./ExcalidrawView";
@@ -417,7 +417,10 @@ const createImgElement = async (
   });  
   eventElement.addEventListener("pointerdown",(ev)=>{
     if(imgOrDiv?.parentElement?.hasClass("canvas-node-content")) return;
-    timer = setTimeout(()=>clickEvent(ev),500);
+    //@ts-ignore
+    const PLUGIN = app.plugins.plugins["obsidian-excalidraw-plugin"] as ExcalidrawPlugin;
+    const timeoutValue = DEVICE.isDesktop ? PLUGIN.settings.longPressDesktop : PLUGIN.settings.longPressMobile;
+    timer = setTimeout(()=>clickEvent(ev),timeoutValue);
     pointerDownEvent = ev;
   });
   eventElement.addEventListener("pointerup",()=>{

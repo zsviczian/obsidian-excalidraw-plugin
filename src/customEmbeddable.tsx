@@ -89,7 +89,7 @@ function RenderObsidianView(
   const react = view.plugin.getPackage(view.ownerWindow).react;
   
   //@ts-ignore
-  const leafRef = react.useRef<{leaf: WorkspaceLeaf; node?: ObsidianCanvasNode} | null>(null);
+  const leafRef = react.useRef<{leaf: WorkspaceLeaf; node?: ObsidianCanvasNode, editNode?: Function} | null>(null);
   const isEditingRef = react.useRef(false);
   const isActiveRef = react.useRef(false);
   const themeRef = react.useRef(theme);
@@ -154,7 +154,7 @@ function RenderObsidianView(
 
 
   //--------------------------------------------------------------------------------
-  //mount the workspace leaf or the canvas node depending on subpath
+  //Mount the workspace leaf or the canvas node depending on subpath
   //--------------------------------------------------------------------------------
   react.useEffect(() => {
     if(!containerRef?.current) {
@@ -176,7 +176,8 @@ function RenderObsidianView(
     rootSplit.containerEl.style.borderRadius = "var(--embeddable-radius)";
     leafRef.current = {
       leaf: app.workspace.createLeafInParent(rootSplit, 0),
-      node: null
+      node: null,
+      editNode: null,
     };
 
     const setKeepOnTop = () => {
@@ -230,6 +231,9 @@ function RenderObsidianView(
     return () => {}; //cleanup on unmount
   }, [linkText, subpath, containerRef]);
   
+  //--------------------------------------------------------------------------------
+  //Set colors of the canvas node
+  //--------------------------------------------------------------------------------
   const setColors = (canvasNode: HTMLDivElement, element: NonDeletedExcalidrawElement, mdProps: EmbeddableMDCustomProps, canvasColor: string) => {
     if(!mdProps) return;
     if (!leafRef.current?.hasOwnProperty("node")) return;
@@ -289,6 +293,9 @@ function RenderObsidianView(
     }
   }
 
+  //--------------------------------------------------------------------------------
+  //Set colors of the canvas node
+  //--------------------------------------------------------------------------------
   react.useEffect(() => {
     if(!containerRef.current) {
       return;
@@ -304,6 +311,9 @@ function RenderObsidianView(
     canvasColor,
   ])
 
+  //--------------------------------------------------------------------------------
+  //Switch to preview mode when the iframe is not active
+  //--------------------------------------------------------------------------------
   react.useEffect(() => {
     if(isEditingRef.current) {
       if(leafRef.current?.node) {
@@ -318,9 +328,9 @@ function RenderObsidianView(
   //--------------------------------------------------------------------------------
   //Switch to edit mode when markdown view is clicked
   //--------------------------------------------------------------------------------
-  const handleClick = react.useCallback((event: React.PointerEvent<HTMLElement>) => {
+  const handleClick = react.useCallback((event?: React.PointerEvent<HTMLElement>) => {
     if(isActiveRef.current) {
-      event.stopPropagation();
+      event?.stopPropagation();
     }
 
     if (isActiveRef.current && !isEditingRef.current && leafRef.current?.leaf) {
@@ -348,6 +358,22 @@ function RenderObsidianView(
       }
     }
   }, [leafRef.current?.leaf, element.id, view, themeRef.current]);
+
+  if(leafRef.current)  leafRef.current.editNode = handleClick;
+  // Event listener for key press
+  react.useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      if (event.key === "Enter") {
+        handleClick(event); // Call handleClick function when Enter key is pressed
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyPress); // Add event listener for key press
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyPress); // Remove event listener when component unmounts
+    };
+  }, [handleClick]);
 
   //--------------------------------------------------------------------------------
   // Set isActiveRef and switch to preview mode when the iframe is not active
@@ -404,7 +430,6 @@ export const CustomEmbeddable: React.FC<{element: NonDeletedExcalidrawElement; v
   const containerRef: React.RefObject<HTMLDivElement> = react.useRef(null);
   const theme = getTheme(view, appState.theme);
   const mdProps: EmbeddableMDCustomProps = element.customData?.mdProps || null;
-
   return (
     <div
       ref={containerRef}

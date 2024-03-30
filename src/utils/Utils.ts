@@ -750,8 +750,8 @@ export const getContainerElement = (
   return null;
 };
 
-export const updateFrontmatterInString = (data:string, keyValuePairs: [string,string][]):string => {
-  if(!data) return data;
+export const updateFrontmatterInString = (data:string, keyValuePairs?: [string,string][]):string => {
+  if(!data || !keyValuePairs) return data;
   for(const kvp of keyValuePairs) {
     const r = new RegExp(`${kvp[0]}:\\s.*\\n`,"g");
     data = data.match(r) 

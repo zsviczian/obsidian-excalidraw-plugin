@@ -15,6 +15,7 @@ import { isWinALTorMacOPT, isWinCTRLorMacCMD, isSHIFT } from "src/utils/Modifier
 import { InsertPDFModal } from "src/dialogs/InsertPDFModal";
 import { ExportDialog } from "src/dialogs/ExportDialog";
 import { openExternalLink } from "src/utils/ExcalidrawViewUtils";
+import { UniversalInsertFileModal } from "src/dialogs/UniversalInsertFileModal";
 
 declare const PLUGIN_VERSION:string;
 const dark = '<svg style="stroke:#ced4da;#212529;color:#ced4da;fill:#ced4da" ';
@@ -461,11 +462,37 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     icon={ICONS.switchToMarkdown}
                     view={this.props.view}
                   />
+                  <ActionButton
+                    key={"link-to-element"}
+                    title={t("INSERT_LINK_TO_ELEMENT")}
+                    action={(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+                      if(isWinALTorMacOPT(e)) {
+                        openExternalLink("https://youtu.be/yZQoJg2RCKI", this.props.view.app);
+                        return;
+                      }
+                      this.props.view.copyLinkToSelectedElementToClipboard(
+                        isWinCTRLorMacCMD(e) ? "group=" : (isSHIFT(e) ? "area=" : "")
+                      );
+                    }}
+                    icon={ICONS.copyElementLink}
+                    view={this.props.view}
+                  />
                 </div>
               </fieldset>
               <fieldset>
                 <legend>Insert actions</legend>
                 <div className="buttonList buttonListIcon">
+                  <ActionButton
+                    key={"anyfile"}
+                    title={t("UNIVERSAL_ADD_FILE")}
+                    action={() => {
+                      this.props.centerPointer();
+                      const insertFileModal = new UniversalInsertFileModal(this.props.view.plugin, this.props.view);
+                      insertFileModal.open();
+                    }}
+                    icon={ICONS["add-file"]}
+                    view={this.props.view}
+                  />
                   <ActionButton
                     key={"image"}
                     title={t("INSERT_IMAGE")}
@@ -502,6 +529,16 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     view={this.props.view}
                   />
                   <ActionButton
+                    key={"insertBackOfNote"}
+                    title={t("INSERT_CARD")}
+                    action={() => {
+                      this.props.centerPointer();
+                      this.props.view.insertBackOfTheNoteCard();
+                    }}
+                    icon={ICONS.BackOfNote}
+                    view={this.props.view}
+                  />
+                  <ActionButton
                     key={"latex"}
                     title={t("INSERT_LATEX")}
                     action={(e) => {
@@ -526,21 +563,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                       );
                     }}
                     icon={ICONS.insertLink}
-                    view={this.props.view}
-                  />
-                  <ActionButton
-                    key={"link-to-element"}
-                    title={t("INSERT_LINK_TO_ELEMENT")}
-                    action={(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-                      if(isWinALTorMacOPT(e)) {
-                        openExternalLink("https://youtu.be/yZQoJg2RCKI", this.props.view.app);
-                        return;
-                      }
-                      this.props.view.copyLinkToSelectedElementToClipboard(
-                        isWinCTRLorMacCMD(e) ? "group=" : (isSHIFT(e) ? "area=" : "")
-                      );
-                    }}
-                    icon={ICONS.copyElementLink}
                     view={this.props.view}
                   />
                   <ActionButton

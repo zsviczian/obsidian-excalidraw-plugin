@@ -3,7 +3,7 @@ import ExcalidrawView from "../ExcalidrawView";
 import ExcalidrawPlugin from "../main";
 import {  Modal, Setting, TextComponent } from "obsidian";
 import { FileSuggestionModal } from "./FolderSuggester";
-import { IMAGE_TYPES, sceneCoordsToViewportCoords, viewportCoordsToSceneCoords, MAX_IMAGE_SIZE, ANIMATED_IMAGE_TYPES } from "src/constants/constants";
+import { IMAGE_TYPES, sceneCoordsToViewportCoords, viewportCoordsToSceneCoords, MAX_IMAGE_SIZE, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS } from "src/constants/constants";
 import { insertEmbeddableToView, insertImageToView } from "src/utils/ExcalidrawViewUtils";
 import { getEA } from "src";
 import { InsertPDFModal } from "./InsertPDFModal";
@@ -78,6 +78,7 @@ export class UniversalInsertFileModal extends Modal {
 
     const updateForm = async () => {
       const ea = this.plugin.ea;
+      const isSelf = file === this.view.file;
       const isMarkdown = file && file.extension === "md" && !ea.isExcalidrawFile(file);
       const isImage = file && (IMAGE_TYPES.contains(file.extension) || ea.isExcalidrawFile(file));
       const isAnimatedImage = file && ANIMATED_IMAGE_TYPES.contains(file.extension);
@@ -85,39 +86,43 @@ export class UniversalInsertFileModal extends Modal {
       const isPDF = file && file.extension === "pdf";
       const isExcalidraw = file && ea.isExcalidrawFile(file);
 
-      if (isMarkdown) {
+      const sections = file && file.extension === "md"
+      ? (await this.plugin.app.metadataCache.blockCache
+           .getForFile({ isCancelled: () => false },file))
+           .blocks.filter((b: any) => b.display && b.node?.type === "heading")
+           .filter((b: any) => !isExcalidraw || !MD_EX_SECTIONS.includes(b.display))
+      : null;
+
+      if (isMarkdown || (isExcalidraw && sections?.length > 0)) {
         sectionPickerSetting.settingEl.style.display = "";
         sectionPicker.selectEl.style.display = "block";
         while(sectionPicker.selectEl.options.length > 0) {
           sectionPicker.selectEl.remove(0);
         }
-        sectionPicker.addOption("","");
-        (await app.metadataCache.blockCache
-          .getForFile({ isCancelled: () => false },file))
-          .blocks.filter((b: any) => b.display && b.node?.type === "heading")
-          .forEach((b: any) => {
-            sectionPicker.addOption(
-              `#${cleanSectionHeading(b.display)}`,
-              b.display)
-          });
+        if(!isExcalidraw) sectionPicker.addOption("","");
+        sections.forEach((b: any) => {
+          sectionPicker.addOption(
+            `#${cleanSectionHeading(b.display)}`,
+            b.display)
+        });
       } else {
         sectionPickerSetting.settingEl.style.display = "none";
         sectionPicker.selectEl.style.display = "none";
       }
 
-      if (isExcalidraw) {
+      if (isExcalidraw && !isSelf) {
         sizeToggleSetting.settingEl.style.display = "";
       } else {
         sizeToggleSetting.settingEl.style.display = "none";
       }
 
-      if (isImage || (file?.extension === "md")) {
+      if (!isSelf && (isImage || (file?.extension === "md"))) {
         actionImage.buttonEl.style.display = "block";
       } else {
         actionImage.buttonEl.style.display = "none";
       }
 
-      if (isIFrame || isAnimatedImage) {
+      if (isIFrame || isAnimatedImage || (isExcalidraw && sections?.length > 0)) {
         actionIFrame.buttonEl.style.display = "block";
       } else {
         actionIFrame.buttonEl.style.display = "none";
@@ -131,9 +136,17 @@ export class UniversalInsertFileModal extends Modal {
 
     }
 
+    const sections = (await this.plugin.app.metadataCache.blockCache
+      .getForFile({ isCancelled: () => false },this.view.file))
+      .blocks.filter((b: any) => b.display && b.node?.type === "heading")
+      .filter((b: any) => !MD_EX_SECTIONS.includes(b.display));
+
     const search = new TextComponent(ce);
     search.inputEl.style.width = "100%";
-    const suggester = new FileSuggestionModal(this.app, search,app.vault.getFiles().filter((f: TFile) => f!==this.view.file));
+    const suggester = new FileSuggestionModal(
+      this.app,
+      search,
+      this.app.vault.getFiles().filter((f: TFile) => sections?.length > 0 || f!==this.view.file));
     search.onChange(() => {
       file = suggester.getSelectedItem();
       updateForm();  

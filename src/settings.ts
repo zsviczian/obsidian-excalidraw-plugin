@@ -33,11 +33,12 @@ import { EmbeddalbeMDFileCustomDataSettingsComponent } from "./dialogs/Embeddabl
 import { startupScript } from "./constants/starutpscript";
 import { ModifierKeySet, ModifierSetType } from "./utils/ModifierkeyHelper";
 import { ModifierKeySettingsComponent } from "./dialogs/ModifierKeySettings";
-import { CROPPED_PREFIX } from "./utils/CarveOut";
+import { ANNOTATED_PREFIX, CROPPED_PREFIX } from "./utils/CarveOut";
 
 export interface ExcalidrawSettings {
   folder: string;
   cropFolder: string;
+  annotateFolder: string;
   embedUseExcalidrawFolder: boolean;
   templateFilePath: string;
   scriptFolderPath: string;
@@ -52,6 +53,7 @@ export interface ExcalidrawSettings {
   drawingFilenameDateTime: string;
   useExcalidrawExtension: boolean;
   cropPrefix: string;
+  annotatePrefix: string;
   displaySVGInPreview: boolean; //No longer used since 1.9.13
   previewImageType: PreviewImageType; //Introduced with 1.9.13
   allowImageCache: boolean;
@@ -177,6 +179,8 @@ export interface ExcalidrawSettings {
   },
   slidingPanesSupport: boolean;
   areaZoomLimit: number;
+  longPressDesktop: number;
+  longPressMobile: number;
 }
 
 declare const PLUGIN_VERSION:string;
@@ -184,6 +188,7 @@ declare const PLUGIN_VERSION:string;
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   folder: "Excalidraw",
   cropFolder: "",
+  annotateFolder: "",
   embedUseExcalidrawFolder: false,
   templateFilePath: "Excalidraw/Template.excalidraw",
   scriptFolderPath: "Excalidraw/Scripts",
@@ -198,6 +203,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   drawingFilenameDateTime: "YYYY-MM-DD HH.mm.ss",
   useExcalidrawExtension: true,
   cropPrefix: CROPPED_PREFIX,
+  annotatePrefix: ANNOTATED_PREFIX,
   displaySVGInPreview: undefined,
   previewImageType: undefined,
   allowImageCache: true,
@@ -415,6 +421,8 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   },
   slidingPanesSupport: false,
   areaZoomLimit: 1,
+  longPressDesktop: 500,
+  longPressMobile: 500,
 };
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
@@ -572,6 +580,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.cropFolder)
           .onChange(async (value) => {
             this.plugin.settings.cropFolder = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("ANNOTATE_FOLDER_NAME"))
+      .setDesc(fragWithHTML(t("ANNOTATE_FOLDER_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder("e.g.: Excalidraw/Annotations")
+          .setValue(this.plugin.settings.annotateFolder)
+          .onChange(async (value) => {
+            this.plugin.settings.annotateFolder = value;
             this.applySettingsUpdate();
           }),
       );
@@ -772,7 +793,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-
     new Setting(detailsEl)
       .setName(t("CROP_PREFIX_NAME"))
       .setDesc(fragWithHTML(t("CROP_PREFIX_DESC")))
@@ -786,6 +806,23 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               "_",
             );
             text.setValue(this.plugin.settings.cropPrefix);
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("ANNOTATE_PREFIX_NAME"))
+      .setDesc(fragWithHTML(t("ANNOTATE_PREFIX_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder("e.g.: Annotated_ ")
+          .setValue(this.plugin.settings.annotatePrefix)
+          .onChange(async (value) => {
+            this.plugin.settings.annotatePrefix = value.replaceAll(
+              /[<>:"/\\|?*]/g,
+              "_",
+            );
+            text.setValue(this.plugin.settings.annotatePrefix);
             this.applySettingsUpdate();
           }),
       );
@@ -1150,6 +1187,48 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h3",
     });
     detailsEl.createDiv({ text: t("DRAG_MODIFIER_DESC"), cls: "setting-item-description" });
+
+    let longPressDesktop: HTMLDivElement;
+    new Setting(detailsEl)
+      .setName(t("LONG_PRESS_DESKTOP_NAME"))
+      .setDesc(fragWithHTML(t("LONG_PRESS_DESKTOP_DESC")))
+      .addSlider((slider) =>
+        slider
+          .setLimits(300, 100, 3000)
+          .setValue(this.plugin.settings.longPressDesktop)
+          .onChange(async (value) => {
+            longPressDesktop.innerText = ` ${value.toString()}`;
+            this.plugin.settings.longPressDesktop = value;
+            this.applySettingsUpdate(true);
+          }),
+      )
+      .settingEl.createDiv("", (el) => {
+        longPressDesktop = el;
+        el.style.minWidth = "2.3em";
+        el.style.textAlign = "right";
+        el.innerText = ` ${this.plugin.settings.longPressDesktop.toString()}`;
+      });
+
+    let longPressMobile: HTMLDivElement;
+    new Setting(detailsEl)
+      .setName(t("LONG_PRESS_MOBILE_NAME"))
+      .setDesc(fragWithHTML(t("LONG_PRESS_MOBILE_DESC")))
+      .addSlider((slider) =>
+        slider
+          .setLimits(300, 100, 3000)
+          .setValue(this.plugin.settings.longPressMobile)
+          .onChange(async (value) => {
+            longPressDesktop.innerText = ` ${value.toString()}`;
+            this.plugin.settings.longPressMobile = value;
+            this.applySettingsUpdate(true);
+          }),
+      )
+      .settingEl.createDiv("", (el) => {
+        longPressMobile = el;
+        el.style.minWidth = "2.3em";
+        el.style.textAlign = "right";
+        el.innerText = ` ${this.plugin.settings.longPressMobile.toString()}`;
+      });
 
     new ModifierKeySettingsComponent(
       detailsEl,
