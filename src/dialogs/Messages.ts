@@ -17,6 +17,18 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.1.0":`
+Bumping the version to 2.1.0 due to minor file format changes that aren't backward compatible. Essentially, 2.0.26 is already not backward compatible, but I forgot to update the version number.
+
+If you haven't watched the [walkthrough video](https://youtu.be/tHUcD4rWIuY) for 2.0.26, I recommend you do so.
+
+## New
+- Settings under ${String.fromCharCode(96)}Excalidraw Appearance and Behavior${String.fromCharCode(96)}
+  - Configure visibility of the crosshair cursor when using the pen tool. [#1673](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1673)
+  - Set the time delay for long press to open drawings from markdown under "Link Click and Modifier Keys".
+
+## 
+`,
 "2.0.26":`
 <div class="excalidraw-videoWrapper"><div>
 <iframe src="https://www.youtube.com/embed/tHUcD4rWIuY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

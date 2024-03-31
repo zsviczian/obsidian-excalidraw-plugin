@@ -69,6 +69,7 @@ export interface ExcalidrawSettings {
   matchThemeTrigger: boolean;
   defaultMode: string;
   defaultPenMode: "never" | "mobile" | "always";
+  penModeCrosshairVisible: boolean;
   allowPinchZoom: boolean;
   allowWheelZoom: boolean;
   zoomToFitOnOpen: boolean;
@@ -219,6 +220,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   matchThemeTrigger: false,
   defaultMode: "normal",
   defaultPenMode: "never",
+  penModeCrosshairVisible: false,
   allowPinchZoom: false,
   allowWheelZoom: false,
   zoomToFitOnOpen: true,
@@ -931,6 +933,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     );
 
     new Setting(detailsEl)
+      .setName(t("SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_NAME"))
+      .setDesc(fragWithHTML(t("SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.penModeCrosshairVisible)
+          .onChange(async (value) => {
+            this.plugin.settings.penModeCrosshairVisible = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
       .setName(t("LEFTHANDED_MODE_NAME"))
       .setDesc(fragWithHTML(t("LEFTHANDED_MODE_DESC")))
       .addToggle((toggle) =>
@@ -945,43 +959,43 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
-      addIframe(detailsEl, "H8Njp7ZXYag",999);
+    addIframe(detailsEl, "H8Njp7ZXYag",999);
 
-      detailsEl = displayDetailsEl.createEl("details");
-      detailsEl.createEl("summary", { 
-        text: t("THEME_HEAD"),
-        cls: "excalidraw-setting-h3",
-      });
-      
-      new Setting(detailsEl)
-        .setName(t("DYNAMICSTYLE_NAME"))
-        .setDesc(fragWithHTML(t("DYNAMICSTYLE_DESC")))
-        .addDropdown((dropdown) =>
-          dropdown
-            .addOption("none","Dynamic Styling OFF")
-            .addOption("colorful","Match color")
-            .addOption("gray","Gray, match tone")
-            .setValue(this.plugin.settings.dynamicStyling)
-            .onChange(async (value) => {
-              this.requestUpdateDynamicStyling = true;
-              this.plugin.settings.dynamicStyling = value as DynamicStyle;
-              this.applySettingsUpdate();
-            }),
-        );
-      addIframe(detailsEl, "fypDth_-8q0");
-  
-      new Setting(detailsEl)
-      .setName(t("IFRAME_MATCH_THEME_NAME"))
-      .setDesc(fragWithHTML(t("IFRAME_MATCH_THEME_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.iframeMatchExcalidrawTheme)
+    detailsEl = displayDetailsEl.createEl("details");
+    detailsEl.createEl("summary", { 
+      text: t("THEME_HEAD"),
+      cls: "excalidraw-setting-h3",
+    });
+    
+    new Setting(detailsEl)
+      .setName(t("DYNAMICSTYLE_NAME"))
+      .setDesc(fragWithHTML(t("DYNAMICSTYLE_DESC")))
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("none","Dynamic Styling OFF")
+          .addOption("colorful","Match color")
+          .addOption("gray","Gray, match tone")
+          .setValue(this.plugin.settings.dynamicStyling)
           .onChange(async (value) => {
-            this.plugin.settings.iframeMatchExcalidrawTheme = value;
-            this.applySettingsUpdate(true);
+            this.requestUpdateDynamicStyling = true;
+            this.plugin.settings.dynamicStyling = value as DynamicStyle;
+            this.applySettingsUpdate();
           }),
       );
-      addIframe(detailsEl, "ICpoyMv6KSs");
+    addIframe(detailsEl, "fypDth_-8q0");
+
+    new Setting(detailsEl)
+    .setName(t("IFRAME_MATCH_THEME_NAME"))
+    .setDesc(fragWithHTML(t("IFRAME_MATCH_THEME_DESC")))
+    .addToggle((toggle) =>
+      toggle
+        .setValue(this.plugin.settings.iframeMatchExcalidrawTheme)
+        .onChange(async (value) => {
+          this.plugin.settings.iframeMatchExcalidrawTheme = value;
+          this.applySettingsUpdate(true);
+        }),
+    );
+    addIframe(detailsEl, "ICpoyMv6KSs");
 
     new Setting(detailsEl)
       .setName(t("MATCH_THEME_NAME"))
@@ -1194,7 +1208,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("LONG_PRESS_DESKTOP_DESC")))
       .addSlider((slider) =>
         slider
-          .setLimits(300, 100, 3000)
+          .setLimits(300, 3000, 100)
           .setValue(this.plugin.settings.longPressDesktop)
           .onChange(async (value) => {
             longPressDesktop.innerText = ` ${value.toString()}`;
@@ -1215,10 +1229,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("LONG_PRESS_MOBILE_DESC")))
       .addSlider((slider) =>
         slider
-          .setLimits(300, 100, 3000)
+          .setLimits(300, 3000, 100)
           .setValue(this.plugin.settings.longPressMobile)
           .onChange(async (value) => {
-            longPressDesktop.innerText = ` ${value.toString()}`;
+            longPressMobile.innerText = ` ${value.toString()}`;
             this.plugin.settings.longPressMobile = value;
             this.applySettingsUpdate(true);
           }),

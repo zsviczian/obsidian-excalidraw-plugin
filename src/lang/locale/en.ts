@@ -281,6 +281,9 @@ FILENAME_HEAD: "Filename",
   DEFAULT_PEN_MODE_NAME: "Pen mode",
   DEFAULT_PEN_MODE_DESC:
     "Should pen mode be automatically enabled when opening Excalidraw?",
+  SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_NAME: "Show (+) crosshair in pen mode",
+  SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_DESC:
+    "Show crosshair in pen mode when using the freedraw tool. <b><u>Toggle ON:</u></b>SHOW <b><u>Toggle OFF:</u></b>HIDE",
   THEME_HEAD: "Theme and styling",
   ZOOM_HEAD: "Zoom",
   DEFAULT_PINCHZOOM_NAME: "Allow pinch zoom in pen mode",
