@@ -17,6 +17,16 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.1.1":`
+## Fixed
+- Printing a markdown page that has an Excalidraw drawing on the back side, resulted in an empty PDF. This is now resolved.
+
+## New
+- Reduce the visual clutter by fading out the Excalidraw markup in markdown view mode. This feature needs to be enabled in plugin settings. You'll find the setting under ${String.fromCharCode(96)}Miscellaneous features${String.fromCharCode(96)}. Look for ${String.fromCharCode(96)}Fade out Excalidraw markup${String.fromCharCode(96)}. Depending on the location of the markdown comment ${String.fromCharCode(96)}%%${String.fromCharCode(96)}, if the comment starts before ${String.fromCharCode(96)}# Text Elements${String.fromCharCode(96)} then the fading will start from ${String.fromCharCode(96)}# Text Elements${String.fromCharCode(96)}, if the comment is before ${String.fromCharCode(96)}# Drawing${String.fromCharCode(96)} then the fading will only start with "drawing". If you delete the opening ${String.fromCharCode(96)}%%${String.fromCharCode(96)} the markup will be visible. Note, that if you place the comment before ${String.fromCharCode(96)}#Text Elements${String.fromCharCode(96)}, you will not be able to reference blocks in the ${String.fromCharCode(96)}# Text Elements${String.fromCharCode(96)} section, because Obsidian does not index blocks within comment blocks. Image references are not effective, they will work.
+
+<img src="https://github.com/zsviczian/obsidian-excalidraw-plugin/assets/14358394/bb96cdb4-8c5f-4dc5-ad39-7fccee6d5cac" referrerpolicy="no-referrer" style="width: 150px; margin: 0 auto;">
+<img src="https://github.com/zsviczian/obsidian-excalidraw-plugin/assets/14358394/e627fdb7-6820-4d7d-97f9-a030016be9aa" referrerpolicy="no-referrer" style="width: 100%; margin: 0 auto;">
+`,
 "2.1.0":`
 Bumping the version to 2.1.0 due to minor file format changes that aren't backward compatible. Essentially, 2.0.26 is already not backward compatible, but I forgot to update the version number.
 

@@ -283,7 +283,8 @@ FILENAME_HEAD: "Filename",
     "Should pen mode be automatically enabled when opening Excalidraw?",
   SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_NAME: "Show (+) crosshair in pen mode",
   SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_DESC:
-    "Show crosshair in pen mode when using the freedraw tool. <b><u>Toggle ON:</u></b>SHOW <b><u>Toggle OFF:</u></b>HIDE",
+    "Show crosshair in pen mode when using the freedraw tool. <b><u>Toggle ON:</u></b> SHOW <b><u>Toggle OFF:</u></b> HIDE<br>"+
+    "The effect depends on the device. Crosshair is typically visible on drawing tablets, MS Surface, but not on iOS.",
   THEME_HEAD: "Theme and styling",
   ZOOM_HEAD: "Zoom",
   DEFAULT_PINCHZOOM_NAME: "Allow pinch zoom in pen mode",
@@ -611,6 +612,9 @@ FILENAME_HEAD: "Filename",
     "Turn this on to support image embedding styles such as ![[drawing|width|style]] in live preview editing mode. " +
     "The setting will not affect the currently open documents. You need close the open documents and re-open them for the change " +
     "to take effect.",
+  FADE_OUT_EXCALIDRAW_MARKUP_NAME: "Fade out Excalidraw markup",
+  FADE_OUT_EXCALIDRAW_MARKUP_DESC: "In Markdown view mode, the section after the markdown comment %% " +
+    "fades out. The text is still there, but the visual clutter is reduced",
   CUSTOM_FONT_HEAD: "Fourth font",
   ENABLE_FOURTH_FONT_NAME: "Enable fourth font option",
   ENABLE_FOURTH_FONT_DESC:

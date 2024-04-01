@@ -133,6 +133,7 @@ import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { CustomMutationObserver, durationTreshold, isDebugMode } from "./utils/DebugHelper";
 import { carveOutImage, carveOutPDF, createImageCropperFile, CROPPED_PREFIX } from "./utils/CarveOut";
 import { ExcalidrawConfig } from "./utils/ExcalidrawConfig";
+import { EditorHandler } from "./CodeMirrorExtension/EditorHandler";
 
 declare const EXCALIDRAW_PACKAGES:string;
 declare const react:any;
@@ -181,6 +182,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private removeEventLisnters:(()=>void)[] = [];
   private stylesManager:StylesManager;
   private textMeasureDiv:HTMLDivElement = null;
+  public editorHandler: EditorHandler;
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
@@ -262,6 +264,8 @@ export default class ExcalidrawPlugin extends Plugin {
     await this.loadSettings({reEnableAutosave:true});
     this.excalidrawConfig = new ExcalidrawConfig(this);
     await loadMermaid();
+    this.editorHandler = new EditorHandler(this);
+    this.editorHandler.setup();
     
     this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
     this.ea = await initExcalidrawAutomate(this);

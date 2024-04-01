@@ -34,6 +34,7 @@ import { startupScript } from "./constants/starutpscript";
 import { ModifierKeySet, ModifierSetType } from "./utils/ModifierkeyHelper";
 import { ModifierKeySettingsComponent } from "./dialogs/ModifierKeySettings";
 import { ANNOTATED_PREFIX, CROPPED_PREFIX } from "./utils/CarveOut";
+import { EDITOR_FADEOUT } from "./CodeMirrorExtension/EditorHandler";
 
 export interface ExcalidrawSettings {
   folder: string;
@@ -110,6 +111,7 @@ export interface ExcalidrawSettings {
   experimentalFileType: boolean;
   experimentalFileTag: string;
   experimentalLivePreview: boolean;
+  fadeOutExcalidrawMarkup: boolean;
   experimentalEnableFourthFont: boolean;
   experimantalFourthFont: string;
   fieldSuggester: boolean;
@@ -260,6 +262,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   experimentalFileType: false,
   experimentalFileTag: "✏️",
   experimentalLivePreview: true,
+  fadeOutExcalidrawMarkup: false,
   experimentalEnableFourthFont: false,
   experimantalFourthFont: "Virgil",
   fieldSuggester: true,
@@ -2256,6 +2259,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.experimentalLivePreview)
           .onChange(async (value) => {
             this.plugin.settings.experimentalLivePreview = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("FADE_OUT_EXCALIDRAW_MARKUP_NAME"))
+      .setDesc(fragWithHTML(t("FADE_OUT_EXCALIDRAW_MARKUP_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.fadeOutExcalidrawMarkup)
+          .onChange(async (value) => {
+            this.plugin.settings.fadeOutExcalidrawMarkup = value;
+            this.plugin.editorHandler.updateCMExtensionState(EDITOR_FADEOUT, value)
             this.applySettingsUpdate();
           }),
       );

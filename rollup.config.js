@@ -26,6 +26,7 @@ const react_pkg = isLib ? "" : isProd
 const reactdom_pkg = isLib ? "" : isProd
   ? fs.readFileSync("./node_modules/react-dom/umd/react-dom.production.min.js", "utf8")
   : fs.readFileSync("./node_modules/react-dom/umd/react-dom.development.js", "utf8");
+
 const lzstring_pkg = isLib ? "" : fs.readFileSync("./node_modules/lz-string/libs/lz-string.min.js", "utf8");
 if(!isLib) {
   const excalidraw_styles = isProd
@@ -58,7 +59,23 @@ const packageString = isLib
 
 const BASE_CONFIG = {
   input: 'src/main.ts',
-  external: ['obsidian', '@zsviczian/excalidraw', 'react', 'react-dom'],
+  external: [
+    '@codemirror/autocomplete',
+    '@codemirror/collab',
+    '@codemirror/commands',
+    '@codemirror/language',
+    '@codemirror/lint',
+    '@codemirror/search',
+    '@codemirror/state',
+    '@codemirror/view',
+    '@lezer/common',
+    '@lezer/highlight',
+    '@lezer/lr',
+    'obsidian',
+    '@zsviczian/excalidraw',
+    'react',
+    'react-dom'
+  ],
 }
 
 const getRollupPlugins = (tsconfig, ...plugins) =>
@@ -107,7 +124,9 @@ const BUILD_CONFIG = {
       //  npm install brettz9/rollup-plugin-postprocess#update --save-dev
       //  https://github.com/developit/rollup-plugin-postprocess/issues/10
       postprocess([
-        [/,React=require\("react"\);/, packageString],
+        //[/,React=require\("react"\);/, packageString],
+        [/React=require\("react"\),state=require\("@codemirror\/state"\),view=require\("@codemirror\/view"\)/,
+        `state=require("@codemirror/state"),view=require("@codemirror/view")` + packageString]
       ])
     ] 
     : [

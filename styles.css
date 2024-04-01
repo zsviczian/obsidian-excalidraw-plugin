@@ -560,3 +560,23 @@ img.excalidraw-cropped-pdfpage,
 .excalidraw .pdf-container {
   width: 100%;
 }
+
+.ex-opacity-30 {
+  opacity: 0.3;
+}
+
+.ex-opacity-15 {
+  opacity: 0.15;
+}
+
+.ex-opacity-8 {
+  opacity: 0.08;
+}
+
+.ex-opacity-5 {
+  opacity: 0.05;
+}
+
+.ex-opacity-0 {
+  opacity: 0;
+}

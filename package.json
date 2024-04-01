@@ -67,7 +67,12 @@
     "rollup-plugin-web-worker-loader": "^1.6.1",
     "tslib": "^2.6.1",
     "ttypescript": "^1.5.15",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "@codemirror/commands": "^6.3.3",
+    "@codemirror/language": "^6.10.0",
+    "@codemirror/search": "^6.5.5",
+    "@codemirror/state": "^6.4.0",
+    "@codemirror/view": "^6.23.0"
   },
   "resolutions": {
     "@typescript-eslint/typescript-estree": "5.3.0"
