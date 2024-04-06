@@ -3,8 +3,6 @@ import ExcalidrawPlugin from "src/main";
 import { HideTextBetweenCommentsExtension } from "./Fadeout";
 export const EDITOR_FADEOUT = "fadeOutExcalidrawMarkup";
 
-export let excalidrawPlugin: ExcalidrawPlugin = null;
-
 const editorExtensions: {[key:string]:Extension}= {
   [EDITOR_FADEOUT]: HideTextBetweenCommentsExtension, 
 }
@@ -12,9 +10,7 @@ const editorExtensions: {[key:string]:Extension}= {
 export class EditorHandler {
   private activeEditorExtensions: Extension[] = [];
 
-  constructor(private plugin: ExcalidrawPlugin) {
-    excalidrawPlugin = plugin; 
-  }
+  constructor(private plugin: ExcalidrawPlugin) {}
 
   setup(): void {
     this.plugin.registerEditorExtension(this.activeEditorExtensions);

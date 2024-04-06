@@ -42,6 +42,7 @@ import {
   LOCALE,
   IMAGE_TYPES,
   MD_TEXTELEMENTS,
+  setExcalidrawPlugin
 } from "./constants/constants";
 import {
   VIRGIL_FONT,
@@ -89,7 +90,6 @@ import {
   getListOfTemplateFiles,
   getNewUniqueFilepath,
   getURLImageExtension,
-  splitFolderAndFilename,
 } from "./utils/FileUtils";
 import {
   getFontDataURL,
@@ -192,6 +192,7 @@ export default class ExcalidrawPlugin extends Plugin {
     >();
     this.equationsMaster = new Map<FileId, string>();
     this.mermaidsMaster = new Map<FileId, string>();
+    setExcalidrawPlugin(this);
   }
 
   get locale() {
@@ -1540,16 +1541,18 @@ export default class ExcalidrawPlugin extends Plugin {
           new Notice("Select a single image element and try again");
           return false;
         }
-        const el = els[0] as ExcalidrawImageElement;
-        const ef = view.excalidrawData.getFile(el.fileId);
-        if(!ef) {
-          if(checking) return false;
-          new Notice("Select a single image element and try again");
-          return false;
-        }
         if(checking) return true;
-
+        
         (async () => {
+          const el = els[0] as ExcalidrawImageElement;
+          let ef = view.excalidrawData.getFile(el.fileId);
+          if(!ef) {
+            await view.forceSave();
+            let ef = view.excalidrawData.getFile(el.fileId);
+            new Notice("Select a single image element and try again");
+            return false;
+          }
+  
           const ea = new ExcalidrawAutomate(this,view);
           const size = await ea.getOriginalImageSize(el);
           if(size) {
@@ -2034,7 +2037,7 @@ export default class ExcalidrawPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: "universal-add-file",
+      id: "universal-card",
       name: t("INSERT_CARD"),
       checkCallback: (checking: boolean) => {
         if (checking) {

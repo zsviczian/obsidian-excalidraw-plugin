@@ -86,7 +86,7 @@ export class UniversalInsertFileModal extends Modal {
       const isPDF = file && file.extension === "pdf";
       const isExcalidraw = file && ea.isExcalidrawFile(file);
 
-      const sections = file && file.extension === "md"
+      const sections = (file && file.extension === "md")
       ? (await this.plugin.app.metadataCache.blockCache
            .getForFile({ isCancelled: () => false },file))
            .blocks.filter((b: any) => b.display && b.node?.type === "heading")

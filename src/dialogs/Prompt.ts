@@ -707,19 +707,22 @@ export const linkPrompt = async (linkText:string, app: App, view?: ExcalidrawVie
   let subpath: string = null;
   let file: TFile = null;
   let parts = partsArray[0];
-    if (partsArray.length > 1) {
-      parts = await ScriptEngine.suggester(
-        app,
-        partsArray.filter(p=>Boolean(p.value)).map(p => {
-          const alias = REGEX_LINK.getAliasOrLink(p);
-          return alias === "100%" ? REGEX_LINK.getLink(p) : alias;
-        }),
-        partsArray.filter(p=>Boolean(p.value)),
-        message,
-      );
-      if(!parts) return;
-    }
-  if(!parts) return;
+  if (partsArray.length > 1) {
+    parts = await ScriptEngine.suggester(
+      app,
+      partsArray.filter(p=>Boolean(p.value)).map(p => {
+        const alias = REGEX_LINK.getAliasOrLink(p);
+        return alias === "100%" ? REGEX_LINK.getLink(p) : alias;
+      }),
+      partsArray.filter(p=>Boolean(p.value)),
+      message,
+    );
+    if(!parts) return;
+  }
+
+  if(!parts) {
+    return;
+  }
   
   if (!parts.value) {
     openTagSearch(linkText, app);

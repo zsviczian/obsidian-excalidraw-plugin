@@ -137,6 +137,7 @@ import { CustomMutationObserver, isDebugMode } from "./utils/DebugHelper";
 import { extractCodeBlocks, postOpenAI } from "./utils/AIUtils";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { SelectCard } from "./dialogs/SelectCard";
+import { link } from "fs";
 
 declare const PLUGIN_VERSION:string;
 
@@ -948,20 +949,27 @@ export default class ExcalidrawView extends TextFileView {
     let linkText: string = null;
 
     if (selectedText?.id || selectedElementWithLink?.id) {
+      const selectedTextElement = selectedText.id
+      ? this.excalidrawAPI.getSceneElements().find((el:ExcalidrawElement)=>el.id === selectedText.id)
+      : null;
+
       linkText =
         selectedElementWithLink?.text ??
         (this.textMode === TextMode.parsed
           ? this.excalidrawData.getRawText(selectedText.id)
           : selectedText.text);
 
+        const partsArray = REGEX_LINK.getResList(linkText);
+      if (!linkText || partsArray.length === 0) {
+        linkText = selectedTextElement?.link;
+      }
+
       if (!linkText) {
-        return;
+          return;
       }
       linkText = linkText.replaceAll("\n", ""); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/187
 
-      const id = selectedText.id??selectedElementWithLink.id;
-      const el = this.excalidrawAPI.getSceneElements().filter((el:ExcalidrawElement)=>el.id === id)[0];
-      if(this.handleLinkHookCall(el,linkText,ev)) return;
+      if(this.handleLinkHookCall(selectedTextElement,linkText,ev)) return;
       if(openExternalLink(linkText, this.app)) return;
 
       const result = await linkPrompt(linkText, this.app, this);

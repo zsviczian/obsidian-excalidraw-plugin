@@ -17,6 +17,7 @@ import {
   exportToBlob,
   IMAGE_TYPES,
   FRONTMATTER_KEYS,
+  EXCALIDRAW_PLUGIN,
 } from "../constants/constants";
 import ExcalidrawPlugin from "../main";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
@@ -282,7 +283,7 @@ export const getSVG = async (
       svg = await cropObject.getCroppedSVG();
     } else {
       svg = await exportToSvg({
-        elements,
+        elements: elements.filter((el:ExcalidrawElement)=>el.isDeleted !== true),
         appState: {
           exportBackground: exportSettings.withBackground,
           exportWithDarkMode: exportSettings.withTheme
@@ -334,7 +335,7 @@ export const getPNG = async (
     }
 
     return await exportToBlob({
-      elements: scene.elements,
+      elements: scene.elements.filter((el:ExcalidrawElement)=>el.isDeleted !== true),
       appState: {
         exportBackground: exportSettings.withBackground,
         exportWithDarkMode: exportSettings.withTheme
@@ -433,13 +434,13 @@ export const addAppendUpdateCustomData = (el: Mutable<ExcalidrawElement>, newDat
 
 export const scaleLoadedImage = (
   scene: any,
-  files: any,
+  files: any
 ): { dirty: boolean; scene: any } => {
   let dirty = false;
   if (!files || !scene) {
     return { dirty, scene };
   }
-  for (const f of files) {
+  for (const f of files.filter((f:TFile)=>!EXCALIDRAW_PLUGIN?.isExcalidrawFile(f))) {
     const [w_image, h_image] = [f.size.width, f.size.height];
     const imageAspectRatio = f.size.width / f.size.height;
     scene.elements

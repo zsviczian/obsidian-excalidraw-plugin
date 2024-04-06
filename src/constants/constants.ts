@@ -2,8 +2,13 @@ import { customAlphabet } from "nanoid";
 import { DeviceType } from "../types";
 import { ExcalidrawLib } from "../ExcalidrawLib";
 import { moment } from "obsidian";
+import ExcalidrawPlugin from "src/main";
 //This is only for backward compatibility because an early version of obsidian included an encoding to avoid fantom links from littering Obsidian graph view
 declare const PLUGIN_VERSION:string;
+export let EXCALIDRAW_PLUGIN: ExcalidrawPlugin = null;
+export const setExcalidrawPlugin = (plugin: ExcalidrawPlugin) => {
+  EXCALIDRAW_PLUGIN = plugin;
+};
 export const MD_TEXTELEMENTS = "# Text Elements";
 export const MD_JSON_START = "```json\n";
 export const MD_JSON_END = "```";

@@ -17,6 +17,16 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.1.2":`
+## Quality of Life Improvements
+- The "Insert Any File" option that disappeared from the Command Palette is now restored. [#1690](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1690)
+- Improved two-finger pan speed.
+- Fixed text wrapping issue that caused text to jump around when editing text in a sticky note when the Obsidian zoom level was not set to 100%.
+- Mask Generation in [ExcaliAI](https://youtu.be/3G8hsV-V-gQ) Edit Image now works properly again. [#1684](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1684)
+- Fixed aspect ratio change for .jpg, .png, .bmp, .webp, .SVG (non-Excalidraw) images. Previously, if the image was distorted (i.e. you held SHIFT while resizing it), it would revert to the original aspect ratio upon saving the drawing. Resetting the aspect ratio is the desired behavior for nested Excalidraw drawings since you might have changed the source image and want it to still display with the correct aspect ratio, however for other image files, the behavior is not desired. [#1698](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1698)
+- The command palette action "Set selected image element size to 100% of original" now works even on freshly pasted images, not just after saving the drawing. ([#1695](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1698))
+- If a text element has an element link (CTRL/CMD+K), but the link was not reflected in the Element Text, then CTRL/CMD+clicking the text element did not navigate to the link, only clicking the link indicator did. Now you can also CTRL/CMD click anywhere on the text element and it will navigate. Note, however, that links in the text element text take precedence over element links.
+`,
 "2.1.1":`
 ## Fixed
 - Printing a markdown page that has an Excalidraw drawing on the back side, resulted in an empty PDF. This is now resolved.
