@@ -17,6 +17,9 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.1.3":`
+This is a republish of 2.1.2 with a minor change. Sorry about the frequent releases. I will hold back for a few weeks now.
+`,
 "2.1.2":`
 ## Quality of Life Improvements
 - The "Insert Any File" option that disappeared from the Command Palette is now restored. [#1690](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1690)

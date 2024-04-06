@@ -440,7 +440,7 @@ export const scaleLoadedImage = (
   if (!files || !scene) {
     return { dirty, scene };
   }
-  for (const f of files.filter((f:TFile)=>!EXCALIDRAW_PLUGIN?.isExcalidrawFile(f))) {
+  for (const f of files.filter((f:TFile)=>EXCALIDRAW_PLUGIN?.isExcalidrawFile(f))) {
     const [w_image, h_image] = [f.size.width, f.size.height];
     const imageAspectRatio = f.size.width / f.size.height;
     scene.elements
