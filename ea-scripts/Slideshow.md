@@ -41,7 +41,7 @@ const TRANSITION_STEP_COUNT = 100;
 const TRANSITION_DELAY = 1000; //maximum time for transition between slides in milliseconds
 const FRAME_SLEEP = 1; //milliseconds
 const EDIT_ZOOMOUT = 0.7; //70% of original slide zoom, set to a value between 1 and 0
-const FADE_LEVEL = 0.15; //opacity of the slideshow controls after fade delay (value between 0 and 1)
+const FADE_LEVEL = 0.1; //opacity of the slideshow controls after fade delay (value between 0 and 1)
 //using outerHTML because the SVG object returned by Obsidin is in the main workspace window
 //but excalidraw might be open in a popout window which has a different document object
 const SVG_COG = ea.obsidian.getIcon("lucide-settings").outerHTML;
@@ -738,6 +738,15 @@ const exitPresentation = async (openForEdit = false) => {
 const start = async () => {
   statusBarElement.style.display = "none";
   ea.setViewModeEnabled(true);
+  const helpButton = ea.targetView.excalidrawContainer?.querySelector(".ToolIcon__icon.help-icon");
+  if(helpButton) {
+    helpButton.style.display = "none";
+  }
+  const zoomButton = ea.targetView.excalidrawContainer?.querySelector(".Stack.Stack_vertical.zoom-actions");
+  if(zoomButton) {
+    zoomButton.style.display = "none";
+  }
+  
   createPresentationNavigationPanel();
   initializeEventListners();
   if(startFullscreen) {
