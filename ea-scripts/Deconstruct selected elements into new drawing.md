@@ -45,6 +45,16 @@ if(!settings["Templates"]) {
 	await ea.setScriptSettings(settings);
 }
 
+if(!settings["Default file name"]) {
+  settings["Default file name"] = {
+    value: "deconstructed",
+    description: "The default filename to use when deconstructing elements."
+  };
+  await ea.setScriptSettings(settings);
+}
+
+const DEFAULT_FILENAME = settings["Default file name"].value;
+
 const templates = settings["Templates"]
   .value
   .split(",")
@@ -144,7 +154,7 @@ const customControls =  (container) => {
 const path = await utils.inputPrompt(
   "Filename for new file",
   "Filename",
-  await ea.getAttachmentFilepath("deconstructed"),
+  await ea.getAttachmentFilepath(DEFAULT_FILENAME),
   actionButtons,
   2,
   false,
@@ -177,8 +187,14 @@ if(!f || !ea.isExcalidrawFile(f)) {
   new Notice("Something went wrong");
   return;
 }
+
+let padding = parseFloat(app.metadataCache.getCache(f.path)?.frontmatter["excalidraw-export-padding"]);
+if(isNaN(padding)) {
+  padding = ea.plugin.settings.exportPaddingSVG;
+}
+
 ea.getElements().forEach(el=>el.isDeleted = true);
-await ea.addImage(bb.topX,bb.topY,f,false, shouldAnchor);
+await ea.addImage(bb.topX-padding,bb.topY-padding,f,false, shouldAnchor);
 await ea.addElementsToView(false, true, true);
 ea.getExcalidrawAPI().history.clear();
 if(!window.ExcalidrawDeconstructElements.openDeconstructedImage) {
