@@ -139,6 +139,9 @@ export default {
   ANNOTATE_PREFIX_DESC:
     "The first part of the filename for new drawings created when annotating an image. " +
     "If empty the default 'annotated_' will be used.",
+  ANNOTATE_PRESERVE_SIZE_NAME: "Preserve image size when annotating",
+  ANNOTATE_PRESERVE_SIZE_DESC:
+    "When annotating an image in markdown the replacment image link will include the width of the original image.",
   CROP_FOLDER_NAME: "Crop file folder",
   CROP_FOLDER_DESC:
     "Default location for new drawings created when cropping an image. If empty, drawings will be created following the Vault attachments settings.",
@@ -285,6 +288,17 @@ FILENAME_HEAD: "Filename",
   SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_DESC:
     "Show crosshair in pen mode when using the freedraw tool. <b><u>Toggle ON:</u></b> SHOW <b><u>Toggle OFF:</u></b> HIDE<br>"+
     "The effect depends on the device. Crosshair is typically visible on drawing tablets, MS Surface, but not on iOS.",
+  SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME: "Render image when in markdown reading mode",
+  SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC:
+    "Must close the active excalidraw/markdown file and reopen it for this change to take effect.<br>When you are in markdown reading mode (aka. reading the back side of the drawing), should the Excalidraw drawing be rendered as an image? " +
+    "This setting will not affect the display of the drawing when you are in Excalidraw mode, when you embed the drawing into a markdown document or when rendering hover preview.<br><ul>" +
+    "<li>See other related setting for <b>PDF Export</b> under 'Embedding and Exporting' further below.</li>" +
+    "<li>Be sure to check out the <b>Fade Out setting</b> in the 'Miscellaneous fetures' section.</li></ul>",
+  SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME: "Render image when EXPORT TO PDF in markdown mode",
+  SHOW_DRAWING_OR_MD_IN_EXPORTPDF_DESC:
+    "Must close the active excalidraw/markdown file and reopen for this change to take effect.<br>When you are printing the markdown side of the note to PDF (aka. the back side of the drawing), should the Excalidraw drawing be rendered as an image?<br><ul>" +
+    "<li>See other related setting for <b>Markdown Reading Mode</b> under 'Appearnace and Behavior' further above.</li>" +
+    "<li>Be sure to check out the <b>Fade Out setting</b> in the 'Miscellaneous fetures' section.</li></ul>",
   THEME_HEAD: "Theme and styling",
   ZOOM_HEAD: "Zoom",
   DEFAULT_PINCHZOOM_NAME: "Allow pinch zoom in pen mode",
@@ -381,7 +395,7 @@ FILENAME_HEAD: "Filename",
     `${labelCTRL()}+CLICK on text with [[links]] or [](links) to open them`,
   LINK_CTRL_CLICK_DESC:
     "You can turn this feature off if it interferes with default Excalidraw features you want to use. If " +
-    "this is turned off, only the link button in the title bar of the drawing pane will open links.",
+    `this is turned off, you can either use ${labelCTRL()} + ${labelMETA()} or the link indicator in the top right of the element to open links.`,
   TRANSCLUSION_WRAP_NAME: "Overflow wrap behavior of transcluded text",
   TRANSCLUSION_WRAP_DESC:
     "Number specifies the character count where the text should be wrapped. " +
@@ -523,6 +537,10 @@ FILENAME_HEAD: "Filename",
   EXPORT_THEME_DESC:
     "Export the image matching the dark/light theme of your drawing. If turned off, " +
     "drawings created in dark mode will appear as they would in light mode.",
+  EXPORT_EMBED_SCENE_NAME: "Embed scene in exported image",
+  EXPORT_EMBED_SCENE_DESC:
+    "Embed Excalidraw scene in exported image. Can be overridden at a file level by adding the <code>excalidraw-export-embed-scene: true/false<code> frontmatter key. " +
+    "The setting only takes effect the next time you (re)open drawings.",
   EXPORT_HEAD: "Auto-export Settings",
   EXPORT_SYNC_NAME:
     "Keep the .SVG and/or .PNG filenames in sync with the drawing file",
@@ -614,7 +632,9 @@ FILENAME_HEAD: "Filename",
     "to take effect.",
   FADE_OUT_EXCALIDRAW_MARKUP_NAME: "Fade out Excalidraw markup",
   FADE_OUT_EXCALIDRAW_MARKUP_DESC: "In Markdown view mode, the section after the markdown comment %% " +
-    "fades out. The text is still there, but the visual clutter is reduced",
+    "fades out. The text is still there, but the visual clutter is reduced. Note, you can place the %% in the line right above # Text Elements, " +
+    "in this case the entire drawing markdown will fade out including # Text Elements. The side effect is you won't be able to block reference text in other markdown notes, that is after the %% comment section. This is seldom an issue. " +
+    "Should you want to edit the Excalidraw markdown script, simply switch to markdown view mode and temporarily remove the %% comment.",
   CUSTOM_FONT_HEAD: "Fourth font",
   ENABLE_FOURTH_FONT_NAME: "Enable fourth font option",
   ENABLE_FOURTH_FONT_DESC:

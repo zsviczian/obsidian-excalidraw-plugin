@@ -114,7 +114,18 @@ export default class Taskbone {
       }]
     };
 
-    const apiResponse = await requestUrl ({
+    const apiResponse = await fetch(url,{
+      method: "post",
+      //@ts-ignore
+      contentType: "application/json",
+      body: JSON.stringify(input),
+      headers: {
+        "Content-Type": "application/json",
+        authorization: `Bearer ${this.apiKey}`
+    }});
+    const content = await apiResponse?.json();
+
+    /*const apiResponse = await requestUrl ({
       url: url,
       method: "post",
       contentType: "application/json",
@@ -124,7 +135,7 @@ export default class Taskbone {
       },
       throw: false 
     });
-    const content = apiResponse?.json;
+    const content = apiResponse?.json;*/
     
     if(!content || apiResponse.status !== 200) {
       new Notice("Something went wrong while processing your request. Please check developer console for more information");

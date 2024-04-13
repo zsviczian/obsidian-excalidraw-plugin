@@ -367,11 +367,22 @@ export const getInternalLinkOrFileURLLink = (
  */
 export const getLink = ( 
   plugin: ExcalidrawPlugin,
-  { embed = true, path, alias }: { embed?: boolean; path: string; alias?: string }
+  { embed = true, path, alias }: { embed?: boolean; path: string; alias?: string },
+  wikilinkOverride?: boolean
 ):string => {
-  return plugin.settings.embedWikiLink
+  const isWikiLink = (typeof wikilinkOverride !== "undefined")
+    ? wikilinkOverride
+    : plugin.settings.embedWikiLink;
+  return isWikiLink
     ? `${embed ? "!" : ""}[[${path}${alias ? `|${alias}` : ""}]]`
     : `${embed ? "!" : ""}[${alias ?? ""}](${encodeURI(path)})`
+}
+
+export const getAliasWithSize = (alias: string, size: string): string => {
+  if(alias && alias !== "") {
+    return `${alias}${size?`|${size}`:""}`;
+  }
+  return size;
 }
 
 export const getCropFileNameAndFolder = async (plugin: ExcalidrawPlugin, hostPath: string, baseNewFileName: string):Promise<{folderpath: string, filename: string}> => {

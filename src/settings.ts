@@ -55,6 +55,7 @@ export interface ExcalidrawSettings {
   useExcalidrawExtension: boolean;
   cropPrefix: string;
   annotatePrefix: string;
+  annotatePreserveSize: boolean;
   displaySVGInPreview: boolean; //No longer used since 1.9.13
   previewImageType: PreviewImageType; //Introduced with 1.9.13
   allowImageCache: boolean;
@@ -71,6 +72,8 @@ export interface ExcalidrawSettings {
   defaultMode: string;
   defaultPenMode: "never" | "mobile" | "always";
   penModeCrosshairVisible: boolean;
+  renderImageInMarkdownReadingMode: boolean,
+  renderImageInMarkdownToPDF: boolean,
   allowPinchZoom: boolean;
   allowWheelZoom: boolean;
   zoomToFitOnOpen: boolean;
@@ -98,6 +101,7 @@ export interface ExcalidrawSettings {
   exportWithTheme: boolean;
   exportWithBackground: boolean;
   exportPaddingSVG: number;
+  exportEmbedScene: boolean;
   keepInSync: boolean;
   autoexportSVG: boolean;
   autoexportPNG: boolean;
@@ -207,6 +211,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   useExcalidrawExtension: true,
   cropPrefix: CROPPED_PREFIX,
   annotatePrefix: ANNOTATED_PREFIX,
+  annotatePreserveSize: false,
   displaySVGInPreview: undefined,
   previewImageType: undefined,
   allowImageCache: true,
@@ -222,7 +227,9 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   matchThemeTrigger: false,
   defaultMode: "normal",
   defaultPenMode: "never",
-  penModeCrosshairVisible: false,
+  penModeCrosshairVisible: true,
+  renderImageInMarkdownReadingMode: false,
+  renderImageInMarkdownToPDF: false,
   allowPinchZoom: false,
   allowWheelZoom: false,
   zoomToFitOnOpen: true,
@@ -250,6 +257,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   exportWithTheme: true,
   exportWithBackground: true,
   exportPaddingSVG: 10, //since 1.6.17, not only SVG but also PNG
+  exportEmbedScene: false,
   keepInSync: false,
   autoexportSVG: false,
   autoexportPNG: false,
@@ -831,6 +839,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
+    
+    new Setting(detailsEl)
+      .setName(t("ANNOTATE_PRESERVE_SIZE_NAME"))
+      .setDesc(fragWithHTML(t("ANNOTATE_PRESERVE_SIZE_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.annotatePreserveSize)
+          .onChange(async (value) => {
+            this.plugin.settings.annotatePreserveSize = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
     //------------------------------------------------
     // AI Settings
     //------------------------------------------------
@@ -943,6 +964,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.penModeCrosshairVisible)
           .onChange(async (value) => {
             this.plugin.settings.penModeCrosshairVisible = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME"))
+      .setDesc(fragWithHTML(t("SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.renderImageInMarkdownReadingMode)
+          .onChange(async (value) => {
+            this.plugin.settings.renderImageInMarkdownReadingMode = value;
             this.applySettingsUpdate();
           }),
       );
@@ -1708,12 +1741,36 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h3",
     });
     addIframe(detailsEl, "wTtaXmRJ7wg",171);
+
+    new Setting(detailsEl)
+    .setName(t("SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME"))
+    .setDesc(fragWithHTML(t("SHOW_DRAWING_OR_MD_IN_EXPORTPDF_DESC")))
+    .addToggle((toggle) =>
+      toggle
+        .setValue(this.plugin.settings.renderImageInMarkdownToPDF)
+        .onChange(async (value) => {
+          this.plugin.settings.renderImageInMarkdownToPDF = value;
+          this.applySettingsUpdate();
+        }),
+    );
+
+    new Setting(detailsEl)
+      .setName(t("EXPORT_EMBED_SCENE_NAME"))
+      .setDesc(fragWithHTML(t("EXPORT_EMBED_SCENE_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.exportEmbedScene)
+          .onChange(async (value) => {
+            this.plugin.settings.exportEmbedScene = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
     detailsEl = exportDetailsEl.createEl("details");
     detailsEl.createEl("summary", { 
       text: t("EMBED_SIZING"),
       cls: "excalidraw-setting-h4",
     });
-
     new Setting(detailsEl)
       .setName(t("EMBED_WIDTH_NAME"))
       .setDesc(fragWithHTML(t("EMBED_WIDTH_DESC")))

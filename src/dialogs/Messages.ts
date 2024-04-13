@@ -17,6 +17,24 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.1.4":`
+## Fixed
+- Fixed the **aspect ratio** of an Excalidraw embedded within another Excalidraw **not updating**. [#1707](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1707)
+- Some plugins automatically add document properties to all files in the Vault. Users with this configuration were **unable to run Excalidraw scripts**. Excalidraw now removes document properties from the script before execution.
+- The very last markdown edit sometimes **wasn't saved when immediately switching from Markdown to Excalidraw View**. I now force a save before switching views. 
+- The setting to disable/enable ${String.fromCharCode(96)}CTRL/CMD + CLICK on text with [[links]] or [](links) to open them${String.fromCharCode(96)} works again. [#1704](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1704)
+- **Annotation and cropping** of images in Markdown notes now also work **with Markdown links that have encoded characters** e.g.: ${String.fromCharCode(96)}![images with](markdown%20links)${String.fromCharCode(96)}.
+- Solved compatibility issue of **Taskbone OCR on Android**.
+
+## New
+- New settings:
+  - Under "Appearance and Behavior": Option to **render Excalidraw file as an image in Markdown reading mode**. This setting is disabled by default. [#1706](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1706), [#1705](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1705)
+  - Under "Embedding Excalidraw ... and Exporting"/"Export Settings": Option to **render Excalidraw file as an image when exporting to PDF** in Markdown mode. This option is disabled by default. When enabled, exporting an Excalidraw drawing in markdown view mode to PDF will render the image on the page.
+- **Enhanced annotation and cropping** of images in Markdown documents:
+  - Newly embedded **links will now follow the style of the original link**. If the original format was a ${String.fromCharCode(96)}![markdown](link)${String.fromCharCode(96)}, the annotated file will follow this format. For ${String.fromCharCode(96)}[[wiki links]]${String.fromCharCode(96)}, it will follow that style. Additionally, if an alias was specified like ${String.fromCharCode(96)}[[link|alias]]${String.fromCharCode(96)}, the annotated or cropped image will retain the alias.
+  - Introduced a new setting under "Saving" titled **"Preserve image size when annotating"**. This setting is disabled by default. When enabled, the embed link replacing the annotated image will maintain the size of the original image.
+- Option to **automaticaly embed the scene in exported PNG and SVG image files**. Including the scene will allow users to open the picture on Excalidraw.com or in another Obsidian Vault as an editable Excalidraw file.New setting is under the Export category. The new frontmatter tag is: ${String.fromCharCode(96)}excalidraw-export-embed-scene: true/false${String.fromCharCode(96)}.
+`,
 "2.1.3":`
 This is a republish of 2.1.2 with a minor change. Sorry about the frequent releases. I will hold back for a few weeks now.
 `,

@@ -16,6 +16,7 @@ import {
 //import Excalidraw from "@zsviczian/excalidraw";
 import {
   ExcalidrawElement,
+  ExcalidrawGenericElement,
   ExcalidrawImageElement,
   ExcalidrawTextElement,
   FileId,
@@ -101,6 +102,8 @@ import {
   isContainer,
   fragWithHTML,
   isMaskFile,
+  shouldEmbedScene,
+  getContainerElement,
 } from "./utils/Utils";
 import { cleanSectionHeading, getLeaf, getParentOfClass, obsidianPDFQuoteWithRef, openLeaf } from "./utils/ObsidianUtils";
 import { splitFolderAndFilename } from "./utils/FileUtils";
@@ -434,6 +437,10 @@ export default class ExcalidrawView extends TextFileView {
       isMask: isMaskFile(this.plugin, this.file),
     };
 
+    if(typeof embedScene === "undefined") {
+      embedScene = shouldEmbedScene(this.plugin, this.file);
+    }
+
     return await getSVG(
       {
         ...scene,
@@ -512,6 +519,11 @@ export default class ExcalidrawView extends TextFileView {
       withTheme: true,
       isMask: isMaskFile(this.plugin, this.file),
     };
+
+    if(typeof embedScene === "undefined") {
+      embedScene = shouldEmbedScene(this.plugin, this.file);
+    }
+
     return await getPNG(
       {
         ...scene,
@@ -778,6 +790,7 @@ export default class ExcalidrawView extends TextFileView {
             [FRONTMATTER_KEYS["export-dark"].name, this.exportDialog.theme === "dark" ? "true" : "false"],
             [FRONTMATTER_KEYS["export-transparent"].name, this.exportDialog.transparent ? "true" : "false"],
             [FRONTMATTER_KEYS["plugin"].name, this.textMode === TextMode.raw ? "raw" : "parsed"],
+            [FRONTMATTER_KEYS["export-embed-scene"].name, this.exportDialog.embedScene ? "true" : "false"], 
           ]
         : [
             [FRONTMATTER_KEYS["plugin"].name, this.textMode === TextMode.raw ? "raw" : "parsed"]
@@ -949,7 +962,7 @@ export default class ExcalidrawView extends TextFileView {
     let linkText: string = null;
 
     if (selectedText?.id || selectedElementWithLink?.id) {
-      const selectedTextElement = selectedText.id
+      const selectedTextElement: ExcalidrawTextElement = selectedText.id
       ? this.excalidrawAPI.getSceneElements().find((el:ExcalidrawElement)=>el.id === selectedText.id)
       : null;
 
@@ -961,8 +974,19 @@ export default class ExcalidrawView extends TextFileView {
 
         const partsArray = REGEX_LINK.getResList(linkText);
       if (!linkText || partsArray.length === 0) {
-        linkText = selectedTextElement?.link;
+        //the container link takes precedence over the text link
+        if(selectedTextElement?.containerId) {
+          const container = getContainerElement(selectedTextElement, {elements: this.excalidrawAPI.getSceneElements()});
+          if(container) {
+            linkText = container.link;
+          }
+        }
+        if(!linkText) {
+          linkText = selectedTextElement?.link;
+        }
       }
+
+
 
       if (!linkText) {
           return;
@@ -3101,7 +3125,7 @@ export default class ExcalidrawView extends TextFileView {
     if (!(isWinCTRLorMacCMD(e)||isWinMETAorMacCTRL(e))) {
       return;
     } 
-    if (!this.plugin.settings.allowCtrlClick && !!isWinMETAorMacCTRL(e)) {
+    if (!this.plugin.settings.allowCtrlClick && !isWinMETAorMacCTRL(e)) {
       return;
     }
     //added setTimeout when I changed onClick(e: MouseEvent) to onPointerDown() in 1.7.9. 

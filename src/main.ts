@@ -81,6 +81,7 @@ import {
   checkAndCreateFolder,
   download,
   fileShouldDefaultAsExcalidraw,
+  getAliasWithSize,
   getAnnotationFileNameAndFolder,
   getCropFileNameAndFolder,
   getDrawingFilename,
@@ -101,6 +102,7 @@ import {
   getExportTheme,
   isCallerFromTemplaterPlugin,
   decompress,
+  getImageSize,
 } from "./utils/Utils";
 import { extractSVGPNGFileName, getActivePDFPageNumberFromPDFView, getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark, mergeMarkdownFiles, openLeaf } from "./utils/ObsidianUtils";
 import { ExcalidrawElement, ExcalidrawEmbeddableElement, ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
@@ -1735,7 +1737,11 @@ export default class ExcalidrawPlugin extends Plugin {
           const line = editor.getLine(cursor.line);
           const parts = REGEX_LINK.getResList(line);
           if(parts.length === 0) return false;
-          const imgpath = REGEX_LINK.getLink(parts[0]);
+          let imgpath = REGEX_LINK.getLink(parts[0]);
+          const isWikilink = REGEX_LINK.isWikiLink(parts[0]);
+          let alias = REGEX_LINK.getAliasOrLink(parts[0]);
+          if(alias === imgpath) alias = null;
+          imgpath = decodeURI(imgpath);
           const imagePathParts = imgpath.split("#");
           const hasRef = imagePathParts.length === 2;
           const imageFile = this.app.metadataCache.getFirstLinkpathDest(
@@ -1759,11 +1765,11 @@ export default class ExcalidrawPlugin extends Plugin {
             const pdfLink = isFile && ref 
               ? "\n" + getLink(this ,{
                   embed: false,
-                  alias: `${imageFile.basename}, ${ref.replace("="," ")}`,
+                  alias: alias ?? `${imageFile.basename}, ${ref.replace("="," ")}`,
                   path:`${imageFile.path}#${ref}`
-                }) 
+                }, isWikilink) 
               : "";
-            editor.setLine(cursor.line,lineparts[0] + getLink(this ,{embed: true, path:link}) + pdfLink + lineparts[1]);
+            editor.setLine(cursor.line,lineparts[0] + getLink(this ,{embed: true, path:link, alias}, isWikilink) + pdfLink + lineparts[1]);
           }
           carveout(isFile, markdownView.file, imageFile, imagepath, replacer, ref);
         }
@@ -1792,8 +1798,11 @@ export default class ExcalidrawPlugin extends Plugin {
             new Notice(`Can't load image\n\n${imageURL}`);
             return;
           }
-          ea.getElement(imageID).locked = true;
-          
+          const el = ea.getElement(imageID) as Mutable<ExcalidrawImageElement>;
+          el.locked = true;
+          const size = this.settings.annotatePreserveSize
+            ? await getImageSize(ea.imagesDict[el.fileId].dataURL)
+            : null;
           let fnBase = "";
           let imageLink = "";
           if(isFile) {
@@ -1841,7 +1850,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
           if(!newFile) return;
           const link = this.app.metadataCache.fileToLinktext(newFile,sourceFile.path, true);
-          replacer(link, newFile);
+          replacer(link, newFile, size ? `${size.width}` : null);
         }
 
         if(isCanvas) {
@@ -1883,7 +1892,11 @@ export default class ExcalidrawPlugin extends Plugin {
           const line = editor.getLine(cursor.line);
           const parts = REGEX_LINK.getResList(line);
           if(parts.length === 0) return false;
-          const imgpath = REGEX_LINK.getLink(parts[0]);
+          let imgpath = REGEX_LINK.getLink(parts[0]);
+          const isWikilink = REGEX_LINK.isWikiLink(parts[0]);
+          let alias = REGEX_LINK.getAliasOrLink(parts[0]);
+          if(alias === imgpath) alias = null;
+          imgpath = decodeURI(imgpath);
           const imagePathParts = imgpath.split("#");
           const hasRef = imagePathParts.length === 2;
           const imageFile = this.app.metadataCache.getFirstLinkpathDest(
@@ -1902,16 +1915,19 @@ export default class ExcalidrawPlugin extends Plugin {
           if(extension !== "pdf" && !IMAGE_TYPES.contains(extension) && !isExcalidraw) return false;
           if(checking) return true;
           const ref = imagePathParts[1];
-          const replacer = (link:string) => {
+          const replacer = (link:string, _:TFile, size:string) => {
             const lineparts = line.split(parts[0].value[0]) 
             const pdfLink = isFile && ref 
               ? "\n" + getLink(this ,{
                   embed: false,
-                  alias: `${imageFile.basename}, ${ref.replace("="," ")}`,
+                  alias: getAliasWithSize(alias ?? `${imageFile.basename}, ${ref.replace("="," ")}`,size),
                   path:`${imageFile.path}#${ref}`
-                }) 
+                }, isWikilink) 
               : "";
-            editor.setLine(cursor.line,lineparts[0] + getLink(this ,{embed: true, path:link}) + pdfLink + lineparts[1]);
+            editor.setLine(
+              cursor.line,
+              lineparts[0] + getLink(this ,{embed: true, path:link, alias: getAliasWithSize(alias,size)}, isWikilink) + pdfLink + lineparts[1]
+            );
           }
           carveout(isFile, markdownView.file, imageFile, imagepath, replacer, ref);
         }
@@ -2096,10 +2112,13 @@ export default class ExcalidrawPlugin extends Plugin {
 
         const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView)
         if (markdownView && fileIsExcalidraw) {
-          const activeLeaf = markdownView.leaf;
-          this.excalidrawFileModes[(activeLeaf as any).id || activeFile.path] =
-            VIEW_TYPE_EXCALIDRAW;
-          this.setExcalidrawView(activeLeaf);
+          (async()=>{
+            await markdownView.save();
+            const activeLeaf = markdownView.leaf;
+            this.excalidrawFileModes[(activeLeaf as any).id || activeFile.path] =
+              VIEW_TYPE_EXCALIDRAW;
+            this.setExcalidrawView(activeLeaf);
+          })()
           return;
         }
       },
@@ -2125,6 +2144,7 @@ export default class ExcalidrawPlugin extends Plugin {
         }
 
         (async () => {
+          await activeView.save();
           const template = await this.getBlankDrawing();
           const target = await this.app.vault.read(activeFile);
           const mergedTarget = mergeMarkdownFiles(template, target);
@@ -2252,7 +2272,8 @@ export default class ExcalidrawPlugin extends Plugin {
           .setTitle(t("OPEN_AS_EXCALIDRAW"))
           .setIcon(ICON_NAME)
           .setSection("excalidraw")
-          .onClick(() => {
+          .onClick(async () => {
+            await view.save();
             //@ts-ignore
             this.excalidrawFileModes[leaf.id || file.path] = VIEW_TYPE_EXCALIDRAW;
             this.setExcalidrawView(leaf);
@@ -2263,7 +2284,9 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.registerEvent(      
       app.workspace.on("file-menu", (menu, file, source, leaf) => {
-        if (!leaf || !(leaf.view instanceof MarkdownView)) return;
+        if (!leaf) return;
+        const view = leaf.view;
+        if(!view || !(view instanceof MarkdownView)) return;
         if (!(file instanceof TFile)) return;
         const cache = this.app.metadataCache.getFileCache(file);
         if (!cache?.frontmatter || !cache.frontmatter[FRONTMATTER_KEYS["plugin"].name]) return;
@@ -2273,7 +2296,8 @@ export default class ExcalidrawPlugin extends Plugin {
           .setTitle(t("OPEN_AS_EXCALIDRAW"))
           .setIcon(ICON_NAME)
           .setSection("pane")
-          .onClick(() => {
+          .onClick(async () => {
+            await view.save();
             //@ts-ignore
             this.excalidrawFileModes[leaf.id || file.path] = VIEW_TYPE_EXCALIDRAW;
             this.setExcalidrawView(leaf);

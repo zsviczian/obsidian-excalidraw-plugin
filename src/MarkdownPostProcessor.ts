@@ -592,8 +592,18 @@ const tmpObsidianWYSIWYG = async (
     
   //@ts-ignore
   const containerEl = ctx.containerEl;
+
+  if(!plugin.settings.renderImageInMarkdownReadingMode && containerEl.parentElement?.parentElement?.hasClass("markdown-reading-view")) {
+    return;
+  }
+
+  if(!plugin.settings.renderImageInMarkdownToPDF && containerEl.parentElement?.hasClass("print")) {
+    return;
+  }
+
   let internalEmbedDiv: HTMLElement = containerEl;
   while (
+    !internalEmbedDiv.hasClass("print") &&
     !internalEmbedDiv.hasClass("dataview") &&
     !internalEmbedDiv.hasClass("cm-preview-code-block") &&
     !internalEmbedDiv.hasClass("cm-embed-block") &&
@@ -613,18 +623,23 @@ const tmpObsidianWYSIWYG = async (
     return; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/835
   }
 
+  const isPrinting = Boolean(internalEmbedDiv.hasClass("print"));
+
   const attr: imgElementAttributes = {
     fname: ctx.sourcePath,
-    fheight: getDefaultHeight(plugin),
-    fwidth: getDefaultWidth(plugin),
+    fheight: isPrinting ? "100%" : getDefaultHeight(plugin),
+    fwidth: isPrinting ? "100%" : getDefaultWidth(plugin),
     style: ["excalidraw-svg"],
   };
   
   attr.file = file;
 
   const markdownEmbed = internalEmbedDiv.hasClass("markdown-embed");
-  const markdownReadingView = internalEmbedDiv.hasClass("markdown-reading-view");
+  const markdownReadingView = internalEmbedDiv.hasClass("markdown-reading-view") || isPrinting;
   if (!internalEmbedDiv.hasClass("internal-embed") && (markdownEmbed || markdownReadingView)) {
+    if(isPrinting) {
+      internalEmbedDiv = containerEl;
+    }
     //We are processing the markdown preview of an actual Excalidraw file
     //the excalidraw file in markdown preview mode
     const isFrontmatterDiv = Boolean(el.querySelector(".frontmatter"));

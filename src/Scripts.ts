@@ -172,6 +172,7 @@ export class ScriptEngine {
           (async()=>{
             const script = await app.vault.read(f);
             if(script) {
+              //remove YAML frontmatter if present
               this.executeScript(view, script, scriptName,f);
             }
           })()
@@ -212,6 +213,7 @@ export class ScriptEngine {
     if (!view || !script || !title) {
       return;
     }
+    script = script.replace(/^---.*?---\n/gs, "");
     const ea = getEA(view);
     ea.activeScript = title;
 

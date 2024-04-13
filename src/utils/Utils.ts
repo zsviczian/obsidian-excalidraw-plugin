@@ -4,6 +4,7 @@ import {
   request,
   requestUrl,
   TFile,
+  TFolder,
 } from "obsidian";
 import { Random } from "roughjs/bin/math";
 import { BinaryFileData, DataURL} from "@zsviczian/excalidraw/types/excalidraw/types";
@@ -30,6 +31,8 @@ import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { cleanBlockRef, cleanSectionHeading, getFileCSSClasses } from "./ObsidianUtils";
 import { updateElementLinksToObsidianLinks } from "src/ExcalidrawAutomate";
 import { CropImage } from "./CropImage";
+import { ExcalidrawData } from "src/ExcalidrawData";
+import { ExcalidrawGenericElement } from "lib/svgToExcalidraw/types";
 
 
 declare const PLUGIN_VERSION:string;
@@ -440,7 +443,15 @@ export const scaleLoadedImage = (
   if (!files || !scene) {
     return { dirty, scene };
   }
-  for (const f of files.filter((f:TFile)=>EXCALIDRAW_PLUGIN?.isExcalidrawFile(f))) {
+
+  for (const f of files.filter((f:any)=>{
+    if(!Boolean(EXCALIDRAW_PLUGIN)) return true; //this should never happen
+    const ef = EXCALIDRAW_PLUGIN.filesMaster.get(f.id);
+    if(!ef) return false;
+    const file = EXCALIDRAW_PLUGIN.app.vault.getAbstractFileByPath(ef.path.replace(/#.*$/,"").replace(/\|.*$/,""));
+    if(!file || (file instanceof TFolder)) return false;
+    return EXCALIDRAW_PLUGIN.isExcalidrawFile(file as TFile)
+  })) {
     const [w_image, h_image] = [f.size.width, f.size.height];
     const imageAspectRatio = f.size.width / f.size.height;
     scene.elements
@@ -585,6 +596,22 @@ export const getExportTheme = (
     }
   }
   return plugin.settings.exportWithTheme ? theme : "light";
+};
+
+export const shouldEmbedScene = (
+  plugin: ExcalidrawPlugin,
+  file: TFile
+): boolean => {
+  if (file) {
+    const fileCache = plugin.app.metadataCache.getFileCache(file);
+    if (
+      fileCache?.frontmatter &&
+      fileCache.frontmatter[FRONTMATTER_KEYS["export-embed-scene"].name] != null
+    ) {
+      return fileCache.frontmatter[FRONTMATTER_KEYS["export-embed-scene"].name];
+    }
+  }
+  return plugin.settings.exportEmbedScene;
 };
 
 export const hasExportBackground = (
@@ -740,13 +767,13 @@ export const getContainerElement = (
   element:
     | (ExcalidrawElement & { containerId: ExcalidrawElement["id"] | null })
     | null,
-  scene: ExcalidrawScene,
+  scene: any,
 ) => {
   if (!element) {
     return null;
   }
   if (element.containerId) {
-    return scene.elements.filter(el=>el.id === element.containerId)[0] ?? null;
+    return scene.elements.find((el:ExcalidrawElement)=>el.id === element.containerId) ?? null;
   }
   return null;
 };

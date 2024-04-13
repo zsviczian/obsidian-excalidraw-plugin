@@ -5,7 +5,7 @@ import { DEVICE } from "src/constants/constants";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import ExcalidrawView from "src/ExcalidrawView";
 import ExcalidrawPlugin from "src/main";
-import { fragWithHTML, getExportPadding, getExportTheme, getPNGScale, getWithBackground } from "src/utils/Utils";
+import { fragWithHTML, getExportPadding, getExportTheme, getPNGScale, getWithBackground, shouldEmbedScene } from "src/utils/Utils";
 
 export class ExportDialog extends Modal {
   private ea: ExcalidrawAutomate;
@@ -40,7 +40,7 @@ export class ExportDialog extends Modal {
     this.scale = getPNGScale(this.plugin,this.file)
     this.theme = getExportTheme(this.plugin, this.file, (this.api).getAppState().theme)
     this.boundingBox = this.ea.getBoundingBox(this.ea.getViewElements());
-    this.embedScene = false;
+    this.embedScene = shouldEmbedScene(this.plugin, this.file);
     this.exportSelectedOnly = false;
     this.saveToVault = true;
     this.transparent = !getWithBackground(this.plugin, this.file);
