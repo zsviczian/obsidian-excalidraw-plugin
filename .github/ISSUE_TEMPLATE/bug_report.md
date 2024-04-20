@@ -1,11 +1,21 @@
 ---
 name: Bug report
-about: Create a report to help me improve Excalidraw
+about: When something is clearly broken. Everything else is a feature request.
 title: 'BUG: '
 labels: ''
 assignees: ''
 
 ---
+
+Help me help you. I am a one man show doing this plugin as a part time hobby. There is no point in flooding me with issues, if there are too many, and they are poorly documented, I will just ignore them. Sorry...
+
+Before creating a bug report, please
+1. review recent release notes - maybe there is already an answer,
+2. search issues (including closed ones) to see if there is anything similar.
+
+⚠️ I will have to close all recorded bugs that do not provide this background information. Sorry, I need to control my workload/time. ⚠️
+
+--------
 
 **Your environment**
 Please run `Command Palette/Show Debug info` in Obsidian and paste the result here.
