@@ -48,6 +48,7 @@ export default {
   NEW_IN_POPOUT_WINDOW_EMBED: "Create new drawing - IN A POPOUT WINDOW - and embed into active document",
   TOGGLE_LOCK: "Toggle Text Element between edit RAW and PREVIEW",
   DELETE_FILE: "Delete selected image or Markdown file from Obsidian Vault",
+  COPY_ELEMENT_LINK: "Copy markdown link for selected element(s)",
   INSERT_LINK_TO_ELEMENT:
     `Copy markdown link for selected element to clipboard. ${labelCTRL()}+CLICK to copy 'group=' link. ${labelSHIFT()}+CLICK to copy an 'area=' link. ${labelALT()}+CLICK to watch a help video.`,
   INSERT_LINK_TO_ELEMENT_GROUP:
@@ -684,7 +685,7 @@ FILENAME_HEAD: "Filename",
   SELECT_SECTION_OR_TYPE_NEW:
     "Select existing section or type name of a new section then press Enter.",
   INVALID_SECTION_NAME: "Invalid section name.",
-  EMPTY_SECTION_MESSAGE: "Hit enter to create a new Section",
+  EMPTY_SECTION_MESSAGE: "Type the Section Name and hit enter to create a new Section",
 
   //EmbeddedFileLoader.ts
   INFINITE_LOOP_WARNING:

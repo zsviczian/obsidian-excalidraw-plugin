@@ -5,7 +5,6 @@ import { getEA } from "src";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import { getExcalidrawMarkdownHeaderSection } from "src/ExcalidrawData";
 import { MD_EX_SECTIONS } from "src/constants/constants";
-import { ExcalidrawImageElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { cleanSectionHeading } from "src/utils/ObsidianUtils";
 
@@ -29,7 +28,7 @@ export class SelectCard extends FuzzySuggestModal<string> {
       if (e.key == "Enter") {
         if (this.containerEl.innerText.includes(t("EMPTY_SECTION_MESSAGE"))) {
           const item = this.inputEl.value;
-          if(MD_EX_SECTIONS.includes(item)) {
+          if(item === "" || MD_EX_SECTIONS.includes(item)) {
             new Notice(t("INVALID_SECTION_NAME"));
             this.close();
             return;
@@ -37,7 +36,13 @@ export class SelectCard extends FuzzySuggestModal<string> {
           (async () => {
             const data = view.data;
             const header = getExcalidrawMarkdownHeaderSection(data);
-            view.data = data.replace(header, header + `\n# ${item}\n\n`);
+            const body = data.split(header)[1];
+            const shouldAddHashtag = body && body.startsWith("%%");
+            const shouldRemoveTrailingHashtag = header.endsWith("#\n");
+            view.data = data.replace(
+              header,
+              (shouldRemoveTrailingHashtag ? header.substring(0,header.length-2) : header) +
+                `\n# ${item}\n\n${shouldAddHashtag ? "#\n" : ""}`);
             await view.forceSave(true);
             let watchdog = 0;
             await sleep(200);

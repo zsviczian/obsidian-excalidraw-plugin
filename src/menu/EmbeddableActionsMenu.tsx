@@ -172,7 +172,9 @@ export class EmbeddableMenu {
                     view.updateScene({appState: {activeEmbeddable: null}});
                     const paragraphs = (await app.metadataCache.blockCache
                       .getForFile({ isCancelled: () => false },file))
-                      .blocks.filter((b: any) => b.display && b.node?.type === "paragraph");
+                      .blocks.filter((b: any) => b.display && b.node && 
+                        (b.node.type === "paragraph" || b.node.type === "blockquote" || b.node.type === "listItem" || b.node.type === "table" || b.node.type === "callout")
+                      );
                     const values = ["entire-file"].concat(paragraphs);
                     const display = [t("SHOW_ENTIRE_FILE")].concat(
                       paragraphs.map((b: any) => `${b.node?.id ? `#^${b.node.id}: ` : ``}${b.display.trim()}`));

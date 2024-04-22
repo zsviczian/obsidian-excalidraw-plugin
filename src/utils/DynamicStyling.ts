@@ -32,6 +32,10 @@ export const setDynamicStyle = (
     view?.excalidrawAPI?.getAppState?.()?.theme === "light" ||
     view?.excalidrawData?.scene?.appState?.theme === "light";
 
+  if (color==="transparent") {
+    color = "#ffffff";
+  }
+
   const darker = "#101010";
   const lighter = "#f0f0f0";
   const step = 10;

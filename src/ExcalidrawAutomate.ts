@@ -601,6 +601,7 @@ export class ExcalidrawAutomate {
       "excalidraw-export-dark"?: boolean;
       "excalidraw-export-padding"?: number;
       "excalidraw-export-pngscale"?: number;
+      "excalidraw-export-embed-scene"?: boolean;
       "excalidraw-default-mode"?: "view" | "zen";
       "excalidraw-onload-script"?: string;
       "excalidraw-linkbutton-opacity"?: number;

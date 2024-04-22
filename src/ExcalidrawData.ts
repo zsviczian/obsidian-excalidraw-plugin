@@ -51,6 +51,7 @@ import { BinaryFiles, DataURL, SceneData } from "@zsviczian/excalidraw/types/exc
 import { EmbeddedFile, MimeType } from "./EmbeddedFileLoader";
 import { ConfirmationPrompt } from "./dialogs/Prompt";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
+import { add } from "@zsviczian/excalidraw/types/excalidraw/ga";
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles };
 
@@ -240,7 +241,11 @@ const estimateMaxLineLen = (text: string, originalText: string): number => {
 const wrap = (text: string, lineLen: number) =>
   lineLen ? wrapTextAtCharLength(text, lineLen, false, 0) : text;
 
-const RE_TEXTELEMENTS = new RegExp(`^(%%\n)?${MD_TEXTELEMENTS}(?:\n|$)`, "m");
+//WITHSECTION refers to back of the card note (see this.inputEl.onkeyup in SelectCard.ts)
+const RE_TEXTELEMENTS_WITHSECTION_OK = new RegExp(`^#\n%%\n${MD_TEXTELEMENTS}(?:\n|$)`, "m");
+const RE_TEXTELEMENTS_WITHSECTION_NOTOK = new RegExp(`#\n%%\n${MD_TEXTELEMENTS}(?:\n|$)`, "m");
+const RE_TEXTELEMENTS_NOSECTION_OK = new RegExp(`^(%%\n)?${MD_TEXTELEMENTS}(?:\n|$)`, "m");
+
 
 //The issue is that when editing in markdown embeds the user can delete the last enter causing two sections
 //to collide. This is particularly problematic when the user is editing the lest section before # Text Elements
@@ -251,19 +256,70 @@ const RE_TEXTELEMENTS_FALLBACK_2 = new RegExp(`(.*)${MD_TEXTELEMENTS}(?:\n|$)`, 
 const RE_DRAWING = new RegExp(`(%%\n)?${MD_DRAWING}\n`);
 
 export const getExcalidrawMarkdownHeaderSection = (data:string, keys?:[string,string][]):string => {
-  let trimLocation = data.search(RE_TEXTELEMENTS);
+
+  /* Expected markdown structure:
+  bla bla bla
+  #
+  %%
+  # Text Elements
+  */
+  let trimLocation = data.search(RE_TEXTELEMENTS_WITHSECTION_OK);
+  let shouldFixTrailingHashtag = false;
+  if(trimLocation > 0) {
+    trimLocation += 2;
+  }
+
+  /* Expected markdown structure:
+  bla bla bla#
+  %%
+  # Text Elements
+  */
   if(trimLocation === -1) {
+    trimLocation = data.search(RE_TEXTELEMENTS_WITHSECTION_NOTOK);
+    if(trimLocation > 0) {
+      shouldFixTrailingHashtag = true;
+    }
+  }
+  /* Expected markdown structure
+  a)
+    bla bla bla
+    %%
+    # Text Elements
+  b)
+    bla bla bla
+    # Text Elements
+  */
+  if(trimLocation === -1) {
+    trimLocation = data.search(RE_TEXTELEMENTS_NOSECTION_OK);
+  }
+  /* Expected markdown structure:
+  bla bla bla%%
+  # Text Elements
+  */
+    if(trimLocation === -1) {
     const res = data.match(RE_TEXTELEMENTS_FALLBACK_1);
     if(res && Boolean(res[1])) {
       trimLocation = res.index + res[1].length;
     }
   }
+  /* Expected markdown structure:
+  bla bla bla# Text Elements
+  */
   if(trimLocation === -1) {
     const res = data.match(RE_TEXTELEMENTS_FALLBACK_2);
     if(res && Boolean(res[1])) {
       trimLocation = res.index + res[1].length;
     }
-  }  
+  }
+  /* Expected markdown structure:
+  a)
+    bla bla bla
+    # Drawing
+  b)
+    bla bla bla
+    %%
+    # Drawing
+  */
   if (trimLocation === -1) {
     trimLocation = data.search(RE_DRAWING);
   }
@@ -278,7 +334,9 @@ export const getExcalidrawMarkdownHeaderSection = (data:string, keys?:[string,st
     header = header.replace(REG_IMG, "$1");
   }
   //end of remove
-  return header.endsWith("\n") ? header : (header + "\n");
+  return shouldFixTrailingHashtag
+    ? header + "\n#\n"
+    : header.endsWith("\n") ? header : (header + "\n");
 }
 
 
@@ -580,19 +638,36 @@ export class ExcalidrawData {
 
     data = data.substring(0, sceneJSONandPOS.pos);
 
-    //The Markdown # Text Elements take priority over the JSON text elements. Assuming the scenario in which the link was updated due to filename changes
+    //The Markdown # Text Elements take priority over the JSON text elements. Assuming the scenario in which the 
+    //link was updated due to filename changes
     //The .excalidraw JSON is modified to reflect the MD in case of difference
     //Read the text elements into the textElements Map
-    let position = data.search(RE_TEXTELEMENTS);
+    let position = data.search(RE_TEXTELEMENTS_NOSECTION_OK);
+    if (position === -1) {
+      //resillience in case back of the note was saved right on top of text elements 
+      // # back of note section
+      // ....# Text Elements
+      // ....
+      // --------------
+      // instead of 
+      // --------------
+      // # back of note section
+      // ....
+      // # Text Elements
+      position = data.search(RE_TEXTELEMENTS_FALLBACK_2);
+    }
     if (position === -1) {
       await this.setTextMode(textMode, false);
       this.loaded = true;
       return true; //Text Elements header does not exist
     }
-    const textElementsMatch = data.match(new RegExp(`^((%%\n)?${MD_TEXTELEMENTS}(?:\n|$))`, "m"))[0]
-    position += textElementsMatch.length;
-    
     data = data.slice(position);
+    const normalMatch = data.match(new RegExp(`^((%%\n)?${MD_TEXTELEMENTS}(?:\n|$))`, "m"));
+    const textElementsMatch = normalMatch
+      ? normalMatch[0]
+      : data.match(new RegExp(`(.*${MD_TEXTELEMENTS}(?:\n|$))`, "m"))[0];
+    
+    data = data.slice(textElementsMatch.length);
     this.textElementCommentedOut = textElementsMatch.startsWith("%%\n");
     position = 0;
     let parts;
@@ -1360,14 +1435,18 @@ export class ExcalidrawData {
     const processedIds = new Set<string>();
     fileIds.forEach((fileId,idx)=>{
       if(processedIds.has(fileId)) {
-        const file = this.getFile(fileId);
+        const embeddedFile = this.getFile(fileId);
         const equation = this.getEquation(fileId);
         const mermaid = this.getMermaid(fileId);
 
-
-
         //images should have a single reference, but equations, and markdown embeds should have as many as instances of the file in the scene
-        if(file && (file.isHyperLink || file.isLocalLink || (file.file && (file.file.extension !== "md" || this.plugin.isExcalidrawFile(file.file))))) {
+        if (embeddedFile &&
+            (embeddedFile.isHyperLink || embeddedFile.isLocalLink ||
+             (embeddedFile.file &&
+              (embeddedFile.file.extension !== "md" || this.plugin.isExcalidrawFile(embeddedFile.file))
+             )
+            )
+        ) {
           return;
         }
         if(mermaid) {
@@ -1379,6 +1458,11 @@ export class ExcalidrawData {
           return;
         }
 
+        if(!embeddedFile && !equation && !mermaid) {
+          //processing freshly pasted images from likely anotehr instance of excalidraw (e.g. Excalidraw.com, or another Obsidian instance)
+          return;
+        }
+
         const newId = fileid();
         (scene
           .elements
@@ -1387,8 +1471,8 @@ export class ExcalidrawData {
           .fileId = newId;
         dirty = true;
         processedIds.add(newId);
-        if(file) {
-          this.setFile(newId as FileId,new EmbeddedFile(this.plugin,this.file.path,file.linkParts.original));
+        if(embeddedFile) {
+          this.setFile(newId as FileId,new EmbeddedFile(this.plugin,this.file.path,embeddedFile.linkParts.original));
         }
         if(equation) {
           this.setEquation(newId as FileId, {latex:equation.latex, isLoaded:false});

@@ -285,7 +285,13 @@ export const openLeaf = ({
         leaf = l;
       }
     });
-    if(leaf) return {leaf, promise: Promise.resolve()};
+    if(leaf) {
+      if(openState) {
+        const promise = leaf.openFile(file, openState);
+        return {leaf, promise};
+      }
+      return {leaf, promise: Promise.resolve()};
+    }
   }
   leaf = fnGetLeaf();
   const promise = leaf.openFile(file, openState);

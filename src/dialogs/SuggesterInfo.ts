@@ -197,6 +197,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     '  "excalidraw-export-dark"?: boolean;\n' +
     '  "excalidraw-export-padding"?: number;\n' +
     '  "excalidraw-export-pngscale"?: number;\n' +
+    '  "excalidraw-export-embed-scene"?: boolean;\n' +
     '  "excalidraw-default-mode"?: "view" | "zen";\n' +
     '  "excalidraw-onload-script"?: string;\n' +
     '  "excalidraw-linkbutton-opacity"?: number;\n' +
@@ -820,6 +821,12 @@ export const FRONTMATTER_KEYS_INFO: SuggesterInfo[] = [
     code: null,
     desc: "If this key is present it will override the default excalidraw embed and export setting. This only affects export to PNG. Specify the export scale for the image. The typical range is between 0.5 and 5, but you can experiment with other values as well.",
     after: ": 1",
+  },
+  {
+    field: "excalidraw-export-embed-scene",
+    code: null,
+    desc: "If this key is present it will override the default excalidraw embed and export setting.",
+    after: ": false",
   },
   {
     field: "open-md",

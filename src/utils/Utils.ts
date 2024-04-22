@@ -19,6 +19,7 @@ import {
   IMAGE_TYPES,
   FRONTMATTER_KEYS,
   EXCALIDRAW_PLUGIN,
+  getCommonBoundingBox,
 } from "../constants/constants";
 import ExcalidrawPlugin from "../main";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
@@ -157,6 +158,10 @@ const rotate = (
 export const rotatedDimensions = (
   element: ExcalidrawElement,
 ): [number, number, number, number] => {
+  const bb = getCommonBoundingBox([element]);
+  return [bb.minX, bb.minY, bb.maxX - bb.minX, bb.maxY - bb.minY];
+
+  //removed with 2.1.5... will delete later
   if (element.angle === 0) {
     return [element.x, element.y, element.width, element.height];
   }
@@ -450,7 +455,7 @@ export const scaleLoadedImage = (
     if(!ef) return false;
     const file = EXCALIDRAW_PLUGIN.app.vault.getAbstractFileByPath(ef.path.replace(/#.*$/,"").replace(/\|.*$/,""));
     if(!file || (file instanceof TFolder)) return false;
-    return EXCALIDRAW_PLUGIN.isExcalidrawFile(file as TFile)
+    return (file as TFile).extension==="md" || EXCALIDRAW_PLUGIN.isExcalidrawFile(file as TFile)
   })) {
     const [w_image, h_image] = [f.size.width, f.size.height];
     const imageAspectRatio = f.size.width / f.size.height;

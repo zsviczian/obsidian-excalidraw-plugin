@@ -22,7 +22,7 @@ export const getElementsAtPointer = (
       y <= pointer.y &&
       y + h >= pointer.y
     );
-  });
+  }).reverse();
 };
 
 export const getTextElementAtPointer = (pointer: any, view: ExcalidrawView) => {

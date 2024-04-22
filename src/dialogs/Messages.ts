@@ -17,6 +17,39 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.1.5":`
+## New
+- Save "Snap to objects" with the scene state. If this is the only change you make to the scene, force save it using CTRL+S (note, use CTRL on Mac as well).
+- Added "Copy markdown link" to the context menu.
+
+## Fixed
+- Paste operation occasionally duplicated text elements.
+- Pasting multiple instances of the same image from excalidraw.com or another instance of Obsidian, or pasting an image from anywhere and making copies with ALT/OPT + drag immediately after pasting (before autosave triggered) led to broken images when reopening the drawing.
+- CTRL/CMD+Click on a Text Element with an element link did not work (previously, you had to click the top right link indicator). Now, you can click anywhere on the element.
+- Hover preview for elements with a link only worked when hovering over the element link. Now, you can hover anywhere. If there are multiple elements with links, the top-level element will take precedence.
+- Link navigation within drawing when the "Focus on Existing Tab" feature is enabled under "Links, transclusion and TODOs" in settings works again.
+- If a link points to a back-of-the-card section or block the drawing will automatically switch to markdown view mode and navigate to the block or section.
+- DynamicSytle, dark mode when canvas background is set to transparent.
+- Scale to maintain the aspect ratio of a markdown notes embedded as images.
+- You can now borrow interactive markdown embeds to tables, blockquotes, list elements and callouts - not just paragraphs.
+- Back of the drawing cards:
+    - Leaving the Section Name empty when creating the first back of the card note resulted in an error.
+    - If you add the markdown comment (${String.fromCharCode(96)}%%${String.fromCharCode(96)}) directly before ${String.fromCharCode(96)}# Text Elements${String.fromCharCode(96)}, a trailing ${String.fromCharCode(96)}#${String.fromCharCode(96)} will be added to your document, when adding a back of the card note. This is to hide the markdown comment from the card. The trailing (empty) ${String.fromCharCode(96)}#${String.fromCharCode(96)} will not be visible in reading mode, pdf exports, and when publishing with Obsidian Publish.
+Here's a sample markdown structure of your document:
+
+${String.fromCharCode(96,96,96)}markdown
+---
+excalidraw-plugin: parsed
+---
+# Your back of the card section
+bla bla bla
+
+#
+%%
+# Text Elements
+... the rest of the Excalidraw file
+${String.fromCharCode(96,96,96)}
+`,
 "2.1.4":`
 ## Fixed
 - Fixed the **aspect ratio** of an Excalidraw embedded within another Excalidraw **not updating**. [#1707](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1707)
@@ -33,7 +66,7 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 - **Enhanced annotation and cropping** of images in Markdown documents:
   - Newly embedded **links will now follow the style of the original link**. If the original format was a ${String.fromCharCode(96)}![markdown](link)${String.fromCharCode(96)}, the annotated file will follow this format. For ${String.fromCharCode(96)}[[wiki links]]${String.fromCharCode(96)}, it will follow that style. Additionally, if an alias was specified like ${String.fromCharCode(96)}[[link|alias]]${String.fromCharCode(96)}, the annotated or cropped image will retain the alias.
   - Introduced a new setting under "Saving" titled **"Preserve image size when annotating"**. This setting is disabled by default. When enabled, the embed link replacing the annotated image will maintain the size of the original image.
-- Option to **automaticaly embed the scene in exported PNG and SVG image files**. Including the scene will allow users to open the picture on Excalidraw.com or in another Obsidian Vault as an editable Excalidraw file.New setting is under the Export category. The new frontmatter tag is: ${String.fromCharCode(96)}excalidraw-export-embed-scene: true/false${String.fromCharCode(96)}.
+- Option to **automatically embed the scene in exported PNG and SVG image files**. Including the scene will allow users to open the picture on Excalidraw.com or in another Obsidian Vault as an editable Excalidraw file.New setting is under the Export category. The new frontmatter tag is: ${String.fromCharCode(96)}excalidraw-export-embed-scene: true/false${String.fromCharCode(96)}.
 `,
 "2.1.3":`
 This is a republish of 2.1.2 with a minor change. Sorry about the frequent releases. I will hold back for a few weeks now.
