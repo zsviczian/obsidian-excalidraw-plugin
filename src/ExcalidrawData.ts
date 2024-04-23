@@ -329,10 +329,10 @@ export const getExcalidrawMarkdownHeaderSection = (data:string, keys?:[string,st
 
   let header = updateFrontmatterInString(data.substring(0, trimLocation),keys);
   //this should be removed at a later time. Left it here to remediate 1.4.9 mistake
-  const REG_IMG = /(^---[\w\W]*?---\n)(!\[\[.*?]]\n(%%\n)?)/m; //(%%\n)? because of 1.4.8-beta... to be backward compatible with anyone who installed that version
+  /*const REG_IMG = /(^---[\w\W]*?---\n)(!\[\[.*?]]\n(%%\n)?)/m; //(%%\n)? because of 1.4.8-beta... to be backward compatible with anyone who installed that version
   if (header.match(REG_IMG)) {
     header = header.replace(REG_IMG, "$1");
-  }
+  }*/
   //end of remove
   return shouldFixTrailingHashtag
     ? header + "\n#\n"

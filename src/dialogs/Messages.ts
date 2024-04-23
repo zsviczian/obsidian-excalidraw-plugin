@@ -17,6 +17,11 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.1.6":`
+## Two minor fixes
+- Scaling of LaTeX formulas when the formula is changed
+- If the back of the note card only contains a block embed ${String.fromCharCode(96)}![[embed]]${String.fromCharCode(96)} this got removed when saving the Excalidraw file. This issue has been present since November, 2021 (v1.4.9).
+`,
 "2.1.5":`
 ## New
 - Save "Snap to objects" with the scene state. If this is the only change you make to the scene, force save it using CTRL+S (note, use CTRL on Mac as well).

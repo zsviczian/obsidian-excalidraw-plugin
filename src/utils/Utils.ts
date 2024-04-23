@@ -452,7 +452,7 @@ export const scaleLoadedImage = (
   for (const f of files.filter((f:any)=>{
     if(!Boolean(EXCALIDRAW_PLUGIN)) return true; //this should never happen
     const ef = EXCALIDRAW_PLUGIN.filesMaster.get(f.id);
-    if(!ef) return false;
+    if(!ef) return true; //mermaid SVG or equation
     const file = EXCALIDRAW_PLUGIN.app.vault.getAbstractFileByPath(ef.path.replace(/#.*$/,"").replace(/\|.*$/,""));
     if(!file || (file instanceof TFolder)) return false;
     return (file as TFile).extension==="md" || EXCALIDRAW_PLUGIN.isExcalidrawFile(file as TFile)
