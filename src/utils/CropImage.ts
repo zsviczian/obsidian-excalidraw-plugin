@@ -97,16 +97,12 @@ export class CropImage {
       withTheme: false,
       isMask: false,
     }
+    const isRotated = this.imageEA.getElements().some(el=>el.type === "image" && el.angle !== 0);
     const images = Object.values(this.imageEA.imagesDict);
-    if(images.length === 1) {
+    if(!isRotated && (images.length === 1)) {
       return images[0].dataURL;
     }
     return await this.imageEA.createPNGBase64(null,1,exportSettings,null,null,0);
-    const imageSVG = await this.imageEA.createSVG(null,false,exportSettings,null,null,0);
-    const svgData = new XMLSerializer().serializeToString(imageSVG);
-    return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgData)))}`;
-//    const blob = new Blob([svgString], { type: 'image/svg+xml' });
-//    return `data:image/svg+xml;base64,${await blobToBase64(blob)}`;
   }
 
   private async buildSVG(): Promise<SVGSVGElement> {

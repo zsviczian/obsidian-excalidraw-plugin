@@ -20,6 +20,7 @@ import {
   FRONTMATTER_KEYS,
   EXCALIDRAW_PLUGIN,
   getCommonBoundingBox,
+  DEVICE,
 } from "../constants/constants";
 import ExcalidrawPlugin from "../main";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
@@ -508,7 +509,7 @@ export const setDocLeftHandedMode = (isLeftHanded: boolean, ownerDocument:Docume
 export const setLeftHandedMode = (isLeftHanded: boolean) => {
   const visitedDocs = new Set<Document>();
   app.workspace.iterateAllLeaves((leaf) => {
-    const ownerDocument = app.isMobile?document:leaf.view.containerEl.ownerDocument;
+    const ownerDocument = DEVICE.isMobile?document:leaf.view.containerEl.ownerDocument;
     if(!ownerDocument) return;
     if(visitedDocs.has(ownerDocument)) return;
     visitedDocs.add(ownerDocument);

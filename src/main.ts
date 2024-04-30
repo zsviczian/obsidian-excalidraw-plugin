@@ -42,7 +42,8 @@ import {
   LOCALE,
   IMAGE_TYPES,
   MD_TEXTELEMENTS,
-  setExcalidrawPlugin
+  setExcalidrawPlugin,
+  DEVICE
 } from "./constants/constants";
 import {
   VIRGIL_FONT,
@@ -381,7 +382,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private getOpenObsidianDocuments(): Document[] {
     const visitedDocs = new Set<Document>();
     this.app.workspace.iterateAllLeaves((leaf)=>{
-      const ownerDocument = this.app.isMobile?document:leaf.view.containerEl.ownerDocument;   
+      const ownerDocument = DEVICE.isMobile?document:leaf.view.containerEl.ownerDocument;   
       if(!ownerDocument) return;        
       if(visitedDocs.has(ownerDocument)) return;
       visitedDocs.add(ownerDocument);
@@ -1087,7 +1088,7 @@ export default class ExcalidrawPlugin extends Plugin {
       name: t("NEW_IN_POPOUT_WINDOW"),
       checkCallback: (checking: boolean) => {
         if (checking) {
-          return !app.isMobile
+          return !DEVICE.isMobile;
         }
         this.createAndOpenDrawing(getDrawingFilename(this.settings), "popout-window");
       },
@@ -1159,7 +1160,7 @@ export default class ExcalidrawPlugin extends Plugin {
       name: t("NEW_IN_POPOUT_WINDOW_EMBED"),
       checkCallback: (checking: boolean) => {
         if (checking) {
-          return !app.isMobile && Boolean(this.app.workspace.getActiveViewOfType(MarkdownView));
+          return !DEVICE.isMobile && Boolean(this.app.workspace.getActiveViewOfType(MarkdownView));
         }
         insertDrawingToDoc("popout-window");
         return true;
@@ -2580,14 +2581,14 @@ export default class ExcalidrawPlugin extends Plugin {
 
         //!Temporary hack
         //https://discord.com/channels/686053708261228577/817515900349448202/1031101635784613968
-        if (this.app.isMobile && newActiveviewEV && !previouslyActiveEV) {
+        if (DEVICE.isMobile && newActiveviewEV && !previouslyActiveEV) {
           const navbar = document.querySelector("body>.app-container>.mobile-navbar");
           if(navbar && navbar instanceof HTMLDivElement) {
             navbar.style.position="relative";
           }
         }
 
-        if (this.app.isMobile && !newActiveviewEV && previouslyActiveEV) {
+        if (DEVICE.isMobile && !newActiveviewEV && previouslyActiveEV) {
           const navbar = document.querySelector("body>.app-container>.mobile-navbar");
           if(navbar && navbar instanceof HTMLDivElement) {
             navbar.style.position="";
@@ -2991,7 +2992,7 @@ export default class ExcalidrawPlugin extends Plugin {
     }
     if(opts.applyLefthandedMode) setLeftHandedMode(this.settings.isLeftHanded);
     if(opts.reEnableAutosave) this.settings.autosave = true;
-    this.settings.autosaveInterval = app.isMobile
+    this.settings.autosaveInterval = DEVICE.isMobile
     ? this.settings.autosaveIntervalMobile
     : this.settings.autosaveIntervalDesktop;
   }
@@ -3018,7 +3019,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public triggerEmbedUpdates(filepath?: string) {
     const visitedDocs = new Set<Document>();
     app.workspace.iterateAllLeaves((leaf)=>{
-      const ownerDocument = app.isMobile?document:leaf.view.containerEl.ownerDocument;
+      const ownerDocument = DEVICE.isMobile?document:leaf.view.containerEl.ownerDocument;
       if(!ownerDocument) return;
       if(visitedDocs.has(ownerDocument)) return;
       visitedDocs.add(ownerDocument);
@@ -3231,7 +3232,7 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public async exportLibrary() {
-    if (this.app.isMobile) {
+    if (DEVICE.isMobile) {
       const prompt = new Prompt(
         this.app,
         "Please provide a filename",

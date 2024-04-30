@@ -8,7 +8,7 @@ import {
   TextComponent,
   TFile,
 } from "obsidian";
-import { GITHUB_RELEASES, VIEW_TYPE_EXCALIDRAW } from "./constants/constants";
+import { DEVICE, GITHUB_RELEASES, VIEW_TYPE_EXCALIDRAW } from "./constants/constants";
 import ExcalidrawView from "./ExcalidrawView";
 import { t } from "./lang/helpers";
 import type ExcalidrawPlugin from "./main";
@@ -674,7 +674,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.autosaveIntervalDesktop.toString())
         .onChange(async (value) => {
           this.plugin.settings.autosaveIntervalDesktop = parseInt(value);
-          this.plugin.settings.autosaveInterval = app.isMobile
+          this.plugin.settings.autosaveInterval = DEVICE.isMobile
             ? this.plugin.settings.autosaveIntervalMobile
             : this.plugin.settings.autosaveIntervalDesktop;
           this.applySettingsUpdate();
@@ -693,7 +693,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.autosaveIntervalMobile.toString())
         .onChange(async (value) => {
           this.plugin.settings.autosaveIntervalMobile = parseInt(value);
-          this.plugin.settings.autosaveInterval = app.isMobile
+          this.plugin.settings.autosaveInterval = DEVICE.isMobile
             ? this.plugin.settings.autosaveIntervalMobile
             : this.plugin.settings.autosaveIntervalDesktop;
           this.applySettingsUpdate();

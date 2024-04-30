@@ -392,7 +392,7 @@ export default class ExcalidrawView extends TextFileView {
     if (!this.excalidrawAPI || !this.file) {
       return;
     }
-    if (this.app.isMobile) {
+    if (DEVICE.isMobile) {
       const prompt = new Prompt(
         this.app,
         "Please provide filename",
@@ -1256,8 +1256,8 @@ export default class ExcalidrawView extends TextFileView {
   onload() {
     const apiMissing = Boolean(typeof this.containerEl.onWindowMigrated === "undefined")
     //@ts-ignore
-    if(!app.isMobile && !apiMissing) this.containerEl.onWindowMigrated(()=>this.leaf.rebuildView());
-    const doc = app.isMobile?document:this.containerEl.ownerDocument;
+    if(!DEVICE.isMobile && !apiMissing) this.containerEl.onWindowMigrated(()=>this.leaf.rebuildView());
+    const doc = DEVICE.isMobile?document:this.containerEl.ownerDocument;
     this.ownerDocument = doc;
     this.ownerWindow = this.ownerDocument.defaultView;
     this.plugin.getPackage(this.ownerWindow);
@@ -2161,7 +2161,7 @@ export default class ExcalidrawView extends TextFileView {
     this.semaphores.preventReload = false;
     const penEnabled =
       this.plugin.settings.defaultPenMode === "always" ||
-      (this.plugin.settings.defaultPenMode === "mobile" && app.isMobile);
+      (this.plugin.settings.defaultPenMode === "mobile" && DEVICE.isMobile);
     const api = this.excalidrawAPI;
     if (api) {
       //isLoaded flags that a new file is being loaded, isLoaded will be true after loadDrawing completes
@@ -2270,7 +2270,7 @@ export default class ExcalidrawView extends TextFileView {
     if(!this.semaphores.viewunload && this.toolsPanelRef?.current) {
       this.toolsPanelRef.current.setDirty(true);
     }
-    if(!this.app.isMobile) {
+    if(!DEVICE.isMobile) {
       if(requireApiVersion("0.16.0")) {
         //@ts-ignore
         this.leaf.tabHeaderInnerTitleEl.style.color="var(--color-accent)"
@@ -2297,7 +2297,7 @@ export default class ExcalidrawView extends TextFileView {
       this.previousSceneVersion = this.getSceneVersion(el);
     }
     this.diskIcon.querySelector("svg").removeClass("excalidraw-dirty");
-    if(!app.isMobile) {
+    if(!DEVICE.isMobile) {
       if(requireApiVersion("0.16.0")) {
         //@ts-ignore
         this.leaf.tabHeaderInnerTitleEl.style.color=""
@@ -4914,7 +4914,7 @@ export default class ExcalidrawView extends TextFileView {
     }
     const maxZoom = this.plugin.settings.zoomToFitMaxLevel;
     const elements = api.getSceneElements().filter((el:ExcalidrawElement)=>el.width<10000 && el.height<10000);
-    if((app.isMobile && elements.length>1000) || elements.length>2500) {
+    if((DEVICE.isMobile && elements.length>1000) || elements.length>2500) {
       if(justLoaded) api.scrollToContent();
       return;
     }
