@@ -1,5 +1,6 @@
 import {
   App,
+  Editor,
   FrontMatterCache,
   normalizePath, OpenViewState, parseFrontMatterEntry, TFile, View, Workspace, WorkspaceLeaf, WorkspaceSplit
 } from "obsidian";
@@ -343,3 +344,10 @@ export const mergeMarkdownFiles = (template: string, target: string): string => 
 
   return mergedMarkdown;
 };
+
+export const editorInsertText = (editor: Editor, text: string)=> {
+  const cursor = editor.getCursor();
+  const line = editor.getLine(cursor.line);
+  const updatedLine = line.slice(0, cursor.ch) + text + line.slice(cursor.ch);
+  editor.setLine(cursor.line, updatedLine);
+}

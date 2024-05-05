@@ -343,6 +343,7 @@ export default class ExcalidrawView extends TextFileView {
   private hoverPreviewTarget: EventTarget = null;
   private viewModeEnabled:boolean = false;
   private lastMouseEvent: any = null;
+  private editingTextElementId: string = null; //storing to handle on-screen keyboard hide events
 
   id: string = (this.leaf as any).id;
 
@@ -1960,7 +1961,7 @@ export default class ExcalidrawView extends TextFileView {
 
   public activeLoader: EmbeddedFilesLoader = null;
   private nextLoader: EmbeddedFilesLoader = null;
-  public async loadSceneFiles() {
+  public async loadSceneFiles(isThemeChange: boolean = false) {
     if (!this.excalidrawAPI) {
       return;
     }
@@ -1996,7 +1997,7 @@ export default class ExcalidrawView extends TextFileView {
               return false;
             })
           }
-        },0
+        },0,isThemeChange,
       );
     };
     if (!this.activeLoader) {
@@ -2956,6 +2957,12 @@ export default class ExcalidrawView extends TextFileView {
     api.refresh();
   };
 
+  // depricated. kept for backward compatibility. e.g. used by the Slideshow plugin
+  // 2024.05.03
+  public refresh() {
+    this.refreshCanvasOffset();
+  }
+
   private clearHoverPreview() {
     if (this.hoverPreviewTarget) {
       const event = new MouseEvent("click", {
@@ -3446,7 +3453,7 @@ export default class ExcalidrawView extends TextFileView {
   private async onThemeChange (newTheme: string) {
     //debug({where:"ExcalidrawView.onThemeChange",file:this.file.name,before:"this.loadSceneFiles",newTheme});
     this.excalidrawData.scene.appState.theme = newTheme;
-    this.loadSceneFiles();
+    this.loadSceneFiles(true);
     this.toolsPanelRef?.current?.setTheme(newTheme);
     //Timeout is to allow appState to update
     setTimeout(()=>setDynamicStyle(this.plugin.ea,this,this.previousBackgroundColor,this.plugin.settings.dynamicStyling));
@@ -3867,7 +3874,7 @@ export default class ExcalidrawView extends TextFileView {
     }
 
     // 1. Set the isEditingText flag to true to prevent autoresize on mobile
-    // 1500ms is an empirical number, the onscreen keyboard usually disappears in 1-2 seconds
+    // 1500ms is an empirical number, the on-screen keyboard usually disappears in 1-2 seconds
     this.semaphores.isEditingText = true;
     if(this.isEditingTextResetTimer) {
       clearTimeout(this.isEditingTextResetTimer);
@@ -4697,7 +4704,7 @@ export default class ExcalidrawView extends TextFileView {
             const height = this.contentEl.clientHeight;
             if(width === 0 || height === 0) return;
             
-            //this is an aweful hack to prevent the keyboard pushing the canvas out of view.
+            //this is an aweful hack to prevent the on-screen keyboard pushing the canvas out of view.
             //The issue is that contrary to Excalidraw.com where the page is simply pushed up, in 
             //Obsidian the leaf has a fixed top. As a consequence the top of excalidrawWrapperDiv does not get pushed out of view
             //but shirnks. But the text area is positioned relative to excalidrawWrapperDiv and consequently does not fit, which
@@ -4708,8 +4715,12 @@ export default class ExcalidrawView extends TextFileView {
             //I found that adding and removing this style solves the issue.
             //...again, just aweful, but works.
             const st = this.excalidrawAPI.getAppState();
-            const isKeyboardOutEvent = st.editingElement?.type === "text";
-            const isKeyboardBackEvent = this.semaphores.isEditingText && !isKeyboardOutEvent;
+            //isEventOnSameElement attempts to solve https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1729
+            //the issue is that when the user hides the keyboard with the keyboard hide button and not tapping on the screen, then editingElement is not null
+            const isEventOnSameElement = this.editingTextElementId === st.editingElement?.id;
+            const isKeyboardOutEvent:Boolean = st.editingElement && st.editingElement.type === "text" && !isEventOnSameElement;
+            const isKeyboardBackEvent:Boolean = (this.semaphores.isEditingText || isEventOnSameElement) && !isKeyboardOutEvent;
+            this.editingTextElementId = isKeyboardOutEvent ? st.editingElement.id : null;
             if(isKeyboardOutEvent) {
               const self = this;
                 const appToolHeight = (self.contentEl.querySelector(".Island.App-toolbar") as HTMLElement)?.clientHeight ?? 0;

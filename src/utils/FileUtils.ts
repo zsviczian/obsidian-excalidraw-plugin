@@ -440,3 +440,38 @@ export const fileShouldDefaultAsExcalidraw = (path:string, app:App):boolean => {
     cache.frontmatter[FRONTMATTER_KEYS["plugin"].name] &&
     !Boolean(cache.frontmatter[FRONTMATTER_KEYS["open-as-markdown"].name]);
 }
+
+export const getExcalidrawEmbeddedFilesFiletree = (sourceFile: TFile, plugin: ExcalidrawPlugin):TFile[] => {
+  if(!sourceFile || !plugin.isExcalidrawFile(sourceFile)) {
+    return [];
+  }
+
+  const fileList = new Set<TFile>();
+  const app = plugin.app;
+
+  const addAttachedImages = (f:TFile) => Object
+    .keys(app.metadataCache.resolvedLinks[f.path])
+    .forEach(path => {
+      const file = app.vault.getAbstractFileByPath(path);
+      if (!file || !(file instanceof TFile)) return;
+      const isExcalidraw = plugin.isExcalidrawFile(file);
+      if (
+        (file.extension === "md" && !isExcalidraw) ||
+        fileList.has(file) //avoid infinite loops
+      ) {
+        return;
+      }
+      fileList.add(file);
+      if (isExcalidraw) {
+        addAttachedImages(file);
+      }
+    });
+
+  addAttachedImages(sourceFile);
+  return Array.from(fileList);
+}
+
+export const hasExcalidrawEmbeddedImagesTreeChanged = (sourceFile: TFile, mtime:number, plugin: ExcalidrawPlugin):boolean => {
+  const fileList = getExcalidrawEmbeddedFilesFiletree(sourceFile, plugin);
+  return fileList.some(f=>f.stat.mtime > mtime);
+}

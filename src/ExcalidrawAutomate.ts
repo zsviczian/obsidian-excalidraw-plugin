@@ -38,7 +38,7 @@ import {
   MD_TEXTELEMENTS,
   MD_DRAWING,
 } from "src/constants/constants";
-import { blobToBase64, checkAndCreateFolder, getDrawingFilename, getListOfTemplateFiles, getNewUniqueFilepath, } from "src/utils/FileUtils";
+import { blobToBase64, checkAndCreateFolder, getDrawingFilename, getExcalidrawEmbeddedFilesFiletree, getListOfTemplateFiles, getNewUniqueFilepath, hasExcalidrawEmbeddedImagesTreeChanged, } from "src/utils/FileUtils";
 import {
   arrayToMap,
   //debug,
@@ -250,6 +250,22 @@ export class ExcalidrawAutomate {
    */
   public getListOfTemplateFiles(): TFile[] | null {
     return getListOfTemplateFiles(this.plugin);
+  }
+
+  /**
+   * Retruns the embedded images in the scene recursively. If excalidrawFile is not provided, 
+   * the function will use ea.targetView.file
+   * @param excalidrawFile 
+   * @returns TFile[] of all nested images and Excalidraw drawings recursively
+   */
+  public getEmbeddedImagesFiletree(excalidrawFile?: TFile): TFile[] {
+    if(!excalidrawFile && this.targetView && this.targetView.file) {
+      excalidrawFile = this.targetView.file;
+    }
+    if(!excalidrawFile) {
+      return [];
+    }
+    return getExcalidrawEmbeddedFilesFiletree(excalidrawFile, this.plugin);
   }
 
   public async getAttachmentFilepath(filename: string): Promise<string> {

@@ -69,7 +69,7 @@ export const carveOutPDF = async (sourceEA: ExcalidrawAutomate, embeddableEl: Ex
 
   const targetEA = getEA(sourceEA.targetView) as ExcalidrawAutomate;
   
-  const {height, width} = embeddableEl;
+  let {height, width} = embeddableEl;
 
   if(!height || !width || height === 0 || width === 0) return;
 
@@ -77,8 +77,6 @@ export const carveOutPDF = async (sourceEA: ExcalidrawAutomate, embeddableEl: Ex
   const newImage = targetEA.getElement(imageId) as Mutable<ExcalidrawImageElement>;
   newImage.x = 0;
   newImage.y = 0;
-  newImage.width = width;
-  newImage.height = height;
   const angle = embeddableEl.angle;
 
   const fname = pdfFile.basename;

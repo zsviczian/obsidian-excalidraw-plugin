@@ -1,12 +1,13 @@
-import { createPNG, ExcalidrawAutomate } from "../ExcalidrawAutomate";
+import { ExcalidrawAutomate, createPNG } from "../ExcalidrawAutomate";
 import {Notice, requestUrl} from "obsidian"
 import ExcalidrawPlugin from "../main"
 import {log} from "../utils/Utils"
 import ExcalidrawView, { ExportSettings } from "../ExcalidrawView"
 import FrontmatterEditor from "src/utils/Frontmatter";
-import { ExcalidrawElement, ExcalidrawImageElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { ExcalidrawElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { EmbeddedFilesLoader } from "src/EmbeddedFileLoader";
 import { blobToBase64 } from "src/utils/FileUtils";
+import { getEA } from "src";
 
 const TASKBONE_URL = "https://api.taskbone.com/"; //"https://excalidraw-preview.onrender.com/";
 const TASKBONE_OCR_FN = "execute?id=60f394af-85f6-40bc-9613-5d26dc283cbb";
@@ -39,23 +40,9 @@ export default class Taskbone {
     return apiKey;
   }
 
-  public async getTextForView(view: ExcalidrawView, forceReScan: boolean) {
-    await view.forceSave(true);
-    const viewElements = view.excalidrawAPI.getSceneElements().filter((el:ExcalidrawElement) => 
-      el.type==="freedraw" || 
-      ( el.type==="image" &&
-        !this.plugin.isExcalidrawFile(view.excalidrawData.getFile(el.fileId)?.file)
-      ));
-    if(viewElements.length === 0) {
-      new Notice ("Aborting OCR because there are no image or freedraw elements on the canvas.",4000);
-      return;
-    }
-    const fe = new FrontmatterEditor(view.data);
-    if(fe.hasKey("taskbone-ocr") && !forceReScan) {
-      new Notice ("The drawing has already been processed, you will find the result in the frontmatter in markdown view mode. If you ran the command from the Obsidian Panel in Excalidraw then you can CTRL(CMD)+click the command to force the rescaning.",4000)
-      return;
-    }   
-    const bb = this.plugin.ea.getBoundingBox(viewElements);
+  public async getTextForElements(elements: ExcalidrawElement[], ea: ExcalidrawAutomate): Promise<string> {
+    ea.copyViewElementsToEAforEditing(elements, true);
+    const bb = ea.getBoundingBox(elements);
     const size = (bb.width*bb.height);
     const minRatio = Math.sqrt(360000/size);
     const maxRatio = Math.sqrt(size/16000000);
@@ -79,26 +66,52 @@ export default class Taskbone {
     };
 
     const img =
-      await createPNG(
-        view.file.path + "#^taskbone",
+      await ea.createPNG(
+        null,
         scale,
         exportSettings,
         loader,
         "light",
-        null,
-        null,
-        [],
-        this.plugin,
-        0
-      );
+      )
+    return await this.getTextForImage(img); 
+  }
 
-    const text = await this.getTextForImage(img); 
+  public async getTextForView(view: ExcalidrawView, {
+    forceReScan,
+    selectedElementsOnly = false,
+    addToFrontmatter = true,
+  }: {
+    forceReScan: boolean,
+    selectedElementsOnly?: boolean,
+    addToFrontmatter?: boolean,
+  }) {
+    await view.forceSave(true);
+    const ea = getEA(view) as ExcalidrawAutomate;
+    const viewElements = (selectedElementsOnly ? ea.getViewSelectedElements() : ea.getViewElements())
+      .filter((el:ExcalidrawElement) => 
+        el.type==="freedraw" || 
+        ( el.type==="image" &&
+          !this.plugin.isExcalidrawFile(view.excalidrawData.getFile(el.fileId)?.file)
+        ));
+    if(viewElements.length === 0) {
+      new Notice ("Aborting OCR because there are no image or freedraw elements on the canvas.",4000);
+      return;
+    }
+    const fe = new FrontmatterEditor(view.data);
+    if(addToFrontmatter && fe.hasKey("taskbone-ocr") && !forceReScan) {
+      new Notice ("The drawing has already been processed, you will find the result in the frontmatter in markdown view mode. If you ran the command from the Obsidian Panel in Excalidraw then you can CTRL(CMD)+click the command to force the rescaning.",4000)
+      return;
+    }
+
+   const text = await this.getTextForElements(viewElements, ea);
     if(text) {
-      fe.setKey("taskbone-ocr",text);
-      view.data = fe.data;
-      view.save(false);
+      if(addToFrontmatter) {
+        fe.setKey("taskbone-ocr",text);
+        view.data = fe.data;
+        view.save(false);
+      }
       window.navigator.clipboard.writeText(text);
-      new Notice("I placed the recognized in the drawing's frontmatter and onto the system clipboard.");
+      new Notice(`I placed the recognized text onto the system clipboard${addToFrontmatter?" and to document properties":""}.`);
     }
   }
 

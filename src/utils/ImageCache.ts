@@ -2,6 +2,8 @@ import { App, Notice, TFile } from "obsidian";
 import ExcalidrawPlugin from "src/main";
 import { convertSVGStringToElement } from "./Utils";
 import { FILENAMEPARTS, PreviewImageType } from "./UtilTypes";
+import { has } from "src/svgToExcalidraw/attributes";
+import { hasExcalidrawEmbeddedImagesTreeChanged } from "./FileUtils";
 
 //@ts-ignore
 const DB_NAME = "Excalidraw " + app.appId;
@@ -19,6 +21,7 @@ export type ImageKey = {
   isDark: boolean;
   previewImageType: PreviewImageType;
   scale: number;
+  isTransparent: boolean;
 } & FILENAMEPARTS;
 
 const getKey = (key: ImageKey): string =>
@@ -29,7 +32,7 @@ const getKey = (key: ImageKey): string =>
       : key.previewImageType === PreviewImageType.PNG
         ? 0
         : 2 
-  }#${key.scale}`; //key.isSVG ? 1 : 0
+  }#${key.scale}${key.isTransparent?"#t":""}`; //key.isSVG ? 1 : 0
 
 class ImageCache {
   private dbName: string;
@@ -291,7 +294,10 @@ class ImageCache {
 
       const file = this.app.vault.getAbstractFileByPath(key_.filepath.split("#")[0]);
       if (!file || !(file instanceof TFile)) return undefined;
-      if (cachedData && cachedData.mtime === file.stat.mtime) {
+      if (cachedData && cachedData.mtime >= file.stat.mtime) {
+        if(hasExcalidrawEmbeddedImagesTreeChanged(file, cachedData.mtime, this.plugin)) {
+          return undefined;
+        }
         if(cachedData.svg) {
           return convertSVGStringToElement(cachedData.svg);
         }
@@ -332,7 +338,7 @@ class ImageCache {
     } else {
      blob = image as Blob;
     }
-    const data: FileCacheData = { mtime: file.stat.mtime, blob, svg};
+    const data: FileCacheData = { mtime: Date.now(), blob, svg};
     const transaction = this.db.transaction(this.cacheStoreName, "readwrite");
     const store = transaction.objectStore(this.cacheStoreName);
     const key = getKey(key_);

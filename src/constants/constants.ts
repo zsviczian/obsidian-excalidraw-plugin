@@ -14,7 +14,7 @@ export const MD_JSON_START = "```json\n";
 export const MD_JSON_END = "```";
 export const MD_DRAWING = "# Drawing";
 export const MD_ELEMENTLINKS = "# Element Links";
-export const MD_EMBEDFILES = "# Embed files";
+export const MD_EMBEDFILES = "# Embedded files";
 export const MD_EX_SECTIONS = [MD_TEXTELEMENTS, MD_DRAWING, MD_ELEMENTLINKS, MD_EMBEDFILES];
 
 export const ERROR_IFRAME_CONVERSION_CANCELED = "iframe conversion canceled";

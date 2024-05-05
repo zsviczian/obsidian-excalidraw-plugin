@@ -6,7 +6,7 @@ If you'd like to learn more, please subscribe to my YouTube channel: [Visual PKM
 Thank you & Enjoy!
 
 <div class="excalidraw-videoWrapper"><div>
-<iframe src="https://www.youtube.com/embed/o0exK-xFP3k" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe src="https://www.youtube.com/embed/P_Q6avJGoWI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 </div></div>
 `;
 
@@ -16,6 +16,41 @@ export const RELEASE_NOTES: { [k: string]: string } = {
 I develop this plugin as a hobby, spending my free time doing this. If you find it valuable, then please say THANK YOU or...
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
+`,
+"2.1.7:":`
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/P_Q6avJGoWI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## Updates from Excalidraw.com
+- Improved undo management.
+- Improved handle to scale images from the side.
+- Changed arrow binding behavior.
+- Many other minor fixes and improvements.
+
+## New
+- Introduced image caching for nested (embedded) Excalidraw drawings on the scene. This enhancement should lead to improved scene loading times, especially when dealing with numerous embedded Excalidraw drawings.
+- Added new OCR Command Palette actions. Users can now re-run OCR and run OCR for selected elements.
+
+## Fixed
+- Fixed an issue where cropping an embeddable PDF frame in the Excalidraw Scene caused distortion based on the embeddable element's aspect ratio. ([#1756](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1756))
+- Removed the listing of ${String.fromCharCode(96)}# Embedded files${String.fromCharCode(96)} section when adding a "Back of the note card". ([#1754](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1754))
+- Resolved the issue where closing the on-screen keyboard with the keyboard hide button of your phone, instead of tapping somewhere else on the Excalidraw scene, did not resize the scene correctly. ([#1729](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1729))
+- Fixed the problem where pasting a text element as text into markdown incorrectly pasted the text to the end of the MD note, with line breaks as rendered on screen in Excalidraw. Also addressed the issue where pasting an image element as an image resulted in it being pasted to the end of the document. ([#1749](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1749))
+- Corrected the color inversion of embedded images when changing the theme from light to dark, then back from dark to light, and again from light to dark on the third change.
+- Addressed the problem where cropping an image while unlocking and rotating it in the cropper did not reflect the rotation. Note that rotating the image in Cropper required switching to markdown view mode, changing the "locked": true property to false, then switching back to Excalidraw mode. This issue likely impacted only a very few power users. ([#1745](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1745))
+
+## New in ExcalidrawAutomate
+${String.fromCharCode(96,96,96)}ts
+/**
+   * Retruns the embedded images in the scene recursively. If excalidrawFile is not provided, 
+   * the function will use ea.targetView.file
+   * @param excalidrawFile 
+   * @returns TFile[] of all nested images and Excalidraw drawings recursively
+   */
+  public getEmbeddedImagesFiletree(excalidrawFile?: TFile): TFile[];
+${String.fromCharCode(96,96,96)}
+
 `,
 "2.1.6":`
 ## Two minor fixes

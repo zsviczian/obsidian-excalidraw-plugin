@@ -105,7 +105,7 @@ import {
   decompress,
   getImageSize,
 } from "./utils/Utils";
-import { extractSVGPNGFileName, getActivePDFPageNumberFromPDFView, getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark, mergeMarkdownFiles, openLeaf } from "./utils/ObsidianUtils";
+import { editorInsertText, extractSVGPNGFileName, getActivePDFPageNumberFromPDFView, getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark, mergeMarkdownFiles, openLeaf } from "./utils/ObsidianUtils";
 import { ExcalidrawElement, ExcalidrawEmbeddableElement, ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { ScriptEngine } from "./Scripts";
 import {
@@ -1182,7 +1182,51 @@ export default class ExcalidrawPlugin extends Plugin {
             new Notice("Taskbone OCR is not enabled. Please go to plugins settings to enable it.",4000);
             return true;
           }
-          this.taskbone.getTextForView(view, false);
+          this.taskbone.getTextForView(view, {forceReScan: false});
+          return true;
+        }
+        return false;
+      },
+    });
+
+    this.addCommand({
+      id: "rerun-ocr",
+      name: t("RERUN_OCR"),
+      checkCallback: (checking: boolean) => {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (checking) {
+          return (
+            Boolean(view)
+          );
+        }
+        if (view) {
+          if(!this.settings.taskboneEnabled) {
+            new Notice("Taskbone OCR is not enabled. Please go to plugins settings to enable it.",4000);
+            return true;
+          }
+          this.taskbone.getTextForView(view, {forceReScan: true});
+          return true;
+        }
+        return false;
+      },
+    });
+
+    this.addCommand({
+      id: "run-ocr-selectedelements",
+      name: t("RUN_OCR_ELEMENTS"),
+      checkCallback: (checking: boolean) => {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (checking) {
+          return (
+            Boolean(view)
+          );
+        }
+        if (view) {
+          if(!this.settings.taskboneEnabled) {
+            new Notice("Taskbone OCR is not enabled. Please go to plugins settings to enable it.",4000);
+            return true;
+          }
+          this.taskbone.getTextForView(view, {forceReScan: false, selectedElementsOnly: true, addToFrontmatter: false});
           return true;
         }
         return false;
@@ -2419,16 +2463,16 @@ export default class ExcalidrawPlugin extends Plugin {
                 if(sourceFile && imageFile && imageFile instanceof TFile) {
                   path = self.app.metadataCache.fileToLinktext(imageFile,sourceFile.path);
                 }
-                editor.insertText(getLink(self, {path}));
+                editorInsertText(editor, getLink(self, {path}));
               }
               return;
             }
             if (element.type === "text") {
-              editor.insertText(element.text);
+              editorInsertText(editor, element.rawText);
               return;
             }
             if (element.link) {
-              editor.insertText(`${element.link}`);
+              editorInsertText(editor, `${element.link}`);
               return;
             }
           } catch (e) {

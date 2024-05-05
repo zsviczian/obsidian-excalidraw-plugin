@@ -21,7 +21,7 @@ The script will convert your drawing into a slideshow presentation.
 
 ```javascript
 */
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.9.23")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.1.7")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
@@ -190,7 +190,7 @@ let preventFullscreenExit = true;
 const gotoFullscreen = async () => {
   if(isFullscreen) return;
   preventFullscreenExit = true;
-	if(app.isMobile) {
+	if(ea.DEVICE.isMobile) {
 	  ea.viewToggleFullScreen();
 	} else {
 		await contentEl.webkitRequestFullscreen();
@@ -206,8 +206,8 @@ const gotoFullscreen = async () => {
 const exitFullscreen = async () => {
   if(!isFullscreen) return;
   preventFullscreenExit = true;
-  if(!app.isMobile && ownerDocument?.fullscreenElement) await ownerDocument.exitFullscreen();
-  if(app.isMobile) ea.viewToggleFullScreen();
+  if(!ea.DEVICE.isMobile && ownerDocument?.fullscreenElement) await ownerDocument.exitFullscreen();
+  if(ea.DEVICE.isMobile) ea.viewToggleFullScreen();
   if(toggleFullscreenButton) toggleFullscreenButton.innerHTML = SVG_MAXIMIZE;
   await waitForExcalidrawResize();
   resetControlPanelElPosition();
@@ -649,7 +649,7 @@ const initializeEventListners = () => {
 	  controlPanelEl.removeEventListener('mouseenter', onMouseEnter, false);
 	  controlPanelEl.removeEventListener('mouseleave', onMouseLeave, false);
 	  controlPanelEl.parentElement?.removeChild(controlPanelEl);
-	  if(!app.isMobile) {
+	  if(!ea.DEVICE.isMobile) {
 	    contentEl.removeEventListener('webkitfullscreenchange', fullscreenListener);
 	    contentEl.removeEventListener('fullscreenchange', fullscreenListener);
 	  }
@@ -664,7 +664,7 @@ const initializeEventListners = () => {
     return true;
   };
   
-  if(!app.isMobile) {
+  if(!ea.DEVICE.isMobile) {
     contentEl.addEventListener('webkitfullscreenchange', fullscreenListener);
     contentEl.addEventListener('fullscreenchange', fullscreenListener);
   }
@@ -727,7 +727,7 @@ const exitPresentation = async (openForEdit = false) => {
     //Resets pointer offsets. Ugly solution. 
     //During testing offsets were wrong after presentation, but don't know why.
     //This should solve it even if they are wrong.
-    hostView.refresh();
+    hostView.refreshCanvasOffset();
     excalidrawAPI.setActiveTool({type: "selection"});
   })
 }

@@ -86,7 +86,7 @@ const _getPNG = async ({imgAttributes,filenameParts,theme,cacheReady,img,file,ex
             ? 2
             : 1;
   
-  const cacheKey = {...filenameParts, isDark: theme==="dark", previewImageType: PreviewImageType.PNG, scale};
+  const cacheKey = {...filenameParts, isDark: theme==="dark", previewImageType: PreviewImageType.PNG, scale, isTransparent: !exportSettings.withBackground};
 
   if(cacheReady) {      
     const src = await imageCache.getImageFromCache(cacheKey);
@@ -163,7 +163,7 @@ const _getSVGIMG = async ({filenameParts,theme,cacheReady,img,file,exportSetting
   exportSettings: ExportSettings,
   loader: EmbeddedFilesLoader,
 }):Promise<HTMLImageElement> => {
-  const cacheKey = {...filenameParts, isDark: theme==="dark", previewImageType: PreviewImageType.SVGIMG, scale:1};
+  const cacheKey = {...filenameParts, isDark: theme==="dark", previewImageType: PreviewImageType.SVGIMG, scale:1, isTransparent: !exportSettings.withBackground};
   if(cacheReady) {
     const src = await imageCache.getImageFromCache(cacheKey);
     if(src && typeof src === "string") {
@@ -220,13 +220,13 @@ const _getSVGNative = async ({filenameParts,theme,cacheReady,containerElement,fi
   exportSettings: ExportSettings,
   loader: EmbeddedFilesLoader,
 }):Promise<HTMLDivElement> => {
-  const cacheKey = {...filenameParts, isDark: theme==="dark", previewImageType: PreviewImageType.SVG, scale:1};
+  const cacheKey = {...filenameParts, isDark: theme==="dark", previewImageType: PreviewImageType.SVG, scale:1, isTransparent: !exportSettings.withBackground};
   let maybeSVG;
   if(cacheReady) {
     maybeSVG = await imageCache.getImageFromCache(cacheKey);
   }
 
-  let svg = maybeSVG && (maybeSVG instanceof SVGSVGElement)
+  let svg = (maybeSVG && (maybeSVG instanceof SVGSVGElement))
     ? maybeSVG
     : convertSVGStringToElement((await createSVG(
       filenameParts.hasGroupref || filenameParts.hasBlockref || filenameParts.hasSectionref || filenameParts.hasFrameref

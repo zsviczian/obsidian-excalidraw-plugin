@@ -571,6 +571,13 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
       "If no template is set, it returns null.",
     after: "",
   },
+  { 
+    field: "getEmbeddedImagesFiletree",
+    code: "getEmbeddedImagesFiletree(excalidrawFile?: TFile): TFile[]",
+    desc: "Retruns the embedded images in the scene recursively. If excalidrawFile is not provided, " +
+      "the function will use ea.targetView.file",
+    after: "",
+  },
   {
     field: "getAttachmentFilepath",
     code: "async getAttachmentFilepath(filename: string): Promise<string>",

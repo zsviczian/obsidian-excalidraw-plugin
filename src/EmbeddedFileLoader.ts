@@ -1,7 +1,7 @@
 //https://stackoverflow.com/questions/2068344/how-do-i-get-a-youtube-video-thumbnail-from-the-youtube-api
 //https://img.youtube.com/vi/uZz5MgzWXiM/maxresdefault.jpg
 
-import { ExcalidrawElement, ExcalidrawImageElement, FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { ExcalidrawElement, FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { App, MarkdownRenderer, Notice, TFile } from "obsidian";
 import {
@@ -23,7 +23,7 @@ import { ExportSettings } from "./ExcalidrawView";
 import { t } from "./lang/helpers";
 import { tex2dataURL } from "./LaTeX";
 import ExcalidrawPlugin from "./main";
-import { blobToBase64, getDataURLFromURL, getMimeType, getPDFDoc, getURLImageExtension, readLocalFileBinary } from "./utils/FileUtils";
+import { blobToBase64, getDataURLFromURL, getMimeType, getPDFDoc, getURLImageExtension, hasExcalidrawEmbeddedImagesTreeChanged, readLocalFileBinary } from "./utils/FileUtils";
 import {
   errorlog,
   getDataURL,
@@ -42,6 +42,8 @@ import {
 import { ValueOf } from "./types";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
 import { mermaidToExcalidraw } from "src/constants/constants";
+import { ImageKey, imageCache } from "./utils/ImageCache";
+import { PreviewImageType } from "./utils/UtilTypes";
 
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B
@@ -164,7 +166,7 @@ export class EmbeddedFile {
   constructor(plugin: ExcalidrawPlugin, hostPath: string, imgPath: string, colorMapJSON?: string) {
     this.plugin = plugin;
     this.resetImage(hostPath, imgPath);
-    if(this.file && (this.plugin.ea.isExcalidrawFile(this.file) || this.file.extension.toLowerCase() === "svg")) {
+    if(this.file && (this.plugin.isExcalidrawFile(this.file) || this.file.extension.toLowerCase() === "svg")) {
       try {
         this.colorMap = colorMapJSON ? JSON.parse(colorMapJSON.toLocaleLowerCase()) : null;
       } catch (error) {
@@ -358,22 +360,46 @@ export class EmbeddedFilesLoader {
       withTheme: !!forceTheme,
       isMask,
     };
-    const svg = replaceSVGColors(
-      await createSVG(
-        file?.path,
-        true,
-        exportSettings,
-        this,
-        forceTheme,
-        null,
-        null,
-        elements,
-        this.plugin,
-        depth+1,
-        getExportPadding(this.plugin, file),
-      ),
-      inFile instanceof EmbeddedFile ? inFile.colorMap : null
-    ) as SVGSVGElement;
+
+    const shouldUseCache = file && imageCache.isReady();
+    const cacheKey:ImageKey = {
+      filepath: file.path,
+      blockref: null,
+      sectionref: null,
+      isDark,
+      previewImageType: PreviewImageType.SVG,
+      scale: 1,
+      isTransparent: !exportSettings.withBackground,
+      hasBlockref: false,
+      hasGroupref: false,
+      hasTaskbone: false,
+      hasArearef: false,
+      hasFrameref: false,
+      hasSectionref: false,
+      linkpartReference: null,
+      linkpartAlias: null,
+    }
+
+    const maybeSVG = await imageCache.getImageFromCache(cacheKey);
+
+    const svg = (maybeSVG && (maybeSVG instanceof SVGSVGElement))
+    ? maybeSVG
+    : replaceSVGColors(
+        await createSVG(
+          file?.path,
+          true,
+          exportSettings,
+          this,
+          forceTheme,
+          null,
+          null,
+          elements,
+          this.plugin,
+          depth+1,
+          getExportPadding(this.plugin, file),
+        ),
+        inFile instanceof EmbeddedFile ? inFile.colorMap : null
+      ) as SVGSVGElement;
 
     //https://stackoverflow.com/questions/51154171/remove-css-filter-on-child-elements
     const imageList = svg.querySelectorAll(
@@ -382,7 +408,8 @@ export class EmbeddedFilesLoader {
     if (imageList.length > 0) {
       hasSVGwithBitmap = true;
     }
-    if (hasSVGwithBitmap && isDark) { 
+
+    if (hasSVGwithBitmap && isDark && !Boolean(maybeSVG)) { 
       imageList.forEach((i) => {
         const id = i.parentElement?.id;
         svg.querySelectorAll(`use[href='#${id}']`).forEach((u) => {
@@ -392,6 +419,9 @@ export class EmbeddedFilesLoader {
     }
     if (!hasSVGwithBitmap && svg.getAttribute("hasbitmap")) {
       hasSVGwithBitmap = true;
+    }
+    if(shouldUseCache && !Boolean(maybeSVG)) {
+      imageCache.addImageToCache(cacheKey,"", svg);
     }
     const dURL = svgToBase64(svg.outerHTML) as DataURL;
     return {dataURL: dURL as DataURL, hasSVGwithBitmap};
@@ -526,7 +556,8 @@ export class EmbeddedFilesLoader {
   public async loadSceneFiles(
     excalidrawData: ExcalidrawData,
     addFiles: (files: FileData[], isDark: boolean, final?: boolean) => void,
-    depth:number
+    depth:number,
+    isThemeChange:boolean = false,
   ) {
     
     if(depth > 7) {
@@ -563,7 +594,8 @@ export class EmbeddedFilesLoader {
           }
           //files.push(fileData);
         }
-      } /*else if (embeddedFile.isSVGwithBitmap) {
+      } else if (embeddedFile.isSVGwithBitmap && (depth !== 0 || isThemeChange)) {
+        //this will reload the image in light/dark mode when switching themes
         const fileData = {
           mimeType: embeddedFile.mimeType,
           id: entry.value[0],
@@ -580,7 +612,7 @@ export class EmbeddedFilesLoader {
         catch(e) {
           errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
         }
-      }*/
+      }
     }
 
     let equation;

@@ -58,9 +58,9 @@ declare module "obsidian" {
     },
     basePath: string;
   }
-  interface Editor {
+  /*interface Editor {
     insertText(data: string): void;
-  }
+  }*/
   interface MetadataCache {
     getBacklinksForFile(file: TFile): any;
     getLinks(): { [id: string]: Array<{ link: string; displayText: string; original: string; position: any }> };

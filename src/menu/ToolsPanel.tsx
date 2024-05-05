@@ -381,7 +381,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                         new Notice("Taskbone OCR is not enabled. Please go to plugins settings to enable it.",4000);
                         return;
                       }
-                      this.props.view.plugin.taskbone.getTextForView(this.props.view, isWinCTRLorMacCMD(e));
+                      this.props.view.plugin.taskbone.getTextForView(this.props.view, {forceReScan: isWinCTRLorMacCMD(e)});
                     }}
                     icon={ICONS.ocr}
                     view={this.props.view}
