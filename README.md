@@ -3,8 +3,7 @@
 The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/), a feature rich sketching tool, into Obsidian. You can store and edit Excalidraw files in your vault, you can embed drawings into your documents, and you can link to documents and other drawings to/and from Excalidraw. For a showcase of Excalidraw features, please read my blog post [here](https://www.zsolt.blog/2021/03/showcasing-excalidraw.html) and/or watch the videos below.
 
 ## Video Walkthrough
-<a href="https://youtu.be/P_Q6avJGoWI" target="_blank"><img src=https://github.com/zsviczian/obsidian-excalidraw-plugin/assets/14358394/da34bb33-7610-45e6-b36f-cb7a02a9141b" width="300"/></a>
-
+<a href="https://youtu.be/P_Q6avJGoWI" target="_blank"><img src="https://github.com/zsviczian/obsidian-excalidraw-plugin/assets/14358394/da34bb33-7610-45e6-b36f-cb7a02a9141b" width="300"/></a>
 <a href="https://youtu.be/o0exK-xFP3k" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/156931370-aa4d88de-c4a8-46cc-aeb2-dc09aa0bea39.jpg" width="300"/></a> 
 <a href="https://youtu.be/QKnQgSjJVuc" target="_blank"><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/thumbnail-getting-started.jpg" width="300"/></a>
 
