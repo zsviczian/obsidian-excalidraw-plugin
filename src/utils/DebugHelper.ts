@@ -1,5 +1,15 @@
-export const isDebugMode = false;
+import { EXCALIDRAW_PLUGIN } from "src/constants/constants";
+
+
 export const durationTreshold = 0; //0.05; //ms
+export const isDebugMode = () => EXCALIDRAW_PLUGIN && EXCALIDRAW_PLUGIN.settings?.isDebugMode;
+
+export const log = console.log.bind(window.console);
+export const debug = (...messages: unknown[]) => {
+  if(isDebugMode()) {
+    console.log(...messages);
+  }
+};
 
 export class CustomMutationObserver {
   private originalCallback: MutationCallback;

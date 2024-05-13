@@ -51,7 +51,6 @@ import {
   getSVG,
   isMaskFile,
   isVersionNewerThanOther,
-  log,
   scaleLoadedImage,
   wrapTextAtCharLength,
 } from "src/utils/Utils";
@@ -91,9 +90,8 @@ import {
   extractCodeBlocks as _extractCodeBlocks,
 } from "./utils/AIUtils";
 import { EXCALIDRAW_AUTOMATE_INFO, EXCALIDRAW_SCRIPTENGINE_INFO } from "./dialogs/SuggesterInfo";
-import { CropImage } from "./utils/CropImage";
-import { has } from "./svgToExcalidraw/attributes";
 import { getFrameBasedOnFrameNameOrId } from "./utils/ExcalidrawViewUtils";
+import { log } from "./utils/DebugHelper";
 
 extendPlugins([
   HarmonyPlugin,
@@ -134,7 +132,7 @@ export class ExcalidrawAutomate {
 
   public help(target: Function | string) {
     if (!target) {
-      console.log("Usage: ea.help(ea.functionName) or ea.help('propertyName') or ea.help('utils.functionName') - notice property name and utils function name is in quotes");
+      log("Usage: ea.help(ea.functionName) or ea.help('propertyName') or ea.help('utils.functionName') - notice property name and utils function name is in quotes");
       return;
     }
   
@@ -153,14 +151,14 @@ export class ExcalidrawAutomate {
     }
   
     if(!funcInfo) {
-      console.log("Usage: ea.help(ea.functionName) or ea.help('propertyName') or ea.help('utils.functionName') - notice property name and utils function name is in quotes");
+      log("Usage: ea.help(ea.functionName) or ea.help('propertyName') or ea.help('utils.functionName') - notice property name and utils function name is in quotes");
       return;
     }
 
     let isMissing = true;
     if (funcInfo.code) {
       isMissing = false;
-      console.log(`Declaration: ${funcInfo.code}`);
+      log(`Declaration: ${funcInfo.code}`);
     }
     if (funcInfo.desc) {
       isMissing = false;
@@ -171,10 +169,10 @@ export class ExcalidrawAutomate {
         .replace(/<a onclick='window\.open\("(.*?)"\)'>(.*?)<\/a>/g, (_, href, text) => `%c\u200b${text}%c\u200b (link: ${href})`); // Zero-width non-joiner
   
       const styles = Array.from({ length: (formattedDesc.match(/%c/g) || []).length }, (_, i) => i % 2 === 0 ? 'color: #007bff;' : '');
-      console.log(`Description: ${formattedDesc}`, ...styles);
+      log(`Description: ${formattedDesc}`, ...styles);
     } 
     if (isMissing) {
-      console.log("Description not available for this function.");
+      log("Description not available for this function.");
     }
   }
 
@@ -2645,7 +2643,7 @@ export class ExcalidrawAutomate {
   importSVG(svgString:string):boolean {
     const res:ConversionResult =  svgToExcalidraw(svgString);
     if(res.hasErrors) {
-      new Notice (`There were errors while parsing the given SVG:\n${[...res.errors].map((el) => el.innerHTML)}`);
+      new Notice (`There were errors while parsing the given SVG:\n${res.errors}`);
       return false;
     }
     this.copyViewElementsToEAforEditing(res.content);

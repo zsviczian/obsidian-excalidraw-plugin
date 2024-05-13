@@ -28,7 +28,6 @@ import { TextMode } from "./ExcalidrawView";
 import {
   addAppendUpdateCustomData,
   compress,
-  debug,
   decompress,
   //getBakPath,
   getBinaryFileFromDataURL,
@@ -51,7 +50,7 @@ import { BinaryFiles, DataURL, SceneData } from "@zsviczian/excalidraw/types/exc
 import { EmbeddedFile, MimeType } from "./EmbeddedFileLoader";
 import { ConfirmationPrompt } from "./dialogs/Prompt";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
-import { add } from "@zsviczian/excalidraw/types/excalidraw/ga";
+import { debug } from "./utils/DebugHelper";
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles };
 
@@ -904,7 +903,7 @@ export class ExcalidrawData {
           container?.type,
         ); //(await this.getText(te.id))??te.text serves the case when the whole #Text Elements section is deleted by accident
       } catch(e) {
-        debug({where: "ExcalidrawData.updateSceneTextElements", fn: this.updateSceneTextElements, textElement: te});
+        debug(`ExcalidrawData.updateSceneTextElements, textElement: ${te?.id}`, te, this.updateSceneTextElements);
       }
     }
   }

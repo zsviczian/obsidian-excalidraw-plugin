@@ -714,7 +714,7 @@ const tmpObsidianWYSIWYG = async (
       internalEmbedDiv.appendChild(imgDiv);    
     }, 500);
   }
-  const observer = isDebugMode
+  const observer = isDebugMode()
     ? new CustomMutationObserver(markdownObserverFn, "markdowPostProcessorObserverFn")
     : new MutationObserver(markdownObserverFn);
   observer.observe(internalEmbedDiv, {
@@ -848,7 +848,7 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = async (m) => {
   node.appendChild(div);
 };
 
-export const legacyExcalidrawPopoverObserver = isDebugMode
+export const legacyExcalidrawPopoverObserver = isDebugMode()
   ? new CustomMutationObserver(legacyExcalidrawPopoverObserverFn, "legacyExcalidrawPopoverObserverFn")
   : new MutationObserver(legacyExcalidrawPopoverObserverFn);
 

@@ -1,6 +1,7 @@
 import { MarkdownRenderer, Modal, Notice, request } from "obsidian";
 import ExcalidrawPlugin from "../main";
-import { errorlog, escapeRegExp, log } from "../utils/Utils";
+import { errorlog, escapeRegExp } from "../utils/Utils";
+import { log } from "src/utils/DebugHelper";
 
 const URL =
   "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/index-new.md";

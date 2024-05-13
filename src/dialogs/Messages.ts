@@ -17,6 +17,17 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.1.8":`
+## Fixed
+- Fixing issues that surfaced after upgrading to Obsidian 1.6.0
+  - Fixed Excalidraw hover previews
+  - Cursor for editing links, text elements, and frame names became virtually invisible if Obsidian was in dark mode and Excalidraw in light mode and vica versa.
+  - Rendering Excalidraw drawings in Markdown views, right after Obsidian loaded did not work.
+- I implemented more graceful fail if you submitted a malformed SVG for SVG to Excalidraw conversation. [#1768](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1768)
+
+## New
+- New setting under "Save" in plugin settings to NOT decompress JSON when switching to Markdown view mode. For details see description under "Save" settings. The benefit is smaller file size and fewer results in the Obsidian search. If you want to edit the JSON, you can always manually decompress JSON in markdown view mode with the command palette action "Excalidraw: Decompress JSON".
+`,
 "2.1.7:":`
 <div class="excalidraw-videoWrapper"><div>
 <iframe src="https://www.youtube.com/embed/P_Q6avJGoWI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

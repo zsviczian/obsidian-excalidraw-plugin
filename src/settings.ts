@@ -44,6 +44,7 @@ export interface ExcalidrawSettings {
   templateFilePath: string;
   scriptFolderPath: string;
   compress: boolean;
+  decompressForMDView: boolean;
   autosave: boolean;
   autosaveInterval: number;
   autosaveIntervalDesktop: number;
@@ -188,6 +189,7 @@ export interface ExcalidrawSettings {
   areaZoomLimit: number;
   longPressDesktop: number;
   longPressMobile: number;
+  isDebugMode: boolean;
 }
 
 declare const PLUGIN_VERSION:string;
@@ -200,6 +202,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   templateFilePath: "Excalidraw/Template.excalidraw",
   scriptFolderPath: "Excalidraw/Scripts",
   compress: false,
+  decompressForMDView: true,
   autosave: true,
   autosaveInterval: 15000,
   autosaveIntervalDesktop: 15000,
@@ -436,6 +439,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   areaZoomLimit: 1,
   longPressDesktop: 500,
   longPressMobile: 500,
+  isDebugMode: false,
 };
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
@@ -658,6 +662,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.compress)
           .onChange(async (value) => {
             this.plugin.settings.compress = value;
+            this.applySettingsUpdate();
+          }),
+    );
+
+    new Setting(detailsEl)
+      .setName(t("DECOMPRESS_FOR_MD_NAME"))
+      .setDesc(fragWithHTML(t("DECOMPRESS_FOR_MD_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.decompressForMDView)
+          .onChange(async (value) => {
+            this.plugin.settings.decompressForMDView = value;
             this.applySettingsUpdate();
           }),
     );
@@ -2460,6 +2476,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       text: t("COMPATIBILITY_HEAD"),
       cls: "excalidraw-setting-h1",
     });
+
+    new Setting(detailsEl)
+    .setName(t("DEBUGMODE_NAME"))
+    .setDesc(fragWithHTML(t("DEBUGMODE_DESC")))
+    .addToggle((toggle) =>
+      toggle
+        .setValue(this.plugin.settings.isDebugMode)
+        .onChange((value) => {
+          this.plugin.settings.isDebugMode = value;
+          this.applySettingsUpdate();
+        }),
+    );
+
 
     new Setting(detailsEl)
       .setName(t("SLIDING_PANES_NAME"))

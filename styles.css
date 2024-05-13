@@ -580,3 +580,18 @@ img.excalidraw-cropped-pdfpage,
 .ex-opacity-0 {
   opacity: 0;
 }
+
+.popover .excalidraw-svg {  
+  width: 100%;
+  max-width: inherit;
+  height: 100%;
+  max-height: inherit;
+}
+
+root {
+ --excalidraw-caret-color: initial;
+}
+
+textarea.excalidraw-wysiwyg, .excalidraw input {
+  caret-color: var(--excalidraw-caret-color);
+}

@@ -217,6 +217,14 @@ export default {
     "once you switch back to Excalidraw view. " +
     "The setting only has effect 'point forward', meaning, existing drawings will not be affected by the setting " +
     "until you open them and save them.<br><b><u>Toggle ON:</u></b> Compress drawing JSON<br><b><u>Toggle OFF:</u></b> Leave drawing JSON uncompressed",
+  DECOMPRESS_FOR_MD_NAME: "Decompress Excalidraw JSON in Markdown View",
+  DECOMPRESS_FOR_MD_DESC:
+    "By enabling this feature Excalidraw will automatically decompress the drawing JSON when you switch to Markdown view. " +
+    "This will allow you to easily read and edit the JSON string. The drawing will be compressed again " +
+    "once you switch back to Excalidraw view and save the drawing (CTRL+S).<br>" +
+    "I recommend switching this feature off as it will result in smaller file sizes and avoiding unnecessary results in Obsidian search. " +
+    "You can always use the 'Excalidraw: Decompress current Excalidraw file' command from the command palette "+
+    "to manually decompress the drawing JSON when you need to read or edit it.",
   AUTOSAVE_INTERVAL_DESKTOP_NAME: "Interval for autosave on Desktop",
   AUTOSAVE_INTERVAL_DESKTOP_DESC:
     "The time interval between saves. Autosave will skip if there are no changes in the drawing. " +
@@ -565,6 +573,9 @@ FILENAME_HEAD: "Filename",
     "Double files will be exported both if auto-export SVG or PNG (or both) are enabled, as well as when clicking export on a single image.",
   COMPATIBILITY_HEAD: "Compatibility features",
   COMPATIBILITY_DESC: "You should only enable these features if you have a strong reason for wanting to work with excalidraw.com files instead of markdown files. Many of the plugin features are not supported on legacy files. Typical usecase would be if you use set your vault up on top of a Visual Studio Code project folder and you have .excalidraw drawings you want to access from Visual Studio Code as well. Another usecase might be using Excalidraw in Logseq and Obsidian in parallel.",
+  DEBUGMODE_NAME: "Enable debug messages",
+  DEBUGMODE_DESC: "I recommend restarting Obsidian after enabling/disabling this setting. This enable debug messages in the console. This is useful for troubleshooting issues. " +
+    "If you are experiencing problems with the plugin, please enable this setting, reproduce the issue, and include the console log in the issue you raise on <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/issues'>GitHub</a>",
   SLIDING_PANES_NAME: "Sliding panes plugin support",
   SLIDING_PANES_DESC:
     "Need to restart Obsidian for this change to take effect.<br>" +

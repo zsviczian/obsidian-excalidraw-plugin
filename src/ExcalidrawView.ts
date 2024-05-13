@@ -132,7 +132,7 @@ import { useDefaultExcalidrawFrame } from "./utils/CustomEmbeddableUtils";
 import { UniversalInsertFileModal } from "./dialogs/UniversalInsertFileModal";
 import { getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
 import { nanoid } from "nanoid";
-import { CustomMutationObserver, isDebugMode } from "./utils/DebugHelper";
+import { CustomMutationObserver, debug, log} from "./utils/DebugHelper";
 import { extractCodeBlocks, postOpenAI } from "./utils/AIUtils";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { SelectCard } from "./dialogs/SelectCard";
@@ -681,7 +681,7 @@ export default class ExcalidrawView extends TextFileView {
 
     try {
       const allowSave = this.isDirty() || forcesave; //removed this.semaphores.autosaving
-      if(isDebugMode) console.log({allowSave, isDirty: this.isDirty(), autosaving: this.semaphores.autosaving, forcesave});
+      debug({where: "ExcalidrawView.save", allowSave, isDirty: this.isDirty(), autosaving: this.semaphores.autosaving, forcesave});
 
       if (allowSave) {
         const scene = this.getScene();
@@ -800,7 +800,7 @@ export default class ExcalidrawView extends TextFileView {
       const header = getExcalidrawMarkdownHeaderSection(this.data, keys);
 
       if (!this.excalidrawData.disableCompression) {
-        this.excalidrawData.disableCompression =
+        this.excalidrawData.disableCompression = this.plugin.settings.decompressForMDView &&
           this.isEditedAsMarkdownInOtherView();
       }
       const result = header + this.excalidrawData.generateMD(
@@ -1303,8 +1303,13 @@ export default class ExcalidrawView extends TextFileView {
     );
 
     const self = this;
-    app.workspace.onLayoutReady(async () => {
-      this.canvasNodeFactory.initialize();
+    this.app.workspace.onLayoutReady(async () => {
+      debug(`ExcalidrawView.onload app.workspace.onLayoutReady, file: ${self.file?.name}, isActiveLeaf: ${self.app.workspace.activeLeaf === self.leaf}, is activeExcalidrawView set: ${Boolean(self.plugin.activeExcalidrawView)}`);
+      //implemented to overcome issue that activeLeafChangeEventHandler is not called when view is initialized from a saved workspace, since Obsidian 1.6.0
+      if (self.app.workspace.activeLeaf === self.leaf) {
+        self.plugin.activeLeafChangeEventHandler(self.leaf);
+      }
+      self.canvasNodeFactory.initialize();
       self.contentEl.addClass("excalidraw-view");
       //https://github.com/zsviczian/excalibrain/issues/28
       await self.addSlidingPanesListner(); //awaiting this because when using workspaces, onLayoutReady comes too early
@@ -1320,7 +1325,7 @@ export default class ExcalidrawView extends TextFileView {
       };
 
       self.onKeyDown = (e: KeyboardEvent) => {
-        this.modifierKeyDown = {
+        self.modifierKeyDown = {
           shiftKey: e.shiftKey,
           ctrlKey: e.ctrlKey,
           altKey: e.altKey,
@@ -1396,7 +1401,7 @@ export default class ExcalidrawView extends TextFileView {
         self.offsetTop = offsetTop;
       }
     };
-    this.parentMoveObserver = isDebugMode
+    this.parentMoveObserver = this.plugin.settings.isDebugMode
       ? new CustomMutationObserver(observerFn, "parentMoveObserver")
       : new MutationObserver(observerFn)
 
@@ -1833,7 +1838,11 @@ export default class ExcalidrawView extends TextFileView {
     this.lastSaveTimestamp = this.file.stat.mtime;
     this.lastLoadedFile = this.file;
     data = this.data = data.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
-    app.workspace.onLayoutReady(async () => {
+    this.app.workspace.onLayoutReady(async () => {
+      debug(`ExcalidrawView.setViewData app.workspace.onLayoutReady, file: ${this.file?.name}, isActiveLeaf: ${this.app.workspace.activeLeaf === this.leaf}`);
+      let counter = 0;
+      while (!this.file && counter++<50) await sleep(50);
+      if(!this.file) return;
       this.compatibilityMode = this.file.extension === "excalidraw";
       await this.plugin.loadSettings();
       if (this.compatibilityMode) {
@@ -2263,9 +2272,9 @@ export default class ExcalidrawView extends TextFileView {
     this.initializeToolsIconPanelAfterLoading();
   }
 
-  public setDirty(debug?:number) {
+  public setDirty(location?:number) {
     if(this.semaphores.saving) return; //do not set dirty if saving
-    if(isDebugMode) console.log(debug);
+    debug(`ExcalidrawView.setDirty location:${location}`);
     this.semaphores.dirty = this.file?.path;
     this.diskIcon.querySelector("svg").addClass("excalidraw-dirty");
     if(!this.semaphores.viewunload && this.toolsPanelRef?.current) {
@@ -2354,7 +2363,7 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   public async openAsMarkdown(eState?: any) {
-    if (this.plugin.settings.compress === true) {
+    if (this.plugin.settings.compress && this.plugin.settings.decompressForMDView) {
       this.excalidrawData.disableCompression = true;
       await this.save(true, true);
     }
@@ -4547,17 +4556,17 @@ export default class ExcalidrawView extends TextFileView {
             }
 
             const json = response.json;
-            if (isDebugMode) console.log(response);
+            debug("ExcalidrawView.ttdDialog", response);
 
             if (json?.error) {
-              console.log(response);
+              log(response);
               return {
                 error: new Error(json.error.message),
               };
             }
 
             if(!json?.choices?.[0]?.message?.content) {
-              console.log(response);
+              log(response);
               return {
                 error: new Error("Generation failed... see console log for details"),
               };
@@ -4566,7 +4575,7 @@ export default class ExcalidrawView extends TextFileView {
             let generatedResponse = extractCodeBlocks(json.choices[0]?.message?.content)[0]?.data;
 
             if(!generatedResponse) {
-              console.log(response);
+              log(response);
               return {
                 error: new Error("Generation failed... see console log for details"),
               };

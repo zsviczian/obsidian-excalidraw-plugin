@@ -110,7 +110,7 @@ export class CanvasNodeFactory {
           }
         }
       };
-      const observer = isDebugMode
+      const observer = isDebugMode()
         ? new CustomMutationObserver(nodeObserverFn, "CanvasNodeFactory")
         : new MutationObserver(nodeObserverFn);
   

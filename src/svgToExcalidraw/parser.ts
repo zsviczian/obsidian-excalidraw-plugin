@@ -4,37 +4,46 @@ import { createTreeWalker, walk } from "./walker";
 
 export type ConversionResult = {
   hasErrors: boolean;
-  errors: NodeListOf<Element> | null;
+  errors: string;
   content: any; // Serialized Excalidraw JSON
 };
 
 export const svgToExcalidraw = (svgString: string): ConversionResult => {
-  const parser = new DOMParser();
-  const svgDOM = parser.parseFromString(svgString, "image/svg+xml");
+  try {
+    const parser = new DOMParser();
+    const svgDOM = parser.parseFromString(svgString, "image/svg+xml");
 
-  // was there a parsing error?
-  const errorsElements = svgDOM.querySelectorAll("parsererror");
-  const hasErrors = errorsElements.length > 0;
-  let content = null;
+    // was there a parsing error?
+    const errorsElements = svgDOM.querySelectorAll("parsererror");
+    const hasErrors = errorsElements.length > 0;
+    let content = null;
 
-  if (hasErrors) {
-    console.error(
-      "There were errors while parsing the given SVG: ",
-      [...errorsElements].map((el) => el.innerHTML),
-    );
-  } else {
-    const tw = createTreeWalker(svgDOM);
-    const scene = new ExcalidrawScene();
-    const groups: Group[] = [];
+    if (hasErrors) {
+      console.error(
+        "There were errors while parsing the given SVG: ",
+        [...errorsElements].map((el) => el.innerHTML),
+      );
+    } else {
+      const tw = createTreeWalker(svgDOM);
+      const scene = new ExcalidrawScene();
+      const groups: Group[] = [];
 
-    walk({ tw, scene, groups, root: svgDOM }, tw.nextNode());
+      walk({ tw, scene, groups, root: svgDOM }, tw.nextNode());
 
-    content = scene.elements; //scene.toExJSON();
+      content = scene.elements; //scene.toExJSON();
+    }
+
+    return {
+      hasErrors,
+      errors: hasErrors ? `${[...errorsElements].map((el) => el.innerHTML)}` : "",
+      content,
+    };
+  } catch (error) {
+    console.log(error);
+    return {
+      hasErrors: true,
+      errors:  `${error}`,
+      content:[],
+    };
   }
-
-  return {
-    hasErrors,
-    errors: hasErrors ? errorsElements : null,
-    content,
-  };
 };

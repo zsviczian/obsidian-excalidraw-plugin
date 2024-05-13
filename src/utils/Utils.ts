@@ -27,14 +27,11 @@ import { ExcalidrawElement } from "@zsviczian/excalidraw/types/excalidraw/elemen
 import { ExportSettings } from "../ExcalidrawView";
 import { getDataURLFromURL, getIMGFilename, getMimeType, getURLImageExtension } from "./FileUtils";
 import { generateEmbeddableLink } from "./CustomEmbeddableUtils";
-import ExcalidrawScene from "src/svgToExcalidraw/elements/ExcalidrawScene";
 import { FILENAMEPARTS } from "./UtilTypes";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { cleanBlockRef, cleanSectionHeading, getFileCSSClasses } from "./ObsidianUtils";
 import { updateElementLinksToObsidianLinks } from "src/ExcalidrawAutomate";
 import { CropImage } from "./CropImage";
-import { ExcalidrawData } from "src/ExcalidrawData";
-import { ExcalidrawGenericElement } from "lib/svgToExcalidraw/types";
 
 
 declare const PLUGIN_VERSION:string;
@@ -546,7 +543,7 @@ export const getLinkParts = (fname: string, file?: TFile): LinkParts => {
 };
 
 export const compress = (data: string): string => {
-  return LZString.compressToBase64(data).replace(/(.{64})/g, "$1\n\n");
+  return LZString.compressToBase64(data).replace(/(.{256})/g, "$1\n\n");
 };
 
 export const decompress = (data: string): string => {
@@ -764,8 +761,6 @@ export const sleep = async (ms: number) => new Promise((resolve) => setTimeout(r
 export const awaitNextAnimationFrame = async () => new Promise(requestAnimationFrame);
 */
 
-export const log = console.log.bind(window.console);
-export const debug = console.log.bind(window.console);
 //export const debug = function(){};
 
 
