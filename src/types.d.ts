@@ -58,6 +58,20 @@ declare module "obsidian" {
     },
     basePath: string;
   }
+  interface FoldPosition {
+    from: number;
+    to: number;
+  }
+
+  interface FoldInfo {
+    folds: FoldPosition[];
+    lines: number;
+  }
+  
+  interface MarkdownSubView {
+    applyFoldInfo(foldInfo: FoldInfo): void;
+    getFoldInfo(): FoldInfo | null;
+  }
   /*interface Editor {
     insertText(data: string): void;
   }*/

@@ -10,9 +10,10 @@ const o0 = Decoration.line({ attributes: {class: "ex-opacity-0"} });
 export const HideTextBetweenCommentsExtension = ViewPlugin.fromClass(
   class {
     view: EditorView;
-    decorations: DecorationSet;  
+    decorations: DecorationSet;
+    reExcalidrawData = /^%%(?:\r\n|\r|\n)# Excalidraw Data$/gm;
     reTextElements = /^%%(?:\r\n|\r|\n)# Text Elements$/gm;
-    reDrawing = /^%%(?:\r\n|\r|\n)# Drawing$/gm;
+    reDrawing = /^%%(?:\r\n|\r|\n)##? Drawing$/gm;
     linecount = 0;
     isExcalidraw = false;
     
@@ -32,11 +33,15 @@ export const HideTextBetweenCommentsExtension = ViewPlugin.fromClass(
       
       const text = doc.toString();
 
-      let start = text.search(this.reTextElements);
+      let start = text.search(this.reExcalidrawData);
+      if(start == -1) {
+        start = text.search(this.reTextElements);
+      }
       if(start == -1) {
         start = text.search(this.reDrawing);
-        if(start == -1) return Decoration.none;
       }
+      if(start == -1) return Decoration.none;
+      
       const startLine = doc.lineAt(start).number;
       const endLine = doc.lines;
       let builder = new RangeSetBuilder<Decoration>()

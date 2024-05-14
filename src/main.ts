@@ -20,7 +20,6 @@ import {
   Editor,
   MarkdownFileInfo,
   loadMermaid,
-  requireApiVersion,
 } from "obsidian";
 import {
   BLANK_DRAWING,
@@ -42,7 +41,6 @@ import {
   EXPORT_IMG_ICON,
   LOCALE,
   IMAGE_TYPES,
-  MD_TEXTELEMENTS,
   setExcalidrawPlugin,
   DEVICE
 } from "./constants/constants";
@@ -105,7 +103,7 @@ import {
   decompress,
   getImageSize,
 } from "./utils/Utils";
-import { editorInsertText, extractSVGPNGFileName, getActivePDFPageNumberFromPDFView, getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark, mergeMarkdownFiles, openLeaf } from "./utils/ObsidianUtils";
+import { editorInsertText, extractSVGPNGFileName, foldExcalidrawSection, getActivePDFPageNumberFromPDFView, getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark, mergeMarkdownFiles, openLeaf } from "./utils/ObsidianUtils";
 import { ExcalidrawElement, ExcalidrawEmbeddableElement, ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { ScriptEngine } from "./Scripts";
 import {
@@ -401,14 +399,14 @@ export default class ExcalidrawPlugin extends Plugin {
       debug(`ExcalidrawPlugin.switchToExcalidarwAfterLoad app.workspace.onLayoutReady`);
       let leaf: WorkspaceLeaf;
       for (leaf of this.app.workspace.getLeavesOfType("markdown")) {
-        if (
-          leaf.view instanceof MarkdownView &&
-          self.isExcalidrawFile(leaf.view.file) &&
-          fileShouldDefaultAsExcalidraw(leaf.view.file?.path, self.app)
-        ) {
-          self.excalidrawFileModes[(leaf as any).id || leaf.view.file.path] =
-            VIEW_TYPE_EXCALIDRAW;
-          self.setExcalidrawView(leaf);
+        if ( leaf.view instanceof MarkdownView && self.isExcalidrawFile(leaf.view.file)) {
+          if (fileShouldDefaultAsExcalidraw(leaf.view.file?.path, self.app)) {
+            self.excalidrawFileModes[(leaf as any).id || leaf.view.file.path] =
+              VIEW_TYPE_EXCALIDRAW;
+            self.setExcalidrawView(leaf);
+          } else {
+            foldExcalidrawSection(leaf.view);
+          }
         }
       }
     });
@@ -878,7 +876,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
         (async () => {
           const data = await this.app.vault.read(activeFile);
-          const parts = data.split("\n# Drawing\n```compressed-json\n");
+          const parts = data.split("\n##? Drawing\n```compressed-json\n");
           if(parts.length!==2) return;
           const header = parts[0] + "\n# Drawing\n```json\n";
           const compressed = parts[1].split("\n```\n%%");
@@ -2281,12 +2279,13 @@ export default class ExcalidrawPlugin extends Plugin {
 
   private registerMonkeyPatches() {
     const key = "https://github.com/zsviczian/obsidian-excalidraw-plugin/issues";
+
     this.register(
       around(Workspace.prototype, {
         getActiveViewOfType(old) {
           return dedupe(key, old, function(...args) {        
             const result = old && old.apply(this, args);
-            const maybeEAView = app?.workspace?.activeLeaf?.view;
+            const maybeEAView = self.app?.workspace?.activeLeaf?.view;
             if(!maybeEAView || !(maybeEAView instanceof ExcalidrawView)) return result;
             const error = new Error();
             const stackTrace = error.stack;
@@ -2386,15 +2385,13 @@ export default class ExcalidrawPlugin extends Plugin {
 
         setViewState(next) {
           return function (state: ViewState, ...rest: any[]) {
+            const markdownViewLoaded = 
+              self._loaded && // Don't force excalidraw mode during shutdown
+              state.type === "markdown" && // If we have a markdown file
+              state.state?.file;
             if (
-              // Don't force excalidraw mode during shutdown
-              self._loaded &&
-              // If we have a markdown file
-              state.type === "markdown" &&
-              state.state?.file &&
-              // And the current mode of the file is not set to markdown
-              self.excalidrawFileModes[this.id || state.state.file] !==
-                "markdown"
+              markdownViewLoaded &&
+              self.excalidrawFileModes[this.id || state.state.file] !== "markdown"
             ) {
               if (fileShouldDefaultAsExcalidraw(state.state.file,this.app)) {
                 // If we have it, force the view type to excalidraw
@@ -2408,6 +2405,16 @@ export default class ExcalidrawPlugin extends Plugin {
 
                 return next.apply(this, [newState, ...rest]);
               }
+            }
+
+            if(markdownViewLoaded) {
+              const leaf = this;
+              setTimeout(async ()=> {
+                if(!leaf || !leaf.view || !(leaf.view instanceof MarkdownView) || 
+                  !leaf.view.file || !self.isExcalidrawFile(leaf.view.file)
+                ) return;
+                foldExcalidrawSection(leaf.view)
+              },500);
             }
 
             return next.apply(this, [state, ...rest]);
@@ -3190,7 +3197,7 @@ export default class ExcalidrawPlugin extends Plugin {
     const textElements = excalidrawData.elements?.filter(
       (el: any) => el.type == "text",
     );
-    let outString = `${MD_TEXTELEMENTS}\n`;
+    let outString = `# Excalidraw Data\n## Text Elements\n`;
     let id: string;
     for (const te of textElements) {
       id = te.id;
@@ -3269,6 +3276,12 @@ export default class ExcalidrawPlugin extends Plugin {
       } as ViewState,
       eState ? eState : { focus: true },
     );
+
+    const mdView = leaf.view;
+    if(mdView instanceof MarkdownView) {
+      foldExcalidrawSection(mdView);
+    }
+
   }
 
   public async setExcalidrawView(leaf: WorkspaceLeaf) {

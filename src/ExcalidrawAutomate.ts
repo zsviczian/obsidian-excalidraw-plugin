@@ -35,8 +35,6 @@ import {
   REG_LINKINDEX_INVALIDCHARS,
   THEME_FILTER,
   mermaidToExcalidraw,
-  MD_TEXTELEMENTS,
-  MD_DRAWING,
 } from "src/constants/constants";
 import { blobToBase64, checkAndCreateFolder, getDrawingFilename, getExcalidrawEmbeddedFilesFiletree, getListOfTemplateFiles, getNewUniqueFilepath, hasExcalidrawEmbeddedImagesTreeChanged, } from "src/utils/FileUtils";
 import {
@@ -720,7 +718,7 @@ export class ExcalidrawAutomate {
 
     const generateMD = ():string => {
       const textElements = this.getElements().filter(el => el.type === "text") as ExcalidrawTextElement[];
-      let outString = `${MD_TEXTELEMENTS}\n`;
+      let outString = `# Excalidraw Data\n## Text Elements\n`;
       textElements.forEach(te=> {
         outString += `${te.rawText ?? (te.originalText ?? te.text)} ^${te.id}\n\n`;
       });
@@ -731,7 +729,7 @@ export class ExcalidrawAutomate {
       })
   
       outString += Object.keys(this.imagesDict).length > 0
-        ? "\n# Embedded files\n"
+        ? `\n## Embedded Files\n`
         : "";
         
       Object.keys(this.imagesDict).forEach((key: FileId)=> {
@@ -2776,9 +2774,9 @@ async function getTemplate(
       textMode,
     );
 
-    let trimLocation = data.search(new RegExp(`^${MD_TEXTELEMENTS}$`,"m"));
+    let trimLocation = data.search(/^##? Text Elements$/m);
     if (trimLocation == -1) {
-      trimLocation = data.search(`${MD_DRAWING}\n`);
+      trimLocation = data.search(/##? Drawing\n/);
     }
 
     let scene = excalidrawData.scene;

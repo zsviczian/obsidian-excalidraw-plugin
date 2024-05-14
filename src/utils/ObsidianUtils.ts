@@ -2,13 +2,14 @@ import {
   App,
   Editor,
   FrontMatterCache,
+  MarkdownView,
   normalizePath, OpenViewState, parseFrontMatterEntry, TFile, View, Workspace, WorkspaceLeaf, WorkspaceSplit
 } from "obsidian";
 import ExcalidrawPlugin from "../main";
 import { checkAndCreateFolder, splitFolderAndFilename } from "./FileUtils";
 import { linkClickModifierType, ModifierKeys } from "./ModifierkeyHelper";
 import { REG_BLOCK_REF_CLEAN, REG_SECTION_REF_CLEAN } from "src/constants/constants";
-import yaml from "js-yaml";
+import yaml, { Mark } from "js-yaml";
 
 export const getParentOfClass = (element: Element, cssClass: string):HTMLElement | null => {
   let parent = element.parentElement;
@@ -350,4 +351,20 @@ export const editorInsertText = (editor: Editor, text: string)=> {
   const line = editor.getLine(cursor.line);
   const updatedLine = line.slice(0, cursor.ch) + text + line.slice(cursor.ch);
   editor.setLine(cursor.line, updatedLine);
+}
+
+export const foldExcalidrawSection = (view: MarkdownView) => {
+  if(!view || !(view instanceof MarkdownView)) return;
+  const existingFolds = view.currentMode.getFoldInfo();
+  const lineCount = view.editor.lineCount();
+  let i = -1;
+  while(i++<lineCount && view.editor.getLine(i) !== "# Excalidraw Data");
+
+  if(i>-1 && i<lineCount) {
+    const foldPositions = [
+        ...(existingFolds?.folds ?? []),
+        ...[{from: i, to: lineCount-1}],
+      ];
+    view.currentMode.applyFoldInfo({folds: foldPositions, lines:lineCount});
+  }
 }

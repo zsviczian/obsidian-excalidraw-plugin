@@ -9,6 +9,7 @@ export default {
   // main.ts
   CONVERT_URL_TO_FILE: "Save image from URL to local file",
   UNZIP_CURRENT_FILE: "Decompress current Excalidraw file",
+  ZIP_CURRENT_FILE: "Compress current Excalidraw file",
   PUBLISH_SVG_CHECK: "Obsidian Publish: Find SVG and PNG exports that are out of date",
   EMBEDDABLE_PROPERTIES: "Embeddable Properties",
   EMBEDDABLE_RELATIVE_ZOOM: "Scale selected embeddable elements to 100% relative to the current canvas zoom",

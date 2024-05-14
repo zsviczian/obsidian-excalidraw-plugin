@@ -18,9 +18,6 @@ import {
   ERROR_IFRAME_CONVERSION_CANCELED,
   JSON_parse,
   FRONTMATTER_KEYS,
-  MD_TEXTELEMENTS,
-  MD_DRAWING,
-  MD_ELEMENTLINKS,
 } from "./constants/constants";
 import { _measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
@@ -117,12 +114,12 @@ export const REGEX_LINK = {
 };
 
 //added \n at and of DRAWING_REG: https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/357
-const DRAWING_REG = /\n# Drawing\n[^`]*(```json\n)([\s\S]*?)```\n/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
-const DRAWING_REG_FALLBACK = /\n# Drawing\n(```json\n)?(.*)(```)?(%%)?/gm;
+const DRAWING_REG = /\n##? Drawing\n[^`]*(```json\n)([\s\S]*?)```\n/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
+const DRAWING_REG_FALLBACK = /\n##? Drawing\n(```json\n)?(.*)(```)?(%%)?/gm;
 export const DRAWING_COMPRESSED_REG =
-  /(\n# Drawing\n[^`]*(?:```compressed\-json\n))([\s\S]*?)(```\n)/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
+  /(\n##? Drawing\n[^`]*(?:```compressed\-json\n))([\s\S]*?)(```\n)/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
 const DRAWING_COMPRESSED_REG_FALLBACK =
-  /(\n# Drawing\n(?:```compressed\-json\n)?)(.*)((```)?(%%)?)/gm;
+  /(\n##? Drawing\n(?:```compressed\-json\n)?)(.*)((```)?(%%)?)/gm;
 export const REG_LINKINDEX_HYPERLINK = /^\w+:\/\//;
 
 const isCompressedMD = (data: string): boolean => {
@@ -204,10 +201,10 @@ export function getMarkdownDrawingSection(
   compressed: boolean,
 ) {
   return compressed
-    ? `# Drawing\n\x60\x60\x60compressed-json\n${compress(
+    ? `## Drawing\n\x60\x60\x60compressed-json\n${compress(
         jsonString,
       )}\n\x60\x60\x60\n%%`
-    : `# Drawing\n\x60\x60\x60json\n${jsonString}\n\x60\x60\x60\n%%`;
+    : `## Drawing\n\x60\x60\x60json\n${jsonString}\n\x60\x60\x60\n%%`;
 }
 
 /**
@@ -241,33 +238,97 @@ const wrap = (text: string, lineLen: number) =>
   lineLen ? wrapTextAtCharLength(text, lineLen, false, 0) : text;
 
 //WITHSECTION refers to back of the card note (see this.inputEl.onkeyup in SelectCard.ts)
-const RE_TEXTELEMENTS_WITHSECTION_OK = new RegExp(`^#\n%%\n${MD_TEXTELEMENTS}(?:\n|$)`, "m");
-const RE_TEXTELEMENTS_WITHSECTION_NOTOK = new RegExp(`#\n%%\n${MD_TEXTELEMENTS}(?:\n|$)`, "m");
-const RE_TEXTELEMENTS_NOSECTION_OK = new RegExp(`^(%%\n)?${MD_TEXTELEMENTS}(?:\n|$)`, "m");
+const RE_EXCALIDRAWDATA_WITHSECTION_OK = new RegExp(`^#\n%%\n# Excalidraw Data(?:\n|$)`, "m");
+const RE_EXCALIDRAWDATA_WITHSECTION_NOTOK = new RegExp(`#\n%%\n# Excalidraw Data(?:\n|$)`, "m");
+const RE_EXCALIDRAWDATA_NOSECTION_OK = new RegExp(`^(%%\n)?# Excalidraw Data(?:\n|$)`, "m");
+
+//WITHSECTION refers to back of the card note (see this.inputEl.onkeyup in SelectCard.ts)
+const RE_TEXTELEMENTS_WITHSECTION_OK = new RegExp(`^#\n%%\n##? Text Elements(?:\n|$)`, "m");
+const RE_TEXTELEMENTS_WITHSECTION_NOTOK = new RegExp(`#\n%%\n##? Text Elements(?:\n|$)`, "m");
+const RE_TEXTELEMENTS_NOSECTION_OK = new RegExp(`^(%%\n)?##? Text Elements(?:\n|$)`, "m");
 
 
 //The issue is that when editing in markdown embeds the user can delete the last enter causing two sections
-//to collide. This is particularly problematic when the user is editing the lest section before # Text Elements
-const RE_TEXTELEMENTS_FALLBACK_1 = new RegExp(`(.*)%%\n${MD_TEXTELEMENTS}(?:\n|$)`, "m");
-const RE_TEXTELEMENTS_FALLBACK_2 = new RegExp(`(.*)${MD_TEXTELEMENTS}(?:\n|$)`, "m");
+//to collide. This is particularly problematic when the user is editing the last section before # Text Elements
+const RE_EXCALIDRAWDATA_FALLBACK_1 = new RegExp(`(.*)%%\n# Excalidraw Data(?:\n|$)`, "m");
+const RE_EXCALIDRAWDATA_FALLBACK_2 = new RegExp(`(.*)# Excalidraw Data(?:\n|$)`, "m");
+
+const RE_TEXTELEMENTS_FALLBACK_1 = new RegExp(`(.*)%%\n##? Text Elements(?:\n|$)`, "m");
+const RE_TEXTELEMENTS_FALLBACK_2 = new RegExp(`(.*)##? Text Elements(?:\n|$)`, "m");
 
 
-const RE_DRAWING = new RegExp(`(%%\n)?${MD_DRAWING}\n`);
+const RE_DRAWING = new RegExp(`(%%\n)?##? Drawing\n`);
 
 export const getExcalidrawMarkdownHeaderSection = (data:string, keys?:[string,string][]):string => {
+  //The base case scenario is at the top, continued with fallbacks in order of likelihood and file structure
+  //change history for sake of backward compatibility
 
+  /* Expected markdown structure:
+  bla bla bla
+  #
+  %%
+  # Excalidraw Data
+  */
+  let trimLocation = data.search(RE_EXCALIDRAWDATA_WITHSECTION_OK);
+  let shouldFixTrailingHashtag = false;
+  if(trimLocation > 0) {
+    trimLocation += 2; //accounts for the "#\n" which I want to leave there untouched
+  }
+
+  /* Expected markdown structure (this happens when the user deletes the last empty line of the last back-of-the-card note):
+  bla bla bla#
+  %%
+  # Excalidraw Data
+  */
+  if(trimLocation === -1) {
+    trimLocation = data.search(RE_EXCALIDRAWDATA_WITHSECTION_NOTOK);
+    if(trimLocation > 0) {
+      shouldFixTrailingHashtag = true;
+    }
+  }
+  /* Expected markdown structure
+  a)
+    bla bla bla
+    %%
+    # Excalidraw Data
+  b)
+    bla bla bla
+    # Excalidraw Data
+  */
+  if(trimLocation === -1) {
+    trimLocation = data.search(RE_EXCALIDRAWDATA_NOSECTION_OK);
+  }
+  /* Expected markdown structure:
+  bla bla bla%%
+  # Excalidraw Data
+  */
+  if(trimLocation === -1) {
+    const res = data.match(RE_EXCALIDRAWDATA_FALLBACK_1);
+    if(res && Boolean(res[1])) {
+      trimLocation = res.index + res[1].length;
+    }
+  }
+  /* Expected markdown structure:
+  bla bla bla# Excalidraw Data
+  */
+  if(trimLocation === -1) {
+    const res = data.match(RE_EXCALIDRAWDATA_FALLBACK_2);
+    if(res && Boolean(res[1])) {
+      trimLocation = res.index + res[1].length;
+    }
+  }
   /* Expected markdown structure:
   bla bla bla
   #
   %%
   # Text Elements
   */
-  let trimLocation = data.search(RE_TEXTELEMENTS_WITHSECTION_OK);
-  let shouldFixTrailingHashtag = false;
-  if(trimLocation > 0) {
-    trimLocation += 2;
+  if(trimLocation === -1) {
+    trimLocation = data.search(RE_TEXTELEMENTS_WITHSECTION_OK);
+    if(trimLocation > 0) {
+      trimLocation += 2; //accounts for the "#\n" which I want to leave there untouched
+    }
   }
-
   /* Expected markdown structure:
   bla bla bla#
   %%
@@ -641,7 +702,28 @@ export class ExcalidrawData {
     //link was updated due to filename changes
     //The .excalidraw JSON is modified to reflect the MD in case of difference
     //Read the text elements into the textElements Map
-    let position = data.search(RE_TEXTELEMENTS_NOSECTION_OK);
+    let position = data.search(RE_EXCALIDRAWDATA_NOSECTION_OK);
+    if (position === -1) {
+      //resillience in case back of the note was saved right on top of text elements 
+      // # back of note section
+      // ....# Excalidraw Data
+      // ....
+      // --------------
+      // instead of 
+      // --------------
+      // # back of note section
+      // ....
+      // # Excalidraw Data
+      position = data.search(RE_EXCALIDRAWDATA_FALLBACK_2);
+    }
+
+    if(position === -1) {
+      // # back of note section
+      // ....
+      // # Text Elements
+      position = data.search(RE_TEXTELEMENTS_NOSECTION_OK);
+    }
+
     if (position === -1) {
       //resillience in case back of the note was saved right on top of text elements 
       // # back of note section
@@ -661,10 +743,12 @@ export class ExcalidrawData {
       return true; //Text Elements header does not exist
     }
     data = data.slice(position);
-    const normalMatch = data.match(new RegExp(`^((%%\n)?${MD_TEXTELEMENTS}(?:\n|$))`, "m"));
+    const normalMatch = data.match(/^((%%\n)?# Excalidraw Data\n## Text Elements(?:\n|$))/m)
+      ??data.match(/^((%%\n)?##? Text Elements(?:\n|$))/m);
+
     const textElementsMatch = normalMatch
       ? normalMatch[0]
-      : data.match(new RegExp(`(.*${MD_TEXTELEMENTS}(?:\n|$))`, "m"))[0];
+      : data.match(/(.*##? Text Elements(?:\n|$))/m)[0];
     
     data = data.slice(textElementsMatch.length);
     this.textElementCommentedOut = textElementsMatch.startsWith("%%\n");
@@ -673,9 +757,13 @@ export class ExcalidrawData {
     
     //load element links
     const elementLinkMap = new Map<string,string>();
-    const elementLinksData = data.substring(
-      data.indexOf(`${MD_ELEMENTLINKS}\n`) + `${MD_ELEMENTLINKS}\n`.length,
-    );
+    const indexOfNewElementLinks = data.indexOf("## Element Links\n");
+    const lengthOfNewElementLinks = 17; //`## Element Links\n`.length
+    const indexOfOldElementLinks = data.indexOf("# Element Links\n");
+    const lengthOfOldElementLinks = 16; //`# Element Links\n`.length
+    const elementLinksData = indexOfNewElementLinks>-1
+      ? data.substring(indexOfNewElementLinks + lengthOfNewElementLinks)
+      : data.substring(indexOfOldElementLinks + lengthOfOldElementLinks);
     //Load Embedded files
     const RE_ELEMENT_LINKS = /^(.{8}):\s*(\[\[[^\]]*]])$/gm;
     const linksRes = elementLinksData.matchAll(RE_ELEMENT_LINKS);
@@ -746,11 +834,15 @@ export class ExcalidrawData {
       }
     }
 
-    const indexOfEmbeddedFiles = data.indexOf("# Embedded files\n");
-    if(indexOfEmbeddedFiles>-1) {
-      data = data.substring(
-        indexOfEmbeddedFiles + "# Embedded files\n".length,
-      );
+    const indexOfNewEmbeddedFiles = data.indexOf("## Embedded Files\n");
+    const embeddedFilesNewLength = 18; //"## Embedded Files\n".length
+    const indexOfOldEmbeddedFiles = data.indexOf("# Embedded files\n");
+    const embeddedFilesOldLength = 17; //"# Embedded files\n".length
+
+    if(indexOfNewEmbeddedFiles>-1 || indexOfOldEmbeddedFiles>-1) {
+      data = indexOfNewEmbeddedFiles>-1
+        ? data.substring(indexOfNewEmbeddedFiles + embeddedFilesNewLength)
+        : data.substring(indexOfOldEmbeddedFiles + embeddedFilesOldLength);
       //Load Embedded files
       const REG_FILEID_FILEPATH = /([\w\d]*):\s*\[\[([^\]]*)]]\s?(\{[^}]*})?\n/gm;
       res = data.matchAll(REG_FILEID_FILEPATH);
@@ -1265,7 +1357,7 @@ export class ExcalidrawData {
   disableCompression: boolean = false;
   generateMD(deletedElements: ExcalidrawElement[] = []): string {
     let outString = this.textElementCommentedOut ? "%%\n" : "";
-    outString += `${MD_TEXTELEMENTS}\n`;
+    outString += `# Excalidraw Data\n## Text Elements\n`;
     const textElementLinks = new Map<string, string>();
     for (const key of this.textElements.keys()) {
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/566
@@ -1281,7 +1373,7 @@ export class ExcalidrawData {
     }
 
     if (this.elementLinks.size > 0  || textElementLinks.size > 0) {
-      outString += `${MD_ELEMENTLINKS}\n`;
+      outString += `## Element Links\n`;
       for (const key of this.elementLinks.keys()) {
         outString += `${key}: ${this.elementLinks.get(key)}\n`;
       }
@@ -1294,7 +1386,7 @@ export class ExcalidrawData {
     // deliberately not adding mermaids to here. It is enough to have the mermaidText in the image element's customData
     outString +=
       this.equations.size > 0 || this.files.size > 0
-        ? "# Embedded files\n"
+        ? "## Embedded Files\n"
         : "";
     if (this.equations.size > 0) {
       for (const key of this.equations.keys()) {

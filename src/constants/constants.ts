@@ -9,13 +9,12 @@ export let EXCALIDRAW_PLUGIN: ExcalidrawPlugin = null;
 export const setExcalidrawPlugin = (plugin: ExcalidrawPlugin) => {
   EXCALIDRAW_PLUGIN = plugin;
 };
-export const MD_TEXTELEMENTS = "# Text Elements";
-export const MD_JSON_START = "```json\n";
-export const MD_JSON_END = "```";
-export const MD_DRAWING = "# Drawing";
-export const MD_ELEMENTLINKS = "# Element Links";
-export const MD_EMBEDFILES = "# Embedded files";
-export const MD_EX_SECTIONS = [MD_TEXTELEMENTS, MD_DRAWING, MD_ELEMENTLINKS, MD_EMBEDFILES];
+const MD_EXCALIDRAW = "# Excalidraw Data";
+const MD_TEXTELEMENTS = "## Text Elements";
+const MD_DRAWING = "## Drawing";
+const MD_ELEMENTLINKS = "## Element Links";
+const MD_EMBEDFILES = "## Embedded Files";
+export const MD_EX_SECTIONS = [MD_EXCALIDRAW, MD_TEXTELEMENTS, MD_DRAWING, MD_ELEMENTLINKS, MD_EMBEDFILES];
 
 export const ERROR_IFRAME_CONVERSION_CANCELED = "iframe conversion canceled";
 
