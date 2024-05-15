@@ -56,7 +56,7 @@ import { getAttachmentsFolderAndFilePath, getLeaf, getNewOrAdjacentLeaf, isObsid
 import { AppState, BinaryFileData,  DataURL,  ExcalidrawImperativeAPI, Point } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddedFile, EmbeddedFilesLoader, FileData } from "src/EmbeddedFileLoader";
 import { tex2dataURL } from "src/LaTeX";
-import { GenericInputPrompt, NewFileActions, Prompt } from "src/dialogs/Prompt";
+import { GenericInputPrompt, NewFileActions } from "src/dialogs/Prompt";
 import { t } from "src/lang/helpers";
 import { ScriptEngine } from "src/Scripts";
 import { ConnectionPoint, DeviceType  } from "src/types";
@@ -78,7 +78,7 @@ import { TInput } from "colormaster/types";
 import {ConversionResult, svgToExcalidraw} from "src/svgToExcalidraw/parser"
 import { ROUNDNESS } from "src/constants/constants";
 import { ClipboardData } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
-import { emulateKeysForLinkClick, KeyEvent, PaneTarget } from "src/utils/ModifierkeyHelper";
+import { emulateKeysForLinkClick, PaneTarget } from "src/utils/ModifierkeyHelper";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import PolyBool from "polybooljs";
 import { EmbeddableMDCustomProps } from "./dialogs/EmbeddableSettings";

@@ -186,6 +186,8 @@ export default class ExcalidrawPlugin extends Plugin {
   private textMeasureDiv:HTMLDivElement = null;
   public editorHandler: EditorHandler;
   public activeLeafChangeEventHandler: (leaf: WorkspaceLeaf) => Promise<void>;
+  //if set, the next time this file is opened it will be opened as markdown
+  public forceToOpenInMarkdownFilepath: string = null;
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
@@ -876,9 +878,9 @@ export default class ExcalidrawPlugin extends Plugin {
 
         (async () => {
           const data = await this.app.vault.read(activeFile);
-          const parts = data.split("\n##? Drawing\n```compressed-json\n");
+          const parts = data.split("\n## Drawing\n```compressed-json\n");
           if(parts.length!==2) return;
-          const header = parts[0] + "\n# Drawing\n```json\n";
+          const header = parts[0] + "\n## Drawing\n```json\n";
           const compressed = parts[1].split("\n```\n%%");
           if(compressed.length!==2) return;
           const decompressed = decompress(compressed[0]);
@@ -1582,6 +1584,31 @@ export default class ExcalidrawPlugin extends Plugin {
         return true;
       },
     });
+
+    this.addCommand({
+      id: "flip-image",
+      name: t("FLIP_IMAGE"),
+      checkCallback: (checking:boolean) => {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if(!view) return false;
+        if(!view.excalidrawAPI) return false;
+        const els = view.getViewSelectedElements().filter(el=>el.type==="image");
+        if(els.length !== 1) {
+          return false;
+        }
+        const el = els[0] as ExcalidrawImageElement;
+        let ef = view.excalidrawData.getFile(el.fileId);
+        if(!ef) {
+          return false;
+        }
+        if(!this.isExcalidrawFile(ef.file)) {
+          return false;
+        }
+        if(checking) return true;
+        this.forceToOpenInMarkdownFilepath = ef.file?.path;
+        this.openDrawing(ef.file, DEVICE.isMobile ? "new-tab":"popout-window", true);
+      }
+    })
 
     this.addCommand({
       id: "reset-image-to-100",
@@ -2393,18 +2420,20 @@ export default class ExcalidrawPlugin extends Plugin {
               markdownViewLoaded &&
               self.excalidrawFileModes[this.id || state.state.file] !== "markdown"
             ) {
-              if (fileShouldDefaultAsExcalidraw(state.state.file,this.app)) {
+              const file = state.state.file;
+              if ((self.forceToOpenInMarkdownFilepath !== file)  && fileShouldDefaultAsExcalidraw(file,this.app)) {
                 // If we have it, force the view type to excalidraw
                 const newState = {
                   ...state,
                   type: VIEW_TYPE_EXCALIDRAW,
                 };
 
-                self.excalidrawFileModes[state.state.file] =
+                self.excalidrawFileModes[file] =
                   VIEW_TYPE_EXCALIDRAW;
 
                 return next.apply(this, [newState, ...rest]);
               }
+              self.forceToOpenInMarkdownFilepath = null;
             }
 
             if(markdownViewLoaded) {
@@ -3113,10 +3142,10 @@ export default class ExcalidrawPlugin extends Plugin {
       }
       let leaf: WorkspaceLeaf;
       if(location === "popout-window") {
-        leaf = app.workspace.openPopoutLeaf();
+        leaf = this.app.workspace.openPopoutLeaf();
       }
       if(location === "new-tab") {
-        leaf = app.workspace.getLeaf('tab');
+        leaf = this.app.workspace.getLeaf('tab');
       }
       if(!leaf) {
         leaf = this.app.workspace.getLeaf(false);
