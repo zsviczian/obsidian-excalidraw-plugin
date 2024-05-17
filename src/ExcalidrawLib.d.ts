@@ -1,7 +1,7 @@
 import { RestoredDataState } from "@zsviczian/excalidraw/types/excalidraw/data/restore";
 import { ImportedDataState } from "@zsviczian/excalidraw/types/excalidraw/data/types";
 import { BoundingBox } from "@zsviczian/excalidraw/types/excalidraw/element/bounds";
-import { ElementsMap, ExcalidrawBindableElement, ExcalidrawElement, ExcalidrawFrameElement, ExcalidrawTextElement, FontFamilyValues, FontString, NonDeleted, NonDeletedExcalidrawElement, Theme } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { ElementsMap, ExcalidrawBindableElement, ExcalidrawElement, ExcalidrawFrameElement, ExcalidrawTextContainer, ExcalidrawTextElement, FontFamilyValues, FontString, NonDeleted, NonDeletedExcalidrawElement, Theme } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { AppState, BinaryFiles, ExportOpts, Point, Zoom } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 
@@ -86,6 +86,24 @@ declare namespace ExcalidrawLib {
   function getCommonBoundingBox(
     elements: ExcalidrawElement[] | readonly NonDeleted<ExcalidrawElement>[],
   ): BoundingBox;
+
+  function getContainerElement(
+    element: ExcalidrawTextElement | null,
+    elementsMap: ElementsMap,
+  ): ExcalidrawTextContainer | null;
+
+  function refreshTextDimensions(
+    textElement: ExcalidrawTextElement,
+    container: ExcalidrawTextContainer | null,
+    elementsMap: ElementsMap,
+    text: string,
+  ): {
+    text: string,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  };
 
   function getMaximumGroups(
     elements: ExcalidrawElement[],

@@ -231,7 +231,7 @@ export class EmbeddedFile {
         return false;
       }
     }
-    return this.mtime != this.file.stat.mtime;
+    return this.mtime !== this.file.stat.mtime;
   }
 
   public setImage(
@@ -817,7 +817,7 @@ export class EmbeddedFilesLoader {
       ? fileCache.frontmatter[FRONTMATTER_KEYS["md-css"].name] ?? ""
       : "";
     let frontmatterCSSisAfile = false;
-    if (style && style != "") {
+    if (style && style !== "") {
       const f = plugin.app.metadataCache.getFirstLinkpathDest(style, file.path);
       if (f) {
         style = await plugin.app.vault.read(f);

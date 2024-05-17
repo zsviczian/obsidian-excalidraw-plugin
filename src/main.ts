@@ -713,7 +713,7 @@ export default class ExcalidrawPlugin extends Plugin {
    */
   private experimentalFileTypeDisplay() {
     const insertFiletype = (el: HTMLElement) => {
-      if (el.childElementCount != 1) {
+      if (el.childElementCount !== 1) {
         return;
       }
       const filename = el.getAttribute("data-path");
@@ -1055,7 +1055,7 @@ export default class ExcalidrawPlugin extends Plugin {
         if (checking) {
           return (
             Boolean(this.app.workspace.getActiveViewOfType(MarkdownView)) &&
-            this.lastActiveExcalidrawFilePath != null
+            this.lastActiveExcalidrawFilePath !== null
           );
         }
         const file = this.app.vault.getAbstractFileByPath(

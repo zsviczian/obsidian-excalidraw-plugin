@@ -808,10 +808,10 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = async (m) => {
   if (!plugin.hover.linkText) {
     return;
   }
-  if (m.length != 1) {
+  if (m.length !== 1) {
     return;
   }
-  if (m[0].addedNodes.length != 1) {
+  if (m[0].addedNodes.length !== 1) {
     return;
   }
   if (

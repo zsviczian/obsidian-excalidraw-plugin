@@ -18,6 +18,8 @@ import {
   ERROR_IFRAME_CONVERSION_CANCELED,
   JSON_parse,
   FRONTMATTER_KEYS,
+  refreshTextDimensions,
+  getContainerElement,
 } from "./constants/constants";
 import { _measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
@@ -28,7 +30,7 @@ import {
   decompress,
   //getBakPath,
   getBinaryFileFromDataURL,
-  getContainerElement,
+  _getContainerElement,
   getExportTheme,
   getLinkParts,
   hasExportTheme,
@@ -36,11 +38,13 @@ import {
   LinkParts,
   updateFrontmatterInString,
   wrapTextAtCharLength,
+  arrayToMap,
 } from "./utils/Utils";
 import { cleanBlockRef, cleanSectionHeading, getAttachmentsFolderAndFilePath, isObsidianThemeDark } from "./utils/ObsidianUtils";
 import {
   ExcalidrawElement,
   ExcalidrawImageElement,
+  ExcalidrawTextElement,
   FileId,
 } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { BinaryFiles, DataURL, SceneData } from "@zsviczian/excalidraw/types/excalidraw/types";
@@ -48,6 +52,7 @@ import { EmbeddedFile, MimeType } from "./EmbeddedFileLoader";
 import { ConfirmationPrompt } from "./dialogs/Prompt";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
 import { debug } from "./utils/DebugHelper";
+import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles };
 
@@ -403,7 +408,7 @@ export const getExcalidrawMarkdownHeaderSection = (data:string, keys?:[string,st
 export class ExcalidrawData {
   public textElements: Map<
     string,
-    { raw: string; parsed: string; wrapAt: number | null }
+    { raw: string; parsed: string}
   > = null;
   public elementLinks: Map<string, string> = null;
   public scene: any = null;
@@ -604,10 +609,10 @@ export class ExcalidrawData {
     this.selectedElementIds = {};
     this.textElements = new Map<
       string,
-      { raw: string; parsed: string; wrapAt: number }
+      { raw: string; parsed: string}
     >();
     this.elementLinks = new Map<string, string>();
-    if (this.file != file) {
+    if (this.file !== file) {
       //this is a reload - files, equations and mermaids will take care of reloading when needed
       this.files.clear();
       this.equations.clear();
@@ -773,7 +778,7 @@ export class ExcalidrawData {
 
     //iterating through all the text elements in .md
     //Text elements always contain the raw value
-    const BLOCKREF_LEN: number = " ^12345678\n\n".length;
+    const BLOCKREF_LEN: number = 12; // " ^12345678\n\n".length;
     const RE_TEXT_ELEMENT_LINK = /^%%\*\*\*>>>text element-link:(\[\[[^<*\]]*]])<<<\*\*\*%%/gm;
     let res = data.matchAll(/\s\^(.{8})[\n]+/g);
     while (!(parts = res.next()).done) {
@@ -791,9 +796,8 @@ export class ExcalidrawData {
           }
           this.elementLinks.set(id, text);
         } else {
-          const wrapAt = estimateMaxLineLen(textEl.text, textEl.originalText);
           //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/566
-          const elementLinkRes = text.matchAll(RE_TEXT_ELEMENT_LINK); 
+          const elementLinkRes = text.matchAll(RE_TEXT_ELEMENT_LINK);
           const elementLink = elementLinkRes.next();
           if(!elementLink.done) {
             text = text.replace(RE_TEXT_ELEMENT_LINK,"");
@@ -808,7 +812,6 @@ export class ExcalidrawData {
           this.textElements.set(id, {
             raw: text,
             parsed: parseRes.parsed,
-            wrapAt,
           });
           if (parseRes.link) {
             textEl.link = parseRes.link;
@@ -907,7 +910,7 @@ export class ExcalidrawData {
     this.file = file;
     this.textElements = new Map<
       string,
-      { raw: string; parsed: string; wrapAt: number }
+      { raw: string; parsed: string}
     >();
     this.elementLinks = new Map<string, string>();
     this.setShowLinkBrackets();
@@ -938,34 +941,6 @@ export class ExcalidrawData {
     await this.updateSceneTextElements(forceupdate);
   }
 
-  //update a single text element in the scene if the newText is different
-  public updateTextElement(
-    sceneTextElement: any,
-    newText: string,
-    newOriginalText: string,
-    forceUpdate: boolean = false,
-    containerType?: string,
-  ) {
-    if (forceUpdate || newText != sceneTextElement.text) {
-      const measure = _measureText(
-        newText,
-        sceneTextElement.fontSize,
-        sceneTextElement.fontFamily,
-        sceneTextElement.lineHeight??getDefaultLineHeight(sceneTextElement.fontFamily),
-      );
-      sceneTextElement.text = newText;
-      sceneTextElement.originalText = newOriginalText;
-
-      if (!sceneTextElement.containerId || containerType==="arrow") {
-        //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/376
-        //I leave the setting of text width to excalidraw, when text is in a container
-        //because text width is fixed to the container width
-        sceneTextElement.width = measure.w;
-      }
-      sceneTextElement.height = measure.h;
-      sceneTextElement.baseline = measure.baseline;
-    }
-  }
 
   /**
    * Updates the TextElements in the Excalidraw scene based on textElements MAP in ExcalidrawData
@@ -976,24 +951,25 @@ export class ExcalidrawData {
   private async updateSceneTextElements(forceupdate: boolean = false) {
     //update text in scene based on textElements Map
     //first get scene text elements
-    const texts = this.scene.elements?.filter((el: any) => el.type === "text");
+    const elementsMap = arrayToMap(this.scene.elements);
+    const texts = this.scene.elements?.filter((el: any) => el.type === "text") as Mutable<ExcalidrawTextElement>[];
     for (const te of texts) {
-      const container = getContainerElement(te,this.scene);
+      const container = getContainerElement(te, elementsMap);
       const originalText =
         (await this.getText(te.id)) ?? te.originalText ?? te.text;
-      const wrapAt = this.textElements.get(te.id)?.wrapAt;
+      const {text, x, y, width, height} = refreshTextDimensions(
+        te,
+        container,
+        elementsMap,
+        originalText,
+      )
       try { //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1062
-        this.updateTextElement(
-          te,
-          wrapAt ? wrapText(
-            originalText,
-            getFontString({fontSize: te.fontSize, fontFamily: te.fontFamily}),
-            getBoundTextMaxWidth(container as any)
-          ) : originalText,
-          originalText,
-          forceupdate,
-          container?.type,
-        ); //(await this.getText(te.id))??te.text serves the case when the whole #Text Elements section is deleted by accident
+        te.originalText = originalText;
+        te.text = text;
+        te.x = x;
+        te.y = y;
+        te.width = width;
+        te.height = height;
       } catch(e) {
         debug(`ExcalidrawData.updateSceneTextElements, textElement: ${te?.id}`, te, this.updateSceneTextElements);
       }
@@ -1012,7 +988,6 @@ export class ExcalidrawData {
         this.textElements.set(id, {
           raw: text.raw,
           parsed: (await this.parse(text.raw)).parsed,
-          wrapAt: text.wrapAt,
         });
       }
       //console.log("parsed",this.textElements.get(id).parsed);
@@ -1089,21 +1064,18 @@ export class ExcalidrawData {
           this.textElements.set(id, {
             raw: text.raw,
             parsed: text.parsed,
-            wrapAt: text.wrapAt,
           });
           this.textElements.delete(te.id); //delete the old ID from the Map
         }
         if (!this.textElements.has(id)) {
           const raw = te.rawText && te.rawText !== "" ? te.rawText : te.text; //this is for compatibility with drawings created before the rawText change on ExcalidrawTextElement
-          const wrapAt = estimateMaxLineLen(te.text, te.originalText);
-          this.textElements.set(id, { raw, parsed: null, wrapAt });
-          this.parseasync(id, raw, wrapAt);
+          this.textElements.set(id, { raw, parsed: null});
+          this.parseasync(id, raw);
         }
       } else if (!this.textElements.has(te.id)) {
         const raw = te.rawText && te.rawText !== "" ? te.rawText : te.text; //this is for compatibility with drawings created before the rawText change on ExcalidrawTextElement
-        const wrapAt = estimateMaxLineLen(te.text, te.originalText);
-        this.textElements.set(id, { raw, parsed: null, wrapAt });
-        this.parseasync(id, raw, wrapAt);
+        this.textElements.set(id, { raw, parsed: null});
+        this.parseasync(id, raw);
       }
       
     }
@@ -1151,22 +1123,19 @@ export class ExcalidrawData {
           ? el[0].rawText
           : (el[0].originalText ?? el[0].text);
         if (text !== (el[0].originalText ?? el[0].text)) {
-          const wrapAt = estimateMaxLineLen(el[0].text, el[0].originalText);
           this.textElements.set(key, {
             raw,
             parsed: (await this.parse(raw)).parsed,
-            wrapAt,
           });
         }
       }
     }
   }
 
-  private async parseasync(key: string, raw: string, wrapAt: number) {
+  private async parseasync(key: string, raw: string) {
     this.textElements.set(key, {
       raw,
       parsed: (await this.parse(raw)).parsed,
-      wrapAt,
     });
   }
 
@@ -1633,12 +1602,12 @@ export class ExcalidrawData {
    * @param id 
    * @returns 
    */
-  public getParsedText(id: string): [parseResultWrapped: string, parseResultOriginal: string, link: string] {
+  public getParsedText(id: string): string {
     const t = this.textElements.get(id);
     if (!t) {
-      return [null, null, null];
+      return null;
     }
-    return [wrap(t.parsed, t.wrapAt), t.parsed, null];
+    return t.parsed;
   }
 
   /**
@@ -1655,24 +1624,23 @@ export class ExcalidrawData {
    * @param rawText 
    * @param rawOriginalText 
    * @param updateSceneCallback 
-   * @returns [parseResultWrapped: string, parseResultOriginal: string, link: string]
+   * @returns [parseResultOriginal: string, link: string]
    */
   public setTextElement(
     elementID: string,
-    rawText: string,
     rawOriginalText: string,
     updateSceneCallback: Function,
-  ): [parseResultWrapped: string, parseResultOriginal: string, link: string] {
-    const maxLineLen = estimateMaxLineLen(rawText, rawOriginalText);
+
+  ): [parseResultOriginal: string, link: string] {
+    //const maxLineLen = estimateMaxLineLen(rawText, rawOriginalText);
     const [parseResult, link] = this.quickParse(rawOriginalText); //will return the parsed result if raw text does not include transclusion
     if (parseResult) {
       //No transclusion
       this.textElements.set(elementID, {
         raw: rawOriginalText,
         parsed: parseResult,
-        wrapAt: maxLineLen,
       });
-      return [wrap(parseResult, maxLineLen), parseResult, link];
+      return [parseResult, link];
     }
     //transclusion needs to be resolved asynchornously
     this.parse(rawOriginalText).then((parseRes) => {
@@ -1680,35 +1648,28 @@ export class ExcalidrawData {
       this.textElements.set(elementID, {
         raw: rawOriginalText,
         parsed: parsedText,
-        wrapAt: maxLineLen,
       });
       if (parsedText) {
-        updateSceneCallback(wrap(parsedText, maxLineLen), parsedText);
+        updateSceneCallback(parsedText);
       }
     });
-    return [null, null, null];
+    return [null, null];
   }
 
   public async addTextElement(
     elementID: string,
     rawText: string,
     rawOriginalText: string,
-  ): Promise<[string, string, string]> {
-    let wrapAt: number = estimateMaxLineLen(rawText, rawOriginalText);
-    if (this.textElements.has(elementID)) {
-      wrapAt = this.textElements.get(elementID).wrapAt;
-    }
+  ): Promise<{parseResult: string, link:string}> {
     const parseResult = await this.parse(rawOriginalText);
     this.textElements.set(elementID, {
       raw: rawOriginalText,
       parsed: parseResult.parsed,
-      wrapAt,
     });
-    return [
-      wrap(parseResult.parsed, wrapAt),
-      parseResult.parsed,
-      parseResult.link,
-    ];
+    return {
+      parseResult: parseResult.parsed,
+      link: parseResult.link,
+    };
   }
 
   public deleteTextElement(id: string) {
@@ -1722,7 +1683,8 @@ export class ExcalidrawData {
       : this.plugin.settings.defaultMode;
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["default-mode"].name] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["default-mode"].name] !== null &&
+      (typeof fileCache.frontmatter[FRONTMATTER_KEYS["default-mode"].name] !== "undefined")
     ) {
       mode = fileCache.frontmatter[FRONTMATTER_KEYS["default-mode"].name];
     }
@@ -1742,7 +1704,8 @@ export class ExcalidrawData {
     let opacity = this.plugin.settings.linkOpacity;
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["linkbutton-opacity"].name] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["linkbutton-opacity"].name] !== null &&
+      (typeof fileCache.frontmatter[FRONTMATTER_KEYS["linkbutton-opacity"].name] !== "undefined")
     ) {
       opacity = fileCache.frontmatter[FRONTMATTER_KEYS["linkbutton-opacity"].name];
     }
@@ -1753,7 +1716,8 @@ export class ExcalidrawData {
     const fileCache = this.app.metadataCache.getFileCache(this.file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["onload-script"].name] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["onload-script"].name] !== null &&
+      (typeof fileCache.frontmatter[FRONTMATTER_KEYS["onload-script"].name] !== "undefined")
     ) {
       return fileCache.frontmatter[FRONTMATTER_KEYS["onload-script"].name];
     }
@@ -1765,13 +1729,13 @@ export class ExcalidrawData {
     const fileCache = this.app.metadataCache.getFileCache(this.file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["link-prefix"].name] != null
+      (typeof fileCache.frontmatter[FRONTMATTER_KEYS["link-prefix"].name] !== "undefined")
     ) {
-      this.linkPrefix = fileCache.frontmatter[FRONTMATTER_KEYS["link-prefix"].name];
+      this.linkPrefix = fileCache.frontmatter[FRONTMATTER_KEYS["link-prefix"].name]??"";
     } else {
       this.linkPrefix = this.plugin.settings.linkPrefix;
     }
-    return linkPrefix != this.linkPrefix;
+    return linkPrefix !== this.linkPrefix;
   }
 
   private setUrlPrefix(): boolean {
@@ -1779,20 +1743,21 @@ export class ExcalidrawData {
     const fileCache = this.app.metadataCache.getFileCache(this.file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["url-prefix"].name] != null
+      (typeof fileCache.frontmatter[FRONTMATTER_KEYS["url-prefix"].name] !== "undefined")
     ) {
-      this.urlPrefix = fileCache.frontmatter[FRONTMATTER_KEYS["url-prefix"].name];
+      this.urlPrefix = fileCache.frontmatter[FRONTMATTER_KEYS["url-prefix"].name]??"";
     } else {
       this.urlPrefix = this.plugin.settings.urlPrefix;
     }
-    return urlPrefix != this.urlPrefix;
+    return urlPrefix !== this.urlPrefix;
   }
 
   private setAutoexportPreferences() {
     const fileCache = this.app.metadataCache.getFileCache(this.file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["autoexport"].name] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["autoexport"].name] !== null &&
+      (typeof fileCache.frontmatter[FRONTMATTER_KEYS["autoexport"].name] !== "undefined")
     ) {
       switch ((fileCache.frontmatter[FRONTMATTER_KEYS["autoexport"].name]).toLowerCase()) {
         case "none": this.autoexportPreference = AutoexportPreference.none; break;
@@ -1811,7 +1776,8 @@ export class ExcalidrawData {
     const fileCache = this.app.metadataCache.getFileCache(this.file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["iframe-theme"].name] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["iframe-theme"].name] !== null &&
+      (typeof fileCache.frontmatter[FRONTMATTER_KEYS["iframe-theme"].name] !== "undefined")
     ) {
       this.embeddableTheme = fileCache.frontmatter[FRONTMATTER_KEYS["iframe-theme"].name].toLowerCase();
       if (!EMBEDDABLE_THEME_FRONTMATTER_VALUES.includes(this.embeddableTheme)) {
@@ -1820,7 +1786,7 @@ export class ExcalidrawData {
     } else {
       this.embeddableTheme = this.plugin.settings.iframeMatchExcalidrawTheme ? "auto" : "default";
     }
-    return embeddableTheme != this.embeddableTheme;
+    return embeddableTheme !== this.embeddableTheme;
   }
 
   private setShowLinkBrackets(): boolean {
@@ -1828,14 +1794,15 @@ export class ExcalidrawData {
     const fileCache = this.app.metadataCache.getFileCache(this.file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["link-brackets"].name] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["link-brackets"].name] !== null &&
+      (typeof fileCache.frontmatter[FRONTMATTER_KEYS["link-brackets"].name] !== "undefined")
     ) {
       this.showLinkBrackets =
-        fileCache.frontmatter[FRONTMATTER_KEYS["link-brackets"].name] != false;
+        fileCache.frontmatter[FRONTMATTER_KEYS["link-brackets"].name] !== false;
     } else {
       this.showLinkBrackets = this.plugin.settings.showLinkBrackets;
     }
-    return showLinkBrackets != this.showLinkBrackets;
+    return showLinkBrackets !== this.showLinkBrackets;
   }
 
   /** 
@@ -2068,7 +2035,7 @@ export const getTransclusion = async (
       { isCancelled: () => false },
       file,
     )
-  ).blocks.filter((block: any) => block.node.type != "comment");
+  ).blocks.filter((block: any) => block.node.type !== "comment");
   if (!blocks) {
     return { contents: linkParts.original.trim(), lineNum: 0 };
   }

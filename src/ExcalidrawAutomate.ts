@@ -38,7 +38,6 @@ import {
 } from "src/constants/constants";
 import { blobToBase64, checkAndCreateFolder, getDrawingFilename, getExcalidrawEmbeddedFilesFiletree, getListOfTemplateFiles, getNewUniqueFilepath, hasExcalidrawEmbeddedImagesTreeChanged, } from "src/utils/FileUtils";
 import {
-  arrayToMap,
   //debug,
   embedFontsInSVG,
   errorlog,
@@ -51,6 +50,7 @@ import {
   isVersionNewerThanOther,
   scaleLoadedImage,
   wrapTextAtCharLength,
+  arrayToMap,
 } from "src/utils/Utils";
 import { getAttachmentsFolderAndFilePath, getLeaf, getNewOrAdjacentLeaf, isObsidianThemeDark, mergeMarkdownFiles, openLeaf } from "src/utils/ObsidianUtils";
 import { AppState, BinaryFileData,  DataURL,  ExcalidrawImperativeAPI, Point } from "@zsviczian/excalidraw/types/excalidraw/types";

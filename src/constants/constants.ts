@@ -93,6 +93,8 @@ export const {
   mutateElement,
   restore,
   mermaidToExcalidraw,
+  getContainerElement,
+  refreshTextDimensions,
 } = excalidrawLib;
 
 export function JSON_parse(x: string): any {

@@ -21,9 +21,10 @@ import {
   EXCALIDRAW_PLUGIN,
   getCommonBoundingBox,
   DEVICE,
+  getContainerElement,
 } from "../constants/constants";
 import ExcalidrawPlugin from "../main";
-import { ExcalidrawElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { ExcalidrawElement, ExcalidrawTextElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { ExportSettings } from "../ExcalidrawView";
 import { getDataURLFromURL, getIMGFilename, getMimeType, getURLImageExtension } from "./FileUtils";
 import { generateEmbeddableLink } from "./CustomEmbeddableUtils";
@@ -293,7 +294,7 @@ export const getSVG = async (
         appState: {
           exportBackground: exportSettings.withBackground,
           exportWithDarkMode: exportSettings.withTheme
-            ? scene.appState?.theme != "light"
+            ? scene.appState?.theme !== "light"
             : false,
           ...scene.appState,
         },
@@ -345,7 +346,7 @@ export const getPNG = async (
       appState: {
         exportBackground: exportSettings.withBackground,
         exportWithDarkMode: exportSettings.withTheme
-          ? scene.appState?.theme != "light"
+          ? scene.appState?.theme !== "light"
           : false,
         ...scene.appState,
       },
@@ -392,13 +393,13 @@ export const embedFontsInSVG = (
 ): SVGSVGElement => {
   //replace font references with base64 fonts)
   const includesVirgil = !localOnly &&
-    svg.querySelector("text[font-family^='Virgil']") != null;
+    svg.querySelector("text[font-family^='Virgil']") !== null;
   const includesCascadia = !localOnly &&
-    svg.querySelector("text[font-family^='Cascadia']") != null;
+    svg.querySelector("text[font-family^='Cascadia']") !== null;
   const includesAssistant = !localOnly &&
-    svg.querySelector("text[font-family^='Assistant']") != null;
+    svg.querySelector("text[font-family^='Assistant']") !== null;
   const includesLocalFont =
-    svg.querySelector("text[font-family^='LocalFont']") != null;
+    svg.querySelector("text[font-family^='LocalFont']") !== null;
   const defs = svg.querySelector("defs");
   if (defs && (includesCascadia || includesVirgil || includesLocalFont || includesAssistant)) {
     let style = defs.querySelector("style");
@@ -467,7 +468,7 @@ export const scaleLoadedImage = (
         }
         if(f.shouldScale) {
           const elementAspectRatio = w_old / h_old;
-          if (imageAspectRatio != elementAspectRatio) {
+          if (imageAspectRatio !== elementAspectRatio) {
             dirty = true;
             const h_new = Math.sqrt((w_old * h_old * h_image) / w_image);
             const w_new = Math.sqrt((w_old * h_old * w_image) / h_image);
@@ -558,7 +559,8 @@ export const isMaskFile = (
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["mask"].name] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["mask"].name] !== null &&
+      (typeof fileCache.frontmatter[FRONTMATTER_KEYS["mask"].name] !== "undefined")
     ) {
       return Boolean(fileCache.frontmatter[FRONTMATTER_KEYS["mask"].name]);
     }
@@ -574,7 +576,8 @@ export const hasExportTheme = (
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["export-dark"].name] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["export-dark"].name] !== null &&
+      (typeof fileCache.frontmatter[FRONTMATTER_KEYS["export-dark"].name] !== "undefined")
     ) {
       return true;
     }
@@ -591,7 +594,8 @@ export const getExportTheme = (
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["export-dark"].name] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["export-dark"].name] !== null &&
+      (typeof fileCache.frontmatter[FRONTMATTER_KEYS["export-dark"].name] !== "undefined")
     ) {
       return fileCache.frontmatter[FRONTMATTER_KEYS["export-dark"].name]
         ? "dark"
@@ -609,7 +613,8 @@ export const shouldEmbedScene = (
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["export-embed-scene"].name] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["export-embed-scene"].name] !== null &&
+      (typeof fileCache.frontmatter[FRONTMATTER_KEYS["export-embed-scene"].name] !== "undefined")
     ) {
       return fileCache.frontmatter[FRONTMATTER_KEYS["export-embed-scene"].name];
     }
@@ -625,7 +630,8 @@ export const hasExportBackground = (
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["export-transparent"].name] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["export-transparent"].name] !== null &&
+      (typeof fileCache.frontmatter[FRONTMATTER_KEYS["export-transparent"].name] !== "undefined")
     ) {
       return true;
     }
@@ -641,7 +647,8 @@ export const getWithBackground = (
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["export-transparent"].name] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["export-transparent"].name] !== null &&
+      (typeof fileCache.frontmatter[FRONTMATTER_KEYS["export-transparent"].name] !== "undefined")
     ) {
       return !fileCache.frontmatter[FRONTMATTER_KEYS["export-transparent"].name];
     }
@@ -657,7 +664,10 @@ export const getExportPadding = (
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if(!fileCache?.frontmatter) return plugin.settings.exportPaddingSVG;
 
-    if (fileCache.frontmatter[FRONTMATTER_KEYS["export-padding"].name] != null) {
+    if (
+      fileCache.frontmatter[FRONTMATTER_KEYS["export-padding"].name] !== null &&
+      (typeof fileCache.frontmatter[FRONTMATTER_KEYS["export-padding"].name] !== "undefined")
+    ) {
       const val = parseInt(
         fileCache.frontmatter[FRONTMATTER_KEYS["export-padding"].name],
       );
@@ -667,7 +677,10 @@ export const getExportPadding = (
     }
 
     //deprecated. Retained for backward compatibility
-    if (fileCache.frontmatter[FRONTMATTER_KEYS["export-svgpadding"].name] != null) {
+    if (
+      fileCache.frontmatter[FRONTMATTER_KEYS["export-svgpadding"].name] !== null &&
+      (typeof fileCache.frontmatter[FRONTMATTER_KEYS["export-svgpadding"].name] !== "undefined")
+    ) {
       const val = parseInt(
         fileCache.frontmatter[FRONTMATTER_KEYS["export-svgpadding"].name],
       );
@@ -685,7 +698,8 @@ export const getPNGScale = (plugin: ExcalidrawPlugin, file: TFile): number => {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["export-pngscale"].name] != null
+      fileCache.frontmatter[FRONTMATTER_KEYS["export-pngscale"].name] !== null &&
+      (typeof fileCache.frontmatter[FRONTMATTER_KEYS["export-pngscale"].name] !== "undefined")
     ) {
       const val = parseFloat(
         fileCache.frontmatter[FRONTMATTER_KEYS["export-pngscale"].name],
@@ -764,19 +778,36 @@ export const awaitNextAnimationFrame = async () => new Promise(requestAnimationF
 //export const debug = function(){};
 
 
-export const getContainerElement = (
+export const _getContainerElement = (
   element:
     | (ExcalidrawElement & { containerId: ExcalidrawElement["id"] | null })
     | null,
   scene: any,
 ) => {
-  if (!element) {
+  if (!element || !scene?.elements || element.type !== "text") {
     return null;
   }
   if (element.containerId) {
-    return scene.elements.find((el:ExcalidrawElement)=>el.id === element.containerId) ?? null;
+    return getContainerElement(element as ExcalidrawTextElement, arrayToMap(scene.elements))
+    //return scene.elements.find((el:ExcalidrawElement)=>el.id === element.containerId) ?? null;
   }
   return null;
+};
+
+/**
+ * Transforms array of objects containing `id` attribute,
+ * or array of ids (strings), into a Map, keyd by `id`.
+ */
+export const arrayToMap = <T extends { id: string } | string>(
+  items: readonly T[] | Map<string, T>,
+) => {
+  if (items instanceof Map) {
+    return items;
+  }
+  return items.reduce((acc: Map<string, T>, element) => {
+    acc.set(typeof element === "string" ? element : element.id, element);
+    return acc;
+  }, new Map());
 };
 
 export const updateFrontmatterInString = (data:string, keyValuePairs?: [string,string][]):string => {
@@ -864,19 +895,3 @@ export const addIframe = (containerEl: HTMLElement, link:string, startAt?: numbe
     },
   });
 }
-
-/**
- * Transforms array of objects containing `id` attribute,
- * or array of ids (strings), into a Map, keyd by `id`.
- */
-export const arrayToMap = <T extends { id: string } | string>(
-  items: readonly T[] | Map<string, T>,
-) => {
-  if (items instanceof Map) {
-    return items;
-  }
-  return items.reduce((acc: Map<string, T>, element) => {
-    acc.set(typeof element === "string" ? element : element.id, element);
-    return acc;
-  }, new Map());
-};
