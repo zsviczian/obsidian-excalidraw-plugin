@@ -1776,15 +1776,26 @@ export class ExcalidrawData {
     const fileCache = this.app.metadataCache.getFileCache(this.file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["iframe-theme"].name] !== null &&
-      (typeof fileCache.frontmatter[FRONTMATTER_KEYS["iframe-theme"].name] !== "undefined")
+      fileCache.frontmatter[FRONTMATTER_KEYS["embeddable-theme"].name] !== null &&
+      (typeof fileCache.frontmatter[FRONTMATTER_KEYS["embeddable-theme"].name] !== "undefined")
     ) {
-      this.embeddableTheme = fileCache.frontmatter[FRONTMATTER_KEYS["iframe-theme"].name].toLowerCase();
+      this.embeddableTheme = fileCache.frontmatter[FRONTMATTER_KEYS["embeddable-theme"].name].toLowerCase();
       if (!EMBEDDABLE_THEME_FRONTMATTER_VALUES.includes(this.embeddableTheme)) {
         this.embeddableTheme = "default";
       }
     } else {
-      this.embeddableTheme = this.plugin.settings.iframeMatchExcalidrawTheme ? "auto" : "default";
+      if ( //backwards compatibility
+        fileCache?.frontmatter &&
+        fileCache.frontmatter[FRONTMATTER_KEYS["iframe-theme"].name] !== null &&
+        (typeof fileCache.frontmatter[FRONTMATTER_KEYS["iframe-theme"].name] !== "undefined")
+      ) {
+        this.embeddableTheme = fileCache.frontmatter[FRONTMATTER_KEYS["iframe-theme"].name].toLowerCase();
+        if (!EMBEDDABLE_THEME_FRONTMATTER_VALUES.includes(this.embeddableTheme)) {
+          this.embeddableTheme = "default";
+        }
+      } else {
+        this.embeddableTheme = this.plugin.settings.iframeMatchExcalidrawTheme ? "auto" : "default";
+      }
     }
     return embeddableTheme !== this.embeddableTheme;
   }

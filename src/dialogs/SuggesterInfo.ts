@@ -848,9 +848,9 @@ export const FRONTMATTER_KEYS_INFO: SuggesterInfo[] = [
     after: ": png",
   },
   {
-    field: "iframe-theme",
+    field: "embeddable-theme",
     code: null,
-    desc: "Override iFrame theme plugin-settings for this file. 'match' will match the Excalidraw theme, 'default' will match the obsidian theme. Valid values are\ndark\nlight\nauto\ndefault",
+    desc: "Override embeddable's theme plugin-settings for this file. 'auto' will match the Excalidraw theme, 'default' will match the Obsidian theme. Valid values are\ndark\nlight\nauto\ndefault",
     after: ": auto",
   },
   {

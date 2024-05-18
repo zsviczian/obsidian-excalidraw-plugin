@@ -177,7 +177,8 @@ export const FRONTMATTER_KEYS:{[key:string]: {name: string, type: string, depric
   "border-color": {name: "excalidraw-border-color", type: "text"},
   "md-css": {name: "excalidraw-css", type: "text"},
   "autoexport": {name: "excalidraw-autoexport", type: "text"},
-  "iframe-theme": {name: "excalidraw-iframe-theme", type: "text"},
+  "iframe-theme": {name: "excalidraw-iframe-theme", type: "text", depricated: true},
+  "embeddable-theme": {name: "excalidraw-embeddable-theme", type: "text"},
   "open-as-markdown": {name: "excalidraw-open-md", type: "checkbox"},
 };
 
