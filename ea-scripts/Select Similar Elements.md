@@ -2,12 +2,12 @@
 
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-select-similar-elements.png)
 
-This script allows users to streamline their Obsidian-Excalidraw workflows by enabling the selection of elements based on similar properties. Users can precisely define which attributes such as stroke color, fill style, font family, and more, should match for selection. It's perfect for large canvases where manual selection would be cumbersome. Users can either run the script to find and select matching elements across the entire scene, or define a specific group of elements to apply the selection criteria within a defined timeframe. This script enhances control and efficiency in your Excalidraw experience.
+This script enables the selection of elements based on matching properties. Select the attributes (such as stroke color, fill style, font family, etc) that should match for selection. It's perfect for large scenes where manual selection of elements would be cumbersome. You can either run the script to select matching elements across the entire scene, or define a specific group of elements to apply the selection criteria to. 
 
 ```js */
 
 let config = window.ExcalidrawSelectConfig;
-config = config && (Date.now() - config.timestamp < 60000) ? config : null;
+config = Boolean(config) && (Date.now() - config.timestamp < 60000) ? config : null;
 
 let elements = ea.getViewSelectedElements();
 if(!config && (elements.length !==1)) {
@@ -27,7 +27,7 @@ const fragWithHTML = (html) => createFragment((frag) => (frag.createDiv().innerH
 // RUN
 //--------------------------
 const run = () => {
-  selectedElements = ea.getViewElements().filter(el=>
+  selectedElements = elements.filter(el=>
     ((typeof config.angle === "undefined") || (el.angle === config.angle)) &&
     ((typeof config.backgroundColor === "undefined") || (el.backgroundColor === config.backgroundColor)) &&
     ((typeof config.fillStyle === "undefined") || (el.fillStyle === config.fillStyle)) &&
@@ -61,7 +61,7 @@ const showInstructions = () => {
 	instructionsModal.contentEl.createEl("p", {text: "Step 2: Select an action:"});
 	instructionsModal.contentEl.createEl("ul", {}, el => {
 	  el.createEl("li", {text: "Click 'RUN' to find matching elements throughout the entire scene."});
-	  el.createEl("li", {text: "Click 'SELECT' to first choose a specific group of elements. Then run the 'Select Similar Elements' script once more on that group within 1 minute."});
+	  el.createEl("li", {text: "Click 'SELECT' to 1) first choose a specific group of elements in the scene, then 2) run the 'Select Similar Elements' once more within 1 minute to apply the filter criteria only to that group of elements."});
 	});
 	instructionsModal.contentEl.createEl("p", {text: "Note: If you choose 'SELECT', make sure to click the 'Select Similar Elements' script again within 1 minute to apply your selection criteria to the group of elements you chose."});
   };
