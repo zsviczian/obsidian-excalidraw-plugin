@@ -39,8 +39,6 @@ export class EmbeddableMenu {
     const ea = getEA(view) as ExcalidrawAutomate;
     ea.copyViewElementsToEAforEditing([element]);
     ea.getElement(element.id).link = link;
-    //mutateElement (element,{link});
-    //view.setDirty(99);
     view.excalidrawData.elementLinks.set(element.id, link);
     ea.addElementsToView(false, true, true);
   }
@@ -105,6 +103,7 @@ export class EmbeddableMenu {
         if(!file) return;
         const isMD = file.extension==="md";
         const isExcalidrawFile = view.plugin.isExcalidrawFile(file);
+        const isPDF = file.extension==="pdf";
         const { x, y } = sceneCoordsToViewportCoords( { sceneX: element.x, sceneY: element.y }, appState);
         const top = `${y-2.5*ROOTELEMENTSIZE-appState.offsetTop}px`;
         const left = `${x-appState.offsetLeft}px`;
@@ -227,6 +226,19 @@ export class EmbeddableMenu {
                 icon={ICONS.Properties}
                 view={view}
               />
+              {isPDF && (
+                <ActionButton
+                key={"Crop"}
+                title={t("CROP_PAGE")}
+                action={() => {
+                  if(!element) return;
+                  //@ts-ignore
+                  view.app.commands.executeCommandById("obsidian-excalidraw-plugin:crop-image");
+                }}
+                icon={ICONS.Crop}
+                view={view}
+              />
+              )}
             </div>
           </div>  
         );

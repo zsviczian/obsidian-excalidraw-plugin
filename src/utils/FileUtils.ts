@@ -334,6 +334,7 @@ export const getPathWithoutExtension = (f:TFile): string => {
 const VAULT_BASE_URL = DEVICE.isDesktop
   ? app.vault.adapter.url.pathToFileURL(app.vault.adapter.basePath).toString()
   : "";
+
 export const getInternalLinkOrFileURLLink = (
   path: string, plugin:ExcalidrawPlugin, alias?: string, sourceFile?: TFile
 ):{link: string, isInternal: boolean, file?: TFile, url?: string} => {
@@ -345,7 +346,7 @@ export const getInternalLinkOrFileURLLink = (
   const vault = plugin.app.vault;
   const fileURLString = vault.adapter.url.pathToFileURL(path).toString();
   if (fileURLString.startsWith(VAULT_BASE_URL)) {
-    const internalPath = normalizePath(fileURLString.substring(VAULT_BASE_URL.length));
+    const internalPath = normalizePath(unescape(fileURLString.substring(VAULT_BASE_URL.length)));
     const file = vault.getAbstractFileByPath(internalPath);
     if(file && file instanceof TFile) {
       const link = plugin.app.metadataCache.fileToLinktext(

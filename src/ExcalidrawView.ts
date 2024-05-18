@@ -104,7 +104,7 @@ import {
   _getContainerElement,
   arrayToMap,
 } from "./utils/Utils";
-import { cleanBlockRef, cleanSectionHeading, getLeaf, getParentOfClass, obsidianPDFQuoteWithRef, openLeaf } from "./utils/ObsidianUtils";
+import { cleanBlockRef, cleanSectionHeading, getAttachmentsFolderAndFilePath, getLeaf, getParentOfClass, obsidianPDFQuoteWithRef, openLeaf } from "./utils/ObsidianUtils";
 import { splitFolderAndFilename } from "./utils/FileUtils";
 import { ConfirmationPrompt, GenericInputPrompt, NewFileActions, Prompt, linkPrompt } from "./dialogs/Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
@@ -3734,15 +3734,35 @@ export default class ExcalidrawView extends TextFileView {
             if(localFileDragAction === "embeddable") {
               insertEmbeddableToView(getEA(this), pos, link.file);
             } else {
+              if(link.file.extension === "pdf") {
+                const insertPDFModal = new InsertPDFModal(this.plugin, this);
+                insertPDFModal.open(link.file);
+                return false;
+              }
               insertImageToView(getEA(this), pos, link.file);
             }
           } else {
             const extension = getURLImageExtension(link.url);
-            if(
-              localFileDragAction === "image-import" &&
-              (IMAGE_TYPES.contains(extension) || extension === "excalidraw")
-            ) {
-              return true; //excalidarw to continue processing
+            if(localFileDragAction === "image-import") {
+              if (IMAGE_TYPES.contains(extension)) {
+                (async () => {
+                  const {folder:_, filepath} = await getAttachmentsFolderAndFilePath(this.app, this.file.path,event.dataTransfer.files[i].name);
+                  const file = await this.app.vault.createBinary(filepath, await event.dataTransfer.files[i].arrayBuffer())
+                  insertImageToView(getEA(this), pos, file);
+                })();
+                return false;
+              } else if(extension === "excalidraw") {
+                return true; //excalidarw to continue processing
+              } else {
+                (async () => {
+                  const {folder:_, filepath} = await getAttachmentsFolderAndFilePath(this.app, this.file.path,event.dataTransfer.files[i].name);
+                  const file = await this.app.vault.createBinary(filepath, await event.dataTransfer.files[i].arrayBuffer());
+                  const modal = new UniversalInsertFileModal(this.plugin, this);
+                  modal.open(file, pos);
+                  //insertEmbeddableToView(getEA(this), pos, file);
+                })();
+                return false;
+              }
             }
             if(localFileDragAction === "embeddable" || !IMAGE_TYPES.contains(extension)) {
               insertEmbeddableToView(getEA(this), pos, null, link.url);

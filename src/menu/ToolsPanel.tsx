@@ -579,7 +579,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     title={t("CROP_IMAGE")}
                     action={(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
                       // @ts-ignore
-                      this.props.view.app.commands.executeCommandById("obsidian-excalidraw-plugin:crop-image")
+                      this.props.view.app.commands.executeCommandById("obsidian-excalidraw-plugin:crop-image");
                     }}
                     icon={ICONS.Crop}
                     view={this.props.view}

@@ -37,7 +37,7 @@ export const modifierKeyTooltipMessages = ():ModifierKeyTooltipMessages => {
       // Add more messages for WebBrowserDragAction as needed
     },
     LocalFileDragAction: {
-      "image-import": "Insert Image: import external or reuse existing if path in Vault",
+      "image-import": "Import external file or reuse existing file if path is from the Vault",
       "image-url": `Insert Image: with local URI or internal-link if from Vault`,
       "link": "Insert Link: local URI or internal-link if from Vault",
       "embeddable": "Insert Interactive-Frame: local URI or internal-link if from Vault",

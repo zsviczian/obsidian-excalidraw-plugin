@@ -81,6 +81,7 @@ export default {
   RUN_OCR_ELEMENTS: "OCR selected elements: Grab text from freedraw + images to clipboard",
   TRAY_MODE: "Toggle property-panel tray-mode",
   SEARCH: "Search for text in drawing",
+  CROP_PAGE: "Crop and mask selected page",
   CROP_IMAGE: "Crop and mask image",
   ANNOTATE_IMAGE : "Annotate image in Excalidraw",
   INSERT_ACTIVE_PDF_PAGE_AS_IMAGE: "Insert active PDF page as image",

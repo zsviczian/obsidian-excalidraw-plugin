@@ -11,10 +11,11 @@ export const setExcalidrawPlugin = (plugin: ExcalidrawPlugin) => {
 };
 const MD_EXCALIDRAW = "# Excalidraw Data";
 const MD_TEXTELEMENTS = "## Text Elements";
-const MD_DRAWING = "## Drawing";
 const MD_ELEMENTLINKS = "## Element Links";
 const MD_EMBEDFILES = "## Embedded Files";
-export const MD_EX_SECTIONS = [MD_EXCALIDRAW, MD_TEXTELEMENTS, MD_DRAWING, MD_ELEMENTLINKS, MD_EMBEDFILES];
+const MD_DRAWING = "## Drawing";
+
+export const MD_EX_SECTIONS = [MD_EXCALIDRAW, MD_TEXTELEMENTS, MD_ELEMENTLINKS, MD_EMBEDFILES, MD_DRAWING];
 
 export const ERROR_IFRAME_CONVERSION_CANCELED = "iframe conversion canceled";
 
@@ -199,7 +200,7 @@ export const FRONTMATTER = [
   "tags: [excalidraw]",
   "",
   "---",
-  "==⚠  Switch to EXCALIDRAW VIEW in the MORE OPTIONS menu of this document. ⚠==",
+  "==⚠  Switch to EXCALIDRAW VIEW in the MORE OPTIONS menu of this document. ⚠== You can decompress Drawing data with the command palette: 'Decompress current Excalidraw file'. For more info check in plugin settings under 'Saving'",
   "",
   "",
 ].join("\n");

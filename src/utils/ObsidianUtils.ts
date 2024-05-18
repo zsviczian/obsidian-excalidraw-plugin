@@ -354,17 +354,41 @@ export const editorInsertText = (editor: Editor, text: string)=> {
 }
 
 export const foldExcalidrawSection = (view: MarkdownView) => {
-  if(!view || !(view instanceof MarkdownView)) return;
-  const existingFolds = view.currentMode.getFoldInfo();
-  const lineCount = view.editor.lineCount();
-  let i = -1;
-  while(i++<lineCount && view.editor.getLine(i) !== "# Excalidraw Data");
+  if (!view || !(view instanceof MarkdownView)) return;
 
-  if(i>-1 && i<lineCount) {
-    const foldPositions = [
-        ...(existingFolds?.folds ?? []),
-        ...[{from: i, to: lineCount-1}],
-      ];
-    view.currentMode.applyFoldInfo({folds: foldPositions, lines:lineCount});
+  const foldStart = {
+    ed: -1, // # Excalidraw Data
+    te: -1, // ## Text Elements
+    el: -1, // ## Element Links
+    ef: -1, // ## Embedded Files
+    d: -1,  // ## Drawing
+  };
+
+  const existingFolds = view.currentMode.getFoldInfo()?.folds ?? [];
+  const lineCount = view.editor.lineCount();
+  
+  for (let i = 0; i < lineCount; i++) {
+    const line = view.editor.getLine(i);
+    switch (line) {
+      case "# Excalidraw Data": foldStart.ed = i; break;
+      case "## Text Elements": foldStart.te = i; break;
+      case "## Element Links": foldStart.el = i; break;
+      case "## Embedded Files": foldStart.ef = i; break;
+      case "## Drawing": foldStart.d = i; break;
+    }
+    if (line === "## Drawing") break;
   }
-}
+
+  if (foldStart.ed > -1 && foldStart.d > -1) {
+    const foldPositions = [
+      ...existingFolds,
+      ...(foldStart.te > -1 ? [{ from: foldStart.te, to: (foldStart.el > -1 ? foldStart.el : (foldStart.ef > -1 ? foldStart.ef : foldStart.d)) - 1 }] : []),
+      ...(foldStart.el > -1 ? [{ from: foldStart.el, to: (foldStart.ef > -1 ? foldStart.ef : foldStart.d) - 1 }] : []),
+      ...(foldStart.ef > -1 ? [{ from: foldStart.ef, to: foldStart.d - 1 }] : []),
+      { from: foldStart.d, to: lineCount - 1 },
+      { from: foldStart.ed, to: lineCount - 1 },
+    ];
+
+    view.currentMode.applyFoldInfo({ folds: foldPositions, lines: lineCount });
+  }
+};
