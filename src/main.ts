@@ -42,7 +42,8 @@ import {
   LOCALE,
   IMAGE_TYPES,
   setExcalidrawPlugin,
-  DEVICE
+  DEVICE,
+  sceneCoordsToViewportCoords
 } from "./constants/constants";
 import {
   VIRGIL_FONT,
@@ -268,6 +269,11 @@ export default class ExcalidrawPlugin extends Plugin {
     addIcon(EXPORT_IMG_ICON_NAME, EXPORT_IMG_ICON);
 
     await this.loadSettings({reEnableAutosave:true});
+    if(!this.settings.onceOffCompressFlagReset) {
+      this.settings.compress = true;
+      this.settings.onceOffCompressFlagReset = true;
+      await this.saveSettings();
+    }
     this.excalidrawConfig = new ExcalidrawConfig(this);
     await loadMermaid();
     this.editorHandler = new EditorHandler(this);
@@ -1606,7 +1612,15 @@ export default class ExcalidrawPlugin extends Plugin {
         }
         if(checking) return true;
         this.forceToOpenInMarkdownFilepath = ef.file?.path;
-        this.openDrawing(ef.file, DEVICE.isMobile ? "new-tab":"popout-window", true);
+        const appState = view.excalidrawAPI.getAppState();
+        const {x:centerX,y:centerY} = sceneCoordsToViewportCoords({sceneX:el.x+el.width/2,sceneY:el.y+el.height/2},appState);
+        const {width, height} = {width:600, height:600};
+        const {x,y} = {
+          x:centerX - width/2 + view.ownerWindow.screenX,
+          y:centerY - height/2 + view.ownerWindow.screenY,
+        }
+      
+        this.openDrawing(ef.file, DEVICE.isMobile ? "new-tab":"popout-window", true, undefined, false, {x,y,width,height});
       }
     })
 
@@ -3133,7 +3147,8 @@ export default class ExcalidrawPlugin extends Plugin {
     location: PaneTarget,
     active: boolean = false,
     subpath?: string,
-    justCreated: boolean = false
+    justCreated: boolean = false,
+    popoutLocation?: {x?: number, y?: number, width?: number, height?: number},
   ) {
 
     const fnGetLeaf = ():WorkspaceLeaf => {
@@ -3142,7 +3157,8 @@ export default class ExcalidrawPlugin extends Plugin {
       }
       let leaf: WorkspaceLeaf;
       if(location === "popout-window") {
-        leaf = this.app.workspace.openPopoutLeaf();
+        //@ts-ignore (the api does not include x,y)
+        leaf = this.app.workspace.openPopoutLeaf(popoutLocation);
       }
       if(location === "new-tab") {
         leaf = this.app.workspace.getLeaf('tab');

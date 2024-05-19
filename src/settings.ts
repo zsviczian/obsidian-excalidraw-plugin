@@ -45,6 +45,7 @@ export interface ExcalidrawSettings {
   scriptFolderPath: string;
   compress: boolean;
   decompressForMDView: boolean;
+  onceOffCompressFlagReset: boolean; //used to reset compress to true in 2.2.0
   autosave: boolean;
   autosaveInterval: number;
   autosaveIntervalDesktop: number;
@@ -203,6 +204,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   scriptFolderPath: "Excalidraw/Scripts",
   compress: true,
   decompressForMDView: false,
+  onceOffCompressFlagReset: false,
   autosave: true,
   autosaveInterval: 15000,
   autosaveIntervalDesktop: 15000,

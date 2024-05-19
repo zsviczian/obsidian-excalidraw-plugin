@@ -17,6 +17,40 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.2.0":`
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/dV0NEOwn5NM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+⚠️⚠️⚠️ BREAKING CHANGE ⚠️⚠️⚠️
+Files you save with 2.2.0 are not backward compatible with earlier plugin versions!
+
+## New from excalidraw.com
+- Wrapable text elements (without the need for transparent sticky notes!)
+
+## New
+- File format. I nested all Excalidraw markup under ${String.fromCharCode(96)}# Excalidraw Data${String.fromCharCode(96)}.  Here's the new structure.
+${String.fromCharCode(96,96,96)}markdown
+---
+excalidraw-plugin: parsed
+other-frontmatter-properties: values
+---
+back of the note bla bla bla
+
+# Excalidraw Data
+## Text Element
+## Element Links
+## Embedded Files
+%%
+## Drawing
+%%
+${String.fromCharCode(96,96,96)}
+- When opening Excalidraw in Markdown ${String.fromCharCode(96)}# Excalidraw Data${String.fromCharCode(96)} will be folded.
+- New command palette action: ${String.fromCharCode(96)}Open the back-of-the-note of the selected Excalidraw image${String.fromCharCode(96)}. The action is only visible when selecting an embedded Excalidraw drawing in the Scene. On a desktop, the command will open the back of the selected card in a popout window, and on a mobile, in a new tab.
+
+## Fixed
+- Drag and drop from Finder/Explorer (OS external). Images will retain their filenames. PDFs will be imported to the Vault. [#1779](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1779)
+`,
 "2.1.8":`
 ## Fixed
 - Fixing issues that surfaced after upgrading to Obsidian 1.6.0

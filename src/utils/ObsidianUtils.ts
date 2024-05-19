@@ -31,11 +31,11 @@ export const getLeaf = (
   const newTab = ():WorkspaceLeaf => {
     if(!plugin.settings.openInMainWorkspace) return app.workspace.getLeaf('tab');
     const [leafLoc, mainLeavesIds] = getLeafLoc(origo);
-    if(leafLoc === 'main') return app.workspace.getLeaf('tab');
+    if(leafLoc === 'main') return plugin.app.workspace.getLeaf('tab');
     return getNewOrAdjacentLeaf(plugin,origo);
   }
   const newTabGroup = ():WorkspaceLeaf => getNewOrAdjacentLeaf(plugin,origo);
-  const newWindow = ():WorkspaceLeaf => app.workspace.openPopoutLeaf();
+  const newWindow = ():WorkspaceLeaf => plugin.app.workspace.openPopoutLeaf();
 
   switch(linkClickModifierType(ev)) {
     case "active-pane": return origo;

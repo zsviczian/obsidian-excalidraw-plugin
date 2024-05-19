@@ -2375,8 +2375,10 @@ export default class ExcalidrawView extends TextFileView {
 
   public async convertExcalidrawToMD() {
     await this.save();
+    const file = await this.plugin.convertSingleExcalidrawToMD(this.file);
+    await sleep(250); //dirty hack to wait for Obsidian metadata to be updated
     this.plugin.openDrawing(
-      await this.plugin.convertSingleExcalidrawToMD(this.file),
+      file,
       "active-pane",
       true
     );
