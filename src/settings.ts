@@ -61,6 +61,7 @@ export interface ExcalidrawSettings {
   displaySVGInPreview: boolean; //No longer used since 1.9.13
   previewImageType: PreviewImageType; //Introduced with 1.9.13
   allowImageCache: boolean;
+  allowImageCacheInScene: boolean;
   displayExportedImageIfAvailable: boolean;
   previewMatchObsidianTheme: boolean;
   width: string;
@@ -220,6 +221,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   displaySVGInPreview: undefined,
   previewImageType: undefined,
   allowImageCache: true,
+  allowImageCacheInScene: true,
   displayExportedImageIfAvailable: false,
   previewMatchObsidianTheme: false,
   width: "400",
@@ -1720,6 +1722,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           })
       )
+    new Setting(detailsEl)
+      .setName(t("SCENE_IMAGE_CACHE_NAME"))
+      .setDesc(fragWithHTML(t("SCENE_IMAGE_CACHE_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.allowImageCacheInScene)
+          .onChange((value) => {
+            this.plugin.settings.allowImageCacheInScene = value;
+            this.applySettingsUpdate();
+          })
+      )
+    new Setting(detailsEl)
+      .setName(t("EMBED_IMAGE_CACHE_CLEAR"))
       .addButton((button) =>
         button
           .setButtonText(t("EMBED_IMAGE_CACHE_CLEAR"))
@@ -1727,6 +1742,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             imageCache.clearImageCache();
           })
       )
+    new Setting(detailsEl)
+      .setName(t("BACKUP_CACHE_CLEAR"))
       .addButton((button) =>
         button
           .setButtonText(t("BACKUP_CACHE_CLEAR"))

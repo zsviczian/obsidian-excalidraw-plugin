@@ -2964,10 +2964,10 @@ export default class ExcalidrawPlugin extends Plugin {
     const excalidrawLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
     excalidrawLeaves.forEach(async (leaf) => {
       const ev: ExcalidrawView = leaf.view as ExcalidrawView;
-      console.log(ev.file.name, ev.semaphores.dirty);
+      //console.log(ev.file.name, ev.semaphores.dirty);
       await this.setMarkdownView(leaf);
       //@ts-ignore
-      console.log(leaf?.view?.file);
+      //console.log(leaf?.view?.file);
     });
 
     document.body.removeChild(this.textMeasureDiv);

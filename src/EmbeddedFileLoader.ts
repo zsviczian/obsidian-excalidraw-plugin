@@ -361,7 +361,7 @@ export class EmbeddedFilesLoader {
       isMask,
     };
 
-    const shouldUseCache = file && imageCache.isReady();
+    const shouldUseCache = this.plugin.settings.allowImageCacheInScene && file && imageCache.isReady();
     const cacheKey:ImageKey = {
       filepath: file.path,
       blockref: null,
@@ -380,7 +380,9 @@ export class EmbeddedFilesLoader {
       linkpartAlias: null,
     }
 
-    const maybeSVG = await imageCache.getImageFromCache(cacheKey);
+    const maybeSVG = shouldUseCache
+    ? await imageCache.getImageFromCache(cacheKey)
+    : undefined;
 
     const svg = (maybeSVG && (maybeSVG instanceof SVGSVGElement))
     ? maybeSVG

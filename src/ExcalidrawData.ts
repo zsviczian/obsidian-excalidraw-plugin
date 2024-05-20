@@ -262,7 +262,7 @@ const RE_TEXTELEMENTS_FALLBACK_1 = new RegExp(`(.*)%%\n##? Text Elements(?:\n|$)
 const RE_TEXTELEMENTS_FALLBACK_2 = new RegExp(`(.*)##? Text Elements(?:\n|$)`, "m");
 
 
-const RE_DRAWING = new RegExp(`(%%\n)?##? Drawing\n`);
+const RE_DRAWING = new RegExp(`^(%%\n)?##? Drawing\n`, "m");
 
 export const getExcalidrawMarkdownHeaderSection = (data:string, keys?:[string,string][]):string => {
   //The base case scenario is at the top, continued with fallbacks in order of likelihood and file structure
@@ -274,6 +274,13 @@ export const getExcalidrawMarkdownHeaderSection = (data:string, keys?:[string,st
   %%
   # Excalidraw Data
   */
+
+  //trimming the json because in legacy excalidraw files the JSON was a single string resulting in very slow regexp parsing
+  const drawingTrimLocation = data.search(RE_DRAWING);
+  if(drawingTrimLocation>0) { 
+    data = data.substring(0, drawingTrimLocation);
+  }
+
   let trimLocation = data.search(RE_EXCALIDRAWDATA_WITHSECTION_OK);
   let shouldFixTrailingHashtag = false;
   if(trimLocation > 0) {
@@ -386,7 +393,9 @@ export const getExcalidrawMarkdownHeaderSection = (data:string, keys?:[string,st
     # Drawing
   */
   if (trimLocation === -1) {
-    trimLocation = data.search(RE_DRAWING);
+    if (drawingTrimLocation > 0) {
+      trimLocation = drawingTrimLocation;
+    }
   }
   if (trimLocation === -1) {
     return data.endsWith("\n") ? data : (data + "\n");
@@ -514,6 +523,18 @@ export class ExcalidrawData {
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/497
       if (el.fontSize === null) {
         el.fontSize = 20;
+      }
+
+      if (el.type === "text" && !el.hasOwnProperty("autoResize")) {
+        el.autoResize = true;
+      }
+
+      if (el.type === "text" && !el.hasOwnProperty("lineHeight")) {
+        el.lineHeight = getDefaultLineHeight(el.fontFamily);
+      }
+
+      if (el.type === "image" && !el.hasOwnProperty("roundness")) {
+        el.roundness = null;
       }
     }
 

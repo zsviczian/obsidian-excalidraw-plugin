@@ -17,6 +17,13 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.2.1":`
+## Fixed
+- Text height becomes unreadable after 2.2.0 update [#1784](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1784)
+- Images are loaded with a rounded border when loading old Excalidraw files
+- Embedded Excalidraw images cache gets stuck with old version of the image
+- Extremely long loading times with legacy (3+ years old) Excalidraw files
+`,
 "2.2.0":`
 <div class="excalidraw-videoWrapper"><div>
 <iframe src="https://www.youtube.com/embed/dV0NEOwn5NM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

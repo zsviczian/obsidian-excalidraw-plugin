@@ -156,7 +156,7 @@ class ImageCache {
           const filepath = key.split("#")[0];
           const fileExists = files.some((f: TFile) => f.path === filepath);
           const file = fileExists ? files.find((f: TFile) => f.path === filepath) : null;
-          if (isLegacyKey || !file || (file && file.stat.mtime > cursor.value.mtime) || (!cursor.value.blob && !cursor.value.svg)) {
+          if (isLegacyKey || !file || (file && (file.stat.mtime > cursor.value.mtime)) || (!cursor.value.blob && !cursor.value.svg)) {
             deletePromises.push(
               new Promise<void>((innerResolve, innerReject) => {
                 const deleteRequest = store.delete(cursor.primaryKey);
@@ -293,7 +293,7 @@ class ImageCache {
 
       const file = this.app.vault.getAbstractFileByPath(key_.filepath.split("#")[0]);
       if (!file || !(file instanceof TFile)) return undefined;
-      if (cachedData && cachedData.mtime >= file.stat.mtime) {
+      if (cachedData && (cachedData.mtime >= file.stat.mtime)) {
         if(hasExcalidrawEmbeddedImagesTreeChanged(file, cachedData.mtime, this.plugin)) {
           return undefined;
         }
