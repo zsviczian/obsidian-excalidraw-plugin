@@ -1,14 +1,14 @@
-import { EXCALIDRAW_PLUGIN } from "src/constants/constants";
-
-
 export const durationTreshold = 0; //0.05; //ms
-export const isDebugMode = () => EXCALIDRAW_PLUGIN && EXCALIDRAW_PLUGIN.settings?.isDebugMode;
+
+export function setDebugging(value: boolean) {
+  DEBUGGING = value;
+}
+
+export let DEBUGGING = false;
 
 export const log = console.log.bind(window.console);
-export const debug = (...messages: unknown[]) => {
-  if(isDebugMode()) {
-    console.log(...messages);
-  }
+export const debug = (fn: Function, fnName: string, ...messages: unknown[]) => {
+  console.log(fnName,fn,...messages);
 };
 
 export class CustomMutationObserver {
@@ -29,7 +29,7 @@ export class CustomMutationObserver {
       const endTime = performance.now(); // Get end time
       const executionTime = endTime - startTime;
       if (executionTime > durationTreshold) {
-        console.log(`Excalidraw ${this.name} MutationObserver callback took ${executionTime}ms to execute`);
+        console.log(`Excalidraw ${this.name} MutationObserver callback took ${executionTime}ms to execute`, observer);
       }
     };
 

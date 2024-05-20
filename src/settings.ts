@@ -35,6 +35,7 @@ import { ModifierKeySet, ModifierSetType } from "./utils/ModifierkeyHelper";
 import { ModifierKeySettingsComponent } from "./dialogs/ModifierKeySettings";
 import { ANNOTATED_PREFIX, CROPPED_PREFIX } from "./utils/CarveOut";
 import { EDITOR_FADEOUT } from "./CodeMirrorExtension/EditorHandler";
+import { setDebugging } from "./utils/DebugHelper";
 
 export interface ExcalidrawSettings {
   folder: string;
@@ -2504,6 +2505,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.isDebugMode)
         .onChange((value) => {
           this.plugin.settings.isDebugMode = value;
+          setDebugging(value);
           this.applySettingsUpdate();
         }),
     );

@@ -26,7 +26,7 @@ import { getParentOfClass, isObsidianThemeDark, getFileCSSClasses } from "./util
 import { linkClickModifierType } from "./utils/ModifierkeyHelper";
 import { ImageKey, imageCache } from "./utils/ImageCache";
 import { FILENAMEPARTS, PreviewImageType } from "./utils/UtilTypes";
-import { CustomMutationObserver, isDebugMode } from "./utils/DebugHelper";
+import { CustomMutationObserver, DEBUGGING } from "./utils/DebugHelper";
 import { getExcalidrawFileForwardLinks } from "./utils/ExcalidrawViewUtils";
 import { linkPrompt } from "./dialogs/Prompt";
 
@@ -714,7 +714,7 @@ const tmpObsidianWYSIWYG = async (
       internalEmbedDiv.appendChild(imgDiv);    
     }, 500);
   }
-  const observer = isDebugMode()
+  const observer = DEBUGGING
     ? new CustomMutationObserver(markdownObserverFn, "markdowPostProcessorObserverFn")
     : new MutationObserver(markdownObserverFn);
   observer.observe(internalEmbedDiv, {
@@ -848,7 +848,7 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = async (m) => {
   node.appendChild(div);
 };
 
-export const legacyExcalidrawPopoverObserver = isDebugMode()
+export const legacyExcalidrawPopoverObserver = DEBUGGING
   ? new CustomMutationObserver(legacyExcalidrawPopoverObserverFn, "legacyExcalidrawPopoverObserverFn")
   : new MutationObserver(legacyExcalidrawPopoverObserverFn);
 

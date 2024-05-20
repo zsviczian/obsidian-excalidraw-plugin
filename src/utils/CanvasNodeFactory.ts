@@ -11,7 +11,7 @@ container.appendChild(node.contentEl)
 import { TFile, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import ExcalidrawView from "src/ExcalidrawView";
 import { getContainerForDocument, ConstructableWorkspaceSplit, isObsidianThemeDark } from "./ObsidianUtils";
-import { CustomMutationObserver, isDebugMode } from "./DebugHelper";
+import { CustomMutationObserver, DEBUGGING } from "./DebugHelper";
 
 declare module "obsidian" {
   interface Workspace {
@@ -110,7 +110,7 @@ export class CanvasNodeFactory {
           }
         }
       };
-      const observer = isDebugMode()
+      const observer = DEBUGGING
         ? new CustomMutationObserver(nodeObserverFn, "CanvasNodeFactory")
         : new MutationObserver(nodeObserverFn);
   

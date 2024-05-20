@@ -1,7 +1,7 @@
 import { WorkspaceWindow } from "obsidian";
 import ExcalidrawPlugin from "src/main";
 import { getAllWindowDocuments } from "./ObsidianUtils";
-import { debug } from "./DebugHelper";
+import { DEBUGGING, debug } from "./DebugHelper";
 
 const STYLE_VARIABLES = ["--background-modifier-cover","--background-primary-alt","--background-secondary","--background-secondary-alt","--background-modifier-border","--text-normal","--text-muted","--text-accent","--text-accent-hover","--text-faint","--text-highlight-bg","--text-highlight-bg-active","--text-selection","--interactive-normal","--interactive-hover","--interactive-accent","--interactive-accent-hover","--scrollbar-bg","--scrollbar-thumb-bg","--scrollbar-active-thumb-bg"];
 const EXCALIDRAW_CONTAINER_CLASS = "excalidraw__embeddable__outer";
@@ -12,12 +12,11 @@ export class StylesManager {
   private styleDark: string;
   private plugin: ExcalidrawPlugin;
 
-  
-
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
+    const self = this;
     plugin.app.workspace.onLayoutReady(async () => {
-      debug("StylesManager.constructor app.workspace.onLayoutReady");
+      DEBUGGING && debug(undefined, "StylesManager.constructor > app.workspace.onLayoutReady", self);
       await this.harvestStyles();
       getAllWindowDocuments(plugin.app).forEach(doc => {
         this.copyPropertiesToTheme(doc);

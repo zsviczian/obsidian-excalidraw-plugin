@@ -132,11 +132,10 @@ import { processLinkText } from "./utils/CustomEmbeddableUtils";
 import { getEA } from "src";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
-import { CustomMutationObserver, debug, durationTreshold, log } from "./utils/DebugHelper";
-import { carveOutImage, carveOutPDF, createImageCropperFile, CROPPED_PREFIX } from "./utils/CarveOut";
+import { CustomMutationObserver, debug, durationTreshold, log, DEBUGGING, setDebugging } from "./utils/DebugHelper";
+import { carveOutImage, carveOutPDF, createImageCropperFile } from "./utils/CarveOut";
 import { ExcalidrawConfig } from "./utils/ExcalidrawConfig";
 import { EditorHandler } from "./CodeMirrorExtension/EditorHandler";
-import de from "./lang/locale/de";
 
 declare const EXCALIDRAW_PACKAGES:string;
 declare const react:any;
@@ -328,7 +327,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     const self = this;
     this.app.workspace.onLayoutReady(() => {
-      debug(`ExcalidrawPlugin.onload.app.workspace.onLayoutReady`);
+      DEBUGGING && debug(self.onload,"ExcalidrawPlugin.onload > app.workspace.onLayoutReady");
       this.scriptEngine = new ScriptEngine(self);
       imageCache.initializeDB(self);
     });
@@ -337,8 +336,9 @@ export default class ExcalidrawPlugin extends Plugin {
 
   private setPropertyTypes() {
     const app = this.app;
+    const self = this;
     this.app.workspace.onLayoutReady(() => {
-      debug(`ExcalidrawPlugin.setPropertyTypes app.workspace.onLayoutReady`);
+      DEBUGGING && debug(self.setPropertyTypes, `ExcalidrawPlugin.setPropertyTypes > app.workspace.onLayoutReady`);
       Object.keys(FRONTMATTER_KEYS).forEach((key) => {
         if(FRONTMATTER_KEYS[key].depricated === true) return;
         const {name, type} = FRONTMATTER_KEYS[key];
@@ -348,8 +348,9 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public initializeFonts() {
+    const self = this;
     this.app.workspace.onLayoutReady(async () => {
-      debug(`ExcalidrawPlugin.initializeFonts app.workspace.onLayoutReady`);
+      DEBUGGING && debug(self.initializeFonts,`ExcalidrawPlugin.initializeFonts > app.workspace.onLayoutReady`);
       const font = await getFontDataURL(
         this.app,
         this.settings.experimantalFourthFont,
@@ -404,7 +405,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private switchToExcalidarwAfterLoad() {
     const self = this;
     this.app.workspace.onLayoutReady(() => {
-      debug(`ExcalidrawPlugin.switchToExcalidarwAfterLoad app.workspace.onLayoutReady`);
+      DEBUGGING && debug(self.switchToExcalidarwAfterLoad, `ExcalidrawPlugin.switchToExcalidarwAfterLoad > app.workspace.onLayoutReady`);
       let leaf: WorkspaceLeaf;
       for (leaf of this.app.workspace.getLeavesOfType("markdown")) {
         if ( leaf.view instanceof MarkdownView && self.isExcalidrawFile(leaf.view.file)) {
@@ -638,7 +639,7 @@ export default class ExcalidrawPlugin extends Plugin {
     
     const self = this;
     this.app.workspace.onLayoutReady(() => {
-      debug(`ExcalidrawPlugin.addMarkdownPostProcessor app.workspace.onLayoutReady`);
+      DEBUGGING && debug(self.addMarkdownPostProcessor, `ExcalidrawPlugin.addMarkdownPostProcessor > app.workspace.onLayoutReady`);
 
       // internal-link quick preview
       self.registerEvent(self.app.workspace.on("hover-link", hoverEvent));
@@ -687,7 +688,7 @@ export default class ExcalidrawPlugin extends Plugin {
       });
     };
 
-    this.themeObserver = this.settings.isDebugMode
+    this.themeObserver = DEBUGGING
       ? new CustomMutationObserver(themeObserverFn, "themeObserver")
       : new MutationObserver(themeObserverFn);
   
@@ -753,13 +754,13 @@ export default class ExcalidrawPlugin extends Plugin {
       });
     };
 
-    this.fileExplorerObserver = this.settings.isDebugMode
+    this.fileExplorerObserver = DEBUGGING
       ? new CustomMutationObserver(fileExplorerObserverFn, "fileExplorerObserver")
       : new MutationObserver(fileExplorerObserverFn);
 
     const self = this;
     this.app.workspace.onLayoutReady(() => {
-      debug(`ExcalidrawPlugin.experimentalFileTypeDisplay app.workspace.onLayoutReady`);
+      DEBUGGING && debug(self.experimentalFileTypeDisplay, `ExcalidrawPlugin.experimentalFileTypeDisplay > app.workspace.onLayoutReady`);
       document.querySelectorAll(".nav-file-title").forEach(insertFiletype); //apply filetype to files already displayed
       const container = document.querySelector(".nav-files-container");
       if (container) {
@@ -2473,7 +2474,7 @@ export default class ExcalidrawPlugin extends Plugin {
     }
     const self = this;
     this.app.workspace.onLayoutReady(async () => {
-      debug(`ExcalidrawPlugin.runStartupScript app.workspace.onLayoutReady: ${self.settings?.startupScriptPath}`);
+      DEBUGGING && debug(self.runStartupScript, `ExcalidrawPlugin.runStartupScript > app.workspace.onLayoutReady, scriptPath:${self.settings?.startupScriptPath}`);
       const path = self.settings.startupScriptPath.endsWith(".md")
         ? self.settings.startupScriptPath
         : `${self.settings.startupScriptPath}.md`;
@@ -2496,7 +2497,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private registerEventListeners() {
     const self: ExcalidrawPlugin = this;
     this.app.workspace.onLayoutReady(async () => {
-      debug("ExcalidrawPlugin.registerEventListeners app.workspace.onLayoutReady");
+      DEBUGGING && debug(self.registerEventListeners,`ExcalidrawPlugin.registerEventListeners > app.workspace.onLayoutReady`);
       const onPasteHandler = (
         evt: ClipboardEvent,
         editor: Editor,
@@ -2885,14 +2886,14 @@ export default class ExcalidrawPlugin extends Plugin {
       };
 
       if (leftWorkspaceDrawer) {
-        this.workspaceDrawerLeftObserver = this.settings.isDebugMode
+        this.workspaceDrawerLeftObserver = DEBUGGING
           ? new CustomMutationObserver(action, "slidingDrawerLeftObserver")
           : new MutationObserver(action);
         this.workspaceDrawerLeftObserver.observe(leftWorkspaceDrawer, options);
       }
 
       if (rightWorkspaceDrawer) {
-        this.workspaceDrawerRightObserver = this.settings.isDebugMode
+        this.workspaceDrawerRightObserver = DEBUGGING
           ? new CustomMutationObserver(action, "slidingDrawerRightObserver")
           : new MutationObserver(action);
         this.workspaceDrawerRightObserver.observe(
@@ -2926,7 +2927,7 @@ export default class ExcalidrawPlugin extends Plugin {
       this.activeExcalidrawView.save();
     };
 
-    this.modalContainerObserver = this.settings.isDebugMode
+    this.modalContainerObserver = DEBUGGING
       ? new CustomMutationObserver(modalContainerObserverFn, "modalContainerObserver")
       : new MutationObserver(modalContainerObserverFn);
     this.activeViewDoc = this.activeExcalidrawView.ownerDocument;
@@ -3100,8 +3101,9 @@ export default class ExcalidrawPlugin extends Plugin {
     if(opts.applyLefthandedMode) setLeftHandedMode(this.settings.isLeftHanded);
     if(opts.reEnableAutosave) this.settings.autosave = true;
     this.settings.autosaveInterval = DEVICE.isMobile
-    ? this.settings.autosaveIntervalMobile
-    : this.settings.autosaveIntervalDesktop;
+      ? this.settings.autosaveIntervalMobile
+      : this.settings.autosaveIntervalDesktop;
+    setDebugging(this.settings.isDebugMode);
   }
 
   async saveSettings() {

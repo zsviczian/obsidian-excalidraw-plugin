@@ -51,7 +51,7 @@ import { BinaryFiles, DataURL, SceneData } from "@zsviczian/excalidraw/types/exc
 import { EmbeddedFile, MimeType } from "./EmbeddedFileLoader";
 import { ConfirmationPrompt } from "./dialogs/Prompt";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
-import { debug } from "./utils/DebugHelper";
+import { DEBUGGING, debug } from "./utils/DebugHelper";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles };
@@ -992,7 +992,7 @@ export class ExcalidrawData {
         te.width = width;
         te.height = height;
       } catch(e) {
-        debug(`ExcalidrawData.updateSceneTextElements, textElement: ${te?.id}`, te, this.updateSceneTextElements);
+        DEBUGGING && debug(this.updateSceneTextElements, `ExcalidrawData.updateSceneTextElements, textElement:${te?.id}`, te, this.updateSceneTextElements);
       }
     }
   }
