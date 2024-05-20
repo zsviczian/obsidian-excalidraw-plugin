@@ -17,6 +17,12 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.2.2":`
+## Fixed
+- ExcaliBrain stopped working with 2.2.0
+
+![I apologize](https://github.com/zsviczian/obsidian-excalidraw-plugin/assets/14358394/3b05aa28-788d-4329-9721-798ad58a6ca2)
+`,
 "2.2.1":`
 ## Fixed
 - Text height becomes unreadable after 2.2.0 update [#1784](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1784)

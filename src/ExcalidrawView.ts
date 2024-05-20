@@ -1309,7 +1309,11 @@ export default class ExcalidrawView extends TextFileView {
     this.app.workspace.onLayoutReady(async () => {
       debug(`ExcalidrawView.onload app.workspace.onLayoutReady, file: ${self.file?.name}, isActiveLeaf: ${self.app.workspace.activeLeaf === self.leaf}, is activeExcalidrawView set: ${Boolean(self.plugin.activeExcalidrawView)}`);
       //implemented to overcome issue that activeLeafChangeEventHandler is not called when view is initialized from a saved workspace, since Obsidian 1.6.0
-      if (self.app.workspace.activeLeaf === self.leaf) {
+      let counter = 0;
+      while(counter++<50 && !Boolean(self.plugin.activeLeafChangeEventHandler)) {
+        await(sleep(50));
+      }
+      if (Boolean(self.plugin.activeLeafChangeEventHandler) && (self.app.workspace.activeLeaf === self.leaf)) {
         self.plugin.activeLeafChangeEventHandler(self.leaf);
       }
       self.canvasNodeFactory.initialize();
@@ -2318,17 +2322,25 @@ export default class ExcalidrawView extends TextFileView {
     }
   }
 
-  public initializeToolsIconPanelAfterLoading() {
+  public async initializeToolsIconPanelAfterLoading() {
     if(this.semaphores.viewunload) return;
     const api = this.excalidrawAPI;
     if (!api) {
       return;
     }
     const st = api.getAppState();
+    //since Obsidian 1.6.0 onLayoutReady calls happen asynchronously compared to starting Excalidraw view
+    //these validations are just to make sure that initialization is complete
+    let counter = 0;
+    while(!this.plugin.scriptEngine && counter++<50) {
+      sleep(50);
+    }
+
     const panel = this.toolsPanelRef?.current;
-    if (!panel) {
+    if (!panel || !this.plugin.scriptEngine) {
       return;
     }
+
     panel.setTheme(st.theme);
     panel.setExcalidrawViewMode(st.viewModeEnabled);
     panel.setPreviewMode(
@@ -2817,7 +2829,7 @@ export default class ExcalidrawView extends TextFileView {
         //@ts-ignore
         textElement.link = link;
       }
-      if (this.textMode == TextMode.parsed) {
+      if (this.textMode === TextMode.parsed && !textElement?.isDeleted) {
         const {text, x, y, width, height} = refreshTextDimensions(
           textElement,null,elementsMap,parseResult
         );
@@ -4021,14 +4033,16 @@ export default class ExcalidrawView extends TextFileView {
         if(el.length === 1) {
           const container = getContainerElement(el[0],elementsMap);
           const clone = cloneElement(el[0]);
-          const {text, x, y, width, height} = refreshTextDimensions(el[0], container, elementsMap, parsedText);
+          if(!el[0]?.isDeleted) {
+            const {text, x, y, width, height} = refreshTextDimensions(el[0], container, elementsMap, parsedText);
 
-          clone.x = x;
-          clone.y = y;
-          clone.width = width;
-          clone.height = height;
-          clone.originalText = parsedText;
-          clone.text = text;
+            clone.x = x;
+            clone.y = y;
+            clone.width = width;
+            clone.height = height;
+            clone.originalText = parsedText;
+            clone.text = text;
+          }
 
           elements[elements.indexOf(el[0])] = clone;
           this.updateScene({elements});

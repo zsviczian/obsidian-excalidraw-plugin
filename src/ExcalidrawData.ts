@@ -973,7 +973,7 @@ export class ExcalidrawData {
     //update text in scene based on textElements Map
     //first get scene text elements
     const elementsMap = arrayToMap(this.scene.elements);
-    const texts = this.scene.elements?.filter((el: any) => el.type === "text") as Mutable<ExcalidrawTextElement>[];
+    const texts = this.scene.elements?.filter((el: any) => el.type === "text" && !el.isDeleted) as Mutable<ExcalidrawTextElement>[];
     for (const te of texts) {
       const container = getContainerElement(te, elementsMap);
       const originalText =
