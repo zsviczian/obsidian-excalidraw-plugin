@@ -35,6 +35,7 @@
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {
+    "dotenv": "^16.4.5",
     "@babel/core": "^7.22.9",
     "@babel/preset-env": "^7.22.10",
     "@babel/preset-react": "^7.22.5",

@@ -213,6 +213,7 @@ export default class ExcalidrawPlugin extends Plugin {
   };
 
   public getPackage(win:Window):Packages {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getPackage, `ExcalidrawPlugin.getPackage`, win);
     if(win===window) {
       return {react, reactDOM, excalidrawLib};
     }
@@ -231,35 +232,39 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public registerEvent(event: any) {
-    if(!this.settings.isDebugMode) {
+    if (process.env.NODE_ENV !== 'development') {
       super.registerEvent(event);
       return;
-    }
+    } else {
+      if(!DEBUGGING) {
+        super.registerEvent(event);
+        return;
+      }
+      const originalHandler = event.fn;
 
-    const originalHandler = event.fn;
-
-    // Wrap the original event handler
-    const wrappedHandler = async (...args: any[]) => {
-      const startTime = performance.now(); // Get start time
-  
-      // Invoke the original event handler
-      const result = await originalHandler(...args);
-  
-      const endTime = performance.now(); // Get end time
-      const executionTime = endTime - startTime;
-  
-      if(executionTime > durationTreshold) {
-        console.log(`Excalidraw Event '${event.name}' took ${executionTime}ms to execute`);
+      // Wrap the original event handler
+      const wrappedHandler = async (...args: any[]) => {
+        const startTime = performance.now(); // Get start time
+    
+        // Invoke the original event handler
+        const result = await originalHandler(...args);
+    
+        const endTime = performance.now(); // Get end time
+        const executionTime = endTime - startTime;
+    
+        if(executionTime > durationTreshold) {
+          console.log(`Excalidraw Event '${event.name}' took ${executionTime}ms to execute`);
+        }
+    
+        return result;
       }
   
-      return result;
+      // Replace the original event handler with the wrapped one
+      event.fn = wrappedHandler;
+    
+      // Register the modified event
+      super.registerEvent(event);
     };
-  
-    // Replace the original event handler with the wrapped one
-    event.fn = wrappedHandler;
-  
-    // Register the modified event
-    super.registerEvent(event);
   }
   
   async onload() {
@@ -327,7 +332,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     const self = this;
     this.app.workspace.onLayoutReady(() => {
-      DEBUGGING && debug(self.onload,"ExcalidrawPlugin.onload > app.workspace.onLayoutReady");
+      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(self.onload,"ExcalidrawPlugin.onload > app.workspace.onLayoutReady");
       this.scriptEngine = new ScriptEngine(self);
       imageCache.initializeDB(self);
     });
@@ -338,7 +343,7 @@ export default class ExcalidrawPlugin extends Plugin {
     const app = this.app;
     const self = this;
     this.app.workspace.onLayoutReady(() => {
-      DEBUGGING && debug(self.setPropertyTypes, `ExcalidrawPlugin.setPropertyTypes > app.workspace.onLayoutReady`);
+      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(self.setPropertyTypes, `ExcalidrawPlugin.setPropertyTypes > app.workspace.onLayoutReady`);
       Object.keys(FRONTMATTER_KEYS).forEach((key) => {
         if(FRONTMATTER_KEYS[key].depricated === true) return;
         const {name, type} = FRONTMATTER_KEYS[key];
@@ -350,7 +355,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public initializeFonts() {
     const self = this;
     this.app.workspace.onLayoutReady(async () => {
-      DEBUGGING && debug(self.initializeFonts,`ExcalidrawPlugin.initializeFonts > app.workspace.onLayoutReady`);
+      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(self.initializeFonts,`ExcalidrawPlugin.initializeFonts > app.workspace.onLayoutReady`);
       const font = await getFontDataURL(
         this.app,
         this.settings.experimantalFourthFont,
@@ -392,6 +397,7 @@ export default class ExcalidrawPlugin extends Plugin {
   }
   
   private getOpenObsidianDocuments(): Document[] {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getOpenObsidianDocuments,`ExcalidrawPlugin.getOpenObsidianDocuments`);
     const visitedDocs = new Set<Document>();
     this.app.workspace.iterateAllLeaves((leaf)=>{
       const ownerDocument = DEVICE.isMobile?document:leaf.view.containerEl.ownerDocument;   
@@ -405,7 +411,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private switchToExcalidarwAfterLoad() {
     const self = this;
     this.app.workspace.onLayoutReady(() => {
-      DEBUGGING && debug(self.switchToExcalidarwAfterLoad, `ExcalidrawPlugin.switchToExcalidarwAfterLoad > app.workspace.onLayoutReady`);
+      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(self.switchToExcalidarwAfterLoad, `ExcalidrawPlugin.switchToExcalidarwAfterLoad > app.workspace.onLayoutReady`);
       let leaf: WorkspaceLeaf;
       for (leaf of this.app.workspace.getLeavesOfType("markdown")) {
         if ( leaf.view instanceof MarkdownView && self.isExcalidrawFile(leaf.view.file)) {
@@ -639,7 +645,7 @@ export default class ExcalidrawPlugin extends Plugin {
     
     const self = this;
     this.app.workspace.onLayoutReady(() => {
-      DEBUGGING && debug(self.addMarkdownPostProcessor, `ExcalidrawPlugin.addMarkdownPostProcessor > app.workspace.onLayoutReady`);
+      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(self.addMarkdownPostProcessor, `ExcalidrawPlugin.addMarkdownPostProcessor > app.workspace.onLayoutReady`);
 
       // internal-link quick preview
       self.registerEvent(self.app.workspace.on("hover-link", hoverEvent));
@@ -653,6 +659,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public enableLegacyFilePopoverObserver() {
     if(!this.legacyExcalidrawPopoverObserver) {
+      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.enableLegacyFilePopoverObserver, `ExcalidrawPlugin.enableLegacyFilePopoverObserver > enabling`)
       //monitoring for div.popover.hover-popover.file-embed.is-loaded to be added to the DOM tree
       this.legacyExcalidrawPopoverObserver = legacyExcalidrawPopoverObserver;
       this.legacyExcalidrawPopoverObserver.observe(document.body, { childList: true, subtree: false });
@@ -665,6 +672,7 @@ export default class ExcalidrawPlugin extends Plugin {
     if (!matchThemeTrigger) return;
 
     const themeObserverFn:MutationCallback = async (mutations: MutationRecord[]) => {
+      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(themeObserverFn, `ExcalidrawPlugin.addThemeObserver`, mutations);
       const { matchThemeTrigger } = this.settings;
       if (!matchThemeTrigger) return;
 
@@ -719,6 +727,7 @@ export default class ExcalidrawPlugin extends Plugin {
    * Display characters configured in settings, in front of the filename, if the markdown file is an excalidraw drawing
    */
   private experimentalFileTypeDisplay() {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.experimentalFileTypeDisplay, `ExcalidrawPlugin.experimentalFileTypeDisplay`);
     const insertFiletype = (el: HTMLElement) => {
       if (el.childElementCount !== 1) {
         return;
@@ -743,6 +752,7 @@ export default class ExcalidrawPlugin extends Plugin {
     };
 
     const fileExplorerObserverFn:MutationCallback = (mutationsList) => {
+      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(fileExplorerObserverFn, `ExcalidrawPlugin.experimentalFileTypeDisplay > fileExplorerObserverFn`, mutationsList);
       const mutationsWithNodes = mutationsList.filter((mutation) => mutation.addedNodes.length > 0);
       mutationsWithNodes.forEach((mutationNode) => {
         mutationNode.addedNodes.forEach((node) => {
@@ -760,7 +770,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     const self = this;
     this.app.workspace.onLayoutReady(() => {
-      DEBUGGING && debug(self.experimentalFileTypeDisplay, `ExcalidrawPlugin.experimentalFileTypeDisplay > app.workspace.onLayoutReady`);
+      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(self.experimentalFileTypeDisplay, `ExcalidrawPlugin.experimentalFileTypeDisplay > app.workspace.onLayoutReady`);
       document.querySelectorAll(".nav-file-title").forEach(insertFiletype); //apply filetype to files already displayed
       const container = document.querySelector(".nav-files-container");
       if (container) {
@@ -2325,7 +2335,8 @@ export default class ExcalidrawPlugin extends Plugin {
     this.register(
       around(Workspace.prototype, {
         getActiveViewOfType(old) {
-          return dedupe(key, old, function(...args) {        
+          return dedupe(key, old, function(...args) {
+            (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.registerMonkeyPatches, `ExcalidrawPlugin.MonkeyPatch >getActiveViewOfType`, key, old, ...args);
             const result = old && old.apply(this, args);
             const maybeEAView = self.app?.workspace?.activeLeaf?.view;
             if(!maybeEAView || !(maybeEAView instanceof ExcalidrawView)) return result;
@@ -2344,7 +2355,7 @@ export default class ExcalidrawPlugin extends Plugin {
       })
     );
     //@ts-ignore
-    if(!app.plugins?.plugins?.["obsidian-hover-editor"]) {
+    if(!this.app.plugins?.plugins?.["obsidian-hover-editor"]) {
       this.register( //stolen from hover editor
         around(WorkspaceLeaf.prototype, {
           getRoot(old) {
@@ -2380,6 +2391,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.registerEvent(      
       app.workspace.on("file-menu", (menu, file, source, leaf) => {
+        (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.registerMonkeyPatches, `ExcalidrawPlugin.MonkeyPatch > file-menu`, file, source, leaf);
         if (!leaf) return;
         const view = leaf.view;
         if(!view || !(view instanceof MarkdownView)) return;
@@ -2427,6 +2439,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
         setViewState(next) {
           return function (state: ViewState, ...rest: any[]) {
+            (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.registerMonkeyPatches, `ExcalidrawPlugin.MonkeyPatch > setViewState`, next);
             const markdownViewLoaded = 
               self._loaded && // Don't force excalidraw mode during shutdown
               state.type === "markdown" && // If we have a markdown file
@@ -2469,12 +2482,13 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   private runStartupScript() {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.runStartupScript, `ExcalidrawPlugin.runStartupScript`);
     if(!this.settings.startupScriptPath || this.settings.startupScriptPath === "") {
       return;
     }
     const self = this;
     this.app.workspace.onLayoutReady(async () => {
-      DEBUGGING && debug(self.runStartupScript, `ExcalidrawPlugin.runStartupScript > app.workspace.onLayoutReady, scriptPath:${self.settings?.startupScriptPath}`);
+      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(self.runStartupScript, `ExcalidrawPlugin.runStartupScript > app.workspace.onLayoutReady, scriptPath:${self.settings?.startupScriptPath}`);
       const path = self.settings.startupScriptPath.endsWith(".md")
         ? self.settings.startupScriptPath
         : `${self.settings.startupScriptPath}.md`;
@@ -2497,7 +2511,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private registerEventListeners() {
     const self: ExcalidrawPlugin = this;
     this.app.workspace.onLayoutReady(async () => {
-      DEBUGGING && debug(self.registerEventListeners,`ExcalidrawPlugin.registerEventListeners > app.workspace.onLayoutReady`);
+      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(self.registerEventListeners,`ExcalidrawPlugin.registerEventListeners > app.workspace.onLayoutReady`);
       const onPasteHandler = (
         evt: ClipboardEvent,
         editor: Editor,
@@ -2549,6 +2563,7 @@ export default class ExcalidrawPlugin extends Plugin {
         file: TAbstractFile,
         oldPath: string,
       ) => {
+        (process.env.NODE_ENV === 'development') && DEBUGGING && debug(renameEventHandler,`ExcalidrawPlugin.renameEventHandler`, file, oldPath);
         if (!(file instanceof TFile)) {
           return;
         }
@@ -2572,6 +2587,7 @@ export default class ExcalidrawPlugin extends Plugin {
       self.registerEvent(app.vault.on("rename", renameEventHandler));
 
       const modifyEventHandler = async (file: TFile) => {
+        (process.env.NODE_ENV === 'development') && DEBUGGING && debug(modifyEventHandler,`ExcalidrawPlugin.modifyEventHandler`, file);
         const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
         leaves.forEach(async (leaf: WorkspaceLeaf) => {
           const excalidrawView = leaf.view as ExcalidrawView;
@@ -2618,6 +2634,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
       //watch file delete and delete corresponding .svg and .png
       const deleteEventHandler = async (file: TFile) => {
+        (process.env.NODE_ENV === 'development') && DEBUGGING && debug(deleteEventHandler,`ExcalidrawPlugin.deleteEventHandler`, file);
         if (!(file instanceof TFile)) {
           return;
         }
@@ -2668,6 +2685,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
       //save Excalidraw leaf and update embeds when switching to another leaf
       const activeLeafChangeEventHandler = async (leaf: WorkspaceLeaf) => {
+        (process.env.NODE_ENV === 'development') && DEBUGGING && debug(activeLeafChangeEventHandler,`ExcalidrawPlugin.activeLeafChangeEventHandler`, leaf);
         //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/723
         if(self.leafChangeTimeout) {
           clearTimeout(self.leafChangeTimeout);
@@ -2848,6 +2866,7 @@ export default class ExcalidrawPlugin extends Plugin {
     });
 
     const onFileMenuEventSaveActiveDrawing = () => {
+      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(onFileMenuEventSaveActiveDrawing,`ExcalidrawPlugin.onFileMenuEventSaveActiveDrawing`);
       if (
         !this.activeExcalidrawView ||
         !this.activeExcalidrawView.semaphores.dirty
@@ -2915,6 +2934,7 @@ export default class ExcalidrawPlugin extends Plugin {
     }
     //The user clicks settings, or "open another vault", or the command palette
     const modalContainerObserverFn: MutationCallback = async (m: MutationRecord[]) => {
+      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(modalContainerObserverFn,`ExcalidrawPlugin.modalContainerObserverFn`, m);
       if (
         (m.length !== 1) ||
         (m[0].type !== "childList") ||
@@ -2950,6 +2970,7 @@ export default class ExcalidrawPlugin extends Plugin {
     frontmatter?: FrontMatterCache,
     deleted: boolean = false,
   ) {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.updateFileCache,`ExcalidrawPlugin.updateFileCache`, file, frontmatter, deleted);
     if (frontmatter && typeof frontmatter[FRONTMATTER_KEYS["plugin"].name] !== "undefined") {
       this.excalidrawFiles.add(file);
       return;
@@ -3086,6 +3107,7 @@ export default class ExcalidrawPlugin extends Plugin {
     reEnableAutosave?: boolean
   } = {applyLefthandedMode: true, reEnableAutosave: false}
   ) {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.loadSettings,`ExcalidrawPlugin.loadSettings`, opts);
     if(typeof opts.applyLefthandedMode === "undefined") opts.applyLefthandedMode = true;
     if(typeof opts.reEnableAutosave === "undefined") opts.reEnableAutosave = false;
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
@@ -3107,10 +3129,12 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   async saveSettings() {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.saveSettings,`ExcalidrawPlugin.saveSettings`);
     await this.saveData(this.settings);
   }
 
   public getStencilLibrary(): {} {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getStencilLibrary,`ExcalidrawPlugin.getStencilLibrary`);
     if (
       this.settings.library === "" ||
       this.settings.library === "deprecated"
@@ -3121,13 +3145,15 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public setStencilLibrary(library: {}) {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setStencilLibrary,`ExcalidrawPlugin.setStencilLibrary`, library);
     this.settings.library = "deprecated";
     this.settings.library2 = library;
   }
 
   public triggerEmbedUpdates(filepath?: string) {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.triggerEmbedUpdates,`ExcalidrawPlugin.triggerEmbedUpdates`, filepath);
     const visitedDocs = new Set<Document>();
-    app.workspace.iterateAllLeaves((leaf)=>{
+    this.app.workspace.iterateAllLeaves((leaf)=>{
       const ownerDocument = DEVICE.isMobile?document:leaf.view.containerEl.ownerDocument;
       if(!ownerDocument) return;
       if(visitedDocs.has(ownerDocument)) return;
@@ -3332,6 +3358,7 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public async setExcalidrawView(leaf: WorkspaceLeaf) {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setExcalidrawView,`ExcalidrawPlugin.setExcalidrawView`, leaf);
     await leaf.setViewState({
       type: VIEW_TYPE_EXCALIDRAW,
       state: leaf.view.getState(),

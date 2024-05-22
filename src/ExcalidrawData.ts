@@ -11,10 +11,7 @@ import {
   fileid,
   DEVICE,
   EMBEDDABLE_THEME_FRONTMATTER_VALUES,
-  getBoundTextMaxWidth,
   getDefaultLineHeight,
-  getFontString,
-  wrapText,
   ERROR_IFRAME_CONVERSION_CANCELED,
   JSON_parse,
   FRONTMATTER_KEYS,
@@ -992,7 +989,7 @@ export class ExcalidrawData {
         te.width = width;
         te.height = height;
       } catch(e) {
-        DEBUGGING && debug(this.updateSceneTextElements, `ExcalidrawData.updateSceneTextElements, textElement:${te?.id}`, te, this.updateSceneTextElements);
+        (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.updateSceneTextElements, `ExcalidrawData.updateSceneTextElements, textElement:${te?.id}`, te, this.updateSceneTextElements);
       }
     }
   }

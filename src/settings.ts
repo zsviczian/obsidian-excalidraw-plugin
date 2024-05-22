@@ -2497,18 +2497,20 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h1",
     });
 
-    new Setting(detailsEl)
-    .setName(t("DEBUGMODE_NAME"))
-    .setDesc(fragWithHTML(t("DEBUGMODE_DESC")))
-    .addToggle((toggle) =>
-      toggle
-        .setValue(this.plugin.settings.isDebugMode)
-        .onChange((value) => {
-          this.plugin.settings.isDebugMode = value;
-          setDebugging(value);
-          this.applySettingsUpdate();
-        }),
-    );
+    if (process.env.NODE_ENV === 'development') {
+      new Setting(detailsEl)
+      .setName(t("DEBUGMODE_NAME"))
+      .setDesc(fragWithHTML(t("DEBUGMODE_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.isDebugMode)
+          .onChange((value) => {
+            this.plugin.settings.isDebugMode = value;
+            setDebugging(value);
+            this.applySettingsUpdate();
+          }),
+      );
+    }
 
 
     new Setting(detailsEl)
