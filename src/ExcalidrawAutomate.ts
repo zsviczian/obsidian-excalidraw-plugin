@@ -1833,7 +1833,7 @@ export class ExcalidrawAutomate {
     this.targetView.updateScene({
       elements: el.filter((e: ExcalidrawElement) => !elToDelete.includes(e)),
       appState: st,
-      commitToHistory: true,
+      storeAction: "capture",
     });
     //this.targetView.save();
     return true;
@@ -1951,7 +1951,7 @@ export class ExcalidrawAutomate {
         appState: {
           viewModeEnabled: !isFullscreen,
         },
-        commitToHistory: false,
+        storeAction: "none",
       });
       this.targetView.toolsPanelRef?.current?.setExcalidrawViewMode(!isFullscreen);
     }
@@ -1986,6 +1986,7 @@ export class ExcalidrawAutomate {
       appState?: AppState,
       files?: BinaryFileData,
       commitToHistory?: boolean,
+      storeAction?: "capture" | "none" | "update",
     },
     restore: boolean = false,
   ):void {
@@ -1994,7 +1995,16 @@ export class ExcalidrawAutomate {
       errorMessage("targetView not set", "viewToggleFullScreen()");
       return;
     }
-    this.targetView.updateScene(scene,restore);
+    if (!Boolean(scene.storeAction)) {
+      scene.storeAction = scene.commitToHistory ? "capture" : "none";  
+    }
+
+    this.targetView.updateScene({
+      elements: scene.elements,
+      appState: scene.appState,
+      files: scene.files,
+      storeAction: scene.storeAction,
+    },restore);
   }
 
   /**
@@ -2555,7 +2565,7 @@ export class ExcalidrawAutomate {
     elements.splice(newZIndex, 0, elements.splice(oldZIndex, 1)[0]);
     this.targetView.updateScene({
       elements,
-      commitToHistory: true,
+      storeAction: "capture",
     });
   };
 

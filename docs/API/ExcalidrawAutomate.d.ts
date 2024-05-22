@@ -422,6 +422,7 @@ export declare class ExcalidrawAutomate {
         appState?: AppState;
         files?: BinaryFileData;
         commitToHistory?: boolean;
+        storeAction?: "capture" | "none" | "update";
     }, restore?: boolean): void;
     /**
      * connect an object to the selected element in the view

@@ -686,8 +686,9 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "viewUpdateScene",
-    code: "viewUpdateScene(scene:{elements?:ExcalidrawElement[],appState?: AppState,files?: BinaryFileData,commitToHistory?: boolean,},restore:boolean=false):void",
-    desc: "Calls the ExcalidrawAPI updateScene function for the targetView. When restore=true, excalidraw will try to correct errors in the scene such as setting default values to missing element properties.",
+    code: "viewUpdateScene(scene:{elements?:ExcalidrawElement[],appState?: AppState,files?: BinaryFileData,commitToHistory?: boolean,storeAction?: 'capture' | 'none' | 'update'},restore:boolean=false):void",
+    desc: "Calls the ExcalidrawAPI updateScene function for the targetView. When restore=true, excalidraw will try to correct errors in the scene such as setting default values to missing element properties. " +
+      `Note that commitToHistory has been deprecated in Excalidraw and is no longer used. You should use storeAction instead. See ${hyperlink("https://github.com/excalidraw/excalidraw/pull/7898", "ExcalidrawAPI")} documentation for more information.`,
     after: "",
   },
   {

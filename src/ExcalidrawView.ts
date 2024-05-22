@@ -206,7 +206,7 @@ export const addFiles = async (
     view.updateScene({
       elements: s.scene.elements,
       appState: s.scene.appState,
-      commitToHistory: false,
+      storeAction: "none",
     });
   }
   for (const f of files) {
@@ -1492,7 +1492,7 @@ export default class ExcalidrawView extends TextFileView {
         ...st,
         theme,
       },
-      commitToHistory: false,
+      storeAction: "none",
     });
   }
 
@@ -2275,7 +2275,7 @@ export default class ExcalidrawView extends TextFileView {
         {
           elements: excalidrawData.elements.concat(deletedElements??[]), //need to preserve deleted elements during autosave if images, links, etc. are updated
           files: excalidrawData.files,
-          commitToHistory: true,
+          storeAction: "update",
         },
         justloaded
       );
@@ -2288,7 +2288,7 @@ export default class ExcalidrawView extends TextFileView {
               ? this.excalidrawData.selectedElementIds
               : {},
             zenModeEnabled,
-            viewModeEnabled: viewModeEnabled,
+            viewModeEnabled,
             linkOpacity: this.excalidrawData.getLinkOpacity(),
             trayModeEnabled: this.plugin.settings.defaultTrayMode,
             penMode: penEnabled,
@@ -2298,10 +2298,7 @@ export default class ExcalidrawView extends TextFileView {
             pinnedScripts: this.plugin.settings.pinnedScripts,
             customPens: this.plugin.settings.customPens.slice(0,this.plugin.settings.numberOfCustomPens),
           },
-          //files: excalidrawData.files,
-          //commitToHistory: true,
         },
-        //justloaded,
       );
       if (
         this.app.workspace.getActiveViewOfType(ExcalidrawView) === this.leaf.view &&
@@ -2971,7 +2968,7 @@ export default class ExcalidrawView extends TextFileView {
     this.updateScene(
       {
         elements,
-        commitToHistory: true,
+        storeAction: "capture",
       },
       shouldRestoreElements,
     );
@@ -5387,7 +5384,7 @@ export default class ExcalidrawView extends TextFileView {
       elements?: ExcalidrawElement[];
       appState?: any;
       files?: any;
-      commitToHistory?: boolean;
+      storeAction?: "capture" | "none" | "update"; //https://github.com/excalidraw/excalidraw/pull/7898
     },
     shouldRestore: boolean = false,
   ) {
