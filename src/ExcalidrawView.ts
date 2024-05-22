@@ -2294,6 +2294,8 @@ export default class ExcalidrawView extends TextFileView {
     if(!DEVICE.isMobile) {
       if(requireApiVersion("0.16.0")) {
         //@ts-ignore
+        this.leaf.tabHeaderInnerIconEl.style.color="var(--color-accent)"
+        //@ts-ignore
         this.leaf.tabHeaderInnerTitleEl.style.color="var(--color-accent)"
       }
     }
@@ -2320,6 +2322,8 @@ export default class ExcalidrawView extends TextFileView {
     this.diskIcon.querySelector("svg").removeClass("excalidraw-dirty");
     if(!DEVICE.isMobile) {
       if(requireApiVersion("0.16.0")) {
+        //@ts-ignore
+        this.leaf.tabHeaderInnerIconEl.style.color=""
         //@ts-ignore
         this.leaf.tabHeaderInnerTitleEl.style.color=""
       }
