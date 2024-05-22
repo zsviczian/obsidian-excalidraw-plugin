@@ -1320,6 +1320,20 @@ export class ExcalidrawData {
     }
     outString += this.equations.size > 0 || this.files.size > 0 ? "\n" : "";
 
+    outString += "## Tags\n";
+    const tagElements = this.scene.elements.filter((el: ExcalidrawElement) => el?.customData?.tags);
+    const tagSet = new Set();
+    for (const el of tagElements) {
+      for (const tag of el.customData.tags) {
+        if (tag) {
+          tagSet.add(tag)
+        }
+      }
+    }
+    for (const tag of tagSet) {
+      outString += `#${tag}\n\n`;
+    }
+
     const sceneJSONstring = JSON.stringify({
       type: this.scene.type,
       version: this.scene.version,

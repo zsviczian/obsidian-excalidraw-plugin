@@ -5023,7 +5023,15 @@ export default class ExcalidrawView extends TextFileView {
       elements.filter((el: ExcalidrawElement) => el.type === "frame"),
       query,
       exactMatch
-    ));
+    )).concat(((tagElements: ExcalidrawElement[]): ExcalidrawElement[] => {
+      return tagElements.filter(el => {
+        return query.some(q => {
+          return el.customData.tags.some((e: string) => {
+            return e == q.substring(1)
+          })
+        })
+      });
+    })(elements.filter(el => el?.customData?.tags)));
 
     if (match.length === 0) {
       new Notice("I could not find a matching text element");
@@ -5114,7 +5122,7 @@ export default class ExcalidrawView extends TextFileView {
     if(elements.length === 2) {
       const textEl = elements.filter(el=>el.type==="text");
       if(textEl.length===1 && (textEl[0] as ExcalidrawTextElement).containerId) {
-        const container = elements.filter(el=>el.boundElements.some(be=>be.type==="text"))
+        const container = elements.filter(el=>el?.boundElements?.some?.(be=>be.type==="text"))
         if(container.length===1) {
           elementId = textEl[0].id;
         }
