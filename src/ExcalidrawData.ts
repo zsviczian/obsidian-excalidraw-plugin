@@ -240,26 +240,26 @@ const wrap = (text: string, lineLen: number) =>
   lineLen ? wrapTextAtCharLength(text, lineLen, false, 0) : text;
 
 //WITHSECTION refers to back of the card note (see this.inputEl.onkeyup in SelectCard.ts)
-const RE_EXCALIDRAWDATA_WITHSECTION_OK = new RegExp(`^#\n%%\n# Excalidraw Data(?:\n|$)`, "m");
-const RE_EXCALIDRAWDATA_WITHSECTION_NOTOK = new RegExp(`#\n%%\n# Excalidraw Data(?:\n|$)`, "m");
-const RE_EXCALIDRAWDATA_NOSECTION_OK = new RegExp(`^(%%\n)?# Excalidraw Data(?:\n|$)`, "m");
+const RE_EXCALIDRAWDATA_WITHSECTION_OK = /^(#\n+)%%\n+# Excalidraw Data(?:\n|$)/m;
+const RE_EXCALIDRAWDATA_WITHSECTION_NOTOK = /#\n+%%\n+# Excalidraw Data(?:\n|$)/m;
+const RE_EXCALIDRAWDATA_NOSECTION_OK = /^(%%\n+)?# Excalidraw Data(?:\n|$)/m;
 
 //WITHSECTION refers to back of the card note (see this.inputEl.onkeyup in SelectCard.ts)
-const RE_TEXTELEMENTS_WITHSECTION_OK = new RegExp(`^#\n%%\n##? Text Elements(?:\n|$)`, "m");
-const RE_TEXTELEMENTS_WITHSECTION_NOTOK = new RegExp(`#\n%%\n##? Text Elements(?:\n|$)`, "m");
-const RE_TEXTELEMENTS_NOSECTION_OK = new RegExp(`^(%%\n)?##? Text Elements(?:\n|$)`, "m");
+const RE_TEXTELEMENTS_WITHSECTION_OK = /^#\n+%%\n+##? Text Elements(?:\n|$)/m;
+const RE_TEXTELEMENTS_WITHSECTION_NOTOK = /#\n+%%\n+##? Text Elements(?:\n|$)/m;
+const RE_TEXTELEMENTS_NOSECTION_OK = /^(%%\n+)?##? Text Elements(?:\n|$)/m;
 
 
 //The issue is that when editing in markdown embeds the user can delete the last enter causing two sections
 //to collide. This is particularly problematic when the user is editing the last section before # Text Elements
-const RE_EXCALIDRAWDATA_FALLBACK_1 = new RegExp(`(.*)%%\n# Excalidraw Data(?:\n|$)`, "m");
-const RE_EXCALIDRAWDATA_FALLBACK_2 = new RegExp(`(.*)# Excalidraw Data(?:\n|$)`, "m");
+const RE_EXCALIDRAWDATA_FALLBACK_1 = /(.*)%%\n+# Excalidraw Data(?:\n|$)/m;
+const RE_EXCALIDRAWDATA_FALLBACK_2 = /(.*)# Excalidraw Data(?:\n|$)/m;
 
-const RE_TEXTELEMENTS_FALLBACK_1 = new RegExp(`(.*)%%\n##? Text Elements(?:\n|$)`, "m");
-const RE_TEXTELEMENTS_FALLBACK_2 = new RegExp(`(.*)##? Text Elements(?:\n|$)`, "m");
+const RE_TEXTELEMENTS_FALLBACK_1 = /(.*)%%\n+##? Text Elements(?:\n|$)/m;
+const RE_TEXTELEMENTS_FALLBACK_2 = /(.*)##? Text Elements(?:\n|$)/m;
 
 
-const RE_DRAWING = new RegExp(`^(%%\n)?##? Drawing\n`, "m");
+const RE_DRAWING = /^(%%\n+)?##? Drawing\n/m;
 
 export const getExcalidrawMarkdownHeaderSection = (data:string, keys?:[string,string][]):string => {
   //The base case scenario is at the top, continued with fallbacks in order of likelihood and file structure
@@ -278,10 +278,11 @@ export const getExcalidrawMarkdownHeaderSection = (data:string, keys?:[string,st
     data = data.substring(0, drawingTrimLocation);
   }
 
-  let trimLocation = data.search(RE_EXCALIDRAWDATA_WITHSECTION_OK);
+  const m1 =  data.match(RE_EXCALIDRAWDATA_WITHSECTION_OK); 
+  let trimLocation = m1?.index ?? -1; //data.search(RE_EXCALIDRAWDATA_WITHSECTION_OK);
   let shouldFixTrailingHashtag = false;
   if(trimLocation > 0) {
-    trimLocation += 2; //accounts for the "#\n" which I want to leave there untouched
+    trimLocation += m1[1].length; //accounts for the "(#\n\s*)" which I want to leave there untouched
   }
 
   /* Expected markdown structure (this happens when the user deletes the last empty line of the last back-of-the-card note):
@@ -766,8 +767,8 @@ export class ExcalidrawData {
       return true; //Text Elements header does not exist
     }
     data = data.slice(position);
-    const normalMatch = data.match(/^((%%\n)?# Excalidraw Data\n## Text Elements(?:\n|$))/m)
-      ??data.match(/^((%%\n)?##? Text Elements(?:\n|$))/m);
+    const normalMatch = data.match(/^((%%\n*)?# Excalidraw Data\n## Text Elements(?:\n|$))/m)
+      ?? data.match(/^((%%\n*)?##? Text Elements(?:\n|$))/m);
 
     const textElementsMatch = normalMatch
       ? normalMatch[0]
@@ -865,7 +866,7 @@ export class ExcalidrawData {
         ? data.substring(indexOfNewEmbeddedFiles + embeddedFilesNewLength)
         : data.substring(indexOfOldEmbeddedFiles + embeddedFilesOldLength);
       //Load Embedded files
-      const REG_FILEID_FILEPATH = /([\w\d]*):\s*\[\[([^\]]*)]]\s?(\{[^}]*})?\n/gm;
+      const REG_FILEID_FILEPATH = /([\w\d]*):\s*\[\[([^\]]*)]]\s*(\{[^}]*})?\n/gm;
       res = data.matchAll(REG_FILEID_FILEPATH);
       while (!(parts = res.next()).done) {
         const embeddedFile = new EmbeddedFile(
@@ -1345,6 +1346,9 @@ export class ExcalidrawData {
   generateMD(deletedElements: ExcalidrawElement[] = []): string {
     let outString = this.textElementCommentedOut ? "%%\n" : "";
     outString += `# Excalidraw Data\n## Text Elements\n`;
+    if (this.plugin.settings.addDummyTextElement) {
+      outString += `\n^_dummy!_\n\n`;
+    }
     const textElementLinks = new Map<string, string>();
     for (const key of this.textElements.keys()) {
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/566

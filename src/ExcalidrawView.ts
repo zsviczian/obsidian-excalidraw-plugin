@@ -127,7 +127,7 @@ import { anyModifierKeysPressed, emulateKeysForLinkClick, webbrowserDragModifier
 import { setDynamicStyle } from "./utils/DynamicStyling";
 import { InsertPDFModal } from "./dialogs/InsertPDFModal";
 import { CustomEmbeddable, renderWebView } from "./customEmbeddable";
-import { getExcalidrawFileForwardLinks, getFrameBasedOnFrameNameOrId, getLinkTextFromLink, insertEmbeddableToView, insertImageToView, openExternalLink, openTagSearch } from "./utils/ExcalidrawViewUtils";
+import { addBackOfTheNoteCard, getExcalidrawFileForwardLinks, getFrameBasedOnFrameNameOrId, getLinkTextFromLink, insertEmbeddableToView, insertImageToView, openExternalLink, openTagSearch } from "./utils/ExcalidrawViewUtils";
 import { imageCache } from "./utils/ImageCache";
 import { CanvasNodeFactory, ObsidianCanvasNode } from "./utils/CanvasNodeFactory";
 import { EmbeddableMenu } from "./menu/EmbeddableActionsMenu";
@@ -670,7 +670,7 @@ export default class ExcalidrawView extends TextFileView {
     this.editingSelfResetTimer = setTimeout(()=>self.semaphores.embeddableIsEditingSelf = false,EMBEDDABLE_SEMAPHORE_TIMEOUT);
   }
 
-  async save(preventReload: boolean = true, forcesave: boolean = false) {
+  async save(preventReload: boolean = true, forcesave: boolean = false, overrideEmbeddableIsEditingSelfDebounce: boolean = false) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.save, "ExcalidrawView.save, enter", preventReload, forcesave);
     /*if(this.semaphores.viewunload && (this.ownerWindow !== window)) {
       (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.save, `ExcalidrawView.save, view is unloading, aborting save`);
@@ -680,7 +680,7 @@ export default class ExcalidrawView extends TextFileView {
     if(!this.isLoaded) {
       return;
     }
-    if (this.semaphores.embeddableIsEditingSelf) {
+    if (!overrideEmbeddableIsEditingSelfDebounce && this.semaphores.embeddableIsEditingSelf) {
       return;
     }
     //console.log("saving - embeddable not editing")
@@ -1290,7 +1290,7 @@ export default class ExcalidrawView extends TextFileView {
     }
     this.semaphores.preventReload = false;
     this.semaphores.forceSaving = true;
-    await this.save(false, true);
+    await this.save(false, true, true);
     this.plugin.triggerEmbedUpdates();
     this.loadSceneFiles();
     this.semaphores.forceSaving = false;
@@ -1617,6 +1617,9 @@ export default class ExcalidrawView extends TextFileView {
   //onClose happens after onunload
   protected async onClose(): Promise<void> {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onClose,`ExcalidrawView.onClose, file:${this.file?.name}`);
+    if(this.isDirty()) {
+      await this.save(true,true,true);
+    }
     await super.onClose();
     return;
   }
@@ -2275,7 +2278,7 @@ export default class ExcalidrawView extends TextFileView {
         {
           elements: excalidrawData.elements.concat(deletedElements??[]), //need to preserve deleted elements during autosave if images, links, etc. are updated
           files: excalidrawData.files,
-          storeAction: "update",
+          storeAction: justloaded ? "update" : "none",
         },
         justloaded
       );
@@ -2298,6 +2301,7 @@ export default class ExcalidrawView extends TextFileView {
             pinnedScripts: this.plugin.settings.pinnedScripts,
             customPens: this.plugin.settings.customPens.slice(0,this.plugin.settings.numberOfCustomPens),
           },
+          storeAction: justloaded ? "update" : "none",
         },
       );
       if (
@@ -2464,7 +2468,9 @@ export default class ExcalidrawView extends TextFileView {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.openAsMarkdown, "ExcalidrawView.openAsMarkdown", eState);
     if (this.plugin.settings.compress && this.plugin.settings.decompressForMDView) {
       this.excalidrawData.disableCompression = true;
-      await this.save(true, true);
+      await this.save(true, true, true);
+    } else if (this.isDirty()) {
+      await this.save(true, true, true);
     }
     this.setMarkdownView(eState);
   }
@@ -3364,6 +3370,9 @@ export default class ExcalidrawView extends TextFileView {
       } else if(e.dataTransfer.types.length === 1 && e.dataTransfer.types.includes("Files")) {
         //drag from OS file manager
         msg = modifierKeyTooltipMessages().LocalFileDragAction[localFileDragModifierType(e)];
+        if(DEVICE.isMacOS && isWinCTRLorMacCMD(e)) {
+          msg = "CMD is reserved by MacOS for file system drag actions.\nCan't use it in Obsidian.\nUse a combination of SHIFT, CTRL, OPT instead."
+        }
       } else {
         //drag from Internet
         msg = modifierKeyTooltipMessages().WebBrowserDragAction[webbrowserDragModifierType(e)];
@@ -3371,7 +3380,7 @@ export default class ExcalidrawView extends TextFileView {
       if(!e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
         msg += DEVICE.isMacOS || DEVICE.isIOS
         ? "\nTry SHIFT, OPT, CTRL combinations for other drop actions" 
-        : "\nTry SHIFT, CTRL, ALT combinations for other drop actions";
+        : "\nTry SHIFT, CTRL, ALT, Meta combinations for other drop actions";
       }
       if(this.draginfoDiv.innerText !== msg) this.draginfoDiv.innerText = msg;
       const top = `${e.clientY-parseFloat(getComputedStyle(this.draginfoDiv).fontSize)*8}px`;
@@ -3559,6 +3568,13 @@ export default class ExcalidrawView extends TextFileView {
       return false;
     }
     if(data && data.text && !this.modifierKeyDown.shiftKey) {
+      const isCodeblock = Boolean(data.text.replaceAll("\r\n", "\n").replaceAll("\r", "\n").match(/^`{3}[^\n]*\n.+\n`{3}\s*$/ms));
+      if(isCodeblock) {
+        const clipboardText = data.text;
+        setTimeout(()=>this.pasteCodeBlock(clipboardText));
+        return false;
+      }
+
       const quoteWithRef = obsidianPDFQuoteWithRef(data.text);
       if(quoteWithRef) {                  
         const ea = getEA(this) as ExcalidrawAutomate;
@@ -3873,8 +3889,38 @@ export default class ExcalidrawView extends TextFileView {
             if(localFileDragAction === "image-import") {
               if (IMAGE_TYPES.contains(extension)) {
                 (async () => {
-                  const {folder:_, filepath} = await getAttachmentsFolderAndFilePath(this.app, this.file.path,event.dataTransfer.files[i].name);
-                  const file = await this.app.vault.createBinary(filepath, await event.dataTransfer.files[i].arrayBuffer())
+                  const droppedFilename = event.dataTransfer.files[i].name;
+                  const fileToImport = await event.dataTransfer.files[i].arrayBuffer();
+                  let {folder:_, filepath} = await getAttachmentsFolderAndFilePath(this.app, this.file.path, droppedFilename);
+                  const maybeFile = this.app.vault.getAbstractFileByPath(filepath);
+                  if(maybeFile && maybeFile instanceof TFile) {
+                    const action = await ScriptEngine.suggester(
+                      this.app,[
+                        "Use the file already in the Vault instead of importing",
+                        "Overwrite existing file in the Vault",
+                        "Import the file with a new name",
+                      ],[
+                        "Use",
+                        "Overwrite",
+                        "Import",
+                      ],
+                      "A file with the same name/path already exists in the Vault",
+                    );
+                    switch(action) {
+                      case "Import":
+                        const {folderpath,filename,basename:_,extension:__} = splitFolderAndFilename(filepath);
+                        filepath = getNewUniqueFilepath(this.app.vault, filename, folderpath);
+                        break;
+                        case "Overwrite":
+                          await this.app.vault.modifyBinary(maybeFile, fileToImport);
+                          // there is deliberately no break here
+                      case "Use":
+                      default:
+                        insertImageToView(getEA(this), pos, maybeFile);
+                        return;
+                    }
+                  }
+                  const file = await this.app.vault.createBinary(filepath, fileToImport)
                   insertImageToView(getEA(this), pos, file);
                 })();
                 return false;
@@ -4325,6 +4371,27 @@ export default class ExcalidrawView extends TextFileView {
     selectCardDialog.start();
   }
 
+  public async pasteCodeBlock(data: string) {
+    try {
+      data = data.replaceAll("\r\n", "\n").replaceAll("\r", "\n").trim();
+      const isCodeblock = Boolean(data.match(/^`{3}[^\n]*\n.+\n`{3}\s*$/ms));
+      if(!isCodeblock) {
+        const codeblockType = await GenericInputPrompt.Prompt(this,this.plugin,this.app,"type codeblock type","javascript, html, python, etc.","");
+        data = "```"+codeblockType.trim()+"\n"+data+"\n```";
+      }
+      let title = (await GenericInputPrompt.Prompt(this,this.plugin,this.app,"Code Block Title","Enter title or leave empty for automatic title","")).trim();
+      if (title === "") {title = "Code Block";};
+      const sections = await this.getBackOfTheNoteSections(); 
+      if (sections.includes(title)) {
+        let i=0;
+        while (sections.includes(`${title} ${++i}`)) {};
+        title = `${title} ${i}`;
+      }
+      addBackOfTheNoteCard(this, title, false, data);
+    } catch (e) {
+    }
+  }
+
   public async convertImageElWithURLToLocalFile(data: {imageEl: ExcalidrawImageElement, embeddedFile: EmbeddedFile}) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.convertImageElWithURLToLocalFile, "ExcalidrawView.convertImageElWithURLToLocalFile", data);
     const {imageEl, embeddedFile} = data;
@@ -4564,7 +4631,6 @@ export default class ExcalidrawView extends TextFileView {
             onClose
           ),
         ]);
-
         contextMenuActions.push([
           renderContextMenuAction(
             t("UNIVERSAL_ADD_FILE"),
@@ -4585,6 +4651,17 @@ export default class ExcalidrawView extends TextFileView {
           ),
           // Add more context menu actions here if needed
         ]);
+        contextMenuActions.push([
+          renderContextMenuAction(
+            t("PASTE_CODEBLOCK"),
+            async () => {
+              const data = await navigator.clipboard?.readText();
+              if(!data || data.trim() === "") return;
+              this.pasteCodeBlock(data);
+            },
+            onClose
+          ),
+        ])
       }
 
       if(contextMenuActions.length === 0) return;

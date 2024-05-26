@@ -9,6 +9,9 @@ const hyperlink = (url: string, text: string) => {
   return `<a onclick='window.open("${url}")'>${text}</a>`;
 }
 
+const EMBEDDABLE_MDCUSTOMPROPS = `type EmbeddableMDCustomProps = {<br>useObsidianDefaults: boolean;<br>backgroundMatchCanvas: boolean;<br>backgroundMatchElement: boolean;<br>backgroundColor: string;<br>backgroundOpacity: number;<br>borderMatchElement: boolean;<br>borderColor: string;<br>borderOpacity: number;<br>filenameVisible: boolean;<br>};<br>`;
+
+
 export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "help",
@@ -262,8 +265,10 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "addText",
-    code: 'addText(topX: number, topY: number, text: string, formatting?: {wrapAt?: number; width?: number; height?: number; textAlign?: "left" | "center" | "right"; textVerticalAlign: "top" | "middle" | "bottom"; box?: boolean | "box" | "blob" | "ellipse" | "diamond"; boxPadding?: number; boxStrokeColor?: string;}, id?: string,): string;',
-    desc: "If box is !null, then text will be boxed\nThe function returns the id of the TextElement. If the text element is boxed i.e. it is a sticky note, then the id of the container object",
+    code: 'addText(topX: number, topY: number, text: string, formatting?: {autoResize?: boolean; wrapAt?: number; width?: number; height?: number; textAlign?: "left" | "center" | "right"; textVerticalAlign: "top" | "middle" | "bottom"; box?: boolean | "box" | "blob" | "ellipse" | "diamond"; boxPadding?: number; boxStrokeColor?: string;}, id?: string,): string;',
+    desc: "If box is !null, then text will be boxed\nThe function returns the id of the TextElement. If the text element is boxed i.e. it is a sticky note, then the id of the container object.\n"+
+      "Default value for autoResize is true. Setting autoResize to false will wrap the text in the text element without the need for the container. If set to false, you must provide a width value as well.\n" +
+      "wrapAt will be ignored if autoResize is set to false (and a width is also provided)",
     after: "",
   },
   {
@@ -286,8 +291,9 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "addEmbeddable",
-    code: "addEmbeddable(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile): string;",
-    desc: "Adds an iframe/webview (depending on content and platform) to the drawing. If url is not null then the iframe/webview will be loaded from the url. The url maybe a markdown link to an note in the Vault or a weblink. If url is null then the iframe/webview will be loaded from the file. Both the url and the file may not be null.",
+    code: "addEmbeddable(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile, embeddableCustomData?: EmbeddableMDCustomProps): string;",
+    desc: "Adds an iframe/webview (depending on content and platform) to the drawing. If url is not null then the iframe/webview will be loaded from the url. The url maybe a markdown link to an note in the Vault or a weblink. " +
+      "If url is null then the iframe/webview will be loaded from the file. Both the url and the file may not be null.<br>" + EMBEDDABLE_MDCUSTOMPROPS,
     after: "",
   },
   {
@@ -363,6 +369,14 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     field: "deleteViewElements",
     code: "deleteViewElements(el: ExcalidrawElement[]): boolean;",
     desc: null,
+    after: "",
+  },
+  {
+    field: "addBackOfTheCardNoteToView",
+    code: "async addBackOfTheCardNoteToView(sectionTitle: string, activate: boolean = false, sectionBody?: string, embeddableCustomData?: EmbeddableMDCustomProps): Promise<string>",
+    desc: "Adds a back of the note card to the current active view. If <b>body</b> is provided the note will be created with the body text, otherwise the note will be created with the title only.<br>Returns the id of the created element.<br>" +
+      "If <b>activate</b> is true, the embedded note will be activated for editing.<br>" +
+      "This is an async function, if you need the element ID of the created element, the function should be awaited.<br>" + EMBEDDABLE_MDCUSTOMPROPS,
     after: "",
   },
   {
@@ -495,6 +509,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     field: "measureText",
     code: "measureText(text: string): { width: number; height: number };",
     desc: "Measures text size based on current style settings",
+    after: "",
+  },
+  {
+    field: "getOriginalImageSize",
+    code: "async getOriginalImageSize(imageElement: ExcalidrawImageElement): Promise<{width: number; height: number}>",
+    desc: "Returns the size of the image element at 100% (i.e. the original size). This is an async function, you need to await the result.",
     after: "",
   },
   {

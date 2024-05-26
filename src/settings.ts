@@ -77,6 +77,7 @@ export interface ExcalidrawSettings {
   defaultPenMode: "never" | "mobile" | "always";
   penModeCrosshairVisible: boolean;
   renderImageInMarkdownReadingMode: boolean,
+  renderImageInHoverPreviewForMDNotes: boolean,
   renderImageInMarkdownToPDF: boolean,
   allowPinchZoom: boolean;
   allowWheelZoom: boolean;
@@ -122,6 +123,7 @@ export interface ExcalidrawSettings {
   fadeOutExcalidrawMarkup: boolean;
   experimentalEnableFourthFont: boolean;
   experimantalFourthFont: string;
+  addDummyTextElement: boolean;
   fieldSuggester: boolean;
   //loadCount: number; //version 1.2 migration counter
   drawingOpenCount: number;
@@ -237,6 +239,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   defaultPenMode: "never",
   penModeCrosshairVisible: true,
   renderImageInMarkdownReadingMode: false,
+  renderImageInHoverPreviewForMDNotes: false,
   renderImageInMarkdownToPDF: false,
   allowPinchZoom: false,
   allowWheelZoom: false,
@@ -281,6 +284,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   fadeOutExcalidrawMarkup: false,
   experimentalEnableFourthFont: false,
   experimantalFourthFont: "Virgil",
+  addDummyTextElement: false,
   fieldSuggester: true,
   compatibilityMode: false,
   //loadCount: 0,
@@ -1001,6 +1005,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
+    new Setting(detailsEl)
+      .setName(t("SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_NAME"))
+      .setDesc(fragWithHTML(t("SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.renderImageInHoverPreviewForMDNotes)
+          .onChange(async (value) => {
+            this.plugin.settings.renderImageInHoverPreviewForMDNotes = value;
+            this.applySettingsUpdate();
+          }),
+      );
+      
     new Setting(detailsEl)
       .setName(t("LEFTHANDED_MODE_NAME"))
       .setDesc(fragWithHTML(t("LEFTHANDED_MODE_DESC")))
@@ -2496,6 +2512,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       text: t("COMPATIBILITY_HEAD"),
       cls: "excalidraw-setting-h1",
     });
+
+
+    new Setting(detailsEl)
+    .setName(t("DUMMY_TEXT_ELEMENT_LINT_SUPPORT_NAME"))
+    .setDesc(fragWithHTML(t("DUMMY_TEXT_ELEMENT_LINT_SUPPORT_DESC")))
+    .addToggle((toggle) =>
+      toggle
+        .setValue(this.plugin.settings.addDummyTextElement)
+        .onChange((value) => {
+          this.plugin.settings.addDummyTextElement = value;
+          this.applySettingsUpdate();
+        }),
+    );
 
     if (process.env.NODE_ENV === 'development') {
       new Setting(detailsEl)

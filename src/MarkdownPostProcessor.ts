@@ -614,13 +614,22 @@ const tmpObsidianWYSIWYG = async (
   ) {
     internalEmbedDiv = internalEmbedDiv.parentElement;
   }
-    
+
   if(
     internalEmbedDiv.hasClass("dataview") ||
     internalEmbedDiv.hasClass("cm-preview-code-block") ||
     internalEmbedDiv.hasClass("cm-embed-block")
   ) { 
     return; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/835
+  }
+
+  
+  if(!plugin.settings.renderImageInHoverPreviewForMDNotes) {
+    const isHoverPopover = internalEmbedDiv.parentElement?.hasClass("hover-popover");
+    const shouldOpenMD = Boolean(ctx.frontmatter?.["excalidraw-open-md"]);
+    if(isHoverPopover && shouldOpenMD) {
+      return;
+    }
   }
 
   const isPrinting = Boolean(internalEmbedDiv.hasClass("print"));

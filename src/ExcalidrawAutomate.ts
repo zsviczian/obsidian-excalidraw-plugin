@@ -11,6 +11,7 @@ import {
   StrokeRoundness,
   RoundnessType,
   ExcalidrawFrameElement,
+  ExcalidrawTextContainer,
 } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { Editor, normalizePath, Notice, OpenViewState, RequestUrlResponse, TFile, TFolder, WorkspaceLeaf } from "obsidian";
 import * as obsidian_module from "obsidian";
@@ -35,6 +36,7 @@ import {
   REG_LINKINDEX_INVALIDCHARS,
   THEME_FILTER,
   mermaidToExcalidraw,
+  refreshTextDimensions,
 } from "src/constants/constants";
 import { blobToBase64, checkAndCreateFolder, getDrawingFilename, getExcalidrawEmbeddedFilesFiletree, getListOfTemplateFiles, getNewUniqueFilepath, hasExcalidrawEmbeddedImagesTreeChanged, } from "src/utils/FileUtils";
 import {
@@ -88,8 +90,9 @@ import {
   extractCodeBlocks as _extractCodeBlocks,
 } from "./utils/AIUtils";
 import { EXCALIDRAW_AUTOMATE_INFO, EXCALIDRAW_SCRIPTENGINE_INFO } from "./dialogs/SuggesterInfo";
-import { getFrameBasedOnFrameNameOrId } from "./utils/ExcalidrawViewUtils";
+import { addBackOfTheNoteCard, getFrameBasedOnFrameNameOrId } from "./utils/ExcalidrawViewUtils";
 import { log } from "./utils/DebugHelper";
+import { auto } from "@popperjs/core";
 
 extendPlugins([
   HarmonyPlugin,
@@ -1211,7 +1214,8 @@ export class ExcalidrawAutomate {
     topY: number,
     text: string,
     formatting?: {
-      wrapAt?: number;
+      autoResize?: boolean; //Default is true. Setting this to false will wrap the text in the text element without the need for the containser. If set to false, you must set a width value as well.
+      wrapAt?: number; //wrapAt is ignored if autoResize is set to false (and width is provided)
       width?: number;
       height?: number;
       textAlign?: "left" | "center" | "right";
@@ -1224,7 +1228,11 @@ export class ExcalidrawAutomate {
   ): string {
     id = id ?? nanoid();
     const originalText = text;
-    text = formatting?.wrapAt ? this.wrapText(text, formatting.wrapAt) : text;
+    const autoresize = ((typeof formatting?.width === "undefined") || formatting?.box)
+      ? true
+      : (formatting?.autoResize ?? true)
+    text = (formatting?.wrapAt && autoresize) ? this.wrapText(text, formatting.wrapAt) : text;
+
     const { w, h, baseline } = _measureText(
       text,
       this.style.fontSize,
@@ -1235,9 +1243,9 @@ export class ExcalidrawAutomate {
     const height = formatting?.height ? formatting.height : h;
 
     let boxId: string = null;
-    const boxPadding = formatting?.boxPadding ?? 30;
     const strokeColor = this.style.strokeColor;
     this.style.strokeColor = formatting?.boxStrokeColor ?? strokeColor;
+    const boxPadding = formatting?.boxPadding ?? 30;
     if (formatting?.box) {
       switch (formatting.box) {
         case "ellipse":
@@ -1283,12 +1291,12 @@ export class ExcalidrawAutomate {
         ? formatting.textAlign
         : this.style.textAlign ?? "left",
       verticalAlign: formatting?.textVerticalAlign ?? this.style.verticalAlign,
-      baseline,
       ...this.boxedElement(id, "text", topX, topY, width, height),
       containerId: isContainerBound ? boxId : null,
       originalText: isContainerBound ? originalText : text,
       rawText: isContainerBound ? originalText : text,
       lineHeight: getDefaultLineHeight(this.style.fontFamily),
+      autoResize: formatting?.box ? true : (formatting?.autoResize ?? true),
     };
     if (boxId && formatting?.box === "blob") {
       this.addToGroup([id, boxId]);
@@ -1299,6 +1307,25 @@ export class ExcalidrawAutomate {
         box.boundElements = [];
       }
       box.boundElements.push({ type: "text", id });
+    }
+    const textElement = this.getElement(id) as Mutable<ExcalidrawTextElement>;
+    const container = (boxId && formatting.box !== "blob") ? this.getElement(boxId) as Mutable<ExcalidrawTextContainer>: undefined;
+    const dimensions = refreshTextDimensions(
+      textElement,
+      container,
+      arrayToMap(this.getElements()),
+      originalText,
+    );
+    if(dimensions) {
+      textElement.width = dimensions.width;
+      textElement.height = dimensions.height;
+      textElement.x = dimensions.x;
+      textElement.y = dimensions.y;
+      textElement.text = dimensions.text;
+      if(container) {
+        container.width = dimensions.width + 2 * boxPadding;
+        container.height = dimensions.height + 2 * boxPadding;
+      }
     }
     return boxId ?? id;
   };
@@ -1838,6 +1865,24 @@ export class ExcalidrawAutomate {
     //this.targetView.save();
     return true;
   };
+
+  /**
+   * Adds a back of the note card to the current active view
+   * @param sectionTitle: string
+   * @param activate:boolean = true; if true, the new Embedded Element will be activated after creation
+   * @param sectionBody?: string;
+   * @param embeddableCustomData?: EmbeddableMDCustomProps; formatting of the embeddable element
+   * @returns embeddable element id
+   */
+  async addBackOfTheCardNoteToView(sectionTitle: string, activate: boolean = false, sectionBody?: string, embeddableCustomData?: EmbeddableMDCustomProps): Promise<string> {
+    //@ts-ignore
+    if (!this.targetView || !this.targetView?._loaded) {
+      errorMessage("targetView not set", "addBackOfTheCardNoteToView()");
+      return null;
+    }
+    await this.targetView.forceSave(true);
+    return addBackOfTheNoteCard(this.targetView, sectionTitle, activate, sectionBody, embeddableCustomData);
+  }
 
   /**
    * get the selected element in the view, if more are selected, get the first

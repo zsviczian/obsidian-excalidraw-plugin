@@ -72,6 +72,7 @@ export default {
   INSERT_PDF: "Insert PDF file from vault",
   UNIVERSAL_ADD_FILE: "Insert ANY file",
   INSERT_CARD: "Add back-of-note card",
+  PASTE_CODEBLOCK: "Paste code block",
   INSERT_LATEX:
     `Insert LaTeX formula (e.g. \\binom{n}{k} = \\frac{n!}{k!(n-k)!}). ${labelALT()}+CLICK to watch a help video.`,
   ENTER_LATEX: "Enter a valid LaTeX expression",
@@ -302,6 +303,9 @@ FILENAME_HEAD: "Filename",
   SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_DESC:
     "Show crosshair in pen mode when using the freedraw tool. <b><u>Toggle ON:</u></b> SHOW <b><u>Toggle OFF:</u></b> HIDE<br>"+
     "The effect depends on the device. Crosshair is typically visible on drawing tablets, MS Surface, but not on iOS.",
+  SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_NAME: "Render image in hover preview for MD files",
+  SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_DESC:
+    "This setting effects files that have the <b>excalidraw-open-md: true</b> frontmatter key.",
   SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME: "Render image when in markdown reading mode",
   SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC:
     "Must close the active excalidraw/markdown file and reopen it for this change to take effect.<br>When you are in markdown reading mode (aka. reading the back side of the drawing), should the Excalidraw drawing be rendered as an image? " +
@@ -580,6 +584,13 @@ FILENAME_HEAD: "Filename",
     "Double files will be exported both if auto-export SVG or PNG (or both) are enabled, as well as when clicking export on a single image.",
   COMPATIBILITY_HEAD: "Compatibility features",
   COMPATIBILITY_DESC: "You should only enable these features if you have a strong reason for wanting to work with excalidraw.com files instead of markdown files. Many of the plugin features are not supported on legacy files. Typical usecase would be if you use set your vault up on top of a Visual Studio Code project folder and you have .excalidraw drawings you want to access from Visual Studio Code as well. Another usecase might be using Excalidraw in Logseq and Obsidian in parallel.",
+  DUMMY_TEXT_ELEMENT_LINT_SUPPORT_NAME: "Insert dummy first text element to support linting",
+  DUMMY_TEXT_ELEMENT_LINT_SUPPORT_DESC: "Excalidraw is sensitive to the file structure below <code># Excalidraw Data</code>. Automatic linting of documents can create errors in Excalidraw Data. " +
+    "While I've made some effort to make the data loading resilient to " +
+    "lint changes, this solution is not foolproof.<br><mark>The best is to avoid liniting or otherwise automatically changing Excalidraw documents using different plugins.</mark><br>" +
+    "Use this setting if for good reasons you have decided to ignore my recommendation and configured linting of Excalidraw files.<br> " +
+    "The <code>## Text Elements</code> section is sensitive to empty lines. A common linting approach is to add an empty line after section headings. In case of Excalidraw this will break/change the first text element in your drawing. " +
+    "To overcome this, you can enable this setting. When enabled, Excalidraw will add a dummy element to the beginning of <code>## Text Elements</code> that the linter can safely modify." ,
   DEBUGMODE_NAME: "Enable debug messages",
   DEBUGMODE_DESC: "I recommend restarting Obsidian after enabling/disabling this setting. This enable debug messages in the console. This is useful for troubleshooting issues. " +
     "If you are experiencing problems with the plugin, please enable this setting, reproduce the issue, and include the console log in the issue you raise on <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/issues'>GitHub</a>",

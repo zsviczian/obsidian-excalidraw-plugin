@@ -748,8 +748,6 @@ export const linkPrompt = async (linkText:string, app: App, view?: ExcalidrawVie
   return [file, linkText, subpath];
 }
 
-
-
 export const templatePromt = async (files: TFile[], app: App): Promise<TFile> => {
   if(files.length === 1) return files[0];
   return ((await linkPrompt(

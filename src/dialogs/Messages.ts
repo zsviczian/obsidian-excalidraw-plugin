@@ -17,6 +17,54 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.2.3":`
+## Fixed
+-  Undo history was not properly initialized [#1791](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1785)
+- Excalidraw did not save edits when switching to markdown view mode with a hotkey or terminating the popout window
+- SVG export did not maintain the aspect ratio of manually distorted images [#1780](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1780)
+
+## New
+- In pen mode, double tapping the screen will toggle the eraser tool when using freedraw tool, or one of the other tools in locked mode.
+- New setting under "Excalidraw appearance and behavior" to disable rendering of Excalidraw drawings in hover previews, in case the file has the ${String.fromCharCode(96)}excalidraw-open-md: true${String.fromCharCode(96)} frontmatter property [#1795](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1795)
+- Additional foolproofing of ${String.fromCharCode(96)}# Excalidraw Data${String.fromCharCode(96)}. The file is now more resilient to automated linting and other changes. There is also a new setting under "Compatibility Features" to add a dummy first text element to ${String.fromCharCode(96)}## Text Elements${String.fromCharCode(96)}. You can use this feature if your auto-linter adds empty lines after section headings.
+- Pasting markdown code blocks will create a back-of-the-note card with the code block. CTRL+SHIFT+V will paste the text as a normal text element. When copying code from Chat GPT the markdown code fence (triple backtick) is missing. In this case, you may use the new context menu action "Paste code block" to create a back of the note card with the code block.
+- Pasting long text will be wrapped in the text element.
+
+## New in ExcalidrawAutomate
+- Updated viewUpdateScene: This now implements the [new Excalidraw API](https://github.com/excalidraw/excalidraw/pull/7898)
+${String.fromCharCode(96, 96, 96)}ts
+  viewUpdateScene (
+    scene: {
+      elements?: ExcalidrawElement[],
+      appState?: AppState,
+      files?: BinaryFileData,
+      commitToHistory?: boolean,
+      storeAction?: "capture" | "none" | "update",
+    },
+    restore: boolean = false,
+  ):void ;
+  ${String.fromCharCode(96, 96, 96)}
+- Updated addText. The function now supports the new text-wrapping feature
+${String.fromCharCode(96, 96, 96)}ts
+  addText(
+    topX: number,
+    topY: number,
+    text: string,
+    formatting?: {
+      autoResize?: boolean; //Default is true. Setting this to false will wrap the text in the text element without the need for the container. If set to false, you must set a width value as well.
+      wrapAt?: number; //wrapAt is ignored if autoResize is set to false (and width is provided)
+      width?: number;
+      height?: number;
+      textAlign?: "left" | "center" | "right";
+      box?: boolean | "box" | "blob" | "ellipse" | "diamond";
+      boxPadding?: number;
+      boxStrokeColor?: string;
+      textVerticalAlign?: "top" | "middle" | "bottom";
+    },
+    id?: string,
+  ): string
+  ${String.fromCharCode(96, 96, 96)}
+  `,
 "2.2.2":`
 ## Fixed
 - ExcaliBrain stopped working with 2.2.0

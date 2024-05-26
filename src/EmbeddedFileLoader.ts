@@ -361,7 +361,8 @@ export class EmbeddedFilesLoader {
       isMask,
     };
 
-    const shouldUseCache = this.plugin.settings.allowImageCacheInScene && file && imageCache.isReady();
+    const hasColorMap = Boolean(inFile instanceof EmbeddedFile ? inFile.colorMap : null);
+    const shouldUseCache = !hasColorMap && this.plugin.settings.allowImageCacheInScene && file && imageCache.isReady();
     const cacheKey:ImageKey = {
       filepath: file.path,
       blockref: null,
