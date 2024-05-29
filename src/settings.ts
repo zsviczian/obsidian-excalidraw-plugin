@@ -48,7 +48,6 @@ export interface ExcalidrawSettings {
   decompressForMDView: boolean;
   onceOffCompressFlagReset: boolean; //used to reset compress to true in 2.2.0
   autosave: boolean;
-  autosaveInterval: number;
   autosaveIntervalDesktop: number;
   autosaveIntervalMobile: number;
   drawingFilenamePrefix: string;
@@ -210,7 +209,6 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   decompressForMDView: false,
   onceOffCompressFlagReset: false,
   autosave: true,
-  autosaveInterval: 15000,
   autosaveIntervalDesktop: 15000,
   autosaveIntervalMobile: 10000,
   drawingFilenamePrefix: "Drawing ",
@@ -699,9 +697,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.autosaveIntervalDesktop.toString())
         .onChange(async (value) => {
           this.plugin.settings.autosaveIntervalDesktop = parseInt(value);
-          this.plugin.settings.autosaveInterval = DEVICE.isMobile
-            ? this.plugin.settings.autosaveIntervalMobile
-            : this.plugin.settings.autosaveIntervalDesktop;
           this.applySettingsUpdate();
         }),
     );
@@ -718,9 +713,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.autosaveIntervalMobile.toString())
         .onChange(async (value) => {
           this.plugin.settings.autosaveIntervalMobile = parseInt(value);
-          this.plugin.settings.autosaveInterval = DEVICE.isMobile
-            ? this.plugin.settings.autosaveIntervalMobile
-            : this.plugin.settings.autosaveIntervalDesktop;
           this.applySettingsUpdate();
         }),
     );

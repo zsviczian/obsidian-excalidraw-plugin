@@ -3122,9 +3122,6 @@ export default class ExcalidrawPlugin extends Plugin {
     }
     if(opts.applyLefthandedMode) setLeftHandedMode(this.settings.isLeftHanded);
     if(opts.reEnableAutosave) this.settings.autosave = true;
-    this.settings.autosaveInterval = DEVICE.isMobile
-      ? this.settings.autosaveIntervalMobile
-      : this.settings.autosaveIntervalDesktop;
     setDebugging(this.settings.isDebugMode);
   }
 

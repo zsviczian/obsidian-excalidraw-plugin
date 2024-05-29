@@ -1530,11 +1530,13 @@ export default class ExcalidrawView extends TextFileView {
   public autosaveFunction: Function;
   public setupAutosaveTimer() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setupAutosaveTimer, "ExcalidrawView.setupAutosaveTimer");
+    const autosaveInterval = DEVICE.isMobile ? this.plugin.settings.autosaveIntervalMobile : this.plugin.settings.autosaveIntervalDesktop;
+
     const timer = async () => {
       if(!this.isLoaded) {
         this.autosaveTimer = setTimeout(
           timer,
-          this.plugin.settings.autosaveInterval,
+          autosaveInterval,
         );
         return;
       }
@@ -1569,7 +1571,7 @@ export default class ExcalidrawView extends TextFileView {
         } 
         this.autosaveTimer = setTimeout(
           timer,
-          this.plugin.settings.autosaveInterval,
+          autosaveInterval,
         );
       } else {
         this.autosaveTimer = setTimeout(
@@ -1578,7 +1580,7 @@ export default class ExcalidrawView extends TextFileView {
             this.semaphores.dirty &&
             this.plugin.settings.autosave
             ? 1000 //try again in 1 second
-            : this.plugin.settings.autosaveInterval,
+            : autosaveInterval,
         );
       }
     };
