@@ -174,16 +174,24 @@ export class EmbeddableSettings extends Modal {
         const fnparts = splitFolderAndFilename(newPathWithExt);
         const newPath = getNewUniqueFilepath(
           this.app.vault,
-          fnparts.folderpath,
           fnparts.filename,
+          fnparts.folderpath,
         );
-        await this.app.vault.rename(this.file,newPath);
-        el.link = this.element.link.replace(
-          /(\[\[)([^#\]]*)([^\]]*]])/,`$1${
-            this.plugin.app.metadataCache.fileToLinktext(
-              this.file,this.view.file.path,true)
-          }$3`);
-        dirty = true;
+        if(this.app.vault.getAbstractFileByPath(newPath)) {
+          new Notice("File rename failed. A file with this name already exists.\n"+newPath,10000);
+        } else {
+          try {
+            await this.app.vault.rename(this.file,newPath);
+            el.link = this.element.link.replace(
+              /(\[\[)([^#\]]*)([^\]]*]])/,`$1${
+                this.plugin.app.metadataCache.fileToLinktext(
+                  this.file,this.view.file.path,true)
+              }$3`);
+            dirty = true;
+          } catch(e) {
+            new Notice("File rename failed. "+e,10000);
+          }
+        }
       }
     }
     if(this.isYouTube && this.youtubeStart !== getYouTubeStartAt(this.element.link)) {

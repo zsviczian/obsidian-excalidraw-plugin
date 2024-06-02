@@ -578,6 +578,14 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "getCM",
+    code: "getCM(color:TInput): ColorMaster;",
+    desc: `Returns a ${hyperlink("https://github.com/lbragile/ColorMaster", "ColorMaster")} object. ` +
+      "The function also accepts css color names. Under the hood, before calling ColorMaster it uses " +
+      "colorNameToHex to convert the color name to a HEX color.",
+    after: "",
+  },
+  {
     field: "obsidian",
     code: "obsidian",
     desc: `Access functions and objects available on the ${hyperlink("https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts","Obsidian Module")}`,

@@ -72,6 +72,8 @@ export default {
   INSERT_PDF: "Insert PDF file from vault",
   UNIVERSAL_ADD_FILE: "Insert ANY file",
   INSERT_CARD: "Add back-of-note card",
+  CONVERT_CARD_TO_FILE: "Move back-of-note card to File",
+  ERROR_TRY_AGAIN: "Please try again.",
   PASTE_CODEBLOCK: "Paste code block",
   INSERT_LATEX:
     `Insert LaTeX formula (e.g. \\binom{n}{k} = \\frac{n!}{k!(n-k)!}). ${labelALT()}+CLICK to watch a help video.`,

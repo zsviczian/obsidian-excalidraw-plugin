@@ -1674,6 +1674,31 @@ export default class ExcalidrawPlugin extends Plugin {
     })
 
     this.addCommand({
+      id: "convert-card-to-file",
+      name: t("CONVERT_CARD_TO_FILE"),
+      checkCallback: (checking:boolean) => {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if(!view) return false;
+        if(!view.excalidrawAPI) return false;
+        const els = view.getViewSelectedElements().filter(el=>el.type==="embeddable");
+        if(els.length !== 1) {
+          if(checking) return false;
+          new Notice("Select a single back-of-the-note card and try again");
+          return false;
+        }
+        const embeddableData = view.getEmbeddableLeafElementById(els[0].id);
+        const child = embeddableData?.node?.child;
+        if(!child || (child.file !== view.file)) {
+          if(checking) return false;
+          new Notice("The selected embeddable is not a back-of-the-note card.");
+          return false;
+        }
+        if(checking) return true;
+        view.moveBackOfTheNoteCardToFile();
+      }
+    })
+
+    this.addCommand({
       id: "insert-active-pdfpage",
       name: t("INSERT_ACTIVE_PDF_PAGE_AS_IMAGE"),
       checkCallback: (checking:boolean) => {

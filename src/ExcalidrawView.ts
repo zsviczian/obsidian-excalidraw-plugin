@@ -1528,15 +1528,18 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   public autosaveFunction: Function;
+  get autosaveInterval() {
+    return DEVICE.isMobile ? this.plugin.settings.autosaveIntervalMobile : this.plugin.settings.autosaveIntervalDesktop;
+  }
+
   public setupAutosaveTimer() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setupAutosaveTimer, "ExcalidrawView.setupAutosaveTimer");
-    const autosaveInterval = DEVICE.isMobile ? this.plugin.settings.autosaveIntervalMobile : this.plugin.settings.autosaveIntervalDesktop;
 
     const timer = async () => {
       if(!this.isLoaded) {
         this.autosaveTimer = setTimeout(
           timer,
-          autosaveInterval,
+          this.autosaveInterval,
         );
         return;
       }
@@ -1571,7 +1574,7 @@ export default class ExcalidrawView extends TextFileView {
         } 
         this.autosaveTimer = setTimeout(
           timer,
-          autosaveInterval,
+          this.autosaveInterval,
         );
       } else {
         this.autosaveTimer = setTimeout(
@@ -1580,7 +1583,7 @@ export default class ExcalidrawView extends TextFileView {
             this.semaphores.dirty &&
             this.plugin.settings.autosave
             ? 1000 //try again in 1 second
-            : autosaveInterval,
+            : this.autosaveInterval,
         );
       }
     };
@@ -1600,7 +1603,7 @@ export default class ExcalidrawView extends TextFileView {
     } // clear previous timer if one exists
     this.autosaveTimer = setTimeout(
       this.autosaveFunction,
-      this.plugin.settings.autosaveInterval,
+      this.autosaveInterval,
     );
 
   }
@@ -3541,6 +3544,7 @@ export default class ExcalidrawView extends TextFileView {
 
   private onPaste (data: ClipboardData, event: ClipboardEvent | null) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onPaste, "ExcalidrawView.onPaste", data, event);
+    const self = this;
     const ea = this.getHookServer();
     if(data && ea.onPasteHook) {
       const res = ea.onPasteHook({
@@ -3605,7 +3609,6 @@ export default class ExcalidrawView extends TextFileView {
       }
     }
     if (data.elements) {
-      const self = this;
       setTimeout(() => self.save(), 300); //removed prevent reload = false, as reload was triggered when pasted containers were processed and there was a conflict with the new elements
     }
     return true;
@@ -4373,6 +4376,63 @@ export default class ExcalidrawView extends TextFileView {
     selectCardDialog.start();
   }
 
+  public async moveBackOfTheNoteCardToFile(id?: string) {
+    id = id ?? this.getViewSelectedElements().filter(el=>el.type==="embeddable")[0]?.id;
+    const embeddableData = this.getEmbeddableLeafElementById(id);
+    const child = embeddableData?.node?.child;
+    if(!child || (child.file !== this.file)) return;
+
+    if(child.lastSavedData !== this.data) {
+      await this.forceSave(true);
+      if(child.lastSavedData !== this.data) {
+        new Notice(t("ERROR_TRY_AGAIN"));
+        return;
+      }
+    }
+    const {folder, filepath:_} = await getAttachmentsFolderAndFilePath(
+      this.app,
+      this.file.path, 
+      "dummy",
+    );
+    const filepath = getNewUniqueFilepath(
+      this.app.vault,
+      child.subpath.replaceAll("#",""),
+      folder,
+    );
+    let path = await ScriptEngine.inputPrompt(
+      this,
+      this.plugin,
+      this.app,
+      "Set filename",
+      "Enter filename",
+      filepath,
+      undefined,
+      3,
+    );
+    if(!path) return;
+    if(!path.endsWith(".md")) {
+      path += ".md";
+    }
+    const {folderpath, filename} = splitFolderAndFilename(path);
+    path = getNewUniqueFilepath(this.app.vault, filename, folderpath);
+    try {
+      const newFile = await this.app.vault.create(path, child.text);
+      if(!newFile) {
+        new Notice("Unexpected error");
+        return;
+      }
+      const ea = getEA(this) as ExcalidrawAutomate;
+      ea.copyViewElementsToEAforEditing([this.getViewElements().find(el=>el.id === id)]);
+      ea.getElement(id).link = `[[${newFile.path}]]`;
+      this.data = this.data.split(child.heading+child.text).join("");
+      ea.addElementsToView(false);
+      this.forceSave(true);
+    } catch(e) {
+      new Notice(`Unexpected error: ${e.message}`);
+      return;
+    }
+  }
+
   public async pasteCodeBlock(data: string) {
     try {
       data = data.replaceAll("\r\n", "\n").replaceAll("\r", "\n").trim();
@@ -4499,7 +4559,8 @@ export default class ExcalidrawView extends TextFileView {
     const onContextMenu = (elements: readonly ExcalidrawElement[], appState: AppState, onClose: (callback?: () => void) => void) => {
       const contextMenuActions = [];
       const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
-      const areElementsSelected = Object.keys(api.getAppState().selectedElementIds).length>0
+      const selectedElementIds = Object.keys(api.getAppState().selectedElementIds);
+      const areElementsSelected = selectedElementIds.length > 0;
 
       if(this.isLinkSelected()) {
         contextMenuActions.push([
@@ -4624,6 +4685,25 @@ export default class ExcalidrawView extends TextFileView {
             ),
           ]);
         }
+
+        if(this.getViewSelectedElements().filter(el=>el.type==="embeddable").length === 1) {
+          const embeddableData = this.getEmbeddableLeafElementById(
+            this.getViewSelectedElements().filter(el=>el.type==="embeddable")[0].id
+          );
+          const child = embeddableData?.node?.child;
+          if(child && (child.file === this.file)) {
+            contextMenuActions.push([
+              renderContextMenuAction(
+                t("CONVERT_CARD_TO_FILE"),
+                () => {
+                  this.moveBackOfTheNoteCardToFile();
+                },
+                onClose
+              ),
+            ]);
+          }
+        }
+
         contextMenuActions.push([
           renderContextMenuAction(
             t("INSERT_CARD"),
@@ -5527,6 +5607,7 @@ export default class ExcalidrawView extends TextFileView {
 
   public getEmbeddableLeafElementById(id: string): {leaf: WorkspaceLeaf; node?: ObsidianCanvasNode; editNode?: Function} | null {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getEmbeddableLeafElementById, "ExcalidrawView.getEmbeddableLeafElementById", id);
+    if(!id) return null;
     const ref = this.embeddableLeafRefs.get(id);
     if(!ref) {
       return null;

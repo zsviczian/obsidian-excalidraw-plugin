@@ -17,6 +17,26 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.2.4":`
+<div style="text-align: center;">
+  <a data-tooltip-position="top" aria-label="https://youtube.com/shorts/zF1p2yfk4f4" rel="noopener" class="external-link" href="https://youtube.com/shorts/zF1p2yfk4f4" target="_blank">
+    <img src="https://private-user-images.githubusercontent.com/14358394/335857018-c4f5c4c7-9b8f-427f-aa6f-8c1b189610af.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MTczMjQxNDksIm5iZiI6MTcxNzMyMzg0OSwicGF0aCI6Ii8xNDM1ODM5NC8zMzU4NTcwMTgtYzRmNWM0YzctOWI4Zi00MjdmLWFhNmYtOGMxYjE4OTYxMGFmLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA2MDIlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwNjAyVDEwMjQwOVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTdhZGUwNDRkZmM2NmJjNTNiYjUwNjMxMmU2MGEyZTQwZGQwNmUyZmI5ZDFhNzMwMzg2OThjMjhmZmJkNzNiZDkmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.wZfkXmBRcXwz0pN6q0EEvmwtxVAB9ymPk9a9upmGXYE" referrerpolicy="no-referrer" style="width: 150px; margin: 0 auto;">
+  </a>
+</div>
+
+## New from Excalidraw.com
+-  You can now set the text width even during creation. Simply drag with the text tool. Note, there's a minimum distance before the text enters the wrapped mode so there aren't false positives. [See example here](https://x.com/excalidraw/status/1795468201335075000)
+
+## New
+- Updated zh-cn translation. Thank you @dmscode 
+- New context menu and command palette action: "Move back-of-note card to File". This is only active when an eligible embeddable element is selected.
+
+## Fixed
+- Setting different autosaveIntervals on Desktop and Mobile will no longer trigger unnecessary commits to settings each time you open Excalidraw on a different device. Thanks @jmhammond for the contribution! [#1805](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/1805), [#1652](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1652), [#888](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/888)
+
+## Fixed in ExcalidrawAutomate
+- ${String.fromCharCode(96)}getCM(color)${String.fromCharCode(96)} was missing from ${String.fromCharCode(96)}ea.help()${String.fromCharCode(96)}. It is now added. getCM returns a ColorMaster object. ColorMaster is a powerful library should you want to create scripts to manipulate colors. Check out my [Scripting Colors](https://youtu.be/7gJDwNgQ6NU) video should you want to learn more. [#1806](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1806)
+`,
 "2.2.3":`
 ## Fixed
 -  Undo history was not properly initialized [#1791](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1785)
