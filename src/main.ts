@@ -2367,7 +2367,7 @@ export default class ExcalidrawPlugin extends Plugin {
         }));
     }
     this.registerEvent(
-      app.workspace.on("editor-menu", (menu, editor, view) => {
+      this.app.workspace.on("editor-menu", (menu, editor, view) => {
         if(!view || !(view instanceof MarkdownView)) return;
         const file = view.file;
         const leaf = view.leaf;
@@ -2390,7 +2390,7 @@ export default class ExcalidrawPlugin extends Plugin {
     );
 
     this.registerEvent(      
-      app.workspace.on("file-menu", (menu, file, source, leaf) => {
+      this.app.workspace.on("file-menu", (menu, file, source, leaf) => {
         (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.registerMonkeyPatches, `ExcalidrawPlugin.MonkeyPatch > file-menu`, file, source, leaf);
         if (!leaf) return;
         const view = leaf.view;
@@ -2556,7 +2556,7 @@ export default class ExcalidrawPlugin extends Plugin {
           }
         }
       };
-      self.registerEvent(self.app.workspace.on('editor-paste', onPasteHandler));
+      self.registerEvent(self.app.workspace.on("editor-paste", onPasteHandler));
 
       //watch filename change to rename .svg, .png; to sync to .md; to update links
       const renameEventHandler = async (
@@ -2588,7 +2588,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
       const modifyEventHandler = async (file: TFile) => {
         (process.env.NODE_ENV === 'development') && DEBUGGING && debug(modifyEventHandler,`ExcalidrawPlugin.modifyEventHandler`, file);
-        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+        const leaves = self.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
         leaves.forEach(async (leaf: WorkspaceLeaf) => {
           const excalidrawView = leaf.view as ExcalidrawView;
           if (
@@ -2613,7 +2613,7 @@ export default class ExcalidrawPlugin extends Plugin {
             if(file.extension==="md") {
               if(excalidrawView.semaphores.embeddableIsEditingSelf) return;
               const inData = new ExcalidrawData(self);
-              const data = await this.app.vault.read(file);
+              const data = await self.app.vault.read(file);
               await inData.loadData(data,file,getTextMode(data));
               excalidrawView.synchronizeWithData(inData);
               if(excalidrawView.semaphores.dirty) {
@@ -2639,14 +2639,14 @@ export default class ExcalidrawPlugin extends Plugin {
           return;
         }
 
-        const isExcalidarwFile = this.excalidrawFiles.has(file);
-        this.updateFileCache(file, undefined, true);
+        const isExcalidarwFile = self.excalidrawFiles.has(file);
+        self.updateFileCache(file, undefined, true);
         if (!isExcalidarwFile) {
           return;
         }
 
         //close excalidraw view where this file is open
-        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+        const leaves = self.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
         for (let i = 0; i < leaves.length; i++) {
           if ((leaves[i].view as ExcalidrawView).file.path == file.path) {
             await leaves[i].setViewState({
@@ -2785,7 +2785,7 @@ export default class ExcalidrawPlugin extends Plugin {
           const handler_ctrlK = scope.register(["Mod"], "k", () => true);
           scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
           const handler_ctrlF = scope.register(["Mod"], "f", () => {
-            const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+            const view = self.app.workspace.getActiveViewOfType(ExcalidrawView);
             if (view) {
               search(view);
               return true;
@@ -2812,9 +2812,9 @@ export default class ExcalidrawPlugin extends Plugin {
           }
         }
       };
-      this.activeLeafChangeEventHandler = activeLeafChangeEventHandler;
+      self.activeLeafChangeEventHandler = activeLeafChangeEventHandler;
       self.registerEvent(
-        this.app.workspace.on(
+        self.app.workspace.on(
           "active-leaf-change",
           activeLeafChangeEventHandler,
         ),
@@ -2822,7 +2822,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
       self.addFileSaveTriggerEventHandlers();
 
-      const metaCache: MetadataCache = this.app.metadataCache;
+      const metaCache: MetadataCache = self.app.metadataCache;
       //@ts-ignore
       metaCache.getCachedFiles().forEach((filename: string) => {
         const fm = metaCache.getCache(filename)?.frontmatter;
@@ -2831,14 +2831,14 @@ export default class ExcalidrawPlugin extends Plugin {
           filename.match(/\.excalidraw$/)
         ) {
           self.updateFileCache(
-            this.app.vault.getAbstractFileByPath(filename) as TFile,
+            self.app.vault.getAbstractFileByPath(filename) as TFile,
             fm,
           );
         }
       });
-      this.registerEvent(
+      self.registerEvent(
         metaCache.on("changed", (file, data, cache) =>
-          this.updateFileCache(file, cache?.frontmatter),
+          self.updateFileCache(file, cache?.frontmatter),
         ),
       );
     });
