@@ -17,6 +17,14 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.2.5": `
+## Fixed
+- Cursor visibility in dark mode [#1812](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1812)
+- SVG to Excalidraw now...
+  - converts elements inside the ${String.fromCharCode(96)}<switch>${String.fromCharCode(96)} tag, improving compatibility with SVGs from [The Noun Project](https://thenounproject.com/)
+  - sets visibility for all elements, preventing invisible converted images.
+- Cached images sometimes lost their font face and natural size when nested in an Excalidraw scene. This issue occurred when drawings were embedded in a markdown note (native SVG) and nested in a drawing simultaneously. Depending on the update and render sequence, these drawings sometimes appeared incorrectly in the Excalidraw scene.
+`,
 "2.2.4":`
 <div style="text-align: center;">
   <a data-tooltip-position="top" aria-label="https://youtube.com/shorts/zF1p2yfk4f4" rel="noopener" class="external-link" href="https://youtube.com/shorts/zF1p2yfk4f4" target="_blank">

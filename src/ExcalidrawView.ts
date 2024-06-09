@@ -4655,7 +4655,10 @@ export default class ExcalidrawView extends TextFileView {
           ]);  
         }
 
-        if(img && img.embeddedFile && img.embeddedFile.mimeType === "image/svg+xml") {
+        if(
+          img && img.embeddedFile && img.embeddedFile.mimeType === "image/svg+xml" &&
+          (!img.embeddedFile.file || (img.embeddedFile.file && !this.plugin.isExcalidrawFile(img.embeddedFile.file)))
+         ) {
           contextMenuActions.push([
             renderContextMenuAction(
               t("IMPORT_SVG_CONTEXTMENU"),

@@ -250,11 +250,12 @@ const _getSVGNative = async ({filenameParts,theme,cacheReady,containerElement,fi
     return null;
   }
 
+  //cache SVG should have the width and height parameters and not the embedded font
+  cacheReady && imageCache.addImageToCache(cacheKey,"", svg);
   svg = embedFontsInSVG(svg, plugin, true);
   svg.removeAttribute("width");
   svg.removeAttribute("height");
   containerElement.append(svg);
-  cacheReady && imageCache.addImageToCache(cacheKey,"", svg);
   return containerElement;
 }
 

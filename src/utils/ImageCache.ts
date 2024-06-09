@@ -321,6 +321,7 @@ class ImageCache {
     return this.getBackupData(filepath);
   }
 
+  //cache SVG should have the width and height parameters and not the embedded font
   public addImageToCache(key_: ImageKey, obsidianURL: string, image: Blob|SVGSVGElement): void {
     if (!this.isReady()) {
       return; // Database not initialized yet

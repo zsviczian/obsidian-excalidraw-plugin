@@ -38,6 +38,7 @@ import {
   LinkParts,
   svgToBase64,
   isMaskFile,
+  embedFontsInSVG,
 } from "./utils/Utils";
 import { ValueOf } from "./types";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
@@ -390,7 +391,7 @@ export class EmbeddedFilesLoader {
     : replaceSVGColors(
         await createSVG(
           file?.path,
-          true,
+          false, //false
           exportSettings,
           this,
           forceTheme,
@@ -424,9 +425,20 @@ export class EmbeddedFilesLoader {
       hasSVGwithBitmap = true;
     }
     if(shouldUseCache && !Boolean(maybeSVG)) {
+      //cache SVG should have the width and height parameters and not the embedded font
+      //see svgWithFont below
       imageCache.addImageToCache(cacheKey,"", svg);
     }
-    const dURL = svgToBase64(svg.outerHTML) as DataURL;
+    const svgWithFont = embedFontsInSVG(svg, this.plugin);
+    if(!svgWithFont.hasAttribute("width") && svgWithFont.hasAttribute("viewBox")){
+      //2024.06.09
+      //this addresses backward compatibility issues where the cache does not have the width and height attributes
+      //this should be removed in the future
+      const vb = svgWithFont.getAttr("viewBox").split(" ");
+      Boolean(vb[2]) && svgWithFont.setAttribute("width", vb[2]);
+      Boolean(vb[3]) && svgWithFont.setAttribute("height", vb[3]);
+    }
+    const dURL = svgToBase64(svgWithFont.outerHTML) as DataURL;
     return {dataURL: dURL as DataURL, hasSVGwithBitmap};
   };
 

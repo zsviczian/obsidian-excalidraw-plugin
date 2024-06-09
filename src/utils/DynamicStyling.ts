@@ -115,7 +115,7 @@ export const setDynamicStyle = (
     [`--h3-color`]: str(text),
     [`--h4-color`]: str(text),
     [`color`]: str(text),
-    ['--excalidraw-caret-color']: str(text),
+    ['--excalidraw-caret-color']: str(isLightTheme ? text : cmBG()),
     [`--select-highlight-color`]: str(gray1()),
     [`--color-gray-80`]: str(isDark?text.darkerBy(40):text.lighterBy(40)), //frame
   };
