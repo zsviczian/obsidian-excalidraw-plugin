@@ -72,6 +72,8 @@ export default {
   INSERT_PDF: "插入 PDF 文档（以图像形式嵌入）到当前绘图中",
   UNIVERSAL_ADD_FILE: "插入任意文件（以交互形式嵌入，或者以图像形式嵌入）到当前绘图中",
   INSERT_CARD: "插入“背景笔记”卡片",
+  CONVERT_CARD_TO_FILE: "将“背景笔记”卡片保存到文件",
+  ERROR_TRY_AGAIN: "请重试。",
   PASTE_CODEBLOCK: "粘贴代码块",
   INSERT_LATEX:
     `插入 LaTeX 公式到当前绘图`,
