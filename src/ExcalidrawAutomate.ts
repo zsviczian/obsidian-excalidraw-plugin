@@ -1188,14 +1188,14 @@ export class ExcalidrawAutomate {
     if (element.type !== "text") {
       return;
     }
-    const { w, h, baseline } = _measureText(
+    const { w, h } = _measureText(
       element.text,
       element.fontSize,
       element.fontFamily,
       getDefaultLineHeight(element.fontFamily)
     );
-    // @ts-ignore
-    element.width = w; element.height = h; element.baseline = baseline;
+    element.width = w;
+    element.height = h;
   }
 
 
@@ -1233,7 +1233,7 @@ export class ExcalidrawAutomate {
       : (formatting?.autoResize ?? true)
     text = (formatting?.wrapAt && autoresize) ? this.wrapText(text, formatting.wrapAt) : text;
 
-    const { w, h, baseline } = _measureText(
+    const { w, h } = _measureText(
       text,
       this.style.fontSize,
       this.style.fontFamily,
@@ -2778,7 +2778,7 @@ export function _measureText(
     `${fontSize.toString()}px ${getFontFamily(fontFamily)}` as any,
     lineHeight
   );
-  return { w: metrics.width, h: metrics.height, baseline: metrics.baseline };
+  return { w: metrics.width, h: metrics.height };
 }
 
 async function getTemplate(

@@ -123,6 +123,7 @@ export interface ExcalidrawSettings {
   experimentalEnableFourthFont: boolean;
   experimantalFourthFont: string;
   addDummyTextElement: boolean;
+  zoteroCompatibility: boolean;
   fieldSuggester: boolean;
   //loadCount: number; //version 1.2 migration counter
   drawingOpenCount: number;
@@ -283,6 +284,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   experimentalEnableFourthFont: false,
   experimantalFourthFont: "Virgil",
   addDummyTextElement: false,
+  zoteroCompatibility: false,
   fieldSuggester: true,
   compatibilityMode: false,
   //loadCount: 0,
@@ -2514,6 +2516,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.addDummyTextElement)
         .onChange((value) => {
           this.plugin.settings.addDummyTextElement = value;
+          this.applySettingsUpdate();
+        }),
+    );
+
+    new Setting(detailsEl)
+    .setName(t("PRESERVE_TEXT_AFTER_DRAWING_NAME"))
+    .setDesc(fragWithHTML(t("PRESERVE_TEXT_AFTER_DRAWING_DESC")))
+    .addToggle((toggle) =>
+      toggle
+        .setValue(this.plugin.settings.zoteroCompatibility)
+        .onChange((value) => {
+          this.plugin.settings.zoteroCompatibility = value;
           this.applySettingsUpdate();
         }),
     );

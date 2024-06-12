@@ -905,7 +905,7 @@ export default class ExcalidrawPlugin extends Plugin {
             new Notice("The compressed string is corrupted. Unable to decompress data.");
             return;
           }
-          await this.app.vault.modify(activeFile,header + decompressed + "\n```\n%%");
+          await this.app.vault.modify(activeFile,header + decompressed + "\n```\n%%" + compressed[1]);
         })();
 
       }

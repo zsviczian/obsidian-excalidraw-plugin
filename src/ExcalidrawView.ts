@@ -142,6 +142,7 @@ import { SelectCard } from "./dialogs/SelectCard";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
+const RE_TAIL = /^## Drawing\n.*```\n%%$(.*)/gms;
 
 declare const PLUGIN_VERSION:string;
 
@@ -230,15 +231,7 @@ export const addFiles = async (
 };
 
 const warningUnknowSeriousError = () => {
-  new Notice(
-    "WARNING: Excalidraw ran into an unknown problem!\n\n" +
-      "There is a risk that your most recent changes cannot be saved.\n\n" +
-      "To be on the safe side...\n" +
-      "1) Please select your drawing using CTRL/CMD+A and make a copy with CTRL/CMD+C.\n" +
-      "2) Then create an empty drawing in a new pane by CTRL/CMD+clicking the Excalidraw ribbon button,\n" +
-      "3) and paste your work to the new document with CTRL/CMD+V.",
-    60000,
-  );
+  new Notice(t("WARNING_SERIOUS_ERROR"),60000);
 };
 
 export default class ExcalidrawView extends TextFileView {
@@ -405,9 +398,9 @@ export default class ExcalidrawView extends TextFileView {
     if (DEVICE.isMobile) {
       const prompt = new Prompt(
         this.app,
-        "Please provide filename",
+        t("EXPORT_FILENAME_PROMPT"),
         this.file.basename,
-        "filename, leave blank to cancel action",
+        t("EXPORT_FILENAME_PROMPT_PLACEHOLDER"),
       );
       prompt.openAndGetValue(async (filename: string) => {
         if (!filename) {
@@ -827,6 +820,7 @@ export default class ExcalidrawView extends TextFileView {
       }
 
       const header = getExcalidrawMarkdownHeaderSection(this.data, keys);
+      const tail = this.plugin.settings.zoteroCompatibility ? (RE_TAIL.exec(this.data)?.[1] ?? "") : "";
 
       if (!this.excalidrawData.disableCompression) {
         this.excalidrawData.disableCompression = this.plugin.settings.decompressForMDView &&
@@ -834,7 +828,7 @@ export default class ExcalidrawView extends TextFileView {
       }
       const result = header + this.excalidrawData.generateMD(
         this.excalidrawAPI.getSceneElementsIncludingDeleted().filter((el:ExcalidrawElement)=>el.isDeleted) //will be concatenated to scene.elements
-      );
+      ) + tail;
       this.excalidrawData.disableCompression = false;
       return result;
     }
@@ -862,14 +856,14 @@ export default class ExcalidrawView extends TextFileView {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleDisableBinding, "ExcalidrawView.toggleDisableBinding");
     const newState = !this.excalidrawAPI.getAppState().invertBindingBehaviour;
     this.updateScene({appState: {invertBindingBehaviour:newState}});
-    new Notice(newState ? "Inverted Mode: Default arrow binding is now disabled. Use CTRL/CMD to temporarily enable binding when needed." : "Normal Mode: Arrow binding is now enabled. Use CTRL/CMD to temporarily disable binding when needed.");
+    new Notice(newState ? t("ARROW_BINDING_INVERSE_MODE") : t("ARROW_BINDING_NORMAL_MODE"));
   }
 
   toggleFrameRendering() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleFrameRendering, "ExcalidrawView.toggleFrameRendering");
     const frameRenderingSt = (this.excalidrawAPI as ExcalidrawImperativeAPI).getAppState().frameRendering;
     this.updateScene({appState: {frameRendering: {...frameRenderingSt, enabled: !frameRenderingSt.enabled}}});
-    new Notice(frameRenderingSt.enabled ? "Frame Rendering: Enabled" : "Frame Rendering: Disabled");
+    new Notice(frameRenderingSt.enabled ? t("FRAME_CLIPPING_ENABLED") : t("FRAME_CLIPPING_DISABLED"));
   }
 
   toggleFrameClipping() {
@@ -1111,13 +1105,13 @@ export default class ExcalidrawView extends TextFileView {
               this,
               this.plugin,
               this.app,
-              "Customize the link",
+              t("MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT_TITLE"),
               undefined,
               ef.linkParts.original,
               [{caption: "✅", action: handler}],
               1,
               false,
-              (container) => container.createEl("p",{text: fragWithHTML("Do not add [[square brackets]] around the filename!<br>Follow this format when editing your link:<br><mark>filename#^blockref|WIDTHxMAXHEIGHT</mark>")}),
+              (container) => container.createEl("p",{text: fragWithHTML(t("MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT"))}),
               false
             ).then(handler, () => {});
             return;
@@ -1135,7 +1129,7 @@ export default class ExcalidrawView extends TextFileView {
               const filepathParts = splitFolderAndFilename(path);
               if(secondOrderLinksSet.has(path)) return "";
               secondOrderLinksSet.add(path);
-              return `[[${path}|Second Order Link: ${filepathParts.basename}]]`;
+              return `[[${path}|${t("LINKLIST_SECOND_ORDER_LINK")}: ${filepathParts.basename}]]`;
             });
           secondOrderLinks += linkPaths.join(" ");
         }
@@ -1281,7 +1275,7 @@ export default class ExcalidrawView extends TextFileView {
   public async forceSave(silent:boolean=false) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.forceSave, "ExcalidrawView.forceSave");
     if (this.semaphores.autosaving || this.semaphores.saving) {
-      if(!silent) new Notice("Force Save aborted because saving is in progress)")
+      if(!silent) new Notice(t("FORCE_SAVE_ABORTED"))
       return;
     }
     if(this.preventReloadResetTimer) {
@@ -4811,7 +4805,7 @@ export default class ExcalidrawView extends TextFileView {
         MainMenu.Item,
         {              
           icon: ICONS.trayMode,
-          "aria-label": "Tray-mode offers an alternative, more spacious canvas",
+          "aria-label": t("ARIA_LABEL_TRAY_MODE"),
           onSelect: ()=>{
             this.toggleTrayMode();
           }
@@ -5558,6 +5552,10 @@ export default class ExcalidrawView extends TextFileView {
     const shouldRestoreElements = scene.elements && shouldRestore;
     if (shouldRestoreElements) {
       scene.elements = restore(scene, null, null).elements;
+    }
+    if(Boolean(scene.appState)) {
+      //@ts-ignore
+      scene.forceFlushSync = true;
     }
     try {
       api.updateScene(scene);

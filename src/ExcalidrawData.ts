@@ -18,7 +18,6 @@ import {
   refreshTextDimensions,
   getContainerElement,
 } from "./constants/constants";
-import { _measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
 import { TextMode } from "./ExcalidrawView";
 import {
@@ -417,7 +416,6 @@ export class ExcalidrawData {
     string,
     { raw: string; parsed: string}
   > = null;
-  public elementLinks: Map<string, string> = null;
   public scene: any = null;
   public deletedElements: ExcalidrawElement[] = [];
   public file: TFile = null;
@@ -429,6 +427,7 @@ export class ExcalidrawData {
   public autoexportPreference: AutoexportPreference = AutoexportPreference.inherit;
   private textMode: TextMode = TextMode.raw;
   public loaded: boolean = false;
+  public elementLinks: Map<string, string> = null;
   public files: Map<FileId, EmbeddedFile> = null; //fileId, path
   private equations: Map<FileId, { latex: string; isLoaded: boolean }> = null; //fileId, path
   private mermaids: Map<FileId, { mermaid: string; isLoaded: boolean }> = null; //fileId, path

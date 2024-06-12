@@ -93,6 +93,23 @@ export default {
   TEMPORARY_ENABLE_AUTOSAVE: "Enable autosave",
 
   //ExcalidrawView.ts
+  FORCE_SAVE_ABORTED: "Force Save aborted because saving is in progress",
+  LINKLIST_SECOND_ORDER_LINK: "Second Order Link",
+  MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT_TITLE: "Customize the link",
+  MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT: "Do not add [[square brackets]] around the filename!<br>Follow this format when editing your link:<br><mark>filename#^blockref|WIDTHxMAXHEIGHT</mark>",
+  FRAME_CLIPPING_ENABLED: "Frame Rendering: Enabled",
+  FRAME_CLIPPING_DISABLED: "Frame Rendering: Disabled",
+  ARROW_BINDING_INVERSE_MODE: "Inverted Mode: Default arrow binding is now disabled. Use CTRL/CMD to temporarily enable binding when needed.",
+  ARROW_BINDING_NORMAL_MODE: "Normal Mode: Arrow binding is now enabled. Use CTRL/CMD to temporarily disable binding when needed.",
+  EXPORT_FILENAME_PROMPT: "Please provide filename",
+  EXPORT_FILENAME_PROMPT_PLACEHOLDER: "filename, leave blank to cancel action",
+  WARNING_SERIOUS_ERROR: "WARNING: Excalidraw ran into an unknown problem!\n\n" +
+    "There is a risk that your most recent changes cannot be saved.\n\n" +
+    "To be on the safe side...\n" +
+    "1) Please select your drawing using CTRL/CMD+A and make a copy with CTRL/CMD+C.\n" +
+    "2) Then create an empty drawing in a new pane by CTRL/CMD+clicking the Excalidraw ribbon button,\n" +
+    "3) and paste your work to the new document with CTRL/CMD+V.",
+  ARIA_LABEL_TRAY_MODE: "Tray-mode offers an alternative, more spacious canvas",
   MASK_FILE_NOTICE: "This is a mask file. It is used to crop images and mask out parts of the image. Press and hold notice to open the help video.",
   INSTALL_SCRIPT_BUTTON: "Install or update Excalidraw Scripts",
   OPEN_AS_MD: "Open as Markdown",
@@ -586,13 +603,15 @@ FILENAME_HEAD: "Filename",
     "Double files will be exported both if auto-export SVG or PNG (or both) are enabled, as well as when clicking export on a single image.",
   COMPATIBILITY_HEAD: "Compatibility features",
   COMPATIBILITY_DESC: "You should only enable these features if you have a strong reason for wanting to work with excalidraw.com files instead of markdown files. Many of the plugin features are not supported on legacy files. Typical usecase would be if you use set your vault up on top of a Visual Studio Code project folder and you have .excalidraw drawings you want to access from Visual Studio Code as well. Another usecase might be using Excalidraw in Logseq and Obsidian in parallel.",
-  DUMMY_TEXT_ELEMENT_LINT_SUPPORT_NAME: "Insert dummy first text element to support linting",
+  DUMMY_TEXT_ELEMENT_LINT_SUPPORT_NAME: "Linter compatibility",
   DUMMY_TEXT_ELEMENT_LINT_SUPPORT_DESC: "Excalidraw is sensitive to the file structure below <code># Excalidraw Data</code>. Automatic linting of documents can create errors in Excalidraw Data. " +
     "While I've made some effort to make the data loading resilient to " +
     "lint changes, this solution is not foolproof.<br><mark>The best is to avoid liniting or otherwise automatically changing Excalidraw documents using different plugins.</mark><br>" +
     "Use this setting if for good reasons you have decided to ignore my recommendation and configured linting of Excalidraw files.<br> " +
     "The <code>## Text Elements</code> section is sensitive to empty lines. A common linting approach is to add an empty line after section headings. In case of Excalidraw this will break/change the first text element in your drawing. " +
     "To overcome this, you can enable this setting. When enabled, Excalidraw will add a dummy element to the beginning of <code>## Text Elements</code> that the linter can safely modify." ,
+  PRESERVE_TEXT_AFTER_DRAWING_NAME: "Zotero compatibility",
+  PRESERVE_TEXT_AFTER_DRAWING_DESC: "Preserve text after the ## Drawing section of the markdown file. This may have a very slight performance impact when saving very large drawings.",
   DEBUGMODE_NAME: "Enable debug messages",
   DEBUGMODE_DESC: "I recommend restarting Obsidian after enabling/disabling this setting. This enable debug messages in the console. This is useful for troubleshooting issues. " +
     "If you are experiencing problems with the plugin, please enable this setting, reproduce the issue, and include the console log in the issue you raise on <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/issues'>GitHub</a>",

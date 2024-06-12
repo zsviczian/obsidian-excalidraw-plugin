@@ -114,7 +114,7 @@ declare namespace ExcalidrawLib {
     text: string,
     font: FontString,
     lineHeight: number,
-  ): { width: number; height: number; baseline: number };
+  ): { width: number; height: number; };
 
   function getDefaultLineHeight(fontFamily: FontFamilyValues): number;
 

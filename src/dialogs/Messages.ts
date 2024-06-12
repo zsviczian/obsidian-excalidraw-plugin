@@ -17,6 +17,17 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.2.6": `
+## Fixed
+- CTRL+F search for text elements in drawing, the result did not get selected. This was a regression in 2.2.5 [#1822](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1822)
+
+## New
+- Zotero compatibility support for back-of-the-side markdown notes. This needs to be enabled in plugin settings under Compatibility [#1820](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1820)
+
+## New from Excalidraw.com
+- ${String.fromCharCode(96)}Stats & Element Properties${String.fromCharCode(96)}, accessible via the context menu, is now editable, e.g. you can type in the exact position and size of objects, change font size and set element angle.
+- Pasting mermaid diagrams from chatGPT will embed a diagram instead of the text
+`,
 "2.2.5": `
 ## Fixed
 - Cursor visibility in dark mode [#1812](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1812)
