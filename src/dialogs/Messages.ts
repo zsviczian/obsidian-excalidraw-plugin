@@ -17,6 +17,14 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.2.7": `
+## New
+- In Miscellaneous Settings: added **Load Excalidraw Properties into Obsidian Suggester**. This setting toggles the automatic loading of Excalidraw properties at startup. Enabled by default for easy use of front matter properties. Disabling it prevents auto-loading, but you'll need to manually remove unwanted properties using Obsidian properties view. A plugin restart is required after enabling auto-loading.
+
+## Fixed
+- Zotero support [1835](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1835)
+- Lines binding to elements and selections [#8146](https://github.com/excalidraw/excalidraw/issues/8146), and plugin getting stuck with dragging an element [#8131](https://github.com/excalidraw/excalidraw/issues/8131)`
+,
 "2.2.6": `
 ## Fixed
 - CTRL+F search for text elements in drawing, the result did not get selected. This was a regression in 2.2.5 [#1822](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1822)

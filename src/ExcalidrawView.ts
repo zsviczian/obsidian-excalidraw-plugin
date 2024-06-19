@@ -142,7 +142,7 @@ import { SelectCard } from "./dialogs/SelectCard";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
-const RE_TAIL = /^## Drawing\n.*```\n%%$(.*)/gms;
+const RE_TAIL = /^## Drawing\n.*```\n%%$(.*)/ms;
 
 declare const PLUGIN_VERSION:string;
 

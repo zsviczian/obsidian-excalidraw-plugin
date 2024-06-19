@@ -688,6 +688,11 @@ FILENAME_HEAD: "Filename",
     "fades out. The text is still there, but the visual clutter is reduced. Note, you can place the %% in the line right above # Text Elements, " +
     "in this case the entire drawing markdown will fade out including # Text Elements. The side effect is you won't be able to block reference text in other markdown notes, that is after the %% comment section. This is seldom an issue. " +
     "Should you want to edit the Excalidraw markdown script, simply switch to markdown view mode and temporarily remove the %% comment.",
+  EXCALIDRAW_PROPERTIES_NAME: "Load Excalidraw Properties into Obsidian Suggester",
+  EXCALIDRAW_PROPERTIES_DESC: "Toggle this setting to load Excalidraw document properties into Obsidian's property suggester at plugin startup. "+
+   "Enabling this feature simplifies the use of Excalidraw front matter properties, allowing you to leverage many powerful settings. If you prefer not to load these properties automatically, " +
+   "you can disable this feature, but you will need to manually remove any unwanted properties from the suggester. " +
+   "Note that turning on this setting requires restarting the plugin as properties are loaded at startup.",  
   CUSTOM_FONT_HEAD: "Fourth font",
   ENABLE_FOURTH_FONT_NAME: "Enable fourth font option",
   ENABLE_FOURTH_FONT_DESC:
