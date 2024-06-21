@@ -120,6 +120,7 @@ export interface ExcalidrawSettings {
   experimentalFileTag: string;
   experimentalLivePreview: boolean;
   fadeOutExcalidrawMarkup: boolean;
+  loadPropertySuggestions: boolean;
   experimentalEnableFourthFont: boolean;
   experimantalFourthFont: string;
   addDummyTextElement: boolean;
@@ -281,6 +282,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   experimentalFileTag: "✏️",
   experimentalLivePreview: true,
   fadeOutExcalidrawMarkup: false,
+  loadPropertySuggestions: true,
   experimentalEnableFourthFont: false,
   experimantalFourthFont: "Virgil",
   addDummyTextElement: false,
@@ -2375,6 +2377,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .onChange(async (value) => {
             this.plugin.settings.fadeOutExcalidrawMarkup = value;
             this.plugin.editorHandler.updateCMExtensionState(EDITOR_FADEOUT, value)
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("EXCALIDRAW_PROPERTIES_NAME"))
+      .setDesc(fragWithHTML(t("EXCALIDRAW_PROPERTIES_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.loadPropertySuggestions)
+          .onChange(async (value) => {
+            this.plugin.settings.loadPropertySuggestions = value;
             this.applySettingsUpdate();
           }),
       );

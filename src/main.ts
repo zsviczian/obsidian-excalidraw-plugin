@@ -340,6 +340,7 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   private setPropertyTypes() {
+    if(!this.settings.loadPropertySuggestions) return;
     const app = this.app;
     const self = this;
     this.app.workspace.onLayoutReady(() => {
