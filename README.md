@@ -243,11 +243,11 @@ Drag the desired file from the Obsidian file explorer and hold down <kbd>SHIFT</
 - In plugin settings, you can add a custom fourth font. For more details, see this [video](https://youtu.be/eKFmrSQhFA4)
 - The plugin includes OCR support using Taskbone OCR. For more details, see this [video](https://youtu.be/7gu4ETx7zro)
 - You can convert SVG files into Excalidraw drawings (with some limitation). For more details, see this [video](https://youtu.be/vlC1-iBvIfo)
-- You can define custom freedraw pens. See documentation [here].(https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Alternative%20Pens.md), [video](https://youtu.be/uZz5MgzWXiM)
+- You can define custom pens and higlighters and pin them to the sidebar. For more details, see this [video](https://youtu.be/OjNhjaH2KjI). Using ExcalidrawAutomate, you can add support for [auto-toggling](<ea-scripts/Auto Draw for Pen.md>) pen & support for [hardware eraser buttons](<ea-scripts/Hardware Eraser Support.md>).
 
 ### Script Engine
 
-- Since 1.5.0, you can easily execute ExcalidrawAutomate macros and assign command palette shortcuts to them, using the ScriptEngine. You will find an intro video and a growing library of ready to install scripts [here](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/ea-scripts).
+- Since 1.5.0, you can easily execute ExcalidrawAutomate macros and assign command palette shortcuts to them, using the ScriptEngine. You will find an intro video and a growing library of ready to install scripts [here](ea-scripts/README.md).
 - You can organize scripts into groups on the Obsidian Tools Panel in Excalidraw by moving scripts and accompanying SVG icon files to folders. See the demo [video](https://youtu.be/wTtaXmRJ7wg?t=16).
 
 ### Other
