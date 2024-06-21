@@ -688,6 +688,11 @@ FILENAME_HEAD: "文件名",
     "之后的部分会淡化。文本仍然存在，但视觉杂乱感会减少。请注意，您可以将 %% 放在 # Text Elements 行的上一行，" +
     "这样，整个 Excalidraw Markdown 都会淡化，包括 # Text Elements。 副作用是您将无法在其他 Markdown 笔记中引用文本块，即 %% 注释部分之后的内容。这应该不是大问题。" +
     "如果您想编辑 Excalidraw Markdown 脚本，只需切换到 Markdown 视图模式并暂时删除 %% 注释。",
+  EXCALIDRAW_PROPERTIES_NAME: "将 Excalidraw 属性加载到 Obsidian 的自动提示中",
+  EXCALIDRAW_PROPERTIES_DESC: "切换此设置以在插件启动时将 Excalidraw 文档属性加载到 Obsidian 的属性自动提示中。"+
+   "启用此功能简化了 Excalidraw 前置属性的使用，使您能够利用许多强大的设置。如果您不希望自动加载这些属性，" +
+   "您可以禁用此功能，但您将需要手动从自动提示中移除任何不需要的属性。" +
+   "请注意，启用此设置需要重启插件，因为属性是在启动时加载的。",
   CUSTOM_FONT_HEAD: "自定义字体",
   ENABLE_FOURTH_FONT_NAME: "为文本元素启用本地字体",
   ENABLE_FOURTH_FONT_DESC:
