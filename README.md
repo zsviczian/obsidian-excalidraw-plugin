@@ -243,7 +243,7 @@ Drag the desired file from the Obsidian file explorer and hold down <kbd>SHIFT</
 - In plugin settings, you can add a custom fourth font. For more details, see this [video](https://youtu.be/eKFmrSQhFA4)
 - The plugin includes OCR support using Taskbone OCR. For more details, see this [video](https://youtu.be/7gu4ETx7zro)
 - You can convert SVG files into Excalidraw drawings (with some limitation). For more details, see this [video](https://youtu.be/vlC1-iBvIfo)
-- You can define custom pens and higlighters and pin them to the sidebar. For more details, see this [video](https://youtu.be/OjNhjaH2KjI). Using ExcalidrawAutomate, you can add support for (auto-toggling)[ea-scripts/Auto Draw for Pen.md) pen & support for [hardware eraser buttons](ea-scripts/Hardware Eraser Support.md).
+- You can define custom pens and higlighters and pin them to the sidebar. For more details, see this [video](https://youtu.be/OjNhjaH2KjI). Using ExcalidrawAutomate, you can add support for [auto-toggling](<ea-scripts/Auto Draw for Pen.md>) pen & support for [hardware eraser buttons](<ea-scripts/Hardware Eraser Support.md>).
 
 ### Script Engine
 
