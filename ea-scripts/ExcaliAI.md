@@ -427,7 +427,7 @@ const run = async (text) => {
   
   const requestObject = isImageEditRequest
   ? {
-      ...imageDataURL ? {image: imageDataURL} : {},
+      ...imageDataURL ? {image: {url: imageDataURL}} : {},
       ...(text && text.trim() !== "") ? {text} : {},
       imageGenerationProperties: {
         size: imageSize, 
@@ -437,7 +437,7 @@ const run = async (text) => {
       },
     }
   : {
-      ...imageDataURL ? {image: imageDataURL} : {},
+      ...imageDataURL ? {image: {url: imageDataURL}} : {},
       ...(text && text.trim() !== "") ? {text} : {},
       systemPrompt: systemPrompt.prompt,
       instruction: outputType.instruction,
