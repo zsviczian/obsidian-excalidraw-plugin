@@ -55,6 +55,7 @@ export class SelectCard extends FuzzySuggestModal<string> {
     (async () => {
       await ea.addElementsToView(true, false, true);
       ea.selectElementsInView([id]);
+      ea.destroy();
     })();
   }
 

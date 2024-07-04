@@ -43,6 +43,19 @@ class ImageCache {
   private app: App;
   public initializationNotice: boolean = false;
   private obsidanURLCache = new Map<string, string>();
+  private purgeInvalidCacheTimer: number = null;
+  private purgeInvalidBackupTimer: number = null;
+
+  public destroy(): void {
+    this.isInitializing = true;
+    if(this.purgeInvalidCacheTimer) clearTimeout(this.purgeInvalidCacheTimer);
+    if(this.purgeInvalidBackupTimer) clearTimeout(this.purgeInvalidBackupTimer);
+    this.db = null;
+    this.plugin = null;
+    this.app = null;
+    this.obsidanURLCache.clear();
+    this.obsidanURLCache = null;
+  }
 
   constructor(dbName: string, cacheStoreName: string, backupStoreName: string) {
     this.dbName = dbName;
@@ -129,8 +142,15 @@ class ImageCache {
         });
       }
 
-      setTimeout(async ()=>this.purgeInvalidCacheFiles(), 60000);
-      setTimeout(async ()=>this.purgeInvalidBackupFiles(), 120000);
+      this.purgeInvalidCacheTimer = window.setTimeout(async ()=>{
+        this.purgeInvalidCacheTimer = null;
+        this.purgeInvalidCacheFiles();
+      }, 60000);
+
+      this.purgeInvalidBackupTimer = window.setTimeout(async ()=>{
+        this.purgeInvalidBackupTimer = null;
+        this.purgeInvalidBackupFiles();
+      }, 120000);
     } finally {
       this.isInitializing = false;
       if(this.initializationNotice) {

@@ -12,6 +12,8 @@ import { ButtonDefinition, GenericInputPrompt, GenericSuggester } from "./dialog
 import { getIMGFilename } from "./utils/FileUtils";
 import { splitFolderAndFilename } from "./utils/FileUtils";
 import { getEA } from "src";
+import { ExcalidrawAutomate } from "./ExcalidrawAutomate";
+import { WeakArray } from "./utils/WeakArray";
 
 export type ScriptIconMap = {
   [key: string]: { name: string; group: string; svgString: string };
@@ -22,6 +24,7 @@ export class ScriptEngine {
   private scriptPath: string;
   //https://stackoverflow.com/questions/60218638/how-to-force-re-render-if-map-value-changes
   public scriptIconMap: ScriptIconMap;
+  eaInstances = new WeakArray<ExcalidrawAutomate>();
 
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
@@ -30,65 +33,83 @@ export class ScriptEngine {
     this.registerEventHandlers();
   }
 
-  registerEventHandlers() {
-    const handleSvgFileChange = (path: string) => {
-      if (!path.endsWith(".svg")) {
-        return;
-      }
-      const scriptFile = app.vault.getAbstractFileByPath(
-        getIMGFilename(path, "md"),
-      );
-      if (scriptFile && scriptFile instanceof TFile) {
-        this.unloadScript(this.getScriptName(scriptFile), scriptFile.path);
-        this.loadScript(scriptFile);
-      }
-    };
+  public destroy() {
+    this.eaInstances.forEach((ea) => ea.destroy());
+    this.eaInstances = null;
+    this.scriptIconMap = null;
+    this.plugin = null;
+    this.scriptPath = null;
+  }
 
-    const deleteEventHandler = async (file: TFile) => {
-      if (!(file instanceof TFile)) {
-        return;
-      }
-      if (!file.path.startsWith(this.scriptPath)) {
-        return;
-      }
-      this.unloadScript(this.getScriptName(file), file.path);
-      handleSvgFileChange(file.path);
-    };
-    this.plugin.registerEvent(
-      app.vault.on("delete", deleteEventHandler),
+  private handleSvgFileChange (path: string) {
+    if (!path.endsWith(".svg")) {
+      return;
+    }
+    const scriptFile = app.vault.getAbstractFileByPath(
+      getIMGFilename(path, "md"),
     );
+    if (scriptFile && scriptFile instanceof TFile) {
+      this.unloadScript(this.getScriptName(scriptFile), scriptFile.path);
+      this.loadScript(scriptFile);
+    }
+  }
 
-    const createEventHandler = async (file: TFile) => {
-      if (!(file instanceof TFile)) {
-        return;
-      }
-      if (!file.path.startsWith(this.scriptPath)) {
-        return;
-      }
+  private async deleteEventHandler (file: TFile) {
+    if (!(file instanceof TFile)) {
+      return;
+    }
+    if (!file.path.startsWith(this.scriptPath)) {
+      return;
+    }
+    this.unloadScript(this.getScriptName(file), file.path);
+    this.handleSvgFileChange(file.path);
+  };
+
+  private async createEventHandler (file: TFile) {
+    if (!(file instanceof TFile)) {
+      return;
+    }
+    if (!file.path.startsWith(this.scriptPath)) {
+      return;
+    }
+    this.loadScript(file);
+    this.handleSvgFileChange(file.path);
+  };
+
+  private async renameEventHandler (file: TAbstractFile, oldPath: string) {
+    if (!(file instanceof TFile)) {
+      return;
+    }
+    const oldFileIsScript = oldPath.startsWith(this.scriptPath);
+    const newFileIsScript = file.path.startsWith(this.scriptPath);
+    if (oldFileIsScript) {
+      this.unloadScript(this.getScriptName(oldPath), oldPath);
+      this.handleSvgFileChange(oldPath);
+    }
+    if (newFileIsScript) {
       this.loadScript(file);
-      handleSvgFileChange(file.path);
-    };
-    this.plugin.registerEvent(
-      app.vault.on("create", createEventHandler),
-    );
+      this.handleSvgFileChange(file.path);
+    }
+  }
 
-    const renameEventHandler = async (file: TAbstractFile, oldPath: string) => {
-      if (!(file instanceof TFile)) {
-        return;
-      }
-      const oldFileIsScript = oldPath.startsWith(this.scriptPath);
-      const newFileIsScript = file.path.startsWith(this.scriptPath);
-      if (oldFileIsScript) {
-        this.unloadScript(this.getScriptName(oldPath), oldPath);
-        handleSvgFileChange(oldPath);
-      }
-      if (newFileIsScript) {
-        this.loadScript(file);
-        handleSvgFileChange(file.path);
-      }
-    };
+  registerEventHandlers() {
     this.plugin.registerEvent(
-      app.vault.on("rename", renameEventHandler),
+      this.plugin.app.vault.on(
+        "delete",
+        (file: TFile)=>this.deleteEventHandler(file)
+      ),
+    );
+    this.plugin.registerEvent(
+      this.plugin.app.vault.on(
+        "create",
+        (file: TFile)=>this.createEventHandler(file)
+      ),
+    );
+    this.plugin.registerEvent(
+      this.plugin.app.vault.on(
+        "rename",
+        (file: TAbstractFile, oldPath: string)=>this.renameEventHandler(file, oldPath)
+      ),
     );
   }
 
@@ -215,6 +236,7 @@ export class ScriptEngine {
     }
     script = script.replace(/^---.*?---\n/gs, "");
     const ea = getEA(view);
+    this.eaInstances.push(ea);
     ea.activeScript = title;
 
     //https://stackoverflow.com/questions/45381204/get-asyncfunction-constructor-in-typescript changed tsconfig to es2017
@@ -253,7 +275,7 @@ export class ScriptEngine {
         instructions?: Instruction[],
       ) =>
         ScriptEngine.suggester(
-          app,
+          this.plugin.app,
           displayItems,
           items,
           hint,
@@ -265,13 +287,12 @@ export class ScriptEngine {
       new Notice(t("SCRIPT_EXECUTION_ERROR"), 4000);
       errorlog({ script: this.plugin.ea.activeScript, error: e });
   }*/
-        //ea.activeScript = null;
-        return result;
+    return result;
 }
 
   private updateToolPannels() {
     const leaves =
-      app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+      this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
     leaves.forEach((leaf: WorkspaceLeaf) => {
       const excalidrawView = leaf.view as ExcalidrawView;
       excalidrawView.toolsPanelRef?.current?.updateScriptIconMap(

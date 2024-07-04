@@ -9,6 +9,12 @@ export class InsertLinkDialog extends FuzzySuggestModal<TFile> {
   private addText: Function;
   private drawingPath: string;
 
+  destroy() {
+    this.app = null;
+    this.addText = null;
+    this.drawingPath = null;
+  }
+
   constructor(private plugin: ExcalidrawPlugin) {
     super(plugin.app);
     this.app = plugin.app;
@@ -49,6 +55,11 @@ export class InsertLinkDialog extends FuzzySuggestModal<TFile> {
     }
     const link = getLink(this.plugin,{embed: false, path: filepath, alias: item.alias});
     this.addText(getLink(this.plugin,{embed: false, path: filepath, alias: item.alias}), filepath, item.alias);
+  }
+
+  onClose(): void {
+    this.addText = null;
+    super.onClose();
   }
 
   public start(drawingPath: string, addText: Function) {

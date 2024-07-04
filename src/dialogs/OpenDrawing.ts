@@ -14,6 +14,13 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
   private action: openDialogAction;
   private onNewPane: boolean;
 
+  destroy() {
+    this.app = null;
+    this.plugin = null;
+    this.action = null;
+    this.inputEl.onkeyup = null;
+  }
+
   constructor(app: App, plugin: ExcalidrawPlugin) {
     super(app);
     this.app = app;

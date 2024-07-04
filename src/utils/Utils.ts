@@ -50,8 +50,9 @@ declare module "obsidian" {
   }
 }
 
+export let versionUpdateCheckTimer: number = null;
 let versionUpdateChecked = false;
-export const checkExcalidrawVersion = async (app: App) => {
+export async function checkExcalidrawVersion() {
   if (versionUpdateChecked) {
     return;
   }
@@ -61,12 +62,13 @@ export const checkExcalidrawVersion = async (app: App) => {
     const gitAPIrequest = async () => {
       return JSON.parse(
         await request({
-          url: `https://api.github.com/repos/zsviczian/obsidian-excalidraw-plugin/releases?per_page=5&page=1`,
+          url: `https://api.github.com/repos/zsviczian/obsidian-excalidraw-plugin/releases?per_page=15&page=1`,
         }),
       );
     };
 
     const latestVersion = (await gitAPIrequest())
+      .filter((el: any) => !el.draft && !el.prerelease)
       .map((el: any) => {
         return {
           version: el.tag_name,
@@ -84,12 +86,17 @@ export const checkExcalidrawVersion = async (app: App) => {
   } catch (e) {
     errorlog({ where: "Utils/checkExcalidrawVersion", error: e });
   }
-  setTimeout(() => (versionUpdateChecked = false), 28800000); //reset after 8 hours
+  versionUpdateCheckTimer = window.setTimeout(() => {
+    versionUpdateChecked = false;
+    versionUpdateCheckTimer = null;
+  }, 28800000); //reset after 8 hours
 };
 
 
 const random = new Random(Date.now());
-export const randomInteger = () => Math.floor(random.next() * 2 ** 31);
+export function randomInteger () {
+  return Math.floor(random.next() * 2 ** 31)
+};
 
 //https://macromates.com/blog/2006/wrapping-text-with-regular-expressions/
 export function wrapTextAtCharLength(
@@ -154,44 +161,17 @@ const rotate = (
       centerY,
   ];
 
-export const rotatedDimensions = (
+export function rotatedDimensions (
   element: ExcalidrawElement,
-): [number, number, number, number] => {
+): [number, number, number, number] {
   const bb = getCommonBoundingBox([element]);
   return [bb.minX, bb.minY, bb.maxX - bb.minX, bb.maxY - bb.minY];
-
-  //removed with 2.1.5... will delete later
-  if (element.angle === 0) {
-    return [element.x, element.y, element.width, element.height];
-  }
-  const centerX = element.x + element.width / 2;
-  const centerY = element.y + element.height / 2;
-  const [left, top] = rotate(
-    element.x,
-    element.y,
-    centerX,
-    centerY,
-    element.angle,
-  );
-  const [right, bottom] = rotate(
-    element.x + element.width,
-    element.y + element.height,
-    centerX,
-    centerY,
-    element.angle,
-  );
-  return [
-    left < right ? left : right,
-    top < bottom ? top : bottom,
-    Math.abs(left - right),
-    Math.abs(top - bottom),
-  ];
 };
 
-export const getDataURL = async (
+export async function getDataURL(
   file: ArrayBuffer,
   mimeType: string,
-): Promise<DataURL> => {
+): Promise<DataURL> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -203,12 +183,12 @@ export const getDataURL = async (
   });
 };
 
-export const getFontDataURL = async (
+export async function getFontDataURL (
   app: App,
   fontFileName: string,
   sourcePath: string,
   name?: string,
-): Promise<{ fontDef: string; fontName: string; dataURL: string }> => {
+): Promise<{ fontDef: string; fontName: string; dataURL: string }> {
   let fontDef: string = "";
   let fontName = "";
   let dataURL = "";
@@ -228,18 +208,18 @@ export const getFontDataURL = async (
   return { fontDef, fontName, dataURL };
 };
 
-export const base64StringToBlob = (base64String: string, mimeType: string): Blob => {
+export function base64StringToBlob (base64String: string, mimeType: string): Blob {
   const buffer = Buffer.from(base64String, 'base64');
   return new Blob([buffer], { type: mimeType });
 };
 
-export const svgToBase64 = (svg: string): string => {
+export function svgToBase64 (svg: string): string {
   return `data:image/svg+xml;base64,${btoa(
     unescape(encodeURIComponent(svg.replaceAll("&nbsp;", " "))),
   )}`;
 };
 
-export const getBinaryFileFromDataURL = async (dataURL: string): Promise<ArrayBuffer> => {
+export async function getBinaryFileFromDataURL (dataURL: string): Promise<ArrayBuffer> {
   if (!dataURL) {
     return null;
   }
@@ -262,12 +242,12 @@ export const getBinaryFileFromDataURL = async (dataURL: string): Promise<ArrayBu
   return bytes.buffer;
 };
 
-export const getSVG = async (
+export async function getSVG (
   scene: any,
   exportSettings: ExportSettings,
   padding: number,
   srcFile: TFile|null, //if set, will replace markdown links with obsidian links
-): Promise<SVGSVGElement> => {
+): Promise<SVGSVGElement> {
   let elements:ExcalidrawElement[] = scene.elements;
   if(elements.some(el => el.type === "embeddable")) {
     elements = JSON.parse(JSON.stringify(elements));
@@ -288,6 +268,7 @@ export const getSVG = async (
     if(exportSettings.isMask) {
       const cropObject = new CropImage(elements, scene.files);
       svg = await cropObject.getCroppedSVG();
+      cropObject.destroy();
     } else {
       svg = await exportToSvg({
         elements: elements.filter((el:ExcalidrawElement)=>el.isDeleted !== true),
@@ -329,16 +310,18 @@ export function filterFiles(files: Record<ExcalidrawElement["id"], BinaryFileDat
   return filteredFiles;
 }
 
-export const getPNG = async (
+export async function getPNG (
   scene: any,
   exportSettings: ExportSettings,
   padding: number,
   scale: number = 1,
-): Promise<Blob> => {
+): Promise<Blob> {
   try {
     if(exportSettings.isMask) {
       const cropObject = new CropImage(scene.elements, scene.files);
-      return await cropObject.getCroppedPNG();
+      const blob = await cropObject.getCroppedPNG();
+      cropObject.destroy();
+      return blob;
     }
 
     return await exportToBlob({
@@ -365,11 +348,11 @@ export const getPNG = async (
   }
 };
 
-export const getQuickImagePreview = async (
+export async function getQuickImagePreview (
   plugin: ExcalidrawPlugin,
   path: string,
   extension: "png" | "svg",
-): Promise<any> => {
+): Promise<any> {
   if (!plugin.settings.displayExportedImageIfAvailable) {
     return null;
   }
@@ -386,11 +369,11 @@ export const getQuickImagePreview = async (
   }
 };
 
-export const embedFontsInSVG = (
+export function embedFontsInSVG(
   svg: SVGSVGElement,
   plugin: ExcalidrawPlugin,
   localOnly: boolean = false,
-): SVGSVGElement => {
+): SVGSVGElement {
   //replace font references with base64 fonts)
   const includesVirgil = !localOnly &&
     svg.querySelector("text[font-family^='Virgil']") !== null;
@@ -415,9 +398,9 @@ export const embedFontsInSVG = (
   return svg;
 };
 
-export const getImageSize = async (
+export async function getImageSize (
   src: string,
-): Promise<{ height: number; width: number }> => {
+): Promise<{ height: number; width: number }> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
@@ -429,7 +412,7 @@ export const getImageSize = async (
   });
 };
 
-export const addAppendUpdateCustomData = (el: Mutable<ExcalidrawElement>, newData: any): ExcalidrawElement => {
+export function addAppendUpdateCustomData (el: Mutable<ExcalidrawElement>, newData: any): ExcalidrawElement {
   if(!newData) return el;
   if(!el.customData) el.customData = {};
   for (const key in newData) {
@@ -439,10 +422,10 @@ export const addAppendUpdateCustomData = (el: Mutable<ExcalidrawElement>, newDat
   return el;
 };
 
-export const scaleLoadedImage = (
+export function scaleLoadedImage (
   scene: any,
   files: any
-): { dirty: boolean; scene: any } => {
+): { dirty: boolean; scene: any } {
   let dirty = false;
   if (!files || !scene) {
     return { dirty, scene };
@@ -491,7 +474,7 @@ export const scaleLoadedImage = (
   return { dirty, scene };
 };
 
-export const setDocLeftHandedMode = (isLeftHanded: boolean, ownerDocument:Document) => {
+export function setDocLeftHandedMode(isLeftHanded: boolean, ownerDocument:Document) {
   const newStylesheet = ownerDocument.createElement("style");
   newStylesheet.id = "excalidraw-left-handed";
   newStylesheet.textContent = `.excalidraw .App-bottom-bar{justify-content:flex-end;}`;
@@ -504,7 +487,7 @@ export const setDocLeftHandedMode = (isLeftHanded: boolean, ownerDocument:Docume
   }
 }
 
-export const setLeftHandedMode = (isLeftHanded: boolean) => {
+export function setLeftHandedMode (isLeftHanded: boolean) {
   const visitedDocs = new Set<Document>();
   app.workspace.iterateAllLeaves((leaf) => {
     const ownerDocument = DEVICE.isMobile?document:leaf.view.containerEl.ownerDocument;
@@ -525,7 +508,7 @@ export type LinkParts = {
   page: number;
 };
 
-export const getLinkParts = (fname: string, file?: TFile): LinkParts => {
+export function getLinkParts (fname: string, file?: TFile): LinkParts {
   //            1           2    3           4      5
   const REG = /(^[^#\|]*)#?(\^)?([^\|]*)?\|?(\d*)x?(\d*)/;
   const parts = fname.match(REG);
@@ -543,18 +526,18 @@ export const getLinkParts = (fname: string, file?: TFile): LinkParts => {
   };
 };
 
-export const compress = (data: string): string => {
+export function compress (data: string): string {
   return LZString.compressToBase64(data).replace(/(.{256})/g, "$1\n\n");
 };
 
-export const decompress = (data: string): string => {
+export function decompress (data: string): string {
   return LZString.decompressFromBase64(data.replaceAll("\n", "").replaceAll("\r", ""));
 };
 
-export const isMaskFile = (
+export function isMaskFile (
   plugin: ExcalidrawPlugin,
   file: TFile,
-): boolean => {
+): boolean {
   if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
@@ -568,10 +551,10 @@ export const isMaskFile = (
   return false;
 };
 
-export const hasExportTheme = (
+export function hasExportTheme (
   plugin: ExcalidrawPlugin,
   file: TFile,
-): boolean => {
+): boolean {
   if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
@@ -585,11 +568,11 @@ export const hasExportTheme = (
   return false;
 };
 
-export const getExportTheme = (
+export function getExportTheme (
   plugin: ExcalidrawPlugin,
   file: TFile,
   theme: string,
-): string => {
+): string {
   if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
@@ -605,10 +588,10 @@ export const getExportTheme = (
   return plugin.settings.exportWithTheme ? theme : "light";
 };
 
-export const shouldEmbedScene = (
+export function shouldEmbedScene (
   plugin: ExcalidrawPlugin,
   file: TFile
-): boolean => {
+): boolean {
   if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
@@ -622,10 +605,10 @@ export const shouldEmbedScene = (
   return plugin.settings.exportEmbedScene;
 };
 
-export const hasExportBackground = (
+export function hasExportBackground (
   plugin: ExcalidrawPlugin,
   file: TFile,
-): boolean => {
+): boolean {
   if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
@@ -639,10 +622,10 @@ export const hasExportBackground = (
   return false;
 };
 
-export const getWithBackground = (
+export function getWithBackground (
   plugin: ExcalidrawPlugin,
   file: TFile,
-): boolean => {
+): boolean {
   if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
@@ -656,10 +639,10 @@ export const getWithBackground = (
   return plugin.settings.exportWithBackground;
 };
 
-export const getExportPadding = (
+export function getExportPadding (
   plugin: ExcalidrawPlugin,
   file: TFile,
-): number => {
+): number {
   if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if(!fileCache?.frontmatter) return plugin.settings.exportPaddingSVG;
@@ -693,7 +676,7 @@ export const getExportPadding = (
   return plugin.settings.exportPaddingSVG;
 };
 
-export const getPNGScale = (plugin: ExcalidrawPlugin, file: TFile): number => {
+export function getPNGScale (plugin: ExcalidrawPlugin, file: TFile): number {
   if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
@@ -712,7 +695,7 @@ export const getPNGScale = (plugin: ExcalidrawPlugin, file: TFile): number => {
   return plugin.settings.pngExportScale;
 };
 
-export const isVersionNewerThanOther = (version: string, otherVersion: string): boolean => {
+export function isVersionNewerThanOther (version: string, otherVersion: string): boolean {
   const v = version.match(/(\d*)\.(\d*)\.(\d*)/);
   const o = otherVersion.match(/(\d*)\.(\d*)\.(\d*)/);
   
@@ -727,7 +710,7 @@ export const isVersionNewerThanOther = (version: string, otherVersion: string): 
   ) 
 }
 
-export const getEmbeddedFilenameParts = (fname:string): FILENAMEPARTS => {
+export function getEmbeddedFilenameParts (fname:string): FILENAMEPARTS {
   //                        0 1        23    4                               5         6  7                             8          9
   const parts = fname?.match(/([^#\^]*)((#\^)(group=|area=|frame=|taskbone)?([^\|]*)|(#)(group=|area=|frame=|taskbone)?([^\^\|]*))(.*)/);
   if(!parts) {
@@ -760,14 +743,17 @@ export const getEmbeddedFilenameParts = (fname:string): FILENAMEPARTS => {
   }
 }
 
-export const fragWithHTML = (html: string) =>
-  createFragment((frag) => (frag.createDiv().innerHTML = html));
+export function fragWithHTML (html: string) {
+  return createFragment((frag) => (frag.createDiv().innerHTML = html));
+}
 
-export const errorlog = (data: {}) => {
+export function errorlog (data: {}) {
   console.error({ plugin: "Excalidraw", ...data });
 };
 
-export const sleep = async (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+export async function sleep (ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 /**REACT 18 
   //see also: https://github.com/zsviczian/obsidian-excalidraw-plugin/commit/b67d70c5196f30e2968f9da919d106ee66f2a5eb
@@ -778,12 +764,12 @@ export const awaitNextAnimationFrame = async () => new Promise(requestAnimationF
 //export const debug = function(){};
 
 
-export const _getContainerElement = (
+export function _getContainerElement (
   element:
     | (ExcalidrawElement & { containerId: ExcalidrawElement["id"] | null })
     | null,
   scene: any,
-) => {
+) {
   if (!element || !scene?.elements || element.type !== "text") {
     return null;
   }
@@ -798,9 +784,9 @@ export const _getContainerElement = (
  * Transforms array of objects containing `id` attribute,
  * or array of ids (strings), into a Map, keyd by `id`.
  */
-export const arrayToMap = <T extends { id: string } | string>(
+export function arrayToMap <T extends { id: string } | string>(
   items: readonly T[] | Map<string, T>,
-) => {
+) {
   if (items instanceof Map) {
     return items;
   }
@@ -810,7 +796,7 @@ export const arrayToMap = <T extends { id: string } | string>(
   }, new Map());
 };
 
-export const updateFrontmatterInString = (data:string, keyValuePairs?: [string,string][]):string => {
+export function updateFrontmatterInString(data:string, keyValuePairs?: [string,string][]):string {
   if(!data || !keyValuePairs) return data;
   for(const kvp of keyValuePairs) {
     const r = new RegExp(`${kvp[0]}:\\s.*\\n`,"g");
@@ -821,22 +807,27 @@ export const updateFrontmatterInString = (data:string, keyValuePairs?: [string,s
   return data;
 }
 
-const isHyperLink = (link:string) => link && !link.includes("\n") && !link.includes("\r") && link.match(/^https?:(\d*)?\/\/[^\s]*$/);
+function isHyperLink (link:string) {
+  return link && !link.includes("\n") && !link.includes("\r") && link.match(/^https?:(\d*)?\/\/[^\s]*$/);
+}
 
-export const isContainer = (el: ExcalidrawElement) => el.type!=="arrow" && el.boundElements?.map((e) => e.type).includes("text");
+export function isContainer (el: ExcalidrawElement) {
+  return el.type!=="arrow" && el.boundElements?.map((e) => e.type).includes("text");
+}
 
-export const hyperlinkIsImage = (data: string):boolean => {
+export function hyperlinkIsImage (data: string):boolean {
   if(!isHyperLink(data)) false;
   const corelink = data.split("?")[0];
   return IMAGE_TYPES.contains(corelink.substring(corelink.lastIndexOf(".")+1));
 }
 
-export const hyperlinkIsYouTubeLink = (link:string): boolean => 
-  isHyperLink(link) &&
+export function hyperlinkIsYouTubeLink (link:string): boolean { 
+  return isHyperLink(link) &&
   (link.startsWith("https://youtu.be") || link.startsWith("https://www.youtube.com") || link.startsWith("https://youtube.com") || link.startsWith("https//www.youtu.be")) &&
   link.match(/(youtu.be\/|v=)([^?\/\&]*)/)!==null
+}
 
-export const getYouTubeThumbnailLink = async (youtubelink: string):Promise<string> => {
+export async function getYouTubeThumbnailLink (youtubelink: string):Promise<string> {
   //https://stackoverflow.com/questions/2068344/how-do-i-get-a-youtube-video-thumbnail-from-the-youtube-api
   //https://youtu.be/z8UkHGpykYU?t=60
   //https://www.youtube.com/watch?v=z8UkHGpykYU&ab_channel=VerbaltoVisual
@@ -860,7 +851,7 @@ export const getYouTubeThumbnailLink = async (youtubelink: string):Promise<strin
   return `https://i.ytimg.com/vi/${videoId}/default.jpg`;
 }
 
-export const isCallerFromTemplaterPlugin = (stackTrace:string) => {
+export function isCallerFromTemplaterPlugin (stackTrace:string) {
   const lines = stackTrace.split("\n");
   for (const line of lines) {
     if (line.trim().startsWith("at Templater.")) {
@@ -870,7 +861,7 @@ export const isCallerFromTemplaterPlugin = (stackTrace:string) => {
   return false;
 }
 
-export const convertSVGStringToElement = (svg: string): SVGSVGElement => {
+export function convertSVGStringToElement (svg: string): SVGSVGElement {
   const divElement = document.createElement("div");
   divElement.innerHTML = svg;
   const firstChild = divElement.firstChild;
@@ -880,9 +871,11 @@ export const convertSVGStringToElement = (svg: string): SVGSVGElement => {
   return;
 }
 
-export const escapeRegExp = (str:string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+export function escapeRegExp (str:string) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+}
 
-export const addIframe = (containerEl: HTMLElement, link:string, startAt?: number, style:string = "settings") => {
+export function addIframe (containerEl: HTMLElement, link:string, startAt?: number, style:string = "settings") {
   const wrapper = containerEl.createDiv({cls: `excalidraw-videoWrapper ${style}`})
   wrapper.createEl("iframe", {
     attr: {

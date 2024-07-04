@@ -527,6 +527,11 @@ export class NewFileActions extends Modal {
   onClose() {
     super.onClose();
     this.resolvePromise(this.newFile);
+    this.app = null;
+    this.plugin = null;
+    this.view = null;
+    this.parentFile = null;
+    this.sourceElement = null;
   }
 
   createForm(): void {
@@ -588,7 +593,8 @@ export class NewFileActions extends Modal {
             ea.copyViewElementsToEAforEditing([this.sourceElement]);
             ea.getElement(this.sourceElement.id).isDeleted = true;
             ea.addEmbeddable(this.sourceElement.x, this.sourceElement.y,MAX_IMAGE_SIZE, MAX_IMAGE_SIZE, undefined,f);
-            ea.addElementsToView();
+            await ea.addElementsToView();
+            ea.destroy();
           }
           this.close();
         };

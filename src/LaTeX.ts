@@ -7,21 +7,18 @@ import {RegisterHTMLHandler} from 'mathjax-full/js/handlers/html.js';
 import {AllPackages} from 'mathjax-full/js/input/tex/AllPackages.js';
 
 import ExcalidrawView from "./ExcalidrawView";
-import ExcalidrawPlugin from "./main";
 import { FileData, MimeType } from "./EmbeddedFileLoader";
 import { FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { getImageSize, svgToBase64 } from "./utils/Utils";
 import { fileid } from "./constants/constants";
 import { TFile } from "obsidian";
 import { MathDocument } from "mathjax-full/js/core/MathDocument";
-import { stripVTControlCharacters } from "util";
 
 export const updateEquation = async (
   equation: string,
   fileId: string,
   view: ExcalidrawView,
   addFiles: Function,
-  plugin: ExcalidrawPlugin,
 ) => {
   const data = await tex2dataURL(equation);
   if (data) {
@@ -40,10 +37,14 @@ export const updateEquation = async (
 };
 
 let adaptor: LiteAdaptor;
-let input: TeX<unknown, unknown, unknown>;
-let output: SVG<unknown, unknown, unknown>;
 let html: MathDocument<any, any, any>;
 let preamble: string;
+
+export const clearMathJaxVariables = () => {
+  adaptor = null;
+  html = null;
+  preamble = null;
+};
 
 //https://github.com/xldenis/obsidian-latex/blob/master/main.ts
 const loadPreamble = async  () => {
@@ -63,6 +64,9 @@ export async function tex2dataURL(
   created: number;
   size: { height: number; width: number };
 }> {
+  let input: TeX<unknown, unknown, unknown>;
+  let output: SVG<unknown, unknown, unknown>;
+
   if(!adaptor) {
     await loadPreamble();
     adaptor = liteAdaptor();

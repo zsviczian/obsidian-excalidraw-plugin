@@ -24,8 +24,9 @@ const light = '<svg style="stroke:#212529;color:#212529;fill:#212529" ';
 
 type PanelProps = {
   visible: boolean;
-  view: ExcalidrawView;
+  view: WeakRef<ExcalidrawView>;
   centerPointer: Function;
+  observer: WeakRef<ResizeObserver>;
 };
 
 export type PanelState = {
@@ -38,7 +39,7 @@ export type PanelState = {
   isDirty: boolean;
   isFullscreen: boolean;
   isPreviewMode: boolean;
-  scriptIconMap: ScriptIconMap;
+  scriptIconMap: ScriptIconMap | null;
 };
 
 const TOOLS_PANEL_WIDTH = 228;
@@ -55,10 +56,22 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   onRightEdge: boolean = false;
   onBottomEdge: boolean = false;
   public containerRef: React.RefObject<HTMLDivElement>;
+  private view: ExcalidrawView;
+
+  componentWillUnmount(): void {
+    if (this.containerRef.current) {
+      this.props.observer.deref()?.unobserve(this.containerRef.current);
+    }
+    this.setState({ scriptIconMap: null });
+    this.containerRef = null;
+    this.view = null;
+  }
 
   constructor(props: PanelProps) {
     super(props);
-    const react = props.view.plugin.getPackage(props.view.ownerWindow).react;
+    this.view = props.view.deref();
+    const react = this.view.packages.react;
+    
     this.containerRef = react.createRef();
     this.state = {
       visible: props.visible,
@@ -194,6 +207,232 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     });
   }
 
+  actionOpenScriptInstallDialog() {
+    new ScriptInstallPrompt(this.view.plugin).open();
+  }
+
+  actionOpenReleaseNotes() {
+    new ReleaseNotes(
+      this.view.app,
+      this.view.plugin,
+      PLUGIN_VERSION,
+    ).open();
+  }
+
+  actionConvertExcalidrawToMD() {
+    this.view.convertExcalidrawToMD();
+  }
+
+  actionToggleViewMode() {
+    if (this.state.isPreviewMode) {
+      this.view.changeTextMode(TextMode.raw);
+    } else {
+      this.view.changeTextMode(TextMode.parsed);
+    }
+  }
+
+  actionToggleTrayMode() {
+    this.view.toggleTrayMode();
+  }
+
+  actionToggleFullscreen() {
+    if (this.state.isFullscreen) {
+      this.view.exitFullscreen();
+    } else {
+      this.view.gotoFullscreen();
+    }
+  }
+
+  actionSearch() {
+    search(this.view);
+  }
+
+  actionOCR(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    if(!this.view.plugin.settings.taskboneEnabled) {
+      new Notice("Taskbone OCR is not enabled. Please go to plugins settings to enable it.",4000);
+      return;
+    }
+    this.view.plugin.taskbone.getTextForView(this.view, {forceReScan: isWinCTRLorMacCMD(e)});
+  }
+
+  actionOpenLink(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    const event = new MouseEvent("click", {
+      ctrlKey: e.ctrlKey || !(DEVICE.isIOS || DEVICE.isMacOS),
+      metaKey: e.metaKey ||  (DEVICE.isIOS || DEVICE.isMacOS),
+      shiftKey: e.shiftKey,
+      altKey: e.altKey,
+    });
+    this.view.handleLinkClick(event);
+  }
+
+  actionOpenLinkProperties() {
+    const event = new MouseEvent("click", {
+      ctrlKey: true,
+      metaKey: true,
+      shiftKey: false,
+      altKey: false,
+    });
+    this.view.handleLinkClick(event);
+  }
+
+  actionForceSave() {
+    this.view.forceSave();
+  }
+
+  actionExportLibrary() {
+    this.view.plugin.exportLibrary();
+  }
+
+  actionExportImage() {
+    const view = this.view;
+    if(!view.exportDialog) {
+      view.exportDialog = new ExportDialog(view.plugin, view,view.file);
+      view.exportDialog.createForm();
+    }
+    view.exportDialog.open();
+  }
+
+  actionOpenAsMarkdown() {
+    this.view.openAsMarkdown();
+  }
+
+  actionLinkToElement(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    if(isWinALTorMacOPT(e)) {
+      openExternalLink("https://youtu.be/yZQoJg2RCKI", this.view.app);
+      return;
+    }
+    this.view.copyLinkToSelectedElementToClipboard(
+      isWinCTRLorMacCMD(e) ? "group=" : (isSHIFT(e) ? "area=" : "")
+    );
+  }
+
+  actionAddAnyFile() {
+    this.props.centerPointer();
+    const insertFileModal = new UniversalInsertFileModal(this.view.plugin, this.view);
+    insertFileModal.open();
+  }
+
+  actionInsertImage() {
+    this.props.centerPointer();
+    this.view.plugin.insertImageDialog.start(
+      this.view,
+    );
+  }
+
+  actionInsertPDF() {
+    this.props.centerPointer();
+    const insertPDFModal = new InsertPDFModal(this.view.plugin, this.view);
+    insertPDFModal.open();
+  }
+
+  actionInsertMarkdown() {
+    this.props.centerPointer();
+    this.view.plugin.insertMDDialog.start(
+      this.view,
+    );
+  }
+
+  actionInsertBackOfNote()  {
+    this.props.centerPointer();
+    this.view.insertBackOfTheNoteCard();
+  }
+
+  actionInsertLaTeX(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    if(isWinALTorMacOPT(e)) {
+      openExternalLink("https://youtu.be/r08wk-58DPk", this.view.app);
+      return;
+    }
+    this.props.centerPointer();
+    insertLaTeXToView(this.view);
+  }
+
+  actionInsertLink() {
+    this.props.centerPointer();
+    this.view.plugin.insertLinkDialog.start(
+      this.view.file.path,
+      (text: string, fontFamily?: 1 | 2 | 3 | 4, save?: boolean) => this.view.addText (text, fontFamily, save),
+    );
+  }
+
+  actionImportSVG(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    this.view.plugin.importSVGDialog.start(this.view);
+  }
+  
+  actionCropImage(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    // @ts-ignore
+    this.view.app.commands.executeCommandById("obsidian-excalidraw-plugin:crop-image");
+  }
+
+  async actionRunScript(key: string) {
+    const view = this.view;
+    const plugin = view.plugin;
+    const f = app.vault.getAbstractFileByPath(key);
+    if (f && f instanceof TFile) {
+      plugin.scriptEngine.executeScript(
+        view,
+        await app.vault.read(f),
+        plugin.scriptEngine.getScriptName(f),
+        f
+      );
+    }
+  }
+
+  async actionPinScript(key: string, scriptName: string) {
+    const view = this.view; 
+    const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
+    const plugin = view.plugin;
+    await plugin.loadSettings();
+    const index = plugin.settings.pinnedScripts.indexOf(key)
+    if(index > -1) {
+      plugin.settings.pinnedScripts.splice(index,1);
+      api?.setToast({message:`Pin removed: ${scriptName}`, duration: 3000, closable: true});
+    } else {
+      plugin.settings.pinnedScripts.push(key);
+      api?.setToast({message:`Pinned: ${scriptName}`, duration: 3000, closable: true})
+    }
+    await plugin.saveSettings();
+    plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
+      if (v.view instanceof ExcalidrawView) v.view.updatePinnedScripts()
+    })
+  }
+
+  private islandOnClick(event: React.MouseEvent<HTMLDivElement, MouseEvent>) {
+    event.preventDefault();
+    if (
+      Math.abs(this.penDownX - this.pos3) > 5 ||
+      Math.abs(this.penDownY - this.pos4) > 5
+    ) {
+      return;
+    }
+    this.setState((prevState: PanelState) => {
+      return {
+        minimized: !prevState.minimized,
+      };
+    });
+  }
+
+  private islandOnPointerDown(event: React.PointerEvent) {
+      const onDrag = (e: PointerEvent) => {
+        e.preventDefault();
+        this.pos1 = this.pos3 - e.clientX;
+        this.pos2 = this.pos4 - e.clientY;
+        this.pos3 = e.clientX;
+        this.pos4 = e.clientY;
+        this.updatePosition(this.pos2, this.pos1);
+      };
+
+      const onPointerUp = () => {
+        this.view.ownerDocument?.removeEventListener("pointerup", onPointerUp);
+        this.view.ownerDocument?.removeEventListener("pointermove", onDrag);
+      };
+
+      event.preventDefault();
+      this.penDownX = this.pos3 = event.clientX;
+      this.penDownY = this.pos4 = event.clientY;
+      this.view.ownerDocument.addEventListener("pointerup", onPointerUp);
+      this.view.ownerDocument.addEventListener("pointermove", onDrag);
+    };
+
   render() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.render,"ToolsPanel.render()");
     return (
@@ -230,41 +469,8 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
               width: "100%",
               cursor: "move",
             }}
-            onClick={(event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-              event.preventDefault();
-              if (
-                Math.abs(this.penDownX - this.pos3) > 5 ||
-                Math.abs(this.penDownY - this.pos4) > 5
-              ) {
-                return;
-              }
-              this.setState((prevState: PanelState) => {
-                return {
-                  minimized: !prevState.minimized,
-                };
-              });
-            }}
-            onPointerDown={(event: React.PointerEvent) => {
-              const onDrag = (e: PointerEvent) => {
-                e.preventDefault();
-                this.pos1 = this.pos3 - e.clientX;
-                this.pos2 = this.pos4 - e.clientY;
-                this.pos3 = e.clientX;
-                this.pos4 = e.clientY;
-                this.updatePosition(this.pos2, this.pos1);
-              };
-
-              const onPointerUp = () => {
-                this.props.view.ownerDocument?.removeEventListener("pointerup", onPointerUp);
-                this.props.view.ownerDocument?.removeEventListener("pointermove", onDrag);
-              };
-
-              event.preventDefault();
-              this.penDownX = this.pos3 = event.clientX;
-              this.penDownY = this.pos4 = event.clientY;
-              this.props.view.ownerDocument.addEventListener("pointerup", onPointerUp);
-              this.props.view.ownerDocument.addEventListener("pointermove", onDrag);
-            }}
+            onClick={this.islandOnClick.bind(this)}
+            onPointerDown={this.islandOnPointerDown.bind(this)}
           >
             <svg
               aria-hidden="true"
@@ -297,62 +503,39 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                 <ActionButton
                     key={"scriptEngine"}
                     title={t("INSTALL_SCRIPT_BUTTON")}
-                    action={() => {
-                      new ScriptInstallPrompt(this.props.view.plugin).open();
-                    }}
+                    action={this.actionOpenScriptInstallDialog.bind(this)}
                     icon={ICONS.scriptEngine}
-                    view={this.props.view}
                   />
                   <ActionButton
                     key={"release-notes"}
                     title={t("READ_RELEASE_NOTES")}
-                    action={() => {
-                      new ReleaseNotes(
-                        this.props.view.app,
-                        this.props.view.plugin,
-                        PLUGIN_VERSION,
-                      ).open();
-                    }}
+                    action={this.actionOpenReleaseNotes.bind(this)}
                     icon={ICONS.releaseNotes}
-                    view={this.props.view}
                   />
                   {this.state.isPreviewMode === null ? (
                     <ActionButton
                       key={"convert"}
                       title={t("CONVERT_FILE")}
-                      action={() => {
-                        this.props.view.convertExcalidrawToMD();
-                      }}
+                      action={(this.actionConvertExcalidrawToMD.bind(this))}
                       icon={ICONS.convertFile}
-                      view={this.props.view}
                     />
                   ) : (
                     <ActionButton
                       key={"viewmode"}
                       title={this.state.isPreviewMode ? t("PARSED") : t("RAW")}
-                      action={() => {
-                        if (this.state.isPreviewMode) {
-                          this.props.view.changeTextMode(TextMode.raw);
-                        } else {
-                          this.props.view.changeTextMode(TextMode.parsed);
-                        }
-                      }}
+                      action={this.actionToggleViewMode.bind(this)}
                       icon={
                         this.state.isPreviewMode
                           ? ICONS.rawMode
                           : ICONS.parsedMode
                       }
-                      view={this.props.view}
                     />
                   )}
                   <ActionButton
                     key={"tray-mode"}
                     title={t("TRAY_MODE")}
-                    action={() => {
-                      this.props.view.toggleTrayMode();
-                    }}
+                    action={this.actionToggleTrayMode.bind(this)}
                     icon={ICONS.trayMode}
-                    view={this.props.view}
                   />
                   <ActionButton
                     key={"fullscreen"}
@@ -361,80 +544,42 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                         ? t("EXIT_FULLSCREEN")
                         : t("GOTO_FULLSCREEN")
                     }
-                    action={() => {
-                      if (this.state.isFullscreen) {
-                        this.props.view.exitFullscreen();
-                      } else {
-                        this.props.view.gotoFullscreen();
-                      }
-                    }}
+                    action={this.actionToggleFullscreen.bind(this)}
                     icon={
                       this.state.isFullscreen
                         ? ICONS.exitFullScreen
                         : ICONS.gotoFullScreen
                     }
-                    view={this.props.view}
                   />
                   <ActionButton
                     key={"search"}
                     title={t("SEARCH")}
-                    action={() => {
-                      search(this.props.view);
-                    }}
+                    action={this.actionSearch.bind(this)}
                     icon={ICONS.search}
-                    view={this.props.view}
                   />
                   <ActionButton
                     key={"ocr"}
                     title={t("RUN_OCR")}
-                    action={(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-                      if(!this.props.view.plugin.settings.taskboneEnabled) {
-                        new Notice("Taskbone OCR is not enabled. Please go to plugins settings to enable it.",4000);
-                        return;
-                      }
-                      this.props.view.plugin.taskbone.getTextForView(this.props.view, {forceReScan: isWinCTRLorMacCMD(e)});
-                    }}
+                    action={this.actionOCR.bind(this)}
                     icon={ICONS.ocr}
-                    view={this.props.view}
                   />
                   <ActionButton
                     key={"openLink"}
                     title={t("OPEN_LINK_CLICK")}
-                    action={(e) => {
-                      const event = new MouseEvent("click", {
-                        ctrlKey: e.ctrlKey || !(DEVICE.isIOS || DEVICE.isMacOS),
-                        metaKey: e.metaKey ||  (DEVICE.isIOS || DEVICE.isMacOS),
-                        shiftKey: e.shiftKey,
-                        altKey: e.altKey,
-                      });
-                      this.props.view.handleLinkClick(event);
-                    }}
+                    action={this.actionOpenLink.bind(this)}
                     icon={ICONS.openLink}
-                    view={this.props.view}
                   />
                   <ActionButton
                     key={"openLinkProperties"}
                     title={t("OPEN_LINK_PROPS")}
-                    action={() => {
-                      const event = new MouseEvent("click", {
-                        ctrlKey: true,
-                        metaKey: true,
-                        shiftKey: false,
-                        altKey: false,
-                      });
-                      this.props.view.handleLinkClick(event);
-                    }}
+                    action={this.actionOpenLinkProperties.bind(this)}
                     icon={ICONS.openLinkProperties}
-                    view={this.props.view}
                   />
                   <ActionButton
                     key={"save"}
                     title={t("FORCE_SAVE")}
-                    action={() => {
-                      this.props.view.forceSave();
-                    }}
+                    action={this.actionForceSave.bind(this)}
                     icon={saveIcon(this.state.isDirty)}
-                    view={this.props.view}
                   />
                 </div>
               </fieldset>
@@ -444,49 +589,26 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   <ActionButton
                     key={"lib"}
                     title={t("DOWNLOAD_LIBRARY")}
-                    action={() => {
-                      this.props.view.plugin.exportLibrary();
-                    }}
+                    action={this.actionExportLibrary.bind(this)}
                     icon={ICONS.exportLibrary}
-                    view={this.props.view}
                   />
                   <ActionButton
                     key={"exportIMG"}
                     title={t("EXPORT_IMAGE")}
-                    action={() => {
-                      const view = this.props.view;
-                      if(!view.exportDialog) {
-                        view.exportDialog = new ExportDialog(view.plugin, view,view.file);
-                        view.exportDialog.createForm();
-                      }
-                      view.exportDialog.open();
-                    }}
+                    action={this.actionExportImage.bind(this)}
                     icon={ICONS.ExportImage}
-                    view={this.props.view}
                   />
                   <ActionButton
                     key={"md"}
                     title={t("OPEN_AS_MD")}
-                    action={() => {
-                      this.props.view.openAsMarkdown();
-                    }}
+                    action={this.actionOpenAsMarkdown.bind(this)}
                     icon={ICONS.switchToMarkdown}
-                    view={this.props.view}
                   />
                   <ActionButton
                     key={"link-to-element"}
                     title={t("INSERT_LINK_TO_ELEMENT")}
-                    action={(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-                      if(isWinALTorMacOPT(e)) {
-                        openExternalLink("https://youtu.be/yZQoJg2RCKI", this.props.view.app);
-                        return;
-                      }
-                      this.props.view.copyLinkToSelectedElementToClipboard(
-                        isWinCTRLorMacCMD(e) ? "group=" : (isSHIFT(e) ? "area=" : "")
-                      );
-                    }}
+                    action={this.actionLinkToElement.bind(this)}
                     icon={ICONS.copyElementLink}
-                    view={this.props.view}
                   />
                 </div>
               </fieldset>
@@ -496,104 +618,56 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   <ActionButton
                     key={"anyfile"}
                     title={t("UNIVERSAL_ADD_FILE")}
-                    action={() => {
-                      this.props.centerPointer();
-                      const insertFileModal = new UniversalInsertFileModal(this.props.view.plugin, this.props.view);
-                      insertFileModal.open();
-                    }}
+                    action={this.actionAddAnyFile.bind(this)}
                     icon={ICONS["add-file"]}
-                    view={this.props.view}
                   />
                   <ActionButton
                     key={"image"}
                     title={t("INSERT_IMAGE")}
-                    action={() => {
-                      this.props.centerPointer();
-                      this.props.view.plugin.insertImageDialog.start(
-                        this.props.view,
-                      );
-                    }}
+                    action={this.actionInsertImage.bind(this)}
                     icon={ICONS.insertImage}
-                    view={this.props.view}
                   />
                   <ActionButton
                     key={"pdf"}
                     title={t("INSERT_PDF")}
-                    action={() => {
-                      this.props.centerPointer();
-                      const insertPDFModal = new InsertPDFModal(this.props.view.plugin, this.props.view);
-                      insertPDFModal.open();
-                    }}
+                    action={this.actionInsertPDF.bind(this)}
                     icon={ICONS.insertPDF}
-                    view={this.props.view}
                   />                  
                   <ActionButton
                     key={"insertMD"}
                     title={t("INSERT_MD")}
-                    action={() => {
-                      this.props.centerPointer();
-                      this.props.view.plugin.insertMDDialog.start(
-                        this.props.view,
-                      );
-                    }}
+                    action={this.actionInsertMarkdown.bind(this)}
                     icon={ICONS.insertMD}
-                    view={this.props.view}
                   />
                   <ActionButton
                     key={"insertBackOfNote"}
                     title={t("INSERT_CARD")}
-                    action={() => {
-                      this.props.centerPointer();
-                      this.props.view.insertBackOfTheNoteCard();
-                    }}
+                    action={this.actionInsertBackOfNote.bind(this)}
                     icon={ICONS.BackOfNote}
-                    view={this.props.view}
                   />
                   <ActionButton
                     key={"latex"}
                     title={t("INSERT_LATEX")}
-                    action={(e) => {
-                      if(isWinALTorMacOPT(e)) {
-                        openExternalLink("https://youtu.be/r08wk-58DPk", this.props.view.app);
-                        return;
-                      }
-                      this.props.centerPointer();
-                      insertLaTeXToView(this.props.view);
-                    }}
+                    action={this.actionInsertLaTeX.bind(this)}
                     icon={ICONS.insertLaTeX}
-                    view={this.props.view}
                   />
                   <ActionButton
                     key={"link"}
                     title={t("INSERT_LINK")}
-                    action={() => {
-                      this.props.centerPointer();
-                      this.props.view.plugin.insertLinkDialog.start(
-                        this.props.view.file.path,
-                        (text: string, fontFamily?: 1 | 2 | 3 | 4, save?: boolean) => this.props.view.addText (text, fontFamily, save),
-                      );
-                    }}
+                    action={this.actionInsertLink.bind(this)}
                     icon={ICONS.insertLink}
-                    view={this.props.view}
                   />
                   <ActionButton
                     key={"import-svg"}
                     title={t("IMPORT_SVG")}
-                    action={(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-                      this.props.view.plugin.importSVGDialog.start(this.props.view);
-                    }}
+                    action={this.actionImportSVG.bind(this)}
                     icon={ICONS.importSVG}
-                    view={this.props.view}
                   />
                   <ActionButton
                     key={"crop-image"}
                     title={t("CROP_IMAGE")}
-                    action={(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-                      // @ts-ignore
-                      this.props.view.app.commands.executeCommandById("obsidian-excalidraw-plugin:crop-image");
-                    }}
+                    action={this.actionCropImage.bind(this)}
                     icon={ICONS.Crop}
-                    view={this.props.view}
                   />
                 </div>
               </fieldset>
@@ -612,7 +686,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       return "";
     }
 
-    const downloadedScriptsRoot = `${this.props.view.plugin.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}/`;
+    const downloadedScriptsRoot = `${this.view.plugin.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}/`;
 
     const filterCondition = (key: string): boolean =>
       isDownloaded
@@ -647,45 +721,15 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                 <ActionButton
                   key={key}
                   title={value.name}
-                  action={async () => {
-                    const view = this.props.view;
-                    const plugin = view.plugin;
-                    const f = app.vault.getAbstractFileByPath(key);
-                    if (f && f instanceof TFile) {
-                      plugin.scriptEngine.executeScript(
-                        view,
-                        await app.vault.read(f),
-                        plugin.scriptEngine.getScriptName(f),
-                        f
-                      );
-                    }
-                  }}
-                  longpress={async () => {
-                    const view = this.props.view; 
-                    const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
-                    const plugin = view.plugin;
-                    await plugin.loadSettings();
-                    const index = plugin.settings.pinnedScripts.indexOf(key)
-                    if(index > -1) {
-                      plugin.settings.pinnedScripts.splice(index,1);
-                      api?.setToast({message:`Pin removed: ${value.name}`, duration: 3000, closable: true});
-                    } else {
-                      plugin.settings.pinnedScripts.push(key);
-                      api?.setToast({message:`Pinned: ${value.name}`, duration: 3000, closable: true})
-                    }
-                    await plugin.saveSettings();
-                    app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
-                      if (v.view instanceof ExcalidrawView) v.view.updatePinnedScripts()
-                    })
-                  }}
+                  action={this.actionRunScript.bind(this,key)}
+                  longpress={this.actionPinScript.bind(this,key, value.name)}
                   icon={
-                    value.svgString
+                    new WeakRef(value.svgString
                     ? stringToSVG(value.svgString)
                     : (
                       ICONS.cog
-                    )
+                    )).deref()
                   }
-                  view={this.props.view}
                 />
               ))}
           </div>

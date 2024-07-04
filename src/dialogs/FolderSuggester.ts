@@ -11,7 +11,6 @@ import {
   SuggestModal,
   Scope,
 } from "obsidian";
-import { t } from "../lang/helpers";
 import { createPopper, Instance as PopperInstance } from "@popperjs/core";
 
 class Suggester<T> {
@@ -132,7 +131,7 @@ class Suggester<T> {
 export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
   items: T[] = [];
   suggestions: HTMLDivElement[];
-  popper: PopperInstance;
+  popper: WeakRef<PopperInstance>;
   //@ts-ignore
   scope: Scope = new Scope(this.app.scope);
   suggester: Suggester<FuzzyMatch<T>>;
@@ -197,7 +196,7 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
     this.app.keymap.pushScope(this.scope);
 
     this.inputEl.ownerDocument.body.appendChild(this.suggestEl);
-    this.popper = createPopper(this.inputEl, this.suggestEl, {
+    this.popper = new WeakRef(createPopper(this.inputEl, this.suggestEl, {
       placement: "bottom-start",
       modifiers: [
         {
@@ -213,7 +212,7 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
           },
         },
       ],
-    });
+    }));
   }
 
   onEscape(): void {
@@ -225,11 +224,15 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
     this.app.keymap.popScope(this.scope);
 
     this.suggester.setSuggestions([]);
-    if (this.popper) {
-      this.popper.destroy();
+    if (this.popper?.deref()) {
+      this.popper.deref().destroy();
     }
 
-    this.suggestEl.detach();
+    this.inputEl.removeEventListener("input", this.onInputChanged.bind(this));
+    this.inputEl.removeEventListener("focus", this.onFocus.bind(this));
+    this.inputEl.removeEventListener("blur", this.close.bind(this));
+
+    this.suggestEl.detach(); 
   }
   createPrompt(prompts: HTMLSpanElement[]) {
     if (!this.promptEl) {

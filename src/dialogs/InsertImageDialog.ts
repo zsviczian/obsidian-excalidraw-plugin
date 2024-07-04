@@ -4,11 +4,27 @@ import { DEVICE, IMAGE_TYPES, REG_LINKINDEX_INVALIDCHARS } from "../constants/co
 import ExcalidrawView from "../ExcalidrawView";
 import { t } from "../lang/helpers";
 import ExcalidrawPlugin from "../main";
+import { getEA } from "src";
 
 export class InsertImageDialog extends FuzzySuggestModal<TFile> {
   public app: App;
   public plugin: ExcalidrawPlugin;
   private view: ExcalidrawView;
+
+  destroy() {
+    this.app = null;
+    this.plugin = null;
+    this.view = null;
+    this.inputEl.onkeyup = null;
+  }
+
+  onClose(): void {
+    //deley this.view destruction until onChooseItem is called
+    window.setTimeout(() => {
+      this.view = null;
+    });
+    super.onClose();
+  }
 
   constructor(plugin: ExcalidrawPlugin) {
     super(plugin.app);
@@ -55,13 +71,14 @@ export class InsertImageDialog extends FuzzySuggestModal<TFile> {
   }
 
   onChooseItem(item: TFile, event: KeyboardEvent): void {
-    const ea = this.plugin.ea.getAPI(this.view);
+    const ea = getEA(this.view);
     ea.canvas.theme = this.view.excalidrawAPI.getAppState().theme;
     const scaleToFullsize = scaleToFullsizeModifier(event);
     (async () => {
       //this.view.currentPosition = this.position;
       await ea.addImage(0, 0, item, !scaleToFullsize);
-      ea.addElementsToView(true, true, true);
+      await ea.addElementsToView(true, true, true);
+      ea.destroy();
     })();
   }
 

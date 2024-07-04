@@ -22,6 +22,10 @@ export default class Taskbone {
   ) {
   }
 
+  public destroy() {
+    this.plugin = null;
+  }
+
   public async initialize(save:boolean = true):Promise<string> {
     if(this.plugin.settings.taskboneAPIkey !== "") return;
     const response = await requestUrl({
@@ -95,11 +99,13 @@ export default class Taskbone {
         ));
     if(viewElements.length === 0) {
       new Notice ("Aborting OCR because there are no image or freedraw elements on the canvas.",4000);
+      ea.destroy();
       return;
     }
     const fe = new FrontmatterEditor(view.data);
     if(addToFrontmatter && fe.hasKey("taskbone-ocr") && !forceReScan) {
       new Notice ("The drawing has already been processed, you will find the result in the frontmatter in markdown view mode. If you ran the command from the Obsidian Panel in Excalidraw then you can CTRL(CMD)+click the command to force the rescaning.",4000)
+      ea.destroy();
       return;
     }
 
@@ -113,6 +119,7 @@ export default class Taskbone {
       window.navigator.clipboard.writeText(text);
       new Notice(`I placed the recognized text onto the system clipboard${addToFrontmatter?" and to document properties":""}.`);
     }
+    ea.destroy();
   }
 
   private async getTextForImage(image: Blob):Promise<string> {

@@ -8,7 +8,7 @@ import {
   TextComponent,
   TFile,
 } from "obsidian";
-import { DEVICE, GITHUB_RELEASES, VIEW_TYPE_EXCALIDRAW } from "./constants/constants";
+import { GITHUB_RELEASES, VIEW_TYPE_EXCALIDRAW } from "./constants/constants";
 import ExcalidrawView from "./ExcalidrawView";
 import { t } from "./lang/helpers";
 import type ExcalidrawPlugin from "./main";
@@ -2223,7 +2223,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           areaZoomText.innerText = ` ${value.toString()}`;
           this.plugin.settings.areaZoomLimit = value;
           this.applySettingsUpdate();
-          this.plugin.excalidrawConfig.updateValues();
+          this.plugin.excalidrawConfig.updateValues(this.plugin);
         }),
     )
     .settingEl.createDiv("", (el) => {

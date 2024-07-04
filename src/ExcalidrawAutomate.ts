@@ -92,7 +92,6 @@ import {
 import { EXCALIDRAW_AUTOMATE_INFO, EXCALIDRAW_SCRIPTENGINE_INFO } from "./dialogs/SuggesterInfo";
 import { addBackOfTheNoteCard, getFrameBasedOnFrameNameOrId } from "./utils/ExcalidrawViewUtils";
 import { log } from "./utils/DebugHelper";
-import { auto } from "@popperjs/core";
 
 extendPlugins([
   HarmonyPlugin,
@@ -2702,6 +2701,20 @@ export class ExcalidrawAutomate {
     this.copyViewElementsToEAforEditing(res.content);
     return true;
   }
+
+  destroy(): void {
+    this.targetView = null;
+    this.plugin = null;
+    this.elementsDict = {};
+    this.imagesDict = {};
+    this.mostRecentMarkdownSVG = null;
+    this.activeScript = null;
+    //@ts-ignore
+    this.style = {};
+    //@ts-ignore
+    this.canvas = {};
+    this.colorPalette = {};
+  }  
 };
 
 export async function initExcalidrawAutomate(
@@ -2712,10 +2725,6 @@ export async function initExcalidrawAutomate(
   //@ts-ignore
   window.ExcalidrawAutomate = ea;
   return ea;
-}
-
-export function destroyExcalidrawAutomate() {
-  delete window.ExcalidrawAutomate;
 }
 
 function normalizeLinePoints(
@@ -2753,10 +2762,14 @@ function getFontFamily(id: number) {
   }
 }
 
-async function initFonts() {
+export async function initFonts(doc: Document = document) {
   for (let i = 1; i <= 3; i++) {
-    await (document as any).fonts.load(`20px ${getFontFamily(i)}`);
+    await (doc as any).fonts.load(`20px ${getFontFamily(i)}`);
   }
+  await (doc as any).fonts.load("400 20px Assistant");
+  await (doc as any).fonts.load("500 20px Assistant");
+  await (doc as any).fonts.load("600 20px Assistant");
+  await (doc as any).fonts.load("700 20px Assistant");
 }
 
 export function _measureText(
@@ -2883,6 +2896,7 @@ async function getTemplate(
         ));
     }
 
+    excalidrawData.destroy();
     return {
       elements: convertMarkdownLinksToObsidianURLs
         ? updateElementLinksToObsidianLinks({

@@ -438,10 +438,32 @@ export class ExcalidrawData {
   constructor(
     private plugin: ExcalidrawPlugin,
   ) {
-    this.app = plugin.app;
+    this.app = this.plugin.app;
     this.files = new Map<FileId, EmbeddedFile>();
     this.equations = new Map<FileId, { latex: string; isLoaded: boolean }>();
     this.mermaids = new Map<FileId, { mermaid: string; isLoaded: boolean }>();
+  }
+
+  public destroy() {
+    this.textElements = null;
+    this.scene = null;
+    this.deletedElements = [];
+    this.file = null;
+    this.app = null;
+    this.showLinkBrackets = null;
+    this.linkPrefix = null;
+    this.embeddableTheme = null;
+    this.urlPrefix = null;
+    this.autoexportPreference = null;
+    this.textMode = null; 
+    this.loaded = false;  
+    this.elementLinks = null;
+    this.files = null;
+    this.equations = null;
+    this.mermaids = null;
+    this.compatibilityMode = null;
+    this.textElementCommentedOut = null;
+    this.selectedElementIds = null;
   }
 
   /**

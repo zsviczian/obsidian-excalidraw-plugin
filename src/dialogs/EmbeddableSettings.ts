@@ -62,7 +62,6 @@ export class EmbeddableSettings extends Modal {
       this.mdCustomData.borderColor = borderCM.stringHEX({alpha: false});
       this.mdCustomData.borderOpacity = element.opacity;
     }
-    
   }
 
   onOpen(): void {
@@ -73,7 +72,15 @@ export class EmbeddableSettings extends Modal {
 
   onClose() {
     this.containerEl.removeEventListener("keydown",this.onKeyDown);
+    this.plugin = null;
+    this.view = null;
+    this.file = null;
+    this.element = null;
+    this.ea.destroy();
+    this.ea = null;
+    this.mdCustomData = null;
   }
+
 
   async createForm() {
 
@@ -140,16 +147,14 @@ export class EmbeddableSettings extends Modal {
       button
         .setButtonText(t("PROMPT_BUTTON_CANCEL"))
         .setTooltip("ESC")
-        .onClick(() => {
-          this.close();
-        })
+        .onClick(this.close.bind(this))
     )
     .addButton(button =>
       button
         .setButtonText(t("PROMPT_BUTTON_OK"))
         .setTooltip("CTRL/Opt+Enter")
         .setCta()
-        .onClick(()=>this.applySettings())
+        .onClick(this.applySettings.bind(this))
     )
 
 
@@ -162,8 +167,6 @@ export class EmbeddableSettings extends Modal {
     this.onKeyDown = onKeyDown;
     this.containerEl.ownerDocument.addEventListener("keydown",onKeyDown);
   }
-
- 
 
   private async applySettings() {
     let dirty = false;
@@ -224,10 +227,11 @@ export class EmbeddableSettings extends Modal {
         await this.ea.addElementsToView();
         //@ts-ignore
         this.ea.viewUpdateScene({appState: {}});
+        this.close(); //close should only run once update scene is done
       })();
-
+    } else {
+      this.close();
     }
-    this.close();
   };
 }
 

@@ -3,7 +3,30 @@ import ExcalidrawPlugin from "src/main";
 import { getAllWindowDocuments } from "./ObsidianUtils";
 import { DEBUGGING, debug } from "./DebugHelper";
 
-const STYLE_VARIABLES = ["--background-modifier-cover","--background-primary-alt","--background-secondary","--background-secondary-alt","--background-modifier-border","--text-normal","--text-muted","--text-accent","--text-accent-hover","--text-faint","--text-highlight-bg","--text-highlight-bg-active","--text-selection","--interactive-normal","--interactive-hover","--interactive-accent","--interactive-accent-hover","--scrollbar-bg","--scrollbar-thumb-bg","--scrollbar-active-thumb-bg"];
+const STYLE_VARIABLES = [
+  "--background-modifier-cover",
+  "--background-primary-alt",
+  "--background-secondary",
+  "--background-secondary-alt",
+  "--background-modifier-border",
+  "--text-normal",
+  "--text-muted",
+  "--text-accent",
+  "--text-accent-hover",
+  "--text-faint",
+  "--text-highlight-bg",
+  "--text-highlight-bg-active",
+  "--text-selection",
+  "--interactive-normal",
+  "--interactive-hover",
+  "--interactive-accent",
+  "--interactive-accent-hover",
+  "--scrollbar-bg",
+  "--scrollbar-thumb-bg",
+  "--scrollbar-active-thumb-bg",
+  "--tab-container-background",
+  "--titlebar-background-focused",
+];
 const EXCALIDRAW_CONTAINER_CLASS = "excalidraw__embeddable__outer";
 
 export class StylesManager {
@@ -17,44 +40,41 @@ export class StylesManager {
     const self = this;
     plugin.app.workspace.onLayoutReady(async () => {
       (process.env.NODE_ENV === 'development') && DEBUGGING && debug(undefined, "StylesManager.constructor > app.workspace.onLayoutReady", self);
-      await this.harvestStyles();
-      getAllWindowDocuments(plugin.app).forEach(doc => {
-        this.copyPropertiesToTheme(doc);
-      })
+      await self.harvestStyles();
+      getAllWindowDocuments(plugin.app).forEach(doc => self.copyPropertiesToTheme(doc));
 
       //initialize
       plugin.registerEvent(
-        plugin.app.workspace.on("css-change", async () => {
-          await this.harvestStyles();
-          getAllWindowDocuments(plugin.app).forEach(doc => {
-            this.copyPropertiesToTheme(doc);
-          })    
-        }),
+        plugin.app.workspace.on("css-change", ()=>self.onCSSChange()),
       )
 
       plugin.registerEvent(
-        plugin.app.workspace.on("window-open", (win: WorkspaceWindow, window: Window) => {
-          this.stylesMap.set(win.doc, {
-            light: document.head.querySelector(`style[id="excalidraw-embedded-light"]`),
-            dark: document.head.querySelector(`style[id="excalidraw-embedded-dark"]`)
-          });
-          //this.copyPropertiesToTheme(win.doc);
-        }),
+        plugin.app.workspace.on("window-open", (win)=>self.onWindowOpen(win)),
       )
 
       plugin.registerEvent(
-        plugin.app.workspace.on("window-open", (win: WorkspaceWindow, window: Window) => {
-          this.stylesMap.delete(win.doc);
-        }),
+        plugin.app.workspace.on("window-close", (win)=>self.onWindowClose(win)),
       )
     });
   }
 
-  public unload() {
-    for (const [doc, styleTags] of this.stylesMap) {
-      doc.head.removeChild(styleTags.light);
-      doc.head.removeChild(styleTags.dark);
-    }
+  private async onCSSChange () {
+    await this.harvestStyles();
+    getAllWindowDocuments(this.plugin.app).forEach(doc => {
+      this.copyPropertiesToTheme(doc);
+    })    
+  }
+
+  private onWindowOpen (win: WorkspaceWindow) {
+    this.stylesMap.set(win.doc, {
+      light: document.head.querySelector(`style[id="excalidraw-embedded-light"]`),
+      dark: document.head.querySelector(`style[id="excalidraw-embedded-dark"]`)
+    });
+    //this.copyPropertiesToTheme(win.doc);
+  }
+
+  private onWindowClose (win: WorkspaceWindow) {
+    this.stylesMap.delete(win.doc);
   }
 
   private async harvestStyles() {
@@ -127,4 +147,13 @@ export class StylesManager {
       this.stylesMap.set(doc, {light: lightStyleTag, dark: darkStyleTag});
     }
   }  	
+  
+  public destroy() {
+    for (const [doc, styleTags] of this.stylesMap) {
+      doc.head.removeChild(styleTags.light);
+      doc.head.removeChild(styleTags.dark);
+    }
+    this.plugin = null;
+  }
+
 }

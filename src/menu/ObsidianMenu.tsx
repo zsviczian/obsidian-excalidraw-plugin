@@ -14,7 +14,7 @@ import { t } from "src/lang/helpers";
 
 declare const PLUGIN_VERSION:string;
 
-export const setPen = (pen: PenStyle, api: any) => {
+export function setPen (pen: PenStyle, api: any) {
   const st = api.getAppState();
   api.updateScene({
     appState: {
@@ -38,7 +38,7 @@ export const setPen = (pen: PenStyle, api: any) => {
   })
 }
 
-export const resetStrokeOptions = (resetCustomPen:any, api: ExcalidrawImperativeAPI, clearCurrentStrokeOptions: boolean) => {
+export function resetStrokeOptions (resetCustomPen:any, api: ExcalidrawImperativeAPI, clearCurrentStrokeOptions: boolean) {
   api.updateScene({
     appState: {
       ...resetCustomPen ? {
@@ -57,6 +57,8 @@ export const resetStrokeOptions = (resetCustomPen:any, api: ExcalidrawImperative
 export class ObsidianMenu {
   private clickTimestamp:number[];
   private activePen: PenStyle;
+  private longpressTimeout : { [key: number]: number } = {};
+  private prevClickTimestamp: number = 0;
   constructor(
     private plugin: ExcalidrawPlugin,
     private toolsRef: React.MutableRefObject<any>,
@@ -65,9 +67,98 @@ export class ObsidianMenu {
     this.clickTimestamp = Array.from({length: Object.keys(PENS).length}, () => 0);
   }
 
-  renderCustomPens = (isMobile: boolean, appState: AppState) => {
+  private actionCustomPenLabelClick(index: number, pen: PenStyle) {
+    const now = Date.now();
+    const dblClick = now-this.clickTimestamp[index] < 500;
+    //open pen settings on double click
+    if(dblClick) {
+      const penSettings = new PenSettingsModal(this.plugin,this.view,index);
+      (async () => {
+        await this.plugin.loadSettings();
+        penSettings.open();
+      })();
+      return;
+    }
+    this.clickTimestamp[index] = now;
+    
+    const api = this.view.excalidrawAPI;
+    const st = api.getAppState();
+
+    //single second click to reset freedraw to default
+    if(st.currentStrokeOptions === pen.penOptions && st.activeTool.type === "freedraw") {
+      resetStrokeOptions(st.resetCustomPen, api, true);
+      return;
+    }
+
+    //apply pen settings to canvas
+    this.activePen = {...pen};
+    setPen(pen,api);
+    api.setActiveTool({type:"freedraw"});
+  }
+
+  private actionScriptButtonPonterUp(index: number, key: string) {
+    if(this.longpressTimeout[index]) {
+      this.view.ownerWindow.clearTimeout(this.longpressTimeout[index]);
+      this.longpressTimeout[index] = 0;
+      (async ()=>{
+        const f = this.view.app.vault.getAbstractFileByPath(key);
+        if (f && f instanceof TFile) {
+          this.plugin.scriptEngine.executeScript(
+            this.view,
+            await this.view.app.vault.read(f),
+            this.plugin.scriptEngine.getScriptName(f),
+            f
+          );
+        }
+      })()
+    }
+  }
+
+  private actionScriptButtonPointerDown(index: number, key: string) {
+    const now = Date.now();
+    if(this.longpressTimeout[index]>0) {
+      this.view.ownerWindow.clearTimeout(this.longpressTimeout[index]);
+      this.longpressTimeout[index] = 0;
+    }
+    if(now-this.prevClickTimestamp >= 500) {
+      this.longpressTimeout[index] = this.view.ownerWindow.setTimeout(
+        () => {
+          this.longpressTimeout[index] = 0;
+          (async () =>{
+            await this.plugin.loadSettings();
+            const index = this.plugin.settings.pinnedScripts.indexOf(key)
+            if(index > -1) {
+              this.plugin.settings.pinnedScripts.splice(index,1);
+              this.view.excalidrawAPI?.setToast({message:`Pin removed: ${name}`, duration: 3000, closable: true});
+            } 
+            await this.plugin.saveSettings();
+            this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
+              if (v.view instanceof ExcalidrawView) v.view.updatePinnedScripts()
+            })
+            })()
+        },
+        1500
+      )
+    }
+    this.prevClickTimestamp = now;
+  }
+
+  private actionShowHideMenu (isMobile: boolean, appState: AppState) {
+    this.toolsRef.current.setTheme(appState.theme);
+    this.toolsRef.current.toggleVisibility(
+      appState.zenModeEnabled || isMobile,
+    );
+  }
+
+  private actionInsertAnyFile() {
+    this.view.setCurrentPositionToCenter();
+    const insertFileModal = new UniversalInsertFileModal(this.plugin, this.view);
+    insertFileModal.open();
+  }
+
+  public renderCustomPens (isMobile: boolean, appState: AppState) {
     return(
-      appState.customPens?.map((key,index)=>{
+      appState.customPens?.map((_,index)=>{
         const pen = this.plugin.settings.customPens[index]
         //Reset stroke setting when changing to a different tool
         if( 
@@ -75,7 +166,7 @@ export class ObsidianMenu {
           appState.activeTool.type !== "freedraw" &&
           appState.currentStrokeOptions === pen.penOptions
         ) {
-          setTimeout(()=> resetStrokeOptions(appState.resetCustomPen, this.view.excalidrawAPI, false))
+          setTimeout(()=> resetStrokeOptions(appState.resetCustomPen, this.view.excalidrawAPI, false));
         }
         //if Pen settings are loaded, select custom pen when activating the freedraw element
         if (
@@ -111,34 +202,7 @@ export class ObsidianMenu {
                 "is-mobile": isMobile,
               },
             )}
-            onClick={() => {
-              const now = Date.now();
-              const dblClick = now-this.clickTimestamp[index] < 500;
-              //open pen settings on double click
-              if(dblClick) {
-                const penSettings = new PenSettingsModal(this.plugin,this.view,index);
-                (async () => {
-                  await this.plugin.loadSettings();
-                  penSettings.open();
-                })();
-                return;
-              }
-              this.clickTimestamp[index] = now;
-              
-              const api = this.view.excalidrawAPI;
-              const st = api.getAppState();
-
-              //single second click to reset freedraw to default
-              if(st.currentStrokeOptions === pen.penOptions && st.activeTool.type === "freedraw") {
-                resetStrokeOptions(st.resetCustomPen, api, true);
-                return;
-              }
-
-              //apply pen settings to canvas
-              this.activePen = {...pen};
-              setPen(pen,api);
-              api.setActiveTool({type:"freedraw"});
-            }}
+            onClick={ this.actionCustomPenLabelClick.bind(this,index, pen) }
           >
             <div
               className="ToolIcon__icon"
@@ -157,10 +221,7 @@ export class ObsidianMenu {
     )
   }
 
-  private longpressTimeout : { [key: number]: number } = {};
-
-  renderPinnedScriptButtons = (isMobile: boolean, appState: AppState) => {
-    let prevClickTimestamp = 0;
+  public renderPinnedScriptButtons (isMobile: boolean, appState: AppState) {
     return (
       appState?.pinnedScripts?.map((key,index)=>{ //pinned scripts
         const scriptProp = this.plugin.scriptEngine.scriptIconMap[key];
@@ -179,51 +240,8 @@ export class ObsidianMenu {
                 "is-mobile": isMobile,
               },
             )}
-            onPointerUp={() => {
-              if(this.longpressTimeout[index]) {
-                window.clearTimeout(this.longpressTimeout[index]);
-                this.longpressTimeout[index] = 0;
-                (async ()=>{
-                  const f = app.vault.getAbstractFileByPath(key);
-                  if (f && f instanceof TFile) {
-                    this.plugin.scriptEngine.executeScript(
-                      this.view,
-                      await app.vault.read(f),
-                      this.plugin.scriptEngine.getScriptName(f),
-                      f
-                    );
-                  }
-                })()
-              }
-            }}
-            onPointerDown={()=>{
-              const now = Date.now();
-              if(this.longpressTimeout[index]>0) {
-                window.clearTimeout(this.longpressTimeout[index]);
-                this.longpressTimeout[index] = 0;
-              }
-              if(now-prevClickTimestamp >= 500) {
-                this.longpressTimeout[index] = window.setTimeout(
-                  () => {
-                    this.longpressTimeout[index] = 0;
-                    (async () =>{
-                      await this.plugin.loadSettings();
-                      const index = this.plugin.settings.pinnedScripts.indexOf(key)
-                      if(index > -1) {
-                        this.plugin.settings.pinnedScripts.splice(index,1);
-                        this.view.excalidrawAPI?.setToast({message:`Pin removed: ${name}`, duration: 3000, closable: true});
-                      } 
-                      await this.plugin.saveSettings();
-                      app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
-                        if (v.view instanceof ExcalidrawView) v.view.updatePinnedScripts()
-                      })
-                      })()
-                  },
-                  1500
-                )
-              }
-              prevClickTimestamp = now;
-            }}
+            onPointerUp={this.actionScriptButtonPonterUp.bind(this,index,key)}
+            onPointerDown={this.actionScriptButtonPointerDown.bind(this,index,key)}
           >
             <div
               className="ToolIcon__icon"
@@ -237,7 +255,7 @@ export class ObsidianMenu {
     )
   }
 
-  renderButton = (isMobile: boolean, appState: AppState) => {
+  public renderButton (isMobile: boolean, appState: AppState) {
     return (
       <>
         <label
@@ -248,12 +266,7 @@ export class ObsidianMenu {
               "is-mobile": isMobile,
             },
           )}
-          onClick={() => {
-            this.toolsRef.current.setTheme(appState.theme);
-            this.toolsRef.current.toggleVisibility(
-              appState.zenModeEnabled || isMobile,
-            );
-          }}
+          onClick={this.actionShowHideMenu.bind(this,isMobile,appState)}
         >
           <div className="ToolIcon__icon" aria-label={t("OBSIDIAN_TOOLS_PANEL")}>
             {ICONS.obsidian}
@@ -267,11 +280,7 @@ export class ObsidianMenu {
               "is-mobile": isMobile,
             },
           )}
-          onClick={() => {
-            this.view.setCurrentPositionToCenter();
-            const insertFileModal = new UniversalInsertFileModal(this.plugin, this.view);
-            insertFileModal.open();
-          }}
+          onClick={this.actionInsertAnyFile.bind(this)}
         >
           <div className="ToolIcon__icon" aria-label={t("UNIVERSAL_ADD_FILE")}>
             {ICONS["add-file"]}
@@ -282,4 +291,19 @@ export class ObsidianMenu {
       </>
     );
   };
+
+  destroy() {
+    Object.values(this.longpressTimeout).forEach(
+      t=>this.view.ownerWindow.clearTimeout(t)
+    );
+    this.longpressTimeout = {};
+    this.activePen = null;
+    this.plugin = null;
+    this.toolsRef = null;
+    this.view = null;
+    this.clickTimestamp = null;
+    this.renderButton = null;
+    this.renderCustomPens = null;
+    this.renderPinnedScriptButtons = null;
+  }
 }

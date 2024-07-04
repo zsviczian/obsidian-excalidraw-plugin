@@ -28,7 +28,7 @@ export class InsertPDFModal extends Modal {
     private plugin: ExcalidrawPlugin,
     private view: ExcalidrawView,
   ) {
-    super(app);
+    super(plugin.app);
   }
 
   open (file?: TFile) {
@@ -54,12 +54,17 @@ export class InsertPDFModal extends Modal {
       this.plugin.settings.pdfNumRows = this.numRows;
       this.plugin.settings.pdfDirection = this.direction;
       this.plugin.settings.pdfLockAfterImport = this.lockAfterImport;
-      this.plugin.saveSettings();
+      await this.plugin.saveSettings();
     }
     if(this.pdfDoc) {
       this.pdfDoc.destroy();
       this.pdfDoc = null;
     }
+    this.plugin = null;
+    this.view = null;
+    this.app = null;
+    this.imageSizeMessage.remove();
+    this.setImageSizeMessage  = null;
   }
 
   private async getPageDimensions (pdfDoc: any) {
@@ -408,6 +413,7 @@ export class InsertPDFModal extends Modal {
             const viewElements = ea.getViewElements().filter(el => ids.includes(el.id));
             api.selectElements(viewElements);
             api.zoomToFit(viewElements);
+            ea.destroy();
             this.close();
           })
         importButton = button;

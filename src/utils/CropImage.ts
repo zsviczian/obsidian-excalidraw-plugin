@@ -45,6 +45,15 @@ export class CropImage {
     })
   }
 
+  public destroy() {
+    this.imageEA.destroy();
+    this.maskEA.destroy();
+    this.imageEA = null;
+    this.maskEA = null;
+    this.elements = null;
+    this.bbox = null;
+  }
+  
   private setBoundingEl(ea: ExcalidrawAutomate, bgColor: string) {
     const {topX, topY, width, height} = this.bbox;
     ea.style.backgroundColor = bgColor;

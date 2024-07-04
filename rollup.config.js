@@ -54,11 +54,11 @@ if (!isLib) console.log(manifest.version);
 const packageString = isLib
   ? ""
   : ';' + lzstring_pkg +
-    '\nconst EXCALIDRAW_PACKAGES = "' + LZString.compressToBase64(react_pkg + reactdom_pkg + excalidraw_pkg) + '";\n' +
-    'const {react, reactDOM, excalidrawLib} = window.eval.call(window, `(function() {' +
-    '${LZString.decompressFromBase64(EXCALIDRAW_PACKAGES)};' +
+    '\nlet EXCALIDRAW_PACKAGES = LZString.decompressFromBase64("' + LZString.compressToBase64(react_pkg + reactdom_pkg + excalidraw_pkg) + '");\n' +
+    'let {react, reactDOM, excalidrawLib} = window.eval.call(window, `(function() {' +
+    '${EXCALIDRAW_PACKAGES};' +
     'return {react: React, reactDOM: ReactDOM, excalidrawLib: ExcalidrawLib};})();`);\n' +
-    'const PLUGIN_VERSION="' + manifest.version + '";';
+    'let PLUGIN_VERSION="' + manifest.version + '";';
 
 const BASE_CONFIG = {
   input: 'src/main.ts',

@@ -1,11 +1,12 @@
 import { ExcalidrawAutomate } from "./ExcalidrawAutomate";
+import { ExcalidrawLib } from "./ExcalidrawLib";
 
 export type ConnectionPoint = "top" | "bottom" | "left" | "right" | null;
 
 export type Packages = {
   react: any,
   reactDOM: any,
-  excalidrawLib: any,
+  excalidrawLib: typeof ExcalidrawLib,
 }
 
 export type ValueOf<T> = T[keyof T];

@@ -19,20 +19,22 @@ declare module "obsidian" {
   }
 }
 
-const getTheme = (view: ExcalidrawView, theme:string): string => view.excalidrawData.embeddableTheme === "dark"
+function getTheme (view: ExcalidrawView, theme:string): string {
+  return view.excalidrawData.embeddableTheme === "dark"
   ? "theme-dark"
   : view.excalidrawData.embeddableTheme === "light" 
     ? "theme-light"
     : view.excalidrawData.embeddableTheme === "auto"
       ? theme === "dark" ? "theme-dark" : "theme-light"
       : isObsidianThemeDark() ? "theme-dark" : "theme-light";
+}
 
 //--------------------------------------------------------------------------------
 //Render webview for anything other than Vimeo and Youtube
 //Vimeo and Youtube are rendered by Excalidraw because of the window messaging
 //required to control the video
 //--------------------------------------------------------------------------------
-export const renderWebView = (src: string, view: ExcalidrawView, id: string, appState: UIAppState):JSX.Element =>{
+export function renderWebView (src: string, view: ExcalidrawView, id: string, _: UIAppState):JSX.Element {
   const isDataURL = src.startsWith("data:");
   if(DEVICE.isDesktop && !isDataURL) {
     return (
@@ -86,36 +88,36 @@ function RenderObsidianView(
   if (!file) {
     return null;
   }
-  const react = view.plugin.getPackage(view.ownerWindow).react;
+  const React = view.packages.react;
   
   //@ts-ignore
-  const leafRef = react.useRef<{leaf: WorkspaceLeaf; node?: ObsidianCanvasNode, editNode?: Function} | null>(null);
-  const isEditingRef = react.useRef(false);
-  const isActiveRef = react.useRef(false);
-  const themeRef = react.useRef(theme);
-  const elementRef = react.useRef(element);
+  const leafRef = React.useRef<{leaf: WorkspaceLeaf; node?: ObsidianCanvasNode, editNode?: Function} | null>(null);
+  const isEditingRef = React.useRef(false);
+  const isActiveRef = React.useRef(false);
+  const themeRef = React.useRef(theme);
+  const elementRef = React.useRef(element);
 
   // Update themeRef when theme changes
-  react.useEffect(() => {
+  React.useEffect(() => {
     themeRef.current = theme;
   }, [theme]);
 
   // Update elementRef when element changes
-  react.useEffect(() => {
+  React.useEffect(() => {
     elementRef.current = element;
   }, [element]);
  
   //--------------------------------------------------------------------------------
   //block propagation of events to the parent if the iframe element is active
   //--------------------------------------------------------------------------------
-  const stopPropagation = react.useCallback((event:React.PointerEvent<HTMLElement>) => {
+  const stopPropagation = React.useCallback((event:React.PointerEvent<HTMLElement>) => {
     if(isActiveRef.current) {
       event.stopPropagation(); // Stop the event from propagating up the DOM tree
     }
   }, [isActiveRef.current]);
 
   //runs once after mounting of the component and when the component is unmounted
-  react.useEffect(() => {
+  React.useEffect(() => {
     if(!containerRef?.current) {
       return;
     }
@@ -134,7 +136,7 @@ function RenderObsidianView(
   }, []);
 
   //blocking or not the propagation of events to the parent if the iframe is active
-  react.useEffect(() => {
+  React.useEffect(() => {
     EXTENDED_EVENT_TYPES.forEach((type) => containerRef.current.removeEventListener(type, stopPropagation));
     if(!containerRef?.current) {
       return;
@@ -156,7 +158,7 @@ function RenderObsidianView(
   //--------------------------------------------------------------------------------
   //Mount the workspace leaf or the canvas node depending on subpath
   //--------------------------------------------------------------------------------
-  react.useEffect(() => {
+  React.useEffect(() => {
     if(!containerRef?.current) {
       return;
     }
@@ -175,7 +177,7 @@ function RenderObsidianView(
     rootSplit.containerEl.style.height = '100%';
     rootSplit.containerEl.style.borderRadius = "var(--embeddable-radius)";
     leafRef.current = {
-      leaf: app.workspace.createLeafInParent(rootSplit, 0),
+      leaf: view.app.workspace.createLeafInParent(rootSplit, 0),
       node: null,
       editNode: null,
     };
@@ -222,19 +224,27 @@ function RenderObsidianView(
           const workspaceLeaf:HTMLDivElement = rootSplit.containerEl.querySelector("div.workspace-leaf");
           if(workspaceLeaf) workspaceLeaf.style.borderRadius = "var(--embeddable-radius)";
           containerRef.current.appendChild(rootSplit.containerEl);
+          setColors(containerRef.current, element, mdProps, canvasColor);
         }
         patchMobileView(view);
         view.updateEmbeddableLeafRef(element.id, leafRef.current);
       })();
     }
 
-    return () => {}; //cleanup on unmount
+    return () => {
+      if(!leafRef.current) {
+        return;
+      }
+      view.canvasNodeFactory.removeNode(leafRef.current.node);
+      leafRef.current.leaf?.detach();
+      leafRef.current = null;
+    }; //cleanup on unmount
   }, [linkText, subpath, containerRef]);
   
   //--------------------------------------------------------------------------------
   //Set colors of the canvas node
   //--------------------------------------------------------------------------------
-  const setColors = (canvasNode: HTMLDivElement, element: NonDeletedExcalidrawElement, mdProps: EmbeddableMDCustomProps, canvasColor: string) => {
+  function setColors (canvasNode: HTMLDivElement, element: NonDeletedExcalidrawElement, mdProps: EmbeddableMDCustomProps, canvasColor: string) {
     if(!mdProps) return;
     if (!leafRef.current?.hasOwnProperty("node")) return;
 
@@ -296,7 +306,7 @@ function RenderObsidianView(
   //--------------------------------------------------------------------------------
   //Set colors of the canvas node
   //--------------------------------------------------------------------------------
-  react.useEffect(() => {
+  React.useEffect(() => {
     if(!containerRef.current) {
       return;
     }
@@ -314,7 +324,7 @@ function RenderObsidianView(
   //--------------------------------------------------------------------------------
   //Switch to preview mode when the iframe is not active
   //--------------------------------------------------------------------------------
-  react.useEffect(() => {
+  React.useEffect(() => {
     if(isEditingRef.current) {
       if(leafRef.current?.node) {
         containerRef.current?.addClasses(["is-editing", "is-focused"]);
@@ -324,11 +334,10 @@ function RenderObsidianView(
     }
   }, [isEditingRef.current, leafRef]);
 
-
   //--------------------------------------------------------------------------------
   //Switch to edit mode when markdown view is clicked
   //--------------------------------------------------------------------------------
-  const handleClick = react.useCallback((event?: React.PointerEvent<HTMLElement>) => {
+  const handleClick = React.useCallback((event?: React.PointerEvent<HTMLElement>) => {
     if(isActiveRef.current) {
       event?.stopPropagation();
     }
@@ -361,7 +370,7 @@ function RenderObsidianView(
 
   if(leafRef.current)  leafRef.current.editNode = handleClick;
   // Event listener for key press
-  react.useEffect(() => {
+  React.useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
       if (event.key === "Enter") {
         handleClick(event); // Call handleClick function when Enter key is pressed
@@ -378,7 +387,7 @@ function RenderObsidianView(
   //--------------------------------------------------------------------------------
   // Set isActiveRef and switch to preview mode when the iframe is not active
   //--------------------------------------------------------------------------------
-  react.useEffect(() => {
+  React.useEffect(() => {
     if(!containerRef?.current || !leafRef?.current) {
       return;
     }
@@ -426,8 +435,8 @@ function RenderObsidianView(
 
 
 export const CustomEmbeddable: React.FC<{element: NonDeletedExcalidrawElement; view: ExcalidrawView; appState: UIAppState; linkText: string}> = ({ element, view, appState, linkText }) => {
-  const react = view.plugin.getPackage(view.ownerWindow).react;
-  const containerRef: React.RefObject<HTMLDivElement> = react.useRef(null);
+  const React = view.packages.react;
+  const containerRef: React.RefObject<HTMLDivElement> = React.useRef(null);
   const theme = getTheme(view, appState.theme);
   const mdProps: EmbeddableMDCustomProps = element.customData?.mdProps || null;
   return (

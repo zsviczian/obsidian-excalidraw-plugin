@@ -23,11 +23,9 @@ export const setDynamicStyle = (
       toolsStyle = toolsStyle.replace(/\-\-color\-primary.*/,"");
       toolspanel.setAttribute("style",toolsStyle);
     }
-  
-
     return;
   }
-  const doc = view.ownerDocument;
+  //const doc = view.ownerDocument;
   const isLightTheme = 
     view?.excalidrawAPI?.getAppState?.()?.theme === "light" ||
     view?.excalidrawData?.scene?.appState?.theme === "light";
@@ -129,9 +127,22 @@ export const setDynamicStyle = (
     styleString
   )*/
 
+  const toolspanel = view.toolsPanelRef?.current?.containerRef?.current;
+  if(toolspanel) {
+    let toolsStyle = toolspanel.getAttribute("style");
+    toolsStyle = toolsStyle.replace(/\-\-color\-primary.*/,"");
+    toolspanel.setAttribute("style",toolsStyle+styleString);
+  }
+
   setTimeout(()=>{
     const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
-    if(!api) return;
+    if(!api) {
+      view = null;
+      ea = null;
+      color = null;
+      dynamicStyle = null;
+      return;
+    }
     const frameColor = {
       stroke: str(isDark?gray2().lighterBy(15):gray2().darkerBy(15)),
       fill: str((isDark?gray2().lighterBy(30):gray2().darkerBy(30)).alphaTo(0.2)),
@@ -158,11 +169,9 @@ export const setDynamicStyle = (
         dynamicStyle: styleObject
       }
     });
+    view = null;
+    ea = null;
+    color = null;
+    dynamicStyle = null;
   });
-  const toolspanel = view.toolsPanelRef?.current?.containerRef?.current;
-  if(toolspanel) {
-    let toolsStyle = toolspanel.getAttribute("style");
-    toolsStyle = toolsStyle.replace(/\-\-color\-primary.*/,"");
-    toolspanel.setAttribute("style",toolsStyle+styleString);
-  }
 }

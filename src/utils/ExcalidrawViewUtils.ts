@@ -1,6 +1,6 @@
 
 import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS } from "src/constants/constants";
-import { App, TFile } from "obsidian";
+import { App, TFile, WorkspaceLeaf } from "obsidian";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK, getExcalidrawMarkdownHeaderSection } from "src/ExcalidrawData";
 import ExcalidrawView from "src/ExcalidrawView";
@@ -10,6 +10,7 @@ import { cleanSectionHeading } from "./ObsidianUtils";
 import { getEA } from "src";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddableMDCustomProps } from "src/dialogs/EmbeddableSettings";
+import { nanoid } from "nanoid";
 
 export const insertImageToView = async (
   ea: ExcalidrawAutomate,
@@ -181,5 +182,104 @@ export const addBackOfTheNoteCard = async (view: ExcalidrawView, title: string, 
       if(found) view.getEmbeddableLeafElementById(el.id)?.editNode?.();
     });
   }
+  ea.destroy();
   return el.id;
+}
+
+export const renderContextMenuAction = (React: any, label: string, action: Function, onClose: (callback?: () => void) => void) => {
+  return React.createElement (
+    "li",          
+    {
+      key: nanoid(),
+      onClick: () => {
+        onClose(()=>action())
+      },
+    },
+    React.createElement(
+      "button",
+      {              
+        className: "context-menu-item",
+      },
+      React.createElement(
+        "div",
+        {
+          className: "context-menu-item__label",
+        },
+        label,
+      ),
+      React.createElement(
+        "kbd",
+        {
+          className: "context-menu-item__shortcut",
+        },
+        "", //this is where the shortcut may go in the future
+      ),
+    )
+  );
+}
+
+export const tmpBruteForceCleanup = (view: ExcalidrawView) => {
+  window.setTimeout(()=>{
+    if(!view) return;
+    // const cleanupHTMLElement = (el: Element) => {
+    //   //console.log(el);
+    //   while(el.firstElementChild) {
+    //     cleanupHTMLElement(el.firstElementChild);
+    //     el.removeChild(el.firstElementChild);
+    //   }
+    //   Object.keys(el).forEach((key) => {
+    //     //@ts-ignore
+    //     delete el[key];
+    //   });
+    //   el.empty();
+    // }
+
+    // const cleanupLeaf = (l:any) => {
+    //   l.detach?.();
+    //   l.resizeObserver?.disconnect?.();
+    //   l.view?.unload?.();
+    //   l.component?.unload?.();      
+    //   Object.keys(l).forEach((key) => {
+    //     const obj = l[key];
+    //     if (obj instanceof Element) {
+    //       // Recursively empty the DOM element's children
+    //       while (obj.firstChild) {
+    //         cleanupHTMLElement(obj.firstElementChild);
+    //         obj.removeChild(obj.firstElementChild);
+    //       }
+    //       obj.empty();
+    //       delete l[key];
+    //       return;
+    //     }
+    //     //@ts-ignore
+    //     delete l[key];
+    //   });
+    // }
+
+    // //@ts-ignore
+    // if(view.leaf && !view.leaf.parent) {
+    //   if(view.containerEl) {
+    //     cleanupHTMLElement(view.containerEl);
+    //   }
+    //   const leaves = new Set();
+    //   leaves.add(view.leaf);
+    //   while(leaves.has(view.leaf.getContainer())) { 
+    //     leaves.add(view.leaf.getContainer());
+    //   }
+    //   const roots = new Set();
+    //   roots.add(view.leaf.getRoot());
+    //   leaves.forEach((leaf:WorkspaceLeaf) => {
+    //     roots.add(leaf.getRoot());
+    //   });
+    //   leaves.forEach((l:any) => cleanupLeaf(l));
+    //   leaves.clear();
+    //   roots.forEach((root:any) => cleanupLeaf(root));
+    //   roots.clear();
+    // }
+
+    Object.keys(view).forEach((key) => {
+      //@ts-ignore    
+      delete view[key];
+    });
+  }, 500);
 }

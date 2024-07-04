@@ -361,7 +361,7 @@ const createImgElement = async (
   imgOrDiv.setAttribute("draggable","false");
   imgOrDiv.setAttribute("onCanvas",onCanvas?"true":"false");
 
-  let timer:NodeJS.Timeout;
+  let timer:number;
   const clickEvent = (ev:PointerEvent) => {
     if(!(ev.target instanceof Element)) {
       return;
@@ -414,7 +414,7 @@ const createImgElement = async (
   eventElement.addEventListener("pointermove",(ev)=>{
     if(!timer) return;
     if(Math.abs(ev.screenX-pointerDownEvent.screenX)>10 || Math.abs(ev.screenY-pointerDownEvent.screenY)>10) {
-      clearTimeout(timer);
+      window.clearTimeout(timer);
       timer = null;
     }
   });  
@@ -423,11 +423,11 @@ const createImgElement = async (
     //@ts-ignore
     const PLUGIN = app.plugins.plugins["obsidian-excalidraw-plugin"] as ExcalidrawPlugin;
     const timeoutValue = DEVICE.isDesktop ? PLUGIN.settings.longPressDesktop : PLUGIN.settings.longPressMobile;
-    timer = setTimeout(()=>clickEvent(ev),timeoutValue);
+    timer = window.setTimeout(()=>clickEvent(ev),timeoutValue);
     pointerDownEvent = ev;
   });
   eventElement.addEventListener("pointerup",()=>{
-    if(timer) clearTimeout(timer);
+    if(timer) window.clearTimeout(timer);
     timer = null;
   })
   eventElement.addEventListener("dblclick",clickEvent);
@@ -711,15 +711,15 @@ const tmpObsidianWYSIWYG = async (
   internalEmbedDiv.appendChild(imgDiv);
 
   //timer to avoid the image flickering when the user is typing
-  let timer: NodeJS.Timeout = null;
+  let timer: number = null;
   const markdownObserverFn: MutationCallback = (m) => {
     if (!["alt", "width", "height"].contains(m[0]?.attributeName)) {
       return;
     }
     if (timer) {
-      clearTimeout(timer);
+      window.clearTimeout(timer);
     }
-    timer = setTimeout(async () => {
+    timer = window.setTimeout(async () => {
       timer = null;
       internalEmbedDiv.empty();
       const imgDiv = await processInternalEmbed(internalEmbedDiv,file);

@@ -2,7 +2,7 @@ import { RestoredDataState } from "@zsviczian/excalidraw/types/excalidraw/data/r
 import { ImportedDataState } from "@zsviczian/excalidraw/types/excalidraw/data/types";
 import { BoundingBox } from "@zsviczian/excalidraw/types/excalidraw/element/bounds";
 import { ElementsMap, ExcalidrawBindableElement, ExcalidrawElement, ExcalidrawFrameElement, ExcalidrawTextContainer, ExcalidrawTextElement, FontFamilyValues, FontString, NonDeleted, NonDeletedExcalidrawElement, Theme } from "@zsviczian/excalidraw/types/excalidraw/element/types";
-import { AppState, BinaryFiles, ExportOpts, Point, Zoom } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { AppState, BinaryFiles, Point, Zoom } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 
 type EmbeddedLink =
@@ -155,4 +155,13 @@ declare namespace ExcalidrawLib {
     files?: any;
     error?: string;
   } | undefined>;
+
+  var getSceneVersion: any;
+  var Excalidraw: any;
+  var MainMenu: any;
+  var WelcomeScreen: any;
+  var TTDDialogTrigger: any;
+  var TTDDialog: any;
+
+  function destroyObsidianUtils(): void;
 }

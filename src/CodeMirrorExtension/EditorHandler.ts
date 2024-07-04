@@ -12,6 +12,10 @@ export class EditorHandler {
 
   constructor(private plugin: ExcalidrawPlugin) {}
 
+  destroy(): void {
+    this.plugin = null;
+  }
+
   setup(): void {
     this.plugin.registerEditorExtension(this.activeEditorExtensions);
     this.updateCMExtensionState(EDITOR_FADEOUT, this.plugin.settings.fadeOutExcalidrawMarkup);
