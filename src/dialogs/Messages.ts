@@ -17,6 +17,17 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.2.8": `
+While this release may appear modest with no new features, it represents nearly 50 hours of dedicated work. Here's what's been improved:
+
+- **Enhanced Memory Management**: Significant improvements to optimize memory usage.
+- Bug Fixes:
+  - Support for multi-file drag and drop from the operating system.
+  - Correct theming of animated GIFs as Embeddables.
+  - Several other minor bug fixes.
+
+Please note that due to extensive refactoring of the codebase, there may be some unexpected issues. Thanks for your understanding and patience.
+`,
 "2.2.7": `
 ## New
 - In Miscellaneous Settings: added **Load Excalidraw Properties into Obsidian Suggester**. This setting toggles the automatic loading of Excalidraw properties at startup. Enabled by default for easy use of front matter properties. Disabling it prevents auto-loading, but you'll need to manually remove unwanted properties using Obsidian properties view. A plugin restart is required after enabling auto-loading.
