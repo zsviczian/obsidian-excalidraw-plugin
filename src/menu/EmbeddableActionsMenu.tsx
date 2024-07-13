@@ -64,9 +64,8 @@ export class EmbeddableMenu {
   };
 
   private handleMouseLeave () {
-    const self = this;
     this.menuFadeTimeout = window.setTimeout(() => {
-      self.containerRef.current?.style.setProperty("opacity", "0.2");
+      this.containerRef.current?.style.setProperty("opacity", "0.2");
     }, 5000);
   };
 

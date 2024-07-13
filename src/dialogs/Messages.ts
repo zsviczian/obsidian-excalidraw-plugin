@@ -17,6 +17,19 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.2.9": `
+## New
+- Improved the "Open the back-of-the-note of the selected Excalidraw image" action. It now works with grouped elements and keeps the popout window within the visible screen area when elements are close to the top of the canvas. Note: Due to an Obsidian bug, I do not recommend using this feature with versions 1.6.0 - 1.6.6, if you have Obsidian Sync enabled, because Obsidian may freeze when closing the popout window. It functions properly in Obsidian versions before 1.6.0 and from 1.6.7 onwards. 
+
+## Fixed
+- Drag and drop from a local folder (outside Obsidian) resulted in duplicate images.
+- Insert Link Action did not work [#1873](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1873)
+- Insert Obsidian Command Action did not work
+- Element link for text element got deleted when editing the text. [#1878](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1878)
+- When back-of-the-drawing Section Headings have spaces in them, clicking the link opens the drawing side not the markdown side. [#1877](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1877)
+- obsidian:// links did not work as expected. [#1872](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1872)
+- copying and moving a rectangle with text, moves the text unexpectedly. The issue should now be resolved (at least much less likely to occur) [#1867](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1867)
+`,
 "2.2.8": `
 While this release may appear modest with no new features, it represents nearly 50 hours of dedicated work. Here's what's been improved:
 

@@ -22,7 +22,7 @@ import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import { MAX_IMAGE_SIZE, REG_LINKINDEX_INVALIDCHARS } from "src/constants/constants";
 import { REGEX_LINK } from "src/ExcalidrawData";
 import { ScriptEngine } from "src/Scripts";
-import { openExternalLink, openTagSearch } from "src/utils/ExcalidrawViewUtils";
+import { openExternalLink, openTagSearch, parseObsidianLink } from "src/utils/ExcalidrawViewUtils";
 
 export type ButtonDefinition = { caption: string; tooltip?:string; action: Function };
 
@@ -708,7 +708,12 @@ export class ConfirmationPrompt extends Modal {
   }
 }
 
-export const linkPrompt = async (linkText:string, app: App, view?: ExcalidrawView, message: string = "Select link to open"):Promise<[file:TFile, linkText:string, subpath: string]> => {
+export async function linkPrompt (
+  linkText:string,
+  app: App,
+  view?: ExcalidrawView,
+  message: string = "Select link to open",
+):Promise<[file:TFile, linkText:string, subpath: string]> {
   const partsArray = REGEX_LINK.getResList(linkText);
   let subpath: string = null;
   let file: TFile = null;
@@ -737,6 +742,9 @@ export const linkPrompt = async (linkText:string, app: App, view?: ExcalidrawVie
 
   linkText = REGEX_LINK.getLink(parts);
   if(openExternalLink(linkText, app)) return;
+  const maybeObsidianLink = parseObsidianLink(linkText, app, false);
+  if (typeof maybeObsidianLink === "boolean" && maybeObsidianLink) return;
+  if (typeof maybeObsidianLink === "string") linkText = maybeObsidianLink;
 
   if (linkText.search("#") > -1) {
     const linkParts = getLinkParts(linkText, view ? view.file : undefined);

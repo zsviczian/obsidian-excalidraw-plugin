@@ -58,7 +58,9 @@ export class InsertLinkDialog extends FuzzySuggestModal<TFile> {
   }
 
   onClose(): void {
-    this.addText = null;
+    window.setTimeout(()=>{
+      this.addText = null
+    }); //make sure this happens after onChooseItem runs
     super.onClose();
   }
 

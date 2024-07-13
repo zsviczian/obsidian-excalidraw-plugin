@@ -12,12 +12,12 @@ import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/
 import { EmbeddableMDCustomProps } from "src/dialogs/EmbeddableSettings";
 import { nanoid } from "nanoid";
 
-export const insertImageToView = async (
+export async function insertImageToView(
   ea: ExcalidrawAutomate,
   position: { x: number, y: number },
   file: TFile | string,
   scale?: boolean,
-):Promise<string> => {
+):Promise<string> {
   ea.clear();
   ea.style.strokeColor = "transparent";
   ea.style.backgroundColor = "transparent";
@@ -33,12 +33,12 @@ export const insertImageToView = async (
   return id;
 }
 
-export const insertEmbeddableToView = async (
+export async function insertEmbeddableToView (
   ea: ExcalidrawAutomate,
   position: { x: number, y: number },
   file?: TFile,
   link?: string,
-):Promise<string> => {
+):Promise<string> {
   ea.clear();
   ea.style.strokeColor = "transparent";
   ea.style.backgroundColor = "transparent";
@@ -58,7 +58,7 @@ export const insertEmbeddableToView = async (
   }
 }
 
-export const getLinkTextFromLink = (text: string): string => {
+export function getLinkTextFromLink (text: string): string {
   if (!text) return;
   if (text.match(REG_LINKINDEX_HYPERLINK)) return;
 
@@ -71,7 +71,7 @@ export const getLinkTextFromLink = (text: string): string => {
   return linktext;
 }
 
-export const openTagSearch = (link:string, app: App, view?: ExcalidrawView) => {
+export function openTagSearch (link:string, app: App, view?: ExcalidrawView) {
   const tags = link
     .matchAll(/#([\p{Letter}\p{Emoji_Presentation}\p{Number}\/_-]+)/gu)
     .next();
@@ -92,21 +92,70 @@ export const openTagSearch = (link:string, app: App, view?: ExcalidrawView) => {
   return;
 }
 
-export const openExternalLink = (link:string, app: App, element?: ExcalidrawElement):boolean => {
+function getLinkFromMarkdownLink(link: string): string {
+  const result = /^\[[^\]]*]\(([^\)]*)\)/.exec(link);
+  return result ? result[1] : link;
+}
+
+export function openExternalLink (link:string, app: App, element?: ExcalidrawElement):boolean {
+  link = getLinkFromMarkdownLink(link);
   if (link.match(/^cmd:\/\/.*/)) {
     const cmd = link.replace("cmd://", "");
     //@ts-ignore
     app.commands.executeCommandById(cmd);
     return true;
   }
-  if (link.match(REG_LINKINDEX_HYPERLINK)) {
-      window.open(link, "_blank");
+  if (!link.startsWith("obsidian://") && link.match(REG_LINKINDEX_HYPERLINK)) {
+    window.open(link, "_blank");
     return true;
   }
+
   return false;
 }
 
-export const getExcalidrawFileForwardLinks = (app: App, excalidrawFile: TFile, secondOrderLinksSet: Set<string>):string => {
+/**
+ * 
+ * @param link 
+ * @param app 
+ * @param returnWikiLink 
+ * @returns 
+ *   false if the link is not an obsidian link,
+ *   true if the link is an obsidian link and it was opened (i.e. it is a link to another Vault or not a file link e.g. plugin link), or
+ *   the link to the file path. By default as a wiki link, or as a file path if returnWikiLink is false.
+ */
+export function parseObsidianLink(link: string, app: App, returnWikiLink: boolean = true): boolean | string {
+  link = getLinkFromMarkdownLink(link);
+  if (!link.startsWith("obsidian://")) {
+      return false;
+  }
+  const url = new URL(link);
+  const action = url.pathname.slice(2); // Remove leading '//'
+
+  const props: {[key: string]: string} = {};
+  url.searchParams.forEach((value, key) => {
+      props[key] = decodeURIComponent(value);
+  });
+
+  if (action === "open" && props.vault === app.vault.getName()) {
+      const file = props.file;
+      const f = app.metadataCache.getFirstLinkpathDest(file, "");
+      if (f && f instanceof TFile) {
+          if (returnWikiLink) {
+            return `[[${f.path}]]`;
+          } else {
+            return f.path;
+          }
+      }
+  }
+
+  window.open(link, "_blank");
+  return true;
+}
+
+export function getExcalidrawFileForwardLinks (
+  app: App, excalidrawFile: TFile,
+  secondOrderLinksSet: Set<string>,
+):string {
   let secondOrderLinks = "";
   const forwardLinks = app.metadataCache.getLinks()[excalidrawFile.path];
   if(forwardLinks && forwardLinks.length > 0) {
@@ -125,7 +174,10 @@ export const getExcalidrawFileForwardLinks = (app: App, excalidrawFile: TFile, s
   return secondOrderLinks;
 }
 
-export const getFrameBasedOnFrameNameOrId = (frameName: string, elements: ExcalidrawElement[]): ExcalidrawFrameElement | null => {
+export function getFrameBasedOnFrameNameOrId(
+  frameName: string,
+  elements: ExcalidrawElement[],
+): ExcalidrawFrameElement | null {
   const frames = elements
     .filter((el: ExcalidrawElement)=>el.type==="frame")
     .map((el: ExcalidrawFrameElement, idx: number)=>{
@@ -136,7 +188,13 @@ export const getFrameBasedOnFrameNameOrId = (frameName: string, elements: Excali
   return frames.length === 1 ? frames[0] : null;
 }
 
-export const addBackOfTheNoteCard = async (view: ExcalidrawView, title: string, activate: boolean = true, cardBody?: string, embeddableCustomData?: EmbeddableMDCustomProps):Promise<string> => {
+export async function addBackOfTheNoteCard(
+  view: ExcalidrawView,
+  title: string,
+  activate: boolean = true,
+  cardBody?: string,
+  embeddableCustomData?: EmbeddableMDCustomProps,
+):Promise<string> {
   const data = view.data;
   const header = getExcalidrawMarkdownHeaderSection(data);
   const body = data.split(header)[1];
@@ -186,7 +244,12 @@ export const addBackOfTheNoteCard = async (view: ExcalidrawView, title: string, 
   return el.id;
 }
 
-export const renderContextMenuAction = (React: any, label: string, action: Function, onClose: (callback?: () => void) => void) => {
+export function renderContextMenuAction(
+  React: any,
+  label: string,
+  action: Function,
+  onClose: (callback?: () => void) => void,
+) {
   return React.createElement (
     "li",          
     {
@@ -218,7 +281,7 @@ export const renderContextMenuAction = (React: any, label: string, action: Funct
   );
 }
 
-export const tmpBruteForceCleanup = (view: ExcalidrawView) => {
+export function tmpBruteForceCleanup (view: ExcalidrawView) {
   window.setTimeout(()=>{
     if(!view) return;
     // const cleanupHTMLElement = (el: Element) => {
