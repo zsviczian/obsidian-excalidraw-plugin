@@ -234,6 +234,7 @@ export class ScriptEngine {
     if (!view || !script || !title) {
       return;
     }
+    //@ts-ignore
     script = script.replace(/^---.*?---\n/gs, "");
     const ea = getEA(view);
     this.eaInstances.push(ea);

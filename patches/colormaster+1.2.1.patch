@@ -1,0 +1,26 @@
+diff --git a/node_modules/colormaster/package.json b/node_modules/colormaster/package.json
+index cd1fec9..d34b670 100644
+--- a/node_modules/colormaster/package.json
++++ b/node_modules/colormaster/package.json
+@@ -136,6 +136,21 @@
+       "import": "./plugins/cmyk.mjs",
+       "require": "./plugins/cmyk.js",
+       "default": "./plugins/cmyk.mjs"
++    },
++    "./plugins/luv": {
++      "import": "./plugins/luv.mjs",
++      "require": "./plugins/luv.js",
++      "default": "./plugins/luv.mjs"
++    },
++    "./plugins/uvw": {
++      "import": "./plugins/uvw.mjs",
++      "require": "./plugins/uvw.js",
++      "default": "./plugins/uvw.mjs"
++    },
++    "./plugins/ryb": {
++      "import": "./plugins/ryb.mjs",
++      "require": "./plugins/ryb.js",
++      "default": "./plugins/ryb.mjs"
+     }
+   },
+   "devDependencies": {
