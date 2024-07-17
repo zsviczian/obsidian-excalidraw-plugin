@@ -887,7 +887,7 @@ export class ExcalidrawData {
         ? data.substring(indexOfNewEmbeddedFiles + embeddedFilesNewLength)
         : data.substring(indexOfOldEmbeddedFiles + embeddedFilesOldLength);
       //Load Embedded files
-      const REG_FILEID_FILEPATH = /([\w\d]*):\s*\[\[([^\]]*)]]\s*(\{[^}]*})?\n/gm;
+      const REG_FILEID_FILEPATH = /([\w\d]*):\s*\!?\[\[([^\]]*)]]\s*(\{[^}]*})?\n/gm;
       res = data.matchAll(REG_FILEID_FILEPATH);
       while (!(parts = res.next()).done) {
         const embeddedFile = new EmbeddedFile(
