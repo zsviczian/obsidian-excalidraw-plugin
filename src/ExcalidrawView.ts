@@ -127,7 +127,7 @@ import { anyModifierKeysPressed, emulateKeysForLinkClick, webbrowserDragModifier
 import { setDynamicStyle } from "./utils/DynamicStyling";
 import { InsertPDFModal } from "./dialogs/InsertPDFModal";
 import { CustomEmbeddable, renderWebView } from "./customEmbeddable";
-import { addBackOfTheNoteCard, getExcalidrawFileForwardLinks, getFrameBasedOnFrameNameOrId, getLinkTextFromLink, insertEmbeddableToView, insertImageToView, openExternalLink, openTagSearch, parseObsidianLink, renderContextMenuAction, tmpBruteForceCleanup } from "./utils/ExcalidrawViewUtils";
+import { addBackOfTheNoteCard, getExcalidrawFileForwardLinks, getFrameBasedOnFrameNameOrId, getLinkTextFromLink, insertEmbeddableToView, insertImageToView, isTextImageTransclusion, openExternalLink, openTagSearch, parseObsidianLink, renderContextMenuAction, tmpBruteForceCleanup } from "./utils/ExcalidrawViewUtils";
 import { imageCache } from "./utils/ImageCache";
 import { CanvasNodeFactory, ObsidianCanvasNode } from "./utils/CanvasNodeFactory";
 import { EmbeddableMenu } from "./menu/EmbeddableActionsMenu";
@@ -3731,6 +3731,23 @@ export default class ExcalidrawView extends TextFileView {
         return false;
       }
 
+      if(isTextImageTransclusion(data.text,this, async (link, file)=>{
+        const ea = getEA(this) as ExcalidrawAutomate;
+          if(IMAGE_TYPES.contains(file.extension)) {
+            ea.selectElementsInView([await insertImageToView (ea, this.currentPosition, file)]);
+            ea.destroy();
+          } else if(file.extension !== "pdf") {
+            ea.selectElementsInView([await insertEmbeddableToView (ea, this.currentPosition, file, link)]);
+            ea.destroy();
+          } else {
+            const modal = new UniversalInsertFileModal(this.plugin, this);
+            modal.open(file, this.currentPosition);
+          }
+          this.setDirty(9);
+      })) {
+        return false;
+      }
+
       const quoteWithRef = obsidianPDFQuoteWithRef(data.text);
       if(quoteWithRef) {                  
         const ea = getEA(this) as ExcalidrawAutomate;
@@ -4308,42 +4325,33 @@ export default class ExcalidrawView extends TextFileView {
     //    If the link is an image or a PDF file, replace the text element with the image or the PDF.
     //    If the link is an embedded markdown file, then display a message, but otherwise transclude the text step 5.
     //                              1                              2
-    const REG_TRANSCLUSION = /^!\[\[([^|\]]*)?.*?]]$|^!\[[^\]]*?]\((.*?)\)$/g;
-    const match = nextOriginalText.trim().matchAll(REG_TRANSCLUSION).next(); //reset the iterator
-    if(match?.value?.[0]) {                
-      const link = match.value[1] ?? match.value[2];
-      const file = this.app.metadataCache.getFirstLinkpathDest(link, this.file.path);
-      if(file && file instanceof TFile) {
-        if (file.extension !== "md" || this.plugin.isExcalidrawFile(file)) {
-          window.setTimeout(async ()=>{
-            const elements = this.excalidrawAPI.getSceneElements();
-            const el = elements.filter((el:ExcalidrawElement)=>el.id === textElement.id) as ExcalidrawTextElement[];
-            if(el.length === 1) {
-              const center = {x: el[0].x, y: el[0].y };
-              const clone = cloneElement(el[0]);
-              clone.isDeleted = true;
-              this.excalidrawData.deleteTextElement(clone.id);
-              elements[elements.indexOf(el[0])] = clone;
-              this.updateScene({elements});
-              const ea:ExcalidrawAutomate = getEA(this);
-              if(IMAGE_TYPES.contains(file.extension)) {
-                ea.selectElementsInView([await insertImageToView (ea, center, file)]);
-                ea.destroy();
-              } else if(file.extension !== "pdf") {
-                ea.selectElementsInView([await insertEmbeddableToView (ea, center, file)]);
-                ea.destroy();
-              } else {
-                const modal = new UniversalInsertFileModal(this.plugin, this);
-                modal.open(file, center);
-              }
-              this.setDirty(9);
-            }
-          });
-          return {updatedNextOriginalText: null, nextLink: textElement.link};
-        } else {
-          new Notice(t("USE_INSERT_FILE_MODAL"),5000);
+    if(isTextImageTransclusion(nextOriginalText, this, (link, file)=>{
+      window.setTimeout(async ()=>{
+        const elements = this.excalidrawAPI.getSceneElements();
+        const el = elements.filter((el:ExcalidrawElement)=>el.id === textElement.id) as ExcalidrawTextElement[];
+        if(el.length === 1) {
+          const center = {x: el[0].x, y: el[0].y };
+          const clone = cloneElement(el[0]);
+          clone.isDeleted = true;
+          this.excalidrawData.deleteTextElement(clone.id);
+          elements[elements.indexOf(el[0])] = clone;
+          this.updateScene({elements});
+          const ea:ExcalidrawAutomate = getEA(this);
+          if(IMAGE_TYPES.contains(file.extension)) {
+            ea.selectElementsInView([await insertImageToView (ea, center, file)]);
+            ea.destroy();
+          } else if(file.extension !== "pdf") {
+            ea.selectElementsInView([await insertEmbeddableToView (ea, center, file, link)]);
+            ea.destroy();
+          } else {
+            const modal = new UniversalInsertFileModal(this.plugin, this);
+            modal.open(file, center);
+          }
+          this.setDirty(9);
         }
-      }
+      });
+    })) {
+      return {updatedNextOriginalText: null, nextLink: textElement.link};
     }
 
     // 5. Check if the user made changes to the text, or

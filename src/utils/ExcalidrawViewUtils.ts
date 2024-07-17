@@ -1,6 +1,6 @@
 
 import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS } from "src/constants/constants";
-import { App, TFile, WorkspaceLeaf } from "obsidian";
+import { App, Notice, TFile, WorkspaceLeaf } from "obsidian";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK, getExcalidrawMarkdownHeaderSection } from "src/ExcalidrawData";
 import ExcalidrawView from "src/ExcalidrawView";
@@ -11,6 +11,7 @@ import { getEA } from "src";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddableMDCustomProps } from "src/dialogs/EmbeddableSettings";
 import { nanoid } from "nanoid";
+import { t } from "src/lang/helpers";
 
 export async function insertImageToView(
   ea: ExcalidrawAutomate,
@@ -43,7 +44,7 @@ export async function insertEmbeddableToView (
   ea.style.strokeColor = "transparent";
   ea.style.backgroundColor = "transparent";
   if(file && (IMAGE_TYPES.contains(file.extension) || ea.isExcalidrawFile(file)) && !ANIMATED_IMAGE_TYPES.contains(file.extension)) {
-    return await insertImageToView(ea, position, file);
+    return await insertImageToView(ea, position, link??file);
   } else {
     const id = ea.addEmbeddable(
       position.x,
@@ -345,4 +346,34 @@ export function tmpBruteForceCleanup (view: ExcalidrawView) {
       delete view[key];
     });
   }, 500);
+}
+
+/**
+* Check if the text matches the transclusion pattern and if so,
+ * check if the link in the transclusion can be resolved to a file in the vault.
+ * if yes, call the callback function with the link and the file.
+ * @param text 
+ * @param callback 
+ * @returns true if text is a transclusion and the link can be resolved to a file in the vault, false otherwise.
+ */
+export function isTextImageTransclusion (
+  text: string,
+  view: ExcalidrawView,
+  callback: (link: string, file: TFile)=>void
+): boolean {
+  const REG_TRANSCLUSION = /^!\[\[([^|\]]*)?.*?]]$|^!\[[^\]]*?]\((.*?)\)$/g;
+  const match = text.trim().matchAll(REG_TRANSCLUSION).next(); //reset the iterator
+  if(match?.value?.[0]) {                
+    const link = match.value[1] ?? match.value[2];
+    const file = view.app.metadataCache.getFirstLinkpathDest(link?.split("#")[0], view.file.path);
+    if(file && file instanceof TFile) {
+      if (file.extension !== "md" || view.plugin.isExcalidrawFile(file)) {
+        callback(link, file);
+        return true;
+      } else {
+        new Notice(t("USE_INSERT_FILE_MODAL"),5000);
+      }
+    }
+  }
+  return false;
 }

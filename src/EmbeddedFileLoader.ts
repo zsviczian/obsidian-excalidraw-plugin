@@ -39,12 +39,13 @@ import {
   svgToBase64,
   isMaskFile,
   embedFontsInSVG,
+  getEmbeddedFilenameParts,
 } from "./utils/Utils";
 import { ValueOf } from "./types";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
 import { mermaidToExcalidraw } from "src/constants/constants";
 import { ImageKey, imageCache } from "./utils/ImageCache";
-import { PreviewImageType } from "./utils/UtilTypes";
+import { FILENAMEPARTS, PreviewImageType } from "./utils/UtilTypes";
 
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B
@@ -145,8 +146,6 @@ const replaceSVGColors = (svg: SVGSVGElement | string, colorMap: ColorMap | null
   return svg;
 }
 
-
-
 export class EmbeddedFile {
   public file: TFile = null;
   public isSVGwithBitmap: boolean = false;
@@ -157,6 +156,7 @@ export class EmbeddedFile {
   public mimeType: MimeType = "application/octet-stream";
   public size: Size = { height: 0, width: 0 };
   public linkParts: LinkParts;
+  public filenameparts: FILENAMEPARTS
   private hostPath: string;
   public attemptCounter: number = 0;
   public isHyperLink: boolean = false;
@@ -204,7 +204,7 @@ export class EmbeddedFile {
     if (!this.linkParts.height) {
       this.linkParts.height = this.plugin.settings.mdSVGmaxHeight;
     }
-    this.file = app.metadataCache.getFirstLinkpathDest(
+    this.file = this.plugin.app.metadataCache.getFirstLinkpathDest(
       this.linkParts.path,
       hostPath,
     );
@@ -215,6 +215,9 @@ export class EmbeddedFile {
           5000,
         );
       }
+    } else {
+      this.filenameparts = getEmbeddedFilenameParts(imgPath);
+      this.filenameparts.filepath = this.file.path;
     }
   }
 
@@ -364,22 +367,26 @@ export class EmbeddedFilesLoader {
 
     const hasColorMap = Boolean(inFile instanceof EmbeddedFile ? inFile.colorMap : null);
     const shouldUseCache = !hasColorMap && this.plugin.settings.allowImageCacheInScene && file && imageCache.isReady();
+    const hasFilenameParts = Boolean((inFile instanceof EmbeddedFile) && inFile.filenameparts);
+    const filenameParts = hasFilenameParts ? (inFile as EmbeddedFile).filenameparts : null;
     const cacheKey:ImageKey = {
-      filepath: file.path,
-      blockref: null,
-      sectionref: null,
+      ...hasFilenameParts? filenameParts : {
+        filepath: file.path,
+        hasBlockref: false,
+        hasGroupref: false,
+        hasTaskbone: false,
+        hasArearef: false,
+        hasFrameref: false,
+        hasSectionref: false,
+        blockref: null,
+        sectionref: null,
+        linkpartReference: null,
+        linkpartAlias: null,
+      },
       isDark,
       previewImageType: PreviewImageType.SVG,
       scale: 1,
       isTransparent: !exportSettings.withBackground,
-      hasBlockref: false,
-      hasGroupref: false,
-      hasTaskbone: false,
-      hasArearef: false,
-      hasFrameref: false,
-      hasSectionref: false,
-      linkpartReference: null,
-      linkpartAlias: null,
     }
 
     const maybeSVG = shouldUseCache
@@ -390,7 +397,12 @@ export class EmbeddedFilesLoader {
     ? maybeSVG
     : replaceSVGColors(
         await createSVG(
-          file?.path,
+          hasFilenameParts
+            ? (filenameParts.hasGroupref || filenameParts.hasBlockref ||
+               filenameParts.hasSectionref || filenameParts.hasFrameref
+              ? filenameParts.filepath + filenameParts.linkpartReference
+              : file.path)
+            : file?.path,
           false, //false
           exportSettings,
           this,
