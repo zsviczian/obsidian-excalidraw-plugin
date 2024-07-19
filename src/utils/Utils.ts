@@ -343,6 +343,7 @@ export async function getPNG (
       }),
     });
   } catch (error) {
+    new Notice("Error exporting PNG - PNG too large, try a smaller resolution");
     errorlog({ where: "Utils.getPNG", error });
     return null;
   }
