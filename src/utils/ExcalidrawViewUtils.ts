@@ -366,6 +366,10 @@ export function isTextImageTransclusion (
   if(match?.value?.[0]) {                
     const link = match.value[1] ?? match.value[2];
     const file = view.app.metadataCache.getFirstLinkpathDest(link?.split("#")[0], view.file.path);
+    if(view.file === file) {
+      new Notice(t("RECURSIVE_INSERT_ERROR"));
+      return false;
+    }
     if(file && file instanceof TFile) {
       if (file.extension !== "md" || view.plugin.isExcalidrawFile(file)) {
         callback(link, file);

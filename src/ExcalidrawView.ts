@@ -174,6 +174,12 @@ export interface ExportSettings {
   withBackground: boolean;
   withTheme: boolean;
   isMask: boolean;
+  frameRendering?: { //optional, overrides relevant appState settings for rendering the frame
+    enabled: boolean;
+    name: boolean;
+    outline: boolean;
+    clip: boolean;
+  };
 }
 
 const HIDE = "excalidraw-hidden";
@@ -4811,6 +4817,17 @@ export default class ExcalidrawView extends TextFileView {
             onClose
           ),
         ]);
+      } else {
+        contextMenuActions.push([
+          renderContextMenuAction(
+            React,
+            t("COPY_DRAWING_LINK"),
+            () => {
+              navigator.clipboard.writeText(`![[${this.file.path}]]`);
+            },
+            onClose
+          ),
+        ]);
       }
 
       if(this.getViewSelectedElements().filter(el=>el.type==="embeddable").length === 1) {
@@ -5684,11 +5701,19 @@ export default class ExcalidrawView extends TextFileView {
     let buttons = [];
     if(isFrame) {
       switch(prefix) {
+        case "clippedframe=":
+          buttons = [
+            {caption: "Clipped Frame", action:()=>{prefix="clippedframe="; return;}},
+            {caption: "Frame", action:()=>{prefix="frame="; return;}},
+            {caption: "Link", action:()=>{prefix="";return}},
+          ];
+          break;
         case "area=":  
         case "group=":
         case "frame=":
           buttons = [
             {caption: "Frame", action:()=>{prefix="frame="; return;}},
+            {caption: "Clipped Frame", action:()=>{prefix="clippedframe="; return;}},
             {caption: "Link", action:()=>{prefix="";return}},
           ];
           break;
@@ -5696,6 +5721,7 @@ export default class ExcalidrawView extends TextFileView {
           buttons = [
             {caption: "Link", action:()=>{prefix="";return}},
             {caption: "Frame", action:()=>{prefix="frame="; return;}},
+            {caption: "Clipped Frame", action:()=>{prefix="clippedframe="; return;}},
           ]
       }
   
@@ -5727,7 +5753,7 @@ export default class ExcalidrawView extends TextFileView {
     const alias = await ScriptEngine.inputPrompt(
       this,
       this.plugin,
-      app,
+      this.app,
       "Set link alias",
       "Leave empty if you do not want to set an alias",
       "",

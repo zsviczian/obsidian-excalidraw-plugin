@@ -17,6 +17,15 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.2.10": `
+## New
+- Area, Group, Frame, and Clipped-Frame references to images now also work when pasting images to Excalidraw.
+- New reference type ${String.fromCharCode(96)}clippedframe=${String.fromCharCode(96)} works in the same way as ${String.fromCharCode(96)}frame=${String.fromCharCode(96)} but will display the elements clipped by the frame. ${String.fromCharCode(96)}clippedframe=${String.fromCharCode(96)} will always display the image with zero padding.
+- New command palette action: ${String.fromCharCode(96)}Frame Settings${String.fromCharCode(96)} gives you fine-grained control over how frames are rendered. Frame settings will also be reflected in image exports. For example, if you hide the frame name or outline, then in exports they will not be visible.
+
+## Fixed
+- Frame title font in exports. 
+`,
 "2.2.9": `
 ## New
 - Improved the "Open the back-of-the-note of the selected Excalidraw image" action. It now works with grouped elements and keeps the popout window within the visible screen area when elements are close to the top of the canvas. Note: Due to an Obsidian bug, I do not recommend using this feature with versions 1.6.0 - 1.6.6, if you have Obsidian Sync enabled, because Obsidian may freeze when closing the popout window. It functions properly in Obsidian versions before 1.6.0 and from 1.6.7 onwards. 

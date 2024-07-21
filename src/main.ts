@@ -137,6 +137,7 @@ import { carveOutImage, carveOutPDF, createImageCropperFile } from "./utils/Carv
 import { ExcalidrawConfig } from "./utils/ExcalidrawConfig";
 import { EditorHandler } from "./CodeMirrorExtension/EditorHandler";
 import { clearMathJaxVariables } from "./LaTeX";
+import { showFrameSettings } from "./dialogs/FrameSettings";
 
 declare let EXCALIDRAW_PACKAGES:string;
 declare let react:any;
@@ -1371,6 +1372,42 @@ export default class ExcalidrawPlugin extends Plugin {
     });
 
     this.addCommand({
+      id: "frame-settings",
+      name: t("FRAME_SETTINGS_TITLE"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return (
+            Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
+          );
+        }
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
+          showFrameSettings(getEA(view));
+          return true;
+        }
+        return false;
+      },
+    });
+
+    this.addCommand({
+      id: "copy-link-to-drawing",
+      name: t("COPY_DRAWING_LINK"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return (
+            Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
+          );
+        }
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
+          navigator.clipboard.writeText(`![[${view.file.path}]]`);
+          return true;
+        }
+        return false;
+      },
+    });
+
+    this.addCommand({
       id: "disable-frameclipping",
       name: t("TOGGLE_FRAME_CLIPPING"),
       checkCallback: (checking: boolean) => {
@@ -1579,11 +1616,27 @@ export default class ExcalidrawPlugin extends Plugin {
       name: t("INSERT_LINK_TO_ELEMENT_FRAME"),
       checkCallback: (checking: boolean) => {
         if (checking) {
-          return Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
+          return Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView));
         }
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
           view.copyLinkToSelectedElementToClipboard("frame=");
+          return true;
+        }
+        return false;
+      },
+    });
+
+    this.addCommand({
+      id: "insert-link-to-element-frame-clipped",
+      name: t("INSERT_LINK_TO_ELEMENT_FRAME_CLIPPED"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          return Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView));
+        }
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (view) {
+          view.copyLinkToSelectedElementToClipboard("clippedframe=");
           return true;
         }
         return false;
@@ -1640,6 +1693,7 @@ export default class ExcalidrawPlugin extends Plugin {
       id: "flip-image",
       name: t("FLIP_IMAGE"),
       checkCallback: (checking:boolean) => {
+        if (!DEVICE.isDesktop) return;
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if(!view) return false;
         if(!view.excalidrawAPI) return false;

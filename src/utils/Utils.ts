@@ -195,7 +195,35 @@ export async function getFontDataURL (
   const f = app.metadataCache.getFirstLinkpathDest(fontFileName, sourcePath);
   if (f) {
     const ab = await app.vault.readBinary(f);
-    const mimeType = f.extension.startsWith("woff")
+    let mimeType = "";
+    let format = "";
+    
+    switch (f.extension) {
+      case "woff":
+        mimeType = "application/font-woff";
+        format = "woff";
+        break;
+      case "woff2":
+        mimeType = "font/woff2";
+        format = "woff2";
+        break;
+      case "ttf":
+        mimeType = "font/ttf";
+        format = "truetype";
+        break;
+      case "otf":
+        mimeType = "font/otf";
+        format = "opentype";
+        break;
+      default:
+        mimeType = "application/octet-stream"; // Fallback if file type is unexpected
+    }
+    fontName = name ?? f.basename;
+    dataURL = await getDataURL(ab, mimeType);
+    const split = dataURL.split(";base64,", 2);
+    dataURL = `${split[0]};charset=utf-8;base64,${split[1]}`;
+    fontDef = ` @font-face {font-family: "${fontName}";src: url("${dataURL}") format("${format}")}`;
+/*    const mimeType = f.extension.startsWith("woff")
       ? "application/font-woff"
       : "font/truetype";
     fontName = name ?? f.basename;
@@ -203,7 +231,7 @@ export async function getFontDataURL (
     fontDef = ` @font-face {font-family: "${fontName}";src: url("${dataURL}")}`;
      //format("${f.extension === "ttf" ? "truetype" : f.extension}");}`;
     const split = fontDef.split(";base64,", 2);
-    fontDef = `${split[0]};charset=utf-8;base64,${split[1]}`;
+    fontDef = `${split[0]};charset=utf-8;base64,${split[1]}`;*/
   }
   return { fontDef, fontName, dataURL };
 };
@@ -273,14 +301,17 @@ export async function getSVG (
       svg = await exportToSvg({
         elements: elements.filter((el:ExcalidrawElement)=>el.isDeleted !== true),
         appState: {
+          ...scene.appState,
           exportBackground: exportSettings.withBackground,
           exportWithDarkMode: exportSettings.withTheme
             ? scene.appState?.theme !== "light"
             : false,
-          ...scene.appState,
+          ...exportSettings.frameRendering
+          ? {frameRendering: exportSettings.frameRendering}
+          : {},
         },
         files: scene.files,
-        exportPadding: padding,
+        exportPadding: exportSettings.frameRendering ? 0 : padding,
         exportingFrame: null,
         renderEmbeddables: true,
       });
@@ -327,14 +358,17 @@ export async function getPNG (
     return await exportToBlob({
       elements: scene.elements.filter((el:ExcalidrawElement)=>el.isDeleted !== true),
       appState: {
+        ...scene.appState,
         exportBackground: exportSettings.withBackground,
         exportWithDarkMode: exportSettings.withTheme
           ? scene.appState?.theme !== "light"
           : false,
-        ...scene.appState,
+        ...exportSettings.frameRendering
+        ? {frameRendering: exportSettings.frameRendering}
+        : {},
       },
       files: filterFiles(scene.files),
-      exportPadding: padding,
+      exportPadding: exportSettings.frameRendering ? 0 : padding,
       mimeType: "image/png",
       getDimensions: (width: number, height: number) => ({
         width: width * scale,
@@ -391,10 +425,10 @@ export function embedFontsInSVG(
       style = document.createElement("style");
       defs.appendChild(style);
     }
-    style.innerHTML = `${includesVirgil ? VIRGIL_FONT : ""}${
-      includesCascadia ? CASCADIA_FONT : ""}${
-      includesAssistant ? ASSISTANT_FONT : ""
-    }${includesLocalFont ? plugin.fourthFontDef : ""}`;
+    style.innerHTML = `${includesVirgil ? (VIRGIL_FONT + "\n") : ""}${
+      includesCascadia ? (CASCADIA_FONT + "\n") : ""}${
+      includesAssistant ? (ASSISTANT_FONT + "\n") : ""
+    }${includesLocalFont ? (plugin.fourthFontDef + "\n") : ""}`;
   }
   return svg;
 };
@@ -713,7 +747,7 @@ export function isVersionNewerThanOther (version: string, otherVersion: string):
 
 export function getEmbeddedFilenameParts (fname:string): FILENAMEPARTS {
   //                        0 1        23    4                               5         6  7                             8          9
-  const parts = fname?.match(/([^#\^]*)((#\^)(group=|area=|frame=|taskbone)?([^\|]*)|(#)(group=|area=|frame=|taskbone)?([^\^\|]*))(.*)/);
+  const parts = fname?.match(/([^#\^]*)((#\^)(group=|area=|frame=|clippedframe=|taskbone)?([^\|]*)|(#)(group=|area=|frame=|clippedframe=|taskbone)?([^\^\|]*))(.*)/);
   if(!parts) {
     return {
       filepath: fname,
@@ -722,6 +756,7 @@ export function getEmbeddedFilenameParts (fname:string): FILENAMEPARTS {
       hasTaskbone: false,
       hasArearef: false,
       hasFrameref: false,
+      hasClippedFrameref: false,
       blockref: "",
       hasSectionref: false,
       sectionref: "",
@@ -736,6 +771,7 @@ export function getEmbeddedFilenameParts (fname:string): FILENAMEPARTS {
     hasTaskbone: (parts[4]==="taskbone") || (parts[7]==="taskbone"),
     hasArearef: (parts[4]==="area=") || (parts[7]==="area="),
     hasFrameref: (parts[4]==="frame=") || (parts[7]==="frame="),
+    hasClippedFrameref: (parts[4]==="clippedframe=") || (parts[7]==="clippedframe="),
     blockref: parts[5],
     hasSectionref: Boolean(parts[6]),
     sectionref: parts[8],

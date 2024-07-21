@@ -50,17 +50,20 @@ export default {
   NEW_IN_POPOUT_WINDOW_EMBED: "Create new drawing - IN A POPOUT WINDOW - and embed into active document",
   TOGGLE_LOCK: "Toggle Text Element between edit RAW and PREVIEW",
   DELETE_FILE: "Delete selected image or Markdown file from Obsidian Vault",
-  COPY_ELEMENT_LINK: "Copy markdown link for selected element(s)",
+  COPY_ELEMENT_LINK: "Copy [[link]] for selected element(s)",
+  COPY_DRAWING_LINK: "Copy ![[embed link]] for this drawing",
   INSERT_LINK_TO_ELEMENT:
-    `Copy markdown link for selected element to clipboard. ${labelCTRL()}+CLICK to copy 'group=' link. ${labelSHIFT()}+CLICK to copy an 'area=' link. ${labelALT()}+CLICK to watch a help video.`,
+    `Copy [[link]] for selected element to clipboard. ${labelCTRL()}+CLICK to copy 'group=' link. ${labelSHIFT()}+CLICK to copy an 'area=' link. ${labelALT()}+CLICK to watch a help video.`,
   INSERT_LINK_TO_ELEMENT_GROUP:
-    "Copy 'group=' markdown link for selected element to clipboard.",
+    "Copy 'group=' ![[link]] for selected element to clipboard.",
   INSERT_LINK_TO_ELEMENT_AREA:
-    "Copy 'area=' markdown link for selected element to clipboard.",
+    "Copy 'area=' ![[link]] for selected element to clipboard.",
   INSERT_LINK_TO_ELEMENT_FRAME:
-    "Copy 'frame=' markdown link for selected element to clipboard.",
+    "Copy 'frame=' ![[link]] for selected element to clipboard.",
+  INSERT_LINK_TO_ELEMENT_FRAME_CLIPPED:
+    "Copy 'clippedframe=' ![[link]] for selected element to clipboard.",
   INSERT_LINK_TO_ELEMENT_NORMAL:
-    "Copy markdown link for selected element to clipboard.",
+    "Copy [[link]] for selected element to clipboard.",
   INSERT_LINK_TO_ELEMENT_ERROR: "Select a single element in the scene",
   INSERT_LINK_TO_ELEMENT_READY: "Link is READY and available on the clipboard",
   INSERT_LINK: "Insert link to file",
@@ -136,6 +139,7 @@ export default {
   ERROR_SAVING_IMAGE: "Unknown error occurred while fetching the image. It could be that for some reason the image is not available or rejected the fetch request from Obsidian",
   WARNING_PASTING_ELEMENT_AS_TEXT: "PASTING EXCALIDRAW ELEMENTS AS A TEXT ELEMENT IS NOT ALLOWED",
   USE_INSERT_FILE_MODAL: "Use 'Insert Any File' to embed a markdown note",
+  RECURSIVE_INSERT_ERROR: "You may not recursively insert part of an image into the same image as it would create an infinite loop",
   CONVERT_TO_MARKDOWN: "Convert to file...",
   SELECT_TEXTELEMENT_ONLY: "Select text element only (not container)",
   REMOVE_LINK: "Remove text element link",
@@ -571,7 +575,7 @@ FILENAME_HEAD: "Filename",
     "If turned off, the exported image will be transparent.",
   EXPORT_PADDING_NAME: "Image Padding",
   EXPORT_PADDING_DESC:
-    "The padding (in pixels) around the exported SVG or PNG image. " +
+    "The padding (in pixels) around the exported SVG or PNG image. Padding is set to 0 for clippedFrame references." +
     "If you have curved lines close to the edge of the image they might get cropped during image export. You can increase this value to avoid cropping. " +
     "You can also override this setting at a file level by adding the <code>excalidraw-export-padding: 5<code> frontmatter key.",
   EXPORT_THEME_NAME: "Export image with theme",
@@ -824,4 +828,11 @@ FILENAME_HEAD: "Filename",
   INTERNAL_DRAG_ACTION: "Obsidian Internal Drag Action",
   PANE_TARGET: "Link click behavior",
   DEFAULT_ACTION_DESC: "In case none of the combinations apply the default action for this group is: ",
+
+  //FrameSettings.ts
+  FRAME_SETTINGS_TITLE: "Frame Settings",
+  FRAME_SETTINGS_ENABLE: "Enable Frames",
+  FRAME_SETTIGNS_NAME: "Display Frame Name",
+  FRAME_SETTINGS_OUTLINE: "Display Frame Outline",
+  FRAME_SETTINGS_CLIP: "Enable Frame Clipping",
 };

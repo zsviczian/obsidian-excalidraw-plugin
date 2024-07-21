@@ -5,6 +5,7 @@ export type FILENAMEPARTS = {
   hasTaskbone: boolean,
   hasArearef: boolean,
   hasFrameref: boolean,
+  hasClippedFrameref: boolean,
   hasSectionref: boolean,
   blockref: string,
   sectionref: string,

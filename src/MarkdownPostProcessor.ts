@@ -105,11 +105,13 @@ const _getPNG = async ({imgAttributes,filenameParts,theme,cacheReady,img,file,ex
   const png =
     quickPNG ??
     (await createPNG(
-      (filenameParts.hasGroupref || filenameParts.hasFrameref)
+      (filenameParts.hasGroupref || filenameParts.hasFrameref || filenameParts.hasClippedFrameref)
         ? filenameParts.filepath + filenameParts.linkpartReference
         : file.path,
       scale,
-      exportSettings,
+      filenameParts.hasClippedFrameref
+      ? { ...exportSettings, frameRendering: { enabled: true, name: false, outline: false, clip: true}}
+      : exportSettings,
       loader,
       theme,
       null,
@@ -184,11 +186,13 @@ const _getSVGIMG = async ({filenameParts,theme,cacheReady,img,file,exportSetting
   
   let svg = convertSVGStringToElement((
     await createSVG(
-      filenameParts.hasGroupref || filenameParts.hasBlockref || filenameParts.hasSectionref || filenameParts.hasFrameref
+      filenameParts.hasGroupref || filenameParts.hasBlockref || filenameParts.hasSectionref || filenameParts.hasFrameref || filenameParts.hasClippedFrameref
         ? filenameParts.filepath + filenameParts.linkpartReference
         : file.path,
       true,
-      exportSettings,
+      filenameParts?.hasClippedFrameref
+      ? { ...exportSettings, frameRendering: { enabled: true, name: false, outline: false, clip: true}}
+      : exportSettings,
       loader,
       theme,
       null,
@@ -229,11 +233,13 @@ const _getSVGNative = async ({filenameParts,theme,cacheReady,containerElement,fi
   let svg = (maybeSVG && (maybeSVG instanceof SVGSVGElement))
     ? maybeSVG
     : convertSVGStringToElement((await createSVG(
-      filenameParts.hasGroupref || filenameParts.hasBlockref || filenameParts.hasSectionref || filenameParts.hasFrameref
+      filenameParts.hasGroupref || filenameParts.hasBlockref || filenameParts.hasSectionref || filenameParts.hasFrameref || filenameParts.hasClippedFrameref
         ? filenameParts.filepath + filenameParts.linkpartReference
         : file.path,
       false,
-      exportSettings,
+      filenameParts.hasClippedFrameref
+      ? { ...exportSettings, frameRendering: { enabled: true, name: false, outline: false, clip: true}}
+      : exportSettings,
       loader,
       theme,
       null,
@@ -571,7 +577,7 @@ const isTextOnlyEmbed = (internalEmbedEl: Element):boolean => {
   const src = internalEmbedEl.getAttribute("src");
   if(!src) return true; //technically this does not mean this is a text only embed, but still should abort further processing
   const fnameParts = getEmbeddedFilenameParts(src);
-  return !(fnameParts.hasArearef || fnameParts.hasGroupref || fnameParts.hasFrameref) &&
+  return !(fnameParts.hasArearef || fnameParts.hasGroupref || fnameParts.hasFrameref || fnameParts.hasClippedFrameref) &&
     (fnameParts.hasBlockref || fnameParts.hasSectionref)
 }
 
@@ -661,7 +667,7 @@ const tmpObsidianWYSIWYG = async (
     } else {
       const warningEl = el.querySelector("div>h3[data-heading^='Unable to find section #^");
       if(warningEl) {
-        const ref = warningEl.getAttr("data-heading").match(/Unable to find section (#\^(?:group=|area=|frame=)[^ ]*)/)?.[1];
+        const ref = warningEl.getAttr("data-heading").match(/Unable to find section (#\^(?:group=|area=|frame=|clippedframe=)[^ ]*)/)?.[1];
         if(ref) {
           attr.fname = file.path + ref;
           areaPreview = true;

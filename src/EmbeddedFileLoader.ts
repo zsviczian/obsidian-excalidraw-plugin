@@ -377,6 +377,7 @@ export class EmbeddedFilesLoader {
         hasTaskbone: false,
         hasArearef: false,
         hasFrameref: false,
+        hasClippedFrameref: false,
         hasSectionref: false,
         blockref: null,
         sectionref: null,
@@ -399,12 +400,15 @@ export class EmbeddedFilesLoader {
         await createSVG(
           hasFilenameParts
             ? (filenameParts.hasGroupref || filenameParts.hasBlockref ||
-               filenameParts.hasSectionref || filenameParts.hasFrameref
+               filenameParts.hasSectionref || filenameParts.hasFrameref ||
+               filenameParts.hasClippedFrameref
               ? filenameParts.filepath + filenameParts.linkpartReference
               : file.path)
             : file?.path,
           false, //false
-          exportSettings,
+          hasFilenameParts && filenameParts.hasClippedFrameref
+          ? {...exportSettings, frameRendering: {enabled: true, name: false, outline: false, clip: true}}
+          : exportSettings,
           this,
           forceTheme,
           null,
@@ -568,7 +572,8 @@ export class EmbeddedFilesLoader {
       return {
         mimeType,
         fileId: await generateIdFromFile(
-          isHyperLink || isPDF ? (new TextEncoder()).encode(dataURL as string) : ab
+          isHyperLink || isPDF ? (new TextEncoder()).encode(dataURL as string) : ab,
+          inFile instanceof EmbeddedFile ? inFile.filenameparts?.linkpartReference : undefined
         ),
         dataURL,
         created: isHyperLink || isLocalLink ? 0 : file.stat.mtime,
@@ -1017,7 +1022,7 @@ const getSVGData = async (app: App, file: TFile, colorMap: ColorMap | null): Pro
   return svgToBase64(svg) as DataURL;
 };
 
-export const generateIdFromFile = async (file: ArrayBuffer): Promise<FileId> => {
+/*export const generateIdFromFile = async (file: ArrayBuffer): Promise<FileId> => {
   let id: FileId;
   try {
     const hashBuffer = await window.crypto.subtle.digest("SHA-1", file);
@@ -1025,6 +1030,39 @@ export const generateIdFromFile = async (file: ArrayBuffer): Promise<FileId> => 
       // convert buffer to byte array
       Array.from(new Uint8Array(hashBuffer))
         // convert to hex string
+        .map((byte) => byte.toString(16).padStart(2, "0"))
+        .join("") as FileId;
+  } catch (error) {
+    errorlog({ where: "EmbeddedFileLoader.generateIdFromFile", error });
+    id = fileid() as FileId;
+  }
+  return id;
+};*/
+
+export const generateIdFromFile = async (file: ArrayBuffer, key?: string): Promise<FileId> => {
+  let id: FileId;
+  try {
+    // Convert the file ArrayBuffer to a Uint8Array
+    const fileArray = new Uint8Array(file);
+
+    // If a key is provided, concatenate it to the file data
+    let dataToHash: Uint8Array;
+    if (key) {
+      const encoder = new TextEncoder();
+      const keyArray = encoder.encode(key);
+      dataToHash = new Uint8Array(fileArray.length + keyArray.length);
+      dataToHash.set(fileArray);
+      dataToHash.set(keyArray, fileArray.length);
+    } else {
+      dataToHash = fileArray;
+    }
+
+    // Hash the combined data (file and key, if provided)
+    const hashBuffer = await window.crypto.subtle.digest("SHA-1", dataToHash);
+    id =
+      // Convert buffer to byte array
+      Array.from(new Uint8Array(hashBuffer))
+        // Convert to hex string
         .map((byte) => byte.toString(16).padStart(2, "0"))
         .join("") as FileId;
   } catch (error) {

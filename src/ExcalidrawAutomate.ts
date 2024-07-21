@@ -2416,13 +2416,19 @@ export class ExcalidrawAutomate {
 
   /**
    * Gets all the elements from elements[] that are contained in the frame.
-   * @param element 
-   * @param elements - typically all the non-deleted elements in the scene 
+   * @param frameElement - the frame element for which to get the elements
+   * @param elements - typically all the non-deleted elements in the scene
+   * @param shouldIncludeFrame - if true, the frame element will be included in the returned array 
+   *                             this is useful when generating an image in which you want the frame to be clipped
    * @returns 
    */
-  getElementsInFrame(frameElement: ExcalidrawElement, elements: ExcalidrawElement[]): ExcalidrawElement[] {
+  getElementsInFrame(
+    frameElement: ExcalidrawElement,
+    elements: ExcalidrawElement[],
+    shouldIncludeFrame: boolean = false,
+  ): ExcalidrawElement[] {
     if(!frameElement || !elements || frameElement.type !== "frame") return [];
-    return elements.filter(el=>el.frameId === frameElement.id);
+    return elements.filter(el=>(el.frameId === frameElement.id) || (shouldIncludeFrame && el.id === frameElement.id));
   } 
 
   /**
@@ -2879,14 +2885,13 @@ async function getTemplate(
         groupElements = plugin.ea.getElementsInTheSameGroupWithElement(el[0],scene.elements)
       }
     }
-    if(filenameParts.hasFrameref) {
+    if(filenameParts.hasFrameref || filenameParts.hasClippedFrameref) {
       const el = getFrameBasedOnFrameNameOrId(filenameParts.blockref,scene.elements);     
       
       if(el) {
-        groupElements = plugin.ea.getElementsInFrame(el,scene.elements)
+        groupElements = plugin.ea.getElementsInFrame(el,scene.elements, filenameParts.hasClippedFrameref);
       }
     }
-
 
     if(filenameParts.hasTaskbone) {
       groupElements = groupElements.filter( el => 
@@ -2965,6 +2970,7 @@ export async function createPNG(
         theme: forceTheme ?? template?.appState?.theme ?? canvasTheme,
         viewBackgroundColor:
           template?.appState?.viewBackgroundColor ?? canvasBackgroundColor,
+        ...template?.appState?.frameRendering ? {frameRendering: template.appState.frameRendering} : {},
       },
       files,
     },
@@ -3060,6 +3066,7 @@ export async function createSVG(
   const theme = forceTheme ?? template?.appState?.theme ?? canvasTheme;
   const withTheme = exportSettings?.withTheme ?? plugin.settings.exportWithTheme;
 
+  const filenameParts = getEmbeddedFilenameParts(templatePath);
   const svg = await getSVG(
     {
       //createAndOpenDrawing
@@ -3071,6 +3078,7 @@ export async function createSVG(
         theme,
         viewBackgroundColor:
           template?.appState?.viewBackgroundColor ?? canvasBackgroundColor,
+        ...template?.appState?.frameRendering ? {frameRendering: template.appState.frameRendering} : {},
       },
       files,
     },
@@ -3079,6 +3087,9 @@ export async function createSVG(
         exportSettings?.withBackground ?? plugin.settings.exportWithBackground,
       withTheme,
       isMask: exportSettings?.isMask ?? false,
+      ...filenameParts?.hasClippedFrameref
+      ? {frameRendering: {enabled: true, name: false, outline: false, clip: true}}
+      : {},
     },
     padding,
     null,
@@ -3086,9 +3097,8 @@ export async function createSVG(
 
   if (withTheme && theme === "dark") addFilterToForeignObjects(svg);
 
-  const filenameParts = getEmbeddedFilenameParts(templatePath);
   if(
-    !(filenameParts.hasGroupref || filenameParts.hasFrameref) && 
+    !(filenameParts.hasGroupref || filenameParts.hasFrameref || filenameParts.hasClippedFrameref) && 
     (filenameParts.hasBlockref || filenameParts.hasSectionref)
   ) {
     let el = filenameParts.hasSectionref

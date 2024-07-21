@@ -482,6 +482,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: ""
   },
   {
+    field: "getElementsInFrame",
+    code: " getElementsInFrame(frameElement: ExcalidrawElement,elements: ExcalidrawElement[],shouldIncludeFrame: boolean = false,): ExcalidrawElement[];",
+    desc: "Gets all the elements from elements[] that are inside the frameElement. If shouldIncludeFrame is true, the frameElement will also be included in the result.",
+    after: "",
+  },
+  {
     field: "activeScript",
     code: "activeScript: string;",
     desc: `Mandatory to set before calling the get and set ScriptSettings functions. Set automatically by the ScriptEngine\nSee for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html","Script Engine Help")}`,
