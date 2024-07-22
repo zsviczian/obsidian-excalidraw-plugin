@@ -1718,6 +1718,7 @@ export default class ExcalidrawView extends TextFileView {
 
     this.clearPreventReloadTimer();
     this.clearEmbeddableIsEditingSelfTimer();
+    this.plugin.scriptEngine?.removeViewEAs(this);
     this.excalidrawAPI = null;
     if(this.draginfoDiv) {
       this.ownerDocument.body.removeChild(this.draginfoDiv);
