@@ -50,15 +50,18 @@ export default {
   NEW_IN_POPOUT_WINDOW_EMBED: "新建绘图 - 于新窗口 - 并将其嵌入（形如 ![[drawing]]）到当前 Markdown 文档中",
   TOGGLE_LOCK: "文本元素：原文模式（RAW）⟺ 预览模式（PREVIEW）",
   DELETE_FILE: "从库中删除所选图像（或以图像形式嵌入绘图中的 Markdown）的源文件",
-  COPY_ELEMENT_LINK: "复制所选元素的 Markdown 链接",
+  COPY_ELEMENT_LINK: "复制所选元素的链接（形如 [[file#^id]]]）",
+  COPY_DRAWING_LINK: "复制绘图的嵌入链接（形如 ![[darwing]]）",
   INSERT_LINK_TO_ELEMENT:
     `复制所选元素为内部链接（形如 [[file#^id]] ）。\n按住 ${labelCTRL()} 可复制元素所在分组为内部链接（形如 [[file#^group=id]] ）。\n按住 ${labelSHIFT()} 可复制所选元素所在区域为内部链接（形如 [[file#^area=id]] ）。\n按住 ${labelALT()} 可观看视频演示。`,
   INSERT_LINK_TO_ELEMENT_GROUP:
-    "复制所选元素所在分组为内部链接（形如 [[file#^group=id]] ）",
+    "复制所选元素所在分组为嵌入链接（形如 ![[file#^group=id]] ）",
   INSERT_LINK_TO_ELEMENT_AREA:
-    "复制所选元素所在区域为内部链接（形如 [[file#^area=id]] ）",
+    "复制所选元素所在区域为嵌入链接（形如 ![[file#^area=id]] ）",
   INSERT_LINK_TO_ELEMENT_FRAME:
-    "复制所选框架为内部链接（形如 [[file#^frame=id]] ）",
+    "复制所选框架为嵌入链接（形如 ![[file#^frame=id]] ）",
+    INSERT_LINK_TO_ELEMENT_FRAME_CLIPPED:
+    "复制所选框架（内容）为嵌入链接（形如 ![[file#^clippedframe=id]] ）",
   INSERT_LINK_TO_ELEMENT_NORMAL:
     "复制所选元素为内部链接（形如 [[file#^id]] ）",
   INSERT_LINK_TO_ELEMENT_ERROR: "未选择画布里的单个元素",
@@ -136,6 +139,7 @@ export default {
   ERROR_SAVING_IMAGE: "获取图像时发生未知错误。可能是由于某种原因，图像不可用或拒绝了 Obsidian 的获取请求。",
   WARNING_PASTING_ELEMENT_AS_TEXT: "你不能将 Excalidraw 元素粘贴为文本元素！",
   USE_INSERT_FILE_MODAL: "使用“插入任意文件”功能来嵌入 Markdown 文档",
+  RECURSIVE_INSERT_ERROR: "你不能将图像的一部分嵌入到此图像中，因为这可能导致无限循环。",
   CONVERT_TO_MARKDOWN: "转存为 Markdown 文档（并嵌入为 MD-Embeddable）",
   SELECT_TEXTELEMENT_ONLY: "只选择文本元素（非容器）",
   REMOVE_LINK: "移除文字元素链接",
@@ -571,7 +575,7 @@ FILENAME_HEAD: "文件名",
     "如果关闭，将导出透明背景的图像。",
   EXPORT_PADDING_NAME: "导出的图像的空白边距",
   EXPORT_PADDING_DESC:
-    "导出的 SVG/PNG 图像四周的空白边距（单位：像素）。<br>" +
+    "导出的 SVG/PNG 图像四周的空白边距（单位：像素）。对于裁剪框架引用，间距被设置为 0。<br>" +
     "增加该值，可以避免在导出图像时，靠近图像边缘的图形被裁掉。<br>" +
     "您可为某个绘图单独设置此项，方法是在其 frontmatter 中添加形如 <code>excalidraw-export-padding: 5<code> 的键值对。",
   EXPORT_THEME_NAME: "导出的图像匹配主题",
@@ -824,4 +828,11 @@ FILENAME_HEAD: "文件名",
   INTERNAL_DRAG_ACTION: "在 Obsidian 内部拖放时",
   PANE_TARGET: "点击链接时",
   DEFAULT_ACTION_DESC: "无修饰键时的行为：",
+
+  //FrameSettings.ts
+  FRAME_SETTINGS_TITLE: "框架设置",
+  FRAME_SETTINGS_ENABLE: "启用框架",
+  FRAME_SETTIGNS_NAME: "显示框架名称",
+  FRAME_SETTINGS_OUTLINE: "显示框架外边框",
+  FRAME_SETTINGS_CLIP: "启用框架裁剪",
 };
