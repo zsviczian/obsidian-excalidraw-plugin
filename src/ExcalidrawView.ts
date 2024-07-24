@@ -144,6 +144,7 @@ import React from "react";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
+//@ts-ignore
 const RE_TAIL = /^## Drawing\n.*```\n%%$(.*)/ms;
 
 declare const PLUGIN_VERSION:string;
@@ -3731,6 +3732,7 @@ export default class ExcalidrawView extends TextFileView {
       return false;
     }
     if(data && data.text && !this.modifierKeyDown.shiftKey) {
+      //@ts-ignore
       const isCodeblock = Boolean(data.text.replaceAll("\r\n", "\n").replaceAll("\r", "\n").match(/^`{3}[^\n]*\n.+\n`{3}\s*$/ms));
       if(isCodeblock) {
         const clipboardText = data.text;
@@ -4500,6 +4502,7 @@ export default class ExcalidrawView extends TextFileView {
         return;
       }
       if (link.startsWith("[[")) {
+        //@ts-ignore
         const linkMatch = link.match(/\[\[(?<link>.*?)\]\]/);
         if (!linkMatch) {
           return;
@@ -4622,6 +4625,7 @@ export default class ExcalidrawView extends TextFileView {
   public async pasteCodeBlock(data: string) {
     try {
       data = data.replaceAll("\r\n", "\n").replaceAll("\r", "\n").trim();
+      //@ts-ignore
       const isCodeblock = Boolean(data.match(/^`{3}[^\n]*\n.+\n`{3}\s*$/ms));
       if(!isCodeblock) {
         const codeblockType = await GenericInputPrompt.Prompt(this,this.plugin,this.app,"type codeblock type","javascript, html, python, etc.","");
