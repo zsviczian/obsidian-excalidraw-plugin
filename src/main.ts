@@ -43,13 +43,9 @@ import {
   IMAGE_TYPES,
   setExcalidrawPlugin,
   DEVICE,
-  sceneCoordsToViewportCoords
-} from "./constants/constants";
-import {
-  VIRGIL_FONT,
-  VIRGIL_DATAURL,
+  sceneCoordsToViewportCoords,
   FONTS_STYLE_ID,
-} from "./constants/constFonts";
+} from "./constants/constants";
 import ExcalidrawView, { TextMode, getTextMode } from "./ExcalidrawView";
 import {
   changeThemeOfExcalidrawMD,
@@ -103,6 +99,7 @@ import {
   decompress,
   getImageSize,
   versionUpdateCheckTimer,
+  getFontMetrics,
 } from "./utils/Utils";
 import { editorInsertText, extractSVGPNGFileName, foldExcalidrawSection, getActivePDFPageNumberFromPDFView, getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark, mergeMarkdownFiles, openLeaf } from "./utils/ObsidianUtils";
 import { ExcalidrawElement, ExcalidrawEmbeddableElement, ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
@@ -116,7 +113,7 @@ import {
 
 import { FieldSuggester } from "./dialogs/FieldSuggester";
 import { ReleaseNotes } from "./dialogs/ReleaseNotes";
-import { Packages } from "./types";
+import { Packages } from "./types/types";
 import { PreviewImageType } from "./utils/UtilTypes";
 import { ScriptInstallPrompt } from "./dialogs/ScriptInstallPrompt";
 import Taskbone from "./ocr/Taskbone";
@@ -138,14 +135,16 @@ import { ExcalidrawConfig } from "./utils/ExcalidrawConfig";
 import { EditorHandler } from "./CodeMirrorExtension/EditorHandler";
 import { clearMathJaxVariables } from "./LaTeX";
 import { showFrameSettings } from "./dialogs/FrameSettings";
+import { ExcalidrawLib } from "./ExcalidrawLib";
 
 declare let EXCALIDRAW_PACKAGES:string;
 declare let react:any;
 declare let reactDOM:any;
-declare let excalidrawLib: any;
+declare let excalidrawLib: typeof ExcalidrawLib;
 declare let PLUGIN_VERSION:string;
 
 export default class ExcalidrawPlugin extends Plugin {
+  public fourthFontLoaded: boolean = false;
   public excalidrawConfig: ExcalidrawConfig;
   public taskbone: Taskbone;
   private excalidrawFiles: Set<TFile> = new Set<TFile>();
@@ -178,7 +177,6 @@ export default class ExcalidrawPlugin extends Plugin {
   public equationsMaster: Map<FileId, string> = null; //fileId, formula
   public mermaidsMaster: Map<FileId, string> = null; //fileId, mermaidText
   public scriptEngine: ScriptEngine;
-  public fourthFontDef: string = VIRGIL_FONT;
   private packageMap: Map<Window,Packages> = new Map<Window,Packages>();
   public leafChangeTimeout: number = null;
   private forceSaveCommand:Command;
@@ -392,26 +390,53 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public initializeFonts() {
     this.app.workspace.onLayoutReady(async () => {
-      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.initializeFonts,`ExcalidrawPlugin.initializeFonts > app.workspace.onLayoutReady`);
+      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.initializeFonts, `ExcalidrawPlugin.initializeFonts > app.workspace.onLayoutReady`);
+  
       const font = await getFontDataURL(
         this.app,
         this.settings.experimantalFourthFont,
         "",
-        "LocalFont",
+        "Local Font",
       );
-      const fourthFontDataURL =
-        font.dataURL === "" ? VIRGIL_DATAURL : font.dataURL;
-      this.fourthFontDef = font.fontDef;
       
-      this.getOpenObsidianDocuments().forEach((ownerDocument) => {
-        this.addFonts([
-          `@font-face{font-family:'LocalFont';src:url("${fourthFontDataURL}");font-display: swap;`,
-        ],ownerDocument);
-      })
+      if(font.dataURL === "") {
+        this.fourthFontLoaded = true;
+        return;
+      }
+      
+      const fourthFontDataURL = font.dataURL;
+  
+      const f = this.app.metadataCache.getFirstLinkpathDest(this.settings.experimantalFourthFont, "");
+      // Call getFontMetrics with the fourthFontDataURL
+      let fontMetrics = f.extension.startsWith("woff") ? undefined : await getFontMetrics(fourthFontDataURL, "Local Font");
+      
+      // Add fonts to open Obsidian documents
+      for(const ownerDocument of this.getOpenObsidianDocuments()) {
+        await this.addFonts([
+          `@font-face{font-family:'Local Font';src:url("${fourthFontDataURL}");font-display: swap;`,
+        ], ownerDocument);
+      };
+
+      if (!fontMetrics) {
+        console.log("Font Metrics not found, using default");
+        fontMetrics = {
+          unitsPerEm: 1000,
+          ascender: 750,
+          descender: -250,
+          lineHeight: 1.2,
+          fontName: "Local Font",
+        }
+      }
+      this.packageMap.forEach(({excalidrawLib}) => {
+        (excalidrawLib as typeof ExcalidrawLib).registerLocalFont({metrics: fontMetrics as any, icon: null}, fourthFontDataURL);
+      });
+      setTimeout(()=>{this.fourthFontLoaded = true},100);
+      // Use the metrics as needed, e.g., store them in state or apply to rendering
+      // Example: this.fontMetrics = fontMetrics;
     });
   }
 
-  public addFonts(declarations: string[],ownerDocument:Document = document) {
+  public async addFonts(declarations: string[],ownerDocument:Document = document) {
     // replace the old local font <style> element with the one we just created
     const newStylesheet = ownerDocument.createElement("style");
     newStylesheet.id = FONTS_STYLE_ID;
@@ -421,7 +446,7 @@ export default class ExcalidrawPlugin extends Plugin {
     if (oldStylesheet) {
       ownerDocument.head.removeChild(oldStylesheet);
     }
-    ownerDocument.fonts.load('20px LocalFont');
+    await ownerDocument.fonts.load('20px Local Font');
   }
 
   public removeFonts() {

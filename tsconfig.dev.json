@@ -18,11 +18,11 @@
       "DOM.Iterable"
     ],
     "jsx": "react",
-    "inlineSourceMap": true
+    "inlineSourceMap": true,
   },
   "include": [
     "**/*.ts",
     "**/*.tsx", "src/Dialogs/OpenDrawing.ts",
-    "src/types.d.ts"
+    "src/types/types.d.ts",
   ]
 }

@@ -13,7 +13,7 @@ import ExcalidrawView from "./ExcalidrawView";
 import { t } from "./lang/helpers";
 import type ExcalidrawPlugin from "./main";
 import { PenStyle } from "./PenTypes";
-import { DynamicStyle } from "./types";
+import { DynamicStyle } from "./types/types";
 import { PreviewImageType } from "./utils/UtilTypes";
 import { setDynamicStyle } from "./utils/DynamicStyling";
 import {

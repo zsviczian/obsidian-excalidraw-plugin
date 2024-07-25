@@ -1,18 +1,12 @@
 import {
   App,
   Notice,
-  request,
-  requestUrl,
+  request,requestUrl,
   TFile,
   TFolder,
 } from "obsidian";
 import { Random } from "roughjs/bin/math";
 import { BinaryFileData, DataURL} from "@zsviczian/excalidraw/types/excalidraw/types";
-import {
-  ASSISTANT_FONT,
-  CASCADIA_FONT,
-  VIRGIL_FONT,
-} from "src/constants/constFonts";
 import {
   exportToSvg,
   exportToBlob,
@@ -33,7 +27,7 @@ import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { cleanBlockRef, cleanSectionHeading, getFileCSSClasses } from "./ObsidianUtils";
 import { updateElementLinksToObsidianLinks } from "src/ExcalidrawAutomate";
 import { CropImage } from "./CropImage";
-
+import opentype from 'opentype.js';
 
 declare const PLUGIN_VERSION:string;
 declare var LZString: any;
@@ -314,6 +308,7 @@ export async function getSVG (
         exportPadding: exportSettings.frameRendering ? 0 : padding,
         exportingFrame: null,
         renderEmbeddables: true,
+        skipInliningFonts: exportSettings.skipInliningFonts,
       });
     }
     if(svg) {
@@ -404,34 +399,6 @@ export async function getQuickImagePreview (
   }
 };
 
-export function embedFontsInSVG(
-  svg: SVGSVGElement,
-  plugin: ExcalidrawPlugin,
-  localOnly: boolean = false,
-): SVGSVGElement {
-  //replace font references with base64 fonts)
-  const includesVirgil = !localOnly &&
-    svg.querySelector("text[font-family^='Virgil']") !== null;
-  const includesCascadia = !localOnly &&
-    svg.querySelector("text[font-family^='Cascadia']") !== null;
-  const includesAssistant = !localOnly &&
-    svg.querySelector("text[font-family^='Assistant']") !== null;
-  const includesLocalFont =
-    svg.querySelector("text[font-family^='LocalFont']") !== null;
-  const defs = svg.querySelector("defs");
-  if (defs && (includesCascadia || includesVirgil || includesLocalFont || includesAssistant)) {
-    let style = defs.querySelector("style");
-    if (!style) {
-      style = document.createElement("style");
-      defs.appendChild(style);
-    }
-    style.innerHTML = `${includesVirgil ? (VIRGIL_FONT + "\n") : ""}${
-      includesCascadia ? (CASCADIA_FONT + "\n") : ""}${
-      includesAssistant ? (ASSISTANT_FONT + "\n") : ""
-    }${includesLocalFont ? (plugin.fourthFontDef + "\n") : ""}`;
-  }
-  return svg;
-};
 
 export async function getImageSize (
   src: string,
@@ -924,4 +891,34 @@ export function addIframe (containerEl: HTMLElement, link:string, startAt?: numb
       sandbox: "allow-forms allow-presentation allow-same-origin allow-scripts allow-modals",
     },
   });
+}
+
+export interface FontMetrics {
+  unitsPerEm: number;
+  ascender: number;
+  descender: number;
+  lineHeight: number;
+  fontName: string;
+}
+
+export async function getFontMetrics(fontUrl: string, name: string): Promise<FontMetrics | null> {
+  try {
+    const font = await opentype.load(fontUrl);
+    const unitsPerEm = font.unitsPerEm;
+    const ascender = font.ascender;
+    const descender = font.descender;
+    const lineHeight = (ascender - descender) / unitsPerEm;
+    const fontName = font.names.fontFamily.en ?? name;
+
+    return {
+      unitsPerEm,
+      ascender,
+      descender,
+      lineHeight,
+      fontName,
+    };
+  } catch (error) {
+    console.error('Error loading font:', error);
+    return null;
+  }
 }

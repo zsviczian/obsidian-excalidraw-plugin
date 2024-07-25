@@ -82,7 +82,6 @@ import {
 } from "./utils/FileUtils";
 import {
   checkExcalidrawVersion,
-  embedFontsInSVG,
   errorlog,
   getEmbeddedFilenameParts,
   getExportTheme,
@@ -139,7 +138,7 @@ import { CustomMutationObserver, DEBUGGING, debug, log} from "./utils/DebugHelpe
 import { extractCodeBlocks, postOpenAI } from "./utils/AIUtils";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { SelectCard } from "./dialogs/SelectCard";
-import { Packages } from "./types";
+import { Packages } from "./types/types";
 import React from "react";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
@@ -180,6 +179,7 @@ export interface ExportSettings {
     outline: boolean;
     clip: boolean;
   };
+  skipInliningFonts?: boolean;
 }
 
 const HIDE = "excalidraw-hidden";
@@ -459,7 +459,7 @@ export default class ExcalidrawView extends TextFileView {
     );
   }
 
-  public async svg(scene: any, theme?:string, embedScene?: boolean): Promise<SVGSVGElement> {
+  public async svg(scene: any, theme?:string, embedScene?: boolean, embedFont: boolean = false): Promise<SVGSVGElement> {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.svg, "ExcalidrawView.svg", scene, theme, embedScene);
     const ed = this.exportDialog;
 
@@ -467,6 +467,7 @@ export default class ExcalidrawView extends TextFileView {
       withBackground: ed ? !ed.transparent : getWithBackground(this.plugin, this.file),
       withTheme: true,
       isMask: isMaskFile(this.plugin, this.file),
+      skipInliningFonts: !embedFont,
     };
 
     if(typeof embedScene === "undefined") {
@@ -504,14 +505,12 @@ export default class ExcalidrawView extends TextFileView {
     const exportImage = async (filepath:string, theme?:string) => {
       const file = this.app.vault.getAbstractFileByPath(normalizePath(filepath));
 
-      const svg = await this.svg(scene,theme, embedScene);
+      const svg = await this.svg(scene,theme, embedScene, true);
       if (!svg) {
         return;
       }
       const serializer = new XMLSerializer();
-      const svgString = serializer.serializeToString(
-        embedFontsInSVG(svg, this.plugin),
-      );
+      const svgString = serializer.serializeToString(svg);
       if (file && file instanceof TFile) {
         await this.app.vault.modify(file, svgString);
       } else {
@@ -533,11 +532,10 @@ export default class ExcalidrawView extends TextFileView {
       return;
     }
 
-    let svg = await this.svg(this.getScene(selectedOnly),undefined,embedScene);
+    const svg = await this.svg(this.getScene(selectedOnly),undefined,embedScene, true);
     if (!svg) {
       return;
     }
-    svg = embedFontsInSVG(svg, this.plugin);
     download(
       null,
       svgToBase64(svg.outerHTML),
@@ -2073,7 +2071,7 @@ export default class ExcalidrawView extends TextFileView {
         return;
       }
       let counter = 0;
-      while (!this.file && counter++<50) await sleep(50);
+      while ((!this.file || !this.plugin.fourthFontLoaded) && counter++<50) await sleep(50);
       if(!this.file) return;
       this.compatibilityMode = this.file.extension === "excalidraw";
       await this.plugin.loadSettings();
@@ -2417,7 +2415,7 @@ export default class ExcalidrawView extends TextFileView {
         ? om.zenModeEnabled
         : api.getAppState().zenModeEnabled;
       //debug({where:"ExcalidrawView.loadDrawing",file:this.file.name,dataTheme:excalidrawData.appState.theme,before:"updateScene"})
-      api.setLocalFont(this.plugin.settings.experimentalEnableFourthFont);
+      //api.setLocalFont(this.plugin.settings.experimentalEnableFourthFont);
 
       this.updateScene(
         {
@@ -4925,7 +4923,7 @@ export default class ExcalidrawView extends TextFileView {
 
   private setExcalidrawAPI (api: ExcalidrawImperativeAPI) {
     this.excalidrawAPI = api;
-    api.setLocalFont(this.plugin.settings.experimentalEnableFourthFont);
+    //api.setLocalFont(this.plugin.settings.experimentalEnableFourthFont);
     window.setTimeout(() => {
       this.onAfterLoadScene(true);
       this.excalidrawContainer?.focus();
@@ -5409,6 +5407,7 @@ export default class ExcalidrawView extends TextFileView {
             renderEmbeddable: this.renderEmbeddable.bind(this),
             renderMermaid: shouldRenderMermaid,
             obsidianHostPlugin: new WeakRef(this.plugin),
+            showDeprecatedFonts: true,
           },
           this.renderCustomActionsMenu(),
           this.renderWelcomeScreen(),

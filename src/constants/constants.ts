@@ -1,5 +1,5 @@
 import { customAlphabet } from "nanoid";
-import { DeviceType } from "../types";
+import { DeviceType } from "../types/types";
 import { ExcalidrawLib } from "../ExcalidrawLib";
 import { moment } from "obsidian";
 import ExcalidrawPlugin from "src/main";
@@ -85,7 +85,7 @@ export const {
   getCommonBoundingBox,
   getMaximumGroups,
   measureText,
-  getDefaultLineHeight,
+  getLineHeight,
   wrapText, 
   getFontString, 
   getBoundTextMaxWidth, 
@@ -96,7 +96,10 @@ export const {
   mermaidToExcalidraw,
   getContainerElement,
   refreshTextDimensions,
+  getFontDefinition,
 } = excalidrawLib;
+
+export const FONTS_STYLE_ID = "excalidraw-custom-fonts";
 
 export function JSON_parse(x: string): any {
   return JSON.parse(x.replaceAll("&#91;", "["));

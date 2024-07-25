@@ -17,11 +17,11 @@
       "esnext",
       "DOM.Iterable"
     ],
-    "jsx": "react"
+    "jsx": "react",
   },
   "include": [
     "**/*.ts",
     "**/*.tsx", "src/Dialogs/OpenDrawing.ts",
-    "src/types.d.ts"
+    "src/types/types.d.ts",
   ]
 }

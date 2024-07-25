@@ -27,7 +27,7 @@ import {
   GITHUB_RELEASES,
   determineFocusDistance,
   getCommonBoundingBox,
-  getDefaultLineHeight,
+  getLineHeight,
   getMaximumGroups,
   intersectElementWithLine,
   measureText,
@@ -41,7 +41,6 @@ import {
 import { blobToBase64, checkAndCreateFolder, getDrawingFilename, getExcalidrawEmbeddedFilesFiletree, getListOfTemplateFiles, getNewUniqueFilepath, hasExcalidrawEmbeddedImagesTreeChanged, } from "src/utils/FileUtils";
 import {
   //debug,
-  embedFontsInSVG,
   errorlog,
   getEmbeddedFilenameParts,
   getImageSize,
@@ -61,7 +60,7 @@ import { tex2dataURL } from "src/LaTeX";
 import { GenericInputPrompt, NewFileActions } from "src/dialogs/Prompt";
 import { t } from "src/lang/helpers";
 import { ScriptEngine } from "src/Scripts";
-import { ConnectionPoint, DeviceType  } from "src/types";
+import { ConnectionPoint, DeviceType  } from "src/types/types";
 import CM, { ColorMaster, extendPlugins } from "colormaster";
 import HarmonyPlugin from "colormaster/plugins/harmony";
 import MixPlugin from "colormaster/plugins/mix"
@@ -92,6 +91,7 @@ import {
 import { EXCALIDRAW_AUTOMATE_INFO, EXCALIDRAW_SCRIPTENGINE_INFO } from "./dialogs/SuggesterInfo";
 import { addBackOfTheNoteCard, getFrameBasedOnFrameNameOrId } from "./utils/ExcalidrawViewUtils";
 import { log } from "./utils/DebugHelper";
+import { ExcalidrawLib } from "./ExcalidrawLib";
 
 extendPlugins([
   HarmonyPlugin,
@@ -111,6 +111,7 @@ extendPlugins([
 
 declare const PLUGIN_VERSION:string;
 declare var LZString: any;
+declare const excalidrawLib: typeof ExcalidrawLib;
 
 const GAP = 4;
 
@@ -386,7 +387,7 @@ export class ExcalidrawAutomate {
     opacity: number;
     strokeSharpness?: StrokeRoundness; //defaults to undefined, use strokeRoundess and roundess instead. Only kept for legacy script compatibility type StrokeRoundness = "round" | "sharp"
     roundness: null | { type: RoundnessType; value?: number };
-    fontFamily: number; //1: Virgil, 2:Helvetica, 3:Cascadia, 4:LocalFont
+    fontFamily: number; //1: Virgil, 2:Helvetica, 3:Cascadia, 4:Local Font
     fontSize: number;
     textAlign: string; //"left"|"right"|"center"
     verticalAlign: string; //"top"|"bottom"|"middle" :for future use, has no effect currently
@@ -1191,7 +1192,7 @@ export class ExcalidrawAutomate {
       element.text,
       element.fontSize,
       element.fontFamily,
-      getDefaultLineHeight(element.fontFamily)
+      getLineHeight(element.fontFamily)
     );
     element.width = w;
     element.height = h;
@@ -1236,7 +1237,7 @@ export class ExcalidrawAutomate {
       text,
       this.style.fontSize,
       this.style.fontFamily,
-      getDefaultLineHeight(this.style.fontFamily)
+      getLineHeight(this.style.fontFamily)
     );
     const width = formatting?.width ? formatting.width : w;
     const height = formatting?.height ? formatting.height : h;
@@ -1294,7 +1295,7 @@ export class ExcalidrawAutomate {
       containerId: isContainerBound ? boxId : null,
       originalText: isContainerBound ? originalText : text,
       rawText: isContainerBound ? originalText : text,
-      lineHeight: getDefaultLineHeight(this.style.fontFamily),
+      lineHeight: getLineHeight(this.style.fontFamily),
       autoResize: formatting?.box ? true : (formatting?.autoResize ?? true),
     };
     if (boxId && formatting?.box === "blob") {
@@ -2494,7 +2495,7 @@ export class ExcalidrawAutomate {
       text,
       this.style.fontSize,
       this.style.fontFamily,
-      getDefaultLineHeight(this.style.fontFamily),
+      getLineHeight(this.style.fontFamily),
     );
     return { width: size.w ?? 0, height: size.h ?? 0 };
   };
@@ -2764,18 +2765,16 @@ function getFontFamily(id: number) {
     case 3:
       return "Cascadia, Segoe UI Emoji";
     case 4:
-      return "LocalFont";
+      return "Local Font";
   }
 }
 
-export async function initFonts(doc: Document = document) {
-  for (let i = 1; i <= 3; i++) {
-    await (doc as any).fonts.load(`20px ${getFontFamily(i)}`);
-  }
-  await (doc as any).fonts.load("400 20px Assistant");
-  await (doc as any).fonts.load("500 20px Assistant");
-  await (doc as any).fonts.load("600 20px Assistant");
-  await (doc as any).fonts.load("700 20px Assistant");
+export async function initFonts() {
+  await excalidrawLib.registerFontsInCSS();
+  const fonts = excalidrawLib.getFontFamilies();
+  for(let i=0;i<fonts.length;i++) {
+    await (document as any).fonts.load(`20px ${fonts[i]}`);  
+  };
 }
 
 export function _measureText(
@@ -2790,7 +2789,7 @@ export function _measureText(
   }
   if (!fontFamily) {
     fontFamily = 1;
-    lineHeight = getDefaultLineHeight(fontFamily);
+    lineHeight = getLineHeight(fontFamily);
   }
   const metrics = measureText(
     newText,
@@ -3050,6 +3049,9 @@ export async function createSVG(
   if (!loader) {
     loader = new EmbeddedFilesLoader(plugin);
   }
+  if(typeof exportSettings.skipInliningFonts === "undefined") {
+    exportSettings.skipInliningFonts = !embedFont;
+  }
   const template = templatePath
     ? await getTemplate(plugin, templatePath, true, loader, depth, convertMarkdownLinksToObsidianURLs)
     : null;
@@ -3120,7 +3122,7 @@ export async function createSVG(
   if (template?.hasSVGwithBitmap) {
     svg.setAttribute("hasbitmap", "true");
   }
-  return embedFont ? embedFontsInSVG(svg, plugin) : svg;
+  return svg;
 }
 
 function estimateLineBound(points: any): [number, number, number, number] {

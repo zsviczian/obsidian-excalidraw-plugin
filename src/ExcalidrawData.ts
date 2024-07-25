@@ -11,7 +11,7 @@ import {
   fileid,
   DEVICE,
   EMBEDDABLE_THEME_FRONTMATTER_VALUES,
-  getDefaultLineHeight,
+  getLineHeight,
   ERROR_IFRAME_CONVERSION_CANCELED,
   JSON_parse,
   FRONTMATTER_KEYS,
@@ -549,7 +549,7 @@ export class ExcalidrawData {
       }
 
       if (el.type === "text" && !el.hasOwnProperty("lineHeight")) {
-        el.lineHeight = getDefaultLineHeight(el.fontFamily);
+        el.lineHeight = getLineHeight(el.fontFamily);
       }
 
       if (el.type === "image" && !el.hasOwnProperty("roundness")) {

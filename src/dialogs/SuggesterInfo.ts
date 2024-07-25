@@ -100,7 +100,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "style.fontFamily",
     code: "[number]",
-    desc: "1: Virgil, 2:Helvetica, 3:Cascadia, 4:LocalFont",
+    desc: "1: Virgil, 2:Helvetica, 3:Cascadia, 4:Local Font, 5: Excalifont, 6: Nunito, 7: Lilita One, 8: Comic Shanns, 9: Liberation Sans",
     after: "",
   },
   {

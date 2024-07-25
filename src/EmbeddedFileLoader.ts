@@ -4,11 +4,6 @@
 import { ExcalidrawElement, FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { App, MarkdownRenderer, Notice, TFile } from "obsidian";
-import {
-  ASSISTANT_FONT,
-  CASCADIA_FONT,
-  VIRGIL_FONT,
-} from "./constants/constFonts";
 import {  
   DEFAULT_MD_EMBED_CSS,
   fileid,
@@ -16,6 +11,7 @@ import {
   nanoid,
   THEME_FILTER,
   FRONTMATTER_KEYS,
+  getFontDefinition,
 } from "./constants/constants";
 import { createSVG } from "./ExcalidrawAutomate";
 import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
@@ -38,10 +34,9 @@ import {
   LinkParts,
   svgToBase64,
   isMaskFile,
-  embedFontsInSVG,
   getEmbeddedFilenameParts,
 } from "./utils/Utils";
-import { ValueOf } from "./types";
+import { ValueOf } from "./types/types";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
 import { mermaidToExcalidraw } from "src/constants/constants";
 import { ImageKey, imageCache } from "./utils/ImageCache";
@@ -363,6 +358,7 @@ export class EmbeddedFilesLoader {
         : false,
       withTheme: !!forceTheme,
       isMask,
+      skipInliningFonts: false,
     };
 
     const hasColorMap = Boolean(inFile instanceof EmbeddedFile ? inFile.colorMap : null);
@@ -445,16 +441,16 @@ export class EmbeddedFilesLoader {
       //see svgWithFont below
       imageCache.addImageToCache(cacheKey,"", svg);
     }
-    const svgWithFont = embedFontsInSVG(svg, this.plugin);
-    if(!svgWithFont.hasAttribute("width") && svgWithFont.hasAttribute("viewBox")){
+
+    if(!svg.hasAttribute("width") && svg.hasAttribute("viewBox")){
       //2024.06.09
       //this addresses backward compatibility issues where the cache does not have the width and height attributes
       //this should be removed in the future
-      const vb = svgWithFont.getAttr("viewBox").split(" ");
-      Boolean(vb[2]) && svgWithFont.setAttribute("width", vb[2]);
-      Boolean(vb[3]) && svgWithFont.setAttribute("height", vb[3]);
+      const vb = svg.getAttr("viewBox").split(" ");
+      Boolean(vb[2]) && svg.setAttribute("width", vb[2]);
+      Boolean(vb[3]) && svg.setAttribute("height", vb[3]);
     }
-    const dURL = svgToBase64(svgWithFont.outerHTML) as DataURL;
+    const dURL = svgToBase64(svg.outerHTML) as DataURL;
     return {dataURL: dURL as DataURL, hasSVGwithBitmap};
   };
 
@@ -816,13 +812,29 @@ export class EmbeddedFilesLoader {
     }
     switch (fontName) {
       case "Virgil":
-        fontDef = VIRGIL_FONT;
+        fontDef = await getFontDefinition(1);
         break;
       case "Cascadia":
-        fontDef = CASCADIA_FONT;
+        fontDef = await getFontDefinition(3);
         break;
-      case "Assistant": 
-        fontDef = ASSISTANT_FONT;
+      case "Assistant":
+      case "Helvetica":
+        fontDef = await getFontDefinition(2);
+        break;
+      case "Excalifont":
+        fontDef = await getFontDefinition(5);
+        break;
+      case "Nunito":
+        fontDef = await getFontDefinition(6);
+        break;
+      case "Lilita One":
+        fontDef = await getFontDefinition(7);
+        break;
+      case "Comic Shanns":
+        fontDef = await getFontDefinition(8);
+        break;
+      case "Liberation Sans":
+        fontDef = await getFontDefinition(9);
         break;
       case "":
         fontDef = "";

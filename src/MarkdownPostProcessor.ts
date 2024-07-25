@@ -12,7 +12,6 @@ import { ExportSettings } from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
 import {getIMGFilename,} from "./utils/FileUtils";
 import {
-  embedFontsInSVG,
   getEmbeddedFilenameParts,
   getExportTheme,
   getQuickImagePreview,
@@ -184,7 +183,8 @@ const _getSVGIMG = async ({filenameParts,theme,cacheReady,img,file,exportSetting
     }
   }
   
-  let svg = convertSVGStringToElement((
+  exportSettings.skipInliningFonts = false;
+  const svg = convertSVGStringToElement((
     await createSVG(
       filenameParts.hasGroupref || filenameParts.hasBlockref || filenameParts.hasSectionref || filenameParts.hasFrameref || filenameParts.hasClippedFrameref
         ? filenameParts.filepath + filenameParts.linkpartReference
@@ -208,7 +208,6 @@ const _getSVGIMG = async ({filenameParts,theme,cacheReady,img,file,exportSetting
     return null;
   }
 
-  svg = embedFontsInSVG(svg, plugin, false);
   //need to remove width and height attributes to support area= embeds
   svg.removeAttribute("width");
   svg.removeAttribute("height");
@@ -230,7 +229,8 @@ const _getSVGNative = async ({filenameParts,theme,cacheReady,containerElement,fi
     maybeSVG = await imageCache.getImageFromCache(cacheKey);
   }
 
-  let svg = (maybeSVG && (maybeSVG instanceof SVGSVGElement))
+  exportSettings.skipInliningFonts = false;
+  const svg = (maybeSVG && (maybeSVG instanceof SVGSVGElement))
     ? maybeSVG
     : convertSVGStringToElement((await createSVG(
       filenameParts.hasGroupref || filenameParts.hasBlockref || filenameParts.hasSectionref || filenameParts.hasFrameref || filenameParts.hasClippedFrameref
@@ -260,7 +260,7 @@ const _getSVGNative = async ({filenameParts,theme,cacheReady,containerElement,fi
   if(!Boolean(maybeSVG)) {
     cacheReady && imageCache.addImageToCache(cacheKey,"", svg);
   }
-  svg = embedFontsInSVG(svg, plugin, true);
+
   svg.removeAttribute("width");
   svg.removeAttribute("height");
   containerElement.append(svg);
