@@ -94,6 +94,7 @@ export const {
   mutateElement,
   restore,
   mermaidToExcalidraw,
+  getFontFamilyString,
   getContainerElement,
   refreshTextDimensions,
   getFontDefinition,

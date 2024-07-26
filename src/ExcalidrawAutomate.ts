@@ -37,6 +37,7 @@ import {
   THEME_FILTER,
   mermaidToExcalidraw,
   refreshTextDimensions,
+  getFontFamilyString,
 } from "src/constants/constants";
 import { blobToBase64, checkAndCreateFolder, getDrawingFilename, getExcalidrawEmbeddedFilesFiletree, getListOfTemplateFiles, getNewUniqueFilepath, hasExcalidrawEmbeddedImagesTreeChanged, } from "src/utils/FileUtils";
 import {
@@ -2757,24 +2758,15 @@ function getLineBox(points: [x: number, y: number][]) {
 }
 
 function getFontFamily(id: number) {
-  switch (id) {
-    case 1:
-      return "Virgil, Segoe UI Emoji";
-    case 2:
-      return "Helvetica, Segoe UI Emoji";
-    case 3:
-      return "Cascadia, Segoe UI Emoji";
-    case 4:
-      return "Local Font";
-  }
+  getFontFamilyString({fontFamily:id})
 }
 
 export async function initFonts() {
   await excalidrawLib.registerFontsInCSS();
-  const fonts = excalidrawLib.getFontFamilies();
+  /*const fonts = excalidrawLib.getFontFamilies();
   for(let i=0;i<fonts.length;i++) {
     await (document as any).fonts.load(`20px ${fonts[i]}`);  
-  };
+  };*/
 }
 
 export function _measureText(

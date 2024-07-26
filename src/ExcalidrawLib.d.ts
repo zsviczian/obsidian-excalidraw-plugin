@@ -129,6 +129,13 @@ declare namespace ExcalidrawLib {
     fontFamily: FontFamilyValues;
   }): FontString;
 
+
+  function getFontFamilyString ({
+    fontFamily,
+  }: {
+    fontFamily: number;
+  }): string;
+
   function getBoundTextMaxWidth(container: ExcalidrawElement): number;
 
   function exportToBlob(

@@ -410,13 +410,6 @@ export default class ExcalidrawPlugin extends Plugin {
       // Call getFontMetrics with the fourthFontDataURL
       let fontMetrics = f.extension.startsWith("woff") ? undefined : await getFontMetrics(fourthFontDataURL, "Local Font");
       
-      // Add fonts to open Obsidian documents
-      for(const ownerDocument of this.getOpenObsidianDocuments()) {
-        await this.addFonts([
-          `@font-face{font-family:'Local Font';src:url("${fourthFontDataURL}");font-display: swap;`,
-        ], ownerDocument);
-      };
-
       if (!fontMetrics) {
         console.log("Font Metrics not found, using default");
         fontMetrics = {
@@ -430,9 +423,13 @@ export default class ExcalidrawPlugin extends Plugin {
       this.packageMap.forEach(({excalidrawLib}) => {
         (excalidrawLib as typeof ExcalidrawLib).registerLocalFont({metrics: fontMetrics as any, icon: null}, fourthFontDataURL);
       });
-      setTimeout(()=>{this.fourthFontLoaded = true},100);
-      // Use the metrics as needed, e.g., store them in state or apply to rendering
-      // Example: this.fontMetrics = fontMetrics;
+      // Add fonts to open Obsidian documents
+      for(const ownerDocument of this.getOpenObsidianDocuments()) {
+        await this.addFonts([
+          `@font-face{font-family:'Local Font';src:url("${fourthFontDataURL}");font-display: swap;font-weight: 400;`,
+        ], ownerDocument);
+      };
+      if(!this.fourthFontLoaded) setTimeout(()=>{this.fourthFontLoaded = true},100);
     });
   }
 
