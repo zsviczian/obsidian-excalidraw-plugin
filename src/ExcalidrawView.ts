@@ -119,7 +119,7 @@ import { ObsidianMenu } from "./menu/ObsidianMenu";
 import { ToolsPanel } from "./menu/ToolsPanel";
 import { ScriptEngine } from "./Scripts";
 import { getTextElementAtPointer, getImageElementAtPointer, getElementWithLinkAtPointer } from "./utils/GetElementAtPointer";
-import { ICONS, LogoWrapper, saveIcon } from "./menu/ActionIcons";
+import { excalidrawSword, ICONS, LogoWrapper, Rank, saveIcon, SwordColors } from "./menu/ActionIcons";
 import { ExportDialog } from "./dialogs/ExportDialog";
 import { getEA } from "src"
 import { anyModifierKeysPressed, emulateKeysForLinkClick, webbrowserDragModifierType, internalDragModifierType, isWinALTorMacOPT, isWinCTRLorMacCMD, isWinMETAorMacCTRL, isSHIFT, linkClickModifierType, localFileDragModifierType, ModifierKeys, modifierKeyTooltipMessages } from "./utils/ModifierkeyHelper";
@@ -1898,6 +1898,25 @@ export default class ExcalidrawView extends TextFileView {
   setEphemeralState(state: any): void {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setEphemeralState, "ExcalidrawView.setEphemeralState", state);
     if (!state) {
+      return;
+    }
+
+    if (state.rename === "all") {
+      (async () => {
+        let filename = await ScriptEngine.inputPrompt(
+          this,
+          this.plugin,
+          this.plugin.app,
+          "Note Title",
+          "Filename without extension",
+          this.file.basename,
+        );
+        if (!filename) {
+          return;
+        }
+        const {folderpath} = splitFolderAndFilename(filename);
+        this.app.vault.rename(this.file, normalizePath(`${folderpath}/${filename}.md`));
+      })();
       return;
     }
 
@@ -4997,7 +5016,10 @@ export default class ExcalidrawView extends TextFileView {
   private renderWelcomeScreen () {
     const React = this.packages.react;
     const {WelcomeScreen} = this.packages.excalidrawLib;
-
+    const filecount = this.app.vault.getFiles().filter(f=>this.plugin.isExcalidrawFile(f)).length;
+    const rank = filecount < 200 ? "Bronze" : filecount < 750 ? "Silver" : filecount < 2000 ? "Gold" : "Platinum";
+    const nextRankDelta = filecount < 200 ? 200 - filecount : filecount < 750 ? 750 - filecount : filecount < 2000 ? 2000 - filecount : 0;
+    const {decoration, title} = SwordColors[rank as Rank];
     return React.createElement(
       WelcomeScreen,
       {},
@@ -5010,8 +5032,16 @@ export default class ExcalidrawView extends TextFileView {
           React.createElement(
             LogoWrapper,
             {},
-            ICONS.ExcalidrawSword,
+            excalidrawSword(rank as Rank),
           ),
+        ),
+        React.createElement(
+          WelcomeScreen.Center.Heading,
+          {
+            color: decoration,
+            message: nextRankDelta > 0 ? `${rank}: ${nextRankDelta} more drawings until the next rank!` : `${rank}: You're at the top. Keep on being legendary!`,
+          },
+          title,
         ),
         React.createElement(
           WelcomeScreen.Center.Heading,
@@ -5043,9 +5073,9 @@ export default class ExcalidrawView extends TextFileView {
               icon: ICONS.Discord,
               href: "https://discord.gg/DyfAXFwUHc",
               shortcut: null,
-              "aria-label": "Join the Visual Thinking Discord Server",
+              "aria-label": "Join the Discord Server",
             },
-            " Join the Visual Thinking Discord Server"
+            " Join the Discord Server"
           ),
           React.createElement(
             WelcomeScreen.Center.MenuItemLink,
@@ -5056,6 +5086,16 @@ export default class ExcalidrawView extends TextFileView {
               "aria-label": "Follow me on Twitter",
             },
             " Follow me on Twitter"
+          ),
+          React.createElement(
+            WelcomeScreen.Center.MenuItemLink,
+            {
+              icon: ICONS.Learn,
+              href: "https://visual-thinking-workshop.com",
+              shortcut: null,
+              "aria-label": "Learn Visual PKM",
+            },
+            " Sign up for the Visual Thinking Workshop"
           ),
           React.createElement(
             WelcomeScreen.Center.MenuItemLink,

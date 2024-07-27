@@ -136,6 +136,8 @@ import { EditorHandler } from "./CodeMirrorExtension/EditorHandler";
 import { clearMathJaxVariables } from "./LaTeX";
 import { showFrameSettings } from "./dialogs/FrameSettings";
 import { ExcalidrawLib } from "./ExcalidrawLib";
+import { Rank, SwordColors } from "./menu/ActionIcons";
+import { RankMessage } from "./dialogs/RankMessage";
 
 declare let EXCALIDRAW_PACKAGES:string;
 declare let react:any;
@@ -187,6 +189,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public forceToOpenInMarkdownFilepath: string = null;
   private slob:string;
   private ribbonIcon:HTMLElement;
+  public loadTimestamp:number;
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
@@ -308,14 +311,23 @@ export default class ExcalidrawPlugin extends Plugin {
   }*/
   
   async onload() {
+    this.loadTimestamp = Date.now();
     addIcon(ICON_NAME, EXCALIDRAW_ICON);
     addIcon(SCRIPTENGINE_ICON_NAME, SCRIPTENGINE_ICON);
     addIcon(EXPORT_IMG_ICON_NAME, EXPORT_IMG_ICON);
 
     await this.loadSettings({reEnableAutosave:true});
+    const updateSettings = !this.settings.onceOffCompressFlagReset || !this.settings.onceOffGPTVersionReset;
     if(!this.settings.onceOffCompressFlagReset) {
       this.settings.compress = true;
       this.settings.onceOffCompressFlagReset = true;
+    }
+    if(!this.settings.onceOffGPTVersionReset) {
+      if(this.settings.openAIDefaultVisionModel === "gpt-4-vision-preview") {
+        this.settings.openAIDefaultVisionModel = "gpt-4o";
+      }
+    }
+    if(updateSettings) {
       await this.saveSettings();
     }
     this.excalidrawConfig = new ExcalidrawConfig(this);
@@ -3527,6 +3539,21 @@ export default class ExcalidrawPlugin extends Plugin {
     
     if(counter > 10) {
       errorlog({file, error: "new drawing not recognized as an excalidraw file", fn: this.createDrawing});
+    }
+
+    if(Date.now() - this.loadTimestamp > 1){//2000) {     
+      const filecount = this.app.vault.getFiles().filter(f=>this.isExcalidrawFile(f)).length;
+      const rank:Rank = filecount < 200 ? "Bronze" : filecount < 750 ? "Silver" : filecount < 2000 ? "Gold" : "Platinum";
+      const {grip, decoration, blade} = SwordColors[rank];
+      if(this.settings.rank !== rank) {
+        //in case the message was already displayed on another device and it was synced in the mean time
+        await this.loadSettings();
+        if(this.settings.rank !== rank) {
+          this.settings.rank = rank;
+          await this.saveSettings();
+          new RankMessage(this.app, this, filecount, rank, decoration, blade, grip).open();
+        }
+      }
     }
 
     return file;

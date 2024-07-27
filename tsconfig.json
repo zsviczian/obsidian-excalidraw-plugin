@@ -14,7 +14,7 @@
       "dom",
       "scripthost",
       "es2015",
-      "esnext",
+      "ESNext",
       "DOM.Iterable"
     ],
     "jsx": "react",

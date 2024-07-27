@@ -17,6 +17,20 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.2.11": `
+<img alt="badges" src="https://github.com/user-attachments/assets/7591b523-6bc6-46ff-b552-5c3492139e4c" referrerpolicy="no-referrer" style="width: 100%;">
+
+## New
+- Font picker with additional fonts (not yet fully configurable, but that will come in due time) [#8012](https://github.com/excalidraw/excalidraw/pull/8012)
+- Introducing Visual Thinking Badges. The more you use Excalidraw the higher your rank will be. Levels are: Bronze, Silver, Gold and Platinum.
+
+## Fixed
+- Embedded PDF was not visible on phones [#1904](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1904)
+- F2 does not rename files in Excalidraw View [#1900](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1900)
+- Wireframe to Code now honors the GPT model settings in plugin settings. [#1901](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1901)
+- Updated ExcaliAI to support gpt-4o for vision. [#1859](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/1859) 🙏@Saik0s
+- Minor fixes from excalidraw.com [#8287](https://github.com/excalidraw/excalidraw/pull/8287), [#8285](https://github.com/excalidraw/excalidraw/pull/8285)
+`,
 "2.2.10": `
 <div class="excalidraw-videoWrapper"><div>
 <iframe src="https://www.youtube.com/embed/sjZfdqpxqsg" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

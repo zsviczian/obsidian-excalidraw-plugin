@@ -107,7 +107,7 @@ const BUILD_CONFIG = {
     babel({
       presets: [['@babel/preset-env', {
         targets: {
-          esmodules: true,
+          ios: "15", // ios Compatibility //esmodules: true,
         },
       }]],
       exclude: "node_modules/**",

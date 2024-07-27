@@ -230,7 +230,7 @@ export default {
     "默认的 OpenAI API URL。请填写有效的 OpenAI API URL。" +
     "Excalidraw 会通过该 URL 发送 API 请求给 OpenAI。我没有对此选项做任何错误处理，请谨慎修改。",
   AI_OPENAI_DEFAULT_IMAGE_API_URL_NAME: "OpenAI 图像生成 API URL",
-  AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER: "gpt-4-vision-preview",
+  AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER: "gpt-4o",
   SAVING_HEAD: "保存",
   SAVING_DESC: "包括：压缩，自动保存的时间间隔，文件的命名格式和扩展名等的设置。",
   COMPRESS_NAME: "压缩 Excalidraw JSON",
