@@ -442,7 +442,19 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "getExportSettings",
     code: "getExportSettings(withBackground: boolean, withTheme: boolean,): ExportSettings;",
-    desc: "Utility function to generate ExportSettings object",
+    desc: "Utility function to generate ExportSettings object\n" +
+      "export interface ExportSettings {\n" +
+      "  withBackground: boolean;\n" +
+      "  withTheme: boolean;\n" +
+      "  isMask: boolean; //if true elements will be processed as mask, clipping, etc.\n" +
+      "  frameRendering?: { //optional, overrides relevant appState settings for rendering the frame\n" +
+      "    enabled: boolean;\n" +
+      "    name: boolean;\n" +
+      "    outline: boolean;\n" +
+      "    clip: boolean;\n" +
+      "  };\n" +
+      "  skipInliningFonts?: boolean;\n" +
+      "}",
     after: "",
   },
   {

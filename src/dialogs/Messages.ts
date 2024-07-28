@@ -17,6 +17,11 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.2.12": `
+## Fixed
+- Rename moved files to root folder [#1905](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1905)
+- Fonts not displaying correctly in cached image previews
+`,
 "2.2.11": `
 <img alt="badges" src="https://github.com/user-attachments/assets/7591b523-6bc6-46ff-b552-5c3492139e4c" referrerpolicy="no-referrer" style="width: 100%;">
 
