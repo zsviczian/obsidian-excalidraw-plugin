@@ -63,7 +63,8 @@ export const showFrameSettings = (ea: ExcalidrawAutomate) => {
             // @ts-ignore
             appState: {
               frameRendering: settings
-            }
+            },
+            storeAction: "update",
           });
           frameSettingsModal.close();
         })

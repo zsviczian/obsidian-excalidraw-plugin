@@ -16,7 +16,7 @@ export const setDynamicStyle = (
 ) => {
   if(dynamicStyle === "none") {
     view.excalidrawContainer?.removeAttribute("style");
-    setTimeout(()=>view.updateScene({appState:{dynamicStyle: ""}}));
+    setTimeout(()=>view.updateScene({appState:{dynamicStyle: ""}, storeAction: "update"}));
     const toolspanel = view.toolsPanelRef?.current?.containerRef?.current;
     if(toolspanel) {
       let toolsStyle = toolspanel.getAttribute("style");
@@ -167,7 +167,8 @@ export const setDynamicStyle = (
       appState:{
         frameColor,
         dynamicStyle: styleObject
-      }
+      },
+      storeAction: "update",
     });
     view = null;
     ea = null;

@@ -1997,7 +1997,7 @@ export class ExcalidrawAutomate {
         appState: {
           viewModeEnabled: !isFullscreen,
         },
-        storeAction: "none",
+        storeAction: "update",
       });
       this.targetView.toolsPanelRef?.current?.setExcalidrawViewMode(!isFullscreen);
     }
@@ -2016,7 +2016,7 @@ export class ExcalidrawAutomate {
       return;
     }
     const view = this.targetView as ExcalidrawView;
-    view.updateScene({appState:{viewModeEnabled: enabled}});
+    view.updateScene({appState:{viewModeEnabled: enabled}, storeAction: "update"});
     view.toolsPanelRef?.current?.setExcalidrawViewMode(enabled);
   }
 
@@ -2042,7 +2042,7 @@ export class ExcalidrawAutomate {
       return;
     }
     if (!Boolean(scene.storeAction)) {
-      scene.storeAction = scene.commitToHistory ? "capture" : "none";  
+      scene.storeAction = scene.commitToHistory ? "capture" : "update";  
     }
 
     this.targetView.updateScene({

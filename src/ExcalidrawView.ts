@@ -140,6 +140,7 @@ import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { SelectCard } from "./dialogs/SelectCard";
 import { Packages } from "./types/types";
 import React from "react";
+import { StoreAction } from "@zsviczian/excalidraw";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -215,7 +216,7 @@ export const addFiles = async (
     view.updateScene({
       elements: s.scene.elements,
       appState: s.scene.appState,
-      storeAction: "none",
+      storeAction: "update",
     });
   }
   for (const f of files) {
@@ -901,21 +902,21 @@ export default class ExcalidrawView extends TextFileView {
   toggleDisableBinding() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleDisableBinding, "ExcalidrawView.toggleDisableBinding");
     const newState = !this.excalidrawAPI.getAppState().invertBindingBehaviour;
-    this.updateScene({appState: {invertBindingBehaviour:newState}});
+    this.updateScene({appState: {invertBindingBehaviour:newState}, storeAction: "update"});
     new Notice(newState ? t("ARROW_BINDING_INVERSE_MODE") : t("ARROW_BINDING_NORMAL_MODE"));
   }
 
   toggleFrameRendering() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleFrameRendering, "ExcalidrawView.toggleFrameRendering");
     const frameRenderingSt = (this.excalidrawAPI as ExcalidrawImperativeAPI).getAppState().frameRendering;
-    this.updateScene({appState: {frameRendering: {...frameRenderingSt, enabled: !frameRenderingSt.enabled}}});
+    this.updateScene({appState: {frameRendering: {...frameRenderingSt, enabled: !frameRenderingSt.enabled}}, storeAction: "update"});
     new Notice(frameRenderingSt.enabled ? t("FRAME_CLIPPING_ENABLED") : t("FRAME_CLIPPING_DISABLED"));
   }
 
   toggleFrameClipping() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleFrameClipping, "ExcalidrawView.toggleFrameClipping");
     const frameRenderingSt = (this.excalidrawAPI as ExcalidrawImperativeAPI).getAppState().frameRendering;
-    this.updateScene({appState: {frameRendering: {...frameRenderingSt, clip: !frameRenderingSt.clip}}});
+    this.updateScene({appState: {frameRendering: {...frameRenderingSt, clip: !frameRenderingSt.clip}}, storeAction: "update"});
     new Notice(frameRenderingSt.clip ? "Frame Clipping: Enabled" : "Frame Clipping: Disabled");
   }
 
@@ -1135,7 +1136,7 @@ export default class ExcalidrawView extends TextFileView {
       if (this.excalidrawData.hasMermaid(selectedImage.fileId) || getMermaidText(imageElement)) {
         if(shouldRenderMermaid) {
           const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
-          api.updateScene({appState: {openDialog: { name: "ttd", tab: "mermaid" }}})
+          api.updateScene({appState: {openDialog: { name: "ttd", tab: "mermaid" }}, storeAction: "update"})
         }
         return;
       }
@@ -1554,7 +1555,7 @@ export default class ExcalidrawView extends TextFileView {
         ...st,
         theme,
       },
-      storeAction: "none",
+      storeAction: "update",
     });
   }
 
@@ -2397,7 +2398,7 @@ export default class ExcalidrawView extends TextFileView {
       if(this.getSceneVersion(inData.scene.elements) !== this.previousSceneVersion) {
         this.setDirty(3);
       }
-      this.updateScene({elements: sceneElements});
+      this.updateScene({elements: sceneElements, storeAction: "capture"});
       if(reloadFiles) this.loadSceneFiles();
     } catch(e) {
       errorlog({
@@ -2440,7 +2441,7 @@ export default class ExcalidrawView extends TextFileView {
         {
           elements: excalidrawData.elements.concat(deletedElements??[]), //need to preserve deleted elements during autosave if images, links, etc. are updated
           files: excalidrawData.files,
-          storeAction: justloaded ? "update" : "none",
+          storeAction: justloaded ? "update" : "update", //was none, but I think based on a false understanding of none
         },
         justloaded
       );
@@ -2463,7 +2464,7 @@ export default class ExcalidrawView extends TextFileView {
             pinnedScripts: this.plugin.settings.pinnedScripts,
             customPens: this.plugin.settings.customPens.slice(0,this.plugin.settings.numberOfCustomPens),
           },
-          storeAction: justloaded ? "update" : "none",
+          storeAction: justloaded ? "update" : "update", //was none, but I think based on a false understanding of none
         },
       );
       if (
@@ -3625,7 +3626,7 @@ export default class ExcalidrawView extends TextFileView {
   private canvasColorChangeHook(st: AppState) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.canvasColorChangeHook, "ExcalidrawView.canvasColorChangeHook", st);
     const canvasColor = st.viewBackgroundColor === "transparent" ? "white" : st.viewBackgroundColor;
-    window.setTimeout(()=>this.updateScene({appState:{gridColor: this.getGridColor(canvasColor, st)}}));
+    window.setTimeout(()=>this.updateScene({appState:{gridColor: this.getGridColor(canvasColor, st)}, storeAction: "update"}));
     setDynamicStyle(this.plugin.ea,this,canvasColor,this.plugin.settings.dynamicStyling);
     if(this.plugin.ea.onCanvasColorChangeHook) {
       try {
@@ -4335,7 +4336,7 @@ export default class ExcalidrawView extends TextFileView {
           clone.rawText = WARNING;
           elements[elements.indexOf(el[0])] = clone;
           this.excalidrawData.setTextElement(clone.id,WARNING,()=>{});
-          this.updateScene({elements});
+          this.updateScene({elements, storeAction: "update"});
           api.history.clear();
         }
       });
@@ -4359,7 +4360,7 @@ export default class ExcalidrawView extends TextFileView {
           clone.isDeleted = true;
           this.excalidrawData.deleteTextElement(clone.id);
           elements[elements.indexOf(el[0])] = clone;
-          this.updateScene({elements});
+          this.updateScene({elements, storeAction: "update"});
           const ea:ExcalidrawAutomate = getEA(this);
           if(IMAGE_TYPES.contains(file.extension)) {
             ea.selectElementsInView([await insertImageToView (ea, center, file)]);
@@ -4412,7 +4413,7 @@ export default class ExcalidrawView extends TextFileView {
           }
 
           elements[elements.indexOf(el[0])] = clone;
-          this.updateScene({elements});
+          this.updateScene({elements, storeAction: "update"});
           if(clone.containerId) this.updateContainerSize(clone.containerId);
           this.setDirty(8.1);
         }
@@ -5547,6 +5548,7 @@ export default class ExcalidrawView extends TextFileView {
     }
     api.updateScene({
       appState: { pinnedScripts: this.plugin.settings.pinnedScripts },
+      storeAction: "update",
     });
   }
 
@@ -5558,8 +5560,9 @@ export default class ExcalidrawView extends TextFileView {
     }
     api.updateScene({
       appState: { 
-        customPens: this.plugin.settings.customPens.slice(0,this.plugin.settings.numberOfCustomPens)
+        customPens: this.plugin.settings.customPens.slice(0,this.plugin.settings.numberOfCustomPens),
       },
+      storeAction: "update",
     });
   }
 
@@ -5571,6 +5574,7 @@ export default class ExcalidrawView extends TextFileView {
     }
     api.updateScene({
       appState: { allowPinchZoom: this.plugin.settings.allowPinchZoom },
+      storeAction: "update",
     });
   }
 
@@ -5582,6 +5586,7 @@ export default class ExcalidrawView extends TextFileView {
     }
     api.updateScene({
       appState: { allowWheelZoom: this.plugin.settings.allowWheelZoom },
+      storeAction: "update",
     });
   }
 
@@ -5594,6 +5599,7 @@ export default class ExcalidrawView extends TextFileView {
     const st = api.getAppState();
     api.updateScene({
       appState: { trayModeEnabled: !st.trayModeEnabled },
+      storeAction: "update",
     });
 
     //just in case settings were updated via Obsidian sync

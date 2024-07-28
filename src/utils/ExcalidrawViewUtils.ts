@@ -236,8 +236,8 @@ export async function addBackOfTheNoteCard(
   const el = ea.getViewElements().find(el=>el.id === id);
   api.selectElements([el]);
   if(activate) {
-    setTimeout(()=>{
-      api.updateScene({appState: {activeEmbeddable: {element: el, state: "active"}}});
+    window.setTimeout(()=>{
+      api.updateScene({appState: {activeEmbeddable: {element: el, state: "active"}}, storeAction: "update"});
       if(found) view.getEmbeddableLeafElementById(el.id)?.editNode?.();
     });
   }
