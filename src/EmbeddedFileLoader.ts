@@ -366,7 +366,10 @@ export class EmbeddedFilesLoader {
     const hasFilenameParts = Boolean((inFile instanceof EmbeddedFile) && inFile.filenameparts);
     const filenameParts = hasFilenameParts ? (inFile as EmbeddedFile).filenameparts : null;
     const cacheKey:ImageKey = {
-      ...hasFilenameParts? filenameParts : {
+      ...hasFilenameParts? {
+        ...filenameParts,
+        inlineFonts: !exportSettings.skipInliningFonts, 
+      }: {
         filepath: file.path,
         hasBlockref: false,
         hasGroupref: false,
@@ -375,6 +378,7 @@ export class EmbeddedFilesLoader {
         hasFrameref: false,
         hasClippedFrameref: false,
         hasSectionref: false,
+        inlineFonts: !exportSettings.skipInliningFonts,
         blockref: null,
         sectionref: null,
         linkpartReference: null,

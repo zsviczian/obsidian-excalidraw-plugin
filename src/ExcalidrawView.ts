@@ -1914,7 +1914,7 @@ export default class ExcalidrawView extends TextFileView {
         if (!filename) {
           return;
         }
-        const {folderpath} = splitFolderAndFilename(filename);
+        const {folderpath} = splitFolderAndFilename(this.file.path);
         this.app.vault.rename(this.file, normalizePath(`${folderpath}/${filename}.md`));
       })();
       return;
