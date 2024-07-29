@@ -230,7 +230,7 @@ export default {
     "默认的 OpenAI API URL。请填写有效的 OpenAI API URL。" +
     "Excalidraw 会通过该 URL 发送 API 请求给 OpenAI。我没有对此选项做任何错误处理，请谨慎修改。",
   AI_OPENAI_DEFAULT_IMAGE_API_URL_NAME: "OpenAI 图像生成 API URL",
-  AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER: "gpt-4o",
+  AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER: "输入你的默认 AI 模型名称，例如：gpt-4o",
   SAVING_HEAD: "保存",
   SAVING_DESC: "包括：压缩，自动保存的时间间隔，文件的命名格式和扩展名等的设置。",
   COMPRESS_NAME: "压缩 Excalidraw JSON",
@@ -646,7 +646,7 @@ FILENAME_HEAD: "文件名",
   LATEX_DEFAULT_NAME: "插入 LaTeX 时的默认表达式",
   LATEX_DEFAULT_DESC: "允许留空。允许使用类似 <code>\\color{white}</code> 的格式化表达式。",
   NONSTANDARD_HEAD: "非 Excalidraw.com 官方支持的特性",
-  NONSTANDARD_DESC: `这些特性不受 Excalidraw.com 官方支持。如果以 Excalidraw.com 格式导出绘图，这些特性将会发生不可预知的变化。
+  NONSTANDARD_DESC: `这些特性不受 Excalidraw.com 官方支持。如果在 Excalidraw.com 导入绘图，这些特性将会发生不可预知的变化。
     包括：自定义画笔工具的数量，自定义字体等。`,
   RENDER_TWEAK_HEAD: "渲染优化",
   MAX_IMAGE_ZOOM_IN_NAME: "最大图像放大倍数",
@@ -697,7 +697,7 @@ FILENAME_HEAD: "文件名",
    "启用此功能简化了 Excalidraw 前置属性的使用，使您能够利用许多强大的设置。如果您不希望自动加载这些属性，" +
    "您可以禁用此功能，但您将需要手动从自动提示中移除任何不需要的属性。" +
    "请注意，启用此设置需要重启插件，因为属性是在启动时加载的。",
-  CUSTOM_FONT_HEAD: "自定义字体",
+  CUSTOM_FONT_HEAD: "本地字体",
   ENABLE_FOURTH_FONT_NAME: "为文本元素启用本地字体",
   ENABLE_FOURTH_FONT_DESC:
     "开启此项后，文本元素的属性面板里会多出一个本地字体按钮。<br>" +
