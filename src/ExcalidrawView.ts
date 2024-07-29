@@ -1903,21 +1903,8 @@ export default class ExcalidrawView extends TextFileView {
     }
 
     if (state.rename === "all") {
-      (async () => {
-        let filename = await ScriptEngine.inputPrompt(
-          this,
-          this.plugin,
-          this.plugin.app,
-          "Note Title",
-          "Filename without extension",
-          this.file.basename,
-        );
-        if (!filename) {
-          return;
-        }
-        const {folderpath} = splitFolderAndFilename(this.file.path);
-        this.app.vault.rename(this.file, normalizePath(`${folderpath}/${filename}.md`));
-      })();
+      //@ts-ignore
+      this.app.fileManager.promptForFileRename(this.file);
       return;
     }
 

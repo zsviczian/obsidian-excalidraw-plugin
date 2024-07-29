@@ -17,6 +17,12 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.2.13": `
+## Fixed
+- Could not undo element after pasting [#1906](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1906)
+- Links broke after renaming an Excalidraw file using the F2 shortcut [#1907](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1907)
+- Unable to open or convert very large ${String.fromCharCode(96)}.excalidraw${String.fromCharCode(96)} file, e.g. BoaPs you can download from [here](https://ko-fi.com/zsolt/shop)
+`,
 "2.2.12": `
 ## Fixed
 - Rename moved files to root folder [#1905](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1905)

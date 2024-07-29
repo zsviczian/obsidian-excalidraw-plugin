@@ -2450,7 +2450,7 @@ export default class ExcalidrawPlugin extends Plugin {
     log(fname);
     const result = await this.app.vault.create(
       fname,
-      FRONTMATTER + (await this.exportSceneToMD(data)),
+      FRONTMATTER + (await this.exportSceneToMD(data, false)),
     );
     if (this.settings.keepInSync) {
       EXPORT_TYPES.forEach((ext: string) => {
@@ -3486,7 +3486,7 @@ export default class ExcalidrawPlugin extends Plugin {
    * @param {string} data - Excalidraw scene JSON string
    * @returns {string} - Text starting with the "# Text Elements" header and followed by each "## id-value" and text
    */
-  public async exportSceneToMD(data: string): Promise<string> {
+  public async exportSceneToMD(data: string, compressOverride?: boolean): Promise<string> {
     if (!data) {
       return "";
     }
@@ -3511,7 +3511,9 @@ export default class ExcalidrawPlugin extends Plugin {
       outString +
       getMarkdownDrawingSection(
         JSON.stringify(JSON_parse(data), null, "\t"),
-        this.settings.compress,
+        typeof compressOverride === "undefined"
+        ? this.settings.compress
+        : compressOverride,
       )
     );
   }
