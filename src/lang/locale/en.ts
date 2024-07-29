@@ -50,17 +50,20 @@ export default {
   NEW_IN_POPOUT_WINDOW_EMBED: "Create new drawing - IN A POPOUT WINDOW - and embed into active document",
   TOGGLE_LOCK: "Toggle Text Element between edit RAW and PREVIEW",
   DELETE_FILE: "Delete selected image or Markdown file from Obsidian Vault",
-  COPY_ELEMENT_LINK: "Copy markdown link for selected element(s)",
+  COPY_ELEMENT_LINK: "Copy [[link]] for selected element(s)",
+  COPY_DRAWING_LINK: "Copy ![[embed link]] for this drawing",
   INSERT_LINK_TO_ELEMENT:
-    `Copy markdown link for selected element to clipboard. ${labelCTRL()}+CLICK to copy 'group=' link. ${labelSHIFT()}+CLICK to copy an 'area=' link. ${labelALT()}+CLICK to watch a help video.`,
+    `Copy [[link]] for selected element to clipboard. ${labelCTRL()}+CLICK to copy 'group=' link. ${labelSHIFT()}+CLICK to copy an 'area=' link. ${labelALT()}+CLICK to watch a help video.`,
   INSERT_LINK_TO_ELEMENT_GROUP:
-    "Copy 'group=' markdown link for selected element to clipboard.",
+    "Copy 'group=' ![[link]] for selected element to clipboard.",
   INSERT_LINK_TO_ELEMENT_AREA:
-    "Copy 'area=' markdown link for selected element to clipboard.",
+    "Copy 'area=' ![[link]] for selected element to clipboard.",
   INSERT_LINK_TO_ELEMENT_FRAME:
-    "Copy 'frame=' markdown link for selected element to clipboard.",
+    "Copy 'frame=' ![[link]] for selected element to clipboard.",
+  INSERT_LINK_TO_ELEMENT_FRAME_CLIPPED:
+    "Copy 'clippedframe=' ![[link]] for selected element to clipboard.",
   INSERT_LINK_TO_ELEMENT_NORMAL:
-    "Copy markdown link for selected element to clipboard.",
+    "Copy [[link]] for selected element to clipboard.",
   INSERT_LINK_TO_ELEMENT_ERROR: "Select a single element in the scene",
   INSERT_LINK_TO_ELEMENT_READY: "Link is READY and available on the clipboard",
   INSERT_LINK: "Insert link to file",
@@ -136,6 +139,7 @@ export default {
   ERROR_SAVING_IMAGE: "Unknown error occurred while fetching the image. It could be that for some reason the image is not available or rejected the fetch request from Obsidian",
   WARNING_PASTING_ELEMENT_AS_TEXT: "PASTING EXCALIDRAW ELEMENTS AS A TEXT ELEMENT IS NOT ALLOWED",
   USE_INSERT_FILE_MODAL: "Use 'Insert Any File' to embed a markdown note",
+  RECURSIVE_INSERT_ERROR: "You may not recursively insert part of an image into the same image as it would create an infinite loop",
   CONVERT_TO_MARKDOWN: "Convert to file...",
   SELECT_TEXTELEMENT_ONLY: "Select text element only (not container)",
   REMOVE_LINK: "Remove text element link",
@@ -226,7 +230,7 @@ export default {
     "The default OpenAI API URL. This is a freetext field, so you can enter any valid OpenAI API compatible URL. " +
     "Excalidraw will use this URL when posting API requests to OpenAI. I am not doing any error handling on this field, so make sure you enter a valid URL and only change this if you know what you are doing. ",
   AI_OPENAI_DEFAULT_IMAGE_API_URL_NAME: "OpenAI Image Generation API URL",
-  AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER: "Enter your default AI vision model here. e.g.: gpt-4-vision-preview",
+  AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER: "Enter your default AI vision model here. e.g.: gpt-4o",
   SAVING_HEAD: "Saving",
   SAVING_DESC: "In the 'Saving' section of Excalidraw Settings, you can configure how your drawings are saved. This includes options for compressing Excalidraw JSON in Markdown, setting autosave intervals for both desktop and mobile, defining filename formats, and choosing whether to use the .excalidraw.md or .md file extension. ",
   COMPRESS_NAME: "Compress Excalidraw JSON in Markdown",
@@ -571,7 +575,7 @@ FILENAME_HEAD: "Filename",
     "If turned off, the exported image will be transparent.",
   EXPORT_PADDING_NAME: "Image Padding",
   EXPORT_PADDING_DESC:
-    "The padding (in pixels) around the exported SVG or PNG image. " +
+    "The padding (in pixels) around the exported SVG or PNG image. Padding is set to 0 for clippedFrame references." +
     "If you have curved lines close to the edge of the image they might get cropped during image export. You can increase this value to avoid cropping. " +
     "You can also override this setting at a file level by adding the <code>excalidraw-export-padding: 5<code> frontmatter key.",
   EXPORT_THEME_NAME: "Export image with theme",
@@ -643,7 +647,7 @@ FILENAME_HEAD: "Filename",
   LATEX_DEFAULT_DESC: "Leave empty if you don't want a default formula. You can add default formatting here such as <code>\\color{white}</code>.",
   NONSTANDARD_HEAD: "Non-Excalidraw.com supported features",
   NONSTANDARD_DESC: `These settings in the "Non-Excalidraw.com Supported Features" section provide customization options beyond the default Excalidraw.com features. These features are not available on excalidraw.com. When exporting the drawing to Excalidraw.com these features will appear different.
-    You can configure the number of custom pens displayed next to the Obsidian Menu on the canvas, allowing you to choose from a range of options. Additionally, you can enable a fourth font option, which adds a fourth font button to the properties panel for text elements. `,
+    You can configure the number of custom pens displayed next to the Obsidian Menu on the canvas, allowing you to choose from a range of options. Additionally, you can enable a local font option, which adds a local font to the list of fonts on the element properties panel for text elements. `,
   RENDER_TWEAK_HEAD: "Rendering tweaks",
   MAX_IMAGE_ZOOM_IN_NAME: "Maximum image zoom in resolution",
   MAX_IMAGE_ZOOM_IN_DESC: "To save on memory and because Apple Safari (Obsidian on iOS) has some hard-coded limitations, Excalidraw.com limits the max resolution of images and large objects when zooming in. You can override this limitation using a multiplicator. " +
@@ -693,16 +697,16 @@ FILENAME_HEAD: "Filename",
    "Enabling this feature simplifies the use of Excalidraw front matter properties, allowing you to leverage many powerful settings. If you prefer not to load these properties automatically, " +
    "you can disable this feature, but you will need to manually remove any unwanted properties from the suggester. " +
    "Note that turning on this setting requires restarting the plugin as properties are loaded at startup.",  
-  CUSTOM_FONT_HEAD: "Fourth font",
-  ENABLE_FOURTH_FONT_NAME: "Enable fourth font option",
+  CUSTOM_FONT_HEAD: "Local font",
+  ENABLE_FOURTH_FONT_NAME: "Enable local font option",
   ENABLE_FOURTH_FONT_DESC:
-    "By turning this on, you will see a fourth font button on the properties panel for text elements. " +
-    "Files that use this fourth font will (partly) lose their platform independence. " +
+    "By turning this on, you will see a local font in the font list on the properties panel for text elements. " +
+    "Files that use this local font will (partly) lose their platform independence. " +
     "Depending on the custom font set in settings, they will look differently when loaded in another vault, or at a later time. " +
     "Also the 4th font will display as system default font on excalidraw.com, or other Excalidraw versions.",
-  FOURTH_FONT_NAME: "Fourth font file",
+  FOURTH_FONT_NAME: "Local font file",
   FOURTH_FONT_DESC:
-    "Select a .ttf, .woff or .woff2 font file from your vault to use as the fourth font. " +
+    "Select a .ttf, .woff or .woff2 font file from your vault to use as the local font. " +
     "If no file is selected, Excalidraw will use the Virgil font by default.",
   SCRIPT_SETTINGS_HEAD: "Settings for installed Scripts",
   SCRIPT_SETTINGS_DESC: "Some of the Excalidraw Automate Scripts include settings. Settings are organized by script. Settings will only become visible in this list after you have executed the newly downloaded script once.",
@@ -824,4 +828,11 @@ FILENAME_HEAD: "Filename",
   INTERNAL_DRAG_ACTION: "Obsidian Internal Drag Action",
   PANE_TARGET: "Link click behavior",
   DEFAULT_ACTION_DESC: "In case none of the combinations apply the default action for this group is: ",
+
+  //FrameSettings.ts
+  FRAME_SETTINGS_TITLE: "Frame Settings",
+  FRAME_SETTINGS_ENABLE: "Enable Frames",
+  FRAME_SETTIGNS_NAME: "Display Frame Name",
+  FRAME_SETTINGS_OUTLINE: "Display Frame Outline",
+  FRAME_SETTINGS_CLIP: "Enable Frame Clipping",
 };

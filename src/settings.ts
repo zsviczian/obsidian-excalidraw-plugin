@@ -2,6 +2,7 @@ import {
   App,
   ButtonComponent,
   DropdownComponent,
+  getIcon,
   normalizePath,
   PluginSettingTab,
   Setting,
@@ -13,7 +14,7 @@ import ExcalidrawView from "./ExcalidrawView";
 import { t } from "./lang/helpers";
 import type ExcalidrawPlugin from "./main";
 import { PenStyle } from "./PenTypes";
-import { DynamicStyle } from "./types";
+import { DynamicStyle } from "./types/types";
 import { PreviewImageType } from "./utils/UtilTypes";
 import { setDynamicStyle } from "./utils/DynamicStyling";
 import {
@@ -36,6 +37,8 @@ import { ModifierKeySettingsComponent } from "./dialogs/ModifierKeySettings";
 import { ANNOTATED_PREFIX, CROPPED_PREFIX } from "./utils/CarveOut";
 import { EDITOR_FADEOUT } from "./CodeMirrorExtension/EditorHandler";
 import { setDebugging } from "./utils/DebugHelper";
+import { link } from "fs";
+import { Rank } from "./menu/ActionIcons";
 
 export interface ExcalidrawSettings {
   folder: string;
@@ -47,6 +50,7 @@ export interface ExcalidrawSettings {
   compress: boolean;
   decompressForMDView: boolean;
   onceOffCompressFlagReset: boolean; //used to reset compress to true in 2.2.0
+  onceOffGPTVersionReset: boolean; //used to reset GPT version in 2.2.11
   autosave: boolean;
   autosaveIntervalDesktop: number;
   autosaveIntervalMobile: number;
@@ -196,6 +200,7 @@ export interface ExcalidrawSettings {
   longPressDesktop: number;
   longPressMobile: number;
   isDebugMode: boolean;
+  rank: Rank;
 }
 
 declare const PLUGIN_VERSION:string;
@@ -210,6 +215,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   compress: true,
   decompressForMDView: false,
   onceOffCompressFlagReset: false,
+  onceOffGPTVersionReset: false,
   autosave: true,
   autosaveIntervalDesktop: 15000,
   autosaveIntervalMobile: 10000,
@@ -360,7 +366,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   startupScriptPath: "",
   openAIAPIToken: "",
   openAIDefaultTextModel: "gpt-3.5-turbo-1106",
-  openAIDefaultVisionModel: "gpt-4-vision-preview",
+  openAIDefaultVisionModel: "gpt-4o",
   openAIDefaultImageGenerationModel: "dall-e-3",
   openAIURL: "https://api.openai.com/v1/chat/completions",
   openAIImageGenerationURL: "https://api.openai.com/v1/images/generations",
@@ -451,6 +457,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   longPressDesktop: 500,
   longPressMobile: 500,
   isDebugMode: false,
+  rank: "Bronze",
 };
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
@@ -539,6 +546,46 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       },
     });
     coffeeImg.height = 45;
+    
+    const iconLinks = [
+      { 
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>`,
+        href: "https://github.com/zsviczian/obsidian-excalidraw-plugin/issues",
+        aria: "Report bugs and raise feature requsts on the plugin's GitHub page",
+        text: "Bugs and Feature Requests",
+      },
+      { 
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19c-2.3 0-6.4-.2-8.1-.6-.7-.2-1.2-.7-1.4-1.4-.3-1.1-.5-3.4-.5-5s.2-3.9.5-5c.2-.7.7-1.2 1.4-1.4C5.6 5.2 9.7 5 12 5s6.4.2 8.1.6c.7.2 1.2.7 1.4 1.4.3 1.1.5 3.4.5 5s-.2 3.9-.5 5c-.2.7-.7 1.2-1.4 1.4-1.7.4-5.8.6-8.1.6 0 0 0 0 0 0z"></path><polygon points="10 15 15 12 10 9"></polygon></svg>`,
+        href: "https://www.youtube.com/@VisualPKM",
+        aria: "Check out my YouTube channel to learn about Visual Thinking and Excalidraw",
+        text: "Visual PKM on YouTube",
+      },
+      { 
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" stroke="none" strokeWidth="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 640 512"><path d="M524.531,69.836a1.5,1.5,0,0,0-.764-.7A485.065,485.065,0,0,0,404.081,32.03a1.816,1.816,0,0,0-1.923.91,337.461,337.461,0,0,0-14.9,30.6,447.848,447.848,0,0,0-134.426,0,309.541,309.541,0,0,0-15.135-30.6,1.89,1.89,0,0,0-1.924-.91A483.689,483.689,0,0,0,116.085,69.137a1.712,1.712,0,0,0-.788.676C39.068,183.651,18.186,294.69,28.43,404.354a2.016,2.016,0,0,0,.765,1.375A487.666,487.666,0,0,0,176.02,479.918a1.9,1.9,0,0,0,2.063-.676A348.2,348.2,0,0,0,208.12,430.4a1.86,1.86,0,0,0-1.019-2.588,321.173,321.173,0,0,1-45.868-21.853,1.885,1.885,0,0,1-.185-3.126c3.082-2.309,6.166-4.711,9.109-7.137a1.819,1.819,0,0,1,1.9-.256c96.229,43.917,200.41,43.917,295.5,0a1.812,1.812,0,0,1,1.924.233c2.944,2.426,6.027,4.851,9.132,7.16a1.884,1.884,0,0,1-.162,3.126,301.407,301.407,0,0,1-45.89,21.83,1.875,1.875,0,0,0-1,2.611,391.055,391.055,0,0,0,30.014,48.815,1.864,1.864,0,0,0,2.063.7A486.048,486.048,0,0,0,610.7,405.729a1.882,1.882,0,0,0,.765-1.352C623.729,277.594,590.933,167.465,524.531,69.836ZM222.491,337.58c-28.972,0-52.844-26.587-52.844-59.239S193.056,219.1,222.491,219.1c29.665,0,53.306,26.82,52.843,59.239C275.334,310.993,251.924,337.58,222.491,337.58Zm195.38,0c-28.971,0-52.843-26.587-52.843-59.239S388.437,219.1,417.871,219.1c29.667,0,53.307,26.82,52.844,59.239C470.715,310.993,447.538,337.58,417.871,337.58Z"/></svg>`,
+        href: "https://discord.gg/DyfAXFwUHc",
+        aria: "Join the Visual Thinking Workshop Discord Server",
+        text: "Community on Discord",
+      },
+      { 
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path></svg>`,
+        href: "https://twitter.com/zsviczian",
+        aria: "Follow me on Twitter",
+        text: "Follow me on Twitter",
+      },
+      { 
+        icon: getIcon("graduation-cap").outerHTML,
+        href: "https://visual-thinking-workshop.com",
+        aria: "Learn about Visual PKM, Excalidraw, Obsidian, ExcaliBrain and more",
+        text: "Join the Visual Thinking Workshop",
+      }
+    ];
+
+    const linksEl = containerEl.createDiv("setting-item-description excalidraw-settings-links-container");
+    iconLinks.forEach(({ icon, href, aria, text }) => {
+      linksEl.createEl("a",{href, attr: { "aria-label": aria }}, (a)=> {
+        a.innerHTML = icon  + text;
+      });
+    });
 
     // ------------------------------------------------
     // Saving
@@ -2137,7 +2184,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         d.addOption("Assistant", "Assistant");
         this.app.vault
           .getFiles()
-          .filter((f) => ["ttf", "woff", "woff2"].contains(f.extension))
+          .filter((f) => ["ttf", "woff", "woff2", "otf"].contains(f.extension))
           .forEach((f: TFile) => {
             d.addOption(f.path, f.name);
           });

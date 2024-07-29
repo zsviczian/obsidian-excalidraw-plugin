@@ -223,6 +223,7 @@ function RenderObsidianView(
         } else {
           const workspaceLeaf:HTMLDivElement = rootSplit.containerEl.querySelector("div.workspace-leaf");
           if(workspaceLeaf) workspaceLeaf.style.borderRadius = "var(--embeddable-radius)";
+          rootSplit.containerEl.addClass("mod-visible");
           containerRef.current.appendChild(rootSplit.containerEl);
           setColors(containerRef.current, element, mdProps, canvasColor);
         }

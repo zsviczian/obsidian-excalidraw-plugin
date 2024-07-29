@@ -6,7 +6,6 @@ import { Notice } from "obsidian";
 import { getEA } from "src";
 import { ExcalidrawAutomate, cloneElement } from "src/ExcalidrawAutomate";
 import { ExportSettings } from "src/ExcalidrawView";
-import { embedFontsInSVG } from "./Utils";
 import { nanoid } from "src/constants/constants";
 
 export class CropImage {
@@ -92,7 +91,7 @@ export class CropImage {
       isMask: false,
     }
 
-    const maskSVG = await this.maskEA.createSVG(null,false,exportSettings,null,null,0);
+    const maskSVG = await this.maskEA.createSVG(null,true,exportSettings,null,null,0);
     const defs = maskSVG.querySelector("defs");
     const styleEl = maskSVG.querySelector("style");
     const style = styleEl ? styleEl.outerHTML : "";
@@ -138,7 +137,7 @@ export class CropImage {
   async getCroppedPNG(): Promise<Blob> {
     //@ts-ignore
     const PLUGIN = app.plugins.plugins["obsidian-excalidraw-plugin"];
-    const svg = embedFontsInSVG(await this.buildSVG(), PLUGIN);
+    const svg = await this.buildSVG();
     return new Promise((resolve, reject) => {
       const svgData = new XMLSerializer().serializeToString(svg);
       const canvas = document.createElement('canvas');

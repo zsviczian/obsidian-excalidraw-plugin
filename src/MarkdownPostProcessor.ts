@@ -12,7 +12,6 @@ import { ExportSettings } from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
 import {getIMGFilename,} from "./utils/FileUtils";
 import {
-  embedFontsInSVG,
   getEmbeddedFilenameParts,
   getExportTheme,
   getQuickImagePreview,
@@ -86,7 +85,14 @@ const _getPNG = async ({imgAttributes,filenameParts,theme,cacheReady,img,file,ex
             ? 2
             : 1;
   
-  const cacheKey = {...filenameParts, isDark: theme==="dark", previewImageType: PreviewImageType.PNG, scale, isTransparent: !exportSettings.withBackground};
+  const cacheKey = {
+    ...filenameParts,
+    isDark: theme==="dark",
+    previewImageType: PreviewImageType.PNG,
+    scale,
+    isTransparent: !exportSettings.withBackground,
+    inlineFonts: true, //though for PNG this makes no difference, but the key requires it
+  };
 
   if(cacheReady) {      
     const src = await imageCache.getImageFromCache(cacheKey);
@@ -105,11 +111,13 @@ const _getPNG = async ({imgAttributes,filenameParts,theme,cacheReady,img,file,ex
   const png =
     quickPNG ??
     (await createPNG(
-      (filenameParts.hasGroupref || filenameParts.hasFrameref)
+      (filenameParts.hasGroupref || filenameParts.hasFrameref || filenameParts.hasClippedFrameref)
         ? filenameParts.filepath + filenameParts.linkpartReference
         : file.path,
       scale,
-      exportSettings,
+      filenameParts.hasClippedFrameref
+      ? { ...exportSettings, frameRendering: { enabled: true, name: false, outline: false, clip: true}}
+      : exportSettings,
       loader,
       theme,
       null,
@@ -163,7 +171,16 @@ const _getSVGIMG = async ({filenameParts,theme,cacheReady,img,file,exportSetting
   exportSettings: ExportSettings,
   loader: EmbeddedFilesLoader,
 }):Promise<HTMLImageElement> => {
-  const cacheKey = {...filenameParts, isDark: theme==="dark", previewImageType: PreviewImageType.SVGIMG, scale:1, isTransparent: !exportSettings.withBackground};
+  exportSettings.skipInliningFonts = false;
+  const cacheKey = {
+    ...filenameParts,
+    isDark: theme==="dark",
+    previewImageType: PreviewImageType.SVGIMG,
+    scale:1,
+    isTransparent: !exportSettings.withBackground,
+    inlineFonts: !exportSettings.skipInliningFonts,
+  };
+
   if(cacheReady) {
     const src = await imageCache.getImageFromCache(cacheKey);
     if(src && typeof src === "string") {
@@ -182,13 +199,15 @@ const _getSVGIMG = async ({filenameParts,theme,cacheReady,img,file,exportSetting
     }
   }
   
-  let svg = convertSVGStringToElement((
+  const svg = convertSVGStringToElement((
     await createSVG(
-      filenameParts.hasGroupref || filenameParts.hasBlockref || filenameParts.hasSectionref || filenameParts.hasFrameref
+      filenameParts.hasGroupref || filenameParts.hasBlockref || filenameParts.hasSectionref || filenameParts.hasFrameref || filenameParts.hasClippedFrameref
         ? filenameParts.filepath + filenameParts.linkpartReference
         : file.path,
       true,
-      exportSettings,
+      filenameParts?.hasClippedFrameref
+      ? { ...exportSettings, frameRendering: { enabled: true, name: false, outline: false, clip: true}}
+      : exportSettings,
       loader,
       theme,
       null,
@@ -204,7 +223,6 @@ const _getSVGIMG = async ({filenameParts,theme,cacheReady,img,file,exportSetting
     return null;
   }
 
-  svg = embedFontsInSVG(svg, plugin, false);
   //need to remove width and height attributes to support area= embeds
   svg.removeAttribute("width");
   svg.removeAttribute("height");
@@ -220,20 +238,30 @@ const _getSVGNative = async ({filenameParts,theme,cacheReady,containerElement,fi
   exportSettings: ExportSettings,
   loader: EmbeddedFilesLoader,
 }):Promise<HTMLDivElement> => {
-  const cacheKey = {...filenameParts, isDark: theme==="dark", previewImageType: PreviewImageType.SVG, scale:1, isTransparent: !exportSettings.withBackground};
+  exportSettings.skipInliningFonts = false;
+  const cacheKey = {
+    ...filenameParts,
+    isDark: theme==="dark",
+    previewImageType: PreviewImageType.SVG,
+    scale:1,
+    isTransparent: !exportSettings.withBackground,
+    inlineFonts: !exportSettings.skipInliningFonts,  
+  };
   let maybeSVG;
   if(cacheReady) {
     maybeSVG = await imageCache.getImageFromCache(cacheKey);
   }
 
-  let svg = (maybeSVG && (maybeSVG instanceof SVGSVGElement))
+  const svg = (maybeSVG && (maybeSVG instanceof SVGSVGElement))
     ? maybeSVG
     : convertSVGStringToElement((await createSVG(
-      filenameParts.hasGroupref || filenameParts.hasBlockref || filenameParts.hasSectionref || filenameParts.hasFrameref
+      filenameParts.hasGroupref || filenameParts.hasBlockref || filenameParts.hasSectionref || filenameParts.hasFrameref || filenameParts.hasClippedFrameref
         ? filenameParts.filepath + filenameParts.linkpartReference
         : file.path,
       false,
-      exportSettings,
+      filenameParts.hasClippedFrameref
+      ? { ...exportSettings, frameRendering: { enabled: true, name: false, outline: false, clip: true}}
+      : exportSettings,
       loader,
       theme,
       null,
@@ -254,7 +282,7 @@ const _getSVGNative = async ({filenameParts,theme,cacheReady,containerElement,fi
   if(!Boolean(maybeSVG)) {
     cacheReady && imageCache.addImageToCache(cacheKey,"", svg);
   }
-  svg = embedFontsInSVG(svg, plugin, true);
+
   svg.removeAttribute("width");
   svg.removeAttribute("height");
   containerElement.append(svg);
@@ -571,7 +599,7 @@ const isTextOnlyEmbed = (internalEmbedEl: Element):boolean => {
   const src = internalEmbedEl.getAttribute("src");
   if(!src) return true; //technically this does not mean this is a text only embed, but still should abort further processing
   const fnameParts = getEmbeddedFilenameParts(src);
-  return !(fnameParts.hasArearef || fnameParts.hasGroupref || fnameParts.hasFrameref) &&
+  return !(fnameParts.hasArearef || fnameParts.hasGroupref || fnameParts.hasFrameref || fnameParts.hasClippedFrameref) &&
     (fnameParts.hasBlockref || fnameParts.hasSectionref)
 }
 
@@ -661,7 +689,7 @@ const tmpObsidianWYSIWYG = async (
     } else {
       const warningEl = el.querySelector("div>h3[data-heading^='Unable to find section #^");
       if(warningEl) {
-        const ref = warningEl.getAttr("data-heading").match(/Unable to find section (#\^(?:group=|area=|frame=)[^ ]*)/)?.[1];
+        const ref = warningEl.getAttr("data-heading").match(/Unable to find section (#\^(?:group=|area=|frame=|clippedframe=)[^ ]*)/)?.[1];
         if(ref) {
           attr.fname = file.path + ref;
           areaPreview = true;

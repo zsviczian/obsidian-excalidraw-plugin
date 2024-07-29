@@ -100,7 +100,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "style.fontFamily",
     code: "[number]",
-    desc: "1: Virgil, 2:Helvetica, 3:Cascadia, 4:LocalFont",
+    desc: "1: Virgil, 2:Helvetica, 3:Cascadia, 4:Local Font, 5: Excalifont, 6: Nunito, 7: Lilita One, 8: Comic Shanns, 9: Liberation Sans",
     after: "",
   },
   {
@@ -442,7 +442,19 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "getExportSettings",
     code: "getExportSettings(withBackground: boolean, withTheme: boolean,): ExportSettings;",
-    desc: "Utility function to generate ExportSettings object",
+    desc: "Utility function to generate ExportSettings object\n" +
+      "export interface ExportSettings {\n" +
+      "  withBackground: boolean;\n" +
+      "  withTheme: boolean;\n" +
+      "  isMask: boolean; //if true elements will be processed as mask, clipping, etc.\n" +
+      "  frameRendering?: { //optional, overrides relevant appState settings for rendering the frame\n" +
+      "    enabled: boolean;\n" +
+      "    name: boolean;\n" +
+      "    outline: boolean;\n" +
+      "    clip: boolean;\n" +
+      "  };\n" +
+      "  skipInliningFonts?: boolean;\n" +
+      "}",
     after: "",
   },
   {
@@ -480,6 +492,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     code: "getElementsInTheSameGroupWithElement(element: ExcalidrawElement, elements: ExcalidrawElement[]): ExcalidrawElement[];",
     desc: "Gets all the elements from elements[] that share one or more groupIds with element.",
     after: ""
+  },
+  {
+    field: "getElementsInFrame",
+    code: " getElementsInFrame(frameElement: ExcalidrawElement,elements: ExcalidrawElement[],shouldIncludeFrame: boolean = false,): ExcalidrawElement[];",
+    desc: "Gets all the elements from elements[] that are inside the frameElement. If shouldIncludeFrame is true, the frameElement will also be included in the result.",
+    after: "",
   },
   {
     field: "activeScript",

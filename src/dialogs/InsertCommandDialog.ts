@@ -46,7 +46,9 @@ export class InsertCommandDialog extends FuzzySuggestModal<TFile> {
   }
 
   onClose(): void {
-    this.addText = null;
+    window.setTimeout(()=>{
+      this.addText = null;
+    }) //onChooseItem must run first
     super.onClose();
   }
 }

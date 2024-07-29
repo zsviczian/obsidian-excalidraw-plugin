@@ -103,7 +103,7 @@ const selectAttributesToCopy = () => {
   
 	attributes.forEach(attr => {
 	  const attrValue = elements[0][attr.key];
-	  if(attrValue || (attr.key === "startArrowhead" && elements[0].type === "arrow") || (attr.key === "endArrowhead" && elements[0].type === "arrow")) {
+	  if((typeof attrValue !== "undefined" && attrValue !== null) || (attr.key === "startArrowhead" && elements[0].type === "arrow") || (attr.key === "endArrowhead" && elements[0].type === "arrow")) {
 	    let description = '';
 	
 	    switch(attr.key) {
@@ -190,7 +190,9 @@ const selectAttributesToCopy = () => {
 
   
 	configModal.onClose = () => {
-    setTimeout(()=>delete configModal);
+    setTimeout(()=>{
+			delete configModal
+		});
 	}
 	
 	configModal.open();

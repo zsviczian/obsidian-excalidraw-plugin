@@ -21,11 +21,13 @@ export type ImageKey = {
   previewImageType: PreviewImageType;
   scale: number;
   isTransparent: boolean;
+  inlineFonts: boolean;
 } & FILENAMEPARTS;
 
 const getKey = (key: ImageKey): string =>
   `${key.filepath}#${key.blockref??""}#${key.sectionref??""}#${key.isDark ? 1 : 0}#${
-    key.hasGroupref}#${key.hasArearef}#${key.hasFrameref}#${key.hasSectionref}#${
+    key.hasGroupref}#${key.hasArearef}#${key.hasFrameref}#${key.hasClippedFrameref}#${
+    key.hasSectionref}#${key.inlineFonts}#${
     key.previewImageType === PreviewImageType.SVGIMG
       ? 1
       : key.previewImageType === PreviewImageType.PNG
@@ -172,7 +174,7 @@ class ImageCache {
         const cursor = (event.target as IDBRequest<IDBCursorWithValue | null>).result;
         if(cursor) {
           const key = cursor.key as string;
-          const isLegacyKey = key.replaceAll(/[^#]/g,"").length < 9; // introduced hasGroupref, etc. in 1.9.28
+          const isLegacyKey = key.split("#").length-1 < 12; // introduced hasGroupref, etc. in 1.9.28 // introduced hasClippedFrameref in 2.2.10 //introduced inlineFonts 2.2.11
           const filepath = key.split("#")[0];
           const fileExists = files.some((f: TFile) => f.path === filepath);
           const file = fileExists ? files.find((f: TFile) => f.path === filepath) : null;

@@ -6,7 +6,7 @@ import * as obsidian_module from "obsidian";
 import ExcalidrawView, { ExportSettings } from "src/ExcalidrawView";
 import { AppState, BinaryFileData, DataURL, ExcalidrawImperativeAPI, Point } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddedFilesLoader } from "src/EmbeddedFileLoader";
-import { ConnectionPoint, DeviceType } from "src/types";
+import { ConnectionPoint, DeviceType } from "src/types/types";
 import { ColorMaster } from "colormaster";
 import { TInput } from "colormaster/types";
 import { ClipboardData } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
@@ -123,7 +123,7 @@ export declare class ExcalidrawAutomate {
      * @param val //1: Virgil, 2:Helvetica, 3:Cascadia
      * @returns
      */
-    setFontFamily(val: number): "Virgil, Segoe UI Emoji" | "Helvetica, Segoe UI Emoji" | "Cascadia, Segoe UI Emoji" | "LocalFont";
+    setFontFamily(val: number): "Virgil, Segoe UI Emoji" | "Helvetica, Segoe UI Emoji" | "Cascadia, Segoe UI Emoji" | "Local Font";
     /**
      * @param val //0:"light", 1:"dark"
      * @returns

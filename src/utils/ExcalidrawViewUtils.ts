@@ -1,6 +1,6 @@
 
 import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS } from "src/constants/constants";
-import { App, TFile, WorkspaceLeaf } from "obsidian";
+import { App, Notice, TFile, WorkspaceLeaf } from "obsidian";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK, getExcalidrawMarkdownHeaderSection } from "src/ExcalidrawData";
 import ExcalidrawView from "src/ExcalidrawView";
@@ -11,13 +11,14 @@ import { getEA } from "src";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddableMDCustomProps } from "src/dialogs/EmbeddableSettings";
 import { nanoid } from "nanoid";
+import { t } from "src/lang/helpers";
 
-export const insertImageToView = async (
+export async function insertImageToView(
   ea: ExcalidrawAutomate,
   position: { x: number, y: number },
   file: TFile | string,
   scale?: boolean,
-):Promise<string> => {
+):Promise<string> {
   ea.clear();
   ea.style.strokeColor = "transparent";
   ea.style.backgroundColor = "transparent";
@@ -33,17 +34,17 @@ export const insertImageToView = async (
   return id;
 }
 
-export const insertEmbeddableToView = async (
+export async function insertEmbeddableToView (
   ea: ExcalidrawAutomate,
   position: { x: number, y: number },
   file?: TFile,
   link?: string,
-):Promise<string> => {
+):Promise<string> {
   ea.clear();
   ea.style.strokeColor = "transparent";
   ea.style.backgroundColor = "transparent";
   if(file && (IMAGE_TYPES.contains(file.extension) || ea.isExcalidrawFile(file)) && !ANIMATED_IMAGE_TYPES.contains(file.extension)) {
-    return await insertImageToView(ea, position, file);
+    return await insertImageToView(ea, position, link??file);
   } else {
     const id = ea.addEmbeddable(
       position.x,
@@ -58,7 +59,7 @@ export const insertEmbeddableToView = async (
   }
 }
 
-export const getLinkTextFromLink = (text: string): string => {
+export function getLinkTextFromLink (text: string): string {
   if (!text) return;
   if (text.match(REG_LINKINDEX_HYPERLINK)) return;
 
@@ -71,7 +72,7 @@ export const getLinkTextFromLink = (text: string): string => {
   return linktext;
 }
 
-export const openTagSearch = (link:string, app: App, view?: ExcalidrawView) => {
+export function openTagSearch (link:string, app: App, view?: ExcalidrawView) {
   const tags = link
     .matchAll(/#([\p{Letter}\p{Emoji_Presentation}\p{Number}\/_-]+)/gu)
     .next();
@@ -92,21 +93,70 @@ export const openTagSearch = (link:string, app: App, view?: ExcalidrawView) => {
   return;
 }
 
-export const openExternalLink = (link:string, app: App, element?: ExcalidrawElement):boolean => {
+function getLinkFromMarkdownLink(link: string): string {
+  const result = /^\[[^\]]*]\(([^\)]*)\)/.exec(link);
+  return result ? result[1] : link;
+}
+
+export function openExternalLink (link:string, app: App, element?: ExcalidrawElement):boolean {
+  link = getLinkFromMarkdownLink(link);
   if (link.match(/^cmd:\/\/.*/)) {
     const cmd = link.replace("cmd://", "");
     //@ts-ignore
     app.commands.executeCommandById(cmd);
     return true;
   }
-  if (link.match(REG_LINKINDEX_HYPERLINK)) {
-      window.open(link, "_blank");
+  if (!link.startsWith("obsidian://") && link.match(REG_LINKINDEX_HYPERLINK)) {
+    window.open(link, "_blank");
     return true;
   }
+
   return false;
 }
 
-export const getExcalidrawFileForwardLinks = (app: App, excalidrawFile: TFile, secondOrderLinksSet: Set<string>):string => {
+/**
+ * 
+ * @param link 
+ * @param app 
+ * @param returnWikiLink 
+ * @returns 
+ *   false if the link is not an obsidian link,
+ *   true if the link is an obsidian link and it was opened (i.e. it is a link to another Vault or not a file link e.g. plugin link), or
+ *   the link to the file path. By default as a wiki link, or as a file path if returnWikiLink is false.
+ */
+export function parseObsidianLink(link: string, app: App, returnWikiLink: boolean = true): boolean | string {
+  link = getLinkFromMarkdownLink(link);
+  if (!link.startsWith("obsidian://")) {
+      return false;
+  }
+  const url = new URL(link);
+  const action = url.pathname.slice(2); // Remove leading '//'
+
+  const props: {[key: string]: string} = {};
+  url.searchParams.forEach((value, key) => {
+      props[key] = decodeURIComponent(value);
+  });
+
+  if (action === "open" && props.vault === app.vault.getName()) {
+      const file = props.file;
+      const f = app.metadataCache.getFirstLinkpathDest(file, "");
+      if (f && f instanceof TFile) {
+          if (returnWikiLink) {
+            return `[[${f.path}]]`;
+          } else {
+            return f.path;
+          }
+      }
+  }
+
+  window.open(link, "_blank");
+  return true;
+}
+
+export function getExcalidrawFileForwardLinks (
+  app: App, excalidrawFile: TFile,
+  secondOrderLinksSet: Set<string>,
+):string {
   let secondOrderLinks = "";
   const forwardLinks = app.metadataCache.getLinks()[excalidrawFile.path];
   if(forwardLinks && forwardLinks.length > 0) {
@@ -125,7 +175,10 @@ export const getExcalidrawFileForwardLinks = (app: App, excalidrawFile: TFile, s
   return secondOrderLinks;
 }
 
-export const getFrameBasedOnFrameNameOrId = (frameName: string, elements: ExcalidrawElement[]): ExcalidrawFrameElement | null => {
+export function getFrameBasedOnFrameNameOrId(
+  frameName: string,
+  elements: ExcalidrawElement[],
+): ExcalidrawFrameElement | null {
   const frames = elements
     .filter((el: ExcalidrawElement)=>el.type==="frame")
     .map((el: ExcalidrawFrameElement, idx: number)=>{
@@ -136,7 +189,13 @@ export const getFrameBasedOnFrameNameOrId = (frameName: string, elements: Excali
   return frames.length === 1 ? frames[0] : null;
 }
 
-export const addBackOfTheNoteCard = async (view: ExcalidrawView, title: string, activate: boolean = true, cardBody?: string, embeddableCustomData?: EmbeddableMDCustomProps):Promise<string> => {
+export async function addBackOfTheNoteCard(
+  view: ExcalidrawView,
+  title: string,
+  activate: boolean = true,
+  cardBody?: string,
+  embeddableCustomData?: EmbeddableMDCustomProps,
+):Promise<string> {
   const data = view.data;
   const header = getExcalidrawMarkdownHeaderSection(data);
   const body = data.split(header)[1];
@@ -177,8 +236,8 @@ export const addBackOfTheNoteCard = async (view: ExcalidrawView, title: string, 
   const el = ea.getViewElements().find(el=>el.id === id);
   api.selectElements([el]);
   if(activate) {
-    setTimeout(()=>{
-      api.updateScene({appState: {activeEmbeddable: {element: el, state: "active"}}});
+    window.setTimeout(()=>{
+      api.updateScene({appState: {activeEmbeddable: {element: el, state: "active"}}, storeAction: "update"});
       if(found) view.getEmbeddableLeafElementById(el.id)?.editNode?.();
     });
   }
@@ -186,7 +245,12 @@ export const addBackOfTheNoteCard = async (view: ExcalidrawView, title: string, 
   return el.id;
 }
 
-export const renderContextMenuAction = (React: any, label: string, action: Function, onClose: (callback?: () => void) => void) => {
+export function renderContextMenuAction(
+  React: any,
+  label: string,
+  action: Function,
+  onClose: (callback?: () => void) => void,
+) {
   return React.createElement (
     "li",          
     {
@@ -218,7 +282,7 @@ export const renderContextMenuAction = (React: any, label: string, action: Funct
   );
 }
 
-export const tmpBruteForceCleanup = (view: ExcalidrawView) => {
+export function tmpBruteForceCleanup (view: ExcalidrawView) {
   window.setTimeout(()=>{
     if(!view) return;
     // const cleanupHTMLElement = (el: Element) => {
@@ -282,4 +346,38 @@ export const tmpBruteForceCleanup = (view: ExcalidrawView) => {
       delete view[key];
     });
   }, 500);
+}
+
+/**
+* Check if the text matches the transclusion pattern and if so,
+ * check if the link in the transclusion can be resolved to a file in the vault.
+ * if yes, call the callback function with the link and the file.
+ * @param text 
+ * @param callback 
+ * @returns true if text is a transclusion and the link can be resolved to a file in the vault, false otherwise.
+ */
+export function isTextImageTransclusion (
+  text: string,
+  view: ExcalidrawView,
+  callback: (link: string, file: TFile)=>void
+): boolean {
+  const REG_TRANSCLUSION = /^!\[\[([^|\]]*)?.*?]]$|^!\[[^\]]*?]\((.*?)\)$/g;
+  const match = text.trim().matchAll(REG_TRANSCLUSION).next(); //reset the iterator
+  if(match?.value?.[0]) {                
+    const link = match.value[1] ?? match.value[2];
+    const file = view.app.metadataCache.getFirstLinkpathDest(link?.split("#")[0], view.file.path);
+    if(view.file === file) {
+      new Notice(t("RECURSIVE_INSERT_ERROR"));
+      return false;
+    }
+    if(file && file instanceof TFile) {
+      if (file.extension !== "md" || view.plugin.isExcalidrawFile(file)) {
+        callback(link, file);
+        return true;
+      } else {
+        new Notice(t("USE_INSERT_FILE_MODAL"),5000);
+      }
+    }
+  }
+  return false;
 }

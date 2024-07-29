@@ -17,6 +17,52 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.2.12": `
+## Fixed
+- Rename moved files to root folder [#1905](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1905)
+- Fonts not displaying correctly in cached image previews
+`,
+"2.2.11": `
+<img alt="badges" src="https://github.com/user-attachments/assets/7591b523-6bc6-46ff-b552-5c3492139e4c" referrerpolicy="no-referrer" style="width: 100%;">
+
+## New
+- Font picker with additional fonts (not yet fully configurable, but that will come in due time) [#8012](https://github.com/excalidraw/excalidraw/pull/8012)
+- Introducing Visual Thinking Badges. The more you use Excalidraw the higher your rank will be. Levels are: Bronze, Silver, Gold and Platinum.
+
+## Fixed
+- Embedded PDF was not visible on phones [#1904](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1904)
+- F2 does not rename files in Excalidraw View [#1900](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1900)
+- Wireframe to Code now honors the GPT model settings in plugin settings. [#1901](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1901)
+- Updated ExcaliAI to support gpt-4o for vision. [#1859](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/1859) 🙏@Saik0s
+- Minor fixes from excalidraw.com [#8287](https://github.com/excalidraw/excalidraw/pull/8287), [#8285](https://github.com/excalidraw/excalidraw/pull/8285)
+`,
+"2.2.10": `
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/sjZfdqpxqsg" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## Fixed
+- Drastically degraded rendering performance when zoomed in and when arrows with labels are used. [#8267](https://github.com/excalidraw/excalidraw/pull/8267), [#8266](https://github.com/excalidraw/excalidraw/pull/8266), [#1893](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1893)
+- Frame title font in exports. 
+
+## New
+- Area, Group, Frame, and Clipped-Frame references to images now also work when pasting images to Excalidraw.
+- The new reference type ${String.fromCharCode(96)}clippedframe=${String.fromCharCode(96)} works in the same way as ${String.fromCharCode(96)}frame=${String.fromCharCode(96)} but will display the elements clipped by the frame. ${String.fromCharCode(96)}clippedframe=${String.fromCharCode(96)} will always display the image with zero padding.
+- New command palette action: ${String.fromCharCode(96)}Frame Settings${String.fromCharCode(96)} gives you fine-grained control over how frames are rendered. Frame settings will also be reflected in image exports. For example, if you hide the frame name or outline, then in exports they will not be visible.
+`,
+"2.2.9": `
+## New
+- Improved the "Open the back-of-the-note of the selected Excalidraw image" action. It now works with grouped elements and keeps the popout window within the visible screen area when elements are close to the top of the canvas. Note: Due to an Obsidian bug, I do not recommend using this feature with versions 1.6.0 - 1.6.6, if you have Obsidian Sync enabled, because Obsidian may freeze when closing the popout window. It functions properly in Obsidian versions before 1.6.0 and from 1.6.7 onwards. 
+
+## Fixed
+- Drag and drop from a local folder (outside Obsidian) resulted in duplicate images.
+- Insert Link Action did not work [#1873](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1873)
+- Insert Obsidian Command Action did not work
+- Element link for text element got deleted when editing the text. [#1878](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1878)
+- When back-of-the-drawing Section Headings have spaces in them, clicking the link opens the drawing side not the markdown side. [#1877](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1877)
+- obsidian:// links did not work as expected. [#1872](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1872)
+- copying and moving a rectangle with text, moves the text unexpectedly. The issue should now be resolved (at least much less likely to occur) [#1867](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1867)
+`,
 "2.2.8": `
 While this release may appear modest with no new features, it represents nearly 50 hours of dedicated work. Here's what's been improved:
 
