@@ -103,7 +103,7 @@ import {
   _getContainerElement,
   arrayToMap,
 } from "./utils/Utils";
-import { cleanBlockRef, cleanSectionHeading, getAttachmentsFolderAndFilePath, getLeaf, getParentOfClass, obsidianPDFQuoteWithRef, openLeaf } from "./utils/ObsidianUtils";
+import { cleanBlockRef, cleanSectionHeading, closeLeafView, getAttachmentsFolderAndFilePath, getLeaf, getParentOfClass, obsidianPDFQuoteWithRef, openLeaf, setExcalidrawView } from "./utils/ObsidianUtils";
 import { splitFolderAndFilename } from "./utils/FileUtils";
 import { ConfirmationPrompt, GenericInputPrompt, NewFileActions, Prompt, linkPrompt } from "./dialogs/Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
@@ -1353,12 +1353,18 @@ export default class ExcalidrawView extends TextFileView {
     const apiMissing = Boolean(typeof this.containerEl.onWindowMigrated === "undefined")
     this.packages = this.plugin.getPackage(this.ownerWindow);
 
-    /*if(!DEVICE.isMobile && !apiMissing) {
+    if(!DEVICE.isMobile && !apiMissing) {
       this.destroyers.push(
         //@ts-ignore 
-        this.containerEl.onWindowMigrated(this.leaf.rebuildView.bind(this))
+        //this.containerEl.onWindowMigrated(this.leaf.rebuildView.bind(this))
+        this.containerEl.onWindowMigrated(async() => {
+          const f = this.file;
+          const l = this.leaf;
+          await closeLeafView(l);
+          l.openFile(f);
+        })
       );
-    }*/
+    }
     
     this.semaphores.scriptsReady = true;
     
@@ -2156,7 +2162,7 @@ export default class ExcalidrawView extends TextFileView {
                 await this.app.vault.modify(file, drawingBAK);
                 //@ts-ignore
                 plugin.excalidrawFileModes[leaf.id || file.path] = VIEW_TYPE_EXCALIDRAW;
-                plugin.setExcalidrawView(leaf);
+                setExcalidrawView(leaf);
               } 
             });
 

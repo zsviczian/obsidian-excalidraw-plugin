@@ -101,7 +101,7 @@ import {
   versionUpdateCheckTimer,
   getFontMetrics,
 } from "./utils/Utils";
-import { editorInsertText, extractSVGPNGFileName, foldExcalidrawSection, getActivePDFPageNumberFromPDFView, getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark, mergeMarkdownFiles, openLeaf } from "./utils/ObsidianUtils";
+import { editorInsertText, extractSVGPNGFileName, foldExcalidrawSection, getActivePDFPageNumberFromPDFView, getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark, mergeMarkdownFiles, openLeaf, setExcalidrawView } from "./utils/ObsidianUtils";
 import { ExcalidrawElement, ExcalidrawEmbeddableElement, ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { ScriptEngine } from "./Scripts";
 import {
@@ -187,7 +187,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public editorHandler: EditorHandler;
   //if set, the next time this file is opened it will be opened as markdown
   public forceToOpenInMarkdownFilepath: string = null;
-  private slob:string;
+  //private slob:string;
   private ribbonIcon:HTMLElement;
   public loadTimestamp:number;
 
@@ -201,9 +201,9 @@ export default class ExcalidrawPlugin extends Plugin {
     this.equationsMaster = new Map<FileId, string>();
     this.mermaidsMaster = new Map<FileId, string>();
     setExcalidrawPlugin(this);
-    if((process.env.NODE_ENV === 'development')) {
+    /*if((process.env.NODE_ENV === 'development')) {
       this.slob = new Array(200 * 1024 * 1024 + 1).join('A'); // Create a 200MB blob
-    }
+    }*/
   }
 
   get locale() {
@@ -488,7 +488,7 @@ export default class ExcalidrawPlugin extends Plugin {
           if (fileShouldDefaultAsExcalidraw(leaf.view.file?.path, this.app)) {
             this.excalidrawFileModes[(leaf as any).id || leaf.view.file.path] =
               VIEW_TYPE_EXCALIDRAW;
-            this.setExcalidrawView(leaf);
+            setExcalidrawView(leaf);
           } else {
             foldExcalidrawSection(leaf.view);
           }
@@ -2377,7 +2377,7 @@ export default class ExcalidrawPlugin extends Plugin {
             const activeLeaf = markdownView.leaf;
             this.excalidrawFileModes[(activeLeaf as any).id || activeFile.path] =
               VIEW_TYPE_EXCALIDRAW;
-            this.setExcalidrawView(activeLeaf);
+            setExcalidrawView(activeLeaf);
           })()
           return;
         }
@@ -2412,7 +2412,7 @@ export default class ExcalidrawPlugin extends Plugin {
             activeFile,
             mergedTarget,
           );
-          this.setExcalidrawView(activeView.leaf);
+          setExcalidrawView(activeView.leaf);
         })();
       },
     });
@@ -2538,7 +2538,7 @@ export default class ExcalidrawPlugin extends Plugin {
             await view.save();
             //@ts-ignore
             this.excalidrawFileModes[leaf.id || file.path] = VIEW_TYPE_EXCALIDRAW;
-            this.setExcalidrawView(leaf);
+            setExcalidrawView(leaf);
           }));
         },
       ),
@@ -2563,7 +2563,7 @@ export default class ExcalidrawPlugin extends Plugin {
             await view.save();
             //@ts-ignore
             this.excalidrawFileModes[leaf.id || file.path] = VIEW_TYPE_EXCALIDRAW;
-            this.setExcalidrawView(leaf);
+            setExcalidrawView(leaf);
           })});
         //@ts-ignore
         menu.items.unshift(menu.items.pop());
@@ -3598,14 +3598,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   }
 
-  public async setExcalidrawView(leaf: WorkspaceLeaf) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setExcalidrawView,`ExcalidrawPlugin.setExcalidrawView`, leaf);
-    await leaf.setViewState({
-      type: VIEW_TYPE_EXCALIDRAW,
-      state: leaf.view.getState(),
-      popstate: true,
-    } as ViewState);
-  }
+
 
   public isExcalidrawFile(f: TFile) {
     if(!f) return false;
