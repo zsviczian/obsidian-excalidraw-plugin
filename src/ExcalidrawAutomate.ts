@@ -2763,10 +2763,10 @@ function getFontFamily(id: number) {
 
 export async function initFonts() {
   await excalidrawLib.registerFontsInCSS();
-  /*const fonts = excalidrawLib.getFontFamilies();
+  const fonts = excalidrawLib.getFontFamilies();
   for(let i=0;i<fonts.length;i++) {
-    await (document as any).fonts.load(`20px ${fonts[i]}`);  
-  };*/
+    if(fonts[i] !== "Local Font") await (document as any).fonts.load(`16px ${fonts[i]}`);  
+  };
 }
 
 export function _measureText(

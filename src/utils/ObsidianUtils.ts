@@ -301,7 +301,7 @@ export const openLeaf = ({
   return {leaf, promise};
 }
 
-export const mergeMarkdownFiles = (template: string, target: string): string => {
+export function mergeMarkdownFiles (template: string, target: string): string {
   // Extract frontmatter from the template
   const templateFrontmatterEnd = template.indexOf('---', 4); // Find end of frontmatter
   const templateFrontmatter = template.substring(4, templateFrontmatterEnd).trim();
@@ -313,8 +313,8 @@ export const mergeMarkdownFiles = (template: string, target: string): string => 
   // Extract frontmatter from the target if it exists
   let targetFrontmatterObj: FrontMatterCache = {};
   let targetContent = '';
-  if (target.includes('---')) {
-    const targetFrontmatterEnd = target.indexOf('---', 4); // Find end of frontmatter
+  if (target.startsWith('---\n') && target.indexOf('---\n', 4) > 0) {
+    const targetFrontmatterEnd = target.indexOf('---\n', 4); // Find end of frontmatter
     const targetFrontmatter = target.substring(4, targetFrontmatterEnd).trim();
     targetContent = target.substring(targetFrontmatterEnd + 3); // Skip frontmatter and ---
 

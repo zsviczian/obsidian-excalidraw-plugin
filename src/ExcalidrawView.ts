@@ -140,7 +140,6 @@ import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { SelectCard } from "./dialogs/SelectCard";
 import { Packages } from "./types/types";
 import React from "react";
-import { StoreAction } from "@zsviczian/excalidraw";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -244,6 +243,8 @@ const warningUnknowSeriousError = () => {
 };
 
 type ActionButtons = "save" | "isParsed" | "isRaw" | "link" | "scriptInstall";
+
+let windowMigratedDisableZoomOnce = false;
 
 export default class ExcalidrawView extends TextFileView {
   public exportDialog: ExportDialog;
@@ -1358,10 +1359,17 @@ export default class ExcalidrawView extends TextFileView {
         //@ts-ignore 
         //this.containerEl.onWindowMigrated(this.leaf.rebuildView.bind(this))
         this.containerEl.onWindowMigrated(async() => {
+          (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onload, "ExcalidrawView.onWindowMigrated");
           const f = this.file;
           const l = this.leaf;
           await closeLeafView(l);
-          l.openFile(f);
+          windowMigratedDisableZoomOnce = true;
+          l.setViewState({
+            type: VIEW_TYPE_EXCALIDRAW,
+            state: {
+              file: f.path,
+            }
+          });
         })
       );
     }
@@ -5514,6 +5522,10 @@ export default class ExcalidrawView extends TextFileView {
     if(modalContainer) return; //do not autozoom when the command palette or other modal container is envoked on iPad
     const api = this.excalidrawAPI;
     if (!api || this.semaphores.isEditingText || this.semaphores.preventAutozoom) {
+      return;
+    }
+    if (windowMigratedDisableZoomOnce) {
+      windowMigratedDisableZoomOnce = false;
       return;
     }
     const maxZoom = this.plugin.settings.zoomToFitMaxLevel;
