@@ -1354,7 +1354,7 @@ export default class ExcalidrawView extends TextFileView {
     const apiMissing = Boolean(typeof this.containerEl.onWindowMigrated === "undefined")
     this.packages = this.plugin.getPackage(this.ownerWindow);
 
-    if(!DEVICE.isMobile && !apiMissing) {
+    if(DEVICE.isDesktop && !apiMissing) {
       this.destroyers.push(
         //@ts-ignore 
         //this.containerEl.onWindowMigrated(this.leaf.rebuildView.bind(this))
@@ -2217,8 +2217,8 @@ export default class ExcalidrawView extends TextFileView {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getGridColor, "ExcalidrawView.getGridColor", bgColor, st);
     const cm = this.plugin.ea.getCM(bgColor);
     const isDark = cm.isDark();
-    const Regular = (isDark ? cm.lighterBy(7) : cm.darkerBy(7)).stringHEX();
-    const Bold = (isDark ? cm.lighterBy(14) : cm.darkerBy(14)).stringHEX();
+    const Regular = (isDark ? cm.lighterBy(7) : cm.darkerBy(7)).stringHEX({alpha: false});
+    const Bold = (isDark ? cm.lighterBy(14) : cm.darkerBy(14)).stringHEX({alpha: false});
     return {Bold, Regular, MajorGridFrequency:st.gridColor.MajorGridFrequency};
   }
 
