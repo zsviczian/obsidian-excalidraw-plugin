@@ -761,6 +761,20 @@ export class ExcalidrawAutomate {
           }
         }
       })
+
+      /*ymjr*/
+      outString += "## Tags\n";
+      const tagElements = this.getElements().filter(el => el?.customData?.tags);
+      const tagSet = new Set()
+      for (const el of tagElements) {
+        for (const tag of el.customData.tags) {
+          tagSet.add(tag)
+        }
+      }
+      for (const tag of tagSet) {
+        outString += `${tag}\n\n`;
+      }
+
       return outString + "\n%%\n";
     }
 
