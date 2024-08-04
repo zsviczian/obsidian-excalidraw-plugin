@@ -17,6 +17,21 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.3.0": `
+I am moving to a new release approach aiming to publish one update per month to the Obsidian script store. If you want to continue to receive more frequent updates with new features and minor bug fixes, then join the beta testing team. [#1912](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1912)
+
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/2poSS-Z91lY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## New
+- Elbow connectors:  https://x.com/excalidraw/status/1819084086222393554
+
+## Fixed 
+- Convert Markdown to Excalidraw did not work correctly when there was ${String.fromCharCode(96)}---${String.fromCharCode(96)} anywhere in the file, but no frontmatter (e.g. a table)
+- Fixed Obsidian move tab to new window
+- Fixed duplicating bound arrows without its bound elements throwing error [#8315](https://github.com/excalidraw/excalidraw/issues/8315)
+`,
 "2.2.13": `
 ## Fixed
 - Could not undo element after pasting [#1906](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1906)
