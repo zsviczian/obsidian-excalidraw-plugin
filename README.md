@@ -63,6 +63,13 @@ The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/),
 <a href="https://youtu.be/4N6efq1DtH0" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/158008902-12c6a851-237e-4edd-a631-d48e81c904b2.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Eraser, left-handed mode, improved filename configuration</a><br>
 </details>
 
+### Beta testing
+The plugin follows a monthly release schedule. If you want to receive more frequent updates with new features (e.g. shiny new stuff available on excalidraw.com, but not yet in Obsidian) and minor bug fixes, then join the beta community.
+
+[![Thumbnail - 20240803 Excalidraw Release Approach (Custom)](https://github.com/user-attachments/assets/ab40648c-f73f-4bda-a416-52839f918f2a)](https://youtu.be/2poSS-Z91lY)
+
+[![Excalidraw Plugin Release Strategy (Phone)](https://github.com/user-attachments/assets/87f1f379-782c-4c32-8b5b-d27fe2d3ac4b)](https://github.com/user-attachments/assets/120a0790-7239-48ae-bfbd-eb249f8b518d)
+
 ---
 
 ## Features
