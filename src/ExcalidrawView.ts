@@ -1628,7 +1628,7 @@ export default class ExcalidrawView extends TextFileView {
       }
       const st = api.getAppState();
       const isEditing = st.editingElement !== null;
-      const isDragging = st.draggingElement !== null;
+      const isDragging = st.newElement !== null;
       //this will reset positioning of the cursor in case due to the popup keyboard,
       //or the command palette, or some other unexpected reason the onResize would not fire...
       this.refreshCanvasOffset();
@@ -3372,7 +3372,7 @@ export default class ExcalidrawView extends TextFileView {
     //(process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.showHoverPreview, "ExcalidrawView.showHoverPreview", linktext, element);
     if(!this.lastMouseEvent) return;
     const st = this.excalidrawAPI?.getAppState();
-    if(st?.editingElement || st?.draggingElement) return; //should not activate hover preview when element is being edited or dragged
+    if(st?.editingElement || st?.newElement) return; //should not activate hover preview when element is being edited or dragged
     if(this.semaphores.wheelTimeout) return;
     //if link text is not provided, try to get it from the element
     if (!linktext) {
@@ -3697,7 +3697,7 @@ export default class ExcalidrawView extends TextFileView {
       //Removed because of
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/565
       /*st.resizingElement === null && 
-      st.draggingElement === null &&
+      st.newElement === null &&
       st.editingGroupId === null &&*/
       st.editingLinearElement === null
     ) {
