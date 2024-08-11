@@ -13,6 +13,7 @@ import {
   ExcalidrawFrameElement,
   ExcalidrawTextContainer,
 } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { MimeType } from "./EmbeddedFileLoader";
 import { Editor, normalizePath, Notice, OpenViewState, RequestUrlResponse, TFile, TFolder, WorkspaceLeaf } from "obsidian";
 import * as obsidian_module from "obsidian";
 import ExcalidrawView, { ExportSettings, TextMode, getTextMode } from "src/ExcalidrawView";
@@ -1572,6 +1573,26 @@ export class ExcalidrawAutomate {
   };
 
   /**
+   * returns the base64 dataURL of the LaTeX equation rendered as an SVG 
+   * @param tex The LaTeX equation as string
+   * @param scale of the image, default value is 4
+   * @returns 
+   */
+  //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1930
+  async tex2dataURL(
+    tex: string,
+    scale: number = 4 // Default scale value, adjust as needed
+  ): Promise<{
+    mimeType: MimeType;
+    fileId: FileId;
+    dataURL: DataURL;
+    created: number;
+    size: { height: number; width: number };
+  }> {
+    return await tex2dataURL(tex,scale);
+  };
+
+  /**
    * 
    * @param objectA 
    * @param connectionA type ConnectionPoint = "top" | "bottom" | "left" | "right" | null
@@ -2738,7 +2759,7 @@ export async function initExcalidrawAutomate(
 function normalizeLinePoints(
   points: [x: number, y: number][],
   //box: { x: number; y: number; w: number; h: number },
-) {
+): number[][] {
   const p = [];
   const [x, y] = points[0];
   for (let i = 0; i < points.length; i++) {
@@ -2747,7 +2768,9 @@ function normalizeLinePoints(
   return p;
 }
 
-function getLineBox(points: [x: number, y: number][]) {
+function getLineBox(
+  points: [x: number, y: number][]
+):{x:number, y:number, w: number, h:number} {
   const [x1, y1, x2, y2] = estimateLineBound(points);
   return {
     x: x1,
@@ -2757,11 +2780,11 @@ function getLineBox(points: [x: number, y: number][]) {
   };
 }
 
-function getFontFamily(id: number) {
-  getFontFamilyString({fontFamily:id})
+function getFontFamily(id: number):string {
+  return getFontFamilyString({fontFamily:id})
 }
 
-export async function initFonts() {
+export async function initFonts():Promise<void> {
   await excalidrawLib.registerFontsInCSS();
   const fonts = excalidrawLib.getFontFamilies();
   for(let i=0;i<fonts.length;i++) {
@@ -2774,7 +2797,7 @@ export function _measureText(
   fontSize: number,
   fontFamily: number,
   lineHeight: number,
-) {
+): {w: number, h:number} {
   //following odd error with mindmap on iPad while synchornizing with desktop.
   if (!fontSize) {
     fontSize = 20;
@@ -2932,7 +2955,7 @@ export async function createPNG(
   depth: number,
   padding?: number,
   imagesDict?: any,
-) {
+): Promise<Blob> {
   if (!loader) {
     loader = new EmbeddedFilesLoader(plugin);
   }
@@ -3016,7 +3039,7 @@ export const updateElementLinksToObsidianLinks = ({elements, hostFile}:{
   })
 }
 
-function addFilterToForeignObjects(svg:SVGSVGElement) {
+function addFilterToForeignObjects(svg:SVGSVGElement):void {
   const foreignObjects = svg.querySelectorAll("foreignObject");
   foreignObjects.forEach((foreignObject) => {
     foreignObject.setAttribute("filter", THEME_FILTER);
@@ -3165,7 +3188,7 @@ export function repositionElementsToCursor(
   return restore({elements}, null, null).elements;
 }
 
-function errorMessage(message: string, source: string) {
+function errorMessage(message: string, source: string):void {
   switch (message) {
     case "targetView not set":
       errorlog({

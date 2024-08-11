@@ -312,6 +312,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "tex2dataURL",
+    code: "async tex2dataURL(tex: string, scale: number = 4): Promise<{mimeType: MimeType;fileId: FileId;dataURL: DataURL;created: number;size: { height: number; width: number };}> ",
+    desc: "returns the base64 dataURL of the LaTeX equation rendered as an SVG. tex is the LaTeX equation string",
+    after: "",
+  },
+  {
     field: "connectObjects",
     code: "connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, formatting?: {numberOfPoints?: number; startArrowHead?: string; endArrowHead?: string; padding?: number;},): string;",
     desc: 'type ConnectionPoint = "top" | "bottom" | "left" | "right" | null\nWhen null is passed as ConnectionPoint then Excalidraw will automatically decide\nnumberOfPoints is the number of points on the line. Default is 0 i.e. line will only have a start and end point.\nArrowHead: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null',

@@ -15,7 +15,7 @@ import cssnano from 'cssnano';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const DIST_FOLDER = 'dist'; 
+const DIST_FOLDER = 'dist';
 const isProd = (process.env.NODE_ENV === "production");
 const isLib = (process.env.NODE_ENV === "lib");
 console.log(`Running: ${process.env.NODE_ENV}`);
