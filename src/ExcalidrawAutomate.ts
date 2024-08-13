@@ -1028,6 +1028,22 @@ export class ExcalidrawAutomate {
   };
 
   /**
+   * Add elements to frame
+   * @param frameId 
+   * @param elementIDs to add
+   * @returns void
+   */
+  addElementsToFrame(frameId: string, elementIDs: string[]):void {
+    if(!this.getElement(frameId)) return;
+    elementIDs.forEach(elID => {
+      const el = this.getElement(elID);
+      if(el) {
+        el.frameId = frameId;
+      }
+    });
+  }
+
+  /**
    * 
    * @param topX 
    * @param topY 
@@ -1917,15 +1933,16 @@ export class ExcalidrawAutomate {
 
   /**
    * 
+   * @param includeFrameChildren 
    * @returns 
    */
-  getViewSelectedElements(): any[] {
+  getViewSelectedElements(includeFrameChildren:boolean = true): any[] {
     //@ts-ignore
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "getViewSelectedElements()");
       return [];
     }
-    return this.targetView.getViewSelectedElements();
+    return this.targetView.getViewSelectedElements(includeFrameChildren);
   };
 
   /**
@@ -2417,24 +2434,44 @@ export class ExcalidrawAutomate {
    * @param elements - typically all the non-deleted elements in the scene 
    * @returns 
    */
-  getElementsInTheSameGroupWithElement(element: ExcalidrawElement, elements: ExcalidrawElement[]): ExcalidrawElement[] {
+  getElementsInTheSameGroupWithElement(
+    element: ExcalidrawElement,
+    elements: ExcalidrawElement[],
+    includeFrameElements: boolean = false,
+  ): ExcalidrawElement[] {
     if(!element || !elements) return [];
     const container = (element.type === "text" && element.containerId)
       ? elements.filter(el=>el.id === element.containerId)
       : [];
     if(element.groupIds.length === 0) {
+      if(includeFrameElements && element.type === "frame") {
+        return this.getElementsInFrame(element,elements,true);
+      }
       if(container.length === 1) return [element,container[0]];
       return [element];
     }
 
-    if(container.length === 1) {
-      return elements.filter(el=>
-        el.groupIds.some(id=>element.groupIds.includes(id)) ||
-        el === container[0]
-      );
+    const conditionFN = container.length === 1
+      ? (el: ExcalidrawElement) => el.groupIds.some(id=>element.groupIds.includes(id)) || el === container[0]
+      : (el: ExcalidrawElement) => el.groupIds.some(id=>element.groupIds.includes(id));
+
+    if(!includeFrameElements) {
+      return elements.filter(el=>conditionFN(el));
+    } else {
+      //I use the set and the filter at the end to preserve scene layer seqeuence
+      //adding frames could potentially mess up the sequence otherwise
+      const elementIDs = new Set<string>();
+      elements
+        .filter(el=>conditionFN(el))
+        .forEach(el=>{
+          if(el.type === "frame") {
+            this.getElementsInFrame(el,elements,true).forEach(el=>elementIDs.add(el.id))
+          } else {
+            elementIDs.add(el.id);
+          }
+        });
+      return elements.filter(el=>elementIDs.has(el.id));
     }
-    
-    return elements.filter(el=>el.groupIds.some(id=>element.groupIds.includes(id)));
   }
 
   /**
@@ -2896,7 +2933,7 @@ async function getTemplate(
       ? getTextElementsMatchingQuery(scene.elements,["# "+filenameParts.sectionref],true)
       : scene.elements.filter((el: ExcalidrawElement)=>el.id===filenameParts.blockref);
       if(el.length > 0) {
-        groupElements = plugin.ea.getElementsInTheSameGroupWithElement(el[0],scene.elements)
+        groupElements = plugin.ea.getElementsInTheSameGroupWithElement(el[0],scene.elements,true)
       }
     }
     if(filenameParts.hasFrameref || filenameParts.hasClippedFrameref) {

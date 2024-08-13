@@ -253,16 +253,16 @@ class ImageCache {
     });
   }
 
-  private async getObjectStore(mode: IDBTransactionMode, storeName: string): Promise<IDBObjectStore> {
+  private getObjectStore(mode: IDBTransactionMode, storeName: string): IDBObjectStore {
     const transaction = this.db!.transaction(storeName, mode);
     return transaction.objectStore(storeName);
   }
 
   private async getCacheData(key: string): Promise<FileCacheData | null> {
-    const store = await this.getObjectStore("readonly", this.cacheStoreName);
+    const store = this.getObjectStore("readonly", this.cacheStoreName);
     const request = store.get(key);
 
-    return new Promise<FileCacheData | null>((resolve, reject) => {
+    return await new Promise<FileCacheData | null>((resolve, reject) => {
       request.onsuccess = () => {
         const result = request.result as FileCacheData;
         resolve(result || null);
@@ -275,7 +275,7 @@ class ImageCache {
   }
 
   private async getBackupData(key: BackupKey): Promise<BackupData | null> {
-    const store = await this.getObjectStore("readonly", this.backupStoreName);
+    const store = this.getObjectStore("readonly", this.backupStoreName);
     const request = store.get(key);
 
     return new Promise<BackupData | null>((resolve, reject) => {
@@ -308,7 +308,9 @@ class ImageCache {
       ? await this.getCacheData(key)
       : await Promise.race([
           this.getCacheData(key),
-          new Promise<undefined>((_,reject) => setTimeout(() => reject(undefined), 100))
+          new Promise<undefined>((_,reject) => setTimeout(() => {
+            reject(undefined);
+          }, 100))
         ]);
       this.fullyInitialized = true;
       if(!cachedData) return undefined;

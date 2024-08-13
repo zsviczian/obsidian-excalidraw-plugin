@@ -326,20 +326,24 @@ FILENAME_HEAD: "Filename",
   SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_DESC:
     "Show crosshair in pen mode when using the freedraw tool. <b><u>Toggle ON:</u></b> SHOW <b><u>Toggle OFF:</u></b> HIDE<br>"+
     "The effect depends on the device. Crosshair is typically visible on drawing tablets, MS Surface, but not on iOS.",
-  SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_NAME: "Render image in hover preview for MD files",
+  SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_NAME: "Render Excalidraw file as an image in hover preview...",
   SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_DESC:
-    "This setting effects files that have the <b>excalidraw-open-md: true</b> frontmatter key.",
+    "...even if the file has the <b>excalidraw-open-md: true</b> frontmatter key.<br>" +
+    "When this setting is off and the file is set to open in md by default, the hover preview will show the " +
+    "markdown side of the document.",
   SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME: "Render image when in markdown reading mode",
   SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC:
     "Must close the active excalidraw/markdown file and reopen it for this change to take effect.<br>When you are in markdown reading mode (aka. reading the back side of the drawing), should the Excalidraw drawing be rendered as an image? " +
     "This setting will not affect the display of the drawing when you are in Excalidraw mode, when you embed the drawing into a markdown document or when rendering hover preview.<br><ul>" +
     "<li>See other related setting for <b>PDF Export</b> under 'Embedding and Exporting' further below.</li>" +
     "<li>Be sure to check out the <b>Fade Out setting</b> in the 'Miscellaneous fetures' section.</li></ul>",
-  SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME: "Render image when EXPORT TO PDF in markdown mode",
+  SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME: "Render Excalidraw as an image when EXPORTING TO PDF",
   SHOW_DRAWING_OR_MD_IN_EXPORTPDF_DESC:
-    "Must close the active excalidraw/markdown file and reopen for this change to take effect.<br>When you are printing the markdown side of the note to PDF (aka. the back side of the drawing), should the Excalidraw drawing be rendered as an image?<br><ul>" +
+    "This setting controls the behavior of Excalidraw when exporting a file to PDF in markdown mode using Obsidian's Export to PDF... feature.<br>" +
+    "When <b>enabled</b> the PDF will show the Excalidraw drawing only; when <b>disabled</b> the PDF will show the markdown side of the document.<br><ul>" +
     "<li>See other related setting for <b>Markdown Reading Mode</b> under 'Appearnace and Behavior' further above.</li>" +
-    "<li>Be sure to check out the <b>Fade Out setting</b> in the 'Miscellaneous fetures' section.</li></ul>",
+    "<li>Be sure to check out the <b>Fade Out setting</b> in the 'Miscellaneous fetures' section.</li></ul><br>" +
+    "⚠️ Note, you must close the active excalidraw/markdown file and reopen for this change to take effect. ⚠️",
   THEME_HEAD: "Theme and styling",
   ZOOM_HEAD: "Zoom",
   DEFAULT_PINCHZOOM_NAME: "Allow pinch zoom in pen mode",
@@ -835,4 +839,16 @@ FILENAME_HEAD: "Filename",
   FRAME_SETTIGNS_NAME: "Display Frame Name",
   FRAME_SETTINGS_OUTLINE: "Display Frame Outline",
   FRAME_SETTINGS_CLIP: "Enable Frame Clipping",
+
+  //InsertPDFModal.ts
+  IPM_PAGES_TO_IMPORT_NAME: "Pages to import",
+  IPM_SELECT_PAGES_TO_IMPORT: "Please select pages to import",
+  IPM_ADD_BORDER_BOX_NAME: "Add border box",
+  IPM_ADD_FRAME_NAME: "Add page to frame",
+  IPM_ADD_FRAME_DESC: "For easier handling I recommend to lock the page inside the frame. " +
+    "If, however, you do lock the page inside the frame then the only way to unlock it is to right-click the frame, select remove elements from frame, then unlock the page.",
+  IPM_GROUP_PAGES_NAME: "Group pages",
+  IPM_GROUP_PAGES_DESC: "This will group all pages into a single group. This is recommended if you are locking the pages after import, because the group will be easier to unlock later rather than unlocking one by one.",
+  IPM_SELECT_PDF: "Please select a PDF file",
+
 };

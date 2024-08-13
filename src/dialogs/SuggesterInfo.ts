@@ -234,6 +234,18 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "addElementsToFrame",
+    code: "addElementsToFrame(frameId: string, elementIDs: string[]):void;",
+    desc: null,
+    after: "",
+  },
+  {
+    field: "addFrame",
+    code: "addFrame(topX: number, topY: number, width: number, height: number, name?: string): string;",
+    desc: null,
+    after: "",
+  },
+  {
     field: "addRect",
     code: "addRect(topX: number, topY: number, width: number, height: number, id?:string): string;",
     desc: null,
@@ -393,8 +405,8 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "getViewSelectedElements",
-    code: "getViewSelectedElements(): ExcalidrawElement[];",
-    desc: null,
+    code: "getViewSelectedElements(includeFrameChildren: boolean = true): ExcalidrawElement[];",
+    desc: "If a frame is selected this function will return the frame and all its elements unless includeFrameChildren is set to false",
     after: "",
   },
   {
@@ -495,8 +507,9 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "getElementsInTheSameGroupWithElement",
-    code: "getElementsInTheSameGroupWithElement(element: ExcalidrawElement, elements: ExcalidrawElement[]): ExcalidrawElement[];",
-    desc: "Gets all the elements from elements[] that share one or more groupIds with element.",
+    code: "getElementsInTheSameGroupWithElement(element: ExcalidrawElement, elements: ExcalidrawElement[], includeFrameElements: boolean = false): ExcalidrawElement[];",
+    desc: "Gets all the elements from elements[] that share one or more groupIds with element.<br>" +
+      "If includeFrameElements is true, then if the frame is part of the group all the elements that are in the frame will also be included in the result set",
     after: ""
   },
   {

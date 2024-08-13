@@ -168,6 +168,7 @@ export interface ExcalidrawSettings {
   numberOfCustomPens: number;
   pdfScale: number;
   pdfBorderBox: boolean;
+  pdfFrame: boolean;
   pdfGapSize: number;
   pdfGroupPages: boolean;
   pdfLockAfterImport: boolean;
@@ -339,6 +340,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   numberOfCustomPens: 0,
   pdfScale: 4,
   pdfBorderBox: true,
+  pdfFrame: false,
   pdfGapSize: 20,
   pdfGroupPages: false,
   pdfLockAfterImport: true,

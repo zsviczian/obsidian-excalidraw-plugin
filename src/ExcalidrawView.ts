@@ -5681,9 +5681,14 @@ export default class ExcalidrawView extends TextFileView {
     return api.getSceneElements();
   }
 
-  public getViewSelectedElements(): ExcalidrawElement[] {
+  /**
+   * 
+   * @param deepSelect: if set to true, child elements of the selected frame will also be selected
+   * @returns 
+   */
+  public getViewSelectedElements(includFrameChildren: boolean = true): ExcalidrawElement[] {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getViewSelectedElements, "ExcalidrawView.getViewSelectedElements");
-    const api = this.excalidrawAPI;
+    const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
     if (!api) {
       return [];
     }
@@ -5695,6 +5700,9 @@ export default class ExcalidrawView extends TextFileView {
     if (!selectedElementsKeys) {
       return [];
     }
+
+    const elementIDs = new Set<string>();
+
     const elements: ExcalidrawElement[] = api
       .getSceneElements()
       .filter((e: any) => selectedElementsKeys.includes(e.id));
@@ -5712,15 +5720,27 @@ export default class ExcalidrawView extends TextFileView {
             .map((be) => be.id)[0],
       );
 
-    const elementIDs = elements
-      .map((el) => el.id)
-      .concat(containerBoundTextElmenetsReferencedInElements);
+    if(includFrameChildren && elements.some(el=>el.type === "frame")) {
+      elements.filter(el=>el.type === "frame").forEach(frameEl => {
+        api.getSceneElements()
+          .filter(el=>el.frameId === frameEl.id)
+          .forEach(el=>elementIDs.add(el.id))
+      })
+    }
+
+    elements.forEach(el=>elementIDs.add(el.id));
+    containerBoundTextElmenetsReferencedInElements.forEach(id=>elementIDs.add(id));
 
     return api
       .getSceneElements()
-      .filter((el: ExcalidrawElement) => elementIDs.contains(el.id));
+      .filter((el: ExcalidrawElement) => elementIDs.has(el.id));
   }
 
+  /**
+   * 
+   * @param prefix - defines the default button. 
+   * @returns 
+   */
   public async copyLinkToSelectedElementToClipboard(prefix:string) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.copyLinkToSelectedElementToClipboard, "ExcalidrawView.copyLinkToSelectedElementToClipboard", prefix);
     const elements = this.getViewSelectedElements();
@@ -5747,58 +5767,59 @@ export default class ExcalidrawView extends TextFileView {
         : this.plugin.ea.getLargestElement(elements).id;
     }
 
-    const isFrame = elements.some(el=>el.id === elementId && el.type==="frame");
+    const frames = elements.filter(el=>el.type==="frame");
+    const hasFrame = frames.length === 1;
+    const hasGroup = elements.some(el=>el.groupIds && el.groupIds.length>0);
+
+    let button = {
+      area: {caption: "Area", action:()=>{prefix="area="; return;}},
+      link: {caption: "Link", action:()=>{prefix="";return}},
+      group: {caption: "Group", action:()=>{prefix="group="; return;}},
+      frame: {caption: "Frame", action:()=>{prefix="frame="; elementId = frames[0].id; return;}},
+      clippedframe: {caption: "Clipped Frame", action:()=>{prefix="clippedframe="; ; elementId = frames[0].id; return;}},
+    }
 
     let buttons = [];
-    if(isFrame) {
-      switch(prefix) {
-        case "clippedframe=":
-          buttons = [
-            {caption: "Clipped Frame", action:()=>{prefix="clippedframe="; return;}},
-            {caption: "Frame", action:()=>{prefix="frame="; return;}},
-            {caption: "Link", action:()=>{prefix="";return}},
-          ];
-          break;
-        case "area=":  
-        case "group=":
-        case "frame=":
-          buttons = [
-            {caption: "Frame", action:()=>{prefix="frame="; return;}},
-            {caption: "Clipped Frame", action:()=>{prefix="clippedframe="; return;}},
-            {caption: "Link", action:()=>{prefix="";return}},
-          ];
-          break;
-        default:
-          buttons = [
-            {caption: "Link", action:()=>{prefix="";return}},
-            {caption: "Frame", action:()=>{prefix="frame="; return;}},
-            {caption: "Clipped Frame", action:()=>{prefix="clippedframe="; return;}},
-          ]
-      }
-  
-    } else {
-      switch(prefix) {
-        case "area=":
-          buttons = [
-            {caption: "Area", action:()=>{prefix="area="; return;}},
-            {caption: "Link", action:()=>{prefix="";return}},
-            {caption: "Group", action:()=>{prefix="group="; return;}},
-          ];
-          break;  
-        case "group=":
-          buttons = [
-            {caption: "Group", action:()=>{prefix="group="; return;}},
-            {caption: "Link", action:()=>{prefix="";return}},
-            {caption: "Area", action:()=>{prefix="area="; return;}},
-          ];
-          break;
-        default:
-          buttons = [
-            {caption: "Link", action:()=>{prefix="";return}},
-            {caption: "Area", action:()=>{prefix="area="; return;}},
-            {caption: "Group", action:()=>{prefix="group="; return;}},
-          ]
-      }
+    switch(prefix) {
+      case "area=":
+        buttons = [
+          button.area,
+          button.link,
+          ...hasGroup ? [button.group] : [],
+          ...hasFrame ? [button.frame, button.clippedframe] : [],
+        ];
+        break;  
+      case "group=":
+        buttons = [
+          ...hasGroup ? [button.group] : [],
+          button.link,
+          button.area,
+          ...hasFrame ? [button.frame, button.clippedframe] : [],
+        ];
+        break;
+      case "frame=":
+        buttons = [
+          ...hasFrame ? [button.frame, button.clippedframe] : [],
+          ...hasGroup ? [button.group] : [],
+          button.link,
+          button.area,
+        ];
+        break;
+      case "clippedframe=":
+        buttons = [
+          ...hasFrame ? [button.clippedframe, button.frame] : [],
+          ...hasGroup ? [button.group] : [],
+          button.link,
+          button.area,
+        ];
+        break;
+      default:
+        buttons = [
+          {caption: "Link", action:()=>{prefix="";return}},
+          {caption: "Area", action:()=>{prefix="area="; return;}},
+          {caption: "Group", action:()=>{prefix="group="; return;}},
+          ...hasFrame ? [button.frame, button.clippedframe] : [],
+        ]
     }
 
     const alias = await ScriptEngine.inputPrompt(
