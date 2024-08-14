@@ -3766,8 +3766,14 @@ export default class ExcalidrawView extends TextFileView {
             ea.selectElementsInView([await insertEmbeddableToView (ea, this.currentPosition, file, link)]);
             ea.destroy();
           } else {
-            const modal = new UniversalInsertFileModal(this.plugin, this);
-            modal.open(file, this.currentPosition);
+            if(link.match(/^[^#]*#page=\d*(&\w*=[^&]+){0,}&rect=\d*,\d*,\d*,\d*/g)) {
+              const ea = getEA(this) as ExcalidrawAutomate;
+              await ea.addImage(this.currentPosition.x, this.currentPosition.y,link);
+              ea.addElementsToView(false,false).then(()=>ea.destroy());
+            } else {
+              const modal = new UniversalInsertFileModal(this.plugin, this);
+              modal.open(file, this.currentPosition);
+            }
           }
           this.setDirty(9);
       })) {

@@ -922,3 +922,20 @@ export async function getFontMetrics(fontUrl: string, name: string): Promise<Fon
     return null;
   }
 }
+
+// Thanks https://stackoverflow.com/a/54555834
+export function cropCanvas(
+  srcCanvas: HTMLCanvasElement,
+  crop: { left: number, top: number, width: number, height: number },
+  output: { width: number, height: number } = { width: crop.width, height: crop.height }) 
+{
+  const dstCanvas = createEl('canvas');
+  dstCanvas.width = output.width;
+  dstCanvas.height = output.height;
+  dstCanvas.getContext('2d')!.drawImage(
+      srcCanvas,
+      crop.left, crop.top, crop.width, crop.height,
+      0, 0, output.width, output.height
+  );
+  return dstCanvas;
+}

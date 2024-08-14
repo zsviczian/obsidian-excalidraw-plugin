@@ -78,6 +78,7 @@ export interface ExcalidrawSettings {
   matchThemeTrigger: boolean;
   defaultMode: string;
   defaultPenMode: "never" | "mobile" | "always";
+  penModeDoubleTapEraser: boolean;
   penModeCrosshairVisible: boolean;
   renderImageInMarkdownReadingMode: boolean,
   renderImageInHoverPreviewForMDNotes: boolean,
@@ -244,6 +245,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   matchThemeTrigger: false,
   defaultMode: "normal",
   defaultPenMode: "never",
+  penModeDoubleTapEraser: true,
   penModeCrosshairVisible: true,
   renderImageInMarkdownReadingMode: false,
   renderImageInHoverPreviewForMDNotes: false,
@@ -1025,6 +1027,17 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           this.applySettingsUpdate();
         }),
     );
+
+    new Setting(detailsEl)
+      .setName(t("DISABLE_DOUBLE_TAP_ERASER_NAME"))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.penModeDoubleTapEraser)
+          .onChange(async (value) => {
+            this.plugin.settings.penModeDoubleTapEraser = value;
+            this.applySettingsUpdate();
+          }),
+      );
 
     new Setting(detailsEl)
       .setName(t("SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_NAME"))

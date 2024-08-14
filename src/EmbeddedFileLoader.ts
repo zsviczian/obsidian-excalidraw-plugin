@@ -35,6 +35,7 @@ import {
   svgToBase64,
   isMaskFile,
   getEmbeddedFilenameParts,
+  cropCanvas,
 } from "./utils/Utils";
 import { ValueOf } from "./types/types";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
@@ -746,6 +747,8 @@ export class EmbeddedFilesLoader {
       }
       const pageNum = isNaN(linkParts.page) ? 1 : (linkParts.page??1);
       const scale = this.plugin.settings.pdfScale;
+      const cropRect = linkParts.ref.split("rect=")[1]?.split(",").map(x=>parseInt(x));
+      const validRect = cropRect && cropRect.length === 4 && cropRect.every(x=>!isNaN(x));
 
       // Render the page
       const renderPage = async (num:number) => {
@@ -766,6 +769,23 @@ export class EmbeddedFilesLoader {
         };
 
         await page.render(renderCtx).promise;
+        if(validRect) {
+          const [left, bottom, _, top] = page.view;
+        
+          const pageHeight = top - bottom;
+          width = (cropRect[2] - cropRect[0]) * scale;
+          height = (cropRect[3] - cropRect[1]) * scale;
+
+          const crop = validRect ? {
+            left: (cropRect[0] - left) * scale,
+            top: (bottom + pageHeight - cropRect[3]) * scale,
+            width,
+            height,
+          } : undefined;
+          if(crop) {
+            return cropCanvas(canvas, crop);
+          }
+        }
         return canvas;
       };
 
