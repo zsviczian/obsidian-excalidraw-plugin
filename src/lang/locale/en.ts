@@ -331,18 +331,18 @@ FILENAME_HEAD: "Filename",
     "...even if the file has the <b>excalidraw-open-md: true</b> frontmatter key.<br>" +
     "When this setting is off and the file is set to open in md by default, the hover preview will show the " +
     "markdown side of the document.",
-  SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME: "Render image when in markdown reading mode",
+  SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME: "Render as image when in markdown reading mode of an Excalidraw file",
   SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC:
-    "Must close the active excalidraw/markdown file and reopen it for this change to take effect.<br>When you are in markdown reading mode (aka. reading the back side of the drawing), should the Excalidraw drawing be rendered as an image? " +
-    "This setting will not affect the display of the drawing when you are in Excalidraw mode, when you embed the drawing into a markdown document or when rendering hover preview.<br><ul>" +
-    "<li>See other related setting for <b>PDF Export</b> under 'Embedding and Exporting' further below.</li>" +
-    "<li>Be sure to check out the <b>Fade Out setting</b> in the 'Miscellaneous fetures' section.</li></ul>",
-  SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME: "Render Excalidraw as an image when EXPORTING TO PDF",
+    "When you are in markdown reading mode (aka. reading the back side of the drawing) should the Excalidraw drawing be rendered as an image? " +
+    "This setting will not affect the display of the drawing when you are in Excalidraw mode or when you embed the drawing into a markdown document or when rendering hover preview.<br><ul>" +
+    "<li>See other related setting for <b>PDF Export</b> under 'Embedding and Exporting' further below.</li></ul><br>" +
+    "You must close the active excalidraw/markdown file and reopen it for this change to take effect.",
+  SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME: "Render the file as an image when exporting an Excalidraw file to PDF",
   SHOW_DRAWING_OR_MD_IN_EXPORTPDF_DESC:
-    "This setting controls the behavior of Excalidraw when exporting a file to PDF in markdown mode using Obsidian's Export to PDF... feature.<br>" +
-    "When <b>enabled</b> the PDF will show the Excalidraw drawing only; when <b>disabled</b> the PDF will show the markdown side of the document.<br><ul>" +
-    "<li>See other related setting for <b>Markdown Reading Mode</b> under 'Appearnace and Behavior' further above.</li>" +
-    "<li>Be sure to check out the <b>Fade Out setting</b> in the 'Miscellaneous fetures' section.</li></ul><br>" +
+    "This setting controls the behavior of Excalidraw when exporting an Excalidraw file to PDF in markdown view mode using Obsidian's <b>Export to PDF</b> feature.<br>" +
+    "<ul><li>When <b>enabled</b> the PDF will show the Excalidraw drawing only;</li>" +
+    "<li>When <b>disabled</b> the PDF will show the markdown side of the document.</li></ul>" +
+    "See the other related setting for <b>Markdown Reading Mode</b> under 'Appearnace and Behavior' further above.<br>" +
     "⚠️ Note, you must close the active excalidraw/markdown file and reopen for this change to take effect. ⚠️",
   THEME_HEAD: "Theme and styling",
   ZOOM_HEAD: "Zoom",

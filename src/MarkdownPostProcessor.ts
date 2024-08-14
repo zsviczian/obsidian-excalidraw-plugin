@@ -623,6 +623,9 @@ const isTextOnlyEmbed = (internalEmbedEl: Element):boolean => {
 const tmpObsidianWYSIWYG = async (
   el: HTMLElement,
   ctx: MarkdownPostProcessorContext,
+  isPrinting: boolean,
+  isMarkdownReadingMode: boolean,
+  isHoverPopover: boolean,
 ) => {
   (process.env.NODE_ENV === 'development') && DEBUGGING_MPP && debug(tmpObsidianWYSIWYG, `MarkdownPostProcessor.ts > tmpObsidianWYSIWYG`);
   const file = app.vault.getAbstractFileByPath(ctx.sourcePath);
@@ -642,11 +645,11 @@ const tmpObsidianWYSIWYG = async (
   //@ts-ignore
   const containerEl = ctx.containerEl;
 
-  if(!plugin.settings.renderImageInMarkdownReadingMode && containerEl.parentElement?.parentElement?.hasClass("markdown-reading-view")) {
+  if(!plugin.settings.renderImageInMarkdownReadingMode && isMarkdownReadingMode) { // containerEl.parentElement?.parentElement?.hasClass("markdown-reading-view")) {
     return;
   }
 
-  if(!plugin.settings.renderImageInMarkdownToPDF && containerEl.parentElement?.hasClass("print")) {
+  if(!plugin.settings.renderImageInMarkdownToPDF && isPrinting) { //containerEl.parentElement?.hasClass("print")) {
     return;
   }
 
@@ -674,14 +677,14 @@ const tmpObsidianWYSIWYG = async (
 
   
   if(!plugin.settings.renderImageInHoverPreviewForMDNotes) {
-    const isHoverPopover = internalEmbedDiv.parentElement?.hasClass("hover-popover");
+    //const isHoverPopover = internalEmbedDiv.parentElement?.hasClass("hover-popover");
     const shouldOpenMD = Boolean(ctx.frontmatter?.["excalidraw-open-md"]);
     if(isHoverPopover && shouldOpenMD) {
       return;
     }
   }
 
-  const isPrinting = Boolean(internalEmbedDiv.hasClass("print"));
+  //const isPrinting = Boolean(internalEmbedDiv.hasClass("print"));
 
   const attr: imgElementAttributes = {
     fname: ctx.sourcePath,
@@ -693,7 +696,7 @@ const tmpObsidianWYSIWYG = async (
   attr.file = file;
 
   const markdownEmbed = internalEmbedDiv.hasClass("markdown-embed");
-  const markdownReadingView = internalEmbedDiv.hasClass("markdown-reading-view") || isPrinting;
+  const markdownReadingView = isPrinting || isMarkdownReadingMode; //internalEmbedDiv.hasClass("markdown-reading-view")
   if (!internalEmbedDiv.hasClass("internal-embed") && (markdownEmbed || markdownReadingView)) {
     if(isPrinting) {
       internalEmbedDiv = containerEl;
@@ -790,16 +793,22 @@ export const markdownPostProcessor = async (
   el: HTMLElement,
   ctx: MarkdownPostProcessorContext,
 ) => {
+  const isPrinting = Boolean(document.body.querySelectorAll("body > .print").length>0);
+  if(isPrinting && el.hasClass("mod-frontmatter")) {
+    return;
+  }
+  
+  //@ts-ignore
+  const containerEl = ctx.containerEl;
+
   (process.env.NODE_ENV === 'development') && DEBUGGING_MPP && debug(markdownPostProcessor, `MarkdownPostProcessor.ts > markdownPostProcessor`, ctx, el);
+
   //check to see if we are rendering in editing mode or live preview
   //if yes, then there should be no .internal-embed containers  
-  const isPrinting = Boolean(document.body.querySelectorAll("body > .print").length>0);
-  const isPreview = isPrinting ||
-    //@ts-ignore
-    Boolean(ctx.containerEl && getParentOfClass(ctx.containerEl, "markdown-reading-view")) ||
-    //@ts-ignore
-    (Boolean(ctx.containerEl && getParentOfClass(ctx.containerEl, "hover-popover")) &&
-     Boolean(ctx?.frontmatter?.["excalidraw-open-md"])) ;
+  const isMarkdownReadingMode = Boolean(containerEl && getParentOfClass(containerEl, "markdown-reading-view"));
+  const isHoverPopover = Boolean(containerEl && getParentOfClass(containerEl, "hover-popover"));
+  const isPreview = isPrinting || isMarkdownReadingMode ||
+    (isHoverPopover && Boolean(ctx?.frontmatter?.["excalidraw-open-md"]) && !plugin.settings.renderImageInHoverPreviewForMDNotes);
   const embeddedItems = el.querySelectorAll(".internal-embed");
   if (!isPreview && embeddedItems.length === 0) {
     if(el.hasClass("mod-frontmatter")) {
@@ -812,7 +821,7 @@ export const markdownPostProcessor = async (
         return;
       }
     }
-    await tmpObsidianWYSIWYG(el, ctx);
+    await tmpObsidianWYSIWYG(el, ctx, isPrinting, isMarkdownReadingMode, isHoverPopover);
     return;
   }
 
@@ -826,9 +835,6 @@ export const markdownPostProcessor = async (
     return;
   }
 
-  if(isPrinting && el.hasClass("mod-frontmatter")) {
-    return;
-  }
   await processReadingMode(embeddedItems, ctx);
 };
 
