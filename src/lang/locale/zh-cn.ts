@@ -322,24 +322,29 @@ FILENAME_HEAD: "文件名",
   DEFAULT_PEN_MODE_NAME: "触控笔模式（Pen mode）",
   DEFAULT_PEN_MODE_DESC:
     "打开绘图时，是否自动开启触控笔模式？",
+  DISABLE_DOUBLE_TAP_ERASER_NAME: "启用手写模式下的双击橡皮擦功能",
   SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_NAME: "在触控笔模式下显示十字准星（+）",
   SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_DESC:
     "在触控笔模式下使用涂鸦功能会显示十字准星 <b><u>打开:</u></b> 显示 <b><u>关闭:</u></b> 隐藏<br>"+
     "效果取决于设备。十字准星通常在绘图板、MS Surface 上可见。但在 iOS 上不可见。",
-  SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_NAME: "在 Markdown 文件的悬停预览中渲染为图片",
+  SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_NAME: "在鼠标悬停预览时将 Excalidraw 文件渲染文图片",
   SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_DESC:
-    "这个设置影响 frontmatter 中具有 <b>excalidraw-open-md: true</b> 的文件。",
-  SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME: "在 Markdown 文件阅读模式下渲染为图片",
+    "...即使文件具有 `<b>excalidraw-open-md: true</b>` frontmatter 属性。<br>" +
+    "当此设置关闭且文件默认设置为以 md 格式打开时，悬停预览将显示文档的 Markdown 部分（背景笔记）。" +
+    "",
+  SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME: "Excalidraw 文件在 Markdown 阅读模式下渲染为图片",
   SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC:
-    "必须关闭活动的 Excalidraw/Markdown 文件，然后重新打开才能使此更改生效。<br>当您处于 Markdown 阅读模式（即阅读 Excalidraw 的背景笔记）时 Excalidraw 绘图是否应该呈现为图像? " +
-    "此设置不会影响您处于 Excalidraw 模式时的绘图显示，也不会影响将绘图嵌入到 Markdown 文档中或在渲染悬停预览时的显示。<br><ul>" +
-    "<li>看下面的“嵌入和导出”中的 <b>PDF 导出</b>的其他相关设置。</li>" +
-    "<li>请务必查看“其他功能”部分中的<b>淡化设置</b>。</li></ul>",
-  SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME: "在 Markdown 模式下导出为 PDF 时渲染为图片",
+    "当您处于 Markdown 阅读模式（即查看绘图的背景笔记）时，Excalidraw 绘图是否应该渲染为图像？" +
+    "此设置不会影响您在 Excalidraw 模式下的绘图显示，或者在将绘图嵌入 Markdown 文档时，或在渲染悬停预览时。<br><ul>" +
+    "<li>请参阅下面‘嵌入和导出’部分的 <b>PDF 导出</b> 相关设置。</li></ul><br>" +
+    "您必须关闭当前的 Excalidraw/Markdown 文件并重新打开，以使此更改生效。",
+  SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME: "在将 Excalidraw 文件导出为 PDF 时将文件渲染为图像",
   SHOW_DRAWING_OR_MD_IN_EXPORTPDF_DESC:
-    "必须关闭活动的 Excalidraw/Markdown 文件，然后重新打开才能使此更改生效。<br>当您处于 Markdown 阅读模式（即阅读 Excalidraw 的背景笔记）时将笔记导出为 PDF，Excalidraw 绘图是否应该呈现为图像? <br><ul>" +
-    "<li>查看上面“外观和行为”下的 <b>Markdown 阅读模式</b>的其他相关设置。</li>" +
-    "<li>请务必查看“其他功能”部分中的<b>淡化设置</b>。</li></ul>",
+    "处于 Markdown 视图模式时，此设置控制 Excalidraw 在使用 Obsidian 的 <b>导出为 PDF</b> 功能时，将 Excalidraw 文件导出为 PDF 的行为。<br>" +
+    "<ul><li>当 <b>启用</b> 时，PDF 将仅显示 Excalidraw 绘图；</li>" +
+    "<li>当 <b>禁用</b> 时，PDF 将显示文档的 Markdown 部分（背景笔记）。</li></ul>" +
+    "请参阅上面‘外观和行为’部分的 <b>Markdown 阅读模式</b> 相关设置。" +
+    "⚠️ 注意，您必须关闭当前的 Excalidraw/Markdown 文件并重新打开，以使此更改生效。⚠️",
   THEME_HEAD: "主题和样式",
   ZOOM_HEAD: "缩放",
   DEFAULT_PINCHZOOM_NAME: "允许在触控笔模式下进行双指缩放",
@@ -606,7 +611,7 @@ FILENAME_HEAD: "文件名",
   EXPORT_BOTH_DARK_AND_LIGHT_DESC:  "若开启，Excalidraw 将导出两个文件：filename.dark.png（或 filename.dark.svg）和 filename.light.png（或 filename.light.svg）。<br>"+
     "该选项可作用于“自动导出 SVG 副本”、“自动导出 PNG 副本”，以及其他的手动的导出命令。",
   COMPATIBILITY_HEAD: "兼容性设置",
-  COMPATIBILITY_DESC: "如果没有特殊原因（例如您想同时在 VSCode / Logseq 和 Obsidian 中使用 Excalidraw），建议您使用 markdown 格式的绘图文件，而不是旧的 excalidraw.com 格式，因为本插件的很多功能在旧格式中无法使用。",
+  COMPATIBILITY_DESC: "如果没有特殊原因（例如您想同时在 VSCode / Logseq 和 Obsidian 中使用 Excalidraw），建议您使用 Markdown 格式的绘图文件，而不是旧的 excalidraw.com 格式，因为本插件的很多功能在旧格式中无法使用。",
   DUMMY_TEXT_ELEMENT_LINT_SUPPORT_NAME: "代码格式化（Linting）兼容性",
   DUMMY_TEXT_ELEMENT_LINT_SUPPORT_DESC: "Excalidraw 对 <code># Excalidraw Data</code> 下的文件结构非常敏感。文档的自动代码格式化（linting）可能会在 Excalidraw 数据中造成错误。" +
     "虽然我已经努力使数据加载对自动代码格式化（linting）变更具有一定的抗性，但这种解决方案并非万无一失。<br>"+
@@ -835,4 +840,16 @@ FILENAME_HEAD: "文件名",
   FRAME_SETTIGNS_NAME: "显示框架名称",
   FRAME_SETTINGS_OUTLINE: "显示框架外边框",
   FRAME_SETTINGS_CLIP: "启用框架裁剪",
+
+  //InsertPDFModal.ts
+  IPM_PAGES_TO_IMPORT_NAME: "要导入的页面",
+  IPM_SELECT_PAGES_TO_IMPORT: "请选择页面以进行导入",
+  IPM_ADD_BORDER_BOX_NAME: "添加带边框的盒子容器",
+  IPM_ADD_FRAME_NAME: "添加页面到框架",
+  IPM_ADD_FRAME_DESC: "为了更方便的操作，我建议将页面锁定在框架内。" +
+    "如果，你将锁定页面在框架内，则唯一的解锁方法是右键点击框架，选择‘从框架中移除元素’，然后解锁页面。",
+  IPM_GROUP_PAGES_NAME: "建立页面组",
+  IPM_GROUP_PAGES_DESC: "这将把所有页面建立为一个单独的组。如果您在导入后锁定页面，建议使用此方法，因为这样可以更方便地解锁整个组，而不是逐个解锁。",
+  IPM_SELECT_PDF: "请选择一个 PDF 文件",
+
 };
