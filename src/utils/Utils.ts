@@ -1,18 +1,12 @@
 import {
   App,
   Notice,
-  request,
-  requestUrl,
+  request,requestUrl,
   TFile,
   TFolder,
 } from "obsidian";
 import { Random } from "roughjs/bin/math";
 import { BinaryFileData, DataURL} from "@zsviczian/excalidraw/types/excalidraw/types";
-import {
-  ASSISTANT_FONT,
-  CASCADIA_FONT,
-  VIRGIL_FONT,
-} from "src/constants/constFonts";
 import {
   exportToSvg,
   exportToBlob,
@@ -33,7 +27,7 @@ import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { cleanBlockRef, cleanSectionHeading, getFileCSSClasses } from "./ObsidianUtils";
 import { updateElementLinksToObsidianLinks } from "src/ExcalidrawAutomate";
 import { CropImage } from "./CropImage";
-
+import opentype from 'opentype.js';
 
 declare const PLUGIN_VERSION:string;
 declare var LZString: any;
@@ -195,7 +189,35 @@ export async function getFontDataURL (
   const f = app.metadataCache.getFirstLinkpathDest(fontFileName, sourcePath);
   if (f) {
     const ab = await app.vault.readBinary(f);
-    const mimeType = f.extension.startsWith("woff")
+    let mimeType = "";
+    let format = "";
+    
+    switch (f.extension) {
+      case "woff":
+        mimeType = "application/font-woff";
+        format = "woff";
+        break;
+      case "woff2":
+        mimeType = "font/woff2";
+        format = "woff2";
+        break;
+      case "ttf":
+        mimeType = "font/ttf";
+        format = "truetype";
+        break;
+      case "otf":
+        mimeType = "font/otf";
+        format = "opentype";
+        break;
+      default:
+        mimeType = "application/octet-stream"; // Fallback if file type is unexpected
+    }
+    fontName = name ?? f.basename;
+    dataURL = await getDataURL(ab, mimeType);
+    const split = dataURL.split(";base64,", 2);
+    dataURL = `${split[0]};charset=utf-8;base64,${split[1]}`;
+    fontDef = ` @font-face {font-family: "${fontName}";src: url("${dataURL}") format("${format}")}`;
+/*    const mimeType = f.extension.startsWith("woff")
       ? "application/font-woff"
       : "font/truetype";
     fontName = name ?? f.basename;
@@ -203,7 +225,7 @@ export async function getFontDataURL (
     fontDef = ` @font-face {font-family: "${fontName}";src: url("${dataURL}")}`;
      //format("${f.extension === "ttf" ? "truetype" : f.extension}");}`;
     const split = fontDef.split(";base64,", 2);
-    fontDef = `${split[0]};charset=utf-8;base64,${split[1]}`;
+    fontDef = `${split[0]};charset=utf-8;base64,${split[1]}`;*/
   }
   return { fontDef, fontName, dataURL };
 };
@@ -273,16 +295,20 @@ export async function getSVG (
       svg = await exportToSvg({
         elements: elements.filter((el:ExcalidrawElement)=>el.isDeleted !== true),
         appState: {
+          ...scene.appState,
           exportBackground: exportSettings.withBackground,
           exportWithDarkMode: exportSettings.withTheme
             ? scene.appState?.theme !== "light"
             : false,
-          ...scene.appState,
+          ...exportSettings.frameRendering
+          ? {frameRendering: exportSettings.frameRendering}
+          : {},
         },
         files: scene.files,
-        exportPadding: padding,
+        exportPadding: exportSettings.frameRendering ? 0 : padding,
         exportingFrame: null,
         renderEmbeddables: true,
+        skipInliningFonts: exportSettings.skipInliningFonts,
       });
     }
     if(svg) {
@@ -327,14 +353,17 @@ export async function getPNG (
     return await exportToBlob({
       elements: scene.elements.filter((el:ExcalidrawElement)=>el.isDeleted !== true),
       appState: {
+        ...scene.appState,
         exportBackground: exportSettings.withBackground,
         exportWithDarkMode: exportSettings.withTheme
           ? scene.appState?.theme !== "light"
           : false,
-        ...scene.appState,
+        ...exportSettings.frameRendering
+        ? {frameRendering: exportSettings.frameRendering}
+        : {},
       },
       files: filterFiles(scene.files),
-      exportPadding: padding,
+      exportPadding: exportSettings.frameRendering ? 0 : padding,
       mimeType: "image/png",
       getDimensions: (width: number, height: number) => ({
         width: width * scale,
@@ -343,6 +372,7 @@ export async function getPNG (
       }),
     });
   } catch (error) {
+    new Notice("Error exporting PNG - PNG too large, try a smaller resolution");
     errorlog({ where: "Utils.getPNG", error });
     return null;
   }
@@ -369,34 +399,6 @@ export async function getQuickImagePreview (
   }
 };
 
-export function embedFontsInSVG(
-  svg: SVGSVGElement,
-  plugin: ExcalidrawPlugin,
-  localOnly: boolean = false,
-): SVGSVGElement {
-  //replace font references with base64 fonts)
-  const includesVirgil = !localOnly &&
-    svg.querySelector("text[font-family^='Virgil']") !== null;
-  const includesCascadia = !localOnly &&
-    svg.querySelector("text[font-family^='Cascadia']") !== null;
-  const includesAssistant = !localOnly &&
-    svg.querySelector("text[font-family^='Assistant']") !== null;
-  const includesLocalFont =
-    svg.querySelector("text[font-family^='LocalFont']") !== null;
-  const defs = svg.querySelector("defs");
-  if (defs && (includesCascadia || includesVirgil || includesLocalFont || includesAssistant)) {
-    let style = defs.querySelector("style");
-    if (!style) {
-      style = document.createElement("style");
-      defs.appendChild(style);
-    }
-    style.innerHTML = `${includesVirgil ? VIRGIL_FONT : ""}${
-      includesCascadia ? CASCADIA_FONT : ""}${
-      includesAssistant ? ASSISTANT_FONT : ""
-    }${includesLocalFont ? plugin.fourthFontDef : ""}`;
-  }
-  return svg;
-};
 
 export async function getImageSize (
   src: string,
@@ -712,7 +714,7 @@ export function isVersionNewerThanOther (version: string, otherVersion: string):
 
 export function getEmbeddedFilenameParts (fname:string): FILENAMEPARTS {
   //                        0 1        23    4                               5         6  7                             8          9
-  const parts = fname?.match(/([^#\^]*)((#\^)(group=|area=|frame=|taskbone)?([^\|]*)|(#)(group=|area=|frame=|taskbone)?([^\^\|]*))(.*)/);
+  const parts = fname?.match(/([^#\^]*)((#\^)(group=|area=|frame=|clippedframe=|taskbone)?([^\|]*)|(#)(group=|area=|frame=|clippedframe=|taskbone)?([^\^\|]*))(.*)/);
   if(!parts) {
     return {
       filepath: fname,
@@ -721,6 +723,7 @@ export function getEmbeddedFilenameParts (fname:string): FILENAMEPARTS {
       hasTaskbone: false,
       hasArearef: false,
       hasFrameref: false,
+      hasClippedFrameref: false,
       blockref: "",
       hasSectionref: false,
       sectionref: "",
@@ -735,6 +738,7 @@ export function getEmbeddedFilenameParts (fname:string): FILENAMEPARTS {
     hasTaskbone: (parts[4]==="taskbone") || (parts[7]==="taskbone"),
     hasArearef: (parts[4]==="area=") || (parts[7]==="area="),
     hasFrameref: (parts[4]==="frame=") || (parts[7]==="frame="),
+    hasClippedFrameref: (parts[4]==="clippedframe=") || (parts[7]==="clippedframe="),
     blockref: parts[5],
     hasSectionref: Boolean(parts[6]),
     sectionref: parts[8],
@@ -887,4 +891,51 @@ export function addIframe (containerEl: HTMLElement, link:string, startAt?: numb
       sandbox: "allow-forms allow-presentation allow-same-origin allow-scripts allow-modals",
     },
   });
+}
+
+export interface FontMetrics {
+  unitsPerEm: number;
+  ascender: number;
+  descender: number;
+  lineHeight: number;
+  fontName: string;
+}
+
+export async function getFontMetrics(fontUrl: string, name: string): Promise<FontMetrics | null> {
+  try {
+    const font = await opentype.load(fontUrl);
+    const unitsPerEm = font.unitsPerEm;
+    const ascender = font.ascender;
+    const descender = font.descender;
+    const lineHeight = (ascender - descender) / unitsPerEm;
+    const fontName = font.names.fontFamily.en ?? name;
+
+    return {
+      unitsPerEm,
+      ascender,
+      descender,
+      lineHeight,
+      fontName,
+    };
+  } catch (error) {
+    console.error('Error loading font:', error);
+    return null;
+  }
+}
+
+// Thanks https://stackoverflow.com/a/54555834
+export function cropCanvas(
+  srcCanvas: HTMLCanvasElement,
+  crop: { left: number, top: number, width: number, height: number },
+  output: { width: number, height: number } = { width: crop.width, height: crop.height }) 
+{
+  const dstCanvas = createEl('canvas');
+  dstCanvas.width = output.width;
+  dstCanvas.height = output.height;
+  dstCanvas.getContext('2d')!.drawImage(
+      srcCanvas,
+      crop.left, crop.top, crop.width, crop.height,
+      0, 0, output.width, output.height
+  );
+  return dstCanvas;
 }

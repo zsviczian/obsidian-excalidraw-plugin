@@ -13,6 +13,7 @@ import {
   ExcalidrawFrameElement,
   ExcalidrawTextContainer,
 } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { MimeType } from "./EmbeddedFileLoader";
 import { Editor, normalizePath, Notice, OpenViewState, RequestUrlResponse, TFile, TFolder, WorkspaceLeaf } from "obsidian";
 import * as obsidian_module from "obsidian";
 import ExcalidrawView, { ExportSettings, TextMode, getTextMode } from "src/ExcalidrawView";
@@ -27,7 +28,7 @@ import {
   GITHUB_RELEASES,
   determineFocusDistance,
   getCommonBoundingBox,
-  getDefaultLineHeight,
+  getLineHeight,
   getMaximumGroups,
   intersectElementWithLine,
   measureText,
@@ -37,11 +38,11 @@ import {
   THEME_FILTER,
   mermaidToExcalidraw,
   refreshTextDimensions,
+  getFontFamilyString,
 } from "src/constants/constants";
 import { blobToBase64, checkAndCreateFolder, getDrawingFilename, getExcalidrawEmbeddedFilesFiletree, getListOfTemplateFiles, getNewUniqueFilepath, hasExcalidrawEmbeddedImagesTreeChanged, } from "src/utils/FileUtils";
 import {
   //debug,
-  embedFontsInSVG,
   errorlog,
   getEmbeddedFilenameParts,
   getImageSize,
@@ -61,7 +62,7 @@ import { tex2dataURL } from "src/LaTeX";
 import { GenericInputPrompt, NewFileActions } from "src/dialogs/Prompt";
 import { t } from "src/lang/helpers";
 import { ScriptEngine } from "src/Scripts";
-import { ConnectionPoint, DeviceType  } from "src/types";
+import { ConnectionPoint, DeviceType  } from "src/types/types";
 import CM, { ColorMaster, extendPlugins } from "colormaster";
 import HarmonyPlugin from "colormaster/plugins/harmony";
 import MixPlugin from "colormaster/plugins/mix"
@@ -92,6 +93,7 @@ import {
 import { EXCALIDRAW_AUTOMATE_INFO, EXCALIDRAW_SCRIPTENGINE_INFO } from "./dialogs/SuggesterInfo";
 import { addBackOfTheNoteCard, getFrameBasedOnFrameNameOrId } from "./utils/ExcalidrawViewUtils";
 import { log } from "./utils/DebugHelper";
+import { ExcalidrawLib } from "./ExcalidrawLib";
 
 extendPlugins([
   HarmonyPlugin,
@@ -111,6 +113,7 @@ extendPlugins([
 
 declare const PLUGIN_VERSION:string;
 declare var LZString: any;
+declare const excalidrawLib: typeof ExcalidrawLib;
 
 const GAP = 4;
 
@@ -386,7 +389,7 @@ export class ExcalidrawAutomate {
     opacity: number;
     strokeSharpness?: StrokeRoundness; //defaults to undefined, use strokeRoundess and roundess instead. Only kept for legacy script compatibility type StrokeRoundness = "round" | "sharp"
     roundness: null | { type: RoundnessType; value?: number };
-    fontFamily: number; //1: Virgil, 2:Helvetica, 3:Cascadia, 4:LocalFont
+    fontFamily: number; //1: Virgil, 2:Helvetica, 3:Cascadia, 4:Local Font
     fontSize: number;
     textAlign: string; //"left"|"right"|"center"
     verticalAlign: string; //"top"|"bottom"|"middle" :for future use, has no effect currently
@@ -1025,6 +1028,22 @@ export class ExcalidrawAutomate {
   };
 
   /**
+   * Add elements to frame
+   * @param frameId 
+   * @param elementIDs to add
+   * @returns void
+   */
+  addElementsToFrame(frameId: string, elementIDs: string[]):void {
+    if(!this.getElement(frameId)) return;
+    elementIDs.forEach(elID => {
+      const el = this.getElement(elID);
+      if(el) {
+        el.frameId = frameId;
+      }
+    });
+  }
+
+  /**
    * 
    * @param topX 
    * @param topY 
@@ -1191,7 +1210,7 @@ export class ExcalidrawAutomate {
       element.text,
       element.fontSize,
       element.fontFamily,
-      getDefaultLineHeight(element.fontFamily)
+      getLineHeight(element.fontFamily)
     );
     element.width = w;
     element.height = h;
@@ -1236,7 +1255,7 @@ export class ExcalidrawAutomate {
       text,
       this.style.fontSize,
       this.style.fontFamily,
-      getDefaultLineHeight(this.style.fontFamily)
+      getLineHeight(this.style.fontFamily)
     );
     const width = formatting?.width ? formatting.width : w;
     const height = formatting?.height ? formatting.height : h;
@@ -1294,7 +1313,7 @@ export class ExcalidrawAutomate {
       containerId: isContainerBound ? boxId : null,
       originalText: isContainerBound ? originalText : text,
       rawText: isContainerBound ? originalText : text,
-      lineHeight: getDefaultLineHeight(this.style.fontFamily),
+      lineHeight: getLineHeight(this.style.fontFamily),
       autoResize: formatting?.box ? true : (formatting?.autoResize ?? true),
     };
     if (boxId && formatting?.box === "blob") {
@@ -1567,6 +1586,26 @@ export class ExcalidrawAutomate {
     this.elementsDict[id].fileId = image.fileId;
     this.elementsDict[id].scale = [1, 1];
     return id;
+  };
+
+  /**
+   * returns the base64 dataURL of the LaTeX equation rendered as an SVG 
+   * @param tex The LaTeX equation as string
+   * @param scale of the image, default value is 4
+   * @returns 
+   */
+  //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1930
+  async tex2dataURL(
+    tex: string,
+    scale: number = 4 // Default scale value, adjust as needed
+  ): Promise<{
+    mimeType: MimeType;
+    fileId: FileId;
+    dataURL: DataURL;
+    created: number;
+    size: { height: number; width: number };
+  }> {
+    return await tex2dataURL(tex,scale);
   };
 
   /**
@@ -1894,15 +1933,16 @@ export class ExcalidrawAutomate {
 
   /**
    * 
+   * @param includeFrameChildren 
    * @returns 
    */
-  getViewSelectedElements(): any[] {
+  getViewSelectedElements(includeFrameChildren:boolean = true): any[] {
     //@ts-ignore
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "getViewSelectedElements()");
       return [];
     }
-    return this.targetView.getViewSelectedElements();
+    return this.targetView.getViewSelectedElements(includeFrameChildren);
   };
 
   /**
@@ -1995,7 +2035,7 @@ export class ExcalidrawAutomate {
         appState: {
           viewModeEnabled: !isFullscreen,
         },
-        storeAction: "none",
+        storeAction: "update",
       });
       this.targetView.toolsPanelRef?.current?.setExcalidrawViewMode(!isFullscreen);
     }
@@ -2014,7 +2054,7 @@ export class ExcalidrawAutomate {
       return;
     }
     const view = this.targetView as ExcalidrawView;
-    view.updateScene({appState:{viewModeEnabled: enabled}});
+    view.updateScene({appState:{viewModeEnabled: enabled}, storeAction: "update"});
     view.toolsPanelRef?.current?.setExcalidrawViewMode(enabled);
   }
 
@@ -2040,7 +2080,7 @@ export class ExcalidrawAutomate {
       return;
     }
     if (!Boolean(scene.storeAction)) {
-      scene.storeAction = scene.commitToHistory ? "capture" : "none";  
+      scene.storeAction = scene.commitToHistory ? "capture" : "update";  
     }
 
     this.targetView.updateScene({
@@ -2394,35 +2434,61 @@ export class ExcalidrawAutomate {
    * @param elements - typically all the non-deleted elements in the scene 
    * @returns 
    */
-  getElementsInTheSameGroupWithElement(element: ExcalidrawElement, elements: ExcalidrawElement[]): ExcalidrawElement[] {
+  getElementsInTheSameGroupWithElement(
+    element: ExcalidrawElement,
+    elements: ExcalidrawElement[],
+    includeFrameElements: boolean = false,
+  ): ExcalidrawElement[] {
     if(!element || !elements) return [];
     const container = (element.type === "text" && element.containerId)
       ? elements.filter(el=>el.id === element.containerId)
       : [];
     if(element.groupIds.length === 0) {
+      if(includeFrameElements && element.type === "frame") {
+        return this.getElementsInFrame(element,elements,true);
+      }
       if(container.length === 1) return [element,container[0]];
       return [element];
     }
 
-    if(container.length === 1) {
-      return elements.filter(el=>
-        el.groupIds.some(id=>element.groupIds.includes(id)) ||
-        el === container[0]
-      );
+    const conditionFN = container.length === 1
+      ? (el: ExcalidrawElement) => el.groupIds.some(id=>element.groupIds.includes(id)) || el === container[0]
+      : (el: ExcalidrawElement) => el.groupIds.some(id=>element.groupIds.includes(id));
+
+    if(!includeFrameElements) {
+      return elements.filter(el=>conditionFN(el));
+    } else {
+      //I use the set and the filter at the end to preserve scene layer seqeuence
+      //adding frames could potentially mess up the sequence otherwise
+      const elementIDs = new Set<string>();
+      elements
+        .filter(el=>conditionFN(el))
+        .forEach(el=>{
+          if(el.type === "frame") {
+            this.getElementsInFrame(el,elements,true).forEach(el=>elementIDs.add(el.id))
+          } else {
+            elementIDs.add(el.id);
+          }
+        });
+      return elements.filter(el=>elementIDs.has(el.id));
     }
-    
-    return elements.filter(el=>el.groupIds.some(id=>element.groupIds.includes(id)));
   }
 
   /**
    * Gets all the elements from elements[] that are contained in the frame.
-   * @param element 
-   * @param elements - typically all the non-deleted elements in the scene 
+   * @param frameElement - the frame element for which to get the elements
+   * @param elements - typically all the non-deleted elements in the scene
+   * @param shouldIncludeFrame - if true, the frame element will be included in the returned array 
+   *                             this is useful when generating an image in which you want the frame to be clipped
    * @returns 
    */
-  getElementsInFrame(frameElement: ExcalidrawElement, elements: ExcalidrawElement[]): ExcalidrawElement[] {
+  getElementsInFrame(
+    frameElement: ExcalidrawElement,
+    elements: ExcalidrawElement[],
+    shouldIncludeFrame: boolean = false,
+  ): ExcalidrawElement[] {
     if(!frameElement || !elements || frameElement.type !== "frame") return [];
-    return elements.filter(el=>el.frameId === frameElement.id);
+    return elements.filter(el=>(el.frameId === frameElement.id) || (shouldIncludeFrame && el.id === frameElement.id));
   } 
 
   /**
@@ -2488,7 +2554,7 @@ export class ExcalidrawAutomate {
       text,
       this.style.fontSize,
       this.style.fontFamily,
-      getDefaultLineHeight(this.style.fontFamily),
+      getLineHeight(this.style.fontFamily),
     );
     return { width: size.w ?? 0, height: size.h ?? 0 };
   };
@@ -2730,7 +2796,7 @@ export async function initExcalidrawAutomate(
 function normalizeLinePoints(
   points: [x: number, y: number][],
   //box: { x: number; y: number; w: number; h: number },
-) {
+): number[][] {
   const p = [];
   const [x, y] = points[0];
   for (let i = 0; i < points.length; i++) {
@@ -2739,7 +2805,9 @@ function normalizeLinePoints(
   return p;
 }
 
-function getLineBox(points: [x: number, y: number][]) {
+function getLineBox(
+  points: [x: number, y: number][]
+):{x:number, y:number, w: number, h:number} {
   const [x1, y1, x2, y2] = estimateLineBound(points);
   return {
     x: x1,
@@ -2749,27 +2817,16 @@ function getLineBox(points: [x: number, y: number][]) {
   };
 }
 
-function getFontFamily(id: number) {
-  switch (id) {
-    case 1:
-      return "Virgil, Segoe UI Emoji";
-    case 2:
-      return "Helvetica, Segoe UI Emoji";
-    case 3:
-      return "Cascadia, Segoe UI Emoji";
-    case 4:
-      return "LocalFont";
-  }
+function getFontFamily(id: number):string {
+  return getFontFamilyString({fontFamily:id})
 }
 
-export async function initFonts(doc: Document = document) {
-  for (let i = 1; i <= 3; i++) {
-    await (doc as any).fonts.load(`20px ${getFontFamily(i)}`);
-  }
-  await (doc as any).fonts.load("400 20px Assistant");
-  await (doc as any).fonts.load("500 20px Assistant");
-  await (doc as any).fonts.load("600 20px Assistant");
-  await (doc as any).fonts.load("700 20px Assistant");
+export async function initFonts():Promise<void> {
+  await excalidrawLib.registerFontsInCSS();
+  const fonts = excalidrawLib.getFontFamilies();
+  for(let i=0;i<fonts.length;i++) {
+    if(fonts[i] !== "Local Font") await (document as any).fonts.load(`16px ${fonts[i]}`);  
+  };
 }
 
 export function _measureText(
@@ -2777,14 +2834,14 @@ export function _measureText(
   fontSize: number,
   fontFamily: number,
   lineHeight: number,
-) {
+): {w: number, h:number} {
   //following odd error with mindmap on iPad while synchornizing with desktop.
   if (!fontSize) {
     fontSize = 20;
   }
   if (!fontFamily) {
     fontFamily = 1;
-    lineHeight = getDefaultLineHeight(fontFamily);
+    lineHeight = getLineHeight(fontFamily);
   }
   const metrics = measureText(
     newText,
@@ -2876,17 +2933,16 @@ async function getTemplate(
       ? getTextElementsMatchingQuery(scene.elements,["# "+filenameParts.sectionref],true)
       : scene.elements.filter((el: ExcalidrawElement)=>el.id===filenameParts.blockref);
       if(el.length > 0) {
-        groupElements = plugin.ea.getElementsInTheSameGroupWithElement(el[0],scene.elements)
+        groupElements = plugin.ea.getElementsInTheSameGroupWithElement(el[0],scene.elements,true)
       }
     }
-    if(filenameParts.hasFrameref) {
+    if(filenameParts.hasFrameref || filenameParts.hasClippedFrameref) {
       const el = getFrameBasedOnFrameNameOrId(filenameParts.blockref,scene.elements);     
       
       if(el) {
-        groupElements = plugin.ea.getElementsInFrame(el,scene.elements)
+        groupElements = plugin.ea.getElementsInFrame(el,scene.elements, filenameParts.hasClippedFrameref);
       }
     }
-
 
     if(filenameParts.hasTaskbone) {
       groupElements = groupElements.filter( el => 
@@ -2936,7 +2992,7 @@ export async function createPNG(
   depth: number,
   padding?: number,
   imagesDict?: any,
-) {
+): Promise<Blob> {
   if (!loader) {
     loader = new EmbeddedFilesLoader(plugin);
   }
@@ -2965,6 +3021,7 @@ export async function createPNG(
         theme: forceTheme ?? template?.appState?.theme ?? canvasTheme,
         viewBackgroundColor:
           template?.appState?.viewBackgroundColor ?? canvasBackgroundColor,
+        ...template?.appState?.frameRendering ? {frameRendering: template.appState.frameRendering} : {},
       },
       files,
     },
@@ -3019,7 +3076,7 @@ export const updateElementLinksToObsidianLinks = ({elements, hostFile}:{
   })
 }
 
-function addFilterToForeignObjects(svg:SVGSVGElement) {
+function addFilterToForeignObjects(svg:SVGSVGElement):void {
   const foreignObjects = svg.querySelectorAll("foreignObject");
   foreignObjects.forEach((foreignObject) => {
     foreignObject.setAttribute("filter", THEME_FILTER);
@@ -3044,6 +3101,9 @@ export async function createSVG(
   if (!loader) {
     loader = new EmbeddedFilesLoader(plugin);
   }
+  if(typeof exportSettings.skipInliningFonts === "undefined") {
+    exportSettings.skipInliningFonts = !embedFont;
+  }
   const template = templatePath
     ? await getTemplate(plugin, templatePath, true, loader, depth, convertMarkdownLinksToObsidianURLs)
     : null;
@@ -3060,6 +3120,7 @@ export async function createSVG(
   const theme = forceTheme ?? template?.appState?.theme ?? canvasTheme;
   const withTheme = exportSettings?.withTheme ?? plugin.settings.exportWithTheme;
 
+  const filenameParts = getEmbeddedFilenameParts(templatePath);
   const svg = await getSVG(
     {
       //createAndOpenDrawing
@@ -3071,6 +3132,7 @@ export async function createSVG(
         theme,
         viewBackgroundColor:
           template?.appState?.viewBackgroundColor ?? canvasBackgroundColor,
+        ...template?.appState?.frameRendering ? {frameRendering: template.appState.frameRendering} : {},
       },
       files,
     },
@@ -3079,6 +3141,9 @@ export async function createSVG(
         exportSettings?.withBackground ?? plugin.settings.exportWithBackground,
       withTheme,
       isMask: exportSettings?.isMask ?? false,
+      ...filenameParts?.hasClippedFrameref
+      ? {frameRendering: {enabled: true, name: false, outline: false, clip: true}}
+      : {},
     },
     padding,
     null,
@@ -3086,9 +3151,8 @@ export async function createSVG(
 
   if (withTheme && theme === "dark") addFilterToForeignObjects(svg);
 
-  const filenameParts = getEmbeddedFilenameParts(templatePath);
   if(
-    !(filenameParts.hasGroupref || filenameParts.hasFrameref) && 
+    !(filenameParts.hasGroupref || filenameParts.hasFrameref || filenameParts.hasClippedFrameref) && 
     (filenameParts.hasBlockref || filenameParts.hasSectionref)
   ) {
     let el = filenameParts.hasSectionref
@@ -3110,7 +3174,7 @@ export async function createSVG(
   if (template?.hasSVGwithBitmap) {
     svg.setAttribute("hasbitmap", "true");
   }
-  return embedFont ? embedFontsInSVG(svg, plugin) : svg;
+  return svg;
 }
 
 function estimateLineBound(points: any): [number, number, number, number] {
@@ -3161,7 +3225,7 @@ export function repositionElementsToCursor(
   return restore({elements}, null, null).elements;
 }
 
-function errorMessage(message: string, source: string) {
+function errorMessage(message: string, source: string):void {
   switch (message) {
     case "targetView not set":
       errorlog({

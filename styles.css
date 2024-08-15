@@ -595,3 +595,34 @@ root {
 textarea.excalidraw-wysiwyg, .excalidraw input {
   caret-color: var(--excalidraw-caret-color);
 }
+
+.excalidraw-settings-links-container {
+  display: flex; /* Align SVG and text horizontally */
+  align-items: center; /* Center SVG and text vertically */
+  text-decoration: none; /* Remove underline from links */
+  color: inherit; /* Inherit text color */
+  text-align: center;
+}
+
+.excalidraw-settings-links-container a {
+  display: flex; /* Align children horizontally */
+  align-items: center; /* Center items vertically */
+  text-align: left;
+}
+
+.excalidraw-settings-links-container svg {
+  margin-right: 8px;
+  height: 30px;
+  width: 30px;
+}
+
+.excalidraw-rank {
+  text-align: center;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.excalidraw-rank svg {
+  height: 8rem;
+  width: 8rem;
+}

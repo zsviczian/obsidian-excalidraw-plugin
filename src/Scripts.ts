@@ -33,8 +33,20 @@ export class ScriptEngine {
     this.registerEventHandlers();
   }
 
+  public removeViewEAs(view: ExcalidrawView) {
+    const eas = new Set<ExcalidrawAutomate>();
+    this.eaInstances.forEach((ea) => {
+      if (ea.targetView === view) {
+        eas.add(ea);
+        ea.destroy();
+      }
+    });
+    this.eaInstances.removeObjects(eas);
+  }
+
   public destroy() {
     this.eaInstances.forEach((ea) => ea.destroy());
+    this.eaInstances.clear();
     this.eaInstances = null;
     this.scriptIconMap = null;
     this.plugin = null;

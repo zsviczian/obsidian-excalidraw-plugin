@@ -1,4 +1,5 @@
 import {
+  App,
   MarkdownPostProcessorContext,
   MetadataCache,
   PaneType,
@@ -12,7 +13,6 @@ import { ExportSettings } from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
 import {getIMGFilename,} from "./utils/FileUtils";
 import {
-  embedFontsInSVG,
   getEmbeddedFilenameParts,
   getExportTheme,
   getQuickImagePreview,
@@ -26,7 +26,7 @@ import { getParentOfClass, isObsidianThemeDark, getFileCSSClasses } from "./util
 import { linkClickModifierType } from "./utils/ModifierkeyHelper";
 import { ImageKey, imageCache } from "./utils/ImageCache";
 import { FILENAMEPARTS, PreviewImageType } from "./utils/UtilTypes";
-import { CustomMutationObserver, DEBUGGING } from "./utils/DebugHelper";
+import { CustomMutationObserver, debug, DEBUGGING } from "./utils/DebugHelper";
 import { getExcalidrawFileForwardLinks } from "./utils/ExcalidrawViewUtils";
 import { linkPrompt } from "./dialogs/Prompt";
 
@@ -39,8 +39,11 @@ interface imgElementAttributes {
 }
 
 let plugin: ExcalidrawPlugin;
+let app: App;
 let vault: Vault;
 let metadataCache: MetadataCache;
+const DEBUGGING_MPP = false;
+
 
 const getDefaultWidth = (plugin: ExcalidrawPlugin): string => {
   const width = parseInt(plugin.settings.width);
@@ -61,8 +64,9 @@ const getDefaultHeight = (plugin: ExcalidrawPlugin): string => {
 
 export const initializeMarkdownPostProcessor = (p: ExcalidrawPlugin) => {
   plugin = p;
-  vault = p.app.vault;
-  metadataCache = p.app.metadataCache;
+  app = plugin.app;
+  vault = app.vault;
+  metadataCache = app.metadataCache;
 };
 
 const _getPNG = async ({imgAttributes,filenameParts,theme,cacheReady,img,file,exportSettings,loader}:{
@@ -75,6 +79,7 @@ const _getPNG = async ({imgAttributes,filenameParts,theme,cacheReady,img,file,ex
   exportSettings: ExportSettings,
   loader: EmbeddedFilesLoader,
 }):Promise<HTMLImageElement> => {
+  (process.env.NODE_ENV === 'development') && DEBUGGING && debug(_getPNG, `MarkdownPostProcessor.ts > _getPNG`);
   const width = parseInt(imgAttributes.fwidth);
     const scale = width >= 2400
       ? 5
@@ -86,7 +91,14 @@ const _getPNG = async ({imgAttributes,filenameParts,theme,cacheReady,img,file,ex
             ? 2
             : 1;
   
-  const cacheKey = {...filenameParts, isDark: theme==="dark", previewImageType: PreviewImageType.PNG, scale, isTransparent: !exportSettings.withBackground};
+  const cacheKey = {
+    ...filenameParts,
+    isDark: theme==="dark",
+    previewImageType: PreviewImageType.PNG,
+    scale,
+    isTransparent: !exportSettings.withBackground,
+    inlineFonts: true, //though for PNG this makes no difference, but the key requires it
+  };
 
   if(cacheReady) {      
     const src = await imageCache.getImageFromCache(cacheKey);
@@ -105,11 +117,13 @@ const _getPNG = async ({imgAttributes,filenameParts,theme,cacheReady,img,file,ex
   const png =
     quickPNG ??
     (await createPNG(
-      (filenameParts.hasGroupref || filenameParts.hasFrameref)
+      (filenameParts.hasGroupref || filenameParts.hasFrameref || filenameParts.hasClippedFrameref)
         ? filenameParts.filepath + filenameParts.linkpartReference
         : file.path,
       scale,
-      exportSettings,
+      filenameParts.hasClippedFrameref
+      ? { ...exportSettings, frameRendering: { enabled: true, name: false, outline: false, clip: true}}
+      : exportSettings,
       loader,
       theme,
       null,
@@ -132,6 +146,7 @@ const setStyle = ({element,imgAttributes,onCanvas}:{
   onCanvas: boolean,
 }
 ) => {
+  (process.env.NODE_ENV === 'development') && DEBUGGING && debug(setStyle, `MarkdownPostProcessor.ts > setStyle`);
   let style = "";
   if(imgAttributes.fwidth) {
     style = `max-width:${imgAttributes.fwidth}${imgAttributes.fwidth.match(/\d$/) ? "px":""}; `; //width:100%;`; //removed !important https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/886
@@ -163,7 +178,17 @@ const _getSVGIMG = async ({filenameParts,theme,cacheReady,img,file,exportSetting
   exportSettings: ExportSettings,
   loader: EmbeddedFilesLoader,
 }):Promise<HTMLImageElement> => {
-  const cacheKey = {...filenameParts, isDark: theme==="dark", previewImageType: PreviewImageType.SVGIMG, scale:1, isTransparent: !exportSettings.withBackground};
+  (process.env.NODE_ENV === 'development') && DEBUGGING && debug(_getSVGIMG, `MarkdownPostProcessor.ts > _getSVGIMG`);
+  exportSettings.skipInliningFonts = false;
+  const cacheKey = {
+    ...filenameParts,
+    isDark: theme==="dark",
+    previewImageType: PreviewImageType.SVGIMG,
+    scale:1,
+    isTransparent: !exportSettings.withBackground,
+    inlineFonts: !exportSettings.skipInliningFonts,
+  };
+
   if(cacheReady) {
     const src = await imageCache.getImageFromCache(cacheKey);
     if(src && typeof src === "string") {
@@ -182,13 +207,15 @@ const _getSVGIMG = async ({filenameParts,theme,cacheReady,img,file,exportSetting
     }
   }
   
-  let svg = convertSVGStringToElement((
+  const svg = convertSVGStringToElement((
     await createSVG(
-      filenameParts.hasGroupref || filenameParts.hasBlockref || filenameParts.hasSectionref || filenameParts.hasFrameref
+      filenameParts.hasGroupref || filenameParts.hasBlockref || filenameParts.hasSectionref || filenameParts.hasFrameref || filenameParts.hasClippedFrameref
         ? filenameParts.filepath + filenameParts.linkpartReference
         : file.path,
       true,
-      exportSettings,
+      filenameParts?.hasClippedFrameref
+      ? { ...exportSettings, frameRendering: { enabled: true, name: false, outline: false, clip: true}}
+      : exportSettings,
       loader,
       theme,
       null,
@@ -204,7 +231,6 @@ const _getSVGIMG = async ({filenameParts,theme,cacheReady,img,file,exportSetting
     return null;
   }
 
-  svg = embedFontsInSVG(svg, plugin, false);
   //need to remove width and height attributes to support area= embeds
   svg.removeAttribute("width");
   svg.removeAttribute("height");
@@ -220,20 +246,31 @@ const _getSVGNative = async ({filenameParts,theme,cacheReady,containerElement,fi
   exportSettings: ExportSettings,
   loader: EmbeddedFilesLoader,
 }):Promise<HTMLDivElement> => {
-  const cacheKey = {...filenameParts, isDark: theme==="dark", previewImageType: PreviewImageType.SVG, scale:1, isTransparent: !exportSettings.withBackground};
+  (process.env.NODE_ENV === 'development') && DEBUGGING && debug(_getSVGNative, `MarkdownPostProcessor.ts > _getSVGNative`);
+  exportSettings.skipInliningFonts = false;
+  const cacheKey = {
+    ...filenameParts,
+    isDark: theme==="dark",
+    previewImageType: PreviewImageType.SVG,
+    scale:1,
+    isTransparent: !exportSettings.withBackground,
+    inlineFonts: !exportSettings.skipInliningFonts,  
+  };
   let maybeSVG;
   if(cacheReady) {
     maybeSVG = await imageCache.getImageFromCache(cacheKey);
   }
 
-  let svg = (maybeSVG && (maybeSVG instanceof SVGSVGElement))
+  const svg = (maybeSVG && (maybeSVG instanceof SVGSVGElement))
     ? maybeSVG
     : convertSVGStringToElement((await createSVG(
-      filenameParts.hasGroupref || filenameParts.hasBlockref || filenameParts.hasSectionref || filenameParts.hasFrameref
+      filenameParts.hasGroupref || filenameParts.hasBlockref || filenameParts.hasSectionref || filenameParts.hasFrameref || filenameParts.hasClippedFrameref
         ? filenameParts.filepath + filenameParts.linkpartReference
         : file.path,
       false,
-      exportSettings,
+      filenameParts.hasClippedFrameref
+      ? { ...exportSettings, frameRendering: { enabled: true, name: false, outline: false, clip: true}}
+      : exportSettings,
       loader,
       theme,
       null,
@@ -254,7 +291,7 @@ const _getSVGNative = async ({filenameParts,theme,cacheReady,containerElement,fi
   if(!Boolean(maybeSVG)) {
     cacheReady && imageCache.addImageToCache(cacheKey,"", svg);
   }
-  svg = embedFontsInSVG(svg, plugin, true);
+
   svg.removeAttribute("width");
   svg.removeAttribute("height");
   containerElement.append(svg);
@@ -272,6 +309,7 @@ const getIMG = async (
   imgAttributes: imgElementAttributes,
   onCanvas: boolean = false,
 ): Promise<HTMLImageElement | HTMLDivElement> => {
+  (process.env.NODE_ENV === 'development') && DEBUGGING && debug(getIMG, `MarkdownPostProcessor.ts > getIMG`, imgAttributes);
   let file = imgAttributes.file;
   if (!imgAttributes.file) {
     const f = vault.getAbstractFileByPath(imgAttributes.fname?.split("#")[0]);
@@ -319,22 +357,23 @@ const getIMG = async (
     case PreviewImageType.PNG: {
       const img = createEl("img");
       setStyle({element:img,imgAttributes,onCanvas});
-      return _getPNG({imgAttributes,filenameParts,theme,cacheReady,img,file,exportSettings,loader});
+      return await _getPNG({imgAttributes,filenameParts,theme,cacheReady,img,file,exportSettings,loader});
     }
     case PreviewImageType.SVGIMG: {
       const img = createEl("img");
       setStyle({element:img,imgAttributes,onCanvas});
-      return _getSVGIMG({filenameParts,theme,cacheReady,img,file,exportSettings,loader});
+      return await _getSVGIMG({filenameParts,theme,cacheReady,img,file,exportSettings,loader});
     }
     case PreviewImageType.SVG:  {
       const img = createEl("div");
       setStyle({element:img,imgAttributes,onCanvas});
-      return _getSVGNative({filenameParts,theme,cacheReady,containerElement: img,file,exportSettings,loader});
+      return await _getSVGNative({filenameParts,theme,cacheReady,containerElement: img,file,exportSettings,loader});
     }
   }
 };
 
 const addSVGToImgSrc = (img: HTMLImageElement, svg: SVGSVGElement, cacheReady: boolean, cacheKey: ImageKey):HTMLImageElement => {
+  (process.env.NODE_ENV === 'development') && DEBUGGING && debug(addSVGToImgSrc, `MarkdownPostProcessor.ts > addSVGToImgSrc`);
   const svgString = new XMLSerializer().serializeToString(svg);
   const blob = new Blob([svgString], { type: 'image/svg+xml' });
   const blobUrl = URL.createObjectURL(blob);
@@ -347,6 +386,7 @@ const createImgElement = async (
   attr: imgElementAttributes,
   onCanvas: boolean = false,
 ) :Promise<HTMLElement> => {
+  (process.env.NODE_ENV === 'development') && DEBUGGING && debug(createImgElement, `MarkdownPostProcessor.ts > createImgElement`);
   const imgOrDiv = await getIMG(attr,onCanvas);
   if(!imgOrDiv) {
     return null;
@@ -474,6 +514,7 @@ const createImageDiv = async (
   attr: imgElementAttributes,
   onCanvas: boolean = false
 ): Promise<HTMLDivElement> => {
+  (process.env.NODE_ENV === 'development') && DEBUGGING && debug(createImageDiv, `MarkdownPostProcessor.ts > createImageDiv`);
   const img = await createImgElement(attr, onCanvas);
   return createDiv(attr.style.join(" "), (el) => el.append(img));
 };
@@ -482,6 +523,7 @@ const processReadingMode = async (
   embeddedItems: NodeListOf<Element> | [HTMLElement],
   ctx: MarkdownPostProcessorContext,
 ) => {
+  (process.env.NODE_ENV === 'development') && DEBUGGING_MPP && debug(processReadingMode, `MarkdownPostProcessor.ts > processReadingMode`);
   //We are processing a non-excalidraw file in reading mode
   //Embedded files will be displayed in an .internal-embed container
 
@@ -513,6 +555,7 @@ const processReadingMode = async (
 };
 
 const processInternalEmbed = async (internalEmbedEl: Element, file: TFile ):Promise<HTMLDivElement> => {
+  (process.env.NODE_ENV === 'development') && DEBUGGING_MPP && debug(processInternalEmbed, `MarkdownPostProcessor.ts > processInternalEmbed`, internalEmbedEl);
   const attr: imgElementAttributes = {
     fname: "",
     fheight: "",
@@ -549,6 +592,7 @@ const processAltText = (
   alt:string,
   attr: imgElementAttributes
 ) => {
+  (process.env.NODE_ENV === 'development') && DEBUGGING && debug(processAltText, `MarkdownPostProcessor.ts > processAltText`);
   if (alt && !alt.startsWith(fname)) {
     //2:width, 3:height, 4:style  12        3           4
     const parts = alt.match(/[^\|\d]*\|?((\d*%?)x?(\d*%?))?\|?(.*)/);
@@ -568,17 +612,22 @@ const processAltText = (
 }
 
 const isTextOnlyEmbed = (internalEmbedEl: Element):boolean => {
+  (process.env.NODE_ENV === 'development') && DEBUGGING && debug(isTextOnlyEmbed, `MarkdownPostProcessor.ts > isTextOnlyEmbed`);
   const src = internalEmbedEl.getAttribute("src");
   if(!src) return true; //technically this does not mean this is a text only embed, but still should abort further processing
   const fnameParts = getEmbeddedFilenameParts(src);
-  return !(fnameParts.hasArearef || fnameParts.hasGroupref || fnameParts.hasFrameref) &&
+  return !(fnameParts.hasArearef || fnameParts.hasGroupref || fnameParts.hasFrameref || fnameParts.hasClippedFrameref) &&
     (fnameParts.hasBlockref || fnameParts.hasSectionref)
 }
 
 const tmpObsidianWYSIWYG = async (
   el: HTMLElement,
   ctx: MarkdownPostProcessorContext,
+  isPrinting: boolean,
+  isMarkdownReadingMode: boolean,
+  isHoverPopover: boolean,
 ) => {
+  (process.env.NODE_ENV === 'development') && DEBUGGING_MPP && debug(tmpObsidianWYSIWYG, `MarkdownPostProcessor.ts > tmpObsidianWYSIWYG`);
   const file = app.vault.getAbstractFileByPath(ctx.sourcePath);
   if(!(file instanceof TFile)) return;
   if(!plugin.isExcalidrawFile(file)) return;
@@ -596,11 +645,11 @@ const tmpObsidianWYSIWYG = async (
   //@ts-ignore
   const containerEl = ctx.containerEl;
 
-  if(!plugin.settings.renderImageInMarkdownReadingMode && containerEl.parentElement?.parentElement?.hasClass("markdown-reading-view")) {
+  if(!plugin.settings.renderImageInMarkdownReadingMode && isMarkdownReadingMode) { // containerEl.parentElement?.parentElement?.hasClass("markdown-reading-view")) {
     return;
   }
 
-  if(!plugin.settings.renderImageInMarkdownToPDF && containerEl.parentElement?.hasClass("print")) {
+  if(!plugin.settings.renderImageInMarkdownToPDF && isPrinting) { //containerEl.parentElement?.hasClass("print")) {
     return;
   }
 
@@ -628,14 +677,14 @@ const tmpObsidianWYSIWYG = async (
 
   
   if(!plugin.settings.renderImageInHoverPreviewForMDNotes) {
-    const isHoverPopover = internalEmbedDiv.parentElement?.hasClass("hover-popover");
+    //const isHoverPopover = internalEmbedDiv.parentElement?.hasClass("hover-popover");
     const shouldOpenMD = Boolean(ctx.frontmatter?.["excalidraw-open-md"]);
     if(isHoverPopover && shouldOpenMD) {
       return;
     }
   }
 
-  const isPrinting = Boolean(internalEmbedDiv.hasClass("print"));
+  //const isPrinting = Boolean(internalEmbedDiv.hasClass("print"));
 
   const attr: imgElementAttributes = {
     fname: ctx.sourcePath,
@@ -647,7 +696,7 @@ const tmpObsidianWYSIWYG = async (
   attr.file = file;
 
   const markdownEmbed = internalEmbedDiv.hasClass("markdown-embed");
-  const markdownReadingView = internalEmbedDiv.hasClass("markdown-reading-view") || isPrinting;
+  const markdownReadingView = isPrinting || isMarkdownReadingMode; //internalEmbedDiv.hasClass("markdown-reading-view")
   if (!internalEmbedDiv.hasClass("internal-embed") && (markdownEmbed || markdownReadingView)) {
     if(isPrinting) {
       internalEmbedDiv = containerEl;
@@ -661,7 +710,7 @@ const tmpObsidianWYSIWYG = async (
     } else {
       const warningEl = el.querySelector("div>h3[data-heading^='Unable to find section #^");
       if(warningEl) {
-        const ref = warningEl.getAttr("data-heading").match(/Unable to find section (#\^(?:group=|area=|frame=)[^ ]*)/)?.[1];
+        const ref = warningEl.getAttr("data-heading").match(/Unable to find section (#\^(?:group=|area=|frame=|clippedframe=)[^ ]*)/)?.[1];
         if(ref) {
           attr.fname = file.path + ref;
           areaPreview = true;
@@ -734,6 +783,7 @@ const tmpObsidianWYSIWYG = async (
   });
 };
 
+const docIDs = new Set<string>();
 /**
  *
  * @param el
@@ -743,12 +793,35 @@ export const markdownPostProcessor = async (
   el: HTMLElement,
   ctx: MarkdownPostProcessorContext,
 ) => {
+  const isPrinting = Boolean(document.body.querySelectorAll("body > .print").length>0);
+  if(isPrinting && el.hasClass("mod-frontmatter")) {
+    return;
+  }
+  
+  //@ts-ignore
+  const containerEl = ctx.containerEl;
+
+  (process.env.NODE_ENV === 'development') && DEBUGGING_MPP && debug(markdownPostProcessor, `MarkdownPostProcessor.ts > markdownPostProcessor`, ctx, el);
 
   //check to see if we are rendering in editing mode or live preview
-  //if yes, then there should be no .internal-embed containers
+  //if yes, then there should be no .internal-embed containers  
+  const isMarkdownReadingMode = Boolean(containerEl && getParentOfClass(containerEl, "markdown-reading-view"));
+  const isHoverPopover = Boolean(containerEl && getParentOfClass(containerEl, "hover-popover"));
+  const isPreview = isPrinting || isMarkdownReadingMode ||
+    (isHoverPopover && Boolean(ctx?.frontmatter?.["excalidraw-open-md"]) && !plugin.settings.renderImageInHoverPreviewForMDNotes);
   const embeddedItems = el.querySelectorAll(".internal-embed");
-  if (embeddedItems.length === 0) {
-    tmpObsidianWYSIWYG(el, ctx);
+  if (!isPreview && embeddedItems.length === 0) {
+    if(el.hasClass("mod-frontmatter")) {
+      docIDs.add(ctx.docId);
+    } else {
+      if(docIDs.has(ctx.docId)) {
+        if(!el.hasChildNodes()) {
+          docIDs.delete(ctx.docId);
+        }
+        return;
+      }
+    }
+    await tmpObsidianWYSIWYG(el, ctx, isPrinting, isMarkdownReadingMode, isHoverPopover);
     return;
   }
 
@@ -757,8 +830,7 @@ export const markdownPostProcessor = async (
   //transcluded text element or some other transcluded content inside the Excalidraw file
   //in reading mode these elements should be hidden
   const excalidrawFile = Boolean(ctx.frontmatter?.hasOwnProperty("excalidraw-plugin"));
-  const isPrinting = Boolean(document.body.querySelectorAll("body > .print"));
-  if (excalidrawFile && !isPrinting) {
+  if (!isPreview && excalidrawFile) {
     el.style.display = "none";
     return;
   }

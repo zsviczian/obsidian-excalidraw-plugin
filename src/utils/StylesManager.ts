@@ -37,23 +37,22 @@ export class StylesManager {
 
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
-    const self = this;
     plugin.app.workspace.onLayoutReady(async () => {
-      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(undefined, "StylesManager.constructor > app.workspace.onLayoutReady", self);
-      await self.harvestStyles();
-      getAllWindowDocuments(plugin.app).forEach(doc => self.copyPropertiesToTheme(doc));
+      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(undefined, "StylesManager.constructor > app.workspace.onLayoutReady", this);
+      await this.harvestStyles();
+      getAllWindowDocuments(plugin.app).forEach(doc => this.copyPropertiesToTheme(doc));
 
       //initialize
       plugin.registerEvent(
-        plugin.app.workspace.on("css-change", ()=>self.onCSSChange()),
+        plugin.app.workspace.on("css-change", ()=>this.onCSSChange()),
       )
 
       plugin.registerEvent(
-        plugin.app.workspace.on("window-open", (win)=>self.onWindowOpen(win)),
+        plugin.app.workspace.on("window-open", (win)=>this.onWindowOpen(win)),
       )
 
       plugin.registerEvent(
-        plugin.app.workspace.on("window-close", (win)=>self.onWindowClose(win)),
+        plugin.app.workspace.on("window-close", (win)=>this.onWindowClose(win)),
       )
     });
   }

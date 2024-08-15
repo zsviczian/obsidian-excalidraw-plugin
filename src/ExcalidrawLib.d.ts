@@ -2,6 +2,7 @@ import { RestoredDataState } from "@zsviczian/excalidraw/types/excalidraw/data/r
 import { ImportedDataState } from "@zsviczian/excalidraw/types/excalidraw/data/types";
 import { BoundingBox } from "@zsviczian/excalidraw/types/excalidraw/element/bounds";
 import { ElementsMap, ExcalidrawBindableElement, ExcalidrawElement, ExcalidrawFrameElement, ExcalidrawTextContainer, ExcalidrawTextElement, FontFamilyValues, FontString, NonDeleted, NonDeletedExcalidrawElement, Theme } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { FontMetadata } from "@zsviczian/excalidraw/types/excalidraw/fonts/metadata";
 import { AppState, BinaryFiles, Point, Zoom } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 
@@ -46,6 +47,7 @@ declare namespace ExcalidrawLib {
     exportPadding?: number;
     exportingFrame: ExcalidrawFrameElement | null | undefined;
     renderEmbeddables?: boolean;
+    skipInliningFonts?: boolean;
   }): Promise<SVGSVGElement>;
 
   function sceneCoordsToViewportCoords(
@@ -116,8 +118,7 @@ declare namespace ExcalidrawLib {
     lineHeight: number,
   ): { width: number; height: number; };
 
-  function getDefaultLineHeight(fontFamily: FontFamilyValues): number;
-
+  function getLineHeight (fontFamily: FontFamilyValues):number;
   function wrapText(text: string, font: FontString, maxWidth: number): string;
 
   function getFontString({
@@ -127,6 +128,13 @@ declare namespace ExcalidrawLib {
     fontSize: number;
     fontFamily: FontFamilyValues;
   }): FontString;
+
+
+  function getFontFamilyString ({
+    fontFamily,
+  }: {
+    fontFamily: number;
+  }): string;
 
   function getBoundTextMaxWidth(container: ExcalidrawElement): number;
 
@@ -164,4 +172,9 @@ declare namespace ExcalidrawLib {
   var TTDDialog: any;
 
   function destroyObsidianUtils(): void;
+  function registerLocalFont(fontMetrics: FontMetadata, uri: string): void;
+  function getFontFamilies(): string[];
+  function registerFontsInCSS(): Promise<void>;
+  function getFontDefinition(fontFamily: number): Promise<string>;
 }
+

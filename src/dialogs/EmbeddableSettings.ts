@@ -184,7 +184,7 @@ export class EmbeddableSettings extends Modal {
           new Notice("File rename failed. A file with this name already exists.\n"+newPath,10000);
         } else {
           try {
-            await this.app.vault.rename(this.file,newPath);
+            await this.app.fileManager.renameFile(this.file,newPath);
             el.link = this.element.link.replace(
               /(\[\[)([^#\]]*)([^\]]*]])/,`$1${
                 this.plugin.app.metadataCache.fileToLinktext(
@@ -226,7 +226,7 @@ export class EmbeddableSettings extends Modal {
       (async() => {
         await this.ea.addElementsToView();
         //@ts-ignore
-        this.ea.viewUpdateScene({appState: {}});
+        this.ea.viewUpdateScene({appState: {}, storeAction: "update"});
         this.close(); //close should only run once update scene is done
       })();
     } else {

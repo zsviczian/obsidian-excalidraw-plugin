@@ -100,7 +100,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "style.fontFamily",
     code: "[number]",
-    desc: "1: Virgil, 2:Helvetica, 3:Cascadia, 4:LocalFont",
+    desc: "1: Virgil, 2:Helvetica, 3:Cascadia, 4:Local Font, 5: Excalifont, 6: Nunito, 7: Lilita One, 8: Comic Shanns, 9: Liberation Sans",
     after: "",
   },
   {
@@ -234,6 +234,18 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "addElementsToFrame",
+    code: "addElementsToFrame(frameId: string, elementIDs: string[]):void;",
+    desc: null,
+    after: "",
+  },
+  {
+    field: "addFrame",
+    code: "addFrame(topX: number, topY: number, width: number, height: number, name?: string): string;",
+    desc: null,
+    after: "",
+  },
+  {
     field: "addRect",
     code: "addRect(topX: number, topY: number, width: number, height: number, id?:string): string;",
     desc: null,
@@ -312,6 +324,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "tex2dataURL",
+    code: "async tex2dataURL(tex: string, scale: number = 4): Promise<{mimeType: MimeType;fileId: FileId;dataURL: DataURL;created: number;size: { height: number; width: number };}> ",
+    desc: "returns the base64 dataURL of the LaTeX equation rendered as an SVG. tex is the LaTeX equation string",
+    after: "",
+  },
+  {
     field: "connectObjects",
     code: "connectObjects(objectA: string, connectionA: ConnectionPoint, objectB: string, connectionB: ConnectionPoint, formatting?: {numberOfPoints?: number; startArrowHead?: string; endArrowHead?: string; padding?: number;},): string;",
     desc: 'type ConnectionPoint = "top" | "bottom" | "left" | "right" | null\nWhen null is passed as ConnectionPoint then Excalidraw will automatically decide\nnumberOfPoints is the number of points on the line. Default is 0 i.e. line will only have a start and end point.\nArrowHead: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null',
@@ -387,8 +405,8 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "getViewSelectedElements",
-    code: "getViewSelectedElements(): ExcalidrawElement[];",
-    desc: null,
+    code: "getViewSelectedElements(includeFrameChildren: boolean = true): ExcalidrawElement[];",
+    desc: "If a frame is selected this function will return the frame and all its elements unless includeFrameChildren is set to false",
     after: "",
   },
   {
@@ -442,7 +460,19 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "getExportSettings",
     code: "getExportSettings(withBackground: boolean, withTheme: boolean,): ExportSettings;",
-    desc: "Utility function to generate ExportSettings object",
+    desc: "Utility function to generate ExportSettings object\n" +
+      "export interface ExportSettings {\n" +
+      "  withBackground: boolean;\n" +
+      "  withTheme: boolean;\n" +
+      "  isMask: boolean; //if true elements will be processed as mask, clipping, etc.\n" +
+      "  frameRendering?: { //optional, overrides relevant appState settings for rendering the frame\n" +
+      "    enabled: boolean;\n" +
+      "    name: boolean;\n" +
+      "    outline: boolean;\n" +
+      "    clip: boolean;\n" +
+      "  };\n" +
+      "  skipInliningFonts?: boolean;\n" +
+      "}",
     after: "",
   },
   {
@@ -477,9 +507,16 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "getElementsInTheSameGroupWithElement",
-    code: "getElementsInTheSameGroupWithElement(element: ExcalidrawElement, elements: ExcalidrawElement[]): ExcalidrawElement[];",
-    desc: "Gets all the elements from elements[] that share one or more groupIds with element.",
+    code: "getElementsInTheSameGroupWithElement(element: ExcalidrawElement, elements: ExcalidrawElement[], includeFrameElements: boolean = false): ExcalidrawElement[];",
+    desc: "Gets all the elements from elements[] that share one or more groupIds with element.<br>" +
+      "If includeFrameElements is true, then if the frame is part of the group all the elements that are in the frame will also be included in the result set",
     after: ""
+  },
+  {
+    field: "getElementsInFrame",
+    code: " getElementsInFrame(frameElement: ExcalidrawElement,elements: ExcalidrawElement[],shouldIncludeFrame: boolean = false,): ExcalidrawElement[];",
+    desc: "Gets all the elements from elements[] that are inside the frameElement. If shouldIncludeFrame is true, the frameElement will also be included in the result.",
+    after: "",
   },
   {
     field: "activeScript",

@@ -64,14 +64,13 @@ export class EmbeddableMenu {
   };
 
   private handleMouseLeave () {
-    const self = this;
     this.menuFadeTimeout = window.setTimeout(() => {
-      self.containerRef.current?.style.setProperty("opacity", "0.2");
+      this.containerRef.current?.style.setProperty("opacity", "0.2");
     }, 5000);
   };
 
   private async actionMarkdownSelection (file: TFile, isExcalidrawFile: boolean, subpath: string, element: ExcalidrawEmbeddableElement) {
-    this.view.updateScene({appState: {activeEmbeddable: null}});
+    this.view.updateScene({appState: {activeEmbeddable: null}, storeAction: "update"});
     const sections = (await app.metadataCache.blockCache
       .getForFile({ isCancelled: () => false },file))
       .blocks.filter((b: any) => b.display && b.node?.type === "heading")
@@ -99,7 +98,7 @@ export class EmbeddableMenu {
 
   private async actionMarkdownBlock (file: TFile, subpath: string, element: ExcalidrawEmbeddableElement) {
     if(!file) return;
-    this.view.updateScene({appState: {activeEmbeddable: null}});
+    this.view.updateScene({appState: {activeEmbeddable: null}, storeAction: "update"});
     const paragraphs = (await app.metadataCache.blockCache
       .getForFile({ isCancelled: () => false },file))
       .blocks.filter((b: any) => b.display && b.node && 

@@ -3,7 +3,7 @@
     "baseUrl": ".",
     "sourceMap": false,
     "module": "es2015",
-    "target": "es2017", //es2017 because script engine requires for async execution
+    "target": "es2018", //es2017 because script engine requires for async execution //es2018 for named capture groups
     "allowJs": true,
     "noImplicitAny": true,
     "moduleResolution": "node",
@@ -14,14 +14,14 @@
       "dom",
       "scripthost",
       "es2015",
-      "esnext",
+      "ESNext",
       "DOM.Iterable"
     ],
-    "jsx": "react"
+    "jsx": "react",
   },
   "include": [
     "**/*.ts",
     "**/*.tsx", "src/Dialogs/OpenDrawing.ts",
-    "src/types.d.ts"
+    "src/types/types.d.ts",
   ]
 }

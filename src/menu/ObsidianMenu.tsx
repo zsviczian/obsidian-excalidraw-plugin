@@ -34,7 +34,8 @@ export function setPen (pen: PenStyle, api: any) {
             currentItemRoughness:       st.currentItemRoughness,
           }} 
         : null,
-    }
+    },
+    storeAction: "update",
   })
 }
 
@@ -50,7 +51,8 @@ export function resetStrokeOptions (resetCustomPen:any, api: ExcalidrawImperativ
       }: null,
       resetCustomPen: null,
       ...clearCurrentStrokeOptions ? {currentStrokeOptions: null} : null,
-    }
+    },
+    storeAction: "update",
   });
 }
 

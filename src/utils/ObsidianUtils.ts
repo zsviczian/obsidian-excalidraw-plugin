@@ -3,13 +3,14 @@ import {
   Editor,
   FrontMatterCache,
   MarkdownView,
-  normalizePath, OpenViewState, parseFrontMatterEntry, TFile, View, Workspace, WorkspaceLeaf, WorkspaceSplit
+  normalizePath, OpenViewState, parseFrontMatterEntry, TFile, View, ViewState, Workspace, WorkspaceLeaf, WorkspaceSplit
 } from "obsidian";
 import ExcalidrawPlugin from "../main";
 import { checkAndCreateFolder, splitFolderAndFilename } from "./FileUtils";
 import { linkClickModifierType, ModifierKeys } from "./ModifierkeyHelper";
-import { REG_BLOCK_REF_CLEAN, REG_SECTION_REF_CLEAN } from "src/constants/constants";
+import { REG_BLOCK_REF_CLEAN, REG_SECTION_REF_CLEAN, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
 import yaml, { Mark } from "js-yaml";
+import { debug, DEBUGGING } from "./DebugHelper";
 
 export const getParentOfClass = (element: Element, cssClass: string):HTMLElement | null => {
   let parent = element.parentElement;
@@ -300,7 +301,7 @@ export const openLeaf = ({
   return {leaf, promise};
 }
 
-export const mergeMarkdownFiles = (template: string, target: string): string => {
+export function mergeMarkdownFiles (template: string, target: string): string {
   // Extract frontmatter from the template
   const templateFrontmatterEnd = template.indexOf('---', 4); // Find end of frontmatter
   const templateFrontmatter = template.substring(4, templateFrontmatterEnd).trim();
@@ -312,8 +313,8 @@ export const mergeMarkdownFiles = (template: string, target: string): string => 
   // Extract frontmatter from the target if it exists
   let targetFrontmatterObj: FrontMatterCache = {};
   let targetContent = '';
-  if (target.includes('---')) {
-    const targetFrontmatterEnd = target.indexOf('---', 4); // Find end of frontmatter
+  if (target.startsWith('---\n') && target.indexOf('---\n', 4) > 0) {
+    const targetFrontmatterEnd = target.indexOf('---\n', 4); // Find end of frontmatter
     const targetFrontmatter = target.substring(4, targetFrontmatterEnd).trim();
     targetContent = target.substring(targetFrontmatterEnd + 3); // Skip frontmatter and ---
 
@@ -392,3 +393,20 @@ export const foldExcalidrawSection = (view: MarkdownView) => {
     view.currentMode.applyFoldInfo({ folds: foldPositions, lines: lineCount });
   }
 };
+
+export async function setExcalidrawView(leaf: WorkspaceLeaf) {
+  (process.env.NODE_ENV === 'development') && DEBUGGING && debug(setExcalidrawView,`setExcalidrawView`, leaf);
+  await leaf.setViewState({
+    type: VIEW_TYPE_EXCALIDRAW,
+    state: leaf.view.getState(),
+    popstate: true,
+  } as ViewState);
+}
+
+export async function closeLeafView(leaf: WorkspaceLeaf) {
+  (process.env.NODE_ENV === 'development') && DEBUGGING && debug(setExcalidrawView,`setExcalidrawView`, leaf);
+  await leaf.setViewState({
+    type: "empty",
+    state: {},
+  });
+}

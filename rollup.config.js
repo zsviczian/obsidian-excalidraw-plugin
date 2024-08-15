@@ -15,7 +15,7 @@ import cssnano from 'cssnano';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const DIST_FOLDER = 'dist'; 
+const DIST_FOLDER = 'dist';
 const isProd = (process.env.NODE_ENV === "production");
 const isLib = (process.env.NODE_ENV === "lib");
 console.log(`Running: ${process.env.NODE_ENV}`);
@@ -107,7 +107,7 @@ const BUILD_CONFIG = {
     babel({
       presets: [['@babel/preset-env', {
         targets: {
-          esmodules: true,
+          ios: "15", // ios Compatibility //esmodules: true,
         },
       }]],
       exclude: "node_modules/**",

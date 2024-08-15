@@ -3,7 +3,7 @@
     "baseUrl": ".",
     "sourceMap": false,
     "module": "ES2015",
-    "target": "es2017", //es2017 because script engine requires for async execution
+    "target": "es2018", //es2017 because script engine requires for async execution
     "allowJs": true,
     "noImplicitAny": true,
     "moduleResolution": "node",
@@ -18,11 +18,11 @@
       "DOM.Iterable"
     ],
     "jsx": "react",
-    "inlineSourceMap": true
+    "inlineSourceMap": true,
   },
   "include": [
     "**/*.ts",
     "**/*.tsx", "src/Dialogs/OpenDrawing.ts",
-    "src/types.d.ts"
+    "src/types/types.d.ts",
   ]
 }
