@@ -2,6 +2,7 @@ import {
   DEVICE,
   FRONTMATTER_KEYS,
 } from "src/constants/constants";
+import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/constSettingsTags";
 import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/ModifierkeyHelper";
 
 // English
@@ -336,14 +337,14 @@ FILENAME_HEAD: "Filename",
   SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC:
     "When you are in markdown reading mode (aka. reading the back side of the drawing) should the Excalidraw drawing be rendered as an image? " +
     "This setting will not affect the display of the drawing when you are in Excalidraw mode or when you embed the drawing into a markdown document or when rendering hover preview.<br><ul>" +
-    "<li>See other related setting for <b>PDF Export</b> under 'Embedding and Exporting' further below.</li></ul><br>" +
+    "<li>See other related setting for <a href='#"+TAG_PDFEXPORT+"'>PDF Export</a> under 'Embedding and Exporting' further below.</li></ul><br>" +
     "You must close the active excalidraw/markdown file and reopen it for this change to take effect.",
   SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME: "Render the file as an image when exporting an Excalidraw file to PDF",
   SHOW_DRAWING_OR_MD_IN_EXPORTPDF_DESC:
     "This setting controls the behavior of Excalidraw when exporting an Excalidraw file to PDF in markdown view mode using Obsidian's <b>Export to PDF</b> feature.<br>" +
     "<ul><li>When <b>enabled</b> the PDF will show the Excalidraw drawing only;</li>" +
     "<li>When <b>disabled</b> the PDF will show the markdown side of the document.</li></ul>" +
-    "See the other related setting for <b>Markdown Reading Mode</b> under 'Appearnace and Behavior' further above.<br>" +
+    "See the other related setting for <a href='#"+TAG_MDREADINGMODE+"'>Markdown Reading Mode</a> under 'Appearnace and Behavior' further above.<br>" +
     "⚠️ Note, you must close the active excalidraw/markdown file and reopen for this change to take effect. ⚠️",
   THEME_HEAD: "Theme and styling",
   ZOOM_HEAD: "Zoom",
@@ -531,7 +532,7 @@ FILENAME_HEAD: "Filename",
   EMBED_REUSE_EXPORTED_IMAGE_NAME:
     "If found, use the already exported image for preview",
   EMBED_REUSE_EXPORTED_IMAGE_DESC:
-    "This setting works in conjunction with the Auto-export SVG/PNG setting. If an exported image that matches the file name of the drawing " +
+    "This setting works in conjunction with the <a href='#"+TAG_AUTOEXPORT+"'>Auto-export SVG/PNG</a> setting. If an exported image that matches the file name of the drawing " +
     "is available, use that image instead of generating a preview image on the fly. This will result in faster previews especially when you have many embedded objects in the drawing, however, " +
     "it may happen that your latest changes are not displayed and that the image will not automatically match your Obsidian theme in case you have changed the " +
     "Obsidian theme since the export was created. This setting only applies to embedding images into markdown documents. " +
@@ -562,7 +563,7 @@ FILENAME_HEAD: "Filename",
   EMBED_TYPE_NAME: "Type of file to insert into the document",
   EMBED_TYPE_DESC:
     "When you embed an image into a document using the command palette this setting will specify if Excalidraw should embed the original Excalidraw file " +
-    "or a PNG or an SVG copy. You need to enable auto-export PNG / SVG (see below under Export Settings) for those image types to be available in the dropdown. For drawings that do not have a " +
+    "or a PNG or an SVG copy. You need to enable <a href='#"+TAG_AUTOEXPORT+"'>auto-export PNG / SVG</a> (see below under Export Settings) for those image types to be available in the dropdown. For drawings that do not have a " +
     "a corresponding PNG or SVG readily available the command palette action will insert a broken link. You need to open the original drawing and initiate export manually. " +
     "This option will not autogenerate PNG/SVG files, but will simply reference the already existing files.",
   EMBED_MARKDOWN_COMMENT_NAME: "Embed link to drawing as comment",

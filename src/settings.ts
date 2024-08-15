@@ -37,8 +37,8 @@ import { ModifierKeySettingsComponent } from "./dialogs/ModifierKeySettings";
 import { ANNOTATED_PREFIX, CROPPED_PREFIX } from "./utils/CarveOut";
 import { EDITOR_FADEOUT } from "./CodeMirrorExtension/EditorHandler";
 import { setDebugging } from "./utils/DebugHelper";
-import { link } from "fs";
 import { Rank } from "./menu/ActionIcons";
+import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/constSettingsTags";
 
 export interface ExcalidrawSettings {
   folder: string;
@@ -1051,7 +1051,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(detailsEl)
+    const readingModeEl = new Setting(detailsEl)
       .setName(t("SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME"))
       .setDesc(fragWithHTML(t("SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC")))
       .addToggle((toggle) =>
@@ -1062,6 +1062,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
+    readingModeEl.nameEl.setAttribute("id",TAG_MDREADINGMODE);
 
     new Setting(detailsEl)
       .setName(t("SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_NAME"))
@@ -1852,7 +1853,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     });
     addIframe(detailsEl, "wTtaXmRJ7wg",171);
 
-    new Setting(detailsEl)
+    const pdfExportEl = new Setting(detailsEl)
     .setName(t("SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME"))
     .setDesc(fragWithHTML(t("SHOW_DRAWING_OR_MD_IN_EXPORTPDF_DESC")))
     .addToggle((toggle) =>
@@ -1863,6 +1864,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           this.applySettingsUpdate();
         }),
     );
+    pdfExportEl.nameEl.setAttribute("id",TAG_PDFEXPORT);
 
     new Setting(detailsEl)
       .setName(t("EXPORT_EMBED_SCENE_NAME"))
@@ -2002,6 +2004,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       text: t("EXPORT_HEAD"),
       cls: "excalidraw-setting-h4",
     });
+    detailsEl.setAttribute("id",TAG_AUTOEXPORT);
 
     new Setting(detailsEl)
       .setName(t("EXPORT_SYNC_NAME"))

@@ -807,17 +807,23 @@ export const markdownPostProcessor = async (
   //if yes, then there should be no .internal-embed containers  
   const isMarkdownReadingMode = Boolean(containerEl && getParentOfClass(containerEl, "markdown-reading-view"));
   const isHoverPopover = Boolean(containerEl && getParentOfClass(containerEl, "hover-popover"));
-  const isPreview = isPrinting || isMarkdownReadingMode ||
-    (isHoverPopover && Boolean(ctx?.frontmatter?.["excalidraw-open-md"]) && !plugin.settings.renderImageInHoverPreviewForMDNotes);
+  const isPreview = (isHoverPopover && Boolean(ctx?.frontmatter?.["excalidraw-open-md"]) && !plugin.settings.renderImageInHoverPreviewForMDNotes);
   const embeddedItems = el.querySelectorAll(".internal-embed");
+  
+  if(isPrinting && plugin.settings.renderImageInMarkdownToPDF) {
+    await tmpObsidianWYSIWYG(el, ctx, isPrinting, isMarkdownReadingMode, isHoverPopover);
+    return;
+  }
+
   if (!isPreview && embeddedItems.length === 0) {
     if(el.hasClass("mod-frontmatter")) {
       docIDs.add(ctx.docId);
     } else {
-      if(docIDs.has(ctx.docId)) {
-        if(!el.hasChildNodes()) {
-          docIDs.delete(ctx.docId);
-        }
+      if(docIDs.has(ctx.docId) && !el.hasChildNodes()) {
+        docIDs.delete(ctx.docId);
+      }
+      const isAreaGroupFrameRef = el.querySelectorAll('[data-heading^="Unable to find"]').length === 1;
+      if(!isAreaGroupFrameRef) {
         return;
       }
     }
@@ -830,7 +836,7 @@ export const markdownPostProcessor = async (
   //transcluded text element or some other transcluded content inside the Excalidraw file
   //in reading mode these elements should be hidden
   const excalidrawFile = Boolean(ctx.frontmatter?.hasOwnProperty("excalidraw-plugin"));
-  if (!isPreview && excalidrawFile) {
+  if (!(isPreview || isMarkdownReadingMode || isPrinting) && excalidrawFile) {
     el.style.display = "none";
     return;
   }
