@@ -19,10 +19,10 @@ if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.0.25")) {
 // -------------------------------
 const excalidrawTemplates = ea.getListOfTemplateFiles();
 if(typeof window.ExcalidrawDeconstructElements === "undefined") {
-	window.ExcalidrawDeconstructElements = {
-	  openDeconstructedImage: true,
-	  templatePath: excalidrawTemplates?.[0].path??""
-	};
+  window.ExcalidrawDeconstructElements = {
+    openDeconstructedImage: true,
+    templatePath: excalidrawTemplates?.[0].path??""
+  };
 }
 
 const splitFolderAndFilename = (filepath) => {
@@ -36,13 +36,13 @@ const splitFolderAndFilename = (filepath) => {
 let settings = ea.getScriptSettings();
 //set default values on first run
 if(!settings["Templates"]) {
-	settings = {
-	  "Templates" : {
-			value: "",
+  settings = {
+    "Templates" : {
+      value: "",
       description: "Comma-separated list of template filepaths"
-		}
-	};
-	await ea.setScriptSettings(settings);
+    }
+  };
+  await ea.setScriptSettings(settings);
 }
 
 if(!settings["Default file name"]) {
@@ -80,31 +80,31 @@ ea.getElements().filter(el=>el.type==="image").forEach(el=>{
   const img = ea.targetView.excalidrawData.getFile(el.fileId);
   const path = (img?.linkParts?.original)??(img?.file?.path);
   if(img && path) {
-	  ea.imagesDict[el.fileId] = {
-	    mimeType: img.mimeType,
-	    id: el.fileId,
-	    dataURL: img.img,
-	    created: img.mtime,
-	    file: path,
-	    hasSVGwithBitmap: img.isSVGwithBitmap,
-     latex: null,
-   };
-   return;
-	}
-	const equation = ea.targetView.excalidrawData.getEquation(el.fileId);
-	eqImg = ea.targetView.getScene()?.files[el.fileId]
-	if(equation && eqImg) {
     ea.imagesDict[el.fileId] = {
-	    mimeType: eqImg.mimeType,
-	    id: el.fileId,
-	    dataURL: eqImg.dataURL,
-	    created: eqImg.created,
-	    file: null,
-	    hasSVGwithBitmap: null,
-	    latex: equation.latex,
-	  };
-	  return;
-	}
+      mimeType: img.mimeType,
+      id: el.fileId,
+      dataURL: img.img,
+      created: img.mtime,
+      file: path,
+      hasSVGwithBitmap: img.isSVGwithBitmap,
+      latex: null,
+    };
+    return;
+  }
+  const equation = ea.targetView.excalidrawData.getEquation(el.fileId);
+  eqImg = ea.targetView.getScene()?.files[el.fileId]
+  if(equation && eqImg) {
+    ea.imagesDict[el.fileId] = {
+      mimeType: eqImg.mimeType,
+      id: el.fileId,
+      dataURL: eqImg.dataURL,
+      created: eqImg.created,
+      file: null,
+      hasSVGwithBitmap: null,
+      latex: equation.latex,
+    };
+    return;
+  }
 });
 
 

@@ -9,7 +9,11 @@ https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.h
 ```javascript
 */
 let width = (ea.getViewSelectedElement().strokeWidth??1).toString();
-width = await utils.inputPrompt("Width?","number",width);
+width = parseFloat(await utils.inputPrompt("Width?","number",width));
+if(isNaN(width)) {
+  new Notice("Invalid number");
+  return;
+}
 const elements=ea.getViewSelectedElements();
 ea.copyViewElementsToEAforEditing(elements);
 ea.getElements().forEach((el)=>el.strokeWidth=width);
