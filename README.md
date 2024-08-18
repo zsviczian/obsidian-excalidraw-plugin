@@ -1,6 +1,4 @@
-# Excalidraw
-
-The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/), a feature rich sketching tool, into Obsidian. You can store and edit Excalidraw files in your vault, you can embed drawings into your documents, and you can link to documents and other drawings to/and from Excalidraw. For a showcase of Excalidraw features, please read my blog post [here](https://www.zsolt.blog/2021/03/showcasing-excalidraw.html) and/or watch the videos below.
+cuments, and you can link to documents and other drawings to/and from Excalidraw. For a showcase of Excalidraw features, please read my blog post [here](https://www.zsolt.blog/2021/03/showcasing-excalidraw.html) and/or watch the videos below.
 
 ## Video Walkthrough
 <a href="https://youtu.be/P_Q6avJGoWI" target="_blank"><img src="https://github.com/zsviczian/obsidian-excalidraw-plugin/assets/14358394/da34bb33-7610-45e6-b36f-cb7a02a9141b" width="300"/></a>
@@ -25,52 +23,7 @@ The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/),
 </details>
 <details><summary>Embedding stuff into Excalidraw</summary>
 <a href="https://www.youtube.com/watch?v=_c_0zpBJ4Xc&" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/138607067-ccb62f92-48a4-4880-ac6e-68c1bf86ac2c.png" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Image Elements</a><br>
-<a href="https://youtu.be/r08wk-58DPk" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/143732412-1c65227e-4381-406d-847a-b001ab3506ca.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;LaTex Demo</a><br>
-<a href="https://youtu.be/tsecSfnTMow" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/143732440-90bfa029-8615-462e-ada3-c903d71a82c9.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Markdown embeds</a><br>
-<a href="https://youtu.be/K6qZkTz8GHs" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/143783906-15cee494-c6d5-4495-a2ca-74634e4e7355.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Markdown embeds advanced features</a><br>
-<a href="https://youtu.be/Etskjw7a5zo" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/156931461-0979b821-315a-41dd-86f1-31d169b7c127.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Link to Elements, Vertical text alignment, Markdown Styling</a><br>
-</details>
-<details><summary>The Script Engine Store - Excalidraw Automation</summary>
-<a href="https://youtu.be/hePJcObHIso" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/145684531-8d9c2992-59ac-4ebc-804a-4cce1777ded2.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Introducing the Script Engine</a><br>
-<a href="https://youtu.be/lzYdOQ6z8F0" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/147889174-6c306d0d-2d29-46cc-a53f-3f0013cf14de.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Script Engine Store</a><br>
-</details>
-<details><summary>Working with colors</summary>
-<a href="https://youtu.be/6PLGHBH9VZ4" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/194773147-5418a0ab-6be5-4eb0-a8e4-d6af21b1b483.png" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Colors - Excalidraw Basics (Custom)</a><br>
-<a href="https://youtu.be/epYNx2FSf2w" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/194773211-9e871be7-0795-4dc7-947e-c6c275e690d0.png" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Excalidraw color palettes (Custom)</a><br>
-<a href="https://youtu.be/Amhlv6r9WvM" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/194773268-400cfb1b-6bde-45e0-9e4b-91bbaa461cf0.png" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;"Artistic" Color Gradients</a><br>
-<a href="https://youtu.be/r9oB1SlK1GU" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/194773527-ef35c8b9-1a6d-4415-9c7e-b667fb17535d.png" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Simple rules for beautiful sketches</a><br>
-<a href="https://youtu.be/7gJDwNgQ6NU" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/195988535-a133a9b9-d094-45ba-ba64-c994b9a1e0ef.png" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;ColorMaster Scripting</a><br>
-</details>
-<details><summary>Links and block references</summary>
-<a href="https://youtu.be/qiKuqMcNWgU" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/171635214-30533c45-94fa-436e-83a9-b2ec99f190e2.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;6 strategies for linking your visual thoughts v4</a><br>
-<a href="https://youtu.be/yZQoJg2RCKI" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/185791706-3d9983ab-7cb1-4b27-a016-30c039d84e34.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Block reference parts of images</a><br>
-<a href="https://youtu.be/Etskjw7a5zo" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/156931461-0979b821-315a-41dd-86f1-31d169b7c127.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Link to Elements, Vertical text alignment, Markdown Styling</a><br>
-<a href="https://youtu.be/2Y8OhkGiTHg" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/152585752-7eb0371f-0bab-40f6-a194-3b48e5811735.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;How to guide for the Excalidraw-native hyperlinks</a><br>
-</details>
-<details><summary>Powertools</summary>
-<a href="https://youtu.be/NOuddK6xrr8" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/147283367-e5689385-ea51-4983-81a3-04d810d39f62.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Sticky Notes (word wrapping)</a><br>
-<a href="https://youtu.be/eKFmrSQhFA4" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/149659524-2a4e0a24-40c9-4e66-a6b1-c92f3b88ecd5.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Fourth Font</a><br>
-<a href="https://youtu.be/vlC1-iBvIfo" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/199207784-8bbe14e0-7d10-47d7-971d-20dce8dbd659.png" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;SVG import</a><br>
-<a href="https://youtu.be/7gu4ETx7zro" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/202916770-28f2fa64-1ba2-4b40-a7fe-d721b42634f7.png" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;OCR</a><br>
-<a href="https://youtu.be/U2LkBRBk4LY" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/159369910-6371f08d-b5fa-454d-9c6c-948f7e7a7d26.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Bind/unbind text from container, Frontmatter tags to customize export</a><br>
-<a href="https://youtu.be/uZz5MgzWXiM" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/211054371-8872e01a-77d6-4afc-a0c2-86a55410a8d3.png" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Custom pen support</a><br>
-</details>
-<details><summary>Quality of life improvements</summary>
-<a href="https://youtu.be/qbPIAZguJeo" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/151705333-54e9ffd2-0bd7-4d02-b99e-0bd4e4708d4d.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Mobile Support</a><br>
-<a href="https://youtu.be/2v9TZmQNO8c" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/153676009-6f86b2d7-c248-49a2-b802-be21c6999e4f.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Tray-mode and Customizable Color Palette</a><br>
-<a href="https://youtu.be/xHPGWR3m0c8" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/154821232-a404b6cf-72fb-4ce4-9d53-619132dce491.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Compressed JSON and improved save/sync support</a><br>
-<a href="https://youtu.be/gMIKXyhS-dM" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/156931428-b2269fd9-87bd-43ab-8558-5572f40dff93.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;The Obsidian Tools Panel</a><br>
-<a href="https://youtu.be/4N6efq1DtH0" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/158008902-12c6a851-237e-4edd-a631-d48e81c904b2.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Eraser, left-handed mode, improved filename configuration</a><br>
-</details>
-
-### Beta testing
-The plugin follows a monthly release schedule. If you want to receive more frequent updates with new features (e.g. shiny new stuff available on excalidraw.com, but not yet in Obsidian) and minor bug fixes, then join the beta community.
-
-[![Thumbnail - 20240803 Excalidraw Release Approach (Custom)](https://github.com/user-attachments/assets/ab40648c-f73f-4bda-a416-52839f918f2a)](https://youtu.be/2poSS-Z91lY)
-
-[![Excalidraw Plugin Release Strategy (Phone)](https://github.com/user-attachments/assets/87f1f379-782c-4c32-8b5b-d27fe2d3ac4b)](https://github.com/user-attachments/assets/120a0790-7239-48ae-bfbd-eb249f8b518d)
-
----
+<a href="https://youtu.be/r08wk-58DPk" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/--
 
 ## Features
 
@@ -128,15 +81,9 @@ Plugin settings are grouped into the following sections:
   - `![[image.excalidraw|100|left]]`,
   - `![[image.excalidraw|right-wrap]]`, formatting options.
   - `![[<filename.excalidraw>|<width>x<height>|<alignment>]]`.
-  - You can add your custom [alignment via CSS](https://www.scaler.com/topics/align-image-in-html/).
-  - Any text that appears in `<alignment>` will be added to the rendered SVG element style and to the wrapper DIV element.
-  - See [styles.css](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/styles.css) for more insight.
-- Excalidraw drawings do not display in Obsidian Publish. If you want to use Excalidraw in your published documents, you can configure in plugin settings, under `Embed & Export`, to automatically insert a PNG or SVG version of the drawing in your document when creating a new file. See `type of file to insert into document`
-  - Under `Export settings`, you can also configure to automatically export a dark and light version of the image, in case your published site supports dark and light modes.
-
-### Hyperlinks and Drag & Drop support
-
-![](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/images/excalidraw-modifiers.png)
+ text that appears in `<alignment>` will be added to the rendered SVG element style and to the wrapper DIV element.
+ Publish. If you want to use Excalidraw in your published documents, you can configure in plugin settings, under `Embed & Export`, to automatically insert a PNG or SVG version of the drawing in your document when creating a new file. See `type of file to insert into document`
+  - Under `Export settings`, you can also configure to automatically export a dark and light version of the image, in case your published site supports dark and light 
 
 #### Hyperlinks
 
@@ -159,7 +106,7 @@ Plugin settings are grouped into the following sections:
 
 - You can drag files from the Obsidian file explorer, and they will become links to those files in Excalidraw. See the table above for the various modifier key combinations.
 - Note: Anchoring an image to 100% of its size is a very niche feature with a very particular behavior that I built primarily for myself.
-  - (even more so than other features in Excalidraw Obsidian - also built primarily for myself 😉).
+  - (even more so than other features in Excalidraw ).
   - This will reset your embedded image to 100% size every time you open the Excalidraw drawing,
       or in case you have embedded an Excalidraw drawing on your canvas inserted using this function,
       every time you update the embedded drawing, it will be scaled back to 100% size.
@@ -188,8 +135,7 @@ You can edit formulas either in Markdown view or by <kbd>CTRL/CMD + Click</kbd> 
 
 ### Block referencing parts of images
 
-For more details, see this [video](https://youtu.be/yZQoJg2RCKI)
-- When referencing an element on the canvas in a link pointing to an Excalidraw file using
+For more deWhen referencing an element on the canvas in a link pointing to an Excalidraw file using
   - The elementId or the section header (i.e. a Text Element containing the `# <Section title>`)
       - e.g. `[[file#^elementID]]`,
   - You can add the `group=` prefix,
@@ -214,11 +160,11 @@ For more details, see this [video](https://youtu.be/yZQoJg2RCKI)
   - Anything you add between the frontmatter and the `# Text Elements` heading will be ignored by Excalidraw, i.e. you can add whatever you like here, and it will be preserved as part of the document.
   - Excalidraw documents now show up in graph view.
   - The following front matter keys will customize how the drawing is displayed - overriding general settings:
-    - `excalidraw-link-prefix: "📍"` preview prefix for internal links
-    - `excalidraw-url-prefix: "🌐"` preview prefix for external links
+"` preview prefix for internal links
+    - `excalidraw-url-prefix: preview prefix for external links
     - `excalidraw-link-brackets: true|false` whether or not to display brackets around links in preview
     - `excalidraw-default-mode: view|zen` Open this document in view mode or zen mode by defult. The default view mode is excellent for presentation slides.
-  - Frontmatter tags to customize image export at a file level [519](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/519). If these keys are present, they will override the default Excalidraw embed and export settings.
+  - Frontmatter tags to customize image are present, they will override the default Excalidraw embed and export settings.
     - `excalidraw-export-transparent: true`:  true == Transparent / false == with background.
     - `excalidraw-export-dark`: true == Dark mode / false == light mode.
     - `excalidraw-export-padding`: Specify the export padding for the image.
@@ -229,73 +175,29 @@ For more details, see this [video](https://youtu.be/yZQoJg2RCKI)
 Drag the desired file from the Obsidian file explorer and hold down <kbd>SHIFT</kbd> while dropping the file onto the canvas.
 - Use the command palette action: `Insert markdown file from vault`
 - Use custom woff, woff2, or TTF font to display the document, you can set the default font to use under Excalidraw Settings.
-- You can set a custom CSS for rendering the snapshot image of your markdown document. Only operating system-standard fonts are supported as the font-family ([Win10](https://docs.microsoft.com/en-us/typography/fonts/windows_10_font_list), [Mac & iOS](https://developer.apple.com/fonts/system-fonts/)), plus you can set one additional custom font using the setting explained above.
-  - (for a demonstration, watch this [video](https://youtu.be/K6qZkTz8GHs) and check out this
-  - [sample css](https://github.com/zsviczian/obsidian-excalidraw-plugin/discussions/281)).
-  - To help with styling, you can observe the SVG snapshot of the markdown document created by Excalidraw.
+- You can set a custom CSS for rendering the snapshot image of your markdown document. Only operating system-standard fonts are supported as the font-family 
     - Open Obsidian Developer Console (<kbd>CTRL+Shift+i</kbd>/<kbd>CMD+OPT+i</kbd>) and
     - Execute the following command: `ExcalidrawAutomate.mostRecentMarkdownSVG`
 - You can control the appearance of the embedded markdown file on a file by file
   bases by adding the following front matter keys to your markdown document:
   - `excalidraw-font: Virgil|Cascadia|font_file_name.extension`
   - `excalidraw-font-color: css-color-name|#HEXcolor|any-other-html-standard-format`,
-    - You can find css color names [here](https://www.w3schools.com/colors/colors_names.asp).
-  - `excalidraw-border-color: css-color-name|#HEXcolor|any-other-html-standard-format`
+ excalidraw-border-color: css-color-name|#HEXcolor|any-other-html-standard-format`
   - `excalidraw-css: "css-filename|css snippet"`
 - Switch to markdown view or use <kbd>WIN+CTRL</kbd>/<kbd>CMD+CTRL</kbd> click on the image to edit the properties of the embed:
-  - `[[filename#^blockref|WIDTHxMAXHEIGHT]]`
-
-### Custom Font, Custom Pen, OCR support, SVG import
-
-- In plugin settings, you can add a custom fourth font. For more details, see this [video](https://youtu.be/eKFmrSQhFA4)
-- The plugin includes OCR support using Taskbone OCR. For more details, see this [video](https://youtu.be/7gu4ETx7zro)
-- You can convert SVG files into Excalidraw drawings (with some limitation). For more details, see this [video](https://youtu.be/vlC1-iBvIfo)
-- You can define custom pens and higlighters and pin them to the sidebar. For more details, see this [video](https://youtu.be/OjNhjaH2KjI). Using ExcalidrawAutomate, you can add support for [auto-toggling](<ea-scripts/Auto Draw for Pen.md>) pen & support for [hardware eraser buttons](<ea-scripts/Hardware Eraser Support.md>).
-
-### Script Engine
-
-- Since 1.5.0, you can easily execute ExcalidrawAutomate macros and assign command palette shortcuts to them, using the ScriptEngine. You will find an intro video and a growing library of ready to install scripts [here](ea-scripts/README.md).
-- You can organize scripts into groups on the Obsidian Tools Panel in Excalidraw by moving scripts and accompanying SVG icon files to folders. See the demo [video](https://youtu.be/wTtaXmRJ7wg?t=16).
-
-### Other
-
-- Left-handed mode
-- Includes full
-    - [QuickAdd](https://github.com/chhoumann/quickadd),
-    - [Templater](https://silentvoid13.github.io/Templater/) and
-    - [Dataview](https://blacksmithgu.github.io/obsidian-dataview/docs/api/intro/) support through ExcalidrawAutomate.
-    - Check out the [detailed help + examples](https://zsviczian.github.io/obsidian-excalidraw-plugin/).
-    - I also have a [YouTube ExcalidrawAutomate Playlist](https://www.youtube.com/playlist?list=PL6mqgtMZ4NP1IR4nXxSlMA4PA5E-qpyHZ) with lots of examples.
-- REQUIRES AN OBSIDIAN SYNC SUBSCRIPTION: Full drawing file history and synchronization between devices
+  - `[[filename#^blockref|WIDTHxMAXHEIGHT]]` SVG files into Excalidraw drawings (with some li- REQUIRES AN OBSIDIAN SYNC : Full drawing file history and synchronization between devices
 - Multilanguage support: if you'd like to help out by translating the plugin, please get in contact with me.
 
 ---
 
-## Feedback, questions, ideas, problems
-
-Join the conversation about the Excalidraw plugin on
-[forum.obsidian.md](https://forum.obsidian.md/t/excalidraw-full-featured-sketching-plugin-in-obsidian)
-
-Please head over to [GitHub](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues) to
-report a bug or request an enhancement.
+## Feedback, questions, ideas, 
 
 ---
 
 ## Say Thank You
 
-If you are enjoying Excalidraw, then please support my work and enthusiasm by buying me a coffee on
-[https://ko-fi/zsolt](https://ko-fi.com/zsolt).
-
+If you are enjoying Excalidraw, then pleasupport my work and enthusiasm by buying me
 Please also help spread the word by sharing about the Obsidian Excalidraw Plugin on Twitter, Reddit,
 or any other social media platform you regularly use.
 
-You can find me on Twitter [@zsviczian](https://twitter.com/zsviczian), and on my blog [zsolt.blog](https://zsolt.blog).
-
-[<img style="float:left" src="https://user-images.githubusercontent.com/14358394/115450238-f39e8100-a21b-11eb-89d0-fa4b82cdbce8.png" width="200">](https://ko-fi.com/zsolt)
-
----
-
-## Friends of Excalidraw
-If you enjoy Excalidraw, consider giving [ExcaliBrain](https://github.com/zsviczian/excalibrain) a try (also available via Obsidian Community Plugins).
-
-<a href="https://youtu.be/gOkniMkDPyM" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/169708346-9e41289d-9536-43ec-8f70-2d2ad2d369d6.png" width="300"/></a>
+You can find me on Twitter [@zsviczian](https://twitters://user-images.githubusercontent.com/f="https://youtu.be/gOkniMkDPyM" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/169708346-9e41289d-9536-43ec-8f70-2d2ad2d369d6.png" width="300"/></a>
