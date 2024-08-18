@@ -720,6 +720,24 @@ export class ExcalidrawData {
       this.scene.appState.theme = isObsidianThemeDark() ? "dark" : "light";
     }
 
+    //girdSize, gridStep, previousGridSize, gridModeEnabled migration
+    if(this.scene.appState.hasOwnProperty("previousGridSize")) { //if previousGridSize was present this is legacy data
+      if(this.scene.appState.gridSize === null) {
+        this.scene.appState.gridSize = this.scene.appState.previousGridSize;
+        this.scene.appState.gridModeEnabled = false;
+      } else {
+        this.scene.appState.gridModeEnabled = true; 
+      }
+      delete this.scene.appState.previousGridSize;
+    }
+
+    if(this.scene.appState?.gridColor?.hasOwnProperty("MajorGridFrequency")) { //if this is present, this is legacy data
+      if(this.scene.appState.gridColor.MajorGridFrequency>1) {
+        this.scene.gridStep = this.scene.appState.gridColor.MajorGridFrequency;
+      }
+      delete this.scene.appState.gridColor.MajorGridFrequency;
+    }
+
     //once off migration of legacy scenes
     if(this.scene?.elements?.some((el:any)=>el.type==="iframe" && !el.customData)) {
         const prompt = new ConfirmationPrompt(
