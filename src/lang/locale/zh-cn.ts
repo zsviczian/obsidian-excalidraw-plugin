@@ -2,6 +2,7 @@ import {
   DEVICE,
   FRONTMATTER_KEYS,
 } from "src/constants/constants";
+import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/constSettingsTags";
 import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/ModifierkeyHelper";
 
 // 简体中文
@@ -336,14 +337,14 @@ FILENAME_HEAD: "文件名",
   SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC:
     "当您处于 Markdown 阅读模式（即查看绘图的背景笔记）时，Excalidraw 绘图是否应该渲染为图像？" +
     "此设置不会影响您在 Excalidraw 模式下的绘图显示，或者在将绘图嵌入 Markdown 文档时，或在渲染悬停预览时。<br><ul>" +
-    "<li>请参阅下面‘嵌入和导出’部分的 <b>PDF 导出</b> 相关设置。</li></ul><br>" +
+    "<li>请参阅下面‘嵌入和导出’部分的 <a href='#"+TAG_PDFEXPORT+"'>PDF 导出</a> 相关设置。</li></ul><br>" +
     "您必须关闭当前的 Excalidraw/Markdown 文件并重新打开，以使此更改生效。",
   SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME: "在将 Excalidraw 文件导出为 PDF 时将文件渲染为图像",
   SHOW_DRAWING_OR_MD_IN_EXPORTPDF_DESC:
     "处于 Markdown 视图模式时，此设置控制 Excalidraw 在使用 Obsidian 的 <b>导出为 PDF</b> 功能时，将 Excalidraw 文件导出为 PDF 的行为。<br>" +
     "<ul><li>当 <b>启用</b> 时，PDF 将仅显示 Excalidraw 绘图；</li>" +
     "<li>当 <b>禁用</b> 时，PDF 将显示文档的 Markdown 部分（背景笔记）。</li></ul>" +
-    "请参阅上面‘外观和行为’部分的 <b>Markdown 阅读模式</b> 相关设置。" +
+    "请参阅上面‘外观和行为’部分的 <<a href='#"+TAG_MDREADINGMODE+"'>>Markdown 阅读模式</a> 相关设置。" +
     "⚠️ 注意，您必须关闭当前的 Excalidraw/Markdown 文件并重新打开，以使此更改生效。⚠️",
   THEME_HEAD: "主题和样式",
   ZOOM_HEAD: "缩放",
@@ -531,7 +532,7 @@ FILENAME_HEAD: "文件名",
   EMBED_REUSE_EXPORTED_IMAGE_NAME:
     "将之前已导出的图像作为预览图",
   EMBED_REUSE_EXPORTED_IMAGE_DESC:
-    "该选项与“自动导出 SVG/PNG 副本”选项配合使用。如果嵌入到 Markdown 文档中的绘图文件存在同名的 SVG/PNG 副本，则将其作为预览图，而不再重新生成。<br>" +
+    "该选项与<a href='#"+TAG_AUTOEXPORT+"'>自动导出 SVG/PNG 副本</a>选项配合使用。如果嵌入到 Markdown 文档中的绘图文件存在同名的 SVG/PNG 副本，则将其作为预览图，而不再重新生成。<br>" +
     "该选项能够提高 Markdown 文档的打开速度，尤其是当嵌入到 Markdown 文档中的绘图文件中含有大量图像或 MD-Embed 时。" +
     "但是，该选项也可能导致预览图无法立即响应你对绘图文件或者 Obsidian 主题风格的修改。<br>" +
     "该选项仅作用于嵌入到 Markdown 文档中的绘图。" +
@@ -562,7 +563,7 @@ FILENAME_HEAD: "文件名",
   EMBED_TYPE_NAME: "“嵌入绘图到当前 Markdown 文档中”系列命令的源文件类型",
   EMBED_TYPE_DESC:
     "在命令面板中执行“嵌入绘图到当前 Markdown 文档中”系列命令时，要嵌入绘图文件本身，还是嵌入其 PNG 或 SVG 副本。<br>" +
-    "如果您想选择 PNG 或 SVG 副本，需要先开启下方的“自动导出 PNG 副本”或“自动导出 SVG 副本”。<br>" +
+    "如果您想选择 PNG 或 SVG 副本，需要先开启下方的<a href='#"+TAG_AUTOEXPORT+"'>自动导出 PNG / SVG 副本</a>。<br>" +
     "如果您选择了 PNG 或 SVG 副本，当副本不存在时，该命令将会插入一条损坏的链接，您需要打开绘图文件并手动导出副本才能修复 —— " +
     "也就是说，该选项不会自动帮您生成 PNG/SVG 副本，而只会引用已有的 PNG/SVG 副本。",
   EMBED_MARKDOWN_COMMENT_NAME: "将链接作为注释嵌入",
@@ -772,7 +773,7 @@ FILENAME_HEAD: "文件名",
   TOGGLE_FRAME_RENDERING: "开启或关闭框架渲染",
   TOGGLE_FRAME_CLIPPING: "开启或关闭框架裁剪",
   OPEN_LINK_CLICK: "打开所选的图形或文本元素里的链接",
-  OPEN_LINK_PROPS: "编辑所选 MD-Embed 的内部链接，或者打开所选的图形或文本元素里的链接",
+  OPEN_LINK_PROPS: "打开 markdown-embed 属性或 LaTeX 编辑器，或在新窗口中打开链接",
 
   //IFrameActionsMenu.tsx
   NARROW_TO_HEADING: "缩放至标题",
