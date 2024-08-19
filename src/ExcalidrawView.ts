@@ -2213,13 +2213,13 @@ export default class ExcalidrawView extends TextFileView {
     });
   }
 
-  private getGridColor(bgColor: string, st: AppState):{Bold: string, Regular: string, MajorGridFrequency: number} {
+  private getGridColor(bgColor: string, st: AppState):{Bold: string, Regular: string} {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getGridColor, "ExcalidrawView.getGridColor", bgColor, st);
     const cm = this.plugin.ea.getCM(bgColor);
     const isDark = cm.isDark();
     const Regular = (isDark ? cm.lighterBy(7) : cm.darkerBy(7)).stringHEX({alpha: false});
     const Bold = (isDark ? cm.lighterBy(14) : cm.darkerBy(14)).stringHEX({alpha: false});
-    return {Bold, Regular, MajorGridFrequency:st.gridColor.MajorGridFrequency};
+    return {Bold, Regular};
   }
 
   public activeLoader: EmbeddedFilesLoader = null;
@@ -3230,6 +3230,7 @@ export default class ExcalidrawView extends TextFileView {
       version: 2,
       source: GITHUB_RELEASES+PLUGIN_VERSION,
       elements: el,
+      //see also ExcalidrawAutomate async create(
       appState: {
         theme: st.theme,
         viewBackgroundColor: st.viewBackgroundColor,
@@ -3250,10 +3251,11 @@ export default class ExcalidrawView extends TextFileView {
         zoom: st.zoom,
         currentItemRoundness: st.currentItemRoundness,
         gridSize: st.gridSize,
+        gridStep: st.gridStep,
+        gridModeEnabled: st.gridModeEnabled,
         gridColor: st.gridColor,
         colorPalette: st.colorPalette,
         currentStrokeOptions: st.currentStrokeOptions,
-        previousGridSize: st.previousGridSize,
         frameRendering: st.frameRendering,
         objectsSnapModeEnabled: st.objectsSnapModeEnabled,
       },

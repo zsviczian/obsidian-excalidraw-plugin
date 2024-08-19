@@ -773,7 +773,7 @@ FILENAME_HEAD: "Filename",
   TOGGLE_FRAME_RENDERING: "Toggle frame rendering",
   TOGGLE_FRAME_CLIPPING: "Toggle frame clipping",
   OPEN_LINK_CLICK: "Open Link",
-  OPEN_LINK_PROPS: "Open markdown-embed properties or open link in new window",
+  OPEN_LINK_PROPS: "Open markdown-embed properties or the LaTeX editor or open the link in a new window",
 
   //IFrameActionsMenu.tsx
   NARROW_TO_HEADING: "Narrow to heading...",

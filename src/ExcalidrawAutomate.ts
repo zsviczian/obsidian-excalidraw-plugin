@@ -717,6 +717,12 @@ export class ExcalidrawAutomate {
           this.style.roundness ? "round":"sharp",
         gridSize: template?.appState?.gridSize ?? this.canvas.gridSize,
         colorPalette: template?.appState?.colorPalette ?? this.colorPalette,
+        ...template?.appState?.frameRendering
+          ? {frameRendering: template.appState.frameRendering}
+          : {},
+        ...template?.appState?.objectsSnapModeEnabled
+          ? {objectsSnapModeEnabled: template.appState.objectsSnapModeEnabled}
+          : {},
       },
       files: template?.files ?? {},
     };
@@ -2953,6 +2959,7 @@ async function getTemplate(
     }
 
     excalidrawData.destroy();
+    const filehead = data.substring(0, trimLocation);
     return {
       elements: convertMarkdownLinksToObsidianURLs
         ? updateElementLinksToObsidianLinks({
@@ -2960,7 +2967,7 @@ async function getTemplate(
           hostFile: file,
         }) : groupElements,
       appState: scene.appState,
-      frontmatter: data.substring(0, trimLocation),
+      frontmatter: filehead.match(/^---\n.*\n---\n/ms)?.[0] ?? filehead,
       files: scene.files,
       hasSVGwithBitmap,
     };
