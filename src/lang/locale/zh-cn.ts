@@ -773,7 +773,7 @@ FILENAME_HEAD: "文件名",
   TOGGLE_FRAME_RENDERING: "开启或关闭框架渲染",
   TOGGLE_FRAME_CLIPPING: "开启或关闭框架裁剪",
   OPEN_LINK_CLICK: "打开所选的图形或文本元素里的链接",
-  OPEN_LINK_PROPS: "编辑所选 MD-Embed 的内部链接，或者打开所选的图形或文本元素里的链接",
+  OPEN_LINK_PROPS: "打开 markdown-embed 属性或 LaTeX 编辑器，或在新窗口中打开链接",
 
   //IFrameActionsMenu.tsx
   NARROW_TO_HEADING: "缩放至标题",
