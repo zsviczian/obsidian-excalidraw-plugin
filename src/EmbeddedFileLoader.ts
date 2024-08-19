@@ -11,7 +11,7 @@ import {
   nanoid,
   THEME_FILTER,
   FRONTMATTER_KEYS,
-  getFontDefinition,
+  getCSSFontDefinition,
 } from "./constants/constants";
 import { createSVG } from "./ExcalidrawAutomate";
 import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
@@ -836,29 +836,29 @@ export class EmbeddedFilesLoader {
     }
     switch (fontName) {
       case "Virgil":
-        fontDef = await getFontDefinition(1);
+        fontDef = await getCSSFontDefinition(1);
         break;
       case "Cascadia":
-        fontDef = await getFontDefinition(3);
+        fontDef = await getCSSFontDefinition(3);
         break;
       case "Assistant":
       case "Helvetica":
-        fontDef = await getFontDefinition(2);
+        fontDef = await getCSSFontDefinition(2);
         break;
       case "Excalifont":
-        fontDef = await getFontDefinition(5);
+        fontDef = await getCSSFontDefinition(5);
         break;
       case "Nunito":
-        fontDef = await getFontDefinition(6);
+        fontDef = await getCSSFontDefinition(6);
         break;
       case "Lilita One":
-        fontDef = await getFontDefinition(7);
+        fontDef = await getCSSFontDefinition(7);
         break;
       case "Comic Shanns":
-        fontDef = await getFontDefinition(8);
+        fontDef = await getCSSFontDefinition(8);
         break;
       case "Liberation Sans":
-        fontDef = await getFontDefinition(9);
+        fontDef = await getCSSFontDefinition(9);
         break;
       case "":
         fontDef = "";
@@ -941,12 +941,14 @@ export class EmbeddedFilesLoader {
     mdDIV.style.display = "block";
     mdDIV.style.color = fontColor && fontColor !== "" ? fontColor : "initial";
   
-    await MarkdownRenderer.renderMarkdown(text, mdDIV, file.path, plugin);
-  
+    //await MarkdownRenderer.renderMarkdown(text, mdDIV, file.path, plugin);
+    await MarkdownRenderer.render(this.plugin.app,text,mdDIV,file.path,this.plugin);
+
     mdDIV
       .querySelectorAll(":scope > *[class^='frontmatter']")
       .forEach((el) => mdDIV.removeChild(el));
   
+    await replaceBlobWithBase64(mdDIV); //because image cache returns a blob
     const internalEmbeds = Array.from(mdDIV.querySelectorAll("span[class='internal-embed']"))
     for(let i=0;i<internalEmbeds.length;i++) {
       const el = internalEmbeds[i];
@@ -1106,4 +1108,20 @@ export const generateIdFromFile = async (file: ArrayBuffer, key?: string): Promi
     id = fileid() as FileId;
   }
   return id;
+};
+
+const replaceBlobWithBase64 = async (divElement: HTMLDivElement): Promise<void> => {
+  const images = divElement.querySelectorAll<HTMLImageElement>('img[src^="blob:app://obsidian.md"]');
+
+  for (let img of images) {
+    const blobUrl = img.src;
+    try {
+      const response = await fetch(blobUrl);
+      const blob = await response.blob();
+      const base64 = await blobToBase64(blob);
+      img.src = `data:${blob.type};base64,${base64}`;
+    } catch (error) {
+      console.error(`Failed to fetch or convert blob: ${blobUrl}`, error);
+    }
+  }
 };

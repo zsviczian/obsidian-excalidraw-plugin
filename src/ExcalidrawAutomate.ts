@@ -2566,10 +2566,11 @@ export class ExcalidrawAutomate {
   };
 
   /**
-   * Returns the size of the image element at 100% (i.e. the original size)
+   * Returns the size of the image element at 100% (i.e. the original size), or undefined if the data URL is not available
    * @param imageElement an image element from the active scene on targetView
+   * @param shouldWaitForImage if true, the function will wait for the image to load before returning the size
    */
-  async getOriginalImageSize(imageElement: ExcalidrawImageElement): Promise<{width: number; height: number}> {
+  async getOriginalImageSize(imageElement: ExcalidrawImageElement, shouldWaitForImage: boolean=false): Promise<{width: number; height: number}> {
     //@ts-ignore
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "getOriginalImageSize()");
@@ -2585,8 +2586,57 @@ export class ExcalidrawAutomate {
       return null;
     }
     const isDark = this.getExcalidrawAPI().getAppState().theme === "dark";
-    const dataURL = ef.getImage(isDark);
+    let dataURL = ef.getImage(isDark);
+    if(!dataURL && !shouldWaitForImage) return;
+    if(!dataURL) {
+      let watchdog = 0;
+      while(!dataURL && watchdog < 50) {
+        await sleep(100);
+        dataURL = ef.getImage(isDark);
+        watchdog++;
+      }
+      if(!dataURL) return;
+    }
     return await getImageSize(dataURL);
+  }
+
+  /**
+   * Resets the image to its original aspect ratio.
+   * If the image is resized then the function returns true.
+   * If the image element is not in EA (only in the view), then if image is resized, the element is copied to EA for Editing using copyViewElementsToEAforEditing([imgEl]).
+   * Note you need to run await ea.addElementsToView(false); to add the modified image to the view.
+   * @param imageElement - the EA image element to be resized
+   * returns true if image was changed, false if image was not changed
+   */
+  async resetImageAspectRatio(imgEl: ExcalidrawImageElement): Promise<boolean> {
+    //@ts-ignore
+    if (!this.targetView || !this.targetView?._loaded) {
+      errorMessage("targetView not set", "resetImageAspectRatio()");
+      return null;
+    }
+
+    const size = await this.getOriginalImageSize(imgEl, true);
+    if (size) {
+      const originalArea = imgEl.width * imgEl.height;
+      const originalAspectRatio = size.width / size.height;
+      let newWidth = Math.sqrt(originalArea * originalAspectRatio);
+      let newHeight = Math.sqrt(originalArea / originalAspectRatio);
+      const centerX = imgEl.x + imgEl.width / 2;
+      const centerY = imgEl.y + imgEl.height / 2;
+
+      if (newWidth !== imgEl.width || newHeight !== imgEl.height) {
+        if(!this.getElement(imgEl.id)) {
+          this.copyViewElementsToEAforEditing([imgEl]);
+        }
+        const eaEl = this.getElement(imgEl.id);
+        eaEl.width = newWidth;
+        eaEl.height = newHeight;
+        eaEl.x = centerX - newWidth / 2;
+        eaEl.y = centerY - newHeight / 2;
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -3285,7 +3335,7 @@ export const search = async (view: ExcalidrawView) => {
   const ea = view.plugin.ea;
   ea.reset();
   ea.setView(view);
-  const elements = ea.getViewElements().filter((el) => el.type === "text" || el.type === "frame");
+  const elements = ea.getViewElements().filter((el) => el.type === "text" || el.type === "frame" || el.link);
   if (elements.length === 0) {
     return;
   }
@@ -3376,6 +3426,32 @@ export const getFrameElementsMatchingQuery = (
        : "";
 
       return text.match(q.toLowerCase()); //to distinguish between "# frame" and "# frame 1" https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530
+    }));
+}
+
+/**
+ * 
+ * @param elements 
+ * @param query 
+ * @param exactMatch - when searching for section header exactMatch should be set to true
+ * @returns the elements matching the query
+ */
+export const getElementsWithLinkMatchingQuery = (
+  elements: ExcalidrawElement[],
+  query: string[],
+  exactMatch: boolean = false, //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530
+): ExcalidrawElement[] => {
+  if (!elements || elements.length === 0 || !query || query.length === 0) {
+    return [];
+  }
+
+  return elements.filter((el: any) =>
+    el.link && 
+    query.some((q) => {
+      const text = el.link.toLowerCase().trim();
+      return exactMatch
+        ? (text === q.toLowerCase())
+        : text.match(q.toLowerCase());
     }));
 }
 

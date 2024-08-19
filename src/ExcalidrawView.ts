@@ -60,7 +60,8 @@ import {
   ExcalidrawAutomate,
   getTextElementsMatchingQuery,
   cloneElement,
-  getFrameElementsMatchingQuery
+  getFrameElementsMatchingQuery,
+  getElementsWithLinkMatchingQuery
 } from "./ExcalidrawAutomate";
 import { t } from "./lang/helpers";
 import {
@@ -126,7 +127,7 @@ import { anyModifierKeysPressed, emulateKeysForLinkClick, webbrowserDragModifier
 import { setDynamicStyle } from "./utils/DynamicStyling";
 import { InsertPDFModal } from "./dialogs/InsertPDFModal";
 import { CustomEmbeddable, renderWebView } from "./customEmbeddable";
-import { addBackOfTheNoteCard, getExcalidrawFileForwardLinks, getFrameBasedOnFrameNameOrId, getLinkTextFromLink, insertEmbeddableToView, insertImageToView, isTextImageTransclusion, openExternalLink, openTagSearch, parseObsidianLink, renderContextMenuAction, tmpBruteForceCleanup } from "./utils/ExcalidrawViewUtils";
+import { addBackOfTheNoteCard, getExcalidrawFileForwardLinks, getFrameBasedOnFrameNameOrId, getLinkTextFromLink, insertEmbeddableToView, insertImageToView, isTextImageTransclusion, openExternalLink, parseObsidianLink, renderContextMenuAction, tmpBruteForceCleanup } from "./utils/ExcalidrawViewUtils";
 import { imageCache } from "./utils/ImageCache";
 import { CanvasNodeFactory, ObsidianCanvasNode } from "./utils/CanvasNodeFactory";
 import { EmbeddableMenu } from "./menu/EmbeddableActionsMenu";
@@ -900,6 +901,90 @@ export default class ExcalidrawView extends TextFileView {
     }
   }
 
+  async openLaTeXEditor(eqId: string) {
+    const el = this.getViewElements().find((el:ExcalidrawElement)=>el.id === eqId && el.type==="image") as ExcalidrawImageElement;
+    if(!el) {
+      return;
+    }
+  
+    const fileId = el.fileId;
+
+    let equation = this.excalidrawData.getEquation(fileId)?.latex;
+    if(!equation) {
+      await this.save(false);
+      equation = this.excalidrawData.getEquation(fileId)?.latex;
+      if(!equation) return;
+    }
+
+    GenericInputPrompt.Prompt(this,this.plugin,this.app,t("ENTER_LATEX"),undefined,equation, undefined, 3).then(async (formula: string) => {
+      if (!formula || formula === equation) {
+        return;
+      }
+      this.excalidrawData.setEquation(fileId, {
+        latex: formula,
+        isLoaded: false,
+      });
+      await this.save(false);
+      await updateEquation(
+        formula,
+        fileId,
+        this,
+        addFiles,
+      );
+      this.setDirty(1);
+    });  
+  }
+
+  async openEmbeddedLinkEditor(imgId:string) {
+    const el = this.getViewElements().find((el:ExcalidrawElement)=>el.id === imgId && el.type==="image") as ExcalidrawImageElement;
+    if(!el) {
+      return;
+    }
+    const fileId = el.fileId;
+    const ef = this.excalidrawData.getFile(fileId);
+    if(!ef) {
+      return
+    }
+    if (!ef.isHyperLink && !ef.isLocalLink && ef.file) {
+      const handler = async (link:string) => {
+        if (!link || ef.linkParts.original === link) {
+          return;
+        }
+        ef.resetImage(this.file.path, link);
+        this.excalidrawData.setFile(fileId, ef);
+        this.setDirty(2);
+        await this.save(false);
+        await sleep(100);
+        if(!this.plugin.isExcalidrawFile(ef.file) && !link.endsWith("|100%")) {
+          const ea = getEA(this) as ExcalidrawAutomate;
+          let imgEl = this.getViewElements().find((x:ExcalidrawElement)=>x.id === el.id) as ExcalidrawImageElement;
+          if(!imgEl) {
+            ea.destroy();
+            return;
+          }
+          if(imgEl && await ea.resetImageAspectRatio(imgEl)) {
+            await ea.addElementsToView(false);
+          }
+          ea.destroy();
+        }
+      }
+      GenericInputPrompt.Prompt(
+        this,
+        this.plugin,
+        this.app,
+        t("MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT_TITLE"),
+        undefined,
+        ef.linkParts.original,
+        [{caption: "✅", action: (x:string)=>{x.replaceAll("\n","").trim()}}],
+        3,
+        false,
+        (container) => container.createEl("p",{text: fragWithHTML(t("MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT"))}),
+        false
+      ).then(handler.bind(this),()=>{});
+      return;
+    }
+  }
+
   toggleDisableBinding() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleDisableBinding, "ExcalidrawView.toggleDisableBinding");
     const newState = !this.excalidrawAPI.getAppState().invertBindingBehaviour;
@@ -1042,6 +1127,10 @@ export default class ExcalidrawView extends TextFileView {
           ? this.excalidrawData.getRawText(selectedText.id)
           : selectedText.text);
 
+      if(linkText.startsWith("#")) {
+        return {linkText, selectedElement: selectedTextElement ?? selectedElement};
+      }
+
       const maybeObsidianLink = parseObsidianLink(linkText, this.app);
       if(typeof maybeObsidianLink === "string") {
         linkText = maybeObsidianLink;
@@ -1054,6 +1143,15 @@ export default class ExcalidrawView extends TextFileView {
           const container = _getContainerElement(selectedTextElement, {elements: this.excalidrawAPI.getSceneElements()});
           if(container) {
             linkText = container.link;
+            
+            if(linkText.startsWith("#")) {
+              return {linkText, selectedElement: selectedTextElement ?? selectedElement};
+            }
+
+            const maybeObsidianLink = parseObsidianLink(linkText, this.app);
+            if(typeof maybeObsidianLink === "string") {
+              linkText = maybeObsidianLink;
+            }
           }
         }
         if(!linkText || partsArray.length === 0) {
@@ -1108,30 +1206,8 @@ export default class ExcalidrawView extends TextFileView {
     if (selectedImage?.id) {
       const imageElement = this.getScene().elements.find((el:ExcalidrawElement)=>el.id === selectedImage.id) as ExcalidrawImageElement;
       if (this.excalidrawData.hasEquation(selectedImage.fileId)) {
-        (async () => {
-          await this.save(false);
-          selectedImage.fileId = imageElement.fileId;
-          const equation = this.excalidrawData.getEquation(
-            selectedImage.fileId,
-          ).latex;
-          GenericInputPrompt.Prompt(this,this.plugin,this.app,t("ENTER_LATEX"),undefined,equation, undefined, 3).then(async (formula: string) => {
-            if (!formula || formula === equation) {
-              return;
-            }
-            this.excalidrawData.setEquation(selectedImage.fileId, {
-              latex: formula,
-              isLoaded: false,
-            });
-            await this.save(false);
-            await updateEquation(
-              formula,
-              selectedImage.fileId,
-              this,
-              addFiles,
-            );
-            this.setDirty(1);
-          });  
-        })();
+        this.updateScene({appState: {contextMenu: null}});
+        this.openLaTeXEditor(selectedImage.id);
         return;
       }
       if (this.excalidrawData.hasMermaid(selectedImage.fileId) || getMermaidText(imageElement)) {
@@ -1144,38 +1220,13 @@ export default class ExcalidrawView extends TextFileView {
       
       await this.save(false); //in case pasted images haven't been saved yet
       if (this.excalidrawData.hasFile(selectedImage.fileId)) {
-        const ef = this.excalidrawData.getFile(selectedImage.fileId);
-        if (!ef.isHyperLink && !ef.isLocalLink && linkClickType === "md-properties") {
-          if (
-            ef.file.extension === "md" &&
-            !this.plugin.isExcalidrawFile(ef.file)
-          ) {
-            const handler = async (link:string) => {
-              if (!link || ef.linkParts.original === link) {
-                return;
-              }
-              ef.resetImage(this.file.path, link);
-              this.setDirty(2);
-              await this.save(false);
-              await this.loadSceneFiles();
-            }
-            GenericInputPrompt.Prompt(
-              this,
-              this.plugin,
-              this.app,
-              t("MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT_TITLE"),
-              undefined,
-              ef.linkParts.original,
-              [{caption: "✅", action: handler}],
-              1,
-              false,
-              (container) => container.createEl("p",{text: fragWithHTML(t("MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT"))}),
-              false
-            ).then(handler, () => {});
-            return;
-          }
+        const fileId = selectedImage.fileId;
+        const ef = this.excalidrawData.getFile(fileId);
+        if (!ef.isHyperLink && !ef.isLocalLink && ef.file && linkClickType === "md-properties") {
+          this.updateScene({appState: {contextMenu: null}});
+          this.openEmbeddedLinkEditor(selectedImage.id);
+          return;
         }
-
         let secondOrderLinks: string = " ";
         
         const backlinks = this.app.metadataCache?.getBacklinksForFile(ef.file)?.data;
@@ -1928,7 +1979,7 @@ export default class ExcalidrawView extends TextFileView {
       state.match &&
       state.match.content &&
       state.match.matches &&
-      state.match.matches.length === 1 &&
+      state.match.matches.length >= 1 &&
       state.match.matches[0].length === 2
     ) {
       query = [
@@ -2023,7 +2074,7 @@ export default class ExcalidrawView extends TextFileView {
         )) {
           const cleanQuery = cleanSectionHeading(query[0]);
           const sections = await this.getBackOfTheNoteSections();
-          if(sections.includes(cleanQuery)) {
+          if(sections.includes(cleanQuery) || this.data.includes(query[0])) {
             this.setMarkdownView(state);
             return;
           }
@@ -5647,10 +5698,14 @@ export default class ExcalidrawView extends TextFileView {
       elements.filter((el: ExcalidrawElement) => el.type === "frame"),
       query,
       exactMatch
+    )).concat(getElementsWithLinkMatchingQuery(
+      elements.filter((el: ExcalidrawElement) => el.link),
+      query,
+      exactMatch
     ));
 
     if (match.length === 0) {
-      new Notice("I could not find a matching text element");
+      new Notice(t("NO_SEARCH_RESULT"));
       return false;
     }
 
@@ -5675,7 +5730,7 @@ export default class ExcalidrawView extends TextFileView {
 
     const zoomLevel = this.plugin.settings.zoomToFitMaxLevel;
     if (selectResult) {
-      api.selectElements(elements);
+      api.selectElements(elements, true);
     }
     api.zoomToFit(elements, zoomLevel, 0.05);
   }

@@ -2,7 +2,7 @@
 import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS } from "src/constants/constants";
 import { App, Notice, TFile, WorkspaceLeaf } from "obsidian";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
-import { REGEX_LINK, REG_LINKINDEX_HYPERLINK, getExcalidrawMarkdownHeaderSection } from "src/ExcalidrawData";
+import { REGEX_LINK, REG_LINKINDEX_HYPERLINK, getExcalidrawMarkdownHeaderSection, REGEX_TAGS } from "src/ExcalidrawData";
 import ExcalidrawView from "src/ExcalidrawView";
 import { ExcalidrawElement, ExcalidrawFrameElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { getLinkParts } from "./Utils";
@@ -72,24 +72,26 @@ export function getLinkTextFromLink (text: string): string {
   return linktext;
 }
 
-export function openTagSearch (link:string, app: App, view?: ExcalidrawView) {
-  const tags = link
-    .matchAll(/#([\p{Letter}\p{Emoji_Presentation}\p{Number}\/_-]+)/gu)
-    .next();
-  if (!tags.value || tags.value.length < 2) {
+export function openTagSearch(link: string, app: App, view?: ExcalidrawView) {
+  const tags = REGEX_TAGS.getResList(link);
+
+  if (!tags.length || !tags[0].value || tags[0].value.length < 2) {
     return;
   }
+
   const search = app.workspace.getLeavesOfType("search");
-  if (search.length == 0) {
+  if (search.length === 0) {
     return;
   }
+
   //@ts-ignore
-  search[0].view.setQuery(`tag:${tags.value[1]}`);
+  search[0].view.setQuery(`tag:${tags[0].value[1]}`);
   app.workspace.revealLeaf(search[0]);
 
   if (view && view.isFullscreen()) {
     view.exitFullscreen();
   }
+
   return;
 }
 

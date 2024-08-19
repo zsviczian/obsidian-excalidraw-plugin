@@ -365,13 +365,10 @@ export const ICONS = {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v7"/>
-      <polyline 
-        points="14 2 14 8 20 8"
-        fill="var(--icon-fill-color)"
-      />
-      <path d="m10 18 3-3-3-3"/>
-      <path d="M4 18v-1a2 2 0 0 1 2-2h6"/>
+      <path d="M10 12.5 8 15l2 2.5"/>
+      <path d="m14 12.5 2 2.5-2 2.5"/>
+      <path d="M14 2v4a2 2 0 0 0 2 2h4"/>
+      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/>
     </svg>
   ),
   //fa-brands fa-markdown

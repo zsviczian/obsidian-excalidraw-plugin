@@ -97,7 +97,7 @@ export const {
   getFontFamilyString,
   getContainerElement,
   refreshTextDimensions,
-  getFontDefinition,
+  getCSSFontDefinition,
 } = excalidrawLib;
 
 export const FONTS_STYLE_ID = "excalidraw-custom-fonts";

@@ -550,8 +550,19 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "getOriginalImageSize",
-    code: "async getOriginalImageSize(imageElement: ExcalidrawImageElement): Promise<{width: number; height: number}>",
-    desc: "Returns the size of the image element at 100% (i.e. the original size). This is an async function, you need to await the result.",
+    code: "async getOriginalImageSize(imageElement: ExcalidrawImageElement, shouldWaitForImage: boolean=false): Promise<{width: number; height: number}>",
+    desc: "Returns the size of the image element at 100% (i.e. the original size) or undefined if the data URL is not available.\n"+
+      "If shouldWaitForImage is true, the function will wait for the view to load the image before returning the size.\n"+
+      "This is an async function, you need to await the result.",
+    after: "",
+  },
+  {
+    field: "resetImageAspectRatio",
+    code: "async resetImageAspectRatio(imgEl: ExcalidrawImageElement): Promise<boolean>",
+    desc: "Resets the image to its original aspect ratio.\n" +
+     "If the image is resized then the function returns true.\n" +
+     "If the image element is not in EA (only in the view), then if the image is resized, the element is copied to EA for Editing using copyViewElementsToEAforEditing([imgEl]).\n" +
+     "Note you need to run await ea.addElementsToView(false); to add the modified image to the view.",
     after: "",
   },
   {

@@ -175,6 +175,6 @@ declare namespace ExcalidrawLib {
   function registerLocalFont(fontMetrics: FontMetadata, uri: string): void;
   function getFontFamilies(): string[];
   function registerFontsInCSS(): Promise<void>;
-  function getFontDefinition(fontFamily: number): Promise<string>;
+  function getCSSFontDefinition(fontFamily: number): Promise<string>;
 }
 

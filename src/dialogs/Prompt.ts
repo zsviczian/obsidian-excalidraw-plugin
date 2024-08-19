@@ -20,7 +20,7 @@ import { t } from "src/lang/helpers";
 import { ExcalidrawElement, getEA } from "src";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import { MAX_IMAGE_SIZE, REG_LINKINDEX_INVALIDCHARS } from "src/constants/constants";
-import { REGEX_LINK } from "src/ExcalidrawData";
+import { REGEX_LINK, REGEX_TAGS } from "src/ExcalidrawData";
 import { ScriptEngine } from "src/Scripts";
 import { openExternalLink, openTagSearch, parseObsidianLink } from "src/utils/ExcalidrawViewUtils";
 
@@ -211,15 +211,15 @@ export class GenericInputPrompt extends Modal {
       }, 30);
     }
 
-    textComponent.inputEl.addEventListener("keydown", this.keyDownCallback);
-    textComponent.inputEl.addEventListener('keyup', checkcaret); // Every character written
-    textComponent.inputEl.addEventListener('pointerup', checkcaret); // Click down
-    textComponent.inputEl.addEventListener('touchend', checkcaret); // Click down
-    textComponent.inputEl.addEventListener('input', checkcaret); // Other input events
-    textComponent.inputEl.addEventListener('paste', checkcaret); // Clipboard actions
-    textComponent.inputEl.addEventListener('cut', checkcaret);
-    textComponent.inputEl.addEventListener('select', checkcaret); // Some browsers support this event
-    textComponent.inputEl.addEventListener('selectionchange', checkcaret);// Some browsers support this event
+    textComponent.inputEl.addEventListener("keydown", this.keyDownCallback.bind(this));
+    textComponent.inputEl.addEventListener('keyup', checkcaret.bind(this)); // Every character written
+    textComponent.inputEl.addEventListener('pointerup', checkcaret.bind(this)); // Click down
+    textComponent.inputEl.addEventListener('touchend', checkcaret.bind(this)); // Click down
+    textComponent.inputEl.addEventListener('input', checkcaret.bind(this)); // Other input events
+    textComponent.inputEl.addEventListener('paste', checkcaret.bind(this)); // Clipboard actions
+    textComponent.inputEl.addEventListener('cut', checkcaret.bind(this));
+    textComponent.inputEl.addEventListener('select', checkcaret.bind(this)); // Some browsers support this event
+    textComponent.inputEl.addEventListener('selectionchange', checkcaret.bind(this));// Some browsers support this event
       
     return textComponent;
   }
@@ -272,18 +272,18 @@ export class GenericInputPrompt extends Modal {
       this.createButton(
         actionButtonContainer,
         "✅",
-        this.submitClickCallback,
+        this.submitClickCallback.bind(this),
       ).setCta().buttonEl.style.marginRight = "0";
     }
-    this.createButton(actionButtonContainer, "❌", this.cancelClickCallback, t("PROMPT_BUTTON_CANCEL"));
+    this.createButton(actionButtonContainer, "❌", this.cancelClickCallback.bind(this), t("PROMPT_BUTTON_CANCEL"));
     if(this.displayEditorButtons) {
       this.createButton(editorButtonContainer, "⏎", ()=>this.insertStringBtnClickCallback("\n"), t("PROMPT_BUTTON_INSERT_LINE"), "0");
-      this.createButton(editorButtonContainer, "⌫", this.delBtnClickCallback, "Delete");
+      this.createButton(editorButtonContainer, "⌫", this.delBtnClickCallback.bind(this), "Delete");
       this.createButton(editorButtonContainer, "⎵", ()=>this.insertStringBtnClickCallback(" "), t("PROMPT_BUTTON_INSERT_SPACE"));
       if(this.view) {
-        this.createButton(editorButtonContainer, "🔗", this.linkBtnClickCallback, t("PROMPT_BUTTON_INSERT_LINK"));
+        this.createButton(editorButtonContainer, "🔗", this.linkBtnClickCallback.bind(this), t("PROMPT_BUTTON_INSERT_LINK"));
       }
-      this.createButton(editorButtonContainer, "🔠", this.uppercaseBtnClickCallback, t("PROMPT_BUTTON_UPPERCASE"));
+      this.createButton(editorButtonContainer, "🔠", this.uppercaseBtnClickCallback.bind(this), t("PROMPT_BUTTON_UPPERCASE"));
     }
   }
 
@@ -342,8 +342,13 @@ export class GenericInputPrompt extends Modal {
     this.inputComponent.inputEl.setSelectionRange(this.selectionStart, this.selectionEnd);
   }
 
-  private submitClickCallback = () => this.submit();
-  private cancelClickCallback = () => this.cancel();
+  private submitClickCallback () {
+    this.submit();
+  }
+
+  private cancelClickCallback () {
+    this.cancel();
+  }
 
   private keyDownCallback = (evt: KeyboardEvent) => {
     if ((evt.key === "Enter" && this.lines === 1) || (isWinCTRLorMacCMD(evt) && evt.key === "Enter")) {
@@ -668,10 +673,10 @@ export class ConfirmationPrompt extends Modal {
     buttonContainer.style.display = "flex";
     buttonContainer.style.justifyContent = "flex-end";
 
-    const cancelButton = this.createButton(buttonContainer, t("PROMPT_BUTTON_CANCEL"), this.cancelClickCallback);
+    const cancelButton = this.createButton(buttonContainer, t("PROMPT_BUTTON_CANCEL"), this.cancelClickCallback.bind(this));
     cancelButton.buttonEl.style.marginRight = "0.5rem";
 
-    const confirmButton = this.createButton(buttonContainer, t("PROMPT_BUTTON_OK"), this.confirmClickCallback);
+    const confirmButton = this.createButton(buttonContainer, t("PROMPT_BUTTON_OK"), this.confirmClickCallback.bind(this));
     confirmButton.buttonEl.style.marginRight = "0";
 
     cancelButton.buttonEl.focus();
@@ -683,12 +688,12 @@ export class ConfirmationPrompt extends Modal {
     return button;
   }
 
-  private cancelClickCallback = () => {
+  private cancelClickCallback() {
     this.didConfirm = false;
     this.close();
   };
 
-  private confirmClickCallback = () => {
+  private confirmClickCallback() {
     this.didConfirm = true;
     this.close();
   };
@@ -714,18 +719,28 @@ export async function linkPrompt (
   view?: ExcalidrawView,
   message: string = "Select link to open",
 ):Promise<[file:TFile, linkText:string, subpath: string]> {
-  const partsArray = REGEX_LINK.getResList(linkText);
+  const linksArray = REGEX_LINK.getResList(linkText);
+  const tagsArray = REGEX_TAGS.getResList(linkText);
   let subpath: string = null;
   let file: TFile = null;
-  let parts = partsArray[0];
-  if (partsArray.length > 1) {
+  let parts = linksArray[0] ?? tagsArray[0];
+  const itemsDisplay = [
+    ...linksArray.filter(p=> Boolean(p.value)).map(p => {
+      const alias = REGEX_LINK.getAliasOrLink(p);
+      return alias === "100%" ? REGEX_LINK.getLink(p) : alias;
+    }),
+    ...tagsArray.filter(x=> Boolean(x.value)).map(x => REGEX_TAGS.getTag(x)),
+  ];
+  const items = [
+    ...linksArray.filter(p=>Boolean(p.value)),
+    ...tagsArray.filter(x=> Boolean(x.value)),
+  ];
+
+  if (items.length>1) {
     parts = await ScriptEngine.suggester(
       app,
-      partsArray.filter(p=>Boolean(p.value)).map(p => {
-        const alias = REGEX_LINK.getAliasOrLink(p);
-        return alias === "100%" ? REGEX_LINK.getLink(p) : alias;
-      }),
-      partsArray.filter(p=>Boolean(p.value)),
+      itemsDisplay,
+      items,
       message,
     );
     if(!parts) return;
@@ -735,8 +750,8 @@ export async function linkPrompt (
     return;
   }
   
-  if (!parts.value) {
-    openTagSearch(linkText, app);
+  if (REGEX_TAGS.isTag(parts)) {
+    openTagSearch(REGEX_TAGS.getTag(parts), app);
     return;
   }
 

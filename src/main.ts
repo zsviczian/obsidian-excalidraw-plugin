@@ -1794,11 +1794,79 @@ export default class ExcalidrawPlugin extends Plugin {
             const eaEl = ea.getElement(el.id);
             //@ts-ignore
             eaEl.width = size.width; eaEl.height = size.height;
-            ea.addElementsToView(false,false,false);
+            await ea.addElementsToView(false,false,false);
           }
+          ea.destroy();
         })()
       }
     })
+
+    this.addCommand({
+      id: "reset-image-ar",
+      name: t("RESET_IMG_ASPECT_RATIO"),
+      checkCallback: (checking: boolean) => {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (!view) return false;
+        if (!view.excalidrawAPI) return false;
+        const els = view.getViewSelectedElements().filter(el => el.type === "image");
+        if (els.length !== 1) {
+          if (checking) return false;
+          new Notice("Select a single image element and try again");
+          return false;
+        }
+        if (checking) return true;
+    
+        (async () => {
+          const el = els[0] as ExcalidrawImageElement;
+          let ef = view.excalidrawData.getFile(el.fileId);
+          if (!ef) {
+            await view.forceSave();
+            let ef = view.excalidrawData.getFile(el.fileId);
+            new Notice("Select a single image element and try again");
+            return false;
+          }
+    
+          const ea = new ExcalidrawAutomate(this, view);
+          if (await ea.resetImageAspectRatio(el)) {
+            await ea.addElementsToView(false, false, false);
+          }
+          ea.destroy();
+        })();
+      }
+    });
+    
+    this.addCommand({
+      id: "open-link-props",
+      name: t("OPEN_LINK_PROPS"),
+      checkCallback: (checking: boolean) => {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (!view) return false;
+        if (!view.excalidrawAPI) return false;
+        const els = view.getViewSelectedElements().filter(el => el.type === "image");
+        if (els.length !== 1) {
+          if (checking) return false;
+          new Notice("Select a single image element and try again");
+          return false;
+        }
+        if (checking) return true;
+
+        const el = els[0] as ExcalidrawImageElement;
+        let ef = view.excalidrawData.getFile(el.fileId);
+        let eq = view.excalidrawData.getEquation(el.fileId);
+        if (!ef && !eq) {
+          view.forceSave();
+          new Notice("Please try again.");
+          return false;
+        }
+
+        if(ef) {
+          view.openEmbeddedLinkEditor(el.id);
+        }
+        if(eq) {
+          view.openLaTeXEditor(el.id);
+        }
+      }
+    });
 
     this.addCommand({
       id: "convert-card-to-file",

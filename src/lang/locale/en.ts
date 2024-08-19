@@ -54,7 +54,7 @@ export default {
   COPY_ELEMENT_LINK: "Copy [[link]] for selected element(s)",
   COPY_DRAWING_LINK: "Copy ![[embed link]] for this drawing",
   INSERT_LINK_TO_ELEMENT:
-    `Copy [[link]] for selected element to clipboard. ${labelCTRL()}+CLICK to copy 'group=' link. ${labelSHIFT()}+CLICK to copy an 'area=' link. ${labelALT()}+CLICK to watch a help video.`,
+    `Copy [[link]] for selected element to clipboard. ${labelCTRL()}+CLICK to copy 'group=' link. ${labelSHIFT()}+CLICK to copy an 'area=' link.`,
   INSERT_LINK_TO_ELEMENT_GROUP:
     "Copy 'group=' ![[link]] for selected element to clipboard.",
   INSERT_LINK_TO_ELEMENT_AREA:
@@ -80,7 +80,7 @@ export default {
   ERROR_TRY_AGAIN: "Please try again.",
   PASTE_CODEBLOCK: "Paste code block",
   INSERT_LATEX:
-    `Insert LaTeX formula (e.g. \\binom{n}{k} = \\frac{n!}{k!(n-k)!}). ${labelALT()}+CLICK to watch a help video.`,
+    `Insert LaTeX formula (e.g. \\binom{n}{k} = \\frac{n!}{k!(n-k)!}).`,
   ENTER_LATEX: "Enter a valid LaTeX expression",
   READ_RELEASE_NOTES: "Read latest release notes",
   RUN_OCR: "OCR full drawing: Grab text from freedraw + images to clipboard and doc.props",
@@ -93,14 +93,20 @@ export default {
   ANNOTATE_IMAGE : "Annotate image in Excalidraw",
   INSERT_ACTIVE_PDF_PAGE_AS_IMAGE: "Insert active PDF page as image",
   RESET_IMG_TO_100: "Set selected image element size to 100% of original",
+  RESET_IMG_ASPECT_RATIO: "Reset selected image element aspect ratio",
   TEMPORARY_DISABLE_AUTOSAVE: "Disable autosave until next time Obsidian starts (only set this if you know what you are doing)",
   TEMPORARY_ENABLE_AUTOSAVE: "Enable autosave",
 
   //ExcalidrawView.ts
+  NO_SEARCH_RESULT: "Didn't find a matching element in the drawing",
   FORCE_SAVE_ABORTED: "Force Save aborted because saving is in progress",
   LINKLIST_SECOND_ORDER_LINK: "Second Order Link",
-  MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT_TITLE: "Customize the link",
-  MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT: "Do not add [[square brackets]] around the filename!<br>Follow this format when editing your link:<br><mark>filename#^blockref|WIDTHxMAXHEIGHT</mark>",
+  MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT_TITLE: "Customize the Embedded File link",
+  MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT: "Do not add [[square brackets]] around the filename!<br>" +
+    "For markdown-page images follow this format when editing your link: <mark>filename#^blockref|WIDTHxMAXHEIGHT</mark><br>" +
+    "You can anchor Excalidraw images to 100% of their size by adding <code>|100%</code> to the end of the link.<br>" +
+    "You can change the PDF page by changing <code>#page=1</code> to <code>#page=2</code> etc.<br>" +
+    "PDF rect crop values are: <code>left, bottom, right, top</code>. Eg.: <code>#rect=0,0,500,500</code><br>",
   FRAME_CLIPPING_ENABLED: "Frame Rendering: Enabled",
   FRAME_CLIPPING_DISABLED: "Frame Rendering: Disabled",
   ARROW_BINDING_INVERSE_MODE: "Inverted Mode: Default arrow binding is now disabled. Use CTRL/CMD to temporarily enable binding when needed.",
@@ -773,7 +779,7 @@ FILENAME_HEAD: "Filename",
   TOGGLE_FRAME_RENDERING: "Toggle frame rendering",
   TOGGLE_FRAME_CLIPPING: "Toggle frame clipping",
   OPEN_LINK_CLICK: "Open Link",
-  OPEN_LINK_PROPS: "Open markdown-embed properties or the LaTeX editor or open the link in a new window",
+  OPEN_LINK_PROPS: "Open the image-link or LaTeX-formula editor",
 
   //IFrameActionsMenu.tsx
   NARROW_TO_HEADING: "Narrow to heading...",

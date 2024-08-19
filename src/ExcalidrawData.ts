@@ -68,6 +68,27 @@ export enum AutoexportPreference {
   inherit
 }
 
+export const REGEX_TAGS = {
+  // #[\p{Letter}\p{Emoji_Presentation}\p{Number}\/_-]+
+  //   1                                     
+  EXPR: /(#[\p{Letter}\p{Emoji_Presentation}\p{Number}\/_-]+)/gu,
+  getResList: (text: string): IteratorResult<RegExpMatchArray, any>[] => {
+    const res = text.matchAll(REGEX_TAGS.EXPR);
+    let parts: IteratorResult<RegExpMatchArray, any>;
+    const resultList = [];
+    while (!(parts = res.next()).done) {
+      resultList.push(parts);
+    }
+    return resultList;
+  },
+  getTag: (parts: IteratorResult<RegExpMatchArray, any>): string => {
+    return parts.value[1];
+  },
+  isTag: (parts: IteratorResult<RegExpMatchArray, any>): boolean => {
+    return parts.value[1]?.startsWith("#")
+  },
+};
+
 export const REGEX_LINK = {
   //![[link|alias]] [alias](link){num}
   //      1   2    3           4             5         67         8  9
@@ -828,7 +849,7 @@ export class ExcalidrawData {
       ? data.substring(indexOfNewElementLinks + lengthOfNewElementLinks)
       : data.substring(indexOfOldElementLinks + lengthOfOldElementLinks);
     //Load Embedded files
-    const RE_ELEMENT_LINKS = /^(.{8}):\s*(\[\[[^\]]*]])$/gm;
+    const RE_ELEMENT_LINKS = /^(.{8}):\s*(.*)$/gm;
     const linksRes = elementLinksData.matchAll(RE_ELEMENT_LINKS);
     while (!(parts = linksRes.next()).done) {
       elementLinkMap.set(parts.value[1], parts.value[2]);
@@ -1061,7 +1082,7 @@ export class ExcalidrawData {
       return (
         el.type !== "text" &&
         el.link &&
-        el.link.startsWith("[[") &&
+        //el.link.startsWith("[[") &&
         !this.elementLinks.has(el.id)
       );
     });
@@ -1152,8 +1173,8 @@ export class ExcalidrawData {
         (el: any) =>
           el.type !== "text" &&
           el.id === key &&
-          el.link &&
-          el.link.startsWith("[["),
+          el.link, //&&
+          //el.link.startsWith("[["),
       );
       if (el.length === 0) {
         this.elementLinks.delete(key); //if no longer in the scene, delete the text element
@@ -1394,10 +1415,10 @@ export class ExcalidrawData {
       const element = this.scene.elements.filter((el:any)=>el.id===key);
       let elementString = this.textElements.get(key).raw;
       if(element && element.length===1 && element[0].link && element[0].rawText === element[0].originalText) {
-        if(element[0].link.match(/^\[\[[^\]]*]]$/g)) { //apply this only to markdown links
+        //if(element[0].link.match(/^\[\[[^\]]*]]$/g)) { //apply this only to markdown links
           textElementLinks.set(key, element[0].link);
           //elementString = `%%***>>>text element-link:${element[0].link}<<<***%%` + elementString;
-        }
+        //}
       }
       outString += `${elementString} ^${key}\n\n`;
     }
