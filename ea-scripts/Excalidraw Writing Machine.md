@@ -27,16 +27,21 @@ if(!settings["Template path"]) {
       value: "Summary",
       description: "The section in your visual zettelkasten file that contains the short written summary of the idea. This is the text that will be included in the hierarchical markdown file if visual ZK cards are included in your flow"
     },
-    "Include image filename for ZK notes": {
+    "ZK '# Source' section": {
+      value: "Source",
+      description: "The section in your visual zettelkasten file that contains the reference to your source. If present in the file, this text will be included in the output file as a reference"
+    },
+    "Embed image links": {
       value: true,
-      description: "Should the name of the visual ZK note be included as a separate line in the resulting markdown document?"
+      description: "Should the resulting markdown document include the ![[embedded images]]?"
     }
   };
   await ea.setScriptSettings(settings);
 }
 
+const ZK_SOURCE = settings["ZK '# Source' section"].value;
 const ZK_SECTION = settings["ZK '# Summary' section"].value;
-const INCLUDE_IMG_FNAME = settings["Include image filename for ZK notes"].value;
+const INCLUDE_IMG_LINK = settings["Embed image links"].value;
 let templatePath = settings["Template path"].value;
 
 //------------------
@@ -71,7 +76,8 @@ templatePath = selection;
 
 function getBoundText(el) {
     const textId = el.boundElements?.find(x => x.type === "text")?.id;
-    return ea.getViewElements().find(x => x.id === textId)?.originalText || "";
+    const text = ea.getViewElements().find(x => x.id === textId)?.originalText;
+    return text ? text + "\n" : "";
 }
 
 function getNextElementFollowingArrow(el, arrow) {
@@ -85,7 +91,7 @@ function getNextElementFollowingArrow(el, arrow) {
 }
 
 async function getSectionText(file, section) {
-    const content = await app.vault.read(file);
+    const content = await app.vault.cachedRead(file);
     const metadata = app.metadataCache.getFileCache(file);
     
     if (!metadata || !metadata.headings) {
@@ -113,16 +119,23 @@ async function getSectionText(file, section) {
     return sectionContent;
 }
 
+function getImageLink(f) {
+  return `![${f.name}](${encodeURI(f.path)})`;
+}
+
 async function getElementText(el) {
     if (el.type === "text") {
         return el.originalText;
     }
     if (el.type === "image") {
       const f = ea.getViewFileForImageElement(el);
-      if(!ea.isExcalidrawFile(f)) return "image: " + f.name;
-      const res = await getSectionText(f, ZK_SECTION);
-      if(res) return (INCLUDE_IMG_FNAME ? f.name + "\n" : "") + res;
-      return "image: " + f.name;
+      if(!ea.isExcalidrawFile(f)) return f.name + (INCLUDE_IMG_LINK ? `\n${getImageLink(f)}\n` : "");
+      let source = await getSectionText(f, ZK_SOURCE);
+      source = source ? ` (source:: ${source})` : "";
+      const summary = await getSectionText(f, ZK_SECTION) ;
+
+      if(summary) return (INCLUDE_IMG_LINK ? `${getImageLink(f)}\n${summary + source}` :  summary + source) + "\n";
+      return f.name + (INCLUDE_IMG_LINK ? `\n${getImageLink(f)}\n` : "");
     }
     return getBoundText(el);
 }
@@ -157,7 +170,7 @@ async function crawl(el, level) {
     return result;
 }
 
-window.ewm = "# " + await crawl(selectedElements[0], 1);
+window.ewm = "## " + await crawl(selectedElements[0], 2);
 
 const outputPath = await ea.getAttachmentFilepath(`EWM - ${ea.targetView.file.name}.md`);
 let result = templatePath
