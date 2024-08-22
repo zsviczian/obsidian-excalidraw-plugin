@@ -1,4 +1,10 @@
 /*
+Generates a hierarchical Markdown document out of a visual layout of an article.
+Watch this video to understand how the script is intended to work:
+![Excalidraw Writing Machine YouTube Video](https://youtu.be/zvRpCOZAUSs)
+You can download the sample Obsidian Templater file from [here](https://gist.github.com/zsviczian/bf49d4b2d401f5749aaf8c2fa8a513d9)
+You can download the demo PDF document showcased in the video from [here](https://zsviczian.github.io/DemoArticle-AtomicHabits.pdf)
+
 ```js*/
 const selectedElements = ea.getViewSelectedElements();
 if (selectedElements.length !== 1 || selectedElements[0].type === "arrow") {
@@ -140,14 +146,14 @@ async function getElementText(el) {
     return getBoundText(el);
 }
 
-async function crawl(el, level) {
+async function crawl(el, level, isFirst = false) {
     visited.add(el.id);
 
     let result = await getElementText(el) + "\n";
 
     // Process all arrows connected to this element
     const boundElementsData = el.boundElements.filter(x => x.type === "arrow");
-    const isFork = boundElementsData.length > 2;
+    const isFork = boundElementsData.length > (isFirst ? 1 : 2);
     if(isFork) level++;
     
     for(const bindingData of boundElementsData) {
@@ -170,7 +176,7 @@ async function crawl(el, level) {
     return result;
 }
 
-window.ewm = "## " + await crawl(selectedElements[0], 2);
+window.ewm = "## " + await crawl(selectedElements[0], 2, true);
 
 const outputPath = await ea.getAttachmentFilepath(`EWM - ${ea.targetView.file.name}.md`);
 let result = templatePath
