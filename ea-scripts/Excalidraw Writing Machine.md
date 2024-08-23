@@ -79,13 +79,6 @@ templatePath = selection;
 //------------------
 // supporting functions
 //------------------
-
-function getBoundText(el) {
-    const textId = el.boundElements?.find(x => x.type === "text")?.id;
-    const text = ea.getViewElements().find(x => x.id === textId)?.originalText;
-    return text ? text + "\n" : "";
-}
-
 function getNextElementFollowingArrow(el, arrow) {
     if (arrow.startBinding?.elementId === el.id) {
         return ea.getViewElements().find(x => x.id === arrow.endBinding?.elementId);
@@ -94,6 +87,16 @@ function getNextElementFollowingArrow(el, arrow) {
         return ea.getViewElements().find(x => x.id === arrow.startBinding?.elementId);
     }
     return null;
+}
+
+function getImageLink(f) {
+  return `![${f.name}](${encodeURI(f.path)})`;
+}
+
+function getBoundText(el) {
+    const textId = el.boundElements?.find(x => x.type === "text")?.id;
+    const text = ea.getViewElements().find(x => x.id === textId)?.originalText;
+    return text ? text + "\n" : "";
 }
 
 async function getSectionText(file, section) {
@@ -125,8 +128,32 @@ async function getSectionText(file, section) {
     return sectionContent;
 }
 
-function getImageLink(f) {
-  return `![${f.name}](${encodeURI(f.path)})`;
+async function getBlockText(file, blockref) {
+    const content = await app.vault.cachedRead(file);
+    const blockPattern = new RegExp(`\\^${blockref}\\b`, 'g');
+    let blockPosition = content.search(blockPattern);
+
+    if (blockPosition === -1) {
+        return "";
+    }
+    
+    const startPos = content.lastIndexOf('\n', blockPosition) + 1;
+    let endPos = content.indexOf('\n', blockPosition);
+
+    if (endPos === -1) {
+        endPos = content.length;
+    } else {
+        const nextBlockOrHeading = content.slice(endPos).search(/(^# |^\^|\n)/gm);
+        if (nextBlockOrHeading !== -1) {
+            endPos += nextBlockOrHeading;
+        } else {
+            endPos = content.length;
+        }
+    }
+    let blockContent = content.slice(startPos, endPos).trim();
+    blockContent = blockContent.replace(blockPattern, '').trim();
+    blockContent = blockContent.replace(/%%[\s\S]*?%%/g, '').trim();
+    return blockContent;
 }
 
 async function getElementText(el) {
@@ -143,8 +170,27 @@ async function getElementText(el) {
       if(summary) return (INCLUDE_IMG_LINK ? `${getImageLink(f)}\n${summary + source}` :  summary + source) + "\n";
       return f.name + (INCLUDE_IMG_LINK ? `\n${getImageLink(f)}\n` : "");
     }
+    if (el.type === "embeddable") {
+      const linkWithRef = el.link.match(/\[\[([^\]]*)]]/)?.[1];
+      if(!linkWithRef) return "";
+      const path = linkWithRef.split("#")[0];
+      const f = app.metadataCache.getFirstLinkpathDest(path, ea.targetView.file.path);
+      if(!f) return "";
+      if(f.extension !== "md") return f.name;
+      const ref = linkWithRef.split("#")[1];
+      if(!ref) return await app.vault.read(f);
+      if(ref.startsWith("^")) {
+        return await getBlockText(f, ref.substring(1));
+      } else {
+        return await getSectionText(f, ref);
+      }
+    }
     return getBoundText(el);
 }
+
+//------------------
+// Navigating the hierarchy
+//------------------
 
 async function crawl(el, level, isFirst = false) {
     visited.add(el.id);
