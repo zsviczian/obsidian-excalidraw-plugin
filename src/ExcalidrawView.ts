@@ -251,6 +251,7 @@ type ActionButtons = "save" | "isParsed" | "isRaw" | "link" | "scriptInstall";
 let windowMigratedDisableZoomOnce = false;
 
 export default class ExcalidrawView extends TextFileView {
+  private freedrawLastActiveTimestamp: number = 0;
   public exportDialog: ExportDialog;
   public excalidrawData: ExcalidrawData;
   //public excalidrawRef: React.MutableRefObject<any> = null;
@@ -1680,7 +1681,8 @@ export default class ExcalidrawView extends TextFileView {
         warningUnknowSeriousError();
         return;
       }
-      const st = api.getAppState();
+      const st = api.getAppState() as AppState;
+      const isFreedrawActive = (st.activeTool?.type === "freedraw") && (this.freedrawLastActiveTimestamp > (Date.now()-2000));
       const isEditingText = st.editingTextElement !== null;
       const isEditingNewElement = st.newElement !== null;
       //this will reset positioning of the cursor in case due to the popup keyboard,
@@ -1692,6 +1694,7 @@ export default class ExcalidrawView extends TextFileView {
         !this.semaphores.forceSaving &&
         !this.semaphores.autosaving &&
         !this.semaphores.embeddableIsEditingSelf &&
+        !isFreedrawActive &&
         !isEditingText &&
         !isEditingNewElement //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/630
       ) {
@@ -3717,6 +3720,9 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   private onChange (et: ExcalidrawElement[], st: AppState) {
+    if(st.newElement?.type === "freedraw") {
+      this.freedrawLastActiveTimestamp = Date.now();
+    }
     this.viewModeEnabled = st.viewModeEnabled;
     if (this.semaphores.justLoaded) {
       const elcount = this.excalidrawData?.scene?.elements?.length ?? 0;
