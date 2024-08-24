@@ -9,6 +9,11 @@ export let EXCALIDRAW_PLUGIN: ExcalidrawPlugin = null;
 export const setExcalidrawPlugin = (plugin: ExcalidrawPlugin) => {
   EXCALIDRAW_PLUGIN = plugin;
 };
+export const THEME = {
+  LIGHT: "light",
+  DARK: "dark",
+} as const;
+
 const MD_EXCALIDRAW = "# Excalidraw Data";
 const MD_TEXTELEMENTS = "## Text Elements";
 const MD_ELEMENTLINKS = "## Element Links";

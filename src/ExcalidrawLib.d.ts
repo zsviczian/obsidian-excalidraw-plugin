@@ -1,9 +1,9 @@
 import { RestoredDataState } from "@zsviczian/excalidraw/types/excalidraw/data/restore";
 import { ImportedDataState } from "@zsviczian/excalidraw/types/excalidraw/data/types";
 import { BoundingBox } from "@zsviczian/excalidraw/types/excalidraw/element/bounds";
-import { ElementsMap, ExcalidrawBindableElement, ExcalidrawElement, ExcalidrawFrameElement, ExcalidrawTextContainer, ExcalidrawTextElement, FontFamilyValues, FontString, NonDeleted, NonDeletedExcalidrawElement, Theme } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { ElementsMap, ExcalidrawBindableElement, ExcalidrawElement, ExcalidrawFrameElement, ExcalidrawFrameLikeElement, ExcalidrawTextContainer, ExcalidrawTextElement, FontFamilyValues, FontString, NonDeleted, NonDeletedExcalidrawElement, Theme } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { FontMetadata } from "@zsviczian/excalidraw/types/excalidraw/fonts/metadata";
-import { AppState, BinaryFiles, Point, Zoom } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { AppState, BinaryFiles, DataURL, GenerateDiagramToCode, Point, Zoom } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 
 type EmbeddedLink =
@@ -27,6 +27,7 @@ declare namespace ExcalidrawLib {
     appState?: Partial<Omit<AppState, "offsetTop" | "offsetLeft">>;
     files: BinaryFiles | null;
     maxWidthOrHeight?: number;
+    exportingFrame?: ExcalidrawFrameLikeElement | null;
     getDimensions?: (
       width: number,
       height: number,
@@ -170,11 +171,20 @@ declare namespace ExcalidrawLib {
   var WelcomeScreen: any;
   var TTDDialogTrigger: any;
   var TTDDialog: any;
-
+  var DiagramToCodePlugin: (props: {
+    generate: GenerateDiagramToCode;
+  }) => any;
+  
+  function getDataURL(file: Blob | File): Promise<DataURL>;
   function destroyObsidianUtils(): void;
   function registerLocalFont(fontMetrics: FontMetadata, uri: string): void;
   function getFontFamilies(): string[];
   function registerFontsInCSS(): Promise<void>;
   function getCSSFontDefinition(fontFamily: number): Promise<string>;
+  function getTextFromElements (
+    elements: readonly ExcalidrawElement[],
+    separator?: string,
+  ): string;
+  function safelyParseJSON (json: string): Record<string, any> | null;
 }
 

@@ -162,13 +162,13 @@ async function getElementText(el) {
     }
     if (el.type === "image") {
       const f = ea.getViewFileForImageElement(el);
-      if(!ea.isExcalidrawFile(f)) return f.name + (INCLUDE_IMG_LINK ? `\n${getImageLink(f)}\n` : "");
+      if(!ea.isExcalidrawFile(f)) return f.basename + (INCLUDE_IMG_LINK ? `\n${getImageLink(f)}\n` : "");
       let source = await getSectionText(f, ZK_SOURCE);
       source = source ? ` (source:: ${source})` : "";
       const summary = await getSectionText(f, ZK_SECTION) ;
 
       if(summary) return (INCLUDE_IMG_LINK ? `${getImageLink(f)}\n${summary + source}` :  summary + source) + "\n";
-      return f.name + (INCLUDE_IMG_LINK ? `\n${getImageLink(f)}\n` : "");
+      return f.basename + (INCLUDE_IMG_LINK ? `\n${getImageLink(f)}\n` : "");
     }
     if (el.type === "embeddable") {
       const linkWithRef = el.link.match(/\[\[([^\]]*)]]/)?.[1];
@@ -176,9 +176,9 @@ async function getElementText(el) {
       const path = linkWithRef.split("#")[0];
       const f = app.metadataCache.getFirstLinkpathDest(path, ea.targetView.file.path);
       if(!f) return "";
-      if(f.extension !== "md") return f.name;
+      if(f.extension !== "md") return f.basename;
       const ref = linkWithRef.split("#")[1];
-      if(!ref) return await app.vault.read(f);
+      if(!ref) return await app.vault.cachedRead(f);
       if(ref.startsWith("^")) {
         return await getBlockText(f, ref.substring(1));
       } else {
@@ -224,9 +224,9 @@ async function crawl(el, level, isFirst = false) {
 
 window.ewm = "## " + await crawl(selectedElements[0], 2, true);
 
-const outputPath = await ea.getAttachmentFilepath(`EWM - ${ea.targetView.file.name}.md`);
+const outputPath = await ea.getAttachmentFilepath(`EWM - ${ea.targetView.file.basename}.md`);
 let result = templatePath
-  ? await app.vault.read(app.vault.getAbstractFileByPath(templatePath))
+  ? await app.vault.cachedRead(app.vault.getAbstractFileByPath(templatePath))
   : "";
 
 if(result.match("<<<REPLACE ME>>>")) {

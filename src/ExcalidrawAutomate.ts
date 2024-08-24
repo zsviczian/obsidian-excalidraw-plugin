@@ -3335,7 +3335,7 @@ export const search = async (view: ExcalidrawView) => {
   const ea = view.plugin.ea;
   ea.reset();
   ea.setView(view);
-  const elements = ea.getViewElements().filter((el) => el.type === "text" || el.type === "frame" || el.link);
+  const elements = ea.getViewElements().filter((el) => el.type === "text" || el.type === "frame" || el.link || el.type === "image");
   if (elements.length === 0) {
     return;
   }
@@ -3454,6 +3454,36 @@ export const getElementsWithLinkMatchingQuery = (
         : text.match(q.toLowerCase());
     }));
 }
+
+/**
+ * 
+ * @param elements 
+ * @param query 
+ * @param exactMatch - when searching for section header exactMatch should be set to true
+ * @returns the elements matching the query
+ */
+export const getImagesMatchingQuery = (
+  elements: ExcalidrawElement[],
+  query: string[],
+  excalidrawData: ExcalidrawData,
+  exactMatch: boolean = false, //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530
+): ExcalidrawElement[] => {
+  if (!elements || elements.length === 0 || !query || query.length === 0) {
+    return [];
+  }
+
+  return elements.filter((el: ExcalidrawElement) => 
+    el.type === "image" &&
+    query.some((q) => {
+      const filename = excalidrawData.getFile(el.fileId)?.file?.basename.toLowerCase().trim();
+      const equation = excalidrawData.getEquation(el.fileId)?.latex?.toLocaleLowerCase().trim();
+      const text = filename ?? equation;
+      if(!text) return false;
+      return exactMatch
+        ? (text === q.toLowerCase())
+        : text.match(q.toLowerCase());
+    }));
+  }
 
 export const cloneElement = (el: ExcalidrawElement):any => {
   const newEl = JSON.parse(JSON.stringify(el));

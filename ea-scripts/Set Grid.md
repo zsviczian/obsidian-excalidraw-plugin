@@ -8,6 +8,46 @@ https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.h
 
 ```javascript
 */
+if(ea.verifyMinimumPluginVersion  && ea.verifyMinimumPluginVersion("2.4.0")) {
+
+  const api = ea.getExcalidrawAPI();
+  let appState = api.getAppState();
+  let gridFrequency = appState.gridStep;;
+
+  const customControls =  (container) => {
+    new ea.obsidian.Setting(container)
+      .setName(`Major grid frequency`)
+      .addDropdown(dropdown => {
+        [2,3,4,5,6,7,8,9,10].forEach(grid=>dropdown.addOption(grid,grid));
+        dropdown
+          .setValue(gridFrequency)
+          .onChange(value => {
+            gridFrequency = value;
+          })
+      })
+  }
+
+  const gridSize = parseInt(await utils.inputPrompt(
+    "Grid size?",
+    null,
+    appState.GridSize?.toString()??"20",
+    null,
+    1,
+    false,
+    customControls
+  ));
+  if(isNaN(gridSize)) return; //this is to avoid passing an illegal value to Excalidraw
+  const gridStep = isNaN(parseInt(gridFrequency)) ? appState.gridStep : parseInt(gridFrequency);
+
+  api.updateScene({
+    appState : {gridSize, gridStep, gridModeEnabled:true},
+    commitToHistory:false
+  });
+}
+
+// ----------------
+// old script
+// ----------------
 if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.9.19")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;

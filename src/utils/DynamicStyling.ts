@@ -74,6 +74,7 @@ export const setDynamicStyle = (
 
   const str = (cm: ColorMaster) => cm.stringHEX({alpha:false});
   const styleObject:{[x: string]: string;} = {
+    ['backgroundColor']: str(cmBG()),
     [`--color-primary`]: str(accent()),
     [`--color-surface-low`]: str(gray1()),
     [`--color-surface-mid`]: str(gray1()),

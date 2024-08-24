@@ -16,6 +16,7 @@ import {
 import {
   ExcalidrawElement,
   ExcalidrawImageElement,
+  ExcalidrawMagicFrameElement,
   ExcalidrawTextElement,
   FileId,
   NonDeletedExcalidrawElement,
@@ -61,7 +62,8 @@ import {
   getTextElementsMatchingQuery,
   cloneElement,
   getFrameElementsMatchingQuery,
-  getElementsWithLinkMatchingQuery
+  getElementsWithLinkMatchingQuery,
+  getImagesMatchingQuery
 } from "./ExcalidrawAutomate";
 import { t } from "./lang/helpers";
 import {
@@ -136,11 +138,12 @@ import { UniversalInsertFileModal } from "./dialogs/UniversalInsertFileModal";
 import { getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
 import { nanoid } from "nanoid";
 import { CustomMutationObserver, DEBUGGING, debug, log} from "./utils/DebugHelper";
-import { extractCodeBlocks, postOpenAI } from "./utils/AIUtils";
+import { errorHTML, extractCodeBlocks, postOpenAI } from "./utils/AIUtils";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { SelectCard } from "./dialogs/SelectCard";
 import { Packages } from "./types/types";
 import React from "react";
+import { diagramToHTML } from "./utils/matic";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -1144,7 +1147,7 @@ export default class ExcalidrawView extends TextFileView {
           if(container) {
             linkText = container.link;
             
-            if(linkText.startsWith("#")) {
+            if(linkText?.startsWith("#")) {
               return {linkText, selectedElement: selectedTextElement ?? selectedElement};
             }
 
@@ -1366,7 +1369,7 @@ export default class ExcalidrawView extends TextFileView {
 
     //final fallback to prevent resizing when text element is in edit mode
     //this is to prevent jumping text due to on-screen keyboard popup
-    if (api.getAppState()?.editingElement?.type === "text") {
+    if (api.getAppState()?.editingTextElement) {
       return;
     }
     this.zoomToFit(false);
@@ -1678,8 +1681,8 @@ export default class ExcalidrawView extends TextFileView {
         return;
       }
       const st = api.getAppState();
-      const isEditing = st.editingElement !== null;
-      const isDragging = st.newElement !== null;
+      const isEditingText = st.editingTextElement !== null;
+      const isEditingNewElement = st.newElement !== null;
       //this will reset positioning of the cursor in case due to the popup keyboard,
       //or the command palette, or some other unexpected reason the onResize would not fire...
       this.refreshCanvasOffset();
@@ -1689,8 +1692,8 @@ export default class ExcalidrawView extends TextFileView {
         !this.semaphores.forceSaving &&
         !this.semaphores.autosaving &&
         !this.semaphores.embeddableIsEditingSelf &&
-        !isEditing &&
-        !isDragging //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/630
+        !isEditingText &&
+        !isEditingNewElement //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/630
       ) {
         //console.log("autosave");
         this.autosaveTimer = null;
@@ -3297,6 +3300,7 @@ export default class ExcalidrawView extends TextFileView {
         currentItemTextAlign: st.currentItemTextAlign,
         currentItemStartArrowhead: st.currentItemStartArrowhead,
         currentItemEndArrowhead: st.currentItemEndArrowhead,
+        currentItemArrowType: st.currentItemArrowType,
         scrollX: st.scrollX,
         scrollY: st.scrollY,
         zoom: st.zoom,
@@ -3425,7 +3429,7 @@ export default class ExcalidrawView extends TextFileView {
     //(process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.showHoverPreview, "ExcalidrawView.showHoverPreview", linktext, element);
     if(!this.lastMouseEvent) return;
     const st = this.excalidrawAPI?.getAppState();
-    if(st?.editingElement || st?.newElement) return; //should not activate hover preview when element is being edited or dragged
+    if(st?.editingTextElement || st?.newElement) return; //should not activate hover preview when element is being edited or dragged
     if(this.semaphores.wheelTimeout) return;
     //if link text is not provided, try to get it from the element
     if (!linktext) {
@@ -3746,7 +3750,7 @@ export default class ExcalidrawView extends TextFileView {
       return;
     }
     if (
-      st.editingElement === null &&
+      st.editingTextElement === null &&
       //Removed because of
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/565
       /*st.resizingElement === null && 
@@ -5067,6 +5071,70 @@ export default class ExcalidrawView extends TextFileView {
     );
   };
 
+  private diagramToCode() {
+    return this.packages.react.createElement(
+      this.packages.excalidrawLib.DiagramToCodePlugin,
+      {
+        generate: async ({ frame, children }: 
+          {frame: ExcalidrawMagicFrameElement, children: readonly ExcalidrawElement[]}) => {
+          const appState = this.excalidrawAPI.getAppState();
+          try {
+            const blob = await this.packages.excalidrawLib.exportToBlob({
+              elements: children,
+              appState: {
+                ...appState,
+                exportBackground: true,
+                viewBackgroundColor: appState.viewBackgroundColor,
+              },
+              exportingFrame: frame,
+              files: this.excalidrawAPI.getFiles(),
+              mimeType: "image/jpeg",
+            });
+  
+            const dataURL = await this.packages.excalidrawLib.getDataURL(blob);
+            const textFromFrameChildren = this.packages.excalidrawLib.getTextFromElements(children);
+  
+            const response = await diagramToHTML ({
+              image:dataURL,
+              apiKey: this.plugin.settings.openAIAPIToken,
+              text: textFromFrameChildren,
+              theme: appState.theme,
+            });
+  
+            if (!response.ok) {
+              const json = await response.json();
+              const text = json.error?.message || "Unknown error during generation";
+              return {
+                html: errorHTML(text),
+              };
+            }
+  
+            const json = await response.json();
+            if(json.choices[0].message.content == null) {
+              return {
+                html: errorHTML("Nothing generated"),
+              };
+            }
+
+            const message = json.choices[0].message.content;  
+                
+            const html = message.slice(  
+              message.indexOf("<!DOCTYPE html>"),  
+              message.indexOf("</html>") + "</html>".length,  
+            );
+  
+            return { html };
+          } catch (err: any) {
+            return {
+              html: errorHTML("Request failed"),
+            };
+          }
+        },
+      }
+    );
+  }
+  
+
   private ttdDialogTrigger() {
     return this.packages.react.createElement(
       this.packages.excalidrawLib.TTDDialogTrigger,
@@ -5315,14 +5383,14 @@ export default class ExcalidrawView extends TextFileView {
       //...again, just aweful, but works.
       const st = api.getAppState();
       //isEventOnSameElement attempts to solve https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1729
-      //the issue is that when the user hides the keyboard with the keyboard hide button and not tapping on the screen, then editingElement is not null
-      const isEventOnSameElement = this.editingTextElementId === st.editingElement?.id;
-      const isKeyboardOutEvent:Boolean = st.editingElement && st.editingElement.type === "text" && !isEventOnSameElement;
+      //the issue is that when the user hides the keyboard with the keyboard hide button and not tapping on the screen, then editingTextElement is not null
+      const isEventOnSameElement = this.editingTextElementId === st.editingTextElement?.id;
+      const isKeyboardOutEvent:Boolean = st.editingTextElement && !isEventOnSameElement;
       const isKeyboardBackEvent:Boolean = (this.semaphores.isEditingText || isEventOnSameElement) && !isKeyboardOutEvent;
-      this.editingTextElementId = isKeyboardOutEvent ? st.editingElement.id : null;
+      this.editingTextElementId = isKeyboardOutEvent ? st.editingTextElement.id : null;
       if(isKeyboardOutEvent) {
         const appToolHeight = (this.contentEl.querySelector(".Island.App-toolbar") as HTMLElement)?.clientHeight ?? 0;
-        const editingElViewY = sceneCoordsToViewportCoords({sceneX:0, sceneY:st.editingElement.y}, st).y;
+        const editingElViewY = sceneCoordsToViewportCoords({sceneX:0, sceneY:st.editingTextElement.y}, st).y;
         const scrollViewY = sceneCoordsToViewportCoords({sceneX:0, sceneY:-st.scrollY}, st).y;
         const delta = editingElViewY - scrollViewY;
         const isElementAboveKeyboard = height > (delta + appToolHeight*2)
@@ -5513,6 +5581,7 @@ export default class ExcalidrawView extends TextFileView {
           this.renderCustomActionsMenu(),
           this.renderWelcomeScreen(),
           this.ttdDialog(),
+          this.diagramToCode(),
           this.ttdDialogTrigger(),
         ),
         this.renderToolsPanel(observer),
@@ -5693,15 +5762,20 @@ export default class ExcalidrawView extends TextFileView {
     let match = getTextElementsMatchingQuery(
       elements.filter((el: ExcalidrawElement) => el.type === "text"),
       query,
-      exactMatch
+      exactMatch,
     ).concat(getFrameElementsMatchingQuery(
       elements.filter((el: ExcalidrawElement) => el.type === "frame"),
       query,
-      exactMatch
+      exactMatch,
     )).concat(getElementsWithLinkMatchingQuery(
       elements.filter((el: ExcalidrawElement) => el.link),
       query,
-      exactMatch
+      exactMatch,
+    )).concat(getImagesMatchingQuery(
+      elements,
+      query,
+      this.excalidrawData,
+      exactMatch,
     ));
 
     if (match.length === 0) {
