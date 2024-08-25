@@ -1,11 +1,10 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
-import babel from '@rollup/plugin-babel';
 import replace from "@rollup/plugin-replace";
 import { terser } from "rollup-plugin-terser";
 import copy from "rollup-plugin-copy";
 import typescript2 from "rollup-plugin-typescript2";
-import webWorker from "rollup-plugin-web-worker-loader";
+//import webWorker from "rollup-plugin-web-worker-loader";
 import fs from 'fs';
 import LZString from 'lz-string';
 import postprocess from 'rollup-plugin-postprocess';
@@ -83,9 +82,12 @@ const BASE_CONFIG = {
 
 const getRollupPlugins = (tsconfig, ...plugins) => [
   typescript2(tsconfig),
-  nodeResolve({ browser: true }),
+  replace({
+    preventAssignment: true,
+    "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
+  }),
   commonjs(),
-  webWorker({ inline: true, forceInline: true, targetPlatform: "browser" }),
+  nodeResolve({ browser: true, preferBuiltins: false }),
 ].concat(plugins);
 
 const BUILD_CONFIG = {
@@ -96,30 +98,11 @@ const BUILD_CONFIG = {
     format: 'cjs',
     exports: 'default',
   },
-  plugins: [
-    typescript2({
-      tsconfig: isProd ? "tsconfig.json" : "tsconfig.dev.json",
-    }),
-    replace({
-      preventAssignment: true,
-      "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
-    }),
-    babel({
-      babelHelpers: 'bundled',
-      presets: [['@babel/preset-env', {
-        targets: {
-          ios: "15", // ios Compatibility //esmodules: true,
-        },
-      }]],
-      exclude: "node_modules/**",
-    }),
-    commonjs(),
-    nodeResolve({ browser: true, preferBuiltins: false }),
+  plugins: getRollupPlugins(
+    {tsconfig: isProd ? "tsconfig.json" : "tsconfig.dev.json"},
+    //webWorker({ inline: true, forceInline: true, targetPlatform: "browser" }),
     ...(isProd ? [
-      terser({
-        toplevel: false,
-        compress: { passes: 2 },
-      }),
+      terser({ toplevel: false, compress: { passes: 2 } }),
       //!postprocess - the version available on npmjs does not work, need this update: 
       //  npm install brettz9/rollup-plugin-postprocess#update --save-dev
       //  https://github.com/developit/rollup-plugin-postprocess/issues/10
@@ -128,17 +111,13 @@ const BUILD_CONFIG = {
         `state=require("@codemirror/state"),view=require("@codemirror/view")` + packageString],
       ]),
     ] : [
-      postprocess([
-        [/var React = require\('react'\);/, packageString],
-      ]),
+      postprocess([ [/var React = require\('react'\);/, packageString] ]),
     ]),
     copy({
-      targets: [
-        { src: 'manifest.json', dest: DIST_FOLDER },
-      ],
-      verbose: true, // Optional: To display copied files in the console
+      targets: [ { src: 'manifest.json', dest: DIST_FOLDER } ],
+      verbose: true,
     }),
-  ],
+  ),
 };
 
 const LIB_CONFIG = {
