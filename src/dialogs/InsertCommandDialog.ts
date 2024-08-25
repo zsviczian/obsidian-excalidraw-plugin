@@ -3,7 +3,6 @@ import { REG_LINKINDEX_INVALIDCHARS } from "../constants/constants";
 import { t } from "../lang/helpers";
 
 export class InsertCommandDialog extends FuzzySuggestModal<TFile> {
-  public app: App;
   private addText: Function;
 
   destroy() {

@@ -2,7 +2,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "sourceMap": false,
-    "module": "ES2015",
+    "module": "es2015",
     "target": "es2018", //es2017 because script engine requires for async execution
     "allowJs": true,
     "noImplicitAny": true,

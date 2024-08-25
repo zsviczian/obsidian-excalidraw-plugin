@@ -5,7 +5,6 @@ import ExcalidrawPlugin from "src/main";
 import { getLink } from "src/utils/FileUtils";
 
 export class InsertLinkDialog extends FuzzySuggestModal<TFile> {
-  public app: App;
   private addText: Function;
   private drawingPath: string;
 

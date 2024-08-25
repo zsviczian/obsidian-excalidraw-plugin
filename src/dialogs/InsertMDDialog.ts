@@ -5,7 +5,6 @@ import ExcalidrawPlugin from "../main";
 import { getEA } from "src";
 
 export class InsertMDDialog extends FuzzySuggestModal<TFile> {
-  public app: App;
   public plugin: ExcalidrawPlugin;
   private view: ExcalidrawView;
 

@@ -529,11 +529,29 @@ export function getLinkParts (fname: string, file?: TFile): LinkParts {
 };
 
 export function compress (data: string): string {
-  return LZString.compressToBase64(data).replace(/(.{256})/g, "$1\n\n");
+  const compressed = LZString.compressToBase64(data);
+  
+  let result = '';
+  const chunkSize = 256;
+  for (let i = 0; i < compressed.length; i += chunkSize) {
+    result += compressed.slice(i, i + chunkSize) + '\n\n';
+  }
+
+  return result.trim();
 };
 
 export function decompress (data: string): string {
-  return LZString.decompressFromBase64(data.replaceAll("\n", "").replaceAll("\r", ""));
+  let cleanedData = '';
+  const length = data.length;
+  
+  for (let i = 0; i < length; i++) {
+      const char = data[i];
+      if (char !== '\n' && char !== '\r') {
+          cleanedData += char;
+      }
+  }
+
+  return LZString.decompressFromBase64(cleanedData);
 };
 
 export function isMaskFile (

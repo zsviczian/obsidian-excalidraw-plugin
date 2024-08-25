@@ -105,6 +105,7 @@ const BUILD_CONFIG = {
       "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
     }),
     babel({
+      babelHelpers: 'bundled',
       presets: [['@babel/preset-env', {
         targets: {
           ios: "15", // ios Compatibility //esmodules: true,

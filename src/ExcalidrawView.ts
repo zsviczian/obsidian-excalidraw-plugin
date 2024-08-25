@@ -404,7 +404,10 @@ export default class ExcalidrawView extends TextFileView {
   preventAutozoom() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.preventAutozoom, "ExcalidrawView.preventAutozoom");
     this.semaphores.preventAutozoom = true;
-    window.setTimeout(() => (this.semaphores.preventAutozoom = false), 1500);
+    window.setTimeout(() => {
+      if(!this.semaphores) return;
+      this.semaphores.preventAutozoom = false;
+    }, 1500);
   }
 
   public saveExcalidraw(scene?: any) {
@@ -734,10 +737,9 @@ export default class ExcalidrawView extends TextFileView {
       return;
     }
 
+    const allowSave = this.isDirty() || forcesave; //removed this.semaphores.autosaving
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.save, `ExcalidrawView.save, try saving, allowSave:${allowSave}, isDirty:${this.isDirty()}, isAutosaving:${this.semaphores.autosaving}, isForceSaving:${forcesave}`);
     try {
-      const allowSave = this.isDirty() || forcesave; //removed this.semaphores.autosaving
-      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.save, `ExcalidrawView.save, try saving, allowSave:${allowSave}, isDirty:${this.isDirty()}, isAutosaving:${this.semaphores.autosaving}, isForceSaving:${forcesave}`);
-
       if (allowSave) {
         const scene = this.getScene();
 
@@ -2064,6 +2066,7 @@ export default class ExcalidrawView extends TextFileView {
                   if(images.length>0) {
                     this.preventAutozoom();
                     window.setTimeout(()=>this.zoomToElements(!api.getAppState().viewModeEnabled, images));
+                    return;
                   }
                 }
               }
@@ -2473,7 +2476,7 @@ export default class ExcalidrawView extends TextFileView {
    *
    * @param justloaded - a flag to trigger zoom to fit after the drawing has been loaded
    */
-  private async loadDrawing(justloaded: boolean, deletedElements?: ExcalidrawElement[]) {
+  public async loadDrawing(justloaded: boolean, deletedElements?: ExcalidrawElement[]) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.loadDrawing, "ExcalidrawView.loadDrawing", justloaded, deletedElements);
     const excalidrawData = this.excalidrawData.scene;
     this.semaphores.justLoaded = justloaded;

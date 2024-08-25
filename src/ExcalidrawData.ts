@@ -49,6 +49,7 @@ import { ConfirmationPrompt } from "./dialogs/Prompt";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
 import { DEBUGGING, debug } from "./utils/DebugHelper";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
+import { updateElementIdsInScene } from "./utils/ExcalidrawSceneUtils";
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles };
 
@@ -222,11 +223,12 @@ export function getMarkdownDrawingSection(
   jsonString: string,
   compressed: boolean,
 ) {
-  return compressed
+  const result = compressed
     ? `## Drawing\n\x60\x60\x60compressed-json\n${compress(
         jsonString,
       )}\n\x60\x60\x60\n%%`
     : `## Drawing\n\x60\x60\x60json\n${jsonString}\n\x60\x60\x60\n%%`;
+  return result;
 }
 
 /**
@@ -1090,8 +1092,6 @@ export class ExcalidrawData {
       return result;
     }
 
-    let jsonString = JSON.stringify(this.scene);
-
     let id: string; //will be used to hold the new 8 char long ID for textelements that don't yet appear under # Text Elements
     
     for (const el of elements) {
@@ -1102,11 +1102,10 @@ export class ExcalidrawData {
       if (el.id.length > 8) {
         result = true;
         id = nanoid();
-        jsonString = jsonString.replaceAll(el.id, id); //brute force approach to replace all occurrences (e.g. links, groups,etc.)
+        updateElementIdsInScene(this.scene, el, id);
       }
       this.elementLinks.set(id, el.link);
     }
-    this.scene = JSON.parse(jsonString);
     return result;
   }
 
@@ -1118,9 +1117,7 @@ export class ExcalidrawData {
     //console.log("Excalidraw.Data.findNewTextElementsInScene()");
     //get scene text elements
     this.selectedElementIds = selectedElementIds;
-    const texts = this.scene.elements?.filter((el: any) => el.type === "text");
-
-    let jsonString = JSON.stringify(this.scene);
+    const texts = this.scene.elements?.filter((el: any) => el.type === "text") as ExcalidrawTextElement[];
 
     let dirty: boolean = false; //to keep track if the json has changed
     let id: string; //will be used to hold the new 8 char long ID for textelements that don't yet appear under # Text Elements
@@ -1136,7 +1133,7 @@ export class ExcalidrawData {
           delete this.selectedElementIds[te.id];
           this.selectedElementIds[id] = true;
         }
-        jsonString = jsonString.replaceAll(te.id, id); //brute force approach to replace all occurrences (e.g. links, groups,etc.)
+        updateElementIdsInScene(this.scene, te, id);
         if (this.textElements.has(te.id)) {
           //element was created with onBeforeTextSubmit
           const text = this.textElements.get(te.id);
@@ -1158,11 +1155,6 @@ export class ExcalidrawData {
       }
       
     }
-    if (dirty) {
-      //reload scene json in case it has changed
-      this.scene = JSON.parse(jsonString);
-    }
-
     return dirty;
   }
 
@@ -1470,7 +1462,7 @@ export class ExcalidrawData {
       appState: this.scene.appState,
       files: this.scene.files
     }, null, "\t");
-    return (
+    const result = (
       outString +
       (this.textElementCommentedOut ? "" : "%%\n") +
       getMarkdownDrawingSection(
@@ -1478,6 +1470,7 @@ export class ExcalidrawData {
         this.disableCompression ? false : this.plugin.settings.compress,
       )
     );
+    return result;
   }
 
   public async saveDataURLtoVault(dataURL: DataURL, mimeType: MimeType, key: FileId) {
@@ -2027,7 +2020,7 @@ export class ExcalidrawData {
   }
 
   public getEquationEntries() {
-    return this.equations.entries();
+    return this.equations?.entries();
   }
 
   public deleteEquation(fileId: FileId) {

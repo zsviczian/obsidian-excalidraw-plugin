@@ -7,7 +7,6 @@ import { getEA } from "src";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 
 export class ImportSVGDialog extends FuzzySuggestModal<TFile> {
-  public app: App;
   public plugin: ExcalidrawPlugin;
   private view: ExcalidrawView;
 

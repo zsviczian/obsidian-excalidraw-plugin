@@ -9,7 +9,6 @@ export enum openDialogAction {
 }
 
 export class OpenFileDialog extends FuzzySuggestModal<TFile> {
-  public app: App;
   private plugin: ExcalidrawPlugin;
   private action: openDialogAction;
   private onNewPane: boolean;
