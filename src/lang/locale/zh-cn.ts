@@ -54,7 +54,7 @@ export default {
   COPY_ELEMENT_LINK: "复制所选元素的链接（形如 [[file#^id]]]）",
   COPY_DRAWING_LINK: "复制绘图的嵌入链接（形如 ![[darwing]]）",
   INSERT_LINK_TO_ELEMENT:
-    `复制所选元素为内部链接（形如 [[file#^id]] ）。\n按住 ${labelCTRL()} 可复制元素所在分组为内部链接（形如 [[file#^group=id]] ）。\n按住 ${labelSHIFT()} 可复制所选元素所在区域为内部链接（形如 [[file#^area=id]] ）。\n按住 ${labelALT()} 可观看视频演示。`,
+    `复制所选元素为内部链接（形如 [[file#^id]] ）。\n按住 ${labelCTRL()} 可复制元素所在分组为内部链接（形如 [[file#^group=id]] ）。\n按住 ${labelSHIFT()} 可复制所选元素所在区域为内部链接（形如 [[file#^area=id]] ）。`,
   INSERT_LINK_TO_ELEMENT_GROUP:
     "复制所选元素所在分组为嵌入链接（形如 ![[file#^group=id]] ）",
   INSERT_LINK_TO_ELEMENT_AREA:
@@ -80,7 +80,7 @@ export default {
   ERROR_TRY_AGAIN: "请重试。",
   PASTE_CODEBLOCK: "粘贴代码块",
   INSERT_LATEX:
-    `插入 LaTeX 公式到当前绘图`,
+    `插入 LaTeX 公式（例如：\\binom{n}{k} = \\frac{n!}{k!(n-k)!}）。`,
   ENTER_LATEX: "输入 LaTeX 表达式",
   READ_RELEASE_NOTES: "阅读本插件的更新说明",
   RUN_OCR: "OCR 完整画布：识别涂鸦和图片里的文本并复制到剪贴板和文档属性中",
@@ -92,15 +92,21 @@ export default {
   CROP_IMAGE: "对图片裁剪并添加蒙版",
   ANNOTATE_IMAGE : "在 Excalidraw 中标注图像",
   INSERT_ACTIVE_PDF_PAGE_AS_IMAGE: "将当前激活的的 PDF 页面作为图片插入",
-  RESET_IMG_TO_100: "重设图像元素的尺寸为 100%",
+  RESET_IMG_TO_100: "重置图像元素的尺寸为 100%",
+  RESET_IMG_ASPECT_RATIO: "重置所选图像元素的纵横比",
   TEMPORARY_DISABLE_AUTOSAVE: "临时禁用自动保存功能，直到本次 Obsidian 退出（小白慎用！）",
   TEMPORARY_ENABLE_AUTOSAVE: "启用自动保存功能",
 
   //ExcalidrawView.ts
+  NO_SEARCH_RESULT: "在绘图中未找到匹配的元素",
   FORCE_SAVE_ABORTED: "自动保存被中止，因为文件正在保存中",
   LINKLIST_SECOND_ORDER_LINK: "二级链接",
-  MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT_TITLE: "自定义链接",
-  MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT: "不要在文件名周围添加[[方括号（Wiki 格式链接）]]！<br>编辑链接时请遵循以下格式:<br><mark>文件名#^块引用|宽度x最大高度</mark>",
+  MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT_TITLE: "自定义嵌入文件链接",
+  MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT: "请不要在文件名周围添加 [[方括号]]！<br>" +
+    "对于 markdown 图像，在编辑链接时请遵循以下格式：<mark>文件名#^块引用|宽度x最大高度</mark><br>" +
+    "您可以通过在链接末尾添加 <code>|100%</code> 来将 Excalidraw 图像锚定为 100% 的大小。<br>" +
+    "您可以通过将 <code>#page=1</code> 更改为 <code>#page=2</code> 等来更改 PDF 页码。<br>" +
+    "PDF 矩形裁剪值为：<code>左, 下, 右, 上</code>。例如：<code>#rect=0,0,500,500</code><br>",
   FRAME_CLIPPING_ENABLED: "渲染框架：已启用",
   FRAME_CLIPPING_DISABLED: "渲染框架：已禁用",
   ARROW_BINDING_INVERSE_MODE: "反转模式：默认方向按键已禁用。需要时请使用 Ctrl/CMD 临时启用。",
@@ -773,7 +779,7 @@ FILENAME_HEAD: "文件名",
   TOGGLE_FRAME_RENDERING: "开启或关闭框架渲染",
   TOGGLE_FRAME_CLIPPING: "开启或关闭框架裁剪",
   OPEN_LINK_CLICK: "打开所选的图形或文本元素里的链接",
-  OPEN_LINK_PROPS: "打开 markdown-embed 属性或 LaTeX 编辑器，或在新窗口中打开链接",
+  OPEN_LINK_PROPS: "打开图像链接或 LaTeX 公式编辑器",
 
   //IFrameActionsMenu.tsx
   NARROW_TO_HEADING: "缩放至标题",
