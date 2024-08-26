@@ -23,6 +23,7 @@ await ea.targetView.save();
 
 let settings = ea.getScriptSettings();
 //set default values on first run
+let didSettingsChange = false;
 if(!settings["Template path"]) {
   settings = {
     "Template path" : {
@@ -42,12 +43,25 @@ if(!settings["Template path"]) {
       description: "Should the resulting markdown document include the ![[embedded images]]?"
     }
   };
+  didSettingsChange = true;
+}
+
+if(!settings["Generate ![markdown](links)"]) {
+  settings["Generate ![markdown](links)"] = {
+    value: true,
+    description: "If you turn this off the script will generate ![[wikilinks]] for images"
+  }
+  didSettingsChange = true;
+}
+
+if(didSettingsChange) {
   await ea.setScriptSettings(settings);
 }
 
 const ZK_SOURCE = settings["ZK '# Source' section"].value;
 const ZK_SECTION = settings["ZK '# Summary' section"].value;
 const INCLUDE_IMG_LINK = settings["Embed image links"].value;
+const MARKDOWN_LINKS = settings["Generate ![markdown](links)"].value;
 let templatePath = settings["Template path"].value;
 
 //------------------
@@ -90,7 +104,10 @@ function getNextElementFollowingArrow(el, arrow) {
 }
 
 function getImageLink(f) {
-  return `![${f.name}](${encodeURI(f.path)})`;
+  if(MARKDOWN_LINKS) {
+    return `![${f.basename}](${encodeURI(f.path)})`;
+  }
+  return `![[${f.path}|${f.basename}]]`;
 }
 
 function getBoundText(el) {
@@ -162,13 +179,13 @@ async function getElementText(el) {
     }
     if (el.type === "image") {
       const f = ea.getViewFileForImageElement(el);
-      if(!ea.isExcalidrawFile(f)) return f.basename + (INCLUDE_IMG_LINK ? `\n${getImageLink(f)}\n` : "");
+      if(!ea.isExcalidrawFile(f)) return f.name + (INCLUDE_IMG_LINK ? `\n${getImageLink(f)}\n` : "");
       let source = await getSectionText(f, ZK_SOURCE);
       source = source ? ` (source:: ${source})` : "";
       const summary = await getSectionText(f, ZK_SECTION) ;
 
       if(summary) return (INCLUDE_IMG_LINK ? `${getImageLink(f)}\n${summary + source}` :  summary + source) + "\n";
-      return f.basename + (INCLUDE_IMG_LINK ? `\n${getImageLink(f)}\n` : "");
+      return f.name + (INCLUDE_IMG_LINK ? `\n${getImageLink(f)}\n` : "");
     }
     if (el.type === "embeddable") {
       const linkWithRef = el.link.match(/\[\[([^\]]*)]]/)?.[1];
@@ -176,9 +193,9 @@ async function getElementText(el) {
       const path = linkWithRef.split("#")[0];
       const f = app.metadataCache.getFirstLinkpathDest(path, ea.targetView.file.path);
       if(!f) return "";
-      if(f.extension !== "md") return f.basename;
+      if(f.extension !== "md") return f.name;
       const ref = linkWithRef.split("#")[1];
-      if(!ref) return await app.vault.cachedRead(f);
+      if(!ref) return await app.vault.read(f);
       if(ref.startsWith("^")) {
         return await getBlockText(f, ref.substring(1));
       } else {
@@ -224,9 +241,9 @@ async function crawl(el, level, isFirst = false) {
 
 window.ewm = "## " + await crawl(selectedElements[0], 2, true);
 
-const outputPath = await ea.getAttachmentFilepath(`EWM - ${ea.targetView.file.basename}.md`);
+const outputPath = await ea.getAttachmentFilepath(`EWM - ${ea.targetView.file.name}.md`);
 let result = templatePath
-  ? await app.vault.cachedRead(app.vault.getAbstractFileByPath(templatePath))
+  ? await app.vault.read(app.vault.getAbstractFileByPath(templatePath))
   : "";
 
 if(result.match("<<<REPLACE ME>>>")) {
