@@ -4,7 +4,6 @@ import replace from "@rollup/plugin-replace";
 import { terser } from "rollup-plugin-terser";
 import copy from "rollup-plugin-copy";
 import typescript2 from "rollup-plugin-typescript2";
-//import webWorker from "rollup-plugin-web-worker-loader";
 import fs from 'fs';
 import LZString from 'lz-string';
 import postprocess from 'rollup-plugin-postprocess';
@@ -100,7 +99,6 @@ const BUILD_CONFIG = {
   },
   plugins: getRollupPlugins(
     {tsconfig: isProd ? "tsconfig.json" : "tsconfig.dev.json"},
-    //webWorker({ inline: true, forceInline: true, targetPlatform: "browser" }),
     ...(isProd ? [
       terser({ toplevel: false, compress: { passes: 2 } }),
       //!postprocess - the version available on npmjs does not work, need this update: 

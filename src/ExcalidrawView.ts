@@ -144,6 +144,7 @@ import { SelectCard } from "./dialogs/SelectCard";
 import { Packages } from "./types/types";
 import React from "react";
 import { diagramToHTML } from "./utils/matic";
+import { IS_WORKER_SUPPORTED } from "./workers/compression-worker";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -765,6 +766,7 @@ export default class ExcalidrawView extends TextFileView {
         //added this to avoid Electron crash when terminating a popout window and saving the drawing, need to check back
         //can likely be removed once this is resolved: https://github.com/electron/electron/issues/40607
         if(this.semaphores?.viewunload) {
+          await this.prepareGetViewData();
           const d = this.getViewData();
           const plugin = this.plugin;
           const file = this.file;
@@ -775,6 +777,7 @@ export default class ExcalidrawView extends TextFileView {
           return;
         }
 
+        await this.prepareGetViewData();
         await super.save();
         if (process.env.NODE_ENV === 'development') {
           if (DEBUGGING) {
@@ -840,16 +843,23 @@ export default class ExcalidrawView extends TextFileView {
   // get the new file content
   // if drawing is in Text Element Edit Lock, then everything should be parsed and in sync
   // if drawing is in Text Element Edit Unlock, then everything is raw and parse and so an async function is not required here
-  
-  getViewData() {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getViewData, "ExcalidrawView.getViewData");
+  /**
+   * I moved the logic from getViewData to prepareGetViewData because getViewData is Sync and prepareGetViewData is async
+   * prepareGetViewData is async because of moving compression to a worker thread in 2.4.0
+   */
+  private viewSaveData: string = "";
+
+  async prepareGetViewData(): Promise<void> {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.prepareGetViewData, "ExcalidrawView.prepareGetViewData");
     if (!this.excalidrawAPI || !this.excalidrawData.loaded) {
-      return this.data;
+      this.viewSaveData = this.data;
+      return;
     }
 
     const scene = this.getScene();
     if(!scene) { 
-      return this.data;
+      this.viewSaveData = this.data;
+      return;
     }
 
     //include deleted elements in save in case saving in markdown mode
@@ -881,17 +891,29 @@ export default class ExcalidrawView extends TextFileView {
         this.excalidrawData.disableCompression = this.plugin.settings.decompressForMDView &&
           this.isEditedAsMarkdownInOtherView();
       }
-      const result = header + this.excalidrawData.generateMD(
-        this.excalidrawAPI.getSceneElementsIncludingDeleted().filter((el:ExcalidrawElement)=>el.isDeleted) //will be concatenated to scene.elements
-      ) + tail;
+      const result = IS_WORKER_SUPPORTED
+        ? (header + (await this.excalidrawData.generateMDAsync(
+            this.excalidrawAPI.getSceneElementsIncludingDeleted().filter((el:ExcalidrawElement)=>el.isDeleted) //will be concatenated to scene.elements
+          )) + tail)
+        : (header + (this.excalidrawData.generateMDSync(
+            this.excalidrawAPI.getSceneElementsIncludingDeleted().filter((el:ExcalidrawElement)=>el.isDeleted) //will be concatenated to scene.elements
+          )) + tail)
+
       this.excalidrawData.disableCompression = false;
-      return result;
+      this.viewSaveData = result;
+      return;
     }
     if (this.compatibilityMode) {
-      return JSON.stringify(scene, null, "\t");
+      this.viewSaveData = JSON.stringify(scene, null, "\t");
+      return;
     }
 
-    return this.data;
+    this.viewSaveData = this.data;
+    return;
+  }
+
+  getViewData() {
+    return this.viewSaveData ?? this.data;
   }
 
   private hiddenMobileLeaves:[WorkspaceLeaf,string][] = [];
@@ -2097,6 +2119,7 @@ export default class ExcalidrawView extends TextFileView {
   // clear the view content
   clear() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.clear, "ExcalidrawView.clear");
+    this.viewSaveData = "";
     this.canvasNodeFactory.purgeNodes();
     this.embeddableRefs.clear();
     this.embeddableLeafRefs.clear();
@@ -3787,6 +3810,7 @@ export default class ExcalidrawView extends TextFileView {
 
   private onPaste (data: ClipboardData, event: ClipboardEvent | null) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onPaste, "ExcalidrawView.onPaste", data, event);
+    const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
     const ea = this.getHookServer();
     if(data && ea.onPasteHook) {
       const res = ea.onPasteHook({
@@ -3849,7 +3873,6 @@ export default class ExcalidrawView extends TextFileView {
       const quoteWithRef = obsidianPDFQuoteWithRef(data.text);
       if(quoteWithRef) {                  
         const ea = getEA(this) as ExcalidrawAutomate;
-        const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
         const st = api.getAppState();
         const strokeC = st.currentItemStrokeColor;
         const viewC = st.viewBackgroundColor;
@@ -3876,6 +3899,77 @@ export default class ExcalidrawView extends TextFileView {
     }
     if (data.elements) {
       window.setTimeout(() => this.save(), 30); //removed prevent reload = false, as reload was triggered when pasted containers were processed and there was a conflict with the new elements
+    }
+
+    //process pasted text after it was processed into elements by Excalidraw
+    //I let Excalidraw handle the paste first, e.g. to split text by lines
+    //Only process text if it includes links or embeds that need to be parsed
+    if(data && data.text && data.text.match(/(\[\[[^\]]*]])|(\[[^\]]*]\([^)]*\))/gm)) {
+      const prevElements = api.getSceneElements().filter(el=>el.type === "text").map(el=>el.id);
+
+      window.setTimeout(async ()=>{
+        const sceneElements = api.getSceneElementsIncludingDeleted() as Mutable<ExcalidrawElement>[];
+        const newElements = sceneElements.filter(el=>el.type === "text" && !el.isDeleted && !prevElements.includes(el.id)) as ExcalidrawTextElement[];
+
+        //collect would-be image elements and their corresponding files and links
+        const imageElementsMap = new Map<ExcalidrawTextElement, [string, TFile]>();
+        let element: ExcalidrawTextElement;
+        const callback = (link: string, file: TFile) => {
+          imageElementsMap.set(element, [link, file]);
+        }
+        newElements.forEach((el:ExcalidrawTextElement)=>{
+          element = el;
+          isTextImageTransclusion(el.originalText,this,callback);
+        });
+
+        //if there are no image elements, save and return
+        //Save will ensure links and embeds are parsed
+        if(imageElementsMap.size === 0) {
+          this.save(false); //saving because there still may be text transclusions
+          return;
+        };
+        
+        //if there are image elements
+        //first delete corresponding "old" text elements
+        for(const [el, [link, file]] of imageElementsMap) {
+          const clone = cloneElement(el);
+          clone.isDeleted = true;
+          this.excalidrawData.deleteTextElement(clone.id);
+          sceneElements[sceneElements.indexOf(el)] = clone;
+        }
+        this.updateScene({elements: sceneElements, storeAction: "update"});
+
+        //then insert images and embeds
+        //shift text elements down to make space for images and embeds
+        const ea:ExcalidrawAutomate = getEA(this);
+        let offset = 0;
+        for(const el of newElements) {
+          const topleft = {x: el.x, y: el.y+offset};
+          if(imageElementsMap.has(el)) {
+            const [link, file] = imageElementsMap.get(el);
+            if(IMAGE_TYPES.contains(file.extension)) {
+              const id = await insertImageToView (ea, topleft, file, undefined, false);
+              offset += ea.getElement(id).height - el.height;
+            } else if(file.extension !== "pdf") {
+              //isTextImageTransclusion will not return text only markdowns, this is here
+              //for the future when we may want to support other embeddables
+              const id = await insertEmbeddableToView (ea, topleft, file, link, false);
+              offset += ea.getElement(id).height - el.height;
+            } else {
+              const modal = new UniversalInsertFileModal(this.plugin, this);
+              modal.open(file, topleft);
+            }
+          } else {
+            if(offset !== 0) {
+              ea.copyViewElementsToEAforEditing([el]);
+              ea.getElement(el.id).y = topleft.y;
+            }
+          }
+        }
+        await ea.addElementsToView(false,true);
+        ea.selectElementsInView(newElements.map(el=>el.id));
+        ea.destroy();
+      },200) //parse transclusion and links after paste
     }
     return true;
   }

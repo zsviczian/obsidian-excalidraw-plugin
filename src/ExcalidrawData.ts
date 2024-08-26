@@ -35,6 +35,7 @@ import {
   updateFrontmatterInString,
   wrapTextAtCharLength,
   arrayToMap,
+  compressAsync,
 } from "./utils/Utils";
 import { cleanBlockRef, cleanSectionHeading, getAttachmentsFolderAndFilePath, isObsidianThemeDark } from "./utils/ObsidianUtils";
 import {
@@ -219,10 +220,22 @@ export function getJSON(data: string): { scene: string; pos: number } {
   return { scene: data, pos: parts.value ? parts.value.index : 0 };
 }
 
-export function getMarkdownDrawingSection(
+export async function getMarkdownDrawingSectionAsync (
   jsonString: string,
   compressed: boolean,
 ) {
+  const result = compressed
+    ? `## Drawing\n\x60\x60\x60compressed-json\n${await compressAsync(
+        jsonString,
+      )}\n\x60\x60\x60\n%%`
+    : `## Drawing\n\x60\x60\x60json\n${jsonString}\n\x60\x60\x60\n%%`;
+  return result;
+}
+
+export function getMarkdownDrawingSection(
+  jsonString: string,
+  compressed: boolean,
+): string {
   const result = compressed
     ? `## Drawing\n\x60\x60\x60compressed-json\n${compress(
         jsonString,
@@ -1395,7 +1408,7 @@ export class ExcalidrawData {
    * @returns markdown string
    */
   disableCompression: boolean = false;
-  generateMD(deletedElements: ExcalidrawElement[] = []): string {
+  generateMDBase(deletedElements: ExcalidrawElement[] = []) {
     let outString = this.textElementCommentedOut ? "%%\n" : "";
     outString += `# Excalidraw Data\n## Text Elements\n`;
     if (this.plugin.settings.addDummyTextElement) {
@@ -1462,13 +1475,31 @@ export class ExcalidrawData {
       appState: this.scene.appState,
       files: this.scene.files
     }, null, "\t");
+    return { outString, sceneJSONstring };
+  }
+
+  async generateMDAsync(deletedElements: ExcalidrawElement[] = []): Promise<string> {
+    const { outString, sceneJSONstring } = this.generateMDBase(deletedElements);
     const result = (
       outString +
       (this.textElementCommentedOut ? "" : "%%\n") +
-      getMarkdownDrawingSection(
+      (await getMarkdownDrawingSectionAsync(
         sceneJSONstring,
         this.disableCompression ? false : this.plugin.settings.compress,
-      )
+      ))
+    );
+    return result;
+  }
+
+  generateMDSync(deletedElements: ExcalidrawElement[] = []): string {
+    const { outString, sceneJSONstring } = this.generateMDBase(deletedElements);
+    const result = (
+      outString +
+      (this.textElementCommentedOut ? "" : "%%\n") +
+      (getMarkdownDrawingSection(
+        sceneJSONstring,
+        this.disableCompression ? false : this.plugin.settings.compress,
+      ))
     );
     return result;
   }

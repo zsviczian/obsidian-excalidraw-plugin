@@ -121,7 +121,7 @@ export const DEVICE: DeviceType = {
   isMacOS: document.body.hasClass("mod-macos") && ! document.body.hasClass("is-ios"),
   isWindows: document.body.hasClass("mod-windows"),
   isIOS: document.body.hasClass("is-ios"),
-  isAndroid: document.body.hasClass("is-android")
+  isAndroid: document.body.hasClass("is-android"),
 };
 
 export const ROOTELEMENTSIZE = (() => {

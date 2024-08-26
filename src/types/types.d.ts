@@ -22,7 +22,7 @@ export type DeviceType = {
   isMacOS: boolean,
   isWindows: boolean,
   isIOS: boolean,
-  isAndroid: boolean
+  isAndroid: boolean,
 };
 
 declare global {

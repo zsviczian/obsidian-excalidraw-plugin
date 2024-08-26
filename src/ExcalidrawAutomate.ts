@@ -278,11 +278,11 @@ export class ExcalidrawAutomate {
     return getNewUniqueFilepath(app.vault, filename, folderAndPath.folder);
   }
 
-  public compressToBase64(str:string):string {
+  public compressToBase64(str:string): string {
     return LZString.compressToBase64(str);
   }
 
-  public decompressFromBase64(str:string):string {
+  public decompressFromBase64(str:string): string {
     return LZString.decompressFromBase64(str);
   }
 

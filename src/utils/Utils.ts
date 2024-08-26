@@ -28,6 +28,7 @@ import { cleanBlockRef, cleanSectionHeading, getFileCSSClasses } from "./Obsidia
 import { updateElementLinksToObsidianLinks } from "src/ExcalidrawAutomate";
 import { CropImage } from "./CropImage";
 import opentype from 'opentype.js';
+import { runCompressionWorker } from "src/workers/compression-worker";
 
 declare const PLUGIN_VERSION:string;
 declare var LZString: any;
@@ -528,9 +529,12 @@ export function getLinkParts (fname: string, file?: TFile): LinkParts {
   };
 };
 
+export async function compressAsync (data: string): Promise<string> {
+  return await runCompressionWorker(data, "compress");
+} 
+
 export function compress (data: string): string {
   const compressed = LZString.compressToBase64(data);
-  
   let result = '';
   const chunkSize = 256;
   for (let i = 0; i < compressed.length; i += chunkSize) {
@@ -540,7 +544,11 @@ export function compress (data: string): string {
   return result.trim();
 };
 
-export function decompress (data: string): string {
+export async function decompressAsync (data: string): Promise<string> {
+  return await runCompressionWorker(data, "decompress");
+};
+
+export function decompress (data: string, isAsync:boolean = false): string {
   let cleanedData = '';
   const length = data.length;
   
@@ -763,6 +771,10 @@ export function getEmbeddedFilenameParts (fname:string): FILENAMEPARTS {
     linkpartReference: parts[2],
     linkpartAlias: parts[9]
   }
+}
+
+export function isImagePartRef (parts: FILENAMEPARTS): boolean {
+  return (parts.hasGroupref || parts.hasArearef || parts.hasFrameref || parts.hasClippedFrameref);
 }
 
 export function fragWithHTML (html: string) {

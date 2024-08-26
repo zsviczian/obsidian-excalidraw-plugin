@@ -138,6 +138,7 @@ import { showFrameSettings } from "./dialogs/FrameSettings";
 import { ExcalidrawLib } from "./ExcalidrawLib";
 import { Rank, SwordColors } from "./menu/ActionIcons";
 import { RankMessage } from "./dialogs/RankMessage";
+import { initCompressionWorker, terminateCompressionWorker } from "./workers/compression-worker";
 
 declare let EXCALIDRAW_PACKAGES:string;
 declare let react:any;
@@ -311,6 +312,7 @@ export default class ExcalidrawPlugin extends Plugin {
   }*/
   
   async onload() {
+    initCompressionWorker();
     this.loadTimestamp = Date.now();
     addIcon(ICON_NAME, EXCALIDRAW_ICON);
     addIcon(SCRIPTENGINE_ICON_NAME, SCRIPTENGINE_ICON);
@@ -3316,6 +3318,7 @@ export default class ExcalidrawPlugin extends Plugin {
     react = null;
     reactDOM = null;
     excalidrawLib = null;
+    terminateCompressionWorker();
   }
 
   public async embedDrawing(file: TFile) {

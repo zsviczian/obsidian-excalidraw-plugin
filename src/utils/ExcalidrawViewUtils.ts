@@ -5,7 +5,7 @@ import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK, getExcalidrawMarkdownHeaderSection, REGEX_TAGS } from "src/ExcalidrawData";
 import ExcalidrawView from "src/ExcalidrawView";
 import { ExcalidrawElement, ExcalidrawFrameElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
-import { getLinkParts } from "./Utils";
+import { getEmbeddedFilenameParts, getLinkParts, isImagePartRef } from "./Utils";
 import { cleanSectionHeading } from "./ObsidianUtils";
 import { getEA } from "src";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
@@ -18,8 +18,9 @@ export async function insertImageToView(
   position: { x: number, y: number },
   file: TFile | string,
   scale?: boolean,
+  shouldInsertToView: boolean = true,
 ):Promise<string> {
-  ea.clear();
+  if(shouldInsertToView) {ea.clear();}
   ea.style.strokeColor = "transparent";
   ea.style.backgroundColor = "transparent";
   const api = ea.getExcalidrawAPI();
@@ -30,7 +31,7 @@ export async function insertImageToView(
     file,
     scale,
   );
-  await ea.addElementsToView(false, true, true);
+  if(shouldInsertToView) {await ea.addElementsToView(false, true, true);}
   return id;
 }
 
@@ -39,12 +40,13 @@ export async function insertEmbeddableToView (
   position: { x: number, y: number },
   file?: TFile,
   link?: string,
+  shouldInsertToView: boolean = true,
 ):Promise<string> {
-  ea.clear();
+  if(shouldInsertToView) {ea.clear();}
   ea.style.strokeColor = "transparent";
   ea.style.backgroundColor = "transparent";
   if(file && (IMAGE_TYPES.contains(file.extension) || ea.isExcalidrawFile(file)) && !ANIMATED_IMAGE_TYPES.contains(file.extension)) {
-    return await insertImageToView(ea, position, link??file);
+    return await insertImageToView(ea, position, link??file, undefined, shouldInsertToView);
   } else {
     const id = ea.addEmbeddable(
       position.x,
@@ -54,7 +56,7 @@ export async function insertEmbeddableToView (
       link,
       file,
     );
-    await ea.addElementsToView(false, true, true);
+    if(shouldInsertToView) {await ea.addElementsToView(false, true, true);}
     return id;
   }
 }
@@ -369,6 +371,9 @@ export function isTextImageTransclusion (
     const link = match.value[1] ?? match.value[2];
     const file = view.app.metadataCache.getFirstLinkpathDest(link?.split("#")[0], view.file.path);
     if(view.file === file) {
+      if(link?.split("#")[1] && !isImagePartRef(getEmbeddedFilenameParts(link))) {
+        return false;
+      }
       new Notice(t("RECURSIVE_INSERT_ERROR"));
       return false;
     }
