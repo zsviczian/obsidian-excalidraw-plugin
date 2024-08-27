@@ -416,8 +416,14 @@ function RenderObsidianView(
       }  
     } else if (leafRef.current?.node) {
       //Handle canvas node
-      containerRef.current?.removeClasses(["is-editing", "is-focused"]);
-      view.canvasNodeFactory.stopEditing(leafRef.current.node);
+      if(view.plugin.settings.markdownNodeOneClickEditing && !containerRef.current?.hasClass("is-editing")) {
+        const newTheme = getTheme(view, themeRef.current);
+        containerRef.current?.addClasses(["is-editing", "is-focused"]);
+        view.canvasNodeFactory.startEditing(leafRef.current.node, newTheme);
+      } else {
+        containerRef.current?.removeClasses(["is-editing", "is-focused"]);
+        view.canvasNodeFactory.stopEditing(leafRef.current.node);
+      }
     }
   }, [
     containerRef,
@@ -428,7 +434,8 @@ function RenderObsidianView(
     element,
     view,
     isEditingRef,
-    view.canvasNodeFactory
+    view.canvasNodeFactory,
+    themeRef.current
   ]);
 
   return null;

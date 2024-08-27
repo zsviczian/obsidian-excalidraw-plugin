@@ -477,7 +477,11 @@ FILENAME_HEAD: "Filename",
   EMBED_TOEXCALIDRAW_DESC: "In the Embed Files section of Excalidraw Settings, you can configure how various files are embedded into Excalidraw. This includes options for embedding interactive markdown files, PDFs, and markdown files as images.",
   MD_HEAD: "Embed markdown into Excalidraw as image",
   MD_EMBED_CUSTOMDATA_HEAD_NAME: "Interactive Markdown Files",
-  MD_EMBED_CUSTOMDATA_HEAD_DESC: `These settings will only effect future embeds. Current embeds remain unchanged. The theme setting of embedded frames is under the "Excalidraw appearance and behavior" section.`,
+  MD_EMBED_CUSTOMDATA_HEAD_DESC: `The below settings will only effect future embeds. Current embeds remain unchanged. The theme setting of embedded frames is under the "Excalidraw appearance and behavior" section.`,
+  MD_EMBED_SINGLECLICK_EDIT_NAME: "Single click to edit embedded markdown",
+  MD_EMBED_SINGLECLICK_EDIT_DESC:
+    "Single click on an embedded markdown file to edit it. " +
+    "When turned off, the markdown file will first open in preview mode, then switch to edit mode when you click on it again.",
   MD_TRANSCLUDE_WIDTH_NAME: "Default width of a transcluded markdown document",
   MD_TRANSCLUDE_WIDTH_DESC:
     "The width of the markdown page. This affects the word wrapping when transcluding longer paragraphs, and the width of " +

@@ -183,6 +183,7 @@ export interface ExcalidrawSettings {
     COLOR: string,
   };
   embeddableMarkdownDefaults: EmbeddableMDCustomProps;
+  markdownNodeOneClickEditing: boolean;
   canvasImmersiveEmbed: boolean,
   startupScriptPath: string,
   openAIAPIToken: string,
@@ -366,6 +367,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
     borderOpacity: 0,
     filenameVisible: false,
   },
+  markdownNodeOneClickEditing: false,
   canvasImmersiveEmbed: true,
   startupScriptPath: "",
   openAIAPIToken: "",
@@ -2125,7 +2127,26 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       text: t("MD_EMBED_CUSTOMDATA_HEAD_NAME"),
       cls: "excalidraw-setting-h3",
     });
-    detailsEl.createEl("span", {text: t("MD_EMBED_CUSTOMDATA_HEAD_DESC")});
+
+    new Setting(detailsEl)
+    .setName(t("MD_EMBED_SINGLECLICK_EDIT_NAME"))
+    .setDesc(fragWithHTML(t("MD_EMBED_SINGLECLICK_EDIT_DESC")))
+    .addToggle((toggle) =>
+      toggle
+        .setValue(this.plugin.settings.markdownNodeOneClickEditing)
+        .onChange(async (value) => {
+          this.plugin.settings.markdownNodeOneClickEditing = value;
+          this.applySettingsUpdate();
+        })
+    );
+
+    detailsEl.createEl("hr", { cls: "excalidraw-setting-hr" });
+    detailsEl.createEl("span", {}, (el) => {
+      el.innerHTML = t("MD_EMBED_CUSTOMDATA_HEAD_DESC");
+    });
+
+
+
 
     new EmbeddalbeMDFileCustomDataSettingsComponent(
       detailsEl,
