@@ -794,7 +794,9 @@ export const markdownPostProcessor = async (
   ctx: MarkdownPostProcessorContext,
 ) => {
   const isPrinting = Boolean(document.body.querySelectorAll("body > .print").length>0);
-  if(isPrinting && el.hasClass("mod-frontmatter")) {
+  //firstElementChild: https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1956
+  const isFrontmatter = el.hasClass("mod-frontmatter") || el.firstElementChild?.hasClass("frontmatter");
+  if(isPrinting && isFrontmatter) {
     return;
   }
   
@@ -816,7 +818,7 @@ export const markdownPostProcessor = async (
   }
 
   if (!isPreview && embeddedItems.length === 0) {
-    if(el.hasClass("mod-frontmatter")) {
+    if(isFrontmatter) {
       docIDs.add(ctx.docId);
     } else {
       if(docIDs.has(ctx.docId) && !el.hasChildNodes()) {
