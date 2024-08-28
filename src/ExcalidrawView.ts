@@ -1534,8 +1534,16 @@ export default class ExcalidrawView extends TextFileView {
         }
       };
 
+      const onMouseLeave = () => {
+        if(!this.excalidrawAPI || !this.excalidrawData.loaded || !this.isDirty()) {
+          return;
+        }
+        this.save();
+      };
+
       this.registerDomEvent(this.ownerWindow, "keydown", onKeyDown, false);
       this.registerDomEvent(this.ownerWindow, "keyup", onKeyUp, false);
+      this.registerDomEvent(this.contentEl, "mouseleave", onMouseLeave, false);
     });
 
     this.setupAutosaveTimer();
