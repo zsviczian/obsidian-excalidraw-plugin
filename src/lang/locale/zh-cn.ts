@@ -37,6 +37,7 @@ export default {
   TRANSCLUDE: "嵌入绘图（形如 ![[drawing]]）到当前 Markdown 文档中",
   TRANSCLUDE_MOST_RECENT: "嵌入最近编辑过的绘图（形如 ![[drawing]]）到当前 Markdown 文档中",
   TOGGLE_LEFTHANDED_MODE: "切换为左手模式",
+  TOGGLE_SPLASHSCREEN: "在新绘图中显示启动画面",
   FLIP_IMAGE: "打开当前所选 excalidraw 图像的“背景笔记”",
   NEW_IN_NEW_PANE: "新建绘图 - 于新面板",
   NEW_IN_NEW_TAB: "新建绘图 - 于新页签",
@@ -352,6 +353,10 @@ FILENAME_HEAD: "文件名",
     "<li>当 <b>禁用</b> 时，PDF 将显示文档的 Markdown 部分（背景笔记）。</li></ul>" +
     "请参阅上面‘外观和行为’部分的 <<a href='#"+TAG_MDREADINGMODE+"'>>Markdown 阅读模式</a> 相关设置。" +
     "⚠️ 注意，您必须关闭当前的 Excalidraw/Markdown 文件并重新打开，以使此更改生效。⚠️",
+  HOTKEY_OVERRIDE_HEAD: "热键覆盖",
+  HOTKEY_OVERRIDE_DESC: `一些 Excalidraw 的热键，例如 ${labelCTRL()}+Enter 用于编辑文本，或 ${labelCTRL()}+K 用于创建元素链接。` +
+    "与 Obsidian 的热键设置发生冲突。您在下面添加的热键组合将在使用 Excalidraw 时覆盖 Obsidian 的热键设置，" +
+    `因此如果您希望在 Excalidraw 中默认选择“组合对象”，而不是打开“图形视图”，您可以添加 ${labelCTRL()}+G。`,
   THEME_HEAD: "主题和样式",
   ZOOM_HEAD: "缩放",
   DEFAULT_PINCHZOOM_NAME: "允许在触控笔模式下进行双指缩放",
@@ -738,6 +743,12 @@ FILENAME_HEAD: "文件名",
   TASKBONE_APIKEY_DESC: "Taskbone 的免费 API key 提供了一定数量的每月识别次数。如果您非常频繁地使用此功能，或者想要支持 " + 
     "Taskbone 的开发者（您懂的，没有人能用爱发电，Taskbone 开发者也需要投入资金来维持这项 OCR 服务）您可以" +
     "到 <a href='https://www.taskbone.com/' target='_blank'>taskbone.com</a> 购买一个商用 API key。购买后请将它填写到旁边这个文本框里，替换掉原本自动生成的免费 API key。",
+
+  //HotkeyEditor
+  HOTKEY_PRESS_COMBO_NANE: "按下您的组合键",
+  HOTKEY_PRESS_COMBO_DESC: "请按下所需的组合键",
+  HOTKEY_BUTTON_ADD_OVERRIDE: "添加新的（热键）覆写",
+  HOTKEY_BUTTON_REMOVE: "移除",
 
   //openDrawings.ts
   SELECT_FILE: "选择一个文件后按回车。",
