@@ -37,6 +37,7 @@ export default {
   TRANSCLUDE: "Embed a drawing",
   TRANSCLUDE_MOST_RECENT: "Embed the most recently edited drawing",
   TOGGLE_LEFTHANDED_MODE: "Toggle left-handed mode",
+  TOGGLE_SPLASHSCREEN: "Show splash screen in new drawings",
   FLIP_IMAGE: "Open the back-of-the-note of the selected excalidraw image",
   NEW_IN_NEW_PANE: "Create new drawing - IN AN ADJACENT WINDOW",
   NEW_IN_NEW_TAB: "Create new drawing - IN A NEW TAB",
@@ -352,6 +353,10 @@ FILENAME_HEAD: "Filename",
     "<li>When <b>disabled</b> the PDF will show the markdown side of the document.</li></ul>" +
     "See the other related setting for <a href='#"+TAG_MDREADINGMODE+"'>Markdown Reading Mode</a> under 'Appearnace and Behavior' further above.<br>" +
     "⚠️ Note, you must close the active excalidraw/markdown file and reopen for this change to take effect. ⚠️",
+  HOTKEY_OVERRIDE_HEAD: "Hotkey overrides",
+  HOTKEY_OVERRIDE_DESC: `Some of the Excalidraw hotkeys such as <code>${labelCTRL()}+Enter</code> to edit text or <code>${labelCTRL()}+K</code> to create an element link ` +
+    "conflict with Obsidian hotkey settings. The hotkey combinations you add below will override Obsidian's hotkey settings while useing Excalidraw, thus " +
+    `you can add <code>${labelCTRL()}+G</code> if you want to default to Group Object in Excalidraw instead of opening Graph View.`,
   THEME_HEAD: "Theme and styling",
   ZOOM_HEAD: "Zoom",
   DEFAULT_PINCHZOOM_NAME: "Allow pinch zoom in pen mode",
@@ -738,6 +743,12 @@ FILENAME_HEAD: "Filename",
   TASKBONE_APIKEY_DESC: "Taskbone offers a free service with a reasonable number of scans per month. If you want to use this feature more frequently, or you want to supoprt " + 
     "the developer of Taskbone (as you can imagine, there is no such thing as 'free', providing this awesome OCR service costs some money to the developer of Taskbone), you can " +
     "purchase a paid API key from <a href='https://www.taskbone.com/' target='_blank'>taskbone.com</a>. In case you have purchased a key, simply overwrite this auto generated free-tier API-key with your paid key.",
+
+  //HotkeyEditor
+  HOTKEY_PRESS_COMBO_NANE: "Press your hotkey combination",
+  HOTKEY_PRESS_COMBO_DESC: "Please press the desired key combination",
+  HOTKEY_BUTTON_ADD_OVERRIDE: "Add New Override",
+  HOTKEY_BUTTON_REMOVE: "Remove",
 
   //openDrawings.ts
   SELECT_FILE: "Select a file then press enter.",

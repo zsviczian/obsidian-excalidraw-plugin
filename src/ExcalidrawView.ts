@@ -3350,6 +3350,7 @@ export default class ExcalidrawView extends TextFileView {
         currentStrokeOptions: st.currentStrokeOptions,
         frameRendering: st.frameRendering,
         objectsSnapModeEnabled: st.objectsSnapModeEnabled,
+        activeTool: st.activeTool,
       },
       prevTextMode: this.prevTextMode,
       files,
@@ -5254,6 +5255,7 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   private renderWelcomeScreen () {
+    if(!this.plugin.settings.showSplashscreen) return null;
     const React = this.packages.react;
     const {WelcomeScreen} = this.packages.excalidrawLib;
     const filecount = this.app.vault.getFiles().filter(f=>this.plugin.isExcalidrawFile(f)).length;

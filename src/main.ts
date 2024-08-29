@@ -2826,37 +2826,53 @@ export default class ExcalidrawPlugin extends Plugin {
       this.popScope = null;
     }
     if (newActiveviewEV) {
-      const scope = this.app.keymap.getRootScope();
-      const handler_ctrlEnter = scope.register(["Mod"], "Enter", () => true);
-      scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
-      const handler_ctrlK = scope.register(["Mod"], "k", () => true);
-      scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
-      const handler_ctrlF = scope.register(["Mod"], "f", () => {
-        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
-        if (view) {
-          search(view);
-          return true;
-        }
-        return false;
-      });
-      scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
-      const overridSaveShortcut = (
-        this.forceSaveCommand &&
-        this.forceSaveCommand.hotkeys[0].key === "s" &&
-        this.forceSaveCommand.hotkeys[0].modifiers.includes("Ctrl")
-      )
-      const saveHandler = overridSaveShortcut
-       ? scope.register(["Ctrl"], "s", () => this.forceSaveActiveView(false))
-       : undefined;
-      if(saveHandler) {
-        scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
+      this.registerHotkeyOverrides();
+    }
+  }
+
+  public registerHotkeyOverrides() {
+    //this is repeated here because the same function is called when settings is closed after hotkeys have changed
+    if (this.popScope) {
+      this.popScope();
+      this.popScope = null;
+    }
+
+    if(!this.activeExcalidrawView) {
+      return;
+    }
+
+    const scope = this.app.keymap.getRootScope();
+    // Register overrides from settings
+    const overrideHandlers = this.settings.modifierKeyOverrides.map(override => {
+      return scope.register(override.modifiers, override.key, () => true);
+    });
+    // Force handlers to the front of the list
+    overrideHandlers.forEach(() => scope.keys.unshift(scope.keys.pop()));
+
+    const handler_ctrlF = scope.register(["Mod"], "f", () => {
+      const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+      if (view) {
+        search(view);
+        return true;
       }
-      this.popScope = () => {
-        scope.unregister(handler_ctrlEnter);
-        scope.unregister(handler_ctrlK);
-        scope.unregister(handler_ctrlF);
-        Boolean(saveHandler) && scope.unregister(saveHandler);
-      }
+      return false;
+    });
+    scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
+    const overridSaveShortcut = (
+      this.forceSaveCommand &&
+      this.forceSaveCommand.hotkeys[0].key === "s" &&
+      this.forceSaveCommand.hotkeys[0].modifiers.includes("Ctrl")
+    )
+    const saveHandler = overridSaveShortcut
+     ? scope.register(["Ctrl"], "s", () => this.forceSaveActiveView(false))
+     : undefined;
+    if(saveHandler) {
+      scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
+    }
+    this.popScope = () => {
+      overrideHandlers.forEach(handler => scope.unregister(handler));
+      scope.unregister(handler_ctrlF);
+      Boolean(saveHandler) && scope.unregister(saveHandler);
     }
   }
 
