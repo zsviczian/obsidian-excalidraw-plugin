@@ -6,7 +6,7 @@ import copy from "rollup-plugin-copy";
 import typescript2 from "rollup-plugin-typescript2";
 import fs from 'fs';
 import LZString from 'lz-string';
-import postprocess from 'rollup-plugin-postprocess';
+import postprocess from '@zsviczian/rollup-plugin-postprocess';
 import cssnano from 'cssnano';
 
 // Load environment variables
@@ -107,9 +107,6 @@ const BUILD_CONFIG = {
           comments: false, // Remove all comments
         },
       }),
-      //!postprocess - the version available on npmjs does not work, need this update: 
-      //  npm install brettz9/rollup-plugin-postprocess#update --save-dev
-      //  https://github.com/developit/rollup-plugin-postprocess/issues/10
       postprocess([
         [/React=require\("react"\),state=require\("@codemirror\/state"\),view=require\("@codemirror\/view"\)/,
         `state=require("@codemirror/state"),view=require("@codemirror/view")` + packageString],

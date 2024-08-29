@@ -28,6 +28,7 @@ export type DeviceType = {
 declare global {
   interface Window {
       ExcalidrawAutomate: ExcalidrawAutomate;
+      pdfjsLib: any;
   }
 }
 

@@ -473,6 +473,8 @@ export class EmbeddedFilesLoader {
       return null;
     }
 
+    const app = this.plugin.app;
+
     const isHyperLink = inFile instanceof EmbeddedFile ? inFile.isHyperLink : false;
     const isLocalLink = inFile instanceof EmbeddedFile ? inFile.isLocalLink : false;
     const hyperlink = inFile instanceof EmbeddedFile ? inFile.hyperlink : "";

@@ -63,21 +63,21 @@ import { GenericInputPrompt, NewFileActions } from "src/dialogs/Prompt";
 import { t } from "src/lang/helpers";
 import { ScriptEngine } from "src/Scripts";
 import { ConnectionPoint, DeviceType  } from "src/types/types";
-import CM, { ColorMaster, extendPlugins } from "colormaster";
-import HarmonyPlugin from "colormaster/plugins/harmony";
-import MixPlugin from "colormaster/plugins/mix"
-import A11yPlugin from "colormaster/plugins/accessibility"
-import NamePlugin from "colormaster/plugins/name"
-import LCHPlugin from "colormaster/plugins/lch";
-import LUVPlugin from "colormaster/plugins/luv";
-import LABPlugin from "colormaster/plugins/lab";
-import UVWPlugin from "colormaster/plugins/uvw";
-import XYZPlugin from "colormaster/plugins/xyz";
-import HWBPlugin from "colormaster/plugins/hwb";
-import HSVPlugin from "colormaster/plugins/hsv";
-import RYBPlugin from "colormaster/plugins/ryb";
-import CMYKPlugin from "colormaster/plugins/cmyk";
-import { TInput } from "colormaster/types";
+import CM, { ColorMaster, extendPlugins } from "@zsviczian/colormaster";
+import HarmonyPlugin from "@zsviczian/colormaster/plugins/harmony";
+import MixPlugin from "@zsviczian/colormaster/plugins/mix"
+import A11yPlugin from "@zsviczian/colormaster/plugins/accessibility"
+import NamePlugin from "@zsviczian/colormaster/plugins/name"
+import LCHPlugin from "@zsviczian/colormaster/plugins/lch";
+import LUVPlugin from "@zsviczian/colormaster/plugins/luv";
+import LABPlugin from "@zsviczian/colormaster/plugins/lab";
+import UVWPlugin from "@zsviczian/colormaster/plugins/uvw";
+import XYZPlugin from "@zsviczian/colormaster/plugins/xyz";
+import HWBPlugin from "@zsviczian/colormaster/plugins/hwb";
+import HSVPlugin from "@zsviczian/colormaster/plugins/hsv";
+import RYBPlugin from "@zsviczian/colormaster/plugins/ryb";
+import CMYKPlugin from "@zsviczian/colormaster/plugins/cmyk";
+import { TInput } from "@zsviczian/colormaster/types";
 import {ConversionResult, svgToExcalidraw} from "src/svgToExcalidraw/parser"
 import { ROUNDNESS } from "src/constants/constants";
 import { ClipboardData } from "@zsviczian/excalidraw/types/excalidraw/clipboard";

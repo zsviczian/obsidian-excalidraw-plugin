@@ -291,9 +291,7 @@ export const blobToBase64 = async (blob: Blob): Promise<string> => {
 }
 
 export const getPDFDoc = async (f: TFile): Promise<any> => {
-  //@ts-ignore
   if(typeof window.pdfjsLib === "undefined") await loadPdfJs();
-  //@ts-ignore
   return await window.pdfjsLib.getDocument(app.vault.getResourcePath(f)).promise;
 }
 
