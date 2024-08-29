@@ -477,7 +477,11 @@ FILENAME_HEAD: "文件名",
   EMBED_TOEXCALIDRAW_DESC: "包括：以图像形式嵌入到绘图中的 PDF 文档、以交互形式嵌入到绘图中的 Markdown 文档（MD-Embeddable）、以图像形式嵌入的 Markdown 文档（MD-Embed）等。",
   MD_HEAD: "以图像形式嵌入到绘图中的 Markdown 文档（MD-Embed）",
   MD_EMBED_CUSTOMDATA_HEAD_NAME: "以交互形式嵌入到绘图中的 Markdown 文档（MD-Embeddable）",
-  MD_EMBED_CUSTOMDATA_HEAD_DESC: `这些选项不会影响到已存在的 MD-Embeddable。MD-Embeddable 的主题风格在“显示 & 行为”小节设置。`,
+  MD_EMBED_CUSTOMDATA_HEAD_DESC: `以下设置只会影响以后的嵌入。已存在的嵌入保持不变。嵌入框的主题设置位于 “Excalidraw 外观和行为” 部分。`,
+  MD_EMBED_SINGLECLICK_EDIT_NAME: "单击以编辑嵌入的 markdown。",
+  MD_EMBED_SINGLECLICK_EDIT_DESC:
+    "单击嵌入的 markdown 文件以进行编辑。 " +
+    "当此功能关闭时，markdown 文件将首先以预览模式打开，然后在您再次单击时切换到编辑模式。",
   MD_TRANSCLUDE_WIDTH_NAME: "MD-Embed 的默认宽度",
   MD_TRANSCLUDE_WIDTH_DESC:
     "MD-Embed 的宽度。该选项会影响到折行，以及图像元素的宽度。<br>" +
