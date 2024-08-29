@@ -100,7 +100,13 @@ const BUILD_CONFIG = {
   plugins: getRollupPlugins(
     {tsconfig: isProd ? "tsconfig.json" : "tsconfig.dev.json"},
     ...(isProd ? [
-      terser({ toplevel: false, compress: { passes: 2 } }),
+      terser({
+        toplevel: false,
+        compress: { passes: 2 },
+        format: {
+          comments: false, // Remove all comments
+        },
+      }),
       //!postprocess - the version available on npmjs does not work, need this update: 
       //  npm install brettz9/rollup-plugin-postprocess#update --save-dev
       //  https://github.com/developit/rollup-plugin-postprocess/issues/10

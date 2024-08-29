@@ -3,6 +3,7 @@ import {
   ButtonComponent,
   DropdownComponent,
   getIcon,
+  Modifier,
   normalizePath,
   PluginSettingTab,
   Setting,
@@ -39,6 +40,7 @@ import { EDITOR_FADEOUT } from "./CodeMirrorExtension/EditorHandler";
 import { setDebugging } from "./utils/DebugHelper";
 import { Rank } from "./menu/ActionIcons";
 import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/constSettingsTags";
+import { HotkeyEditor } from "./dialogs/HotkeyEditor";
 
 export interface ExcalidrawSettings {
   folder: string;
@@ -204,6 +206,8 @@ export interface ExcalidrawSettings {
   longPressMobile: number;
   isDebugMode: boolean;
   rank: Rank;
+  modifierKeyOverrides: {modifiers: Modifier[], key: string}[];
+  showSplashscreen: boolean;
 }
 
 declare const PLUGIN_VERSION:string;
@@ -464,6 +468,11 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   longPressMobile: 500,
   isDebugMode: false,
   rank: "Bronze",
+  modifierKeyOverrides: [
+    {modifiers: ["Mod"], key:"Enter"},
+    {modifiers: ["Mod"], key:"k"},
+  ],
+  showSplashscreen: true,
 };
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
@@ -472,6 +481,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private requestReloadDrawings: boolean = false;
   private requestUpdatePinnedPens: boolean = false;
   private requestUpdateDynamicStyling: boolean = false;
+  private hotkeyEditor: HotkeyEditor;
   //private reloadMathJax: boolean = false;
   //private applyDebounceTimer: number = 0;
 
@@ -498,21 +508,25 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     }
     this.plugin.saveSettings();
     if (this.requestUpdatePinnedPens) {
-      app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
+      this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
         if (v.view instanceof ExcalidrawView) v.view.updatePinnedCustomPens()
       })
     }
     if (this.requestUpdateDynamicStyling) {
-      app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
+      this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
         if (v.view instanceof ExcalidrawView) {
           setDynamicStyle(this.plugin.ea,v.view,v.view.previousBackgroundColor,this.plugin.settings.dynamicStyling);
         }
         
       })
     }
+    this.hotkeyEditor.unload();
+    if (this.hotkeyEditor.isDirty) {
+      this.plugin.registerHotkeyOverrides();
+    }
     if (this.requestReloadDrawings) {
       const exs =
-        app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+        this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
       for (const v of exs) {
         if (v.view instanceof ExcalidrawView) {
           await v.view.save(false);
@@ -1094,6 +1108,29 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
     addIframe(detailsEl, "H8Njp7ZXYag",999);
+
+    new Setting(detailsEl)
+      .setName(t("TOGGLE_SPLASHSCREEN"))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.showSplashscreen)
+          .onChange((value)=> {
+            this.plugin.settings.showSplashscreen = value;
+            this.applySettingsUpdate();
+          })
+      )
+
+    detailsEl = displayDetailsEl.createEl("details");
+    detailsEl.createEl("summary", {
+      text: t("HOTKEY_OVERRIDE_HEAD"),
+      cls: "excalidraw-setting-h3",
+    });
+    detailsEl.createEl("span", {}, (el) => {
+      el.innerHTML = t("HOTKEY_OVERRIDE_DESC");
+    });
+
+    this.hotkeyEditor = new HotkeyEditor(detailsEl, this.plugin.settings, this.applySettingsUpdate);
+    this.hotkeyEditor.onload();
 
     detailsEl = displayDetailsEl.createEl("details");
     detailsEl.createEl("summary", { 

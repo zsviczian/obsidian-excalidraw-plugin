@@ -1,3 +1,4 @@
+import { Modifier } from "obsidian";
 import { DEVICE } from "src/constants/constants";
 import { ExcalidrawSettings } from "src/settings";
 export type ModifierKeys = {shiftKey:boolean, ctrlKey: boolean, metaKey: boolean, altKey: boolean};
@@ -177,4 +178,26 @@ export const emulateKeysForLinkClick = (action: PaneTarget): ModifierKeys => {
 
 export const anyModifierKeysPressed = (e: ModifierKeys): boolean => {
   return e.shiftKey || e.ctrlKey || e.metaKey || e.altKey;
+}
+
+export function modifierLabel(modifiers: Modifier[], platform?: "Mac" | "Other"): string {
+  const isMacPlatform = platform === "Mac" || 
+                        (platform === undefined && (DEVICE.isIOS || DEVICE.isMacOS));
+
+  return modifiers.map(modifier => {
+    switch (modifier) {
+      case "Mod":
+        return isMacPlatform ? "CMD" : "CTRL";
+      case "Ctrl":
+        return "CTRL";
+      case "Meta":
+        return isMacPlatform ? "CMD" : "WIN";
+      case "Shift":
+        return "SHIFT";
+      case "Alt":
+        return isMacPlatform ? "OPTION" : "ALT";
+      default:
+        return modifier;
+    }
+  }).join("+");
 }
