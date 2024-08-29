@@ -471,6 +471,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   modifierKeyOverrides: [
     {modifiers: ["Mod"], key:"Enter"},
     {modifiers: ["Mod"], key:"k"},
+    {modifiers: ["Mod"], key:"G"},
   ],
   showSplashscreen: true,
 };
