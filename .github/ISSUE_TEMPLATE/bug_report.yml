@@ -21,6 +21,11 @@ body:
       value: |
         Please help by providing the following details. Bugs reported without the required information may be closed without review.
 
+  - type: markdown
+    attributes:
+      value: |
+        ---
+
   - type: checkboxes
     id: search_existing_issues
     attributes:
