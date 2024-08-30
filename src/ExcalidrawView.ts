@@ -1535,7 +1535,7 @@ export default class ExcalidrawView extends TextFileView {
         }
       };
 
-      const onMouseLeave = () => {
+      const onBlurOrLeave = () => {
         if(!this.excalidrawAPI || !this.excalidrawData.loaded || !this.isDirty()) {
           return;
         }
@@ -1544,7 +1544,8 @@ export default class ExcalidrawView extends TextFileView {
 
       this.registerDomEvent(this.ownerWindow, "keydown", onKeyDown, false);
       this.registerDomEvent(this.ownerWindow, "keyup", onKeyUp, false);
-      this.registerDomEvent(this.contentEl, "mouseleave", onMouseLeave, false);
+      this.registerDomEvent(this.contentEl, "mouseleave", onBlurOrLeave, false);
+      this.registerDomEvent(this.ownerWindow, "blur", onBlurOrLeave, false);
     });
 
     this.setupAutosaveTimer();
