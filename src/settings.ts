@@ -224,8 +224,8 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   onceOffCompressFlagReset: false,
   onceOffGPTVersionReset: false,
   autosave: true,
-  autosaveIntervalDesktop: 15000,
-  autosaveIntervalMobile: 10000,
+  autosaveIntervalDesktop: 30000,
+  autosaveIntervalMobile: 20000,
   drawingFilenamePrefix: "Drawing ",
   drawingEmbedPrefixWithFilename: true,
   drawingFilnameEmbedPostfix: " ",
@@ -762,7 +762,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     .setDesc(fragWithHTML(t("AUTOSAVE_INTERVAL_DESKTOP_DESC")))
     .addDropdown((dropdown) =>
       dropdown
-        .addOption("15000", "Frequent (every 15 seconds)")
+        .addOption("15000", "Very frequent (every 15 seconds)")
+        .addOption("30000", "Frequent (every 30 seconds)")
         .addOption("60000", "Moderate (every 60 seconds)")
         .addOption("300000", "Rare (every 5 minutes)")
         .addOption("900000", "Practically never (every 15 minutes)")
@@ -778,7 +779,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     .setDesc(fragWithHTML(t("AUTOSAVE_INTERVAL_MOBILE_DESC")))
     .addDropdown((dropdown) =>
       dropdown
-        .addOption("10000", "Frequent (every 10 seconds)")
+        .addOption("10000", "Very frequent (every 10 seconds)")
+        .addOption("20000", "Frequent (every 20 seconds)")
         .addOption("30000", "Moderate (every 30 seconds)")
         .addOption("60000", "Rare (every 1 minute)")
         .addOption("300000", "Practically never (every 5 minutes)")

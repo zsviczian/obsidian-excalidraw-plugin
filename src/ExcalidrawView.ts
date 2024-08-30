@@ -838,6 +838,7 @@ export default class ExcalidrawView extends TextFileView {
     if(triggerReload) {
       this.reload(true, this.file);
     }
+    this.resetAutosaveTimer(); //next autosave period starts after save
   }
 
   // get the new file content
@@ -1736,7 +1737,7 @@ export default class ExcalidrawView extends TextFileView {
           this.semaphores.autosaving = true;
           //changed from await to then to avoid lag during saving of large file
           this.save().then(()=>this.semaphores.autosaving = false);
-        } 
+        }
         this.autosaveTimer = window.setTimeout(
           timer,
           this.autosaveInterval,
@@ -1770,7 +1771,6 @@ export default class ExcalidrawView extends TextFileView {
       this.autosaveFunction,
       this.autosaveInterval,
     );
-
   }
 
   unload(): void {
