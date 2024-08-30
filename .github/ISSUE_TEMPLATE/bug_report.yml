@@ -24,7 +24,7 @@ body:
       options:
         - label: Yes, I have verified the issue persists.
 
-  - type: input
+  - type: textarea
     id: environment
     attributes:
       label: "Your environment"
