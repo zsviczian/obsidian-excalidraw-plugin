@@ -12,9 +12,7 @@ body:
 
         Before creating a bug report, please:
         1. **Review recent release notes** – maybe there is already an answer.
-        2. **Search issues (including closed ones)** to see if there is anything similar.
-
-        ⚠️ **I will close all bug reports that do not provide this background information.** I need to control my workload and time. Sorry, and thank you for understanding! ⚠️
+        2. **[Search issues](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues) (including closed ones)** to see if there is anything similar.
 
   - type: markdown
     attributes:
