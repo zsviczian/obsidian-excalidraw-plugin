@@ -11,7 +11,7 @@ body:
         I am a one-person team working on this plugin as a part-time hobby. I cannot handle a flood of poorly documented issues. **To ensure your report is considered, you must follow these guidelines**. If you don't, I will close the issue without review.
 
         Before creating a bug report, please:
-        1. **Review recent release notes** – maybe there is already an answer.
+        1. **Review recent [release notes](https://github.com/zsviczian/obsidian-excalidraw-plugin/releases)** – maybe there is already an answer.
         2. **[Search issues](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues) (including closed ones)** to see if there is anything similar.
 
   - type: markdown
