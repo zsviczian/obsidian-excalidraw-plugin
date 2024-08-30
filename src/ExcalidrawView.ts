@@ -2619,6 +2619,10 @@ export default class ExcalidrawView extends TextFileView {
 
   public setDirty(location?:number) {
     if(this.semaphores.saving) return; //do not set dirty if saving
+    if(!this.isDirty()) {
+      //the autosave timer should start when the first stroke was made... thus avoiding an immediate impact by saving right then
+      this.resetAutosaveTimer();
+    }
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setDirty,`ExcalidrawView.setDirty, location:${location}`);
     this.semaphores.dirty = this.file?.path;
     this.actionButtons['save'].querySelector("svg").addClass("excalidraw-dirty");
