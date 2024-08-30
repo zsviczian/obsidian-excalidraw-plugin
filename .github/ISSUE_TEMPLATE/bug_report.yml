@@ -6,6 +6,19 @@ body:
   - type: markdown
     attributes:
       value: |
+        ⚠️ **Important: Please Read Before Submitting a Bug Report** ⚠️
+
+        I am a one-person team working on this plugin as a part-time hobby. I cannot handle a flood of poorly documented issues. **To ensure your report is considered, you must follow these guidelines**. If you don't, I will close the issue without review.
+
+        Before creating a bug report, please:
+        1. **Review recent release notes** – maybe there is already an answer.
+        2. **Search issues (including closed ones)** to see if there is anything similar.
+
+        ⚠️ **I will close all bug reports that do not provide this background information.** I need to control my workload and time. Sorry, and thank you for understanding! ⚠️
+
+  - type: markdown
+    attributes:
+      value: |
         Please help by providing the following details. Bugs reported without the required information may be closed without review.
 
   - type: checkboxes
