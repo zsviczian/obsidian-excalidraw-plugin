@@ -1,0 +1,84 @@
+name: Bug report
+description: When something is clearly broken. Everything else is a feature request.
+title: "BUG: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please help by providing the following details. Bugs reported without the required information may be closed without review.
+
+  - type: checkboxes
+    id: search_existing_issues
+    attributes:
+      label: Have you searched for existing issues (including closed ones)?
+      description: Please confirm that you have searched the issue tracker before reporting a new issue.
+      options:
+        - label: Yes, I have searched the existing issues.
+          required: true
+
+  - type: checkboxes
+    id: verify_bug
+    attributes:
+      label: Does this bug persist in a new vault with only Excalidraw installed?
+      description: Please confirm that you have tested this issue in an empty Obsidian vault with no other plugins or themes installed.
+      options:
+        - label: Yes, I have verified the issue persists.
+          required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: "Your environment"
+      description: "Run `Command Palette/Show Debug info` in Obsidian and paste the result here."
+      placeholder: "Paste your Obsidian debug info here..."
+      required: true
+
+  - type: textarea
+    id: bug_description
+    attributes:
+      label: "Describe the bug"
+      description: "A clear and concise description of what the bug is."
+      placeholder: "Provide a detailed description of the issue..."
+      required: true
+
+  - type: textarea
+    id: steps_to_reproduce
+    attributes:
+      label: "Steps to reproduce"
+      description: "List the steps to reproduce the behavior."
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. See error
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: "Expected behavior"
+      description: "A clear and concise description of what you expected to happen."
+      placeholder: "Describe what you expected to happen..."
+      required: true
+
+  - type: file
+    id: attachments
+    attributes:
+      label: "Screenshots or screen recordings"
+      description: "If applicable, add screenshots or recordings to help explain your problem."
+      required: false
+
+  - type: file
+    id: relevant_files
+    attributes:
+      label: "Attach relevant files"
+      description: "Attach any files that could help reproduce or understand the issue, if not confidential."
+      required: false
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: "Additional context"
+      description: "Add any other context about the problem here."
+      placeholder: "Include any other information that may be helpful..."
+      required: false
