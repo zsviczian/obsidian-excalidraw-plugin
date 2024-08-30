@@ -79,4 +79,5 @@ body:
     attributes:
       value: |
         **Attachments:**
-        Please add any screenshots, screen recordings, or files (if applicable) by dragging and dropping them into this issue.
+        If applicable, please attach any screenshots, screen recordings, or files by dragging and dropping them into the comment area or directly into any of the text fields above. 
+
