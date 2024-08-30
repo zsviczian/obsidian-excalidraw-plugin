@@ -1,7 +1,6 @@
 name: Bug report
 description: When something is clearly broken. Everything else is a feature request.
 title: "BUG: "
-labels: ["bug"]
 body:
   - type: markdown
     attributes:
