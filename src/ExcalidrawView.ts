@@ -1539,7 +1539,7 @@ export default class ExcalidrawView extends TextFileView {
         if(!this.excalidrawAPI || !this.excalidrawData.loaded || !this.isDirty()) {
           return;
         }
-        this.save();
+        this.forceSave(true);
       };
 
       this.registerDomEvent(this.ownerWindow, "keydown", onKeyDown, false);

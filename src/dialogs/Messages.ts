@@ -17,6 +17,49 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.4.0": `
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/LtuAaqY_DNc" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## New
+- Flowcharts with CTRL/CMD+Arrow and ALT/OPT+Arrow keys
+- Improved PDF Support
+  - PDF++ cropped area paste
+  - Import PDF into frames
+- Element links with metadata
+- Obisidan Hotkey overrides
+- Support for Zotero style markdown links
+
+## QoL
+- Much improved freedraw flow, less autosave glitches
+- Link editor CTRL+Meta/(CTRL+CMD) + click or via the command palette "Open the image-link or LaTeX-formula editor.
+- Improved search and search results
+- Disable double tap ereaser activation in pen mode
+- Single click editing of markdown embeddables
+- Set grid size and frequency
+- Improved paste
+- Pan & Zoom while editing Text
+- Save active too-state (e.g. tool-lock) with the drawing
+- Show/hide "sword" splashscreen in new drawings
+
+## Fixed
+- Duplicate line points when Alt+click adding new points in line editor- - Excalidraw Automate measureText, impacting gate placement in ExcaliBrain
+- If a group includes a frame, the image reference will include all the elements in the frame, not just the frame
+- Excalidraw rendering issues in markdown preview
+- Markdown pages embedded in Excalidraw were broken
+- Drawing did not save arrow type
+- Fixed rendering of newly pasted links
+
+## ExcalidrawAutomate
+- new functions
+  - tex2dataURL
+  - addElementsToFrame
+  - resetImageAspectRatio
+- Changed
+  - getViewSelectedElements(includeFrameChildren: boolean = true);
+  - getOriginalImageSize with option to wait for the image to load
+`,
 "2.3.0": `
 I am moving to a new release approach aiming to publish one update per month to the Obsidian script store. If you want to continue to receive more frequent updates with new features and minor bug fixes, then join the beta testing team. [#1912](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1912)
 
