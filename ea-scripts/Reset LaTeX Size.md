@@ -19,13 +19,14 @@ scale = await utils.inputPrompt("Scale?", "Number", "1");
 if (!scale) return;
 scale = parseFloat(scale);
 
+ea.copyViewElementsToEAforEditing(elements);
+
 for (el of elements) {
   equation = ea.targetView.excalidrawData.getEquation(el.fileId)?.latex;
   if (!equation) return;
   eqData = await ea.tex2dataURL(equation);
-  el.width = eqData.size.width * scale;
-  el.height = eqData.size.height * scale;
+  ea.getElement(el.id).width = eqData.size.width * scale;
+  ea.getElement(el.id).height = eqData.size.height * scale;
 };
 
-ea.copyViewElementsToEAforEditing(elements);
 ea.addElementsToView(false, false);

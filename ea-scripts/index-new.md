@@ -89,6 +89,7 @@ I would love to include your contribution in the script library. If you have a s
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Modify%20background%20color%20opacity.svg"/></div>|[[#Modify background color opacity]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Organic%20Line.svg"/></div>|[[#Organic Line]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Organic%20Line%20Legacy.svg"/></div>|[[#Organic Line Legacy]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Reset%20LaTeX%20Size.svg"/></div>|[[#Reset LaTeX Size]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Set%20background%20color%20of%20unclosed%20line%20object%20by%20adding%20a%20shadow%20clone.svg"/></div>|[[#Set background color of unclosed line object by adding a shadow clone]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Set%20Dimensions.svg"/></div>|[[#Set Dimensions]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Set%20Grid.svg"/></div>|[[#Set Grid]]|
@@ -516,6 +517,14 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Select%20Similar%20Elements.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Select%20Similar%20Elements.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script allows you to streamline your Obsidian-Excalidraw workflows by enabling the selection of elements based on similar properties. you can precisely define which attributes such as stroke color, fill style, font family, and more, should match for selection. It's perfect for large canvases where manual selection would be cumbersome. You can either run the script to find and select matching elements across the entire scene, or define a specific group of elements to apply the selection criteria within a defined timeframe.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-select-similar-elements.png'></td></tr></table>
+
+
+## Reset LaTeX Size
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Reset%20LaTeX%20Size.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/firai'>@firai</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Reset%20LaTeX%20Size.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Reset the sizes of embedded LaTeX equations to the default sizes or a multiple of the default sizes.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-reset-latex.jpg'></td></tr></table>
+
 
 ## Set background color of unclosed line object by adding a shadow clone
 ```excalidraw-script-install
