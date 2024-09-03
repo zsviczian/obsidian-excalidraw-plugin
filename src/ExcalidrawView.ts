@@ -1782,7 +1782,16 @@ export default class ExcalidrawView extends TextFileView {
   async onUnloadFile(file: TFile): Promise<void> {
     //deliberately not calling super.onUnloadFile() to avoid autosave (saved in unload)
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onUnloadFile,`ExcalidrawView.onUnloadFile, file:${this.file?.name}`);
-    while (this.semaphores.saving) await sleep(50); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1988
+    let counter = 0;
+    while (this.semaphores.saving) {
+      await sleep(50); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1988
+      if(counter++ === 15) {
+        new Notice(t("SAVE_IS_TAKING_LONG"));
+      }
+      if(counter === 80) {
+        new Notice(t("SAVE_IS_TAKING_VERY_LONG"));
+      }
+    }
   }
 
   private async forceSaveIfRequired():Promise<boolean> {

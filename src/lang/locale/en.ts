@@ -169,6 +169,8 @@ export default {
   WELCOME_LEARN_LINK: "Sign up for the Visual Thinking Workshop",
   WELCOME_DONATE_ARIA: "Donate to support Excalidraw-Obsidian",
   WELCOME_DONATE_LINK: 'Say "Thank You" & support the plugin.',
+  SAVE_IS_TAKING_LONG: "Saving your previous file is taking a long time. Please wait...",
+  SAVE_IS_TAKING_VERY_LONG: "For better performance, consider splitting large drawings into several smaller files.",
 
   //settings.ts
   RELEASE_NOTES_NAME: "Display Release Notes after update",
