@@ -44,7 +44,7 @@ body:
   - type: checkboxes
     id: verify_guidelines
     attributes:
-      label: Read the [WIKI Contributors Guidelines](https://github.com/zsviczian/obsidian-excalidraw-plugin/wiki/Contributor-Guidelines) before submitting the request.
+      label: Please read the WIKI Contributors Guidelines before submitting your request!
       options:
         - label: Yes, I have read and understood the [Contributors Guidelines](https://github.com/zsviczian/obsidian-excalidraw-plugin/wiki/Contributor-Guidelines)
 
