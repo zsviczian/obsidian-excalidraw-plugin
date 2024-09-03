@@ -9,9 +9,11 @@ labels: [collaboration-request]
 assignees: []
 
 body:
-  - type: markdown
+  - type: textarea
     attributes:
-      content: |
+      label: Contribution Details
+      description: Provide details about your contribution request.
+      placeholder: |
         ## Contribution Request
 
         Thank you for your interest in contributing to the Excalidraw Plugin wiki! To help us understand how you’d like to contribute, please provide the following details:
