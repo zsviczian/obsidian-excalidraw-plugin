@@ -9,14 +9,12 @@ labels: [collaboration-request]
 assignees: []
 
 body:
-  - type: textarea
+  - type: markdown
     attributes:
-      label: Contribution Details
-      description: Provide details about your contribution request.
-      placeholder: |
+      value: |
         ## Contribution Request
 
-        Thank you for your interest in contributing to the Excalidraw Plugin wiki! To help us understand how you’d like to contribute, please provide the following details:
+        Thank you for your interest in contributing to the Excalidraw Plugin wiki! To help me understand how you’d like to contribute, please provide the following details:
 
         1. **Contribution Area**: Describe what areas of the wiki you’re interested in contributing to (e.g., fixing typos, adding new tutorials, improving existing content).
         2. **Experience**: Briefly describe your experience with Excalidraw or Obsidian and any relevant background that will help with the contribution.
@@ -29,7 +27,16 @@ body:
         - Additional Information: Looking forward to contributing!
         ```
 
-        Once we review your request, we will get back to you with instructions on how to proceed. Thank you for helping improve our documentation!
+        Once I review your request, I will get back to you with instructions on how to proceed. Thank you for helping improve our documentation!
 
         ---
-        The Excalidraw Plugin Team
+        Zsolt
+
+  - type: textarea
+    attributes:
+      label: Contribution Details
+      description: Provide details about your contribution request.
+      placeholder: |
+        - Contribution Area: Adding a tutorial on advanced Excalidraw features
+        - Experience: Regular user of Excalidraw and experienced in creating tutorials
+        - Additional Information: Looking forward to contributing!
