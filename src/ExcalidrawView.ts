@@ -1781,7 +1781,8 @@ export default class ExcalidrawView extends TextFileView {
 
   async onUnloadFile(file: TFile): Promise<void> {
     //deliberately not calling super.onUnloadFile() to avoid autosave (saved in unload)
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onUnloadFile,`ExcalidrawView.onUnloadFile, file:${this.file?.name}`);   
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onUnloadFile,`ExcalidrawView.onUnloadFile, file:${this.file?.name}`);
+    while (this.semaphores.saving) await sleep(50); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1988
   }
 
   private async forceSaveIfRequired():Promise<boolean> {
@@ -5259,14 +5260,14 @@ export default class ExcalidrawView extends TextFileView {
     );
   }
 
-  private renderWelcomeScreen () {
-    if(!this.plugin.settings.showSplashscreen) return null;
+  private renderWelcomeScreen() {
+    if (!this.plugin.settings.showSplashscreen) return null;
     const React = this.packages.react;
-    const {WelcomeScreen} = this.packages.excalidrawLib;
-    const filecount = this.app.vault.getFiles().filter(f=>this.plugin.isExcalidrawFile(f)).length;
+    const { WelcomeScreen } = this.packages.excalidrawLib;
+    const filecount = this.app.vault.getFiles().filter(f => this.plugin.isExcalidrawFile(f)).length;
     const rank = filecount < 200 ? "Bronze" : filecount < 750 ? "Silver" : filecount < 2000 ? "Gold" : "Platinum";
     const nextRankDelta = filecount < 200 ? 200 - filecount : filecount < 750 ? 750 - filecount : filecount < 2000 ? 2000 - filecount : 0;
-    const {decoration, title} = SwordColors[rank as Rank];
+    const { decoration, title } = SwordColors[rank as Rank];
     return React.createElement(
       WelcomeScreen,
       {},
@@ -5286,20 +5287,22 @@ export default class ExcalidrawView extends TextFileView {
           WelcomeScreen.Center.Heading,
           {
             color: decoration,
-            message: nextRankDelta > 0 ? `${rank}: ${nextRankDelta} more drawings until the next rank!` : `${rank}: You're at the top. Keep on being legendary!`,
+            message: nextRankDelta > 0 
+              ? `${rank}: ${nextRankDelta} ${t("WELCOME_RANK_NEXT")}` 
+              : `${rank}: ${t("WELCOME_RANK_LEGENDARY")}`,
           },
           title,
         ),
         React.createElement(
           WelcomeScreen.Center.Heading,
           {},
-          "Type \"Excalidraw\" in the Command Palette",
+          t("WELCOME_COMMAND_PALETTE"),
           React.createElement("br"),
-          "Explore the Obsidian Menu in the top right",
+          t("WELCOME_OBSIDIAN_MENU"),
           React.createElement("br"),
-          "Visit the Script Library",
+          t("WELCOME_SCRIPT_LIBRARY"),
           React.createElement("br"),
-          "Find help in the hamburger-menu",
+          t("WELCOME_HELP_MENU"),
         ),
         React.createElement(
           WelcomeScreen.Center.Menu,
@@ -5310,9 +5313,9 @@ export default class ExcalidrawView extends TextFileView {
               icon: ICONS.YouTube,
               href: "https://www.youtube.com/@VisualPKM",
               shortcut: null,
-              "aria-label": "Visual PKM YouTube Channel",  
+              "aria-label": t("WELCOME_YOUTUBE_ARIA"),
             },
-            " Check out the Visual PKM YouTube channel."
+            t("WELCOME_YOUTUBE_LINK")
           ),
           React.createElement(
             WelcomeScreen.Center.MenuItemLink,
@@ -5320,9 +5323,9 @@ export default class ExcalidrawView extends TextFileView {
               icon: ICONS.Discord,
               href: "https://discord.gg/DyfAXFwUHc",
               shortcut: null,
-              "aria-label": "Join the Discord Server",
+              "aria-label": t("WELCOME_DISCORD_ARIA"),
             },
-            " Join the Discord Server"
+            t("WELCOME_DISCORD_LINK")
           ),
           React.createElement(
             WelcomeScreen.Center.MenuItemLink,
@@ -5330,9 +5333,9 @@ export default class ExcalidrawView extends TextFileView {
               icon: ICONS.twitter,
               href: "https://twitter.com/zsviczian",
               shortcut: null,
-              "aria-label": "Follow me on Twitter",
+              "aria-label": t("WELCOME_TWITTER_ARIA"),
             },
-            " Follow me on Twitter"
+            t("WELCOME_TWITTER_LINK")
           ),
           React.createElement(
             WelcomeScreen.Center.MenuItemLink,
@@ -5340,9 +5343,9 @@ export default class ExcalidrawView extends TextFileView {
               icon: ICONS.Learn,
               href: "https://visual-thinking-workshop.com",
               shortcut: null,
-              "aria-label": "Learn Visual PKM",
+              "aria-label": t("WELCOME_LEARN_ARIA"),
             },
-            " Sign up for the Visual Thinking Workshop"
+            t("WELCOME_LEARN_LINK")
           ),
           React.createElement(
             WelcomeScreen.Center.MenuItemLink,
@@ -5350,9 +5353,9 @@ export default class ExcalidrawView extends TextFileView {
               icon: ICONS.heart,
               href: "https://ko-fi.com/zsolt",
               shortcut: null,
-              "aria-label": "Donate to support Excalidraw-Obsidian",    
+              "aria-label": t("WELCOME_DONATE_ARIA"),
             },
-            " Say \"Thank You\" & support the plugin."
+            t("WELCOME_DONATE_LINK")
           ),
         )
       )

@@ -877,6 +877,9 @@ export const penIcon = (pen: PenStyle) => {
 }
 
 export const stringToSVG = (svg: string) => {
+  if(svg.match('class="skip"')) {
+    return <div dangerouslySetInnerHTML={{__html: svg}}></div>
+  }
   svg = svg
     .replace(/stroke\s*=\s*['"][^"']*['"]/g,"")
     .replace(/[^-]width\s*=\s*['"][^"']*['"]/g,"")

@@ -378,6 +378,13 @@ export function isTextImageTransclusion (
       return false;
     }
     if(file && file instanceof TFile) {
+      if(
+        view.plugin.isExcalidrawFile(file) &&
+        link?.split("#")[1] &&
+        !isImagePartRef(getEmbeddedFilenameParts(link)))
+      {
+        return false;
+      }
       if (file.extension !== "md" || view.plugin.isExcalidrawFile(file)) {
         callback(link, file);
         return true;

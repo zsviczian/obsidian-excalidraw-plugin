@@ -153,6 +153,22 @@ export default {
   REMOVE_LINK: "Remove text element link",
   LASER_ON: "Enable laser pointer",
   LASER_OFF: "Disable laser pointer",
+  WELCOME_RANK_NEXT: "more drawings until the next rank!",
+  WELCOME_RANK_LEGENDARY: "You're at the top. Keep on being legendary!",
+  WELCOME_COMMAND_PALETTE: 'Type "Excalidraw" in the Command Palette',
+  WELCOME_OBSIDIAN_MENU: "Explore the Obsidian Menu in the top right",
+  WELCOME_SCRIPT_LIBRARY: "Visit the Script Library",
+  WELCOME_HELP_MENU: "Find help in the hamburger-menu",
+  WELCOME_YOUTUBE_ARIA: "Visual PKM YouTube Channel",
+  WELCOME_YOUTUBE_LINK: "Check out the Visual PKM YouTube channel.",
+  WELCOME_DISCORD_ARIA: "Join the Discord Server",
+  WELCOME_DISCORD_LINK: "Join the Discord Server",
+  WELCOME_TWITTER_ARIA: "Follow me on Twitter",
+  WELCOME_TWITTER_LINK: "Follow me on Twitter",
+  WELCOME_LEARN_ARIA: "Learn Visual PKM",
+  WELCOME_LEARN_LINK: "Sign up for the Visual Thinking Workshop",
+  WELCOME_DONATE_ARIA: "Donate to support Excalidraw-Obsidian",
+  WELCOME_DONATE_LINK: 'Say "Thank You" & support the plugin.',
 
   //settings.ts
   RELEASE_NOTES_NAME: "Display Release Notes after update",
@@ -721,14 +737,16 @@ FILENAME_HEAD: "Filename",
   CUSTOM_FONT_HEAD: "Local font",
   ENABLE_FOURTH_FONT_NAME: "Enable local font option",
   ENABLE_FOURTH_FONT_DESC:
-    "By turning this on, you will see a local font in the font list on the properties panel for text elements. " +
-    "Files that use this local font will (partly) lose their platform independence. " +
-    "Depending on the custom font set in settings, they will look differently when loaded in another vault, or at a later time. " +
-    "Also the 4th font will display as system default font on excalidraw.com, or other Excalidraw versions.",
+    "Enabling this option will add a local font to the font list in the properties panel for text elements. " +
+    "Be aware that using this local font may compromise platform independence. " +
+    "Files using the custom font might render differently when opened in a different vault or at a later time, depending on the font settings. " +
+    "Additionally, the 4th font will default to the system font on excalidraw.com or other Excalidraw versions.",
   FOURTH_FONT_NAME: "Local font file",
   FOURTH_FONT_DESC:
-    "Select a .ttf, .woff or .woff2 font file from your vault to use as the local font. " +
-    "If no file is selected, Excalidraw will use the Virgil font by default.",
+    "Select a .otf, .ttf, .woff, or .woff2 font file from your vault to use as the local font. " +
+    "If no file is selected, Excalidraw will default to the Virgil font. " +
+    "For optimal performance, it is recommended to use a .woff2 file, as Excalidraw will encode only the necessary glyphs when exporting images to SVG. " +
+    "Other font formats will embed the entire font in the exported file, potentially resulting in significantly larger file sizes.",
   SCRIPT_SETTINGS_HEAD: "Settings for installed Scripts",
   SCRIPT_SETTINGS_DESC: "Some of the Excalidraw Automate Scripts include settings. Settings are organized by script. Settings will only become visible in this list after you have executed the newly downloaded script once.",
   TASKBONE_HEAD: "Taskbone Optical Character Recogntion",

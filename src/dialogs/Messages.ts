@@ -17,6 +17,17 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.4.1": `
+This release includes an important fix that can result in your drawing being overwritten by another drawing. Please update to this version as soon as possible.
+
+## Fixed
+- A problem where switching between two Excalidraw documents in the same tab could result in the content from the first document overwriting the second one, particularly when the first document was large. [#1988](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1988)
+- Styling issue when Obsidian font size is set to the non-default value.
+- Embedding a block reference ${String.fromCharCode(96)}![[file#^block]]${String.fromCharCode(96)} where the file is an excalidraw file incorrectly replaced the embedding with the image instead of the block of text.
+
+## New
+- Improved SVG export to include only the necessary glyphs for .woff2 fonts, minimizing file sizes. Note that this feature is currently supported only for .woff2 files; other font formats like .ttf and .otf will be fully embedded, leading to larger SVG files. I recommend using .woff2 files whenever possible.
+`,
 "2.4.0": `
 <div class="excalidraw-videoWrapper"><div>
 <iframe src="https://www.youtube.com/embed/LtuAaqY_DNc" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

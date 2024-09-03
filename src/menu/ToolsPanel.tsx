@@ -453,7 +453,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
           style={{
             top: `${this.state.top}px`,
             left: `${this.state.left}px`,
-            width: `${TOOLS_PANEL_WIDTH}px`,
+            width: `13.75rem`,
             display:
               this.state.visible && !this.state.excalidrawViewMode
                 ? "block"
