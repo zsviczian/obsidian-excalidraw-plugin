@@ -40,3 +40,11 @@ body:
         - Contribution Area: Adding a tutorial on advanced Excalidraw features
         - Experience: Regular user of Excalidraw and experienced in creating tutorials
         - Additional Information: Looking forward to contributing!
+
+  - type: checkboxes
+    id: verify_guidelines
+    attributes:
+      label: Read the [WIKI Contributors Guidelines](https://github.com/zsviczian/obsidian-excalidraw-plugin/wiki/Contributor-Guidelines) before submitting the request.
+      options:
+        - label: Yes, I have read and understood the [Contributors Guidelines](https://github.com/zsviczian/obsidian-excalidraw-plugin/wiki/Contributor-Guidelines)
+
