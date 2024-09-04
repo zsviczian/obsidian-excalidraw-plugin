@@ -153,6 +153,24 @@ export default {
   REMOVE_LINK: "移除文字元素链接",
   LASER_ON: "启用激光笔",
   LASER_OFF: "关闭激光笔",
+  WELCOME_RANK_NEXT: "张绘图之后，可以到达下一等级！",
+  WELCOME_RANK_LEGENDARY: "您已是绘图大师，请续写传奇~",
+  WELCOME_COMMAND_PALETTE: '在命令面板中输入 "Excalidraw"',
+  WELCOME_OBSIDIAN_MENU: "探索右上角的 Obsidian 菜单",
+  WELCOME_SCRIPT_LIBRARY: "访问脚本库",
+  WELCOME_HELP_MENU: "在汉堡菜单（三横线）中寻找帮助",
+  WELCOME_YOUTUBE_ARIA: "可视化个人知识管理的 YouTube 频道",
+  WELCOME_YOUTUBE_LINK: "查看可视化个人知识管理的 YouTube 频道",
+  WELCOME_DISCORD_ARIA: "加入 Discord 服务器",
+  WELCOME_DISCORD_LINK: "加入 Discord 服务器",
+  WELCOME_TWITTER_ARIA: "在 Twitter 上关注我",
+  WELCOME_TWITTER_LINK: "在 Twitter 上关注我",
+  WELCOME_LEARN_ARIA: "学习“可视化个人知识管理”（Visual PKM）",
+  WELCOME_LEARN_LINK: "报名加入视觉思维工作坊",
+  WELCOME_DONATE_ARIA: "捐赠以支持 Excalidraw-Obsidian",
+  WELCOME_DONATE_LINK: '感谢并支持此插件。',
+  SAVE_IS_TAKING_LONG: "保存您之前的文件花费的时间较长，请稍候...",
+  SAVE_IS_TAKING_VERY_LONG: "为了更好的性能，请考虑将大型绘图拆分成几个较小的文件。",
 
   //settings.ts
   RELEASE_NOTES_NAME: "显示更新说明",
@@ -721,14 +739,16 @@ FILENAME_HEAD: "文件名",
   CUSTOM_FONT_HEAD: "本地字体",
   ENABLE_FOURTH_FONT_NAME: "为文本元素启用本地字体",
   ENABLE_FOURTH_FONT_DESC:
-    "开启此项后，文本元素的属性面板里会多出一个本地字体按钮。<br>" +
-    "使用了本地字体的绘图文件，将会失去一部分跨平台能力 —— " +
-    "若将绘图文件移动到其他库中打开，显示效果可能会截然不同；" +
-    "若在 excalidraw.com 或者其他版本的 Excalidraw 中打开，使用本地字体的文本会变回系统默认字体。",
+    "启用此选项将在文本元素的属性面板的字体列表中添加一个本地字体。" +
+    "请注意，使用这个本地字体可能会破坏平台的独立性。" +
+    "使用自定义字体的文件在不同的库中打开或在以后打开时，根据字体设置，可能会以不同的方式呈现。" +
+    "此外，在excalidraw.com 或其他 Excalidraw 版本中，默认的本地字体字体将使用系统字体。",
   FOURTH_FONT_NAME: "本地字体文件",
   FOURTH_FONT_DESC:
-    "选择库文件夹中的一个 .ttf，.woff 或 .woff2 字体文件作为本地字体文件。若未选择文件，则使用默认的 Virgil 字体。"+
-    "<mark>译者注：</mark>您可以在<a href='https://wangchujiang.com/free-font/' target='_blank'>Free Font</a>获取免费商用字体。",
+    "从您的库中选择一个 .otf、.ttf、.woff 或 .woff2 字体文件作为本地字体使用。"+
+    "如果没有选择文件，Excalidraw 将默认使用 Virgil 字体。"+
+    "为了获得最佳性能，建议使用 .woff2 文件，因为当导出到 SVG 格式的图像时，Excalidraw 只会编码必要的字形。"+
+    "其他字体格式将在导出文件中嵌入整个字体，可能会导致文件大小显著增加。<mark>译者注：</mark>您可以在<a href='https://wangchujiang.com/free-font/' target='_blank'>Free Font</a>获取免费商用中文手写字体。",
   SCRIPT_SETTINGS_HEAD: "已安装脚本的设置",
   SCRIPT_SETTINGS_DESC: "有些 Excalidraw 自动化脚本包含设置项，当执行这些脚本时，它们会在该列表下添加设置项。",
   TASKBONE_HEAD: "Taskbone OCR（光学符号识别）",
