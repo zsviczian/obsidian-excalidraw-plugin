@@ -12,6 +12,8 @@ Compatible with my *Hardware Eraser Support* script
 
 ```javascript
 */
+let eaGlobal = ea
+
 (function() {
     'use strict';
     
@@ -20,10 +22,10 @@ Compatible with my *Hardware Eraser Support* script
     let disable
 
     function handlePointer(e) {
-        ea.setView("active");
-        var activeTool = ea.getExcalidrawAPI().getAppState().activeTool;
+        eaGlobal.setView("active");
+        var activeTool = eaGlobal.getExcalidrawAPI().getAppState().activeTool;
         function setActiveTool(t) {
-            ea.getExcalidrawAPI().setActiveTool(t)
+            eaGlobal.getExcalidrawAPI().setActiveTool(t)
         }
 
         if (e.pointerType === 'pen') {
@@ -32,7 +34,7 @@ Compatible with my *Hardware Eraser Support* script
                 setActiveTool({type:"freedraw"})
             }
 
-            if (timeout) clearTimeout(timeout)
+            if (timeout) cleaGlobalrTimeout(timeout)
 
             function setTimeoutX(a,b) {
                 timeout = setTimeout(a,b)
@@ -40,7 +42,7 @@ Compatible with my *Hardware Eraser Support* script
             }
     
             function revert() {
-                activeTool = ea.getExcalidrawAPI().getAppState().activeTool;
+                activeTool = eaGlobal.getExcalidrawAPI().getAppState().activeTool;
                 disable = false
                 if (activeTool.type==='freedraw') {
                     setActiveTool({type:"selection"})
@@ -55,7 +57,7 @@ Compatible with my *Hardware Eraser Support* script
         }
     }
     function handleClick(e) {
-        ea.setView("active");
+        eaGlobal.setView("active");
         if (e.pointerType !== 'pen') {
             disable = false
         }
