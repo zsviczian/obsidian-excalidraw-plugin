@@ -11,6 +11,8 @@ Compatible with my *Auto Draw for Pen* script
 ```javascript
 */
 
+let eaGlobal = ea
+
 (function() {
     'use strict';
 
@@ -18,12 +20,16 @@ Compatible with my *Auto Draw for Pen* script
     let revert
     
     function handlePointer(e) {
-        const activeTool = ea.getExcalidrawAPI().getAppState().activeTool;
+        const activeTool = eaGlobal.getExcalidrawAPI().getAppState().activeTool
         const isEraser = e.pointerType === 'pen' && e.buttons & 32
         function setActiveTool(t) {
-            ea.getExcalidrawAPI().setActiveTool(t)
+            eaGlobal.getExcalidrawAPI().setActiveTool(t)
         }
         if (!activated && isEraser) {
+            if (activeTool.type == "eraser") {
+                //console.log("Multiple instances running, cancelled this one")
+                return
+            } 
             //Store previous tool
             const btns = document.querySelectorAll('.App-toolbar input.ToolIcon_type_radio')
             for (const i in btns) {
@@ -47,26 +53,29 @@ Compatible with my *Auto Draw for Pen* script
         // Keep on eraser!
         if (isEraser && activated) {
             setActiveTool({type: "eraser"})
+            Object.defineProperty(e, 'button', {
+                value: 0,
+                writable: false
+            });
         }
         if (activated && !isEraser) {
-            // Revert tool on release
-            // revert.click()
+            // Revert tool on releaGlobalse
             setActiveTool(revert)
             activated = false
-            
             // Force delete "limbo" elements
             // This doesn't happen on the web app
             // It's a bug caused by switching to eraser during a stroke
-            ea.setView("active");
+            eaGlobal.setView("active");
             var del = []
-            for (const i in ea.getViewElements()) {
-                const element = ea.getViewElements()[i];
+            for (const i in eaGlobal.getViewElements()) {
+                const element = eaGlobal.getViewElements()[i];
                 if (element.opacity === 20) {
                     del.push(element)
                 }
             }
-            ea.deleteViewElements(del)
+            eaGlobal.deleteViewElements(del)
             setActiveTool(revert)
+    
         }
     }
     
