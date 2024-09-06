@@ -115,14 +115,12 @@ I would love to include your contribution in the script library. If you have a s
 
 |    |     |
 |----|-----|
-|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Auto%20Draw%20for%20Pen.svg"/></div>|[[#Auto Draw for Pen]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Boolean%20Operations.svg"/></div>|[[#Boolean Operations]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Custom%20Zoom.svg"/></div>|[[#Custom Zoom]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Copy%20Selected%20Element%20Styles%20to%20Global.svg"/></div>|[[#Copy Selected Element Styles to Global]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/ExcaliAI.svg"/></div>|[[#ExcaliAI]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Excalidraw%20Writing%20Machine.svg"/></div>|[[#Excalidraw Writing Machine]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/GPT-Draw-a-UI.svg"/></div>|[[#GPT Draw-a-UI]]|
-|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Hardware%20Eraser%20Support.svg"/></div>|[[#Hardware Eraser Support]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Palette%20loader.svg"/></div>|[[#Palette Loader]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/PDF%20Page%20Text%20to%20Clipboard.svg"/></div>|[[#PDF Page Text to Clipboard]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Rename%20Image.svg"/></div>|[[#Rename Image]]|
@@ -183,12 +181,6 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Add%20Next%20Step%20in%20Process.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Add%20Next%20Step%20in%20Process.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script will prompt you for the title of the process step, then will create a stick note with the text. If an element is selected then the script will connect this new step with an arrow to the previous step (the selected element). If no element is selected, then the script assumes this is the first step in the process and will only output the sticky note with the text that was entered.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-add-process-step.jpg'></td></tr></table>
-
-## Auto Draw for Pen
-```excalidraw-script-install
-https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Auto%20Draw%20for%20Pen.md
-```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/threethan'>@threethan</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Auto%20Draw%20for%20Pen.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Automatically switches from select mode to drawing mode when hovering a pen, and then back.</td></tr></table>
 
 ## Auto Layout
 ```excalidraw-script-install
@@ -402,13 +394,6 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/GPT-Draw-a-UI.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/GPT-Draw-a-UI.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script was discontinued in favor of ExcaliAI. Draw a UI and let GPT create the code for you.<br><iframe width="400" height="225" src="https://www.youtube.com/embed/y3kHl_6Ll4w" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-draw-a-ui.jpg'></td></tr></table>
-
-
-## Hardware Eraser Support
-```excalidraw-script-install
-https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Hardware%20Eraser%20Support.md
-```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/threethan'>@threethan</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Hardware%20Eraser%20Support.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Allows you to use inversion, aka hardware eraser, on supported pens.</td></tr></table>
 
 ## Invert colors
 ```excalidraw-script-install
