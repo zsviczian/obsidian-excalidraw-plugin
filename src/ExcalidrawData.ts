@@ -1434,12 +1434,11 @@ export class ExcalidrawData {
     if (this.elementLinks.size > 0  || textElementLinks.size > 0) {
       outString += `## Element Links\n`;
       for (const key of this.elementLinks.keys()) {
-        outString += `${key}: ${this.elementLinks.get(key)}\n`;
+        outString += `${key}: ${this.elementLinks.get(key)}\n\n`;
       }
       for (const key of textElementLinks.keys()) {
-        outString += `${key}: ${textElementLinks.get(key)}\n`;
+        outString += `${key}: ${textElementLinks.get(key)}\n\n`;
       }
-      outString += "\n";
     }
 
     // deliberately not adding mermaids to here. It is enough to have the mermaidText in the image element's customData
@@ -1449,7 +1448,7 @@ export class ExcalidrawData {
         : "";
     if (this.equations.size > 0) {
       for (const key of this.equations.keys()) {
-        outString += `${key}: $$${this.equations.get(key).latex}$$\n`;
+        outString += `${key}: $$${this.equations.get(key).latex}$$\n\n`;
       }
     }
     if (this.files.size > 0) {
@@ -1457,18 +1456,18 @@ export class ExcalidrawData {
         const PATHREG = /(^[^#\|]*)/;
         const ef = this.files.get(key);
         if(ef.isHyperLink || ef.isLocalLink) {
-          outString += `${key}: ${ef.hyperlink}\n`;
+          outString += `${key}: ${ef.hyperlink}\n\n`;
         } else {
           //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/829
           const path = ef.file
             ? ef.linkParts.original.replace(PATHREG,this.app.metadataCache.fileToLinktext(ef.file,this.file.path))
             : ef.linkParts.original;
           const colorMap = ef.colorMap ? " " + JSON.stringify(ef.colorMap) : "";
-          outString += `${key}: [[${path}]]${colorMap}\n`;
+          outString += `${key}: [[${path}]]${colorMap}\n\n`;
         }
       }
     }
-    outString += this.equations.size > 0 || this.files.size > 0 ? "\n" : "";
+    //outString += this.equations.size > 0 || this.files.size > 0 ? "\n" : "";
 
     const sceneJSONstring = JSON.stringify({
       type: this.scene.type,

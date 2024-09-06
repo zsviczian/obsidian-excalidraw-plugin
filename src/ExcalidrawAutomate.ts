@@ -427,7 +427,9 @@ export class ExcalidrawAutomate {
    * @returns 
    */
   public getAPI(view?:ExcalidrawView):ExcalidrawAutomate {
-    return new ExcalidrawAutomate(this.plugin, view);
+    const ea = new ExcalidrawAutomate(this.plugin, view);
+    this.plugin.eaInstances.push(ea);
+    return ea;
   }
 
   /**
@@ -741,18 +743,18 @@ export class ExcalidrawAutomate {
   
       outString += Object.keys(this.imagesDict).length > 0
         ? `\n## Embedded Files\n`
-        : "";
+        : "\n";
         
       Object.keys(this.imagesDict).forEach((key: FileId)=> {
         const item = this.imagesDict[key];
         if(item.latex) {
-          outString += `${key}: $$${item.latex}$$\n`;  
+          outString += `${key}: $$${item.latex}$$\n\n`;  
         } else {
           if(item.file) {
             if(item.file instanceof TFile) {
-              outString += `${key}: [[${item.file.path}]]\n`;
+              outString += `${key}: [[${item.file.path}]]\n\n`;
             } else {
-              outString += `${key}: [[${item.file}]]\n`;
+              outString += `${key}: [[${item.file}]]\n\n`;
             }
           } else {
             const hyperlinkSplit = item.hyperlink.split("#");
@@ -760,15 +762,15 @@ export class ExcalidrawAutomate {
             if(file && file instanceof TFile) {
               const hasFileRef = hyperlinkSplit.length === 2
               outString += hasFileRef
-                ? `${key}: [[${file.path}#${hyperlinkSplit[1]}]]\n`
-                : `${key}: [[${file.path}]]\n`;
+                ? `${key}: [[${file.path}#${hyperlinkSplit[1]}]]\n\n`
+                : `${key}: [[${file.path}]]\n\n`;
             } else {
-              outString += `${key}: ${item.hyperlink}\n`;
+              outString += `${key}: ${item.hyperlink}\n\n`;
             }
           }
         }
       })
-      return outString + "\n%%\n";
+      return outString + "%%\n";
     }
 
     const filename = params?.filename

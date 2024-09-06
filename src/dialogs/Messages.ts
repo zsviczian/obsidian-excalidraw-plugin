@@ -17,6 +17,23 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.4.2": `
+This release addresses critical issues for all Obsidian Mobile users.
+
+#### 😞 I made two mistakes...
+- I expedited the 2.4.1 release to resolve a major bug, but in doing so, I skippes some of my usual rigorous testing
+- I included a new feature in 2.4.1 fresh from Excalidraw.com because I believe it brings significant end user benefits and did not want to wait until October. However, a small part of this feature was designed for server-side execution on Excalidraw.com, not for local use on Obsidian Mobile.
+
+Despite the recent two (2.4.1 and 2.4.2) emergency bug-fix releases, this doesn't deviate from the [monthly release schedule](https://youtu.be/2poSS-Z91lY). The next feature update is still planned for early October.
+
+## Fixes:
+- **Excalidraw rendering issues on Obsidian Mobile:** [#1995](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1995), [#1997](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1997)
+  - Nested Excalidraw drawings with text failed to render.
+  - Drawings in Markdown view didn't render if they contained text and were set to SVG Image or SVG Native (they worked with PNG).
+  - SVG export failed for drawings containing text.
+- **LaTeX equation duplication:** After using ALT+Drag to duplicate a LaTeX equation, editing the duplicate modified the original instead. [#1984](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1994)
+- **Unreadable Obsidian search results:** When drawings contained numerous Element Links and Embedded Files Links, search results became unreadable. This fix will apply to files saved after installing the update. [#1999](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1999)
+`,
 "2.4.1": `
 This release includes an important fix that can result in your drawing being overwritten by another drawing. Please update to this version as soon as possible.
 

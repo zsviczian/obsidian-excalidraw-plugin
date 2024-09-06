@@ -655,6 +655,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "getAPI",
+    code: "public getAPI(view?:ExcalidrawView):ExcalidrawAutomate",
+    desc: "Returns a new instance of ExcalidrawAutomate.",
+    after: "",
+  },
+  {
     field: "getAttachmentFilepath",
     code: "async getAttachmentFilepath(filename: string): Promise<string>",
     desc: "This asynchronous function should be awaited. It retrieves the filepath to a new file, taking into account the attachments preference settings in Obsidian. If the attachment folder doesn't exist, it creates it. The function returns the complete path to the file. If the provided filename already exists, the function will append '_[number]' before the extension to generate a unique filename." +

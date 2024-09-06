@@ -931,6 +931,10 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   async openLaTeXEditor(eqId: string) {
+    if(await this.excalidrawData.syncElements(this.getScene())) {
+      //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1994
+      await this.forceSave(true);
+    }
     const el = this.getViewElements().find((el:ExcalidrawElement)=>el.id === eqId && el.type==="image") as ExcalidrawImageElement;
     if(!el) {
       return;

@@ -139,6 +139,7 @@ import { ExcalidrawLib } from "./ExcalidrawLib";
 import { Rank, SwordColors } from "./menu/ActionIcons";
 import { RankMessage } from "./dialogs/RankMessage";
 import { initCompressionWorker, terminateCompressionWorker } from "./workers/compression-worker";
+import { WeakArray } from "./utils/WeakArray";
 
 declare let EXCALIDRAW_PACKAGES:string;
 declare let react:any;
@@ -147,6 +148,7 @@ declare let excalidrawLib: typeof ExcalidrawLib;
 declare let PLUGIN_VERSION:string;
 
 export default class ExcalidrawPlugin extends Plugin {
+  public eaInstances = new WeakArray<ExcalidrawAutomate>();
   public fourthFontLoaded: boolean = false;
   public excalidrawConfig: ExcalidrawConfig;
   public taskbone: Taskbone;
@@ -3248,6 +3250,10 @@ export default class ExcalidrawPlugin extends Plugin {
       removeEventListener(),
     );
     this.removeEventLisnters = [];
+
+    this.eaInstances.forEach((ea) => ea?.destroy());
+    this.eaInstances.clear();
+    this.eaInstances = null;
 
     this.ea.destroy();
     this.ea = null;
