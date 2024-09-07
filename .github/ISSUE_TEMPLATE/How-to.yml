@@ -1,0 +1,68 @@
+name: How to? Support request
+description: Ask for help with using the plugin or understanding its features.
+title: "SUPPORT: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ℹ️ **Important: Please Read Before Submitting a Support Request** ℹ️
+
+        I am a one-person team working on this plugin as a part-time hobby. Please help me manage the workload by following these guidelines. **Support requests that don't include enough details may be closed without review**.
+
+        Before submitting a support request, please:
+        1. **Review the [documentation](https://github.com/zsviczian/obsidian-excalidraw-plugin/wiki)** – your question may already be answered.
+        2. **[Search issues](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues) (including closed ones)** to see if your question has already been addressed.
+
+  - type: markdown
+    attributes:
+      value: |
+        Please help by providing the following details. Requests without this information may be closed without review.
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+
+  - type: checkboxes
+    id: search_existing_resources
+    attributes:
+      label: Have you checked the documentation and searched existing issues?
+      description: Please confirm that you've reviewed available resources before submitting your request.
+      options:
+        - label: Yes, I have reviewed the documentation and searched for related issues.
+
+  - type: textarea
+    id: support_question
+    attributes:
+      label: "Your question"
+      description: "Provide a clear and concise description of the question or issue you need help with."
+      placeholder: "Describe your question or the problem you are trying to solve..."
+
+  - type: textarea
+    id: steps_tried
+    attributes:
+      label: "Steps you've already tried"
+      description: "List any steps you've taken to try to resolve or understand the issue."
+      placeholder: |
+        1. Tried reading the documentation.
+        2. Searched the issues for similar questions.
+
+  - type: textarea
+    id: expected_outcome
+    attributes:
+      label: "Expected outcome"
+      description: "Describe what you expected to happen or what you are trying to achieve."
+      placeholder: "Describe the result you are aiming for..."
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: "Additional context"
+      description: "Add any other context or details that may help."
+      placeholder: "Include any other information that may be relevant..."
+
+  - type: markdown
+    attributes:
+      value: |
+        **Attachments: Screenshots and files are critical!**  
+        A picture speaks a thousand words, and a screen recording even more. **Please attach screenshots, screen recordings, or sample files** to help illustrate your question or issue. Drag and drop them into the comment area or directly into any of the text fields above.
