@@ -2851,14 +2851,7 @@ export default class ExcalidrawPlugin extends Plugin {
     // Force handlers to the front of the list
     overrideHandlers.forEach(() => scope.keys.unshift(scope.keys.pop()));
 
-    const handler_ctrlF = scope.register(["Mod"], "f", () => {
-      const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
-      if (view) {
-        search(view);
-        return true;
-      }
-      return false;
-    });
+    const handler_ctrlF = scope.register(["Mod"], "f", () => true);
     scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
     const overridSaveShortcut = (
       this.forceSaveCommand &&
