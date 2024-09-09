@@ -3,6 +3,8 @@ import ExcalidrawPlugin from "src/main";
 import { getAllWindowDocuments } from "./ObsidianUtils";
 import { DEBUGGING, debug } from "./DebugHelper";
 
+export let REM_VALUE = 16;
+
 const STYLE_VARIABLES = [
   "--background-modifier-cover",
   "--background-primary-alt",
@@ -77,6 +79,11 @@ export class StylesManager {
   }
 
   private async harvestStyles() {
+    REM_VALUE = parseInt(window.getComputedStyle(document.body).getPropertyValue('--font-text-size').trim());
+    if (isNaN(REM_VALUE)) {
+      REM_VALUE = 16;
+    }
+
     const body = document.body;
     const iframe:HTMLIFrameElement = document.createElement("iframe");
     iframe.style.display = "none";

@@ -763,6 +763,8 @@ export default class ExcalidrawView extends TextFileView {
         this.clearPreventReloadTimer();
 
         this.semaphores.preventReload = preventReload;
+        await this.prepareGetViewData();
+
         //added this to avoid Electron crash when terminating a popout window and saving the drawing, need to check back
         //can likely be removed once this is resolved: https://github.com/electron/electron/issues/40607
         if(this.semaphores?.viewunload) {
@@ -774,10 +776,10 @@ export default class ExcalidrawView extends TextFileView {
             await plugin.app.vault.modify(file,d);
             await imageCache.addBAKToCache(file.path,d);                        
           },200)
+          this.semaphores.saving = false;
           return;
         }
 
-        await this.prepareGetViewData();
         await super.save();
         if (process.env.NODE_ENV === 'development') {
           if (DEBUGGING) {
@@ -1548,7 +1550,7 @@ export default class ExcalidrawView extends TextFileView {
 
       this.registerDomEvent(this.ownerWindow, "keydown", onKeyDown, false);
       this.registerDomEvent(this.ownerWindow, "keyup", onKeyUp, false);
-      this.registerDomEvent(this.contentEl, "mouseleave", onBlurOrLeave, false);
+      //this.registerDomEvent(this.contentEl, "mouseleave", onBlurOrLeave, false); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2004
       this.registerDomEvent(this.ownerWindow, "blur", onBlurOrLeave, false);
     });
 
@@ -1787,7 +1789,7 @@ export default class ExcalidrawView extends TextFileView {
     //deliberately not calling super.onUnloadFile() to avoid autosave (saved in unload)
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onUnloadFile,`ExcalidrawView.onUnloadFile, file:${this.file?.name}`);
     let counter = 0;
-    while (this.semaphores.saving) {
+    while (this.semaphores.saving && (counter++ < 200)) {
       await sleep(50); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1988
       if(counter++ === 15) {
         new Notice(t("SAVE_IS_TAKING_LONG"));
@@ -1795,6 +1797,10 @@ export default class ExcalidrawView extends TextFileView {
       if(counter === 80) {
         new Notice(t("SAVE_IS_TAKING_VERY_LONG"));
       }
+    }
+    if(counter >= 200) {
+      new Notice("Unknown error, save is taking too long");
+      return;
     }
   }
 

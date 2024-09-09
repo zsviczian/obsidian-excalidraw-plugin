@@ -913,7 +913,7 @@ export const FRONTMATTER_KEYS_INFO: SuggesterInfo[] = [
     after: ": 1",
   },
   {
-    field: "excalidraw-export-embed-scene",
+    field: "export-embed-scene",
     code: null,
     desc: "If this key is present it will override the default excalidraw embed and export setting.",
     after: ": false",

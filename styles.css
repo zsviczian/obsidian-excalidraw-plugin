@@ -226,7 +226,7 @@ li[data-testid] {
 }
 
 .excalidraw .ToolIcon__icon img{
-  height: 1em;
+  height: 1rem;
 }
 
 .excalidraw-scriptengine-install tbody>tr>td>div>img {
@@ -394,23 +394,28 @@ div.excalidraw-draginfo {
 
 .modal-content.excalidraw-scriptengine-install .search-bar-wrapper {
   position: sticky;
-  top: 1em;
-  margin-right: 1em;
+  top: 1rem;
+  margin-right: 1rem;
   display: flex;
   align-items: center;
   gap: 5px;
   flex-wrap: nowrap;
   z-index: 10;
   background: var(--background-secondary);
-  padding: 0.5em;
+  padding: 0.5rem;
   border-bottom: 1px solid var(--background-modifier-border);
   float: right;
-  max-width: 28em;
+  max-width: 28rem;
+}
+
+div.search-bar-wrapper input {
+  margin-right: -0.5rem;
 }
 
 .modal-content.excalidraw-scriptengine-install .hit-count {
   margin-left: 0.5em;
   white-space: nowrap;
+  font-size: smaller;
 }
 
 .modal-content.excalidraw-scriptengine-install .active-highlight {

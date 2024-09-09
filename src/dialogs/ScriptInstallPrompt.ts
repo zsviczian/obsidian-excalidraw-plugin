@@ -22,7 +22,7 @@ export class ScriptInstallPrompt extends Modal {
     searchBar.type = "text";
     searchBar.id = "search-bar";
     searchBar.placeholder = "Search...";
-    searchBar.style.width = "calc(100% - 120px)"; // space for the buttons and hit count
+    //searchBar.style.width = "calc(100% - 120px)"; // space for the buttons and hit count
 
     const nextButton = document.createElement("button");
     nextButton.textContent = "→";

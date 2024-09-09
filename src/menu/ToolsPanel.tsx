@@ -17,6 +17,7 @@ import { ExportDialog } from "src/dialogs/ExportDialog";
 import { openExternalLink } from "src/utils/ExcalidrawViewUtils";
 import { UniversalInsertFileModal } from "src/dialogs/UniversalInsertFileModal";
 import { DEBUGGING, debug } from "src/utils/DebugHelper";
+import { REM_VALUE } from "src/utils/StylesManager";
 
 declare const PLUGIN_VERSION:string;
 const dark = '<svg style="stroke:#ced4da;#212529;color:#ced4da;fill:#ced4da" ';
@@ -42,7 +43,7 @@ export type PanelState = {
   scriptIconMap: ScriptIconMap | null;
 };
 
-const TOOLS_PANEL_WIDTH = 228;
+const TOOLS_PANEL_WIDTH = () => REM_VALUE * 14.2;
 
 export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   pos1: number = 0;
@@ -155,11 +156,11 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       return {
         left:
           (this.containerRef.current.clientWidth -
-            TOOLS_PANEL_WIDTH -
-            (isMobileOrZen ? 0 : TOOLS_PANEL_WIDTH + 4)) /
+            TOOLS_PANEL_WIDTH() -
+            (isMobileOrZen ? 0 : TOOLS_PANEL_WIDTH() + 4)) /
             2 +
           this.containerRef.current.parentElement.offsetLeft +
-          (isMobileOrZen ? 0 : TOOLS_PANEL_WIDTH + 4),
+          (isMobileOrZen ? 0 : TOOLS_PANEL_WIDTH() + 4),
         top: 64 + this.containerRef.current.parentElement.offsetTop,
       };
     });

@@ -17,6 +17,17 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.4.3": `
+Check out the [Excalidraw Plugin's Community WIKI](https://excalidraw-obsidian.online/Hobbies/Excalidraw+Blog/WIKI/Welcome+to+the+WIKI) and help with your content contribution.
+
+## Fixed
+- In some situations Excalidraw hangs indefinitely when opening a different file in the same tab
+- Can't exit arrow tool on phone [#2006](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2006)
+- Save is triggered every few seconds, leading to glitches in handwriting [#2004](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2004)
+- Canvas shifts when editing text reaches right hand side of the canvas, especially at higher zoom values
+- Minor styling tweaks to adapt to Obsidian 1.7.1 new stylesheet, in particular to scale Excalidraw properly in line with Obsidian Appearance Setting Font-Size value.
+- Tweaked Compatibilty Setting description to mention Obsidian 1.7.1 Footnotes support
+`,
 "2.4.2": `
 This release addresses critical issues for all Obsidian Mobile users.
 
