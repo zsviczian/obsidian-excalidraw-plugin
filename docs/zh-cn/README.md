@@ -1,6 +1,10 @@
 # Excalidraw
 
-> 此说明当前更新至 2.4.0-beta-9。
+> 此说明当前更新至 `5569cff`。
+
+[English](./README.md)
+
+👉👉👉 快来查看并为新的 [Obsidian-Excalidraw 社区维基](https://excalidraw-obsidian.online/Hobbies/Excalidraw+Blog/WIKI/Welcome+to+the+WIKI)贡献你的力量吧
 
 Obsidian-Excalidraw 插件将 [Excalidraw](https://excalidraw.com/) 这一功能丰富的草图工具集成到 Obsidian 中。您可以在您的库中存储和编辑 Excalidraw 文件，可以将图形嵌入到文档中，还可以在 Excalidraw 中链接到文档和其他图形。有关 Excalidraw 功能的展示，请查看我的博客文章 [这里](https://www.zsolt.blog/2021/03/showcasing-excalidraw.html) 或观看以下视频。
 
