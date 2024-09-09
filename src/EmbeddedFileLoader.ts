@@ -593,6 +593,7 @@ export class EmbeddedFilesLoader {
     addFiles: (files: FileData[], isDark: boolean, final?: boolean) => void,
     depth:number,
     isThemeChange:boolean = false,
+    fileIDWhiteList?: Set<FileId>,
   ) {
     
     if(depth > 7) {
@@ -607,6 +608,7 @@ export class EmbeddedFilesLoader {
     let entry: IteratorResult<[FileId, EmbeddedFile]>;
     const files: FileData[] = [];
     while (!this.terminate && !(entry = entries.next()).done) {
+      if(fileIDWhiteList && !fileIDWhiteList.has(entry.value[0])) continue;
       const embeddedFile: EmbeddedFile = entry.value[1];
       if (!embeddedFile.isLoaded(this.isDark)) {
         //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"embedded Files are not loaded"});
@@ -653,6 +655,7 @@ export class EmbeddedFilesLoader {
     let equation;
     const equations = excalidrawData.getEquationEntries();
     while (!this.terminate && !(equation = equations.next()).done) {
+      if(fileIDWhiteList && !fileIDWhiteList.has(entry.value[0])) continue;
       if (!excalidrawData.getEquation(equation.value[0]).isLoaded) {
         const latex = equation.value[1].latex;
         const data = await tex2dataURL(latex);

@@ -2963,27 +2963,6 @@ async function getTemplate(
     }
 
     let scene = excalidrawData.scene;
-    if (loadFiles) {
-      //debug({where:"getTemplate",template:file.name,loader:loader.uid});
-      await loader.loadSceneFiles(excalidrawData, (fileArray: FileData[]) => {
-        //, isDark: boolean) => {
-        if (!fileArray || fileArray.length === 0) {
-          return;
-        }
-        for (const f of fileArray) {
-          if (f.hasSVGwithBitmap) {
-            hasSVGwithBitmap = true;
-          }
-          excalidrawData.scene.files[f.id] = {
-            mimeType: f.mimeType,
-            id: f.id,
-            dataURL: f.dataURL,
-            created: f.created,
-          };
-        }
-        scene = scaleLoadedImage(excalidrawData.scene, fileArray).scene;
-      }, depth);
-    }
 
     let groupElements:ExcalidrawElement[] = scene.elements;
     if(filenameParts.hasGroupref) {
@@ -3010,8 +2989,41 @@ async function getTemplate(
         ));
     }
 
+    const fileIDWhiteList = new Set<FileId>();
+    groupElements.filter(el=>el.type==="image").forEach((el:ExcalidrawImageElement)=>fileIDWhiteList.add(el.fileId));
+
+    if (loadFiles) {
+      //debug({where:"getTemplate",template:file.name,loader:loader.uid});
+      await loader.loadSceneFiles(excalidrawData, (fileArray: FileData[]) => {
+        //, isDark: boolean) => {
+        if (!fileArray || fileArray.length === 0) {
+          return;
+        }
+        for (const f of fileArray) {
+          if (f.hasSVGwithBitmap) {
+            hasSVGwithBitmap = true;
+          }
+          excalidrawData.scene.files[f.id] = {
+            mimeType: f.mimeType,
+            id: f.id,
+            dataURL: f.dataURL,
+            created: f.created,
+          };
+        }
+        scene = scaleLoadedImage(excalidrawData.scene, fileArray).scene;
+      }, depth, false, fileIDWhiteList);
+    }
+
     excalidrawData.destroy();
     const filehead = data.substring(0, trimLocation);
+    let files:any = {};
+    const sceneFilesSize = Object.values(scene.files).length;
+    if (sceneFilesSize > 0) {
+      if(sceneFilesSize === fileIDWhiteList.size)
+      Object.values(scene.files).filter((f: any) => fileIDWhiteList.has(f.id)).forEach((f: any) => {
+        files[f.id] = f;
+      });
+    }
     return {
       elements: convertMarkdownLinksToObsidianURLs
         ? updateElementLinksToObsidianLinks({
@@ -3020,7 +3032,7 @@ async function getTemplate(
         }) : groupElements,
       appState: scene.appState,
       frontmatter: filehead.match(/^---\n.*\n---\n/ms)?.[0] ?? filehead,
-      files: scene.files,
+      files,
       hasSVGwithBitmap,
     };
   }
