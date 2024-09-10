@@ -653,7 +653,7 @@ FILENAME_HEAD: "文件名",
     "如果出于某些合理的原因，您决定忽略我的建议并配置了 Excalidraw 文件的自动代码格式化，那么可以使用这个设置<br> " +
     "<code>## Text Elements</code> 部分对空行很敏感。一种常见的代码格式化是在章节标题后添加一个空行。但对于 Excalidraw 来说，这将破坏/改变您绘图中的第一个文本元素。" +
     "为了解决这个问题，您可以启用这个设置。启用后 Excalidraw 将在 <code>## Text Elements</code> 的开头添加一个虚拟元素，供自动代码格式化工具修改。" ,
-  PRESERVE_TEXT_AFTER_DRAWING_NAME: "Zotero 兼容性",
+  PRESERVE_TEXT_AFTER_DRAWING_NAME: "Zotero 和脚注（footnotes）的兼容性",
   PRESERVE_TEXT_AFTER_DRAWING_DESC: "保留 Markdown 文件中 <code>## Drawing</code> 部分之后的文本内容。保存非常大的绘图时，这可能会造成微小的性能影响。",
   DEBUGMODE_NAME: "开启 debug 信息",
   DEBUGMODE_DESC: "我建议在启用/禁用此设置后重新启动 Obsidian。这将在控制台中启用调试消息。这对于排查问题很有帮助。" +

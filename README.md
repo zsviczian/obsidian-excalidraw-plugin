@@ -1,6 +1,6 @@
 # Excalidraw
 
-[简体中文](./README.zh-cn.md)
+[简体中文](./docs/zh-cn/README.md)
 
 👉👉👉 Check out and contribute to the new [Obsidian-Excalidraw Community Wiki](https://excalidraw-obsidian.online/Hobbies/Excalidraw+Blog/WIKI/Welcome+to+the+WIKI)
 
