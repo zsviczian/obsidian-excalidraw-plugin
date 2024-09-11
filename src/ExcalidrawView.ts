@@ -2325,14 +2325,35 @@ export default class ExcalidrawView extends TextFileView {
     });
   }
 
-  private getGridColor(bgColor: string, st: AppState):{Bold: string, Regular: string} {
+  private getGridColor(bgColor: string, st: AppState): { Bold: string, Regular: string } {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getGridColor, "ExcalidrawView.getGridColor", bgColor, st);
+  
     const cm = this.plugin.ea.getCM(bgColor);
     const isDark = cm.isDark();
-    const Regular = (isDark ? cm.lighterBy(7) : cm.darkerBy(7)).stringHEX({alpha: false});
-    const Bold = (isDark ? cm.lighterBy(14) : cm.darkerBy(14)).stringHEX({alpha: false});
-    return {Bold, Regular};
+  
+    let Regular: string;
+    let Bold: string;
+    const opacity = this.plugin.settings.gridSettings.OPACITY/100;
+
+    if (this.plugin.settings.gridSettings.DYNAMIC_COLOR) {
+      // Dynamic color: concatenate opacity to the HEX string  
+      Regular = (isDark ? cm.lighterBy(7) : cm.darkerBy(7)).alphaTo(opacity).stringRGB({ alpha: true });
+      Bold = (isDark ? cm.lighterBy(14) : cm.darkerBy(14)).alphaTo(opacity).stringRGB({ alpha: true });
+    } else {
+      // Custom color handling
+      const customCM = this.plugin.ea.getCM(this.plugin.settings.gridSettings.COLOR);
+      const customIsDark = customCM.isDark();
+      
+      // Regular uses the custom color directly
+      Regular = customCM.alphaTo(opacity).stringRGB({ alpha: true });
+      
+      // Bold is 7 shades lighter or darker based on the custom color's darkness
+      Bold = (customIsDark ? customCM.lighterBy(7) : customCM.darkerBy(7)).alphaTo(opacity).stringRGB({ alpha: true });
+    }
+  
+    return { Bold, Regular };
   }
+  
 
   public activeLoader: EmbeddedFilesLoader = null;
   private nextLoader: EmbeddedFilesLoader = null;
@@ -3744,10 +3765,18 @@ export default class ExcalidrawView extends TextFileView {
     }
   }
 
+  public updateGridColor(canvasColor?: string, st?: any) {
+    if(!canvasColor) {
+      st = (this.excalidrawAPI as ExcalidrawImperativeAPI).getAppState();
+      canvasColor = canvasColor ?? st.viewBackgroundColor === "transparent" ? "white" : st.viewBackgroundColor;
+    }
+    window.setTimeout(()=>this.updateScene({appState:{gridColor: this.getGridColor(canvasColor, st)}, storeAction: "update"}));
+  }
+
   private canvasColorChangeHook(st: AppState) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.canvasColorChangeHook, "ExcalidrawView.canvasColorChangeHook", st);
     const canvasColor = st.viewBackgroundColor === "transparent" ? "white" : st.viewBackgroundColor;
-    window.setTimeout(()=>this.updateScene({appState:{gridColor: this.getGridColor(canvasColor, st)}, storeAction: "update"}));
+    this.updateGridColor(canvasColor,st);
     setDynamicStyle(this.plugin.ea,this,canvasColor,this.plugin.settings.dynamicStyling);
     if(this.plugin.ea.onCanvasColorChangeHook) {
       try {

@@ -15,7 +15,7 @@ import ExcalidrawView from "./ExcalidrawView";
 import { t } from "./lang/helpers";
 import type ExcalidrawPlugin from "./main";
 import { PenStyle } from "./PenTypes";
-import { DynamicStyle } from "./types/types";
+import { DynamicStyle, GridSettings } from "./types/types";
 import { PreviewImageType } from "./utils/UtilTypes";
 import { setDynamicStyle } from "./utils/DynamicStyling";
 import {
@@ -179,6 +179,7 @@ export interface ExcalidrawSettings {
   pdfNumRows: number;
   pdfDirection: "down" | "right";
   pdfImportScale: number;
+  gridSettings: GridSettings;
   laserSettings: {
     DECAY_TIME: number,
     DECAY_LENGTH: number,
@@ -355,6 +356,11 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   pdfNumRows: 1,
   pdfDirection: "right",
   pdfImportScale: 0.3,
+  gridSettings: {
+    DYNAMIC_COLOR: true,
+    COLOR: "#000000",
+    OPACITY: 50,
+  },
   laserSettings: {
     DECAY_LENGTH: 50,
     DECAY_TIME: 1000,
@@ -1310,7 +1316,85 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         el.innerText = ` ${this.plugin.settings.zoomToFitMaxLevel.toString()}`;
       });
 
-    
+      // ------------------------------------------------
+      // Grid
+      // ------------------------------------------------
+      detailsEl = displayDetailsEl.createEl("details");
+      detailsEl.createEl("summary", {
+        text: t("GRID_HEAD"),
+        cls: "excalidraw-setting-h3",
+      });
+
+      const updateGridColor = () => {
+        const exs =
+          this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
+        for (const v of exs) {
+          if (v.view instanceof ExcalidrawView) {
+            v.view.updateGridColor();
+          }
+        }
+      };
+
+      // Dynamic color toggle
+      let gridColorSection: HTMLDivElement;
+      new Setting(detailsEl)
+        .setName(t("GRID_DYNAMIC_COLOR_NAME"))
+        .setDesc(fragWithHTML(t("GRID_DYNAMIC_COLOR_DESC")))
+        .addToggle((toggle) =>
+          toggle
+            .setValue(this.plugin.settings.gridSettings.DYNAMIC_COLOR)
+            .onChange(async (value) => {
+              this.plugin.settings.gridSettings.DYNAMIC_COLOR = value;
+              gridColorSection.style.display = value ? "none" : "block";
+              this.applySettingsUpdate();
+              updateGridColor();
+            }),
+        );
+
+      // Create a div to contain color and opacity settings
+      gridColorSection = detailsEl.createDiv();
+      gridColorSection.style.display = this.plugin.settings.gridSettings.DYNAMIC_COLOR ? "none" : "block";
+
+      // Grid color picker
+      new Setting(gridColorSection)
+        .setName(t("GRID_COLOR_NAME"))
+        .addColorPicker((colorPicker) =>
+          colorPicker
+            .setValue(this.plugin.settings.gridSettings.COLOR)
+            .onChange(async (value) => {
+              this.plugin.settings.gridSettings.COLOR = value;
+              this.applySettingsUpdate();
+              updateGridColor();
+            }),
+        );
+
+      // Grid opacity slider (hex value between 00 and FF)
+      let opacityValue: HTMLDivElement;
+      new Setting(detailsEl)
+        .setName(t("GRID_OPACITY_NAME"))
+        .setDesc(fragWithHTML(t("GRID_OPACITY_DESC")))
+        .addSlider((slider) =>
+          slider
+            .setLimits(0, 100, 1) // 0 to 100 in decimal
+            .setValue(this.plugin.settings.gridSettings.OPACITY)
+            .onChange(async (value) => {
+              opacityValue.innerText = ` ${value.toString()}`;
+              this.plugin.settings.gridSettings.OPACITY = value;
+              this.applySettingsUpdate();
+              updateGridColor();
+            }),
+        )
+        .settingEl.createDiv("", (el) => {
+          opacityValue = el;
+          el.style.minWidth = "3em";
+          el.style.textAlign = "right";
+          el.innerText = ` ${this.plugin.settings.gridSettings.OPACITY}`;
+        });
+
+
+    // ------------------------------------------------
+    // Laser Pointer
+    // ------------------------------------------------
     detailsEl = displayDetailsEl.createEl("details");
     detailsEl.createEl("summary", { 
       text: t("LASER_HEAD"),

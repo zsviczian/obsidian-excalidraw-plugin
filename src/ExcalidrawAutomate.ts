@@ -2989,8 +2989,12 @@ async function getTemplate(
         ));
     }
 
-    const fileIDWhiteList = new Set<FileId>();
-    groupElements.filter(el=>el.type==="image").forEach((el:ExcalidrawImageElement)=>fileIDWhiteList.add(el.fileId));
+    let fileIDWhiteList:Set<FileId>;
+
+    if(groupElements.length < scene.elements.length) {
+      fileIDWhiteList = new Set<FileId>();
+      groupElements.filter(el=>el.type==="image").forEach((el:ExcalidrawImageElement)=>fileIDWhiteList.add(el.fileId));
+    }
 
     if (loadFiles) {
       //debug({where:"getTemplate",template:file.name,loader:loader.uid});
@@ -3019,11 +3023,15 @@ async function getTemplate(
     let files:any = {};
     const sceneFilesSize = Object.values(scene.files).length;
     if (sceneFilesSize > 0) {
-      if(sceneFilesSize === fileIDWhiteList.size)
-      Object.values(scene.files).filter((f: any) => fileIDWhiteList.has(f.id)).forEach((f: any) => {
-        files[f.id] = f;
-      });
+      if(fileIDWhiteList && (sceneFilesSize > fileIDWhiteList.size)) {
+          Object.values(scene.files).filter((f: any) => fileIDWhiteList.has(f.id)).forEach((f: any) => {
+            files[f.id] = f;
+          });
+      } else {
+        files = scene.files;
+      }
     }
+
     return {
       elements: convertMarkdownLinksToObsidianURLs
         ? updateElementLinksToObsidianLinks({

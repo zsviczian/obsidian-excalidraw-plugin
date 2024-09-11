@@ -82,6 +82,7 @@ export const setDynamicStyle = (
     [`--color-surface-high`]: str(gray1().lighterBy(step)),
     [`--color-on-primary-container`]: str(!isDark?accent().darkerBy(15):accent().lighterBy(15)),
     [`--color-surface-primary-container`]: str(isDark?accent().darkerBy(step):accent().lighterBy(step)),
+    [`--bold-color`]: str(!isDark?accent().darkerBy(15):accent().lighterBy(15)),
     //[`--color-primary-darker`]: str(accent().darkerBy(step)),
     //[`--color-primary-darkest`]: str(accent().darkerBy(step)),
     [`--button-gray-1`]: str(gray1()),
@@ -96,6 +97,7 @@ export const setDynamicStyle = (
     [`--overlay-bg-color`]: gray2().alphaTo(0.6).stringHEX(),
     [`--popup-bg-color`]: str(gray1()),
     [`--color-on-surface`]: str(text),
+    [`--default-border-color`]: str(text),
     //[`--color-gray-100`]: str(text),
     [`--color-gray-40`]: str(text), //frame
     [`--color-gray-50`]: str(text), //frame
@@ -117,6 +119,8 @@ export const setDynamicStyle = (
     ['--excalidraw-caret-color']: str(isLightTheme ? text : cmBG()),
     [`--select-highlight-color`]: str(gray1()),
     [`--color-gray-80`]: str(isDark?text.darkerBy(40):text.lighterBy(40)), //frame
+    [`--color-gray-90`]: str(isDark?text.darkerBy(5):text.lighterBy(5)), //search background
+    [`--default-bg-color`]: str(text), //search background,
   };
   
     const styleString = Object.keys(styleObject)

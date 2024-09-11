@@ -395,6 +395,14 @@ FILENAME_HEAD: "Filename",
   ZOOM_TO_FIT_MAX_LEVEL_NAME: "Zoom to fit max ZOOM level",
   ZOOM_TO_FIT_MAX_LEVEL_DESC:
     "Set the maximum level to which zoom to fit will enlarge the drawing. Minimum is 0.5 (50%) and maximum is 10 (1000%).",
+  GRID_HEAD: "Grid",
+  GRID_DYNAMIC_COLOR_NAME: "Dynamic grid color",
+  GRID_DYNAMIC_COLOR_DESC:
+    "<b><u>Toggle ON:</u></b>Change grid color to match the canvas color<br><b><u>Toggle OFF:</u></b>Use the color below as the grid color",
+  GRID_COLOR_NAME: "Grid color",
+  GRID_OPACITY_NAME: "Grid opacity",
+  GRID_OPACITY_DESC: "Grid opacity will also control the opacity of the binding box when binding an arrow to an element.<br>" +
+    "Set the opacity of the grid. 0 is transparent, 1 is opaque.",
   LASER_HEAD: "Laser pointer",
   LASER_COLOR: "Laser pointer color",
   LASER_DECAY_TIME_NAME: "Laser pointer decay time",

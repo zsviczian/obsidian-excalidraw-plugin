@@ -13,6 +13,12 @@ export type ValueOf<T> = T[keyof T];
 
 export type DynamicStyle = "none" | "gray" | "colorful";
 
+export type GridSettings = {
+  DYNAMIC_COLOR: boolean;  // Whether the grid color is dynamic
+  COLOR: string;           // The grid color (in hex format)
+  OPACITY: number;         // The grid opacity (hex value between "00" and "FF")
+};
+
 export type DeviceType = {
   isDesktop: boolean,
   isPhone: boolean,

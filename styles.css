@@ -635,3 +635,7 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 .excalidraw .color-picker-content input[type="color"] {
   filter: var(--theme-filter);
 }
+
+.ExcTextField__input input::placeholder {
+  color: var(--select-highlight-color);
+}
