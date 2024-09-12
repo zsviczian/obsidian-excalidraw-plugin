@@ -101,7 +101,7 @@ import {
   versionUpdateCheckTimer,
   getFontMetrics,
 } from "./utils/Utils";
-import { editorInsertText, extractSVGPNGFileName, foldExcalidrawSection, getActivePDFPageNumberFromPDFView, getAttachmentsFolderAndFilePath, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark, mergeMarkdownFiles, openLeaf, setExcalidrawView } from "./utils/ObsidianUtils";
+import { editorInsertText, extractSVGPNGFileName, foldExcalidrawSection, getActivePDFPageNumberFromPDFView, getAttachmentsFolderAndFilePath, getExcalidrawViews, getNewOrAdjacentLeaf, getParentOfClass, isObsidianThemeDark, mergeMarkdownFiles, openLeaf, setExcalidrawView } from "./utils/ObsidianUtils";
 import { ExcalidrawElement, ExcalidrawEmbeddableElement, ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { ScriptEngine } from "./Scripts";
 import {
@@ -758,9 +758,8 @@ export default class ExcalidrawPlugin extends Plugin {
 
       setTimeout(()=>{ //run async to avoid blocking the UI
         const theme = isObsidianThemeDark() ? "dark" : "light";
-        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
-        leaves.forEach((leaf: WorkspaceLeaf) => {
-          const excalidrawView = leaf.view as ExcalidrawView;
+        const excalidrawViews = getExcalidrawViews(this.app);
+        excalidrawViews.forEach(excalidrawView => {
           if (excalidrawView.file && excalidrawView.excalidrawAPI) {
             excalidrawView.setTheme(theme);
           }
@@ -1495,7 +1494,6 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "toggle-lock",
-      hotkeys: [{ modifiers: ["Ctrl" || "Meta", "Shift"], key: "e" }],
       name: t("TOGGLE_LOCK"),
       checkCallback: (checking: boolean) => {
         if (checking) {
@@ -1585,7 +1583,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "insert-link",
-      hotkeys: [{ modifiers: ["Ctrl" || "Meta", "Shift"], key: "k" }],
+      hotkeys: [{ modifiers: ["Mod", "Shift"], key: "k" }],
       name: t("INSERT_LINK"),
       checkCallback: (checking: boolean) => {
         if (checking) {
@@ -1618,7 +1616,6 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.addCommand({
       id: "insert-link-to-element",
-      hotkeys: [{ modifiers: ["Ctrl" || "Meta", "Shift"], key: "k" }],
       name: t("INSERT_LINK_TO_ELEMENT_NORMAL"),
       checkCallback: (checking: boolean) => {
         if (checking) {
@@ -2951,9 +2948,8 @@ export default class ExcalidrawPlugin extends Plugin {
 
       const modifyEventHandler = async (file: TFile) => {
         (process.env.NODE_ENV === 'development') && DEBUGGING && debug(modifyEventHandler,`ExcalidrawPlugin.modifyEventHandler`, file);
-        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
-        leaves.forEach(async (leaf: WorkspaceLeaf) => {
-          const excalidrawView = leaf.view as ExcalidrawView;
+        const excalidrawViews = getExcalidrawViews(this.app);
+        excalidrawViews.forEach(async (excalidrawView) => {
           if(excalidrawView.semaphores?.viewunload) {
             return;
           }
@@ -3013,10 +3009,10 @@ export default class ExcalidrawPlugin extends Plugin {
         }
 
         //close excalidraw view where this file is open
-        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
-        for (let i = 0; i < leaves.length; i++) {
-          if ((leaves[i].view as ExcalidrawView).file.path == file.path) {
-            await leaves[i].setViewState({
+        const excalidrawViews = getExcalidrawViews(this.app);
+        for (const excalidrawView of excalidrawViews) {
+          if (excalidrawView.file.path === file.path) {
+            await excalidrawView.leaf.setViewState({
               type: VIEW_TYPE_EXCALIDRAW,
               state: { file: null },
             });
@@ -3212,8 +3208,8 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   onunload() {
-    const excalidrawLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
-    excalidrawLeaves.forEach((leaf) => {
+    const excalidrawViews = getExcalidrawViews(this.app);
+    excalidrawViews.forEach(({leaf}) => {
       this.setMarkdownView(leaf);
     });
     

@@ -2,7 +2,7 @@ import { AppState, ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/e
 import clsx from "clsx";
 import { TFile } from "obsidian";
 import * as React from "react";
-import { DEVICE, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
+import { DEVICE } from "src/constants/constants";
 import { PenSettingsModal } from "src/dialogs/PenSettingsModal";
 import ExcalidrawView from "src/ExcalidrawView";
 import { PenStyle } from "src/PenTypes";
@@ -11,8 +11,7 @@ import ExcalidrawPlugin from "../main";
 import { ICONS, penIcon, stringToSVG } from "./ActionIcons";
 import { UniversalInsertFileModal } from "src/dialogs/UniversalInsertFileModal";
 import { t } from "src/lang/helpers";
-
-declare const PLUGIN_VERSION:string;
+import { getExcalidrawViews } from "src/utils/ObsidianUtils";
 
 export function setPen (pen: PenStyle, api: any) {
   const st = api.getAppState();
@@ -134,10 +133,8 @@ export class ObsidianMenu {
               this.view.excalidrawAPI?.setToast({message:`Pin removed: ${name}`, duration: 3000, closable: true});
             } 
             await this.plugin.saveSettings();
-            this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
-              if (v.view instanceof ExcalidrawView) v.view.updatePinnedScripts()
-            })
-            })()
+            getExcalidrawViews(this.plugin.app).forEach(excalidrawView=>excalidrawView.updatePinnedScripts());
+          })()
         },
         1500
       )

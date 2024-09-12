@@ -1,12 +1,13 @@
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { ColorComponent, Modal, Setting, SliderComponent, TextComponent, ToggleComponent } from "obsidian";
-import { COLOR_NAMES, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
+import { ColorComponent, Modal, Setting, TextComponent, ToggleComponent } from "obsidian";
+import { COLOR_NAMES } from "src/constants/constants";
 import ExcalidrawView from "src/ExcalidrawView";
 import ExcalidrawPlugin from "src/main";
 import { setPen } from "src/menu/ObsidianMenu";
-import { ExtendedFillStyle, PenStyle, PenType } from "src/PenTypes";
+import { ExtendedFillStyle, PenType } from "src/PenTypes";
+import { getExcalidrawViews } from "src/utils/ObsidianUtils";
 import { PENS } from "src/utils/Pens";
-import { fragWithHTML, getExportPadding, getExportTheme, getPNGScale, getWithBackground } from "src/utils/Utils";
+import { fragWithHTML } from "src/utils/Utils";
 import { __values } from "tslib";
 
 const EASINGFUNCTIONS: Record<string,string> = {
@@ -65,9 +66,7 @@ export class PenSettingsModal extends Modal {
 
   async onClose() {
     if(this.dirty) {
-      app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
-        if (v.view instanceof ExcalidrawView) v.view.updatePinnedCustomPens()
-      })
+      getExcalidrawViews(this.app).forEach(excalidrawView=>excalidrawView.updatePinnedCustomPens());
       this.plugin.saveSettings();
       const pen = this.plugin.settings.customPens[this.pen]
       const api = this.view.excalidrawAPI;
