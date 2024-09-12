@@ -3639,6 +3639,7 @@ export default class ExcalidrawView extends TextFileView {
 
   private excalidrawDIVonKeyDown(event: KeyboardEvent) {
     //(process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.excalidrawDIVonKeyDown, "ExcalidrawView.excalidrawDIVonKeyDown", event);
+    if (this.semaphores?.viewunload) return;
     if (event.target === this.excalidrawWrapperRef.current) {
       return;
     } //event should originate from the canvas
