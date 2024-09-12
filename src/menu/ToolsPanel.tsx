@@ -3,7 +3,7 @@ import { Notice, TFile } from "obsidian";
 import * as React from "react";
 import { ActionButton } from "./ActionButton";
 import { ICONS, saveIcon, stringToSVG } from "./ActionIcons";
-import { DEVICE, SCRIPT_INSTALL_FOLDER, VIEW_TYPE_EXCALIDRAW } from "../constants/constants";
+import { DEVICE, SCRIPT_INSTALL_FOLDER } from "../constants/constants";
 import { insertLaTeXToView, search } from "../ExcalidrawAutomate";
 import ExcalidrawView, { TextMode } from "../ExcalidrawView";
 import { t } from "../lang/helpers";
@@ -18,10 +18,9 @@ import { openExternalLink } from "src/utils/ExcalidrawViewUtils";
 import { UniversalInsertFileModal } from "src/dialogs/UniversalInsertFileModal";
 import { DEBUGGING, debug } from "src/utils/DebugHelper";
 import { REM_VALUE } from "src/utils/StylesManager";
+import { getExcalidrawViews } from "src/utils/ObsidianUtils";
 
 declare const PLUGIN_VERSION:string;
-const dark = '<svg style="stroke:#ced4da;#212529;color:#ced4da;fill:#ced4da" ';
-const light = '<svg style="stroke:#212529;color:#212529;fill:#212529" ';
 
 type PanelProps = {
   visible: boolean;
@@ -43,7 +42,7 @@ export type PanelState = {
   scriptIconMap: ScriptIconMap | null;
 };
 
-const TOOLS_PANEL_WIDTH = () => REM_VALUE * 14.2;
+const TOOLS_PANEL_WIDTH = () => REM_VALUE * 14.4;
 
 export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   pos1: number = 0;
@@ -367,11 +366,11 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   async actionRunScript(key: string) {
     const view = this.view;
     const plugin = view.plugin;
-    const f = app.vault.getAbstractFileByPath(key);
+    const f = plugin.app.vault.getAbstractFileByPath(key);
     if (f && f instanceof TFile) {
       plugin.scriptEngine.executeScript(
         view,
-        await app.vault.read(f),
+        await plugin.app.vault.read(f),
         plugin.scriptEngine.getScriptName(f),
         f
       );
@@ -392,9 +391,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       api?.setToast({message:`Pinned: ${scriptName}`, duration: 3000, closable: true})
     }
     await plugin.saveSettings();
-    plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
-      if (v.view instanceof ExcalidrawView) v.view.updatePinnedScripts()
-    })
+    getExcalidrawViews(plugin.app).forEach(excalidrawView=>excalidrawView.updatePinnedScripts());
   }
 
   private islandOnClick(event: React.MouseEvent<HTMLDivElement, MouseEvent>) {
@@ -454,7 +451,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
           style={{
             top: `${this.state.top}px`,
             left: `${this.state.left}px`,
-            width: `13.75rem`,
+            width: `14.4rem`,
             display:
               this.state.visible && !this.state.excalidrawViewMode
                 ? "block"
@@ -493,7 +490,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
               maxHeight: "350px",
               width: "initial",
               //@ts-ignore
-              "--padding": 2,
+              "--padding": "0.125rem",
               display: this.state.minimized ? "none" : "block",
             }}
           >

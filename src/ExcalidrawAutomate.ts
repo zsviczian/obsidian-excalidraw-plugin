@@ -21,7 +21,6 @@ import { ExcalidrawData, getMarkdownDrawingSection, REGEX_LINK } from "src/Excal
 import {
   FRONTMATTER,
   nanoid,
-  VIEW_TYPE_EXCALIDRAW,
   MAX_IMAGE_SIZE,
   COLOR_NAMES,
   fileid,
@@ -55,14 +54,14 @@ import {
   wrapTextAtCharLength,
   arrayToMap,
 } from "src/utils/Utils";
-import { getAttachmentsFolderAndFilePath, getLeaf, getNewOrAdjacentLeaf, isObsidianThemeDark, mergeMarkdownFiles, openLeaf } from "src/utils/ObsidianUtils";
-import { AppState, BinaryFileData,  DataURL,  ExcalidrawImperativeAPI, Point } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { getAttachmentsFolderAndFilePath, getExcalidrawViews, getLeaf, getNewOrAdjacentLeaf, isObsidianThemeDark, mergeMarkdownFiles, openLeaf } from "src/utils/ObsidianUtils";
+import { AppState, BinaryFileData,  DataURL,  ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddedFile, EmbeddedFilesLoader, FileData } from "src/EmbeddedFileLoader";
 import { tex2dataURL } from "src/LaTeX";
 import { GenericInputPrompt, NewFileActions } from "src/dialogs/Prompt";
 import { t } from "src/lang/helpers";
 import { ScriptEngine } from "src/Scripts";
-import { ConnectionPoint, DeviceType  } from "src/types/types";
+import { ConnectionPoint, DeviceType, Point  } from "src/types/types";
 import CM, { ColorMaster, extendPlugins } from "@zsviczian/colormaster";
 import HarmonyPlugin from "@zsviczian/colormaster/plugins/harmony";
 import MixPlugin from "@zsviczian/colormaster/plugins/mix"
@@ -1826,33 +1825,23 @@ export class ExcalidrawAutomate {
    */
   setView(view?: ExcalidrawView | "first" | "active"): ExcalidrawView {
     if(!view) {
-      const v = app.workspace.getActiveViewOfType(ExcalidrawView);
+      const v = this.plugin.app.workspace.getActiveViewOfType(ExcalidrawView);
       if (v instanceof ExcalidrawView) {
         this.targetView = v;
       }
       else {
-        const leaves =
-          app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
-        if (!leaves || leaves.length == 0) {
-          return;
-        }
-        this.targetView = leaves[0].view as ExcalidrawView;
+        this.targetView = getExcalidrawViews(this.plugin.app)[0];
       }
     }
     if (view == "active") {
-      const v = app.workspace.getActiveViewOfType(ExcalidrawView);
+      const v = this.plugin.app.workspace.getActiveViewOfType(ExcalidrawView);
       if (!(v instanceof ExcalidrawView)) {
         return;
       }
       this.targetView = v;
     }
     if (view == "first") {
-      const leaves =
-        app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
-      if (!leaves || leaves.length == 0) {
-        return;
-      }
-      this.targetView = leaves[0].view as ExcalidrawView;
+      this.targetView = getExcalidrawViews(this.plugin.app)[0];
     }
     if (view instanceof ExcalidrawView) {
       this.targetView = view;

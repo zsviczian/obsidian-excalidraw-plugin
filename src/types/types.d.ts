@@ -31,6 +31,8 @@ export type DeviceType = {
   isAndroid: boolean,
 };
 
+export type Point = [number, number];
+
 declare global {
   interface Window {
       ExcalidrawAutomate: ExcalidrawAutomate;

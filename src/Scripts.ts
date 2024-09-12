@@ -5,7 +5,7 @@ import {
   TFile,
   WorkspaceLeaf,
 } from "obsidian";
-import { PLUGIN_ID, VIEW_TYPE_EXCALIDRAW } from "./constants/constants";
+import { PLUGIN_ID } from "./constants/constants";
 import ExcalidrawView from "./ExcalidrawView";
 import ExcalidrawPlugin from "./main";
 import { ButtonDefinition, GenericInputPrompt, GenericSuggester } from "./dialogs/Prompt";
@@ -14,6 +14,7 @@ import { splitFolderAndFilename } from "./utils/FileUtils";
 import { getEA } from "src";
 import { ExcalidrawAutomate } from "./ExcalidrawAutomate";
 import { WeakArray } from "./utils/WeakArray";
+import { getExcalidrawViews } from "./utils/ObsidianUtils";
 
 export type ScriptIconMap = {
   [key: string]: { name: string; group: string; svgString: string };
@@ -303,10 +304,8 @@ export class ScriptEngine {
 }
 
   private updateToolPannels() {
-    const leaves =
-      this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
-    leaves.forEach((leaf: WorkspaceLeaf) => {
-      const excalidrawView = leaf.view as ExcalidrawView;
+    const excalidrawViews = getExcalidrawViews(this.plugin.app);
+    excalidrawViews.forEach(excalidrawView => {
       excalidrawView.toolsPanelRef?.current?.updateScriptIconMap(
         this.scriptIconMap,
       );

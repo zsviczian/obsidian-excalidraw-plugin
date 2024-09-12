@@ -4,6 +4,7 @@ import { getEA } from "src";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import { getCropFileNameAndFolder, getListOfTemplateFiles, splitFolderAndFilename } from "./FileUtils";
 import { Notice, TFile } from "obsidian";
+import { Radians } from "@zsviczian/excalidraw/types/math";
 
 export const CROPPED_PREFIX = "cropped_";
 export const ANNOTATED_PREFIX = "annotated_";
@@ -30,7 +31,7 @@ export const carveOutImage = async (sourceEA: ExcalidrawAutomate, viewImageEl: E
   const scale = newImage.scale;
   const angle = newImage.angle;
   newImage.scale = [1,1];
-  newImage.angle = 0;
+  newImage.angle = 0 as Radians;
 
   const ef = sourceEA.targetView.excalidrawData.getFile(viewImageEl.fileId);
   let imageLink = "";

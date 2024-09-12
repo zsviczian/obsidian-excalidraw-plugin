@@ -10,8 +10,7 @@ import {
   TextComponent,
   TFile,
 } from "obsidian";
-import { GITHUB_RELEASES, VIEW_TYPE_EXCALIDRAW } from "./constants/constants";
-import ExcalidrawView from "./ExcalidrawView";
+import { GITHUB_RELEASES } from "./constants/constants";
 import { t } from "./lang/helpers";
 import type ExcalidrawPlugin from "./main";
 import { PenStyle } from "./PenTypes";
@@ -41,6 +40,7 @@ import { setDebugging } from "./utils/DebugHelper";
 import { Rank } from "./menu/ActionIcons";
 import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/constSettingsTags";
 import { HotkeyEditor } from "./dialogs/HotkeyEditor";
+import { getExcalidrawViews } from "./utils/ObsidianUtils";
 
 export interface ExcalidrawSettings {
   folder: string;
@@ -515,31 +515,25 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     }
     this.plugin.saveSettings();
     if (this.requestUpdatePinnedPens) {
-      this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
-        if (v.view instanceof ExcalidrawView) v.view.updatePinnedCustomPens()
-      })
+      getExcalidrawViews(this.app).forEach(excalidrawView =>
+        excalidrawView.updatePinnedCustomPens()
+      )
     }
     if (this.requestUpdateDynamicStyling) {
-      this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
-        if (v.view instanceof ExcalidrawView) {
-          setDynamicStyle(this.plugin.ea,v.view,v.view.previousBackgroundColor,this.plugin.settings.dynamicStyling);
-        }
-        
-      })
+      getExcalidrawViews(this.app).forEach(excalidrawView =>
+          setDynamicStyle(this.plugin.ea,excalidrawView,excalidrawView.previousBackgroundColor,this.plugin.settings.dynamicStyling)
+      )
     }
     this.hotkeyEditor.unload();
     if (this.hotkeyEditor.isDirty) {
       this.plugin.registerHotkeyOverrides();
     }
     if (this.requestReloadDrawings) {
-      const exs =
-        this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
-      for (const v of exs) {
-        if (v.view instanceof ExcalidrawView) {
-          await v.view.save(false);
-          //debug({where:"ExcalidrawSettings.hide",file:v.view.file.name,before:"reload(true)"})
-          await v.view.reload(true);
-        }
+      const excalidrawViews = getExcalidrawViews(this.app);
+      for (const excalidrawView of excalidrawViews) {
+        await excalidrawView.save(false);
+        //debug({where:"ExcalidrawSettings.hide",file:v.view.file.name,before:"reload(true)"})
+        await excalidrawView.reload(true);
       }
       this.requestEmbedUpdate = true;
     }
@@ -1247,9 +1241,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.allowPinchZoom)
           .onChange(async (value) => {
             this.plugin.settings.allowPinchZoom = value;
-            app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
-              if (v.view instanceof ExcalidrawView) v.view.updatePinchZoom()
-            })
+            getExcalidrawViews(this.app).forEach(excalidrawView=>excalidrawView.updatePinchZoom())
             this.applySettingsUpdate();
           }),
       );
@@ -1263,9 +1255,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.allowWheelZoom)
           .onChange(async (value) => {
             this.plugin.settings.allowWheelZoom = value;
-            app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
-              if (v.view instanceof ExcalidrawView) v.view.updateWheelZoom()
-            })
+            getExcalidrawViews(this.app).forEach(excalidrawView=>excalidrawView.updateWheelZoom());
             this.applySettingsUpdate();
           }),
       );
@@ -1326,13 +1316,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       });
 
       const updateGridColor = () => {
-        const exs =
-          this.app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
-        for (const v of exs) {
-          if (v.view instanceof ExcalidrawView) {
-            v.view.updateGridColor();
-          }
-        }
+        getExcalidrawViews(this.app).forEach(excalidrawView=>excalidrawView.updateGridColor());
       };
 
       // Dynamic color toggle

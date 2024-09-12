@@ -9,8 +9,9 @@ import ExcalidrawPlugin from "../main";
 import { checkAndCreateFolder, splitFolderAndFilename } from "./FileUtils";
 import { linkClickModifierType, ModifierKeys } from "./ModifierkeyHelper";
 import { REG_BLOCK_REF_CLEAN, REG_SECTION_REF_CLEAN, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
-import yaml, { Mark } from "js-yaml";
+import yaml from "js-yaml";
 import { debug, DEBUGGING } from "./DebugHelper";
+import ExcalidrawView from "src/ExcalidrawView";
 
 export const getParentOfClass = (element: Element, cssClass: string):HTMLElement | null => {
   let parent = element.parentElement;
@@ -23,6 +24,11 @@ export const getParentOfClass = (element: Element, cssClass: string):HTMLElement
   }
   return parent?.classList?.contains(cssClass) ? parent : null;
 };
+
+export function getExcalidrawViews(app: App): ExcalidrawView[] {
+  const leaves = app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).filter(l=>l instanceof ExcalidrawView);
+  return leaves.map(l=>l.view as ExcalidrawView);
+}
 
 export const getLeaf = (
   plugin: ExcalidrawPlugin,
