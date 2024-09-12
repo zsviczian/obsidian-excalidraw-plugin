@@ -26,7 +26,7 @@ export const getParentOfClass = (element: Element, cssClass: string):HTMLElement
 };
 
 export function getExcalidrawViews(app: App): ExcalidrawView[] {
-  const leaves = app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).filter(l=>l instanceof ExcalidrawView);
+  const leaves = app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).filter(l=>l.view instanceof ExcalidrawView);
   return leaves.map(l=>l.view as ExcalidrawView);
 }
 
