@@ -129,8 +129,9 @@ export function openExternalLink (link:string, app: App, element?: ExcalidrawEle
  *   the link to the file path. By default as a wiki link, or as a file path if returnWikiLink is false.
  */
 export function parseObsidianLink(link: string, app: App, returnWikiLink: boolean = true): boolean | string {
+  if(!link) return false;
   link = getLinkFromMarkdownLink(link);
-  if (!link.startsWith("obsidian://")) {
+  if (!link?.startsWith("obsidian://")) {
       return false;
   }
   const url = new URL(link);
