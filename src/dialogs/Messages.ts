@@ -17,6 +17,20 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.5.0": `
+The new [Community Wiki](https://excalidraw-obsidian.online/Hobbies/Excalidraw+Blog/WIKI/Welcome+to+the+WIKI) is waiting for your contribution!
+
+## Fixed
+- Regression from 2.4.3: Text flickers when editing text in a container [#2015](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2015).
+- Significantly improved the performance of group and frame [image fragments](https://youtu.be/sjZfdqpxqsg) when the source drawing includes many images, but the fragment does not.
+- Minor styling tweaks. Note that with Obsidian 1.7.1, the font size and zoom settings in Obsidian > Appearance will affect the size of buttons and menu items in Excalidraw as well.
+
+## New
+- New Canvas Search from Excalidraw.com (CTRL/CMD+F). The "old" search is still available in the Obsidian Command Palette _"Search for text in drawing"_. The old search will also search in image-file names and frame titles, but the result set is not as sophisticated as the one built by Excalidraw.com. If you want to use the old search, you can set up a hotkey in Obsidian settings, e.g., CTRL+ALT/CMD+OPT+F. [#8438](https://github.com/excalidraw/excalidraw/pull/8438)
+- Grid Color settings under **Excalidraw Appearance and Behavior**. Note that the grid color and opacity also affect the color and transparency of the binding box when using the arrow tool. [#2007](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2007)
+- Refactoring the code to be compatible with the upcoming Obsidian 1.7.2.
+- ${String.fromCharCode(96)}ExcalidrawAutomate.decompressFromBase64()${String.fromCharCode(96)} will now remove line breaks from the input string so you can directly supply the compressed JSON string for decompression by script.
+`,
 "2.4.3": `
 Check out the [Excalidraw Plugin's Community WIKI](https://excalidraw-obsidian.online/Hobbies/Excalidraw+Blog/WIKI/Welcome+to+the+WIKI) and help with your content contribution.
 

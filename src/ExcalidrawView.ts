@@ -9,6 +9,8 @@ import {
   MarkdownView,
   request,
   requireApiVersion,
+  HoverParent,
+  HoverPopover,
 } from "obsidian";
 //import * as React from "react";
 //import * as ReactDOM from "react-dom";
@@ -251,7 +253,8 @@ type ActionButtons = "save" | "isParsed" | "isRaw" | "link" | "scriptInstall";
 
 let windowMigratedDisableZoomOnce = false;
 
-export default class ExcalidrawView extends TextFileView {
+export default class ExcalidrawView extends TextFileView implements HoverParent{
+  public hoverPopover: HoverPopover;
   private freedrawLastActiveTimestamp: number = 0;
   public exportDialog: ExportDialog;
   public excalidrawData: ExcalidrawData;
@@ -1348,7 +1351,7 @@ export default class ExcalidrawView extends TextFileView {
       
       //if link will open in the same pane I want to save the drawing before opening the link
       await this.forceSaveIfRequired();
-      const {leaf, promise} = openLeaf({
+      const { promise } = openLeaf({
         plugin: this.plugin,
         fnGetLeaf: () => getLeaf(this.plugin,this.leaf,keys),
         file,
@@ -1802,6 +1805,7 @@ export default class ExcalidrawView extends TextFileView {
       new Notice("Unknown error, save is taking too long");
       return;
     }
+    await this.forceSaveIfRequired();
   }
 
   private async forceSaveIfRequired():Promise<boolean> {
@@ -1810,9 +1814,9 @@ export default class ExcalidrawView extends TextFileView {
     let dirty = false;
     //if saving was already in progress
     //the function awaits the save to finish.
-    while (this.semaphores.saving && watchdog++ < 10) {
+    while (this.semaphores.saving && watchdog++ < 200) {
       dirty = true;
-      await sleep(20);
+      await sleep(40);
     }
     if(this.excalidrawAPI) {
       this.checkSceneVersion(this.excalidrawAPI.getSceneElements());
@@ -2348,7 +2352,7 @@ export default class ExcalidrawView extends TextFileView {
       Regular = customCM.alphaTo(opacity).stringRGB({ alpha: true });
       
       // Bold is 7 shades lighter or darker based on the custom color's darkness
-      Bold = (customIsDark ? customCM.lighterBy(7) : customCM.darkerBy(7)).alphaTo(opacity).stringRGB({ alpha: true });
+      Bold = (customIsDark ? customCM.lighterBy(10) : customCM.darkerBy(10)).alphaTo(opacity).stringRGB({ alpha: true });
     }
   
     return { Bold, Regular };
@@ -3363,7 +3367,7 @@ export default class ExcalidrawView extends TextFileView {
     }
 
     const activeTool = st.activeTool;
-    if(activeTool.type!=="freedraw") {
+    if(!["freedraw","hand"].includes(activeTool.type)) {
       activeTool.type = "selection";
     }
     activeTool.customType = null;
@@ -3431,7 +3435,15 @@ export default class ExcalidrawView extends TextFileView {
   }
 
   private clearHoverPreview() {
-    if (this.hoverPreviewTarget) {
+    if (this.hoverPopover) {
+      this.hoverPreviewTarget = null;
+      //@ts-ignore
+      if(this.hoverPopover.embed?.editor) {
+        return;
+      }
+      //@ts-ignore
+      this.hoverPopover?.hide();
+    } else if (this.hoverPreviewTarget) {
       (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.clearHoverPreview, "ExcalidrawView.clearHoverPreview", this);
       const event = new MouseEvent("click", {
         view: this.ownerWindow,
@@ -3617,7 +3629,7 @@ export default class ExcalidrawView extends TextFileView {
     this.app.workspace.trigger("hover-link", {
       event: this.lastMouseEvent,
       source: VIEW_TYPE_EXCALIDRAW,
-      hoverParent: this.hoverPreviewTarget,
+      hoverParent: this,
       targetEl: this.hoverPreviewTarget, //null //0.15.0 hover editor!!
       linktext: this.plugin.hover.linkText,
       sourcePath: this.plugin.hover.sourcePath,
@@ -5080,7 +5092,8 @@ export default class ExcalidrawView extends TextFileView {
             React,
             t("COPY_DRAWING_LINK"),
             () => {
-              navigator.clipboard.writeText(`![[${this.file.path}]]`);
+              const path = this.file.path.match(/(.*)(\.md)$/)?.[1];
+              navigator.clipboard.writeText(`![[${path ?? this.file.path}]]`);
             },
             onClose
           ),
