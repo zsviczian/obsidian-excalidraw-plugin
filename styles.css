@@ -639,3 +639,11 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 .ExcTextField__input input::placeholder {
   color: var(--select-highlight-color);
 }
+
+.excalidraw textarea::placeholder {
+  color: var(--color-gray-50);
+}
+
+.excalidraw textarea.ttd-dialog-input {
+  caret-color: var(--excalidraw-caret-color);
+}

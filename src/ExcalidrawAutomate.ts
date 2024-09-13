@@ -281,8 +281,17 @@ export class ExcalidrawAutomate {
     return LZString.compressToBase64(str);
   }
 
-  public decompressFromBase64(str:string): string {
-    return LZString.decompressFromBase64(str);
+  public decompressFromBase64(data:string): string {
+    if (!data) throw new Error("No input string provided for decompression.");
+    let cleanedData = '';
+    const length = data.length;
+    for (let i = 0; i < length; i++) {
+      const char = data[i];
+      if (char !== '\\n' && char !== '\\r') {
+        cleanedData += char;
+      }
+    }
+    return LZString.decompressFromBase64(cleanedData);
   }
 
   /**

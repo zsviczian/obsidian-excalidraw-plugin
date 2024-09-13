@@ -402,7 +402,7 @@ FILENAME_HEAD: "Filename",
   GRID_COLOR_NAME: "Grid color",
   GRID_OPACITY_NAME: "Grid opacity",
   GRID_OPACITY_DESC: "Grid opacity will also control the opacity of the binding box when binding an arrow to an element.<br>" +
-    "Set the opacity of the grid. 0 is transparent, 1 is opaque.",
+    "Set the opacity of the grid. 0 is transparent, 100 is opaque.",
   LASER_HEAD: "Laser pointer",
   LASER_COLOR: "Laser pointer color",
   LASER_DECAY_TIME_NAME: "Laser pointer decay time",

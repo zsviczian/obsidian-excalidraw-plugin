@@ -2337,8 +2337,8 @@ export default class ExcalidrawView extends TextFileView {
 
     if (this.plugin.settings.gridSettings.DYNAMIC_COLOR) {
       // Dynamic color: concatenate opacity to the HEX string  
-      Regular = (isDark ? cm.lighterBy(7) : cm.darkerBy(7)).alphaTo(opacity).stringRGB({ alpha: true });
-      Bold = (isDark ? cm.lighterBy(14) : cm.darkerBy(14)).alphaTo(opacity).stringRGB({ alpha: true });
+      Regular = (isDark ? cm.lighterBy(10) : cm.darkerBy(10)).alphaTo(opacity).stringRGB({ alpha: true });
+      Bold = (isDark ? cm.lighterBy(5) : cm.darkerBy(5)).alphaTo(opacity).stringRGB({ alpha: true });
     } else {
       // Custom color handling
       const customCM = this.plugin.ea.getCM(this.plugin.settings.gridSettings.COLOR);
@@ -3362,6 +3362,13 @@ export default class ExcalidrawView extends TextFileView {
       toDelete.forEach((k) => delete files[k]);
     }
 
+    const activeTool = st.activeTool;
+    if(activeTool.type!=="freedraw") {
+      activeTool.type = "selection";
+    }
+    activeTool.customType = null;
+    activeTool.lastActiveTool = null;
+
     return {
       type: "excalidraw",
       version: 2,
@@ -3396,7 +3403,7 @@ export default class ExcalidrawView extends TextFileView {
         currentStrokeOptions: st.currentStrokeOptions,
         frameRendering: st.frameRendering,
         objectsSnapModeEnabled: st.objectsSnapModeEnabled,
-        activeTool: st.activeTool,
+        activeTool,
       },
       prevTextMode: this.prevTextMode,
       files,
