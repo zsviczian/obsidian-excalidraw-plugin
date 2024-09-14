@@ -1,5 +1,5 @@
 name: Bug report
-description: If something is clearly broken, it’s a bug. Everything else is a feature or support request. While there may be bugs, please ensure you’ve done proper due diligence before reporting. Most “bugs” tend to be how-to questions or feature requests.
+description: If something is clearly broken, it’s a bug. Everything else is a feature or support request. Most reported “bugs” are actually how-to questions or feature requests.
 title: "BUG: "
 body:
   - type: markdown
