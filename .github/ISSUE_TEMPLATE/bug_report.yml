@@ -1,5 +1,5 @@
 name: Bug report
-description: When something is clearly broken. Everything else is a feature request or a support request. While no doubt there are many bugs in the plugin, please do proper due dilligence before declaring that something is a "bug". I find that most of the "bugs" reported are either how-to questions or feature requests.
+description: When something is clearly broken. Everything else is a feature request or a support request. While no doubt there are many bugs in the plugin, please do proper due dilligence before declaring that something is a bug. I find that most of the bugs reported are either how-to questions or feature requests.
 title: "BUG: "
 body:
   - type: markdown
