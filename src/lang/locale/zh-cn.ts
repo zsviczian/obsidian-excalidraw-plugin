@@ -395,7 +395,15 @@ FILENAME_HEAD: "文件名",
   ZOOM_TO_FIT_MAX_LEVEL_NAME: "自动缩放的最高级别",
   ZOOM_TO_FIT_MAX_LEVEL_DESC:
     "自动缩放画布时，允许放大的最高级别。该值不能低于 0.5（50%）且不能超过 10（1000%）。",
-  LASER_HEAD: "激光笔工具（More Tools > Laser pointer）",
+  GRID_HEAD: "网格",
+  GRID_DYNAMIC_COLOR_NAME: "动态网格颜色",
+  GRID_DYNAMIC_COLOR_DESC:
+    "<b><u>开启：</u></b>更改网格颜色以匹配画布颜色<br><b><u>关闭：</u></b>将以下颜色用作网格颜色",
+  GRID_COLOR_NAME: "网格颜色",
+  GRID_OPACITY_NAME: "网格透明度",
+  GRID_OPACITY_DESC: "网格透明度还将控制将箭头绑定到元素时绑定框的透明度。<br>"+
+    "设置网格的不透明度。 0 表示完全透明，100 表示完全不透明。",
+  LASER_HEAD: "激光笔工具（更多工具 > 激光笔）",
   LASER_COLOR: "激光笔颜色",
   LASER_DECAY_TIME_NAME: "激光笔消失时间",
   LASER_DECAY_TIME_DESC: "单位是毫秒，默认是 1000（即 1 秒）。",

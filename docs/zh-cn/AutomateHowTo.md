@@ -2,7 +2,7 @@
 
 > 此说明当前更新至 `5569cff`。
 
-[English](./AutomateHowTo.md)
+[English](../../AutomateHowTo.md)
 
 Excalidraw 自动化允许您使用 [Templater](https://github.com/SilentVoid13/Templater) 插件创建 Excalidraw 绘图。
 

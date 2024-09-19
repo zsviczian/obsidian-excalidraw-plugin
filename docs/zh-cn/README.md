@@ -2,7 +2,7 @@
 
 > 此说明当前更新至 `5569cff`。
 
-[English](./README.md)
+[English](../../README.md)
 
 👉👉👉 快来查看并为新的 [Obsidian-Excalidraw 社区维基](https://excalidraw-obsidian.online/Hobbies/Excalidraw+Blog/WIKI/Welcome+to+the+WIKI)贡献你的力量吧
 
