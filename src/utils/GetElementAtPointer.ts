@@ -2,6 +2,7 @@ import { ExcalidrawElement, ExcalidrawImageElement, ExcalidrawTextElement } from
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK } from "src/ExcalidrawData";
 import ExcalidrawView, { TextMode } from "src/ExcalidrawView";
 import { rotatedDimensions } from "./Utils";
+import { getBoundTextElementId } from "src/ExcalidrawAutomate";
 
 export const getElementsAtPointer = (
   pointer: any,
@@ -93,12 +94,23 @@ const api = view.excalidrawAPI;
   if (!api) {
     return;
   }
-  const elements = (
+  let elements = (
     getElementsAtPointer(
       pointer,
       api.getSceneElements(),
-    ) as ExcalidrawImageElement[]
+    ) as ExcalidrawElement[]
   ).filter((el) => el.link);
+
+  //as a fallback let's check if any of the elements at pointer are containers with a text element that has a link.
+  if (elements.length === 0) {
+    const textElIDs = (
+      getElementsAtPointer(
+        pointer,
+        api.getSceneElements(),
+      ) as ExcalidrawImageElement[]
+    ).map((el) => getBoundTextElementId(el));
+    elements = view.getViewElements().filter((el) => el.type==="text" && el.link && textElIDs.includes(el.id));
+  }
 
   if (elements.length === 0) {
     return { id: null, text: null };

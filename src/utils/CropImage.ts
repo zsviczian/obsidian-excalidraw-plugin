@@ -139,7 +139,9 @@ export class CropImage {
     const PLUGIN = app.plugins.plugins["obsidian-excalidraw-plugin"];
     const svg = await this.buildSVG();
     return new Promise((resolve, reject) => {
-      const svgData = new XMLSerializer().serializeToString(svg);
+      //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2026
+      const svgData = svg.outerHTML;
+      //const svgData = new XMLSerializer().serializeToString(svg);
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
   

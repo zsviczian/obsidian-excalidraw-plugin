@@ -655,7 +655,7 @@ export class EmbeddedFilesLoader {
     let equation;
     const equations = excalidrawData.getEquationEntries();
     while (!this.terminate && !(equation = equations.next()).done) {
-      if(fileIDWhiteList && !fileIDWhiteList.has(entry.value[0])) continue;
+      if(fileIDWhiteList && !fileIDWhiteList.has(equation.value[0])) continue;
       if (!excalidrawData.getEquation(equation.value[0]).isLoaded) {
         const latex = equation.value[1].latex;
         const data = await tex2dataURL(latex);

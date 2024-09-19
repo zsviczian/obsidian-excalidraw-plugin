@@ -123,12 +123,18 @@ export function openExternalLink (link:string, app: App, element?: ExcalidrawEle
  * @param link 
  * @param app 
  * @param returnWikiLink 
+ * @param openLink: if set to false, the link will not be opened just true will be returned for an obsidian link.
  * @returns 
  *   false if the link is not an obsidian link,
  *   true if the link is an obsidian link and it was opened (i.e. it is a link to another Vault or not a file link e.g. plugin link), or
  *   the link to the file path. By default as a wiki link, or as a file path if returnWikiLink is false.
  */
-export function parseObsidianLink(link: string, app: App, returnWikiLink: boolean = true): boolean | string {
+export function parseObsidianLink(
+  link: string,
+  app: App,
+  returnWikiLink: boolean = true,
+  openLink: boolean = true,
+): boolean | string {
   if(!link) return false;
   link = getLinkFromMarkdownLink(link);
   if (!link?.startsWith("obsidian://")) {
@@ -154,7 +160,9 @@ export function parseObsidianLink(link: string, app: App, returnWikiLink: boolea
       }
   }
 
-  window.open(link, "_blank");
+  if(openLink) {
+    window.open(link, "_blank");
+  }
   return true;
 }
 

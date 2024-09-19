@@ -65,7 +65,8 @@ import {
   cloneElement,
   getFrameElementsMatchingQuery,
   getElementsWithLinkMatchingQuery,
-  getImagesMatchingQuery
+  getImagesMatchingQuery,
+  getBoundTextElementId
 } from "./ExcalidrawAutomate";
 import { t } from "./lang/helpers";
 import {
@@ -280,6 +281,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   private embeddableLeafRefs = new Map<ExcalidrawElement["id"], any>();
 
   public semaphores: {
+    warnAboutLinearElementLinkClick: boolean;
     //flag to prevent overwriting the changes the user makes in an embeddable view editing the back side of the drawing
     embeddableIsEditingSelf: boolean;
     popoutUnload: boolean; //the unloaded Excalidraw view was the last leaf in the popout window
@@ -316,6 +318,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     hoverSleep: boolean; //flag with timer to prevent hover preview from being triggered dozens of times
     wheelTimeout:number; //used to avoid hover preview while zooming
   } | null = {
+    warnAboutLinearElementLinkClick: true,
     embeddableIsEditingSelf: false,
     popoutUnload: false,
     viewunload: false,
@@ -523,8 +526,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       if (!svg) {
         return;
       }
-      const serializer = new XMLSerializer();
-      const svgString = serializer.serializeToString(svg);
+      //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2026
+      const svgString = svg.outerHTML;
       if (file && file instanceof TFile) {
         await this.app.vault.modify(file, svgString);
       } else {
@@ -1144,20 +1147,61 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
   private getLinkTextForElement(
     selectedText:SelectedElementWithLink,
-    selectedElementWithLink?:SelectedElementWithLink
+    selectedElementWithLink?:SelectedElementWithLink,
+    allowLinearElementClick: boolean = false,
   ): {
     linkText: string,
     selectedElement: ExcalidrawElement,
+    isLinearElement: boolean,
   } {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getLinkTextForElement, "ExcalidrawView.getLinkTextForElement", selectedText, selectedElementWithLink);
     if (selectedText?.id || selectedElementWithLink?.id) {
-      const selectedTextElement: ExcalidrawTextElement = selectedText.id
+      let selectedTextElement: ExcalidrawTextElement = selectedText.id
       ? this.excalidrawAPI.getSceneElements().find((el:ExcalidrawElement)=>el.id === selectedText.id)
       : null;
 
-      const selectedElement = selectedElementWithLink.id
-      ? this.excalidrawAPI.getSceneElements().find((el:ExcalidrawElement)=>el.id === selectedElementWithLink.id)
+      let selectedElement = selectedElementWithLink.id
+      ? this.excalidrawAPI.getSceneElements().find((el:ExcalidrawElement)=>
+          el.id === selectedElementWithLink.id)
       : null;
+
+      //if the user clicked on the label of an arrow then the label will be captured in selectedElement, because
+      //Excalidraw returns the container as the selected element. But in this case we want this to be treated as the
+      //text element, as the assumption is, if the user wants to invoke the linear element editor for an arrow that has
+      //a label with a link, then he/she should rather CTRL+click on the arrow line, not the label. CTRL+Click on
+      //the label is an indication of wanting to navigate.
+      if (!Boolean(selectedTextElement) && selectedElement?.type === "text") {
+        const container = getContainerElement(selectedElement, arrayToMap(this.excalidrawAPI.getSceneElements()));
+        if(container?.type === "arrow") {
+          const x = getTextElementAtPointer(this.currentPosition,this);
+          if(x?.id === selectedElement.id) {
+            selectedTextElement = selectedElement;
+            selectedElement = null;
+          }
+        }
+      }
+      
+      //CTRL click on a linear element with a link will navigate instead of line editor
+      if(!allowLinearElementClick && ["arrow", "line"].includes(selectedElement?.type)) {
+        return {linkText: selectedElement.link, selectedElement: selectedElement, isLinearElement: true};
+      }
+
+      if (!selectedTextElement && selectedElement?.type === "text") {
+        if(!allowLinearElementClick) {
+          //CTRL click on a linear element with a link will navigate instead of line editor
+          const container = getContainerElement(selectedElement, arrayToMap(this.excalidrawAPI.getSceneElements()));
+          if(container?.type !== "arrow") {
+            selectedTextElement = selectedElement as ExcalidrawTextElement;
+            selectedElement = null;
+          } else {
+            const x = this.processLinkText(selectedElement.rawText, selectedElement as ExcalidrawTextElement, container, false);
+            return {linkText: x.linkText, selectedElement: container, isLinearElement: true};
+          }
+        } else {
+          selectedTextElement = selectedElement as ExcalidrawTextElement;
+          selectedElement = null;
+        }
+      }
 
       let linkText =
         selectedElementWithLink?.text ??
@@ -1165,40 +1209,49 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           ? this.excalidrawData.getRawText(selectedText.id)
           : selectedText.text);
 
-      if(linkText.startsWith("#")) {
-        return {linkText, selectedElement: selectedTextElement ?? selectedElement};
-      }
+      return {...this.processLinkText(linkText, selectedTextElement, selectedElement), isLinearElement: false};
+    }
+    return {linkText: null, selectedElement: null, isLinearElement: false};
+  }
 
-      const maybeObsidianLink = parseObsidianLink(linkText, this.app);
-      if(typeof maybeObsidianLink === "string") {
-        linkText = maybeObsidianLink;
-      }
+  
+  processLinkText(linkText: string, selectedTextElement: ExcalidrawTextElement, selectedElement: ExcalidrawElement, shouldOpenLink: boolean = true) {
+    if(!linkText) {
+      return {linkText: null, selectedElement: null};
+    }
 
-      const partsArray = REGEX_LINK.getResList(linkText);
-      if (!linkText || partsArray.length === 0) {
-        //the container link takes precedence over the text link
-        if(selectedTextElement?.containerId) {
-          const container = _getContainerElement(selectedTextElement, {elements: this.excalidrawAPI.getSceneElements()});
-          if(container) {
-            linkText = container.link;
-            
-            if(linkText?.startsWith("#")) {
-              return {linkText, selectedElement: selectedTextElement ?? selectedElement};
-            }
-
-            const maybeObsidianLink = parseObsidianLink(linkText, this.app);
-            if(typeof maybeObsidianLink === "string") {
-              linkText = maybeObsidianLink;
-            }
-          }
-        }
-        if(!linkText || partsArray.length === 0) {
-          linkText = selectedTextElement?.link;
-        }
-      }
+    if(linkText.startsWith("#")) {
       return {linkText, selectedElement: selectedTextElement ?? selectedElement};
     }
-    return {linkText: null, selectedElement: null};
+
+    const maybeObsidianLink = parseObsidianLink(linkText, this.app, shouldOpenLink);
+    if(typeof maybeObsidianLink === "string") {
+      linkText = maybeObsidianLink;
+    }
+
+    const partsArray = REGEX_LINK.getResList(linkText);
+    if (!linkText || partsArray.length === 0) {
+      //the container link takes precedence over the text link
+      if(selectedTextElement?.containerId) {
+        const container = _getContainerElement(selectedTextElement, {elements: this.excalidrawAPI.getSceneElements()});
+        if(container) {
+          linkText = container.link;
+          
+          if(linkText?.startsWith("#")) {
+            return {linkText, selectedElement: selectedTextElement ?? selectedElement};
+          }
+
+          const maybeObsidianLink = parseObsidianLink(linkText, this.app, shouldOpenLink);
+          if(typeof maybeObsidianLink === "string") {
+            linkText = maybeObsidianLink;
+          }
+        }
+      }
+      if(!linkText || partsArray.length === 0) {
+        linkText = selectedTextElement?.link;
+      }
+    }
+    return {linkText, selectedElement: selectedTextElement ?? selectedElement};
   }
 
   async linkClick(
@@ -1206,7 +1259,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     selectedText: SelectedElementWithLink,
     selectedImage: SelectedImage,
     selectedElementWithLink: SelectedElementWithLink,
-    keys?: ModifierKeys
+    keys?: ModifierKeys,
+    allowLinearElementClick: boolean = false,
   ) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.linkClick, "ExcalidrawView.linkClick", ev, selectedText, selectedImage, selectedElementWithLink, keys);
     if(!selectedText) selectedText = {id:null, text: null};
@@ -1219,10 +1273,17 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
     let file = null;
     let subpath: string = null;
-    let {linkText, selectedElement} = this.getLinkTextForElement(selectedText, selectedElementWithLink);
+    let {linkText, selectedElement, isLinearElement} = this.getLinkTextForElement(selectedText, selectedElementWithLink, allowLinearElementClick);
 
     //if (selectedText?.id || selectedElementWithLink?.id) {
     if (selectedElement) {
+      if (!allowLinearElementClick && linkText && isLinearElement) {
+        if(this.semaphores.warnAboutLinearElementLinkClick) {
+          new Notice(t("LINEAR_ELEMENT_LINK_CLICK_ERROR"), 20000);
+          this.semaphores.warnAboutLinearElementLinkClick = false;
+        }
+        return;
+      }
       if (!linkText) {
           return;
       }
@@ -1301,6 +1362,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
 
     if (!linkText) {
+      if(allowLinearElementClick) {
+        return;
+      }
       new Notice(t("LINK_BUTTON_CLICK_NO_TEXT"), 20000);
       return;
     }
@@ -1367,7 +1431,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
   }
   
-  async handleLinkClick(ev: MouseEvent | ModifierKeys) {
+  async handleLinkClick(ev: MouseEvent | ModifierKeys, allowLinearElementClick: boolean = false) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.handleLinkClick, "ExcalidrawView.handleLinkClick", ev);
     this.removeLinkTooltip();
 
@@ -1385,6 +1449,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       selectedImage,
       selectedElementWithLink,
       ev instanceof MouseEvent ? null : ev,
+      allowLinearElementClick,
     );
   }
 
@@ -2152,6 +2217,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   // clear the view content
   clear() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.clear, "ExcalidrawView.clear");
+    this.semaphores.warnAboutLinearElementLinkClick = true;
     this.viewSaveData = "";
     this.canvasNodeFactory.purgeNodes();
     this.embeddableRefs.clear();
@@ -3138,6 +3204,16 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       };
     }
 
+    const textId = getBoundTextElementId(selectedElement[0]);
+    if (textId) {
+      const textElement = api
+        .getSceneElements()
+        .filter((el: any) => el.id === textId && el.link);
+      if (textElement.length > 0) {
+        return { id: textElement[0].id, text: textElement[0].text };
+      }
+    }
+
     if (selectedElement[0].groupIds.length === 0) {
       return { id: null, text: null };
     } //is the selected element part of a group?
@@ -3675,6 +3751,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       return;
     } 
     if (!this.plugin.settings.allowCtrlClick && !isWinMETAorMacCTRL(e)) {
+      return;
+    }
+    if (Boolean((this.excalidrawAPI as ExcalidrawImperativeAPI)?.getAppState().contextMenu)) {
       return;
     }
     //added setTimeout when I changed onClick(e: MouseEvent) to onPointerDown() in 1.7.9. 
@@ -4749,6 +4828,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       null,
       {id: element.id, text: link},
       event,
+      true,
     );
     return;
   }
@@ -4958,7 +5038,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           t("OPEN_LINK_CLICK"),
           () => {
             const event = emulateKeysForLinkClick("new-tab");
-            this.handleLinkClick(event);
+            this.handleLinkClick(event, true);
           },
           onClose
         ),

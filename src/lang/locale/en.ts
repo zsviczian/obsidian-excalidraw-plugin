@@ -128,7 +128,10 @@ export default {
   OPEN_LINK: "Open selected text as link\n(SHIFT+CLICK to open in a new pane)",
   EXPORT_EXCALIDRAW: "Export to an .Excalidraw file",
   LINK_BUTTON_CLICK_NO_TEXT:
-    "Select an ImageElement, or select a TextElement that contains an internal or external link.\n",
+    "Select an element that contains an internal or external link.\n",
+  LINEAR_ELEMENT_LINK_CLICK_ERROR:
+    "Arrow- and Line-Element links cannot be navigated by " + labelCTRL() + " + CLICKing on the element because that also activates the line editor.\n" +
+    "Use the right-click context menu to open the link, or click the link indicator in the top right corner of the element.\n",
   FILENAME_INVALID_CHARS:
     'File name cannot contain any of the following characters: * " \\ < > : | ? #',
   FORCE_SAVE:

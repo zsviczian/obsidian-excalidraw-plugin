@@ -374,7 +374,9 @@ const getIMG = async (
 
 const addSVGToImgSrc = (img: HTMLImageElement, svg: SVGSVGElement, cacheReady: boolean, cacheKey: ImageKey):HTMLImageElement => {
   (process.env.NODE_ENV === 'development') && DEBUGGING && debug(addSVGToImgSrc, `MarkdownPostProcessor.ts > addSVGToImgSrc`);
-  const svgString = new XMLSerializer().serializeToString(svg);
+  //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2026
+  //const svgString = new XMLSerializer().serializeToString(svg);
+  const svgString = svg.outerHTML;
   const blob = new Blob([svgString], { type: 'image/svg+xml' });
   const blobUrl = URL.createObjectURL(blob);
   img.setAttribute("src", blobUrl);
@@ -795,7 +797,9 @@ export const markdownPostProcessor = async (
 ) => {
   const isPrinting = Boolean(document.body.querySelectorAll("body > .print").length>0);
   //firstElementChild: https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1956
-  const isFrontmatter = el.hasClass("mod-frontmatter") || el.firstElementChild?.hasClass("frontmatter");
+  const isFrontmatter = el.hasClass("mod-frontmatter") ||
+    el.firstElementChild?.hasClass("frontmatter") ||
+    el.firstElementChild?.hasClass("block-language-yaml");
   if(isPrinting && isFrontmatter) {
     return;
   }

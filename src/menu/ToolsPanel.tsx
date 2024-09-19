@@ -262,7 +262,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       shiftKey: e.shiftKey,
       altKey: e.altKey,
     });
-    this.view.handleLinkClick(event);
+    this.view.handleLinkClick(event, true);
   }
 
   actionOpenLinkProperties() {

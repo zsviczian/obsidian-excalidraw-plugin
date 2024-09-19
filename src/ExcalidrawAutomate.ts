@@ -3516,3 +3516,9 @@ export const cloneElement = (el: ExcalidrawElement):any => {
 export const verifyMinimumPluginVersion = (requiredVersion: string): boolean => {
   return PLUGIN_VERSION === requiredVersion || isVersionNewerThanOther(PLUGIN_VERSION,requiredVersion);
 }
+
+export const getBoundTextElementId = (container: ExcalidrawElement | null) => {
+  return container?.boundElements?.length
+    ? container?.boundElements?.find((ele) => ele.type === "text")?.id || null
+    : null;
+};
