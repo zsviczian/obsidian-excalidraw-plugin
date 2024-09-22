@@ -81,20 +81,18 @@ export function openTagSearch(link: string, app: App, view?: ExcalidrawView) {
     return;
   }
 
-  const search = app.workspace.getLeavesOfType("search");
-  if (search.length === 0) {
-    return;
+  const query = `tag:${tags[0].value[1]}`;
+  const searchPlugin = app.internalPlugins.getPluginById("global-search");
+  if (searchPlugin) {
+    const searchInstance = searchPlugin.instance;
+    if (searchInstance) {
+      searchInstance.openGlobalSearch(query);
+    }
   }
-
-  //@ts-ignore
-  search[0].view.setQuery(`tag:${tags[0].value[1]}`);
-  app.workspace.revealLeaf(search[0]);
 
   if (view && view.isFullscreen()) {
     view.exitFullscreen();
   }
-
-  return;
 }
 
 function getLinkFromMarkdownLink(link: string): string {

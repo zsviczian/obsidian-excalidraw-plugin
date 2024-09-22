@@ -51,6 +51,7 @@ import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "./
 import { DEBUGGING, debug } from "./utils/DebugHelper";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { updateElementIdsInScene } from "./utils/ExcalidrawSceneUtils";
+import { getNewUniqueFilepath } from "./utils/FileUtils";
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles };
 
@@ -1506,31 +1507,40 @@ export class ExcalidrawData {
     return result;
   }
 
-  public async saveDataURLtoVault(dataURL: DataURL, mimeType: MimeType, key: FileId) {
+  public async saveDataURLtoVault(dataURL: DataURL, mimeType: MimeType, key: FileId, name?:string) {
     const scene = this.scene as SceneDataWithFiles;
-    let fname = `Pasted Image ${window
-      .moment()
-      .format("YYYYMMDDHHmmss_SSS")}`;
-  
-    switch (mimeType) {
-      case "image/png":
-        fname += ".png";
-        break;
-      case "image/jpeg":
-        fname += ".jpg";
-        break;
-      case "image/svg+xml":
-        fname += ".svg";
-        break;
-      case "image/gif":
-        fname += ".gif";
-        break;
-      default:
-        fname += ".png";
+    let fname = name;
+
+    if(!fname) {
+      fname = `Pasted Image ${window
+        .moment()
+        .format("YYYYMMDDHHmmss_SSS")}`;
+    
+      switch (mimeType) {
+        case "image/png":
+          fname += ".png";
+          break;
+        case "image/jpeg":
+          fname += ".jpg";
+          break;
+        case "image/svg+xml":
+          fname += ".svg";
+          break;
+        case "image/gif":
+          fname += ".gif";
+          break;
+        default:
+          fname += ".png";
+      }
     }
+
+    const x = await getAttachmentsFolderAndFilePath(this.app, this.file.path, fname);
+    const filepath = getNewUniqueFilepath(this.app.vault,fname,x.folder);
+
+    /*
     const filepath = (
       await getAttachmentsFolderAndFilePath(this.app, this.file.path, fname)
-    ).filepath;
+    ).filepath;*/
 
     const arrayBuffer = await getBinaryFileFromDataURL(dataURL);
     if(!arrayBuffer) return null;
@@ -1657,7 +1667,9 @@ export class ExcalidrawData {
         await this.saveDataURLtoVault(
           scene.files[key].dataURL,
           scene.files[key].mimeType,
-          key as FileId
+          key as FileId,
+          //@ts-ignore
+          scene.files[key].name,
         );
       }
     }

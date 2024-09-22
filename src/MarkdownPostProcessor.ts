@@ -589,6 +589,102 @@ const processInternalEmbed = async (internalEmbedEl: Element, file: TFile ):Prom
   return await createImageDiv(attr);
 }
 
+function getDimensionsFromAliasString(data: string) {
+  const dimensionRegex = /^(?<width>\d+%|\d+)(x(?<height>\d+%|\d+))?$/;
+  const heightOnlyRegex = /^x(?<height>\d+%|\d+)$/;
+
+  const match = data.match(dimensionRegex) || data.match(heightOnlyRegex);
+  if (match) {
+      const { width, height } = match.groups;
+
+      // Ensure width and height do not start with '0'
+      if ((width && width.startsWith('0') && width !== '0') || 
+          (height && height.startsWith('0') && height !== '0')) {
+          return null;
+      }
+
+      return {
+          width: width || undefined,
+          height: height || undefined,
+      };
+  }
+  
+  // If the input starts with a 0 or is a decimal, return null
+  if (/^0\d|^\d+\.\d+/.test(data)) {
+      return null;
+  }
+  return null;
+}
+
+type AliasParts = { alias?: string, width?: string, height?: string, style?: string };
+function parseAlias(input: string):AliasParts {
+  const result:AliasParts = {};
+  const parts = input.split('|').map(part => part.trim());
+
+  switch (parts.length) {
+      case 1:
+          const singleMatch = getDimensionsFromAliasString(parts[0]);
+          if (singleMatch) {
+              return singleMatch; // Return dimensions if valid
+          }
+          result.style = parts[0]; // Otherwise, return as style
+          break;
+
+      case 2:
+          const firstDim = getDimensionsFromAliasString(parts[0]);
+          const secondDim = getDimensionsFromAliasString(parts[1]);
+
+          if (secondDim) {
+              result.alias = parts[0];
+              result.width = secondDim.width;
+              result.height = secondDim.height;
+          } else if (firstDim) {
+              result.width = firstDim.width;
+              result.height = firstDim.height;
+              result.style = parts[1]; // Second part is style
+          } else {
+              result.alias = parts[0];
+              result.style = parts[1]; // Assuming second part is style
+          }
+          break;
+
+      case 3:
+          const middleMatch = getDimensionsFromAliasString(parts[1]);
+          if (middleMatch) {
+              result.alias = parts[0];
+              result.width = middleMatch.width;
+              result.height = middleMatch.height;
+              result.style = parts[2];
+          } else {
+              result.alias = parts[0];
+              result.style = parts[2]; // Last part is style
+          }
+          break;
+
+      default:
+          const secondValue = getDimensionsFromAliasString(parts[1]);
+          if (secondValue) {
+              result.alias = parts[0];
+              result.width = secondValue.width;
+              result.height = secondValue.height;
+              result.style = parts[parts.length - 1]; // Last part is style
+          } else {
+              result.alias = parts[0];
+              result.style = parts[parts.length - 1]; // Last part is style
+          }
+          break;
+  }
+
+  // Clean up the result to remove undefined properties
+  Object.keys(result).forEach((key: keyof AliasParts) => {
+    if (result[key] === undefined) {
+        delete result[key];
+    }
+  });
+
+  return result;
+}
+
 const processAltText = (
   fname: string,
   alt:string,
@@ -596,19 +692,11 @@ const processAltText = (
 ) => {
   (process.env.NODE_ENV === 'development') && DEBUGGING && debug(processAltText, `MarkdownPostProcessor.ts > processAltText`);
   if (alt && !alt.startsWith(fname)) {
-    //2:width, 3:height, 4:style  12        3           4
-    const parts = alt.match(/[^\|\d]*\|?((\d*%?)x?(\d*%?))?\|?(.*)/);
-    attr.fwidth = parts[2] ?? attr.fwidth;
-    attr.fheight = parts[3] ?? attr.fheight;
-    if (parts[4] && !parts[4].startsWith(fname)) {
-      attr.style = [`excalidraw-svg${`-${parts[4]}`}`];
-    }
-    if (
-      (!parts[4] || parts[4]==="") &&
-      (!parts[2] || parts[2]==="") &&
-      parts[0] && parts[0] !== ""
-    ) {
-      attr.style = [`excalidraw-svg${`-${parts[0]}`}`];
+    const aliasParts = parseAlias(alt);
+    attr.fwidth = aliasParts.width ?? attr.fwidth;
+    attr.fheight = aliasParts.height ?? attr.fheight;
+    if (aliasParts.style && !aliasParts.style.startsWith(fname)) {
+      attr.style = [`excalidraw-svg${`-${aliasParts.style}`}`];
     }
   }
 }

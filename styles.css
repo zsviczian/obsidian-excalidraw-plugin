@@ -647,3 +647,7 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 .excalidraw textarea.ttd-dialog-input {
   caret-color: var(--excalidraw-caret-color);
 }
+
+.excalidraw .ToolIcon_type_button {
+  color: var(--text-primary-color);
+}

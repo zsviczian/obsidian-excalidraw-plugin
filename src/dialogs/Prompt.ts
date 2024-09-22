@@ -720,7 +720,7 @@ export async function linkPrompt (
   message: string = "Select link to open",
 ):Promise<[file:TFile, linkText:string, subpath: string]> {
   const linksArray = REGEX_LINK.getResList(linkText);
-  const tagsArray = REGEX_TAGS.getResList(linkText);
+  const tagsArray = REGEX_TAGS.getResList(linkText.replaceAll(/([^\s])#/g,"$1 "));
   let subpath: string = null;
   let file: TFile = null;
   let parts = linksArray[0] ?? tagsArray[0];

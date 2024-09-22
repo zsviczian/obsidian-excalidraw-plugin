@@ -3434,7 +3434,7 @@ export const getFrameElementsMatchingQuery = (
     el.type === "frame" && 
     query.some((q) => {
       if (exactMatch) {
-        const text = el.name.toLowerCase().split("\n")[0].trim();
+        const text = el.name?.toLowerCase().split("\n")[0].trim() ?? "";
         const m = text.match(/^#*(# .*)/);
         if (!m || m.length !== 2) {
           return false;
