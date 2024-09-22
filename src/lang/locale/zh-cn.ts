@@ -128,7 +128,10 @@ export default {
   OPEN_LINK: "打开所选元素里的链接 \n（按住 Shift 在新面板打开）",
   EXPORT_EXCALIDRAW: "导出为 .excalidraw 文件（旧版绘图文件格式）",
   LINK_BUTTON_CLICK_NO_TEXT:
-    "请选择一个含有链接的图形或文本元素。",
+    "请选择一个包含内部或外部链接的元素。\n",
+  LINEAR_ELEMENT_LINK_CLICK_ERROR:
+    "箭头和线元素的链接无法通过 " + labelCTRL() + " + 点击元素来导航，因为这也会激活线编辑器。\n" +
+    "请使用右键上下文菜单打开链接，或点击元素右上角的链接指示器。\n",
   FILENAME_INVALID_CHARS:
     '文件名不能含有以下符号： * " \\  < > : | ? #',
   FORCE_SAVE:
