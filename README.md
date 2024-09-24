@@ -104,11 +104,13 @@ Plugin settings are grouped into the following sections:
   - Via the template, you can customize the color palette used by Excalidraw.
     - Switch to Markdown view.
     - Scroll down to the bottom of the file and find `"AppState": {`.
-    - Find `"customColorPalette": {` at the end of the AppState section.
-    - You may specify the 3 palettes used in Excalidraw by adding any or all of the following 3 variables:
-        - `"canvasBackground":[], "elementBackground":[], "elementStroke": []`.
-    - Add a comma-separated list of valid HTML colors (e.g. `#FF0000` for red).
-        in the array for each of the variables.
+    - Find `"colorPalette": {` at the end of the AppState section.
+        - You may specify the 3 palettes used in Excalidraw by adding any or all of the following 3 variables:
+            - `"canvasBackground":[], "elementBackground":[], "elementStroke": []`.
+            - Add a comma-separated list of valid HTML colors (e.g. `#FF0000` for red) in the array for each of the variables.
+        - To change the previewed colors, a `"topPicks": {` may be specified containing the same three keys:
+            - `"canvasBackground":[], "elementBackground":[], "elementStroke": []`.
+            - Note that the corresponding arrays must contain 5 elements.
     - See my videos above for further help.
 
 #### Export
