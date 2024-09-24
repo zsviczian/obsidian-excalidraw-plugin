@@ -100,7 +100,7 @@ Plugin settings are grouped into the following sections:
 
 #### Templates
 
-- Template for new drawings. The template will restore stroke properties. This means you can set up defaults in your template for stroke color, stroke width, opacity, font family, font size, fill style, stroke style, etc. This also applies to ExcalidrawAutomate.
+- Template for new drawings. The template will restore stroke properties. This means you can set up defaults in your template for stroke color, stroke width, opacity, font family, font size, fill style, stroke style, etc. This also applies to ExcalidrawAutomate. With versions 1.6.13 or higher make sure to enable "Decompress Excalidraw JSON in Markdown View" in the settings before editing the JSON in the template. This can be disabled after the canges are performed.
   - Via the template, you can customize the color palette used by Excalidraw.
     - Switch to Markdown view.
     - Scroll down to the bottom of the file and find `"AppState": {`.
@@ -229,6 +229,7 @@ For more details, see this [video](https://youtu.be/yZQoJg2RCKI)
     - `excalidraw-export-dark`: true == Dark mode / false == light mode.
     - `excalidraw-export-padding`: Specify the export padding for the image.
     - `excalidraw-export-pngscale`: This only affects export to PNG. Specify the export scale for the image. The typical range is between 0.5 and 5, but you can experiment with other values as well.
+- Since 1.6.13, enable "Decompress Excalidraw JSON in Markdown View" in the settings if you want to change any JSON content.
 
 ### Embed complete markdown files into your drawings
 
