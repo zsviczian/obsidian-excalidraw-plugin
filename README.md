@@ -100,15 +100,17 @@ Plugin settings are grouped into the following sections:
 
 #### Templates
 
-- Template for new drawings. The template will restore stroke properties. This means you can set up defaults in your template for stroke color, stroke width, opacity, font family, font size, fill style, stroke style, etc. This also applies to ExcalidrawAutomate.
+- Template for new drawings. The template will restore stroke properties. This means you can set up defaults in your template for stroke color, stroke width, opacity, font family, font size, fill style, stroke style, etc. This also applies to ExcalidrawAutomate. With versions 1.6.13 or higher make sure to enable "Decompress Excalidraw JSON in Markdown View" in the settings before editing the JSON in the template. This can be disabled after the canges are performed.
   - Via the template, you can customize the color palette used by Excalidraw.
     - Switch to Markdown view.
     - Scroll down to the bottom of the file and find `"AppState": {`.
-    - Find `"customColorPalette": {` at the end of the AppState section.
-    - You may specify the 3 palettes used in Excalidraw by adding any or all of the following 3 variables:
-        - `"canvasBackground":[], "elementBackground":[], "elementStroke": []`.
-    - Add a comma-separated list of valid HTML colors (e.g. `#FF0000` for red).
-        in the array for each of the variables.
+    - Find `"colorPalette": {` at the end of the AppState section.
+        - You may specify the 3 palettes used in Excalidraw by adding any or all of the following 3 variables:
+            - `"canvasBackground":[], "elementBackground":[], "elementStroke": []`.
+            - Add a comma-separated list of valid HTML colors (e.g. `#FF0000` for red) in the array for each of the variables.
+        - To change the previewed colors, a `"topPicks": {` may be specified containing the same three keys:
+            - `"canvasBackground":[], "elementBackground":[], "elementStroke": []`.
+            - Note that the corresponding arrays must contain 5 elements.
     - See my videos above for further help.
 
 #### Export
@@ -227,6 +229,7 @@ For more details, see this [video](https://youtu.be/yZQoJg2RCKI)
     - `excalidraw-export-dark`: true == Dark mode / false == light mode.
     - `excalidraw-export-padding`: Specify the export padding for the image.
     - `excalidraw-export-pngscale`: This only affects export to PNG. Specify the export scale for the image. The typical range is between 0.5 and 5, but you can experiment with other values as well.
+- Since 1.6.13, enable "Decompress Excalidraw JSON in Markdown View" in the settings if you want to change any JSON content.
 
 ### Embed complete markdown files into your drawings
 
