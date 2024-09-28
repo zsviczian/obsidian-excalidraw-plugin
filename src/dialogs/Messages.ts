@@ -17,6 +17,31 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.5.1": `
+## New
+- Excalidraw will now save images using the filename from the file system when adding an image via the image tool (in the top toolbar).
+- Increased the maximum image size from a width/height of 1440 to 2880 when adding an image via the image tool in the top toolbar.
+- Flip arrowheads: If you have an arrow bound to elements, select only the arrow (not the bound elements) and press SHIFT+H or SHIFT+V to swap the arrowheads. [#8525](https://github.com/excalidraw/excalidraw/pull/8525)
+
+## Fixed
+- Zoom
+  - "Zoom to Fit" did not work correctly when multiple Obsidian tabs were open, and Excalidraw was in a lower tab. Additionally, there was an offset when the left side panel was open, especially if the panel was relatively large compared to the canvas area. [#2039](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2039)
+  - SHIFT+1 and SHIFT+2 will now honor the max zoom setting in Plugin Settings.
+- Adding images using the image tool in the toolbar was unreliable. Sometimes it worked, sometimes it didn't, depending on whether the drawing had unsaved changes. Autosave was causing the issue with the image tool. [#1992](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1992)
+- Frame related issues
+  - Fixed an issue where links to the back of the note were broken if an unnamed frame was present in the scene. [#2027](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2027)
+  - Frame transclusion was not working when there was a LaTeX equation anywhere in the scene. [#2028](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2028)
+  - Frame settings and rounded image corners were not honored when exporting (and auto-exporting) SVGs. [#2026](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2026)
+- Resolved issues with the width, height, and style parsing of Excalidraw drawings embedded in Markdown notes. ${String.fromCharCode(96)}![[my file|10 - my alias]]${String.fromCharCode(96)} was incorrectly parsed as a width of 10 and a style of "- my alias."
+- Links
+  - When navigating element links, selecting a #tag from the link-list did not open the Obsidian tag in the search.
+  - False-positive tag results in second-order links list.
+  - Arrow label links did not work as expected. Since CTRL/CMD+Click is used in Excalidraw to start the line editor, the solution is not straightforward from a UX perspective. [#2023](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2023)
+    - You can open arrow links by ctrl+clicking on the label itself. If the arrow or line element contains the link, ctrl+click on the link indicator in the top right.
+    - You can also right-click the linear element and select "Open Link" from the context menu.
+- Various elbow-arrow fixes and QoL improvements from excalidraw.com [#8324](https://github.com/excalidraw/excalidraw/pull/8324), [#8448](https://github.com/excalidraw/excalidraw/pull/8448), [#8440](https://github.com/excalidraw/excalidraw/pull/8440)
+
+`,
 "2.5.0": `
 The new [Community Wiki](https://excalidraw-obsidian.online/Hobbies/Excalidraw+Blog/WIKI/Welcome+to+the+WIKI) is waiting for your contribution!
 
