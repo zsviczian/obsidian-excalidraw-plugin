@@ -23,6 +23,9 @@ export function updateElementIdsInScene(
       boundEl.boundElements?.filter(x=>x.id === elementToChange.id).forEach( x => {
         (x.id as Mutable<string>) = newID;
       });
+      if(boundEl.type === "text") {
+        boundEl.containerId = newID; 
+      }
       if(boundEl.type === "arrow") {
         const arrow = boundEl as Mutable<ExcalidrawArrowElement>;
         if(arrow.startBinding?.elementId === elementToChange.id) {

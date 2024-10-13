@@ -3444,7 +3444,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       toDelete.forEach((k) => delete files[k]);
     }
 
-    const activeTool = st.activeTool;
+    const activeTool = {...st.activeTool};
     if(!["freedraw","hand"].includes(activeTool.type)) {
       activeTool.type = "selection";
     }

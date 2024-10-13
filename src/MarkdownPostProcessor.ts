@@ -29,6 +29,7 @@ import { FILENAMEPARTS, PreviewImageType } from "./utils/UtilTypes";
 import { CustomMutationObserver, debug, DEBUGGING } from "./utils/DebugHelper";
 import { getExcalidrawFileForwardLinks } from "./utils/ExcalidrawViewUtils";
 import { linkPrompt } from "./dialogs/Prompt";
+import { isHTMLElement } from "./utils/typechecks";
 
 interface imgElementAttributes {
   file?: TFile;
@@ -405,12 +406,13 @@ const createImgElement = async (
 
   let timer:number;
   const clickEvent = (ev:PointerEvent) => {
-    if(!(ev.target instanceof Element)) {
+    if (!isHTMLElement(ev.target)) {
       return;
     }
-    const containerElement = ev.target.hasClass("excalidraw-embedded-img")
+    const targetElement = ev.target as HTMLElement;
+    const containerElement = targetElement.hasClass("excalidraw-embedded-img")
       ? ev.target
-      : getParentOfClass(ev.target, "excalidraw-embedded-img");
+      : getParentOfClass(targetElement, "excalidraw-embedded-img");
     if (!containerElement) {
       return;
     }

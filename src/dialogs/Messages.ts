@@ -17,6 +17,18 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.5.2": `
+## Fixed
+- Text became disconnected from sticky notes (rectangle/ellipse/diamond + text) if the sticky note contained a link (e.g., URL or wiki link), and in some cases, triggered a save error warning. [#2054](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2054)
+- Long-clicking to open an Excalidraw drawing from a markdown note did not work when the note was in an Obsidian pop-out window.
+- Active tool was deactivated after autosave, requiring the user to reselect the tool.
+
+## Minor changes to default settings
+- I adjusted some of the default settings. This change only affects new installs of Excalidraw; existing installs and settings remain unchanged:
+  - **Reuse Adjacent Pane** is now the default for opening new drawings. Excalidraw will try to open the drawing in the most recently used adjacent pane, if available.
+  - **Focus on Existing Tab** is the default for reopening an already open drawing. Excalidraw will switch to the existing tab where the drawing is open, instead of creating a new one.
+  - **Autosave Interval** is now set to a default value of 1 minute on Desktop and 30 seconds on mobile platforms.
+`,
 "2.5.1": `
 ## New
 - Excalidraw will now save images using the filename from the file system when adding an image via the image tool (in the top toolbar).
