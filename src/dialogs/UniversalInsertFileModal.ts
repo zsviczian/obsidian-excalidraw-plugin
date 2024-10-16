@@ -189,6 +189,7 @@ export class UniversalInsertFileModal extends Modal {
                 `[[${path}${sectionPicker.selectEl.value}]]`,
               )]
             );
+            ea.destroy();
             this.close();
           })
         actionIFrame = button;
@@ -220,6 +221,7 @@ export class UniversalInsertFileModal extends Modal {
                 ea.isExcalidrawFile(file) ? !anchorTo100 : undefined,
               )]
             );
+            ea.destroy();
             this.close();
           })
         actionImage = button;
@@ -271,5 +273,8 @@ export class UniversalInsertFileModal extends Modal {
 
   onClose(): void {
     this.view.ownerWindow.removeEventListener("keydown", this.onKeyDown);
+    this.view = null;
+    this.file = null;
+    this.plugin = null;
   }
 }

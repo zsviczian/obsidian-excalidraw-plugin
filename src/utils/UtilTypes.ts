@@ -5,8 +5,9 @@ export type FILENAMEPARTS = {
   hasTaskbone: boolean,
   hasArearef: boolean,
   hasFrameref: boolean,
-  blockref: string,
+  hasClippedFrameref: boolean,
   hasSectionref: boolean,
+  blockref: string,
   sectionref: string,
   linkpartReference: string,
   linkpartAlias: string

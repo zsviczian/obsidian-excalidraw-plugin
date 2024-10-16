@@ -1,14 +1,18 @@
 import { ExcalidrawElement, ExcalidrawImageElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { requireApiVersion } from "obsidian";
 
-export const getMermaidImageElements = (elements: ExcalidrawElement[]):ExcalidrawImageElement[] =>
-  elements
+export function getMermaidImageElements (elements: ExcalidrawElement[]):ExcalidrawImageElement[] {
+  return elements
   ? elements.filter((element) =>
     element.type === "image" && element.customData?.mermaidText
   ) as ExcalidrawImageElement[]
   : [];
+}
  
-export const getMermaidText = (element: ExcalidrawElement):string =>
-  element.customData?.mermaidText;
+export function getMermaidText (element: ExcalidrawElement):string {
+  return element.customData?.mermaidText;
+}
 
-export const shouldRenderMermaid = ():boolean => requireApiVersion("1.4.14");
+export function shouldRenderMermaid():boolean {
+  return requireApiVersion("1.4.14");
+}

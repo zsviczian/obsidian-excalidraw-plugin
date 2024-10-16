@@ -7,9 +7,14 @@ import { getEA } from "src";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 
 export class ImportSVGDialog extends FuzzySuggestModal<TFile> {
-  public app: App;
   public plugin: ExcalidrawPlugin;
   private view: ExcalidrawView;
+
+  destroy() {
+    this.app = null;
+    this.plugin = null;
+    this.view = null;
+  }
 
   constructor(plugin: ExcalidrawPlugin) {
     super(plugin.app);
@@ -38,14 +43,23 @@ export class ImportSVGDialog extends FuzzySuggestModal<TFile> {
     return item.path;
   }
 
-  async onChooseItem(item: TFile, event: KeyboardEvent): Promise<void> {
+  async onChooseItem(item: TFile, _: KeyboardEvent): Promise<void> {
     if(!item) return;
     const ea = getEA(this.view) as ExcalidrawAutomate;
-    const svg = await app.vault.read(item);
+    const svg = await this.app.vault.read(item);
     if(!svg || svg === "") return;
     ea.importSVG(svg);
     ea.addToGroup(ea.getElements().map(el=>el.id));
-    ea.addElementsToView(true, true, true,true);
+    await ea.addElementsToView(true, true, true,true);
+    ea.destroy();
+  }
+
+  onClose(): void {
+    //deley this.view destruction until onChooseItem is called
+    window.setTimeout(() => {
+      this.view = null;
+    });
+    super.onClose();
   }
 
   public start(view: ExcalidrawView) {

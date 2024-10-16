@@ -1,0 +1,69 @@
+name: Feature request
+description: Request a new feature for the Excalidraw plugin.
+title: "FR: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        🛠️ **Important: Please Read Before Submitting a Feature Request** 🛠️
+
+        I develop Excalidraw primarily as a hobby, and I prioritize features that I personally use regularly. Features I don't use often break without me noticing, which is why the plugin is as stable as it is—because I rely on it every day. 
+
+        **Your task isn't just to describe the feature you want, but to sell me on the idea**. If I'm not convinced that the feature would significantly benefit my own workflow, it's unlikely I'll spend my free hobby time on it. 
+
+        When creating your feature request:
+        - **Provide real-life usage scenarios**: How will this feature help you? How do you imagine using it in practice? 
+        - **Sell the idea**: Convince me that I need this feature too.
+        - **Include supporting materials**: Reference other solutions? Include relevant screenshots, screen recordings, and links. The more work I need to do to understand your request, the less likely it is to be implemented.
+
+        **Additional Guidelines:**
+        - **Excalidraw Core Features**: If your request relates to core Excalidraw features, and not the Obsidian integration specifically, please raise it with the Excalidraw product team here: [Excalidraw Issues](https://github.com/excalidraw/excalidraw/issues).
+        - **Cross-Platform Compatibility**: Obsidian and Excalidraw are cross-platform solutions. I cannot develop platform-specific features like Apple Pencil or Samsung S-Pen support due to technical limitations. Please only request features that make sense across all platforms (Windows, Linux, ChromeOS, macOS, Android, iOS).
+
+        Remember: You're not asking from a genie. You're pitching to someone who will need to spend hours (even for small changes) on testing, releasing, documenting, and supporting the feature. If you don't sell it well, it won't get done.
+
+        **Explore Scripting First:**  
+        Many feature requests can already be achieved with scripts using Excalidraw Automate. While the documentation is somewhat dated, there are nearly a hundred published scripts available. With a little determination, you can explore the possibilities. Feeding relevant scripts into GPT can often generate a working solution. Start here: [Excalidraw Automate Documentation](https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html).
+
+  - type: textarea
+    id: problem_description
+    attributes:
+      label: "Is your feature request related to a problem? Please describe."
+      description: "Provide a clear and concise description of the problem. Ex. I'm always frustrated when..."
+      placeholder: "Describe the problem you are facing..."
+
+  - type: textarea
+    id: solution_description
+    attributes:
+      label: "Describe the solution you'd like"
+      description: "Provide a clear and concise description of what you want to happen."
+      placeholder: "Describe the feature you are requesting..."
+
+  - type: textarea
+    id: usage_scenario
+    attributes:
+      label: "Real-life usage scenarios"
+      description: "Provide specific examples of how you would use this feature. Convince me that this is a feature I need in my own workflow."
+      placeholder: |
+        1. In this scenario, I would use the feature to...
+        2. Another use case is when I...
+
+  - type: textarea
+    id: alternatives_considered
+    attributes:
+      label: "Describe alternatives you've considered"
+      description: "Provide a clear and concise description of any alternative solutions or features you've considered."
+      placeholder: "Describe any alternative approaches you have considered..."
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: "Additional context"
+      description: "Include any other context, screenshots, or references about the feature request."
+      placeholder: "Include screenshots, recordings, or other supporting material..."
+
+  - type: markdown
+    attributes:
+      value: |
+        **Attachments: Make your case visually!**  
+        Supporting images, screenshots, or screen recordings are critical for helping me understand your request. Drag and drop them into the comment area or directly into any of the text fields above. Every bit of detail increases the chance of your request being understood and prioritized.

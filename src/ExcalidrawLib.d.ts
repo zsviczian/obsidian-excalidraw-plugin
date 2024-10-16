@@ -1,8 +1,9 @@
 import { RestoredDataState } from "@zsviczian/excalidraw/types/excalidraw/data/restore";
 import { ImportedDataState } from "@zsviczian/excalidraw/types/excalidraw/data/types";
 import { BoundingBox } from "@zsviczian/excalidraw/types/excalidraw/element/bounds";
-import { ElementsMap, ExcalidrawBindableElement, ExcalidrawElement, ExcalidrawFrameElement, ExcalidrawTextContainer, ExcalidrawTextElement, FontFamilyValues, FontString, NonDeleted, NonDeletedExcalidrawElement, Theme } from "@zsviczian/excalidraw/types/excalidraw/element/types";
-import { AppState, BinaryFiles, ExportOpts, Point, Zoom } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { ElementsMap, ExcalidrawBindableElement, ExcalidrawElement, ExcalidrawFrameElement, ExcalidrawFrameLikeElement, ExcalidrawTextContainer, ExcalidrawTextElement, FontFamilyValues, FontString, NonDeleted, NonDeletedExcalidrawElement, Theme } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { FontMetadata } from "@zsviczian/excalidraw/types/excalidraw/fonts/metadata";
+import { AppState, BinaryFiles, DataURL, GenerateDiagramToCode, Point, Zoom } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 
 type EmbeddedLink =
@@ -26,6 +27,7 @@ declare namespace ExcalidrawLib {
     appState?: Partial<Omit<AppState, "offsetTop" | "offsetLeft">>;
     files: BinaryFiles | null;
     maxWidthOrHeight?: number;
+    exportingFrame?: ExcalidrawFrameLikeElement | null;
     getDimensions?: (
       width: number,
       height: number,
@@ -46,6 +48,7 @@ declare namespace ExcalidrawLib {
     exportPadding?: number;
     exportingFrame: ExcalidrawFrameElement | null | undefined;
     renderEmbeddables?: boolean;
+    skipInliningFonts?: boolean;
   }): Promise<SVGSVGElement>;
 
   function sceneCoordsToViewportCoords(
@@ -114,10 +117,9 @@ declare namespace ExcalidrawLib {
     text: string,
     font: FontString,
     lineHeight: number,
-  ): { width: number; height: number; baseline: number };
+  ): { width: number; height: number; };
 
-  function getDefaultLineHeight(fontFamily: FontFamilyValues): number;
-
+  function getLineHeight (fontFamily: FontFamilyValues):number;
   function wrapText(text: string, font: FontString, maxWidth: number): string;
 
   function getFontString({
@@ -127,6 +129,13 @@ declare namespace ExcalidrawLib {
     fontSize: number;
     fontFamily: FontFamilyValues;
   }): FontString;
+
+
+  function getFontFamilyString ({
+    fontFamily,
+  }: {
+    fontFamily: number;
+  }): string;
 
   function getBoundTextMaxWidth(container: ExcalidrawElement): number;
 
@@ -155,4 +164,27 @@ declare namespace ExcalidrawLib {
     files?: any;
     error?: string;
   } | undefined>;
+
+  var getSceneVersion: any;
+  var Excalidraw: any;
+  var MainMenu: any;
+  var WelcomeScreen: any;
+  var TTDDialogTrigger: any;
+  var TTDDialog: any;
+  var DiagramToCodePlugin: (props: {
+    generate: GenerateDiagramToCode;
+  }) => any;
+  
+  function getDataURL(file: Blob | File): Promise<DataURL>;
+  function destroyObsidianUtils(): void;
+  function registerLocalFont(fontMetrics: FontMetadata, uri: string): void;
+  function getFontFamilies(): string[];
+  function registerFontsInCSS(): Promise<void>;
+  function getCSSFontDefinition(fontFamily: number): Promise<string>;
+  function getTextFromElements (
+    elements: readonly ExcalidrawElement[],
+    separator?: string,
+  ): string;
+  function safelyParseJSON (json: string): Record<string, any> | null;
 }
+

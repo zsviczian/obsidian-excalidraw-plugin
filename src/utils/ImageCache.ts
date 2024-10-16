@@ -21,11 +21,13 @@ export type ImageKey = {
   previewImageType: PreviewImageType;
   scale: number;
   isTransparent: boolean;
+  inlineFonts: boolean;
 } & FILENAMEPARTS;
 
 const getKey = (key: ImageKey): string =>
   `${key.filepath}#${key.blockref??""}#${key.sectionref??""}#${key.isDark ? 1 : 0}#${
-    key.hasGroupref}#${key.hasArearef}#${key.hasFrameref}#${key.hasSectionref}#${
+    key.hasGroupref}#${key.hasArearef}#${key.hasFrameref}#${key.hasClippedFrameref}#${
+    key.hasSectionref}#${key.inlineFonts}#${
     key.previewImageType === PreviewImageType.SVGIMG
       ? 1
       : key.previewImageType === PreviewImageType.PNG
@@ -43,6 +45,19 @@ class ImageCache {
   private app: App;
   public initializationNotice: boolean = false;
   private obsidanURLCache = new Map<string, string>();
+  private purgeInvalidCacheTimer: number = null;
+  private purgeInvalidBackupTimer: number = null;
+
+  public destroy(): void {
+    this.isInitializing = true;
+    if(this.purgeInvalidCacheTimer) clearTimeout(this.purgeInvalidCacheTimer);
+    if(this.purgeInvalidBackupTimer) clearTimeout(this.purgeInvalidBackupTimer);
+    this.db = null;
+    this.plugin = null;
+    this.app = null;
+    this.obsidanURLCache.clear();
+    this.obsidanURLCache = null;
+  }
 
   constructor(dbName: string, cacheStoreName: string, backupStoreName: string) {
     this.dbName = dbName;
@@ -129,8 +144,15 @@ class ImageCache {
         });
       }
 
-      setTimeout(async ()=>this.purgeInvalidCacheFiles(), 60000);
-      setTimeout(async ()=>this.purgeInvalidBackupFiles(), 120000);
+      this.purgeInvalidCacheTimer = window.setTimeout(async ()=>{
+        this.purgeInvalidCacheTimer = null;
+        this.purgeInvalidCacheFiles();
+      }, 60000);
+
+      this.purgeInvalidBackupTimer = window.setTimeout(async ()=>{
+        this.purgeInvalidBackupTimer = null;
+        this.purgeInvalidBackupFiles();
+      }, 120000);
     } finally {
       this.isInitializing = false;
       if(this.initializationNotice) {
@@ -152,7 +174,7 @@ class ImageCache {
         const cursor = (event.target as IDBRequest<IDBCursorWithValue | null>).result;
         if(cursor) {
           const key = cursor.key as string;
-          const isLegacyKey = key.replaceAll(/[^#]/g,"").length < 9; // introduced hasGroupref, etc. in 1.9.28
+          const isLegacyKey = key.split("#").length-1 < 12; // introduced hasGroupref, etc. in 1.9.28 // introduced hasClippedFrameref in 2.2.10 //introduced inlineFonts 2.2.11
           const filepath = key.split("#")[0];
           const fileExists = files.some((f: TFile) => f.path === filepath);
           const file = fileExists ? files.find((f: TFile) => f.path === filepath) : null;
@@ -231,16 +253,16 @@ class ImageCache {
     });
   }
 
-  private async getObjectStore(mode: IDBTransactionMode, storeName: string): Promise<IDBObjectStore> {
+  private getObjectStore(mode: IDBTransactionMode, storeName: string): IDBObjectStore {
     const transaction = this.db!.transaction(storeName, mode);
     return transaction.objectStore(storeName);
   }
 
   private async getCacheData(key: string): Promise<FileCacheData | null> {
-    const store = await this.getObjectStore("readonly", this.cacheStoreName);
+    const store = this.getObjectStore("readonly", this.cacheStoreName);
     const request = store.get(key);
 
-    return new Promise<FileCacheData | null>((resolve, reject) => {
+    return await new Promise<FileCacheData | null>((resolve, reject) => {
       request.onsuccess = () => {
         const result = request.result as FileCacheData;
         resolve(result || null);
@@ -253,7 +275,7 @@ class ImageCache {
   }
 
   private async getBackupData(key: BackupKey): Promise<BackupData | null> {
-    const store = await this.getObjectStore("readonly", this.backupStoreName);
+    const store = this.getObjectStore("readonly", this.backupStoreName);
     const request = store.get(key);
 
     return new Promise<BackupData | null>((resolve, reject) => {
@@ -286,7 +308,9 @@ class ImageCache {
       ? await this.getCacheData(key)
       : await Promise.race([
           this.getCacheData(key),
-          new Promise<undefined>((_,reject) => setTimeout(() => reject(undefined), 100))
+          new Promise<undefined>((_,reject) => setTimeout(() => {
+            reject(undefined);
+          }, 100))
         ]);
       this.fullyInitialized = true;
       if(!cachedData) return undefined;
@@ -321,6 +345,7 @@ class ImageCache {
     return this.getBackupData(filepath);
   }
 
+  //cache SVG should have the width and height parameters and not the embedded font
   public addImageToCache(key_: ImageKey, obsidianURL: string, image: Blob|SVGSVGElement): void {
     if (!this.isReady()) {
       return; // Database not initialized yet

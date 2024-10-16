@@ -1,6 +1,6 @@
 # [◀ Excalidraw Automate How To](../readme.md)
 ## Generating a simple mindmap from a text outline
-This is a slightly more elaborate example. This will generate an a mindmap from a tabulated outline.
+This is a slightly more elaborate example. This will generate a mindmap from a tabulated outline.
 
 ### Output
 ![Drawing 2021-05-05 20 52 34](https://user-images.githubusercontent.com/14358394/117194124-00a69d00-ade4-11eb-8b75-5e18a9cbc3cd.png)

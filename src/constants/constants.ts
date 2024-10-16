@@ -1,5 +1,5 @@
 import { customAlphabet } from "nanoid";
-import { DeviceType } from "../types";
+import { DeviceType } from "../types/types";
 import { ExcalidrawLib } from "../ExcalidrawLib";
 import { moment } from "obsidian";
 import ExcalidrawPlugin from "src/main";
@@ -9,6 +9,11 @@ export let EXCALIDRAW_PLUGIN: ExcalidrawPlugin = null;
 export const setExcalidrawPlugin = (plugin: ExcalidrawPlugin) => {
   EXCALIDRAW_PLUGIN = plugin;
 };
+export const THEME = {
+  LIGHT: "light",
+  DARK: "dark",
+} as const;
+
 const MD_EXCALIDRAW = "# Excalidraw Data";
 const MD_TEXTELEMENTS = "## Text Elements";
 const MD_ELEMENTLINKS = "## Element Links";
@@ -85,7 +90,7 @@ export const {
   getCommonBoundingBox,
   getMaximumGroups,
   measureText,
-  getDefaultLineHeight,
+  getLineHeight,
   wrapText, 
   getFontString, 
   getBoundTextMaxWidth, 
@@ -94,9 +99,13 @@ export const {
   mutateElement,
   restore,
   mermaidToExcalidraw,
+  getFontFamilyString,
   getContainerElement,
   refreshTextDimensions,
+  getCSSFontDefinition,
 } = excalidrawLib;
+
+export const FONTS_STYLE_ID = "excalidraw-custom-fonts";
 
 export function JSON_parse(x: string): any {
   return JSON.parse(x.replaceAll("&#91;", "["));
@@ -112,7 +121,7 @@ export const DEVICE: DeviceType = {
   isMacOS: document.body.hasClass("mod-macos") && ! document.body.hasClass("is-ios"),
   isWindows: document.body.hasClass("mod-windows"),
   isIOS: document.body.hasClass("is-ios"),
-  isAndroid: document.body.hasClass("is-android")
+  isAndroid: document.body.hasClass("is-android"),
 };
 
 export const ROOTELEMENTSIZE = (() => {

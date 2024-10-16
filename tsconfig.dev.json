@@ -2,9 +2,9 @@
   "compilerOptions": {
     "baseUrl": ".",
     "sourceMap": false,
-    "module": "ES2015",
-    "target": "es2017", //es2017 because script engine requires for async execution
-    "allowJs": true,
+    "module": "es2020",
+    "target": "es2022", //min es2017 because script engine requires for async execution and min es2018 for named capture groups
+    "allowJs": false,
     "noImplicitAny": true,
     "moduleResolution": "node",
     "esModuleInterop": true,
@@ -13,16 +13,15 @@
     "lib": [
       "dom",
       "scripthost",
-      "es2015",
-      "esnext",
+      "es2022",
       "DOM.Iterable"
     ],
     "jsx": "react",
-    "inlineSourceMap": true
+    "inlineSourceMap": true,
   },
   "include": [
     "**/*.ts",
     "**/*.tsx", "src/Dialogs/OpenDrawing.ts",
-    "src/types.d.ts"
+    "src/types/types.d.ts",
   ]
 }

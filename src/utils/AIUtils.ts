@@ -250,3 +250,14 @@ export const extractCodeBlocks = (markdown: string): { data: string, type: strin
 
   return result;
 }
+
+export const errorHTML = (message: string) => `<html>
+  <body style="margin: 0; text-align: center">
+  <div style="display: flex; align-items: center; justify-content: center; flex-direction: column; height: 100vh; padding: 0 60px">
+    <div style="color:red">There was an error during generation</div>
+    </br>
+    </br>
+    <div>${message}</div>
+  </div>
+  </body>
+  </html>`;

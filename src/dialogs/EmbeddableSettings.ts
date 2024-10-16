@@ -62,7 +62,6 @@ export class EmbeddableSettings extends Modal {
       this.mdCustomData.borderColor = borderCM.stringHEX({alpha: false});
       this.mdCustomData.borderOpacity = element.opacity;
     }
-    
   }
 
   onOpen(): void {
@@ -73,7 +72,15 @@ export class EmbeddableSettings extends Modal {
 
   onClose() {
     this.containerEl.removeEventListener("keydown",this.onKeyDown);
+    this.plugin = null;
+    this.view = null;
+    this.file = null;
+    this.element = null;
+    this.ea.destroy();
+    this.ea = null;
+    this.mdCustomData = null;
   }
+
 
   async createForm() {
 
@@ -140,16 +147,14 @@ export class EmbeddableSettings extends Modal {
       button
         .setButtonText(t("PROMPT_BUTTON_CANCEL"))
         .setTooltip("ESC")
-        .onClick(() => {
-          this.close();
-        })
+        .onClick(this.close.bind(this))
     )
     .addButton(button =>
       button
         .setButtonText(t("PROMPT_BUTTON_OK"))
         .setTooltip("CTRL/Opt+Enter")
         .setCta()
-        .onClick(()=>this.applySettings())
+        .onClick(this.applySettings.bind(this))
     )
 
 
@@ -163,8 +168,6 @@ export class EmbeddableSettings extends Modal {
     this.containerEl.ownerDocument.addEventListener("keydown",onKeyDown);
   }
 
- 
-
   private async applySettings() {
     let dirty = false;
     const el = this.ea.getElement(this.element.id) as Mutable<ExcalidrawEmbeddableElement>;
@@ -174,16 +177,24 @@ export class EmbeddableSettings extends Modal {
         const fnparts = splitFolderAndFilename(newPathWithExt);
         const newPath = getNewUniqueFilepath(
           this.app.vault,
-          fnparts.folderpath,
           fnparts.filename,
+          fnparts.folderpath,
         );
-        await this.app.vault.rename(this.file,newPath);
-        el.link = this.element.link.replace(
-          /(\[\[)([^#\]]*)([^\]]*]])/,`$1${
-            this.plugin.app.metadataCache.fileToLinktext(
-              this.file,this.view.file.path,true)
-          }$3`);
-        dirty = true;
+        if(this.app.vault.getAbstractFileByPath(newPath)) {
+          new Notice("File rename failed. A file with this name already exists.\n"+newPath,10000);
+        } else {
+          try {
+            await this.app.fileManager.renameFile(this.file,newPath);
+            el.link = this.element.link.replace(
+              /(\[\[)([^#\]]*)([^\]]*]])/,`$1${
+                this.plugin.app.metadataCache.fileToLinktext(
+                  this.file,this.view.file.path,true)
+              }$3`);
+            dirty = true;
+          } catch(e) {
+            new Notice("File rename failed. "+e,10000);
+          }
+        }
       }
     }
     if(this.isYouTube && this.youtubeStart !== getYouTubeStartAt(this.element.link)) {
@@ -215,11 +226,12 @@ export class EmbeddableSettings extends Modal {
       (async() => {
         await this.ea.addElementsToView();
         //@ts-ignore
-        this.ea.viewUpdateScene({appState: {}});
+        this.ea.viewUpdateScene({appState: {}, storeAction: "update"});
+        this.close(); //close should only run once update scene is done
       })();
-
+    } else {
+      this.close();
     }
-    this.close();
   };
 }
 

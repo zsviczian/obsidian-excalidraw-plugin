@@ -33,7 +33,7 @@ export class ExportDialog extends Modal {
     private view: ExcalidrawView,
     private file: TFile,
   ) {
-    super(app);
+    super(plugin.app);
     this.ea = getEA(this.view);
     this.api = this.ea.getExcalidrawAPI() as ExcalidrawImperativeAPI;
     this.padding = getExportPadding(this.plugin,this.file);
@@ -45,6 +45,19 @@ export class ExportDialog extends Modal {
     this.saveToVault = true;
     this.transparent = !getWithBackground(this.plugin, this.file);
     this.saveSettings = false;
+  }
+
+  destroy() {
+    this.app = null;
+    this.plugin = null;
+    this.ea.destroy();
+    this.ea = null;
+    this.view = null;
+    this.file = null;
+    this.api = null;
+    this.theme = null;
+    this.selectedOnlySetting = null;
+    this.containerEl.remove();
   }
 
   onOpen(): void {

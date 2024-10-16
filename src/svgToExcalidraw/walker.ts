@@ -37,6 +37,7 @@ const SUPPORTED_TAGS = [
   "rect",
   "polyline",
   "polygon",
+  "switch",
 ];
 
 const nodeValidator = (node: Element): number => {
@@ -118,6 +119,18 @@ const getDefElWithCorrectAttrs = (defEl: Element, useEl: Element): Element => {
 const walkers = {
   svg: (args: WalkerArgs) => {
     walk(args, args.tw.nextNode());
+  },
+
+  switch: (args: WalkerArgs) => {
+    const nextArgs = {
+      ...args,
+      tw: createTreeWalker(args.tw.currentNode),
+      groups: [...args.groups, new Group(args.tw.currentNode as Element)],
+    };
+
+    walk(nextArgs, nextArgs.tw.nextNode());
+
+    walk(args, args.tw.nextSibling());
   },
 
   g: (args: WalkerArgs) => {

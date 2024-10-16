@@ -30,6 +30,15 @@ export const svgToExcalidraw = (svgString: string): ConversionResult => {
 
       walk({ tw, scene, groups, root: svgDOM }, tw.nextNode());
 
+      const hasVisibleElements = Boolean(scene.elements.find((el)=>el.opacity !== 0));
+      if (!hasVisibleElements) {
+        scene.elements.forEach((el) => {
+          el.opacity = 100;
+        });
+      }
+      scene.elements.forEach((el) => {
+        if(el.opacity <= 1) el.opacity = 100;
+      });
       content = scene.elements; //scene.toExJSON();
     }
 

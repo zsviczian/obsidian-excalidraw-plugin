@@ -33,8 +33,8 @@ const run = () => {
     ((typeof config.fillStyle === "undefined") || (el.fillStyle === config.fillStyle)) &&
     ((typeof config.fontFamily === "undefined") || (el.fontFamily === config.fontFamily)) &&
     ((typeof config.fontSize === "undefined") || (el.fontSize === config.fontSize)) &&
-	((typeof config.height === "undefined") || Math.abs(el.height - config.height) < 0.01) &&
-	((typeof config.width === "undefined") || Math.abs(el.width - config.width) < 0.01) &&
+	  ((typeof config.height === "undefined") || Math.abs(el.height - config.height) < 0.01) &&
+	  ((typeof config.width === "undefined") || Math.abs(el.width - config.width) < 0.01) &&
     ((typeof config.opacity === "undefined") || (el.opacity === config.opacity)) &&
     ((typeof config.roughness === "undefined") || (el.roughness === config.roughness)) &&
     ((typeof config.roundness === "undefined") || (el.roundness === config.roundness)) &&
@@ -56,7 +56,7 @@ const run = () => {
 const showInstructions = () => {
   const instructionsModal = new ea.obsidian.Modal(app);
   instructionsModal.onOpen = () => {
-    instructionsModal.contentEl.createEl("h2", {text: "Instructions"});
+  instructionsModal.contentEl.createEl("h2", {text: "Instructions"});
 	instructionsModal.contentEl.createEl("p", {text: "Step 1: Choose the attributes that you want the selected elements to match."});
 	instructionsModal.contentEl.createEl("p", {text: "Step 2: Select an action:"});
 	instructionsModal.contentEl.createEl("ul", {}, el => {
@@ -71,14 +71,14 @@ const showInstructions = () => {
 const selectAttributesToCopy = () => {
   const configModal = new ea.obsidian.Modal(app);
   configModal.onOpen = () => {
-    config = {};
+  config = {};
 	configModal.contentEl.createEl("h1", {text: "Select Similar Elements"});
-    new ea.obsidian.Setting(configModal.contentEl)
-      .setDesc("Choose the attributes you want the selected elements to match, then select an action.")
-      .addButton(button => button
-        .setButtonText("Instructions")
-        .onClick(showInstructions)
-      );
+  new ea.obsidian.Setting(configModal.contentEl)
+    .setDesc("Choose the attributes you want the selected elements to match, then select an action.")
+    .addButton(button => button
+      .setButtonText("Instructions")
+      .onClick(showInstructions)
+    );
 
     
     // Add Toggles for the rest of the attributes
@@ -103,7 +103,7 @@ const selectAttributesToCopy = () => {
   
 	attributes.forEach(attr => {
 	  const attrValue = elements[0][attr.key];
-	  if(attrValue || (attr.key === "startArrowhead" && elements[0].type === "arrow") || (attr.key === "endArrowhead" && elements[0].type === "arrow")) {
+	  if((typeof attrValue !== "undefined" && attrValue !== null) || (attr.key === "startArrowhead" && elements[0].type === "arrow") || (attr.key === "endArrowhead" && elements[0].type === "arrow")) {
 	    let description = '';
 	
 	    switch(attr.key) {
@@ -144,8 +144,6 @@ const selectAttributesToCopy = () => {
 	        description = `${attrValue}`;
 	        break;
 	      default:
-	        console.log(attr.key);
-	        console.log(attrValue);
 	        description = `${attrValue.charAt(0).toUpperCase() + attrValue.slice(1)}`;
 	        break;
 	    }
@@ -192,7 +190,9 @@ const selectAttributesToCopy = () => {
 
   
 	configModal.onClose = () => {
-      setTimeout(()=>delete configModal);
+    setTimeout(()=>{
+			delete configModal
+		});
 	}
 	
 	configModal.open();

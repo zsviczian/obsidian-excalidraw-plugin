@@ -33,6 +33,7 @@ export interface ObsidianCanvasNode {
   child: any;
   isEditing: boolean;
   file: TFile;
+  detach: Function;
 }
 
 export class CanvasNodeFactory {
@@ -41,6 +42,7 @@ export class CanvasNodeFactory {
   nodes = new Map<string, ObsidianCanvasNode>();
   initialized: boolean = false;
   public isInitialized = () => this.initialized;
+  private observer: CustomMutationObserver | MutationObserver;
 
   constructor(
     private view: ExcalidrawView,
@@ -110,11 +112,11 @@ export class CanvasNodeFactory {
           }
         }
       };
-      const observer = DEBUGGING
+      this.observer = DEBUGGING
         ? new CustomMutationObserver(nodeObserverFn, "CanvasNodeFactory")
         : new MutationObserver(nodeObserverFn);
   
-      observer.observe(node.child.editor.containerEl.parentElement.parentElement, { attributes: true });
+      this.observer.observe(node.child.editor.containerEl.parentElement.parentElement, { attributes: true });
     })();
   } 
 
@@ -127,12 +129,29 @@ export class CanvasNodeFactory {
     node.child.showPreview();
   }
 
+  removeNode(node: ObsidianCanvasNode) {
+    if(!this.initialized || !node) return;
+    this.nodes.delete(node.file.path);
+    this.canvas.removeNode(node);
+    node.detach();
+  }
+
   public purgeNodes() {
     if(!this.initialized) return;
     this.nodes.forEach(node => {
-      this.canvas.removeNode(node);      
+      this.canvas.removeNode(node);
+      node.detach(); 
     });
     this.nodes.clear();
+  }
+
+  destroy() {
+    this.purgeNodes();
+    this.initialized = false;  //calling after purgeNodes becaues purge nodes checks for initialized
+    this.observer?.disconnect();
+    this.view = null;
+    this.canvas = null;
+    this.leaf = null;
   }
 }
     

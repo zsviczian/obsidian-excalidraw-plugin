@@ -11,17 +11,13 @@ import {
   fileid,
   DEVICE,
   EMBEDDABLE_THEME_FRONTMATTER_VALUES,
-  getBoundTextMaxWidth,
-  getDefaultLineHeight,
-  getFontString,
-  wrapText,
+  getLineHeight,
   ERROR_IFRAME_CONVERSION_CANCELED,
   JSON_parse,
   FRONTMATTER_KEYS,
   refreshTextDimensions,
   getContainerElement,
 } from "./constants/constants";
-import { _measureText } from "./ExcalidrawAutomate";
 import ExcalidrawPlugin from "./main";
 import { TextMode } from "./ExcalidrawView";
 import {
@@ -39,6 +35,7 @@ import {
   updateFrontmatterInString,
   wrapTextAtCharLength,
   arrayToMap,
+  compressAsync,
 } from "./utils/Utils";
 import { cleanBlockRef, cleanSectionHeading, getAttachmentsFolderAndFilePath, isObsidianThemeDark } from "./utils/ObsidianUtils";
 import {
@@ -53,6 +50,8 @@ import { ConfirmationPrompt } from "./dialogs/Prompt";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
 import { DEBUGGING, debug } from "./utils/DebugHelper";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
+import { updateElementIdsInScene } from "./utils/ExcalidrawSceneUtils";
+import { getNewUniqueFilepath } from "./utils/FileUtils";
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles };
 
@@ -72,10 +71,34 @@ export enum AutoexportPreference {
   inherit
 }
 
+export const REGEX_TAGS = {
+  // #[\p{Letter}\p{Emoji_Presentation}\p{Number}\/_-]+
+  //   1                                     
+  EXPR: /(#[\p{Letter}\p{Emoji_Presentation}\p{Number}\/_-]+)/gu,
+  getResList: (text: string): IteratorResult<RegExpMatchArray, any>[] => {
+    const res = text.matchAll(REGEX_TAGS.EXPR);
+    let parts: IteratorResult<RegExpMatchArray, any>;
+    const resultList = [];
+    while (!(parts = res.next()).done) {
+      resultList.push(parts);
+    }
+    return resultList;
+  },
+  getTag: (parts: IteratorResult<RegExpMatchArray, any>): string => {
+    return parts.value[1];
+  },
+  isTag: (parts: IteratorResult<RegExpMatchArray, any>): boolean => {
+    return parts.value[1]?.startsWith("#")
+  },
+};
+
 export const REGEX_LINK = {
   //![[link|alias]] [alias](link){num}
   //      1   2    3           4             5         67         8  9
-  EXPR: /(!)?(\[\[([^|\]]+)\|?([^\]]+)?]]|\[([^\]]*)]\(([^)]*)\))(\{(\d+)\})?/g, //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/187
+  //EXPR: /(!)?(\[\[([^|\]]+)\|?([^\]]+)?]]|\[([^\]]*)]\(([^)]*)\))(\{(\d+)\})?/g, //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/187
+  //      1   2    3           4             5         67                             8  9
+  EXPR: /(!)?(\[\[([^|\]]+)\|?([^\]]+)?]]|\[([^\]]*)]\(((?:[^\(\)]|\([^\(\)]*\))*)\))(\{(\d+)\})?/g,  //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1963
+
   getResList: (text: string): IteratorResult<RegExpMatchArray, any>[] => {
     const res = text.matchAll(REGEX_LINK.EXPR);
     let parts: IteratorResult<RegExpMatchArray, any>;
@@ -201,15 +224,28 @@ export function getJSON(data: string): { scene: string; pos: number } {
   return { scene: data, pos: parts.value ? parts.value.index : 0 };
 }
 
-export function getMarkdownDrawingSection(
+export async function getMarkdownDrawingSectionAsync (
   jsonString: string,
   compressed: boolean,
 ) {
-  return compressed
+  const result = compressed
+    ? `## Drawing\n\x60\x60\x60compressed-json\n${await compressAsync(
+        jsonString,
+      )}\n\x60\x60\x60\n%%`
+    : `## Drawing\n\x60\x60\x60json\n${jsonString}\n\x60\x60\x60\n%%`;
+  return result;
+}
+
+export function getMarkdownDrawingSection(
+  jsonString: string,
+  compressed: boolean,
+): string {
+  const result = compressed
     ? `## Drawing\n\x60\x60\x60compressed-json\n${compress(
         jsonString,
       )}\n\x60\x60\x60\n%%`
     : `## Drawing\n\x60\x60\x60json\n${jsonString}\n\x60\x60\x60\n%%`;
+  return result;
 }
 
 /**
@@ -243,26 +279,26 @@ const wrap = (text: string, lineLen: number) =>
   lineLen ? wrapTextAtCharLength(text, lineLen, false, 0) : text;
 
 //WITHSECTION refers to back of the card note (see this.inputEl.onkeyup in SelectCard.ts)
-const RE_EXCALIDRAWDATA_WITHSECTION_OK = new RegExp(`^#\n%%\n# Excalidraw Data(?:\n|$)`, "m");
-const RE_EXCALIDRAWDATA_WITHSECTION_NOTOK = new RegExp(`#\n%%\n# Excalidraw Data(?:\n|$)`, "m");
-const RE_EXCALIDRAWDATA_NOSECTION_OK = new RegExp(`^(%%\n)?# Excalidraw Data(?:\n|$)`, "m");
+const RE_EXCALIDRAWDATA_WITHSECTION_OK = /^(#\n+)%%\n+# Excalidraw Data(?:\n|$)/m;
+const RE_EXCALIDRAWDATA_WITHSECTION_NOTOK = /#\n+%%\n+# Excalidraw Data(?:\n|$)/m;
+const RE_EXCALIDRAWDATA_NOSECTION_OK = /^(%%\n+)?# Excalidraw Data(?:\n|$)/m;
 
 //WITHSECTION refers to back of the card note (see this.inputEl.onkeyup in SelectCard.ts)
-const RE_TEXTELEMENTS_WITHSECTION_OK = new RegExp(`^#\n%%\n##? Text Elements(?:\n|$)`, "m");
-const RE_TEXTELEMENTS_WITHSECTION_NOTOK = new RegExp(`#\n%%\n##? Text Elements(?:\n|$)`, "m");
-const RE_TEXTELEMENTS_NOSECTION_OK = new RegExp(`^(%%\n)?##? Text Elements(?:\n|$)`, "m");
+const RE_TEXTELEMENTS_WITHSECTION_OK = /^#\n+%%\n+##? Text Elements(?:\n|$)/m;
+const RE_TEXTELEMENTS_WITHSECTION_NOTOK = /#\n+%%\n+##? Text Elements(?:\n|$)/m;
+const RE_TEXTELEMENTS_NOSECTION_OK = /^(%%\n+)?##? Text Elements(?:\n|$)/m;
 
 
 //The issue is that when editing in markdown embeds the user can delete the last enter causing two sections
 //to collide. This is particularly problematic when the user is editing the last section before # Text Elements
-const RE_EXCALIDRAWDATA_FALLBACK_1 = new RegExp(`(.*)%%\n# Excalidraw Data(?:\n|$)`, "m");
-const RE_EXCALIDRAWDATA_FALLBACK_2 = new RegExp(`(.*)# Excalidraw Data(?:\n|$)`, "m");
+const RE_EXCALIDRAWDATA_FALLBACK_1 = /(.*)%%\n+# Excalidraw Data(?:\n|$)/m;
+const RE_EXCALIDRAWDATA_FALLBACK_2 = /(.*)# Excalidraw Data(?:\n|$)/m;
 
-const RE_TEXTELEMENTS_FALLBACK_1 = new RegExp(`(.*)%%\n##? Text Elements(?:\n|$)`, "m");
-const RE_TEXTELEMENTS_FALLBACK_2 = new RegExp(`(.*)##? Text Elements(?:\n|$)`, "m");
+const RE_TEXTELEMENTS_FALLBACK_1 = /(.*)%%\n+##? Text Elements(?:\n|$)/m;
+const RE_TEXTELEMENTS_FALLBACK_2 = /(.*)##? Text Elements(?:\n|$)/m;
 
 
-const RE_DRAWING = new RegExp(`^(%%\n)?##? Drawing\n`, "m");
+const RE_DRAWING = /^(%%\n+)?##? Drawing\n/m;
 
 export const getExcalidrawMarkdownHeaderSection = (data:string, keys?:[string,string][]):string => {
   //The base case scenario is at the top, continued with fallbacks in order of likelihood and file structure
@@ -281,10 +317,11 @@ export const getExcalidrawMarkdownHeaderSection = (data:string, keys?:[string,st
     data = data.substring(0, drawingTrimLocation);
   }
 
-  let trimLocation = data.search(RE_EXCALIDRAWDATA_WITHSECTION_OK);
+  const m1 =  data.match(RE_EXCALIDRAWDATA_WITHSECTION_OK); 
+  let trimLocation = m1?.index ?? -1; //data.search(RE_EXCALIDRAWDATA_WITHSECTION_OK);
   let shouldFixTrailingHashtag = false;
   if(trimLocation > 0) {
-    trimLocation += 2; //accounts for the "#\n" which I want to leave there untouched
+    trimLocation += m1[1].length; //accounts for the "(#\n\s*)" which I want to leave there untouched
   }
 
   /* Expected markdown structure (this happens when the user deletes the last empty line of the last back-of-the-card note):
@@ -419,7 +456,6 @@ export class ExcalidrawData {
     string,
     { raw: string; parsed: string}
   > = null;
-  public elementLinks: Map<string, string> = null;
   public scene: any = null;
   public deletedElements: ExcalidrawElement[] = [];
   public file: TFile = null;
@@ -431,6 +467,7 @@ export class ExcalidrawData {
   public autoexportPreference: AutoexportPreference = AutoexportPreference.inherit;
   private textMode: TextMode = TextMode.raw;
   public loaded: boolean = false;
+  public elementLinks: Map<string, string> = null;
   public files: Map<FileId, EmbeddedFile> = null; //fileId, path
   private equations: Map<FileId, { latex: string; isLoaded: boolean }> = null; //fileId, path
   private mermaids: Map<FileId, { mermaid: string; isLoaded: boolean }> = null; //fileId, path
@@ -441,10 +478,32 @@ export class ExcalidrawData {
   constructor(
     private plugin: ExcalidrawPlugin,
   ) {
-    this.app = plugin.app;
+    this.app = this.plugin.app;
     this.files = new Map<FileId, EmbeddedFile>();
     this.equations = new Map<FileId, { latex: string; isLoaded: boolean }>();
     this.mermaids = new Map<FileId, { mermaid: string; isLoaded: boolean }>();
+  }
+
+  public destroy() {
+    this.textElements = null;
+    this.scene = null;
+    this.deletedElements = [];
+    this.file = null;
+    this.app = null;
+    this.showLinkBrackets = null;
+    this.linkPrefix = null;
+    this.embeddableTheme = null;
+    this.urlPrefix = null;
+    this.autoexportPreference = null;
+    this.textMode = null; 
+    this.loaded = false;  
+    this.elementLinks = null;
+    this.files = null;
+    this.equations = null;
+    this.mermaids = null;
+    this.compatibilityMode = null;
+    this.textElementCommentedOut = null;
+    this.selectedElementIds = null;
   }
 
   /**
@@ -530,7 +589,7 @@ export class ExcalidrawData {
       }
 
       if (el.type === "text" && !el.hasOwnProperty("lineHeight")) {
-        el.lineHeight = getDefaultLineHeight(el.fontFamily);
+        el.lineHeight = getLineHeight(el.fontFamily);
       }
 
       if (el.type === "image" && !el.hasOwnProperty("roundness")) {
@@ -701,6 +760,24 @@ export class ExcalidrawData {
       this.scene.appState.theme = isObsidianThemeDark() ? "dark" : "light";
     }
 
+    //girdSize, gridStep, previousGridSize, gridModeEnabled migration
+    if(this.scene.appState.hasOwnProperty("previousGridSize")) { //if previousGridSize was present this is legacy data
+      if(this.scene.appState.gridSize === null) {
+        this.scene.appState.gridSize = this.scene.appState.previousGridSize;
+        this.scene.appState.gridModeEnabled = false;
+      } else {
+        this.scene.appState.gridModeEnabled = true; 
+      }
+      delete this.scene.appState.previousGridSize;
+    }
+
+    if(this.scene.appState?.gridColor?.hasOwnProperty("MajorGridFrequency")) { //if this is present, this is legacy data
+      if(this.scene.appState.gridColor.MajorGridFrequency>1) {
+        this.scene.gridStep = this.scene.appState.gridColor.MajorGridFrequency;
+      }
+      delete this.scene.appState.gridColor.MajorGridFrequency;
+    }
+
     //once off migration of legacy scenes
     if(this.scene?.elements?.some((el:any)=>el.type==="iframe" && !el.customData)) {
         const prompt = new ConfirmationPrompt(
@@ -769,8 +846,8 @@ export class ExcalidrawData {
       return true; //Text Elements header does not exist
     }
     data = data.slice(position);
-    const normalMatch = data.match(/^((%%\n)?# Excalidraw Data\n## Text Elements(?:\n|$))/m)
-      ??data.match(/^((%%\n)?##? Text Elements(?:\n|$))/m);
+    const normalMatch = data.match(/^((%%\n*)?# Excalidraw Data\n## Text Elements(?:\n|$))/m)
+      ?? data.match(/^((%%\n*)?##? Text Elements(?:\n|$))/m);
 
     const textElementsMatch = normalMatch
       ? normalMatch[0]
@@ -791,7 +868,7 @@ export class ExcalidrawData {
       ? data.substring(indexOfNewElementLinks + lengthOfNewElementLinks)
       : data.substring(indexOfOldElementLinks + lengthOfOldElementLinks);
     //Load Embedded files
-    const RE_ELEMENT_LINKS = /^(.{8}):\s*(\[\[[^\]]*]])$/gm;
+    const RE_ELEMENT_LINKS = /^(.{8}):\s*(.*)$/gm;
     const linksRes = elementLinksData.matchAll(RE_ELEMENT_LINKS);
     while (!(parts = linksRes.next()).done) {
       elementLinkMap.set(parts.value[1], parts.value[2]);
@@ -868,7 +945,7 @@ export class ExcalidrawData {
         ? data.substring(indexOfNewEmbeddedFiles + embeddedFilesNewLength)
         : data.substring(indexOfOldEmbeddedFiles + embeddedFilesOldLength);
       //Load Embedded files
-      const REG_FILEID_FILEPATH = /([\w\d]*):\s*\[\[([^\]]*)]]\s?(\{[^}]*})?\n/gm;
+      const REG_FILEID_FILEPATH = /([\w\d]*):\s*\!?\[\[([^\]]*)]]\s*(\{[^}]*})?\n/gm;
       res = data.matchAll(REG_FILEID_FILEPATH);
       while (!(parts = res.next()).done) {
         const embeddedFile = new EmbeddedFile(
@@ -992,7 +1069,7 @@ export class ExcalidrawData {
         te.width = width;
         te.height = height;
       } catch(e) {
-        DEBUGGING && debug(this.updateSceneTextElements, `ExcalidrawData.updateSceneTextElements, textElement:${te?.id}`, te, this.updateSceneTextElements);
+        (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.updateSceneTextElements, `ExcalidrawData.updateSceneTextElements, textElement:${te?.id}`, te, this.updateSceneTextElements);
       }
     }
   }
@@ -1024,15 +1101,13 @@ export class ExcalidrawData {
       return (
         el.type !== "text" &&
         el.link &&
-        el.link.startsWith("[[") &&
+        //el.link.startsWith("[[") &&
         !this.elementLinks.has(el.id)
       );
     });
     if (elements.length === 0) {
       return result;
     }
-
-    let jsonString = JSON.stringify(this.scene);
 
     let id: string; //will be used to hold the new 8 char long ID for textelements that don't yet appear under # Text Elements
     
@@ -1044,11 +1119,10 @@ export class ExcalidrawData {
       if (el.id.length > 8) {
         result = true;
         id = nanoid();
-        jsonString = jsonString.replaceAll(el.id, id); //brute force approach to replace all occurrences (e.g. links, groups,etc.)
+        updateElementIdsInScene(this.scene, el, id);
       }
       this.elementLinks.set(id, el.link);
     }
-    this.scene = JSON.parse(jsonString);
     return result;
   }
 
@@ -1060,9 +1134,7 @@ export class ExcalidrawData {
     //console.log("Excalidraw.Data.findNewTextElementsInScene()");
     //get scene text elements
     this.selectedElementIds = selectedElementIds;
-    const texts = this.scene.elements?.filter((el: any) => el.type === "text");
-
-    let jsonString = JSON.stringify(this.scene);
+    const texts = this.scene.elements?.filter((el: any) => el.type === "text") as ExcalidrawTextElement[];
 
     let dirty: boolean = false; //to keep track if the json has changed
     let id: string; //will be used to hold the new 8 char long ID for textelements that don't yet appear under # Text Elements
@@ -1078,7 +1150,7 @@ export class ExcalidrawData {
           delete this.selectedElementIds[te.id];
           this.selectedElementIds[id] = true;
         }
-        jsonString = jsonString.replaceAll(te.id, id); //brute force approach to replace all occurrences (e.g. links, groups,etc.)
+        updateElementIdsInScene(this.scene, te, id);
         if (this.textElements.has(te.id)) {
           //element was created with onBeforeTextSubmit
           const text = this.textElements.get(te.id);
@@ -1100,11 +1172,6 @@ export class ExcalidrawData {
       }
       
     }
-    if (dirty) {
-      //reload scene json in case it has changed
-      this.scene = JSON.parse(jsonString);
-    }
-
     return dirty;
   }
 
@@ -1115,8 +1182,8 @@ export class ExcalidrawData {
         (el: any) =>
           el.type !== "text" &&
           el.id === key &&
-          el.link &&
-          el.link.startsWith("[["),
+          el.link, //&&
+          //el.link.startsWith("[["),
       );
       if (el.length === 0) {
         this.elementLinks.delete(key); //if no longer in the scene, delete the text element
@@ -1345,19 +1412,22 @@ export class ExcalidrawData {
    * @returns markdown string
    */
   disableCompression: boolean = false;
-  generateMD(deletedElements: ExcalidrawElement[] = []): string {
+  generateMDBase(deletedElements: ExcalidrawElement[] = []) {
     let outString = this.textElementCommentedOut ? "%%\n" : "";
     outString += `# Excalidraw Data\n## Text Elements\n`;
+    if (this.plugin.settings.addDummyTextElement) {
+      outString += `\n^_dummy!_\n\n`;
+    }
     const textElementLinks = new Map<string, string>();
     for (const key of this.textElements.keys()) {
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/566
       const element = this.scene.elements.filter((el:any)=>el.id===key);
       let elementString = this.textElements.get(key).raw;
       if(element && element.length===1 && element[0].link && element[0].rawText === element[0].originalText) {
-        if(element[0].link.match(/^\[\[[^\]]*]]$/g)) { //apply this only to markdown links
+        //if(element[0].link.match(/^\[\[[^\]]*]]$/g)) { //apply this only to markdown links
           textElementLinks.set(key, element[0].link);
           //elementString = `%%***>>>text element-link:${element[0].link}<<<***%%` + elementString;
-        }
+        //}
       }
       outString += `${elementString} ^${key}\n\n`;
     }
@@ -1365,12 +1435,11 @@ export class ExcalidrawData {
     if (this.elementLinks.size > 0  || textElementLinks.size > 0) {
       outString += `## Element Links\n`;
       for (const key of this.elementLinks.keys()) {
-        outString += `${key}: ${this.elementLinks.get(key)}\n`;
+        outString += `${key}: ${this.elementLinks.get(key)}\n\n`;
       }
       for (const key of textElementLinks.keys()) {
-        outString += `${key}: ${textElementLinks.get(key)}\n`;
+        outString += `${key}: ${textElementLinks.get(key)}\n\n`;
       }
-      outString += "\n";
     }
 
     // deliberately not adding mermaids to here. It is enough to have the mermaidText in the image element's customData
@@ -1380,7 +1449,7 @@ export class ExcalidrawData {
         : "";
     if (this.equations.size > 0) {
       for (const key of this.equations.keys()) {
-        outString += `${key}: $$${this.equations.get(key).latex}$$\n`;
+        outString += `${key}: $$${this.equations.get(key).latex}$$\n\n`;
       }
     }
     if (this.files.size > 0) {
@@ -1388,18 +1457,18 @@ export class ExcalidrawData {
         const PATHREG = /(^[^#\|]*)/;
         const ef = this.files.get(key);
         if(ef.isHyperLink || ef.isLocalLink) {
-          outString += `${key}: ${ef.hyperlink}\n`;
+          outString += `${key}: ${ef.hyperlink}\n\n`;
         } else {
           //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/829
           const path = ef.file
             ? ef.linkParts.original.replace(PATHREG,this.app.metadataCache.fileToLinktext(ef.file,this.file.path))
             : ef.linkParts.original;
           const colorMap = ef.colorMap ? " " + JSON.stringify(ef.colorMap) : "";
-          outString += `${key}: [[${path}]]${colorMap}\n`;
+          outString += `${key}: [[${path}]]${colorMap}\n\n`;
         }
       }
     }
-    outString += this.equations.size > 0 || this.files.size > 0 ? "\n" : "";
+    //outString += this.equations.size > 0 || this.files.size > 0 ? "\n" : "";
 
     const sceneJSONstring = JSON.stringify({
       type: this.scene.type,
@@ -1409,41 +1478,69 @@ export class ExcalidrawData {
       appState: this.scene.appState,
       files: this.scene.files
     }, null, "\t");
-    return (
-      outString +
-      (this.textElementCommentedOut ? "" : "%%\n") +
-      getMarkdownDrawingSection(
-        sceneJSONstring,
-        this.disableCompression ? false : this.plugin.settings.compress,
-      )
-    );
+    return { outString, sceneJSONstring };
   }
 
-  public async saveDataURLtoVault(dataURL: DataURL, mimeType: MimeType, key: FileId) {
+  async generateMDAsync(deletedElements: ExcalidrawElement[] = []): Promise<string> {
+    const { outString, sceneJSONstring } = this.generateMDBase(deletedElements);
+    const result = (
+      outString +
+      (this.textElementCommentedOut ? "" : "%%\n") +
+      (await getMarkdownDrawingSectionAsync(
+        sceneJSONstring,
+        this.disableCompression ? false : this.plugin.settings.compress,
+      ))
+    );
+    return result;
+  }
+
+  generateMDSync(deletedElements: ExcalidrawElement[] = []): string {
+    const { outString, sceneJSONstring } = this.generateMDBase(deletedElements);
+    const result = (
+      outString +
+      (this.textElementCommentedOut ? "" : "%%\n") +
+      (getMarkdownDrawingSection(
+        sceneJSONstring,
+        this.disableCompression ? false : this.plugin.settings.compress,
+      ))
+    );
+    return result;
+  }
+
+  public async saveDataURLtoVault(dataURL: DataURL, mimeType: MimeType, key: FileId, name?:string) {
     const scene = this.scene as SceneDataWithFiles;
-    let fname = `Pasted Image ${window
-      .moment()
-      .format("YYYYMMDDHHmmss_SSS")}`;
-  
-    switch (mimeType) {
-      case "image/png":
-        fname += ".png";
-        break;
-      case "image/jpeg":
-        fname += ".jpg";
-        break;
-      case "image/svg+xml":
-        fname += ".svg";
-        break;
-      case "image/gif":
-        fname += ".gif";
-        break;
-      default:
-        fname += ".png";
+    let fname = name;
+
+    if(!fname) {
+      fname = `Pasted Image ${window
+        .moment()
+        .format("YYYYMMDDHHmmss_SSS")}`;
+    
+      switch (mimeType) {
+        case "image/png":
+          fname += ".png";
+          break;
+        case "image/jpeg":
+          fname += ".jpg";
+          break;
+        case "image/svg+xml":
+          fname += ".svg";
+          break;
+        case "image/gif":
+          fname += ".gif";
+          break;
+        default:
+          fname += ".png";
+      }
     }
+
+    const x = await getAttachmentsFolderAndFilePath(this.app, this.file.path, fname);
+    const filepath = getNewUniqueFilepath(this.app.vault,fname,x.folder);
+
+    /*
     const filepath = (
       await getAttachmentsFolderAndFilePath(this.app, this.file.path, fname)
-    ).filepath;
+    ).filepath;*/
 
     const arrayBuffer = await getBinaryFileFromDataURL(dataURL);
     if(!arrayBuffer) return null;
@@ -1570,7 +1667,9 @@ export class ExcalidrawData {
         await this.saveDataURLtoVault(
           scene.files[key].dataURL,
           scene.files[key].mimeType,
-          key as FileId
+          key as FileId,
+          //@ts-ignore
+          scene.files[key].name,
         );
       }
     }
@@ -1966,7 +2065,7 @@ export class ExcalidrawData {
   }
 
   public getEquationEntries() {
-    return this.equations.entries();
+    return this.equations?.entries();
   }
 
   public deleteEquation(fileId: FileId) {

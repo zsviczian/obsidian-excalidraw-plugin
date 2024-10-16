@@ -1,0 +1,85 @@
+name: Bug report
+description: If something is clearly broken, it’s a bug. Everything else is a feature or support request. Most reported “bugs” are actually how-to questions or feature requests.
+title: "BUG: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ⚠️ **Important: Please Read Before Submitting a Bug Report** ⚠️
+
+        I am a one-person team working on this plugin as a part-time hobby. I cannot handle a flood of poorly documented issues. **To ensure your report is considered, you must follow these guidelines**. If you don't, I will close the issue without review.
+
+        Before creating a bug report, please:
+        1. **Review recent [release notes](https://github.com/zsviczian/obsidian-excalidraw-plugin/releases)** – maybe there is already an answer.
+        2. **[Search issues](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues) (including closed ones)** to see if there is anything similar.
+
+  - type: markdown
+    attributes:
+      value: |
+        Please help by providing the following details. Bugs reported without the required information may be closed without review.
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+
+  - type: checkboxes
+    id: search_existing_issues
+    attributes:
+      label: Have you searched for existing issues (including closed ones)?
+      description: Please confirm that you have searched the issue tracker before reporting a new issue.
+      options:
+        - label: Yes, I have searched the existing issues.
+    
+  - type: checkboxes
+    id: verify_bug
+    attributes:
+      label: Does this bug persist in a new vault with only Excalidraw installed?
+      description: Please confirm that you have tested this issue in an empty Obsidian vault with no other plugins or themes installed.
+      options:
+        - label: Yes, I have verified the issue persists.
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: "Your environment"
+      description: "Run `Command Palette/Show Debug info` in Obsidian and paste the result here."
+      placeholder: "Paste your Obsidian debug info here..."
+
+  - type: textarea
+    id: bug_description
+    attributes:
+      label: "Describe the bug"
+      description: "A clear and concise description of what the bug is."
+      placeholder: "Provide a detailed description of the issue..."
+
+  - type: textarea
+    id: steps_to_reproduce
+    attributes:
+      label: "Steps to reproduce"
+      description: "List the steps to reproduce the behavior."
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. See error
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: "Expected behavior"
+      description: "A clear and concise description of what you expected to happen."
+      placeholder: "Describe what you expected to happen..."
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: "Additional context"
+      description: "Add any other context about the problem here."
+      placeholder: "Include any other information that may be helpful..."
+
+  - type: markdown
+    attributes:
+      value: |
+        **Attachments:**
+        If applicable, please attach any screenshots, screen recordings, or files by dragging and dropping them into the comment area or directly into any of the text fields above. 
+

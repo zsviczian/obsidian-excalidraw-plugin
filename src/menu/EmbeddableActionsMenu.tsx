@@ -17,11 +17,26 @@ import { getEA } from "src";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 
 export class EmbeddableMenu {
+  private menuFadeTimeout: number = 0;
+  private menuElementId: string = null;
 
   constructor( 
     private view:ExcalidrawView,
     private containerRef: React.RefObject<HTMLDivElement>,
   ) {
+  }
+
+  public destroy() {
+    if(this.menuFadeTimeout) {
+      clearTimeout(this.menuFadeTimeout);
+      this.menuFadeTimeout = null;
+    }
+    this.view = null;
+    this.containerRef = null;
+    this.updateElement = null;
+    this.handleMouseEnter = null;
+    this.handleMouseLeave = null;
+    this.renderButtons = null;
   }
 
   private updateElement = (subpath: string, element: ExcalidrawEmbeddableElement, file: TFile) => {
@@ -40,23 +55,118 @@ export class EmbeddableMenu {
     ea.copyViewElementsToEAforEditing([element]);
     ea.getElement(element.id).link = link;
     view.excalidrawData.elementLinks.set(element.id, link);
-    ea.addElementsToView(false, true, true);
+    ea.addElementsToView(false, true, true).then(() => ea.destroy());
   }
 
-  private menuFadeTimeout: number = 0;
-  private menuElementId: string = null;
   private handleMouseEnter () {
     clearTimeout(this.menuFadeTimeout);
     this.containerRef.current?.style.setProperty("opacity", "1");
   };
 
   private handleMouseLeave () {
-    const self = this;
     this.menuFadeTimeout = window.setTimeout(() => {
-      self.containerRef.current?.style.setProperty("opacity", "0.2");
+      this.containerRef.current?.style.setProperty("opacity", "0.2");
     }, 5000);
   };
 
+  private async actionMarkdownSelection (file: TFile, isExcalidrawFile: boolean, subpath: string, element: ExcalidrawEmbeddableElement) {
+    this.view.updateScene({appState: {activeEmbeddable: null}, storeAction: "update"});
+    const sections = (await app.metadataCache.blockCache
+      .getForFile({ isCancelled: () => false },file))
+      .blocks.filter((b: any) => b.display && b.node?.type === "heading")
+      .filter((b: any) => !isExcalidrawFile || !MD_EX_SECTIONS.includes(b.display));
+    let values, display;
+    if(isExcalidrawFile) {
+      values = sections.map((b: any) => `#${cleanSectionHeading(b.display)}`);
+      display = sections.map((b: any) => b.display);
+    } else {
+      values = [""].concat(
+        sections.map((b: any) => `#${cleanSectionHeading(b.display)}`)
+      );
+      display = [t("SHOW_ENTIRE_FILE")].concat(
+        sections.map((b: any) => b.display)
+      );
+    }
+    const newSubpath = await ScriptEngine.suggester(
+      app, display, values, "Select section from document"
+    );
+    if(!newSubpath && newSubpath!=="") return;
+    if (newSubpath !== subpath) {
+      this.updateElement(newSubpath, element, file);
+    }
+  }
+
+  private async actionMarkdownBlock (file: TFile, subpath: string, element: ExcalidrawEmbeddableElement) {
+    if(!file) return;
+    this.view.updateScene({appState: {activeEmbeddable: null}, storeAction: "update"});
+    const paragraphs = (await app.metadataCache.blockCache
+      .getForFile({ isCancelled: () => false },file))
+      .blocks.filter((b: any) => b.display && b.node && 
+        (b.node.type === "paragraph" || b.node.type === "blockquote" || b.node.type === "listItem" || b.node.type === "table" || b.node.type === "callout")
+      );
+    const values = ["entire-file"].concat(paragraphs);
+    const display = [t("SHOW_ENTIRE_FILE")].concat(
+      paragraphs.map((b: any) => `${b.node?.id ? `#^${b.node.id}: ` : ``}${b.display.trim()}`));
+
+    const selectedBlock = await ScriptEngine.suggester(
+      app, display, values, "Select section from document"
+    );
+    if(!selectedBlock) return;
+
+    if(selectedBlock==="entire-file") {
+      if(subpath==="") return;
+      this.updateElement("", element, file);
+      return;
+    }
+
+    let blockID = selectedBlock.node.id;
+    if(blockID && (`#^${blockID}` === subpath)) return;
+    if (!blockID) {
+      const offset = selectedBlock.node?.position?.end?.offset;
+      if(!offset) return;
+      blockID = nanoid();
+      const fileContents = await app.vault.cachedRead(file);
+      if(!fileContents) return;
+      await app.vault.modify(file, fileContents.slice(0, offset) + ` ^${blockID}` + fileContents.slice(offset));
+      await sleep(200); //wait for cache to update
+    }
+    this.updateElement(`#^${blockID}`, element, file);
+  }
+
+  private actionZoomToElement (element: ExcalidrawEmbeddableElement, maxLevel?: number) {
+    if(!element) return;
+    const api = this.view.excalidrawAPI as ExcalidrawImperativeAPI;
+    api.zoomToFit([element], maxLevel ?? this.view.plugin.settings.zoomToFitMaxLevel, 0.1);
+  }
+
+  private actionProperties (element: ExcalidrawEmbeddableElement, file: TFile) {
+    if(!element) return;
+    new EmbeddableSettings(this.view.plugin,this.view,file,element).open();
+  }
+
+  private actionCrop (element: ExcalidrawEmbeddableElement) {
+    if(!element) return;
+    //@ts-ignore
+    this.view.app.commands.executeCommandById("obsidian-excalidraw-plugin:crop-image");
+  }
+
+  private actionReload (iframe: HTMLIFrameElement, link: string) {
+    iframe.src = link;
+  }
+
+  private actionOpen (iframe: HTMLIFrameElement, element: ExcalidrawEmbeddableElement) {
+    openExternalLink(
+      !iframe.src.startsWith("https://www.youtube.com") && !iframe.src.startsWith("https://player.vimeo.com") 
+        ? iframe.src
+        : element.link,
+      this.view.app
+    );
+  }
+
+  private actionCopyCode (element: ExcalidrawEmbeddableElement, link: string) {
+    if(!element) return;
+    navigator.clipboard.writeText(atob(link.split(",")[1]));
+  }
 
   renderButtons(appState: AppState) {
     const view = this.view;
@@ -132,111 +242,36 @@ export class EmbeddableMenu {
                 <ActionButton
                   key={"MarkdownSection"}
                   title={t("NARROW_TO_HEADING")}
-                  action={async () => {
-                    view.updateScene({appState: {activeEmbeddable: null}});
-                    const sections = (await app.metadataCache.blockCache
-                      .getForFile({ isCancelled: () => false },file))
-                      .blocks.filter((b: any) => b.display && b.node?.type === "heading")
-                      .filter((b: any) => !isExcalidrawFile || !MD_EX_SECTIONS.includes(b.display));
-                    let values, display;
-                    if(isExcalidrawFile) {
-                      values = sections.map((b: any) => `#${cleanSectionHeading(b.display)}`);
-                      display = sections.map((b: any) => b.display);
-                    } else {
-                      values = [""].concat(
-                        sections.map((b: any) => `#${cleanSectionHeading(b.display)}`)
-                      );
-                      display = [t("SHOW_ENTIRE_FILE")].concat(
-                        sections.map((b: any) => b.display)
-                      );
-                    }
-                    const newSubpath = await ScriptEngine.suggester(
-                      app, display, values, "Select section from document"
-                    );
-                    if(!newSubpath && newSubpath!=="") return;
-                    if (newSubpath !== subpath) {
-                      this.updateElement(newSubpath, element, file);
-                    }
-                  }}
+                  action={async () => this.actionMarkdownSelection(file, isExcalidrawFile, subpath, element)}
                   icon={ICONS.ZoomToSection}
-                  view={view}
                 />
               )}
               {isMD && !isExcalidrawFile && (
                 <ActionButton
                   key={"MarkdownBlock"}
                   title={t("NARROW_TO_BLOCK")}
-                  action={async () => {
-                    if(!file) return;
-                    view.updateScene({appState: {activeEmbeddable: null}});
-                    const paragraphs = (await app.metadataCache.blockCache
-                      .getForFile({ isCancelled: () => false },file))
-                      .blocks.filter((b: any) => b.display && b.node && 
-                        (b.node.type === "paragraph" || b.node.type === "blockquote" || b.node.type === "listItem" || b.node.type === "table" || b.node.type === "callout")
-                      );
-                    const values = ["entire-file"].concat(paragraphs);
-                    const display = [t("SHOW_ENTIRE_FILE")].concat(
-                      paragraphs.map((b: any) => `${b.node?.id ? `#^${b.node.id}: ` : ``}${b.display.trim()}`));
-      
-                    const selectedBlock = await ScriptEngine.suggester(
-                      app, display, values, "Select section from document"
-                    );
-                    if(!selectedBlock) return;
-
-                    if(selectedBlock==="entire-file") {
-                      if(subpath==="") return;
-                      this.updateElement("", element, file);
-                      return;
-                    }
-                
-                    let blockID = selectedBlock.node.id;
-                    if(blockID && (`#^${blockID}` === subpath)) return;
-                    if (!blockID) {
-                      const offset = selectedBlock.node?.position?.end?.offset;
-                      if(!offset) return;
-                      blockID = nanoid();
-                      const fileContents = await app.vault.cachedRead(file);
-                      if(!fileContents) return;
-                      await app.vault.modify(file, fileContents.slice(0, offset) + ` ^${blockID}` + fileContents.slice(offset));
-                      await sleep(200); //wait for cache to update
-                    }
-                    this.updateElement(`#^${blockID}`, element, file);
-                  }}
+                  action={async () => this.actionMarkdownBlock(file, subpath, element)}
                   icon={ICONS.ZoomToBlock}
-                  view={view}
                 />
               )}
               <ActionButton
                 key={"ZoomToElement"}
                 title={t("ZOOM_TO_FIT")}
-                action={() => {
-                  if(!element) return;
-                  api.zoomToFit([element], 30, 0.1);
-                }}
+                action={() => this.actionZoomToElement(element,30)}
                 icon={ICONS.ZoomToSelectedElement}
-                view={view}
               />
               <ActionButton
                 key={"Properties"}
                 title={t("PROPERTIES")}
-                action={() => {
-                  if(!element) return;
-                  new EmbeddableSettings(view.plugin,view,file,element).open();
-                }}
+                action={() => this.actionProperties(element, file)}
                 icon={ICONS.Properties}
-                view={view}
               />
               {isPDF && (
                 <ActionButton
                 key={"Crop"}
                 title={t("CROP_PAGE")}
-                action={() => {
-                  if(!element) return;
-                  //@ts-ignore
-                  view.app.commands.executeCommandById("obsidian-excalidraw-plugin:crop-image");
-                }}
+                action={() => this.actionCrop(element)}
                 icon={ICONS.Crop}
-                view={view}
               />
               )}
             </div>
@@ -276,57 +311,34 @@ export class EmbeddableMenu {
               <ActionButton
                 key={"Reload"}
                 title={t("RELOAD")}
-                action={()=>{
-                  iframe.src = link;
-                }}
+                action={()=> this.actionReload(iframe, link)}
                 icon={ICONS.Reload}
-                view={view}
               />
             )}
             <ActionButton
               key={"Open"}
               title={t("OPEN_IN_BROWSER")}
-              action={() => {
-                openExternalLink(
-                  !iframe.src.startsWith("https://www.youtube.com") && !iframe.src.startsWith("https://player.vimeo.com") 
-                    ? iframe.src
-                    : element.link,
-                  view.app
-                );
-              }}
+              action={() => this.actionOpen(iframe, element)}
               icon={ICONS.Globe}
-              view={view}
             />
             <ActionButton
               key={"ZoomToElement"}
               title={t("ZOOM_TO_FIT")}
-              action={() => {
-                if(!element) return;
-                api.zoomToFit([element], view.plugin.settings.zoomToFitMaxLevel, 0.1);
-              }}
+              action={() => this.actionZoomToElement(element)}
               icon={ICONS.ZoomToSelectedElement}
-              view={view}
             />
             <ActionButton
               key={"Properties"}
               title={t("PROPERTIES")}
-              action={() => {
-                if(!element) return;
-                new EmbeddableSettings(view.plugin,view,null,element).open();
-              }}
+              action={() => this.actionProperties(element, null)}
               icon={ICONS.Properties}
-              view={view}
             />
             {link?.startsWith("data:text/html") && (
               <ActionButton
                 key={"CopyCode"}
                 title={t("COPYCODE")}
-                action={() => {
-                  if(!element) return;
-                  navigator.clipboard.writeText(atob(link.split(",")[1]));
-                }}
+                action={() => this.actionCopyCode(element, link)}
                 icon={ICONS.Copy}
-                view={view}
               />
             )}
           </div>

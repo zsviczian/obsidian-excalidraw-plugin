@@ -2,18 +2,19 @@ import {
   App,
   ButtonComponent,
   DropdownComponent,
+  getIcon,
+  Modifier,
   normalizePath,
   PluginSettingTab,
   Setting,
   TextComponent,
   TFile,
 } from "obsidian";
-import { DEVICE, GITHUB_RELEASES, VIEW_TYPE_EXCALIDRAW } from "./constants/constants";
-import ExcalidrawView from "./ExcalidrawView";
+import { GITHUB_RELEASES } from "./constants/constants";
 import { t } from "./lang/helpers";
 import type ExcalidrawPlugin from "./main";
 import { PenStyle } from "./PenTypes";
-import { DynamicStyle } from "./types";
+import { DynamicStyle, GridSettings } from "./types/types";
 import { PreviewImageType } from "./utils/UtilTypes";
 import { setDynamicStyle } from "./utils/DynamicStyling";
 import {
@@ -36,6 +37,10 @@ import { ModifierKeySettingsComponent } from "./dialogs/ModifierKeySettings";
 import { ANNOTATED_PREFIX, CROPPED_PREFIX } from "./utils/CarveOut";
 import { EDITOR_FADEOUT } from "./CodeMirrorExtension/EditorHandler";
 import { setDebugging } from "./utils/DebugHelper";
+import { Rank } from "./menu/ActionIcons";
+import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/constSettingsTags";
+import { HotkeyEditor } from "./dialogs/HotkeyEditor";
+import { getExcalidrawViews } from "./utils/ObsidianUtils";
 
 export interface ExcalidrawSettings {
   folder: string;
@@ -47,8 +52,8 @@ export interface ExcalidrawSettings {
   compress: boolean;
   decompressForMDView: boolean;
   onceOffCompressFlagReset: boolean; //used to reset compress to true in 2.2.0
+  onceOffGPTVersionReset: boolean; //used to reset GPT version in 2.2.11
   autosave: boolean;
-  autosaveInterval: number;
   autosaveIntervalDesktop: number;
   autosaveIntervalMobile: number;
   drawingFilenamePrefix: string;
@@ -75,8 +80,10 @@ export interface ExcalidrawSettings {
   matchThemeTrigger: boolean;
   defaultMode: string;
   defaultPenMode: "never" | "mobile" | "always";
+  penModeDoubleTapEraser: boolean;
   penModeCrosshairVisible: boolean;
   renderImageInMarkdownReadingMode: boolean,
+  renderImageInHoverPreviewForMDNotes: boolean,
   renderImageInMarkdownToPDF: boolean,
   allowPinchZoom: boolean;
   allowWheelZoom: boolean;
@@ -120,8 +127,11 @@ export interface ExcalidrawSettings {
   experimentalFileTag: string;
   experimentalLivePreview: boolean;
   fadeOutExcalidrawMarkup: boolean;
+  loadPropertySuggestions: boolean;
   experimentalEnableFourthFont: boolean;
   experimantalFourthFont: string;
+  addDummyTextElement: boolean;
+  zoteroCompatibility: boolean;
   fieldSuggester: boolean;
   //loadCount: number; //version 1.2 migration counter
   drawingOpenCount: number;
@@ -161,6 +171,7 @@ export interface ExcalidrawSettings {
   numberOfCustomPens: number;
   pdfScale: number;
   pdfBorderBox: boolean;
+  pdfFrame: boolean;
   pdfGapSize: number;
   pdfGroupPages: boolean;
   pdfLockAfterImport: boolean;
@@ -168,12 +179,14 @@ export interface ExcalidrawSettings {
   pdfNumRows: number;
   pdfDirection: "down" | "right";
   pdfImportScale: number;
+  gridSettings: GridSettings;
   laserSettings: {
     DECAY_TIME: number,
     DECAY_LENGTH: number,
     COLOR: string,
   };
   embeddableMarkdownDefaults: EmbeddableMDCustomProps;
+  markdownNodeOneClickEditing: boolean;
   canvasImmersiveEmbed: boolean,
   startupScriptPath: string,
   openAIAPIToken: string,
@@ -193,6 +206,9 @@ export interface ExcalidrawSettings {
   longPressDesktop: number;
   longPressMobile: number;
   isDebugMode: boolean;
+  rank: Rank;
+  modifierKeyOverrides: {modifiers: Modifier[], key: string}[];
+  showSplashscreen: boolean;
 }
 
 declare const PLUGIN_VERSION:string;
@@ -207,10 +223,10 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   compress: true,
   decompressForMDView: false,
   onceOffCompressFlagReset: false,
+  onceOffGPTVersionReset: false,
   autosave: true,
-  autosaveInterval: 15000,
-  autosaveIntervalDesktop: 15000,
-  autosaveIntervalMobile: 10000,
+  autosaveIntervalDesktop: 60000,
+  autosaveIntervalMobile: 30000,
   drawingFilenamePrefix: "Drawing ",
   drawingEmbedPrefixWithFilename: true,
   drawingFilnameEmbedPostfix: " ",
@@ -235,8 +251,10 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   matchThemeTrigger: false,
   defaultMode: "normal",
   defaultPenMode: "never",
+  penModeDoubleTapEraser: true,
   penModeCrosshairVisible: true,
   renderImageInMarkdownReadingMode: false,
+  renderImageInHoverPreviewForMDNotes: false,
   renderImageInMarkdownToPDF: false,
   allowPinchZoom: false,
   allowWheelZoom: false,
@@ -250,9 +268,9 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   done: "🗹",
   hoverPreviewWithoutCTRL: false,
   linkOpacity: 1,
-  openInAdjacentPane: false,
+  openInAdjacentPane: true,
   showSecondOrderLinks: true,
-  focusOnFileTab: false,
+  focusOnFileTab: true,
   openInMainWorkspace: true,
   showLinkBrackets: true,
   allowCtrlClick: true,
@@ -279,8 +297,11 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   experimentalFileTag: "✏️",
   experimentalLivePreview: true,
   fadeOutExcalidrawMarkup: false,
+  loadPropertySuggestions: true,
   experimentalEnableFourthFont: false,
   experimantalFourthFont: "Virgil",
+  addDummyTextElement: false,
+  zoteroCompatibility: false,
   fieldSuggester: true,
   compatibilityMode: false,
   //loadCount: 0,
@@ -327,6 +348,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   numberOfCustomPens: 0,
   pdfScale: 4,
   pdfBorderBox: true,
+  pdfFrame: false,
   pdfGapSize: 20,
   pdfGroupPages: false,
   pdfLockAfterImport: true,
@@ -334,6 +356,11 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   pdfNumRows: 1,
   pdfDirection: "right",
   pdfImportScale: 0.3,
+  gridSettings: {
+    DYNAMIC_COLOR: true,
+    COLOR: "#000000",
+    OPACITY: 50,
+  },
   laserSettings: {
     DECAY_LENGTH: 50,
     DECAY_TIME: 1000,
@@ -350,11 +377,12 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
     borderOpacity: 0,
     filenameVisible: false,
   },
+  markdownNodeOneClickEditing: false,
   canvasImmersiveEmbed: true,
   startupScriptPath: "",
   openAIAPIToken: "",
   openAIDefaultTextModel: "gpt-3.5-turbo-1106",
-  openAIDefaultVisionModel: "gpt-4-vision-preview",
+  openAIDefaultVisionModel: "gpt-4o",
   openAIDefaultImageGenerationModel: "dall-e-3",
   openAIURL: "https://api.openai.com/v1/chat/completions",
   openAIImageGenerationURL: "https://api.openai.com/v1/images/generations",
@@ -445,6 +473,13 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   longPressDesktop: 500,
   longPressMobile: 500,
   isDebugMode: false,
+  rank: "Bronze",
+  modifierKeyOverrides: [
+    {modifiers: ["Mod"], key:"Enter"},
+    {modifiers: ["Mod"], key:"k"},
+    {modifiers: ["Mod"], key:"G"},
+  ],
+  showSplashscreen: true,
 };
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
@@ -453,6 +488,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private requestReloadDrawings: boolean = false;
   private requestUpdatePinnedPens: boolean = false;
   private requestUpdateDynamicStyling: boolean = false;
+  private hotkeyEditor: HotkeyEditor;
   //private reloadMathJax: boolean = false;
   //private applyDebounceTimer: number = 0;
 
@@ -479,27 +515,25 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     }
     this.plugin.saveSettings();
     if (this.requestUpdatePinnedPens) {
-      app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
-        if (v.view instanceof ExcalidrawView) v.view.updatePinnedCustomPens()
-      })
+      getExcalidrawViews(this.app).forEach(excalidrawView =>
+        excalidrawView.updatePinnedCustomPens()
+      )
     }
     if (this.requestUpdateDynamicStyling) {
-      app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
-        if (v.view instanceof ExcalidrawView) {
-          setDynamicStyle(this.plugin.ea,v.view,v.view.previousBackgroundColor,this.plugin.settings.dynamicStyling);
-        }
-        
-      })
+      getExcalidrawViews(this.app).forEach(excalidrawView =>
+          setDynamicStyle(this.plugin.ea,excalidrawView,excalidrawView.previousBackgroundColor,this.plugin.settings.dynamicStyling)
+      )
+    }
+    this.hotkeyEditor.unload();
+    if (this.hotkeyEditor.isDirty) {
+      this.plugin.registerHotkeyOverrides();
     }
     if (this.requestReloadDrawings) {
-      const exs =
-        app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
-      for (const v of exs) {
-        if (v.view instanceof ExcalidrawView) {
-          await v.view.save(false);
-          //debug({where:"ExcalidrawSettings.hide",file:v.view.file.name,before:"reload(true)"})
-          await v.view.reload(true);
-        }
+      const excalidrawViews = getExcalidrawViews(this.app);
+      for (const excalidrawView of excalidrawViews) {
+        await excalidrawView.save(false);
+        //debug({where:"ExcalidrawSettings.hide",file:v.view.file.name,before:"reload(true)"})
+        await excalidrawView.reload(true);
       }
       this.requestEmbedUpdate = true;
     }
@@ -533,6 +567,46 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       },
     });
     coffeeImg.height = 45;
+    
+    const iconLinks = [
+      { 
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>`,
+        href: "https://github.com/zsviczian/obsidian-excalidraw-plugin/issues",
+        aria: "Report bugs and raise feature requsts on the plugin's GitHub page",
+        text: "Bugs and Feature Requests",
+      },
+      { 
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19c-2.3 0-6.4-.2-8.1-.6-.7-.2-1.2-.7-1.4-1.4-.3-1.1-.5-3.4-.5-5s.2-3.9.5-5c.2-.7.7-1.2 1.4-1.4C5.6 5.2 9.7 5 12 5s6.4.2 8.1.6c.7.2 1.2.7 1.4 1.4.3 1.1.5 3.4.5 5s-.2 3.9-.5 5c-.2.7-.7 1.2-1.4 1.4-1.7.4-5.8.6-8.1.6 0 0 0 0 0 0z"></path><polygon points="10 15 15 12 10 9"></polygon></svg>`,
+        href: "https://www.youtube.com/@VisualPKM",
+        aria: "Check out my YouTube channel to learn about Visual Thinking and Excalidraw",
+        text: "Visual PKM on YouTube",
+      },
+      { 
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" stroke="none" strokeWidth="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 640 512"><path d="M524.531,69.836a1.5,1.5,0,0,0-.764-.7A485.065,485.065,0,0,0,404.081,32.03a1.816,1.816,0,0,0-1.923.91,337.461,337.461,0,0,0-14.9,30.6,447.848,447.848,0,0,0-134.426,0,309.541,309.541,0,0,0-15.135-30.6,1.89,1.89,0,0,0-1.924-.91A483.689,483.689,0,0,0,116.085,69.137a1.712,1.712,0,0,0-.788.676C39.068,183.651,18.186,294.69,28.43,404.354a2.016,2.016,0,0,0,.765,1.375A487.666,487.666,0,0,0,176.02,479.918a1.9,1.9,0,0,0,2.063-.676A348.2,348.2,0,0,0,208.12,430.4a1.86,1.86,0,0,0-1.019-2.588,321.173,321.173,0,0,1-45.868-21.853,1.885,1.885,0,0,1-.185-3.126c3.082-2.309,6.166-4.711,9.109-7.137a1.819,1.819,0,0,1,1.9-.256c96.229,43.917,200.41,43.917,295.5,0a1.812,1.812,0,0,1,1.924.233c2.944,2.426,6.027,4.851,9.132,7.16a1.884,1.884,0,0,1-.162,3.126,301.407,301.407,0,0,1-45.89,21.83,1.875,1.875,0,0,0-1,2.611,391.055,391.055,0,0,0,30.014,48.815,1.864,1.864,0,0,0,2.063.7A486.048,486.048,0,0,0,610.7,405.729a1.882,1.882,0,0,0,.765-1.352C623.729,277.594,590.933,167.465,524.531,69.836ZM222.491,337.58c-28.972,0-52.844-26.587-52.844-59.239S193.056,219.1,222.491,219.1c29.665,0,53.306,26.82,52.843,59.239C275.334,310.993,251.924,337.58,222.491,337.58Zm195.38,0c-28.971,0-52.843-26.587-52.843-59.239S388.437,219.1,417.871,219.1c29.667,0,53.307,26.82,52.844,59.239C470.715,310.993,447.538,337.58,417.871,337.58Z"/></svg>`,
+        href: "https://discord.gg/DyfAXFwUHc",
+        aria: "Join the Visual Thinking Workshop Discord Server",
+        text: "Community on Discord",
+      },
+      { 
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path></svg>`,
+        href: "https://twitter.com/zsviczian",
+        aria: "Follow me on Twitter",
+        text: "Follow me on Twitter",
+      },
+      { 
+        icon: getIcon("graduation-cap").outerHTML,
+        href: "https://visual-thinking-workshop.com",
+        aria: "Learn about Visual PKM, Excalidraw, Obsidian, ExcaliBrain and more",
+        text: "Join the Visual Thinking Workshop",
+      }
+    ];
+
+    const linksEl = containerEl.createDiv("setting-item-description excalidraw-settings-links-container");
+    iconLinks.forEach(({ icon, href, aria, text }) => {
+      linksEl.createEl("a",{href, attr: { "aria-label": aria }}, (a)=> {
+        a.innerHTML = icon  + text;
+      });
+    });
 
     // ------------------------------------------------
     // Saving
@@ -688,16 +762,14 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     .setDesc(fragWithHTML(t("AUTOSAVE_INTERVAL_DESKTOP_DESC")))
     .addDropdown((dropdown) =>
       dropdown
-        .addOption("15000", "Frequent (every 15 seconds)")
+        .addOption("15000", "Very frequent (every 15 seconds)")
+        .addOption("30000", "Frequent (every 30 seconds)")
         .addOption("60000", "Moderate (every 60 seconds)")
         .addOption("300000", "Rare (every 5 minutes)")
         .addOption("900000", "Practically never (every 15 minutes)")
         .setValue(this.plugin.settings.autosaveIntervalDesktop.toString())
         .onChange(async (value) => {
           this.plugin.settings.autosaveIntervalDesktop = parseInt(value);
-          this.plugin.settings.autosaveInterval = DEVICE.isMobile
-            ? this.plugin.settings.autosaveIntervalMobile
-            : this.plugin.settings.autosaveIntervalDesktop;
           this.applySettingsUpdate();
         }),
     );
@@ -707,16 +779,14 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     .setDesc(fragWithHTML(t("AUTOSAVE_INTERVAL_MOBILE_DESC")))
     .addDropdown((dropdown) =>
       dropdown
-        .addOption("10000", "Frequent (every 10 seconds)")
+        .addOption("10000", "Very frequent (every 10 seconds)")
+        .addOption("20000", "Frequent (every 20 seconds)")
         .addOption("30000", "Moderate (every 30 seconds)")
         .addOption("60000", "Rare (every 1 minute)")
         .addOption("300000", "Practically never (every 5 minutes)")
         .setValue(this.plugin.settings.autosaveIntervalMobile.toString())
         .onChange(async (value) => {
           this.plugin.settings.autosaveIntervalMobile = parseInt(value);
-          this.plugin.settings.autosaveInterval = DEVICE.isMobile
-            ? this.plugin.settings.autosaveIntervalMobile
-            : this.plugin.settings.autosaveIntervalDesktop;
           this.applySettingsUpdate();
         }),
     );
@@ -978,6 +1048,17 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     );
 
     new Setting(detailsEl)
+      .setName(t("DISABLE_DOUBLE_TAP_ERASER_NAME"))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.penModeDoubleTapEraser)
+          .onChange(async (value) => {
+            this.plugin.settings.penModeDoubleTapEraser = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
       .setName(t("SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_NAME"))
       .setDesc(fragWithHTML(t("SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_DESC")))
       .addToggle((toggle) =>
@@ -989,7 +1070,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(detailsEl)
+    const readingModeEl = new Setting(detailsEl)
       .setName(t("SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME"))
       .setDesc(fragWithHTML(t("SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC")))
       .addToggle((toggle) =>
@@ -1000,7 +1081,20 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
+    readingModeEl.nameEl.setAttribute("id",TAG_MDREADINGMODE);
 
+    new Setting(detailsEl)
+      .setName(t("SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_NAME"))
+      .setDesc(fragWithHTML(t("SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.renderImageInHoverPreviewForMDNotes)
+          .onChange(async (value) => {
+            this.plugin.settings.renderImageInHoverPreviewForMDNotes = value;
+            this.applySettingsUpdate();
+          }),
+      );
+      
     new Setting(detailsEl)
       .setName(t("LEFTHANDED_MODE_NAME"))
       .setDesc(fragWithHTML(t("LEFTHANDED_MODE_DESC")))
@@ -1017,6 +1111,29 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
     addIframe(detailsEl, "H8Njp7ZXYag",999);
+
+    new Setting(detailsEl)
+      .setName(t("TOGGLE_SPLASHSCREEN"))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.showSplashscreen)
+          .onChange((value)=> {
+            this.plugin.settings.showSplashscreen = value;
+            this.applySettingsUpdate();
+          })
+      )
+
+    detailsEl = displayDetailsEl.createEl("details");
+    detailsEl.createEl("summary", {
+      text: t("HOTKEY_OVERRIDE_HEAD"),
+      cls: "excalidraw-setting-h3",
+    });
+    detailsEl.createEl("span", {}, (el) => {
+      el.innerHTML = t("HOTKEY_OVERRIDE_DESC");
+    });
+
+    this.hotkeyEditor = new HotkeyEditor(detailsEl, this.plugin.settings, this.applySettingsUpdate);
+    this.hotkeyEditor.onload();
 
     detailsEl = displayDetailsEl.createEl("details");
     detailsEl.createEl("summary", { 
@@ -1124,9 +1241,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.allowPinchZoom)
           .onChange(async (value) => {
             this.plugin.settings.allowPinchZoom = value;
-            app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
-              if (v.view instanceof ExcalidrawView) v.view.updatePinchZoom()
-            })
+            getExcalidrawViews(this.app).forEach(excalidrawView=>excalidrawView.updatePinchZoom())
             this.applySettingsUpdate();
           }),
       );
@@ -1140,9 +1255,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.allowWheelZoom)
           .onChange(async (value) => {
             this.plugin.settings.allowWheelZoom = value;
-            app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).forEach(v=> {
-              if (v.view instanceof ExcalidrawView) v.view.updateWheelZoom()
-            })
+            getExcalidrawViews(this.app).forEach(excalidrawView=>excalidrawView.updateWheelZoom());
             this.applySettingsUpdate();
           }),
       );
@@ -1193,7 +1306,79 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         el.innerText = ` ${this.plugin.settings.zoomToFitMaxLevel.toString()}`;
       });
 
-    
+      // ------------------------------------------------
+      // Grid
+      // ------------------------------------------------
+      detailsEl = displayDetailsEl.createEl("details");
+      detailsEl.createEl("summary", {
+        text: t("GRID_HEAD"),
+        cls: "excalidraw-setting-h3",
+      });
+
+      const updateGridColor = () => {
+        getExcalidrawViews(this.app).forEach(excalidrawView=>excalidrawView.updateGridColor());
+      };
+
+      // Dynamic color toggle
+      let gridColorSection: HTMLDivElement;
+      new Setting(detailsEl)
+        .setName(t("GRID_DYNAMIC_COLOR_NAME"))
+        .setDesc(fragWithHTML(t("GRID_DYNAMIC_COLOR_DESC")))
+        .addToggle((toggle) =>
+          toggle
+            .setValue(this.plugin.settings.gridSettings.DYNAMIC_COLOR)
+            .onChange(async (value) => {
+              this.plugin.settings.gridSettings.DYNAMIC_COLOR = value;
+              gridColorSection.style.display = value ? "none" : "block";
+              this.applySettingsUpdate();
+              updateGridColor();
+            }),
+        );
+
+      // Create a div to contain color and opacity settings
+      gridColorSection = detailsEl.createDiv();
+      gridColorSection.style.display = this.plugin.settings.gridSettings.DYNAMIC_COLOR ? "none" : "block";
+
+      // Grid color picker
+      new Setting(gridColorSection)
+        .setName(t("GRID_COLOR_NAME"))
+        .addColorPicker((colorPicker) =>
+          colorPicker
+            .setValue(this.plugin.settings.gridSettings.COLOR)
+            .onChange(async (value) => {
+              this.plugin.settings.gridSettings.COLOR = value;
+              this.applySettingsUpdate();
+              updateGridColor();
+            }),
+        );
+
+      // Grid opacity slider (hex value between 00 and FF)
+      let opacityValue: HTMLDivElement;
+      new Setting(detailsEl)
+        .setName(t("GRID_OPACITY_NAME"))
+        .setDesc(fragWithHTML(t("GRID_OPACITY_DESC")))
+        .addSlider((slider) =>
+          slider
+            .setLimits(0, 100, 1) // 0 to 100 in decimal
+            .setValue(this.plugin.settings.gridSettings.OPACITY)
+            .onChange(async (value) => {
+              opacityValue.innerText = ` ${value.toString()}`;
+              this.plugin.settings.gridSettings.OPACITY = value;
+              this.applySettingsUpdate();
+              updateGridColor();
+            }),
+        )
+        .settingEl.createDiv("", (el) => {
+          opacityValue = el;
+          el.style.minWidth = "3em";
+          el.style.textAlign = "right";
+          el.innerText = ` ${this.plugin.settings.gridSettings.OPACITY}`;
+        });
+
+
+    // ------------------------------------------------
+    // Laser Pointer
+    // ------------------------------------------------
     detailsEl = displayDetailsEl.createEl("details");
     detailsEl.createEl("summary", { 
       text: t("LASER_HEAD"),
@@ -1778,7 +1963,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     });
     addIframe(detailsEl, "wTtaXmRJ7wg",171);
 
-    new Setting(detailsEl)
+    const pdfExportEl = new Setting(detailsEl)
     .setName(t("SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME"))
     .setDesc(fragWithHTML(t("SHOW_DRAWING_OR_MD_IN_EXPORTPDF_DESC")))
     .addToggle((toggle) =>
@@ -1789,6 +1974,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           this.applySettingsUpdate();
         }),
     );
+    pdfExportEl.nameEl.setAttribute("id",TAG_PDFEXPORT);
 
     new Setting(detailsEl)
       .setName(t("EXPORT_EMBED_SCENE_NAME"))
@@ -1928,6 +2114,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       text: t("EXPORT_HEAD"),
       cls: "excalidraw-setting-h4",
     });
+    detailsEl.setAttribute("id",TAG_AUTOEXPORT);
 
     new Setting(detailsEl)
       .setName(t("EXPORT_SYNC_NAME"))
@@ -2048,7 +2235,26 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       text: t("MD_EMBED_CUSTOMDATA_HEAD_NAME"),
       cls: "excalidraw-setting-h3",
     });
-    detailsEl.createEl("span", {text: t("MD_EMBED_CUSTOMDATA_HEAD_DESC")});
+
+    new Setting(detailsEl)
+    .setName(t("MD_EMBED_SINGLECLICK_EDIT_NAME"))
+    .setDesc(fragWithHTML(t("MD_EMBED_SINGLECLICK_EDIT_DESC")))
+    .addToggle((toggle) =>
+      toggle
+        .setValue(this.plugin.settings.markdownNodeOneClickEditing)
+        .onChange(async (value) => {
+          this.plugin.settings.markdownNodeOneClickEditing = value;
+          this.applySettingsUpdate();
+        })
+    );
+
+    detailsEl.createEl("hr", { cls: "excalidraw-setting-hr" });
+    detailsEl.createEl("span", {}, (el) => {
+      el.innerHTML = t("MD_EMBED_CUSTOMDATA_HEAD_DESC");
+    });
+
+
+
 
     new EmbeddalbeMDFileCustomDataSettingsComponent(
       detailsEl,
@@ -2125,7 +2331,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         d.addOption("Assistant", "Assistant");
         this.app.vault
           .getFiles()
-          .filter((f) => ["ttf", "woff", "woff2"].contains(f.extension))
+          .filter((f) => ["ttf", "woff", "woff2", "otf"].contains(f.extension))
           .forEach((f: TFile) => {
             d.addOption(f.path, f.name);
           });
@@ -2211,7 +2417,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           areaZoomText.innerText = ` ${value.toString()}`;
           this.plugin.settings.areaZoomLimit = value;
           this.applySettingsUpdate();
-          this.plugin.excalidrawConfig.updateValues();
+          this.plugin.excalidrawConfig.updateValues(this.plugin);
         }),
     )
     .settingEl.createDiv("", (el) => {
@@ -2369,6 +2575,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
+    new Setting(detailsEl)
+      .setName(t("EXCALIDRAW_PROPERTIES_NAME"))
+      .setDesc(fragWithHTML(t("EXCALIDRAW_PROPERTIES_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.loadPropertySuggestions)
+          .onChange(async (value) => {
+            this.plugin.settings.loadPropertySuggestions = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
     detailsEl = experimentalDetailsEl.createEl("details");
     detailsEl.createEl("summary", { 
       text: t("TASKBONE_HEAD"),
@@ -2497,18 +2715,45 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h1",
     });
 
+
     new Setting(detailsEl)
-    .setName(t("DEBUGMODE_NAME"))
-    .setDesc(fragWithHTML(t("DEBUGMODE_DESC")))
+    .setName(t("DUMMY_TEXT_ELEMENT_LINT_SUPPORT_NAME"))
+    .setDesc(fragWithHTML(t("DUMMY_TEXT_ELEMENT_LINT_SUPPORT_DESC")))
     .addToggle((toggle) =>
       toggle
-        .setValue(this.plugin.settings.isDebugMode)
+        .setValue(this.plugin.settings.addDummyTextElement)
         .onChange((value) => {
-          this.plugin.settings.isDebugMode = value;
-          setDebugging(value);
+          this.plugin.settings.addDummyTextElement = value;
           this.applySettingsUpdate();
         }),
     );
+
+    new Setting(detailsEl)
+    .setName(t("PRESERVE_TEXT_AFTER_DRAWING_NAME"))
+    .setDesc(fragWithHTML(t("PRESERVE_TEXT_AFTER_DRAWING_DESC")))
+    .addToggle((toggle) =>
+      toggle
+        .setValue(this.plugin.settings.zoteroCompatibility)
+        .onChange((value) => {
+          this.plugin.settings.zoteroCompatibility = value;
+          this.applySettingsUpdate();
+        }),
+    );
+
+    if (process.env.NODE_ENV === 'development') {
+      new Setting(detailsEl)
+      .setName(t("DEBUGMODE_NAME"))
+      .setDesc(fragWithHTML(t("DEBUGMODE_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.isDebugMode)
+          .onChange((value) => {
+            this.plugin.settings.isDebugMode = value;
+            setDebugging(value);
+            this.applySettingsUpdate();
+          }),
+      );
+    }
 
 
     new Setting(detailsEl)

@@ -4,11 +4,6 @@
 import { ExcalidrawElement, FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { App, MarkdownRenderer, Notice, TFile } from "obsidian";
-import {
-  ASSISTANT_FONT,
-  CASCADIA_FONT,
-  VIRGIL_FONT,
-} from "./constants/constFonts";
 import {  
   DEFAULT_MD_EMBED_CSS,
   fileid,
@@ -16,6 +11,7 @@ import {
   nanoid,
   THEME_FILTER,
   FRONTMATTER_KEYS,
+  getCSSFontDefinition,
 } from "./constants/constants";
 import { createSVG } from "./ExcalidrawAutomate";
 import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
@@ -38,12 +34,14 @@ import {
   LinkParts,
   svgToBase64,
   isMaskFile,
+  getEmbeddedFilenameParts,
+  cropCanvas,
 } from "./utils/Utils";
-import { ValueOf } from "./types";
+import { ValueOf } from "./types/types";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
 import { mermaidToExcalidraw } from "src/constants/constants";
 import { ImageKey, imageCache } from "./utils/ImageCache";
-import { PreviewImageType } from "./utils/UtilTypes";
+import { FILENAMEPARTS, PreviewImageType } from "./utils/UtilTypes";
 
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B
@@ -144,8 +142,6 @@ const replaceSVGColors = (svg: SVGSVGElement | string, colorMap: ColorMap | null
   return svg;
 }
 
-
-
 export class EmbeddedFile {
   public file: TFile = null;
   public isSVGwithBitmap: boolean = false;
@@ -156,6 +152,7 @@ export class EmbeddedFile {
   public mimeType: MimeType = "application/octet-stream";
   public size: Size = { height: 0, width: 0 };
   public linkParts: LinkParts;
+  public filenameparts: FILENAMEPARTS
   private hostPath: string;
   public attemptCounter: number = 0;
   public isHyperLink: boolean = false;
@@ -203,7 +200,7 @@ export class EmbeddedFile {
     if (!this.linkParts.height) {
       this.linkParts.height = this.plugin.settings.mdSVGmaxHeight;
     }
-    this.file = app.metadataCache.getFirstLinkpathDest(
+    this.file = this.plugin.app.metadataCache.getFirstLinkpathDest(
       this.linkParts.path,
       hostPath,
     );
@@ -214,6 +211,9 @@ export class EmbeddedFile {
           5000,
         );
       }
+    } else {
+      this.filenameparts = getEmbeddedFilenameParts(imgPath);
+      this.filenameparts.filepath = this.file.path;
     }
   }
 
@@ -359,25 +359,36 @@ export class EmbeddedFilesLoader {
         : false,
       withTheme: !!forceTheme,
       isMask,
+      skipInliningFonts: false,
     };
 
-    const shouldUseCache = this.plugin.settings.allowImageCacheInScene && file && imageCache.isReady();
+    const hasColorMap = Boolean(inFile instanceof EmbeddedFile ? inFile.colorMap : null);
+    const shouldUseCache = !hasColorMap && this.plugin.settings.allowImageCacheInScene && file && imageCache.isReady();
+    const hasFilenameParts = Boolean((inFile instanceof EmbeddedFile) && inFile.filenameparts);
+    const filenameParts = hasFilenameParts ? (inFile as EmbeddedFile).filenameparts : null;
     const cacheKey:ImageKey = {
-      filepath: file.path,
-      blockref: null,
-      sectionref: null,
+      ...hasFilenameParts? {
+        ...filenameParts,
+        inlineFonts: !exportSettings.skipInliningFonts, 
+      }: {
+        filepath: file.path,
+        hasBlockref: false,
+        hasGroupref: false,
+        hasTaskbone: false,
+        hasArearef: false,
+        hasFrameref: false,
+        hasClippedFrameref: false,
+        hasSectionref: false,
+        inlineFonts: !exportSettings.skipInliningFonts,
+        blockref: null,
+        sectionref: null,
+        linkpartReference: null,
+        linkpartAlias: null,
+      },
       isDark,
       previewImageType: PreviewImageType.SVG,
       scale: 1,
       isTransparent: !exportSettings.withBackground,
-      hasBlockref: false,
-      hasGroupref: false,
-      hasTaskbone: false,
-      hasArearef: false,
-      hasFrameref: false,
-      hasSectionref: false,
-      linkpartReference: null,
-      linkpartAlias: null,
     }
 
     const maybeSVG = shouldUseCache
@@ -388,9 +399,17 @@ export class EmbeddedFilesLoader {
     ? maybeSVG
     : replaceSVGColors(
         await createSVG(
-          file?.path,
-          true,
-          exportSettings,
+          hasFilenameParts
+            ? (filenameParts.hasGroupref || filenameParts.hasBlockref ||
+               filenameParts.hasSectionref || filenameParts.hasFrameref ||
+               filenameParts.hasClippedFrameref
+              ? filenameParts.filepath + filenameParts.linkpartReference
+              : file.path)
+            : file?.path,
+          false, //false
+          hasFilenameParts && filenameParts.hasClippedFrameref
+          ? {...exportSettings, frameRendering: {enabled: true, name: false, outline: false, clip: true}}
+          : exportSettings,
           this,
           forceTheme,
           null,
@@ -423,7 +442,18 @@ export class EmbeddedFilesLoader {
       hasSVGwithBitmap = true;
     }
     if(shouldUseCache && !Boolean(maybeSVG)) {
+      //cache SVG should have the width and height parameters and not the embedded font
+      //see svgWithFont below
       imageCache.addImageToCache(cacheKey,"", svg);
+    }
+
+    if(!svg.hasAttribute("width") && svg.hasAttribute("viewBox")){
+      //2024.06.09
+      //this addresses backward compatibility issues where the cache does not have the width and height attributes
+      //this should be removed in the future
+      const vb = svg.getAttr("viewBox").split(" ");
+      Boolean(vb[2]) && svg.setAttribute("width", vb[2]);
+      Boolean(vb[3]) && svg.setAttribute("height", vb[3]);
     }
     const dURL = svgToBase64(svg.outerHTML) as DataURL;
     return {dataURL: dURL as DataURL, hasSVGwithBitmap};
@@ -442,6 +472,8 @@ export class EmbeddedFilesLoader {
     if (!this.plugin || !inFile) {
       return null;
     }
+
+    const app = this.plugin.app;
 
     const isHyperLink = inFile instanceof EmbeddedFile ? inFile.isHyperLink : false;
     const isLocalLink = inFile instanceof EmbeddedFile ? inFile.isLocalLink : false;
@@ -543,7 +575,8 @@ export class EmbeddedFilesLoader {
       return {
         mimeType,
         fileId: await generateIdFromFile(
-          isHyperLink || isPDF ? (new TextEncoder()).encode(dataURL as string) : ab
+          isHyperLink || isPDF ? (new TextEncoder()).encode(dataURL as string) : ab,
+          inFile instanceof EmbeddedFile ? inFile.filenameparts?.linkpartReference : undefined
         ),
         dataURL,
         created: isHyperLink || isLocalLink ? 0 : file.stat.mtime,
@@ -560,6 +593,7 @@ export class EmbeddedFilesLoader {
     addFiles: (files: FileData[], isDark: boolean, final?: boolean) => void,
     depth:number,
     isThemeChange:boolean = false,
+    fileIDWhiteList?: Set<FileId>,
   ) {
     
     if(depth > 7) {
@@ -574,6 +608,7 @@ export class EmbeddedFilesLoader {
     let entry: IteratorResult<[FileId, EmbeddedFile]>;
     const files: FileData[] = [];
     while (!this.terminate && !(entry = entries.next()).done) {
+      if(fileIDWhiteList && !fileIDWhiteList.has(entry.value[0])) continue;
       const embeddedFile: EmbeddedFile = entry.value[1];
       if (!embeddedFile.isLoaded(this.isDark)) {
         //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"embedded Files are not loaded"});
@@ -620,6 +655,7 @@ export class EmbeddedFilesLoader {
     let equation;
     const equations = excalidrawData.getEquationEntries();
     while (!this.terminate && !(equation = equations.next()).done) {
+      if(fileIDWhiteList && !fileIDWhiteList.has(equation.value[0])) continue;
       if (!excalidrawData.getEquation(equation.value[0]).isLoaded) {
         const latex = equation.value[1].latex;
         const data = await tex2dataURL(latex);
@@ -716,6 +752,8 @@ export class EmbeddedFilesLoader {
       }
       const pageNum = isNaN(linkParts.page) ? 1 : (linkParts.page??1);
       const scale = this.plugin.settings.pdfScale;
+      const cropRect = linkParts.ref.split("rect=")[1]?.split(",").map(x=>parseInt(x));
+      const validRect = cropRect && cropRect.length === 4 && cropRect.every(x=>!isNaN(x));
 
       // Render the page
       const renderPage = async (num:number) => {
@@ -736,6 +774,23 @@ export class EmbeddedFilesLoader {
         };
 
         await page.render(renderCtx).promise;
+        if(validRect) {
+          const [left, bottom, _, top] = page.view;
+        
+          const pageHeight = top - bottom;
+          width = (cropRect[2] - cropRect[0]) * scale;
+          height = (cropRect[3] - cropRect[1]) * scale;
+
+          const crop = validRect ? {
+            left: (cropRect[0] - left) * scale,
+            top: (bottom + pageHeight - cropRect[3]) * scale,
+            width,
+            height,
+          } : undefined;
+          if(crop) {
+            return cropCanvas(canvas, crop);
+          }
+        }
         return canvas;
       };
 
@@ -786,13 +841,29 @@ export class EmbeddedFilesLoader {
     }
     switch (fontName) {
       case "Virgil":
-        fontDef = VIRGIL_FONT;
+        fontDef = await getCSSFontDefinition(1);
         break;
       case "Cascadia":
-        fontDef = CASCADIA_FONT;
+        fontDef = await getCSSFontDefinition(3);
         break;
-      case "Assistant": 
-        fontDef = ASSISTANT_FONT;
+      case "Assistant":
+      case "Helvetica":
+        fontDef = await getCSSFontDefinition(2);
+        break;
+      case "Excalifont":
+        fontDef = await getCSSFontDefinition(5);
+        break;
+      case "Nunito":
+        fontDef = await getCSSFontDefinition(6);
+        break;
+      case "Lilita One":
+        fontDef = await getCSSFontDefinition(7);
+        break;
+      case "Comic Shanns":
+        fontDef = await getCSSFontDefinition(8);
+        break;
+      case "Liberation Sans":
+        fontDef = await getCSSFontDefinition(9);
         break;
       case "":
         fontDef = "";
@@ -875,12 +946,14 @@ export class EmbeddedFilesLoader {
     mdDIV.style.display = "block";
     mdDIV.style.color = fontColor && fontColor !== "" ? fontColor : "initial";
   
-    await MarkdownRenderer.renderMarkdown(text, mdDIV, file.path, plugin);
-  
+    //await MarkdownRenderer.renderMarkdown(text, mdDIV, file.path, plugin);
+    await MarkdownRenderer.render(this.plugin.app,text,mdDIV,file.path,this.plugin);
+
     mdDIV
       .querySelectorAll(":scope > *[class^='frontmatter']")
       .forEach((el) => mdDIV.removeChild(el));
   
+    await replaceBlobWithBase64(mdDIV); //because image cache returns a blob
     const internalEmbeds = Array.from(mdDIV.querySelectorAll("span[class='internal-embed']"))
     for(let i=0;i<internalEmbeds.length;i++) {
       const el = internalEmbeds[i];
@@ -992,7 +1065,7 @@ const getSVGData = async (app: App, file: TFile, colorMap: ColorMap | null): Pro
   return svgToBase64(svg) as DataURL;
 };
 
-export const generateIdFromFile = async (file: ArrayBuffer): Promise<FileId> => {
+/*export const generateIdFromFile = async (file: ArrayBuffer): Promise<FileId> => {
   let id: FileId;
   try {
     const hashBuffer = await window.crypto.subtle.digest("SHA-1", file);
@@ -1007,4 +1080,53 @@ export const generateIdFromFile = async (file: ArrayBuffer): Promise<FileId> => 
     id = fileid() as FileId;
   }
   return id;
+};*/
+
+export const generateIdFromFile = async (file: ArrayBuffer, key?: string): Promise<FileId> => {
+  let id: FileId;
+  try {
+    // Convert the file ArrayBuffer to a Uint8Array
+    const fileArray = new Uint8Array(file);
+
+    // If a key is provided, concatenate it to the file data
+    let dataToHash: Uint8Array;
+    if (key) {
+      const encoder = new TextEncoder();
+      const keyArray = encoder.encode(key);
+      dataToHash = new Uint8Array(fileArray.length + keyArray.length);
+      dataToHash.set(fileArray);
+      dataToHash.set(keyArray, fileArray.length);
+    } else {
+      dataToHash = fileArray;
+    }
+
+    // Hash the combined data (file and key, if provided)
+    const hashBuffer = await window.crypto.subtle.digest("SHA-1", dataToHash);
+    id =
+      // Convert buffer to byte array
+      Array.from(new Uint8Array(hashBuffer))
+        // Convert to hex string
+        .map((byte) => byte.toString(16).padStart(2, "0"))
+        .join("") as FileId;
+  } catch (error) {
+    errorlog({ where: "EmbeddedFileLoader.generateIdFromFile", error });
+    id = fileid() as FileId;
+  }
+  return id;
+};
+
+const replaceBlobWithBase64 = async (divElement: HTMLDivElement): Promise<void> => {
+  const images = divElement.querySelectorAll<HTMLImageElement>('img[src^="blob:app://obsidian.md"]');
+
+  for (let img of images) {
+    const blobUrl = img.src;
+    try {
+      const response = await fetch(blobUrl);
+      const blob = await response.blob();
+      const base64 = await blobToBase64(blob);
+      img.src = `data:${blob.type};base64,${base64}`;
+    } catch (error) {
+      console.error(`Failed to fetch or convert blob: ${blobUrl}`, error);
+    }
+  }
 };

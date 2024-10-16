@@ -17,6 +17,312 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
 `,
+"2.5.2": `
+## Fixed
+- Text became disconnected from sticky notes (rectangle/ellipse/diamond + text) if the sticky note contained a link (e.g., URL or wiki link), and in some cases, triggered a save error warning. [#2054](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2054)
+- Long-clicking to open an Excalidraw drawing from a markdown note did not work when the note was in an Obsidian pop-out window.
+- Active tool was deactivated after autosave, requiring the user to reselect the tool.
+
+## Minor changes to default settings
+- I adjusted some of the default settings. This change only affects new installs of Excalidraw; existing installs and settings remain unchanged:
+  - **Reuse Adjacent Pane** is now the default for opening new drawings. Excalidraw will try to open the drawing in the most recently used adjacent pane, if available.
+  - **Focus on Existing Tab** is the default for reopening an already open drawing. Excalidraw will switch to the existing tab where the drawing is open, instead of creating a new one.
+  - **Autosave Interval** is now set to a default value of 1 minute on Desktop and 30 seconds on mobile platforms.
+`,
+"2.5.1": `
+## New
+- Excalidraw will now save images using the filename from the file system when adding an image via the image tool (in the top toolbar).
+- Increased the maximum image size from a width/height of 1440 to 2880 when adding an image via the image tool in the top toolbar.
+- Flip arrowheads: If you have an arrow bound to elements, select only the arrow (not the bound elements) and press SHIFT+H or SHIFT+V to swap the arrowheads. [#8525](https://github.com/excalidraw/excalidraw/pull/8525)
+
+## Fixed
+- Zoom
+  - "Zoom to Fit" did not work correctly when multiple Obsidian tabs were open, and Excalidraw was in a lower tab. Additionally, there was an offset when the left side panel was open, especially if the panel was relatively large compared to the canvas area. [#2039](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2039)
+  - SHIFT+1 and SHIFT+2 will now honor the max zoom setting in Plugin Settings.
+- Adding images using the image tool in the toolbar was unreliable. Sometimes it worked, sometimes it didn't, depending on whether the drawing had unsaved changes. Autosave was causing the issue with the image tool. [#1992](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1992)
+- Frame related issues
+  - Fixed an issue where links to the back of the note were broken if an unnamed frame was present in the scene. [#2027](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2027)
+  - Frame transclusion was not working when there was a LaTeX equation anywhere in the scene. [#2028](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2028)
+  - Frame settings and rounded image corners were not honored when exporting (and auto-exporting) SVGs. [#2026](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2026)
+- Resolved issues with the width, height, and style parsing of Excalidraw drawings embedded in Markdown notes. ${String.fromCharCode(96)}![[my file|10 - my alias]]${String.fromCharCode(96)} was incorrectly parsed as a width of 10 and a style of "- my alias."
+- Links
+  - When navigating element links, selecting a #tag from the link-list did not open the Obsidian tag in the search.
+  - False-positive tag results in second-order links list.
+  - Arrow label links did not work as expected. Since CTRL/CMD+Click is used in Excalidraw to start the line editor, the solution is not straightforward from a UX perspective. [#2023](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2023)
+    - You can open arrow links by ctrl+clicking on the label itself. If the arrow or line element contains the link, ctrl+click on the link indicator in the top right.
+    - You can also right-click the linear element and select "Open Link" from the context menu.
+- Various elbow-arrow fixes and QoL improvements from excalidraw.com [#8324](https://github.com/excalidraw/excalidraw/pull/8324), [#8448](https://github.com/excalidraw/excalidraw/pull/8448), [#8440](https://github.com/excalidraw/excalidraw/pull/8440)
+
+`,
+"2.5.0": `
+The new [Community Wiki](https://excalidraw-obsidian.online/Hobbies/Excalidraw+Blog/WIKI/Welcome+to+the+WIKI) is waiting for your contribution!
+
+## Fixed
+- Regression from 2.4.3: Text flickers when editing text in a container [#2015](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2015).
+- Significantly improved the performance of group and frame [image fragments](https://youtu.be/sjZfdqpxqsg) when the source drawing includes many images, but the fragment does not.
+- Minor styling tweaks. Note that with Obsidian 1.7.1, the font size and zoom settings in Obsidian > Appearance will affect the size of buttons and menu items in Excalidraw as well.
+
+## New
+- New Canvas Search from Excalidraw.com (CTRL/CMD+F). The "old" search is still available in the Obsidian Command Palette _"Search for text in drawing"_. The old search will also search in image-file names and frame titles, but the result set is not as sophisticated as the one built by Excalidraw.com. If you want to use the old search, you can set up a hotkey in Obsidian settings, e.g., CTRL+ALT/CMD+OPT+F. [#8438](https://github.com/excalidraw/excalidraw/pull/8438)
+- Grid Color settings under **Excalidraw Appearance and Behavior**. Note that the grid color and opacity also affect the color and transparency of the binding box when using the arrow tool. [#2007](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2007)
+- Refactoring the code to be compatible with the upcoming Obsidian 1.7.2.
+- ${String.fromCharCode(96)}ExcalidrawAutomate.decompressFromBase64()${String.fromCharCode(96)} will now remove line breaks from the input string so you can directly supply the compressed JSON string for decompression by script.
+`,
+"2.4.3": `
+Check out the [Excalidraw Plugin's Community WIKI](https://excalidraw-obsidian.online/Hobbies/Excalidraw+Blog/WIKI/Welcome+to+the+WIKI) and help with your content contribution.
+
+## Fixed
+- In some situations Excalidraw hangs indefinitely when opening a different file in the same tab
+- Can't exit arrow tool on phone [#2006](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2006)
+- Save is triggered every few seconds, leading to glitches in handwriting [#2004](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2004)
+- Canvas shifts when editing text reaches right hand side of the canvas, especially at higher zoom values
+- Minor styling tweaks to adapt to Obsidian 1.7.1 new stylesheet, in particular to scale Excalidraw properly in line with Obsidian Appearance Setting Font-Size value.
+- Tweaked Compatibilty Setting description to mention Obsidian 1.7.1 Footnotes support
+`,
+"2.4.2": `
+This release addresses critical issues for all Obsidian Mobile users.
+
+#### 😞 I made two mistakes...
+- I expedited the 2.4.1 release to resolve a major bug, but in doing so, I skippes some of my usual rigorous testing
+- I included a new feature in 2.4.1 fresh from Excalidraw.com because I believe it brings significant end user benefits and did not want to wait until October. However, a small part of this feature was designed for server-side execution on Excalidraw.com, not for local use on Obsidian Mobile.
+
+Despite the recent two (2.4.1 and 2.4.2) emergency bug-fix releases, this doesn't deviate from the [monthly release schedule](https://youtu.be/2poSS-Z91lY). The next feature update is still planned for early October.
+
+## Fixes:
+- **Excalidraw rendering issues on Obsidian Mobile:** [#1995](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1995), [#1997](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1997)
+  - Nested Excalidraw drawings with text failed to render.
+  - Drawings in Markdown view didn't render if they contained text and were set to SVG Image or SVG Native (they worked with PNG).
+  - SVG export failed for drawings containing text.
+- **LaTeX equation duplication:** After using ALT+Drag to duplicate a LaTeX equation, editing the duplicate modified the original instead. [#1984](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1994)
+- **Unreadable Obsidian search results:** When drawings contained numerous Element Links and Embedded Files Links, search results became unreadable. This fix will apply to files saved after installing the update. [#1999](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1999)
+`,
+"2.4.1": `
+This release includes an important fix that can result in your drawing being overwritten by another drawing. Please update to this version as soon as possible.
+
+## Fixed
+- A problem where switching between two Excalidraw documents in the same tab could result in the content from the first document overwriting the second one, particularly when the first document was large. [#1988](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1988)
+- Styling issue when Obsidian font size is set to the non-default value.
+- Embedding a block reference ${String.fromCharCode(96)}![[file#^block]]${String.fromCharCode(96)} where the file is an excalidraw file incorrectly replaced the embedding with the image instead of the block of text.
+
+## New
+- Improved SVG export to include only the necessary glyphs for .woff2 fonts, minimizing file sizes. Note that this feature is currently supported only for .woff2 files; other font formats like .ttf and .otf will be fully embedded, leading to larger SVG files. I recommend using .woff2 files whenever possible.
+`,
+"2.4.0": `
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/LtuAaqY_DNc" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## New
+- Flowcharts with CTRL/CMD+Arrow and ALT/OPT+Arrow keys
+- Improved PDF Support
+  - PDF++ cropped area paste
+  - Import PDF into frames
+- Element links with metadata
+- Obisidan Hotkey overrides
+- Support for Zotero style markdown links
+
+## QoL
+- Much improved freedraw flow, less autosave glitches
+- Link editor CTRL+Meta/(CTRL+CMD) + click or via the command palette "Open the image-link or LaTeX-formula editor.
+- Improved search and search results
+- Disable double tap ereaser activation in pen mode
+- Single click editing of markdown embeddables
+- Set grid size and frequency
+- Improved paste
+- Pan & Zoom while editing Text
+- Save active too-state (e.g. tool-lock) with the drawing
+- Show/hide "sword" splashscreen in new drawings
+
+## Fixed
+- Duplicate line points when Alt+click adding new points in line editor- - Excalidraw Automate measureText, impacting gate placement in ExcaliBrain
+- If a group includes a frame, the image reference will include all the elements in the frame, not just the frame
+- Excalidraw rendering issues in markdown preview
+- Markdown pages embedded in Excalidraw were broken
+- Drawing did not save arrow type
+- Fixed rendering of newly pasted links
+
+## ExcalidrawAutomate
+- new functions
+  - tex2dataURL
+  - addElementsToFrame
+  - resetImageAspectRatio
+- Changed
+  - getViewSelectedElements(includeFrameChildren: boolean = true);
+  - getOriginalImageSize with option to wait for the image to load
+`,
+"2.3.0": `
+I am moving to a new release approach aiming to publish one update per month to the Obsidian script store. If you want to continue to receive more frequent updates with new features and minor bug fixes, then join the beta testing team. [#1912](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1912)
+
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/2poSS-Z91lY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## New
+- Elbow connectors:  https://x.com/excalidraw/status/1819084086222393554
+
+## Fixed 
+- Convert Markdown to Excalidraw did not work correctly when there was ${String.fromCharCode(96)}---${String.fromCharCode(96)} anywhere in the file, but no frontmatter (e.g. a table)
+- Fixed Obsidian move tab to new window
+- Fixed duplicating bound arrows without its bound elements throwing error [#8315](https://github.com/excalidraw/excalidraw/issues/8315)
+`,
+"2.2.13": `
+## Fixed
+- Could not undo element after pasting [#1906](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1906)
+- Links broke after renaming an Excalidraw file using the F2 shortcut [#1907](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1907)
+- Unable to open or convert very large ${String.fromCharCode(96)}.excalidraw${String.fromCharCode(96)} file, e.g. BoaPs you can download from [here](https://ko-fi.com/zsolt/shop)
+`,
+"2.2.12": `
+## Fixed
+- Rename moved files to root folder [#1905](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1905)
+- Fonts not displaying correctly in cached image previews
+`,
+"2.2.11": `
+<img alt="badges" src="https://github.com/user-attachments/assets/7591b523-6bc6-46ff-b552-5c3492139e4c" referrerpolicy="no-referrer" style="width: 100%;">
+
+## New
+- Font picker with additional fonts (not yet fully configurable, but that will come in due time) [#8012](https://github.com/excalidraw/excalidraw/pull/8012)
+- Introducing Visual Thinking Badges. The more you use Excalidraw the higher your rank will be. Levels are: Bronze, Silver, Gold and Platinum.
+
+## Fixed
+- Embedded PDF was not visible on phones [#1904](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1904)
+- F2 does not rename files in Excalidraw View [#1900](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1900)
+- Wireframe to Code now honors the GPT model settings in plugin settings. [#1901](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1901)
+- Updated ExcaliAI to support gpt-4o for vision. [#1859](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/1859) 🙏@Saik0s
+- Minor fixes from excalidraw.com [#8287](https://github.com/excalidraw/excalidraw/pull/8287), [#8285](https://github.com/excalidraw/excalidraw/pull/8285)
+`,
+"2.2.10": `
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/sjZfdqpxqsg" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## Fixed
+- Drastically degraded rendering performance when zoomed in and when arrows with labels are used. [#8267](https://github.com/excalidraw/excalidraw/pull/8267), [#8266](https://github.com/excalidraw/excalidraw/pull/8266), [#1893](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1893)
+- Frame title font in exports. 
+
+## New
+- Area, Group, Frame, and Clipped-Frame references to images now also work when pasting images to Excalidraw.
+- The new reference type ${String.fromCharCode(96)}clippedframe=${String.fromCharCode(96)} works in the same way as ${String.fromCharCode(96)}frame=${String.fromCharCode(96)} but will display the elements clipped by the frame. ${String.fromCharCode(96)}clippedframe=${String.fromCharCode(96)} will always display the image with zero padding.
+- New command palette action: ${String.fromCharCode(96)}Frame Settings${String.fromCharCode(96)} gives you fine-grained control over how frames are rendered. Frame settings will also be reflected in image exports. For example, if you hide the frame name or outline, then in exports they will not be visible.
+`,
+"2.2.9": `
+## New
+- Improved the "Open the back-of-the-note of the selected Excalidraw image" action. It now works with grouped elements and keeps the popout window within the visible screen area when elements are close to the top of the canvas. Note: Due to an Obsidian bug, I do not recommend using this feature with versions 1.6.0 - 1.6.6, if you have Obsidian Sync enabled, because Obsidian may freeze when closing the popout window. It functions properly in Obsidian versions before 1.6.0 and from 1.6.7 onwards. 
+
+## Fixed
+- Drag and drop from a local folder (outside Obsidian) resulted in duplicate images.
+- Insert Link Action did not work [#1873](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1873)
+- Insert Obsidian Command Action did not work
+- Element link for text element got deleted when editing the text. [#1878](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1878)
+- When back-of-the-drawing Section Headings have spaces in them, clicking the link opens the drawing side not the markdown side. [#1877](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1877)
+- obsidian:// links did not work as expected. [#1872](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1872)
+- copying and moving a rectangle with text, moves the text unexpectedly. The issue should now be resolved (at least much less likely to occur) [#1867](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1867)
+`,
+"2.2.8": `
+While this release may appear modest with no new features, it represents nearly 50 hours of dedicated work. Here's what's been improved:
+
+- **Enhanced Memory Management**: Significant improvements to optimize memory usage.
+- Bug Fixes:
+  - Support for multi-file drag and drop from the operating system.
+  - Correct theming of animated GIFs as Embeddables.
+  - Several other minor bug fixes.
+
+Please note that due to extensive refactoring of the codebase, there may be some unexpected issues. Thanks for your understanding and patience.
+`,
+"2.2.7": `
+## New
+- In Miscellaneous Settings: added **Load Excalidraw Properties into Obsidian Suggester**. This setting toggles the automatic loading of Excalidraw properties at startup. Enabled by default for easy use of front matter properties. Disabling it prevents auto-loading, but you'll need to manually remove unwanted properties using Obsidian properties view. A plugin restart is required after enabling auto-loading.
+
+## Fixed
+- Zotero support [1835](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1835)
+- Lines binding to elements and selections [#8146](https://github.com/excalidraw/excalidraw/issues/8146), and plugin getting stuck with dragging an element [#8131](https://github.com/excalidraw/excalidraw/issues/8131)`
+,
+"2.2.6": `
+## Fixed
+- CTRL+F search for text elements in drawing, the result did not get selected. This was a regression in 2.2.5 [#1822](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1822)
+
+## New
+- Zotero compatibility support for back-of-the-side markdown notes. This needs to be enabled in plugin settings under Compatibility [#1820](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1820)
+
+## New from Excalidraw.com
+- ${String.fromCharCode(96)}Stats & Element Properties${String.fromCharCode(96)}, accessible via the context menu, is now editable, e.g. you can type in the exact position and size of objects, change font size and set element angle.
+- Pasting mermaid diagrams from chatGPT will embed a diagram instead of the text
+`,
+"2.2.5": `
+## Fixed
+- Cursor visibility in dark mode [#1812](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1812)
+- SVG to Excalidraw now...
+  - converts elements inside the ${String.fromCharCode(96)}<switch>${String.fromCharCode(96)} tag, improving compatibility with SVGs from [The Noun Project](https://thenounproject.com/)
+  - sets visibility for all elements, preventing invisible converted images.
+- Cached images sometimes lost their font face and natural size when nested in an Excalidraw scene. This issue occurred when drawings were embedded in a markdown note (native SVG) and nested in a drawing simultaneously. Depending on the update and render sequence, these drawings sometimes appeared incorrectly in the Excalidraw scene.
+`,
+"2.2.4":`
+<div style="text-align: center;">
+  <a data-tooltip-position="top" aria-label="https://youtube.com/shorts/zF1p2yfk4f4" rel="noopener" class="external-link" href="https://youtube.com/shorts/zF1p2yfk4f4" target="_blank">
+    <img src="https://private-user-images.githubusercontent.com/14358394/335857018-c4f5c4c7-9b8f-427f-aa6f-8c1b189610af.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MTczMjQxNDksIm5iZiI6MTcxNzMyMzg0OSwicGF0aCI6Ii8xNDM1ODM5NC8zMzU4NTcwMTgtYzRmNWM0YzctOWI4Zi00MjdmLWFhNmYtOGMxYjE4OTYxMGFmLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA2MDIlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwNjAyVDEwMjQwOVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTdhZGUwNDRkZmM2NmJjNTNiYjUwNjMxMmU2MGEyZTQwZGQwNmUyZmI5ZDFhNzMwMzg2OThjMjhmZmJkNzNiZDkmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.wZfkXmBRcXwz0pN6q0EEvmwtxVAB9ymPk9a9upmGXYE" referrerpolicy="no-referrer" style="width: 150px; margin: 0 auto;">
+  </a>
+</div>
+
+## New from Excalidraw.com
+-  You can now set the text width even during creation. Simply drag with the text tool. Note, there's a minimum distance before the text enters the wrapped mode so there aren't false positives. [See example here](https://x.com/excalidraw/status/1795468201335075000)
+
+## New
+- Updated zh-cn translation. Thank you @dmscode 
+- New context menu and command palette action: "Move back-of-note card to File". This is only active when an eligible embeddable element is selected.
+
+## Fixed
+- Setting different autosaveIntervals on Desktop and Mobile will no longer trigger unnecessary commits to settings each time you open Excalidraw on a different device. Thanks @jmhammond for the contribution! [#1805](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/1805), [#1652](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1652), [#888](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/888)
+
+## Fixed in ExcalidrawAutomate
+- ${String.fromCharCode(96)}getCM(color)${String.fromCharCode(96)} was missing from ${String.fromCharCode(96)}ea.help()${String.fromCharCode(96)}. It is now added. getCM returns a ColorMaster object. ColorMaster is a powerful library should you want to create scripts to manipulate colors. Check out my [Scripting Colors](https://youtu.be/7gJDwNgQ6NU) video should you want to learn more. [#1806](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1806)
+`,
+"2.2.3":`
+## Fixed
+-  Undo history was not properly initialized [#1791](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1785)
+- Excalidraw did not save edits when switching to markdown view mode with a hotkey or terminating the popout window
+- SVG export did not maintain the aspect ratio of manually distorted images [#1780](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1780)
+
+## New
+- In pen mode, double tapping the screen will toggle the eraser tool when using freedraw tool, or one of the other tools in locked mode.
+- New setting under "Excalidraw appearance and behavior" to disable rendering of Excalidraw drawings in hover previews, in case the file has the ${String.fromCharCode(96)}excalidraw-open-md: true${String.fromCharCode(96)} frontmatter property [#1795](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1795)
+- Additional foolproofing of ${String.fromCharCode(96)}# Excalidraw Data${String.fromCharCode(96)}. The file is now more resilient to automated linting and other changes. There is also a new setting under "Compatibility Features" to add a dummy first text element to ${String.fromCharCode(96)}## Text Elements${String.fromCharCode(96)}. You can use this feature if your auto-linter adds empty lines after section headings.
+- Pasting markdown code blocks will create a back-of-the-note card with the code block. CTRL+SHIFT+V will paste the text as a normal text element. When copying code from Chat GPT the markdown code fence (triple backtick) is missing. In this case, you may use the new context menu action "Paste code block" to create a back of the note card with the code block.
+- Pasting long text will be wrapped in the text element.
+
+## New in ExcalidrawAutomate
+- Updated viewUpdateScene: This now implements the [new Excalidraw API](https://github.com/excalidraw/excalidraw/pull/7898)
+${String.fromCharCode(96, 96, 96)}ts
+  viewUpdateScene (
+    scene: {
+      elements?: ExcalidrawElement[],
+      appState?: AppState,
+      files?: BinaryFileData,
+      commitToHistory?: boolean,
+      storeAction?: "capture" | "none" | "update",
+    },
+    restore: boolean = false,
+  ):void ;
+  ${String.fromCharCode(96, 96, 96)}
+- Updated addText. The function now supports the new text-wrapping feature
+${String.fromCharCode(96, 96, 96)}ts
+  addText(
+    topX: number,
+    topY: number,
+    text: string,
+    formatting?: {
+      autoResize?: boolean; //Default is true. Setting this to false will wrap the text in the text element without the need for the container. If set to false, you must set a width value as well.
+      wrapAt?: number; //wrapAt is ignored if autoResize is set to false (and width is provided)
+      width?: number;
+      height?: number;
+      textAlign?: "left" | "center" | "right";
+      box?: boolean | "box" | "blob" | "ellipse" | "diamond";
+      boxPadding?: number;
+      boxStrokeColor?: string;
+      textVerticalAlign?: "top" | "middle" | "bottom";
+    },
+    id?: string,
+  ): string
+  ${String.fromCharCode(96, 96, 96)}
+  `,
 "2.2.2":`
 ## Fixed
 - ExcaliBrain stopped working with 2.2.0

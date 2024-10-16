@@ -6,7 +6,6 @@ import { Notice } from "obsidian";
 import { getEA } from "src";
 import { ExcalidrawAutomate, cloneElement } from "src/ExcalidrawAutomate";
 import { ExportSettings } from "src/ExcalidrawView";
-import { embedFontsInSVG } from "./Utils";
 import { nanoid } from "src/constants/constants";
 
 export class CropImage {
@@ -45,6 +44,15 @@ export class CropImage {
     })
   }
 
+  public destroy() {
+    this.imageEA.destroy();
+    this.maskEA.destroy();
+    this.imageEA = null;
+    this.maskEA = null;
+    this.elements = null;
+    this.bbox = null;
+  }
+  
   private setBoundingEl(ea: ExcalidrawAutomate, bgColor: string) {
     const {topX, topY, width, height} = this.bbox;
     ea.style.backgroundColor = bgColor;
@@ -83,7 +91,7 @@ export class CropImage {
       isMask: false,
     }
 
-    const maskSVG = await this.maskEA.createSVG(null,false,exportSettings,null,null,0);
+    const maskSVG = await this.maskEA.createSVG(null,true,exportSettings,null,null,0);
     const defs = maskSVG.querySelector("defs");
     const styleEl = maskSVG.querySelector("style");
     const style = styleEl ? styleEl.outerHTML : "";
@@ -129,9 +137,11 @@ export class CropImage {
   async getCroppedPNG(): Promise<Blob> {
     //@ts-ignore
     const PLUGIN = app.plugins.plugins["obsidian-excalidraw-plugin"];
-    const svg = embedFontsInSVG(await this.buildSVG(), PLUGIN);
+    const svg = await this.buildSVG();
     return new Promise((resolve, reject) => {
-      const svgData = new XMLSerializer().serializeToString(svg);
+      //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2026
+      const svgData = svg.outerHTML;
+      //const svgData = new XMLSerializer().serializeToString(svg);
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
   

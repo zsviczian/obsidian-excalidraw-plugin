@@ -13,6 +13,11 @@ Gravitational point of spiral: $$\left[x,y\right]=\left[ x + \frac{{\text{width}
 Dimensions of inner rectangles in case of Double Spiral: $$[width, height] = \left[\frac{width\cdot(\phi^2+1)}{2\phi^2}\;, \;\frac{height\cdot(\phi^2+1)}{2\phi^2}\right]$$
 
 ```js*/
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.4.0")) {
+  new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
+  return;
+}
+
 const phi = (1 + Math.sqrt(5)) / 2; // Golden Ratio (φ)
 const inversePhi = (1-1/phi);
 const pointsPerCurve = 20; // Number of points per curve segment
@@ -33,18 +38,16 @@ if(!rect || rect.type !== "rectangle") {
     }
     window.excalidrawGoldenRatio.timer = setTimeout(()=>{delete window.excalidrawGoldenRatio;},2000);
     window.excalidrawGoldenRatio.cycle = (window.excalidrawGoldenRatio.cycle+1)%5;
-    
     ea.copyViewElementsToEAforEditing(textEls);
     ea.getElements().forEach(el=> {
       el.fontSize = window.excalidrawGoldenRatio.cycle === 2
         ? el.fontSize / Math.pow(phi,4)
         : el.fontSize * phi;
-      const font = ExcalidrawLib.getFontString(el);
-      const lineHeight = ExcalidrawLib.getDefaultLineHeight(el.fontFamily);
-      const {width, height, baseline} = ExcalidrawLib.measureText(el.originalText, font, lineHeight);
+      ea.style.fontFamily = el.fontFamily;
+      ea.style.fontSize = el.fontSize;
+      const {width, height } = ea.measureText(el.originalText);
       el.width = width;
       el.height = height;
-      el.baseline = baseline;
     });
     ea.addElementsToView();
     return;
@@ -631,7 +634,7 @@ modal.onOpen = async () => {
     .addDropdown(dropdown=>dropdown
       .addOption("none","None")
       .addOption("top-down","Top down")
-      .addOption("bottom-up","Bottom up")
+      .addOption("bottom-up","Bootom up")
       .addOption("center-out","Center out")
       .addOption("center-in","Center in")
       .setValue(vDirection)

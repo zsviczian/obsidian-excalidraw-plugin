@@ -11,6 +11,7 @@ import { getAttachmentsFolderAndFilePath } from "./ObsidianUtils";
 /**
  * Splits a full path including a folderpath and a filename into separate folderpath and filename components
  * @param filepath
+ * @returns folderpath will be normalized. This means "/" for root folder and no trailing "/" for other folders
  */
 type ImageExtension = keyof typeof IMAGE_MIME_TYPES;
 
@@ -290,9 +291,7 @@ export const blobToBase64 = async (blob: Blob): Promise<string> => {
 }
 
 export const getPDFDoc = async (f: TFile): Promise<any> => {
-  //@ts-ignore
   if(typeof window.pdfjsLib === "undefined") await loadPdfJs();
-  //@ts-ignore
   return await window.pdfjsLib.getDocument(app.vault.getResourcePath(f)).promise;
 }
 

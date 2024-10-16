@@ -9,6 +9,9 @@ const hyperlink = (url: string, text: string) => {
   return `<a onclick='window.open("${url}")'>${text}</a>`;
 }
 
+const EMBEDDABLE_MDCUSTOMPROPS = `type EmbeddableMDCustomProps = {<br>useObsidianDefaults: boolean;<br>backgroundMatchCanvas: boolean;<br>backgroundMatchElement: boolean;<br>backgroundColor: string;<br>backgroundOpacity: number;<br>borderMatchElement: boolean;<br>borderColor: string;<br>borderOpacity: number;<br>filenameVisible: boolean;<br>};<br>`;
+
+
 export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "help",
@@ -97,7 +100,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "style.fontFamily",
     code: "[number]",
-    desc: "1: Virgil, 2:Helvetica, 3:Cascadia, 4:LocalFont",
+    desc: "1: Virgil, 2:Helvetica, 3:Cascadia, 4:Local Font, 5: Excalifont, 6: Nunito, 7: Lilita One, 8: Comic Shanns, 9: Liberation Sans",
     after: "",
   },
   {
@@ -231,6 +234,18 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "addElementsToFrame",
+    code: "addElementsToFrame(frameId: string, elementIDs: string[]):void;",
+    desc: null,
+    after: "",
+  },
+  {
+    field: "addFrame",
+    code: "addFrame(topX: number, topY: number, width: number, height: number, name?: string): string;",
+    desc: null,
+    after: "",
+  },
+  {
     field: "addRect",
     code: "addRect(topX: number, topY: number, width: number, height: number, id?:string): string;",
     desc: null,
@@ -262,8 +277,10 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "addText",
-    code: 'addText(topX: number, topY: number, text: string, formatting?: {wrapAt?: number; width?: number; height?: number; textAlign?: "left" | "center" | "right"; textVerticalAlign: "top" | "middle" | "bottom"; box?: boolean | "box" | "blob" | "ellipse" | "diamond"; boxPadding?: number; boxStrokeColor?: string;}, id?: string,): string;',
-    desc: "If box is !null, then text will be boxed\nThe function returns the id of the TextElement. If the text element is boxed i.e. it is a sticky note, then the id of the container object",
+    code: 'addText(topX: number, topY: number, text: string, formatting?: {autoResize?: boolean; wrapAt?: number; width?: number; height?: number; textAlign?: "left" | "center" | "right"; textVerticalAlign: "top" | "middle" | "bottom"; box?: boolean | "box" | "blob" | "ellipse" | "diamond"; boxPadding?: number; boxStrokeColor?: string;}, id?: string,): string;',
+    desc: "If box is !null, then text will be boxed\nThe function returns the id of the TextElement. If the text element is boxed i.e. it is a sticky note, then the id of the container object.\n"+
+      "Default value for autoResize is true. Setting autoResize to false will wrap the text in the text element without the need for the container. If set to false, you must provide a width value as well.\n" +
+      "wrapAt will be ignored if autoResize is set to false (and a width is also provided)",
     after: "",
   },
   {
@@ -286,8 +303,9 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "addEmbeddable",
-    code: "addEmbeddable(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile): string;",
-    desc: "Adds an iframe/webview (depending on content and platform) to the drawing. If url is not null then the iframe/webview will be loaded from the url. The url maybe a markdown link to an note in the Vault or a weblink. If url is null then the iframe/webview will be loaded from the file. Both the url and the file may not be null.",
+    code: "addEmbeddable(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile, embeddableCustomData?: EmbeddableMDCustomProps): string;",
+    desc: "Adds an iframe/webview (depending on content and platform) to the drawing. If url is not null then the iframe/webview will be loaded from the url. The url maybe a markdown link to an note in the Vault or a weblink. " +
+      "If url is null then the iframe/webview will be loaded from the file. Both the url and the file may not be null.<br>" + EMBEDDABLE_MDCUSTOMPROPS,
     after: "",
   },
   {
@@ -303,6 +321,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     field: "addLaTex",
     code: "async addLaTex(topX: number, topY: number, tex: string): Promise<string>;",
     desc: "This is an async function, you need to avait the results. Adds a LaTex element to the drawing. The tex string is the LaTex code. The function returns the id of the created element.",
+    after: "",
+  },
+  {
+    field: "tex2dataURL",
+    code: "async tex2dataURL(tex: string, scale: number = 4): Promise<{mimeType: MimeType;fileId: FileId;dataURL: DataURL;created: number;size: { height: number; width: number };}> ",
+    desc: "returns the base64 dataURL of the LaTeX equation rendered as an SVG. tex is the LaTeX equation string",
     after: "",
   },
   {
@@ -366,6 +390,14 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "addBackOfTheCardNoteToView",
+    code: "async addBackOfTheCardNoteToView(sectionTitle: string, activate: boolean = false, sectionBody?: string, embeddableCustomData?: EmbeddableMDCustomProps): Promise<string>",
+    desc: "Adds a back of the note card to the current active view. If <b>body</b> is provided the note will be created with the body text, otherwise the note will be created with the title only.<br>Returns the id of the created element.<br>" +
+      "If <b>activate</b> is true, the embedded note will be activated for editing.<br>" +
+      "This is an async function, if you need the element ID of the created element, the function should be awaited.<br>" + EMBEDDABLE_MDCUSTOMPROPS,
+    after: "",
+  },
+  {
     field: "getViewSelectedElement",
     code: "getViewSelectedElement(): ExcalidrawElement;",
     desc: "Get the selected element in the view, if more are selected, get the first",
@@ -373,8 +405,8 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "getViewSelectedElements",
-    code: "getViewSelectedElements(): ExcalidrawElement[];",
-    desc: null,
+    code: "getViewSelectedElements(includeFrameChildren: boolean = true): ExcalidrawElement[];",
+    desc: "If a frame is selected this function will return the frame and all its elements unless includeFrameChildren is set to false",
     after: "",
   },
   {
@@ -428,7 +460,19 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "getExportSettings",
     code: "getExportSettings(withBackground: boolean, withTheme: boolean,): ExportSettings;",
-    desc: "Utility function to generate ExportSettings object",
+    desc: "Utility function to generate ExportSettings object\n" +
+      "export interface ExportSettings {\n" +
+      "  withBackground: boolean;\n" +
+      "  withTheme: boolean;\n" +
+      "  isMask: boolean; //if true elements will be processed as mask, clipping, etc.\n" +
+      "  frameRendering?: { //optional, overrides relevant appState settings for rendering the frame\n" +
+      "    enabled: boolean;\n" +
+      "    name: boolean;\n" +
+      "    outline: boolean;\n" +
+      "    clip: boolean;\n" +
+      "  };\n" +
+      "  skipInliningFonts?: boolean;\n" +
+      "}",
     after: "",
   },
   {
@@ -463,9 +507,16 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "getElementsInTheSameGroupWithElement",
-    code: "getElementsInTheSameGroupWithElement(element: ExcalidrawElement, elements: ExcalidrawElement[]): ExcalidrawElement[];",
-    desc: "Gets all the elements from elements[] that share one or more groupIds with element.",
+    code: "getElementsInTheSameGroupWithElement(element: ExcalidrawElement, elements: ExcalidrawElement[], includeFrameElements: boolean = false): ExcalidrawElement[];",
+    desc: "Gets all the elements from elements[] that share one or more groupIds with element.<br>" +
+      "If includeFrameElements is true, then if the frame is part of the group all the elements that are in the frame will also be included in the result set",
     after: ""
+  },
+  {
+    field: "getElementsInFrame",
+    code: " getElementsInFrame(frameElement: ExcalidrawElement,elements: ExcalidrawElement[],shouldIncludeFrame: boolean = false,): ExcalidrawElement[];",
+    desc: "Gets all the elements from elements[] that are inside the frameElement. If shouldIncludeFrame is true, the frameElement will also be included in the result.",
+    after: "",
   },
   {
     field: "activeScript",
@@ -495,6 +546,23 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     field: "measureText",
     code: "measureText(text: string): { width: number; height: number };",
     desc: "Measures text size based on current style settings",
+    after: "",
+  },
+  {
+    field: "getOriginalImageSize",
+    code: "async getOriginalImageSize(imageElement: ExcalidrawImageElement, shouldWaitForImage: boolean=false): Promise<{width: number; height: number}>",
+    desc: "Returns the size of the image element at 100% (i.e. the original size) or undefined if the data URL is not available.\n"+
+      "If shouldWaitForImage is true, the function will wait for the view to load the image before returning the size.\n"+
+      "This is an async function, you need to await the result.",
+    after: "",
+  },
+  {
+    field: "resetImageAspectRatio",
+    code: "async resetImageAspectRatio(imgEl: ExcalidrawImageElement): Promise<boolean>",
+    desc: "Resets the image to its original aspect ratio.\n" +
+     "If the image is resized then the function returns true.\n" +
+     "If the image element is not in EA (only in the view), then if the image is resized, the element is copied to EA for Editing using copyViewElementsToEAforEditing([imgEl]).\n" +
+     "Note you need to run await ea.addElementsToView(false); to add the modified image to the view.",
     after: "",
   },
   {
@@ -558,6 +626,14 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "getCM",
+    code: "getCM(color:TInput): ColorMaster;",
+    desc: `Returns a ${hyperlink("https://github.com/lbragile/ColorMaster", "ColorMaster")} object. ` +
+      "The function also accepts css color names. Under the hood, before calling ColorMaster it uses " +
+      "colorNameToHex to convert the color name to a HEX color.",
+    after: "",
+  },
+  {
     field: "obsidian",
     code: "obsidian",
     desc: `Access functions and objects available on the ${hyperlink("https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts","Obsidian Module")}`,
@@ -576,6 +652,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     code: "getEmbeddedImagesFiletree(excalidrawFile?: TFile): TFile[]",
     desc: "Retruns the embedded images in the scene recursively. If excalidrawFile is not provided, " +
       "the function will use ea.targetView.file",
+    after: "",
+  },
+  {
+    field: "getAPI",
+    code: "public getAPI(view?:ExcalidrawView):ExcalidrawAutomate",
+    desc: "Returns a new instance of ExcalidrawAutomate.",
     after: "",
   },
   {
@@ -686,8 +768,9 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "viewUpdateScene",
-    code: "viewUpdateScene(scene:{elements?:ExcalidrawElement[],appState?: AppState,files?: BinaryFileData,commitToHistory?: boolean,},restore:boolean=false):void",
-    desc: "Calls the ExcalidrawAPI updateScene function for the targetView. When restore=true, excalidraw will try to correct errors in the scene such as setting default values to missing element properties.",
+    code: "viewUpdateScene(scene:{elements?:ExcalidrawElement[],appState?: AppState,files?: BinaryFileData,commitToHistory?: boolean,storeAction?: 'capture' | 'none' | 'update'},restore:boolean=false):void",
+    desc: "Calls the ExcalidrawAPI updateScene function for the targetView. When restore=true, excalidraw will try to correct errors in the scene such as setting default values to missing element properties. " +
+      `Note that commitToHistory has been deprecated in Excalidraw and is no longer used. You should use storeAction instead. See ${hyperlink("https://github.com/excalidraw/excalidraw/pull/7898", "ExcalidrawAPI")} documentation for more information.`,
     after: "",
   },
   {
@@ -830,7 +913,7 @@ export const FRONTMATTER_KEYS_INFO: SuggesterInfo[] = [
     after: ": 1",
   },
   {
-    field: "excalidraw-export-embed-scene",
+    field: "export-embed-scene",
     code: null,
     desc: "If this key is present it will override the default excalidraw embed and export setting.",
     after: ": false",

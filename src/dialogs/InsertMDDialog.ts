@@ -2,11 +2,17 @@ import { App, FuzzySuggestModal, TFile } from "obsidian";
 import ExcalidrawView from "../ExcalidrawView";
 import { t } from "../lang/helpers";
 import ExcalidrawPlugin from "../main";
+import { getEA } from "src";
 
 export class InsertMDDialog extends FuzzySuggestModal<TFile> {
-  public app: App;
   public plugin: ExcalidrawPlugin;
   private view: ExcalidrawView;
+
+  destroy() {
+    this.app = null;
+    this.plugin = null;
+    this.view = null;
+  }
 
   constructor(plugin: ExcalidrawPlugin) {
     super(plugin.app);
@@ -34,17 +40,24 @@ export class InsertMDDialog extends FuzzySuggestModal<TFile> {
   }
 
   onChooseItem(item: TFile): void {
-    const ea = this.plugin.ea;
-    ea.reset();
-    ea.setView(this.view);
+    const ea = getEA(this.view);
     (async () => {
       await ea.addImage(0, 0, item);
-      ea.addElementsToView(true, false, true);
+      await ea.addElementsToView(true, false, true);
+      ea.destroy();
     })();
   }
 
   public start(view: ExcalidrawView) {
     this.view = view;
     this.open();
+  }
+
+  onClose(): void {
+    //deley this.view destruction until onChooseItem is called
+    window.setTimeout(() => {
+      this.view = null;
+    });
+    super.onClose();
   }
 }

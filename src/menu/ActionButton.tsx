@@ -1,12 +1,11 @@
 import * as React from "react";
-import ExcalidrawView from "../ExcalidrawView";
+import { Notice } from "obsidian";
 
 type ButtonProps = {
   title: string;
   action: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
   longpress?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
   icon: JSX.Element;
-  view: ExcalidrawView;
 };
 
 type ButtonState = {
@@ -22,6 +21,10 @@ export class ActionButton extends React.Component<ButtonProps, ButtonState> {
     this.state = {
       visible: true,
     };
+  }
+
+  componentWillUnmount(): void {
+    this.render = () => null;
   }
 
   render() {
@@ -48,7 +51,8 @@ export class ActionButton extends React.Component<ButtonProps, ButtonState> {
         onPointerDown={(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
           this.toastMessageTimeout = window.setTimeout(
             () => {
-              this.props.view.excalidrawAPI?.setToast({message:this.props.title, duration: 3000, closable: true});
+              new Notice(this.props.title, 3000);
+              //this.props.view.excalidrawAPI?.setToast({message:this.props.title, duration: 3000, closable: true});
               this.toastMessageTimeout = 0;
             },
             400,
@@ -58,7 +62,8 @@ export class ActionButton extends React.Component<ButtonProps, ButtonState> {
               if(this.props.longpress) {
                 this.props.longpress(event);
               } else {
-                this.props.view.excalidrawAPI?.setToast({message:"Cannot pin this action", duration: 3000, closable: true});
+                new Notice("Cannot pin this action", 3000);
+                //this.props.view.excalidrawAPI?.setToast({message:"Cannot pin this action", duration: 3000, closable: true});
               }
               this.longpressTimeout = 0;
             },

@@ -1,4 +1,4 @@
-import { ButtonComponent, TFile } from "obsidian";
+import { ButtonComponent, TFile, ToggleComponent } from "obsidian";
 import ExcalidrawView from "../ExcalidrawView";
 import ExcalidrawPlugin from "../main";
 import { getPDFDoc } from "src/utils/FileUtils";
@@ -7,9 +7,11 @@ import { FileSuggestionModal } from "./FolderSuggester";
 import { getEA } from "src";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { t } from "src/lang/helpers";
 
 export class InsertPDFModal extends Modal {
   private borderBox: boolean = true;
+  private frame: boolean = false;
   private gapSize:number = 20;
   private groupPages: boolean = false;
   private direction: "down" | "right" = "right";
@@ -28,7 +30,7 @@ export class InsertPDFModal extends Modal {
     private plugin: ExcalidrawPlugin,
     private view: ExcalidrawView,
   ) {
-    super(app);
+    super(plugin.app);
   }
 
   open (file?: TFile) {
@@ -48,18 +50,24 @@ export class InsertPDFModal extends Modal {
     if(this.dirty) {
       this.plugin.settings.pdfImportScale = this.importScale;
       this.plugin.settings.pdfBorderBox = this.borderBox;
+      this.plugin.settings.pdfFrame = this.frame;
       this.plugin.settings.pdfGapSize = this.gapSize;
       this.plugin.settings.pdfGroupPages = this.groupPages;
       this.plugin.settings.pdfNumColumns = this.numColumns;
       this.plugin.settings.pdfNumRows = this.numRows;
       this.plugin.settings.pdfDirection = this.direction;
       this.plugin.settings.pdfLockAfterImport = this.lockAfterImport;
-      this.plugin.saveSettings();
+      await this.plugin.saveSettings();
     }
     if(this.pdfDoc) {
       this.pdfDoc.destroy();
       this.pdfDoc = null;
     }
+    this.plugin = null;
+    this.view = null;
+    this.app = null;
+    this.imageSizeMessage.remove();
+    this.setImageSizeMessage  = null;
   }
 
   private async getPageDimensions (pdfDoc: any) {
@@ -115,6 +123,7 @@ export class InsertPDFModal extends Modal {
   async createForm() {
     await this.plugin.loadSettings();
     this.borderBox = this.plugin.settings.pdfBorderBox;
+    this.frame = this.plugin.settings.pdfFrame;
     this.gapSize = this.plugin.settings.pdfGapSize;
     this.groupPages = this.plugin.settings.pdfGroupPages;
     this.numColumns = this.plugin.settings.pdfNumColumns;
@@ -133,13 +142,13 @@ export class InsertPDFModal extends Modal {
     
     const importButtonMessages = () => {
       if(!this.pdfDoc) {
-        importMessage.innerText = "Please select a PDF file";
+        importMessage.innerText = t("IPM_SELECT_PDF");
         importButton.buttonEl.style.display="none";
         return;
       }      
       if(this.pagesToImport.length === 0) {
         importButton.buttonEl.style.display="none";
-        importMessage.innerText = "Please select pages to import";
+        importMessage.innerText = t("IPM_SELECT_PAGES_TO_IMPORT");
         return
       }
       if(Math.max(...this.pagesToImport) <= this.pdfDoc.numPages) {
@@ -156,7 +165,7 @@ export class InsertPDFModal extends Modal {
 
     const numPagesMessages = () => {
       if(numPages === 0) {
-        numPagesMessage.innerText = "Please select a PDF file";
+        numPagesMessage.innerText = t("IPM_SELECT_PDF");
         return;
       }
       numPagesMessage.innerHTML = `There are <b>${numPages}</b> pages in the selected document.`;
@@ -206,7 +215,7 @@ export class InsertPDFModal extends Modal {
     numPagesMessage = ce.createEl("p", {text: ""});
     numPagesMessages();
     new Setting(ce)
-      .setName("Pages to import")
+      .setName(t("IPM_PAGES_TO_IMPORT_NAME"))
       .setDesc("e.g.: 1,3-5,7,9-10")
       .addText(text => {
         pageRangesTextComponent = text;
@@ -217,18 +226,52 @@ export class InsertPDFModal extends Modal {
       })
     importPagesMessage = ce.createEl("p", {text: ""});
     
-    new Setting(ce)
-      .setName("Add border box")
-      .addToggle(toggle => toggle
-        .setValue(this.borderBox)
-        .onChange((value) => {
-          this.borderBox = value;
-          this.dirty = true;
-        }))
+    let bbToggle: ToggleComponent;
+    let fToggle: ToggleComponent;
+    let laiToggle: ToggleComponent;
+
+    this.frame = this.borderBox ? false : this.frame;
 
     new Setting(ce)
-      .setName("Group pages")
-      .setDesc("This will group all pages into a single group. This is recommended if you are locking the pages after import, because the group will be easier to unlock later rather than unlocking one by one.")
+      .setName(t("IPM_ADD_BORDER_BOX_NAME"))
+      .addToggle(toggle => {
+        bbToggle = toggle;
+        toggle
+          .setValue(this.borderBox)
+          .onChange((value) => {
+            this.borderBox = value;
+            if(value) {
+              this.frame = false;
+              fToggle.setValue(false);
+            }
+            this.dirty = true;
+          })
+      })
+
+    new Setting(ce)
+      .setName(t("IPM_ADD_FRAME_NAME"))
+      .setDesc(t("IPM_ADD_FRAME_DESC"))
+      .addToggle(toggle => {
+        fToggle = toggle;
+        toggle
+          .setValue(this.frame)
+          .onChange((value) => {
+            this.frame = value;
+            if(value) {
+              this.borderBox = false;
+              bbToggle.setValue(false);
+              if(!this.lockAfterImport) {
+                this.lockAfterImport = true;
+                laiToggle.setValue(true);
+              }
+            }
+            this.dirty = true;
+          })
+      })
+
+    new Setting(ce)
+      .setName(t("IPM_GROUP_PAGES_NAME"))
+      .setDesc(t("IPM_GROUP_PAGES_DESC"))
       .addToggle(toggle => toggle
         .setValue(this.groupPages)
         .onChange((value) => {
@@ -239,12 +282,15 @@ export class InsertPDFModal extends Modal {
         
     new Setting(ce)
       .setName("Lock pages on canvas after import")
-      .addToggle(toggle => toggle
-        .setValue(this.lockAfterImport)
-        .onChange((value) => {
-          this.lockAfterImport = value
-          this.dirty = true;
-        }))
+      .addToggle(toggle => {
+        laiToggle = toggle;
+        toggle
+          .setValue(this.lockAfterImport)
+          .onChange((value) => {
+            this.lockAfterImport = value
+            this.dirty = true;
+        })
+      })
 
     let numColumnsSetting: Setting;
     let numRowsSetting: Setting;
@@ -386,6 +432,12 @@ export class InsertPDFModal extends Modal {
               if(this.lockAfterImport) imgEl.locked = true;
 
               ea.addToGroup([boxID,imageID]);
+
+              if(this.frame) {
+                const frameID = ea.addFrame(topX, topY,imgWidth,imgHeight,`${page}`);
+                ea.addElementsToFrame(frameID, [boxID,imageID]);
+                ea.getElement(frameID).link = this.pdfFile.path + `#page=${page}`;
+              }
               
               switch(this.direction) {
                 case "right":
@@ -399,7 +451,9 @@ export class InsertPDFModal extends Modal {
               }
             }
             if(this.groupPages) {
-              const ids = ea.getElements().map(el => el.id);
+              const ids = ea.getElements()
+                .filter(el=>!this.frame || (el.type === "frame"))
+                .map(el => el.id);
               ea.addToGroup(ids);
             }
             await ea.addElementsToView(true,true,false);
@@ -408,6 +462,7 @@ export class InsertPDFModal extends Modal {
             const viewElements = ea.getViewElements().filter(el => ids.includes(el.id));
             api.selectElements(viewElements);
             api.zoomToFit(viewElements);
+            ea.destroy();
             this.close();
           })
         importButton = button;

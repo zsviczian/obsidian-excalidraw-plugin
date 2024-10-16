@@ -1,5 +1,9 @@
 # Excalidraw
 
+[简体中文](./docs/zh-cn/README.md)
+
+👉👉👉 Check out and contribute to the new [Obsidian-Excalidraw Community Wiki](https://excalidraw-obsidian.online/WIKI/Welcome+to+the+WIKI)
+
 The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/), a feature rich sketching tool, into Obsidian. You can store and edit Excalidraw files in your vault, you can embed drawings into your documents, and you can link to documents and other drawings to/and from Excalidraw. For a showcase of Excalidraw features, please read my blog post [here](https://www.zsolt.blog/2021/03/showcasing-excalidraw.html) and/or watch the videos below.
 
 ## Video Walkthrough
@@ -63,6 +67,13 @@ The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/),
 <a href="https://youtu.be/4N6efq1DtH0" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/158008902-12c6a851-237e-4edd-a631-d48e81c904b2.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Eraser, left-handed mode, improved filename configuration</a><br>
 </details>
 
+### Beta testing
+The plugin follows a monthly release schedule. If you want to receive more frequent updates with new features (e.g. shiny new stuff available on excalidraw.com, but not yet in Obsidian) and minor bug fixes, then join the beta community.
+
+[![Thumbnail - 20240803 Excalidraw Release Approach (Custom)](https://github.com/user-attachments/assets/ab40648c-f73f-4bda-a416-52839f918f2a)](https://youtu.be/2poSS-Z91lY)
+
+[![Excalidraw Plugin Release Strategy (Phone)](https://github.com/user-attachments/assets/87f1f379-782c-4c32-8b5b-d27fe2d3ac4b)](https://github.com/user-attachments/assets/120a0790-7239-48ae-bfbd-eb249f8b518d)
+
 ---
 
 ## Features
@@ -89,15 +100,17 @@ Plugin settings are grouped into the following sections:
 
 #### Templates
 
-- Template for new drawings. The template will restore stroke properties. This means you can set up defaults in your template for stroke color, stroke width, opacity, font family, font size, fill style, stroke style, etc. This also applies to ExcalidrawAutomate.
+- Template for new drawings. The template will restore stroke properties. This means you can set up defaults in your template for stroke color, stroke width, opacity, font family, font size, fill style, stroke style, etc. This also applies to ExcalidrawAutomate. With versions 1.6.13 or higher make sure to enable "Decompress Excalidraw JSON in Markdown View" in the settings before editing the JSON in the template. This can be disabled after the canges are performed.
   - Via the template, you can customize the color palette used by Excalidraw.
     - Switch to Markdown view.
     - Scroll down to the bottom of the file and find `"AppState": {`.
-    - Find `"customColorPalette": {` at the end of the AppState section.
-    - You may specify the 3 palettes used in Excalidraw by adding any or all of the following 3 variables:
-        - `"canvasBackground":[], "elementBackground":[], "elementStroke": []`.
-    - Add a comma-separated list of valid HTML colors (e.g. `#FF0000` for red).
-        in the array for each of the variables.
+    - Find `"colorPalette": {` at the end of the AppState section.
+        - You may specify the 3 palettes used in Excalidraw by adding any or all of the following 3 variables:
+            - `"canvasBackground":[], "elementBackground":[], "elementStroke": []`.
+            - Add a comma-separated list of valid HTML colors (e.g. `#FF0000` for red) in the array for each of the variables.
+        - To change the previewed colors, a `"topPicks": {` may be specified containing the same three keys:
+            - `"canvasBackground":[], "elementBackground":[], "elementStroke": []`.
+            - Note that the corresponding arrays must contain 5 elements.
     - See my videos above for further help.
 
 #### Export
@@ -216,6 +229,7 @@ For more details, see this [video](https://youtu.be/yZQoJg2RCKI)
     - `excalidraw-export-dark`: true == Dark mode / false == light mode.
     - `excalidraw-export-padding`: Specify the export padding for the image.
     - `excalidraw-export-pngscale`: This only affects export to PNG. Specify the export scale for the image. The typical range is between 0.5 and 5, but you can experiment with other values as well.
+- Since 1.6.13, enable "Decompress Excalidraw JSON in Markdown View" in the settings if you want to change any JSON content.
 
 ### Embed complete markdown files into your drawings
 
@@ -243,11 +257,11 @@ Drag the desired file from the Obsidian file explorer and hold down <kbd>SHIFT</
 - In plugin settings, you can add a custom fourth font. For more details, see this [video](https://youtu.be/eKFmrSQhFA4)
 - The plugin includes OCR support using Taskbone OCR. For more details, see this [video](https://youtu.be/7gu4ETx7zro)
 - You can convert SVG files into Excalidraw drawings (with some limitation). For more details, see this [video](https://youtu.be/vlC1-iBvIfo)
-- You can define custom freedraw pens. See documentation [here].(https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Alternative%20Pens.md), [video](https://youtu.be/uZz5MgzWXiM)
+- You can define custom pens and higlighters and pin them to the sidebar. For more details, see this [video](https://youtu.be/OjNhjaH2KjI). Using ExcalidrawAutomate, you can add support for [auto-toggling](<ea-scripts/Auto Draw for Pen.md>) pen & support for [hardware eraser buttons](<ea-scripts/Hardware Eraser Support.md>).
 
 ### Script Engine
 
-- Since 1.5.0, you can easily execute ExcalidrawAutomate macros and assign command palette shortcuts to them, using the ScriptEngine. You will find an intro video and a growing library of ready to install scripts [here](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/ea-scripts).
+- Since 1.5.0, you can easily execute ExcalidrawAutomate macros and assign command palette shortcuts to them, using the ScriptEngine. You will find an intro video and a growing library of ready to install scripts [here](ea-scripts/README.md).
 - You can organize scripts into groups on the Obsidian Tools Panel in Excalidraw by moving scripts and accompanying SVG icon files to folders. See the demo [video](https://youtu.be/wTtaXmRJ7wg?t=16).
 
 ### Other

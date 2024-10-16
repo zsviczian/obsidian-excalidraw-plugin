@@ -11,7 +11,9 @@ import {
   StrokeRoundness,
   RoundnessType,
   ExcalidrawFrameElement,
+  ExcalidrawTextContainer,
 } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { MimeType } from "./EmbeddedFileLoader";
 import { Editor, normalizePath, Notice, OpenViewState, RequestUrlResponse, TFile, TFolder, WorkspaceLeaf } from "obsidian";
 import * as obsidian_module from "obsidian";
 import ExcalidrawView, { ExportSettings, TextMode, getTextMode } from "src/ExcalidrawView";
@@ -19,14 +21,13 @@ import { ExcalidrawData, getMarkdownDrawingSection, REGEX_LINK } from "src/Excal
 import {
   FRONTMATTER,
   nanoid,
-  VIEW_TYPE_EXCALIDRAW,
   MAX_IMAGE_SIZE,
   COLOR_NAMES,
   fileid,
   GITHUB_RELEASES,
   determineFocusDistance,
   getCommonBoundingBox,
-  getDefaultLineHeight,
+  getLineHeight,
   getMaximumGroups,
   intersectElementWithLine,
   measureText,
@@ -35,11 +36,12 @@ import {
   REG_LINKINDEX_INVALIDCHARS,
   THEME_FILTER,
   mermaidToExcalidraw,
+  refreshTextDimensions,
+  getFontFamilyString,
 } from "src/constants/constants";
 import { blobToBase64, checkAndCreateFolder, getDrawingFilename, getExcalidrawEmbeddedFilesFiletree, getListOfTemplateFiles, getNewUniqueFilepath, hasExcalidrawEmbeddedImagesTreeChanged, } from "src/utils/FileUtils";
 import {
   //debug,
-  embedFontsInSVG,
   errorlog,
   getEmbeddedFilenameParts,
   getImageSize,
@@ -52,29 +54,29 @@ import {
   wrapTextAtCharLength,
   arrayToMap,
 } from "src/utils/Utils";
-import { getAttachmentsFolderAndFilePath, getLeaf, getNewOrAdjacentLeaf, isObsidianThemeDark, mergeMarkdownFiles, openLeaf } from "src/utils/ObsidianUtils";
-import { AppState, BinaryFileData,  DataURL,  ExcalidrawImperativeAPI, Point } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { getAttachmentsFolderAndFilePath, getExcalidrawViews, getLeaf, getNewOrAdjacentLeaf, isObsidianThemeDark, mergeMarkdownFiles, openLeaf } from "src/utils/ObsidianUtils";
+import { AppState, BinaryFileData,  DataURL,  ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddedFile, EmbeddedFilesLoader, FileData } from "src/EmbeddedFileLoader";
 import { tex2dataURL } from "src/LaTeX";
 import { GenericInputPrompt, NewFileActions } from "src/dialogs/Prompt";
 import { t } from "src/lang/helpers";
 import { ScriptEngine } from "src/Scripts";
-import { ConnectionPoint, DeviceType  } from "src/types";
-import CM, { ColorMaster, extendPlugins } from "colormaster";
-import HarmonyPlugin from "colormaster/plugins/harmony";
-import MixPlugin from "colormaster/plugins/mix"
-import A11yPlugin from "colormaster/plugins/accessibility"
-import NamePlugin from "colormaster/plugins/name"
-import LCHPlugin from "colormaster/plugins/lch";
-import LUVPlugin from "colormaster/plugins/luv";
-import LABPlugin from "colormaster/plugins/lab";
-import UVWPlugin from "colormaster/plugins/uvw";
-import XYZPlugin from "colormaster/plugins/xyz";
-import HWBPlugin from "colormaster/plugins/hwb";
-import HSVPlugin from "colormaster/plugins/hsv";
-import RYBPlugin from "colormaster/plugins/ryb";
-import CMYKPlugin from "colormaster/plugins/cmyk";
-import { TInput } from "colormaster/types";
+import { ConnectionPoint, DeviceType, Point  } from "src/types/types";
+import CM, { ColorMaster, extendPlugins } from "@zsviczian/colormaster";
+import HarmonyPlugin from "@zsviczian/colormaster/plugins/harmony";
+import MixPlugin from "@zsviczian/colormaster/plugins/mix"
+import A11yPlugin from "@zsviczian/colormaster/plugins/accessibility"
+import NamePlugin from "@zsviczian/colormaster/plugins/name"
+import LCHPlugin from "@zsviczian/colormaster/plugins/lch";
+import LUVPlugin from "@zsviczian/colormaster/plugins/luv";
+import LABPlugin from "@zsviczian/colormaster/plugins/lab";
+import UVWPlugin from "@zsviczian/colormaster/plugins/uvw";
+import XYZPlugin from "@zsviczian/colormaster/plugins/xyz";
+import HWBPlugin from "@zsviczian/colormaster/plugins/hwb";
+import HSVPlugin from "@zsviczian/colormaster/plugins/hsv";
+import RYBPlugin from "@zsviczian/colormaster/plugins/ryb";
+import CMYKPlugin from "@zsviczian/colormaster/plugins/cmyk";
+import { TInput } from "@zsviczian/colormaster/types";
 import {ConversionResult, svgToExcalidraw} from "src/svgToExcalidraw/parser"
 import { ROUNDNESS } from "src/constants/constants";
 import { ClipboardData } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
@@ -88,8 +90,9 @@ import {
   extractCodeBlocks as _extractCodeBlocks,
 } from "./utils/AIUtils";
 import { EXCALIDRAW_AUTOMATE_INFO, EXCALIDRAW_SCRIPTENGINE_INFO } from "./dialogs/SuggesterInfo";
-import { getFrameBasedOnFrameNameOrId } from "./utils/ExcalidrawViewUtils";
+import { addBackOfTheNoteCard, getFrameBasedOnFrameNameOrId } from "./utils/ExcalidrawViewUtils";
 import { log } from "./utils/DebugHelper";
+import { ExcalidrawLib } from "./ExcalidrawLib";
 
 extendPlugins([
   HarmonyPlugin,
@@ -109,6 +112,7 @@ extendPlugins([
 
 declare const PLUGIN_VERSION:string;
 declare var LZString: any;
+declare const excalidrawLib: typeof ExcalidrawLib;
 
 const GAP = 4;
 
@@ -273,12 +277,21 @@ export class ExcalidrawAutomate {
     return getNewUniqueFilepath(app.vault, filename, folderAndPath.folder);
   }
 
-  public compressToBase64(str:string):string {
+  public compressToBase64(str:string): string {
     return LZString.compressToBase64(str);
   }
 
-  public decompressFromBase64(str:string):string {
-    return LZString.decompressFromBase64(str);
+  public decompressFromBase64(data:string): string {
+    if (!data) throw new Error("No input string provided for decompression.");
+    let cleanedData = '';
+    const length = data.length;
+    for (let i = 0; i < length; i++) {
+      const char = data[i];
+      if (char !== '\\n' && char !== '\\r') {
+        cleanedData += char;
+      }
+    }
+    return LZString.decompressFromBase64(cleanedData);
   }
 
   /**
@@ -384,7 +397,7 @@ export class ExcalidrawAutomate {
     opacity: number;
     strokeSharpness?: StrokeRoundness; //defaults to undefined, use strokeRoundess and roundess instead. Only kept for legacy script compatibility type StrokeRoundness = "round" | "sharp"
     roundness: null | { type: RoundnessType; value?: number };
-    fontFamily: number; //1: Virgil, 2:Helvetica, 3:Cascadia, 4:LocalFont
+    fontFamily: number; //1: Virgil, 2:Helvetica, 3:Cascadia, 4:Local Font
     fontSize: number;
     textAlign: string; //"left"|"right"|"center"
     verticalAlign: string; //"top"|"bottom"|"middle" :for future use, has no effect currently
@@ -422,7 +435,9 @@ export class ExcalidrawAutomate {
    * @returns 
    */
   public getAPI(view?:ExcalidrawView):ExcalidrawAutomate {
-    return new ExcalidrawAutomate(this.plugin, view);
+    const ea = new ExcalidrawAutomate(this.plugin, view);
+    this.plugin.eaInstances.push(ea);
+    return ea;
   }
 
   /**
@@ -712,6 +727,12 @@ export class ExcalidrawAutomate {
           this.style.roundness ? "round":"sharp",
         gridSize: template?.appState?.gridSize ?? this.canvas.gridSize,
         colorPalette: template?.appState?.colorPalette ?? this.colorPalette,
+        ...template?.appState?.frameRendering
+          ? {frameRendering: template.appState.frameRendering}
+          : {},
+        ...template?.appState?.objectsSnapModeEnabled
+          ? {objectsSnapModeEnabled: template.appState.objectsSnapModeEnabled}
+          : {},
       },
       files: template?.files ?? {},
     };
@@ -730,18 +751,18 @@ export class ExcalidrawAutomate {
   
       outString += Object.keys(this.imagesDict).length > 0
         ? `\n## Embedded Files\n`
-        : "";
+        : "\n";
         
       Object.keys(this.imagesDict).forEach((key: FileId)=> {
         const item = this.imagesDict[key];
         if(item.latex) {
-          outString += `${key}: $$${item.latex}$$\n`;  
+          outString += `${key}: $$${item.latex}$$\n\n`;  
         } else {
           if(item.file) {
             if(item.file instanceof TFile) {
-              outString += `${key}: [[${item.file.path}]]\n`;
+              outString += `${key}: [[${item.file.path}]]\n\n`;
             } else {
-              outString += `${key}: [[${item.file}]]\n`;
+              outString += `${key}: [[${item.file}]]\n\n`;
             }
           } else {
             const hyperlinkSplit = item.hyperlink.split("#");
@@ -749,15 +770,15 @@ export class ExcalidrawAutomate {
             if(file && file instanceof TFile) {
               const hasFileRef = hyperlinkSplit.length === 2
               outString += hasFileRef
-                ? `${key}: [[${file.path}#${hyperlinkSplit[1]}]]\n`
-                : `${key}: [[${file.path}]]\n`;
+                ? `${key}: [[${file.path}#${hyperlinkSplit[1]}]]\n\n`
+                : `${key}: [[${file.path}]]\n\n`;
             } else {
-              outString += `${key}: ${item.hyperlink}\n`;
+              outString += `${key}: ${item.hyperlink}\n\n`;
             }
           }
         }
       })
-      return outString + "\n%%\n";
+      return outString + "%%\n";
     }
 
     const filename = params?.filename
@@ -1023,6 +1044,22 @@ export class ExcalidrawAutomate {
   };
 
   /**
+   * Add elements to frame
+   * @param frameId 
+   * @param elementIDs to add
+   * @returns void
+   */
+  addElementsToFrame(frameId: string, elementIDs: string[]):void {
+    if(!this.getElement(frameId)) return;
+    elementIDs.forEach(elID => {
+      const el = this.getElement(elID);
+      if(el) {
+        el.frameId = frameId;
+      }
+    });
+  }
+
+  /**
    * 
    * @param topX 
    * @param topY 
@@ -1185,14 +1222,14 @@ export class ExcalidrawAutomate {
     if (element.type !== "text") {
       return;
     }
-    const { w, h, baseline } = _measureText(
+    const { w, h } = _measureText(
       element.text,
       element.fontSize,
       element.fontFamily,
-      getDefaultLineHeight(element.fontFamily)
+      getLineHeight(element.fontFamily)
     );
-    // @ts-ignore
-    element.width = w; element.height = h; element.baseline = baseline;
+    element.width = w;
+    element.height = h;
   }
 
 
@@ -1211,7 +1248,8 @@ export class ExcalidrawAutomate {
     topY: number,
     text: string,
     formatting?: {
-      wrapAt?: number;
+      autoResize?: boolean; //Default is true. Setting this to false will wrap the text in the text element without the need for the containser. If set to false, you must set a width value as well.
+      wrapAt?: number; //wrapAt is ignored if autoResize is set to false (and width is provided)
       width?: number;
       height?: number;
       textAlign?: "left" | "center" | "right";
@@ -1224,20 +1262,24 @@ export class ExcalidrawAutomate {
   ): string {
     id = id ?? nanoid();
     const originalText = text;
-    text = formatting?.wrapAt ? this.wrapText(text, formatting.wrapAt) : text;
-    const { w, h, baseline } = _measureText(
+    const autoresize = ((typeof formatting?.width === "undefined") || formatting?.box)
+      ? true
+      : (formatting?.autoResize ?? true)
+    text = (formatting?.wrapAt && autoresize) ? this.wrapText(text, formatting.wrapAt) : text;
+
+    const { w, h } = _measureText(
       text,
       this.style.fontSize,
       this.style.fontFamily,
-      getDefaultLineHeight(this.style.fontFamily)
+      getLineHeight(this.style.fontFamily)
     );
     const width = formatting?.width ? formatting.width : w;
     const height = formatting?.height ? formatting.height : h;
 
     let boxId: string = null;
-    const boxPadding = formatting?.boxPadding ?? 30;
     const strokeColor = this.style.strokeColor;
     this.style.strokeColor = formatting?.boxStrokeColor ?? strokeColor;
+    const boxPadding = formatting?.boxPadding ?? 30;
     if (formatting?.box) {
       switch (formatting.box) {
         case "ellipse":
@@ -1283,12 +1325,12 @@ export class ExcalidrawAutomate {
         ? formatting.textAlign
         : this.style.textAlign ?? "left",
       verticalAlign: formatting?.textVerticalAlign ?? this.style.verticalAlign,
-      baseline,
       ...this.boxedElement(id, "text", topX, topY, width, height),
       containerId: isContainerBound ? boxId : null,
       originalText: isContainerBound ? originalText : text,
       rawText: isContainerBound ? originalText : text,
-      lineHeight: getDefaultLineHeight(this.style.fontFamily),
+      lineHeight: getLineHeight(this.style.fontFamily),
+      autoResize: formatting?.box ? true : (formatting?.autoResize ?? true),
     };
     if (boxId && formatting?.box === "blob") {
       this.addToGroup([id, boxId]);
@@ -1299,6 +1341,25 @@ export class ExcalidrawAutomate {
         box.boundElements = [];
       }
       box.boundElements.push({ type: "text", id });
+    }
+    const textElement = this.getElement(id) as Mutable<ExcalidrawTextElement>;
+    const container = (boxId && formatting.box !== "blob") ? this.getElement(boxId) as Mutable<ExcalidrawTextContainer>: undefined;
+    const dimensions = refreshTextDimensions(
+      textElement,
+      container,
+      arrayToMap(this.getElements()),
+      originalText,
+    );
+    if(dimensions) {
+      textElement.width = dimensions.width;
+      textElement.height = dimensions.height;
+      textElement.x = dimensions.x;
+      textElement.y = dimensions.y;
+      textElement.text = dimensions.text;
+      if(container) {
+        container.width = dimensions.width + 2 * boxPadding;
+        container.height = dimensions.height + 2 * boxPadding;
+      }
     }
     return boxId ?? id;
   };
@@ -1544,6 +1605,26 @@ export class ExcalidrawAutomate {
   };
 
   /**
+   * returns the base64 dataURL of the LaTeX equation rendered as an SVG 
+   * @param tex The LaTeX equation as string
+   * @param scale of the image, default value is 4
+   * @returns 
+   */
+  //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1930
+  async tex2dataURL(
+    tex: string,
+    scale: number = 4 // Default scale value, adjust as needed
+  ): Promise<{
+    mimeType: MimeType;
+    fileId: FileId;
+    dataURL: DataURL;
+    created: number;
+    size: { height: number; width: number };
+  }> {
+    return await tex2dataURL(tex,scale);
+  };
+
+  /**
    * 
    * @param objectA 
    * @param connectionA type ConnectionPoint = "top" | "bottom" | "left" | "right" | null
@@ -1753,33 +1834,23 @@ export class ExcalidrawAutomate {
    */
   setView(view?: ExcalidrawView | "first" | "active"): ExcalidrawView {
     if(!view) {
-      const v = app.workspace.getActiveViewOfType(ExcalidrawView);
+      const v = this.plugin.app.workspace.getActiveViewOfType(ExcalidrawView);
       if (v instanceof ExcalidrawView) {
         this.targetView = v;
       }
       else {
-        const leaves =
-          app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
-        if (!leaves || leaves.length == 0) {
-          return;
-        }
-        this.targetView = leaves[0].view as ExcalidrawView;
+        this.targetView = getExcalidrawViews(this.plugin.app)[0];
       }
     }
     if (view == "active") {
-      const v = app.workspace.getActiveViewOfType(ExcalidrawView);
+      const v = this.plugin.app.workspace.getActiveViewOfType(ExcalidrawView);
       if (!(v instanceof ExcalidrawView)) {
         return;
       }
       this.targetView = v;
     }
     if (view == "first") {
-      const leaves =
-        app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW);
-      if (!leaves || leaves.length == 0) {
-        return;
-      }
-      this.targetView = leaves[0].view as ExcalidrawView;
+      this.targetView = getExcalidrawViews(this.plugin.app)[0];
     }
     if (view instanceof ExcalidrawView) {
       this.targetView = view;
@@ -1833,11 +1904,29 @@ export class ExcalidrawAutomate {
     this.targetView.updateScene({
       elements: el.filter((e: ExcalidrawElement) => !elToDelete.includes(e)),
       appState: st,
-      commitToHistory: true,
+      storeAction: "capture",
     });
     //this.targetView.save();
     return true;
   };
+
+  /**
+   * Adds a back of the note card to the current active view
+   * @param sectionTitle: string
+   * @param activate:boolean = true; if true, the new Embedded Element will be activated after creation
+   * @param sectionBody?: string;
+   * @param embeddableCustomData?: EmbeddableMDCustomProps; formatting of the embeddable element
+   * @returns embeddable element id
+   */
+  async addBackOfTheCardNoteToView(sectionTitle: string, activate: boolean = false, sectionBody?: string, embeddableCustomData?: EmbeddableMDCustomProps): Promise<string> {
+    //@ts-ignore
+    if (!this.targetView || !this.targetView?._loaded) {
+      errorMessage("targetView not set", "addBackOfTheCardNoteToView()");
+      return null;
+    }
+    await this.targetView.forceSave(true);
+    return addBackOfTheNoteCard(this.targetView, sectionTitle, activate, sectionBody, embeddableCustomData);
+  }
 
   /**
    * get the selected element in the view, if more are selected, get the first
@@ -1850,15 +1939,16 @@ export class ExcalidrawAutomate {
 
   /**
    * 
+   * @param includeFrameChildren 
    * @returns 
    */
-  getViewSelectedElements(): any[] {
+  getViewSelectedElements(includeFrameChildren:boolean = true): any[] {
     //@ts-ignore
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "getViewSelectedElements()");
       return [];
     }
-    return this.targetView.getViewSelectedElements();
+    return this.targetView.getViewSelectedElements(includeFrameChildren);
   };
 
   /**
@@ -1951,7 +2041,7 @@ export class ExcalidrawAutomate {
         appState: {
           viewModeEnabled: !isFullscreen,
         },
-        commitToHistory: false,
+        storeAction: "update",
       });
       this.targetView.toolsPanelRef?.current?.setExcalidrawViewMode(!isFullscreen);
     }
@@ -1970,7 +2060,7 @@ export class ExcalidrawAutomate {
       return;
     }
     const view = this.targetView as ExcalidrawView;
-    view.updateScene({appState:{viewModeEnabled: enabled}});
+    view.updateScene({appState:{viewModeEnabled: enabled}, storeAction: "update"});
     view.toolsPanelRef?.current?.setExcalidrawViewMode(enabled);
   }
 
@@ -1986,6 +2076,7 @@ export class ExcalidrawAutomate {
       appState?: AppState,
       files?: BinaryFileData,
       commitToHistory?: boolean,
+      storeAction?: "capture" | "none" | "update",
     },
     restore: boolean = false,
   ):void {
@@ -1994,7 +2085,16 @@ export class ExcalidrawAutomate {
       errorMessage("targetView not set", "viewToggleFullScreen()");
       return;
     }
-    this.targetView.updateScene(scene,restore);
+    if (!Boolean(scene.storeAction)) {
+      scene.storeAction = scene.commitToHistory ? "capture" : "update";  
+    }
+
+    this.targetView.updateScene({
+      elements: scene.elements,
+      appState: scene.appState,
+      files: scene.files,
+      storeAction: scene.storeAction,
+    },restore);
   }
 
   /**
@@ -2340,35 +2440,61 @@ export class ExcalidrawAutomate {
    * @param elements - typically all the non-deleted elements in the scene 
    * @returns 
    */
-  getElementsInTheSameGroupWithElement(element: ExcalidrawElement, elements: ExcalidrawElement[]): ExcalidrawElement[] {
+  getElementsInTheSameGroupWithElement(
+    element: ExcalidrawElement,
+    elements: ExcalidrawElement[],
+    includeFrameElements: boolean = false,
+  ): ExcalidrawElement[] {
     if(!element || !elements) return [];
     const container = (element.type === "text" && element.containerId)
       ? elements.filter(el=>el.id === element.containerId)
       : [];
     if(element.groupIds.length === 0) {
+      if(includeFrameElements && element.type === "frame") {
+        return this.getElementsInFrame(element,elements,true);
+      }
       if(container.length === 1) return [element,container[0]];
       return [element];
     }
 
-    if(container.length === 1) {
-      return elements.filter(el=>
-        el.groupIds.some(id=>element.groupIds.includes(id)) ||
-        el === container[0]
-      );
+    const conditionFN = container.length === 1
+      ? (el: ExcalidrawElement) => el.groupIds.some(id=>element.groupIds.includes(id)) || el === container[0]
+      : (el: ExcalidrawElement) => el.groupIds.some(id=>element.groupIds.includes(id));
+
+    if(!includeFrameElements) {
+      return elements.filter(el=>conditionFN(el));
+    } else {
+      //I use the set and the filter at the end to preserve scene layer seqeuence
+      //adding frames could potentially mess up the sequence otherwise
+      const elementIDs = new Set<string>();
+      elements
+        .filter(el=>conditionFN(el))
+        .forEach(el=>{
+          if(el.type === "frame") {
+            this.getElementsInFrame(el,elements,true).forEach(el=>elementIDs.add(el.id))
+          } else {
+            elementIDs.add(el.id);
+          }
+        });
+      return elements.filter(el=>elementIDs.has(el.id));
     }
-    
-    return elements.filter(el=>el.groupIds.some(id=>element.groupIds.includes(id)));
   }
 
   /**
    * Gets all the elements from elements[] that are contained in the frame.
-   * @param element 
-   * @param elements - typically all the non-deleted elements in the scene 
+   * @param frameElement - the frame element for which to get the elements
+   * @param elements - typically all the non-deleted elements in the scene
+   * @param shouldIncludeFrame - if true, the frame element will be included in the returned array 
+   *                             this is useful when generating an image in which you want the frame to be clipped
    * @returns 
    */
-  getElementsInFrame(frameElement: ExcalidrawElement, elements: ExcalidrawElement[]): ExcalidrawElement[] {
+  getElementsInFrame(
+    frameElement: ExcalidrawElement,
+    elements: ExcalidrawElement[],
+    shouldIncludeFrame: boolean = false,
+  ): ExcalidrawElement[] {
     if(!frameElement || !elements || frameElement.type !== "frame") return [];
-    return elements.filter(el=>el.frameId === frameElement.id);
+    return elements.filter(el=>(el.frameId === frameElement.id) || (shouldIncludeFrame && el.id === frameElement.id));
   } 
 
   /**
@@ -2434,16 +2560,17 @@ export class ExcalidrawAutomate {
       text,
       this.style.fontSize,
       this.style.fontFamily,
-      getDefaultLineHeight(this.style.fontFamily),
+      getLineHeight(this.style.fontFamily),
     );
     return { width: size.w ?? 0, height: size.h ?? 0 };
   };
 
   /**
-   * Returns the size of the image element at 100% (i.e. the original size)
+   * Returns the size of the image element at 100% (i.e. the original size), or undefined if the data URL is not available
    * @param imageElement an image element from the active scene on targetView
+   * @param shouldWaitForImage if true, the function will wait for the image to load before returning the size
    */
-  async getOriginalImageSize(imageElement: ExcalidrawImageElement): Promise<{width: number; height: number}> {
+  async getOriginalImageSize(imageElement: ExcalidrawImageElement, shouldWaitForImage: boolean=false): Promise<{width: number; height: number}> {
     //@ts-ignore
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "getOriginalImageSize()");
@@ -2459,8 +2586,57 @@ export class ExcalidrawAutomate {
       return null;
     }
     const isDark = this.getExcalidrawAPI().getAppState().theme === "dark";
-    const dataURL = ef.getImage(isDark);
+    let dataURL = ef.getImage(isDark);
+    if(!dataURL && !shouldWaitForImage) return;
+    if(!dataURL) {
+      let watchdog = 0;
+      while(!dataURL && watchdog < 50) {
+        await sleep(100);
+        dataURL = ef.getImage(isDark);
+        watchdog++;
+      }
+      if(!dataURL) return;
+    }
     return await getImageSize(dataURL);
+  }
+
+  /**
+   * Resets the image to its original aspect ratio.
+   * If the image is resized then the function returns true.
+   * If the image element is not in EA (only in the view), then if image is resized, the element is copied to EA for Editing using copyViewElementsToEAforEditing([imgEl]).
+   * Note you need to run await ea.addElementsToView(false); to add the modified image to the view.
+   * @param imageElement - the EA image element to be resized
+   * returns true if image was changed, false if image was not changed
+   */
+  async resetImageAspectRatio(imgEl: ExcalidrawImageElement): Promise<boolean> {
+    //@ts-ignore
+    if (!this.targetView || !this.targetView?._loaded) {
+      errorMessage("targetView not set", "resetImageAspectRatio()");
+      return null;
+    }
+
+    const size = await this.getOriginalImageSize(imgEl, true);
+    if (size) {
+      const originalArea = imgEl.width * imgEl.height;
+      const originalAspectRatio = size.width / size.height;
+      let newWidth = Math.sqrt(originalArea * originalAspectRatio);
+      let newHeight = Math.sqrt(originalArea / originalAspectRatio);
+      const centerX = imgEl.x + imgEl.width / 2;
+      const centerY = imgEl.y + imgEl.height / 2;
+
+      if (newWidth !== imgEl.width || newHeight !== imgEl.height) {
+        if(!this.getElement(imgEl.id)) {
+          this.copyViewElementsToEAforEditing([imgEl]);
+        }
+        const eaEl = this.getElement(imgEl.id);
+        eaEl.width = newWidth;
+        eaEl.height = newHeight;
+        eaEl.x = centerX - newWidth / 2;
+        eaEl.y = centerY - newHeight / 2;
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -2555,7 +2731,7 @@ export class ExcalidrawAutomate {
     elements.splice(newZIndex, 0, elements.splice(oldZIndex, 1)[0]);
     this.targetView.updateScene({
       elements,
-      commitToHistory: true,
+      storeAction: "capture",
     });
   };
 
@@ -2647,6 +2823,20 @@ export class ExcalidrawAutomate {
     this.copyViewElementsToEAforEditing(res.content);
     return true;
   }
+
+  destroy(): void {
+    this.targetView = null;
+    this.plugin = null;
+    this.elementsDict = {};
+    this.imagesDict = {};
+    this.mostRecentMarkdownSVG = null;
+    this.activeScript = null;
+    //@ts-ignore
+    this.style = {};
+    //@ts-ignore
+    this.canvas = {};
+    this.colorPalette = {};
+  }  
 };
 
 export async function initExcalidrawAutomate(
@@ -2659,14 +2849,10 @@ export async function initExcalidrawAutomate(
   return ea;
 }
 
-export function destroyExcalidrawAutomate() {
-  delete window.ExcalidrawAutomate;
-}
-
 function normalizeLinePoints(
   points: [x: number, y: number][],
   //box: { x: number; y: number; w: number; h: number },
-) {
+): number[][] {
   const p = [];
   const [x, y] = points[0];
   for (let i = 0; i < points.length; i++) {
@@ -2675,7 +2861,9 @@ function normalizeLinePoints(
   return p;
 }
 
-function getLineBox(points: [x: number, y: number][]) {
+function getLineBox(
+  points: [x: number, y: number][]
+):{x:number, y:number, w: number, h:number} {
   const [x1, y1, x2, y2] = estimateLineBound(points);
   return {
     x: x1,
@@ -2685,23 +2873,16 @@ function getLineBox(points: [x: number, y: number][]) {
   };
 }
 
-function getFontFamily(id: number) {
-  switch (id) {
-    case 1:
-      return "Virgil, Segoe UI Emoji";
-    case 2:
-      return "Helvetica, Segoe UI Emoji";
-    case 3:
-      return "Cascadia, Segoe UI Emoji";
-    case 4:
-      return "LocalFont";
-  }
+function getFontFamily(id: number):string {
+  return getFontFamilyString({fontFamily:id})
 }
 
-async function initFonts() {
-  for (let i = 1; i <= 3; i++) {
-    await (document as any).fonts.load(`20px ${getFontFamily(i)}`);
-  }
+export async function initFonts():Promise<void> {
+  await excalidrawLib.registerFontsInCSS();
+  const fonts = excalidrawLib.getFontFamilies();
+  for(let i=0;i<fonts.length;i++) {
+    if(fonts[i] !== "Local Font") await (document as any).fonts.load(`16px ${fonts[i]}`);  
+  };
 }
 
 export function _measureText(
@@ -2709,21 +2890,21 @@ export function _measureText(
   fontSize: number,
   fontFamily: number,
   lineHeight: number,
-) {
+): {w: number, h:number} {
   //following odd error with mindmap on iPad while synchornizing with desktop.
   if (!fontSize) {
     fontSize = 20;
   }
   if (!fontFamily) {
     fontFamily = 1;
-    lineHeight = getDefaultLineHeight(fontFamily);
+    lineHeight = getLineHeight(fontFamily);
   }
   const metrics = measureText(
     newText,
     `${fontSize.toString()}px ${getFontFamily(fontFamily)}` as any,
     lineHeight
   );
-  return { w: metrics.width, h: metrics.height, baseline: metrics.baseline };
+  return { w: metrics.width, h: metrics.height };
 }
 
 async function getTemplate(
@@ -2780,6 +2961,39 @@ async function getTemplate(
     }
 
     let scene = excalidrawData.scene;
+
+    let groupElements:ExcalidrawElement[] = scene.elements;
+    if(filenameParts.hasGroupref) {
+      const el = filenameParts.hasSectionref
+      ? getTextElementsMatchingQuery(scene.elements,["# "+filenameParts.sectionref],true)
+      : scene.elements.filter((el: ExcalidrawElement)=>el.id===filenameParts.blockref);
+      if(el.length > 0) {
+        groupElements = plugin.ea.getElementsInTheSameGroupWithElement(el[0],scene.elements,true)
+      }
+    }
+    if(filenameParts.hasFrameref || filenameParts.hasClippedFrameref) {
+      const el = getFrameBasedOnFrameNameOrId(filenameParts.blockref,scene.elements);     
+      
+      if(el) {
+        groupElements = plugin.ea.getElementsInFrame(el,scene.elements, filenameParts.hasClippedFrameref);
+      }
+    }
+
+    if(filenameParts.hasTaskbone) {
+      groupElements = groupElements.filter( el => 
+        el.type==="freedraw" || 
+        ( el.type==="image" &&
+          !plugin.isExcalidrawFile(excalidrawData.getFile(el.fileId)?.file)
+        ));
+    }
+
+    let fileIDWhiteList:Set<FileId>;
+
+    if(groupElements.length < scene.elements.length) {
+      fileIDWhiteList = new Set<FileId>();
+      groupElements.filter(el=>el.type==="image").forEach((el:ExcalidrawImageElement)=>fileIDWhiteList.add(el.fileId));
+    }
+
     if (loadFiles) {
       //debug({where:"getTemplate",template:file.name,loader:loader.uid});
       await loader.loadSceneFiles(excalidrawData, (fileArray: FileData[]) => {
@@ -2799,33 +3013,21 @@ async function getTemplate(
           };
         }
         scene = scaleLoadedImage(excalidrawData.scene, fileArray).scene;
-      }, depth);
+      }, depth, false, fileIDWhiteList);
     }
 
-    let groupElements:ExcalidrawElement[] = scene.elements;
-    if(filenameParts.hasGroupref) {
-      const el = filenameParts.hasSectionref
-      ? getTextElementsMatchingQuery(scene.elements,["# "+filenameParts.sectionref],true)
-      : scene.elements.filter((el: ExcalidrawElement)=>el.id===filenameParts.blockref);
-      if(el.length > 0) {
-        groupElements = plugin.ea.getElementsInTheSameGroupWithElement(el[0],scene.elements)
+    excalidrawData.destroy();
+    const filehead = data.substring(0, trimLocation);
+    let files:any = {};
+    const sceneFilesSize = Object.values(scene.files).length;
+    if (sceneFilesSize > 0) {
+      if(fileIDWhiteList && (sceneFilesSize > fileIDWhiteList.size)) {
+          Object.values(scene.files).filter((f: any) => fileIDWhiteList.has(f.id)).forEach((f: any) => {
+            files[f.id] = f;
+          });
+      } else {
+        files = scene.files;
       }
-    }
-    if(filenameParts.hasFrameref) {
-      const el = getFrameBasedOnFrameNameOrId(filenameParts.blockref,scene.elements);     
-      
-      if(el) {
-        groupElements = plugin.ea.getElementsInFrame(el,scene.elements)
-      }
-    }
-
-
-    if(filenameParts.hasTaskbone) {
-      groupElements = groupElements.filter( el => 
-        el.type==="freedraw" || 
-        ( el.type==="image" &&
-          !plugin.isExcalidrawFile(excalidrawData.getFile(el.fileId)?.file)
-        ));
     }
 
     return {
@@ -2835,8 +3037,8 @@ async function getTemplate(
           hostFile: file,
         }) : groupElements,
       appState: scene.appState,
-      frontmatter: data.substring(0, trimLocation),
-      files: scene.files,
+      frontmatter: filehead.match(/^---\n.*\n---\n/ms)?.[0] ?? filehead,
+      files,
       hasSVGwithBitmap,
     };
   }
@@ -2867,7 +3069,7 @@ export async function createPNG(
   depth: number,
   padding?: number,
   imagesDict?: any,
-) {
+): Promise<Blob> {
   if (!loader) {
     loader = new EmbeddedFilesLoader(plugin);
   }
@@ -2896,6 +3098,7 @@ export async function createPNG(
         theme: forceTheme ?? template?.appState?.theme ?? canvasTheme,
         viewBackgroundColor:
           template?.appState?.viewBackgroundColor ?? canvasBackgroundColor,
+        ...template?.appState?.frameRendering ? {frameRendering: template.appState.frameRendering} : {},
       },
       files,
     },
@@ -2950,7 +3153,7 @@ export const updateElementLinksToObsidianLinks = ({elements, hostFile}:{
   })
 }
 
-function addFilterToForeignObjects(svg:SVGSVGElement) {
+function addFilterToForeignObjects(svg:SVGSVGElement):void {
   const foreignObjects = svg.querySelectorAll("foreignObject");
   foreignObjects.forEach((foreignObject) => {
     foreignObject.setAttribute("filter", THEME_FILTER);
@@ -2975,6 +3178,9 @@ export async function createSVG(
   if (!loader) {
     loader = new EmbeddedFilesLoader(plugin);
   }
+  if(typeof exportSettings.skipInliningFonts === "undefined") {
+    exportSettings.skipInliningFonts = !embedFont;
+  }
   const template = templatePath
     ? await getTemplate(plugin, templatePath, true, loader, depth, convertMarkdownLinksToObsidianURLs)
     : null;
@@ -2991,6 +3197,7 @@ export async function createSVG(
   const theme = forceTheme ?? template?.appState?.theme ?? canvasTheme;
   const withTheme = exportSettings?.withTheme ?? plugin.settings.exportWithTheme;
 
+  const filenameParts = getEmbeddedFilenameParts(templatePath);
   const svg = await getSVG(
     {
       //createAndOpenDrawing
@@ -3002,6 +3209,7 @@ export async function createSVG(
         theme,
         viewBackgroundColor:
           template?.appState?.viewBackgroundColor ?? canvasBackgroundColor,
+        ...template?.appState?.frameRendering ? {frameRendering: template.appState.frameRendering} : {},
       },
       files,
     },
@@ -3010,6 +3218,9 @@ export async function createSVG(
         exportSettings?.withBackground ?? plugin.settings.exportWithBackground,
       withTheme,
       isMask: exportSettings?.isMask ?? false,
+      ...filenameParts?.hasClippedFrameref
+      ? {frameRendering: {enabled: true, name: false, outline: false, clip: true}}
+      : {},
     },
     padding,
     null,
@@ -3017,9 +3228,8 @@ export async function createSVG(
 
   if (withTheme && theme === "dark") addFilterToForeignObjects(svg);
 
-  const filenameParts = getEmbeddedFilenameParts(templatePath);
   if(
-    !(filenameParts.hasGroupref || filenameParts.hasFrameref) && 
+    !(filenameParts.hasGroupref || filenameParts.hasFrameref || filenameParts.hasClippedFrameref) && 
     (filenameParts.hasBlockref || filenameParts.hasSectionref)
   ) {
     let el = filenameParts.hasSectionref
@@ -3041,7 +3251,7 @@ export async function createSVG(
   if (template?.hasSVGwithBitmap) {
     svg.setAttribute("hasbitmap", "true");
   }
-  return embedFont ? embedFontsInSVG(svg, plugin) : svg;
+  return svg;
 }
 
 function estimateLineBound(points: any): [number, number, number, number] {
@@ -3092,7 +3302,7 @@ export function repositionElementsToCursor(
   return restore({elements}, null, null).elements;
 }
 
-function errorMessage(message: string, source: string) {
+function errorMessage(message: string, source: string):void {
   switch (message) {
     case "targetView not set":
       errorlog({
@@ -3145,7 +3355,7 @@ export const search = async (view: ExcalidrawView) => {
   const ea = view.plugin.ea;
   ea.reset();
   ea.setView(view);
-  const elements = ea.getViewElements().filter((el) => el.type === "text" || el.type === "frame");
+  const elements = ea.getViewElements().filter((el) => el.type === "text" || el.type === "frame" || el.link || el.type === "image");
   if (elements.length === 0) {
     return;
   }
@@ -3224,7 +3434,7 @@ export const getFrameElementsMatchingQuery = (
     el.type === "frame" && 
     query.some((q) => {
       if (exactMatch) {
-        const text = el.name.toLowerCase().split("\n")[0].trim();
+        const text = el.name?.toLowerCase().split("\n")[0].trim() ?? "";
         const m = text.match(/^#*(# .*)/);
         if (!m || m.length !== 2) {
           return false;
@@ -3239,6 +3449,62 @@ export const getFrameElementsMatchingQuery = (
     }));
 }
 
+/**
+ * 
+ * @param elements 
+ * @param query 
+ * @param exactMatch - when searching for section header exactMatch should be set to true
+ * @returns the elements matching the query
+ */
+export const getElementsWithLinkMatchingQuery = (
+  elements: ExcalidrawElement[],
+  query: string[],
+  exactMatch: boolean = false, //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530
+): ExcalidrawElement[] => {
+  if (!elements || elements.length === 0 || !query || query.length === 0) {
+    return [];
+  }
+
+  return elements.filter((el: any) =>
+    el.link && 
+    query.some((q) => {
+      const text = el.link.toLowerCase().trim();
+      return exactMatch
+        ? (text === q.toLowerCase())
+        : text.match(q.toLowerCase());
+    }));
+}
+
+/**
+ * 
+ * @param elements 
+ * @param query 
+ * @param exactMatch - when searching for section header exactMatch should be set to true
+ * @returns the elements matching the query
+ */
+export const getImagesMatchingQuery = (
+  elements: ExcalidrawElement[],
+  query: string[],
+  excalidrawData: ExcalidrawData,
+  exactMatch: boolean = false, //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530
+): ExcalidrawElement[] => {
+  if (!elements || elements.length === 0 || !query || query.length === 0) {
+    return [];
+  }
+
+  return elements.filter((el: ExcalidrawElement) => 
+    el.type === "image" &&
+    query.some((q) => {
+      const filename = excalidrawData.getFile(el.fileId)?.file?.basename.toLowerCase().trim();
+      const equation = excalidrawData.getEquation(el.fileId)?.latex?.toLocaleLowerCase().trim();
+      const text = filename ?? equation;
+      if(!text) return false;
+      return exactMatch
+        ? (text === q.toLowerCase())
+        : text.match(q.toLowerCase());
+    }));
+  }
+
 export const cloneElement = (el: ExcalidrawElement):any => {
   const newEl = JSON.parse(JSON.stringify(el));
   newEl.version = el.version + 1;
@@ -3250,3 +3516,9 @@ export const cloneElement = (el: ExcalidrawElement):any => {
 export const verifyMinimumPluginVersion = (requiredVersion: string): boolean => {
   return PLUGIN_VERSION === requiredVersion || isVersionNewerThanOther(PLUGIN_VERSION,requiredVersion);
 }
+
+export const getBoundTextElementId = (container: ExcalidrawElement | null) => {
+  return container?.boundElements?.length
+    ? container?.boundElements?.find((ele) => ele.type === "text")?.id || null
+    : null;
+};
