@@ -313,6 +313,15 @@ export default class ExcalidrawPlugin extends Plugin {
     };
   }*/
   
+  public async loadFontFromFile(fontName: string): Promise<ArrayBuffer> {
+    const assetsFoler = "Fonts/";
+    const file = this.app.vault.getAbstractFileByPath(assetsFoler + fontName);
+    if(!file || !(file instanceof TFile)) {
+      return;
+    }
+    return await this.app.vault.readBinary(file);
+  }
+
   async onload() {
     initCompressionWorker();
     this.loadTimestamp = Date.now();

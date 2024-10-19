@@ -103,6 +103,7 @@ export const {
   getContainerElement,
   refreshTextDimensions,
   getCSSFontDefinition,
+  loadSceneFonts,
 } = excalidrawLib;
 
 export const FONTS_STYLE_ID = "excalidraw-custom-fonts";

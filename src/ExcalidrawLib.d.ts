@@ -3,8 +3,9 @@ import { ImportedDataState } from "@zsviczian/excalidraw/types/excalidraw/data/t
 import { BoundingBox } from "@zsviczian/excalidraw/types/excalidraw/element/bounds";
 import { ElementsMap, ExcalidrawBindableElement, ExcalidrawElement, ExcalidrawFrameElement, ExcalidrawFrameLikeElement, ExcalidrawTextContainer, ExcalidrawTextElement, FontFamilyValues, FontString, NonDeleted, NonDeletedExcalidrawElement, Theme } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { FontMetadata } from "@zsviczian/excalidraw/types/excalidraw/fonts/metadata";
-import { AppState, BinaryFiles, DataURL, GenerateDiagramToCode, Point, Zoom } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { AppState, BinaryFiles, DataURL, GenerateDiagramToCode, Zoom } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
+import { GlobalPoint } from "@zsviczian/excalidraw/types/math/types";
 
 type EmbeddedLink =
   | ({
@@ -75,16 +76,16 @@ declare namespace ExcalidrawLib {
 
   function determineFocusDistance(
     element: ExcalidrawBindableElement,
-    a: Point,
-    b: Point,
+    a: GlobalPoint,
+    b: GlobalPoint,
   ): number;
 
   function intersectElementWithLine(
     element: ExcalidrawBindableElement,
-    a: Point,
-    b: Point,
+    a: GlobalPoint,
+    b: GlobalPoint,
     gap?: number,
-  ): Point[];
+  ): GlobalPoint[];
 
   function getCommonBoundingBox(
     elements: ExcalidrawElement[] | readonly NonDeleted<ExcalidrawElement>[],
@@ -186,5 +187,6 @@ declare namespace ExcalidrawLib {
     separator?: string,
   ): string;
   function safelyParseJSON (json: string): Record<string, any> | null;
+  function loadSceneFonts(elements: NonDeletedExcalidrawElement[]): Promise<void>;
 }
 

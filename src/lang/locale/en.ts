@@ -187,7 +187,7 @@ export default {
   
   BASIC_HEAD: "Basic",
   BASIC_DESC: `In the "Basic" settings, you can configure options such as displaying release notes after updates, receiving plugin update notifications, setting the default location for new drawings, specifying the Excalidraw folder for embedding drawings into active documents, defining an Excalidraw template file, and designating an Excalidraw Automate script folder for managing automation scripts.`,
-  FOLDER_NAME: "Excalidraw folder",
+  FOLDER_NAME: "Excalidraw folder (CAsE sEnsITive!)",
   FOLDER_DESC:
     "Default location for new drawings. If empty, drawings will be created in the Vault root.",
   CROP_PREFIX_NAME: "Crop file prefix",
@@ -201,10 +201,10 @@ export default {
   ANNOTATE_PRESERVE_SIZE_NAME: "Preserve image size when annotating",
   ANNOTATE_PRESERVE_SIZE_DESC:
     "When annotating an image in markdown the replacment image link will include the width of the original image.",
-  CROP_FOLDER_NAME: "Crop file folder",
+  CROP_FOLDER_NAME: "Crop file folder (CaSE senSItive!)",
   CROP_FOLDER_DESC:
     "Default location for new drawings created when cropping an image. If empty, drawings will be created following the Vault attachments settings.",
-  ANNOTATE_FOLDER_NAME: "Image annotation file folder",
+  ANNOTATE_FOLDER_NAME: "Image annotation file folder (CaSe SeNSitIVe!)",
   ANNOTATE_FOLDER_DESC:
     "Default location for new drawings created when annotating an image. If empty, drawings will be created following the Vault attachments settings.",
   FOLDER_EMBED_NAME:
@@ -213,7 +213,7 @@ export default {
     "Define which folder to place the newly inserted drawing into " +
     "when using the command palette action: 'Create a new drawing and embed into active document'.<br>" +
     "<b><u>Toggle ON:</u></b> Use Excalidraw folder<br><b><u>Toggle OFF:</u></b> Use the attachments folder defined in Obsidian settings.",
-  TEMPLATE_NAME: "Excalidraw template file or folder",
+  TEMPLATE_NAME: "Excalidraw template file or folder (caSe SenSiTive!)",
   TEMPLATE_DESC:
     "Full filepath or folderpath to the Excalidraw template.<br>" +
     "<b>Template File:</b>E.g.: If your template is in the default Excalidraw folder and its name is " +
@@ -229,6 +229,15 @@ export default {
     "You can access your scripts from Excalidraw via the Obsidian Command Palette. Assign " +
     "hotkeys to your favorite scripts just like to any other Obsidian command. " +
     "The folder may not be the root folder of your Vault. ",
+  ASSETS_FOLDER_NAME: "Local Font Assets Folder (cAsE sENsiTIvE!)",
+  ASSETS_FOLDER_DESC: `Since version 2.5.3, following the implementation of CJK font support, Excalidraw downloads fonts from the internet.
+    If you prefer to keep Excalidraw fully local, allowing it to work without internet access, or if your internet connection is slow
+    and you want to improve performance, you can download the necessary
+    <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip" target="_blank">font assets from GitHub</a>.
+    After downloading, unzip the contents into a folder within your Vault.<br>
+    You can specify the location of that folder here. For example, you may choose to place it under <code>Excalidraw/FontAssets</code>.<br><br>
+    <strong>Important:</strong> Do not set this to the Vault root! Ensure that no other files are placed in this folder.<br><br>
+    <strong>Note:</strong> If you're using Obsidian Sync and want to synchronize these font files across your devices, ensure that Obsidian Sync is set to synchronize "All other file types".`,  
   AI_HEAD: "AI Settings - Experimental",
   AI_DESC: `In the "AI" settings, you can configure options for using OpenAI's GPT API. ` +
     `While the OpenAI API is in beta, its use is strictly limited — as such we require you use your own API key. ` +
@@ -816,6 +825,36 @@ FILENAME_HEAD: "Filename",
 
   //ExcalidrawData.ts
   LOAD_FROM_BACKUP: "Excalidraw file was corrupted. Loading from backup file.",
+  FONT_LOAD_SLOW: "Loading Fonts...\n\n This is taking longer than expected. If this delay occurs regulary then you may download the fonts locally to your Vault. \n\n" +
+    "(click=dismiss, right-click=Info)",
+  FONT_INFO_TITLE: "Starting v2.5.3 fonts load from the Internet",
+  FONT_INFO_DETAILED: `
+      <p>
+        To improve Obsidian's startup time and manage the large <strong>CJK font family</strong>, 
+        I've moved the fonts out of the plugin's <code>main.js</code>. Starting with version 2.5.3, 
+        fonts will be loaded from the internet. This typically shouldn't cause issues as Obsidian caches 
+        these files after first use.
+      </p>
+      <p>
+        If you prefer to keep Obsidian 100% local or experience performance issues, you can download the font assets.
+      </p>
+      <h3>Instructions:</h3>
+      <ol>
+        <li>Download the fonts from <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip">GitHub</a>.</li>
+        <li>Unzip and copy files into a Vault folder (default: <code>Excalidraw/FontAssets</code>; folder names are cAse-senSITive).</li>
+        <li><mark>DO NOT</mark> set this folder to the Vault root or mix with other local fonts.</li>
+      </ol>
+      <h3>For Obsidian Sync Users:</h3>
+      <p>
+        Ensure Obsidian Sync is set to synchronize "All other file types" or download and unzip the file on all devices.
+      </p>
+      <h3>Note:</h3>
+      <p>
+        If you find this process cumbersome, please submit a feature request to Obsidian.md for supporting assets in the plugin folder. 
+        Currently, only a single <code>main.js</code> is supported, which leads to large files and slow startup times for complex plugins like Excalidraw. 
+        I apologize for the inconvenience.
+      </p>
+    `,
 
   //ObsidianMenu.tsx
   GOTO_FULLSCREEN: "Goto fullscreen mode",

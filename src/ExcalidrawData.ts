@@ -17,6 +17,7 @@ import {
   FRONTMATTER_KEYS,
   refreshTextDimensions,
   getContainerElement,
+  loadSceneFonts,
 } from "./constants/constants";
 import ExcalidrawPlugin from "./main";
 import { TextMode } from "./ExcalidrawView";
@@ -52,6 +53,8 @@ import { DEBUGGING, debug } from "./utils/DebugHelper";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { updateElementIdsInScene } from "./utils/ExcalidrawSceneUtils";
 import { getNewUniqueFilepath } from "./utils/FileUtils";
+import { t } from "./lang/helpers";
+import { displayFontMessage } from "./utils/ExcalidrawViewUtils";
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles };
 
@@ -745,6 +748,15 @@ export class ExcalidrawData {
 
     this.deletedElements = this.scene.elements.filter((el:ExcalidrawElement)=>el.isDeleted);
     this.scene.elements = this.scene.elements.filter((el:ExcalidrawElement)=>!el.isDeleted);
+    
+    const timer = window.setTimeout(()=>{
+      const notice = new Notice(t("FONT_LOAD_SLOW"),15000);
+      notice.noticeEl.oncontextmenu = () => {
+        displayFontMessage(this.app);
+      }
+    },2000);
+    await loadSceneFonts(this.scene.elements);
+    clearTimeout(timer);
 
     if (!this.scene.files) {
       this.scene.files = {}; //loading legacy scenes that do not yet have the files attribute.

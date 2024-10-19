@@ -49,6 +49,7 @@ export interface ExcalidrawSettings {
   embedUseExcalidrawFolder: boolean;
   templateFilePath: string;
   scriptFolderPath: string;
+  fontAssetsPath: string;
   compress: boolean;
   decompressForMDView: boolean;
   onceOffCompressFlagReset: boolean; //used to reset compress to true in 2.2.0
@@ -220,6 +221,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   embedUseExcalidrawFolder: false,
   templateFilePath: "Excalidraw/Template.excalidraw",
   scriptFolderPath: "Excalidraw/Scripts",
+  fontAssetsPath: "Excalidraw/FontAssets",
   compress: true,
   decompressForMDView: false,
   onceOffCompressFlagReset: false,
@@ -720,6 +722,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
+    new Setting(detailsEl)
+      .setName(t("ASSETS_FOLDER_NAME"))
+      .setDesc(fragWithHTML(t("ASSETS_FOLDER_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder("e.g.: Excalidraw/FontAssets")
+          .setValue(this.plugin.settings.fontAssetsPath)
+          .onChange(async (value) => {
+            this.plugin.settings.fontAssetsPath = value;
+            this.applySettingsUpdate();
+          }),
+      );
 
     // ------------------------------------------------
     // Saving
@@ -2484,7 +2498,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         d.addOption("Virgil", "Virgil");
         this.app.vault
           .getFiles()
-          .filter((f) => ["ttf", "woff", "woff2", "otf"].contains(f.extension))
+          .filter((f) => ["ttf", "woff", "woff2", "otf"].contains(f.extension) && !f.path.startsWith(this.plugin.settings.fontAssetsPath))
           .forEach((f: TFile) => {
             d.addOption(f.path, f.name);
           });

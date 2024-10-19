@@ -1,6 +1,6 @@
 
 import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS } from "src/constants/constants";
-import { App, Notice, TFile, WorkspaceLeaf } from "obsidian";
+import { App, Modal, Notice, TFile, WorkspaceLeaf } from "obsidian";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK, getExcalidrawMarkdownHeaderSection, REGEX_TAGS } from "src/ExcalidrawData";
 import ExcalidrawView from "src/ExcalidrawView";
@@ -401,4 +401,20 @@ export function isTextImageTransclusion (
     }
   }
   return false;
+}
+
+export function displayFontMessage(app: App) {
+  const modal = new Modal(app);
+
+  modal.onOpen = () => {
+    const contentEl = modal.contentEl;
+    contentEl.createEl("h2", { text: t("FONT_INFO_TITLE") });
+
+    const releaseNotesHTML = t("FONT_INFO_DETAILED");
+
+    const div = contentEl.createDiv({ cls: "release-notes" });
+    div.innerHTML = releaseNotesHTML;
+  }
+
+  modal.open();
 }

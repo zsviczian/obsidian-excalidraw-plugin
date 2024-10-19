@@ -93,6 +93,7 @@ import { EXCALIDRAW_AUTOMATE_INFO, EXCALIDRAW_SCRIPTENGINE_INFO } from "./dialog
 import { addBackOfTheNoteCard, getFrameBasedOnFrameNameOrId } from "./utils/ExcalidrawViewUtils";
 import { log } from "./utils/DebugHelper";
 import { ExcalidrawLib } from "./ExcalidrawLib";
+import { GlobalPoint } from "@zsviczian/excalidraw/types/math/types";
 
 extendPlugins([
   HarmonyPlugin,
@@ -1402,8 +1403,8 @@ export class ExcalidrawAutomate {
   ): string {
     const box = getLineBox(points);
     id = id ?? nanoid();
-    const startPoint = points[0];
-    const endPoint = points[points.length - 1];
+    const startPoint = points[0] as GlobalPoint;
+    const endPoint = points[points.length - 1] as GlobalPoint;
     this.elementsDict[id] = {
       points: normalizeLinePoints(points),
       lastCommittedPoint: null,
@@ -1693,8 +1694,8 @@ export class ExcalidrawAutomate {
       if (!connectionA) {
         const intersect = intersectElementWithLine(
           elA,
-          [bCenterX, bCenterY],
-          [aCenterX, aCenterY],
+          [bCenterX, bCenterY] as GlobalPoint,
+          [aCenterX, aCenterY] as GlobalPoint,
           GAP,
         );
         if (intersect.length === 0) {
@@ -1707,8 +1708,8 @@ export class ExcalidrawAutomate {
       if (!connectionB) {
         const intersect = intersectElementWithLine(
           elB,
-          [aCenterX, aCenterY],
-          [bCenterX, bCenterY],
+          [aCenterX, aCenterY] as GlobalPoint,
+          [bCenterX, bCenterY] as GlobalPoint,
           GAP,
         );
         if (intersect.length === 0) {
@@ -2421,7 +2422,12 @@ export class ExcalidrawAutomate {
     b: readonly [number, number],
     gap?: number,
   ): Point[] {
-    return intersectElementWithLine(element, a, b, gap);
+    return intersectElementWithLine(
+      element,
+      a as GlobalPoint,
+      b as GlobalPoint,
+      gap
+    );
   };
 
   /**
@@ -2878,11 +2884,11 @@ function getFontFamily(id: number):string {
 }
 
 export async function initFonts():Promise<void> {
-  await excalidrawLib.registerFontsInCSS();
+  /*await excalidrawLib.registerFontsInCSS();
   const fonts = excalidrawLib.getFontFamilies();
   for(let i=0;i<fonts.length;i++) {
     if(fonts[i] !== "Local Font") await (document as any).fonts.load(`16px ${fonts[i]}`);  
-  };
+  };*/
 }
 
 export function _measureText(
