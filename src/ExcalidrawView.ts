@@ -2746,6 +2746,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if(!DEVICE.isMobile) {
       if(requireApiVersion("0.16.0")) {
         //@ts-ignore
+        this.leaf.tabHeaderInnerIconEl.style.color="var(--color-accent)"
+        //@ts-ignore
         this.leaf.tabHeaderInnerTitleEl.style.color="var(--color-accent)"
       }
     }
@@ -2773,6 +2775,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.actionButtons['save'].querySelector("svg").removeClass("excalidraw-dirty");
     if(!DEVICE.isMobile) {
       if(requireApiVersion("0.16.0")) {
+        //@ts-ignore
+        this.leaf.tabHeaderInnerIconEl.style.color=""
         //@ts-ignore
         this.leaf.tabHeaderInnerTitleEl.style.color=""
       }
