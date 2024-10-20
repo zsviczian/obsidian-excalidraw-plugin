@@ -2345,7 +2345,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         d.addOption("Assistant", "Assistant");
         this.app.vault
           .getFiles()
-          .filter((f) => ["ttf", "woff", "woff2", "otf"].contains(f.extension))
+          .filter((f) => ["ttf", "woff", "woff2", "otf"].contains(f.extension) && !f.path.startsWith(this.plugin.settings.fontAssetsPath))
           .forEach((f: TFile) => {
             d.addOption(f.path, f.name);
           });

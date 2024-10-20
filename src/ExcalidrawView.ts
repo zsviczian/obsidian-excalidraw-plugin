@@ -5851,7 +5851,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             renderWebview: DEVICE.isDesktop,
             renderEmbeddable: this.renderEmbeddable.bind(this),
             renderMermaid: shouldRenderMermaid,
-            obsidianHostPlugin: new WeakRef(this.plugin),
             showDeprecatedFonts: true,
           },
           this.renderCustomActionsMenu(),

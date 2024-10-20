@@ -104,6 +104,7 @@ export const {
   refreshTextDimensions,
   getCSSFontDefinition,
   loadSceneFonts,
+  initializeObsidianUtils,
 } = excalidrawLib;
 
 export const FONTS_STYLE_ID = "excalidraw-custom-fonts";

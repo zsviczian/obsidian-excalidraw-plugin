@@ -6,6 +6,7 @@ import { FontMetadata } from "@zsviczian/excalidraw/types/excalidraw/fonts/metad
 import { AppState, BinaryFiles, DataURL, GenerateDiagramToCode, Zoom } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/types";
+import ExcalidrawPlugin from "./main";
 
 type EmbeddedLink =
   | ({
@@ -188,5 +189,6 @@ declare namespace ExcalidrawLib {
   ): string;
   function safelyParseJSON (json: string): Record<string, any> | null;
   function loadSceneFonts(elements: NonDeletedExcalidrawElement[]): Promise<void>;
+  function initializeObsidianUtils(obsidianPlugin: ExcalidrawPlugin): void;
 }
 

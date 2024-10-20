@@ -16,7 +16,7 @@ dotenv.config();
 const DIST_FOLDER = 'dist';
 const isProd = (process.env.NODE_ENV === "production");
 const isLib = (process.env.NODE_ENV === "lib");
-console.log(`Running: ${process.env.NODE_ENV}`);
+console.log(`Running: ${process.env.NODE_ENV}; isProd: ${isProd}; isLib: ${isLib}`);
 
 const excalidraw_pkg = isLib ? "" : isProd
   ? fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/excalidraw.production.min.js", "utf8")
