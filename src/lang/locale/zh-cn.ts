@@ -187,7 +187,7 @@ export default {
   
   BASIC_HEAD: "基本",
   BASIC_DESC: `包括：更新说明，更新提示，新绘图文件、模板文件、脚本文件的存储路径等的设置。`,
-  FOLDER_NAME: "Excalidraw 文件夹",
+  FOLDER_NAME: "Excalidraw 文件夹（區分大小寫！）",
   FOLDER_DESC:
     "新绘图的默认存储路径。若为空，将在库的根目录中创建新绘图。",
   CROP_PREFIX_NAME: "剪贴文件的前缀",
@@ -201,10 +201,10 @@ export default {
   ANNOTATE_PRESERVE_SIZE_NAME: "在标注时保留图像尺寸",
   ANNOTATE_PRESERVE_SIZE_DESC:
     "当在 Markdown 中标注图像时，替换后的图像链接将包含原始图像的宽度。",
-  CROP_FOLDER_NAME: "剪贴文件文件夹",
+  CROP_FOLDER_NAME: "剪贴文件文件夹（區分大小寫！）",
   CROP_FOLDER_DESC:
     "剪贴图像时创建新绘图的默认存储路径。如果留空，将按照 Vault 附件设置创建。",
-  ANNOTATE_FOLDER_NAME: "图片标注文件文件夹",
+  ANNOTATE_FOLDER_NAME: "图片标注文件文件夹（區分大小寫！）",
   ANNOTATE_FOLDER_DESC:
     "创建图片标注是的默认存储路径。如果留空，将按照 Vault 附件设置创建。",
   FOLDER_EMBED_NAME:
@@ -213,7 +213,7 @@ export default {
     "在命令面板中执行“新建绘图”系列命令时，" +
     "新建的绘图文件的存储路径。<br>" +
     "<b>开启：</b>使用上面的 Excalidraw 文件夹。 <br><b>关闭：</b>使用 Obsidian 设置的新附件默认位置。",
-  TEMPLATE_NAME: "Excalidraw 模板文件",
+  TEMPLATE_NAME: "Excalidraw 模板文件（區分大小寫！）",
   TEMPLATE_DESC:
     "Excalidraw 模板文件（文件夹）的存储路径。<br>" +
     "<b>模板文件：</b>比如：如果您的模板在默认的 Excalidraw 文件夹中且文件名是 " +
@@ -229,6 +229,14 @@ export default {
     "您可以在 Obsidian 命令面板中执行这些脚本，" +
     "还可以为喜欢的脚本分配快捷键，就像为其他 Obsidian 命令分配快捷键一样。<br>" +
     "该项不能设为库的根目录。",
+  ASSETS_FOLDER_NAME: "本地字体资源文件夹（區分大小寫！）",
+  ASSETS_FOLDER_DESC: `自 2.5.3 版本以来，随着 CJK 字体支持的实现，Excalidraw 将从互联网下载字体。
+如果您希望 Excalidraw 完全离线工作，避免依赖互联网，或者您的网络连接较慢，希望提高性能，您可以从 
+<a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip" target="_blank">GitHub 下载所需的字体资资源</a>。
+下载后，将内容解压到您的 Vault 中的一个文件夹内。<br>
+您可以在此处指定该文件夹的位置。例如，您可以选择将其放置在 <code>Excalidraw/FontAssets</code> 下。<br><br>
+<strong>重要：</strong> 请勿将其设置为 Vault 根目录！确保该文件夹中不放置其他文件。<br><br>
+<strong>注意：</strong> 如果您使用 Obsidian Sync 并希望在设备间同步这些字体文件，请确保 Obsidian Sync 设置为同步“所有其他文件类型”。`,
   AI_HEAD: "AI（实验性）",
   AI_DESC: `OpenAI GPT API 的设置。 ` +
     `目前 OpenAI API 还处于测试中，您需要在自己的。` +
@@ -817,6 +825,36 @@ FILENAME_HEAD: "文件名",
   //ExcalidrawData.ts
   LOAD_FROM_BACKUP: "Excalidraw 文件已损坏。尝试从备份文件中加载。",
 
+  FONT_LOAD_SLOW: "正在加载字体...\n\n 这比预期花费的时间更长。如果这种延迟经常发生，您可以将字体下载到您的 Vault 中。\n\n" +
+    "(点击=忽略提示，右键=更多信息)",
+  FONT_INFO_TITLE: "从互联网加载 v2.5.3 字体",
+  FONT_INFO_DETAILED: `
+      <p>
+        为了提高 Obsidian 的启动时间并管理大型 <strong>CJK 字体系列</strong>，
+        我已将字体移出插件的 <code>main.js</code>。从 2.5.3 版本开始，
+        字体将从互联网加载。这通常不会导致问题，因为 Obsidian 在首次使用后会缓存
+        这些文件。
+      </p>
+      <p>
+        如果您希望 Obsidian 完全离线或遇到性能问题，可以下载字体资源。
+      </p>
+      <h3>说明：</h3>
+      <ol>
+        <li>从 <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip">GitHub</a> 下载字体。</li>
+        <li>解压并将文件复制到 Vault 文件夹中（默认：<code>Excalidraw/FontAssets</code>; 文件夹名称區分大小寫！）。</li>
+        <li><mark>请勿</mark>将此文件夹设置为 Vault 根目录或与其他本地字体混合。</li>
+      </ol>
+      <h3>对于 Obsidian Sync 用户：</h3>
+      <p>
+        确保 Obsidian Sync 设置为同步“所有其他文件类型”，或者在所有设备上下载并解压文件。
+      </p>
+      <h3>注意：</h3>
+      <p>
+        如果您觉得这个过程繁琐，请向 Obsidian.md 提交功能请求，以支持插件文件夹中的资源。
+        目前，仅支持（同步）单个 <code>main.js</code>，这导致大型文件和复杂插件（如 Excalidraw）启动时间较慢。
+        对此带来的不便，我深表歉意。
+      </p>
+    `,
   //ObsidianMenu.tsx
   GOTO_FULLSCREEN: "进入全屏模式",
   EXIT_FULLSCREEN: "退出全屏模式",
