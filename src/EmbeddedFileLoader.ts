@@ -36,6 +36,8 @@ import {
   isMaskFile,
   getEmbeddedFilenameParts,
   cropCanvas,
+  promiseTry,
+  PromisePool,
 } from "./utils/Utils";
 import { ValueOf } from "./types/types";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "./utils/MermaidUtils";
@@ -607,125 +609,150 @@ export class EmbeddedFilesLoader {
     }
     let entry: IteratorResult<[FileId, EmbeddedFile]>;
     const files: FileData[] = [];
-    while (!this.terminate && !(entry = entries.next()).done) {
-      if(fileIDWhiteList && !fileIDWhiteList.has(entry.value[0])) continue;
-      const embeddedFile: EmbeddedFile = entry.value[1];
-      if (!embeddedFile.isLoaded(this.isDark)) {
-        //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"embedded Files are not loaded"});
-        const data = await this._getObsidianImage(embeddedFile, depth);
-        if (data) {
-          const fileData: FileData = {
-            mimeType: data.mimeType,
-            id: entry.value[0],
-            dataURL: data.dataURL,
-            created: data.created,
-            size: data.size,
-            hasSVGwithBitmap: data.hasSVGwithBitmap,
-            shouldScale: embeddedFile.shouldScale()
-          };
-          try  {
-            addFiles([fileData], this.isDark, false);
-          }
-          catch(e) {
-            errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
-          }
-          //files.push(fileData);
-        }
-      } else if (embeddedFile.isSVGwithBitmap && (depth !== 0 || isThemeChange)) {
-        //this will reload the image in light/dark mode when switching themes
-        const fileData = {
-          mimeType: embeddedFile.mimeType,
-          id: entry.value[0],
-          dataURL: embeddedFile.getImage(this.isDark) as DataURL,
-          created: embeddedFile.mtime,
-          size: embeddedFile.size,
-          hasSVGwithBitmap: embeddedFile.isSVGwithBitmap,
-          shouldScale: embeddedFile.shouldScale()
-        };
-        //files.push(fileData);
-        try  {
-          addFiles([fileData], this.isDark, false);
-        }
-        catch(e) {
-          errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
-        }
-      }
-    }
 
-    let equation;
-    const equations = excalidrawData.getEquationEntries();
-    while (!this.terminate && !(equation = equations.next()).done) {
-      if(fileIDWhiteList && !fileIDWhiteList.has(equation.value[0])) continue;
-      if (!excalidrawData.getEquation(equation.value[0]).isLoaded) {
-        const latex = equation.value[1].latex;
-        const data = await tex2dataURL(latex);
-        if (data) {
-          const fileData = {
-            mimeType: data.mimeType,
-            id: equation.value[0],
-            dataURL: data.dataURL,
-            created: data.created,
-            size: data.size,
-            hasSVGwithBitmap: false,
-            shouldScale: true
-          };
-          files.push(fileData);
-        }
-      }
-    }
-
-    if(shouldRenderMermaid()) {
-      const mermaidElements = getMermaidImageElements(excalidrawData.scene.elements);
-      for(const element of mermaidElements) {
-        if(this.terminate) {
-          continue;
-        }
-        const data = getMermaidText(element);
-        const result = await mermaidToExcalidraw(data, {fontSize: 20}, true);
-        if(!result) {
-          continue;
-        }
-        if(result?.files) {
-          for (const key in result.files) {
+    function* loadIterator():Generator<Promise<void>> {
+      while (!(entry = entries.next()).done) {
+        if(fileIDWhiteList && !fileIDWhiteList.has(entry.value[0])) continue;
+        const embeddedFile: EmbeddedFile = entry.value[1];
+        const id = entry.value[0];
+        yield promiseTry(async () => {
+          if(this.terminate) {
+            return;
+          }
+          if (!embeddedFile.isLoaded(this.isDark)) {
+            //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"embedded Files are not loaded"});
+            const data = await this._getObsidianImage(embeddedFile, depth);
+            if (data) {
+              const fileData: FileData = {
+                mimeType: data.mimeType,
+                id: id,
+                dataURL: data.dataURL,
+                created: data.created,
+                size: data.size,
+                hasSVGwithBitmap: data.hasSVGwithBitmap,
+                shouldScale: embeddedFile.shouldScale()
+              };
+              try  {
+                addFiles([fileData], this.isDark, false);
+              }
+              catch(e) {
+                errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
+              }
+              //files.push(fileData);
+            }
+          } else if (embeddedFile.isSVGwithBitmap && (depth !== 0 || isThemeChange)) {
+            //this will reload the image in light/dark mode when switching themes
             const fileData = {
-              ...result.files[key],
-              id: element.fileId,
-              created: Date.now(),
-              hasSVGwithBitmap: false,
-              shouldScale: true,
-              size: await getImageSize(result.files[key].dataURL),
+              mimeType: embeddedFile.mimeType,
+              id: id,
+              dataURL: embeddedFile.getImage(this.isDark) as DataURL,
+              created: embeddedFile.mtime,
+              size: embeddedFile.size,
+              hasSVGwithBitmap: embeddedFile.isSVGwithBitmap,
+              shouldScale: embeddedFile.shouldScale()
             };
-            files.push(fileData);
+            //files.push(fileData);
+            try  {
+              addFiles([fileData], this.isDark, false);
+            }
+            catch(e) {
+              errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
+            }
           }
-          continue;
-        }
-        if(result?.elements) {
-          //handle case that mermaidToExcalidraw has implemented this type of diagram in the mean time
-          const res = await this.getExcalidrawSVG({
-            isDark: this.isDark,
-            file: null,
-            depth,
-            inFile: null,
-            hasSVGwithBitmap: false,
-            elements: result.elements
-          });
-          if(res?.dataURL) {
-            const size = await getImageSize(res.dataURL);
-            const fileData:FileData = {
-              mimeType: "image/svg+xml",
-              id: element.fileId,
-              dataURL: res.dataURL,
-              created: Date.now(),
-              hasSVGwithBitmap: res.hasSVGwithBitmap,
-              size,
-              shouldScale: true,
-            };
-            files.push(fileData);
-          }
-          continue;
-        }  
+        });
       }
-    };
+
+      let equationItem;
+      const equations = excalidrawData.getEquationEntries();
+      while (!(equationItem = equations.next()).done) {
+        if(fileIDWhiteList && !fileIDWhiteList.has(equationItem.value[0])) continue;
+        const equation = equationItem.value[1];
+        const id = equationItem.value[0];
+        yield promiseTry(async () => {
+          if (this.terminate) {
+            return;
+          }
+          if (!excalidrawData.getEquation(id).isLoaded) {
+            const latex = equation.latex;
+            const data = await tex2dataURL(latex);
+            if (data) {
+              const fileData = {
+                mimeType: data.mimeType,
+                id: id,
+                dataURL: data.dataURL,
+                created: data.created,
+                size: data.size,
+                hasSVGwithBitmap: false,
+                shouldScale: true
+              };
+              files.push(fileData);
+            }
+          }
+        });
+      }
+
+      if(shouldRenderMermaid()) {
+        const mermaidElements = getMermaidImageElements(excalidrawData.scene.elements);
+        for(const element of mermaidElements) {
+          yield promiseTry(async () => {
+            if(this.terminate) {
+              return;
+            }
+            const data = getMermaidText(element);
+            const result = await mermaidToExcalidraw(data, {fontSize: 20}, true);
+            if(!result) {
+              return;
+            }
+            if(result?.files) {
+              for (const key in result.files) {
+                const fileData = {
+                  ...result.files[key],
+                  id: element.fileId,
+                  created: Date.now(),
+                  hasSVGwithBitmap: false,
+                  shouldScale: true,
+                  size: await getImageSize(result.files[key].dataURL),
+                };
+                files.push(fileData);
+              }
+              return;
+            }
+            if(result?.elements) {
+              //handle case that mermaidToExcalidraw has implemented this type of diagram in the mean time
+              if (this.terminate) {
+                return;
+              }
+              const res = await this.getExcalidrawSVG({
+                isDark: this.isDark,
+                file: null,
+                depth,
+                inFile: null,
+                hasSVGwithBitmap: false,
+                elements: result.elements
+              });
+              if(res?.dataURL) {
+                const size = await getImageSize(res.dataURL);
+                const fileData:FileData = {
+                  mimeType: "image/svg+xml",
+                  id: element.fileId,
+                  dataURL: res.dataURL,
+                  created: Date.now(),
+                  hasSVGwithBitmap: res.hasSVGwithBitmap,
+                  size,
+                  shouldScale: true,
+                };
+                files.push(fileData);
+              }
+              return;
+            }
+          });
+        }
+      };
+    }
+
+    const iterator = loadIterator.bind(this)();
+    const concurency = 5;
+    await new PromisePool(iterator, concurency).all();
 
     this.emptyPDFDocsMap();
     if (this.terminate) {

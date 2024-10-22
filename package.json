@@ -19,7 +19,7 @@
   "license": "MIT",
   "dependencies": {
     "@popperjs/core": "^2.11.8",
-    "@zsviczian/excalidraw": "0.17.6-4",
+    "@zsviczian/excalidraw": "0.17.6-5",
     "chroma-js": "^2.4.2",
     "clsx": "^2.0.0",
     "@zsviczian/colormaster": "^1.2.2",
@@ -34,7 +34,8 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "roughjs": "^4.5.2",
-    "woff2sfnt-sfnt2woff": "^1.0.0"
+    "woff2sfnt-sfnt2woff": "^1.0.0",
+    "es6-promise-pool": "2.5.0"
   },
   "devDependencies": {
     "@babel/core": "^7.22.9",
