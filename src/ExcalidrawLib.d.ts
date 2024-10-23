@@ -189,6 +189,5 @@ declare namespace ExcalidrawLib {
   ): string;
   function safelyParseJSON (json: string): Record<string, any> | null;
   function loadSceneFonts(elements: NonDeletedExcalidrawElement[]): Promise<void>;
-  function initializeObsidianUtils(obsidianPlugin: ExcalidrawPlugin): void;
 }
 

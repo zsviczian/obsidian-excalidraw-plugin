@@ -608,7 +608,9 @@ export class EmbeddedFilesLoader {
       this.isDark = excalidrawData?.scene?.appState?.theme === "dark";
     }
     let entry: IteratorResult<[FileId, EmbeddedFile]>;
-    const files: FileData[] = [];
+    const files: FileData[][] = [];
+    files.push([]);
+    let batch = 0;
 
     function* loadIterator():Generator<Promise<void>> {
       while (!(entry = entries.next()).done) {
@@ -632,13 +634,13 @@ export class EmbeddedFilesLoader {
                 hasSVGwithBitmap: data.hasSVGwithBitmap,
                 shouldScale: embeddedFile.shouldScale()
               };
-              try  {
+              files[batch].push(fileData);
+/*              try  {
                 addFiles([fileData], this.isDark, false);
               }
               catch(e) {
                 errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
-              }
-              //files.push(fileData);
+              }*/
             }
           } else if (embeddedFile.isSVGwithBitmap && (depth !== 0 || isThemeChange)) {
             //this will reload the image in light/dark mode when switching themes
@@ -651,13 +653,13 @@ export class EmbeddedFilesLoader {
               hasSVGwithBitmap: embeddedFile.isSVGwithBitmap,
               shouldScale: embeddedFile.shouldScale()
             };
-            //files.push(fileData);
-            try  {
+            files[batch].push(fileData);
+/*            try  {
               addFiles([fileData], this.isDark, false);
             }
             catch(e) {
               errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
-            }
+            }*/
           }
         });
       }
@@ -685,7 +687,7 @@ export class EmbeddedFilesLoader {
                 hasSVGwithBitmap: false,
                 shouldScale: true
               };
-              files.push(fileData);
+              files[batch].push(fileData);
             }
           }
         });
@@ -713,7 +715,7 @@ export class EmbeddedFilesLoader {
                   shouldScale: true,
                   size: await getImageSize(result.files[key].dataURL),
                 };
-                files.push(fileData);
+                files[batch].push(fileData);
               }
               return;
             }
@@ -741,7 +743,7 @@ export class EmbeddedFilesLoader {
                   size,
                   shouldScale: true,
                 };
-                files.push(fileData);
+                files[batch].push(fileData);
               }
               return;
             }
@@ -750,9 +752,25 @@ export class EmbeddedFilesLoader {
       };
     }
 
+    const addFilesTimer = setInterval(() => {
+      if(files[batch].length === 0) {
+        return;
+      }
+      try  {
+        addFiles(files[batch], this.isDark, false);
+      }
+      catch(e) {
+        errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
+      }
+      files.push([]);
+      batch++;
+    }, 1200);
+
     const iterator = loadIterator.bind(this)();
     const concurency = 5;
     await new PromisePool(iterator, concurency).all();
+    
+    clearInterval(addFilesTimer);
 
     this.emptyPDFDocsMap();
     if (this.terminate) {
@@ -761,7 +779,7 @@ export class EmbeddedFilesLoader {
     //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"add Files"});
     try {
       //in try block because by the time files are loaded the user may have closed the view
-      addFiles(files, this.isDark, true);
+      addFiles(files[batch], this.isDark, true);
     } catch (e) {
       errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
     }

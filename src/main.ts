@@ -45,7 +45,6 @@ import {
   DEVICE,
   sceneCoordsToViewportCoords,
   FONTS_STYLE_ID,
-  initializeObsidianUtils,
 } from "./constants/constants";
 import ExcalidrawView, { TextMode, getTextMode } from "./ExcalidrawView";
 import {
@@ -205,7 +204,6 @@ export default class ExcalidrawPlugin extends Plugin {
     this.equationsMaster = new Map<FileId, string>();
     this.mermaidsMaster = new Map<FileId, string>();
     setExcalidrawPlugin(this);
-    initializeObsidianUtils(this);
     /*if((process.env.NODE_ENV === 'development')) {
       this.slob = new Array(200 * 1024 * 1024 + 1).join('A'); // Create a 200MB blob
     }*/
