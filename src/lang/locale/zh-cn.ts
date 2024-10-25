@@ -5,6 +5,7 @@ import {
 import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/constSettingsTags";
 import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/ModifierkeyHelper";
 
+const CJK_FONTS = "CJK Fonts";
 // 简体中文
 export default {
   // main.ts
@@ -229,14 +230,6 @@ export default {
     "您可以在 Obsidian 命令面板中执行这些脚本，" +
     "还可以为喜欢的脚本分配快捷键，就像为其他 Obsidian 命令分配快捷键一样。<br>" +
     "该项不能设为库的根目录。",
-  ASSETS_FOLDER_NAME: "本地字体资源文件夹（區分大小寫！）",
-  ASSETS_FOLDER_DESC: `自 2.5.3 版本以来，随着 CJK 字体支持的实现，Excalidraw 将从互联网下载字体。
-如果您希望 Excalidraw 完全离线工作，避免依赖互联网，或者您的网络连接较慢，希望提高性能，您可以从 
-<a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip" target="_blank">GitHub 下载所需的字体资资源</a>。
-下载后，将内容解压到您的 Vault 中的一个文件夹内。<br>
-您可以在此处指定该文件夹的位置。例如，您可以选择将其放置在 <code>Excalidraw/FontAssets</code> 下。<br><br>
-<strong>重要：</strong> 请勿将其设置为 Vault 根目录！确保该文件夹中不放置其他文件。<br><br>
-<strong>注意：</strong> 如果您使用 Obsidian Sync 并希望在设备间同步这些字体文件，请确保 Obsidian Sync 设置为同步“所有其他文件类型”。`,
   AI_HEAD: "AI（实验性）",
   AI_DESC: `OpenAI GPT API 的设置。 ` +
     `目前 OpenAI API 还处于测试中，您需要在自己的。` +
@@ -755,6 +748,8 @@ FILENAME_HEAD: "文件名",
    "启用此功能简化了 Excalidraw 前置属性的使用，使您能够利用许多强大的设置。如果您不希望自动加载这些属性，" +
    "您可以禁用此功能，但您将需要手动从自动提示中移除任何不需要的属性。" +
    "请注意，启用此设置需要重启插件，因为属性是在启动时加载的。",
+  FONTS_HEAD: "字体",
+  FONTS_DESC: "配置本地字体并下载的 CJK 字体以供 Excalidraw 使用。",
   CUSTOM_FONT_HEAD: "本地字体",
   ENABLE_FOURTH_FONT_NAME: "为文本元素启用本地字体",
   ENABLE_FOURTH_FONT_DESC:
@@ -768,6 +763,20 @@ FILENAME_HEAD: "文件名",
     "如果没有选择文件，Excalidraw 将默认使用 Virgil 字体。"+
     "为了获得最佳性能，建议使用 .woff2 文件，因为当导出到 SVG 格式的图像时，Excalidraw 只会编码必要的字形。"+
     "其他字体格式将在导出文件中嵌入整个字体，可能会导致文件大小显著增加。<mark>译者注：</mark>您可以在<a href='https://wangchujiang.com/free-font/' target='_blank'>Free Font</a>获取免费商用中文手写字体。",
+  OFFLINE_CJK_NAME: "离线 CJK 字体支持",
+  OFFLINE_CJK_DESC:
+    `<strong>您在这里所做的更改将在重启 Obsidian 后生效。</strong><br>
+    Excalidraw.com 提供手写风格的 CJK 字体。默认情况下，这些字体并未在插件中本地包含，而是从互联网获取。
+    如果您希望 Excalidraw 完全本地化，以便在没有互联网连接的情况下使用，可以从 <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip" target="_blank">GitHub 下载所需的字体文件</a>。
+    下载后，将内容解压到您的 Vault 中的一个文件夹内。<br>
+    预加载字体会影响启动性能。因此，您可以选择加载哪些字体。`,
+  CJK_ASSETS_FOLDER_NAME: "CJK 字体文件夹（區分大小寫！）",
+  CJK_ASSETS_FOLDER_DESC: `您可以在此设置 CJK 字体文件夹的位置。例如，您可以选择将其放置在 <code>Excalidraw/CJK Fonts</code> 下。<br><br>
+    <strong>重要：</strong> 请勿将此文件夹设置为 Vault 根目录！请勿在此文件夹中放置其他字体。<br><br>
+    <strong>注意：</strong> 如果您使用 Obsidian Sync 并希望在设备之间同步这些字体文件，请确保 Obsidian Sync 设置为同步“所有其他文件类型”。`, 
+  LOAD_CHINESE_FONTS_NAME: "启动时从文件加载中文字体",
+  LOAD_JAPANESE_FONTS_NAME: "启动时从文件加载日文字体",
+  LOAD_KOREAN_FONTS_NAME: "启动时从文件加载韩文字体",
   SCRIPT_SETTINGS_HEAD: "已安装脚本的设置",
   SCRIPT_SETTINGS_DESC: "有些 Excalidraw 自动化脚本包含设置项，当执行这些脚本时，它们会在该列表下添加设置项。",
   TASKBONE_HEAD: "Taskbone OCR（光学符号识别）",
@@ -824,16 +833,14 @@ FILENAME_HEAD: "文件名",
 
   //ExcalidrawData.ts
   LOAD_FROM_BACKUP: "Excalidraw 文件已损坏。尝试从备份文件中加载。",
-
   FONT_LOAD_SLOW: "正在加载字体...\n\n 这比预期花费的时间更长。如果这种延迟经常发生，您可以将字体下载到您的 Vault 中。\n\n" +
     "(点击=忽略提示，右键=更多信息)",
   FONT_INFO_TITLE: "从互联网加载 v2.5.3 字体",
   FONT_INFO_DETAILED: `
       <p>
         为了提高 Obsidian 的启动时间并管理大型 <strong>CJK 字体系列</strong>，
-        我已将字体移出插件的 <code>main.js</code>。从 2.5.3 版本开始，
-        字体将从互联网加载。这通常不会导致问题，因为 Obsidian 在首次使用后会缓存
-        这些文件。
+        我已将 CJK 字体移出插件的 <code>main.js</code>。默认情况下，CJK 字体将从互联网加载。
+        这通常不会造成问题，因为 Obsidian 在首次使用后会缓存这些文件。
       </p>
       <p>
         如果您希望 Obsidian 完全离线或遇到性能问题，可以下载字体资源。
@@ -841,7 +848,7 @@ FILENAME_HEAD: "文件名",
       <h3>说明：</h3>
       <ol>
         <li>从 <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip">GitHub</a> 下载字体。</li>
-        <li>解压并将文件复制到 Vault 文件夹中（默认：<code>Excalidraw/FontAssets</code>; 文件夹名称區分大小寫！）。</li>
+        <li>解压并将文件复制到 Vault 文件夹中（默认：<code>Excalidraw/${CJK_FONTS}</code>; 文件夹名称區分大小寫！）。</li>
         <li><mark>请勿</mark>将此文件夹设置为 Vault 根目录或与其他本地字体混合。</li>
       </ol>
       <h3>对于 Obsidian Sync 用户：</h3>
