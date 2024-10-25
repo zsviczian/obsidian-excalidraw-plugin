@@ -107,6 +107,7 @@ export const {
 } = excalidrawLib;
 
 export const FONTS_STYLE_ID = "excalidraw-custom-fonts";
+export const CJK_STYLE_ID = "excalidraw-cjk-fonts";
 
 export function JSON_parse(x: string): any {
   return JSON.parse(x.replaceAll("&#91;", "["));

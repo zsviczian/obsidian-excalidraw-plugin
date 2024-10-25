@@ -5,6 +5,7 @@ import {
 import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/constSettingsTags";
 import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/ModifierkeyHelper";
 
+const CJK_FONTS = "CJK Fonts";
 // English
 export default {
   // main.ts
@@ -229,15 +230,6 @@ export default {
     "You can access your scripts from Excalidraw via the Obsidian Command Palette. Assign " +
     "hotkeys to your favorite scripts just like to any other Obsidian command. " +
     "The folder may not be the root folder of your Vault. ",
-  ASSETS_FOLDER_NAME: "Local Font Assets Folder (cAsE sENsiTIvE!)",
-  ASSETS_FOLDER_DESC: `Since version 2.5.3, following the implementation of CJK font support, Excalidraw downloads fonts from the internet.
-    If you prefer to keep Excalidraw fully local, allowing it to work without internet access, or if your internet connection is slow
-    and you want to improve performance, you can download the necessary
-    <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip" target="_blank">font assets from GitHub</a>.
-    After downloading, unzip the contents into a folder within your Vault.<br>
-    You can specify the location of that folder here. For example, you may choose to place it under <code>Excalidraw/FontAssets</code>.<br><br>
-    <strong>Important:</strong> Do not set this to the Vault root! Ensure that no other files are placed in this folder.<br><br>
-    <strong>Note:</strong> If you're using Obsidian Sync and want to synchronize these font files across your devices, ensure that Obsidian Sync is set to synchronize "All other file types".`,  
   AI_HEAD: "AI Settings - Experimental",
   AI_DESC: `In the "AI" settings, you can configure options for using OpenAI's GPT API. ` +
     `While the OpenAI API is in beta, its use is strictly limited — as such we require you use your own API key. ` +
@@ -756,6 +748,8 @@ FILENAME_HEAD: "Filename",
    "Enabling this feature simplifies the use of Excalidraw front matter properties, allowing you to leverage many powerful settings. If you prefer not to load these properties automatically, " +
    "you can disable this feature, but you will need to manually remove any unwanted properties from the suggester. " +
    "Note that turning on this setting requires restarting the plugin as properties are loaded at startup.",  
+  FONTS_HEAD: "Fonts",
+  FONTS_DESC: "Configure local fontfaces and downloaded CJK fonts for Excalidraw.",
   CUSTOM_FONT_HEAD: "Local font",
   ENABLE_FOURTH_FONT_NAME: "Enable local font option",
   ENABLE_FOURTH_FONT_DESC:
@@ -769,6 +763,20 @@ FILENAME_HEAD: "Filename",
     "If no file is selected, Excalidraw will default to the Virgil font. " +
     "For optimal performance, it is recommended to use a .woff2 file, as Excalidraw will encode only the necessary glyphs when exporting images to SVG. " +
     "Other font formats will embed the entire font in the exported file, potentially resulting in significantly larger file sizes.",
+  OFFLINE_CJK_NAME: "Offline CJK font support",
+  OFFLINE_CJK_DESC: 
+    `<strong>Changes you make here will only take effect after restarting Obsidian.</strong><br>
+     Excalidraw.com offers handwritten CJK fonts. By default these fonts are not included in the plugin locally, but are served from the Internet. 
+     If you prefer to keep Excalidraw fully local, allowing it to work without Internet access you can download the necessary <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip" target="_blank">font files from GitHub</a>.
+     After downloading, unzip the contents into a folder within your Vault.<br>
+     Pre-loading fonts will impact startup performance. For this reason you can select which fonts to load.`,
+  CJK_ASSETS_FOLDER_NAME: "CJK Font Folder (cAsE sENsiTIvE!)",
+  CJK_ASSETS_FOLDER_DESC: `You can set the location of the CJK fonts folder here. For example, you may choose to place it under <code>Excalidraw/CJK Fonts</code>.<br><br>
+    <strong>Important:</strong> Do not set this folder to the Vault root! Do not put other fonts in this folder.<br><br>
+    <strong>Note:</strong> If you're using Obsidian Sync and want to synchronize these font files across your devices, ensure that Obsidian Sync is set to synchronize "All other file types".`, 
+  LOAD_CHINESE_FONTS_NAME: "Load Chinese fonts from file at startup",
+  LOAD_JAPANESE_FONTS_NAME: "Load Japanese fonts from file at startup",
+  LOAD_KOREAN_FONTS_NAME: "Load Korean fonts frome file at startup",
   SCRIPT_SETTINGS_HEAD: "Settings for installed Scripts",
   SCRIPT_SETTINGS_DESC: "Some of the Excalidraw Automate Scripts include settings. Settings are organized by script. Settings will only become visible in this list after you have executed the newly downloaded script once.",
   TASKBONE_HEAD: "Taskbone Optical Character Recogntion",
@@ -831,9 +839,8 @@ FILENAME_HEAD: "Filename",
   FONT_INFO_DETAILED: `
       <p>
         To improve Obsidian's startup time and manage the large <strong>CJK font family</strong>, 
-        I've moved the fonts out of the plugin's <code>main.js</code>. Starting with version 2.5.3, 
-        fonts will be loaded from the internet. This typically shouldn't cause issues as Obsidian caches 
-        these files after first use.
+        I've moved the CJK fonts out of the plugin's <code>main.js</code>. CJK fonts will be loaded from the internet by default.
+        This typically shouldn't cause issues as Obsidian caches these files after first use.
       </p>
       <p>
         If you prefer to keep Obsidian 100% local or experience performance issues, you can download the font assets.
@@ -841,7 +848,7 @@ FILENAME_HEAD: "Filename",
       <h3>Instructions:</h3>
       <ol>
         <li>Download the fonts from <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip">GitHub</a>.</li>
-        <li>Unzip and copy files into a Vault folder (default: <code>Excalidraw/FontAssets</code>; folder names are cAse-senSITive).</li>
+        <li>Unzip and copy files into a Vault folder (default: <code>Excalidraw/${CJK_FONTS}</code>; folder names are cAse-senSITive).</li>
         <li><mark>DO NOT</mark> set this folder to the Vault root or mix with other local fonts.</li>
       </ol>
       <h3>For Obsidian Sync Users:</h3>

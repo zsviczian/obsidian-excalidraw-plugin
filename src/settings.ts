@@ -50,6 +50,9 @@ export interface ExcalidrawSettings {
   templateFilePath: string;
   scriptFolderPath: string;
   fontAssetsPath: string;
+  loadChineseFonts: boolean;
+  loadJapaneseFonts: boolean;
+  loadKoreanFonts: boolean;
   compress: boolean;
   decompressForMDView: boolean;
   onceOffCompressFlagReset: boolean; //used to reset compress to true in 2.2.0
@@ -221,7 +224,10 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   embedUseExcalidrawFolder: false,
   templateFilePath: "Excalidraw/Template.excalidraw",
   scriptFolderPath: "Excalidraw/Scripts",
-  fontAssetsPath: "Excalidraw/FontAssets",
+  fontAssetsPath: "Excalidraw/CJK Fonts",
+  loadChineseFonts: false,
+  loadJapaneseFonts: false,
+  loadKoreanFonts: false,
   compress: true,
   decompressForMDView: false,
   onceOffCompressFlagReset: false,
@@ -718,19 +724,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.scriptFolderPath)
           .onChange(async (value) => {
             this.plugin.settings.scriptFolderPath = value;
-            this.applySettingsUpdate();
-          }),
-      );
-
-    new Setting(detailsEl)
-      .setName(t("ASSETS_FOLDER_NAME"))
-      .setDesc(fragWithHTML(t("ASSETS_FOLDER_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder("e.g.: Excalidraw/FontAssets")
-          .setValue(this.plugin.settings.fontAssetsPath)
-          .onChange(async (value) => {
-            this.plugin.settings.fontAssetsPath = value;
             this.applySettingsUpdate();
           }),
       );
@@ -2470,8 +2463,20 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate(false);
           })
       )
+
+    // ------------------------------------------------
+    // Fonts supported features
+    // ------------------------------------------------
+    containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
+    containerEl.createDiv({ text: t("FONTS_DESC"), cls: "setting-item-description"  });
+    detailsEl = this.containerEl.createEl("details");
+    const fontsDetailsEl = detailsEl;
+    detailsEl.createEl("summary", { 
+      text: t("FONTS_HEAD"),
+      cls: "excalidraw-setting-h1",
+    });
     
-    detailsEl = nonstandardDetailsEl.createEl("details");
+    detailsEl = fontsDetailsEl.createEl("details");
     detailsEl.createEl("summary", { 
       text: t("CUSTOM_FONT_HEAD"),
       cls: "excalidraw-setting-h3",
@@ -2512,7 +2517,61 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         );
       });
 
+      detailsEl = fontsDetailsEl.createEl("details");
+      detailsEl.createEl("summary", { 
+        text: t("OFFLINE_CJK_NAME"),
+        cls: "excalidraw-setting-h3",
+      });
+  
+      const cjkdescdiv = detailsEl.createDiv({ cls: "setting-item-description"  });
+      cjkdescdiv.innerHTML = t("OFFLINE_CJK_DESC");
+
+      new Setting(detailsEl)
+      .setName(t("CJK_ASSETS_FOLDER_NAME"))
+      .setDesc(fragWithHTML(t("CJK_ASSETS_FOLDER_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder("e.g.: Excalidraw/FontAssets")
+          .setValue(this.plugin.settings.fontAssetsPath)
+          .onChange(async (value) => {
+            this.plugin.settings.fontAssetsPath = value;
+            this.applySettingsUpdate();
+          }),
+      );
     
+      new Setting(detailsEl)
+        .setName(t("LOAD_CHINESE_FONTS_NAME"))
+        .addToggle((toggle) =>
+          toggle
+            .setValue(this.plugin.settings.loadChineseFonts)
+            .onChange(async (value) => {
+              this.plugin.settings.loadChineseFonts = value;
+              this.applySettingsUpdate();
+            }),
+        );
+
+    new Setting(detailsEl)
+      .setName(t("LOAD_JAPANESE_FONTS_NAME"))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.loadJapaneseFonts)
+          .onChange(async (value) => {
+            this.plugin.settings.loadJapaneseFonts = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("LOAD_KOREAN_FONTS_NAME"))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.loadKoreanFonts)
+          .onChange(async (value) => {
+            this.plugin.settings.loadKoreanFonts = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
     // ------------------------------------------------
     // Experimental features
     // ------------------------------------------------

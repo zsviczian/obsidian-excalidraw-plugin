@@ -45,6 +45,7 @@ import {
   DEVICE,
   sceneCoordsToViewportCoords,
   FONTS_STYLE_ID,
+  CJK_STYLE_ID,
 } from "./constants/constants";
 import ExcalidrawView, { TextMode, getTextMode } from "./ExcalidrawView";
 import {
@@ -140,6 +141,7 @@ import { Rank, SwordColors } from "./menu/ActionIcons";
 import { RankMessage } from "./dialogs/RankMessage";
 import { initCompressionWorker, terminateCompressionWorker } from "./workers/compression-worker";
 import { WeakArray } from "./utils/WeakArray";
+import { getCJKDataURLs } from "./utils/CJKLoader";
 
 declare let EXCALIDRAW_PACKAGES:string;
 declare let react:any;
@@ -193,6 +195,7 @@ export default class ExcalidrawPlugin extends Plugin {
   //private slob:string;
   private ribbonIcon:HTMLElement;
   public loadTimestamp:number;
+  private isLocalCJKFontAvailabe:boolean = undefined
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
@@ -313,8 +316,27 @@ export default class ExcalidrawPlugin extends Plugin {
     };
   }*/
   
-  public async loadFontFromFile(fontName: string): Promise<ArrayBuffer> {
+  public getCJKFontSettings() {
     const assetsFoler = this.settings.fontAssetsPath;
+    if(typeof this.isLocalCJKFontAvailabe === "undefined") {
+      this.isLocalCJKFontAvailabe = this.app.vault.getFiles().some(f=>f.path.startsWith(assetsFoler));
+    }
+    if(!this.isLocalCJKFontAvailabe) {
+      return { c: false, j: false, k: false };
+    }
+    return {
+      c: this.settings.loadChineseFonts,
+      j: this.settings.loadJapaneseFonts,
+      k: this.settings.loadKoreanFonts,
+    }
+  }
+
+  public async loadFontFromFile(fontName: string): Promise<ArrayBuffer|undefined> {
+    const assetsFoler = this.settings.fontAssetsPath;
+
+    if(!this.isLocalCJKFontAvailabe) {
+      return;
+    }
     const file = this.app.vault.getAbstractFileByPath(normalizePath(assetsFoler + "/" + fontName));
     if(!file || !(file instanceof TFile)) {
       return;
@@ -417,6 +439,17 @@ export default class ExcalidrawPlugin extends Plugin {
     this.app.workspace.onLayoutReady(async () => {
       (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.initializeFonts, `ExcalidrawPlugin.initializeFonts > app.workspace.onLayoutReady`);
   
+      const cjkFontDataURLs = await getCJKDataURLs(this);
+      if(cjkFontDataURLs) {
+        const fontDeclarations = cjkFontDataURLs.map(dataURL => 
+          `@font-face { font-family: 'Xiaolai'; src: url("${dataURL}"); font-display: swap; font-weight: 400; }`
+        );
+        for(const ownerDocument of this.getOpenObsidianDocuments()) {
+          await this.addFonts(fontDeclarations, ownerDocument, CJK_STYLE_ID);
+        };
+        new Notice("Excalidraw: CJK Fonts loaded");
+      }
+
       const font = await getFontDataURL(
         this.app,
         this.settings.experimantalFourthFont,
@@ -458,12 +491,12 @@ export default class ExcalidrawPlugin extends Plugin {
     });
   }
 
-  public async addFonts(declarations: string[],ownerDocument:Document = document) {
+  public async addFonts(declarations: string[],ownerDocument:Document = document, styleId:string = FONTS_STYLE_ID) {
     // replace the old local font <style> element with the one we just created
     const newStylesheet = ownerDocument.createElement("style");
-    newStylesheet.id = FONTS_STYLE_ID;
+    newStylesheet.id = styleId;
     newStylesheet.textContent = declarations.join("");
-    const oldStylesheet = ownerDocument.getElementById(FONTS_STYLE_ID);
+    const oldStylesheet = ownerDocument.getElementById(styleId);
     ownerDocument.head.appendChild(newStylesheet);
     if (oldStylesheet) {
       ownerDocument.head.removeChild(oldStylesheet);
@@ -473,11 +506,15 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public removeFonts() {
     this.getOpenObsidianDocuments().forEach((ownerDocument) => {
-      const oldStylesheet = ownerDocument.getElementById(FONTS_STYLE_ID);
-      if (oldStylesheet) {
-        ownerDocument.head.removeChild(oldStylesheet);
+      const oldCustomFontStylesheet = ownerDocument.getElementById(FONTS_STYLE_ID);
+      if (oldCustomFontStylesheet) {
+        ownerDocument.head.removeChild(oldCustomFontStylesheet);
       }
-    })
+      const oldCJKFontStylesheet = ownerDocument.getElementById(CJK_STYLE_ID);
+      if (oldCJKFontStylesheet) {
+        ownerDocument.head.removeChild(oldCJKFontStylesheet);
+      }
+    });
   }
   
   private getOpenObsidianDocuments(): Document[] {
