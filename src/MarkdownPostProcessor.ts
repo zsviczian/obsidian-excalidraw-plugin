@@ -353,7 +353,8 @@ const getIMG = async (
   );
 
   const cacheReady = imageCache.isReady();
-  
+
+  await plugin.awaitInit();
   switch (plugin.settings.previewImageType) {
     case PreviewImageType.PNG: {
       const img = createEl("img");

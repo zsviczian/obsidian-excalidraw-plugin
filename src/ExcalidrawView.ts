@@ -1575,6 +1575,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       if(!this.plugin) {
         return;
       }
+      await this.plugin.awaitInit();
       //implemented to overcome issue that activeLeafChangeEventHandler is not called when view is initialized from a saved workspace, since Obsidian 1.6.0
       let counter = 0;
       while(counter++<50 && (!Boolean(this?.plugin?.activeLeafChangeEventHandler) || !Boolean(this.canvasNodeFactory))) {
@@ -2245,6 +2246,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     //I am using last loaded file to control when the view reloads.
     //It seems text file view gets the modified file event after sync before the modifyEventHandler in main.ts
     //reload can only be triggered via reload()
+    await this.plugin.awaitInit();
     if(this.lastLoadedFile === this.file) return;
     this.isLoaded = false;
     if(!this.file) return;
@@ -2275,6 +2277,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       if(!this?.app) {
         return;
       }
+      await this.plugin.awaitInit();
       let counter = 0;
       while ((!this.file || !this.plugin.fourthFontLoaded) && counter++<50) await sleep(50);
       if(!this.file) return;

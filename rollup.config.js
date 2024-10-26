@@ -8,6 +8,7 @@ import fs from 'fs';
 import LZString from 'lz-string';
 import postprocess from '@zsviczian/rollup-plugin-postprocess';
 import cssnano from 'cssnano';
+import jsesc from 'jsesc';
 
 // Load environment variables
 import dotenv from 'dotenv';
@@ -52,11 +53,13 @@ if (!isLib) console.log(manifest.version);
 const packageString = isLib
   ? ""
   : ';' + lzstring_pkg +
-    '\nlet EXCALIDRAW_PACKAGES = LZString.decompressFromBase64("' + LZString.compressToBase64(react_pkg + reactdom_pkg + excalidraw_pkg) + '");\n' +
-    'let {react, reactDOM, excalidrawLib} = window.eval.call(window, `(function() {' +
-    '${EXCALIDRAW_PACKAGES};' +
-    'return {react: React, reactDOM: ReactDOM, excalidrawLib: ExcalidrawLib};})();`);\n' +
-    'let PLUGIN_VERSION="' + manifest.version + '";';
+  '\nlet REACT_PACKAGES = `' +
+  jsesc(react_pkg + reactdom_pkg, { quotes: 'backtick' }) +
+  '`;\n' +
+  'let EXCALIDRAW_PACKAGE = ""; const unpackExcalidraw = () => {EXCALIDRAW_PACKAGE = LZString.decompressFromBase64("' + LZString.compressToBase64(excalidraw_pkg) + '");};\n' +
+  'let {react, reactDOM } = window.eval.call(window, `(function() {' + '${REACT_PACKAGES};' + 'return {react: React, reactDOM: ReactDOM};})();`);\n' +
+  `let excalidrawLib = {};\n` +
+  'let PLUGIN_VERSION="' + manifest.version + '";';
 
 const BASE_CONFIG = {
   input: 'src/main.ts',

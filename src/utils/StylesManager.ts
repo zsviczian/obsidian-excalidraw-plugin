@@ -41,6 +41,7 @@ export class StylesManager {
     this.plugin = plugin;
     plugin.app.workspace.onLayoutReady(async () => {
       (process.env.NODE_ENV === 'development') && DEBUGGING && debug(undefined, "StylesManager.constructor > app.workspace.onLayoutReady", this);
+      await plugin.awaitInit();
       await this.harvestStyles();
       getAllWindowDocuments(plugin.app).forEach(doc => this.copyPropertiesToTheme(doc));
 

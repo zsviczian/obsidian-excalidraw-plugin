@@ -82,7 +82,7 @@ export const obsidianToExcalidrawMap: { [key: string]: string } = {
 };
 
 
-export const {
+export let {
   sceneCoordsToViewportCoords,
   viewportCoordsToSceneCoords,
   determineFocusDistance,
@@ -105,6 +105,32 @@ export const {
   getCSSFontDefinition,
   loadSceneFonts,
 } = excalidrawLib;
+
+export function updateExcalidrawLib() {
+  ({
+    sceneCoordsToViewportCoords,
+    viewportCoordsToSceneCoords,
+    determineFocusDistance,
+    intersectElementWithLine,
+    getCommonBoundingBox,
+    getMaximumGroups,
+    measureText,
+    getLineHeight,
+    wrapText, 
+    getFontString, 
+    getBoundTextMaxWidth, 
+    exportToSvg,
+    exportToBlob,
+    mutateElement,
+    restore,
+    mermaidToExcalidraw,
+    getFontFamilyString,
+    getContainerElement,
+    refreshTextDimensions,
+    getCSSFontDefinition,
+    loadSceneFonts,
+  } = excalidrawLib);
+}
 
 export const FONTS_STYLE_ID = "excalidraw-custom-fonts";
 export const CJK_STYLE_ID = "excalidraw-cjk-fonts";
