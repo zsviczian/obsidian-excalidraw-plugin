@@ -5878,6 +5878,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
   ) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.instantiateExcalidraw, "ExcalidrawView.instantiateExcalidraw", initdata);
+    await this.plugin.awaitInit();
     while(!this.semaphores.scriptsReady) {
       await sleep(50);
     }

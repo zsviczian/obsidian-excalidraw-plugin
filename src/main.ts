@@ -143,6 +143,7 @@ import { RankMessage } from "./dialogs/RankMessage";
 import { initCompressionWorker, terminateCompressionWorker } from "./workers/compression-worker";
 import { WeakArray } from "./utils/WeakArray";
 import { getCJKDataURLs } from "./utils/CJKLoader";
+import ExcalidrawLoading from "./dialogs/ExcalidrawLoading";
 
 declare let EXCALIDRAW_PACKAGE:string;
 declare let REACT_PACKAGES:string;
@@ -351,8 +352,17 @@ export default class ExcalidrawPlugin extends Plugin {
   async onload() {
     this.registerView(
       VIEW_TYPE_EXCALIDRAW,
-      (leaf: WorkspaceLeaf) => new ExcalidrawView(leaf, this),
+      (leaf: WorkspaceLeaf) => {
+        if(this.isReady) {
+          return new ExcalidrawView(leaf, this);
+        } else {
+          return new ExcalidrawLoading(leaf, this);
+        }
+      },
     );
+    //Compatibility mode with .excalidraw files
+    this.registerExtensions(["excalidraw"], VIEW_TYPE_EXCALIDRAW);
+
     await this.loadSettings({reEnableAutosave:true});
     const updateSettings = !this.settings.onceOffCompressFlagReset || !this.settings.onceOffGPTVersionReset;
     if(!this.settings.onceOffCompressFlagReset) {
@@ -370,8 +380,6 @@ export default class ExcalidrawPlugin extends Plugin {
     this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
     this.ea = await initExcalidrawAutomate(this);
 
-    //Compatibility mode with .excalidraw files
-    this.registerExtensions(["excalidraw"], VIEW_TYPE_EXCALIDRAW);
     this.addMarkdownPostProcessor();
     
     this.app.workspace.onLayoutReady(async () => {

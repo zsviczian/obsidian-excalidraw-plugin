@@ -754,7 +754,7 @@ export class ExcalidrawData {
       notice.noticeEl.oncontextmenu = () => {
         displayFontMessage(this.app);
       }
-    },2000);
+    },5000);
     await loadSceneFonts(this.scene.elements);
     clearTimeout(timer);
 
