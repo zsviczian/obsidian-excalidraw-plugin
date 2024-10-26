@@ -440,14 +440,18 @@ export default class ExcalidrawPlugin extends Plugin {
       (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.initializeFonts, `ExcalidrawPlugin.initializeFonts > app.workspace.onLayoutReady`);
   
       const cjkFontDataURLs = await getCJKDataURLs(this);
-      if(cjkFontDataURLs) {
+      if(typeof cjkFontDataURLs === "boolean" && !cjkFontDataURLs) {
+        new Notice(t("FONTS_LOAD_ERROR") + this.settings.fontAssetsPath,6000);
+      }
+
+      if(typeof cjkFontDataURLs === "object") {
         const fontDeclarations = cjkFontDataURLs.map(dataURL => 
           `@font-face { font-family: 'Xiaolai'; src: url("${dataURL}"); font-display: swap; font-weight: 400; }`
         );
         for(const ownerDocument of this.getOpenObsidianDocuments()) {
           await this.addFonts(fontDeclarations, ownerDocument, CJK_STYLE_ID);
         };
-        new Notice("Excalidraw: CJK Fonts loaded");
+        new Notice(t("FONTS_LOADED"));
       }
 
       const font = await getFontDataURL(

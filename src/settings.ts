@@ -209,6 +209,7 @@ export interface ExcalidrawSettings {
   areaZoomLimit: number;
   longPressDesktop: number;
   longPressMobile: number;
+  doubleClickLinkOpenViewMode: boolean;
   isDebugMode: boolean;
   rank: Rank;
   modifierKeyOverrides: {modifiers: Modifier[], key: string}[];
@@ -480,6 +481,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   areaZoomLimit: 1,
   longPressDesktop: 500,
   longPressMobile: 500,
+  doubleClickLinkOpenViewMode: true,
   isDebugMode: false,
   rank: "Bronze",
   modifierKeyOverrides: [
@@ -1492,6 +1494,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         el.style.textAlign = "right";
         el.innerText = ` ${this.plugin.settings.longPressMobile.toString()}`;
       });
+
+    new Setting(detailsEl)
+      .setName(t("DOUBLE_CLICK_LINK_OPEN_VIEW_MODE"))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.doubleClickLinkOpenViewMode)
+          .onChange(async (value) => {
+            this.plugin.settings.doubleClickLinkOpenViewMode = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
 
     new ModifierKeySettingsComponent(
       detailsEl,

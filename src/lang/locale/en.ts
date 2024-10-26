@@ -98,6 +98,8 @@ export default {
   RESET_IMG_ASPECT_RATIO: "Reset selected image element aspect ratio",
   TEMPORARY_DISABLE_AUTOSAVE: "Disable autosave until next time Obsidian starts (only set this if you know what you are doing)",
   TEMPORARY_ENABLE_AUTOSAVE: "Enable autosave",
+  FONTS_LOADED: "Excalidraw: CJK Fonts loaded",
+  FONTS_LOAD_ERROR: "Excalidraw: Could not find CJK Fonts in the assets folder\n",
 
   //ExcalidrawView.ts
   NO_SEARCH_RESULT: "Didn't find a matching element in the drawing",
@@ -432,6 +434,7 @@ FILENAME_HEAD: "Filename",
   LONG_PRESS_DESKTOP_DESC: "Long press delay in milliseconds to open an Excalidraw Drawing embedded in a Markdown file. ",
   LONG_PRESS_MOBILE_NAME: "Long press to open mobile",
   LONG_PRESS_MOBILE_DESC: "Long press delay in milliseconds to open an Excalidraw Drawing embedded in a Markdown file. ",
+  DOUBLE_CLICK_LINK_OPEN_VIEW_MODE: "Allow double-click to open links in view mode",
 
   FOCUS_ON_EXISTING_TAB_NAME: "Focus on Existing Tab",
   FOCUS_ON_EXISTING_TAB_DESC: "When opening a link, Excalidraw will focus on the existing tab if the file is already open. " +

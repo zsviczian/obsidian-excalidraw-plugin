@@ -3851,12 +3851,14 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         return;
       }
 
-      //dobule click
-      const now = Date.now();
-      if ((now - this.doubleClickTimestamp) < 600 && (now - this.doubleClickTimestamp) > 40) {
-        this.identifyElementClicked();
+      if(this.plugin.settings.doubleClickLinkOpenViewMode) {
+        //dobule click
+        const now = Date.now();
+        if ((now - this.doubleClickTimestamp) < 600 && (now - this.doubleClickTimestamp) > 40) {
+          this.identifyElementClicked();
+        }
+        this.doubleClickTimestamp = now;
       }
-      this.doubleClickTimestamp = now;
       return;
     }
     if (p.button === "up") {

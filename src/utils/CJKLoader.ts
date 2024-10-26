@@ -1354,7 +1354,15 @@ export function matchesCJKRange(
   });
 }
 
-export async function getCJKDataURLs(plugin: ExcalidrawPlugin): Promise<string[] | undefined> {
+/**
+ * 
+ * @param plugin 
+ * @returns 
+ *   - undefined if no CJK ranges are specified
+ *   - false if no CJK fonts are found
+ *   - array of Data URLs for CJK fonts
+ */
+export async function getCJKDataURLs(plugin: ExcalidrawPlugin): Promise<string[] | undefined | boolean> {
   const rangesToLoad = plugin.getCJKFontSettings();
   if (!(rangesToLoad.c || rangesToLoad.j || rangesToLoad.k)) {
     return;
@@ -1391,5 +1399,5 @@ export async function getCJKDataURLs(plugin: ExcalidrawPlugin): Promise<string[]
     dataUrls.push("data:font/woff2;base64," + dataUrl);
   }
 
-  return dataUrls; // Return the array of Data URLs
+  return dataUrls.length > 0 ? dataUrls : false; // Return the array of Data URLs
 }
