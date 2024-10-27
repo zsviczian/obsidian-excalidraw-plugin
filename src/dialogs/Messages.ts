@@ -15,7 +15,24 @@ export const RELEASE_NOTES: { [k: string]: string } = {
 
 I develop this plugin as a hobby, spending my free time doing this. If you find it valuable, then please say THANK YOU or...
 
-<div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height=45></a></div>
+<div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
+`,
+"2.6.0":`
+## Performance
+- Much faster plugin initialization. Down from 1000-3000ms to 100-300ms. According to my testing speed varies on a wide spectrum depending on device, size of Vault and other plugins being loaded. I measured values ranging from 84ms up to 782ms [#2068](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2068)
+- Faster loading of scenes with many embedded illustrations or PDF pages.
+- SVG export results in even smaller files by further optimizing which characters are included in the embedded fonts. [#8641](https://github.com/excalidraw/excalidraw/pull/8641)
+
+## New
+- Image cropping tool. Double click the image to crop it. [#8613](https://github.com/excalidraw/excalidraw/pull/8613)
+- Single finger panning in pen mode.
+- Native handwritten CJK Font support [8530](https://github.com/excalidraw/excalidraw/pull/8530) 
+  - Created a new **Fonts** section in settings. This includes configuration of the "Local Font" and downloading of the CJK fonts in case you need them offline.
+- Option under **Appearance and Behavior / Link Click** to disable double-click link navigation in view mode. [#2075](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2075)
+- New RU translation 🙏[@tovBender](https://github.com/tovBender)
+
+## Updated
+- CN translation 🙏[@dmscode](https://github.com/dmscode)
 `,
 "2.5.2": `
 ## Fixed
