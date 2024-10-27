@@ -98,6 +98,8 @@ export default {
   RESET_IMG_ASPECT_RATIO: "重置所选图像元素的纵横比",
   TEMPORARY_DISABLE_AUTOSAVE: "临时禁用自动保存功能，直到本次 Obsidian 退出（小白慎用！）",
   TEMPORARY_ENABLE_AUTOSAVE: "启用自动保存功能",
+  FONTS_LOADED : "Excalidraw: CJK 字体已加载" ,
+  FONTS_LOAD_ERROR : "Excalidraw: 在资源文件夹下找不到 CJK 字体\n" ,
 
   //ExcalidrawView.ts
   NO_SEARCH_RESULT: "在绘图中未找到匹配的元素",
@@ -432,6 +434,7 @@ FILENAME_HEAD: "文件名",
   LONG_PRESS_DESKTOP_DESC: "长按(以毫秒为单位)打开在 Markdown 文件中嵌入的 Excalidraw 绘图。",
   LONG_PRESS_MOBILE_NAME: "长按打开（移动端）",
   LONG_PRESS_MOBILE_DESC: "长按(以毫秒为单位)打开在 Markdown 文件中嵌入的 Excalidraw 绘图。",
+  DOUBLE_CLICK_LINK_OPEN_VIEW_MODE: "在查看模式下允许双击打开链接",
 
   FOCUS_ON_EXISTING_TAB_NAME: "聚焦于当前标签页",
   FOCUS_ON_EXISTING_TAB_DESC: "当打开一个链接时，如果该文件已经打开，Excalidraw 将会聚焦到现有的标签页上 " +
