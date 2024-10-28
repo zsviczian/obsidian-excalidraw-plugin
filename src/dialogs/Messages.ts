@@ -17,6 +17,15 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.6.1":`
+## New
+- Pen-mode single-finger panning enabled also for the "Selection" tool.
+- You can disable pen-mode single-finger panning in Plugin Settings under Excalidraw Appearance and Behavior [#2080](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2080)
+
+## Fixed
+- Text tool did not work in pen-mode using finger [#2080](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2080)
+- Pasting images to Excalidraw from the web resulted in filenames of "image_1.png", "image_2.png" instead of "Pasted Image TIMESTAMP" [#2081](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2081)
+`,
 "2.6.0":`
 ## Performance
 - Much faster plugin initialization. Down from 1000-3000ms to 100-300ms. According to my testing speed varies on a wide spectrum depending on device, size of Vault and other plugins being loaded. I measured values ranging from 84ms up to 782ms [#2068](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2068)

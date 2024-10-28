@@ -85,6 +85,7 @@ export interface ExcalidrawSettings {
   defaultMode: string;
   defaultPenMode: "never" | "mobile" | "always";
   penModeDoubleTapEraser: boolean;
+  penModeSingleFingerPanning: boolean;
   penModeCrosshairVisible: boolean;
   renderImageInMarkdownReadingMode: boolean,
   renderImageInHoverPreviewForMDNotes: boolean,
@@ -261,6 +262,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   defaultMode: "normal",
   defaultPenMode: "never",
   penModeDoubleTapEraser: true,
+  penModeSingleFingerPanning: true,
   penModeCrosshairVisible: true,
   renderImageInMarkdownReadingMode: false,
   renderImageInHoverPreviewForMDNotes: false,
@@ -1063,6 +1065,17 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.penModeDoubleTapEraser)
           .onChange(async (value) => {
             this.plugin.settings.penModeDoubleTapEraser = value;
+            this.applySettingsUpdate();
+          }),
+      );
+    
+    new Setting(detailsEl)
+      .setName(t("DISABLE_SINGLE_FINGER_PANNING_NAME"))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.penModeSingleFingerPanning)
+          .onChange(async (value) => {
+            this.plugin.settings.penModeSingleFingerPanning = value;
             this.applySettingsUpdate();
           }),
       );
