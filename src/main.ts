@@ -1871,9 +1871,13 @@ export default class ExcalidrawPlugin extends Plugin {
           const size = await ea.getOriginalImageSize(el);
           if(size) {
             ea.copyViewElementsToEAforEditing(els);
-            const eaEl = ea.getElement(el.id);
-            //@ts-ignore
-            eaEl.width = size.width; eaEl.height = size.height;
+            const eaEl = ea.getElement(el.id) as Mutable<ExcalidrawImageElement>;
+            if(eaEl.crop) {
+              eaEl.width = eaEl.crop.width;
+              eaEl.height = eaEl.crop.height;
+            } else {
+              eaEl.width = size.width; eaEl.height = size.height;
+            }
             await ea.addElementsToView(false,false,false);
           }
           ea.destroy();

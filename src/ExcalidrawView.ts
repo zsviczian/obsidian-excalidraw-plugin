@@ -3985,6 +3985,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onPaste, "ExcalidrawView.onPaste", data, event);
     const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
     const ea = this.getHookServer();
+    if(data?.elements) {
+      data.elements
+        .filter(el=>el.type==="text" && !el.hasOwnProperty("rawText"))
+        .forEach(el=>(el as Mutable<ExcalidrawTextElement>).rawText = (el as ExcalidrawTextElement).originalText);
+    };
     if(data && ea.onPasteHook) {
       const res = ea.onPasteHook({
         ea,

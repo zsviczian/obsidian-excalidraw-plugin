@@ -18,7 +18,7 @@ import {
   getContainerElement,
 } from "../constants/constants";
 import ExcalidrawPlugin from "../main";
-import { ExcalidrawElement, ExcalidrawTextElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { ExcalidrawElement, ExcalidrawTextElement, ImageCrop } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { ExportSettings } from "../ExcalidrawView";
 import { getDataURLFromURL, getIMGFilename, getMimeType, getURLImageExtension } from "./FileUtils";
 import { generateEmbeddableLink } from "./CustomEmbeddableUtils";
@@ -30,6 +30,7 @@ import { CropImage } from "./CropImage";
 import opentype from 'opentype.js';
 import { runCompressionWorker } from "src/workers/compression-worker";
 import Pool from "es6-promise-pool";
+import { FileData } from "src/EmbeddedFileLoader";
 
 declare const PLUGIN_VERSION:string;
 declare var LZString: any;
@@ -428,14 +429,14 @@ export function addAppendUpdateCustomData (el: Mutable<ExcalidrawElement>, newDa
 
 export function scaleLoadedImage (
   scene: any,
-  files: any
+  files: FileData[],
 ): { dirty: boolean; scene: any } {
   let dirty = false;
   if (!files || !scene) {
     return { dirty, scene };
   }
 
-  for (const f of files.filter((f:any)=>{
+  for (const img of files.filter((f:any)=>{
     if(!Boolean(EXCALIDRAW_PLUGIN)) return true; //this should never happen
     const ef = EXCALIDRAW_PLUGIN.filesMaster.get(f.id);
     if(!ef) return true; //mermaid SVG or equation
@@ -443,34 +444,85 @@ export function scaleLoadedImage (
     if(!file || (file instanceof TFolder)) return false;
     return (file as TFile).extension==="md" || EXCALIDRAW_PLUGIN.isExcalidrawFile(file as TFile)
   })) {
-    const [w_image, h_image] = [f.size.width, f.size.height];
-    const imageAspectRatio = f.size.width / f.size.height;
+    const [imgWidth, imgHeight] = [img.size.width, img.size.height];
+    const imgAspectRatio = imgWidth / imgHeight;
+
     scene.elements
-      .filter((e: any) => e.type === "image" && e.fileId === f.id)
+      .filter((e: any) => e.type === "image" && e.fileId === img.id)
       .forEach((el: any) => {
-        const [w_old, h_old] = [el.width, el.height];
-        if(el.customData?.isAnchored && f.shouldScale || !el.customData?.isAnchored && !f.shouldScale) {
-          addAppendUpdateCustomData(el, f.shouldScale ? {isAnchored: false} : {isAnchored: true});
+        const [elWidth, elHeight] = [el.width, el.height];
+        const maintainArea = img.shouldScale; //true if image should maintain its area, false if image should display at 100% its size
+        const elCrop: ImageCrop = el.crop;
+        const isCropped = Boolean(elCrop);
+
+  
+        if(el.customData?.isAnchored && img.shouldScale || !el.customData?.isAnchored && !img.shouldScale) {
+          //customData.isAnchored is used by the Excalidraw component to disable resizing of anchored images
+          //customData.isAnchored has no direct role in the calculation in the scaleLoadedImage function
+          addAppendUpdateCustomData(el, img.shouldScale ? {isAnchored: false} : {isAnchored: true});
           dirty = true;
         }
-        if(f.shouldScale) {
-          const elementAspectRatio = w_old / h_old;
-          if (imageAspectRatio !== elementAspectRatio) {
+
+        if(isCropped) {
+          if(elCrop.naturalWidth !== imgWidth || elCrop.naturalHeight !== imgHeight) {
             dirty = true;
-            const h_new = Math.sqrt((w_old * h_old * h_image) / w_image);
-            const w_new = Math.sqrt((w_old * h_old * w_image) / h_image);
-            el.height = h_new;
-            el.width = w_new;
-            el.y += (h_old - h_new) / 2;
-            el.x += (w_old - w_new) / 2;
+            //the current crop area may be maintained, need to calculate the new crop.x, crop.y offsets            
+            el.crop.y += (imgHeight - elCrop.naturalHeight)/2;
+            if(imgWidth < elCrop.width) {
+              const scaleX = el.width / elCrop.width;
+              el.crop.x = 0;
+              el.crop.width = imgWidth;
+              el.width = imgWidth * scaleX;
+            } else {
+              const ratioX = elCrop.x / (elCrop.naturalWidth - elCrop.x - elCrop.width);
+              const gapX = imgWidth - elCrop.width;
+              el.crop.x = ratioX * gapX / (1 + ratioX);
+//              const ratioA = elCrop.x / (elCrop.naturalWidth - elCrop.x);
+//              el.crop.x = ratioA * imgWidth / (1 + ratioA);
+              if(el.crop.x + elCrop.width > imgWidth) {
+                el.crop.x = (imgWidth - elCrop.width) / 2;
+              }
+            }
+            if(imgHeight < elCrop.height) {
+              const scaleY = el.height / elCrop.height;
+              el.crop.y = 0;
+              el.crop.height = imgHeight;
+              el.height = imgHeight * scaleY;
+            } else {
+              const ratioY = elCrop.y / (elCrop.naturalHeight - elCrop.y - elCrop.height);
+              const gapY = imgHeight - elCrop.height;
+              el.crop.y = ratioY * gapY / (1 + ratioY);
+//              const ratioB = elCrop.y / (elCrop.naturalHeight - elCrop.y);
+//              el.crop.y = ratioB * imgHeight / (1 + ratioB);
+              if(el.crop.y + elCrop.height > imgHeight) {
+                el.crop.y = (imgHeight - elCrop.height)/2;
+              }
+            }
+            el.crop.naturalWidth = imgWidth;
+            el.crop.naturalHeight = imgHeight;
+            const noCrop = el.crop.width === imgWidth && el.crop.height === imgHeight;
+            if(noCrop) {
+              el.crop = null;
+            }
           }
-        } else {
-          if(w_old !== w_image || h_old !== h_image) {
+        } else if(maintainArea) {
+          const elAspectRatio = elWidth / elHeight;
+          if (imgAspectRatio !== elAspectRatio) {
             dirty = true;
-            el.height = h_image;
-            el.width = w_image;
-            el.y += (h_old - h_image) / 2;
-            el.x += (w_old - w_image) / 2;         
+            const elNewHeight = Math.sqrt((elWidth * elHeight * imgHeight) / imgWidth);
+            const elNewWidth = Math.sqrt((elWidth * elHeight * imgWidth) / imgHeight);
+            el.height = elNewHeight;
+            el.width = elNewWidth;
+            el.y += (elHeight - elNewHeight) / 2;
+            el.x += (elWidth - elNewWidth) / 2;
+          } 
+        } else { //100% size
+          if(elWidth !== imgWidth || elHeight !== imgHeight) {
+            dirty = true;
+            el.height = imgHeight;
+            el.width = imgWidth;
+            el.y += (elHeight - imgHeight) / 2;
+            el.x += (elWidth - imgWidth) / 2;         
           }
         }
       });

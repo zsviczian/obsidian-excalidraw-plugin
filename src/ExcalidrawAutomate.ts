@@ -2621,26 +2621,31 @@ export class ExcalidrawAutomate {
       return null;
     }
 
-    const size = await this.getOriginalImageSize(imgEl, true);
-    if (size) {
-      const originalArea = imgEl.width * imgEl.height;
-      const originalAspectRatio = size.width / size.height;
-      let newWidth = Math.sqrt(originalArea * originalAspectRatio);
-      let newHeight = Math.sqrt(originalArea / originalAspectRatio);
-      const centerX = imgEl.x + imgEl.width / 2;
-      const centerY = imgEl.y + imgEl.height / 2;
+    let originalArea, originalAspectRatio;
+    if(imgEl.crop) {
+      originalArea = imgEl.width * imgEl.height;
+      originalAspectRatio = imgEl.crop.width / imgEl.crop.height;
+    } else {
+      const size = await this.getOriginalImageSize(imgEl, true);
+      if (!size) { return false; }
+      originalArea = imgEl.width * imgEl.height;
+      originalAspectRatio = size.width / size.height;
+    }
+    let newWidth = Math.sqrt(originalArea * originalAspectRatio);
+    let newHeight = Math.sqrt(originalArea / originalAspectRatio);
+    const centerX = imgEl.x + imgEl.width / 2;
+    const centerY = imgEl.y + imgEl.height / 2;
 
-      if (newWidth !== imgEl.width || newHeight !== imgEl.height) {
-        if(!this.getElement(imgEl.id)) {
-          this.copyViewElementsToEAforEditing([imgEl]);
-        }
-        const eaEl = this.getElement(imgEl.id);
-        eaEl.width = newWidth;
-        eaEl.height = newHeight;
-        eaEl.x = centerX - newWidth / 2;
-        eaEl.y = centerY - newHeight / 2;
-        return true;
+    if (newWidth !== imgEl.width || newHeight !== imgEl.height) {
+      if(!this.getElement(imgEl.id)) {
+        this.copyViewElementsToEAforEditing([imgEl]);
       }
+      const eaEl = this.getElement(imgEl.id);
+      eaEl.width = newWidth;
+      eaEl.height = newHeight;
+      eaEl.x = centerX - newWidth / 2;
+      eaEl.y = centerY - newHeight / 2;
+      return true;
     }
     return false;
   }

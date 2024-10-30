@@ -1107,7 +1107,8 @@ export class EmbeddedFilesLoader {
 
 const getSVGData = async (app: App, file: TFile, colorMap: ColorMap | null): Promise<DataURL> => {
   const svgString = replaceSVGColors(await app.vault.read(file), colorMap) as string;
-
+  return svgToBase64(svgString) as DataURL;
+/*
   try {
     const container = document.createElement('div');
     container.innerHTML = svgString;
@@ -1147,7 +1148,7 @@ const getSVGData = async (app: App, file: TFile, colorMap: ColorMap | null): Pro
   } catch (error) {
     errorlog({ where: "EmbeddedFileLoader.getSVGData", error });
     return svgToBase64(svgString) as DataURL;
-  }
+  }*/
 };
 
 /*export const generateIdFromFile = async (file: ArrayBuffer): Promise<FileId> => {
