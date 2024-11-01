@@ -1108,65 +1108,7 @@ export class EmbeddedFilesLoader {
 const getSVGData = async (app: App, file: TFile, colorMap: ColorMap | null): Promise<DataURL> => {
   const svgString = replaceSVGColors(await app.vault.read(file), colorMap) as string;
   return svgToBase64(svgString) as DataURL;
-/*
-  try {
-    const container = document.createElement('div');
-    container.innerHTML = svgString;
-    
-    const svgElement = container.querySelector('svg');
-    
-    if (!svgElement) {
-      throw new Error('Invalid SVG content'); // Ensure there's an SVG element
-    }
-
-    // Check for width and height attributes
-    const hasWidth = svgElement.hasAttribute('width');
-    const hasHeight = svgElement.hasAttribute('height');
-
-    // If width or height is missing, calculate based on viewBox
-    if (!hasWidth || !hasHeight) {
-      const viewBox = svgElement.getAttribute('viewBox');
-      
-      if (viewBox) {
-        const [ , , viewBoxWidth, viewBoxHeight] = viewBox.split(/\s+/).map(Number);
-
-        // Set width and height based on viewBox if they are missing
-        if (!hasWidth) {
-          svgElement.setAttribute('width', `${viewBoxWidth}px`);
-        }
-        if (!hasHeight) {
-          svgElement.setAttribute('height', `${viewBoxHeight}px`);
-        }
-      }
-    }
-
-    // Get the updated SVG string from outerHTML
-    const updatedSVGString = svgElement.outerHTML;
-
-    // Convert the updated SVG string to a base64 Data URL
-    return svgToBase64(updatedSVGString) as DataURL;
-  } catch (error) {
-    errorlog({ where: "EmbeddedFileLoader.getSVGData", error });
-    return svgToBase64(svgString) as DataURL;
-  }*/
 };
-
-/*export const generateIdFromFile = async (file: ArrayBuffer): Promise<FileId> => {
-  let id: FileId;
-  try {
-    const hashBuffer = await window.crypto.subtle.digest("SHA-1", file);
-    id =
-      // convert buffer to byte array
-      Array.from(new Uint8Array(hashBuffer))
-        // convert to hex string
-        .map((byte) => byte.toString(16).padStart(2, "0"))
-        .join("") as FileId;
-  } catch (error) {
-    errorlog({ where: "EmbeddedFileLoader.generateIdFromFile", error });
-    id = fileid() as FileId;
-  }
-  return id;
-};*/
 
 export const generateIdFromFile = async (file: ArrayBuffer, key?: string): Promise<FileId> => {
   let id: FileId;

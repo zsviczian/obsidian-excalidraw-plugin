@@ -222,6 +222,7 @@ export const FRONTMATTER_KEYS:{[key:string]: {name: string, type: string, depric
 
 export const EMBEDDABLE_THEME_FRONTMATTER_VALUES = ["light", "dark", "auto", "dafault"];
 export const VIEW_TYPE_EXCALIDRAW = "excalidraw";
+export const VIEW_TYPE_EXCALIDRAW_LOADING = "excalidraw-loading";
 export const ICON_NAME = "excalidraw-icon";
 export const MAX_COLORS = 5;
 export const COLOR_FREQ = 6;

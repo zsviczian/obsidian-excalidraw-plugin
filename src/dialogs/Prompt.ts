@@ -713,27 +713,70 @@ export class ConfirmationPrompt extends Modal {
   }
 }
 
-export async function linkPrompt (
-  linkText:string,
+export async function linkPrompt(
+  linkText: string,
   app: App,
   view?: ExcalidrawView,
-  message: string = "Select link to open",
-):Promise<[file:TFile, linkText:string, subpath: string]> {
-  const linksArray = REGEX_LINK.getResList(linkText);
-  const tagsArray = REGEX_TAGS.getResList(linkText.replaceAll(/([^\s])#/g,"$1 "));
+  message: string = t("SELECT_LINK_TO_OPEN"),
+): Promise<[file: TFile, linkText: string, subpath: string]> {
+  const linksArray = REGEX_LINK.getResList(linkText).filter(x => Boolean(x.value));
+  const links = linksArray.map(x => REGEX_LINK.getLink(x));
+
+  // Create a map to track duplicates by base link (without rect reference)
+  const linkMap = new Map<string, number[]>();
+  links.forEach((link, i) => {
+    const linkBase = link.split("&rect=")[0];
+    if (!linkMap.has(linkBase)) linkMap.set(linkBase, []);
+    linkMap.get(linkBase).push(i);
+  });
+
+  // Determine indices to keep
+  const indicesToKeep = new Set<number>();
+  linkMap.forEach(indices => {
+    if (indices.length === 1) {
+      // Only one link, keep it
+      indicesToKeep.add(indices[0]);
+    } else {
+      // Multiple links: prefer the one with rect reference, if available
+      const rectIndex = indices.find(i => links[i].includes("&rect="));
+      if (rectIndex !== undefined) {
+        indicesToKeep.add(rectIndex);
+      } else {
+        // No rect reference in duplicates, add the first one
+        indicesToKeep.add(indices[0]);
+      }
+    }
+  });
+
+  // Final validation to ensure each duplicate group has at least one entry
+  linkMap.forEach(indices => {
+    const hasKeptEntry = indices.some(i => indicesToKeep.has(i));
+    if (!hasKeptEntry) {
+      // Add the first index if none were kept
+      indicesToKeep.add(indices[0]);
+    }
+  });
+
+  // Filter linksArray, links, itemsDisplay, and items based on indicesToKeep
+  const filteredLinksArray = linksArray.filter((_, i) => indicesToKeep.has(i));
+  const tagsArray = REGEX_TAGS.getResList(linkText.replaceAll(/([^\s])#/g, "$1 ")).filter(x => Boolean(x.value));
+
   let subpath: string = null;
   let file: TFile = null;
-  let parts = linksArray[0] ?? tagsArray[0];
+  let parts = filteredLinksArray[0] ?? tagsArray[0];
+
+  // Generate filtered itemsDisplay and items arrays
   const itemsDisplay = [
-    ...linksArray.filter(p=> Boolean(p.value)).map(p => {
+    ...filteredLinksArray.map(p => {
       const alias = REGEX_LINK.getAliasOrLink(p);
       return alias === "100%" ? REGEX_LINK.getLink(p) : alias;
     }),
-    ...tagsArray.filter(x=> Boolean(x.value)).map(x => REGEX_TAGS.getTag(x)),
+    ...tagsArray.map(x => REGEX_TAGS.getTag(x)),
   ];
+
   const items = [
-    ...linksArray.filter(p=>Boolean(p.value)),
-    ...tagsArray.filter(x=> Boolean(x.value)),
+    ...filteredLinksArray,
+    ...tagsArray,
   ];
 
   if (items.length>1) {

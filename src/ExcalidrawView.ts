@@ -148,6 +148,7 @@ import { Packages } from "./types/types";
 import React from "react";
 import { diagramToHTML } from "./utils/matic";
 import { IS_WORKER_SUPPORTED } from "./workers/compression-worker";
+import { getPDFCropRect } from "./utils/PDFUtils";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -218,6 +219,27 @@ export const addFiles = async (
   if (isDark === undefined) {
     isDark = s.scene.appState.theme;
   }
+  // update element.crop naturalWidth and naturalHeight in case scale of PDF loading has changed
+  // update crop.x crop.y, crop.width, crop.height according to the new scale
+  files
+    .filter((f:FileData) => view.excalidrawData.getFile(f.id)?.file?.extension === "pdf")
+    .forEach((f:FileData) => {
+      s.scene.elements
+        .filter((el:ExcalidrawElement)=>el.type === "image" && el.fileId === f.id && el.crop && el.crop.naturalWidth !== f.size.width)
+        .forEach((el:Mutable<ExcalidrawImageElement>) => {
+          s.dirty = true;
+          const scale = f.size.width / el.crop.naturalWidth;
+          el.crop = {
+            x: el.crop.x * scale,
+            y: el.crop.y * scale,
+            width: el.crop.width * scale,
+            height: el.crop.height * scale,
+            naturalWidth: f.size.width,
+            naturalHeight: f.size.height,
+          };
+        });
+    });
+
   if (s.dirty) {
     //debug({where:"ExcalidrawView.addFiles",file:view.file.name,dataTheme:view.excalidrawData.scene.appState.theme,before:"updateScene",state:scene.appState})
     view.updateScene({
@@ -4036,7 +4058,20 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           } else {
             if(link.match(/^[^#]*#page=\d*(&\w*=[^&]+){0,}&rect=\d*,\d*,\d*,\d*/g)) {
               const ea = getEA(this) as ExcalidrawAutomate;
-              await ea.addImage(this.currentPosition.x, this.currentPosition.y,link);
+              const imgID = await ea.addImage(this.currentPosition.x, this.currentPosition.y,link.split("&rect=")[0]);
+              const el = ea.getElement(imgID) as Mutable<ExcalidrawImageElement>;
+              const fd = ea.imagesDict[el.fileId] as FileData;
+              el.crop = getPDFCropRect({
+                scale: this.plugin.settings.pdfScale,
+                link,
+                naturalHeight: fd.size.height,
+                naturalWidth: fd.size.width,
+              });
+              if(el.crop) {
+                el.width = el.crop.width/this.plugin.settings.pdfScale;
+                el.height = el.crop.height/this.plugin.settings.pdfScale;
+              }
+              el.link = `[[${link}]]`;
               ea.addElementsToView(false,false).then(()=>ea.destroy());
             } else {
               const modal = new UniversalInsertFileModal(this.plugin, this);

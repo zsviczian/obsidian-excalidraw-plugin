@@ -20,6 +20,7 @@ import {
   Editor,
   MarkdownFileInfo,
   loadMermaid,
+  View,
 } from "obsidian";
 import {
   BLANK_DRAWING,
@@ -143,7 +144,8 @@ import { RankMessage } from "./dialogs/RankMessage";
 import { initCompressionWorker, terminateCompressionWorker } from "./workers/compression-worker";
 import { WeakArray } from "./utils/WeakArray";
 import { getCJKDataURLs } from "./utils/CJKLoader";
-import ExcalidrawLoading from "./dialogs/ExcalidrawLoading";
+import { ExcalidrawLoading, switchToExcalidraw } from "./dialogs/ExcalidrawLoading";
+import { insertImageToView } from "./utils/ExcalidrawViewUtils";
 
 declare let EXCALIDRAW_PACKAGE:string;
 declare let REACT_PACKAGES:string;
@@ -432,6 +434,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
       this.taskbone = new Taskbone(this);
       this.isReady = true;
+      switchToExcalidraw(this.app);
 
       this.app.workspace.onLayoutReady(() => {
         (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onload,"ExcalidrawPlugin.onload > app.workspace.onLayoutReady");
@@ -2448,6 +2451,27 @@ export default class ExcalidrawPlugin extends Plugin {
     });
 
     this.addCommand({
+      id: "insert-pdf",
+      name: t("INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE"),
+      checkCallback: (checking: boolean) => {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if(!Boolean(view)) return false;
+        const PDFLink = this.getLastActivePDFPageLink(view.file);
+        if(!PDFLink) return false;
+        if(checking) return true;
+        const ea = getEA(view);
+        insertImageToView(
+          ea,
+          view.currentPosition,
+          PDFLink,
+          undefined,
+          undefined,
+          true,
+        );
+      },
+    });
+
+    this.addCommand({
       id: "universal-add-file",
       name: t("UNIVERSAL_ADD_FILE"),
       checkCallback: (checking: boolean) => {
@@ -2814,9 +2838,33 @@ export default class ExcalidrawPlugin extends Plugin {
     });
   }
 
+  private lastPDFLeafID: string = null;
+
+  public getLastActivePDFPageLink(requestorFile: TFile): string {
+    if(!this.lastPDFLeafID) return;
+    const leaf = this.app.workspace.getLeafById(this.lastPDFLeafID);
+    //@ts-ignore
+    if(!leaf || !leaf.view || leaf.view.getViewType() !== "pdf") return;
+    const view:any = leaf.view;
+    const file = view.file;
+    const page = view.viewer.child.pdfViewer.page;
+    if(!file || !page) return;
+    return this.app.metadataCache.fileToLinktext(
+      file,
+      requestorFile?.path,
+      false,
+    ) + `#page=${page}`;
+  }
+
   public async activeLeafChangeEventHandler (leaf: WorkspaceLeaf) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.activeLeafChangeEventHandler,`ExcalidrawPlugin.activeLeafChangeEventHandler`, leaf);
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/723
+
+    if (leaf.view && leaf.view.getViewType() === "pdf") {
+      //@ts-ignore
+      this.lastPDFLeafID = leaf.id;
+    }
+
     if(this.leafChangeTimeout) {
       window.clearTimeout(this.leafChangeTimeout);
     }

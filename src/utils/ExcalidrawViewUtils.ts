@@ -19,6 +19,7 @@ export async function insertImageToView(
   file: TFile | string,
   scale?: boolean,
   shouldInsertToView: boolean = true,
+  repositionToCursor: boolean = false,
 ):Promise<string> {
   if(shouldInsertToView) {ea.clear();}
   ea.style.strokeColor = "transparent";
@@ -31,7 +32,7 @@ export async function insertImageToView(
     file,
     scale,
   );
-  if(shouldInsertToView) {await ea.addElementsToView(false, true, true);}
+  if(shouldInsertToView) {await ea.addElementsToView(repositionToCursor, true, true);}
   return id;
 }
 

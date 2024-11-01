@@ -477,8 +477,6 @@ export function scaleLoadedImage (
               const ratioX = elCrop.x / (elCrop.naturalWidth - elCrop.x - elCrop.width);
               const gapX = imgWidth - elCrop.width;
               el.crop.x = ratioX * gapX / (1 + ratioX);
-//              const ratioA = elCrop.x / (elCrop.naturalWidth - elCrop.x);
-//              el.crop.x = ratioA * imgWidth / (1 + ratioA);
               if(el.crop.x + elCrop.width > imgWidth) {
                 el.crop.x = (imgWidth - elCrop.width) / 2;
               }
@@ -492,8 +490,6 @@ export function scaleLoadedImage (
               const ratioY = elCrop.y / (elCrop.naturalHeight - elCrop.y - elCrop.height);
               const gapY = imgHeight - elCrop.height;
               el.crop.y = ratioY * gapY / (1 + ratioY);
-//              const ratioB = elCrop.y / (elCrop.naturalHeight - elCrop.y);
-//              el.crop.y = ratioB * imgHeight / (1 + ratioB);
               if(el.crop.y + elCrop.height > imgHeight) {
                 el.crop.y = (imgHeight - elCrop.height)/2;
               }

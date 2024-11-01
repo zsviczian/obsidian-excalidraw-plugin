@@ -1547,6 +1547,10 @@ export class ExcalidrawAutomate {
         : imageFile.path + (scale || !anchor ? "":"|100%"),
       hasSVGwithBitmap: image.hasSVGwithBitmap,
       latex: null,
+      size: { //must have the natural size here (e.g. for PDF cropping)
+        height: image.size.height,
+        width: image.size.width,
+      },
     };
     if (scale && (Math.max(image.size.width, image.size.height) > MAX_IMAGE_SIZE)) {
       const scale =

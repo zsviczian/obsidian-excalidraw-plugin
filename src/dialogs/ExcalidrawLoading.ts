@@ -1,11 +1,16 @@
-import { FileView, TextFileView, View, WorkspaceLeaf } from "obsidian";
+import { App, FileView, WorkspaceLeaf } from "obsidian";
+import { VIEW_TYPE_EXCALIDRAW_LOADING } from "src/constants/constants";
 import ExcalidrawPlugin from "src/main";
 import { setExcalidrawView } from "src/utils/ObsidianUtils";
 
-export default class ExcalidrawLoading extends FileView {
+export function switchToExcalidraw(app: App) {
+  const leaves = app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW_LOADING).filter(l=>l.view instanceof ExcalidrawLoading);
+  leaves.forEach(l=>(l.view as ExcalidrawLoading).switchToeExcalidraw());
+}
+
+export class ExcalidrawLoading extends FileView {
   constructor(leaf: WorkspaceLeaf, private plugin: ExcalidrawPlugin) {
     super(leaf);
-    this.switchToeExcalidraw();
     this.displayLoadingText();
   }
 
@@ -14,13 +19,12 @@ export default class ExcalidrawLoading extends FileView {
     this.displayLoadingText();
   }
 
-  private async switchToeExcalidraw() {
-    await this.plugin.awaitInit();
+  public switchToeExcalidraw() {
     setExcalidrawView(this.leaf);
   }
   
   getViewType(): string {
-    return "excalidra-loading";
+    return VIEW_TYPE_EXCALIDRAW_LOADING;
   }
 
   getDisplayText() {

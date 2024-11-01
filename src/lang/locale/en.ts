@@ -76,6 +76,7 @@ export default {
   IMPORT_SVG_CONTEXTMENU: "Convert SVG to strokes - with limitations",
   INSERT_MD: "Insert markdown file from vault",
   INSERT_PDF: "Insert PDF file from vault",
+  INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE: "Insert last active PDF page as image",
   UNIVERSAL_ADD_FILE: "Insert ANY file",
   INSERT_CARD: "Add back-of-note card",
   CONVERT_CARD_TO_FILE: "Move back-of-note card to File",
@@ -100,6 +101,9 @@ export default {
   TEMPORARY_ENABLE_AUTOSAVE: "Enable autosave",
   FONTS_LOADED: "Excalidraw: CJK Fonts loaded",
   FONTS_LOAD_ERROR: "Excalidraw: Could not find CJK Fonts in the assets folder\n",
+
+  //Prompt.ts
+  SELECT_LINK_TO_OPEN: "Select a link to open",
 
   //ExcalidrawView.ts
   NO_SEARCH_RESULT: "Didn't find a matching element in the drawing",
