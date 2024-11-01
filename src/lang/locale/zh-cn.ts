@@ -76,6 +76,7 @@ export default {
   IMPORT_SVG_CONTEXTMENU: "转换 SVG 到线条 - 有限制",
   INSERT_MD: "插入 Markdown 文档（以图像形式嵌入）到当前绘图中",
   INSERT_PDF: "插入 PDF 文档（以图像形式嵌入）到当前绘图中",
+  INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE: "将最后激活的 PDF 页面插入为图片",
   UNIVERSAL_ADD_FILE: "插入任意文件（以交互形式嵌入，或者以图像形式嵌入）到当前绘图中",
   INSERT_CARD: "插入“背景笔记”卡片",
   CONVERT_CARD_TO_FILE: "将“背景笔记”卡片保存到文件",
@@ -100,6 +101,9 @@ export default {
   TEMPORARY_ENABLE_AUTOSAVE: "启用自动保存功能",
   FONTS_LOADED : "Excalidraw: CJK 字体已加载" ,
   FONTS_LOAD_ERROR : "Excalidraw: 在资源文件夹下找不到 CJK 字体\n" ,
+
+  //Prompt.ts
+  SELECT_LINK_TO_OPEN: "选择要打开的链接",
 
   //ExcalidrawView.ts
   NO_SEARCH_RESULT: "在绘图中未找到匹配的元素",
