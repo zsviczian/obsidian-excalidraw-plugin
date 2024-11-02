@@ -404,6 +404,9 @@ export default class ExcalidrawPlugin extends Plugin {
       this.registerMonkeyPatches();
 
       this.stylesManager = new StylesManager(this);
+      this.scriptEngine = new ScriptEngine(this);
+      await this.initializeFonts();
+      imageCache.initializeDB(this);
 
       this.isReady = true;
       switchToExcalidraw(this.app);
@@ -424,7 +427,6 @@ export default class ExcalidrawPlugin extends Plugin {
 
       //initialization that can happen after Excalidraw views are initialized
       this.registerEventListeners();
-      this.initializeFonts();
       this.runStartupScript();
       this.editorHandler = new EditorHandler(this);
       this.editorHandler.setup();
@@ -434,8 +436,6 @@ export default class ExcalidrawPlugin extends Plugin {
       this.registerEditorSuggest(new FieldSuggester(this));
       this.setPropertyTypes();
       this.taskbone = new Taskbone(this);
-      this.scriptEngine = new ScriptEngine(this);
-      imageCache.initializeDB(this);
     });
   }
 
