@@ -145,6 +145,7 @@ import { WeakArray } from "./utils/WeakArray";
 import { getCJKDataURLs } from "./utils/CJKLoader";
 import { ExcalidrawLoading, switchToExcalidraw } from "./dialogs/ExcalidrawLoading";
 import { insertImageToView } from "./utils/ExcalidrawViewUtils";
+import tr from "./lang/locale/tr";
 
 declare let EXCALIDRAW_PACKAGE:string;
 declare let REACT_PACKAGES:string;
@@ -412,32 +413,85 @@ export default class ExcalidrawPlugin extends Plugin {
       switchToExcalidraw(this.app);
       this.switchToExcalidarwAfterLoad();
 
-      if (this.settings.showReleaseNotes) {
-        //I am repurposing imageElementNotice, if the value is true, this means the plugin was just newly installed to Obsidian.
-        const obsidianJustInstalled = this.settings.previousRelease === "0.0.0"
+      try {
+        if (this.settings.showReleaseNotes) {
+          //I am repurposing imageElementNotice, if the value is true, this means the plugin was just newly installed to Obsidian.
+          const obsidianJustInstalled = this.settings.previousRelease === "0.0.0"
 
-        if (isVersionNewerThanOther(PLUGIN_VERSION, this.settings.previousRelease)) {
-          new ReleaseNotes(
-            this.app,
-            this,
-            obsidianJustInstalled ? null : PLUGIN_VERSION,
-          ).open();
+          if (isVersionNewerThanOther(PLUGIN_VERSION, this.settings.previousRelease)) {
+            new ReleaseNotes(
+              this.app,
+              this,
+              obsidianJustInstalled ? null : PLUGIN_VERSION,
+            ).open();
+          }
         }
+      } catch (e) {
+        new Notice("Error opening release notes", 6000);
+        console.log("Error opening release notes", e);
       }
 
       //initialization that can happen after Excalidraw views are initialized
-      this.registerEventListeners();
-      this.runStartupScript();
-      this.editorHandler = new EditorHandler(this);
-      this.editorHandler.setup();
-      this.registerInstallCodeblockProcessor();
-      this.experimentalFileTypeDisplayToggle(this.settings.experimentalFileType);
-      this.registerCommands();
-      this.registerEditorSuggest(new FieldSuggester(this));
-      this.setPropertyTypes();
-      this.taskbone = new Taskbone(this);
+      
+      try {
+        this.registerEventListeners();
+      } catch (e) {
+        new Notice("Error registering event listeners", 6000);
+        console.log("Error registering event listeners", e);
+      }
+      try { 
+        this.runStartupScript();
+      } catch (e) {
+        new Notice("Error running startup script", 6000);
+        console.log("Error running startup script", e);
+      }
+      try {
+        this.editorHandler = new EditorHandler(this);
+        this.editorHandler.setup();
+      } catch (e) {
+        new Notice("Error setting up editor handler", 6000);
+        console.log("Error setting up editor handler", e);
+      }
+      try {
+        this.registerInstallCodeblockProcessor();
+      } catch (e) {
+        new Notice("Error registering script install-codeblock processor", 6000);
+        console.log("Error registering script install-codeblock processor", e);
+      }
+
+      try {
+        this.experimentalFileTypeDisplayToggle(this.settings.experimentalFileType);
+      } catch (e) {
+        new Notice("Error setting up experimental file type display", 6000);
+        console.log("Error setting up experimental file type display", e);
+      }
+      try {
+        this.registerCommands();
+      } catch (e) {
+        new Notice("Error registering commands", 6000);
+        console.log("Error registering commands", e);
+      }
+      try {
+        this.registerEditorSuggest(new FieldSuggester(this));
+      } catch (e) {
+        new Notice("Error registering editor suggester", 6000);
+        console.log("Error registering editor suggester", e);
+      }
+      try {
+        this.setPropertyTypes();
+      } catch (e) {
+        new Notice("Error setting up property types", 6000);
+        console.log("Error setting up property types", e);
+      }
+      try {
+        this.taskbone = new Taskbone(this);
+      } catch (e) {
+        new Notice("Error setting up taskbone", 6000);
+        console.log("Error setting up taskbone", e);
+      }
     });
   }
+
 
   public async awaitInit() {
     let counter = 0;
