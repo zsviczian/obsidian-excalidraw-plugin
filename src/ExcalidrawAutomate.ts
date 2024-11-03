@@ -2854,10 +2854,9 @@ export class ExcalidrawAutomate {
   }  
 };
 
-export async function initExcalidrawAutomate(
+export function initExcalidrawAutomate(
   plugin: ExcalidrawPlugin,
-): Promise<ExcalidrawAutomate> {
-  await initFonts();
+): ExcalidrawAutomate {
   const ea = new ExcalidrawAutomate(plugin);
   //@ts-ignore
   window.ExcalidrawAutomate = ea;
@@ -2890,14 +2889,6 @@ function getLineBox(
 
 function getFontFamily(id: number):string {
   return getFontFamilyString({fontFamily:id})
-}
-
-export async function initFonts():Promise<void> {
-  /*await excalidrawLib.registerFontsInCSS();
-  const fonts = excalidrawLib.getFontFamilies();
-  for(let i=0;i<fonts.length;i++) {
-    if(fonts[i] !== "Local Font") await (document as any).fonts.load(`16px ${fonts[i]}`);  
-  };*/
 }
 
 export function _measureText(

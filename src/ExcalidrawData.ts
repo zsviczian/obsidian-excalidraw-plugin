@@ -1588,6 +1588,7 @@ export class ExcalidrawData {
     .filter(el=>el.type === "image" && el.crop && !el.isDeleted)
     .forEach((el: Mutable<ExcalidrawImageElement>)=>{
       const ef = this.getFile(el.fileId);
+      if(!ef.file) return;
       if(ef.file.extension !== "pdf") return;
       const pageRef = ef.linkParts.original.split("#")?.[1];
       if(!pageRef || !pageRef.startsWith("page=") || pageRef.includes("rect")) return;

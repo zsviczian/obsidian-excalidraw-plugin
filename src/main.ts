@@ -365,53 +365,132 @@ export default class ExcalidrawPlugin extends Plugin {
     //Compatibility mode with .excalidraw files
     this.registerExtensions(["excalidraw"], VIEW_TYPE_EXCALIDRAW);
 
-    await this.loadSettings({reEnableAutosave:true});
-    const updateSettings = !this.settings.onceOffCompressFlagReset || !this.settings.onceOffGPTVersionReset;
-    if(!this.settings.onceOffCompressFlagReset) {
-      this.settings.compress = true;
-      this.settings.onceOffCompressFlagReset = true;
-    }
-    if(!this.settings.onceOffGPTVersionReset) {
-      if(this.settings.openAIDefaultVisionModel === "gpt-4-vision-preview") {
-        this.settings.openAIDefaultVisionModel = "gpt-4o";
+    try {
+      await this.loadSettings({reEnableAutosave:true});
+      const updateSettings = !this.settings.onceOffCompressFlagReset || !this.settings.onceOffGPTVersionReset;
+      if(!this.settings.onceOffCompressFlagReset) {
+        this.settings.compress = true;
+        this.settings.onceOffCompressFlagReset = true;
       }
+      if(!this.settings.onceOffGPTVersionReset) {
+        if(this.settings.openAIDefaultVisionModel === "gpt-4-vision-preview") {
+          this.settings.openAIDefaultVisionModel = "gpt-4o";
+        }
+      }
+      if(updateSettings) {
+        await this.saveSettings();
+      }
+      this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
+    } catch (e) {
+      new Notice("Error loading plugin settings", 6000);
+      console.error("Error loading plugin settings", e);
     }
-    if(updateSettings) {
-      await this.saveSettings();
-    }
-    this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
-    this.ea = await initExcalidrawAutomate(this);
 
-    //Licat: Are you registering your post processors in onLayoutReady? You should register them in onload instead
-    this.addMarkdownPostProcessor();
-    
+    try {
+      // need it her for ExcaliBrain
+      this.ea = initExcalidrawAutomate(this);
+    } catch (e) {
+      new Notice("Error initializing Excalidraw Automate", 6000);
+      console.error("Error initializing Excalidraw Automate", e);
+    }
+
+    try {
+      //Licat: Are you registering your post processors in onLayoutReady? You should register them in onload instead
+      this.addMarkdownPostProcessor();
+    } catch (e) {
+      new Notice("Error adding markdown post processor", 6000);
+      console.error("Error adding markdown post processor", e);
+    }
+
     this.app.workspace.onLayoutReady(async () => {
-      unpackExcalidraw();
-      excalidrawLib = window.eval.call(window,`(function() {${EXCALIDRAW_PACKAGE};return ExcalidrawLib;})()`);
-      this.packageMap.set(window,{react, reactDOM, excalidrawLib});
-      updateExcalidrawLib();
-      initCompressionWorker();
+      try {
+        unpackExcalidraw();
+        excalidrawLib = window.eval.call(window,`(function() {${EXCALIDRAW_PACKAGE};return ExcalidrawLib;})()`);
+        this.packageMap.set(window,{react, reactDOM, excalidrawLib});
+        updateExcalidrawLib();
+      } catch (e) {
+        new Notice("Error loading the Excalidraw package", 6000);
+        console.error("Error loading the Excalidraw package", e);
+      }
+
+      try {
+        initCompressionWorker();
+      } catch (e) {
+        new Notice("Error initializing compression worker", 6000);
+        console.error("Error initializing compression worker", e);
+      }
+
       this.loadTimestamp = Date.now();
       addIcon(ICON_NAME, EXCALIDRAW_ICON);
       addIcon(SCRIPTENGINE_ICON_NAME, SCRIPTENGINE_ICON);
       addIcon(EXPORT_IMG_ICON_NAME, EXPORT_IMG_ICON);
 
-      this.excalidrawConfig = new ExcalidrawConfig(this);
-      await loadMermaid();
-      this.addThemeObserver();
+      try {
+        this.excalidrawConfig = new ExcalidrawConfig(this);
+      } catch (e) {
+        new Notice("Error initializing Excalidraw config", 6000);
+        console.error("Error initializing Excalidraw config", e);
+      }
 
-      //inspiration taken from kanban:
-      //https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/main.ts#L267
-      this.registerMonkeyPatches();
+      try {
+        await loadMermaid();
+      } catch (e) {
+        new Notice("Error loading Mermaid", 6000);
+        console.error("Error loading Mermaid", e);
+      }
 
-      this.stylesManager = new StylesManager(this);
-      this.scriptEngine = new ScriptEngine(this);
-      await this.initializeFonts();
-      imageCache.initializeDB(this);
+      try {
+        this.addThemeObserver();
+      } catch (e) {
+        new Notice("Error adding theme observer", 6000);
+        console.error("Error adding theme observer", e);
+      }
 
-      this.isReady = true;
-      switchToExcalidraw(this.app);
-      this.switchToExcalidarwAfterLoad();
+      try {
+        //inspiration taken from kanban:
+        //https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/main.ts#L267
+        this.registerMonkeyPatches();
+      } catch (e) {
+        new Notice("Error registering monkey patches", 6000);
+        console.error("Error registering monkey patches", e);
+      }
+
+      try {
+        this.stylesManager = new StylesManager(this);
+      } catch (e) {
+        new Notice("Error initializing styles manager", 6000);
+        console.error("Error initializing styles manager", e);
+      }
+
+      try {
+        this.scriptEngine = new ScriptEngine(this);
+      } catch (e) {
+        new Notice("Error initializing script engine", 6000);
+        console.error("Error initializing script engine", e);
+      }
+
+      try {
+        await this.initializeFonts();
+      } catch (e) {
+        new Notice("Error initializing fonts", 6000);
+        console.error("Error initializing fonts", e);
+      }
+
+      try {
+        imageCache.initializeDB(this);
+      } catch (e) {
+        new Notice("Error initializing image cache", 6000);
+        console.error("Error initializing image cache", e);
+      }
+
+      try {
+        this.isReady = true;
+        switchToExcalidraw(this.app);
+        this.switchToExcalidarwAfterLoad();
+      } catch (e) {
+        new Notice("Error switching views to Excalidraw", 6000);
+        console.error("Error switching views to Excalidraw", e);
+      }
 
       try {
         if (this.settings.showReleaseNotes) {
@@ -431,20 +510,23 @@ export default class ExcalidrawPlugin extends Plugin {
         console.error("Error opening release notes", e);
       }
 
+      //---------------------------------------------------------------------
       //initialization that can happen after Excalidraw views are initialized
-      
+      //---------------------------------------------------------------------      
       try {
         this.registerEventListeners();
       } catch (e) {
         new Notice("Error registering event listeners", 6000);
         console.error("Error registering event listeners", e);
       }
+
       try { 
         this.runStartupScript();
       } catch (e) {
         new Notice("Error running startup script", 6000);
         console.error("Error running startup script", e);
       }
+
       try {
         this.editorHandler = new EditorHandler(this);
         this.editorHandler.setup();
@@ -452,6 +534,7 @@ export default class ExcalidrawPlugin extends Plugin {
         new Notice("Error setting up editor handler", 6000);
         console.error("Error setting up editor handler", e);
       }
+
       try {
         this.registerInstallCodeblockProcessor();
       } catch (e) {
@@ -465,24 +548,28 @@ export default class ExcalidrawPlugin extends Plugin {
         new Notice("Error setting up experimental file type display", 6000);
         console.error("Error setting up experimental file type display", e);
       }
+
       try {
         this.registerCommands();
       } catch (e) {
         new Notice("Error registering commands", 6000);
         console.error("Error registering commands", e);
       }
+
       try {
         this.registerEditorSuggest(new FieldSuggester(this));
       } catch (e) {
         new Notice("Error registering editor suggester", 6000);
         console.error("Error registering editor suggester", e);
       }
+
       try {
         this.setPropertyTypes();
       } catch (e) {
         new Notice("Error setting up property types", 6000);
         console.error("Error setting up property types", e);
       }
+
       try {
         this.taskbone = new Taskbone(this);
       } catch (e) {
