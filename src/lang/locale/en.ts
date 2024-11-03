@@ -6,6 +6,8 @@ import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/
 import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/ModifierkeyHelper";
 
 const CJK_FONTS = "CJK Fonts";
+declare const PLUGIN_VERSION:string;
+
 // English
 export default {
   // main.ts
@@ -959,4 +961,7 @@ FILENAME_HEAD: "Filename",
   IPM_GROUP_PAGES_DESC: "This will group all pages into a single group. This is recommended if you are locking the pages after import, because the group will be easier to unlock later rather than unlocking one by one.",
   IPM_SELECT_PDF: "Please select a PDF file",
 
+  //Utils.ts
+  UPDATE_AVAILABLE: `A newer version of Excalidraw is available in Community Plugins.\n\nYou are using ${PLUGIN_VERSION}.\nThe latest is`,
+  ERROR_PNG_TOO_LARGE: "Error exporting PNG - PNG too large, try a smaller resolution",
 };

@@ -416,9 +416,9 @@ export default class ExcalidrawPlugin extends Plugin {
       try {
         if (this.settings.showReleaseNotes) {
           //I am repurposing imageElementNotice, if the value is true, this means the plugin was just newly installed to Obsidian.
-          const obsidianJustInstalled = this.settings.previousRelease === "0.0.0"
+          const obsidianJustInstalled = (this.settings.previousRelease === "0.0.0") || !this.settings.previousRelease;
 
-          if (isVersionNewerThanOther(PLUGIN_VERSION, this.settings.previousRelease)) {
+          if (isVersionNewerThanOther(PLUGIN_VERSION, this.settings.previousRelease ?? "0.0.0")) {
             new ReleaseNotes(
               this.app,
               this,
@@ -428,7 +428,7 @@ export default class ExcalidrawPlugin extends Plugin {
         }
       } catch (e) {
         new Notice("Error opening release notes", 6000);
-        console.log("Error opening release notes", e);
+        console.error("Error opening release notes", e);
       }
 
       //initialization that can happen after Excalidraw views are initialized
@@ -437,57 +437,57 @@ export default class ExcalidrawPlugin extends Plugin {
         this.registerEventListeners();
       } catch (e) {
         new Notice("Error registering event listeners", 6000);
-        console.log("Error registering event listeners", e);
+        console.error("Error registering event listeners", e);
       }
       try { 
         this.runStartupScript();
       } catch (e) {
         new Notice("Error running startup script", 6000);
-        console.log("Error running startup script", e);
+        console.error("Error running startup script", e);
       }
       try {
         this.editorHandler = new EditorHandler(this);
         this.editorHandler.setup();
       } catch (e) {
         new Notice("Error setting up editor handler", 6000);
-        console.log("Error setting up editor handler", e);
+        console.error("Error setting up editor handler", e);
       }
       try {
         this.registerInstallCodeblockProcessor();
       } catch (e) {
         new Notice("Error registering script install-codeblock processor", 6000);
-        console.log("Error registering script install-codeblock processor", e);
+        console.error("Error registering script install-codeblock processor", e);
       }
 
       try {
         this.experimentalFileTypeDisplayToggle(this.settings.experimentalFileType);
       } catch (e) {
         new Notice("Error setting up experimental file type display", 6000);
-        console.log("Error setting up experimental file type display", e);
+        console.error("Error setting up experimental file type display", e);
       }
       try {
         this.registerCommands();
       } catch (e) {
         new Notice("Error registering commands", 6000);
-        console.log("Error registering commands", e);
+        console.error("Error registering commands", e);
       }
       try {
         this.registerEditorSuggest(new FieldSuggester(this));
       } catch (e) {
         new Notice("Error registering editor suggester", 6000);
-        console.log("Error registering editor suggester", e);
+        console.error("Error registering editor suggester", e);
       }
       try {
         this.setPropertyTypes();
       } catch (e) {
         new Notice("Error setting up property types", 6000);
-        console.log("Error setting up property types", e);
+        console.error("Error setting up property types", e);
       }
       try {
         this.taskbone = new Taskbone(this);
       } catch (e) {
         new Notice("Error setting up taskbone", 6000);
-        console.log("Error setting up taskbone", e);
+        console.error("Error setting up taskbone", e);
       }
     });
   }

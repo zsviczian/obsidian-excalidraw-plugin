@@ -31,6 +31,7 @@ import opentype from 'opentype.js';
 import { runCompressionWorker } from "src/workers/compression-worker";
 import Pool from "es6-promise-pool";
 import { FileData } from "src/EmbeddedFileLoader";
+import { t } from "src/lang/helpers";
 
 declare const PLUGIN_VERSION:string;
 declare var LZString: any;
@@ -77,7 +78,7 @@ export async function checkExcalidrawVersion() {
 
     if (isVersionNewerThanOther(latestVersion,PLUGIN_VERSION)) {
       new Notice(
-        `A newer version of Excalidraw is available in Community Plugins.\n\nYou are using ${PLUGIN_VERSION}.\nThe latest is ${latestVersion}`,
+        t("UPDATE_AVAILABLE") + ` ${latestVersion}`,
       );
     }
   } catch (e) {
@@ -220,15 +221,6 @@ export async function getFontDataURL (
     const split = dataURL.split(";base64,", 2);
     dataURL = `${split[0]};charset=utf-8;base64,${split[1]}`;
     fontDef = ` @font-face {font-family: "${fontName}";src: url("${dataURL}") format("${format}")}`;
-/*    const mimeType = f.extension.startsWith("woff")
-      ? "application/font-woff"
-      : "font/truetype";
-    fontName = name ?? f.basename;
-    dataURL = await getDataURL(ab, mimeType);
-    fontDef = ` @font-face {font-family: "${fontName}";src: url("${dataURL}")}`;
-     //format("${f.extension === "ttf" ? "truetype" : f.extension}");}`;
-    const split = fontDef.split(";base64,", 2);
-    fontDef = `${split[0]};charset=utf-8;base64,${split[1]}`;*/
   }
   return { fontDef, fontName, dataURL };
 };
@@ -375,7 +367,7 @@ export async function getPNG (
       }),
     });
   } catch (error) {
-    new Notice("Error exporting PNG - PNG too large, try a smaller resolution");
+    new Notice(t("ERROR_PNG_TOO_LARGE"));
     errorlog({ where: "Utils.getPNG", error });
     return null;
   }
