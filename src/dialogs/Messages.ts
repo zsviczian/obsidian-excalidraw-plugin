@@ -17,6 +17,28 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.6.3":`
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/OfUWAvCgbXk" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## New
+- **Cropping PDF Pages**  
+  - Improved PDF++ cropping: You can now double-click cropped images in Excalidraw to adjust the crop area, which will also appear as a highlight in PDF++. This feature applies to PDF cut-outs created in version 2.6.3 and beyond.
+- **Insert Last Active PDF Page as Image**  
+  - New command palette action lets you insert the currently active PDF page into Excalidraw. Ideal for setups with PDF and Excalidraw side-by-side. You can assign a hotkey for quicker access. Cropped areas in Excalidraw will show as highlights in PDF++.
+
+## Fixed
+- Fixed **Close Settings** button toggle behavior [#2085](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2085)
+- Resolved text wrapping issues causing layout shifts due to trailing whitespaces [#8714](https://github.com/excalidraw/excalidraw/pull/8714)
+- **Aspect Ratio and Size Reset** commands now function correctly with cropped images.
+- **Cropped Drawings**: Adjustments to cropped Excalidraw drawings are now supported. However, for nested Excalidraw drawings, it's recommended to use area, group, and frame references instead of cropping.
+
+## Refactoring
+- Further font loading optimizations on Excalidraw.com; no impact expected in Obsidian [#8693](https://github.com/excalidraw/excalidraw/pull/8693)
+- Text wrapping improvements [#8715](https://github.com/excalidraw/excalidraw/pull/8715)
+- Plugin initiation and error handling
+`,
 "2.6.2":`
 ## Fixed
 - Image scaling issue with SVGs that miss the width and height property. [#8729](https://github.com/excalidraw/excalidraw/issues/8729)

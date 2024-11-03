@@ -765,6 +765,8 @@ export function getPNGScale (plugin: ExcalidrawPlugin, file: TFile): number {
 };
 
 export function isVersionNewerThanOther (version: string, otherVersion: string): boolean {
+  if(!version || !otherVersion) return true;
+
   const v = version.match(/(\d*)\.(\d*)\.(\d*)/);
   const o = otherVersion.match(/(\d*)\.(\d*)\.(\d*)/);
   
