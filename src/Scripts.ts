@@ -1,6 +1,7 @@
 import {
   App,
   Instruction,
+  normalizePath,
   TAbstractFile,
   TFile,
   WorkspaceLeaf,
@@ -22,6 +23,7 @@ export type ScriptIconMap = {
 
 export class ScriptEngine {
   private plugin: ExcalidrawPlugin;
+  private app: App;
   private scriptPath: string;
   //https://stackoverflow.com/questions/60218638/how-to-force-re-render-if-map-value-changes
   public scriptIconMap: ScriptIconMap;
@@ -29,6 +31,7 @@ export class ScriptEngine {
 
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
+    this.app = plugin.app;
     this.scriptIconMap = {};
     this.loadScripts();
     this.registerEventHandlers();
@@ -58,7 +61,7 @@ export class ScriptEngine {
     if (!path.endsWith(".svg")) {
       return;
     }
-    const scriptFile = app.vault.getAbstractFileByPath(
+    const scriptFile = this.app.vault.getAbstractFileByPath(
       getIMGFilename(path, "md"),
     );
     if (scriptFile && scriptFile instanceof TFile) {
@@ -107,19 +110,19 @@ export class ScriptEngine {
 
   registerEventHandlers() {
     this.plugin.registerEvent(
-      this.plugin.app.vault.on(
+      this.app.vault.on(
         "delete",
         (file: TFile)=>this.deleteEventHandler(file)
       ),
     );
     this.plugin.registerEvent(
-      this.plugin.app.vault.on(
+      this.app.vault.on(
         "create",
         (file: TFile)=>this.createEventHandler(file)
       ),
     );
     this.plugin.registerEvent(
-      this.plugin.app.vault.on(
+      this.app.vault.on(
         "rename",
         (file: TAbstractFile, oldPath: string)=>this.renameEventHandler(file, oldPath)
       ),
@@ -138,15 +141,16 @@ export class ScriptEngine {
 
   public getListofScripts(): TFile[] {
     this.scriptPath = this.plugin.settings.scriptFolderPath;
-    if (!app.vault.getAbstractFileByPath(this.scriptPath)) {
-      //this.scriptPath = null;
+    if(!this.scriptPath) return;
+    this.scriptPath = normalizePath(this.scriptPath);
+    if (!this.app.vault.getAbstractFileByPath(this.scriptPath)) {
       return;
     }
-    return app.vault
+    return this.app.vault
       .getFiles()
       .filter(
         (f: TFile) =>
-          f.path.startsWith(this.scriptPath) && f.extension === "md",
+          f.path.startsWith(this.scriptPath+"/") && f.extension === "md",
       );
   }
 
@@ -166,7 +170,10 @@ export class ScriptEngine {
     }
 
     const subpath = path.split(`${this.scriptPath}/`)[1];
-    const lastSlash = subpath.lastIndexOf("/");
+    if(!subpath) {
+      console.warn(`ScriptEngine.getScriptName unexpected basename: ${basename}; path: ${path}`)
+    }
+    const lastSlash = subpath?.lastIndexOf("/");
     if (lastSlash > -1) {
       return subpath.substring(0, lastSlash + 1) + basename;
     }
@@ -175,10 +182,10 @@ export class ScriptEngine {
 
   async addScriptIconToMap(scriptPath: string, name: string) {
     const svgFilePath = getIMGFilename(scriptPath, "svg");
-    const file = app.vault.getAbstractFileByPath(svgFilePath);
+    const file = this.app.vault.getAbstractFileByPath(svgFilePath);
     const svgString: string =
       file && file instanceof TFile
-        ? await app.vault.read(file)
+        ? await this.app.vault.read(file)
         : null;
     this.scriptIconMap = {
       ...this.scriptIconMap,
@@ -199,12 +206,12 @@ export class ScriptEngine {
       name: `(Script) ${scriptName}`,
       checkCallback: (checking: boolean) => {
         if (checking) {
-          return Boolean(app.workspace.getActiveViewOfType(ExcalidrawView));
+          return Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView));
         }
-        const view = app.workspace.getActiveViewOfType(ExcalidrawView);
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
           (async()=>{
-            const script = await app.vault.read(f);
+            const script = await this.app.vault.read(f);
             if(script) {
               //remove YAML frontmatter if present
               this.executeScript(view, script, scriptName,f);
@@ -218,7 +225,7 @@ export class ScriptEngine {
   }
 
   unloadScripts() {
-    const scripts = app.vault
+    const scripts = this.app.vault
       .getFiles()
       .filter((f: TFile) => f.path.startsWith(this.scriptPath));
     scripts.forEach((f) => {
@@ -236,11 +243,11 @@ export class ScriptEngine {
 
     const commandId = `${PLUGIN_ID}:${basename}`;
     // @ts-ignore
-    if (!this.plugin.app.commands.commands[commandId]) {
+    if (!this.app.commands.commands[commandId]) {
       return;
     }
     // @ts-ignore
-    delete this.plugin.app.commands.commands[commandId];
+    delete this.app.commands.commands[commandId];
   }
 
   async executeScript(view: ExcalidrawView, script: string, title: string, file: TFile) {
@@ -271,7 +278,7 @@ export class ScriptEngine {
         ScriptEngine.inputPrompt(
           view,
           this.plugin,
-          this.plugin.app,
+          this.app,
           header,
           placeholder,
           value,
@@ -288,7 +295,7 @@ export class ScriptEngine {
         instructions?: Instruction[],
       ) =>
         ScriptEngine.suggester(
-          this.plugin.app,
+          this.app,
           displayItems,
           items,
           hint,
@@ -304,7 +311,7 @@ export class ScriptEngine {
 }
 
   private updateToolPannels() {
-    const excalidrawViews = getExcalidrawViews(this.plugin.app);
+    const excalidrawViews = getExcalidrawViews(this.app);
     excalidrawViews.forEach(excalidrawView => {
       excalidrawView.toolsPanelRef?.current?.updateScriptIconMap(
         this.scriptIconMap,
