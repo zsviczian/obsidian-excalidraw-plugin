@@ -756,7 +756,7 @@ export class ExcalidrawData {
         displayFontMessage(this.app);
       }
     },5000);
-    await loadSceneFonts(this.scene.elements);
+    const fontFaces = await loadSceneFonts(this.scene.elements);
     clearTimeout(timer);
 
     if (!this.scene.files) {
