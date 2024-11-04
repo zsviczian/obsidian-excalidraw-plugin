@@ -328,6 +328,11 @@ FILENAME_HEAD: "Filename",
     "i.e. you are not using Excalidraw markdown files.<br><b><u>Toggle ON:</u></b> filename ends with .excalidraw.md<br><b><u>Toggle OFF:</u></b> filename ends with .md",
   DISPLAY_HEAD: "Excalidraw appearance and behavior",
   DISPLAY_DESC: "In the 'appearance and behavior' section of Excalidraw Settings, you can fine-tune how Excalidraw appears and behaves. This includes options for dynamic styling, left-handed mode, matching Excalidraw and Obsidian themes, default modes, and more.",
+  OVERRIDE_OBSIDIAN_FONT_SIZE_NAME: "Limit Obsidian Font Size to Editor Text",
+  OVERRIDE_OBSIDIAN_FONT_SIZE_DESC:
+    "Obsidian's custom font size setting affects the entire interface, including Excalidraw and themes that depend on the default font size. " +
+    "Enabling this option restricts font size changes to editor text, which will improve the look of Excalidraw. " +
+    "If parts of the UI look incorrect after enabling, try turning this setting off.",  
   DYNAMICSTYLE_NAME: "Dynamic styling",
   DYNAMICSTYLE_DESC:
     "Change Excalidraw UI colors to match the canvas color",

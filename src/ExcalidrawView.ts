@@ -1527,6 +1527,10 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
   onload() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onload, "ExcalidrawView.onload");
+    if(this.plugin.settings.overrideObsidianFontSize) {
+      document.documentElement.style.fontSize = "";
+    }
+  
     const apiMissing = Boolean(typeof this.containerEl.onWindowMigrated === "undefined")
     this.packages = this.plugin.getPackage(this.ownerWindow);
 

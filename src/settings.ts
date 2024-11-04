@@ -41,6 +41,7 @@ import { Rank } from "./menu/ActionIcons";
 import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/constSettingsTags";
 import { HotkeyEditor } from "./dialogs/HotkeyEditor";
 import { getExcalidrawViews } from "./utils/ObsidianUtils";
+import de from "./lang/locale/de";
 
 export interface ExcalidrawSettings {
   folder: string;
@@ -76,6 +77,7 @@ export interface ExcalidrawSettings {
   previewMatchObsidianTheme: boolean;
   width: string;
   height: string;
+  overrideObsidianFontSize: boolean;
   dynamicStyling: DynamicStyle;
   isLeftHanded: boolean;
   iframeMatchExcalidrawTheme: boolean;
@@ -253,6 +255,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   previewMatchObsidianTheme: false,
   width: "400",
   height: "",
+  overrideObsidianFontSize: false,
   dynamicStyling: "colorful",
   isLeftHanded: false,
   iframeMatchExcalidrawTheme: true,
@@ -516,6 +519,12 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   }
 
   async hide() {
+    if(this.plugin.settings.overrideObsidianFontSize) {
+      document.documentElement.style.fontSize = "";
+    } else if(!document.documentElement.style.fontSize) {
+      document.documentElement.style.fontSize = getComputedStyle(document.body).getPropertyValue("--font-text-size");
+    }
+    
     this.plugin.settings.scriptFolderPath = normalizePath(
       this.plugin.settings.scriptFolderPath,
     );
@@ -1163,6 +1172,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h3",
     });
     
+    new Setting(detailsEl)
+      .setName(t("OVERRIDE_OBSIDIAN_FONT_SIZE_NAME"))
+      .setDesc(fragWithHTML(t("OVERRIDE_OBSIDIAN_FONT_SIZE_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.overrideObsidianFontSize)
+          .onChange((value) => {
+            this.plugin.settings.overrideObsidianFontSize = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
     new Setting(detailsEl)
       .setName(t("DYNAMICSTYLE_NAME"))
       .setDesc(fragWithHTML(t("DYNAMICSTYLE_DESC")))

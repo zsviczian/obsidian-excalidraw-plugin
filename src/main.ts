@@ -3005,6 +3005,12 @@ export default class ExcalidrawPlugin extends Plugin {
     }
     this.leafChangeTimeout = window.setTimeout(()=>{this.leafChangeTimeout = null;},1000);
 
+    if(this.settings.overrideObsidianFontSize) {
+      if(leaf.view && (leaf.view.getViewType() === VIEW_TYPE_EXCALIDRAW)) {
+        document.documentElement.style.fontSize = "";
+      } 
+    }
+
     const previouslyActiveEV = this.activeExcalidrawView;
     const newActiveviewEV: ExcalidrawView =
       leaf.view instanceof ExcalidrawView ? leaf.view : null;
