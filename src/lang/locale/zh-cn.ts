@@ -6,6 +6,8 @@ import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/
 import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/ModifierkeyHelper";
 
 const CJK_FONTS = "CJK Fonts";
+declare const PLUGIN_VERSION:string;
+
 // 简体中文
 export default {
   // main.ts
@@ -870,6 +872,7 @@ FILENAME_HEAD: "文件名",
         对此带来的不便，我深表歉意。
       </p>
     `,
+
   //ObsidianMenu.tsx
   GOTO_FULLSCREEN: "进入全屏模式",
   EXIT_FULLSCREEN: "退出全屏模式",
@@ -958,4 +961,7 @@ FILENAME_HEAD: "文件名",
   IPM_GROUP_PAGES_DESC: "这将把所有页面建立为一个单独的组。如果您在导入后锁定页面，建议使用此方法，因为这样可以更方便地解锁整个组，而不是逐个解锁。",
   IPM_SELECT_PDF: "请选择一个 PDF 文件",
 
+  //Utils.ts
+  UPDATE_AVAILABLE: `Excalidraw 的新版本已在社区插件中可用。\n\n您正在使用 ${PLUGIN_VERSION}。\n最新版本是`,
+  ERROR_PNG_TOO_LARGE: "导出 PNG 时出错 - PNG 文件过大，请尝试较小的分辨率",
 };
