@@ -327,7 +327,12 @@ FILENAME_HEAD: "文件名",
     "该选项在兼容模式（即非 Excalidraw 专用 Markdown 文件）下不会生效。<br>" +
     "<b>开启：</b>使用 .excalidraw.md 作为扩展名。<br><b>关闭：</b>使用 .md 作为扩展名。",
   DISPLAY_HEAD: "界面 & 行为",
-  DISPLAY_DESC: "包括：左手模式，主题匹配，缩放，激光笔工具，修饰键等的设置。",
+  DISPLAY_DESC: "在 Excalidraw 设置的 '外观和行为' 部分，您可以微调 Excalidraw 的外观和行为。这包括动态样式、左手模式、匹配 Excalidraw 和 Obsidian 主题、默认模式等选项。",
+  OVERRIDE_OBSIDIAN_FONT_SIZE_NAME : "限制 Obsidian 字体大小为编辑器文本" ,
+  OVERRIDE_OBSIDIAN_FONT_SIZE_DESC :
+    "Obsidian 的自定义字体大小设置会影响整个界面，包括 Excalidraw 和依赖默认字体大小的主题。" +
+    "启用此选项将限制字体大小更改为编辑器文本，这将改善 Excalidraw 的外观。" +
+    "如果启用后发现界面的某些部分看起来不正确，请尝试关闭此设置。" ,
   DYNAMICSTYLE_NAME: "动态样式",
   DYNAMICSTYLE_DESC:
     "根据画布颜色自动调节 Excalidraw 界面颜色",
