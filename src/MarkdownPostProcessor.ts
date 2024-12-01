@@ -886,6 +886,7 @@ export const markdownPostProcessor = async (
   el: HTMLElement,
   ctx: MarkdownPostProcessorContext,
 ) => {
+  await plugin.awaitSettings();
   const isPrinting = Boolean(document.body.querySelectorAll("body > .print").length>0);
   //firstElementChild: https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1956
   const isFrontmatter = el.hasClass("mod-frontmatter") ||

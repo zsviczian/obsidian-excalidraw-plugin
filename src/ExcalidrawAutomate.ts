@@ -133,6 +133,10 @@ export class ExcalidrawAutomate {
     return DEVICE;
   }
 
+  public printStartupBreakdown() {
+    this.plugin.printStarupBreakdown();
+  }
+
   public help(target: Function | string) {
     if (!target) {
       log("Usage: ea.help(ea.functionName) or ea.help('propertyName') or ea.help('utils.functionName') - notice property name and utils function name is in quotes");
@@ -1820,7 +1824,7 @@ export class ExcalidrawAutomate {
       viewBackgroundColor: "#FFFFFF",
       gridSize: 0
     };
-  }; 
+  };
 
   /**
    * returns true if MD file is an Excalidraw file

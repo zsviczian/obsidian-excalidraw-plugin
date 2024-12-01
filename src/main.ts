@@ -145,7 +145,6 @@ import { WeakArray } from "./utils/WeakArray";
 import { getCJKDataURLs } from "./utils/CJKLoader";
 import { ExcalidrawLoading, switchToExcalidraw } from "./dialogs/ExcalidrawLoading";
 import { insertImageToView } from "./utils/ExcalidrawViewUtils";
-import tr from "./lang/locale/tr";
 
 declare let EXCALIDRAW_PACKAGE:string;
 declare let REACT_PACKAGES:string;
@@ -153,7 +152,8 @@ declare const unpackExcalidraw: Function;
 declare let react:any;
 declare let reactDOM:any;
 declare let excalidrawLib: typeof ExcalidrawLib;
-declare let PLUGIN_VERSION:string;
+declare const PLUGIN_VERSION:string;
+declare const INITIAL_TIMESTAMP: number;
 
 export default class ExcalidrawPlugin extends Plugin {
   public eaInstances = new WeakArray<ExcalidrawAutomate>();
@@ -202,9 +202,14 @@ export default class ExcalidrawPlugin extends Plugin {
   public loadTimestamp:number;
   private isLocalCJKFontAvailabe:boolean = undefined
   public isReady = false;
+  private startupAnalytics: string[] = [];
+  private lastLogTimestamp: number;
+  private settingsReady: boolean = false;
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
+    this.loadTimestamp = INITIAL_TIMESTAMP;
+    this.lastLogTimestamp = this.loadTimestamp;
     this.packageMap.set(window,{react, reactDOM, excalidrawLib});
     this.filesMaster = new Map<
       FileId,
@@ -216,6 +221,16 @@ export default class ExcalidrawPlugin extends Plugin {
     /*if((process.env.NODE_ENV === 'development')) {
       this.slob = new Array(200 * 1024 * 1024 + 1).join('A'); // Create a 200MB blob
     }*/
+  }
+
+  private logStartupEvent(message:string) {
+    const timestamp = Date.now();
+    this.startupAnalytics.push(`${message}\nTotal: ${timestamp - this.loadTimestamp}ms Delta: ${timestamp - this.lastLogTimestamp}ms\n`);
+    this.lastLogTimestamp = timestamp;
+  }
+
+  public printStarupBreakdown() {
+    console.log(`Excalidraw ${PLUGIN_VERSION} startup breakdown:\n`+this.startupAnalytics.join("\n"));
   }
 
   get locale() {
@@ -351,6 +366,7 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   async onload() {
+    this.logStartupEvent("Plugin Constructor ready, starting onload()");
     this.registerView(
       VIEW_TYPE_EXCALIDRAW,
       (leaf: WorkspaceLeaf) => {
@@ -370,25 +386,28 @@ export default class ExcalidrawPlugin extends Plugin {
     this.addRibbonIcon(ICON_NAME, t("CREATE_NEW"), this.actionRibbonClick.bind(this));
 
     try {
-      await this.loadSettings({reEnableAutosave:true});
-      const updateSettings = !this.settings.onceOffCompressFlagReset || !this.settings.onceOffGPTVersionReset;
-      if(!this.settings.onceOffCompressFlagReset) {
-        this.settings.compress = true;
-        this.settings.onceOffCompressFlagReset = true;
-      }
-      if(!this.settings.onceOffGPTVersionReset) {
-        if(this.settings.openAIDefaultVisionModel === "gpt-4-vision-preview") {
-          this.settings.openAIDefaultVisionModel = "gpt-4o";
+      this.loadSettings({reEnableAutosave:true}).then(async () => {
+        const updateSettings = !this.settings.onceOffCompressFlagReset || !this.settings.onceOffGPTVersionReset;
+        if(!this.settings.onceOffCompressFlagReset) {
+          this.settings.compress = true;
+          this.settings.onceOffCompressFlagReset = true;
         }
-      }
-      if(updateSettings) {
-        await this.saveSettings();
-      }
-      this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
+        if(!this.settings.onceOffGPTVersionReset) {
+          if(this.settings.openAIDefaultVisionModel === "gpt-4-vision-preview") {
+            this.settings.openAIDefaultVisionModel = "gpt-4o";
+          }
+        }
+        if(updateSettings) {
+          await this.saveSettings();
+        }
+        this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
+        this.settingsReady = true;
+      });
     } catch (e) {
       new Notice("Error loading plugin settings", 6000);
       console.error("Error loading plugin settings", e);
     }
+    this.logStartupEvent("Settings loaded");
 
     try {
       // need it her for ExcaliBrain
@@ -397,6 +416,7 @@ export default class ExcalidrawPlugin extends Plugin {
       new Notice("Error initializing Excalidraw Automate", 6000);
       console.error("Error initializing Excalidraw Automate", e);
     }
+    this.logStartupEvent("Excalidraw Automate initialized");
 
     try {
       //Licat: Are you registering your post processors in onLayoutReady? You should register them in onload instead
@@ -405,8 +425,14 @@ export default class ExcalidrawPlugin extends Plugin {
       new Notice("Error adding markdown post processor", 6000);
       console.error("Error adding markdown post processor", e);
     }
+    this.logStartupEvent("Markdown post processor added");
 
     this.app.workspace.onLayoutReady(async () => {
+      this.loadTimestamp = Date.now();
+      this.lastLogTimestamp = this.loadTimestamp;
+      this.logStartupEvent("\n----------------------------------\nWorkspace onLayoutReady event fired (these actions are outside the plugin initialization)");
+      await this.awaitSettings();
+      this.logStartupEvent("Settings awaited");
       try {
         unpackExcalidraw();
         excalidrawLib = window.eval.call(window,`(function() {${EXCALIDRAW_PACKAGE};return ExcalidrawLib;})()`);
@@ -416,6 +442,7 @@ export default class ExcalidrawPlugin extends Plugin {
         new Notice("Error loading the Excalidraw package", 6000);
         console.error("Error loading the Excalidraw package", e);
       }
+      this.logStartupEvent("Excalidraw package unpacked");
 
       try {
         initCompressionWorker();
@@ -423,8 +450,7 @@ export default class ExcalidrawPlugin extends Plugin {
         new Notice("Error initializing compression worker", 6000);
         console.error("Error initializing compression worker", e);
       }
-
-      this.loadTimestamp = Date.now();
+      this.logStartupEvent("Compression worker initialized");
 
       try {
         this.excalidrawConfig = new ExcalidrawConfig(this);
@@ -432,6 +458,7 @@ export default class ExcalidrawPlugin extends Plugin {
         new Notice("Error initializing Excalidraw config", 6000);
         console.error("Error initializing Excalidraw config", e);
       }
+      this.logStartupEvent("Excalidraw config initialized");
 
       try {
         await loadMermaid();
@@ -439,6 +466,7 @@ export default class ExcalidrawPlugin extends Plugin {
         new Notice("Error loading Mermaid", 6000);
         console.error("Error loading Mermaid", e);
       }
+      this.logStartupEvent("Mermaid loaded");
 
       try {
         this.addThemeObserver();
@@ -446,6 +474,7 @@ export default class ExcalidrawPlugin extends Plugin {
         new Notice("Error adding theme observer", 6000);
         console.error("Error adding theme observer", e);
       }
+      this.logStartupEvent("Theme observer added");
 
       try {
         //inspiration taken from kanban:
@@ -455,6 +484,7 @@ export default class ExcalidrawPlugin extends Plugin {
         new Notice("Error registering monkey patches", 6000);
         console.error("Error registering monkey patches", e);
       }
+      this.logStartupEvent("Monkey patches registered");
 
       try {
         this.stylesManager = new StylesManager(this);
@@ -462,6 +492,7 @@ export default class ExcalidrawPlugin extends Plugin {
         new Notice("Error initializing styles manager", 6000);
         console.error("Error initializing styles manager", e);
       }
+      this.logStartupEvent("Styles manager initialized");
 
       try {
         this.scriptEngine = new ScriptEngine(this);
@@ -469,6 +500,7 @@ export default class ExcalidrawPlugin extends Plugin {
         new Notice("Error initializing script engine", 6000);
         console.error("Error initializing script engine", e);
       }
+      this.logStartupEvent("Script engine initialized");
 
       try {
         await this.initializeFonts();
@@ -476,6 +508,7 @@ export default class ExcalidrawPlugin extends Plugin {
         new Notice("Error initializing fonts", 6000);
         console.error("Error initializing fonts", e);
       }
+      this.logStartupEvent("Fonts initialized");
 
       try {
         imageCache.initializeDB(this);
@@ -483,6 +516,7 @@ export default class ExcalidrawPlugin extends Plugin {
         new Notice("Error initializing image cache", 6000);
         console.error("Error initializing image cache", e);
       }
+      this.logStartupEvent("Image cache initialized");
 
       try {
         this.isReady = true;
@@ -492,6 +526,7 @@ export default class ExcalidrawPlugin extends Plugin {
         new Notice("Error switching views to Excalidraw", 6000);
         console.error("Error switching views to Excalidraw", e);
       }
+      this.logStartupEvent("Switched to Excalidraw views");
 
       try {
         if (this.settings.showReleaseNotes) {
@@ -510,6 +545,7 @@ export default class ExcalidrawPlugin extends Plugin {
         new Notice("Error opening release notes", 6000);
         console.error("Error opening release notes", e);
       }
+      this.logStartupEvent("Release notes opened");
 
       //---------------------------------------------------------------------
       //initialization that can happen after Excalidraw views are initialized
@@ -520,6 +556,7 @@ export default class ExcalidrawPlugin extends Plugin {
         new Notice("Error registering event listeners", 6000);
         console.error("Error registering event listeners", e);
       }
+      this.logStartupEvent("Event listeners registered");
 
       try { 
         this.runStartupScript();
@@ -527,6 +564,7 @@ export default class ExcalidrawPlugin extends Plugin {
         new Notice("Error running startup script", 6000);
         console.error("Error running startup script", e);
       }
+      this.logStartupEvent("Startup script run");
 
       try {
         this.editorHandler = new EditorHandler(this);
@@ -535,6 +573,7 @@ export default class ExcalidrawPlugin extends Plugin {
         new Notice("Error setting up editor handler", 6000);
         console.error("Error setting up editor handler", e);
       }
+      this.logStartupEvent("Editor handler initialized");
 
       try {
         this.registerInstallCodeblockProcessor();
@@ -542,6 +581,7 @@ export default class ExcalidrawPlugin extends Plugin {
         new Notice("Error registering script install-codeblock processor", 6000);
         console.error("Error registering script install-codeblock processor", e);
       }
+      this.logStartupEvent("Script install-codeblock processor registered");
 
       try {
         this.experimentalFileTypeDisplayToggle(this.settings.experimentalFileType);
@@ -549,6 +589,7 @@ export default class ExcalidrawPlugin extends Plugin {
         new Notice("Error setting up experimental file type display", 6000);
         console.error("Error setting up experimental file type display", e);
       }
+      this.logStartupEvent("Experimental file type display set");
 
       try {
         this.registerCommands();
@@ -556,6 +597,7 @@ export default class ExcalidrawPlugin extends Plugin {
         new Notice("Error registering commands", 6000);
         console.error("Error registering commands", e);
       }
+      this.logStartupEvent("Commands registered");
 
       try {
         this.registerEditorSuggest(new FieldSuggester(this));
@@ -563,6 +605,7 @@ export default class ExcalidrawPlugin extends Plugin {
         new Notice("Error registering editor suggester", 6000);
         console.error("Error registering editor suggester", e);
       }
+      this.logStartupEvent("Editor suggester registered");
 
       try {
         this.setPropertyTypes();
@@ -570,6 +613,7 @@ export default class ExcalidrawPlugin extends Plugin {
         new Notice("Error setting up property types", 6000);
         console.error("Error setting up property types", e);
       }
+      this.logStartupEvent("Property types set");
 
       try {
         this.taskbone = new Taskbone(this);
@@ -577,9 +621,17 @@ export default class ExcalidrawPlugin extends Plugin {
         new Notice("Error setting up taskbone", 6000);
         console.error("Error setting up taskbone", e);
       }
+      this.logStartupEvent("Taskbone set up");
     });
+    this.logStartupEvent("Workspace ready event handler added");
   }
 
+  public async awaitSettings() {
+    let counter = 0;
+    while(!this.settingsReady && counter < 150) {
+      await sleep(20);
+    }
+  }
 
   public async awaitInit() {
     let counter = 0;
@@ -3247,7 +3299,11 @@ export default class ExcalidrawPlugin extends Plugin {
           }
           //if the user hasn't touched the file for 5 minutes, don't synchronize, reload.
           //this is to avoid complex sync scenarios of multiple remote changes outside an active collaboration session
-          if(excalidrawView.lastSaveTimestamp + 300000 < Date.now()) {
+          const activeView = this.app.workspace.activeLeaf.view;
+          const isEditingMarkdownSideInSplitView = (activeView !== excalidrawView) &&
+            activeView instanceof MarkdownView && activeView.file === excalidrawView.file;
+
+          if(!isEditingMarkdownSideInSplitView && (excalidrawView.lastSaveTimestamp + 300000 < Date.now())) {
             excalidrawView.reload(true, excalidrawView.file);
             return;
           }           
@@ -3596,7 +3652,7 @@ export default class ExcalidrawPlugin extends Plugin {
     EXCALIDRAW_PACKAGE = "";
     REACT_PACKAGES = "";
     //pluginPackages = null;
-    PLUGIN_VERSION = null;
+    //PLUGIN_VERSION = null;
     //@ts-ignore
     delete window.PolyBool;
     this.deletePackage(window);
