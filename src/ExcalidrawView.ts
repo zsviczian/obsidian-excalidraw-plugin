@@ -295,7 +295,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   private lastLoadedFile: TFile = null;
   //store key state for view mode link resolution
   private modifierKeyDown: ModifierKeys = {shiftKey:false, metaKey: false, ctrlKey: false, altKey: false}
-  public currentPosition: {x:number,y:number} = { x: 0, y: 0 };
+  public currentPosition: {x:number,y:number} = { x: 0, y: 0 }; //these are scene coord thus would be more apt to call them sceneX and sceneY, however due to scrits already using x and y, I will keep it as is
   //Obsidian 0.15.0
   private draginfoDiv: HTMLDivElement;
   public canvasNodeFactory: CanvasNodeFactory;
@@ -4657,8 +4657,20 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
   //returns the raw text of the element which is the original text without parsing
   //in compatibility mode, returns the original text, and for backward compatibility the text if originalText is not available
-  private onBeforeTextEdit (textElement: ExcalidrawTextElement) {
+  private onBeforeTextEdit (textElement: ExcalidrawTextElement, isExistingElement: boolean): string {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onBeforeTextEdit, "ExcalidrawView.onBeforeTextEdit", textElement);
+    const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
+    const st = api.getAppState();
+    setDynamicStyle(
+      this.plugin.ea,
+      this,
+      st.viewBackgroundColor === "transparent" ? "white" : st.viewBackgroundColor,
+      this.plugin.settings.dynamicStyling,
+      api.getColorAtScenePoint({sceneX: this.currentPosition.x, sceneY: this.currentPosition.y})
+    );
+    if(!isExistingElement) {
+      return;
+    }
     window.clearTimeout(this.isEditingTextResetTimer);
     this.isEditingTextResetTimer = null;
     this.semaphores.isEditingText = true; //to prevent autoresize on mobile when keyboard pops up

@@ -13,6 +13,7 @@ export const setDynamicStyle = (
   view: ExcalidrawView, //the excalidraw view 
   color: string,
   dynamicStyle: DynamicStyle,
+  textBackgroundColor?: string,
 ) => {
   if(dynamicStyle === "none") {
     view.excalidrawContainer?.removeAttribute("style");
@@ -116,7 +117,9 @@ export const setDynamicStyle = (
     [`--h3-color`]: str(text),
     [`--h4-color`]: str(text),
     [`color`]: str(text),
-    ['--excalidraw-caret-color']: str(isLightTheme ? text : cmBG()),
+    ['--excalidraw-caret-color']: textBackgroundColor
+      ? str(isLightTheme ? invertColor(textBackgroundColor) : ea.getCM(textBackgroundColor))
+      : str(isLightTheme ? text : cmBG()),
     [`--select-highlight-color`]: str(gray1()),
     [`--color-gray-90`]: str(isDark?text.darkerBy(5):text.lighterBy(5)), //search background
     [`--color-gray-80`]: str(isDark?text.darkerBy(10):text.lighterBy(10)), //frame
