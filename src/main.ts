@@ -199,7 +199,6 @@ export default class ExcalidrawPlugin extends Plugin {
   //if set, the next time this file is opened it will be opened as markdown
   public forceToOpenInMarkdownFilepath: string = null;
   //private slob:string;
-  private ribbonIcon:HTMLElement;
   public loadTimestamp:number;
   private isLocalCJKFontAvailabe:boolean = undefined
   public isReady = false;
@@ -365,6 +364,11 @@ export default class ExcalidrawPlugin extends Plugin {
     //Compatibility mode with .excalidraw files
     this.registerExtensions(["excalidraw"], VIEW_TYPE_EXCALIDRAW);
 
+    addIcon(ICON_NAME, EXCALIDRAW_ICON);
+    addIcon(SCRIPTENGINE_ICON_NAME, SCRIPTENGINE_ICON);
+    addIcon(EXPORT_IMG_ICON_NAME, EXPORT_IMG_ICON);
+    this.addRibbonIcon(ICON_NAME, t("CREATE_NEW"), this.actionRibbonClick.bind(this));
+
     try {
       await this.loadSettings({reEnableAutosave:true});
       const updateSettings = !this.settings.onceOffCompressFlagReset || !this.settings.onceOffGPTVersionReset;
@@ -421,9 +425,6 @@ export default class ExcalidrawPlugin extends Plugin {
       }
 
       this.loadTimestamp = Date.now();
-      addIcon(ICON_NAME, EXCALIDRAW_ICON);
-      addIcon(SCRIPTENGINE_ICON_NAME, SCRIPTENGINE_ICON);
-      addIcon(EXPORT_IMG_ICON_NAME, EXPORT_IMG_ICON);
 
       try {
         this.excalidrawConfig = new ExcalidrawConfig(this);
@@ -1082,8 +1083,6 @@ export default class ExcalidrawPlugin extends Plugin {
     this.insertImageDialog = new InsertImageDialog(this);
     this.importSVGDialog = new ImportSVGDialog(this);
     this.insertMDDialog = new InsertMDDialog(this);
-
-    this.ribbonIcon = this.addRibbonIcon(ICON_NAME, t("CREATE_NEW"), this.actionRibbonClick.bind(this));
 
     const createNewAction = (e: MouseEvent | KeyboardEvent, file: TFile) => {
       let folderpath = file.path;
@@ -3494,11 +3493,6 @@ export default class ExcalidrawPlugin extends Plugin {
     
     if(versionUpdateCheckTimer) {
       window.clearTimeout(versionUpdateCheckTimer);
-    }
-
-    if(this.ribbonIcon) {
-      this.ribbonIcon.remove();
-      this.ribbonIcon = null;
     }
 
     if(this.scriptEngine) {
