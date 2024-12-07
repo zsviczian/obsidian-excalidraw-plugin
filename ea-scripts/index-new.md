@@ -153,7 +153,6 @@ I would love to include your contribution in the script library. If you have a s
 |    |     |
 |----|-----|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Crop%20Vintage%20Mask.svg"/></div>|[[#Crop Vintage Mask]]|
-|----|-----|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Image%20Occlusion.svg"/></div>|[[#Image Occlusion]]|
 
 ---
