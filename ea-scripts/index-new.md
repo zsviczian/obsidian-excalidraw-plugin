@@ -130,6 +130,7 @@ I would love to include your contribution in the script library. If you have a s
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Select%20Similar%20Elements.svg"/></div>|[[#Select Similar Elements]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Slideshow.svg"/></div>|[[#Slideshow]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Split%20Ellipse.svg"/></div>|[[#Split Ellipse]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Image%20Occlusion.svg"/></div>|[[#Image Occlusion]]|
 
 ## Collaboration and Export
 **Keywords**: Sharing, Teamwork, Exporting, Distribution, Cooperative, Publish
@@ -153,7 +154,7 @@ I would love to include your contribution in the script library. If you have a s
 |    |     |
 |----|-----|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Crop%20Vintage%20Mask.svg"/></div>|[[#Crop Vintage Mask]]|
-|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Image%20Occlusion.svg"/></div>|[[#Image Occlusion]]|
+
 
 ---
 
@@ -268,11 +269,6 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Crop%20Vintage%20Mask.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Adds a rounded mask to the image by adding a full cover black mask and a rounded rectangle white mask. The script is also useful for adding just a black mask. In this case, run the script, then delete the white mask and add your custom white mask.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-crop-vintage.jpg'></td></tr></table>
 
-## Image Occlusion
-```excalidraw-script-install
-https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Image%20Occlusion.md
-```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/TrillStones'>@TrillStones</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Image%20Occlusion.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">An Excalidraw script for creating Anki image occlusion cards in Obsidian, similar to Anki's Image Occlusion Enhanced add-on but integrated into your Obsidian workflow.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-image-occlusion.png'></td></tr></table>
 
 
 ## Custom Zoom
@@ -402,6 +398,12 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/GPT-Draw-a-UI.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/GPT-Draw-a-UI.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script was discontinued in favor of ExcaliAI. Draw a UI and let GPT create the code for you.<br><iframe width="400" height="225" src="https://www.youtube.com/embed/y3kHl_6Ll4w" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-draw-a-ui.jpg'></td></tr></table>
+
+## Image Occlusion
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Image%20Occlusion.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/TrillStones'>@TrillStones</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Image%20Occlusion.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">An Excalidraw script for creating Anki image occlusion cards in Obsidian, similar to Anki's Image Occlusion Enhanced add-on but integrated into your Obsidian workflow.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-image-occlusion.png'></td></tr></table>
 
 ## Invert colors
 ```excalidraw-script-install
