@@ -17,7 +17,7 @@ import { MimeType } from "./EmbeddedFileLoader";
 import { Editor, normalizePath, Notice, OpenViewState, RequestUrlResponse, TFile, TFolder, WorkspaceLeaf } from "obsidian";
 import * as obsidian_module from "obsidian";
 import ExcalidrawView, { ExportSettings, TextMode, getTextMode } from "src/ExcalidrawView";
-import { ExcalidrawData, getMarkdownDrawingSection, REGEX_LINK } from "src/ExcalidrawData";
+import { ExcalidrawData, getExcalidrawMarkdownHeaderSection, getMarkdownDrawingSection, REGEX_LINK } from "src/ExcalidrawData";
 import {
   FRONTMATTER,
   nanoid,
@@ -654,6 +654,13 @@ export class ExcalidrawAutomate {
           0
         )
       : null;
+    if (template?.plaintext) {
+      if(params.plaintext) {
+        params.plaintext = params.plaintext + "\n\n" + template.plaintext;
+      } else {
+        params.plaintext = template.plaintext;
+      }
+    }
     let elements = template ? template.elements : [];
     elements = elements.concat(this.getElements());
     let frontmatter: string;
@@ -679,7 +686,13 @@ export class ExcalidrawAutomate {
         : FRONTMATTER;
     }
 
-    frontmatter += params.plaintext ? params.plaintext + "\n\n" : "";
+    frontmatter += params.plaintext
+      ? (params.plaintext.endsWith("\n\n")
+        ? params.plaintext
+        : (params.plaintext.endsWith("\n") 
+          ? params.plaintext + "\n"
+          : params.plaintext + "\n\n"))
+      : "";
     if(template?.frontmatter && params?.frontmatterKeys) {
       //the frontmatter tags supplyed to create take priority
       frontmatter = mergeMarkdownFiles(template.frontmatter,frontmatter);
@@ -2930,6 +2943,7 @@ async function getTemplate(
   frontmatter: string;
   files: any;
   hasSVGwithBitmap: boolean;
+  plaintext: string; //markdown data above Excalidraw data and below YAML frontmatter
 }> {
   const app = plugin.app;
   const vault = app.vault;
@@ -2955,6 +2969,7 @@ async function getTemplate(
         frontmatter: "",
         files: excalidrawData.scene.files,
         hasSVGwithBitmap,
+        plaintext: "",
       };
     }
 
@@ -3027,7 +3042,7 @@ async function getTemplate(
     }
 
     excalidrawData.destroy();
-    const filehead = data.substring(0, trimLocation);
+    const filehead = getExcalidrawMarkdownHeaderSection(data); // data.substring(0, trimLocation);
     let files:any = {};
     const sceneFilesSize = Object.values(scene.files).length;
     if (sceneFilesSize > 0) {
@@ -3040,6 +3055,7 @@ async function getTemplate(
       }
     }
 
+    const frontmatter = filehead.match(/^---\n.*\n---\n/ms)?.[0] ?? filehead;
     return {
       elements: convertMarkdownLinksToObsidianURLs
         ? updateElementLinksToObsidianLinks({
@@ -3047,7 +3063,10 @@ async function getTemplate(
           hostFile: file,
         }) : groupElements,
       appState: scene.appState,
-      frontmatter: filehead.match(/^---\n.*\n---\n/ms)?.[0] ?? filehead,
+      frontmatter,
+      plaintext: frontmatter !== filehead
+        ? (filehead.split(/^---\n.*\n---\n/ms)?.[1] ?? "")
+        : "",
       files,
       hasSVGwithBitmap,
     };
@@ -3058,6 +3077,7 @@ async function getTemplate(
     frontmatter: null,
     files: [],
     hasSVGwithBitmap,
+    plaintext: "",
   };
 }
 

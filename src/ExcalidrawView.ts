@@ -3546,7 +3546,10 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   }
 
   private clearHoverPreview() {
-    if (this.hoverPopover) {
+    //@ts-ignore
+    const hoverContainerEl = this.hoverPopover?.containerEl;
+    //don't auto hide hover-editor
+    if (this.hoverPopover && !hoverContainerEl?.parentElement?.hasClass("hover-editor")) {
       this.hoverPreviewTarget = null;
       //@ts-ignore
       if(this.hoverPopover.embed?.editor) {
@@ -4659,7 +4662,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   //in compatibility mode, returns the original text, and for backward compatibility the text if originalText is not available
   private onBeforeTextEdit (textElement: ExcalidrawTextElement, isExistingElement: boolean): string {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onBeforeTextEdit, "ExcalidrawView.onBeforeTextEdit", textElement);
-    const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
+    /*const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
     const st = api.getAppState();
     setDynamicStyle(
       this.plugin.ea,
@@ -4667,7 +4670,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       st.viewBackgroundColor === "transparent" ? "white" : st.viewBackgroundColor,
       this.plugin.settings.dynamicStyling,
       api.getColorAtScenePoint({sceneX: this.currentPosition.x, sceneY: this.currentPosition.y})
-    );
+    );*/
     if(!isExistingElement) {
       return;
     }

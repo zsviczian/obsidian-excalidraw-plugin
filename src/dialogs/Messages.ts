@@ -17,6 +17,18 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.6.8":`
+## New
+- Text Element cursor color matched the text color.
+
+## Fixed
+- BUG: icon on the ribbon menu keeps reappearing even if you hide it every time you reopen Obsidian [#2115](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2115)
+- In pen mode, when single-finger panning is enabled, allow actions with the mouse.
+- When editing an Excalidraw file in split mode (drawing on one side, markdown view on the other), editing the markdown sometimes causes the drawing to re-zoom and jump away from the selected area.
+- Hover-Editor compatibility
+-  ${String.fromCharCode(96)}ExcalidrawAutomate.create() ${String.fromCharCode(96)} will now correctly include the markdown text in templates above Excalidraw Data and below YAML front matter. This also fixes the same issue with the Deconstruct Selected Element script.
+
+`,
 "2.6.7":`
 Hoping to finally move on to 2.7.0... but still have one last bug to fix in 2.6.x!
 
