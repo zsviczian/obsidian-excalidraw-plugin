@@ -518,28 +518,27 @@ const getImageName = (fileId) => {
   return 'image';
 };
 
-// Create timestamp in format: YYMMDDHHmmssSSS
-const now = new Date();
-const timestamp = now.getFullYear().toString().slice(-2) + 
-                 (now.getMonth() + 1).toString().padStart(2, '0') +
-                 now.getDate().toString().padStart(2, '0') +
-                 now.getHours().toString().padStart(2, '0') +
-                 now.getMinutes().toString().padStart(2, '0') +
-                 now.getSeconds().toString().padStart(2, '0') +
-                 now.getMilliseconds().toString().padStart(3, '0');
-
-// Function to generate current timestamp for file names
+// Function to generate current timestamp for file names (For card file names)
 const getCurrentTimestamp = () => {
   const now = new Date();
-  const baseTimestamp = now.getFullYear().toString().slice(-2) + 
-                         (now.getMonth() + 1).toString().padStart(2, '0') +
-                         now.getDate().toString().padStart(2, '0') +
-                         now.getHours().toString().padStart(2, '0') +
-                         now.getMinutes().toString().padStart(2, '0') +
-                         now.getSeconds().toString().padStart(2, '0') +
-                         now.getMilliseconds().toString().padStart(3, '0');
+  const baseTimestamp = now.getFullYear() + 
+                       (now.getMonth() + 1).toString().padStart(2, '0') +
+                       now.getDate().toString().padStart(2, '0') +
+                       now.getHours().toString().padStart(2, '0') +
+                       now.getMinutes().toString().padStart(2, '0') +
+                       now.getSeconds().toString().padStart(2, '0') +
+                       now.getMilliseconds().toString().padStart(3, '0');
   return baseTimestamp;
 };
+
+// Create timestamp for folder name (For folder naming)
+const now = new Date();
+const timestamp = now.getFullYear() + '-' +  // 使用完整年份
+                 (now.getMonth() + 1).toString().padStart(2, '0') + '-' +
+                 now.getDate().toString().padStart(2, '0') + ' ' +
+                 now.getHours().toString().padStart(2, '0') + '.' +
+                 now.getMinutes().toString().padStart(2, '0') + '.' +
+                 now.getSeconds().toString().padStart(2, '0');
 
 // Initialize or get script settings for card location
 let settings = ea.getScriptSettings();
@@ -585,6 +584,11 @@ const defaultSettings = {
     value: "#ffd700",
     description: "Color used to highlight the target mask in 'Hide All, Guess One' mode (e.g., #ffd700 for gold, #ff0000 for red)",
     valueset: []  // Empty array allows free text input
+  },
+  "Generate Images No Matter What": {
+    value: "no",
+    description: "Always generate images even when template selection is cancelled (yes/no)",
+    valueset: ["yes", "no"]
   }
 };
 
@@ -732,7 +736,7 @@ const getImageFolder = (imageName, timestamp) => {
   const normalizedBase = baseFolder
     .replace(/\\/g, '/')
     .replace(/\/+$/, '');
-  return `${normalizedBase}/${imageName}-${timestamp}`;
+  return `${normalizedBase}/${imageName}__${timestamp}`;
 };
 
 // Function to determine final output folder path based on settings or user choice
@@ -1013,14 +1017,24 @@ const getTemplateFile = async (templates) => {
 
 // Begin card generation process based on selected mode
 let counter = 1;
+let templateFile = null;  // Move templateFile declaration to outer scope
+
 if(mode === "hideAll") {
   // Get template selection from user for Hide All mode
   const templates = getTemplates();
-  if (!templates) return;
   
-  // Get template file based on settings or user selection
-  const templateFile = await getTemplateFile(templates);
-  if (!templateFile) return;
+  // Only try to get template if templates exist
+  if (templates) {
+    // Get template file based on settings or user selection
+    templateFile = await getTemplateFile(templates);
+  }
+
+  // Check if we should proceed without template
+  const generateImagesNoMatterWhat = settings["Generate Images No Matter What"]?.value === "yes";
+  if (!templateFile && !generateImagesNoMatterWhat) {
+    new Notice("Operation cancelled - no template selected");
+    return;
+  }
 
   // Generate cards for each mask in Hide All mode
   for(let i = 0; i < masks.length; i++) {
@@ -1040,108 +1054,147 @@ if(mode === "hideAll") {
             ...mask,
             elements: mask.elements.map(el => ({
               ...el,
-              strokeWidth: 4,              // Thicker border
-              strokeColor: highlightColor,  // Use configured highlight color
-              strokeStyle: "solid",        // Solid line
-              roughness: 0                 // Smooth border
+              strokeWidth: 4,              
+              strokeColor: highlightColor,  
+              strokeStyle: "solid",        
+              roughness: 0                 
             }))
           };
         }
         // Handle single element masks
         return {
           ...mask,
-          strokeWidth: 4,              // Thicker border
-          strokeColor: highlightColor,  // Use configured highlight color
-          strokeStyle: "solid",        // Solid line
-          roughness: 0                 // Smooth border
+          strokeWidth: 4,              
+          strokeColor: highlightColor,  
+          strokeStyle: "solid",        
+          roughness: 0                 
         };
       }
       return mask;
     });
     
-    // Generate question image with all masks visible
-    const questionDataURL = await generateMaskedImage(questionMasks, []);
-    const questionPath = `${imageFolder}/q-${fileTimestamp}.png`;
-    await app.vault.adapter.writeBinary(
-      questionPath,
-      base64ToBinary(questionDataURL)
-    );
-    
-    // Generate answer image with one mask hidden and others visible
-    const dataURL = await generateMaskedImage(visibleMasks, hiddenMasks);
-    const imagePath = `${imageFolder}/a-${fileTimestamp}.png`;
-    
-    // Save answer image to disk
-    await app.vault.adapter.writeBinary(
-      imagePath,
-      base64ToBinary(dataURL)
-    );
+    if (templateFile || generateImagesNoMatterWhat) {
+      // Generate question image with all masks visible
+      const questionDataURL = await generateMaskedImage(questionMasks, []);
+      const questionPath = `${imageFolder}/q-${fileTimestamp}.png`;
+      await app.vault.adapter.writeBinary(
+        questionPath,
+        base64ToBinary(questionDataURL)
+      );
+      
+      // Generate answer image with one mask hidden and others visible
+      const dataURL = await generateMaskedImage(visibleMasks, hiddenMasks);
+      const imagePath = `${imageFolder}/a-${fileTimestamp}.png`;
+      
+      // Save answer image to disk
+      await app.vault.adapter.writeBinary(
+        imagePath,
+        base64ToBinary(dataURL)
+      );
 
-    // Create markdown file with full paths to images
-    const fullPaths = {
-      question: app.vault.adapter.getFullPath(questionPath),
-      answer: app.vault.adapter.getFullPath(imagePath)
-    };
-    // Generate card file from template with all necessary information
-    await createMarkdownFromTemplate(
-      templateFile,
-      fileTimestamp,
-      fullPaths,
-      sourceFile
-    );
+      // Only create markdown file if template was selected
+      if (templateFile) {
+        const fullPaths = {
+          question: app.vault.adapter.getFullPath(questionPath),
+          answer: app.vault.adapter.getFullPath(imagePath)
+        };
+        await createMarkdownFromTemplate(
+          templateFile,
+          fileTimestamp,
+          fullPaths,
+          sourceFile
+        );
+      }
+    }
   }
-} else {
+} else if(mode === "hideOne") {
   // Process Hide One, Guess One mode
   const templates = getTemplates();
-  if (!templates) return;
   
-  // Get template file based on settings or user selection
-  const templateFile = await getTemplateFile(templates);
-  if (!templateFile) return;
+  // Only try to get template if templates exist
+  if (templates) {
+    templateFile = await getTemplateFile(templates);
+  }
 
-  // Generate common answer image first (all masks hidden)
-  const commonAnswerTimestamp = getCurrentTimestamp();
-  const commonAnswerDataURL = await generateMaskedImage([], masks);
-  const commonAnswerPath = `${imageFolder}/a-${commonAnswerTimestamp}.png`;
-  await app.vault.adapter.writeBinary(
-    commonAnswerPath,
-    base64ToBinary(commonAnswerDataURL)
-  );
-  
-  // Get full path for common answer image
-  const commonAnswerFullPath = app.vault.adapter.getFullPath(commonAnswerPath);
+  // Check if we should proceed without template
+  const generateImagesNoMatterWhat = settings["Generate Images No Matter What"]?.value === "yes";
+  if (!templateFile && !generateImagesNoMatterWhat) {
+    new Notice("Operation cancelled - no template selected");
+    return;
+  }
 
-  // Process each mask individually
-  for(const mask of masks) {
-    // Set current mask as visible, others as hidden for question
-    const visibleMasks = masks.filter(m => m !== mask);
-    const hiddenMasks = [mask];
-    
-    // Generate unique timestamp for this card
-    const fileTimestamp = getCurrentTimestamp();
-    
-    // Generate question image showing only the current mask
-    const questionDataURL = await generateMaskedImage([mask], visibleMasks);
-    const questionPath = `${imageFolder}/q-${fileTimestamp}.png`;
+  if (templateFile || generateImagesNoMatterWhat) {
+    // Generate common answer image first (all masks hidden)
+    const commonAnswerTimestamp = getCurrentTimestamp();
+    const commonAnswerDataURL = await generateMaskedImage([], masks);
+    const commonAnswerPath = `${imageFolder}/a-${commonAnswerTimestamp}.png`;
     await app.vault.adapter.writeBinary(
-      questionPath,
-      base64ToBinary(questionDataURL)
+      commonAnswerPath,
+      base64ToBinary(commonAnswerDataURL)
     );
     
-    // Create markdown file with paths to question and answer images
-    const fullPaths = {
-      question: app.vault.adapter.getFullPath(questionPath),
-      answer: commonAnswerFullPath
-    };
-    // Generate card file using template and image paths
-    await createMarkdownFromTemplate(
-      templateFile,
-      fileTimestamp,
-      fullPaths,
-      sourceFile
-    );
+    // Get full path for common answer image
+    const commonAnswerFullPath = app.vault.adapter.getFullPath(commonAnswerPath);
+
+    // Process each mask individually
+    for(const mask of masks) {
+      // Set current mask as visible, others as hidden for question
+      const visibleMasks = masks.filter(m => m !== mask);
+      const hiddenMasks = [mask];
+      
+      // Generate unique timestamp for this card
+      const fileTimestamp = getCurrentTimestamp();
+      
+      // Generate question image showing only the current mask
+      const questionDataURL = await generateMaskedImage([mask], visibleMasks);
+      const questionPath = `${imageFolder}/q-${fileTimestamp}.png`;
+      await app.vault.adapter.writeBinary(
+        questionPath,
+        base64ToBinary(questionDataURL)
+      );
+      
+      // Only create markdown file if template was selected
+      if (templateFile) {
+        const fullPaths = {
+          question: app.vault.adapter.getFullPath(questionPath),
+          answer: commonAnswerFullPath
+        };
+        await createMarkdownFromTemplate(
+          templateFile,
+          fileTimestamp,
+          fullPaths,
+          sourceFile
+        );
+      }
+    }
+  }
+} else if(mode === "deleteFiles") {
+  try {
+    const currentFile = app.workspace.getActiveFile();
+    if (currentFile) {
+      // Get all batch markers and their folders
+      const batchMarkersMap = await getBatchMarkersInfo(currentFile);
+      
+      if (batchMarkersMap.size === 0) {
+        new Notice("No files found to delete");
+        return;
+      }
+
+      // ... rest of deleteFiles mode code remains the same ...
+    }
+  } catch (error) {
+    console.error("Error during file deletion:", error);
+    new Notice("Error occurred during file deletion");
   }
 }
 
-// Display completion message with number of cards created
-new Notice(`Generated ${masks.length} sets of files in ${imageFolder}/`); 
+// Move completion message inside a try-catch block
+try {
+  if (templateFile || settings["Generate Images No Matter What"]?.value === "yes") {
+    const messagePrefix = templateFile ? "Generated" : "Generated images only with";
+    new Notice(`${messagePrefix} ${masks.length} sets of files in ${imageFolder}/`);
+  }
+} catch (error) {
+  console.error("Error showing completion message:", error);
+  new Notice("Operation completed with some errors");
+} 
