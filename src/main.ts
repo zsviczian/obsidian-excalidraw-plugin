@@ -113,7 +113,7 @@ import {
   legacyExcalidrawPopoverObserver,
 } from "./MarkdownPostProcessor";
 
-import { FieldSuggester } from "./dialogs/FieldSuggester";
+import { FieldSuggester } from "./Components/Suggesters/FieldSuggester";
 import { ReleaseNotes } from "./dialogs/ReleaseNotes";
 import { Packages } from "./types/types";
 import { PreviewImageType } from "./utils/UtilTypes";

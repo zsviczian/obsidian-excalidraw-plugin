@@ -2,7 +2,7 @@ import { ButtonComponent, DropdownComponent, TFile, ToggleComponent } from "obsi
 import ExcalidrawView from "../ExcalidrawView";
 import ExcalidrawPlugin from "../main";
 import {  Modal, Setting, TextComponent } from "obsidian";
-import { FileSuggestionModal } from "./FolderSuggester";
+import { FileSuggestionModal } from "../Components/Suggesters/FileSuggestionModal";
 import { IMAGE_TYPES, sceneCoordsToViewportCoords, viewportCoordsToSceneCoords, MAX_IMAGE_SIZE, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS } from "src/constants/constants";
 import { insertEmbeddableToView, insertImageToView } from "src/utils/ExcalidrawViewUtils";
 import { getEA } from "src";
@@ -146,7 +146,9 @@ export class UniversalInsertFileModal extends Modal {
     const suggester = new FileSuggestionModal(
       this.app,
       search,
-      this.app.vault.getFiles().filter((f: TFile) => sections?.length > 0 || f!==this.view.file));
+      this.app.vault.getFiles().filter((f: TFile) => sections?.length > 0 || f!==this.view.file),
+      this.plugin
+    );
     search.onChange(() => {
       file = suggester.getSelectedItem();
       updateForm();  

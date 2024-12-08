@@ -1,3 +1,4 @@
+import { TFile } from "obsidian";
 import { ExcalidrawAutomate } from "../ExcalidrawAutomate";
 import { ExcalidrawLib } from "../ExcalidrawLib";
 
@@ -32,6 +33,12 @@ export type DeviceType = {
 };
 
 export type Point = [number, number];
+
+export type LinkSuggestion = {
+  file: TFile;
+  path: string;
+  alias?: string;
+}
 
 declare global {
   interface Window {

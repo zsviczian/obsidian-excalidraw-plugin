@@ -6,13 +6,16 @@ import {
   EditorSuggestTriggerInfo,
   TFile,
 } from "obsidian";
-import { FRONTMATTER_KEYS_INFO } from "./SuggesterInfo";
+import { FRONTMATTER_KEYS_INFO } from "../../dialogs/SuggesterInfo";
 import {
   EXCALIDRAW_AUTOMATE_INFO,
   EXCALIDRAW_SCRIPTENGINE_INFO,
-} from "./SuggesterInfo";
-import type ExcalidrawPlugin from "../main";
+} from "../../dialogs/SuggesterInfo";
+import type ExcalidrawPlugin from "../../main";
 
+/**
+ * The field suggester recommends document properties in source mode, ea and utils function and attribute names.
+ */
 export class FieldSuggester extends EditorSuggest<string> {
   plugin: ExcalidrawPlugin;
   suggestType: "ea" | "excalidraw" | "utils";

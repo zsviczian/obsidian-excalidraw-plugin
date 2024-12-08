@@ -19,15 +19,19 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 `,
 "2.6.8":`
 ## New
-- Text Element cursor color matched the text color.
-- [Image Occlusion](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Image%20Occlusion.md) script by [@TrillStones](https://github.com/TrillStones) 🙏
+- **QoL improvements**:
+  - Obsidian-link search button in Element Link Editor.
+  - Add Any File now searches file aliases as well.
+  - Cosmetic changes to file search modals (display path, show file type icon).
+  - Text Element cursor-color matches the text color.
+- New script in script store: [Image Occlusion](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Image%20Occlusion.md) by [@TrillStones](https://github.com/TrillStones) 🙏
 
 ## Fixed
-- BUG: icon on the ribbon menu keeps reappearing even if you hide it every time you reopen Obsidian [#2115](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2115)
-- In pen mode, when single-finger panning is enabled, allow actions with the mouse.
-- When editing an Excalidraw file in split mode (drawing on one side, markdown view on the other), editing the markdown sometimes causes the drawing to re-zoom and jump away from the selected area.
-- Hover-Editor compatibility
--  ${String.fromCharCode(96)}ExcalidrawAutomate.create() ${String.fromCharCode(96)} will now correctly include the markdown text in templates above Excalidraw Data and below YAML front matter. This also fixes the same issue with the Deconstruct Selected Element script.
+- Excalidraw icon on the **ribbon menu kept reappearing** every time you reopen Obsidian [#2115](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2115)
+- In pen mode, when **single-finger panning** is enabled, Excalidraw should still **allow actions with the mouse**.
+- When **editing a drawing in split mode** (drawing is on one side, markdown view is on the other), editing the markdown note sometimes causes the drawing to re-zoom and jump away from the selected area.
+- Hover-Editor compatibility resolved [2041](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2041)
+-  ${String.fromCharCode(96)}ExcalidrawAutomate.create() ${String.fromCharCode(96)} will now correctly include the markdown text in templates above Excalidraw Data and below YAML front matter. This also fixes the same issue with the **Deconstruct Selected Element script**.
 
 `,
 "2.6.7":`

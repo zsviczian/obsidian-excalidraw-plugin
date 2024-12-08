@@ -3,7 +3,7 @@ import ExcalidrawView from "../ExcalidrawView";
 import ExcalidrawPlugin from "../main";
 import { getPDFDoc } from "src/utils/FileUtils";
 import {  Modal, Setting, TextComponent } from "obsidian";
-import { FileSuggestionModal } from "./FolderSuggester";
+import { FileSuggestionModal } from "../Components/Suggesters/FileSuggestionModal";
 import { getEA } from "src";
 import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
@@ -206,7 +206,11 @@ export class InsertPDFModal extends Modal {
 
     const search = new TextComponent(ce);
     search.inputEl.style.width = "100%";
-    const suggester = new FileSuggestionModal(this.app, search,app.vault.getFiles().filter((f: TFile) => f.extension.toLowerCase() === "pdf"));
+    const suggester = new FileSuggestionModal(
+      this.app,
+      search,this.app.vault.getFiles().filter((f: TFile) => f.extension.toLowerCase() === "pdf"),
+      this.plugin
+    );
     search.onChange(async () => {
       const file = suggester.getSelectedItem();
       await setFile(file);

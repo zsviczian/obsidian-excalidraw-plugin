@@ -1,3 +1,4 @@
+import { FILE } from "dns";
 import {
   DEVICE,
   FRONTMATTER_KEYS,
@@ -10,6 +11,8 @@ declare const PLUGIN_VERSION:string;
 
 // English
 export default {
+  // Sugester
+  SELECT_FILE_TO_INSERT: "Select a file to insert",
   // main.ts
   CONVERT_URL_TO_FILE: "Save image from URL to local file",
   UNZIP_CURRENT_FILE: "Decompress current Excalidraw file",

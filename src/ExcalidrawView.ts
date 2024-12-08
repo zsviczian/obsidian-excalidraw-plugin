@@ -3267,6 +3267,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     markdownlink: string,
     path: string,
     alias: string,
+    originalLink?: string,
   ) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.addLink, "ExcalidrawView.addLink", markdownlink, path, alias);
     const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
@@ -3280,16 +3281,28 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
     const selectedElementId = Object.keys(api.getAppState().selectedElementIds)[0];
     const selectedElement = api.getSceneElements().find(el=>el.id === selectedElementId);
-    if(!selectedElement || (selectedElement && selectedElement.link !== null)) {
+    if(!selectedElement || (!Boolean(originalLink) && (selectedElement && selectedElement.link !== null) )) {
       if(selectedElement) new Notice("Selected element already has a link. Inserting link as text.");
       this.addText(markdownlink);
       return;
     }
     const ea = getEA(this) as ExcalidrawAutomate;
     ea.copyViewElementsToEAforEditing([selectedElement]);
+    if(originalLink?.match(/\[\[(.*?)\]\]/)?.[1]) {
+      markdownlink = originalLink.replace(/(\[\[.*?\]\])/,markdownlink);
+    }
     ea.getElement(selectedElementId).link = markdownlink;
     await ea.addElementsToView(false, true);
     ea.destroy();
+    if(Boolean(originalLink)) {
+      this.updateScene({
+        appState: {
+          showHyperlinkPopup: {
+            newValue : "info", oldValue : "editor"
+          }
+        }
+      });
+    }
   }
 
   public async addText (
@@ -5094,6 +5107,15 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     new Notice("Image successfully converted to local file");
   }
 
+  private insertLinkAction(linkVal: string) {
+    let link = linkVal.match(/\[\[(.*?)\]\]/)?.[1];
+    if(!link) {
+      link = linkVal.replaceAll("[","").replaceAll("]","");
+      link = link.split("|")[0].trim();
+    }
+    this.plugin.insertLinkDialog.start(this.file.path, (markdownlink: string, path:string, alias:string) => this.addLink(markdownlink, path, alias, linkVal), link);
+  }
+
   private onContextMenu(elements: readonly ExcalidrawElement[], appState: AppState, onClose: (callback?: () => void) => void) {
     const React = this.packages.react;
     const contextMenuActions = [];
@@ -5916,6 +5938,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             renderEmbeddable: this.renderEmbeddable.bind(this),
             renderMermaid: shouldRenderMermaid,
             showDeprecatedFonts: true,
+            insertLinkAction: this.insertLinkAction.bind(this),
           },
           this.renderCustomActionsMenu(),
           this.renderWelcomeScreen(),
