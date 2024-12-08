@@ -20,6 +20,7 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 "2.6.8":`
 ## New
 - Text Element cursor color matched the text color.
+- [Image Occlusion](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Image%20Occlusion.md) script by [@TrillStones](https://github.com/TrillStones) 🙏
 
 ## Fixed
 - BUG: icon on the ribbon menu keeps reappearing even if you hide it every time you reopen Obsidian [#2115](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2115)
