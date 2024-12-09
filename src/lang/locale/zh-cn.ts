@@ -1,3 +1,4 @@
+import { FILE } from "dns";
 import {
   DEVICE,
   FRONTMATTER_KEYS,
@@ -10,6 +11,8 @@ declare const PLUGIN_VERSION:string;
 
 // 简体中文
 export default {
+  // Sugester
+  SELECT_FILE_TO_INSERT: "选择一个要插入的文件",
   // main.ts
   CONVERT_URL_TO_FILE: "从 URL 下载图像到本地",
   UNZIP_CURRENT_FILE: "解压当前 Excalidraw 文件",
