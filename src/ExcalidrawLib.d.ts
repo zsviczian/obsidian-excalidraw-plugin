@@ -6,7 +6,38 @@ import { FontMetadata } from "@zsviczian/excalidraw/types/excalidraw/fonts/metad
 import { AppState, BinaryFiles, DataURL, GenerateDiagramToCode, Zoom } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/types";
-import ExcalidrawPlugin from "./main";
+
+interface MermaidConfig {
+  /**
+   * Whether to start the diagram automatically when the page loads.
+   * @default false
+   */
+  startOnLoad?: boolean;
+  /**
+   * The flowchart curve style.
+   * @default "linear"
+   */
+  flowchart?: {
+      curve?: "linear" | "basis";
+  };
+  /**
+   * Theme variables
+   * @default { fontSize: "25px" }
+   */
+  themeVariables?: {
+      fontSize?: string;
+  };
+  /**
+   * Maximum number of edges to be rendered.
+   * @default 1000
+   */
+  maxEdges?: number;
+  /**
+   * Maximum number of characters to be rendered.
+   * @default 1000
+   */
+  maxTextSize?: number;
+}
 
 type EmbeddedLink =
   | ({
@@ -159,7 +190,7 @@ declare namespace ExcalidrawLib {
 
   function mermaidToExcalidraw(
     mermaidDefinition: string,
-    opts: {fontSize: number},
+    opts: MermaidConfig,
     forceSVG?: boolean,
   ): Promise<{
     elements?: ExcalidrawElement[];

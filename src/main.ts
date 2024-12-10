@@ -19,7 +19,6 @@ import {
   Workspace,
   Editor,
   MarkdownFileInfo,
-  loadMermaid,
 } from "obsidian";
 import {
   BLANK_DRAWING,
@@ -459,14 +458,6 @@ export default class ExcalidrawPlugin extends Plugin {
         console.error("Error initializing Excalidraw config", e);
       }
       this.logStartupEvent("Excalidraw config initialized");
-
-      try {
-        await loadMermaid();
-      } catch (e) {
-        new Notice("Error loading Mermaid", 6000);
-        console.error("Error loading Mermaid", e);
-      }
-      this.logStartupEvent("Mermaid loaded");
 
       try {
         this.addThemeObserver();

@@ -1489,7 +1489,12 @@ export class ExcalidrawAutomate {
     diagram: string,
     groupElements: boolean = true,
   ): Promise<string[]|string> {
-    const result = await mermaidToExcalidraw(diagram, {fontSize: this.style.fontSize});
+    const result = await mermaidToExcalidraw(
+      diagram, {
+        themeVariables: {fontSize: `${this.style.fontSize}`},
+        flowchart: {curve: this.style.roundness===null ? "linear" : "basis"},
+      }
+    );
     const ids:string[] = [];
     if(!result) return null;
     if(result?.error) return result.error;
