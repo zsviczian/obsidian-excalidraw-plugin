@@ -392,6 +392,7 @@ export default class ExcalidrawPlugin extends Plugin {
           this.settings.onceOffCompressFlagReset = true;
         }
         if(!this.settings.onceOffGPTVersionReset) {
+          this.settings.onceOffGPTVersionReset = true;
           if(this.settings.openAIDefaultVisionModel === "gpt-4-vision-preview") {
             this.settings.openAIDefaultVisionModel = "gpt-4o";
           }
