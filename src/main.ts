@@ -385,24 +385,8 @@ export default class ExcalidrawPlugin extends Plugin {
     this.addRibbonIcon(ICON_NAME, t("CREATE_NEW"), this.actionRibbonClick.bind(this));
 
     try {
-      this.loadSettings({reEnableAutosave:true}).then(async () => {
-        const updateSettings = !this.settings.onceOffCompressFlagReset || !this.settings.onceOffGPTVersionReset;
-        if(!this.settings.onceOffCompressFlagReset) {
-          this.settings.compress = true;
-          this.settings.onceOffCompressFlagReset = true;
-        }
-        if(!this.settings.onceOffGPTVersionReset) {
-          this.settings.onceOffGPTVersionReset = true;
-          if(this.settings.openAIDefaultVisionModel === "gpt-4-vision-preview") {
-            this.settings.openAIDefaultVisionModel = "gpt-4o";
-          }
-        }
-        if(updateSettings) {
-          await this.saveSettings();
-        }
-        this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
-        this.settingsReady = true;
-      });
+      this.loadSettings({reEnableAutosave:true})
+        .then(this.onloadCheckForOnceOffSettingsUpdates.bind(this));
     } catch (e) {
       new Notice("Error loading plugin settings", 6000);
       console.error("Error loading plugin settings", e);
@@ -427,195 +411,216 @@ export default class ExcalidrawPlugin extends Plugin {
     }
     this.logStartupEvent("Markdown post processor added");
 
-    this.app.workspace.onLayoutReady(async () => {
-      this.loadTimestamp = Date.now();
-      this.lastLogTimestamp = this.loadTimestamp;
-      this.logStartupEvent("\n----------------------------------\nWorkspace onLayoutReady event fired (these actions are outside the plugin initialization)");
-      await this.awaitSettings();
-      this.logStartupEvent("Settings awaited");
-      try {
-        unpackExcalidraw();
-        excalidrawLib = window.eval.call(window,`(function() {${EXCALIDRAW_PACKAGE};return ExcalidrawLib;})()`);
-        this.packageMap.set(window,{react, reactDOM, excalidrawLib});
-        updateExcalidrawLib();
-      } catch (e) {
-        new Notice("Error loading the Excalidraw package", 6000);
-        console.error("Error loading the Excalidraw package", e);
-      }
-      this.logStartupEvent("Excalidraw package unpacked");
-
-      try {
-        initCompressionWorker();
-      } catch (e) {
-        new Notice("Error initializing compression worker", 6000);
-        console.error("Error initializing compression worker", e);
-      }
-      this.logStartupEvent("Compression worker initialized");
-
-      try {
-        this.excalidrawConfig = new ExcalidrawConfig(this);
-      } catch (e) {
-        new Notice("Error initializing Excalidraw config", 6000);
-        console.error("Error initializing Excalidraw config", e);
-      }
-      this.logStartupEvent("Excalidraw config initialized");
-
-      try {
-        this.addThemeObserver();
-      } catch (e) {
-        new Notice("Error adding theme observer", 6000);
-        console.error("Error adding theme observer", e);
-      }
-      this.logStartupEvent("Theme observer added");
-
-      try {
-        //inspiration taken from kanban:
-        //https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/main.ts#L267
-        this.registerMonkeyPatches();
-      } catch (e) {
-        new Notice("Error registering monkey patches", 6000);
-        console.error("Error registering monkey patches", e);
-      }
-      this.logStartupEvent("Monkey patches registered");
-
-      try {
-        this.stylesManager = new StylesManager(this);
-      } catch (e) {
-        new Notice("Error initializing styles manager", 6000);
-        console.error("Error initializing styles manager", e);
-      }
-      this.logStartupEvent("Styles manager initialized");
-
-      try {
-        this.scriptEngine = new ScriptEngine(this);
-      } catch (e) {
-        new Notice("Error initializing script engine", 6000);
-        console.error("Error initializing script engine", e);
-      }
-      this.logStartupEvent("Script engine initialized");
-
-      try {
-        await this.initializeFonts();
-      } catch (e) {
-        new Notice("Error initializing fonts", 6000);
-        console.error("Error initializing fonts", e);
-      }
-      this.logStartupEvent("Fonts initialized");
-
-      try {
-        imageCache.initializeDB(this);
-      } catch (e) {
-        new Notice("Error initializing image cache", 6000);
-        console.error("Error initializing image cache", e);
-      }
-      this.logStartupEvent("Image cache initialized");
-
-      try {
-        this.isReady = true;
-        switchToExcalidraw(this.app);
-        this.switchToExcalidarwAfterLoad();
-      } catch (e) {
-        new Notice("Error switching views to Excalidraw", 6000);
-        console.error("Error switching views to Excalidraw", e);
-      }
-      this.logStartupEvent("Switched to Excalidraw views");
-
-      try {
-        if (this.settings.showReleaseNotes) {
-          //I am repurposing imageElementNotice, if the value is true, this means the plugin was just newly installed to Obsidian.
-          const obsidianJustInstalled = (this.settings.previousRelease === "0.0.0") || !this.settings.previousRelease;
-
-          if (isVersionNewerThanOther(PLUGIN_VERSION, this.settings.previousRelease ?? "0.0.0")) {
-            new ReleaseNotes(
-              this.app,
-              this,
-              obsidianJustInstalled ? null : PLUGIN_VERSION,
-            ).open();
-          }
-        }
-      } catch (e) {
-        new Notice("Error opening release notes", 6000);
-        console.error("Error opening release notes", e);
-      }
-      this.logStartupEvent("Release notes opened");
-
-      //---------------------------------------------------------------------
-      //initialization that can happen after Excalidraw views are initialized
-      //---------------------------------------------------------------------      
-      try {
-        this.registerEventListeners();
-      } catch (e) {
-        new Notice("Error registering event listeners", 6000);
-        console.error("Error registering event listeners", e);
-      }
-      this.logStartupEvent("Event listeners registered");
-
-      try { 
-        this.runStartupScript();
-      } catch (e) {
-        new Notice("Error running startup script", 6000);
-        console.error("Error running startup script", e);
-      }
-      this.logStartupEvent("Startup script run");
-
-      try {
-        this.editorHandler = new EditorHandler(this);
-        this.editorHandler.setup();
-      } catch (e) {
-        new Notice("Error setting up editor handler", 6000);
-        console.error("Error setting up editor handler", e);
-      }
-      this.logStartupEvent("Editor handler initialized");
-
-      try {
-        this.registerInstallCodeblockProcessor();
-      } catch (e) {
-        new Notice("Error registering script install-codeblock processor", 6000);
-        console.error("Error registering script install-codeblock processor", e);
-      }
-      this.logStartupEvent("Script install-codeblock processor registered");
-
-      try {
-        this.experimentalFileTypeDisplayToggle(this.settings.experimentalFileType);
-      } catch (e) {
-        new Notice("Error setting up experimental file type display", 6000);
-        console.error("Error setting up experimental file type display", e);
-      }
-      this.logStartupEvent("Experimental file type display set");
-
-      try {
-        this.registerCommands();
-      } catch (e) {
-        new Notice("Error registering commands", 6000);
-        console.error("Error registering commands", e);
-      }
-      this.logStartupEvent("Commands registered");
-
-      try {
-        this.registerEditorSuggest(new FieldSuggester(this));
-      } catch (e) {
-        new Notice("Error registering editor suggester", 6000);
-        console.error("Error registering editor suggester", e);
-      }
-      this.logStartupEvent("Editor suggester registered");
-
-      try {
-        this.setPropertyTypes();
-      } catch (e) {
-        new Notice("Error setting up property types", 6000);
-        console.error("Error setting up property types", e);
-      }
-      this.logStartupEvent("Property types set");
-
-      try {
-        this.taskbone = new Taskbone(this);
-      } catch (e) {
-        new Notice("Error setting up taskbone", 6000);
-        console.error("Error setting up taskbone", e);
-      }
-      this.logStartupEvent("Taskbone set up");
-    });
+    this.app.workspace.onLayoutReady(this.onloadOnLayoutReady.bind(this));
     this.logStartupEvent("Workspace ready event handler added");
+  }
+
+  private async onloadCheckForOnceOffSettingsUpdates() {
+    const updateSettings = !this.settings.onceOffCompressFlagReset || !this.settings.onceOffGPTVersionReset;
+    if(!this.settings.onceOffCompressFlagReset) {
+      this.settings.compress = true;
+      this.settings.onceOffCompressFlagReset = true;
+    }
+    if(!this.settings.onceOffGPTVersionReset) {
+      this.settings.onceOffGPTVersionReset = true;
+      if(this.settings.openAIDefaultVisionModel === "gpt-4-vision-preview") {
+        this.settings.openAIDefaultVisionModel = "gpt-4o";
+      }
+    }
+    if(updateSettings) {
+      await this.saveSettings();
+    }
+    this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
+    this.settingsReady = true;
+  }
+
+  private async onloadOnLayoutReady() {
+    this.loadTimestamp = Date.now();
+    this.lastLogTimestamp = this.loadTimestamp;
+    this.logStartupEvent("\n----------------------------------\nWorkspace onLayoutReady event fired (these actions are outside the plugin initialization)");
+    await this.awaitSettings();
+    this.logStartupEvent("Settings awaited");
+    try {
+      unpackExcalidraw();
+      excalidrawLib = window.eval.call(window,`(function() {${EXCALIDRAW_PACKAGE};return ExcalidrawLib;})()`);
+      this.packageMap.set(window,{react, reactDOM, excalidrawLib});
+      updateExcalidrawLib();
+    } catch (e) {
+      new Notice("Error loading the Excalidraw package", 6000);
+      console.error("Error loading the Excalidraw package", e);
+    }
+    this.logStartupEvent("Excalidraw package unpacked");
+
+    try {
+      initCompressionWorker();
+    } catch (e) {
+      new Notice("Error initializing compression worker", 6000);
+      console.error("Error initializing compression worker", e);
+    }
+    this.logStartupEvent("Compression worker initialized");
+
+    try {
+      this.excalidrawConfig = new ExcalidrawConfig(this);
+    } catch (e) {
+      new Notice("Error initializing Excalidraw config", 6000);
+      console.error("Error initializing Excalidraw config", e);
+    }
+    this.logStartupEvent("Excalidraw config initialized");
+
+    try {
+      this.addThemeObserver();
+    } catch (e) {
+      new Notice("Error adding theme observer", 6000);
+      console.error("Error adding theme observer", e);
+    }
+    this.logStartupEvent("Theme observer added");
+
+    try {
+      //inspiration taken from kanban:
+      //https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/main.ts#L267
+      this.registerMonkeyPatches();
+    } catch (e) {
+      new Notice("Error registering monkey patches", 6000);
+      console.error("Error registering monkey patches", e);
+    }
+    this.logStartupEvent("Monkey patches registered");
+
+    try {
+      this.stylesManager = new StylesManager(this);
+    } catch (e) {
+      new Notice("Error initializing styles manager", 6000);
+      console.error("Error initializing styles manager", e);
+    }
+    this.logStartupEvent("Styles manager initialized");
+
+    try {
+      this.scriptEngine = new ScriptEngine(this);
+    } catch (e) {
+      new Notice("Error initializing script engine", 6000);
+      console.error("Error initializing script engine", e);
+    }
+    this.logStartupEvent("Script engine initialized");
+
+    try {
+      await this.initializeFonts();
+    } catch (e) {
+      new Notice("Error initializing fonts", 6000);
+      console.error("Error initializing fonts", e);
+    }
+    this.logStartupEvent("Fonts initialized");
+
+    try {
+      imageCache.initializeDB(this);
+    } catch (e) {
+      new Notice("Error initializing image cache", 6000);
+      console.error("Error initializing image cache", e);
+    }
+    this.logStartupEvent("Image cache initialized");
+
+    try {
+      this.isReady = true;
+      switchToExcalidraw(this.app);
+      this.switchToExcalidarwAfterLoad();
+    } catch (e) {
+      new Notice("Error switching views to Excalidraw", 6000);
+      console.error("Error switching views to Excalidraw", e);
+    }
+    this.logStartupEvent("Switched to Excalidraw views");
+
+    try {
+      if (this.settings.showReleaseNotes) {
+        //I am repurposing imageElementNotice, if the value is true, this means the plugin was just newly installed to Obsidian.
+        const obsidianJustInstalled = (this.settings.previousRelease === "0.0.0") || !this.settings.previousRelease;
+
+        if (isVersionNewerThanOther(PLUGIN_VERSION, this.settings.previousRelease ?? "0.0.0")) {
+          new ReleaseNotes(
+            this.app,
+            this,
+            obsidianJustInstalled ? null : PLUGIN_VERSION,
+          ).open();
+        }
+      }
+    } catch (e) {
+      new Notice("Error opening release notes", 6000);
+      console.error("Error opening release notes", e);
+    }
+    this.logStartupEvent("Release notes opened");
+
+    //---------------------------------------------------------------------
+    //initialization that can happen after Excalidraw views are initialized
+    //---------------------------------------------------------------------      
+    try {
+      this.registerEventListeners();
+    } catch (e) {
+      new Notice("Error registering event listeners", 6000);
+      console.error("Error registering event listeners", e);
+    }
+    this.logStartupEvent("Event listeners registered");
+
+    try { 
+      this.runStartupScript();
+    } catch (e) {
+      new Notice("Error running startup script", 6000);
+      console.error("Error running startup script", e);
+    }
+    this.logStartupEvent("Startup script run");
+
+    try {
+      this.editorHandler = new EditorHandler(this);
+      this.editorHandler.setup();
+    } catch (e) {
+      new Notice("Error setting up editor handler", 6000);
+      console.error("Error setting up editor handler", e);
+    }
+    this.logStartupEvent("Editor handler initialized");
+
+    try {
+      this.registerInstallCodeblockProcessor();
+    } catch (e) {
+      new Notice("Error registering script install-codeblock processor", 6000);
+      console.error("Error registering script install-codeblock processor", e);
+    }
+    this.logStartupEvent("Script install-codeblock processor registered");
+
+    try {
+      this.experimentalFileTypeDisplayToggle(this.settings.experimentalFileType);
+    } catch (e) {
+      new Notice("Error setting up experimental file type display", 6000);
+      console.error("Error setting up experimental file type display", e);
+    }
+    this.logStartupEvent("Experimental file type display set");
+
+    try {
+      this.registerCommands();
+    } catch (e) {
+      new Notice("Error registering commands", 6000);
+      console.error("Error registering commands", e);
+    }
+    this.logStartupEvent("Commands registered");
+
+    try {
+      this.registerEditorSuggest(new FieldSuggester(this));
+    } catch (e) {
+      new Notice("Error registering editor suggester", 6000);
+      console.error("Error registering editor suggester", e);
+    }
+    this.logStartupEvent("Editor suggester registered");
+
+    try {
+      this.setPropertyTypes();
+    } catch (e) {
+      new Notice("Error setting up property types", 6000);
+      console.error("Error setting up property types", e);
+    }
+    this.logStartupEvent("Property types set");
+
+    try {
+      this.taskbone = new Taskbone(this);
+    } catch (e) {
+      new Notice("Error setting up taskbone", 6000);
+      console.error("Error setting up taskbone", e);
+    }
+    this.logStartupEvent("Taskbone set up");
   }
 
   public async awaitSettings() {
