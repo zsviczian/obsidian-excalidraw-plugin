@@ -48,7 +48,9 @@ if (!isLib) {
 
 const manifestStr = isLib ? "" : fs.readFileSync("manifest.json", "utf-8");
 const manifest = isLib ? {} : JSON.parse(manifestStr);
-if (!isLib) console.log(manifest.version);
+if (!isLib) {
+  console.log(manifest.version);
+}
 
 const packageString = isLib
   ? ""
@@ -56,11 +58,13 @@ const packageString = isLib
   '\nlet REACT_PACKAGES = `' +
   jsesc(react_pkg + reactdom_pkg, { quotes: 'backtick' }) +
   '`;\n' +
-  'let EXCALIDRAW_PACKAGE = ""; const unpackExcalidraw = () => {EXCALIDRAW_PACKAGE = LZString.decompressFromBase64("' + LZString.compressToBase64(excalidraw_pkg) + '");};\n' +
+/*  'let EXCALIDRAW_PACKAGE = `' +
+  jsesc(excalidraw_pkg, { quotes: 'backtick' }) +
+  '`;\n' +*/
+  'const unpackExcalidraw = () => LZString.decompressFromBase64("' + LZString.compressToBase64(excalidraw_pkg) + '");\n' +
   'let {react, reactDOM } = window.eval.call(window, `(function() {' + '${REACT_PACKAGES};' + 'return {react: React, reactDOM: ReactDOM};})();`);\n' +
   `let excalidrawLib = {};\n` +
   'const PLUGIN_VERSION="' + manifest.version + '";';
-  
 
 const BASE_CONFIG = {
   input: 'src/main.ts',

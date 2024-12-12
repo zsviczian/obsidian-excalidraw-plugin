@@ -145,8 +145,8 @@ import { getCJKDataURLs } from "./utils/CJKLoader";
 import { ExcalidrawLoading, switchToExcalidraw } from "./dialogs/ExcalidrawLoading";
 import { insertImageToView } from "./utils/ExcalidrawViewUtils";
 
-declare let EXCALIDRAW_PACKAGE:string;
 declare let REACT_PACKAGES:string;
+//declare let EXCALIDRAW_PACKAGE:string;
 declare const unpackExcalidraw: Function;
 declare let react:any;
 declare let reactDOM:any;
@@ -155,6 +155,7 @@ declare const PLUGIN_VERSION:string;
 declare const INITIAL_TIMESTAMP: number;
 
 export default class ExcalidrawPlugin extends Plugin {
+  private EXCALIDRAW_PACKAGE: string;
   public eaInstances = new WeakArray<ExcalidrawAutomate>();
   public fourthFontLoaded: boolean = false;
   public excalidrawConfig: ExcalidrawConfig;
@@ -290,7 +291,7 @@ export default class ExcalidrawPlugin extends Plugin {
     //@ts-ignore
     const {react:r, reactDOM:rd, excalidrawLib:e} = win.eval.call(win,
       `(function() {
-        ${REACT_PACKAGES + EXCALIDRAW_PACKAGE};
+        ${REACT_PACKAGES + this.EXCALIDRAW_PACKAGE};
         return {react:React,reactDOM:ReactDOM,excalidrawLib:ExcalidrawLib};
        })()`);
     this.packageMap.set(win,{react:r, reactDOM:rd, excalidrawLib:e});
@@ -441,8 +442,8 @@ export default class ExcalidrawPlugin extends Plugin {
     await this.awaitSettings();
     this.logStartupEvent("Settings awaited");
     try {
-      unpackExcalidraw();
-      excalidrawLib = window.eval.call(window,`(function() {${EXCALIDRAW_PACKAGE};return ExcalidrawLib;})()`);
+      this.EXCALIDRAW_PACKAGE = unpackExcalidraw();
+      excalidrawLib = window.eval.call(window,`(function() {${this.EXCALIDRAW_PACKAGE};return ExcalidrawLib;})()`);
       this.packageMap.set(window,{react, reactDOM, excalidrawLib});
       updateExcalidrawLib();
     } catch (e) {
@@ -3646,7 +3647,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.settings = null;
     clearMathJaxVariables();
-    EXCALIDRAW_PACKAGE = "";
+    this.EXCALIDRAW_PACKAGE = "";
     REACT_PACKAGES = "";
     //pluginPackages = null;
     //PLUGIN_VERSION = null;
