@@ -651,3 +651,17 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 .excalidraw .ToolIcon_type_button {
   color: var(--text-primary-color);
 }
+
+.excalidraw-setting-desc {
+  padding: 10px;
+  cursor: pointer;
+  background-color: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 5px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.excalidraw-setting-desc:hover {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-accent);
+}

@@ -82,51 +82,74 @@ export class CanvasNodeFactory {
     return node;
   }
 
-  public async startEditing(node: ObsidianCanvasNode, theme: string) {
-    if (!this.initialized || !node) return;
-    if (node.file === this.view.file) {
-      await this.view.setEmbeddableIsEditingSelf();
+  private async waitForEditor(node: ObsidianCanvasNode): Promise<HTMLElement | null> {
+    let counter = 0;
+    while (!node.child.editor?.containerEl?.parentElement?.parentElement && counter++ < 100) {
+      await new Promise(resolve => setTimeout(resolve, 25));
     }
-    node.startEditing();
-  
-    const obsidianTheme = isObsidianThemeDark() ? "theme-dark" : "theme-light";
-    if (obsidianTheme === theme) return;
-  
-    (async () => {
-      let counter = 0;
-      while (!node.child.editor?.containerEl?.parentElement?.parentElement && counter++ < 100) {
-        await sleep(25);
-      }
-      if (!node.child.editor?.containerEl?.parentElement?.parentElement) return;
-      node.child.editor.containerEl.parentElement.parentElement.classList.remove(obsidianTheme);
-      node.child.editor.containerEl.parentElement.parentElement.classList.add(theme);
-      
-      const nodeObserverFn: MutationCallback = (mutationsList) => {
-        for (const mutation of mutationsList) {
-          if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-            const targetElement = mutation.target as HTMLElement;
-            if (targetElement.classList.contains(obsidianTheme)) {
-              targetElement.classList.remove(obsidianTheme);
-              targetElement.classList.add(theme);
-            }
+    return node.child.editor?.containerEl?.parentElement?.parentElement;
+  }
+
+  private setupThemeObserver(editorEl: HTMLElement, obsidianTheme: string, theme: string) {
+    const nodeObserverFn: MutationCallback = (mutationsList) => {
+      for (const mutation of mutationsList) {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+          const targetElement = mutation.target as HTMLElement;
+          if (targetElement.classList.contains(obsidianTheme)) {
+            targetElement.classList.remove(obsidianTheme);
+            targetElement.classList.add(theme);
           }
         }
-      };
-      this.observer = DEBUGGING
-        ? new CustomMutationObserver(nodeObserverFn, "CanvasNodeFactory")
-        : new MutationObserver(nodeObserverFn);
-  
-      this.observer.observe(node.child.editor.containerEl.parentElement.parentElement, { attributes: true });
-    })();
-  } 
+      }
+    };
+
+    this.observer?.disconnect();
+    this.observer = DEBUGGING
+      ? new CustomMutationObserver(nodeObserverFn, "CanvasNodeFactory")
+      : new MutationObserver(nodeObserverFn);
+
+    this.observer.observe(editorEl, { attributes: true });
+  }
+
+  public async startEditing(node: ObsidianCanvasNode, theme: string) {
+    if (!this.initialized || !node) return;
+    
+    try {
+      if (node.file === this.view.file) {
+        await this.view.setEmbeddableIsEditingSelf();
+      }
+      node.startEditing();
+      node.isEditing = true;
+
+      const obsidianTheme = isObsidianThemeDark() ? "theme-dark" : "theme-light";
+      if (obsidianTheme === theme) return;
+
+      const editorEl = await this.waitForEditor(node);
+      if (!editorEl) return;
+
+      editorEl.classList.remove(obsidianTheme);
+      editorEl.classList.add(theme);
+      
+      this.setupThemeObserver(editorEl, obsidianTheme, theme);
+    } catch (error) {
+      console.error('Error starting edit:', error);
+      node.isEditing = false;
+    }
+  }
 
   public stopEditing(node: ObsidianCanvasNode) {
-    if(!this.initialized || !node) return;
-    if(!node.child.editMode) return;
-    if(node.file === this.view.file) {
-      this.view.clearEmbeddableIsEditingSelf();
+    if (!this.initialized || !node || !node.isEditing) return;
+    
+    try {
+      if (node.file === this.view.file) {
+        this.view.clearEmbeddableIsEditingSelf();
+      }
+      node.child.showPreview();
+      node.isEditing = false;
+      this.observer?.disconnect();
+    } catch (error) {
+      console.error('Error stopping edit:', error);
     }
-    node.child.showPreview();
   }
 
   removeNode(node: ObsidianCanvasNode) {

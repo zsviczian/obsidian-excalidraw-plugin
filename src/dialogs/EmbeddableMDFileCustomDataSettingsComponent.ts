@@ -46,6 +46,16 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
           );
       }
       contentEl.createEl("h4",{text: t("ES_BACKGROUND_HEAD")});
+      const descDiv = contentEl.createDiv({ cls: "excalidraw-setting-desc" });
+      descDiv.textContent = t("ES_BACKGROUND_DESC_INFO");
+
+      descDiv.addEventListener("click", () => {
+        if (descDiv.textContent === t("ES_BACKGROUND_DESC_INFO")) {
+          descDiv.textContent = t("ES_BACKGROUND_DESC_DETAIL");
+        } else {
+          descDiv.textContent = t("ES_BACKGROUND_DESC_INFO");
+        }
+      });
       
       let bgSetting: Setting;  
       let bgMatchElementToggle: ToggleComponent;

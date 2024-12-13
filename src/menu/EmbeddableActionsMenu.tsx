@@ -127,7 +127,7 @@ export class EmbeddableMenu {
       blockID = nanoid();
       const fileContents = await app.vault.cachedRead(file);
       if(!fileContents) return;
-      await app.vault.modify(file, fileContents.slice(0, offset) + ` ^${blockID}` + fileContents.slice(offset));
+      await this.view.app.vault.modify(file, fileContents.slice(0, offset) + ` ^${blockID}` + fileContents.slice(offset));
       await sleep(200); //wait for cache to update
     }
     this.updateElement(`#^${blockID}`, element, file);
@@ -170,7 +170,6 @@ export class EmbeddableMenu {
 
   renderButtons(appState: AppState) {
     const view = this.view;
-    const app = view.app;
     const api = view?.excalidrawAPI as ExcalidrawImperativeAPI;
     if(!api) return null;
     if(!view.file) return null;

@@ -265,20 +265,20 @@ function RenderObsidianView(
       const color = element?.backgroundColor 
         ? (element.backgroundColor.toLowerCase() === "transparent"
           ? "transparent"
-          : ea.getCM(element.backgroundColor).alphaTo(opacity).stringHEX())
+          : ea.getCM(element.backgroundColor).alphaTo(opacity).stringHEX({alpha: true}))
         : "transparent";
       
       color === "transparent" ? canvasNode?.addClass("transparent") : canvasNode?.removeClass("transparent");        
       canvasNode?.style.setProperty("--canvas-background", color);
       canvasNode?.style.setProperty("--background-primary", color);
       canvasNodeContainer?.style.setProperty("background-color", color);
-    } else if (!(mdProps?.backgroundMatchElement ?? true )) {
+    } else if (!(mdProps.backgroundMatchElement ?? true )) {
       const opacity = (mdProps.backgroundOpacity??100)/100;
       const color = mdProps.backgroundMatchCanvas
         ? (canvasColor.toLowerCase() === "transparent"
           ? "transparent"
-          : ea.getCM(canvasColor).alphaTo(opacity).stringHEX())
-        : ea.getCM(mdProps.backgroundColor).alphaTo((mdProps.backgroundOpacity??100)/100).stringHEX();
+          : ea.getCM(canvasColor).alphaTo(opacity).stringHEX({alpha: true}))
+        : ea.getCM(mdProps.backgroundColor).alphaTo((mdProps.backgroundOpacity??100)/100).stringHEX({alpha: true});
       
       color === "transparent" ? canvasNode?.addClass("transparent") : canvasNode?.removeClass("transparent");
       canvasNode?.style.setProperty("--canvas-background", color);
@@ -291,13 +291,13 @@ function RenderObsidianView(
       const color = element?.strokeColor
         ? (element.strokeColor.toLowerCase() === "transparent"
           ? "transparent"
-          : ea.getCM(element.strokeColor).alphaTo(opacity).stringHEX())
+          : ea.getCM(element.strokeColor).alphaTo(opacity).stringHEX({alpha: true}))
         : "transparent";
       canvasNode?.style.setProperty("--canvas-border", color);
       canvasNode?.style.setProperty("--canvas-color", color);
       //canvasNodeContainer?.style.setProperty("border-color", color);
     } else if(!(mdProps?.borderMatchElement ?? true)) {
-      const color = ea.getCM(mdProps.borderColor).alphaTo((mdProps.borderOpacity??100)/100).stringHEX();
+      const color = ea.getCM(mdProps.borderColor).alphaTo((mdProps.borderOpacity??100)/100).stringHEX({alpha: true});
       canvasNode?.style.setProperty("--canvas-border", color);
       canvasNode?.style.setProperty("--canvas-color", color);
       //canvasNodeContainer?.style.setProperty("border-color", color);
@@ -315,8 +315,16 @@ function RenderObsidianView(
     const canvasNode = containerRef.current;
     if(!canvasNode.hasClass("canvas-node")) return;
     setColors(canvasNode, element, mdProps, canvasColor);
+    console.log("Setting colors");
   }, [
-    mdProps,
+    mdProps?.useObsidianDefaults,
+    mdProps?.backgroundMatchCanvas,
+    mdProps?.backgroundMatchElement,
+    mdProps?.backgroundColor,
+    mdProps?.backgroundOpacity,
+    mdProps?.borderMatchElement,
+    mdProps?.borderColor,
+    mdProps?.borderOpacity,
     elementRef.current,
     containerRef.current,
     canvasColor,
@@ -395,7 +403,8 @@ function RenderObsidianView(
 
     const previousIsActive = isActiveRef.current;
     isActiveRef.current = (activeEmbeddable?.element.id === element.id) && (activeEmbeddable?.state === "active");
-
+    
+    const node = leafRef.current?.node as ObsidianCanvasNode;
     if (previousIsActive === isActiveRef.current) {
       return;
     }
@@ -414,15 +423,15 @@ function RenderObsidianView(
         isEditingRef.current = false;
         return;
       }  
-    } else if (leafRef.current?.node) {
+    } else if (node) {
       //Handle canvas node
-      if(view.plugin.settings.markdownNodeOneClickEditing && !containerRef.current?.hasClass("is-editing")) {
+      if(isActiveRef.current && view.plugin.settings.markdownNodeOneClickEditing && !containerRef.current?.hasClass("is-editing")) { //!node.isEditing
         const newTheme = getTheme(view, themeRef.current);
         containerRef.current?.addClasses(["is-editing", "is-focused"]);
-        view.canvasNodeFactory.startEditing(leafRef.current.node, newTheme);
+        view.canvasNodeFactory.startEditing(node, newTheme);
       } else {
         containerRef.current?.removeClasses(["is-editing", "is-focused"]);
-        view.canvasNodeFactory.stopEditing(leafRef.current.node);
+        view.canvasNodeFactory.stopEditing(node);
       }
     }
   }, [
