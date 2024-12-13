@@ -8,11 +8,15 @@
     "lib/**/*"
   ],
   "scripts": {
-    "dev": "cross-env NODE_ENV=development rollup --config rollup.config.js -w",
+    "dev": "cross-env NODE_ENV=development rollup --config rollup.config.js",
     "build": "cross-env NODE_ENV=production rollup --config rollup.config.js",
     "lib": "cross-env NODE_ENV=lib rollup --config rollup.config.js",
     "code:fix": "eslint --max-warnings=0 --ext .ts,.tsx ./src --fix",
-    "madge": "madge --circular ."
+    "madge": "madge --circular .",
+    "build:mathjax": "cd MathjaxToSVG && npm run build",
+    "build:all": "npm run build:mathjax && npm run build",
+    "dev:mathjax": "cd MathjaxToSVG && npm run dev",
+    "dev:all": "npm run dev:mathjax && npm run dev"
   },
   "keywords": [],
   "author": "",

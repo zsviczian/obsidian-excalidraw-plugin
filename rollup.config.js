@@ -19,6 +19,8 @@ const isProd = (process.env.NODE_ENV === "production");
 const isLib = (process.env.NODE_ENV === "lib");
 console.log(`Running: ${process.env.NODE_ENV}; isProd: ${isProd}; isLib: ${isLib}`);
 
+const mathjaxtosvg_pkg = isLib ? "" : fs.readFileSync("./MathjaxToSVG/dist/index.js", "utf8");
+
 const excalidraw_pkg = isLib ? "" : isProd
   ? fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/excalidraw.production.min.js", "utf8")
   : fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/excalidraw.development.js", "utf8");
@@ -63,7 +65,10 @@ const packageString = isLib
   '`;\n' +*/
   'const unpackExcalidraw = () => LZString.decompressFromBase64("' + LZString.compressToBase64(excalidraw_pkg) + '");\n' +
   'let {react, reactDOM } = window.eval.call(window, `(function() {' + '${REACT_PACKAGES};' + 'return {react: React, reactDOM: ReactDOM};})();`);\n' +
-  `let excalidrawLib = {};\n` +
+  'let excalidrawLib = {};\n' +
+  'const loadMathjaxToSVG = () => window.eval.call(window, `(function() {' + 
+  '${LZString.decompressFromBase64("' + LZString.compressToBase64(mathjaxtosvg_pkg) + '")}' +
+  'return MathjaxToSVG;})();`);\n' +
   'const PLUGIN_VERSION="' + manifest.version + '";';
 
 const BASE_CONFIG = {

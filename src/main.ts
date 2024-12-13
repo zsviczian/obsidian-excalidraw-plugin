@@ -134,7 +134,6 @@ import { CustomMutationObserver, debug, log, DEBUGGING, setDebugging } from "./u
 import { carveOutImage, carveOutPDF, createImageCropperFile } from "./utils/CarveOut";
 import { ExcalidrawConfig } from "./utils/ExcalidrawConfig";
 import { EditorHandler } from "./CodeMirrorExtension/EditorHandler";
-import { clearMathJaxVariables } from "./LaTeX";
 import { showFrameSettings } from "./dialogs/FrameSettings";
 import { ExcalidrawLib } from "./ExcalidrawLib";
 import { Rank, SwordColors } from "./menu/ActionIcons";
@@ -144,6 +143,7 @@ import { WeakArray } from "./utils/WeakArray";
 import { getCJKDataURLs } from "./utils/CJKLoader";
 import { ExcalidrawLoading, switchToExcalidraw } from "./dialogs/ExcalidrawLoading";
 import { insertImageToView } from "./utils/ExcalidrawViewUtils";
+import { clearMathJaxVariables } from "./LaTeX";
 
 declare let REACT_PACKAGES:string;
 //declare let EXCALIDRAW_PACKAGE:string;

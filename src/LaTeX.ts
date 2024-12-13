@@ -1,18 +1,22 @@
+// LaTeX.ts
 import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
-import {mathjax} from "mathjax-full/js/mathjax";
-import {TeX} from 'mathjax-full/js/input/tex.js';
-import {SVG} from 'mathjax-full/js/output/svg.js';
-import {LiteAdaptor, liteAdaptor} from 'mathjax-full/js/adaptors/liteAdaptor.js';
-import {RegisterHTMLHandler} from 'mathjax-full/js/handlers/html.js';
-import {AllPackages} from 'mathjax-full/js/input/tex/AllPackages.js';
-
 import ExcalidrawView from "./ExcalidrawView";
 import { FileData, MimeType } from "./EmbeddedFileLoader";
 import { FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
-import { getImageSize, svgToBase64 } from "./utils/Utils";
-import { fileid } from "./constants/constants";
-import { TFile } from "obsidian";
-import { MathDocument } from "mathjax-full/js/core/MathDocument";
+
+declare const loadMathjaxToSVG: Function;
+let mathjaxLoaded = false;
+let tex2dataURLExternal: Function;
+let clearVariables: Function;
+
+const loadMathJax = async () => {
+  if (!mathjaxLoaded) {
+    const module = await loadMathjaxToSVG();
+    tex2dataURLExternal = module.tex2dataURL;
+    clearVariables = module.clearMathJaxVariables;
+    mathjaxLoaded = true;
+  }
+};
 
 export const updateEquation = async (
   equation: string,
@@ -20,13 +24,14 @@ export const updateEquation = async (
   view: ExcalidrawView,
   addFiles: Function,
 ) => {
-  const data = await tex2dataURL(equation);
+  await loadMathJax();
+  const data = await tex2dataURLExternal(equation, 4, app);
   if (data) {
     const files: FileData[] = [];
     files.push({
-      mimeType: data.mimeType,
+      mimeType: data.mimeType as MimeType,
       id: fileId as FileId,
-      dataURL: data.dataURL,
+      dataURL: data.dataURL as DataURL,
       created: data.created,
       size: data.size,
       hasSVGwithBitmap: false,
@@ -36,27 +41,9 @@ export const updateEquation = async (
   }
 };
 
-let adaptor: LiteAdaptor;
-let html: MathDocument<any, any, any>;
-let preamble: string;
-
-export const clearMathJaxVariables = () => {
-  adaptor = null;
-  html = null;
-  preamble = null;
-};
-
-//https://github.com/xldenis/obsidian-latex/blob/master/main.ts
-const loadPreamble = async  () => {
-  const file = app.vault.getAbstractFileByPath("preamble.sty");
-  preamble = file && file instanceof TFile
-    ? await app.vault.read(file)
-    : null;
-};
-
 export async function tex2dataURL(
   tex: string,
-  scale: number = 4 // Default scale value, adjust as needed
+  scale: number = 4
 ): Promise<{
   mimeType: MimeType;
   fileId: FileId;
@@ -64,47 +51,12 @@ export async function tex2dataURL(
   created: number;
   size: { height: number; width: number };
 }> {
-  let input: TeX<unknown, unknown, unknown>;
-  let output: SVG<unknown, unknown, unknown>;
-
-  if(!adaptor) {
-    await loadPreamble();
-    adaptor = liteAdaptor();
-    RegisterHTMLHandler(adaptor);
-    input = new TeX({
-      packages: AllPackages,
-      ...Boolean(preamble) ? {
-        inlineMath: [['$', '$']],
-        displayMath: [['$$', '$$']]
-      } : {},
-    });
-    output = new SVG({ fontCache: "local" });
-    html = mathjax.document("", { InputJax: input, OutputJax: output });
-  }
-  try {
-    const node = html.convert(
-      Boolean(preamble) ? `${preamble}${tex}` : tex,
-      { display: true, scale }
-    );
-    const svg = new DOMParser().parseFromString(adaptor.innerHTML(node), "image/svg+xml").firstChild as SVGSVGElement;
-    if (svg) {
-      if(svg.width.baseVal.valueInSpecifiedUnits < 2) {
-        svg.width.baseVal.valueAsString = `${(svg.width.baseVal.valueInSpecifiedUnits+1).toFixed(3)}ex`;
-      }
-      const img = svgToBase64(svg.outerHTML);
-      svg.width.baseVal.valueAsString = (svg.width.baseVal.valueInSpecifiedUnits * 10).toFixed(3);
-      svg.height.baseVal.valueAsString = (svg.height.baseVal.valueInSpecifiedUnits * 10).toFixed(3);
-      const dataURL = svgToBase64(svg.outerHTML);
-      return {
-        mimeType: "image/svg+xml",
-        fileId: fileid() as FileId,
-        dataURL: dataURL as DataURL,
-        created: Date.now(),
-        size: await getImageSize(img),
-      };
-    }
-  } catch (e) {
-    console.error(e);
-  }
-  return null;
+  await loadMathJax();
+  return tex2dataURLExternal(tex, scale, app);
 }
+
+export const clearMathJaxVariables = () => {
+  if (clearVariables) {
+    clearVariables();
+  }
+};
