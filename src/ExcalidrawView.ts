@@ -1532,7 +1532,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
   
     const apiMissing = Boolean(typeof this.containerEl.onWindowMigrated === "undefined")
-    this.packages = this.plugin.packageManager.getPackage(this.ownerWindow);
+    this.packages = this.plugin.getPackage(this.ownerWindow);
 
     if(DEVICE.isDesktop && !apiMissing) {
       this.destroyers.push(
@@ -1981,7 +1981,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       }
     })
     if(leafcount === 0) {
-      this.plugin.packageManager.deletePackage(this.ownerWindow);
+      this.plugin.deletePackage(this.ownerWindow);
     }
 
     this.lastMouseEvent = null;
@@ -2893,7 +2893,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     await this.save();
     const file = await this.plugin.convertSingleExcalidrawToMD(this.file);
     await sleep(250); //dirty hack to wait for Obsidian metadata to be updated
-    this.plugin.fileManager.openDrawing(
+    this.plugin.openDrawing(
       file,
       "active-pane",
       true

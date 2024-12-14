@@ -147,9 +147,9 @@ declare let reactDOM:any;
 declare let excalidrawLib: typeof ExcalidrawLib;
 
 export default class ExcalidrawPlugin extends Plugin {
-  public fileManager: PluginFileManager;
-  public observerManager: ObserverManager;
-  public packageManager: PackageManager;
+  private fileManager: PluginFileManager;
+  private observerManager: ObserverManager;
+  private packageManager: PackageManager;
   private EXCALIDRAW_PACKAGE: string;
   public eaInstances = new WeakArray<ExcalidrawAutomate>();
   public fourthFontLoaded: boolean = false;
@@ -171,9 +171,7 @@ export default class ExcalidrawPlugin extends Plugin {
     sourcePath: null,
   };
   private legacyExcalidrawPopoverObserver: MutationObserver | CustomMutationObserver;
-  private themeObserver: MutationObserver | CustomMutationObserver;
   private fileExplorerObserver: MutationObserver | CustomMutationObserver;
-  private modalContainerObserver: MutationObserver | CustomMutationObserver;
   private workspaceDrawerLeftObserver: MutationObserver | CustomMutationObserver;
   private workspaceDrawerRightObserver: MutationObserver  | CustomMutationObserver;
   public opencount: number = 0;
@@ -3434,6 +3432,45 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public isExcalidrawFile(f: TFile) {
     return this.fileManager.isExcalidrawFile(f);
+  }
+
+  public openDrawing(
+    drawingFile: TFile,
+    location: PaneTarget,
+    active: boolean = false,
+    subpath?: string,
+    justCreated: boolean = false,
+    popoutLocation?: {x?: number, y?: number, width?: number, height?: number},
+  ) {
+    this.fileManager.openDrawing(drawingFile, location, active, subpath, justCreated, popoutLocation);
+  }
+
+  public async embedDrawing(file: TFile) {
+    return await this.fileManager.embedDrawing(file);
+  }
+
+  public async exportLibrary() {
+    return await this.fileManager.exportLibrary();
+  }
+
+  public addThemeObserver() {
+    this.observerManager.addThemeObserver();
+  }
+
+  public removeThemeObserver() {
+    this.observerManager.removeThemeObserver();
+  }
+
+  public experimentalFileTypeDisplayToggle(enabled: boolean) {
+    this.observerManager.experimentalFileTypeDisplayToggle(enabled);
+  }
+
+  public getPackage(win:Window):Packages {
+    return this.packageManager.getPackage(win);
+  }
+
+  public deletePackage(win: Window) {
+    this.packageManager.deletePackage(win);
   }
 
 }

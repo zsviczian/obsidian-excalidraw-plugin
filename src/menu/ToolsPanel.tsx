@@ -280,7 +280,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   actionExportLibrary() {
-    this.view.plugin.fileManager.exportLibrary();
+    this.view.plugin.exportLibrary();
   }
 
   actionExportImage() {

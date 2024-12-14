@@ -1247,9 +1247,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .onChange(async (value) => {
             this.plugin.settings.matchThemeTrigger = value;
             if(value) {
-              this.plugin.observerManager.addThemeObserver();
+              this.plugin.addThemeObserver();
             } else {
-              this.plugin.observerManager.removeThemeObserver();
+              this.plugin.removeThemeObserver();
             }
             this.applySettingsUpdate();
           }),
@@ -2653,7 +2653,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.experimentalFileType)
           .onChange(async (value) => {
             this.plugin.settings.experimentalFileType = value;
-            this.plugin.observerManager.experimentalFileTypeDisplayToggle(value);
+            this.plugin.experimentalFileTypeDisplayToggle(value);
             this.applySettingsUpdate();
           }),
       );
