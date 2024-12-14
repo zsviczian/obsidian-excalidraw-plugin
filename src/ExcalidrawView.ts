@@ -703,24 +703,24 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
   }
 
-  public async setEmbeddableIsEditingSelf() {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setEmbeddableIsEditingSelf, "ExcalidrawView.setEmbeddableIsEditingSelf");
-    this.clearEmbeddableIsEditingSelfTimer();
+  public async setEmbeddableNodeIsEditing() {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setEmbeddableNodeIsEditing, "ExcalidrawView.setEmbeddableNodeIsEditing");
+    this.clearEmbeddableNodeIsEditingTimer();
     await this.forceSave(true);
     this.semaphores.embeddableIsEditingSelf = true;
   }
 
-  public clearEmbeddableIsEditingSelfTimer () {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.clearEmbeddableIsEditingSelfTimer, "ExcalidrawView.clearEmbeddableIsEditingSelfTimer");
+  public clearEmbeddableNodeIsEditingTimer () {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.clearEmbeddableNodeIsEditingTimer, "ExcalidrawView.clearEmbeddableNodeIsEditingTimer");
     if(this.editingSelfResetTimer) {
       window.clearTimeout(this.editingSelfResetTimer);
       this.editingSelfResetTimer = null;
     }
   }
 
-  public clearEmbeddableIsEditingSelf() {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.clearEmbeddableIsEditingSelf, "ExcalidrawView.clearEmbeddableIsEditingSelf");
-    this.clearEmbeddableIsEditingSelfTimer();
+  public clearEmbeddableNodeIsEditing() {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.clearEmbeddableNodeIsEditing, "ExcalidrawView.clearEmbeddableNodeIsEditing");
+    this.clearEmbeddableNodeIsEditingTimer();
     this.editingSelfResetTimer = window.setTimeout(()=>this.semaphores.embeddableIsEditingSelf = false,EMBEDDABLE_SEMAPHORE_TIMEOUT);
   }
 
@@ -1938,7 +1938,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
 
     this.clearPreventReloadTimer();
-    this.clearEmbeddableIsEditingSelfTimer();
+    this.clearEmbeddableNodeIsEditingTimer();
     this.plugin.scriptEngine?.removeViewEAs(this);
     this.excalidrawAPI = null;
     if(this.draginfoDiv) {
@@ -2048,7 +2048,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if (this.semaphores.embeddableIsEditingSelf) {
       //console.log("reload - embeddable is editing")
       if(this.editingSelfResetTimer) {
-        this.clearEmbeddableIsEditingSelfTimer();
+        this.clearEmbeddableNodeIsEditingTimer();
         this.semaphores.embeddableIsEditingSelf = false;
       }
       if(loadOnModifyTrigger) {

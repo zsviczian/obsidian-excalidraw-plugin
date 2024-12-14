@@ -3,19 +3,27 @@ import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import ExcalidrawView from "./ExcalidrawView";
 import { FileData, MimeType } from "./EmbeddedFileLoader";
 import { FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { App } from "obsidian";
 
 declare const loadMathjaxToSVG: Function;
 let mathjaxLoaded = false;
 let tex2dataURLExternal: Function;
 let clearVariables: Function;
 
+let loadMathJaxPromise: Promise<void> | null = null;
+
 const loadMathJax = async () => {
-  if (!mathjaxLoaded) {
-    const module = await loadMathjaxToSVG();
-    tex2dataURLExternal = module.tex2dataURL;
-    clearVariables = module.clearMathJaxVariables;
-    mathjaxLoaded = true;
+  if (!loadMathJaxPromise) {
+    loadMathJaxPromise = (async () => {
+      if (!mathjaxLoaded) {
+        const module = await loadMathjaxToSVG();
+        tex2dataURLExternal = module.tex2dataURL;
+        clearVariables = module.clearMathJaxVariables;
+        mathjaxLoaded = true;
+      }
+    })();
   }
+  return loadMathJaxPromise;
 };
 
 export const updateEquation = async (
@@ -43,7 +51,8 @@ export const updateEquation = async (
 
 export async function tex2dataURL(
   tex: string,
-  scale: number = 4
+  scale: number = 4,
+  app: App,
 ): Promise<{
   mimeType: MimeType;
   fileId: FileId;

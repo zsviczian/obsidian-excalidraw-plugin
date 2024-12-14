@@ -115,9 +115,9 @@ export class CanvasNodeFactory {
     if (!this.initialized || !node) return;
     
     try {
-      if (node.file === this.view.file) {
-        await this.view.setEmbeddableIsEditingSelf();
-      }
+      //if (node.file === this.view.file) {
+        await this.view.setEmbeddableNodeIsEditing();
+      //}
       node.startEditing();
       node.isEditing = true;
 
@@ -141,9 +141,9 @@ export class CanvasNodeFactory {
     if (!this.initialized || !node || !node.isEditing) return;
     
     try {
-      if (node.file === this.view.file) {
-        this.view.clearEmbeddableIsEditingSelf();
-      }
+      //if (node.file === this.view.file) {
+        this.view.clearEmbeddableNodeIsEditing();
+      //}
       node.child.showPreview();
       node.isEditing = false;
       this.observer?.disconnect();
