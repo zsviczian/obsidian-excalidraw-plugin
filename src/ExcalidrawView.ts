@@ -1532,7 +1532,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
   
     const apiMissing = Boolean(typeof this.containerEl.onWindowMigrated === "undefined")
-    this.packages = this.plugin.getPackage(this.ownerWindow);
+    this.packages = this.plugin.packageManager.getPackage(this.ownerWindow);
 
     if(DEVICE.isDesktop && !apiMissing) {
       this.destroyers.push(
@@ -1981,7 +1981,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       }
     })
     if(leafcount === 0) {
-      this.plugin.deletePackage(this.ownerWindow);
+      this.plugin.packageManager.deletePackage(this.ownerWindow);
     }
 
     this.lastMouseEvent = null;

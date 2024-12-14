@@ -44,6 +44,10 @@ declare global {
   interface Window {
       ExcalidrawAutomate: ExcalidrawAutomate;
       pdfjsLib: any;
+      eval: (x: string) => any;
+      React?: any;
+      ReactDOM?: any;
+      ExcalidrawLib?: any;
   }
 }
 

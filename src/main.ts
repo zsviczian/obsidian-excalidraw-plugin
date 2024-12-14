@@ -136,20 +136,20 @@ import { insertImageToView } from "./utils/ExcalidrawViewUtils";
 import { clearMathJaxVariables } from "./LaTeX";
 import { PluginFileManager } from "./Managers/FileManager";
 import { ObserverManager } from "./Managers/ObserverManager";
+import { PackageManager } from "./Managers/PackageManager";
 
-
-declare let REACT_PACKAGES:string;
 //declare let EXCALIDRAW_PACKAGE:string;
 declare const unpackExcalidraw: Function;
+declare const PLUGIN_VERSION:string;
+declare const INITIAL_TIMESTAMP: number;
 declare let react:any;
 declare let reactDOM:any;
 declare let excalidrawLib: typeof ExcalidrawLib;
-declare const PLUGIN_VERSION:string;
-declare const INITIAL_TIMESTAMP: number;
 
 export default class ExcalidrawPlugin extends Plugin {
   public fileManager: PluginFileManager;
   public observerManager: ObserverManager;
+  public packageManager: PackageManager;
   private EXCALIDRAW_PACKAGE: string;
   public eaInstances = new WeakArray<ExcalidrawAutomate>();
   public fourthFontLoaded: boolean = false;
@@ -184,8 +184,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public equationsMaster: Map<FileId, string> = null; //fileId, formula
   public mermaidsMaster: Map<FileId, string> = null; //fileId, mermaidText
   public scriptEngine: ScriptEngine;
-  private packageMap: Map<Window,Packages> = new Map<Window,Packages>();
-  public leafChangeTimeout: number = null;
+    public leafChangeTimeout: number = null;
   private forceSaveCommand:Command;
   private removeEventLisnters:(()=>void)[] = [];
   private stylesManager:StylesManager;
@@ -203,10 +202,10 @@ export default class ExcalidrawPlugin extends Plugin {
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
-    this.fileManager = new PluginFileManager(this);
     this.loadTimestamp = INITIAL_TIMESTAMP;
     this.lastLogTimestamp = this.loadTimestamp;
-    this.packageMap.set(window,{react, reactDOM, excalidrawLib});
+    this.fileManager = new PluginFileManager(this);
+    this.packageManager = new PackageManager();
     this.filesMaster = new Map<
       FileId,
       { isHyperLink: boolean; isLocalLink: boolean; path: string; hasSVGwithBitmap: boolean; blockrefData: string; colorMapJSON?: string }
@@ -240,60 +239,6 @@ export default class ExcalidrawPlugin extends Plugin {
   get document(): Document {
     return document;
   };
-
-  public deletePackage(win:Window) {
-    //window.console.log("ExcalidrawPlugin.deletePackage",win, this.packageMap.has(win));
-    const {react, reactDOM, excalidrawLib} = this.getPackage(win);
-    
-    //@ts-ignore
-    if(win.ExcalidrawLib === excalidrawLib) {
-    excalidrawLib.destroyObsidianUtils();
-    //@ts-ignore
-    delete win.ExcalidrawLib;
-    }
-
-    //@ts-ignore
-    if(win.React === react) {
-      //@ts-ignore
-      Object.keys(win.React).forEach((key) => {
-        //@ts-ignore
-        delete win.React[key];
-      });
-      //@ts-ignore
-      delete win.React;
-    }
-    //@ts-ignore
-    if(win.ReactDOM === reactDOM) {
-      //@ts-ignore
-      Object.keys(win.ReactDOM).forEach((key) => {
-        //@ts-ignore    
-        delete win.ReactDOM[key];
-      });
-      //@ts-ignore
-      delete win.ReactDOM;
-    }
-    if(this.packageMap.has(win)) {
-      this.packageMap.delete(win);
-    }
-  }
-
-  public getPackage(win:Window):Packages {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getPackage, `ExcalidrawPlugin.getPackage`, win);
-
-    if(this.packageMap.has(win)) {
-      return this.packageMap.get(win);
-    }
-    
-    //@ts-ignore
-    const {react:r, reactDOM:rd, excalidrawLib:e} = win.eval.call(win,
-      `(function() {
-        ${REACT_PACKAGES + this.EXCALIDRAW_PACKAGE};
-        return {react:React,reactDOM:ReactDOM,excalidrawLib:ExcalidrawLib};
-       })()`);
-    this.packageMap.set(win,{react:r, reactDOM:rd, excalidrawLib:e});
-    return {react:r, reactDOM:rd, excalidrawLib:e};
-    
-  }
 
   // by adding the wrapper like this, likely in debug mode I am leaking memory because my code removes
   // the original event handlers, not the wrapped ones. I will only uncomment this if I need to debug
@@ -446,7 +391,7 @@ export default class ExcalidrawPlugin extends Plugin {
     try {
       this.EXCALIDRAW_PACKAGE = unpackExcalidraw();
       excalidrawLib = window.eval.call(window,`(function() {${this.EXCALIDRAW_PACKAGE};return ExcalidrawLib;})()`);
-      this.packageMap.set(window,{react, reactDOM, excalidrawLib});
+      this.packageManager.setPackage(window,{react, reactDOM, excalidrawLib});
       updateExcalidrawLib();
     } catch (e) {
       new Notice("Error loading the Excalidraw package", 6000);
@@ -693,7 +638,7 @@ export default class ExcalidrawPlugin extends Plugin {
         fontName: "Local Font",
       }
     }
-    this.packageMap.forEach(({excalidrawLib}) => {
+    this.packageManager.getPackageMap().forEach(({excalidrawLib}) => {
       (excalidrawLib as typeof ExcalidrawLib).registerLocalFont({metrics: fontMetrics as any, icon: null}, fourthFontDataURL);
     });
     // Add fonts to open Obsidian documents
@@ -3299,11 +3244,6 @@ export default class ExcalidrawPlugin extends Plugin {
       this.taskbone.destroy();
       this.taskbone = null;
     }
-    Object.values(this.packageMap).forEach((p:Packages)=>{
-      delete p.excalidrawLib;
-      delete p.reactDOM;
-      delete p.react;
-    });
 
     this.excalidrawConfig = null;
 
@@ -3348,12 +3288,11 @@ export default class ExcalidrawPlugin extends Plugin {
     this.settings = null;
     clearMathJaxVariables();
     this.EXCALIDRAW_PACKAGE = "";
-    REACT_PACKAGES = "";
     //pluginPackages = null;
     //PLUGIN_VERSION = null;
     //@ts-ignore
     delete window.PolyBool;
-    this.deletePackage(window);
+    this.packageManager.destroy();
     react = null;
     reactDOM = null;
     excalidrawLib = null;
