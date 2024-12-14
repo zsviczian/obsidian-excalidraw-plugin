@@ -430,7 +430,7 @@ const createImgElement = async (
               if(!result) return;
               const [file, linkText, subpath] = result;
               if(plugin.isExcalidrawFile(file)) {
-                plugin.openDrawing(file,linkModifier, true, subpath);
+                plugin.fileManager.openDrawing(file,linkModifier, true, subpath);
                 return;
               }
               let paneType: boolean | PaneType = false;
@@ -445,7 +445,7 @@ const createImgElement = async (
           })()
           return;
         }
-      plugin.openDrawing(f,linkModifier,true,srcParts[2]);
+      plugin.fileManager.openDrawing(f,linkModifier,true,srcParts[2]);
     } //.ctrlKey||ev.metaKey);
   };
   //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1003
@@ -1026,7 +1026,7 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = async (m) => {
       ev.stopImmediatePropagation();
       const src = el.getAttribute("src");
       if (src) {
-        plugin.openDrawing(
+        plugin.fileManager.openDrawing(
           vault.getAbstractFileByPath(src) as TFile,
           linkClickModifierType(ev)
         );

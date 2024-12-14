@@ -13,7 +13,7 @@ import {
 import { GITHUB_RELEASES } from "./constants/constants";
 import { t } from "./lang/helpers";
 import type ExcalidrawPlugin from "./main";
-import { PenStyle } from "./PenTypes";
+import { PenStyle } from "./types/PenTypes";
 import { DynamicStyle, GridSettings } from "./types/types";
 import { PreviewImageType } from "./utils/UtilTypes";
 import { setDynamicStyle } from "./utils/DynamicStyling";

@@ -5,7 +5,7 @@ import * as React from "react";
 import { DEVICE } from "src/constants/constants";
 import { PenSettingsModal } from "src/dialogs/PenSettingsModal";
 import ExcalidrawView from "src/ExcalidrawView";
-import { PenStyle } from "src/PenTypes";
+import { PenStyle } from "src/types/PenTypes";
 import { PENS } from "src/utils/Pens";
 import ExcalidrawPlugin from "../main";
 import { ICONS, penIcon, stringToSVG } from "./ActionIcons";

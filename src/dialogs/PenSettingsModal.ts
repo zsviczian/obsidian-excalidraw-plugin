@@ -4,7 +4,7 @@ import { COLOR_NAMES } from "src/constants/constants";
 import ExcalidrawView from "src/ExcalidrawView";
 import ExcalidrawPlugin from "src/main";
 import { setPen } from "src/menu/ObsidianMenu";
-import { ExtendedFillStyle, PenType } from "src/PenTypes";
+import { ExtendedFillStyle, PenType } from "src/types/PenTypes";
 import { getExcalidrawViews } from "src/utils/ObsidianUtils";
 import { PENS } from "src/utils/Pens";
 import { fragWithHTML } from "src/utils/Utils";

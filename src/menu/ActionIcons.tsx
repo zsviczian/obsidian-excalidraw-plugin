@@ -1,6 +1,6 @@
 import { Copy, Crop, Globe, RotateCcw, Scan, Settings, TextSelect } from "lucide-react";
 import * as React from "react";
-import { PenStyle } from "src/PenTypes";
+import { PenStyle } from "src/types/PenTypes";
 
 export const ICONS = {
   ExportImage: (

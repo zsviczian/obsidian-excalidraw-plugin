@@ -120,7 +120,7 @@ export class PublishOutOfDateFilesDialog extends Modal {
     bOpen.onclick = () => {
       filesMap.forEach((value:boolean,key:TFile) => {
         if(value) {
-          this.plugin.openDrawing(key,"new-tab",true);
+          this.plugin.fileManager.openDrawing(key,"new-tab",true);
         }
       });
       this.close();

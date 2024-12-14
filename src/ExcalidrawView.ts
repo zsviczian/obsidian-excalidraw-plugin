@@ -2893,7 +2893,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     await this.save();
     const file = await this.plugin.convertSingleExcalidrawToMD(this.file);
     await sleep(250); //dirty hack to wait for Obsidian metadata to be updated
-    this.plugin.openDrawing(
+    this.plugin.fileManager.openDrawing(
       file,
       "active-pane",
       true
