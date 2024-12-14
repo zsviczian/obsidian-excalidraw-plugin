@@ -1,4 +1,4 @@
-import { ExcalidrawAutomate, createPNG } from "../ExcalidrawAutomate";
+import { ExcalidrawAutomate } from "../ExcalidrawAutomate";
 import {Notice, requestUrl} from "obsidian"
 import ExcalidrawPlugin from "../main"
 import ExcalidrawView, { ExportSettings } from "../ExcalidrawView"

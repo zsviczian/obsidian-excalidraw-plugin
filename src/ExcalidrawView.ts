@@ -2657,9 +2657,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.clearDirty();
     const om = this.excalidrawData.getOpenMode();
     this.semaphores.preventReload = false;
-    const penEnabled =
-      this.plugin.settings.defaultPenMode === "always" ||
-      (this.plugin.settings.defaultPenMode === "mobile" && DEVICE.isMobile);
+    const penEnabled = this.plugin.isPenMode();
     const api = this.excalidrawAPI;
     if (api) {
       //isLoaded flags that a new file is being loaded, isLoaded will be true after loadDrawing completes
@@ -3700,6 +3698,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         if (selectedElementWithLink?.id) {
           linktext = getLinkTextFromLink(selectedElementWithLink.text);
           if(!linktext) return;
+          if(this.app.metadataCache.getFirstLinkpathDest(linktext.split("#")[0],this.file.path) === this.file) return;
         }
       } else {
         const {linkText, selectedElement} = this.getLinkTextForElement(selectedEl, selectedEl);
@@ -3963,6 +3962,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   private onChange (et: ExcalidrawElement[], st: AppState) {
     if(st.newElement?.type === "freedraw") {
       this.freedrawLastActiveTimestamp = Date.now();
+    }
+    if (st.newElement || st.editingTextElement || st.editingLinearElement) {
+      this.plugin.wasPenModeActivePreviously = st.penMode;
     }
     this.viewModeEnabled = st.viewModeEnabled;
     if (this.semaphores.justLoaded) {

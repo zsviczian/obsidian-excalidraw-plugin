@@ -205,6 +205,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private startupAnalytics: string[] = [];
   private lastLogTimestamp: number;
   private settingsReady: boolean = false;
+  public wasPenModeActivePreviously: boolean = false;
 
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
@@ -336,6 +337,12 @@ export default class ExcalidrawPlugin extends Plugin {
       super.registerEvent(event);
     };
   }*/
+
+  public isPenMode() {
+    return this.wasPenModeActivePreviously ||
+      (this.settings.defaultPenMode === "always") ||
+      (this.settings.defaultPenMode === "mobile" && DEVICE.isMobile);
+  }
   
   public getCJKFontSettings() {
     const assetsFoler = this.settings.fontAssetsPath;
