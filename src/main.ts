@@ -135,6 +135,7 @@ import { ExcalidrawLoading, switchToExcalidraw } from "./dialogs/ExcalidrawLoadi
 import { insertImageToView } from "./utils/ExcalidrawViewUtils";
 import { clearMathJaxVariables } from "./LaTeX";
 import { PluginFileManager } from "./Managers/FileManager";
+import { ObserverManager } from "./Managers/ObserverManager";
 
 
 declare let REACT_PACKAGES:string;
@@ -148,6 +149,7 @@ declare const INITIAL_TIMESTAMP: number;
 
 export default class ExcalidrawPlugin extends Plugin {
   public fileManager: PluginFileManager;
+  public observerManager: ObserverManager;
   private EXCALIDRAW_PACKAGE: string;
   public eaInstances = new WeakArray<ExcalidrawAutomate>();
   public fourthFontLoaded: boolean = false;
@@ -469,12 +471,12 @@ export default class ExcalidrawPlugin extends Plugin {
     this.logStartupEvent("Excalidraw config initialized");
 
     try {
-      this.addThemeObserver();
+      this.observerManager = new ObserverManager(this);
     } catch (e) {
-      new Notice("Error adding theme observer", 6000);
-      console.error("Error adding theme observer", e);
+      new Notice("Error adding ObserverManager", 6000);
+      console.error("Error adding ObserverManager", e);
     }
-    this.logStartupEvent("Theme observer added");
+    this.logStartupEvent("ObserverManager added");
 
     try {
       //inspiration taken from kanban:
@@ -582,14 +584,6 @@ export default class ExcalidrawPlugin extends Plugin {
       console.error("Error registering script install-codeblock processor", e);
     }
     this.logStartupEvent("Script install-codeblock processor registered");
-
-    try {
-      this.experimentalFileTypeDisplayToggle(this.settings.experimentalFileType);
-    } catch (e) {
-      new Notice("Error setting up experimental file type display", 6000);
-      console.error("Error setting up experimental file type display", e);
-    }
-    this.logStartupEvent("Experimental file type display set");
 
     try {
       this.registerCommands();
@@ -1003,119 +997,6 @@ export default class ExcalidrawPlugin extends Plugin {
       //monitoring for div.popover.hover-popover.file-embed.is-loaded to be added to the DOM tree
       this.legacyExcalidrawPopoverObserver = legacyExcalidrawPopoverObserver;
       this.legacyExcalidrawPopoverObserver.observe(document.body, { childList: true, subtree: false });
-    }
-  }
-
-  public addThemeObserver() {
-    if(this.themeObserver) return;
-    const { matchThemeTrigger } = this.settings;
-    if (!matchThemeTrigger) return;
-
-    const themeObserverFn:MutationCallback = async (mutations: MutationRecord[]) => {
-      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(themeObserverFn, `ExcalidrawPlugin.addThemeObserver`, mutations);
-      const { matchThemeTrigger } = this.settings;
-      if (!matchThemeTrigger) return;
-
-      const bodyClassList = document.body.classList;
-      const mutation = mutations[0];
-      if (mutation?.oldValue === bodyClassList.value) return;
-      
-      const darkClass = bodyClassList.contains('theme-dark');
-      if (mutation?.oldValue?.includes('theme-dark') === darkClass) return;
-
-      setTimeout(()=>{ //run async to avoid blocking the UI
-        const theme = isObsidianThemeDark() ? "dark" : "light";
-        const excalidrawViews = getExcalidrawViews(this.app);
-        excalidrawViews.forEach(excalidrawView => {
-          if (excalidrawView.file && excalidrawView.excalidrawAPI) {
-            excalidrawView.setTheme(theme);
-          }
-        });
-      });
-    };
-
-    this.themeObserver = DEBUGGING
-      ? new CustomMutationObserver(themeObserverFn, "themeObserver")
-      : new MutationObserver(themeObserverFn);
-  
-    this.themeObserver.observe(document.body, {
-      attributeOldValue: true,
-      attributeFilter: ["class"],
-    });
-  }
-
-  public removeThemeObserver() {
-    if(!this.themeObserver) return;
-    this.themeObserver.disconnect();
-    this.themeObserver = null;
-  }
-
-  public experimentalFileTypeDisplayToggle(enabled: boolean) {
-    if (enabled) {
-      this.experimentalFileTypeDisplay();
-      return;
-    }
-    if (this.fileExplorerObserver) {
-      this.fileExplorerObserver.disconnect();
-    }
-    this.fileExplorerObserver = null;
-  }
-
-  /**
-   * Display characters configured in settings, in front of the filename, if the markdown file is an excalidraw drawing
-   * Must be called after the workspace is ready
-   * The function is called from onload()
-   */
-  private async experimentalFileTypeDisplay() {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.experimentalFileTypeDisplay, `ExcalidrawPlugin.experimentalFileTypeDisplay`);
-    const insertFiletype = (el: HTMLElement) => {
-      if (el.childElementCount !== 1) {
-        return;
-      }
-      const filename = el.getAttribute("data-path");
-      if (!filename) {
-        return;
-      }
-      const f = this.app.vault.getAbstractFileByPath(filename);
-      if (!f || !(f instanceof TFile)) {
-        return;
-      }
-      if (this.isExcalidrawFile(f)) {
-        el.insertBefore(
-          createDiv({
-            cls: "nav-file-tag",
-            text: this.settings.experimentalFileTag,
-          }),
-          el.firstChild,
-        );
-      }
-    };
-
-    const fileExplorerObserverFn:MutationCallback = (mutationsList) => {
-      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(fileExplorerObserverFn, `ExcalidrawPlugin.experimentalFileTypeDisplay > fileExplorerObserverFn`, mutationsList);
-      const mutationsWithNodes = mutationsList.filter((mutation) => mutation.addedNodes.length > 0);
-      mutationsWithNodes.forEach((mutationNode) => {
-        mutationNode.addedNodes.forEach((node) => {
-          if (!(node instanceof Element)) {
-            return;
-          }
-          node.querySelectorAll(".nav-file-title").forEach(insertFiletype);
-        });
-      });
-    };
-
-    this.fileExplorerObserver = DEBUGGING
-      ? new CustomMutationObserver(fileExplorerObserverFn, "fileExplorerObserver")
-      : new MutationObserver(fileExplorerObserverFn);
-
-    //the part that should only run after onLayoutReady
-    document.querySelectorAll(".nav-file-title").forEach(insertFiletype); //apply filetype to files already displayed
-    const container = document.querySelector(".nav-files-container");
-    if (container) {
-      this.fileExplorerObserver.observe(container, {
-        childList: true,
-        subtree: true,
-      });
     }
   }
 
@@ -3066,10 +2947,10 @@ export default class ExcalidrawPlugin extends Plugin {
     this.activeExcalidrawView = newActiveviewEV;
 
     if (newActiveviewEV) {
-      this.addModalContainerObserver();
+      this.observerManager.addModalContainerObserver();
       this.lastActiveExcalidrawFilePath = newActiveviewEV.file?.path;
     } else {
-      this.removeModalContainerObserver();
+      this.observerManager.removeModalContainerObserver();
     }
 
     //!Temporary hack
@@ -3317,8 +3198,6 @@ export default class ExcalidrawPlugin extends Plugin {
       this.app.workspace.on("file-menu", onFileMenuEventSaveActiveDrawing),
     );
 
-    this.addModalContainerObserver();
-
     //when the user activates the sliding drawers on Obsidian Mobile
     const leftWorkspaceDrawer = document.querySelector(
       ".workspace-drawer.mod-left",
@@ -3359,47 +3238,6 @@ export default class ExcalidrawPlugin extends Plugin {
         );
       }
     }
-  }
-
-  private activeViewDoc: Document;
-  private addModalContainerObserver() {
-    if(!this.activeExcalidrawView) return;
-    if(this.modalContainerObserver) {
-      if(this.activeViewDoc === this.activeExcalidrawView.ownerDocument) {
-        return;
-      }
-      this.removeModalContainerObserver();
-    }
-    //The user clicks settings, or "open another vault", or the command palette
-    const modalContainerObserverFn: MutationCallback = async (m: MutationRecord[]) => {
-      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(modalContainerObserverFn,`ExcalidrawPlugin.modalContainerObserverFn`, m);
-      if (
-        (m.length !== 1) ||
-        (m[0].type !== "childList") ||
-        (m[0].addedNodes.length !== 1) ||
-        (!this.activeExcalidrawView) ||
-        this.activeExcalidrawView?.semaphores?.viewunload ||
-        (!this.activeExcalidrawView?.isDirty())
-      ) {
-        return;
-      }
-      this.activeExcalidrawView.save();
-    };
-
-    this.modalContainerObserver = DEBUGGING
-      ? new CustomMutationObserver(modalContainerObserverFn, "modalContainerObserver")
-      : new MutationObserver(modalContainerObserverFn);
-    this.activeViewDoc = this.activeExcalidrawView.ownerDocument;
-    this.modalContainerObserver.observe(this.activeViewDoc.body, {
-      childList: true,
-    });    
-  }
-
-  private removeModalContainerObserver() {
-    if(!this.modalContainerObserver) return;
-    this.modalContainerObserver.disconnect();
-    this.activeViewDoc = null;
-    this.modalContainerObserver = null;
   }
 
   onunload() {
@@ -3447,8 +3285,7 @@ export default class ExcalidrawPlugin extends Plugin {
     if(this.legacyExcalidrawPopoverObserver) {
       this.legacyExcalidrawPopoverObserver.disconnect();
     }
-    this.removeThemeObserver();
-    this.removeModalContainerObserver();
+    this.observerManager.destroy();
     if (this.workspaceDrawerLeftObserver) {
       this.workspaceDrawerLeftObserver.disconnect();
     }
