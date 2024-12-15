@@ -16,7 +16,8 @@
     "build:mathjax": "cd MathjaxToSVG && npm run build",
     "build:all": "npm run build:mathjax && npm run build",
     "dev:mathjax": "cd MathjaxToSVG && npm run dev",
-    "dev:all": "npm run dev:mathjax && npm run dev"
+    "dev:all": "npm run dev:mathjax && npm run dev",
+    "build:lang": "node ./scripts/compressLanguages.js"
   },
   "keywords": [],
   "author": "",
@@ -81,7 +82,9 @@
     "rollup-plugin-typescript2": "^0.34.1",
     "tslib": "^2.6.1",
     "ttypescript": "^1.5.15",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "fs-extra": "^11.2.0",
+    "uglify-js": "^3.19.3"
   },
   "resolutions": {
     "@typescript-eslint/typescript-estree": "5.3.0"

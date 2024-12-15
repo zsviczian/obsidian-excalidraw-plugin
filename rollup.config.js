@@ -9,6 +9,7 @@ import LZString from 'lz-string';
 import postprocess from '@zsviczian/rollup-plugin-postprocess';
 import cssnano from 'cssnano';
 import jsesc from 'jsesc';
+import { minify } from 'uglify-js';
 
 // Load environment variables
 import dotenv from 'dotenv';
@@ -20,6 +21,36 @@ const isLib = (process.env.NODE_ENV === "lib");
 console.log(`Running: ${process.env.NODE_ENV}; isProd: ${isProd}; isLib: ${isLib}`);
 
 const mathjaxtosvg_pkg = isLib ? "" : fs.readFileSync("./MathjaxToSVG/dist/index.js", "utf8");
+
+const LANGUAGES = ['ru', 'zh-cn']; //english is not compressed as it is always loaded by default
+
+function trimLastSemicolon(input) {
+  if (input.endsWith(";")) {
+    return input.slice(0, -1);
+  }
+  return input;
+}
+
+function compressLanguageFile(lang) {
+  const inputDir = "./src/lang/locale";
+  const filePath = `${inputDir}/${lang}.ts`;
+  let content = fs.readFileSync(filePath, "utf-8");
+  content = trimLastSemicolon(content.split("export default")[1].trim());
+
+  const minified = minify(`x = ${content};`,{
+    compress: true,
+    mangle: true,
+    output: {
+      comments: false,
+      beautify: false,
+    },
+  });
+
+  if (minified.error) {
+    throw new Error(minified.error);
+  }
+  return LZString.compressToBase64(minified.code);
+}
 
 const excalidraw_pkg = isLib ? "" : isProd
   ? fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/excalidraw.production.min.js", "utf8")
@@ -69,6 +100,7 @@ const packageString = isLib
   'const loadMathjaxToSVG = () => window.eval.call(window, `(function() {' + 
   '${LZString.decompressFromBase64("' + LZString.compressToBase64(mathjaxtosvg_pkg) + '")}' +
   'return MathjaxToSVG;})();`);\n' +
+  `const PLUGIN_LANGUAGES = {${LANGUAGES.map(lang => `"${lang}": "${compressLanguageFile(lang)}"`).join(",")}};\n` +
   'const PLUGIN_VERSION="' + manifest.version + '";';
 
 const BASE_CONFIG = {

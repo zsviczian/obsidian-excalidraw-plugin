@@ -1,7 +1,32 @@
 //Solution copied from obsidian-kanban: https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/lang/helpers.ts
 
-import { moment } from "obsidian";
-import { errorlog } from "src/utils/Utils";
+import { LOCALE } from "src/constants/constants";
+import en from "./locale/en";
+
+declare const PLUGIN_LANGUAGES: Record<string, string>;
+declare var LZString: any;
+
+let locale: Partial<typeof en> | null = null;
+
+function loadLocale(lang: string): Partial<typeof en> {
+  if (Object.keys(PLUGIN_LANGUAGES).includes(lang)) {
+    const decompressed = LZString.decompressFromBase64(PLUGIN_LANGUAGES[lang]);
+    let x = {};
+    eval(decompressed);
+    return x;
+  } else {
+    return en;
+  }
+}
+
+export function t(str: keyof typeof en): string {
+  if (!locale) {
+    locale = loadLocale(LOCALE);
+  }
+  return (locale && locale[str]) || en[str];
+}
+
+/*
 import ar from "./locale/ar";
 import cz from "./locale/cz";
 import da from "./locale/da";
@@ -51,11 +76,4 @@ const localeMap: { [k: string]: Partial<typeof en> } = {
   tr,
   "zh-cn": zhCN,
   "zh-tw": zhTW,
-};
-
-const locale = localeMap[LOCALE];
-
-export function t(str: keyof typeof en): string {
-
-  return (locale && locale[str]) || en[str];
-}
+};*/
