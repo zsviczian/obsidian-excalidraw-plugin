@@ -8,6 +8,7 @@ import {
   Notice,
   Command,
   EventRef,
+  FileView,
 } from "obsidian";
 import {
   VIEW_TYPE_EXCALIDRAW,
@@ -100,8 +101,17 @@ export class CommandManager {
   constructor(plugin: ExcalidrawPlugin) {
     this.app = plugin.app;
     this.plugin = plugin;
-    this.taskbone = new Taskbone(plugin);
-    this.registerCommands();
+  }
+
+  public initialize() {
+    try {
+      this.taskbone = new Taskbone(this.plugin);
+      this.registerCommands();
+    } catch (e) {
+      new Notice("Error registering commands", 6000);
+      console.error("Error registering commands", e);
+    }
+    this.plugin.logStartupEvent("Commands registered");
   }
 
   destroy() {
@@ -1189,8 +1199,8 @@ export class CommandManager {
 
         const embeddableEl = embeddables[0] as ExcalidrawEmbeddableElement;
         const ea = new ExcalidrawAutomate(this.plugin,excalidrawView);
-        //@ts-ignore
-        const pdfFile: TFile = excalidrawView.getEmbeddableLeafElementById(embeddableEl.id)?.leaf?.view?.file;
+        const view = excalidrawView.getEmbeddableLeafElementById(embeddableEl.id)?.leaf?.view;
+        const pdfFile: TFile = view && (view instanceof FileView) ? view.file : undefined;
         (async () => {
           const imgID = await ea.addImage(embeddableEl.x + embeddableEl.width + 10, embeddableEl.y, `${pdfFile?.path}#page=${page}`, false, false);
           const imgEl = ea.getElement(imgID) as Mutable<ExcalidrawImageElement>;
@@ -1230,7 +1240,6 @@ export class CommandManager {
             return false;
           }
 
-          //@ts-ignore
           const page = isPDF ? getActivePDFPageNumberFromPDFView(excalidrawView.getEmbeddableLeafElementById(embeddables[0].id)?.leaf?.view) : undefined;
           if(isPDF && !page) {
             return false;
@@ -1241,8 +1250,8 @@ export class CommandManager {
           if(isPDF) {
             const embeddableEl = embeddables[0] as ExcalidrawEmbeddableElement;
             const ea = new ExcalidrawAutomate(this.plugin,excalidrawView);
-            //@ts-ignore
-            const pdfFile: TFile = excalidrawView.getEmbeddableLeafElementById(embeddableEl.id)?.leaf?.view?.file;
+            const view = excalidrawView.getEmbeddableLeafElementById(embeddableEl.id)?.leaf?.view;
+            const pdfFile: TFile = view && (view instanceof FileView) ? view.file : undefined;
             carveOutPDF(ea, embeddableEl, `${pdfFile?.path}#page=${page}`, pdfFile);
             return;
           }

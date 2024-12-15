@@ -1,5 +1,5 @@
 import { debug } from "src/utils/DebugHelper";
-import { App, FrontMatterCache, MarkdownView, normalizePath, Notice, TAbstractFile, TFile, WorkspaceLeaf } from "obsidian";
+import { App, FrontMatterCache, MarkdownView, MetadataCache, normalizePath, Notice, TAbstractFile, TFile, WorkspaceLeaf } from "obsidian";
 import { BLANK_DRAWING, DARK_BLANK_DRAWING, DEVICE, EXPORT_TYPES, FRONTMATTER, FRONTMATTER_KEYS, JSON_parse, nanoid, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
 import { Prompt, templatePromt } from "src/dialogs/Prompt";
 import { changeThemeOfExcalidrawMD, ExcalidrawData, getMarkdownDrawingSection } from "src/ExcalidrawData";
@@ -23,6 +23,23 @@ export class PluginFileManager {
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
     this.app = plugin.app;
+  }
+
+  public async initialize() {
+    await this.plugin.awaitInit();
+    const metaCache: MetadataCache = this.app.metadataCache;
+    metaCache.getCachedFiles().forEach((filename: string) => {
+      const fm = metaCache.getCache(filename)?.frontmatter;
+      if (
+        (fm && typeof fm[FRONTMATTER_KEYS["plugin"].name] !== "undefined") ||
+        filename.match(/\.excalidraw$/)
+      ) {
+        this.updateFileCache(
+          this.app.vault.getAbstractFileByPath(filename) as TFile,
+          fm,
+        );
+      }
+    });
   }
 
   public isExcalidrawFile(f: TFile): boolean {
@@ -255,7 +272,6 @@ export class PluginFileManager {
       }
       let leaf: WorkspaceLeaf;
       if(location === "popout-window") {
-        //@ts-ignore (the api does not include x,y)
         leaf = this.app.workspace.openPopoutLeaf(popoutLocation);
       }
       if(location === "new-tab") {
@@ -367,7 +383,7 @@ export class PluginFileManager {
   }
 
   public async modifyEventHandler (file: TFile) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.modifyEventHandler,`ExcalidrawPlugin.modifyEventHandler`, file);
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.modifyEventHandler,`FileManager.modifyEventHandler`, file);
     const excalidrawViews = getExcalidrawViews(this.app);
     excalidrawViews.forEach(async (excalidrawView) => {
       if(excalidrawView.semaphores?.viewunload) {

@@ -49,6 +49,9 @@ declare global {
       ReactDOM?: any;
       ExcalidrawLib?: any;
   }
+  interface File {
+    path?: string;
+  }
 }
 
 declare module "obsidian" {
@@ -59,12 +62,40 @@ declare module "obsidian" {
     metadataTypeManager: {
       setType(name:string, type:string): void;
     };
+    plugins: {
+      plugins: {
+        [key: string]: Plugin | undefined;
+      };
+    };
+  }
+  interface FileManager {
+    promptForFileRename(file: TFile): Promise<void>;
+  }
+  interface FileView {
+    _loaded: boolean;
+    headerEl: HTMLElement;
+  }
+  interface TextFileView {
+    lastSavedData: string;
+  }
+  interface Menu {
+    items: MenuItem[];
   }
   interface Keymap {
     getRootScope(): Scope;
   }
   interface Scope {
     keys: any[];
+  }
+  interface WorkspaceLeaf {
+    id: string;
+    containerEl: HTMLDivElement;
+    tabHeaderInnerTitleEl: HTMLDivElement;
+    tabHeaderInnerIconEl: HTMLDivElement;
+  }
+  interface WorkspaceWindowInitData {
+    x?: number;
+    y?: number;
   }
   interface Workspace {
     on(
@@ -99,5 +130,15 @@ declare module "obsidian" {
   interface MetadataCache {
     getBacklinksForFile(file: TFile): any;
     getLinks(): { [id: string]: Array<{ link: string; displayText: string; original: string; position: any }> };
+    getCachedFiles(): string[];
+  }
+
+  interface HoverPopover {
+    containerEl: HTMLElement;
+    hide(): void;
+  }
+
+  interface Plugin {
+    _loaded: boolean;
   }
 }

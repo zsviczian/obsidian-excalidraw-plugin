@@ -2,7 +2,7 @@ import { debug, DEBUGGING } from "src/utils/DebugHelper";
 import ExcalidrawPlugin from "src/main";
 import { CustomMutationObserver } from "src/utils/DebugHelper";
 import { getExcalidrawViews, isObsidianThemeDark } from "src/utils/ObsidianUtils";
-import { App, TFile } from "obsidian";
+import { App, Notice, TFile } from "obsidian";
 
 export class ObserverManager {
   private plugin: ExcalidrawPlugin;
@@ -14,16 +14,45 @@ export class ObserverManager {
   private workspaceDrawerRightObserver: MutationObserver | CustomMutationObserver;
   private activeViewDoc: Document;
 
+  get settings() {
+    return this.plugin.settings;
+  }
+
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
     this.app = plugin.app;
-    if(this.settings.matchThemeTrigger) this.addThemeObserver();
-    this.experimentalFileTypeDisplayToggle(this.settings.experimentalFileType);
-    this.addModalContainerObserver();
   }
 
-  get settings() {
-    return this.plugin.settings;
+  public initialize() {
+    try {
+      if(this.settings.matchThemeTrigger) this.addThemeObserver();
+      this.experimentalFileTypeDisplayToggle(this.settings.experimentalFileType);
+      this.addModalContainerObserver();
+    } catch (e) {
+      new Notice("Error adding ObserverManager", 6000);
+      console.error("Error adding ObserverManager", e);
+    }
+    this.plugin.logStartupEvent("ObserverManager added");
+  }
+
+  public destroy() {
+    this.removeThemeObserver();
+    this.removeModalContainerObserver();
+    if (this.workspaceDrawerLeftObserver) {
+      this.workspaceDrawerLeftObserver.disconnect();
+    }
+    if (this.workspaceDrawerRightObserver) {
+      this.workspaceDrawerRightObserver.disconnect();
+    }
+    if (this.fileExplorerObserver) {
+      this.fileExplorerObserver.disconnect();
+    }
+    if (this.workspaceDrawerRightObserver) {
+      this.workspaceDrawerRightObserver.disconnect();
+    }
+    if (this.workspaceDrawerLeftObserver) {
+      this.workspaceDrawerLeftObserver.disconnect();
+    }
   }
 
   public addThemeObserver() {
@@ -183,17 +212,46 @@ export class ObserverManager {
     this.modalContainerObserver = null;
   }
 
-  public destroy() {
-    this.removeThemeObserver();
-    this.removeModalContainerObserver();
-    if (this.workspaceDrawerLeftObserver) {
-      this.workspaceDrawerLeftObserver.disconnect();
-    }
-    if (this.workspaceDrawerRightObserver) {
-      this.workspaceDrawerRightObserver.disconnect();
-    }
-    if (this.fileExplorerObserver) {
-      this.fileExplorerObserver.disconnect();
+  private addWorkspaceDrawerObserver() {
+    //when the user activates the sliding drawers on Obsidian Mobile
+    const leftWorkspaceDrawer = document.querySelector(
+      ".workspace-drawer.mod-left",
+    );
+    const rightWorkspaceDrawer = document.querySelector(
+      ".workspace-drawer.mod-right",
+    );
+    if (leftWorkspaceDrawer || rightWorkspaceDrawer) {
+      const action = async (m: MutationRecord[]) => {
+        if (
+          m[0].oldValue !== "display: none;" ||
+          !this.plugin.activeExcalidrawView ||
+          !this.plugin.activeExcalidrawView?.isDirty()
+        ) {
+          return;
+        }
+        this.plugin.activeExcalidrawView.save();
+      };
+      const options = {
+        attributeOldValue: true,
+        attributeFilter: ["style"],
+      };
+
+      if (leftWorkspaceDrawer) {
+        this.workspaceDrawerLeftObserver = DEBUGGING
+          ? new CustomMutationObserver(action, "slidingDrawerLeftObserver")
+          : new MutationObserver(action);
+        this.workspaceDrawerLeftObserver.observe(leftWorkspaceDrawer, options);
+      }
+
+      if (rightWorkspaceDrawer) {
+        this.workspaceDrawerRightObserver = DEBUGGING
+          ? new CustomMutationObserver(action, "slidingDrawerRightObserver")
+          : new MutationObserver(action);
+        this.workspaceDrawerRightObserver.observe(
+          rightWorkspaceDrawer,
+          options,
+        );
+      }
     }
   }
 }
