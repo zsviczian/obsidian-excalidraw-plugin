@@ -91,15 +91,10 @@ const packageString = isLib
   '\nlet REACT_PACKAGES = `' +
   jsesc(react_pkg + reactdom_pkg, { quotes: 'backtick' }) +
   '`;\n' +
-/*  'let EXCALIDRAW_PACKAGE = `' +
-  jsesc(excalidraw_pkg, { quotes: 'backtick' }) +
-  '`;\n' +*/
   'const unpackExcalidraw = () => LZString.decompressFromBase64("' + LZString.compressToBase64(excalidraw_pkg) + '");\n' +
-  'let {react, reactDOM } = window.eval.call(window, `(function() {' + '${REACT_PACKAGES};' + 'return {react: React, reactDOM: ReactDOM};})();`);\n' +
+  'let {react, reactDOM } = new Function(`${REACT_PACKAGES}; return {react: React, reactDOM: ReactDOM};`)();\n' +
   'let excalidrawLib = {};\n' +
-  'const loadMathjaxToSVG = () => window.eval.call(window, `(function() {' + 
-  '${LZString.decompressFromBase64("' + LZString.compressToBase64(mathjaxtosvg_pkg) + '")}' +
-  'return MathjaxToSVG;})();`);\n' +
+  'const loadMathjaxToSVG = () => new Function(`${LZString.decompressFromBase64("' + LZString.compressToBase64(mathjaxtosvg_pkg) + '")}; return MathjaxToSVG;`)();\n' +
   `const PLUGIN_LANGUAGES = {${LANGUAGES.map(lang => `"${lang}": "${compressLanguageFile(lang)}"`).join(",")}};\n` +
   'const PLUGIN_VERSION="' + manifest.version + '";';
 

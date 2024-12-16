@@ -42,7 +42,7 @@ export class PackageManager {
     if(this.packageMap.has(win)) {
       return this.packageMap.get(win);
     }
-    
+
     const {react:r, reactDOM:rd, excalidrawLib:e} = win.eval.call(win,
       `(function() {
         ${REACT_PACKAGES + this.EXCALIDRAW_PACKAGE};
