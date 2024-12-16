@@ -105,6 +105,7 @@ export let {
   refreshTextDimensions,
   getCSSFontDefinition,
   loadSceneFonts,
+  loadMermaid,
 } = excalidrawLib;
 
 export function updateExcalidrawLib() {
@@ -130,6 +131,7 @@ export function updateExcalidrawLib() {
     refreshTextDimensions,
     getCSSFontDefinition,
     loadSceneFonts,
+    loadMermaid,
   } = excalidrawLib);
 }
 

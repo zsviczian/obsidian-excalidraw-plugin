@@ -36,6 +36,7 @@ import {
   FONTS_STYLE_ID,
   CJK_STYLE_ID,
   updateExcalidrawLib,
+  loadMermaid,
 } from "./constants/constants";
 import { ExcalidrawSettings, DEFAULT_SETTINGS, ExcalidrawSettingTab } from "./settings";
 import { initExcalidrawAutomate, ExcalidrawAutomate } from "./ExcalidrawAutomate";
@@ -87,12 +88,8 @@ import ExcalidrawView from "./ExcalidrawView";
 import { CommandManager } from "./Managers/CommandManager";
 import { EventManager } from "./Managers/EventManager";
 
-declare const unpackExcalidraw: Function;
 declare const PLUGIN_VERSION:string;
 declare const INITIAL_TIMESTAMP: number;
-declare let react:any;
-declare let reactDOM:any;
-declare let excalidrawLib: typeof ExcalidrawLib;
 
 export default class ExcalidrawPlugin extends Plugin {
   private fileManager: PluginFileManager;
@@ -100,7 +97,6 @@ export default class ExcalidrawPlugin extends Plugin {
   private packageManager: PackageManager;
   private commandManager: CommandManager;
   private eventManager: EventManager;
-  private EXCALIDRAW_PACKAGE: string;
   public eaInstances = new WeakArray<ExcalidrawAutomate>();
   public fourthFontLoaded: boolean = false;
   public excalidrawConfig: ExcalidrawConfig;
@@ -213,6 +209,14 @@ export default class ExcalidrawPlugin extends Plugin {
     };
   }*/
 
+  /**
+   * used by Excalidraw to getSharedMermaidInstance
+   * @returns shared mermaid instance
+   */
+  public async getMermaid() {
+    return await loadMermaid();
+  }
+
   public isPenMode() {
     return this.wasPenModeActivePreviously ||
       (this.settings.defaultPenMode === "always") ||
@@ -324,22 +328,11 @@ export default class ExcalidrawPlugin extends Plugin {
     await this.awaitSettings();
     this.logStartupEvent("Settings awaited");
 
-    this.packageManager = new PackageManager();
+    this.packageManager = new PackageManager(this);
     this.fileManager = new PluginFileManager(this);
     this.eventManager = new EventManager(this);
     this.observerManager = new ObserverManager(this);
     this.commandManager = new CommandManager(this);
-
-    try {
-      this.EXCALIDRAW_PACKAGE = unpackExcalidraw();
-      excalidrawLib = window.eval.call(window,`(function() {${this.EXCALIDRAW_PACKAGE};return ExcalidrawLib;})()`);
-      this.packageManager.setPackage(window,{react, reactDOM, excalidrawLib});
-      updateExcalidrawLib();
-    } catch (e) {
-      new Notice("Error loading the Excalidraw package", 6000);
-      console.error("Error loading the Excalidraw package", e);
-    }
-    this.logStartupEvent("Excalidraw package unpacked");
 
     try {
       initCompressionWorker();
@@ -1197,7 +1190,6 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.settings = null;
     clearMathJaxVariables();
-    this.EXCALIDRAW_PACKAGE = "";
     //pluginPackages = null;
     //PLUGIN_VERSION = null;
     //@ts-ignore
@@ -1205,9 +1197,6 @@ export default class ExcalidrawPlugin extends Plugin {
     this.packageManager.destroy();
     this.commandManager?.destroy();
     this.eventManager.destroy();
-    react = null;
-    reactDOM = null;
-    excalidrawLib = null;
     terminateCompressionWorker();
   }
 

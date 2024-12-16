@@ -1,18 +1,31 @@
+import { updateExcalidrawLib } from "src/constants/constants";
 import { ExcalidrawLib } from "../ExcalidrawLib";
 import { Packages } from "../types/types";
 import { debug, DEBUGGING } from "../utils/DebugHelper";
+import { Notice } from "obsidian";
+import ExcalidrawPlugin from "src/main";
 
 declare let REACT_PACKAGES:string;
 declare let react:any;
 declare let reactDOM:any;
 declare let excalidrawLib: typeof ExcalidrawLib;
+declare const unpackExcalidraw: Function;
 
 export class PackageManager {
   private packageMap: Map<Window, Packages> = new Map<Window, Packages>();
   private EXCALIDRAW_PACKAGE: string;
 
-  constructor() {
-    this.packageMap.set(window,{react, reactDOM, excalidrawLib});
+  constructor(plugin: ExcalidrawPlugin) {
+    try {
+      this.EXCALIDRAW_PACKAGE = unpackExcalidraw();
+      excalidrawLib = window.eval.call(window,`(function() {${this.EXCALIDRAW_PACKAGE};return ExcalidrawLib;})()`);
+      updateExcalidrawLib();
+      this.setPackage(window,{react, reactDOM, excalidrawLib});
+    } catch (e) {
+      new Notice("Error loading the Excalidraw package", 6000);
+      console.error("Error loading the Excalidraw package", e);
+    }
+    plugin.logStartupEvent("Excalidraw package unpacked");
   }
 
   public setPackage(window: Window, pkg: Packages) {
@@ -76,5 +89,9 @@ export class PackageManager {
       delete p.react;
     });
     this.packageMap.clear();
+    this.EXCALIDRAW_PACKAGE = "";
+    react = null;
+    reactDOM = null;
+    excalidrawLib = null;
   }
 }

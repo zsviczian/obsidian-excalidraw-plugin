@@ -315,7 +315,6 @@ function RenderObsidianView(
     const canvasNode = containerRef.current;
     if(!canvasNode.hasClass("canvas-node")) return;
     setColors(canvasNode, element, mdProps, canvasColor);
-    console.log("Setting colors");
   }, [
     mdProps?.useObsidianDefaults,
     mdProps?.backgroundMatchCanvas,

@@ -2,7 +2,7 @@ import { RestoredDataState } from "@zsviczian/excalidraw/types/excalidraw/data/r
 import { ImportedDataState } from "@zsviczian/excalidraw/types/excalidraw/data/types";
 import { BoundingBox } from "@zsviczian/excalidraw/types/excalidraw/element/bounds";
 import { ElementsMap, ExcalidrawBindableElement, ExcalidrawElement, ExcalidrawFrameElement, ExcalidrawFrameLikeElement, ExcalidrawTextContainer, ExcalidrawTextElement, FontFamilyValues, FontString, NonDeleted, NonDeletedExcalidrawElement, Theme } from "@zsviczian/excalidraw/types/excalidraw/element/types";
-import { FontMetadata } from "@zsviczian/excalidraw/types/excalidraw/fonts/metadata";
+import { FontMetadata } from "@zsviczian/excalidraw/types/excalidraw/fonts/FontMetadata";
 import { AppState, BinaryFiles, DataURL, GenerateDiagramToCode, Zoom } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/types";
@@ -220,5 +220,6 @@ declare namespace ExcalidrawLib {
   ): string;
   function safelyParseJSON (json: string): Record<string, any> | null;
   function loadSceneFonts(elements: NonDeletedExcalidrawElement[]): Promise<void>;
+  function loadMermaid(): Promise<any>;
 }
 
