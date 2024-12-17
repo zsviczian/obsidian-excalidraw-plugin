@@ -17,6 +17,24 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.7.0":`
+## Fixed
+- Various Markdown embeddable "fuzziness":  
+    - Fixed issues with appearance settings and edit mode toggling when single-click editing is enabled.  
+    - Ensured embeddable file editing no longer gets interrupted unexpectedly.  
+- **Hover Preview**: Disabled hover preview for back-of-the-note cards to reduce distractions.
+- **Settings Save**: Fixed an issue where plugin settings unnecessarily saved on every startup.
+
+## New Features
+- **Image Cropping Snaps to Objects**: When snapping is enabled in the scene, image cropping now aligns to nearby objects.  
+- **Session Persistence for Pen Mode**: Excalidraw remembers the last pen mode when switching between drawings within the same session.
+
+## Refactoring
+- **Mermaid Diagrams**: Excalidraw now uses its own Mermaid package, breaking future dependencies on Obsidian's Mermaid updates. This ensures stability and includes all fixes and improvements made to Excalidraw Mermaid since February 2024. The plugin file size has increased slightly, but this change significantly improves maintainability while remaining invisible to users.  
+- **MathJax Optimization**: MathJax (LaTeX equation SVG image generation) now loads only on demand, with the package compressed to minimize the startup and file size impact caused by the inclusion of Mermaid.  
+- **On-Demand Language Loading**: Non-English language files are now compressed and load only when needed, counterbalancing the increase in file size due to Mermaid and improving load speeds.  
+- **Codebase Restructuring**: Improved type safety by removing many ${String.fromCharCode(96)}//@ts-ignore${String.fromCharCode(96)} commands and enhancing modularity. Introduced new management classes: **CommandManager**, **EventManager**, **PluginFileManager**, **ObserverManager**, and **PackageManager**. Further restructuring is planned for upcoming releases to improve maintainability and stability.
+`,
 "2.6.8":`
 ## New
 - **QoL improvements**:

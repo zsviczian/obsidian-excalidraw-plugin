@@ -143,6 +143,10 @@ export default class ExcalidrawPlugin extends Plugin {
     >();
     this.equationsMaster = new Map<FileId, string>();
     this.mermaidsMaster = new Map<FileId, string>();
+
+    //isExcalidraw function is used already is already used by MarkdownPostProcessor in onLoad before onLayoutReady
+    this.fileManager = new PluginFileManager(this);
+    
     setExcalidrawPlugin(this);
     /*if((process.env.NODE_ENV === 'development')) {
       this.slob = new Array(200 * 1024 * 1024 + 1).join('A'); // Create a 200MB blob
@@ -329,7 +333,6 @@ export default class ExcalidrawPlugin extends Plugin {
     this.logStartupEvent("Settings awaited");
 
     this.packageManager = new PackageManager(this);
-    this.fileManager = new PluginFileManager(this);
     this.eventManager = new EventManager(this);
     this.observerManager = new ObserverManager(this);
     this.commandManager = new CommandManager(this);
