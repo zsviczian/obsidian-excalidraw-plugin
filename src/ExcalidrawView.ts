@@ -2736,7 +2736,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   isEditedAsMarkdownInOtherView(): boolean {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.isEditedAsMarkdownInOtherView, "ExcalidrawView.isEditedAsMarkdownInOtherView");
     //if the user is editing the same file in markdown mode, do not compress it
-    const leaves = app.workspace.getLeavesOfType("markdown");
+    const leaves = this.app.workspace.getLeavesOfType("markdown");
     return (
       leaves.filter((leaf) => (leaf.view as MarkdownView).file === this.file)
         .length > 0
@@ -3568,7 +3568,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   private dropAction(transfer: DataTransfer) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.dropAction, "ExcalidrawView.dropAction");
     // Return a 'copy' or 'link' action according to the content types, or undefined if no recognized type
-    const files = (app as any).dragManager.draggable?.files;
+    const files = (this.app as any).dragManager.draggable?.files;
     if (files) {
       if (files[0] == this.file) {
         files.shift();
@@ -3718,7 +3718,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       return;
     }
 
-    const f = app.metadataCache.getFirstLinkpathDest(
+    const f = this.app.metadataCache.getFirstLinkpathDest(
       linktext.split("#")[0],
       this.file.path,
     );
@@ -4310,7 +4310,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
           //internalDragAction === "link"
           this.addText(
-            `[[${app.metadataCache.fileToLinktext(
+            `[[${this.app.metadataCache.fileToLinktext(
               draggable.file,
               this.file.path,
               true,
@@ -4373,7 +4373,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             //internalDragAction === "link"
             for (const f of draggable.files) {
               await this.addText(
-                `[[${app.metadataCache.fileToLinktext(
+                `[[${this.app.metadataCache.fileToLinktext(
                   f,
                   this.file.path,
                   true,

@@ -33,7 +33,7 @@ export const updateEquation = async (
   addFiles: Function,
 ) => {
   await loadMathJax();
-  const data = await tex2dataURLExternal(equation, 4, app);
+  const data = await tex2dataURLExternal(equation, 4, view.app);
   if (data) {
     const files: FileData[] = [];
     files.push({

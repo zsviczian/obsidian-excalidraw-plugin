@@ -372,7 +372,7 @@ export class PluginFileManager {
     }
     [EXPORT_TYPES, "excalidraw"].flat().forEach(async (ext: string) => {
       const oldIMGpath = getIMGFilename(oldPath, ext);
-      const imgFile = app.vault.getAbstractFileByPath(
+      const imgFile = this.app.vault.getAbstractFileByPath(
         normalizePath(oldIMGpath),
       );
       if (imgFile && imgFile instanceof TFile) {

@@ -5,7 +5,7 @@ export const showFrameSettings = (ea: ExcalidrawAutomate) => {
   const {enabled, clip, name, outline} = ea.getExcalidrawAPI().getAppState().frameRendering;
   
   // Create modal dialog
-  const frameSettingsModal = new ea.obsidian.Modal(app);
+  const frameSettingsModal = new ea.obsidian.Modal(ea.plugin.app);
   
   frameSettingsModal.onOpen = () => {
     const {contentEl} = frameSettingsModal;

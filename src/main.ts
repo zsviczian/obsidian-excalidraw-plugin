@@ -709,7 +709,7 @@ export default class ExcalidrawPlugin extends Plugin {
         }
         const fname = decodedURI.substring(decodedURI.lastIndexOf("/") + 1);
         const folder = `${this.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}`;
-        const downloaded = app.vault.getFiles().filter(f=>f.path.startsWith(folder) && f.name === fname).sort((a,b)=>a.path>b.path?1:-1);
+        const downloaded = this.app.vault.getFiles().filter(f=>f.path.startsWith(folder) && f.name === fname).sort((a,b)=>a.path>b.path?1:-1);
         let scriptFile = downloaded[0]; 
         const scriptPath = scriptFile?.path ?? `${folder}/${fname}`;
         const svgPath = getIMGFilename(scriptPath, "svg");
@@ -986,15 +986,15 @@ export default class ExcalidrawPlugin extends Plugin {
               markdownViewLoaded &&
               self.excalidrawFileModes[this.id || state.state.file] !== "markdown"
             ) {
-              const file = state.state.file;
-              if ((self.forceToOpenInMarkdownFilepath !== file)  && fileShouldDefaultAsExcalidraw(file,this.app)) {
+              const filepath:string = state.state.file as string;
+              if ((self.forceToOpenInMarkdownFilepath !== filepath)  && fileShouldDefaultAsExcalidraw(filepath,this.app)) {
                 // If we have it, force the view type to excalidraw
                 const newState = {
                   ...state,
                   type: VIEW_TYPE_EXCALIDRAW,
                 };
 
-                self.excalidrawFileModes[file] =
+                self.excalidrawFileModes[filepath] =
                   VIEW_TYPE_EXCALIDRAW;
 
                 return next.apply(this, [newState, ...rest]);

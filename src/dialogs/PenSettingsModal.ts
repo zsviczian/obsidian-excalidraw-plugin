@@ -53,7 +53,7 @@ export class PenSettingsModal extends Modal {
     private view: ExcalidrawView,
     private pen: number,
   ) {
-    super(app);
+    super(plugin.app);
     this.api = view.excalidrawAPI;
 
   }

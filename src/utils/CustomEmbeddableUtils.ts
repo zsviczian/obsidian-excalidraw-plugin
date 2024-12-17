@@ -37,7 +37,7 @@ export const processLinkText = (linkText: string, view:ExcalidrawView): { subpat
     return {subpath, file: null};
   }
 
-  const file = app.metadataCache.getFirstLinkpathDest(
+  const file = view.app.metadataCache.getFirstLinkpathDest(
     linkText,
     view.file.path,
   );

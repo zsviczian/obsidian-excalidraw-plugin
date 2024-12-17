@@ -38,6 +38,7 @@ import {
   mermaidToExcalidraw,
   refreshTextDimensions,
   getFontFamilyString,
+  EXCALIDRAW_PLUGIN,
 } from "src/constants/constants";
 import { blobToBase64, checkAndCreateFolder, getDrawingFilename, getExcalidrawEmbeddedFilesFiletree, getListOfTemplateFiles, getNewUniqueFilepath, hasExcalidrawEmbeddedImagesTreeChanged, } from "src/utils/FileUtils";
 import {
@@ -246,7 +247,7 @@ export class ExcalidrawAutomate {
    * @returns 
    */
   public getNewUniqueFilepath(filename: string, folderpath: string): string {
-    return getNewUniqueFilepath(app.vault, filename, folderpath);
+    return getNewUniqueFilepath(this.plugin.app.vault, filename, folderpath);
   }
 
   /**
@@ -278,8 +279,8 @@ export class ExcalidrawAutomate {
       errorMessage("targetView not set", "getAttachmentFolderAndFilePath()");
       return null;
     }
-    const folderAndPath = await getAttachmentsFolderAndFilePath(app,this.targetView.file.path, filename);
-    return getNewUniqueFilepath(app.vault, filename, folderAndPath.folder);
+    const folderAndPath = await getAttachmentsFolderAndFilePath(this.plugin.app,this.targetView.file.path, filename);
+    return getNewUniqueFilepath(this.plugin.app.vault, filename, folderAndPath.folder);
   }
 
   public compressToBase64(str:string): string {
@@ -1049,7 +1050,7 @@ export class ExcalidrawAutomate {
       width,
       height,
       url ? url : file ? `[[${
-        app.metadataCache.fileToLinktext(
+        this.plugin.app.metadataCache.fileToLinktext(
           file,
           this.targetView.file.path,
           false, //file.extension === "md", //changed this to false because embedable link navigation in ExcaliBrain
@@ -3164,14 +3165,14 @@ export const updateElementLinksToObsidianLinks = ({elements, hostFile}:{
       if (linkText.match(REG_LINKINDEX_INVALIDCHARS)) {
         return el;
       }
-      const file = app.metadataCache.getFirstLinkpathDest(
+      const file = EXCALIDRAW_PLUGIN.app.metadataCache.getFirstLinkpathDest(
         linkText,
         hostFile.path,
       );
       if(!file) {
         return el;
       }
-      let link = app.getObsidianUrl(file);
+      let link = EXCALIDRAW_PLUGIN.app.getObsidianUrl(file);
       if(window.ExcalidrawAutomate?.onUpdateElementLinkForExportHook) {
         link = window.ExcalidrawAutomate.onUpdateElementLinkForExportHook({
           originalLink: el.link,
