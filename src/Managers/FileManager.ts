@@ -402,11 +402,30 @@ export class PluginFileManager {
           excalidrawView.semaphores.preventReload = false;
           return;
         }
-        //if the user hasn't touched the file for 5 minutes, don't synchronize, reload.
-        //this is to avoid complex sync scenarios of multiple remote changes outside an active collaboration session
+
+
+        // Avoid synchronizing or reloading if the user hasn't interacted with the file for 5 minutes.
+        // This prevents complex sync issues when multiple remote changes occur outside an active collaboration session.
+
+        // The following logic handles a rare edge case where:
+        // 1. The user opens an Excalidraw file.
+        // 2. Immediately splits the view without saving Excalidraw (since no changes were made).
+        // 3. Switches the new split view to Markdown, edits the file, and quickly returns to Excalidraw.
+        // 4. The "modify" event may fire while Excalidraw is active, triggering an unwanted reload and zoom reset.
+
+        // To address this:
+        // - We check if the user is currently editing the Markdown version of the Excalidraw file in a split view.  
+        // - As a heuristic, we also check for recent leaf switches.  
+        //   This is not perfectly accurate (e.g., rapid switching between views within a few seconds),  
+        //   but it is sufficient to avoid most edge cases without introducing complexity.
+
+        // Edge case impact:  
+        // - In extremely rare situations, an update arriving within the "recent switch" timeframe (e.g., from Obsidian Sync)  
+        //   might not trigger a reload. This is unlikely and an acceptable trade-off for better user experience.
         const activeView = this.app.workspace.activeLeaf.view;
-        const isEditingMarkdownSideInSplitView = (activeView !== excalidrawView) &&
-          activeView instanceof MarkdownView && activeView.file === excalidrawView.file;
+        const isEditingMarkdownSideInSplitView = ((activeView !== excalidrawView) &&
+          activeView instanceof MarkdownView && activeView.file === excalidrawView.file) ||
+          (activeView === excalidrawView && this.plugin.isRecentSplitViewSwitch());
 
         if(!isEditingMarkdownSideInSplitView && (excalidrawView.lastSaveTimestamp + 300000 < Date.now())) {
           excalidrawView.reload(true, excalidrawView.file);

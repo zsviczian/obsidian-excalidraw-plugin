@@ -1419,6 +1419,10 @@ export default class ExcalidrawPlugin extends Plugin {
     return this.commandManager?.importSVGDialog;
   }
 
+  public isRecentSplitViewSwitch():boolean {
+    return this.eventManager.isRecentSplitViewSwitch();
+  }
+
   get leafChangeTimeout() {
     return this.eventManager.leafChangeTimeout;
   }
