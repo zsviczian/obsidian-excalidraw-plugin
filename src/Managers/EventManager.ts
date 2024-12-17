@@ -181,12 +181,9 @@ export class EventManager {
     const currentFile = (leaf?.view as FileView).file;
     //editing the same file in a different leaf
     if(currentFile && (previousFile === currentFile)) {
-      if(
-        (this.previouslyActiveLeaf.view instanceof MarkdownView   && leaf.view instanceof ExcalidrawView) ||
-        (this.previouslyActiveLeaf.view instanceof ExcalidrawView && leaf.view instanceof MarkdownView)
-      ) {
+      if((this.previouslyActiveLeaf.view instanceof MarkdownView   && leaf.view instanceof ExcalidrawView)) {
         this.splitViewLeafSwitchTimestamp = Date.now();
-      } 
+      }
     }
     this.previouslyActiveLeaf = leaf;
     
