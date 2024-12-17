@@ -1,6 +1,6 @@
 import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { App, loadPdfJs, normalizePath, Notice, requestUrl, RequestUrlResponse, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
-import { DEVICE, FRONTMATTER_KEYS, URLFETCHTIMEOUT } from "src/constants/constants";
+import { DEVICE, EXCALIDRAW_PLUGIN, FRONTMATTER_KEYS, URLFETCHTIMEOUT } from "src/constants/constants";
 import { IMAGE_MIME_TYPES, MimeType } from "src/EmbeddedFileLoader";
 import { ExcalidrawSettings } from "src/settings";
 import { errorlog, getDataURL } from "./Utils";
@@ -142,7 +142,7 @@ export function getEmbedFilename(
  * @param folderpath
  */
 export async function checkAndCreateFolder(folderpath: string):Promise<TFolder> {
-  const vault = app.vault;
+  const vault = EXCALIDRAW_PLUGIN.app.vault;
   folderpath = normalizePath(folderpath);
   //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/658
   //@ts-ignore
@@ -292,7 +292,7 @@ export const blobToBase64 = async (blob: Blob): Promise<string> => {
 
 export const getPDFDoc = async (f: TFile): Promise<any> => {
   if(typeof window.pdfjsLib === "undefined") await loadPdfJs();
-  return await window.pdfjsLib.getDocument(app.vault.getResourcePath(f)).promise;
+  return await window.pdfjsLib.getDocument(EXCALIDRAW_PLUGIN.app.vault.getResourcePath(f)).promise;
 }
 
 export const readLocalFile = async (filePath:string): Promise<string> => {
@@ -330,9 +330,14 @@ export const getPathWithoutExtension = (f:TFile): string => {
   return f.path.substring(0, f.path.lastIndexOf("."));
 }
 
-const VAULT_BASE_URL = DEVICE.isDesktop
-  ? app.vault.adapter.url.pathToFileURL(app.vault.adapter.basePath).toString()
+let _VAULT_BASE_URL:string = null;
+const VAULT_BASE_URL = () => {
+  if(_VAULT_BASE_URL) return _VAULT_BASE_URL;
+  _VAULT_BASE_URL = DEVICE.isDesktop
+  ? EXCALIDRAW_PLUGIN.app.vault.adapter.url.pathToFileURL(EXCALIDRAW_PLUGIN.app.vault.adapter.basePath).toString()
   : "";
+  return _VAULT_BASE_URL;
+}
 
 export const getInternalLinkOrFileURLLink = (
   path: string, plugin:ExcalidrawPlugin, alias?: string, sourceFile?: TFile
@@ -344,8 +349,8 @@ export const getInternalLinkOrFileURLLink = (
   }
   const vault = plugin.app.vault;
   const fileURLString = vault.adapter.url.pathToFileURL(path).toString();
-  if (fileURLString.startsWith(VAULT_BASE_URL)) {
-    const internalPath = normalizePath(unescape(fileURLString.substring(VAULT_BASE_URL.length)));
+  if (fileURLString.startsWith(VAULT_BASE_URL())) {
+    const internalPath = normalizePath(unescape(fileURLString.substring(VAULT_BASE_URL().length)));
     const file = vault.getAbstractFileByPath(internalPath);
     if(file && file instanceof TFile) {
       const link = plugin.app.metadataCache.fileToLinktext(

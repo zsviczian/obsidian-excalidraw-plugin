@@ -266,7 +266,7 @@ export class EmbeddedFile {
   public isLoaded(isDark: boolean): boolean {
     if(!this.isHyperLink && !this.isLocalLink) {  
       if (!this.file) {
-        this.file = app.metadataCache.getFirstLinkpathDest(
+        this.file = this.plugin.app.metadataCache.getFirstLinkpathDest(
           this.linkParts.path,
           this.hostPath,
         ); // maybe the file has synchronized in the mean time

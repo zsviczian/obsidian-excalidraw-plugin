@@ -31,13 +31,8 @@ function trimLastSemicolon(input) {
   return input;
 }
 
-function compressLanguageFile(lang) {
-  const inputDir = "./src/lang/locale";
-  const filePath = `${inputDir}/${lang}.ts`;
-  let content = fs.readFileSync(filePath, "utf-8");
-  content = trimLastSemicolon(content.split("export default")[1].trim());
-
-  const minified = minify(`x = ${content};`,{
+function minifyCode(code) {
+  const minified = minify(code,{
     compress: true,
     mangle: true,
     output: {
@@ -49,18 +44,26 @@ function compressLanguageFile(lang) {
   if (minified.error) {
     throw new Error(minified.error);
   }
-  return LZString.compressToBase64(minified.code);
+  return minified.code;
 }
 
-const excalidraw_pkg = isLib ? "" : isProd
+function compressLanguageFile(lang) {
+  const inputDir = "./src/lang/locale";
+  const filePath = `${inputDir}/${lang}.ts`;
+  let content = fs.readFileSync(filePath, "utf-8");
+  content = trimLastSemicolon(content.split("export default")[1].trim());
+  return LZString.compressToBase64(minifyCode(`x = ${content};`));
+}
+
+const excalidraw_pkg = isLib ? "" : minifyCode( isProd
   ? fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/excalidraw.production.min.js", "utf8")
-  : fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/excalidraw.development.js", "utf8");
-const react_pkg = isLib ? "" : isProd
+  : fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/excalidraw.development.js", "utf8"));
+const react_pkg = isLib ? "" : minifyCode(isProd
   ? fs.readFileSync("./node_modules/react/umd/react.production.min.js", "utf8")
-  : fs.readFileSync("./node_modules/react/umd/react.development.js", "utf8");
-const reactdom_pkg = isLib ? "" : isProd
+  : fs.readFileSync("./node_modules/react/umd/react.development.js", "utf8"));
+const reactdom_pkg = isLib ? "" : minifyCode(isProd
   ? fs.readFileSync("./node_modules/react-dom/umd/react-dom.production.min.js", "utf8")
-  : fs.readFileSync("./node_modules/react-dom/umd/react-dom.development.js", "utf8");
+  : fs.readFileSync("./node_modules/react-dom/umd/react-dom.development.js", "utf8"));
 
 const lzstring_pkg = isLib ? "" : fs.readFileSync("./node_modules/lz-string/libs/lz-string.min.js", "utf8");
 if (!isLib) {

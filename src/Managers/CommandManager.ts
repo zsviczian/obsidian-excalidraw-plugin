@@ -268,7 +268,7 @@ export class CommandManager {
       id: "excalidraw-publish-svg-check",
       name: t("PUBLISH_SVG_CHECK"),
       checkCallback: (checking: boolean) => {
-        const publish = app.internalPlugins.plugins["publish"].instance;
+        const publish = this.app.internalPlugins.plugins["publish"].instance;
         if (!publish) {
           return false;
         }

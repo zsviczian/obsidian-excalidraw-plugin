@@ -73,7 +73,7 @@
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
     "lz-string": "^1.5.0",
-    "obsidian": "1.5.7-1",
+    "obsidian": "^1.7.2",
     "prettier": "^3.0.1",
     "rollup": "^2.70.1",
     "rollup-plugin-copy": "^3.5.0",

@@ -1,4 +1,4 @@
-import { WorkspaceLeaf, TFile, Editor, MarkdownView, MarkdownFileInfo, MetadataCache, App, EventRef, Menu } from "obsidian";
+import { WorkspaceLeaf, TFile, Editor, MarkdownView, MarkdownFileInfo, MetadataCache, App, EventRef, Menu, FileView } from "obsidian";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { getLink } from "../utils/FileUtils";
 import { editorInsertText, getParentOfClass, setExcalidrawView } from "../utils/ObsidianUtils";
@@ -19,6 +19,8 @@ export class EventManager {
   private app: App;
   public leafChangeTimeout: number|null = null;
   private removeEventLisnters:(()=>void)[] = []; //only used if I register an event directly, not via Obsidian's registerEvent
+  private previouslyActiveLeaf: WorkspaceLeaf;
+  private splitViewLeafSwitchTimestamp: number = 0;
 
   get settings() {
     return this.plugin.settings;
@@ -63,8 +65,11 @@ export class EventManager {
       console.error("Error registering event listeners", e);
     }
     this.plugin.logStartupEvent("Event listeners registered");
+  }
 
-  } 
+  public isRecentSplitViewSwitch():boolean {
+    return (Date.now() - this.splitViewLeafSwitchTimestamp) < 3000;
+  }
 
   public async registerEvents() {
     await this.plugin.awaitInit();
@@ -172,7 +177,16 @@ export class EventManager {
     const newActiveviewEV: ExcalidrawView =
       leaf.view instanceof ExcalidrawView ? leaf.view : null;
     this.activeExcalidrawView = newActiveviewEV;
-
+    const previousFile = (this.previouslyActiveLeaf?.view as FileView)?.file;
+    const currentFile = (leaf?.view as FileView).file;
+    //editing the same file in a different leaf
+    if(currentFile && (previousFile === currentFile)) {
+      if((this.previouslyActiveLeaf.view instanceof MarkdownView   && leaf.view instanceof ExcalidrawView)) {
+        this.splitViewLeafSwitchTimestamp = Date.now();
+      }
+    }
+    this.previouslyActiveLeaf = leaf;
+    
     if (newActiveviewEV) {
       this.plugin.addModalContainerObserver();
       this.plugin.lastActiveExcalidrawFilePath = newActiveviewEV.file?.path;

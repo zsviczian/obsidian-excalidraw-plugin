@@ -176,7 +176,7 @@ export class UniversalInsertFileModal extends Modal {
         button
           .setButtonText("as Embeddable")
           .onClick(async () => {
-            const path = app.metadataCache.fileToLinktext(
+            const path = this.app.metadataCache.fileToLinktext(
               file,
               this.view.file.path,
               file.extension === "md",

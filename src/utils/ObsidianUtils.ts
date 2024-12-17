@@ -8,7 +8,7 @@ import {
 import ExcalidrawPlugin from "../main";
 import { checkAndCreateFolder, splitFolderAndFilename } from "./FileUtils";
 import { linkClickModifierType, ModifierKeys } from "./ModifierkeyHelper";
-import { REG_BLOCK_REF_CLEAN, REG_SECTION_REF_CLEAN, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
+import { EXCALIDRAW_PLUGIN, REG_BLOCK_REF_CLEAN, REG_SECTION_REF_CLEAN, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
 import yaml from "js-yaml";
 import { debug, DEBUGGING } from "./DebugHelper";
 import ExcalidrawView from "src/ExcalidrawView";
@@ -36,7 +36,7 @@ export const getLeaf = (
   ev: ModifierKeys
 ) => {
   const newTab = ():WorkspaceLeaf => {
-    if(!plugin.settings.openInMainWorkspace) return app.workspace.getLeaf('tab');
+    if(!plugin.settings.openInMainWorkspace) return plugin.app.workspace.getLeaf('tab');
     const [leafLoc, mainLeavesIds] = getLeafLoc(origo);
     if(leafLoc === 'main') return plugin.app.workspace.getLeaf('tab');
     return getNewOrAdjacentLeaf(plugin,origo);
@@ -56,7 +56,7 @@ export const getLeaf = (
 const getLeafLoc = (leaf: WorkspaceLeaf): ["main" | "popout" | "left" | "right" | "hover",any] => {
   //@ts-ignore
   const leafId = leaf.id;
-  const layout = app.workspace.getLayout();
+  const layout = EXCALIDRAW_PLUGIN.app.workspace.getLayout();
   const getLeaves = (l:any)=> l.children
     .filter((c:any)=>c.type!=="leaf")
     .map((c:any)=>getLeaves(c))
@@ -95,7 +95,7 @@ export const getNewOrAdjacentLeaf = (
   const [leafLoc, mainLeavesIds] = getLeafLoc(leaf);
 
   const getMostRecentOrAvailableLeafInMainWorkspace = (inDifferentTabGroup?: boolean):WorkspaceLeaf => {
-    let mainLeaf = app.workspace.getMostRecentLeaf();
+    let mainLeaf = plugin.app.workspace.getMostRecentLeaf();
     if(mainLeaf && mainLeaf !== leaf && mainLeaf.view?.containerEl.ownerDocument === document) {
       //Found a leaf in the main workspace that is not the originating leaf
       return mainLeaf;
@@ -104,7 +104,7 @@ export const getNewOrAdjacentLeaf = (
     mainLeaf = null;
     mainLeavesIds
       .forEach((id:any)=> {
-        const l = app.workspace.getLeafById(id);
+        const l = plugin.app.workspace.getLeafById(id);
         if(mainLeaf ||
           !l.view?.navigation || 
           leaf === l ||
@@ -121,28 +121,28 @@ export const getNewOrAdjacentLeaf = (
     //1.1 - Create new leaf in main workspace
     if(!plugin.settings.openInAdjacentPane) {
       if(leafLoc === "main") {
-        return app.workspace.createLeafBySplit(leaf);
+        return plugin.app.workspace.createLeafBySplit(leaf);
       }
       const ml = getMostRecentOrAvailableLeafInMainWorkspace();
       return ml
-        ? (ml.view.getViewType() === "empty" ? ml : app.workspace.createLeafBySplit(ml))
-        : app.workspace.getLeaf(true);
+        ? (ml.view.getViewType() === "empty" ? ml : plugin.app.workspace.createLeafBySplit(ml))
+        : plugin.app.workspace.getLeaf(true);
     }
 
     //1.2 - Reuse leaf if it is adjacent
     const ml = getMostRecentOrAvailableLeafInMainWorkspace(true);
-    return ml ?? app.workspace.createLeafBySplit(leaf); //app.workspace.getLeaf(true);
+    return ml ?? plugin.app.workspace.createLeafBySplit(leaf); //app.workspace.getLeaf(true);
   }
 
   //2
   if(!plugin.settings.openInAdjacentPane) {
-    return app.workspace.createLeafBySplit(leaf);
+    return plugin.app.workspace.createLeafBySplit(leaf);
   }
 
   //3
   if(leafLoc === "hover") {
     const leaves = new Set<WorkspaceLeaf>();
-    app.workspace.iterateAllLeaves(l=>{
+    plugin.app.workspace.iterateAllLeaves(l=>{
       //@ts-ignore
       if(l!==leaf && leaf.containerEl.parentElement === l.containerEl.parentElement) leaves.add(l);
     })
@@ -155,13 +155,13 @@ export const getNewOrAdjacentLeaf = (
   //4
   if(leafLoc === "popout") {
     const popoutLeaves = new Set<WorkspaceLeaf>();  
-    app.workspace.iterateAllLeaves(l=>{
+    plugin.app.workspace.iterateAllLeaves(l=>{
       if(l !== leaf && l.view.navigation && l.view.containerEl.ownerDocument === leaf.view.containerEl.ownerDocument) {
         popoutLeaves.add(l);
       }
     });
     if(popoutLeaves.size === 0) {
-      return app.workspace.createLeafBySplit(leaf);
+      return plugin.app.workspace.createLeafBySplit(leaf);
     }
     return Array.from(popoutLeaves)[0];
   }
@@ -201,12 +201,12 @@ export const isObsidianThemeDark = () => document.body.classList.contains("theme
 export type ConstructableWorkspaceSplit = new (ws: Workspace, dir: "horizontal"|"vertical") => WorkspaceSplit;
 
 export const getContainerForDocument = (doc:Document) => {
-  if (doc !== document && app.workspace.floatingSplit) {
-    for (const container of app.workspace.floatingSplit.children) {
+  if (doc !== document && EXCALIDRAW_PLUGIN.app.workspace.floatingSplit) {
+    for (const container of EXCALIDRAW_PLUGIN.app.workspace.floatingSplit.children) {
       if (container.doc === doc) return container;
     }
   }
-  return app.workspace.rootSplit;
+  return EXCALIDRAW_PLUGIN.app.workspace.rootSplit;
 };
 
 export const cleanSectionHeading = (heading:string) => {

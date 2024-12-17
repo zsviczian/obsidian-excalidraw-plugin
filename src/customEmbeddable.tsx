@@ -170,8 +170,8 @@ function RenderObsidianView(
     containerRef.current.parentElement.style.padding = "";
 
     const doc = view.ownerDocument;
-    const rootSplit:WorkspaceSplit = new (WorkspaceSplit as ConstructableWorkspaceSplit)(app.workspace, "vertical");
-    rootSplit.getRoot = () => app.workspace[doc === document ? 'rootSplit' : 'floatingSplit'];
+    const rootSplit:WorkspaceSplit = new (WorkspaceSplit as ConstructableWorkspaceSplit)(view.app.workspace, "vertical");
+    rootSplit.getRoot = () => view.app.workspace[doc === document ? 'rootSplit' : 'floatingSplit'];
     rootSplit.getContainer = () => getContainerForDocument(doc);
     rootSplit.containerEl.style.width = '100%';
     rootSplit.containerEl.style.height = '100%';
@@ -183,7 +183,7 @@ function RenderObsidianView(
     };
 
     const setKeepOnTop = () => {
-      const keepontop = (app.workspace.activeLeaf === view.leaf) && DEVICE.isDesktop;
+      const keepontop = (view.app.workspace.activeLeaf === view.leaf) && DEVICE.isDesktop;
       if (keepontop) {
         //@ts-ignore
         if(!view.ownerWindow.electronWindow.isAlwaysOnTop()) {

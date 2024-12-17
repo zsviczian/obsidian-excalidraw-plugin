@@ -37,6 +37,7 @@ import {
   CJK_STYLE_ID,
   updateExcalidrawLib,
   loadMermaid,
+  setRootElementSize,
 } from "./constants/constants";
 import { ExcalidrawSettings, DEFAULT_SETTINGS, ExcalidrawSettingTab } from "./settings";
 import { initExcalidrawAutomate, ExcalidrawAutomate } from "./ExcalidrawAutomate";
@@ -143,6 +144,10 @@ export default class ExcalidrawPlugin extends Plugin {
     >();
     this.equationsMaster = new Map<FileId, string>();
     this.mermaidsMaster = new Map<FileId, string>();
+
+    //isExcalidraw function is used already is already used by MarkdownPostProcessor in onLoad before onLayoutReady
+    this.fileManager = new PluginFileManager(this);
+    
     setExcalidrawPlugin(this);
     /*if((process.env.NODE_ENV === 'development')) {
       this.slob = new Array(200 * 1024 * 1024 + 1).join('A'); // Create a 200MB blob
@@ -327,9 +332,11 @@ export default class ExcalidrawPlugin extends Plugin {
     this.logStartupEvent("\n----------------------------------\nWorkspace onLayoutReady event fired (these actions are outside the plugin initialization)");
     await this.awaitSettings();
     this.logStartupEvent("Settings awaited");
+    if(!this.settings.overrideObsidianFontSize) {
+      setRootElementSize();
+    }
 
     this.packageManager = new PackageManager(this);
-    this.fileManager = new PluginFileManager(this);
     this.eventManager = new EventManager(this);
     this.observerManager = new ObserverManager(this);
     this.commandManager = new CommandManager(this);
@@ -706,7 +713,7 @@ export default class ExcalidrawPlugin extends Plugin {
         }
         const fname = decodedURI.substring(decodedURI.lastIndexOf("/") + 1);
         const folder = `${this.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}`;
-        const downloaded = app.vault.getFiles().filter(f=>f.path.startsWith(folder) && f.name === fname).sort((a,b)=>a.path>b.path?1:-1);
+        const downloaded = this.app.vault.getFiles().filter(f=>f.path.startsWith(folder) && f.name === fname).sort((a,b)=>a.path>b.path?1:-1);
         let scriptFile = downloaded[0]; 
         const scriptPath = scriptFile?.path ?? `${folder}/${fname}`;
         const svgPath = getIMGFilename(scriptPath, "svg");
@@ -983,15 +990,15 @@ export default class ExcalidrawPlugin extends Plugin {
               markdownViewLoaded &&
               self.excalidrawFileModes[this.id || state.state.file] !== "markdown"
             ) {
-              const file = state.state.file;
-              if ((self.forceToOpenInMarkdownFilepath !== file)  && fileShouldDefaultAsExcalidraw(file,this.app)) {
+              const filepath:string = state.state.file as string;
+              if ((self.forceToOpenInMarkdownFilepath !== filepath)  && fileShouldDefaultAsExcalidraw(filepath,this.app)) {
                 // If we have it, force the view type to excalidraw
                 const newState = {
                   ...state,
                   type: VIEW_TYPE_EXCALIDRAW,
                 };
 
-                self.excalidrawFileModes[file] =
+                self.excalidrawFileModes[filepath] =
                   VIEW_TYPE_EXCALIDRAW;
 
                 return next.apply(this, [newState, ...rest]);
@@ -1414,6 +1421,10 @@ export default class ExcalidrawPlugin extends Plugin {
 
   get importSVGDialog() {
     return this.commandManager?.importSVGDialog;
+  }
+
+  public isRecentSplitViewSwitch():boolean {
+    return this.eventManager.isRecentSplitViewSwitch();
   }
 
   get leafChangeTimeout() {

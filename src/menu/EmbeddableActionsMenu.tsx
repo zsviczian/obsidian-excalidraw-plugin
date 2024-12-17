@@ -71,7 +71,7 @@ export class EmbeddableMenu {
 
   private async actionMarkdownSelection (file: TFile, isExcalidrawFile: boolean, subpath: string, element: ExcalidrawEmbeddableElement) {
     this.view.updateScene({appState: {activeEmbeddable: null}, storeAction: "update"});
-    const sections = (await app.metadataCache.blockCache
+    const sections = (await this.view.app.metadataCache.blockCache
       .getForFile({ isCancelled: () => false },file))
       .blocks.filter((b: any) => b.display && b.node?.type === "heading")
       .filter((b: any) => !isExcalidrawFile || !MD_EX_SECTIONS.includes(b.display));
@@ -88,7 +88,7 @@ export class EmbeddableMenu {
       );
     }
     const newSubpath = await ScriptEngine.suggester(
-      app, display, values, "Select section from document"
+      this.view.app, display, values, "Select section from document"
     );
     if(!newSubpath && newSubpath!=="") return;
     if (newSubpath !== subpath) {
@@ -99,7 +99,7 @@ export class EmbeddableMenu {
   private async actionMarkdownBlock (file: TFile, subpath: string, element: ExcalidrawEmbeddableElement) {
     if(!file) return;
     this.view.updateScene({appState: {activeEmbeddable: null}, storeAction: "update"});
-    const paragraphs = (await app.metadataCache.blockCache
+    const paragraphs = (await this.view.app.metadataCache.blockCache
       .getForFile({ isCancelled: () => false },file))
       .blocks.filter((b: any) => b.display && b.node && 
         (b.node.type === "paragraph" || b.node.type === "blockquote" || b.node.type === "listItem" || b.node.type === "table" || b.node.type === "callout")
@@ -109,7 +109,7 @@ export class EmbeddableMenu {
       paragraphs.map((b: any) => `${b.node?.id ? `#^${b.node.id}: ` : ``}${b.display.trim()}`));
 
     const selectedBlock = await ScriptEngine.suggester(
-      app, display, values, "Select section from document"
+      this.view.app, display, values, "Select section from document"
     );
     if(!selectedBlock) return;
 
@@ -125,7 +125,7 @@ export class EmbeddableMenu {
       const offset = selectedBlock.node?.position?.end?.offset;
       if(!offset) return;
       blockID = nanoid();
-      const fileContents = await app.vault.cachedRead(file);
+      const fileContents = await this.view.app.vault.cachedRead(file);
       if(!fileContents) return;
       await this.view.app.vault.modify(file, fileContents.slice(0, offset) + ` ^${blockID}` + fileContents.slice(offset));
       await sleep(200); //wait for cache to update

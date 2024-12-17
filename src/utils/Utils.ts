@@ -533,7 +533,7 @@ export function setDocLeftHandedMode(isLeftHanded: boolean, ownerDocument:Docume
 
 export function setLeftHandedMode (isLeftHanded: boolean) {
   const visitedDocs = new Set<Document>();
-  app.workspace.iterateAllLeaves((leaf) => {
+  EXCALIDRAW_PLUGIN.app.workspace.iterateAllLeaves((leaf) => {
     const ownerDocument = DEVICE.isMobile?document:leaf.view.containerEl.ownerDocument;
     if(!ownerDocument) return;
     if(visitedDocs.has(ownerDocument)) return;
