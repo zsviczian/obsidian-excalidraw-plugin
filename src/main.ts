@@ -37,6 +37,7 @@ import {
   CJK_STYLE_ID,
   updateExcalidrawLib,
   loadMermaid,
+  setRootElementSize,
 } from "./constants/constants";
 import { ExcalidrawSettings, DEFAULT_SETTINGS, ExcalidrawSettingTab } from "./settings";
 import { initExcalidrawAutomate, ExcalidrawAutomate } from "./ExcalidrawAutomate";
@@ -331,6 +332,9 @@ export default class ExcalidrawPlugin extends Plugin {
     this.logStartupEvent("\n----------------------------------\nWorkspace onLayoutReady event fired (these actions are outside the plugin initialization)");
     await this.awaitSettings();
     this.logStartupEvent("Settings awaited");
+    if(!this.settings.overrideObsidianFontSize) {
+      setRootElementSize();
+    }
 
     this.packageManager = new PackageManager(this);
     this.eventManager = new EventManager(this);

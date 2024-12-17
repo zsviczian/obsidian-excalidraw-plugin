@@ -10,7 +10,7 @@ import {
   TextComponent,
   TFile,
 } from "obsidian";
-import { GITHUB_RELEASES } from "./constants/constants";
+import { GITHUB_RELEASES, setRootElementSize } from "./constants/constants";
 import { t } from "./lang/helpers";
 import type ExcalidrawPlugin from "./main";
 import { PenStyle } from "./types/PenTypes";
@@ -521,8 +521,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   async hide() {
     if(this.plugin.settings.overrideObsidianFontSize) {
       document.documentElement.style.fontSize = "";
+      setRootElementSize(16);
     } else if(!document.documentElement.style.fontSize) {
       document.documentElement.style.fontSize = getComputedStyle(document.body).getPropertyValue("--font-text-size");
+      setRootElementSize();
     }
     
     this.plugin.settings.scriptFolderPath = normalizePath(

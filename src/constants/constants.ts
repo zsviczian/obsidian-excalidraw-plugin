@@ -155,7 +155,12 @@ export const DEVICE: DeviceType = {
   isAndroid: document.body.hasClass("is-android"),
 };
 
-export const ROOTELEMENTSIZE = (() => {
+export let ROOTELEMENTSIZE: number = 16;
+export function setRootElementSize(size?:number) {
+  if(size) {
+    ROOTELEMENTSIZE = size;
+    return;
+  }
   const tempElement = document.createElement('div');
   tempElement.style.fontSize = '1rem';
   tempElement.style.display = 'none'; // Hide the element
@@ -164,7 +169,7 @@ export const ROOTELEMENTSIZE = (() => {
   const pixelSize = parseFloat(computedStyle.fontSize);
   document.body.removeChild(tempElement);
   return pixelSize;
-})();
+};
 
 export const nanoid = customAlphabet(
   "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
