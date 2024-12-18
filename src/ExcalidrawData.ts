@@ -518,7 +518,7 @@ export class ExcalidrawData {
       return;
     }
 
-    const saveVersion = this.scene.source.split("https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/")[1]??"1.8.16";
+    const saveVersion = this.scene.source?.split("https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/")[1]??"1.8.16";
 
     const elements = this.scene.elements;
     for (const el of elements) {
