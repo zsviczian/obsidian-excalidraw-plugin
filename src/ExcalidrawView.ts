@@ -1925,7 +1925,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   //onClose happens after onunload
   protected async onClose(): Promise<void> {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onClose,`ExcalidrawView.onClose, file:${this.file?.name}`);
-
+    this.exitFullscreen();
     await this.forceSaveIfRequired();
     if (this.excalidrawRoot) {
       this.excalidrawRoot.unmount();

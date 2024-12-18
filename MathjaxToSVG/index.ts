@@ -15,9 +15,15 @@ let html: any;
 let preamble: string;
 
 function svgToBase64(svg: string): string {
-  return `data:image/svg+xml;base64,${btoa(
-    decodeURIComponent(encodeURIComponent(svg.replaceAll("&nbsp;", " "))),
-  )}`;
+  const cleanSvg = svg.replaceAll("&nbsp;", " ");
+  
+  // Convert the string to UTF-8 and handle non-Latin1 characters
+  const encodedData = encodeURIComponent(cleanSvg)
+    .replace(/%([0-9A-F]{2})/g,
+      (match, p1) => String.fromCharCode(parseInt(p1, 16))
+    );
+    
+  return `data:image/svg+xml;base64,${btoa(encodedData)}`;
 }
 
 async function getImageSize(src: string): Promise<{ height: number; width: number }> {
