@@ -635,12 +635,6 @@ export class EmbeddedFilesLoader {
                 shouldScale: embeddedFile.shouldScale()
               };
               files[batch].push(fileData);
-/*              try  {
-                addFiles([fileData], this.isDark, false);
-              }
-              catch(e) {
-                errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
-              }*/
             }
           } else if (embeddedFile.isSVGwithBitmap && (depth !== 0 || isThemeChange)) {
             //this will reload the image in light/dark mode when switching themes
@@ -654,12 +648,6 @@ export class EmbeddedFilesLoader {
               shouldScale: embeddedFile.shouldScale()
             };
             files[batch].push(fileData);
-/*            try  {
-              addFiles([fileData], this.isDark, false);
-            }
-            catch(e) {
-              errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
-            }*/
           }
         });
       }

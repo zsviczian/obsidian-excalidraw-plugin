@@ -2610,7 +2610,16 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             sceneElementIds.splice(parentLayer+1,0,incomingElement.id);
           }
         } else if(sceneElement && incomingElement.type === "image") { //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/632
-          if(inData.getFile(incomingElement.fileId)) {
+          const incomingFile = inData.getFile(incomingElement.fileId);
+          const sceneFile = this.excalidrawData.getFile(incomingElement.fileId);
+
+          const shouldUpdate = Boolean(incomingFile) && (
+            ((sceneElement as ExcalidrawImageElement).fileId !== incomingElement.fileId) ||
+            (incomingFile.file && (sceneFile.file !== incomingFile.file)) ||
+            (incomingFile.hyperlink && (sceneFile.hyperlink !== incomingFile.hyperlink)) ||
+            (incomingFile.linkParts?.original && (sceneFile.linkParts?.original !== incomingFile.linkParts?.original))
+          )
+          if(shouldUpdate) {
             this.excalidrawData.setFile(
               incomingElement.fileId,
               inData.getFile(incomingElement.fileId)
@@ -4456,9 +4465,24 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       }
       
       if (event.dataTransfer.types.length >= 1 && ["image-url","image-import","embeddable"].contains(localFileDragAction)) {
-        for(let i=0;i<event.dataTransfer.files.length;i++) {
-          const path = event.dataTransfer.files[i].path;
-          if(!path) return true; //excalidarw to continue processing
+        const files = Array.from(event.dataTransfer.files || []);
+        
+        for(let i = 0; i < files.length; i++) {
+          // Try multiple ways to get file path
+          const file = files[i];
+          let path = file?.path
+
+          if(!path && file && DEVICE.isDesktop) {
+            //https://www.electronjs.org/docs/latest/breaking-changes#removed-filepath
+            const { webUtils } = require('electron');
+            if(webUtils && webUtils.getPathForFile) {
+              path = webUtils.getPathForFile(file);
+            }
+          }
+          if(!path) {            
+            new Notice(t("ERROR_CANT_READ_FILEPATH"),6000);
+            return true; //excalidarw to continue processing
+          }
           const link = getInternalLinkOrFileURLLink(path, this.plugin, event.dataTransfer.files[i].name, this.file);
           const {x,y} = this.currentPosition;
           const pos = {x:x+i*300, y:y+i*300};
@@ -4470,7 +4494,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
               if(link.file.extension === "pdf") {
                 const insertPDFModal = new InsertPDFModal(this.plugin, this);
                 insertPDFModal.open(link.file);
-                //return false;
               }
               const ea = getEA(this) as ExcalidrawAutomate;
               insertImageToView(ea, pos, link.file).then(()=>ea.destroy()) ;
@@ -4510,7 +4533,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
                         const ea = getEA(this) as ExcalidrawAutomate;
                         await insertImageToView(ea, pos, maybeFile);
                         ea.destroy();
-                        return;
+                        return false;
                     }
                   }
                   const file = await this.app.vault.createBinary(filepath, fileToImport)
@@ -4518,7 +4541,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
                   await insertImageToView(ea, pos, file);
                   ea.destroy();
                 })();
-                //return false;
               } else if(extension === "excalidraw") {
                 return true; //excalidarw to continue processing
               } else {
@@ -4527,9 +4549,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
                   const file = await this.app.vault.createBinary(filepath, await event.dataTransfer.files[i].arrayBuffer());
                   const modal = new UniversalInsertFileModal(this.plugin, this);
                   modal.open(file, pos);
-                  //insertEmbeddableToView(getEA(this), pos, file);
                 })();
-                //return false;
               }
             }
             else if(localFileDragAction === "embeddable" || !IMAGE_TYPES.contains(extension)) {
@@ -4550,9 +4570,21 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       if(event.dataTransfer.types.length >= 1 && localFileDragAction === "link") {
         const ea = getEA(this) as ExcalidrawAutomate;
         for(let i=0;i<event.dataTransfer.files.length;i++) {
-          const path = event.dataTransfer.files[i].path;
-          const name = event.dataTransfer.files[i].name;
-          if(!path || !name) return true; //excalidarw to continue processing
+          const file = event.dataTransfer.files[i];
+          let path = file?.path;
+          const name = file?.name;
+          if(!path && file && DEVICE.isDesktop) {
+            //https://www.electronjs.org/docs/latest/breaking-changes#removed-filepath
+            const { webUtils } = require('electron');
+            if(webUtils && webUtils.getPathForFile) {
+              path = webUtils.getPathForFile(file);
+            }
+          }
+          if(!path || !name) {
+            new Notice(t("ERROR_CANT_READ_FILEPATH"),6000);
+            ea.destroy();
+            return true; //excalidarw to continue processing
+          }
           const link = getInternalLinkOrFileURLLink(path, this.plugin, name, this.file);
           const id = ea.addText(
             this.currentPosition.x+i*40,

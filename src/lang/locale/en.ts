@@ -110,6 +110,7 @@ export default {
   SELECT_LINK_TO_OPEN: "Select a link to open",
 
   //ExcalidrawView.ts
+  ERROR_CANT_READ_FILEPATH: "Error, can't read file path. Importing file instead",
   NO_SEARCH_RESULT: "Didn't find a matching element in the drawing",
   FORCE_SAVE_ABORTED: "Force Save aborted because saving is in progress",
   LINKLIST_SECOND_ORDER_LINK: "Second Order Link",
@@ -973,4 +974,30 @@ FILENAME_HEAD: "Filename",
   //Utils.ts
   UPDATE_AVAILABLE: `A newer version of Excalidraw is available in Community Plugins.\n\nYou are using ${PLUGIN_VERSION}.\nThe latest is`,
   ERROR_PNG_TOO_LARGE: "Error exporting PNG - PNG too large, try a smaller resolution",
+
+  //ModifierkeyHelper.ts
+  // WebBrowserDragAction
+  WEB_DRAG_IMPORT_IMAGE: "Import Image to Vault",
+  WEB_DRAG_IMAGE_URL: "Insert Image or YouTube Thumbnail with URL",
+  WEB_DRAG_LINK: "Insert Link", 
+  WEB_DRAG_EMBEDDABLE: "Insert Interactive-Frame",
+
+  // LocalFileDragAction
+  LOCAL_DRAG_IMPORT: "Import external file or reuse existing file if path is from the Vault",
+  LOCAL_DRAG_IMAGE: "Insert Image: with local URI or internal-link if from Vault",
+  LOCAL_DRAG_LINK: "Insert Link: local URI or internal-link if from Vault",
+  LOCAL_DRAG_EMBEDDABLE: "Insert Interactive-Frame: local URI or internal-link if from Vault",
+
+  // InternalDragAction  
+  INTERNAL_DRAG_IMAGE: "Insert Image",
+  INTERNAL_DRAG_IMAGE_FULL: "Insert Image @100%",
+  INTERNAL_DRAG_LINK: "Insert Link",
+  INTERNAL_DRAG_EMBEDDABLE: "Insert Interactive-Frame",
+
+  // LinkClickAction
+  LINK_CLICK_ACTIVE: "Open in current active window",
+  LINK_CLICK_NEW_PANE: "Open in a new adjacent window",
+  LINK_CLICK_POPOUT: "Open in a popout window",
+  LINK_CLICK_NEW_TAB: "Open in a new tab",
+  LINK_CLICK_MD_PROPS: "Show the Markdown image-properties dialog (only relevant if you have embedded a markdown document as an image)",
 };

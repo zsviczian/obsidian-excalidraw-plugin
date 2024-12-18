@@ -1,5 +1,6 @@
 import { Modifier } from "obsidian";
 import { DEVICE } from "src/constants/constants";
+import { t } from "src/lang/helpers";
 import { ExcalidrawSettings } from "src/settings";
 export type ModifierKeys = {shiftKey:boolean, ctrlKey: boolean, metaKey: boolean, altKey: boolean};
 export type KeyEvent = PointerEvent | MouseEvent | KeyboardEvent | React.DragEvent | React.PointerEvent | React.MouseEvent | ModifierKeys; 
@@ -31,30 +32,29 @@ export type ModifierKeyTooltipMessages = Partial<{
 export const modifierKeyTooltipMessages = ():ModifierKeyTooltipMessages => {
   return {
     WebBrowserDragAction: {
-      "image-import": "Import Image to Vault",
-      "image-url": `Insert Image or YouTube Thumbnail with URL`,
-      "link": "Insert Link",
-      "embeddable": "Insert Interactive-Frame",
-      // Add more messages for WebBrowserDragAction as needed
+      "image-import": t("WEB_DRAG_IMPORT_IMAGE"),
+      "image-url": t("WEB_DRAG_IMAGE_URL"),
+      "link": t("WEB_DRAG_LINK"),
+      "embeddable": t("WEB_DRAG_EMBEDDABLE"),
     },
     LocalFileDragAction: {
-      "image-import": "Import external file or reuse existing file if path is from the Vault",
-      "image-url": `Insert Image: with local URI or internal-link if from Vault`,
-      "link": "Insert Link: local URI or internal-link if from Vault",
-      "embeddable": "Insert Interactive-Frame: local URI or internal-link if from Vault",
+      "image-import": t("LOCAL_DRAG_IMPORT"),
+      "image-url": t("LOCAL_DRAG_IMAGE"),
+      "link": t("LOCAL_DRAG_LINK"), 
+      "embeddable": t("LOCAL_DRAG_EMBEDDABLE"),
     },
     InternalDragAction: {
-      "image": "Insert Image",
-      "image-fullsize": "Insert Image @100%",
-      "link": `Insert Link`,
-      "embeddable": "Insert Interactive-Frame",
+      "image": t("INTERNAL_DRAG_IMAGE"),
+      "image-fullsize": t("INTERNAL_DRAG_IMAGE_FULL"),
+      "link": t("INTERNAL_DRAG_LINK"),
+      "embeddable": t("INTERNAL_DRAG_EMBEDDABLE"),
     },
     LinkClickAction: {
-      "active-pane": "Open in current active window",
-      "new-pane": "Open in a new adjacent window",
-      "popout-window": "Open in a popout window",
-      "new-tab": "Open in a new tab",
-      "md-properties": "Show the Markdown image-properties dialog (only relevant if you have embedded a markdown document as an image)",
+      "active-pane": t("LINK_CLICK_ACTIVE"),
+      "new-pane": t("LINK_CLICK_NEW_PANE"), 
+      "popout-window": t("LINK_CLICK_POPOUT"),
+      "new-tab": t("LINK_CLICK_NEW_TAB"),
+      "md-properties": t("LINK_CLICK_MD_PROPS"),
     },
   }
 };
