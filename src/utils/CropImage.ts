@@ -7,6 +7,7 @@ import { getEA } from "src";
 import { ExcalidrawAutomate, cloneElement } from "src/ExcalidrawAutomate";
 import { ExportSettings } from "src/ExcalidrawView";
 import { nanoid } from "src/constants/constants";
+import { svgToBase64 } from "./Utils";
 
 export class CropImage {
   private imageEA: ExcalidrawAutomate;
@@ -170,7 +171,7 @@ export class CropImage {
           1 // image quality (0 - 1)
         );
       };
-      image.src = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgData)))}`;
+      image.src = svgToBase64(svgData);
     });
   }
 

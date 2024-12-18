@@ -230,11 +230,17 @@ export function base64StringToBlob (base64String: string, mimeType: string): Blo
   return new Blob([buffer], { type: mimeType });
 };
 
-export function svgToBase64 (svg: string): string {
-  return `data:image/svg+xml;base64,${btoa(
-    unescape(encodeURIComponent(svg.replaceAll("&nbsp;", " "))),
-  )}`;
-};
+export function svgToBase64(svg: string): string {
+  const cleanSvg = svg.replaceAll("&nbsp;", " ");
+  
+  // Convert the string to UTF-8 and handle non-Latin1 characters
+  const encodedData = encodeURIComponent(cleanSvg)
+    .replace(/%([0-9A-F]{2})/g,
+      (match, p1) => String.fromCharCode(parseInt(p1, 16))
+    );
+    
+  return `data:image/svg+xml;base64,${btoa(encodedData)}`;
+}
 
 export async function getBinaryFileFromDataURL (dataURL: string): Promise<ArrayBuffer> {
   if (!dataURL) {

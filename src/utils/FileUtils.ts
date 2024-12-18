@@ -350,7 +350,9 @@ export const getInternalLinkOrFileURLLink = (
   const vault = plugin.app.vault;
   const fileURLString = vault.adapter.url.pathToFileURL(path).toString();
   if (fileURLString.startsWith(VAULT_BASE_URL())) {
-    const internalPath = normalizePath(unescape(fileURLString.substring(VAULT_BASE_URL().length)));
+    const internalPath = normalizePath(
+      decodeURIComponent(fileURLString.substring(VAULT_BASE_URL().length))
+    );
     const file = vault.getAbstractFileByPath(internalPath);
     if(file && file instanceof TFile) {
       const link = plugin.app.metadataCache.fileToLinktext(
