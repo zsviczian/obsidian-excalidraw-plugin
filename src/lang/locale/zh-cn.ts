@@ -1,6 +1,11 @@
-import { DEVICE, FRONTMATTER_KEYS, CJK_FONTS } from "src/constants/constants";
+import {
+  DEVICE,
+  FRONTMATTER_KEYS,
+  CJK_FONTS
+} from "src/constants/constants";
 import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/constSettingsTags";
 import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/ModifierkeyHelper";
+
 declare const PLUGIN_VERSION:string;
 
 // 简体中文
@@ -105,6 +110,7 @@ export default {
   SELECT_LINK_TO_OPEN: "选择要打开的链接",
 
   //ExcalidrawView.ts
+  ERROR_CANT_READ_FILEPATH : "错误，无法读取文件路径。正在改为导入文件",
   NO_SEARCH_RESULT: "在绘图中未找到匹配的元素",
   FORCE_SAVE_ABORTED: "自动保存被中止，因为文件正在保存中",
   LINKLIST_SECOND_ORDER_LINK: "二级链接",
@@ -968,4 +974,30 @@ FILENAME_HEAD: "文件名",
   //Utils.ts
   UPDATE_AVAILABLE: `Excalidraw 的新版本已在社区插件中可用。\n\n您正在使用 ${PLUGIN_VERSION}。\n最新版本是`,
   ERROR_PNG_TOO_LARGE: "导出 PNG 时出错 - PNG 文件过大，请尝试较小的分辨率",
+
+  // ModifierkeyHelper.ts
+  // WebBrowserDragAction
+  WEB_DRAG_IMPORT_IMAGE : "导入图片到 Vault" ,
+  WEB_DRAG_IMAGE_URL : "通过 URL 插入图片或 YouTube 缩略图" ,
+  WEB_DRAG_LINK : "插入链接" ,
+  WEB_DRAG_EMBEDDABLE : "插入交互框架" ,
+
+  // LocalFileDragAction
+  LOCAL_DRAG_IMPORT : "导入外部文件，或在路径来自 Vault 时复用现有文件" ,
+  LOCAL_DRAG_IMAGE : "插入图片：使用本地 URI，或在路径来自 Vault 时使用内部链接" ,
+  LOCAL_DRAG_LINK : "插入链接：使用本地 URI，或在路径来自 Vault 时使用内部链接" ,
+  LOCAL_DRAG_EMBEDDABLE : "插入交互框架：使用本地 URI，或在路径来自 Vault 时使用内部链接" ,
+
+  // InternalDragAction
+  INTERNAL_DRAG_IMAGE : "插入图片" ,
+  INTERNAL_DRAG_IMAGE_FULL : "插入图片（100% 尺寸）" ,
+  INTERNAL_DRAG_LINK : "插入链接" ,
+  INTERNAL_DRAG_EMBEDDABLE : "插入交互框架" ,
+
+  // LinkClickAction
+  LINK_CLICK_ACTIVE : "在当前活动窗口中打开" ,
+  LINK_CLICK_NEW_PANE : "在相邻的新窗口中打开" ,
+  LINK_CLICK_POPOUT : "在弹出窗口中打开" ,
+  LINK_CLICK_NEW_TAB : "在新标签页中打开" ,
+  LINK_CLICK_MD_PROPS : "显示 Markdown 图片属性对话框（仅在嵌入 Markdown 文档为图片时适用）" ,
 };
