@@ -1,8 +1,8 @@
 import { ExcalidrawElement, ExcalidrawImageElement, ExcalidrawTextElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
-import { REGEX_LINK, REG_LINKINDEX_HYPERLINK } from "src/ExcalidrawData";
-import ExcalidrawView, { TextMode } from "src/ExcalidrawView";
+import { REGEX_LINK, REG_LINKINDEX_HYPERLINK } from "../Shared/ExcalidrawData";
+import ExcalidrawView, { TextMode } from "src/View/ExcalidrawView";
 import { rotatedDimensions } from "./Utils";
-import { getBoundTextElementId } from "src/ExcalidrawAutomate";
+import { getBoundTextElementId } from "src/Shared/ExcalidrawAutomate";
 
 export const getElementsAtPointer = (
   pointer: any,

@@ -16,22 +16,22 @@ import {
   getCommonBoundingBox,
   DEVICE,
   getContainerElement,
-} from "../constants/constants";
-import ExcalidrawPlugin from "../main";
+} from "../Constants/Constants";
+import ExcalidrawPlugin from "../Core/main";
 import { ExcalidrawElement, ExcalidrawTextElement, ImageCrop } from "@zsviczian/excalidraw/types/excalidraw/element/types";
-import { ExportSettings } from "../ExcalidrawView";
+import { ExportSettings } from "../View/ExcalidrawView";
 import { getDataURLFromURL, getIMGFilename, getMimeType, getURLImageExtension } from "./FileUtils";
 import { generateEmbeddableLink } from "./CustomEmbeddableUtils";
 import { FILENAMEPARTS } from "./UtilTypes";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { cleanBlockRef, cleanSectionHeading, getFileCSSClasses } from "./ObsidianUtils";
-import { updateElementLinksToObsidianLinks } from "src/ExcalidrawAutomate";
+import { updateElementLinksToObsidianLinks } from "src/Shared/ExcalidrawAutomate";
 import { CropImage } from "./CropImage";
 import opentype from 'opentype.js';
-import { runCompressionWorker } from "src/workers/compression-worker";
+import { runCompressionWorker } from "src/Shared/Workers/compression-worker";
 import Pool from "es6-promise-pool";
-import { FileData } from "src/EmbeddedFileLoader";
-import { t } from "src/lang/helpers";
+import { FileData } from "../Shared/EmbeddedFileLoader";
+import { t } from "src/Lang/Helpers";
 
 declare const PLUGIN_VERSION:string;
 declare var LZString: any;

@@ -1,4 +1,4 @@
-import ExcalidrawPlugin from "src/main";
+import ExcalidrawPlugin from "src/Core/main";
 import { PromisePool, promiseTry } from "./Utils";
 import { blobToBase64 } from "./FileUtils";
 

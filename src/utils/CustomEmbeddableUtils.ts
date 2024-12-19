@@ -1,9 +1,9 @@
 import { NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
-import { DEVICE, REG_LINKINDEX_INVALIDCHARS } from "src/constants/constants";
+import { DEVICE, REG_LINKINDEX_INVALIDCHARS } from "src/Constants/Constants";
 import { getParentOfClass } from "./ObsidianUtils";
 import { TFile, WorkspaceLeaf } from "obsidian";
 import { getLinkParts } from "./Utils";
-import ExcalidrawView from "src/ExcalidrawView";
+import ExcalidrawView from "src/View/ExcalidrawView";
 
 export const useDefaultExcalidrawFrame = (element: NonDeletedExcalidrawElement) => {
   return !(element.link.startsWith("[") || element.link.startsWith("file:") || element.link.startsWith("data:")); // && !element.link.match(TWITTER_REG);

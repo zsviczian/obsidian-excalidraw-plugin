@@ -3,10 +3,10 @@ import { BinaryFileData } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { Notice } from "obsidian";
 
-import { getEA } from "src";
-import { ExcalidrawAutomate, cloneElement } from "src/ExcalidrawAutomate";
-import { ExportSettings } from "src/ExcalidrawView";
-import { nanoid } from "src/constants/constants";
+import { getEA } from "src/Core";
+import { ExcalidrawAutomate, cloneElement } from "src/Shared/ExcalidrawAutomate";
+import { ExportSettings } from "src/View/ExcalidrawView";
+import { nanoid } from "src/Constants/Constants";
 import { svgToBase64 } from "./Utils";
 
 export class CropImage {

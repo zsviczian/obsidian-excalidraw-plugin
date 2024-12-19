@@ -5,13 +5,13 @@ import {
   MarkdownView,
   normalizePath, OpenViewState, parseFrontMatterEntry, TFile, View, ViewState, Workspace, WorkspaceLeaf, WorkspaceSplit
 } from "obsidian";
-import ExcalidrawPlugin from "../main";
+import ExcalidrawPlugin from "../Core/main";
 import { checkAndCreateFolder, splitFolderAndFilename } from "./FileUtils";
 import { linkClickModifierType, ModifierKeys } from "./ModifierkeyHelper";
-import { EXCALIDRAW_PLUGIN, REG_BLOCK_REF_CLEAN, REG_SECTION_REF_CLEAN, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
+import { EXCALIDRAW_PLUGIN, REG_BLOCK_REF_CLEAN, REG_SECTION_REF_CLEAN, VIEW_TYPE_EXCALIDRAW } from "src/Constants/Constants";
 import yaml from "js-yaml";
 import { debug, DEBUGGING } from "./DebugHelper";
-import ExcalidrawView from "src/ExcalidrawView";
+import ExcalidrawView from "src/View/ExcalidrawView";
 
 export const getParentOfClass = (element: Element, cssClass: string):HTMLElement | null => {
   let parent = element.parentElement;

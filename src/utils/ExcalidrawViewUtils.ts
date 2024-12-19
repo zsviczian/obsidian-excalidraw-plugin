@@ -1,17 +1,17 @@
 
-import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS } from "src/constants/constants";
+import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS } from "src/Constants/Constants";
 import { App, Modal, Notice, TFile, WorkspaceLeaf } from "obsidian";
-import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
-import { REGEX_LINK, REG_LINKINDEX_HYPERLINK, getExcalidrawMarkdownHeaderSection, REGEX_TAGS } from "src/ExcalidrawData";
-import ExcalidrawView from "src/ExcalidrawView";
+import { ExcalidrawAutomate } from "src/Shared/ExcalidrawAutomate";
+import { REGEX_LINK, REG_LINKINDEX_HYPERLINK, getExcalidrawMarkdownHeaderSection, REGEX_TAGS } from "../Shared/ExcalidrawData";
+import ExcalidrawView from "src/View/ExcalidrawView";
 import { ExcalidrawElement, ExcalidrawFrameElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { getEmbeddedFilenameParts, getLinkParts, isImagePartRef } from "./Utils";
 import { cleanSectionHeading } from "./ObsidianUtils";
-import { getEA } from "src";
+import { getEA } from "src/Core";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { EmbeddableMDCustomProps } from "src/dialogs/EmbeddableSettings";
+import { EmbeddableMDCustomProps } from "src/Shared/Dialogs/EmbeddableSettings";
 import { nanoid } from "nanoid";
-import { t } from "src/lang/helpers";
+import { t } from "src/Lang/Helpers";
 
 export async function insertImageToView(
   ea: ExcalidrawAutomate,

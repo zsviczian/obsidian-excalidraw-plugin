@@ -1,6 +1,6 @@
-import { DEVICE, FRONTMATTER_KEYS, CJK_FONTS } from "src/constants/constants";
-import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/constSettingsTags";
-import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/ModifierkeyHelper";
+import { DEVICE, FRONTMATTER_KEYS, CJK_FONTS } from "src/Constants/Constants";
+import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/Constants/ConstSettingsTags";
+import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/Utils/ModifierkeyHelper";
 
 // русский
 export default {

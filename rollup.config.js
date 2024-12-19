@@ -48,7 +48,7 @@ function minifyCode(code) {
 }
 
 function compressLanguageFile(lang) {
-  const inputDir = "./src/lang/locale";
+  const inputDir = "./src/Lang/Locale";
   const filePath = `${inputDir}/${lang}.ts`;
   let content = fs.readFileSync(filePath, "utf-8");
   content = trimLastSemicolon(content.split("export default")[1].trim());
@@ -102,7 +102,7 @@ const packageString = isLib
   'const PLUGIN_VERSION="' + manifest.version + '";';
 
 const BASE_CONFIG = {
-  input: 'src/main.ts',
+  input: 'src/Core/main.ts',
   external: [
     '@codemirror/autocomplete',
     '@codemirror/collab',
@@ -166,7 +166,7 @@ const BUILD_CONFIG = {
 
 const LIB_CONFIG = {
   ...BASE_CONFIG,
-  input: "src/index.ts",
+  input: "src/Core/index.ts",
   output: {
     dir: "lib",
     sourcemap: true,

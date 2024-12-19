@@ -1,6 +1,5 @@
-import { DEVICE } from "../constants/constants";
 import { Notice, RequestUrlResponse, requestUrl } from "obsidian";
-import ExcalidrawPlugin from "src/main";
+import ExcalidrawPlugin from "src/Core/main";
 
 type MessageContent =
   | string

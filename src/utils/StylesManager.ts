@@ -1,5 +1,5 @@
 import { WorkspaceWindow } from "obsidian";
-import ExcalidrawPlugin from "src/main";
+import ExcalidrawPlugin from "src/Core/main";
 import { getAllWindowDocuments } from "./ObsidianUtils";
 import { DEBUGGING, debug } from "./DebugHelper";
 

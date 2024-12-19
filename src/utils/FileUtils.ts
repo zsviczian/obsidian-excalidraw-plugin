@@ -1,10 +1,10 @@
 import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { App, loadPdfJs, normalizePath, Notice, requestUrl, RequestUrlResponse, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
-import { DEVICE, EXCALIDRAW_PLUGIN, FRONTMATTER_KEYS, URLFETCHTIMEOUT } from "src/constants/constants";
-import { IMAGE_MIME_TYPES, MimeType } from "src/EmbeddedFileLoader";
-import { ExcalidrawSettings } from "src/settings";
+import { DEVICE, EXCALIDRAW_PLUGIN, FRONTMATTER_KEYS, URLFETCHTIMEOUT } from "src/Constants/Constants";
+import { IMAGE_MIME_TYPES, MimeType } from "../Shared/EmbeddedFileLoader";
+import { ExcalidrawSettings } from "src/Core/settings";
 import { errorlog, getDataURL } from "./Utils";
-import ExcalidrawPlugin from "src/main";
+import ExcalidrawPlugin from "src/Core/main";
 import { ANNOTATED_PREFIX, CROPPED_PREFIX } from "./CarveOut";
 import { getAttachmentsFolderAndFilePath } from "./ObsidianUtils";
 

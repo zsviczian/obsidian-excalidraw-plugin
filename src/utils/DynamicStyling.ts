@@ -1,12 +1,12 @@
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ColorMaster } from "@zsviczian/colormaster";
-import { ExcalidrawAutomate } from "src/ExcalidrawAutomate";
-import ExcalidrawView from "src/ExcalidrawView";
-import { DynamicStyle } from "src/types/types";
-import { cloneElement } from "src/ExcalidrawAutomate";
+import { ExcalidrawAutomate } from "src/Shared/ExcalidrawAutomate";
+import ExcalidrawView from "src/View/ExcalidrawView";
+import { DynamicStyle } from "src/Types/Types";
+import { cloneElement } from "src/Shared/ExcalidrawAutomate";
 import { ExcalidrawFrameElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { addAppendUpdateCustomData } from "./Utils";
-import { mutateElement } from "src/constants/constants";
+import { mutateElement } from "src/Constants/Constants";
 
 export const setDynamicStyle = (
   ea: ExcalidrawAutomate,

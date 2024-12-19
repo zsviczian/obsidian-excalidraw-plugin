@@ -1,7 +1,7 @@
 import { Modifier } from "obsidian";
-import { DEVICE } from "src/constants/constants";
-import { t } from "src/lang/helpers";
-import { ExcalidrawSettings } from "src/settings";
+import { DEVICE } from "src/Constants/Constants";
+import { t } from "src/Lang/Helpers";
+import { ExcalidrawSettings } from "src/Core/settings";
 export type ModifierKeys = {shiftKey:boolean, ctrlKey: boolean, metaKey: boolean, altKey: boolean};
 export type KeyEvent = PointerEvent | MouseEvent | KeyboardEvent | React.DragEvent | React.PointerEvent | React.MouseEvent | ModifierKeys; 
 export type PaneTarget = "active-pane"|"new-pane"|"popout-window"|"new-tab"|"md-properties";
@@ -113,7 +113,7 @@ export const mdPropModifier = (ev: KeyEvent): boolean => !isSHIFT(ev) && isWinCT
 export const scaleToFullsizeModifier = (ev: KeyEvent) => {
   const settings:ExcalidrawSettings = window.ExcalidrawAutomate.plugin.settings;
   const keySet = ((DEVICE.isMacOS || DEVICE.isIOS) ? settings.modifierKeyConfig.Mac : settings.modifierKeyConfig.Win )["InternalDragAction"];
-  const rule = keySet.rules.find(r => r.result === "image-fullsize");
+  const rule:ModifierKey = keySet.rules.find((r:ModifierKey) => r.result === "image-fullsize");
   if(!rule) return false;
   const { shift, ctrl_cmd, alt_opt, meta_ctrl, result } = rule;
   return (
@@ -162,7 +162,7 @@ export const emulateKeysForLinkClick = (action: PaneTarget): ModifierKeys => {
   const config = modifierKeyConfig[platform]?.LinkClickAction;
 
   if (config) {
-    const rule = config.rules.find(rule => rule.result === action);
+    const rule:ModifierKey = config.rules.find((rule:ModifierKey) => rule.result === action);
     if (rule) {
       setCTRL(ev, rule.ctrl_cmd);
       setALT(ev, rule.alt_opt);

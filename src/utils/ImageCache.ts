@@ -1,5 +1,5 @@
 import { App, Notice, TFile } from "obsidian";
-import ExcalidrawPlugin from "src/main";
+import ExcalidrawPlugin from "src/Core/main";
 import { convertSVGStringToElement } from "./Utils";
 import { FILENAMEPARTS, PreviewImageType } from "./UtilTypes";
 import { hasExcalidrawEmbeddedImagesTreeChanged } from "./FileUtils";

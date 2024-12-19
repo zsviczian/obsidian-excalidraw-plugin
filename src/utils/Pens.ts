@@ -1,4 +1,4 @@
-import { PenStyle, PenType } from "src/types/PenTypes";
+import { PenStyle, PenType } from "src/Types/PenTypes";
 
 export const PENS:Record<PenType,PenStyle> = {
   "default": {

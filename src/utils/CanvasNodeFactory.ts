@@ -9,7 +9,7 @@ container.appendChild(node.contentEl)
 */
 
 import { TFile, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
-import ExcalidrawView from "src/ExcalidrawView";
+import ExcalidrawView from "src/View/ExcalidrawView";
 import { getContainerForDocument, ConstructableWorkspaceSplit, isObsidianThemeDark } from "./ObsidianUtils";
 import { CustomMutationObserver, DEBUGGING } from "./DebugHelper";
 
