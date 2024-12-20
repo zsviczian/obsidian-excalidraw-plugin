@@ -859,7 +859,7 @@ export class ExcalidrawData {
       return true; //Text Elements header does not exist
     }
     data = data.slice(position);
-    const normalMatch = data.match(/^((%%\n*)?# Excalidraw Data\n## Text Elements(?:\n|$))/m)
+    const normalMatch = data.match(/^((%%\n*)?# Excalidraw Data\n\n?## Text Elements(?:\n|$))/m)
       ?? data.match(/^((%%\n*)?##? Text Elements(?:\n|$))/m);
 
     const textElementsMatch = normalMatch
@@ -1427,7 +1427,7 @@ export class ExcalidrawData {
   disableCompression: boolean = false;
   generateMDBase(deletedElements: ExcalidrawElement[] = []) {
     let outString = this.textElementCommentedOut ? "%%\n" : "";
-    outString += `# Excalidraw Data\n## Text Elements\n`;
+    outString += `# Excalidraw Data\n\n## Text Elements\n`;
     if (this.plugin.settings.addDummyTextElement) {
       outString += `\n^_dummy!_\n\n`;
     }

@@ -758,7 +758,7 @@ export class ExcalidrawAutomate {
 
     const generateMD = ():string => {
       const textElements = this.getElements().filter(el => el.type === "text") as ExcalidrawTextElement[];
-      let outString = `# Excalidraw Data\n## Text Elements\n`;
+      let outString = `# Excalidraw Data\n\n## Text Elements\n`;
       textElements.forEach(te=> {
         outString += `${te.rawText ?? (te.originalText ?? te.text)} ^${te.id}\n\n`;
       });

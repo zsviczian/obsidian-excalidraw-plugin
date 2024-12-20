@@ -324,7 +324,7 @@ export class PluginFileManager {
     const textElements = excalidrawData.elements?.filter(
       (el: any) => el.type == "text",
     );
-    let outString = `# Excalidraw Data\n## Text Elements\n`;
+    let outString = `# Excalidraw Data\n\n## Text Elements\n`;
     let id: string;
     for (const te of textElements) {
       id = te.id;
