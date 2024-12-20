@@ -800,7 +800,7 @@ export class EmbeddedFilesLoader {
         // Get page
         const page = await pdfDoc.getPage(num);
         // Set scale
-        const viewport = page.getViewport({ scale });
+        const viewport = await page.getViewport({ scale });
         height = canvas.height = viewport.height;
         width = canvas.width = viewport.width;
 

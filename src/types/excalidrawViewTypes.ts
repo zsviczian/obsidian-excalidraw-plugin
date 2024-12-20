@@ -4,18 +4,7 @@ import { WorkspaceLeaf } from "obsidian";
 import { FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { ObsidianCanvasNode } from "../view/managers/CanvasNodeFactory";
 
-export interface DropData {
-  files?: File[];
-  text?: string;
-  html?: string;
-  uri?: string;
-}
-
-export interface DropContext {
-  event: DragEvent;
-  position: {x: number; y: number};
-  modifierAction: string;
-}
+export type Position = { x: number; y: number };
 
 export interface SelectedElementWithLink {
   id: string | null;

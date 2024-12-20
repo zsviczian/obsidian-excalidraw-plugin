@@ -5,6 +5,7 @@ import { terser } from "rollup-plugin-terser";
 import copy from "rollup-plugin-copy";
 import typescript2 from "rollup-plugin-typescript2";
 import fs from 'fs';
+import path from 'path';
 import LZString from 'lz-string';
 import postprocess from '@zsviczian/rollup-plugin-postprocess';
 import cssnano from 'cssnano';
@@ -16,6 +17,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const DIST_FOLDER = 'dist';
+const absolutePath = path.resolve(DIST_FOLDER);
+fs.mkdirSync(absolutePath, { recursive: true });
 const isProd = (process.env.NODE_ENV === "production");
 const isLib = (process.env.NODE_ENV === "lib");
 console.log(`Running: ${process.env.NODE_ENV}; isProd: ${isProd}; isLib: ${isLib}`);
@@ -145,7 +148,7 @@ const BUILD_CONFIG = {
       tsconfig: isProd ? "tsconfig.json" : "tsconfig.dev.json",
       sourcemap: !isProd,
       clean: true,
-      verbosity: isProd ? 1 : 2,
+      //verbosity: isProd ? 1 : 2,
     },
     ...(isProd ? [
       terser({
