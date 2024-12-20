@@ -48,7 +48,7 @@ function minifyCode(code) {
 }
 
 function compressLanguageFile(lang) {
-  const inputDir = "./src/Lang/Locale";
+  const inputDir = "./src/lang/locale";
   const filePath = `${inputDir}/${lang}.ts`;
   let content = fs.readFileSync(filePath, "utf-8");
   content = trimLastSemicolon(content.split("export default")[1].trim());
@@ -102,7 +102,7 @@ const packageString = isLib
   'const PLUGIN_VERSION="' + manifest.version + '";';
 
 const BASE_CONFIG = {
-  input: 'src/Core/main.ts',
+  input: 'src/core/main.ts',
   external: [
     '@codemirror/autocomplete',
     '@codemirror/collab',
@@ -141,7 +141,12 @@ const BUILD_CONFIG = {
     exports: 'default',
   },
   plugins: getRollupPlugins(
-    {tsconfig: isProd ? "tsconfig.json" : "tsconfig.dev.json"},
+    {
+      tsconfig: isProd ? "tsconfig.json" : "tsconfig.dev.json",
+      sourcemap: !isProd,
+      clean: true,
+      verbosity: isProd ? 1 : 2,
+    },
     ...(isProd ? [
       terser({
         toplevel: false,
@@ -166,10 +171,10 @@ const BUILD_CONFIG = {
 
 const LIB_CONFIG = {
   ...BASE_CONFIG,
-  input: "src/Core/index.ts",
+  input: "src/core/index.ts",
   output: {
     dir: "lib",
-    sourcemap: true,
+    sourcemap: false,
     format: "cjs",
     name: "Excalidraw (Library)",
   },

@@ -20,7 +20,7 @@
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx", "src/Shared/Dialogs/OpenDrawing.ts",
-    "src/Types/Types.d.ts",
+    "**/*.tsx", "src/shared/Dialogs/OpenDrawing.ts",
+    "src/types/types.d.ts",
   ]
 }

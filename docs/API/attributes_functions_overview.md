@@ -17,7 +17,7 @@ import { ConnectionPoint, DeviceType } from "src/types";
 import { ColorMaster } from "colormaster";
 import { TInput } from "colormaster/types";
 import { ClipboardData } from "@zsviczian/excalidraw/types/clipboard";
-import { PaneTarget } from "src/utils/ModifierkeyHelper";
+import { PaneTarget } from "src/utils/modifierkeyHelper";
 export declare class ExcalidrawAutomate {
     /**
      * Utility function that returns the Obsidian Module object.

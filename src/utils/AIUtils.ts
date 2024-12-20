@@ -1,5 +1,5 @@
 import { Notice, RequestUrlResponse, requestUrl } from "obsidian";
-import ExcalidrawPlugin from "src/Core/main";
+import ExcalidrawPlugin from "src/core/main";
 
 type MessageContent =
   | string
