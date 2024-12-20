@@ -800,7 +800,7 @@ export class EmbeddedFilesLoader {
         // Get page
         const page = await pdfDoc.getPage(num);
         // Set scale
-        const viewport = await page.getViewport({ scale });
+        const viewport = page.getViewport({ scale });
         height = canvas.height = viewport.height;
         width = canvas.width = viewport.width;
 
@@ -810,7 +810,22 @@ export class EmbeddedFilesLoader {
           viewport
         };
 
-        await page.render(renderCtx).promise;
+        //when obsidian loads there seems to be an occasional race condition where the rendering is cancelled
+        //this is a workaround for that
+        const maxRetries = 3;
+        for (let i = 0; i < maxRetries; i++) {
+          try {
+            await page.render(renderCtx).promise;
+            break;
+          } catch (e) {
+            if (i === maxRetries - 1) throw e; // Throw on last retry
+            if (e.name === 'RenderingCancelledException') {
+              await new Promise(resolve => setTimeout(resolve, 50 * (i + 1))); // Incremental backoff
+              continue;
+            }
+            throw e; // Throw other errors immediately
+          }
+        }
         if(validRect) {
           const [left, bottom, _, top] = page.view;
         
