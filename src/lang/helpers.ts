@@ -1,7 +1,7 @@
 //Solution copied from obsidian-kanban: https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/lang/helpers.ts
 
-import { LOCALE } from "src/Constants/Constants";
-import en from "./Locale/en";
+import { LOCALE } from "src/constants/constants";
+import en from "./locale/en";
 
 declare const PLUGIN_LANGUAGES: Record<string, string>;
 declare var LZString: any;

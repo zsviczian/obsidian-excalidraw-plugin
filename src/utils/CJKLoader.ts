@@ -1,6 +1,6 @@
-import ExcalidrawPlugin from "src/Core/main";
-import { PromisePool, promiseTry } from "./Utils";
-import { blobToBase64 } from "./FileUtils";
+import ExcalidrawPlugin from "src/core/main";
+import { PromisePool, promiseTry } from "./utils";
+import { blobToBase64 } from "./fileUtils";
 
 interface ExcalidrawFontFaceDescriptor {
   uri: string;

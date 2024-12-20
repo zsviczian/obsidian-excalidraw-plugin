@@ -1,6 +1,6 @@
 import { TFile } from "obsidian";
-import { ExcalidrawAutomate } from "../Shared/ExcalidrawAutomate";
-import { ExcalidrawLib } from "./ExcalidrawLib";
+import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
+import { ExcalidrawLib } from "./excalidrawLib";
 
 export type ConnectionPoint = "top" | "bottom" | "left" | "right" | null;
 

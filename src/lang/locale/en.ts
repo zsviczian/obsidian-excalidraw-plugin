@@ -2,9 +2,9 @@ import {
   DEVICE,
   FRONTMATTER_KEYS,
   CJK_FONTS,
-} from "src/Constants/Constants";
-import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/Constants/ConstSettingsTags";
-import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/Utils/ModifierkeyHelper";
+} from "src/constants/constants";
+import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/constSettingsTags";
+import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/modifierkeyHelper";
 
 declare const PLUGIN_VERSION:string;
 
@@ -975,7 +975,7 @@ FILENAME_HEAD: "Filename",
   UPDATE_AVAILABLE: `A newer version of Excalidraw is available in Community Plugins.\n\nYou are using ${PLUGIN_VERSION}.\nThe latest is`,
   ERROR_PNG_TOO_LARGE: "Error exporting PNG - PNG too large, try a smaller resolution",
 
-  //ModifierkeyHelper.ts
+  //modifierkeyHelper.ts
   // WebBrowserDragAction
   WEB_DRAG_IMPORT_IMAGE: "Import Image to Vault",
   WEB_DRAG_IMAGE_URL: "Insert Image or YouTube Thumbnail with URL",
