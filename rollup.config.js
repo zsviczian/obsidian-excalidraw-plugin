@@ -35,13 +35,16 @@ function trimLastSemicolon(input) {
 }
 
 function minifyCode(code) {
-  const minified = minify(code,{
-    compress: true,
+  const minified = minify(code, {
+    compress: {
+      //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2170
+      reduce_vars: false,
+    },
     mangle: true,
     output: {
       comments: false,
       beautify: false,
-    },
+    }
   });
 
   if (minified.error) {
@@ -58,7 +61,7 @@ function compressLanguageFile(lang) {
   return LZString.compressToBase64(minifyCode(`x = ${content};`));
 }
 
-const excalidraw_pkg = isLib ? "" : minifyCode( isProd
+const excalidraw_pkg = isLib ? "" : minifyCode(isProd
   ? fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/excalidraw.production.min.js", "utf8")
   : fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/excalidraw.development.js", "utf8"));
 const react_pkg = isLib ? "" : minifyCode(isProd
