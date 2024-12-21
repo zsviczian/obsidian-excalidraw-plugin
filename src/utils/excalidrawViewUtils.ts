@@ -44,8 +44,21 @@ export async function insertEmbeddableToView (
   shouldInsertToView: boolean = true,
 ):Promise<string> {
   if(shouldInsertToView) {ea.clear();}
-  ea.style.strokeColor = "transparent";
-  ea.style.backgroundColor = "transparent";
+  const api = ea.getExcalidrawAPI() as ExcalidrawImperativeAPI;
+  const st = api.getAppState();
+  
+  if(ea.plugin.settings.embeddableMarkdownDefaults.backgroundMatchElement) {
+    ea.style.backgroundColor = st.currentItemBackgroundColor;
+  } else {
+    ea.style.backgroundColor = "transparent";
+  }
+
+  if(ea.plugin.settings.embeddableMarkdownDefaults.borderMatchElement) {
+    ea.style.strokeColor = st.currentItemStrokeColor;
+  } else {
+    ea.style.strokeColor = "transparent";
+  }
+  
   if(file && (IMAGE_TYPES.contains(file.extension) || ea.isExcalidrawFile(file)) && !ANIMATED_IMAGE_TYPES.contains(file.extension)) {
     return await insertImageToView(ea, position, link??file, undefined, shouldInsertToView);
   } else {

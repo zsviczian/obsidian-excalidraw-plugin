@@ -812,18 +812,15 @@ export class EmbeddedFilesLoader {
 
         //when obsidian loads there seems to be an occasional race condition where the rendering is cancelled
         //this is a workaround for that
-        const maxRetries = 3;
+        const maxRetries = 4;
         for (let i = 0; i < maxRetries; i++) {
           try {
             await page.render(renderCtx).promise;
             break;
           } catch (e) {
             if (i === maxRetries - 1) throw e; // Throw on last retry
-            if (e.name === 'RenderingCancelledException') {
-              await new Promise(resolve => setTimeout(resolve, 50 * (i + 1))); // Incremental backoff
-              continue;
-            }
-            throw e; // Throw other errors immediately
+            await sleep(50*(i+1)); 
+            continue;
           }
         }
         if(validRect) {

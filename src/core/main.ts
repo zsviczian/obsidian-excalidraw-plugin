@@ -35,7 +35,6 @@ import {
   DEVICE,
   FONTS_STYLE_ID,
   CJK_STYLE_ID,
-  updateExcalidrawLib,
   loadMermaid,
   setRootElementSize,
 } from "../constants/constants";

@@ -1887,6 +1887,12 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   //onClose happens after onunload
   protected async onClose(): Promise<void> {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onClose,`ExcalidrawView.onClose, file:${this.file?.name}`);
+    
+    // This happens when the user right clicks a tab and selects delete
+    // in this case the onDelete event handler tirggers, but then Obsidian's delete event handler reaches onclose first, and
+    // when the function is called a second time via on delete an error is thrown.)
+    if(!this.file) return; 
+
     this.exitFullscreen();
     await this.forceSaveIfRequired();
     if (this.excalidrawRoot) {
