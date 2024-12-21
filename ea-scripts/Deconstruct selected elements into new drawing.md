@@ -79,13 +79,15 @@ ea.copyViewElementsToEAforEditing(els);
 ea.getElements().filter(el=>el.type==="image").forEach(el=>{
   const img = ea.targetView.excalidrawData.getFile(el.fileId);
   const path = (img?.linkParts?.original)??(img?.file?.path);
-  if(img && path) {
+  const hyperlink = img?.hyperlink;
+  if(img && (path || hyperlink)) {
     ea.imagesDict[el.fileId] = {
       mimeType: img.mimeType,
       id: el.fileId,
       dataURL: img.img,
       created: img.mtime,
       file: path,
+      hyperlink,
       hasSVGwithBitmap: img.isSVGwithBitmap,
       latex: null,
     };
