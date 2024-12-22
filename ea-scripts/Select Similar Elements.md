@@ -23,13 +23,17 @@ const {angle, backgroundColor, fillStyle, fontFamily, fontSize, height, width, o
 
 const fragWithHTML = (html) => createFragment((frag) => (frag.createDiv().innerHTML = html));
   
+function lc(x) {
+  return x?.toLocaleLowerCase();
+}
+
 //--------------------------
 // RUN
 //--------------------------
 const run = () => {
   selectedElements = elements.filter(el=>
     ((typeof config.angle === "undefined") || (el.angle === config.angle)) &&
-    ((typeof config.backgroundColor === "undefined") || (el.backgroundColor === config.backgroundColor)) &&
+    ((typeof config.backgroundColor === "undefined") || (lc(el.backgroundColor) === lc(config.backgroundColor))) &&
     ((typeof config.fillStyle === "undefined") || (el.fillStyle === config.fillStyle)) &&
     ((typeof config.fontFamily === "undefined") || (el.fontFamily === config.fontFamily)) &&
     ((typeof config.fontSize === "undefined") || (el.fontSize === config.fontSize)) &&
@@ -38,7 +42,7 @@ const run = () => {
     ((typeof config.opacity === "undefined") || (el.opacity === config.opacity)) &&
     ((typeof config.roughness === "undefined") || (el.roughness === config.roughness)) &&
     ((typeof config.roundness === "undefined") || (el.roundness === config.roundness)) &&
-    ((typeof config.strokeColor === "undefined") || (el.strokeColor === config.strokeColor)) &&
+    ((typeof config.strokeColor === "undefined") || (lc(el.strokeColor) === lc(config.strokeColor))) &&
     ((typeof config.strokeStyle === "undefined") || (el.strokeStyle === config.strokeStyle)) &&
     ((typeof config.strokeWidth === "undefined") || (el.strokeWidth === config.strokeWidth)) &&
     ((typeof config.type === "undefined") || (el.type === config.type)) &&
