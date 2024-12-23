@@ -128,7 +128,7 @@ import { getEA } from "src/core"
 import { anyModifierKeysPressed, emulateKeysForLinkClick, isWinALTorMacOPT, isWinCTRLorMacCMD, isWinMETAorMacCTRL, isSHIFT, linkClickModifierType, localFileDragModifierType, ModifierKeys, modifierKeyTooltipMessages } from "../utils/modifierkeyHelper";
 import { setDynamicStyle } from "../utils/dynamicStyling";
 import { CustomEmbeddable, renderWebView } from "./components/CustomEmbeddable";
-import { addBackOfTheNoteCard, getExcalidrawFileForwardLinks, getFrameBasedOnFrameNameOrId, getLinkTextFromLink, insertEmbeddableToView, insertImageToView, isTextImageTransclusion, openExternalLink, parseObsidianLink, renderContextMenuAction, tmpBruteForceCleanup } from "../utils/excalidrawViewUtils";
+import { addBackOfTheNoteCard, getExcalidrawFileForwardLinks, getFrameBasedOnFrameNameOrId, getLinkTextFromLink, insertEmbeddableToView, insertImageToView, isTextImageTransclusion, openExternalLink, parseObsidianLink, renderContextMenuAction, tmpBruteForceCleanup, toggleImageAnchoring } from "../utils/excalidrawViewUtils";
 import { imageCache } from "../shared/ImageCache";
 import { CanvasNodeFactory, ObsidianCanvasNode } from "./managers/CanvasNodeFactory";
 import { EmbeddableMenu } from "./components/menu/EmbeddableActionsMenu";
@@ -973,9 +973,14 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         if (!link || ef.linkParts.original === link) {
           return;
         }
+        const originalAnchor = Boolean(ef.linkParts.original.endsWith("|100%"));
+        const nextAnchor = Boolean(link.endsWith("|100%"));
         ef.resetImage(this.file.path, link);
         this.excalidrawData.setFile(fileId, ef);
         this.setDirty(2);
+        if(originalAnchor !== nextAnchor) {
+          await toggleImageAnchoring(el, this, nextAnchor, ef)
+        }
         await this.save(false);
         await sleep(100);
         if(!this.plugin.isExcalidrawFile(ef.file) && !link.endsWith("|100%")) {
@@ -2433,7 +2438,10 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         (files: FileData[], isDark: boolean, final:boolean = true) => {
           if (!files) {
             return;
-          }          
+          }
+          if(!this.file || !this.excalidrawAPI) {
+            return; //The view was closed in the mean time
+          }  
           addFiles(files, this, isDark);
           if(!final) return;
           this.activeLoader = null;

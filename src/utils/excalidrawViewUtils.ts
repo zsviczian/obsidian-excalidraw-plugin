@@ -4,7 +4,7 @@ import { App, Modal, Notice, TFile, WorkspaceLeaf } from "obsidian";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK, getExcalidrawMarkdownHeaderSection, REGEX_TAGS } from "../shared/ExcalidrawData";
 import ExcalidrawView from "src/view/ExcalidrawView";
-import { ExcalidrawElement, ExcalidrawFrameElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { ExcalidrawElement, ExcalidrawFrameElement, ExcalidrawImageElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { getEmbeddedFilenameParts, getLinkParts, isImagePartRef } from "./utils";
 import { cleanSectionHeading } from "./obsidianUtils";
 import { getEA } from "src/core";
@@ -12,6 +12,8 @@ import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
 import { nanoid } from "nanoid";
 import { t } from "src/lang/helpers";
+import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
+import { EmbeddedFile } from "src/shared/EmbeddedFileLoader";
 
 export async function insertImageToView(
   ea: ExcalidrawAutomate,
@@ -431,4 +433,35 @@ export function displayFontMessage(app: App) {
   }
 
   modal.open();
+}
+
+export async function toggleImageAnchoring(
+  el: ExcalidrawImageElement,
+  view: ExcalidrawView,
+  shouldAnchor: boolean,
+  ef: EmbeddedFile,
+) {
+  const ea = getEA(view) as ExcalidrawAutomate;
+  let imgEl = view.getViewElements().find((x:ExcalidrawElement)=>x.id === el.id) as Mutable<ExcalidrawImageElement>;
+  if(!imgEl) {
+    ea.destroy();
+    return;
+  }
+  ea.copyViewElementsToEAforEditing([imgEl]);
+  imgEl = ea.getElements()[0] as Mutable<ExcalidrawImageElement>;
+  if(!imgEl.customData) {
+    imgEl.customData = {};
+  }
+  imgEl.customData.isAnchored = shouldAnchor;
+  if(shouldAnchor) {
+    const {height, width} = ef.size;
+    const dX = width - imgEl.width;
+    const dY = height - imgEl.height;
+    imgEl.height = height;
+    imgEl.width = width;
+    imgEl.x -= dX/2;
+    imgEl.y -= dY/2;
+  }
+  await ea.addElementsToView(false, false);
+  ea.destroy();
 }
