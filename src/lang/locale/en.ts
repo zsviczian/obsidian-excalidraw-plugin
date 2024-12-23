@@ -416,6 +416,7 @@ FILENAME_HEAD: "Filename",
   ZOOM_TO_FIT_MAX_LEVEL_NAME: "Zoom to fit max ZOOM level",
   ZOOM_TO_FIT_MAX_LEVEL_DESC:
     "Set the maximum level to which zoom to fit will enlarge the drawing. Minimum is 0.5 (50%) and maximum is 10 (1000%).",
+  PEN_HEAD: "Pen",
   GRID_HEAD: "Grid",
   GRID_DYNAMIC_COLOR_NAME: "Dynamic grid color",
   GRID_DYNAMIC_COLOR_DESC:
@@ -578,7 +579,11 @@ FILENAME_HEAD: "Filename",
   EMBED_CANVAS_DESC: 
     "Hide canvas node border and background when embedding an Excalidraw drawing to Canvas. " +
     "Note that for a full transparent background for your image, you will still need to configure Excalidraw to export images with transparent background.",
-  EMBED_CACHING: "Image caching",
+  EMBED_CACHING: "Image caching and rendering optimization",
+  RENDERING_CONCURRENCY_NAME: "Image rendering concurrency",
+  RENDERING_CONCURRENCY_DESC:
+    "Number of parallel workers to use for image rendering. Increasing this number will speed up the rendering process, but may slow down the rest of the system. " +
+    "The default value is 3. You can increase this number if you have a powerful system.",
   EXPORT_SUBHEAD: "Export Settings",
   EMBED_SIZING: "Image sizing",
   EMBED_THEME_BACKGROUND: "Image theme and background color",

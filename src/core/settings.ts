@@ -41,6 +41,7 @@ import { Rank } from "src/constants/actionIcons";
 import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/constSettingsTags";
 import { HotkeyEditor } from "src/shared/Dialogs/HotkeyEditor";
 import { getExcalidrawViews } from "src/utils/obsidianUtils";
+import { createSliderWithText } from "src/utils/sliderUtils";
 
 export interface ExcalidrawSettings {
   folder: string;
@@ -70,6 +71,7 @@ export interface ExcalidrawSettings {
   annotatePreserveSize: boolean;
   displaySVGInPreview: boolean; //No longer used since 1.9.13
   previewImageType: PreviewImageType; //Introduced with 1.9.13
+  renderingConcurrency: number;
   allowImageCache: boolean;
   allowImageCacheInScene: boolean;
   displayExportedImageIfAvailable: boolean;
@@ -248,6 +250,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   annotatePreserveSize: false,
   displaySVGInPreview: undefined,
   previewImageType: undefined,
+  renderingConcurrency: 3,
   allowImageCache: true,
   allowImageCacheInScene: true,
   displayExportedImageIfAvailable: false,
@@ -1053,55 +1056,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h1",
     });
 
-    new Setting(detailsEl)
-    .setName(t("DEFAULT_PEN_MODE_NAME"))
-    .setDesc(fragWithHTML(t("DEFAULT_PEN_MODE_DESC")))
-    .addDropdown((dropdown) =>
-      dropdown
-        .addOption("never", "Never")
-        .addOption("mobile", "On Obsidian Mobile")
-        .addOption("always", "Always")
-        .setValue(this.plugin.settings.defaultPenMode)
-        .onChange(async (value: "never" | "always" | "mobile") => {
-          this.plugin.settings.defaultPenMode = value;
-          this.applySettingsUpdate();
-        }),
-    );
-
-    new Setting(detailsEl)
-      .setName(t("DISABLE_DOUBLE_TAP_ERASER_NAME"))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.penModeDoubleTapEraser)
-          .onChange(async (value) => {
-            this.plugin.settings.penModeDoubleTapEraser = value;
-            this.applySettingsUpdate();
-          }),
-      );
-    
-    new Setting(detailsEl)
-      .setName(t("DISABLE_SINGLE_FINGER_PANNING_NAME"))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.penModeSingleFingerPanning)
-          .onChange(async (value) => {
-            this.plugin.settings.penModeSingleFingerPanning = value;
-            this.applySettingsUpdate();
-          }),
-      );
-
-    new Setting(detailsEl)
-      .setName(t("SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_NAME"))
-      .setDesc(fragWithHTML(t("SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.penModeCrosshairVisible)
-          .onChange(async (value) => {
-            this.plugin.settings.penModeCrosshairVisible = value;
-            this.applySettingsUpdate();
-          }),
-      );
-
     const readingModeEl = new Setting(detailsEl)
       .setName(t("SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME"))
       .setDesc(fragWithHTML(t("SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC")))
@@ -1328,27 +1282,77 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    let zoomText: HTMLDivElement;
 
-    new Setting(detailsEl)
-      .setName(t("ZOOM_TO_FIT_MAX_LEVEL_NAME"))
-      .setDesc(fragWithHTML(t("ZOOM_TO_FIT_MAX_LEVEL_DESC")))
-      .addSlider((slider) =>
-        slider
-          .setLimits(0.5, 10, 0.5)
-          .setValue(this.plugin.settings.zoomToFitMaxLevel)
-          .onChange(async (value) => {
-            zoomText.innerText = ` ${value.toString()}`;
-            this.plugin.settings.zoomToFitMaxLevel = value;
+    createSliderWithText(detailsEl, {
+      name: t("ZOOM_TO_FIT_MAX_LEVEL_NAME"),
+      desc: t("ZOOM_TO_FIT_MAX_LEVEL_DESC"),
+      value: this.plugin.settings.zoomToFitMaxLevel,
+      min: 0.5,
+      max: 10,
+      step: 0.5,
+      onChange: (value) => {
+        this.plugin.settings.zoomToFitMaxLevel = value;
+        this.applySettingsUpdate();
+      }
+    })
+
+      // ------------------------------------------------
+      // Pen
+      // ------------------------------------------------
+      detailsEl = displayDetailsEl.createEl("details");
+      detailsEl.createEl("summary", {
+        text: t("PEN_HEAD"),
+        cls: "excalidraw-setting-h3",
+      });
+
+      new Setting(detailsEl)
+      .setName(t("DEFAULT_PEN_MODE_NAME"))
+      .setDesc(fragWithHTML(t("DEFAULT_PEN_MODE_DESC")))
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("never", "Never")
+          .addOption("mobile", "On Obsidian Mobile")
+          .addOption("always", "Always")
+          .setValue(this.plugin.settings.defaultPenMode)
+          .onChange(async (value: "never" | "always" | "mobile") => {
+            this.plugin.settings.defaultPenMode = value;
             this.applySettingsUpdate();
           }),
-      )
-      .settingEl.createDiv("", (el) => {
-        zoomText = el;
-        el.style.minWidth = "2.3em";
-        el.style.textAlign = "right";
-        el.innerText = ` ${this.plugin.settings.zoomToFitMaxLevel.toString()}`;
-      });
+      );
+  
+      new Setting(detailsEl)
+        .setName(t("DISABLE_DOUBLE_TAP_ERASER_NAME"))
+        .addToggle((toggle) =>
+          toggle
+            .setValue(this.plugin.settings.penModeDoubleTapEraser)
+            .onChange(async (value) => {
+              this.plugin.settings.penModeDoubleTapEraser = value;
+              this.applySettingsUpdate();
+            }),
+        );
+      
+      new Setting(detailsEl)
+        .setName(t("DISABLE_SINGLE_FINGER_PANNING_NAME"))
+        .addToggle((toggle) =>
+          toggle
+            .setValue(this.plugin.settings.penModeSingleFingerPanning)
+            .onChange(async (value) => {
+              this.plugin.settings.penModeSingleFingerPanning = value;
+              this.applySettingsUpdate();
+            }),
+        );
+  
+      new Setting(detailsEl)
+        .setName(t("SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_NAME"))
+        .setDesc(fragWithHTML(t("SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_DESC")))
+        .addToggle((toggle) =>
+          toggle
+            .setValue(this.plugin.settings.penModeCrosshairVisible)
+            .onChange(async (value) => {
+              this.plugin.settings.penModeCrosshairVisible = value;
+              this.applySettingsUpdate();
+            }),
+        );
 
       // ------------------------------------------------
       // Grid
@@ -1397,28 +1401,20 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         );
 
       // Grid opacity slider (hex value between 00 and FF)
-      let opacityValue: HTMLDivElement;
-      new Setting(detailsEl)
-        .setName(t("GRID_OPACITY_NAME"))
-        .setDesc(fragWithHTML(t("GRID_OPACITY_DESC")))
-        .addSlider((slider) =>
-          slider
-            .setLimits(0, 100, 1) // 0 to 100 in decimal
-            .setValue(this.plugin.settings.gridSettings.OPACITY)
-            .onChange(async (value) => {
-              opacityValue.innerText = ` ${value.toString()}`;
-              this.plugin.settings.gridSettings.OPACITY = value;
-              this.applySettingsUpdate();
-              updateGridColor();
-            }),
-        )
-        .settingEl.createDiv("", (el) => {
-          opacityValue = el;
-          el.style.minWidth = "3em";
-          el.style.textAlign = "right";
-          el.innerText = ` ${this.plugin.settings.gridSettings.OPACITY}`;
-        });
-
+      createSliderWithText(detailsEl, {
+        name: t("GRID_OPACITY_NAME"),
+        desc: t("GRID_OPACITY_DESC"),
+        value: this.plugin.settings.gridSettings.OPACITY,
+        min: 0,
+        max: 100,
+        step: 1,
+        onChange: (value) => {
+          this.plugin.settings.gridSettings.OPACITY = value;
+          this.applySettingsUpdate();
+          updateGridColor();
+        },
+        minWidth: "3em",
+      })
 
     // ------------------------------------------------
     // Laser Pointer
@@ -1439,47 +1435,33 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
     
-    let decayTime: HTMLDivElement;
-    new Setting(detailsEl)
-      .setName(t("LASER_DECAY_TIME_NAME"))
-      .setDesc(fragWithHTML(t("LASER_DECAY_TIME_DESC")))
-      .addSlider((slider) =>
-        slider
-          .setLimits(500, 20000, 500)
-          .setValue(this.plugin.settings.laserSettings.DECAY_TIME)
-          .onChange(async (value) => {
-            decayTime.innerText = ` ${value.toString()}`;
-            this.plugin.settings.laserSettings.DECAY_TIME = value;
-            this.applySettingsUpdate();
-          }),
-      )
-      .settingEl.createDiv("", (el) => {
-        decayTime = el;
-        el.style.minWidth = "3em";
-        el.style.textAlign = "right";
-        el.innerText = ` ${this.plugin.settings.laserSettings.DECAY_TIME.toString()}`;
-      });
+    createSliderWithText(detailsEl, {
+      name: t("LASER_DECAY_TIME_NAME"),
+      desc: t("LASER_DECAY_TIME_DESC"),
+      value: this.plugin.settings.laserSettings.DECAY_TIME,
+      min: 500,
+      max: 20000,
+      step: 500,
+      onChange: (value) => {
+        this.plugin.settings.laserSettings.DECAY_TIME = value;
+        this.applySettingsUpdate();
+      },
+      minWidth: "3em",
+    })
 
-      let decayLength: HTMLDivElement;
-      new Setting(detailsEl)
-        .setName(t("LASER_DECAY_LENGTH_NAME"))
-        .setDesc(fragWithHTML(t("LASER_DECAY_LENGTH_DESC")))
-        .addSlider((slider) =>
-          slider
-            .setLimits(25, 2000, 25)
-            .setValue(this.plugin.settings.laserSettings.DECAY_LENGTH)
-            .onChange(async (value) => {
-              decayLength.innerText = ` ${value.toString()}`;
-              this.plugin.settings.laserSettings.DECAY_LENGTH = value;
-              this.applySettingsUpdate();
-            }),
-        )
-        .settingEl.createDiv("", (el) => {
-          decayLength = el;
-          el.style.minWidth = "3em";
-          el.style.textAlign = "right";
-          el.innerText = ` ${this.plugin.settings.laserSettings.DECAY_LENGTH.toString()}`;
-        });
+    createSliderWithText(detailsEl, {
+      name: t("LASER_DECAY_LENGTH_NAME"),
+      desc: t("LASER_DECAY_LENGTH_DESC"),
+      value: this.plugin.settings.laserSettings.DECAY_LENGTH,
+      min: 25,
+      max: 2000,
+      step: 25,
+      onChange: (value) => {
+        this.plugin.settings.laserSettings.DECAY_LENGTH = value;
+        this.applySettingsUpdate();
+      },
+      minWidth: "3em",
+    })
 
     detailsEl = displayDetailsEl.createEl("details");
     detailsEl.createEl("summary", { 
@@ -1488,47 +1470,31 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     });
     detailsEl.createDiv({ text: t("DRAG_MODIFIER_DESC"), cls: "setting-item-description" });
 
-    let longPressDesktop: HTMLDivElement;
-    new Setting(detailsEl)
-      .setName(t("LONG_PRESS_DESKTOP_NAME"))
-      .setDesc(fragWithHTML(t("LONG_PRESS_DESKTOP_DESC")))
-      .addSlider((slider) =>
-        slider
-          .setLimits(300, 3000, 100)
-          .setValue(this.plugin.settings.longPressDesktop)
-          .onChange(async (value) => {
-            longPressDesktop.innerText = ` ${value.toString()}`;
-            this.plugin.settings.longPressDesktop = value;
-            this.applySettingsUpdate(true);
-          }),
-      )
-      .settingEl.createDiv("", (el) => {
-        longPressDesktop = el;
-        el.style.minWidth = "2.3em";
-        el.style.textAlign = "right";
-        el.innerText = ` ${this.plugin.settings.longPressDesktop.toString()}`;
-      });
+    createSliderWithText(detailsEl, {
+      name: t("LONG_PRESS_DESKTOP_NAME"),
+      desc: t("LONG_PRESS_DESKTOP_DESC"),
+      value: this.plugin.settings.longPressDesktop,
+      min: 300,
+      max: 3000,
+      step: 100,
+      onChange: (value) => {
+        this.plugin.settings.longPressDesktop = value;
+        this.applySettingsUpdate(true);
+      },
+    })
 
-    let longPressMobile: HTMLDivElement;
-    new Setting(detailsEl)
-      .setName(t("LONG_PRESS_MOBILE_NAME"))
-      .setDesc(fragWithHTML(t("LONG_PRESS_MOBILE_DESC")))
-      .addSlider((slider) =>
-        slider
-          .setLimits(300, 3000, 100)
-          .setValue(this.plugin.settings.longPressMobile)
-          .onChange(async (value) => {
-            longPressMobile.innerText = ` ${value.toString()}`;
-            this.plugin.settings.longPressMobile = value;
-            this.applySettingsUpdate(true);
-          }),
-      )
-      .settingEl.createDiv("", (el) => {
-        longPressMobile = el;
-        el.style.minWidth = "2.3em";
-        el.style.textAlign = "right";
-        el.innerText = ` ${this.plugin.settings.longPressMobile.toString()}`;
-      });
+    createSliderWithText(detailsEl, {
+      name: t("LONG_PRESS_MOBILE_NAME"),
+      desc: t("LONG_PRESS_MOBILE_DESC"),
+      value: this.plugin.settings.longPressMobile,
+      min: 300,
+      max: 3000,
+      step: 100,
+      onChange: (value) => {
+        this.plugin.settings.longPressMobile = value;
+        this.applySettingsUpdate(true);
+      },
+    })
 
     new Setting(detailsEl)
       .setName(t("DOUBLE_CLICK_LINK_OPEN_VIEW_MODE"))
@@ -1700,26 +1666,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
     donePrefixSetting.setDisabled(!this.plugin.settings.parseTODO);
 
-    let opacityText: HTMLDivElement;
-    new Setting(detailsEl)
-      .setName(t("LINKOPACITY_NAME"))
-      .setDesc(fragWithHTML(t("LINKOPACITY_DESC")))
-      .addSlider((slider) =>
-        slider
-          .setLimits(0, 1, 0.05)
-          .setValue(this.plugin.settings.linkOpacity)
-          .onChange(async (value) => {
-            opacityText.innerText = ` ${value.toString()}`;
-            this.plugin.settings.linkOpacity = value;
-            this.applySettingsUpdate(true);
-          }),
-      )
-      .settingEl.createDiv("", (el) => {
-        opacityText = el;
-        el.style.minWidth = "2.3em";
-        el.style.textAlign = "right";
-        el.innerText = ` ${this.plugin.settings.linkOpacity.toString()}`;
-      });
+    createSliderWithText(detailsEl, {
+      name: t("LINKOPACITY_NAME"),
+      desc: t("LINKOPACITY_DESC"),
+      value: this.plugin.settings.linkOpacity,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      onChange: (value) => {
+        this.plugin.settings.linkOpacity = value;
+        this.applySettingsUpdate(true);
+      },
+    });
 
     new Setting(detailsEl)
       .setName(t("HOVERPREVIEW_NAME"))
@@ -1953,6 +1911,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h3",
     });
 
+    createSliderWithText(detailsEl, {
+      name: t("RENDERING_CONCURRENCY_NAME"),
+      desc: t("RENDERING_CONCURRENCY_DESC"),
+      min: 1,
+      max: 5,
+      step: 1,
+      value: this.plugin.settings.renderingConcurrency,
+      onChange: (value) => {
+        this.plugin.settings.renderingConcurrency = value;
+        this.applySettingsUpdate();
+      }
+    });
+
     new Setting(detailsEl)
       .setName(t("EMBED_IMAGE_CACHE_NAME"))
       .setDesc(fragWithHTML(t("EMBED_IMAGE_CACHE_DESC")))
@@ -2077,49 +2048,31 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    let scaleText: HTMLDivElement;
+    createSliderWithText(detailsEl, {
+      name: t("EXPORT_PNG_SCALE_NAME"),
+      desc: t("EXPORT_PNG_SCALE_DESC"),
+      value: this.plugin.settings.pngExportScale,
+      min: 1,
+      max: 5,
+      step: 0.5,
+      onChange: (value) => {
+        this.plugin.settings.pngExportScale = value;
+        this.applySettingsUpdate();
+      }
+    });
 
-    new Setting(detailsEl)
-      .setName(t("EXPORT_PNG_SCALE_NAME"))
-      .setDesc(fragWithHTML(t("EXPORT_PNG_SCALE_DESC")))
-      .addSlider((slider) =>
-        slider
-          .setLimits(1, 5, 0.5)
-          .setValue(this.plugin.settings.pngExportScale)
-          .onChange(async (value) => {
-            scaleText.innerText = ` ${value.toString()}`;
-            this.plugin.settings.pngExportScale = value;
-            this.applySettingsUpdate();
-          }),
-      )
-      .settingEl.createDiv("", (el) => {
-        scaleText = el;
-        el.style.minWidth = "2.3em";
-        el.style.textAlign = "right";
-        el.innerText = ` ${this.plugin.settings.pngExportScale.toString()}`;
-      });
-
-    let exportPadding: HTMLDivElement;
-    
-    new Setting(detailsEl)
-      .setName(t("EXPORT_PADDING_NAME"))
-      .setDesc(fragWithHTML(t("EXPORT_PADDING_DESC")))
-      .addSlider((slider) =>
-        slider
-          .setLimits(0, 50, 5)
-          .setValue(this.plugin.settings.exportPaddingSVG)
-          .onChange(async (value) => {
-            exportPadding.innerText = ` ${value.toString()}`;
-            this.plugin.settings.exportPaddingSVG = value;
-            this.applySettingsUpdate();
-          }),
-      )
-      .settingEl.createDiv("", (el) => {
-        exportPadding = el;
-        el.style.minWidth = "2.3em";
-        el.style.textAlign = "right";
-        el.innerText = ` ${this.plugin.settings.exportPaddingSVG.toString()}`;
-      });
+    createSliderWithText(detailsEl, {
+      name: t("EXPORT_PADDING_NAME"),
+      desc: fragWithHTML(t("EXPORT_PADDING_DESC")),
+      value: this.plugin.settings.exportPaddingSVG,
+      min: 0,
+      max: 50,
+      step: 5,
+      onChange: (value) => {
+        this.plugin.settings.exportPaddingSVG = value;
+        this.applySettingsUpdate();
+      }
+    });
 
     detailsEl = exportDetailsEl.createEl("details");
     detailsEl.createEl("summary", { 
@@ -2460,27 +2413,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h3",
     });
     
-    let areaZoomText: HTMLDivElement;
 
-    new Setting(detailsEl)
-    .setName(t("MAX_IMAGE_ZOOM_IN_NAME"))
-    .setDesc(fragWithHTML(t("MAX_IMAGE_ZOOM_IN_DESC")))
-    .addSlider((slider) =>
-      slider
-        .setLimits(1, 10, 0.5)
-        .setValue(this.plugin.settings.areaZoomLimit)
-        .onChange(async (value) => {
-          areaZoomText.innerText = ` ${value.toString()}`;
-          this.plugin.settings.areaZoomLimit = value;
-          this.applySettingsUpdate();
-          this.plugin.excalidrawConfig.updateValues(this.plugin);
-        }),
-    )
-    .settingEl.createDiv("", (el) => {
-      areaZoomText = el;
-      el.style.minWidth = "2.3em";
-      el.style.textAlign = "right";
-      el.innerText = ` ${this.plugin.settings.areaZoomLimit.toString()}`;
+    createSliderWithText(detailsEl, {
+      name: t("MAX_IMAGE_ZOOM_IN_NAME"),
+      desc: fragWithHTML(t("MAX_IMAGE_ZOOM_IN_DESC")),
+      value: this.plugin.settings.areaZoomLimit,
+      min: 1,
+      max: 10,
+      step: 0.5,
+      onChange: (value) => {
+        this.plugin.settings.areaZoomLimit = value;
+        this.applySettingsUpdate();
+        this.plugin.excalidrawConfig.updateValues(this.plugin);
+      },
     });
 
     detailsEl = nonstandardDetailsEl.createEl("details");
