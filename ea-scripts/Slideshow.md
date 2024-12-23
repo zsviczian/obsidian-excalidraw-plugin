@@ -26,6 +26,10 @@ if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.1.7")) {
   return;
 }
 
+if(ea.targetView.isDirty()) {
+  ea.targetView.forceSave(true);
+}
+
 const hostLeaf = ea.targetView.leaf;
 const hostView = hostLeaf.view;
 const statusBarElement = document.querySelector("div.status-bar");
@@ -33,7 +37,7 @@ const ctrlKey = ea.targetView.modifierKeyDown.ctrlKey || ea.targetView.modifierK
 const altKey = ea.targetView.modifierKeyDown.altKey || ctrlKey;
 const shiftKey = ea.targetView.modifierKeyDown.shiftKey;
 const shouldStartWithLastSlide = shiftKey && window.ExcalidrawSlideshow &&
-      (window.ExcalidrawSlideshow.script === utils.scriptFile.path) && (typeof window.ExcalidrawSlideshow.slide === "number")
+      (window.ExcalidrawSlideshow.script === utils.scriptFile.path) && (typeof window.ExcalidrawSlideshow.slide?.[ea.targetView.file.path] === "number")
 //-------------------------------
 //constants
 //-------------------------------
@@ -57,8 +61,9 @@ const SVG_LASER_OFF = ea.obsidian.getIcon("lucide-wand").outerHTML;
 //-------------------------------
 //utility & convenience functions
 //-------------------------------
+let shouldSaveAfterThePresentation = false;
 let isLaserOn = false;
-let slide = shouldStartWithLastSlide ? window.ExcalidrawSlideshow.slide : 0;
+let slide = shouldStartWithLastSlide ? window.ExcalidrawSlideshow.slide?.[ea.targetView.file.path] : 0;
 let isFullscreen = false;
 const ownerDocument = ea.targetView.ownerDocument;
 const startFullscreen = !altKey;
@@ -350,8 +355,8 @@ const navigate = async (dir) => {
   }
   if(selectSlideDropdown) selectSlideDropdown.value = slide+1;
   await scrollToNextRect(nextRect);
-  if(window.ExcalidrawSlideshow && (typeof window.ExcalidrawSlideshow.slide === "number")) {
-    window.ExcalidrawSlideshow.slide = slide;
+  if(window.ExcalidrawSlideshow && (typeof window.ExcalidrawSlideshow.slide?.[ea.targetView.file.path] === "number")) {
+    window.ExcalidrawSlideshow.slide[ea.targetView.file.path] = slide;
   }
 }
 
@@ -505,6 +510,7 @@ const createPresentationNavigationPanel = () => {
 		    new ea.obsidian.ToggleComponent(el)
 		      .setValue(isHidden)
 		      .onChange(value => {
+            shouldSaveAfterThePresentation = true;
 		        if(value) {
 		          excalidrawAPI.setToast({
 						    message:"The presentation path remain hidden after the presentation. No need to select the line again. Just click the slideshow button to start the next presentation.",
@@ -730,6 +736,9 @@ const exitPresentation = async (openForEdit = false) => {
     hostView.refreshCanvasOffset();
     excalidrawAPI.setActiveTool({type: "selection"});
   })
+  if(!shouldSaveAfterThePresentation) {
+    ea.targetView.clearDirty();
+  }
 }
 
 //--------------------------
@@ -755,6 +764,7 @@ const start = async () => {
     resetControlPanelElPosition();
   }
   if(presentationPathType === "line") await toggleArrowVisibility(isHidden);
+  ea.targetView.clearDirty();
 }
 
 const timestamp = Date.now();
@@ -769,10 +779,14 @@ if(window.ExcalidrawSlideshow && (window.ExcalidrawSlideshow.script === utils.sc
     window.clearTimeout(window.ExcalidrawSlideshowStartTimer);
     delete window.ExcalidrawSlideshowStartTimer;
   }
-  window.ExcalidrawSlideshow = {
-    script: utils.scriptFile.path,
-    timestamp,
-    slide: 0
-  };
+  if(!window.ExcalidrawSlideshow) {
+    window.ExcalidrawSlideshow = {
+      script: utils.scriptFile.path,
+      slide: {},
+    };
+  }
+  window.ExcalidrawSlideshow.timestamp = timestamp;
+  window.ExcalidrawSlideshow.slide[ea.targetView.file.path] = 0;
+  
   window.ExcalidrawSlideshowStartTimer = window.setTimeout(start,500);
 }
