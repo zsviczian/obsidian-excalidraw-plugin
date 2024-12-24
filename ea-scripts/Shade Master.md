@@ -15,7 +15,7 @@ Holding down both SHIFT and CTRL/CMD when clicking the script button will toggle
 
 ```js*/
 
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.7.19")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.7.3")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
@@ -100,21 +100,15 @@ function showSettingsModal() {
     const instructions = contentEl.createDiv();
     instructions.innerHTML = `
       <h3>Instructions</h3>
-      <h4>Color Selection:</h4>
-      <p>The role of <kbd>${modKeys.shift}</kbd> and <kbd>${modKeys.meta}</kbd></p> 
+      <p>The script button will perform a range of actions depending on how you click and which modifier buttons you press when clicking.</p>
       <ul>
-        <li>No modifier: Both element stroke and background colors are changed</li>
-        <li><kbd>${modKeys.shift}</kbd>: Only stroke color</li>
-        <li><kbd>${modKeys.ctrl}</kbd>: Only background color</li>
+        <li>If neither of <kbd>${modKeys.shift}</kbd> and <kbd>${modKeys.ctrl}</kbd> are down the script will modify both stroke and background colors</li>
+        <li><kbd>${modKeys.shift}</kbd>: Modify only the stroke color</li>
+        <li><kbd>${modKeys.ctrl}</kbd>: Modify only the background color</li>
+        <li><kbd>${modKeys.alt}</kbd>: Increase/Decrease hue/ligthness/saturation/transparency (based on setting)</li>
+        <li><kbd>${modKeys.shift}</kbd> and <kbd>${modKeys.ctrl}</kbd>: Click to toggle script action between hue/lightness/saturation/transparency.</li>
+        <li><kbd>${modKeys.shift}</kbd> and <kbd>${modKeys.ctrl}</kbd>: Double-click to display current action</li>
       </ul>
-      <h4>Modification Type:</h4>
-      <ul>
-        <li><kbd>${modKeys.alt}</kbd>: Increase/Decrease ligthness/hue/saturation (based on setting)</li>
-      </ul>
-      <h4>Action toggle:</h4>
-      <p>Holding down both <kbd>${modKeys.shift}</kbd> and <kbd>${modKeys.ctrl}</kbd>
-        when clicking the script button will toggle the action.</p>
-      <br>
       <h3>Settings</h3>
     `;
 
@@ -176,8 +170,13 @@ function showSettingsModal() {
 }
 
 // Main script execution
-const elements = ea.getViewSelectedElements()
-  .filter(el => ["rectangle", "ellipse", "diamond", "image", "line", "freedraw", "text"].includes(el.type));
+const allElements = ea.getViewSelectedElements();
+const regularElements = allElements.filter(el => 
+  ["rectangle", "ellipse", "diamond", "line", "freedraw", "text"].includes(el.type)
+);
+const svgImageElements = allElements.filter(el => 
+  el.type === "image" && ea.getViewFileForImageElement(el)?.extension === "svg"
+);
 
 const modifiers = ea.targetView.modifierKeyDown;
 
@@ -203,24 +202,59 @@ if((modifiers.ctrlKey || modifiers.metaKey) && modifiers.shiftKey) {
   return;
 }
 
-if (elements.length === 0) {
+// Show settings modal if no elements selected (unchanged)
+if (allElements.length === 0) {
   showSettingsModal();
   return;
 }
 
-ea.copyViewElementsToEAforEditing(elements);
+// Process regular elements
+if (regularElements.length > 0) {
+  ea.copyViewElementsToEAforEditing(regularElements);
 
-const modifyStroke = !modifiers.ctrlKey && !modifiers.metaKey;
-const modifyBackground = !modifiers.shiftKey && (!modifiers.ctrlKey || !modifiers.metaKey);
+  const modifyStroke = !modifiers.ctrlKey && !modifiers.metaKey;
+  const modifyBackground = !modifiers.shiftKey && (!modifiers.ctrlKey || !modifiers.metaKey);
 
-for (const el of ea.getElements()) {  
-  if (modifyStroke && el.strokeColor) {
-    el.strokeColor = modifyColor(el.strokeColor, modifiers);
+  for (const el of ea.getElements()) {  
+    if (modifyStroke && el.strokeColor) {
+      el.strokeColor = modifyColor(el.strokeColor, modifiers);
+    }
+    
+    if (modifyBackground && el.backgroundColor) {
+      el.backgroundColor = modifyColor(el.backgroundColor, modifiers);
+    }
   }
-  
-  if (modifyBackground && el.backgroundColor) {
-    el.backgroundColor = modifyColor(el.backgroundColor, modifiers);
-  }
+
+  await ea.addElementsToView(false, false);
 }
 
-await ea.addElementsToView(false, false);
+// Process SVG image elements
+if (svgImageElements.length > 0) {
+  const modifyStroke = !modifiers.ctrlKey && !modifiers.metaKey;
+  const modifyBackground = !modifiers.shiftKey && (!modifiers.ctrlKey || !modifiers.metaKey);
+
+  for (const el of svgImageElements) {
+    // Get current color mapping
+    const colorInfo = await ea.getColorMapForImgElement(el);
+    const newColorMap = {};
+    let hasChanges = false;
+
+    // Process each color in the SVG
+    for (const [color, info] of colorInfo.entries()) {
+      let shouldModify = (modifyBackground && info.fill) || (modifyStroke && info.stroke);
+      
+      if (shouldModify) {
+        const modifiedColor = modifyColor(info.mappedTo, modifiers);
+        if (modifiedColor !== color) {
+          newColorMap[color] = modifiedColor;
+          hasChanges = true;
+        }
+      }
+    }
+
+    // Update the SVG if any colors were modified
+    if (hasChanges) {
+      ea.updateViewSVGImageColorMap(el, newColorMap);
+    }
+  }
+}
