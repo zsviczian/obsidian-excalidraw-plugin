@@ -196,7 +196,7 @@ export default {
   NEWVERSION_NOTIFICATION_DESC:
       "<b>开启：</b>当本插件存在可用更新时，显示通知。<br>" +
       "<b>关闭：</b>您需要手动检查本插件的更新（设置 - 第三方插件 - 检查更新）。",
-  
+
   BASIC_HEAD: "基本",
   BASIC_DESC: `包括：更新说明，更新提示，新绘图文件、模板文件、脚本文件的存储路径等的设置。`,
   FOLDER_NAME: "Excalidraw 文件夹（區分大小寫！）",
@@ -406,7 +406,7 @@ FILENAME_HEAD: "文件名",
   DEFAULT_WHEELZOOM_NAME: "鼠标滚轮缩放页面",
   DEFAULT_WHEELZOOM_DESC:
     `<b>开启：</b>鼠标滚轮为缩放页面，${labelCTRL()}+鼠标滚轮为滚动页面</br><b>关闭：</b>鼠标滚轮为滚动页面，${labelCTRL()}+鼠标滚轮为缩放页面`,
-    
+
   ZOOM_TO_FIT_NAME: "调节面板尺寸后自动缩放页面",
   ZOOM_TO_FIT_DESC: "调节面板尺寸后，自适应地缩放页面" +
     "<br><b>开启：</b>自动缩放。<br><b>关闭：</b>禁用自动缩放。",
@@ -416,6 +416,7 @@ FILENAME_HEAD: "文件名",
   ZOOM_TO_FIT_MAX_LEVEL_NAME: "自动缩放的最高级别",
   ZOOM_TO_FIT_MAX_LEVEL_DESC:
     "自动缩放画布时，允许放大的最高级别。该值不能低于 0.5（50%）且不能超过 10（1000%）。",
+  PEN_HEAD: "手写笔",
   GRID_HEAD: "网格",
   GRID_DYNAMIC_COLOR_NAME: "动态网格颜色",
   GRID_DYNAMIC_COLOR_DESC:
@@ -575,10 +576,14 @@ FILENAME_HEAD: "文件名",
     此外，还有自动导出 SVG 或 PNG 文件并保持与绘图文件状态同步的设置。`,
   EMBED_CANVAS: "Obsidian 白板支持",
   EMBED_CANVAS_NAME: "沉浸式嵌入",
-  EMBED_CANVAS_DESC: 
+  EMBED_CANVAS_DESC:
     "当嵌入绘图到 Obsidian 白板中时，隐藏元素的边界和背景。" +
     "注意：如果想要背景完全透明，您依然需要在 Excalidraw 中设置“导出的图像不包含背景”。",
-  EMBED_CACHING: "预览图缓存",
+  EMBED_CACHING : "图像缓存和渲染优化" ,
+  RENDERING_CONCURRENCY_NAME : "图像渲染并发性" ,
+  RENDERING_CONCURRENCY_DESC :
+    "用于图像渲染的并行工作线程数。增加此数值可以加快渲染速度，但可能会减慢系统的其他部分运行速度。" +
+    "默认值为 3。如果您的系统性能强大，可以增加此数值。" ,
   EXPORT_SUBHEAD: "导出",
   EMBED_SIZING: "图像尺寸",
   EMBED_THEME_BACKGROUND: "图像的主题和背景色",
@@ -586,7 +591,7 @@ FILENAME_HEAD: "文件名",
   EMBED_IMAGE_CACHE_DESC: "可提高下次嵌入的速度。" +
     "但如果绘图中又嵌入了子绘图，当子绘图改变时，您需要打开子绘图并手动保存，才能够更新父绘图的预览图。",
   SCENE_IMAGE_CACHE_NAME: "缓存场景中嵌套的 Excalidraw",
-  SCENE_IMAGE_CACHE_DESC: "缓存场景中嵌套的 Excalidraw 以加快场景渲染速度。这将加快渲染过程，特别是在您的场景中有深度嵌套的 Excalidraw 时。" + 
+  SCENE_IMAGE_CACHE_DESC: "缓存场景中嵌套的 Excalidraw 以加快场景渲染速度。这将加快渲染过程，特别是在您的场景中有深度嵌套的 Excalidraw 时。" +
     "Excalidraw 将智能地尝试识别嵌套 Excalidraw 的子元素是否发生变化，并更新缓存。 " +
     "如果您怀疑缓存未能正确更新，您可能需要关闭此功能。",
   EMBED_IMAGE_CACHE_CLEAR: "清除缓存",
@@ -630,7 +635,7 @@ FILENAME_HEAD: "文件名",
     "如果您选择了 PNG 或 SVG 副本，当副本不存在时，该命令将会插入一条损坏的链接，您需要打开绘图文件并手动导出副本才能修复 —— " +
     "也就是说，该选项不会自动帮您生成 PNG/SVG 副本，而只会引用已有的 PNG/SVG 副本。",
   EMBED_MARKDOWN_COMMENT_NAME: "将链接作为注释嵌入",
-  EMBED_MARKDOWN_COMMENT_DESC: 
+  EMBED_MARKDOWN_COMMENT_DESC:
     "在图像下方以 Markdown 链接的形式嵌入原始 Excalidraw 文件的链接，例如：<code>%%[[drawing.excalidraw]]%%</code>。<br>" +
     "除了添加 Markdown 注释之外，您还可以选择嵌入的 SVG 或 PNG，并使用命令面板：" +
     "'<code>Excalidraw: 打开 Excalidraw 绘图</code>'来打开该绘图",
@@ -709,7 +714,7 @@ FILENAME_HEAD: "文件名",
     "文件浏览器等创建的绘图都将是旧格式（*.excalidraw）。" +
     "此外，您打开旧格式绘图文件时将不再收到警告消息。",
   MATHJAX_NAME: "MathJax (LaTeX) 的 javascript 库服务器",
-  MATHJAX_DESC: "如果您在绘图中使用 LaTeX，插件需要从服务器获取并加载一个 javascript 库。" + 
+  MATHJAX_DESC: "如果您在绘图中使用 LaTeX，插件需要从服务器获取并加载一个 javascript 库。" +
     "如果您的网络无法访问某些库服务器，可以尝试通过此选项更换库服务器。"+
     "更改此选项后，您可能需要重启 Obsidian 来使其生效。",
   LATEX_DEFAULT_NAME: "插入 LaTeX 时的默认表达式",
@@ -728,7 +733,7 @@ FILENAME_HEAD: "文件名",
   EXPERIMENTAL_HEAD: "杂项",
   EXPERIMENTAL_DESC: `包括：默认的 LaTeX 公式，字段建议，绘图文件的类型标识符，OCR 等设置。`,
   EA_HEAD: "Excalidraw 自动化",
-  EA_DESC: 
+  EA_DESC:
     "ExcalidrawAutomate 是用于 Excalidraw 自动化脚本的 API，但是目前说明文档还不够完善，" +
     "建议阅读 <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/API/ExcalidrawAutomate.d.ts'>ExcalidrawAutomate.d.ts</a> 文件源码，" +
     "参考 <a href='https://zsviczian.github.io/obsidian-excalidraw-plugin/'>ExcalidrawAutomate How-to</a> 网页（不过该网页" +
@@ -791,7 +796,7 @@ FILENAME_HEAD: "文件名",
   CJK_ASSETS_FOLDER_NAME: "CJK 字体文件夹（區分大小寫！）",
   CJK_ASSETS_FOLDER_DESC: `您可以在此设置 CJK 字体文件夹的位置。例如，您可以选择将其放置在 <code>Excalidraw/CJK Fonts</code> 下。<br><br>
     <strong>重要：</strong> 请勿将此文件夹设置为 Vault 根目录！请勿在此文件夹中放置其他字体。<br><br>
-    <strong>注意：</strong> 如果您使用 Obsidian Sync 并希望在设备之间同步这些字体文件，请确保 Obsidian Sync 设置为同步“所有其他文件类型”。`, 
+    <strong>注意：</strong> 如果您使用 Obsidian Sync 并希望在设备之间同步这些字体文件，请确保 Obsidian Sync 设置为同步“所有其他文件类型”。`,
   LOAD_CHINESE_FONTS_NAME: "启动时从文件加载中文字体",
   LOAD_JAPANESE_FONTS_NAME: "启动时从文件加载日文字体",
   LOAD_KOREAN_FONTS_NAME: "启动时从文件加载韩文字体",
@@ -806,7 +811,7 @@ FILENAME_HEAD: "文件名",
   TASKBONE_ENABLE_DESC: "启用意味着您同意 Taskbone <a href='https://www.taskbone.com/legal/terms/' target='_blank'>条款及细则</a> 以及 " +
     "<a href='https://www.taskbone.com/legal/privacy/' target='_blank'>隐私政策</a>。",
   TASKBONE_APIKEY_NAME: "Taskbone API Key",
-  TASKBONE_APIKEY_DESC: "Taskbone 的免费 API key 提供了一定数量的每月识别次数。如果您非常频繁地使用此功能，或者想要支持 " + 
+  TASKBONE_APIKEY_DESC: "Taskbone 的免费 API key 提供了一定数量的每月识别次数。如果您非常频繁地使用此功能，或者想要支持 " +
     "Taskbone 的开发者（您懂的，没有人能用爱发电，Taskbone 开发者也需要投入资金来维持这项 OCR 服务）您可以" +
     "到 <a href='https://www.taskbone.com/' target='_blank'>taskbone.com</a> 购买一个商用 API key。购买后请将它填写到旁边这个文本框里，替换掉原本自动生成的免费 API key。",
 
