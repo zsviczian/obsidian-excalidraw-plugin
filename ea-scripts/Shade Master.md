@@ -15,7 +15,7 @@ Holding down both SHIFT and CTRL/CMD when clicking the script button will toggle
 
 ```js*/
 
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.7.3")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.7.19")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
@@ -91,12 +91,12 @@ function modifyColor(color, modifiers) {
 function showSettingsModal() {
   const modal = new ea.obsidian.Modal(app);
   let dirty = false;
-  
+
   modal.onOpen = () => {
-    const {contentEl} = modal;
-    
-    contentEl.createEl('h2', {text: 'Shade Master'});
-    
+    const { contentEl } = modal;
+    modal.bgOpacity = 0;
+    contentEl.createEl('h2', { text: 'Shade Master' });
+
     const instructions = contentEl.createDiv();
     instructions.innerHTML = `
       <h3>Instructions</h3>
@@ -118,8 +118,8 @@ function showSettingsModal() {
       .addText(text => text
         .setValue(settings["Step size"].value.toString())
         .onChange(value => {
-          val = parseFloat(value);
-          if(isNaN(val)) {
+          const val = parseFloat(value);
+          if (isNaN(val)) {
             new Notice("Enter a valid number");
             return;
           }
@@ -145,8 +145,8 @@ function showSettingsModal() {
     new ea.obsidian.Setting(contentEl)
       .setName(ACTION)
       .setDesc("Sets which aspect of the color should be modified")
-      .addDropdown(dropdown=>dropdown
-        .addOptions(ACTIONS.reduce((acc, key) => { acc[key] = key; return acc;}, {}))
+      .addDropdown(dropdown => dropdown
+        .addOptions(ACTIONS.reduce((acc, key) => { acc[key] = key; return acc; }, {}))
         .setValue(settings[ACTION].value)
         .onChange(value => {
           settings[ACTION].value = value;
@@ -158,16 +158,59 @@ function showSettingsModal() {
         .setButtonText("Close")
         .setCta(true)
         .onClick(() => modal.close()));
+
+    makeModalDraggable(modal.modalEl); // Add draggable functionality
   };
 
   modal.onClose = () => {
-    if(dirty) {
+    if (dirty) {
       ea.setScriptSettings(settings);
     }
   };
 
   modal.open();
 }
+
+/**
+ * Add draggable functionality to the modal element.
+ * @param {HTMLElement} modalEl - The modal element to make draggable.
+ */
+function makeModalDraggable(modalEl) {
+  let isDragging = false;
+  let startX, startY, initialX, initialY;
+
+  const header = modalEl.querySelector('.modal-titlebar') || modalEl; // Default to modalEl if no titlebar
+  header.style.cursor = 'move';
+
+  header.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    const rect = modalEl.getBoundingClientRect();
+    initialX = rect.left;
+    initialY = rect.top;
+
+    modalEl.style.position = 'absolute';
+    modalEl.style.margin = '0'; // Reset margin to avoid issues
+    modalEl.style.left = `${initialX}px`;
+    modalEl.style.top = `${initialY}px`;
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+
+    modalEl.style.left = `${initialX + dx}px`;
+    modalEl.style.top = `${initialY + dy}px`;
+  });
+
+  document.addEventListener('mouseup', () => {
+    isDragging = false;
+  });
+}
+
 
 // Main script execution
 const allElements = ea.getViewSelectedElements();
