@@ -4,7 +4,7 @@ Select elements in the scene, then run the script.
 
 ```js*/
 
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.7.19")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.7.3")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
@@ -20,6 +20,8 @@ if(allElements.length === 0) {
   return;
 }
 
+const originalColors = new Map();
+
 let terminate = false;
 const FORMAT = "Color Format";
 const STROKE = "Modify Stroke Color";
@@ -31,13 +33,89 @@ let settings = ea.getScriptSettings();
 if(!settings[STROKE]) {
   settings = {};
   settings[FORMAT] = {
-    value: "HSL",
+    value: "HEX",
     valueset: ["HSL", "RGB", "HEX"],
-    description: "Output color format"
+    description: "Output color format."
   };
   settings[STROKE] = { value: true }
   settings[BACKGROUND] = {value: true }
   ea.setScriptSettings(settings);
+}
+
+async function storeOriginalColors() {
+  // Store colors for regular elements
+  const regularElements = allElements.filter(el => 
+    ["rectangle", "ellipse", "diamond", "line", "arrow", "freedraw", "text"].includes(el.type)
+  );
+  
+  for (const el of regularElements) {
+    const key = el.id;
+    originalColors.set(key, {
+      type: "regular",
+      strokeColor: el.strokeColor,
+      backgroundColor: el.backgroundColor
+    });
+  }
+
+  // Store colors for SVG elements
+  for (const el of svgImageElements) {
+    const colorInfo = await ea.getColorMapForImgElement(el);
+    const svgColors = new Map();
+    for (const [color, info] of colorInfo.entries()) {
+      svgColors.set(color, {...info});
+    }
+    originalColors.set(el.id, {
+      type: "svg",
+      colors: svgColors
+    });
+  }
+}
+
+// Function to reset colors
+async function resetColors() {
+  ea.clear();
+  const allElements = ea.getViewSelectedElements();
+  
+  // Reset regular elements
+  const regularElements = allElements.filter(el => 
+    ["rectangle", "ellipse", "diamond", "line", "arrow", "freedraw", "text"].includes(el.type)
+  );
+  
+  if (regularElements.length > 0) {
+    ea.copyViewElementsToEAforEditing(regularElements);
+    for (const el of ea.getElements()) {
+      const original = originalColors.get(el.id);
+      if (original && original.type === "regular") {
+        if (original.strokeColor) el.strokeColor = original.strokeColor;
+        if (original.backgroundColor) el.backgroundColor = original.backgroundColor;
+      }
+    }
+    await ea.addElementsToView(false, false);
+  }
+
+  // Reset SVG elements
+  for (const el of allElements.filter(el => 
+    el.type === "image" && ea.getViewFileForImageElement(el)?.extension === "svg"
+  )) {
+    const original = originalColors.get(el.id);
+    if (original && original.type === "svg") {
+      const newColorMap = {};
+      let hasChanges = false;
+      
+      const currentColors = await ea.getColorMapForImgElement(el);
+      for (const [color, info] of currentColors.entries()) {
+        const originalInfo = original.colors.get(color);
+        if (originalInfo && originalInfo.mappedTo !== info.mappedTo) {
+          newColorMap[color] = originalInfo.mappedTo;
+          hasChanges = true;
+        }
+      }
+
+      if (hasChanges) {
+        ea.updateViewSVGImageColorMap(el, newColorMap);
+      }
+    }
+  }
 }
 
 function modifyColor(color, isDecrease, step, action) {
@@ -47,6 +125,7 @@ function modifyColor(color, isDecrease, step, action) {
   if (!cm) return color;
 
   let modified = cm;
+  console.log(cm.alpha);
   switch(action) {
     case "Lightness":
       modified = isDecrease ? modified.darkerBy(step) : modified.lighterBy(step);
@@ -55,14 +134,15 @@ function modifyColor(color, isDecrease, step, action) {
       modified = isDecrease ? modified.hueBy(-step) : modified.hueBy(step);
       break;
     case "Transparency":
-      modified = isDecrease ? modified.alphaBy(-step/100) : modified.alphaBy(step/100);
+      modified = isDecrease ? modified.alphaBy(-step) : modified.alphaBy(step);
       break;
     default:
       modified = isDecrease ? modified.desaturateBy(step) : modified.saturateBy(step);
   }
 
-  const hasAlpha = modified.alpha !== 1;
-  const opts = { alpha: hasAlpha };
+  const hasAlpha = modified.alpha < 1;
+  console.log(modified.alpha);
+  const opts = { alpha: hasAlpha, precision: [1,2,2,3] };
   
   const format = settings[FORMAT].value;
   switch(format) {
@@ -135,12 +215,17 @@ function showModal() {
         })
       );
 
-    slider(contentEl, "Hue", 0, 200, 1, false);
+    slider(contentEl, "Hue", 0, 400, 1, false);
     slider(contentEl, "Saturation", 0, 200, 1, false);
     slider(contentEl, "Lightness", 0, 50, 1, false);
-    slider(contentEl, "Transparency", 0, 100, 1, true);
+    slider(contentEl, "Transparency", 0, 1, 0.05, true);
     
     new ea.obsidian.Setting(contentEl)
+      .addButton(button => button
+        .setButtonText("Reset Colors")
+        .onClick(async () => {
+          await resetColors();
+        }))
       .addButton(button => button
         .setButtonText("Close")
         .setCta(true)
@@ -298,5 +383,6 @@ async function executeChange(isDecrease, step, action) {
   }
 }
 
+await storeOriginalColors();
 showModal();
 processQueue();
