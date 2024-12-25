@@ -125,7 +125,7 @@ function modifyColor(color, isDecrease, step, action) {
   if (!cm) return color;
 
   let modified = cm;
-  console.log(cm.alpha);
+
   switch(action) {
     case "Lightness":
       modified = isDecrease ? modified.darkerBy(step) : modified.lighterBy(step);
@@ -141,7 +141,6 @@ function modifyColor(color, isDecrease, step, action) {
   }
 
   const hasAlpha = modified.alpha < 1;
-  console.log(modified.alpha);
   const opts = { alpha: hasAlpha, precision: [1,2,2,3] };
   
   const format = settings[FORMAT].value;
@@ -239,6 +238,9 @@ function showModal() {
     if (dirty) {
       ea.setScriptSettings(settings);
     }
+    if(ea.targetView.isDirty()) {
+      ea.targetView.save(false);
+    }
   };
 
   modal.open();
@@ -298,13 +300,31 @@ function makeModalDraggable(modalEl) {
   });
 }
 
+
+const updatedImageElementColorMaps = new Map();
+let isWaitingForSVGUpdate = false;
+function updateViewImageColors() {
+  if(terminate || isWaitingForSVGUpdate || updatedImageElementColorMaps.size === 0) {
+    return;
+  }
+  isWaitingForSVGUpdate = true;
+  elementArray = Array.from(updatedImageElementColorMaps.keys());
+  colorMapArray = Array.from(updatedImageElementColorMaps.values());
+  updatedImageElementColorMaps.clear();
+  ea.updateViewSVGImageColorMap(elementArray, colorMapArray).then(()=>{
+    isWaitingForSVGUpdate = false;
+    updateViewImageColors();
+  });
+}
+
 isRunning = false;
 const queue = [];
 function processQueue() {
   if (!isRunning && queue.length > 0) {
     const [isDecrease, step, action] = queue.shift();
     executeChange(isDecrease, step, action).then(() => {
-      if (queue.length > 0) processQueue();
+      updateViewImageColors()
+      if (!terminate && queue.length > 0) processQueue();
     });
   }
 }
@@ -371,7 +391,10 @@ async function executeChange(isDecrease, step, action) {
     
         // Update the SVG if any colors were modified
         if (hasChanges) {
-          ea.updateViewSVGImageColorMap(el, newColorMap);
+          //using el.id as key as elements may change
+          updatedImageElementColorMaps.set(el, newColorMap);
+        } else {
+          updatedImageElementColorMaps.delete(el.id);
         }
       }
     }
