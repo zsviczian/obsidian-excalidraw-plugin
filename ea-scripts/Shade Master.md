@@ -3,8 +3,7 @@ This script modifies the color lightness/hue/saturation/transparency of selected
 Select elements in the scene, then run the script.
 
 ```js*/
-
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.7.3")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.7.19")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
@@ -21,7 +20,7 @@ if(allElements.length === 0) {
 }
 
 const originalColors = new Map();
-
+const colorInputs = new Map();
 let terminate = false;
 const FORMAT = "Color Format";
 const STROKE = "Modify Stroke Color";
@@ -42,6 +41,22 @@ if(!settings[STROKE]) {
   ea.setScriptSettings(settings);
 }
 
+const updatedImageElementColorMaps = new Map();
+let isWaitingForSVGUpdate = false;
+function updateViewImageColors() {
+  if(terminate || isWaitingForSVGUpdate || updatedImageElementColorMaps.size === 0) {
+    return;
+  }
+  isWaitingForSVGUpdate = true;
+  elementArray = Array.from(updatedImageElementColorMaps.keys());
+  colorMapArray = Array.from(updatedImageElementColorMaps.values());
+  updatedImageElementColorMaps.clear();
+  ea.updateViewSVGImageColorMap(elementArray, colorMapArray).then(()=>{
+    isWaitingForSVGUpdate = false;
+    updateViewImageColors();
+  });
+}
+
 async function storeOriginalColors() {
   // Store colors for regular elements
   const regularElements = allElements.filter(el => 
@@ -59,7 +74,7 @@ async function storeOriginalColors() {
 
   // Store colors for SVG elements
   for (const el of svgImageElements) {
-    const colorInfo = await ea.getColorMapForImgElement(el);
+    const colorInfo = await ea.getSVGColorInfoForImgElement(el);
     const svgColors = new Map();
     for (const [color, info] of colorInfo.entries()) {
       svgColors.set(color, {...info});
@@ -94,28 +109,64 @@ async function resetColors() {
   }
 
   // Reset SVG elements
-  for (const el of allElements.filter(el => 
-    el.type === "image" && ea.getViewFileForImageElement(el)?.extension === "svg"
-  )) {
+  if (svgImageElements.length === 1) {
+    const el = svgImageElements[0];
     const original = originalColors.get(el.id);
     if (original && original.type === "svg") {
       const newColorMap = {};
       let hasChanges = false;
       
-      const currentColors = await ea.getColorMapForImgElement(el);
+      const currentColors = await ea.getSVGColorInfoForImgElement(el);
       for (const [color, info] of currentColors.entries()) {
         const originalInfo = original.colors.get(color);
-        if (originalInfo && originalInfo.mappedTo !== info.mappedTo) {
+        if (originalInfo) {
           newColorMap[color] = originalInfo.mappedTo;
           hasChanges = true;
+
+          // Update UI components
+          const inputs = colorInputs.get(color);
+          if (inputs) {
+            const cm = ea.getCM(originalInfo.mappedTo);
+            inputs.textInput.setValue(originalInfo.mappedTo);
+            inputs.colorPicker.setValue(cm.stringHEX({alpha: false}));
+          }
         }
       }
 
       if (hasChanges) {
-        ea.updateViewSVGImageColorMap(el, newColorMap);
+        updatedImageElementColorMaps.set(el, newColorMap);
+      } else {
+        updatedImageElementColorMaps.delete(el);
+      }
+    }
+  } else {
+    for (const el of allElements.filter(el => 
+      el.type === "image" && ea.getViewFileForImageElement(el)?.extension === "svg"
+    )) {
+      const original = originalColors.get(el.id);
+      if (original && original.type === "svg") {
+        const newColorMap = {};
+        let hasChanges = false;
+        
+        const currentColors = await ea.getSVGColorInfoForImgElement(el);
+        for (const [color, info] of currentColors.entries()) {
+          const originalInfo = original.colors.get(color);
+          if (originalInfo) {
+            newColorMap[color] = originalInfo.mappedTo;
+            hasChanges = true;
+          }
+        }
+  
+          if (hasChanges) {
+            //using el.id as key as elements may change
+            updatedImageElementColorMaps.set(el, newColorMap);
+          } else {
+            updatedImageElementColorMaps.delete(el);
+          }
       }
     }
   }
+  updateViewImageColors();
 }
 
 function modifyColor(color, isDecrease, step, action) {
@@ -170,10 +221,11 @@ function slider(contentEl, action, min, max, step, invert) {
 }
 
 function showModal() {
+  let isColorPickerChange = false;
   const modal = new ea.obsidian.Modal(app);
   let dirty = false;
 
-  modal.onOpen = () => {
+  modal.onOpen = async () => {
     const { contentEl } = modal;
     modal.bgOpacity = 0;
     contentEl.createEl('h2', { text: 'Shade Master' });
@@ -218,11 +270,164 @@ function showModal() {
     slider(contentEl, "Saturation", 0, 200, 1, false);
     slider(contentEl, "Lightness", 0, 50, 1, false);
     slider(contentEl, "Transparency", 0, 1, 0.05, true);
-    
+
+    // Add color pickers if a single SVG image is selected
+    if (svgImageElements.length === 1) {
+      const svgElement = svgImageElements[0];
+      const colorInfo = await ea.getSVGColorInfoForImgElement(svgElement);
+      
+      const colorSection = contentEl.createDiv();
+      colorSection.createEl('h3', { text: 'SVG Colors' });
+      
+      for (const [color, info] of colorInfo.entries()) {
+        const row = new ea.obsidian.Setting(colorSection)
+          .setName(color)
+          .setDesc(`${info.fill ? "Fill" : ""}${info.fill && info.stroke ? " & " : ""}${info.stroke ? "Stroke" : ""}`);
+        
+        // Create color preview div
+        const previewDiv = row.controlEl.createDiv();
+        previewDiv.style.width = "30px";
+        previewDiv.style.height = "20px";
+        previewDiv.style.border = "1px solid var(--background-modifier-border)";
+        //previewDiv.style.marginRight = "10px";
+        previewDiv.style.backgroundColor = ea.getCM(color).stringHEX({alpha: false});
+
+        // Add reset button
+        
+        const resetButton = new ea.obsidian.Setting(row.controlEl)
+          .addButton(button => button
+            .setButtonText(">>>")
+            .setClass("reset-color-button")  // Optional: for styling
+            .onClick(async () => {
+              const original = originalColors.get(svgElement.id);
+              if (original?.type === "svg") {
+                const originalInfo = original.colors.get(color);
+                if (originalInfo) {
+                  const newColorMap = ea.getColorMapForImageElement(svgElement);
+                  delete newColorMap[color];
+                  updatedImageElementColorMaps.set(svgElement, newColorMap);
+                  updateViewImageColors();
+                  
+                  // Update UI components
+                  isColorPickerChange = false;
+                  textInput.setValue(color);
+                  colorPicker.setValue(ea.getCM(color).stringHEX({alpha: false}));
+                  updateViewImageColors();
+                }
+              }
+            }))
+          resetButton.settingEl.style.padding = "0";
+          resetButton.settingEl.style.border = "0";
+        //resetButton.settingEl.style.marginRight = "5px";
+
+        // Add text input for color value
+        const textInput = new ea.obsidian.TextComponent(row.controlEl)
+          .setValue(info.mappedTo)
+          .setPlaceholder("Color value");
+        textInput.inputEl.style.width = "120px";
+        //textInput.inputEl.style.marginRight = "5px";
+
+        const applyButtonComponent = new ea.obsidian.Setting(row.controlEl)
+          .addButton(button => button
+            .setIcon("check")
+            .setTooltip("Apply")
+            .onClick(async () => {
+              debugger;
+              const value = textInput.getValue();
+              try {
+                if(!CSS.supports("color",value)) {
+                  new Notice (`${value} is not a valid color string`);
+                  return;
+                }
+                const cm = ea.getCM(value);
+                if (cm) {
+                  // Preserve alpha from original color if new color is valid
+                  const originalAlpha = ea.getCM(info.mappedTo).alpha;
+                  const format = settings[FORMAT].value;
+                  const alpha = cm.alpha < 1 ? true : false;
+                  const newColor = format === "RGB" 
+                    ? cm.stringRGB({alpha , precision: [1,2,2,3]})
+                    : format === "HEX" 
+                      ? cm.stringHEX({alpha})
+                      : cm.stringHSL({alpha, precision: [1,2,2,3]});
+      
+                  const newColorMap = ea.getColorMapForImageElement(svgElement);
+                  if(color === newColor) {
+                    delete newColorMap[color];
+                  } else {
+                    newColorMap[color] = newColor;
+                  }
+                  updatedImageElementColorMaps.set(svgElement, newColorMap);
+                  updateViewImageColors();
+                  isColorPickerChange = false;
+                  colorPicker.setValue(cm.stringHEX({alpha: false}));
+                }
+              } catch (e) {
+                console.error("Invalid color value:", e);
+              }
+            }));
+          applyButtonComponent.settingEl.style.padding = "0";
+          applyButtonComponent.settingEl.style.border = "0";
+        
+        // Add color picker
+        const colorPicker = new ea.obsidian.ColorComponent(row.controlEl)
+          .setValue(ea.getCM(info.mappedTo).stringHEX({alpha: false}));
+  
+        // Store references to the components
+        colorInputs.set(color, {
+          textInput,
+          colorPicker,
+          previewDiv,
+          resetButton
+        });
+
+        colorPicker.colorPickerEl.addEventListener('click', () => {
+          isColorPickerChange = true;
+        });
+
+        colorPicker.onChange(async (value) => {
+          try {
+            if(isColorPickerChange) {
+            // Preserve alpha from original color
+              const originalAlpha = ea.getCM(info.mappedTo).alpha;
+              const cm = ea.getCM(value);
+              cm.alphaTo(originalAlpha);
+              const alpha = originalAlpha < 1 ? true : false;
+              const format = settings[FORMAT].value;
+              const newColor = format === "RGB" 
+                ? cm.stringRGB({alpha, precision: [1,2,2,3]})
+                : format === "HEX" 
+                  ? cm.stringHEX({alpha})
+                  : cm.stringHSL({alpha, precision: [1,2,2,3]});
+              
+              // Update text input
+              textInput.setValue(newColor);
+              
+              // Update SVG
+              const newColorMap = ea.getColorMapForImageElement(svgElement);
+              if(color === newColor) {
+                delete newColorMap[color];
+              } else {
+                newColorMap[color] = newColor;
+              }
+              updatedImageElementColorMaps.set(svgElement, newColorMap);
+              updateViewImageColors();
+            }
+          } catch (e) {
+            console.error("Invalid color value:", e);
+          } finally {
+            isColorPickerChange = false;
+          }
+        });
+      }
+    }
+        
+        
     new ea.obsidian.Setting(contentEl)
       .addButton(button => button
         .setButtonText("Reset Colors")
         .onClick(async () => {
+          isColorPickerChange = false;
           await resetColors();
         }))
       .addButton(button => button
@@ -300,23 +505,6 @@ function makeModalDraggable(modalEl) {
   });
 }
 
-
-const updatedImageElementColorMaps = new Map();
-let isWaitingForSVGUpdate = false;
-function updateViewImageColors() {
-  if(terminate || isWaitingForSVGUpdate || updatedImageElementColorMaps.size === 0) {
-    return;
-  }
-  isWaitingForSVGUpdate = true;
-  elementArray = Array.from(updatedImageElementColorMaps.keys());
-  colorMapArray = Array.from(updatedImageElementColorMaps.values());
-  updatedImageElementColorMaps.clear();
-  ea.updateViewSVGImageColorMap(elementArray, colorMapArray).then(()=>{
-    isWaitingForSVGUpdate = false;
-    updateViewImageColors();
-  });
-}
-
 isRunning = false;
 const queue = [];
 function processQueue() {
@@ -369,32 +557,67 @@ async function executeChange(isDecrease, step, action) {
     }
     
     // Process SVG image elements
-    if (svgImageElements.length > 0) {
-      for (const el of svgImageElements) {
-        // Get current color mapping
-        const colorInfo = await ea.getColorMapForImgElement(el);
-        const newColorMap = {};
-        let hasChanges = false;
-    
-        // Process each color in the SVG
-        for (const [color, info] of colorInfo.entries()) {
-          let shouldModify = (modifyBackground && info.fill) || (modifyStroke && info.stroke);
-          
-          if (shouldModify) {
-            const modifiedColor = modifyColor(info.mappedTo, isDecrease, step, action);
-            if (modifiedColor !== color) {
-              newColorMap[color] = modifiedColor;
-              hasChanges = true;
+    if (svgImageElements.length === 1) { // Only update UI for single SVG
+      const el = svgImageElements[0];
+      const colorInfo = await ea.getSVGColorInfoForImgElement(el);
+      const newColorMap = {};
+      let hasChanges = false;
+  
+      // Process each color in the SVG
+      for (const [color, info] of colorInfo.entries()) {
+        let shouldModify = (modifyBackground && info.fill) || (modifyStroke && info.stroke);
+        
+        if (shouldModify) {
+          const modifiedColor = modifyColor(info.mappedTo, isDecrease, step, action);
+          if (modifiedColor !== color) {
+            newColorMap[color] = modifiedColor;
+            hasChanges = true;
+
+            // Update UI components if they exist
+            const inputs = colorInputs.get(color);
+            if (inputs) {
+              const cm = ea.getCM(modifiedColor);
+              inputs.textInput.setValue(modifiedColor);
+              inputs.colorPicker.setValue(cm.stringHEX({alpha: false}));
             }
           }
         }
-    
-        // Update the SVG if any colors were modified
-        if (hasChanges) {
-          //using el.id as key as elements may change
-          updatedImageElementColorMaps.set(el, newColorMap);
-        } else {
-          updatedImageElementColorMaps.delete(el.id);
+      }
+  
+      // Update the SVG if any colors were modified
+      if (hasChanges) {
+        updatedImageElementColorMaps.set(el, newColorMap);
+      } else {
+        updatedImageElementColorMaps.delete(el);
+      }
+    } else {
+      if (svgImageElements.length > 0) {
+        for (const el of svgImageElements) {
+          // Get current color mapping
+          const colorInfo = await ea.getSVGColorInfoForImgElement(el);
+          const newColorMap = {};
+          let hasChanges = false;
+      
+          // Process each color in the SVG
+          for (const [color, info] of colorInfo.entries()) {
+            let shouldModify = (modifyBackground && info.fill) || (modifyStroke && info.stroke);
+            
+            if (shouldModify) {
+              const modifiedColor = modifyColor(info.mappedTo, isDecrease, step, action);
+              if (modifiedColor !== color) {
+                newColorMap[color] = modifiedColor;
+                hasChanges = true;
+              }
+            }
+          }
+      
+          // Update the SVG if any colors were modified
+          if (hasChanges) {
+            //using el.id as key as elements may change
+            updatedImageElementColorMaps.set(el, newColorMap);
+          } else {
+            updatedImageElementColorMaps.delete(el);
+          }
         }
       }
     }
