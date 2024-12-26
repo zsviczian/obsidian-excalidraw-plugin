@@ -30,6 +30,7 @@ export default {
     "Script is up to date - Click to reinstall",
   OPEN_AS_EXCALIDRAW: "Open as Excalidraw Drawing",
   TOGGLE_MODE: "Toggle between Excalidraw and Markdown mode",
+  DUPLICATE_IMAGE: "Duplicate selected image with a different image ID",
   CONVERT_NOTE_TO_EXCALIDRAW: "Convert markdown note to Excalidraw Drawing",
   CONVERT_EXCALIDRAW: "Convert *.excalidraw to *.md files",
   CREATE_NEW: "Create new drawing",
