@@ -2028,7 +2028,8 @@ export class ExcalidrawData {
       this.file.path,
       masterFile.blockrefData
         ? masterFile.path + "#" + masterFile.blockrefData
-        : masterFile.path
+        : masterFile.path,
+      masterFile.colorMapJSON
     );
     this.files.set(fileId,embeddedFile);
     return embeddedFile;

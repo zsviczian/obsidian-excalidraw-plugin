@@ -16,6 +16,7 @@ import {
   IMAGE_TYPES,
   DEVICE,
   sceneCoordsToViewportCoords,
+  fileid,
 } from "../../constants/constants";
 import ExcalidrawView, { TextMode } from "../../view/ExcalidrawView";
 import {
@@ -53,7 +54,7 @@ import {
   getImageSize,
 } from "../../utils/utils";
 import { extractSVGPNGFileName, getActivePDFPageNumberFromPDFView, getAttachmentsFolderAndFilePath, isObsidianThemeDark, mergeMarkdownFiles, setExcalidrawView } from "../../utils/obsidianUtils";
-import { ExcalidrawElement, ExcalidrawEmbeddableElement, ExcalidrawImageElement, ExcalidrawTextElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { ExcalidrawElement, ExcalidrawEmbeddableElement, ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { ReleaseNotes } from "../../shared/Dialogs/ReleaseNotes";
 import { ScriptInstallPrompt } from "../../shared/Dialogs/ScriptInstallPrompt";
 import Taskbone from "../../shared/OCR/Taskbone";
@@ -71,6 +72,7 @@ import { carveOutImage, carveOutPDF, createImageCropperFile } from "../../utils/
 import { showFrameSettings } from "../../shared/Dialogs/FrameSettings";
 import { insertImageToView } from "../../utils/excalidrawViewUtils";
 import ExcalidrawPlugin from "src/core/main";
+import { get } from "http";
 
 declare const PLUGIN_VERSION:string;
 
@@ -1041,6 +1043,43 @@ export class CommandManager {
         }
       
         this.plugin.openDrawing(ef.file, DEVICE.isMobile ? "new-tab":"popout-window", true, undefined, false, {x,y,width,height});
+      }
+    })
+
+    this.addCommand({
+      id: "duplicate-image",
+      name: t("DUPLICATE_IMAGE"),
+      checkCallback: (checking:boolean) => {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if(!view) return false;
+        if(!view.excalidrawAPI) return false;
+        const els = view.getViewSelectedElements().filter(el=>el.type==="image");
+        if(els.length !== 1) {
+          if(checking) return false;
+          new Notice("Select a single image element and try again");
+          return false;
+        }
+        const el = els[0] as ExcalidrawImageElement;
+        const ef = view.excalidrawData.getFile(el.fileId);
+        if(!ef?.file) return false;
+        if(checking) return true;
+        (async()=>{
+          const ea = getEA(view) as ExcalidrawAutomate;
+          const isAnchored = Boolean(el.customData?.isAnchored); 
+          const imgId = await ea.addImage(el.x+el.width/5, el.y+el.height/5, ef.file,!isAnchored, isAnchored);
+          const img = ea.getElement(imgId) as Mutable<ExcalidrawImageElement>;
+          img.width = el.width;
+          img.height = el.height;
+          if(el.crop) img.crop = {...el.crop};
+          const newFileId = fileid() as FileId;
+          ea.imagesDict[newFileId] = ea.imagesDict[img.fileId];
+          ea.imagesDict[newFileId].id = newFileId;
+          delete ea.imagesDict[img.fileId]
+          img.fileId = newFileId;
+          await ea.addElementsToView(false, false, true);
+          ea.selectElementsInView([imgId]);
+          ea.destroy();
+        })();
       }
     })
 

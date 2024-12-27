@@ -102,7 +102,6 @@ function updateViewImageColors() {
   colorMapArray = Array.from(updatedImageElementColorMaps.values());
   updatedImageElementColorMaps.clear();
   ea.updateViewSVGImageColorMap(elementArray, colorMapArray).then(()=>{
-    console.log("Updated colors", elementArray, colorMapArray);
     isWaitingForSVGUpdate = false;
     updateViewImageColors();
   });

@@ -416,6 +416,47 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "updateViewSVGImageColorMap",
+    code: "async updateViewSVGImageColorMap(elements: ExcalidrawImageElement | ExcalidrawImageElement[], colors: ColorMap | SVGColorInfo | ColorMap[] | SVGColorInfo[]): Promise<void>;",
+    desc: 'Updates the color map of an SVG image element in the view. If a ColorMap is provided, it will be used directly. If an SVGColorInfo is provided, it will be converted to a ColorMap. The view will be marked as dirty (i.e. will be saved at next scheduled time) and the image will be reset using the color map.\n'+
+          'See "Shade Master" scritp in Script Library for an example of using this function.\n\n' +
+          'type SVGColorInfo = Map<string, { mappedTo: string; fill: boolean; stroke: boolean; }>\n' +
+          'type ColorMap = { [color: string]: string; }',
+    after: "",
+  },
+  {
+    field: "getColorMapForImageElement",
+    code: "getColorMapForImageElement(el: ExcalidrawElement): ColorMap",
+    desc: 'Retrieves the color map for an image element. The color map contains information about the mapping of colors used in the image. If the element already has a color map, it will be returned. The colorMap does not include all colors in the image, only those that have been mapped.\n' +
+          'See "Shade Master" scritp in Script Library for an example of using this function.\n\n' +
+          'type ColorMap = { [color: string]: string; }',
+    after: "",
+  },
+  {
+    field: "getSVGColorInfoForImgElement",
+    code: "async getColorMapForImgElement(el: ExcalidrawElement): Promise<SVGColorInfo>",
+    desc: 'This function must be awaited. Retrieves the color map for an SVG image element. The color map contains information about the fill and stroke colors used in the SVG. If the element already has a color map, it will be merged with the colors extracted from the SVG.\n' +
+          'See "Shade Master" scritp in Script Library for an example of using this function.\n\n' +
+          'type SVGColorInfo = Map<string, { mappedTo: string; fill: boolean; stroke: boolean; }>',
+    after: "",
+  },
+  {
+    field: "getColosFromExcalidrawFile",
+    code: "async getColosFromExcalidrawFile(file:TFile, img: ExcalidrawImageElement): Promise<SVGColorInfo>",
+    desc: 'Must be awaited. Extracts the fill (background) and stroke colors from an excalidraw file and returns them as an SVGColorInfo. The SVGColorInfo is a map where the keys are the colors used in the SVG and the values contain information about whether the color is used for fill, stroke, or both.\n' +
+          'See "Shade Master" scritp in Script Library for an example of using this function.\n\n' +
+          'type SVGColorInfo = Map<string, { mappedTo: string; fill: boolean; stroke: boolean; }>',
+    after: "",
+  },
+  {
+    field: "getColorsFromSVGString",
+    code: "getColorsFromSVGString(svgString: string): SVGColorInfo",
+    desc: 'Extracts the fill and stroke colors from an SVG string and returns them as an SVGColorInfo. The SVGColorInfo is a map where the keys are the colors used in the SVG and the values contain information about whether the color is used for fill, stroke, or both.\n' +
+          'See "Shade Master" scritp in Script Library for an example of using this function.\n\n' +
+          'type SVGColorInfo = Map<string, { mappedTo: string; fill: boolean; stroke: boolean; }>',
+    after: "",
+  },
+  {
     field: "copyViewElementsToEAforEditing",
     code: "copyViewElementsToEAforEditing(elements: ExcalidrawElement[], copyImages: boolean = false): void;",
     desc: "Copies elements from view to elementsDict for editing. If copyImages is true, then relevant entries from scene.files will also be copied. This is required if you want to generate a PNG for a subset of the elements in the drawing (e.g. for AI generation)",

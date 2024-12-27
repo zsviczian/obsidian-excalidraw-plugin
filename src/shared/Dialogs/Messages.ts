@@ -17,6 +17,57 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.7.3":`
+## Fixed
+- Toggling image size anchoring on and off by modifying the image link did not update the image in the view until the user forced saved it or closed and opened the drawing again. This was a side-effect of the less frequent view save introduced in 2.7.1
+
+## New
+- **Shade Master Script**: A new script that allows you to modify the color lightness, hue, saturation, and transparency of selected Excalidraw elements, SVG images, and nested Excalidraw drawings. When a single image is selected, you can map colors individually. The original image remains unchanged, and a mapping table is added under ${String.fromCharCode(96)}## Embedded Files${String.fromCharCode(96)} for SVG and nested drawings. This helps maintain links between drawings while allowing different color themes.
+- New Command Palette Command: "Duplicate selected image with a different image ID". Creates a copy of the selected image with a new image ID. This allows you to add multiple color mappings to the same image. In the scene the image will be treated as if a different image, but loaded from the same file in the Vault.
+
+## QoL Improvements
+- New setting under ${String.fromCharCode(96)}Embedding Excalidraw into your notes and Exporting${String.fromCharCode(96)} > ${String.fromCharCode(96)}Image Caching and rendering optimization${String.fromCharCode(96)}. You can now set the number of concurrent workers that render your embedded images. Increasing the number will increase the speed but temporarily reduce the responsiveness of your system in case of large drawings.
+- Moved pen-related settings under ${String.fromCharCode(96)}Excalidraw appearance and behavior${String.fromCharCode(96)} to their own sub-heading called ${String.fromCharCode(96)}Pen${String.fromCharCode(96)}.
+- Minor error fixing and performance optimizations when loading and updating embedded images.
+- Color maps in ${String.fromCharCode(96)}## Embedded Files${String.fromCharCode(96)} may now include color keys "stroke" and "fill". If set, these will change the fill and stroke attributes of the SVG root element of the relevant file.
+
+## New in ExcalidrawAutomate
+${String.fromCharCode(96,96,96)}ts
+// Updates the color map of an SVG image element in the view. If a ColorMap is provided, it will be used directly.
+// If an SVGColorInfo is provided, it will be converted to a ColorMap.
+// The view will be marked as dirty and the image will be reset using the color map.
+updateViewSVGImageColorMap(
+  elements: ExcalidrawImageElement | ExcalidrawImageElement[],
+  colors: ColorMap | SVGColorInfo | ColorMap[] | SVGColorInfo[]
+): Promise<void>;
+
+// Retrieves the color map for an image element.
+// The color map contains information about the mapping of colors used in the image.
+// If the element already has a color map, it will be returned.
+getColorMapForImageElement(el: ExcalidrawElement): ColorMap;
+
+// Retrieves the color map for an SVG image element.
+// The color map contains information about the fill and stroke colors used in the SVG.
+// If the element already has a color map, it will be merged with the colors extracted from the SVG.
+getColorMapForImgElement(el: ExcalidrawElement): Promise<SVGColorInfo>;
+
+// Extracts the fill (background) and stroke colors from an Excalidraw file and returns them as an SVGColorInfo.
+getColosFromExcalidrawFile(file:TFile, img: ExcalidrawImageElement): Promise<SVGColorInfo>;
+
+// Extracts the fill and stroke colors from an SVG string and returns them as an SVGColorInfo.
+getColorsFromSVGString(svgString: string): SVGColorInfo;
+
+type SVGColorInfo = Map<string, {
+  mappedTo: string;
+  fill: boolean;
+  stroke: boolean;
+}>;
+
+interface ColorMap {
+  [color: string]: string;
+};
+${String.fromCharCode(96,96,96)}
+`,
 "2.7.2":`
 ## Fixed
 - The plugin did not load on **iOS 16 and older**. [#2170](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2170)
@@ -89,57 +140,5 @@ I misread a line in the Excalidraw package code... ended up breaking image loadi
 "2.6.4":`
 ## Fixed
 - Error saving when cropping images embedded from a URL (not from a file in the Vault) [#2096](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2096)
-`,
-"2.6.3":`
-<div class="excalidraw-videoWrapper"><div>
-<iframe src="https://www.youtube.com/embed/OfUWAvCgbXk" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-</div></div>
-
-## New
-- **Cropping PDF Pages**  
-  - Improved PDF++ cropping: You can now double-click cropped images in Excalidraw to adjust the crop area, which will also appear as a highlight in PDF++. This feature applies to PDF cut-outs created in version 2.6.3 and beyond.
-- **Insert Last Active PDF Page as Image**  
-  - New command palette action lets you insert the currently active PDF page into Excalidraw. Ideal for setups with PDF and Excalidraw side-by-side. You can assign a hotkey for quicker access. Cropped areas in Excalidraw will show as highlights in PDF++.
-
-## Fixed
-- Fixed **Close Settings** button toggle behavior [#2085](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2085)
-- Resolved text wrapping issues causing layout shifts due to trailing whitespaces [#8714](https://github.com/excalidraw/excalidraw/pull/8714)
-- **Aspect Ratio and Size Reset** commands now function correctly with cropped images.
-- **Cropped Drawings**: Adjustments to cropped Excalidraw drawings are now supported. However, for nested Excalidraw drawings, it's recommended to use area, group, and frame references instead of cropping.
-
-## Refactoring
-- Further font loading optimizations on Excalidraw.com; no impact expected in Obsidian [#8693](https://github.com/excalidraw/excalidraw/pull/8693)
-- Text wrapping improvements [#8715](https://github.com/excalidraw/excalidraw/pull/8715)
-- Plugin initiation and error handling
-`,
-"2.6.2":`
-## Fixed
-- Image scaling issue with SVGs that miss the width and height property. [#8729](https://github.com/excalidraw/excalidraw/issues/8729)
-`,
-"2.6.1":`
-## New
-- Pen-mode single-finger panning enabled also for the "Selection" tool.
-- You can disable pen-mode single-finger panning in Plugin Settings under Excalidraw Appearance and Behavior [#2080](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2080)
-
-## Fixed
-- Text tool did not work in pen-mode using finger [#2080](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2080)
-- Pasting images to Excalidraw from the web resulted in filenames of "image_1.png", "image_2.png" instead of "Pasted Image TIMESTAMP" [#2081](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2081)
-`,
-"2.6.0":`
-## Performance
-- Much faster plugin initialization. Down from 1000-3000ms to 100-300ms. According to my testing speed varies on a wide spectrum depending on device, size of Vault and other plugins being loaded. I measured values ranging from 84ms up to 782ms [#2068](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2068)
-- Faster loading of scenes with many embedded illustrations or PDF pages.
-- SVG export results in even smaller files by further optimizing which characters are included in the embedded fonts. [#8641](https://github.com/excalidraw/excalidraw/pull/8641)
-
-## New
-- Image cropping tool. Double click the image to crop it. [#8613](https://github.com/excalidraw/excalidraw/pull/8613)
-- Single finger panning in pen mode.
-- Native handwritten CJK Font support [8530](https://github.com/excalidraw/excalidraw/pull/8530) 
-  - Created a new **Fonts** section in settings. This includes configuration of the "Local Font" and downloading of the CJK fonts in case you need them offline.
-- Option under **Appearance and Behavior / Link Click** to disable double-click link navigation in view mode. [#2075](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2075)
-- New RU translation 🙏[@tovBender](https://github.com/tovBender)
-
-## Updated
-- CN translation 🙏[@dmscode](https://github.com/dmscode)
 `,
 };

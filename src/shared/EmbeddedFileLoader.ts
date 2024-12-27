@@ -107,6 +107,20 @@ const replaceSVGColors = (svg: SVGSVGElement | string, colorMap: ColorMap | null
   if(typeof svg === 'string') {
     // Replace colors in the SVG string
     for (const [oldColor, newColor] of Object.entries(colorMap)) {
+      if(oldColor === "stroke" || oldColor === "fill") {
+        const [svgTag, prefix, suffix] = (svg.match(/(<svg[^>]*)(>)/i) || []) as string[];
+        if (!svgTag) continue;
+        
+        svg = svg.replace(
+          svgTag,
+          svgTag.match(new RegExp(`${oldColor}=["'][^"']*["']`))
+            ? prefix.replace(
+                new RegExp(`${oldColor}=["'][^"']*["']`,'i'), 
+                `${oldColor}="${newColor}"`) + suffix
+            : `${prefix} ${oldColor}="${newColor}"${suffix}`
+        );
+        continue;
+      }
       const fillRegex = new RegExp(`fill="${oldColor}"`, 'gi');
       svg = svg.replaceAll(fillRegex, `fill="${newColor}"`);
       const fillStyleRegex = new RegExp(`fill:${oldColor}`, 'gi');
@@ -137,6 +151,8 @@ const replaceSVGColors = (svg: SVGSVGElement | string, colorMap: ColorMap | null
     }
   }
 
+  if("fill" in colorMap) svg.setAttribute("fill", colorMap.fill);
+  if("stroke" in colorMap) svg.setAttribute("stroke", colorMap.stroke);
   for (const child of svg.childNodes) {
     childNodes(child);
   }
@@ -515,7 +531,7 @@ export class EmbeddedFilesLoader {
     ) {
       return null;
     }
-    const ab = isHyperLink || isPDF
+    const ab = isHyperLink || isPDF || isExcalidrawFile
       ? null
       : isLocalLink
         ? await readLocalFileBinary(this.getLocalPath((inFile as EmbeddedFile).hyperlink))
@@ -590,13 +606,19 @@ export class EmbeddedFilesLoader {
     }
   }
 
-  public async loadSceneFiles(
-    excalidrawData: ExcalidrawData,
-    addFiles: (files: FileData[], isDark: boolean, final?: boolean) => void,
-    depth:number,
-    isThemeChange:boolean = false,
-    fileIDWhiteList?: Set<FileId>,
-  ) {
+  public async loadSceneFiles({
+    excalidrawData,
+    addFiles,
+    depth,
+    isThemeChange = false,
+    fileIDWhiteList,
+  }: {
+    excalidrawData: ExcalidrawData;
+    addFiles: (files: FileData[], isDark: boolean, final?: boolean) => void;
+    depth: number;
+    isThemeChange?: boolean;
+    fileIDWhiteList?: Set<FileId>;
+  }) {
     
     if(depth > 7) {
       new Notice(t("INFINITE_LOOP_WARNING")+depth.toString(), 6000);
@@ -766,6 +788,7 @@ export class EmbeddedFilesLoader {
 
     this.emptyPDFDocsMap();
     if (this.terminate) {
+      addFiles(undefined, this.isDark, true);
       return;
     }
     //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"add Files"});

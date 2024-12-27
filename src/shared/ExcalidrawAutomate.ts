@@ -13,7 +13,7 @@ import {
   ExcalidrawFrameElement,
   ExcalidrawTextContainer,
 } from "@zsviczian/excalidraw/types/excalidraw/element/types";
-import { MimeType } from "./EmbeddedFileLoader";
+import { ColorMap, MimeType } from "./EmbeddedFileLoader";
 import { Editor, normalizePath, Notice, OpenViewState, RequestUrlResponse, TFile, TFolder, WorkspaceLeaf } from "obsidian";
 import * as obsidian_module from "obsidian";
 import ExcalidrawView, { ExportSettings, TextMode, getTextMode } from "src/view/ExcalidrawView";
@@ -95,6 +95,8 @@ import { addBackOfTheNoteCard, getFrameBasedOnFrameNameOrId } from "../utils/exc
 import { log } from "../utils/debugHelper";
 import { ExcalidrawLib } from "../types/excalidrawLib";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/types";
+import { SVGColorInfo } from "src/types/excalidrawAutomateTypes";
+import { errorMessage, filterColorMap, getEmbeddedFileForImageElment, isColorStringTransparent, isSVGColorInfo, mergeColorMapIntoSVGColorInfo, svgColorInfoToColorMap, updateOrAddSVGColorInfo } from "src/utils/excalidrawAutomateUtils";
 
 extendPlugins([
   HarmonyPlugin,
@@ -1985,22 +1987,188 @@ export class ExcalidrawAutomate {
    * @returns TFile file handle for the image element
    */
   getViewFileForImageElement(el: ExcalidrawElement): TFile | null {
-    //@ts-ignore
+    return getEmbeddedFileForImageElment(this,el)?.file;
+  };
+
+  getColorMapForImageElement(el: ExcalidrawElement): ColorMap {
+    const cm = getEmbeddedFileForImageElment(this,el)?.colorMap 
+    if(!cm) {
+      return {};
+    }
+    return cm;
+  }
+
+  async updateViewSVGImageColorMap(
+    elements: ExcalidrawImageElement | ExcalidrawImageElement[],
+    colors: ColorMap | SVGColorInfo | ColorMap[] | SVGColorInfo[]
+  ): Promise<void> {
+    const elementArray = Array.isArray(elements) ? elements : [elements];
+    const colorArray = Array.isArray(colors) ? colors : [colors];
+    let colorMaps: ColorMap[];
+
+    if(colorArray.length !== elementArray.length) {
+      errorMessage("Elements and colors arrays must have same length", "updateViewSVGImageColorMap()");
+      return;
+    }
+    
+    if (isSVGColorInfo(colorArray[0])) {
+        colorMaps = (colors as SVGColorInfo[]).map(svgColorInfoToColorMap);
+      } else {
+        colorMaps = colors as ColorMap[];
+      }
+
+    const fileIDWhiteList = new Set<FileId>();
+    for(let i = 0; i < elementArray.length; i++) {
+      const el = elementArray[i];
+      const colorMap = filterColorMap(colorMaps[i]);
+
+      const ef = getEmbeddedFileForImageElment(this, el);
+      if (!ef || !ef.file || !colorMap) {
+        errorMessage("Must provide an image element and a colorMap as input", "updateViewSVGImageColorMap()");
+        continue;
+      }
+      if (!colorMap || typeof colorMap !== 'object' || Object.keys(colorMap).length === 0) {
+        ef.colorMap = null;
+      } else {
+        ef.colorMap = colorMap;
+      }
+      ef.resetImage(this.targetView.file.path, ef.linkParts.original);
+      fileIDWhiteList.add(el.fileId);
+    }
+
+    if(fileIDWhiteList.size > 0) {
+      this.targetView.setDirty();
+      await new Promise<void>((resolve) => {
+        this.targetView.loadSceneFiles(
+          false,
+          fileIDWhiteList,
+          resolve
+        );
+      });
+    }
+    return;
+  };
+
+  async getSVGColorInfoForImgElement(el: ExcalidrawElement): Promise<SVGColorInfo> {
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "getViewFileForImageElement()");
-      return null;
+      return;
     }
+
     if (!el || el.type !== "image") {
       errorMessage(
         "Must provide an image element as input",
         "getViewFileForImageElement()",
       );
-      return null;
+      return;
     }
-    return (this.targetView as ExcalidrawView)?.excalidrawData?.getFile(
-      el.fileId,
-    )?.file;
+    const ef = getEmbeddedFileForImageElment(this, el);
+
+    const file = ef?.file;
+    if(!file || !(file.extension === "svg" || this.isExcalidrawFile(file))) {
+      errorMessage("Must provide an SVG or nested Excalidraw image element as input", "getColorMapForImgElement()");
+      return;
+    }
+
+    if (file.extension === "svg") {
+      const svgString = await this.plugin.app.vault.cachedRead(file);
+      const svgColors = this.getColorsFromSVGString(svgString);
+      return mergeColorMapIntoSVGColorInfo(ef.colorMap, svgColors);
+    }
+    const svgColors = await this.getColosFromExcalidrawFile(file, el);
+    return mergeColorMapIntoSVGColorInfo(ef.colorMap, svgColors);
   };
+
+  async getColosFromExcalidrawFile(file:TFile, img: ExcalidrawImageElement): Promise<SVGColorInfo> {
+    if(!file || !this.isExcalidrawFile(file)) {
+      errorMessage("Must provide an Excalidraw file as input", "getColosFromExcalidrawFile()");
+      return;
+    }
+    const ef = getEmbeddedFileForImageElment(this, img);
+
+    const ed = new ExcalidrawData(this.plugin);
+    if(file.extension === "excalidraw") {
+      await ed.loadLegacyData(await this.plugin.app.vault.cachedRead(file), file);
+    } else {  
+      await ed.loadData(await this.plugin.app.vault.cachedRead(file), file,TextMode.raw);
+    }
+    const svgColors: SVGColorInfo = new Map();
+    if (!ed.loaded) {
+      return svgColors;
+    }
+    ed.scene.elements.forEach((el:ExcalidrawElement) => {
+      if("strokeColor" in el) {
+        updateOrAddSVGColorInfo(svgColors, el.strokeColor, {stroke: true});
+      }
+      if("backgroundColor" in el) {
+        updateOrAddSVGColorInfo(svgColors, el.backgroundColor, {fill: true});
+      }
+    });
+    return svgColors;
+  }
+
+  /**
+   * 
+   * @param svgString 
+   * @returns 
+   */
+  getColorsFromSVGString(svgString: string): SVGColorInfo {
+    const colorMap = new Map<string, {mappedTo: string, fill: boolean, stroke: boolean}>();
+
+    if(!svgString) {
+      return colorMap;
+    }
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svgString, "image/svg+xml");
+    
+    // Function to process an element and extract its colors
+    function processElement(element: Element, isRoot = false) {
+      // Check for fill attribute
+      const fillColor = element.getAttribute("fill");
+      if (fillColor !== "none") {
+        if (fillColor) {
+          updateOrAddSVGColorInfo(colorMap, fillColor, {fill: true});
+        } else if (isRoot) {
+          // If the root element has no fill, assume it is white
+          updateOrAddSVGColorInfo(colorMap, "fill", {fill: true, mappedTo: "black"});
+        }
+      }
+      
+      // Check for stroke attribute
+      const strokeColor = element.getAttribute("stroke");
+      if (strokeColor && strokeColor !== "none") {
+        updateOrAddSVGColorInfo(colorMap, strokeColor, {stroke: true});
+      }
+      
+      // Check for style attribute that might contain fill or stroke
+      const style = element.getAttribute("style");
+      if (style) {
+        // Extract fill from style
+        const fillMatch = style.match(/fill:\s*([^;}\s]+)/);
+        if (fillMatch && fillMatch[1] !== "none") {
+          updateOrAddSVGColorInfo(colorMap, fillMatch[1], {fill: true});
+        }
+        
+        // Extract stroke from style
+        const strokeMatch = style.match(/stroke:\s*([^;}\s]+)/);
+        if (strokeMatch && strokeMatch[1] !== "none") {
+          updateOrAddSVGColorInfo(colorMap, strokeMatch[1], {stroke: true});
+        }
+      }
+      
+      // Recursively process child elements
+      for (const child of Array.from(element.children)) {
+        processElement(child);
+      }
+    }
+    
+    // Process the root SVG element
+    const svgElement = doc.documentElement;
+    processElement(svgElement, true);
+    
+    return colorMap;
+  }
 
   /**
    * copies elements from view to elementsDict for editing
@@ -2839,7 +3007,13 @@ export class ExcalidrawAutomate {
       color = this.colorNameToHex(color);
     }
     
-    return CM(color);
+    const cm = CM(color);
+    //ColorMaster converts #FFFFFF00 to #FFFFFF, which is not what we want
+    //same is true for rgba and hsla transparent colors
+    if(isColorStringTransparent(color as string)) {
+      return cm.alphaTo(0);
+    }
+    return cm;
   }
 
   /**
@@ -3027,24 +3201,29 @@ async function getTemplate(
 
     if (loadFiles) {
       //debug({where:"getTemplate",template:file.name,loader:loader.uid});
-      await loader.loadSceneFiles(excalidrawData, (fileArray: FileData[]) => {
-        //, isDark: boolean) => {
-        if (!fileArray || fileArray.length === 0) {
-          return;
-        }
-        for (const f of fileArray) {
-          if (f.hasSVGwithBitmap) {
-            hasSVGwithBitmap = true;
+      await loader.loadSceneFiles({
+        excalidrawData, 
+        addFiles: (fileArray: FileData[]) => {
+          //, isDark: boolean) => {
+          if (!fileArray || fileArray.length === 0) {
+            return;
           }
-          excalidrawData.scene.files[f.id] = {
-            mimeType: f.mimeType,
-            id: f.id,
-            dataURL: f.dataURL,
-            created: f.created,
-          };
-        }
-        scene = scaleLoadedImage(excalidrawData.scene, fileArray).scene;
-      }, depth, false, fileIDWhiteList);
+          for (const f of fileArray) {
+            if (f.hasSVGwithBitmap) {
+              hasSVGwithBitmap = true;
+            }
+            excalidrawData.scene.files[f.id] = {
+              mimeType: f.mimeType,
+              id: f.id,
+              dataURL: f.dataURL,
+              created: f.created,
+            };
+          }
+          scene = scaleLoadedImage(excalidrawData.scene, fileArray).scene;
+        },
+        depth,
+        fileIDWhiteList
+      });
     }
 
     excalidrawData.destroy();
@@ -3336,32 +3515,6 @@ export function repositionElementsToCursor(
   });
   
   return restore({elements}, null, null).elements;
-}
-
-function errorMessage(message: string, source: string):void {
-  switch (message) {
-    case "targetView not set":
-      errorlog({
-        where: "ExcalidrawAutomate",
-        source,
-        message:
-          "targetView not set, or no longer active. Use setView before calling this function",
-      });
-      break;
-    case "mobile not supported":
-      errorlog({
-        where: "ExcalidrawAutomate",
-        source,
-        message: "this function is not available on Obsidian Mobile",
-      });
-      break;
-    default:
-      errorlog({
-        where: "ExcalidrawAutomate",
-        source,
-        message: message??"unknown error",
-      });
-  }
 }
 
 export const insertLaTeXToView = (view: ExcalidrawView) => {

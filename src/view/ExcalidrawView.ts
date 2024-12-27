@@ -2423,7 +2423,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
   public activeLoader: EmbeddedFilesLoader = null;
   private nextLoader: EmbeddedFilesLoader = null;
-  public async loadSceneFiles(isThemeChange: boolean = false) {
+  public async loadSceneFiles(isThemeChange: boolean = false, fileIDWhiteList?: Set<FileId>, callback?: Function) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.loadSceneFiles, "ExcalidrawView.loadSceneFiles", isThemeChange);
     if (!this.excalidrawAPI) {
       return;
@@ -2433,16 +2433,18 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     const runLoader = (l: EmbeddedFilesLoader) => {
       this.nextLoader = null;
       this.activeLoader = l;
-      l.loadSceneFiles(
-        this.excalidrawData,
-        (files: FileData[], isDark: boolean, final:boolean = true) => {
-          if (!files) {
-            return;
+      l.loadSceneFiles({
+        excalidrawData: this.excalidrawData,
+        addFiles: (files: FileData[], isDark: boolean, final:boolean = true) => {
+          if(callback && final) {
+            callback();
           }
           if(!this.file || !this.excalidrawAPI) {
             return; //The view was closed in the mean time
-          }  
-          addFiles(files, this, isDark);
+          }
+          if (files && files.length > 0) {
+            addFiles(files, this, isDark);
+          }
           if(!final) return;
           this.activeLoader = null;
           if (this.nextLoader) {
@@ -2462,8 +2464,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
               return false;
             })
           }
-        },0,isThemeChange,
-      );
+        },
+        depth: 0,
+        isThemeChange,
+        fileIDWhiteList,
+      });
     };
     if (!this.activeLoader) {
       runLoader(loader);
@@ -2492,7 +2497,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       return;
     }
     this.semaphores.saving = true;
-    let reloadFiles = false;
+    let reloadFiles = new Set<FileId>();
 
     try {
       const deletedIds = inData.deletedElements.map(el=>el.id);
@@ -2515,13 +2520,13 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
                 incomingElement.fileId,
                 inData.getFile(incomingElement.fileId)
               );
-              reloadFiles = true;
+              reloadFiles.add(incomingElement.fileId);
             } else if (inData.getEquation(incomingElement.fileId)) {
               this.excalidrawData.setEquation(
                 incomingElement.fileId,
                 inData.getEquation(incomingElement.fileId)
               )
-              reloadFiles = true;
+              reloadFiles.add(incomingElement.fileId);
             }
           break;
         }
@@ -2600,7 +2605,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
               incomingElement.fileId,
               inData.getFile(incomingElement.fileId)
             );
-            reloadFiles = true;
+            reloadFiles.add(incomingElement.fileId);
           }
         }
       })
@@ -2611,7 +2616,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         this.setDirty(3);
       }
       this.updateScene({elements: sceneElements, storeAction: "capture"});
-      if(reloadFiles) this.loadSceneFiles();
+      if(reloadFiles.size>0) {
+        this.loadSceneFiles(false,reloadFiles);
+      }
     } catch(e) {
       errorlog({
         where:"ExcalidrawView.synchronizeWithData",
