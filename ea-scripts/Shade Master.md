@@ -31,7 +31,7 @@ const HELP_TEXT = `
 </div></div>
 `;
 
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.7.3")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.7.2")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
@@ -424,7 +424,7 @@ function showModal() {
         
         const resetButton = new ea.obsidian.Setting(row.controlEl)
           .addButton(button => button
-            .setButtonText(">>>")
+            .setButtonText(">>")
             .setClass("reset-color-button")
             .onClick(async () => {
               const original = originalColors.get(svgElement.id);
@@ -567,6 +567,8 @@ function showModal() {
         .onClick(() => modal.close()));
 
     makeModalDraggable(modal.modalEl);
+   const maxHeight = Math.round(ea.getExcalidrawAPI().getAppState().height * 0.6);
+    modal.modalEl.style.maxHeight = `${maxHeight}px`;
   };
 
   modal.onClose = () => {
