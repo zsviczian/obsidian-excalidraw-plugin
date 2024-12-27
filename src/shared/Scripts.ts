@@ -253,6 +253,12 @@ export class ScriptEngine {
     if (!view || !script || !title) {
       return;
     }
+    //addresses the situation when after paste text element IDs are not updated to 8 characters
+    //linked to onPaste save issue with the false parameter
+    if(view.getScene().elements.some(el=>!el.isDeleted && el.type === "text" && el.id.length > 8)) {
+      await view.save(false, true);
+    }
+
     script = script.replace(/^---.*?---\n/gs, "");
     const ea = getEA(view);
     this.eaInstances.push(ea);

@@ -18,16 +18,20 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
 "2.7.3":`
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/ISuORbVKyhQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
 ## Fixed
 - Toggling image size anchoring on and off by modifying the image link did not update the image in the view until the user forced saved it or closed and opened the drawing again. This was a side-effect of the less frequent view save introduced in 2.7.1
 
 ## New
 - **Shade Master Script**: A new script that allows you to modify the color lightness, hue, saturation, and transparency of selected Excalidraw elements, SVG images, and nested Excalidraw drawings. When a single image is selected, you can map colors individually. The original image remains unchanged, and a mapping table is added under ${String.fromCharCode(96)}## Embedded Files${String.fromCharCode(96)} for SVG and nested drawings. This helps maintain links between drawings while allowing different color themes.
-- New Command Palette Command: "Duplicate selected image with a different image ID". Creates a copy of the selected image with a new image ID. This allows you to add multiple color mappings to the same image. In the scene the image will be treated as if a different image, but loaded from the same file in the Vault.
+- New Command Palette Command: "Duplicate selected image with a different image ID". Creates a copy of the selected image with a new image ID. This allows you to add multiple color mappings to the same image. In the scene, the image will be treated as if a different image, but loaded from the same file in the Vault.
 
 ## QoL Improvements
 - New setting under ${String.fromCharCode(96)}Embedding Excalidraw into your notes and Exporting${String.fromCharCode(96)} > ${String.fromCharCode(96)}Image Caching and rendering optimization${String.fromCharCode(96)}. You can now set the number of concurrent workers that render your embedded images. Increasing the number will increase the speed but temporarily reduce the responsiveness of your system in case of large drawings.
-- Moved pen-related settings under ${String.fromCharCode(96)}Excalidraw appearance and behavior${String.fromCharCode(96)} to their own sub-heading called ${String.fromCharCode(96)}Pen${String.fromCharCode(96)}.
+- Moved pen-related settings under ${String.fromCharCode(96)}Excalidraw appearance and behavior${String.fromCharCode(96)} to their sub-heading called ${String.fromCharCode(96)}Pen${String.fromCharCode(96)}.
 - Minor error fixing and performance optimizations when loading and updating embedded images.
 - Color maps in ${String.fromCharCode(96)}## Embedded Files${String.fromCharCode(96)} may now include color keys "stroke" and "fill". If set, these will change the fill and stroke attributes of the SVG root element of the relevant file.
 
@@ -56,6 +60,21 @@ getColosFromExcalidrawFile(file:TFile, img: ExcalidrawImageElement): Promise<SVG
 
 // Extracts the fill and stroke colors from an SVG string and returns them as an SVGColorInfo.
 getColorsFromSVGString(svgString: string): SVGColorInfo;
+
+// upgraded the addImage function.
+// 1. It now accepts an object as the input parameter, making your scripts more readable
+// 2. AddImageOptions now includes colorMap as an optional parameter, this will only have an effect in case of SVGs and nested Excalidraws
+// 3. The API function is backwards compatible, but I recommend new implementations to use the object based input
+addImage(opts: AddImageOptions}): Promise<string>;
+
+interface AddImageOptions {
+  topX: number;
+  topY: number;
+  imageFile: TFile | string;
+  scale?: boolean; 
+  anchor?: boolean;
+  colorMap?: ColorMap;
+}
 
 type SVGColorInfo = Map<string, {
   mappedTo: string;

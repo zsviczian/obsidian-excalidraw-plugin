@@ -95,8 +95,9 @@ import { addBackOfTheNoteCard, getFrameBasedOnFrameNameOrId } from "../utils/exc
 import { log } from "../utils/debugHelper";
 import { ExcalidrawLib } from "../types/excalidrawLib";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/types";
-import { SVGColorInfo } from "src/types/excalidrawAutomateTypes";
+import { AddImageOptions, ImageInfo, SVGColorInfo } from "src/types/excalidrawAutomateTypes";
 import { errorMessage, filterColorMap, getEmbeddedFileForImageElment, isColorStringTransparent, isSVGColorInfo, mergeColorMapIntoSVGColorInfo, svgColorInfoToColorMap, updateOrAddSVGColorInfo } from "src/utils/excalidrawAutomateUtils";
+import { Color } from "chroma-js";
 
 extendPlugins([
   HarmonyPlugin,
@@ -392,7 +393,7 @@ export class ExcalidrawAutomate {
 
   plugin: ExcalidrawPlugin;
   elementsDict: {[key:string]:any}; //contains the ExcalidrawElements currently edited in Automate indexed by el.id
-  imagesDict: {[key: FileId]: any}; //the images files including DataURL, indexed by fileId
+  imagesDict: {[key: FileId]: ImageInfo}; //the images files including DataURL, indexed by fileId
   mostRecentMarkdownSVG:SVGSVGElement = null; //Markdown renderer will drop a copy of the most recent SVG here for debugging purposes
   style: {
     strokeColor: string; //https://www.w3schools.com/colors/default.asp
@@ -774,6 +775,10 @@ export class ExcalidrawAutomate {
         ? `\n## Embedded Files\n`
         : "\n";
         
+      const embeddedFile = (key: FileId, path: string, colorMap?:ColorMap): string => {
+        return `${key}: [[${path}]]${colorMap ? " " + JSON.stringify(colorMap): ""}\n\n`;
+      }
+
       Object.keys(this.imagesDict).forEach((key: FileId)=> {
         const item = this.imagesDict[key];
         if(item.latex) {
@@ -781,9 +786,9 @@ export class ExcalidrawAutomate {
         } else {
           if(item.file) {
             if(item.file instanceof TFile) {
-              outString += `${key}: [[${item.file.path}]]\n\n`;
+              outString += embeddedFile(key,item.file.path, item.colorMap);
             } else {
-              outString += `${key}: [[${item.file}]]\n\n`;
+              outString += embeddedFile(key,item.file, item.colorMap);
             }
           } else {
             const hyperlinkSplit = item.hyperlink.split("#");
@@ -791,8 +796,8 @@ export class ExcalidrawAutomate {
             if(file && file instanceof TFile) {
               const hasFileRef = hyperlinkSplit.length === 2
               outString += hasFileRef
-                ? `${key}: [[${file.path}#${hyperlinkSplit[1]}]]\n\n`
-                : `${key}: [[${file.path}]]\n\n`;
+                ? embeddedFile(key,`${file.path}#${hyperlinkSplit[1]}`, item.colorMap)
+                : embeddedFile(key,file.path, item.colorMap);
             } else {
               outString += `${key}: ${item.hyperlink}\n\n`;
             }
@@ -1537,12 +1542,26 @@ export class ExcalidrawAutomate {
    * @returns 
    */
   async addImage(
-    topX: number,
+    topXOrOpts: number | AddImageOptions,
     topY: number,
     imageFile: TFile | string, //string may also be an Obsidian filepath with a reference such as folder/path/my.pdf#page=2
     scale: boolean = true, //default is true which will scale the image to MAX_IMAGE_SIZE, false will insert image at 100% of its size
     anchor: boolean = true, //only has effect if scale is false. If anchor is true the image path will include |100%, if false the image will be inserted at 100%, but if resized by the user it won't pop back to 100% the next time Excalidraw is opened.
   ): Promise<string> {
+
+    let colorMap: ColorMap;
+    let topX: number;
+    if(typeof topXOrOpts === "number") {
+      topX = topXOrOpts;
+    } else {
+      topY = topXOrOpts.topY;
+      topX = topXOrOpts.topX;
+      imageFile = topXOrOpts.imageFile;
+      scale = topXOrOpts.scale ?? true;
+      anchor = topXOrOpts.anchor ?? true;
+      colorMap = topXOrOpts.colorMap;
+    }
+
     const id = nanoid();
     const loader = new EmbeddedFilesLoader(
       this.plugin,
@@ -1576,6 +1595,7 @@ export class ExcalidrawAutomate {
         height: image.size.height,
         width: image.size.width,
       },
+      colorMap,
     };
     if (scale && (Math.max(image.size.width, image.size.height) > MAX_IMAGE_SIZE)) {
       const scale =
@@ -2031,6 +2051,13 @@ export class ExcalidrawAutomate {
         ef.colorMap = null;
       } else {
         ef.colorMap = colorMap;
+        //delete special mappings for default/SVG root color values
+        if (ef.colorMap["fill"] === "black") {
+          delete ef.colorMap["fill"];
+        }
+        if (ef.colorMap["stroke"] === "none") {
+          delete ef.colorMap["stroke"];
+        }
       }
       ef.resetImage(this.targetView.file.path, ef.linkParts.original);
       fileIDWhiteList.add(el.fileId);
@@ -2194,21 +2221,20 @@ export class ExcalidrawAutomate {
             id: el.fileId,
             dataURL: sceneFile.dataURL,
             created: sceneFile.created,
+            hasSVGwithBitmap: ef ? ef.isSVGwithBitmap : false,
             ...ef ? {
-              isHyperLink: ef.isHyperLink || imageWithRef,
+              isHyperLink: ef.isHyperLink || Boolean(imageWithRef),
               hyperlink: imageWithRef ? `${ef.file.path}#${ef.linkParts.ref}` : ef.hyperlink,
               file: imageWithRef ? null : ef.file,
-              hasSVGwithBitmap: ef.isSVGwithBitmap,
               latex: null,
             } : {},
             ...equation ? {
               file: null,
               isHyperLink: false,
               hyperlink: null,
-              hasSVGwithBitmap: false,
               latex: equation.latex,
             } : {},
-          };
+          }
         }
       });
     } else {

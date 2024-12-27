@@ -297,8 +297,13 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "addImage",
-    code: "async addImage(topX: number, topY: number, imageFile: TFile|string, scale?: boolean, anchor?: boolean): Promise<string>;",
-    desc: "imageFile may be a TFile or a string that contains a hyperlink. imageFile may also be an obsidian filepath including a reference eg.: 'path/my.pdf#page=3'\nSet scale to false if you want to embed the image at 100% of its original size. Default is true which will insert a scaled image.\nanchor will only be evaluated if scale is false. anchor true will add |100% to the end of the filename, resulting in an image that will always pop back to 100% when the source file is updated or when the Excalidraw file is reopened.",
+    code: "async addImage(opts: {topX: number, topY: number, imageFile: TFile|string, scale?: boolean, anchor?: boolean, colorMap?: ColorMap}): Promise<string>;",
+    desc: "imageFile may be a TFile or a string that contains a hyperlink.\n"+
+      "imageFile may also be an obsidian filepath including a reference eg.: 'path/my.pdf#page=3'\n"+
+      "Set scale to false if you want to embed the image at 100% of its original size. Default is true which will insert a scaled image.\n"+
+      "anchor will only be evaluated if scale is false. anchor true will add |100% to the end of the filename, resulting in an image that will always pop back to 100% when the source file is updated or when the Excalidraw file is reopened.\n"+
+      "colorMap is only used for SVG images and nested Excalidraw images. See the Shade Master script and the Deconstruct Selected Elements script for examples using colorMap.\n"+
+      "type ColorMap = { [color: string]: string; }",
     after: "",
   },
   {
