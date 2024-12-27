@@ -332,7 +332,8 @@ function showModal() {
   let dirty = false;
 
   modal.onOpen = async () => {
-    const { contentEl } = modal;
+    const { contentEl, modalEl } = modal;
+    const { width, height } = ea.getExcalidrawAPI().getAppState();
     modal.bgOpacity = 0;
     contentEl.createEl('h2', { text: 'Shade Master' });
     
@@ -490,6 +491,8 @@ function showModal() {
         // Add color picker
         const colorPicker = new ea.obsidian.ColorComponent(row.controlEl)
           .setValue(ea.getCM(info.mappedTo).stringHEX({alpha: false}).toLowerCase());
+
+        colorPicker.colorPickerEl.style.maxWidth = "2.5rem";
   
         // Store references to the components
         colorInputs.set(color, {
@@ -566,9 +569,12 @@ function showModal() {
         .setCta(true)
         .onClick(() => modal.close()));
 
-    makeModalDraggable(modal.modalEl);
-   const maxHeight = Math.round(ea.getExcalidrawAPI().getAppState().height * 0.6);
-    modal.modalEl.style.maxHeight = `${maxHeight}px`;
+    makeModalDraggable(modalEl);
+    
+    const maxHeight = Math.round(height * 0.6);
+    const maxWidth = Math.round(width * 0.9);
+    modalEl.style.maxHeight = `${maxHeight}px`;
+    modalEl.style.maxWidth = `${maxWidth}px`;
   };
 
   modal.onClose = () => {
