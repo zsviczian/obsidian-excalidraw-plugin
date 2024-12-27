@@ -30,6 +30,7 @@ export default {
     "脚本已是最新 - 点击重新安装",
   OPEN_AS_EXCALIDRAW: "打开为 Excalidraw 绘图",
   TOGGLE_MODE: "在 Excalidraw 和 Markdown 模式之间切换",
+  DUPLICATE_IMAGE : "复制选定的图像，并分配一个不同的图像 ID",
   CONVERT_NOTE_TO_EXCALIDRAW: "转换：空白 Markdown 文档 => Excalidraw 绘图文件",
   CONVERT_EXCALIDRAW: "转换： *.excalidraw => *.md",
   CREATE_NEW: "新建绘图文件",
