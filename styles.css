@@ -6,7 +6,7 @@
   .excalidraw-wrapper {
     height: 100%;
     margin: 0px;
-    background-color: white;
+    background-color: var(--background-primary);
     position:relative;
   }
   

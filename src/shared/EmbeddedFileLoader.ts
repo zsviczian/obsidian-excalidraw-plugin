@@ -593,7 +593,7 @@ export class EmbeddedFilesLoader {
       return {
         mimeType,
         fileId: await generateIdFromFile(
-          isHyperLink || isPDF ? (new TextEncoder()).encode(dataURL as string) : ab,
+          isHyperLink || isPDF || isExcalidrawFile ? (new TextEncoder()).encode(dataURL as string) : ab,
           inFile instanceof EmbeddedFile ? inFile.filenameparts?.linkpartReference : undefined
         ),
         dataURL,
