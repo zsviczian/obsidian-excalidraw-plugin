@@ -14,6 +14,7 @@ hot-reload.bat
 data.json
 lib
 dist
+tmp
 
 #VSCode
 .vscode

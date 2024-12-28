@@ -398,12 +398,14 @@ function showModal() {
     // Add color pickers if a single SVG image is selected
     if (svgImageElements.length === 1) {
       const svgElement = svgImageElements[0];
-      const colorInfo = await ea.getSVGColorInfoForImgElement(svgElement);
-      
+      //note that the objects in currentColors might get replaced when
+      //colors are reset, thus in the onChange functions I will always
+      //read currentColorInfo from currentColors based on svgElement.id
+      const initialColorInfo = currentColors.get(svgElement.id).colors;
       const colorSection = contentEl.createDiv();
       colorSection.createEl('h3', { text: 'SVG Colors' });
       
-      for (const [color, info] of colorInfo.entries()) {
+      for (const [color, info] of initialColorInfo.entries()) {
         const row = new ea.obsidian.Setting(colorSection)
           .setName(color === "fill" ? "SVG default" : color)
           .setDesc(`${info.fill ? "Fill" : ""}${info.fill && info.stroke ? " & " : ""}${info.stroke ? "Stroke" : ""}`);
@@ -475,9 +477,9 @@ function showModal() {
                       : cm.stringHSL({alpha, precision }).toLowerCase();
 
                   textInput.setValue(newColor);
-                  const colorInfo = currentColors.get(svgElement.id).colors;
-                  colorInfo.get(color).mappedTo = newColor;
-                  run("no action");
+                  const currentInfo = currentColors.get(svgElement.id).colors;
+                  currentInfo.get(color).mappedTo = newColor;
+                  run("Update SVG color");
                   debounceColorPicker = true;
                   colorPicker.setValue(cm.stringHEX({alpha: false}).toLowerCase());
                 }
@@ -509,8 +511,9 @@ function showModal() {
         colorPicker.onChange(async (value) => {
           try {
             if(!debounceColorPicker) {
-            // Preserve alpha from original color
-              const originalAlpha = ea.getCM(info.mappedTo).alpha;
+              const currentInfo = currentColors.get(svgElement.id).colors.get(color);
+              // Preserve alpha from original color
+              const originalAlpha = ea.getCM(currentInfo.mappedTo).alpha;
               const cm = ea.getCM(value);
               cm.alphaTo(originalAlpha);
               const alpha = originalAlpha < 1 ? true : false;
@@ -525,14 +528,8 @@ function showModal() {
               textInput.setValue(newColor);
               
               // Update SVG
-              const newColorMap = await ea.getColorMapForImageElement(svgElement);
-              if(color === newColor) {
-                delete newColorMap[color];
-              } else {
-                newColorMap[color] = newColor;
-              }
-              updatedImageElementColorMaps.set(svgElement, newColorMap);
-              updateViewImageColors();
+              currentInfo.mappedTo = newColor;
+              run("Update SVG color");
             }
           } catch (e) {
             console.error("Invalid color value:", e);
