@@ -17,4 +17,5 @@ if(isNaN(width)) {
 const elements=ea.getViewSelectedElements();
 ea.copyViewElementsToEAforEditing(elements);
 ea.getElements().forEach((el)=>el.strokeWidth=width);
-ea.addElementsToView(false,false);
+await ea.addElementsToView(false,false);
+ea.viewUpdateScene({appState: {currentItemStrokeWidth: width}});
