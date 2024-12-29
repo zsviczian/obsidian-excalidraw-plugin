@@ -893,7 +893,12 @@ export const markdownPostProcessor = async (
     el.firstElementChild?.hasClass("frontmatter") ||
     el.firstElementChild?.hasClass("block-language-yaml");
   if(isPrinting && isFrontmatter) {
-    return;
+    //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2184
+    const file = app.vault.getAbstractFileByPath(ctx.sourcePath);
+    const isDrawing = file && file instanceof TFile && plugin.isExcalidrawFile(file);
+    if(isDrawing) {
+      return;
+    }
   }
   
   //@ts-ignore
