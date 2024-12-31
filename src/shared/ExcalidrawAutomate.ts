@@ -3485,8 +3485,12 @@ export async function createSVG(
       const drawingBB = plugin.ea.getBoundingBox(elements);
       svg.viewBox.baseVal.x = elBB.topX - drawingBB.topX;
       svg.viewBox.baseVal.y = elBB.topY - drawingBB.topY;
-      svg.viewBox.baseVal.width = elBB.width + 2*padding; 
-      svg.viewBox.baseVal.height = elBB.height + 2*padding;
+      const width = elBB.width + 2*padding;
+      svg.viewBox.baseVal.width = width;
+      const height = elBB.height + 2*padding;
+      svg.viewBox.baseVal.height = height;
+      svg.setAttribute("width", `${width}`);
+      svg.setAttribute("height", `${height}`);
     }
   }
   if (template?.hasSVGwithBitmap) {
