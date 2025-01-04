@@ -16,10 +16,10 @@ export default {
   },
   plugins: [
     typescript({
-      tsconfig: '../tsconfig.json',
+      tsconfig: 'tsconfig.json',
     }),
     commonjs(),
-    nodeResolve({ 
+    nodeResolve({
       browser: true,
       preferBuiltins: false
     }),
