@@ -9,6 +9,30 @@ import { ExportSettings } from "src/view/ExcalidrawView";
 import { nanoid } from "src/constants/constants";
 import { svgToBase64 } from "../utils/utils";
 
+/**
+ * Creates a masked image from an Excalidraw scene.
+ * 
+ * The scene must contain:
+ * - One element.type="frame" element that defines the crop area
+ * - One or more element.type="image" elements
+ * - Zero or more non-image shape elements (rectangles, ellipses etc) that define the mask
+ * 
+ * The class splits the scene into two parts:
+ * 1. Images (managed in imageEA)
+ * 2. Mask shapes (managed in maskEA)
+ * 
+ * A transparent rectangle matching the combined bounding box is added to both
+ * imageEA and maskEA to ensure consistent sizing between image and mask.
+ * 
+ * For performance, if there is only one image, it is not rotated, and
+ * its size matches the bounding box,
+ * the image data is used directly from cache rather than regenerating.
+ * 
+ * @example
+ * const cropper = new CropImage(elements, files);
+ * const pngBlob = await cropper.getCroppedPNG();
+ * cropper.destroy();
+ */
 export class CropImage {
   private imageEA: ExcalidrawAutomate;
   private maskEA: ExcalidrawAutomate;
@@ -106,10 +130,15 @@ export class CropImage {
       withTheme: false,
       isMask: false,
     }
-    const isRotated = this.imageEA.getElements().some(el=>el.type === "image" && el.angle !== 0);
-    const images = Object.values(this.imageEA.imagesDict);
-    if(!isRotated && (images.length === 1)) {
-      return images[0].dataURL;
+    const images = this.imageEA.getElements().filter(el=>el.type === "image" && el.isDeleted === false);
+    const isRotated = images.some(el=>el.angle !== 0);
+    const imageDataURLs = Object.values(this.imageEA.imagesDict);
+    if(!isRotated && images.length === 1 && imageDataURLs.length === 1) {
+      const { width, height } = this.bbox;
+      if(images[0].width === width && images[0].height === height) {
+        //get image from the cache if mask is not bigger than the image, and if there is a single image element
+        return imageDataURLs[0].dataURL;
+      }
     }
     return await this.imageEA.createPNGBase64(null,1,exportSettings,null,null,0);
   }

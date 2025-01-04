@@ -105,8 +105,9 @@ import {
   shouldEmbedScene,
   _getContainerElement,
   arrayToMap,
+  addAppendUpdateCustomData,
 } from "../utils/utils";
-import { cleanBlockRef, cleanSectionHeading, closeLeafView, getAttachmentsFolderAndFilePath, getLeaf, getParentOfClass, obsidianPDFQuoteWithRef, openLeaf, setExcalidrawView } from "../utils/obsidianUtils";
+import { cleanBlockRef, cleanSectionHeading, closeLeafView, getActivePDFPageNumberFromPDFView, getAttachmentsFolderAndFilePath, getLeaf, getParentOfClass, obsidianPDFQuoteWithRef, openLeaf, setExcalidrawView } from "../utils/obsidianUtils";
 import { splitFolderAndFilename } from "../utils/fileUtils";
 import { ConfirmationPrompt, GenericInputPrompt, NewFileActions, Prompt, linkPrompt } from "../shared/Dialogs/Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
@@ -147,6 +148,7 @@ import { IS_WORKER_SUPPORTED } from "../shared/Workers/compression-worker";
 import { getPDFCropRect } from "../utils/PDFUtils";
 import { Position, ViewSemaphores } from "../types/excalidrawViewTypes";
 import { DropManager } from "./managers/DropManager";
+import { ImageInfo } from "src/types/excalidrawAutomateTypes";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -223,7 +225,9 @@ export const addFiles = async (
     .filter((f:FileData) => view.excalidrawData.getFile(f.id)?.file?.extension === "pdf")
     .forEach((f:FileData) => {
       s.scene.elements
-        .filter((el:ExcalidrawElement)=>el.type === "image" && el.fileId === f.id && el.crop && el.crop.naturalWidth !== f.size.width)
+        .filter((el:ExcalidrawElement)=>el.type === "image" && el.fileId === f.id && (
+          (el.crop && el.crop.naturalWidth !== f.size.width) || !el.customData?.pdfPageViewProps
+        ))
         .forEach((el:Mutable<ExcalidrawImageElement>) => {
           s.dirty = true;
           const scale = f.size.width / el.crop.naturalWidth;
@@ -235,6 +239,7 @@ export const addFiles = async (
             naturalWidth: f.size.width,
             naturalHeight: f.size.height,
           };
+          addAppendUpdateCustomData(el, { pdfPageViewProps: f.pdfPageViewProps});
         });
     });
 
@@ -250,13 +255,14 @@ export const addFiles = async (
     if (view.excalidrawData.hasFile(f.id)) {
       const embeddedFile = view.excalidrawData.getFile(f.id);
 
-      embeddedFile.setImage(
-        f.dataURL,
-        f.mimeType,
-        f.size,
+      embeddedFile.setImage({
+        imgBase64: f.dataURL,
+        mimeType: f.mimeType,
+        size: f.size,
         isDark,
-        f.hasSVGwithBitmap,
-      );
+        isSVGwithBitmap: f.hasSVGwithBitmap,
+        pdfPageViewProps: f.pdfPageViewProps,
+      });
     }
     if (view.excalidrawData.hasEquation(f.id)) {
       const latex = view.excalidrawData.getEquation(f.id).latex;
@@ -1087,7 +1093,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
   isFullscreen(): boolean {
     //(process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.isFullscreen, "ExcalidrawView.isFullscreen");
-    return Boolean(document.body.querySelector(".excalidraw-hidden"));
+    return Boolean(this.ownerDocument.body.querySelector(".excalidraw-hidden"));
   }
 
   exitFullscreen() {
@@ -3322,19 +3328,31 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     const isPointerOutsideVisibleArea = top.x>this.currentPosition.x || bottom.x<this.currentPosition.x || top.y>this.currentPosition.y || bottom.y<this.currentPosition.y;
 
     const id = ea.addText(this.currentPosition.x, this.currentPosition.y, text);
-    await this.addElements(ea.getElements(), isPointerOutsideVisibleArea, save, undefined, true);
+    await this.addElements({
+      newElements: ea.getElements(),
+      repositionToCursor: isPointerOutsideVisibleArea,
+      save: save,
+      newElementsOnTop: true
+    });
     ea.destroy();
     return id;
   };
 
-  public async addElements(
-    newElements: ExcalidrawElement[],
-    repositionToCursor: boolean = false,
-    save: boolean = false,
-    images: any,
-    newElementsOnTop: boolean = false,
-    shouldRestoreElements: boolean = false,
-  ): Promise<boolean> {
+  public async addElements({
+    newElements,
+    repositionToCursor = false,
+    save = false,
+    images,
+    newElementsOnTop = false,
+    shouldRestoreElements = false,
+  }: {
+    newElements: ExcalidrawElement[];
+    repositionToCursor?: boolean;
+    save?: boolean;
+    images?: {[key: FileId]: ImageInfo};
+    newElementsOnTop?: boolean;
+    shouldRestoreElements?: boolean;
+  }): Promise<boolean> {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.addElements, "ExcalidrawView.addElements", newElements, repositionToCursor, save, images, newElementsOnTop, shouldRestoreElements);
     const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
     if (!api) {
@@ -3391,40 +3409,38 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       ? el.concat(newElements.filter((e) => !removeList.includes(e.id)))
       : newElements.filter((e) => !removeList.includes(e.id)).concat(el);
     
-    this.updateScene(
-      {
-        elements,
-        storeAction: "capture",
-      },
-      shouldRestoreElements,
-    );
-
-    if (images && Object.keys(images).length >0) {
-      const files: BinaryFileData[] = [];
-      Object.keys(images).forEach((k) => {
+    const files: BinaryFileData[] = [];
+    if (images && Object.keys(images).length >0) {  
+      Object.keys(images).forEach((k: FileId) => {
         files.push({
           mimeType: images[k].mimeType,
           id: images[k].id,
           dataURL: images[k].dataURL,
           created: images[k].created,
         });
-        if (images[k].file || images[k].isHyperLink || images[k].isLocalLink) {
+        if (images[k].file || images[k].isHyperLink) { //|| images[k].isLocalLink but isLocalLink was never passed
           const embeddedFile = new EmbeddedFile(
             this.plugin,
             this.file.path,
-            images[k].isHyperLink && !images[k].isLocalLink
+            images[k].isHyperLink //&& !images[k].isLocalLink local link is never passed to addElements
               ? images[k].hyperlink
-              : images[k].file,
+              : (typeof images[k].file === "string" ? images[k].file : images[k].file.path),
           );
           const st: AppState = api.getAppState();
-          embeddedFile.setImage(
-            images[k].dataURL,
-            images[k].mimeType,
-            images[k].size,
-            st.theme === "dark",
-            images[k].hasSVGwithBitmap,
-          );
+          embeddedFile.setImage({
+            imgBase64: images[k].dataURL,
+            mimeType: images[k].mimeType,
+            size: images[k].size,
+            isDark: st.theme === "dark",
+            isSVGwithBitmap: images[k].hasSVGwithBitmap,
+            pdfPageViewProps: images[k].pdfPageViewProps,
+          });
           this.excalidrawData.setFile(images[k].id, embeddedFile);
+          if(images[k].pdfPageViewProps) {
+            elements.filter((e) => e.type === "image" && e.fileId === images[k].id).forEach((e) => {
+              addAppendUpdateCustomData(e, {pdfPageViewProps: images[k].pdfPageViewProps});
+            });
+          }
         }
         if (images[k].latex) {
           this.excalidrawData.setEquation(images[k].id, {
@@ -3433,8 +3449,20 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           });
         }
       });
+    }
+
+    this.updateScene(
+      {
+        elements,
+        storeAction: "capture",
+      },
+      shouldRestoreElements,
+    );
+
+    if(files.length > 0) {
       api.addFiles(files);
     }
+
     api.updateContainerSize(api.getSceneElements().filter(el => newIds.includes(el.id)).filter(isContainer));
     if (save) {
       await this.save(false); //preventReload=false will ensure that markdown links are paresed and displayed correctly
@@ -3993,7 +4021,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
                 link,
                 naturalHeight: fd.size.height,
                 naturalWidth: fd.size.width,
+                pdfPageViewProps: fd.pdfPageViewProps,
               });
+              addAppendUpdateCustomData(el, {pdfPageViewProps: fd.pdfPageViewProps});
               if(el.crop) {
                 el.width = el.crop.width/this.plugin.settings.pdfScale;
                 el.height = el.crop.height/this.plugin.settings.pdfScale;

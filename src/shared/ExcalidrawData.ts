@@ -649,7 +649,6 @@ export class ExcalidrawData {
       containers.forEach((container: any) => {
         if(ellipseAndRhombusContainerWrapping && !container.customData?.legacyTextWrap) {
           addAppendUpdateCustomData(container, {legacyTextWrap: true});
-          //container.customData = {...container.customData, legacyTextWrap: true};
         }
         const filteredBoundElements = container.boundElements.filter(
           (boundEl: any) => elements.some((el: any) => el.id === boundEl.id),
@@ -1569,13 +1568,13 @@ export class ExcalidrawData {
       filepath,
     );
     
-    embeddedFile.setImage(
-      dataURL,
+    embeddedFile.setImage({
+      imgBase64: dataURL,
       mimeType,
-      { height: 0, width: 0 },
-      scene.appState?.theme === "dark",
-      mimeType === "image/svg+xml", //this treat all SVGs as if they had embedded images REF:addIMAGE
-    );
+      size: { height: 0, width: 0 },
+      isDark: scene.appState?.theme === "dark",
+      isSVGwithBitmap: mimeType === "image/svg+xml", //this treat all SVGs as if they had embedded images REF:addIMAGE
+    });
     this.setFile(key as FileId, embeddedFile);
     return file;
   }
@@ -1593,7 +1592,9 @@ export class ExcalidrawData {
       const pageRef = ef.linkParts.original.split("#")?.[1];
       if(!pageRef || !pageRef.startsWith("page=") || pageRef.includes("rect")) return;
       const restOfLink = el.link ? el.link.match(/&rect=\d*,\d*,\d*,\d*(.*)/)?.[1] : "";
-      const link = ef.linkParts.original + getPDFRect(el.crop, pdfScale) + (restOfLink ? restOfLink : "]]");
+      const link = ef.linkParts.original +
+        getPDFRect({elCrop: el.crop, scale: pdfScale, customData: el.customData}) +
+        (restOfLink ? restOfLink : "]]");
       el.link = `[[${link}`;
       this.elementLinks.set(el.id, el.link);
       dirty = true;
@@ -1992,7 +1993,7 @@ export class ExcalidrawData {
         isLocalLink: data.isLocalLink,
         path: data.hyperlink,
         blockrefData: null,
-        hasSVGwithBitmap: data.isSVGwithBitmap
+        hasSVGwithBitmap: data.isSVGwithBitmap,
       });
       return;
     }

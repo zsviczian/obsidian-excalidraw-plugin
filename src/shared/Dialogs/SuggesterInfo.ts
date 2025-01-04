@@ -158,6 +158,15 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "addAppendUpdateCustomData",
+    code: "addAppendUpdateCustomData(id: string, newData: Partial<Record<string, unknown>>)",
+    desc: "Add, modify keys in element customData and preserve existing keys.\n" +
+      "Creates customData={} if it does not exist.\n" +
+      "Takes the element ID for an element in the elementsDict and the new data to add or modify.\n" +
+      "To delete keys set key value in newData to undefined. so {keyToBeDeleted:undefined} will be deleted.",
+    after: "",
+  },
+  {
     field: "addToGroup",
     code: "addToGroup(objectIds: []): string;",
     desc: null,

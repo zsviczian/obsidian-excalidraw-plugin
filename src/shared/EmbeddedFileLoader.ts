@@ -73,7 +73,8 @@ type ImgData = {
   dataURL: DataURL;
   created: number;
   hasSVGwithBitmap: boolean;
-  size: { height: number; width: number };
+  size: Size;
+  pdfPageViewProps?: PDFPageViewProps;
 };
 
 export declare type MimeType = ValueOf<typeof IMAGE_MIME_TYPES> | "application/octet-stream";
@@ -82,7 +83,15 @@ export type FileData = BinaryFileData & {
   size: Size;
   hasSVGwithBitmap: boolean;
   shouldScale: boolean; //true if image should maintain its area, false if image should display at 100% its size
+  pdfPageViewProps?: PDFPageViewProps;
 };
+
+export type PDFPageViewProps = {
+  left: number;
+  bottom: number;
+  right: number;
+  top: number;
+}
 
 export type Size = {
   height: number;
@@ -177,6 +186,7 @@ export class EmbeddedFile {
   public isLocalLink: boolean = false;
   public hyperlink:DataURL;
   public colorMap: ColorMap | null = null;
+  public pdfPageViewProps: PDFPageViewProps;
 
   constructor(plugin: ExcalidrawPlugin, hostPath: string, imgPath: string, colorMapJSON?: string) {
     this.plugin = plugin;
@@ -252,12 +262,14 @@ export class EmbeddedFile {
     return this.mtime !== this.file.stat.mtime;
   }
 
-  public setImage(
-    imgBase64: string,
-    mimeType: MimeType,
-    size: Size,
-    isDark: boolean,
-    isSVGwithBitmap: boolean,
+  public setImage({ imgBase64, mimeType, size, isDark, isSVGwithBitmap, pdfPageViewProps } : {
+    imgBase64: string;
+    mimeType: MimeType;
+    size: Size;
+    isDark: boolean;
+    isSVGwithBitmap: boolean;
+    pdfPageViewProps?: PDFPageViewProps;
+  }
   ) {
     if (!this.file && !this.isHyperLink && !this.isLocalLink) {
       return;
@@ -266,6 +278,7 @@ export class EmbeddedFile {
       this.imgInverted = this.img = "";
     }
     this.mtime = this.isHyperLink || this.isLocalLink ? 0 : this.file.stat.mtime;
+    this.pdfPageViewProps = pdfPageViewProps;
     this.size = size;
     this.mimeType = mimeType;
     switch (isDark && isSVGwithBitmap) {
@@ -345,6 +358,7 @@ export class EmbeddedFilesLoader {
     created: number;
     hasSVGwithBitmap: boolean;
     size: { height: number; width: number };
+    pdfPageViewProps?: PDFPageViewProps;
   }> {
     const result = await this._getObsidianImage(inFile, depth);
     this.emptyPDFDocsMap();
@@ -552,9 +566,9 @@ export class EmbeddedFilesLoader {
 
     const excalidrawSVG = isExcalidrawFile ? dURL : null;
 
-    const [pdfDataURL, pdfSize] = isPDF
+    const [pdfDataURL, pdfSize, pdfPageViewProps] = isPDF
       ? await this.pdfToDataURL(file,linkParts)
-      : [null, null];
+      : [null, null, null];
 
     let mimeType: MimeType = isPDF
       ? "image/png"
@@ -600,6 +614,7 @@ export class EmbeddedFilesLoader {
         created: isHyperLink || isLocalLink ? 0 : file.stat.mtime,
         hasSVGwithBitmap,
         size,
+        pdfPageViewProps,
       };
     } catch(e) {
       return null;
@@ -634,7 +649,7 @@ export class EmbeddedFilesLoader {
     files.push([]);
     let batch = 0;
 
-    function* loadIterator():Generator<Promise<void>> {
+    function* loadIterator(this: EmbeddedFilesLoader):Generator<Promise<void>> {
       while (!(entry = entries.next()).done) {
         if(fileIDWhiteList && !fileIDWhiteList.has(entry.value[0])) continue;
         const embeddedFile: EmbeddedFile = entry.value[1];
@@ -654,20 +669,22 @@ export class EmbeddedFilesLoader {
                 created: data.created,
                 size: data.size,
                 hasSVGwithBitmap: data.hasSVGwithBitmap,
-                shouldScale: embeddedFile.shouldScale()
+                shouldScale: embeddedFile.shouldScale(),
+                pdfPageViewProps: data.pdfPageViewProps,
               };
               files[batch].push(fileData);
             }
           } else if (embeddedFile.isSVGwithBitmap && (depth !== 0 || isThemeChange)) {
             //this will reload the image in light/dark mode when switching themes
-            const fileData = {
+            const fileData: FileData = {
               mimeType: embeddedFile.mimeType,
               id: id,
               dataURL: embeddedFile.getImage(this.isDark) as DataURL,
               created: embeddedFile.mtime,
               size: embeddedFile.size,
               hasSVGwithBitmap: embeddedFile.isSVGwithBitmap,
-              shouldScale: embeddedFile.shouldScale()
+              shouldScale: embeddedFile.shouldScale(),
+              pdfPageViewProps: embeddedFile.pdfPageViewProps,
             };
             files[batch].push(fileData);
           }
@@ -803,7 +820,7 @@ export class EmbeddedFilesLoader {
   private async pdfToDataURL(
     file: TFile,
     linkParts: LinkParts,
-  ): Promise<[DataURL,{width:number, height:number}]> {
+  ): Promise<[DataURL,Size, PDFPageViewProps]> {
     try {
       let width = 0, height = 0;
       const pdfDoc = this.pdfDocsMap.get(file.path) ?? await getPDFDoc(file);
@@ -814,6 +831,7 @@ export class EmbeddedFilesLoader {
       const scale = this.plugin.settings.pdfScale;
       const cropRect = linkParts.ref.split("rect=")[1]?.split(",").map(x=>parseInt(x));
       const validRect = cropRect && cropRect.length === 4 && cropRect.every(x=>!isNaN(x));
+      let viewProps: PDFPageViewProps;
 
       // Render the page
       const renderPage = async (num:number) => {
@@ -824,8 +842,8 @@ export class EmbeddedFilesLoader {
         const page = await pdfDoc.getPage(num);
         // Set scale
         const viewport = page.getViewport({ scale });
-        height = canvas.height = viewport.height;
-        width = canvas.width = viewport.width;
+        height = canvas.height = Math.round(viewport.height);
+        width = canvas.width = Math.round(viewport.width);
 
         const renderCtx = {
           canvasContext: ctx,
@@ -846,9 +864,10 @@ export class EmbeddedFilesLoader {
             continue;
           }
         }
+        const [left, bottom, right, top] = page.view;
+        viewProps = {left, bottom, right, top};
+
         if(validRect) {
-          const [left, bottom, _, top] = page.view;
-        
           const pageHeight = top - bottom;
           width = (cropRect[2] - cropRect[0]) * scale;
           height = (cropRect[3] - cropRect[1]) * scale;
@@ -868,19 +887,19 @@ export class EmbeddedFilesLoader {
 
       const canvas = await renderPage(pageNum); 
       if(canvas) {
-        const result: [DataURL,{width:number, height:number}] = [`data:image/png;base64,${await new Promise((resolve, reject) => {
+        const result: [DataURL,Size, PDFPageViewProps] = [`data:image/png;base64,${await new Promise((resolve, reject) => {
           canvas.toBlob(async (blob) => {
             const dataURL = await blobToBase64(blob);
             resolve(dataURL);
           });
-        })}` as DataURL, {width, height}];
+        })}` as DataURL, {width, height}, viewProps];
         canvas.width = 0; //free memory iOS bug
         canvas.height = 0;
         return result;
       }
     } catch(e) {
       console.log(e);
-      return [null,null];
+      return [null, null, null];
     }
   }
 

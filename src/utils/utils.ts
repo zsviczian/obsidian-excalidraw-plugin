@@ -18,7 +18,7 @@ import {
   getContainerElement,
 } from "../constants/constants";
 import ExcalidrawPlugin from "../core/main";
-import { ExcalidrawElement, ExcalidrawTextElement, ImageCrop } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { ExcalidrawElement, ExcalidrawImageElement, ExcalidrawTextElement, ImageCrop } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { ExportSettings } from "../view/ExcalidrawView";
 import { getDataURLFromURL, getIMGFilename, getMimeType, getURLImageExtension } from "./fileUtils";
 import { generateEmbeddableLink } from "./customEmbeddableUtils";
@@ -32,6 +32,7 @@ import { runCompressionWorker } from "src/shared/Workers/compression-worker";
 import Pool from "es6-promise-pool";
 import { FileData } from "../shared/EmbeddedFileLoader";
 import { t } from "src/lang/helpers";
+import ExcalidrawScene from "src/shared/svgToExcalidraw/elements/ExcalidrawScene";
 
 declare const PLUGIN_VERSION:string;
 declare var LZString: any;
@@ -415,11 +416,17 @@ export async function getImageSize (
   });
 };
 
-export function addAppendUpdateCustomData (el: Mutable<ExcalidrawElement>, newData: any): ExcalidrawElement {
+export function addAppendUpdateCustomData (
+  el: Mutable<ExcalidrawElement>,
+  newData: Partial<Record<string, unknown>>
+): ExcalidrawElement {
   if(!newData) return el;
   if(!el.customData) el.customData = {};
   for (const key in newData) {
-    if(typeof newData[key] === "undefined") continue;
+    if(typeof newData[key] === "undefined") {
+      delete el.customData[key];
+      continue;
+    }
     el.customData[key] = newData[key];
   }
   return el;
@@ -447,7 +454,7 @@ export function scaleLoadedImage (
 
     scene.elements
       .filter((e: any) => e.type === "image" && e.fileId === img.id)
-      .forEach((el: any) => {
+      .forEach((el: Mutable<ExcalidrawImageElement>) => {
         const [elWidth, elHeight] = [el.width, el.height];
         const maintainArea = img.shouldScale; //true if image should maintain its area, false if image should display at 100% its size
         const elCrop: ImageCrop = el.crop;

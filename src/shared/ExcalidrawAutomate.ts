@@ -54,6 +54,7 @@ import {
   scaleLoadedImage,
   wrapTextAtCharLength,
   arrayToMap,
+  addAppendUpdateCustomData,
 } from "src/utils/utils";
 import { getAttachmentsFolderAndFilePath, getExcalidrawViews, getLeaf, getNewOrAdjacentLeaf, isObsidianThemeDark, mergeMarkdownFiles, openLeaf } from "src/utils/obsidianUtils";
 import { AppState, BinaryFileData,  DataURL,  ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
@@ -97,7 +98,6 @@ import { ExcalidrawLib } from "../types/excalidrawLib";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/types";
 import { AddImageOptions, ImageInfo, SVGColorInfo } from "src/types/excalidrawAutomateTypes";
 import { errorMessage, filterColorMap, getEmbeddedFileForImageElment, isColorStringTransparent, isSVGColorInfo, mergeColorMapIntoSVGColorInfo, svgColorInfoToColorMap, updateOrAddSVGColorInfo } from "src/utils/excalidrawAutomateUtils";
-import { Color } from "chroma-js";
 
 extendPlugins([
   HarmonyPlugin,
@@ -139,6 +139,23 @@ export class ExcalidrawAutomate {
 
   public printStartupBreakdown() {
     this.plugin.printStarupBreakdown();
+  }
+
+  /**
+   * Add, modify keys in element customData and preserve existing keys.
+   * Creates customData={} if it does not exist.
+   * Takes the element ID for an element in the elementsDict and the new data to add or modify.
+   * To delete keys set key value in newData to undefined. so {keyToBeDeleted:undefined} will be deleted.
+   * @param id
+   * @param newData 
+   * @returns undefined if element does not exist in elementsDict, returns the modified element otherwise.
+   */
+  public addAppendUpdateCustomData(id:string, newData: Partial<Record<string, unknown>>) {
+    const el = this.elementsDict[id];
+    if (!el) {
+      return;
+    }
+    return addAppendUpdateCustomData(el,newData);
   }
 
   public help(target: Function | string) {
@@ -1596,6 +1613,7 @@ export class ExcalidrawAutomate {
         width: image.size.width,
       },
       colorMap,
+      pdfPageViewProps: image.pdfPageViewProps,
     };
     if (scale && (Math.max(image.size.width, image.size.height) > MAX_IMAGE_SIZE)) {
       const scale =
@@ -2392,14 +2410,14 @@ export class ExcalidrawAutomate {
       return false;
     }
     const elements = this.getElements();    
-    return await this.targetView.addElements(
-      elements,
+    return await this.targetView.addElements({
+      newElements: elements,
       repositionToCursor,
       save,
-      this.imagesDict,
+      images: this.imagesDict,
       newElementsOnTop,
       shouldRestoreElements,
-    );
+    });
   };
 
   /**

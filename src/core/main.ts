@@ -91,6 +91,15 @@ import { EventManager } from "./managers/EventManager";
 declare const PLUGIN_VERSION:string;
 declare const INITIAL_TIMESTAMP: number;
 
+type FileMasterInfo = {
+  isHyperLink: boolean;
+  isLocalLink: boolean;
+  path: string;
+  hasSVGwithBitmap: boolean;
+  blockrefData: string,
+  colorMapJSON?: string
+}
+
 export default class ExcalidrawPlugin extends Plugin {
   private fileManager: PluginFileManager;
   private observerManager: ObserverManager;
@@ -113,7 +122,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public opencount: number = 0;
   public ea: ExcalidrawAutomate;
   //A master list of fileIds to facilitate copy / paste
-  public filesMaster: Map<FileId, { isHyperLink: boolean; isLocalLink: boolean; path: string; hasSVGwithBitmap: boolean; blockrefData: string, colorMapJSON?: string}> =
+  public filesMaster: Map<FileId, FileMasterInfo> =
     null; //fileId, path
   public equationsMaster: Map<FileId, string> = null; //fileId, formula
   public mermaidsMaster: Map<FileId, string> = null; //fileId, mermaidText
