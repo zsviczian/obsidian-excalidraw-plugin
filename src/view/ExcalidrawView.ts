@@ -57,16 +57,16 @@ import {
   getContainerElement,
 } from "../constants/constants";
 import ExcalidrawPlugin from "../core/main";
+import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
 import { 
   repositionElementsToCursor,
-  ExcalidrawAutomate,
   getTextElementsMatchingQuery,
   cloneElement,
   getFrameElementsMatchingQuery,
   getElementsWithLinkMatchingQuery,
   getImagesMatchingQuery,
   getBoundTextElementId
-} from "../shared/ExcalidrawAutomate";
+} from "../utils/excalidrawAutomateUtils";
 import { t } from "../lang/helpers";
 import {
   ExcalidrawData,

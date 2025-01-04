@@ -8,7 +8,7 @@ import {
 } from "obsidian";
 import { DEVICE, RERENDER_EVENT } from "../../constants/constants";
 import { EmbeddedFilesLoader } from "../../shared/EmbeddedFileLoader";
-import { createPNG, createSVG } from "../../shared/ExcalidrawAutomate";
+import { createPNG, createSVG } from "../../utils/excalidrawAutomateUtils";
 import { ExportSettings } from "../../view/ExcalidrawView";
 import ExcalidrawPlugin from "../main";
 import {getIMGFilename,} from "../../utils/fileUtils";

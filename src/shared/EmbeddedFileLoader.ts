@@ -13,7 +13,7 @@ import {
   FRONTMATTER_KEYS,
   getCSSFontDefinition,
 } from "../constants/constants";
-import { createSVG } from "./ExcalidrawAutomate";
+import { createSVG } from "src/utils/excalidrawAutomateUtils";
 import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
 import { ExportSettings } from "../view/ExcalidrawView";
 import { t } from "../lang/helpers";

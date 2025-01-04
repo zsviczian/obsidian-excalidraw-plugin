@@ -39,7 +39,8 @@ import {
   setRootElementSize,
 } from "../constants/constants";
 import { ExcalidrawSettings, DEFAULT_SETTINGS, ExcalidrawSettingTab } from "./settings";
-import { initExcalidrawAutomate, ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
+import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
+import { initExcalidrawAutomate } from "src/utils/excalidrawAutomateUtils";
 import { around, dedupe } from "monkey-around";
 import { t } from "../lang/helpers";
 import {

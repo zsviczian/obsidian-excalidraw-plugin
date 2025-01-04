@@ -3,7 +3,7 @@ import { ColorMaster } from "@zsviczian/colormaster";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { DynamicStyle } from "src/types/types";
-import { cloneElement } from "src/shared/ExcalidrawAutomate";
+import { cloneElement } from "./excalidrawAutomateUtils";
 import { ExcalidrawFrameElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { addAppendUpdateCustomData } from "./utils";
 import { mutateElement } from "src/constants/constants";

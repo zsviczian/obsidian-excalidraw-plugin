@@ -4,7 +4,8 @@ import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { Notice } from "obsidian";
 
 import { getEA } from "src/core";
-import { ExcalidrawAutomate, cloneElement } from "src/shared/ExcalidrawAutomate";
+import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
+import { cloneElement } from "src/utils/excalidrawAutomateUtils";
 import { ExportSettings } from "src/view/ExcalidrawView";
 import { nanoid } from "src/constants/constants";
 import { svgToBase64 } from "../utils/utils";

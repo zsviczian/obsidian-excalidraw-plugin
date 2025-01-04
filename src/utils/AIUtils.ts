@@ -1,4 +1,4 @@
-import { Notice, RequestUrlResponse, requestUrl } from "obsidian";
+import { Notice, RequestUrlResponse } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
 
 type MessageContent =

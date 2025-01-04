@@ -25,7 +25,7 @@ import { generateEmbeddableLink } from "./customEmbeddableUtils";
 import { FILENAMEPARTS } from "../types/utilTypes";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { cleanBlockRef, cleanSectionHeading, getFileCSSClasses } from "./obsidianUtils";
-import { updateElementLinksToObsidianLinks } from "src/shared/ExcalidrawAutomate";
+import { updateElementLinksToObsidianLinks } from "./excalidrawAutomateUtils";
 import { CropImage } from "../shared/CropImage";
 import opentype from 'opentype.js';
 import { runCompressionWorker } from "src/shared/Workers/compression-worker";

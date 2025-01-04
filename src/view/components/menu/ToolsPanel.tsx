@@ -4,7 +4,7 @@ import * as React from "react";
 import { ActionButton } from "./ActionButton";
 import { ICONS, saveIcon, stringToSVG } from "../../../constants/actionIcons";
 import { DEVICE, SCRIPT_INSTALL_FOLDER } from "../../../constants/constants";
-import { insertLaTeXToView, search } from "../../../shared/ExcalidrawAutomate";
+import { insertLaTeXToView, search } from "../../../utils/excalidrawAutomateUtils";
 import ExcalidrawView, { TextMode } from "../../ExcalidrawView";
 import { t } from "../../../lang/helpers";
 import { ReleaseNotes } from "../../../shared/Dialogs/ReleaseNotes";

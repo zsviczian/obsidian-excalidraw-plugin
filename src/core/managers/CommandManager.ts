@@ -29,11 +29,8 @@ import { InsertCommandDialog } from "../../shared/Dialogs/InsertCommandDialog";
 import { InsertImageDialog } from "../../shared/Dialogs/InsertImageDialog";
 import { ImportSVGDialog } from "../../shared/Dialogs/ImportSVGDialog";
 import { InsertMDDialog } from "../../shared/Dialogs/InsertMDDialog";
-import {
-  ExcalidrawAutomate,
-  insertLaTeXToView,
-  search,
-} from "../../shared/ExcalidrawAutomate";
+import { ExcalidrawAutomate } from "../../shared/ExcalidrawAutomate";
+import { insertLaTeXToView, search } from "src/utils/excalidrawAutomateUtils";
 import { templatePromt } from "../../shared/Dialogs/Prompt";
 import { t } from "../../lang/helpers";
 import {

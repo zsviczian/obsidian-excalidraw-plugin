@@ -2,7 +2,7 @@ import { ExcalidrawElement, ExcalidrawImageElement, ExcalidrawTextElement } from
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK } from "../shared/ExcalidrawData";
 import ExcalidrawView, { TextMode } from "src/view/ExcalidrawView";
 import { rotatedDimensions } from "./utils";
-import { getBoundTextElementId } from "src/shared/ExcalidrawAutomate";
+import { getBoundTextElementId } from "src/utils/excalidrawAutomateUtils";
 
 export const getElementsAtPointer = (
   pointer: any,
