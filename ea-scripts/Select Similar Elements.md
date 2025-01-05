@@ -7,16 +7,41 @@ This script enables the selection of elements based on matching properties. Sele
 ```js */
 
 let config = window.ExcalidrawSelectConfig;
-config = Boolean(config) && (Date.now() - config.timestamp < 60000) ? config : null;
+const isValidConfig = config && (Date.now() - config.timestamp < 60000);
+config = isValidConfig ? config : null;
 
 let elements = ea.getViewSelectedElements();
-if(!config && (elements.length !==1)) {
-  new Notice("Select a single element");
-  return;
-} else {
-  if(elements.length === 0) {
-    elements = ea.getViewElements();
+if(!config) {
+
+  async function shouldAbort() {
+    if(elements.length === 1) return false;
+    if(elements.length !== 2) return true;
+
+    //maybe container?
+    const textEl = elements.find(el=>el.type==="text");
+    if(!textEl || !textEl.containerId) return true;
+    
+    const containerEl = elements.find(el=>el.id === textEl.containerId);
+    if(!containerEl) return true;
+    
+    const id = await utils.suggester(
+      elements.map(el=>el.type),
+      elements.map(el=>el.id),
+      "Select container component"
+    );
+    if(!id) return true;
+    elements = elements.filter(el=>el.id === id);
+    return false;
   }
+
+  if(await shouldAbort()) {  
+    new Notice("Select a single element");
+    return;
+  }
+}
+
+if(Boolean(config) && elements.length === 0) {
+  elements = ea.getViewElements();
 }
 
 const {angle, backgroundColor, fillStyle, fontFamily, fontSize, height, width, opacity, roughness, roundness, strokeColor, strokeStyle, strokeWidth, type, startArrowhead, endArrowhead, fileId} = ea.getViewSelectedElement();
