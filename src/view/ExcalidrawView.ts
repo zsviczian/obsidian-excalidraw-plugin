@@ -226,20 +226,25 @@ export const addFiles = async (
     .forEach((f:FileData) => {
       s.scene.elements
         .filter((el:ExcalidrawElement)=>el.type === "image" && el.fileId === f.id && (
-          (el.crop && el.crop.naturalWidth !== f.size.width) || !el.customData?.pdfPageViewProps
+          (el.crop && el.crop?.naturalWidth !== f.size.width) || !el.customData?.pdfPageViewProps
         ))
         .forEach((el:Mutable<ExcalidrawImageElement>) => {
-          s.dirty = true;
-          const scale = f.size.width / el.crop.naturalWidth;
-          el.crop = {
-            x: el.crop.x * scale,
-            y: el.crop.y * scale,
-            width: el.crop.width * scale,
-            height: el.crop.height * scale,
-            naturalWidth: f.size.width,
-            naturalHeight: f.size.height,
-          };
-          addAppendUpdateCustomData(el, { pdfPageViewProps: f.pdfPageViewProps});
+          if(el.crop) {
+            s.dirty = true;
+            const scale = f.size.width / el.crop.naturalWidth;
+            el.crop = {
+              x: el.crop.x * scale,
+              y: el.crop.y * scale,
+              width: el.crop.width * scale,
+              height: el.crop.height * scale,
+              naturalWidth: f.size.width,
+              naturalHeight: f.size.height,
+            };
+          }
+          if(!el.customData?.pdfPageViewProps) {
+            s.dirty = true;
+            addAppendUpdateCustomData(el, { pdfPageViewProps: f.pdfPageViewProps});
+          }
         });
     });
 

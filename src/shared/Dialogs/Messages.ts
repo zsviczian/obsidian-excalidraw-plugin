@@ -17,6 +17,32 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.7.5":`
+## Fixed
+- PDF export scenario described in [#2184](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2184)
+- Elbow arrows do not work within frames [#2187](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2187)
+- Embedding images into Excalidraw with areaRef links did not work as expected due to conflicting SVG viewbox and width and height values
+- Can't exit full-screen mode in popout windows using the Command Palette toggle action [#2188](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2188)
+- If the image mask extended beyond the image in "Mask and Crop" image mode, the mask got misaligned from the image.
+- PDF image embedding fixes that impacted some PDF files (not all):
+    - When cropping the PDF page in the scene (by double-clicking the image to crop), the size and position of the PDF cutout drifted.
+    - Using PDF++ there was a small offset in the position of the cutout in PDF++ and the image in Excalidraw.
+ - Updated a number of scripts including Split Ellipse, Select Similar Elements, and Concatenate Lines
+
+## New in ExcalidrawAutomate
+${String.fromCharCode(96,96,96)}
+  /**
+   * Add, modify, or delete keys in element.customData and preserve existing keys.
+   * Creates customData={} if it does not exist.
+   * Takes the element id for an element in ea.elementsDict and the newData to add or modify.
+   * To delete keys set key value in newData to undefined. So {keyToBeDeleted:undefined} will be deleted.
+   * @param id
+   * @param newData 
+   * @returns undefined if element does not exist in elementsDict, returns the modified element otherwise.
+   */
+  public addAppendUpdateCustomData(id:string, newData: Partial<Record<string, unknown>>);
+${String.fromCharCode(96,96,96)}
+`,
 "2.7.4":`
 ## Fixed
 - Regression from 2.7.3 where image fileId got overwritten in some cases
