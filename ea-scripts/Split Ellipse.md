@@ -18,6 +18,7 @@ if (!ellipse) return;
 
 let lines = elements.filter(el => el.type == "line" || el.type == "arrow");
 if (lines.length == 0) lines = ea.getViewElements().filter(el => el.type == "line" || el.type == "arrow");
+lines = lines.map(getNormalizedLine);
 const subLines = getSubLines(lines);
 
 const angles = subLines.flatMap(line => {
@@ -205,4 +206,71 @@ function isBetween(num, min, max) {
 
 function clamp(number, min, max) {
   return Math.max(min, Math.min(number, max));
+}
+
+//Same line but with angle=0
+function getNormalizedLine(originalElement) {
+  if(originalElement.angle === 0) return originalElement;
+
+  // Get absolute coordinates for all points first
+  const pointRotateRads = (point, center, angle) => {
+    const [x, y] = point;
+    const [cx, cy] = center;
+    return [
+      (x - cx) * Math.cos(angle) - (y - cy) * Math.sin(angle) + cx,
+      (x - cx) * Math.sin(angle) + (y - cy) * Math.cos(angle) + cy
+    ];
+  };
+  
+  // Get element absolute coordinates (matching Excalidraw's approach)
+  const getElementAbsoluteCoords = (element) => {
+    const points = element.points;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+  
+    for (const [x, y] of points) {
+      const absX = x + element.x;
+      const absY = y + element.y;
+      minX = Math.min(minX, absX);
+      minY = Math.min(minY, absY);
+      maxX = Math.max(maxX, absX);
+      maxY = Math.max(maxY, absY);
+    }
+  
+    return [minX, minY, maxX, maxY];
+  };
+  
+  // Calculate center point based on absolute coordinates
+  const [x1, y1, x2, y2] = getElementAbsoluteCoords(originalElement);
+  const centerX = (x1 + x2) / 2;
+  const centerY = (y1 + y2) / 2;
+  
+  // Calculate absolute coordinates of all points
+  const absolutePoints = originalElement.points.map(([x, y]) => [
+    x + originalElement.x,
+    y + originalElement.y
+  ]);
+  
+  // Rotate all points around the center
+  const rotatedPoints = absolutePoints.map(point => 
+    pointRotateRads(point, [centerX, centerY], originalElement.angle)
+  );
+  
+  // Convert back to relative coordinates
+  const newPoints = rotatedPoints.map(([x, y]) => [
+    x - rotatedPoints[0][0],
+    y - rotatedPoints[0][1]
+  ]);
+  
+  const newLineId = ea.addLine(newPoints);
+  
+  // Set the position of the new line to the first rotated point
+  const newLine = ea.getElement(newLineId);
+  newLine.x = rotatedPoints[0][0];
+  newLine.y = rotatedPoints[0][1];
+  newLine.angle = 0;
+  delete ea.elementsDict[newLine.id];
+  return newLine;
 }

@@ -11,18 +11,41 @@ if(lines.length !== 2) {
 //Same line but with angle=0
 function getNormalizedLine(originalElement) {
   if(originalElement.angle === 0) return originalElement;
-  
-  const originalBB = ea.getBoundingBox([originalElement]);
-  const centerX = originalBB.topX + originalBB.width/2;
-  const centerY = originalBB.topY + originalBB.height/2;
-  
-  const rotate = (point, cx, cy, angle) => {
+
+  // Get absolute coordinates for all points first
+  const pointRotateRads = (point, center, angle) => {
     const [x, y] = point;
+    const [cx, cy] = center;
     return [
       (x - cx) * Math.cos(angle) - (y - cy) * Math.sin(angle) + cx,
       (x - cx) * Math.sin(angle) + (y - cy) * Math.cos(angle) + cy
     ];
   };
+  
+  // Get element absolute coordinates (matching Excalidraw's approach)
+  const getElementAbsoluteCoords = (element) => {
+    const points = element.points;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+  
+    for (const [x, y] of points) {
+      const absX = x + element.x;
+      const absY = y + element.y;
+      minX = Math.min(minX, absX);
+      minY = Math.min(minY, absY);
+      maxX = Math.max(maxX, absX);
+      maxY = Math.max(maxY, absY);
+    }
+  
+    return [minX, minY, maxX, maxY];
+  };
+  
+  // Calculate center point based on absolute coordinates
+  const [x1, y1, x2, y2] = getElementAbsoluteCoords(originalElement);
+  const centerX = (x1 + x2) / 2;
+  const centerY = (y1 + y2) / 2;
   
   // Calculate absolute coordinates of all points
   const absolutePoints = originalElement.points.map(([x, y]) => [
@@ -30,9 +53,9 @@ function getNormalizedLine(originalElement) {
     y + originalElement.y
   ]);
   
-  // Rotate all points around the bounding box center
+  // Rotate all points around the center
   const rotatedPoints = absolutePoints.map(point => 
-    rotate(point, centerX, centerY, originalElement.angle)
+    pointRotateRads(point, [centerX, centerY], originalElement.angle)
   );
   
   // Convert back to relative coordinates
@@ -41,22 +64,19 @@ function getNormalizedLine(originalElement) {
     y - rotatedPoints[0][1]
   ]);
   
-  // Create a new line element with angle 0
-  ea.style = { ...ea.style, ...originalElement };
-  ea.style.strokeColor = "red";
-  ea.style.angle = 0;
-  
   const newLineId = ea.addLine(newPoints);
   
   // Set the position of the new line to the first rotated point
   const newLine = ea.getElement(newLineId);
   newLine.x = rotatedPoints[0][0];
   newLine.y = rotatedPoints[0][1];
+  newLine.angle = 0;
   delete ea.elementsDict[newLine.id];
   return newLine;
 }
 
-const points = lines.map(el=>getNormalizedLine(el)).map(
+
+const points = lines.map(getNormalizedLine).map(
   el=>el.points.map(p=>[p[0]+el.x, p[1]+el.y])
 );
 
