@@ -8,20 +8,56 @@ if(lines.length !== 2) {
   return;
 }
 
-// https://math.stackexchange.com/questions/2204520/how-do-i-rotate-a-line-segment-in-a-specific-point-on-the-line
-const rotate = (point, element) => {
-  const [x1, y1] = point;
-  const x2 = element.x + element.width/2;
-  const y2 = element.y - element.height/2;
-  const angle = element.angle;
-  return [
-    (x1 - x2) * Math.cos(angle) - (y1 - y2) * Math.sin(angle) + x2,
-    (x1 - x2) * Math.sin(angle) + (y1 - y2) * Math.cos(angle) + y2,
-  ];
+//Same line but with angle=0
+function getNormalizedLine(originalElement) {
+  if(originalElement.angle === 0) return originalElement;
+  
+  const originalBB = ea.getBoundingBox([originalElement]);
+  const centerX = originalBB.topX + originalBB.width/2;
+  const centerY = originalBB.topY + originalBB.height/2;
+  
+  const rotate = (point, cx, cy, angle) => {
+    const [x, y] = point;
+    return [
+      (x - cx) * Math.cos(angle) - (y - cy) * Math.sin(angle) + cx,
+      (x - cx) * Math.sin(angle) + (y - cy) * Math.cos(angle) + cy
+    ];
+  };
+  
+  // Calculate absolute coordinates of all points
+  const absolutePoints = originalElement.points.map(([x, y]) => [
+    x + originalElement.x,
+    y + originalElement.y
+  ]);
+  
+  // Rotate all points around the bounding box center
+  const rotatedPoints = absolutePoints.map(point => 
+    rotate(point, centerX, centerY, originalElement.angle)
+  );
+  
+  // Convert back to relative coordinates
+  const newPoints = rotatedPoints.map(([x, y]) => [
+    x - rotatedPoints[0][0],
+    y - rotatedPoints[0][1]
+  ]);
+  
+  // Create a new line element with angle 0
+  ea.style = { ...ea.style, ...originalElement };
+  ea.style.strokeColor = "red";
+  ea.style.angle = 0;
+  
+  const newLineId = ea.addLine(newPoints);
+  
+  // Set the position of the new line to the first rotated point
+  const newLine = ea.getElement(newLineId);
+  newLine.x = rotatedPoints[0][0];
+  newLine.y = rotatedPoints[0][1];
+  delete ea.elementsDict[newLine.id];
+  return newLine;
 }
 
-const points = lines.map(
-  el=>el.points.map(p=>rotate([p[0]+el.x, p[1]+el.y],el))
+const points = lines.map(el=>getNormalizedLine(el)).map(
+  el=>el.points.map(p=>[p[0]+el.x, p[1]+el.y])
 );
 
 const last = (p) => p[p.length-1];
@@ -99,4 +135,4 @@ switch (lineTypes) {
 }
 
 
-ea.addElementsToView();
+await ea.addElementsToView();
