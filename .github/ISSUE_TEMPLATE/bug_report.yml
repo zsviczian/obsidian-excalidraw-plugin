@@ -1,5 +1,5 @@
 name: Bug report
-description: If something is clearly broken, it’s a bug. Everything else is a feature or support request. Most reported “bugs” are actually how-to questions or feature requests.
+description: If something is clearly broken, it’s a bug. **Everything else** is a feature or support request. Most reported “bugs” are actually how-to questions or feature requests. Just because other apps have the feature, or you would have liked this feature **does not** make it a bug. It is a feature request unless you have seen documentation that the feature is advertised to be available.
 title: "BUG: "
 body:
   - type: markdown
@@ -12,6 +12,8 @@ body:
         Before creating a bug report, please:
         1. **Review recent [release notes](https://github.com/zsviczian/obsidian-excalidraw-plugin/releases)** – maybe there is already an answer.
         2. **[Search issues](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues) (including closed ones)** to see if there is anything similar.
+        3. **[Watch the Feature Walkthrough Video](https://youtu.be/P_Q6avJGoWI)**: As it infact answers 90% of the typical questions I receive
+        4. **[Consult NotebookLM with your question](https://excalidraw-obsidian.online/WIKI/09+Video+Transcripts/Videos/Turn+any+YouTube+Channel+into+your+AI+Mentor+-+Obsidian+is+the+ultimate+automation+workbench+for+PKM)
 
   - type: markdown
     attributes:
@@ -45,6 +47,13 @@ body:
       label: "Your environment"
       description: "Run `Command Palette/Show Debug info` in Obsidian and paste the result here."
       placeholder: "Paste your Obsidian debug info here..."
+
+  - type: textarea
+    id: notebook_lm
+    attributes:
+      label: "Your NotebookLM query"
+      description: "See point 4) above. Paste the question and answer you received from NotebookLM. This serves partly as proof, partly to help me see where the model is incorrect"
+      placeholder: "Copy/Paste your question and the resulting answer you got from NotebookLM"
 
   - type: textarea
     id: bug_description
