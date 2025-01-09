@@ -12,6 +12,8 @@ body:
         Before submitting a support request, please:
         1. **Review the [documentation](https://github.com/zsviczian/obsidian-excalidraw-plugin/wiki)** – your question may already be answered.
         2. **[Search issues](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues) (including closed ones)** to see if your question has already been addressed.
+        3. **[Watch the Feature Walkthrough Video](https://youtu.be/P_Q6avJGoWI)**: As it infact answers 90% of the typical questions I receive
+        4. **[Consult NotebookLM with your question](https://excalidraw-obsidian.online/WIKI/09+Video+Transcripts/Videos/Turn+any+YouTube+Channel+into+your+AI+Mentor+-+Obsidian+is+the+ultimate+automation+workbench+for+PKM)
 
   - type: markdown
     attributes:
@@ -30,6 +32,13 @@ body:
       description: Please confirm that you've reviewed available resources before submitting your request.
       options:
         - label: Yes, I have reviewed the documentation and searched for related issues.
+
+  - type: textarea
+    id: notebook_lm
+    attributes:
+      label: "Your NotebookLM query"
+      description: "See point 4) above. Paste the question and answer you received from NotebookLM. This serves partly as proof, partly to help me see where the model is incorrect"
+      placeholder: "Copy/Paste your question and the resulting answer you got from NotebookLM"
 
   - type: textarea
     id: support_question
