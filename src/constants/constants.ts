@@ -198,7 +198,7 @@ export const REG_BLOCK_REF_CLEAN = /[!"#$%&()*+,.:;<=>?@^`{|}~\/\[\]\\\r\n]/g;
 //                                 /[!"#$%&()*+,.:;<=>?@^`{|}~\/\[\]\\]/g; 
 // https://discord.com/channels/686053708261228577/989603365606531104/1000128926619816048
 // /\+|\/|~|=|%|\(|\)|{|}|,|&|\.|\$|!|\?|;|\[|]|\^|#|\*|<|>|&|@|\||\\|"|:|\s/g;
-export const IMAGE_TYPES = ["jpeg", "jpg", "png", "gif", "svg", "webp", "bmp", "ico", "jtif", "tif"];
+export const IMAGE_TYPES = ["jpeg", "jpg", "png", "gif", "svg", "webp", "bmp", "ico", "jtif", "tif", "jfif", "avif"];
 export const ANIMATED_IMAGE_TYPES = ["gif", "webp", "apng", "svg"];
 export const EXPORT_TYPES = ["svg", "dark.svg", "light.svg", "png", "dark.png", "light.png"];
 export const MAX_IMAGE_SIZE = 500;
