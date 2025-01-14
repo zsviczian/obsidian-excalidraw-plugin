@@ -361,7 +361,14 @@ div.excalidraw-draginfo {
 }
 
 .excalidraw [data-radix-popper-content-wrapper] {
+  /*Overrides position:fixed in popover*/
   position: absolute !important;
+}
+
+.excalidraw .Island .App-mobile-menu,
+.excalidraw .Island.App-menu__left {
+  /*Arrow Picker Popover Overflow*/
+	overflow: visible;
 }
 
 .excalidraw__embeddable-container .view-header {
