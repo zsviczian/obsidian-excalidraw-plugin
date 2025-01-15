@@ -6,7 +6,7 @@ import { ConstructableWorkspaceSplit, getContainerForDocument, isObsidianThemeDa
 import { DEVICE, EXTENDED_EVENT_TYPES, KEYBOARD_EVENT_TYPES } from "src/constants/constants";
 import { ExcalidrawImperativeAPI, UIAppState } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
-import { processLinkText, patchMobileView } from "src/utils/customEmbeddableUtils";
+import { processLinkText, patchMobileView, setFileToLocalGraph } from "src/utils/customEmbeddableUtils";
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
 
 declare module "obsidian" {
@@ -154,6 +154,15 @@ function RenderObsidianView(
     }; //cleanup on unmount
   }, [isActiveRef.current, containerRef.current]);
 
+  //set local graph to view when deactivating embeddables
+  React.useEffect(() => {
+    if(file === view.file) {
+      return;
+    }
+    if(!isActiveRef.current) {
+      setFileToLocalGraph(view.app, view.file);
+    }
+  }, [isActiveRef.current]);
 
   //--------------------------------------------------------------------------------
   //Mount the workspace leaf or the canvas node depending on subpath
@@ -406,6 +415,10 @@ function RenderObsidianView(
     const node = leafRef.current?.node as ObsidianCanvasNode;
     if (previousIsActive === isActiveRef.current) {
       return;
+    }
+
+    if(file !== view.file) {
+      setFileToLocalGraph(view.app, file);
     }
 
     if(leafRef.current.leaf?.view?.getViewType() === "markdown") {
