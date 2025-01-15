@@ -19,7 +19,7 @@ import { ExportSettings } from "../view/ExcalidrawView";
 import { t } from "../lang/helpers";
 import { tex2dataURL } from "./LaTeX";
 import ExcalidrawPlugin from "../core/main";
-import { blobToBase64, getDataURLFromURL, getMimeType, getPDFDoc, getURLImageExtension, hasExcalidrawEmbeddedImagesTreeChanged, readLocalFileBinary } from "../utils/fileUtils";
+import { blobToBase64, getDataURLFromURL, getMimeType, getPDFDoc, getURLImageExtension, readLocalFileBinary } from "../utils/fileUtils";
 import {
   errorlog,
   getDataURL,
@@ -91,6 +91,7 @@ export type PDFPageViewProps = {
   bottom: number;
   right: number;
   top: number;
+  rotate?: number; //may be undefined in legacy files
 }
 
 export type Size = {
@@ -866,19 +867,58 @@ export class EmbeddedFilesLoader {
         }
         const [left, bottom, right, top] = page.view;
         viewProps = {left, bottom, right, top};
+        viewProps.rotate = page.rotate;
 
         if(validRect) {
-          const pageHeight = top - bottom;
-          width = (cropRect[2] - cropRect[0]) * scale;
-          height = (cropRect[3] - cropRect[1]) * scale;
 
-          const crop = validRect ? {
-            left: (cropRect[0] - left) * scale,
-            top: (bottom + pageHeight - cropRect[3]) * scale,
-            width,
-            height,
-          } : undefined;
-          if(crop) {
+          const pageHeight = top - bottom;
+          const pageWidth = right - left;
+
+          if(!page.rotate || page.rotate === 0) {  
+            width = (cropRect[2] - cropRect[0]) * scale;
+            height = (cropRect[3] - cropRect[1]) * scale;
+
+            const crop = {
+              left: (cropRect[0] - left) * scale,
+              top: (bottom + pageHeight - cropRect[3]) * scale,
+              width,
+              height,
+            };
+            return cropCanvas(canvas, crop);
+          }
+          if(page.rotate === 90) {
+            width = (cropRect[3] - cropRect[1]) * scale;
+            height = (cropRect[2] - cropRect[0]) * scale;
+            const crop = {
+              left: cropRect[1] * scale,
+              top: (pageHeight - cropRect[2]) * scale,
+              width,
+              height,
+            };
+            return cropCanvas(canvas, crop);
+          }
+          
+          if(page.rotate === 180) {
+            width = (cropRect[2] - cropRect[0]) * scale;
+            height = (cropRect[3] - cropRect[1]) * scale;
+            const crop = {
+              left: (pageWidth - cropRect[2]) * scale,
+              top: cropRect[1] * scale,
+              width,
+              height,
+            };
+            return cropCanvas(canvas, crop);
+          }
+          
+          if(page.rotate === 270) {
+            width = (cropRect[3] - cropRect[1]) * scale;
+            height = (cropRect[2] - cropRect[0]) * scale;
+            const crop = {
+              left: (pageWidth - cropRect[3]) * scale,
+              top: cropRect[0] * scale,
+              width,
+              height,
+            };
             return cropCanvas(canvas, crop);
           }
         }
