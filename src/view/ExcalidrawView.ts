@@ -596,7 +596,18 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if(toVault) {
       const filepath = getIMGFilename(this.file.path, "pdf");
       const file = await createOrOverwriteFile(this.app, filepath, pdfArrayBuffer);
-      this.app.workspace.getLeaf("split").openFile(file);
+      let leaf: WorkspaceLeaf;
+      this.app.workspace.getLeavesOfType("pdf").forEach((l) => {
+        //@ts-ignore
+        if(l.view?.file === file) {
+          leaf = l;
+        }
+      });
+      if(leaf) {
+        this.app.workspace.revealLeaf(leaf);
+      } else {
+        this.app.workspace.getLeaf("split").openFile(file);
+      }
     } else {
       download(
         "data:application/pdf;base64",

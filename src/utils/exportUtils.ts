@@ -50,8 +50,8 @@ export function getMarginValue(margin:PDFPageMarginString): PDFMargin {
   switch(margin) {
     case "none": return { left: 0, right: 0, top: 0, bottom: 0 };
     case "tiny": return { left: 5, right: 5, top: 5, bottom: 5 };
-    case "normal": return { left: 20, right: 20, top: 20, bottom: 20 };
-    default: return { left: 20, right: 20, top: 20, bottom: 20 };
+    case "normal": return { left: 25, right: 25, top: 25, bottom: 25 };
+    default: return { left: 25, right: 25, top: 25, bottom: 25 };
   }
 }
 
@@ -67,6 +67,85 @@ interface SVGDimensions {
   height: number;
   x: number;
   y: number;
+  sourceX?: number;
+  sourceY?: number;
+  sourceWidth?: number;
+  sourceHeight?: number;
+}
+
+function calculatePosition(
+  svgWidth: number, 
+  svgHeight: number,
+  pageWidth: number,
+  pageHeight: number,
+  margin: PDFMargin,
+  alignment: PDFPageAlignment,
+  scale: PDFExportScale
+): {x: number, y: number} {
+  const availableWidth = pageWidth - margin.left - margin.right;
+  const availableHeight = pageHeight - margin.top - margin.bottom;
+
+  console.log(JSON.stringify({
+    message: 'PDF Position Debug',
+    input: {
+      svgWidth,
+      svgHeight,
+      pageWidth,
+      pageHeight,
+      margin,
+      alignment,
+      scale
+    },
+    calculated: {
+      availableWidth,
+      availableHeight
+    }
+  }));
+
+  let x = margin.left;
+  let y = margin.bottom;
+
+  // Handle horizontal alignment
+  if (alignment.includes('center')) {
+    x = margin.left + (availableWidth - svgWidth) / 2;
+  } else if (alignment.includes('right')) {
+    x = margin.left + availableWidth - svgWidth;
+  }
+
+  // Handle vertical alignment
+  if (alignment.startsWith('center')) {
+    y = margin.bottom + (availableHeight - svgHeight) / 2;
+  } else if (alignment.startsWith('top')) {
+    y = margin.bottom;
+  } else if (alignment.startsWith('bottom')) {
+    y = pageHeight - margin.top - svgHeight;
+  }
+
+  console.log(JSON.stringify({
+    message: 'PDF Position Intermediate',
+    x,
+    y,
+    alignment,
+    availableHeight,
+    marginTop: margin.top,
+    marginBottom: margin.bottom,
+    svgHeight,
+    pageHeight
+  }));
+
+  console.log(JSON.stringify({
+    message: 'PDF Position Result',
+    x,
+    y,
+    finalPosition: {
+      bottom: y,
+      top: y + svgHeight,
+      left: x,
+      right: x + svgWidth
+    }
+  }));
+
+  return {x, y};
 }
 
 function calculateDimensions(
@@ -74,25 +153,89 @@ function calculateDimensions(
   svgHeight: number,
   pageDim: PageDimensions,
   margin: PDFPageProperties['margin'],
-  scale: PDFExportScale
-): SVGDimensions {
-  const availableWidth = pageDim.width - (margin?.left || 0) - (margin?.right || 0);
-  const availableHeight = pageDim.height - (margin?.top || 0) - (margin?.bottom || 0);
+  scale: PDFExportScale,
+  alignment: PDFPageAlignment
+): SVGDimensions[] {
+  const availableWidth = pageDim.width - margin.left - margin.right;
+  const availableHeight = pageDim.height - margin.top - margin.bottom;
 
-  let finalWidth, finalHeight;
+  let finalWidth: number;
+  let finalHeight: number;
+
   if (scale.fitToPage) {
     const ratio = Math.min(availableWidth / svgWidth, availableHeight / svgHeight);
     finalWidth = svgWidth * ratio;
     finalHeight = svgHeight * ratio;
+    
+    const position = calculatePosition(
+      finalWidth, 
+      finalHeight, 
+      pageDim.width, 
+      pageDim.height, 
+      margin,
+      alignment,
+      scale
+    );
+
+    return [{
+      width: finalWidth,
+      height: finalHeight,
+      x: position.x,
+      y: position.y
+    }];
   } else {
+    // Scale mode - may need multiple pages
     finalWidth = svgWidth * (scale.zoom || 1);
     finalHeight = svgHeight * (scale.zoom || 1);
+
+    if (finalWidth <= availableWidth && finalHeight <= availableHeight) {
+      // Content fits on one page
+      const position = calculatePosition(
+        finalWidth, 
+        finalHeight, 
+        pageDim.width, 
+        pageDim.height, 
+        margin,
+        alignment,
+        scale
+      );
+      
+      return [{
+        width: finalWidth,
+        height: finalHeight,
+        x: position.x,
+        y: position.y
+      }];
+    } else {
+      // Content needs to be tiled across multiple pages
+      const dimensions: SVGDimensions[] = [];
+      const cols = Math.ceil(finalWidth / availableWidth);
+      const rows = Math.ceil(finalHeight / availableHeight);
+
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const tileWidth = Math.min(availableWidth, finalWidth - col * availableWidth);
+          const tileHeight = Math.min(availableHeight, finalHeight - row * availableHeight);
+          
+          // Calculate y coordinate following the same logic as single-page rendering
+          // We start from the bottom margin and work our way up
+          //const y = margin.bottom + row * availableHeight;
+          
+          dimensions.push({
+            width: tileWidth,
+            height: tileHeight,
+            x: margin.left,
+            y: margin.top,
+            sourceX: col * availableWidth / (scale.zoom || 1),
+            sourceY: row * availableHeight / (scale.zoom || 1),
+            sourceWidth: tileWidth / (scale.zoom || 1),
+            sourceHeight: tileHeight / (scale.zoom || 1)
+          });
+        }
+      }
+      return dimensions;
+    }
   }
-
-  const x = (margin?.left || 0) + (availableWidth - finalWidth) / 2;
-  const y = pageDim.height - (margin?.top || 0) - finalHeight;
-
-  return { width: finalWidth, height: finalHeight, x, y };
 }
 
 async function addSVGToPage(
@@ -115,14 +258,37 @@ async function addSVGToPage(
     });
   }
 
-  const svgImage = await pdfDoc.embedSvg(svg.outerHTML);
+  // Clone and modify SVG for tiling if needed
+  let svgToEmbed = svg;
+  if (dimensions.sourceX !== undefined) {
+    svgToEmbed = svg.cloneNode(true) as SVGSVGElement;
+    const viewBox = `${dimensions.sourceX} ${dimensions.sourceY} ${dimensions.sourceWidth} ${dimensions.sourceHeight}`;
+    svgToEmbed.setAttribute('viewBox', viewBox);
+    svgToEmbed.setAttribute('width', String(dimensions.sourceWidth));
+    svgToEmbed.setAttribute('height', String(dimensions.sourceHeight));
+  }
+
+  const svgImage = await pdfDoc.embedSvg(svgToEmbed.outerHTML);
   
+  console.log(JSON.stringify({message: "addSVGToPage", dimensions, html: svgToEmbed.outerHTML}));
+
+  // Adjust y-coordinate to account for PDF coordinate system
+  const adjustedY = pageDim.height - dimensions.y;
+
   page.drawSvg(svgImage, {
     x: dimensions.x,
-    y: dimensions.y,
+    y: adjustedY,
     width: dimensions.width,
     height: dimensions.height,
   });
+
+  console.log(JSON.stringify({
+    message: 'PDF Draw SVG',
+    x: dimensions.x,
+    y: adjustedY,
+    width: dimensions.width,
+    height: dimensions.height
+  }));
 
   return page;
 }
@@ -136,35 +302,23 @@ export async function exportToPDF({
   scale: PDFExportScale;
   pageProps: PDFPageProperties;
 }): Promise<ArrayBuffer> {
-  const margin = pageProps.margin;
-  const pageDim = pageProps.dimensions;
-  
   const pdfDoc = await PDFDocument.create();
 
   for (const svg of SVG) {
     const svgWidth = parseFloat(svg.getAttribute('width') || '0');
     const svgHeight = parseFloat(svg.getAttribute('height') || '0');
     
-    const dimensions = calculateDimensions(svgWidth, svgHeight, pageDim, margin, scale);
+    const dimensions = calculateDimensions(
+      svgWidth, 
+      svgHeight, 
+      pageProps.dimensions, 
+      pageProps.margin, 
+      scale,
+      pageProps.alignment
+    );
 
-    if (!scale.fitToPage && (dimensions.width > pageDim.width || dimensions.height > pageDim.height)) {
-      // Split oversized SVG into pages
-      const maxWidth = pageDim.width - margin.left - margin.right;
-      const maxHeight = pageDim.height - margin.top - margin.bottom;
-      const splitSVGs = splitSVGIntoPages(svg, maxWidth, maxHeight);
-      
-      for (const splitSvg of splitSVGs) {
-        const splitDimensions = calculateDimensions(
-          parseFloat(splitSvg.getAttribute('width') || '0'),
-          parseFloat(splitSvg.getAttribute('height') || '0'),
-          pageDim,
-          margin,
-          { fitToPage: true }
-        );
-        await addSVGToPage(pdfDoc, splitSvg, splitDimensions, pageDim, pageProps.backgroundColor);
-      }
-    } else {
-      await addSVGToPage(pdfDoc, svg, dimensions, pageDim, pageProps.backgroundColor);
+    for (const dim of dimensions) {
+      await addSVGToPage(pdfDoc, svg, dim, pageProps.dimensions, pageProps.backgroundColor);
     }
   }
 
