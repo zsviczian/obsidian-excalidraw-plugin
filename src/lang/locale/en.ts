@@ -662,6 +662,7 @@ FILENAME_HEAD: "Filename",
   EXPORT_EMBED_SCENE_DESC:
     "Embed Excalidraw scene in exported image. Can be overridden at a file level by adding the <code>excalidraw-export-embed-scene: true/false<code> frontmatter key. " +
     "The setting only takes effect the next time you (re)open drawings.",
+  PDF_EXPORT_SETTINGS: "PDF Export Settings",
   EXPORT_HEAD: "Auto-export Settings",
   EXPORT_SYNC_NAME:
     "Keep the .SVG and/or .PNG filenames in sync with the drawing file",
@@ -1014,7 +1015,7 @@ FILENAME_HEAD: "Filename",
   EXPORTDIALOG_TAB_IMAGE: "Image",
   EXPORTDIALOG_TAB_PDF: "PDF",
   // Settings persistence
-  EXPORTDIALOG_SAVE_SETTINGS: "Save as preset?",
+  EXPORTDIALOG_SAVE_SETTINGS: "Save image settings to file doc.properties?",
   EXPORTDIALOG_SAVE_SETTINGS_SAVE: "Save as preset",
   EXPORTDIALOG_SAVE_SETTINGS_ONETIME: "One-time use",
   // Image settings
@@ -1070,6 +1071,8 @@ FILENAME_HEAD: "Filename",
   EXPORTDIALOG_PDF_MARGIN_NONE: "None",
   EXPORTDIALOG_PDF_MARGIN_TINY: "Small",
   EXPORTDIALOG_PDF_MARGIN_NORMAL: "Normal",
+  EXPORTDIALOG_SAVE_PDF_SETTINGS: "Save PDF settings",
+  EXPORTDIALOG_SAVE_CONFIRMATION: "PDF config saved to plugin settings as default",
   // Buttons
   EXPORTDIALOG_PNGTOFILE : "PNT to File",
   EXPORTDIALOG_SVGTOFILE : "SVG to File",

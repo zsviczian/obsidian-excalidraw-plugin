@@ -1,5 +1,5 @@
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { Modal, Setting, TFile } from "obsidian";
+import { Modal, Notice, Setting, TFile } from "obsidian";
 import { getEA } from "src/core";
 import { DEVICE } from "src/constants/constants";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
@@ -47,7 +47,6 @@ export class ExportDialog extends Modal {
     private plugin: ExcalidrawPlugin,
     private view: ExcalidrawView,
     private file: TFile,
-    
   ) {
     super(plugin.app);
     this.ea = getEA(this.view);
@@ -60,6 +59,15 @@ export class ExportDialog extends Modal {
     this.exportSelectedOnly = false;
     this.saveToVault = true;
     this.transparent = !getWithBackground(this.plugin, this.file);
+
+    this.pageSize = plugin.settings.pdfSettings.pageSize;
+    this.pageOrientation = plugin.settings.pdfSettings.pageOrientation;
+    this.fitToPage = plugin.settings.pdfSettings.fitToPage;
+    this.paperColor = plugin.settings.pdfSettings.paperColor;
+    this.customPaperColor = plugin.settings.pdfSettings.customPaperColor;
+    this.alignment = plugin.settings.pdfSettings.alignment;
+    this.margin = plugin.settings.pdfSettings.margin;
+
     this.saveSettings = false;
   }
 
@@ -144,9 +152,6 @@ export class ExportDialog extends Modal {
     this.contentContainer.empty();
     this.buttonContainer.empty();
 
-    // Always show save settings dropdown
-    this.createSaveSettingsDropdown();
-
     if (this.activeTab === "image") {
       this.createImageSettings();
       this.createExportSettings();
@@ -165,6 +170,8 @@ export class ExportDialog extends Modal {
     this.contentContainer.createEl("h1",{text: t("EXPORTDIALOG_IMAGE_SETTINGS")});
     this.contentContainer.createEl("p",{text: t("EXPORTDIALOG_IMAGE_DESC")})
 
+    this.createSaveSettingsDropdown();
+
     const size = ():DocumentFragment => {
       const width = Math.round(this.scale*this.boundingBox.width + this.padding*2);
       const height = Math.round(this.scale*this.boundingBox.height + this.padding*2);
@@ -180,7 +187,7 @@ export class ExportDialog extends Modal {
       .setDesc(padding())
       .addSlider(slider => {
         slider
-          .setLimits(0,50,1)
+          .setLimits(0,100,1)
           .setValue(this.padding)
           .onChange(value => {
             this.padding = value;
@@ -194,7 +201,7 @@ export class ExportDialog extends Modal {
       .setDesc(size())
       .addSlider(slider => 
         slider
-          .setLimits(0.5,5,0.5)
+          .setLimits(0.2,7,0.1)
           .setValue(this.scale)
           .onChange(value => {
             this.scale = value;
@@ -329,6 +336,25 @@ export class ExportDialog extends Modal {
   }
 
   private createPDFButton() {
+    const bSavePDFSettings = this.buttonContainer.createEl("button",
+      { text: t("EXPORTDIALOG_SAVE_PDF_SETTINGS"), cls: "excalidraw-prompt-button" }
+    );
+    bSavePDFSettings.onclick = async () => {
+      //in case sync loaded a new version of settings in the mean time
+      await this.plugin.loadSettings();
+      this.plugin.settings.pdfSettings = {
+        pageSize: this.pageSize,
+        pageOrientation: this.pageOrientation,
+        fitToPage: this.fitToPage,
+        paperColor: this.paperColor,
+        customPaperColor: this.customPaperColor,
+        alignment: this.alignment,
+        margin: this.margin
+      };
+      await this.plugin.saveSettings();
+      new Notice(t("EXPORTDIALOG_SAVE_CONFIRMATION"));
+    };
+
     const bPDFVault = this.buttonContainer.createEl("button", { 
       text: t("EXPORTDIALOG_PDFTOVAULT"), 
       cls: "excalidraw-prompt-button" 

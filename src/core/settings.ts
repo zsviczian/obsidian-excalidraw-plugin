@@ -42,6 +42,7 @@ import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/
 import { HotkeyEditor } from "src/shared/Dialogs/HotkeyEditor";
 import { getExcalidrawViews } from "src/utils/obsidianUtils";
 import { createSliderWithText } from "src/utils/sliderUtils";
+import { PDFExportSettingsComponent, PDFExportSettings } from "src/shared/Dialogs/PDFExportSettingsComponent";
 
 export interface ExcalidrawSettings {
   folder: string;
@@ -218,6 +219,7 @@ export interface ExcalidrawSettings {
   rank: Rank;
   modifierKeyOverrides: {modifiers: Modifier[], key: string}[];
   showSplashscreen: boolean;
+  pdfSettings: PDFExportSettings;
 }
 
 declare const PLUGIN_VERSION:string;
@@ -497,6 +499,15 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
     {modifiers: ["Mod"], key:"G"},
   ],
   showSplashscreen: true,
+  pdfSettings: {
+    pageSize: "A4",
+    pageOrientation: "portrait",
+    fitToPage: true,
+    paperColor: "white",
+    customPaperColor: "#ffffff",
+    alignment: "center",
+    margin: "normal"
+  },
 };
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
@@ -2117,7 +2128,21 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
-    //Add new section here:
+
+    detailsEl = exportDetailsEl.createEl("details");
+    detailsEl.createEl("summary", { 
+      text: t("PDF_EXPORT_SETTINGS"),
+      cls: "excalidraw-setting-h4",
+    });
+
+    new PDFExportSettingsComponent(
+      detailsEl,
+      this.plugin.settings.pdfSettings,
+      () => {
+        this.applySettingsUpdate();
+      }
+    ).render();
+
     detailsEl = exportDetailsEl.createEl("details");
     detailsEl.createEl("summary", { 
       text: t("EXPORT_HEAD"),
@@ -2261,9 +2286,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     detailsEl.createEl("span", {}, (el) => {
       el.innerHTML = t("MD_EMBED_CUSTOMDATA_HEAD_DESC");
     });
-
-
-
 
     new EmbeddalbeMDFileCustomDataSettingsComponent(
       detailsEl,
