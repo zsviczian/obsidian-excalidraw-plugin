@@ -1006,4 +1006,55 @@ FILENAME_HEAD: "Filename",
   LINK_CLICK_POPOUT: "Open in a popout window",
   LINK_CLICK_NEW_TAB: "Open in a new tab",
   LINK_CLICK_MD_PROPS: "Show the Markdown image-properties dialog (only relevant if you have embedded a markdown document as an image)",
+
+  //ExportDialog
+  // Dialog and tabs
+  EXPORTDIALOG_TITLE: "Export Drawing",
+  EXPORTDIALOG_TAB_IMAGE: "Image",
+  EXPORTDIALOG_TAB_PDF: "PDF",
+  // Settings persistence
+  EXPORTDIALOG_SAVE_SETTINGS: "Save as preset?",
+  EXPORTDIALOG_SAVE_SETTINGS_SAVE: "Save as preset",
+  EXPORTDIALOG_SAVE_SETTINGS_ONETIME: "One-time use",
+  // Image settings
+  EXPORTDIALOG_IMAGE_SETTINGS: "Image",
+  EXPORTDIALOG_IMAGE_DESC: "PNG supports transparency. External files can include Excalidraw scene data.",
+  EXPORTDIALOG_PADDING: "Padding",
+  EXPORTDIALOG_SCALE: "Scale",
+  EXPORTDIALOG_CURRENT_PADDING: "Current padding:",
+  EXPORTDIALOG_SIZE_DESC: "Scale affects output size",
+  EXPORTDIALOG_SCALE_VALUE: "Scale:",
+  EXPORTDIALOG_IMAGE_SIZE: "Size:",
+  // Theme and background
+  EXPORTDIALOG_EXPORT_THEME: "Theme",
+  EXPORTDIALOG_THEME_LIGHT: "Light",
+  EXPORTDIALOG_THEME_DARK: "Dark",
+  EXPORTDIALOG_BACKGROUND: "Background",
+  EXPORTDIALOG_BACKGROUND_TRANSPARENT: "Transparent",
+  EXPORTDIALOG_BACKGROUND_USE_COLOR: "Use scene color",
+  // Selection
+  EXPORTDIALOG_SELECTED_ELEMENTS: "Export",
+  EXPORTDIALOG_SELECTED_ALL: "Entire scene",
+  EXPORTDIALOG_SELECTED_SELECTED: "Selection only",
+  // Export options
+  EXPORTDIALOG_EXPORT_SETTINGS: "Options",
+  EXPORTDIALOG_EMBED_SCENE: "Include scene data?",
+  EXPORTDIALOG_EMBED_YES: "Yes",
+  EXPORTDIALOG_EMBED_NO: "No",
+  EXPORTDIALOG_SAVE_LOCATION: "Save to",
+  EXPORTDIALOG_SAVE_VAULT: "Vault",
+  EXPORTDIALOG_SAVE_OUTSIDE: "File system",
+  // PDF settings
+  EXPORTDIALOG_PDF_SETTINGS: "PDF",
+  EXPORTDIALOG_PAGE_SIZE: "Size",
+  EXPORTDIALOG_PAGE_ORIENTATION: "Orientation",
+  EXPORTDIALOG_ORIENTATION_PORTRAIT: "Portrait",
+  EXPORTDIALOG_ORIENTATION_LANDSCAPE: "Landscape",
+  // Buttons
+  EXPORTDIALOG_PNGTOFILE : "PNT to File",
+  EXPORTDIALOG_SVGTOFILE : "SVG to File",
+  EXPORTDIALOG_EXCALIDRAW: "Excalidraw",
+  EXPORTDIALOG_PNGTOCLIPBOARD : "PNG to Clipboard",
+  EXPORTDIALOG_PDF: "Export PDF",
+  EXPORTDIALOG_PDFTOVAULT: "Save PDF to Vault",
 };
