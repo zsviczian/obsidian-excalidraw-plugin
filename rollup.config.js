@@ -11,6 +11,7 @@ import postprocess from '@zsviczian/rollup-plugin-postprocess';
 import cssnano from 'cssnano';
 import jsesc from 'jsesc';
 import { minify } from 'uglify-js';
+import json from '@rollup/plugin-json';
 
 // Load environment variables
 import dotenv from 'dotenv';
@@ -130,6 +131,7 @@ const BASE_CONFIG = {
 
 const getRollupPlugins = (tsconfig, ...plugins) => [
   typescript2(tsconfig),
+  json(),
   replace({
     preventAssignment: true,
     "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),

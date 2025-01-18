@@ -6,6 +6,7 @@ import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import ExcalidrawPlugin from "src/core/main";
 import { fragWithHTML, getExportPadding, getExportTheme, getPNGScale, getWithBackground, shouldEmbedScene } from "src/utils/utils";
+import { PageOrientation, PageSize, STANDARD_PAGE_SIZES } from "src/utils/exportUtils";
 
 export class ExportDialog extends Modal {
   private ea: ExcalidrawAutomate;
@@ -27,11 +28,17 @@ export class ExportDialog extends Modal {
   public embedScene: boolean;
   public exportSelectedOnly: boolean;
   public saveToVault: boolean;
+  public pageSize: PageSize = "A4";
+  public pageOrientation: PageOrientation = "portrait";
+  private activeTab: "image" | "pdf" = "image";
+  private contentContainer: HTMLDivElement;
+  private buttonContainer: HTMLDivElement;
 
   constructor(
     private plugin: ExcalidrawPlugin,
     private view: ExcalidrawView,
     private file: TFile,
+    
   ) {
     super(plugin.app);
     this.ea = getEA(this.view);
@@ -73,11 +80,81 @@ export class ExportDialog extends Modal {
   }
 
   async createForm() {
-    let scaleSetting:Setting;
-    let paddingSetting: Setting;
+    if(DEVICE.isDesktop) {
+      // Create tab container
+      const tabContainer = this.contentEl.createDiv("nav-buttons-container");
+      const imageTab = tabContainer.createEl("button", { 
+        text: "Image",
+        cls: `nav-button ${this.activeTab === "image" ? "is-active" : ""}`
+      });
 
-    this.contentEl.createEl("h1",{text: "Image settings"});
-    this.contentEl.createEl("p",{text: "Transparency only affects PNGs. Excalidraw files can only be exported outside the Vault. PNGs copied to clipboard may not include the scene."})
+      
+      const pdfTab = tabContainer.createEl("button", { 
+        text: "PDF",
+        cls: `nav-button ${this.activeTab === "pdf" ? "is-active" : ""}`
+      });
+
+      // Tab click handlers
+      imageTab.onclick = () => {
+        this.activeTab = "image";
+        imageTab.addClass("is-active");
+        pdfTab.removeClass("is-active");
+        this.renderContent();
+      };
+
+      pdfTab.onclick = () => {
+        this.activeTab = "pdf";
+        pdfTab.addClass("is-active");
+        imageTab.removeClass("is-active");
+        this.renderContent();
+      };
+    }
+
+    // Create content container
+    this.contentContainer = this.contentEl.createDiv();
+    this.buttonContainer = this.contentEl.createDiv({cls: "excalidraw-prompt-buttons-div"});
+
+    this.renderContent();
+  }
+
+  private createSaveSettingsDropdown() {
+    new Setting(this.contentContainer)
+      .setName("Save settings?")
+      .addDropdown(dropdown => 
+        dropdown
+          .addOption("save", "Save these settings as the preset for this image")
+          .addOption("one-time", "These are one-time settings")
+          .setValue(this.saveSettings ? "save" : "one-time")
+          .onChange(value => {
+            this.saveSettings = value === "save";
+          })
+      );
+  }
+
+  private renderContent() {
+    this.contentContainer.empty();
+    this.buttonContainer.empty();
+
+    // Always show save settings dropdown
+    this.createSaveSettingsDropdown();
+
+    if (this.activeTab === "image") {
+      this.createImageSettings();
+      this.createExportSettings();
+      this.createImageButtons();
+    } else {
+      this.createImageSettings();
+      this.createPDFSettings();
+      this.createPDFButton();
+    }
+  }
+  
+  private createImageSettings() {
+    let scaleSetting:Setting;
+    let paddingSetting: Setting;   
+
+    this.contentContainer.createEl("h1",{text: "Image settings"});
+    this.contentContainer.createEl("p",{text: "Transparency only affects PNGs. Excalidraw files can only be exported outside the Vault. PNGs copied to clipboard may not include the scene."})
 
     const size = ():DocumentFragment => {
       const width = Math.round(this.scale*this.boundingBox.width + this.padding*2);
@@ -89,7 +166,7 @@ export class ExportDialog extends Modal {
       return fragWithHTML(`Current image padding is <b>${this.padding}</b>`);
     }
 
-    paddingSetting = new Setting(this.contentEl)
+    paddingSetting = new Setting(this.contentContainer)
       .setName("Image padding")
       .setDesc(padding())
       .addSlider(slider => {
@@ -103,8 +180,8 @@ export class ExportDialog extends Modal {
           })
         })
     
-    scaleSetting = new Setting(this.contentEl)
-      .setName("PNG Scale")
+    scaleSetting = new Setting(this.contentContainer)
+      .setName("Scale")
       .setDesc(size())
       .addSlider(slider => 
         slider
@@ -116,7 +193,7 @@ export class ExportDialog extends Modal {
           })
       )
   
-    new Setting(this.contentEl)
+    new Setting(this.contentContainer)
       .setName("Export theme")
       .addDropdown(dropdown => 
         dropdown
@@ -128,8 +205,8 @@ export class ExportDialog extends Modal {
           })
       )
 
-    new Setting(this.contentEl)
-      .setName("Background color")
+    new Setting(this.contentContainer)
+      .setName("Use scene background color")
       .addDropdown(dropdown => 
         dropdown
           .addOption("transparent","Transparent")
@@ -139,22 +216,24 @@ export class ExportDialog extends Modal {
             this.transparent = value === "transparent";
           })
       )
-    
-    new Setting(this.contentEl)
-      .setName("Save or one-time settings?")
+
+    this.selectedOnlySetting = new Setting(this.contentContainer)
+      .setName("The scene or just selected elements?")
       .addDropdown(dropdown => 
         dropdown
-          .addOption("save","Save these settings as the preset for this image")
-          .addOption("one-time","These are one-time settings")
-          .setValue(this.saveSettings?"save":"one-time")
+          .addOption("all","Entire scene")
+          .addOption("selected","Selected elements")
+          .setValue(this.exportSelectedOnly?"selected":"all")
           .onChange(value => {
-            this.saveSettings = value === "save";
+            this.exportSelectedOnly = value === "selected";
           })
-      )
+      );
+  }
 
-    this.contentEl.createEl("h1",{text:"Export settings"});
+  private createExportSettings() {
+    this.contentContainer.createEl("h1",{text:"Export settings"});
 
-    new Setting(this.contentEl)
+    new Setting(this.contentContainer)
       .setName("Embed the Excalidraw scene in the exported file?")
       .addDropdown(dropdown => 
         dropdown
@@ -167,7 +246,7 @@ export class ExportDialog extends Modal {
       )
 
     if(DEVICE.isDesktop) {
-      new Setting(this.contentEl)
+      new Setting(this.contentContainer)
       .setName("Where to save the image?")
       .addDropdown(dropdown => 
         dropdown
@@ -179,46 +258,87 @@ export class ExportDialog extends Modal {
           })
       )
     }
+  }
 
-    this.selectedOnlySetting = new Setting(this.contentEl)
-      .setName("Export entire scene or just selected elements?")
+  private createPDFSettings() {
+    if (!DEVICE.isDesktop) return;
+
+    this.contentContainer.createEl("h1", { text: "PDF settings" });
+
+    const pageSizeOptions: Record<string, string> = Object.keys(STANDARD_PAGE_SIZES)
+      .reduce((acc, key) => ({
+        ...acc,
+        [key]: key
+      }), {});
+
+    new Setting(this.contentContainer)
+      .setName("Page size")
       .addDropdown(dropdown => 
         dropdown
-          .addOption("all","Export entire scene")
-          .addOption("selected","Export selected elements")
-          .setValue(this.exportSelectedOnly?"selected":"all")
+          .addOptions(pageSizeOptions)
+          .setValue(this.pageSize)
           .onChange(value => {
-            this.exportSelectedOnly = value === "selected";
+            this.pageSize = value as PageSize;
           })
-      )
+      );
 
+    new Setting(this.contentContainer)
+      .setName("Page orientation")
+      .addDropdown(dropdown => 
+        dropdown
+          .addOptions({
+            "portrait": "Portrait",
+            "landscape": "Landscape"
+          })
+          .setValue(this.pageOrientation)
+          .onChange(value => {
+            this.pageOrientation = value as PageOrientation;
+          })
+      );
+  }
 
-    const div = this.contentEl.createDiv({cls: "excalidraw-prompt-buttons-div"});
-    const bPNG = div.createEl("button", { text: "PNG to File", cls: "excalidraw-prompt-button"});
+  private createImageButtons() {
+    const bPNG = this.buttonContainer.createEl("button", { text: "PNG > File", cls: "excalidraw-prompt-button"});
     bPNG.onclick = () => {
       this.saveToVault 
         ? this.view.savePNG(this.view.getScene(this.hasSelectedElements && this.exportSelectedOnly))
         : this.view.exportPNG(this.embedScene,this.hasSelectedElements && this.exportSelectedOnly);
       this.close();
     };
-    const bSVG = div.createEl("button", { text: "SVG to File", cls: "excalidraw-prompt-button" });
+    const bSVG = this.buttonContainer.createEl("button", { text: "SVG > File", cls: "excalidraw-prompt-button" });
     bSVG.onclick = () => {
       this.saveToVault
         ? this.view.saveSVG(this.view.getScene(this.hasSelectedElements && this.exportSelectedOnly))
         : this.view.exportSVG(this.embedScene,this.hasSelectedElements && this.exportSelectedOnly);
       this.close();
     };
-    const bExcalidraw = div.createEl("button", { text: "Excalidraw", cls: "excalidraw-prompt-button" });
+    const bExcalidraw = this.buttonContainer.createEl("button", { text: "Excalidraw", cls: "excalidraw-prompt-button" });
     bExcalidraw.onclick = () => {
       this.view.exportExcalidraw(this.hasSelectedElements && this.exportSelectedOnly);
       this.close();
     };
     if(DEVICE.isDesktop) {
-      const bPNGClipboard = div.createEl("button", { text: "PNG to Clipboard", cls: "excalidraw-prompt-button" });
+      const bPNGClipboard = this.buttonContainer.createEl("button", { text: "PNG > Clipboard", cls: "excalidraw-prompt-button" });
       bPNGClipboard.onclick = () => {
         this.view.exportPNGToClipboard(this.embedScene, this.hasSelectedElements && this.exportSelectedOnly);
         this.close();
       };
     }
+  }
+
+  private createPDFButton() {
+    if (!DEVICE.isDesktop) return;
+    const bPDF = this.buttonContainer.createEl("button", { 
+      text: "PDF", 
+      cls: "excalidraw-prompt-button" 
+    });
+    bPDF.onclick = () => {
+      this.view.exportPDF(
+        this.hasSelectedElements && this.exportSelectedOnly,
+        this.pageSize,
+        this.pageOrientation
+      );
+      this.close();
+    };
   }
 }

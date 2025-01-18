@@ -76,6 +76,7 @@ import {
   getExcalidrawMarkdownHeaderSection,
 } from "../shared/ExcalidrawData";
 import {
+  arrayBufferToBase64,
   checkAndCreateFolder,
   download,
   getDataURLFromURL,
@@ -149,6 +150,7 @@ import { getPDFCropRect } from "../utils/PDFUtils";
 import { Position, ViewSemaphores } from "../types/excalidrawViewTypes";
 import { DropManager } from "./managers/DropManager";
 import { ImageInfo } from "src/types/excalidrawAutomateTypes";
+import { exportToPDF, getPageDimensions, PageOrientation, PageSize } from "src/utils/exportUtils";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -552,6 +554,52 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       null,
       svgToBase64(svg.outerHTML),
       `${this.file.basename}.svg`,
+    );
+  }
+
+  public async exportPDF(
+    selectedOnly?: boolean,
+    pageSize: PageSize = "A4",
+    orientation: PageOrientation = "portrait"
+  ): Promise<void> {
+    if (!this.excalidrawAPI || !this.file) {
+      return;
+    }
+  
+    const svg = await this.svg(
+      this.getScene(selectedOnly),
+      undefined,
+      false,
+      true
+    );
+  
+    if (!svg) {
+      return;
+    }
+  
+    const pdfArrayBuffer = await exportToPDF({
+      SVG: [svg],
+      scale: { fitToPage: true },
+      pageProps: {
+        dimensions: getPageDimensions(pageSize, orientation),
+        backgroundColor: this.exportDialog.transparent ? undefined : "#ffffff",
+        margin: {
+          top: 20,
+          left: 20,
+          right: 20,
+          bottom: 20
+        }
+      }
+    });
+  
+    if (!pdfArrayBuffer) {
+      return;
+    }
+  
+    download(
+      "data:application/pdf;base64",
+      arrayBufferToBase64(pdfArrayBuffer),
+      `${this.file.basename}.pdf`
     );
   }
 

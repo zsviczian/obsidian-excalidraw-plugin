@@ -290,6 +290,17 @@ export const blobToBase64 = async (blob: Blob): Promise<string> => {
   return btoa(binary);
 }
 
+export const arrayBufferToBase64 = (arrayBuffer: ArrayBuffer): string => {
+  const bytes = new Uint8Array(arrayBuffer);
+  let binary = '';
+  
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+
+  return btoa(binary);
+};
+
 export const getPDFDoc = async (f: TFile): Promise<any> => {
   if(typeof window.pdfjsLib === "undefined") await loadPdfJs();
   return await window.pdfjsLib.getDocument(EXCALIDRAW_PLUGIN.app.vault.getResourcePath(f)).promise;

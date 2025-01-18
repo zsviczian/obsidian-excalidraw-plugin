@@ -40,7 +40,8 @@
     "react-dom": "^18.2.0",
     "roughjs": "^4.5.2",
     "woff2sfnt-sfnt2woff": "^1.0.0",
-    "es6-promise-pool": "2.5.0"
+    "es6-promise-pool": "2.5.0",
+    "@cantoo/pdf-lib": "^2.2.4"
   },
   "devDependencies": {
     "jsesc": "^3.0.2",
@@ -59,6 +60,7 @@
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-replace": "^5.0.2",
     "@rollup/plugin-typescript": "^12.1.2",
+    "@rollup/plugin-json": "^6.1.0",
     "@types/chroma-js": "^2.4.0",
     "@types/js-beautify": "^1.14.0",
     "@types/js-yaml": "^4.0.9",
