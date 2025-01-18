@@ -290,6 +290,17 @@ export const blobToBase64 = async (blob: Blob): Promise<string> => {
   return btoa(binary);
 }
 
+export const arrayBufferToBase64 = (arrayBuffer: ArrayBuffer): string => {
+  const bytes = new Uint8Array(arrayBuffer);
+  let binary = '';
+  
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+
+  return btoa(binary);
+};
+
 export const getPDFDoc = async (f: TFile): Promise<any> => {
   if(typeof window.pdfjsLib === "undefined") await loadPdfJs();
   return await window.pdfjsLib.getDocument(EXCALIDRAW_PLUGIN.app.vault.getResourcePath(f)).promise;
@@ -481,4 +492,23 @@ export const getExcalidrawEmbeddedFilesFiletree = (sourceFile: TFile, plugin: Ex
 export const hasExcalidrawEmbeddedImagesTreeChanged = (sourceFile: TFile, mtime:number, plugin: ExcalidrawPlugin):boolean => {
   const fileList = getExcalidrawEmbeddedFilesFiletree(sourceFile, plugin);
   return fileList.some(f=>f.stat.mtime > mtime);
+}
+
+export async function createOrOverwriteFile(app: App, path: string, content: string | ArrayBuffer): Promise<TFile> {
+  const file = app.vault.getAbstractFileByPath(normalizePath(path));
+  if(content instanceof ArrayBuffer) {
+    if(file && file instanceof TFile) {
+      await app.vault.modifyBinary(file, content);
+      return file;
+    } else {
+      return await app.vault.createBinary(path, content);
+    }
+  }
+
+  if (file && file instanceof TFile) {
+    await app.vault.modify(file, content);
+    return file;
+  } else {
+    return await app.vault.create(path, content);
+  }
 }

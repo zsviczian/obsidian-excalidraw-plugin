@@ -225,6 +225,62 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "createPDF",
+    code: "async createPDF({SVG: SVGSVGElement[], scale?: PDFExportScale, pageProps?: PDFPageProperties}): Promise<ArrayBuffer>",
+    desc: "",
+    after: "Creates a PDF from the provided SVG elements with specified scaling and page properties.\n" +
+        "\n" +
+        "@param {Object} params - The parameters for creating the PDF.\n" +
+        "@param {SVGSVGElement[]} params.SVG - An array of SVG elements to be included in the PDF. If multiple SVGs are provided, each will be added to a new page.\n" +
+        "@param {PDFExportScale} [params.scale={ fitToPage: true, zoom: 1 }] - The scaling options for the SVG elements.\n" +
+        "@param {PDFPageProperties} [params.pageProps] - The properties for the PDF pages.\n" +
+        "@returns {Promise<ArrayBuffer>} - A promise that resolves to an ArrayBuffer containing the PDF data.\n" +
+        "\n" +
+        "@typedef {Object} PDFExportScale\n" +
+        "@property {boolean} fitToPage - Whether to fit the SVG to the page.\n" +
+        "@property {number} [zoom=1] - The zoom level for the SVG. Used only if fitToPage is false. If the SVG does not fit the page, it will be tiled over multiple pages.\n" +
+        "\n" +
+        "@typedef {Object} PDFPageProperties\n" +
+        "@property {{width: number, height: number}} [dimensions] - The dimensions of the PDF pages. Use getPageDimensions to get standard page sizes.\n" +
+        "@property {string} [backgroundColor] - The background color of the PDF pages.\n" +
+        "@property {PDFMargin} margin - The margins of the PDF pages.\n" +
+        "@property {PDFPageAlignment} alignment - The alignment of the SVG on the PDF pages.\n" +
+        "\n" +
+        "@example\n" +
+        "const pdfData = await createPDF({\n" +
+        "  SVG: [svgElement1, svgElement2],\n" +
+        "  scale: { fitToPage: true },\n" +
+        "  pageProps: {\n" +
+        "    dimensions: { width: 595.28, height: 841.89 },\n" +
+        "    backgroundColor: \"#ffffff\",\n" +
+        "    margin: { left: 20, right: 20, top: 20, bottom: 20 },\n" +
+        "    alignment: \"center\"\n" +
+        "  }\n" +
+        "});",
+  },
+  {
+    field: "getPagePDFDimensions",
+    code: "getPagePDFDimensions(pageSize: PageSize, orientation: PageOrientation): PageDimensions",
+    desc: "Returns the dimensions of a standard page size in points (pt).\n" +
+          "\n" +
+          "@param {PageSize} pageSize - The standard page size. Possible values are \"A0\", \"A1\", \"A2\", \"A3\", \"A4\", \"A5\", \"Letter\", \"Legal\", \"Tabloid\".\n" +
+          "@param {PageOrientation} orientation - The orientation of the page. Possible values are \"portrait\" and \"landscape\".\n" +
+          "@returns {PageDimensions} - An object containing the width and height of the page in points (pt).\n" +
+          "\n" +
+          "@typedef {Object} PageDimensions\n" +
+          "@property {number} width - The width of the page in points (pt).\n" +
+          "@property {number} height - The height of the page in points (pt).\n" +
+          "\n" +
+          "@typedef {\"A0\" | \"A1\" | \"A2\" | \"A3\" | \"A4\" | \"A5\" | \"Letter\" | \"Legal\" | \"Tabloid\"} PageSize\n" +
+          "\n" +
+          "@typedef {\"portrait\" | \"landscape\"} PageOrientation\n" +
+          "\n" +
+          "@example\n" +
+          "const dimensions = getPDFPageDimensions(\"A4\", \"portrait\");\n" +
+          "console.log(dimensions); // { width: 595.28, height: 841.89 }",
+    after: "",
+  },
+  {
     field: "createPNG",
     code: "async createPNG(templatePath?: string, scale?: number, exportSettings?: ExportSettings, loader?: EmbeddedFilesLoader, theme?: string,padding?: number): Promise<any>;",
     desc: "Create an image based on the objects in ea.getElements(). The elements in ea will be merged with the elements from the provided template file - if any. Use ExcalidrawAutomate.getExportSettings(boolean,boolean) to create an ExportSettings object.\nUse ExcalidrawAutomate.getEmbeddedFilesLoader(boolean?) to create an EmbeddedFilesLoader object.",

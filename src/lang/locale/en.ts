@@ -386,13 +386,14 @@ FILENAME_HEAD: "Filename",
     "This setting will not affect the display of the drawing when you are in Excalidraw mode or when you embed the drawing into a markdown document or when rendering hover preview.<br><ul>" +
     "<li>See other related setting for <a href='#"+TAG_PDFEXPORT+"'>PDF Export</a> under 'Embedding and Exporting' further below.</li></ul><br>" +
     "You must close the active excalidraw/markdown file and reopen it for this change to take effect.",
-  SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME: "Render the file as an image when exporting an Excalidraw file to PDF",
+  SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME: "Render Excalidraw as Image in Obsidian PDF Export",
   SHOW_DRAWING_OR_MD_IN_EXPORTPDF_DESC:
-    "This setting controls the behavior of Excalidraw when exporting an Excalidraw file to PDF in markdown view mode using Obsidian's <b>Export to PDF</b> feature.<br>" +
-    "<ul><li>When <b>enabled</b> the PDF will show the Excalidraw drawing only;</li>" +
-    "<li>When <b>disabled</b> the PDF will show the markdown side of the document.</li></ul>" +
-    "See the other related setting for <a href='#"+TAG_MDREADINGMODE+"'>Markdown Reading Mode</a> under 'Appearnace and Behavior' further above.<br>" +
-    "⚠️ Note, you must close the active excalidraw/markdown file and reopen for this change to take effect. ⚠️",
+    "This setting controls how Excalidraw files are exported to PDF using Obsidian's built-in <b>Export to PDF</b> feature.<br>" +
+    "<ul><li><b>Enabled:</b> The PDF will include the Excalidraw drawing as an image.</li>" +
+    "<li><b>Disabled:</b> The PDF will include the markdown content as text.</li></ul>" +
+    "Note: This setting does not affect the PDF export feature within Excalidraw itself.<br>" +
+    "See the other related setting for <a href='#"+TAG_MDREADINGMODE+"'>Markdown Reading Mode</a> under 'Appearance and Behavior' further above.<br>" +
+    "⚠️ You must close and reopen the Excalidraw/markdown file for changes to take effect. ⚠️",
   HOTKEY_OVERRIDE_HEAD: "Hotkey overrides",
   HOTKEY_OVERRIDE_DESC: `Some of the Excalidraw hotkeys such as <code>${labelCTRL()}+Enter</code> to edit text or <code>${labelCTRL()}+K</code> to create an element link ` +
     "conflict with Obsidian hotkey settings. The hotkey combinations you add below will override Obsidian's hotkey settings while useing Excalidraw, thus " +
@@ -661,6 +662,7 @@ FILENAME_HEAD: "Filename",
   EXPORT_EMBED_SCENE_DESC:
     "Embed Excalidraw scene in exported image. Can be overridden at a file level by adding the <code>excalidraw-export-embed-scene: true/false<code> frontmatter key. " +
     "The setting only takes effect the next time you (re)open drawings.",
+  PDF_EXPORT_SETTINGS: "PDF Export Settings",
   EXPORT_HEAD: "Auto-export Settings",
   EXPORT_SYNC_NAME:
     "Keep the .SVG and/or .PNG filenames in sync with the drawing file",
@@ -1006,4 +1008,75 @@ FILENAME_HEAD: "Filename",
   LINK_CLICK_POPOUT: "Open in a popout window",
   LINK_CLICK_NEW_TAB: "Open in a new tab",
   LINK_CLICK_MD_PROPS: "Show the Markdown image-properties dialog (only relevant if you have embedded a markdown document as an image)",
+
+  //ExportDialog
+  // Dialog and tabs
+  EXPORTDIALOG_TITLE: "Export Drawing",
+  EXPORTDIALOG_TAB_IMAGE: "Image",
+  EXPORTDIALOG_TAB_PDF: "PDF",
+  // Settings persistence
+  EXPORTDIALOG_SAVE_SETTINGS: "Save image settings to file doc.properties?",
+  EXPORTDIALOG_SAVE_SETTINGS_SAVE: "Save as preset",
+  EXPORTDIALOG_SAVE_SETTINGS_ONETIME: "One-time use",
+  // Image settings
+  EXPORTDIALOG_IMAGE_SETTINGS: "Image",
+  EXPORTDIALOG_IMAGE_DESC: "PNG supports transparency. External files can include Excalidraw scene data.",
+  EXPORTDIALOG_PADDING: "Padding",
+  EXPORTDIALOG_SCALE: "Scale",
+  EXPORTDIALOG_CURRENT_PADDING: "Current padding:",
+  EXPORTDIALOG_SIZE_DESC: "Scale affects output size",
+  EXPORTDIALOG_SCALE_VALUE: "Scale:",
+  EXPORTDIALOG_IMAGE_SIZE: "Size:",
+  // Theme and background
+  EXPORTDIALOG_EXPORT_THEME: "Theme",
+  EXPORTDIALOG_THEME_LIGHT: "Light",
+  EXPORTDIALOG_THEME_DARK: "Dark",
+  EXPORTDIALOG_BACKGROUND: "Background",
+  EXPORTDIALOG_BACKGROUND_TRANSPARENT: "Transparent",
+  EXPORTDIALOG_BACKGROUND_USE_COLOR: "Use scene color",
+  // Selection
+  EXPORTDIALOG_SELECTED_ELEMENTS: "Export",
+  EXPORTDIALOG_SELECTED_ALL: "Entire scene",
+  EXPORTDIALOG_SELECTED_SELECTED: "Selection only",
+  // Export options
+  EXPORTDIALOG_EMBED_SCENE: "Include scene data?",
+  EXPORTDIALOG_EMBED_YES: "Yes",
+  EXPORTDIALOG_EMBED_NO: "No",
+  // PDF settings
+  EXPORTDIALOG_PDF_SETTINGS: "PDF",
+  EXPORTDIALOG_PAGE_SIZE: "Size",
+  EXPORTDIALOG_PAGE_ORIENTATION: "Orientation",
+  EXPORTDIALOG_ORIENTATION_PORTRAIT: "Portrait",
+  EXPORTDIALOG_ORIENTATION_LANDSCAPE: "Landscape",
+  EXPORTDIALOG_PDF_FIT_TO_PAGE: "Page Fitting",
+  EXPORTDIALOG_PDF_FIT_OPTION: "Fit to page",
+  EXPORTDIALOG_PDF_SCALE_OPTION: "Use image scale (may span multiple pages)",
+  EXPORTDIALOG_PDF_PAPER_COLOR: "Paper Color",
+  EXPORTDIALOG_PDF_PAPER_WHITE: "White",
+  EXPORTDIALOG_PDF_PAPER_SCENE: "Use scene color",
+  EXPORTDIALOG_PDF_PAPER_CUSTOM: "Custom color",
+  EXPORTDIALOG_PDF_ALIGNMENT: "Position on Page",
+  EXPORTDIALOG_PDF_ALIGN_CENTER: "Center",
+  EXPORTDIALOG_PDF_ALIGN_TOP_LEFT: "Top Left",
+  EXPORTDIALOG_PDF_ALIGN_TOP_CENTER: "Top Center", 
+  EXPORTDIALOG_PDF_ALIGN_TOP_RIGHT: "Top Right",
+  EXPORTDIALOG_PDF_ALIGN_BOTTOM_LEFT: "Bottom Left",
+  EXPORTDIALOG_PDF_ALIGN_BOTTOM_CENTER: "Bottom Center",
+  EXPORTDIALOG_PDF_ALIGN_BOTTOM_RIGHT: "Bottom Right",
+  EXPORTDIALOG_PDF_MARGIN: "Margin",
+  EXPORTDIALOG_PDF_MARGIN_NONE: "None",
+  EXPORTDIALOG_PDF_MARGIN_TINY: "Small",
+  EXPORTDIALOG_PDF_MARGIN_NORMAL: "Normal",
+  EXPORTDIALOG_SAVE_PDF_SETTINGS: "Save PDF settings",
+  EXPORTDIALOG_SAVE_CONFIRMATION: "PDF config saved to plugin settings as default",
+  // Buttons
+  EXPORTDIALOG_PNGTOFILE : "Export PNG",
+  EXPORTDIALOG_SVGTOFILE : "Export SVG",
+  EXPORTDIALOG_PNGTOVAULT : "PNG to Vault",
+  EXPORTDIALOG_SVGTOVAULT : "SVG to Vault",
+  EXPORTDIALOG_EXCALIDRAW: "Excalidraw",
+  EXPORTDIALOG_PNGTOCLIPBOARD : "PNG to Clipboard",
+  EXPORTDIALOG_SVGTOCLIPBOARD : "SVG to Clipboard",
+  EXPORTDIALOG_PDF: "Export PDF",
+  EXPORTDIALOG_PDFTOVAULT: "PDF to Vault",
 };

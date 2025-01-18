@@ -80,11 +80,23 @@ button.ToolIcon_type_button[title="Export"] {
   width: 9em;
 }
 
+.excalidraw-export-button {
+  width: 9em;
+  margin-left: 10px;
+}
+
 .excalidraw-prompt-buttons-div {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
   justify-content: space-evenly;
+}
+
+.excalidraw-export-buttons-div {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: right;
 }
 
 li[data-testid] {
@@ -671,4 +683,22 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 .excalidraw-setting-desc:hover {
   background-color: var(--background-modifier-hover);
   color: var(--text-accent);
+}
+
+.excalidraw-release .nav-buttons-container {
+  display: flex;
+  margin-bottom: 20px;
+  border-bottom: 2px solid var(--background-modifier-border);
+}
+
+.excalidraw-release .nav-button {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.excalidraw-release .nav-button.is-active {
+  border-bottom: 2px solid var(--interactive-accent);
+  margin-bottom: -2px;
 }
