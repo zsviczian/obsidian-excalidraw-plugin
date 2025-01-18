@@ -5,7 +5,7 @@ import { getEA } from 'src/core';
 export type PDFPageAlignment = "center" | "top-left" | "top-center" | "top-right" | "bottom-left" | "bottom-center" | "bottom-right";
 export type PDFPageMarginString = "none" | "tiny" | "normal";
 
-interface PDFExportScale {
+export interface PDFExportScale {
   fitToPage: boolean;
   zoom?: number;
 }
@@ -17,14 +17,14 @@ export interface PDFMargin {
   bottom: number;
 }
 
-interface PDFPageProperties {
+export interface PDFPageProperties {
   dimensions?: {width: number; height: number};
   backgroundColor?: string;
   margin: PDFMargin;
   alignment: PDFPageAlignment;
 }
 
-interface PageDimensions {
+export interface PageDimensions {
   width: number;
   height: number;
 }

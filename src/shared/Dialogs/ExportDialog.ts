@@ -43,8 +43,6 @@ export class ExportDialog extends Modal {
   public customPaperColor: string = "#ffffff";
   public alignment: PDFPageAlignment = "center";
   public margin: PDFPageMarginString = "normal";
-  private pngButton: HTMLButtonElement;
-  private svgButton: HTMLButtonElement;
 
   constructor(
     private plugin: ExcalidrawPlugin,

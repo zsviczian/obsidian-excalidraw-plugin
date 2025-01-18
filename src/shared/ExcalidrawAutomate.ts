@@ -83,6 +83,7 @@ import { ExcalidrawLib } from "../types/excalidrawLib";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/types";
 import { AddImageOptions, ImageInfo, SVGColorInfo } from "src/types/excalidrawAutomateTypes";
 import { _measureText, cloneElement, createPNG, createSVG, errorMessage, filterColorMap, getEmbeddedFileForImageElment, getFontFamily, getLineBox, getTemplate, isColorStringTransparent, isSVGColorInfo, mergeColorMapIntoSVGColorInfo, normalizeLinePoints, repositionElementsToCursor, svgColorInfoToColorMap, updateOrAddSVGColorInfo, verifyMinimumPluginVersion } from "src/utils/excalidrawAutomateUtils";
+import { exportToPDF, getMarginValue, getPageDimensions, PageDimensions, PageOrientation, PageSize, PDFExportScale, PDFPageProperties } from "src/utils/exportUtils";
 
 extendPlugins([
   HarmonyPlugin,
@@ -929,6 +930,75 @@ export class ExcalidrawAutomate {
       );
     }
   };
+
+  /**
+   * Returns the dimensions of a standard page size in points (pt).
+   *
+   * @param {PageSize} pageSize - The standard page size. Possible values are "A0", "A1", "A2", "A3", "A4", "A5", "Letter", "Legal", "Tabloid".
+   * @param {PageOrientation} orientation - The orientation of the page. Possible values are "portrait" and "landscape".
+   * @returns {PageDimensions} - An object containing the width and height of the page in points (pt).
+   *
+   * @typedef {Object} PageDimensions
+   * @property {number} width - The width of the page in points (pt).
+   * @property {number} height - The height of the page in points (pt).
+   *
+   * @example
+   * const dimensions = getPageDimensions("A4", "portrait");
+   * console.log(dimensions); // { width: 595.28, height: 841.89 }
+  */
+  getPagePDFDimensions(pageSize: PageSize, orientation: PageOrientation): PageDimensions {
+    return getPageDimensions(pageSize, orientation);
+  }
+
+  /**
+   * Creates a PDF from the provided SVG elements with specified scaling and page properties.
+   *
+   * @param {Object} params - The parameters for creating the PDF.
+   * @param {SVGSVGElement[]} params.SVG - An array of SVG elements to be included in the PDF.
+   * @param {PDFExportScale} [params.scale={ fitToPage: true, zoom: 1 }] - The scaling options for the SVG elements.
+   * @param {PDFPageProperties} [params.pageProps] - The properties for the PDF pages.
+   * @returns {Promise<ArrayBuffer>} - A promise that resolves to an ArrayBuffer containing the PDF data.
+   *
+   * @example
+   * const pdfData = await createToPDF({
+   *   SVG: [svgElement1, svgElement2],
+   *   scale: { fitToPage: true },
+   *   pageProps: {
+   *     dimensions: { width: 595.28, height: 841.89 },
+   *     backgroundColor: "#ffffff",
+   *     margin: { left: 20, right: 20, top: 20, bottom: 20 },
+   *     alignment: "center"
+   *   }
+   * });
+  */
+  async createPDF({
+    SVG,
+    scale = { fitToPage: true, zoom: 1 },
+    pageProps,
+  }: {
+    SVG: SVGSVGElement[];
+    scale?: PDFExportScale;
+    pageProps?: PDFPageProperties;
+  }): Promise<ArrayBuffer> {
+    if(!pageProps) {
+      pageProps = {
+        alignment: this.plugin.settings.pdfSettings.alignment,
+        margin: getMarginValue(this.plugin.settings.pdfSettings.margin),
+      };
+    }
+
+    if(!pageProps.dimensions) {
+      pageProps.dimensions = getPageDimensions(
+        this.plugin.settings.pdfSettings.pageSize,
+        this.plugin.settings.pdfSettings.pageOrientation
+      )
+    }
+    if(!pageProps.backgroundColor) {
+      pageProps.backgroundColor = "#ffffff";
+    }
+    
+    return await exportToPDF({SVG, scale, pageProps});
+  }
 
   /**
    * Creates an SVG image from the ExcalidrawAutomate elements and the template provided.
