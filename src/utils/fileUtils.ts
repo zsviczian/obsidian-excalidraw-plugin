@@ -493,3 +493,22 @@ export const hasExcalidrawEmbeddedImagesTreeChanged = (sourceFile: TFile, mtime:
   const fileList = getExcalidrawEmbeddedFilesFiletree(sourceFile, plugin);
   return fileList.some(f=>f.stat.mtime > mtime);
 }
+
+export async function createOrOverwriteFile(app: App, path: string, content: string | ArrayBuffer): Promise<TFile> {
+  const file = app.vault.getAbstractFileByPath(normalizePath(path));
+  if(content instanceof ArrayBuffer) {
+    if(file && file instanceof TFile) {
+      await app.vault.modifyBinary(file, content);
+      return file;
+    } else {
+      return await app.vault.createBinary(path, content);
+    }
+  }
+
+  if (file && file instanceof TFile) {
+    await app.vault.modify(file, content);
+    return file;
+  } else {
+    return await app.vault.create(path, content);
+  }
+}

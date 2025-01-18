@@ -78,6 +78,7 @@ import {
 import {
   arrayBufferToBase64,
   checkAndCreateFolder,
+  createOrOverwriteFile,
   download,
   getDataURLFromURL,
   getIMGFilename,
@@ -150,7 +151,8 @@ import { getPDFCropRect } from "../utils/PDFUtils";
 import { Position, ViewSemaphores } from "../types/excalidrawViewTypes";
 import { DropManager } from "./managers/DropManager";
 import { ImageInfo } from "src/types/excalidrawAutomateTypes";
-import { exportToPDF, getPageDimensions, PageOrientation, PageSize } from "src/utils/exportUtils";
+import { exportToPDF, getMarginValue, getPageDimensions, PageOrientation, PageSize } from "src/utils/exportUtils";
+import { create } from "domain";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -517,19 +519,13 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
 
     const exportImage = async (filepath:string, theme?:string) => {
-      const file = this.app.vault.getAbstractFileByPath(normalizePath(filepath));
-
       const svg = await this.svg(scene,theme, embedScene, true);
       if (!svg) {
         return;
       }
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2026
       const svgString = svg.outerHTML;
-      if (file && file instanceof TFile) {
-        await this.app.vault.modify(file, svgString);
-      } else {
-        await this.app.vault.create(filepath, svgString);
-      }
+      await createOrOverwriteFile(this.app, filepath, svgString);
     }
 
     if(this.plugin.settings.autoExportLightAndDark) {
@@ -558,6 +554,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   }
 
   public async exportPDF(
+    toVault: boolean,
     selectedOnly?: boolean,
     pageSize: PageSize = "A4",
     orientation: PageOrientation = "portrait"
@@ -579,16 +576,16 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   
     const pdfArrayBuffer = await exportToPDF({
       SVG: [svg],
-      scale: { fitToPage: true },
+      scale: { 
+        ...this.exportDialog.fitToPage
+        ? { fitToPage: true }
+        : { zoom: this.exportDialog.scale, fitToPage: false },
+      },
       pageProps: {
         dimensions: getPageDimensions(pageSize, orientation),
-        backgroundColor: this.exportDialog.transparent ? undefined : "#ffffff",
-        margin: {
-          top: 20,
-          left: 20,
-          right: 20,
-          bottom: 20
-        }
+        backgroundColor: this.exportDialog.getPaperColor(),
+        margin: getMarginValue(this.exportDialog.margin),
+        alignment: this.exportDialog.alignment,
       }
     });
   
@@ -596,11 +593,17 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       return;
     }
   
-    download(
-      "data:application/pdf;base64",
-      arrayBufferToBase64(pdfArrayBuffer),
-      `${this.file.basename}.pdf`
-    );
+    if(toVault) {
+      const filepath = getIMGFilename(this.file.path, "pdf");
+      const file = await createOrOverwriteFile(this.app, filepath, pdfArrayBuffer);
+      this.app.workspace.getLeaf("split").openFile(file);
+    } else {
+      download(
+        "data:application/pdf;base64",
+        arrayBufferToBase64(pdfArrayBuffer),
+        `${this.file.basename}.pdf`
+      );
+    }
   }
 
   public async png(scene: any, theme?:string, embedScene?: boolean): Promise<Blob> {
@@ -646,17 +649,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
 
     const exportImage = async (filepath:string, theme?:string) => {
-      const file = this.app.vault.getAbstractFileByPath(normalizePath(filepath));
-
       const png = await this.png(scene, theme, embedScene);
       if (!png) {
         return;
       }
-      if (file && file instanceof TFile) {
-        await this.app.vault.modifyBinary(file, await png.arrayBuffer());
-      } else {
-        await this.app.vault.createBinary(filepath, await png.arrayBuffer());
-      }
+      await createOrOverwriteFile(this.app, filepath, await png.arrayBuffer());
     }
 
     if(this.plugin.settings.autoExportLightAndDark) {

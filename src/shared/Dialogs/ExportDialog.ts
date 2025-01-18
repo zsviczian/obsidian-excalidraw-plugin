@@ -6,8 +6,10 @@ import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import ExcalidrawPlugin from "src/core/main";
 import { fragWithHTML, getExportPadding, getExportTheme, getPNGScale, getWithBackground, shouldEmbedScene } from "src/utils/utils";
-import { PageOrientation, PageSize, STANDARD_PAGE_SIZES } from "src/utils/exportUtils";
+import { PageOrientation, PageSize, PDFMargin, PDFPageAlignment, PDFPageMarginString, STANDARD_PAGE_SIZES } from "src/utils/exportUtils";
 import { t } from "src/lang/helpers";
+
+
 
 export class ExportDialog extends Modal {
   private ea: ExcalidrawAutomate;
@@ -34,6 +36,11 @@ export class ExportDialog extends Modal {
   private activeTab: "image" | "pdf" = "image";
   private contentContainer: HTMLDivElement;
   private buttonContainer: HTMLDivElement;
+  public fitToPage: boolean = true;
+  public paperColor: "white" | "scene" | "custom" = "white";
+  public customPaperColor: string = "#ffffff";
+  public alignment: PDFPageAlignment = "center";
+  public margin: PDFPageMarginString = "normal";
 
   constructor(
     private plugin: ExcalidrawPlugin,
@@ -296,6 +303,82 @@ export class ExportDialog extends Modal {
             this.pageOrientation = value as PageOrientation;
           })
       );
+
+    new Setting(this.contentContainer)
+      .setName(t("EXPORTDIALOG_PDF_FIT_TO_PAGE"))
+      .addDropdown(dropdown => 
+        dropdown
+          .addOptions({
+            "fit": t("EXPORTDIALOG_PDF_FIT_OPTION"),
+            "scale": t("EXPORTDIALOG_PDF_SCALE_OPTION")
+          })
+          .setValue(this.fitToPage ? "fit" : "scale")
+          .onChange(value => {
+            this.fitToPage = value === "fit";
+          })
+      );
+    
+    new Setting(this.contentContainer)
+      .setName(t("EXPORTDIALOG_PDF_MARGIN"))
+      .addDropdown(dropdown => 
+        dropdown
+          .addOptions({
+            "none": t("EXPORTDIALOG_PDF_MARGIN_NONE"),
+            "tiny": t("EXPORTDIALOG_PDF_MARGIN_TINY"),
+            "normal": t("EXPORTDIALOG_PDF_MARGIN_NORMAL")
+          })
+          .setValue(this.margin)
+          .onChange(value => {
+            this.margin = value as typeof this.margin;
+          })
+      );
+
+
+    const paperColorSetting = new Setting(this.contentContainer)
+      .setName(t("EXPORTDIALOG_PDF_PAPER_COLOR"))
+      .addDropdown(dropdown => 
+        dropdown
+          .addOptions({
+            "white": t("EXPORTDIALOG_PDF_PAPER_WHITE"),
+            "scene": t("EXPORTDIALOG_PDF_PAPER_SCENE"),
+            "custom": t("EXPORTDIALOG_PDF_PAPER_CUSTOM")
+          })
+          .setValue(this.paperColor)
+          .onChange(value => {
+            this.paperColor = value as typeof this.paperColor;
+            colorInput.style.display = (value === "custom") ? "block" : "none";
+          })
+      );
+
+    const colorInput = paperColorSetting.controlEl.createEl("input", {
+      type: "color",
+      value: this.customPaperColor
+    });
+    colorInput.style.width = "50px";
+    colorInput.style.marginLeft = "10px";
+    colorInput.style.display = this.paperColor === "custom" ? "block" : "none";
+    colorInput.addEventListener("change", (e) => {
+      this.customPaperColor = (e.target as HTMLInputElement).value;
+    });
+
+    new Setting(this.contentContainer)
+      .setName(t("EXPORTDIALOG_PDF_ALIGNMENT"))
+      .addDropdown(dropdown => 
+        dropdown
+          .addOptions({
+            "center": t("EXPORTDIALOG_PDF_ALIGN_CENTER"),
+            "top-left": t("EXPORTDIALOG_PDF_ALIGN_TOP_LEFT"),
+            "top-center": t("EXPORTDIALOG_PDF_ALIGN_TOP_CENTER"),
+            "top-right": t("EXPORTDIALOG_PDF_ALIGN_TOP_RIGHT"),
+            "bottom-left": t("EXPORTDIALOG_PDF_ALIGN_BOTTOM_LEFT"),
+            "bottom-center": t("EXPORTDIALOG_PDF_ALIGN_BOTTOM_CENTER"),
+            "bottom-right": t("EXPORTDIALOG_PDF_ALIGN_BOTTOM_RIGHT")
+          })
+          .setValue(this.alignment)
+          .onChange(value => {
+            this.alignment = value as typeof this.alignment;
+          })
+      );
   }
 
   private createImageButtons() {
@@ -328,18 +411,42 @@ export class ExportDialog extends Modal {
   }
 
   private createPDFButton() {
-    if (!DEVICE.isDesktop) return;
-    const bPDF = this.buttonContainer.createEl("button", { 
-      text: t("EXPORTDIALOG_PDF"), 
+    const bPDFVault = this.buttonContainer.createEl("button", { 
+      text: t("EXPORTDIALOG_PDFTOVAULT"), 
       cls: "excalidraw-prompt-button" 
     });
-    bPDF.onclick = () => {
+    bPDFVault.onclick = () => {
       this.view.exportPDF(
+        true,
         this.hasSelectedElements && this.exportSelectedOnly,
         this.pageSize,
         this.pageOrientation
       );
       this.close();
     };
+
+    if (!DEVICE.isDesktop) return;
+    const bPDFExport = this.buttonContainer.createEl("button", { 
+      text: t("EXPORTDIALOG_PDF"), 
+      cls: "excalidraw-prompt-button" 
+    });
+    bPDFExport.onclick = () => {
+      this.view.exportPDF(
+        false,
+        this.hasSelectedElements && this.exportSelectedOnly,
+        this.pageSize,
+        this.pageOrientation
+      );
+      this.close();
+    };
+  }
+
+  public getPaperColor(): string {
+    switch (this.paperColor) {
+      case "white": return "#ffffff";
+      case "scene": return this.api.getAppState().viewBackgroundColor;
+      case "custom": return this.customPaperColor;
+      default: return "#ffffff";
+    }
   }
 }

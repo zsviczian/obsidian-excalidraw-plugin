@@ -1,21 +1,27 @@
 import { PDFDocument, rgb } from '@cantoo/pdf-lib';
 import { getEA } from 'src/core';
-import { svgToBase64 } from './utils';
+
+
+export type PDFPageAlignment = "center" | "top-left" | "top-center" | "top-right" | "bottom-left" | "bottom-center" | "bottom-right";
+export type PDFPageMarginString = "none" | "tiny" | "normal";
 
 interface PDFExportScale {
   fitToPage: boolean;
   zoom?: number;
 }
 
+export interface PDFMargin {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+}
+
 interface PDFPageProperties {
   dimensions?: {width: number; height: number};
   backgroundColor?: string;
-  margin?: {
-    left: number;
-    right: number;
-    top: number;
-    bottom: number;
-  };
+  margin: PDFMargin;
+  alignment: PDFPageAlignment;
 }
 
 interface PageDimensions {
@@ -40,14 +46,21 @@ export const STANDARD_PAGE_SIZES = {
 
 export type PageSize = keyof typeof STANDARD_PAGE_SIZES;
 
+export function getMarginValue(margin:PDFPageMarginString): PDFMargin {
+  switch(margin) {
+    case "none": return { left: 0, right: 0, top: 0, bottom: 0 };
+    case "tiny": return { left: 5, right: 5, top: 5, bottom: 5 };
+    case "normal": return { left: 20, right: 20, top: 20, bottom: 20 };
+    default: return { left: 20, right: 20, top: 20, bottom: 20 };
+  }
+}
+
 export function getPageDimensions(pageSize: PageSize, orientation: PageOrientation): PageDimensions {
   const dimensions = STANDARD_PAGE_SIZES[pageSize];
   return orientation === "portrait" 
     ? { width: dimensions.width, height: dimensions.height }
     : { width: dimensions.height, height: dimensions.width };
 }
-
-const DEFAULT_MARGIN = 20; // 20pt margins
 
 interface SVGDimensions {
   width: number;
@@ -117,20 +130,15 @@ async function addSVGToPage(
 export async function exportToPDF({
   SVG,
   scale = { fitToPage: true, zoom: 1 },
-  pageProps = {}
+  pageProps,
 }: {
   SVG: SVGSVGElement[];
-  scale?: PDFExportScale;
-  pageProps?: PDFPageProperties;
+  scale: PDFExportScale;
+  pageProps: PDFPageProperties;
 }): Promise<ArrayBuffer> {
-  const margin = pageProps.margin ?? {
-    left: DEFAULT_MARGIN,
-    right: DEFAULT_MARGIN,
-    top: DEFAULT_MARGIN,
-    bottom: DEFAULT_MARGIN
-  };
-
-  const pageDim = pageProps.dimensions ?? getPageDimensions("A4", "portrait");
+  const margin = pageProps.margin;
+  const pageDim = pageProps.dimensions;
+  
   const pdfDoc = await PDFDocument.create();
 
   for (const svg of SVG) {
