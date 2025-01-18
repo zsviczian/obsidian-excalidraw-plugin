@@ -386,13 +386,14 @@ FILENAME_HEAD: "Filename",
     "This setting will not affect the display of the drawing when you are in Excalidraw mode or when you embed the drawing into a markdown document or when rendering hover preview.<br><ul>" +
     "<li>See other related setting for <a href='#"+TAG_PDFEXPORT+"'>PDF Export</a> under 'Embedding and Exporting' further below.</li></ul><br>" +
     "You must close the active excalidraw/markdown file and reopen it for this change to take effect.",
-  SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME: "Render the file as an image when exporting an Excalidraw file to PDF",
+  SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME: "Render Excalidraw as Image in Obsidian PDF Export",
   SHOW_DRAWING_OR_MD_IN_EXPORTPDF_DESC:
-    "This setting controls the behavior of Excalidraw when exporting an Excalidraw file to PDF in markdown view mode using Obsidian's <b>Export to PDF</b> feature.<br>" +
-    "<ul><li>When <b>enabled</b> the PDF will show the Excalidraw drawing only;</li>" +
-    "<li>When <b>disabled</b> the PDF will show the markdown side of the document.</li></ul>" +
-    "See the other related setting for <a href='#"+TAG_MDREADINGMODE+"'>Markdown Reading Mode</a> under 'Appearnace and Behavior' further above.<br>" +
-    "⚠️ Note, you must close the active excalidraw/markdown file and reopen for this change to take effect. ⚠️",
+    "This setting controls how Excalidraw files are exported to PDF using Obsidian's built-in <b>Export to PDF</b> feature.<br>" +
+    "<ul><li><b>Enabled:</b> The PDF will include the Excalidraw drawing as an image.</li>" +
+    "<li><b>Disabled:</b> The PDF will include the markdown content as text.</li></ul>" +
+    "Note: This setting does not affect the PDF export feature within Excalidraw itself.<br>" +
+    "See the other related setting for <a href='#"+TAG_MDREADINGMODE+"'>Markdown Reading Mode</a> under 'Appearance and Behavior' further above.<br>" +
+    "⚠️ You must close and reopen the Excalidraw/markdown file for changes to take effect. ⚠️",
   HOTKEY_OVERRIDE_HEAD: "Hotkey overrides",
   HOTKEY_OVERRIDE_DESC: `Some of the Excalidraw hotkeys such as <code>${labelCTRL()}+Enter</code> to edit text or <code>${labelCTRL()}+K</code> to create an element link ` +
     "conflict with Obsidian hotkey settings. The hotkey combinations you add below will override Obsidian's hotkey settings while useing Excalidraw, thus " +

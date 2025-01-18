@@ -8,6 +8,7 @@ import ExcalidrawPlugin from "src/core/main";
 import { fragWithHTML, getExportPadding, getExportTheme, getPNGScale, getWithBackground, shouldEmbedScene } from "src/utils/utils";
 import { PageOrientation, PageSize, PDFMargin, PDFPageAlignment, PDFPageMarginString, STANDARD_PAGE_SIZES } from "src/utils/exportUtils";
 import { t } from "src/lang/helpers";
+import { PDFExportSettings, PDFExportSettingsComponent } from "./PDFExportSettingsComponent";
 
 
 
@@ -273,112 +274,29 @@ export class ExportDialog extends Modal {
 
     this.contentContainer.createEl("h1", { text: t("EXPORTDIALOG_PDF_SETTINGS") });
 
-    const pageSizeOptions: Record<string, string> = Object.keys(STANDARD_PAGE_SIZES)
-      .reduce((acc, key) => ({
-        ...acc,
-        [key]: key
-      }), {});
+    const pdfSettings: PDFExportSettings = {
+      pageSize: this.pageSize,
+      pageOrientation: this.pageOrientation,
+      fitToPage: this.fitToPage,
+      paperColor: this.paperColor,
+      customPaperColor: this.customPaperColor,
+      alignment: this.alignment,
+      margin: this.margin
+    };
 
-    new Setting(this.contentContainer)
-      .setName(t("EXPORTDIALOG_PAGE_SIZE"))
-      .addDropdown(dropdown => 
-        dropdown
-          .addOptions(pageSizeOptions)
-          .setValue(this.pageSize)
-          .onChange(value => {
-            this.pageSize = value as PageSize;
-          })
-      );
-
-    new Setting(this.contentContainer)
-      .setName(t("EXPORTDIALOG_PAGE_ORIENTATION"))
-      .addDropdown(dropdown => 
-        dropdown
-          .addOptions({
-            "portrait": t("EXPORTDIALOG_ORIENTATION_PORTRAIT"),
-            "landscape": t("EXPORTDIALOG_ORIENTATION_LANDSCAPE")
-          })
-          .setValue(this.pageOrientation)
-          .onChange(value => {
-            this.pageOrientation = value as PageOrientation;
-          })
-      );
-
-    new Setting(this.contentContainer)
-      .setName(t("EXPORTDIALOG_PDF_FIT_TO_PAGE"))
-      .addDropdown(dropdown => 
-        dropdown
-          .addOptions({
-            "fit": t("EXPORTDIALOG_PDF_FIT_OPTION"),
-            "scale": t("EXPORTDIALOG_PDF_SCALE_OPTION")
-          })
-          .setValue(this.fitToPage ? "fit" : "scale")
-          .onChange(value => {
-            this.fitToPage = value === "fit";
-          })
-      );
-    
-    new Setting(this.contentContainer)
-      .setName(t("EXPORTDIALOG_PDF_MARGIN"))
-      .addDropdown(dropdown => 
-        dropdown
-          .addOptions({
-            "none": t("EXPORTDIALOG_PDF_MARGIN_NONE"),
-            "tiny": t("EXPORTDIALOG_PDF_MARGIN_TINY"),
-            "normal": t("EXPORTDIALOG_PDF_MARGIN_NORMAL")
-          })
-          .setValue(this.margin)
-          .onChange(value => {
-            this.margin = value as typeof this.margin;
-          })
-      );
-
-
-    const paperColorSetting = new Setting(this.contentContainer)
-      .setName(t("EXPORTDIALOG_PDF_PAPER_COLOR"))
-      .addDropdown(dropdown => 
-        dropdown
-          .addOptions({
-            "white": t("EXPORTDIALOG_PDF_PAPER_WHITE"),
-            "scene": t("EXPORTDIALOG_PDF_PAPER_SCENE"),
-            "custom": t("EXPORTDIALOG_PDF_PAPER_CUSTOM")
-          })
-          .setValue(this.paperColor)
-          .onChange(value => {
-            this.paperColor = value as typeof this.paperColor;
-            colorInput.style.display = (value === "custom") ? "block" : "none";
-          })
-      );
-
-    const colorInput = paperColorSetting.controlEl.createEl("input", {
-      type: "color",
-      value: this.customPaperColor
-    });
-    colorInput.style.width = "50px";
-    colorInput.style.marginLeft = "10px";
-    colorInput.style.display = this.paperColor === "custom" ? "block" : "none";
-    colorInput.addEventListener("change", (e) => {
-      this.customPaperColor = (e.target as HTMLInputElement).value;
-    });
-
-    new Setting(this.contentContainer)
-      .setName(t("EXPORTDIALOG_PDF_ALIGNMENT"))
-      .addDropdown(dropdown => 
-        dropdown
-          .addOptions({
-            "center": t("EXPORTDIALOG_PDF_ALIGN_CENTER"),
-            "top-left": t("EXPORTDIALOG_PDF_ALIGN_TOP_LEFT"),
-            "top-center": t("EXPORTDIALOG_PDF_ALIGN_TOP_CENTER"),
-            "top-right": t("EXPORTDIALOG_PDF_ALIGN_TOP_RIGHT"),
-            "bottom-left": t("EXPORTDIALOG_PDF_ALIGN_BOTTOM_LEFT"),
-            "bottom-center": t("EXPORTDIALOG_PDF_ALIGN_BOTTOM_CENTER"),
-            "bottom-right": t("EXPORTDIALOG_PDF_ALIGN_BOTTOM_RIGHT")
-          })
-          .setValue(this.alignment)
-          .onChange(value => {
-            this.alignment = value as typeof this.alignment;
-          })
-      );
+    new PDFExportSettingsComponent(
+      this.contentContainer,
+      pdfSettings,
+      () => {
+        this.pageSize = pdfSettings.pageSize;
+        this.pageOrientation = pdfSettings.pageOrientation;
+        this.fitToPage = pdfSettings.fitToPage;
+        this.paperColor = pdfSettings.paperColor;
+        this.customPaperColor = pdfSettings.customPaperColor;
+        this.alignment = pdfSettings.alignment;
+        this.margin = pdfSettings.margin;
+      }
+    ).render();
   }
 
   private createImageButtons() {

@@ -2117,7 +2117,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
-
+    //Add new section here:
     detailsEl = exportDetailsEl.createEl("details");
     detailsEl.createEl("summary", { 
       text: t("EXPORT_HEAD"),
