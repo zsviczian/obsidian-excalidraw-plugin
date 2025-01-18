@@ -80,27 +80,9 @@ function calculatePosition(
   pageHeight: number,
   margin: PDFMargin,
   alignment: PDFPageAlignment,
-  scale: PDFExportScale
 ): {x: number, y: number} {
   const availableWidth = pageWidth - margin.left - margin.right;
   const availableHeight = pageHeight - margin.top - margin.bottom;
-
-  console.log(JSON.stringify({
-    message: 'PDF Position Debug',
-    input: {
-      svgWidth,
-      svgHeight,
-      pageWidth,
-      pageHeight,
-      margin,
-      alignment,
-      scale
-    },
-    calculated: {
-      availableWidth,
-      availableHeight
-    }
-  }));
 
   let x = margin.left;
   let y = margin.bottom;
@@ -120,30 +102,6 @@ function calculatePosition(
   } else if (alignment.startsWith('bottom')) {
     y = pageHeight - margin.top - svgHeight;
   }
-
-  console.log(JSON.stringify({
-    message: 'PDF Position Intermediate',
-    x,
-    y,
-    alignment,
-    availableHeight,
-    marginTop: margin.top,
-    marginBottom: margin.bottom,
-    svgHeight,
-    pageHeight
-  }));
-
-  console.log(JSON.stringify({
-    message: 'PDF Position Result',
-    x,
-    y,
-    finalPosition: {
-      bottom: y,
-      top: y + svgHeight,
-      left: x,
-      right: x + svgWidth
-    }
-  }));
 
   return {x, y};
 }
@@ -174,7 +132,6 @@ function calculateDimensions(
       pageDim.height, 
       margin,
       alignment,
-      scale
     );
 
     return [{
@@ -197,7 +154,6 @@ function calculateDimensions(
         pageDim.height, 
         margin,
         alignment,
-        scale
       );
       
       return [{
@@ -268,10 +224,9 @@ async function addSVGToPage(
     svgToEmbed.setAttribute('height', String(dimensions.sourceHeight));
   }
 
+  svgToEmbed = await preprocessSVGForPDFLib(svgToEmbed);
   const svgImage = await pdfDoc.embedSvg(svgToEmbed.outerHTML);
   
-  console.log(JSON.stringify({message: "addSVGToPage", dimensions, html: svgToEmbed.outerHTML}));
-
   // Adjust y-coordinate to account for PDF coordinate system
   const adjustedY = pageDim.height - dimensions.y;
 
@@ -282,15 +237,68 @@ async function addSVGToPage(
     height: dimensions.height,
   });
 
-  console.log(JSON.stringify({
-    message: 'PDF Draw SVG',
-    x: dimensions.x,
-    y: adjustedY,
-    width: dimensions.width,
-    height: dimensions.height
+  return page;
+}
+
+async function convertImageToDataURL(src: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = src;
+  });
+}
+
+async function preprocessSVGForPDFLib(svg: SVGSVGElement): Promise<SVGSVGElement> {
+  const clone = svg.cloneNode(true) as SVGSVGElement;
+  
+  // Convert all images to PNG format
+  const images = clone.querySelectorAll('image');
+  await Promise.all(Array.from(images).map(async (img) => {
+    const href = img.getAttribute('href') || img.getAttribute('xlink:href');
+    if (href && href.startsWith('data:image/')) {
+      try {
+        const pngDataUrl = await convertImageToDataURL(href);
+        img.setAttribute('href', pngDataUrl);
+        if (img.hasAttribute('xlink:href')) {
+          img.setAttribute('xlink:href', pngDataUrl);
+        }
+      } catch (error) {
+        console.error('Failed to convert image:', error);
+      }
+    }
   }));
 
-  return page;
+  // Convert symbols with images
+  const symbols = clone.querySelectorAll('symbol');
+  for (const symbol of Array.from(symbols)) {
+    const image = symbol.querySelector('image');
+    if (image) {
+      const uses = clone.querySelectorAll(`use[href="#${symbol.id}"]`);
+      for (const use of Array.from(uses)) {
+        const newImage = image.cloneNode(true) as SVGImageElement;
+        newImage.setAttribute('width', use.getAttribute('width') || '100%');
+        newImage.setAttribute('height', use.getAttribute('height') || '100%');
+        newImage.setAttribute('x', use.getAttribute('x') || '0');
+        newImage.setAttribute('y', use.getAttribute('y') || '0');
+        use.parentNode.replaceChild(newImage, use);
+      }
+    }
+  }
+
+  // Remove defs and symbols
+  const defs = clone.querySelector('defs');
+  if (defs) defs.remove();
+
+  return clone;
 }
 
 export async function exportToPDF({
