@@ -364,3 +364,12 @@ function splitSVGIntoPages(
 
   return pages;
 }
+
+export async function exportSVGToClipboard(svg: SVGSVGElement) {
+  try {
+    const svgString = svg.outerHTML;
+    await navigator.clipboard.writeText(svgString);
+  } catch (error) {
+    console.error("Failed to copy SVG to clipboard: ", error);
+  }
+}

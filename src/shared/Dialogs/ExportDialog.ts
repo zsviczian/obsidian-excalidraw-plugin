@@ -1,12 +1,12 @@
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { Modal, Notice, Setting, TFile } from "obsidian";
+import { Modal, Notice, Setting, TFile, ButtonComponent } from "obsidian";
 import { getEA } from "src/core";
 import { DEVICE } from "src/constants/constants";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import ExcalidrawPlugin from "src/core/main";
 import { fragWithHTML, getExportPadding, getExportTheme, getPNGScale, getWithBackground, shouldEmbedScene } from "src/utils/utils";
-import { PageOrientation, PageSize, PDFMargin, PDFPageAlignment, PDFPageMarginString, STANDARD_PAGE_SIZES } from "src/utils/exportUtils";
+import { PageOrientation, PageSize, PDFMargin, PDFPageAlignment, PDFPageMarginString, STANDARD_PAGE_SIZES, exportSVGToClipboard } from "src/utils/exportUtils";
 import { t } from "src/lang/helpers";
 import { PDFExportSettings, PDFExportSettingsComponent } from "./PDFExportSettingsComponent";
 
@@ -36,12 +36,15 @@ export class ExportDialog extends Modal {
   public pageOrientation: PageOrientation = "portrait";
   private activeTab: "image" | "pdf" = "image";
   private contentContainer: HTMLDivElement;
-  private buttonContainer: HTMLDivElement;
+  private buttonContainerRow1: HTMLDivElement;
+  private buttonContainerRow2: HTMLDivElement;
   public fitToPage: boolean = true;
   public paperColor: "white" | "scene" | "custom" = "white";
   public customPaperColor: string = "#ffffff";
   public alignment: PDFPageAlignment = "center";
   public margin: PDFPageMarginString = "normal";
+  private pngButton: HTMLButtonElement;
+  private svgButton: HTMLButtonElement;
 
   constructor(
     private plugin: ExcalidrawPlugin,
@@ -129,7 +132,9 @@ export class ExportDialog extends Modal {
 
     // Create content container
     this.contentContainer = this.contentEl.createDiv();
-    this.buttonContainer = this.contentEl.createDiv({cls: "excalidraw-prompt-buttons-div"});
+    this.buttonContainerRow1 = this.contentEl.createDiv({cls: "excalidraw-export-buttons-div"});
+    this.buttonContainerRow2 = this.contentEl.createDiv({cls: "excalidraw-export-buttons-div"});
+    this.buttonContainerRow2.style.marginTop = "10px";
 
     this.renderContent();
   }
@@ -150,7 +155,8 @@ export class ExportDialog extends Modal {
 
   private renderContent() {
     this.contentContainer.empty();
-    this.buttonContainer.empty();
+    this.buttonContainerRow1.empty();
+    this.buttonContainerRow2.empty();
 
     if (this.activeTab === "image") {
       this.createImageSettings();
@@ -247,8 +253,6 @@ export class ExportDialog extends Modal {
   }
 
   private createExportSettings() {
-    this.contentContainer.createEl("h1",{text:t("EXPORTDIALOG_EXPORT_SETTINGS")});
-
     new Setting(this.contentContainer)
       .setName(t("EXPORTDIALOG_EMBED_SCENE"))
       .addDropdown(dropdown => 
@@ -260,20 +264,6 @@ export class ExportDialog extends Modal {
             this.embedScene = value === "embed";
           })
       )
-
-    if(DEVICE.isDesktop) {
-      new Setting(this.contentContainer)
-      .setName(t("EXPORTDIALOG_SAVE_LOCATION"))
-      .addDropdown(dropdown => 
-        dropdown
-          .addOption("vault",t("EXPORTDIALOG_SAVE_VAULT"))
-          .addOption("outside",t("EXPORTDIALOG_SAVE_OUTSIDE"))
-          .setValue(this.saveToVault?"vault":"outside")
-          .onChange(value => {
-            this.saveToVault = value === "vault";
-          })
-      )
-    }
   }
 
   private createPDFSettings() {
@@ -307,37 +297,78 @@ export class ExportDialog extends Modal {
   }
 
   private createImageButtons() {
-    const bPNG = this.buttonContainer.createEl("button", { text: t("EXPORTDIALOG_PNGTOFILE"), cls: "excalidraw-prompt-button"});
-    bPNG.onclick = () => {
-      this.saveToVault 
-        ? this.view.savePNG(this.view.getScene(this.hasSelectedElements && this.exportSelectedOnly))
-        : this.view.exportPNG(this.embedScene,this.hasSelectedElements && this.exportSelectedOnly);
-      this.close();
-    };
-    const bSVG = this.buttonContainer.createEl("button", { text: t("EXPORTDIALOG_SVGTOFILE"), cls: "excalidraw-prompt-button" });
-    bSVG.onclick = () => {
-      this.saveToVault
-        ? this.view.saveSVG(this.view.getScene(this.hasSelectedElements && this.exportSelectedOnly))
-        : this.view.exportSVG(this.embedScene,this.hasSelectedElements && this.exportSelectedOnly);
-      this.close();
-    };
-    const bExcalidraw = this.buttonContainer.createEl("button", { text: t("EXPORTDIALOG_EXCALIDRAW"), cls: "excalidraw-prompt-button" });
-    bExcalidraw.onclick = () => {
-      this.view.exportExcalidraw(this.hasSelectedElements && this.exportSelectedOnly);
-      this.close();
-    };
     if(DEVICE.isDesktop) {
-      const bPNGClipboard = this.buttonContainer.createEl("button", { text: t("EXPORTDIALOG_PNGTOCLIPBOARD"), cls: "excalidraw-prompt-button" });
-      bPNGClipboard.onclick = () => {
-        this.view.exportPNGToClipboard(this.embedScene, this.hasSelectedElements && this.exportSelectedOnly);
+      const bPNG = this.buttonContainerRow1.createEl("button", { 
+        text: t("EXPORTDIALOG_PNGTOFILE"), 
+        cls: "excalidraw-export-button"
+      });
+      bPNG.onclick = () => {
+        this.view.exportPNG(this.embedScene, this.hasSelectedElements && this.exportSelectedOnly);
         this.close();
       };
     }
+
+    const bPNGVault = this.buttonContainerRow1.createEl("button", { 
+      text: t("EXPORTDIALOG_PNGTOVAULT"), 
+      cls: "excalidraw-export-button"
+    });
+    bPNGVault.onclick = () => {
+      this.view.savePNG(this.view.getScene(this.hasSelectedElements && this.exportSelectedOnly));
+      this.close();
+    };
+
+    const bPNGClipboard = this.buttonContainerRow1.createEl("button", { 
+      text: t("EXPORTDIALOG_PNGTOCLIPBOARD"), 
+      cls: "excalidraw-export-button"
+    });
+    bPNGClipboard.onclick = async () => {
+      this.view.exportPNGToClipboard(this.embedScene, this.hasSelectedElements && this.exportSelectedOnly);
+      this.close();
+    };
+
+    if(DEVICE.isDesktop) {
+      const bExcalidraw = this.buttonContainerRow2.createEl("button", { 
+        text: t("EXPORTDIALOG_EXCALIDRAW"), 
+        cls: "excalidraw-export-button" 
+      });
+      bExcalidraw.onclick = () => {
+        this.view.exportExcalidraw();
+        this.close();
+      };
+
+      const bSVG = this.buttonContainerRow2.createEl("button", { 
+        text: t("EXPORTDIALOG_SVGTOFILE"), 
+        cls: "excalidraw-export-button" 
+      });
+      bSVG.onclick = () => {
+        this.view.exportSVG(this.embedScene, this.hasSelectedElements && this.exportSelectedOnly);
+        this.close();
+      };
+    }
+
+    const bSVGVault = this.buttonContainerRow2.createEl("button", { 
+      text: t("EXPORTDIALOG_SVGTOVAULT"), 
+      cls: "excalidraw-export-button" 
+    });
+    bSVGVault.onclick = () => {
+      this.view.saveSVG(this.view.getScene(this.hasSelectedElements && this.exportSelectedOnly));
+      this.close();
+    };
+
+    const bSVGClipboard = this.buttonContainerRow2.createEl("button", { 
+      text: t("EXPORTDIALOG_SVGTOCLIPBOARD"), 
+      cls: "excalidraw-export-button" 
+    });
+    bSVGClipboard.onclick = async () => {
+      const svg = await this.view.getSVG(this.embedScene, this.hasSelectedElements && this.exportSelectedOnly);
+      exportSVGToClipboard(svg);
+      this.close();
+    };
   }
 
   private createPDFButton() {
-    const bSavePDFSettings = this.buttonContainer.createEl("button",
-      { text: t("EXPORTDIALOG_SAVE_PDF_SETTINGS"), cls: "excalidraw-prompt-button" }
+    const bSavePDFSettings = this.buttonContainerRow1.createEl("button",
+      { text: t("EXPORTDIALOG_SAVE_PDF_SETTINGS"), cls: "excalidraw-export-button" }
     );
     bSavePDFSettings.onclick = async () => {
       //in case sync loaded a new version of settings in the mean time
@@ -355,9 +386,9 @@ export class ExportDialog extends Modal {
       new Notice(t("EXPORTDIALOG_SAVE_CONFIRMATION"));
     };
 
-    const bPDFVault = this.buttonContainer.createEl("button", { 
+    const bPDFVault = this.buttonContainerRow1.createEl("button", { 
       text: t("EXPORTDIALOG_PDFTOVAULT"), 
-      cls: "excalidraw-prompt-button" 
+      cls: "excalidraw-export-button" 
     });
     bPDFVault.onclick = () => {
       this.view.exportPDF(
@@ -370,9 +401,9 @@ export class ExportDialog extends Modal {
     };
 
     if (!DEVICE.isDesktop) return;
-    const bPDFExport = this.buttonContainer.createEl("button", { 
+    const bPDFExport = this.buttonContainerRow1.createEl("button", { 
       text: t("EXPORTDIALOG_PDF"), 
-      cls: "excalidraw-prompt-button" 
+      cls: "excalidraw-export-button" 
     });
     bPDFExport.onclick = () => {
       this.view.exportPDF(

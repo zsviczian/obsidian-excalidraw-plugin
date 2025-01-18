@@ -553,6 +553,19 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     );
   }
 
+  public async getSVG(embedScene?: boolean, selectedOnly?: boolean):Promise<SVGSVGElement> {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getSVG, "ExcalidrawView.getSVG", embedScene, selectedOnly);
+    if (!this.excalidrawAPI || !this.file) {
+      return;
+    }
+
+    const svg = await this.svg(this.getScene(selectedOnly),undefined,embedScene, true);
+    if (!svg) {
+      return;
+    }
+    return svg;
+  }
+
   public async exportPDF(
     toVault: boolean,
     selectedOnly?: boolean,

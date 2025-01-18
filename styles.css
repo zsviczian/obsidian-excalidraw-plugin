@@ -80,11 +80,23 @@ button.ToolIcon_type_button[title="Export"] {
   width: 9em;
 }
 
+.excalidraw-export-button {
+  width: 9em;
+  margin-left: 10px;
+}
+
 .excalidraw-prompt-buttons-div {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
   justify-content: space-evenly;
+}
+
+.excalidraw-export-buttons-div {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: right;
 }
 
 li[data-testid] {
