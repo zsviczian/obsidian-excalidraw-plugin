@@ -1,12 +1,15 @@
 import { PDFDocument, rgb } from '@cantoo/pdf-lib';
 import { getEA } from 'src/core';
 
+const SVG_DPI = 300;
+const PDF_DPI = 72;
+const SVG_TO_PDF_SCALE = PDF_DPI / SVG_DPI;
 
 export type PDFPageAlignment = "center" | "top-left" | "top-center" | "top-right" | "bottom-left" | "bottom-center" | "bottom-right";
 export type PDFPageMarginString = "none" | "tiny" | "normal";
 
 export interface PDFExportScale {
-  fitToPage: boolean;
+  fitToPage: number; // 0 means use zoom, >1 means fit to that many pages exactly
   zoom?: number;
 }
 
@@ -106,6 +109,17 @@ function calculatePosition(
   return {x, y};
 }
 
+function getNumberOfPages(
+  width: number,
+  height: number,
+  availableWidth: number,
+  availableHeight: number
+): number {
+  const cols = Math.ceil(width / availableWidth);
+  const rows = Math.ceil(height / availableHeight);
+  return cols * rows;
+}
+
 function calculateDimensions(
   svgWidth: number,
   svgHeight: number,
@@ -114,17 +128,46 @@ function calculateDimensions(
   scale: PDFExportScale,
   alignment: PDFPageAlignment
 ): SVGDimensions[] {
+  const pdfWidth = svgWidth * SVG_TO_PDF_SCALE;
+  const pdfHeight = svgHeight * SVG_TO_PDF_SCALE;
   const availableWidth = pageDim.width - margin.left - margin.right;
   const availableHeight = pageDim.height - margin.top - margin.bottom;
 
-  let finalWidth: number;
-  let finalHeight: number;
+  // If fitToPage is specified, find optimal zoom using binary search
+  if (scale.fitToPage > 0) {
+    let low = 0;
+    let high = 100; // Start with a reasonable upper bound
+    let bestZoom = 1;
+    const tolerance = 0.000001;
 
-  if (scale.fitToPage) {
-    const ratio = Math.min(availableWidth / svgWidth, availableHeight / svgHeight);
-    finalWidth = svgWidth * ratio;
-    finalHeight = svgHeight * ratio;
-    
+    while (high - low > tolerance) {
+      const mid = (low + high) / 2;
+      const scaledWidth = pdfWidth * mid;
+      const scaledHeight = pdfHeight * mid;
+      const pages = getNumberOfPages(scaledWidth, scaledHeight, availableWidth, availableHeight);
+
+      if (pages > scale.fitToPage) {
+        high = mid;
+      } else {
+        bestZoom = mid;
+        low = mid;
+      }
+    }
+
+    // Apply a small reduction to prevent floating-point issues
+    scale.zoom = Math.round(bestZoom * 0.99999 * 1000000) / 1000000;
+  }
+
+  // Now handle as regular scale mode
+  const finalWidth = Math.round(pdfWidth * (scale.zoom || 1) * 1000) / 1000;
+  const finalHeight = Math.round(pdfHeight * (scale.zoom || 1) * 1000) / 1000;
+
+  // Round the available dimensions as well for consistent comparison
+  const roundedAvailableWidth = Math.round(availableWidth * 1000) / 1000;
+  const roundedAvailableHeight = Math.round(availableHeight * 1000) / 1000;
+
+  if (finalWidth <= roundedAvailableWidth && finalHeight <= roundedAvailableHeight) {
+    // Content fits on one page
     const position = calculatePosition(
       finalWidth, 
       finalHeight, 
@@ -133,7 +176,7 @@ function calculateDimensions(
       margin,
       alignment,
     );
-
+    
     return [{
       width: finalWidth,
       height: finalHeight,
@@ -141,56 +184,37 @@ function calculateDimensions(
       y: position.y
     }];
   } else {
-    // Scale mode - may need multiple pages
-    finalWidth = svgWidth * (scale.zoom || 1);
-    finalHeight = svgHeight * (scale.zoom || 1);
+    // Content needs to be tiled across multiple pages
+    const dimensions: SVGDimensions[] = [];
+    // Calculate exact number of needed columns and rows
+    const cols = Math.ceil(finalWidth / roundedAvailableWidth);
+    const rows = Math.ceil(finalHeight / roundedAvailableHeight);
 
-    if (finalWidth <= availableWidth && finalHeight <= availableHeight) {
-      // Content fits on one page
-      const position = calculatePosition(
-        finalWidth, 
-        finalHeight, 
-        pageDim.width, 
-        pageDim.height, 
-        margin,
-        alignment,
-      );
-      
-      return [{
-        width: finalWidth,
-        height: finalHeight,
-        x: position.x,
-        y: position.y
-      }];
-    } else {
-      // Content needs to be tiled across multiple pages
-      const dimensions: SVGDimensions[] = [];
-      const cols = Math.ceil(finalWidth / availableWidth);
-      const rows = Math.ceil(finalHeight / availableHeight);
-
-      for (let row = 0; row < rows; row++) {
-        for (let col = 0; col < cols; col++) {
-          const tileWidth = Math.min(availableWidth, finalWidth - col * availableWidth);
-          const tileHeight = Math.min(availableHeight, finalHeight - row * availableHeight);
-          
-          // Calculate y coordinate following the same logic as single-page rendering
-          // We start from the bottom margin and work our way up
-          //const y = margin.bottom + row * availableHeight;
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        // Calculate remaining width and height for this tile
+        const remainingWidth = finalWidth - col * roundedAvailableWidth;
+        const remainingHeight = finalHeight - row * roundedAvailableHeight;
+        
+        // Only create tile if there's actual content to show
+        if (remainingWidth > 0 && remainingHeight > 0) {
+          const tileWidth = Math.min(roundedAvailableWidth, remainingWidth);
+          const tileHeight = Math.min(roundedAvailableHeight, remainingHeight);
           
           dimensions.push({
             width: tileWidth,
             height: tileHeight,
             x: margin.left,
             y: margin.top,
-            sourceX: col * availableWidth / (scale.zoom || 1),
-            sourceY: row * availableHeight / (scale.zoom || 1),
-            sourceWidth: tileWidth / (scale.zoom || 1),
-            sourceHeight: tileHeight / (scale.zoom || 1)
+            sourceX: (col * roundedAvailableWidth) / ((scale.zoom || 1) * SVG_TO_PDF_SCALE),
+            sourceY: (row * roundedAvailableHeight) / ((scale.zoom || 1) * SVG_TO_PDF_SCALE),
+            sourceWidth: tileWidth / ((scale.zoom || 1) * SVG_TO_PDF_SCALE),
+            sourceHeight: tileHeight / ((scale.zoom || 1) * SVG_TO_PDF_SCALE)
           });
         }
       }
-      return dimensions;
     }
+    return dimensions;
   }
 }
 
@@ -292,18 +316,15 @@ async function preprocessSVGForPDFLib(svg: SVGSVGElement): Promise<SVGSVGElement
         use.parentNode.replaceChild(newImage, use);
       }
     }
+    symbol.remove();
   }
-
-  // Remove defs and symbols
-  const defs = clone.querySelector('defs');
-  if (defs) defs.remove();
 
   return clone;
 }
 
 export async function exportToPDF({
   SVG,
-  scale = { fitToPage: true, zoom: 1 },
+  scale = { fitToPage: 1, zoom: 1 },
   pageProps,
 }: {
   SVG: SVGSVGElement[];

@@ -955,14 +955,14 @@ export class ExcalidrawAutomate {
    *
    * @param {Object} params - The parameters for creating the PDF.
    * @param {SVGSVGElement[]} params.SVG - An array of SVG elements to be included in the PDF.
-   * @param {PDFExportScale} [params.scale={ fitToPage: true, zoom: 1 }] - The scaling options for the SVG elements.
+   * @param {PDFExportScale} [params.scale={ fitToPage: 1, zoom: 1 }] - The scaling options for the SVG elements.
    * @param {PDFPageProperties} [params.pageProps] - The properties for the PDF pages.
    * @returns {Promise<ArrayBuffer>} - A promise that resolves to an ArrayBuffer containing the PDF data.
    *
    * @example
    * const pdfData = await createToPDF({
    *   SVG: [svgElement1, svgElement2],
-   *   scale: { fitToPage: true },
+   *   scale: { fitToPage: 1 },
    *   pageProps: {
    *     dimensions: { width: 595.28, height: 841.89 },
    *     backgroundColor: "#ffffff",
@@ -973,7 +973,7 @@ export class ExcalidrawAutomate {
   */
   async createPDF({
     SVG,
-    scale = { fitToPage: true, zoom: 1 },
+    scale = { fitToPage: 1, zoom: 1 },
     pageProps,
   }: {
     SVG: SVGSVGElement[];

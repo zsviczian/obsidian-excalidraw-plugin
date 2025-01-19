@@ -5,7 +5,7 @@ import { t } from "src/lang/helpers";
 export interface PDFExportSettings {
   pageSize: PageSize;
   pageOrientation: PageOrientation;
-  fitToPage: boolean;
+  fitToPage: number;
   paperColor: "white" | "scene" | "custom";
   customPaperColor: string;
   alignment: PDFPageAlignment;
@@ -60,12 +60,20 @@ export class PDFExportSettingsComponent {
       .addDropdown(dropdown => 
         dropdown
           .addOptions({
+            "scale": t("EXPORTDIALOG_PDF_SCALE_OPTION"),
             "fit": t("EXPORTDIALOG_PDF_FIT_OPTION"),
-            "scale": t("EXPORTDIALOG_PDF_SCALE_OPTION")
+            "fit-2": t("EXPORTDIALOG_PDF_FIT_2_OPTION"),
+            "fit-4": t("EXPORTDIALOG_PDF_FIT_4_OPTION"),
+            "fit-6": t("EXPORTDIALOG_PDF_FIT_6_OPTION"),
+            "fit-8": t("EXPORTDIALOG_PDF_FIT_8_OPTION"),
+            "fit-12": t("EXPORTDIALOG_PDF_FIT_12_OPTION"),
+            "fit-16": t("EXPORTDIALOG_PDF_FIT_16_OPTION")
           })
-          .setValue(this.settings.fitToPage ? "fit" : "scale")
+          .setValue(this.settings.fitToPage === 1 ? "fit" : 
+            (typeof this.settings.fitToPage === "number" ? `fit-${this.settings.fitToPage}` : "scale"))
           .onChange(value => {
-            this.settings.fitToPage = value === "fit";
+            this.settings.fitToPage = value === "scale" ? 0 : 
+              (value === "fit" ? 1 : parseInt(value.split("-")[1]));
             this.update();
           })
       );

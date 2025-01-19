@@ -502,7 +502,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   pdfSettings: {
     pageSize: "A4",
     pageOrientation: "portrait",
-    fitToPage: true,
+    fitToPage: 1,
     paperColor: "white",
     customPaperColor: "#ffffff",
     alignment: "center",

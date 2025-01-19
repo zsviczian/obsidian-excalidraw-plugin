@@ -589,10 +589,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   
     const pdfArrayBuffer = await exportToPDF({
       SVG: [svg],
-      scale: { 
-        ...this.exportDialog.fitToPage
-        ? { fitToPage: true }
-        : { zoom: this.exportDialog.scale, fitToPage: false },
+      scale: {
+        zoom: this.exportDialog.scale,
+        fitToPage: this.exportDialog.fitToPage
       },
       pageProps: {
         dimensions: getPageDimensions(pageSize, orientation),

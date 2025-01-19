@@ -38,7 +38,7 @@ export class ExportDialog extends Modal {
   private contentContainer: HTMLDivElement;
   private buttonContainerRow1: HTMLDivElement;
   private buttonContainerRow2: HTMLDivElement;
-  public fitToPage: boolean = true;
+  public fitToPage: number = 1;
   public paperColor: "white" | "scene" | "custom" = "white";
   public customPaperColor: string = "#ffffff";
   public alignment: PDFPageAlignment = "center";
