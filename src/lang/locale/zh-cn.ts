@@ -386,13 +386,14 @@ FILENAME_HEAD: "文件名",
     "此设置不会影响您在 Excalidraw 模式下的绘图显示，或者在将绘图嵌入 Markdown 文档时，或在渲染悬停预览时。<br><ul>" +
     "<li>请参阅下面‘嵌入和导出’部分的 <a href='#"+TAG_PDFEXPORT+"'>PDF 导出</a> 相关设置。</li></ul><br>" +
     "您必须关闭当前的 Excalidraw/Markdown 文件并重新打开，以使此更改生效。",
-  SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME: "在将 Excalidraw 文件导出为 PDF 时将文件渲染为图像",
+  SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME : "在 Obsidian 中导出为 PDF 格式时将 Excalidraw 渲染为图像" ,
   SHOW_DRAWING_OR_MD_IN_EXPORTPDF_DESC:
-    "处于 Markdown 视图模式时，此设置控制 Excalidraw 在使用 Obsidian 的 <b>导出为 PDF</b> 功能时，将 Excalidraw 文件导出为 PDF 的行为。<br>" +
-    "<ul><li>当 <b>启用</b> 时，PDF 将仅显示 Excalidraw 绘图；</li>" +
-    "<li>当 <b>禁用</b> 时，PDF 将显示文档的 Markdown 部分（背景笔记）。</li></ul>" +
-    "请参阅上面‘外观和行为’部分的 <<a href='#"+TAG_MDREADINGMODE+"'>>Markdown 阅读模式</a> 相关设置。" +
-    "⚠️ 注意，您必须关闭当前的 Excalidraw/Markdown 文件并重新打开，以使此更改生效。⚠️",
+    "此设置控制在使用 Obsidian 内置的<b>导出为 PDF</b>功能，如何将 Excalidraw 文件导出为 PDF。<br>" +
+    "<ul><li><b>启用：</b>PDF 将包含图像格式的 Excalidraw 绘图。</li>" +
+    "<li><b>禁用：</b>PDF 将包含作为文本的 Markdown 内容。</li></ul>" +
+    "注意：此设置不会影响 Excalidraw 本身的 PDF 导出功能。<br>" +
+    "请参阅上方“外观和行为”部分中与<a href='#" + TAG_MDREADINGMODE + "'>Markdown 阅读模式</a>相关的其他设置。<br>" +
+    "⚠️ 您必须关闭并重新打开 Excalidraw/Markdown 文件，设置更改才会生效。⚠️",
   HOTKEY_OVERRIDE_HEAD: "热键覆盖",
   HOTKEY_OVERRIDE_DESC: `一些 Excalidraw 的热键，例如 ${labelCTRL()}+Enter 用于编辑文本，或 ${labelCTRL()}+K 用于创建元素链接。` +
     "与 Obsidian 的热键设置发生冲突。您在下面添加的热键组合将在使用 Excalidraw 时覆盖 Obsidian 的热键设置，" +
@@ -661,6 +662,7 @@ FILENAME_HEAD: "文件名",
   EXPORT_EMBED_SCENE_DESC:
     "在导出的图像中嵌入 Excalidraw 场景。可以通过在文件级别添加 <code>excalidraw-export-embed-scene: true/false</code> frontmatter 元数据键来覆盖此设置。" +
     "此设置仅在您下次(重新)打开绘图时生效。",
+  PDF_EXPORT_SETTINGS : "PDF 导出设置",
   EXPORT_HEAD: "导出设置",
   EXPORT_SYNC_NAME:
     "保持 SVG/PNG 文件名与绘图文件同步",
@@ -1006,4 +1008,75 @@ FILENAME_HEAD: "文件名",
   LINK_CLICK_POPOUT : "在弹出窗口中打开" ,
   LINK_CLICK_NEW_TAB : "在新标签页中打开" ,
   LINK_CLICK_MD_PROPS : "显示 Markdown 图片属性对话框（仅在嵌入 Markdown 文档为图片时适用）" ,
+
+// 导出对话框
+// 对话框和标签页
+EXPORTDIALOG_TITLE : "导出图形",
+EXPORTDIALOG_TAB_IMAGE : "图像",
+EXPORTDIALOG_TAB_PDF : "PDF",
+// 设置持久化
+EXPORTDIALOG_SAVE_SETTINGS : "将图像设置保存到文件 doc.properties 吗？",
+EXPORTDIALOG_SAVE_SETTINGS_SAVE : "保存为预设",
+EXPORTDIALOG_SAVE_SETTINGS_ONETIME : "仅本次使用",
+// 图像设置
+EXPORTDIALOG_IMAGE_SETTINGS : "图像",
+EXPORTDIALOG_IMAGE_DESC : "PNG 支持透明。外部文件可以包含 Excalidraw 场景数据。",
+EXPORTDIALOG_PADDING : "边距",
+EXPORTDIALOG_SCALE : "缩放",
+EXPORTDIALOG_CURRENT_PADDING : "当前边距：",
+EXPORTDIALOG_SIZE_DESC : "缩放会影响输出大小",
+EXPORTDIALOG_SCALE_VALUE : "缩放：",
+EXPORTDIALOG_IMAGE_SIZE : "大小：",
+// 主题和背景
+EXPORTDIALOG_EXPORT_THEME : "主题",
+EXPORTDIALOG_THEME_LIGHT : "浅色",
+EXPORTDIALOG_THEME_DARK : "深色",
+EXPORTDIALOG_BACKGROUND : "背景",
+EXPORTDIALOG_BACKGROUND_TRANSPARENT : "透明",
+EXPORTDIALOG_BACKGROUND_USE_COLOR : "使用场景颜色",
+// 选择
+EXPORTDIALOG_SELECTED_ELEMENTS : "导出",
+EXPORTDIALOG_SELECTED_ALL : "整个场景",
+EXPORTDIALOG_SELECTED_SELECTED : "仅选中部分",
+// 导出选项
+EXPORTDIALOG_EMBED_SCENE : "包含场景数据吗？",
+EXPORTDIALOG_EMBED_YES : "是",
+EXPORTDIALOG_EMBED_NO : "否",
+// PDF 设置
+EXPORTDIALOG_PDF_SETTINGS : "PDF",
+EXPORTDIALOG_PAGE_SIZE : "页面大小",
+EXPORTDIALOG_PAGE_ORIENTATION : "方向",
+EXPORTDIALOG_ORIENTATION_PORTRAIT : "纵向",
+EXPORTDIALOG_ORIENTATION_LANDSCAPE : "横向",
+EXPORTDIALOG_PDF_FIT_TO_PAGE : "页面适配",
+EXPORTDIALOG_PDF_FIT_OPTION : "适配页面",
+EXPORTDIALOG_PDF_SCALE_OPTION : "使用图像缩放（可能跨多页）",
+EXPORTDIALOG_PDF_PAPER_COLOR : "纸张颜色",
+EXPORTDIALOG_PDF_PAPER_WHITE : "白色",
+EXPORTDIALOG_PDF_PAPER_SCENE : "使用场景颜色",
+EXPORTDIALOG_PDF_PAPER_CUSTOM : "自定义颜色",
+EXPORTDIALOG_PDF_ALIGNMENT : "页面位置",
+EXPORTDIALOG_PDF_ALIGN_CENTER : "居中",
+EXPORTDIALOG_PDF_ALIGN_TOP_LEFT : "左上角",
+EXPORTDIALOG_PDF_ALIGN_TOP_CENTER : "顶部居中",
+EXPORTDIALOG_PDF_ALIGN_TOP_RIGHT : "右上角",
+EXPORTDIALOG_PDF_ALIGN_BOTTOM_LEFT : "左下角",
+EXPORTDIALOG_PDF_ALIGN_BOTTOM_CENTER : "底部居中",
+EXPORTDIALOG_PDF_ALIGN_BOTTOM_RIGHT : "右下角",
+EXPORTDIALOG_PDF_MARGIN : "边距",
+EXPORTDIALOG_PDF_MARGIN_NONE : "无",
+EXPORTDIALOG_PDF_MARGIN_TINY : "小",
+EXPORTDIALOG_PDF_MARGIN_NORMAL : "正常",
+EXPORTDIALOG_SAVE_PDF_SETTINGS : "保存 PDF 设置",
+EXPORTDIALOG_SAVE_CONFIRMATION : "PDF 配置已保存为插件默认设置",
+// 按钮
+EXPORTDIALOG_PNGTOFILE : "导出 PNG 文件",
+EXPORTDIALOG_SVGTOFILE : "导出 SVG 文件",
+EXPORTDIALOG_PNGTOVAULT : "PNG 保存到 Vault",
+EXPORTDIALOG_SVGTOVAULT : "SVG 保存到 Vault",
+EXPORTDIALOG_EXCALIDRAW : "Excalidraw",
+EXPORTDIALOG_PNGTOCLIPBOARD : "PNG 复制到剪贴板",
+EXPORTDIALOG_SVGTOCLIPBOARD : "SVG 复制到剪贴板",
+EXPORTDIALOG_PDF : "导出 PDF 文件",
+EXPORTDIALOG_PDFTOVAULT : "PDF 保存到 Vault",
 };
