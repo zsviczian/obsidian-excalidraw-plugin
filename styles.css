@@ -116,6 +116,7 @@ li[data-testid] {
   border: 0 !important;
   box-shadow: 0 !important;
   background-color: transparent !important;
+  overflow-y: auto !important;
 } 
 
 .excalidraw .popover {
@@ -334,6 +335,16 @@ label.color-input-container > input {
 
 .excalidraw-hidden {
   display: none !important;
+}
+
+.excalidraw .App-toolbar-content .dropdown-menu {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.excalidraw .panelColumn {
+  max-height: 70vh;
+  overflow-y: auto;
 }
 
 .excalidraw .panelColumn .buttonList {

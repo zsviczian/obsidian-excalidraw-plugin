@@ -801,15 +801,16 @@ const tmpObsidianWYSIWYG = async (
     if(Boolean(ctx.frontmatter)) {
       el.empty();
     } else {
-      const warningEl = el.querySelector("div>h3[data-heading^='Unable to find section #^");
+      //Obsidian changed this at some point from h3 to h5 and also the text...
+      const warningEl = el.querySelector("div>*[data-heading^='Unable to find ");
       if(warningEl) {
-        const ref = warningEl.getAttr("data-heading").match(/Unable to find section (#\^(?:group=|area=|frame=|clippedframe=)[^ ]*)/)?.[1];
+        const dataHeading = warningEl.getAttr("data-heading");
+        const ref = warningEl.getAttr("data-heading").match(/Unable to find[^^]+(\^(?:group=|area=|frame=|clippedframe=)[^ ”]+)/)?.[1];
         if(ref) {
-          attr.fname = file.path + ref;
+          attr.fname = file.path + "#" +ref;
           areaPreview = true;
         }
       }
-
     }
     if(!isFrontmatterDiv && !areaPreview) {
       if(el.parentElement === containerEl) containerEl.removeChild(el);

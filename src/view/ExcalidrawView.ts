@@ -1578,6 +1578,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.packages = this.plugin.getPackage(this.ownerWindow);
 
     if(DEVICE.isDesktop && !apiMissing) {
+      if(this.ownerWindow !== window) {
+        this.plugin.initializeFonts();
+      }
       this.destroyers.push(
         //this.containerEl.onWindowMigrated(this.leaf.rebuildView.bind(this))
         this.containerEl.onWindowMigrated(async() => {

@@ -1,8 +1,17 @@
-import { PDFDocument, rgb } from '@cantoo/pdf-lib';
-import exp from 'constants';
 import { Notice } from 'obsidian';
 import { getEA } from 'src/core';
 import { t } from 'src/lang/helpers';
+
+// Define proper types for PDFLib
+type PDFLibType = typeof import('@cantoo/pdf-lib');
+let pdfLibPromise: Promise<PDFLibType> | null = null;
+
+async function getPDFLib(): Promise<PDFLibType> {
+  if (!pdfLibPromise) {
+    pdfLibPromise = import('@cantoo/pdf-lib');
+  }
+  return pdfLibPromise;
+}
 
 const PDF_DPI = 72;
 
@@ -223,12 +232,13 @@ function calculateDimensions(
 }
 
 async function addSVGToPage(
-  pdfDoc: PDFDocument,
+  pdfDoc: Awaited<ReturnType<typeof import('@cantoo/pdf-lib').PDFDocument.create>>,
   svg: SVGSVGElement,
   dimensions: SVGDimensions,
   pageDim: PageDimensions,
   pageProps: PDFPageProperties
 ) {
+  const { rgb } = await getPDFLib();
   const page = pdfDoc.addPage([pageDim.width, pageDim.height]);
     
   if (pageProps.backgroundColor && pageProps.backgroundColor !== '#ffffff') {
@@ -315,13 +325,15 @@ export async function exportToPDF({
   scale: PDFExportScale;
   pageProps: PDFPageProperties;
 }): Promise<ArrayBuffer> {
-  
+  const { PDFDocument } = await getPDFLib();
   const pdfDoc = await PDFDocument.create();
 
   const msg = t('EXPORTDIALOG_PDF_PROGRESS_NOTICE');
   const imgmsg = t('EXPORTDIALOG_PDF_PROGRESS_IMAGE');
 
   let notice = new Notice(msg, 0);
+  //@ts-ignore
+  let noticeContainerEl = notice.containerEl ?? notice.noticeEl;
 
   let j=1;
   for (const svg of SVG) {
@@ -339,12 +351,13 @@ export async function exportToPDF({
     );
 
     let i=1;
-    for (const dim of dimensions) {
-      //@ts-ignore
-      if(notice.containerEl.parentElement) {
+    for (const dim of dimensions) {    
+      if(noticeContainerEl.parentElement) {
         notice.setMessage(`${msg} ${i++}/${dimensions.length}${SVG.length>1?` ${imgmsg} ${j}`:""}`);
       } else {
         notice = new Notice(`${msg} ${i++}/${dimensions.length}${SVG.length>1?` ${imgmsg} ${j}`:""}`, 0);
+        //@ts-ignore
+        noticeContainerEl = notice.containerEl ?? notice.noticeEl;
       }
       await addSVGToPage(pdfDoc, svg, dim, pageProps.dimensions, pageProps);
     }
@@ -352,7 +365,7 @@ export async function exportToPDF({
   }
 
   //@ts-ignore
-  if(notice.containerEl.parentElement) {
+  if(noticeContainerEl.parentElement) {
     notice.setMessage(t('EXPORTDIALOG_PDF_PROGRESS_DONE'));
     setTimeout(() => notice.hide(), 4000);
   } else {

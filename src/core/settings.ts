@@ -2509,6 +2509,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.requestReloadDrawings = true;
             this.plugin.settings.experimentalEnableFourthFont = value;
             this.applySettingsUpdate();
+            if(value) {
+              this.plugin.initializeFonts();
+            }
           }),
       );
     

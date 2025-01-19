@@ -147,6 +147,7 @@ const BUILD_CONFIG = {
     entryFileNames: 'main.js',
     format: 'cjs',
     exports: 'default',
+    inlineDynamicImports: true, // Add this line only
   },
   plugins: getRollupPlugins(
     {
