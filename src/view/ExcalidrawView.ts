@@ -598,6 +598,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         backgroundColor: this.exportDialog.getPaperColor(),
         margin: getMarginValue(this.exportDialog.margin),
         alignment: this.exportDialog.alignment,
+        exportDPI: this.exportDialog.exportDPI,
       }
     });
   

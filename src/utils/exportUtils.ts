@@ -1,9 +1,10 @@
 import { PDFDocument, rgb } from '@cantoo/pdf-lib';
+import exp from 'constants';
+import { Notice } from 'obsidian';
 import { getEA } from 'src/core';
+import { t } from 'src/lang/helpers';
 
-const SVG_DPI = 300;
 const PDF_DPI = 72;
-const SVG_TO_PDF_SCALE = PDF_DPI / SVG_DPI;
 
 export type PDFPageAlignment = "center" | "top-left" | "top-center" | "top-right" | "bottom-left" | "bottom-center" | "bottom-right";
 export type PDFPageMarginString = "none" | "tiny" | "normal";
@@ -25,6 +26,7 @@ export interface PDFPageProperties {
   backgroundColor?: string;
   margin: PDFMargin;
   alignment: PDFPageAlignment;
+  exportDPI: number;
 }
 
 export interface PageDimensions {
@@ -126,10 +128,12 @@ function calculateDimensions(
   pageDim: PageDimensions,
   margin: PDFPageProperties['margin'],
   scale: PDFExportScale,
-  alignment: PDFPageAlignment
+  alignment: PDFPageAlignment,
+  exportDPI: number,
 ): SVGDimensions[] {
-  const pdfWidth = svgWidth * SVG_TO_PDF_SCALE;
-  const pdfHeight = svgHeight * SVG_TO_PDF_SCALE;
+  const svg_to_pdf_scale = PDF_DPI / exportDPI;
+  const pdfWidth = svgWidth * svg_to_pdf_scale;
+  const pdfHeight = svgHeight * svg_to_pdf_scale;
   const availableWidth = pageDim.width - margin.left - margin.right;
   const availableHeight = pageDim.height - margin.top - margin.bottom;
 
@@ -206,10 +210,10 @@ function calculateDimensions(
             height: tileHeight,
             x: margin.left,
             y: margin.top,
-            sourceX: (col * roundedAvailableWidth) / ((scale.zoom || 1) * SVG_TO_PDF_SCALE),
-            sourceY: (row * roundedAvailableHeight) / ((scale.zoom || 1) * SVG_TO_PDF_SCALE),
-            sourceWidth: tileWidth / ((scale.zoom || 1) * SVG_TO_PDF_SCALE),
-            sourceHeight: tileHeight / ((scale.zoom || 1) * SVG_TO_PDF_SCALE)
+            sourceX: (col * roundedAvailableWidth) / ((scale.zoom || 1) * svg_to_pdf_scale),
+            sourceY: (row * roundedAvailableHeight) / ((scale.zoom || 1) * svg_to_pdf_scale),
+            sourceWidth: tileWidth / ((scale.zoom || 1) * svg_to_pdf_scale),
+            sourceHeight: tileHeight / ((scale.zoom || 1) * svg_to_pdf_scale)
           });
         }
       }
@@ -223,12 +227,12 @@ async function addSVGToPage(
   svg: SVGSVGElement,
   dimensions: SVGDimensions,
   pageDim: PageDimensions,
-  backgroundColor?: string
+  pageProps: PDFPageProperties
 ) {
   const page = pdfDoc.addPage([pageDim.width, pageDim.height]);
     
-  if (backgroundColor && backgroundColor !== '#ffffff') {
-    const { r, g, b } = hexToRGB(backgroundColor);
+  if (pageProps.backgroundColor && pageProps.backgroundColor !== '#ffffff') {
+    const { r, g, b } = hexToRGB(pageProps.backgroundColor);
     page.drawRectangle({
       x: 0,
       y: 0,
@@ -238,23 +242,20 @@ async function addSVGToPage(
     });
   }
 
-  // Clone and modify SVG for tiling if needed
-  let svgToEmbed = svg;
-  if (dimensions.sourceX !== undefined) {
-    svgToEmbed = svg.cloneNode(true) as SVGSVGElement;
-    const viewBox = `${dimensions.sourceX} ${dimensions.sourceY} ${dimensions.sourceWidth} ${dimensions.sourceHeight}`;
-    svgToEmbed.setAttribute('viewBox', viewBox);
-    svgToEmbed.setAttribute('width', String(dimensions.sourceWidth));
-    svgToEmbed.setAttribute('height', String(dimensions.sourceHeight));
-  }
-
-  svgToEmbed = await preprocessSVGForPDFLib(svgToEmbed);
-  const svgImage = await pdfDoc.embedSvg(svgToEmbed.outerHTML);
+  // Render SVG to canvas with specified DPI
+  const canvas = await renderSVGToCanvas(svg, dimensions, pageProps.exportDPI);
+  
+  // Convert canvas to PNG
+  const pngData = canvas.toDataURL('image/png');
+  
+  // Embed the PNG in the PDF
+  const image = await pdfDoc.embedPng(pngData);
   
   // Adjust y-coordinate to account for PDF coordinate system
-  const adjustedY = pageDim.height - dimensions.y;
+  const adjustedY = pageDim.height - dimensions.y - dimensions.height;
 
-  page.drawSvg(svgImage, {
+  // Draw the image
+  page.drawImage(image, {
     x: dimensions.x,
     y: adjustedY,
     width: dimensions.width,
@@ -264,62 +265,45 @@ async function addSVGToPage(
   return page;
 }
 
-async function convertImageToDataURL(src: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL('image/png'));
-    };
-    img.onerror = () => reject(new Error('Failed to load image'));
-    img.src = src;
-  });
-}
-
-async function preprocessSVGForPDFLib(svg: SVGSVGElement): Promise<SVGSVGElement> {
-  const clone = svg.cloneNode(true) as SVGSVGElement;
+async function renderSVGToCanvas(
+  svg: SVGSVGElement,
+  dimensions: SVGDimensions,
+  exportDPI: number = 300,
+): Promise<HTMLCanvasElement> {
+  const canvas = document.createElement('canvas');
+  const scale = exportDPI / PDF_DPI;
   
-  // Convert all images to PNG format
-  const images = clone.querySelectorAll('image');
-  await Promise.all(Array.from(images).map(async (img) => {
-    const href = img.getAttribute('href') || img.getAttribute('xlink:href');
-    if (href && href.startsWith('data:image/')) {
-      try {
-        const pngDataUrl = await convertImageToDataURL(href);
-        img.setAttribute('href', pngDataUrl);
-        if (img.hasAttribute('xlink:href')) {
-          img.setAttribute('xlink:href', pngDataUrl);
-        }
-      } catch (error) {
-        console.error('Failed to convert image:', error);
-      }
-    }
-  }));
+  canvas.width = dimensions.width * scale;
+  canvas.height = dimensions.height * scale;
 
-  // Convert symbols with images
-  const symbols = clone.querySelectorAll('symbol');
-  for (const symbol of Array.from(symbols)) {
-    const image = symbol.querySelector('image');
-    if (image) {
-      const uses = clone.querySelectorAll(`use[href="#${symbol.id}"]`);
-      for (const use of Array.from(uses)) {
-        const newImage = image.cloneNode(true) as SVGImageElement;
-        newImage.setAttribute('width', use.getAttribute('width') || '100%');
-        newImage.setAttribute('height', use.getAttribute('height') || '100%');
-        newImage.setAttribute('x', use.getAttribute('x') || '0');
-        newImage.setAttribute('y', use.getAttribute('y') || '0');
-        use.parentNode.replaceChild(newImage, use);
-      }
-    }
-    symbol.remove();
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Failed to get canvas context');
+
+  let svgToRender = svg;
+  if (dimensions.sourceX !== undefined) {
+    svgToRender = svg.cloneNode(true) as SVGSVGElement;
+    const viewBox = `${dimensions.sourceX} ${dimensions.sourceY} ${dimensions.sourceWidth} ${dimensions.sourceHeight}`;
+    svgToRender.setAttribute('viewBox', viewBox);
+    svgToRender.setAttribute('width', String(dimensions.sourceWidth));
+    svgToRender.setAttribute('height', String(dimensions.sourceHeight));
   }
 
-  return clone;
+  const svgBlob = new Blob([svgToRender.outerHTML], { type: 'image/svg+xml;charset=utf-8' });
+  const blobUrl = URL.createObjectURL(svgBlob);
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(blobUrl);
+      resolve(canvas);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(blobUrl);
+      reject(new Error('Failed to load SVG'));
+    };
+    img.src = blobUrl;
+  });
 }
 
 export async function exportToPDF({
@@ -331,8 +315,15 @@ export async function exportToPDF({
   scale: PDFExportScale;
   pageProps: PDFPageProperties;
 }): Promise<ArrayBuffer> {
+  
   const pdfDoc = await PDFDocument.create();
 
+  const msg = t('EXPORTDIALOG_PDF_PROGRESS_NOTICE');
+  const imgmsg = t('EXPORTDIALOG_PDF_PROGRESS_IMAGE');
+
+  let notice = new Notice(msg, 0);
+
+  let j=1;
   for (const svg of SVG) {
     const svgWidth = parseFloat(svg.getAttribute('width') || '0');
     const svgHeight = parseFloat(svg.getAttribute('height') || '0');
@@ -343,14 +334,30 @@ export async function exportToPDF({
       pageProps.dimensions, 
       pageProps.margin, 
       scale,
-      pageProps.alignment
+      pageProps.alignment,
+      pageProps.exportDPI
     );
 
+    let i=1;
     for (const dim of dimensions) {
-      await addSVGToPage(pdfDoc, svg, dim, pageProps.dimensions, pageProps.backgroundColor);
+      //@ts-ignore
+      if(notice.containerEl.parentElement) {
+        notice.setMessage(`${msg} ${i++}/${dimensions.length}${SVG.length>1?` ${imgmsg} ${j}`:""}`);
+      } else {
+        notice = new Notice(`${msg} ${i++}/${dimensions.length}${SVG.length>1?` ${imgmsg} ${j}`:""}`, 0);
+      }
+      await addSVGToPage(pdfDoc, svg, dim, pageProps.dimensions, pageProps);
     }
+    j++;
   }
 
+  //@ts-ignore
+  if(notice.containerEl.parentElement) {
+    notice.setMessage(t('EXPORTDIALOG_PDF_PROGRESS_DONE'));
+    setTimeout(() => notice.hide(), 4000);
+  } else {
+    new Notice(t('EXPORTDIALOG_PDF_PROGRESS_DONE'));
+  }
   return pdfDoc.save();
 }
 

@@ -245,6 +245,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
         "@property {string} [backgroundColor] - The background color of the PDF pages.\n" +
         "@property {PDFMargin} margin - The margins of the PDF pages.\n" +
         "@property {PDFPageAlignment} alignment - The alignment of the SVG on the PDF pages.\n" +
+        "@property {number} exportDPI - The DPI of the exported PDF (150/300/600/1200).\n" +
         "\n" +
         "@example\n" +
         "const pdfData = await createPDF({\n" +
@@ -255,6 +256,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
         "    backgroundColor: \"#ffffff\",\n" +
         "    margin: { left: 20, right: 20, top: 20, bottom: 20 },\n" +
         "    alignment: \"center\"\n" +
+        "    exportDPI: 300\n" +
         "  }\n" +
         "});",
   },

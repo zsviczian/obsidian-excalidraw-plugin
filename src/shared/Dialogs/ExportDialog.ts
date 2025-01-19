@@ -43,6 +43,7 @@ export class ExportDialog extends Modal {
   public customPaperColor: string = "#ffffff";
   public alignment: PDFPageAlignment = "center";
   public margin: PDFPageMarginString = "normal";
+  public exportDPI: number = 300;
 
   constructor(
     private plugin: ExcalidrawPlugin,
@@ -68,6 +69,7 @@ export class ExportDialog extends Modal {
     this.customPaperColor = plugin.settings.pdfSettings.customPaperColor;
     this.alignment = plugin.settings.pdfSettings.alignment;
     this.margin = plugin.settings.pdfSettings.margin;
+    this.exportDPI = plugin.settings.pdfSettings.exportDPI ?? 300;
 
     this.saveSettings = false;
   }
@@ -276,7 +278,8 @@ export class ExportDialog extends Modal {
       paperColor: this.paperColor,
       customPaperColor: this.customPaperColor,
       alignment: this.alignment,
-      margin: this.margin
+      margin: this.margin,
+      exportDPI: this.exportDPI, 
     };
 
     new PDFExportSettingsComponent(
@@ -290,6 +293,7 @@ export class ExportDialog extends Modal {
         this.customPaperColor = pdfSettings.customPaperColor;
         this.alignment = pdfSettings.alignment;
         this.margin = pdfSettings.margin;
+        this.exportDPI = pdfSettings.exportDPI ?? 300;
       }
     ).render();
   }
@@ -378,7 +382,8 @@ export class ExportDialog extends Modal {
         paperColor: this.paperColor,
         customPaperColor: this.customPaperColor,
         alignment: this.alignment,
-        margin: this.margin
+        margin: this.margin,
+        exportDPI: this.exportDPI,
       };
       await this.plugin.saveSettings();
       new Notice(t("EXPORTDIALOG_SAVE_CONFIRMATION"));

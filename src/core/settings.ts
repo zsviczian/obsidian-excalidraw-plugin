@@ -506,7 +506,8 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
     paperColor: "white",
     customPaperColor: "#ffffff",
     alignment: "center",
-    margin: "normal"
+    margin: "normal",
+    exportDPI: 300,
   },
 };
 

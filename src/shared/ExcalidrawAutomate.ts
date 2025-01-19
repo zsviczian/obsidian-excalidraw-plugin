@@ -967,7 +967,8 @@ export class ExcalidrawAutomate {
    *     dimensions: { width: 595.28, height: 841.89 },
    *     backgroundColor: "#ffffff",
    *     margin: { left: 20, right: 20, top: 20, bottom: 20 },
-   *     alignment: "center"
+   *     alignment: "center",
+   *     exportDPI: 300,
    *   }
    * });
   */
@@ -984,6 +985,7 @@ export class ExcalidrawAutomate {
       pageProps = {
         alignment: this.plugin.settings.pdfSettings.alignment,
         margin: getMarginValue(this.plugin.settings.pdfSettings.margin),
+        exportDPI: this.plugin.settings.pdfSettings.exportDPI ?? 300,
       };
     }
 
