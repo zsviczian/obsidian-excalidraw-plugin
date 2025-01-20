@@ -372,7 +372,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   constructor(leaf: WorkspaceLeaf, plugin: ExcalidrawPlugin) {
     super(leaf);
     this._plugin = plugin;
-    this.excalidrawData = new ExcalidrawData(plugin);
+    this.excalidrawData = new ExcalidrawData(plugin, this);
     this.canvasNodeFactory = new CanvasNodeFactory(this);
     this.setHookServer();
     this.dropManager = new DropManager(this);
