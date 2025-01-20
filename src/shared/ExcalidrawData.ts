@@ -52,10 +52,11 @@ import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "..
 import { DEBUGGING, debug } from "../utils/debugHelper";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { updateElementIdsInScene } from "../utils/excalidrawSceneUtils";
-import { getNewUniqueFilepath, splitFolderAndFilename } from "../utils/fileUtils";
+import { checkAndCreateFolder, getNewUniqueFilepath, splitFolderAndFilename } from "../utils/fileUtils";
 import { t } from "../lang/helpers";
 import { displayFontMessage } from "../utils/excalidrawViewUtils";
 import { getPDFRect } from "../utils/PDFUtils";
+import { create } from "domain";
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles };
 
@@ -1558,6 +1559,7 @@ export class ExcalidrawData {
     let filepath:string;
     if(hookFilepath) {
       const {folderpath, filename} = splitFolderAndFilename(hookFilepath);
+      await checkAndCreateFolder(folderpath);
       filepath = getNewUniqueFilepath(this.app.vault,filename,folderpath);
     } else {
       const x = await getAttachmentsFolderAndFilePath(this.app, this.file.path, fname);

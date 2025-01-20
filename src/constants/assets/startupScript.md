@@ -138,7 +138,7 @@
  *   drawingFilePath: string; // The full filepath of the Excalidraw file where the image is being used.
  * }) => string = null;  
 */
-//ea.onImageFileNameHook = (data) => {};
+//ea.onImageFilePathHook = (data) => {};
 
 /**
  * If set, this callback is triggered whenever the active canvas color changes
