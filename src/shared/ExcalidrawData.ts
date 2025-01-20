@@ -20,7 +20,7 @@ import {
   loadSceneFonts,
 } from "../constants/constants";
 import ExcalidrawPlugin from "../core/main";
-import { TextMode } from "../view/ExcalidrawView";
+import ExcalidrawView, { TextMode } from "../view/ExcalidrawView";
 import {
   addAppendUpdateCustomData,
   compress,
@@ -52,7 +52,7 @@ import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "..
 import { DEBUGGING, debug } from "../utils/debugHelper";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { updateElementIdsInScene } from "../utils/excalidrawSceneUtils";
-import { getNewUniqueFilepath } from "../utils/fileUtils";
+import { getNewUniqueFilepath, splitFolderAndFilename } from "../utils/fileUtils";
 import { t } from "../lang/helpers";
 import { displayFontMessage } from "../utils/excalidrawViewUtils";
 import { getPDFRect } from "../utils/PDFUtils";
@@ -480,7 +480,7 @@ export class ExcalidrawData {
   selectedElementIds: {[key:string]:boolean} = {}; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/609
 
   constructor(
-    private plugin: ExcalidrawPlugin,
+    private plugin: ExcalidrawPlugin, private view?: ExcalidrawView,
   ) {
     this.app = this.plugin.app;
     this.files = new Map<FileId, EmbeddedFile>();
@@ -1546,13 +1546,23 @@ export class ExcalidrawData {
       }
     }
 
-    const x = await getAttachmentsFolderAndFilePath(this.app, this.file.path, fname);
-    const filepath = getNewUniqueFilepath(this.app.vault,fname,x.folder);
+    let hookFilepath:string;
+    const ea = this.view?.getHookServer();
+    if(ea?.onImageFilePathHook) {
+      hookFilepath = ea.onImageFilePathHook({
+        currentImageName: fname,
+        drawingFilePath: this.view?.file?.path,
+      })
+    }
 
-    /*
-    const filepath = (
-      await getAttachmentsFolderAndFilePath(this.app, this.file.path, fname)
-    ).filepath;*/
+    let filepath:string;
+    if(hookFilepath) {
+      const {folderpath, filename} = splitFolderAndFilename(hookFilepath);
+      filepath = getNewUniqueFilepath(this.app.vault,filename,folderpath);
+    } else {
+      const x = await getAttachmentsFolderAndFilePath(this.app, this.file.path, fname);
+      filepath = getNewUniqueFilepath(this.app.vault,fname,x.folder);
+    }
 
     const arrayBuffer = await getBinaryFileFromDataURL(dataURL);
     if(!arrayBuffer) return null;
