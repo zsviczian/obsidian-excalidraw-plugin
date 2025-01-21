@@ -289,9 +289,15 @@ async function renderSVGToCanvas(
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Failed to get canvas context');
 
-  let svgToRender = svg;
+  let svgToRender = svg.cloneNode(true) as SVGSVGElement;
+
+  // Remove foreignObject elements
+  const foreignObjects = svgToRender.getElementsByTagName('foreignObject');
+  while (foreignObjects.length > 0) {
+    foreignObjects[0].parentNode?.removeChild(foreignObjects[0]);
+  }
+
   if (dimensions.sourceX !== undefined) {
-    svgToRender = svg.cloneNode(true) as SVGSVGElement;
     const viewBox = `${dimensions.sourceX} ${dimensions.sourceY} ${dimensions.sourceWidth} ${dimensions.sourceHeight}`;
     svgToRender.setAttribute('viewBox', viewBox);
     svgToRender.setAttribute('width', String(dimensions.sourceWidth));
@@ -303,6 +309,7 @@ async function renderSVGToCanvas(
 
   return new Promise((resolve, reject) => {
     const img = new Image();
+    img.crossOrigin = 'Anonymous'; // Enable CORS
     img.onload = () => {
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(blobUrl);
