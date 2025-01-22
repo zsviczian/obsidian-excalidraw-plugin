@@ -226,7 +226,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "createPDF",
-    code: "async createPDF({SVG: SVGSVGElement[], scale?: PDFExportScale, pageProps?: PDFPageProperties}): Promise<ArrayBuffer>",
+    code: "async createPDF({SVG: SVGSVGElement[], scale?: PDFExportScale, pageProps?: PDFPageProperties}): Promise<void>",
     desc: "",
     after: "Creates a PDF from the provided SVG elements with specified scaling and page properties.\n" +
         "\n" +
@@ -241,11 +241,10 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
         "@property {number} [zoom=1] - The zoom level for the SVG. Used only if fitToPage is false. If the SVG does not fit the page, it will be tiled over multiple pages.\n" +
         "\n" +
         "@typedef {Object} PDFPageProperties\n" +
-        "@property {{width: number, height: number}} [dimensions] - The dimensions of the PDF pages. Use getPageDimensions to get standard page sizes.\n" +
+        "@property {{width: number, height: number}} [dimensions] - The dimensions of the PDF pages in pixels. Use getPageDimensions to get standard page sizes.\n" +
         "@property {string} [backgroundColor] - The background color of the PDF pages.\n" +
-        "@property {PDFMargin} margin - The margins of the PDF pages.\n" +
+        "@property {PDFMargin} margin - The margins of the PDF pages in pixels.\n" +
         "@property {PDFPageAlignment} alignment - The alignment of the SVG on the PDF pages.\n" +
-        "@property {number} exportDPI - The DPI of the exported PDF (150/300/600/1200).\n" +
         "\n" +
         "@example\n" +
         "const pdfData = await createPDF({\n" +
@@ -256,22 +255,21 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
         "    backgroundColor: \"#ffffff\",\n" +
         "    margin: { left: 20, right: 20, top: 20, bottom: 20 },\n" +
         "    alignment: \"center\"\n" +
-        "    exportDPI: 300\n" +
         "  }\n" +
         "});",
   },
   {
     field: "getPagePDFDimensions",
     code: "getPagePDFDimensions(pageSize: PageSize, orientation: PageOrientation): PageDimensions",
-    desc: "Returns the dimensions of a standard page size in points (pt).\n" +
+    desc: "Returns the dimensions of a standard page size in pixels.\n" +
           "\n" +
           "@param {PageSize} pageSize - The standard page size. Possible values are \"A0\", \"A1\", \"A2\", \"A3\", \"A4\", \"A5\", \"Letter\", \"Legal\", \"Tabloid\".\n" +
           "@param {PageOrientation} orientation - The orientation of the page. Possible values are \"portrait\" and \"landscape\".\n" +
-          "@returns {PageDimensions} - An object containing the width and height of the page in points (pt).\n" +
+          "@returns {PageDimensions} - An object containing the width and height of the page in pixels.\n" +
           "\n" +
           "@typedef {Object} PageDimensions\n" +
-          "@property {number} width - The width of the page in points (pt).\n" +
-          "@property {number} height - The height of the page in points (pt).\n" +
+          "@property {number} width - The width of the page in pixels.\n" +
+          "@property {number} height - The height of the page in pixels.\n" +
           "\n" +
           "@typedef {\"A0\" | \"A1\" | \"A2\" | \"A3\" | \"A4\" | \"A5\" | \"Letter\" | \"Legal\" | \"Tabloid\"} PageSize\n" +
           "\n" +

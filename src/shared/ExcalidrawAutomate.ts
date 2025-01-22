@@ -932,19 +932,19 @@ export class ExcalidrawAutomate {
   };
 
   /**
-   * Returns the dimensions of a standard page size in points (pt).
+   * Returns the dimensions of a standard page size in pixels.
    *
    * @param {PageSize} pageSize - The standard page size. Possible values are "A0", "A1", "A2", "A3", "A4", "A5", "Letter", "Legal", "Tabloid".
    * @param {PageOrientation} orientation - The orientation of the page. Possible values are "portrait" and "landscape".
-   * @returns {PageDimensions} - An object containing the width and height of the page in points (pt).
+   * @returns {PageDimensions} - An object containing the width and height of the page in pixels.
    *
    * @typedef {Object} PageDimensions
-   * @property {number} width - The width of the page in points (pt).
-   * @property {number} height - The height of the page in points (pt).
+   * @property {number} width - The width of the page in pixels.
+   * @property {number} height - The height of the page in pixels.
    *
    * @example
    * const dimensions = getPageDimensions("A4", "portrait");
-   * console.log(dimensions); // { width: 595.28, height: 841.89 }
+   * console.log(dimensions); // { width: 794.56, height: 1122.56 }
   */
   getPagePDFDimensions(pageSize: PageSize, orientation: PageOrientation): PageDimensions {
     return getPageDimensions(pageSize, orientation);
@@ -964,11 +964,10 @@ export class ExcalidrawAutomate {
    *   SVG: [svgElement1, svgElement2],
    *   scale: { fitToPage: 1 },
    *   pageProps: {
-   *     dimensions: { width: 595.28, height: 841.89 },
+   *     dimensions: { width: 794.56, height: 1122.56 },
    *     backgroundColor: "#ffffff",
    *     margin: { left: 20, right: 20, top: 20, bottom: 20 },
    *     alignment: "center",
-   *     exportDPI: 300,
    *   }
    * });
   */
