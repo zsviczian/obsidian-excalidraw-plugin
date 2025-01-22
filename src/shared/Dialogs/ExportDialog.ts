@@ -6,7 +6,7 @@ import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import ExcalidrawPlugin from "src/core/main";
 import { fragWithHTML, getExportPadding, getExportTheme, getPNGScale, getWithBackground, shouldEmbedScene } from "src/utils/utils";
-import { PageOrientation, PageSize, PDFMargin, PDFPageAlignment, PDFPageMarginString, STANDARD_PAGE_SIZES, exportSVGToClipboard } from "src/utils/exportUtils";
+import { PageOrientation, PageSize, PDFPageAlignment, PDFPageMarginString, exportSVGToClipboard } from "src/utils/exportUtils";
 import { t } from "src/lang/helpers";
 import { PDFExportSettings, PDFExportSettingsComponent } from "./PDFExportSettingsComponent";
 
@@ -43,7 +43,6 @@ export class ExportDialog extends Modal {
   public customPaperColor: string = "#ffffff";
   public alignment: PDFPageAlignment = "center";
   public margin: PDFPageMarginString = "normal";
-  public exportDPI: number = 300;
 
   constructor(
     private plugin: ExcalidrawPlugin,
@@ -69,7 +68,6 @@ export class ExportDialog extends Modal {
     this.customPaperColor = plugin.settings.pdfSettings.customPaperColor;
     this.alignment = plugin.settings.pdfSettings.alignment;
     this.margin = plugin.settings.pdfSettings.margin;
-    this.exportDPI = plugin.settings.pdfSettings.exportDPI ?? 300;
 
     this.saveSettings = false;
   }
@@ -279,7 +277,6 @@ export class ExportDialog extends Modal {
       customPaperColor: this.customPaperColor,
       alignment: this.alignment,
       margin: this.margin,
-      exportDPI: this.exportDPI, 
     };
 
     new PDFExportSettingsComponent(
@@ -293,7 +290,6 @@ export class ExportDialog extends Modal {
         this.customPaperColor = pdfSettings.customPaperColor;
         this.alignment = pdfSettings.alignment;
         this.margin = pdfSettings.margin;
-        this.exportDPI = pdfSettings.exportDPI ?? 300;
       }
     ).render();
   }
@@ -383,24 +379,9 @@ export class ExportDialog extends Modal {
         customPaperColor: this.customPaperColor,
         alignment: this.alignment,
         margin: this.margin,
-        exportDPI: this.exportDPI,
       };
       await this.plugin.saveSettings();
       new Notice(t("EXPORTDIALOG_SAVE_CONFIRMATION"));
-    };
-
-    const bPDFVault = this.buttonContainerRow1.createEl("button", { 
-      text: t("EXPORTDIALOG_PDFTOVAULT"), 
-      cls: "excalidraw-export-button" 
-    });
-    bPDFVault.onclick = () => {
-      this.view.exportPDF(
-        true,
-        this.hasSelectedElements && this.exportSelectedOnly,
-        this.pageSize,
-        this.pageOrientation
-      );
-      this.close();
     };
 
     if (!DEVICE.isDesktop) return;

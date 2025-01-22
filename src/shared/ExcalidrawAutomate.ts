@@ -976,16 +976,17 @@ export class ExcalidrawAutomate {
     SVG,
     scale = { fitToPage: 1, zoom: 1 },
     pageProps,
+    filename,
   }: {
     SVG: SVGSVGElement[];
     scale?: PDFExportScale;
     pageProps?: PDFPageProperties;
-  }): Promise<ArrayBuffer> {
+    filename: string;
+  }): Promise<void> {
     if(!pageProps) {
       pageProps = {
         alignment: this.plugin.settings.pdfSettings.alignment,
         margin: getMarginValue(this.plugin.settings.pdfSettings.margin),
-        exportDPI: this.plugin.settings.pdfSettings.exportDPI ?? 300,
       };
     }
 
@@ -999,7 +1000,7 @@ export class ExcalidrawAutomate {
       pageProps.backgroundColor = "#ffffff";
     }
     
-    return await exportToPDF({SVG, scale, pageProps});
+    await exportToPDF({SVG, scale, pageProps, filename});
   }
 
   /**

@@ -10,7 +10,6 @@ export interface PDFExportSettings {
   customPaperColor: string;
   alignment: PDFPageAlignment;
   margin: PDFPageMarginString;
-  exportDPI: number;
 }
 
 export class PDFExportSettingsComponent {
@@ -52,23 +51,6 @@ export class PDFExportSettingsComponent {
           .setValue(this.settings.pageOrientation)
           .onChange(value => {
             this.settings.pageOrientation = value as PageOrientation;
-            this.update();
-          })
-      );
-
-    new Setting(this.contentEl)
-      .setName(t("EXPORTDIALOG_PDF_DPI"))
-      .addDropdown(dropdown =>
-        dropdown
-          .addOptions({
-            "150": "150",
-            "300": "300",
-            "600": "600",
-            "1200": "1200"
-          })
-          .setValue(`${this.settings.exportDPI}`)
-          .onChange(value => {
-            this.settings.exportDPI = parseInt(value);
             this.update();
           })
       );

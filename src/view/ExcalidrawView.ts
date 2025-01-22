@@ -587,7 +587,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       return;
     }
   
-    const pdfArrayBuffer = await exportToPDF({
+    exportToPDF({
       SVG: [svg],
       scale: {
         zoom: this.exportDialog.scale,
@@ -598,36 +598,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         backgroundColor: this.exportDialog.getPaperColor(),
         margin: getMarginValue(this.exportDialog.margin),
         alignment: this.exportDialog.alignment,
-        exportDPI: this.exportDialog.exportDPI,
-      }
+      },
+      filename: this.file.basename,
     });
-  
-    if (!pdfArrayBuffer) {
-      return;
-    }
-  
-    if(toVault) {
-      const filepath = getIMGFilename(this.file.path, "pdf");
-      const file = await createOrOverwriteFile(this.app, filepath, pdfArrayBuffer);
-      let leaf: WorkspaceLeaf;
-      this.app.workspace.getLeavesOfType("pdf").forEach((l) => {
-        //@ts-ignore
-        if(l.view?.file === file) {
-          leaf = l;
-        }
-      });
-      if(leaf) {
-        this.app.workspace.revealLeaf(leaf);
-      } else {
-        this.app.workspace.getLeaf("split").openFile(file);
-      }
-    } else {
-      download(
-        "data:application/pdf;base64",
-        arrayBufferToBase64(pdfArrayBuffer),
-        `${this.file.basename}.pdf`
-      );
-    }
   }
 
   public async png(scene: any, theme?:string, embedScene?: boolean): Promise<Blob> {

@@ -1048,7 +1048,6 @@ FILENAME_HEAD: "Filename",
   EXPORTDIALOG_PAGE_ORIENTATION: "Orientation",
   EXPORTDIALOG_ORIENTATION_PORTRAIT: "Portrait",
   EXPORTDIALOG_ORIENTATION_LANDSCAPE: "Landscape",
-  EXPORTDIALOG_PDF_DPI: "Image quality [DPI]",
   EXPORTDIALOG_PDF_FIT_TO_PAGE: "Page Fitting",
   EXPORTDIALOG_PDF_FIT_OPTION: "Fit to page",
   EXPORTDIALOG_PDF_FIT_2_OPTION: "Fit to 2-pages",
@@ -1085,9 +1084,11 @@ FILENAME_HEAD: "Filename",
   EXPORTDIALOG_PNGTOCLIPBOARD : "PNG to Clipboard",
   EXPORTDIALOG_SVGTOCLIPBOARD : "SVG to Clipboard",
   EXPORTDIALOG_PDF: "Export PDF",
-  EXPORTDIALOG_PDFTOVAULT: "PDF to Vault",
 
-  EXPORTDIALOG_PDF_PROGRESS_NOTICE: "Exporting page",
-  EXPORTDIALOG_PDF_PROGRESS_IMAGE: "of image",
+  EXPORTDIALOG_PDF_PROGRESS_NOTICE: "Exporting PDF. If this image is large, it may take a while.",
   EXPORTDIALOG_PDF_PROGRESS_DONE: "Export complete",
+  EXPORTDIALOG_PDF_PROGRESS_ERROR: "Error exporting PDF, check developer console for details",
+
+  //exportUtils.ts
+  PDF_EXPORT_DESKTOP_ONLY: "PDF export is only available on desktop",
 };
