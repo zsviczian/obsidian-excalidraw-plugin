@@ -722,6 +722,8 @@ FILENAME_HEAD: "Filename",
     "restart Obsidian after closing settings, for this change to take effect.",
   LATEX_DEFAULT_NAME: "Default LaTeX formula for new equations",
   LATEX_DEFAULT_DESC: "Leave empty if you don't want a default formula. You can add default formatting here such as <code>\\color{white}</code>.",
+  LATEX_PREAMBLE_NAME: "LaTeX preamble file (CasE SEnSiTivE!)",
+  LATEX_PREAMBLE_DESC: "Full filepath to the preamble file, leave empty for default. If the file doesn't exist this option will be ignored.<br><strong>Important:</strong> Requires obsidian reload after change to take effect!",
   NONSTANDARD_HEAD: "Non-Excalidraw.com supported features",
   NONSTANDARD_DESC: `These settings in the "Non-Excalidraw.com Supported Features" section provide customization options beyond the default Excalidraw.com features. These features are not available on excalidraw.com. When exporting the drawing to Excalidraw.com these features will appear different.
     You can configure the number of custom pens displayed next to the Obsidian Menu on the canvas, allowing you to choose from a range of options. Additionally, you can enable a local font option, which adds a local font to the list of fonts on the element properties panel for text elements. `,

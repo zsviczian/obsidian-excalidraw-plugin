@@ -173,6 +173,7 @@ export interface ExcalidrawSettings {
   showNewVersionNotification: boolean;
   //mathjaxSourceURL: string;
   latexBoilerplate: string;
+  latexPreambleLocation: string;
   taskboneEnabled: boolean;
   taskboneAPIkey: string;
   pinnedScripts: string[];
@@ -348,6 +349,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   showNewVersionNotification: true,
   //mathjaxSourceURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.1/es5/tex-svg.js",
   latexBoilerplate: "\\color{blue}",
+  latexPreambleLocation: "preamble.sty",
   taskboneEnabled: false,
   taskboneAPIkey: "",
   pinnedScripts: [],
@@ -2613,6 +2615,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.latexBoilerplate)
           .onChange( (value) => {
             this.plugin.settings.latexBoilerplate = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+	new Setting(detailsEl)
+      .setName(t("LATEX_PREAMBLE_NAME"))
+      .setDesc(fragWithHTML(t("LATEX_PREAMBLE_DESC")))
+      .addText((text) =>
+        text
+	  	  .setPlaceholder("e.g.: preamble.sty")
+          .setValue(this.plugin.settings.latexPreambleLocation)
+          .onChange(async (value) => {
+            this.plugin.settings.latexPreambleLocation = value;
             this.applySettingsUpdate();
           }),
       );

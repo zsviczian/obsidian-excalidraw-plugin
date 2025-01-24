@@ -38,7 +38,7 @@ async function getImageSize(src: string): Promise<{ height: number; width: numbe
 export async function tex2dataURL(
   tex: string,
   scale: number = 4,
-  app?: any
+  plugin?: any
 ): Promise<{
   mimeType: string;
   fileId: FileId;
@@ -50,9 +50,9 @@ export async function tex2dataURL(
   let output: SVG<unknown, unknown, unknown>;
 
   if(!adaptor) {
-    if (app) {
-      const file = app.vault.getAbstractFileByPath("preamble.sty");
-      preamble = file ? await app.vault.read(file) : null;
+    if (plugin) {
+      const file = plugin.app.vault.getAbstractFileByPath(plugin.settings.latexPreambleLocation || "preamble.sty");
+      preamble = file ? await plugin.app.vault.read(file) : null;
     }
     adaptor = liteAdaptor();
     RegisterHTMLHandler(adaptor);
