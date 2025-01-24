@@ -203,6 +203,7 @@ async function printPdf(
 }
 
 function calculateDimensions(
+  svg: SVGSVGElement,
   svgWidth: number,
   svgHeight: number,
   pageDim: PageDimensions,
@@ -219,6 +220,9 @@ function calculateDimensions(
   }[],
   pages: number
 } {
+  const viewBox = svg.getAttribute('viewBox')?.split(' ').map(Number) || [0, 0, svgWidth, svgHeight];
+  const [viewBoxX, viewBoxY] = viewBox;
+
   const availableWidth = pageDim.width - margin.left - margin.right;
   const availableHeight = pageDim.height - margin.top - margin.bottom;
 
@@ -262,7 +266,7 @@ function calculateDimensions(
 
     return {
       tiles: [{
-        viewBox: `0 0 ${svgWidth} ${svgHeight}`,
+        viewBox: `${viewBoxX} ${viewBoxY} ${svgWidth} ${svgHeight}`,
         width: finalWidth,
         height: finalHeight,
         x: position.x,
@@ -297,7 +301,7 @@ function calculateDimensions(
       );
 
       tiles.push({
-        viewBox: `${tileX} ${tileY} ${tileWidth} ${tileHeight}`,
+        viewBox: `${tileX + viewBoxX} ${tileY + viewBoxY} ${tileWidth} ${tileHeight}`,
         width: scaledTileWidth,
         height: scaledTileHeight,
         x: position.x,
@@ -364,12 +368,13 @@ export async function exportToPDF({
   allPagesDiv.style.width = "100%";
   allPagesDiv.style.height = "fit-content";
 
-  let j = 1;
+  let j = 0;
   for (const svg of SVG) {
     const svgWidth = parseFloat(svg.getAttribute('width') || '0');
     const svgHeight = parseFloat(svg.getAttribute('height') || '0');
     
     const {tiles} = calculateDimensions(
+      svg,
       svgWidth,
       svgHeight,
       pageProps.dimensions,
@@ -378,7 +383,7 @@ export async function exportToPDF({
       pageProps.alignment
     );
 
-    let i = 1;
+    let i = 0;
     for (const tile of tiles) {
       const pageDiv = createDiv();
       pageDiv.style.width = `${width}px`;
@@ -394,7 +399,7 @@ export async function exportToPDF({
       clonedSVG.style.height = `${tile.height}px`;
       clonedSVG.style.position = 'absolute';
       clonedSVG.style.left = `${tile.x}px`;
-      clonedSVG.style.top = `${tile.y + (i-1)*height}px`;
+      clonedSVG.style.top = `${tile.y + (i+j)*height}px`;
 
       pageDiv.appendChild(clonedSVG);
       allPagesDiv.appendChild(pageDiv);

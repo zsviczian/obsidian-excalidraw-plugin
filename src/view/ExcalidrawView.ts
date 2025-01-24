@@ -153,6 +153,7 @@ import { DropManager } from "./managers/DropManager";
 import { ImageInfo } from "src/types/excalidrawAutomateTypes";
 import { exportToPDF, getMarginValue, getPageDimensions, PageOrientation, PageSize } from "src/utils/exportUtils";
 import { create } from "domain";
+import { FrameRenderingOptions } from "src/types/utilTypes";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -186,12 +187,7 @@ export interface ExportSettings {
   withBackground: boolean;
   withTheme: boolean;
   isMask: boolean;
-  frameRendering?: { //optional, overrides relevant appState settings for rendering the frame
-    enabled: boolean;
-    name: boolean;
-    outline: boolean;
-    clip: boolean;
-  };
+  frameRendering?: FrameRenderingOptions; //optional, overrides relevant appState settings for rendering the frame
   skipInliningFonts?: boolean;
 }
 
@@ -475,20 +471,61 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     );
   }
 
+  public getViewExportTheme(theme?:string):string {
+    if(theme) return theme;
+    if(!this.exportDialog) {
+      this.exportDialog = new ExportDialog(this.plugin, this,this.file);
+    }
+    const ed = this.exportDialog;
+    return ed ? ed.theme : getExportTheme(this.plugin, this.file, this.excalidrawAPI.getAppState().theme)
+  }
+
+  public getViewExportEmbedScene(embedScene?:boolean):boolean {
+    if(!this.exportDialog) {
+      this.exportDialog = new ExportDialog(this.plugin, this,this.file);
+    }
+    const ed = this.exportDialog;
+    return typeof embedScene === "undefined"
+      ? (ed ? ed.embedScene : false)
+      : embedScene;
+  }
+
+  public getViewExportPadding(padding?: number): number {
+    if(typeof padding !== "undefined") return padding;
+    if(!this.exportDialog) {
+      this.exportDialog = new ExportDialog(this.plugin, this,this.file);
+    }
+    const ed = this.exportDialog;
+    return ed ? ed.padding : getExportPadding(this.plugin, this.file)
+  }
+
+  public getViewExportScale(scale?: number): number {
+    if(typeof scale !== "undefined") return scale;
+    if(!this.exportDialog) {
+      this.exportDialog = new ExportDialog(this.plugin, this,this.file);
+    }
+    const ed = this.exportDialog;
+    return ed ? ed.scale : getPNGScale(this.plugin, this.file);
+  }
+
+  public getViewExportWithBackground(withBackground?:boolean) {
+    if(typeof withBackground !== "undefined") return withBackground;
+    if(!this.exportDialog) {
+      this.exportDialog = new ExportDialog(this.plugin, this,this.file);
+    }
+    const ed = this.exportDialog;
+    return ed ? !ed.transparent : getWithBackground(this.plugin, this.file)
+  }
+  
   public async svg(scene: any, theme?:string, embedScene?: boolean, embedFont: boolean = false): Promise<SVGSVGElement> {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.svg, "ExcalidrawView.svg", scene, theme, embedScene);
-    const ed = this.exportDialog;
 
     const exportSettings: ExportSettings = {
-      withBackground: ed ? !ed.transparent : getWithBackground(this.plugin, this.file),
+      withBackground: this.getViewExportWithBackground(),
       withTheme: true,
       isMask: isMaskFile(this.plugin, this.file),
       skipInliningFonts: !embedFont,
     };
-
-    if(typeof embedScene === "undefined") {
-      embedScene = shouldEmbedScene(this.plugin, this.file);
-    }
 
     return await getSVG(
       {
@@ -496,15 +533,13 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         ...{
           appState: {
             ...scene.appState,
-            theme: theme ?? (ed ? ed.theme : getExportTheme(this.plugin, this.file, scene.appState.theme)),
-            exportEmbedScene: typeof embedScene === "undefined"
-              ? (ed ? ed.embedScene : false)
-              : embedScene,
+            theme: this.getViewExportTheme(theme),
+            exportEmbedScene: this.getViewExportEmbedScene(embedScene),
           },
         },
       },
       exportSettings,
-      ed ? ed.padding : getExportPadding(this.plugin, this.file),
+      this.getViewExportPadding(),
       this.file,
     );
   }
@@ -567,7 +602,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   }
 
   public async exportPDF(
-    toVault: boolean,
     selectedOnly?: boolean,
     pageSize: PageSize = "A4",
     orientation: PageOrientation = "portrait"
@@ -605,17 +639,12 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
   public async png(scene: any, theme?:string, embedScene?: boolean): Promise<Blob> {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.png, "ExcalidrawView.png", scene, theme, embedScene);
-    const ed = this.exportDialog;
 
     const exportSettings: ExportSettings = {
-      withBackground: ed ? !ed.transparent : getWithBackground(this.plugin, this.file),
+      withBackground: this.getViewExportWithBackground(),
       withTheme: true,
       isMask: isMaskFile(this.plugin, this.file),
     };
-
-    if(typeof embedScene === "undefined") {
-      embedScene = shouldEmbedScene(this.plugin, this.file);
-    }
 
     return await getPNG(
       {
@@ -623,16 +652,14 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         ...{
           appState: {
             ...scene.appState,
-            theme: theme ?? (ed ? ed.theme : getExportTheme(this.plugin, this.file, scene.appState.theme)),
-            exportEmbedScene: typeof embedScene === "undefined"
-              ? (ed ? ed.embedScene : false)
-              : embedScene,
+            theme: this.getViewExportTheme(theme),
+            exportEmbedScene: this.getViewExportEmbedScene(embedScene),
           },
         },
       },
       exportSettings,
-      ed ? ed.padding : getExportPadding(this.plugin, this.file),
-      ed ? ed.scale : getPNGScale(this.plugin, this.file),
+      this.getViewExportPadding(),
+      this.getViewExportScale(),
     );
   }
 

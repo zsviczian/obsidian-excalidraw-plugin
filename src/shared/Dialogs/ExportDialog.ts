@@ -391,7 +391,6 @@ export class ExportDialog extends Modal {
     });
     bPDFExport.onclick = () => {
       this.view.exportPDF(
-        false,
         this.hasSelectedElements && this.exportSelectedOnly,
         this.pageSize,
         this.pageOrientation
@@ -402,7 +401,7 @@ export class ExportDialog extends Modal {
 
   public getPaperColor(): string {
     switch (this.paperColor) {
-      case "white": return "#ffffff";
+      case "white": return this.theme === "light" ? "#ffffff" : "#000000";
       case "scene": return this.api.getAppState().viewBackgroundColor;
       case "custom": return this.customPaperColor;
       default: return "#ffffff";

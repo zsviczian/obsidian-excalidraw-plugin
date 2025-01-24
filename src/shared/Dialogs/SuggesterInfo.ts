@@ -226,14 +226,14 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "createPDF",
-    code: "async createPDF({SVG: SVGSVGElement[], scale?: PDFExportScale, pageProps?: PDFPageProperties}): Promise<void>",
-    desc: "",
-    after: "Creates a PDF from the provided SVG elements with specified scaling and page properties.\n" +
+    code: "async createPDF({SVG: SVGSVGElement[], scale?: PDFExportScale, pageProps?: PDFPageProperties, filename: string}): Promise<void>",
+    desc: "Creates a PDF from the provided SVG elements with specified scaling and page properties.\n" +
         "\n" +
         "@param {Object} params - The parameters for creating the PDF.\n" +
         "@param {SVGSVGElement[]} params.SVG - An array of SVG elements to be included in the PDF. If multiple SVGs are provided, each will be added to a new page.\n" +
         "@param {PDFExportScale} [params.scale={ fitToPage: true, zoom: 1 }] - The scaling options for the SVG elements.\n" +
         "@param {PDFPageProperties} [params.pageProps] - The properties for the PDF pages.\n" +
+        "@param {string} params.filename - The name of the PDF file to be created.\n" +
         "@returns {Promise<ArrayBuffer>} - A promise that resolves to an ArrayBuffer containing the PDF data.\n" +
         "\n" +
         "@typedef {Object} PDFExportScale\n" +
@@ -244,10 +244,8 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
         "@property {{width: number, height: number}} [dimensions] - The dimensions of the PDF pages in pixels. Use getPageDimensions to get standard page sizes.\n" +
         "@property {string} [backgroundColor] - The background color of the PDF pages.\n" +
         "@property {PDFMargin} margin - The margins of the PDF pages in pixels.\n" +
-        "@property {PDFPageAlignment} alignment - The alignment of the SVG on the PDF pages.\n" +
-        "\n" +
-        "@example\n" +
-        "const pdfData = await createPDF({\n" +
+        "@property {PDFPageAlignment} alignment - The alignment of the SVG on the PDF pages.",
+    after: "({\n" +
         "  SVG: [svgElement1, svgElement2],\n" +
         "  scale: { fitToPage: true },\n" +
         "  pageProps: {\n" +
@@ -255,9 +253,40 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
         "    backgroundColor: \"#ffffff\",\n" +
         "    margin: { left: 20, right: 20, top: 20, bottom: 20 },\n" +
         "    alignment: \"center\"\n" +
+        "    filename: \"myPDF.pdf\"\n" +
         "  }\n" +
         "});",
   },
+  {
+    field: "createViewSVG",
+    code: "async createViewSVG({withBackground?: boolean, theme?: 'light' | 'dark', frameRendering?: FrameRenderingOptions, padding?: number, selectedOnly?: boolean, skipInliningFonts?: boolean, embedScene?: boolean}): Promise<SVGSVGElement>",
+    desc: "Creates an SVG representation of the current view with specified options.\n" +
+        "\n" +
+        "@param {Object} options - The options for creating the SVG.\n" +
+        "@param {boolean} [options.withBackground=true] - Whether to include the background in the SVG.\n" +
+        "@param {\"light\" | \"dark\"} [options.theme] - The theme to use for the SVG.\n" +
+        "@param {FrameRenderingOptions} [options.frameRendering={enabled: true, name: true, outline: true, clip: true}] - The frame rendering options.\n" +
+        "@param {number} [options.padding] - The padding to apply around the SVG.\n" +
+        "@param {boolean} [options.selectedOnly=false] - Whether to include only the selected elements in the SVG.\n" +
+        "@param {boolean} [options.skipInliningFonts=false] - Whether to skip inlining fonts in the SVG.\n" +
+        "@param {boolean} [options.embedScene=false] - Whether to embed the scene in the SVG.\n" +
+        "@returns {Promise<SVGSVGElement>} A promise that resolves to the SVG element.\n" +
+        "\n" +
+        "@typedef {Object} FrameRenderingOptions\n" +
+        "@property {boolean} enabled - Whether frame rendering is enabled.\n" +
+        "@property {boolean} name - Whether to include the name in the frame rendering.\n" +
+        "@property {boolean} outline - Whether to include the outline in the frame rendering.\n" +
+        "@property {boolean} clip - Whether to clip the frame rendering.\n",
+    after: "({\n" +
+        "  withBackground: true,\n" +
+        "  theme: 'light',\n" +
+        "  frameRendering: { enabled: true, name: true, outline: true, clip: true },\n" +
+        "  padding: 10,\n" +
+        "  selectedOnly: false,\n" +
+        "  skipInliningFonts: false,\n" +
+        "  embedScene: false,\n" +
+        "});",
+  },  
   {
     field: "getPagePDFDimensions",
     code: "getPagePDFDimensions(pageSize: PageSize, orientation: PageOrientation): PageDimensions",
@@ -273,12 +302,8 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
           "\n" +
           "@typedef {\"A0\" | \"A1\" | \"A2\" | \"A3\" | \"A4\" | \"A5\" | \"Letter\" | \"Legal\" | \"Tabloid\"} PageSize\n" +
           "\n" +
-          "@typedef {\"portrait\" | \"landscape\"} PageOrientation\n" +
-          "\n" +
-          "@example\n" +
-          "const dimensions = getPDFPageDimensions(\"A4\", \"portrait\");\n" +
-          "console.log(dimensions); // { width: 595.28, height: 841.89 }",
-    after: "",
+          "@typedef {\"portrait\" | \"landscape\"} PageOrientation",
+    after: "(\"A4\", \"portrait\");",
   },
   {
     field: "createPNG",
