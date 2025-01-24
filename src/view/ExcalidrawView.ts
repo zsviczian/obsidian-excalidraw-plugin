@@ -3122,7 +3122,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             }
             if(!this.exportDialog) {
               this.exportDialog = new ExportDialog(this.plugin, this,this.file);
-              this.exportDialog.createForm();
             }
             this.exportDialog.open();
           })
@@ -4919,7 +4918,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   private actionOpenExportImageDialog() {
     if(!this.exportDialog) {
       this.exportDialog = new ExportDialog(this.plugin, this,this.file);
-      this.exportDialog.createForm();
     }
     this.exportDialog.open();
   }

@@ -70,6 +70,7 @@ export class ExportDialog extends Modal {
     this.margin = plugin.settings.pdfSettings.margin;
 
     this.saveSettings = false;
+    this.createForm();
   }
 
   destroy() {
@@ -97,7 +98,7 @@ export class ExportDialog extends Modal {
     this.dirty = this.saveSettings;
   }
 
-  async createForm() {
+  createForm() {
     if(DEVICE.isDesktop) {
       // Create tab container
       const tabContainer = this.contentEl.createDiv("nav-buttons-container");

@@ -4,7 +4,16 @@ import { t } from 'src/lang/helpers';
 
 const DPI = 96;
 
-export type PDFPageAlignment = "center" | "top-left" | "top-center" | "top-right" | "bottom-left" | "bottom-center" | "bottom-right";
+export type PDFPageAlignment = 
+  | "center" 
+  | "top-left" 
+  | "top-center" 
+  | "top-right" 
+  | "bottom-left" 
+  | "bottom-center" 
+  | "bottom-right"
+  | "center-left"
+  | "center-right";
 export type PDFPageMarginString = "none" | "tiny" | "normal";
 
 export interface PDFExportScale {
@@ -54,9 +63,9 @@ export type PageSize = keyof typeof STANDARD_PAGE_SIZES;
 export function getMarginValue(margin:PDFPageMarginString): PDFMargin {
   switch(margin) {
     case "none": return { left: 0, right: 0, top: 0, bottom: 0 };
-    case "tiny": return { left: 5, right: 5, top: 5, bottom: 5 };
-    case "normal": return { left: 25, right: 25, top: 25, bottom: 25 };
-    default: return { left: 25, right: 25, top: 25, bottom: 25 };
+    case "tiny": return { left: 10, right: 10, top: 10, bottom: 10 };
+    case "normal": return { left: 60, right: 60, top: 60, bottom: 60 };
+    default: return { left: 60, right: 60, top: 60, bottom: 60 };
   }
 }
 
@@ -277,35 +286,98 @@ function calculateDimensions(
   }
 
   // Content needs to be tiled
-  const tiles = [];
   const cols = Math.ceil(finalWidth / availableWidth);
   const rows = Math.ceil(finalHeight / availableHeight);
 
+  // Calculate total available space considering all margins
+  const totalAvailableWidth = cols * availableWidth;
+  const totalAvailableHeight = rows * availableHeight;
+
+  // Calculate global position in the total available space
+  const globalPosition = calculatePosition(
+    finalWidth,
+    finalHeight,
+    totalAvailableWidth,
+    totalAvailableHeight,
+    {
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0
+    },
+    alignment
+  );
+
+  const tiles = [];
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
-      const tileX = (col * availableWidth) / (scale.zoom || 1);
-      const tileY = (row * availableHeight) / (scale.zoom || 1);
-      const tileWidth = Math.min(svgWidth - tileX, availableWidth / (scale.zoom || 1));
-      const tileHeight = Math.min(svgHeight - tileY, availableHeight / (scale.zoom || 1));
-      const scaledTileWidth = tileWidth * (scale.zoom || 1);
-      const scaledTileHeight = tileHeight * (scale.zoom || 1);
+      // Calculate where this tile intersects with the image in global space
+      const tileGlobalX = col * availableWidth;
+      const tileGlobalY = row * availableHeight;
+      
+      // Calculate the intersection of the tile with the image
+      const intersectX = Math.max(tileGlobalX, globalPosition.x);
+      const intersectY = Math.max(tileGlobalY, globalPosition.y);
+      const intersectRight = Math.min(tileGlobalX + availableWidth, globalPosition.x + finalWidth);
+      const intersectBottom = Math.min(tileGlobalY + availableHeight, globalPosition.y + finalHeight);
 
-      // Calculate position for each tile
-      const position = calculatePosition(
-        scaledTileWidth,
-        scaledTileHeight,
-        pageDim.width,
-        pageDim.height,
-        margin,
-        alignment
-      );
+      // Calculate actual tile dimensions
+      const scaledTileWidth = Math.max(0, intersectRight - intersectX);
+      const scaledTileHeight = Math.max(0, intersectBottom - intersectY);
+
+      if (scaledTileWidth <= 0 || scaledTileHeight <= 0) continue;
+
+      // Calculate viewBox coordinates
+      const tileX = (intersectX - globalPosition.x) / (scale.zoom || 1);
+      const tileY = (intersectY - globalPosition.y) / (scale.zoom || 1);
+      const tileWidth = scaledTileWidth / (scale.zoom || 1);
+      const tileHeight = scaledTileHeight / (scale.zoom || 1);
+
+      let x = margin.left;
+      let y = margin.top;
+
+      // Handle horizontal positioning
+      const widthRatio = scaledTileWidth / availableWidth;
+      if (widthRatio >= 0.99 && widthRatio <= 1.01) {
+        x = margin.left;
+      } else {
+        if (alignment === "center" || alignment === "top-center" || alignment === "bottom-center") {
+          if(col === 0) {
+            x = margin.left + (availableWidth - scaledTileWidth);
+          } else {
+            x = margin.left;
+          }
+        } else if (alignment.endsWith('right')) {
+          x = pageDim.width - margin.right - scaledTileWidth;
+        } else {
+          x = margin.left;
+        }
+      }
+
+      // Handle vertical positioning
+      const heightRatio = scaledTileHeight / availableHeight;
+      if (heightRatio >= 0.99 && heightRatio <= 1.01) {
+        y = margin.top;
+      } else {
+        if (alignment === "center" || alignment === "center-left" || alignment === "center-right") {
+          if(row === 0) {
+            y = margin.top + (availableHeight - scaledTileHeight);
+          } else {
+            y = margin.top;
+          }
+        } else if (alignment.startsWith('bottom')) {
+          y = pageDim.height - margin.bottom - scaledTileHeight;
+        } else {
+          y = margin.top;
+        }
+      }
 
       tiles.push({
         viewBox: `${tileX + viewBoxX} ${tileY + viewBoxY} ${tileWidth} ${tileHeight}`,
         width: scaledTileWidth,
         height: scaledTileHeight,
-        x: position.x,
-        y: position.y
+        x: x,
+        y: y
       });
     }
   }
@@ -328,14 +400,14 @@ function calculatePosition(
   let y = margin.top;
 
   // Handle horizontal alignment
-  if (alignment.includes('center')) {
+  if (alignment === "center" || alignment === "top-center" || alignment === "bottom-center") {
     x = margin.left + (availableWidth - svgWidth) / 2;
-  } else if (alignment.includes('right')) {
+  } else if (alignment.endsWith('right')) {
     x = margin.left + availableWidth - svgWidth;
   }
 
   // Handle vertical alignment
-  if (alignment.startsWith('center')) {
+  if (alignment === "center" || alignment === "center-left" || alignment === "center-right") {
     y = margin.top + (availableHeight - svgHeight) / 2;
   } else if (alignment.startsWith('bottom')) {
     y = margin.top + availableHeight - svgHeight;
