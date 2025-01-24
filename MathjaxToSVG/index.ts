@@ -69,7 +69,7 @@ export async function tex2dataURL(
 
   try {
     const node = html.convert(
-      preamble ? `${preamble}${tex}` : tex,
+      preamble ? `${preamble}\n${tex}` : tex,
       { display: true, scale }
     );
     const svg = new DOMParser().parseFromString(adaptor.innerHTML(node), "image/svg+xml").firstChild as SVGSVGElement;
