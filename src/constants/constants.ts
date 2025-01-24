@@ -26,7 +26,7 @@ export const ERROR_IFRAME_CONVERSION_CANCELED = "iframe conversion canceled";
 
 declare const excalidrawLib: typeof ExcalidrawLib;
 
-export const LOCALE = moment.locale();
+export const LOCALE = localStorage.getItem("language")?.toLowerCase() || "en";
 export const CJK_FONTS = "CJK Fonts";
 
 export const obsidianToExcalidrawMap: { [key: string]: string } = {

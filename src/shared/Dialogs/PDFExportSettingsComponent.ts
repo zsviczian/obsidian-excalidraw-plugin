@@ -129,6 +129,8 @@ export class PDFExportSettingsComponent {
         dropdown
           .addOptions({
             "center": t("EXPORTDIALOG_PDF_ALIGN_CENTER"),
+            "center-left": t("EXPORTDIALOG_PDF_ALIGN_CENTER_LEFT"),
+            "center-right": t("EXPORTDIALOG_PDF_ALIGN_CENTER_RIGHT"),
             "top-left": t("EXPORTDIALOG_PDF_ALIGN_TOP_LEFT"),
             "top-center": t("EXPORTDIALOG_PDF_ALIGN_TOP_CENTER"),
             "top-right": t("EXPORTDIALOG_PDF_ALIGN_TOP_RIGHT"),

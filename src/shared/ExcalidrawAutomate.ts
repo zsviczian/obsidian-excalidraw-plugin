@@ -42,6 +42,8 @@ import {
   wrapTextAtCharLength,
   arrayToMap,
   addAppendUpdateCustomData,
+  getSVG,
+  getWithBackground,
 } from "src/utils/utils";
 import { getAttachmentsFolderAndFilePath, getExcalidrawViews, getLeaf, getNewOrAdjacentLeaf, isObsidianThemeDark, mergeMarkdownFiles, openLeaf } from "src/utils/obsidianUtils";
 import { AppState, BinaryFileData,  DataURL,  ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
@@ -84,6 +86,7 @@ import { GlobalPoint } from "@zsviczian/excalidraw/types/math/types";
 import { AddImageOptions, ImageInfo, SVGColorInfo } from "src/types/excalidrawAutomateTypes";
 import { _measureText, cloneElement, createPNG, createSVG, errorMessage, filterColorMap, getEmbeddedFileForImageElment, getFontFamily, getLineBox, getTemplate, isColorStringTransparent, isSVGColorInfo, mergeColorMapIntoSVGColorInfo, normalizeLinePoints, repositionElementsToCursor, svgColorInfoToColorMap, updateOrAddSVGColorInfo, verifyMinimumPluginVersion } from "src/utils/excalidrawAutomateUtils";
 import { exportToPDF, getMarginValue, getPageDimensions, PageDimensions, PageOrientation, PageSize, PDFExportScale, PDFPageProperties } from "src/utils/exportUtils";
+import { FrameRenderingOptions } from "src/types/utilTypes";
 
 extendPlugins([
   HarmonyPlugin,
@@ -969,6 +972,7 @@ export class ExcalidrawAutomate {
    *     margin: { left: 20, right: 20, top: 20, bottom: 20 },
    *     alignment: "center",
    *   }
+   *   filename: "example.pdf",
    * });
   */
   async createPDF({
@@ -1000,6 +1004,68 @@ export class ExcalidrawAutomate {
     }
     
     await exportToPDF({SVG, scale, pageProps, filename});
+  }
+
+ /**
+  * Creates an SVG representation of the current view.
+  *
+  * @param {Object} options - The options for creating the SVG.
+  * @param {boolean} [options.withBackground=true] - Whether to include the background in the SVG.
+  * @param {"light" | "dark"} [options.theme] - The theme to use for the SVG.
+  * @param {FrameRenderingOptions} [options.frameRendering={enabled: true, name: true, outline: true, clip: true}] - The frame rendering options.
+  * @param {number} [options.padding] - The padding to apply around the SVG.
+  * @param {boolean} [options.selectedOnly=false] - Whether to include only the selected elements in the SVG.
+  * @param {boolean} [options.skipInliningFonts=false] - Whether to skip inlining fonts in the SVG.
+  * @param {boolean} [options.embedScene=false] - Whether to embed the scene in the SVG.
+  * @returns {Promise<SVGSVGElement>} A promise that resolves to the SVG element.
+ */
+  async createViewSVG({
+    withBackground = true,
+    theme,
+    frameRendering = {enabled: true, name: true, outline: true, clip: true},
+    padding,
+    selectedOnly = false,
+    skipInliningFonts = false,
+    embedScene = false,
+  } : {
+    withBackground?: boolean,
+    theme?: "light" | "dark",
+    frameRendering?: FrameRenderingOptions,
+    padding?: number,
+    selectedOnly?: boolean,
+    skipInliningFonts?: boolean,
+    embedScene?: boolean,
+  }): Promise<SVGSVGElement> {
+    if(!this.targetView || !this.targetView.file || !this.targetView._loaded) {
+      console.log("No view loaded");
+      return;
+    }
+    const view = this.targetView;
+    const scene = this.targetView.getScene(selectedOnly);
+
+    const exportSettings: ExportSettings = {
+      withBackground: view.getViewExportWithBackground(withBackground),
+      withTheme: true,
+      isMask: isMaskFile(this.plugin, view.file),
+      skipInliningFonts,
+      frameRendering,
+    };
+
+    return await getSVG(
+      {
+        ...scene,
+        ...{
+          appState: {
+            ...scene.appState,
+            theme: view.getViewExportTheme(theme),
+            exportEmbedScene: view.getViewExportEmbedScene(embedScene),
+          },
+        },
+      },
+      exportSettings,
+      view.getViewExportPadding(padding),
+      view.file,
+    );
   }
 
   /**
@@ -1848,7 +1914,7 @@ export class ExcalidrawAutomate {
    */
   async addLaTex(topX: number, topY: number, tex: string): Promise<string> {
     const id = nanoid();
-    const image = await tex2dataURL(tex, 4, this.plugin.app);
+    const image = await tex2dataURL(tex, 4, this.plugin);
     if (!image) {
       return null;
     }
@@ -1890,7 +1956,7 @@ export class ExcalidrawAutomate {
     created: number;
     size: { height: number; width: number };
   }> {
-    return await tex2dataURL(tex,scale, this.plugin.app);
+    return await tex2dataURL(tex,scale, this.plugin);
   };
 
   /**

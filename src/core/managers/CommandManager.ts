@@ -756,7 +756,6 @@ export class CommandManager {
         if (view) {
           if(!view.exportDialog) {
             view.exportDialog = new ExportDialog(this.plugin, view,view.file);
-            view.exportDialog.createForm();
           }
           view.exportDialog.open();
           return true;
