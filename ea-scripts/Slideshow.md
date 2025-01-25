@@ -769,7 +769,7 @@ function setSingleNotice(message) {
     return;
   }
   notice = new Notice(message, 0);
-  noticeEl = notice.containerEl ?? n.noticeEl;
+  noticeEl = notice.containerEl ?? notice.noticeEl;
 }
 
 function hideSingleNotice() {
