@@ -388,8 +388,10 @@ div.excalidraw-draginfo {
   position: absolute !important;
 }
 
+.excalidraw .selected-shape-actions .Island.App-menu__left,
+.excalidraw .selected-shape-actions .Island.App-menu__left .panelColumn,
 .excalidraw .Island .App-mobile-menu,
-.excalidraw .Island.App-menu__left {
+.excalidraw .Island .App-mobile-menu .panelColumn {
   /*Arrow Picker Popover Overflow*/
 	overflow: visible;
 }
