@@ -1461,7 +1461,7 @@ export class ExcalidrawData {
         : "";
     if (this.equations.size > 0) {
       for (const key of this.equations.keys()) {
-        outString += `${key}: $$${this.equations.get(key).latex}$$\n\n`;
+        outString += `${key}: $$${this.equations.get(key).latex.trim()}$$\n\n`;
       }
     }
     if (this.files.size > 0) {
