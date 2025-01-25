@@ -236,7 +236,7 @@ export default {
     "在这种情况下，创建新绘图时将提示您选择使用哪个模板。<br>" +
     "<b>专业提示：</b> 如果您正在使用 Obsidian Templater 插件，您可以将 Templater 代码添加到不同的" +
     "Excalidraw 模板中，以自动配置您的绘图",
-  SCRIPT_FOLDER_NAME: "Excalidraw 自动化脚本的文件夹（大小写敏感！）",
+  SCRIPT_FOLDER_NAME: "Excalidraw 自动化脚本的文件夹（區分大小寫！）",
   SCRIPT_FOLDER_DESC:
     "此文件夹用于存放 Excalidraw 自动化脚本。" +
     "您可以在 Obsidian 命令面板中执行这些脚本，" +
@@ -722,6 +722,8 @@ FILENAME_HEAD: "文件名",
     "更改此选项后，您可能需要重启 Obsidian 来使其生效。",
   LATEX_DEFAULT_NAME: "插入 LaTeX 时的默认表达式",
   LATEX_DEFAULT_DESC: "允许留空。允许使用类似 <code>\\color{white}</code> 的格式化表达式。",
+  LATEX_PREAMBLE_NAME : "LaTeX 前言文件（區分大小寫！）" ,
+  LATEX_PREAMBLE_DESC : "前言文件的完整路径，留空则使用默认值。如果文件不存在，此选项将被忽略。<br><strong>重要：</strong>更改后需要重新加载 Obsidian 才能生效！" ,
   NONSTANDARD_HEAD: "非 Excalidraw.com 官方支持的特性",
   NONSTANDARD_DESC: `这些特性不受 Excalidraw.com 官方支持。如果在 Excalidraw.com 导入绘图，这些特性将会发生不可预知的变化。
     包括：自定义画笔工具的数量，自定义字体等。`,
@@ -1063,6 +1065,8 @@ EXPORTDIALOG_PDF_PAPER_SCENE : "使用场景颜色",
 EXPORTDIALOG_PDF_PAPER_CUSTOM : "自定义颜色",
 EXPORTDIALOG_PDF_ALIGNMENT : "页面位置",
 EXPORTDIALOG_PDF_ALIGN_CENTER : "居中",
+EXPORTDIALOG_PDF_ALIGN_CENTER_LEFT : "左对齐居中" ,
+EXPORTDIALOG_PDF_ALIGN_CENTER_RIGHT : "右对齐居中" ,
 EXPORTDIALOG_PDF_ALIGN_TOP_LEFT : "左上角",
 EXPORTDIALOG_PDF_ALIGN_TOP_CENTER : "顶部居中",
 EXPORTDIALOG_PDF_ALIGN_TOP_RIGHT : "右上角",
