@@ -205,7 +205,7 @@ const gotoFullscreen = async () => {
 	}
 	await waitForExcalidrawResize();
 	const layerUIWrapper = contentEl.querySelector(".layer-ui__wrapper");
-	if(!layerUIWrapper.hasClass("excalidraw-hidden")) layerUIWrapper.addClass("excalidraw-hidden");
+	if(!layerUIWrapper?.hasClass("excalidraw-hidden")) layerUIWrapper.addClass("excalidraw-hidden");
 	if(toggleFullscreenButton) toggleFullscreenButton.innerHTML = SVG_MINIMIZE;
 	resetControlPanelElPosition();
 	isFullscreen = true;
