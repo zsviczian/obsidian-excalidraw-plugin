@@ -89,8 +89,8 @@ Plugin settings are grouped into the following sections:
 - **Basic settings**: such as default folders to use.
 - **Saving**: compression and autosave timer.
 - **Filename**: configure the automatically created Excalidraw filename.
-- **Display**: settings that effect the handling of Excalidraw (e.g.: left-handed mode, theme settings, mouse wheel and pinch zoom settings, zoom to fit settings).
-- **Links and transclusions**: Settings that effect how links and embedded items behave on the Excalidraw canvas.
+- **Display**: settings that affect the handling of Excalidraw (e.g.: left-handed mode, theme settings, mouse wheel and pinch zoom settings, zoom to fit settings).
+- **Links and transclusions**: Settings that affect how links and embedded items behave on the Excalidraw canvas.
 - **Markdown-embed settings**: These settings control how markdown documents from your Vault embedded into Excalidraw drawings will behave.
 - **Embed & Export**: Settings that control how Excalidraw images are displayed when embedding them into markdown documents.
 - **Auto-export Settings**: You can configure Excalidraw to create a PNG or SVG copy of your drawing each time it gets saved.
