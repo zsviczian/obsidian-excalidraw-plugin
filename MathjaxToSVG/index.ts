@@ -73,6 +73,14 @@ export async function tex2dataURL(
       { display: true, scale }
     );
     const svg = new DOMParser().parseFromString(adaptor.innerHTML(node), "image/svg+xml").firstChild as SVGSVGElement;
+    
+	//https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2195
+	//https://stackoverflow.com/a/77181931
+	let styleNode = document.createElement('style');
+    styleNode.setAttribute("type", "text/css");
+    styleNode.appendChild(document.createTextNode(".mjx-solid { stroke-width: 80px; }"));
+    svg.appendChild(styleNode);
+
     if (svg) {
       if(svg.width.baseVal.valueInSpecifiedUnits < 2) {
         svg.width.baseVal.valueAsString = `${(svg.width.baseVal.valueInSpecifiedUnits+1).toFixed(3)}ex`;
