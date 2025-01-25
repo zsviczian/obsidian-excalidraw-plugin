@@ -388,13 +388,14 @@ div.excalidraw-draginfo {
   position: absolute !important;
 }
 
+/*Arrow Picker Popover Overflow*/
+/*
 .excalidraw .selected-shape-actions .Island.App-menu__left,
 .excalidraw .selected-shape-actions .Island.App-menu__left .panelColumn,
 .excalidraw .Island .App-mobile-menu,
 .excalidraw .Island .App-mobile-menu .panelColumn {
-  /*Arrow Picker Popover Overflow*/
 	overflow: visible;
-}
+}*/
 
 .excalidraw__embeddable-container .view-header {
   display: none !important;
@@ -714,4 +715,21 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 .excalidraw-release .nav-button.is-active {
   border-bottom: 2px solid var(--interactive-accent);
   margin-bottom: -2px;
+}
+
+.excalidraw .picker-content {
+  grid-gap: 0.2rem !important;
+}
+
+.excalidraw .picker-content button.picker-option{
+  width: 1.85rem !important;
+  height: 1.85rem !important;
+}
+
+.excalidraw .picker {
+  padding: 0.2rem !important;
+}
+
+.excalidraw .context-menu {
+  height: fit-content;
 }
