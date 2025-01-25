@@ -342,7 +342,9 @@ label.color-input-container > input {
   overflow-y: auto;
 }
 
-.excalidraw .panelColumn {
+.excalidraw .selected-shape-actions .panelColumn,
+.excalidraw .App-mobile-menu .panelColumn
+ {
   max-height: 70vh;
   overflow-y: auto;
 }
