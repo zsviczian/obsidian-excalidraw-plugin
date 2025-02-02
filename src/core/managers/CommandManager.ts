@@ -166,6 +166,7 @@ export class CommandManager {
     const fileMenuHandlerCreateNew = (menu: Menu, file: TFile) => {
       menu.addItem((item: MenuItem) => {
         item
+          .setSection('action-primary')
           .setTitle(t("CREATE_NEW"))
           .setIcon(ICON_NAME)
           .onClick((e) => {createNewAction(e, file)});

@@ -17,6 +17,21 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.8.2":`
+## New
+- Moved "Create new drawing" option up in the context menu [#2243](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2243)
+
+## Fixed
+- In rare cases drawing content gets overwritten with another drawing [#2152](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2152)
+- "Wrap selection in frame" sets dark mode to light mode [#2240](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2240)
+- Multiple bug fixes from Excalidraw.com
+  - Elbow arrows within boxes [#9077](https://github.com/excalidraw/excalidraw/issues/9077)
+  - Elbow arrow orthogonality [#9073](https://github.com/excalidraw/excalidraw/pull/9073)
+  - Improve library sidebar performance [#9060](https://github.com/excalidraw/excalidraw/pull/9060)
+  - Opacity slider now displays numerical value [#9009](https://github.com/excalidraw/excalidraw/pull/9009)
+  - Resize a frame and its children together when box selecting the frame and its children together [#9031](https://github.com/excalidraw/excalidraw/pull/9031)
+  - Excalidraw screen flickering in dark mode [#9057](https://github.com/excalidraw/excalidraw/pull/9057)
+`,
 "2.8.1":`
 ## Fixed
 - Unable to open Excalidraw files after the 2.8.0 update. [#2235](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2235)
@@ -260,24 +275,5 @@ ${String.fromCharCode(96,96,96)}
 - Hover-Editor compatibility resolved [2041](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2041)
 -  ${String.fromCharCode(96)}ExcalidrawAutomate.create() ${String.fromCharCode(96)} will now correctly include the markdown text in templates above Excalidraw Data and below YAML front matter. This also fixes the same issue with the **Deconstruct Selected Element script**.
 
-`,
-"2.6.7":`
-Hoping to finally move on to 2.7.0... but still have one last bug to fix in 2.6.x!
-
-## Fixed
-I misread a line in the Excalidraw package code... ended up breaking image loading in 2.6.6. The icon library script didn't work right, and updating nested drawings caused all images in the scene to be dropped from memory. This led to image-placeholders in exports and broke copy-paste to Excalidraw.com and between drawings. I am surprised no one reported it! 😳
-`,
-"2.6.6":`
-## Fixed
-- Images and LaTeX formulas did not update in the scene when the source was changed until the Excalidraw drawing was closed and reopened. [#2105](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2105)
-`,
-"2.6.5":`
-## Fixed
-- Text sizing issue in the drawing that is first loaded after Obsidian restarts [#2086](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2086)
-- Excalidraw didn't load if there was a file in the Excalidraw folder with a name that starts the same way as the Scripts folder name. [#2095](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2095)
-- **OVERSIZED EXCALIDRAW TOOLBAR**: Added a new setting under "Excalidraw Appearance and Behavior > Theme and Styling" called "Limit Obsidian Font Size to Editor Text." This setting is off by default. When enabled, it restricts Obsidian's custom font size adjustments to editor text only, preventing unintended scaling of Excalidraw UI elements and other themes that rely on the default interface font size. Feel free to experiment with this setting to improve Excalidraw UI consistency. However, because this change affects the broader Obsidian UI, it's recommended to turn it off if any layout issues arise. [#2087](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2087)`,
-"2.6.4":`
-## Fixed
-- Error saving when cropping images embedded from a URL (not from a file in the Vault) [#2096](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2096)
 `,
 };
