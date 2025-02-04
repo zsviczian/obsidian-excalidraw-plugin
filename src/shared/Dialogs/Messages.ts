@@ -17,6 +17,12 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.8.3":`
+## Fixed
+- Chinese translation not available since 2.8.0. [#2247](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2247)
+- Since the most recent Samsung Android update, adding images from the gallery returns an Unsupported Image Type error. [#2245](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2245)
+- Duplicating/removing frame while children selected [#9079](https://github.com/excalidraw/excalidraw/pull/9079)
+`,
 "2.8.2":`
 ## New
 - Moved "Create new drawing" option up in the context menu [#2243](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2243)
