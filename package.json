@@ -16,15 +16,14 @@
     "build:mathjax": "cd MathjaxToSVG && npm run build",
     "build:all": "npm run build:mathjax && npm run build",
     "dev:mathjax": "cd MathjaxToSVG && npm run dev",
-    "dev:all": "npm run dev:mathjax && npm run dev",
-    "build:lang": "node ./scripts/compressLanguages.js"
+    "dev:all": "npm run dev:mathjax && npm run dev"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "@popperjs/core": "^2.11.8",
-    "@zsviczian/excalidraw": "0.17.6-29",
+    "@zsviczian/excalidraw": "0.17.6-32",
     "chroma-js": "^2.4.2",
     "clsx": "^2.0.0",
     "@zsviczian/colormaster": "^1.2.2",

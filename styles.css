@@ -342,7 +342,9 @@ label.color-input-container > input {
   overflow-y: auto;
 }
 
-.excalidraw .panelColumn {
+.excalidraw .selected-shape-actions .panelColumn,
+.excalidraw .App-mobile-menu .panelColumn
+ {
   max-height: 70vh;
   overflow-y: auto;
 }
@@ -388,11 +390,14 @@ div.excalidraw-draginfo {
   position: absolute !important;
 }
 
+/*Arrow Picker Popover Overflow*/
+/*
+.excalidraw .selected-shape-actions .Island.App-menu__left,
+.excalidraw .selected-shape-actions .Island.App-menu__left .panelColumn,
 .excalidraw .Island .App-mobile-menu,
-.excalidraw .Island.App-menu__left {
-  /*Arrow Picker Popover Overflow*/
+.excalidraw .Island .App-mobile-menu .panelColumn {
 	overflow: visible;
-}
+}*/
 
 .excalidraw__embeddable-container .view-header {
   display: none !important;
@@ -712,4 +717,21 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 .excalidraw-release .nav-button.is-active {
   border-bottom: 2px solid var(--interactive-accent);
   margin-bottom: -2px;
+}
+
+.excalidraw .picker-content {
+  grid-gap: 0.2rem !important;
+}
+
+.excalidraw .picker-content button.picker-option{
+  width: 1.85rem !important;
+  height: 1.85rem !important;
+}
+
+.excalidraw .picker {
+  padding: 0.2rem !important;
+}
+
+.excalidraw .context-menu {
+  height: fit-content;
 }

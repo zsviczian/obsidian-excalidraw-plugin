@@ -33,7 +33,7 @@ export default {
   DUPLICATE_IMAGE: "Duplicate selected image with a different image ID",
   CONVERT_NOTE_TO_EXCALIDRAW: "Convert markdown note to Excalidraw Drawing",
   CONVERT_EXCALIDRAW: "Convert *.excalidraw to *.md files",
-  CREATE_NEW: "Create new drawing",
+  CREATE_NEW: "New drawing",
   CONVERT_FILE_KEEP_EXT: "*.excalidraw => *.excalidraw.md",
   CONVERT_FILE_REPLACE_EXT: "*.excalidraw => *.md (Logseq compatibility)",
   DOWNLOAD_LIBRARY: "Export stencil library as an *.excalidrawlib file",

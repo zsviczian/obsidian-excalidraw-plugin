@@ -888,7 +888,7 @@ export class ExcalidrawAutomate {
       Object.keys(this.imagesDict).forEach((key: FileId)=> {
         const item = this.imagesDict[key];
         if(item.latex) {
-          outString += `${key}: $$${item.latex}$$\n\n`;  
+          outString += `${key}: $$${item.latex.trim()}$$\n\n`;  
         } else {
           if(item.file) {
             if(item.file instanceof TFile) {

@@ -2623,7 +2623,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("LATEX_PREAMBLE_DESC")))
       .addText((text) =>
         text
-	  	  .setPlaceholder("e.g.: preamble.sty")
+          .setPlaceholder("e.g.: preamble.sty")
           .setValue(this.plugin.settings.latexPreambleLocation)
           .onChange(async (value) => {
             this.plugin.settings.latexPreambleLocation = value;

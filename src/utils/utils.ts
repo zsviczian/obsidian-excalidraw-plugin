@@ -365,7 +365,7 @@ export async function getPNG (
         : {},
       },
       files: filterFiles(scene.files),
-      exportPadding: exportSettings.frameRendering.enabled ? 0 : padding,
+      exportPadding: exportSettings.frameRendering?.enabled ? 0 : padding,
       mimeType: "image/png",
       getDimensions: (width: number, height: number) => ({
         width: width * scale,
