@@ -1,7 +1,7 @@
 /*
 Toggles the Stroke color panel on and off when fire with the (Option+D) shortcut.Useful especially when drawing with a pen and need to change stroke color.
 
-[Add video link describing script feature]: #
+[Video Link](https://www.youtube.com/watch?v=vWigXs03XqU)
 
 ```javascript
 */
