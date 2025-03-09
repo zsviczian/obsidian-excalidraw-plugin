@@ -802,10 +802,14 @@ const tmpObsidianWYSIWYG = async (
       el.empty();
     } else {
       //Obsidian changed this at some point from h3 to h5 and also the text...
-      const warningEl = el.querySelector("div>*[data-heading^='Unable to find ");
+      let warningEl = el.querySelector("div>*[data-heading^='Unable to find ");
+      if(!warningEl) {
+        //changed in Obsidian 1.8.9
+        warningEl = el.querySelector("div > *[data-heading]");
+      }
       if(warningEl) {
         const dataHeading = warningEl.getAttr("data-heading");
-        const ref = warningEl.getAttr("data-heading").match(/Unable to find[^^]+(\^(?:group=|area=|frame=|clippedframe=)[^ ”]+)/)?.[1];
+        const ref = dataHeading.match(/.+(\^(?:group=|area=|frame=|clippedframe=)[A-Za-z0-9_-]{8,21})/)?.[1];
         if(ref) {
           attr.fname = file.path + "#" +ref;
           areaPreview = true;
@@ -926,7 +930,7 @@ export const markdownPostProcessor = async (
       if(docIDs.has(ctx.docId) && !el.hasChildNodes()) {
         docIDs.delete(ctx.docId);
       }
-      const isAreaGroupFrameRef = el.querySelectorAll('[data-heading^="Unable to find"]').length === 1;
+      const isAreaGroupFrameRef = el.querySelectorAll('div > *[data-heading]').length === 1;
       if(!isAreaGroupFrameRef) {
         return;
       }
