@@ -684,6 +684,10 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       return "";
     }
 
+    if(!this.view.plugin._loaded) {
+      return null;
+    }
+
     const downloadedScriptsRoot = `${this.view.plugin.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}/`;
 
     const filterCondition = (key: string): boolean =>

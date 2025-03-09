@@ -30,6 +30,7 @@ import {
   ExcalidrawImperativeAPI,
   Gesture,
   LibraryItems,
+  SceneData,
   UIAppState,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
 import {
@@ -152,8 +153,8 @@ import { Position, ViewSemaphores } from "../types/excalidrawViewTypes";
 import { DropManager } from "./managers/DropManager";
 import { ImageInfo } from "src/types/excalidrawAutomateTypes";
 import { exportToPDF, getMarginValue, getPageDimensions, PageOrientation, PageSize } from "src/utils/exportUtils";
-import { create } from "domain";
 import { FrameRenderingOptions } from "src/types/utilTypes";
+import { CaptureUpdateAction } from "src/constants/constants";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -253,7 +254,7 @@ export const addFiles = async (
     view.updateScene({
       elements: s.scene.elements,
       appState: s.scene.appState,
-      storeAction: "update",
+      captureUpdate: CaptureUpdateAction.NEVER,
     });
   }
   for (const f of files) {
@@ -1096,21 +1097,21 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   toggleDisableBinding() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleDisableBinding, "ExcalidrawView.toggleDisableBinding");
     const newState = !this.excalidrawAPI.getAppState().invertBindingBehaviour;
-    this.updateScene({appState: {invertBindingBehaviour:newState}, storeAction: "update"});
+    this.updateScene({appState: {invertBindingBehaviour:newState}, captureUpdate: CaptureUpdateAction.NEVER,});
     new Notice(newState ? t("ARROW_BINDING_INVERSE_MODE") : t("ARROW_BINDING_NORMAL_MODE"));
   }
 
   toggleFrameRendering() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleFrameRendering, "ExcalidrawView.toggleFrameRendering");
     const frameRenderingSt = (this.excalidrawAPI as ExcalidrawImperativeAPI).getAppState().frameRendering;
-    this.updateScene({appState: {frameRendering: {...frameRenderingSt, enabled: !frameRenderingSt.enabled}}, storeAction: "update"});
+    this.updateScene({appState: {frameRendering: {...frameRenderingSt, enabled: !frameRenderingSt.enabled}}, captureUpdate: CaptureUpdateAction.NEVER,});
     new Notice(frameRenderingSt.enabled ? t("FRAME_CLIPPING_ENABLED") : t("FRAME_CLIPPING_DISABLED"));
   }
 
   toggleFrameClipping() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleFrameClipping, "ExcalidrawView.toggleFrameClipping");
     const frameRenderingSt = (this.excalidrawAPI as ExcalidrawImperativeAPI).getAppState().frameRendering;
-    this.updateScene({appState: {frameRendering: {...frameRenderingSt, clip: !frameRenderingSt.clip}}, storeAction: "update"});
+    this.updateScene({appState: {frameRendering: {...frameRenderingSt, clip: !frameRenderingSt.clip}}, captureUpdate: CaptureUpdateAction.NEVER,});
     new Notice(frameRenderingSt.clip ? "Frame Clipping: Enabled" : "Frame Clipping: Disabled");
   }
 
@@ -1379,7 +1380,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       if (this.excalidrawData.hasMermaid(selectedImage.fileId) || getMermaidText(imageElement)) {
         if(shouldRenderMermaid) {
           const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
-          api.updateScene({appState: {openDialog: { name: "ttd", tab: "mermaid" }}, storeAction: "update"})
+          api.updateScene({appState: {openDialog: { name: "ttd", tab: "mermaid" }}, captureUpdate: CaptureUpdateAction.NEVER })
         }
         return;
       }
@@ -1806,7 +1807,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         ...st,
         theme,
       },
-      storeAction: "update",
+      captureUpdate: CaptureUpdateAction.NEVER,
     });
   }
 
@@ -1976,6 +1977,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   protected async onClose(): Promise<void> {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onClose,`ExcalidrawView.onClose, file:${this.file?.name}`);
     
+    //I noticed Obsidian calls this function twice when disabling the plugin
+    //once from "unregisterView"
+    //the from "detachLeavesOfType"
+    if(!this.dropManager) return; //the view is already closed
+
     // This happens when the user right clicks a tab and selects delete
     // in this case the onDelete event handler tirggers, but then Obsidian's delete event handler reaches onclose first, and
     // when the function is called a second time via on delete an error is thrown.)
@@ -2741,7 +2747,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         {
           elements: excalidrawData.elements.concat(deletedElements??[]), //need to preserve deleted elements during autosave if images, links, etc. are updated
           files: excalidrawData.files,
-          storeAction: justloaded ? "update" : "update", //was none, but I think based on a false understanding of none
+          captureUpdate: CaptureUpdateAction.NEVER,
         },
         justloaded
       );
@@ -2764,7 +2770,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             pinnedScripts: this.plugin.settings.pinnedScripts,
             customPens: this.plugin.settings.customPens.slice(0,this.plugin.settings.numberOfCustomPens),
           },
-          storeAction: justloaded ? "update" : "update", //was none, but I think based on a false understanding of none
+          captureUpdate: CaptureUpdateAction.NEVER,
         },
       );
       if (
@@ -3530,7 +3536,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.updateScene(
       {
         elements,
-        storeAction: "capture",
+        captureUpdate: CaptureUpdateAction.IMMEDIATELY,
       },
       shouldRestoreElements,
     );
@@ -3930,7 +3936,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       st = (this.excalidrawAPI as ExcalidrawImperativeAPI).getAppState();
       canvasColor = canvasColor ?? st.viewBackgroundColor === "transparent" ? "white" : st.viewBackgroundColor;
     }
-    window.setTimeout(()=>this.updateScene({appState:{gridColor: this.getGridColor(canvasColor, st)}, storeAction: "update"}));
+    window.setTimeout(()=>this.updateScene({appState:{gridColor: this.getGridColor(canvasColor, st)}, captureUpdate: CaptureUpdateAction.NEVER}));
   }
 
   private canvasColorChangeHook(st: AppState) {
@@ -4183,7 +4189,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           this.excalidrawData.deleteTextElement(clone.id);
           sceneElements[sceneElements.indexOf(el)] = clone;
         }
-        this.updateScene({elements: sceneElements, storeAction: "update"});
+        this.updateScene({elements: sceneElements, captureUpdate: CaptureUpdateAction.NEVER});
 
         //then insert images and embeds
         //shift text elements down to make space for images and embeds
@@ -4307,7 +4313,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           clone.rawText = WARNING;
           elements[elements.indexOf(el[0])] = clone;
           this.excalidrawData.setTextElement(clone.id,WARNING,()=>{});
-          this.updateScene({elements, storeAction: "update"});
+          this.updateScene({elements, captureUpdate: CaptureUpdateAction.NEVER});
           api.history.clear();
         }
       });
@@ -4331,7 +4337,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           clone.isDeleted = true;
           this.excalidrawData.deleteTextElement(clone.id);
           elements[elements.indexOf(el[0])] = clone;
-          this.updateScene({elements, storeAction: "update"});
+          this.updateScene({elements, captureUpdate: CaptureUpdateAction.NEVER});
           const ea:ExcalidrawAutomate = getEA(this);
           if(IMAGE_TYPES.contains(file.extension)) {
             ea.selectElementsInView([await insertImageToView (ea, center, file)]);
@@ -4384,7 +4390,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           }
 
           elements[elements.indexOf(el[0])] = clone;
-          this.updateScene({elements, storeAction: "update"});
+          this.updateScene({elements, captureUpdate: CaptureUpdateAction.NEVER});
           if(clone.containerId) this.updateContainerSize(clone.containerId);
           this.setDirty(8.1);
         }
@@ -5600,7 +5606,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
     api.updateScene({
       appState: { pinnedScripts: this.plugin.settings.pinnedScripts },
-      storeAction: "update",
+      captureUpdate: CaptureUpdateAction.NEVER,
     });
   }
 
@@ -5614,7 +5620,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       appState: { 
         customPens: this.plugin.settings.customPens.slice(0,this.plugin.settings.numberOfCustomPens),
       },
-      storeAction: "update",
+      captureUpdate: CaptureUpdateAction.NEVER,
     });
   }
 
@@ -5626,7 +5632,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
     api.updateScene({
       appState: { allowPinchZoom: this.plugin.settings.allowPinchZoom },
-      storeAction: "update",
+      captureUpdate: CaptureUpdateAction.NEVER,
     });
   }
 
@@ -5638,7 +5644,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
     api.updateScene({
       appState: { allowWheelZoom: this.plugin.settings.allowWheelZoom },
-      storeAction: "update",
+      captureUpdate: CaptureUpdateAction.NEVER,
     });
   }
 
@@ -5651,7 +5657,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     const st = api.getAppState();
     api.updateScene({
       appState: { trayModeEnabled: !st.trayModeEnabled },
-      storeAction: "update",
+      captureUpdate: CaptureUpdateAction.NEVER,
     });
 
     //just in case settings were updated via Obsidian sync
@@ -5899,13 +5905,28 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       appState?: any;
       files?: any;
       storeAction?: "capture" | "none" | "update"; //https://github.com/excalidraw/excalidraw/pull/7898
+      captureUpdate?: SceneData["captureUpdate"];
     },
     shouldRestore: boolean = false,
   ) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.updateScene, "ExcalidrawView.updateScene", scene, shouldRestore);
-    const api = this.excalidrawAPI;
+    const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
     if (!api) {
       return;
+    }
+
+    if(typeof scene.storeAction === "string") {
+      switch(scene.storeAction) {
+        case "capture":
+          scene.captureUpdate = CaptureUpdateAction.IMMEDIATELY;
+          break;
+        case "none":
+          scene.captureUpdate = CaptureUpdateAction.EVENTUALLY;
+          break;
+        default:
+          scene.captureUpdate = CaptureUpdateAction.NEVER;
+      }
+      delete scene.storeAction;
     }
     const shouldRestoreElements = scene.elements && shouldRestore;
     if (shouldRestoreElements) {

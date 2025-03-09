@@ -24,6 +24,29 @@ const isProd = (process.env.NODE_ENV === "production");
 const isLib = (process.env.NODE_ENV === "lib");
 console.log(`Running: ${process.env.NODE_ENV}; isProd: ${isProd}; isLib: ${isLib}`);
 
+
+// Excalidraw React 19 compatiblity shim
+// Create JSX runtime compatibility layer
+const jsxRuntimeShim = `
+  const jsx = (type, props, key) => {
+    return React.createElement(type, props);
+  };
+  const jsxs = (type, props, key) => {
+    return React.createElement(type, props);
+  };
+  const Fragment = React.Fragment;
+  React.jsx = jsx;
+  React.jsxs = jsxs;
+  React.Fragment = Fragment;
+  React.jsxRuntime = { jsx, jsxs, Fragment };
+  window.__WEBPACK_EXTERNAL_MODULE_react_jsx_runtime__ = { jsx, jsxs, Fragment };
+  window.__WEBPACK_EXTERNAL_MODULE_react_jsx_dev_runtime__ = { jsx, jsxs, Fragment, jsxDEV: jsx };
+  window['react/jsx-runtime'] = { jsx, jsxs, Fragment };
+  window['react/jsx-dev-runtime'] = { jsx, jsxs, Fragment, jsxDEV: jsx };
+`;
+
+
+
 const mathjaxtosvg_pkg = isLib ? "" : fs.readFileSync("./MathjaxToSVG/dist/index.js", "utf8");
 
 const LANGUAGES = ['ru', 'zh-cn']; //english is not compressed as it is always loaded by default
@@ -99,7 +122,7 @@ const packageString = isLib
   ? ""
   : ';const INITIAL_TIMESTAMP=Date.now();' + lzstring_pkg +
   '\nlet REACT_PACKAGES = `' +
-  jsesc(react_pkg + reactdom_pkg, { quotes: 'backtick' }) +
+  jsesc(react_pkg + reactdom_pkg + jsxRuntimeShim, { quotes: 'backtick' }) +
   '`;\n' +
   'const unpackExcalidraw = () => LZString.decompressFromBase64("' + LZString.compressToBase64(excalidraw_pkg) + '");\n' +
   'let {react, reactDOM } = new Function(`${REACT_PACKAGES}; return {react: React, reactDOM: ReactDOM};`)();\n' +

@@ -14,6 +14,7 @@ import { nanoid } from "nanoid";
 import { t } from "src/lang/helpers";
 import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
 import { EmbeddedFile } from "src/shared/EmbeddedFileLoader";
+import { CaptureUpdateAction } from "src/constants/constants";
 
 export async function insertImageToView(
   ea: ExcalidrawAutomate,
@@ -264,7 +265,7 @@ export async function addBackOfTheNoteCard(
   api.selectElements([el]);
   if(activate) {
     window.setTimeout(()=>{
-      api.updateScene({appState: {activeEmbeddable: {element: el, state: "active"}}, storeAction: "update"});
+      api.updateScene({appState: {activeEmbeddable: {element: el, state: "active"}}, captureUpdate: CaptureUpdateAction.NEVER,});
       if(found) view.getEmbeddableLeafElementById(el.id)?.editNode?.();
     });
   }

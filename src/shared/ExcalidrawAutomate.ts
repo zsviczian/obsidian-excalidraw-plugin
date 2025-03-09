@@ -46,7 +46,7 @@ import {
   getWithBackground,
 } from "src/utils/utils";
 import { getAttachmentsFolderAndFilePath, getExcalidrawViews, getLeaf, getNewOrAdjacentLeaf, isObsidianThemeDark, mergeMarkdownFiles, openLeaf } from "src/utils/obsidianUtils";
-import { AppState, BinaryFileData,  DataURL,  ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { AppState, BinaryFileData,  DataURL,  ExcalidrawImperativeAPI, SceneData } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddedFile, EmbeddedFilesLoader } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
 import { NewFileActions } from "src/shared/Dialogs/Prompt";
@@ -87,6 +87,7 @@ import { AddImageOptions, ImageInfo, SVGColorInfo } from "src/types/excalidrawAu
 import { _measureText, cloneElement, createPNG, createSVG, errorMessage, filterColorMap, getEmbeddedFileForImageElment, getFontFamily, getLineBox, getTemplate, isColorStringTransparent, isSVGColorInfo, mergeColorMapIntoSVGColorInfo, normalizeLinePoints, repositionElementsToCursor, svgColorInfoToColorMap, updateOrAddSVGColorInfo, verifyMinimumPluginVersion } from "src/utils/excalidrawAutomateUtils";
 import { exportToPDF, getMarginValue, getPageDimensions, PageDimensions, PageOrientation, PageSize, PDFExportScale, PDFPageProperties } from "src/utils/exportUtils";
 import { FrameRenderingOptions } from "src/types/utilTypes";
+import { CaptureUpdateAction } from "src/constants/constants";
 
 extendPlugins([
   HarmonyPlugin,
@@ -2237,7 +2238,7 @@ export class ExcalidrawAutomate {
     this.targetView.updateScene({
       elements: el.filter((e: ExcalidrawElement) => !ids.includes(e.id)),
       appState: st,
-      storeAction: "capture",
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
     });
     //this.targetView.save();
     return true;
@@ -2564,7 +2565,7 @@ export class ExcalidrawAutomate {
         appState: {
           viewModeEnabled: !isFullscreen,
         },
-        storeAction: "update",
+        captureUpdate: CaptureUpdateAction.NEVER,
       });
       this.targetView.toolsPanelRef?.current?.setExcalidrawViewMode(!isFullscreen);
     }
@@ -2586,7 +2587,7 @@ export class ExcalidrawAutomate {
       return;
     }
     const view = this.targetView as ExcalidrawView;
-    view.updateScene({appState:{viewModeEnabled: enabled}, storeAction: "update"});
+    view.updateScene({appState:{viewModeEnabled: enabled}, captureUpdate: CaptureUpdateAction.NEVER});
     view.toolsPanelRef?.current?.setExcalidrawViewMode(enabled);
   }
 
@@ -2596,8 +2597,9 @@ export class ExcalidrawAutomate {
    * @param {ExcalidrawElement[]} [scene.elements] - Array of elements in the scene.
    * @param {AppState} [scene.appState] - The app state of the scene.
    * @param {BinaryFileData} [scene.files] - The files in the scene.
-   * @param {boolean} [scene.commitToHistory] - Whether to commit the scene to history.
-   * @param {"capture" | "none" | "update"} [scene.storeAction] - The store action for the scene.
+   * @param {boolean} [scene.commitToHistory] - Whether to commit the scene to history. @deprecated Use scene.storageOption instead
+   * @param {"capture" | "none" | "update"} [scene.storeAction] - The store action for the scene. @deprecated Use scene.storageOption instead
+   * @param {"IMMEDIATELY" | "NEVER" | "EVENTUALLY"} [scene.captureUpdate] - The capture update action for the scene.
    * @param {boolean} [restore=false] - Whether to restore legacy elements in the scene.
    */
   viewUpdateScene (
@@ -2607,6 +2609,7 @@ export class ExcalidrawAutomate {
       files?: BinaryFileData,
       commitToHistory?: boolean,
       storeAction?: "capture" | "none" | "update",
+      captureUpdate?: SceneData["captureUpdate"],
     },
     restore: boolean = false,
   ):void {
@@ -2623,6 +2626,7 @@ export class ExcalidrawAutomate {
       appState: scene.appState,
       files: scene.files,
       storeAction: scene.storeAction,
+      captureUpdate: scene.captureUpdate,
     },restore);
   }
 
@@ -3308,7 +3312,7 @@ export class ExcalidrawAutomate {
     elements.splice(newZIndex, 0, elements.splice(oldZIndex, 1)[0]);
     this.targetView.updateScene({
       elements,
-      storeAction: "capture",
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
     });
   };
 

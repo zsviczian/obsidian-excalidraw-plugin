@@ -8,7 +8,7 @@ import {
 import ExcalidrawPlugin from "../core/main";
 import { checkAndCreateFolder, splitFolderAndFilename } from "./fileUtils";
 import { linkClickModifierType, ModifierKeys } from "./modifierkeyHelper";
-import { EXCALIDRAW_PLUGIN, REG_BLOCK_REF_CLEAN, REG_SECTION_REF_CLEAN, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
+import { DEVICE, EXCALIDRAW_PLUGIN, REG_BLOCK_REF_CLEAN, REG_SECTION_REF_CLEAN, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
 import yaml from "js-yaml";
 import { debug, DEBUGGING } from "./debugHelper";
 import ExcalidrawView from "src/view/ExcalidrawView";
@@ -415,4 +415,13 @@ export async function closeLeafView(leaf: WorkspaceLeaf) {
     type: "empty",
     state: {},
   });
+}
+
+//In Obsidian 1.8.x the active excalidraw leaf is obscured by an empty leaf without a parent
+//In some ways similar to patchMobileView() - though does something completely different, but both mobile leaf related
+export function isUnwantedLeaf(leaf:WorkspaceLeaf):boolean {
+  return !DEVICE.isDesktop && 
+    leaf.view?.getViewType() === "empty" && leaf.parent && !leaf.parent.parent &&
+    //@ts-ignore
+    leaf.parent.type === "split" && leaf.parent.children.length === 1
 }

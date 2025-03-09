@@ -1,5 +1,6 @@
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { t } from "src/lang/helpers";
+import { CaptureUpdateAction } from "src/constants/constants";
 
 export const showFrameSettings = (ea: ExcalidrawAutomate) => {
   const {enabled, clip, name, outline} = ea.getExcalidrawAPI().getAppState().frameRendering;
@@ -64,7 +65,7 @@ export const showFrameSettings = (ea: ExcalidrawAutomate) => {
             appState: {
               frameRendering: settings
             },
-            storeAction: "update",
+            captureUpdate: CaptureUpdateAction.NEVER,
           });
           frameSettingsModal.close();
         })

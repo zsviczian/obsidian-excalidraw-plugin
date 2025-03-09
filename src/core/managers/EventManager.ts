@@ -1,7 +1,7 @@
 import { WorkspaceLeaf, TFile, Editor, MarkdownView, MarkdownFileInfo, MetadataCache, App, EventRef, Menu, FileView } from "obsidian";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { getLink } from "../../utils/fileUtils";
-import { editorInsertText, getExcalidrawViews, getParentOfClass, setExcalidrawView } from "../../utils/obsidianUtils";
+import { editorInsertText, getExcalidrawViews, getParentOfClass, isUnwantedLeaf, setExcalidrawView } from "../../utils/obsidianUtils";
 import ExcalidrawPlugin from "src/core/main";
 import { DEBUGGING, debug } from "src/utils/debugHelper";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
@@ -163,6 +163,13 @@ export class EventManager {
   public async onActiveLeafChangeHandler (leaf: WorkspaceLeaf) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onActiveLeafChangeHandler,`onActiveLeafChangeEventHandler`, leaf);
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/723
+
+    //In Obsidian 1.8.x the active excalidraw leaf is obscured by an empty leaf without a parent
+    //This hack resolves it
+    if(this.app.workspace.activeLeaf === leaf && isUnwantedLeaf(leaf)) {
+      leaf.detach();
+      return;
+    }
 
     if (leaf.view && leaf.view.getViewType() === "pdf") {
       this.plugin.lastPDFLeafID = leaf.id;

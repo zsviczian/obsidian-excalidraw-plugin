@@ -226,7 +226,7 @@ export class EmbeddableSettings extends Modal {
       (async() => {
         await this.ea.addElementsToView();
         //@ts-ignore
-        this.ea.viewUpdateScene({appState: {}, storeAction: "update"});
+        this.ea.viewUpdateScene({appState: {}, captureUpdate: CaptureUpdateAction.NEVER});
         this.close(); //close should only run once update scene is done
       })();
     } else {

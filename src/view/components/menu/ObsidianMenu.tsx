@@ -12,6 +12,7 @@ import { ICONS, penIcon, stringToSVG } from "../../../constants/actionIcons";
 import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFileModal";
 import { t } from "src/lang/helpers";
 import { getExcalidrawViews } from "src/utils/obsidianUtils";
+import { CaptureUpdateAction } from "src/constants/constants";
 
 export function setPen (pen: PenStyle, api: any) {
   const st = api.getAppState();
@@ -34,7 +35,7 @@ export function setPen (pen: PenStyle, api: any) {
           }} 
         : null,
     },
-    storeAction: "update",
+    captureUpdate: CaptureUpdateAction.NEVER,
   })
 }
 
@@ -51,7 +52,7 @@ export function resetStrokeOptions (resetCustomPen:any, api: ExcalidrawImperativ
       resetCustomPen: null,
       ...clearCurrentStrokeOptions ? {currentStrokeOptions: null} : null,
     },
-    storeAction: "update",
+    captureUpdate: CaptureUpdateAction.NEVER
   });
 }
 

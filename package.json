@@ -21,15 +21,15 @@
   "keywords": [],
   "author": "",
   "license": "MIT",
-  "dependencies": {
+"dependencies": {
     "@popperjs/core": "^2.11.8",
-    "@zsviczian/excalidraw": "0.17.6-32",
+    "@zsviczian/excalidraw": "0.18.0-0",
     "chroma-js": "^2.4.2",
     "clsx": "^2.0.0",
     "@zsviczian/colormaster": "^1.2.2",
     "gl-matrix": "^3.4.3",
     "js-yaml": "^4.1.0",
-    "lucide-react": "^0.263.1",
+    "lucide-react": "^0.479.0",
     "mathjax-full": "^3.2.2",
     "monkey-around": "^2.3.0",
     "nanoid": "^4.0.2",

@@ -15,6 +15,7 @@ import { EmbeddableSettings } from "src/shared/Dialogs/EmbeddableSettings";
 import { openExternalLink } from "src/utils/excalidrawViewUtils";
 import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
+import { CaptureUpdateAction } from "src/constants/constants";
 
 export class EmbeddableMenu {
   private menuFadeTimeout: number = 0;
@@ -70,7 +71,7 @@ export class EmbeddableMenu {
   };
 
   private async actionMarkdownSelection (file: TFile, isExcalidrawFile: boolean, subpath: string, element: ExcalidrawEmbeddableElement) {
-    this.view.updateScene({appState: {activeEmbeddable: null}, storeAction: "update"});
+    this.view.updateScene({appState: {activeEmbeddable: null}, captureUpdate: CaptureUpdateAction.NEVER});
     const sections = (await this.view.app.metadataCache.blockCache
       .getForFile({ isCancelled: () => false },file))
       .blocks.filter((b: any) => b.display && b.node?.type === "heading")
@@ -98,7 +99,7 @@ export class EmbeddableMenu {
 
   private async actionMarkdownBlock (file: TFile, subpath: string, element: ExcalidrawEmbeddableElement) {
     if(!file) return;
-    this.view.updateScene({appState: {activeEmbeddable: null}, storeAction: "update"});
+    this.view.updateScene({appState: {activeEmbeddable: null}, captureUpdate: CaptureUpdateAction.NEVER});
     const paragraphs = (await this.view.app.metadataCache.blockCache
       .getForFile({ isCancelled: () => false },file))
       .blocks.filter((b: any) => b.display && b.node && 

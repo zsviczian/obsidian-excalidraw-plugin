@@ -7,6 +7,7 @@ import { cloneElement } from "./excalidrawAutomateUtils";
 import { ExcalidrawFrameElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
 import { addAppendUpdateCustomData } from "./utils";
 import { mutateElement } from "src/constants/constants";
+import { CaptureUpdateAction } from "src/constants/constants";
 
 export const setDynamicStyle = (
   ea: ExcalidrawAutomate,
@@ -17,7 +18,7 @@ export const setDynamicStyle = (
 ) => {
   if(dynamicStyle === "none") {
     view.excalidrawContainer?.removeAttribute("style");
-    setTimeout(()=>view.updateScene({appState:{dynamicStyle: ""}, storeAction: "update"}));
+    setTimeout(()=>view.updateScene({appState:{dynamicStyle: ""}, captureUpdate: CaptureUpdateAction.NEVER}));
     const toolspanel = view.toolsPanelRef?.current?.containerRef?.current;
     if(toolspanel) {
       let toolsStyle = toolspanel.getAttribute("style");
@@ -178,7 +179,7 @@ export const setDynamicStyle = (
         frameColor,
         dynamicStyle: styleObject
       },
-      storeAction: "update",
+      captureUpdate: CaptureUpdateAction.NEVER,
     });
     view = null;
     ea = null;

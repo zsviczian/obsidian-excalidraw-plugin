@@ -412,7 +412,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     try {
       this.isReady = true;
-      switchToExcalidraw(this.app);
+      await switchToExcalidraw(this.app);
       this.switchToExcalidarwAfterLoad();
     } catch (e) {
       new Notice("Error switching views to Excalidraw", 6000);
