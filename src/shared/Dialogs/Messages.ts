@@ -17,6 +17,9 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.9.1":`
+- Minor emergency fix. Reverting: [#9203](https://github.com/excalidraw/excalidraw/pull/9203)
+`,
 "2.9.0":`
 ## New
 - QoL improvement: The context menu requires a longer press and hold for it to be displayed on mobile devices. When you want to precision adjust an element it happens that you linger on the point for just a little longer and the context menu appears unwantedly.
