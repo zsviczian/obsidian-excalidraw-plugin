@@ -17,6 +17,9 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.9.2":`
+- More minor fix. Toolbars are not responsive when dynamic styling is turned off. [#2287](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2287)
+`,
 "2.9.1":`
 - Minor emergency fix. Reverting: [#9203](https://github.com/excalidraw/excalidraw/pull/9203)
 `,

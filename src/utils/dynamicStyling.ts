@@ -17,8 +17,13 @@ export const setDynamicStyle = (
   textBackgroundColor?: string,
 ) => {
   if(dynamicStyle === "none") {
-    view.excalidrawContainer?.removeAttribute("style");
-    setTimeout(()=>view.updateScene({appState:{dynamicStyle: ""}, captureUpdate: CaptureUpdateAction.NEVER}));
+    //view.excalidrawContainer?.removeAttribute("style");
+    setTimeout(()=>
+      view.updateScene({
+        appState:{dynamicStyle: {}}, 
+        captureUpdate: CaptureUpdateAction.NEVER
+      })
+    );
     const toolspanel = view.toolsPanelRef?.current?.containerRef?.current;
     if(toolspanel) {
       let toolsStyle = toolspanel.getAttribute("style");
