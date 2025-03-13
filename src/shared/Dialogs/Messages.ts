@@ -17,6 +17,18 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.9.0":`
+## New
+- QoL improvement: The context menu requires a longer press and hold for it to be displayed on mobile devices. When you want to precision adjust an element it happens that you linger on the point for just a little longer and the context menu appears unwantedly.
+- Elbow arrow improvements [#9236](https://github.com/excalidraw/excalidraw/pull/9236), [#8593](https://github.com/excalidraw/excalidraw/pull/8593), [#9197](https://github.com/excalidraw/excalidraw/pull/9197), [#9191](https://github.com/excalidraw/excalidraw/pull/9191), [#9236](https://github.com/excalidraw/excalidraw/pull/9236)
+
+## Fixed Obsidian 1.8.9 regressions
+- Custom references (like #^group) broken in Live Preview in Obsidian 1.8.9 due to translation update [#2279](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2279)
+- Excalidraw tabs only show on a second click on Obsidian Mobile
+
+## Refactoring
+- The Excalidraw component moved to React 19. Obsidian for now remains on React 18. This refactoring ensures that Excalidraw continues to work in Obsidian and Obsidian will receive future Excalidraw updates. [#9182](https://github.com/excalidraw/excalidraw/pull/9182)
+`,
 "2.8.3":`
 ## Fixed
 - Chinese translation not available since 2.8.0. [#2247](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2247)
