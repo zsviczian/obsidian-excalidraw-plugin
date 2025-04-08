@@ -107,7 +107,7 @@ Obsidian-Excalidraw 插件将 [Excalidraw](https://excalidraw.com/) 这一功能
 
 #### 模板
 
-- 新绘图的模板。该模板将恢复笔画属性。这意味着您可以在模板中设置笔画颜色、笔画宽度、不透明度、字体系列、字体大小、填充样式、笔画样式等的默认值。这同样适用于 ExcalidrawAutomate。
+- 新绘图的模板。该模板将恢复笔画属性。这意味着您可以在模板中设置笔画颜色、笔画宽度、不透明度、字体系列、字体大小、填充样式、笔画样式等的默认值。这同样适用于 ExcalidrawAutomate。对于 1.6.13 或更高版本，在编辑模板中的 JSON 之前，请确保在设置中启用"在 Markdown 视图中解压缩 Excalidraw JSON"。完成更改后可以禁用此选项。
   - 通过模板，您可以自定义 Excalidraw 使用的调色板。
     - 切换到 Markdown 视图。
     - 滚动到文件底部，找到 `"AppState": {`。
@@ -218,6 +218,7 @@ Obsidian-Excalidraw 插件将 [Excalidraw](https://excalidraw.com/) 这一功能
     - `excalidraw-export-dark`： true == 深色模式 / false == 浅色模式。
     - `excalidraw-export-padding`：指定图像的导出边距。
     - `excalidraw-export-pngscale`：这仅影响导出为 PNG。指定图像的导出比例。典型范围在 0.5 到 5 之间，但您也可以尝试其他值。
+- 从 1.6.13 版本开始，如果您想修改任何 JSON 内容，请在设置中启用"在 Markdown 视图中解压缩 Excalidraw JSON"。
 
 ### 将完整的 Markdown 文件嵌入到您的绘图中
 
