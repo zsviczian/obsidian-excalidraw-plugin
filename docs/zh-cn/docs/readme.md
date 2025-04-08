@@ -1,6 +1,6 @@
 # Excalidraw 自动化使用指南
 
-[[English](../../readme.md)]
+【[English](../../readme.md)】
 
 使用 ExcalidrawAutomate 可以通过 [ExcalidrawAutomate 脚本引擎](ExcalidrawScriptsEngine.md)、[Templater](https://silentvoid13.github.io/Templater/docs/) 或 [QuickAdd](https://github.com/chhoumann/quickadd) 插件来创建或操作 Excalidraw 绘图，并使用 [DataviewJS](https://blacksmithgu.github.io/obsidian-dataview/docs/api/intro/) 生成嵌入式的 SVG 和 PNG 图像。
 
