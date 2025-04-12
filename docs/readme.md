@@ -1,6 +1,6 @@
 # Excalidraw Automate How To
 
-【[简体中文](zh-cn/docs/readme.md)】
+【English | [简体中文](zh-cn/docs/readme.md)】
 
 Use ExcalidrawAutomate to create or manipulate Excalidraw drawings using the [ExcalidrawAutomate Script Engine](ExcalidrawScriptsEngine.md), the [Templater](https://silentvoid13.github.io/Templater/docs/) or the [QuickAdd](https://github.com/chhoumann/quickadd) plugins, and to generate embedded SVG and PNG images using [DataviewJS](https://blacksmithgu.github.io/obsidian-dataview/docs/api/intro/)
 
