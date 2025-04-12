@@ -1,5 +1,7 @@
 # Excalidraw Automate How To
 
+【[简体中文](zh-cn/docs/readme.md)】
+
 Use ExcalidrawAutomate to create or manipulate Excalidraw drawings using the [ExcalidrawAutomate Script Engine](ExcalidrawScriptsEngine.md), the [Templater](https://silentvoid13.github.io/Templater/docs/) or the [QuickAdd](https://github.com/chhoumann/quickadd) plugins, and to generate embedded SVG and PNG images using [DataviewJS](https://blacksmithgu.github.io/obsidian-dataview/docs/api/intro/)
 
 With a little work, using ExcalidrawAutomate you can generate simple mindmaps, build a family tree, fill out SVG forms, create customized charts, or automate simple tasks (i.e. create macros) in Excalidraw.
