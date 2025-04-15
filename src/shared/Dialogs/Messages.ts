@@ -17,6 +17,19 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.10.0": `
+## New from Excalidraw.com
+- Lasso select [#9169](https://github.com/excalidraw/excalidraw/pull/9169)
+- Add container to multiple text elements [#9348](https://github.com/excalidraw/excalidraw/pull/9348)
+
+## Fixed from Excalidraw.com
+- Rounded diamond edge elbow arrow U route [#9349](https://github.com/excalidraw/excalidraw/pull/9349)
+- Improved eraser performance [#9352](https://github.com/excalidraw/excalidraw/pull/9352)
+- Keep arrow label horizontal [#9364](https://github.com/excalidraw/excalidraw/pull/9364)
+
+## Fixed in ExcalidrawAutomate
+- ea.addText did not honor the width parameter.
+`,
 "2.9.2":`
 - More minor fix. Toolbars are not responsive when dynamic styling is turned off. [#2287](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2287)
 `,
