@@ -5500,19 +5500,19 @@ Adds context menu to file explorer to create a drawing in any folder.
 
 # 1.0.8-test
 
-Adds [ExcalidrawAutomate](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/AutomateHowTo.md) a library of functions to generate Excalidraw drawings with Templater.
+添加了 [ExcalidrawAutomate](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/AutomateHowTo.md)，这是一个用于通过 Templater 生成 Excalidraw 绘图的函数库。
 
-Fixes issue [#37](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/37).
-Adds context menu to file explorer to create a drawing in any folder.
+修复了问题 [#37](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/37)。
+在文件浏览器中添加了上下文菜单，可以在任何文件夹中创建绘图。
 
 
 # 1.0.7
 
-Added a small tweak to styles. 
-Now you can control if the text wraps around the object or not.
-Use `|left` to align the image left without text wrapping and `|left-wrap` to wrap text.
+对样式做了一个小调整。
+现在你可以控制文本是否环绕在对象周围。
+使用 `|left` 可以让图片左对齐且不换行，使用 `|left-wrap` 可以实现文本环绕。
 
-CSS used:
+CSS 使用：
 ```
 svg.excalidraw-svg-right-wrap {
   float: right;
@@ -5535,38 +5535,38 @@ div.excalidraw-svg-left {
 
 # 1.0.6
 
-Fixes:
+修复：
 [#31](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/31) [#25](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/25) [#24](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/24) [#23](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/23) [#22](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/22) [#20](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/20)
 
 [![](https://user-images.githubusercontent.com/14358394/116312909-58725200-a7ad-11eb-89b9-c67cb48ffebb.jpg)](https://youtu.be/ipZPbcP2B0M)
 
-## Export to SVG and PNG
-- Using the filename and location of the active drawing
-### Image Settings
-- Export with background
-- Export with theme
+## 导出为SVG和PNG
+- 使用当前绘图的文件名和位置
+### 图片设置
+- 导出时包含背景
+- 导出时包含主题
 
-### Triggering export
-#### Once-off
-- Buttons to export active drawing
-- Command palette action to export active drawing
-#### Automated
-- Auto export SVG
-- Auto export PNG
-- Keep filenames in Sync
+### 触发导出
+#### 一次性导出
+- 导出当前绘图的按钮
+- 通过命令面板导出当前绘图
+#### 自动导出
+- 自动导出SVG
+- 自动导出PNG
+- 保持文件名同步
 
-## Open drawings on a new page or on the current page
-### Command Palette
-- Create a drawing on a new page by splitting the currently active pane
-- Open a drawing on a new page by splitting the currently active pane
-### Ribbon Button
-- Click to open in an active pane
-- CTRL+Click to open on a new page
+## 在新页面或当前页面打开绘图
+### 命令面板
+- 通过拆分当前活动窗格在新页面创建绘图
+- 通过拆分当前活动窗格在新页面打开绘图
+### 功能区按钮
+- 点击在活动窗格中打开
+- CTRL+点击在新页面打开
 
-## SVG styling when embedding using a code block
-- new formatting option for the code block embed
-- Valid values: left, right, center... but really anything after the last |.
-- corresponding CSS
+## 使用代码块嵌入时的SVG样式
+- 代码块嵌入的新格式选项
+- 有效值：left（左对齐）、right（右对齐）、center（居中）...实际上最后一个|后的任何内容都可以
+- 对应的CSS
 ```
 .excalidraw-svg-left {
  float: left;
@@ -5582,9 +5582,9 @@ Fixes:
 .excalidraw-svg {
 }
 ```
-# How to install 
-Install from Obsidian Community Plugins or ...
-Copy the following 3 files into your `vault/.obsidian/plugins/obsidian-excalidraw-plugin` folder
+# 如何安装
+从Obsidian社区插件安装或...
+将以下3个文件复制到你的`vault/.obsidian/plugins/obsidian-excalidraw-plugin`文件夹中
 - main.js
 - manifest.json
 - style.css
@@ -5596,35 +5596,35 @@ Fixes:
 
 [![](https://user-images.githubusercontent.com/14358394/116312909-58725200-a7ad-11eb-89b9-c67cb48ffebb.jpg)](https://youtu.be/TKgveGuA8Eo)
 
-# Excalidraw 1.0.6 update
-## Export to SVG and PNG
-### New settings
-- Export with background
-- Export with theme
-- Auto export SVG
-- Auto export PNG
-- Keep filenames in Sync
-### Command palette action to export active drawing
-- Using the filename and location of the active drawing
-- Image types supported
+# Excalidraw 1.0.6 更新
+## 导出为 SVG 和 PNG
+### 新设置
+- 导出时包含背景
+- 导出时包含主题
+- 自动导出 SVG
+- 自动导出 PNG
+- 保持文件名同步
+### 命令面板导出当前绘图的操作
+- 使用当前绘图的文件名和位置
+- 支持的图片类型
 	- PNG
 	- SVG
-## New command palette actions
-- Create a new drawing in a new pane by splitting the currently active pane
-- Open drawing in a new pane by splitting the currently active pane
-### New setting
-- Configure the ribbon button to 
-	- open in a new pane by splitting the current pane
-	- open in the currently active pane
+## 命令面板新增功能
+- 通过拆分当前活动面板来在新面板中创建新绘图
+- 通过拆分当前活动面板来在新面板中打开绘图
+### 新设置
+- 配置功能区按钮以
+	- 通过拆分当前面板在新面板中打开
+	- 在当前活动面板中打开
 
-## SVG styling when embedding using code block
-### new options
+## 使用代码块嵌入时的 SVG 样式
+### 新选项
 [[drawing.excalidraw|500|left]]
 
 [[drawing.excalidraw|500x300|right]]
 
 [[drawing.excalidraw|center]]
-### corresponding CSS
+### 对应的 CSS
 ```
 .excalidraw-svg-left {
  float: left;
@@ -5640,9 +5640,9 @@ Fixes:
 .excalidraw-svg {
 }
 ```
-## Stencil library bug resolved
-# How to install the test release
-Copy the following 3 files into your `vault/.obsidian/plugins/obsidian-excalidraw-plugin` folder
+## 修复模板库错误
+# 如何安装测试版本
+将以下3个文件复制到你的 `vault/.obsidian/plugins/obsidian-excalidraw-plugin` 文件夹中
 - main.js
 - manifest.json
 - style.css
@@ -5753,6 +5753,31 @@ Excalidraw 0.7.0 还对客户端模板库的处理方式引入了重大变更。
 
 安装方法:
 将3个文件 main.js、manifest.json、styles.css 复制到 vault/.obsidian/plugins/obsidian-excalidraw-plugin/ 文件夹中。
+![image](https://user-images.githubusercontent.com/14358394/115279271-ca5ff100-a146-11eb-8ca6-cb4aae296dd9.png)
+
+
+# 0.0.1
+
+## 发布说明：
+插件可以工作，但我还没有解决在 .md 文件中嵌入(transclusion)的问题。
+
+## 安装方法：
+将3个文件 main.js、manifest.json、styles.css 复制到 vault/.obsidian/plugins/obsidian-excalidraw-plugin/ 文件夹中。
+
+# 1.0.2
+
+处理反馈：
+https://github.com/obsidianmd/obsidian-releases/pull/258
+
+# 1.0.1
+
+处理代码相关反馈。
+https://github.com/obsidianmd/obsidian-releases/pull/258
+
+# 1.0.0
+
+这是 Obsidian-Excalidraw 插件的首次发布。
+件夹中。
 ![image](https://user-images.githubusercontent.com/14358394/115279271-ca5ff100-a146-11eb-8ca6-cb4aae296dd9.png)
 
 

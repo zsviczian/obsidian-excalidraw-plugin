@@ -1,4 +1,7 @@
 # Excalidraw Script Engine scripts library
+
+【English | [简体中文](../docs/zh-cn/ea-scripts/README.md)】
+
 Click to watch the intro video:
 
 [![Script Engine](https://user-images.githubusercontent.com/14358394/145684531-8d9c2992-59ac-4ebc-804a-4cce1777ded2.jpg)](https://youtu.be/hePJcObHIso)
