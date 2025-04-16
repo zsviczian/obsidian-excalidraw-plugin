@@ -1096,13 +1096,14 @@ export class ExcalidrawAutomate {
         ? "light"
         : undefined;
     }
-    if (theme && !exportSettings) {
+    if (!exportSettings) {
       exportSettings = {
         withBackground: this.plugin.settings.exportWithBackground,
         withTheme: true,
         isMask: false,
+        skipInliningFonts: !embedFont,
       };
-    }
+    }  
     if (!loader) {
       loader = new EmbeddedFilesLoader(
         this.plugin,

@@ -380,6 +380,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
     DYNAMIC_COLOR: true,
     COLOR: "#000000",
     OPACITY: 50,
+    GRID_DIRECTION: {horizontal: true, vertical: true},
   },
   laserSettings: {
     DECAY_LENGTH: 50,
@@ -1379,6 +1380,42 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       const updateGridColor = () => {
         getExcalidrawViews(this.app).forEach(excalidrawView=>excalidrawView.updateGridColor());
       };
+
+      const updateGridDirection = () => {
+        getExcalidrawViews(this.app).forEach(excalidrawView=>
+          excalidrawView.updateGridDirection(this.plugin.settings.gridSettings.GRID_DIRECTION));
+      }
+      
+      new Setting(detailsEl)
+        .setName(t("GRID_DIRECTION_NAME"))
+        .setDesc(t("GRID_DIRECTION_DESC"))
+        .addToggle((toggle) =>
+          toggle
+            .setTooltip(t("GRID_HORIZONTAL"))
+            .setValue(this.plugin.settings.gridSettings.GRID_DIRECTION?.horizontal ?? true)
+            .onChange((value) => {
+              if(!this.plugin.settings.gridSettings.GRID_DIRECTION) {
+                this.plugin.settings.gridSettings.GRID_DIRECTION = { horizontal: true, vertical: true };
+              } //2.10.1 migration
+              this.plugin.settings.gridSettings.GRID_DIRECTION.horizontal = value;
+              this.applySettingsUpdate();
+              updateGridDirection();
+            }),
+        )
+        .addToggle((toggle) =>
+          toggle
+            .setTooltip(t("GRID_VERTICAL"))
+            .setValue(this.plugin.settings.gridSettings.GRID_DIRECTION?.vertical ?? true)
+            .onChange((value) => {
+              if(!this.plugin.settings.gridSettings.GRID_DIRECTION) {
+                this.plugin.settings.gridSettings.GRID_DIRECTION = { horizontal: true, vertical: true };
+              } //2.10.1 migration
+              this.plugin.settings.gridSettings.GRID_DIRECTION.vertical = value;
+              this.applySettingsUpdate();
+              updateGridDirection();
+            }),
+        );
+      
 
       // Dynamic color toggle
       let gridColorSection: HTMLDivElement;

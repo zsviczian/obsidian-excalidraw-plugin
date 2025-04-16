@@ -11,11 +11,31 @@ Thank you & Enjoy!
 `;
 
 export const RELEASE_NOTES: { [k: string]: string } = {
-  Intro: `After each update you'll be prompted with the release notes. You can disable this in plugin settings.
+  Intro: `After each update, you’ll see these release notes (you can turn this off in the plugin settings).
 
-I develop this plugin as a hobby, spending my free time doing this. If you find it valuable, then please say THANK YOU or...
+I build this plugin in my free time, as a labor of love. Curious about the philosophy behind it? Check out [📕 Sketch Your Mind](https://sketch-your-mind.com). If you find it valuable, say THANK YOU or…
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
+`,
+"2.10.1": `
+
+## Fixed by Excalidraw.com
+- Eraser performance improvement regression. Erasing locked elements. [#9400](https://github.com/excalidraw/excalidraw/pull/9400)
+
+## New
+- Grid Customization Options in plugin settings (appearance and behavior/grid): You can now selectively show or hide vertical and horizontal grid lines independently. This allows you to create alternative grid styles, such as horizontal-only lined grids instead of the traditional checkered pattern.
+
+## Fixed in ExcalidrawAutomate
+- ${String.fromCharCode(96)}ea.createSVG${String.fromCharCode(96)} throws error [#2321]https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2321)
+
+---
+
+## ❤️ Enjoying the plugin?
+
+Support my work by checking out my new book, now available for pre-order:  
+[Sketch Your Mind: Nurture a Playful and Creative Brain](https://sketch-your-mind.com) is about visual Personal Knowledge Management. It explores the thinking behind Excalidraw and how it helps you structure and evolve ideas visually. It’s the book I wish I had when I began my own PKM journey.
+
+<div class="ex-coffee-div"><a href="https://sketch-your-mind.com"><img src="https://raw.githubusercontent.com/zsviczian/sketch-your-mind/refs/heads/main/images/cover-mini.jpg" border="0" alt="Pre-order Sketch Your Mind"  height="100%"></a></div>
 `,
 "2.10.0": `
 ## New from Excalidraw.com
@@ -28,7 +48,7 @@ I develop this plugin as a hobby, spending my free time doing this. If you find 
 - Keep arrow label horizontal [#9364](https://github.com/excalidraw/excalidraw/pull/9364)
 
 ## Fixed in ExcalidrawAutomate
-- ea.addText did not honor the width parameter.
+- ${String.fromCharCode(96)}ea.addText${String.fromCharCode(96)} did not honor the width parameter.
 `,
 "2.9.2":`
 - More minor fix. Toolbars are not responsive when dynamic styling is turned off. [#2287](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2287)

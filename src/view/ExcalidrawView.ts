@@ -155,6 +155,7 @@ import { ImageInfo } from "src/types/excalidrawAutomateTypes";
 import { exportToPDF, getMarginValue, getPageDimensions, PageOrientation, PageSize } from "src/utils/exportUtils";
 import { FrameRenderingOptions } from "src/types/utilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
+import { FlipHorizontal } from "lucide-react";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -2769,6 +2770,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             allowWheelZoom: this.plugin.settings.allowWheelZoom,
             pinnedScripts: this.plugin.settings.pinnedScripts,
             customPens: this.plugin.settings.customPens.slice(0,this.plugin.settings.numberOfCustomPens),
+            gridDirection: this.plugin.settings.gridSettings.GRID_DIRECTION ?? {horizontal: true, vertical: true},
           },
           captureUpdate: CaptureUpdateAction.NEVER,
         },
@@ -2797,6 +2799,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           allowWheelZoom: this.plugin.settings.allowWheelZoom,
           pinnedScripts: this.plugin.settings.pinnedScripts,
           customPens: this.plugin.settings.customPens.slice(0,this.plugin.settings.numberOfCustomPens),
+          gridDirection: this.plugin.settings.gridSettings.GRID_DIRECTION,
         },
         files: excalidrawData.files,
         libraryItems: await this.getLibrary(),
@@ -3937,6 +3940,13 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       canvasColor = canvasColor ?? st.viewBackgroundColor === "transparent" ? "white" : st.viewBackgroundColor;
     }
     window.setTimeout(()=>this.updateScene({appState:{gridColor: this.getGridColor(canvasColor, st)}, captureUpdate: CaptureUpdateAction.NEVER}));
+  }
+
+  public updateGridDirection(gridDirection: {horizontal: boolean, vertical: boolean}) {
+    window.setTimeout(()=>this.updateScene({appState:{gridDirection: {
+      horizontal: gridDirection.horizontal,
+      vertical: gridDirection.vertical}
+    }, captureUpdate: CaptureUpdateAction.NEVER}));
   }
 
   private canvasColorChangeHook(st: AppState) {
