@@ -247,6 +247,8 @@ export default {
     `目前 OpenAI API 还处于测试中，您需要在自己的。` +
     `OpenAI 账户中充值至少 5 美元后才能生成 API key，` +
     `然后就可以在 Excalidraw 中配置并使用 AI。`,
+  AI_ENABLED_NAME : "启用 AI 功能" ,
+  AI_ENABLED_DESC : "您需要重新打开 Excalidraw 才能使更改生效。" ,
   AI_OPENAI_TOKEN_NAME: "OpenAI API key",
   AI_OPENAI_TOKEN_DESC:
     "您可以访问您的<a href='https://platform.openai.com/api-keys'> OpenAI 账户</a>来获取自己的 OpenAI API key。",
