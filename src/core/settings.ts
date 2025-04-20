@@ -43,6 +43,7 @@ import { HotkeyEditor } from "src/shared/Dialogs/HotkeyEditor";
 import { getExcalidrawViews } from "src/utils/obsidianUtils";
 import { createSliderWithText } from "src/utils/sliderUtils";
 import { PDFExportSettingsComponent, PDFExportSettings } from "src/shared/Dialogs/PDFExportSettingsComponent";
+import de from "src/lang/locale/de";
 
 export interface ExcalidrawSettings {
   folder: string;
@@ -199,6 +200,7 @@ export interface ExcalidrawSettings {
   markdownNodeOneClickEditing: boolean;
   canvasImmersiveEmbed: boolean,
   startupScriptPath: string,
+  aiEnabled: boolean,
   openAIAPIToken: string,
   openAIDefaultTextModel: string,
   openAIDefaultVisionModel: string,
@@ -401,6 +403,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   markdownNodeOneClickEditing: false,
   canvasImmersiveEmbed: true,
   startupScriptPath: "",
+  aiEnabled: true,
   openAIAPIToken: "",
   openAIDefaultTextModel: "gpt-3.5-turbo-1106",
   openAIDefaultVisionModel: "gpt-4o",
@@ -992,6 +995,27 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       text: t("AI_HEAD"),
       cls: "excalidraw-setting-h1",
     });
+
+    let aiEl: HTMLElement;
+
+    new Setting(detailsEl)
+      .setName(t("AI_ENABLED_NAME"))
+      .setDesc(fragWithHTML(t("AI_ENABLED_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.aiEnabled??true)
+          .onChange(async (value) => {
+            aiEl.style.display = value ? "block" : "none";
+            this.plugin.settings.aiEnabled = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    detailsEl = detailsEl.createDiv();
+    aiEl = detailsEl;
+    if(!(this.plugin.settings.aiEnabled??true)) {
+      detailsEl.style.display = "none";
+    }
 
     new Setting(detailsEl)
       .setName(t("AI_OPENAI_TOKEN_NAME"))

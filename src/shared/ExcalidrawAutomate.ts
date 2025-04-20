@@ -2606,7 +2606,7 @@ export class ExcalidrawAutomate {
   viewUpdateScene (
     scene: {
       elements?: ExcalidrawElement[],
-      appState?: AppState,
+      appState?: AppState | {},
       files?: BinaryFileData,
       commitToHistory?: boolean,
       storeAction?: "capture" | "none" | "update",

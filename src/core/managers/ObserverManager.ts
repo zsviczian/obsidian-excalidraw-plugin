@@ -130,7 +130,7 @@ export class ObserverManager {
         return;
       }
       if (this.plugin.isExcalidrawFile(f)) {
-        el.insertBefore(
+        el.insertAfter(
           createDiv({
             cls: "nav-file-tag",
             text: this.settings.experimentalFileTag,
