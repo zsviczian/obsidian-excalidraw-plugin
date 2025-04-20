@@ -1655,7 +1655,8 @@ export class ExcalidrawAutomate {
       arrayToMap(this.getElements()),
       originalText,
     );
-    if(dimensions) {
+
+    if(dimensions && !formatting?.width) {
       textElement.width = dimensions.width;
       textElement.height = dimensions.height;
       textElement.x = dimensions.x;
