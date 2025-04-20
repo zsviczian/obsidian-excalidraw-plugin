@@ -247,6 +247,8 @@ export default {
     `While the OpenAI API is in beta, its use is strictly limited — as such we require you use your own API key. ` +
     `You can create an OpenAI account, add a small credit (5 USD minimum), and generate your own API key. ` +
     `Once API key is set, you can use the AI tools in Excalidraw.`,
+  AI_ENABLED_NAME: "Enable AI features",
+  AI_ENABLED_DESC: "You need to reopen Excalidraw for the changes to take effect.",
   AI_OPENAI_TOKEN_NAME: "OpenAI API key",
   AI_OPENAI_TOKEN_DESC:
     "You can get your OpenAI API key from your <a href='https://platform.openai.com/api-keys'>OpenAI account</a>.",

@@ -17,6 +17,19 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.10.2": `
+## Fixed by Excalidraw.com
+- Alt-duplicate now preserves the original element. Previously, using Alt to duplicate would swap the original with the new element, leading to unexpected behavior and several downstream issues. [#9403](https://github.com/excalidraw/excalidraw/pull/9403)
+
+## New
+- Expose parameter in plugin settings to disable AI functionality [#2325](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2325)
+
+## Fixed in the plugin
+- Scaling multiple embeddables at once did not work. [#2276](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2276)
+- When creating multiple back-of-the-note the second card is not created correctly if autosave has not yet happened.
+- Drawing reloads while editing the back-of-the-note card in certain cases causing editing to be interrupted.
+- Moved Excalidraw filetype indicator ✏️ to after filename where other filetype tags are displayed. You can turn filetype indicator on/off in plugin settings under Miscellaneous.
+`,
 "2.10.1": `
 
 ## Fixed by Excalidraw.com
@@ -26,7 +39,7 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 - Grid Customization Options in plugin settings (appearance and behavior/grid): You can now selectively show or hide vertical and horizontal grid lines independently. This allows you to create alternative grid styles, such as horizontal-only lined grids instead of the traditional checkered pattern.
 
 ## Fixed in ExcalidrawAutomate
-- ${String.fromCharCode(96)}ea.createSVG${String.fromCharCode(96)} throws error [#2321]https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2321)
+- ${String.fromCharCode(96)}ea.createSVG${String.fromCharCode(96)} throws error [#2321](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2321)
 
 ---
 

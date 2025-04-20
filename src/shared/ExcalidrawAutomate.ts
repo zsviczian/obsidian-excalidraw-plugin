@@ -1655,7 +1655,8 @@ export class ExcalidrawAutomate {
       arrayToMap(this.getElements()),
       originalText,
     );
-    if(dimensions) {
+
+    if(dimensions && !formatting?.width) {
       textElement.width = dimensions.width;
       textElement.height = dimensions.height;
       textElement.x = dimensions.x;
@@ -2606,7 +2607,7 @@ export class ExcalidrawAutomate {
   viewUpdateScene (
     scene: {
       elements?: ExcalidrawElement[],
-      appState?: AppState,
+      appState?: AppState | {},
       files?: BinaryFileData,
       commitToHistory?: boolean,
       storeAction?: "capture" | "none" | "update",

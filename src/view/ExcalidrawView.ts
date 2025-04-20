@@ -750,8 +750,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   public async setEmbeddableNodeIsEditing() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setEmbeddableNodeIsEditing, "ExcalidrawView.setEmbeddableNodeIsEditing");
     this.clearEmbeddableNodeIsEditingTimer();
-    await this.forceSave(true);
     this.semaphores.embeddableIsEditingSelf = true;
+    await this.forceSave(true);
   }
 
   public clearEmbeddableNodeIsEditingTimer () {
@@ -3741,6 +3741,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             return;
           }
           const ef = this.excalidrawData.getFile(selectedImgElement.fileId);
+          if(!ef.file) {
+            return;
+          }
           if (
             (ef.isHyperLink || ef.isLocalLink) || //web images don't have a preview
             (IMAGE_TYPES.contains(ef.file.extension)) || //images don't have a preview
@@ -4562,6 +4565,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
   public async insertBackOfTheNoteCard() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.insertBackOfTheNoteCard, "ExcalidrawView.insertBackOfTheNoteCard");
+    await this.forceSave(true);
     const sections = await this.getBackOfTheNoteSections(); 
     const selectCardDialog = new SelectCard(this.app,this,sections);
     selectCardDialog.start();
@@ -5491,7 +5495,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             libraryReturnUrl: "app://obsidian.md",
             autoFocus: true,
             langCode: obsidianToExcalidrawMap[this.plugin.locale]??"en-EN",
-            aiEnabled: true,
+            aiEnabled: this.plugin.settings.aiEnabled??true,
             onChange: this.onChange.bind(this),
             onLibraryChange: this.onLibraryChange.bind(this),
             renderTopRightUI: this.renderTopRightUI.bind(this), //(isMobile: boolean, appState: AppState) => this.obsidianMenu.renderButton (isMobile, appState),

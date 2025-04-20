@@ -12,6 +12,7 @@ import { getYouTubeStartAt, isValidYouTubeStart, isYouTube, updateYouTubeStartTi
 import { EmbeddalbeMDFileCustomDataSettingsComponent } from "./EmbeddableMDFileCustomDataSettingsComponent";
 import { isWinCTRLorMacCMD } from "src/utils/modifierkeyHelper";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { CaptureUpdateAction } from "src/constants/constants";
 
 export type EmbeddableMDCustomProps = {
   useObsidianDefaults: boolean;
@@ -225,7 +226,6 @@ export class EmbeddableSettings extends Modal {
     if(dirty) {
       (async() => {
         await this.ea.addElementsToView();
-        //@ts-ignore
         this.ea.viewUpdateScene({appState: {}, captureUpdate: CaptureUpdateAction.NEVER});
         this.close(); //close should only run once update scene is done
       })();
