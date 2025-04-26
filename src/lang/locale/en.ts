@@ -371,6 +371,7 @@ FILENAME_HEAD: "Filename",
   DEFAULT_PEN_MODE_NAME: "Pen mode",
   DEFAULT_PEN_MODE_DESC:
     "Should pen mode be automatically enabled when opening Excalidraw?",
+  ENABLE_DOUBLE_CLICK_TEXT_EDITING_NAME: "Enable double-click text create",
   DISABLE_DOUBLE_TAP_ERASER_NAME: "Enable double-tap eraser in pen mode",
   DISABLE_SINGLE_FINGER_PANNING_NAME: "Enable single-finger panning in pen mode",
   SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_NAME: "Show (+) crosshair in pen mode",

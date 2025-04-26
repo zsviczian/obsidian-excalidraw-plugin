@@ -77,7 +77,6 @@ import {
   getExcalidrawMarkdownHeaderSection,
 } from "../shared/ExcalidrawData";
 import {
-  arrayBufferToBase64,
   checkAndCreateFolder,
   createOrOverwriteFile,
   download,
@@ -155,7 +154,6 @@ import { ImageInfo } from "src/types/excalidrawAutomateTypes";
 import { exportToPDF, getMarginValue, getPageDimensions, PageOrientation, PageSize } from "src/utils/exportUtils";
 import { FrameRenderingOptions } from "src/types/utilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
-import { FlipHorizontal } from "lucide-react";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -612,8 +610,10 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       return;
     }
   
+    const scene = this.getScene(selectedOnly);
+
     const svg = await this.svg(
-      this.getScene(selectedOnly),
+      scene,
       undefined,
       false,
       true
@@ -622,20 +622,26 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if (!svg) {
       return;
     }
-  
+
+    const boundingBox = this.plugin.ea.getBoundingBox(scene.elements);
+    const margin = getMarginValue(this.exportDialog.margin);
+    const [width, height] = [boundingBox.width, boundingBox.height];
+
     exportToPDF({
       SVG: [svg],
       scale: {
         zoom: this.exportDialog.scale,
-        fitToPage: this.exportDialog.fitToPage
+        fitToPage: pageSize === "MATCH IMAGE" || pageSize === "HD Screen"
+          ? 1
+          : this.exportDialog.fitToPage
       },
       pageProps: {
-        dimensions: getPageDimensions(pageSize, orientation),
+        dimensions: getPageDimensions(pageSize, orientation, {width, height}),
         backgroundColor: this.exportDialog.getPaperColor(),
-        margin: getMarginValue(this.exportDialog.margin),
+        margin,
         alignment: this.exportDialog.alignment,
       },
-      filename: this.file.basename,
+      filename: this.file.basename+".pdf",
     });
   }
 

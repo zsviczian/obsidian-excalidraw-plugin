@@ -46,6 +46,7 @@ import { PDFExportSettingsComponent, PDFExportSettings } from "src/shared/Dialog
 import de from "src/lang/locale/de";
 
 export interface ExcalidrawSettings {
+  disableDoubleClickTextEditing: boolean;
   folder: string;
   cropFolder: string;
   annotateFolder: string;
@@ -228,6 +229,7 @@ export interface ExcalidrawSettings {
 declare const PLUGIN_VERSION:string;
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
+  disableDoubleClickTextEditing: false,
   folder: "Excalidraw",
   cropFolder: "",
   annotateFolder: "",
@@ -685,6 +687,17 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     );
 
     new Setting(detailsEl)
+    .setName(t("TOGGLE_SPLASHSCREEN"))
+    .addToggle((toggle) =>
+      toggle
+        .setValue(this.plugin.settings.showSplashscreen)
+        .onChange((value)=> {
+          this.plugin.settings.showSplashscreen = value;
+          this.applySettingsUpdate();
+        })
+    )
+
+    new Setting(detailsEl)
       .setName(t("FOLDER_NAME"))
       .setDesc(fragWithHTML(t("FOLDER_DESC")))
       .addText((text) =>
@@ -1094,6 +1107,17 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h1",
     });
 
+    new Setting(detailsEl)
+      .setName(t("ENABLE_DOUBLE_CLICK_TEXT_EDITING_NAME"))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(!this.plugin.settings.disableDoubleClickTextEditing)
+          .onChange(async (value) => {
+            this.plugin.settings.disableDoubleClickTextEditing = !value;
+            this.applySettingsUpdate();
+          }),
+      );
+
     const readingModeEl = new Setting(detailsEl)
       .setName(t("SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME"))
       .setDesc(fragWithHTML(t("SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC")))
@@ -1135,17 +1159,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
     addIframe(detailsEl, "H8Njp7ZXYag",999);
-
-    new Setting(detailsEl)
-      .setName(t("TOGGLE_SPLASHSCREEN"))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.showSplashscreen)
-          .onChange((value)=> {
-            this.plugin.settings.showSplashscreen = value;
-            this.applySettingsUpdate();
-          })
-      )
 
     detailsEl = displayDetailsEl.createEl("details");
     detailsEl.createEl("summary", {

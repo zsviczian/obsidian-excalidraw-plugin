@@ -70,7 +70,7 @@ export class InsertPDFModal extends Modal {
     this.setImageSizeMessage  = null;
   }
 
-  private async getPageDimensions (pdfDoc: any) {
+  private async getPDFPageDimensions (pdfDoc: any) {
     try {
       const scale = this.plugin.settings.pdfScale;
       const canvas = createEl("canvas");
@@ -197,7 +197,7 @@ export class InsertPDFModal extends Modal {
           rangeOnChange(`1-${numPages}`);
           importButtonMessages();
           numPagesMessages();
-          this.getPageDimensions(this.pdfDoc);
+          this.getPDFPageDimensions(this.pdfDoc);
         } else {
           importButton.setDisabled(true);
         }

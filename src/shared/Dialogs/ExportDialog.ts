@@ -43,6 +43,7 @@ export class ExportDialog extends Modal {
   public customPaperColor: string = "#ffffff";
   public alignment: PDFPageAlignment = "center";
   public margin: PDFPageMarginString = "normal";
+  private scaleSetting:Setting;
 
   constructor(
     private plugin: ExcalidrawPlugin,
@@ -85,6 +86,17 @@ export class ExportDialog extends Modal {
     this.selectedOnlySetting = null;
     this.containerEl.remove();
   }
+  
+  updateBoundingBox() {
+    if(this.hasSelectedElements && this.exportSelectedOnly) {
+      this.boundingBox = this.ea.getBoundingBox(this.view.getViewSelectedElements());
+    } else {
+      this.boundingBox = this.ea.getBoundingBox(this.ea.getViewElements());
+    }
+    if(this.scaleSetting) {
+      this.scaleSetting.setDesc(this.size());
+    }
+  }
 
   onOpen(): void {
     this.containerEl.classList.add("excalidraw-release");
@@ -92,6 +104,7 @@ export class ExportDialog extends Modal {
     this.hasSelectedElements = this.view.getViewSelectedElements().length > 0;
     //@ts-ignore
     this.selectedOnlySetting.setVisibility(this.hasSelectedElements);
+    this.updateBoundingBox();
   }
 
   async onClose() {
@@ -167,21 +180,20 @@ export class ExportDialog extends Modal {
       this.createPDFButton();
     }
   }
+
+  private size ():DocumentFragment {
+    const width = Math.round(this.scale*this.boundingBox.width + this.padding*2);
+    const height = Math.round(this.scale*this.boundingBox.height + this.padding*2);
+    return fragWithHTML(`${t("EXPORTDIALOG_SIZE_DESC")}<br>${t("EXPORTDIALOG_SCALE_VALUE")} <b>${this.scale}</b><br>${t("EXPORTDIALOG_IMAGE_SIZE")} <b>${width}x${height}</b>`);
+  }
   
   private createImageSettings() {
-    let scaleSetting:Setting;
     let paddingSetting: Setting;   
 
     this.contentContainer.createEl("h1",{text: t("EXPORTDIALOG_IMAGE_SETTINGS")});
     this.contentContainer.createEl("p",{text: t("EXPORTDIALOG_IMAGE_DESC")})
 
     this.createSaveSettingsDropdown();
-
-    const size = ():DocumentFragment => {
-      const width = Math.round(this.scale*this.boundingBox.width + this.padding*2);
-      const height = Math.round(this.scale*this.boundingBox.height + this.padding*2);
-      return fragWithHTML(`${t("EXPORTDIALOG_SIZE_DESC")}<br>${t("EXPORTDIALOG_SCALE_VALUE")} <b>${this.scale}</b><br>${t("EXPORTDIALOG_IMAGE_SIZE")} <b>${width}x${height}</b>`);
-    }
 
     const padding = ():DocumentFragment => {
       return fragWithHTML(`${t("EXPORTDIALOG_CURRENT_PADDING")} <b>${this.padding}</b>`);
@@ -196,21 +208,21 @@ export class ExportDialog extends Modal {
           .setValue(this.padding)
           .onChange(value => {
             this.padding = value;
-            scaleSetting.setDesc(size());
+            this.scaleSetting.setDesc(this.size());
             paddingSetting.setDesc(padding());
           })
         })
     
-    scaleSetting = new Setting(this.contentContainer)
+    this.scaleSetting = new Setting(this.contentContainer)
       .setName(t("EXPORTDIALOG_SCALE"))
-      .setDesc(size())
+      .setDesc(this.size())
       .addSlider(slider => 
         slider
           .setLimits(0.2,7,0.1)
           .setValue(this.scale)
           .onChange(value => {
             this.scale = value;
-            scaleSetting.setDesc(size());
+            this.scaleSetting.setDesc(this.size());
           })
       )
   
@@ -247,6 +259,7 @@ export class ExportDialog extends Modal {
           .setValue(this.exportSelectedOnly?"selected":"all")
           .onChange(value => {
             this.exportSelectedOnly = value === "selected";
+            this.updateBoundingBox();
           })
       );
   }

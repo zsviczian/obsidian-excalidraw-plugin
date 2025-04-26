@@ -23,6 +23,8 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 ## New
 - Expose parameter in plugin settings to disable AI functionality [#2325](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2325)
+- Enable double-click text editing option in Excalidraw appearance and behavior (based on request on Discord)
+- Added two new PDF export sizes: "Match image", "HD Screen".
 
 ## Fixed in the plugin
 - Scaling multiple embeddables at once did not work. [#2276](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2276)
