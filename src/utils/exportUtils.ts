@@ -1,6 +1,8 @@
 import { Notice } from 'obsidian';
 import { DEVICE } from 'src/constants/constants';
 import { t } from 'src/lang/helpers';
+import { download } from './fileUtils';
+import { svgToBase64 } from './utils';
 
 const DPI = 96;
 
@@ -513,3 +515,29 @@ export async function exportSVGToClipboard(svg: SVGSVGElement) {
     console.error("Failed to copy SVG to clipboard: ", error);
   }
 }
+
+export async function exportPNGToClipboard(png: Blob) {
+  await navigator.clipboard.write([
+    new window.ClipboardItem({
+      "image/png": png,
+    }),
+  ]);
+}
+
+export function exportPNG(png: Blob, filename: string) {
+  const reader = new FileReader();
+  reader.readAsDataURL(png);
+  reader.onloadend = () => {
+    const base64data = reader.result;
+    download(null, base64data, `${filename}.png`);
+  };
+}
+
+export function exportSVG(svg: SVGSVGElement, filename: string) {
+  download(
+    null,
+    svgToBase64(svg.outerHTML),
+    `${filename}.svg`,
+  );
+}
+

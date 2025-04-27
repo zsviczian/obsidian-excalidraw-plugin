@@ -151,7 +151,7 @@ import { getPDFCropRect } from "../utils/PDFUtils";
 import { Position, ViewSemaphores } from "../types/excalidrawViewTypes";
 import { DropManager } from "./managers/DropManager";
 import { ImageInfo } from "src/types/excalidrawAutomateTypes";
-import { exportToPDF, getMarginValue, getPageDimensions, PageOrientation, PageSize } from "src/utils/exportUtils";
+import { exportPNG, exportPNGToClipboard, exportSVG, exportToPDF, getMarginValue, getPageDimensions, PageOrientation, PageSize } from "src/utils/exportUtils";
 import { FrameRenderingOptions } from "src/types/utilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
 
@@ -581,11 +581,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if (!svg) {
       return;
     }
-    download(
-      null,
-      svgToBase64(svg.outerHTML),
-      `${this.file.basename}.svg`,
-    );
+    exportSVG(svg, this.file.basename);
   }
 
   public async getSVG(embedScene?: boolean, selectedOnly?: boolean):Promise<SVGSVGElement> {
@@ -685,7 +681,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       if (!png) {
         return;
       }
-      await createOrOverwriteFile(this.app, filepath, await png.arrayBuffer());
+      await createOrOverwriteFile(this.app, filepath, png);
     }
 
     if(this.plugin.settings.autoExportLightAndDark) {
@@ -714,11 +710,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     //
     // not await so that we can detect whether the thrown error likely relates
     // to a lack of support for the Promise ClipboardItem constructor
-    await navigator.clipboard.write([
-      new window.ClipboardItem({
-        "image/png": png,
-      }),
-    ]);
+    await exportPNGToClipboard(png);
   }
 
   public async exportPNG(embedScene?:boolean, selectedOnly?: boolean):Promise<void> {
@@ -731,12 +723,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if (!png) {
       return;
     }
-    const reader = new FileReader();
-    reader.readAsDataURL(png);
-    reader.onloadend = () => {
-      const base64data = reader.result;
-      download(null, base64data, `${this.file.basename}.png`);
-    };
+    exportPNG(png, this.file.basename);
   }
 
   public setPreventReload() {

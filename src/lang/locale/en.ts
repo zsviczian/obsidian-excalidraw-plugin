@@ -1100,6 +1100,15 @@ FILENAME_HEAD: "Filename",
   EXPORTDIALOG_PDF_PROGRESS_DONE: "Export complete",
   EXPORTDIALOG_PDF_PROGRESS_ERROR: "Error exporting PDF, check developer console for details",
 
+  // Screenshot tab
+  EXPORTDIALOG_TAB_SCREENSHOT: "Screenshot",
+  EXPORTDIALOG_SCREENSHOT_DESC: "Screenshots will include embeddables such as markdown pages, YouTube, websites, etc. They are only available on desktop, cannot be automatically exported, and only support PNG format.",
+  SCREENSHOT_DESKTOP_ONLY: "Screenshot feature is only available on desktop",
+  SCREENSHOT_FILE_SUCCESS: "Screenshot saved to vault",
+  SCREENSHOT_CLIPBOARD_SUCCESS: "Screenshot copied to clipboard",
+  SCREENSHOT_CLIPBOARD_ERROR: "Failed to copy screenshot to clipboard: ",
+  SCREENSHOT_ERROR: "Error capturing screenshot - see console log",
+
   //exportUtils.ts
   PDF_EXPORT_DESKTOP_ONLY: "PDF export is only available on desktop",
 };

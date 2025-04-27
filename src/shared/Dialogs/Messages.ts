@@ -17,11 +17,9 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
-"2.10.2": `
-## Fixed by Excalidraw.com
-- Alt-duplicate now preserves the original element. Previously, using Alt to duplicate would swap the original with the new element, leading to unexpected behavior and several downstream issues. [#9403](https://github.com/excalidraw/excalidraw/pull/9403)
-
+"2.11.0": `
 ## New
+- New "Screenshot" option in the Export Image dialog. This allows you to take a screenshot of the current view, including embedded web pages, youtube videos, and markdown documents. Screenshot is only possible in PNG.
 - Expose parameter in plugin settings to disable AI functionality [#2325](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2325)
 - Enable double-click text editing option in Excalidraw appearance and behavior (based on request on Discord)
 - Added two new PDF export sizes: "Match image", "HD Screen".
@@ -29,8 +27,13 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 ## Fixed in the plugin
 - Scaling multiple embeddables at once did not work. [#2276](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2276)
 - When creating multiple back-of-the-note the second card is not created correctly if autosave has not yet happened.
-- Drawing reloads while editing the back-of-the-note card in certain cases causing editing to be interrupted.
-- Moved Excalidraw filetype indicator ✏️ to after filename where other filetype tags are displayed. You can turn filetype indicator on/off in plugin settings under Miscellaneous.
+- Drawing reloads while editing the back-of-the-note card in certain cases causes editing to be interrupted.
+- Moved Excalidraw filetype indicator ✏️ to after filename where other filetype tags are displayed. You can turn the filetype indicator on/off in plugin settings under Miscellaneous.
+
+## Fixed by Excalidraw.com
+- Alt-duplicate now preserves the original element. Previously, using Alt to duplicate would swap the original with the new element, leading to unexpected behavior and several downstream issues. [#9403](https://github.com/excalidraw/excalidraw/pull/9403)
+- When dragging the arrow endpoint, update the binding only on the dragged side [#9367](https://github.com/excalidraw/excalidraw/pull/9367)
+- Laser pointer trail disappearing on pointerup [#9413](https://github.com/excalidraw/excalidraw/pull/9413) [#9427](https://github.com/excalidraw/excalidraw/pull/9427)
 `,
 "2.10.1": `
 

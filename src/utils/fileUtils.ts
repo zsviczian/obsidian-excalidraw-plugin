@@ -404,8 +404,8 @@ export const getAliasWithSize = (alias: string, size: string): string => {
 }
 
 export const getCropFileNameAndFolder = async (plugin: ExcalidrawPlugin, hostPath: string, baseNewFileName: string):Promise<{folderpath: string, filename: string}> => {
-  let prefix = plugin.settings.cropPrefix;
-  if(!prefix || prefix.trim() === "") prefix = CROPPED_PREFIX;
+  let prefix = plugin.settings.cropPrefix || "";
+  if(prefix.trim() === "") prefix = CROPPED_PREFIX;
   const filename = prefix + baseNewFileName + ".md";
   if(!plugin.settings.cropFolder || plugin.settings.cropFolder.trim() === "") {
     const folderpath = (await getAttachmentsFolderAndFilePath(plugin.app, hostPath, filename)).folder;
@@ -417,8 +417,8 @@ export const getCropFileNameAndFolder = async (plugin: ExcalidrawPlugin, hostPat
 }
 
 export const getAnnotationFileNameAndFolder = async (plugin: ExcalidrawPlugin, hostPath: string, baseNewFileName: string):Promise<{folderpath: string, filename: string}> => {
-  let prefix = plugin.settings.annotatePrefix;
-  if(!prefix || prefix.trim() === "") prefix = ANNOTATED_PREFIX;
+  let prefix = plugin.settings.annotatePrefix || "";
+  if(prefix.trim() === "") prefix = ANNOTATED_PREFIX;
   const filename = prefix + baseNewFileName + ".md";
   if(!plugin.settings.annotateFolder || plugin.settings.annotateFolder.trim() === "") {
     const folderpath = (await getAttachmentsFolderAndFilePath(plugin.app, hostPath, filename)).folder;
@@ -494,8 +494,11 @@ export const hasExcalidrawEmbeddedImagesTreeChanged = (sourceFile: TFile, mtime:
   return fileList.some(f=>f.stat.mtime > mtime);
 }
 
-export async function createOrOverwriteFile(app: App, path: string, content: string | ArrayBuffer): Promise<TFile> {
+export async function createOrOverwriteFile(app: App, path: string, content: string | ArrayBuffer | Blob): Promise<TFile> {
   const file = app.vault.getAbstractFileByPath(normalizePath(path));
+  if (content instanceof Blob) {
+    content = await content.arrayBuffer();
+  }
   if(content instanceof ArrayBuffer) {
     if(file && file instanceof TFile) {
       await app.vault.modifyBinary(file, content);
