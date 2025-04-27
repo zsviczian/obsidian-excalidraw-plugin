@@ -371,6 +371,7 @@ FILENAME_HEAD: "文件名",
   DEFAULT_PEN_MODE_NAME: "触控笔模式（Pen mode）",
   DEFAULT_PEN_MODE_DESC:
     "打开绘图时，是否自动开启触控笔模式？",
+  ENABLE_DOUBLE_CLICK_TEXT_EDITING_NAME : "启用双击文本创建",
   DISABLE_DOUBLE_TAP_ERASER_NAME: "启用手写模式下的双击橡皮擦功能",
   DISABLE_SINGLE_FINGER_PANNING_NAME: "启用手写模式下的单指平移功能",
   SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_NAME: "在触控笔模式下显示十字准星（+）",
