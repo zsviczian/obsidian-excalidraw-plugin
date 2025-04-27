@@ -5,7 +5,7 @@ import {
   ExcalidrawElement,
   ExcalidrawImageElement,
   FileId,
-} from "@zsviczian/excalidraw/types/excalidraw/element/types";
+} from "@zsviczian/excalidraw/types/element/src/types";
 import { normalizePath, TFile } from "obsidian";
 
 import ExcalidrawView, { ExportSettings, getTextMode } from "src/view/ExcalidrawView";
@@ -32,7 +32,7 @@ import {
 } from "src/utils/utils";
 import { GenericInputPrompt, NewFileActions } from "src/shared/Dialogs/Prompt";
 import { t } from "src/lang/helpers";
-import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
+import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import {
   postOpenAI as _postOpenAI,
   extractCodeBlocks as _extractCodeBlocks,

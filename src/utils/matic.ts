@@ -1,5 +1,5 @@
 import { THEME } from "../constants/constants";
-import type { Theme } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import type { Theme } from "@zsviczian/excalidraw/types/element/src/types";
 import type { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import type { OpenAIInput, OpenAIOutput } from "@zsviczian/excalidraw/types/excalidraw/data/ai/types";
 

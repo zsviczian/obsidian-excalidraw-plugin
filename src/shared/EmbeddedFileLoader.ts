@@ -1,7 +1,7 @@
 //https://stackoverflow.com/questions/2068344/how-do-i-get-a-youtube-video-thumbnail-from-the-youtube-api
 //https://img.youtube.com/vi/uZz5MgzWXiM/maxresdefault.jpg
 
-import { ExcalidrawElement, FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { ExcalidrawElement, FileId } from "@zsviczian/excalidraw/types/element/src/types";
 import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { App, MarkdownRenderer, Notice, TFile } from "obsidian";
 import {  

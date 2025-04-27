@@ -1,5 +1,5 @@
 import ExcalidrawPlugin from "src/core/main";
-import { FillStyle, StrokeStyle, ExcalidrawElement, ExcalidrawBindableElement, FileId, NonDeletedExcalidrawElement, ExcalidrawImageElement, StrokeRoundness, RoundnessType } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { FillStyle, StrokeStyle, ExcalidrawElement, ExcalidrawBindableElement, FileId, NonDeletedExcalidrawElement, ExcalidrawImageElement, StrokeRoundness, RoundnessType } from "@zsviczian/excalidraw/types/element/src/types";
 import { ColorMap, MimeType } from "./EmbeddedFileLoader";
 import { Editor, OpenViewState, RequestUrlResponse, TFile, TFolder, WorkspaceLeaf } from "obsidian";
 import * as obsidian_module from "obsidian";
@@ -11,7 +11,7 @@ import { ColorMaster } from "@zsviczian/colormaster";
 import { TInput } from "@zsviczian/colormaster/types";
 import { ClipboardData } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
 import { PaneTarget } from "src/utils/modifierkeyHelper";
-import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
+import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { EmbeddableMDCustomProps } from "./Dialogs/EmbeddableSettings";
 import { AIRequest } from "../utils/AIUtils";
 import { AddImageOptions, ImageInfo, SVGColorInfo } from "src/types/excalidrawAutomateTypes";

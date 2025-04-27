@@ -3,7 +3,7 @@ import {Notice, requestUrl} from "obsidian"
 import ExcalidrawPlugin from "../../core/main"
 import ExcalidrawView, { ExportSettings } from "../../view/ExcalidrawView"
 import FrontmatterEditor from "src/shared/Frontmatter";
-import { ExcalidrawElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { EmbeddedFilesLoader } from "../EmbeddedFileLoader";
 import { blobToBase64 } from "src/utils/fileUtils";
 import { getEA } from "src/core";

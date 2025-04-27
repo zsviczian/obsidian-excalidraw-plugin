@@ -1,5 +1,5 @@
 import { WorkspaceLeaf, TFile, Editor, MarkdownView, MarkdownFileInfo, MetadataCache, App, EventRef, Menu, FileView } from "obsidian";
-import { ExcalidrawElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { getLink } from "../../utils/fileUtils";
 import { editorInsertText, getExcalidrawViews, getParentOfClass, isUnwantedLeaf, setExcalidrawView } from "../../utils/obsidianUtils";
 import ExcalidrawPlugin from "src/core/main";

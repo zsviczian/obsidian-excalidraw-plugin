@@ -22,7 +22,7 @@ import {
   ExcalidrawTextElement,
   FileId,
   NonDeletedExcalidrawElement,
-} from "@zsviczian/excalidraw/types/excalidraw/element/types";
+} from "@zsviczian/excalidraw/types/element/src/types";
 import {
   AppState,
   BinaryFileData,
@@ -141,7 +141,7 @@ import { getMermaidText, shouldRenderMermaid } from "../utils/mermaidUtils";
 import { nanoid } from "nanoid";
 import { CustomMutationObserver, DEBUGGING, debug, log} from "../utils/debugHelper";
 import { errorHTML, extractCodeBlocks, postOpenAI } from "../utils/AIUtils";
-import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
+import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { SelectCard } from "../shared/Dialogs/SelectCard";
 import { Packages } from "../types/types";
 import React from "react";

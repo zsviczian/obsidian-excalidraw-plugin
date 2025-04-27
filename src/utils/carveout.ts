@@ -1,10 +1,10 @@
-import { ExcalidrawEmbeddableElement, ExcalidrawFrameElement, ExcalidrawImageElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
-import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
+import { ExcalidrawEmbeddableElement, ExcalidrawFrameElement, ExcalidrawImageElement } from "@zsviczian/excalidraw/types/element/src/types";
+import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { getCropFileNameAndFolder, getListOfTemplateFiles, splitFolderAndFilename } from "./fileUtils";
 import { Notice, TFile } from "obsidian";
-import { Radians } from "@zsviczian/excalidraw/types/math";
+import { Radians } from "@zsviczian/excalidraw/types/math/src/types";
 
 export const CROPPED_PREFIX = "cropped_";
 export const ANNOTATED_PREFIX = "annotated_";

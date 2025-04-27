@@ -1,5 +1,5 @@
-import { ExcalidrawEmbeddableElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
-import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
+import { ExcalidrawEmbeddableElement } from "@zsviczian/excalidraw/types/element/src/types";
+import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { Modal, Notice, Setting, TFile, ToggleComponent } from "obsidian";
 import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";

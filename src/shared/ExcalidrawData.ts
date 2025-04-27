@@ -44,13 +44,13 @@ import {
   ExcalidrawImageElement,
   ExcalidrawTextElement,
   FileId,
-} from "@zsviczian/excalidraw/types/excalidraw/element/types";
+} from "@zsviczian/excalidraw/types/element/src/types";
 import { BinaryFiles, DataURL, SceneData } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddedFile, MimeType } from "./EmbeddedFileLoader";
 import { ConfirmationPrompt } from "./Dialogs/Prompt";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "../utils/mermaidUtils";
 import { DEBUGGING, debug } from "../utils/debugHelper";
-import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
+import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { updateElementIdsInScene } from "../utils/excalidrawSceneUtils";
 import { checkAndCreateFolder, getNewUniqueFilepath, splitFolderAndFilename } from "../utils/fileUtils";
 import { t } from "../lang/helpers";

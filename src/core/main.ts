@@ -61,7 +61,7 @@ import {
   getFontMetrics,
 } from "../utils/utils";
 import { foldExcalidrawSection, getExcalidrawViews, setExcalidrawView } from "../utils/obsidianUtils";
-import { FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { FileId } from "@zsviczian/excalidraw/types/element/src/types";
 import { ScriptEngine } from "../shared/Scripts";
 import { hoverEvent, initializeMarkdownPostProcessor, markdownPostProcessor, legacyExcalidrawPopoverObserver } from "./managers/MarkdownPostProcessor";
 import { FieldSuggester } from "../shared/Suggesters/FieldSuggester";

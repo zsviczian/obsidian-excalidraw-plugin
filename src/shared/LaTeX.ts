@@ -2,7 +2,7 @@
 import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import ExcalidrawView from "../view/ExcalidrawView";
 import { FileData, MimeType } from "./EmbeddedFileLoader";
-import { FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { FileId } from "@zsviczian/excalidraw/types/element/src/types";
 import ExcalidrawPlugin from "src/core/main";
 
 declare const loadMathjaxToSVG: Function;

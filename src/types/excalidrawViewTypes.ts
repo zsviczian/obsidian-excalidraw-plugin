@@ -1,7 +1,7 @@
 // src/types/ExcalidrawViewTypes.ts
 
 import { WorkspaceLeaf } from "obsidian";
-import { FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { FileId } from "@zsviczian/excalidraw/types/element/src/types";
 import { ObsidianCanvasNode } from "../view/managers/CanvasNodeFactory";
 
 export type Position = { x: number; y: number };

@@ -1,4 +1,4 @@
-import {  NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import {  NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { Notice, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import * as React from "react";
