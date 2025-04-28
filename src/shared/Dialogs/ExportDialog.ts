@@ -195,8 +195,10 @@ export class ExportDialog extends Modal {
         this.createPDFButton();
         break;
       case "screenshot":
-        this.createImageSettings(true);
-        this.createImageButtons(true);
+        if(this.view.isInMainObsidianWorkspace) {
+          this.createImageSettings(true);
+          this.createImageButtons(true);
+        }
         break;
       case "image":
       default:
@@ -221,7 +223,11 @@ export class ExportDialog extends Modal {
         break;
       case "screenshot":
         this.contentContainer.createEl("h1",{text: t("EXPORTDIALOG_TAB_SCREENSHOT")});
-        this.contentContainer.createEl("p",{text: t("EXPORTDIALOG_SCREENSHOT_DESC")})
+        if(this.view.isInMainObsidianWorkspace) {
+          this.contentContainer.createEl("p",{text: t("EXPORTDIALOG_SCREENSHOT_DESC")})
+        } else {
+          this.contentContainer.createEl("p",{text: t("EXPORTDIALOG_NOT_AVAILALBE")})
+        }
         break;
       case "image":
       default:

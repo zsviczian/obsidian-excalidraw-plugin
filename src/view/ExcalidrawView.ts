@@ -390,6 +390,10 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     return this.ownerDocument.defaultView;
   }
 
+  get isInMainObsidianWorkspace(): boolean {
+    return document === this.ownerDocument;
+  }
+
   setHookServer(ea?:ExcalidrawAutomate) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setHookServer, "ExcalidrawView.setHookServer", ea);
     if(ea) {

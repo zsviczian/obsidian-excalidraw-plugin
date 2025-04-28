@@ -1101,6 +1101,7 @@ FILENAME_HEAD: "Filename",
   EXPORTDIALOG_PDF_PROGRESS_ERROR: "Error exporting PDF, check developer console for details",
 
   // Screenshot tab
+  EXPORTDIALOG_NOT_AVAILALBE: "Sorry, this feature is only available when the drawing is open in the main Obsidian workspace.",
   EXPORTDIALOG_TAB_SCREENSHOT: "Screenshot",
   EXPORTDIALOG_SCREENSHOT_DESC: "Screenshots will include embeddables such as markdown pages, YouTube, websites, etc. They are only available on desktop, cannot be automatically exported, and only support PNG format.",
   SCREENSHOT_DESKTOP_ONLY: "Screenshot feature is only available on desktop",
