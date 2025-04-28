@@ -1100,6 +1100,15 @@ EXPORTDIALOG_PDF_PROGRESS_NOTICE: "正在导出 PDF。如果图像较大，可�
 EXPORTDIALOG_PDF_PROGRESS_DONE: "导出完成" ,
 EXPORTDIALOG_PDF_PROGRESS_ERROR: "导出 PDF 时出错，请检查开发者控制台以获取详细信息" ,
 
+  // Screenshot tab
+EXPORTDIALOG_TAB_SCREENSHOT : "截图" ,
+EXPORTDIALOG_SCREENSHOT_DESC : "截图将包括可嵌入的内容，例如 markdown 页面、YouTube、网站等。它们仅在桌面端可用，无法自动导出，并且仅支持 PNG 格式。" ,
+SCREENSHOT_DESKTOP_ONLY : "截图功能仅在桌面端可用" ,
+SCREENSHOT_FILE_SUCCESS : "截图已保存到仓库" ,
+SCREENSHOT_CLIPBOARD_SUCCESS : "截图已复制到剪贴板" ,
+SCREENSHOT_CLIPBOARD_ERROR : "无法复制截图到剪贴板：" ,
+SCREENSHOT_ERROR : "截图出错 - 请查看控制台日志" ,
+
 // exportUtils.ts
 PDF_EXPORT_DESKTOP_ONLY: "PDF 导出功能仅限桌面端使用" ,
 };
