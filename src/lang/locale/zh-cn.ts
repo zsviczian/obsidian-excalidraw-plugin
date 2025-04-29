@@ -1100,7 +1100,8 @@ EXPORTDIALOG_PDF_PROGRESS_NOTICE: "正在导出 PDF。如果图像较大，可�
 EXPORTDIALOG_PDF_PROGRESS_DONE: "导出完成" ,
 EXPORTDIALOG_PDF_PROGRESS_ERROR: "导出 PDF 时出错，请检查开发者控制台以获取详细信息" ,
 
-  // Screenshot tab
+// Screenshot tab
+EXPORTDIALOG_NOT_AVAILALBE : "抱歉，此功能仅在绘图在主 Obsidian 工作区打开时可用。",
 EXPORTDIALOG_TAB_SCREENSHOT : "截图" ,
 EXPORTDIALOG_SCREENSHOT_DESC : "截图将包括可嵌入的内容，例如 markdown 页面、YouTube、网站等。它们仅在桌面端可用，无法自动导出，并且仅支持 PNG 格式。" ,
 SCREENSHOT_DESKTOP_ONLY : "截图功能仅在桌面端可用" ,
