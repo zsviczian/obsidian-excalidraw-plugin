@@ -83,7 +83,7 @@ export async function checkExcalidrawVersion() {
       );
     }
   } catch (e) {
-    errorlog({ where: "Utils/checkExcalidrawVersion", error: e });
+    console.log({ where: "Utils/checkExcalidrawVersion", error: e });
   }
   versionUpdateCheckTimer = window.setTimeout(() => {
     versionUpdateChecked = false;
