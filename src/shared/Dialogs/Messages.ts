@@ -21,10 +21,10 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 ## New
 - New "Screenshot" option in the Export Image dialog. This allows you to take a screenshot of the current view, including embedded web pages, youtube videos, and markdown documents. Screenshot is only possible in PNG.
 - Expose parameter in plugin settings to disable AI functionality [#2325](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2325)
-- Enable double-click text editing option in Excalidraw appearance and behavior (based on request on Discord)
+- Enable (disable) double-click text editing option in Excalidraw appearance and behavior (based on request on Discord)
 - Added two new PDF export sizes: "Match image", "HD Screen".
-- Quickly change the shape of the selected element by pressing TAB [#9270](https://github.com/excalidraw/excalidraw/pull/9270)
-- Updated the Scribble Helper Script. Now controls are at the top so your palm does accidently trigger controls. I added a new button to inser special characters. Scribble helper now makes use of the new text wrapping in Excalidraw.
+- Switch between basic shapes. Quickly change the shape of the selected element by pressing TAB [#9270](https://github.com/excalidraw/excalidraw/pull/9270)
+- Updated the Scribble Helper Script. Now controls are at the top so your palm does accidently trigger them. I added a new button to insert special characters. Scribble helper now makes use of the new text element wrapping in Excalidraw.
 
 ## Fixed in the plugin
 - Scaling multiple embeddables at once did not work. [#2276](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2276)
