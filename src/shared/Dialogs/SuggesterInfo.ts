@@ -947,15 +947,16 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
 export const EXCALIDRAW_SCRIPTENGINE_INFO: SuggesterInfo[] = [
   {
     field: "inputPrompt",
-    code: "inputPrompt: (header: string, placeholder?: string, value?: string, buttons?: {caption:string, tooltip?:string, action:Function}[], lines?: number, displayEditorButtons?: boolean, customComponents?: (container: HTMLElement) => void, blockPointerInputOutsideModal?: boolean);",
+    code: "inputPrompt: (opts: {header: string, placeholder?: string, value?: string, buttons?: {caption:string, tooltip?:string, action:Function}[], lines?: number, displayEditorButtons?: boolean, customComponents?: (container: HTMLElement) => void, blockPointerInputOutsideModal?: boolean, controlsOnTop?: boolean});",
     desc:
       "Opens a prompt that asks for an input.\nReturns a string with the input.\nYou need to await the result of inputPrompt.\n" +
       "Editor buttons are text editing buttons like delete, enter, allcaps - these are only displayed if lines is greater than 1 \n" +
       "Custom components are components that you can add to the prompt. These will be displayed between the text input area and the buttons.\n" +
       "blockPointerInputOutsideModal will block pointer input outside the modal. This is useful if you want to prevent the user accidently closing the modal or interacting with the excalidraw canvas while the prompt is open.\n" +
+      "controlsOnTop when set to true will move all the buttons to the top of the modal, leaving the text area at the bottom. This feature was developed for Scribble Helper script to avoid your palm pressing buttons while scribbling.\n"+
       "buttons.action(input: string) => string\nThe button action function will receive the actual input string. If action returns null, input will be unchanged. If action returns a string, input will receive that value when the promise is resolved. " +
       "example:\n<code>let fileType = '';\nconst filename = await utils.inputPrompt (\n  'Filename',\n  '',\n  '',\n,  [\n    {\n      caption: 'Markdown',\n      action: ()=>{fileType='md';return;}\n    },\n    {\n      caption: 'Excalidraw',\n      action: ()=>{fileType='ex';return;}\n    }\n  ]\n);</code>",
-    after: "",
+    after: `({header: string, placeholder?: string, value?: string, buttons?: {caption:string, tooltip?:string, action:Function}[], lines?: number, displayEditorButtons?: boolean, customComponents?: (container: HTMLElement) => void, blockPointerInputOutsideModal?: boolean, controlsOnTop?: boolean})`,
   },
   {
     field: "suggester",

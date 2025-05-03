@@ -22,8 +22,7 @@ import { MAX_IMAGE_SIZE, REG_LINKINDEX_INVALIDCHARS } from "src/constants/consta
 import { REGEX_LINK, REGEX_TAGS } from "../ExcalidrawData";
 import { ScriptEngine } from "../Scripts";
 import { openExternalLink, openTagSearch, parseObsidianLink } from "src/utils/excalidrawViewUtils";
-
-export type ButtonDefinition = { caption: string; tooltip?:string; action: Function };
+import { ButtonDefinition } from "src/types/promptTypes";
 
 export class Prompt extends Modal {
   private promptEl: HTMLInputElement;
@@ -98,6 +97,7 @@ export class GenericInputPrompt extends Modal {
   private selectionUpdateTimer: number = 0;
   private customComponents: (container: HTMLElement) => void;
   private blockPointerInputOutsideModal: boolean = false;
+  private controlsOnTop: boolean = false;
 
   public static Prompt(
     view: ExcalidrawView,
@@ -111,6 +111,7 @@ export class GenericInputPrompt extends Modal {
     displayEditorButtons?: boolean,
     customComponents?: (container: HTMLElement) => void,
     blockPointerInputOutsideModal?: boolean,
+    controlsOnTop?: boolean,
   ): Promise<string> {
     const newPromptModal = new GenericInputPrompt(
       view,
@@ -124,6 +125,7 @@ export class GenericInputPrompt extends Modal {
       displayEditorButtons,
       customComponents,
       blockPointerInputOutsideModal,
+      controlsOnTop,
     );
     return newPromptModal.waitForClose;
   }
@@ -140,6 +142,7 @@ export class GenericInputPrompt extends Modal {
     displayEditorButtons?: boolean,
     customComponents?: (container: HTMLElement) => void,
     blockPointerInputOutsideModal?: boolean,
+    controlsOnTop?: boolean,
   ) {
     super(app);
     this.view = view;
@@ -151,6 +154,7 @@ export class GenericInputPrompt extends Modal {
     this.displayEditorButtons = this.lines > 1 ? (displayEditorButtons ?? false) : false;
     this.customComponents = customComponents;
     this.blockPointerInputOutsideModal = blockPointerInputOutsideModal ?? false;
+    this.controlsOnTop = controlsOnTop ?? false;
 
     this.waitForClose = new Promise<string>((resolve, reject) => {
       this.resolvePromise = resolve;
@@ -173,13 +177,29 @@ export class GenericInputPrompt extends Modal {
     this.titleEl.textContent = this.header;
 
     const mainContentContainer: HTMLDivElement = this.contentEl.createDiv();
-    this.inputComponent = this.createInputField(
-      mainContentContainer,
-      this.placeholder,
-      this.input
-    );
-    this.customComponents?.(mainContentContainer);
-    this.createButtonBar(mainContentContainer);
+    
+    // Conditionally order elements based on controlsOnTop flag
+    if (this.controlsOnTop) {
+      // Create button bar first
+      this.customComponents?.(mainContentContainer);
+      this.createButtonBar(mainContentContainer);
+      
+      // Then add input field and custom components
+      this.inputComponent = this.createInputField(
+        mainContentContainer,
+        this.placeholder,
+        this.input
+      );
+    } else {
+      // Original order: input field, custom components, then buttons
+      this.inputComponent = this.createInputField(
+        mainContentContainer,
+        this.placeholder,
+        this.input
+      );
+      this.customComponents?.(mainContentContainer);
+      this.createButtonBar(mainContentContainer);
+    }
   }
 
   protected createInputField(
@@ -242,7 +262,12 @@ export class GenericInputPrompt extends Modal {
     const buttonBarContainer: HTMLDivElement = mainContentContainer.createDiv();
     buttonBarContainer.style.display = "flex";
     buttonBarContainer.style.justifyContent = "space-between";
-    buttonBarContainer.style.marginTop = "1rem";
+    if(this.controlsOnTop) {
+      buttonBarContainer.style.padding = "0.5em 0";
+      buttonBarContainer.style.borderTop = "1px solid var(--background-modifier-border)";
+    } else {
+      buttonBarContainer.style.marginTop = "1rem";
+    }
 
     const editorButtonContainer: HTMLDivElement = buttonBarContainer.createDiv();
 
