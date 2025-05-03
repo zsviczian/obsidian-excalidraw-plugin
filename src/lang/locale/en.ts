@@ -961,6 +961,7 @@ FILENAME_HEAD: "Filename",
   PROMPT_BUTTON_INSERT_SPACE: "Insert space",
   PROMPT_BUTTON_INSERT_LINK: "Insert markdown link to file",
   PROMPT_BUTTON_UPPERCASE: "Uppercase",
+  PROMPT_BUTTON_SPECIAL_CHARS: "Special Characters",
   PROMPT_SELECT_TEMPLATE: "Select a template",
 
   //ModifierKeySettings

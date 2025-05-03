@@ -260,17 +260,8 @@ export class GenericInputPrompt extends Modal {
 
   private createButtonBar(mainContentContainer: HTMLDivElement) {
     const buttonBarContainer: HTMLDivElement = mainContentContainer.createDiv();
-    buttonBarContainer.style.display = "flex";
-    buttonBarContainer.style.justifyContent = "space-between";
-    if(this.controlsOnTop) {
-      buttonBarContainer.style.padding = "0.5em 0";
-      buttonBarContainer.style.borderTop = "1px solid var(--background-modifier-border)";
-    } else {
-      buttonBarContainer.style.marginTop = "1rem";
-    }
-
+    buttonBarContainer.addClass(`excalidraw-prompt-buttonbar-${this.controlsOnTop ? "top" : "bottom"}`);
     const editorButtonContainer: HTMLDivElement = buttonBarContainer.createDiv();
-
     const actionButtonContainer: HTMLDivElement = buttonBarContainer.createDiv();
 
     if (this.buttons && this.buttons.length > 0) {
@@ -304,6 +295,7 @@ export class GenericInputPrompt extends Modal {
       this.createButton(editorButtonContainer, "⏎", ()=>this.insertStringBtnClickCallback("\n"), t("PROMPT_BUTTON_INSERT_LINE"), "0");
       this.createButton(editorButtonContainer, "⌫", this.delBtnClickCallback.bind(this), "Delete");
       this.createButton(editorButtonContainer, "⎵", ()=>this.insertStringBtnClickCallback(" "), t("PROMPT_BUTTON_INSERT_SPACE"));
+      this.createButton(editorButtonContainer, "§", this.specialCharsBtnClickCallback.bind(this), t("PROMPT_BUTTON_SPECIAL_CHARS"));
       if(this.view) {
         this.createButton(editorButtonContainer, "🔗", this.linkBtnClickCallback.bind(this), t("PROMPT_BUTTON_INSERT_LINK"));
       }
@@ -407,6 +399,74 @@ export class GenericInputPrompt extends Modal {
       "keydown",
       this.keyDownCallback,
     );
+  }
+
+  private specialCharsBtnClickCallback = (evt: MouseEvent) => {
+    this.view.ownerWindow.clearTimeout(this.selectionUpdateTimer);
+    
+    // Remove any existing popup
+    const existingPopup = document.querySelector('.excalidraw-special-chars-popup');
+    if (existingPopup) {
+      existingPopup.remove();
+      return;
+    }
+    
+    // Create popup element
+    const popup = document.createElement('div');
+    popup.className = 'excalidraw-special-chars-popup';
+    popup.style.position = 'absolute';
+    popup.style.zIndex = '1000';
+    popup.style.background = 'var(--background-primary)';
+    popup.style.border = '1px solid var(--background-modifier-border)';
+    popup.style.borderRadius = '4px';
+    popup.style.padding = '4px';
+    popup.style.boxShadow = '0 2px 8px var(--background-modifier-box-shadow)';
+    popup.style.display = 'flex';
+    popup.style.flexWrap = 'wrap';
+    popup.style.maxWidth = '200px';
+    
+    // Position near the button
+    const rect = (evt.target as HTMLElement).getBoundingClientRect();
+    popup.style.top = `${rect.bottom + 5}px`;
+    popup.style.left = `${rect.left}px`;
+    
+    // Special characters to include
+    const specialChars = [',', '.', ':', ';', '!', '?', '"', '{', '}', '[', ']', '(', ')'];
+    
+    // Add character buttons
+    specialChars.forEach(char => {
+      const charButton = document.createElement('button');
+      charButton.textContent = char;
+      charButton.style.margin = '2px';
+      charButton.style.width = '28px';
+      charButton.style.height = '28px';
+      charButton.style.cursor = 'pointer';
+      charButton.style.background = 'var(--interactive-normal)';
+      charButton.style.border = 'none';
+      charButton.style.borderRadius = '4px';
+      
+      charButton.addEventListener('click', () => {
+        this.insertStringBtnClickCallback(char);
+        popup.remove();
+      });
+      
+      popup.appendChild(charButton);
+    });
+    
+    // Add click outside listener to close popup
+    const closePopupListener = (e: MouseEvent) => {
+      if (!popup.contains(e.target as Node) && 
+          (evt.target as HTMLElement) !== e.target) {
+        popup.remove();
+        document.removeEventListener('click', closePopupListener);
+      }
+    };
+    
+    // Add to document and set up listeners
+    document.body.appendChild(popup);
+    setTimeout(() => {
+      document.addEventListener('click', closePopupListener);
+    }, 10);
   }
 
   onOpen() {

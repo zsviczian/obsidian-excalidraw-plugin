@@ -735,3 +735,40 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 .excalidraw .context-menu {
   height: fit-content;
 }
+
+.excalidraw-prompt-buttonbar-top,
+.excalidraw-prompt-buttonbar-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;  /* keep both rows top‐aligned */
+  row-gap: 0.5em;           /* vertical space when wrapped */
+}
+
+/* top bar specifics */
+.excalidraw-prompt-buttonbar-top {
+  padding: 0.5em 0;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+/* bottom bar specifics */
+.excalidraw-prompt-buttonbar-bottom {
+  margin-top: 1rem;
+}
+
+/* make each child a flex row */
+.excalidraw-prompt-buttonbar-top  > div,
+.excalidraw-prompt-buttonbar-bottom > div {
+  display: flex;
+}
+
+/* push the first group to the left */
+.excalidraw-prompt-buttonbar-top  > div:first-child,
+.excalidraw-prompt-buttonbar-bottom > div:first-child {
+  margin-right: auto;
+}
+
+/* push the second group to the right */
+.excalidraw-prompt-buttonbar-top  > div:last-child,
+.excalidraw-prompt-buttonbar-bottom > div:last-child {
+  margin-left: auto;
+}
