@@ -19,6 +19,10 @@ export async function captureScreenshot(view: ExcalidrawView, options: Screensho
     return null;
   }
 
+  const wasFullscreen = view.isFullscreen();
+  if (!wasFullscreen) {
+    view.gotoFullscreen();
+  }
   const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
   api.setForceRenderAllEmbeddables(true);
   options.selectedOnly = options.selectedOnly && (view.getViewSelectedElements().length > 0);
@@ -158,7 +162,9 @@ export async function captureScreenshot(view: ExcalidrawView, options: Screensho
     await sleep(200); // wait for frame to render
 
     // Prepare to collect tile images as data URLs
-    const { offsetLeft, offsetTop } = api.getAppState();
+    const { left,top } = container.getBoundingClientRect();
+    //const { offsetLeft, offsetTop } = api.getAppState();
+
     const tiles = [];
     
     for (let row = 0; row < rows; row++) {
@@ -200,8 +206,8 @@ export async function captureScreenshot(view: ExcalidrawView, options: Screensho
         const captureHeight = row === rows - 1 ? adjustedTotalHeight - tileHeight * (rows - 1) : tileHeight;
         
         const image = await remote.getCurrentWebContents().capturePage({
-          x: offsetLeft,
-          y: offsetTop,
+          x: left, //offsetLeft,
+          y: top, //offsetTop,
           width: captureWidth * devicePixelRatio,
           height: captureHeight * devicePixelRatio,
         });
@@ -283,6 +289,10 @@ export async function captureScreenshot(view: ExcalidrawView, options: Screensho
     
     // Restore original state
     restoreState(savedState);
+
+    if(!wasFullscreen) {
+      view.exitFullscreen();
+    }
     
   }
 }

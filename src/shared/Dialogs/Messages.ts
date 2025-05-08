@@ -17,6 +17,15 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.11.1": `
+## Fixed:
+- The new "Screenshot" option in the Export Image dialog was not working properly. [#2339](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2339)
+
+## New from Excalidraw.com
+- Quarter snap points for diamonds [#9387](https://github.com/excalidraw/excalidraw/pull/9387)
+- Precise highlights for bindings [#9472](https://github.com/excalidraw/excalidraw/pull/9472)
+
+`,
 "2.11.0": `
 ## New
 - New "Screenshot" option in the Export Image dialog. This allows you to take a screenshot of the current view, including embedded web pages, youtube videos, and markdown documents. Screenshot is only possible in PNG.
