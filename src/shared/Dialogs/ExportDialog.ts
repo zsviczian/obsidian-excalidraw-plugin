@@ -88,9 +88,13 @@ export class ExportDialog extends Modal {
     this.selectedOnlySetting = null;
     this.containerEl.remove();
   }
+
+  get isSelectedOnly(): boolean {
+    return this.hasSelectedElements && this.exportSelectedOnly;
+  }
   
   updateBoundingBox() {
-    if(this.hasSelectedElements && this.exportSelectedOnly) {
+    if(this.isSelectedOnly) {
       this.boundingBox = this.ea.getBoundingBox(this.view.getViewSelectedElements());
     } else {
       this.boundingBox = this.ea.getBoundingBox(this.ea.getViewElements());
@@ -368,12 +372,12 @@ export class ExportDialog extends Modal {
       });
       bPNG.onclick = () => {
         if(isScreenshot) {
-          //allow dialot to close before taking screenshot
+          //allow dialog to close before taking screenshot
           setTimeout(async () => {
             const png = await captureScreenshot(this.view, {
               zoom: this.scale,
               margin: this.padding,
-              selectedOnly: this.exportSelectedOnly,
+              selectedOnly: this.isSelectedOnly,
               theme: this.theme
             });
             if(png) {
@@ -381,7 +385,7 @@ export class ExportDialog extends Modal {
             }
           });
         } else {
-          this.view.exportPNG(this.embedScene, this.hasSelectedElements && this.exportSelectedOnly);
+          this.view.exportPNG(this.embedScene, this.isSelectedOnly);
         }
         this.close();
       };
@@ -398,7 +402,7 @@ export class ExportDialog extends Modal {
           const png = await captureScreenshot(this.view, {
             zoom: this.scale,
             margin: this.padding,
-            selectedOnly: this.exportSelectedOnly,
+            selectedOnly: this.isSelectedOnly,
             theme: this.theme
           });
           if(png) {
@@ -406,7 +410,7 @@ export class ExportDialog extends Modal {
           }
         });
       } else {
-        this.view.savePNG(this.view.getScene(this.hasSelectedElements && this.exportSelectedOnly));
+        this.view.savePNG(this.view.getScene(this.isSelectedOnly));
       }
       this.close();
     };
@@ -417,12 +421,12 @@ export class ExportDialog extends Modal {
     });
     bPNGClipboard.onclick = async () => {
       if(isScreenshot) {
-        //allow dialot to close before taking screenshot
+        //allow dialog to close before taking screenshot
         setTimeout(async () => {
           const png = await captureScreenshot(this.view, {
             zoom: this.scale,
             margin: this.padding,
-            selectedOnly: this.exportSelectedOnly,
+            selectedOnly: this.isSelectedOnly,
             theme: this.theme
           });
           if(png) {
@@ -430,7 +434,7 @@ export class ExportDialog extends Modal {
           }
         });
       } else {
-        this.view.exportPNGToClipboard(this.embedScene, this.hasSelectedElements && this.exportSelectedOnly);
+        this.view.exportPNGToClipboard(this.embedScene, this.isSelectedOnly);
       }
       this.close();
     };
@@ -452,7 +456,7 @@ export class ExportDialog extends Modal {
         cls: "excalidraw-export-button" 
       });
       bSVG.onclick = () => {
-        this.view.exportSVG(this.embedScene, this.hasSelectedElements && this.exportSelectedOnly);
+        this.view.exportSVG(this.embedScene, this.isSelectedOnly);
         this.close();
       };
     }
@@ -462,7 +466,7 @@ export class ExportDialog extends Modal {
       cls: "excalidraw-export-button" 
     });
     bSVGVault.onclick = () => {
-      this.view.saveSVG(this.view.getScene(this.hasSelectedElements && this.exportSelectedOnly));
+      this.view.saveSVG(this.view.getScene(this.isSelectedOnly));
       this.close();
     };
 
@@ -471,7 +475,7 @@ export class ExportDialog extends Modal {
       cls: "excalidraw-export-button" 
     });
     bSVGClipboard.onclick = async () => {
-      const svg = await this.view.getSVG(this.embedScene, this.hasSelectedElements && this.exportSelectedOnly);
+      const svg = await this.view.getSVG(this.embedScene, this.isSelectedOnly);
       exportSVGToClipboard(svg);
       this.close();
     };
@@ -504,7 +508,7 @@ export class ExportDialog extends Modal {
     });
     bPDFExport.onclick = () => {
       this.view.exportPDF(
-        this.hasSelectedElements && this.exportSelectedOnly,
+        this.isSelectedOnly,
         this.pageSize,
         this.pageOrientation
       );

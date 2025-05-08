@@ -1,5 +1,4 @@
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { request } from "http";
 import { Notice } from "obsidian";
 import { DEVICE } from "src/constants/constants";
 import { getEA } from "src/core";
@@ -20,12 +19,14 @@ export async function captureScreenshot(view: ExcalidrawView, options: Screensho
     return null;
   }
 
-  (view.excalidrawAPI as ExcalidrawImperativeAPI).setForceRenderAllEmbeddables(true);
-
+  const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
+  api.setForceRenderAllEmbeddables(true);
+  options.selectedOnly = options.selectedOnly && (view.getViewSelectedElements().length > 0);
   const remote = window.require("electron").remote;
-  const scene = view.getScene();
-  const viewSelectedElements = view.getViewSelectedElements();
-  const selectedIDs = new Set(options.selectedOnly ? viewSelectedElements.map(el => el.id) : []);
+  const elementsToInclude = options.selectedOnly
+    ? view.getViewSelectedElements()
+    : view.getViewElements();
+  const includedElementIDs = new Set(elementsToInclude.map(el => el.id));
   const savedOpacity: { id: string; opacity: number }[] = [];
   const ea = getEA(view) as ExcalidrawAutomate;
 
@@ -39,7 +40,7 @@ export async function captureScreenshot(view: ExcalidrawView, options: Screensho
   const devicePixelRatio = window.devicePixelRatio || 1;
   
   if (options.selectedOnly) {
-    ea.copyViewElementsToEAforEditing(ea.getViewElements().filter(el => !selectedIDs.has(el.id)));
+    ea.copyViewElementsToEAforEditing(view.getViewElements().filter(el=>!includedElementIDs.has(el.id)));
     ea.getElements().forEach(el => {
       savedOpacity.push({
         id: el.id,
@@ -52,7 +53,7 @@ export async function captureScreenshot(view: ExcalidrawView, options: Screensho
     }
   }
 
-  let boundingBox = ea.getBoundingBox(options.selectedOnly ? viewSelectedElements : scene.elements);
+  let boundingBox = ea.getBoundingBox(elementsToInclude);
   boundingBox = {
     topX: Math.ceil(boundingBox.topX),
     topY: Math.ceil(boundingBox.topY),
@@ -61,8 +62,8 @@ export async function captureScreenshot(view: ExcalidrawView, options: Screensho
   }
   
   const margin = options.margin;
-  const availableWidth = Math.floor(view.excalidrawAPI.getAppState().width);
-  const availableHeight = Math.floor(view.excalidrawAPI.getAppState().height);
+  const availableWidth = Math.floor(api.getAppState().width);
+  const availableHeight = Math.floor(api.getAppState().height);
   
   // Apply zoom to the total dimensions
   const totalWidth = Math.ceil(boundingBox.width * options.zoom + margin * 2);
@@ -89,7 +90,7 @@ export async function captureScreenshot(view: ExcalidrawView, options: Screensho
       viewModeEnabled,
       linkOpacity,
       theme,
-    } = view.excalidrawAPI.getAppState();
+    } = api.getAppState();
     return {
       scrollX,
       scrollY,
@@ -123,10 +124,11 @@ export async function captureScreenshot(view: ExcalidrawView, options: Screensho
   
   // Hide UI elements (must be after changing to view mode)
   const container = view.excalidrawWrapperRef.current;
-  const layerUIWrapper = container.querySelector(".layer-ui__wrapper");
-  const layerUIWrapperOriginalDisplay = layerUIWrapper.style.display;
-  layerUIWrapper.style.display = "none";
-  
+  let layerUIWrapperOriginalDisplay = "block";
+  let appBottonBarOriginalDisplay = "block";
+  let layerUIWrapper: HTMLElement | null = null;
+  let appBottomBar: HTMLElement | null = null;
+
   const originalStyle = {
     width: container.style.width,
     height: container.style.height,
@@ -153,10 +155,10 @@ export async function captureScreenshot(view: ExcalidrawView, options: Screensho
       },
     });
     
-    await sleep(50); // wait for frame to render
-    
+    await sleep(200); // wait for frame to render
+
     // Prepare to collect tile images as data URLs
-    const rect = container.getBoundingClientRect();
+    const { offsetLeft, offsetTop } = api.getAppState();
     const tiles = [];
     
     for (let row = 0; row < rows; row++) {
@@ -176,16 +178,30 @@ export async function captureScreenshot(view: ExcalidrawView, options: Screensho
             height: tileHeight
           },
         });
+
+        await sleep(50);
         
-        await sleep(250);
-        
+        //set tileWidth/tileHeight will reset the button bar
+        layerUIWrapper = container.querySelector(".layer-ui__wrapper");
+        appBottomBar = container.querySelector(".App-bottom-bar");
+        if (layerUIWrapper) {
+          layerUIWrapperOriginalDisplay = layerUIWrapper.style.display;
+          layerUIWrapper.style.display = "none";
+        }
+        if (appBottomBar) {
+          appBottonBarOriginalDisplay = appBottomBar.style.display;
+          appBottomBar.style.display = "none";
+        }
+
+        await sleep(50);
+
         // Calculate the exact width/height for this tile
         const captureWidth = col === cols - 1 ? adjustedTotalWidth - tileWidth * (cols - 1) : tileWidth;
         const captureHeight = row === rows - 1 ? adjustedTotalHeight - tileHeight * (rows - 1) : tileHeight;
         
         const image = await remote.getCurrentWebContents().capturePage({
-          x: rect.left * devicePixelRatio,
-          y: rect.top * devicePixelRatio,
+          x: offsetLeft,
+          y: offsetTop,
           width: captureWidth * devicePixelRatio,
           height: captureHeight * devicePixelRatio,
         });
@@ -243,31 +259,30 @@ export async function captureScreenshot(view: ExcalidrawView, options: Screensho
     new Notice(t("SCREENSHOT_ERROR"));
     return null;
   } finally {
+    // Restore opacity for selected elements if necessary
+    if (options.selectedOnly && savedOpacity.length > 0) {
+      ea.clear();
+      ea.copyViewElementsToEAforEditing(view.getViewElements().filter(el => !includedElementIDs.has(el.id)));
+      savedOpacity.forEach(x => {
+        ea.getElement(x.id).opacity = x.opacity;
+      });
+      await ea.addElementsToView(false, false, false, false);
+    }
+
     // Restore browser zoom to its original value
     webContents.setZoomFactor(originalZoomFactor);
     
     // Restore UI elements
-    try {
-      const container = view.excalidrawWrapperRef.current;
-      const layerUIWrapper = container.querySelector(".layer-ui__wrapper");
-      if (layerUIWrapper) {
-        layerUIWrapper.style.display = layerUIWrapperOriginalDisplay;
-      }
-      
-      // Restore original state
-      restoreState(savedState);
-      
-      // Restore opacity for selected elements if necessary
-      if (options.selectedOnly && savedOpacity.length > 0) {
-        ea.clear();
-        ea.copyViewElementsToEAforEditing(ea.getViewElements().filter(el => !selectedIDs.has(el.id)));
-        savedOpacity.forEach(x => {
-          ea.getElement(x.id).opacity = x.opacity;
-        });
-        await ea.addElementsToView(false, false, false, false);
-      }
-    } catch (e) {
-      console.error("Error in cleanup:", e);
+    if (layerUIWrapper) {
+      layerUIWrapper.style.display = layerUIWrapperOriginalDisplay;
     }
+
+    if (appBottomBar) {
+      appBottomBar.style.display = appBottonBarOriginalDisplay;
+    }
+    
+    // Restore original state
+    restoreState(savedState);
+    
   }
 }
