@@ -21,6 +21,7 @@ export class EventManager {
   private removeEventLisnters:(()=>void)[] = []; //only used if I register an event directly, not via Obsidian's registerEvent
   private previouslyActiveLeaf: WorkspaceLeaf;
   private splitViewLeafSwitchTimestamp: number = 0;
+  private debunceActiveLeafChangeHandlerTimer: number|null = null;
 
   get settings() {
     return this.plugin.settings;
@@ -103,6 +104,15 @@ export class EventManager {
     this.plugin.registerEvent(this.plugin.app.workspace.on("editor-menu", this.onEditorMenuHandler.bind(this)));
   }
 
+  public setDebounceActiveLeafChangeHandler() {
+    if(this.debunceActiveLeafChangeHandlerTimer) {
+      window.clearTimeout(this.debunceActiveLeafChangeHandlerTimer);
+    }
+    this.debunceActiveLeafChangeHandlerTimer = window.setTimeout(() => {
+      this.debunceActiveLeafChangeHandlerTimer = null;
+    }, 50);
+  }
+
   private onLayoutChangeHandler() {
     getExcalidrawViews(this.app).forEach(excalidrawView=>excalidrawView.refresh());
   }
@@ -163,6 +173,10 @@ export class EventManager {
   public async onActiveLeafChangeHandler (leaf: WorkspaceLeaf) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onActiveLeafChangeHandler,`onActiveLeafChangeEventHandler`, leaf);
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/723
+
+     if(this.debunceActiveLeafChangeHandlerTimer) {
+       return;
+     }
 
     //In Obsidian 1.8.x the active excalidraw leaf is obscured by an empty leaf without a parent
     //This hack resolves it

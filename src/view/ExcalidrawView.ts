@@ -1158,6 +1158,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       doc.body.querySelectorAll(`div.workspace-ribbon`).forEach(node=>node.addClass(HIDE));
       doc.body.querySelectorAll(`div.mobile-navbar`).forEach(node=>node.addClass(HIDE));
       doc.body.querySelectorAll(`div.status-bar`).forEach(node=>node.addClass(HIDE));
+      doc.body.querySelectorAll(`div.titlebar`).forEach(node=>node.addClass(HIDE));
     }
 
     hide(this.contentEl);

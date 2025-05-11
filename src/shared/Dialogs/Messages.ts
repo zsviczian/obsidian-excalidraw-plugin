@@ -17,6 +17,13 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.11.2": `
+## Fixed
+- Dynamic styling was not working when there were frames in the scene.
+- Minor fix for the screenshot feature. This fix also solves the long-standing issue of the window control buttons (close, minimize, maximize) being visible in full-screen mode.
+- When ALT/OPT + dragging an Embeddable object, the object dragging was not working properly at times, resulting in an empty embeddable object (instead of dragging the element).
+
+`,
 "2.11.1": `
 ## Fixed:
 - The new "Screenshot" option in the Export Image dialog was not working properly. [#2339](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2339)

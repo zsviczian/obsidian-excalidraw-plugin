@@ -6,7 +6,6 @@ import { DynamicStyle } from "src/types/types";
 import { cloneElement } from "./excalidrawAutomateUtils";
 import { ExcalidrawFrameElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { addAppendUpdateCustomData } from "./utils";
-import { mutateElement } from "src/constants/constants";
 import { CaptureUpdateAction } from "src/constants/constants";
 
 export const setDynamicStyle = (
@@ -176,7 +175,7 @@ export const setDynamicStyle = (
       ) {
         return;
       }
-      mutateElement(e,{customData: f.customData});
+      (view.excalidrawAPI as ExcalidrawImperativeAPI).mutateElement(e,{customData: f.customData});
     });
 
     view.updateScene({

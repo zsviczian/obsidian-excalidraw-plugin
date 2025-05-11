@@ -185,6 +185,7 @@ function RenderObsidianView(
     rootSplit.containerEl.style.width = '100%';
     rootSplit.containerEl.style.height = '100%';
     rootSplit.containerEl.style.borderRadius = "var(--embeddable-radius)";
+    view.plugin.setDebounceActiveLeafChangeHandler();
     leafRef.current = {
       leaf: view.app.workspace.createLeafInParent(rootSplit, 0),
       node: null,

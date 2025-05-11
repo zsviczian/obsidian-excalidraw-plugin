@@ -1078,6 +1078,10 @@ export default class ExcalidrawPlugin extends Plugin {
     this.eventManager.onActiveLeafChangeHandler(leaf);
   }
 
+  public setDebounceActiveLeafChangeHandler() {
+    this.eventManager.setDebounceActiveLeafChangeHandler();
+  }
+
   public registerHotkeyOverrides() {
     //this is repeated here because the same function is called when settings is closed after hotkeys have changed
     if (this.popScope) {
