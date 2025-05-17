@@ -17,12 +17,17 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
-"2.11.2": `
+"2.12.0": `
 ## Fixed
 - Dynamic styling was not working when there were frames in the scene.
 - Minor fix for the screenshot feature. This fix also solves the long-standing issue of the window control buttons (close, minimize, maximize) being visible in full-screen mode.
 - When ALT/OPT + dragging an Embeddable object, the object dragging was not working properly at times, resulting in an empty embeddable object (instead of dragging the element).
 
+## New
+- Line polygons. Draw a closed line shape, and it will snap to a polygon. [#9477](https://github.com/excalidraw/excalidraw/pull/9477)
+  - I updated the Split Ellipse and Boolean Operations Scripts to support this new feature.
+  - If you enter line editor mode by CTRL/CMD + clicking on the line, the lock-point will be marked for easier editing. Look for the polygon action on the elements panel to break the polygon if required.
+- Override "Focus on Existing Tab" setting for the "Open the back-of-the-note for the selected image in a popout window" action. "Open the back-of-the-note" will open a new popout every time.
 `,
 "2.11.1": `
 ## Fixed:

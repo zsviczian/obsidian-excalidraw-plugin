@@ -69,10 +69,15 @@ const result = polyboolAction({
 const polygonHierachy = subordinateInnerPolygons(result.regions);
 drawPolygonHierachy(polygonHierachy);
 ea.deleteViewElements(elements);
+setPolygonTrue();
 ea.addElementsToView(false,false,true);
 return;
 
-
+function setPolygonTrue() {
+  ea.getElements().filter(el=>el.type==="line").forEach(el => {
+    el.polygon = true;
+  });
+}
 
 function traceElement(element) {
   const diamondPath = (diamond) => [

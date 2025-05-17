@@ -44,7 +44,7 @@ export default {
   TRANSCLUDE_MOST_RECENT: "Embed the most recently edited drawing",
   TOGGLE_LEFTHANDED_MODE: "Toggle left-handed mode",
   TOGGLE_SPLASHSCREEN: "Show splash screen in new drawings",
-  FLIP_IMAGE: "Open the back-of-the-note of the selected excalidraw image",
+  FLIP_IMAGE: "Open the back-of-the-note for the selected image in a popout window",
   NEW_IN_NEW_PANE: "Create new drawing - IN AN ADJACENT WINDOW",
   NEW_IN_NEW_TAB: "Create new drawing - IN A NEW TAB",
   NEW_IN_ACTIVE_PANE: "Create new drawing - IN THE CURRENT ACTIVE WINDOW",
@@ -463,7 +463,7 @@ FILENAME_HEAD: "Filename",
 
   FOCUS_ON_EXISTING_TAB_NAME: "Focus on Existing Tab",
   FOCUS_ON_EXISTING_TAB_DESC: "When opening a link, Excalidraw will focus on the existing tab if the file is already open. " +
-    "Enabling this setting overrides 'Reuse Adjacent Pane' when the file is already open.",
+    "Enabling this setting overrides 'Reuse Adjacent Pane' when the file is already open except for the 'Open the back-of-the-note of the selected excalidraw image' command palette action.",
   SECOND_ORDER_LINKS_NAME: "Show second-order links",
   SECOND_ORDER_LINKS_DESC: "Show links when clicking on a link in Excalidraw. Second-order link are backlinks pointing to the link being clicked. " +
     "When using image icons to connect similar notes, second order links allow you to get to related notes in one click instead of two. " +

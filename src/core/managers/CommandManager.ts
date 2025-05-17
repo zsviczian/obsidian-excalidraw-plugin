@@ -1038,8 +1038,13 @@ export class CommandManager {
           x:Math.max(0,centerX - width/2 + view.ownerWindow.screenX),
           y:Math.max(0,centerY - height/2 + view.ownerWindow.screenY),
         }
-      
+        const focusOnFileTab = this.settings.focusOnFileTab;
+        //override focusOnFileTab for popout windows
+        if(DEVICE.isDesktop) {
+          this.settings.focusOnFileTab = false;
+        }
         this.plugin.openDrawing(ef.file, DEVICE.isMobile ? "new-tab":"popout-window", true, undefined, false, {x,y,width,height});
+        this.settings.focusOnFileTab = focusOnFileTab;
       }
     })
 
