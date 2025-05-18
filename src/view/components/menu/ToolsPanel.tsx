@@ -494,7 +494,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
               display: this.state.minimized ? "none" : "block",
             }}
           >
-            <div className="panelColumn">
+            <div className="selected-shape-actions">
               <fieldset>
                 <legend>Utility actions</legend>
                 <div className="buttonList buttonListIcon">

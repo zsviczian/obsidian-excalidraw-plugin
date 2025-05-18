@@ -28,6 +28,7 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
   - I updated the Split Ellipse and Boolean Operations Scripts to support this new feature.
   - If you enter line editor mode by CTRL/CMD + clicking on the line, the lock-point will be marked for easier editing. Look for the polygon action on the elements panel to break the polygon if required.
 - Override "Focus on Existing Tab" setting for the "Open the back-of-the-note for the selected image in a popout window" action. "Open the back-of-the-note" will open a new popout every time.
+- I significantly extended the features of the Text Arch script. It can now fit text to a wide range of paths and shapes, and allows for the text to be edited and refitted to other paths.
 `,
 "2.11.1": `
 ## Fixed:

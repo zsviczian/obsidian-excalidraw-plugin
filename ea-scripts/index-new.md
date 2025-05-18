@@ -600,7 +600,13 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Text%20Arch.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Text%20Arch.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Fit a text to the arch of a circle. The script will prompt you for the radius of the circle and then split your text to individual letters and place each letter to the arch defined by the radius. Setting a lower radius value will increase the arching of the text. Note that the arched-text will no longer be editable as a text element and it will no longer function as a markdown link. Emojis are currently not supported.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/text-arch.jpg'></td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Text%20Arch.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script allows you to fit a text element along a selected path (line, arrow, freedraw, ellipse, rectangle, or diamond) in Excalidraw. You can select either a path or a text element, or both:<br><br>
+- If only a path is selected, you will be prompted to provide the text.<br>
+- If only a text element is selected and it was previously fitted to a path, the script will use the original path if it is still present in the scene.<br>
+- If both a text and a path are selected, the script will fit the text to the selected path.<br><br>
+If the path is a perfect circle, you will be prompted to choose whether to fit the text above or below the circle.<br><br>
+After fitting, the text will no longer be editable as a standard text element or function as a markdown link. Emojis are not supported.<br>
+<img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/text-arch.jpg'></td></tr></table>
 
 ## Text Aura
 ```excalidraw-script-install

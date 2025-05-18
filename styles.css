@@ -349,6 +349,10 @@ label.color-input-container > input {
   overflow-y: auto;
 }
 
+.excalidraw .App-mobile-menu {
+  width: 12.5rem !important;
+}
+
 .excalidraw .panelColumn .buttonList {
   max-width: 13rem;
 }

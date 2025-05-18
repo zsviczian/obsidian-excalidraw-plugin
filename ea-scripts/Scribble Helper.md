@@ -109,9 +109,18 @@ async function editExistingTextElement(elements) {
   ea.copyViewElementsToEAforEditing(elements);
   const el = ea.getElements()[0];
   ea.style.strokeColor = el.strokeColor;
-  const text = await utils.inputPrompt(
-    "Edit text","",elements[0].rawText,undefined,5,true,customControls,true,true
-  ); 
+  const text = await utils.inputPrompt({
+    header: "Edit text",
+    placeholder: "",
+    value: elements[0].rawText,
+    //buttons: undefined,
+    lines: 5,
+    displayEditorButtons: true,
+    customComponents: customControls,
+    blockPointerInputOutsideModal: true,
+    controlsOnTop: true
+  });
+
   windowOpen = false;
   if(!text) return;
   
