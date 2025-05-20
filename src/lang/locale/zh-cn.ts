@@ -44,7 +44,7 @@ export default {
   TRANSCLUDE_MOST_RECENT: "嵌入最近编辑过的绘图（形如 ![[drawing]]）到当前 Markdown 文档中",
   TOGGLE_LEFTHANDED_MODE: "切换为左手模式",
   TOGGLE_SPLASHSCREEN: "在新绘图中显示启动画面",
-  FLIP_IMAGE: "打开当前所选 excalidraw 图像的“背景笔记”",
+  FLIP_IMAGE: "在弹出窗口中打开当前所选图像的“背景笔记”",
   NEW_IN_NEW_PANE: "新建绘图 - 于新面板",
   NEW_IN_NEW_TAB: "新建绘图 - 于新页签",
   NEW_IN_ACTIVE_PANE: "新建绘图 - 于当前面板",
@@ -463,7 +463,7 @@ FILENAME_HEAD: "文件名",
 
   FOCUS_ON_EXISTING_TAB_NAME: "聚焦于当前标签页",
   FOCUS_ON_EXISTING_TAB_DESC: "当打开一个链接时，如果该文件已经打开，Excalidraw 将会聚焦到现有的标签页上 " +
-    "启用这个设置会在文件已经打开的情况下覆盖“重用相邻窗格”的设置。",
+    "启用此设置时，如果文件已打开，将覆盖“重用相邻窗格”，但“打开所选 Excalidraw 图像的背影笔记”命令面板操作除外。",
   SECOND_ORDER_LINKS_NAME: "显示二级链接",
   SECOND_ORDER_LINKS_DESC: "在 Excalidraw 中点击链接时显示链接。二级链接是指指向被点击链接的反向链接" +
     "当使用图标连接相似的笔记时，二级链接可以让你直接到达相关笔记，而不需要两次点击。" +
