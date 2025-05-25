@@ -1,5 +1,5 @@
 /*
-![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/text-arch.jpg)
+![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-text-to-path.jpg)
 
 This script allows you to fit a text element along a selected path: line, arrow, freedraw, ellipse, rectangle, or diamond. You can select either a path or a text element, or both:
 
@@ -961,6 +961,9 @@ function diamondToLine(diamond, pointDensity = 16) {
 }
 
 async function addToView() {
+  ea.getElements()
+    .filter(el=>el.type==="text" && el.text === " " && !el.isDeleted)
+    .forEach(el=>tempElementIDs.push(el.id));
   tempElementIDs.forEach(elID=>{
     delete ea.elementsDict[elID];
   });
