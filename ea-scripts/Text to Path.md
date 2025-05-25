@@ -1066,12 +1066,7 @@ async function fitTextToShape() {
 
   // Place text along the path with natural spacing
   const offsetValue = (parseInt(win.TextArchOffset ?? initialOffset) || 0);
-  // The `spacing` parameter (ea.measureText("i").width*0.3) is not used by distributeTextAlongPath
-  // as character advances are now calculated from substring widths.
-  // Pass 0 for spacing, or remove it if it's truly unused.
-  // For now, let's assume it might be intended for *extra* spacing beyond natural kerning.
-  // However, the current distributeTextAlongPath doesn't use the `spacing` parameter.
-  // Let's remove charWidths, charHeights, and spacing from the call as they are not used.
+
   distributeTextAlongPath(text, pathPoints, pathID, objectIDs, offsetValue, isLeftToRight);
 
   // Add all text characters to a group
