@@ -18,19 +18,25 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
 "2.12.0": `
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/-fldh3cE2gs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
 ## Fixed
-- Dynamic styling was not working when there were frames in the scene.
-- Minor fix for the screenshot feature. This fix also solves the long-standing issue of the window control buttons (close, minimize, maximize) being visible in full-screen mode.
-- When ALT/OPT + dragging an Embeddable object, the object dragging was not working properly at times, resulting in an empty embeddable object (instead of dragging the element).
+
+- Dynamic styling was not working when frames were present in the scene.
+- Minor fix to the screenshot feature. This also resolves the long-standing issue where window control buttons (close, minimize, maximize) appeared in full-screen mode.
+- Fixed an issue where ALT/OPT + dragging an embeddable object sometimes failed, resulting in an empty object instead of dragging the element.
 
 ## New
-- Line polygons. Draw a closed line shape, and it will snap to a polygon. [#9477](https://github.com/excalidraw/excalidraw/pull/9477)
-  - I updated the Split Ellipse and Boolean Operations Scripts to support this new feature.
-  - If you enter line editor mode by CTRL/CMD + clicking on the line, the lock-point will be marked for easier editing. Look for the polygon action on the elements panel to break the polygon if required.
-- Override "Focus on Existing Tab" setting for the "Open the back-of-the-note for the selected image in a popout window" action. "Open the back-of-the-note" will open a new popout every time.
-- I significantly extended the features of the Text Arch script. It can now fit text to a wide range of paths and shapes, and allows for the text to be edited and refitted to other paths.
-- Better element unlock. Single left click on a locked element will display an unlock button. [#9546](https://github.com/excalidraw/excalidraw/pull/9546)
-- On startup Excalidraw will alert you if there are installed scripts that have available updates.
+
+- **Line Polygons**: Draw a closed line shape, and it will automatically snap into a polygon. [#9477](https://github.com/excalidraw/excalidraw/pull/9477)
+  - Updated the Split Ellipse and Boolean Operations scripts to support this feature.
+  - When entering line editor mode (CTRL/CMD + click), the lock point is now marked for easier editing. You can break the polygon using the polygon action in the elements panel.
+- **Popout Override**: The "Open the back-of-the-note for the selected image in a popout window" action now overrides the "Focus on Existing Tab" setting and always opens a new popout.
+- **Text Arch Enhancements**: The Text Arch script now supports fitting text to a wider range of paths and shapes. Text can also be edited and refitted to different paths.
+- **Improved Unlock UI**: Single-clicking a locked element now shows an unlock button. [#9546](https://github.com/excalidraw/excalidraw/pull/9546)
+- **Script Update Alerts**: On startup, Excalidraw will notify you if any installed scripts have available updates.
 `,
 "2.11.1": `
 ## Fixed:
