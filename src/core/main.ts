@@ -566,7 +566,7 @@ export default class ExcalidrawPlugin extends Plugin {
       }
     }
     this.packageManager.getPackageMap().forEach(({excalidrawLib}) => {
-      (excalidrawLib as typeof ExcalidrawLib).registerLocalFont({metrics: fontMetrics as any, icon: null}, fourthFontDataURL);
+      (excalidrawLib as typeof ExcalidrawLib).registerLocalFont({metrics: fontMetrics as any}, fourthFontDataURL);
     });
     // Add fonts to open Obsidian documents
     for(const ownerDocument of this.getOpenObsidianDocuments()) {

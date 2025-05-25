@@ -50,17 +50,17 @@ export class CanvasNodeFactory {
   }
 
   public async initialize() {
-    //@ts-ignore
+    const app = this.view.app;
     const canvasPlugin = app.internalPlugins.plugins["canvas"];
     
     if(!canvasPlugin._loaded) {
       await canvasPlugin.load();
     }
     const doc = this.view.ownerDocument;
-    const rootSplit:WorkspaceSplit = new (WorkspaceSplit as ConstructableWorkspaceSplit)(this.view.app.workspace, "vertical");
-    rootSplit.getRoot = () => this.view.app.workspace[doc === document ? 'rootSplit' : 'floatingSplit'];
+    const rootSplit:WorkspaceSplit = new (WorkspaceSplit as ConstructableWorkspaceSplit)(app.workspace, "vertical");
+    rootSplit.getRoot = () => app.workspace[doc === document ? 'rootSplit' : 'floatingSplit'];
     rootSplit.getContainer = () => getContainerForDocument(doc);
-    this.leaf = this.view.app.workspace.createLeafInParent(rootSplit, 0);
+    this.leaf = app.workspace.createLeafInParent(rootSplit, 0);
     this.canvas = canvasPlugin.views.canvas(this.leaf).canvas;
     this.initialized = true;
   }

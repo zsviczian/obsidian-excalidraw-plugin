@@ -749,7 +749,7 @@ FILENAME_HEAD: "Filename",
     "ExcalidrawAutomate is a scripting and automation API for Excalidraw. Unfortunately, the documentation of the API is sparse. " +
     "I recommend reading the <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/API/ExcalidrawAutomate.d.ts'>ExcalidrawAutomate.d.ts</a> file, " +
     "visiting the <a href='https://zsviczian.github.io/obsidian-excalidraw-plugin/'>ExcalidrawAutomate How-to</a> page - though the information " +
-    "here has not been updated for a long while -, and finally to enable the field suggester below. The field suggester will show you the available " +
+          "here has not been updated for a long while -, and finally to enable the field suggester below. The field suggester will show you the available " +
     "functions, their parameters and short description as you type. The field suggester is the most up-to-date documentation of the API.",
   FIELD_SUGGESTER_NAME: "Enable Field Suggester",
   FIELD_SUGGESTER_DESC:
@@ -991,6 +991,7 @@ FILENAME_HEAD: "Filename",
 
   //Utils.ts
   UPDATE_AVAILABLE: `A newer version of Excalidraw is available in Community Plugins.\n\nYou are using ${PLUGIN_VERSION}.\nThe latest is`,
+  SCRIPT_UPDATES_AVAILABLE: `Script updates available - check the script store.\n\n${DEVICE.isDesktop ? `This message is available in console.log (${DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i"})\n\n` : ""}If you have organized scripts into subfolders under the script store folder and have multiple copies of the same script, you may need to clean up unused versions to clear this alert. For private copies of scripts that should not be updated, store them outside the script store folder.`,
   ERROR_PNG_TOO_LARGE: "Error exporting PNG - PNG too large, try a smaller resolution",
 
   //modifierkeyHelper.ts

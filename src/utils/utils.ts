@@ -16,6 +16,7 @@ import {
   getCommonBoundingBox,
   DEVICE,
   getContainerElement,
+  SCRIPT_INSTALL_FOLDER,
 } from "../constants/constants";
 import ExcalidrawPlugin from "../core/main";
 import { ExcalidrawElement, ExcalidrawImageElement, ExcalidrawTextElement, ImageCrop } from "@zsviczian/excalidraw/types/element/src/types";
@@ -33,6 +34,7 @@ import Pool from "es6-promise-pool";
 import { FileData } from "../shared/EmbeddedFileLoader";
 import { t } from "src/lang/helpers";
 import ExcalidrawScene from "src/shared/svgToExcalidraw/elements/ExcalidrawScene";
+import { log } from "./debugHelper";
 
 declare const PLUGIN_VERSION:string;
 declare var LZString: any;
@@ -82,6 +84,9 @@ export async function checkExcalidrawVersion() {
         t("UPDATE_AVAILABLE") + ` ${latestVersion}`,
       );
     }
+
+    // Check for script updates
+    await checkScriptUpdates();
   } catch (e) {
     console.log({ where: "Utils/checkExcalidrawVersion", error: e });
   }
@@ -91,6 +96,56 @@ export async function checkExcalidrawVersion() {
   }, 28800000); //reset after 8 hours
 };
 
+async function checkScriptUpdates() {
+  try {
+    if (!EXCALIDRAW_PLUGIN?.settings?.scriptFolderPath) {
+      return;
+    }
+
+    const folder = `${EXCALIDRAW_PLUGIN.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}/`;
+    const installedScripts = EXCALIDRAW_PLUGIN.app.vault.getFiles()
+      .filter(f => f.path.startsWith(folder) && f.extension === "md");
+
+    if (installedScripts.length === 0) {
+      return;
+    }
+
+    // Get directory info from GitHub
+    const files = new Map<string, number>();
+    const directoryInfo = JSON.parse(
+      await request({
+        url: "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/directory-info.json",
+      }),
+    );
+    directoryInfo.forEach((f: any) => files.set(f.fname, f.mtime));
+
+    if (files.size === 0) {
+      return;
+    }
+
+    // Check if any installed scripts have updates
+    const updates:string[] = [];
+    let hasUpdates = false;
+    for (const scriptFile of installedScripts) {
+      const filename = scriptFile.name;
+      if (files.has(filename)) {
+        const mtime = files.get(filename);
+        if (mtime > scriptFile.stat.mtime) {
+          updates.push(scriptFile.path.split(folder)?.[1]?.split(".md")[0]);
+          hasUpdates = true;
+        }
+      }
+    }
+
+    if (hasUpdates) {
+      const message = `${t("SCRIPT_UPDATES_AVAILABLE")}\n\n${updates.sort().join("\n")}`;
+      new Notice(message,8000+updates.length*1000);
+      log(message);
+    }
+  } catch (e) {
+    console.log({ where: "Utils/checkScriptUpdates", error: e });
+  }
+}
 
 const random = new Random(Date.now());
 export function randomInteger () {

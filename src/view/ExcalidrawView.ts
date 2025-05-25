@@ -315,6 +315,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     warnAboutLinearElementLinkClick: true,
     embeddableIsEditingSelf: false,
     popoutUnload: false,
+    viewloaded: false,
     viewunload: false,
     scriptsReady: false,
     justLoaded: false,
@@ -1656,8 +1657,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       if(!Boolean(this?.plugin?.activeLeafChangeEventHandler)) return;
       if (Boolean(this.plugin.activeLeafChangeEventHandler) && (this?.app?.workspace?.activeLeaf === this.leaf)) {
         this.plugin.activeLeafChangeEventHandler(this.leaf);
-      }
-      this.canvasNodeFactory.initialize();
+      }      
+      await this.canvasNodeFactory.initialize();
       this.contentEl.addClass("excalidraw-view");
       //https://github.com/zsviczian/excalibrain/issues/28
       await this.addSlidingPanesListner(); //awaiting this because when using workspaces, onLayoutReady comes too early
@@ -1694,6 +1695,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       this.registerDomEvent(this.ownerWindow, "keyup", onKeyUp, false);
       //this.registerDomEvent(this.contentEl, "mouseleave", onBlurOrLeave, false); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2004
       this.registerDomEvent(this.ownerWindow, "blur", onBlurOrLeave, false);
+      this.semaphores.viewloaded = true;
     });
 
     this.setupAutosaveTimer();
@@ -2359,7 +2361,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       }
       await this.plugin.awaitInit();
       let counter = 0;
-      while ((!this.file || !this.plugin.fourthFontLoaded) && counter++<50) await sleep(50);
+      while ((!this.semaphores.viewloaded || !this.file || !this.plugin.fourthFontLoaded) && counter++<50) await sleep(50);
       if(!this.file) return;
       this.compatibilityMode = this.file.extension === "excalidraw";
       await this.plugin.loadSettings();
