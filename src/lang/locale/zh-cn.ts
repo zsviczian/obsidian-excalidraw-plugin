@@ -991,6 +991,7 @@ FILENAME_HEAD: "文件名",
 
   //Utils.ts
   UPDATE_AVAILABLE: `Excalidraw 的新版本已在社区插件中可用。\n\n您正在使用 ${PLUGIN_VERSION}。\n最新版本是`,
+  SCRIPT_UPDATES_AVAILABLE : `脚本更新可用 - 请检查脚本存储。\n\n ${ DEVICE . isDesktop ? `此消息可在控制台日志中查看 ( ${ DEVICE . isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i" } )\n\n` : "" } 如果您已将脚本组织到脚本存储文件夹下的子文件夹中，并且存在同一脚本的多个副本，可能需要清理未使用的版本以消除此警报。对于不需要更新的私人脚本副本，请将它们存储在脚本存储文件夹之外。` ,
   ERROR_PNG_TOO_LARGE: "导出 PNG 时出错 - PNG 文件过大，请尝试较小的分辨率",
 
   // ModifierkeyHelper.ts
