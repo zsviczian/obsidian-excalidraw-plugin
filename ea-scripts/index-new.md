@@ -612,7 +612,7 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 - If both a text and a path are selected, the script will fit the text to the selected path.<br><br>
 If the path is a perfect circle, you will be prompted to choose whether to fit the text above or below the circle.<br><br>
 After fitting, the text will no longer be editable as a standard text element or function as a markdown link. Emojis are not supported.<br>
-<img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/text-to-path.jpg'></td></tr></table>
+<img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-text-to-path.jpg'></td></tr></table>
 
 ## Toggle Grid
 ```excalidraw-script-install

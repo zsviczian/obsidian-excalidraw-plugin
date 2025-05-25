@@ -1,7 +1,7 @@
 /*
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/text-arch.jpg)
 
-This script allows you to fit a text element along a selected path (line, arrow, freedraw, ellipse, rectangle, or diamond) in Excalidraw. You can select either a path or a text element, or both:
+This script allows you to fit a text element along a selected path: line, arrow, freedraw, ellipse, rectangle, or diamond. You can select either a path or a text element, or both:
 
 - If only a path is selected, you will be prompted to provide the text.
 - If only a text element is selected and it was previously fitted to a path, the script will use the original path if it is still present in the scene.
@@ -9,7 +9,7 @@ This script allows you to fit a text element along a selected path (line, arrow,
 
 If the path is a perfect circle, you will be prompted to choose whether to fit the text above or below the circle.
 
-After fitting, the text will no longer be editable as a standard text element or function as a markdown link. Emojis are not supported.
+After fitting, the text will no longer be editable as a standard text element, but you'll be able to edit it with this script. Text on path cannot function as a markdown link. Emojis are not supported.
 
 ```javascript
 */
