@@ -97,6 +97,7 @@ const text = (await utils.inputPrompt({
     : textEl?.text ?? "",
   lines: 3,
   customComponents: isCircle ? circleArchControl : offsetControl,
+  draggable: true,
 }))?.replace(" \n"," ").replace("\n ", " ").replace("\n"," ");
 
 if(!text) {

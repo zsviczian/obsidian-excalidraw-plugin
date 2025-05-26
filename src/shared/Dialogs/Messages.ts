@@ -17,6 +17,31 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.12.1": `
+## New
+- "Text to Path" text input window is now draggable.
+
+## Fixed
+- Minor fixes to the Polygon line feature introduced in 2.12.0. [#9580](https://github.com/excalidraw/excalidraw/pull/9580)
+- Fix new Improved Unlock UI, where if a lock element was over an unlocked element, the unlocked element was not selectable. [#9582](https://github.com/excalidraw/excalidraw/pull/9582)
+- Fixed ghost point issue when moving a shape after dragging a point in the line editor [#9530](https://github.com/excalidraw/excalidraw/pull/9530)
+
+## New in ExcalidrawAutomate
+${String.fromCharCode(96,96,96)}js
+untils.inputPrompt({
+  header: string,
+  placeholder?: string,
+  value?: string,
+  buttons?: { caption: string; tooltip?:string; action: Function }[],
+  lines?: number,
+  displayEditorButtons?: boolean,
+  customComponents?: (container: HTMLElement) => void,
+  blockPointerInputOutsideModal?: boolean,
+  controlsOnTop?: boolean,
+  draggable?: boolean,
+});
+${String.fromCharCode(96,96,96)}
+`,
 "2.12.0": `
 <div class="excalidraw-videoWrapper"><div>
 <iframe src="https://www.youtube.com/embed/-fldh3cE2gs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
