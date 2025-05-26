@@ -10,4 +10,5 @@ export interface InputPromptOptions {
   customComponents?: (container: HTMLElement) => void,
   blockPointerInputOutsideModal?: boolean,
   controlsOnTop?: boolean,
+  draggable?: boolean,
 }
