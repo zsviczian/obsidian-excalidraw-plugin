@@ -98,6 +98,8 @@ export class GenericInputPrompt extends Modal {
   private customComponents: (container: HTMLElement) => void;
   private blockPointerInputOutsideModal: boolean = false;
   private controlsOnTop: boolean = false;
+  private draggable: boolean = false;
+  private cleanupDragListeners: (() => void) | null = null;
 
   public static Prompt(
     view: ExcalidrawView,
@@ -112,6 +114,7 @@ export class GenericInputPrompt extends Modal {
     customComponents?: (container: HTMLElement) => void,
     blockPointerInputOutsideModal?: boolean,
     controlsOnTop?: boolean,
+    draggable?: boolean,
   ): Promise<string> {
     const newPromptModal = new GenericInputPrompt(
       view,
@@ -126,6 +129,7 @@ export class GenericInputPrompt extends Modal {
       customComponents,
       blockPointerInputOutsideModal,
       controlsOnTop,
+      draggable,
     );
     return newPromptModal.waitForClose;
   }
@@ -143,6 +147,7 @@ export class GenericInputPrompt extends Modal {
     customComponents?: (container: HTMLElement) => void,
     blockPointerInputOutsideModal?: boolean,
     controlsOnTop?: boolean,
+    draggable?: boolean,
   ) {
     super(app);
     this.view = view;
@@ -155,6 +160,7 @@ export class GenericInputPrompt extends Modal {
     this.customComponents = customComponents;
     this.blockPointerInputOutsideModal = blockPointerInputOutsideModal ?? false;
     this.controlsOnTop = controlsOnTop ?? false;
+    this.draggable = draggable ?? false;
 
     this.waitForClose = new Promise<string>((resolve, reject) => {
       this.resolvePromise = resolve;
@@ -473,12 +479,137 @@ export class GenericInputPrompt extends Modal {
     super.onOpen();
     this.inputComponent.inputEl.focus();
     this.inputComponent.inputEl.select();
+    
+    if (this.draggable) {
+      this.makeModalDraggable();
+    }
+  }
+
+  private makeModalDraggable() {
+    let isDragging = false;
+    let startX: number, startY: number, initialX: number, initialY: number;
+    let activeElement: HTMLElement | null = null;
+    let cursorPosition: { start: number; end: number } | null = null;
+
+    const modalEl = this.modalEl;
+    const header = modalEl.querySelector('.modal-titlebar') || modalEl.querySelector('.modal-title') || modalEl;
+    (header as HTMLElement).style.cursor = 'move';
+
+    // Track focus changes to store the last focused interactive element
+    const onFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'SELECT' || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'BUTTON')) {
+        activeElement = target;
+        // Store cursor position for input/textarea elements (but not for number inputs)
+        if (target.tagName === 'TEXTAREA' || 
+            (target.tagName === 'INPUT' && (target as HTMLInputElement).type !== 'number')) {
+          const inputEl = target as HTMLInputElement | HTMLTextAreaElement;
+          cursorPosition = {
+            start: inputEl.selectionStart || 0,
+            end: inputEl.selectionEnd || 0
+          };
+        } else {
+          cursorPosition = null;
+        }
+      }
+    };
+
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement;
+      
+      // Don't allow dragging if clicking on interactive controls
+      if (target.tagName === 'INPUT' || 
+          target.tagName === 'TEXTAREA' || 
+          target.tagName === 'BUTTON' ||
+          target.tagName === 'SELECT' ||
+          target.closest('button') ||
+          target.closest('input') ||
+          target.closest('textarea') ||
+          target.closest('select')) {
+        return;
+      }
+      
+      // Allow dragging from header or modal content areas
+      if (!header.contains(target) && !modalEl.querySelector('.modal-content')?.contains(target)) {
+        return;
+      }
+      
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      const rect = modalEl.getBoundingClientRect();
+      initialX = rect.left;
+      initialY = rect.top;
+
+      modalEl.style.position = 'absolute';
+      modalEl.style.margin = '0';
+      modalEl.style.left = `${initialX}px`;
+      modalEl.style.top = `${initialY}px`;
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (!isDragging) return;
+
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+
+      modalEl.style.left = `${initialX + dx}px`;
+      modalEl.style.top = `${initialY + dy}px`;
+    };
+
+    const onPointerUp = () => {
+      if (!isDragging) return;
+      isDragging = false;
+
+      // Restore focus and cursor position
+      if (activeElement && activeElement.isConnected) {
+        // Use setTimeout to ensure the pointer event is fully processed
+        setTimeout(() => {
+          activeElement.focus();
+          
+          // Restore cursor position for input/textarea elements (but not for number inputs)
+          if (cursorPosition && 
+              (activeElement.tagName === 'TEXTAREA' || 
+               (activeElement.tagName === 'INPUT' && (activeElement as HTMLInputElement).type !== 'number'))) {
+            const inputEl = activeElement as HTMLInputElement | HTMLTextAreaElement;
+            inputEl.setSelectionRange(cursorPosition.start, cursorPosition.end);
+          }
+        }, 0);
+      }
+    };
+
+    // Initialize activeElement with the main input field
+    activeElement = this.inputComponent.inputEl;
+    cursorPosition = {
+      start: this.inputComponent.inputEl.selectionStart || 0,
+      end: this.inputComponent.inputEl.selectionEnd || 0
+    };
+
+    // Set up event listeners
+    modalEl.addEventListener('focusin', onFocusIn);
+    modalEl.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', onPointerUp);
+
+    // Store cleanup function for use in onClose
+    this.cleanupDragListeners = () => {
+      modalEl.removeEventListener('focusin', onFocusIn);
+      modalEl.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('pointermove', onPointerMove);
+      document.removeEventListener('pointerup', onPointerUp);
+    };
   }
 
   onClose() {
     super.onClose();
     this.resolveInput();
     this.removeInputListener();
+    
+    // Clean up drag listeners to prevent memory leaks
+    if (this.cleanupDragListeners) {
+      this.cleanupDragListeners();
+      this.cleanupDragListeners = null;
+    }
   }
 }
 

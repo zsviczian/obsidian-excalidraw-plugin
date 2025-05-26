@@ -956,7 +956,7 @@ export const EXCALIDRAW_SCRIPTENGINE_INFO: SuggesterInfo[] = [
       "controlsOnTop when set to true will move all the buttons to the top of the modal, leaving the text area at the bottom. This feature was developed for Scribble Helper script to avoid your palm pressing buttons while scribbling.\n"+
       "buttons.action(input: string) => string\nThe button action function will receive the actual input string. If action returns null, input will be unchanged. If action returns a string, input will receive that value when the promise is resolved. " +
       "example:\n<code>let fileType = '';\nconst filename = await utils.inputPrompt (\n  'Filename',\n  '',\n  '',\n,  [\n    {\n      caption: 'Markdown',\n      action: ()=>{fileType='md';return;}\n    },\n    {\n      caption: 'Excalidraw',\n      action: ()=>{fileType='ex';return;}\n    }\n  ]\n);</code>",
-    after: `({header: string, placeholder?: string, value?: string, buttons?: {caption:string, tooltip?:string, action:Function}[], lines?: number, displayEditorButtons?: boolean, customComponents?: (container: HTMLElement) => void, blockPointerInputOutsideModal?: boolean, controlsOnTop?: boolean})`,
+    after: `({\n  header: "",\n  placeholder: undefined, //string\n  value: undefined, //string\n  buttons: [{ //optional, may leave undefined\n    caption: "", //string\n    tooltip: undefined, //string\n    action: (input)=>{} //Function\n  }],\n  lines: undefined, //number\n  displayEditorButtons: undefined, //boolean\n  customComponents: undefined, //(container: HTMLElement) => void\n  blockPointerInputOutsideModal: undefined, //boolean\n  controlsOnTop: undefined, //boolean\n  draggable: undefined, //boolean\n});`,
   },
   {
     field: "suggester",

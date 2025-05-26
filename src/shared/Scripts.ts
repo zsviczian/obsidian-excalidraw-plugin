@@ -281,6 +281,7 @@ export class ScriptEngine {
         customComponents?: (container: HTMLElement) => void,
         blockPointerInputOutsideModal?: boolean,
         controlsOnTop?: boolean,
+        draggable?: boolean,
       ) => {
         if (typeof header === "object") {
           const options = header as InputPromptOptions;
@@ -293,6 +294,7 @@ export class ScriptEngine {
           customComponents = options.customComponents;
           blockPointerInputOutsideModal = options.blockPointerInputOutsideModal;
           controlsOnTop = options.controlsOnTop;
+          draggable = options.draggable;
         }
         return ScriptEngine.inputPrompt(
           view,
@@ -307,6 +309,7 @@ export class ScriptEngine {
           customComponents,
           blockPointerInputOutsideModal,
           controlsOnTop,
+          draggable
         );
       },
       suggester: (
@@ -353,6 +356,7 @@ export class ScriptEngine {
     customComponents?: (container: HTMLElement) => void,
     blockPointerInputOutsideModal?: boolean,
     controlsOnTop?: boolean,
+    draggable: boolean = false,
   ) {
     try {
       return await GenericInputPrompt.Prompt(
@@ -367,7 +371,8 @@ export class ScriptEngine {
         displayEditorButtons,
         customComponents,
         blockPointerInputOutsideModal,
-        controlsOnTop
+        controlsOnTop,
+        draggable
       );
     } catch {
       return undefined;
