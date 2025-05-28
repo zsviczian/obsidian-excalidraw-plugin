@@ -17,6 +17,10 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.12.2": `
+## Fixed
+- BUG: Excalidraw theme changes to Light from Dark when clicking line element node [#2360](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2360)
+`,
 "2.12.1": `
 ## New
 - "Text to Path" text input window is now draggable.
