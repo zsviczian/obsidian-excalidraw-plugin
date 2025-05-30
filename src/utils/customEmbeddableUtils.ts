@@ -63,9 +63,10 @@ export function setFileToLocalGraph(app: App, file: TFile) {
     if (l.view?.getViewType() === "localgraph") lgv = l.view;
   });
   try {
-    if (lgv) {
-      //@ts-ignore
-      lgv.loadFile(file);
+    //@ts-ignore
+    const loadFile = lgv?.loadFile;
+    if (loadFile) {
+      loadFile(file);
     }
   } catch (e) {
     console.error(e);
