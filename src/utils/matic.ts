@@ -1,4 +1,4 @@
-import { THEME } from "../constants/constants";
+import { EXCALIDRAW_PLUGIN, THEME } from "../constants/constants";
 import type { Theme } from "@zsviczian/excalidraw/types/element/src/types";
 import type { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import type { OpenAIInput, OpenAIOutput } from "@zsviczian/excalidraw/types/excalidraw/data/ai/types";
@@ -43,7 +43,7 @@ export async function diagramToHTML({
   theme?: Theme;
 }) {
   const body: OpenAIInput.ChatCompletionCreateParamsBase = {
-    model: "gpt-4-vision-preview",
+    model: EXCALIDRAW_PLUGIN.settings.openAIDefaultVisionModel,
     // 4096 are max output tokens allowed for `gpt-4-vision-preview` currently
     max_tokens: 4096,
     temperature: 0.1,

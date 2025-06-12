@@ -21,9 +21,9 @@
   "keywords": [],
   "author": "",
   "license": "MIT",
-"dependencies": {
+  "dependencies": {
     "@popperjs/core": "^2.11.8",
-    "@zsviczian/excalidraw": "0.18.0-19",
+    "@zsviczian/excalidraw": "0.18.0-21",
     "chroma-js": "^2.4.2",
     "clsx": "^2.0.0",
     "@zsviczian/colormaster": "^1.2.2",
@@ -89,5 +89,9 @@
   "resolutions": {
     "@typescript-eslint/typescript-estree": "5.3.0"
   },
-  "prettier": "@excalidraw/prettier-config"
+  "prettier": "@excalidraw/prettier-config",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
 }
