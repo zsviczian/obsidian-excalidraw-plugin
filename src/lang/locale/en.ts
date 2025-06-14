@@ -203,14 +203,22 @@ export default {
   FOLDER_NAME: "Excalidraw folder (CAsE sEnsITive!)",
   FOLDER_DESC:
     "Default location for new drawings. If empty, drawings will be created in the Vault root.",
+  CROP_SUFFIX_NAME: "Crop file suffix",
+  CROP_SUFFIX_DESC:
+    "The last part of the filename for new drawings created when cropping an image. " +
+    "Leave empty if you don't need a sufix.",
   CROP_PREFIX_NAME: "Crop file prefix",
   CROP_PREFIX_DESC:
     "The first part of the filename for new drawings created when cropping an image. " +
-    "If empty the default 'cropped_' will be used.",  
+    "Leave empty if you don't need a prefix.",  
+  ANNOTATE_SUFFIX_NAME: "Annotation file suffix",
+  ANNOTATE_SUFFIX_DESC:
+    "The last part of the filename for new drawings created when annotating an image. " +
+    "Leave empty if you don't need a suffix.",
   ANNOTATE_PREFIX_NAME: "Annotation file prefix",
   ANNOTATE_PREFIX_DESC:
     "The first part of the filename for new drawings created when annotating an image. " +
-    "If empty the default 'annotated_' will be used.",
+    "Leave empty if you don't need a prefix.",
   ANNOTATE_PRESERVE_SIZE_NAME: "Preserve image size when annotating",
   ANNOTATE_PRESERVE_SIZE_DESC:
     "When annotating an image in markdown the replacment image link will include the width of the original image.",

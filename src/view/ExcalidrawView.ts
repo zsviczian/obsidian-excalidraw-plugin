@@ -2518,6 +2518,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if (!this.excalidrawAPI) {
       return;
     }
+    
     const loader = new EmbeddedFilesLoader(this.plugin);
 
     const runLoader = (l: EmbeddedFilesLoader) => {
@@ -2705,7 +2706,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       if(this.getSceneVersion(inData.scene.elements) !== this.previousSceneVersion) {
         this.setDirty(3);
       }
-      this.updateScene({elements: sceneElements, storeAction: "capture"});
+      this.updateScene({elements: sceneElements, captureUpdate: CaptureUpdateAction.IMMEDIATELY});
       if(reloadFiles.size>0) {
         this.loadSceneFiles(false,reloadFiles);
       }

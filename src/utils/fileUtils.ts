@@ -405,8 +405,8 @@ export const getAliasWithSize = (alias: string, size: string): string => {
 
 export const getCropFileNameAndFolder = async (plugin: ExcalidrawPlugin, hostPath: string, baseNewFileName: string):Promise<{folderpath: string, filename: string}> => {
   let prefix = plugin.settings.cropPrefix || "";
-  if(prefix.trim() === "") prefix = CROPPED_PREFIX;
-  const filename = prefix + baseNewFileName + ".md";
+  let suffix = plugin.settings.cropSuffix || "";
+  const filename = prefix + baseNewFileName + suffix + ".md";
   if(!plugin.settings.cropFolder || plugin.settings.cropFolder.trim() === "") {
     const folderpath = (await getAttachmentsFolderAndFilePath(plugin.app, hostPath, filename)).folder;
     return {folderpath, filename};
@@ -418,8 +418,8 @@ export const getCropFileNameAndFolder = async (plugin: ExcalidrawPlugin, hostPat
 
 export const getAnnotationFileNameAndFolder = async (plugin: ExcalidrawPlugin, hostPath: string, baseNewFileName: string):Promise<{folderpath: string, filename: string}> => {
   let prefix = plugin.settings.annotatePrefix || "";
-  if(prefix.trim() === "") prefix = ANNOTATED_PREFIX;
-  const filename = prefix + baseNewFileName + ".md";
+  let suffix = plugin.settings.annotateSuffix || "";
+  const filename = prefix + baseNewFileName + suffix + ".md";
   if(!plugin.settings.annotateFolder || plugin.settings.annotateFolder.trim() === "") {
     const folderpath = (await getAttachmentsFolderAndFilePath(plugin.app, hostPath, filename)).folder;
     return {folderpath, filename};

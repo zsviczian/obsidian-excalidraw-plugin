@@ -114,7 +114,7 @@ export default class Taskbone {
       if(addToFrontmatter) {
         fe.setKey("taskbone-ocr",text);
         view.data = fe.data;
-        view.save(false);
+        view.save(false, true, true);
       }
       window.navigator.clipboard.writeText(text);
       new Notice(`I placed the recognized text onto the system clipboard${addToFrontmatter?" and to document properties":""}.`);

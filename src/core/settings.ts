@@ -69,7 +69,9 @@ export interface ExcalidrawSettings {
   drawingFilnameEmbedPostfix: string;
   drawingFilenameDateTime: string;
   useExcalidrawExtension: boolean;
+  cropSuffix: string;
   cropPrefix: string;
+  annotateSuffix: string;
   annotatePrefix: string;
   annotatePreserveSize: boolean;
   displaySVGInPreview: boolean; //No longer used since 1.9.13
@@ -252,7 +254,9 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   drawingFilnameEmbedPostfix: " ",
   drawingFilenameDateTime: "YYYY-MM-DD HH.mm.ss",
   useExcalidrawExtension: true,
+  cropSuffix: "",
   cropPrefix: CROPPED_PREFIX,
+  annotateSuffix: "",
   annotatePrefix: ANNOTATED_PREFIX,
   annotatePreserveSize: false,
   displaySVGInPreview: undefined,
@@ -320,7 +324,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   experimentalFileTag: "✏️",
   experimentalLivePreview: true,
   fadeOutExcalidrawMarkup: false,
-  loadPropertySuggestions: true,
+  loadPropertySuggestions: false,
   experimentalEnableFourthFont: false,
   experimantalFourthFont: "Virgil",
   addDummyTextElement: false,
@@ -956,7 +960,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("CROP_PREFIX_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("e.g.: Cropped_ ")
+          .setPlaceholder("e.g.: cropped_")
           .setValue(this.plugin.settings.cropPrefix)
           .onChange(async (value) => {
             this.plugin.settings.cropPrefix = value.replaceAll(
@@ -969,11 +973,28 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
 
     new Setting(detailsEl)
+      .setName(t("CROP_SUFFIX_NAME"))
+      .setDesc(fragWithHTML(t("CROP_SUFFIX_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder("e.g.: _cropped")
+          .setValue(this.plugin.settings.cropSuffix)
+          .onChange(async (value) => {
+            this.plugin.settings.cropSuffix = value.replaceAll(
+              /[<>:"/\\|?*]/g,
+              "_",
+            );
+            text.setValue(this.plugin.settings.cropSuffix);
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
       .setName(t("ANNOTATE_PREFIX_NAME"))
       .setDesc(fragWithHTML(t("ANNOTATE_PREFIX_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("e.g.: Annotated_ ")
+          .setPlaceholder("e.g.: annotated_")
           .setValue(this.plugin.settings.annotatePrefix)
           .onChange(async (value) => {
             this.plugin.settings.annotatePrefix = value.replaceAll(
@@ -984,7 +1005,24 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
-    
+
+    new Setting(detailsEl)
+      .setName(t("ANNOTATE_SUFFIX_NAME"))
+      .setDesc(fragWithHTML(t("ANNOTATE_SUFFIX_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder("e.g.: _annotated")
+          .setValue(this.plugin.settings.annotateSuffix)
+          .onChange(async (value) => {
+            this.plugin.settings.annotateSuffix = value.replaceAll(
+              /[<>:"/\\|?*]/g,
+              "_",
+            );
+            text.setValue(this.plugin.settings.annotateSuffix);
+            this.applySettingsUpdate();
+          }),
+      );
+
     new Setting(detailsEl)
       .setName(t("ANNOTATE_PRESERVE_SIZE_NAME"))
       .setDesc(fragWithHTML(t("ANNOTATE_PRESERVE_SIZE_DESC")))

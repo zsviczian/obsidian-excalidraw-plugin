@@ -17,6 +17,17 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.12.3":`
+## Minor fixes
+- Includes all recent updates and fixes from excalidraw.com
+- Fixed issue with line editor snapping out of edit mode
+- Fixed long-standing issue with wireframe to code calling a deprecated OpenAI endpoint
+- "Load Excalidraw Properties into Obsidian Suggester" setting now defaults to false for new installations. [#2380](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2380)
+- Taskbone OCR result does not get saved to frontmatter in some cases [#1123](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1123)
+
+## New
+- If the cropped file or annotated file prefix is set to empty, there will now be no prefix added to the file name. Additionally, now you can also set a suffix to the file name. [#2370](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2370)
+`,
 "2.12.2": `
 ## Fixed
 - BUG: Excalidraw theme changes to Light from Dark when clicking line element node [#2360](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2360)
