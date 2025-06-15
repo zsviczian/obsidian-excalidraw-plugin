@@ -218,7 +218,7 @@ export default {
   ANNOTATE_PREFIX_NAME: "标注文件的前缀",
   ANNOTATE_PREFIX_DESC:
     "在标注图像时创建新绘图的文件名的第一部分。" +
-    "如果不需要后缀，请留空。" ,
+    "如果不需要前缀，请留空。" ,
   ANNOTATE_PRESERVE_SIZE_NAME: "在标注时保留图像尺寸",
   ANNOTATE_PRESERVE_SIZE_DESC:
     "当在 Markdown 中标注图像时，替换后的图像链接将包含原始图像的宽度。",
