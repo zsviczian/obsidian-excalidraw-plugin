@@ -17,6 +17,10 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.12.4":`
+## Fixed
+- ExaliBrain did not render after the 2.12.3 update. [#2384](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2384)
+`,
 "2.12.3":`
 ## Minor fixes
 - Includes all recent updates and fixes from excalidraw.com

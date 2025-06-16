@@ -1715,6 +1715,7 @@ export class ExcalidrawAutomate {
     id = id ?? nanoid();
     const startPoint = points[0] as GlobalPoint;
     const endPoint = points[points.length - 1] as GlobalPoint;
+    const elementsMap = arrayToMap(this.getElements());
     this.elementsDict[id] = {
       points: normalizeLinePoints(points),
       lastCommittedPoint: null,
@@ -1723,6 +1724,7 @@ export class ExcalidrawAutomate {
         focus: formatting?.startObjectId
           ? determineFocusDistance(
               this.getElement(formatting?.startObjectId) as ExcalidrawBindableElement,
+              elementsMap,
               endPoint,
               startPoint,
             )
@@ -1734,6 +1736,7 @@ export class ExcalidrawAutomate {
         focus: formatting?.endObjectId
           ? determineFocusDistance(
               this.getElement(formatting?.endObjectId) as ExcalidrawBindableElement,
+              elementsMap,
               startPoint,
               endPoint,
             )
