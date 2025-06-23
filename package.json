@@ -24,7 +24,7 @@
   "dependencies": {
     "@popperjs/core": "^2.11.8",
     "@zsviczian/excalidraw": "0.18.0-24",
-    "chroma-js": "^2.4.2",
+    "chroma-js": "^3.1.2",
     "clsx": "^2.0.0",
     "@zsviczian/colormaster": "^1.2.2",
     "gl-matrix": "^3.4.3",
@@ -59,7 +59,7 @@
     "@rollup/plugin-replace": "^5.0.2",
     "@rollup/plugin-typescript": "^12.1.2",
     "@rollup/plugin-json": "^6.1.0",
-    "@types/chroma-js": "^2.4.0",
+    "@types/chroma-js": "^3.1.1",
     "@types/js-beautify": "^1.14.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.10.5",
