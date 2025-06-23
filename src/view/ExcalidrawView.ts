@@ -3822,7 +3822,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       event: this.lastMouseEvent,
       source: VIEW_TYPE_EXCALIDRAW,
       hoverParent: this,
-      targetEl: this.hoverPreviewTarget, //null //0.15.0 hover editor!!
+      //https://discord.com/channels/686053708261228577/989603365606531104/1386783538795249715
+      //targetEl: this.hoverPreviewTarget, //null //0.15.0 hover editor!!
       linktext: this.plugin.hover.linkText,
       sourcePath: this.plugin.hover.sourcePath,
     });
