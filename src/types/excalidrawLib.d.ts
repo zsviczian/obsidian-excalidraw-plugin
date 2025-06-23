@@ -52,7 +52,7 @@ type EmbeddedLink =
 declare namespace ExcalidrawLib {
   type ElementUpdate<TElement extends ExcalidrawElement> = Omit<
     Partial<TElement>,
-    "id" | "version" | "versionNonce"
+    "id" | "updated"
   >;
 
   type ExportOpts = {
@@ -108,6 +108,7 @@ declare namespace ExcalidrawLib {
 
   function determineFocusDistance(
     element: ExcalidrawBindableElement,
+    elementsMap: ElementsMap,
     a: GlobalPoint,
     b: GlobalPoint,
   ): number;

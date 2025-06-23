@@ -203,14 +203,22 @@ export default {
   FOLDER_NAME: "Excalidraw 文件夹（區分大小寫！）",
   FOLDER_DESC:
     "新绘图的默认存储路径。若为空，将在库的根目录中创建新绘图。",
+  CROP_SUFFIX_NAME : "裁剪文件后缀" ,
+  CROP_SUFFIX_DESC :
+    "为裁剪图像时创建的新图纸文件名的最后部分。" +
+    "如果不需要后缀，请留空。" ,
   CROP_PREFIX_NAME: "剪贴文件的前缀",
   CROP_PREFIX_DESC:
     "当剪贴图片进来时保存的文件名的前缀。 " +
-    "留空则使用 'cropped_'",
+    "如果不需要前缀，请留空。" ,
+  ANNOTATE_SUFFIX_NAME : "注释文件后缀" ,
+  ANNOTATE_SUFFIX_DESC :
+    "为注释图像时创建的新绘图文件名的最后部分。" +
+    "如果不需要后缀，请留空。" ,
   ANNOTATE_PREFIX_NAME: "标注文件的前缀",
   ANNOTATE_PREFIX_DESC:
     "在标注图像时创建新绘图的文件名的第一部分。" +
-    "留空则使用'annotated_'",
+    "如果不需要前缀，请留空。" ,
   ANNOTATE_PRESERVE_SIZE_NAME: "在标注时保留图像尺寸",
   ANNOTATE_PRESERVE_SIZE_DESC:
     "当在 Markdown 中标注图像时，替换后的图像链接将包含原始图像的宽度。",
