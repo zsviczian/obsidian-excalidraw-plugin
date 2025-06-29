@@ -78,6 +78,6 @@ ea.connectObjects(
 	numberOfPoints: linePoints
   }
 );
-ea.addElementsToView(false,false,true);
+await ea.addElementsToView(false,false,true);
 const ids = ea.getElements().map(el=>el.id);
 ea.selectElementsInView(ea.getViewElements().filter(el=>ids.contains(el.id)));
