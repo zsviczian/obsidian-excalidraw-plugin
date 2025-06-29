@@ -13,7 +13,7 @@ import ExcalidrawView from "../../view/ExcalidrawView";
 import ExcalidrawPlugin from "../../core/main";
 import { escapeRegExp, getLinkParts, sleep } from "../../utils/utils";
 import { getLeaf, openLeaf } from "../../utils/obsidianUtils";
-import { checkAndCreateFolder, splitFolderAndFilename } from "src/utils/fileUtils";
+import { createOrOverwriteFile } from "src/utils/fileUtils";
 import { KeyEvent, isWinCTRLorMacCMD } from "src/utils/modifierkeyHelper";
 import { t } from "src/lang/helpers";
 import { ExcalidrawElement, getEA } from "src/core";
@@ -792,10 +792,7 @@ export class NewFileActions extends Modal {
         if (!this.path.match(/\.md$/)) {
           this.path = `${this.path}.md`;
         }
-        const folderpath = splitFolderAndFilename(this.path).folderpath;
-        checkAndCreateFolder(folderpath);
-        const f = await this.app.vault.create(this.path, data);
-        return f;
+        return await createOrOverwriteFile(this.app, this.path, data);
       };
 
       if(this.sourceElement) {

@@ -382,6 +382,25 @@ class ImageCache {
     store.put(data, filepath);
   }
 
+  public async removeBAKFromCache(filepath: string): Promise<void> {
+    if (!this.isReady()) {
+      return; // Database not initialized yet
+    }
+
+    const transaction = this.db.transaction(this.backupStoreName, "readwrite");
+    const store = transaction.objectStore(this.backupStoreName);
+    
+    return new Promise<void>((resolve, reject) => {
+      const request = store.delete(filepath);
+      request.onsuccess = () => {
+        resolve();
+      };
+      request.onerror = () => {
+        reject(new Error(`Failed to remove backup file with key: ${filepath}`));
+      };
+    });
+  }
+
   public async clearImageCache(): Promise<void> {
     if (!this.isReady()) {
       return; // Database not initialized yet

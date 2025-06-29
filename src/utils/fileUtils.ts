@@ -1,12 +1,12 @@
 import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { App, loadPdfJs, normalizePath, Notice, requestUrl, RequestUrlResponse, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
+import { App, loadPdfJs, MetadataCache, normalizePath, Notice, requestUrl, RequestUrlResponse, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
 import { DEVICE, EXCALIDRAW_PLUGIN, FRONTMATTER_KEYS, URLFETCHTIMEOUT } from "src/constants/constants";
 import { IMAGE_MIME_TYPES, MimeType } from "../shared/EmbeddedFileLoader";
 import { ExcalidrawSettings } from "src/core/settings";
 import { errorlog, getDataURL } from "./utils";
 import ExcalidrawPlugin from "src/core/main";
-import { ANNOTATED_PREFIX, CROPPED_PREFIX } from "./carveout";
 import { getAttachmentsFolderAndFilePath } from "./obsidianUtils";
+import ExcalidrawView from "src/view/ExcalidrawView";
 
 /**
  * Splits a full path including a folderpath and a filename into separate folderpath and filename components
@@ -494,7 +494,55 @@ export const hasExcalidrawEmbeddedImagesTreeChanged = (sourceFile: TFile, mtime:
   return fileList.some(f=>f.stat.mtime > mtime);
 }
 
+export async function exportImageToFile(view: ExcalidrawView, path: string, content: string | ArrayBuffer | Blob, extension: string): Promise<TFile> {
+  const ea = view?.getHookServer();
+  if(ea?.onImageExportPathHook) {
+    try {
+      path = ea.onImageExportPathHook({
+        exportFilepath: path,
+        exportExtension: extension,
+        excalidrawFile: view.file,
+        action: "export",
+      }) ?? path;
+    } catch (e) {
+      errorlog({where: "fileUtils.exportImageToFile", fn: ea.onImageExportPathHook, error: e});
+    }
+  }
+  return await createOrOverwriteFile(view.app, path, content);
+}
+
+export async function importFileToVault(app: App, fname: string, content: string | ArrayBuffer | Blob, excalidrawFile: TFile, view?: ExcalidrawView): Promise<TFile> {
+  let hookFilepath:string;
+  const ea = view?.getHookServer();
+  if(ea?.onImageFilePathHook) {
+    try {
+      hookFilepath = ea.onImageFilePathHook({
+        currentImageName: fname,
+        drawingFilePath: excalidrawFile.path,
+      })
+    } catch (e) {
+      errorlog({where: "fileUtils.importFileToVault", fn: ea.onImageFilePathHook, error: e});
+    }
+  }
+
+  let filepath:string;
+  if(hookFilepath) {
+    const {folderpath, filename} = splitFolderAndFilename(hookFilepath);
+    await checkAndCreateFolder(folderpath);
+    filepath = getNewUniqueFilepath(app.vault,filename,folderpath);
+  } else {
+    const {folder} = await getAttachmentsFolderAndFilePath(app, excalidrawFile.path, fname);
+    filepath = getNewUniqueFilepath(app.vault,fname,folder);
+  }
+
+  return await createOrOverwriteFile(app, filepath, content);
+}
+
 export async function createOrOverwriteFile(app: App, path: string, content: string | ArrayBuffer | Blob): Promise<TFile> {
+  const {folderpath} = splitFolderAndFilename(path);
+  if(folderpath && folderpath !== "/") {
+    await checkAndCreateFolder(folderpath);
+  }
   const file = app.vault.getAbstractFileByPath(normalizePath(path));
   if (content instanceof Blob) {
     content = await content.arrayBuffer();
@@ -514,4 +562,41 @@ export async function createOrOverwriteFile(app: App, path: string, content: str
   } else {
     return await app.vault.create(path, content);
   }
+}
+
+export async function createFileAndAwaitMetacacheUpdate(
+  app: App,
+  path: string,
+  content: string | ArrayBuffer | Blob,
+) : Promise<TFile> {
+  path = normalizePath(path);
+  let ready = false;
+  const extension = path.substring(path.lastIndexOf(".") + 1);
+
+  //metadataCache.on("changed", (file:TFile) => void) does not fire for non-markdown files
+  if(extension === "md") {
+    const metaCache: MetadataCache = app.metadataCache;
+    const handler = (file:TFile) => {
+      if(file.path === path) {
+        metaCache.off("changed", handler);
+        ready = true;
+      }
+    }
+    metaCache.on("changed", handler);
+
+    const file = await createOrOverwriteFile(app, path, content);
+
+    if(!file) {
+      ready = true; //if file is null, it means it was not created, so we can skip waiting
+      metaCache.off("changed", handler);
+    }
+
+    let attempts = 0;
+    while (!ready && attempts++ < 15) await sleep(50);
+    if(!ready) {
+      metaCache.off("changed", handler); //if we timed out, remove the handler
+    }
+    return file;
+  }
+  return await createOrOverwriteFile(app, path, content);
 }

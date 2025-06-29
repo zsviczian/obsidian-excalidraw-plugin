@@ -34,6 +34,7 @@ import { insertLaTeXToView, search } from "src/utils/excalidrawAutomateUtils";
 import { templatePromt } from "../../shared/Dialogs/Prompt";
 import { t } from "../../lang/helpers";
 import {
+  createOrOverwriteFile,
   getAliasWithSize,
   getAnnotationFileNameAndFolder,
   getCropFileNameAndFolder,
@@ -69,7 +70,6 @@ import { carveOutImage, carveOutPDF, createImageCropperFile } from "../../utils/
 import { showFrameSettings } from "../../shared/Dialogs/FrameSettings";
 import { insertImageToView } from "../../utils/excalidrawViewUtils";
 import ExcalidrawPlugin from "src/core/main";
-import { get } from "http";
 
 declare const PLUGIN_VERSION:string;
 
@@ -258,7 +258,7 @@ export class CommandManager {
             new Notice("The compressed string is corrupted. Unable to decompress data.");
             return;
           }
-          await this.app.vault.modify(activeFile,header + decompressed + "\n```\n%%" + compressed[1]);
+          await createOrOverwriteFile(this.app, activeFile.path,header + decompressed + "\n```\n%%" + compressed[1]);
         })();
 
       }
@@ -355,7 +355,16 @@ export class CommandManager {
           if(excalidrawFname.endsWith(".light.md")) {
             excalidrawFile = this.app.metadataCache.getFirstLinkpathDest(excalidrawFname.replace(/\.light\.md$/,".md"), view.file.path);
           }
-          if(!excalidrawFile) return false;
+          //handles the case if the png or svg is not in the same folder as the excalidraw file
+          if(!excalidrawFile) {
+            const basename = imgFile.basename.replace(/(?:\.dark|\.light)$/,"");
+            const candidates = this.app.vault.getMarkdownFiles().filter(f=>f.basename === basename);
+            if(candidates.length === 1) {
+              excalidrawFile = candidates[0];
+            } else {
+              return false;
+            }
+          }
         }
         if(checking) return true;
         this.plugin.openDrawing(excalidrawFile, "new-tab", true);
@@ -1823,10 +1832,7 @@ export class CommandManager {
           const template = await this.plugin.getBlankDrawing();
           const target = await this.app.vault.read(activeFile);
           const mergedTarget = mergeMarkdownFiles(template, target);
-          await this.app.vault.modify(
-            activeFile,
-            mergedTarget,
-          );
+          await createOrOverwriteFile(this.app, activeFile.path, mergedTarget);
           setExcalidrawView(activeView.leaf);
         })();
       },

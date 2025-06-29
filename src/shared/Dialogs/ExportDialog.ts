@@ -10,7 +10,7 @@ import { PageOrientation, PageSize, PDFPageAlignment, PDFPageMarginString, expor
 import { t } from "src/lang/helpers";
 import { PDFExportSettings, PDFExportSettingsComponent } from "./PDFExportSettingsComponent";
 import { captureScreenshot } from "src/utils/screenshot";
-import { createOrOverwriteFile, getIMGFilename } from "src/utils/fileUtils";
+import { exportImageToFile, getIMGFilename } from "src/utils/fileUtils";
 
 
 
@@ -397,7 +397,7 @@ export class ExportDialog extends Modal {
     });
     bPNGVault.onclick = () => {
       if(isScreenshot) {
-        //allow dialot to close before taking screenshot
+        //allow dialog to close before taking screenshot
         setTimeout(async () => {
           const png = await captureScreenshot(this.view, {
             zoom: this.scale,
@@ -406,11 +406,11 @@ export class ExportDialog extends Modal {
             theme: this.theme
           });
           if(png) {
-            createOrOverwriteFile(this.app, getIMGFilename(this.view.file.path,"png"), png);
+            exportImageToFile(this.view, getIMGFilename(this.view.file.path,"png"), png, ".png");
           }
         });
       } else {
-        this.view.savePNG(this.view.getScene(this.isSelectedOnly));
+        this.view.savePNG({scene: this.view.getScene(this.isSelectedOnly)});
       }
       this.close();
     };
@@ -466,7 +466,7 @@ export class ExportDialog extends Modal {
       cls: "excalidraw-export-button" 
     });
     bSVGVault.onclick = () => {
-      this.view.saveSVG(this.view.getScene(this.isSelectedOnly));
+      this.view.saveSVG({scene: this.view.getScene(this.isSelectedOnly)});
       this.close();
     };
 

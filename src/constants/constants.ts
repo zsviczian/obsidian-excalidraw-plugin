@@ -1,8 +1,8 @@
 import { customAlphabet } from "nanoid";
 import { ExcalidrawLib } from "../types/excalidrawLib";
-import { moment } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
 import { DeviceType } from "src/types/types";
+import { errorHandler } from "../utils/ErrorHandler";
 //This is only for backward compatibility because an early version of obsidian included an encoding to avoid fantom links from littering Obsidian graph view
 declare const PLUGIN_VERSION:string;
 export let EXCALIDRAW_PLUGIN: ExcalidrawPlugin = null;
@@ -106,33 +106,65 @@ export let {
   getCSSFontDefinition,
   loadSceneFonts,
   loadMermaid,
+  syncInvalidIndices,
 } = excalidrawLib;
 
 export function updateExcalidrawLib() {
-  ({
-    sceneCoordsToViewportCoords,
-    viewportCoordsToSceneCoords,
-    determineFocusDistance,
-    intersectElementWithLine,
-    getCommonBoundingBox,
-    getMaximumGroups,
-    measureText,
-    getLineHeight,
-    wrapText, 
-    getFontString, 
-    getBoundTextMaxWidth, 
-    exportToSvg,
-    exportToBlob,
-    mutateElement,
-    restore,
-    mermaidToExcalidraw,
-    getFontFamilyString,
-    getContainerElement,
-    refreshTextDimensions,
-    getCSSFontDefinition,
-    loadSceneFonts,
-    loadMermaid,
-  } = excalidrawLib);
+  try {
+    // First validate that excalidrawLib exists and has the expected methods
+    if (!excalidrawLib) {
+      throw new Error("excalidrawLib is undefined");
+    }
+    
+    // Check that critical functions exist before assigning them
+    const requiredFunctions = [
+      'sceneCoordsToViewportCoords',
+      'viewportCoordsToSceneCoords',
+      'determineFocusDistance',
+      'intersectElementWithLine',
+      'getCommonBoundingBox',
+      'measureText',
+      'getLineHeight',
+      'restore'
+    ];
+    
+    for (const fnName of requiredFunctions) {
+      if (!(fnName in excalidrawLib) || typeof excalidrawLib[fnName as keyof typeof excalidrawLib] !== 'function') {
+        throw new Error(`Required function ${fnName} is missing from excalidrawLib`);
+      }
+    }
+    
+    // If validation passes, update the exported functions
+    ({
+      sceneCoordsToViewportCoords,
+      viewportCoordsToSceneCoords,
+      determineFocusDistance,
+      intersectElementWithLine,
+      getCommonBoundingBox,
+      getMaximumGroups,
+      measureText,
+      getLineHeight,
+      wrapText, 
+      getFontString, 
+      getBoundTextMaxWidth, 
+      exportToSvg,
+      exportToBlob,
+      mutateElement,
+      restore,
+      mermaidToExcalidraw,
+      getFontFamilyString,
+      getContainerElement,
+      refreshTextDimensions,
+      getCSSFontDefinition,
+      loadSceneFonts,
+      loadMermaid,
+      syncInvalidIndices,
+    } = excalidrawLib);
+  } catch (error) {
+    errorHandler.handleError(error, "updateExcalidrawLib", true);
+    // Don't throw here - we'll try to continue with potentially stale functions
+    // but at least we won't crash
+  }
 }
 
 export const FONTS_STYLE_ID = "excalidraw-custom-fonts";

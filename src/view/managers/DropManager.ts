@@ -12,8 +12,7 @@ import { getEA } from "src/core";
 import { insertEmbeddableToView, insertImageToView } from "src/utils/excalidrawViewUtils";
 import { t } from "src/lang/helpers";
 import ExcalidrawPlugin from "src/core/main";
-import { getInternalLinkOrFileURLLink, getNewUniqueFilepath, getURLImageExtension, splitFolderAndFilename } from "src/utils/fileUtils";
-import { getAttachmentsFolderAndFilePath } from "src/utils/obsidianUtils";
+import { getInternalLinkOrFileURLLink, getURLImageExtension, importFileToVault } from "src/utils/fileUtils";
 import { ScriptEngine } from "src/shared/Scripts";
 import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFileModal";
 import { Position } from "src/types/excalidrawViewTypes";
@@ -372,8 +371,7 @@ export class DropManager {
                 (async () => {
                   const droppedFilename = event.dataTransfer.files[i].name;
                   const fileToImport = await event.dataTransfer.files[i].arrayBuffer();
-                  let {folder:_, filepath} = await getAttachmentsFolderAndFilePath(this.app, this.file.path, droppedFilename);
-                  const maybeFile = this.app.vault.getAbstractFileByPath(filepath);
+                  const maybeFile = this.app.metadataCache.getFirstLinkpathDest(droppedFilename, this.file.path);
                   if(maybeFile && maybeFile instanceof TFile) {
                     const action = await ScriptEngine.suggester(
                       this.app,[
@@ -385,12 +383,11 @@ export class DropManager {
                         "Overwrite",
                         "Import",
                       ],
-                      "A file with the same name/path already exists in the Vault",
+                      "A file with the same name/path already exists in the Vault\n" +
+                      maybeFile.path,
                     );
                     switch(action) {
                       case "Import":
-                        const {folderpath,filename,basename:_,extension:__} = splitFolderAndFilename(filepath);
-                        filepath = getNewUniqueFilepath(this.app.vault, filename, folderpath);
                         break;
                         case "Overwrite":
                           await this.app.vault.modifyBinary(maybeFile, fileToImport);
@@ -403,7 +400,13 @@ export class DropManager {
                         return false;
                     }
                   }
-                  const file = await this.app.vault.createBinary(filepath, fileToImport)
+                  const file = await importFileToVault(
+                    this.app,
+                    droppedFilename,
+                    fileToImport,
+                    this.view.file,
+                    this.view
+                  );
                   const ea = getEA(this.view) as ExcalidrawAutomate;
                   await insertImageToView(ea, pos, file);
                   ea.destroy();
@@ -412,8 +415,13 @@ export class DropManager {
                 return true; //excalidarw to continue processing
               } else {
                 (async () => {
-                  const {folder:_, filepath} = await getAttachmentsFolderAndFilePath(this.app, this.file.path,event.dataTransfer.files[i].name);
-                  const file = await this.app.vault.createBinary(filepath, await event.dataTransfer.files[i].arrayBuffer());
+                  const file = await importFileToVault(
+                    this.app,
+                    event.dataTransfer.files[i].name,
+                    await event.dataTransfer.files[i].arrayBuffer(),
+                    this.view.file,
+                    this.view,
+                  );
                   const modal = new UniversalInsertFileModal(this.plugin, this.view);
                   modal.open(file, pos);
                 })();

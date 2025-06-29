@@ -6,7 +6,7 @@ import { changeThemeOfExcalidrawMD, ExcalidrawData, getMarkdownDrawingSection } 
 import ExcalidrawView, { getTextMode } from "src/view/ExcalidrawView";
 import ExcalidrawPlugin from "src/core/main";
 import { DEBUGGING } from "src/utils/debugHelper";
-import { checkAndCreateFolder, download, getIMGFilename, getLink, getListOfTemplateFiles, getNewUniqueFilepath } from "src/utils/fileUtils";
+import { checkAndCreateFolder, createFileAndAwaitMetacacheUpdate, download, getIMGFilename, getLink, getListOfTemplateFiles, getNewUniqueFilepath } from "src/utils/fileUtils";
 import { PaneTarget } from "src/utils/modifierkeyHelper";
 import { getExcalidrawViews, getNewOrAdjacentLeaf, isObsidianThemeDark, openLeaf } from "src/utils/obsidianUtils";
 import { errorlog, getExportTheme } from "src/utils/utils";
@@ -172,28 +172,71 @@ export class PluginFileManager {
        ? ""
        : theme + ".";
 
-      const imageRelativePath = getIMGFilename(
-        excalidrawRelativePath,
-        theme+this.settings.embedType.toLowerCase(),
-      );
-      const imageFullpath = getIMGFilename(
+      const exportExtension = theme+this.settings.embedType.toLowerCase();
+      let imageFullpath = getIMGFilename(
         file.path,
-        theme+this.settings.embedType.toLowerCase(),
+        exportExtension,
       );
      
+      if(this.plugin.ea?.onImageExportPathHook) {
+        try {
+          imageFullpath = this.plugin.ea.onImageExportPathHook({
+            exportFilepath: imageFullpath,
+            exportExtension,
+            excalidrawFile: file,
+            action: "export",
+          }) ?? imageFullpath;
+        } catch (e) {
+          errorlog({where: "FileManager.embedDrawing", fn: this.plugin.ea.onImageExportPathHook, error: e});
+        }
+      }
+
+      const createFile = async (path: string):Promise<TFile> => {
+        return await createFileAndAwaitMetacacheUpdate(this.app, path, 
+          this.settings.embedType === "SVG"
+            ? `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="0" height="0"></svg>`
+            : new Uint8Array([
+                0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG signature
+                0x00, 0x00, 0x00, 0x0D, // IHDR chunk length
+                0x49, 0x48, 0x44, 0x52, // IHDR
+                0x00, 0x00, 0x00, 0x01, // width: 1
+                0x00, 0x00, 0x00, 0x01, // height: 1
+                0x08, 0x06, 0x00, 0x00, 0x00, // bit depth: 8, color type: 6 (RGBA), compression: 0, filter: 0, interlace: 0
+                0x1F, 0x15, 0xC4, 0x89, // IHDR CRC
+                0x00, 0x00, 0x00, 0x0B, // IDAT chunk length
+                0x49, 0x44, 0x41, 0x54, // IDAT
+                0x78, 0x9C, 0x62, 0x00, 0x02, 0x00, 0x00, 0x05, 0x00, 0x01, 0x0D, // compressed data (1x1 transparent pixel)
+                0x0A, 0x2D, 0xB4, // IDAT CRC
+                0x00, 0x00, 0x00, 0x00, // IEND chunk length
+                0x49, 0x45, 0x4E, 0x44, // IEND
+                0xAE, 0x42, 0x60, 0x82  // IEND CRC
+              ]).buffer
+        );
+      }
+
+      let imgFile = this.app.vault.getFileByPath(imageFullpath);
+      if (!imgFile) {
+        imgFile = await createFile(imageFullpath);
+      }
+
+      const imageRelativePath = this.app.metadataCache.fileToLinktext(
+        imgFile,
+        activeView.file.path,
+        false,
+      );
+
       //will hold incorrect value if theme==="", however in that case it won't be used
       const otherTheme = theme === "dark." ? "light." : "dark.";
-      const otherImageRelativePath = theme === "" 
+      //if the hook tinkers with the extension, then I cannot predict the other theme's extension
+      //it would become a messy heuristic to try to guess the other theme's extension
+      const otherImageRelativePath = ((theme === "") || !imageRelativePath.endsWith(exportExtension))
         ? null
-        : getIMGFilename(
-            excalidrawRelativePath,
-            otherTheme+this.settings.embedType.toLowerCase(),
-          );
+        : (imageRelativePath.substring(0, imageRelativePath.lastIndexOf(exportExtension)) + otherTheme+this.settings.embedType.toLowerCase());
 
-      const imgFile = this.app.vault.getAbstractFileByPath(imageFullpath);
-      if (!imgFile) {
-        await this.app.vault.create(imageFullpath, "");
-        await sleep(200); //wait for metadata cache to update
+      if(otherImageRelativePath) {
+        await createFile(
+          imgFile.path.substring(0, imgFile.path.lastIndexOf(exportExtension)) + otherTheme+this.settings.embedType.toLowerCase()
+        );
       }
 
       const inclCom = this.settings.embedMarkdownCommentLinks;
@@ -370,14 +413,38 @@ export class PluginFileManager {
     if (!this.settings.keepInSync) {
       return;
     }
-    [EXPORT_TYPES, "excalidraw"].flat().forEach(async (ext: string) => {
-      const oldIMGpath = getIMGFilename(oldPath, ext);
-      const imgFile = this.app.vault.getAbstractFileByPath(
-        normalizePath(oldIMGpath),
+    const imgMap = new Map<string, {oldImgPath: string, newImgPath: string}>();
+    [EXPORT_TYPES, "excalidraw"].flat().forEach(ext => {
+      let oldImgPath = getIMGFilename(oldPath, ext);
+      let newImgPath = getIMGFilename(file.path, ext);
+      if(this.plugin.ea?.onImageExportPathHook) {
+        try {
+          oldImgPath = this.plugin.ea.onImageExportPathHook({
+            exportFilepath: oldImgPath,
+            exportExtension: ext,
+            excalidrawFile: file,
+            oldExcalidrawPath: oldPath,
+            action: "move",
+          }) ?? oldImgPath;
+          newImgPath = this.plugin.ea.onImageExportPathHook({
+            exportFilepath: newImgPath,
+            exportExtension: ext,
+            excalidrawFile: file,
+            action: "export",
+          }) ?? newImgPath;
+        } catch (e) {
+          errorlog({where: "FileManager.renameEventHandler", fn: this.plugin.ea.onImageExportPathHook, error: e});
+        }
+      }
+      imgMap.set(ext, { oldImgPath, newImgPath });
+    });
+
+    imgMap.forEach((path, ext) => {
+      const imgFile = this.app.vault.getFileByPath(
+        normalizePath(path.oldImgPath),
       );
-      if (imgFile && imgFile instanceof TFile) {
-        const newIMGpath = getIMGFilename(file.path, ext);
-        await this.app.fileManager.renameFile(imgFile, newIMGpath);
+      if (imgFile) {
+        this.app.fileManager.renameFile(imgFile, normalizePath(path.newImgPath));
       }
     });
   }
@@ -473,7 +540,7 @@ export class PluginFileManager {
     //close excalidraw view where this file is open
     const excalidrawViews = getExcalidrawViews(this.app);
     for (const excalidrawView of excalidrawViews) {
-      if (excalidrawView.file.path === file.path) {
+      if (file?.path && excalidrawView?.file?.path === file.path) {
         await excalidrawView.leaf.setViewState({
           type: VIEW_TYPE_EXCALIDRAW,
           state: { file: null },
@@ -483,14 +550,31 @@ export class PluginFileManager {
 
     //delete PNG and SVG files as well
     if (this.settings.keepInSync) {
+      const imgMap = new Map<string, string>();
+      [EXPORT_TYPES, "excalidraw"].flat().forEach(ext => {
+        let imgPath = getIMGFilename(file.path, ext);
+        if(this.plugin.ea?.onImageExportPathHook) {
+          try {
+            imgPath = this.plugin.ea.onImageExportPathHook({
+              exportFilepath: imgPath,
+              exportExtension: ext,
+              excalidrawFile: file,
+              action: "delete",
+            }) ?? imgPath;
+          } catch (e) {
+            errorlog({where: "FileManager.deleteEventHandler", fn: this.plugin.ea.onImageExportPathHook, error: e});
+          }
+        }
+        imgMap.set(ext, imgPath);
+      });
+      
       window.setTimeout(() => {
-        [EXPORT_TYPES, "excalidraw"].flat().forEach(async (ext: string) => {
-          const imgPath = getIMGFilename(file.path, ext);
-          const imgFile = this.app.vault.getAbstractFileByPath(
+        imgMap.forEach((imgPath: string, ext: string) => {        
+          const imgFile = this.app.vault.getFileByPath(
             normalizePath(imgPath),
           );
-          if (imgFile && imgFile instanceof TFile) {
-            await this.app.vault.delete(imgFile);
+          if (imgFile) {
+            this.app.vault.delete(imgFile);
           }
         });
       }, 500);

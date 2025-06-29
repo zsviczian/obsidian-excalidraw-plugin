@@ -52,11 +52,10 @@ import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "..
 import { DEBUGGING, debug } from "../utils/debugHelper";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { updateElementIdsInScene } from "../utils/excalidrawSceneUtils";
-import { checkAndCreateFolder, getNewUniqueFilepath, splitFolderAndFilename } from "../utils/fileUtils";
+import {  importFileToVault } from "../utils/fileUtils";
 import { t } from "../lang/helpers";
 import { displayFontMessage } from "../utils/excalidrawViewUtils";
 import { getPDFRect } from "../utils/PDFUtils";
-import { create } from "domain";
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles };
 
@@ -1547,37 +1546,15 @@ export class ExcalidrawData {
       }
     }
 
-    let hookFilepath:string;
-    const ea = this.view?.getHookServer();
-    if(ea?.onImageFilePathHook) {
-      hookFilepath = ea.onImageFilePathHook({
-        currentImageName: fname,
-        drawingFilePath: this.view?.file?.path,
-      })
-    }
-
-    let filepath:string;
-    if(hookFilepath) {
-      const {folderpath, filename} = splitFolderAndFilename(hookFilepath);
-      await checkAndCreateFolder(folderpath);
-      filepath = getNewUniqueFilepath(this.app.vault,filename,folderpath);
-    } else {
-      const x = await getAttachmentsFolderAndFilePath(this.app, this.file.path, fname);
-      filepath = getNewUniqueFilepath(this.app.vault,fname,x.folder);
-    }
-
     const arrayBuffer = await getBinaryFileFromDataURL(dataURL);
     if(!arrayBuffer) return null;
 
-    const file = await this.app.vault.createBinary(
-      filepath,
-      arrayBuffer,
-    );
+    const file = await importFileToVault(this.app, fname, arrayBuffer, this.file, this.view);
 
     const embeddedFile = new EmbeddedFile(
       this.plugin,
       this.file.path,
-      filepath,
+      file.path,
     );
     
     embeddedFile.setImage({

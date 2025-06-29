@@ -456,12 +456,16 @@ export const updateElementLinksToObsidianLinks = ({elements, hostFile}:{
       }
       let link = EXCALIDRAW_PLUGIN.app.getObsidianUrl(file);
       if(window.ExcalidrawAutomate?.onUpdateElementLinkForExportHook) {
-        link = window.ExcalidrawAutomate.onUpdateElementLinkForExportHook({
-          originalLink: el.link,
-          obsidianLink: link,
-          linkedFile: file,
-          hostFile: hostFile
-       });
+        try {
+          link = window.ExcalidrawAutomate.onUpdateElementLinkForExportHook({
+            originalLink: el.link,
+            obsidianLink: link,
+            linkedFile: file,
+            hostFile: hostFile
+          }) ?? link;
+        } catch (e) {
+          errorlog({where: "excalidrawAutomateUtils.updateElementLinksToObsidianLinks", fn: window.ExcalidrawAutomate.onUpdateElementLinkForExportHook, error: e});
+        }
       }
       const newElement: Mutable<ExcalidrawElement> = cloneElement(el);
       newElement.link = link;

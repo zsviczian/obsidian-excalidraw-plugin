@@ -18,6 +18,7 @@ import { DynamicStyle, GridSettings } from "src/types/types";
 import { PreviewImageType } from "src/types/utilTypes";
 import { setDynamicStyle } from "src/utils/dynamicStyling";
 import {
+  createOrOverwriteFile,
   getDrawingFilename,
   getEmbedFilename,
 } from "src/utils/fileUtils";
@@ -43,7 +44,6 @@ import { HotkeyEditor } from "src/shared/Dialogs/HotkeyEditor";
 import { getExcalidrawViews } from "src/utils/obsidianUtils";
 import { createSliderWithText } from "src/utils/sliderUtils";
 import { PDFExportSettingsComponent, PDFExportSettings } from "src/shared/Dialogs/PDFExportSettingsComponent";
-import de from "src/lang/locale/de";
 
 export interface ExcalidrawSettings {
   disableDoubleClickTextEditing: boolean;
@@ -2914,7 +2914,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               : this.plugin.settings.startupScriptPath + ".md");
             let f = this.app.vault.getAbstractFileByPath(startupPath);
             if(!f) {
-              f = await this.app.vault.create(startupPath, startupScript());  
+              f = await createOrOverwriteFile(this.app, startupPath, startupScript());
             }
             startupScriptButton.setButtonText(t("STARTUP_SCRIPT_BUTTON_OPEN"));
             this.app.workspace.openLinkText(f.path,"",true);

@@ -966,6 +966,41 @@ export function hyperlinkIsImage (data: string):boolean {
   return IMAGE_TYPES.contains(corelink.substring(corelink.lastIndexOf(".")+1));
 }
 
+export function getFilePathFromObsidianURL (data: string): string {
+  if(!data) return null;
+  if(!data.startsWith("obsidian://")) return null;
+  
+  try {
+    const url = new URL(data);
+    const fileParam = url.searchParams.get("file");
+    if(!fileParam) return null;
+    
+    return decodeURIComponent(fileParam);
+  } catch {
+    return null;
+  }
+}
+
+export function obsidianURLIsImage (data: string):boolean {
+  if(!data) return false;
+  if(!data.startsWith("obsidian://")) return false;
+  
+  try {
+    const url = new URL(data);
+    const fileParam = url.searchParams.get("file");
+    if(!fileParam) return false;
+    
+    const decodedFile = decodeURIComponent(fileParam);
+    const lastDotIndex = decodedFile.lastIndexOf(".");
+    if(lastDotIndex === -1) return false;
+    
+    const extension = decodedFile.substring(lastDotIndex + 1);
+    return IMAGE_TYPES.contains(extension);
+  } catch {
+    return false;
+  }
+}
+
 export function hyperlinkIsYouTubeLink (link:string): boolean { 
   return isHyperLink(link) &&
   (link.startsWith("https://youtu.be") || link.startsWith("https://www.youtube.com") || link.startsWith("https://youtube.com") || link.startsWith("https//www.youtu.be")) &&

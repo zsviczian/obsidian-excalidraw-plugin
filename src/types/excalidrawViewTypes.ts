@@ -22,6 +22,13 @@ export interface EmbeddableLeafRef {
   editNode?: Function;
 }
 
+export interface AutoexportConfig {
+  png: boolean; // Whether to auto-export to PNG
+  svg: boolean; // Whether to auto-export to SVG
+  excalidraw: boolean; // Whether to auto-export to Excalidraw format
+  theme: "light" | "dark" | "both"; // The theme to use for the export
+}
+
 export interface ViewSemaphores {
   warnAboutLinearElementLinkClick: boolean;
   //flag to prevent overwriting the changes the user makes in an embeddable view editing the back side of the drawing
