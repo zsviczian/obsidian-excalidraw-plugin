@@ -158,6 +158,8 @@ export default {
   CONVERT_FILE: "转换为新格式",
   BACKUP_AVAILABLE: "加载绘图文件时出错，可能是由于 Obsidian 在上次保存时意外退出了（手机上更容易发生这种意外）。<br><br><b>好消息：</b>这台设备上存在备份。您是否想要恢复本设备上的备份？<br><br>（我建议您先尝试在最近使用过的其他设备上打开该绘图，以检查是否有更新的备份。）",
   BACKUP_RESTORED: "已恢复备份",
+  BACKUP_SAVE_AS_FILE : "此绘图为空，但有一个较大的备份可用。您是否想将其另存为新文件，并在新标签页中打开？" ,
+  DO_YOU_WANT_TO_DELETE_THE_BACKUP : "该备份[未]作为恢复文件保存到您的存储库中。您是否想删除备份数据？" ,
   CACHE_NOT_READY: "抱歉，加载绘图文件时出错。<br><br><mark>现在有耐心，将来更省心。</mark><br><br>该插件有备份机制，但您似乎刚刚打开 Obsidian，需要等待一分钟或更长的时间来读取缓存。缓存读取完毕时，您将会在右上角收到提示。<br><br>请点击 OK 并耐心等待缓存，或者选择点击取消后手动修复你的文件。<br>",
   OBSIDIAN_TOOLS_PANEL: "Obsidian 工具面板",
   ERROR_SAVING_IMAGE: "获取图像时发生未知错误。可能是由于某种原因，图像不可用或拒绝了 Obsidian 的获取请求。",
