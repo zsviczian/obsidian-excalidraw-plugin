@@ -1,7 +1,6 @@
 import {
   TextFileView,
   WorkspaceLeaf,
-  normalizePath,
   TFile,
   WorkspaceItem,
   Notice,
@@ -113,7 +112,7 @@ import {
 } from "../utils/utils";
 import { cleanBlockRef, cleanSectionHeading, closeLeafView, getActivePDFPageNumberFromPDFView, getAttachmentsFolderAndFilePath, getLeaf, getParentOfClass, obsidianPDFQuoteWithRef, openLeaf, setExcalidrawView } from "../utils/obsidianUtils";
 import { splitFolderAndFilename } from "../utils/fileUtils";
-import { ConfirmationPrompt, GenericInputPrompt, NewFileActions, Prompt, linkPrompt } from "../shared/Dialogs/Prompt";
+import { GenericInputPrompt, MultiOptionConfirmationPrompt, NewFileActions, Prompt, linkPrompt } from "../shared/Dialogs/Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
 import { updateEquation } from "../shared/LaTeX";
 import {
@@ -156,6 +155,7 @@ import { ImageInfo } from "src/types/excalidrawAutomateTypes";
 import { exportPNG, exportPNGToClipboard, exportSVG, exportToPDF, getMarginValue, getPageDimensions, PageOrientation, PageSize } from "src/utils/exportUtils";
 import { FrameRenderingOptions } from "src/types/utilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
+import { Backpack } from "lucide-react";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -2429,7 +2429,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             while (!imageCache.isReady() && confirmation) {
               const message = `You've been now waiting for <b>${Math.round((Date.now()-timestamp)/1000)}</b> seconds. `
               imageCache.initializationNotice = true;
-              const confirmationPrompt = new ConfirmationPrompt(plugin,
+              const confirmationPrompt = new MultiOptionConfirmationPrompt(plugin,
                 `${counter>0
                   ? counter%4 === 0
                     ? message + "The CACHE is still loading.<br><br>"
@@ -2455,7 +2455,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
               );
               return;
             }
-            const confirmationPrompt = new ConfirmationPrompt(plugin,t("BACKUP_AVAILABLE"));
+            const confirmationPrompt = new MultiOptionConfirmationPrompt(plugin,t("BACKUP_AVAILABLE"));
             confirmationPrompt.waitForClose.then(async (confirmed) => {
               if (confirmed) {
                 await this.app.vault.modify(file, drawingBAK);
@@ -2471,23 +2471,30 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         }
       }
 
-      if(this.excalidrawData.scene && this.excalidrawData.scene.elements && this.excalidrawData.scene.elements.length === 0) {
+      if(imageCache.isReady() && this.excalidrawData.scene && this.excalidrawData.scene.elements && this.excalidrawData.scene.elements.length === 0) {
         const backup = await imageCache.getBAKFromCache(this.file.path);
         if(backup && backup.length > data.length) {
-          const confirmationPrompt = new ConfirmationPrompt(this.plugin,t("BACKUP_SAVE_AS_FILE"));
-          const confirmationResult = await confirmationPrompt.waitForClose;
-          if(confirmationResult) {
-            const path = getNewUniqueFilepath(this.app.vault, `${this.file.basename}.restored.${this.file.extension}`, this.file.parent.path);
-            const backupFile = await createFileAndAwaitMetacacheUpdate(this.app,path, backup);
-            await imageCache.removeBAKFromCache(this.file.path);
-            this.plugin.openDrawing(backupFile,"new-tab");
-          } else {
-            const confirmationPrompt = new ConfirmationPrompt(this.plugin,t("DO_YOU_WANT_TO_DELETE_THE_BACKUP"));
-            const confirmationResult = await confirmationPrompt.waitForClose;
-            if(confirmationResult) {
+          setTimeout(async () => {
+            const confirmationPrompt = new MultiOptionConfirmationPrompt(
+                this.plugin,
+                t("BACKUP_SAVE_AS_FILE"),
+                new Map([
+                  [t("BACKUP_CANCEL"), 0],
+                  [t("BACKUP_DELETE"), 2],
+                  [t("BACKUP_SAVE"), 1],
+                ]),
+                t("BACKUP_SAVE"),
+              );
+            const result = await confirmationPrompt.waitForClose;
+            if(result === 1) {
+              const path = getNewUniqueFilepath(this.app.vault, `${this.file.basename}.restored.${this.file.extension}`, this.file.parent.path);
+              const backupFile = await createFileAndAwaitMetacacheUpdate(this.app,path, backup);
+              await imageCache.removeBAKFromCache(this.file.path);
+              this.plugin.openDrawing(backupFile,"new-tab");
+            } else if (result === 2) {
               await imageCache.removeBAKFromCache(this.file.path);
             }
-          }
+          });
         }
       }
       await this.loadDrawing(true);
@@ -3089,7 +3096,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     const ea = getEA(this) as ExcalidrawAutomate;
     const mimeType = getMimeType(getURLImageExtension(link));
     const dataURL = await getDataURLFromURL(link,mimeType,3000);
-    const fileId = await generateIdFromFile((new TextEncoder()).encode(dataURL as string))
+    const fileId = await generateIdFromFile((new TextEncoder()).encode(dataURL as string).buffer)
     const file = await this.excalidrawData.saveDataURLtoVault(dataURL,mimeType,fileId);
     if(!file) {
       new Notice(t("ERROR_SAVING_IMAGE"));

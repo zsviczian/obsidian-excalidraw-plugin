@@ -10,6 +10,7 @@ import { checkAndCreateFolder, createFileAndAwaitMetacacheUpdate, download, getI
 import { PaneTarget } from "src/utils/modifierkeyHelper";
 import { getExcalidrawViews, getNewOrAdjacentLeaf, isObsidianThemeDark, openLeaf } from "src/utils/obsidianUtils";
 import { errorlog, getExportTheme } from "src/utils/utils";
+import { imageCache } from "src/shared/ImageCache";
 
 export class PluginFileManager {
   private plugin: ExcalidrawPlugin;
@@ -410,6 +411,8 @@ export class PluginFileManager {
     if (!this.isExcalidrawFile(file)) {
       return;
     }
+    this.moveBAKFile(oldPath, file.path);
+    
     if (!this.settings.keepInSync) {
       return;
     }
@@ -520,6 +523,34 @@ export class PluginFileManager {
     });
   }
 
+  private async removeBAKFromCache(path: string) {
+    //this will not work in a short period when Obsidian is starting up, however
+    //because there is housekeeping in ImageCache at each startup to delete
+    //BAK files, this is not a major issue.
+    if(!imageCache.isReady() || !path) {
+      return;
+    }  
+    await imageCache.removeBAKFromCache(path);
+  }
+
+  private async moveBAKFile(oldPath: string, newPath: string) {
+    if(!oldPath || !newPath) {
+      return;
+    }
+    //this will not work in the short period when Obsidian is starting up, however
+    //this will only effect a very few files, statistically unlikely to cause
+    //much/any real user impact.
+    //a proper queuing feels overkill for this.
+    if(!imageCache.isReady()) {
+      return;
+    }
+    const backup = await imageCache.getBAKFromCache(oldPath);
+    if(backup) {
+      await imageCache.addBAKToCache(newPath, `${backup}`);
+      await this.removeBAKFromCache(oldPath);
+    }
+  }
+
   /**
    * watch file delete and delete corresponding .svg and .png
    * @param file 
@@ -547,6 +578,8 @@ export class PluginFileManager {
         });
       }
     }
+
+    this.removeBAKFromCache(file.path);
 
     //delete PNG and SVG files as well
     if (this.settings.keepInSync) {

@@ -47,7 +47,7 @@ import {
 } from "@zsviczian/excalidraw/types/element/src/types";
 import { BinaryFiles, DataURL, SceneData } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddedFile, MimeType } from "./EmbeddedFileLoader";
-import { ConfirmationPrompt } from "./Dialogs/Prompt";
+import { MultiOptionConfirmationPrompt } from "./Dialogs/Prompt";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "../utils/mermaidUtils";
 import { DEBUGGING, debug } from "../utils/debugHelper";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
@@ -792,7 +792,7 @@ export class ExcalidrawData {
 
     //once off migration of legacy scenes
     if(this.scene?.elements?.some((el:any)=>el.type==="iframe" && !el.customData)) {
-        const prompt = new ConfirmationPrompt(
+        const prompt = new MultiOptionConfirmationPrompt(
           this.plugin,
           "This file contains embedded frames " +
           "which will be migrated to a newer version for compatibility with " +

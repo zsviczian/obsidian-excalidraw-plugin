@@ -29,7 +29,7 @@ import {
   setLeftHandedMode,
 } from "src/utils/utils";
 import { imageCache } from "src/shared/ImageCache";
-import { ConfirmationPrompt } from "src/shared/Dialogs/Prompt";
+import { MultiOptionConfirmationPrompt } from "src/shared/Dialogs/Prompt";
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
 import { EmbeddalbeMDFileCustomDataSettingsComponent } from "src/shared/Dialogs/EmbeddableMDFileCustomDataSettingsComponent";
 import { startupScript } from "src/constants/starutpscript";
@@ -2086,7 +2086,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         button
           .setButtonText(t("BACKUP_CACHE_CLEAR"))
           .onClick(() => {
-            const confirmationPrompt = new ConfirmationPrompt(this.plugin,t("BACKUP_CACHE_CLEAR_CONFIRMATION"));
+            const confirmationPrompt = new MultiOptionConfirmationPrompt(this.plugin,t("BACKUP_CACHE_CLEAR_CONFIRMATION"));
             confirmationPrompt.waitForClose.then((confirmed) => {
               if (confirmed) {
                 imageCache.clearBackupCache();

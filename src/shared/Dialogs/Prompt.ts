@@ -854,17 +854,30 @@ export class NewFileActions extends Modal {
   }
 }
 
-export class ConfirmationPrompt extends Modal {
-  public waitForClose: Promise<boolean>;
-  private resolvePromise: (value: boolean) => void;
+export class MultiOptionConfirmationPrompt extends Modal {
+  public waitForClose: Promise<any>;
+  private resolvePromise: (value: any) => void;
   private rejectPromise: (reason?: any) => void;
-  private didConfirm: boolean = false;
+  private selectedValue: any = null;
   private readonly message: string;
+  private readonly buttons: Map<string, any>;
+  private ctaButtonLabel: string = null;
 
-  constructor(private plugin: ExcalidrawPlugin, message: string) {
+  constructor(private plugin: ExcalidrawPlugin, message: string, buttons?: Map<string, any>, ctaButtonLabel?: string) {
     super(plugin.app);
     this.message = message;
-    this.waitForClose = new Promise<boolean>((resolve, reject) => {
+    if (!buttons || buttons.size === 0) {
+      buttons = new Map<string, any>([
+        [t("PROMPT_BUTTON_CANCEL"), null],
+        [t("PROMPT_BUTTON_OK"), true],
+      ]);
+      if( !ctaButtonLabel) {
+        ctaButtonLabel = t("PROMPT_BUTTON_OK");
+      } 
+    }
+    this.ctaButtonLabel = ctaButtonLabel;
+    this.buttons = buttons;
+    this.waitForClose = new Promise<any>((resolve, reject) => {
       this.resolvePromise = resolve;
       this.rejectPromise = reject;
     });
@@ -884,14 +897,35 @@ export class ConfirmationPrompt extends Modal {
     const buttonContainer = this.contentEl.createDiv();
     buttonContainer.style.display = "flex";
     buttonContainer.style.justifyContent = "flex-end";
+    buttonContainer.style.flexWrap = "wrap";
+    
+    // Convert Map to Array for easier iteration
+    const buttonEntries = Array.from(this.buttons.entries());
 
-    const cancelButton = this.createButton(buttonContainer, t("PROMPT_BUTTON_CANCEL"), this.cancelClickCallback.bind(this));
-    cancelButton.buttonEl.style.marginRight = "0.5rem";
+    // Add buttons in reverse order (last button will be on the right)
+    let ctaButton: HTMLButtonElement = null;
+    buttonEntries.reverse().forEach(([buttonText, value], index) => {
+      const button = this.createButton(buttonContainer, buttonText, () => {
+        this.selectedValue = value;
+        this.close();
+      });
+      
+      if (buttonText === this.ctaButtonLabel) {
+        ctaButton = button.buttonEl;
+        button.setCta();
+      }
+      
+      if (index < buttonEntries.length - 1) {
+        button.buttonEl.style.marginRight = "0.5rem";
+      }
+    });
 
-    const confirmButton = this.createButton(buttonContainer, t("PROMPT_BUTTON_OK"), this.confirmClickCallback.bind(this));
-    confirmButton.buttonEl.style.marginRight = "0";
-
-    cancelButton.buttonEl.focus();
+    // Set focus on the first button (visually last)
+    if(this.ctaButtonLabel) {
+      if (ctaButton) {
+        ctaButton.focus();
+      }
+    }
   }
 
   private createButton(container: HTMLElement, text: string, callback: (evt: MouseEvent) => void) {
@@ -900,16 +934,6 @@ export class ConfirmationPrompt extends Modal {
     return button;
   }
 
-  private cancelClickCallback() {
-    this.didConfirm = false;
-    this.close();
-  };
-
-  private confirmClickCallback() {
-    this.didConfirm = true;
-    this.close();
-  };
-
   onOpen() {
     super.onOpen();
     this.contentEl.querySelector("button")?.focus();
@@ -917,11 +941,7 @@ export class ConfirmationPrompt extends Modal {
 
   onClose() {
     super.onClose();
-    if (!this.didConfirm) {
-      this.resolvePromise(false);
-    } else {
-      this.resolvePromise(true);
-    }
+    this.resolvePromise(this.selectedValue);
   }
 }
 
