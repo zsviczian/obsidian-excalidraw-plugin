@@ -921,8 +921,12 @@ FILENAME_HEAD: "Filename",
 
   //IFrameActionsMenu.tsx
   NARROW_TO_HEADING: "Narrow to heading...",
+  PIN_VIEW: "Pin view",
+  DO_NOT_PIN_VIEW: "Do not pin view",
   NARROW_TO_BLOCK: "Narrow to block...",
   SHOW_ENTIRE_FILE: "Show entire file",
+  SELECT_SECTION: "Select section from document",
+  SELECT_VIEW: "Select view from base",
   ZOOM_TO_FIT: "Zoom to fit",
   RELOAD: "Reload original link",
   OPEN_IN_BROWSER: "Open current link in browser",

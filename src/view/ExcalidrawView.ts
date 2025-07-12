@@ -1708,7 +1708,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         if(!this.excalidrawAPI || !this.excalidrawData.loaded || !this.isDirty()) {
           return;
         }
-        if((this.excalidrawAPI as ExcalidrawImperativeAPI).getAppState().activeTool.type !== "image") {
+        const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
+        const st = api.getAppState();
+        if(st.activeTool.type !== "image" && st.activeEmbeddable?.state !== "active") {
           this.forceSave(true);
         }
       };

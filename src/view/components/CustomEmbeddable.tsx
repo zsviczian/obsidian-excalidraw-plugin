@@ -9,6 +9,8 @@ import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
 import { processLinkText, patchMobileView, setFileToLocalGraph } from "src/utils/customEmbeddableUtils";
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
 
+const CANVAS_VIEWTYPES = new Set(["markdown", "bases"]);
+
 declare module "obsidian" {
   interface Workspace {
     floatingSplit: any;
@@ -223,7 +225,7 @@ function RenderObsidianView(
         if(viewType === "canvas") {
           leafRef.current.leaf.view.canvas?.setReadonly(true);
         }
-        if ((viewType === "markdown") && view.canvasNodeFactory.isInitialized()) {
+        if (CANVAS_VIEWTYPES.has(viewType) && view.canvasNodeFactory.isInitialized()) {
           setKeepOnTop();
           //I haven't found a better way of deciding if an .md file has its own view (e.g., kanban) or not
           //This runs only when the file is added, thus should not be a major performance issue
@@ -295,6 +297,22 @@ function RenderObsidianView(
       canvasNode?.style.setProperty("--background-primary", color);
       canvasNodeContainer?.style.setProperty("background-color", color);
     }
+    canvasNode?.style.setProperty("--bases-cards-container-background","var(--background-primary)");
+    canvasNode?.style.setProperty("--bases-embed-border-color","var(--background-modifier-border)");
+    canvasNode?.style.setProperty("--bases-table-header-color","var(--text-muted)");
+    canvasNode?.style.setProperty("--bases-table-header-background","var(--background-primary)");
+    canvasNode?.style.setProperty("--bases-table-header-background-hover","var(--background-modifier-hover)");
+    canvasNode?.style.setProperty("--bases-table-header-sort-mask","linear-gradient(to left, transparent var(--size-4-6), black var(--size-4-6))");
+    canvasNode?.style.setProperty("--bases-table-border-color","var(--table-border-color)");
+    canvasNode?.style.setProperty("--bases-table-row-background-hover","var(--table-row-background-hover)");
+    canvasNode?.style.setProperty("--bases-table-cell-shadow-active","0 0 0 2px var(--interactive-accent)");
+    canvasNode?.style.setProperty("--bases-table-cell-background-active","var(--background-primary)");
+    canvasNode?.style.setProperty("--bases-table-cell-background-disabled","var(--background-primary-alt)");
+    canvasNode?.style.setProperty("--bases-cards-container-background","var(--background-primary)");
+    canvasNode?.style.setProperty("--bases-cards-background","var(--background-primary)");
+    canvasNode?.style.setProperty("--bases-cards-cover-background","var(--background-primary-alt)");
+    canvasNode?.style.setProperty("--bases-cards-shadow","0 0 0 1px var(--background-modifier-border)");
+    canvasNode?.style.setProperty("--bases-cards-shadow-hover","0 0 0 1px var(--background-modifier-border-hover)");
 
     if(mdProps.borderMatchElement) {
       const opacity = (mdProps?.borderOpacity ?? 50)/100;

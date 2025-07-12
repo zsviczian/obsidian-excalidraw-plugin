@@ -17,6 +17,15 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.13.1":`
+## New
+- Support for Obsidian bases as embeddables in Excalidraw.
+  - **Note:** The feature is only available to Insiders who have Obsidian 1.9.4 or later installed.
+  - If your base includes multiple views you can pin the desired view similar to filtering to a section (click top left # button; \`[[my.base|my view]]\`).
+
+## Fixed
+- Cannot type in embedded web forms. In certain cases, typing within these embeds would trigger Excalidraw hotkeys instead of interacting with the embedded content. [#2403](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2403)
+`,
 "2.13.0":`
 <div class="excalidraw-videoWrapper"><div>
 <iframe src="https://www.youtube.com/embed/QzhyQb4JF3Q" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

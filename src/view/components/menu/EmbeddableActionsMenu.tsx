@@ -70,6 +70,28 @@ export class EmbeddableMenu {
     }, 5000);
   };
 
+  private async actionBaseViewSelection (file: TFile, subpath: string, element: ExcalidrawEmbeddableElement) {
+    this.view.updateScene({appState: {activeEmbeddable: null}, captureUpdate: CaptureUpdateAction.NEVER});
+    const views = Array.from(
+      (await this.view.app.vault.read(file)).matchAll(/\s*name\: (.*)$/gm)
+    ).map(x=>x?.[1]);
+    let values, display;
+    values = [""].concat(
+      views.map((b: string) => `#${cleanSectionHeading(b)}`)
+    );
+    display = [t("DO_NOT_PIN_VIEW")].concat(
+      views.map((b: string) => b)
+    );
+    
+    const newSubpath = await ScriptEngine.suggester(
+      this.view.app, display, values, t("SELECT_VIEW")
+    );
+    if(!newSubpath && newSubpath!=="") return;
+    if (newSubpath !== subpath) {
+      this.updateElement(newSubpath, element, file);
+    }
+  }
+
   private async actionMarkdownSelection (file: TFile, isExcalidrawFile: boolean, subpath: string, element: ExcalidrawEmbeddableElement) {
     this.view.updateScene({appState: {activeEmbeddable: null}, captureUpdate: CaptureUpdateAction.NEVER});
     const sections = (await this.view.app.metadataCache.blockCache
@@ -89,7 +111,7 @@ export class EmbeddableMenu {
       );
     }
     const newSubpath = await ScriptEngine.suggester(
-      this.view.app, display, values, "Select section from document"
+      this.view.app, display, values, t("SELECT_SECTION")
     );
     if(!newSubpath && newSubpath!=="") return;
     if (newSubpath !== subpath) {
@@ -110,7 +132,7 @@ export class EmbeddableMenu {
       paragraphs.map((b: any) => `${b.node?.id ? `#^${b.node.id}: ` : ``}${b.display.trim()}`));
 
     const selectedBlock = await ScriptEngine.suggester(
-      this.view.app, display, values, "Select section from document"
+      this.view.app, display, values, t("SELECT_SECTION")
     );
     if(!selectedBlock) return;
 
@@ -212,6 +234,7 @@ export class EmbeddableMenu {
         const { subpath, file } = processLinkText(link, view);
         if(!file) return;
         const isMD = file.extension==="md";
+        const isBase = file.extension==="base";
         const isExcalidrawFile = view.plugin.isExcalidrawFile(file);
         const isPDF = file.extension==="pdf";
         const { x, y } = sceneCoordsToViewportCoords( { sceneX: element.x, sceneY: element.y }, appState);
@@ -238,6 +261,14 @@ export class EmbeddableMenu {
                 display: "block",
               }}
             >
+              {isBase && (
+                <ActionButton
+                  key={"MarkdownSection"}
+                  title={t("PIN_VIEW")}
+                  action={async () => this.actionBaseViewSelection(file, subpath, element)}
+                  icon={ICONS.ZoomToSection}
+                />
+              )}
               {isMD && (
                 <ActionButton
                   key={"MarkdownSection"}
