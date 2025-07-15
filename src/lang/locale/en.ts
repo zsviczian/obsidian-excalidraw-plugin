@@ -158,7 +158,7 @@ export default {
   CONVERT_FILE: "Convert to new format",
   BACKUP_AVAILABLE: "We encountered an error while loading your drawing. This might have occurred if Obsidian unexpectedly closed during a save operation. For example, if you accidentally closed Obsidian on your mobile device while saving.<br><br><b>GOOD NEWS:</b> Fortunately, a local backup is available. However, please note that if you last modified this drawing on a different device (e.g., tablet) and you are now on your desktop, that other device likely has a more recent backup.<br><br>I recommend trying to open the drawing on your other device first and restore the backup from its local storage.<br><br>Would you like to load the backup?",
   BACKUP_RESTORED: "Backup restored",
-  BACKUP_SAVE_AS_FILE: "This drawing is empty. A non-empty backup is avalable. Would you like to resture it as a new file and open it in a new tab?",
+  BACKUP_SAVE_AS_FILE: "This drawing is empty. A non-empty backup is available. Would you like to restore it as a new file and open it in a new tab?",
   BACKUP_SAVE: "Restore",
   BACKUP_DELETE: "Delete Backup",
   BACKUP_CANCEL: "Cancel",  CACHE_NOT_READY: "I apologize for the inconvenience, but an error occurred while loading your file.<br><br><mark>Having a little patience can save you a lot of time...</mark><br><br>The plugin has a backup cache, but it appears that you have just started Obsidian. Initializing the Backup Cache may take some time, usually up to a minute or more depending on your device's performance. You will receive a notification in the top right corner when the cache initialization is complete.<br><br>Please press OK to attempt loading the file again and check if the cache has finished initializing. If you see a completely empty file behind this message, I recommend waiting until the backup cache is ready before proceeding. Alternatively, you can choose Cancel to manually correct your file.<br>",
@@ -209,7 +209,7 @@ export default {
   CROP_SUFFIX_NAME: "Crop file suffix",
   CROP_SUFFIX_DESC:
     "The last part of the filename for new drawings created when cropping an image. " +
-    "Leave empty if you don't need a sufix.",
+    "Leave empty if you don't need a suffix.",
   CROP_PREFIX_NAME: "Crop file prefix",
   CROP_PREFIX_DESC:
     "The first part of the filename for new drawings created when cropping an image. " +
@@ -224,7 +224,7 @@ export default {
     "Leave empty if you don't need a prefix.",
   ANNOTATE_PRESERVE_SIZE_NAME: "Preserve image size when annotating",
   ANNOTATE_PRESERVE_SIZE_DESC:
-    "When annotating an image in markdown the replacment image link will include the width of the original image.",
+    "When annotating an image in markdown the replacement image link will include the width of the original image.",
   CROP_FOLDER_NAME: "Crop file folder (CaSE senSItive!)",
   CROP_FOLDER_DESC:
     "Default location for new drawings created when cropping an image. If empty, drawings will be created following the Vault attachments settings.",
@@ -244,7 +244,7 @@ export default {
     "Template.md, the setting would be: Excalidraw/Template.md (or just Excalidraw/Template - you may omit the .md file extension). " +
     "If you are using Excalidraw in compatibility mode, then your template must be a legacy Excalidraw file as well " +
     "such as Excalidraw/Template.excalidraw. <br><b>Template Folder:</b> You can also set a folder as your template. " +
-    "In this case you will be prompted which tempalte to use when creating a new drawing.<br>" +
+    "In this case you will be prompted which template to use when creating a new drawing.<br>" +
     "<b>Pro Tip:</b> If you are using the Obsidian Templater plugin, you can add Templater code to your different Excalidraw " +
     "templates to automate configuration of your drawings.",
   SCRIPT_FOLDER_NAME: "Excalidraw Automate script folder (CASE SeNSitiVE!)",
@@ -356,7 +356,7 @@ FILENAME_HEAD: "Filename",
   LEFTHANDED_MODE_NAME: "Left-handed mode",
   LEFTHANDED_MODE_DESC:
     "Currently only has effect in tray-mode. If turned on, the tray will be on the right side." +
-    "<br><b><u>Toggle ON:</u></b> Left-handed mode.<br><b><u>Toggle OFF:</u></b> Right-handed moded",
+    "<br><b><u>Toggle ON:</u></b> Left-handed mode.<br><b><u>Toggle OFF:</u></b> Right-handed mode.",
   IFRAME_MATCH_THEME_NAME: "Markdown embeds to match Excalidraw theme",
   IFRAME_MATCH_THEME_DESC:
     "<b><u>Toggle ON:</u></b> Set this to true if for example you are using Obsidian in dark-mode but use excalidraw with a light background. " +
@@ -410,7 +410,7 @@ FILENAME_HEAD: "Filename",
     "⚠️ You must close and reopen the Excalidraw/markdown file for changes to take effect. ⚠️",
   HOTKEY_OVERRIDE_HEAD: "Hotkey overrides",
   HOTKEY_OVERRIDE_DESC: `Some of the Excalidraw hotkeys such as <code>${labelCTRL()}+Enter</code> to edit text or <code>${labelCTRL()}+K</code> to create an element link ` +
-    "conflict with Obsidian hotkey settings. The hotkey combinations you add below will override Obsidian's hotkey settings while useing Excalidraw, thus " +
+    "conflict with Obsidian hotkey settings. The hotkey combinations you add below will override Obsidian's hotkey settings while using Excalidraw, thus " +
     `you can add <code>${labelCTRL()}+G</code> if you want to default to Group Object in Excalidraw instead of opening Graph View.`,
   THEME_HEAD: "Theme and styling",
   ZOOM_HEAD: "Zoom",
@@ -545,7 +545,7 @@ FILENAME_HEAD: "Filename",
     "Use the <code>http://iframely.server.crestify.com/iframely?url=</code> to get title of page when dropping a link into Excalidraw",
   PDF_TO_IMAGE: "PDF to Image",
   PDF_TO_IMAGE_SCALE_NAME: "PDF to Image conversion scale",
-  PDF_TO_IMAGE_SCALE_DESC: "Sets the resolution of the image that is generated from the PDF page. Higher resolution will result in bigger images in memory and consequently a higher load on your system (slower performance), but sharper imagee. " +
+  PDF_TO_IMAGE_SCALE_DESC: "Sets the resolution of the image that is generated from the PDF page. Higher resolution will result in bigger images in memory and consequently a higher load on your system (slower performance), but sharper image. " +
     "Additionally, if you want to copy PDF pages (as images) to Excalidraw.com, the bigger image size may result in exceeding the 2MB limit on Excalidraw.com.",
   EMBED_TOEXCALIDRAW_HEAD: "Embed files into Excalidraw",
   EMBED_TOEXCALIDRAW_DESC: "In the Embed Files section of Excalidraw Settings, you can configure how various files are embedded into Excalidraw. This includes options for embedding interactive markdown files, PDFs, and markdown files as images.",
@@ -705,7 +705,7 @@ FILENAME_HEAD: "Filename",
   DUMMY_TEXT_ELEMENT_LINT_SUPPORT_NAME: "Linter compatibility",
   DUMMY_TEXT_ELEMENT_LINT_SUPPORT_DESC: "Excalidraw is sensitive to the file structure below <code># Excalidraw Data</code>. Automatic linting of documents can create errors in Excalidraw Data. " +
     "While I've made some effort to make the data loading resilient to " +
-    "lint changes, this solution is not foolproof.<br><mark>The best is to avoid liniting or otherwise automatically changing Excalidraw documents using different plugins.</mark><br>" +
+    "lint changes, this solution is not foolproof.<br><mark>The best is to avoid linting or otherwise automatically changing Excalidraw documents using different plugins.</mark><br>" +
     "Use this setting if for good reasons you have decided to ignore my recommendation and configured linting of Excalidraw files.<br> " +
     "The <code>## Text Elements</code> section is sensitive to empty lines. A common linting approach is to add an empty line after section headings. In case of Excalidraw this will break/change the first text element in your drawing. " +
     "To overcome this, you can enable this setting. When enabled, Excalidraw will add a dummy element to the beginning of <code>## Text Elements</code> that the linter can safely modify." ,
@@ -822,10 +822,10 @@ FILENAME_HEAD: "Filename",
     <strong>Note:</strong> If you're using Obsidian Sync and want to synchronize these font files across your devices, ensure that Obsidian Sync is set to synchronize "All other file types".`, 
   LOAD_CHINESE_FONTS_NAME: "Load Chinese fonts from file at startup",
   LOAD_JAPANESE_FONTS_NAME: "Load Japanese fonts from file at startup",
-  LOAD_KOREAN_FONTS_NAME: "Load Korean fonts frome file at startup",
+  LOAD_KOREAN_FONTS_NAME: "Load Korean fonts from file at startup",
   SCRIPT_SETTINGS_HEAD: "Settings for installed Scripts",
   SCRIPT_SETTINGS_DESC: "Some of the Excalidraw Automate Scripts include settings. Settings are organized by script. Settings will only become visible in this list after you have executed the newly downloaded script once.",
-  TASKBONE_HEAD: "Taskbone Optical Character Recogntion",
+  TASKBONE_HEAD: "Taskbone Optical Character Recognition",
   TASKBONE_DESC: "This is an experimental integration of optical character recognition into Excalidraw. Please note, that taskbone is an independent external service not provided by Excalidraw, nor the Excalidraw-Obsidian plugin project. " +
     "The OCR service will grab legible text from freedraw lines and embedded pictures on your canvas and place the recognized text in the frontmatter of your drawing as well as onto clipboard. " +
     "Having the text in the frontmatter will enable you to search in Obsidian for the text contents of these. " +
@@ -834,7 +834,7 @@ FILENAME_HEAD: "Filename",
   TASKBONE_ENABLE_DESC: "By enabling this service your agree to the Taskbone <a href='https://www.taskbone.com/legal/terms/' target='_blank'>Terms and Conditions</a> and the " +
     "<a href='https://www.taskbone.com/legal/privacy/' target='_blank'>Privacy Policy</a>.",
   TASKBONE_APIKEY_NAME: "Taskbone API Key",
-  TASKBONE_APIKEY_DESC: "Taskbone offers a free service with a reasonable number of scans per month. If you want to use this feature more frequently, or you want to supoprt " + 
+  TASKBONE_APIKEY_DESC: "Taskbone offers a free service with a reasonable number of scans per month. If you want to use this feature more frequently, or you want to support " + 
     "the developer of Taskbone (as you can imagine, there is no such thing as 'free', providing this awesome OCR service costs some money to the developer of Taskbone), you can " +
     "purchase a paid API key from <a href='https://www.taskbone.com/' target='_blank'>taskbone.com</a>. In case you have purchased a key, simply overwrite this auto generated free-tier API-key with your paid key.",
 
@@ -879,7 +879,7 @@ FILENAME_HEAD: "Filename",
 
   //ExcalidrawData.ts
   LOAD_FROM_BACKUP: "Excalidraw file was corrupted. Loading from backup file.",
-  FONT_LOAD_SLOW: "Loading Fonts...\n\n This is taking longer than expected. If this delay occurs regulary then you may download the fonts locally to your Vault. \n\n" +
+  FONT_LOAD_SLOW: "Loading Fonts...\n\n This is taking longer than expected. If this delay occurs regularly then you may download the fonts locally to your Vault. \n\n" +
     "(click=dismiss, right-click=Info)",
   FONT_INFO_TITLE: "Starting v2.5.3 fonts load from the Internet",
   FONT_INFO_DETAILED: `
