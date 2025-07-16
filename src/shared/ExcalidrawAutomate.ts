@@ -88,6 +88,7 @@ import { exportToPDF, getMarginValue, getPageDimensions, PageDimensions, PageOri
 import { FrameRenderingOptions } from "src/types/utilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
 import { AutoexportConfig } from "src/types/excalidrawViewTypes";
+import { FloatingModal } from "./Dialogs/FloatingModal";
 
 extendPlugins([
   HarmonyPlugin,
@@ -169,6 +170,15 @@ export class ExcalidrawAutomate {
   get obsidian() {
     return obsidian_module;
   };
+
+  /**
+   * This is a modified version of the Obsidian.Modal class
+   * that allows the modal to be dragged around the screen
+   * and that does not dim the background.
+   */
+  get FloatingModal() {
+    return FloatingModal;
+  }
 
   /**
    * Retrieves the laser pointer settings from the plugin.

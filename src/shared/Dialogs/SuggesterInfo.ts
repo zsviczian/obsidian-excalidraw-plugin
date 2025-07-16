@@ -32,6 +32,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "FloatingModal",
+    code: null,
+    desc: "A modified version of the Obsidian.Modal class that allows the modal to be dragged around the screen and that does not dim the background.",
+    after: "",
+  },
+  {
     field: "elementsDict",
     code: null,
     desc: "The {} dictionary object, contains the ExcalidrawElements currently edited in Automate indexed by el.id",

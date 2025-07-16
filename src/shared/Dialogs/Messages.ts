@@ -17,6 +17,11 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.13.2":`
+## New
+- Excalidraw now properly supports drag and drop of obsidian links from Bases.
+- ExcalidrawAutomate exposes a new class: \`FloatingModal\`. This is a modified version of the Obsidian.Modal class that allows the modal to be dragged around the screen and that does not dim the background. You can use it to create custom dialogs that behave like Obsidian modals but with more flexibility.
+`,
 "2.13.1":`
 ## New
 - Support for Obsidian bases as embeddables in Excalidraw.

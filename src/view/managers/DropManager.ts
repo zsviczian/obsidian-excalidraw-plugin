@@ -134,6 +134,7 @@ export class DropManager {
     // Obsidian internal drag event
     //---------------------------------------------------------------------------------
     switch (draggable?.type) {
+      case "link":
       case "file":
         if (!onDropHook("file", [draggable.file], null)) {
           const file:TFile = draggable.file;
