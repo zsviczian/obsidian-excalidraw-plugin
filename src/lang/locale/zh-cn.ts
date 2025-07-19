@@ -193,6 +193,22 @@ export default {
   SAVE_IS_TAKING_VERY_LONG: "为了更好的性能，请考虑将大型绘图拆分成几个较小的文件。",
 
   //settings.ts
+  LINKS_BUGS_ARIA: "在插件的 GitHub 页面报告错误和提交功能请求",
+  LINKS_BUGS: "报告错误",
+  LINKS_YT_ARIA: "访问我的 YouTube 频道学习视觉思维和 Excalidraw",
+  LINKS_YT: "在 YouTube 学习",
+  LINKS_DISCORD_ARIA: "加入视觉思维研讨会 Discord 服务器",
+  LINKS_DISCORD: "加入社区",
+  LINKS_TWITTER: "关注我",
+  LINKS_VTW_ARIA: "了解视觉知识管理、Excalidraw、Obsidian、ExcaliBrain 等内容",
+  LINKS_VTW: "参加研讨会",
+  LINKS_BOOK_ARIA: "阅读我的视觉思维著作《Sketch Your Mind》",
+  LINKS_BOOK: "阅读书籍",
+
+  SETTINGS_COPIED_TO_CLIPBOARD: "Markdown 内容已复制到剪贴板",
+  SETTINGS_COPY_TO_CLIPBOARD: "复制为文本",
+  SETTINGS_COPY_TO_CLIPBOARD_ARIA: "将整个设置对话框以 Markdown 格式复制到剪贴板。适合与 ChatGPT 等工具配合使用进行设置搜索和理解。",
+
   RELEASE_NOTES_NAME: "显示更新说明",
   RELEASE_NOTES_DESC:
     "<b>开启：</b>每次更新本插件后，显示最新发行版本的说明。<br>" +
