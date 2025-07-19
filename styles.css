@@ -646,6 +646,7 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
   text-decoration: none; /* Remove underline from links */
   color: inherit; /* Inherit text color */
   text-align: center;
+  gap: 0.3em;
 }
 
 .excalidraw-settings-links-container a {

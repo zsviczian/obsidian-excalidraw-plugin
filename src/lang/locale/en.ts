@@ -193,6 +193,18 @@ export default {
   SAVE_IS_TAKING_VERY_LONG: "For better performance, consider splitting large drawings into several smaller files.",
 
   //settings.ts
+  LINKS_BUGS_ARIA: "Report bugs and raise feature requsts on the plugin's GitHub page",
+  LINKS_BUGS: "Report Bugs",
+  LINKS_YT_ARIA: "Check out my YouTube channel to learn about Visual Thinking and Excalidraw",
+  LINKS_YT: "Learn on YouTube",
+  LINKS_DISCORD_ARIA: "Join the Visual Thinking Workshop Discord Server",
+  LINKS_DISCORD: "Join the Community",
+  LINKS_TWITTER: "Follow me",
+  LINKS_VTW_ARIA: "Learn about Visual PKM, Excalidraw, Obsidian, ExcaliBrain and more",
+  LINKS_VTW: "Join a Workshop",
+  LINKS_BOOK_ARIA: "Read Sketch Your Mind, my book on Visual Thinking",
+  LINKS_BOOK: "Read the Book",
+
   RELEASE_NOTES_NAME: "Display Release Notes after update",
   RELEASE_NOTES_DESC:
     "<b><u>Toggle ON:</u></b> Display release notes each time you update Excalidraw to a newer version.<br>" +
