@@ -390,7 +390,7 @@ FILENAME_HEAD: "文件名",
   SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_DESC:
     "在触控笔模式下使用涂鸦功能会显示十字准星 <b><u>打开:</u></b> 显示 <b><u>关闭:</u></b> 隐藏<br>"+
     "效果取决于设备。十字准星通常在绘图板、MS Surface 上可见。但在 iOS 上不可见。",
-  SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_NAME: "在鼠标悬停预览时将 Excalidraw 文件渲染文图片",
+  SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_NAME: "在鼠标悬停预览时将 Excalidraw 文件渲染为图片",
   SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_DESC:
     "...即使文件具有 `<b>excalidraw-open-md: true</b>` frontmatter 属性。<br>" +
     "当此设置关闭且文件默认设置为以 md 格式打开时，悬停预览将显示文档的 Markdown 部分（背景笔记）。" +
