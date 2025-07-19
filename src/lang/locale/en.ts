@@ -205,6 +205,10 @@ export default {
   LINKS_BOOK_ARIA: "Read Sketch Your Mind, my book on Visual Thinking",
   LINKS_BOOK: "Read the Book",
 
+  SETTINGS_COPIED_TO_CLIPBOARD: "Markdown ready on clipboard",
+  SETTINGS_COPY_TO_CLIPBOARD: "Copy as Text",
+  SETTINGS_COPY_TO_CLIPBOARD_ARIA: "Copy the entire settings dialog to the clipboard as Markdown. Ideal for use with tools like ChatGPT to search and understand the settings.",
+
   RELEASE_NOTES_NAME: "Display Release Notes after update",
   RELEASE_NOTES_DESC:
     "<b><u>Toggle ON:</u></b> Display release notes each time you update Excalidraw to a newer version.<br>" +

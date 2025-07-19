@@ -3,8 +3,10 @@ import {
   ButtonComponent,
   DropdownComponent,
   getIcon,
+  htmlToMarkdown,
   Modifier,
   normalizePath,
+  Notice,
   PluginSettingTab,
   Setting,
   TextComponent,
@@ -660,6 +662,40 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       linksEl.createEl("a",{href, attr: { "aria-label": aria }}, (a)=> {
         a.innerHTML = icon + text;
       });
+    });
+
+    // ------------------------------------------------
+    // Search and Settings to Clipboard
+    // ------------------------------------------------
+
+    const settingActions = containerEl.createDiv("ex-settings-actions");
+    const settingActionsContainer = settingActions.createDiv("setting-item-description ex-setting-actions-container");
+    const clipboardActionEl = settingActionsContainer.createEl("a", {attr: { "aria-label": t("SETTINGS_COPY_TO_CLIPBOARD_ARIA") }});
+    clipboardActionEl.innerHTML = getIcon("clipboard-copy").outerHTML + t("SETTINGS_COPY_TO_CLIPBOARD");
+    clipboardActionEl.onClickEvent(e => {
+      // Get the full HTML content first
+      const fullHtml = containerEl.outerHTML;
+      
+      // Find the index of the first <hr> element
+      const startIndex = fullHtml.indexOf('<hr');
+      
+      // Extract HTML from the first <hr> element onwards
+      const html = startIndex > -1 ? fullHtml.substring(startIndex) : fullHtml;
+
+      function replaceHeading(html:string,level:number):string {
+        const re = new RegExp(`<summary class="excalidraw-setting-h${level}">([^<]+)<\/summary>`,"g");
+        return html.replaceAll(re,`<summary class="excalidraw-setting-h${level}"><h${level}>$1</h${level}></summary>`);
+      }
+
+      let x = replaceHeading(html,1);
+      x = replaceHeading(x,2);
+      x = replaceHeading(x,3);
+      x = replaceHeading(x,4);
+      x = x.replaceAll(/<div class="setting-item-name">([^<]+)<\/div>/g,"<h5>$1</h5>");
+
+      const md = htmlToMarkdown(x);
+      window.navigator.clipboard.writeText(md);
+      new Notice(t("SETTINGS_COPIED_TO_CLIPBOARD"));
     });
 
     // ------------------------------------------------
