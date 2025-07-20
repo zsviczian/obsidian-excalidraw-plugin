@@ -192,6 +192,14 @@ export default {
   SAVE_IS_TAKING_LONG: "Saving your previous file is taking a long time. Please wait...",
   SAVE_IS_TAKING_VERY_LONG: "For better performance, consider splitting large drawings into several smaller files.",
 
+  //ContentSearcher.ts
+  SEARCH_COPIED_TO_CLIPBOARD: "Markdown ready on clipboard",
+  SEARCH_COPY_TO_CLIPBOARD_ARIA: "Copy the entire dialog to the clipboard as Markdown. Ideal for use with tools like ChatGPT to search and understand.",
+  SEARCH_NEXT: "Next",
+  SEARCH_PREVIOUS: "Previous",
+
+
+
   //settings.ts
   LINKS_BUGS_ARIA: "Report bugs and raise feature requsts on the plugin's GitHub page",
   LINKS_BUGS: "Report Bugs",
@@ -204,10 +212,6 @@ export default {
   LINKS_VTW: "Join a Workshop",
   LINKS_BOOK_ARIA: "Read Sketch Your Mind, my book on Visual Thinking",
   LINKS_BOOK: "Read the Book",
-
-  SETTINGS_COPIED_TO_CLIPBOARD: "Markdown ready on clipboard",
-  SETTINGS_COPY_TO_CLIPBOARD: "Copy as Text",
-  SETTINGS_COPY_TO_CLIPBOARD_ARIA: "Copy the entire settings dialog to the clipboard as Markdown. Ideal for use with tools like ChatGPT to search and understand the settings.",
 
   RELEASE_NOTES_NAME: "Display Release Notes after update",
   RELEASE_NOTES_DESC:

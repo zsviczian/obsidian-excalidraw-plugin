@@ -431,25 +431,6 @@ div.excalidraw-draginfo {
   margin: auto;
 }
 
-.modal-content.excalidraw-scriptengine-install .search-bar-wrapper {
-  position: sticky;
-  top: 1rem;
-  margin-right: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  flex-wrap: nowrap;
-  z-index: 10;
-  background: var(--background-secondary);
-  padding: 0.5rem;
-  border-bottom: 1px solid var(--background-modifier-border);
-  float: right;
-  max-width: 28rem;
-}
-
-div.search-bar-wrapper input {
-  margin-right: -0.5rem;
-}
 
 .modal-content.excalidraw-scriptengine-install .hit-count {
   margin-left: 0.5em;
@@ -640,7 +621,7 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
   caret-color: var(--excalidraw-caret-color);
 }
 
-.excalidraw-settings-links-container, .ex-setting-actions-container {
+.excalidraw-settings-links-container {
   display: flex; /* Align SVG and text horizontally */
   align-items: center; /* Center SVG and text vertically */
   text-decoration: none; /* Remove underline from links */
@@ -649,13 +630,7 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
   gap: 0.3em;
 }
 
-.excalidraw-settings-links-container {
-  background-color: color-mix(in srgb, var(--color-base-100) 7%, transparent);
-  padding: 0.5em;
-}
-
-.excalidraw-settings-links-container a,
-.ex-setting-actions-container a {
+.excalidraw-settings-links-container a {
   display: flex; /* Align children horizontally */
   align-items: center; /* Center items vertically */
   text-align: left;
@@ -783,4 +758,97 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 .excalidraw-prompt-buttonbar-top  > div:last-child,
 .excalidraw-prompt-buttonbar-bottom > div:last-child {
   margin-left: auto;
+}
+
+.document-search-container {
+  display: flex;
+  flex-direction: column;
+  background: var(--background-secondary);
+  border-radius: 8px;
+  box-shadow: 0 1px 4px 0 rgba(0,0,0,0.10);
+  padding: 0.5em 0.8em;
+  margin-bottom: 2em;
+  min-width: 18rem;
+  position: sticky;
+  top: 1rem;
+  margin-right: 1rem;
+  margin-left: 1rem;
+}
+
+.document-search {
+  align-items: center;
+  max-width: none;
+}
+
+.search-input-container.document-search-input {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  background: var(--background-primary);
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  min-width: 0;
+}
+
+.search-input-container .clickable-icon {
+  display: flex;
+  align-items: center;
+  color: var(--text-faint);
+}
+
+.search-input-container input[type="text"] {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-normal);
+  font-size: 1em;
+  flex: 1 1 auto;
+  padding: 0.1em 2em;
+  margin: 0;
+}
+
+.document-search-count {
+  margin-left: 0.5em;
+  color: var(--text-faint);
+  font-size: 0.95em;
+  white-space: nowrap;
+  min-width: 3.5em;
+  text-align: right;
+}
+
+.document-search-buttons {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.document-search-button {
+  background: none;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  padding: 0.1em 0.2em;
+  margin: 0 1px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-faint);
+  transition: background 0.15s;
+  height: 2em;
+  width: 2em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.document-search-button:hover, .document-search-button:focus {
+  background: var(--background-modifier-hover);
+  color: var(--text-accent);
+}
+
+.document-search-button svg {
+  width: 1.3em;
+  height: 1.3em;
+  stroke: currentColor;
+  fill: none;
+  pointer-events: none;
 }

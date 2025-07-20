@@ -25,8 +25,10 @@ export class ReleaseNotes extends Modal {
   async onClose() {
     this.contentEl.empty();
     await this.plugin.loadSettings();
-    this.plugin.settings.previousRelease = PLUGIN_VERSION
-    await this.plugin.saveSettings();
+    if(this.plugin.settings.previousRelease !== PLUGIN_VERSION) {
+      this.plugin.settings.previousRelease = PLUGIN_VERSION;
+      await this.plugin.saveSettings();
+    }
   }
 
   async createForm() {
@@ -39,7 +41,8 @@ export class ReleaseNotes extends Modal {
           .slice(0, 10)
           .join("\n\n---\n")
       : FIRST_RUN;
-    await MarkdownRenderer.renderMarkdown(
+    await MarkdownRenderer.render(
+      this.app,
       message,
       this.contentEl,
       "",
