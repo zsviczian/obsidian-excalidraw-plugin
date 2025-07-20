@@ -154,7 +154,7 @@ export default {
     "Cambiar a modo BRUTO(RAW) (solo afecta elementos de texto con enlaces o transclusiones)",
   NOFILE: "Excalidraw (sin archivo)",
   COMPATIBILITY_MODE:
-    "Archivo *.excalidraw abierto en modo de compatibilidad. Convierte al nuevo formato para la funcionalidad completa del plugin.",
+    "Archivo *.excalidraw abierto en modo de compatibilidad. Convierte al nuevo formato para la funcionalidad completa del complemento.",
   CONVERT_FILE: "Convertir a nuevo formato",
   BACKUP_AVAILABLE: "Encontramos un error al cargar tu bosquejo. Esto pudo haber ocurrido si Obsidian se cerró inesperadamente durante una operación de guardado. Por ejemplo, si cerraste accidentalmente Obsidian en tu dispositivo móvil mientras guardabas.<br><br><b>BUENAS NOTICIAS:</b> Afortunadamente, hay una copia de seguridad local disponible. Sin embargo, ten en cuenta que si modificaste este bosquejo por última vez en un dispositivo diferente (ej. tablet) y ahora estás en tu computadora de escritorio, es probable que ese otro dispositivo tenga una copia de seguridad más reciente.<br><br>Recomiendo intentar abrir el bosquejo en tu otro dispositivo primero y restaurar la copia de seguridad desde su almacenamiento local.<br><br>¿Te gustaría cargar la copia de seguridad?",
   BACKUP_RESTORED: "Copia de seguridad restaurada",
@@ -162,7 +162,7 @@ export default {
   BACKUP_SAVE: "Restaurar",
   BACKUP_DELETE: "Eliminar copia de seguridad",
   BACKUP_CANCEL: "Cancelar",
-  CACHE_NOT_READY: "Disculpa las molestias, pero ocurrió un error al cargar tu archivo.<br><br><mark>Tener un poco de paciencia puede ahorrarte mucho tiempo...</mark><br><br>El plugin tiene una caché de respaldo, pero parece que acabas de iniciar Obsidian. La inicialización de la caché de respaldo puede tomar algún tiempo, generalmente hasta un minuto o más dependiendo del rendimiento de tu dispositivo. Recibirás una notificación en la esquina superior derecha cuando la inicialización de la caché esté completa.<br><br>Por favor, presiona OK para intentar cargar el archivo nuevamente y verificar si la caché ha terminado de inicializarse. Si ves un archivo completamente vacío detrás de este mensaje, te recomiendo esperar hasta que la caché de respaldo esté lista antes de continuar. Alternativamente, puedes elegir Cancelar para corregir tu archivo manualmente.<br>",
+  CACHE_NOT_READY: "Disculpa las molestias, pero ocurrió un error al cargar tu archivo.<br><br><mark>Tener un poco de paciencia puede ahorrarte mucho tiempo...</mark><br><br>El complemento tiene una caché de respaldo, pero parece que acabas de iniciar Obsidian. La inicialización de la caché de respaldo puede tomar algún tiempo, generalmente hasta un minuto o más dependiendo del rendimiento de tu dispositivo. Recibirás una notificación en la esquina superior derecha cuando la inicialización de la caché esté completa.<br><br>Por favor, presiona OK para intentar cargar el archivo nuevamente y verificar si la caché ha terminado de inicializarse. Si ves un archivo completamente vacío detrás de este mensaje, te recomiendo esperar hasta que la caché de respaldo esté lista antes de continuar. Alternativamente, puedes elegir Cancelar para corregir tu archivo manualmente.<br>",
   OBSIDIAN_TOOLS_PANEL: "Panel de herramientas de Obsidian",
   ERROR_SAVING_IMAGE: "Ocurrió un error desconocido al obtener la imagen. Podría ser que por alguna razón la imagen no esté disponible o rechazó la solicitud de descarga de Obsidian.",
   WARNING_PASTING_ELEMENT_AS_TEXT: "NO SE PERMITE PEGAR ELEMENTOS DE EXCALIDRAW COMO ELEMENTO DE TEXTO",
@@ -188,88 +188,88 @@ export default {
   WELCOME_LEARN_ARIA: "Aprende PKM Visual",
   WELCOME_LEARN_LINK: "Inscríbete en el Taller de Pensamiento Visual",
   WELCOME_DONATE_ARIA: "Dona para apoyar Excalidraw-Obsidian",
-  WELCOME_DONATE_LINK: 'Di "Gracias" y apoya el plugin.',
+  WELCOME_DONATE_LINK: 'Di "Gracias" y apoya el complemento.',
   SAVE_IS_TAKING_LONG: "Guardar tu archivo anterior está tomando mucho tiempo. Por favor espera...",
   SAVE_IS_TAKING_VERY_LONG: "Para un mejor rendimiento, considera dividir bosquejos grandes en varios archivos más pequeños.",
 
   //settings.ts
-  LINKS_BUGS_ARIA: "Report bugs and raise feature requsts on the plugin's GitHub page",
-  LINKS_BUGS: "Report Bugs",
-  LINKS_YT_ARIA: "Check out my YouTube channel to learn about Visual Thinking and Excalidraw",
-  LINKS_YT: "Learn on YouTube",
-  LINKS_DISCORD_ARIA: "Join the Visual Thinking Workshop Discord Server",
-  LINKS_DISCORD: "Join the Community",
-  LINKS_TWITTER: "Follow me",
-  LINKS_VTW_ARIA: "Learn about Visual PKM, Excalidraw, Obsidian, ExcaliBrain and more",
-  LINKS_VTW: "Join a Workshop",
-  LINKS_BOOK_ARIA: "Read Sketch Your Mind, my book on Visual Thinking",
-  LINKS_BOOK: "Read the Book",
+  LINKS_BUGS_ARIA: "Reporta errores y solicita nuevas funciones en la página de GitHub del complemento",
+  LINKS_BUGS: "Reportar Errores",
+  LINKS_YT_ARIA: "Visita mi canal de YouTube para aprender sobre Pensamiento Visual y Excalidraw",
+  LINKS_YT: "Aprende en YouTube",
+  LINKS_DISCORD_ARIA: "Únete al servidor de Discord del Taller de Pensamiento Visual",
+  LINKS_DISCORD: "Únete a la Comunidad",
+  LINKS_TWITTER: "Sígueme",
+  LINKS_VTW_ARIA: "Aprende sobre PKM Visual, Excalidraw, Obsidian, ExcaliBrain y más",
+  LINKS_VTW: "Únete a un Taller",
+  LINKS_BOOK_ARIA: "Lee Sketch Your Mind, mi libro sobre Pensamiento Visual",
+  LINKS_BOOK: "Lee el Libro",
 
-  SETTINGS_COPIED_TO_CLIPBOARD: "Markdown ready on clipboard",
-  SETTINGS_COPY_TO_CLIPBOARD: "Copy as Text",
-  SETTINGS_COPY_TO_CLIPBOARD_ARIA: "Copy the entire settings dialog to the clipboard as Markdown. Ideal for use with tools like ChatGPT to search and understand the settings.",
+  SETTINGS_COPIED_TO_CLIPBOARD: "Markdown listo en el portapapeles",
+  SETTINGS_COPY_TO_CLIPBOARD: "Copiar como Texto",
+  SETTINGS_COPY_TO_CLIPBOARD_ARIA: "Copia todo el diálogo de configuración al portapapeles como Markdown. Ideal para usar con herramientas como ChatGPT para buscar y entender la configuración.",
 
-  RELEASE_NOTES_NAME: "Display Release Notes after update",
+  RELEASE_NOTES_NAME: "Mostrar Notas de la Versión después de actualizar",
   RELEASE_NOTES_DESC:
-    "<b><u>Toggle ON:</u></b> Display release notes each time you update Excalidraw to a newer version.<br>" +
-    "<b><u>Toggle OFF:</u></b> Silent mode. You can still read release notes on <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases'>GitHub</a>.",
-  NEWVERSION_NOTIFICATION_NAME: "Plugin update notification",
+    "<b><u>Activar:</u></b> Muestra las notas de la versión cada vez que actualices Excalidraw a una versión más reciente.<br>" +
+    "<b><u>Desactivar:</u></b> Modo silencioso. Aún puedes leer las notas de la versión en <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases'>GitHub</a>.",
+  NEWVERSION_NOTIFICATION_NAME: "Notificación de Actualización del Complemento",
   NEWVERSION_NOTIFICATION_DESC:
-      "<b><u>Toggle ON:</u></b> Show a notification when a new version of the plugin is available.<br>" +
-      "<b><u>Toggle OFF:</u></b> Silent mode. You need to check for plugin updates in Community Plugins.",
+      "<b><u>Activar:</u></b> Muestra una notificación cuando hay una nueva versión del complemento disponible.<br>" +
+      "<b><u>Desactivar:</u></b> Modo silencioso. Necesitarás verificar las actualizaciones del complemento en Complementos Comunitarios.",
   
-  BASIC_HEAD: "Basic",
-  BASIC_DESC: `In the "Basic" settings, you can configure options such as displaying release notes after updates, receiving plugin update notifications, setting the default location for new drawings, specifying the Excalidraw folder for embedding drawings into active documents, defining an Excalidraw template file, and designating an Excalidraw Automate script folder for managing automation scripts.`,
-  FOLDER_NAME: "Excalidraw folder (CAsE sEnsITive!)",
+  BASIC_HEAD: "Básico",
+  BASIC_DESC: `En la configuración "Básica", puedes configurar opciones como mostrar las notas de la versión después de las actualizaciones, recibir notificaciones de actualización del complemento, establecer la ubicación predeterminada para nuevos bosquejos, especificar la carpeta de Excalidraw para incrustar bosquejos en documentos activos, definir un archivo de plantilla de Excalidraw, y designar una carpeta de scripts de Excalidraw Automate para gestionar scripts de automatización.`,
+  FOLDER_NAME: "Carpeta de Excalidraw (¡Sensible a MAYÚSCULAS/minúsculas!)",
   FOLDER_DESC:
-    "Default location for new drawings. If empty, drawings will be created in the Vault root.",
-  CROP_SUFFIX_NAME: "Crop file suffix",
+    "Ubicación predeterminada para nuevos bosquejos. Si está vacío, los bosquejos se crearán en la raíz de la Bóveda.",
+  CROP_SUFFIX_NAME: "Sufijo para archivo recortado",
   CROP_SUFFIX_DESC:
-    "The last part of the filename for new drawings created when cropping an image. " +
-    "Leave empty if you don't need a suffix.",
-  CROP_PREFIX_NAME: "Crop file prefix",
+    "La última parte del nombre del archivo para nuevos bosquejos creados al recortar una imagen. " +
+    "Deja el campo vacío si no necesitas un sufijo.",
+  CROP_PREFIX_NAME: "Prefijo para archivo recortado",
   CROP_PREFIX_DESC:
-    "The first part of the filename for new drawings created when cropping an image. " +
-    "Leave empty if you don't need a prefix.",  
-  ANNOTATE_SUFFIX_NAME: "Annotation file suffix",
+    "La primera parte del nombre del archivo para nuevos bosquejos creados al recortar una imagen. " +
+    "Deja el campo vacío si no necesitas un prefijo.",  
+  ANNOTATE_SUFFIX_NAME: "Sufijo para archivo de anotación",
   ANNOTATE_SUFFIX_DESC:
-    "The last part of the filename for new drawings created when annotating an image. " +
-    "Leave empty if you don't need a suffix.",
-  ANNOTATE_PREFIX_NAME: "Annotation file prefix",
+    "La última parte del nombre del archivo para nuevos bosquejos creados al anotar una imagen. " +
+    "Deja el campo vacío si no necesitas un sufijo.",
+  ANNOTATE_PREFIX_NAME: "Prefijo para archivo de anotación",
   ANNOTATE_PREFIX_DESC:
-    "The first part of the filename for new drawings created when annotating an image. " +
-    "Leave empty if you don't need a prefix.",
-  ANNOTATE_PRESERVE_SIZE_NAME: "Preserve image size when annotating",
+    "La primera parte del nombre del archivo para nuevos bosquejos creados al anotar una imagen. " +
+    "Deja el campo vacío si no necesitas un prefijo.",
+  ANNOTATE_PRESERVE_SIZE_NAME: "Preservar tamaño de imagen al anotar",
   ANNOTATE_PRESERVE_SIZE_DESC:
-    "When annotating an image in markdown the replacement image link will include the width of the original image.",
-  CROP_FOLDER_NAME: "Crop file folder (CaSE senSItive!)",
+    "Al anotar una imagen en Markdown, el enlace de la imagen de reemplazo incluirá el ancho de la imagen original.",
+  CROP_FOLDER_NAME: "Carpeta de archivos recortados (¡Sensible a MAYÚSCULAS/minúsculas!)",
   CROP_FOLDER_DESC:
-    "Default location for new drawings created when cropping an image. If empty, drawings will be created following the Vault attachments settings.",
-  ANNOTATE_FOLDER_NAME: "Image annotation file folder (CaSe SeNSitIVe!)",
+    "Ubicación predeterminada para nuevos bosquejos creados al recortar una imagen. Si el campo está vacío, los bosquejos se crearán siguiendo la configuración de adjuntos de la Bóveda.",
+  ANNOTATE_FOLDER_NAME: "Carpeta de archivos de anotación de imagen (¡Sensible a MAYÚSCULAS/minúsculas!)",
   ANNOTATE_FOLDER_DESC:
-    "Default location for new drawings created when annotating an image. If empty, drawings will be created following the Vault attachments settings.",
+    "Ubicación predeterminada para nuevos bosquejos creados al anotar una imagen. Si el campo está vacío, los bosquejos se crearán siguiendo la configuración de adjuntos de la Bóveda.",
   FOLDER_EMBED_NAME:
-    "Use Excalidraw folder when embedding a drawing into the active document",
+    "Usar carpeta de Excalidraw al incrustar un bosquejo en el documento activo",
   FOLDER_EMBED_DESC:
-    "Define which folder to place the newly inserted drawing into " +
-    "when using the command palette action: 'Create a new drawing and embed into active document'.<br>" +
-    "<b><u>Toggle ON:</u></b> Use Excalidraw folder<br><b><u>Toggle OFF:</u></b> Use the attachments folder defined in Obsidian settings.",
-  TEMPLATE_NAME: "Excalidraw template file or folder (caSe SenSiTive!)",
+    "Define en qué carpeta se colocará el bosquejo recién insertado " +
+    "al usar la acción de la paleta de comandos: 'Crear un nuevo bosquejo e incrustar en el documento activo'.<br>" +
+    "<b><u>Activar:</u></b> Usar carpeta de Excalidraw<br><b><u>Desactivar:</u></b> Usar la carpeta de adjuntos definida en la configuración de Obsidian.",
+  TEMPLATE_NAME: "Archivo o carpeta de plantillas de Excalidraw (¡Sensible a MAYÚSCULAS/minúsculas!)",
   TEMPLATE_DESC:
-    "Full filepath or folderpath to the Excalidraw template.<br>" +
-    "<b>Template File:</b>E.g.: If your template is in the default Excalidraw folder and its name is " +
-    "Template.md, the setting would be: Excalidraw/Template.md (or just Excalidraw/Template - you may omit the .md file extension). " +
-    "If you are using Excalidraw in compatibility mode, then your template must be a legacy Excalidraw file as well " +
-    "such as Excalidraw/Template.excalidraw. <br><b>Template Folder:</b> You can also set a folder as your template. " +
-    "In this case you will be prompted which template to use when creating a new drawing.<br>" +
-    "<b>Pro Tip:</b> If you are using the Obsidian Templater plugin, you can add Templater code to your different Excalidraw " +
-    "templates to automate configuration of your drawings.",
-  SCRIPT_FOLDER_NAME: "Excalidraw Automate script folder (CASE SeNSitiVE!)",
+    "Ruta de archivo o carpeta completa a la plantilla de Excalidraw.<br>" +
+    "<b>Archivo de Plantilla:</b>Ej.: Si tu plantilla está en la carpeta predeterminada de Excalidraw y su nombre es " +
+    "Plantilla.md, la configuración sería: Excalidraw/Plantilla.md (o simplemente Excalidraw/Plantilla - puedes omitir la extensión de archivo .md). " +
+    "Si estás usando Excalidraw en modo de compatibilidad, entonces tu plantilla también debe ser un archivo Excalidraw heredado " +
+    "como Excalidraw/Plantilla.excalidraw. <br><b>Carpeta de Plantillas:</b> También puedes establecer una carpeta como tu plantilla. " +
+    "En este caso, se te pedirá qué plantilla usar al crear un nuevo bosquejo.<br>" +
+    "<b>Consejo:</b>  Si estás usando el complemento Obsidian Templater, puedes añadir código Templater a tus diferentes plantillas de Excalidraw " +
+    "para automatizar la configuración de tus bosquejos.",
+  SCRIPT_FOLDER_NAME: "Carpeta de scripts para Excalidraw Automate (¡Sensible a MAYÚSCULAS/minúsculas!)",
   SCRIPT_FOLDER_DESC:
-    "The files you place in this folder will be treated as Excalidraw Automate scripts. " +
-    "You can access your scripts from Excalidraw via the Obsidian Command Palette. Assign " +
-    "hotkeys to your favorite scripts just like to any other Obsidian command. " +
-    "The folder may not be the root folder of your Vault. ",
+    "Los archivos que coloques en esta carpeta se tratarán como scripts de Excalidraw Automate. " +
+    "Puedes acceder a tus scripts desde Excalidraw a través de la Paleta de Comandos de Obsidian. Asigna " +
+    "atajos de teclado a tus scripts favoritos al igual que a cualquier otro comando de Obsidian. " +
+    "La carpeta no puede ser la carpeta raíz de tu Bóveda. ",
   AI_HEAD: "AI Settings - Experimental",
   AI_DESC: `In the "AI" settings, you can configure options for using OpenAI's GPT API. ` +
     `While the OpenAI API is in beta, its use is strictly limited — as such we require you use your own API key. ` +
