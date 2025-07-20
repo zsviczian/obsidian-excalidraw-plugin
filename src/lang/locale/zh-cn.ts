@@ -938,8 +938,12 @@ FILENAME_HEAD: "文件名",
 
   //IFrameActionsMenu.tsx
   NARROW_TO_HEADING: "缩放至标题",
+  PIN_VIEW: "锁定视图",
+  DO_NOT_PIN_VIEW: "不锁定视图",
   NARROW_TO_BLOCK: "缩放至块",
   SHOW_ENTIRE_FILE: "显示全部",
+  SELECT_SECTION: "从文档选择章节",
+  SELECT_VIEW: "从 base 选择视图",
   ZOOM_TO_FIT: "缩放至合适大小",
   RELOAD: "重载链接",
   OPEN_IN_BROWSER: "在浏览器中打开",
