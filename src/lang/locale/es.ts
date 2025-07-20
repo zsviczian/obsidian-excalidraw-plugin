@@ -108,89 +108,89 @@ export default {
   FONTS_LOAD_ERROR: "Excalidraw: No se pudieron encontrar las fuentes CJK en la carpeta assets\n",
 
   //Prompt.ts
-  SELECT_LINK_TO_OPEN: "Select a link to open",
+  SELECT_LINK_TO_OPEN: "Selecciona un enlace para abrir",
 
   //ExcalidrawView.ts
-  ERROR_CANT_READ_FILEPATH: "Error, can't read file path. Importing file instead",
-  NO_SEARCH_RESULT: "Didn't find a matching element in the drawing",
-  FORCE_SAVE_ABORTED: "Force Save aborted because saving is in progress",
-  LINKLIST_SECOND_ORDER_LINK: "Second Order Link",
-  MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT_TITLE: "Customize the Embedded File link",
-  MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT: "Do not add [[square brackets]] around the filename!<br>" +
-    "For markdown-page images follow this format when editing your link: <mark>filename#^blockref|WIDTHxMAXHEIGHT</mark><br>" +
-    "You can anchor Excalidraw images to 100% of their size by adding <code>|100%</code> to the end of the link.<br>" +
-    "You can change the PDF page by changing <code>#page=1</code> to <code>#page=2</code> etc.<br>" +
-    "PDF rect crop values are: <code>left, bottom, right, top</code>. Eg.: <code>#rect=0,0,500,500</code><br>",
-  FRAME_CLIPPING_ENABLED: "Frame Rendering: Enabled",
-  FRAME_CLIPPING_DISABLED: "Frame Rendering: Disabled",
-  ARROW_BINDING_INVERSE_MODE: "Inverted Mode: Default arrow binding is now disabled. Use CTRL/CMD to temporarily enable binding when needed.",
-  ARROW_BINDING_NORMAL_MODE: "Normal Mode: Arrow binding is now enabled. Use CTRL/CMD to temporarily disable binding when needed.",
-  EXPORT_FILENAME_PROMPT: "Please provide filename",
-  EXPORT_FILENAME_PROMPT_PLACEHOLDER: "filename, leave blank to cancel action",
-  WARNING_SERIOUS_ERROR: "WARNING: Excalidraw ran into an unknown problem!\n\n" +
-    "There is a risk that your most recent changes cannot be saved.\n\n" +
-    "To be on the safe side...\n" +
-    "1) Please select your drawing using CTRL/CMD+A and make a copy with CTRL/CMD+C.\n" +
-    "2) Then create an empty drawing in a new pane by CTRL/CMD+clicking the Excalidraw ribbon button,\n" +
-    "3) and paste your work to the new document with CTRL/CMD+V.",
-  ARIA_LABEL_TRAY_MODE: "Tray-mode offers an alternative, more spacious canvas",
-  MASK_FILE_NOTICE: "This is a mask file. It is used to crop images and mask out parts of the image. Press and hold notice to open the help video.",
-  INSTALL_SCRIPT_BUTTON: "Install or update Excalidraw Scripts",
-  OPEN_AS_MD: "Open as Markdown",
-  EXPORT_IMAGE: `Export Image`,
-  OPEN_LINK: "Open selected text as link\n(SHIFT+CLICK to open in a new pane)",
-  EXPORT_EXCALIDRAW: "Export to an .Excalidraw file",
+  ERROR_CANT_READ_FILEPATH: "Error, no se puede leer la ruta del archivo. Insertando el archivo en su lugar",
+  NO_SEARCH_RESULT: "No se encontró ningún elemento coincidente en el bosquejo",
+  FORCE_SAVE_ABORTED: "Guardado forzado abortado porque ya se está guardando",
+  LINKLIST_SECOND_ORDER_LINK: "Enlace de Segundo Orden",
+  MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT_TITLE: "Personalizar el enlace del archivo incrustado",
+  MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT: "¡No agregues [[corchetes]] alrededor del nombre de archivo!<br>" +
+    "Para imágenes de páginas_Markdown, sigue este formato al editar tu enlace: <mark>nombre-archivo#^referencia-bloque|ANCHOxALTURAMAX</mark><br>" +
+    "Puedes anclar imágenes de Excalidraw al 100% de su tamaño agregando <code>|100%</code> al final del enlace.<br>" +
+    "Puedes cambiar la página del PDF cambiando <code>#page=1</code> a <code>#page=2</code>, etc.<br>" +
+    "Los valores de recorte de rectángulo de PDF son: <code>left, bottom, right, top</code>. Ej.: <code>#rect=0,0,500,500</code><br>",
+  FRAME_CLIPPING_ENABLED: "Renderizado de marcos: Habilitado",
+  FRAME_CLIPPING_DISABLED: "Renderizado de marcos: Deshabilitado",
+  ARROW_BINDING_INVERSE_MODE: "Modo Invertido: La vinculación de flechas predeterminada está ahora deshabilitada. Usa CTRL/CMD para habilitar temporalmente la vinculación cuando sea necesario.",
+  ARROW_BINDING_NORMAL_MODE: "Modo Normal: La vinculación de flechas está ahora habilitada. Usa CTRL/CMD para deshabilitar temporalmente la vinculación cuando sea necesario.",
+  EXPORT_FILENAME_PROMPT: "Por favor, ingresa el nombre de archivo",
+  EXPORT_FILENAME_PROMPT_PLACEHOLDER: "nombre de archivo, dejar en blanco para cancelar la acción",
+  WARNING_SERIOUS_ERROR: "ADVERTENCIA: ¡Excalidraw encontró un problema desconocido!\n\n" +
+    "Existe el riesgo de que tus cambios más recientes no se puedan guardar.\n\n" +
+    "Para estar seguro...\n" +
+    "1) Por favor, selecciona tu bosquejo usando CTRL/CMD+A y haz una copia con CTRL/CMD+C.\n" +
+    "2) Luego, crea un bosquejo vacío en un nuevo panel haciendo CTRL/CMD+clic en el botón de la barra de Excalidraw,\n" +
+    "3) y pega tu trabajo en el nuevo documento con CTRL/CMD+V.",
+  ARIA_LABEL_TRAY_MODE: "El modo bandeja ofrece un lienzo alternativo y más espacioso",
+  MASK_FILE_NOTICE: "Este es un archivo de máscara. Se usa para recortar y enmascarar partes de la imagen. Mantén presionado el aviso para abrir el video de ayuda.",
+  INSTALL_SCRIPT_BUTTON: "Instalar o actualizar scripts de Excalidraw",
+  OPEN_AS_MD: "Abrir como Markdown",
+  EXPORT_IMAGE: `Exportar imagen`,
+  OPEN_LINK: "Abrir texto seleccionado como enlace\n(SHIFT+CLICK para abrir en un nuevo panel)",
+  EXPORT_EXCALIDRAW: "Exportar a un archivo .Excalidraw",
   LINK_BUTTON_CLICK_NO_TEXT:
-    "Select an element that contains an internal or external link.\n",
+    "Selecciona un elemento que contenga un enlace interno o externo.\n",
   LINEAR_ELEMENT_LINK_CLICK_ERROR:
-    "Arrow- and Line-Element links cannot be navigated by " + labelCTRL() + " + CLICKing on the element because that also activates the line editor.\n" +
-    "Use the right-click context menu to open the link, or click the link indicator in the top right corner of the element.\n",
+    "Los enlaces de elementos de flecha y línea no se pueden navegar haciendo " + labelCTRL() + " + CLICK en el elemento porque eso también activa el editor de línea.\n" +
+    "Usa el menú contextual del click derecho para abrir el enlace, o haz clic en el indicador de enlace en la esquina superior derecha del elemento.\n",
   FILENAME_INVALID_CHARS:
-    'File name cannot contain any of the following characters: * " \\ < > : | ? #',
+    'El nombre de archivo no puede contener ninguno de los siguientes caracteres: * " \\ < > : | ? #',
   FORCE_SAVE:
-    "Save (will also update transclusions)",
-  RAW: "Change to PREVIEW mode (only affects text-elements with links or transclusions)",
+    "Guardar (también actualizará las transclusiones)",
+  RAW: "Cambiar a modo VISTA PREVIA (solo afecta elementos de texto con enlaces o transclusiones)",
   PARSED:
-    "Change to RAW mode (only affects text-elements with links or transclusions)",
-  NOFILE: "Excalidraw (no file)",
+    "Cambiar a modo BRUTO(RAW) (solo afecta elementos de texto con enlaces o transclusiones)",
+  NOFILE: "Excalidraw (sin archivo)",
   COMPATIBILITY_MODE:
-    "*.excalidraw file opened in compatibility mode. Convert to new format for full plugin functionality.",
-  CONVERT_FILE: "Convert to new format",
-  BACKUP_AVAILABLE: "We encountered an error while loading your drawing. This might have occurred if Obsidian unexpectedly closed during a save operation. For example, if you accidentally closed Obsidian on your mobile device while saving.<br><br><b>GOOD NEWS:</b> Fortunately, a local backup is available. However, please note that if you last modified this drawing on a different device (e.g., tablet) and you are now on your desktop, that other device likely has a more recent backup.<br><br>I recommend trying to open the drawing on your other device first and restore the backup from its local storage.<br><br>Would you like to load the backup?",
-  BACKUP_RESTORED: "Backup restored",
-  BACKUP_SAVE_AS_FILE: "This drawing is empty. A non-empty backup is available. Would you like to restore it as a new file and open it in a new tab?",
-  BACKUP_SAVE: "Restore",
-  BACKUP_DELETE: "Delete Backup",
-  BACKUP_CANCEL: "Cancel",
-  CACHE_NOT_READY: "I apologize for the inconvenience, but an error occurred while loading your file.<br><br><mark>Having a little patience can save you a lot of time...</mark><br><br>The plugin has a backup cache, but it appears that you have just started Obsidian. Initializing the Backup Cache may take some time, usually up to a minute or more depending on your device's performance. You will receive a notification in the top right corner when the cache initialization is complete.<br><br>Please press OK to attempt loading the file again and check if the cache has finished initializing. If you see a completely empty file behind this message, I recommend waiting until the backup cache is ready before proceeding. Alternatively, you can choose Cancel to manually correct your file.<br>",
-  OBSIDIAN_TOOLS_PANEL: "Obsidian Tools Panel",
-  ERROR_SAVING_IMAGE: "Unknown error occurred while fetching the image. It could be that for some reason the image is not available or rejected the fetch request from Obsidian",
-  WARNING_PASTING_ELEMENT_AS_TEXT: "PASTING EXCALIDRAW ELEMENTS AS A TEXT ELEMENT IS NOT ALLOWED",
-  USE_INSERT_FILE_MODAL: "Use 'Insert Any File' to embed a markdown note",
-  RECURSIVE_INSERT_ERROR: "You may not recursively insert part of an image into the same image as it would create an infinite loop",
-  CONVERT_TO_MARKDOWN: "Convert to file...",
-  SELECT_TEXTELEMENT_ONLY: "Select text element only (not container)",
-  REMOVE_LINK: "Remove text element link",
-  LASER_ON: "Enable laser pointer",
-  LASER_OFF: "Disable laser pointer",
-  WELCOME_RANK_NEXT: "more drawings until the next rank!",
-  WELCOME_RANK_LEGENDARY: "You're at the top. Keep on being legendary!",
-  WELCOME_COMMAND_PALETTE: 'Type "Excalidraw" in the Command Palette',
-  WELCOME_OBSIDIAN_MENU: "Explore the Obsidian Menu in the top right",
-  WELCOME_SCRIPT_LIBRARY: "Visit the Script Library",
-  WELCOME_HELP_MENU: "Find help in the hamburger-menu",
-  WELCOME_YOUTUBE_ARIA: "Visual PKM YouTube Channel",
-  WELCOME_YOUTUBE_LINK: "Check out the Visual PKM YouTube channel.",
-  WELCOME_DISCORD_ARIA: "Join the Discord Server",
-  WELCOME_DISCORD_LINK: "Join the Discord Server",
-  WELCOME_TWITTER_ARIA: "Follow me on Twitter",
-  WELCOME_TWITTER_LINK: "Follow me on Twitter",
-  WELCOME_LEARN_ARIA: "Learn Visual PKM",
-  WELCOME_LEARN_LINK: "Sign up for the Visual Thinking Workshop",
-  WELCOME_DONATE_ARIA: "Donate to support Excalidraw-Obsidian",
-  WELCOME_DONATE_LINK: 'Say "Thank You" & support the plugin.',
-  SAVE_IS_TAKING_LONG: "Saving your previous file is taking a long time. Please wait...",
-  SAVE_IS_TAKING_VERY_LONG: "For better performance, consider splitting large drawings into several smaller files.",
+    "Archivo *.excalidraw abierto en modo de compatibilidad. Convierte al nuevo formato para la funcionalidad completa del plugin.",
+  CONVERT_FILE: "Convertir a nuevo formato",
+  BACKUP_AVAILABLE: "Encontramos un error al cargar tu bosquejo. Esto pudo haber ocurrido si Obsidian se cerró inesperadamente durante una operación de guardado. Por ejemplo, si cerraste accidentalmente Obsidian en tu dispositivo móvil mientras guardabas.<br><br><b>BUENAS NOTICIAS:</b> Afortunadamente, hay una copia de seguridad local disponible. Sin embargo, ten en cuenta que si modificaste este bosquejo por última vez en un dispositivo diferente (ej. tablet) y ahora estás en tu computadora de escritorio, es probable que ese otro dispositivo tenga una copia de seguridad más reciente.<br><br>Recomiendo intentar abrir el bosquejo en tu otro dispositivo primero y restaurar la copia de seguridad desde su almacenamiento local.<br><br>¿Te gustaría cargar la copia de seguridad?",
+  BACKUP_RESTORED: "Copia de seguridad restaurada",
+  BACKUP_SAVE_AS_FILE: "Este bosquejo está vacío. Hay una copia de seguridad no vacía disponible. ¿Te gustaría restaurarla como un nuevo archivo y abrirla en una nueva pestaña?",
+  BACKUP_SAVE: "Restaurar",
+  BACKUP_DELETE: "Eliminar copia de seguridad",
+  BACKUP_CANCEL: "Cancelar",
+  CACHE_NOT_READY: "Disculpa las molestias, pero ocurrió un error al cargar tu archivo.<br><br><mark>Tener un poco de paciencia puede ahorrarte mucho tiempo...</mark><br><br>El plugin tiene una caché de respaldo, pero parece que acabas de iniciar Obsidian. La inicialización de la caché de respaldo puede tomar algún tiempo, generalmente hasta un minuto o más dependiendo del rendimiento de tu dispositivo. Recibirás una notificación en la esquina superior derecha cuando la inicialización de la caché esté completa.<br><br>Por favor, presiona OK para intentar cargar el archivo nuevamente y verificar si la caché ha terminado de inicializarse. Si ves un archivo completamente vacío detrás de este mensaje, te recomiendo esperar hasta que la caché de respaldo esté lista antes de continuar. Alternativamente, puedes elegir Cancelar para corregir tu archivo manualmente.<br>",
+  OBSIDIAN_TOOLS_PANEL: "Panel de herramientas de Obsidian",
+  ERROR_SAVING_IMAGE: "Ocurrió un error desconocido al obtener la imagen. Podría ser que por alguna razón la imagen no esté disponible o rechazó la solicitud de descarga de Obsidian.",
+  WARNING_PASTING_ELEMENT_AS_TEXT: "NO SE PERMITE PEGAR ELEMENTOS DE EXCALIDRAW COMO ELEMENTO DE TEXTO",
+  USE_INSERT_FILE_MODAL: "Usa 'Insertar CUALQUIER archivo' para incrustar una nota Markdown",
+  RECURSIVE_INSERT_ERROR: "No puedes insertar recursivamente parte de una imagen en la misma imagen, ya que crearía un bucle infinito",
+  CONVERT_TO_MARKDOWN: "Convertir a archivo...",
+  SELECT_TEXTELEMENT_ONLY: "Seleccionar solo elemento de texto (no contenedor)",
+  REMOVE_LINK: "Eliminar enlace del elemento de texto",
+  LASER_ON: "Activar puntero láser",
+  LASER_OFF: "Desactivar puntero láser",
+  WELCOME_RANK_NEXT: "¡más bosquejos hasta el siguiente rango!",
+  WELCOME_RANK_LEGENDARY: "Estás en la cima. ¡Sigue siendo legendario!",
+  WELCOME_COMMAND_PALETTE: 'Escribe "Excalidraw" en la Paleta de Comandos',
+  WELCOME_OBSIDIAN_MENU: "Explora el Menú de Obsidian en la esquina superior derecha",
+  WELCOME_SCRIPT_LIBRARY: "Visita la Librería de Scripts",
+  WELCOME_HELP_MENU: "Encuentra ayuda en el menú_de_hamburguesa",
+  WELCOME_YOUTUBE_ARIA: "Canal de YouTube de PKM Visual",
+  WELCOME_YOUTUBE_LINK: "Echa un vistazo al canal de YouTube de PKM Visual.",
+  WELCOME_DISCORD_ARIA: "Únete al servidor de Discord",
+  WELCOME_DISCORD_LINK: "Únete al servidor de Discord",
+  WELCOME_TWITTER_ARIA: "Sígueme en Twitter",
+  WELCOME_TWITTER_LINK: "Sígueme en Twitter",
+  WELCOME_LEARN_ARIA: "Aprende PKM Visual",
+  WELCOME_LEARN_LINK: "Inscríbete en el Taller de Pensamiento Visual",
+  WELCOME_DONATE_ARIA: "Dona para apoyar Excalidraw-Obsidian",
+  WELCOME_DONATE_LINK: 'Di "Gracias" y apoya el plugin.',
+  SAVE_IS_TAKING_LONG: "Guardar tu archivo anterior está tomando mucho tiempo. Por favor espera...",
+  SAVE_IS_TAKING_VERY_LONG: "Para un mejor rendimiento, considera dividir bosquejos grandes en varios archivos más pequeños.",
 
   //settings.ts
   LINKS_BUGS_ARIA: "Report bugs and raise feature requsts on the plugin's GitHub page",
