@@ -192,7 +192,27 @@ export default {
   SAVE_IS_TAKING_LONG: "保存您之前的文件花费的时间较长，请稍候...",
   SAVE_IS_TAKING_VERY_LONG: "为了更好的性能，请考虑将大型绘图拆分成几个较小的文件。",
 
+  //ContentSearcher.ts
+  SEARCH_COPIED_TO_CLIPBOARD: "Markdown 已复制到剪贴板",
+  SEARCH_COPY_TO_CLIPBOARD_ARIA: "将整个对话框复制为 Markdown 到剪贴板。非常适合搭配 ChatGPT 等工具进行搜索和理解。",
+  SEARCH_NEXT: "下一个",
+  SEARCH_PREVIOUS: "上一个",
+
+
+
   //settings.ts
+  LINKS_BUGS_ARIA: "在插件的 GitHub 页面报告错误和提交功能请求",
+  LINKS_BUGS: "报告错误",
+  LINKS_YT_ARIA: "访问我的 YouTube 频道学习视觉思维和 Excalidraw",
+  LINKS_YT: "在 YouTube 学习",
+  LINKS_DISCORD_ARIA: "加入视觉思维研讨会 Discord 服务器",
+  LINKS_DISCORD: "加入社区",
+  LINKS_TWITTER: "关注我",
+  LINKS_VTW_ARIA: "了解视觉知识管理、Excalidraw、Obsidian、ExcaliBrain 等内容",
+  LINKS_VTW: "参加研讨会",
+  LINKS_BOOK_ARIA: "阅读我的视觉思维著作《Sketch Your Mind》",
+  LINKS_BOOK: "阅读书籍",
+
   RELEASE_NOTES_NAME: "显示更新说明",
   RELEASE_NOTES_DESC:
     "<b>开启：</b>每次更新本插件后，显示最新发行版本的说明。<br>" +
@@ -922,8 +942,12 @@ FILENAME_HEAD: "文件名",
 
   //IFrameActionsMenu.tsx
   NARROW_TO_HEADING: "缩放至标题",
+  PIN_VIEW: "锁定视图",
+  DO_NOT_PIN_VIEW: "不锁定视图",
   NARROW_TO_BLOCK: "缩放至块",
   SHOW_ENTIRE_FILE: "显示全部",
+  SELECT_SECTION: "从文档选择章节",
+  SELECT_VIEW: "从 base 选择视图",
   ZOOM_TO_FIT: "缩放至合适大小",
   RELOAD: "重载链接",
   OPEN_IN_BROWSER: "在浏览器中打开",
