@@ -192,6 +192,14 @@ export default {
   SAVE_IS_TAKING_LONG: "保存您之前的文件花费的时间较长，请稍候...",
   SAVE_IS_TAKING_VERY_LONG: "为了更好的性能，请考虑将大型绘图拆分成几个较小的文件。",
 
+  //ContentSearcher.ts
+  SEARCH_COPIED_TO_CLIPBOARD: "Markdown 已复制到剪贴板",
+  SEARCH_COPY_TO_CLIPBOARD_ARIA: "将整个对话框复制为 Markdown 到剪贴板。非常适合搭配 ChatGPT 等工具进行搜索和理解。",
+  SEARCH_NEXT: "下一个",
+  SEARCH_PREVIOUS: "上一个",
+
+
+
   //settings.ts
   LINKS_BUGS_ARIA: "在插件的 GitHub 页面报告错误和提交功能请求",
   LINKS_BUGS: "报告错误",
@@ -204,10 +212,6 @@ export default {
   LINKS_VTW: "参加研讨会",
   LINKS_BOOK_ARIA: "阅读我的视觉思维著作《Sketch Your Mind》",
   LINKS_BOOK: "阅读书籍",
-
-  SETTINGS_COPIED_TO_CLIPBOARD: "Markdown 内容已复制到剪贴板",
-  SETTINGS_COPY_TO_CLIPBOARD: "复制为文本",
-  SETTINGS_COPY_TO_CLIPBOARD_ARIA: "将整个设置对话框以 Markdown 格式复制到剪贴板。适合与 ChatGPT 等工具配合使用进行设置搜索和理解。",
 
   RELEASE_NOTES_NAME: "显示更新说明",
   RELEASE_NOTES_DESC:
