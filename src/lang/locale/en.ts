@@ -201,6 +201,8 @@ export default {
 
 
   //settings.ts
+  NOTEBOOKLM_LINK_ARIA: "Ask NotebookLM for help about the plugin. This model is pre-loaded with all my video transcripts, release notes and other helpful content. Chat with NotebookLM to explore my 250+ videos and the Excalidraw documentation.",
+  NOTEBOOKLM_LINK_TEXT: "Learn the Plugin. Access the NotebookLM knowledgebase.",
   LINKS_BUGS_ARIA: "Report bugs and raise feature requsts on the plugin's GitHub page",
   LINKS_BUGS: "Report Bugs",
   LINKS_YT_ARIA: "Check out my YouTube channel to learn about Visual Thinking and Excalidraw",

@@ -622,12 +622,15 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 }
 
 .excalidraw-settings-links-container {
-  display: flex; /* Align SVG and text horizontally */
-  align-items: center; /* Center SVG and text vertically */
-  text-decoration: none; /* Remove underline from links */
-  color: inherit; /* Inherit text color */
-  text-align: center;
-  gap: 0.3em;
+    align-items: center;
+    color: inherit;
+    display: flex;
+    gap: .3em;
+    text-align: center;
+    text-decoration: none;
+    flex-wrap: wrap;
+    justify-content: center;
+    flex-direction: row;
 }
 
 .excalidraw-settings-links-container a {

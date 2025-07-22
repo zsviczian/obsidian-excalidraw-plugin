@@ -16,6 +16,7 @@ export class ContentSearcher {
     this.contentDiv = contentDiv;
     this.createSearchElements();
     this.setupEventListeners();
+    contentDiv.prepend(this.getSearchBarWrapper());
   }
 
   /**
@@ -239,12 +240,32 @@ export class ContentSearcher {
 
     const nextActiveHighlight = highlights[nextActiveIndex];
     nextActiveHighlight.classList.add("active-highlight");
-    nextActiveHighlight.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-    });
+    
+    // Expand all parent details elements
+    this.expandParentDetails(nextActiveHighlight);
+    
+    // Use setTimeout to ensure DOM has time to update after expanding details
+    setTimeout(() => {
+      nextActiveHighlight.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }, 100);
 
     // Update the hit count
     this.hitCount.textContent = `${nextActiveIndex + 1} / ${highlights.length}`;
+  }
+  
+  /**
+   * Expand all parent <details> elements to make the element visible
+   */
+  private expandParentDetails(element: HTMLElement): void {
+    let parent = element.parentElement;
+    while (parent) {
+      if (parent.tagName === "DETAILS") {
+        parent.setAttribute("open", "");
+      }
+      parent = parent.parentElement;
+    }
   }
 }
