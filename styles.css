@@ -637,6 +637,8 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
   display: flex; /* Align children horizontally */
   align-items: center; /* Center items vertically */
   text-align: left;
+  margin-right: 4px;
+  margin-left: 4px;
 }
 
 .excalidraw-settings-links-container svg,

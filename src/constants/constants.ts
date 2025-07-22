@@ -79,7 +79,7 @@ export const obsidianToExcalidrawMap: { [key: string]: string } = {
   'ur': 'ur-PK', // Assuming Pakistan for Urdu
   'vi': 'vi-VN',
   'zh': 'zh-CN',
-  'zh-TW': 'zh-TW',
+  'zh-tw': 'zh-TW',
 };
 
 

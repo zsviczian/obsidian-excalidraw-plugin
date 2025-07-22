@@ -17,6 +17,11 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.14.0":`
+## A Big "Small" Update
+- Added search to Excalidraw Settings, plus added a link to access the public NotebookLM workbook pre-loaded with everything about the plugin
+- New Taiwan-idiomatic Traditional Chinese translation by [@rlan](https://github.com/rlan) [#2413](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2413)
+`,
 "2.13.2":`
 ## New
 - Excalidraw now properly supports drag and drop of obsidian links from Bases.

@@ -9,11 +9,16 @@ export class ContentSearcher {
   private prevButton: HTMLButtonElement;
   private nextButton: HTMLButtonElement;
   private exportMarkdown: HTMLButtonElement;
+  private showHideButton: HTMLButtonElement;
+  private customElemenentContainer: HTMLDivElement;
+  private inputContainer: HTMLDivElement;
+  private customElement: HTMLElement;
   private hitCount: HTMLSpanElement;
   private searchBarWrapper: HTMLDivElement;
 
-  constructor(contentDiv: HTMLElement) {
+  constructor(contentDiv: HTMLElement, customElement?: HTMLElement) {
     this.contentDiv = contentDiv;
+    this.customElement = customElement;
     this.createSearchElements();
     this.setupEventListeners();
     contentDiv.prepend(this.getSearchBarWrapper());
@@ -23,63 +28,71 @@ export class ContentSearcher {
    * Creates search UI elements styled like Obsidian's native search
    */
   private createSearchElements(): void {
-    // Outer container
-    this.searchBarWrapper = document.createElement("div");
-    this.searchBarWrapper.classList.add("document-search-container");
+    this.searchBarWrapper = createDiv("document-search-container");
+    const documentSearch = createDiv("document-search");
+    this.inputContainer = createDiv("search-input-container document-search-input");
+    this.searchBar = createEl("input",{type: "text", placeholder: "Find..."});
+    this.hitCount = createDiv("document-search-count");
 
-    // Main search bar
-    const documentSearch = document.createElement("div");
-    documentSearch.classList.add("document-search");
+    this.inputContainer.appendChild(this.searchBar);
+    this.inputContainer.appendChild(this.hitCount);
+    const buttonContainer = createDiv("document-search-buttons");
 
-    // Search input container
-    const inputContainer = document.createElement("div");
-    inputContainer.classList.add("search-input-container", "document-search-input");
-
-    // Search input
-    this.searchBar = document.createElement("input");
-    this.searchBar.type = "text";
-    this.searchBar.placeholder = "Find...";
-
-    // Hit count
-    this.hitCount = document.createElement("div");
-    this.hitCount.classList.add("document-search-count");
-
-    inputContainer.appendChild(this.searchBar);
-    inputContainer.appendChild(this.hitCount);
-
-    // Search buttons (prev/next)
-    const buttonContainer = document.createElement("div");
-    buttonContainer.classList.add("document-search-buttons");
-
-    this.prevButton = document.createElement("button");
-    this.prevButton.classList.add("clickable-icon", "document-search-button");
-    this.prevButton.setAttribute("aria-label", t("SEARCH_PREVIOUS"));
-    this.prevButton.setAttribute("data-tooltip-position", "top");
-    this.prevButton.type = "button";
+    this.prevButton = createEl("button", {
+      cls: ["clickable-icon", "document-search-button"],
+      attr: {
+        "aria-label": t("SEARCH_PREVIOUS"),
+        "data-tooltip-position": "top",
+      },
+      type: "button",
+    });
     this.prevButton.innerHTML = getIcon("arrow-up").outerHTML;
 
-    this.nextButton = document.createElement("button");
-    this.nextButton.classList.add("clickable-icon", "document-search-button");
-    this.nextButton.setAttribute("aria-label", t("SEARCH_NEXT"));
-    this.nextButton.setAttribute("data-tooltip-position", "top");
-    this.nextButton.type = "button";
+    this.nextButton = createEl("button", {
+      cls: ["clickable-icon", "document-search-button"],
+      attr: {
+        "aria-label": t("SEARCH_NEXT"),
+        "data-tooltip-position": "top",
+      },
+      type: "button",
+    });
     this.nextButton.innerHTML = getIcon("arrow-down").outerHTML;
 
-    this.exportMarkdown = document.createElement("button");
-    this.exportMarkdown.classList.add("clickable-icon", "document-search-button");
-    this.exportMarkdown.setAttribute("aria-label", t("SEARCH_COPY_TO_CLIPBOARD_ARIA"));
-    this.exportMarkdown.setAttribute("data-tooltip-position", "top");
-    this.exportMarkdown.type = "button";
+    this.exportMarkdown = createEl("button", {
+      cls: ["clickable-icon", "document-search-button"],
+      attr: {
+        "aria-label": t("SEARCH_COPY_TO_CLIPBOARD_ARIA"),
+        "data-tooltip-position": "top",
+      },
+      type: "button",
+    });
     this.exportMarkdown.innerHTML = getIcon("clipboard-copy").outerHTML;
+
+    this.showHideButton = createEl("button", {
+      cls: ["clickable-icon", "document-search-button", "search-visible"],
+      attr: {
+        "aria-label": t("SEARCH_SHOWHIDE_ARIA"),
+        "data-tooltip-position": "top",
+      },
+      type: "button",
+    });
+    this.showHideButton.innerHTML = getIcon("minimize-2").outerHTML;
 
     buttonContainer.appendChild(this.prevButton);
     buttonContainer.appendChild(this.nextButton);
     buttonContainer.appendChild(this.exportMarkdown);
+    buttonContainer.appendChild(this.showHideButton);
 
-    documentSearch.appendChild(inputContainer);
+    documentSearch.appendChild(this.inputContainer);
     documentSearch.appendChild(buttonContainer);
 
     this.searchBarWrapper.appendChild(documentSearch);
+
+    this.customElemenentContainer = createDiv();
+    if(this.customElement) {
+      this.customElemenentContainer.appendChild(this.customElement);
+      this.searchBarWrapper.appendChild(this.customElemenentContainer)
+    }
   }
 
   /**
@@ -113,6 +126,28 @@ export class ContentSearcher {
       window.navigator.clipboard.writeText(md);
       new Notice(t("SEARCH_COPIED_TO_CLIPBOARD"));
     };
+    this.showHideButton.onclick = () => {
+      const setOpacity = (value:string|null) => {
+        this.inputContainer.style.opacity = value;
+        this.prevButton.style.opacity = value;
+        this.nextButton.style.opacity = value;
+        this.exportMarkdown.style.opacity = value;
+        this.customElemenentContainer.style.opacity = value;
+      }
+      if(this.showHideButton.hasClass("search-visible")) {
+        this.showHideButton.removeClass("search-visible");
+        this.showHideButton.addClass("search-hidden");
+        this.searchBarWrapper.style.backgroundColor = "transparent";
+        setOpacity("0");
+        this.showHideButton.innerHTML = getIcon("maximize-2").outerHTML;
+      } else {
+        this.showHideButton.removeClass("search-hidden");
+        this.showHideButton.addClass("search-visible");
+        this.searchBarWrapper.style.backgroundColor = null;
+        setOpacity(null);
+        this.showHideButton.innerHTML = getIcon("minimize-2").outerHTML;
+      }
+    }
 
     this.searchBar.addEventListener("input", (e) => {
       this.clearHighlights();

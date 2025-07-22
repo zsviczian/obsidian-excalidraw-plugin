@@ -611,11 +611,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     // Search and Settings to Clipboard
     // ------------------------------------------------
 
-    const search = new ContentSearcher(containerEl);
-    
-
-    const notebookLM = search.getSearchBarWrapper().createDiv("setting-item-description excalidraw-settings-links-container");
-    notebookLM.createEl("a",{
+    const notebookLMLinkContainer = createDiv("setting-item-description excalidraw-settings-links-container");
+    new ContentSearcher(containerEl, notebookLMLinkContainer);
+    notebookLMLinkContainer.createEl("a",{
       href: "https://notebooklm.google.com/notebook/42d76a2f-c11d-4002-9286-1683c43d0ab0",
       attr: { 
         "aria-label": t("NOTEBOOKLM_LINK_ARIA"),
@@ -653,6 +651,12 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         aria: t("LINKS_BUGS_ARIA"),
         text: t("LINKS_BUGS"),
       },
+      {
+        icon: getIcon("globe").outerHTML,
+        href: "https://excalidraw-obsidian.online/",
+        aria: t("LINKS_WIKI_ARIA"),
+        text: t("LINKS_WIKI"),
+      },
       { 
         icon: getIcon("youtube").outerHTML,
         href: "https://www.youtube.com/@VisualPKM",
@@ -682,7 +686,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         href: "https://sketch-your-mind.com",
         aria: t("LINKS_BOOK_ARIA"),
         text: t("LINKS_BOOK"),
-      }
+      },
     ];
 
     const linksEl = containerEl.createDiv("setting-item-description excalidraw-settings-links-container");

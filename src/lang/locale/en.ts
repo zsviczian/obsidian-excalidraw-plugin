@@ -195,6 +195,7 @@ export default {
   //ContentSearcher.ts
   SEARCH_COPIED_TO_CLIPBOARD: "Markdown ready on clipboard",
   SEARCH_COPY_TO_CLIPBOARD_ARIA: "Copy the entire dialog to the clipboard as Markdown. Ideal for use with tools like ChatGPT to search and understand.",
+  SEARCH_SHOWHIDE_ARIA: "Show/Hide search bar",
   SEARCH_NEXT: "Next",
   SEARCH_PREVIOUS: "Previous",
 
@@ -214,6 +215,8 @@ export default {
   LINKS_VTW: "Join a Workshop",
   LINKS_BOOK_ARIA: "Read Sketch Your Mind, my book on Visual Thinking",
   LINKS_BOOK: "Read the Book",
+  LINKS_WIKI: "Plugin Wiki",
+  LINKS_WIKI_ARIA: "Explore the Excalidraw Plugin Wiki",
 
   RELEASE_NOTES_NAME: "Display Release Notes after update",
   RELEASE_NOTES_DESC:
