@@ -98,20 +98,20 @@ export default {
   SEARCH: "搜尋文字",
   CROP_PAGE: "對所選頁面裁剪並新增蒙版",
   CROP_IMAGE: "對圖片裁剪並新增蒙版",
-  ANNOTATE_IMAGE : "在 Excalidraw 中標註影像",
+  ANNOTATE_IMAGE: "在 Excalidraw 中標註影像",
   INSERT_ACTIVE_PDF_PAGE_AS_IMAGE: "將當前啟用的 PDF 頁面作為圖片插入",
   RESET_IMG_TO_100: "重置影像元素的尺寸為 100%",
   RESET_IMG_ASPECT_RATIO: "重置所選影像元素的縱橫比",
   TEMPORARY_DISABLE_AUTOSAVE: "臨時停用自動儲存功能，直到本次 Obsidian 退出（小白慎用！）",
   TEMPORARY_ENABLE_AUTOSAVE: "啟用自動儲存功能",
-  FONTS_LOADED : "Excalidraw: CJK 字型已載入" ,
-  FONTS_LOAD_ERROR : "Excalidraw: 在資原始檔夾下找不到 CJK 字型\n" ,
+  FONTS_LOADED: "Excalidraw: CJK 字型已載入" ,
+  FONTS_LOAD_ERROR: "Excalidraw: 在資原始檔夾下找不到 CJK 字型\n" ,
 
   //Prompt.ts
   SELECT_LINK_TO_OPEN: "選擇要開啟的連結",
 
   //ExcalidrawView.ts
-  ERROR_CANT_READ_FILEPATH : "錯誤，無法讀取檔案路徑。正在改為匯入檔案",
+  ERROR_CANT_READ_FILEPATH: "錯誤，無法讀取檔案路徑。正在改為匯入檔案",
   NO_SEARCH_RESULT: "在繪圖中未找到匹配的元素",
   FORCE_SAVE_ABORTED: "自動儲存被中止，因為檔案正在儲存中",
   LINKLIST_SECOND_ORDER_LINK: "二級連結",
@@ -158,11 +158,11 @@ export default {
   CONVERT_FILE: "轉換為新格式",
   BACKUP_AVAILABLE: "載入繪圖檔案時出錯，可能是由於 Obsidian 在上次儲存時意外退出了（手機上更容易發生這種意外）。<br><br><b>好訊息：</b>這臺裝置上存在備份。您是否想要恢復本裝置上的備份？<br><br>（我建議您先嚐試在最近使用過的其他裝置上開啟該繪圖，以檢查是否有更新的備份。）",
   BACKUP_RESTORED: "已恢復備份",
-  BACKUP_SAVE_AS_FILE : "此繪圖為空。存在一個非空的備份。您是否希望將其恢復為新檔案並在新標籤頁中開啟？" ,
-  BACKUP_SAVE : "恢復" ,
-  BACKUP_DELETE : "刪除備份" ,
-  BACKUP_CANCEL : "取消" ,
-  CACHE_NOT_READY : "很抱歉給您帶來不便，載入檔案時發生了錯誤。<br><br><mark>稍作等待可能會節省您大量時間……</mark><br><br>外掛有一個備份快取，但似乎您剛剛啟動了 Obsidian。初始化備份快取可能需要一些時間，通常取決於裝置效能，可能需要一分鐘或更長時間。當快取初始化完成時，您會在右上角收到通知。<br><br>請按“確定”嘗試重新載入檔案，並檢查快取是否已完成初始化。如果在此訊息後看到一個完全空白的檔案，我建議等待備份快取準備就緒後再繼續操作。或者，您也可以選擇“取消”以手動修復您的檔案。<br>" ,
+  BACKUP_SAVE_AS_FILE: "此繪圖為空。存在一個非空的備份。您是否希望將其恢復為新檔案並在新標籤頁中開啟？" ,
+  BACKUP_SAVE: "恢復" ,
+  BACKUP_DELETE: "刪除備份" ,
+  BACKUP_CANCEL: "取消" ,
+  CACHE_NOT_READY: "很抱歉給您帶來不便，載入檔案時發生了錯誤。<br><br><mark>稍作等待可能會節省您大量時間……</mark><br><br>外掛有一個備份快取，但似乎您剛剛啟動了 Obsidian。初始化備份快取可能需要一些時間，通常取決於裝置效能，可能需要一分鐘或更長時間。當快取初始化完成時，您會在右上角收到通知。<br><br>請按“確定”嘗試重新載入檔案，並檢查快取是否已完成初始化。如果在此訊息後看到一個完全空白的檔案，我建議等待備份快取準備就緒後再繼續操作。或者，您也可以選擇“取消”以手動修復您的檔案。<br>" ,
   OBSIDIAN_TOOLS_PANEL: "Obsidian 工具面板",
   ERROR_SAVING_IMAGE: "獲取影像時發生未知錯誤。可能是由於某種原因，影像不可用或拒絕了 Obsidian 的獲取請求。",
   WARNING_PASTING_ELEMENT_AS_TEXT: "你不能將 Excalidraw 元素貼上為文字元素！",
@@ -192,7 +192,32 @@ export default {
   SAVE_IS_TAKING_LONG: "儲存您之前的檔案花費的時間較長，請稍候...",
   SAVE_IS_TAKING_VERY_LONG: "為了更好的效能，請考慮將大型繪圖拆分成幾個較小的檔案。",
 
+  //ContentSearcher.ts
+  SEARCH_COPIED_TO_CLIPBOARD: "Markdown 已複製到剪貼簿",
+  SEARCH_COPY_TO_CLIPBOARD_ARIA: "將整個對話框複製為 Markdown 到剪貼簿。非常適合搭配 ChatGPT 等工具進行搜尋和理解。",
+  SEARCH_SHOWHIDE_ARIA: "顯示/隱藏搜尋列" ,
+  SEARCH_NEXT: "下一個",
+  SEARCH_PREVIOUS: "上一個",
+
+
+
   //settings.ts
+  NOTEBOOKLM_LINK_ARIA: "向 NotebookLM 諮詢有關外掛的協助。此模型已預先載入了我所有的影片轉錄、發佈說明和其他有用內容。與 NotebookLM 聊天，探索我的 250+ 影片和 Excalidraw 文件。",
+  NOTEBOOKLM_LINK_TEXT: "了解外掛。造訪 NotebookLM 知識庫。" ,
+  LINKS_BUGS_ARIA: "在外掛的 GitHub 頁面回報錯誤並提交功能請求",
+  LINKS_BUGS: "回報錯誤",
+  LINKS_YT_ARIA: "造訪我的 YouTube 頻道學習視覺思考與 Excalidraw",
+  LINKS_YT: "在 YouTube 學習",
+  LINKS_DISCORD_ARIA: "加入視覺思考研討會 Discord 伺服器",
+  LINKS_DISCORD: "加入社群",
+  LINKS_TWITTER: "追蹤我",
+  LINKS_VTW_ARIA: "了解視覺知識管理、Excalidraw、Obsidian、ExcaliBrain 等內容",
+  LINKS_VTW: "參加研討會",
+  LINKS_BOOK_ARIA: "閱讀我的視覺思考著作《Sketch Your Mind》",
+  LINKS_BOOK: "閱讀書籍",
+  LINKS_WIKI: "外掛 Wiki" ,
+  LINKS_WIKI_ARIA: "探索 Excalidraw 外掛 Wiki" ,
+
   RELEASE_NOTES_NAME: "顯示更新說明",
   RELEASE_NOTES_DESC:
     "<b>開啟：</b>每次更新本外掛後，顯示最新發行版本的說明。<br>" +
@@ -207,16 +232,16 @@ export default {
   FOLDER_NAME: "Excalidraw 資料夾（區分大小寫！）",
   FOLDER_DESC:
     "新繪圖的預設儲存路徑。若為空，將在庫的根目錄中建立新繪圖。",
-  CROP_SUFFIX_NAME : "裁剪檔案字尾" ,
-  CROP_SUFFIX_DESC :
+  CROP_SUFFIX_NAME: "裁剪檔案字尾" ,
+  CROP_SUFFIX_DESC:
     "為裁剪影像時建立的新圖紙檔名的最後部分。" +
     "如果不需要字尾，請留空。" ,
   CROP_PREFIX_NAME: "剪貼檔案的字首",
   CROP_PREFIX_DESC:
     "當剪貼圖片進來時儲存的檔名的字首。 " +
     "如果不需要字首，請留空。" ,
-  ANNOTATE_SUFFIX_NAME : "註釋檔案字尾" ,
-  ANNOTATE_SUFFIX_DESC :
+  ANNOTATE_SUFFIX_NAME: "註釋檔案字尾" ,
+  ANNOTATE_SUFFIX_DESC:
     "為註釋影像時建立的新繪圖檔名的最後部分。" +
     "如果不需要字尾，請留空。" ,
   ANNOTATE_PREFIX_NAME: "標註檔案的字首",
@@ -259,8 +284,8 @@ export default {
     `目前 OpenAI API 還處於測試中，您需要在自己的。` +
     `OpenAI 賬戶中充值至少 5 美元后才能生成 API key，` +
     `然後就可以在 Excalidraw 中配置並使用 AI。`,
-  AI_ENABLED_NAME : "啟用 AI 功能" ,
-  AI_ENABLED_DESC : "您需要重新開啟 Excalidraw 才能使更改生效。" ,
+  AI_ENABLED_NAME: "啟用 AI 功能" ,
+  AI_ENABLED_DESC: "您需要重新開啟 Excalidraw 才能使更改生效。" ,
   AI_OPENAI_TOKEN_NAME: "OpenAI API key",
   AI_OPENAI_TOKEN_DESC:
     "您可以訪問您的<a href='https://platform.openai.com/api-keys'> OpenAI 賬戶</a>來獲取自己的 OpenAI API key。",
@@ -346,8 +371,8 @@ FILENAME_HEAD: "檔名",
     "<b>開啟：</b>使用 .excalidraw.md 作為副檔名。<br><b>關閉：</b>使用 .md 作為副檔名。",
   DISPLAY_HEAD: "介面 & 行為",
   DISPLAY_DESC: "在 Excalidraw 設定的 '外觀和行為' 部分，您可以微調 Excalidraw 的外觀和行為。這包括動態樣式、左手模式、匹配 Excalidraw 和 Obsidian 主題、預設模式等選項。",
-  OVERRIDE_OBSIDIAN_FONT_SIZE_NAME : "限制 Obsidian 字型大小為編輯器文字" ,
-  OVERRIDE_OBSIDIAN_FONT_SIZE_DESC :
+  OVERRIDE_OBSIDIAN_FONT_SIZE_NAME: "限制 Obsidian 字型大小為編輯器文字" ,
+  OVERRIDE_OBSIDIAN_FONT_SIZE_DESC:
     "Obsidian 的自定義字型大小設定會影響整個介面，包括 Excalidraw 和依賴預設字型大小的主題。" +
     "啟用此選項將限制字型大小更改為編輯器文字，這將改善 Excalidraw 的外觀。" +
     "如果啟用後發現介面的某些部分看起來不正確，請嘗試關閉此設定。" ,
@@ -383,7 +408,7 @@ FILENAME_HEAD: "檔名",
   DEFAULT_PEN_MODE_NAME: "觸控筆模式（Pen mode）",
   DEFAULT_PEN_MODE_DESC:
     "開啟繪圖時，是否自動開啟觸控筆模式？",
-  ENABLE_DOUBLE_CLICK_TEXT_EDITING_NAME : "啟用雙擊文字建立",
+  ENABLE_DOUBLE_CLICK_TEXT_EDITING_NAME: "啟用雙擊文字建立",
   DISABLE_DOUBLE_TAP_ERASER_NAME: "啟用手寫模式下的雙擊橡皮擦功能",
   DISABLE_SINGLE_FINGER_PANNING_NAME: "啟用手寫模式下的單指平移功能",
   SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_NAME: "在觸控筆模式下顯示十字準星（+）",
@@ -401,7 +426,7 @@ FILENAME_HEAD: "檔名",
     "此設定不會影響您在 Excalidraw 模式下的繪圖顯示，或者在將繪圖嵌入 Markdown 文件時，或在渲染懸停預覽時。<br><ul>" +
     "<li>請參閱下面‘嵌入和匯出’部分的 <a href='#"+TAG_PDFEXPORT+"'>PDF 匯出</a> 相關設定。</li></ul><br>" +
     "您必須關閉當前的 Excalidraw/Markdown 檔案並重新開啟，以使此更改生效。",
-  SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME : "在 Obsidian 中匯出為 PDF 格式時將 Excalidraw 渲染為影像" ,
+  SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME: "在 Obsidian 中匯出為 PDF 格式時將 Excalidraw 渲染為影像" ,
   SHOW_DRAWING_OR_MD_IN_EXPORTPDF_DESC:
     "此設定控制在使用 Obsidian 內建的<b>匯出為 PDF</b>功能，如何將 Excalidraw 檔案匯出為 PDF。<br>" +
     "<ul><li><b>啟用：</b>PDF 將包含影像格式的 Excalidraw 繪圖。</li>" +
@@ -442,10 +467,10 @@ FILENAME_HEAD: "檔名",
   GRID_OPACITY_NAME: "網格透明度",
   GRID_OPACITY_DESC: "網格透明度還將控制將箭頭繫結到元素時繫結框的透明度。<br>"+
     "設定網格的不透明度。 0 表示完全透明，100 表示完全不透明。",
-  GRID_DIRECTION_NAME : "網格方向" ,
-  GRID_DIRECTION_DESC : "第一個開關顯示/隱藏水平網格，第二個開關顯示/隱藏垂直網格。" ,
-  GRID_HORIZONTAL : "渲染水平網格" ,
-  GRID_VERTICAL : "渲染垂直網格" ,
+  GRID_DIRECTION_NAME: "網格方向" ,
+  GRID_DIRECTION_DESC: "第一個開關顯示/隱藏水平網格，第二個開關顯示/隱藏垂直網格。" ,
+  GRID_HORIZONTAL: "渲染水平網格" ,
+  GRID_VERTICAL: "渲染垂直網格" ,
   LASER_HEAD: "雷射筆工具（更多工具 > 雷射筆）",
   LASER_COLOR: "雷射筆顏色",
   LASER_DECAY_TIME_NAME: "雷射筆消失時間",
@@ -600,9 +625,9 @@ FILENAME_HEAD: "檔名",
   EMBED_CANVAS_DESC:
     "當嵌入繪圖到 Obsidian 白板中時，隱藏元素的邊界和背景。" +
     "注意：如果想要背景完全透明，您依然需要在 Excalidraw 中設定“匯出的影像不包含背景”。",
-  EMBED_CACHING : "影像快取和渲染最佳化" ,
-  RENDERING_CONCURRENCY_NAME : "影像渲染併發性" ,
-  RENDERING_CONCURRENCY_DESC :
+  EMBED_CACHING: "影像快取和渲染最佳化" ,
+  RENDERING_CONCURRENCY_NAME: "影像渲染併發性" ,
+  RENDERING_CONCURRENCY_DESC:
     "用於影像渲染的並行工作執行緒數。增加此數值可以加快渲染速度，但可能會減慢系統的其他部分執行速度。" +
     "預設值為 3。如果您的系統性能強大，可以增加此數值。" ,
   EXPORT_SUBHEAD: "匯出",
@@ -681,7 +706,7 @@ FILENAME_HEAD: "檔名",
   EXPORT_EMBED_SCENE_DESC:
     "在匯出的影像中嵌入 Excalidraw 場景。可以透過在檔案級別新增 <code>excalidraw-export-embed-scene: true/false</code> frontmatter 元資料鍵來覆蓋此設定。" +
     "此設定僅在您下次(重新)開啟繪圖時生效。",
-  PDF_EXPORT_SETTINGS : "PDF 匯出設定",
+  PDF_EXPORT_SETTINGS: "PDF 匯出設定",
   EXPORT_HEAD: "匯出設定",
   EXPORT_SYNC_NAME:
     "保持 SVG/PNG 檔名與繪圖檔案同步",
@@ -741,8 +766,8 @@ FILENAME_HEAD: "檔名",
     "更改此選項後，您可能需要重啟 Obsidian 來使其生效。",
   LATEX_DEFAULT_NAME: "插入 LaTeX 時的預設表示式",
   LATEX_DEFAULT_DESC: "允許留空。允許使用類似 <code>\\color{white}</code> 的格式化表示式。",
-  LATEX_PREAMBLE_NAME : "LaTeX 前言檔案（區分大小寫！）" ,
-  LATEX_PREAMBLE_DESC : "前言檔案的完整路徑，留空則使用預設值。如果檔案不存在，此選項將被忽略。<br><strong>重要：</strong>更改後需要重新載入 Obsidian 才能生效！" ,
+  LATEX_PREAMBLE_NAME: "LaTeX 前言檔案（區分大小寫！）" ,
+  LATEX_PREAMBLE_DESC: "前言檔案的完整路徑，留空則使用預設值。如果檔案不存在，此選項將被忽略。<br><strong>重要：</strong>更改後需要重新載入 Obsidian 才能生效！" ,
   NONSTANDARD_HEAD: "非 Excalidraw.com 官方支援的特性",
   NONSTANDARD_DESC: `這些特性不受 Excalidraw.com 官方支援。如果在 Excalidraw.com 匯入繪圖，這些特性將會發生不可預知的變化。
     包括：自定義畫筆工具的數量，自定義字型等。`,
@@ -922,8 +947,12 @@ FILENAME_HEAD: "檔名",
 
   //IFrameActionsMenu.tsx
   NARROW_TO_HEADING: "縮放至標題",
+  PIN_VIEW: "鎖定視圖",
+  DO_NOT_PIN_VIEW: "解除視圖鎖定",
   NARROW_TO_BLOCK: "縮放至塊",
   SHOW_ENTIRE_FILE: "顯示全部",
+  SELECT_SECTION: "自文件選取章節",
+  SELECT_VIEW: "自 base 選取視圖",
   ZOOM_TO_FIT: "縮放至合適大小",
   RELOAD: "過載連結",
   OPEN_IN_BROWSER: "在瀏覽器中開啟",
@@ -939,8 +968,8 @@ FILENAME_HEAD: "檔名",
   ES_YOUTUBE_START_INVALID: "YouTube 起始時間無效。請檢查格式並重試",
   ES_FILENAME_VISIBLE: "顯示檔名",
   ES_BACKGROUND_HEAD: "背景色",
-  ES_BACKGROUND_DESC_INFO : "點選此處瞭解更多顏色資訊" ,
-  ES_BACKGROUND_DESC_DETAIL : "背景顏色僅影響 Markdown 嵌入預覽模式。在編輯模式下，它會根據場景（透過文件屬性設定）或外掛設定，遵循 Obsidian 的淺色/深色主題。背景顏色有兩層：元素背景顏色（下層）和上層顏色。選擇“匹配元素背景”意味著兩層都遵循元素顏色。選擇“匹配畫布”或特定背景顏色時，保留元素背景層。設定透明度（例如 50%）會將畫布或選定的顏色與元素背景顏色混合。要移除元素背景層，可以在 Excalidraw 的元素屬性編輯器中將元素顏色設定為透明，這樣只有上層顏色生效。" ,
+  ES_BACKGROUND_DESC_INFO: "點選此處瞭解更多顏色資訊" ,
+  ES_BACKGROUND_DESC_DETAIL: "背景顏色僅影響 Markdown 嵌入預覽模式。在編輯模式下，它會根據場景（透過文件屬性設定）或外掛設定，遵循 Obsidian 的淺色/深色主題。背景顏色有兩層：元素背景顏色（下層）和上層顏色。選擇“匹配元素背景”意味著兩層都遵循元素顏色。選擇“匹配畫布”或特定背景顏色時，保留元素背景層。設定透明度（例如 50%）會將畫布或選定的顏色與元素背景顏色混合。要移除元素背景層，可以在 Excalidraw 的元素屬性編輯器中將元素顏色設定為透明，這樣只有上層顏色生效。" ,
   ES_BACKGROUND_MATCH_ELEMENT: "匹配元素背景色",
   ES_BACKGROUND_MATCH_CANVAS: "匹配畫布背景色",
   ES_BACKGROUND_COLOR: "背景色",
@@ -973,7 +1002,7 @@ FILENAME_HEAD: "檔名",
   PROMPT_BUTTON_INSERT_SPACE: "插入空格",
   PROMPT_BUTTON_INSERT_LINK: "插入內部連結",
   PROMPT_BUTTON_UPPERCASE: "大寫",
-  PROMPT_BUTTON_SPECIAL_CHARS : "特殊字元" ,
+  PROMPT_BUTTON_SPECIAL_CHARS: "特殊字元" ,
   PROMPT_SELECT_TEMPLATE: "選擇一個模板",
 
   //ModifierKeySettings
@@ -1003,34 +1032,34 @@ FILENAME_HEAD: "檔名",
 
   //Utils.ts
   UPDATE_AVAILABLE: `Excalidraw 的新版本已在社群外掛中可用。\n\n您正在使用 ${PLUGIN_VERSION}。\n最新版本是`,
-  SCRIPT_UPDATES_AVAILABLE : `指令碼更新可用 - 請檢查指令碼儲存。\n\n ${ DEVICE . isDesktop ? `此訊息可在控制檯日誌中檢視 ( ${ DEVICE . isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i" } )\n\n` : "" } 如果您已將指令碼組織到指令碼儲存資料夾下的子資料夾中，並且存在同一指令碼的多個副本，可能需要清理未使用的版本以消除此警報。對於不需要更新的私人指令碼副本，請將它們儲存在指令碼儲存資料夾之外。` ,
+  SCRIPT_UPDATES_AVAILABLE: `指令碼更新可用 - 請檢查指令碼儲存。\n\n ${ DEVICE . isDesktop ? `此訊息可在控制檯日誌中檢視 ( ${ DEVICE . isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i" } )\n\n` : "" } 如果您已將指令碼組織到指令碼儲存資料夾下的子資料夾中，並且存在同一指令碼的多個副本，可能需要清理未使用的版本以消除此警報。對於不需要更新的私人指令碼副本，請將它們儲存在指令碼儲存資料夾之外。` ,
   ERROR_PNG_TOO_LARGE: "匯出 PNG 時出錯 - PNG 檔案過大，請嘗試較小的解析度",
 
   // ModifierkeyHelper.ts
   // WebBrowserDragAction
-  WEB_DRAG_IMPORT_IMAGE : "匯入圖片到 Vault" ,
-  WEB_DRAG_IMAGE_URL : "透過 URL 插入圖片或 YouTube 縮圖" ,
-  WEB_DRAG_LINK : "插入連結" ,
-  WEB_DRAG_EMBEDDABLE : "插入互動框架" ,
+  WEB_DRAG_IMPORT_IMAGE: "匯入圖片到 Vault" ,
+  WEB_DRAG_IMAGE_URL: "透過 URL 插入圖片或 YouTube 縮圖" ,
+  WEB_DRAG_LINK: "插入連結" ,
+  WEB_DRAG_EMBEDDABLE: "插入互動框架" ,
 
   // LocalFileDragAction
-  LOCAL_DRAG_IMPORT : "匯入外部檔案，或在路徑來自 Vault 時複用現有檔案" ,
-  LOCAL_DRAG_IMAGE : "插入圖片：使用本地 URI，或在路徑來自 Vault 時使用內部連結" ,
-  LOCAL_DRAG_LINK : "插入連結：使用本地 URI，或在路徑來自 Vault 時使用內部連結" ,
-  LOCAL_DRAG_EMBEDDABLE : "插入互動框架：使用本地 URI，或在路徑來自 Vault 時使用內部連結" ,
+  LOCAL_DRAG_IMPORT: "匯入外部檔案，或在路徑來自 Vault 時複用現有檔案" ,
+  LOCAL_DRAG_IMAGE: "插入圖片：使用本地 URI，或在路徑來自 Vault 時使用內部連結" ,
+  LOCAL_DRAG_LINK: "插入連結：使用本地 URI，或在路徑來自 Vault 時使用內部連結" ,
+  LOCAL_DRAG_EMBEDDABLE: "插入互動框架：使用本地 URI，或在路徑來自 Vault 時使用內部連結" ,
 
   // InternalDragAction
-  INTERNAL_DRAG_IMAGE : "插入圖片" ,
-  INTERNAL_DRAG_IMAGE_FULL : "插入圖片（100% 尺寸）" ,
-  INTERNAL_DRAG_LINK : "插入連結" ,
-  INTERNAL_DRAG_EMBEDDABLE : "插入互動框架" ,
+  INTERNAL_DRAG_IMAGE: "插入圖片" ,
+  INTERNAL_DRAG_IMAGE_FULL: "插入圖片（100% 尺寸）" ,
+  INTERNAL_DRAG_LINK: "插入連結" ,
+  INTERNAL_DRAG_EMBEDDABLE: "插入互動框架" ,
 
   // LinkClickAction
-  LINK_CLICK_ACTIVE : "在當前活動視窗中開啟" ,
-  LINK_CLICK_NEW_PANE : "在相鄰的新視窗中開啟" ,
-  LINK_CLICK_POPOUT : "在彈出視窗中開啟" ,
-  LINK_CLICK_NEW_TAB : "在新標籤頁中開啟" ,
-  LINK_CLICK_MD_PROPS : "顯示 Markdown 圖片屬性對話方塊（僅在嵌入 Markdown 文件為圖片時適用）" ,
+  LINK_CLICK_ACTIVE: "在當前活動視窗中開啟" ,
+  LINK_CLICK_NEW_PANE: "在相鄰的新視窗中開啟" ,
+  LINK_CLICK_POPOUT: "在彈出視窗中開啟" ,
+  LINK_CLICK_NEW_TAB: "在新標籤頁中開啟" ,
+  LINK_CLICK_MD_PROPS: "顯示 Markdown 圖片屬性對話方塊（僅在嵌入 Markdown 文件為圖片時適用）" ,
 
 // 匯出對話方塊
 // 對話方塊和標籤頁
@@ -1115,14 +1144,14 @@ EXPORTDIALOG_PDF_PROGRESS_DONE: "匯出完成" ,
 EXPORTDIALOG_PDF_PROGRESS_ERROR: "匯出 PDF 時出錯，請檢查開發者控制檯以獲取詳細資訊" ,
 
 // Screenshot tab
-EXPORTDIALOG_NOT_AVAILALBE : "抱歉，此功能僅在繪圖在主 Obsidian 工作區開啟時可用。",
-EXPORTDIALOG_TAB_SCREENSHOT : "截圖" ,
-EXPORTDIALOG_SCREENSHOT_DESC : "截圖將包括可嵌入的內容，例如 markdown 頁面、YouTube、網站等。它們僅在桌面端可用，無法自動匯出，並且僅支援 PNG 格式。" ,
-SCREENSHOT_DESKTOP_ONLY : "截圖功能僅在桌面端可用" ,
-SCREENSHOT_FILE_SUCCESS : "截圖已儲存到倉庫" ,
-SCREENSHOT_CLIPBOARD_SUCCESS : "截圖已複製到剪貼簿" ,
-SCREENSHOT_CLIPBOARD_ERROR : "無法複製截圖到剪貼簿：" ,
-SCREENSHOT_ERROR : "截圖出錯 - 請檢視控制檯日誌" ,
+EXPORTDIALOG_NOT_AVAILALBE: "抱歉，此功能僅在繪圖在主 Obsidian 工作區開啟時可用。",
+EXPORTDIALOG_TAB_SCREENSHOT: "截圖" ,
+EXPORTDIALOG_SCREENSHOT_DESC: "截圖將包括可嵌入的內容，例如 markdown 頁面、YouTube、網站等。它們僅在桌面端可用，無法自動匯出，並且僅支援 PNG 格式。" ,
+SCREENSHOT_DESKTOP_ONLY: "截圖功能僅在桌面端可用" ,
+SCREENSHOT_FILE_SUCCESS: "截圖已儲存到倉庫" ,
+SCREENSHOT_CLIPBOARD_SUCCESS: "截圖已複製到剪貼簿" ,
+SCREENSHOT_CLIPBOARD_ERROR: "無法複製截圖到剪貼簿：" ,
+SCREENSHOT_ERROR: "截圖出錯 - 請檢視控制檯日誌" ,
 
 // exportUtils.ts
 PDF_EXPORT_DESKTOP_ONLY: "PDF 匯出功能僅限桌面端使用" ,
