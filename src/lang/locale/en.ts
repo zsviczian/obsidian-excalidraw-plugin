@@ -98,7 +98,7 @@ export default {
   SEARCH: "Search for text in drawing",
   CROP_PAGE: "Crop and mask selected page",
   CROP_IMAGE: "Crop and mask image",
-  ANNOTATE_IMAGE : "Annotate image in Excalidraw",
+  ANNOTATE_IMAGE: "Annotate image in Excalidraw",
   INSERT_ACTIVE_PDF_PAGE_AS_IMAGE: "Insert active PDF page as image",
   RESET_IMG_TO_100: "Set selected image element size to 100% of original",
   RESET_IMG_ASPECT_RATIO: "Reset selected image element aspect ratio",
@@ -199,8 +199,6 @@ export default {
   SEARCH_NEXT: "Next",
   SEARCH_PREVIOUS: "Previous",
 
-
-
   //settings.ts
   NOTEBOOKLM_LINK_ARIA: "Ask NotebookLM for help about the plugin. This model is pre-loaded with all my video transcripts, release notes and other helpful content. Chat with NotebookLM to explore my 250+ videos and the Excalidraw documentation.",
   NOTEBOOKLM_LINK_TEXT: "Learn the Plugin. Access the NotebookLM knowledgebase.",
@@ -226,7 +224,7 @@ export default {
   NEWVERSION_NOTIFICATION_DESC:
       "<b><u>Toggle ON:</u></b> Show a notification when a new version of the plugin is available.<br>" +
       "<b><u>Toggle OFF:</u></b> Silent mode. You need to check for plugin updates in Community Plugins.",
-  
+
   BASIC_HEAD: "Basic",
   BASIC_DESC: `In the "Basic" settings, you can configure options such as displaying release notes after updates, receiving plugin update notifications, setting the default location for new drawings, specifying the Excalidraw folder for embedding drawings into active documents, defining an Excalidraw template file, and designating an Excalidraw Automate script folder for managing automation scripts.`,
   FOLDER_NAME: "Excalidraw folder (CAsE sEnsITive!)",
@@ -239,7 +237,7 @@ export default {
   CROP_PREFIX_NAME: "Crop file prefix",
   CROP_PREFIX_DESC:
     "The first part of the filename for new drawings created when cropping an image. " +
-    "Leave empty if you don't need a prefix.",  
+    "Leave empty if you don't need a prefix.",
   ANNOTATE_SUFFIX_NAME: "Annotation file suffix",
   ANNOTATE_SUFFIX_DESC:
     "The last part of the filename for new drawings created when annotating an image. " +
@@ -331,7 +329,7 @@ export default {
     "This will allow you to easily read and edit the JSON string. The drawing will be compressed again " +
     "once you switch back to Excalidraw view and save the drawing (CTRL+S).<br>" +
     "I recommend switching this feature off as it will result in smaller file sizes and avoiding unnecessary results in Obsidian search. " +
-    "You can always use the 'Excalidraw: Decompress current Excalidraw file' command from the command palette "+
+    "You can always use the 'Excalidraw: Decompress current Excalidraw file' command from the command palette " +
     "to manually decompress the drawing JSON when you need to read or edit it.",
   AUTOSAVE_INTERVAL_DESKTOP_NAME: "Interval for autosave on Desktop",
   AUTOSAVE_INTERVAL_DESKTOP_DESC:
@@ -375,7 +373,7 @@ FILENAME_HEAD: "Filename",
   OVERRIDE_OBSIDIAN_FONT_SIZE_DESC:
     "Obsidian's custom font size setting affects the entire interface, including Excalidraw and themes that depend on the default font size. " +
     "Enabling this option restricts font size changes to editor text, which will improve the look of Excalidraw. " +
-    "If parts of the UI look incorrect after enabling, try turning this setting off.",  
+    "If parts of the UI look incorrect after enabling, try turning this setting off.",
   DYNAMICSTYLE_NAME: "Dynamic styling",
   DYNAMICSTYLE_DESC:
     "Change Excalidraw UI colors to match the canvas color",
@@ -387,7 +385,7 @@ FILENAME_HEAD: "Filename",
   IFRAME_MATCH_THEME_DESC:
     "<b><u>Toggle ON:</u></b> Set this to true if for example you are using Obsidian in dark-mode but use excalidraw with a light background. " +
     "With this setting the embedded Obsidian markdown document will match the Excalidraw theme (i.e. light colors if Excalidraw is in light mode).<br>" +
-    "<b><u>Toggle OFF:</u></b> Set this to false if you want the embedded Obsidian markdown document to match the Obsidian theme (i.e. dark colors if Obsidian is in dark mode).",    
+    "<b><u>Toggle OFF:</u></b> Set this to false if you want the embedded Obsidian markdown document to match the Obsidian theme (i.e. dark colors if Obsidian is in dark mode).",
   MATCH_THEME_NAME: "New drawing to match Obsidian theme",
   MATCH_THEME_DESC:
     "If theme is dark, new drawing will be created in dark mode. This does not apply when you use a template for new drawings. " +
@@ -413,7 +411,7 @@ FILENAME_HEAD: "Filename",
   DISABLE_SINGLE_FINGER_PANNING_NAME: "Enable single-finger panning in pen mode",
   SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_NAME: "Show (+) crosshair in pen mode",
   SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_DESC:
-    "Show crosshair in pen mode when using the freedraw tool. <b><u>Toggle ON:</u></b> SHOW <b><u>Toggle OFF:</u></b> HIDE<br>"+
+    "Show crosshair in pen mode when using the freedraw tool. <b><u>Toggle ON:</u></b> SHOW <b><u>Toggle OFF:</u></b> HIDE<br>" +
     "The effect depends on the device. Crosshair is typically visible on drawing tablets, MS Surface, but not on iOS.",
   SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_NAME: "Render Excalidraw file as an image in hover preview...",
   SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_DESC:
@@ -448,13 +446,13 @@ FILENAME_HEAD: "Filename",
   DEFAULT_WHEELZOOM_NAME: "Mouse wheel to zoom by default",
   DEFAULT_WHEELZOOM_DESC:
     `<b><u>Toggle ON:</u></b> Mouse wheel to zoom; ${labelCTRL()} + mouse wheel to scroll</br><b><u>Toggle OFF:</u></b>${labelCTRL()} + mouse wheel to zoom; Mouse wheel to scroll`,
-    
+
   ZOOM_TO_FIT_NAME: "Zoom to fit on view resize",
   ZOOM_TO_FIT_DESC: "Zoom to fit drawing when the pane is resized" +
     "<br><b><u>Toggle ON:</u></b> Zoom to fit<br><b><u>Toggle OFF:</u></b> Auto zoom disabled",
   ZOOM_TO_FIT_ONOPEN_NAME: "Zoom to fit on file open",
   ZOOM_TO_FIT_ONOPEN_DESC: "Zoom to fit drawing when the drawing is first opened" +
-      "<br><b><u>Toggle ON:</u></b> Zoom to fit<br><b><u>Toggle OFF:</u></b> Auto zoom disabled",  
+      "<br><b><u>Toggle ON:</u></b> Zoom to fit<br><b><u>Toggle OFF:</u></b> Auto zoom disabled",
   ZOOM_TO_FIT_MAX_LEVEL_NAME: "Zoom to fit max ZOOM level",
   ZOOM_TO_FIT_MAX_LEVEL_DESC:
     "Set the maximum level to which zoom to fit will enlarge the drawing. Minimum is 0.5 (50%) and maximum is 10 (1000%).",
@@ -489,7 +487,7 @@ FILENAME_HEAD: "Filename",
   DRAG_MODIFIER_NAME: "Link Click and Drag&Drop Modifier Keys",
   DRAG_MODIFIER_DESC: "Modifier key behavior when clicking links and dragging and dropping elements. " +
     "Excalidraw will not validate your configuration... pay attention to avoid conflicting settings. " +
-    "These settings are different for Apple and non-Apple. If you use Obsidian on multiple platforms, you'll need to make the settings separately. "+
+    "These settings are different for Apple and non-Apple. If you use Obsidian on multiple platforms, you'll need to make the settings separately. " +
     "The toggles follow the order of " +
     (DEVICE.isIOS || DEVICE.isMacOS ? "SHIFT, CMD, OPT, CONTROL." : "SHIFT, CTRL, ALT, META (Windows key)."),
   LONG_PRESS_DESKTOP_NAME: "Long press to open desktop",
@@ -514,7 +512,7 @@ FILENAME_HEAD: "Filename",
   MAINWORKSPACE_PANE_NAME: "Open in main workspace",
   MAINWORKSPACE_PANE_DESC:
     `When ${labelCTRL()}+${labelALT()} clicking a link in Excalidraw, by default the plugin will open the link in a new pane in the current active window. ` +
-    "Turning this setting on, Excalidraw will open the link in an existing or new pane in the main workspace. ",  
+    "Turning this setting on, Excalidraw will open the link in an existing or new pane in the main workspace. ",
   LINK_BRACKETS_NAME: "Show <code>[[brackets]]</code> around links",
   LINK_BRACKETS_DESC: `${
     "In PREVIEW mode, when parsing Text Elements, place brackets around links. " +
@@ -618,11 +616,11 @@ FILENAME_HEAD: "Filename",
     "You can add one custom font beyond that using the setting above. " +
     'You can override this css setting by adding the following frontmatter-key to the embedded markdown file: "excalidraw-css: css_file_in_vault|css-snippet".',
   EMBED_HEAD: "Embedding Excalidraw into your Notes and Exporting",
-  EMBED_DESC: `In the "Embed & Export" settings, you can configure how images and Excalidraw drawings are embedded and exported within your documents. Key settings include choosing the image type for markdown preview (such as Native SVG or PNG), specifying the type of file to insert into the document (original Excalidraw, PNG, or SVG), and managing image caching for embedding in markdown. You can also control image sizing, whether to embed drawings using wiki links or markdown links, and adjust settings related to image themes, background colors, and Obsidian integration. 
+  EMBED_DESC: `In the "Embed & Export" settings, you can configure how images and Excalidraw drawings are embedded and exported within your documents. Key settings include choosing the image type for markdown preview (such as Native SVG or PNG), specifying the type of file to insert into the document (original Excalidraw, PNG, or SVG), and managing image caching for embedding in markdown. You can also control image sizing, whether to embed drawings using wiki links or markdown links, and adjust settings related to image themes, background colors, and Obsidian integration.
     Additionally, there are settings for auto-export, which automatically generates SVG and/or PNG files to match the title of your Excalidraw drawings, keeping them in sync with file renames and deletions.`,
   EMBED_CANVAS: "Obsidian Canvas support",
   EMBED_CANVAS_NAME: "Immersive embedding",
-  EMBED_CANVAS_DESC: 
+  EMBED_CANVAS_DESC:
     "Hide canvas node border and background when embedding an Excalidraw drawing to Canvas. " +
     "Note that for a full transparent background for your image, you will still need to configure Excalidraw to export images with transparent background.",
   EMBED_CACHING: "Image caching and rendering optimization",
@@ -637,7 +635,7 @@ FILENAME_HEAD: "Filename",
   EMBED_IMAGE_CACHE_DESC: "Cache images for embedding in markdown. This will speed up the embedding process, but in case you compose images of several sub-component drawings, " +
     "the embedded image in Markdown won't update until you open the drawing and save it to trigger an update of the cache.",
   SCENE_IMAGE_CACHE_NAME: "Cache nested Excalidraws in Scene",
-  SCENE_IMAGE_CACHE_DESC: "Cache nested Excalidraws in the Scene for faster scene rendering. This will speed up the rendering process, especially if you have deeply nested Excalidraws in your scene. " + 
+  SCENE_IMAGE_CACHE_DESC: "Cache nested Excalidraws in the Scene for faster scene rendering. This will speed up the rendering process, especially if you have deeply nested Excalidraws in your scene. " +
     "Excalidraw will try to intelligently identify if any children of a nested Excalidraw have changed and will update the cache accordingly. " +
     "You may want to turn this off, in case you are suspecting that the cache is not updating properly.",
   EMBED_IMAGE_CACHE_CLEAR: "Purge Cache",
@@ -659,7 +657,7 @@ FILENAME_HEAD: "Filename",
   EMBED_PREVIEW_IMAGETYPE_DESC:
     "<b><u>Native SVG</u></b>: High Image Quality. Embedded Websites, YouTube videos, Obsidian Links, and external images embedded via a URL will all work. Embedded Obsidian pages will not<br>" +
     "<b><u>SVG Image</u></b>: High Image Quality. Embedded elements and images embedded via URL only have placeholders, links don't work<br>" +
-    "<b><u>PNG Image</u></b>: Lower Image Quality, but in some cases better performance with large drawings. Embedded elements and images embedded via URL only have placeholders, links don't work. Also some of the <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>image block referencing features</a> do not work with PNG embeds.", 
+    "<b><u>PNG Image</u></b>: Lower Image Quality, but in some cases better performance with large drawings. Embedded elements and images embedded via URL only have placeholders, links don't work. Also some of the <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>image block referencing features</a> do not work with PNG embeds.",
   PREVIEW_MATCH_OBSIDIAN_NAME: "Excalidraw preview to match Obsidian theme",
   PREVIEW_MATCH_OBSIDIAN_DESC:
     "Image preview in documents should match the Obsidian theme. If enabled, when Obsidian is in dark mode, Excalidraw images will render in dark mode. " +
@@ -681,7 +679,7 @@ FILENAME_HEAD: "Filename",
     "a corresponding PNG or SVG readily available the command palette action will insert a broken link. You need to open the original drawing and initiate export manually. " +
     "This option will not autogenerate PNG/SVG files, but will simply reference the already existing files.",
   EMBED_MARKDOWN_COMMENT_NAME: "Embed link to drawing as comment",
-  EMBED_MARKDOWN_COMMENT_DESC: 
+  EMBED_MARKDOWN_COMMENT_DESC:
     "Embed the link to the original Excalidraw file as a markdown link under the image, e.g.:<code>%%[[drawing.excalidraw]]%%</code>.<br>" +
     "Instead of adding a markdown comment you may also select the embedded SVG or PNG line and use the command palette action: " +
     "'<code>Excalidraw: Open Excalidraw drawing</code>' to open the drawing.",
@@ -718,13 +716,13 @@ FILENAME_HEAD: "Filename",
     "Automatically create an SVG export of your drawing matching the title of your file. " +
     "The plugin will save the *.SVG file in the same folder as the drawing. " +
     "Embed the .svg file into your documents instead of Excalidraw making you embeds platform independent. " +
-    "While the auto-export switch is on, this file will get updated every time you edit the Excalidraw drawing with the matching name. " + 
+    "While the auto-export switch is on, this file will get updated every time you edit the Excalidraw drawing with the matching name. " +
     "You can override this setting on a file level by adding the <code>excalidraw-autoexport</code> frontmatter key. Valid values for this key are " +
     "<code>none</code>,<code>both</code>,<code>svg</code>, and <code>png</code>.",
   EXPORT_PNG_NAME: "Auto-export PNG",
   EXPORT_PNG_DESC: "Same as the auto-export SVG, but for *.PNG",
   EXPORT_BOTH_DARK_AND_LIGHT_NAME: "Export both dark- and light-themed image",
-  EXPORT_BOTH_DARK_AND_LIGHT_DESC:  "When enabled, Excalidraw will export two files instead of one: filename.dark.png, filename.light.png and/or filename.dark.svg and filename.light.svg<br>"+
+  EXPORT_BOTH_DARK_AND_LIGHT_DESC: "When enabled, Excalidraw will export two files instead of one: filename.dark.png, filename.light.png and/or filename.dark.svg and filename.light.svg<br>" +
     "Double files will be exported both if auto-export SVG or PNG (or both) are enabled, as well as when clicking export on a single image.",
   COMPATIBILITY_HEAD: "Compatibility features",
   COMPATIBILITY_DESC: "You should only enable these features if you have a strong reason for wanting to work with excalidraw.com files instead of markdown files. Many of the plugin features are not supported on legacy files. Typical usecase would be if you use set your vault up on top of a Visual Studio Code project folder and you have .excalidraw drawings you want to access from Visual Studio Code as well. Another usecase might be using Excalidraw in Logseq and Obsidian in parallel.",
@@ -761,8 +759,8 @@ FILENAME_HEAD: "Filename",
     "and the file explorer are going to be all legacy *.excalidraw files. This setting will also turn off the reminder message " +
     "when you open a legacy file for editing.",
   MATHJAX_NAME: "MathJax (LaTeX) javascript library host",
-  MATHJAX_DESC: "If you are using LaTeX equations in Excalidraw, then the plugin needs to load a javascript library for that. " + 
-    "Some users are unable to access certain host servers. If you are experiencing issues, try changing the host here. You may need to "+
+  MATHJAX_DESC: "If you are using LaTeX equations in Excalidraw, then the plugin needs to load a javascript library for that. " +
+    "Some users are unable to access certain host servers. If you are experiencing issues, try changing the host here. You may need to " +
     "restart Obsidian after closing settings, for this change to take effect.",
   LATEX_DEFAULT_NAME: "Default LaTeX formula for new equations",
   LATEX_DEFAULT_DESC: "Leave empty if you don't want a default formula. You can add default formatting here such as <code>\\color{white}</code>.",
@@ -782,7 +780,7 @@ FILENAME_HEAD: "Filename",
   EXPERIMENTAL_HEAD: "Miscellaneous features",
   EXPERIMENTAL_DESC: `These miscellaneous features in Excalidraw include options for setting default LaTeX formulas for new equations, enabling a Field Suggester for autocompletion, displaying type indicators for Excalidraw files, enabling immersive image embedding in live preview editing mode, and experimenting with Taskbone Optical Character Recognition for text extraction from images and drawings. Users can also enter a Taskbone API key for extended usage of the OCR service.`,
   EA_HEAD: "Excalidraw Automate",
-  EA_DESC: 
+  EA_DESC:
     "ExcalidrawAutomate is a scripting and automation API for Excalidraw. Unfortunately, the documentation of the API is sparse. " +
     "I recommend reading the <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/API/ExcalidrawAutomate.d.ts'>ExcalidrawAutomate.d.ts</a> file, " +
     "visiting the <a href='https://zsviczian.github.io/obsidian-excalidraw-plugin/'>ExcalidrawAutomate How-to</a> page - though the information " +
@@ -816,10 +814,10 @@ FILENAME_HEAD: "Filename",
     "in this case the entire drawing markdown will fade out including # Text Elements. The side effect is you won't be able to block reference text in other markdown notes, that is after the %% comment section. This is seldom an issue. " +
     "Should you want to edit the Excalidraw markdown script, simply switch to markdown view mode and temporarily remove the %% comment.",
   EXCALIDRAW_PROPERTIES_NAME: "Load Excalidraw Properties into Obsidian Suggester",
-  EXCALIDRAW_PROPERTIES_DESC: "Toggle this setting to load Excalidraw document properties into Obsidian's property suggester at plugin startup. "+
+  EXCALIDRAW_PROPERTIES_DESC: "Toggle this setting to load Excalidraw document properties into Obsidian's property suggester at plugin startup. " +
    "Enabling this feature simplifies the use of Excalidraw front matter properties, allowing you to leverage many powerful settings. If you prefer not to load these properties automatically, " +
    "you can disable this feature, but you will need to manually remove any unwanted properties from the suggester. " +
-   "Note that turning on this setting requires restarting the plugin as properties are loaded at startup.",  
+   "Note that turning on this setting requires restarting the plugin as properties are loaded at startup.",
   FONTS_HEAD: "Fonts",
   FONTS_DESC: "Configure local fontfaces and downloaded CJK fonts for Excalidraw.",
   CUSTOM_FONT_HEAD: "Local font",
@@ -836,16 +834,16 @@ FILENAME_HEAD: "Filename",
     "For optimal performance, it is recommended to use a .woff2 file, as Excalidraw will encode only the necessary glyphs when exporting images to SVG. " +
     "Other font formats will embed the entire font in the exported file, potentially resulting in significantly larger file sizes.",
   OFFLINE_CJK_NAME: "Offline CJK font support",
-  OFFLINE_CJK_DESC: 
+  OFFLINE_CJK_DESC:
     `<strong>Changes you make here will only take effect after restarting Obsidian.</strong><br>
-     Excalidraw.com offers handwritten CJK fonts. By default these fonts are not included in the plugin locally, but are served from the Internet. 
+     Excalidraw.com offers handwritten CJK fonts. By default these fonts are not included in the plugin locally, but are served from the Internet.
      If you prefer to keep Excalidraw fully local, allowing it to work without Internet access you can download the necessary <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip" target="_blank">font files from GitHub</a>.
      After downloading, unzip the contents into a folder within your Vault.<br>
      Pre-loading fonts will impact startup performance. For this reason you can select which fonts to load.`,
   CJK_ASSETS_FOLDER_NAME: "CJK Font Folder (cAsE sENsiTIvE!)",
   CJK_ASSETS_FOLDER_DESC: `You can set the location of the CJK fonts folder here. For example, you may choose to place it under <code>Excalidraw/CJK Fonts</code>.<br><br>
     <strong>Important:</strong> Do not set this folder to the Vault root! Do not put other fonts in this folder.<br><br>
-    <strong>Note:</strong> If you're using Obsidian Sync and want to synchronize these font files across your devices, ensure that Obsidian Sync is set to synchronize "All other file types".`, 
+    <strong>Note:</strong> If you're using Obsidian Sync and want to synchronize these font files across your devices, ensure that Obsidian Sync is set to synchronize "All other file types".`,
   LOAD_CHINESE_FONTS_NAME: "Load Chinese fonts from file at startup",
   LOAD_JAPANESE_FONTS_NAME: "Load Japanese fonts from file at startup",
   LOAD_KOREAN_FONTS_NAME: "Load Korean fonts from file at startup",
@@ -860,7 +858,7 @@ FILENAME_HEAD: "Filename",
   TASKBONE_ENABLE_DESC: "By enabling this service your agree to the Taskbone <a href='https://www.taskbone.com/legal/terms/' target='_blank'>Terms and Conditions</a> and the " +
     "<a href='https://www.taskbone.com/legal/privacy/' target='_blank'>Privacy Policy</a>.",
   TASKBONE_APIKEY_NAME: "Taskbone API Key",
-  TASKBONE_APIKEY_DESC: "Taskbone offers a free service with a reasonable number of scans per month. If you want to use this feature more frequently, or you want to support " + 
+  TASKBONE_APIKEY_DESC: "Taskbone offers a free service with a reasonable number of scans per month. If you want to use this feature more frequently, or you want to support " +
     "the developer of Taskbone (as you can imagine, there is no such thing as 'free', providing this awesome OCR service costs some money to the developer of Taskbone), you can " +
     "purchase a paid API key from <a href='https://www.taskbone.com/' target='_blank'>taskbone.com</a>. In case you have purchased a key, simply overwrite this auto generated free-tier API-key with your paid key.",
 
@@ -910,7 +908,7 @@ FILENAME_HEAD: "Filename",
   FONT_INFO_TITLE: "Starting v2.5.3 fonts load from the Internet",
   FONT_INFO_DETAILED: `
       <p>
-        To improve Obsidian's startup time and manage the large <strong>CJK font family</strong>, 
+        To improve Obsidian's startup time and manage the large <strong>CJK font family</strong>,
         I've moved the CJK fonts out of the plugin's <code>main.js</code>. CJK fonts will be loaded from the internet by default.
         This typically shouldn't cause issues as Obsidian caches these files after first use.
       </p>
@@ -929,8 +927,8 @@ FILENAME_HEAD: "Filename",
       </p>
       <h3>Note:</h3>
       <p>
-        If you find this process cumbersome, please submit a feature request to Obsidian.md for supporting assets in the plugin folder. 
-        Currently, only a single <code>main.js</code> is supported, which leads to large files and slow startup times for complex plugins like Excalidraw. 
+        If you find this process cumbersome, please submit a feature request to Obsidian.md for supporting assets in the plugin folder.
+        Currently, only a single <code>main.js</code> is supported, which leads to large files and slow startup times for complex plugins like Excalidraw.
         I apologize for the inconvenience.
       </p>
     `,
@@ -1039,7 +1037,7 @@ FILENAME_HEAD: "Filename",
   // WebBrowserDragAction
   WEB_DRAG_IMPORT_IMAGE: "Import Image to Vault",
   WEB_DRAG_IMAGE_URL: "Insert Image or YouTube Thumbnail with URL",
-  WEB_DRAG_LINK: "Insert Link", 
+  WEB_DRAG_LINK: "Insert Link",
   WEB_DRAG_EMBEDDABLE: "Insert Interactive-Frame",
 
   // LocalFileDragAction
@@ -1048,7 +1046,7 @@ FILENAME_HEAD: "Filename",
   LOCAL_DRAG_LINK: "Insert Link: local URI or internal-link if from Vault",
   LOCAL_DRAG_EMBEDDABLE: "Insert Interactive-Frame: local URI or internal-link if from Vault",
 
-  // InternalDragAction  
+  // InternalDragAction
   INTERNAL_DRAG_IMAGE: "Insert Image",
   INTERNAL_DRAG_IMAGE_FULL: "Insert Image @100%",
   INTERNAL_DRAG_LINK: "Insert Link",
@@ -1118,7 +1116,7 @@ FILENAME_HEAD: "Filename",
   EXPORTDIALOG_PDF_ALIGN_CENTER_LEFT: "Center Left",
   EXPORTDIALOG_PDF_ALIGN_CENTER_RIGHT: "Center Right",
   EXPORTDIALOG_PDF_ALIGN_TOP_LEFT: "Top Left",
-  EXPORTDIALOG_PDF_ALIGN_TOP_CENTER: "Top Center", 
+  EXPORTDIALOG_PDF_ALIGN_TOP_CENTER: "Top Center",
   EXPORTDIALOG_PDF_ALIGN_TOP_RIGHT: "Top Right",
   EXPORTDIALOG_PDF_ALIGN_BOTTOM_LEFT: "Bottom Left",
   EXPORTDIALOG_PDF_ALIGN_BOTTOM_CENTER: "Bottom Center",
@@ -1130,13 +1128,13 @@ FILENAME_HEAD: "Filename",
   EXPORTDIALOG_SAVE_PDF_SETTINGS: "Save PDF settings",
   EXPORTDIALOG_SAVE_CONFIRMATION: "PDF config saved to plugin settings as default",
   // Buttons
-  EXPORTDIALOG_PNGTOFILE : "Export PNG",
-  EXPORTDIALOG_SVGTOFILE : "Export SVG",
-  EXPORTDIALOG_PNGTOVAULT : "PNG to Vault",
-  EXPORTDIALOG_SVGTOVAULT : "SVG to Vault",
+  EXPORTDIALOG_PNGTOFILE: "Export PNG",
+  EXPORTDIALOG_SVGTOFILE: "Export SVG",
+  EXPORTDIALOG_PNGTOVAULT: "PNG to Vault",
+  EXPORTDIALOG_SVGTOVAULT: "SVG to Vault",
   EXPORTDIALOG_EXCALIDRAW: "Excalidraw",
-  EXPORTDIALOG_PNGTOCLIPBOARD : "PNG to Clipboard",
-  EXPORTDIALOG_SVGTOCLIPBOARD : "SVG to Clipboard",
+  EXPORTDIALOG_PNGTOCLIPBOARD: "PNG to Clipboard",
+  EXPORTDIALOG_SVGTOCLIPBOARD: "SVG to Clipboard",
   EXPORTDIALOG_PDF: "Export PDF",
 
   EXPORTDIALOG_PDF_PROGRESS_NOTICE: "Exporting PDF. If this image is large, it may take a while.",
