@@ -270,39 +270,39 @@ export default {
     "Puedes acceder a tus scripts desde Excalidraw a través de la Paleta de Comandos de Obsidian. Asigna " +
     "atajos de teclado a tus scripts favoritos al igual que a cualquier otro comando de Obsidian. " +
     "La carpeta no puede ser la carpeta raíz de tu Bóveda. ",
-  AI_HEAD: "AI Settings - Experimental",
-  AI_DESC: `In the "AI" settings, you can configure options for using OpenAI's GPT API. ` +
-    `While the OpenAI API is in beta, its use is strictly limited — as such we require you use your own API key. ` +
-    `You can create an OpenAI account, add a small credit (5 USD minimum), and generate your own API key. ` +
-    `Once API key is set, you can use the AI tools in Excalidraw.`,
-  AI_ENABLED_NAME: "Enable AI features",
-  AI_ENABLED_DESC: "You need to reopen Excalidraw for the changes to take effect.",
-  AI_OPENAI_TOKEN_NAME: "OpenAI API key",
+  AI_HEAD: "Configuración de IA - Experimental",
+  AI_DESC: `En la configuración de "IA", puedes configurar opciones para usar la API GPT de OpenAI. ` +
+    `Aunque la API de OpenAI está en fase beta, su uso es estrictamente limitado; por lo tanto, requerimos que uses tu propia API KEY (clave de API). ` +
+    `Puedes crear una cuenta de OpenAI, agregar un pequeño crédito (mínimo 5 USD) y generar tu propia API KEY (clave de API) ` +
+    `Una vez que la API KEY (clave de API) esté configurada, podrás usar las herramientas de IA en Excalidraw.`,
+  AI_ENABLED_NAME: "Habilitar funcionalidades de IA",
+  AI_ENABLED_DESC: "Necesitas reabrir Excalidraw para que los cambios surtan efecto.",
+  AI_OPENAI_TOKEN_NAME: "OpenAI API key (Clave de API de OpenAI)",
   AI_OPENAI_TOKEN_DESC:
-    "You can get your OpenAI API key from your <a href='https://platform.openai.com/api-keys'>OpenAI account</a>.",
-  AI_OPENAI_TOKEN_PLACEHOLDER: "Enter your OpenAI API key here",
-  AI_OPENAI_DEFAULT_MODEL_NAME: "Default AI model",
+    "Puedes obtener tu API KEY (clave de API) de OpenAI desde tu <a href='https://platform.openai.com/api-keys'></a>.",
+  AI_OPENAI_TOKEN_PLACEHOLDER: "Ingresa tu API Key (clave de API) de OpenAI aquí",
+  AI_OPENAI_DEFAULT_MODEL_NAME: "Modelo de IA predeterminado",
   AI_OPENAI_DEFAULT_MODEL_DESC:
-    "The default AI model to use when generating text. This is a freetext field, so you can enter any valid OpenAI model name. " +
-    "Find out more about the available models on the <a href='https://platform.openai.com/docs/models'>OpenAI website</a>.",
-  AI_OPENAI_DEFAULT_MODEL_PLACEHOLDER: "Enter your default AI model here. e.g.: gpt-3.5-turbo-1106",
-  AI_OPENAI_DEFAULT_IMAGE_MODEL_NAME: "Default Image Generation AI model",
+    "El modelo de IA predeterminado para usar al generar texto. Este es un campo de texto libre, así que puedes ingresar cualquier nombre de modelo de OpenAI válido. " +
+    "Encuentra más información sobre los modelos disponibles en el sitio web de OpenAI: <a href='https://platform.openai.com/docs/models'></a>.",
+  AI_OPENAI_DEFAULT_MODEL_PLACEHOLDER: "Ingresa aquí tu modelo de IA predeterminado. Ej.: gpt-3.5-turbo-1106",
+  AI_OPENAI_DEFAULT_IMAGE_MODEL_NAME: "Modelo de IA predeterminado para generación de imágenes",
   AI_OPENAI_DEFAULT_IMAGE_MODEL_DESC:
-    "The default AI model to use when generating images. Image editing and variations are only supported by dall-e-2 at this time by OpenAI, " +
-    "for this reason dall-e-2 will automatically be used in such cases regardless of this setting.<br>" +
-    "This is a freetext field, so you can enter any valid OpenAI model name. " +
-    "Find out more about the available models on the <a href='https://platform.openai.com/docs/models'>OpenAI website</a>.",
-  AI_OPENAI_DEFAULT_IMAGE_MODEL_PLACEHOLDER: "Enter your default Image Generation AI model here e.g.: dall-e-3",
-  AI_OPENAI_DEFAULT_VISION_MODEL_NAME: "Default AI vision model",
+    "El modelo de IA predeterminado para usar al generar imágenes. La edición y variaciones de imágenes solo son compatibles con Dall-E 2 en este momento por parte de OpenAI, " +
+    "por esta razón, Dall-E 2 se usará automáticamente en tales casos, independientemente de esta configuración.<br>" +
+    "Este es un campo de texto libre, así que puedes ingresar cualquier nombre de modelo de OpenAI válido. " +
+    "Encuentra más información sobre los modelos disponibles en el sitio web de OpenAI: <a href='https://platform.openai.com/docs/models'></a>.",
+  AI_OPENAI_DEFAULT_IMAGE_MODEL_PLACEHOLDER: "Ingresa aquí tu modelo de IA predeterminado para generación de imágenes. Ej.: Dall-E 3",
+  AI_OPENAI_DEFAULT_VISION_MODEL_NAME: "Modelo de visión de IA predeterminado",
   AI_OPENAI_DEFAULT_VISION_MODEL_DESC:
-    "The default AI vision model to use when generating text from images. This is a freetext field, so you can enter any valid OpenAI model name. " +
+    "El modelo de visión de IA predeterminado para usar al generar texto a partir de imágenes. Este es un campo de texto libre, así que puedes ingresar cualquier nombre de modelo de OpenAI válido. " +
     "Find out more about the available models on the <a href='https://platform.openai.com/docs/models'>OpenAI website</a>.",
-  AI_OPENAI_DEFAULT_API_URL_NAME: "OpenAI API URL",
+  AI_OPENAI_DEFAULT_API_URL_NAME: "URL de la API de OpenAI",
   AI_OPENAI_DEFAULT_API_URL_DESC:
-    "The default OpenAI API URL. This is a freetext field, so you can enter any valid OpenAI API compatible URL. " +
-    "Excalidraw will use this URL when posting API requests to OpenAI. I am not doing any error handling on this field, so make sure you enter a valid URL and only change this if you know what you are doing. ",
-  AI_OPENAI_DEFAULT_IMAGE_API_URL_NAME: "OpenAI Image Generation API URL",
-  AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER: "Enter your default AI vision model here. e.g.: gpt-4o",
+    "La URL predeterminada de la API de OpenAI. Este es un campo de texto libre, así que puedes ingresar cualquier URL compatible con la API de OpenAI válida. " +
+    "Excalidraw usará esta URL al enviar solicitudes a la API de OpenAI. No realizo manejo de errores en este campo, así que asegúrate de ingresar una URL válida y solo cámbiala si sabes lo que estás haciendo. ",
+  AI_OPENAI_DEFAULT_IMAGE_API_URL_NAME: "URL de la API de Generación de Imágenes de OpenAI",
+  AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER: "Ingresa aquí tu modelo de visión de IA predeterminado. Ej.: gpt-4o",
   SAVING_HEAD: "Saving",
   SAVING_DESC: "In the 'Saving' section of Excalidraw Settings, you can configure how your drawings are saved. This includes options for compressing Excalidraw JSON in Markdown, setting autosave intervals for both desktop and mobile, defining filename formats, and choosing whether to use the .excalidraw.md or .md file extension. ",
   COMPRESS_NAME: "Compress Excalidraw JSON in Markdown",
