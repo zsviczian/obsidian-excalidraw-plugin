@@ -303,128 +303,128 @@ export default {
     "Excalidraw usará esta URL al enviar solicitudes a la API de OpenAI. No realizo manejo de errores en este campo, así que asegúrate de ingresar una URL válida y solo cámbiala si sabes lo que estás haciendo. ",
   AI_OPENAI_DEFAULT_IMAGE_API_URL_NAME: "URL de la API de Generación de Imágenes de OpenAI",
   AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER: "Ingresa aquí tu modelo de visión de IA predeterminado. Ej.: gpt-4o",
-  SAVING_HEAD: "Saving",
-  SAVING_DESC: "In the 'Saving' section of Excalidraw Settings, you can configure how your drawings are saved. This includes options for compressing Excalidraw JSON in Markdown, setting autosave intervals for both desktop and mobile, defining filename formats, and choosing whether to use the .excalidraw.md or .md file extension. ",
-  COMPRESS_NAME: "Compress Excalidraw JSON in Markdown",
+  SAVING_HEAD: "Guardar",
+  SAVING_DESC: "En la sección 'Guardar' de la Configuración de Excalidraw, puedes configurar cómo se guardan tus bosquejos. Esto incluye opciones para comprimir el JSON de Excalidraw en Markdown, establecer intervalos de autoguardado para escritorio y móvil, definir formatos de nombre de archivo y elegir si usar la extensión de archivo .excalidraw.md o .md. ",
+  COMPRESS_NAME: "Comprimir JSON de Excalidraw en Markdown",
   COMPRESS_DESC:
-    "By enabling this feature Excalidraw will store the drawing JSON in a Base64 compressed " +
-    "format using the <a href='https://pieroxy.net/blog/pages/lz-string/index.html'>LZ-String</a> algorithm. " +
-    "This will reduce the chance of Excalidraw JSON cluttering your search results in Obsidian. " +
-    "As a side effect, this will also reduce the filesize of Excalidraw drawings. " +
-    "When you switch an Excalidraw drawing to Markdown view, using the options menu in Excalidraw, the file will " +
-    "be saved without compression, so that you can read and edit the JSON string. The drawing will be compressed again " +
-    "once you switch back to Excalidraw view. " +
-    "The setting only has effect 'point forward', meaning, existing drawings will not be affected by the setting " +
-    "until you open them and save them.<br><b><u>Toggle ON:</u></b> Compress drawing JSON<br><b><u>Toggle OFF:</u></b> Leave drawing JSON uncompressed",
-  DECOMPRESS_FOR_MD_NAME: "Decompress Excalidraw JSON in Markdown View",
+    "Al habilitar esta función, Excalidraw almacenará el JSON del bosquejo en un formato comprimido Base64 " +
+    "utilizando el algoritmo <a href='https://pieroxy.net/blog/pages/lz-string/index.html'>LZ-String</a>. " +
+    "Esto reducirá la probabilidad de que el JSON de Excalidraw sature tus resultados de búsqueda en Obsidian. " +
+    "Como efecto secundario, también reducirá el tamaño de los archivos de los bosquejos de Excalidraw. " +
+    "Cuando cambias un bosquejo de Excalidraw a la vista de Markdown, usando el menú de opciones en Excalidraw, el archivo " +
+    "se guardará sin compresión, para que puedas leer y editar la cadena JSON. El bosquejo se comprimirá de nuevo " +
+    "una vez que vuelvas a la vista de Excalidraw. " +
+    "La configuración solo tiene efecto 'en adelante', es decir, los bosquejos existentes no se verán afectados por la configuración " +
+    "hasta que los abras y los guardes.<br><b><u>Activado:</u></b> Comprime el JSON del bosquejo<br><b><u>Desactivado:</u></b> Deja el JSON del bosquejo sin comprimir ",
+  DECOMPRESS_FOR_MD_NAME: "Descomprimir JSON de Excalidraw en la vista de Markdown",
   DECOMPRESS_FOR_MD_DESC:
-    "By enabling this feature Excalidraw will automatically decompress the drawing JSON when you switch to Markdown view. " +
-    "This will allow you to easily read and edit the JSON string. The drawing will be compressed again " +
-    "once you switch back to Excalidraw view and save the drawing (CTRL+S).<br>" +
-    "I recommend switching this feature off as it will result in smaller file sizes and avoiding unnecessary results in Obsidian search. " +
-    "You can always use the 'Excalidraw: Decompress current Excalidraw file' command from the command palette "+
-    "to manually decompress the drawing JSON when you need to read or edit it.",
-  AUTOSAVE_INTERVAL_DESKTOP_NAME: "Interval for autosave on Desktop",
+    "Al habilitar esta función, Excalidraw descomprimirá automáticamente el JSON del bosquejo cuando cambies a la vista de Markdown. " +
+    "Esto te permitirá leer y editar fácilmente la cadena JSON. El bosquejo se comprimirá de nuevo " +
+    "una vez que vuelvas a la vista de Excalidraw y guardes el bosquejo (CTRL+S).<br>" +
+    "Recomiendo desactivar esta función, ya que resultará en tamaños de archivo más pequeños y evitará resultados innecesarios en la búsqueda de Obsidian. " +
+    "Siempre puedes usar el comando 'Excalidraw: Descomprimir archivo Excalidraw actual' desde la paleta de comandos "+
+    "para descomprimir manualmente el JSON del bosquejo cuando necesites leerlo o editarlo.",
+  AUTOSAVE_INTERVAL_DESKTOP_NAME: "Intervalo para autoguardado en Escritorio",
   AUTOSAVE_INTERVAL_DESKTOP_DESC:
-    "The time interval between saves. Autosave will skip if there are no changes in the drawing. " +
-    "Excalidraw will also save the file when closing a workspace tab or navigating within Obsidian, but away from the active Excalidraw tab (i.e. clicking on the Obsidian ribbon or checking backlinks, etc.). " +
-    "Excalidraw will not be able to save your work when terminating Obsidian directly either by killing the Obsidian process, or clicking to close Obsidian altogether.",
-  AUTOSAVE_INTERVAL_MOBILE_NAME: "Interval for autosave on Mobile",
+    "Es el intervalo de tiempo entre guardados. El autoguardado se omitirá si no hay cambios en el bosquejo. " +
+    "Excalidraw también guardará el archivo al cerrar una pestaña del espacio de trabajo o al navegar dentro de Obsidian, pero lejos de la pestaña activa de Excalidraw (es decir, hacer clic en la barra de Obsidian o revisar los enlaces inversos, etc.). " +
+    "Excalidraw no podrá guardar tu trabajo al cerrar Obsidian directamente, ya sea terminando el proceso de Obsidian o haciendo clic para cerrar Obsidian por completo.",
+  AUTOSAVE_INTERVAL_MOBILE_NAME: "Intervalo para autoguardado en Móvil",
   AUTOSAVE_INTERVAL_MOBILE_DESC:
-    "I recommend a more frequent interval for Mobiles. " +
-    "Excalidraw will also save the file when closing a workspace tab or navigating within Obsidian, but away from the active Excalidraw tab (i.e. tapping on the Obsidian ribbon or checking backlinks, etc.). " +
-    "Excalidraw will not be able to save your work when terminating Obsidian directly (i.e. swiping it away). Also note, that when you switch apps on a Mobile device, sometimes Android and iOS closes " +
-    "Obsidian in the background to save system resources. In such a case Excalidraw will not be able to save the latest changes.",
-FILENAME_HEAD: "Filename",
+    "Recomiendo un intervalo más frecuente para móviles. " +
+    "Excalidraw también guardará el archivo al cerrar una pestaña del espacio de trabajo o al navegar dentro de Obsidian, pero lejos de la pestaña activa de Excalidraw (es decir, tocar la barra de Obsidian o revisar los enlaces inversos, etc.). " +
+    "Excalidraw no podrá guardar tu trabajo al cerrar Obsidian directamente (es decir, al deslizar la aplicación para cerrarla). También ten en cuenta que cuando cambias de aplicación en un dispositivo móvil, a veces Android e iOS cierran " +
+    "Obsidian en segundo plano para ahorrar recursos del sistema. En tal caso, Excalidraw no podrá guardar los últimos cambios.",
+FILENAME_HEAD: "Nombre de archivo",
   FILENAME_DESC:
-    "<p>Click this link for the <a href='https://momentjs.com/docs/#/displaying/format/'>" +
-    "date and time format reference</a>.</p>",
-  FILENAME_SAMPLE: "Filename for a new drawing is: ",
-  FILENAME_EMBED_SAMPLE: "Filename for a new embedded drawing is: ",
-  FILENAME_PREFIX_NAME: "Filename prefix",
-  FILENAME_PREFIX_DESC: "The first part of the filename",
+    "<p>Haz click en este enlace para la <a href='https://momentjs.com/docs/#/displaying/format/'>" +
+    "referencia de formato de fecha y hora</a>.</p>",
+  FILENAME_SAMPLE: "El nombre de archivo para un nuevo bosquejo es: ",
+  FILENAME_EMBED_SAMPLE: "El nombre de archivo para un nuevo bosquejo incrustado es: ",
+  FILENAME_PREFIX_NAME: "Prefijo del nombre de archivo",
+  FILENAME_PREFIX_DESC: "La primera parte del nombre del archivo. ",
   FILENAME_PREFIX_EMBED_NAME:
-    "Filename prefix when embedding a new drawing into a markdown note",
+    "Prefijo del nombre de archivo al incrustar un nuevo bosquejo en una nota Markdown",
   FILENAME_PREFIX_EMBED_DESC:
-    "Should the filename of the newly inserted drawing start with the name of the active markdown note " +
-    "when using the command palette action: <code>Create a new drawing and embed into active document</code>?<br>" +
-    "<b><u>Toggle ON:</u></b> Yes, the filename of a new drawing should start with filename of the active document<br><b><u>Toggle OFF:</u></b> No, filename of a new drawing should not include the filename of the active document",
+    "Debería el nombre del nuevo bosquejo insertado comenzar con el nombre de la nota Markdown activa " +
+    "al usar la acción de la paleta de comandos: <code>Crear un nuevo bosquejo e incrustar en el documento activo</code>?<br>" +
+    "<b><u>Activado:</u></b> Sí, el nombre del nuevo bosquejo debería comenzar con el nombre del archivo del documento activo.<br><b><u>Desactivado:</u></b> No, el nombre del nuevo bosquejo no debería incluir el nombre del archivo del documento activo.",
   FILENAME_POSTFIX_NAME:
-    "Custom text after markdown Note's name when embedding",
+    "Texto personalizado después del nombre de la nota Markdown al incrustar",
   FILENAME_POSTFIX_DESC:
-    "Affects filename only when embedding into a markdown document. This text will be inserted after the note's name, but before the date.",
-  FILENAME_DATE_NAME: "Filename Date",
+    "Afecta el nombre del archivo solo al incrustarlo en un documento Markdown. Este texto se insertará después del nombre de la nota, pero antes de la fecha.",
+  FILENAME_DATE_NAME: "Fecha en el nombre de archivo",
   FILENAME_DATE_DESC:
-    "The last part of the filename. Leave empty if you do not want a date.",
-  FILENAME_EXCALIDRAW_EXTENSION_NAME: ".excalidraw.md or .md",
+    "La última parte del nombre del archivo. Deja en blanco si no quieres incluir una fecha.",
+  FILENAME_EXCALIDRAW_EXTENSION_NAME: ".excalidraw.md o .md",
   FILENAME_EXCALIDRAW_EXTENSION_DESC:
-    "This setting does not apply if you use Excalidraw in compatibility mode, " +
-    "i.e. you are not using Excalidraw markdown files.<br><b><u>Toggle ON:</u></b> filename ends with .excalidraw.md<br><b><u>Toggle OFF:</u></b> filename ends with .md",
-  DISPLAY_HEAD: "Excalidraw appearance and behavior",
-  DISPLAY_DESC: "In the 'appearance and behavior' section of Excalidraw Settings, you can fine-tune how Excalidraw appears and behaves. This includes options for dynamic styling, left-handed mode, matching Excalidraw and Obsidian themes, default modes, and more.",
-  OVERRIDE_OBSIDIAN_FONT_SIZE_NAME: "Limit Obsidian Font Size to Editor Text",
+    "Esta configuración no aplica si usas Excalidraw en modo de compatibilidad, " +
+    "es decir, si no usas archivos Markdown de Excalidraw. <br><b><u>Activado:</u></b> el nombre de archivo termina en .excalidraw.md<br><b><u>Desactivado:</u></b> el nombre de archivo termina en .md",
+  DISPLAY_HEAD: "Apariencia y Comportamiento de Excalidraw",
+  DISPLAY_DESC: "En la sección 'Apariencia y Comportamiento' de la Configuración de Excalidraw, puedes ajustar cómo se ve y se comporta Excalidraw. Esto incluye opciones para estilos dinámicos, modo para zurdos, coincidencia de temas de Excalidraw y Obsidian, modos predeterminados y más.",
+  OVERRIDE_OBSIDIAN_FONT_SIZE_NAME: "Limitar tamaño de fuente de Obsidian al texto del editor",
   OVERRIDE_OBSIDIAN_FONT_SIZE_DESC:
-    "Obsidian's custom font size setting affects the entire interface, including Excalidraw and themes that depend on the default font size. " +
-    "Enabling this option restricts font size changes to editor text, which will improve the look of Excalidraw. " +
-    "If parts of the UI look incorrect after enabling, try turning this setting off.",  
-  DYNAMICSTYLE_NAME: "Dynamic styling",
+    "La configuración de tamaño de fuente personalizada de Obsidian afecta toda la interfaz, incluyendo Excalidraw y los temas que dependen del tamaño de fuente predeterminado. " +
+    "Habilitar esta opción restringe los cambios de tamaño de fuente al texto del editor, lo que mejorará el aspecto de Excalidraw. " +
+    "Si partes de la interfaz de usuario se ven incorrectas después de habilitarla, intenta desactivar esta configuración.",  
+  DYNAMICSTYLE_NAME: "Estilo dinámico",
   DYNAMICSTYLE_DESC:
-    "Change Excalidraw UI colors to match the canvas color",
-  LEFTHANDED_MODE_NAME: "Left-handed mode",
+    "Cambia los colores de la interfaz de usuario de Excalidraw para que coincidan con el color del lienzo",
+  LEFTHANDED_MODE_NAME: "Modo para zurdos",
   LEFTHANDED_MODE_DESC:
-    "Currently only has effect in tray-mode. If turned on, the tray will be on the right side." +
-    "<br><b><u>Toggle ON:</u></b> Left-handed mode.<br><b><u>Toggle OFF:</u></b> Right-handed mode.",
-  IFRAME_MATCH_THEME_NAME: "Markdown embeds to match Excalidraw theme",
+    "Actualmente solo tiene efecto en el modo de bandeja. Si está activado, la bandeja estará en el lado derecho." +
+    "<br><b><u>Activado:</u></b> Modo para zurdos. <br><b><u>Desactivado:</u></b> Modo para diestros.",
+  IFRAME_MATCH_THEME_NAME: "Incrustaciones de Markdown para que coincidan con el tema de Excalidraw",
   IFRAME_MATCH_THEME_DESC:
-    "<b><u>Toggle ON:</u></b> Set this to true if for example you are using Obsidian in dark-mode but use excalidraw with a light background. " +
-    "With this setting the embedded Obsidian markdown document will match the Excalidraw theme (i.e. light colors if Excalidraw is in light mode).<br>" +
-    "<b><u>Toggle OFF:</u></b> Set this to false if you want the embedded Obsidian markdown document to match the Obsidian theme (i.e. dark colors if Obsidian is in dark mode).",    
-  MATCH_THEME_NAME: "New drawing to match Obsidian theme",
+    "<b><u>Activado:</u></b> Establece esto en verdadero si, por ejemplo, estás usando Obsidian en modo oscuro pero usas Excalidraw con un fondo claro. " +
+    "Con esta configuración, el documento Markdown incrustado de Obsidian coincidirá con el tema de Excalidraw (es decir, colores claros si Excalidraw está en modo claro).<br>" +
+    "<b><u>Desactivado:</u></b> Establece esto en falso si quieres que el documento Markdown incrustado de Obsidian coincida con el tema de Obsidian (es decir, colores oscuros si Obsidian está en modo oscuro).",    
+  MATCH_THEME_NAME: "Nuevo bosquejo para que coincida con el tema de Obsidian",
   MATCH_THEME_DESC:
-    "If theme is dark, new drawing will be created in dark mode. This does not apply when you use a template for new drawings. " +
-    "Also this will not affect when you open an existing drawing. Those will follow the theme of the template/drawing respectively." +
-    "<br><b><u>Toggle ON:</u></b> Follow Obsidian Theme<br><b><u>Toggle OFF:</u></b> Follow theme defined in your template",
-  MATCH_THEME_ALWAYS_NAME: "Existing drawings to match Obsidian theme",
+    "Si el tema es oscuro, el nuevo bosquejo se creará en modo oscuro. Esto no aplica cuando usas una plantilla para nuevos bosquejos. " +
+    "Tampoco afectará cuando abras un bosquejo existente. Esos seguirán el tema de la plantilla/bosquejo respectivamente." +
+    "<br><b><u>Activado:</u></b> Sigue el Tema de Obsidian <br><b><u>Desactivado:</u></b> Sigue el el tema definido en tu plantilla",
+  MATCH_THEME_ALWAYS_NAME: "Bosquejos existentes para que coincidan con el tema de Obsidian",
   MATCH_THEME_ALWAYS_DESC:
-    "If theme is dark, drawings will be opened in dark mode. If your theme is light, they will be opened in light mode. " +
-    "<br><b><u>Toggle ON:</u></b> Match Obsidian theme<br><b><u>Toggle OFF:</u></b> Open with the same theme as last saved",
-  MATCH_THEME_TRIGGER_NAME: "Excalidraw to follow when Obsidian Theme changes",
+    "Si el tema es oscuro, los bosquejos se abrirán en modo oscuro. Si tu tema es claro, se abrirán en modo claro. " +
+    "<br><b><u>Activado:</u></b> Coincide con el tema de Obsidian<br><b><u>Desactivado:</u></b> Se abre con el mismo tema que la última vez que se guardó",
+  MATCH_THEME_TRIGGER_NAME: "Excalidraw para seguir cuando cambie el tema de Obsidian",
   MATCH_THEME_TRIGGER_DESC:
-    "If this option is enabled open Excalidraw pane will switch to light/dark mode when Obsidian theme changes. " +
-    "<br><b><u>Toggle ON:</u></b> Follow theme changes<br><b><u>Toggle OFF:</u></b> Drawings are not affected by Obsidian theme changes",
-  DEFAULT_OPEN_MODE_NAME: "Default mode when opening Excalidraw",
+    "Si esta opción está habilitada, el panel de Excalidraw abierto cambiará a modo claro/oscuro cuando cambie el tema de Obsidian. " +
+    "<br><b><u>Activado:</u></b> Sigue el cambio de tema <br><b><u>Desactivado:</u></b> Los bosquejos no se ven afectados por los cambios de tema de Obsidian",
+  DEFAULT_OPEN_MODE_NAME: "Modo predeterminado al abrir Excalidraw",
   DEFAULT_OPEN_MODE_DESC:
-    "Specifies the mode how Excalidraw opens: Normal, Zen, or View mode. You may also set this behavior on a file level by " +
-    "adding the excalidraw-default-mode frontmatter key with a value of: normal, view, or zen to your document.",
-  DEFAULT_PEN_MODE_NAME: "Pen mode",
+    "Especifica el modo en que se abre Excalidraw: Normal, Zen o Vista. También puedes configurar este comportamiento a nivel de archivo " +
+    "añadiendo la clave excalidraw-default-mode al frontmatter de tu documento con un valor de: normal, view o zen.",
+  DEFAULT_PEN_MODE_NAME: "Modo lápiz",
   DEFAULT_PEN_MODE_DESC:
-    "Should pen mode be automatically enabled when opening Excalidraw?",
-  ENABLE_DOUBLE_CLICK_TEXT_EDITING_NAME: "Enable double-click text create",
-  DISABLE_DOUBLE_TAP_ERASER_NAME: "Enable double-tap eraser in pen mode",
-  DISABLE_SINGLE_FINGER_PANNING_NAME: "Enable single-finger panning in pen mode",
-  SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_NAME: "Show (+) crosshair in pen mode",
+    "¿Debe habilitarse automáticamente el modo lápiz al abrir Excalidraw?",
+  ENABLE_DOUBLE_CLICK_TEXT_EDITING_NAME: "Habilitar creación de texto con doble click",
+  DISABLE_DOUBLE_TAP_ERASER_NAME: "Habilitar borrador con doble tap(toque) en modo lápiz",
+  DISABLE_SINGLE_FINGER_PANNING_NAME: "Habilitar desplazamiento con un solo dedo en modo lápiz",
+  SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_NAME: "Mostrar mira (+) en modo lápiz",
   SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_DESC:
-    "Show crosshair in pen mode when using the freedraw tool. <b><u>Toggle ON:</u></b> SHOW <b><u>Toggle OFF:</u></b> HIDE<br>"+
-    "The effect depends on the device. Crosshair is typically visible on drawing tablets, MS Surface, but not on iOS.",
-  SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_NAME: "Render Excalidraw file as an image in hover preview...",
+    "Muestra una mira en modo lápiz al usar la herramienta de dibujo a mano alzada. <b><u>Activado:</u></b> MOSTRAR <b><u>Desactivado:</u></b> OCULTAR<br>"+
+    "El efecto depende del dispositivo. La mira es típicamente visible en tabletas de dibujo, MS Surface, pero no en iOS.",
+  SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_NAME: "Renderizar archivo de Excalidraw como imagen en la vista previa al pasar el mouse...",
   SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_DESC:
-    "...even if the file has the <b>excalidraw-open-md: true</b> frontmatter key.<br>" +
-    "When this setting is off and the file is set to open in md by default, the hover preview will show the " +
-    "markdown side of the document.",
-  SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME: "Render as image when in markdown reading mode of an Excalidraw file",
+    "...incluso si el archivo tiene la clave frontmatter <b>excalidraw-open-md: true</b>.<br>" +
+    "Cuando esta configuración está desactivada y el archivo está configurado para abrirse en Markdown por defecto, " +
+    "la vista previa al pasar el mouse mostrará el lado Markdown del documento.",
+  SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME: "Renderizar como imagen en el modo de lectura Markdown de un archivo de Excalidraw",
   SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC:
-    "When you are in markdown reading mode (aka. reading the back side of the drawing) should the Excalidraw drawing be rendered as an image? " +
-    "This setting will not affect the display of the drawing when you are in Excalidraw mode or when you embed the drawing into a markdown document or when rendering hover preview.<br><ul>" +
-    "<li>See other related setting for <a href='#"+TAG_PDFEXPORT+"'>PDF Export</a> under 'Embedding and Exporting' further below.</li></ul><br>" +
-    "You must close the active excalidraw/markdown file and reopen it for this change to take effect.",
-  SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME: "Render Excalidraw as Image in Obsidian PDF Export",
+    "Cuando estás en modo de lectura Markdown (es decir, leyendo el reverso del bosquejo), ¿debe renderizarse el bosquejo de Excalidraw como una imagen? " +
+    "Esta configuración no afectará la visualización del bosquejo cuando estés en modo Excalidraw, cuando incrustes el bosquejo en un documento Markdown o cuando se renderice la vista previa al pasar el mouse.<br><ul>" +
+    "<li>Consulta otra configuración relacionada para la <a href='#"+TAG_PDFEXPORT+"'>Exportación a PDF</a> en 'Incrustación y Exportación' más abajo.</li></ul><br>" +
+    "Debes cerrar el archivo activo de Excalidraw/Markdown y volver a abrirlo para que este cambio surta efecto.",
+  SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME: "Renderizar Excalidraw como Imagen en la Exportación a PDF de Obsidian",
   SHOW_DRAWING_OR_MD_IN_EXPORTPDF_DESC:
-    "This setting controls how Excalidraw files are exported to PDF using Obsidian's built-in <b>Export to PDF</b> feature.<br>" +
-    "<ul><li><b>Enabled:</b> The PDF will include the Excalidraw drawing as an image.</li>" +
-    "<li><b>Disabled:</b> The PDF will include the markdown content as text.</li></ul>" +
-    "Note: This setting does not affect the PDF export feature within Excalidraw itself.<br>" +
-    "See the other related setting for <a href='#"+TAG_MDREADINGMODE+"'>Markdown Reading Mode</a> under 'Appearance and Behavior' further above.<br>" +
-    "⚠️ You must close and reopen the Excalidraw/markdown file for changes to take effect. ⚠️",
+    "Esta configuración controla cómo se exportan los archivos de Excalidraw a PDF usando la función incorporada de Obsidian <b>Exportar a PDF</b>.<br>" +
+    "<ul><li><b>Habilitado:</b> El PDF incluirá el bosquejo de Excalidraw como una imagen.</li>" +
+    "<li><b>Desactivado:</b> El PDF incluirá el contenido Markdown como texto.</li></ul>" +
+    "Nota: Esta configuración no afecta la función de exportación a PDF dentro del propio Excalidraw.<br>" +
+    "Consulta la otra configuración relacionada para el  <a href='#"+TAG_MDREADINGMODE+"'>Modo de Lectura de Markdown</a> en 'Apariencia y Comportamiento' más arriba.<br>" +
+    "⚠️ Debes cerrar y volver a abrir el archivo de Excalidraw/Markdown para que los cambios surtan efecto. ⚠️",
   HOTKEY_OVERRIDE_HEAD: "Hotkey overrides",
   HOTKEY_OVERRIDE_DESC: `Some of the Excalidraw hotkeys such as <code>${labelCTRL()}+Enter</code> to edit text or <code>${labelCTRL()}+K</code> to create an element link ` +
     "conflict with Obsidian hotkey settings. The hotkey combinations you add below will override Obsidian's hotkey settings while using Excalidraw, thus " +
