@@ -425,298 +425,298 @@ FILENAME_HEAD: "Nombre de archivo",
     "Nota: Esta configuración no afecta la función de exportación a PDF dentro del propio Excalidraw.<br>" +
     "Consulta la otra configuración relacionada para el  <a href='#"+TAG_MDREADINGMODE+"'>Modo de Lectura de Markdown</a> en 'Apariencia y Comportamiento' más arriba.<br>" +
     "⚠️ Debes cerrar y volver a abrir el archivo de Excalidraw/Markdown para que los cambios surtan efecto. ⚠️",
-  HOTKEY_OVERRIDE_HEAD: "Hotkey overrides",
-  HOTKEY_OVERRIDE_DESC: `Some of the Excalidraw hotkeys such as <code>${labelCTRL()}+Enter</code> to edit text or <code>${labelCTRL()}+K</code> to create an element link ` +
-    "conflict with Obsidian hotkey settings. The hotkey combinations you add below will override Obsidian's hotkey settings while using Excalidraw, thus " +
-    `you can add <code>${labelCTRL()}+G</code> if you want to default to Group Object in Excalidraw instead of opening Graph View.`,
-  THEME_HEAD: "Theme and styling",
+  HOTKEY_OVERRIDE_HEAD: "Anulaciones de atajos de teclado",
+  HOTKEY_OVERRIDE_DESC: `Algunos de los atajos de teclado de Excalidraw, como <code>${labelCTRL()}+Enter</code> para editar texto o <code>${labelCTRL()}+K</code> para crear un enlace de elemento ` +
+    "entran en conflicto con la configuración de atajos de teclado de Obsidian. Las combinaciones de atajos de teclado que agregues a continuación anularán la configuración de atajos de teclado de Obsidian mientras usas Excalidraw. Por lo tanto, " +
+    `puedes agregar <code>${labelCTRL()}+G</code> si quieres que el comportamiento predeterminado sea Agrupar Objeto en Excalidraw en lugar de abrir la Vista de Gráfico.`,
+  THEME_HEAD: "Tema y estilo",
   ZOOM_HEAD: "Zoom",
-  DEFAULT_PINCHZOOM_NAME: "Allow pinch zoom in pen mode",
+  DEFAULT_PINCHZOOM_NAME: "Permitir zoom con pellizco en modo lápiz",
   DEFAULT_PINCHZOOM_DESC:
-    "Pinch zoom in pen mode when using the freedraw tool is disabled by default to prevent unwanted accidental zooming with your palm.<br>" +
-    "<b><u>Toggle ON:</u></b> Enable pinch zoom in pen mode<br><b><u>Toggle OFF:</u></b>Disable pinch zoom in pen mode",
+    "El zoom con pellizco en modo lápiz, al usar la herramienta de dibujo a mano alzada, está deshabilitado por defecto para evitar zooms accidentales no deseados con la palma de la mano.<br>" +
+    "<b><u>Activado:</u></b> Habilita el zoom con pellizco en modo lápiz <br><b><u>Desactivado:</u></b>Deshabilita el zoom con pellizco en modo lápiz",
 
-  DEFAULT_WHEELZOOM_NAME: "Mouse wheel to zoom by default",
+  DEFAULT_WHEELZOOM_NAME: "Rueda del mouse para zoom por defecto",
   DEFAULT_WHEELZOOM_DESC:
-    `<b><u>Toggle ON:</u></b> Mouse wheel to zoom; ${labelCTRL()} + mouse wheel to scroll</br><b><u>Toggle OFF:</u></b>${labelCTRL()} + mouse wheel to zoom; Mouse wheel to scroll`,
+    `<b><u>Activado:</u></b> Rueda del mouse para zoom; ${labelCTRL()} + rueda del mouse para desplazarse</br><b><u>Desactivado:</u></b>${labelCTRL()} + rueda del mouse para zoom; Rueda del mouse para desplazarse`,
     
-  ZOOM_TO_FIT_NAME: "Zoom to fit on view resize",
-  ZOOM_TO_FIT_DESC: "Zoom to fit drawing when the pane is resized" +
-    "<br><b><u>Toggle ON:</u></b> Zoom to fit<br><b><u>Toggle OFF:</u></b> Auto zoom disabled",
-  ZOOM_TO_FIT_ONOPEN_NAME: "Zoom to fit on file open",
-  ZOOM_TO_FIT_ONOPEN_DESC: "Zoom to fit drawing when the drawing is first opened" +
-      "<br><b><u>Toggle ON:</u></b> Zoom to fit<br><b><u>Toggle OFF:</u></b> Auto zoom disabled",  
-  ZOOM_TO_FIT_MAX_LEVEL_NAME: "Zoom to fit max ZOOM level",
+  ZOOM_TO_FIT_NAME: "Zoom para ajustar al redimensionar la vista",
+  ZOOM_TO_FIT_DESC: "Zoom para ajustar el bosquejo cuando se redimensiona el panel." +
+    "<br><b><u>Activado:</u></b> Zoom para ajustar<br><b><u>Desactivado:</u></b> Auto-zoom deshabilitado",
+  ZOOM_TO_FIT_ONOPEN_NAME: "Zoom para ajustar al abrir archivo",
+  ZOOM_TO_FIT_ONOPEN_DESC: "Zoom para ajustar el bosquejo cuando se abre por primera vez." +
+      "<br><b><u>Activado:</u></b> Zoom para ajustar<br><b><u>Desactivado:</u></b> Auto-zoom deshabilitado",  
+  ZOOM_TO_FIT_MAX_LEVEL_NAME: "Nivel máximo de zoom para ajustar",
   ZOOM_TO_FIT_MAX_LEVEL_DESC:
-    "Set the maximum level to which zoom to fit will enlarge the drawing. Minimum is 0.5 (50%) and maximum is 10 (1000%).",
-  PEN_HEAD: "Pen",
-  GRID_HEAD: "Grid",
-  GRID_DYNAMIC_COLOR_NAME: "Dynamic grid color",
+    "Establece el nivel máximo al que el zoom para encajar agrandará el bosquejo. El mínimo es 0.5 (50%) y el máximo es 10 (1000%).",
+  PEN_HEAD: "Lápiz",
+  GRID_HEAD: "Cuadrícula",
+  GRID_DYNAMIC_COLOR_NAME: "Color de cuadrícula dinámica",
   GRID_DYNAMIC_COLOR_DESC:
-    "<b><u>Toggle ON:</u></b>Change grid color to match the canvas color<br><b><u>Toggle OFF:</u></b>Use the color below as the grid color",
-  GRID_COLOR_NAME: "Grid color",
-  GRID_OPACITY_NAME: "Grid opacity",
-  GRID_OPACITY_DESC: "Grid opacity will also control the opacity of the binding box when binding an arrow to an element.<br>" +
-    "Set the opacity of the grid. 0 is transparent, 100 is opaque.",
-  GRID_DIRECTION_NAME: "Grid direction",
-  GRID_DIRECTION_DESC: "The first toggle shows/hides the horizontal grid, the second toggle shows/hides the vertical grid.",
-  GRID_HORIZONTAL: "Render horizontal grid",
-  GRID_VERTICAL: "Render vertical grid",
-  LASER_HEAD: "Laser pointer",
-  LASER_COLOR: "Laser pointer color",
-  LASER_DECAY_TIME_NAME: "Laser pointer decay time",
-  LASER_DECAY_TIME_DESC: "Laser pointer decay time in milliseconds. Default is 1000 (i.e. 1 second).",
-  LASER_DECAY_LENGTH_NAME: "Laser pointer decay length.",
-  LASER_DECAY_LENGTH_DESC: "Laser pointer decay length in line points. Default is 50.",
-  LINKS_HEAD: "Links, transclusion and TODOs",
-  LINKS_HEAD_DESC: "In the 'Links, transclusion and TODOs' section of Excalidraw Settings, you can configure how Excalidraw handles links, transclusions, and TODO items. This includes options for opening links, managing panes, displaying links with brackets, customizing link prefixes, handling TODO items, and more. ",
+    "<b><u>Activado:</u></b> Cambia el color de la cuadrícula para que coincida con el color del lienzo<br><b><u>Desactivado:</u></bUsar el color de abajo como color de la cuadrícula",
+  GRID_COLOR_NAME: "Color de la cuadrícula",
+  GRID_OPACITY_NAME: "Opacidad de la cuadrícula",
+  GRID_OPACITY_DESC: "La opacidad de la cuadrícula también controlará la opacidad del recuadro de vinculación al vincular una flecha a un elemento.<br>" +
+    "Establece la opacidad de la cuadrícula. 0 es transparente, 100 es opaco.",
+  GRID_DIRECTION_NAME: "Dirección de la cuadrícula",
+  GRID_DIRECTION_DESC: "El primer interruptor muestra/oculta la cuadrícula horizontal, el segundo interruptor muestra/oculta la cuadrícula vertical.",
+  GRID_HORIZONTAL: "Renderizar cuadrícula horizontal",
+  GRID_VERTICAL: "Renderizar cuadrícula vertical",
+  LASER_HEAD: "Puntero láser",
+  LASER_COLOR: "Color del puntero láser",
+  LASER_DECAY_TIME_NAME: "Tiempo de desvanecimiento del puntero láser",
+  LASER_DECAY_TIME_DESC: "Tiempo de desvanecimiento del puntero láser en milisegundos. El valor predeterminado es 1000 (es decir, 1 segundo).",
+  LASER_DECAY_LENGTH_NAME: "Longitud de desvanecimiento del puntero láser.",
+  LASER_DECAY_LENGTH_DESC: "Longitud de desvanecimiento del puntero láser en puntos de línea. El valor predeterminado es 50.",
+  LINKS_HEAD: "Enlaces, transclusión y pendientes (TODOs)",
+  LINKS_HEAD_DESC: "En la sección 'Enlaces, transclusión y pendientes (TODOs)' de la Configuración de Excalidraw, puedes configurar cómo Excalidraw maneja los enlaces, las transclusiones y los elementos pendientes (TODO). Esto incluye opciones para abrir enlaces, gestionar paneles, mostrar enlaces con corchetes, personalizar prefijos de enlaces, manejar elementos pendientes (TODO) y más. ",
   LINKS_DESC:
-    `${labelCTRL()}+CLICK on <code>[[Text Elements]]</code> to open them as links. ` +
-    "If the selected text has more than one <code>[[valid Obsidian links]]</code>, only the first will be opened. " +
-    "If the text starts as a valid web link (i.e. <code>https://</code> or <code>http://</code>), then " +
-    "the plugin will open it in a browser. " +
-    "When Obsidian files change, the matching <code>[[link]]</code> in your drawings will also change. " +
-    "If you don't want text accidentally changing in your drawings use <code>[[links|with aliases]]</code>.",
-  DRAG_MODIFIER_NAME: "Link Click and Drag&Drop Modifier Keys",
-  DRAG_MODIFIER_DESC: "Modifier key behavior when clicking links and dragging and dropping elements. " +
-    "Excalidraw will not validate your configuration... pay attention to avoid conflicting settings. " +
-    "These settings are different for Apple and non-Apple. If you use Obsidian on multiple platforms, you'll need to make the settings separately. "+
-    "The toggles follow the order of " +
-    (DEVICE.isIOS || DEVICE.isMacOS ? "SHIFT, CMD, OPT, CONTROL." : "SHIFT, CTRL, ALT, META (Windows key)."),
-  LONG_PRESS_DESKTOP_NAME: "Long press to open desktop",
-  LONG_PRESS_DESKTOP_DESC: "Long press delay in milliseconds to open an Excalidraw Drawing embedded in a Markdown file. ",
-  LONG_PRESS_MOBILE_NAME: "Long press to open mobile",
-  LONG_PRESS_MOBILE_DESC: "Long press delay in milliseconds to open an Excalidraw Drawing embedded in a Markdown file. ",
-  DOUBLE_CLICK_LINK_OPEN_VIEW_MODE: "Allow double-click to open links in view mode",
+    `${labelCTRL()}+CLICK on <code>[[Elementos de Texto]]</code> para abrirlos como enlaces. ` +
+    "Si el texto seleccionado tiene más de un <code>[[enlace válido de Obsidian]]</code>, solo se abrirá el primero. " +
+    "Si el texto comienza como un enlace web válido (es decir, <code>https://</code> o <code>http://</code>), entonces " +
+    "el complemento lo abrirá en un navegador. " +
+    "Cuando los archivos de Obsidian cambian, el <code>[[enlace]]</code> coincidente en tus bosquejos también cambiará. " +
+    "Si no quieres que el texto cambie accidentalmente en tus bosquejos, usa <code>[[enlaces|con alias]]</code>.",
+  DRAG_MODIFIER_NAME: "Teclas modificadoras para click de enlace y Arrastrar y Soltar(Drag&Drop)",
+  DRAG_MODIFIER_DESC: "Comportamiento de la tecla modificadora al hacer click en enlaces y arrastrar y soltar elementos. " +
+    "Excalidraw no validará tu configuración... presta atención para evitar configuraciones conflictivas. " +
+    "Estas configuraciones son diferentes para Apple y no Apple. Si usas Obsidian en múltiples plataformas, deberás realizar las configuraciones por separado. "+
+    "Los interruptores siguen el orden de " +
+    (DEVICE.isIOS || DEVICE.isMacOS ? "SHIFT, CMD, OPT, CONTROL." : "SHIFT, CTRL, ALT, META (Tecla de Windows)."),
+  LONG_PRESS_DESKTOP_NAME: "Mantener presionado para abrir en escritorio",
+  LONG_PRESS_DESKTOP_DESC: "Retraso en milisegundos para mantener presionado y abrir un bosquejo de Excalidraw incrustado en un archivo Markdown. ",
+  LONG_PRESS_MOBILE_NAME: "Mantener presionado para abrir en móvil",
+  LONG_PRESS_MOBILE_DESC: "Retraso en milisegundos para mantener presionado y abrir un bosquejo de Excalidraw incrustado en un archivo Markdown. ",
+  DOUBLE_CLICK_LINK_OPEN_VIEW_MODE: "Permitir doble click para abrir enlaces en modo vista",
 
-  FOCUS_ON_EXISTING_TAB_NAME: "Focus on Existing Tab",
-  FOCUS_ON_EXISTING_TAB_DESC: "When opening a link, Excalidraw will focus on the existing tab if the file is already open. " +
-    "Enabling this setting overrides 'Reuse Adjacent Pane' when the file is already open except for the 'Open the back-of-the-note of the selected excalidraw image' command palette action.",
-  SECOND_ORDER_LINKS_NAME: "Show second-order links",
-  SECOND_ORDER_LINKS_DESC: "Show links when clicking on a link in Excalidraw. Second-order link are backlinks pointing to the link being clicked. " +
-    "When using image icons to connect similar notes, second order links allow you to get to related notes in one click instead of two. " +
-    "See <a href='https://youtube.com/shorts/O_1ls9c6wBY?feature=share'>YT Short</a> to understand.",
-  ADJACENT_PANE_NAME: "Reuse adjacent pane",
+  FOCUS_ON_EXISTING_TAB_NAME: "Enfocar en pestaña existente",
+  FOCUS_ON_EXISTING_TAB_DESC: "Al abrir un enlace, Excalidraw se enfocará en la pestaña existente si el archivo ya está abierto. " +
+    "Habilitar esta configuración anula 'Reutilizar Panel Adyacente' cuando el archivo ya está abierto, excepto para la acción de la paleta de comandos 'Abrir el reverso de la nota de la imagen de excalidraw seleccionada'.",
+  SECOND_ORDER_LINKS_NAME: "Mostrar enlaces de segundo orden",
+  SECOND_ORDER_LINKS_DESC: "Muestra enlaces al hacer clic en un enlace en Excalidraw. Los enlaces de segundo orden son enlaces inversos que apuntan al enlace en el que se hizo click. " +
+    "Al usar iconos de imagen para conectar notas similares, los enlaces de segundo orden te permiten acceder a notas relacionadas en un solo clic en lugar de dos. " +
+    "Consulta el siguiente <a href='https://youtube.com/shorts/O_1ls9c6wBY?feature=share'>Short de Youtube</a> para entender.",
+  ADJACENT_PANE_NAME: "Reutilizar panel adyacente",
   ADJACENT_PANE_DESC:
-    `When ${labelCTRL()}+${labelALT()} clicking a link in Excalidraw, by default the plugin will open the link in a new pane. ` +
-    "Turning this setting on, Excalidraw will first look for an existing pane, and try to open the link there. " +
-    "Excalidraw will look for the other workspace pane based on your focus/navigation history, i.e. the workpane that was active before you " +
+    `Cuando usas ${labelCTRL()}+${labelALT()} y haces click en un enlace en Excalidraw, por defecto el complemento lo abrirá en un panel nuevo. ` +
+    "Al activar esta opción, Excalidraw buscará primero un panel ya abierto e intentará abrir el enlace ahí. " +
+    "Excalidraw buscará el panel adyacente basándose en tu historial de foco/navegación, es decir, el panel de trabajo que estaba activo antes de que activaras Excalidraw. " +
     "activated Excalidraw.",
-  MAINWORKSPACE_PANE_NAME: "Open in main workspace",
+  MAINWORKSPACE_PANE_NAME: "Abrir en el espacio de trabajo principal",
   MAINWORKSPACE_PANE_DESC:
-    `When ${labelCTRL()}+${labelALT()} clicking a link in Excalidraw, by default the plugin will open the link in a new pane in the current active window. ` +
-    "Turning this setting on, Excalidraw will open the link in an existing or new pane in the main workspace. ",  
-  LINK_BRACKETS_NAME: "Show <code>[[brackets]]</code> around links",
+    `Cuando usas ${labelCTRL()}+${labelALT()} y haces click en un enlace en Excalidraw, por defecto el plugin lo abrirá en un panel nuevo en la ventana activa. ` +
+    "Al activar esta opción, Excalidraw abrirá el enlace en un panel nuevo o ya existente en el espacio de trabajo principal. ",  
+  LINK_BRACKETS_NAME: "Mostrar <code>[[corchetes]]</code> alrededor de los enlaces",
   LINK_BRACKETS_DESC: `${
-    "In PREVIEW mode, when parsing Text Elements, place brackets around links. " +
-    "You can override this setting for a specific drawing by adding <code>"
-  }${FRONTMATTER_KEYS["link-brackets"].name}: true/false</code> to the file's frontmatter.`,
+    "En el MODO VISTA PREVIA, al analizar elementos de texto, se colocarán corchetes alrededor de los enlaces. " +
+    "Puedes anular esta configuración para un bosquejo específico agregando <code>"
+  }${FRONTMATTER_KEYS["link-brackets"].name}: true/false</code> al frontmatter del archivo.`,
   LINK_PREFIX_NAME: "Link prefix",
   LINK_PREFIX_DESC: `${
-    "In PREVIEW mode, if the Text Element contains a link, precede the text with these characters. " +
-    "You can override this setting for a specific drawing by adding <code>"
-  }${FRONTMATTER_KEYS["link-prefix"].name}: "📍 "</code> to the file's frontmatter.`,
+    "En el MODO VISTA PREVIA, si el elemento de texto contiene un enlace, se precederá el texto con estos caracteres. " +
+    "Puedes anular esta configuración para un bosquejo específico agregando <code>"
+  }${FRONTMATTER_KEYS["link-prefix"].name}: "📍 "</code> al frontmatter del archivo.`,
   URL_PREFIX_NAME: "URL prefix",
   URL_PREFIX_DESC: `${
-    "In PREVIEW mode, if the Text Element contains a URL link, precede the text with these characters. " +
-    "You can override this setting for a specific drawing by adding <code>"
-  }${FRONTMATTER_KEYS["url-prefix"].name}: "🌐 "</code> to the file's frontmatter.`,
-  PARSE_TODO_NAME: "Parse todo",
-  PARSE_TODO_DESC: "Convert '- [ ] ' and '- [x] ' to checkbox and tick in the box.",
-  TODO_NAME: "Open TODO icon",
-  TODO_DESC: "Icon to use for open TODO items",
-  DONE_NAME: "Completed TODO icon",
-  DONE_DESC: "Icon to use for completed TODO items",
-  HOVERPREVIEW_NAME: `Hover preview without pressing the ${labelCTRL()} key`,
+    "En el MODO VISTA PREVIA, si el elemento de texto contiene un enlace URL, se precederá el texto con estos caracteres. " +
+    "Puedes anular esta configuración para un bosquejo específico agregando <code>"
+  }${FRONTMATTER_KEYS["url-prefix"].name}: "🌐 "</code> al frontmatter del archivo.`,
+  PARSE_TODO_NAME: "Analizar tareas pendientes",
+  PARSE_TODO_DESC: "Convertir '- [ ] ' y '- [x] ' en casillas de verificación (checkbox) con y sin marca.",
+  TODO_NAME: "Abrir ícono de tareas pendientes",
+  TODO_DESC: "Ícono a usar para las tareas pendientes (sin completar).",
+  DONE_NAME: "Ícono de tarea completada",
+  DONE_DESC: "Ícono a usar para las tareas completadas.",
+  HOVERPREVIEW_NAME: `Previsualización al pasar el mouse sin presionar la tecla ${labelCTRL()} `,
   HOVERPREVIEW_DESC:
-    `<b><u>Toggle ON:</u></b> In Exalidraw <u>view mode</u> the hover preview for [[wiki links]] will be shown immediately, without the need to hold the ${labelCTRL()} key. ` +
-    "In Excalidraw <u>normal mode</u>, the preview will be shown immediately only when hovering the blue link icon in the top right of the element.<br> " +
-    `<b><u>Toggle OFF:</u></b> Hover preview is shown only when you hold the ${labelCTRL()} key while hovering the link.`,
-  LINKOPACITY_NAME: "Opacity of link icon",
+    `<b><u>Activado::</u></b> En el <u>modo visualización</u> de Excalidraw, la previsualización de los enlaces wiki [[ejemplo]] se mostrará inmediatamente, sin necesidad de mantener presionada la tecla ${labelCTRL()} . ` +
+    "En el <u>modo normal</u> de Excalidraw, , la previsualización se mostrará inmediatamente solo al pasar el mouse sobre el ícono de enlace azul en la esquina superior derecha del elemento.<br> " +
+    `<b><u>Desactivado:</u></b> La previsualización solo se muestra si mantienes la tecla ${labelCTRL()} presionada mientras pasas el mouse sobre el enlace.`,
+  LINKOPACITY_NAME: "Opacidad del ícono de enlace",
   LINKOPACITY_DESC:
-    "Opacity of the link indicator icon in the top right corner of an element. 1 is opaque, 0 is transparent.",
+    "Opacidad del ícono de enlace que aparece en la esquina superior derecha de un elemento. 1 es opaco, 0 es transparente.",
   LINK_CTRL_CLICK_NAME:
-    `${labelCTRL()}+CLICK on text with [[links]] or [](links) to open them`,
+    `${labelCTRL()}+CLICK en texto con [[enlaces]] o [](enlaces) para abrirlos`,
   LINK_CTRL_CLICK_DESC:
-    "You can turn this feature off if it interferes with default Excalidraw features you want to use. If " +
-    `this is turned off, you can either use ${labelCTRL()} + ${labelMETA()} or the link indicator in the top right of the element to open links.`,
-  TRANSCLUSION_WRAP_NAME: "Overflow wrap behavior of transcluded text",
+    "Puedes desactivar esta función si interfiere con otras funciones de Excalidraw que quieras usar. Si " +
+    `la desactivas, puedes usar ${labelCTRL()} + ${labelMETA()} o el ícono de enlace en la esquina superior derecha del elemento para abrir los enlaces.`,
+  TRANSCLUSION_WRAP_NAME: "Comportamiento de ajuste de texto transcluido",
   TRANSCLUSION_WRAP_DESC:
-    "Number specifies the character count where the text should be wrapped. " +
-    "Set the text wrapping behavior of transcluded text. Turn this ON to force-wrap " +
-    "text (i.e. no overflow), or OFF to soft-wrap text (at the nearest whitespace).",
-  TRANSCLUSION_DEFAULT_WRAP_NAME: "Transclusion word wrap default",
+    "El número especifica el recuento de caracteres donde el texto debe ajustarse. " +
+    "Establece el comportamiento de ajuste de texto para el texto transcluido. Activa esta opción para forzar el ajuste " +
+    "del texto (es decir, sin desbordamiento) o desactívala para un ajuste suave (en el espacio en blanco más cercano).",
+  TRANSCLUSION_DEFAULT_WRAP_NAME: "Ajuste de texto predeterminado para transclusión",
   TRANSCLUSION_DEFAULT_WRAP_DESC:
-    "You can manually set/override word wrapping length using the `![[page#^block]]{NUMBER}` format. " +
-    "Normally you will not want to set a default, because if you transclude text inside a sticky note, then Excalidraw will automatically take care of word wrapping. " +
-    "Set this value to `0` if you do not want to set a default. ",
-  PAGE_TRANSCLUSION_CHARCOUNT_NAME: "Page transclusion max char count",
+    "Puedes establecer o anular manualmente la longitud del ajuste de texto usando el formato `![[página#^bloque]]{NÚMERO}`. " +
+    "Normalmente no querrás establecer un valor predeterminado, ya que si transcluyes texto dentro de una nota adhesiva, Excalidraw se encargará automáticamente del ajuste. " +
+    "Establece este valor en `0` si no deseas establecer un valor predeterminado. ",
+  PAGE_TRANSCLUSION_CHARCOUNT_NAME: "Transclusión de página: máximo de caracteres",
   PAGE_TRANSCLUSION_CHARCOUNT_DESC:
-    "The maximum number of characters to display from the page when transcluding an entire page with the " +
-    "![[markdown page]] format.",
-  QUOTE_TRANSCLUSION_REMOVE_NAME: "Quote translusion: remove leading '> ' from each line",
-  QUOTE_TRANSCLUSION_REMOVE_DESC: "Remove the leading '> ' from each line of the transclusion. This will improve readability of quotes in text only transclusions<br>" +
-    "<b><u>Toggle ON:</u></b> Remove leading '> '<br><b><u>Toggle OFF:</u></b> Do not remove leading '> ' (note it will still be removed from the first row due to Obsidian API functionality)",
-  GET_URL_TITLE_NAME: "Use iframely to resolve page title",
+    "El número máximo de caracteres a mostrar de la página al transcluir una página completa con el " +
+    "formato ![[página de markdown]].",
+  QUOTE_TRANSCLUSION_REMOVE_NAME: "Transclusión de citas: eliminar el  '> ' inicial de cada línea",
+  QUOTE_TRANSCLUSION_REMOVE_DESC: "Elimina el '> ' inicial de cada línea de la transclusión. Esto mejorará la legibilidad de las citas en transclusiones de solo texto.<br>" +
+    "<b><u>Activado:</u></b> Elimina el '> ' inicial<br><b><u>Desactivado:</u></b> No elimina el '> ' inicial (tenga en cuenta que se seguirá eliminando de la primera línea debido a la funcionalidad de la API de Obsidian).",
+  GET_URL_TITLE_NAME: "Usar iframely para resolver el título de la página",
   GET_URL_TITLE_DESC:
-    "Use the <code>http://iframely.server.crestify.com/iframely?url=</code> to get title of page when dropping a link into Excalidraw",
-  PDF_TO_IMAGE: "PDF to Image",
-  PDF_TO_IMAGE_SCALE_NAME: "PDF to Image conversion scale",
-  PDF_TO_IMAGE_SCALE_DESC: "Sets the resolution of the image that is generated from the PDF page. Higher resolution will result in bigger images in memory and consequently a higher load on your system (slower performance), but sharper image. " +
-    "Additionally, if you want to copy PDF pages (as images) to Excalidraw.com, the bigger image size may result in exceeding the 2MB limit on Excalidraw.com.",
-  EMBED_TOEXCALIDRAW_HEAD: "Embed files into Excalidraw",
-  EMBED_TOEXCALIDRAW_DESC: "In the Embed Files section of Excalidraw Settings, you can configure how various files are embedded into Excalidraw. This includes options for embedding interactive markdown files, PDFs, and markdown files as images.",
-  MD_HEAD: "Embed markdown into Excalidraw as image",
-  MD_EMBED_CUSTOMDATA_HEAD_NAME: "Interactive Markdown Files",
-  MD_EMBED_CUSTOMDATA_HEAD_DESC: `The below settings will only effect future embeds. Current embeds remain unchanged. The theme setting of embedded frames is under the "Excalidraw appearance and behavior" section.`,
-  MD_EMBED_SINGLECLICK_EDIT_NAME: "Single click to edit embedded markdown",
+    "Usa <code>http://iframely.server.crestify.com/iframely?url=</code> para obtener el título de la página al soltar un enlace en Excalidraw.",
+  PDF_TO_IMAGE: "PDF a Image",
+  PDF_TO_IMAGE_SCALE_NAME: "Escala de conversión de PDF a imagen",
+  PDF_TO_IMAGE_SCALE_DESC: "Establece la resolución de la imagen que se genera a partir de la página PDF. Una mayor resolución resultará en imágenes más grandes en la memoria y, por lo tanto, una mayor carga para tu sistema (rendimiento más lento), pero la imagen será más nítida. " +
+    "Además, si quieres copiar páginas de PDF (como imágenes) a Excalidraw.com, un tamaño de imagen más grande podría exceder el límite de 2MB de Excalidraw.com.",
+  EMBED_TOEXCALIDRAW_HEAD: "Incrustar archivos en Excalidraw",
+  EMBED_TOEXCALIDRAW_DESC: "En la sección 'Incrustar archivos' de la Configuración de Excalidraw, puedes configurar cómo se incrustan varios tipos de archivos en Excalidraw. Esto incluye opciones para incrustar archivos Markdown interactivos, PDFs y archivos Markdown como imágenes.",
+  MD_HEAD: "Incrustar Markdown en Excalidraw como imagen",
+  MD_EMBED_CUSTOMDATA_HEAD_NAME: "Archivos Markdown interactivos",
+  MD_EMBED_CUSTOMDATA_HEAD_DESC: `Las siguientes configuraciones solo afectarán a futuras incrustaciones. Las incrustaciones actuales no se modificarán. La configuración del tema de los marcos incrustados se encuentra en la sección "Apariencia y comportamiento de Excalidraw`,
+  MD_EMBED_SINGLECLICK_EDIT_NAME: "Un solo click para editar Markdown incrustado",
   MD_EMBED_SINGLECLICK_EDIT_DESC:
-    "Single click on an embedded markdown file to edit it. " +
-    "When turned off, the markdown file will first open in preview mode, then switch to edit mode when you click on it again.",
-  MD_TRANSCLUDE_WIDTH_NAME: "Default width of a transcluded markdown document",
+    "Haz un solo click en un archivo Markdown incrustado para editarlo. " +
+    "Cuando está desactivado, el archivo Markdown se abrirá primero en modo de vista previa, y luego cambiará a modo de edición cuando hagas click en él nuevamente.",
+  MD_TRANSCLUDE_WIDTH_NAME: "Ancho predeterminado de un documento Markdown transcluido",
   MD_TRANSCLUDE_WIDTH_DESC:
-    "The width of the markdown page. This affects the word wrapping when transcluding longer paragraphs, and the width of " +
-    "the image element. You can override the default width of " +
-    "an embedded file using the <code>[[filename#heading|WIDTHxMAXHEIGHT]]</code> syntax in markdown view mode under embedded files.",
+    "El ancho de la página Markdown. Esto afecta el ajuste de texto al incrustar párrafos largos y el ancho " +
+    "del elemento de imagen. Puedes anular el ancho predeterminado de " +
+    "un archivo incrustado usando la sintaxis <code>[[nombre-de-archivo#encabezado|ANCHOxALTURA_MÁXIMA]]</code> en la vista de Markdown, bajo archivos incrustados.",
   MD_TRANSCLUDE_HEIGHT_NAME:
-    "Default maximum height of a transcluded markdown document",
+    "Altura máxima predeterminada de un documento Markdown transcluido",
   MD_TRANSCLUDE_HEIGHT_DESC:
-    "The embedded image will be as high as the markdown text requires, but not higher than this value. " +
-    "You can override this value by editing the embedded image link in markdown view mode with the following syntax <code>[[filename#^blockref|WIDTHxMAXHEIGHT]]</code>.",
+    "La imagen incrustada tendrá la altura que requiera el texto Markdown, pero no superará este valor." +
+    "Puedes anular este valor editando el enlace de la imagen incrustada en la vista de Markdown con la siguiente sintaxis  <code>[[nombre-de-archivo#^referencia-de-bloque|ANCHOxALTURA_MÁXIMA]]</code>.",
   MD_DEFAULT_FONT_NAME:
-    "The default font typeface to use for embedded markdown files.",
+    "El tipo de letra de fuente predeterminado a usar para los archivos Markdown incrustados.",
   MD_DEFAULT_FONT_DESC:
-    'Set this value to "Virgil" or "Cascadia" or the filename of a valid <code>.ttf</code>, <code>.woff</code>, or <code>.woff2</code> font e.g. <code>MyFont.woff2</code> ' +
-    "You can override this setting by adding the following frontmatter-key to the embedded markdown file: <code>excalidraw-font: font_or_filename</code>",
+    'Establece este valor en "Virgil" o "Cascadia" o en el nombre de archivo de una fuente válida <code>.ttf</code>, <code>.woff</code>, o <code>.woff2</code> por ejemplo <code>MiFuente.woff2</code> ' +
+    "Puedes anular esta configuración añadiendo la siguiente clave de frontmatter al archivo Markdown incrustado: <code>excalidraw-font: fuente_o_nombre-de-archivo</code>",
   MD_DEFAULT_COLOR_NAME:
-    "The default font color to use for embedded markdown files.",
+    "El color de fuente predeterminado a usar para los archivos Markdown incrustados.",
   MD_DEFAULT_COLOR_DESC:
-    'Set this to any valid css color name e.g. "steelblue" (<a href="https://www.w3schools.com/colors/colors_names.asp">color names</a>), or a valid hexadecimal color e.g. "#e67700", ' +
-    "or any other valid css color string. You can override this setting by adding the following frontmatter-key to the embedded markdown file: <code>excalidraw-font-color: steelblue</code>",
+    'Establece esto en cualquier nombre de color CSS válido, por ejemplo "steelblue" (<a href="https://www.w3schools.com/colors/colors_names.asp">nombres de colores</a>), o un color hexadecimal válido, por ejemplo "#e67700", ' +
+    "o cualquier otra cadena de color CSS válida. Puedes anular esta configuración añadiendo la siguiente clave de frontmatter al archivo Markdown incrustado: <code>excalidraw-font-color: steelblue</code>",
   MD_DEFAULT_BORDER_COLOR_NAME:
-    "The default border color to use for embedded markdown files.",
+    "El color de borde predeterminado a usar para los archivos Markdown incrustados.",
   MD_DEFAULT_BORDER_COLOR_DESC:
-    'Set this to any valid css color name e.g. "steelblue" (<a href="https://www.w3schools.com/colors/colors_names.asp">color names</a>), or a valid hexadecimal color e.g. "#e67700", ' +
-    "or any other valid css color string. You can override this setting by adding the following frontmatter-key to the embedded markdown file: <code>excalidraw-border-color: gray</code>. " +
-    "Leave empty if you don't want a border. ",
-  MD_CSS_NAME: "CSS file",
+    'Establece esto en cualquier nombre de color CSS válido, por ejemplo "steelblue" (<a href="https://www.w3schools.com/colors/colors_names.asp">nombres de colores</a>), o un color hexadecimal válido, por ejemplo "#e67700", ' +
+    "o cualquier otra cadena de color CSS válida. Puedes anular esta configuración añadiendo la siguiente clave de frontmatter al archivo Markdown incrustado: <code>excalidraw-border-color: gray</code>. " +
+    "Deja el campo vacío si no quieres un borde. ",
+  MD_CSS_NAME: "Archivo CSS",
   MD_CSS_DESC:
-    "The filename of the CSS to apply to markdown embeds. Provide the filename with extension (e.g. 'md-embed.css'). The css file may also be a plain " +
-    "markdown file (e.g. 'md-embed-css.md'), just make sure the content is written using valid css syntax. " +
-    `If you need to look at the HTML code you are applying the CSS to, then open Obsidian Developer Console (${DEVICE.isIOS || DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i"}) and type in the following command: ` +
-    '"ExcalidrawAutomate.mostRecentMarkdownSVG". This will display the most recent SVG generated by Excalidraw. ' +
-    "Setting the font-family in the css is has limitations. By default only your operating system's standard fonts are available (see README for details). " +
-    "You can add one custom font beyond that using the setting above. " +
-    'You can override this css setting by adding the following frontmatter-key to the embedded markdown file: "excalidraw-css: css_file_in_vault|css-snippet".',
-  EMBED_HEAD: "Embedding Excalidraw into your Notes and Exporting",
-  EMBED_DESC: `In the "Embed & Export" settings, you can configure how images and Excalidraw drawings are embedded and exported within your documents. Key settings include choosing the image type for markdown preview (such as Native SVG or PNG), specifying the type of file to insert into the document (original Excalidraw, PNG, or SVG), and managing image caching for embedding in markdown. You can also control image sizing, whether to embed drawings using wiki links or markdown links, and adjust settings related to image themes, background colors, and Obsidian integration. 
-    Additionally, there are settings for auto-export, which automatically generates SVG and/or PNG files to match the title of your Excalidraw drawings, keeping them in sync with file renames and deletions.`,
-  EMBED_CANVAS: "Obsidian Canvas support",
-  EMBED_CANVAS_NAME: "Immersive embedding",
+    "El nombre de archivo del CSS a aplicar a las incrustaciones de Markdown. Proporciona el nombre de archivo con la extensión (ej. 'md-embed.css'). El archivo CSS también puede ser un " +
+    "archivo Markdown simple (ej. 'md-embed-css.md'), solo asegúrate de que el contenido esté escrito usando una sintaxis CSS válida. " +
+    `Si necesitas ver el código HTML al que estás aplicando el CSS, abre la Consola de desarrollador de Obsidian (${DEVICE.isIOS || DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i"}) y escribe el siguiente comando: ` +
+    '"ExcalidrawAutomate.mostRecentMarkdownSVG". Esto mostrará el SVG más reciente generado por Excalidraw. ' +
+    "Configurar la familia de fuentes en el CSS tiene limitaciones. Por defecto, solo las fuentes estándar de tu sistema operativo están disponibles (consulta el archivo README para más detalles). " +
+    "Puedes añadir una fuente personalizada más allá de eso usando la configuración de arriba. " +
+    'Puedes anular esta configuración CSS añadiendo la siguiente clave de frontmatter al archivo Markdown incrustado: "excalidraw-css: archivo_css_en_la_bóveda|fragmento_css".',
+  EMBED_HEAD: "Incrustar Excalidraw en tus notas y exportar",
+  EMBED_DESC: `En la configuración de "Incrustar y exportar", puedes configurar cómo se incrustan y exportan las imágenes y los bosquejos de Excalidraw en tus documentos. Las configuraciones clave incluyen elegir el tipo de imagen para la vista previa de Markdown (como SVG nativo o PNG), especificar el tipo de archivo a insertar en el documento (Excalidraw original, PNG o SVG) y gestionar el almacenamiento en caché de imágenes para incrustarlas en Markdown. También puedes controlar el tamaño de la imagen, si incrustar los bosquejos usando wikienlaces o enlaces Markdown y ajustar la configuración relacionada con los temas de imagen, colores de fondo y la integración de Obsidian. 
+    Además, hay configuraciones para la autoexportación, que genera automáticamente archivos SVG y/o PNG que coinciden con el título de tus bosquejos de Excalidraw, manteniéndolos sincronizados con los cambios de nombre y eliminaciones de archivos.`,
+  EMBED_CANVAS: "Soporte para Obsidian Canvas",
+  EMBED_CANVAS_NAME: "Incrustación inmersiva",
   EMBED_CANVAS_DESC: 
-    "Hide canvas node border and background when embedding an Excalidraw drawing to Canvas. " +
-    "Note that for a full transparent background for your image, you will still need to configure Excalidraw to export images with transparent background.",
-  EMBED_CACHING: "Image caching and rendering optimization",
-  RENDERING_CONCURRENCY_NAME: "Image rendering concurrency",
+    "Oculta el borde y el fondo del nodo del Canvas al incrustar un bosquejo de Excalidraw en un Canvas. " +
+    "Ten en cuenta que para un fondo completamente transparente en tu imagen, aún necesitarás configurar Excalidraw para que exporte las imágenes con fondo transparente.",
+  EMBED_CACHING: "Caché de imágenes y optimización de renderizado",
+  RENDERING_CONCURRENCY_NAME: "Concurrencia de renderizado de imágenes",
   RENDERING_CONCURRENCY_DESC:
-    "Number of parallel workers to use for image rendering. Increasing this number will speed up the rendering process, but may slow down the rest of the system. " +
-    "The default value is 3. You can increase this number if you have a powerful system.",
-  EXPORT_SUBHEAD: "Export Settings",
-  EMBED_SIZING: "Image sizing",
-  EMBED_THEME_BACKGROUND: "Image theme and background color",
-  EMBED_IMAGE_CACHE_NAME: "Cache images for embedding in markdown",
-  EMBED_IMAGE_CACHE_DESC: "Cache images for embedding in markdown. This will speed up the embedding process, but in case you compose images of several sub-component drawings, " +
-    "the embedded image in Markdown won't update until you open the drawing and save it to trigger an update of the cache.",
-  SCENE_IMAGE_CACHE_NAME: "Cache nested Excalidraws in Scene",
-  SCENE_IMAGE_CACHE_DESC: "Cache nested Excalidraws in the Scene for faster scene rendering. This will speed up the rendering process, especially if you have deeply nested Excalidraws in your scene. " + 
-    "Excalidraw will try to intelligently identify if any children of a nested Excalidraw have changed and will update the cache accordingly. " +
-    "You may want to turn this off, in case you are suspecting that the cache is not updating properly.",
-  EMBED_IMAGE_CACHE_CLEAR: "Purge Cache",
-  BACKUP_CACHE_CLEAR: "Purge Backups",
-  BACKUP_CACHE_CLEAR_CONFIRMATION: "This action will delete all Excalidraw drawing backups. Backups are used as a safety measure in case your drawing file gets damaged. Each time you open Obsidian the plugin automatically deletes backups for files that no longer exist in your Vault. Are you sure you want to clear all backups?",
+    "Número de parallel workers(trabajadores paralelos) a usar para el renderizado de imágenes. Aumentar este número acelerará el proceso de renderizado, pero puede ralentizar el resto del sistema. " +
+    "El valor predeterminado es 3. Puedes aumentar este número si tienes un sistema potente.",
+  EXPORT_SUBHEAD: "Configuraciones de Exportación",
+  EMBED_SIZING: "Tamaño de imagen",
+  EMBED_THEME_BACKGROUND: "Tema de la imagen y color de fondo",
+  EMBED_IMAGE_CACHE_NAME: "Guardar imágenes en caché para incrustar en Markdown",
+  EMBED_IMAGE_CACHE_DESC: "Guarda imágenes en caché para incrustar en Markdown. Esto acelerará el proceso de incrustación, pero si compones imágenes a partir de varios bosquejos anidados, " +
+    "la imagen incrustada en Markdown no se actualizará hasta que abras el bosquejo y lo guardes para activar la actualización del caché.",
+  SCENE_IMAGE_CACHE_NAME: "Guardar bosquejos anidados de Excalidraw en caché en la escena",
+  SCENE_IMAGE_CACHE_DESC: "Guarda los bosquejos anidados en caché para un renderizado más rápido. Esto acelerará el proceso de renderizado, especialmente si tienes muchos bosquejos anidados en tu escena. " + 
+    "Excalidraw intentará identificar de manera inteligente si algún elemento de un bosquejo anidado ha cambiado y actualizará el caché. " +
+    "Puede que quieras desactivar esta opción si sospechas que el caché no se está actualizando correctamente.",
+  EMBED_IMAGE_CACHE_CLEAR: "Vaciar caché de imágenes",
+  BACKUP_CACHE_CLEAR: "Eliminar copias de seguridad",
+  BACKUP_CACHE_CLEAR_CONFIRMATION: "Esta acción eliminará todas las copias de seguridad de los bosquejos de Excalidraw. Las copias de seguridad se utilizan como medida de seguridad en caso de que tu archivo de bosquejo se dañe. Cada vez que abres Obsidian, el plugin elimina automáticamente las copias de seguridad de los archivos que ya no existen en tu Bóveda. ¿Estás seguro de que quieres borrar todas las copias de seguridad?",
   EMBED_REUSE_EXPORTED_IMAGE_NAME:
-    "If found, use the already exported image for preview",
+    "Si se encuentra, usar la imagen ya exportada para la vista previa",
   EMBED_REUSE_EXPORTED_IMAGE_DESC:
-    "This setting works in conjunction with the <a href='#"+TAG_AUTOEXPORT+"'>Auto-export SVG/PNG</a> setting. If an exported image that matches the file name of the drawing " +
-    "is available, use that image instead of generating a preview image on the fly. This will result in faster previews especially when you have many embedded objects in the drawing, however, " +
-    "it may happen that your latest changes are not displayed and that the image will not automatically match your Obsidian theme in case you have changed the " +
-    "Obsidian theme since the export was created. This setting only applies to embedding images into markdown documents. " +
-    "For a number of reasons, the same approach cannot be used to expedite the loading of drawings with many embedded objects. See demonstration <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.23' target='_blank'>here</a>.",
-  /*EMBED_PREVIEW_SVG_NAME: "Display SVG in markdown preview",
+    "Esta configuración funciona en conjunto con la opción de <a href='#"+TAG_AUTOEXPORT+"'>Auto-exportar SVG/PNG</a>.Si hay una imagen exportada que coincide con el nombre del archivo del bosquejo " +
+    "disponible, se usará esa imagen en lugar de generar una vista previa al momento. Esto resultará en vistas previas más rápidas, especialmente si tienes muchos objetos incrustados en el bosquejo. Sin embargo, " +
+    "puede que tus últimos cambios no se muestren y la imagen no coincida automáticamente con el " +
+    "tema de Obsidian si lo has cambiado desde que se creó la exportación. Esta configuración solo se aplica a la incrustación de imágenes en documentos Markdown.  " +
+    "Por diversas razones, el mismo enfoque no se puede usar para acelerar la carga de bosquejos con muchos objetos incrustados. Puedes ver una demostración <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.23' target='_blank'>aquí</a>.",
+  /*EMBED_PREVIEW_SVG_NAME: "Mostrar SVG en la vista previa de Markdown",
   EMBED_PREVIEW_SVG_DESC:
-    "<b><u>Toggle ON:</u></b> Embed drawing as an <a href='https://en.wikipedia.org/wiki/Scalable_Vector_Graphics' target='_blank'>SVG</a> image into the markdown preview.<br>" +
-    "<b><u>Toggle OFF:</u></b> Embed drawing as a <a href='' target='_blank'>PNG</a> image. Note, that some of the <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>image block referencing features</a> do not work with PNG embeds.",*/
-  EMBED_PREVIEW_IMAGETYPE_NAME: "Image type in markdown preview",
+    "<b><u>Activado:</u></b> Incrustar el bosquejo como una imagen <a href='https://en.wikipedia.org/wiki/Scalable_Vector_Graphics' target='_blank'>SVG</a> en la vista previa de Markdown.<br>" +
+    "<b><u>Desactivado:</u></b> Incrustar el bosquejo como una imagen <a href='' target='_blank'>PNG</a>. Ten en cuenta que algunas de las <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>funciones de referencia de bloque de imagen</a> no funcionan con las incrustaciones PNG.",*/
+  EMBED_PREVIEW_IMAGETYPE_NAME: "Tipo de imagen en la vista previa de Markdown",
   EMBED_PREVIEW_IMAGETYPE_DESC:
-    "<b><u>Native SVG</u></b>: High Image Quality. Embedded Websites, YouTube videos, Obsidian Links, and external images embedded via a URL will all work. Embedded Obsidian pages will not<br>" +
-    "<b><u>SVG Image</u></b>: High Image Quality. Embedded elements and images embedded via URL only have placeholders, links don't work<br>" +
-    "<b><u>PNG Image</u></b>: Lower Image Quality, but in some cases better performance with large drawings. Embedded elements and images embedded via URL only have placeholders, links don't work. Also some of the <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>image block referencing features</a> do not work with PNG embeds.", 
-  PREVIEW_MATCH_OBSIDIAN_NAME: "Excalidraw preview to match Obsidian theme",
+    "<b><u>SVG Nativo</u></b>: Alta calidad de imagen. Los sitios web incrustados, videos de YouTube, enlaces de Obsidian e imágenes externas incrustadas a través de una URL funcionarán. Las páginas de Obsidian incrustadas no<br>" +
+    "<b><u>Imagen SVG</u></b>: Alta calidad de imagen. Los elementos incrustados e imágenes incrustadas a través de una URL solo tienen marcadores de posición; los enlaces no funcionan.<br>" +
+    "<b><u>Imagen PNG</u></b>: Menor calidad de imagen, pero en algunos casos mejor rendimiento con bosquejos grandes. Los elementos incrustados e imágenes incrustadas a través de una URL solo tienen marcadores de posición; los enlaces no funcionan. Además, algunas de las <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>funciones de referencia de bloque de imagen</a> no funcionan con las incrustaciones PNG.", 
+  PREVIEW_MATCH_OBSIDIAN_NAME: "Vista previa de Excalidraw para que coincida con el tema de Obsidian",
   PREVIEW_MATCH_OBSIDIAN_DESC:
-    "Image preview in documents should match the Obsidian theme. If enabled, when Obsidian is in dark mode, Excalidraw images will render in dark mode. " +
-    "When Obsidian is in light mode, Excalidraw will render light mode as well. You may want to switch 'Export image with background' off for a more Obsidian-integrated look and feel.",
-  EMBED_WIDTH_NAME: "Default width of embedded (transcluded) image",
+    "La vista previa de la imagen en los documentos debe coincidir con el tema de Obsidian. Si está habilitado, cuando Obsidian esté en modo oscuro, las imágenes de Excalidraw se renderizarán en modo oscuro. " +
+    "Cuando Obsidian esté en modo claro, Excalidraw también se renderizará en modo claro. Es posible que quieras desactivar 'Exportar imagen con fondo' para una apariencia más integrada con Obsidian.",
+  EMBED_WIDTH_NAME: "Ancho predeterminado de la imagen incrustada (transcluida)",
   EMBED_WIDTH_DESC:
-    "The default width of an embedded drawing. This applies to live preview edit and reading mode, as well as to hover previews. You can specify a custom " +
-    "width when embedding an image using the <code>![[drawing.excalidraw|100]]</code> or " +
-    "<code>[[drawing.excalidraw|100x100]]</code> format.",
-  EMBED_HEIGHT_NAME: "Default height of embedded (transcluded) image",
+    "El ancho predeterminado de un bosquejo incrustado. Esto se aplica al modo de edición de vista en vivo y al modo de lectura, así como a las vistas previas al pasar el cursor. Puedes especificar un " +
+    "ancho personalizado al incrustar una imagen usando el formato <code>![[bosquejo.excalidraw|100]]</code> o " +
+    "<code>[[bosquejo.excalidraw|100x100]]</code>.",
+  EMBED_HEIGHT_NAME: "Altura predeterminada de la imagen incrustada (transcluida)",
   EMBED_HEIGHT_DESC:
-    "The default height of an embedded drawing. This applies to live preview edit and reading mode, as well as to hover previews. You can specify a custom " +
-    "height when embedding an image using the <code>![[drawing.excalidraw|100]]</code> or " +
-    "<code>[[drawing.excalidraw|100x100]]</code> format.",
-  EMBED_TYPE_NAME: "Type of file to insert into the document",
+    "TLa altura predeterminada de un bosquejo incrustado. Esto se aplica al modo de edición de vista en vivo y al modo de lectura, así como a las vistas previas al pasar el cursor. Puedes especificar  " +
+    "una altura personalizada al incrustar una imagen usando el formato <code>![[bosquejo.excalidraw|100]]</code> o " +
+    "<code>[[bosquejo.excalidraw|100x100]]</code>.",
+  EMBED_TYPE_NAME: "Tipo de archivo a insertar en el documento",
   EMBED_TYPE_DESC:
-    "When you embed an image into a document using the command palette this setting will specify if Excalidraw should embed the original Excalidraw file " +
-    "or a PNG or an SVG copy. You need to enable <a href='#"+TAG_AUTOEXPORT+"'>auto-export PNG / SVG</a> (see below under Export Settings) for those image types to be available in the dropdown. For drawings that do not have a " +
-    "a corresponding PNG or SVG readily available the command palette action will insert a broken link. You need to open the original drawing and initiate export manually. " +
-    "This option will not autogenerate PNG/SVG files, but will simply reference the already existing files.",
-  EMBED_MARKDOWN_COMMENT_NAME: "Embed link to drawing as comment",
+    "Cuando incrustas una imagen en un documento usando la paleta de comandos, esta configuración especificará si Excalidraw debe incrustar el archivo original de Excalidraw " +
+    "o una copia PNG o SVG. Debes habilitar <a href='#"+TAG_AUTOEXPORT+"'>auto-exportar PNG / SVG</a> (ver abajo en Configuración de Exportación) para que esos tipos de imagen estén disponibles en el menú desplegable. Para los bosquejos que no tengan " +
+    "PNG o SVG correspondiente disponible, la acción de la paleta de comandos insertará un enlace roto. Tendrás que abrir el bosquejo original e iniciar la exportación manualmente. " +
+    "Esta opción no generará automáticamente archivos PNG/SVG, sino que simplemente hará referencia a los archivos ya existentes.",
+  EMBED_MARKDOWN_COMMENT_NAME: "Incrustar enlace al bosquejo como comentario",
   EMBED_MARKDOWN_COMMENT_DESC: 
-    "Embed the link to the original Excalidraw file as a markdown link under the image, e.g.:<code>%%[[drawing.excalidraw]]%%</code>.<br>" +
-    "Instead of adding a markdown comment you may also select the embedded SVG or PNG line and use the command palette action: " +
-    "'<code>Excalidraw: Open Excalidraw drawing</code>' to open the drawing.",
-  EMBED_WIKILINK_NAME: "Embed Drawing using Wiki link",
+    "Incrusta el enlace al archivo original de Excalidraw como un enlace Markdown debajo de la imagen, ej:<code>%%[[bosquejo.excalidraw]]%%</code>.<br>" +
+    "En lugar de añadir un comentario de Markdown, también puedes seleccionar la línea del SVG o PNG incrustado y usar la acción de la paleta de comandos: " +
+    "'<code>Excalidraw: Abrir bosquejo de Excalidraw</code>' para abrir el bosquejo.",
+  EMBED_WIKILINK_NAME: "Incrustar bosquejo usando un enlace Wiki",
   EMBED_WIKILINK_DESC:
-    "<b><u>Toggle ON:</u></b> Excalidraw will embed a [[wiki link]].<br><b><u>Toggle OFF:</u></b> Excalidraw will embed a [markdown](link).",
-  EXPORT_PNG_SCALE_NAME: "PNG export image scale",
-  EXPORT_PNG_SCALE_DESC: "The size-scale of the exported PNG image",
-  EXPORT_BACKGROUND_NAME: "Export image with background",
+    "<b><u>Activado:</u></b> Excalidraw incrustará un [[enlace wiki]].<br><b><u>Desactivado:</u></b> Excalidraw incrustará un [markdown](enlace).",
+  EXPORT_PNG_SCALE_NAME: "Escala de la imagen exportada en PNG",
+  EXPORT_PNG_SCALE_DESC: "La escala de tamaño de la imagen PNG exportada.",
+  EXPORT_BACKGROUND_NAME: "Exportar imagen con fondo",
   EXPORT_BACKGROUND_DESC:
-    "If turned off, the exported image will be transparent.",
-  EXPORT_PADDING_NAME: "Image Padding",
+    "Si está desactivado, la imagen exportada será transparente.",
+  EXPORT_PADDING_NAME: "Relleno de imagen",
   EXPORT_PADDING_DESC:
-    "The padding (in pixels) around the exported SVG or PNG image. Padding is set to 0 for clippedFrame references." +
-    "If you have curved lines close to the edge of the image they might get cropped during image export. You can increase this value to avoid cropping. " +
-    "You can also override this setting at a file level by adding the <code>excalidraw-export-padding: 5<code> frontmatter key.",
-  EXPORT_THEME_NAME: "Export image with theme",
+    "El relleno (en píxeles) alrededor de la imagen SVG o PNG exportada. El relleno se establece en 0 para las referencias clippedFrame" +
+    "Si tienes líneas curvas cerca del borde de la imagen, es posible que se recorten durante la exportación. Puedes aumentar este valor para evitar el recorte. " +
+    "También puedes anular esta configuración a nivel de archivo añadiendo la clave frontmatter <code>excalidraw-export-padding: 5<code>.",
+  EXPORT_THEME_NAME: "Exportar imagen con el tema",
   EXPORT_THEME_DESC:
-    "Export the image matching the dark/light theme of your drawing. If turned off, " +
-    "drawings created in dark mode will appear as they would in light mode.",
-  EXPORT_EMBED_SCENE_NAME: "Embed scene in exported image",
+    "Exporta la imagen coincidiendo con el tema claro/oscuro de tu bosquejo. Si está desactivado, " +
+    "los bosquejos creados en modo oscuro aparecerán como lo harían en modo claro.",
+  EXPORT_EMBED_SCENE_NAME: "Incrustar escena en la imagen exportada",
   EXPORT_EMBED_SCENE_DESC:
-    "Embed Excalidraw scene in exported image. Can be overridden at a file level by adding the <code>excalidraw-export-embed-scene: true/false<code> frontmatter key. " +
-    "The setting only takes effect the next time you (re)open drawings.",
-  PDF_EXPORT_SETTINGS: "PDF Export Settings",
-  EXPORT_HEAD: "Auto-export Settings",
+    "Incrusta la escena de Excalidraw en la imagen exportada. Se puede anular a nivel de archivo añadiendo la clave frontmatter <code>excalidraw-export-embed-scene: true/false<code> . " +
+    "La configuración solo surtirá efecto la próxima vez que (re)abras los bosquejos.",
+  PDF_EXPORT_SETTINGS: "Configuración de exportación a PDF",
+  EXPORT_HEAD: "Configuración de auto-exportación",
   EXPORT_SYNC_NAME:
-    "Keep the .SVG and/or .PNG filenames in sync with the drawing file",
+    "Mantiene los nombres de archivo .SVG y/o .PNG sincronizados con el archivo del bosquejo",
   EXPORT_SYNC_DESC:
-    "When turned on, the plugin will automatically update the filename of the .SVG and/or .PNG files when the drawing in the same folder (and same name) is renamed. " +
-    "The plugin will also automatically delete the .SVG and/or .PNG files when the drawing in the same folder (and same name) is deleted. ",
-  EXPORT_SVG_NAME: "Auto-export SVG",
+    "Cuando está activado, el plugin actualizará automáticamente el nombre de los archivos .SVG y/o .PNG cuando el bosquejo en la misma carpeta (y con el mismo nombre) sea renombrado. " +
+    "El complemento también eliminará automáticamente los archivos .SVG y/o .PNG cuando el bosquejo en la misma carpeta (y con el mismo nombre) sea eliminado. ",
+  EXPORT_SVG_NAME: "Auto-exportar SVG",
   EXPORT_SVG_DESC:
-    "Automatically create an SVG export of your drawing matching the title of your file. " +
-    "The plugin will save the *.SVG file in the same folder as the drawing. " +
-    "Embed the .svg file into your documents instead of Excalidraw making you embeds platform independent. " +
-    "While the auto-export switch is on, this file will get updated every time you edit the Excalidraw drawing with the matching name. " + 
-    "You can override this setting on a file level by adding the <code>excalidraw-autoexport</code> frontmatter key. Valid values for this key are " +
-    "<code>none</code>,<code>both</code>,<code>svg</code>, and <code>png</code>.",
-  EXPORT_PNG_NAME: "Auto-export PNG",
-  EXPORT_PNG_DESC: "Same as the auto-export SVG, but for *.PNG",
-  EXPORT_BOTH_DARK_AND_LIGHT_NAME: "Export both dark- and light-themed image",
-  EXPORT_BOTH_DARK_AND_LIGHT_DESC:  "When enabled, Excalidraw will export two files instead of one: filename.dark.png, filename.light.png and/or filename.dark.svg and filename.light.svg<br>"+
-    "Double files will be exported both if auto-export SVG or PNG (or both) are enabled, as well as when clicking export on a single image.",
+    "Crea automáticamente una exportación SVG de tu bosquejo que coincida con el título de tu archivo. " +
+    "El complemento guardará el archivo *.SVG en la misma carpeta que el bosquejo. " +
+    "Incrustar el archivo .svg en tus documentos hace que tus incrustaciones sean independientes de la plataforma. " +
+    "Mientras el interruptor de autoexportación esté activado, este archivo se actualizará cada vez que edites el bosquejo de Excalidraw con el nombre correspondiente. " + 
+    "Puedes anular esta configuración a nivel de archivo añadiendo la clave frontmatter <code>excalidraw-autoexport</code>. Los valores válidos para esta clave son " +
+    "<code>none</code>,<code>both</code>,<code>svg</code>, y <code>png</code>.",
+  EXPORT_PNG_NAME: "Auto-exportar PNG",
+  EXPORT_PNG_DESC: "Igual que la autoexportación de SVG, pero para *.PNG",
+  EXPORT_BOTH_DARK_AND_LIGHT_NAME: "Exportar imagen con tema oscuro y claro",
+  EXPORT_BOTH_DARK_AND_LIGHT_DESC:  "Cuando está habilitado, Excalidraw exportará dos archivos en lugar de uno: nombre-archivo.dark.png, nombre-archivo.light.png y/o nombre-archivo.dark.svg y nombre-archivo.light.svg<br>"+
+    "Se exportarán archivos dobles tanto si la autoexportación de SVG o PNG (o ambos) está habilitada, como al hacer clic en exportar en una sola imagen.",
   COMPATIBILITY_HEAD: "Compatibility features",
   COMPATIBILITY_DESC: "You should only enable these features if you have a strong reason for wanting to work with excalidraw.com files instead of markdown files. Many of the plugin features are not supported on legacy files. Typical usecase would be if you use set your vault up on top of a Visual Studio Code project folder and you have .excalidraw drawings you want to access from Visual Studio Code as well. Another usecase might be using Excalidraw in Logseq and Obsidian in parallel.",
   DUMMY_TEXT_ELEMENT_LINT_SUPPORT_NAME: "Linter compatibility",
