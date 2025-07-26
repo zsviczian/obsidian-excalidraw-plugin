@@ -862,37 +862,37 @@ FILENAME_HEAD: "Nombre de archivo",
   HOTKEY_BUTTON_REMOVE: "Eliminar atajo",
 
   //openDrawings.ts
-  SELECT_FILE: "Select a file then press enter.",
-  SELECT_COMMAND: "Select a command then press enter.",
-  SELECT_FILE_WITH_OPTION_TO_SCALE: `Select a file then press ENTER, or ${labelSHIFT()}+${labelMETA()}+ENTER to insert at 100% scale.`,
-  NO_MATCH: "No file matches your query.",
-  NO_MATCHING_COMMAND: "No command matches your query.",
-  SELECT_FILE_TO_LINK: "Select the file you want to insert the link for.",
-  SELECT_COMMAND_PLACEHOLDER: "Select the command you want to insert the link for.",
-  SELECT_DRAWING: "Select the image or drawing you want to insert",
-  TYPE_FILENAME: "Type name of drawing to select.",
+  SELECT_FILE: "Selecciona un archivo y luego presiona Enter.",
+  SELECT_COMMAND: "Selecciona un comando y luego presiona Enter.",
+  SELECT_FILE_WITH_OPTION_TO_SCALE: `Selecciona un archivo y luego presiona ENTER, o ${labelSHIFT()}+${labelMETA()}+ENTER para insertar a escala del 100%`,
+  NO_MATCH: "Ningún archivo coincide con tu búsqueda.",
+  NO_MATCHING_COMMAND: "Ningún comando coincide con tu búsqueda.",
+  SELECT_FILE_TO_LINK: "Selecciona el archivo para el que quieres insertar el enlace.",
+  SELECT_COMMAND_PLACEHOLDER: "Selecciona el comando para el que quieres insertar el enlace.",
+  SELECT_DRAWING: "Selecciona el bosquejo que quieres insertar.",
+  TYPE_FILENAME: "Escribe el nombre del bosquejo para seleccionar.",
   SELECT_FILE_OR_TYPE_NEW:
-    "Select existing drawing or type name of a new drawing then press Enter.",
-  SELECT_TO_EMBED: "Select the drawing to insert into active document.",
-  SELECT_MD: "Select the markdown document you want to insert",
-  SELECT_PDF: "Select the PDF document you want to insert",
-  PDF_PAGES_HEADER: "Pages to load?",
-  PDF_PAGES_DESC: "Format: 1, 3-5, 7, 9-11",
+    "Selecciona un bosquejo existente o escribe el nombre de uno nuevo y luego presiona Enter.",
+  SELECT_TO_EMBED: "Selecciona el bosquejo para insertar en el documento activo.",
+  SELECT_MD: "Selecciona el documento Markdown que quieres insertar",
+  SELECT_PDF: "Selecciona el documento PDF que quieres insertar.",
+  PDF_PAGES_HEADER: "¿Páginas a cargar?",
+  PDF_PAGES_DESC: "Formato: 1, 3-5, 7, 9-11",
 
   //SelectCard.ts
-  TYPE_SECTION: "Type section name to select.",
+  TYPE_SECTION: "Escribe el nombre de la sección para seleccionar.",
   SELECT_SECTION_OR_TYPE_NEW:
-    "Select existing section or type name of a new section then press Enter.",
-  INVALID_SECTION_NAME: "Invalid section name.",
-  EMPTY_SECTION_MESSAGE: "Type the Section Name and hit enter to create a new Section",
+    "Selecciona una sección existente o escribe el nombre de una nueva y luego presiona Enter.",
+  INVALID_SECTION_NAME: "Nombre de sección inválido.",
+  EMPTY_SECTION_MESSAGE: "Escribe el nombre de la sección y presiona Enter para crear una nueva.",
 
   //EmbeddedFileLoader.ts
   INFINITE_LOOP_WARNING:
-    "EXCALIDRAW WARNING\nAborted loading embedded images due to infinite loop in file:\n",
+    "ADVERTENCIA DE EXCALIDRAW\nCarga de imágenes incrustadas abortada debido a un bucle infinito en el archivo:\n",
 
   //Scripts.ts
   SCRIPT_EXECUTION_ERROR:
-    "Script execution error. Please find error message on the developer console.",
+    "Error de ejecución del script. Por favor, revisa la consola del desarrollador para ver el mensaje de error.",
 
   //ExcalidrawData.ts
   LOAD_FROM_BACKUP: "Excalidraw file was corrupted. Loading from backup file.",
