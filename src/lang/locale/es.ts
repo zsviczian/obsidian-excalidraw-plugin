@@ -856,10 +856,10 @@ FILENAME_HEAD: "Nombre de archivo",
     "puedes comprar una clave API(API Key) de pago en <a href='https://www.taskbone.com/' target='_blank'>taskbone.com</a>. En caso de que hayas comprado una clave, simplemente sobrescribe esta clave API(API Key) gratuita generada automáticamente con tu clave de pago.",
 
   //HotkeyEditor
-  HOTKEY_PRESS_COMBO_NANE: "Press your hotkey combination",
-  HOTKEY_PRESS_COMBO_DESC: "Please press the desired key combination",
-  HOTKEY_BUTTON_ADD_OVERRIDE: "Add New Override",
-  HOTKEY_BUTTON_REMOVE: "Remove",
+  HOTKEY_PRESS_COMBO_NANE: "Presiona tu combinación de atajos",
+  HOTKEY_PRESS_COMBO_DESC: "Por favor, presiona la combinación de teclas deseada para el atajo.",
+  HOTKEY_BUTTON_ADD_OVERRIDE: "Agregar nueva sobrescritura de atajo",
+  HOTKEY_BUTTON_REMOVE: "Eliminar atajo",
 
   //openDrawings.ts
   SELECT_FILE: "Select a file then press enter.",
