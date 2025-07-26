@@ -717,143 +717,143 @@ FILENAME_HEAD: "Nombre de archivo",
   EXPORT_BOTH_DARK_AND_LIGHT_NAME: "Exportar imagen con tema oscuro y claro",
   EXPORT_BOTH_DARK_AND_LIGHT_DESC:  "Cuando está habilitado, Excalidraw exportará dos archivos en lugar de uno: nombre-archivo.dark.png, nombre-archivo.light.png y/o nombre-archivo.dark.svg y nombre-archivo.light.svg<br>"+
     "Se exportarán archivos dobles tanto si la autoexportación de SVG o PNG (o ambos) está habilitada, como al hacer clic en exportar en una sola imagen.",
-  COMPATIBILITY_HEAD: "Compatibility features",
-  COMPATIBILITY_DESC: "You should only enable these features if you have a strong reason for wanting to work with excalidraw.com files instead of markdown files. Many of the plugin features are not supported on legacy files. Typical usecase would be if you use set your vault up on top of a Visual Studio Code project folder and you have .excalidraw drawings you want to access from Visual Studio Code as well. Another usecase might be using Excalidraw in Logseq and Obsidian in parallel.",
+  COMPATIBILITY_HEAD: "Funciones de compatibilidad",
+  COMPATIBILITY_DESC: "Solo debes habilitar estas funciones si tienes una razón de peso para querer trabajar con archivos de excalidraw.com en lugar de archivos Markdown. Muchas de las funciones del plugin no son compatibles con los archivos heredados. Un caso de uso típico sería si configuras tu bóveda sobre una carpeta de proyecto de Visual Studio Code y también quieres acceder a los bosquejos .excalidraw desde allí. Otro caso de uso podría ser usar Excalidraw en Logseq y Obsidian en paralelo.",
   DUMMY_TEXT_ELEMENT_LINT_SUPPORT_NAME: "Linter compatibility",
-  DUMMY_TEXT_ELEMENT_LINT_SUPPORT_DESC: "Excalidraw is sensitive to the file structure below <code># Excalidraw Data</code>. Automatic linting of documents can create errors in Excalidraw Data. " +
-    "While I've made some effort to make the data loading resilient to " +
-    "lint changes, this solution is not foolproof.<br><mark>The best is to avoid linting or otherwise automatically changing Excalidraw documents using different plugins.</mark><br>" +
-    "Use this setting if for good reasons you have decided to ignore my recommendation and configured linting of Excalidraw files.<br> " +
-    "The <code>## Text Elements</code> section is sensitive to empty lines. A common linting approach is to add an empty line after section headings. In case of Excalidraw this will break/change the first text element in your drawing. " +
-    "To overcome this, you can enable this setting. When enabled, Excalidraw will add a dummy element to the beginning of <code>## Text Elements</code> that the linter can safely modify." ,
-  PRESERVE_TEXT_AFTER_DRAWING_NAME: "Zotero and Footnotes compatibility",
-  PRESERVE_TEXT_AFTER_DRAWING_DESC: "Preserve text after the ## Drawing section of the markdown file. This may have a very slight performance impact when saving very large drawings.",
-  DEBUGMODE_NAME: "Enable debug messages",
-  DEBUGMODE_DESC: "I recommend restarting Obsidian after enabling/disabling this setting. This enable debug messages in the console. This is useful for troubleshooting issues. " +
-    "If you are experiencing problems with the plugin, please enable this setting, reproduce the issue, and include the console log in the issue you raise on <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/issues'>GitHub</a>",
-  SLIDING_PANES_NAME: "Sliding panes plugin support",
+  DUMMY_TEXT_ELEMENT_LINT_SUPPORT_DESC: "Excalidraw es sensible a la estructura del archivo debajo de <code># Excalidraw Data</code>. La revisión automática de documentos (linting) puede crear errores en los datos de Excalidraw. " +
+    "Si bien he hecho un esfuerzo para que la carga de datos sea resistente a los " +
+    "cambios de lint, esta solución no es infalible.<br><mark>Lo mejor es evitar el linting o la modificación automática de documentos de Excalidraw usando otros complementos.</mark><br>" +
+    "Usa esta configuración si, por buenas razones, has decidido ignorar mi recomendación y configuraste el linting para archivos de Excalidraw.<br> " +
+    "La sección <code>## Text Elements</code> es sensible a las líneas vacías. Un enfoque de linting común es agregar una línea vacía después de los encabezados de sección. En el caso de Excalidraw, esto romperá o cambiará el primer elemento de texto de tu bosquejo. " +
+    "Para solucionar esto, puedes habilitar esta configuración. Cuando está habilitada, Excalidraw agregará un elemento ficticio al inicio de <code>## Text Elements</code> que el linter puede modificar de forma segura." ,
+  PRESERVE_TEXT_AFTER_DRAWING_NAME: "Compatibilidad con Zotero y notas al pie",
+  PRESERVE_TEXT_AFTER_DRAWING_DESC: "Preserva el texto después de la sección ## Bosquejo del archivo Markdown. Esto puede tener un impacto muy leve en el rendimiento al guardar bosquejos muy grandes.",
+  DEBUGMODE_NAME: "Habilitar mensajes de depuración",
+  DEBUGMODE_DESC: "Recomiendo reiniciar Obsidian después de habilitar o deshabilitar esta configuración. Esto habilita los mensajes de depuración en la consola. Esto es útil para solucionar problemas. " +
+    "Si estás experimentando problemas con el plugin, por favor, habilita esta configuración, reproduce el problema e incluye el registro de la consola en el problema que reportes en <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/issues'>GitHub</a>",
+  SLIDING_PANES_NAME: "Soporte para el complemento Sliding Panes",
   SLIDING_PANES_DESC:
-    "Need to restart Obsidian for this change to take effect.<br>" +
-    "If you use the <a href='https://github.com/deathau/sliding-panes-obsidian' target='_blank'>Sliding Panes plugin</a> " +
-    "you can enable this setting to make Excalidraw drawings work with the Sliding Panes plugin.<br>" +
-    "Note, that Excalidraw Sliding Panes support causes compatibility issues with Obsidian Workspaces.<br>" +
-    "Note also, that the 'Stack Tabs' feature is now available in Obsidian, providing native support for most of the Sliding Panes functionality.",
-  EXPORT_EXCALIDRAW_NAME: "Auto-export Excalidraw",
-  EXPORT_EXCALIDRAW_DESC: "Same as the auto-export SVG, but for *.Excalidraw",
+    "Necesitas reiniciar Obsidian para que este cambio surta efecto.<br>" +
+    "Si usas el <a href='https://github.com/deathau/sliding-panes-obsidian' target='_blank'>complemento Sliding Panes</a> " +
+    ", puedes habilitar esta configuración para que los bosquejos de Excalidraw funcionen con él.<br>" +
+    "Ten en cuenta que el soporte de Excalidraw para Sliding Panes causa problemas de compatibilidad con los Workspaces(Espacios de Trabajo) de Obsidian.<br>" +
+    "Ten en cuenta también que la función 'Stack Tabs' ya está disponible en Obsidian, lo que proporciona soporte nativo para la mayoría de las funcionalidades de Sliding Panes.",
+  EXPORT_EXCALIDRAW_NAME: "Auto-exportar Excalidraw",
+  EXPORT_EXCALIDRAW_DESC: "Igual que la autoexportación de SVG, pero para *.Excalidraw",
   SYNC_EXCALIDRAW_NAME:
-    "Sync *.excalidraw with *.md version of the same drawing",
+    "Sincronizar *.excalidraw con la versión *.md del mismo bosquejo",
   SYNC_EXCALIDRAW_DESC:
-    "If the modified date of the *.excalidraw file is more recent than the modified date of the *.md file " +
-    "then update the drawing in the .md file based on the .excalidraw file",
-  COMPATIBILITY_MODE_NAME: "New drawings as legacy files",
+    "Si la fecha de modificación del archivo *.excalidraw es más reciente que la fecha de modificación del archivo *.md, " +
+    "entonces actualiza el bosquejo en el archivo .md basándose en el archivo .excalidraw.",
+  COMPATIBILITY_MODE_NAME: "Nuevos bosquejos como archivos heredados",
   COMPATIBILITY_MODE_DESC:
-    "⚠️ Enable this only if you know what you are doing. In 99.9% of the cases you DO NOT want this on. " +
-    "By enabling this feature drawings you create with the ribbon icon, the command palette actions, " +
-    "and the file explorer are going to be all legacy *.excalidraw files. This setting will also turn off the reminder message " +
-    "when you open a legacy file for editing.",
-  MATHJAX_NAME: "MathJax (LaTeX) javascript library host",
-  MATHJAX_DESC: "If you are using LaTeX equations in Excalidraw, then the plugin needs to load a javascript library for that. " + 
-    "Some users are unable to access certain host servers. If you are experiencing issues, try changing the host here. You may need to "+
-    "restart Obsidian after closing settings, for this change to take effect.",
-  LATEX_DEFAULT_NAME: "Default LaTeX formula for new equations",
-  LATEX_DEFAULT_DESC: "Leave empty if you don't want a default formula. You can add default formatting here such as <code>\\color{white}</code>.",
-  LATEX_PREAMBLE_NAME: "LaTeX preamble file (CasE SEnSiTivE!)",
-  LATEX_PREAMBLE_DESC: "Full filepath to the preamble file, leave empty for default. If the file doesn't exist this option will be ignored.<br><strong>Important:</strong> Requires obsidian reload after change to take effect!",
-  NONSTANDARD_HEAD: "Non-Excalidraw.com supported features",
-  NONSTANDARD_DESC: `These settings in the "Non-Excalidraw.com Supported Features" section provide customization options beyond the default Excalidraw.com features. These features are not available on excalidraw.com. When exporting the drawing to Excalidraw.com these features will appear different.
-    You can configure the number of custom pens displayed next to the Obsidian Menu on the canvas, allowing you to choose from a range of options. Additionally, you can enable a local font option, which adds a local font to the list of fonts on the element properties panel for text elements. `,
-  RENDER_TWEAK_HEAD: "Rendering tweaks",
-  MAX_IMAGE_ZOOM_IN_NAME: "Maximum image zoom in resolution",
-  MAX_IMAGE_ZOOM_IN_DESC: "To save on memory and because Apple Safari (Obsidian on iOS) has some hard-coded limitations, Excalidraw.com limits the max resolution of images and large objects when zooming in. You can override this limitation using a multiplicator. " +
-    "This means you are multiplying the limit set by default in Excalidraw, the larger the multiplier the better the image zoom in resolution will be, and the more memory it will consume. " +
-    "I recommend playing with multiple values for this setting. You know you've hit the wall, when zooming in to a larger PNG image suddenly the image disappears from view. The default value is 1. The setting has no effect on iOS.",
-  CUSTOM_PEN_HEAD: "Custom pens",
-  CUSTOM_PEN_NAME: "Number of custom pens",
-  CUSTOM_PEN_DESC: "You will see these pens next to the Obsidian Menu on the canvas. You can customize the pens on the canvas by long-pressing the pen button.",
-  EXPERIMENTAL_HEAD: "Miscellaneous features",
-  EXPERIMENTAL_DESC: `These miscellaneous features in Excalidraw include options for setting default LaTeX formulas for new equations, enabling a Field Suggester for autocompletion, displaying type indicators for Excalidraw files, enabling immersive image embedding in live preview editing mode, and experimenting with Taskbone Optical Character Recognition for text extraction from images and drawings. Users can also enter a Taskbone API key for extended usage of the OCR service.`,
+    "⚠️ Habilita esto solo si sabes lo que estás haciendo. En el 99.9% de los casos NO querrás tener esto activado. " +
+    "Al habilitar esta función, los bosquejos que crees con el icono de la barra, las acciones de la paleta de comandos " +
+    "y el explorador de archivos serán todos archivos heredados *.excalidraw . Esta configuración también desactivará el mensaje de recordatorio " +
+    "cuando abras un archivo heredado para editar.",
+  MATHJAX_NAME: "Host(Servidor) de la librería Javascript MathJax(LaTeX)",
+  MATHJAX_DESC: "Si estás usando ecuaciones LaTeX en Excalidraw, el complemento necesita cargar una librería de Javascript para ello. " + 
+    "Algunos usuarios no pueden acceder a ciertos servidores. Si tienes problemas, intenta cambiar el servidor aquí. Es posible que necesites"+
+    "reiniciar Obsidian después de cerrar la configuración para que este cambio surta efecto.",
+  LATEX_DEFAULT_NAME: "Fórmula LaTeX predeterminada para nuevas ecuaciones",
+  LATEX_DEFAULT_DESC: "Deja vacío si no quieres una fórmula predeterminada. Puedes añadir formato predeterminado aquí, como <code>\\color{white}</code>.",
+  LATEX_PREAMBLE_NAME: "Archivo preámbulo de LaTeX (¡Sensible a MAYÚSCULAS/minúsculas!)",
+  LATEX_PREAMBLE_DESC: "Ruta de archivo completa al preámbulo; deja vacío para usar el predeterminado. Si el archivo no existe, esta opción será ignorada.<br><strong>Importante:</strong> Requiere recargar Obsidian para que el cambio surta efecto!",
+  NONSTANDARD_HEAD: "Funciones no compatibles con Excalidraw.com",
+  NONSTANDARD_DESC: `Estas configuraciones en la sección "Funciones no compatibles con Excalidraw.com" ofrecen opciones de personalización que van más allá de las funciones predeterminadas de Excalidraw.com. Estas funciones no están disponibles en excalidraw.com. Al exportar el bosquejo a Excalidraw.com, estas funciones se verán diferentes.
+    Puedes configurar el número de lápices personalizados que se muestran junto al Menú de Obsidian en el lienzo, permitiéndote elegir entre una variedad de opciones. Además, puedes habilitar una opción de fuente local, que agrega una fuente local a la lista de fuentes en el panel de propiedades de elementos de texto. `,
+  RENDER_TWEAK_HEAD: "Ajustes de renderizado",
+  MAX_IMAGE_ZOOM_IN_NAME: "Resolución máxima de zoom en imágenes",
+  MAX_IMAGE_ZOOM_IN_DESC: "Para ahorrar memoria y debido a que Apple Safari (Obsidian en iOS) tiene algunas limitaciones codificadas, excalidraw.com limita la resolución máxima de las imágenes y objetos grandes al hacer zoom. Puedes anular esta limitación usando un multiplicador. " +
+    "Esto significa que multiplicas el límite establecido por defecto en Excalidraw; cuanto mayor sea el multiplicador, mejor será la resolución de zoom de la imagen y más memoria consumirá. " +
+    "Te recomiendo experimentar con varios valores. Sabrás que has llegado al límite cuando al hacer zoom en una imagen PNG grande, esta desaparezca de la vista. El valor predeterminado es 1. Esta configuración no tiene efecto en iOS.",
+  CUSTOM_PEN_HEAD: "Lápices personalizados",
+  CUSTOM_PEN_NAME: "Número de lápices personalizados",
+  CUSTOM_PEN_DESC: "Verás estos lápices junto al Menú de Obsidian en el lienzo. Puedes personalizarlos manteniendo presionado el botón del lápiz en el lienzo.",
+  EXPERIMENTAL_HEAD: "Funcionalidades misceláneas",
+  EXPERIMENTAL_DESC: `Estas funcionalidades misceláneas en Excalidraw incluyen opciones para establecer fórmulas LaTeX predeterminadas para nuevas ecuaciones, habilitar un sugeridor de campos para autocompletar, mostrar indicadores de tipo para archivos de Excalidraw, habilitar la incrustación de imágenes inmersivas en el modo de edición de vista en vivo y experimentar con el Reconocimiento Óptico de Caracteres (OCR) de Taskbone para la extracción de texto de imágenes y bosquejos. Los usuarios también pueden ingresar una clave de API de Taskbone para un uso extendido del servicio de OCR.`,
   EA_HEAD: "Excalidraw Automate",
   EA_DESC: 
-    "ExcalidrawAutomate is a scripting and automation API for Excalidraw. Unfortunately, the documentation of the API is sparse. " +
-    "I recommend reading the <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/API/ExcalidrawAutomate.d.ts'>ExcalidrawAutomate.d.ts</a> file, " +
-    "visiting the <a href='https://zsviczian.github.io/obsidian-excalidraw-plugin/'>ExcalidrawAutomate How-to</a> page - though the information " +
-          "here has not been updated for a long while -, and finally to enable the field suggester below. The field suggester will show you the available " +
-    "functions, their parameters and short description as you type. The field suggester is the most up-to-date documentation of the API.",
-  FIELD_SUGGESTER_NAME: "Enable Field Suggester",
+    "ExcalidrawAutomate es una API de scripting y automatización para Excalidraw. Desafortunadamente, la documentación de la API es escasa. " +
+    "Te recomiendo leer el archivo <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/API/ExcalidrawAutomate.d.ts'>ExcalidrawAutomate.d.ts</a>, " +
+    "visitar la página <a href='https://zsviczian.github.io/obsidian-excalidraw-plugin/'>Cómo usar ExcalidrawAutomate</a> (aunque la información " +
+          "aquí no se ha actualizado en mucho tiempo), y finalmente, habilitar el sugeridor de campos que se encuentra abajo. El sugeridor de campos te mostrará las funciones disponibles,  " +
+    "sus parámetros y una breve descripción mientras escribes. El sugeridor de campos es la documentación más actualizada de la API.",
+  FIELD_SUGGESTER_NAME: "Habilitar Sugeridor de Campos",
   FIELD_SUGGESTER_DESC:
-    "Field Suggester borrowed from Breadcrumbs and Templater plugins. The Field Suggester will show an autocomplete menu " +
-    "when you type <code>excalidraw-</code> or <code>ea.</code> with function description as hints on the individual items in the list.",
-  STARTUP_SCRIPT_NAME: "Startup script",
+    "El sugeridor de campos, tomado de los plugins Breadcrumbs y Templater, mostrará un menú de autocompletar " +
+    "cuando escribas <code>excalidraw-</code> o <code>ea.</code> , con descripciones de las funciones como pistas para cada elemento en la lista.",
+  STARTUP_SCRIPT_NAME: "Script de inicio",
   STARTUP_SCRIPT_DESC:
-    "If set, excalidraw will execute the script at plugin startup. This is useful if you want to set any of the Excalidraw Automate hooks. The startup script is a markdown file " +
-    "that should contain the javascript code you want to execute when Excalidraw starts.",
-  STARTUP_SCRIPT_BUTTON_CREATE: "Create startup script",
-  STARTUP_SCRIPT_BUTTON_OPEN: "Open startup script",
-  STARTUP_SCRIPT_EXISTS: "Startup script file already exists",
-  FILETYPE_NAME: "Display type (✏️) for excalidraw.md files in File Explorer",
+    "Si está configurado, Excalidraw ejecutará el script al iniciar el plugin. Esto es útil si quieres establecer cualquiera de los hooks de Excalidraw Automate. El script de inicio es un archivo Markdown " +
+    "que debe contener el código Javascript que quieres ejecutar cuando Excalidraw se inicie",
+  STARTUP_SCRIPT_BUTTON_CREATE: "Crear script de inicio",
+  STARTUP_SCRIPT_BUTTON_OPEN: "Abrir script de inicio",
+  STARTUP_SCRIPT_EXISTS: "El archivo del script de inicio ya existe",
+  FILETYPE_NAME: "Muestra el indicador de tipo (✏️) para archivos excalidraw.md en el Explorador de archivos",
   FILETYPE_DESC:
-    "Excalidraw files will receive an indicator using the emoji or text defined in the next setting.",
-  FILETAG_NAME: "Set the type indicator for excalidraw.md files",
-  FILETAG_DESC: "The text or emoji to display as type indicator.",
-  INSERT_EMOJI: "Insert an emoji",
-  LIVEPREVIEW_NAME: "Immersive image embedding in live preview editing mode",
+    "Los archivos de Excalidraw recibirán un indicador usando el emoji o texto definido en la siguiente configuración.",
+  FILETAG_NAME: "Establecer el indicador de tipo para archivos excalidraw.md",
+  FILETAG_DESC: "El texto o emoji a mostrar como indicador de tipo.",
+  INSERT_EMOJI: "Insertar un emoji",
+  LIVEPREVIEW_NAME: "Incrustación de imágenes inmersiva en modo de edición de vista en vivo",
   LIVEPREVIEW_DESC:
-    "Turn this on to support image embedding styles such as ![[drawing|width|style]] in live preview editing mode. " +
-    "The setting will not affect the currently open documents. You need close the open documents and re-open them for the change " +
-    "to take effect.",
-  FADE_OUT_EXCALIDRAW_MARKUP_NAME: "Fade out Excalidraw markup",
-  FADE_OUT_EXCALIDRAW_MARKUP_DESC: "In Markdown view mode, the section after the markdown comment %% " +
-    "fades out. The text is still there, but the visual clutter is reduced. Note, you can place the %% in the line right above # Text Elements, " +
-    "in this case the entire drawing markdown will fade out including # Text Elements. The side effect is you won't be able to block reference text in other markdown notes, that is after the %% comment section. This is seldom an issue. " +
-    "Should you want to edit the Excalidraw markdown script, simply switch to markdown view mode and temporarily remove the %% comment.",
-  EXCALIDRAW_PROPERTIES_NAME: "Load Excalidraw Properties into Obsidian Suggester",
-  EXCALIDRAW_PROPERTIES_DESC: "Toggle this setting to load Excalidraw document properties into Obsidian's property suggester at plugin startup. "+
-   "Enabling this feature simplifies the use of Excalidraw front matter properties, allowing you to leverage many powerful settings. If you prefer not to load these properties automatically, " +
-   "you can disable this feature, but you will need to manually remove any unwanted properties from the suggester. " +
-   "Note that turning on this setting requires restarting the plugin as properties are loaded at startup.",  
-  FONTS_HEAD: "Fonts",
-  FONTS_DESC: "Configure local fontfaces and downloaded CJK fonts for Excalidraw.",
-  CUSTOM_FONT_HEAD: "Local font",
-  ENABLE_FOURTH_FONT_NAME: "Enable local font option",
+    "Activa esta opción para admitir estilos de incrustación de imágenes como ![[bosquejo|ancho|estilo]] en el modo de edición de vista en vivo. " +
+    "Esta configuración no afectará los documentos abiertos actualmente. Debes cerrar los documentos y volver a abrirlos " +
+    "para que el cambio surta efecto.",
+  FADE_OUT_EXCALIDRAW_MARKUP_NAME: "Desvanecer el marcado de Excalidraw",
+  FADE_OUT_EXCALIDRAW_MARKUP_DESC: "En el modo de vista Markdown, la sección después del comentario de Markdown %% " +
+    "se desvanece. El texto sigue ahí, pero la saturación visual se reduce. Ten en cuenta que puedes colocar el %% en la línea justo encima de # Text Elements, " +
+    "en ese caso, todo el Markdown del bosquejo se desvanecerá, incluyendo # Text Elements. El efecto secundario es que no podrás hacer referencia a bloques de texto en otras notas Markdown que estén después de la sección de comentarios %% . Esto rara vez es un problema. " +
+    "i necesitas editar el script Markdown de Excalidraw, simplemente cambia al modo de vista Markdown y elimina temporalmente el comentario %% .",
+  EXCALIDRAW_PROPERTIES_NAME: "Cargar propiedades de Excalidraw en el sugeridor de Obsidian",
+  EXCALIDRAW_PROPERTIES_DESC: "Activa esta configuración para cargar las propiedades de los documentos de Excalidraw en el sugeridor de propiedades de Obsidian al iniciar el complemento. "+
+   "Habilitar esta función simplifica el uso de las propiedades de frontmatter de Excalidraw, permitiéndote aprovechar muchas configuraciones poderosas. Si prefieres no cargar estas propiedades automáticamente, " +
+   "puedes deshabilitar esta función, pero tendrás que eliminar manualmente cualquier propiedad no deseada del sugeridor. " +
+   "Ten en cuenta que activar esta configuración requiere reiniciar el plugin, ya que las propiedades se cargan al inicio.",  
+  FONTS_HEAD: "Fuentes",
+  FONTS_DESC: "Configura los tipos de letra locales y las fuentes CJK (chino, japonés y coreano) descargadas para Excalidraw.",
+  CUSTOM_FONT_HEAD: "Fuente local",
+  ENABLE_FOURTH_FONT_NAME: "Habilitar opción de fuente local",
   ENABLE_FOURTH_FONT_DESC:
-    "Enabling this option will add a local font to the font list in the properties panel for text elements. " +
-    "Be aware that using this local font may compromise platform independence. " +
-    "Files using the custom font might render differently when opened in a different vault or at a later time, depending on the font settings. " +
-    "Additionally, the 4th font will default to the system font on excalidraw.com or other Excalidraw versions.",
-  FOURTH_FONT_NAME: "Local font file",
+    "Habilitar esta opción añadirá una fuente local a la lista de fuentes en el panel de propiedades para elementos de texto. " +
+    "Ten en cuenta que el uso de esta fuente local puede comprometer la independencia de la plataforma. " +
+    "Los archivos que utilicen la fuente personalizada podrían renderizarse de forma diferente al ser abiertos en otra bóveda o en un momento posterior, dependiendo de la configuración de la fuente. " +
+    "Además, la 4ta(cuarta) fuente se establecerá por defecto como la fuente del sistema en excalidraw.com o en otras versiones de Excalidraw.",
+  FOURTH_FONT_NAME: "Archivo de fuente local",
   FOURTH_FONT_DESC:
-    "Select a .otf, .ttf, .woff, or .woff2 font file from your vault to use as the local font. " +
-    "If no file is selected, Excalidraw will default to the Virgil font. " +
-    "For optimal performance, it is recommended to use a .woff2 file, as Excalidraw will encode only the necessary glyphs when exporting images to SVG. " +
-    "Other font formats will embed the entire font in the exported file, potentially resulting in significantly larger file sizes.",
-  OFFLINE_CJK_NAME: "Offline CJK font support",
+    "Selecciona un archivo de fuente .otf, .ttf, .woff o .woff2 de tu bóveda para usarlo como fuente local. " +
+    "Si no se selecciona ningún archivo, Excalidraw usará la fuente Virgil por defecto. " +
+    "Para un rendimiento óptimo, se recomienda usar un archivo .woff2, ya que Excalidraw solo codificará los glifos necesarios al exportar imágenes a SVG. " +
+    "Otros formatos de fuente incrustarán la fuente completa en el archivo exportado, lo que podría resultar en tamaños de archivo significativamente mayores.",
+  OFFLINE_CJK_NAME: "Soporte de fuentes CJK (chino, japonés y coreano) sin conexión",
   OFFLINE_CJK_DESC: 
-    `<strong>Changes you make here will only take effect after restarting Obsidian.</strong><br>
-     Excalidraw.com offers handwritten CJK fonts. By default these fonts are not included in the plugin locally, but are served from the Internet. 
-     If you prefer to keep Excalidraw fully local, allowing it to work without Internet access you can download the necessary <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip" target="_blank">font files from GitHub</a>.
-     After downloading, unzip the contents into a folder within your Vault.<br>
-     Pre-loading fonts will impact startup performance. For this reason you can select which fonts to load.`,
-  CJK_ASSETS_FOLDER_NAME: "CJK Font Folder (cAsE sENsiTIvE!)",
-  CJK_ASSETS_FOLDER_DESC: `You can set the location of the CJK fonts folder here. For example, you may choose to place it under <code>Excalidraw/CJK Fonts</code>.<br><br>
-    <strong>Important:</strong> Do not set this folder to the Vault root! Do not put other fonts in this folder.<br><br>
-    <strong>Note:</strong> If you're using Obsidian Sync and want to synchronize these font files across your devices, ensure that Obsidian Sync is set to synchronize "All other file types".`, 
-  LOAD_CHINESE_FONTS_NAME: "Load Chinese fonts from file at startup",
-  LOAD_JAPANESE_FONTS_NAME: "Load Japanese fonts from file at startup",
-  LOAD_KOREAN_FONTS_NAME: "Load Korean fonts from file at startup",
-  SCRIPT_SETTINGS_HEAD: "Settings for installed Scripts",
-  SCRIPT_SETTINGS_DESC: "Some of the Excalidraw Automate Scripts include settings. Settings are organized by script. Settings will only become visible in this list after you have executed the newly downloaded script once.",
-  TASKBONE_HEAD: "Taskbone Optical Character Recognition",
-  TASKBONE_DESC: "This is an experimental integration of optical character recognition into Excalidraw. Please note, that taskbone is an independent external service not provided by Excalidraw, nor the Excalidraw-Obsidian plugin project. " +
-    "The OCR service will grab legible text from freedraw lines and embedded pictures on your canvas and place the recognized text in the frontmatter of your drawing as well as onto clipboard. " +
-    "Having the text in the frontmatter will enable you to search in Obsidian for the text contents of these. " +
-    "Note, that the process of extracting the text from the image is not done locally, but via an online API. The taskbone service stores the image on its servers only as long as necessary for the text extraction. However, if this is a dealbreaker, then please don't use this feature.",
-  TASKBONE_ENABLE_NAME: "Enable Taskbone",
-  TASKBONE_ENABLE_DESC: "By enabling this service your agree to the Taskbone <a href='https://www.taskbone.com/legal/terms/' target='_blank'>Terms and Conditions</a> and the " +
-    "<a href='https://www.taskbone.com/legal/privacy/' target='_blank'>Privacy Policy</a>.",
-  TASKBONE_APIKEY_NAME: "Taskbone API Key",
-  TASKBONE_APIKEY_DESC: "Taskbone offers a free service with a reasonable number of scans per month. If you want to use this feature more frequently, or you want to support " + 
-    "the developer of Taskbone (as you can imagine, there is no such thing as 'free', providing this awesome OCR service costs some money to the developer of Taskbone), you can " +
-    "purchase a paid API key from <a href='https://www.taskbone.com/' target='_blank'>taskbone.com</a>. In case you have purchased a key, simply overwrite this auto generated free-tier API-key with your paid key.",
+    `<strong>Los cambios que hagas aquí solo se aplicarán después de reiniciar Obsidian.</strong><br>
+     Excalidraw.com ofrece fuentes CJK (chino, japonés, coreano) escritas a mano. Por defecto, estas fuentes no se incluyen en el plugin de forma local, sino que se obtienen de internet. 
+     Si prefieres que Excalidraw funcione completamente sin conexión a internet, puedes descargar los <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip" target="_blank">archivos de fuentes necesarios desde GitHub</a>.
+     Después de descargarlos, descomprime el contenido en una carpeta dentro de tu Bóveda.<br>
+     La precarga de fuentes afectará el rendimiento al iniciar. Por esta razón, puedes seleccionar qué fuentes cargar.`,
+  CJK_ASSETS_FOLDER_NAME: "Carpeta de fuentes CJK (¡Sensible a MAYÚSCULAS/minúsculas!)",
+  CJK_ASSETS_FOLDER_DESC: `Puedes establecer la ubicación de la carpeta de fuentes CJK aquí. Por ejemplo, podrías elegir colocarla en una carpeta llamada <code>Excalidraw/Fuentes CJK</code>.<br><br>
+    <strong>Importante:</strong> ¡No establezcas esta carpeta en la raíz de tu Bóveda! No coloques otras fuentes en esta carpeta.<br><br>
+    <strong>Nota:</strong> Si usas Obsidian Sync y quieres sincronizar estos archivos de fuentes en tus dispositivos, asegúrate de que Obsidian Sync esté configurado para sincronizar "Todos los demás tipos de archivo"`, 
+  LOAD_CHINESE_FONTS_NAME: "Cargar fuentes chinas desde el archivo al inicio",
+  LOAD_JAPANESE_FONTS_NAME: "Cargar fuentes japonesas desde el archivo al inicio",
+  LOAD_KOREAN_FONTS_NAME: "Cargar fuentes coreanas desde el archivo al inicio",
+  SCRIPT_SETTINGS_HEAD: "Configuración para scripts instalados",
+  SCRIPT_SETTINGS_DESC: "Algunos de los scripts de Excalidraw Automate incluyen configuraciones. Las configuraciones están organizadas por script. Solo se harán visibles en esta lista después de que hayas ejecutado el script recién descargado al menos una vez.",
+  TASKBONE_HEAD: "Reconocimiento Óptico de Caracteres de Taskbone",
+  TASKBONE_DESC: "Esta es una integración experimental del reconocimiento óptico de caracteres en Excalidraw. Ten en cuenta que Taskbone es un servicio externo independiente y no es proporcionado por Excalidraw ni por el proyecto del complemento Excalidraw-Obsidian. " +
+    "El servicio de OCR capturará texto legible de las líneas de dibujo a mano alzada y de las imágenes incrustadas en tu lienzo y colocará el texto reconocido en el frontmatter de tu bosquejo, así como en el portapapeles. " +
+    "Tener el texto en el frontmatter te permitirá buscar su contenido en Obsidian. " +
+    "Ten en cuenta que el proceso de extracción de texto de la imagen no se realiza de forma local, sino a través de una API en línea. El servicio de Taskbone almacena la imagen en sus servidores solo durante el tiempo necesario para la extracción de texto. Sin embargo, si esto es un inconveniente para ti, por favor no uses esta función.",
+  TASKBONE_ENABLE_NAME: "Habilitar Taskbone",
+  TASKBONE_ENABLE_DESC: "Al habilitar este servicio, aceptas los <a href='https://www.taskbone.com/legal/terms/' target='_blank'>Términos y Condiciones</a> y la " +
+    "<a href='https://www.taskbone.com/legal/privacy/' target='_blank'>Política de Privacidad</a> de Taskbone.",
+  TASKBONE_APIKEY_NAME: "Clave API(API Key) de Taskbone",
+  TASKBONE_APIKEY_DESC: "Taskbone ofrece un servicio gratuito con un número razonable de escaneos al mes. Si quieres usar esta función con más frecuencia, o si quieres apoyar " + 
+    "al desarrollador de Taskbone (como puedes imaginar, no existe el 'gratis', proporcionar este increíble servicio de OCR le cuesta dinero al desarrollador de Taskbone), " +
+    "puedes comprar una clave API(API Key) de pago en <a href='https://www.taskbone.com/' target='_blank'>taskbone.com</a>. En caso de que hayas comprado una clave, simplemente sobrescribe esta clave API(API Key) gratuita generada automáticamente con tu clave de pago.",
 
   //HotkeyEditor
   HOTKEY_PRESS_COMBO_NANE: "Press your hotkey combination",
