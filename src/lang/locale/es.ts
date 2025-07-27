@@ -997,60 +997,60 @@ FILENAME_HEAD: "Nombre de archivo",
   PROMPT_SELECT_TEMPLATE: "Selecciona una plantilla",
 
   //ModifierKeySettings
-  WEB_BROWSER_DRAG_ACTION: "Web Browser Drag Action",
-  LOCAL_FILE_DRAG_ACTION: "OS Local File Drag Action",
-  INTERNAL_DRAG_ACTION: "Obsidian Internal Drag Action",
-  PANE_TARGET: "Link click behavior",
-  DEFAULT_ACTION_DESC: "In case none of the combinations apply the default action for this group is: ",
+  WEB_BROWSER_DRAG_ACTION: "Acción de arrastrar desde el navegador web",
+  LOCAL_FILE_DRAG_ACTION: "Acción de arrastrar archivo local del sistema operativo",
+  INTERNAL_DRAG_ACTION: "Acción de arrastrar interna de Obsidian",
+  PANE_TARGET: "Comportamiento al hacer click en un enlace",
+  DEFAULT_ACTION_DESC: "En caso de que ninguna de las combinaciones se aplique, la acción predeterminada para este grupo es: ",
 
   //FrameSettings.ts
-  FRAME_SETTINGS_TITLE: "Frame Settings",
-  FRAME_SETTINGS_ENABLE: "Enable Frames",
-  FRAME_SETTIGNS_NAME: "Display Frame Name",
-  FRAME_SETTINGS_OUTLINE: "Display Frame Outline",
-  FRAME_SETTINGS_CLIP: "Enable Frame Clipping",
+  FRAME_SETTINGS_TITLE: "Configuración de marcos(frames)",
+  FRAME_SETTINGS_ENABLE: "Habilitar marcos(frames)",
+  FRAME_SETTIGNS_NAME: "Mostrar nombre del marco(frame)",
+  FRAME_SETTINGS_OUTLINE: "Mostrar contorno del marco(frame)",
+  FRAME_SETTINGS_CLIP: "Habilitar recorte de marco(frame)",
 
   //InsertPDFModal.ts
-  IPM_PAGES_TO_IMPORT_NAME: "Pages to import",
-  IPM_SELECT_PAGES_TO_IMPORT: "Please select pages to import",
-  IPM_ADD_BORDER_BOX_NAME: "Add border box",
-  IPM_ADD_FRAME_NAME: "Add page to frame",
-  IPM_ADD_FRAME_DESC: "For easier handling I recommend to lock the page inside the frame. " +
-    "If, however, you do lock the page inside the frame then the only way to unlock it is to right-click the frame, select remove elements from frame, then unlock the page.",
-  IPM_GROUP_PAGES_NAME: "Group pages",
-  IPM_GROUP_PAGES_DESC: "This will group all pages into a single group. This is recommended if you are locking the pages after import, because the group will be easier to unlock later rather than unlocking one by one.",
-  IPM_SELECT_PDF: "Please select a PDF file",
+  IPM_PAGES_TO_IMPORT_NAME: "Páginas para importar",
+  IPM_SELECT_PAGES_TO_IMPORT: "Por favor, selecciona las páginas para importar",
+  IPM_ADD_BORDER_BOX_NAME: "Añadir recuadro de borde",
+  IPM_ADD_FRAME_NAME: "Añadir página a un marco(frame)",
+  IPM_ADD_FRAME_DESC: "Para un manejo más fácil, recomiendo bloquear la página dentro del marco(frame). " +
+    "Sin embargo, si bloqueas la página dentro del marco(frame), la única forma de desbloquearla es hacer click derecho en el marco(frame), seleccionar 'eliminar elementos del marco(frame)' y luego desbloquear la página.",
+  IPM_GROUP_PAGES_NAME: "Agrupar páginas",
+  IPM_GROUP_PAGES_DESC: "Esto agrupará todas las páginas en un solo grupo. Se recomienda si bloqueas las páginas después de la importación, ya que será más fácil desbloquear el grupo más tarde que desbloquear una por una.",
+  IPM_SELECT_PDF: "Por favor, selecciona un archivo PDF",
 
   //Utils.ts
-  UPDATE_AVAILABLE: `A newer version of Excalidraw is available in Community Plugins.\n\nYou are using ${PLUGIN_VERSION}.\nThe latest is`,
-  SCRIPT_UPDATES_AVAILABLE: `Script updates available - check the script store.\n\n${DEVICE.isDesktop ? `This message is available in console.log (${DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i"})\n\n` : ""}If you have organized scripts into subfolders under the script store folder and have multiple copies of the same script, you may need to clean up unused versions to clear this alert. For private copies of scripts that should not be updated, store them outside the script store folder.`,
-  ERROR_PNG_TOO_LARGE: "Error exporting PNG - PNG too large, try a smaller resolution",
+  UPDATE_AVAILABLE: `Hay una versión más nueva de Excalidraw disponible en los Complementos de la Comunidad.\n\nEstás usando la versión ${PLUGIN_VERSION}.\nLa última versión es `,
+  SCRIPT_UPDATES_AVAILABLE: `Hay actualizaciones de scripts disponibles; revisa la tienda de scripts.\n\n${DEVICE.isDesktop ? `Este mensaje está disponible en console.log (${DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i"})\n\n` : ""}Si has organizado los scripts en subcarpetas dentro de la carpeta de la tienda de scripts y tienes varias copias del mismo script, es posible que necesites limpiar las versiones no utilizadas para borrar esta alerta. Para copias privadas de scripts que no deben actualizarse, guárdalas fuera de la carpeta de la tienda de scripts.`,
+  ERROR_PNG_TOO_LARGE: "Error al exportar PNG: El archivo PNG es demasiado grande, intenta una resolución más pequeña.",
 
   //modifierkeyHelper.ts
   // WebBrowserDragAction
-  WEB_DRAG_IMPORT_IMAGE: "Import Image to Vault",
-  WEB_DRAG_IMAGE_URL: "Insert Image or YouTube Thumbnail with URL",
-  WEB_DRAG_LINK: "Insert Link", 
-  WEB_DRAG_EMBEDDABLE: "Insert Interactive-Frame",
+  WEB_DRAG_IMPORT_IMAGE: "Importar imagen a la Bóveda",
+  WEB_DRAG_IMAGE_URL: "Insertar imagen o miniatura de YouTube con URL",
+  WEB_DRAG_LINK: "Insertar enlace", 
+  WEB_DRAG_EMBEDDABLE: "Insertar marco(frame) interactivo",
 
   // LocalFileDragAction
-  LOCAL_DRAG_IMPORT: "Import external file or reuse existing file if path is from the Vault",
-  LOCAL_DRAG_IMAGE: "Insert Image: with local URI or internal-link if from Vault",
-  LOCAL_DRAG_LINK: "Insert Link: local URI or internal-link if from Vault",
-  LOCAL_DRAG_EMBEDDABLE: "Insert Interactive-Frame: local URI or internal-link if from Vault",
+  LOCAL_DRAG_IMPORT: "Importar archivo externo o reutilizar archivo existente si la ruta es de la Bóveda",
+  LOCAL_DRAG_IMAGE: "Insertar imagen: con URI local o enlace interno si es de la Bóveda",
+  LOCAL_DRAG_LINK: "Insertar enlace: URI local o enlace interno si es de la Bóveda",
+  LOCAL_DRAG_EMBEDDABLE: "Insertar marco(frame) interactivo: URI local o enlace interno si es de la Bóveda",
 
   // InternalDragAction  
-  INTERNAL_DRAG_IMAGE: "Insert Image",
-  INTERNAL_DRAG_IMAGE_FULL: "Insert Image @100%",
-  INTERNAL_DRAG_LINK: "Insert Link",
-  INTERNAL_DRAG_EMBEDDABLE: "Insert Interactive-Frame",
+  INTERNAL_DRAG_IMAGE: "Insertar Imagen",
+  INTERNAL_DRAG_IMAGE_FULL: "Insertar Imagen al 100%",
+  INTERNAL_DRAG_LINK: "Insertar Enlace",
+  INTERNAL_DRAG_EMBEDDABLE: "Insertar Marco(frame) Interactivo",
 
   // LinkClickAction
-  LINK_CLICK_ACTIVE: "Open in current active window",
-  LINK_CLICK_NEW_PANE: "Open in a new adjacent window",
-  LINK_CLICK_POPOUT: "Open in a popout window",
-  LINK_CLICK_NEW_TAB: "Open in a new tab",
-  LINK_CLICK_MD_PROPS: "Show the Markdown image-properties dialog (only relevant if you have embedded a markdown document as an image)",
+  LINK_CLICK_ACTIVE: "Abrir en la ventana activa actual",
+  LINK_CLICK_NEW_PANE: "Abrir en un nuevo panel adyacente",
+  LINK_CLICK_POPOUT: "Abrir en una ventana emergente",
+  LINK_CLICK_NEW_TAB: "Abrir en una nueva pestaña",
+  LINK_CLICK_MD_PROPS: "Mostrar el diálogo de propiedades de imagen de Markdown (solo relevante si has incrustado un documento Markdown como imagen)",
 
   //ExportDialog
   // Dialog and tabs
