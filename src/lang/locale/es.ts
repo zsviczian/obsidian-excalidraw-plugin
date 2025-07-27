@@ -895,106 +895,106 @@ FILENAME_HEAD: "Nombre de archivo",
     "Error de ejecución del script. Por favor, revisa la consola del desarrollador para ver el mensaje de error.",
 
   //ExcalidrawData.ts
-  LOAD_FROM_BACKUP: "Excalidraw file was corrupted. Loading from backup file.",
-  FONT_LOAD_SLOW: "Loading Fonts...\n\n This is taking longer than expected. If this delay occurs regularly then you may download the fonts locally to your Vault. \n\n" +
-    "(click=dismiss, right-click=Info)",
-  FONT_INFO_TITLE: "Starting v2.5.3 fonts load from the Internet",
+  LOAD_FROM_BACKUP: "El archivo de Excalidraw estaba dañado. Cargando desde el archivo de backup(copia de seguridad).",
+  FONT_LOAD_SLOW: "Cargando fuentes...\n\n Esto está tomando más tiempo de lo esperado. Si este retraso ocurre regularmente, puedes descargar las fuentes de forma local en tu Bóveda. \n\n" +
+    "(Click_izquierdo=para-descartar,Click_derecho=para-más-información).",
+  FONT_INFO_TITLE: "A partir de la versión 2.5.3, las fuentes se cargan desde internet.",
   FONT_INFO_DETAILED: `
       <p>
-        To improve Obsidian's startup time and manage the large <strong>CJK font family</strong>, 
-        I've moved the CJK fonts out of the plugin's <code>main.js</code>. CJK fonts will be loaded from the internet by default.
-        This typically shouldn't cause issues as Obsidian caches these files after first use.
+        Para mejorar el tiempo de inicio de Obsidian y gestionar la gran <strong>familia de fuentes CJK</strong>, 
+        moví las fuentes CJK del archivo <code>main.js</code> del complemento. Ahora, las fuentes CJK se cargarán desde internet por defecto.
+        Esto no debería causar problemas, ya que Obsidian almacena estos archivos en caché después del primer uso.
       </p>
       <p>
-        If you prefer to keep Obsidian 100% local or experience performance issues, you can download the font assets.
+        Si prefieres mantener Obsidian 100% local o experimentas problemas de rendimiento, puedes descargar los archivos de fuentes.
       </p>
-      <h3>Instructions:</h3>
+      <h3>Instrucciones:</h3>
       <ol>
-        <li>Download the fonts from <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip">GitHub</a>.</li>
-        <li>Unzip and copy files into a Vault folder (default: <code>Excalidraw/${CJK_FONTS}</code>; folder names are cAse-senSITive).</li>
-        <li><mark>DO NOT</mark> set this folder to the Vault root or mix with other local fonts.</li>
+        <li>Descarga las fuentes desde <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip">GitHub</a>.</li>
+        <li>Descomprime y copia los archivos en una carpeta de tu Bóveda (por defecto: <code>Excalidraw/${CJK_FONTS}</code>; los nombres de las carpetas son sensibles a MAYÚSCULAS y minúsculas).</li>
+        <li><mark>NO</mark> configures esta carpeta como la raíz de la Bóveda ni la combines con otras fuentes locales.</li>
       </ol>
-      <h3>For Obsidian Sync Users:</h3>
+      <h3>Para usuarios de Obsidian Sync:</h3>
       <p>
-        Ensure Obsidian Sync is set to synchronize "All other file types" or download and unzip the file on all devices.
+        Asegúrate de que Obsidian Sync esté configurado para sincronizar "Todos los demás tipos de archivo" o descarga y descomprime el archivo en todos los dispositivos.
       </p>
-      <h3>Note:</h3>
+      <h3>Nota:</h3>
       <p>
-        If you find this process cumbersome, please submit a feature request to Obsidian.md for supporting assets in the plugin folder. 
-        Currently, only a single <code>main.js</code> is supported, which leads to large files and slow startup times for complex plugins like Excalidraw. 
-        I apologize for the inconvenience.
+        Si este proceso te parece complicado, por favor, envía una solicitud de función a Obsidian.md para que den soporte a los archivos de recursos en la carpeta del complemento. 
+        Actualmente, solo se admite un único <code>main.js</code>, lo que resulta en archivos grandes y tiempos de inicio lentos para complementos complejos como Excalidraw. 
+        Te pido disculpas por los inconvenientes.
       </p>
     `,
 
   //ObsidianMenu.tsx
-  GOTO_FULLSCREEN: "Goto fullscreen mode",
-  EXIT_FULLSCREEN: "Exit fullscreen mode",
-  TOGGLE_FULLSCREEN: "Toggle fullscreen mode",
-  TOGGLE_DISABLEBINDING: "Toggle to invert default binding behavior",
-  TOGGLE_FRAME_RENDERING: "Toggle frame rendering",
-  TOGGLE_FRAME_CLIPPING: "Toggle frame clipping",
-  OPEN_LINK_CLICK: "Open Link",
-  OPEN_LINK_PROPS: "Open the image-link or LaTeX-formula editor",
+  GOTO_FULLSCREEN: "Ir a modo de pantalla completa",
+  EXIT_FULLSCREEN: "Salir de modo de pantalla completa",
+  TOGGLE_FULLSCREEN: "Alternar modo de pantalla completa",
+  TOGGLE_DISABLEBINDING: "Alternar para invertir el comportamiento de enlace predeterminado",
+  TOGGLE_FRAME_RENDERING: "Alternar renderizado de marco(frame)",
+  TOGGLE_FRAME_CLIPPING: "Alternar recorte de marco(frame)",
+  OPEN_LINK_CLICK: "Abrir Enlace",
+  OPEN_LINK_PROPS: "Abrir el editor de enlaces de imagen o de fórmulas-LaTeX",
 
   //IFrameActionsMenu.tsx
-  NARROW_TO_HEADING: "Narrow to heading...",
-  PIN_VIEW: "Pin view",
-  DO_NOT_PIN_VIEW: "Do not pin view",
-  NARROW_TO_BLOCK: "Narrow to block...",
-  SHOW_ENTIRE_FILE: "Show entire file",
-  SELECT_SECTION: "Select section from document",
-  SELECT_VIEW: "Select view from base",
-  ZOOM_TO_FIT: "Zoom to fit",
-  RELOAD: "Reload original link",
-  OPEN_IN_BROWSER: "Open current link in browser",
-  PROPERTIES: "Properties",
-  COPYCODE: "Copy source to clipboard",
+  NARROW_TO_HEADING: "Limitar a encabezado...",
+  PIN_VIEW: "Fijar vista",
+  DO_NOT_PIN_VIEW: "No fijar vista",
+  NARROW_TO_BLOCK: "Limitar a bloque...",
+  SHOW_ENTIRE_FILE: "Mostrar archivo completo",
+  SELECT_SECTION: "Seleccionar sección del documento",
+  SELECT_VIEW: "Seleccionar vista desde la base",
+  ZOOM_TO_FIT: "Zoom para ajustar",
+  RELOAD: "Recargar enlace original",
+  OPEN_IN_BROWSER: "Abrir enlace actual en el navegador",
+  PROPERTIES: "Propiedades",
+  COPYCODE: "Copiar fuente al portapapeles",
 
   //EmbeddableSettings.tsx
-  ES_TITLE: "Embeddable Element Settings",
-  ES_RENAME: "Rename File",
-  ES_ZOOM: "Embedded Content Scaling",
-  ES_YOUTUBE_START: "YouTube Start Time",
+  ES_TITLE: "Configuración de elementos incrustables",
+  ES_RENAME: "Renombrar archivo",
+  ES_ZOOM: "Escala del contenido incrustado",
+  ES_YOUTUBE_START: "Tiempo de inicio de YouTube",
   ES_YOUTUBE_START_DESC: "ss, mm:ss, hh:mm:ss",
-  ES_YOUTUBE_START_INVALID: "The YouTube Start Time is invalid. Please check the format and try again",
-  ES_FILENAME_VISIBLE: "Filename Visible",
-  ES_BACKGROUND_HEAD: "Embedded note background color",
-  ES_BACKGROUND_DESC_INFO: "Click here for more info on colors",
-  ES_BACKGROUND_DESC_DETAIL: "Background color affects only the preview mode of the markdown embeddable. When editing, it follows the Obsidian light/dark theme as set for the scene (via document property) or in plugin settings. The background color has two layers: the element background color (lower layer) and a color on top (upper layer). Selecting 'Match Element Background' means both layers follow the element color. Selecting 'Match Canvas' or a specific background color keeps the element background layer. Setting opacity (e.g., 50%) mixes the canvas or selected color with the element background color. To remove the element background layer, set the element color to transparent in Excalidraw's element properties editor. This makes only the upper layer effective.",
-  ES_BACKGROUND_MATCH_ELEMENT: "Match Element Background Color",
-  ES_BACKGROUND_MATCH_CANVAS: "Match Canvas Background Color",
-  ES_BACKGROUND_COLOR: "Background Color",
-  ES_BORDER_HEAD: "Embedded note border color",
-  ES_BORDER_COLOR: "Border Color",
-  ES_BORDER_MATCH_ELEMENT: "Match Element Border Color",
-  ES_BACKGROUND_OPACITY: "Background Opacity",
-  ES_BORDER_OPACITY: "Border Opacity",
-  ES_EMBEDDABLE_SETTINGS: "Embeddable Markdown Settings",
-  ES_USE_OBSIDIAN_DEFAULTS: "Use Obsidian Defaults",
-  ES_ZOOM_100_RELATIVE_DESC: "The button will adjust the element scale so it will show the content at 100% relative to the current zoom level of your canvas",
-  ES_ZOOM_100: "Relative 100%",
+  ES_YOUTUBE_START_INVALID: "El tiempo de inicio de YouTube es inválido. Por favor, revisa el formato e inténtalo de nuevo.",
+  ES_FILENAME_VISIBLE: "Nombre de archivo visible",
+  ES_BACKGROUND_HEAD: "Color de fondo de la nota incrustada",
+  ES_BACKGROUND_DESC_INFO: "Haz click aquí para más información sobre los colores",
+  ES_BACKGROUND_DESC_DETAIL: "El color de fondo afecta solo al modo de vista previa del incrustado de Markdown. Al editar, sigue el tema claro/oscuro de Obsidian, según lo establecido para la escena (a través de la propiedad del documento) o en la configuración del plugin. El color de fondo tiene dos capas: el color de fondo del elemento (capa inferior) y un color encima (capa superior). Seleccionar 'Coincidir con el color de fondo del elemento' significa que ambas capas siguen el color del elemento. Seleccionar 'Coincidir con el lienzo' o un color de fondo específico mantiene la capa de fondo del elemento. Establecer la opacidad (ej., 50%) mezcla el lienzo o el color seleccionado con el color de fondo del elemento. Para eliminar la capa de fondo del elemento, establece el color del elemento en transparente en el editor de propiedades de Excalidraw. Esto hace que solo la capa superior sea efectiva.",
+  ES_BACKGROUND_MATCH_ELEMENT: "Coincidir con el color de fondo del elemento",
+  ES_BACKGROUND_MATCH_CANVAS: "Coincidir con el color de fondo del lienzo",
+  ES_BACKGROUND_COLOR: "Color de fondo",
+  ES_BORDER_HEAD: "Color del borde de la nota incrustada",
+  ES_BORDER_COLOR: "Color del borde",
+  ES_BORDER_MATCH_ELEMENT: "Coincidir con el color del borde del elemento",
+  ES_BACKGROUND_OPACITY: "Opacidad del fondo",
+  ES_BORDER_OPACITY: "Opacidad del borde",
+  ES_EMBEDDABLE_SETTINGS: "Configuración de incrustables de Markdown",
+  ES_USE_OBSIDIAN_DEFAULTS: "Usar los valores predeterminados de Obsidian",
+  ES_ZOOM_100_RELATIVE_DESC: "El botón ajustará la escala del elemento para que muestre el contenido al 100% en relación con el nivel de zoom actual de tu lienzo.",
+  ES_ZOOM_100: "100% Relativo",
 
   //Prompts.ts
-  PROMPT_FILE_DOES_NOT_EXIST: "File does not exist. Do you want to create it?",
-  PROMPT_ERROR_NO_FILENAME: "Error: Filename for new file may not be empty",
-  PROMPT_ERROR_DRAWING_CLOSED: "Unknown error. It seems as if your drawing was closed or the drawing file is missing",
-  PROMPT_TITLE_NEW_FILE: "New File",
-  PROMPT_TITLE_CONFIRMATION: "Confirmation",
-  PROMPT_BUTTON_CREATE_EXCALIDRAW: "Create EX",
-  PROMPT_BUTTON_CREATE_EXCALIDRAW_ARIA: "Create Excalidraw drawing and open in new tab",
-  PROMPT_BUTTON_CREATE_MARKDOWN: "Create MD",
-  PROMPT_BUTTON_CREATE_MARKDOWN_ARIA: "Create markdown document and open in new tab",
-  PROMPT_BUTTON_EMBED_MARKDOWN: "Embed MD",
-  PROMPT_BUTTON_EMBED_MARKDOWN_ARIA: "Replace selected element with embedded markdown document",
-  PROMPT_BUTTON_NEVERMIND: "Nevermind",
+  PROMPT_FILE_DOES_NOT_EXIST: "El archivo no existe. ¿Quieres crearlo?",
+  PROMPT_ERROR_NO_FILENAME: "Error: El nombre de archivo para un archivo nuevo no puede estar vacío",
+  PROMPT_ERROR_DRAWING_CLOSED: "Error desconocido. Parece que tu bosquejo se cerró o el archivo no se encuentra.",
+  PROMPT_TITLE_NEW_FILE: "Nuevo Archivo",
+  PROMPT_TITLE_CONFIRMATION: "Confirmación",
+  PROMPT_BUTTON_CREATE_EXCALIDRAW: "Crear EX",
+  PROMPT_BUTTON_CREATE_EXCALIDRAW_ARIA: "Crear bosquejo de Excalidraw y abrir en una nueva pestaña",
+  PROMPT_BUTTON_CREATE_MARKDOWN: "Crear MD",
+  PROMPT_BUTTON_CREATE_MARKDOWN_ARIA: "Crear documento de Markdown y abrir en una nueva pestaña",
+  PROMPT_BUTTON_EMBED_MARKDOWN: "Incrustar MD",
+  PROMPT_BUTTON_EMBED_MARKDOWN_ARIA: "Reemplazar el elemento seleccionado con un documento de Markdown incrustado",
+  PROMPT_BUTTON_NEVERMIND: "No importa",
   PROMPT_BUTTON_OK: "OK",
-  PROMPT_BUTTON_CANCEL: "Cancel",
-  PROMPT_BUTTON_INSERT_LINE: "Insert new line",
-  PROMPT_BUTTON_INSERT_SPACE: "Insert space",
-  PROMPT_BUTTON_INSERT_LINK: "Insert markdown link to file",
-  PROMPT_BUTTON_UPPERCASE: "Uppercase",
-  PROMPT_BUTTON_SPECIAL_CHARS: "Special Characters",
-  PROMPT_SELECT_TEMPLATE: "Select a template",
+  PROMPT_BUTTON_CANCEL: "Cancelar",
+  PROMPT_BUTTON_INSERT_LINE: "Insertar nueva línea",
+  PROMPT_BUTTON_INSERT_SPACE: "Insertar espacio",
+  PROMPT_BUTTON_INSERT_LINK: "Insertar enlace Markdown a un archivo",
+  PROMPT_BUTTON_UPPERCASE: "Mayúsculas",
+  PROMPT_BUTTON_SPECIAL_CHARS: "Carácteres especiales",
+  PROMPT_SELECT_TEMPLATE: "Selecciona una plantilla",
 
   //ModifierKeySettings
   WEB_BROWSER_DRAG_ACTION: "Web Browser Drag Action",
