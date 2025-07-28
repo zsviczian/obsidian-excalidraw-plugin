@@ -47,7 +47,7 @@ declare module "obsidian" {
     ): WorkspaceLeaf;
   }
   interface Vault {
-    getConfig(option: "attachmentFolderPath"): string;
+    getAvailablePathForAttachments(filename: string, extension: string, file: TFile | null): Promise<string>
   }
 }
 

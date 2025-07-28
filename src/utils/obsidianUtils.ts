@@ -174,25 +174,17 @@ export const getAttachmentsFolderAndFilePath = async (
   activeViewFilePath: string,
   newFileName: string
 ): Promise<{ folder: string; filepath: string; }> => {
-  let folder = app.vault.getConfig("attachmentFolderPath");
-  // folder == null: save to vault root
-  // folder == "./" save to same folder as current file
-  // folder == "folder" save to specific folder in vault
-  // folder == "./folder" save to specific subfolder of current active folder
-  if (folder && folder.startsWith("./")) {
-    // folder relative to current file
-    const activeFileFolder = `${splitFolderAndFilename(activeViewFilePath).folderpath}/`;
-    folder = normalizePath(activeFileFolder + folder.substring(2));
-  }
-  if (!folder || folder === "/") {
-    folder = "";
-  }
-  await checkAndCreateFolder(folder);
+  const NOT_FOUND_INDEX = -1;
+  const extensionSeparatorIndex = newFileName.lastIndexOf(".");
+  const attachmentFileBasename = extensionSeparatorIndex === NOT_FOUND_INDEX ? newFileName : newFileName.slice(0, extensionSeparatorIndex);
+  const attachmentFileExtension = extensionSeparatorIndex === NOT_FOUND_INDEX ? "" : newFileName.slice(extensionSeparatorIndex + 1);
+  const activeViewFile = app.vault.getFileByPath(activeViewFilePath);
+  const attachmentFilePath = await app.vault.getAvailablePathForAttachments(attachmentFileBasename, attachmentFileExtension, activeViewFile);
+  const folderSeparatorIndex = attachmentFilePath.lastIndexOf("/");
+  const attachmentFolderPath = folderSeparatorIndex === NOT_FOUND_INDEX ? "" : attachmentFilePath.slice(0, folderSeparatorIndex);
   return {
-    folder,
-    filepath: normalizePath(
-      folder === "" ? newFileName : `${folder}/${newFileName}`
-    ),
+    folder: attachmentFolderPath,
+    filepath: attachmentFilePath
   };
 };
 
