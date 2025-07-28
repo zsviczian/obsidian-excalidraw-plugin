@@ -4041,7 +4041,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if(st.newElement?.type === "freedraw") {
       this.freedrawLastActiveTimestamp = Date.now();
     }
-    if (st.newElement || st.editingTextElement || st.editingLinearElement) {
+    if (
+      st.newElement ||
+      st.editingTextElement ||
+      (st.selectedLinearElement && st.selectedLinearElement.isEditing)
+    ) {
       this.plugin.wasPenModeActivePreviously = st.penMode;
     }
     this.viewModeEnabled = st.viewModeEnabled;
@@ -4083,7 +4087,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       /*st.resizingElement === null && 
       st.newElement === null &&
       st.editingGroupId === null &&*/
-      st.editingLinearElement === null
+      (st.selectedLinearElement === null || !st.selectedLinearElement.isEditing)
     ) {
       this.checkSceneVersion(et);
     }

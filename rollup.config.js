@@ -49,7 +49,7 @@ const jsxRuntimeShim = `
 
 const mathjaxtosvg_pkg = isLib ? "" : fs.readFileSync("./MathjaxToSVG/dist/index.js", "utf8");
 
-const LANGUAGES = ['ru', 'zh-cn', 'zh-tw']; //english is not compressed as it is always loaded by default
+const LANGUAGES = ['ru', 'zh-cn', 'zh-tw', 'es']; //english is not compressed as it is always loaded by default
 
 function trimLastSemicolon(input) {
   if (input.endsWith(";")) {

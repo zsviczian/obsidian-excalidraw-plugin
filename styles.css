@@ -765,7 +765,7 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
   margin-left: auto;
 }
 
-.document-search-container {
+.excalidraw-search.document-search-container {
   display: flex;
   flex-direction: column;
   background: var(--background-secondary);
@@ -780,12 +780,12 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
   margin-left: 1rem;
 }
 
-.document-search {
+.excalidraw-search .document-search {
   align-items: center;
   max-width: none;
 }
 
-.search-input-container.document-search-input {
+.excalidraw-search .search-input-container.document-search-input {
   display: flex;
   align-items: center;
   flex: 1 1 auto;
@@ -795,13 +795,13 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
   min-width: 0;
 }
 
-.search-input-container .clickable-icon {
+.excalidraw-search .search-input-container .clickable-icon {
   display: flex;
   align-items: center;
   color: var(--text-faint);
 }
 
-.search-input-container input[type="text"] {
+.excalidraw-search .search-input-container input[type="text"] {
   background: transparent;
   border: none;
   outline: none;
@@ -812,7 +812,7 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
   margin: 0;
 }
 
-.document-search-count {
+.excalidraw-search .document-search-count {
   margin-left: 0.5em;
   color: var(--text-faint);
   font-size: 0.95em;
@@ -821,13 +821,13 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
   text-align: right;
 }
 
-.document-search-buttons {
+.excalidraw-search .document-search-buttons {
   display: flex;
   align-items: center;
   gap: 2px;
 }
 
-.document-search-button {
+.excalidraw-search .document-search-button {
   background: none;
   border: none;
   outline: none;
@@ -845,12 +845,12 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
   justify-content: center;
 }
 
-.document-search-button:hover, .document-search-button:focus {
+.excalidraw-search .document-search-button:hover, .excalidraw-search .document-search-button:focus {
   background: var(--background-modifier-hover);
   color: var(--text-accent);
 }
 
-.document-search-button svg {
+.excalidraw-search .document-search-button svg {
   width: 1.3em;
   height: 1.3em;
   stroke: currentColor;

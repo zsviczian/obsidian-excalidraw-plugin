@@ -191,7 +191,7 @@ export class ScriptEngine {
       ...this.scriptIconMap,
     };
     const splitname = splitFolderAndFilename(name)
-    this.scriptIconMap[scriptPath] = { name:splitname.filename, group: splitname.folderpath === "/" ? "" : splitname.folderpath, svgString };
+    this.scriptIconMap[scriptPath] = { name:splitname.filename, group: splitname.folderpath, svgString };
     this.updateToolPannels();
   }
 

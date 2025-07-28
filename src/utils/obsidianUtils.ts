@@ -3,10 +3,10 @@ import {
   Editor,
   FrontMatterCache,
   MarkdownView,
-  normalizePath, OpenViewState, parseFrontMatterEntry, TFile, View, ViewState, Workspace, WorkspaceLeaf, WorkspaceSplit
+  OpenViewState, parseFrontMatterEntry, TFile, View, ViewState, Workspace, WorkspaceLeaf, WorkspaceSplit
 } from "obsidian";
 import ExcalidrawPlugin from "../core/main";
-import { checkAndCreateFolder, splitFolderAndFilename } from "./fileUtils";
+import { splitFolderAndFilename } from "./fileUtils";
 import { linkClickModifierType, ModifierKeys } from "./modifierkeyHelper";
 import { DEVICE, EXCALIDRAW_PLUGIN, REG_BLOCK_REF_CLEAN, REG_SECTION_REF_CLEAN, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
 import yaml from "js-yaml";
@@ -174,16 +174,12 @@ export const getAttachmentsFolderAndFilePath = async (
   activeViewFilePath: string,
   newFileName: string
 ): Promise<{ folder: string; filepath: string; }> => {
-  const NOT_FOUND_INDEX = -1;
-  const extensionSeparatorIndex = newFileName.lastIndexOf(".");
-  const attachmentFileBasename = extensionSeparatorIndex === NOT_FOUND_INDEX ? newFileName : newFileName.slice(0, extensionSeparatorIndex);
-  const attachmentFileExtension = extensionSeparatorIndex === NOT_FOUND_INDEX ? "" : newFileName.slice(extensionSeparatorIndex + 1);
+  const { basename, extension } = splitFolderAndFilename(newFileName);
   const activeViewFile = app.vault.getFileByPath(activeViewFilePath);
-  const attachmentFilePath = await app.vault.getAvailablePathForAttachments(attachmentFileBasename, attachmentFileExtension, activeViewFile);
-  const folderSeparatorIndex = attachmentFilePath.lastIndexOf("/");
-  const attachmentFolderPath = folderSeparatorIndex === NOT_FOUND_INDEX ? "" : attachmentFilePath.slice(0, folderSeparatorIndex);
+  const attachmentFilePath = await app.vault.getAvailablePathForAttachments(basename, extension, activeViewFile);
+  const { folderpath } = splitFolderAndFilename(attachmentFilePath);
   return {
-    folder: attachmentFolderPath,
+    folder: folderpath,
     filepath: attachmentFilePath
   };
 };

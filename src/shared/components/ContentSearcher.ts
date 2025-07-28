@@ -28,7 +28,7 @@ export class ContentSearcher {
    * Creates search UI elements styled like Obsidian's native search
    */
   private createSearchElements(): void {
-    this.searchBarWrapper = createDiv("document-search-container");
+    this.searchBarWrapper = createDiv("excalidraw-search document-search-container");
     const documentSearch = createDiv("document-search");
     this.inputContainer = createDiv("search-input-container document-search-input");
     this.searchBar = createEl("input",{type: "text", placeholder: "Find..."});
