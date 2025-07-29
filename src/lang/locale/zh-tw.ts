@@ -192,7 +192,32 @@ export default {
   SAVE_IS_TAKING_LONG: "儲存您之前的檔案花費的時間較長，請稍候...",
   SAVE_IS_TAKING_VERY_LONG: "為了更好的效能，請考慮將大型繪圖拆分成幾個較小的檔案。",
 
+  //ContentSearcher.ts
+  SEARCH_COPIED_TO_CLIPBOARD: "Markdown 已複製到剪貼簿",
+  SEARCH_COPY_TO_CLIPBOARD_ARIA: "將整個對話框複製為 Markdown 到剪貼簿。非常適合搭配 ChatGPT 等工具進行搜尋和理解。",
+  SEARCH_SHOWHIDE_ARIA : "顯示/隱藏搜尋欄" ,
+  SEARCH_NEXT: "下一個",
+  SEARCH_PREVIOUS: "上一個",
+
+
+
   //settings.ts
+  NOTEBOOKLM_LINK_ARIA : "向 NotebookLM 諮詢有關外掛的幫助。此模型已預載入我的所有影片轉錄、發佈說明以及其他有用內容。與 NotebookLM 聊天，探索我的 250+ 影片以及 Excalidraw 文件。" ,
+  NOTEBOOKLM_LINK_TEXT : "瞭解外掛。訪問 NotebookLM 知識庫。" ,
+  LINKS_BUGS_ARIA: "在外掛的 GitHub 頁面回報錯誤和提交功能請求",
+  LINKS_BUGS: "回報錯誤",
+  LINKS_YT_ARIA: "訪問我的 YouTube 頻道學習視覺思維和 Excalidraw",
+  LINKS_YT: "在 YouTube 學習",
+  LINKS_DISCORD_ARIA: "加入視覺思維研討會 Discord 伺服器",
+  LINKS_DISCORD: "加入社群",
+  LINKS_TWITTER: "關注我",
+  LINKS_VTW_ARIA: "瞭解視覺知識管理、Excalidraw、Obsidian、ExcaliBrain 等內容",
+  LINKS_VTW: "參加研討會",
+  LINKS_BOOK_ARIA: "閱讀我的視覺思維著作《Sketch Your Mind》",
+  LINKS_BOOK: "閱讀書籍",
+  LINKS_WIKI : "外掛 Wiki" ,
+  LINKS_WIKI_ARIA : "探索 Excalidraw 外掛 Wiki" ,
+
   RELEASE_NOTES_NAME: "顯示更新說明",
   RELEASE_NOTES_DESC:
     "<b>開啟：</b>每次更新本外掛後，顯示最新發行版本的說明。<br>" +
@@ -922,8 +947,12 @@ FILENAME_HEAD: "檔名",
 
   //IFrameActionsMenu.tsx
   NARROW_TO_HEADING: "縮放至標題",
+  PIN_VIEW: "釘選視圖",
+  DO_NOT_PIN_VIEW: "取消釘選視圖",
   NARROW_TO_BLOCK: "縮放至塊",
   SHOW_ENTIRE_FILE: "顯示全部",
+  SELECT_SECTION: "從文件選擇區塊",
+  SELECT_VIEW: "從基礎選擇視圖",
   ZOOM_TO_FIT: "縮放至合適大小",
   RELOAD: "過載連結",
   OPEN_IN_BROWSER: "在瀏覽器中開啟",

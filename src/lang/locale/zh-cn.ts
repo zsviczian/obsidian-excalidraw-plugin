@@ -195,12 +195,15 @@ export default {
   //ContentSearcher.ts
   SEARCH_COPIED_TO_CLIPBOARD: "Markdown 已复制到剪贴板",
   SEARCH_COPY_TO_CLIPBOARD_ARIA: "将整个对话框复制为 Markdown 到剪贴板。非常适合搭配 ChatGPT 等工具进行搜索和理解。",
+  SEARCH_SHOWHIDE_ARIA : "显示/隐藏搜索栏" ,
   SEARCH_NEXT: "下一个",
   SEARCH_PREVIOUS: "上一个",
 
 
 
   //settings.ts
+  NOTEBOOKLM_LINK_ARIA : "向 NotebookLM 咨询有关插件的帮助。此模型已预加载我的所有视频转录、发布说明以及其他有用内容。与 NotebookLM 聊天，探索我的 250+ 视频以及 Excalidraw 文档。" ,
+  NOTEBOOKLM_LINK_TEXT : "了解插件。访问 NotebookLM 知识库。" ,
   LINKS_BUGS_ARIA: "在插件的 GitHub 页面报告错误和提交功能请求",
   LINKS_BUGS: "报告错误",
   LINKS_YT_ARIA: "访问我的 YouTube 频道学习视觉思维和 Excalidraw",
@@ -212,6 +215,8 @@ export default {
   LINKS_VTW: "参加研讨会",
   LINKS_BOOK_ARIA: "阅读我的视觉思维著作《Sketch Your Mind》",
   LINKS_BOOK: "阅读书籍",
+  LINKS_WIKI : "插件 Wiki" ,
+  LINKS_WIKI_ARIA : "探索 Excalidraw 插件 Wiki" ,
 
   RELEASE_NOTES_NAME: "显示更新说明",
   RELEASE_NOTES_DESC:
@@ -943,7 +948,7 @@ FILENAME_HEAD: "文件名",
   //IFrameActionsMenu.tsx
   NARROW_TO_HEADING: "缩放至标题",
   PIN_VIEW: "锁定视图",
-  DO_NOT_PIN_VIEW: "不锁定视图",
+  DO_NOT_PIN_VIEW: "取消锁定视图",
   NARROW_TO_BLOCK: "缩放至块",
   SHOW_ENTIRE_FILE: "显示全部",
   SELECT_SECTION: "从文档选择章节",
