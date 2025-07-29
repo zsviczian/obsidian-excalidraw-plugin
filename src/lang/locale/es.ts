@@ -83,10 +83,10 @@ export default {
   INSERT_PDF: "Insertar archivo PDF desde la bóveda",
   INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE: "Insertar última página PDF activa como imagen",
   UNIVERSAL_ADD_FILE: "Insertar CUALQUIER archivo",
-  INSERT_CARD: "Agregar tarjeta_de_reverso de nota",
-  CONVERT_CARD_TO_FILE: "Mover tarjeta_de_reverso de nota a Archivo",
+  INSERT_CARD: "Agregar tarjeta al reverso-de-la-nota",
+  CONVERT_CARD_TO_FILE: "Mover tarjeta del reverso-de-la-nota a un Archivo",
   ERROR_TRY_AGAIN: "Por favor, inténtalo de nuevo.",
-  PASTE_CODEBLOCK: "Pegar un bloque de código",
+  PASTE_CODEBLOCK: "Pegar un Bloque de Código",
   INSERT_LATEX:
     `Insertar fórmula LaTeX (ej. \\binom{n}{k} = \\frac{n!}{k!(n-k)!}).`,
   ENTER_LATEX: "Ingresa una expresión LaTeX válida",
@@ -192,7 +192,18 @@ export default {
   SAVE_IS_TAKING_LONG: "Guardar tu archivo anterior está tomando mucho tiempo. Por favor espera...",
   SAVE_IS_TAKING_VERY_LONG: "Para un mejor rendimiento, considera dividir bosquejos grandes en varios archivos más pequeños.",
 
+  //ContentSearcher.ts
+  SEARCH_COPIED_TO_CLIPBOARD: "Markdown listo en el portapapeles",
+  SEARCH_COPY_TO_CLIPBOARD_ARIA: "Copia todo el diálogo de configuración al portapapeles como Markdown. Ideal para usar con herramientas como ChatGPT para buscar y entender la configuración.",
+  SEARCH_SHOWHIDE_ARIA: "Mostrar/Ocultar barra de búsqueda",
+  SEARCH_NEXT: "Siguiente",
+  SEARCH_PREVIOUS: "Anterior",
+
+
+
   //settings.ts
+  NOTEBOOKLM_LINK_ARIA: "Pídele ayuda a NotebookLM sobre el complemento. Este modelo viene precargado con todas mis transcripciones de videos, notas de lanzamiento y otro contenido útil. Chatea con NotebookLM para explorar mis más de 250 videos y la documentación de Excalidraw.",
+  NOTEBOOKLM_LINK_TEXT: "Aprende sobre el complemento. Accede a la base de conocimientos de NotebookLM.",
   LINKS_BUGS_ARIA: "Reporta errores y solicita nuevas funciones en la página de GitHub del complemento",
   LINKS_BUGS: "Reportar Errores",
   LINKS_YT_ARIA: "Visita mi canal de YouTube para aprender sobre Pensamiento Visual y Excalidraw",
@@ -204,22 +215,20 @@ export default {
   LINKS_VTW: "Únete a un Taller",
   LINKS_BOOK_ARIA: "Lee Sketch Your Mind, mi libro sobre Pensamiento Visual",
   LINKS_BOOK: "Lee el Libro",
-
-  SETTINGS_COPIED_TO_CLIPBOARD: "Markdown listo en el portapapeles",
-  SETTINGS_COPY_TO_CLIPBOARD: "Copiar como Texto",
-  SETTINGS_COPY_TO_CLIPBOARD_ARIA: "Copia todo el diálogo de configuración al portapapeles como Markdown. Ideal para usar con herramientas como ChatGPT para buscar y entender la configuración.",
+  LINKS_WIKI: "Wiki del Complemento",
+  LINKS_WIKI_ARIA: "Explora la Wiki del Complemento de Excalidraw",
 
   RELEASE_NOTES_NAME: "Mostrar Notas de la Versión después de actualizar",
   RELEASE_NOTES_DESC:
-    "<b><u>Activar:</u></b> Muestra las notas de la versión cada vez que actualices Excalidraw a una versión más reciente.<br>" +
-    "<b><u>Desactivar:</u></b> Modo silencioso. Aún puedes leer las notas de la versión en <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases'>GitHub</a>.",
+    "<b><u>Activado:</u></b> Muestra las notas de la versión cada vez que actualices Excalidraw a una versión más reciente.<br>" +
+    "<b><u>Desactivado:</u></b> Modo silencioso. Aún puedes leer las notas de la versión en <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases'>GitHub</a>.",
   NEWVERSION_NOTIFICATION_NAME: "Notificación de Actualización del Complemento",
   NEWVERSION_NOTIFICATION_DESC:
-      "<b><u>Activar:</u></b> Muestra una notificación cuando hay una nueva versión del complemento disponible.<br>" +
-      "<b><u>Desactivar:</u></b> Modo silencioso. Necesitarás verificar las actualizaciones del complemento en Complementos Comunitarios.",
+      "<b><u>Activado:</u></b> Muestra una notificación cuando hay una nueva versión del complemento disponible.<br>" +
+      "<b><u>Desactivado:</u></b> Modo silencioso. Necesitarás verificar las actualizaciones del complemento en Complementos Comunitarios.",
   
   BASIC_HEAD: "Básico",
-  BASIC_DESC: `En la configuración "Básica", puedes configurar opciones como mostrar las notas de la versión después de las actualizaciones, recibir notificaciones de actualización del complemento, establecer la ubicación predeterminada para nuevos bosquejos, especificar la carpeta de Excalidraw para incrustar bosquejos en documentos activos, definir un archivo de plantilla de Excalidraw, y designar una carpeta de scripts de Excalidraw Automate para gestionar scripts de automatización.`,
+  BASIC_DESC: `En la configuración "Básico", puedes configurar opciones como mostrar las notas de la versión después de las actualizaciones, recibir notificaciones de actualización del complemento, establecer la ubicación predeterminada para nuevos bosquejos, especificar la carpeta de Excalidraw para incrustar bosquejos en documentos activos, definir un archivo de plantilla de Excalidraw, y designar una carpeta de scripts de Excalidraw Automate para gestionar scripts de automatización.`,
   FOLDER_NAME: "Carpeta de Excalidraw (¡Sensible a MAYÚSCULAS/minúsculas!)",
   FOLDER_DESC:
     "Ubicación predeterminada para nuevos bosquejos. Si está vacío, los bosquejos se crearán en la raíz de la Bóveda.",
@@ -253,7 +262,7 @@ export default {
   FOLDER_EMBED_DESC:
     "Define en qué carpeta se colocará el bosquejo recién insertado " +
     "al usar la acción de la paleta de comandos: 'Crear un nuevo bosquejo e incrustar en el documento activo'.<br>" +
-    "<b><u>Activar:</u></b> Usar carpeta de Excalidraw<br><b><u>Desactivar:</u></b> Usar la carpeta de adjuntos definida en la configuración de Obsidian.",
+    "<b><u>Activado:</u></b> Usar carpeta de Excalidraw<br><b><u>Desactivado:</u></b> Usar la carpeta de adjuntos definida en la configuración de Obsidian.",
   TEMPLATE_NAME: "Archivo o carpeta de plantillas de Excalidraw (¡Sensible a MAYÚSCULAS/minúsculas!)",
   TEMPLATE_DESC:
     "Ruta de archivo o carpeta completa a la plantilla de Excalidraw.<br>" +
@@ -504,7 +513,7 @@ FILENAME_HEAD: "Nombre de archivo",
     "activated Excalidraw.",
   MAINWORKSPACE_PANE_NAME: "Abrir en el espacio de trabajo principal",
   MAINWORKSPACE_PANE_DESC:
-    `Cuando usas ${labelCTRL()}+${labelALT()} y haces click en un enlace en Excalidraw, por defecto el plugin lo abrirá en un panel nuevo en la ventana activa. ` +
+    `Cuando usas ${labelCTRL()}+${labelALT()} y haces click en un enlace en Excalidraw, por defecto el complemento lo abrirá en un panel nuevo en la ventana activa. ` +
     "Al activar esta opción, Excalidraw abrirá el enlace en un panel nuevo o ya existente en el espacio de trabajo principal. ",  
   LINK_BRACKETS_NAME: "Mostrar <code>[[corchetes]]</code> alrededor de los enlaces",
   LINK_BRACKETS_DESC: `${
@@ -633,7 +642,7 @@ FILENAME_HEAD: "Nombre de archivo",
     "Puede que quieras desactivar esta opción si sospechas que el caché no se está actualizando correctamente.",
   EMBED_IMAGE_CACHE_CLEAR: "Vaciar caché de imágenes",
   BACKUP_CACHE_CLEAR: "Eliminar copias de seguridad",
-  BACKUP_CACHE_CLEAR_CONFIRMATION: "Esta acción eliminará todas las copias de seguridad de los bosquejos de Excalidraw. Las copias de seguridad se utilizan como medida de seguridad en caso de que tu archivo de bosquejo se dañe. Cada vez que abres Obsidian, el plugin elimina automáticamente las copias de seguridad de los archivos que ya no existen en tu Bóveda. ¿Estás seguro de que quieres borrar todas las copias de seguridad?",
+  BACKUP_CACHE_CLEAR_CONFIRMATION: "Esta acción eliminará todas las copias de seguridad de los bosquejos de Excalidraw. Las copias de seguridad se utilizan como medida de seguridad en caso de que tu archivo de bosquejo se dañe. Cada vez que abres Obsidian, el complemento elimina automáticamente las copias de seguridad de los archivos que ya no existen en tu Bóveda. ¿Estás seguro de que quieres borrar todas las copias de seguridad?",
   EMBED_REUSE_EXPORTED_IMAGE_NAME:
     "Si se encuentra, usar la imagen ya exportada para la vista previa",
   EMBED_REUSE_EXPORTED_IMAGE_DESC:
@@ -702,7 +711,7 @@ FILENAME_HEAD: "Nombre de archivo",
   EXPORT_SYNC_NAME:
     "Mantiene los nombres de archivo .SVG y/o .PNG sincronizados con el archivo del bosquejo",
   EXPORT_SYNC_DESC:
-    "Cuando está activado, el plugin actualizará automáticamente el nombre de los archivos .SVG y/o .PNG cuando el bosquejo en la misma carpeta (y con el mismo nombre) sea renombrado. " +
+    "Cuando está activado, el complemento actualizará automáticamente el nombre de los archivos .SVG y/o .PNG cuando el bosquejo en la misma carpeta (y con el mismo nombre) sea renombrado. " +
     "El complemento también eliminará automáticamente los archivos .SVG y/o .PNG cuando el bosquejo en la misma carpeta (y con el mismo nombre) sea eliminado. ",
   EXPORT_SVG_NAME: "Auto-exportar SVG",
   EXPORT_SVG_DESC:
@@ -718,7 +727,7 @@ FILENAME_HEAD: "Nombre de archivo",
   EXPORT_BOTH_DARK_AND_LIGHT_DESC:  "Cuando está habilitado, Excalidraw exportará dos archivos en lugar de uno: nombre-archivo.dark.png, nombre-archivo.light.png y/o nombre-archivo.dark.svg y nombre-archivo.light.svg<br>"+
     "Se exportarán archivos dobles tanto si la autoexportación de SVG o PNG (o ambos) está habilitada, como al hacer clic en exportar en una sola imagen.",
   COMPATIBILITY_HEAD: "Funciones de compatibilidad",
-  COMPATIBILITY_DESC: "Solo debes habilitar estas funciones si tienes una razón de peso para querer trabajar con archivos de excalidraw.com en lugar de archivos Markdown. Muchas de las funciones del plugin no son compatibles con los archivos heredados. Un caso de uso típico sería si configuras tu bóveda sobre una carpeta de proyecto de Visual Studio Code y también quieres acceder a los bosquejos .excalidraw desde allí. Otro caso de uso podría ser usar Excalidraw en Logseq y Obsidian en paralelo.",
+  COMPATIBILITY_DESC: "Solo debes habilitar estas funciones si tienes una razón de peso para querer trabajar con archivos de excalidraw.com en lugar de archivos Markdown. Muchas de las funciones del complemento no son compatibles con los archivos heredados. Un caso de uso típico sería si configuras tu bóveda sobre una carpeta de proyecto de Visual Studio Code y también quieres acceder a los bosquejos .excalidraw desde allí. Otro caso de uso podría ser usar Excalidraw en Logseq y Obsidian en paralelo.",
   DUMMY_TEXT_ELEMENT_LINT_SUPPORT_NAME: "Linter compatibility",
   DUMMY_TEXT_ELEMENT_LINT_SUPPORT_DESC: "Excalidraw es sensible a la estructura del archivo debajo de <code># Excalidraw Data</code>. La revisión automática de documentos (linting) puede crear errores en los datos de Excalidraw. " +
     "Si bien he hecho un esfuerzo para que la carga de datos sea resistente a los " +
@@ -730,7 +739,7 @@ FILENAME_HEAD: "Nombre de archivo",
   PRESERVE_TEXT_AFTER_DRAWING_DESC: "Preserva el texto después de la sección ## Bosquejo del archivo Markdown. Esto puede tener un impacto muy leve en el rendimiento al guardar bosquejos muy grandes.",
   DEBUGMODE_NAME: "Habilitar mensajes de depuración",
   DEBUGMODE_DESC: "Recomiendo reiniciar Obsidian después de habilitar o deshabilitar esta configuración. Esto habilita los mensajes de depuración en la consola. Esto es útil para solucionar problemas. " +
-    "Si estás experimentando problemas con el plugin, por favor, habilita esta configuración, reproduce el problema e incluye el registro de la consola en el problema que reportes en <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/issues'>GitHub</a>",
+    "Si estás experimentando problemas con el complemento, por favor, habilita esta configuración, reproduce el problema e incluye el registro de la consola en el problema que reportes en <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/issues'>GitHub</a>",
   SLIDING_PANES_NAME: "Soporte para el complemento Sliding Panes",
   SLIDING_PANES_DESC:
     "Necesitas reiniciar Obsidian para que este cambio surta efecto.<br>" +
@@ -781,11 +790,11 @@ FILENAME_HEAD: "Nombre de archivo",
     "sus parámetros y una breve descripción mientras escribes. El sugeridor de campos es la documentación más actualizada de la API.",
   FIELD_SUGGESTER_NAME: "Habilitar Sugeridor de Campos",
   FIELD_SUGGESTER_DESC:
-    "El sugeridor de campos, tomado de los plugins Breadcrumbs y Templater, mostrará un menú de autocompletar " +
+    "El sugeridor de campos, tomado de los complementos Breadcrumbs y Templater, mostrará un menú de autocompletar " +
     "cuando escribas <code>excalidraw-</code> o <code>ea.</code> , con descripciones de las funciones como pistas para cada elemento en la lista.",
   STARTUP_SCRIPT_NAME: "Script de inicio",
   STARTUP_SCRIPT_DESC:
-    "Si está configurado, Excalidraw ejecutará el script al iniciar el plugin. Esto es útil si quieres establecer cualquiera de los hooks de Excalidraw Automate. El script de inicio es un archivo Markdown " +
+    "Si está configurado, Excalidraw ejecutará el script al iniciar el complemento. Esto es útil si quieres establecer cualquiera de los hooks de Excalidraw Automate. El script de inicio es un archivo Markdown " +
     "que debe contener el código Javascript que quieres ejecutar cuando Excalidraw se inicie",
   STARTUP_SCRIPT_BUTTON_CREATE: "Crear script de inicio",
   STARTUP_SCRIPT_BUTTON_OPEN: "Abrir script de inicio",
@@ -810,7 +819,7 @@ FILENAME_HEAD: "Nombre de archivo",
   EXCALIDRAW_PROPERTIES_DESC: "Activa esta configuración para cargar las propiedades de los documentos de Excalidraw en el sugeridor de propiedades de Obsidian al iniciar el complemento. "+
    "Habilitar esta función simplifica el uso de las propiedades de frontmatter de Excalidraw, permitiéndote aprovechar muchas configuraciones poderosas. Si prefieres no cargar estas propiedades automáticamente, " +
    "puedes deshabilitar esta función, pero tendrás que eliminar manualmente cualquier propiedad no deseada del sugeridor. " +
-   "Ten en cuenta que activar esta configuración requiere reiniciar el plugin, ya que las propiedades se cargan al inicio.",  
+   "Ten en cuenta que activar esta configuración requiere reiniciar el complemento, ya que las propiedades se cargan al inicio.",  
   FONTS_HEAD: "Fuentes",
   FONTS_DESC: "Configura los tipos de letra locales y las fuentes CJK (chino, japonés y coreano) descargadas para Excalidraw.",
   CUSTOM_FONT_HEAD: "Fuente local",
@@ -829,7 +838,7 @@ FILENAME_HEAD: "Nombre de archivo",
   OFFLINE_CJK_NAME: "Soporte de fuentes CJK (chino, japonés y coreano) sin conexión",
   OFFLINE_CJK_DESC: 
     `<strong>Los cambios que hagas aquí solo se aplicarán después de reiniciar Obsidian.</strong><br>
-     Excalidraw.com ofrece fuentes CJK (chino, japonés, coreano) escritas a mano. Por defecto, estas fuentes no se incluyen en el plugin de forma local, sino que se obtienen de internet. 
+     Excalidraw.com ofrece fuentes CJK (chino, japonés, coreano) escritas a mano. Por defecto, estas fuentes no se incluyen en el complemento de forma local, sino que se obtienen de internet. 
      Si prefieres que Excalidraw funcione completamente sin conexión a internet, puedes descargar los <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip" target="_blank">archivos de fuentes necesarios desde GitHub</a>.
      Después de descargarlos, descomprime el contenido en una carpeta dentro de tu Bóveda.<br>
      La precarga de fuentes afectará el rendimiento al iniciar. Por esta razón, puedes seleccionar qué fuentes cargar.`,
@@ -960,7 +969,7 @@ FILENAME_HEAD: "Nombre de archivo",
   ES_FILENAME_VISIBLE: "Nombre de archivo visible",
   ES_BACKGROUND_HEAD: "Color de fondo de la nota incrustada",
   ES_BACKGROUND_DESC_INFO: "Haz click aquí para más información sobre los colores",
-  ES_BACKGROUND_DESC_DETAIL: "El color de fondo afecta solo al modo de vista previa del incrustado de Markdown. Al editar, sigue el tema claro/oscuro de Obsidian, según lo establecido para la escena (a través de la propiedad del documento) o en la configuración del plugin. El color de fondo tiene dos capas: el color de fondo del elemento (capa inferior) y un color encima (capa superior). Seleccionar 'Coincidir con el color de fondo del elemento' significa que ambas capas siguen el color del elemento. Seleccionar 'Coincidir con el lienzo' o un color de fondo específico mantiene la capa de fondo del elemento. Establecer la opacidad (ej., 50%) mezcla el lienzo o el color seleccionado con el color de fondo del elemento. Para eliminar la capa de fondo del elemento, establece el color del elemento en transparente en el editor de propiedades de Excalidraw. Esto hace que solo la capa superior sea efectiva.",
+  ES_BACKGROUND_DESC_DETAIL: "El color de fondo afecta solo al modo de vista previa del incrustado de Markdown. Al editar, sigue el tema claro/oscuro de Obsidian, según lo establecido para la escena (a través de la propiedad del documento) o en la configuración del complemento. El color de fondo tiene dos capas: el color de fondo del elemento (capa inferior) y un color encima (capa superior). Seleccionar 'Coincidir con el color de fondo del elemento' significa que ambas capas siguen el color del elemento. Seleccionar 'Coincidir con el lienzo' o un color de fondo específico mantiene la capa de fondo del elemento. Establecer la opacidad (ej., 50%) mezcla el lienzo o el color seleccionado con el color de fondo del elemento. Para eliminar la capa de fondo del elemento, establece el color del elemento en transparente en el editor de propiedades de Excalidraw. Esto hace que solo la capa superior sea efectiva.",
   ES_BACKGROUND_MATCH_ELEMENT: "Coincidir con el color de fondo del elemento",
   ES_BACKGROUND_MATCH_CANVAS: "Coincidir con el color de fondo del lienzo",
   ES_BACKGROUND_COLOR: "Color de fondo",
