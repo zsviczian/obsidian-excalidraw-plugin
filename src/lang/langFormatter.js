@@ -28,7 +28,7 @@ const indentStr = "  "  // 缩进字符串，2个空格
 const formatter = (lang = "en") => {
     const content = fs.readFileSync(path.join(__dirname, `./locale/${lang}.ts`), "utf8")
                 // 添加丢失的换行 | Add missing line breaks
-                .replace(/(["`])\s*,\s*([A-z0-9_])\s*:/g, `$1,\n${indentStr}$2:`)
+                .replace(/(["`])\s*,\s*([A-Z0-9_])\s*:/g, `$1,\n${indentStr}$2:`)
                 // 去除过多的空行 | Remove excessive blank lines
                 .replace(/\n{3,}/g, "\n\n")
                 // 修正正文中的连续空格 | Fix consecutive spaces in text
