@@ -419,7 +419,8 @@ FILENAME_HEAD: "文件名",
   SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_DESC:
     "...即使文件具有 `<b>excalidraw-open-md: true</b>` frontmatter 属性。<br>" +
     "当此设置关闭且文件默认设置为以 md 格式打开时，悬停预览将显示文档的 Markdown 部分（背景笔记）。" +
-    "",
+    "<br>" +
+    "注意：<b>excalidraw-open-md</b> 与 <b>excalidraw-embed-md</b> 是不同的。如果 <b>excalidraw-embed-md</b> 设置为 true，则悬停预览始终显示 markdown 部分，而不受此设置影响。要在嵌入时强制图像渲染，请在你的 markdown 文件中使用 <code>![[drawing#^as-image]]</code>。" ,
   SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME: "Excalidraw 文件在 Markdown 阅读模式下渲染为图片",
   SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC:
     "当您处于 Markdown 阅读模式（即查看绘图的背景笔记）时，Excalidraw 绘图是否应该渲染为图像？" +
