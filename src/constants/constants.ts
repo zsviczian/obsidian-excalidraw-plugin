@@ -262,6 +262,7 @@ export const FRONTMATTER_KEYS:{[key:string]: {name: string, type: string, depric
   "iframe-theme": {name: "excalidraw-iframe-theme", type: "text", depricated: true},
   "embeddable-theme": {name: "excalidraw-embeddable-theme", type: "text"},
   "open-as-markdown": {name: "excalidraw-open-md", type: "checkbox"},
+  "embed-as-markdown": {name: "excalidraw-embed-md", type: "checkbox"},
 };
 
 export const CaptureUpdateAction = {

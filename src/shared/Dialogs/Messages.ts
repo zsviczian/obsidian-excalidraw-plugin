@@ -19,8 +19,10 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 `,
 "2.14.1":`
 ## New
+- New frontmatter option \`excalidraw-embed-md\`. When set to \`true\`, embedding this Excalidraw file into another markdown file will display its markdown content (the "back of the note") instead of rendering it as an image.
+  - If you want to always display the drawing as an image, even when \`excalidraw-embed-md\` is enabled, use the special embed syntax: \`![[drawing#^as-image]]\`. Here, \`as-image\` is a phantom block reference that forces image rendering.
 - Added Spanish translation by [@Joakim31](https://github.com/Joakim31) [#2425](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2425)
-- Incremental minor updates from the main Excalidraw project.
+- Incremental minor updates from the main [Excalidraw project](https://github.com/excalidraw/excalidraw).
 
 ## Fixed
 - Styling issues impacting native Obsidian search/replace dialogs. [#2420](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2420)

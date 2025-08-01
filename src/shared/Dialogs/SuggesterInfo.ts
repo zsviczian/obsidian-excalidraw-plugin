@@ -1068,6 +1068,13 @@ export const FRONTMATTER_KEYS_INFO: SuggesterInfo[] = [
     after: ": true",
   },
   {
+    field: "embed-md",
+    code: null,
+    desc: "If this key is present, when embedding the ![[image]] into a markdown document, it will be embedded as markdown, not as an image.\n" +
+      "If however you embed ![[image#^as-image]], i.e. you reference the 'as-image' block, then the image will be embedded as an image.",
+    after: ": true",
+  },
+  {
     field: "autoexport",
     code: null,
     desc: "Override autoexport settings for this file. Valid values are\nnone\nboth\npng\nsvg",

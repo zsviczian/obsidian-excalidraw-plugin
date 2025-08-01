@@ -710,7 +710,7 @@ const isTextOnlyEmbed = (internalEmbedEl: Element):boolean => {
   if(!src) return true; //technically this does not mean this is a text only embed, but still should abort further processing
   const fnameParts = getEmbeddedFilenameParts(src);
   return !(fnameParts.hasArearef || fnameParts.hasGroupref || fnameParts.hasFrameref || fnameParts.hasClippedFrameref) &&
-    (fnameParts.hasBlockref || fnameParts.hasSectionref)
+    (fnameParts.hasBlockref || fnameParts.hasSectionref) && fnameParts.blockref !== "as-image"
 }
 
 const tmpObsidianWYSIWYG = async (
@@ -724,6 +724,9 @@ const tmpObsidianWYSIWYG = async (
   const file = app.vault.getAbstractFileByPath(ctx.sourcePath);
   if(!(file instanceof TFile)) return;
   if(!plugin.isExcalidrawFile(file)) return;
+  if(ctx.frontmatter?.["excalidraw-embed-md"]) {
+    return;
+  }
 
   //@ts-ignore
   if (ctx.remainingNestLevel < 4) {

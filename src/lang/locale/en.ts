@@ -419,7 +419,8 @@ FILENAME_HEAD: "Filename",
   SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_DESC:
     "...even if the file has the <b>excalidraw-open-md: true</b> frontmatter key.<br>" +
     "When this setting is off and the file is set to open in md by default, the hover preview will show the " +
-    "markdown side of the document.",
+    "markdown side of the document.<br>" +
+    "Note: <b>excalidraw-open-md</b> is different from <b>excalidraw-embed-md</b>. If <b>excalidraw-embed-md</b> is set to true, the hover preview will always show the markdown side, regardless of this setting. To force image rendering when embedding, use <code>![[drawing#^as-image]]</code> in your markdown file.",
   SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME: "Render as image when in markdown reading mode of an Excalidraw file",
   SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC:
     "When you are in markdown reading mode (aka. reading the back side of the drawing) should the Excalidraw drawing be rendered as an image? " +
