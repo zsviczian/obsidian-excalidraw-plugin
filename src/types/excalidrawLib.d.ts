@@ -106,13 +106,6 @@ declare namespace ExcalidrawLib {
     },
   ): { x: number; y: number };
 
-  function determineFocusDistance(
-    element: ExcalidrawBindableElement,
-    elementsMap: ElementsMap,
-    a: GlobalPoint,
-    b: GlobalPoint,
-  ): number;
-
   function intersectElementWithLine(
     element: ExcalidrawBindableElement,
     a: GlobalPoint,
