@@ -18,15 +18,16 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
 "2.14.1":`
+## Fixed
+- Excalidraw broke Obsidian's UI in Arabic, Persian, and Hebrew due to LTR, RTL conflict. [#2423](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2423) 
+- Styling issues impacting native Obsidian search/replace dialogs. [#2420](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2420)
+- Now using native Obsidian attachment location function. 🙏 [mnaoumov](https://github.com/mnaoumov) [#2421](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2421), potentially fixes [#179](https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/179) of the Obsidian Custom Attachment Location plugin issue.
+
 ## New
-- New frontmatter option \`excalidraw-embed-md\`. When set to \`true\`, embedding this Excalidraw file into another markdown file will display its markdown content (the "back of the note") instead of rendering it as an image.
+- New frontmatter option \`excalidraw-embed-md\`. When set to \`true\`, embedding the drawing into a markdown note will render the "back of the note" (its markdown content) instead of rendering it as an image.
   - If you want to always display the drawing as an image, even when \`excalidraw-embed-md\` is enabled, use the special embed syntax: \`![[drawing#^as-image]]\`. Here, \`as-image\` is a phantom block reference that forces image rendering.
 - Added Spanish translation by [@Joakim31](https://github.com/Joakim31) [#2425](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2425)
 - Incremental minor updates from the main [Excalidraw project](https://github.com/excalidraw/excalidraw).
-
-## Fixed
-- Styling issues impacting native Obsidian search/replace dialogs. [#2420](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2420)
-- Now using native Obsidian attachment location function. 🙏 [mnaoumov](https://github.com/mnaoumov) [#2421](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2421), potentially fixes [#179](https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/179) of the Obsidian Custom Attachment Location plugin issue.
 `,
 "2.14.0":`
 ## A Big "Small" Update
