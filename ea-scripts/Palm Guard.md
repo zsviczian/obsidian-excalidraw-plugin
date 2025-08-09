@@ -104,15 +104,27 @@ async function run() {
   let uiHidden = true;
   let currentIcon = "eye";
   const toolbar = ea.targetView.contentEl.querySelector(".excalidraw > .Island");
-  const toolbarActiveAtStart = toolbar?.style.display === "block";
+  let toolbarActive = toolbar?.style.display === "block";
+  let prevHiddenState = false;
   
   // Function to toggle UI visibility
   const toggleUIVisibility = (hidden) => {
+    if(hidden === prevHiddenState) return hidden;
+    prevHiddenState = hidden;
     try{
       const topBar = ea.targetView.containerEl.querySelector(".App-top-bar");
       const bottomBar = ea.targetView.containerEl.querySelector(".App-bottom-bar");
       const sidebarToggle = ea.targetView.containerEl.querySelector(".sidebar-toggle");
       const plugins = ea.targetView.containerEl.querySelector(".plugins-container");
+
+      if(hidden) {
+        if (toolbarActive && (toolbar?.style.display === "none")) {
+          toolbarActive = false;
+        }
+        if (toolbarActive = toolbar?.style.display === "block") {
+          toolbarActive = true;
+        };
+      }
       
       const display = hidden ? "none" : "";
       
@@ -120,7 +132,7 @@ async function run() {
       if (bottomBar) bottomBar.style.display = display;
       if (sidebarToggle) sidebarToggle.style.display = display;
       if (plugins) plugins.style.display = display;
-      if (toolbarActiveAtStart) toolbar.style.display = hidden ? "none" : "block";
+      if (toolbarActive) toolbar.style.display = hidden ? "none" : "block";
       modal.modalEl.style.opacity = hidden ? "0.4" : "0.8";
     } catch {};
     return hidden;
