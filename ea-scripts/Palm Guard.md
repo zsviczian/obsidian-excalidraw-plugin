@@ -8,7 +8,7 @@ Features:
 - Enables a completely distraction-free canvas even on desktop devices by hiding the main toolbar and all chrome while keeping a tiny movable toggle control (addresses immersive canvas / beyond Zen Mode request)
 - Draggable toolbar can be positioned anywhere on screen
 - Exit Palm Guard mode with a single tap
-- Press ALT+X (OPT+X on Mac) to toggle UI visibility without tapping. This hotkey (modifier combination + key) can be customized under Excalidraw Plugin / Script Settings for Palm Guard. Default: Modifiers = "ALT/OPT", Key = "x".
+- Press the hotkey you configured for this script in Obsidian's Hotkey settings (e.g., ALT+X) to toggle UI visibility; if no hotkey is set, use the on-screen toggle button.
 
 ```js
 */
@@ -25,81 +25,81 @@ async function run() {
   }
   window.excalidrawPalmGuard = true;
   const modal = new ea.FloatingModal(ea.plugin.app);
-  // --- Hotkey settings initialization ---
-  const HOTKEY_MODIFIERS = "PalmGuard Toggle UI Hotkey Modifiers";
-  const HOTKEY_KEY = "PalmGuard Toggle UI Hotkey Key";
   const FULLSCREEN = "Goto fullscreen?";
-  const MODIFIER_OPTIONS = [
-    "ALT/OPT",
-    "CTRL/CMD",
-    "WIN/CTRL",
-    "ALT/OPT+CTRL/CMD",
-    "ALT/OPT+WIN/CTRL",
-    "CTRL/CMD+WIN/CTRL",
-    "SHIFT+ALT/OPT",
-    "SHIFT+CTRL/CMD",
-    "SHIFT+WIN/CTRL",
-    "SHIFT+ALT/OPT+CTRL/CMD",
-    "SHIFT+ALT/OPT+WIN/CTRL",
-    "SHIFT+CTRL/CMD+WIN/CTRL",
-    "SHIFT+ALT/OPT+CTRL/CMD+WIN/CTRL"
-  ];
   let settings = ea.getScriptSettings() || {};
-  let initialized = false;
-  if(!settings[HOTKEY_MODIFIERS] || !settings[HOTKEY_KEY]) {
-    settings[HOTKEY_MODIFIERS] = { value: "ALT/OPT", valueset: MODIFIER_OPTIONS };
-    settings[HOTKEY_KEY] = { value: "x" };
+  if(!settings[FULLSCREEN]) {
     settings[FULLSCREEN] = { value: true };
     await ea.setScriptSettings(settings);
-    initialized = true;
-  } else {
-    // ensure valueset present (in case older run stored only value)
-    settings[HOTKEY_MODIFIERS].valueset = MODIFIER_OPTIONS;
   }
-  const hotkeyMods = settings[HOTKEY_MODIFIERS].value;
-  const hotkeyKey = (settings[HOTKEY_KEY].value || "x").toLowerCase();
+  
+  //added only to clean up settings if someone installed the initial version of the script
+  const HOTKEY_MODIFIERS = "PalmGuard Toggle UI Hotkey Modifiers";
+  const HOTKEY_KEY = "PalmGuard Toggle UI Hotkey Key";
+  if(settings[HOTKEY_MODIFIERS] || settings[HOTKEY_KEY]) {
+    delete settings[HOTKEY_MODIFIERS];
+    delete settings[HOTKEY_KEY];
+    await ea.setScriptSettings(settings);
+  }
+
   const enableFullscreen = settings[FULLSCREEN].value;
+
+  // Retrieve configured hotkey from Obsidian (if any)
+  const hotkeySetting = app.hotkeyManager.getHotkeys(
+    ea.plugin.manifest.id + ":" +
+    utils.scriptFile.path
+      .replace(/\.md$/,"")
+      .replace(ea.obsidian.normalizePath(ea.plugin.settings.scriptFolderPath)+"/","")
+  )?.[0];
+
   const isMac = ea.DEVICE.isMacOS;
-  const parseMods = (mods) => mods.split("+").map(m=>m.trim());
+
+  // Match event to retrieved hotkey (if defined)
   const matchHotkey = (e) => {
+    if(!hotkeySetting) return false;
     if(e.repeat) return false;
-    if(e.key.toLowerCase() !== hotkeyKey) return false;
-    const required = parseMods(hotkeyMods);
-    const reqSet = new Set(required);
-    const active = {
-      "SHIFT": e.shiftKey,
-      "ALT/OPT": e.altKey,
-      "CTRL/CMD": isMac ? e.metaKey : e.ctrlKey,
-      "WIN/CTRL": isMac ? e.ctrlKey : e.metaKey,
-    };
-    // all required present
-    for(const r of required) if(!active[r]) return false;
-    // ensure no extra (only consider our tracked modifiers)
-    for(const name in active) {
-      if(active[name] && !reqSet.has(name)) return false;
+    if(!hotkeySetting.key) return false;
+    if(e.key.toLowerCase() !== hotkeySetting.key.toLowerCase()) return false;
+
+    const required = new Set(hotkeySetting.modifiers || []);
+
+    // Check required presence
+    if(required.has("Shift") && !e.shiftKey) return false;
+    if(required.has("Alt") && !e.altKey) return false;
+    if(required.has("Mod")) {
+      if(isMac) { if(!e.metaKey) return false; } else { if(!e.ctrlKey) return false; }
+    }
+    if(required.has("Ctrl") && !e.ctrlKey) return false;
+    if(required.has("Meta") && !e.metaKey) return false;
+
+    // Disallow extra modifiers (accounting for Mod consuming Ctrl/Meta)
+    if(e.shiftKey && !required.has("Shift")) return false;
+    if(e.altKey && !required.has("Alt")) return false;
+    if(e.ctrlKey) {
+      const ctrlConsumedByMod = required.has("Mod") && !isMac;
+      if(!ctrlConsumedByMod && !required.has("Ctrl")) return false;
+    }
+    if(e.metaKey) {
+      const metaConsumedByMod = required.has("Mod") && isMac;
+      if(!metaConsumedByMod && !required.has("Meta")) return false;
     }
     return true;
   };
-  // --- Obsidian hotkey override for script hotkey ---
-  const toObsidianModifiers = (modsStr) => {
-    const parts = modsStr.split("+").map(p=>p.trim());
-    const out = [];
-    parts.forEach(p=>{
-      if(p==="ALT/OPT") out.push("Alt");
-      else if(p==="CTRL/CMD") out.push("Mod");        // Obsidian's platform abstraction
-      else if(p==="WIN/CTRL") out.push(isMac ? "Ctrl" : "Meta");
-      else if(p==="SHIFT") out.push("Shift");
-    });
-    return out;
-  };
+
+  // --- Obsidian hotkey override only if a hotkey is configured ---
   let unregisterHotkeyOverride;
-  try {
-    const scope = ea.plugin.app.keymap.getRootScope();
-    const modifiersForOverride = toObsidianModifiers(hotkeyMods);
-    const handler = scope.register(modifiersForOverride, hotkeyKey, () => true);
-    scope.keys.unshift(scope.keys.pop()); // prioritize our handler
-    unregisterHotkeyOverride = () => scope.unregister(handler);
-  } catch {}
+  if(hotkeySetting && hotkeySetting.key) {
+    try {
+      const scope = ea.plugin.app.keymap.getRootScope();
+      const keyOriginal = hotkeySetting.key;
+      const keyForRegister = /^[A-Z]$/.test(keyOriginal) ? keyOriginal.toLowerCase() : keyOriginal;
+      const modifiers = Array.isArray(hotkeySetting.modifiers) ? hotkeySetting.modifiers.slice() : [];
+      const handler = scope.register(modifiers, keyForRegister, () => true);
+      // Force our handler to front (pattern from sample)
+      scope.keys.unshift(scope.keys.pop());
+      unregisterHotkeyOverride = () => scope.unregister(handler);
+    } catch {}
+  }
+
   // Initialize state
   let uiHidden = true;
   let currentIcon = "eye";
@@ -182,7 +182,7 @@ async function run() {
       }
     });
     toggleButton.innerHTML = ea.obsidian.getIcon("eye").outerHTML;
-    // Keyboard hotkey listener (added after button exists)
+    // Keyboard hotkey listener (only acts if hotkey configured)
     keyHandler = (e) => {
       try {
         if(matchHotkey(e)) {
@@ -191,7 +191,7 @@ async function run() {
         }
       } catch(_) {}
     };
-    window.addEventListener("keydown", keyHandler, true); // capture phase to precede other handlers
+    if(hotkeySetting) window.addEventListener("keydown", keyHandler, true);
     toggleButton.addEventListener("click", () => {
       uiHidden = !uiHidden;
       toggleUIVisibility(uiHidden);
@@ -243,8 +243,8 @@ async function run() {
 
   // Handle modal close (exit Palm Guard mode)
   modal.onClose = () => {
-    if(keyHandler) {
-      window.removeEventListener("keydown", keyHandler);
+    if(keyHandler && hotkeySetting) {
+      window.removeEventListener("keydown", keyHandler, true);
     }
     if(unregisterHotkeyOverride) unregisterHotkeyOverride();
     // Show all UI elements
