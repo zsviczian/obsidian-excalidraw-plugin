@@ -296,50 +296,93 @@ export const openLeaf = ({
 }
 
 export function mergeMarkdownFiles (template: string, target: string): string {
-  // Extract frontmatter from the template
-  const templateFrontmatterEnd = template.indexOf('---', 4); // Find end of frontmatter
-  const templateFrontmatter = template.substring(4, templateFrontmatterEnd).trim();
-  const templateContent = template.substring(templateFrontmatterEnd + 3); // Skip frontmatter and ---
-  
-  // Parse template frontmatter
-  const templateFrontmatterObj: FrontMatterCache = yaml.load(templateFrontmatter) || {};
+  // Template frontmatter
+  const templateFrontmatterEnd = template.indexOf('---', 4);
+  const templateFrontmatterRaw = template.substring(4, templateFrontmatterEnd).trim();
+  const templateContent = template.substring(templateFrontmatterEnd + 3);
+  const templateFrontmatterObj: FrontMatterCache = yaml.load(templateFrontmatterRaw) || {};
 
-  // Extract frontmatter from the target if it exists
-  let targetFrontmatterObj: FrontMatterCache = {};
-  let targetContent = '';
-  if (target.startsWith('---\n') && target.indexOf('---\n', 4) > 0) {
-    const targetFrontmatterEnd = target.indexOf('---\n', 4); // Find end of frontmatter
-    const targetFrontmatter = target.substring(4, targetFrontmatterEnd).trim();
-    targetContent = target.substring(targetFrontmatterEnd + 3); // Skip frontmatter and ---
+  const hasTargetFM = target.startsWith('---\n') && target.indexOf('---\n', 4) > 0;
+  if (hasTargetFM) {
+    const targetFrontmatterEnd = target.indexOf('---\n', 4);
+    let targetFrontmatterRaw = target.substring(4, targetFrontmatterEnd).replace(/\s+$/,''); // keep as-is
+    const targetContent = target.substring(targetFrontmatterEnd + 3);
 
-    // Parse target frontmatter
-    targetFrontmatterObj = yaml.load(targetFrontmatter) || {};
+    const targetFrontmatterObj: FrontMatterCache = yaml.load(targetFrontmatterRaw) || {};
+
+    // 1. Merge array keys present in both (target has precedence for ordering)
+    const mergeArrayKeys = Object.keys(templateFrontmatterObj)
+      .filter(k => Array.isArray(templateFrontmatterObj[k]) && Array.isArray(targetFrontmatterObj[k]));
+
+    if (mergeArrayKeys.length) {
+      for (const k of mergeArrayKeys) {
+        const tArr = targetFrontmatterObj[k] as any[];
+        const tplArr = templateFrontmatterObj[k] as any[];
+        const merged = [...tArr, ...tplArr.filter(v => !tArr.includes(v))];
+        // Produce YAML for just this key
+        const mergedYaml = yaml.dump({ [k]: merged }).trimEnd();
+        targetFrontmatterRaw = replaceYamlKeyBlock(targetFrontmatterRaw, k, mergedYaml) ?? targetFrontmatterRaw;
+      }
+    }
+
+    // 2. Append only missing keys (not present in target)
+    const newKeys: Record<string, any> = {};
+    for (const k of Object.keys(templateFrontmatterObj)) {
+      if (!(k in targetFrontmatterObj)) {
+        newKeys[k] = templateFrontmatterObj[k];
+      }
+    }
+
+    const appended = Object.keys(newKeys).length
+      ? targetFrontmatterRaw + '\n' + yaml.dump(newKeys).trimEnd()
+      : targetFrontmatterRaw;
+
+    return `---\n${appended}\n---\n${targetContent}\n\n${templateContent.trim()}\n`;
   } else {
-    // If target doesn't have frontmatter, consider the entire content as target content
-    targetContent = target.trim();
+    // No frontmatter in target: use template FM + target content + template content
+    const targetContent = target.trim();
+    const templateFMYaml = yaml.dump(templateFrontmatterObj).trimEnd();
+    return `---\n${templateFMYaml}\n---\n${targetContent}\n\n${templateContent.trim()}\n`;
   }
+};
 
-  // Merge frontmatter with target values taking precedence
-  const mergedFrontmatter: FrontMatterCache = { ...templateFrontmatterObj };
-
-  // Merge arrays by combining and removing duplicates
-  for (const key in targetFrontmatterObj) {
-    if (Array.isArray(targetFrontmatterObj[key]) && Array.isArray(mergedFrontmatter[key])) {
-      const combinedArray = [...new Set([...mergedFrontmatter[key], ...targetFrontmatterObj[key]])];
-      mergedFrontmatter[key] = combinedArray;
-    } else {
-      mergedFrontmatter[key] = targetFrontmatterObj[key];
+// Helper: replace a top-level YAML key block (line-based, avoids partial matches causing duplicates)
+function replaceYamlKeyBlock(src: string, key: string, newBlock: string): string | null {
+  const lines = src.split(/\r?\n/);
+  let start = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (new RegExp(`^${escapeRegex(key)}\\s*:`).test(lines[i])) {
+      start = i;
+      break;
     }
   }
+  if (start === -1) return null;
 
-  // Convert merged frontmatter back to YAML
-  const mergedFrontmatterYaml = yaml.dump(mergedFrontmatter);
+  let end = start + 1;
+  while (end < lines.length) {
+    const line = lines[end];
+    if (line.trim() === "") { // blank line ends block (retain blank after replacement)
+      break;
+    }
+    if (/^[^\s].*?:/.test(line)) { // next top-level key
+      break;
+    }
+    if (!/^\s/.test(line)) { // safety: non-indented (shouldn't happen)
+      break;
+    }
+    end++;
+  }
 
-  // Concatenate frontmatter and content
-  const mergedMarkdown = `---\n${mergedFrontmatterYaml}---\n${targetContent}\n\n${templateContent.trim()}\n`;
+  const before = lines.slice(0, start);
+  const after = lines.slice(end);
+  const replaced = [...before, newBlock, ...after].join('\n');
 
-  return mergedMarkdown;
-};
+  return replaced;
+}
+
+function escapeRegex(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 export const editorInsertText = (editor: Editor, text: string)=> {
   const cursor = editor.getCursor();

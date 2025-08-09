@@ -16,10 +16,14 @@ export class ReleaseNotes extends Modal {
   }
 
   onOpen(): void {
+    //@ts-ignore
+    const { containerEl, contentEl, titleEl, headerEl } = this;
     //this.contentEl.classList.add("excalidraw-release");
-    this.containerEl.classList.add("excalidraw-release");
-    this.titleEl.setText(`Welcome to Excalidraw ${this.version ?? ""}`);
+    containerEl.classList.add("excalidraw-release");
+    titleEl.setText(`Welcome to Excalidraw ${this.version ?? ""}`);
     this.createForm();
+
+    if(headerEl) headerEl.style.pointerEvents = "none"; // Disable pointer events on header to allow clicks through
   }
 
   async onClose() {

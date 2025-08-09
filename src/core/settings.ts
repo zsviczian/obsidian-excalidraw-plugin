@@ -106,6 +106,9 @@ export interface ExcalidrawSettings {
   zoomToFitOnOpen: boolean;
   zoomToFitOnResize: boolean;
   zoomToFitMaxLevel: number;
+  zoomStep: number;        // % increment per zoom action (e.g. mouse wheel)
+  zoomMin: number;         // minimum zoom percentage
+  zoomMax: number;         // maximum zoom percentage
   openInAdjacentPane: boolean;
   showSecondOrderLinks: boolean;
   focusOnFileTab: boolean;
@@ -291,6 +294,9 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   zoomToFitOnOpen: true,
   zoomToFitOnResize: true,
   zoomToFitMaxLevel: 2,
+  zoomStep: 0.05,
+  zoomMin: 0.1,
+  zoomMax: 30,
   linkPrefix: "📍",
   urlPrefix: "🌐",
   parseTODO: false,
@@ -1421,6 +1427,45 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       step: 0.5,
       onChange: (value) => {
         this.plugin.settings.zoomToFitMaxLevel = value;
+        this.applySettingsUpdate();
+      }
+    })
+
+    createSliderWithText(detailsEl, {
+      name: t("ZOOM_STEP_NAME"),
+      desc: t("ZOOM_STEP_DESC"),
+      value: this.plugin.settings.zoomStep*100,
+      min: 1,
+      max: 25,
+      step: 1,
+      onChange: (value) => {
+        this.plugin.settings.zoomStep = value/100;
+        this.applySettingsUpdate();
+      }
+    })
+
+    createSliderWithText(detailsEl, {
+      name: t("ZOOM_MIN_NAME"),
+      desc: t("ZOOM_MIN_DESC"),
+      value: this.plugin.settings.zoomMin*100,
+      min: 1,
+      max: 50,
+      step: 1,
+      onChange: (value) => {
+        this.plugin.settings.zoomMin = value/100;
+        this.applySettingsUpdate();
+      }
+    })
+
+    createSliderWithText(detailsEl, {
+      name: t("ZOOM_MAX_NAME"),
+      desc: t("ZOOM_MAX_DESC"),
+      value: this.plugin.settings.zoomMax*100,
+      min: 500,
+      max: 6000,
+      step: 100,
+      onChange: (value) => {
+        this.plugin.settings.zoomMax = value/100;
         this.applySettingsUpdate();
       }
     })
@@ -2575,7 +2620,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     // Non-excalidraw.com supported features
     // ------------------------------------------------
     containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
-    containerEl.createDiv({ text: t("NONSTANDARD_DESC"), cls: "setting-item-description"  });
+    containerEl.createDiv( { text: t("NONSTANDARD_DESC"), cls: "setting-item-description"  });
     detailsEl = this.containerEl.createEl("details");
     const nonstandardDetailsEl = detailsEl;
     detailsEl.createEl("summary", { 

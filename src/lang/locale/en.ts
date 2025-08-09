@@ -344,7 +344,7 @@ export default {
     "Excalidraw will also save the file when closing a workspace tab or navigating within Obsidian, but away from the active Excalidraw tab (i.e. tapping on the Obsidian ribbon or checking backlinks, etc.). " +
     "Excalidraw will not be able to save your work when terminating Obsidian directly (i.e. swiping it away). Also note, that when you switch apps on a Mobile device, sometimes Android and iOS closes " +
     "Obsidian in the background to save system resources. In such a case Excalidraw will not be able to save the latest changes.",
-FILENAME_HEAD: "Filename",
+  FILENAME_HEAD: "Filename",
   FILENAME_DESC:
     "<p>Click this link for the <a href='https://momentjs.com/docs/#/displaying/format/'>" +
     "date and time format reference</a>.</p>",
@@ -459,6 +459,12 @@ FILENAME_HEAD: "Filename",
   ZOOM_TO_FIT_MAX_LEVEL_NAME: "Zoom to fit max ZOOM level",
   ZOOM_TO_FIT_MAX_LEVEL_DESC:
     "Set the maximum level to which zoom to fit will enlarge the drawing. Minimum is 0.5 (50%) and maximum is 10 (1000%).",
+  ZOOM_STEP_NAME: "Zoom increment",
+  ZOOM_STEP_DESC: "Zoom increment (in percentage points) for actions like mouse wheel zoom. Smaller values give finer control but may require excessive scrolling. Default: 5%.",
+  ZOOM_MIN_NAME: "Minimum zoom",
+  ZOOM_MIN_DESC: "How far you can zoom out (fit more of the drawing on screen). Default: 10%. Values below 10% were historically unstable—lower with caution and reset to 10% if issues occur.",
+  ZOOM_MAX_NAME: "Maximum zoom",
+  ZOOM_MAX_DESC: "Upper zoom limit. Default: 3000%. Usually no need to change; included for completeness.",
   PEN_HEAD: "Pen",
   GRID_HEAD: "Grid",
   GRID_DYNAMIC_COLOR_NAME: "Dynamic grid color",

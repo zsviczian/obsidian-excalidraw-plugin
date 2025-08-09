@@ -8,6 +8,10 @@ export class FloatingModal extends Modal {
   private pointerMoveHandler: (e: PointerEvent | TouchEvent) => void;
   private pointerUpHandler: () => void;
 
+  private disableKeyCapture = true; // new flag: when true, let keystrokes pass through to workspace
+  private previousActive: HTMLElement | null = null; // stores element focused before opening
+  private escListener: (e: KeyboardEvent) => void;
+
   constructor(app: App) {
     super(app);
 
@@ -15,6 +19,7 @@ export class FloatingModal extends Modal {
     this.pointerDownHandler = this.handlePointerDown.bind(this);
     this.pointerMoveHandler = this.handlePointerMove.bind(this);
     this.pointerUpHandler = this.handlePointerUp.bind(this);
+    this.escListener = this.handleEscKey.bind(this);
   }
 
   private handlePointerDown(e: PointerEvent | TouchEvent): void {
@@ -106,13 +111,34 @@ export class FloatingModal extends Modal {
     document.removeEventListener("touchcancel", this.pointerUpHandler);
   }
 
+  private handleEscKey(e: KeyboardEvent) {
+    if (e.key === "Escape") {
+      // Optionally stop propagation if you do not want other handlers firing
+      e.stopPropagation();
+      this.close();
+    }
+  }
+
   open(): void {
     super.open();
+    // NEW: capture previously focused element & release Obsidian modal key trapping
+    if (this.disableKeyCapture) {
+      this.previousActive = document.activeElement as HTMLElement | null;
+      try {
+        // @ts-ignore pop modal's key scope so keys are not intercepted
+        this.app.keymap.popScope(this.scope);
+      } catch {}
+      try {
+        // @ts-ignore prevent automatic selection / focus restoration
+        this.shouldRestoreSelection = false;
+      } catch {}
+    }
     setTimeout(() => {
       //@ts-ignore
-      const { containerEl, modalEl, bgEl } = this;
+      const { containerEl, modalEl, bgEl, headerEl } = this;
       containerEl.style.pointerEvents = "none";
       if (bgEl) bgEl.style.display = "none";
+      if (headerEl) headerEl.style.pointerEvents = "none";
 
       // Set initial position and make modal draggable
       if (modalEl) {
@@ -137,11 +163,28 @@ export class FloatingModal extends Modal {
         modalEl.addEventListener("touchstart", this.pointerDownHandler as (e: TouchEvent) => void, {
           passive: false,
         });
+
+        if (this.disableKeyCapture) {
+          // Prevent the modal from stealing focus
+          modalEl.setAttr("tabindex", "-1");
+          // Refocus previous element (if still in DOM)
+          if (this.previousActive?.isConnected) {
+            this.previousActive.focus({ preventScroll: true });
+          }
+          // Stop key events originating inside the modal from bubbling back
+          modalEl.addEventListener("keydown", (ev) => ev.stopPropagation(), { capture: true });
+        }
+        // Add ESC listener (capture to run before underlying workspace)
+        document.addEventListener("keydown", this.escListener, { capture: true });
       }
     });
   }
 
   close(): void {
+    // Optional: restore previous focus if body ended up focused
+    if (this.disableKeyCapture && this.previousActive?.isConnected && document.activeElement === document.body) {
+      try { this.previousActive.focus({ preventScroll: true }); } catch {}
+    }
     const { modalEl } = this;
     // Clean up event listeners
     if (modalEl) {
@@ -150,7 +193,12 @@ export class FloatingModal extends Modal {
     }
     // Remove any remaining document event listeners
     this.handlePointerUp();
+    document.removeEventListener("keydown", this.escListener);
 
     super.close();
   }
+
+  // (Optional helper if you want to toggle later)
+  enableKeyCapture() { this.disableKeyCapture = false; }
+  disableKeyCaptureFn() { this.disableKeyCapture = true; }
 }

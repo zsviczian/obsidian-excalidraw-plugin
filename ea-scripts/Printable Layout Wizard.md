@@ -9,6 +9,10 @@ Export Excalidraw to PDF Pages: Define printable page areas using frames, then e
 ```js
 */
 
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.14.2")) {
+  new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
+  return;
+}
 
 async function run() {
   // Help text for the script
@@ -61,60 +65,71 @@ You can also access script settings at the bottom of Excalidraw Plugin settings.
 **Tip:** For more on templates, see [Mastering Excalidraw Templates](https://youtu.be/jgUpYznHP9A). For referencing pages in markdown, see [Image Fragments](https://youtu.be/sjZfdqpxqsg) and [Image Block References](https://youtu.be/yZQoJg2RCKI).
 `;
 
-  // Enable frame rendering
-  const st = ea.getExcalidrawAPI().getAppState();
-  const {enabled, clip, name, outline} = st.frameRendering;
-  if(!enabled || clip || !name || !outline) {
-    ea.viewUpdateScene({
-      appState: {
-        frameRendering: {
-          enabled: true,
-          clip: false,
-          name: true,
-          outline: true
-        }
+// Enable frame rendering
+const st = ea.getExcalidrawAPI().getAppState();
+const {enabled, clip, name, outline} = st.frameRendering;
+if(!enabled || clip || !name || !outline) {
+  ea.viewUpdateScene({
+    appState: {
+      frameRendering: {
+        enabled: true,
+        clip: false,
+        name: true,
+        outline: true
       }
-    });
-  }
+    }
+  });
+}
 
-  // Page size options (using standard sizes from ExcalidrawAutomate)
-  const PAGE_SIZES = [
-    "A0", "A1", "A2", "A3", "A4", "A5", "A6", 
-    "Letter", "Legal", "Tabloid", "Ledger"
-  ];
+// Page size options (using standard sizes from ExcalidrawAutomate)
+const PAGE_SIZES = [
+  "A0", "A1", "A2", "A3", "A4", "A5", "A6", 
+  "Letter", "Legal", "Tabloid", "Ledger"
+];
 
-  const PAGE_ORIENTATIONS = ["portrait", "landscape"];
+const PAGE_ORIENTATIONS = ["portrait", "landscape"];
 
-  // Margin sizes in points
-  const MARGINS = {
-    "none": 0,
-    "tiny": 10,
-    "normal": 60,
-  };
+// Margin sizes in points
+const MARGINS = {
+  "none": 0,
+  "tiny": 10,
+  "normal": 60,
+};
 
-  // Initialize settings
-  let settings = ea.getScriptSettings();
-  let dirty = false;
+// Initialize settings
+let settings = ea.getScriptSettings();
+let dirty = false;
 
-  // Define setting keys
-  const PAGE_SIZE = "Page size";
-  const ORIENTATION = "Page orientation";
-  const MARGIN = "Print-margin";
-  const LOCK_FRAME = "Lock frame after it is created";
-  const SHOULD_ZOOM = "Should zoom after adding page";
-  const SHOULD_CLOSE = "Should close after adding page";
+// Define setting keys
+const PAGE_SIZE = "Page size";
+const ORIENTATION = "Page orientation";
+const MARGIN = "Print-margin";
+const LOCK_FRAME = "Lock frame after it is created";
+const SHOULD_ZOOM = "Should zoom after adding page";
+const SHOULD_CLOSE = "Should close after adding page";
 
-  // Set default values on first run
-  if (!settings[PAGE_SIZE]) {
-    settings = {};
-    settings[PAGE_SIZE] = { value: "A4", valueSet: PAGE_SIZES };
-    settings[ORIENTATION] = { value: "portrait", valueSet: PAGE_ORIENTATIONS };
-    settings[MARGIN] = { value: "none", valueSet: Object.keys(MARGINS)};
-    settings[SHOULD_ZOOM] = { value: false };
-    settings[SHOULD_CLOSE] = { value: false };
-    settings[LOCK_FRAME] = { value: true };
-    await ea.setScriptSettings(settings);
-  }
+// Set default values on first run
+if (!settings[PAGE_SIZE]) {
+  settings = {};
+  settings[PAGE_SIZE] = { value: "A4", valueset: PAGE_SIZES };
+  settings[ORIENTATION] = { value: "portrait", valueset: PAGE_ORIENTATIONS };
+  settings[MARGIN] = { value: "none", valueset: Object.keys(MARGINS)};
+  settings[SHOULD_ZOOM] = { value: false };
+  settings[SHOULD_CLOSE] = { value: false };
+  settings[LOCK_FRAME] = { value: true };
+  await ea.setScriptSettings(settings);
+}
+
+//once off correction. In the first version I incorrectly used valueSet with wrong casing.
+if(settings[PAGE_SIZE].valueSet) {
+  settings[PAGE_SIZE].valueset = settings[PAGE_SIZE].valueSet;
+  delete settings[PAGE_SIZE].valueSet;
+  settings[ORIENTATION].valueset = settings[ORIENTATION].valueSet;
+  delete settings[ORIENTATION].valueSet;
+  settings[MARGIN].valueset = settings[MARGIN].valueSet;
+  delete settings[MARGIN].valueSet;
+  await ea.setScriptSettings(settings);
+}
 
 const getSortedFrames = () => ea.getViewElements()
     .filter(el => el.type === "frame")
