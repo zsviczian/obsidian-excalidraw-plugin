@@ -20,10 +20,9 @@ if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.14.2")) {
 
 async function run() {
   if(window.excalidrawPalmGuard) {
-    new Notice("PalmGuard already running");
+    window.excalidrawPalmGuard()
     return;
   }
-  window.excalidrawPalmGuard = true;
   const modal = new ea.FloatingModal(ea.plugin.app);
   const FULLSCREEN = "Goto fullscreen?";
   let settings = ea.getScriptSettings() || {};
@@ -42,63 +41,6 @@ async function run() {
   }
 
   const enableFullscreen = settings[FULLSCREEN].value;
-
-  // Retrieve configured hotkey from Obsidian (if any)
-  const hotkeySetting = app.hotkeyManager.getHotkeys(
-    ea.plugin.manifest.id + ":" +
-    utils.scriptFile.path
-      .replace(/\.md$/,"")
-      .replace(ea.obsidian.normalizePath(ea.plugin.settings.scriptFolderPath)+"/","")
-  )?.[0];
-
-  const isMac = ea.DEVICE.isMacOS;
-
-  // Match event to retrieved hotkey (if defined)
-  const matchHotkey = (e) => {
-    if(!hotkeySetting) return false;
-    if(e.repeat) return false;
-    if(!hotkeySetting.key) return false;
-    if(e.key.toLowerCase() !== hotkeySetting.key.toLowerCase()) return false;
-
-    const required = new Set(hotkeySetting.modifiers || []);
-
-    // Check required presence
-    if(required.has("Shift") && !e.shiftKey) return false;
-    if(required.has("Alt") && !e.altKey) return false;
-    if(required.has("Mod")) {
-      if(isMac) { if(!e.metaKey) return false; } else { if(!e.ctrlKey) return false; }
-    }
-    if(required.has("Ctrl") && !e.ctrlKey) return false;
-    if(required.has("Meta") && !e.metaKey) return false;
-
-    // Disallow extra modifiers (accounting for Mod consuming Ctrl/Meta)
-    if(e.shiftKey && !required.has("Shift")) return false;
-    if(e.altKey && !required.has("Alt")) return false;
-    if(e.ctrlKey) {
-      const ctrlConsumedByMod = required.has("Mod") && !isMac;
-      if(!ctrlConsumedByMod && !required.has("Ctrl")) return false;
-    }
-    if(e.metaKey) {
-      const metaConsumedByMod = required.has("Mod") && isMac;
-      if(!metaConsumedByMod && !required.has("Meta")) return false;
-    }
-    return true;
-  };
-
-  // --- Obsidian hotkey override only if a hotkey is configured ---
-  let unregisterHotkeyOverride;
-  if(hotkeySetting && hotkeySetting.key) {
-    try {
-      const scope = ea.plugin.app.keymap.getRootScope();
-      const keyOriginal = hotkeySetting.key;
-      const keyForRegister = /^[A-Z]$/.test(keyOriginal) ? keyOriginal.toLowerCase() : keyOriginal;
-      const modifiers = Array.isArray(hotkeySetting.modifiers) ? hotkeySetting.modifiers.slice() : [];
-      const handler = scope.register(modifiers, keyForRegister, () => true);
-      // Force our handler to front (pattern from sample)
-      scope.keys.unshift(scope.keys.pop());
-      unregisterHotkeyOverride = () => scope.unregister(handler);
-    } catch {}
-  }
 
   // Initialize state
   let uiHidden = true;
@@ -159,7 +101,6 @@ async function run() {
   modal.titleEl.setText(""); // No title for minimal UI
   
   // Create modal content
-  let keyHandler;
   modal.contentEl.createDiv({ cls: "palm-guard-toolbar" }, div => {
     const container = div.createDiv({
       attr: {
@@ -183,15 +124,7 @@ async function run() {
     });
     toggleButton.innerHTML = ea.obsidian.getIcon("eye").outerHTML;
     // Keyboard hotkey listener (only acts if hotkey configured)
-    keyHandler = (e) => {
-      try {
-        if(matchHotkey(e)) {
-          e.preventDefault();
-          toggleButton.click();
-        }
-      } catch(_) {}
-    };
-    if(hotkeySetting) window.addEventListener("keydown", keyHandler, true);
+    window.excalidrawPalmGuard = () => toggleButton.click();
     toggleButton.addEventListener("click", () => {
       uiHidden = !uiHidden;
       toggleUIVisibility(uiHidden);
@@ -243,10 +176,6 @@ async function run() {
 
   // Handle modal close (exit Palm Guard mode)
   modal.onClose = () => {
-    if(keyHandler && hotkeySetting) {
-      window.removeEventListener("keydown", keyHandler, true);
-    }
-    if(unregisterHotkeyOverride) unregisterHotkeyOverride();
     // Show all UI elements
     toggleUIVisibility(false);
     
