@@ -194,7 +194,7 @@ export default {
 
   //ContentSearcher.ts
   SEARCH_COPIED_TO_CLIPBOARD: "Markdown 已複製到剪貼簿",
-  SEARCH_COPY_TO_CLIPBOARD_ARIA: "將整個對話框複製為 Markdown 到剪貼簿。非常適合搭配 ChatGPT 等工具進行搜尋和理解。",
+  SEARCH_COPY_TO_CLIPBOARD_ARIA: "將整個對話方塊複製為 Markdown 到剪貼簿。非常適合搭配 ChatGPT 等工具進行搜尋和理解。",
   SEARCH_SHOWHIDE_ARIA : "顯示/隱藏搜尋欄" ,
   SEARCH_NEXT: "下一個",
   SEARCH_PREVIOUS: "上一個",
@@ -202,10 +202,10 @@ export default {
 
 
   //settings.ts
-  NOTEBOOKLM_LINK_ARIA : "向 NotebookLM 諮詢有關外掛的幫助。此模型已預載入我的所有影片轉錄、發佈說明以及其他有用內容。與 NotebookLM 聊天，探索我的 250+ 影片以及 Excalidraw 文件。" ,
+  NOTEBOOKLM_LINK_ARIA : "向 NotebookLM 諮詢有關外掛的幫助。此模型已預載入我的所有影片轉錄、釋出說明以及其他有用內容。與 NotebookLM 聊天，探索我的 250+ 影片以及 Excalidraw 文件。" ,
   NOTEBOOKLM_LINK_TEXT : "瞭解外掛。訪問 NotebookLM 知識庫。" ,
-  LINKS_BUGS_ARIA: "在外掛的 GitHub 頁面回報錯誤和提交功能請求",
-  LINKS_BUGS: "回報錯誤",
+  LINKS_BUGS_ARIA: "在外掛的 GitHub 頁面報告錯誤和提交功能請求",
+  LINKS_BUGS: "報告錯誤",
   LINKS_YT_ARIA: "訪問我的 YouTube 頻道學習視覺思維和 Excalidraw",
   LINKS_YT: "在 YouTube 學習",
   LINKS_DISCORD_ARIA: "加入視覺思維研討會 Discord 伺服器",
@@ -419,7 +419,8 @@ FILENAME_HEAD: "檔名",
   SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_DESC:
     "...即使檔案具有 `<b>excalidraw-open-md: true</b>` frontmatter 屬性。<br>" +
     "當此設定關閉且檔案預設設定為以 md 格式開啟時，懸停預覽將顯示文件的 Markdown 部分（背景筆記）。" +
-    "",
+    "<br>" +
+    "注意：<b>excalidraw-open-md</b> 與 <b>excalidraw-embed-md</b> 是不同的。如果 <b>excalidraw-embed-md</b> 設定為 true，則懸停預覽始終顯示 markdown 部分，而不受此設定影響。要在嵌入時強制影像渲染，請在你的 markdown 檔案中使用 <code>![[drawing#^as-image]]</code>。" ,
   SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME: "Excalidraw 檔案在 Markdown 閱讀模式下渲染為圖片",
   SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC:
     "當您處於 Markdown 閱讀模式（即檢視繪圖的背景筆記）時，Excalidraw 繪圖是否應該渲染為影像？" +
@@ -947,12 +948,12 @@ FILENAME_HEAD: "檔名",
 
   //IFrameActionsMenu.tsx
   NARROW_TO_HEADING: "縮放至標題",
-  PIN_VIEW: "釘選視圖",
-  DO_NOT_PIN_VIEW: "取消釘選視圖",
+  PIN_VIEW: "鎖定檢視",
+  DO_NOT_PIN_VIEW: "取消鎖定檢視",
   NARROW_TO_BLOCK: "縮放至塊",
   SHOW_ENTIRE_FILE: "顯示全部",
-  SELECT_SECTION: "從文件選擇區塊",
-  SELECT_VIEW: "從基礎選擇視圖",
+  SELECT_SECTION: "從文件選擇章節",
+  SELECT_VIEW: "從 base 選擇檢視",
   ZOOM_TO_FIT: "縮放至合適大小",
   RELOAD: "過載連結",
   OPEN_IN_BROWSER: "在瀏覽器中開啟",
