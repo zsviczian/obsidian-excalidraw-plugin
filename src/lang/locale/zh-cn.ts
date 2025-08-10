@@ -344,7 +344,7 @@ export default {
     "当 Obsidian 应用内的焦点离开活动文档（如关闭工作空间、点击菜单栏、切换到其他页签或面板等）的时候，也会触发自动保存。" +
     "直接退出 Obsidian 应用（在应用切换器中划掉）不会触发自动保存。此外，当您切换到其他应用时，有时候" +
     "系统会自动清理 Obsidian 后台以释放资源。这种情况下，自动保存会失效。",
-FILENAME_HEAD: "文件名",
+  FILENAME_HEAD: "文件名",
   FILENAME_DESC:
     "<p>点击阅读" +
     "<a href='https://momentjs.com/docs/#/displaying/format/'>日期和时间格式参考</a>。</p>",
@@ -459,6 +459,12 @@ FILENAME_HEAD: "文件名",
   ZOOM_TO_FIT_MAX_LEVEL_NAME: "自动缩放的最高级别",
   ZOOM_TO_FIT_MAX_LEVEL_DESC:
     "自动缩放画布时，允许放大的最高级别。该值不能低于 0.5（50%）且不能超过 10（1000%）。",
+  ZOOM_STEP_NAME : "缩放增量" ,
+  ZOOM_STEP_DESC : "用于鼠标滚轮缩放等操作的缩放增量（以百分比为单位）。值越小，控制越精细，但可能需要过多滚动。默认值：5%。" ,
+  ZOOM_MIN_NAME : "最小缩放" ,
+  ZOOM_MIN_DESC : "屏幕上可缩小到的最小比例（显示更多绘图内容）。默认值：10%。历史上低于 10% 的值可能会导致不稳定问题，建议谨慎调整，并在出现问题时重置为 10%。" ,
+  ZOOM_MAX_NAME : "最大缩放" ,
+  ZOOM_MAX_DESC : "缩放的上限值。默认值：3000%。通常不需要修改，仅供完整性考虑而设置。" ,
   PEN_HEAD: "手写笔",
   GRID_HEAD: "网格",
   GRID_DYNAMIC_COLOR_NAME: "动态网格颜色",
