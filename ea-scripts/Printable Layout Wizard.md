@@ -6,10 +6,12 @@ Export Excalidraw to PDF Pages: Define printable page areas using frames, then e
 
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-layout-wizard-02.png)
 
+![Printable Layout Wizard](https://youtu.be/29EWeglRm7s)
+
 ```js
 */
 
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.14.2")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.14.3")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
@@ -107,6 +109,7 @@ const MARGIN = "Print-margin";
 const LOCK_FRAME = "Lock frame after it is created";
 const SHOULD_ZOOM = "Should zoom after adding page";
 const SHOULD_CLOSE = "Should close after adding page";
+const PRINT_EMPTY = "Print empty pages";
 
 // Set default values on first run
 if (!settings[PAGE_SIZE]) {
@@ -117,7 +120,8 @@ if (!settings[PAGE_SIZE]) {
   settings[SHOULD_ZOOM] = { value: false };
   settings[SHOULD_CLOSE] = { value: false };
   settings[LOCK_FRAME] = { value: true };
-  await ea.setScriptSettings(settings);
+  settings[PRINT_EMPTY] = { value: false };
+  dirty = true;
 }
 
 //once off correction. In the first version I incorrectly used valueSet with wrong casing.
@@ -128,7 +132,17 @@ if(settings[PAGE_SIZE].valueSet) {
   delete settings[ORIENTATION].valueSet;
   settings[MARGIN].valueset = settings[MARGIN].valueSet;
   delete settings[MARGIN].valueSet;
-  await ea.setScriptSettings(settings);
+  dirty = true;
+}
+
+if(!settings[LOCK_FRAME]) {
+  settings[LOCK_FRAME] = { value: true };
+  dirty = true;
+}
+
+if(!settings[PRINT_EMPTY]) {
+  settings[PRINT_EMPTY] = { value: false };
+  dirty = true;
 }
 
 const getSortedFrames = () => ea.getViewElements()
@@ -180,11 +194,13 @@ const getSortedFrames = () => ea.getViewElements()
       selectedFrame = ea.getViewSelectedElements().find(el => el.type === "frame");
     }
   }
+
   const hasSelectedFrame = !!selectedFrame;
   const modal = new ea.FloatingModal(ea.plugin.app);
-  let lockFrame = !!settings[LOCK_FRAME]?.value;
+  let lockFrame = settings[LOCK_FRAME].value;
   let shouldClose = settings[SHOULD_CLOSE].value;
   let shouldZoom = settings[SHOULD_ZOOM].value;
+  let printEmptyPages = settings[PRINT_EMPTY].value;
 
   // Show notice if there are frames but none selected
   if (hasFrames && !hasSelectedFrame) {
@@ -310,6 +326,21 @@ const getSortedFrames = () => ea.getViewElements()
     };
   }
 
+  // NEW: detect if any non-frame element overlaps the given area
+  const hasElementsInArea = ({top, left, bottom, right}) => {
+    return ea.getViewElements()
+      .filter(el => el.type !== "frame")
+      .some(el => {
+        const {topX, topY, width, height} = ea.getBoundingBox([el]);
+        const elLeft = topX;
+        const elTop = topY;
+        const elRight = topX + width;
+        const elBottom = topY + height;
+        // overlap exists if rectangles intersect
+        return !(elLeft >= right || elRight <= left || elTop >= bottom || elBottom <= top);
+      });
+  };
+
   // Check if all frames have the same size
   const checkFrameSizes = (frames) => {
     if (frames.length <= 1) return true;
@@ -364,12 +395,16 @@ const getSortedFrames = () => ea.getViewElements()
     });
     
     for (const frame of frames) {
-      const  { top, left, bottom, right } = translateToZero({
+      // NEW: skip empty frames unless user opted to print them
+      const area = {
         top: frame.y,
         left: frame.x,
         bottom: frame.y + frame.height,
         right: frame.x + frame.width,
-      });
+      };
+      if(!printEmptyPages && !hasElementsInArea(area)) continue;
+
+      const { top, left, bottom, right } = translateToZero(area);
       
       //always create the new SVG in the main Obsidian workspace (not the popout window, if present)
       const host = window.createDiv();
@@ -383,6 +418,14 @@ const getSortedFrames = () => ea.getViewElements()
       svgPages.push(clonedSVG);
     }
     
+    // NEW: abort if nothing to print
+    if(svgPages.length === 0) {
+      notice.hide();
+      new Notice("No pages to print (all selected frames are empty)");
+      notice.hide();
+      return;
+    }
+
     // Use dimensions from the first frame
     const width = frames[0].width;
     const height = frames[0].height;
@@ -560,6 +603,21 @@ const getSortedFrames = () => ea.getViewElements()
           });
       });
     
+    // NEW toggle: Print empty pages
+    new ea.obsidian.Setting(optionsContainer)
+      .setName("Print empty pages")
+      .setDesc("Include frames with no content in the PDF")
+      .addToggle(toggle => {
+        toggle.setValue(printEmptyPages)
+          .onChange(value => {
+            printEmptyPages = value;
+            if(settings[PRINT_EMPTY].value !== value) {
+              settings[PRINT_EMPTY].value = value;
+              dirty = true;
+            }
+          });
+      });
+
     // Buttons section
     const buttonContainer = container.createDiv({
       attr: {

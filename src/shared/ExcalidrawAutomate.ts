@@ -832,59 +832,60 @@ export class ExcalidrawAutomate {
       frontmatter = mergeMarkdownFiles(template.frontmatter,frontmatter);
     }
 
+    const templateAppstate = template?.appState ?? {};
+    Object.keys(templateAppstate).forEach((key) => {
+      if(templateAppstate[key] === undefined) {
+        delete templateAppstate[key];
+      }
+    });
     const scene = {
       type: "excalidraw",
       version: 2,
       source: GITHUB_RELEASES+PLUGIN_VERSION,
       elements,
       appState: {
-        theme: template?.appState?.theme ?? this.canvas.theme,
+        ...templateAppstate,
+        theme: templateAppstate.theme ?? this.canvas.theme,
         viewBackgroundColor:
-          template?.appState?.viewBackgroundColor ??
+          templateAppstate.viewBackgroundColor ??
           this.canvas.viewBackgroundColor,
         currentItemStrokeColor:
-          template?.appState?.currentItemStrokeColor ??
+          templateAppstate.currentItemStrokeColor ??
           this.style.strokeColor,
         currentItemBackgroundColor:
-          template?.appState?.currentItemBackgroundColor ??
+          templateAppstate.currentItemBackgroundColor ??
           this.style.backgroundColor,
         currentItemFillStyle:
-          template?.appState?.currentItemFillStyle ?? this.style.fillStyle,
+          templateAppstate.currentItemFillStyle ?? this.style.fillStyle,
         currentItemStrokeWidth:
-          template?.appState?.currentItemStrokeWidth ??
+          templateAppstate.currentItemStrokeWidth ??
           this.style.strokeWidth,
         currentItemStrokeStyle:
-          template?.appState?.currentItemStrokeStyle ??
+          templateAppstate.currentItemStrokeStyle ??
           this.style.strokeStyle,
         currentItemRoughness:
-          template?.appState?.currentItemRoughness ?? this.style.roughness,
+          templateAppstate.currentItemRoughness ?? this.style.roughness,
         currentItemOpacity:
-          template?.appState?.currentItemOpacity ?? this.style.opacity,
+          templateAppstate.currentItemOpacity ?? this.style.opacity,
         currentItemFontFamily:
-          template?.appState?.currentItemFontFamily ?? this.style.fontFamily,
+          templateAppstate.currentItemFontFamily ?? this.style.fontFamily,
         currentItemFontSize:
-          template?.appState?.currentItemFontSize ?? this.style.fontSize,
+          templateAppstate.currentItemFontSize ?? this.style.fontSize,
         currentItemTextAlign:
-          template?.appState?.currentItemTextAlign ?? this.style.textAlign,
+          templateAppstate.currentItemTextAlign ?? this.style.textAlign,
         currentItemStartArrowhead:
-          template?.appState?.currentItemStartArrowhead ??
+          templateAppstate.currentItemStartArrowhead ??
           this.style.startArrowHead,
         currentItemEndArrowhead:
-          template?.appState?.currentItemEndArrowhead ??
+          templateAppstate.currentItemEndArrowhead ??
           this.style.endArrowHead,
-        currentItemRoundness: //type StrokeRoundness = "round" | "sharp"
-          template?.appState?.currentItemLinearStrokeSharpness ?? //legacy compatibility
-          template?.appState?.currentItemStrokeSharpness ?? //legacy compatibility
-          template?.appState?.currentItemRoundness ??
+        currentItemRoundness:
+          templateAppstate.currentItemLinearStrokeSharpness ??
+          templateAppstate.currentItemStrokeSharpness ??
+          templateAppstate.currentItemRoundness ??
           this.style.roundness ? "round":"sharp",
-        gridSize: template?.appState?.gridSize ?? this.canvas.gridSize,
-        colorPalette: template?.appState?.colorPalette ?? this.colorPalette,
-        ...template?.appState?.frameRendering
-          ? {frameRendering: template.appState.frameRendering}
-          : {},
-        ...template?.appState?.objectsSnapModeEnabled
-          ? {objectsSnapModeEnabled: template.appState.objectsSnapModeEnabled}
-          : {},
+        gridSize: templateAppstate.gridSize ?? this.canvas.gridSize,
+        colorPalette: templateAppstate.colorPalette ?? this.colorPalette,
       },
       files: template?.files ?? {},
     };
@@ -1680,6 +1681,7 @@ export class ExcalidrawAutomate {
     );
 
     if(dimensions && !formatting?.width) {
+
       textElement.width = dimensions.width;
       textElement.height = dimensions.height;
       textElement.x = dimensions.x;

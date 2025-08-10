@@ -709,7 +709,7 @@ export class CommandManager {
         }
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
-          showFrameSettings(getEA(view));
+          showFrameSettings(view);
           return true;
         }
         return false;

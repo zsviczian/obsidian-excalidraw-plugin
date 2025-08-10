@@ -10,6 +10,8 @@ Features:
 - Exit Palm Guard mode with a single tap
 - Press the hotkey you configured for this script in Obsidian's Hotkey settings (e.g., ALT+X) to toggle UI visibility; if no hotkey is set, use the on-screen toggle button.
 
+![Palm Guard Script](https://youtu.be/A_udjVjgWN0)
+
 ```js
 */
 
