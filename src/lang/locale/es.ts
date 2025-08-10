@@ -419,7 +419,8 @@ FILENAME_HEAD: "Nombre de archivo",
   SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_DESC:
     "...incluso si el archivo tiene la clave frontmatter <b>excalidraw-open-md: true</b>.<br>" +
     "Cuando esta configuración está desactivada y el archivo está configurado para abrirse en Markdown por defecto, " +
-    "la vista previa al pasar el mouse mostrará el lado Markdown del documento.",
+    "la vista previa al pasar el mouse mostrará el lado Markdown del documento.<br>" +
+    "Nota: <b>excalidraw-open-md</b> es diferente de <b>excalidraw-embed-md</b>. Si <b>excalidraw-embed-md</b> está establecido en true, a vista previa al pasar el mouse siempre mostrará el lado Markdown, sin importar esta configuración. Para forzar la renderización de la imagen al incrustar, usa <code>![[drawing#^as-image]]</code> en tu archivo Markdown.",
   SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME: "Renderizar como imagen en el modo de lectura Markdown de un archivo de Excalidraw",
   SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC:
     "Cuando estás en modo de lectura Markdown (es decir, leyendo el reverso del bosquejo), ¿debe renderizarse el bosquejo de Excalidraw como una imagen? " +
@@ -458,6 +459,12 @@ FILENAME_HEAD: "Nombre de archivo",
   ZOOM_TO_FIT_MAX_LEVEL_NAME: "Nivel máximo de zoom para ajustar",
   ZOOM_TO_FIT_MAX_LEVEL_DESC:
     "Establece el nivel máximo al que el zoom para encajar agrandará el bosquejo. El mínimo es 0.5 (50%) y el máximo es 10 (1000%).",
+  ZOOM_STEP_NAME: "Incremento del zoom",
+  ZOOM_STEP_DESC: "Incremento del zoom (en puntos porcentuales) para acciones como el zoom con la rueda del ratón. Valores más pequeños dan un control más preciso, pero pueden requerir un desplazamiento excesivo. Predeterminado: 5%.",
+  ZOOM_MIN_NAME: "Zoom mínimo",
+  ZOOM_MIN_DESC: "Qué tanto puedes alejarte con el zoom (para que quepa más del bosquejo en la pantalla). Predeterminado: 10%. Históricamente, los valores por debajo del 10% eran inestables; bájalo con precaución y restablece a 10% si surgen problemas.",
+  ZOOM_MAX_NAME: "Zoom máximo",
+  ZOOM_MAX_DESC: "Límite superior del zoom. Predeterminado: 3000%. Por lo general, no es necesario cambiarlo; se incluye para ser exhaustivos.",
   PEN_HEAD: "Lápiz",
   GRID_HEAD: "Cuadrícula",
   GRID_DYNAMIC_COLOR_NAME: "Color de cuadrícula dinámica",
