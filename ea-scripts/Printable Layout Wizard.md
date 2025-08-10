@@ -227,7 +227,14 @@ const getSortedFrames = () => ea.getViewElements()
   // Add new page frame
   const addPage = async (direction, pageSize, orientation) => {
     selectedFrame = ea.getViewSelectedElements().find(el => el.type === "frame");
-    if (!selectedFrame) return;
+    if (!selectedFrame) {
+      const { activeLockedId } = ea.getExcalidrawAPI().getAppState();
+      if(activeLockedId) {
+        selectedFrame = ea.getViewElements().find(el=>el.id === activeLockedId && el.type === "frame");
+      }
+      if (!selectedFrame) return;
+    }
+    ea.viewUpdateScene({appState: {activeLockedId: null}});
     
     const { frames, nextPageNumber } = findExistingPages();
     
