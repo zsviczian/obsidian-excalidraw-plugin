@@ -26,6 +26,36 @@ I would love to include your contribution in the script library. If you have a s
 
 # List of available scripts
 
+## Editors Picks
+These are the scripts I use most often. I tried to order them by importance, but usefulness is situational—some days Crop Vintage Mask is as helpful as Deconstruct Selected Elements. I do deconstruct drawings daily; the entries lower in the Editors’ Picks list are still valuable, just needed less frequently.
+
+|    |     |
+|----|-----|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Deconstruct%20selected%20elements%20into%20new%20drawing.svg"/></div>|[[#Deconstruct selected elements into new drawing]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Slideshow.svg"/></div>|[[#Slideshow]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Shade%20Master.svg"/></div>|[[#Shade Master]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Palette%20loader.svg"/></div>|[[#Palette Loader]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Palm%20Guard.svg"/></div>|[[#Palm Guard]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Rename%20Image.svg"/></div>|[[#Rename Image]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Select%20Elements%20of%20Type.svg"/></div>|[[#Select Elements of Type]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Select%20Similar%20Elements.svg"/></div>|[[#Select Similar Elements]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Boolean%20Operations.svg"/></div>|[[#Boolean Operations]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Split%20Ellipse.svg"/></div>|[[#Split Ellipse]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Text%20to%20Path.svg"/></div>|[[#Text to Path]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Set%20Dimensions.svg"/></div>|[[#Set Dimensions]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Set%20Stroke%20Width%20of%20Selected%20Elements.svg"/></div>|[[#Set Stroke Width of Selected Elements]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Scribble%20Helper.svg"/></div>|[[#Scribble Helper]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Split%20text%20by%20lines.svg"/></div>|[[#Split text by lines]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Text%20Aura.svg"/></div>|[[#Text Aura]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Golden%20Ratio.svg"/></div>|[[#Golden Ratio]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Printable%20Layout%20Wizard.svg"/></div>|[[#Printable Layout Wizard]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Concatenate%20lines.svg"></div>|[[#Concatenate lines]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Repeat%20Elements.svg"/></div>|[[#Repeat Elements]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Set%20background%20color%20of%20unclosed%20line%20object%20by%20adding%20a%20shadow%20clone.svg"/></div>|[[#Set background color of unclosed line object by adding a shadow clone]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Excalidraw%20Writing%20Machine.svg"/></div>|[[#Excalidraw Writing Machine]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Convert%20freedraw%20to%20line.svg"/></div>|[[#Convert freedraw to line]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Crop%20Vintage%20Mask.svg"/></div>|[[#Crop Vintage Mask]]|
+
 ## Layout and Organization
 **Keywords**: Design, Placement, Arrangement, Structure, Formatting, Alignment
 
