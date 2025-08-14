@@ -1042,6 +1042,7 @@ export class ExcalidrawAutomate {
   * @param {boolean} [options.selectedOnly=false] - Whether to include only the selected elements in the SVG.
   * @param {boolean} [options.skipInliningFonts=false] - Whether to skip inlining fonts in the SVG.
   * @param {boolean} [options.embedScene=false] - Whether to embed the scene in the SVG.
+  * @param {ExcalidrawElement[]} [options.elementsOverride] - Optional override for the elements to include in the SVG. Primary to support the Printable Layout Wizard script
   * @returns {Promise<SVGSVGElement>} A promise that resolves to the SVG element.
  */
   async createViewSVG({
@@ -1052,6 +1053,7 @@ export class ExcalidrawAutomate {
     selectedOnly = false,
     skipInliningFonts = false,
     embedScene = false,
+    elementsOverride,
   } : {
     withBackground?: boolean,
     theme?: "light" | "dark",
@@ -1060,6 +1062,7 @@ export class ExcalidrawAutomate {
     selectedOnly?: boolean,
     skipInliningFonts?: boolean,
     embedScene?: boolean,
+    elementsOverride?: ExcalidrawElement[]
   }): Promise<SVGSVGElement> {
     if(!this.targetView || !this.targetView.file || !this.targetView._loaded) {
       console.log("No view loaded");
@@ -1068,6 +1071,9 @@ export class ExcalidrawAutomate {
     const view = this.targetView;
     const scene = this.targetView.getScene(selectedOnly);
 
+    if(elementsOverride) {
+      scene.elements = elementsOverride;
+    }
     const exportSettings: ExportSettings = {
       withBackground: view.getViewExportWithBackground(withBackground),
       withTheme: true,
@@ -3030,6 +3036,32 @@ export class ExcalidrawAutomate {
     isMask: boolean = false,
   ): ExportSettings {
     return { withBackground, withTheme, isMask };
+  };
+
+
+  /**
+   * Gets the elements within a specific area.
+   * @param elements - The elements to check.
+   * @param param1 - The area to check against.
+   * @returns The elements within the area.
+   */
+  getElementsInArea(
+    elements: NonDeletedExcalidrawElement[], 
+    {x, y, width, height}:{
+      x:number; y:number; width:number; height:number;
+    }
+  ):ExcalidrawElement[] {
+    return elements
+      .filter(el => {
+        if((el.type==="frame" && el.frameRole==="marker")) return false;
+        const {topX, topY, width:w, height:h} = this.getBoundingBox([el]);
+        const elLeft = topX;
+        const elTop = topY;
+        const elRight = topX + w;
+        const elBottom = topY + h;
+        // overlap exists if rectangles intersect
+        return !(elLeft >= x + width || elRight <= x || elTop >= y + height || elBottom <= y);
+      });
   };
 
   /**

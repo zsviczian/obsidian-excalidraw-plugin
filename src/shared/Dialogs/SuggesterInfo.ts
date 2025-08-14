@@ -612,6 +612,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "getElementsInArea",
+    code: "getElementsInArea(elements: ExcalidrawElement[], area: {x: number, y: number, width: number, height: number}): ExcalidrawElement[];",
+    desc: "Filter the elements and returns only those within the specific area.",
+    after: "",
+  },
+  {
     field: "getBoundingBox",
     code: "getBoundingBox(elements: ExcalidrawElement[]): {topX: number, topY: number, width: number, height: number,};",
     desc: "Gets the bounding box of elements. The bounding box is the box encapsulating all of the elements completely.",

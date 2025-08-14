@@ -2811,6 +2811,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             ...this.excalidrawData.selectedElementIds //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/609
               ? this.excalidrawData.selectedElementIds
               : {},
+            ...excalidrawData.appState.frameRendering && excalidrawData.appState.frameRendering.markerName === undefined
+              ? { frameRendering: {...excalidrawData.appState.frameRendering, markerName: true, markerEnabled: true } }
+              : {},
             zenModeEnabled,
             viewModeEnabled,
             linkOpacity: this.excalidrawData.getLinkOpacity(),
@@ -2840,6 +2843,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         elements: excalidrawData.elements,
         appState: {
           ...excalidrawData.appState,
+          ...excalidrawData.appState.frameRendering && excalidrawData.appState.frameRendering.markerName === undefined
+            ? { frameRendering: {...excalidrawData.appState.frameRendering, markerName: true, markerEnabled: true } }
+            : {},
           zenModeEnabled: om.zenModeEnabled,
           viewModeEnabled: excalidrawData.elements.length > 0 ? om.viewModeEnabled : false,
           linkOpacity: this.excalidrawData.getLinkOpacity(),
@@ -3657,6 +3663,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         currentItemStartArrowhead: st.currentItemStartArrowhead,
         currentItemEndArrowhead: st.currentItemEndArrowhead,
         currentItemArrowType: st.currentItemArrowType,
+        currentItemFrameRole: st.currentItemFrameRole,
         scrollX: st.scrollX,
         scrollY: st.scrollY,
         zoom: st.zoom,
@@ -4977,6 +4984,39 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           onClose
         ),
       ])
+
+      if(
+        !areElementsSelected &&
+        elements.some(el=>el.type === "frame" && el.frameRole === "marker")
+      ) {
+        const {frameRendering} = appState;
+        contextMenuActions.push([
+          renderContextMenuAction(
+            React,
+            frameRendering.markerEnabled
+            ? t("MARKER_FRAME_HIDE")
+            : t("MARKER_FRAME_SHOW"),
+            () => {
+              setTimeout(() => this.updateScene({appState: {frameRendering: {...frameRendering, markerEnabled: !frameRendering.markerEnabled}}, captureUpdate: CaptureUpdateAction.NEVER}));
+            },
+            onClose
+          ),
+        ]);
+        if(frameRendering.markerEnabled) {
+          contextMenuActions.push([
+            renderContextMenuAction(
+              React,
+              frameRendering.markerName
+              ? t("MARKER_FRAME_TITLE_HIDE")
+              : t("MARKER_FRAME_TITLE_SHOW"),
+              () => {
+                setTimeout(() => this.updateScene({appState: {frameRendering: {...frameRendering, markerName: !frameRendering.markerName}}, captureUpdate: CaptureUpdateAction.NEVER}));
+              },
+              onClose
+            ),
+          ]);
+        }
+      }
     }
 
     if(contextMenuActions.length === 0) return;
@@ -5908,6 +5948,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
     const frames = elements.filter(el=>el.type==="frame");
     const hasFrame = frames.length === 1;
+    const hasMarkerFrame = hasFrame && frames[0].frameRole === "marker";
     const hasGroup = elements.some(el=>el.groupIds && el.groupIds.length>0);
 
     let button = {
@@ -5925,7 +5966,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           button.area,
           button.link,
           ...hasGroup ? [button.group] : [],
-          ...hasFrame ? [button.frame, button.clippedframe] : [],
+          ...hasFrame && !hasMarkerFrame ? [button.clippedframe] : [],
+          ...hasFrame ? [button.frame] : [],
         ];
         break;  
       case "group=":
@@ -5933,12 +5975,14 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           ...hasGroup ? [button.group] : [],
           button.link,
           button.area,
-          ...hasFrame ? [button.frame, button.clippedframe] : [],
+          ...hasFrame && !hasMarkerFrame ? [button.clippedframe] : [],
+          ...hasFrame ? [button.frame] : [],
         ];
         break;
       case "frame=":
         buttons = [
-          ...hasFrame ? [button.frame, button.clippedframe] : [],
+          ...hasFrame && !hasMarkerFrame ? [button.clippedframe] : [],
+          ...hasFrame ? [button.frame] : [],
           ...hasGroup ? [button.group] : [],
           button.link,
           button.area,
@@ -5946,7 +5990,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         break;
       case "clippedframe=":
         buttons = [
-          ...hasFrame ? [button.clippedframe, button.frame] : [],
+          ...hasFrame && !hasMarkerFrame ? [button.clippedframe] : [],
+          ...hasFrame ? [button.frame] : [],
           ...hasGroup ? [button.group] : [],
           button.link,
           button.area,
@@ -5957,7 +6002,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           {caption: "Link", action:()=>{prefix="";return}},
           {caption: "Area", action:()=>{prefix="area="; return;}},
           {caption: "Group", action:()=>{prefix="group="; return;}},
-          ...hasFrame ? [button.frame, button.clippedframe] : [],
+          ...hasFrame && !hasMarkerFrame ? [button.clippedframe] : [],
+          ...hasFrame ? [button.frame] : [],
         ]
     }
 

@@ -280,10 +280,17 @@ export async function getTemplate(
       }
     }
     if(filenameParts.hasFrameref || filenameParts.hasClippedFrameref) {
-      const el = getFrameBasedOnFrameNameOrId(filenameParts.blockref,scene.elements);     
-      
+      const el = getFrameBasedOnFrameNameOrId(filenameParts.blockref,scene.elements);
       if(el) {
-        groupElements = plugin.ea.getElementsInFrame(el,scene.elements, filenameParts.hasClippedFrameref);
+        groupElements = el.frameRole === "marker"
+        ? plugin.ea.getElementsInArea(scene.elements, el).concat(el)
+        : plugin.ea.getElementsInFrame(el,scene.elements, filenameParts.hasClippedFrameref);
+      }
+    }
+    if(filenameParts.hasArearef) {
+      const el=scene.elements.find((el: ExcalidrawElement)=>el.id===filenameParts.blockref);
+      if(el) {
+        groupElements = plugin.ea.getElementsInArea(scene.elements, el).concat(el);
       }
     }
 
@@ -551,13 +558,15 @@ export async function createSVG(
   if (withTheme && theme === "dark") addFilterToForeignObjects(svg);
 
   if(
-    !(filenameParts.hasGroupref || filenameParts.hasFrameref || filenameParts.hasClippedFrameref) && 
+    !(filenameParts.hasGroupref || filenameParts.hasClippedFrameref) && 
     (filenameParts.hasBlockref || filenameParts.hasSectionref)
   ) {
     let el = filenameParts.hasSectionref
       ? getTextElementsMatchingQuery(elements,["# "+filenameParts.sectionref],true)
       : elements.filter((el: ExcalidrawElement)=>el.id===filenameParts.blockref);
-    if(el.length>0) {
+    const isNonMarkerFrameRef = filenameParts.hasFrameref && el.length === 1 && el[0].type === "frame" && el[0].frameRole !== "marker";
+
+    if(el.length>0 && !isNonMarkerFrameRef) {
       const containerId = el[0].containerId;
       if(containerId) {
         el = el.concat(elements.filter((el: ExcalidrawElement)=>el.id === containerId));

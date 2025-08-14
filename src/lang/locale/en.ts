@@ -58,6 +58,10 @@ export default {
   NEW_IN_POPOUT_WINDOW_EMBED: "Create new drawing - IN A POPOUT WINDOW - and embed into active document",
   TOGGLE_LOCK: "Toggle Text Element between edit RAW and PREVIEW",
   DELETE_FILE: "Delete selected image or Markdown file from Obsidian Vault",
+  MARKER_FRAME_SHOW: "Show Marker Frames",
+  MARKER_FRAME_HIDE: "Hide Marker Frames",
+  MARKER_FRAME_TITLE_SHOW: "Show Marker Frame Titles",
+  MARKER_FRAME_TITLE_HIDE: "Hide Marker Frame Titles",
   COPY_ELEMENT_LINK: "Copy [[link]] for selected element(s)",
   COPY_DRAWING_LINK: "Copy ![[embed link]] for this drawing",
   INSERT_LINK_TO_ELEMENT:

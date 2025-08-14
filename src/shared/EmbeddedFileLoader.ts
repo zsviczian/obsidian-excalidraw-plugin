@@ -608,7 +608,7 @@ export class EmbeddedFilesLoader {
       return {
         mimeType,
         fileId: await generateIdFromFile(
-          isHyperLink || isPDF || isExcalidrawFile ? (new TextEncoder()).encode(dataURL as string) : ab,
+          isHyperLink || isPDF || isExcalidrawFile ? (new TextEncoder()).encode(dataURL as string).buffer : ab,
           inFile instanceof EmbeddedFile ? inFile.filenameparts?.linkpartReference : undefined
         ),
         dataURL,
@@ -1215,11 +1215,14 @@ export const generateIdFromFile = async (file: ArrayBuffer, key?: string): Promi
     }
 
     // Hash the combined data (file and key, if provided)
-    const hashBuffer = await window.crypto.subtle.digest("SHA-1", dataToHash);
+    // Ensure we pass an ArrayBuffer (not ArrayBufferLike) to subtle.digest
+    const buffer: ArrayBuffer = dataToHash.buffer.slice(
+      dataToHash.byteOffset,
+      dataToHash.byteOffset + dataToHash.byteLength
+    ) as ArrayBuffer;
+    const hashBuffer = await window.crypto.subtle.digest("SHA-1", buffer);
     id =
-      // Convert buffer to byte array
       Array.from(new Uint8Array(hashBuffer))
-        // Convert to hex string
         .map((byte) => byte.toString(16).padStart(2, "0"))
         .join("") as FileId;
   } catch (error) {
