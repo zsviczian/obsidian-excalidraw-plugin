@@ -1,5 +1,5 @@
 /*
-
+opposed by::
 Export Excalidraw to PDF Pages: Define printable page areas using frames, then export each frame as a separate page in a multi-page PDF. Perfect for turning your Excalidraw drawings into printable notes, handouts, or booklets. Supports standard and custom page sizes, margins, and easy frame arrangement.
 
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-layout-wizard-01.png)
@@ -69,17 +69,15 @@ You can also access script settings at the bottom of Excalidraw Plugin settings.
 
 // Enable frame rendering
 const st = ea.getExcalidrawAPI().getAppState();
-let {enabled, clip, name, outline, printFrameName, printFrameOutline} = st.frameRendering;
-if(!enabled || !name || !outline || !printFrameOutline || !printFrameName) {
+const {enabled, clip, name, outline} = st.frameRendering;
+if(!enabled || clip || !name || !outline) {
   ea.viewUpdateScene({
     appState: {
       frameRendering: {
         enabled: true,
-        clip: clip,
+        clip: false,
         name: true,
-        outline: true,
-        printFrameName: true,
-        printFrameOutline: true
+        outline: true
       }
     }
   });
@@ -112,7 +110,6 @@ const LOCK_FRAME = "Lock frame after it is created";
 const SHOULD_ZOOM = "Should zoom after adding page";
 const SHOULD_CLOSE = "Should close after adding page";
 const PRINT_EMPTY = "Print empty pages";
-const ROTATE_ON_ADD = "Rotate added page 90°"; // NEW
 
 // Set default values on first run
 if (!settings[PAGE_SIZE]) {
@@ -149,7 +146,7 @@ if(!settings[PRINT_EMPTY]) {
 }
 
 const getSortedFrames = () => ea.getViewElements()
-    .filter(el => el.type === "frame" && el.customData?.printFrame)
+    .filter(el => el.type === "frame")
     .sort((a, b) => {
       const nameA = a.name || "";
       const nameB = b.name || "";
@@ -184,8 +181,8 @@ const getSortedFrames = () => ea.getViewElements()
   };
 
   // Check if there are frames in the scene and if a frame is selected
-  let existingFrames = ea.getViewElements().filter(el => el.type === "frame" && el.customData?.printFrame);
-  let selectedFrame = ea.getViewSelectedElements().find(el => el.type === "frame" && el.customData?.printFrame);
+  let existingFrames = ea.getViewElements().filter(el => el.type === "frame");
+  let selectedFrame = ea.getViewSelectedElements().find(el => el.type === "frame");
   const hasFrames = existingFrames.length > 0;
   if(hasFrames && !selectedFrame) {
     if(st.activeLockedId && existingFrames.find(f=>f.id === st.activeLockedId)) {
@@ -194,7 +191,7 @@ const getSortedFrames = () => ea.getViewElements()
       ea.selectElementsInView([selectedFrame]);
     } else {
       findExistingPages(true);
-      selectedFrame = ea.getViewSelectedElements().find(el => el.type === "frame" && el.customData?.printFrame);
+      selectedFrame = ea.getViewSelectedElements().find(el => el.type === "frame");
     }
   }
 
@@ -204,15 +201,6 @@ const getSortedFrames = () => ea.getViewElements()
   let shouldClose = settings[SHOULD_CLOSE].value;
   let shouldZoom = settings[SHOULD_ZOOM].value;
   let printEmptyPages = settings[PRINT_EMPTY].value;
-
-  // rotation is now a temporary UI state controlled by the center button
-  let rotateOnAdd = false;
-  let centerRotateBtn = null;
-  const setRotateBtnActive = (active) => {
-    if (!centerRotateBtn) return;
-    centerRotateBtn.classList.toggle("is-accent", active);
-    centerRotateBtn.setAttribute("aria-pressed", active ? "true" : "false");
-  };
 
   // Show notice if there are frames but none selected
   if (hasFrames && !hasSelectedFrame) {
@@ -254,11 +242,11 @@ const getSortedFrames = () => ea.getViewElements()
 
   // Add new page frame
   const addPage = async (direction, pageSize, orientation) => {
-    selectedFrame = ea.getViewSelectedElements().find(el => el.type === "frame" && el.customData?.printFrame);
+    selectedFrame = ea.getViewSelectedElements().find(el => el.type === "frame");
     if (!selectedFrame) {
       const { activeLockedId } = ea.getExcalidrawAPI().getAppState();
       if(activeLockedId) {
-        selectedFrame = ea.getViewElements().find(el=>el.id === activeLockedId && el.type === "frame"  && el.customData?.printFrame);
+        selectedFrame = ea.getViewElements().find(el=>el.id === activeLockedId && el.type === "frame");
       }
       if (!selectedFrame) return;
     }
@@ -266,10 +254,10 @@ const getSortedFrames = () => ea.getViewElements()
     
     const { frames, nextPageNumber } = findExistingPages();
     
-    // Get dimensions from selected frame, support optional rotation
+    // Get dimensions from selected frame
     const dimensions = {
-      width: rotateOnAdd ? selectedFrame.height : selectedFrame.width,
-      height: rotateOnAdd ? selectedFrame.width : selectedFrame.height
+      width: selectedFrame.width,
+      height: selectedFrame.height
     };
     
     // Format page number with leading zero
@@ -298,16 +286,11 @@ const getSortedFrames = () => ea.getViewElements()
         break;
     }
       
-    const added = await addFrameElement(x, y, dimensions.width, dimensions.height, pageName);
-    // reset the rotate toggle after adding the frame
-    rotateOnAdd = false;
-    setRotateBtnActive(false);
-    return added;
+    return await addFrameElement(x, y, dimensions.width, dimensions.height, pageName);
   };
 
   addFrameElement = async (x, y, width, height, pageName, repositionToCursor = false) => {
     const frameId = ea.addFrame(x, y, width, height, pageName);
-    ea.addAppendUpdateCustomData(frameId, {printFrame: true});
     if(lockFrame) {
       ea.getElement(frameId).locked = true;
     }
@@ -346,7 +329,7 @@ const getSortedFrames = () => ea.getViewElements()
   // NEW: detect if any non-frame element overlaps the given area
   const hasElementsInArea = ({top, left, bottom, right}) => {
     return ea.getViewElements()
-      .filter(el => !el.customData?.printFrame)
+      .filter(el => el.type !== "frame")
       .some(el => {
         const {topX, topY, width, height} = ea.getBoundingBox([el]);
         const elLeft = topX;
@@ -358,6 +341,7 @@ const getSortedFrames = () => ea.getViewElements()
       });
   };
 
+  // Check if all frames have the same size
   const checkFrameSizes = (frames) => {
     if (frames.length <= 1) return true;
     
@@ -370,6 +354,7 @@ const getSortedFrames = () => ea.getViewElements()
     );
   };
 
+  // Print frames to PDF
   const printToPDF = async (marginSize) => {  
     const margin = MARGINS[marginSize] || 0;  
     
@@ -386,6 +371,12 @@ const getSortedFrames = () => ea.getViewElements()
       new Notice("No frames found to print");
       return;
     }
+    
+    // Check if all frames have the same size
+    if (!checkFrameSizes(frames)) {
+      new Notice("Only same sized pages are supported currently", 7000);
+      return;
+    }
 
     // Create a notice during processing
     const notice = new Notice("Preparing PDF, please wait...", 0);
@@ -393,28 +384,15 @@ const getSortedFrames = () => ea.getViewElements()
     // Create SVGs for each frame
     const svgPages = [];
     
-    let placeholderRects = [];
-    ea.clear();
-    for (const frame of frames) {
-	    ea.style.opacity = 20;
-	    ea.style.roughness = 0;
-	    ea.style.fillStyle = "solid";
-	    ea.style.backgroundColor = "black"
-	    ea.style.strokeWidth = 0.1;
-	    ea.addRect(frame.x, frame.y, frame.width, frame.height);
-    }
-    
     const svgScene = await ea.createViewSVG({
       withBackground: true,
       theme: st.theme,
-      //frameRendering: { enabled: false, name: false, outline: false, clip: false },
+      frameRendering: { enabled: false, name: false, outline: false, clip: false },
       padding: 0,
       selectedOnly: false,
       skipInliningFonts: false,
       embedScene: false,
-      elementsOverride: ea.getViewElements().concat(ea.getElements()),
     });
-    ea.clear();
     
     for (const frame of frames) {
       // NEW: skip empty frames unless user opted to print them
@@ -457,8 +435,7 @@ const getSortedFrames = () => ea.getViewElements()
       SVG: svgPages,
       scale: { fitToPage: true },
       pageProps: {
-        dimensions: {},
-        //dimensions: { width, height },
+        dimensions: { width, height },
         backgroundColor: "#ffffff",
         margin: { 
           left: margin, 
@@ -480,15 +457,11 @@ const getSortedFrames = () => ea.getViewElements()
   modal.titleEl.setText("Page Management");
   modal.titleEl.style.textAlign = "center";
 
+  // Handle save settings on modal close
   modal.onClose = () => {
     if (dirty) {
       ea.setScriptSettings(settings);
     }
-    ea.viewUpdateScene({
-      appState: {
-        frameRendering: {enabled, clip, name, outline, printFrameName, printFrameOutline}
-      }
-    });   
   };
 
   // Create modal content
@@ -499,12 +472,13 @@ const getSortedFrames = () => ea.getViewElements()
       }
     });
     
-    // Help section
+    // Add help section at the top
     const helpDiv = container.createDiv({
       attr: {
         style: "margin-bottom: 10px;"
       }
     });
+    
     helpDiv.createEl("details", {}, (details) => {
       details.createEl("summary", { 
         text: "Help & Information",
@@ -521,139 +495,143 @@ const getSortedFrames = () => ea.getViewElements()
         ea.obsidian.MarkdownRenderer.render(ea.plugin.app, HELP_TEXT, div, "", ea.plugin)
       });
     });
-
-    // Tabs (show only when frames exist)
-    let framesTabEl, printingTabEl, tabsHeaderEl, marginDropdown;
-    if (hasFrames) {
-      tabsHeaderEl = container.createDiv({
-        attr: { style: "display:flex; gap:8px; border-bottom:1px solid var(--background-modifier-border); padding-bottom:0;" }
-      });
-      tabsHeaderEl.addClass("tabs-header"); // NEW
-
-      const framesTabBtn = tabsHeaderEl.createEl("button", {
-        text: "Frames",
-        attr: { style: "padding:8px 12px; cursor:pointer;" }
-      });
-      framesTabBtn.addClass("tab-btn"); // NEW
-
-      const printingTabBtn = tabsHeaderEl.createEl("button", {
-        text: "Printing",
-        attr: { style: "padding:8px 12px; cursor:pointer;" }
-      });
-      printingTabBtn.addClass("tab-btn"); // NEW
-
-      const tabsBody = container.createDiv();
-      tabsBody.addClass("tab-panels"); // NEW
-
-      framesTabEl = tabsBody.createDiv({ attr: { style: "display:block;" } });
-      framesTabEl.addClass("tab-panel"); // NEW
-
-      printingTabEl = tabsBody.createDiv({ attr: { style: "display:none;" } });
-      printingTabEl.addClass("tab-panel"); // NEW
-
-      const activate = (tab) => {
-        if (tab === "frames") {
-          framesTabEl.style.display = "";
-          printingTabEl.style.display = "none";
-          framesTabBtn.classList.add("is-active");
-          printingTabBtn.classList.remove("is-active");
-        } else {
-          framesTabEl.style.display = "none";
-          printingTabEl.style.display = "";
-          framesTabBtn.classList.remove("is-active");
-          printingTabBtn.classList.add("is-active");
+    
+    let pageSizeDropdown, orientationDropdown, marginDropdown;
+    
+    // Settings section - only show for first frame creation
+    if (!hasFrames) {
+      const settingsContainer = container.createDiv({
+        attr: {
+          style: "display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center;"
         }
-      };
-      framesTabBtn.addEventListener("click", () => activate("frames"));
-      printingTabBtn.addEventListener("click", () => activate("printing"));
-      activate("frames");
-    } else {
-      // No frames yet, only frames tab content
-      framesTabEl = container.createDiv();
+      });
+      
+      // Page size dropdown
+      settingsContainer.createEl("label", { text: "Page Size:" });
+      pageSizeDropdown = settingsContainer.createEl("select", {
+        cls: "dropdown",
+        attr: { style: "width: 100%;" }
+      });
+      
+      PAGE_SIZES.forEach(size => {
+        pageSizeDropdown.createEl("option", { text: size, value: size });
+      });
+      pageSizeDropdown.value = settings[PAGE_SIZE].value;
+      
+      // Orientation dropdown
+      settingsContainer.createEl("label", { text: "Orientation:" });
+      orientationDropdown = settingsContainer.createEl("select", {
+        cls: "dropdown",
+        attr: { style: "width: 100%;" }
+      });
+      
+      PAGE_ORIENTATIONS.forEach(orientation => {
+        orientationDropdown.createEl("option", { text: orientation, value: orientation });
+      });
+      orientationDropdown.value = settings[ORIENTATION].value;
+    }
+    
+    // Show margin settings only if frames exist
+    if (hasFrames) {
+      const marginContainer = container.createDiv({
+        attr: {
+          style: "display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center;"
+        }
+      });
+      
+      // Margin dropdown (for printing)
+      marginContainer.createEl("label", { text: "Print Margin:" });
+      marginDropdown = marginContainer.createEl("select", {
+        cls: "dropdown",
+        attr: { style: "width: 100%;" }
+      });
+      
+      Object.keys(MARGINS).forEach(margin => {
+        marginDropdown.createEl("option", { text: margin, value: margin });
+      });
+      marginDropdown.value = settings[MARGIN].value;
     }
 
-    // FRAMES TAB CONTENT
-    // When no frames yet: initial size/orientation inputs and Create First Frame button
-    if (!hasFrames) {
-      const settingsContainer = framesTabEl.createDiv({
-        attr: {
-          // four columns: label + input, label + input
-          style: "display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 10px; align-items: center;"
-        }
-      });
-      // Page Size
-      settingsContainer.createEl("label", { text: "Page Size:" });
-      const pageSizeDropdown = settingsContainer.createEl("select", {
-        cls: "dropdown",
-        attr: { style: "width: 100%;" }
-      });
-      PAGE_SIZES.forEach(size => pageSizeDropdown.createEl("option", { text: size, value: size }));
-      pageSizeDropdown.value = settings[PAGE_SIZE].value;
+    // Add checkboxes for zoom and modal behavior only when frames exist
+    const optionsContainer = container.createDiv({
+      attr: {
+        style: "margin-top: 10px;"
+      }
+    });
 
-      // Orientation
-      settingsContainer.createEl("label", { text: "Orientation:" });
-      const orientationDropdown = settingsContainer.createEl("select", {
-        cls: "dropdown",
-        attr: { style: "width: 100%;" }
-      });
-      PAGE_ORIENTATIONS.forEach(orientation => orientationDropdown.createEl("option", { text: orientation, value: orientation }));
-      orientationDropdown.value = settings[ORIENTATION].value;
-
-      // Frame options (also useful before first frame)
-      const optionsContainer = framesTabEl.createDiv({ attr: { style: "margin-top: 10px;" } });
-      new ea.obsidian.Setting(optionsContainer)
-        .setName("Lock")
-        .setDesc("Lock the new frame element after it is created.")
-        .addToggle(toggle => {
-          toggle.setValue(lockFrame).onChange(value => {
+    new ea.obsidian.Setting(optionsContainer)
+      .setName("Lock")
+      .setDesc("Lock the new frame element after it is created.")
+      .addToggle(toggle => {
+        toggle.setValue(lockFrame)
+          .onChange(value => {
             lockFrame = value;
             if (settings[LOCK_FRAME].value !== value) {
-              settings[LOCK_FRAME].value = value; dirty = true;
+              settings[LOCK_FRAME].value = value;
+              dirty = true;
             }
           });
-        });
+      });
 
-      new ea.obsidian.Setting(optionsContainer)
-        .setName("Zoom to new frame")
-        .setDesc("Automatically zoom to the newly created frame")
-        .addToggle(toggle => {
-          toggle.setValue(shouldZoom).onChange(value => {
+    // Zoom to added frame checkbox
+    new ea.obsidian.Setting(optionsContainer)
+      .setName("Zoom to new frame")
+      .setDesc("Automatically zoom to the newly created frame")
+      .addToggle(toggle => {
+        toggle.setValue(shouldZoom)
+          .onChange(value => {
             shouldZoom = value;
             if (settings[SHOULD_ZOOM].value !== value) {
-              settings[SHOULD_ZOOM].value = value; dirty = true;
+              settings[SHOULD_ZOOM].value = value;
+              dirty = true;
             }
           });
-        });
-
-      new ea.obsidian.Setting(optionsContainer)
-        .setName("Close after adding")
-        .setDesc("Close this dialog after adding a new frame")
-        .addToggle(toggle => {
-          toggle.setValue(shouldClose).onChange(value => {
+      });
+    
+    // Close after adding checkbox
+    new ea.obsidian.Setting(optionsContainer)
+      .setName("Close after adding")
+      .setDesc("Close this dialog after adding a new frame")
+      .addToggle(toggle => {
+        toggle.setValue(shouldClose)
+          .onChange(value => {
             shouldClose = value;
             if (settings[SHOULD_CLOSE].value !== value) {
-              settings[SHOULD_CLOSE].value = value; dirty = true;
+              settings[SHOULD_CLOSE].value = value;
+              dirty = true;
             }
           });
-        });
-
-      new ea.obsidian.Setting(optionsContainer)
-        .setName("Show Print-Frame Title")
-        .setDesc("This setting will only take effect when Layout Wizard is closed")
-        .addToggle(toggle => { toggle.setValue(printFrameName).onChange(value => { printFrameName = value; }); });
-
-      new ea.obsidian.Setting(optionsContainer)
-        .setName("Show Print-Frame Outline")
-        .setDesc("This setting will only take effect when Layout Wizard is closed")
-        .addToggle(toggle => { toggle.setValue(printFrameOutline).onChange(value => { printFrameOutline = value; }); });
-
-      // Create First Frame button
-      const buttonContainer = framesTabEl.createDiv({
-        attr: { style: "display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px;" }
       });
+    
+    // NEW toggle: Print empty pages
+    new ea.obsidian.Setting(optionsContainer)
+      .setName("Print empty pages")
+      .setDesc("Include frames with no content in the PDF")
+      .addToggle(toggle => {
+        toggle.setValue(printEmptyPages)
+          .onChange(value => {
+            printEmptyPages = value;
+            if(settings[PRINT_EMPTY].value !== value) {
+              settings[PRINT_EMPTY].value = value;
+              dirty = true;
+            }
+          });
+      });
+
+    // Buttons section
+    const buttonContainer = container.createDiv({
+      attr: {
+        style: "display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px;"
+      }
+    });
+    
+    if (!hasFrames) {
+      // First frame creation button (centered)
       const createFirstBtn = buttonContainer.createEl("button", {
         cls: "page-btn",
-        attr: { style: "height: 40px; background-color: var(--interactive-accent); color: var(--text-on-accent);" }
+        attr: { 
+          style: "grid-column: 1 / span 3; height: 40px; background-color: var(--interactive-accent); color: var(--text-on-accent);" 
+        }
       });
       createFirstBtn.textContent = "Create First Frame";
       createFirstBtn.addEventListener("click", async () => {
@@ -663,144 +641,75 @@ const getSortedFrames = () => ea.getViewElements()
         shouldClose = tmpShouldClose;
         if(!shouldClose) run();
       });
-
-    } else {
-      // hasFrames: frame-management options + arrow buttons
-      const optionsContainer = framesTabEl.createDiv({ attr: { style: "margin-top: 10px;" } });
-
-      new ea.obsidian.Setting(optionsContainer)
-        .setName("Lock")
-        .setDesc("Lock the new frame element after it is created.")
-        .addToggle(toggle => {
-          toggle.setValue(lockFrame).onChange(value => {
-            lockFrame = value;
-            if (settings[LOCK_FRAME].value !== value) {
-              settings[LOCK_FRAME].value = value; dirty = true;
-            }
-          });
-        });
-
-      new ea.obsidian.Setting(optionsContainer)
-        .setName("Zoom to new frame")
-        .setDesc("Automatically zoom to the newly created frame")
-        .addToggle(toggle => {
-          toggle.setValue(shouldZoom).onChange(value => {
-            shouldZoom = value;
-            if (settings[SHOULD_ZOOM].value !== value) {
-              settings[SHOULD_ZOOM].value = value; dirty = true;
-            }
-          });
-        });
-
-      new ea.obsidian.Setting(optionsContainer)
-        .setName("Close after adding")
-        .setDesc("Close this dialog after adding a new frame")
-        .addToggle(toggle => {
-          toggle.setValue(shouldClose).onChange(value => {
-            shouldClose = value;
-            if (settings[SHOULD_CLOSE].value !== value) {
-              settings[SHOULD_CLOSE].value = value; dirty = true;
-            }
-          });
-        });
-
-      new ea.obsidian.Setting(optionsContainer)
-        .setName("Show Print-Frame Title")
-        .setDesc("This setting will only take effect when Layout Wizard is closed")
-        .addToggle(toggle => { toggle.setValue(printFrameName).onChange(value => { printFrameName = value; }); });
-
-      new ea.obsidian.Setting(optionsContainer)
-        .setName("Show Print-Frame Outline")
-        .setDesc("This setting will only take effect when Layout Wizard is closed")
-        .addToggle(toggle => { toggle.setValue(printFrameOutline).onChange(value => { printFrameOutline = value; }); });
-
-      // Arrow buttons with center rotate toggle
-      const buttonContainer = framesTabEl.createDiv({
-        attr: {
-          style: "display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px;"
-        }
-      });
-
+    } else if (hasSelectedFrame) {
+      // Only show navigation buttons and print when a frame is selected
+      
+      // Up button (in middle of top row)
       const upBtn = buttonContainer.createEl("button", {
         cls: "page-btn",
-        attr: { style: "grid-column: 2; grid-row: 1; height: 40px;" }
+        attr: { 
+          style: "grid-column: 2; grid-row: 1; height: 40px;" 
+        }
       });
       upBtn.innerHTML = ea.obsidian.getIcon("arrow-big-up").outerHTML;
-      upBtn.addEventListener("click", async () => { await addPage("up"); });
-
-      buttonContainer.createDiv({ attr: { style: "grid-column: 3; grid-row: 1;" } });
-
+      upBtn.addEventListener("click", async () => {
+        await addPage("up");
+      });
+      
+      // Add empty space
+      buttonContainer.createDiv({
+        attr: { style: "grid-column: 3; grid-row: 1;" }
+      });
+      
+      // Left button
       const leftBtn = buttonContainer.createEl("button", {
         cls: "page-btn",
         attr: { style: "grid-column: 1; grid-row: 2; height: 40px;" }
       });
       leftBtn.innerHTML = ea.obsidian.getIcon("arrow-big-left").outerHTML;
-      leftBtn.addEventListener("click", async () => { await addPage("left"); });
-
-      // Center toggle: Rotate next page
-      centerRotateBtn = buttonContainer.createEl("button", {
+      leftBtn.addEventListener("click", async () => {
+        await addPage("left");
+      });
+      
+      // Print button (center)
+      const printBtn = buttonContainer.createEl("button", {
         cls: "page-btn",
-        attr: { style: "grid-column: 2; grid-row: 2; height: 40px;" }
+        attr: { 
+          style: "grid-column: 2; grid-row: 2; height: 40px; background-color: var(--interactive-accent);" 
+        }
       });
-      centerRotateBtn.textContent = "Rotate next page";
-      centerRotateBtn.addEventListener("click", () => {
-        rotateOnAdd = !rotateOnAdd;
-        setRotateBtnActive(rotateOnAdd);
+      printBtn.innerHTML = ea.obsidian.getIcon("printer").outerHTML;
+      printBtn.addEventListener("click", async () => {
+        await printToPDF(marginDropdown.value);
       });
-      setRotateBtnActive(rotateOnAdd);
-
+      
+      // Right button
       const rightBtn = buttonContainer.createEl("button", {
         cls: "page-btn",
         attr: { style: "grid-column: 3; grid-row: 2; height: 40px;" }
       });
       rightBtn.innerHTML = ea.obsidian.getIcon("arrow-big-right").outerHTML;
-      rightBtn.addEventListener("click", async () => { await addPage("right"); });
-
+      rightBtn.addEventListener("click", async () => {
+        await addPage("right");
+      });
+      
+      // Down button (in middle of bottom row)
       const downBtn = buttonContainer.createEl("button", {
         cls: "page-btn",
         attr: { style: "grid-column: 2; grid-row: 3; height: 40px;" }
       });
       downBtn.innerHTML = ea.obsidian.getIcon("arrow-big-down").outerHTML;
-      downBtn.addEventListener("click", async () => { await addPage("down"); });
-
-      buttonContainer.createDiv({ attr: { style: "grid-column: 1; grid-row: 3;" } });
-    }
-
-    // PRINTING TAB CONTENT (only when hasFrames)
-    if (hasFrames && printingTabEl) {
-      const marginContainer = printingTabEl.createDiv({
-        attr: {
-          style: "display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; margin-top: 6px;"
-        }
+      downBtn.addEventListener("click", async () => {
+        await addPage("down");
       });
-      marginContainer.createEl("label", { text: "Print Margin:" });
-      marginDropdown = marginContainer.createEl("select", { cls: "dropdown", attr: { style: "width: 100%;" } });
-      Object.keys(MARGINS).forEach(margin => marginDropdown.createEl("option", { text: margin, value: margin }));
-      marginDropdown.value = settings[MARGIN].value;
-
-      const printingOptions = printingTabEl.createDiv({ attr: { style: "margin-top: 10px;" } });
-      new ea.obsidian.Setting(printingOptions)
-        .setName(PRINT_EMPTY)
-        .setDesc("Include frames with no content in the PDF")
-        .addToggle(toggle => {
-          toggle.setValue(printEmptyPages).onChange(value => {
-            printEmptyPages = value;
-            if(settings[PRINT_EMPTY].value !== value) {
-              settings[PRINT_EMPTY].value = value; dirty = true;
-            }
-          });
-        });
-
-      const printBtnRow = printingTabEl.createDiv({ attr: { style: "margin-top: 10px; display:flex; justify-content:flex-start;" } });
-      const printBtn = printBtnRow.createEl("button", {
-        cls: "page-btn",
-        attr: { style: "height: 40px; background-color: var(--interactive-accent);" }
+      
+      // Add empty space
+      buttonContainer.createDiv({
+        attr: { style: "grid-column: 1; grid-row: 3;" }
       });
-      printBtn.innerHTML = ea.obsidian.getIcon("printer").outerHTML;
-      printBtn.addEventListener("click", async () => { await printToPDF(marginDropdown.value); });
     }
-
-    // CSS
+    
+    // Add CSS
     div.createEl("style", { 
       text: `
         .page-btn {
@@ -820,51 +729,6 @@ const getSortedFrames = () => ea.getViewElements()
           border-radius: 4px;
           border: 1px solid var(--background-modifier-border);
           padding: 0 10px;
-        }
-        .is-active {
-          background-color: var(--background-modifier-hover);
-          border-radius: 4px;
-        }
-        /* Tabs styling - NEW */
-        .tabs-header {
-          gap: 8px;
-          border-bottom: 1px solid var(--background-modifier-border);
-        }
-        .tabs-header .tab-btn {
-          background: var(--background-primary);
-          color: var(--text-normal);
-          border: 1px solid var(--background-modifier-border);
-          border-bottom: none;
-          border-top-left-radius: 6px;
-          border-top-right-radius: 6px;
-          border-bottom-left-radius: 0;
-          border-bottom-right-radius: 0;
-          padding: 8px 12px;
-          margin-bottom: -1px; /* sit on top of the panel border */
-        }
-        .tabs-header .tab-btn:hover {
-          background: var(--background-modifier-hover);
-        }
-        .tabs-header .tab-btn.is-active {
-          background: var(--background-secondary);
-          color: var(--text-normal);
-          position: relative;
-          z-index: 2;
-        }
-        .tab-panels {
-          border: 1px solid var(--background-modifier-border);
-          border-radius: 0 6px 6px 6px; /* merge with active tab */
-          padding: 12px;
-          background: var(--background-primary);
-        }
-
-        /* accent styling for center rotate toggle when active */
-        .page-btn.is-accent {
-          background-color: var(--interactive-accent);
-          color: var(--text-on-accent);
-        }
-        .page-btn.is-accent:hover {
-          background-color: var(--interactive-accent-hover, var(--interactive-accent));
         }
       `
     });
