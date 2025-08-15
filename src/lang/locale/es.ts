@@ -440,7 +440,7 @@ FILENAME_HEAD: "Nombre de archivo",
     "entran en conflicto con la configuración de atajos de teclado de Obsidian. Las combinaciones de atajos de teclado que agregues a continuación anularán la configuración de atajos de teclado de Obsidian mientras usas Excalidraw. Por lo tanto, " +
     `puedes agregar <code>${labelCTRL()}+G</code> si quieres que el comportamiento predeterminado sea Agrupar Objeto en Excalidraw en lugar de abrir la Vista de Gráfico.`,
   THEME_HEAD: "Tema y estilo",
-  ZOOM_HEAD: "Zoom",
+  ZOOM_AND_PAN_HEAD: "Zoom y panorámica",
   DEFAULT_PINCHZOOM_NAME: "Permitir zoom con pellizco en modo lápiz",
   DEFAULT_PINCHZOOM_DESC:
     "El zoom con pellizco en modo lápiz, al usar la herramienta de dibujo a mano alzada, está deshabilitado por defecto para evitar zooms accidentales no deseados con la palma de la mano.<br>" +

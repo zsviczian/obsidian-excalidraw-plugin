@@ -444,7 +444,7 @@ export default {
     "与 Obsidian 的热键设置发生冲突。您在下面添加的热键组合将在使用 Excalidraw 时覆盖 Obsidian 的热键设置，" +
     `因此如果您希望在 Excalidraw 中默认选择“组合对象”，而不是打开“图形视图”，您可以添加 ${labelCTRL()}+G。`,
   THEME_HEAD: "主题和样式",
-  ZOOM_HEAD: "缩放",
+  ZOOM_AND_PAN_HEAD: "缩放和平移",
   DEFAULT_PINCHZOOM_NAME: "允许在触控笔模式下进行双指缩放",
   DEFAULT_PINCHZOOM_DESC:
     "在触控笔模式下使用自由画笔工具时，双指缩放可能造成干扰。<br>" +

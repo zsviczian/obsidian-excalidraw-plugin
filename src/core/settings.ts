@@ -98,6 +98,7 @@ export interface ExcalidrawSettings {
   penModeDoubleTapEraser: boolean;
   penModeSingleFingerPanning: boolean;
   penModeCrosshairVisible: boolean;
+  panWithRightMouseButton: boolean;
   renderImageInMarkdownReadingMode: boolean,
   renderImageInHoverPreviewForMDNotes: boolean,
   renderImageInMarkdownToPDF: boolean,
@@ -286,6 +287,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   penModeDoubleTapEraser: true,
   penModeSingleFingerPanning: true,
   penModeCrosshairVisible: true,
+  panWithRightMouseButton: false,
   renderImageInMarkdownReadingMode: false,
   renderImageInHoverPreviewForMDNotes: false,
   renderImageInMarkdownToPDF: false,
@@ -703,7 +705,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     });
 
     // ------------------------------------------------
-    // Saving
+    // Basic
     // ------------------------------------------------  
     containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
     containerEl.createDiv({ text: t("BASIC_DESC"), cls: "setting-item-description" });
@@ -1363,9 +1365,34 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     detailsEl = displayDetailsEl.createEl("details");
     detailsEl.createEl("summary", { 
-      text: t("ZOOM_HEAD"),
+      text: t("ZOOM_AND_PAN_HEAD"),
       cls: "excalidraw-setting-h3",
     });
+        
+    new Setting(detailsEl)
+      .setName(t("PAN_WITH_RIGHT_MOUSE_BUTTON_NAME"))
+      .setDesc(fragWithHTML(t("PAN_WITH_RIGHT_MOUSE_BUTTON_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.panWithRightMouseButton)
+          .onChange(async (value) => {
+            this.plugin.settings.panWithRightMouseButton = value;
+            this.applySettingsUpdate(true);
+          }),
+      );
+        
+    new Setting(detailsEl)
+      .setName(t("PAN_WITH_RIGHT_MOUSE_BUTTON_NAME"))
+      .setDesc(fragWithHTML(t("PAN_WITH_RIGHT_MOUSE_BUTTON_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.panWithRightMouseButton)
+          .onChange(async (value) => {
+            this.plugin.settings.panWithRightMouseButton = value;
+            this.applySettingsUpdate(true);
+          }),
+      );
+
     new Setting(detailsEl)
       .setName(t("DEFAULT_PINCHZOOM_NAME"))
       .setDesc(fragWithHTML(t("DEFAULT_PINCHZOOM_DESC")))
