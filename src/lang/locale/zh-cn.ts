@@ -58,6 +58,10 @@ export default {
   NEW_IN_POPOUT_WINDOW_EMBED: "新建绘图 - 于新窗口 - 并将其嵌入（形如 ![[drawing]]）到当前 Markdown 文档中",
   TOGGLE_LOCK: "文本元素：原文模式（RAW）⟺ 预览模式（PREVIEW）",
   DELETE_FILE: "从库中删除所选图像（或以图像形式嵌入绘图中的 Markdown）的源文件",
+  MARKER_FRAME_SHOW: "显示标记框架",
+  MARKER_FRAME_HIDE: "隐藏标记框架",
+  MARKER_FRAME_TITLE_SHOW: "显示标记框架标题",
+  MARKER_FRAME_TITLE_HIDE: "隐藏标记框架标题",
   COPY_ELEMENT_LINK: "复制所选元素的链接（形如 [[file#^id]]）",
   COPY_DRAWING_LINK: "复制绘图的嵌入链接（形如 ![[drawing]]）",
   INSERT_LINK_TO_ELEMENT:
