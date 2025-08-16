@@ -98,6 +98,7 @@ export interface ExcalidrawSettings {
   penModeDoubleTapEraser: boolean;
   penModeSingleFingerPanning: boolean;
   penModeCrosshairVisible: boolean;
+  panWithRightMouseButton: boolean; //mfuria #329
   renderImageInMarkdownReadingMode: boolean,
   renderImageInHoverPreviewForMDNotes: boolean,
   renderImageInMarkdownToPDF: boolean,
@@ -286,6 +287,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   penModeDoubleTapEraser: true,
   penModeSingleFingerPanning: true,
   penModeCrosshairVisible: true,
+  panWithRightMouseButton: false, //mfuria #329
   renderImageInMarkdownReadingMode: false,
   renderImageInHoverPreviewForMDNotes: false,
   renderImageInMarkdownToPDF: false,
@@ -1363,9 +1365,24 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     detailsEl = displayDetailsEl.createEl("details");
     detailsEl.createEl("summary", { 
-      text: t("ZOOM_HEAD"),
+      text: t("ZOOM_AND_PAN_HEAD"),  //mfuria #329
       cls: "excalidraw-setting-h3",
     });
+
+    //mfuria #329. Added setting for right-click panning
+    new Setting(detailsEl)
+      .setName(t("PAN_WITH_RIGHT_MOUSE_BUTTON_NAME"))
+      .setDesc(fragWithHTML(t("PAN_WITH_RIGHT_MOUSE_BUTTON_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.panWithRightMouseButton)
+          .onChange(async (value) => {
+            this.plugin.settings.panWithRightMouseButton = value;
+            this.applySettingsUpdate(true);
+          }),
+      );
+
+
     new Setting(detailsEl)
       .setName(t("DEFAULT_PINCHZOOM_NAME"))
       .setDesc(fragWithHTML(t("DEFAULT_PINCHZOOM_DESC")))

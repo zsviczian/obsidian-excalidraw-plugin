@@ -440,7 +440,9 @@ export default {
     "與 Obsidian 的熱鍵設定發生衝突。您在下面新增的熱鍵組合將在使用 Excalidraw 時覆蓋 Obsidian 的熱鍵設定，" +
     `因此如果您希望在 Excalidraw 中預設選擇“組合物件”，而不是開啟“圖形檢視”，您可以新增 ${labelCTRL()}+G。`,
   THEME_HEAD: "主題和樣式",
-  ZOOM_HEAD: "縮放",
+  ZOOM_AND_PAN_HEAD: "縮放與平移",
+  PAN_WITH_RIGHT_MOUSE_BUTTON_NAME: "使用滑鼠右鍵平移畫布（按下 'm' 鍵開啟選單）",
+  PAN_WITH_RIGHT_MOUSE_BUTTON_DESC: "啟用後，您可以通過右鍵點擊並拖動來平移畫布。當您不編輯文字時，將使用 'm' 鍵開啟上下文選單。",
   DEFAULT_PINCHZOOM_NAME: "允許在觸控筆模式下進行雙指縮放",
   DEFAULT_PINCHZOOM_DESC:
     "在觸控筆模式下使用自由畫筆工具時，雙指縮放可能造成干擾。<br>" +
