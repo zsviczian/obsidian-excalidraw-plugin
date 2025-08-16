@@ -11,6 +11,7 @@ export class FloatingModal extends Modal {
   private disableKeyCapture = true; // new flag: when true, let keystrokes pass through to workspace
   private previousActive: HTMLElement | null = null; // stores element focused before opening
   private escListener: (e: KeyboardEvent) => void;
+  private modalKeydownStopHandler: (e: KeyboardEvent) => void; // store handler so we can remove it
 
   constructor(app: App) {
     super(app);
@@ -20,6 +21,7 @@ export class FloatingModal extends Modal {
     this.pointerMoveHandler = this.handlePointerMove.bind(this);
     this.pointerUpHandler = this.handlePointerUp.bind(this);
     this.escListener = this.handleEscKey.bind(this);
+    this.modalKeydownStopHandler = (ev: KeyboardEvent) => ev.stopPropagation();
   }
 
   private handlePointerDown(e: PointerEvent | TouchEvent): void {
@@ -172,7 +174,7 @@ export class FloatingModal extends Modal {
             this.previousActive.focus({ preventScroll: true });
           }
           // Stop key events originating inside the modal from bubbling back
-          modalEl.addEventListener("keydown", (ev) => ev.stopPropagation(), { capture: true });
+          modalEl.addEventListener("keydown", this.modalKeydownStopHandler, { capture: true });
         }
         // Add ESC listener (capture to run before underlying workspace)
         document.addEventListener("keydown", this.escListener, { capture: true });
@@ -190,10 +192,12 @@ export class FloatingModal extends Modal {
     if (modalEl) {
       modalEl.removeEventListener("pointerdown", this.pointerDownHandler as (e: PointerEvent) => void);
       modalEl.removeEventListener("touchstart", this.pointerDownHandler as (e: TouchEvent) => void);
+      // Remove the capturing keydown stopper if it was added
+      modalEl.removeEventListener("keydown", this.modalKeydownStopHandler, { capture: true });
     }
     // Remove any remaining document event listeners
     this.handlePointerUp();
-    document.removeEventListener("keydown", this.escListener);
+    document.removeEventListener("keydown", this.escListener, { capture: true });
 
     super.close();
   }

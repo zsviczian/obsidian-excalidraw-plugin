@@ -132,7 +132,7 @@ import { getEA } from "src/core"
 import { anyModifierKeysPressed, emulateKeysForLinkClick, isWinALTorMacOPT, isWinCTRLorMacCMD, isWinMETAorMacCTRL, isSHIFT, linkClickModifierType, localFileDragModifierType, ModifierKeys, modifierKeyTooltipMessages } from "../utils/modifierkeyHelper";
 import { setDynamicStyle } from "../utils/dynamicStyling";
 import { CustomEmbeddable, renderWebView } from "./components/CustomEmbeddable";
-import { addBackOfTheNoteCard, getExcalidrawFileForwardLinks, getFrameBasedOnFrameNameOrId, getLinkTextFromLink, insertEmbeddableToView, insertImageToView, isTextImageTransclusion, openExternalLink, parseObsidianLink, renderContextMenuAction, tmpBruteForceCleanup, toggleImageAnchoring } from "../utils/excalidrawViewUtils";
+import { addBackOfTheNoteCard, getExcalidrawFileForwardLinks, getFrameBasedOnFrameNameOrId, getLinkTextFromLink, insertEmbeddableToView, insertImageToView, isTextImageTransclusion, onLoadMessages, openExternalLink, parseObsidianLink, renderContextMenuAction, tmpBruteForceCleanup, toggleImageAnchoring } from "../utils/excalidrawViewUtils";
 import { imageCache } from "../shared/ImageCache";
 import { CanvasNodeFactory, ObsidianCanvasNode } from "./managers/CanvasNodeFactory";
 import { EmbeddableMenu } from "./components/menu/EmbeddableActionsMenu";
@@ -2500,6 +2500,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       }
       await this.loadDrawing(true);
 
+      onLoadMessages(this.plugin, this.excalidrawData.scene,this.data);
+
       if(this.plugin.ea.onFileOpenHook) {
         const tempEA = getEA(this);
         try {
@@ -2794,6 +2796,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         : api.getAppState().zenModeEnabled;
       //debug({where:"ExcalidrawView.loadDrawing",file:this.file.name,dataTheme:excalidrawData.appState.theme,before:"updateScene"})
       //api.setLocalFont(this.plugin.settings.experimentalEnableFourthFont);
+
 
       this.updateScene(
         {
@@ -4993,16 +4996,21 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         contextMenuActions.push([
           renderContextMenuAction(
             React,
-            frameRendering.markerEnabled
+            frameRendering.markerEnabled && frameRendering.enabled && frameRendering.outline
             ? t("MARKER_FRAME_HIDE")
             : t("MARKER_FRAME_SHOW"),
             () => {
-              setTimeout(() => this.updateScene({appState: {frameRendering: {...frameRendering, markerEnabled: !frameRendering.markerEnabled}}, captureUpdate: CaptureUpdateAction.NEVER}));
+              const markerEnabled = !(frameRendering.markerEnabled && frameRendering.enabled && frameRendering.outline);
+              if(markerEnabled) {
+                setTimeout(() => this.updateScene({appState: {frameRendering: {...frameRendering, enabled: true, outline: true, markerEnabled}}, captureUpdate: CaptureUpdateAction.NEVER}));
+              } else {
+                setTimeout(() => this.updateScene({appState: {frameRendering: {...frameRendering, markerEnabled}}, captureUpdate: CaptureUpdateAction.NEVER}));
+              }
             },
             onClose
           ),
         ]);
-        if(frameRendering.markerEnabled) {
+        if(frameRendering.markerEnabled && frameRendering.enabled && frameRendering.outline) {
           contextMenuActions.push([
             renderContextMenuAction(
               React,

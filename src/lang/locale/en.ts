@@ -914,6 +914,10 @@ export default {
   SCRIPT_EXECUTION_ERROR:
     "Script execution error. Please find error message on the developer console.",
 
+  //ExcalidrawViewUtils.ts
+  MARKER_FRAME_RENDERING_DISABLED_NOTICE: "There are hidden marker-frames in the scene.",
+  //DRAWING_HAS_BACK_OF_THE_CARD: "There are notes on the back of this drawing.",
+
   //ExcalidrawData.ts
   LOAD_FROM_BACKUP: "Excalidraw file was corrupted. Loading from backup file.",
   FONT_LOAD_SLOW: "Loading Fonts...\n\n This is taking longer than expected. If this delay occurs regularly then you may download the fonts locally to your Vault. \n\n" +

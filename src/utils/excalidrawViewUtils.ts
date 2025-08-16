@@ -1,20 +1,21 @@
 
 import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS } from "src/constants/constants";
-import { App, Modal, Notice, TFile, WorkspaceLeaf } from "obsidian";
+import { App, Modal, Notice, TFile } from "obsidian";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
-import { REGEX_LINK, REG_LINKINDEX_HYPERLINK, getExcalidrawMarkdownHeaderSection, REGEX_TAGS } from "../shared/ExcalidrawData";
+import { REGEX_LINK, REG_LINKINDEX_HYPERLINK, getExcalidrawMarkdownHeaderSection, REGEX_TAGS, getExcalidrawMarkdownHeader } from "../shared/ExcalidrawData";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { ExcalidrawElement, ExcalidrawFrameElement, ExcalidrawImageElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { getEmbeddedFilenameParts, getLinkParts, isImagePartRef } from "./utils";
 import { cleanSectionHeading } from "./obsidianUtils";
 import { getEA } from "src/core";
-import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { AppState, ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
 import { nanoid } from "nanoid";
 import { t } from "src/lang/helpers";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { EmbeddedFile } from "src/shared/EmbeddedFileLoader";
 import { CaptureUpdateAction } from "src/constants/constants";
+import ExcalidrawPlugin from "src/core/main";
 
 export async function insertImageToView(
   ea: ExcalidrawAutomate,
@@ -209,8 +210,8 @@ export function getFrameBasedOnFrameNameOrId(
 ): ExcalidrawFrameElement | null {
   const frames = elements
     .filter((el: ExcalidrawElement)=>el.type==="frame")
-    .map((el: ExcalidrawFrameElement, idx: number)=>{
-      return {el: el, id: el.id, name: el.name ?? `Frame ${String(idx+1).padStart(2,"0")}`};
+    .map((el: ExcalidrawFrameElement)=>{
+      return {el: el, id: el.id, name: el.name ?? "Frame"};
     })
     .filter((item:any) => item.id === frameName || item.name === frameName)
     .map((item:any)=>item.el as ExcalidrawFrameElement);
@@ -465,4 +466,20 @@ export async function toggleImageAnchoring(
   }
   await ea.addElementsToView(false, false);
   ea.destroy();
+}
+
+export function onLoadMessages(plugin: ExcalidrawPlugin, scene: {elements: ExcalidrawElement[], appState: AppState}, data: string) {
+  setTimeout(() => {
+    if(!(scene.appState.frameRendering?.markerEnabled ?? true) && scene.elements.some(el=>el.type === "frame" && el.frameRole === "marker")) {
+      new Notice(t("MARKER_FRAME_RENDERING_DISABLED_NOTICE"));
+    }
+    /*const backOfTheCardNote = getExcalidrawMarkdownHeader(data)
+      .header
+      .replace(/^---\n[\s\S]*?\n---/gm, "")
+      .replace("==⚠  Switch to EXCALIDRAW VIEW in the MORE OPTIONS menu of this document. ⚠== You can decompress Drawing data with the command palette: 'Decompress current Excalidraw file'. For more info check in plugin settings under 'Saving'","")
+      .trim();
+    if(backOfTheCardNote.length>0) {
+      new Notice(t("DRAWING_HAS_BACK_OF_THE_CARD")); 
+    }*/
+  });
 }

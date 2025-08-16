@@ -18,20 +18,26 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
 "2.15.0":`
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/DqDnzCOoYMc" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
 ## New
-- Introducing Marker Frames. These are special frames that can be used to mark slides, pages areas for PDF printouts, image references, etc.
-  To create a marker frame, create a frame and toggle marker frame in the elements properties panel.
-    - They are not included in exports such as images or PDFs.
-    - They do not contain elements
-    - They can be hidden/shown from the canvas context menu
-- Updated "Printable Layout Wizard"
-  - ⚠️⚠️⚠️ Breaking changes ⚠️⚠️⚠️: now works with marker frames
-  - Supports different sizes and orientation of pages in a single document
-  - The printout may include non-marker frames (e.g. PDF image embeds in frames)
-- Tip: You can use marker frames also 
+- Introducing **Marker Frames**. These are special frames that can be used to mark slides, pages areas for PDF printouts, image references, etc.
+  To create a marker frame, create a frame and toggle the marker frame in the elements properties panel.
+    - Markers are not included in exports such as images or PDFs.
+    - Markers do not contain elements
+    - Markers can be hidden/shown from the canvas context menu
+- Updated the "Printable Layout Wizard" script
+  - Now works with marker frames
+  - Supports different page sizes and orientations within a single PDF document
+  - The printout may include non-marker frames (e.g., PDF image embeds in frames)
+- Pro-tip: You can also use marker frames... 
     - with the Slideshow plugin
-    - to create area references such that the frames do not get rendered in exported images and you can reference areas by frame name
-#New in ExcalidrawAutomate
+    - to create image-area references such that the frames do not get rendered in exported images, and you can reference areas by frame name
+- Performance improvement of Image-area references
+
+# New in ExcalidrawAutomate
 - \`createPDF()\` now supports \`SVG[]\` array of SVGs with different sizes.
 - New function:
 \`\`\`ts

@@ -304,7 +304,11 @@ const RE_TEXTELEMENTS_FALLBACK_2 = /(.*)##? Text Elements(?:\n|$)/m;
 
 const RE_DRAWING = /^(%%\n+)?##? Drawing\n/m;
 
-export const getExcalidrawMarkdownHeaderSection = (data:string, keys?:[string,string][]):string => {
+export function getExcalidrawMarkdownHeader (data: string): {
+  header: string,
+  shouldFixTrailingHashtag: boolean,
+  processingOk: boolean,
+} {
   //The base case scenario is at the top, continued with fallbacks in order of likelihood and file structure
   //change history for sake of backward compatibility
 
@@ -439,10 +443,18 @@ export const getExcalidrawMarkdownHeaderSection = (data:string, keys?:[string,st
     }
   }
   if (trimLocation === -1) {
-    return data.endsWith("\n") ? data : (data + "\n");
+    return {header:data.endsWith("\n") ? data : (data + "\n"), shouldFixTrailingHashtag, processingOk: false};
   }
 
-  let header = updateFrontmatterInString(data.substring(0, trimLocation),keys);
+  return {header: data.substring(0, trimLocation), shouldFixTrailingHashtag, processingOk: true};
+}
+
+export const getExcalidrawMarkdownHeaderSection = (data:string, keys?:[string,string][]):string => {
+
+  const {header, shouldFixTrailingHashtag, processingOk} = getExcalidrawMarkdownHeader(data);
+  if(!processingOk) return header;
+  
+  const updatedHeader = updateFrontmatterInString(header, keys);
   //this should be removed at a later time. Left it here to remediate 1.4.9 mistake
   /*const REG_IMG = /(^---[\w\W]*?---\n)(!\[\[.*?]]\n(%%\n)?)/m; //(%%\n)? because of 1.4.8-beta... to be backward compatible with anyone who installed that version
   if (header.match(REG_IMG)) {
@@ -450,8 +462,8 @@ export const getExcalidrawMarkdownHeaderSection = (data:string, keys?:[string,st
   }*/
   //end of remove
   return shouldFixTrailingHashtag
-    ? header + "\n#\n"
-    : header.endsWith("\n") ? header : (header + "\n");
+    ? updatedHeader + "\n#\n"
+    : updatedHeader.endsWith("\n") ? header : (header + "\n");
 }
 
 

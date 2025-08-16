@@ -6,7 +6,7 @@ import ExcalidrawView from "src/view/ExcalidrawView";
 import { Setting } from "obsidian";
 
 export const showFrameSettings = (view: ExcalidrawView) => {
-  const {enabled, clip, name, outline, markerName, markerOutline} = view.excalidrawAPI.getAppState().frameRendering;
+  const {enabled, clip, name, outline, markerName, markerEnabled} = view.excalidrawAPI.getAppState().frameRendering;
   
   // Create modal dialog
   const frameSettingsModal = new FloatingModal(view.app);
@@ -16,7 +16,7 @@ export const showFrameSettings = (view: ExcalidrawView) => {
     
     contentEl.createEl("h1", {text: t("FRAME_SETTINGS_TITLE")});
     
-    const settings = { enabled, clip, name, outline, markerName, markerOutline };
+    const settings = { enabled, clip, name, outline, markerName, markerEnabled };
 
     // Add toggles
     new Setting(contentEl)

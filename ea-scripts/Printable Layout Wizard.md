@@ -1,24 +1,32 @@
 /*
-opposed by::
+
 Export Excalidraw to PDF Pages: Define printable page areas using frames, then export each frame as a separate page in a multi-page PDF. Perfect for turning your Excalidraw drawings into printable notes, handouts, or booklets. Supports standard and custom page sizes, margins, and easy frame arrangement.
 
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-layout-wizard-01.png)
 
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-layout-wizard-02.png)
 
+![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-layout-wizard-03.png)
+
+![Marker Frames](https://youtu.be/DqDnzCOoYMc)
+
 ![Printable Layout Wizard](https://youtu.be/29EWeglRm7s)
 
 ```js
 */
 
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.14.3")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.15.0")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
 
-async function run() {
-  // Help text for the script
-  const HELP_TEXT = `
+if(window.excalidrawPrintableLayoutWizardModal) {
+    window.excalidrawPrintableLayoutWizardModal.open();
+    return;
+}
+
+// Help text for the script
+const HELP_TEXT = `
 **Easily split your Excalidraw drawing into printable pages!**
 
 If you find this script helpful, consider [buying me a coffee](https://ko-fi.com/zsolt). Thank you.
@@ -65,102 +73,129 @@ You can also access script settings at the bottom of Excalidraw Plugin settings.
 ---
 
 **Tip:** For more on templates, see [Mastering Excalidraw Templates](https://youtu.be/jgUpYznHP9A). For referencing pages in markdown, see [Image Fragments](https://youtu.be/sjZfdqpxqsg) and [Image Block References](https://youtu.be/yZQoJg2RCKI).
+
+![Marker Frames](https://youtu.be/DqDnzCOoYMc)
+
+![Printable Layout Wizard](https://youtu.be/29EWeglRm7s)
 `;
 
-// Enable frame rendering
-const st = ea.getExcalidrawAPI().getAppState();
-const {enabled, clip, name, outline} = st.frameRendering;
-if(!enabled || clip || !name || !outline) {
-  ea.viewUpdateScene({
-    appState: {
-      frameRendering: {
-        enabled: true,
-        clip: false,
-        name: true,
-        outline: true
+async function run() {
+  modal = new ea.FloatingModal(ea.plugin.app);
+  window.excalidrawPrintableLayoutWizardModal = modal;
+  modal.contentEl.empty();
+  let shouldRestart = false;
+  // Enable frame rendering
+  const st = ea.getExcalidrawAPI().getAppState();
+  let {enabled, clip, name, outline, markerName, markerEnabled} = st.frameRendering;
+  if(!enabled || !name || !outline || !markerEnabled || !markerName) {
+    ea.viewUpdateScene({
+      appState: {
+        frameRendering: {
+          enabled: true,
+          clip: clip,
+          name: true,
+          outline: true,
+          markerName: true,
+          markerEnabled: true
+        }
       }
-    }
-  });
-}
-
-// Page size options (using standard sizes from ExcalidrawAutomate)
-const PAGE_SIZES = [
-  "A0", "A1", "A2", "A3", "A4", "A5", "A6", 
-  "Letter", "Legal", "Tabloid", "Ledger"
-];
-
-const PAGE_ORIENTATIONS = ["portrait", "landscape"];
-
-// Margin sizes in points
-const MARGINS = {
-  "none": 0,
-  "tiny": 10,
-  "normal": 60,
-};
-
-// Initialize settings
-let settings = ea.getScriptSettings();
-let dirty = false;
-
-// Define setting keys
-const PAGE_SIZE = "Page size";
-const ORIENTATION = "Page orientation";
-const MARGIN = "Print-margin";
-const LOCK_FRAME = "Lock frame after it is created";
-const SHOULD_ZOOM = "Should zoom after adding page";
-const SHOULD_CLOSE = "Should close after adding page";
-const PRINT_EMPTY = "Print empty pages";
-
-// Set default values on first run
-if (!settings[PAGE_SIZE]) {
-  settings = {};
-  settings[PAGE_SIZE] = { value: "A4", valueset: PAGE_SIZES };
-  settings[ORIENTATION] = { value: "portrait", valueset: PAGE_ORIENTATIONS };
-  settings[MARGIN] = { value: "none", valueset: Object.keys(MARGINS)};
-  settings[SHOULD_ZOOM] = { value: false };
-  settings[SHOULD_CLOSE] = { value: false };
-  settings[LOCK_FRAME] = { value: true };
-  settings[PRINT_EMPTY] = { value: false };
-  dirty = true;
-}
-
-//once off correction. In the first version I incorrectly used valueSet with wrong casing.
-if(settings[PAGE_SIZE].valueSet) {
-  settings[PAGE_SIZE].valueset = settings[PAGE_SIZE].valueSet;
-  delete settings[PAGE_SIZE].valueSet;
-  settings[ORIENTATION].valueset = settings[ORIENTATION].valueSet;
-  delete settings[ORIENTATION].valueSet;
-  settings[MARGIN].valueset = settings[MARGIN].valueSet;
-  delete settings[MARGIN].valueSet;
-  dirty = true;
-}
-
-if(!settings[LOCK_FRAME]) {
-  settings[LOCK_FRAME] = { value: true };
-  dirty = true;
-}
-
-if(!settings[PRINT_EMPTY]) {
-  settings[PRINT_EMPTY] = { value: false };
-  dirty = true;
-}
-
-const getSortedFrames = () => ea.getViewElements()
-    .filter(el => el.type === "frame")
-    .sort((a, b) => {
-      const nameA = a.name || "";
-      const nameB = b.name || "";
-      return nameA.localeCompare(nameB);
     });
+  }
 
-  // Find existing page frames and determine next page number
+  // Page size options (using standard sizes from ExcalidrawAutomate)
+  const PAGE_SIZES = [
+    "A0", "A1", "A2", "A3", "A4", "A5", "A6", 
+    "Letter", "Legal", "Tabloid", "Ledger"
+  ];
+
+  const PAGE_ORIENTATIONS = ["portrait", "landscape"];
+
+  // Margin sizes in points
+  const MARGINS = {
+    "none": 0,
+    "tiny": 10,
+    "normal": 60,
+  };
+
+  // Initialize settings
+  let settings = ea.getScriptSettings();
+  let dirty = false;
+
+  // Define setting keys
+  const PAGE_SIZE = "Page size";
+  const ORIENTATION = "Page orientation";
+  const MARGIN = "Print-margin";
+  const LOCK_FRAME = "Lock frame after it is created";
+  const SHOULD_ZOOM = "Should zoom after adding page";
+  const SHOULD_CLOSE = "Should close after adding page";
+  const PRINT_EMPTY = "Print empty pages";
+  const PRINT_MARKERS_ONLY = "Print only marker frames";
+
+  // Set default values on first run
+  if (!settings[PAGE_SIZE]) {
+    settings = {};
+    settings[PAGE_SIZE] = { value: "A4", valueset: PAGE_SIZES };
+    settings[ORIENTATION] = { value: "portrait", valueset: PAGE_ORIENTATIONS };
+    settings[MARGIN] = { value: "none", valueset: Object.keys(MARGINS)};
+    settings[SHOULD_ZOOM] = { value: false };
+    settings[SHOULD_CLOSE] = { value: false };
+    settings[LOCK_FRAME] = { value: true };
+    settings[PRINT_EMPTY] = { value: false };
+    settings[PRINT_MARKERS_ONLY] = { value: true };
+    dirty = true;
+  }
+
+  //once off correction. In the first version I incorrectly used valueSet with wrong casing.
+  if(settings[PAGE_SIZE].valueSet) {
+    settings[PAGE_SIZE].valueset = settings[PAGE_SIZE].valueSet;
+    delete settings[PAGE_SIZE].valueSet;
+    settings[ORIENTATION].valueset = settings[ORIENTATION].valueSet;
+    delete settings[ORIENTATION].valueSet;
+    settings[MARGIN].valueset = settings[MARGIN].valueSet;
+    delete settings[MARGIN].valueSet;
+    dirty = true;
+  }
+
+  if(!settings[LOCK_FRAME]) {
+    settings[LOCK_FRAME] = { value: true };
+    dirty = true;
+  }
+
+  if(!settings[PRINT_EMPTY]) {
+    settings[PRINT_EMPTY] = { value: false };
+    dirty = true;
+  }
+
+
+  if(!settings[PRINT_MARKERS_ONLY]) {
+    settings[PRINT_MARKERS_ONLY] = { value: true };
+    dirty = true;
+  }
+
+  let lockFrame = settings[LOCK_FRAME].value;
+  let shouldClose = settings[SHOULD_CLOSE].value;
+  let shouldZoom = settings[SHOULD_ZOOM].value;
+  let printEmptyPages = settings[PRINT_EMPTY].value;
+  let printMarkersOnly = settings[PRINT_MARKERS_ONLY].value;
+  
+  const getSortedFrames = () => {
+    return ea.getViewElements()
+      .filter(el => isEligibleFrame(el))
+      .sort((a, b) => {
+        const nameA = a.name || "";
+        const nameB = b.name || "";
+        return nameA.localeCompare(nameB);
+      });
+  };
+
+    // Find existing page frames and determine next page number
   const findExistingPages = (selectLastFrame = false) => {
     const frameElements = getSortedFrames();
     
     // Extract page numbers from frame names
     const pageNumbers = frameElements
       .map(frame => {
-        const match = frame.name?.match(/Page\s+(\d+)/i);
+        const match = frame.name?.match(/(?:Page\s+)?(\d+)/i);
         return match ? parseInt(match[1]) : 0;
       })
       .filter(num => !isNaN(num));
@@ -179,10 +214,13 @@ const getSortedFrames = () => ea.getViewElements()
       nextPageNumber: nextPageNumber
     };
   };
+  
+  const isEligibleFrame = (el) => el.type === "frame" && (printMarkersOnly ? el.frameRole === "marker" : true);
 
   // Check if there are frames in the scene and if a frame is selected
-  let existingFrames = ea.getViewElements().filter(el => el.type === "frame");
-  let selectedFrame = ea.getViewSelectedElements().find(el => el.type === "frame");
+  let existingFrames = ea.getViewElements().filter(el => isEligibleFrame(el));
+  let selectedFrame = ea.getViewSelectedElements().find(el => isEligibleFrame(el));
+  
   const hasFrames = existingFrames.length > 0;
   if(hasFrames && !selectedFrame) {
     if(st.activeLockedId && existingFrames.find(f=>f.id === st.activeLockedId)) {
@@ -191,16 +229,20 @@ const getSortedFrames = () => ea.getViewElements()
       ea.selectElementsInView([selectedFrame]);
     } else {
       findExistingPages(true);
-      selectedFrame = ea.getViewSelectedElements().find(el => el.type === "frame");
+      selectedFrame = ea.getViewSelectedElements().find(el => isEligibleFrame(el));
     }
   }
 
   const hasSelectedFrame = !!selectedFrame;
-  const modal = new ea.FloatingModal(ea.plugin.app);
-  let lockFrame = settings[LOCK_FRAME].value;
-  let shouldClose = settings[SHOULD_CLOSE].value;
-  let shouldZoom = settings[SHOULD_ZOOM].value;
-  let printEmptyPages = settings[PRINT_EMPTY].value;
+
+  // rotation is now a temporary UI state controlled by the center button
+  let rotateOnAdd = false;
+  let centerRotateBtn = null;
+  const setRotateBtnActive = (active) => {
+    if (!centerRotateBtn) return;
+    centerRotateBtn.classList.toggle("is-accent", active);
+    centerRotateBtn.setAttribute("aria-pressed", active ? "true" : "false");
+  };
 
   // Show notice if there are frames but none selected
   if (hasFrames && !hasSelectedFrame) {
@@ -230,7 +272,7 @@ const getSortedFrames = () => ea.getViewElements()
     }
     
     // Format page number with leading zero
-    const pageName = "Page 01";
+    const pageName = "01";
     
     // Calculate position to center the frame
     const appState = ea.getExcalidrawAPI().getAppState();
@@ -242,11 +284,11 @@ const getSortedFrames = () => ea.getViewElements()
 
   // Add new page frame
   const addPage = async (direction, pageSize, orientation) => {
-    selectedFrame = ea.getViewSelectedElements().find(el => el.type === "frame");
+    selectedFrame = ea.getViewSelectedElements().find(el => isEligibleFrame(el));
     if (!selectedFrame) {
       const { activeLockedId } = ea.getExcalidrawAPI().getAppState();
       if(activeLockedId) {
-        selectedFrame = ea.getViewElements().find(el=>el.id === activeLockedId && el.type === "frame");
+        selectedFrame = ea.getViewElements().find(el=>el.id === activeLockedId && isEligibleFrame(el));
       }
       if (!selectedFrame) return;
     }
@@ -254,14 +296,14 @@ const getSortedFrames = () => ea.getViewElements()
     
     const { frames, nextPageNumber } = findExistingPages();
     
-    // Get dimensions from selected frame
+    // Get dimensions from selected frame, support optional rotation
     const dimensions = {
-      width: selectedFrame.width,
-      height: selectedFrame.height
+      width: rotateOnAdd ? selectedFrame.height : selectedFrame.width,
+      height: rotateOnAdd ? selectedFrame.width : selectedFrame.height
     };
     
     // Format page number with leading zero
-    const pageName = `Page ${nextPageNumber.toString().padStart(2, '0')}`;
+    const pageName = `${nextPageNumber.toString().padStart(2, '0')}`;
     
     // Calculate position based on direction and selected frame
     let x = 0;
@@ -286,11 +328,16 @@ const getSortedFrames = () => ea.getViewElements()
         break;
     }
       
-    return await addFrameElement(x, y, dimensions.width, dimensions.height, pageName);
+    const added = await addFrameElement(x, y, dimensions.width, dimensions.height, pageName);
+    // reset the rotate toggle after adding the frame
+    rotateOnAdd = false;
+    setRotateBtnActive(false);
+    return added;
   };
 
   addFrameElement = async (x, y, width, height, pageName, repositionToCursor = false) => {
     const frameId = ea.addFrame(x, y, width, height, pageName);
+    ea.getElement(frameId).frameRole = "marker";
     if(lockFrame) {
       ea.getElement(frameId).locked = true;
     }
@@ -311,8 +358,9 @@ const getSortedFrames = () => ea.getViewElements()
     return addedFrame;
   }
 
-  const translateToZero = ({ top, left, bottom, right }, padding=0) => {
-    const {topX, topY, width, height} = ea.getBoundingBox(ea.getViewElements());
+  const translateToZero = ({ x, y, width, height }, padding=0) => {
+    const top = y, left = x, right = x + width, bottom = y + height;
+    const {topX, topY, width:w, height:h} = ea.getBoundingBox(ea.getViewElements());
     const newTop = top - (topY - padding);
     const newLeft = left - (topX - padding);
     const newBottom = bottom - (topY - padding);
@@ -327,21 +375,8 @@ const getSortedFrames = () => ea.getViewElements()
   }
 
   // NEW: detect if any non-frame element overlaps the given area
-  const hasElementsInArea = ({top, left, bottom, right}) => {
-    return ea.getViewElements()
-      .filter(el => el.type !== "frame")
-      .some(el => {
-        const {topX, topY, width, height} = ea.getBoundingBox([el]);
-        const elLeft = topX;
-        const elTop = topY;
-        const elRight = topX + width;
-        const elBottom = topY + height;
-        // overlap exists if rectangles intersect
-        return !(elLeft >= right || elRight <= left || elTop >= bottom || elBottom <= top);
-      });
-  };
+  const hasElementsInArea = (area) => ea.getElementsInArea(ea.getViewElements(), area).length>0;
 
-  // Check if all frames have the same size
   const checkFrameSizes = (frames) => {
     if (frames.length <= 1) return true;
     
@@ -354,7 +389,6 @@ const getSortedFrames = () => ea.getViewElements()
     );
   };
 
-  // Print frames to PDF
   const printToPDF = async (marginSize) => {  
     const margin = MARGINS[marginSize] || 0;  
     
@@ -371,12 +405,6 @@ const getSortedFrames = () => ea.getViewElements()
       new Notice("No frames found to print");
       return;
     }
-    
-    // Check if all frames have the same size
-    if (!checkFrameSizes(frames)) {
-      new Notice("Only same sized pages are supported currently", 7000);
-      return;
-    }
 
     // Create a notice during processing
     const notice = new Notice("Preparing PDF, please wait...", 0);
@@ -384,27 +412,33 @@ const getSortedFrames = () => ea.getViewElements()
     // Create SVGs for each frame
     const svgPages = [];
     
+    let placeholderRects = [];
+    ea.clear();
+    for (const frame of frames) {
+	    ea.style.opacity = 0;
+	    ea.style.roughness = 0;
+	    ea.style.fillStyle = "solid";
+	    ea.style.backgroundColor = "black"
+	    ea.style.strokeWidth = 0.01;
+	    ea.addRect(frame.x, frame.y, frame.width, frame.height);
+    }
+    
     const svgScene = await ea.createViewSVG({
       withBackground: true,
       theme: st.theme,
-      frameRendering: { enabled: false, name: false, outline: false, clip: false },
+      //frameRendering: { enabled: false, name: false, outline: false, clip: false },
       padding: 0,
       selectedOnly: false,
       skipInliningFonts: false,
       embedScene: false,
+      elementsOverride: ea.getViewElements().concat(ea.getElements()),
     });
-    
+    ea.clear();
     for (const frame of frames) {
       // NEW: skip empty frames unless user opted to print them
-      const area = {
-        top: frame.y,
-        left: frame.x,
-        bottom: frame.y + frame.height,
-        right: frame.x + frame.width,
-      };
-      if(!printEmptyPages && !hasElementsInArea(area)) continue;
+      if(!printEmptyPages && !hasElementsInArea(frame)) continue;
 
-      const { top, left, bottom, right } = translateToZero(area);
+      const { top, left, bottom, right } = translateToZero(frame);
       
       //always create the new SVG in the main Obsidian workspace (not the popout window, if present)
       const host = window.createDiv();
@@ -435,7 +469,8 @@ const getSortedFrames = () => ea.getViewElements()
       SVG: svgPages,
       scale: { fitToPage: true },
       pageProps: {
-        dimensions: { width, height },
+        dimensions: {},
+        //dimensions: { width, height },
         backgroundColor: "#ffffff",
         margin: { 
           left: margin, 
@@ -457,11 +492,17 @@ const getSortedFrames = () => ea.getViewElements()
   modal.titleEl.setText("Page Management");
   modal.titleEl.style.textAlign = "center";
 
-  // Handle save settings on modal close
-  modal.onClose = () => {
+  modal.onClose = async () => {
+    delete window.excalidrawPrintableLayoutWizardModal;
     if (dirty) {
-      ea.setScriptSettings(settings);
+      await ea.setScriptSettings(settings);
     }
+    ea.viewUpdateScene({
+      appState: {
+        frameRendering: {enabled, clip, name, outline, markerName, markerEnabled}
+      }
+    });
+    if(shouldRestart) setTimeout(()=>run());
   };
 
   // Create modal content
@@ -472,13 +513,12 @@ const getSortedFrames = () => ea.getViewElements()
       }
     });
     
-    // Add help section at the top
+    // Help section
     const helpDiv = container.createDiv({
       attr: {
         style: "margin-bottom: 10px;"
       }
     });
-    
     helpDiv.createEl("details", {}, (details) => {
       details.createEl("summary", { 
         text: "Help & Information",
@@ -495,143 +535,153 @@ const getSortedFrames = () => ea.getViewElements()
         ea.obsidian.MarkdownRenderer.render(ea.plugin.app, HELP_TEXT, div, "", ea.plugin)
       });
     });
-    
-    let pageSizeDropdown, orientationDropdown, marginDropdown;
-    
-    // Settings section - only show for first frame creation
-    if (!hasFrames) {
-      const settingsContainer = container.createDiv({
-        attr: {
-          style: "display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center;"
-        }
-      });
-      
-      // Page size dropdown
-      settingsContainer.createEl("label", { text: "Page Size:" });
-      pageSizeDropdown = settingsContainer.createEl("select", {
-        cls: "dropdown",
-        attr: { style: "width: 100%;" }
-      });
-      
-      PAGE_SIZES.forEach(size => {
-        pageSizeDropdown.createEl("option", { text: size, value: size });
-      });
-      pageSizeDropdown.value = settings[PAGE_SIZE].value;
-      
-      // Orientation dropdown
-      settingsContainer.createEl("label", { text: "Orientation:" });
-      orientationDropdown = settingsContainer.createEl("select", {
-        cls: "dropdown",
-        attr: { style: "width: 100%;" }
-      });
-      
-      PAGE_ORIENTATIONS.forEach(orientation => {
-        orientationDropdown.createEl("option", { text: orientation, value: orientation });
-      });
-      orientationDropdown.value = settings[ORIENTATION].value;
-    }
-    
-    // Show margin settings only if frames exist
+
+    // Tabs (show only when frames exist)
+    let framesTabEl, printingTabEl, tabsHeaderEl, marginDropdown;
     if (hasFrames) {
-      const marginContainer = container.createDiv({
-        attr: {
-          style: "display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center;"
+      tabsHeaderEl = container.createDiv({
+        attr: { style: "display:flex; gap:8px; border-bottom:1px solid var(--background-modifier-border); padding-bottom:0;" }
+      });
+      tabsHeaderEl.addClass("tabs-header"); // NEW
+
+      const framesTabBtn = tabsHeaderEl.createEl("button", {
+        text: "Frames",
+        attr: { style: "padding:8px 12px; cursor:pointer;" }
+      });
+      framesTabBtn.addClass("tab-btn"); // NEW
+
+      const printingTabBtn = tabsHeaderEl.createEl("button", {
+        text: "Printing",
+        attr: { style: "padding:8px 12px; cursor:pointer;" }
+      });
+      printingTabBtn.addClass("tab-btn"); // NEW
+
+      const tabsBody = container.createDiv();
+      tabsBody.addClass("tab-panels"); // NEW
+
+      framesTabEl = tabsBody.createDiv({ attr: { style: "display:block;" } });
+      framesTabEl.addClass("tab-panel"); // NEW
+
+      printingTabEl = tabsBody.createDiv({ attr: { style: "display:none;" } });
+      printingTabEl.addClass("tab-panel"); // NEW
+
+      const activate = (tab) => {
+        if (tab === "frames") {
+          framesTabEl.style.display = "";
+          printingTabEl.style.display = "none";
+          framesTabBtn.classList.add("is-active");
+          printingTabBtn.classList.remove("is-active");
+        } else {
+          framesTabEl.style.display = "none";
+          printingTabEl.style.display = "";
+          framesTabBtn.classList.remove("is-active");
+          printingTabBtn.classList.add("is-active");
         }
+      };
+      framesTabBtn.addEventListener("click", () => {
+        window.excalidrawPrintLayoutWizard = "frames";
+        activate("frames")
       });
-      
-      // Margin dropdown (for printing)
-      marginContainer.createEl("label", { text: "Print Margin:" });
-      marginDropdown = marginContainer.createEl("select", {
-        cls: "dropdown",
-        attr: { style: "width: 100%;" }
+      printingTabBtn.addEventListener("click", () => {
+        window.excalidrawPrintLayoutWizard = "printing";
+        activate("printing")
       });
-      
-      Object.keys(MARGINS).forEach(margin => {
-        marginDropdown.createEl("option", { text: margin, value: margin });
-      });
-      marginDropdown.value = settings[MARGIN].value;
+      activate(window.excalidrawPrintLayoutWizard ?? "frames");
+    } else {
+      // No frames yet, only frames tab content
+      framesTabEl = container.createDiv();
     }
 
-    // Add checkboxes for zoom and modal behavior only when frames exist
-    const optionsContainer = container.createDiv({
-      attr: {
-        style: "margin-top: 10px;"
-      }
-    });
-
-    new ea.obsidian.Setting(optionsContainer)
-      .setName("Lock")
-      .setDesc("Lock the new frame element after it is created.")
-      .addToggle(toggle => {
-        toggle.setValue(lockFrame)
-          .onChange(value => {
+    const createOptionsContainerCommonControls = (optionsContainer) => {
+      new ea.obsidian.Setting(optionsContainer)
+        .setName("Lock")
+        .setDesc("Lock the new frame element after it is created.")
+        .addToggle(toggle => {
+          toggle.setValue(lockFrame).onChange(value => {
             lockFrame = value;
             if (settings[LOCK_FRAME].value !== value) {
-              settings[LOCK_FRAME].value = value;
-              dirty = true;
+              settings[LOCK_FRAME].value = value; dirty = true;
             }
           });
-      });
+        });
 
-    // Zoom to added frame checkbox
-    new ea.obsidian.Setting(optionsContainer)
-      .setName("Zoom to new frame")
-      .setDesc("Automatically zoom to the newly created frame")
-      .addToggle(toggle => {
-        toggle.setValue(shouldZoom)
-          .onChange(value => {
+      new ea.obsidian.Setting(optionsContainer)
+        .setName("Zoom to new frame")
+        .setDesc("Automatically zoom to the newly created frame")
+        .addToggle(toggle => {
+          toggle.setValue(shouldZoom).onChange(value => {
             shouldZoom = value;
             if (settings[SHOULD_ZOOM].value !== value) {
-              settings[SHOULD_ZOOM].value = value;
-              dirty = true;
+              settings[SHOULD_ZOOM].value = value; dirty = true;
             }
           });
-      });
-    
-    // Close after adding checkbox
-    new ea.obsidian.Setting(optionsContainer)
-      .setName("Close after adding")
-      .setDesc("Close this dialog after adding a new frame")
-      .addToggle(toggle => {
-        toggle.setValue(shouldClose)
-          .onChange(value => {
+        });
+
+      new ea.obsidian.Setting(optionsContainer)
+        .setName("Close after adding")
+        .setDesc("Close this dialog after adding a new frame")
+        .addToggle(toggle => {
+          toggle.setValue(shouldClose).onChange(value => {
             shouldClose = value;
             if (settings[SHOULD_CLOSE].value !== value) {
-              settings[SHOULD_CLOSE].value = value;
-              dirty = true;
+              settings[SHOULD_CLOSE].value = value; dirty = true;
             }
           });
-      });
-    
-    // NEW toggle: Print empty pages
-    new ea.obsidian.Setting(optionsContainer)
-      .setName("Print empty pages")
-      .setDesc("Include frames with no content in the PDF")
-      .addToggle(toggle => {
-        toggle.setValue(printEmptyPages)
-          .onChange(value => {
-            printEmptyPages = value;
-            if(settings[PRINT_EMPTY].value !== value) {
-              settings[PRINT_EMPTY].value = value;
+        });
+        
+       new ea.obsidian.Setting(optionsContainer)
+        .setName("Use only Marker Frames")
+        .setDesc("When off, all frames will be printed (not just marker frames)")
+        .addToggle(toggle => {
+          toggle.setValue(printMarkersOnly).onChange(value => {
+            printMarkersOnly = value;
+            if (settings[PRINT_MARKERS_ONLY].value !== value) {
+              settings[PRINT_MARKERS_ONLY].value = value;
               dirty = true;
+              shouldRestart = true;
+              modal.close();
             }
           });
-      });
-
-    // Buttons section
-    const buttonContainer = container.createDiv({
-      attr: {
-        style: "display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px;"
-      }
-    });
+        });
+    }
     
+    // FRAMES TAB CONTENT
+    // When no frames yet: initial size/orientation inputs and Create First Frame button
     if (!hasFrames) {
-      // First frame creation button (centered)
+      const settingsContainer = framesTabEl.createDiv({
+        attr: {
+          // four columns: label + input, label + input
+          style: "display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 10px; align-items: center;"
+        }
+      });
+      // Page Size
+      settingsContainer.createEl("label", { text: "Page Size:" });
+      const pageSizeDropdown = settingsContainer.createEl("select", {
+        cls: "dropdown",
+        attr: { style: "width: 100%;" }
+      });
+      PAGE_SIZES.forEach(size => pageSizeDropdown.createEl("option", { text: size, value: size }));
+      pageSizeDropdown.value = settings[PAGE_SIZE].value;
+
+      // Orientation
+      settingsContainer.createEl("label", { text: "Orientation:" });
+      const orientationDropdown = settingsContainer.createEl("select", {
+        cls: "dropdown",
+        attr: { style: "width: 100%;" }
+      });
+      PAGE_ORIENTATIONS.forEach(orientation => orientationDropdown.createEl("option", { text: orientation, value: orientation }));
+      orientationDropdown.value = settings[ORIENTATION].value;
+
+      const optionsContainer = framesTabEl.createDiv({ attr: { style: "margin-top: 10px;" } });
+      createOptionsContainerCommonControls(optionsContainer);
+
+      // Create First Frame button
+      const buttonContainer = framesTabEl.createDiv({
+        attr: { style: "display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px;" }
+      });
       const createFirstBtn = buttonContainer.createEl("button", {
         cls: "page-btn",
-        attr: { 
-          style: "grid-column: 1 / span 3; height: 40px; background-color: var(--interactive-accent); color: var(--text-on-accent);" 
-        }
+        attr: { style: "height: 40px; background-color: var(--interactive-accent); color: var(--text-on-accent);" }
       });
       createFirstBtn.textContent = "Create First Frame";
       createFirstBtn.addEventListener("click", async () => {
@@ -639,77 +689,106 @@ const getSortedFrames = () => ea.getViewElements()
         shouldClose = true;
         await createFirstFrame(pageSizeDropdown.value, orientationDropdown.value);
         shouldClose = tmpShouldClose;
-        if(!shouldClose) run();
-      });
-    } else if (hasSelectedFrame) {
-      // Only show navigation buttons and print when a frame is selected
-      
-      // Up button (in middle of top row)
-      const upBtn = buttonContainer.createEl("button", {
-        cls: "page-btn",
-        attr: { 
-          style: "grid-column: 2; grid-row: 1; height: 40px;" 
+        if(!shouldClose) {
+          shouldRestart = true;
+          modal.close()
         }
       });
+
+    } else {
+      // hasFrames: frame-management options + arrow buttons
+      const optionsContainer = framesTabEl.createDiv({ attr: { style: "margin-top: 10px;" } });
+      createOptionsContainerCommonControls(optionsContainer);
+
+      // Arrow buttons with center rotate toggle
+      const buttonContainer = framesTabEl.createDiv({
+        attr: {
+          style: "display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px;"
+        }
+      });
+
+      const upBtn = buttonContainer.createEl("button", {
+        cls: "page-btn",
+        attr: { style: "grid-column: 2; grid-row: 1; height: 40px;" }
+      });
       upBtn.innerHTML = ea.obsidian.getIcon("arrow-big-up").outerHTML;
-      upBtn.addEventListener("click", async () => {
-        await addPage("up");
-      });
-      
-      // Add empty space
-      buttonContainer.createDiv({
-        attr: { style: "grid-column: 3; grid-row: 1;" }
-      });
-      
-      // Left button
+      upBtn.addEventListener("click", async () => { await addPage("up"); });
+
+      buttonContainer.createDiv({ attr: { style: "grid-column: 3; grid-row: 1;" } });
+
       const leftBtn = buttonContainer.createEl("button", {
         cls: "page-btn",
         attr: { style: "grid-column: 1; grid-row: 2; height: 40px;" }
       });
       leftBtn.innerHTML = ea.obsidian.getIcon("arrow-big-left").outerHTML;
-      leftBtn.addEventListener("click", async () => {
-        await addPage("left");
-      });
-      
-      // Print button (center)
-      const printBtn = buttonContainer.createEl("button", {
+      leftBtn.addEventListener("click", async () => { await addPage("left"); });
+
+      // Center toggle: Rotate next page
+      centerRotateBtn = buttonContainer.createEl("button", {
         cls: "page-btn",
-        attr: { 
-          style: "grid-column: 2; grid-row: 2; height: 40px; background-color: var(--interactive-accent);" 
-        }
+        attr: { style: "grid-column: 2; grid-row: 2; height: 40px;" }
       });
-      printBtn.innerHTML = ea.obsidian.getIcon("printer").outerHTML;
-      printBtn.addEventListener("click", async () => {
-        await printToPDF(marginDropdown.value);
+      centerRotateBtn.textContent = "Rotate next page";
+      centerRotateBtn.addEventListener("click", () => {
+        rotateOnAdd = !rotateOnAdd;
+        setRotateBtnActive(rotateOnAdd);
       });
-      
-      // Right button
+      setRotateBtnActive(rotateOnAdd);
+
       const rightBtn = buttonContainer.createEl("button", {
         cls: "page-btn",
         attr: { style: "grid-column: 3; grid-row: 2; height: 40px;" }
       });
       rightBtn.innerHTML = ea.obsidian.getIcon("arrow-big-right").outerHTML;
-      rightBtn.addEventListener("click", async () => {
-        await addPage("right");
-      });
-      
-      // Down button (in middle of bottom row)
+      rightBtn.addEventListener("click", async () => { await addPage("right"); });
+
       const downBtn = buttonContainer.createEl("button", {
         cls: "page-btn",
         attr: { style: "grid-column: 2; grid-row: 3; height: 40px;" }
       });
       downBtn.innerHTML = ea.obsidian.getIcon("arrow-big-down").outerHTML;
-      downBtn.addEventListener("click", async () => {
-        await addPage("down");
-      });
-      
-      // Add empty space
-      buttonContainer.createDiv({
-        attr: { style: "grid-column: 1; grid-row: 3;" }
-      });
+      downBtn.addEventListener("click", async () => { await addPage("down"); });
+
+      buttonContainer.createDiv({ attr: { style: "grid-column: 1; grid-row: 3;" } });
     }
-    
-    // Add CSS
+
+    // PRINTING TAB CONTENT (only when hasFrames)
+    if (hasFrames && printingTabEl) {
+      const marginContainer = printingTabEl.createDiv({
+        attr: {
+          style: "display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; margin-top: 6px;"
+        }
+      });
+      marginContainer.createEl("label", { text: "Print Margin:" });
+      marginDropdown = marginContainer.createEl("select", { cls: "dropdown", attr: { style: "width: 100%;" } });
+      Object.keys(MARGINS).forEach(margin => marginDropdown.createEl("option", { text: margin, value: margin }));
+      marginDropdown.value = settings[MARGIN].value;
+
+      const printingOptions = printingTabEl.createDiv({ attr: { style: "margin-top: 10px;" } });
+
+      new ea.obsidian.Setting(printingOptions)
+        .setName(PRINT_EMPTY)
+        .setDesc("Include frames with no content in the PDF")
+        .addToggle(toggle => {
+          toggle.setValue(printEmptyPages).onChange(value => {
+            printEmptyPages = value;
+            if(settings[PRINT_EMPTY].value !== value) {
+              settings[PRINT_EMPTY].value = value;
+              dirty = true;
+            }
+          });
+        });
+
+      const printBtnRow = printingTabEl.createDiv({ attr: { style: "margin-top: 10px; display:flex; justify-content:flex-start;" } });
+      const printBtn = printBtnRow.createEl("button", {
+        cls: "page-btn",
+        attr: { style: "height: 40px; background-color: var(--interactive-accent);" }
+      });
+      printBtn.innerHTML = ea.obsidian.getIcon("printer").outerHTML;
+      printBtn.addEventListener("click", async () => { await printToPDF(marginDropdown.value); });
+    }
+
+    // CSS
     div.createEl("style", { 
       text: `
         .page-btn {
@@ -729,6 +808,51 @@ const getSortedFrames = () => ea.getViewElements()
           border-radius: 4px;
           border: 1px solid var(--background-modifier-border);
           padding: 0 10px;
+        }
+        .is-active {
+          background-color: var(--background-modifier-hover);
+          border-radius: 4px;
+        }
+        /* Tabs styling - NEW */
+        .tabs-header {
+          gap: 8px;
+          border-bottom: 1px solid var(--background-modifier-border);
+        }
+        .tabs-header .tab-btn {
+          background: var(--background-primary);
+          color: var(--text-normal);
+          border: 1px solid var(--background-modifier-border);
+          border-bottom: none;
+          border-top-left-radius: 6px;
+          border-top-right-radius: 6px;
+          border-bottom-left-radius: 0;
+          border-bottom-right-radius: 0;
+          padding: 8px 12px;
+          margin-bottom: -1px; /* sit on top of the panel border */
+        }
+        .tabs-header .tab-btn:hover {
+          background: var(--background-modifier-hover);
+        }
+        .tabs-header .tab-btn.is-active {
+          background: var(--background-secondary);
+          color: var(--text-normal);
+          position: relative;
+          z-index: 2;
+        }
+        .tab-panels {
+          border: 1px solid var(--background-modifier-border);
+          border-radius: 0 6px 6px 6px; /* merge with active tab */
+          padding: 12px;
+          background: var(--background-primary);
+        }
+
+        /* accent styling for center rotate toggle when active */
+        .page-btn.is-accent {
+          background-color: var(--interactive-accent);
+          color: var(--text-on-accent);
+        }
+        .page-btn.is-accent:hover {
+          background-color: var(--interactive-accent-hover, var(--interactive-accent));
         }
       `
     });

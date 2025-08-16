@@ -564,6 +564,12 @@ export async function createSVG(
     let el = filenameParts.hasSectionref
       ? getTextElementsMatchingQuery(elements,["# "+filenameParts.sectionref],true)
       : elements.filter((el: ExcalidrawElement)=>el.id===filenameParts.blockref);
+    if(el.length === 0 && filenameParts.hasFrameref) {
+      const frame = getFrameBasedOnFrameNameOrId(filenameParts.blockref, elements);
+      if(frame) {
+        el = [frame];
+      }
+    }
     const isNonMarkerFrameRef = filenameParts.hasFrameref && el.length === 1 && el[0].type === "frame" && el[0].frameRole !== "marker";
 
     if(el.length>0 && !isNonMarkerFrameRef) {
