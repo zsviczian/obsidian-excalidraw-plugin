@@ -11,7 +11,7 @@ declare const PLUGIN_VERSION:string;
 // 简体中文
 export default {
   // Sugester
-  SELECT_FILE_TO_INSERT: "选择一个要插入的文件",
+  SELECT_FILE_TO_INSERT: "选择要嵌入到当前绘图中的文件",
   // main.ts
   CONVERT_URL_TO_FILE: "从 URL 下载图像到本地",
   UNZIP_CURRENT_FILE: "解压当前 Excalidraw 文件",
@@ -57,7 +57,7 @@ export default {
     "新建绘图 - 于当前面板 - 并将其嵌入（形如 ![[drawing]]）到当前 Markdown 文档中",
   NEW_IN_POPOUT_WINDOW_EMBED: "新建绘图 - 于新窗口 - 并将其嵌入（形如 ![[drawing]]）到当前 Markdown 文档中",
   TOGGLE_LOCK: "文本元素：原文模式（RAW）⟺ 预览模式（PREVIEW）",
-  DELETE_FILE: "从库中删除所选图像（或以图像形式嵌入绘图中的 Markdown）的源文件",
+  DELETE_FILE: "从仓库中删除所选图片（或以图像形式嵌入的 Markdown）源文件",
   MARKER_FRAME_SHOW: "显示标记画框",
   MARKER_FRAME_HIDE: "隐藏标记画框",
   MARKER_FRAME_TITLE_SHOW: "显示标记画框标题",
@@ -243,7 +243,7 @@ export default {
   BASIC_DESC: `包括：更新说明，更新通知，新绘图文件、模板文件、脚本文件的存储路径等。`,
   FOLDER_NAME: "Excalidraw 文件夹（區分大小寫！）",
   FOLDER_DESC:
-    "新绘图的默认存储路径。若为空，将在库的根目录中创建新绘图。",
+    "新绘图的默认存储路径。若为空，将在仓库根目录中创建新绘图。",
   CROP_SUFFIX_NAME: "裁剪文件的后缀",
   CROP_SUFFIX_DESC:
     "裁剪图像时创建的新绘图文件名的最后部分。" +
@@ -265,10 +265,10 @@ export default {
     "当在 Markdown 中标注图像时，替换后的图像链接将包含原始图像的宽度。",
   CROP_FOLDER_NAME: "裁剪文件所在文件夹（區分大小寫！）",
   CROP_FOLDER_DESC:
-    "裁剪图像时创建的新绘图的默认存储路径。如果留空，将按照 Vault 附件设置创建。",
+    "裁剪图像时创建的新绘图的默认存储路径。如果留空，将按照仓库附件设置创建。",
   ANNOTATE_FOLDER_NAME: "标注文件所在文件夹（區分大小寫！）",
   ANNOTATE_FOLDER_DESC:
-    "标注图像时创建的新绘图的默认存储路径。如果留空，将按照 Vault 附件设置创建。",
+    "标注图像时创建的新绘图的默认存储路径。如果留空，将按照仓库附件设置创建。",
   FOLDER_EMBED_NAME:
     "将 Excalidraw 文件夹用于“新建绘图”系列命令",
   FOLDER_EMBED_DESC:
@@ -290,7 +290,7 @@ export default {
     "此文件夹用于存放 Excalidraw 自动化脚本。" +
     "您可以在 Obsidian 命令面板中执行这些脚本，" +
     "还可以为喜欢的脚本分配快捷键，就像为其他 Obsidian 命令分配快捷键一样。<br>" +
-    "该项不能设为库的根目录。",
+    "该项不能设为仓库根目录。",
   AI_HEAD: "AI（实验性）",
   AI_DESC: `OpenAI GPT API 的设置。` +
     `目前 OpenAI API 还处于测试阶段，您需要使用自己的 API key。` +
@@ -634,10 +634,10 @@ export default {
     "如果您要查询 CSS 所作用的 HTML 节点，请在 Obsidian 开发者控制台（Ctrl+Shift+I）中键入命令：" +
     "<code>ExcalidrawAutomate.mostRecentMarkdownSVG</code> —— 这将显示 Excalidraw 最近生成的 SVG。<br>" +
     "此外，在 CSS 中不能任意地设置字体，您一般只能使用系统默认的标准字体（详见 README），" +
-    "但可以通过上面的设置来额外添加一个自定义字体。<br>" +
-    "您可为某个 MD-Embed 单独设置此项，方法是在其源文件的 frontmatter 中添加形如 <code>excalidraw-css: 库中的 CSS 文件或 CSS 片段</code> 的键值对。",
+    "但可以通过上面的选项来额外添加一个自定义字体。<br>" +
+    "可为某个 MD-Embed 单独设置，方法是在其 frontmatter 中添加如 <code>excalidraw-css: 仓库中的 CSS 文件或 CSS 片段</code> 的键值对。",
   EMBED_HEAD: "嵌入到 Markdown 文档中的绘图",
-  EMBED_DESC: `包括：嵌入到 Markdown 文档中的绘图的预览图类型（SVG、PNG）、源文件类型（Excalidraw 绘图文件、SVG、PNG）、缓存、图像大小、图像主题，以及嵌入的语法等。
+  EMBED_DESC: `包括：嵌入到 Markdown 文档中的绘图的预览图类型（SVG、PNG）、源文件类型（Excalidraw、SVG、PNG）、缓存、图像尺寸、图像主题，以及嵌入的语法等。
     此外，还有自动导出 SVG 或 PNG 文件并保持与绘图文件状态同步的设置。`,
   EMBED_CANVAS: "Obsidian 白板支持",
   EMBED_CANVAS_NAME: "沉浸式嵌入",
@@ -844,26 +844,26 @@ export default {
   CUSTOM_FONT_HEAD: "本地字体",
   ENABLE_FOURTH_FONT_NAME: "为文本元素启用本地字体",
   ENABLE_FOURTH_FONT_DESC:
-    "启用此选项将在文本元素的属性面板的字体列表中添加一个本地字体。" +
+    "启用该项将在文本元素的属性面板的字体列表中添加一个本地字体。" +
     "请注意，使用这个本地字体可能会破坏平台的独立性。" +
-    "使用自定义字体的文件在不同的库中打开或在以后打开时，根据字体设置，可能会以不同的方式呈现。" +
+    "使用自定义字体的文件在不同仓库中打开或在以后打开时，根据字体设置，可能会以不同的方式呈现。" +
     "此外，在 Excalidraw.com 或其他 Excalidraw 版本中，默认的本地字体字体将使用系统字体。",
   FOURTH_FONT_NAME: "本地字体文件",
   FOURTH_FONT_DESC:
-    "从您的库中选择一个 .otf、.ttf、.woff 或 .woff2 字体文件作为本地字体使用。"+
-    "如果没有选择文件，Excalidraw 将默认使用 Virgil 字体。"+
-    "为了获得最佳性能，建议使用 .woff2 文件，因为当导出到 SVG 格式的图像时，Excalidraw 只会编码必要的字形。"+
-    "其他字体格式将在导出文件中嵌入整个字体，可能会导致文件大小显著增加。<mark>译者注：</mark>您可以在<a href='https://wangchujiang.com/free-font/' target='_blank'>Free Font</a>获取免费商用中文手写字体。",
+    "从仓库中选择一个 .otf/.ttf/.woff/.woff2 字体文件作为本地字体使用。" +
+    "Excalidraw 默认使用 Virgil 字体。" +
+    "为了获得最佳性能，建议使用 .woff2 文件，因为当导出 SVG 格式的图片时，Excalidraw 只会编码必要的字形。" +
+    "其他字体格式将在导出文件中嵌入整个字体，可能会导致文件大小显著增加。<b>译者注：</b>可在 <a href='https://wangchujiang.com/free-font/' target='_blank'>Free Font</a> 获取免费商用中文手写字体。",
   OFFLINE_CJK_NAME: "离线 CJK 字体支持",
   OFFLINE_CJK_DESC:
     `<strong>您在这里所做的更改将在重启 Obsidian 后生效。</strong><br>
     Excalidraw.com 提供手写风格的 CJK 字体。默认情况下，这些字体并未在插件中本地包含，而是从互联网获取。
     如果您希望 Excalidraw 完全本地化，以便在没有互联网连接的情况下使用，可以从 <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip" target="_blank">GitHub 下载所需的字体文件</a>。
-    下载后，将内容解压到您的 Vault 中的一个文件夹内。<br>
+    下载后，将内容解压到您的仓库中的一个文件夹内。<br>
     预加载字体会影响启动性能。因此，您可以选择加载哪些字体。`,
   CJK_ASSETS_FOLDER_NAME: "CJK 字体文件夹（區分大小寫！）",
-  CJK_ASSETS_FOLDER_DESC: `您可以在此设置 CJK 字体文件夹的位置。例如，您可以选择将其放置在 <code>Excalidraw/CJK Fonts</code> 下。<br><br>
-    <strong>重要：</strong> 请勿将此文件夹设置为 Vault 根目录！请勿在此文件夹中放置其他字体。<br><br>
+  CJK_ASSETS_FOLDER_DESC: `您可以在此设置 CJK 字体文件夹的位置。例如，您可以选择将其放置在 <code>Excalidraw/CJK Fonts</code> 下。<br>
+    <strong>重要：</strong> 请勿将此文件夹设置为仓库根目录！请勿在此文件夹中放置其他字体。<br>
     <strong>注意：</strong> 如果您使用 Obsidian Sync 并希望在设备之间同步这些字体文件，请确保 Obsidian Sync 设置为同步“所有其他文件类型”。`,
   LOAD_CHINESE_FONTS_NAME: "启动时从文件加载中文字体",
   LOAD_JAPANESE_FONTS_NAME: "启动时从文件加载日文字体",
@@ -928,7 +928,7 @@ export default {
 
   //ExcalidrawData.ts
   LOAD_FROM_BACKUP: "Excalidraw 文件已损坏。尝试从备份文件中加载。",
-  FONT_LOAD_SLOW: "正在加载字体...\n\n 这比预期花费的时间更长。如果这种延迟经常发生，您可以将字体下载到您的 Vault 中。\n\n" +
+  FONT_LOAD_SLOW: "正在加载字体...\n\n 这比预期花费的时间更长。如果这种延迟经常发生，您可以将字体下载到您的仓库中。\n\n" +
     "(点击=忽略提示，右键=更多信息)",
   FONT_INFO_TITLE: "从互联网加载 v2.5.3 字体",
   FONT_INFO_DETAILED: `
@@ -943,8 +943,8 @@ export default {
       <h3>说明：</h3>
       <ol>
         <li>从 <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip">GitHub</a> 下载字体。</li>
-        <li>解压并将文件复制到 Vault 文件夹中（默认：<code>Excalidraw/${CJK_FONTS}</code>; 文件夹名称區分大小寫！）。</li>
-        <li><mark>请勿</mark>将此文件夹设置为 Vault 根目录或与其他本地字体混合。</li>
+        <li>解压并将文件复制到仓库文件夹中（默认：<code>Excalidraw/${CJK_FONTS}</code>; 文件夹名称區分大小寫！）。</li>
+        <li><mark>请勿</mark>将此文件夹设置为仓库根目录或与其他本地字体混合。</li>
       </ol>
       <h3>对于 Obsidian Sync 用户：</h3>
       <p>
@@ -1060,16 +1060,16 @@ export default {
 
   //modifierkeyHelper.ts
   // WebBrowserDragAction
-  WEB_DRAG_IMPORT_IMAGE: "导入图片到 Vault",
+  WEB_DRAG_IMPORT_IMAGE: "导入图片到仓库",
   WEB_DRAG_IMAGE_URL: "通过 URL 插入图片或 YouTube 缩略图",
   WEB_DRAG_LINK: "插入链接",
   WEB_DRAG_EMBEDDABLE: "插入交互框架",
 
   // LocalFileDragAction
-  LOCAL_DRAG_IMPORT: "导入外部文件，或在路径来自 Vault 时复用现有文件",
-  LOCAL_DRAG_IMAGE: "插入图片：使用本地 URI，或在路径来自 Vault 时使用内部链接",
-  LOCAL_DRAG_LINK: "插入链接：使用本地 URI，或在路径来自 Vault 时使用内部链接",
-  LOCAL_DRAG_EMBEDDABLE: "插入交互框架：使用本地 URI，或在路径来自 Vault 时使用内部链接",
+  LOCAL_DRAG_IMPORT: "导入文件到仓库，或在路径来自仓库时复用现有文件",
+  LOCAL_DRAG_IMAGE: "插入图片：使用本地 URI，或在路径来自仓库时使用内部链接",
+  LOCAL_DRAG_LINK: "插入链接：使用本地 URI，或在路径来自仓库时使用内部链接",
+  LOCAL_DRAG_EMBEDDABLE: "插入交互框架：使用本地 URI，或在路径来自仓库时使用内部链接",
 
   // InternalDragAction
   INTERNAL_DRAG_IMAGE: "插入图片",
@@ -1155,8 +1155,8 @@ export default {
   // Buttons
   EXPORTDIALOG_PNGTOFILE: "导出 PNG 文件",
   EXPORTDIALOG_SVGTOFILE: "导出 SVG 文件",
-  EXPORTDIALOG_PNGTOVAULT: "PNG 保存到 Vault",
-  EXPORTDIALOG_SVGTOVAULT: "SVG 保存到 Vault",
+  EXPORTDIALOG_PNGTOVAULT: "PNG 保存到仓库",
+  EXPORTDIALOG_SVGTOVAULT: "SVG 保存到仓库",
   EXPORTDIALOG_EXCALIDRAW: "Excalidraw",
   EXPORTDIALOG_PNGTOCLIPBOARD: "PNG 复制到剪贴板",
   EXPORTDIALOG_SVGTOCLIPBOARD: "SVG 复制到剪贴板",
@@ -1180,7 +1180,7 @@ export default {
   PDF_EXPORT_DESKTOP_ONLY: "PDF 导出功能仅限桌面端使用",
 
   //UniversalInsertFileModal.ts
-  UIFM_TITLE: "Insert File From Vault",
+  UIFM_TITLE: "从仓库嵌入文件",
   UIFM_SECTION_HEAD: "Select section heading",
   UIFM_ANCHOR: "Anchor to 100% of original size",
   UIFM_ANCHOR_DESC: "This is a pro feature, use it only if you understand how it works. If enabled even if you change the size of the imported image in Excalidraw, the next time you open the drawing this image will pop back to 100% size. This is useful when embedding an atomic Excalidraw idea into another note and preserving relative sizing of text and icons.",
@@ -1194,8 +1194,8 @@ export default {
   //Excalidraw component
   COMP_IMG: "Image & Files",
   COMP_IMG_FROM_SYSTEM: "Import from system",
-  COMP_IMG_ANY_FILE: "ANY file from Vault",
-  COMP_IMG_LaTeX: "LaTeX formula",
+  COMP_IMG_ANY_FILE: "任何仓库中的文件",
+  COMP_IMG_LaTeX: "LaTeX 公式",
   COMP_FRAME: "Frame Actions",
   COMP_FRAME_HINT: "Toggle Marker Frame. Guide-only frames to define slides/print areas/image references. " +
       "Hidden in image exports; doesn't contain elements. Hide/show frames via canvas context menu.",
