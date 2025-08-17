@@ -138,6 +138,14 @@ export default {
     "2) 然后在新窗格中，通过 Ctrl/CMD 点击 Excalidraw 功能区按钮创建一个空白绘图。\n" +
     "3) 最后，使用 Ctrl/CMD+V 将您的作品粘贴到新文档中。",
   ARIA_LABEL_TRAY_MODE: "托盘模式提供了一个更宽敞的画布空间",
+  TRAY_TRAY_MODE: "Toggle tray-mode",
+  TRAY_SCRIPT_LIBRARY: "Script Library",
+  TRAY_SCRIPT_LIBRARY_ARIA: "Explore the Excalidraw Script Library",
+  TRAY_EXPORT: "Export Image...",
+  TRAY_EXPORT_ARIA: "Export image as PNG, SVG, or Excalidraw file",
+  TRAY_SAVE: "Save",
+  TRAY_SWITCH_TO_MD: "Open as Markdown",
+  TRAY_SWITCH_TO_MD_ARIA: "Switch to markdown view",
   MASK_FILE_NOTICE: "这是一个蒙版图像。长按本提示来观看视频讲解。",
   INSTALL_SCRIPT_BUTTON: "安装或更新 Excalidraw 脚本",
   OPEN_AS_MD: "打开为 Markdown 文档",
@@ -1170,4 +1178,25 @@ export default {
 
   //exportUtils.ts
   PDF_EXPORT_DESKTOP_ONLY: "PDF 导出功能仅限桌面端使用",
+
+  //UniversalInsertFileModal.ts
+  UIFM_TITLE: "Insert File From Vault",
+  UIFM_SECTION_HEAD: "Select section heading",
+  UIFM_ANCHOR: "Anchor to 100% of original size",
+  UIFM_ANCHOR_DESC: "This is a pro feature, use it only if you understand how it works. If enabled even if you change the size of the imported image in Excalidraw, the next time you open the drawing this image will pop back to 100% size. This is useful when embedding an atomic Excalidraw idea into another note and preserving relative sizing of text and icons.",
+  UIFM_BTN_EMBEDDABLE: "as Embeddable",
+  UIFM_BTN_PDF: "as Pdf",
+  UIFM_BTN_IMAGE: "as Image",
+  
+  //ReleaseNotes.ts
+  RN_WELCOME: "Welcome to Excalidraw",
+  
+  //Excalidraw component
+  COMP_IMG: "Image & Files",
+  COMP_IMG_FROM_SYSTEM: "Import from system",
+  COMP_IMG_ANY_FILE: "ANY file from Vault",
+  COMP_IMG_LaTeX: "LaTeX formula",
+  COMP_FRAME: "Frame Actions",
+  COMP_FRAME_HINT: "Toggle Marker Frame. Guide-only frames to define slides/print areas/image references. " +
+      "Hidden in image exports; doesn't contain elements. Hide/show frames via canvas context menu.",
 };
