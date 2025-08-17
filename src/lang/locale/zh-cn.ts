@@ -914,6 +914,10 @@ export default {
   SCRIPT_EXECUTION_ERROR:
     "脚本运行错误。请在开发者控制台中查看错误信息。",
 
+  //ExcalidrawViewUtils.ts
+  MARKER_FRAME_RENDERING_DISABLED_NOTICE : "场景中有隐藏的标记框。" ,
+  //DRAWING_HAS_BACK_OF_THE_CARD: "这幅画的背面有笔记。",
+
   //ExcalidrawData.ts
   LOAD_FROM_BACKUP: "Excalidraw 文件已损坏。尝试从备份文件中加载。",
   FONT_LOAD_SLOW: "正在加载字体...\n\n 这比预期花费的时间更长。如果这种延迟经常发生，您可以将字体下载到您的 Vault 中。\n\n" +
