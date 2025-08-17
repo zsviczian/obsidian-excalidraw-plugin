@@ -18,6 +18,9 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
 "2.15.1":`
+## Fixed
+- Pasting an oversized image resulted in an error message and Excalidraw dumping the scene. [#2453](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2453), [#9878](https://github.com/excalidraw/excalidraw/issues/9878)
+
 ## New
 - New option in settings under "Zoom and Pan". Pan with right mouse button (Miro‑style): right‑click and drag to pan the canvas. Press 'm' for the context menu (disabled while editing text). 🙏 [@mfuria](https://github.com/mfuria) for making this happen! [#2450](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2450), [#329](https://github.com/zsviczian/excalidraw/pull/329)
 - Insert image in the main toolbar now opens a dropdown menu of options: Insert from system, insert from Vault, insert LaTeX. [#2448](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2448)
