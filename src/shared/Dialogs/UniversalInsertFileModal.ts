@@ -1,4 +1,4 @@
-import { ButtonComponent, DropdownComponent, TFile, ToggleComponent } from "obsidian";
+import { ButtonComponent, DropdownComponent, TFile } from "obsidian";
 import ExcalidrawView from "../../view/ExcalidrawView";
 import ExcalidrawPlugin from "../../core/main";
 import {  Modal, Setting, TextComponent } from "obsidian";
@@ -10,6 +10,7 @@ import { InsertPDFModal } from "./InsertPDFModal";
 import {  ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { cleanSectionHeading } from "src/utils/obsidianUtils";
+import { t } from "src/lang/helpers";
 
 export class UniversalInsertFileModal extends Modal {
   private center: { x: number, y: number } = { x: 0, y: 0 };
@@ -61,7 +62,7 @@ export class UniversalInsertFileModal extends Modal {
 
   onOpen(): void {
     this.containerEl.classList.add("excalidraw-release");
-    this.titleEl.setText(`Insert File From Vault`);
+    this.titleEl.setText(t("UIFM_TITLE"));
     this.createForm();
   }
 
@@ -155,15 +156,15 @@ export class UniversalInsertFileModal extends Modal {
     });
 
     sectionPickerSetting = new Setting(ce)
-      .setName("Select section heading")
+      .setName(t("UIFM_SECTION_HEAD"))
       .addDropdown(dropdown => {
         sectionPicker = dropdown;
         sectionPicker.selectEl.style.width = "100%";
       })
 
     sizeToggleSetting = new Setting(ce)
-      .setName("Anchor to 100% of original size")
-      .setDesc("This is a pro feature, use it only if you understand how it works. If enabled even if you change the size of the imported image in Excalidraw, the next time you open the drawing this image will pop back to 100% size. This is useful when embedding an atomic Excalidraw idea into another note and preserving relative sizing of text and icons.")
+      .setName(t("UIFM_ANCHOR"))
+      .setDesc(t("UIFM_ANCHOR_DESC"))
       .addToggle(toggle => {
         toggle.setValue(anchorTo100)
         .onChange((value) => {
@@ -174,7 +175,7 @@ export class UniversalInsertFileModal extends Modal {
     new Setting(ce)
       .addButton(button => {
         button
-          .setButtonText("as Embeddable")
+          .setButtonText(t("UIFM_BTN_EMBEDDABLE"))
           .onClick(async () => {
             const path = this.app.metadataCache.fileToLinktext(
               file,
@@ -198,7 +199,7 @@ export class UniversalInsertFileModal extends Modal {
       })
       .addButton(button => {
         button
-          .setButtonText("as Pdf")
+          .setButtonText(t("UIFM_BTN_PDF"))
           .onClick(() => {
             const insertPDFModal = new InsertPDFModal(this.plugin, this.view);
             insertPDFModal.open(file);
@@ -208,7 +209,7 @@ export class UniversalInsertFileModal extends Modal {
       })
       .addButton(button => {
         button
-          .setButtonText("as Image")
+          .setButtonText(t("UIFM_BTN_IMAGE"))
           .onClick(async () => {
             const ea:ExcalidrawAutomate = getEA(this.view);
             const isMarkdown = file && file.extension === "md" && !ea.isExcalidrawFile(file);

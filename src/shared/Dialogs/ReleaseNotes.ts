@@ -2,6 +2,7 @@ import { App, MarkdownRenderer, Modal } from "obsidian";
 import { isVersionNewerThanOther } from "src/utils/utils";
 import ExcalidrawPlugin from "../../core/main";
 import { FIRST_RUN, RELEASE_NOTES } from "./Messages";
+import { t } from "src/lang/helpers";
 
 declare const PLUGIN_VERSION:string;
 
@@ -20,7 +21,7 @@ export class ReleaseNotes extends Modal {
     const { containerEl, contentEl, titleEl, headerEl } = this;
     //this.contentEl.classList.add("excalidraw-release");
     containerEl.classList.add("excalidraw-release");
-    titleEl.setText(`Welcome to Excalidraw ${this.version ?? ""}`);
+    titleEl.setText(`${t("RN_WELCOME")} ${this.version ?? ""}`);
     this.createForm();
 
     if(headerEl) headerEl.style.pointerEvents = "none"; // Disable pointer events on header to allow clicks through

@@ -5309,7 +5309,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           "aria-label": t("ARIA_LABEL_TRAY_MODE"),
           onSelect: ()=> this.toggleTrayMode(),
         },
-        "Toggle tray-mode"
+        t("TRAY_TRAY_MODE")
       ) : null,
       React.createElement(
         MainMenu.Item,
@@ -5318,34 +5318,34 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           "aria-label": t("FORCE_SAVE"),
           onSelect: ()=> this.forceSave(),
         },
-        "Save"
+        t("TRAY_SAVE")
       ),
       React.createElement(
         MainMenu.Item,
         {              
           icon: ICONS.scriptEngine,
-          "aria-label": "Explore the Excalidraw Script Library",
+          "aria-label": t("TRAY_SCRIPT_LIBRARY_ARIA"),
           onSelect: ()=> this.actionOpenScriptInstallPrompt(),
         },
-        "Script Library"
+        t("TRAY_SCRIPT_LIBRARY")
       ),
       React.createElement(
         MainMenu.Item,
         {              
           icon: ICONS.ExportImage,
-          "aria-label": "Export image as PNG, SVG, or Excalidraw file",
+          "aria-label": t("TRAY_EXPORT_ARIA"),
           onSelect: ()=> this.actionOpenExportImageDialog(),
         },
-        "Export Image..."
+        t("TRAY_EXPORT")
       ),
       React.createElement(
         MainMenu.Item,
         {              
           icon: ICONS.switchToMarkdown,
-          "aria-label": "Switch to markdown view",
+          "aria-label": t("TRAY_SWITCH_TO_MD_ARIA"),
           onSelect: ()=> this.openAsMarkdown(),
         },
-        "Open as Markdown"
+        t("TRAY_SWITCH_TO_MD")
       ),
       React.createElement(MainMenu.Separator),
       React.createElement(MainMenu.DefaultItems.Help),

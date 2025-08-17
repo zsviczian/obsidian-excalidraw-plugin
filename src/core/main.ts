@@ -40,7 +40,7 @@ import {
 } from "../constants/constants";
 import { ExcalidrawSettings, DEFAULT_SETTINGS, ExcalidrawSettingTab } from "./settings";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
-import { initExcalidrawAutomate } from "src/utils/excalidrawAutomateUtils";
+import { initExcalidrawAutomate, insertLaTeXToView } from "src/utils/excalidrawAutomateUtils";
 import { around, dedupe } from "monkey-around";
 import { t } from "../lang/helpers";
 import {
@@ -88,6 +88,8 @@ import { PackageManager } from "./managers/PackageManager";
 import ExcalidrawView from "../view/ExcalidrawView";
 import { CommandManager } from "./managers/CommandManager";
 import { EventManager } from "./managers/EventManager";
+import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFileModal";
+import en from "src/lang/locale/en";
 
 declare const PLUGIN_VERSION:string;
 declare const INITIAL_TIMESTAMP: number;
@@ -1077,6 +1079,15 @@ export default class ExcalidrawPlugin extends Plugin {
     this.eventManager.setDebounceActiveLeafChangeHandler();
   }
 
+  private getPathForFile(file: File) {
+    let path = "";
+    const { webUtils } = require('electron');
+    if(webUtils && webUtils.getPathForFile) {
+      path = webUtils.getPathForFile(file);
+    }
+    return path;
+  }
+
   public registerHotkeyOverrides() {
     //this is repeated here because the same function is called when settings is closed after hotkeys have changed
     if (this.popScope) {
@@ -1445,5 +1456,27 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public updateFileCache(file: TFile, frontmatter: FrontMatterCache) {
     this.fileManager.updateFileCache(file, frontmatter);
+  }
+
+  //used by obsidianUtils in the Excalidraw Pacakge
+  //aweful coding, but does the job
+  public runAction(action: "anyFile" | "LaTeX") {
+    if(!this.activeExcalidrawView) return;
+    switch (action) {
+      case "anyFile":
+        this.activeExcalidrawView.setCurrentPositionToCenter();
+        const insertFileModal = new UniversalInsertFileModal(this, this.activeExcalidrawView);
+        insertFileModal.open();
+        break;
+      case "LaTeX":
+        insertLaTeXToView(this.activeExcalidrawView);
+        break;
+    }
+  }
+
+  //used by obsidianUtils in the Excalidraw Pacakge
+  //aweful coding, but does the job
+  public getLabel(key: keyof typeof en): string {
+   return t(key);
   }
 }
