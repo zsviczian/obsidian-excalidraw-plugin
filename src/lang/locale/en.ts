@@ -452,7 +452,9 @@ export default {
     "conflict with Obsidian hotkey settings. The hotkey combinations you add below will override Obsidian's hotkey settings while using Excalidraw, thus " +
     `you can add <code>${labelCTRL()}+G</code> if you want to default to Group Object in Excalidraw instead of opening Graph View.`,
   THEME_HEAD: "Theme and styling",
-  ZOOM_HEAD: "Zoom",
+  ZOOM_AND_PAN_HEAD: "Zoom and Panning",
+  PAN_WITH_RIGHT_MOUSE_BUTTON_NAME: "Pan canvas with right mouse button (open menu with ‘m’)",
+  PAN_WITH_RIGHT_MOUSE_BUTTON_DESC: "When enabled, you can pan the canvas by right-clicking and dragging. The context menu will open with the ‘m‘ key, unless you are editing text.",
   DEFAULT_PINCHZOOM_NAME: "Allow pinch zoom in pen mode",
   DEFAULT_PINCHZOOM_DESC:
     "Pinch zoom in pen mode when using the freedraw tool is disabled by default to prevent unwanted accidental zooming with your palm.<br>" +
