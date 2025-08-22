@@ -1,7 +1,7 @@
 import { NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { DEVICE, REG_LINKINDEX_INVALIDCHARS } from "src/constants/constants";
 import { getParentOfClass } from "./obsidianUtils";
-import { App, Notice, TFile, WorkspaceLeaf } from "obsidian";
+import { App, TFile, WorkspaceLeaf } from "obsidian";
 import { getLinkParts } from "./utils";
 import ExcalidrawView from "src/view/ExcalidrawView";
 
@@ -58,15 +58,14 @@ export const generateEmbeddableLink = (src: string, theme: "light" | "dark"):str
 }
 
 export function setFileToLocalGraph(app: App, file: TFile) {
-  let lgv;
+  let lgv: any;
   app.workspace.iterateAllLeaves((l) => {
     if (l.view?.getViewType() === "localgraph") lgv = l.view;
   });
+  if(!lgv) return;
   try {
-    //@ts-ignore
-    const loadFile = lgv?.loadFile;
-    if (loadFile) {
-      loadFile(file);
+    if (lgv.loadFile && lgv.file !== file) {
+      lgv.loadFile(file);
     }
   } catch (e) {
     console.error(e);

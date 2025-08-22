@@ -34,6 +34,7 @@ export interface ObsidianCanvasNode {
   isEditing: boolean;
   file: TFile;
   detach: Function;
+  isEditable: Function;
 }
 
 export class CanvasNodeFactory {
@@ -112,12 +113,11 @@ export class CanvasNodeFactory {
   }
 
   public async startEditing(node: ObsidianCanvasNode, theme: string) {
-    if (!this.initialized || !node) return;
+    if (!this.initialized || !node || !node.isEditable()) return;
     
     try {
-      //if (node.file === this.view.file) {
-        await this.view.setEmbeddableNodeIsEditing();
-      //}
+      await this.view.setEmbeddableNodeIsEditing();
+      
       node.startEditing();
       node.isEditing = true;
 
@@ -138,12 +138,10 @@ export class CanvasNodeFactory {
   }
 
   public stopEditing(node: ObsidianCanvasNode) {
-    if (!this.initialized || !node || !node.isEditing) return;
+    if (!this.initialized || !node || !node.isEditing || !node.isEditable()) return;
     
     try {
-      //if (node.file === this.view.file) {
-        this.view.clearEmbeddableNodeIsEditing();
-      //}
+      this.view.clearEmbeddableNodeIsEditing();
       node.child.showPreview();
       node.isEditing = false;
       this.observer?.disconnect();

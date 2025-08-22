@@ -1,4 +1,4 @@
-import {  NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
+import {  ExcalidrawEmbeddableElement, NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { Notice, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import * as React from "react";
@@ -9,7 +9,7 @@ import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
 import { processLinkText, patchMobileView, setFileToLocalGraph } from "src/utils/customEmbeddableUtils";
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
 
-const CANVAS_VIEWTYPES = new Set(["markdown", "bases"]);
+const CANVAS_VIEWTYPES = new Set(["markdown", "bases", "audio", "video"]);
 
 declare module "obsidian" {
   interface Workspace {
@@ -76,11 +76,11 @@ export function renderWebView (src: string, view: ExcalidrawView, id: string, _:
 function RenderObsidianView(
   { mdProps, element, linkText, view, containerRef, activeEmbeddable, theme, canvasColor }:{
   mdProps: EmbeddableMDCustomProps;
-  element: NonDeletedExcalidrawElement;
+  element: ExcalidrawEmbeddableElement;
   linkText: string;
   view: ExcalidrawView;
   containerRef: React.RefObject<HTMLDivElement>;
-  activeEmbeddable: {element: NonDeletedExcalidrawElement; state: string};
+  activeEmbeddable: {element: ExcalidrawEmbeddableElement; state: string};
   theme: string;
   canvasColor: string;
 }): JSX.Element {
@@ -166,6 +166,21 @@ function RenderObsidianView(
     }
   }, [isActiveRef.current]);
 
+  const setKeepOnTop = () => {
+    const keepontop = (view.app.workspace.activeLeaf === view.leaf) && DEVICE.isDesktop;
+    if (keepontop) {
+      //@ts-ignore
+      if(!view.ownerWindow.electronWindow.isAlwaysOnTop()) {
+        //@ts-ignore
+        view.ownerWindow.electronWindow.setAlwaysOnTop(true);
+        setTimeout(() => {
+          //@ts-ignore
+          view.ownerWindow.electronWindow.setAlwaysOnTop(false);
+        }, 500);
+      }
+    }
+  }
+
   //--------------------------------------------------------------------------------
   //Mount the workspace leaf or the canvas node depending on subpath
   //--------------------------------------------------------------------------------
@@ -193,21 +208,6 @@ function RenderObsidianView(
       node: null,
       editNode: null,
     };
-
-    const setKeepOnTop = () => {
-      const keepontop = (view.app.workspace.activeLeaf === view.leaf) && DEVICE.isDesktop;
-      if (keepontop) {
-        //@ts-ignore
-        if(!view.ownerWindow.electronWindow.isAlwaysOnTop()) {
-          //@ts-ignore
-          view.ownerWindow.electronWindow.setAlwaysOnTop(true);
-          setTimeout(() => {
-            //@ts-ignore
-            view.ownerWindow.electronWindow.setAlwaysOnTop(false);
-          }, 500);
-        }
-      }
-    }
 
     //if subpath is defined, create a canvas node else create a workspace leaf
     if(subpath && view.canvasNodeFactory.isInitialized()) {
@@ -257,7 +257,7 @@ function RenderObsidianView(
   //--------------------------------------------------------------------------------
   //Set colors of the canvas node
   //--------------------------------------------------------------------------------
-  function setColors (canvasNode: HTMLDivElement, element: NonDeletedExcalidrawElement, mdProps: EmbeddableMDCustomProps, canvasColor: string) {
+  function setColors (canvasNode: HTMLDivElement, element: ExcalidrawEmbeddableElement, mdProps: EmbeddableMDCustomProps, canvasColor: string) {
     if(!mdProps) return;
     if (!leafRef.current?.hasOwnProperty("node")) return;
 
@@ -378,6 +378,11 @@ function RenderObsidianView(
       event?.stopPropagation();
     }
 
+    if(isActiveRef.current && leafRef.current?.leaf) {
+      setKeepOnTop();
+      view.app.workspace.setActiveLeaf(leafRef.current.leaf, { focus: true });
+    }
+
     if (isActiveRef.current && !isEditingRef.current && leafRef.current?.leaf) {
       if(leafRef.current.leaf.view?.getViewType() === "markdown") {
         const api:ExcalidrawImperativeAPI = view.excalidrawAPI;
@@ -402,13 +407,13 @@ function RenderObsidianView(
         view.canvasNodeFactory.startEditing(leafRef.current.node, newTheme);
       }
     }
-  }, [leafRef.current?.leaf, element.id, view, themeRef.current]);
+  }, [leafRef.current?.leaf, element.id, view, themeRef.current, isActiveRef.current, isEditingRef.current]);
 
   if(leafRef.current)  leafRef.current.editNode = handleClick;
   // Event listener for key press
   React.useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
-      if (event.key === "Enter") {
+      if (event.key === "Enter" && !isActiveRef.current) {
         handleClick(event); // Call handleClick function when Enter key is pressed
       }
     };
@@ -418,7 +423,7 @@ function RenderObsidianView(
     return () => {
       document.removeEventListener("keydown", handleKeyPress); // Remove event listener when component unmounts
     };
-  }, [handleClick]);
+  }, [handleClick, isActiveRef.current]);
 
   //--------------------------------------------------------------------------------
   // Set isActiveRef and switch to preview mode when the iframe is not active
@@ -434,6 +439,11 @@ function RenderObsidianView(
     const node = leafRef.current?.node as ObsidianCanvasNode;
     if (previousIsActive === isActiveRef.current) {
       return;
+    }
+
+    if(leafRef.current?.leaf) {
+      setKeepOnTop();
+      view.app.workspace.setActiveLeaf(leafRef.current.leaf, { focus: true });
     }
 
     if(file !== view.file) {
@@ -468,6 +478,7 @@ function RenderObsidianView(
   }, [
     containerRef,
     leafRef,
+    activeEmbeddable?.state,
     isActiveRef,
     activeEmbeddable?.element,
     activeEmbeddable?.state,
@@ -482,7 +493,7 @@ function RenderObsidianView(
 };
 
 
-export const CustomEmbeddable: React.FC<{element: NonDeletedExcalidrawElement; view: ExcalidrawView; appState: UIAppState; linkText: string}> = ({ element, view, appState, linkText }) => {
+export const CustomEmbeddable: React.FC<{element: ExcalidrawEmbeddableElement; view: ExcalidrawView; appState: UIAppState; linkText: string}> = ({ element, view, appState, linkText }) => {
   const React = view.packages.react;
   const containerRef: React.RefObject<HTMLDivElement> = React.useRef(null);
   const theme = getTheme(view, appState.theme);

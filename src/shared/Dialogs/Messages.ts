@@ -19,7 +19,11 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 `,
 "2.15.1":`
 ## Fixed
+- PDF improvements
+  - It was not possible to scroll the embedded PDF. [#9891](https://github.com/excalidraw/excalidraw/pull/9891)
+  - Embedded PDF pages were blurred (pixelated).
 - Pasting an oversized image resulted in an error message and Excalidraw dumping the scene. [#2453](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2453), [#9878](https://github.com/excalidraw/excalidraw/issues/9878)
+- Insert Any File now supports adding Audio files.
 
 ## New
 - New option in settings under "Zoom and Pan". Pan with right mouse button (Miro‑style): right‑click and drag to pan the canvas. Press 'm' for the context menu (disabled while editing text). 🙏 [@mfuria](https://github.com/mfuria) for making this happen! [#2450](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2450), [#329](https://github.com/zsviczian/excalidraw/pull/329)

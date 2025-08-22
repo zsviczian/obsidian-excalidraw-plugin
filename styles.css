@@ -857,3 +857,8 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
   fill: none;
   pointer-events: none;
 }
+
+/*remove blur from PDF embed*/
+.excalidraw__embeddable-container canvas {
+  image-rendering: auto;
+}
