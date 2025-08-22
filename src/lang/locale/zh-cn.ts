@@ -161,9 +161,9 @@ export default {
     '文件名不能含有以下符号： * " \\ < > : | ? #',
   FORCE_SAVE:
     "保存（同时更新嵌入了该绘图的 Markdown 文档）",
-  RAW: "文本元素正以原文（RAW）模式显示链接。\n点击切换到预览（PREVIEW）模式",
+  RAW: "正以 RAW 模式显示链接\n点击切换到 PREVIEW 模式",
   PARSED:
-    "文本元素正以预览（PREVIEW）模式显示链接。\n点击切换到原文（RAW）模式",
+    "正以 PREVIEW 模式显示链接\n点击切换到 RAW 模式",
   NOFILE: "Excalidraw（没有文件）",
   COMPATIBILITY_MODE:
     "*.excalidraw 是兼容旧版的绘图文件格式。需要转换为新格式才能解锁本插件的全部功能。",
@@ -415,7 +415,7 @@ export default {
     "<br><b>开启：</b>跟随主题变化。<br><b>关闭：</b>不跟随主题变化。",
   DEFAULT_OPEN_MODE_NAME: "Excalidraw 的默认运行模式",
   DEFAULT_OPEN_MODE_DESC:
-    "设置 Excalidraw 的运行模式：普通模式（Normal）/禅模式（Zen）/阅读模式（View）。<br>" +
+    "设置 Excalidraw 的运行模式：普通模式（Normal）/禅模式（Zen）/查看模式（View）。<br>" +
     "您可为某个绘图单独设置此项，方法是在其 frontmatter 中添加形如 <code>excalidraw-default-mode: normal/zen/view</code> 的键值对。",
   DEFAULT_PEN_MODE_NAME: "触控笔模式（Pen mode）",
   DEFAULT_PEN_MODE_DESC:
@@ -538,17 +538,17 @@ export default {
     "若开启此项，Excalidraw 会在主工作区的面板中打开该链接。",
   LINK_BRACKETS_NAME: "在链接的两侧显示 <code>[[中括号]]</code>",
   LINK_BRACKETS_DESC: `${
-    "文本元素处于预览（PREVIEW）模式时，在内部链接的两侧显示中括号。<br>" +
+    "文本元素处于 PREVIEW 模式时，在内部链接的两侧显示中括号。<br>" +
     "您可为某个绘图单独设置此项，方法是在其 frontmatter 中添加形如 <code>"
   }${FRONTMATTER_KEYS["link-brackets"].name}: true/false</code> 的键值对。`,
   LINK_PREFIX_NAME: "内部链接的前缀",
   LINK_PREFIX_DESC: `${
-    "文本元素处于预览（PREVIEW）模式时，如果其中包含链接，则添加此前缀。<br>" +
+    "文本元素处于 PREVIEW 模式时，如果其中包含链接，则添加此前缀。<br>" +
     "您可为某个绘图单独设置此项，方法是在其 frontmatter 中添加形如 <code>"
   }${FRONTMATTER_KEYS["link-prefix"].name}: "📍 "</code> 的键值对。`,
   URL_PREFIX_NAME: "外部链接的前缀",
   URL_PREFIX_DESC: `${
-    "文本元素处于预览（PREVIEW）模式时，如果其中包含外部链接，则添加此前缀。<br>" +
+    "文本元素处于 PREVIEW 模式时，如果其中包含外部链接，则添加此前缀。<br>" +
     "您可为某个绘图单独设置此项，方法是在其 frontmatter 中添加形如 <code>"
   }${FRONTMATTER_KEYS["url-prefix"].name}: "🌐 "</code> 的键值对。`,
   PARSE_TODO_NAME: "待办任务（Todo）",
@@ -559,8 +559,8 @@ export default {
   DONE_DESC: "已完成的待办项目的符号",
   HOVERPREVIEW_NAME: "鼠标悬停预览内部链接",
   HOVERPREVIEW_DESC:
-    `<b>开启：</b>在 Excalidraw <u>阅读模式（View）</u>下，鼠标悬停在 <code>[[内部链接]]</code> 上即可预览；` +
-    "而在<u>普通模式（Normal）</u>下，鼠标悬停在内部链接右上角的蓝色标识上即可预览。<br> " +
+    `<b>开启：</b>在 Excalidraw <u>查看模式（View）</u>下，鼠标悬停在 <code>[[内部链接]]</code> 上即可预览；` +
+    "而在<u>普通模式（Normal）</u>下，鼠标悬停在内部链接右上角的蓝色标识上即可预览。<br>" +
     `<b>关闭：</b>鼠标悬停在 <code>[[内部链接]]</code> 上，并且按住 ${labelCTRL()} 才能预览。`,
   LINKOPACITY_NAME: "链接标识的透明度",
   LINKOPACITY_DESC:
