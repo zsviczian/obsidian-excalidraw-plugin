@@ -579,17 +579,26 @@ function RenderObsidianView(
   // Event listener for key press
   React.useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
+      // Deactivate active embeddable on Escape
+      if (event.key === "Escape" && isActiveRef.current) {
+        event.preventDefault();
+        event.stopPropagation();
+        view.updateScene({ appState: { activeEmbeddable: null } });
+        return;
+      }
+      // Existing Enter behavior
       if (event.key === "Enter" && !isActiveRef.current) {
         handleClick(event); // Call handleClick function when Enter key is pressed
       }
     };
 
-    document.addEventListener("keydown", handleKeyPress); // Add event listener for key press
+    // Use capture so this runs even if container stops bubbling
+    document.addEventListener("keydown", handleKeyPress, true);
 
     return () => {
-      document.removeEventListener("keydown", handleKeyPress); // Remove event listener when component unmounts
+      document.removeEventListener("keydown", handleKeyPress, true);
     };
-  }, [handleClick, isActiveRef.current]);
+  }, [handleClick, isActiveRef.current, view]);
 
   //--------------------------------------------------------------------------------
   // Set isActiveRef and switch to preview mode when the iframe is not active
