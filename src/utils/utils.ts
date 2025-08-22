@@ -625,6 +625,8 @@ export function getLinkParts (fname: string, file?: TFile): LinkParts {
   const REG = /(^[^#\|]*)#?(\^)?([^\|]*)?\|?(\d*)x?(\d*)/;
   const parts = fname.match(REG);
   const isBlockRef = parts[2] === "^";
+  let page = parseInt(parts[3]?.match(/page=(\d*)/)?.[1]);
+  page = isNaN(page) ? null : page;
   return {
     original: fname,
     path: file && (parts[1] === "") ? file.path : parts[1],
@@ -634,7 +636,7 @@ export function getLinkParts (fname: string, file?: TFile): LinkParts {
       : isBlockRef ? cleanBlockRef(parts[3]) : cleanSectionHeading(parts[3]),
     width: parts[4] ? parseInt(parts[4]) : undefined,
     height: parts[5] ? parseInt(parts[5]) : undefined,
-    page: parseInt(parts[3]?.match(/page=(\d*)/)?.[1])
+    page,
   };
 };
 

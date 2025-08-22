@@ -22,6 +22,11 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 - PDF improvements
   - It was not possible to scroll the embedded PDF. [#9891](https://github.com/excalidraw/excalidraw/pull/9891)
   - Embedded PDF pages were blurred (pixelated).
+  - Embedded PDF now accurately follows \`excalidraw-embeddable-theme\` document property.
+    - auto: follows Excalidraw theme (regardless of Obsidian theme)
+    - default: follows Obsidian theme (regardless of Excalidraw theme)
+    - dark: always displays the PDF in dark mode (regardless of Excalidraw and Obsidian themes)
+    - light: always displays the PDF in light mode (regardless of Excalidraw and Obsidian themes)
 - Pasting an oversized image resulted in an error message and Excalidraw dumping the scene. [#2453](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2453), [#9878](https://github.com/excalidraw/excalidraw/issues/9878)
 - Insert Any File now supports adding Audio files.
 

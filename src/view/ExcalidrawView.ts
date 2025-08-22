@@ -109,6 +109,7 @@ import {
   arrayToMap,
   addAppendUpdateCustomData,
   getFilePathFromObsidianURL,
+  getLinkParts,
 } from "../utils/utils";
 import { cleanBlockRef, cleanSectionHeading, closeLeafView, getActivePDFPageNumberFromPDFView, getAttachmentsFolderAndFilePath, getLeaf, getParentOfClass, obsidianPDFQuoteWithRef, openLeaf, setExcalidrawView } from "../utils/obsidianUtils";
 import { splitFolderAndFilename } from "../utils/fileUtils";
@@ -4432,8 +4433,14 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             ea.selectElementsInView([await insertEmbeddableToView (ea, center, file, link)]);
             ea.destroy();
           } else {
-            const modal = new UniversalInsertFileModal(this.plugin, this);
-            modal.open(file, center);
+            const linkParts = getLinkParts(link);
+            if(linkParts.page) {
+              const path = file.path + "#" + link.split("#")[1];
+              ea.selectElementsInView([await insertImageToView (ea, center, path)]);
+            } else {
+              const modal = new UniversalInsertFileModal(this.plugin, this);
+              modal.open(file, center);
+            }
           }
           this.setDirty(9);
         }

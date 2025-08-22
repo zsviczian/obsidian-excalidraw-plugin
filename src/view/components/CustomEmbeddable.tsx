@@ -278,20 +278,108 @@ function RenderObsidianView(
         patchMobileView(view);
         view.updateEmbeddableLeafRef(element.id, leafRef.current);
         if(viewType === "pdf") {
+          const pdfView = leafRef.current.leaf.view;
           // Disable observer while applying the theme to avoid loops
           pdfObserverDisabledRef.current = true;
-          setPDFViewTheme(view, leafRef.current.leaf.view);
+          setPDFViewTheme(view, pdfView);
           requestAnimationFrame(() => { pdfObserverDisabledRef.current = false; });
 
+                    // Transform-aware MMB drag-to-scroll (bypasses Chromium autoscroll)
+          const scroller = pdfView.contentEl?.querySelector(".pdf-viewer-container") || null;
+          let active = false;
+          let lastX = 0, lastY = 0;
+          let scaleX = 1, scaleY = 1;
+
+          const getScaleFromAncestor = (target: Element | null) => {
+            // Read scale from the outer excalidraw embeddable container transform
+            const container = target?.closest(".excalidraw__embeddable-container") as HTMLElement | null;
+            if (!container) return { sx: 1, sy: 1 };
+            const t = getComputedStyle(container).transform;
+            // t can be "none", "matrix(a,b,c,d,tx,ty)" or "matrix3d(...)"
+            if (!t || t === "none") return { sx: 1, sy: 1 };
+            if (t.startsWith("matrix3d(")) {
+              // matrix3d: m11=a1, m12=b1, m21=a2, m22=b2 in the first 6 entries
+              const m = t.slice(9, -1).split(",").map(Number);
+              const a = m[0], b = m[1], c = m[4], d = m[5];
+              // scaleX = length of first column, scaleY = length of second column
+              return { sx: Math.hypot(a, b) || 1, sy: Math.hypot(c, d) || 1 };
+            }
+            if (t.startsWith("matrix(")) {
+              const m = t.slice(7, -1).split(",").map(Number); // [a,b,c,d,tx,ty]
+              const a = m[0], b = m[1], c = m[2], d = m[3];
+              return { sx: Math.hypot(a, b) || 1, sy: Math.hypot(c, d) || 1 };
+            }
+            return { sx: 1, sy: 1 };
+          };
+
+          const onPointerDownCapture = (e: PointerEvent) => {
+            if (e.button !== 1 || !scroller) return;
+            // Start custom pan, cancel browser autoscroll and prevent Excalidraw from handling it.
+            e.preventDefault();
+            e.stopPropagation();
+
+            active = true;
+            lastX = e.clientX;
+            lastY = e.clientY;
+
+            const { sx, sy } = getScaleFromAncestor(scroller);
+            scaleX = sx;
+            scaleY = sy;
+
+            // Listen on window so we keep panning even if we leave the element.
+            window.addEventListener("pointermove", onPointerMove, { capture: true });
+            window.addEventListener("pointerup", onPointerUp, { capture: true, once: true });
+            window.addEventListener("pointercancel", onPointerUp, { capture: true, once: true });
+
+            try { (view.contentEl as HTMLElement).style.cursor = "grabbing"; } catch {}
+          };
+
+          const onPointerMove = (e: PointerEvent) => {
+            if (!active || !scroller) return;
+            // Only continue while MMB is held (bit 3 = 4)
+            if ((e.buttons & 4) === 0) return;
+
+            const dx = e.clientX - lastX;
+            const dy = e.clientY - lastY;
+            lastX = e.clientX;
+            lastY = e.clientY;
+
+            // Convert viewport dx/dy to local CSS px by dividing by scale.
+            scroller.scrollLeft -= dx / (scaleX || 1);
+            scroller.scrollTop  -= dy / (scaleY || 1);
+
+            e.preventDefault();
+            e.stopPropagation();
+          };
+
+          const onPointerUp = (_e: PointerEvent) => {
+            active = false;
+            try { (view.contentEl as HTMLElement).style.cursor = ""; } catch {}
+            window.removeEventListener("pointermove", onPointerMove, { capture: true } as any);
+            window.removeEventListener("pointerup", onPointerUp,   { capture: true } as any);
+            window.removeEventListener("pointercancel", onPointerUp,{ capture: true } as any);
+          };
+
+          const root = pdfView.contentEl as HTMLElement;
+          root?.addEventListener("pointerdown", onPointerDownCapture, { capture: true });
+
+          const cleanupPan = () => {
+            root?.removeEventListener("pointerdown", onPointerDownCapture, { capture: true } as any);
+            window.removeEventListener("pointermove", onPointerMove, { capture: true } as any);
+            window.removeEventListener("pointerup", onPointerUp,   { capture: true } as any);
+            window.removeEventListener("pointercancel", onPointerUp,{ capture: true } as any);
+          };
+          (pdfObserverRef as any).currentCleanup = () => { cleanupPan(); };
+
           if (view.excalidrawData.embeddableTheme !== "default") {
-            const pdfContainerEl = leafRef.current.leaf.view?.contentEl?.querySelector(".pdf-container") as HTMLElement | null;
+            const pdfContainerEl = pdfView.contentEl?.querySelector(".pdf-container") as HTMLElement | null;
             if (pdfContainerEl) {
               pdfObserverRef.current?.disconnect();
               pdfObserverRef.current = new MutationObserver(() => {
                 if (pdfObserverDisabledRef.current) return;
                 pdfObserverDisabledRef.current = true;
                 try {
-                  setPDFViewTheme(view, leafRef.current?.leaf?.view);
+                  setPDFViewTheme(view, pdfView);
                 } finally {
                   requestAnimationFrame(() => { pdfObserverDisabledRef.current = false; });
                 }
@@ -308,6 +396,7 @@ function RenderObsidianView(
 
     return () => {
       // disconnect observer if any
+      (pdfObserverRef as any).currentCleanup?.();
       pdfObserverRef.current?.disconnect();
       pdfObserverRef.current = null;
 
