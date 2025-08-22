@@ -201,6 +201,10 @@ export class EmbeddedFile {
     }
   }
 
+  get hasSeparateDarkAndLightVersion(): boolean {
+    return this.isSVGwithBitmap || (this.file && this.file.extension.toLowerCase() === "pdf");
+  }
+
   public resetImage(hostPath: string, imgPath: string) {
     this.imgInverted = this.img = "";
     this.mtime = 0;
@@ -278,11 +282,12 @@ export class EmbeddedFile {
     if (this.fileChanged()) {
       this.imgInverted = this.img = "";
     }
+    this.isSVGwithBitmap = isSVGwithBitmap;
     this.mtime = this.isHyperLink || this.isLocalLink ? 0 : this.file.stat.mtime;
     this.pdfPageViewProps = pdfPageViewProps;
     this.size = size;
     this.mimeType = mimeType;
-    switch (isDark && isSVGwithBitmap) {
+    switch (isDark && this.hasSeparateDarkAndLightVersion) {
       case true:
         this.imgInverted = imgBase64;
         break;
@@ -290,7 +295,6 @@ export class EmbeddedFile {
         this.img = imgBase64;
         break; //bitmaps and SVGs without an embedded bitmap do not need a negative image
     }
-    this.isSVGwithBitmap = isSVGwithBitmap;
   }
 
   public isLoaded(isDark: boolean): boolean {
@@ -309,7 +313,7 @@ export class EmbeddedFile {
         return false;
       }
     }
-    if (this.isSVGwithBitmap && isDark) {
+    if (this.hasSeparateDarkAndLightVersion && isDark) {
       return this.imgInverted !== "";
     }
     return this.img !== "";
@@ -319,7 +323,7 @@ export class EmbeddedFile {
     if (!this.file && !this.isHyperLink && !this.isLocalLink) {
       return "";
     }
-    if (isDark && this.isSVGwithBitmap) {
+    if (this.hasSeparateDarkAndLightVersion && isDark) {
       return this.imgInverted;
     }
     return this.img; //images that are not SVGwithBitmap, only the light string is stored, since inverted and non-inverted are ===
@@ -675,7 +679,7 @@ export class EmbeddedFilesLoader {
               };
               files[batch].push(fileData);
             }
-          } else if (embeddedFile.isSVGwithBitmap && (depth !== 0 || isThemeChange)) {
+          } else if (embeddedFile.hasSeparateDarkAndLightVersion && (depth !== 0 || isThemeChange)) {
             //this will reload the image in light/dark mode when switching themes
             const fileData: FileData = {
               mimeType: embeddedFile.mimeType,
@@ -927,6 +931,26 @@ export class EmbeddedFilesLoader {
 
       const canvas = await renderPage(pageNum); 
       if(canvas) {
+        // NEW: invert colors for dark theme (keep alpha unchanged)
+        if (this.isDark) {
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            try {
+              const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const data = img.data;
+              for (let i = 0; i < data.length; i += 4) {
+                data[i] = 255 - data[i];       // R
+                data[i + 1] = 255 - data[i+1]; // G
+                data[i + 2] = 255 - data[i+2]; // B
+                // alpha channel (data[i+3]) remains unchanged
+              }
+              ctx.putImageData(img, 0, 0);
+            } catch (e) {
+              // If reading pixel data fails, silently fallback to non-inverted
+            }
+          }
+        }
+
         const result: [DataURL,Size, PDFPageViewProps] = [`data:image/png;base64,${await new Promise((resolve, reject) => {
           canvas.toBlob(async (blob) => {
             const dataURL = await blobToBase64(blob);
