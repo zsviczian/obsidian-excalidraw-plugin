@@ -231,13 +231,13 @@ function RenderObsidianView(
           //This runs only when the file is added, thus should not be a major performance issue
           await leafRef.current.leaf.setViewState({state: {file:null}})
           leafRef.current.node = view.canvasNodeFactory.createFileNote(file, subpath, containerRef.current, element.id);
-          setColors(containerRef.current, element, mdProps, canvasColor);
+          setColors(containerRef.current, element, mdProps, canvasColor, viewType);
         } else {
           const workspaceLeaf:HTMLDivElement = rootSplit.containerEl.querySelector("div.workspace-leaf");
           if(workspaceLeaf) workspaceLeaf.style.borderRadius = "var(--embeddable-radius)";
           rootSplit.containerEl.addClass("mod-visible");
           containerRef.current.appendChild(rootSplit.containerEl);
-          setColors(containerRef.current, element, mdProps, canvasColor);
+          setColors(containerRef.current, element, mdProps, canvasColor, viewType);
         }
         patchMobileView(view);
         view.updateEmbeddableLeafRef(element.id, leafRef.current);
@@ -257,7 +257,7 @@ function RenderObsidianView(
   //--------------------------------------------------------------------------------
   //Set colors of the canvas node
   //--------------------------------------------------------------------------------
-  function setColors (canvasNode: HTMLDivElement, element: ExcalidrawEmbeddableElement, mdProps: EmbeddableMDCustomProps, canvasColor: string) {
+  function setColors (canvasNode: HTMLDivElement, element: ExcalidrawEmbeddableElement, mdProps: EmbeddableMDCustomProps, canvasColor: string, viewType: string) {
     if(!mdProps) return;
     if (!leafRef.current?.hasOwnProperty("node")) return;
 
@@ -297,22 +297,31 @@ function RenderObsidianView(
       canvasNode?.style.setProperty("--background-primary", color);
       canvasNodeContainer?.style.setProperty("background-color", color);
     }
-    canvasNode?.style.setProperty("--bases-cards-container-background","var(--background-primary)");
-    canvasNode?.style.setProperty("--bases-embed-border-color","var(--background-modifier-border)");
-    canvasNode?.style.setProperty("--bases-table-header-color","var(--text-muted)");
-    canvasNode?.style.setProperty("--bases-table-header-background","var(--background-primary)");
-    canvasNode?.style.setProperty("--bases-table-header-background-hover","var(--background-modifier-hover)");
-    canvasNode?.style.setProperty("--bases-table-header-sort-mask","linear-gradient(to left, transparent var(--size-4-6), black var(--size-4-6))");
-    canvasNode?.style.setProperty("--bases-table-border-color","var(--table-border-color)");
-    canvasNode?.style.setProperty("--bases-table-row-background-hover","var(--table-row-background-hover)");
-    canvasNode?.style.setProperty("--bases-table-cell-shadow-active","0 0 0 2px var(--interactive-accent)");
-    canvasNode?.style.setProperty("--bases-table-cell-background-active","var(--background-primary)");
-    canvasNode?.style.setProperty("--bases-table-cell-background-disabled","var(--background-primary-alt)");
-    canvasNode?.style.setProperty("--bases-cards-container-background","var(--background-primary)");
-    canvasNode?.style.setProperty("--bases-cards-background","var(--background-primary)");
-    canvasNode?.style.setProperty("--bases-cards-cover-background","var(--background-primary-alt)");
-    canvasNode?.style.setProperty("--bases-cards-shadow","0 0 0 1px var(--background-modifier-border)");
-    canvasNode?.style.setProperty("--bases-cards-shadow-hover","0 0 0 1px var(--background-modifier-border-hover)");
+    switch (viewType) {
+      case "bases": 
+        canvasNode?.style.setProperty("--bases-cards-container-background","var(--background-primary)");
+        canvasNode?.style.setProperty("--bases-embed-border-color","var(--background-modifier-border)");
+        canvasNode?.style.setProperty("--bases-table-header-color","var(--text-muted)");
+        canvasNode?.style.setProperty("--bases-table-header-background","var(--background-primary)");
+        canvasNode?.style.setProperty("--bases-table-header-background-hover","var(--background-modifier-hover)");
+        canvasNode?.style.setProperty("--bases-table-header-sort-mask","linear-gradient(to left, transparent var(--size-4-6), black var(--size-4-6))");
+        canvasNode?.style.setProperty("--bases-table-border-color","var(--table-border-color)");
+        canvasNode?.style.setProperty("--bases-table-row-background-hover","var(--table-row-background-hover)");
+        canvasNode?.style.setProperty("--bases-table-cell-shadow-active","0 0 0 2px var(--interactive-accent)");
+        canvasNode?.style.setProperty("--bases-table-cell-background-active","var(--background-primary)");
+        canvasNode?.style.setProperty("--bases-table-cell-background-disabled","var(--background-primary-alt)");
+        canvasNode?.style.setProperty("--bases-cards-container-background","var(--background-primary)");
+        canvasNode?.style.setProperty("--bases-cards-background","var(--background-primary)");
+        canvasNode?.style.setProperty("--bases-cards-cover-background","var(--background-primary-alt)");
+        canvasNode?.style.setProperty("--bases-cards-shadow","0 0 0 1px var(--background-modifier-border)");
+        canvasNode?.style.setProperty("--bases-cards-shadow-hover","0 0 0 1px var(--background-modifier-border-hover)");
+        break;
+      case "pdf":
+        canvasNode?.style.setProperty("--pdf-sidebar-background","var(--background-primary)");
+        canvasNode?.style.setProperty("--pdf-background","var(--background-primary)");
+        canvasNode?.style.setProperty("--pdf-sidebar-background","var(--background-primary)");
+      break;
+    }
 
     if(mdProps.borderMatchElement) {
       const opacity = (mdProps?.borderOpacity ?? 50)/100;
@@ -342,7 +351,8 @@ function RenderObsidianView(
     const element = elementRef.current;
     const canvasNode = containerRef.current;
     if(!canvasNode.hasClass("canvas-node")) return;
-    setColors(canvasNode, element, mdProps, canvasColor);
+    const viewType = leafRef.current.leaf.view?.getViewType();
+    setColors(canvasNode, element, mdProps, canvasColor, viewType);
   }, [
     mdProps?.useObsidianDefaults,
     mdProps?.backgroundMatchCanvas,
@@ -355,6 +365,7 @@ function RenderObsidianView(
     elementRef.current,
     containerRef.current,
     canvasColor,
+    leafRef.current,
   ])
 
   //--------------------------------------------------------------------------------
