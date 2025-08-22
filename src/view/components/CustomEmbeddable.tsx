@@ -132,6 +132,8 @@ function RenderObsidianView(
   const isActiveRef = React.useRef(false);
   const themeRef = React.useRef(theme);
   const elementRef = React.useRef(element);
+  const pdfObserverRef = React.useRef(null);
+  const pdfObserverDisabledRef = React.useRef(false);
 
   // Update themeRef when theme changes
   React.useEffect(() => {
@@ -276,12 +278,39 @@ function RenderObsidianView(
         patchMobileView(view);
         view.updateEmbeddableLeafRef(element.id, leafRef.current);
         if(viewType === "pdf") {
+          // Disable observer while applying the theme to avoid loops
+          pdfObserverDisabledRef.current = true;
           setPDFViewTheme(view, leafRef.current.leaf.view);
+          requestAnimationFrame(() => { pdfObserverDisabledRef.current = false; });
+
+          if (view.excalidrawData.embeddableTheme !== "default") {
+            const pdfContainerEl = leafRef.current.leaf.view?.contentEl?.querySelector(".pdf-container") as HTMLElement | null;
+            if (pdfContainerEl) {
+              pdfObserverRef.current?.disconnect();
+              pdfObserverRef.current = new MutationObserver(() => {
+                if (pdfObserverDisabledRef.current) return;
+                pdfObserverDisabledRef.current = true;
+                try {
+                  setPDFViewTheme(view, leafRef.current?.leaf?.view);
+                } finally {
+                  requestAnimationFrame(() => { pdfObserverDisabledRef.current = false; });
+                }
+              });
+              pdfObserverRef.current.observe(pdfContainerEl, {
+                attributes: true,
+                attributeFilter: ["class"],
+              });
+            }
+          }
         }
       })();
     }
 
     return () => {
+      // disconnect observer if any
+      pdfObserverRef.current?.disconnect();
+      pdfObserverRef.current = null;
+
       if(!leafRef.current) {
         return;
       }
