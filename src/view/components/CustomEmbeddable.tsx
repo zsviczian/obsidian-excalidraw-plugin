@@ -3,7 +3,7 @@ import ExcalidrawView from "src/view/ExcalidrawView";
 import { Notice, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import * as React from "react";
 import { ConstructableWorkspaceSplit, getContainerForDocument, isObsidianThemeDark } from "src/utils/obsidianUtils";
-import { DEVICE, EXTENDED_EVENT_TYPES, KEYBOARD_EVENT_TYPES } from "src/constants/constants";
+import { DEVICE, EXTENDED_EVENT_TYPES, KEYBOARD_EVENT_TYPES, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
 import { ExcalidrawImperativeAPI, UIAppState } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
 import { processLinkText, patchMobileView, setFileToLocalGraph } from "src/utils/customEmbeddableUtils";
@@ -29,6 +29,40 @@ function getTheme (view: ExcalidrawView, theme:string): string {
     : view.excalidrawData.embeddableTheme === "auto"
       ? theme === "dark" ? "theme-dark" : "theme-light"
       : isObsidianThemeDark() ? "theme-dark" : "theme-light";
+}
+
+function setPDFViewTheme(view: ExcalidrawView, pdfView: any) {
+  if(!pdfView) return;
+  if(view.excalidrawData.embeddableTheme === "auto") {
+    pdfView.viewer?.child?.pdfViewer?.setBackground?.(null, false);
+    const pdfContainerEl = pdfView.contentEl?.querySelector(".pdf-container");
+    if(pdfContainerEl) {
+      pdfContainerEl.classList.remove("mod-themed");
+    }
+    const thumbnailViewEl = pdfView.contentEl?.querySelector(".pdf-thumbnail-view");
+    if(thumbnailViewEl) {
+      thumbnailViewEl.style.filter = "var(--theme-filter)";
+    }
+  } else {
+    const pdfViewerEl = pdfView.contentEl?.querySelector("div.pdfViewer");
+    if(pdfViewerEl) {
+      pdfViewerEl.addClass("mod-nofilter");
+    } 
+  }
+  if(["dark", "light"].includes(view.excalidrawData.embeddableTheme)) {
+    const pdfContainerEl = pdfView.contentEl?.querySelector(".pdf-container");
+    if(pdfContainerEl && !pdfContainerEl.classList.contains("mod-themed")) {
+      pdfContainerEl.classList.add("mod-themed");
+    }
+  }
+  if(view.excalidrawData.embeddableTheme === "light") {
+    pdfView.viewer?.child?.pdfViewer?.setBackground?.(null, false);
+  }
+  if(view.excalidrawData.embeddableTheme === "dark") {
+    pdfView.viewer?.child?.pdfViewer?.setBackground?.(
+      document.body.getCssPropertyValue("--color-base-00"), true
+    );
+  }
 }
 
 //--------------------------------------------------------------------------------
@@ -241,6 +275,9 @@ function RenderObsidianView(
         }
         patchMobileView(view);
         view.updateEmbeddableLeafRef(element.id, leafRef.current);
+        if(viewType === "pdf") {
+          setPDFViewTheme(view, leafRef.current.leaf.view);
+        }
       })();
     }
 

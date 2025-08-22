@@ -862,3 +862,7 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 .excalidraw__embeddable-container canvas {
   image-rendering: auto;
 }
+
+.excalidraw__embeddable-container .mod-nofilter canvas {
+  filter: none !important;
+}

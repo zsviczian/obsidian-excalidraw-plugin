@@ -101,7 +101,7 @@ if (!isLib) {
     ? fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/styles.production.css", "utf8")
     : fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/styles.development.css", "utf8");
   const plugin_styles = fs.readFileSync("./styles.css", "utf8");
-  const styles = plugin_styles + excalidraw_styles;
+  const styles = excalidraw_styles + plugin_styles;
   cssnano()
     .process(styles) // Process the CSS
     .then(result => {
