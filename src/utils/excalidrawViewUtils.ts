@@ -1,12 +1,12 @@
 
-import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS } from "src/constants/constants";
+import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS, AUDIO_TYPES } from "src/constants/constants";
 import { App, Modal, Notice, TFile } from "obsidian";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK, getExcalidrawMarkdownHeaderSection, REGEX_TAGS, getExcalidrawMarkdownHeader } from "../shared/ExcalidrawData";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { ExcalidrawElement, ExcalidrawFrameElement, ExcalidrawImageElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { getEmbeddedFilenameParts, getLinkParts, isImagePartRef } from "./utils";
-import { cleanSectionHeading } from "./obsidianUtils";
+import { cleanSectionHeading, getAudioElementHeight } from "./obsidianUtils";
 import { getEA } from "src/core";
 import { AppState, ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
@@ -66,11 +66,17 @@ export async function insertEmbeddableToView (
   if(file && (IMAGE_TYPES.contains(file.extension) || ea.isExcalidrawFile(file)) && !ANIMATED_IMAGE_TYPES.contains(file.extension)) {
     return await insertImageToView(ea, position, link??file, undefined, shouldInsertToView);
   } else {
+    let height = MAX_IMAGE_SIZE;
+    if (file && AUDIO_TYPES.contains(file.extension.toLowerCase())) {
+      ea.style.strokeColor = "transparent";
+      ea.style.backgroundColor = "transparent";
+      height = getAudioElementHeight();
+    }
     const id = ea.addEmbeddable(
       position.x,
       position.y,
       MAX_IMAGE_SIZE,
-      MAX_IMAGE_SIZE,
+      height,
       link,
       file,
     );

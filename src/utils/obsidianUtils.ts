@@ -456,3 +456,52 @@ export function isUnwantedLeaf(leaf:WorkspaceLeaf):boolean {
     //@ts-ignore
     leaf.parent.type === "split" && leaf.parent.children.length === 1
 }
+
+/**
+ * Gets the height of an audio element in Obsidian's CSS environment
+ * @returns The height of the audio element in pixels
+ */
+export function getAudioElementHeight(): number {
+  // Create a temporary audio element with controls
+  const audioElement = document.createElement("audio");
+  audioElement.controls = true;
+  audioElement.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA"; // Minimal valid audio
+  
+  // Create a wrapper to avoid affecting page layout
+  const wrapper = document.createElement("div");
+  wrapper.style.position = "absolute";
+  wrapper.style.left = "-9999px";
+  wrapper.style.visibility = "hidden";
+  wrapper.style.pointerEvents = "none";
+  wrapper.appendChild(audioElement);
+  
+  // Add to document to allow CSS to be applied
+  document.body.appendChild(wrapper);
+  
+  // Get height
+  let height = 0;
+  try {
+    // Force layout calculation
+    document.body.offsetHeight;
+    
+    // Get height from bounding rect
+    const rect = audioElement.getBoundingClientRect();
+    height = rect.height;
+    
+    // Fallback to computed style if bounding rect returns 0
+    if (height === 0) {
+      const computedStyle = window.getComputedStyle(audioElement);
+      height = parseFloat(computedStyle.height) || 0;
+      
+      // If still 0, try measuring the wrapper
+      if (height === 0) {
+        height = wrapper.getBoundingClientRect().height;
+      }
+    }
+  } finally {
+    // Clean up
+    document.body.removeChild(wrapper);
+  }
+  
+  return Math.round(height);
+}

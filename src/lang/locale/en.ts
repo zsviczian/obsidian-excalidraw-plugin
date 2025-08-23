@@ -1201,4 +1201,9 @@ export default {
   COMP_FRAME: "Frame Actions",
   COMP_FRAME_HINT: "Toggle Marker Frame. Guide-only frames to define slides/print areas/image references. " +
       "Hidden in image exports; doesn't contain elements. Hide/show frames via canvas context menu.",
+
+  //CustomEmbeddable.tsx
+  NOTICE_PDF_THEME: "PDF theme overridden.\n" +
+    "Control via this file's 'excalidraw-embeddable-theme' document property (overrides plugin).\n\n" +
+    "Values: dark, light, auto=Excalidraw, default=Obsidian.",
 };

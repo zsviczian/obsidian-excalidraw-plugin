@@ -8,6 +8,7 @@ import { ExcalidrawImperativeAPI, UIAppState } from "@zsviczian/excalidraw/types
 import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
 import { processLinkText, patchMobileView, setFileToLocalGraph } from "src/utils/customEmbeddableUtils";
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
+import { t } from "src/lang/helpers";
 
 const CANVAS_VIEWTYPES = new Set(["markdown", "bases", "audio", "video"]);
 
@@ -19,6 +20,17 @@ declare module "obsidian" {
   interface WorkspaceSplit {
     containerEl: HTMLDivElement;
   }
+}
+
+let noticeTimer: number;
+function showNoticeOnce(message: string) {
+  if (noticeTimer) {
+    return
+  }
+  noticeTimer = window.setTimeout(() => {
+    noticeTimer = undefined;
+  }, 1000);
+  new Notice(message,6000);
 }
 
 function getTheme (view: ExcalidrawView, theme:string): string {
@@ -380,6 +392,9 @@ function RenderObsidianView(
                 pdfObserverDisabledRef.current = true;
                 try {
                   setPDFViewTheme(view, pdfView);
+                  if(view.excalidrawData.embeddableTheme !== "default") {
+                    showNoticeOnce(t("NOTICE_PDF_THEME"));
+                  }
                 } finally {
                   requestAnimationFrame(() => { pdfObserverDisabledRef.current = false; });
                 }
