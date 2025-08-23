@@ -429,7 +429,7 @@ export default {
     "效果取决于设备。十字准星通常在绘图板、MS Surface 上可见，但在 iOS 上不可见。",
   SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_NAME: "鼠标悬停预览时 Excalidraw 将渲染为图像",
   SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_DESC:
-    "…即使文件具有 <code>excalidraw-open-md: true</code> frontmatter 属性。<br>" +
+    "…即使文件具有 <code>excalidraw-open-md: true</code> 笔记属性。<br>" +
     "当该项关闭且设置了默认打开为 Markdown 时，" +
     "悬停预览将显示 Markdown 模式的绘图。<br>" +
     "注意：<b>excalidraw-open-md</b> 不同于 <b>excalidraw-embed-md</b>。如果 <b>excalidraw-embed-md</b> 设置为 true，则悬停预览始终显示 Markdown 模式的绘图，不受该项影响。要强制将嵌入到 Markdown 文档的绘图渲染为图像，请使用 <code>![[drawing#^as-image]]</code>。",
@@ -1201,4 +1201,9 @@ export default {
   COMP_FRAME: "画框操作",
   COMP_FRAME_HINT: "切换标记画框。标记画框仅用于引导，用于定义幻灯片/打印区域/[[file#^frame=id]]，" +
       "导出时会隐藏；也不会包含元素。通过上下文菜单显示/隐藏标记画框。",
+
+  //CustomEmbeddable.tsx
+  NOTICE_PDF_THEME: "已覆盖 PDF 主题。\n" +
+    "通过文件的 'excalidraw-embeddable-theme' 笔记属性设置（将覆盖插件设置）。\n\n" +
+    "值：dark/light/auto/default，表示深色、浅色、跟随 Excalidraw 或 Obsidian 主题。",
 };
