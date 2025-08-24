@@ -781,20 +781,19 @@ export class CommandManager {
       checkCallback: (checking:boolean) => this.plugin.forceSaveActiveView(checking),
     })
 
+    //removing raw mode. Not required. I never use it. Raw mode can still be enabled
+    //via document properties. Only showing command palette action if raw mode is enabled
     this.addCommand({
       id: "toggle-lock",
       name: t("TOGGLE_LOCK"),
       checkCallback: (checking: boolean) => {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (checking) {
-          if (
-            Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
-          ) {
-            return !(this.app.workspace.getActiveViewOfType(ExcalidrawView))
-              .compatibilityMode;
+          if (view) {
+            return !view.compatibilityMode && view.textMode === TextMode.raw;
           }
           return false;
         }
-        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view && !view.compatibilityMode) {
           view.changeTextMode(
             view.textMode === TextMode.parsed ? TextMode.raw : TextMode.parsed,
@@ -1707,15 +1706,19 @@ export class CommandManager {
         const PDFLink = this.plugin.getLastActivePDFPageLink(view.file);
         if(!PDFLink) return false;
         if(checking) return true;
-        const ea = getEA(view);
-        insertImageToView(
-          ea,
-          view.currentPosition,
-          PDFLink,
-          undefined,
-          undefined,
-          true,
-        );
+        (async()=>{
+          const ea = getEA(view) as ExcalidrawAutomate;
+          const id = await insertImageToView(
+            ea,
+            view.currentPosition,
+            PDFLink,
+            undefined,
+            undefined,
+            true,
+          );
+          ea.selectElementsInView([id]);
+          ea.destroy()
+        })();
       },
     });
 

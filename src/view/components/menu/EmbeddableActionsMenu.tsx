@@ -131,7 +131,7 @@ export class EmbeddableMenu {
     this.updateElement(`#page=${page}`, element, pdfFile, false);
   }
 
-  private actionInsertPageAsImage (element: ExcalidrawEmbeddableElement) {
+  private async actionInsertPageAsImage (element: ExcalidrawEmbeddableElement) {
     if(!element) return;
     const pdfView = this.view.getEmbeddableLeafElementById(element.id)?.node?.child;
     if(!pdfView) return;
@@ -139,7 +139,8 @@ export class EmbeddableMenu {
     if(!page) return;
     const pdfFile: TFile = pdfView?.file;
     if(!pdfFile) return;
-    const ea = getEA(this.view);
+    const ea = getEA(this.view) as ExcalidrawAutomate;
+    ea.selectElementsInView([]);
     const x = element.x + element.width + 20;
     const y = element.y;
     const path = this.view.app.metadataCache.fileToLinktext(
@@ -147,7 +148,7 @@ export class EmbeddableMenu {
       this.view.file.path,
       false,
     )
-    insertImageToView(
+    const id = await insertImageToView(
       ea,
       {x,y},
       `${path}#page=${page}`,
@@ -155,6 +156,8 @@ export class EmbeddableMenu {
       undefined,
       false,
     );
+    ea.selectElementsInView([id]);
+    ea.destroy();
   }
 
   private async actionMarkdownBlock (file: TFile, subpath: string, element: ExcalidrawEmbeddableElement) {

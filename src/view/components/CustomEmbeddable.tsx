@@ -92,6 +92,25 @@ function setupPdfViewEnhancements(
     pdfObserverDisabledRef.current = true;
     setPDFViewTheme(view, pdfView);
     requestAnimationFrame(() => { pdfObserverDisabledRef.current = false; });
+    
+    // Observe inline height changes on the PDF root container and reset them
+    // this could be an obsidian bug, should be revisted later 2025-08-23
+    const containerEl = pdfView.containerEl as HTMLElement | null;
+    let prevHeight = containerEl?.style?.height || "";
+    let heightObserver: MutationObserver | null = null;
+    if (containerEl) {
+      heightObserver = new MutationObserver(() => {
+        const h = containerEl.style.height || "";
+        if (h !== prevHeight) {
+          prevHeight = h;
+          if (h) {
+            containerEl.style.height = "";
+            prevHeight = "";
+          }
+        }
+      });
+      heightObserver.observe(containerEl, { attributes: true, attributeFilter: ["style"] });
+    }
 
     // Transform-aware MMB drag-to-scroll (bypasses Chromium autoscroll)
     const scroller = pdfView.containerEl?.querySelector(".pdf-viewer-container") || null;
@@ -185,6 +204,8 @@ function setupPdfViewEnhancements(
       window.removeEventListener("pointermove", onPointerMove, { capture: true } as any);
       window.removeEventListener("pointerup", onPointerUp,   { capture: true } as any);
       window.removeEventListener("pointercancel", onPointerUp,{ capture: true } as any);
+      heightObserver?.disconnect();
+      heightObserver = null;
     };
     (pdfObserverRef as any).currentCleanup = () => { cleanupPan(); };
 
@@ -416,6 +437,8 @@ function RenderObsidianView(
       node: null,
       editNode: null,
     };
+
+    patchMobileView(view);
     //if subpath is defined, create a canvas node else create a workspace leaf
     if(subpath && view.canvasNodeFactory.isInitialized() && file.extension.toLowerCase() === "md") {
       setKeepOnTop();
@@ -446,7 +469,6 @@ function RenderObsidianView(
           containerRef.current.appendChild(rootSplit.containerEl);
           setColors(containerRef.current, element, mdProps, canvasColor, viewType);
         }
-        patchMobileView(view);
         view.updateEmbeddableLeafRef(element.id, leafRef.current);
 
         if(viewType === "pdf") {
@@ -630,9 +652,9 @@ function RenderObsidianView(
         if (!modes) {
           return;
         }
+        patchMobileView(view);
         leafRef.current.leaf.view.setMode(modes['source']);
         isEditingRef.current = true;
-        patchMobileView(view);
       } else if (leafRef.current?.node) {
         //Handle canvas node
         const newTheme = getTheme(view, themeRef.current);

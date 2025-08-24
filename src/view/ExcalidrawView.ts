@@ -1650,11 +1650,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       t("RAW"),
       () => this.changeTextMode(TextMode.parsed),
     );
-    this.actionButtons['isParsed'] = this.addAction(
+   /*this.actionButtons['isParsed'] = this.addAction(
       TEXT_DISPLAY_PARSED_ICON_NAME,
       t("PARSED"),
       () => this.changeTextMode(TextMode.raw),
-    );
+    );*/
     
     this.actionButtons['link'] = this.addAction("link", t("OPEN_LINK"), (ev) =>
       this.handleLinkClick(ev),
@@ -1846,7 +1846,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.textMode = textMode;
     if (textMode === TextMode.parsed) {
       this.actionButtons['isRaw'].hide();
-      this.actionButtons['isParsed'].show();
+      this.actionButtons['isParsed'].hide();
     } else {
       this.actionButtons['isRaw'].show();
       this.actionButtons['isParsed'].hide();

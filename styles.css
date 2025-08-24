@@ -876,3 +876,7 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 .excalidraw__embeddable-container .pdf-toolbar-right {
   display: none;
 }
+
+.excalidraw-scriptengine-install .modal-close-button {
+  z-index: 9999;
+}

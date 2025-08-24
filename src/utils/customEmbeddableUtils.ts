@@ -13,6 +13,7 @@ export const leafMap = new Map<string, WorkspaceLeaf>();
 
 //This is definitely not the right solution, feels like sticking plaster
 //patch disappearing content on mobile
+//based on obsidian app.js, obsidian is looking for activeEditor, but active editor is in a leaf that is disconnected from root
 export const patchMobileView = (view: ExcalidrawView) => {
   if(DEVICE.isDesktop) return;
   console.log("patching mobile view");
@@ -21,6 +22,14 @@ export const patchMobileView = (view: ExcalidrawView) => {
     if(!parent.hasClass("mod-visible")) {
       parent.addClass("mod-visible");
     }
+    //create observer here
+    const observer = new MutationObserver(() => {
+      if(!parent.hasClass("mod-visible")) {
+        parent.addClass("mod-visible");
+      }
+    });
+    observer.observe(parent, { attributes: true, attributeFilter: ["class"] });
+    window.setTimeout(() => observer.disconnect(), 500);
   }
 }
 

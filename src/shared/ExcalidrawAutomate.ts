@@ -89,6 +89,7 @@ import { FrameRenderingOptions } from "src/types/utilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
 import { AutoexportConfig } from "src/types/excalidrawViewTypes";
 import { FloatingModal } from "./Dialogs/FloatingModal";
+import { patchMobileView } from "src/utils/customEmbeddableUtils";
 
 extendPlugins([
   HarmonyPlugin,
@@ -2753,8 +2754,11 @@ export class ExcalidrawAutomate {
       errorMessage("targetView not set", "addElementsToView()");
       return false;
     }
-    const elements = this.getElements();    
-    return await this.targetView.addElements({
+    const elements = this.getElements();
+    if(elements.some(el=>el.type === "embeddable")) {
+      patchMobileView(this.targetView);
+    }
+    const result = await this.targetView.addElements({
       newElements: elements,
       repositionToCursor,
       save,
@@ -2762,6 +2766,7 @@ export class ExcalidrawAutomate {
       newElementsOnTop,
       shouldRestoreElements,
     });
+    return result;
   };
 
   /**
