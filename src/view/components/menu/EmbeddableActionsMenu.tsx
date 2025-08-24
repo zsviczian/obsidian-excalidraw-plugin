@@ -10,9 +10,9 @@ import { ScriptEngine } from "../../../shared/Scripts";
 import { MD_EX_SECTIONS, ROOTELEMENTSIZE, nanoid, sceneCoordsToViewportCoords } from "src/constants/constants";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK } from "../../../shared/ExcalidrawData";
 import { processLinkText, useDefaultExcalidrawFrame } from "src/utils/customEmbeddableUtils";
-import { cleanSectionHeading } from "src/utils/obsidianUtils";
+import { cleanSectionHeading, getActivePDFPageNumberFromPDFView } from "src/utils/obsidianUtils";
 import { EmbeddableSettings } from "src/shared/Dialogs/EmbeddableSettings";
-import { openExternalLink } from "src/utils/excalidrawViewUtils";
+import { insertImageToView, openExternalLink } from "src/utils/excalidrawViewUtils";
 import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { CaptureUpdateAction } from "src/constants/constants";
@@ -40,7 +40,7 @@ export class EmbeddableMenu {
     this.renderButtons = null;
   }
 
-  private updateElement = (subpath: string, element: ExcalidrawEmbeddableElement, file: TFile) => {
+  private updateElement = async (subpath: string, element: ExcalidrawEmbeddableElement, file: TFile, save: boolean = true) => {
     if(!element) return;
     const view = this.view;
     const app = view.app;
@@ -56,7 +56,8 @@ export class EmbeddableMenu {
     ea.copyViewElementsToEAforEditing([element]);
     ea.getElement(element.id).link = link;
     view.excalidrawData.elementLinks.set(element.id, link);
-    ea.addElementsToView(false, true, true).then(() => ea.destroy());
+    await ea.addElementsToView(false, save, true);
+    ea.destroy();
   }
 
   private handleMouseEnter () {
@@ -117,6 +118,43 @@ export class EmbeddableMenu {
     if (newSubpath !== subpath) {
       this.updateElement(newSubpath, element, file);
     }
+  }
+
+  private actionBookmarkPage (element: ExcalidrawEmbeddableElement) {
+    if(!element) return;
+    const pdfView = this.view.getEmbeddableLeafElementById(element.id)?.node?.child;
+    if(!pdfView) return;
+    const page = getActivePDFPageNumberFromPDFView(pdfView);
+    if(!page) return;
+    const pdfFile: TFile = pdfView?.file;
+    if(!pdfFile) return;
+    this.updateElement(`#page=${page}`, element, pdfFile, false);
+  }
+
+  private actionInsertPageAsImage (element: ExcalidrawEmbeddableElement) {
+    if(!element) return;
+    const pdfView = this.view.getEmbeddableLeafElementById(element.id)?.node?.child;
+    if(!pdfView) return;
+    const page = getActivePDFPageNumberFromPDFView(pdfView);
+    if(!page) return;
+    const pdfFile: TFile = pdfView?.file;
+    if(!pdfFile) return;
+    const ea = getEA(this.view);
+    const x = element.x + element.width + 20;
+    const y = element.y;
+    const path = this.view.app.metadataCache.fileToLinktext(
+      pdfFile,
+      this.view.file.path,
+      false,
+    )
+    insertImageToView(
+      ea,
+      {x,y},
+      `${path}#page=${page}`,
+      undefined,
+      undefined,
+      false,
+    );
   }
 
   private async actionMarkdownBlock (file: TFile, subpath: string, element: ExcalidrawEmbeddableElement) {
@@ -298,12 +336,26 @@ export class EmbeddableMenu {
                 icon={ICONS.Properties}
               />
               {isPDF && (
-                <ActionButton
-                key={"Crop"}
-                title={t("CROP_PAGE")}
-                action={() => this.actionCrop(element)}
-                icon={ICONS.Crop}
-              />
+                <>
+                  <ActionButton
+                    key={"Crop"}
+                    title={t("CROP_PAGE")}
+                    action={() => this.actionCrop(element)}
+                    icon={ICONS.Crop}
+                  />
+                  <ActionButton
+                    key={"SymLink"}
+                    title={t("BOOKMARK_PAGE")}
+                    action={() => this.actionBookmarkPage(element)}
+                    icon={ICONS.SymLink}
+                  />
+                  <ActionButton
+                    key={"Camera"}
+                    title={t("CAPTURE_PAGE")}
+                    action={() => this.actionInsertPageAsImage(element)}
+                    icon={ICONS.Camera}
+                  />
+                </>
               )}
             </div>
           </div>  

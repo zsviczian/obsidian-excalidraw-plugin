@@ -415,9 +415,8 @@ function RenderObsidianView(
       node: null,
       editNode: null,
     };
-
     //if subpath is defined, create a canvas node else create a workspace leaf
-    if(subpath && view.canvasNodeFactory.isInitialized()) {
+    if(subpath && view.canvasNodeFactory.isInitialized() && file.extension.toLowerCase() === "md") {
       setKeepOnTop();
       leafRef.current.node = view.canvasNodeFactory.createFileNote(file, subpath, containerRef.current, element.id);
       view.updateEmbeddableLeafRef(element.id, leafRef.current);
@@ -642,7 +641,15 @@ function RenderObsidianView(
     }
   }, [leafRef.current?.leaf, element.id, view, themeRef.current, isActiveRef.current, isEditingRef.current]);
 
-  if(leafRef.current)  leafRef.current.editNode = handleClick;
+  const startEditing = React.useCallback(() => {
+    if(isActiveRef.current && isEditingRef.current) {
+      return;
+    }
+    isActiveRef.current = true;
+    handleClick();
+  }, [isActiveRef.current, isEditingRef.current, handleClick]);
+
+  if(leafRef.current)  leafRef.current.editNode = startEditing;
   // Event listener for key press
   React.useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
@@ -655,7 +662,7 @@ function RenderObsidianView(
       }
       // Existing Enter behavior
       if (event.key === "Enter" && !isActiveRef.current) {
-        handleClick(event); // Call handleClick function when Enter key is pressed
+        startEditing(); // Call handleClick function when Enter key is pressed
       }
     };
 

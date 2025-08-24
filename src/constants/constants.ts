@@ -234,6 +234,8 @@ export const IMAGE_TYPES = ["jpeg", "jpg", "png", "gif", "svg", "webp", "bmp", "
 export const ANIMATED_IMAGE_TYPES = ["gif", "webp", "apng", "svg"];
 export const EXPORT_TYPES = ["svg", "dark.svg", "light.svg", "png", "dark.png", "light.png"];
 export const MAX_IMAGE_SIZE = 500;
+export const CARD_WIDTH = 400;
+export const CARD_HEIGHT = 500;
 
 export const VIDEO_TYPES = ["mp4", "webm", "ogv", "mov", "mkv"];
 export const AUDIO_TYPES = ["mp3", "wav", "m4a", "3gp", "flac", "ogg", "oga", "opus"];

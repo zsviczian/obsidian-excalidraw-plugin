@@ -1,5 +1,5 @@
 
-import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS, AUDIO_TYPES } from "src/constants/constants";
+import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS, AUDIO_TYPES, CARD_WIDTH, CARD_HEIGHT } from "src/constants/constants";
 import { App, Modal, Notice, TFile } from "obsidian";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK, getExcalidrawMarkdownHeaderSection, REGEX_TAGS, getExcalidrawMarkdownHeader } from "../shared/ExcalidrawData";
@@ -67,7 +67,10 @@ export async function insertEmbeddableToView (
     return await insertImageToView(ea, position, link??file, undefined, shouldInsertToView);
   } else {
     let height = MAX_IMAGE_SIZE;
-    if (file && AUDIO_TYPES.contains(file.extension.toLowerCase())) {
+    if (
+      (file && AUDIO_TYPES.contains(file.extension.toLowerCase())) ||
+      (link && AUDIO_TYPES.contains(link.match(/\[\[[^\]]+?\.([^\.\]]+)]]/)?.[1]?.toLocaleLowerCase()))
+    ) {
       ea.style.strokeColor = "transparent";
       ea.style.backgroundColor = "transparent";
       height = getAudioElementHeight();
@@ -230,6 +233,7 @@ export async function addBackOfTheNoteCard(
   activate: boolean = true,
   cardBody?: string,
   embeddableCustomData?: EmbeddableMDCustomProps,
+  center: boolean = false,
 ):Promise<string> {
   const data = view.data;
   const header = getExcalidrawMarkdownHeaderSection(data);
@@ -259,13 +263,22 @@ export async function addBackOfTheNoteCard(
   }
 
   const ea = getEA(view) as ExcalidrawAutomate;
+  let x,y = 0;
+  if(center) {
+    const centerPos = ea.getViewCenterPosition();
+    if(centerPos) {
+      x = centerPos.x - (CARD_WIDTH / 2);
+      y = centerPos.y - (CARD_HEIGHT / 2);
+    }
+  }
+
   const id = ea.addEmbeddable(
-    0,0,400,500,
+    x,y,CARD_WIDTH,CARD_HEIGHT,
     `[[${view.file.path}#${title}]]`,
     undefined,
     embeddableCustomData
   );
-  await ea.addElementsToView(true, false, true);
+  await ea.addElementsToView(!center, false, true);
 
   const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
   const el = ea.getViewElements().find(el=>el.id === id);

@@ -1460,7 +1460,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   //used by obsidianUtils in the Excalidraw Pacakge
   //aweful coding, but does the job
-  public runAction(action: "anyFile" | "LaTeX") {
+  public runAction(action: "anyFile" | "LaTeX" | "card") {
     if(!this.activeExcalidrawView) return;
     switch (action) {
       case "anyFile":
@@ -1470,6 +1470,9 @@ export default class ExcalidrawPlugin extends Plugin {
         break;
       case "LaTeX":
         insertLaTeXToView(this.activeExcalidrawView);
+        break;
+      case "card":
+        this.activeExcalidrawView.insertBackOfTheNoteCard(true);
         break;
     }
   }

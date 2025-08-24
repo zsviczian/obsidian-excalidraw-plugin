@@ -866,3 +866,13 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 .excalidraw__embeddable-container .mod-nofilter canvas {
   filter: none !important;
 }
+
+.excalidraw__embeddable-container .canvas-node.is-selected .canvas-node-container,
+.excalidraw__embeddable-container .canvas-node.is-focused .canvas-node-container {
+  border-color: inherit;
+  box-shadow: inherit;
+}
+
+.excalidraw__embeddable-container .pdf-toolbar-right {
+  display: none;
+}

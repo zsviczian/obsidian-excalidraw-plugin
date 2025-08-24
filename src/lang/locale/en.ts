@@ -1206,4 +1206,8 @@ export default {
   NOTICE_PDF_THEME: "PDF theme overridden.\n" +
     "Control via this file's 'excalidraw-embeddable-theme' document property (overrides plugin).\n\n" +
     "Values: dark, light, auto=Excalidraw, default=Obsidian.",
+
+  //EmbeddableActionsMenu.tsx
+  BOOKMARK_PAGE: "Save current position in document",
+  CAPTURE_PAGE: "Capture current page as image",
 };

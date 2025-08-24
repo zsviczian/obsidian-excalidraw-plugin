@@ -3,10 +3,11 @@ import { t } from "../../lang/helpers";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
-import { MD_EX_SECTIONS } from "src/constants/constants";
+import { CARD_HEIGHT, CARD_WIDTH, MD_EX_SECTIONS } from "src/constants/constants";
 import { addBackOfTheNoteCard } from "src/utils/excalidrawViewUtils";
 
 export class SelectCard extends FuzzySuggestModal<string> {
+  private center: boolean = false;
 
   constructor(
     public app: App,
@@ -31,7 +32,7 @@ export class SelectCard extends FuzzySuggestModal<string> {
             this.close();
             return;
           }
-          addBackOfTheNoteCard(this.view, item);
+          addBackOfTheNoteCard(this.view, item, true, undefined, undefined, this.center);
           this.close();
         }
       }
@@ -48,18 +49,28 @@ export class SelectCard extends FuzzySuggestModal<string> {
 
   onChooseItem(item: string): void {
     const ea = getEA(this.view) as ExcalidrawAutomate;
+    let x,y = 0;
+    if(this.center) {
+      const centerPos = ea.getViewCenterPosition();
+      if(centerPos) {
+        x = centerPos.x - (CARD_WIDTH / 2);
+        y = centerPos.y - (CARD_HEIGHT / 2);
+      }
+    }
+
     const id = ea.addEmbeddable(
-      0,0,400,500,
+      x,y,CARD_WIDTH,CARD_HEIGHT,
       `[[${this.view.file.path}#${item}]]`
     );
     (async () => {
-      await ea.addElementsToView(true, false, true);
+      await ea.addElementsToView(!this.center, false, true);
       ea.selectElementsInView([id]);
       ea.destroy();
     })();
   }
 
-  public start(): void {
+  public start(center: boolean = false): void {
+    this.center = center;
     this.emptyStateText = t("EMPTY_SECTION_MESSAGE");
     this.setPlaceholder(t("SELECT_SECTION_OR_TYPE_NEW"));
     this.open();

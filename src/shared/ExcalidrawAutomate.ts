@@ -555,6 +555,21 @@ export class ExcalidrawAutomate {
     return this.targetView.currentPosition;
   }
 
+  public getViewCenterPosition(): {x:number, y:number} {
+    if (!this.targetView || !this.targetView?._loaded) {
+      errorMessage("targetView not set", "getExcalidrawAPI()");
+      return null;
+    }
+    const st = (this.getExcalidrawAPI() as ExcalidrawImperativeAPI).getAppState();
+    if (!st) return null;
+
+    const zoom = st.zoom?.value ?? 1;
+    const x = -st.scrollX + (st.width / 2) / zoom;
+    const y = -st.scrollY + (st.height / 2) / zoom;
+
+    return { x, y };
+  }
+
   /**
    * Returns the Excalidraw API for the current view or the view provided.
    * @param {ExcalidrawView} [view] - The view to get the API for.

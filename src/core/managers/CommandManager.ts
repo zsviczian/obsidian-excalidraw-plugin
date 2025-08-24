@@ -1281,7 +1281,7 @@ export class CommandManager {
           if(!excalidrawView.excalidrawAPI) return false;
           const embeddables = excalidrawView.getViewSelectedElements().filter(el=>el.type==="embeddable");
           const imageEls = excalidrawView.getViewSelectedElements().filter(el=>el.type==="image");
-          const isPDF = (imageEls.length === 0 && embeddables.length === 1 && excalidrawView.getEmbeddableLeafElementById(embeddables[0].id)?.leaf?.view?.getViewType() === "pdf")
+          const isPDF = (imageEls.length === 0 && embeddables.length === 1 && excalidrawView.getEmbeddableLeafElementById(embeddables[0].id)?.node?.child?.file?.extension === "pdf")
           const isImage = (imageEls.length === 1 && embeddables.length === 0)
 
           if(!isPDF && !isImage) {
@@ -1290,7 +1290,7 @@ export class CommandManager {
             return false;
           }
 
-          const page = isPDF ? getActivePDFPageNumberFromPDFView(excalidrawView.getEmbeddableLeafElementById(embeddables[0].id)?.leaf?.view) : undefined;
+          const page = isPDF ? getActivePDFPageNumberFromPDFView(excalidrawView.getEmbeddableLeafElementById(embeddables[0].id)?.node?.child) : undefined;
           if(isPDF && !page) {
             return false;
           }
@@ -1300,8 +1300,8 @@ export class CommandManager {
           if(isPDF) {
             const embeddableEl = embeddables[0] as ExcalidrawEmbeddableElement;
             const ea = new ExcalidrawAutomate(this.plugin,excalidrawView);
-            const view = excalidrawView.getEmbeddableLeafElementById(embeddableEl.id)?.leaf?.view;
-            const pdfFile: TFile = view && (view instanceof FileView) ? view.file : undefined;
+            const view = excalidrawView.getEmbeddableLeafElementById(embeddableEl.id)?.node?.child;
+            const pdfFile: TFile = view?.file;
             carveOutPDF(ea, embeddableEl, `${pdfFile?.path}#page=${page}`, pdfFile);
             return;
           }

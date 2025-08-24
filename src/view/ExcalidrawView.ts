@@ -4643,12 +4643,12 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     return {imageEl: el, embeddedFile: imageFile};
   }
 
-  public async insertBackOfTheNoteCard() {
+  public async insertBackOfTheNoteCard(center: boolean = false) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.insertBackOfTheNoteCard, "ExcalidrawView.insertBackOfTheNoteCard");
     await this.forceSave(true);
     const sections = await this.getBackOfTheNoteSections(); 
     const selectCardDialog = new SelectCard(this.app,this,sections);
-    selectCardDialog.start();
+    selectCardDialog.start(center);
   }
 
   public async moveBackOfTheNoteCardToFile(id?: string) {
