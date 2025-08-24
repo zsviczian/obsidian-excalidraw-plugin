@@ -833,6 +833,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "getViewCenterPosition",
+    code: "getViewCenterPosition(): {x: number, y: number};",
+    desc: "@returns the center position of the current view in Excalidraw coordinates",
+    after: "",
+  },
+  {
     field: "getleaf",
     code: "getLeaf(origo: WorkspaceLeaf, targetPane?: PaneTarget): WorkspaceLeaf;",
     desc: "Generates a new Obsidian Leaf following Excalidraw plugin settings such as open in Main Workspace or not, open in adjacent pane if available, etc.<br>" +

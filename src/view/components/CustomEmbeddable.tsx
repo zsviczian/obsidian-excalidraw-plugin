@@ -161,7 +161,7 @@ function setupPdfViewEnhancements(
       lastX = e.clientX;
       lastY = e.clientY;
 
-      // Convert viewport dx/dy to local CSS px by dividing by scale.
+      // Convert viewport dx/dy to local CSS px by dividing on scale.
       scroller.scrollLeft -= dx / (scaleX || 1);
       scroller.scrollTop  -= dy / (scaleY || 1);
 
@@ -251,6 +251,7 @@ export function renderWebView (src: string, view: ExcalidrawView, id: string, _:
         title="Excalidraw Embedded Content"
         allowFullScreen={true}
         src={src}
+        webpreferences="autoplayPolicy=document-user-activation-required"
         style={{
           overflow: "hidden",
           borderRadius: "var(--embeddable-radius)",
@@ -264,7 +265,7 @@ export function renderWebView (src: string, view: ExcalidrawView, id: string, _:
       className="excalidraw__embeddable"
       title="Excalidraw Embedded Content"
       allowFullScreen={true}
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
       src={isDataURL ? null : src}
       style={{
         overflow: "hidden",

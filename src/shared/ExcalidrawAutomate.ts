@@ -555,6 +555,10 @@ export class ExcalidrawAutomate {
     return this.targetView.currentPosition;
   }
 
+  /**
+   * Returns the center position of the current view in Excalidraw coordinates.
+   * @returns {{x:number, y:number}} The center position of the view.
+   */
   public getViewCenterPosition(): {x:number, y:number} {
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "getExcalidrawAPI()");
@@ -3061,14 +3065,14 @@ export class ExcalidrawAutomate {
    * @returns The elements within the area.
    */
   getElementsInArea(
-    elements: NonDeletedExcalidrawElement[], 
-    {x, y, width, height}:{
-      x:number; y:number; width:number; height:number;
-    }
+    elements: NonDeletedExcalidrawElement[],
+    element: NonDeletedExcalidrawElement,    
   ):ExcalidrawElement[] {
+    const {x, y, width, height, id} = element;
     return elements
       .filter(el => {
         if((el.type==="frame" && el.frameRole==="marker")) return false;
+        if(el.id === id) return true;
         const {topX, topY, width:w, height:h} = this.getBoundingBox([el]);
         const elLeft = topX;
         const elTop = topY;

@@ -290,7 +290,7 @@ export async function getTemplate(
     if(filenameParts.hasArearef) {
       const el=scene.elements.find((el: ExcalidrawElement)=>el.id===filenameParts.blockref);
       if(el) {
-        groupElements = plugin.ea.getElementsInArea(scene.elements, el).concat(el);
+        groupElements = plugin.ea.getElementsInArea(scene.elements, el);
       }
     }
 

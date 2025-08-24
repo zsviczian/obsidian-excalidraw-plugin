@@ -28,11 +28,24 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
     - dark: always displays the PDF in dark mode (regardless of Excalidraw and Obsidian themes)
     - light: always displays the PDF in light mode (regardless of Excalidraw and Obsidian themes)
 - Pasting an oversized image resulted in an error message and Excalidraw dumping the scene. [#2453](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2453), [#9878](https://github.com/excalidraw/excalidraw/issues/9878)
+- Video with local URI will no longer start to autoplay when the scene loads
+- Error creating link to element when element is a sticky note
+- Area link embeds hide the content of the objects within the area [#2461](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2461)
+- Embeddables lead to a dark screen on Obsidian Mobile 1.9.10 [#2460](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2460)
 
 ## New
 - Insert Any File now supports adding Audio files.
 - New option in settings under "Zoom and Pan". Pan with right mouse button (Miro‑style): right‑click and drag to pan the canvas. Press 'm' for the context menu (disabled while editing text). 🙏 [@mfuria](https://github.com/mfuria) for making this happen! [#2450](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2450), [#329](https://github.com/zsviczian/excalidraw/pull/329)
-- Insert image in the main toolbar now opens a dropdown menu of options: Insert from system, insert from Vault, insert LaTeX. [#2448](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2448)
+- Insert image in the main toolbar now opens a dropdown menu of options: Insert from system, insert from Vault, insert Card, and insert LaTeX. [#2448](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2448)
+
+## New in ExcalidrawAutomate
+\`\`\`ts
+/**
+ * Returns the center position of the current view in Excalidraw coordinates.
+ * @returns {{x:number, y:number}} The center position of the view.
+ */
+public getViewCenterPosition(): {x:number, y:number};
+\`\`\`
 `,
 "2.15.0":`
 <div class="excalidraw-videoWrapper"><div>
