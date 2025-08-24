@@ -991,7 +991,7 @@ export default {
   ES_YOUTUBE_START: "YouTube 起始时间",
   ES_YOUTUBE_START_DESC: "ss, mm:ss, hh:mm:ss",
   ES_YOUTUBE_START_INVALID: "YouTube 起始时间无效。请检查格式并重试",
-  ES_FILENAME_VISIBLE: "显示文件名",
+  ES_FILENAME_VISIBLE: "显示页内标题",
   ES_BACKGROUND_HEAD: "背景色",
   ES_BACKGROUND_DESC_INFO: "点击此处查看更多颜色信息",
   ES_BACKGROUND_DESC_DETAIL: "背景色仅影响预览模式的 MD-Embeddable。在编辑模式，它会根据场景（通过笔记属性设置）或插件设置，遵循 Obsidian 的深色/浅色主题。背景色有两层：元素背景色（下层颜色）和上层颜色。选择“匹配元素”表示两层都遵循元素背景色。选择“匹配绘图”或特定背景色不会改变元素背景色。设置透明度（例如 50%）会将绘图或选定的颜色与元素背景色混合。要移除元素背景色，可以在 Excalidraw 的元素属性编辑器中将元素背景色设置为透明，这样只有上层颜色生效。",
