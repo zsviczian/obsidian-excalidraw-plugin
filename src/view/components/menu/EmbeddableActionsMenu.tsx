@@ -347,10 +347,10 @@ export class EmbeddableMenu {
                     icon={ICONS.Crop}
                   />
                   <ActionButton
-                    key={"SymLink"}
+                    key={"Bookmark"}
                     title={t("BOOKMARK_PAGE")}
                     action={() => this.actionBookmarkPage(element)}
-                    icon={ICONS.SymLink}
+                    icon={ICONS.Bookmark}
                   />
                   <ActionButton
                     key={"Camera"}

@@ -498,7 +498,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
               <fieldset>
                 <legend>Utility actions</legend>
                 <div className="buttonList buttonListIcon">
-                <ActionButton
+                  <ActionButton
                     key={"scriptEngine"}
                     title={t("INSTALL_SCRIPT_BUTTON")}
                     action={this.actionOpenScriptInstallDialog.bind(this)}
@@ -517,7 +517,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                       action={(this.actionConvertExcalidrawToMD.bind(this))}
                       icon={ICONS.convertFile}
                     />
-                  ) : (
+                  ) : !this.state.isPreviewMode && (
                     <ActionButton
                       key={"viewmode"}
                       title={this.state.isPreviewMode ? t("PARSED") : t("RAW")}
@@ -549,6 +549,8 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                         : ICONS.gotoFullScreen
                     }
                   />
+                </div>
+                <div className="buttonList buttonListIcon">
                   <ActionButton
                     key={"search"}
                     title={t("SEARCH")}

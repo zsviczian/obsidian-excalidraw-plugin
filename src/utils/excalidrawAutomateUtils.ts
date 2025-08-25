@@ -42,6 +42,7 @@ import { SVGColorInfo } from "src/types/excalidrawAutomateTypes";
 import { ExcalidrawData, getExcalidrawMarkdownHeaderSection, REGEX_LINK } from "src/shared/ExcalidrawData";
 import { getFrameBasedOnFrameNameOrId } from "./excalidrawViewUtils";
 import { ScriptEngine } from "src/shared/Scripts";
+import { getEA } from "src/core";
 
 declare const PLUGIN_VERSION:string;
 
@@ -643,9 +644,9 @@ export function repositionElementsToCursor(
   return restore({elements}, null, null).elements;
 }
 
-export const insertLaTeXToView = (view: ExcalidrawView) => {
+export const insertLaTeXToView = (view: ExcalidrawView, center: boolean = false) => {
   const app = view.plugin.app;
-  const ea = view.plugin.ea;
+  const ea = getEA(view) as ExcalidrawAutomate;
   GenericInputPrompt.Prompt(
     view,
     view.plugin,
@@ -656,13 +657,19 @@ export const insertLaTeXToView = (view: ExcalidrawView) => {
     undefined,
     3
   ).then(async (formula: string) => {
-    if (!formula) {
-      return;
+    if (formula) {
+      const id = await ea.addLaTex(0, 0, formula);
+      if(center) {
+        const el = ea.getElement(id);
+        let {width, height} = el;
+        let {x, y} = ea.getViewCenterPosition();
+        el.x = x - width / 2;
+        el.y = y - height / 2;
+      }
+      await ea.addElementsToView(!center, false, true);
+      ea.selectElementsInView([id]);
     }
-    ea.reset();
-    await ea.addLaTex(0, 0, formula);
-    ea.setView(view);
-    ea.addElementsToView(true, false, true);
+    ea.destroy();
   });
 };
 

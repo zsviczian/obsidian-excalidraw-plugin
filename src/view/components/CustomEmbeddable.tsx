@@ -339,7 +339,7 @@ function RenderObsidianView(
   }, [element]);
  
   //--------------------------------------------------------------------------------
-  //block propagation of events to the parent if the iframe element is active
+  //block propagation of events to the parent if the embeddable element is active
   //--------------------------------------------------------------------------------
   const stopPropagation = React.useCallback((event:React.PointerEvent<HTMLElement>) => {
     if(isActiveRef.current) {
@@ -366,7 +366,7 @@ function RenderObsidianView(
     }; //cleanup on unmount
   }, []);
 
-  //blocking or not the propagation of events to the parent if the iframe is active
+  //blocking or not the propagation of events to the parent if the embeddable element is active
   React.useEffect(() => {
     EXTENDED_EVENT_TYPES.forEach((type) => containerRef.current.removeEventListener(type, stopPropagation));
     if(!containerRef?.current) {
@@ -778,6 +778,7 @@ export const CustomEmbeddable: React.FC<{element: ExcalidrawEmbeddableElement; v
         height: `100%`,
         borderRadius: "var(--embeddable-radius)",
         color: `var(--text-normal)`,
+        touchAction: "auto",
       }}
       className={`${theme} canvas-node ${
         mdProps?.filenameVisible && !mdProps.useObsidianDefaults ? "" : "excalidraw-mdEmbed-hideFilename"}`}

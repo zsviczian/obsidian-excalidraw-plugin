@@ -36,7 +36,7 @@ export async function insertImageToView(
     file,
     scale,
   );
-  if(shouldInsertToView) {await ea.addElementsToView(repositionToCursor, true, true, true);}
+  if(shouldInsertToView) {await ea.addElementsToView(repositionToCursor, true, true);}
   return id;
 }
 

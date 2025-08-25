@@ -1,4 +1,4 @@
-import { Camera, Copy, Crop, FileSymlink, Globe, RotateCcw, Scan, Settings, TextSelect } from "lucide-react";
+import { Bookmark, Camera, Copy, Crop, Globe, RotateCcw, Scan, Settings, TextSelect } from "lucide-react";
 import * as React from "react";
 import { PenStyle } from "src/types/penTypes";
 
@@ -31,7 +31,7 @@ export const ICONS = {
   Copy: (<Copy /> ),
   Globe: (<Globe />),
   Crop: (<Crop />),
-  SymLink: (<FileSymlink />),
+  Bookmark: (<Bookmark />),
   Camera: (<Camera />),
   ZoomToSelectedElement: (<Scan />),
   Properties: (<Settings />),

@@ -1318,6 +1318,7 @@ export class ExcalidrawAutomate {
       boundElements: [] as any,
       link,
       locked: false,
+      frameId: null as string,
       ...scale ? {scale} : {},
     };
   }
@@ -1954,10 +1955,12 @@ export class ExcalidrawAutomate {
       image.size.width,
       image.size.height,
     );
-    this.elementsDict[id].fileId = fileId;
-    this.elementsDict[id].scale = [1, 1];
+    const newEl = this.elementsDict[id] as Mutable<ExcalidrawImageElement>;
+    newEl.fileId = fileId;
+    newEl.scale = [1, 1];
+    newEl.crop = null;
     if(!scale && anchor) {
-      this.elementsDict[id].customData = {isAnchored: true}
+      newEl.customData = {isAnchored: true}
     };
     return id;
   };

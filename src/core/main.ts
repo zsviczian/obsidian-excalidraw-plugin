@@ -1469,7 +1469,7 @@ export default class ExcalidrawPlugin extends Plugin {
         insertFileModal.open();
         break;
       case "LaTeX":
-        insertLaTeXToView(this.activeExcalidrawView);
+        insertLaTeXToView(this.activeExcalidrawView, true);
         break;
       case "card":
         this.activeExcalidrawView.insertBackOfTheNoteCard(true);
