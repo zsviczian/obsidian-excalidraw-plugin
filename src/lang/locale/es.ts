@@ -58,6 +58,10 @@ export default {
   NEW_IN_POPOUT_WINDOW_EMBED: "Crear nuevo bosquejo - EN UNA VENTANA EMERGENTE - e incrustar en el documento activo",
   TOGGLE_LOCK: "Alternar Elemento de Texto entre edición RAW y VISTA PREVIA",
   DELETE_FILE: "Eliminar imagen o archivo Markdown seleccionado de la Bóveda de Obsidian",
+  MARKER_FRAME_SHOW: "Mostrar Marker Frames(marcos de marcador)",
+  MARKER_FRAME_HIDE: "Ocultar Marker Frames(marcos de marcador)",
+  MARKER_FRAME_TITLE_SHOW: "Mostrar títulos de Marker Frames(marcos de marcador)",
+  MARKER_FRAME_TITLE_HIDE: "Ocultar títulos de Marker Frames(marcos de marcador)",
   COPY_ELEMENT_LINK: "Copiar [[enlace]] para el/los elemento(s) seleccionado(s)",
   COPY_DRAWING_LINK: "Copiar ![[enlace incrustado]] de este bosquejo",
   INSERT_LINK_TO_ELEMENT:
@@ -134,6 +138,14 @@ export default {
     "2) Luego, crea un bosquejo vacío en un nuevo panel haciendo CTRL/CMD+clic en el botón de la barra de Excalidraw,\n" +
     "3) y pega tu trabajo en el nuevo documento con CTRL/CMD+V.",
   ARIA_LABEL_TRAY_MODE: "El modo bandeja ofrece un lienzo alternativo y más espacioso",
+  TRAY_TRAY_MODE: "Activar/desactivar modo bandeja",
+  TRAY_SCRIPT_LIBRARY: "Biblioteca de scripts",
+  TRAY_SCRIPT_LIBRARY_ARIA: "Explorar la biblioteca de scripts de Excalidraw",
+  TRAY_EXPORT: "Exportar imagen...",
+  TRAY_EXPORT_ARIA: "Exportar imagen como archivo PNG, SVG o Excalidraw",
+  TRAY_SAVE: "Guardar",
+  TRAY_SWITCH_TO_MD: "Abrir como Markdown",
+  TRAY_SWITCH_TO_MD_ARIA: "Cambiar a vista de Markdown",
   MASK_FILE_NOTICE: "Este es un archivo de máscara. Se usa para recortar y enmascarar partes de la imagen. Mantén presionado el aviso para abrir el video de ayuda.",
   INSTALL_SCRIPT_BUTTON: "Instalar o actualizar scripts de Excalidraw",
   OPEN_AS_MD: "Abrir como Markdown",
@@ -178,7 +190,7 @@ export default {
   WELCOME_COMMAND_PALETTE: 'Escribe "Excalidraw" en la Paleta de Comandos',
   WELCOME_OBSIDIAN_MENU: "Explora el Menú de Obsidian en la esquina superior derecha",
   WELCOME_SCRIPT_LIBRARY: "Visita la Librería de Scripts",
-  WELCOME_HELP_MENU: "Encuentra ayuda en el menú_de_hamburguesa",
+  WELCOME_HELP_MENU: "Encuentra ayuda en el menú de la esquina superior izquierda",
   WELCOME_YOUTUBE_ARIA: "Canal de YouTube de PKM Visual",
   WELCOME_YOUTUBE_LINK: "Echa un vistazo al canal de YouTube de PKM Visual.",
   WELCOME_DISCORD_ARIA: "Únete al servidor de Discord",
@@ -912,6 +924,10 @@ FILENAME_HEAD: "Nombre de archivo",
   SCRIPT_EXECUTION_ERROR:
     "Error de ejecución del script. Por favor, revisa la consola del desarrollador para ver el mensaje de error.",
 
+  //ExcalidrawViewUtils.ts
+  MARKER_FRAME_RENDERING_DISABLED_NOTICE: "Hay marker-frames (marcos de marcador) ocultos en la escena.",
+  //DRAWING_HAS_BACK_OF_THE_CARD: "Hay notas en el reverso de este dibujo.",
+
   //ExcalidrawData.ts
   LOAD_FROM_BACKUP: "El archivo de Excalidraw estaba dañado. Cargando desde el archivo de backup(copia de seguridad).",
   FONT_LOAD_SLOW: "Cargando fuentes...\n\n Esto está tomando más tiempo de lo esperado. Si este retraso ocurre regularmente, puedes descargar las fuentes de forma local en tu Bóveda. \n\n" +
@@ -1164,4 +1180,34 @@ FILENAME_HEAD: "Nombre de archivo",
 
   //exportUtils.ts
   PDF_EXPORT_DESKTOP_ONLY: "La exportación a PDF solo está disponible en escritorio.",
+
+  //UniversalInsertFileModal.ts
+  UIFM_TITLE: "Insertar archivo desde la bóveda",
+  UIFM_SECTION_HEAD: "Seleccionar encabezado de sección",
+  UIFM_ANCHOR: "Anclar al 100% del tamaño original",
+  UIFM_ANCHOR_DESC: "Esta es una función Pro, úsala solo si entiendes cómo funciona. Si se activa, incluso si cambias el tamaño de la imagen importada en Excalidraw, la próxima vez que abras el dibujo, la imagen volverá al 100% de su tamaño. Esto es útil para incrustar una idea atómica de Excalidraw en otra nota y preservar el tamaño relativo del texto y los íconos.",
+  UIFM_BTN_EMBEDDABLE: "como Incrustable",
+  UIFM_BTN_PDF: "como Pdf",
+  UIFM_BTN_IMAGE: "como Imagen",
+
+  //ReleaseNotes.ts
+  RN_WELCOME: "Bienvenido a Excalidraw",
+
+  //Excalidraw component
+  COMP_IMG: "Imágenes y archivos",
+  COMP_IMG_FROM_SYSTEM: "Importar desde el sistema",
+  COMP_IMG_ANY_FILE: "Cualquier archivo de la bóveda",
+  COMP_IMG_LaTeX: "Fórmula de LaTeX",
+  COMP_FRAME: "Acciones de Frame(marco)",
+  COMP_FRAME_HINT: "Activar/desactivar Marker-Frame (marco de marcador). Marcos de guía para definir diapositivas/áreas de impresión/referencias de imagen. " +
+      "Se ocultan en las exportaciones de imágenes y no contienen elementos. Oculta/muestra los marcos desde el menú contextual del lienzo.",
+
+  //CustomEmbeddable.tsx
+  NOTICE_PDF_THEME: "Sobreescritura de Tema de PDF .\n" +
+    "Controla esto a través de la propiedad de documento 'excalidraw-embeddable-theme' de este archivo (anula la configuración del complemento).\n\n" +
+    "Valores: dark, light, auto=Excalidraw, default=Obsidian.",
+
+  //EmbeddableActionsMenu.tsx
+  BOOKMARK_PAGE: "Guardar posición actual en el documento",
+  CAPTURE_PAGE: "Capturar la página actual como imagen",
 };
