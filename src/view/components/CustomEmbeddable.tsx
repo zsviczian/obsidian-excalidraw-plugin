@@ -592,8 +592,7 @@ function RenderObsidianView(
     const element = elementRef.current;
     const canvasNode = containerRef.current;
     if(!canvasNode.hasClass("canvas-node")) return;
-    const viewType = viewTypeRef.current; //leafRef.current.leaf.view?.getViewType();
-    setColors(canvasNode, element, mdProps, canvasColor, viewType);
+    setColors(canvasNode, element, mdProps, canvasColor, viewTypeRef.current);
   }, [
     mdProps?.useObsidianDefaults,
     mdProps?.backgroundMatchCanvas,
@@ -709,24 +708,32 @@ function RenderObsidianView(
     const previousIsActive = isActiveRef.current;
     isActiveRef.current = (activeEmbeddable?.element.id === element.id) && (activeEmbeddable?.state === "active");
     
-    const node = leafRef.current?.node as ObsidianCanvasNode;
     if (previousIsActive === isActiveRef.current) {
       return;
     }
-
-    /*if(leafRef.current?.leaf) {
-      setKeepOnTop();
-      view.app.workspace.setActiveLeaf(leafRef.current.leaf, { focus: true });
-    }*/
 
     if(file !== view.file) {
       setFileToLocalGraph(view.app, file);
     }
 
-    if(leafRef.current.leaf?.view?.getViewType() === "markdown") {
+    const node = leafRef.current?.node as ObsidianCanvasNode;
+    if (node) {
+      //Handle canvas node
+      if(isActiveRef.current && view.plugin.settings.markdownNodeOneClickEditing && !containerRef.current?.hasClass("is-editing")) { //!node.isEditing
+        const newTheme = getTheme(view, themeRef.current);
+        containerRef.current?.addClasses(["is-editing", "is-focused"]);
+        view.canvasNodeFactory.startEditing(node, newTheme);
+      } else {
+        containerRef.current?.removeClasses(["is-editing", "is-focused"]);
+        view.canvasNodeFactory.stopEditing(node);
+      }
+      return;
+    }
+
+    if(leafRef.current.leaf && viewTypeRef.current === "markdown") {
       //Handle markdown leaf
       //@ts-ignore
-      const modes = leafRef.current.leaf.view.modes;
+      const modes = leafRef.current.leaf?.view.modes;
       if(!modes) {
         return;
       }
@@ -736,16 +743,6 @@ function RenderObsidianView(
         leafRef.current.leaf.view.setMode(modes["preview"]);
         isEditingRef.current = false;
         return;
-      }  
-    } else if (node) {
-      //Handle canvas node
-      if(isActiveRef.current && view.plugin.settings.markdownNodeOneClickEditing && !containerRef.current?.hasClass("is-editing")) { //!node.isEditing
-        const newTheme = getTheme(view, themeRef.current);
-        containerRef.current?.addClasses(["is-editing", "is-focused"]);
-        view.canvasNodeFactory.startEditing(node, newTheme);
-      } else {
-        containerRef.current?.removeClasses(["is-editing", "is-focused"]);
-        view.canvasNodeFactory.stopEditing(node);
       }
     }
   }, [
