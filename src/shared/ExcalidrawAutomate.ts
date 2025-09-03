@@ -90,6 +90,7 @@ import { CaptureUpdateAction } from "src/constants/constants";
 import { AutoexportConfig } from "src/types/excalidrawViewTypes";
 import { FloatingModal } from "./Dialogs/FloatingModal";
 import { patchMobileView } from "src/utils/customEmbeddableUtils";
+import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
 
 extendPlugins([
   HarmonyPlugin,
@@ -476,7 +477,7 @@ export class ExcalidrawAutomate {
    * @param {ExcalidrawView} [view] - The view to check.
    * @returns {{view:any}|{file:TFile, editor:Editor}|null} The active embeddable view or editor.
    */
-  public getActiveEmbeddableViewOrEditor (view?:ExcalidrawView): {view:any}|{file:TFile, editor:Editor}|null {
+  public getActiveEmbeddableViewOrEditor (view?:ExcalidrawView): {view:any}|{file:TFile, editor:Editor}|{node: ObsidianCanvasNode}|null {
     if (!this.targetView && !view) {
       return null;
     }
@@ -485,6 +486,9 @@ export class ExcalidrawAutomate {
     if(leafOrNode) {
       if(leafOrNode.node && leafOrNode.node.isEditing) {
         return {file: leafOrNode.node.file, editor: leafOrNode.node.child.editor};
+      }
+      if(leafOrNode.node) {
+        return {node: leafOrNode.node};
       }
       if(leafOrNode.leaf && leafOrNode.leaf.view) {
         return {view: leafOrNode.leaf.view};

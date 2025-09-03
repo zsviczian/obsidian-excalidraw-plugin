@@ -236,9 +236,8 @@ export const EXPORT_TYPES = ["svg", "dark.svg", "light.svg", "png", "dark.png", 
 export const MAX_IMAGE_SIZE = 500;
 export const CARD_WIDTH = 400;
 export const CARD_HEIGHT = 500;
-
-export const VIDEO_TYPES = ["mp4", "webm", "ogv", "mov", "mkv"];
-export const AUDIO_TYPES = ["mp3", "wav", "m4a", "3gp", "flac", "ogg", "oga", "opus"];
+export const VIDEO_TYPES = ["mp4","webm","ogv","mov","mkv","avi","m4v","wmv"];
+export const AUDIO_TYPES = ["mp3","wav", "m4a", "3gp", "flac", "ogg", "oga", "opus", "aac", "aiff", "aif", "mid", "midi"];
 export const CODE_TYPES = ["json", "css", "js"];
 
 export const FRONTMATTER_KEYS:{[key:string]: {name: string, type: string, depricated?:boolean}} = {

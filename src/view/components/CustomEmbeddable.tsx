@@ -1,12 +1,12 @@
-import {  ExcalidrawEmbeddableElement, NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
+import {  ExcalidrawEmbeddableElement,  } from "@zsviczian/excalidraw/types/element/src/types";
 import ExcalidrawView from "src/view/ExcalidrawView";
-import { Notice, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
+import { Notice, WorkspaceLeaf,  } from "obsidian";
 import * as React from "react";
-import { ConstructableWorkspaceSplit, getContainerForDocument, isObsidianThemeDark } from "src/utils/obsidianUtils";
-import { DEVICE, EXTENDED_EVENT_TYPES, KEYBOARD_EVENT_TYPES, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
+import { isObsidianThemeDark } from "src/utils/obsidianUtils";
+import { DEVICE, EXTENDED_EVENT_TYPES, KEYBOARD_EVENT_TYPES,  } from "src/constants/constants";
 import { ExcalidrawImperativeAPI, UIAppState } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
-import { processLinkText, patchMobileView, setFileToLocalGraph } from "src/utils/customEmbeddableUtils";
+import { processLinkText, patchMobileView, setFileToLocalGraph, createLeaf } from "src/utils/customEmbeddableUtils";
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
 import { t } from "src/lang/helpers";
 
@@ -301,7 +301,7 @@ export function renderWebView (src: string, view: ExcalidrawView, id: string, _:
 //Render WorkspaceLeaf or CanvasNode
 //--------------------------------------------------------------------------------
 function RenderObsidianView(
-  { mdProps, element, linkText, view, containerRef, activeEmbeddable, theme, canvasColor }:{
+  { mdProps, element, linkText, view, containerRef, activeEmbeddable, theme, canvasColor, selectedElementId }:{
   mdProps: EmbeddableMDCustomProps;
   element: ExcalidrawEmbeddableElement;
   linkText: string;
@@ -310,6 +310,7 @@ function RenderObsidianView(
   activeEmbeddable: {element: ExcalidrawEmbeddableElement; state: string};
   theme: string;
   canvasColor: string;
+  selectedElementId: string;
 }): JSX.Element {
   
   const { subpath, file } = processLinkText(linkText, view);
@@ -323,6 +324,7 @@ function RenderObsidianView(
   const leafRef = React.useRef<{leaf: WorkspaceLeaf; node?: ObsidianCanvasNode, editNode?: Function} | null>(null);
   const isEditingRef = React.useRef(false);
   const isActiveRef = React.useRef(false);
+  const viewTypeRef = React.useRef("empty");
   const themeRef = React.useRef(theme);
   const elementRef = React.useRef(element);
   const pdfObserverRef = React.useRef(null);
@@ -424,14 +426,7 @@ function RenderObsidianView(
 
     containerRef.current.parentElement.style.padding = "";
 
-    const doc = view.ownerDocument;
-    const rootSplit:WorkspaceSplit = new (WorkspaceSplit as ConstructableWorkspaceSplit)(view.app.workspace, "vertical");
-    rootSplit.getRoot = () => view.app.workspace[doc === document ? 'rootSplit' : 'floatingSplit'];
-    rootSplit.getContainer = () => getContainerForDocument(doc);
-    rootSplit.containerEl.style.width = '100%';
-    rootSplit.containerEl.style.height = '100%';
-    rootSplit.containerEl.style.borderRadius = "var(--embeddable-radius)";
-    view.plugin.setDebounceActiveLeafChangeHandler();
+    const {rootSplit, leaf } = createLeaf(view);
     leafRef.current = {
       leaf: view.app.workspace.createLeafInParent(rootSplit, 0),
       node: null,
@@ -444,6 +439,7 @@ function RenderObsidianView(
       setKeepOnTop();
       leafRef.current.node = view.canvasNodeFactory.createFileNote(file, subpath, containerRef.current, element.id);
       view.updateEmbeddableLeafRef(element.id, leafRef.current);
+      viewTypeRef.current = "markdown";
     } else {
       (async () => {
         await leafRef.current.leaf.openFile(file, {
@@ -452,6 +448,7 @@ function RenderObsidianView(
           ...subpath ? { eState: { subpath }}:{},
         });
         const viewType = leafRef.current.leaf.view?.getViewType();
+        viewTypeRef.current = viewType;
         if(viewType === "canvas") {
           leafRef.current.leaf.view.canvas?.setReadonly(true);
         }
@@ -595,7 +592,7 @@ function RenderObsidianView(
     const element = elementRef.current;
     const canvasNode = containerRef.current;
     if(!canvasNode.hasClass("canvas-node")) return;
-    const viewType = leafRef.current.leaf.view?.getViewType();
+    const viewType = viewTypeRef.current; //leafRef.current.leaf.view?.getViewType();
     setColors(canvasNode, element, mdProps, canvasColor, viewType);
   }, [
     mdProps?.useObsidianDefaults,
@@ -609,7 +606,7 @@ function RenderObsidianView(
     elementRef.current,
     containerRef.current,
     canvasColor,
-    leafRef.current,
+    viewTypeRef.current,
   ])
 
   //--------------------------------------------------------------------------------
@@ -684,7 +681,11 @@ function RenderObsidianView(
         return;
       }
       // Existing Enter behavior
-      if (event.key === "Enter" && !isActiveRef.current) {
+
+      if (
+        event.key === "Enter" && !isEditingRef.current &&
+        (selectedElementId === element.id || activeEmbeddable?.element?.id === element.id)
+      ) {
         startEditing(); // Call handleClick function when Enter key is pressed
       }
     };
@@ -695,10 +696,10 @@ function RenderObsidianView(
     return () => {
       document.removeEventListener("keydown", handleKeyPress, true);
     };
-  }, [handleClick, isActiveRef.current, view]);
+  }, [handleClick, isActiveRef.current, view, activeEmbeddable, element, selectedElementId]);
 
   //--------------------------------------------------------------------------------
-  // Set isActiveRef and switch to preview mode when the iframe is not active
+  // Set isActiveRef and switch to preview mode when the embeddable is not active
   //--------------------------------------------------------------------------------
   React.useEffect(() => {
     if(!containerRef?.current || !leafRef?.current) {
@@ -770,6 +771,7 @@ export const CustomEmbeddable: React.FC<{element: ExcalidrawEmbeddableElement; v
   const containerRef: React.RefObject<HTMLDivElement> = React.useRef(null);
   const theme = getTheme(view, appState.theme);
   const mdProps: EmbeddableMDCustomProps = element.customData?.mdProps || null;
+  const selectedElementIds = Object.keys(appState.selectedElementIds);
   return (
     <div
       ref={containerRef}
@@ -792,6 +794,7 @@ export const CustomEmbeddable: React.FC<{element: ExcalidrawEmbeddableElement; v
         activeEmbeddable={appState.activeEmbeddable}
         theme={appState.theme}
         canvasColor={appState.viewBackgroundColor}
+        selectedElementId={selectedElementIds.length === 1 ? selectedElementIds[0] : null}
       />
     </div>
   )

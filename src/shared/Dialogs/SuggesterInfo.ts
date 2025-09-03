@@ -819,11 +819,11 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "getActiveEmbeddableViewOrEditor",
-    code: "getActiveEmbeddableViewOrEditor(view?: ExcalidrawView);",
+    code: "getActiveEmbeddableViewOrEditor (view?:ExcalidrawView): {view:any}|{file:TFile, editor:Editor}|{node: ObsidianCanvasNode}|null;",
     desc: "Returns the editor or leaf.view of the currently active embedded obsidian file.<br>" +
     "If view is not provided, ea.targetView is used.<br>" +
-    "If the embedded file is a markdown document the function will return<br>" +
-    "<code>{file:TFile, editor:Editor}</code> otherwise it will return {view:any}. You can check view type with view.getViewType();",
+    "If the embedded file is an eligible Obsidian canvas node document the function will return<br>" +
+    "<code>{file:TFile, editor:Editor}</code> of {node: ObsidianCanvasNode}, otherwise it will return {view:any}. You can check view type with view.getViewType();",
     after: "",
   },
   {

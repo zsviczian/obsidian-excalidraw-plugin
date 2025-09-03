@@ -1,9 +1,25 @@
 import { NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { DEVICE, REG_LINKINDEX_INVALIDCHARS } from "src/constants/constants";
-import { getParentOfClass } from "./obsidianUtils";
-import { App, TFile, WorkspaceLeaf } from "obsidian";
+import { ConstructableWorkspaceSplit, getContainerForDocument, getParentOfClass } from "./obsidianUtils";
+import { App, TFile, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import { getLinkParts } from "./utils";
 import ExcalidrawView from "src/view/ExcalidrawView";
+import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
+
+export const createLeaf = (view: ExcalidrawView): {leaf: WorkspaceLeaf, rootSplit: WorkspaceSplit} => {
+  const doc = view.ownerDocument;
+  const rootSplit:WorkspaceSplit = new (WorkspaceSplit as ConstructableWorkspaceSplit)(view.app.workspace, "vertical");
+  rootSplit.getRoot = () => view.app.workspace[doc === document ? 'rootSplit' : 'floatingSplit'];
+  rootSplit.getContainer = () => getContainerForDocument(doc);
+  rootSplit.containerEl.style.width = '100%';
+  rootSplit.containerEl.style.height = '100%';
+  rootSplit.containerEl.style.borderRadius = "var(--embeddable-radius)";
+  view.plugin.setDebounceActiveLeafChangeHandler();
+  return {
+    leaf: view.app.workspace.createLeafInParent(rootSplit, 0),
+    rootSplit,
+  };
+}
 
 export const useDefaultExcalidrawFrame = (element: NonDeletedExcalidrawElement) => {
   return !(element.link.startsWith("[") || element.link.startsWith("file:") || element.link.startsWith("data:")); // && !element.link.match(TWITTER_REG);

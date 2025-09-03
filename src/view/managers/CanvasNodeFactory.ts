@@ -85,8 +85,8 @@ export class CanvasNodeFactory {
 
   private async waitForEditor(node: ObsidianCanvasNode): Promise<HTMLElement | null> {
     let counter = 0;
-    while (!node.child.editor?.containerEl?.parentElement?.parentElement && counter++ < 100) {
-      await new Promise(resolve => setTimeout(resolve, 25));
+    while (!node.child.editor?.containerEl?.parentElement?.parentElement && counter++ < 40) {
+      await sleep(25);
     }
     return node.child.editor?.containerEl?.parentElement?.parentElement;
   }
