@@ -629,36 +629,40 @@ function RenderObsidianView(
       event?.stopPropagation();
     }
 
+    if(!isActiveRef.current || isEditingRef.current || !leafRef.current) {
+      return;
+    }
+
     /*if(isActiveRef.current && leafRef.current?.leaf) {
       setKeepOnTop();
       view.app.workspace.setActiveLeaf(leafRef.current.leaf, { focus: true });
     }*/
 
-    if (isActiveRef.current && !isEditingRef.current && leafRef.current?.leaf) {
-      if(leafRef.current.leaf.view?.getViewType() === "markdown") {
-        const api:ExcalidrawImperativeAPI = view.excalidrawAPI;
-        const el = api.getSceneElements().filter(el=>el.id === element.id)[0];
-
-        if(!el || el.angle !== 0) {
-          new Notice("Sorry, cannot edit rotated markdown documents");
-          return;
-        }
-        //@ts-ignore
-        const modes = leafRef.current.leaf.view.modes;
-        if (!modes) {
-          return;
-        }
-        patchMobileView(view);
-        leafRef.current.leaf.view.setMode(modes['source']);
-        isEditingRef.current = true;
-      } else if (leafRef.current?.node) {
-        //Handle canvas node
-        const newTheme = getTheme(view, themeRef.current);
-        containerRef.current?.addClasses(["is-editing", "is-focused"]);
-        view.canvasNodeFactory.startEditing(leafRef.current.node, newTheme);
-      }
+    if (leafRef.current.node) {
+      //Handle canvas node
+      const newTheme = getTheme(view, themeRef.current);
+      containerRef.current?.addClasses(["is-editing", "is-focused"]);
+      view.canvasNodeFactory.startEditing(leafRef.current.node, newTheme);
+      return;
     }
-  }, [leafRef.current?.leaf, element.id, view, themeRef.current, isActiveRef.current, isEditingRef.current]);
+
+    if(leafRef.current.leaf && viewTypeRef.current === "markdown") {
+      const api:ExcalidrawImperativeAPI = view.excalidrawAPI;
+      const el = api.getSceneElements().filter(el=>el.id === element.id)[0];
+      if(!el || el.angle !== 0) {
+        new Notice("Sorry, cannot edit rotated markdown documents");
+        return;
+      }
+      //@ts-ignore
+      const modes = leafRef.current.leaf.view.modes;
+      if (!modes) {
+        return;
+      }
+      patchMobileView(view);
+      leafRef.current.leaf.view.setMode(modes['source']);
+      isEditingRef.current = true;
+    } 
+  }, [leafRef.current?.leaf, element.id, view, themeRef.current, isActiveRef.current, isEditingRef.current, viewTypeRef.current]);
 
   const startEditing = React.useCallback(() => {
     if(isActiveRef.current && isEditingRef.current) {
