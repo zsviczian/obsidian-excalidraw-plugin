@@ -6,7 +6,7 @@ import { isObsidianThemeDark } from "src/utils/obsidianUtils";
 import { DEVICE, EXTENDED_EVENT_TYPES, KEYBOARD_EVENT_TYPES,  } from "src/constants/constants";
 import { ExcalidrawImperativeAPI, UIAppState } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
-import { processLinkText, patchMobileView, setFileToLocalGraph, createLeaf } from "src/utils/customEmbeddableUtils";
+import { processLinkText, patchMobileView, setFileToLocalGraph, createLeaf, predictViewType } from "src/utils/customEmbeddableUtils";
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
 import { t } from "src/lang/helpers";
 
@@ -426,48 +426,29 @@ function RenderObsidianView(
 
     containerRef.current.parentElement.style.padding = "";
 
-    const {rootSplit, leaf } = createLeaf(view);
     leafRef.current = {
-      leaf: view.app.workspace.createLeafInParent(rootSplit, 0),
+      leaf: null,
       node: null,
       editNode: null,
     };
 
+    const createNode = (viewType: string) => {
+      setKeepOnTop();
+      leafRef.current.node = view.canvasNodeFactory.createFileNote(file, subpath, containerRef.current, element.id);
+      setColors(containerRef.current, element, mdProps, canvasColor, viewType);
+      view.updateEmbeddableLeafRef(element.id, leafRef.current);
+      viewTypeRef.current = "markdown";
+    }
+
     patchMobileView(view);
     //if subpath is defined, create a canvas node else create a workspace leaf
     if(subpath && view.canvasNodeFactory.isInitialized() && file.extension.toLowerCase() === "md") {
-      setKeepOnTop();
-      leafRef.current.node = view.canvasNodeFactory.createFileNote(file, subpath, containerRef.current, element.id);
-      view.updateEmbeddableLeafRef(element.id, leafRef.current);
-      viewTypeRef.current = "markdown";
+      createNode("markdown");
     } else {
-      (async () => {
-        await leafRef.current.leaf.openFile(file, {
-          active: false,
-          state: {mode:"preview"},
-          ...subpath ? { eState: { subpath }}:{},
-        });
-        const viewType = leafRef.current.leaf.view?.getViewType();
-        viewTypeRef.current = viewType;
-        if(viewType === "canvas") {
-          leafRef.current.leaf.view.canvas?.setReadonly(true);
-        }
-        if (CANVAS_VIEWTYPES.has(viewType) && view.canvasNodeFactory.isInitialized()) {
-          setKeepOnTop();
-          //I haven't found a better way of deciding if an .md file has its own view (e.g., kanban) or not
-          //This runs only when the file is added, thus should not be a major performance issue
-          await leafRef.current.leaf.setViewState({state: {file:null}})
-          leafRef.current.node = view.canvasNodeFactory.createFileNote(file, subpath, containerRef.current, element.id);
-          setColors(containerRef.current, element, mdProps, canvasColor, viewType);
-        } else {
-          const workspaceLeaf:HTMLDivElement = rootSplit.containerEl.querySelector("div.workspace-leaf");
-          if(workspaceLeaf) workspaceLeaf.style.borderRadius = "var(--embeddable-radius)";
-          rootSplit.containerEl.addClass("mod-visible");
-          containerRef.current.appendChild(rootSplit.containerEl);
-          setColors(containerRef.current, element, mdProps, canvasColor, viewType);
-        }
-        view.updateEmbeddableLeafRef(element.id, leafRef.current);
-
+      let viewType = predictViewType(view.app,file);
+      // markdown could still be a kanban board or other custom view on top of markdown, those need to be displayed in leaves
+      if(viewType !== "markdown" && CANVAS_VIEWTYPES.has(viewType) && view.canvasNodeFactory.isInitialized()) {
+        createNode(viewType);
         if(viewType === "pdf") {
           // Moved PDF setup logic into a helper for readability
           setupPdfViewEnhancements(
@@ -477,7 +458,36 @@ function RenderObsidianView(
             pdfObserverDisabledRef
           );
         }
-      })();
+      } else {
+        (async () => {
+          const {rootSplit, leaf } = createLeaf(view);
+          leafRef.current.leaf = leaf;
+          await leafRef.current.leaf.openFile(file, {
+            active: false,
+            state: {mode:"preview"},
+            ...subpath ? { eState: { subpath }}:{},
+          });
+          const viewType = leafRef.current.leaf.view?.getViewType();
+          viewTypeRef.current = viewType;
+          if(viewType === "canvas") {
+            leafRef.current.leaf.view.canvas?.setReadonly(true);
+          }
+          if (viewType === "markdown" && view.canvasNodeFactory.isInitialized()) {
+            createNode("markdown");
+            //I haven't found a better way of deciding if an .md file has its own view (e.g., kanban) or not
+            //This runs only when the file is added, thus should not be a major performance issue
+            await leafRef.current.leaf.setViewState({state: {file:null}})
+            leafRef.current.leaf?.detach();
+          } else {
+            const workspaceLeaf:HTMLDivElement = rootSplit.containerEl.querySelector("div.workspace-leaf");
+            if(workspaceLeaf) workspaceLeaf.style.borderRadius = "var(--embeddable-radius)";
+            rootSplit.containerEl.addClass("mod-visible");
+            containerRef.current.appendChild(rootSplit.containerEl);
+            setColors(containerRef.current, element, mdProps, canvasColor, viewType);
+            view.updateEmbeddableLeafRef(element.id, leafRef.current);
+          }
+        })();
+      }
     }
 
     return () => {

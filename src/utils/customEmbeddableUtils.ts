@@ -1,5 +1,5 @@
 import { NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
-import { DEVICE, REG_LINKINDEX_INVALIDCHARS } from "src/constants/constants";
+import { AUDIO_TYPES, DEVICE, REG_LINKINDEX_INVALIDCHARS, VIDEO_TYPES } from "src/constants/constants";
 import { ConstructableWorkspaceSplit, getContainerForDocument, getParentOfClass } from "./obsidianUtils";
 import { App, TFile, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import { getLinkParts } from "./utils";
@@ -95,4 +95,46 @@ export function setFileToLocalGraph(app: App, file: TFile) {
   } catch (e) {
     console.error(e);
   }
+}
+
+export function predictViewType(app: App, file: TFile): string {
+  const ext = file.extension?.toLowerCase?.() ?? "";
+
+  // 1) Try private registry APIs when available (covers .md files with custom views like Kanban)
+  const vr = (app as any)?.viewRegistry;
+  const registryFileMethods = [
+    "getViewTypeForFile",
+    "getViewTypeByFile",
+    "getTypeByFile",
+  ];
+  for (const m of registryFileMethods) {
+    if (vr?.[m]) {
+      try {
+        const vt = vr[m](file);
+        if (typeof vt === "string" && vt) return vt;
+      } catch {}
+    }
+  }
+  // 2) Try extension mapping from registry
+  const registryExtMethods = [
+    "getViewTypeByExtension",
+    "getTypeByExtension",
+  ];
+  for (const m of registryExtMethods) {
+    if (vr?.[m]) {
+      try {
+        const vt = vr[m](ext);
+        if (typeof vt === "string" && vt) return vt;
+      } catch {}
+    }
+  }
+
+  // 3) Fallbacks by extension
+  if (ext === "md") return "markdown";
+  if (ext === "pdf") return "pdf";
+  if (ext === "canvas") return "canvas";
+  if (AUDIO_TYPES.contains(ext)) return "audio";
+  if (VIDEO_TYPES.contains(ext)) return "video";
+
+  return "empty";
 }

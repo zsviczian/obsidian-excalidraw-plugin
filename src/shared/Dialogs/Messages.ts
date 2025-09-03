@@ -17,6 +17,13 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.15.2":`
+## Fixed:
+- Pressing enter on a text element erroneously activated all markdown embeddables in the scene. [discord](https://discord.com/channels/1026825302900494357/1412683408424833045)
+
+## Fixed in ExcalidrawAutomate
+- \`getActiveEmbeddableViewOrEditor (view?:ExcalidrawView): {view:any}|{file:TFile, editor:Editor}|{node: ObsidianCanvasNode}|null;\` no returns the node, instead of the empty view from the leaf.
+`,
 "2.15.1":`
 ## Fixed
 - PDF improvements
