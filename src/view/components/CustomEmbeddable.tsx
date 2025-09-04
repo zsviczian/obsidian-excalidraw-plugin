@@ -77,7 +77,6 @@ function setPDFViewTheme(view: ExcalidrawView, pdfView: any) {
   }
 }
 
-// New: carve out PDF setup logic
 function setupPdfViewEnhancements(
   view: ExcalidrawView,
   leafRef: React.MutableRefObject<{ leaf: WorkspaceLeaf; node?: ObsidianCanvasNode; editNode?: Function } | null>,
@@ -229,6 +228,45 @@ function setupPdfViewEnhancements(
           attributes: true,
           attributeFilter: ["class"],
         });
+
+        // https://github.com/RyotaUshio/obsidian-pdf-plus/issues/477
+        // Watch for the PDF container being removed from DOM (e.g. by PDF+)
+        const rootEl = pdfView.containerEl as HTMLElement | null;
+        if (rootEl) {
+          let detachObserver: MutationObserver | null = new MutationObserver((_muts, obs) => {
+            // If the tracked pdfContainerEl is gone/replaced, clean up and reattach
+            if (!pdfContainerEl.isConnected || !rootEl.contains(pdfContainerEl)) {
+              obs.disconnect();
+              detachObserver = null;
+
+              // Cleanup existing handlers/observers
+              try { (pdfObserverRef as any).currentCleanup?.(); } catch {}
+              try { pdfObserverRef.current?.disconnect(); } catch {}
+
+              // Re-setup on next tick to allow DOM to settle
+              setTimeout(() => {
+                if (leafRef.current?.node?.child?.containerEl?.isConnected) {
+                  setupPdfViewEnhancements(
+                    view,
+                    leafRef as React.MutableRefObject<{ leaf: WorkspaceLeaf; node?: ObsidianCanvasNode; editNode?: Function } | null>,
+                    pdfObserverRef as any,
+                    pdfObserverDisabledRef
+                  );
+                }
+              }, 0);
+            }
+          });
+          detachObserver.observe(rootEl, { childList: true, subtree: true });
+
+          // Extend cleanup to also stop the detachObserver and the class observer
+          const prevCleanup = (pdfObserverRef as any).currentCleanup;
+          (pdfObserverRef as any).currentCleanup = () => {
+            try { prevCleanup?.(); } catch {}
+            try { pdfObserverRef.current?.disconnect(); } catch {}
+            try { detachObserver?.disconnect(); } catch {}
+            detachObserver = null;
+          };
+        }
       }
     }
   };
