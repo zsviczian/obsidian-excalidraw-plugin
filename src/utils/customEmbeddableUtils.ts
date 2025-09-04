@@ -30,22 +30,38 @@ export const leafMap = new Map<string, WorkspaceLeaf>();
 //This is definitely not the right solution, feels like sticking plaster
 //patch disappearing content on mobile
 //based on obsidian app.js, obsidian is looking for activeEditor, but active editor is in a leaf that is disconnected from root
-export const patchMobileView = (view: ExcalidrawView) => {
-  if(DEVICE.isDesktop) return;
+export const patchMobileView = (
+  view: ExcalidrawView,
+  opts?: { keepAlive?: boolean; isActive?: () => boolean }
+): (() => void) | void => {
+  if (!DEVICE.isPhone) return;
   console.log("patching mobile view");
-  const parent = getParentOfClass(view.containerEl,"mod-top");
-  if(parent) {
-    if(!parent.hasClass("mod-visible")) {
+  const parent = getParentOfClass(view.containerEl, "mod-top");
+  if (parent) {
+    if (!parent.hasClass("mod-visible")) {
       parent.addClass("mod-visible");
     }
-    //create observer here
+    // create observer here
     const observer = new MutationObserver(() => {
-      if(!parent.hasClass("mod-visible")) {
+      if (opts?.keepAlive && opts?.isActive && !opts.isActive()) {
+        observer.disconnect();
+        return;
+      }
+      if (!parent.hasClass("mod-visible")) {
         parent.addClass("mod-visible");
       }
     });
     observer.observe(parent, { attributes: true, attributeFilter: ["class"] });
-    window.setTimeout(() => observer.disconnect(), 500);
+
+    const cleanup = () => observer.disconnect();
+
+    if (opts?.keepAlive) {
+      // Keep the observer alive until caller cleans up (or callback signals inactive)
+      return cleanup;
+    }
+    // default behavior: disconnect after 500ms
+    window.setTimeout(cleanup, 500);
+    return cleanup;
   }
 }
 

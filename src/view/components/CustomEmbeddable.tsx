@@ -367,6 +367,8 @@ function RenderObsidianView(
   const elementRef = React.useRef(element);
   const pdfObserverRef = React.useRef(null);
   const pdfObserverDisabledRef = React.useRef(false);
+  // Keep-alive mobile patch cleanup holder
+  const mobilePatchCleanupRef = React.useRef(null);
 
   // Update themeRef when theme changes
   React.useEffect(() => {
@@ -533,6 +535,10 @@ function RenderObsidianView(
       (pdfObserverRef as any).currentCleanup?.();
       pdfObserverRef.current?.disconnect();
       pdfObserverRef.current = null;
+
+      // cleanup persistent mobile patch if active
+      try { mobilePatchCleanupRef.current?.(); } catch {}
+      mobilePatchCleanupRef.current = null;
 
       if(!leafRef.current) {
         return;
@@ -782,19 +788,40 @@ function RenderObsidianView(
       return;
     }
 
-    if(leafRef.current.leaf && viewTypeRef.current === "markdown") {
-      //Handle markdown leaf
-      //@ts-ignore
-      const modes = leafRef.current.leaf?.view.modes;
-      if(!modes) {
-        return;
+    if(leafRef.current.leaf) {
+      // Manage persistent mobile patch lifecycle for LEAF on phones
+      if (DEVICE.isPhone) {
+        if (isActiveRef.current) {
+          // start persistent observer if not running
+          if (!mobilePatchCleanupRef.current) {
+            const cleanup = patchMobileView(view, {
+              keepAlive: true,
+              isActive: () => isActiveRef.current,
+            });
+            mobilePatchCleanupRef.current = (typeof cleanup === "function") ? cleanup : null;
+          }
+        } else {
+          // stop persistent observer when deactivated
+          try { mobilePatchCleanupRef.current?.(); } catch {}
+          mobilePatchCleanupRef.current = null;
+        }
       }
-    
-      if(!isActiveRef.current) {
+
+      //I think this no longer happens since markdown is always a canvas node if canvasNodeFactory is initialized
+      if(viewTypeRef.current === "markdown") {
+        //Handle markdown leaf
         //@ts-ignore
-        leafRef.current.leaf.view.setMode(modes["preview"]);
-        isEditingRef.current = false;
-        return;
+        const modes = leafRef.current.leaf?.view.modes;
+        if(!modes) {
+          return;
+        }
+      
+        if(!isActiveRef.current) {
+          //@ts-ignore
+          leafRef.current.leaf.view.setMode(modes["preview"]);
+          isEditingRef.current = false;
+          return;
+        }
       }
     }
   }, [
