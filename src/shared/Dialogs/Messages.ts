@@ -20,7 +20,8 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 "2.15.2":`
 ## Fixed:
 - Pressing enter on a text element erroneously activated all markdown embeddables in the scene. [discord](https://discord.com/channels/1026825302900494357/1412683408424833045)
-- After updating to PDF++ 0.40.31 touch scrolling of embedded PDF documents stopped working on mobile devices, and PDF document appeard with wrong themes in some cases.
+- After updating to PDF++ 0.40.31, touch scrolling of embedded PDF documents stopped working on mobile devices, and the PDF document appeared with the wrong themes in some cases.
+- Issue with the Kanban board as an active embeddable on mobile phones is fixed.
 
 ## Fixed in ExcalidrawAutomate
 - \`getActiveEmbeddableViewOrEditor (view?:ExcalidrawView): {view:any}|{file:TFile, editor:Editor}|{node: ObsidianCanvasNode}|null;\` no returns the node, instead of the empty view from the leaf.
