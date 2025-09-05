@@ -92,7 +92,7 @@ export default {
   ERROR_TRY_AGAIN: "请重试。",
   PASTE_CODEBLOCK: "粘贴代码块",
   INSERT_LATEX:
-    `插入 LaTeX 公式（如：\\binom{n}{k} = \\frac{n!}{k!(n-k)!}）`,
+    `插入 LaTeX 公式到当前绘图中`,
   ENTER_LATEX: "输入 LaTeX 公式",
   READ_RELEASE_NOTES: "阅读本插件的更新说明",
   RUN_OCR: "OCR 整个绘图：识别涂鸦和图片里的文本并复制到剪贴板和笔记属性中",
@@ -155,7 +155,7 @@ export default {
   LINK_BUTTON_CLICK_NO_TEXT:
     "请选择一个包含内部或外部链接的元素。\n",
   LINEAR_ELEMENT_LINK_CLICK_ERROR:
-    "箭头和线元素的链接无法通过 " + labelCTRL() + " + 点击元素来导航，因为这也会激活线编辑器。\n" +
+    "箭头和线条元素的链接无法通过 " + labelCTRL() + " + 点击元素来跳转，因为这也会激活线条编辑器。\n" +
     "请使用右键上下文菜单打开链接，或点击元素右上角的链接指示器。\n",
   FILENAME_INVALID_CHARS:
     '文件名不能包含以下符号： * " \\ < > : | ? #',
@@ -278,10 +278,10 @@ export default {
   TEMPLATE_NAME: "Excalidraw 模板文件（區分大小寫！）",
   TEMPLATE_DESC:
     "Excalidraw 模板文件（文件夹）的存储路径。<br>" +
-    "<b>模板文件：</b>比如：您的模板在默认的 Excalidraw 文件夹中且文件名是 Template.md，" +
+    "<b>模板文件：</b>例如：您的模板在默认的 Excalidraw 文件夹中且文件名是 Template.md，" +
     "则该项应设为 Excalidraw/Template.md 或 Excalidraw/Template（省略 .md 扩展名）。<br>" +
     "如果您在兼容模式下使用 Excalidraw，那么您的模板文件也必须是旧的 *.excalidraw 格式，" +
-    "例如 Excalidraw/Template.excalidraw。<br><b>模板文件夹：</b> 您还可以将文件夹设置为模板。" +
+    "如 Excalidraw/Template.excalidraw。<br><b>模板文件夹：</b> 您还可以将文件夹设置为模板。" +
     "这时，创建新绘图时将提示您选择使用哪个模板。<br>" +
     "<b>专业提示：</b> 如果您正在使用 Obsidian Templater 插件，您可以将 Templater 代码添加到不同的" +
     "Excalidraw 模板中，以自动配置您的绘图。",
@@ -323,7 +323,7 @@ export default {
     "默认的 OpenAI API URL。请填写有效的 OpenAI API URL。" +
     "Excalidraw 会通过该 URL 发送 API 请求给 OpenAI。我没有对该项做任何错误处理，请谨慎修改。",
   AI_OPENAI_DEFAULT_IMAGE_API_URL_NAME: "OpenAI 图片生成 API URL",
-  AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER: "输入默认 AI 模型名称，例如：gpt-4o",
+  AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER: "输入默认 AI 模型名称，如 gpt-4o",
   SAVING_HEAD: "保存",
   SAVING_DESC: "包括：压缩，自动保存的时间间隔，文件的命名格式和扩展名等。",
   COMPRESS_NAME: "压缩 Excalidraw JSON",
@@ -332,7 +332,7 @@ export default {
     "（使用 <a href='https://pieroxy.net/blog/pages/lz-string/index.html'>LZ-String</a> 算法）。" +
     "这样一方面可以避免原来的明文 JSON 数据干扰 Obsidian 的文本搜索结果，" +
     "另一方面减小了绘图文件的体积。<br>" +
-    "当您通过功能区按钮或命令将绘图切换至 Markdown 视图模式时，" +
+    "当您通过菜单按钮或命令将绘图切换至 Markdown 视图模式时，" +
     "数据将被解码回 JSON 格式以便阅读和编辑；" +
     "而当您切换回 Excalidraw 模式时，数据就会被再次编码。<br>" +
     "开启该项后，对于之前已存在但未压缩的绘图文件，" +
@@ -347,8 +347,8 @@ export default {
     "在需要阅读或编辑时手动解压缩绘图 JSON。",
   AUTOSAVE_INTERVAL_DESKTOP_NAME: "桌面端自动保存时间间隔",
   AUTOSAVE_INTERVAL_DESKTOP_DESC:
-    "每隔多长时间自动保存一次（如果绘图文件没有发生改变，将不会保存）。" +
-    "当 Obsidian 应用内的焦点离开活动文件，如关闭工作空间、点击菜单栏、切换到其他页面或面板等时，也会触发自动保存；" +
+    "每隔多长时间自动保存一次。如果绘图文件没有发生改变，将不会保存。" +
+    "当 Obsidian 应用内的焦点离开活动文件，如关闭某个标签页、点击功能区、切换到其他标签页等时，也会触发自动保存；" +
     "直接退出 Obsidian 应用（不管是终结进程还是点关闭按钮）不会触发自动保存。",
   AUTOSAVE_INTERVAL_MOBILE_NAME: "移动端自动保存时间间隔",
   AUTOSAVE_INTERVAL_MOBILE_DESC:
@@ -448,9 +448,9 @@ export default {
     "请参阅下方 <a href='#"+TAG_PDFEXPORT+"'>PDF 导出设置</a>。<br>" +
     "⚠️ 关闭并重新打开 Excalidraw/Markdown 文件后生效。",
   HOTKEY_OVERRIDE_HEAD: "热键覆盖",
-  HOTKEY_OVERRIDE_DESC: `一些 Excalidraw 的热键，例如 ${labelCTRL()}+Enter 用于编辑文本，或 ${labelCTRL()}+K 用于创建元素链接。` +
-    "与 Obsidian 的热键设置发生冲突。您在下面添加的热键组合将在使用 Excalidraw 时覆盖 Obsidian 的热键设置，" +
-    `因此如果您希望在 Excalidraw 中默认选择“组合对象”，而不是“查看关系图谱”（核心插件 - 关系图谱），您可以添加 ${labelCTRL()}+G。`,
+  HOTKEY_OVERRIDE_DESC: `一些 Excalidraw 的热键，如 ${labelCTRL()}+Enter 用于编辑文本，或 ${labelCTRL()}+K 用于创建元素链接，` +
+    "与 Obsidian 的热键设置冲突。您在下面添加的热键组合将在使用 Excalidraw 时覆盖 Obsidian 的热键设置，" +
+    `因此如果您希望在 Excalidraw 中默认“编组”，而不是“查看关系图谱”（核心插件 - 关系图谱），您可以添加 ${labelCTRL()}+G。`,
   THEME_HEAD: "主题和样式",
   ZOOM_AND_PAN_HEAD: "缩放和平移",
   PAN_WITH_RIGHT_MOUSE_BUTTON_NAME: "右键拖动平移",
@@ -621,17 +621,17 @@ export default {
   MD_DEFAULT_COLOR_NAME:
     "MD-Embed 的默认文本颜色",
   MD_DEFAULT_COLOR_DESC:
-    "可以填写 HTML 颜色名，如 steelblue（参考 <a href='https://www.w3schools.com/colors/colors_names.asp'>HTML Color Names</a>），或者有效的 16 进制颜色值，例如 #e67700，或者任何其他有效的 CSS 颜色。<br>" +
+    "可以填写 HTML 颜色名，如 steelblue（参考 <a href='https://www.w3schools.com/colors/colors_names.asp'>HTML Color Names</a>），或者有效的 16 进制颜色值，如 #e67700，或者任何其他有效的 CSS 颜色。<br>" +
     "可为某个 MD-Embed 单独设置，方法是在其 frontmatter 中添加如 <code>excalidraw-font-color: steelblue</code> 的键值对。",
   MD_DEFAULT_BORDER_COLOR_NAME:
     "MD-Embed 的默认边框颜色",
   MD_DEFAULT_BORDER_COLOR_DESC:
-    "可以填写 HTML 颜色名，如 steelblue（参考 <a href='https://www.w3schools.com/colors/colors_names.asp'>HTML Color Names</a>），或者有效的 16 进制颜色值，例如 #e67700，或者任何其他有效的 CSS 颜色。<br>" +
+    "可以填写 HTML 颜色名，如 steelblue（参考 <a href='https://www.w3schools.com/colors/colors_names.asp'>HTML Color Names</a>），或者有效的 16 进制颜色值，如 #e67700，或者任何其他有效的 CSS 颜色。<br>" +
     "可为某个 MD-Embed 单独设置，方法是在其 frontmatter 中添加如 <code>excalidraw-border-color: gray</code> 的键值对。<br>" +
     "如果您不想要边框，请留空。",
   MD_CSS_NAME: "MD-Embed 的默认 CSS 样式表",
   MD_CSS_DESC:
-    "MD-Embed 图像所采用的 CSS 样式表文件名。需包含扩展名，例如 md-embed.css。" +
+    "MD-Embed 图像所采用的 CSS 样式表文件名。需包含扩展名，如 md-embed.css。" +
     "允许使用 Markdown 文档（如 md-embed-css.md），但其内容应符合 CSS 语法。<br>" +
     "如果您要查询 CSS 所作用的 HTML 节点，请在 Obsidian 开发者控制台（Ctrl+Shift+I）中键入命令：" +
     "<code>ExcalidrawAutomate.mostRecentMarkdownSVG</code> —— 这将显示 Excalidraw 最近生成的 SVG。<br>" +
@@ -703,7 +703,7 @@ export default {
     "也就是说，该项不会自动帮您生成 SVG/PNG 副本，而只会引用已有的 SVG/PNG 副本。",
   EMBED_MARKDOWN_COMMENT_NAME: "将链接作为注释插入",
   EMBED_MARKDOWN_COMMENT_DESC:
-    "在图像下方以 Markdown 链接形式插入原始 Excalidraw 文件的链接，例如：<code>%%[[drawing.excalidraw]]%%</code>。<br>" +
+    "在图像下方以 Markdown 链接形式插入原始 Excalidraw 文件的链接，如 <code>%%[[drawing.excalidraw]]%%</code>。<br>" +
     "除了添加 Markdown 注释之外，您还可以选择嵌入的 SVG 或 PNG，并使用命令面板：" +
     "'<code>Excalidraw: 打开 Excalidraw 绘图</code>'来打开该绘图",
   EMBED_WIKILINK_NAME: "“嵌入绘图到当前 Markdown 文档中”系列命令产生的内部链接类型",
@@ -748,7 +748,7 @@ export default {
   EXPORT_BOTH_DARK_AND_LIGHT_DESC: "若开启，Excalidraw 将导出两个文件：filename.dark.png（或 .svg）和 filename.light.png（或 .svg）。<br>" +
     "该项可作用于“自动导出 SVG 副本”、“自动导出 PNG 副本”，以及其他的手动的导出命令。",
   COMPATIBILITY_HEAD: "兼容性设置",
-  COMPATIBILITY_DESC: "如果没有特殊原因（例如您想同时在 VSCode/Logseq 和 Obsidian 中使用 Excalidraw），建议您使用 Markdown 格式的绘图文件，而不是旧的 Excalidraw.com 格式，因为本插件的很多功能在旧格式中无法使用。",
+  COMPATIBILITY_DESC: "如果没有特殊原因（例如：您想同时在 VSCode/Logseq 和 Obsidian 中使用 Excalidraw），建议您使用 Markdown 格式的绘图文件，而不是旧的 Excalidraw.com 格式，因为本插件的很多功能在旧格式中无法使用。",
   DUMMY_TEXT_ELEMENT_LINT_SUPPORT_NAME: "兼容代码格式化（Linting）",
   DUMMY_TEXT_ELEMENT_LINT_SUPPORT_DESC: "Excalidraw 对 <code># Excalidraw Data</code> 下的文件结构非常敏感。文档的自动格式化可能会在 Excalidraw 数据中造成错误。" +
     "虽然我已经努力使数据加载对自动格式化变更具有一定的抗性，但这种解决方案并非万无一失。<br>" +
@@ -864,7 +864,7 @@ export default {
     下载后，将内容解压到您的仓库中的一个文件夹内。<br>
     预加载字体会影响启动性能。因此，您可以选择加载哪些字体。`,
   CJK_ASSETS_FOLDER_NAME: "CJK 字体文件夹（區分大小寫！）",
-  CJK_ASSETS_FOLDER_DESC: `您可以在此设置 CJK 字体文件夹的位置。例如，您可以选择将其放置在 <code>Excalidraw/CJK Fonts</code> 下。<br>
+  CJK_ASSETS_FOLDER_DESC: `您可以在此设置 CJK 字体文件夹的位置。例如：<code>Excalidraw/CJK Fonts</code>。<br>
     <strong>重要：</strong> 请勿将此文件夹设置为仓库根目录！请勿在此文件夹中放置其他字体。<br>
     <strong>注意：</strong> 如果您使用 Obsidian Sync 并希望在设备之间同步这些字体文件，请确保 Obsidian Sync 设置为同步“所有其他文件类型”。`,
   LOAD_CHINESE_FONTS_NAME: "启动时从文件加载中文字体",
@@ -994,7 +994,7 @@ export default {
   ES_FILENAME_VISIBLE: "显示页内标题",
   ES_BACKGROUND_HEAD: "背景色",
   ES_BACKGROUND_DESC_INFO: "点击此处查看更多颜色信息",
-  ES_BACKGROUND_DESC_DETAIL: "背景色仅影响预览模式的 MD-Embeddable。在编辑模式，它会根据场景（通过笔记属性设置）或插件设置，遵循 Obsidian 的深色/浅色主题。背景色有两层：元素背景色（下层颜色）和上层颜色。选择“匹配元素”表示两层都遵循元素背景色。选择“匹配绘图”或特定背景色不会改变元素背景色。设置透明度（例如 50%）会将绘图或选定的颜色与元素背景色混合。要移除元素背景色，可以在 Excalidraw 的元素属性编辑器中将元素背景色设置为透明，这样只有上层颜色生效。",
+  ES_BACKGROUND_DESC_DETAIL: "背景色仅影响预览模式的 MD-Embeddable。在编辑模式，它会根据场景（通过笔记属性设置）或插件设置，遵循 Obsidian 的深色/浅色主题。背景色有两层：元素背景色（下层颜色）和上层颜色。选择“匹配元素”表示两层都遵循元素背景色。选择“匹配绘图”或特定背景色不会改变元素背景色。设置透明度（如 50%）会将绘图或选定的颜色与元素背景色混合。要移除元素背景色，可以在 Excalidraw 的元素属性编辑器中将元素背景色设置为透明，这样只有上层颜色生效。",
   ES_BACKGROUND_MATCH_ELEMENT: "匹配元素背景色",
   ES_BACKGROUND_MATCH_CANVAS: "匹配绘图背景色",
   ES_BACKGROUND_COLOR: "背景色",
@@ -1171,7 +1171,7 @@ export default {
   // Screenshot tab
   EXPORTDIALOG_NOT_AVAILALBE: "抱歉，此功能仅在绘图在主 Obsidian 工作区打开时可用。",
   EXPORTDIALOG_TAB_SCREENSHOT: "截图",
-  EXPORTDIALOG_SCREENSHOT_DESC: "截图将包含可嵌入的内容，例如 Markdown 页面、YouTube、网站等。它们仅在桌面端可用，无法自动导出，并且仅支持 PNG 格式。",
+  EXPORTDIALOG_SCREENSHOT_DESC: "截图将包含可嵌入的内容，如 Markdown 页面、YouTube、网站等。它们仅在桌面端可用，无法自动导出，并且仅支持 PNG 格式。",
   SCREENSHOT_DESKTOP_ONLY: "截图功能仅在桌面端可用",
   SCREENSHOT_FILE_SUCCESS: "截图已保存到仓库",
   SCREENSHOT_CLIPBOARD_SUCCESS: "截图已复制到剪贴板",
@@ -1200,10 +1200,14 @@ export default {
   COMP_IMG_LaTeX: "LaTeX 公式",
   COMP_FRAME: "画框操作",
   COMP_FRAME_HINT: "切换标记画框。标记画框仅用于引导，用于定义幻灯片/打印区域/[[file#^frame=id]]，" +
-      "导出时会隐藏；也不会包含元素。通过上下文菜单显示/隐藏标记画框。",
+    "导出时会隐藏；也不会包含元素。通过上下文菜单显示/隐藏标记画框。",
 
   //CustomEmbeddable.tsx
   NOTICE_PDF_THEME: "已覆盖 PDF 主题。\n" +
     "通过文件的 'excalidraw-embeddable-theme' 笔记属性设置（将覆盖插件设置）。\n\n" +
     "值：dark/light/auto/default，表示深色、浅色、跟随 Excalidraw 或 Obsidian 主题。",
+
+  //EmbeddableActionsMenu.tsx
+  BOOKMARK_PAGE: "保存当前进度",
+  CAPTURE_PAGE: "以图像形式截取当前页面",
 };
