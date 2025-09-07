@@ -8,6 +8,8 @@ import { addBackOfTheNoteCard } from "src/utils/excalidrawViewUtils";
 
 export class SelectCard extends FuzzySuggestModal<string> {
   private center: boolean = false;
+  private x: number = 0;
+  private y: number = 0;
 
   constructor(
     public app: App,
@@ -49,17 +51,16 @@ export class SelectCard extends FuzzySuggestModal<string> {
 
   onChooseItem(item: string): void {
     const ea = getEA(this.view) as ExcalidrawAutomate;
-    let x,y = 0;
     if(this.center) {
       const centerPos = ea.getViewCenterPosition();
       if(centerPos) {
-        x = centerPos.x - (CARD_WIDTH / 2);
-        y = centerPos.y - (CARD_HEIGHT / 2);
+        this.x = centerPos.x - (CARD_WIDTH / 2);
+        this.y = centerPos.y - (CARD_HEIGHT / 2);
       }
     }
 
     const id = ea.addEmbeddable(
-      x,y,CARD_WIDTH,CARD_HEIGHT,
+      this.x,this.y,CARD_WIDTH,CARD_HEIGHT,
       `[[${this.view.file.path}#${item}]]`
     );
     (async () => {
@@ -70,7 +71,9 @@ export class SelectCard extends FuzzySuggestModal<string> {
   }
 
   public start(center: boolean = false): void {
-    this.center = center;
+    this.x = this.view.currentPosition.x;
+    this.y = this.view.currentPosition.y;
+    this.center = !!center;
     this.emptyStateText = t("EMPTY_SECTION_MESSAGE");
     this.setPlaceholder(t("SELECT_SECTION_OR_TYPE_NEW"));
     this.open();

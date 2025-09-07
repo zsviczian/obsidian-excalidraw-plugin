@@ -17,6 +17,10 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.15.3":`
+## Fixed
+- When adding a back-of-the-note card using the context menu, the card got placed at the absolute 0,0 position in the scene instead of the current pointer position. [#9949](https://github.com/excalidraw/excalidraw/issues/9949)
+`,
 "2.15.2":`
 ## Fixed:
 - Pressing enter on a text element erroneously activated all markdown embeddables in the scene. [discord](https://discord.com/channels/1026825302900494357/1412683408424833045)
