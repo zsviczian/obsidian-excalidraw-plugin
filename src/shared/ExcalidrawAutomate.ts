@@ -25,7 +25,6 @@ import {
   COLOR_NAMES,
   fileid,
   GITHUB_RELEASES,
-  determineFocusDistance,
   getCommonBoundingBox,
   getLineHeight,
   getMaximumGroups,
@@ -1778,27 +1777,19 @@ export class ExcalidrawAutomate {
       lastCommittedPoint: null,
       startBinding: {
         elementId: formatting?.startObjectId,
-        focus: formatting?.startObjectId
-          ? determineFocusDistance(
-              this.getElement(formatting?.startObjectId) as ExcalidrawBindableElement,
-              elementsMap,
-              endPoint,
-              startPoint,
-            )
-          : 0.1,
-        gap: GAP,
+				mode: "orbit",
+				fixedPoint: [
+					1,
+					1
+				]
       },
       endBinding: {
         elementId: formatting?.endObjectId,
-        focus: formatting?.endObjectId
-          ? determineFocusDistance(
-              this.getElement(formatting?.endObjectId) as ExcalidrawBindableElement,
-              elementsMap,
-              startPoint,
-              endPoint,
-            )
-          : 0.1,
-        gap: GAP,
+        mode: "orbit",
+				fixedPoint: [
+					0,
+					0
+				]
       },
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/388
       startArrowhead:
