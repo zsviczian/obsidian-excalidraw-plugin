@@ -234,6 +234,8 @@ export default {
   RELEASE_NOTES_DESC:
     "<b><u>Toggle ON:</u></b> Display release notes each time you update Excalidraw to a newer version.<br>" +
     "<b><u>Toggle OFF:</u></b> Silent mode. You can still read release notes on <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases'>GitHub</a>.",
+  WARN_ON_MANIFEST_MISMATCH_NAME: "Warn about incomplete plugin updates",
+  WARN_ON_MANIFEST_MISMATCH_DESC: "Checks that the installed Excalidraw executable matches the version shown in Obsidian's plugin list. If they don't match (often after partial sync), you'll see a warning and can update. Disable to stop checking.",
   NEWVERSION_NOTIFICATION_NAME: "Plugin update notification",
   NEWVERSION_NOTIFICATION_DESC:
       "<b><u>Toggle ON:</u></b> Show a notification when a new version of the plugin is available.<br>" +
@@ -1210,4 +1212,17 @@ export default {
   //EmbeddableActionsMenu.tsx
   BOOKMARK_PAGE: "Save current position in document",
   CAPTURE_PAGE: "Capture current page as image",
+
+  //VersionMismatch.ts
+  //WARNING: Do not change the {VAL_RECORDED} and {VAL_ACTUAL} strings, they are replaced by the actual version values at runtime!
+  VERSION_MISMATCH_NOTICE: `The version recorded by Obsidian is <b>{VAL_RECORDED}</b>, but the installed Excalidraw code is <b>{VAL_ACTUAL}</b>.`,
+  
+  VERSION_MISMATCH_HEADING: "Excalidraw version mismatch",
+  VERSION_MISMATCH_CAUSE: "This usually happens after a partial sync (e.g. Obsidian Sync Standard) where large files (main.js > 5MB) did not sync, so only <code>manifest.json</code> updated.",
+  VERSION_MISMATCH_OPTIONS: "Options:<br><b>1.</b> Re-download the plugin (recommended).<br><b>2.</b> Ignore for now.",
+  VERSION_MISMATCH_NOTE: "Note: Updating version info manually may affect tools that read manifest.json directly (e.g. Plugin Update Tracker, BRAT) until a full reinstall.",
+  VERSION_MISMATCH_DISABLE_NAME: "Disable future mismatch warnings",
+  VERSION_MISMATCH_DISABLE_DESC: "You can re-enable this under: Settings → Excalidraw → Basic → Warn about incomplete plugin updates.",
+  VERSION_MISMATCH_REDOWNLOAD: "Re-download plugin",
+  VERSION_MISMATCH_IGNORE: "Ignore",
 };

@@ -181,6 +181,7 @@ export interface ExcalidrawSettings {
   defaultTrayMode: boolean;
   previousRelease: string;
   showReleaseNotes: boolean;
+  compareManifestToPluginVersion: boolean;
   showNewVersionNotification: boolean;
   //mathjaxSourceURL: string;
   latexBoilerplate: string;
@@ -294,7 +295,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   allowPinchZoom: false,
   allowWheelZoom: false,
   zoomToFitOnOpen: true,
-  zoomToFitOnResize: true,
+  zoomToFitOnResize: false,
   zoomToFitMaxLevel: 2,
   zoomStep: 0.05,
   zoomMin: 0.1,
@@ -365,6 +366,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   defaultTrayMode: true,
   previousRelease: "0.0.0",
   showReleaseNotes: true,
+  compareManifestToPluginVersion: true,
   showNewVersionNotification: true,
   //mathjaxSourceURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.1/es5/tex-svg.js",
   latexBoilerplate: "\\color{blue}",
@@ -726,6 +728,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
+    new Setting(detailsEl)
+      .setName(t("WARN_ON_MANIFEST_MISMATCH_NAME"))
+      .setDesc(fragWithHTML(t("WARN_ON_MANIFEST_MISMATCH_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.compareManifestToPluginVersion)
+          .onChange(async (value) => {
+            this.plugin.settings.compareManifestToPluginVersion = value;
+            this.applySettingsUpdate();
+          }),
+      );
+  
     new Setting(detailsEl)
     .setName(t("NEWVERSION_NOTIFICATION_NAME"))
     .setDesc(fragWithHTML(t("NEWVERSION_NOTIFICATION_DESC")))

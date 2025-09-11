@@ -234,6 +234,7 @@ export async function addBackOfTheNoteCard(
   cardBody?: string,
   embeddableCustomData?: EmbeddableMDCustomProps,
   center: boolean = false,
+  position?: {x: number, y: number},
 ):Promise<string> {
   const data = view.data;
   const header = getExcalidrawMarkdownHeaderSection(data);
@@ -263,7 +264,7 @@ export async function addBackOfTheNoteCard(
   }
 
   const ea = getEA(view) as ExcalidrawAutomate;
-  let x,y = 0;
+  let {x,y} = position ?? ea.targetView.currentPosition;
   if(center) {
     const centerPos = ea.getViewCenterPosition();
     if(centerPos) {
@@ -287,7 +288,7 @@ export async function addBackOfTheNoteCard(
     window.setTimeout(()=>{
       api.updateScene({appState: {activeEmbeddable: {element: el, state: "active"}}, captureUpdate: CaptureUpdateAction.NEVER,});
       if(found) view.getEmbeddableLeafElementById(el.id)?.editNode?.();
-    });
+    },200);
   }
   ea.destroy();
   return el.id;

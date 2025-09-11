@@ -34,7 +34,7 @@ export class SelectCard extends FuzzySuggestModal<string> {
             this.close();
             return;
           }
-          addBackOfTheNoteCard(this.view, item, true, undefined, undefined, this.center);
+          addBackOfTheNoteCard(this.view, item, true, undefined, undefined, this.center, {x: this.x, y: this.y});
           this.close();
         }
       }

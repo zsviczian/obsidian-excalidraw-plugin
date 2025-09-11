@@ -58,6 +58,7 @@ declare global {
 declare module "obsidian" {
   interface App {
     internalPlugins: any;
+    setting: any;
     isMobile(): boolean;
     getObsidianUrl(file:TFile): string;
     metadataTypeManager: {
