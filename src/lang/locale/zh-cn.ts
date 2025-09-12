@@ -234,6 +234,8 @@ export default {
   RELEASE_NOTES_DESC:
     "<b>开启：</b>每次更新本插件后，显示最新发行版本的说明。<br>" +
     "<b>关闭：</b>您仍可以在 <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases'>GitHub</a> 上阅读更新说明。",
+  WARN_ON_MANIFEST_MISMATCH_NAME: "警告插件更新不完整",
+  WARN_ON_MANIFEST_MISMATCH_DESC: "检查已安装的 Excalidraw 可执行文件是否与 Obsidian 插件列表中显示的版本一致。如果不一致（通常源于同步不完整），你会看到警告并可以选择更新。关闭该项可禁用检查。",
   NEWVERSION_NOTIFICATION_NAME: "插件更新通知",
   NEWVERSION_NOTIFICATION_DESC:
     "<b>开启：</b>当本插件存在可用更新时，显示通知。<br>" +
@@ -1210,4 +1212,16 @@ export default {
   //EmbeddableActionsMenu.tsx
   BOOKMARK_PAGE: "保存当前进度",
   CAPTURE_PAGE: "以图像形式截取当前页面",
+
+  //VersionMismatch.ts
+  //WARNING: Do not change the {VAL_RECORDED} and {VAL_ACTUAL} strings, they are replaced by the actual version values at runtime!
+  VERSION_MISMATCH_NOTICE: `Obsidian 显示的版本是 <b>{VAL_RECORDED}</b>，但已安装的 Excalidraw 代码显示的版本是 <b>{VAL_ACTUAL}</b>。`,
+  VERSION_MISMATCH_HEADING: "Excalidraw 版本不匹配",
+  VERSION_MISMATCH_CAUSE: "通常源于同步不完整，大文件未能同步（如使用 Obsidian Sync Standard，main.js > 5MB），只更新了 <code>manifest.json</code>。",
+  VERSION_MISMATCH_OPTIONS: "选项：<br><b>1.</b> 重新下载插件（推荐）。<br><b>2.</b> 暂时忽略。",
+  VERSION_MISMATCH_NOTE: "注意：手动更新版本信息可能会影响依赖 manifest.json 的工具（如 Plugin Update Tracker、BRAT），直到你完全重装插件。",
+  VERSION_MISMATCH_DISABLE_NAME: "禁用版本不匹配警告",
+  VERSION_MISMATCH_DISABLE_DESC: "可在以下位置重新启用：设置 → Excalidraw → 基本 → 警告插件更新不完整",
+  VERSION_MISMATCH_REDOWNLOAD: "重新下载插件",
+  VERSION_MISMATCH_IGNORE: "忽略",
 };
