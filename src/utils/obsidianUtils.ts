@@ -3,7 +3,7 @@ import {
   Editor,
   FrontMatterCache,
   MarkdownView,
-  OpenViewState, parseFrontMatterEntry, TFile, View, ViewState, Workspace, WorkspaceLeaf, WorkspaceSplit
+  OpenViewState, parseFrontMatterEntry, TextFileView, TFile, View, ViewState, Workspace, WorkspaceLeaf, WorkspaceSplit
 } from "obsidian";
 import ExcalidrawPlugin from "../core/main";
 import { splitFolderAndFilename } from "./fileUtils";
@@ -28,6 +28,14 @@ export const getParentOfClass = (element: Element, cssClass: string):HTMLElement
 export function getExcalidrawViews(app: App): ExcalidrawView[] {
   const leaves = app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).filter(l=>l.view instanceof ExcalidrawView);
   return leaves.map(l=>l.view as ExcalidrawView);
+}
+
+export function getExcalidraAndMarkdowViewsForFile(app: App, file: TFile): TextFileView[] {
+  const leaves = [
+    ...app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).filter(l=>l.view instanceof ExcalidrawView),
+    ...app.workspace.getLeavesOfType("markdown").filter(l=>l.view instanceof MarkdownView)
+  ];
+  return leaves.map(l=>l.view as TextFileView).filter(v=>v.file === file);
 }
 
 export const getLeaf = (

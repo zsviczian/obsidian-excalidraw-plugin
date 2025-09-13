@@ -105,6 +105,7 @@ export class DropManager {
       files: TFile[],
       text: string,
     ): boolean => {
+      this.app.workspace.setActiveLeaf(this.view.leaf); //ensure the view is active, so ModalContainerObserver is active
       if (this.view.getHookServer().onDropHook) {
         try {
           return this.view.getHookServer().onDropHook({

@@ -38,7 +38,6 @@ import {
   DISK_ICON_NAME,
   SCRIPTENGINE_ICON_NAME,
   TEXT_DISPLAY_RAW_ICON_NAME,
-  TEXT_DISPLAY_PARSED_ICON_NAME,
   IMAGE_TYPES,
   KEYCODE,
   FRONTMATTER_KEYS,
@@ -110,8 +109,9 @@ import {
   addAppendUpdateCustomData,
   getFilePathFromObsidianURL,
   getLinkParts,
+  checkVersionMismatch,
 } from "../utils/utils";
-import { cleanBlockRef, cleanSectionHeading, closeLeafView, getActivePDFPageNumberFromPDFView, getAttachmentsFolderAndFilePath, getLeaf, getParentOfClass, obsidianPDFQuoteWithRef, openLeaf, setExcalidrawView } from "../utils/obsidianUtils";
+import { cleanBlockRef, cleanSectionHeading, closeLeafView, getAttachmentsFolderAndFilePath, getExcalidraAndMarkdowViewsForFile, getLeaf, getParentOfClass, obsidianPDFQuoteWithRef, openLeaf, setExcalidrawView } from "../utils/obsidianUtils";
 import { splitFolderAndFilename } from "../utils/fileUtils";
 import { GenericInputPrompt, MultiOptionConfirmationPrompt, NewFileActions, Prompt, linkPrompt } from "../shared/Dialogs/Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
@@ -130,10 +130,10 @@ import { getTextElementAtPointer, getImageElementAtPointer, getElementWithLinkAt
 import { excalidrawSword, ICONS, LogoWrapper, Rank, saveIcon, SwordColors } from "../constants/actionIcons";
 import { ExportDialog } from "../shared/Dialogs/ExportDialog";
 import { getEA } from "src/core"
-import { anyModifierKeysPressed, emulateKeysForLinkClick, isWinALTorMacOPT, isWinCTRLorMacCMD, isWinMETAorMacCTRL, isSHIFT, linkClickModifierType, localFileDragModifierType, ModifierKeys, modifierKeyTooltipMessages } from "../utils/modifierkeyHelper";
+import { anyModifierKeysPressed, emulateKeysForLinkClick, isWinALTorMacOPT, isWinCTRLorMacCMD, isWinMETAorMacCTRL, isSHIFT, linkClickModifierType, ModifierKeys } from "../utils/modifierkeyHelper";
 import { setDynamicStyle } from "../utils/dynamicStyling";
 import { CustomEmbeddable, renderWebView } from "./components/CustomEmbeddable";
-import { addBackOfTheNoteCard, getExcalidrawFileForwardLinks, getFrameBasedOnFrameNameOrId, getLinkTextFromLink, insertEmbeddableToView, insertImageToView, isTextImageTransclusion, onLoadMessages, openExternalLink, parseObsidianLink, renderContextMenuAction, tmpBruteForceCleanup, toggleImageAnchoring } from "../utils/excalidrawViewUtils";
+import { addBackOfTheNoteCard, deleteAppStateKeys, getExcalidrawFileForwardLinks, getFrameBasedOnFrameNameOrId, getLinkTextFromLink, insertEmbeddableToView, insertImageToView, isTextImageTransclusion, onLoadMessages, openExternalLink, parseObsidianLink, renderContextMenuAction, tmpBruteForceCleanup, toggleImageAnchoring } from "../utils/excalidrawViewUtils";
 import { imageCache } from "../shared/ImageCache";
 import { CanvasNodeFactory, ObsidianCanvasNode } from "./managers/CanvasNodeFactory";
 import { EmbeddableMenu } from "./components/menu/EmbeddableActionsMenu";
@@ -2165,7 +2165,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       await this.excalidrawData.setTextMode(this.textMode);
     }
     this.excalidrawData.scene.appState.theme = api.getAppState().theme;
-    await this.loadDrawing(loadOnModifyTrigger);
+    await this.loadDrawing(loadOnModifyTrigger, undefined, true);
     this.clearDirty();
   }
 
@@ -2356,6 +2356,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if(this.lastLoadedFile === this.file) return;
     this.isLoaded = false;
     if(!this.file) return;
+    if(this.plugin.settings.compareManifestToPluginVersion) checkVersionMismatch(this.plugin);
     if(this.plugin.settings.showNewVersionNotification) checkExcalidrawVersion();
     if(isMaskFile(this.plugin,this.file)) {
       const notice = new Notice(t("MASK_FILE_NOTICE"), 5000);
@@ -2778,9 +2779,10 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
    *
    * @param justloaded - a flag to trigger zoom to fit after the drawing has been loaded
    */
-  public async loadDrawing(justloaded: boolean, deletedElements?: ExcalidrawElement[]) {
+  public async loadDrawing(justloaded: boolean, deletedElements?: ExcalidrawElement[], isReloading: boolean = false) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.loadDrawing, "ExcalidrawView.loadDrawing", justloaded, deletedElements);
     const excalidrawData = this.excalidrawData.scene;
+    const isOpenInMultipleLeaves = getExcalidraAndMarkdowViewsForFile(this.app,this.file).length > 1;
     this.semaphores.justLoaded = justloaded;
     this.clearDirty();
     const om = this.excalidrawData.getOpenMode();
@@ -2798,7 +2800,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       //debug({where:"ExcalidrawView.loadDrawing",file:this.file.name,dataTheme:excalidrawData.appState.theme,before:"updateScene"})
       //api.setLocalFont(this.plugin.settings.experimentalEnableFourthFont);
 
-
       this.updateScene(
         {
           elements: excalidrawData.elements.concat(deletedElements??[]), //need to preserve deleted elements during autosave if images, links, etc. are updated
@@ -2811,7 +2812,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         {
           //elements: excalidrawData.elements.concat(deletedElements??[]), //need to preserve deleted elements during autosave if images, links, etc. are updated
           appState: {
-            ...excalidrawData.appState,
+            ...isReloading && isOpenInMultipleLeaves
+              ? deleteAppStateKeys(excalidrawData.appState, ["scrollX","scrollY","zoom"])
+              : excalidrawData.appState,
             ...this.excalidrawData.selectedElementIds //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/609
               ? this.excalidrawData.selectedElementIds
               : {},
@@ -2846,7 +2849,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       this.instantiateExcalidraw({
         elements: excalidrawData.elements,
         appState: {
-          ...excalidrawData.appState,
+          ...isReloading && isOpenInMultipleLeaves
+            ? deleteAppStateKeys(excalidrawData.appState, ["scrollX","scrollY","zoom"])
+            : excalidrawData.appState,
           ...excalidrawData.appState.frameRendering && excalidrawData.appState.frameRendering.markerName === undefined
             ? { frameRendering: {...excalidrawData.appState.frameRendering, markerName: true, markerEnabled: true } }
             : {},
@@ -4047,7 +4052,23 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
   }
 
+  private shouldSaveImportedImage: boolean = false; 
   private onChange (et: ExcalidrawElement[], st: AppState) {
+    if(st.activeTool?.type) {
+      if(st.activeTool.type === "image") {
+        if(st.selectedElementIds && Object.keys(st.selectedElementIds).length === 1) {
+          const selectedElement = et.filter(el=>el.id === Object.keys(st.selectedElementIds)[0])[0];
+          if(selectedElement && selectedElement.type === "image") {
+            this.shouldSaveImportedImage = true;
+          }
+        }
+      }
+      if(st.activeTool.type === "selection" && this.shouldSaveImportedImage) {
+        this.shouldSaveImportedImage = false;
+        setTimeout(()=>this.save(true, true),100); //image is being added to the scene
+      }
+    }
+
     if(st.newElement?.type === "freedraw") {
       this.freedrawLastActiveTimestamp = Date.now();
     }
@@ -4064,7 +4085,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       if( elcount>0 && et.length===0 ) return;
       this.semaphores.justLoaded = false;
       if (!this.semaphores.preventAutozoom && this.plugin.settings.zoomToFitOnOpen) {
-        this.zoomToFit(false,true);
+        if(getExcalidraAndMarkdowViewsForFile(this.app, this.file).length === 1) {
+          this.zoomToFit(false,true);
+        }
       }
       this.previousSceneVersion = this.getSceneVersion(et);
       this.previousBackgroundColor = st.viewBackgroundColor;
@@ -4237,7 +4260,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       }
     }
     if (data.elements) {
-      window.setTimeout(() => this.save(), 30); //removed prevent reload = false, as reload was triggered when pasted containers were processed and there was a conflict with the new elements
+      const preventReload = !(data.elements.some((el) => el.type === "image") && !data.elements.some((el) => el.type !== "image"));
+      window.setTimeout(() => this.save(preventReload), 30); //removed prevent reload = false, as reload was triggered when pasted containers were processed and there was a conflict with the new elements
     }
 
     //process pasted text after it was processed into elements by Excalidraw

@@ -90,7 +90,6 @@ import { CommandManager } from "./managers/CommandManager";
 import { EventManager } from "./managers/EventManager";
 import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFileModal";
 import en from "src/lang/locale/en";
-import { VersionMismatchPrompt } from "src/shared/Dialogs/VersionMismatch";
 
 declare const PLUGIN_VERSION:string;
 declare const INITIAL_TIMESTAMP: number;
@@ -424,21 +423,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.logStartupEvent("Switched to Excalidraw views");
 
     try {
-      let skipReleaseNotes = false;
-      if (this.settings.compareManifestToPluginVersion) {
-        if (this.manifest.version !== PLUGIN_VERSION) {
-          const versionMismatchPrompt = new VersionMismatchPrompt(this);
-          const result = await versionMismatchPrompt.start();
-          if(result) {
-            skipReleaseNotes = true;
-            this.manifest.version = PLUGIN_VERSION;
-            await this.app.setting.open();
-            this.app.setting.openTabById("community-plugins");
-          }
-        }
-      }
-
-      if (!skipReleaseNotes && this.settings.showReleaseNotes) {
+      if (this.settings.showReleaseNotes) {
         //I am repurposing imageElementNotice, if the value is true, this means the plugin was just newly installed to Obsidian.
         const obsidianJustInstalled = (this.settings.previousRelease === "0.0.0") || !this.settings.previousRelease;
 

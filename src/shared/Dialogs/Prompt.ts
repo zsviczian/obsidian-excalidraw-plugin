@@ -1011,6 +1011,7 @@ export async function linkPrompt(
     ...tagsArray,
   ];
 
+  await sleep(10); //obsidian modal link click immediately refocuses the editor, so we need to wait a bit
   if (items.length>1) {
     parts = await ScriptEngine.suggester(
       app,

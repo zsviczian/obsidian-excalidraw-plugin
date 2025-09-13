@@ -40,6 +40,16 @@ export async function insertImageToView(
   return id;
 }
 
+  export function deleteAppStateKeys(
+    st: AppState,
+    [...keys]: (keyof AppState)[],
+  ): Partial<AppState> {
+    keys.forEach((key) => {
+      delete (st as Mutable<AppState>)[key];
+    });
+    return st;
+  };
+
 export async function insertEmbeddableToView (
   ea: ExcalidrawAutomate,
   position: { x: number, y: number },

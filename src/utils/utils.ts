@@ -33,8 +33,8 @@ import { runCompressionWorker } from "src/shared/Workers/compression-worker";
 import Pool from "es6-promise-pool";
 import { FileData } from "../shared/EmbeddedFileLoader";
 import { t } from "src/lang/helpers";
-import ExcalidrawScene from "src/shared/svgToExcalidraw/elements/ExcalidrawScene";
 import { log } from "./debugHelper";
+import { VersionMismatchPrompt } from "src/shared/Dialogs/VersionMismatch";
 
 declare const PLUGIN_VERSION:string;
 declare var LZString: any;
@@ -50,6 +50,21 @@ declare module "obsidian" {
     getAvailablePathForAttachments(filename: string, extension: string, file: TFile | null): Promise<string>
   }
 }
+
+let versionMismatchChecked = false;
+export async function checkVersionMismatch(plugin: ExcalidrawPlugin) {
+  if (!versionMismatchChecked && plugin.manifest.version !== PLUGIN_VERSION) {
+    versionMismatchChecked = true;
+    const versionMismatchPrompt = new VersionMismatchPrompt(plugin);
+    const result = await versionMismatchPrompt.start();
+    if(result) {
+      plugin.manifest.version = PLUGIN_VERSION;
+      await plugin.app.setting.open();
+      plugin.app.setting.openTabById("community-plugins");
+    }
+  }
+};
+
 
 export let versionUpdateCheckTimer: number = null;
 let versionUpdateChecked = false;

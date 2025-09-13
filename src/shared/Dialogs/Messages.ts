@@ -21,9 +21,12 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 ## Fixed
 - New back of the note cards are not visible until the drawing is saved. When adding a back-of-the-note card using the context menu, the card got placed at the absolute 0,0 position in the scene instead of the current pointer position. [#9949](https://github.com/excalidraw/excalidraw/issues/9949)
 - Drawings created 4 years ago don't open [#2479](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2479)
+- On Obsidian Mobile, when an element has multiple links, clicking the link icon, the link selector pops up and immediately closes
+- Improved handling of importing external images and drag and drop of images from inside Obsidian. Features like (Convert SVG to Strokes) and (Flip the card) now work immediately, you don't need to force save, or wait for autosave to kick in.
 
 ## New
 - Added startup check that detects when Obsidian's recorded plugin version differs from the installed Excalidraw code (e.g. after partial sync of large files) and offers to update or ignore, with a setting to disable the check.
+- When Excalidraw is open in two or more tabs—either as Markdown or Excalidraw—auto-zoom is disabled. This allows you to work in multiple tabs on the same drawing at once: focusing on different areas of the same drawing, or editing the Markdown and Excalidraw views in parallel.
 `,
 "2.15.2":`
 ## Fixed:

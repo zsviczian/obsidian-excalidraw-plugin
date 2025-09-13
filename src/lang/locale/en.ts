@@ -44,7 +44,7 @@ export default {
   TRANSCLUDE_MOST_RECENT: "Embed the most recently edited drawing",
   TOGGLE_LEFTHANDED_MODE: "Toggle left-handed mode",
   TOGGLE_SPLASHSCREEN: "Show splash screen in new drawings",
-  FLIP_IMAGE: "Open the back-of-the-note for the selected image in a popout window",
+  FLIP_IMAGE: "Open the back-of-the-note for the selected image in a popout window (flip the card)",
   NEW_IN_NEW_PANE: "Create new drawing - IN AN ADJACENT WINDOW",
   NEW_IN_NEW_TAB: "Create new drawing - IN A NEW TAB",
   NEW_IN_ACTIVE_PANE: "Create new drawing - IN THE CURRENT ACTIVE WINDOW",
