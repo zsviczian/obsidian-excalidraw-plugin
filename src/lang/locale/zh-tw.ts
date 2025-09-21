@@ -234,6 +234,8 @@ export default {
   RELEASE_NOTES_DESC:
     "<b>開啟：</b>每次更新本外掛後，顯示最新發行版本的說明。<br>" +
     "<b>關閉：</b>您仍可以在 <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases'>GitHub</a> 上閱讀更新說明。",
+  WARN_ON_MANIFEST_MISMATCH_NAME: "警告外掛更新不完整",
+  WARN_ON_MANIFEST_MISMATCH_DESC: "檢查已安裝的 Excalidraw 可執行檔案是否與 Obsidian 外掛列表中顯示的版本一致。如果不一致（通常源於同步不完整），你會看到警告並可以選擇更新。關閉該項可停用檢查。",
   NEWVERSION_NOTIFICATION_NAME: "外掛更新通知",
   NEWVERSION_NOTIFICATION_DESC:
     "<b>開啟：</b>當本外掛存在可用更新時，顯示通知。<br>" +
@@ -1210,4 +1212,16 @@ export default {
   //EmbeddableActionsMenu.tsx
   BOOKMARK_PAGE: "儲存當前進度",
   CAPTURE_PAGE: "以影像形式擷取當前頁面",
+
+  //VersionMismatch.ts
+  //WARNING: Do not change the {VAL_RECORDED} and {VAL_ACTUAL} strings, they are replaced by the actual version values at runtime!
+  VERSION_MISMATCH_NOTICE: `Obsidian 顯示的版本是 <b>{VAL_RECORDED}</b>，但已安裝的 Excalidraw 程式碼顯示的版本是 <b>{VAL_ACTUAL}</b>。`,
+  VERSION_MISMATCH_HEADING: "Excalidraw 版本不匹配",
+  VERSION_MISMATCH_CAUSE: "通常源於同步不完整，大檔案未能同步（如使用 Obsidian Sync Standard，main.js > 5MB），只更新了 <code>manifest.json</code>。",
+  VERSION_MISMATCH_OPTIONS: "選項：<br><b>1.</b> 重新下載外掛（推薦）。<br><b>2.</b> 暫時忽略。",
+  VERSION_MISMATCH_NOTE: "注意：手動更新版本資訊可能會影響依賴 manifest.json 的工具（如 Plugin Update Tracker、BRAT），直到你完全重灌外掛。",
+  VERSION_MISMATCH_DISABLE_NAME: "停用版本不匹配警告",
+  VERSION_MISMATCH_DISABLE_DESC: "可在以下位置重新啟用：設定 → Excalidraw → 基本 → 警告外掛更新不完整",
+  VERSION_MISMATCH_REDOWNLOAD: "重新下載外掛",
+  VERSION_MISMATCH_IGNORE: "忽略",
 };
