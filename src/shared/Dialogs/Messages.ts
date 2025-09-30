@@ -17,6 +17,11 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.16.0":`
+# New from Excalidraw.com
+- New library search feature [#9903](https://github.com/excalidraw/excalidraw/pull/9903)
+  - You can rename library items by selecting them, then choosing "Rename or publish" from the ... menu.
+`,
 "2.15.3":`
 ## Fixed
 - New back of the note cards are not visible until the drawing is saved. When adding a back-of-the-note card using the context menu, the card got placed at the absolute 0,0 position in the scene instead of the current pointer position. [#9949](https://github.com/excalidraw/excalidraw/issues/9949)
