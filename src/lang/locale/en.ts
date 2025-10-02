@@ -139,6 +139,7 @@ export default {
     "3) and paste your work to the new document with CTRL/CMD+V.",
   ARIA_LABEL_TRAY_MODE: "Tray-mode offers an alternative, more spacious canvas",
   TRAY_TRAY_MODE: "Toggle tray-mode",
+  TOGGLE_COMPACT_MODE: "Toggle compact-mode",
   TRAY_SCRIPT_LIBRARY: "Script Library",
   TRAY_SCRIPT_LIBRARY_ARIA: "Explore the Excalidraw Script Library",
   TRAY_EXPORT: "Export Image...",
@@ -449,6 +450,10 @@ export default {
     "Note: This setting does not affect the PDF export feature within Excalidraw itself.<br>" +
     "See the other related setting for <a href='#"+TAG_MDREADINGMODE+"'>Markdown Reading Mode</a> under 'Appearance and Behavior' further above.<br>" +
     "⚠️ You must close and reopen the Excalidraw/markdown file for changes to take effect. ⚠️",
+  MODES_HEAD: "Modes",
+  TRAY_MODE_NAME: "Enable tray-mode",
+  COMPACT_MODE_NAME: "Compact-mode on Tablets",
+  COMPACT_MODE_DESC: "Overrides tray-mode on tablets, allowing the native Excalidraw compact-mode to be used instead.",
   HOTKEY_OVERRIDE_HEAD: "Hotkey overrides",
   HOTKEY_OVERRIDE_DESC: `Some of the Excalidraw hotkeys such as <code>${labelCTRL()}+Enter</code> to edit text or <code>${labelCTRL()}+K</code> to create an element link ` +
     "conflict with Obsidian hotkey settings. The hotkey combinations you add below will override Obsidian's hotkey settings while using Excalidraw, thus " +

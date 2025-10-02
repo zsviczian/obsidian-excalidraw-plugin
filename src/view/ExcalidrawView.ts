@@ -110,6 +110,8 @@ import {
   getFilePathFromObsidianURL,
   getLinkParts,
   checkVersionMismatch,
+  calculateTrayModeValue,
+  setTrayMode,
 } from "../utils/utils";
 import { cleanBlockRef, cleanSectionHeading, closeLeafView, getAttachmentsFolderAndFilePath, getExcalidraAndMarkdowViewsForFile, getLeaf, getParentOfClass, obsidianPDFQuoteWithRef, openLeaf, setExcalidrawView } from "../utils/obsidianUtils";
 import { splitFolderAndFilename } from "../utils/fileUtils";
@@ -2824,7 +2826,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             zenModeEnabled,
             viewModeEnabled,
             linkOpacity: this.excalidrawData.getLinkOpacity(),
-            trayModeEnabled: this.plugin.settings.defaultTrayMode,
+            trayModeEnabled: calculateTrayModeValue(this.plugin.settings),
             penMode: penEnabled,
             penDetected: penEnabled,
             allowPinchZoom: this.plugin.settings.allowPinchZoom,
@@ -2858,7 +2860,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           zenModeEnabled: om.zenModeEnabled,
           viewModeEnabled: excalidrawData.elements.length > 0 ? om.viewModeEnabled : false,
           linkOpacity: this.excalidrawData.getLinkOpacity(),
-          trayModeEnabled: this.plugin.settings.defaultTrayMode,
+          trayModeEnabled: calculateTrayModeValue(this.plugin.settings),
           penMode: penEnabled,
           penDetected: penEnabled,
           allowPinchZoom: this.plugin.settings.allowPinchZoom,
@@ -5338,7 +5340,17 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         {              
           icon: ICONS.trayMode,
           "aria-label": t("ARIA_LABEL_TRAY_MODE"),
-          onSelect: ()=> this.toggleTrayMode(),
+          onSelect: ()=> {
+            if(!DEVICE.isTablet) {
+              this.toggleTrayMode();
+              return;
+            }
+            if(this.plugin.settings.defaultTrayMode) {
+              this.toggleCompactMode();
+              return;
+            }
+            this.toggleTrayMode(false);
+          },
         },
         t("TRAY_TRAY_MODE")
       ) : null,
@@ -5804,22 +5816,41 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     });
   }
 
-  public async toggleTrayMode() {
+  public async toggleCompactMode() {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleCompactMode, "ExcalidrawView.toggleCompactMode");
+
+    //just in case settings were updated via Obsidian sync
+    const newCompactMode = !this.plugin.settings.compactModeOnTablets;
+    await this.plugin.loadSettings();
+    this.plugin.settings.compactModeOnTablets = newCompactMode;
+    setTrayMode(this.app, this.plugin.settings);
+    await this.plugin.saveSettings();
+  }
+
+  public async toggleTrayMode(compactMode?: boolean) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleTrayMode, "ExcalidrawView.toggleTrayMode");
+    //just in case settings were updated via Obsidian sync
+    const newTrayMode = !this.plugin.settings.defaultTrayMode;
+    await this.plugin.loadSettings();
+    this.plugin.settings.defaultTrayMode = newTrayMode;
+    if(compactMode!==undefined) {
+      this.plugin.settings.compactModeOnTablets = compactMode;
+    }
+    setTrayMode(this.app, this.plugin.settings);
+    await this.plugin.saveSettings();
+  }
+
+  public setTrayMode(on: boolean) {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleTrayMode, "ExcalidrawView.setTrayMode");
     const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
     if (!api) {
       return false;
     }
-    const st = api.getAppState();
     api.updateScene({
-      appState: { trayModeEnabled: !st.trayModeEnabled },
+      appState: { trayModeEnabled: on },
       captureUpdate: CaptureUpdateAction.NEVER,
     });
-
-    //just in case settings were updated via Obsidian sync
-    await this.plugin.loadSettings();
-    this.plugin.settings.defaultTrayMode = !st.trayModeEnabled;
-    this.plugin.saveSettings();
+    setTimeout(()=>api.refreshEditorBreakpoints());
   }
 
   /**

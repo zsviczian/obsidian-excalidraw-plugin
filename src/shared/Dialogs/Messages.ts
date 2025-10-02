@@ -21,6 +21,12 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 # New from Excalidraw.com
 - New library search feature [#9903](https://github.com/excalidraw/excalidraw/pull/9903)
   - You can rename library items by selecting them, then choosing "Rename or publish" from the ... menu.
+- New compact mode for tablets [#9910](https://github.com/excalidraw/excalidraw/pull/9910)
+  - New setting in plugin setting \`Compact-mode on Tablets\` to override tray-mode on tablets in favor of the new compact mode.
+
+# New
+- Embedding PDF as images, frames are now marker frames instead of regular frames. You can reference pages including their markup in markdown notes using this syntax: \`![[drawing#^frame=12]]\` (page 12)
+- Pinned scripts and Obsidian toolbar is now on the right side in all modes: tray-, normal-, and compact. The toolbar moves into view when the sidpanel is openned for the stencil library or for search.
 `,
 "2.15.3":`
 ## Fixed

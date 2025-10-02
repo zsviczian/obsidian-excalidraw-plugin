@@ -439,7 +439,10 @@ export class InsertPDFModal extends Modal {
 
               if(this.frame) {
                 const frameID = ea.addFrame(topX, topY,imgWidth,imgHeight,`${page}`);
-                ea.addElementsToFrame(frameID, [boxID,imageID]);
+                const frameEl = ea.getElement(frameID) as any;
+                frameEl.frameRole = "marker";
+                ea.addToGroup([frameID,boxID,imageID]);
+                //ea.addElementsToFrame(frameID, [boxID,imageID]);
                 ea.getElement(frameID).link = this.pdfFile.path + `#page=${page}`;
               }
               

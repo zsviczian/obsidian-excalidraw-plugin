@@ -29,6 +29,7 @@ import {
   addIframe,
   fragWithHTML,
   setLeftHandedMode,
+  setTrayMode,
 } from "src/utils/utils";
 import { imageCache } from "src/shared/ImageCache";
 import { MultiOptionConfirmationPrompt } from "src/shared/Dialogs/Prompt";
@@ -179,6 +180,7 @@ export interface ExcalidrawSettings {
     }
   };
   defaultTrayMode: boolean;
+  compactModeOnTablets: boolean;
   previousRelease: string;
   showReleaseNotes: boolean;
   compareManifestToPluginVersion: boolean;
@@ -364,6 +366,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   mdCSS: "",
   scriptEngineSettings: {},
   defaultTrayMode: true,
+  compactModeOnTablets: true,
   previousRelease: "0.0.0",
   showReleaseNotes: true,
   compareManifestToPluginVersion: true,
@@ -1243,6 +1246,39 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
       
+    detailsEl = displayDetailsEl.createEl("details");
+    detailsEl.createEl("summary", {
+      text: t("MODES_HEAD"),
+      cls: "excalidraw-setting-h3",
+    });
+
+    new Setting(detailsEl)
+      .setName(t("TRAY_MODE_NAME"))
+      .setDesc(fragWithHTML(t("ARIA_LABEL_TRAY_MODE")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.defaultTrayMode)
+          .onChange((value) => {
+            this.plugin.settings.defaultTrayMode = value;
+            setTrayMode(this.app, this.plugin.settings);
+            this.applySettingsUpdate();
+          })
+      );
+
+    new Setting(detailsEl)
+      .setName(t("COMPACT_MODE_NAME"))
+      .setDesc(fragWithHTML(t("COMPACT_MODE_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.compactModeOnTablets)
+          .onChange((value) => {
+            this.plugin.settings.compactModeOnTablets = value;
+            setTrayMode(this.app, this.plugin.settings);
+            this.applySettingsUpdate();
+          }),
+      );
+
+
     new Setting(detailsEl)
       .setName(t("LEFTHANDED_MODE_NAME"))
       .setDesc(fragWithHTML(t("LEFTHANDED_MODE_DESC")))

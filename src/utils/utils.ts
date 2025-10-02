@@ -25,7 +25,7 @@ import { getDataURLFromURL, getIMGFilename, getMimeType, getURLImageExtension } 
 import { generateEmbeddableLink } from "./customEmbeddableUtils";
 import { FILENAMEPARTS } from "../types/utilTypes";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
-import { cleanBlockRef, cleanSectionHeading, getFileCSSClasses } from "./obsidianUtils";
+import { cleanBlockRef, cleanSectionHeading, getExcalidrawViews, getFileCSSClasses } from "./obsidianUtils";
 import { updateElementLinksToObsidianLinks } from "./excalidrawAutomateUtils";
 import { CropImage } from "../shared/CropImage";
 import opentype from 'opentype.js';
@@ -35,6 +35,7 @@ import { FileData } from "../shared/EmbeddedFileLoader";
 import { t } from "src/lang/helpers";
 import { log } from "./debugHelper";
 import { VersionMismatchPrompt } from "src/shared/Dialogs/VersionMismatch";
+import { ExcalidrawSettings } from "src/core/settings";
 
 declare const PLUGIN_VERSION:string;
 declare var LZString: any;
@@ -624,6 +625,19 @@ export function setLeftHandedMode (isLeftHanded: boolean) {
     setDocLeftHandedMode(isLeftHanded,ownerDocument);
   })  
 };
+
+export function calculateTrayModeValue(settings: ExcalidrawSettings): boolean {
+  const { defaultTrayMode, compactModeOnTablets } = settings;
+  const isTrayMode = DEVICE.isTablet
+    ? (compactModeOnTablets ? false : defaultTrayMode)
+    : defaultTrayMode;
+  return isTrayMode;
+}
+
+export function setTrayMode(app: App, settings: ExcalidrawSettings) {
+  const isTrayMode = calculateTrayModeValue(settings);
+  getExcalidrawViews(app).forEach((view) => view.setTrayMode(isTrayMode));
+}
 
 export type LinkParts = {
   original: string;
