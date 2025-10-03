@@ -14,7 +14,7 @@ Excalidraw for Obsidian keeps evolving; it is extremely feature‑rich and can f
 <a href="https://youtu.be/QKnQgSjJVuc" target="_blank"><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/thumbnail-getting-started.jpg" width="300"/></a>
 
 ### Here's my complete catalog of videos:
-<a href="https://excalidraw-obsidian.online/Hobbies/Excalidraw+Blog/Catalogue+of+Videos"><img width="380" alt="image" src="https://github.com/zsviczian/obsidian-excalidraw-plugin/assets/14358394/2577e5ad-7a21-4c62-acd5-4fe80c8a8a95"></a>
+<a href="https://excalidraw-obsidian.online/wiki/catalogue"><img width="380" alt="image" src="https://github.com/zsviczian/obsidian-excalidraw-plugin/assets/14358394/2577e5ad-7a21-4c62-acd5-4fe80c8a8a95"></a>
 <br>
 
 <details><summary>10 Part (slightly outdated) Video Walkthrough</summary>
@@ -227,7 +227,7 @@ For more details, see this [video](https://youtu.be/yZQoJg2RCKI)
     - `excalidraw-link-brackets: true|false` whether or not to display brackets around links in preview
     - `excalidraw-default-mode: view|zen` Open this document in view mode or zen mode by defult. The default view mode is excellent for presentation slides.
   - Frontmatter tags to customize image export at a file level [519](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/519). If these keys are present, they will override the default Excalidraw embed and export settings.
-    - `excalidraw-export-transparent: true`:  true == Transparent / false == with background.
+    - `excalidraw-export-transparent: true`:  true == Transparent / false == with background.
     - `excalidraw-export-dark`: true == Dark mode / false == light mode.
     - `excalidraw-export-padding`: Specify the export padding for the image.
     - `excalidraw-export-pngscale`: This only affects export to PNG. Specify the export scale for the image. The typical range is between 0.5 and 5, but you can experiment with other values as well.
@@ -245,7 +245,7 @@ Drag the desired file from the Obsidian file explorer and hold down <kbd>SHIFT</
     - Open Obsidian Developer Console (<kbd>CTRL+Shift+i</kbd>/<kbd>CMD+OPT+i</kbd>) and
     - Execute the following command: `ExcalidrawAutomate.mostRecentMarkdownSVG`
 - You can control the appearance of the embedded markdown file on a file by file
-  bases by adding the following front matter keys to your markdown document:
+  bases by adding the following front matter keys to your markdown document:
   - `excalidraw-font: Virgil|Cascadia|font_file_name.extension`
   - `excalidraw-font-color: css-color-name|#HEXcolor|any-other-html-standard-format`,
     - You can find css color names [here](https://www.w3schools.com/colors/colors_names.asp).
@@ -308,3 +308,4 @@ You can find me on Twitter [@zsviczian](https://twitter.com/zsviczian), and on m
 If you enjoy Excalidraw, consider giving [ExcaliBrain](https://github.com/zsviczian/excalibrain) a try (also available via Obsidian Community Plugins).
 
 <a href="https://youtu.be/gOkniMkDPyM" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/169708346-9e41289d-9536-43ec-8f70-2d2ad2d369d6.png" width="300"/></a>
+
