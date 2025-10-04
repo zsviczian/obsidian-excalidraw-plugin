@@ -24,7 +24,7 @@ import {
 } from "src/utils/fileUtils";
 import { PENS } from "src/utils/pens";
 import {
-  addIframe,
+  addYouTubeThumbnail,
   fragWithHTML,
   setLeftHandedMode,
   setTrayMode,
@@ -827,7 +827,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
-    addIframe(detailsEl, "jgUpYznHP9A",216);
+    addYouTubeThumbnail(detailsEl, "jgUpYznHP9A",216);
 
     new Setting(detailsEl)
       .setName(t("SCRIPT_FOLDER_NAME"))
@@ -1292,7 +1292,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
-    addIframe(detailsEl, "H8Njp7ZXYag",999);
+    addYouTubeThumbnail(detailsEl, "H8Njp7ZXYag",999);
 
     detailsEl = displayDetailsEl.createEl("details");
     detailsEl.createEl("summary", {
@@ -1339,7 +1339,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
-    addIframe(detailsEl, "fypDth_-8q0");
+    addYouTubeThumbnail(detailsEl, "fypDth_-8q0");
 
     new Setting(detailsEl)
     .setName(t("IFRAME_MATCH_THEME_NAME"))
@@ -1352,7 +1352,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           this.applySettingsUpdate(true);
         }),
     );
-    addIframe(detailsEl, "ICpoyMv6KSs");
+    addYouTubeThumbnail(detailsEl, "ICpoyMv6KSs");
 
     new Setting(detailsEl)
       .setName(t("MATCH_THEME_NAME"))
@@ -1443,7 +1443,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
-    addIframe(detailsEl, "rBarRfcSxNo",107);
+    addYouTubeThumbnail(detailsEl, "rBarRfcSxNo",107);
 
     new Setting(detailsEl)
       .setName(t("DEFAULT_WHEELZOOM_NAME"))
@@ -2103,8 +2103,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         this.applySettingsUpdate();
       })
     );
-    addIframe(detailsEl, "yZQoJg2RCKI");
-    addIframe(detailsEl, "opLd1SqaH_I",8);
+    addYouTubeThumbnail(detailsEl, "yZQoJg2RCKI");
+    addYouTubeThumbnail(detailsEl, "opLd1SqaH_I",8);
 
     let dropdown: DropdownComponent;
     let embedComment: Setting;
@@ -2263,7 +2263,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       text: t("EXPORT_SUBHEAD"),
       cls: "excalidraw-setting-h3",
     });
-    addIframe(detailsEl, "wTtaXmRJ7wg",171);
+    addYouTubeThumbnail(detailsEl, "wTtaXmRJ7wg",171);
 
     const pdfExportEl = new Setting(detailsEl)
     .setName(t("SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME"))
@@ -2508,7 +2508,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h3",
     });
   
-    addIframe(detailsEl, "nB4cOfn0xAs");
+    addYouTubeThumbnail(detailsEl, "nB4cOfn0xAs");
     new Setting(detailsEl)
       .setName(t("PDF_TO_IMAGE_SCALE_NAME"))
       .setDesc(fragWithHTML(t("PDF_TO_IMAGE_SCALE_DESC")))
@@ -2719,7 +2719,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       text: t("CUSTOM_PEN_HEAD"),
       cls: "excalidraw-setting-h3",
     });
-    addIframe(detailsEl, "OjNhjaH2KjI",69);
+    addYouTubeThumbnail(detailsEl, "OjNhjaH2KjI",69);
     new Setting(detailsEl)
       .setName(t("CUSTOM_PEN_NAME"))
       .setDesc(t("CUSTOM_PEN_DESC"))
@@ -2761,7 +2761,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       text: t("CUSTOM_FONT_HEAD"),
       cls: "excalidraw-setting-h3",
     });
-    addIframe(detailsEl, "eKFmrSQhFA4");
+    addYouTubeThumbnail(detailsEl, "eKFmrSQhFA4");
     new Setting(detailsEl)
       .setName(t("ENABLE_FOURTH_FONT_NAME"))
       .setDesc(fragWithHTML(t("ENABLE_FOURTH_FONT_DESC")))
@@ -2867,7 +2867,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h1",
     });
   
-    addIframe(detailsEl, "r08wk-58DPk");
+    addYouTubeThumbnail(detailsEl, "r08wk-58DPk");
     new Setting(detailsEl)
       .setName(t("LATEX_DEFAULT_NAME"))
       .setDesc(fragWithHTML(t("LATEX_DEFAULT_DESC")))
@@ -2965,7 +2965,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     detailsEl.createDiv( { text: t("TASKBONE_DESC"), cls: "setting-item-description"  });
     let taskboneAPIKeyText: TextComponent;
 
-    addIframe(detailsEl, "7gu4ETx7zro");
+    addYouTubeThumbnail(detailsEl, "7gu4ETx7zro");
     new Setting(detailsEl)
     .setName(t("TASKBONE_ENABLE_NAME"))
     .setDesc(fragWithHTML(t("TASKBONE_ENABLE_DESC")))
@@ -3344,7 +3344,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         cls: "excalidraw-setting-h1",
       });
 
-      addIframe(detailsEl, "H8Njp7ZXYag",52);
+      addYouTubeThumbnail(detailsEl, "H8Njp7ZXYag",52);
       Object.keys(this.plugin.settings.scriptEngineSettings)
         .filter((s) => scripts.contains(s))
         .forEach((scriptName: string) => {

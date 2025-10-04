@@ -1086,16 +1086,24 @@ export function escapeRegExp (str:string) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
-export function addIframe (containerEl: HTMLElement, link:string, startAt?: number, style:string = "settings") {
-  const wrapper = containerEl.createDiv({cls: `excalidraw-videoWrapper ${style}`})
-  wrapper.createEl("iframe", {
+export async function addYouTubeThumbnail (containerEl: HTMLElement, link:string, startAt?: number, style:string = "settings") {
+  const wrapper = containerEl.createDiv({cls: `excalidraw-videoWrapper ${style}`});
+  
+  const thumbnailUrl = await getYouTubeThumbnailLink(`https://www.youtube.com/watch?v=${link}`);
+  
+  const anchor = wrapper.createEl("a", {
     attr: {
-      allowfullscreen: true,
-      allow: "encrypted-media;picture-in-picture",
-      frameborder: "0",
-      title: "YouTube video player",
-      src: "https://www.youtube.com/embed/" + link + (startAt ? "?start=" + startAt : ""),
-      sandbox: "allow-forms allow-presentation allow-same-origin allow-scripts allow-modals",
+      href: "https://www.youtube.com/watch?v=" + link + (startAt ? "&t=" + startAt : ""),
+      target: "_blank",
+      rel: "noopener noreferrer",
+    },
+  });
+  
+  anchor.createEl("img", {
+    attr: {
+      src: thumbnailUrl || `https://i.ytimg.com/vi/${link}/default.jpg`,
+      alt: "YouTube video thumbnail",
+      style: "width: 100%; height: auto; cursor: pointer;",
     },
   });
 }
