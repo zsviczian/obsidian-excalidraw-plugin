@@ -1,6 +1,6 @@
 import {  ExcalidrawEmbeddableElement,  } from "@zsviczian/excalidraw/types/element/src/types";
 import ExcalidrawView from "src/view/ExcalidrawView";
-import { Notice, WorkspaceLeaf,  } from "obsidian";
+import { Notice, requireApiVersion, WorkspaceLeaf,  } from "obsidian";
 import * as React from "react";
 import { isObsidianThemeDark } from "src/utils/obsidianUtils";
 import { DEVICE, EXTENDED_EVENT_TYPES, KEYBOARD_EVENT_TYPES,  } from "src/constants/constants";
@@ -367,8 +367,8 @@ function RenderObsidianView(
   const elementRef = React.useRef(element);
   const pdfObserverRef = React.useRef(null);
   const pdfObserverDisabledRef = React.useRef(false);
-  // Keep-alive mobile patch cleanup holder
   const mobilePatchCleanupRef = React.useRef(null);
+  const initialViewFileRef = React.useRef(view.file);
 
   // Update themeRef when theme changes
   React.useEffect(() => {
@@ -473,7 +473,9 @@ function RenderObsidianView(
     };
 
     const createNode = (viewType: string) => {
-      setKeepOnTop();
+      if(!requireApiVersion("1.9.10")) {
+        setKeepOnTop();
+      }
       leafRef.current.node = view.canvasNodeFactory.createFileNote(file, subpath, containerRef.current, element.id);
       setColors(containerRef.current, element, mdProps, canvasColor, viewType);
       view.updateEmbeddableLeafRef(element.id, leafRef.current);
@@ -679,6 +681,10 @@ function RenderObsidianView(
   //Switch to edit mode when markdown view is clicked
   //--------------------------------------------------------------------------------
   const handleClick = React.useCallback((event?: React.PointerEvent<HTMLElement>) => {
+    if (view.file !== initialViewFileRef.current) {
+      return;
+    }
+
     if(isActiveRef.current) {
       event?.stopPropagation();
     }
@@ -719,12 +725,15 @@ function RenderObsidianView(
   }, [leafRef.current?.leaf, element.id, view, themeRef.current, isActiveRef.current, isEditingRef.current, viewTypeRef.current]);
 
   const startEditing = React.useCallback(() => {
+    if (view.file !== initialViewFileRef.current) {
+      return;
+    }
     if(isActiveRef.current && isEditingRef.current) {
       return;
     }
     isActiveRef.current = true;
     handleClick();
-  }, [isActiveRef.current, isEditingRef.current, handleClick]);
+  }, [isActiveRef.current, isEditingRef.current, handleClick, view]);
 
   if(leafRef.current)  leafRef.current.editNode = startEditing;
   // Event listener for key press
@@ -759,6 +768,10 @@ function RenderObsidianView(
   // Set isActiveRef and switch to preview mode when the embeddable is not active
   //--------------------------------------------------------------------------------
   React.useEffect(() => {
+    if (view.file !== initialViewFileRef.current) {
+      return;
+    }
+
     if(!containerRef?.current || !leafRef?.current) {
       return;
     }

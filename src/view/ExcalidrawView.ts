@@ -2267,10 +2267,10 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if(filenameParts.hasSectionref) {
       query = [`# ${filenameParts.sectionref}`]
     } else if (state.line && state.line > 0) {
-      query = [this.data.split("\n")[state.line - 1]];
+      query = [this.data.split("\n")[state.line]]; //was -1 https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2503
     }
 
-    if (query) {
+    if (query && query.length > 0 && !(query.length === 1 && query[0].length === 0)) {
       window.setTimeout(async () => {
         await waitForExcalidraw();
 
@@ -2279,6 +2279,15 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         if (api.getAppState().isLoading) return;
         
         const elements = api.getSceneElements() as ExcalidrawElement[];
+        if(query.length === 1) {
+          const elementId = query[0].match(/ \^([^ ]+)$/)?.[1] ?? query[0].match(/^([^ :]+): \[\[[^\]]+]]$/)?.[1];
+          if(elementId && elements.find((el)=>el.id === elementId)) {
+            this.preventAutozoom();
+            window.setTimeout(()=>this.zoomToElements(!api.getAppState().viewModeEnabled, [elements.find((el)=>el.id === elementId)]));
+            return;
+          }
+
+        }
 
         if(query.length === 1 && query[0].startsWith("[")) {
           const partsArray = REGEX_LINK.getResList(query[0]);

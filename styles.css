@@ -880,3 +880,7 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 .excalidraw-scriptengine-install .modal-close-button {
   z-index: 9999;
 }
+
+.excalidraw .undo-redo-buttons button {
+  width: 3em;
+}

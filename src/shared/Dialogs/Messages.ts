@@ -11,22 +11,32 @@ Thank you & Enjoy!
 `;
 
 export const RELEASE_NOTES: { [k: string]: string } = {
-  Intro: `After each update, you’ll see these release notes (you can turn this off in the plugin settings).
+  Intro: `After each update, you'll see these release notes (you can turn this off in the plugin settings).
 
 I build this plugin in my free time, as a labor of love. Curious about the philosophy behind it? Check out [📕 Sketch Your Mind](https://sketch-your-mind.com). If you find it valuable, say THANK YOU or…
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
 "2.16.0":`
-# New from Excalidraw.com
+<div class="excalidraw-videoWrapper"><div>
+<iframe src="https://www.youtube.com/embed/51EgDgtiZgQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div></div>
+
+## New from Excalidraw.com
 - New library search feature [#9903](https://github.com/excalidraw/excalidraw/pull/9903)
   - You can rename library items by selecting them, then choosing "Rename or publish" from the ... menu.
 - New compact mode for tablets [#9910](https://github.com/excalidraw/excalidraw/pull/9910)
   - New setting in plugin setting \`Compact-mode on Tablets\` to override tray-mode on tablets in favor of the new compact mode.
 
-# New
-- Embedding PDF as images, frames are now marker frames instead of regular frames. You can reference pages including their markup in markdown notes using this syntax: \`![[drawing#^frame=12]]\` (page 12)
-- Pinned scripts and Obsidian toolbar is now on the right side in all modes: tray-, normal-, and compact. The toolbar moves into view when the sidpanel is openned for the stencil library or for search.
+## New
+- Embedding PDF as images, frames are now marker frames instead of regular frames. You can reference pages, including their markup in markdown notes, using this syntax: \`![[drawing#^frame=12]]\` (page 12)
+- Pinned scripts toolbar is now on the right side in all modes: tray-, normal-, and compact. The toolbar moves into view when the side panel is opened for the stencil library or for search.
+- Better RTL support, pinned scripts are rendered on the left side in RTL mode.
+
+## Fixed
+- Critical fix: When clicking to follow a link in a markdown embeddable in preview mode to open an Excalidraw drawing in the same tab, the back of the newly opened drawing was overwritten with the content of the source drawing.
+- PDF++ Links from document to Excalidraw select everything in the scene instead of the linked element. [#2503](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2503)
+
 `,
 "2.15.3":`
 ## Fixed
