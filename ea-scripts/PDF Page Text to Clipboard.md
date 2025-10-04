@@ -1,8 +1,7 @@
 /*
 Copies the text from the selected PDF page on the Excalidraw canvas to the clipboard.
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/Kwt_8WdOUT4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-Link:: https://youtu.be/Kwt_8WdOUT4
+<a href="https://www.youtube.com/watch?v=Kwt_8WdOUT4" target="_blank"><img src ="https://i.ytimg.com/vi/Kwt_8WdOUT4/maxresdefault.jpg" style="width:560px;"></a>
 
 
 ```js*/

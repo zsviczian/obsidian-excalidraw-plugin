@@ -3,7 +3,7 @@
 
 Scribble Helper can improve handwriting and add links. It lets you create and edit text elements, including wrapped text and sticky notes, by double-tapping on the canvas. When you run the script, it creates an event handler that will activate the editor when you double-tap. If you select a text element on the canvas before running the script, it will open the editor for that element. If you use a pen, you can set it up to only activate Scribble Helper when you double-tap with the pen. The event handler is removed when you run the script a second time or switch to a different tab.
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/BvYkOaly-QM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<a href="https://www.youtube.com/watch?v=BvYkOaly-QM" target="_blank"><img src ="https://i.ytimg.com/vi/BvYkOaly-QM/maxresdefault.jpg" style="width:560px;"></a>
 
 ```javascript
 */
