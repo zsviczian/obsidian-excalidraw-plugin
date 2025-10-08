@@ -139,6 +139,7 @@ export default {
     "3) y pega tu trabajo en el nuevo documento con CTRL/CMD+V.",
   ARIA_LABEL_TRAY_MODE: "El modo bandeja ofrece un lienzo alternativo y más espacioso",
   TRAY_TRAY_MODE: "Activar/desactivar modo bandeja",
+  TOGGLE_COMPACT_MODE: "Alternar modo compacto",
   TRAY_SCRIPT_LIBRARY: "Biblioteca de scripts",
   TRAY_SCRIPT_LIBRARY_ARIA: "Explorar la biblioteca de scripts de Excalidraw",
   TRAY_EXPORT: "Exportar imagen...",
@@ -234,6 +235,8 @@ export default {
   RELEASE_NOTES_DESC:
     "<b><u>Activado:</u></b> Muestra las notas de la versión cada vez que actualices Excalidraw a una versión más reciente.<br>" +
     "<b><u>Desactivado:</u></b> Modo silencioso. Aún puedes leer las notas de la versión en <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases'>GitHub</a>.",
+  WARN_ON_MANIFEST_MISMATCH_NAME: "Advertir sobre actualizaciones de complementos incompletos",
+  WARN_ON_MANIFEST_MISMATCH_DESC: "Comprueba que el ejecutable de Excalidraw instalado coincida con la versión mostrada en la lista de complementos de Obsidian. Si no coinciden (a menudo después de una sincronización parcial), verás una advertencia y podrás actualizar. Desactívalo para dejar de comprobar.",
   NEWVERSION_NOTIFICATION_NAME: "Notificación de Actualización del Complemento",
   NEWVERSION_NOTIFICATION_DESC:
       "<b><u>Activado:</u></b> Muestra una notificación cuando hay una nueva versión del complemento disponible.<br>" +
@@ -447,6 +450,10 @@ FILENAME_HEAD: "Nombre de archivo",
     "Nota: Esta configuración no afecta la función de exportación a PDF dentro del propio Excalidraw.<br>" +
     "Consulta la otra configuración relacionada para el  <a href='#"+TAG_MDREADINGMODE+"'>Modo de Lectura de Markdown</a> en 'Apariencia y Comportamiento' más arriba.<br>" +
     "⚠️ Debes cerrar y volver a abrir el archivo de Excalidraw/Markdown para que los cambios surtan efecto. ⚠️",
+  MODES_HEAD: "Modos",
+  TRAY_MODE_NAME: "Habilitar modo de bandeja (tray-mode)",
+  COMPACT_MODE_NAME: "Modo compacto en tablets",
+  COMPACT_MODE_DESC: "Anula el modo de bandeja en tablets, permitiendo que se use en su lugar el modo compacto nativo de Excalidraw.",
   HOTKEY_OVERRIDE_HEAD: "Anulaciones de atajos de teclado",
   HOTKEY_OVERRIDE_DESC: `Algunos de los atajos de teclado de Excalidraw, como <code>${labelCTRL()}+Enter</code> para editar texto o <code>${labelCTRL()}+K</code> para crear un enlace de elemento ` +
     "entran en conflicto con la configuración de atajos de teclado de Obsidian. Las combinaciones de atajos de teclado que agregues a continuación anularán la configuración de atajos de teclado de Obsidian mientras usas Excalidraw. Por lo tanto, " +
@@ -1210,4 +1217,17 @@ FILENAME_HEAD: "Nombre de archivo",
   //EmbeddableActionsMenu.tsx
   BOOKMARK_PAGE: "Guardar posición actual en el documento",
   CAPTURE_PAGE: "Capturar la página actual como imagen",
+
+  //VersionMismatch.ts
+  //ADVERTENCIA: No cambie las cadenas {VAL_RECORDED} y {VAL_ACTUAL}, ¡son reemplazadas por los valores de versión reales en tiempo de ejecución!
+  VERSION_MISMATCH_NOTICE: `La versión registrada por Obsidian es <b>{VAL_RECORDED}</b>, pero el código de Excalidraw instalado es <b>{VAL_ACTUAL}</b>.`,
+  
+  VERSION_MISMATCH_HEADING: "Desajuste de versión de Excalidraw",
+  VERSION_MISMATCH_CAUSE: "Esto suele ocurrir después de una sincronización parcial (ej. Obsidian Sync Standard) donde archivos grandes (main.js > 5MB) no se sincronizaron, por lo que solo se actualizó <code>manifest.json</code> .",
+  VERSION_MISMATCH_OPTIONS: "Opciones:<br><b>1.</b> Vuelva a descargar el complemento (recomendado).<br><b>2.</b> Ignorar por ahora.",
+  VERSION_MISMATCH_NOTE: "Nota: Actualizar la información de la versión manualmente puede afectar a las herramientas que leen manifest.json directamente (ej. Plugin Update Tracker, BRAT) hasta una reinstalación completa.",
+  VERSION_MISMATCH_DISABLE_NAME: "Desactivar futuras advertencias de desajuste",
+  VERSION_MISMATCH_DISABLE_DESC: "Puede volver a habilitar esto en: Opciones → Excalidraw → Básico → Advertir sobre actualizaciones de complementos incompletos.",
+  VERSION_MISMATCH_REDOWNLOAD: "Volver a descargar complemento",
+  VERSION_MISMATCH_IGNORE: "Ignorar",
 };
