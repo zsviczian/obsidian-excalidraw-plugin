@@ -215,9 +215,15 @@ export class EventManager {
     this.previouslyActiveLeaf = leaf;
     
     if (newActiveviewEV) {
+      // hide the statusBar while in an ExcalidrawView
+      this.app.statusBar.containerEl.hide()
+
       this.plugin.addModalContainerObserver();
       this.plugin.lastActiveExcalidrawFilePath = newActiveviewEV.file?.path;
     } else {
+      // restore the statusBar after unfocusing an ExcalidrawView
+      this.app.statusBar.containerEl.show()
+
       this.plugin.removeModalContainerObserver();
     }
 
