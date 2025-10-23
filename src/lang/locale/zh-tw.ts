@@ -42,7 +42,7 @@ export default {
     "開啟已有的繪圖 - 於當前面板",
   TRANSCLUDE: "嵌入繪圖 ![[drawing]] 到當前 Markdown 文件中",
   TRANSCLUDE_MOST_RECENT: "嵌入最近編輯過的繪圖 ![[drawing]] 到當前 Markdown 文件中",
-  TOGGLE_LEFTHANDED_MODE: "切換為左手模式",
+  TOGGLE_LEFTHANDED_MODE: "切換左手模式",
   TOGGLE_SPLASHSCREEN: "在新繪圖中顯示啟動畫面",
   FLIP_IMAGE: "在彈出視窗中開啟所選繪圖的背景筆記",
   NEW_IN_NEW_PANE: "新建繪圖 - 於新面板",
@@ -139,6 +139,7 @@ export default {
     "3) 最後，使用 Ctrl/CMD+V 將您的作品貼上到新檔案中。",
   ARIA_LABEL_TRAY_MODE: "托盤模式提供更寬敞的繪圖空間",
   TRAY_TRAY_MODE: "切換托盤模式",
+  TOGGLE_COMPACT_MODE: "切換緊湊模式",
   TRAY_SCRIPT_LIBRARY: "指令碼庫",
   TRAY_SCRIPT_LIBRARY_ARIA: "瀏覽 Excalidraw 指令碼庫",
   TRAY_EXPORT: "匯出繪圖…",
@@ -449,6 +450,10 @@ export default {
     "注意：該項不會影響 Excalidraw 本身的 PDF 匯出功能。<br>" +
     "請參閱下方 <a href='#"+TAG_PDFEXPORT+"'>PDF 匯出設定</a>。<br>" +
     "⚠️ 關閉並重新開啟 Excalidraw/Markdown 檔案後生效。",
+  MODES_HEAD: "模式",
+  TRAY_MODE_NAME: "啟用托盤模式",
+  COMPACT_MODE_NAME: "平板上的緊湊模式",
+  COMPACT_MODE_DESC: "覆蓋平板上的托盤模式，使用原生的 Excalidraw 緊湊模式。",
   HOTKEY_OVERRIDE_HEAD: "熱鍵覆蓋",
   HOTKEY_OVERRIDE_DESC: `一些 Excalidraw 的熱鍵，如 ${labelCTRL()}+Enter 用於編輯文字，或 ${labelCTRL()}+K 用於建立元素連結，` +
     "與 Obsidian 的熱鍵設定衝突。您在下面新增的熱鍵組合將在使用 Excalidraw 時覆蓋 Obsidian 的熱鍵設定，" +
@@ -1216,6 +1221,7 @@ export default {
   //VersionMismatch.ts
   //WARNING: Do not change the {VAL_RECORDED} and {VAL_ACTUAL} strings, they are replaced by the actual version values at runtime!
   VERSION_MISMATCH_NOTICE: `Obsidian 顯示的版本是 <b>{VAL_RECORDED}</b>，但已安裝的 Excalidraw 程式碼顯示的版本是 <b>{VAL_ACTUAL}</b>。`,
+
   VERSION_MISMATCH_HEADING: "Excalidraw 版本不匹配",
   VERSION_MISMATCH_CAUSE: "通常源於同步不完整，大檔案未能同步（如使用 Obsidian Sync Standard，main.js > 5MB），只更新了 <code>manifest.json</code>。",
   VERSION_MISMATCH_OPTIONS: "選項：<br><b>1.</b> 重新下載外掛（推薦）。<br><b>2.</b> 暫時忽略。",
