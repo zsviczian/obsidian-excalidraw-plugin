@@ -290,6 +290,7 @@ textarea.excalidraw-wysiwyg {
 }
 
 .excalidraw .tray-zoom {
+  height: var(--default-button-size);
   pointer-events: initial;
   padding-bottom: 0.05rem;
   padding-top: 0.05rem;
@@ -318,9 +319,11 @@ textarea.excalidraw-wysiwyg {
   font-size: 0.45rem !important;
 }
 
+/*
 .Island > .Stack > .Stack {
   padding:0.2rem;
 }
+*/
 
 label.color-input-container > input {
   max-width: 5rem;
@@ -883,4 +886,22 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 
 .excalidraw .undo-redo-buttons button {
   width: 3em;
+}
+
+.ExcalidrawObsidianMenu--mobile label.ToolIcon {
+  margin-left: 4px;
+}
+
+.ExcalidrawObsidianMenu--mobile {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  row-gap: 4px;
+  justify-content: center;
+  align-items: center;
+}
+
+.ExcalidrawObsidianMenu {
+  display: flex;
+  flex-direction: column;
 }

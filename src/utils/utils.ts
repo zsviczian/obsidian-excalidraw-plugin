@@ -1086,10 +1086,10 @@ export function escapeRegExp (str:string) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
-export async function addYouTubeThumbnail (containerEl: HTMLElement, link:string, startAt?: number, style:string = "settings") {
+export function addYouTubeThumbnail (containerEl: HTMLElement, link:string, startAt?: number, style:string = "settings") {
   const wrapper = containerEl.createDiv({cls: `excalidraw-videoWrapper ${style}`});
   
-  const thumbnailUrl = await getYouTubeThumbnailLink(`https://www.youtube.com/watch?v=${link}`);
+  const thumbnailUrl = `https://i.ytimg.com/vi/${link}/maxresdefault.jpg`;
   
   const anchor = wrapper.createEl("a", {
     attr: {

@@ -369,7 +369,7 @@ export class PenSettingsModal extends Modal {
 		  .setName(fragWithHTML(`Stroke Width <b>${ps.strokeWidth === 0 ? "Not Set" : ps.strokeWidth}</b>`))
       .addSlider(slider =>
         slider
-          .setLimits(0,5,0.5)
+          .setLimits(0,5,0.1)
           .setValue(ps.strokeWidth)
           .onChange(value => {
             this.dirty = true;
@@ -421,7 +421,7 @@ export class PenSettingsModal extends Modal {
       .setDesc("If the stroke has an outline, this will mean the stroke color is the outline color, and the background color is the pen stroke's fill color. If the pen does not have an outline then the pen color is the stroke color. The Fill Style setting applies to the fill style of the enclosed shape, not of the line itself. The line can only have solid fill.")
       .addSlider(slider => 
         slider
-          .setLimits(0,8,0.5)
+          .setLimits(0,8,0.1)
           .setValue(ps.penOptions.outlineWidth)
           .onChange(value => {
             this.dirty = true;

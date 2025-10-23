@@ -257,7 +257,12 @@ export class ObsidianMenu {
 
   public renderButton (isMobile: boolean, appState: AppState) {
     return (
-      <>
+      <div className={clsx(
+        {
+          "ExcalidrawObsidianMenu--mobile": isMobile,
+          "ExcalidrawObsidianMenu": !isMobile,
+        },
+      )}>
         <label
           className={clsx(
             "ToolIcon",
@@ -288,7 +293,7 @@ export class ObsidianMenu {
         </label>
         {this.renderCustomPens(isMobile,appState)}
         {this.renderPinnedScriptButtons(isMobile,appState)}
-      </>
+      </div>
     );
   };
 
