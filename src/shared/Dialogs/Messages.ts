@@ -20,11 +20,14 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 "2.17.0":`
 ## New
 - Phone UI from Excalidraw.com [#9996](https://github.com/excalidraw/excalidraw/pull/9996)
+- Custom pen settings now allows pen width to be set at 0.1 increments from 0.1 to 8.0
+- I increased long-press context menu trigger on touch screens from 500ms to 2000ms to reduce accidental triggers
+- Updated the "Palm Guard" script to support the change UI configurations.
 
 ## Fixed
 - side panel does not attach correctly when library is pinned [#2510](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2510)
 - Fixed print area when using marker frames and printing Slideshow to PDF
-- The Invert Colors script and ExcalidrawAutomate bugs that resulted in broken colors and Excalidarw crash in some cases after color inversion.
+- The "Invert Colors" script and ExcalidrawAutomate bugs that resulted in broken colors and Excalidarw crash in some cases after color inversion.
 - Fixed duplicated PDF elements after copy-pasting from scene to scene.
 `,
 "2.16.1":`

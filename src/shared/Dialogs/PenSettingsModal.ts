@@ -66,8 +66,8 @@ export class PenSettingsModal extends Modal {
 
   async onClose() {
     if(this.dirty) {
+      await this.plugin.saveSettings();
       getExcalidrawViews(this.app).forEach(excalidrawView=>excalidrawView.updatePinnedCustomPens());
-      this.plugin.saveSettings();
       const pen = this.plugin.settings.customPens[this.pen]
       const api = this.view.excalidrawAPI;
       setPen(pen,api);
@@ -369,7 +369,7 @@ export class PenSettingsModal extends Modal {
 		  .setName(fragWithHTML(`Stroke Width <b>${ps.strokeWidth === 0 ? "Not Set" : ps.strokeWidth}</b>`))
       .addSlider(slider =>
         slider
-          .setLimits(0,5,0.1)
+          .setLimits(0.1,8,0.1)
           .setValue(ps.strokeWidth)
           .onChange(value => {
             this.dirty = true;
