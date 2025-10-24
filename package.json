@@ -17,7 +17,7 @@
     "build:all": "npm run build:mathjax && npm run build",
     "dev:mathjax": "cd MathjaxToSVG && npm run dev",
     "dev:all": "npm run dev:mathjax && npm run dev",
-    "doc": "node scripts/generate-script-library.js"
+    "doc": "npm run lib && node scripts/generate-script-library.js"
   },
   "keywords": [],
   "author": "",
@@ -74,7 +74,7 @@
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
     "lz-string": "^1.5.0",
-    "obsidian": "^1.7.2",
+    "obsidian": "^1.10.0",
     "prettier": "^3.0.1",
     "rollup": "^2.70.1",
     "rollup-plugin-copy": "^3.5.0",

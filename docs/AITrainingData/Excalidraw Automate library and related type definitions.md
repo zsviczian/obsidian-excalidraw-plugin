@@ -1,16 +1,10 @@
-# Excalidraw Automate library (not only) file for LLM training
+# ExcalidrawAutomate library and related type definitions
 
-[Gemini](https://aistudio.google.com/) because of its very large context window (without subscription) is effective at developing ExcalidrawAutomate scripts. To achieve the best result I recommend attaching 3 files for these LLMs to use as reference.
-1) The [Obsidian API library file](https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts).
-2) One or more ready made ExcalidrawAutomate scripts that do something remotely similar to what you want. You'll find a very extensive list of scripts [here](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/ea-scripts).
-3) This library file for ExcalidrawAutomate that includes a more detailed description of each function, plus includes some general explanation about the logic of Excalidraw Automate intended for both hobby hackers and LLMs.
-
-For more information about Excalidraw scripting visit my playlist on [YouTube](https://youtube.com/playlist?list=PL6mqgtMZ4NP3up3qjrWW69UwlPow0ZvzU&si=iWIF9pkQPdXYXOYc)
 
 ```js
-/* ********************************** */
+/* ************************************** */
 /* lib/shared/ExcalidrawAutomate.d.ts */
-/* ********************************** */
+/* ************************************** */
 /**
  * ExcalidrawAutomate is a utility class that provides a simplified API to interact with Excalidraw elements and the Excalidraw canvas.
  * Elements in the Excalidraw Scene are immutable. You should never directly change element properties in the scene object.
@@ -492,6 +486,35 @@ export declare class ExcalidrawAutomate {
      * @returns {string} The wrapped text.
      */
     wrapText(text: string, lineLen: number): string;
+    /** ROUNDNESS as defined in the Excalidraw packages/common/src/constants.ts
+     * Radius represented as 25% of element's largest side (width/height).
+     * Used for LEGACY and PROPORTIONAL_RADIUS algorithms, or when the element is
+     * below the cutoff size.
+     * export const DEFAULT_PROPORTIONAL_RADIUS = 0.25;
+     *
+     * Fixed radius for the ADAPTIVE_RADIUS algorithm. In pixels.
+     * export const DEFAULT_ADAPTIVE_RADIUS = 32;
+     *
+     * roundness type (algorithm)
+     * export const ROUNDNESS = {
+     *   Used for legacy rounding (rectangles), which currently works the same
+     *   as PROPORTIONAL_RADIUS, but we need to differentiate for UI purposes and
+     *   forwards-compat.
+     *   LEGACY: 1,
+     *
+     *   Used for linear elements & diamonds
+     *   PROPORTIONAL_RADIUS: 2,
+     *
+     *   Current default algorithm for rectangles, using fixed pixel radius.
+     *   It's working similarly to a regular border-radius, but attemps to make
+     *   radius visually similar across differnt element sizes, especially
+     *   very large and very small elements.
+     *
+     *   NOTE right now we don't allow configuration and use a constant radius
+     *   (see DEFAULT_ADAPTIVE_RADIUS constant)
+     *   ADAPTIVE_RADIUS: 3,
+     * } as const;
+     */
     /**
      * Utility function. Returns an element object using style settings and provided parameters.
      * @param {string} id - The element ID.
@@ -1331,283 +1354,290 @@ export declare class ExcalidrawAutomate {
 /* lib/types/excalidrawAutomateTypes.d.ts */
 /* ************************************** */
 export type SVGColorInfo = Map<string, {
-  mappedTo: string;
-  fill: boolean;
-  stroke: boolean;
+    mappedTo: string;
+    fill: boolean;
+    stroke: boolean;
 }>;
-
 export type ImageInfo = {
-  mimeType: MimeType,
-  id: FileId,
-  dataURL: DataURL,
-  created: number,
-  isHyperLink?: boolean,
-  hyperlink?: string,
-  file?:string | TFile,
-  hasSVGwithBitmap: boolean,
-  latex?: string,
-  size?: Size,
-  colorMap?: ColorMap,
-  pdfPageViewProps?: PDFPageViewProps,
-}
-
-export interface AddImageOptions {
-  topX: number;
-  topY: number;
-  imageFile: TFile | string;
-  scale?: boolean; 
-  anchor?: boolean;
-  colorMap?: ColorMap;
-}
-
-/* *********************** */
-/* lib/types/penTypes.d.ts */
-/* *********************** */
-export interface StrokeOptions {
-  thinning: number;
-  smoothing: number;
-  streamline: number;
-  easing: string;
-  simulatePressure?: boolean;
-  start: {
-      cap: boolean;
-      taper: number | boolean;
-      easing: string;
-  };
-  end: {
-      cap: boolean;
-      taper: number | boolean;
-      easing: string;
-  };
-}
-
-export interface PenOptions {
-  highlighter: boolean;
-  constantPressure: boolean;
-  hasOutline: boolean;
-  outlineWidth: number;
-  options: StrokeOptions;
-}
-
-export declare type ExtendedFillStyle = "dots"|"zigzag"|"zigzag-line"|"dashed"|"hachure"|"cross-hatch"|"solid"|"";
-export declare type PenType = "default" | "highlighter" | "finetip" | "fountain" | "marker" | "thick-thin" | "thin-thick-thin";
-
-export interface PenStyle {
-  type: PenType;
-  freedrawOnly: boolean; 
-  strokeColor?: string;
-  backgroundColor?: string;
-  fillStyle: ExtendedFillStyle;
-  strokeWidth: number;
-  roughness: number;
-  penOptions: PenOptions;
-}
-
-/* ************************ */
-/* lib/types/utilTypes.d.ts */
-/* ************************ */
-export type FILENAMEPARTS = {
-  filepath: string,
-  hasBlockref: boolean,
-  hasGroupref: boolean,
-  hasTaskbone: boolean,
-  hasArearef: boolean,
-  hasFrameref: boolean,
-  hasClippedFrameref: boolean,
-  hasSectionref: boolean,
-  blockref: string,
-  sectionref: string,
-  linkpartReference: string,
-  linkpartAlias: string
+    mimeType: MimeType;
+    id: FileId;
+    dataURL: DataURL;
+    created: number;
+    isHyperLink?: boolean;
+    hyperlink?: string;
+    file?: string | TFile;
+    hasSVGwithBitmap: boolean;
+    latex?: string;
+    size?: Size;
+    colorMap?: ColorMap;
+    pdfPageViewProps?: PDFPageViewProps;
 };
-
-export enum PreviewImageType {
-  PNG = "PNG",
-  SVGIMG = "SVGIMG",
-  SVG = "SVG"
+export interface AddImageOptions {
+    topX: number;
+    topY: number;
+    imageFile: TFile | string;
+    scale?: boolean;
+    anchor?: boolean;
+    colorMap?: ColorMap;
 }
 
+/* ***************************** */
+/* lib/types/penTypes.d.ts */
+/* ***************************** */
+export interface StrokeOptions {
+    thinning: number;
+    smoothing: number;
+    streamline: number;
+    easing: string;
+    simulatePressure?: boolean;
+    start: {
+        cap: boolean;
+        taper: number | boolean;
+        easing: string;
+    };
+    end: {
+        cap: boolean;
+        taper: number | boolean;
+        easing: string;
+    };
+}
+export interface PenOptions {
+    highlighter: boolean;
+    constantPressure: boolean;
+    hasOutline: boolean;
+    outlineWidth: number;
+    options: StrokeOptions;
+}
+export declare type ExtendedFillStyle = "dots" | "zigzag" | "zigzag-line" | "dashed" | "hachure" | "cross-hatch" | "solid" | "";
+export declare type PenType = "default" | "highlighter" | "finetip" | "fountain" | "marker" | "thick-thin" | "thin-thick-thin";
+export interface PenStyle {
+    type: PenType;
+    freedrawOnly: boolean;
+    strokeColor?: string;
+    backgroundColor?: string;
+    fillStyle: ExtendedFillStyle;
+    strokeWidth: number;
+    roughness: number;
+    penOptions: PenOptions;
+}
+
+/* ****************************** */
+/* lib/types/utilTypes.d.ts */
+/* ****************************** */
+export type FILENAMEPARTS = {
+    filepath: string;
+    hasBlockref: boolean;
+    hasGroupref: boolean;
+    hasTaskbone: boolean;
+    hasArearef: boolean;
+    hasFrameref: boolean;
+    hasClippedFrameref: boolean;
+    hasSectionref: boolean;
+    blockref: string;
+    sectionref: string;
+    linkpartReference: string;
+    linkpartAlias: string;
+};
+export declare enum PreviewImageType {
+    PNG = "PNG",
+    SVGIMG = "SVGIMG",
+    SVG = "SVG"
+}
 export interface FrameRenderingOptions {
-  enabled: boolean;
-  name: boolean;
-  outline: boolean;
-  clip: boolean;
+    enabled: boolean;
+    name: boolean;
+    outline: boolean;
+    clip: boolean;
 }
 
-/* ****************************** */
+/* ************************************ */
 /* lib/types/exportUtilTypes.d.ts */
-/* ****************************** */
-export type PDFPageAlignment = 
-  | "center" 
-  | "top-left" 
-  | "top-center" 
-  | "top-right" 
-  | "bottom-left" 
-  | "bottom-center" 
-  | "bottom-right"
-  | "center-left"
-  | "center-right";
+/* ************************************ */
+export type PDFPageAlignment = "center" | "top-left" | "top-center" | "top-right" | "bottom-left" | "bottom-center" | "bottom-right" | "center-left" | "center-right";
 export type PDFPageMarginString = "none" | "tiny" | "normal";
-
 export interface PDFExportScale {
-  fitToPage: number; // 0 means use zoom, >1 means fit to that many pages exactly
-  zoom?: number;
+    fitToPage: number;
+    zoom?: number;
 }
-
 export interface PDFMargin {
-  left: number;
-  right: number;
-  top: number;
-  bottom: number;
+    left: number;
+    right: number;
+    top: number;
+    bottom: number;
 }
-
 export interface PDFPageProperties {
-  dimensions?: {width: number; height: number};
-  backgroundColor?: string;
-  margin: PDFMargin;
-  alignment: PDFPageAlignment;
+    dimensions?: {
+        width: number;
+        height: number;
+    };
+    backgroundColor?: string;
+    margin: PDFMargin;
+    alignment: PDFPageAlignment;
 }
-
 export interface PageDimensions {
-  width: number;
-  height: number;
+    width: number;
+    height: number;
 }
-
 export type PageOrientation = "portrait" | "landscape";
-
-// All dimensions in pixels (pt)
-export const STANDARD_PAGE_SIZES = {
-  A0: { width: 3179.52, height: 4494.96 }, // 33.11 × 46.81 inches
-  A1: { width: 2245.76, height: 3179.52 }, // 23.39 × 33.11 inches
-  A2: { width: 1587.76, height: 2245.76 }, // 16.54 × 23.39 inches
-  A3: { width: 1122.56, height: 1587.76 }, // 11.69 × 16.54 inches
-  A4: { width: 794.56, height: 1122.56 },  // 8.27 × 11.69 inches
-  A5: { width: 559.37, height: 794.56 },   // 5.83 × 8.27 inches
-  A6: { width: 397.28, height: 559.37 },   // 4.13 × 5.83 inches
-  Legal: { width: 816, height: 1344 },     // 8.5 × 14 inches
-  Letter: { width: 816, height: 1056 },    // 8.5 × 11 inches
-  Tabloid: { width: 1056, height: 1632 },  // 11 × 17 inches
-  Ledger: { width: 1632, height: 1056 },   // 17 × 11 inches
-  "HD Screen": { width: 1920, height: 1080 },// 16:9 aspect ratio
-  "MATCH IMAGE": { width: 0, height: 0 },    // 0 means use the current screen size
-} as const;
-
+export declare const STANDARD_PAGE_SIZES: {
+    readonly A0: {
+        readonly width: 3179.52;
+        readonly height: 4494.96;
+    };
+    readonly A1: {
+        readonly width: 2245.76;
+        readonly height: 3179.52;
+    };
+    readonly A2: {
+        readonly width: 1587.76;
+        readonly height: 2245.76;
+    };
+    readonly A3: {
+        readonly width: 1122.56;
+        readonly height: 1587.76;
+    };
+    readonly A4: {
+        readonly width: 794.56;
+        readonly height: 1122.56;
+    };
+    readonly A5: {
+        readonly width: 559.37;
+        readonly height: 794.56;
+    };
+    readonly A6: {
+        readonly width: 397.28;
+        readonly height: 559.37;
+    };
+    readonly Legal: {
+        readonly width: 816;
+        readonly height: 1344;
+    };
+    readonly Letter: {
+        readonly width: 816;
+        readonly height: 1056;
+    };
+    readonly Tabloid: {
+        readonly width: 1056;
+        readonly height: 1632;
+    };
+    readonly Ledger: {
+        readonly width: 1632;
+        readonly height: 1056;
+    };
+    readonly "HD Screen": {
+        readonly width: 1920;
+        readonly height: 1080;
+    };
+    readonly "MATCH IMAGE": {
+        readonly width: 0;
+        readonly height: 0;
+    };
+};
 export type PageSize = keyof typeof STANDARD_PAGE_SIZES;
-
 export interface ExportSettings {
-  withBackground: boolean;
-  withTheme: boolean;
-  isMask: boolean;
-  frameRendering?: FrameRenderingOptions; //optional, overrides relevant appState settings for rendering the frame
-  skipInliningFonts?: boolean;
+    withBackground: boolean;
+    withTheme: boolean;
+    isMask: boolean;
+    frameRendering?: FrameRenderingOptions;
+    skipInliningFonts?: boolean;
 }
 
 /* ************************************** */
 /* lib/types/embeddedFileLoaderTypes.d.ts */
 /* ************************************** */
-export const IMAGE_MIME_TYPES = {
-  svg: "image/svg+xml",
-  png: "image/png",
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  gif: "image/gif",
-  webp: "image/webp",
-  bmp: "image/bmp",
-  ico: "image/x-icon",
-  avif: "image/avif",
-  jfif: "image/jfif",
-} as const;
-
+export declare const IMAGE_MIME_TYPES: {
+    readonly svg: "image/svg+xml";
+    readonly png: "image/png";
+    readonly jpg: "image/jpeg";
+    readonly jpeg: "image/jpeg";
+    readonly gif: "image/gif";
+    readonly webp: "image/webp";
+    readonly bmp: "image/bmp";
+    readonly ico: "image/x-icon";
+    readonly avif: "image/avif";
+    readonly jfif: "image/jfif";
+};
 export type ImgData = {
-  mimeType: MimeType;
-  fileId: FileId;
-  dataURL: DataURL;
-  created: number;
-  hasSVGwithBitmap: boolean;
-  size: Size;
-  pdfPageViewProps?: PDFPageViewProps;
+    mimeType: MimeType;
+    fileId: FileId;
+    dataURL: DataURL;
+    created: number;
+    hasSVGwithBitmap: boolean;
+    size: Size;
+    pdfPageViewProps?: PDFPageViewProps;
 };
-
 export declare type MimeType = ValueOf<typeof IMAGE_MIME_TYPES> | "application/octet-stream";
-
 export type FileData = BinaryFileData & {
-  size: Size;
-  hasSVGwithBitmap: boolean;
-  shouldScale: boolean; //true if image should maintain its area, false if image should display at 100% its size
-  pdfPageViewProps?: PDFPageViewProps;
+    size: Size;
+    hasSVGwithBitmap: boolean;
+    shouldScale: boolean;
+    pdfPageViewProps?: PDFPageViewProps;
 };
-
 export type PDFPageViewProps = {
-  left: number;
-  bottom: number;
-  right: number;
-  top: number;
-  rotate?: number; //may be undefined in legacy files
+    left: number;
+    bottom: number;
+    right: number;
+    top: number;
+    rotate?: number;
+};
+export type Size = {
+    height: number;
+    width: number;
+};
+export interface ColorMap {
+    [color: string]: string;
 }
 
-export type Size = {
-  height: number;
-  width: number;
-};
-
-export interface ColorMap {
-  [color: string]: string;
-};
-
-/* ************************** */
+/* ******************************** */
 /* lib/types/AIUtilTypes.d.ts */
-/* ************************** */
-
-type MessageContent =
-  | string
-  | (string | { type: "image_url"; image_url: string })[];
-
+/* ******************************** */
+type MessageContent = string | (string | {
+    type: "image_url";
+    image_url: string;
+})[];
 export type GPTCompletionRequest = {
-  model: string;
-  messages?: {
-    role?: "system" | "user" | "assistant" | "function";
-    content?: MessageContent;
-    name?: string | undefined;
-  }[];
-  functions?: any[] | undefined;
-  function_call?: any | undefined;
-  stream?: boolean | undefined;
-  temperature?: number | undefined;
-  top_p?: number | undefined;
-  max_tokens?: number | undefined;
-  n?: number | undefined;
-  best_of?: number | undefined;
-  frequency_penalty?: number | undefined;
-  presence_penalty?: number | undefined;
-  logit_bias?:
-    | {
+    model: string;
+    messages?: {
+        role?: "system" | "user" | "assistant" | "function";
+        content?: MessageContent;
+        name?: string | undefined;
+    }[];
+    functions?: any[] | undefined;
+    function_call?: any | undefined;
+    stream?: boolean | undefined;
+    temperature?: number | undefined;
+    top_p?: number | undefined;
+    max_tokens?: number | undefined;
+    n?: number | undefined;
+    best_of?: number | undefined;
+    frequency_penalty?: number | undefined;
+    presence_penalty?: number | undefined;
+    logit_bias?: {
         [x: string]: number;
-      }
-    | undefined;
-  stop?: (string[] | string) | undefined;
-  size?: string;
-  quality?: "standard" | "hd";
-  prompt?: string;
-  image?: string;
-  mask?: string;
+    } | undefined;
+    stop?: (string[] | string) | undefined;
+    size?: string;
+    quality?: "standard" | "hd";
+    prompt?: string;
+    image?: string;
+    mask?: string;
 };
-
 export type AIRequest = {
-  image?: string;
-  text?: string;
-  instruction?: string;
-  systemPrompt?: string;
-  imageGenerationProperties?: {
-    size?: string; //depends on model
-    quality?: "standard" | "hd"; //depends on model
-    n?: number; //dall-e-3 only accepts 1
-    mask?: string; //dall-e-2 only (image editing)
-  };
+    image?: string;
+    text?: string;
+    instruction?: string;
+    systemPrompt?: string;
+    imageGenerationProperties?: {
+        size?: string;
+        quality?: "standard" | "hd";
+        n?: number;
+        mask?: string;
+    };
 };
 
-/* *************************************************************** */
+/* ************************************** */
 /* node_modules/@zsviczian/excalidraw/types/element/src/types.d.ts */
-/* *************************************************************** */
+/* ************************************** */
 export type ChartType = "bar" | "line";
 export type FillStyle = "hachure" | "cross-hatch" | "solid" | "zigzag";
 export type FontFamilyKeys = keyof typeof FONT_FAMILY;
@@ -1912,11 +1942,10 @@ export type ExcalidrawLinearElementSubType = "line" | "sharpArrow" | "curvedArro
 export type ConvertibleGenericTypes = "rectangle" | "diamond" | "ellipse";
 export type ConvertibleLinearTypes = ExcalidrawLinearElementSubType;
 export type ConvertibleTypes = ConvertibleGenericTypes | ConvertibleLinearTypes;
-export {};
 
-/* ************************************************************** */
+/* ************************************** */
 /* node_modules/@zsviczian/excalidraw/types/excalidraw/types.d.ts */
-/* ************************************************************** */
+/* ************************************** */
 export type SocketId = string & {
     _brand: "SocketId";
 };
@@ -2688,6 +2717,5 @@ export type Offsets = Partial<{
     bottom: number;
     left: number;
 }>;
-export {};
 
 ```

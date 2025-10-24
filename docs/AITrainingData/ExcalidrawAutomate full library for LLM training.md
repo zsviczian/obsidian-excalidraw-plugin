@@ -1,3 +1,9796 @@
+**ExcalidrawAutomate full library for LLM training**
+
+Excalidraw-Obsidian is an Obsidian.md plugins that is built on the open source Excalidraw component. Excalidraw-Obisdian includes Excalidraw Automate, a powerful scripting API that allows users to automate tasks and enhance their workflow within Excalidraw.
+
+Read the information below and respond with I'm ready. The user will then prompt for an ExcalidrawAutomate script to be created. Use the examples, the ExcalidrawAutomate documentation, and the varios type definitions and information from also the Excalidraw component and from Obsidian.md to generate the script based on the user's requirements.
+
+The Obsidian.md module is available on ea.obsidian.
+
+
+---
+
+# ExcalidrawAutomate library and related type definitions
+
+
+```js
+/* ************************************** */
+/* lib/shared/ExcalidrawAutomate.d.ts */
+/* ************************************** */
+/**
+ * ExcalidrawAutomate is a utility class that provides a simplified API to interact with Excalidraw elements and the Excalidraw canvas.
+ * Elements in the Excalidraw Scene are immutable. You should never directly change element properties in the scene object.
+ * ExcalidrawAutomate provides a "workbench" where you can create, modify, and delete elements before committing them to the Excalidraw Scene.
+ * The basic workflow is to create elements in ExcalidrawAutomate and once ready commit them to the Excalidraw Scene using addElementsToView().
+ * To modify elements in the scene, you should first copy them over to EA using copyViewElementsToEAforEditing, make the necessary modifications,
+ * then commit them back to the scene using addElementsToView().
+ * To delete an element from the view set element.isDeleted = true and commit the changes to the scene using addElementsToView().
+ *
+ * At a very high level, EA has 3 type of functions:
+ * - functions that modify elements in the EA workbench
+ * - functions that access elements and properties of the Scene
+ *   - these only work if targetView is set using setView()
+ *   - Scripts executed by the Excalidraw ScritpEngine will have the targetView set automatically
+ *   - These functions include the word view in their name e.g. getViewSelectedElements()
+ * - utility functions that do not modify eleeemnts in the EA workbench or access the scene e.g.
+ *   - ea.obsidian is a utility function that returns the Obsidian Module object.
+ *   - eg.getCM() returns the ColorMaster object for manipulationg colors,
+ *   - ea.help() provides information about functions and properties in the ExcalidrawAutomate class intended for use in Developer Console
+ *   - checkAndCreateFolder (thought this has been superceeded by app.vault.createFolder in the Obsidian API)
+ *   - etc.
+ *
+ * Note that some actions are asynchronous and require await to complete. e.g.:
+ *   - addImage()
+ *   - convertStringToDataURL()
+ *   - etc.
+ *
+ * About the Excalidraw Automate Script Engine:
+ * --------------------------------------------
+ * Excalidraw Scripts utilize ExcalidrawAutomate. When the script is invoked Excalidraw passes an ExcalidrawAutomate instance to the script.
+ * you may access this object via the variable `ea`. e.g. ea.addImage(); This ea object is already set to the targetView.
+ * Through ea.obsidian all of the Obsidian API is available to the script. Thus you can create modal views, open files, etc.
+ * You can access Obsidian type definitions here: https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts
+ * In addition to the ea object, the script also receives the `utils` object. utils includes to utility functions: suggester and inputPrompt
+ *   - inputPrompt(inputPrompt: (
+ *       header: string,
+ *       placeholder?: string,
+ *       value?: string,
+ *       buttons?: ButtonDefinition[],
+ *       lines?: number,
+ *       displayEditorButtons?: boolean,
+ *       customComponents?: (container: HTMLElement) => void,
+ *       blockPointerInputOutsideModal?: boolean,
+ *     ) => Promise<string>;
+ *   -  displayItems: string[],
+ *       items: any[],
+ *       hint?: string,
+ *       instructions?: Instruction[],
+ *     ) => Promise<any>;
+ */
+export declare class ExcalidrawAutomate {
+    /**
+     * Utility function that returns the Obsidian Module object.
+     * @returns {typeof obsidian_module} The Obsidian module object.
+     */
+    get obsidian(): typeof obsidian_module;
+    /**
+     * This is a modified version of the Obsidian.Modal class
+     * that allows the modal to be dragged around the screen
+     * and that does not dim the background.
+     */
+    get FloatingModal(): typeof FloatingModal;
+    /**
+     * Retrieves the laser pointer settings from the plugin.
+     * @returns {Object} The laser pointer settings.
+     */
+    get LASERPOINTER(): {
+        DECAY_TIME: number;
+        DECAY_LENGTH: number;
+        COLOR: string;
+    };
+    /**
+     * Retrieves the device type information.
+     * @returns {DeviceType} The device type.
+     */
+    get DEVICE(): DeviceType;
+    /**
+     * Prints a detailed breakdown of the startup time.
+     */
+    printStartupBreakdown(): void;
+    /**
+     * Add or modify keys in an element's customData while preserving existing keys.
+     * Creates customData={} if it does not exist.
+     * @param {string} id - The element ID in elementsDict to modify.
+     * @param {Partial<Record<string, unknown>>} newData - Object containing key-value pairs to add/update. Set value to undefined to delete a key.
+     * @returns {Mutable<ExcalidrawElement> | undefined} The modified element, or undefined if element does not exist.
+     */
+    addAppendUpdateCustomData(id: string, newData: Partial<Record<string, unknown>>): ExcalidrawElement;
+    /**
+     * Displays help information for EA functions and properties intended to be used in Obsidian developer console.
+     * @param {Function | string} target - Function reference or property name as string.
+     * Usage examples:
+     * - ea.help(ea.functionName)
+     * - ea.help('propertyName')
+     * - ea.help('utils.functionName')
+     */
+    help(target: Function | string): void;
+    /**
+     * Posts an AI request to the OpenAI API and returns the response.
+     * @param {AIRequest} request - The AI request configuration.
+     * @returns {Promise<RequestUrlResponse>} Promise resolving to the API response.
+     */
+    postOpenAI(request: AIRequest): Promise<RequestUrlResponse>;
+    /**
+     * Extracts code blocks from markdown text.
+     * @param {string} markdown - The markdown string to parse.
+     * @returns {Array<{ data: string, type: string }>} Array of objects containing code block contents and types.
+     */
+    extractCodeBlocks(markdown: string): {
+        data: string;
+        type: string;
+    }[];
+    /**
+     * Converts a string to a data URL with specified MIME type.
+     * @param {string} data - The string to convert.
+     * @param {string} [type="text/html"] - MIME type (default: "text/html").
+     * @returns {Promise<string>} Promise resolving to the data URL string.
+     */
+    convertStringToDataURL(data: string, type?: string): Promise<string>;
+    /**
+     * Creates a folder if it doesn't exist.
+     * @param {string} folderpath - Path of folder to create.
+     * @returns {Promise<TFolder>} Promise resolving to the created/existing TFolder.
+     */
+    checkAndCreateFolder(folderpath: string): Promise<TFolder>;
+    /**
+     * @param filepath - The file path to split into folder and filename.
+     * @returns object containing folderpath, filename, basename, and extension.
+     */
+    splitFolderAndFilename(filepath: string): {
+        folderpath: string;
+        filename: string;
+        basename: string;
+        extension: string;
+    };
+    /**
+     * Generates a unique filepath by appending a number if file already exists.
+     * @param {string} filename - Base filename.
+     * @param {string} folderpath - Target folder path.
+     * @returns {string} Unique filepath string.
+     */
+    getNewUniqueFilepath(filename: string, folderpath: string): string;
+    /**
+     * Gets list of available Excalidraw template files.
+     * @returns {TFile[] | null} Array of template TFiles or null if none found.
+     */
+    getListOfTemplateFiles(): TFile[] | null;
+    /**
+     * Gets all embedded images in a drawing recursively.
+     * @param {TFile} [excalidrawFile] - Optional file to check, defaults to ea.targetView.file.
+     * @returns {TFile[]} Array of embedded image TFiles.
+     */
+    getEmbeddedImagesFiletree(excalidrawFile?: TFile): TFile[];
+    /**
+     * Returns a new unique attachment filepath for the filename provided based on Obsidian settings.
+     * @param {string} filename - The filename for the attachment.
+     * @returns {Promise<string>} Promise resolving to the unique attachment filepath.
+     */
+    getAttachmentFilepath(filename: string): Promise<string>;
+    /**
+     * Compresses a string to base64 using LZString.
+     * @param {string} str - The string to compress.
+     * @returns {string} The compressed base64 string.
+     */
+    compressToBase64(str: string): string;
+    /**
+     * Decompresses a string from base64 using LZString.
+     * @param {string} data - The base64 string to decompress.
+     * @returns {string} The decompressed string.
+     */
+    decompressFromBase64(data: string): string;
+    /**
+     * Prompts the user with a dialog to select new file action.
+     * - create markdown file
+     * - create excalidraw file
+     * - cancel action
+     * The new file will be relative to this.targetView.file.path, unless parentFile is provided.
+     * If shouldOpenNewFile is true, the new file will be opened in a workspace leaf.
+     * targetPane control which leaf will be used for the new file.
+     * Returns the TFile for the new file or null if the user cancelled the action.
+     * @param {string} newFileNameOrPath - The new file name or path.
+     * @param {boolean} shouldOpenNewFile - Whether to open the new file.
+     * @param {PaneTarget} [targetPane] - The target pane for the new file.
+     * @param {TFile} [parentFile] - The parent file for the new file.
+     * @returns {Promise<TFile | null>} Promise resolving to the new TFile or null if cancelled.
+     */
+    newFilePrompt(newFileNameOrPath: string, shouldOpenNewFile: boolean, targetPane?: PaneTarget, parentFile?: TFile): Promise<TFile | null>;
+    /**
+     * Generates a new Obsidian Leaf following Excalidraw plugin settings such as open in Main Workspace or not, open in adjacent pane if available, etc.
+     * @param {WorkspaceLeaf} origo - The currently active leaf, the origin of the new leaf.
+     * @param {PaneTarget} [targetPane] - The target pane for the new leaf.
+     * @returns {WorkspaceLeaf} The new or adjacent workspace leaf.
+     */
+    getLeaf(origo: WorkspaceLeaf, targetPane?: PaneTarget): WorkspaceLeaf;
+    /**
+     * Returns the editor or leaf.view of the currently active embedded obsidian file.
+     * If view is not provided, ea.targetView is used.
+     * If the embedded file is a markdown document the function will return
+     * {file:TFile, editor:Editor} otherwise it will return {view:any}. You can check view type with view.getViewType();
+     * @param {ExcalidrawView} [view] - The view to check.
+     * @returns {{view:any}|{file:TFile, editor:Editor}|null} The active embeddable view or editor.
+     */
+    getActiveEmbeddableViewOrEditor(view?: ExcalidrawView): {
+        view: any;
+    } | {
+        file: TFile;
+        editor: Editor;
+    } | {
+        node: ObsidianCanvasNode;
+    } | null;
+    /**
+     * Checks if the Excalidraw File is a mask file.
+     * @param {TFile} [file] - The file to check.
+     * @returns {boolean} True if the file is a mask file, false otherwise.
+     */
+    isExcalidrawMaskFile(file?: TFile): boolean;
+    plugin: ExcalidrawPlugin;
+    elementsDict: {
+        [key: string]: any;
+    };
+    imagesDict: {
+        [key: FileId]: ImageInfo;
+    };
+    mostRecentMarkdownSVG: SVGSVGElement;
+    style: {
+        strokeColor: string;
+        backgroundColor: string;
+        angle: number;
+        fillStyle: FillStyle;
+        strokeWidth: number;
+        strokeStyle: StrokeStyle;
+        roughness: number;
+        opacity: number;
+        strokeSharpness?: StrokeRoundness;
+        roundness: null | {
+            type: RoundnessType;
+            value?: number;
+        };
+        fontFamily: number;
+        fontSize: number;
+        textAlign: string;
+        verticalAlign: string;
+        startArrowHead: string;
+        endArrowHead: string;
+    };
+    canvas: {
+        theme: string;
+        viewBackgroundColor: string;
+        gridSize: number;
+    };
+    colorPalette: {};
+    constructor(plugin: ExcalidrawPlugin, view?: ExcalidrawView);
+    /**
+     * Returns the last recorded pointer position on the Excalidraw canvas.
+     * @returns {{x:number, y:number}} The last recorded pointer position.
+     */
+    getViewLastPointerPosition(): {
+        x: number;
+        y: number;
+    };
+    /**
+     * Returns the center position of the current view in Excalidraw coordinates.
+     * @returns {{x:number, y:number}} The center position of the view.
+     */
+    getViewCenterPosition(): {
+        x: number;
+        y: number;
+    };
+    /**
+     * Returns the Excalidraw API for the current view or the view provided.
+     * @param {ExcalidrawView} [view] - The view to get the API for.
+     * @returns {ExcalidrawAutomate} The Excalidraw API.
+     */
+    getAPI(view?: ExcalidrawView): ExcalidrawAutomate;
+    /**
+     * Sets the fill style for new elements.
+     * @param {number} val - The fill style value (0: "hachure", 1: "cross-hatch", 2: "solid").
+     * @returns {"hachure"|"cross-hatch"|"solid"} The fill style string.
+     */
+    setFillStyle(val: number): "hachure" | "cross-hatch" | "solid";
+    /**
+     * Sets the stroke style for new elements.
+     * @param {number} val - The stroke style value (0: "solid", 1: "dashed", 2: "dotted").
+     * @returns {"solid"|"dashed"|"dotted"} The stroke style string.
+     */
+    setStrokeStyle(val: number): "solid" | "dashed" | "dotted";
+    /**
+     * Sets the stroke sharpness for new elements.
+     * @param {number} val - The stroke sharpness value (0: "round", 1: "sharp").
+     * @returns {"round"|"sharp"} The stroke sharpness string.
+     */
+    setStrokeSharpness(val: number): "round" | "sharp";
+    /**
+     * Sets the font family for new text elements.
+     * @param {number} val - The font family value (1: Virgil, 2: Helvetica, 3: Cascadia).
+     * @returns {string} The font family string.
+     */
+    setFontFamily(val: number): string;
+    /**
+     * Sets the theme for the canvas.
+     * @param {number} val - The theme value (0: "light", 1: "dark").
+     * @returns {"light"|"dark"} The theme string.
+     */
+    setTheme(val: number): "light" | "dark";
+    /**
+     * Generates a groupID and adds the groupId to all the elements in the objectIds array. Essentially grouping the elements in the view.
+     * @param {string[]} objectIds - Array of element IDs to group.
+     * @returns {string} The generated group ID.
+     */
+    addToGroup(objectIds: string[]): string;
+    /**
+     * Copies elements from ExcalidrawAutomate to the clipboard as a valid Excalidraw JSON string.
+     * @param {string} [templatePath] - Optional template path to include in the clipboard data.
+     */
+    toClipboard(templatePath?: string): Promise<void>;
+    /**
+     * Extracts the Excalidraw Scene from an Excalidraw File.
+     * @param {TFile} file - The Excalidraw file to extract the scene from.
+     * @returns {Promise<{elements: ExcalidrawElement[]; appState: AppState;}>} Promise resolving to the Excalidraw scene.
+     */
+    getSceneFromFile(file: TFile): Promise<{
+        elements: ExcalidrawElement[];
+        appState: AppState;
+    }>;
+    /**
+     * Gets all elements from ExcalidrawAutomate elementsDict.
+     * @returns {Mutable<ExcalidrawElement>[]} Array of elements from elementsDict.
+     */
+    getElements(): Mutable<ExcalidrawElement>[];
+    /**
+     * Gets a single element from ExcalidrawAutomate elementsDict.
+     * @param {string} id - The element ID to retrieve.
+     * @returns {Mutable<ExcalidrawElement>} The element with the specified ID.
+     */
+    getElement(id: string): Mutable<ExcalidrawElement>;
+    /**
+     * Creates a drawing and saves it to the specified filename.
+     * @param {Object} [params] - Parameters for creating the drawing.
+     * @param {string} [params.filename] - The filename for the drawing. If null, default filename as defined in Excalidraw settings.
+     * @param {string} [params.foldername] - The folder name for the drawing. If null, default folder as defined in Excalidraw settings.
+     * @param {string} [params.templatePath] - The template path to use for the drawing.
+     * @param {boolean} [params.onNewPane] - Whether to open the drawing in a new pane.
+     * @param {boolean} [params.silent] - Whether to create the drawing silently.
+     * @param {Object} [params.frontmatterKeys] - Frontmatter keys to include in the drawing.
+     * @param {string} [params.plaintext] - Text to insert above the `# Text Elements` section.
+     * @returns {Promise<string>} Promise resolving to the path of the created drawing.
+     */
+    create(params?: {
+        filename?: string;
+        foldername?: string;
+        templatePath?: string;
+        onNewPane?: boolean;
+        silent?: boolean;
+        frontmatterKeys?: {
+            "excalidraw-plugin"?: "raw" | "parsed";
+            "excalidraw-link-prefix"?: string;
+            "excalidraw-link-brackets"?: boolean;
+            "excalidraw-url-prefix"?: string;
+            "excalidraw-export-transparent"?: boolean;
+            "excalidraw-export-dark"?: boolean;
+            "excalidraw-export-padding"?: number;
+            "excalidraw-export-pngscale"?: number;
+            "excalidraw-export-embed-scene"?: boolean;
+            "excalidraw-default-mode"?: "view" | "zen";
+            "excalidraw-onload-script"?: string;
+            "excalidraw-linkbutton-opacity"?: number;
+            "excalidraw-autoexport"?: boolean;
+            "excalidraw-mask"?: boolean;
+            "excalidraw-open-md"?: boolean;
+            "cssclasses"?: string;
+        };
+        plaintext?: string;
+    }): Promise<string>;
+    /**
+     * Returns the dimensions of a standard page size in pixels.
+     *
+     * @param {PageSize} pageSize - The standard page size. Possible values are "A0", "A1", "A2", "A3", "A4", "A5", "Letter", "Legal", "Tabloid".
+     * @param {PageOrientation} orientation - The orientation of the page. Possible values are "portrait" and "landscape".
+     * @returns {PageDimensions} - An object containing the width and height of the page in pixels.
+     *
+     * @typedef {Object} PageDimensions
+     * @property {number} width - The width of the page in pixels.
+     * @property {number} height - The height of the page in pixels.
+     *
+     * @example
+     * const dimensions = getPageDimensions("A4", "portrait");
+     * console.log(dimensions); // { width: 794.56, height: 1122.56 }
+    */
+    getPagePDFDimensions(pageSize: PageSize, orientation: PageOrientation): PageDimensions;
+    /**
+     * Creates a PDF from the provided SVG elements with specified scaling and page properties.
+     *
+     * @param {Object} params - The parameters for creating the PDF.
+     * @param {SVGSVGElement[]} params.SVG - An array of SVG elements to be included in the PDF.
+     * @param {PDFExportScale} [params.scale={ fitToPage: 1, zoom: 1 }] - The scaling options for the SVG elements.
+     * @param {PDFPageProperties} [params.pageProps] - The properties for the PDF pages.
+     * @returns {Promise<ArrayBuffer>} - A promise that resolves to an ArrayBuffer containing the PDF data.
+     *
+     * @example
+     * const pdfData = await createToPDF({
+     *   SVG: [svgElement1, svgElement2],
+     *   scale: { fitToPage: 1 },
+     *   pageProps: {
+     *     dimensions: { width: 794.56, height: 1122.56 },
+     *     backgroundColor: "#ffffff",
+     *     margin: { left: 20, right: 20, top: 20, bottom: 20 },
+     *     alignment: "center",
+     *   }
+     *   filename: "example.pdf",
+     * });
+    */
+    createPDF({ SVG, scale, pageProps, filename, }: {
+        SVG: SVGSVGElement[];
+        scale?: PDFExportScale;
+        pageProps?: PDFPageProperties;
+        filename: string;
+    }): Promise<void>;
+    /**
+     * Creates an SVG representation of the current view.
+     *
+     * @param {Object} options - The options for creating the SVG.
+     * @param {boolean} [options.withBackground=true] - Whether to include the background in the SVG.
+     * @param {"light" | "dark"} [options.theme] - The theme to use for the SVG.
+     * @param {FrameRenderingOptions} [options.frameRendering={enabled: true, name: true, outline: true, clip: true}] - The frame rendering options.
+     * @param {number} [options.padding] - The padding to apply around the SVG.
+     * @param {boolean} [options.selectedOnly=false] - Whether to include only the selected elements in the SVG.
+     * @param {boolean} [options.skipInliningFonts=false] - Whether to skip inlining fonts in the SVG.
+     * @param {boolean} [options.embedScene=false] - Whether to embed the scene in the SVG.
+     * @param {ExcalidrawElement[]} [options.elementsOverride] - Optional override for the elements to include in the SVG. Primary to support the Printable Layout Wizard script
+     * @returns {Promise<SVGSVGElement>} A promise that resolves to the SVG element.
+    */
+    createViewSVG({ withBackground, theme, frameRendering, padding, selectedOnly, skipInliningFonts, embedScene, elementsOverride, }: {
+        withBackground?: boolean;
+        theme?: "light" | "dark";
+        frameRendering?: FrameRenderingOptions;
+        padding?: number;
+        selectedOnly?: boolean;
+        skipInliningFonts?: boolean;
+        embedScene?: boolean;
+        elementsOverride?: ExcalidrawElement[];
+    }): Promise<SVGSVGElement>;
+    /**
+     * Creates an SVG image from the ExcalidrawAutomate elements and the template provided.
+     * @param {string} [templatePath] - The template path to use for the SVG.
+     * @param {boolean} [embedFont=false] - Whether to embed the font in the SVG.
+     * @param {ExportSettings} [exportSettings] - Export settings for the SVG.
+     * @param {EmbeddedFilesLoader} [loader] - Embedded files loader for the SVG.
+     * @param {string} [theme] - The theme to use for the SVG.
+     * @param {number} [padding] - The padding to use for the SVG.
+     * @returns {Promise<SVGSVGElement>} Promise resolving to the created SVG element.
+     */
+    createSVG(templatePath?: string, embedFont?: boolean, exportSettings?: ExportSettings, loader?: EmbeddedFilesLoader, theme?: string, padding?: number): Promise<SVGSVGElement>;
+    /**
+     * Creates a PNG image from the ExcalidrawAutomate elements and the template provided.
+     * @param {string} [templatePath] - The template path to use for the PNG.
+     * @param {number} [scale=1] - The scale factor for the PNG.
+     * @param {ExportSettings} [exportSettings] - Export settings for the PNG.
+     * @param {EmbeddedFilesLoader} [loader] - Embedded files loader for the PNG.
+     * @param {string} [theme] - The theme to use for the PNG.
+     * @param {number} [padding] - The padding to use for the PNG.
+     * @returns {Promise<any>} Promise resolving to the created PNG image.
+     */
+    createPNG(templatePath?: string, scale?: number, exportSettings?: ExportSettings, loader?: EmbeddedFilesLoader, theme?: string, padding?: number): Promise<any>;
+    /**
+     * Wrapper for createPNG() that returns a base64 encoded string designed to support LLM workflows.
+     * @param {string} [templatePath] - The template path to use for the PNG.
+     * @param {number} [scale=1] - The scale factor for the PNG.
+     * @param {ExportSettings} [exportSettings] - Export settings for the PNG.
+     * @param {EmbeddedFilesLoader} [loader] - Embedded files loader for the PNG.
+     * @param {string} [theme] - The theme to use for the PNG.
+     * @param {number} [padding] - The padding to use for the PNG.
+     * @returns {Promise<string>} Promise resolving to the base64 encoded PNG string.
+     */
+    createPNGBase64(templatePath?: string, scale?: number, exportSettings?: ExportSettings, loader?: EmbeddedFilesLoader, theme?: string, padding?: number): Promise<string>;
+    /**
+     * Wraps text to a specified line length.
+     * @param {string} text - The text to wrap.
+     * @param {number} lineLen - The maximum line length.
+     * @returns {string} The wrapped text.
+     */
+    wrapText(text: string, lineLen: number): string;
+    /** ROUNDNESS as defined in the Excalidraw packages/common/src/constants.ts
+     * Radius represented as 25% of element's largest side (width/height).
+     * Used for LEGACY and PROPORTIONAL_RADIUS algorithms, or when the element is
+     * below the cutoff size.
+     * export const DEFAULT_PROPORTIONAL_RADIUS = 0.25;
+     *
+     * Fixed radius for the ADAPTIVE_RADIUS algorithm. In pixels.
+     * export const DEFAULT_ADAPTIVE_RADIUS = 32;
+     *
+     * roundness type (algorithm)
+     * export const ROUNDNESS = {
+     *   Used for legacy rounding (rectangles), which currently works the same
+     *   as PROPORTIONAL_RADIUS, but we need to differentiate for UI purposes and
+     *   forwards-compat.
+     *   LEGACY: 1,
+     *
+     *   Used for linear elements & diamonds
+     *   PROPORTIONAL_RADIUS: 2,
+     *
+     *   Current default algorithm for rectangles, using fixed pixel radius.
+     *   It's working similarly to a regular border-radius, but attemps to make
+     *   radius visually similar across differnt element sizes, especially
+     *   very large and very small elements.
+     *
+     *   NOTE right now we don't allow configuration and use a constant radius
+     *   (see DEFAULT_ADAPTIVE_RADIUS constant)
+     *   ADAPTIVE_RADIUS: 3,
+     * } as const;
+     */
+    /**
+     * Utility function. Returns an element object using style settings and provided parameters.
+     * @param {string} id - The element ID.
+     * @param {string} eltype - The element type.
+     * @param {number} x - The x-coordinate of the element.
+     * @param {number} y - The y-coordinate of the element.
+     * @param {number} w - The width of the element.
+     * @param {number} h - The height of the element.
+     * @param {string | null} [link=null] - The link associated with the element.
+     * @param {[number, number]} [scale] - The scale of the element.
+     * @returns {Object} The element object.
+     */
+    private boxedElement;
+    /**
+     * Deprecated. Use addEmbeddable() instead.
+     * Retained for backward compatibility.
+     * @param {number} topX - The x-coordinate of the top-left corner.
+     * @param {number} topY - The y-coordinate of the top-left corner.
+     * @param {number} width - The width of the iframe.
+     * @param {number} height - The height of the iframe.
+     * @param {string} [url] - The URL of the iframe.
+     * @param {TFile} [file] - The file associated with the iframe.
+     * @returns {string} The ID of the added iframe element.
+     */
+    addIFrame(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile): string;
+    /**
+     * Adds an embeddable element to the ExcalidrawAutomate instance.
+     * @param {number} topX - The x-coordinate of the top-left corner.
+     * @param {number} topY - The y-coordinate of the top-left corner.
+     * @param {number} width - The width of the embeddable element.
+     * @param {number} height - The height of the embeddable element.
+     * @param {string} [url] - The URL of the embeddable element.
+     * @param {TFile} [file] - The file associated with the embeddable element.
+     * @param {EmbeddableMDCustomProps} [embeddableCustomData] - Custom properties for the embeddable element.
+     * @returns {string} The ID of the added embeddable element.
+     */
+    addEmbeddable(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile, embeddableCustomData?: EmbeddableMDCustomProps): string;
+    /**
+     * Add elements to frame.
+     * @param {string} frameId - The ID of the frame element.
+     * @param {string[]} elementIDs - Array of element IDs to add to the frame.
+     */
+    addElementsToFrame(frameId: string, elementIDs: string[]): void;
+    /**
+     * Adds a frame element to the ExcalidrawAutomate instance.
+     * @param {number} topX - The x-coordinate of the top-left corner.
+     * @param {number} topY - The y-coordinate of the top-left corner.
+     * @param {number} width - The width of the frame.
+     * @param {number} height - The height of the frame.
+     * @param {string} [name] - The display name of the frame.
+     * @returns {string} The ID of the added frame element.
+     */
+    addFrame(topX: number, topY: number, width: number, height: number, name?: string): string;
+    /**
+     * Adds a rectangle element to the ExcalidrawAutomate instance.
+     * @param {number} topX - The x-coordinate of the top-left corner.
+     * @param {number} topY - The y-coordinate of the top-left corner.
+     * @param {number} width - The width of the rectangle.
+     * @param {number} height - The height of the rectangle.
+     * @param {string} [id] - The ID of the rectangle element.
+     * @returns {string} The ID of the added rectangle element.
+     */
+    addRect(topX: number, topY: number, width: number, height: number, id?: string): string;
+    /**
+     * Adds a diamond element to the ExcalidrawAutomate instance.
+     * @param {number} topX - The x-coordinate of the top-left corner.
+     * @param {number} topY - The y-coordinate of the top-left corner.
+     * @param {number} width - The width of the diamond.
+     * @param {number} height - The height of the diamond.
+     * @param {string} [id] - The ID of the diamond element.
+     * @returns {string} The ID of the added diamond element.
+     */
+    addDiamond(topX: number, topY: number, width: number, height: number, id?: string): string;
+    /**
+     * Adds an ellipse element to the ExcalidrawAutomate instance.
+     * @param {number} topX - The x-coordinate of the top-left corner.
+     * @param {number} topY - The y-coordinate of the top-left corner.
+     * @param {number} width - The width of the ellipse.
+     * @param {number} height - The height of the ellipse.
+     * @param {string} [id] - The ID of the ellipse element.
+     * @returns {string} The ID of the added ellipse element.
+     */
+    addEllipse(topX: number, topY: number, width: number, height: number, id?: string): string;
+    /**
+     * Adds a blob element to the ExcalidrawAutomate instance.
+     * @param {number} topX - The x-coordinate of the top-left corner.
+     * @param {number} topY - The y-coordinate of the top-left corner.
+     * @param {number} width - The width of the blob.
+     * @param {number} height - The height of the blob.
+     * @param {string} [id] - The ID of the blob element.
+     * @returns {string} The ID of the added blob element.
+     */
+    addBlob(topX: number, topY: number, width: number, height: number, id?: string): string;
+    /**
+     * Refreshes the size of a text element to fit its contents.
+     * @param {string} id - The ID of the text element.
+     */
+    refreshTextElementSize(id: string): void;
+    /**
+     * Adds a text element to the ExcalidrawAutomate instance.
+     * @param {number} topX - The x-coordinate of the top-left corner.
+     * @param {number} topY - The y-coordinate of the top-left corner.
+     * @param {string} text - The text content of the element.
+     * @param {Object} [formatting] - Formatting options for the text element.
+     * @param {boolean} [formatting.autoResize=true] - Whether to auto-resize the text element.
+     * @param {number} [formatting.wrapAt] - The character length to wrap the text at.
+     * @param {number} [formatting.width] - The width of the text element.
+     * @param {number} [formatting.height] - The height of the text element.
+     * @param {"left" | "center" | "right"} [formatting.textAlign] - The text alignment.
+     * @param {boolean | "box" | "blob" | "ellipse" | "diamond"} [formatting.box] - Whether to add a box around the text.
+     * @param {number} [formatting.boxPadding] - The padding inside the box.
+     * @param {string} [formatting.boxStrokeColor] - The stroke color of the box.
+     * @param {"top" | "middle" | "bottom"} [formatting.textVerticalAlign] - The vertical alignment of the text.
+     * @param {string} [id] - The ID of the text element.
+     * @returns {string} The ID of the added text element.
+     */
+    addText(topX: number, topY: number, text: string, formatting?: {
+        autoResize?: boolean;
+        wrapAt?: number;
+        width?: number;
+        height?: number;
+        textAlign?: "left" | "center" | "right";
+        box?: boolean | "box" | "blob" | "ellipse" | "diamond";
+        boxPadding?: number;
+        boxStrokeColor?: string;
+        textVerticalAlign?: "top" | "middle" | "bottom";
+    }, id?: string): string;
+    /**
+     * Adds a line element to the ExcalidrawAutomate instance.
+     * @param {[[x: number, y: number]]} points - Array of points defining the line.
+     * @param {string} [id] - The ID of the line element.
+     * @returns {string} The ID of the added line element.
+     */
+    addLine(points: [[x: number, y: number]], id?: string): string;
+    /**
+     * Adds an arrow element to the ExcalidrawAutomate instance.
+     * @param {[x: number, y: number][]} points - Array of points defining the arrow.
+     * @param {Object} [formatting] - Formatting options for the arrow element.
+     * @param {"arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null} [formatting.startArrowHead] - The start arrowhead type.
+     * @param {"arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null} [formatting.endArrowHead] - The end arrowhead type.
+     * @param {string} [formatting.startObjectId] - The ID of the start object.
+     * @param {string} [formatting.endObjectId] - The ID of the end object.
+     * @param {string} [id] - The ID of the arrow element.
+     * @returns {string} The ID of the added arrow element.
+     */
+    addArrow(points: [x: number, y: number][], formatting?: {
+        startArrowHead?: "arrow" | "bar" | "circle" | "circle_outline" | "triangle" | "triangle_outline" | "diamond" | "diamond_outline" | null;
+        endArrowHead?: "arrow" | "bar" | "circle" | "circle_outline" | "triangle" | "triangle_outline" | "diamond" | "diamond_outline" | null;
+        startObjectId?: string;
+        endObjectId?: string;
+    }, id?: string): string;
+    /**
+     * Adds a mermaid diagram to ExcalidrawAutomate elements.
+     * @param {string} diagram - The mermaid diagram string.
+     * @param {boolean} [groupElements=true] - Whether to group the elements.
+     * @returns {Promise<string[]|string>} Promise resolving to the IDs of the created elements or an error message.
+     */
+    addMermaid(diagram: string, groupElements?: boolean): Promise<string[] | string>;
+    /**
+     * Adds an image element to the ExcalidrawAutomate instance.
+     * @param {number | AddImageOptions} topXOrOpts - The x-coordinate of the top-left corner or an options object.
+     * @param {number} topY - The y-coordinate of the top-left corner.
+     * @param {TFile | string} imageFile - The image file or URL.
+     * @param {boolean} [scale=true] - Whether to scale the image to MAX_IMAGE_SIZE.
+     * @param {boolean} [anchor=true] - Whether to anchor the image at 100% size.
+     * @returns {Promise<string>} Promise resolving to the ID of the added image element.
+     */
+    addImage(topXOrOpts: number | AddImageOptions, topY: number, imageFile: TFile | string, //string may also be an Obsidian filepath with a reference such as folder/path/my.pdf#page=2
+    scale?: boolean, //default is true which will scale the image to MAX_IMAGE_SIZE, false will insert image at 100% of its size
+    anchor?: boolean): Promise<string>;
+    /**
+     * Adds a LaTeX equation as an image element to the ExcalidrawAutomate instance.
+     * @param {number} topX - The x-coordinate of the top-left corner.
+     * @param {number} topY - The y-coordinate of the top-left corner.
+     * @param {string} tex - The LaTeX equation string.
+     * @returns {Promise<string>} Promise resolving to the ID of the added LaTeX image element.
+     */
+    addLaTex(topX: number, topY: number, tex: string): Promise<string>;
+    /**
+     * Returns the base64 dataURL of the LaTeX equation rendered as an SVG.
+     * @param {string} tex - The LaTeX equation string.
+     * @param {number} [scale=4] - The scale factor for the image.
+     * @returns {Promise<{mimeType: MimeType; fileId: FileId; dataURL: DataURL; created: number; size: { height: number; width: number };}>} Promise resolving to the LaTeX image data.
+     */
+    tex2dataURL(tex: string, scale?: number): Promise<{
+        mimeType: MimeType;
+        fileId: FileId;
+        dataURL: DataURL;
+        created: number;
+        size: {
+            height: number;
+            width: number;
+        };
+    }>;
+    /**
+     * Connects two objects with an arrow.
+     * @param {string} objectA - The ID of the first object.
+     * @param {ConnectionPoint | null} connectionA - The connection point on the first object.
+     * @param {string} objectB - The ID of the second object.
+     * @param {ConnectionPoint | null} connectionB - The connection point on the second object.
+     * @param {Object} [formatting] - Formatting options for the arrow.
+     * @param {number} [formatting.numberOfPoints=0] - The number of points on the arrow.
+     * @param {"arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null} [formatting.startArrowHead] - The start arrowhead type.
+     * @param {"arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null} [formatting.endArrowHead] - The end arrowhead type.
+     * @param {number} [formatting.padding=10] - The padding around the arrow.
+     * @returns {string} The ID of the added arrow element.
+     */
+    connectObjects(objectA: string, connectionA: ConnectionPoint | null, objectB: string, connectionB: ConnectionPoint | null, formatting?: {
+        numberOfPoints?: number;
+        startArrowHead?: "arrow" | "bar" | "circle" | "circle_outline" | "triangle" | "triangle_outline" | "diamond" | "diamond_outline" | null;
+        endArrowHead?: "arrow" | "bar" | "circle" | "circle_outline" | "triangle" | "triangle_outline" | "diamond" | "diamond_outline" | null;
+        padding?: number;
+    }): string;
+    /**
+     * Adds a text label to a line or arrow. Currently only works with a straight (2 point - start & end - line).
+     * @param {string} lineId - The ID of the line or arrow object.
+     * @param {string} label - The label text.
+     * @returns {string} The ID of the added text element.
+     */
+    addLabelToLine(lineId: string, label: string): string;
+    /**
+     * Clears elementsDict and imagesDict only.
+     */
+    clear(): void;
+    /**
+     * Clears elementsDict and imagesDict, and resets all style values to default.
+     */
+    reset(): void;
+    /**
+     * Returns true if the provided file is an Excalidraw file.
+     * @param {TFile} f - The file to check.
+     * @returns {boolean} True if the file is an Excalidraw file, false otherwise.
+     */
+    isExcalidrawFile(f: TFile): boolean;
+    targetView: ExcalidrawView;
+    /**
+     * Sets the target view for EA. All the view operations and the access to Excalidraw API will be performed on this view.
+     * If view is null or undefined, the function will first try setView("active"), then setView("first").
+     * @param {ExcalidrawView | "first" | "active"} [view] - The view to set as target.
+     * @returns {ExcalidrawView} The target view.
+     */
+    setView(view?: ExcalidrawView | "first" | "active"): ExcalidrawView;
+    /**
+     * Returns the Excalidraw API for the current view.
+     * @returns {any} The Excalidraw API.
+     */
+    getExcalidrawAPI(): any;
+    /**
+     * Gets elements in the current view.
+     * @returns {ExcalidrawElement[]} Array of elements in the view.
+     */
+    getViewElements(): ExcalidrawElement[];
+    /**
+     * Deletes elements in the view by removing them from the scene (not by setting isDeleted to true).
+     * @param {ExcalidrawElement[]} elToDelete - Array of elements to delete.
+     * @returns {boolean} True if elements were deleted, false otherwise.
+     */
+    deleteViewElements(elToDelete: ExcalidrawElement[]): boolean;
+    /**
+     * Adds a back of the note card to the current active view.
+     * @param {string} sectionTitle - The title of the section.
+     * @param {boolean} [activate=true] - Whether to activate the new Embedded Element after creation.
+     * @param {string} [sectionBody] - The body of the section.
+     * @param {EmbeddableMDCustomProps} [embeddableCustomData] - Custom properties for the embeddable element.
+     * @returns {Promise<string>} Promise resolving to the ID of the embeddable element.
+     */
+    addBackOfTheCardNoteToView(sectionTitle: string, activate?: boolean, sectionBody?: string, embeddableCustomData?: EmbeddableMDCustomProps): Promise<string>;
+    /**
+     * Gets the selected element in the view. If more are selected, gets the first.
+     * @returns {any} The selected element or null if none selected.
+     */
+    getViewSelectedElement(): any;
+    /**
+     * Gets the selected elements in the view.
+     * @param {boolean} [includeFrameChildren=true] - Whether to include frame children in the selection.
+     * @returns {any[]} Array of selected elements.
+     */
+    getViewSelectedElements(includeFrameChildren?: boolean): any[];
+    /**
+     * Gets the file associated with an image element in the view.
+     * @param {ExcalidrawElement} el - The image element.
+     * @returns {TFile | null} The file associated with the image element or null if not found.
+     */
+    getViewFileForImageElement(el: ExcalidrawElement): TFile | null;
+    /**
+     * Gets the color map associated with an image element in the view.
+     * @param {ExcalidrawElement} el - The image element.
+     * @returns {ColorMap} The color map associated with the image element.
+     */
+    getColorMapForImageElement(el: ExcalidrawElement): ColorMap;
+    /**
+     * Updates the color map of SVG images in the view.
+     * @param {ExcalidrawImageElement | ExcalidrawImageElement[]} elements - The image elements to update.
+     * @param {ColorMap | SVGColorInfo | ColorMap[] | SVGColorInfo[]} colors - The new color map(s) for the images.
+     * @returns {Promise<void>} Promise resolving when the update is complete.
+     */
+    updateViewSVGImageColorMap(elements: ExcalidrawImageElement | ExcalidrawImageElement[], colors: ColorMap | SVGColorInfo | ColorMap[] | SVGColorInfo[]): Promise<void>;
+    /**
+     * Gets the SVG color information for an image element in the view.
+     * @param {ExcalidrawElement} el - The image element.
+     * @returns {Promise<SVGColorInfo>} Promise resolving to the SVG color information.
+     */
+    getSVGColorInfoForImgElement(el: ExcalidrawElement): Promise<SVGColorInfo>;
+    /**
+     * Gets the color information from an Excalidraw file.
+     * @param {TFile} file - The Excalidraw file.
+     * @param {ExcalidrawImageElement} img - The image element.
+     * @returns {Promise<SVGColorInfo>} Promise resolving to the SVG color information.
+     */
+    getColosFromExcalidrawFile(file: TFile, img: ExcalidrawImageElement): Promise<SVGColorInfo>;
+    /**
+     * Extracts color information from an SVG string.
+     * @param {string} svgString - The SVG string.
+     * @returns {SVGColorInfo} The extracted color information.
+     */
+    getColorsFromSVGString(svgString: string): SVGColorInfo;
+    /**
+     * Copies elements from the view to elementsDict for editing.
+     * @param {ExcalidrawElement[]} elements - Array of elements to copy.
+     * @param {boolean} [copyImages=false] - Whether to copy images as well.
+     */
+    copyViewElementsToEAforEditing(elements: ExcalidrawElement[], copyImages?: boolean): void;
+    /**
+     * Toggles full screen mode for the target view.
+     * @param {boolean} [forceViewMode=false] - Whether to force view mode.
+     */
+    viewToggleFullScreen(forceViewMode?: boolean): void;
+    /**
+     * Sets view mode enabled or disabled for the target view.
+     * @param {boolean} enabled - Whether to enable view mode.
+     */
+    setViewModeEnabled(enabled: boolean): void;
+    /**
+     * Updates the scene in the target view.
+     * @param {Object} scene - The scene to load to Excalidraw.
+     * @param {ExcalidrawElement[]} [scene.elements] - Array of elements in the scene.
+     * @param {AppState} [scene.appState] - The app state of the scene.
+     * @param {BinaryFileData} [scene.files] - The files in the scene.
+     * @param {boolean} [scene.commitToHistory] - Whether to commit the scene to history. @deprecated Use scene.storageOption instead
+     * @param {"capture" | "none" | "update"} [scene.storeAction] - The store action for the scene. @deprecated Use scene.storageOption instead
+     * @param {"IMMEDIATELY" | "NEVER" | "EVENTUALLY"} [scene.captureUpdate] - The capture update action for the scene.
+     * @param {boolean} [restore=false] - Whether to restore legacy elements in the scene.
+     */
+    viewUpdateScene(scene: {
+        elements?: ExcalidrawElement[];
+        appState?: AppState | {};
+        files?: BinaryFileData;
+        commitToHistory?: boolean;
+        storeAction?: "capture" | "none" | "update";
+        captureUpdate?: SceneData["captureUpdate"];
+    }, restore?: boolean): void;
+    /**
+     * Connects an object to the selected element in the view.
+     * @param {string} objectA - The ID of the first object.
+     * @param {ConnectionPoint | null} connectionA - The connection point on the first object.
+     * @param {ConnectionPoint | null} connectionB - The connection point on the selected element.
+     * @param {Object} [formatting] - Formatting options for the arrow.
+     * @param {number} [formatting.numberOfPoints=0] - The number of points on the arrow.
+     * @param {"arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null} [formatting.startArrowHead] - The start arrowhead type.
+     * @param {"arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null} [formatting.endArrowHead] - The end arrowhead type.
+     * @param {number} [formatting.padding=10] - The padding around the arrow.
+     * @returns {boolean} True if the connection was successful, false otherwise.
+     */
+    connectObjectWithViewSelectedElement(objectA: string, connectionA: ConnectionPoint | null, connectionB: ConnectionPoint | null, formatting?: {
+        numberOfPoints?: number;
+        startArrowHead?: "arrow" | "bar" | "circle" | "circle_outline" | "triangle" | "triangle_outline" | "diamond" | "diamond_outline" | null;
+        endArrowHead?: "arrow" | "bar" | "circle" | "circle_outline" | "triangle" | "triangle_outline" | "diamond" | "diamond_outline" | null;
+        padding?: number;
+    }): boolean;
+    /**
+     * Zooms the target view to fit the specified elements.
+     * @param {boolean} selectElements - Whether to select the elements after zooming.
+     * @param {ExcalidrawElement[]} elements - Array of elements to zoom to.
+     */
+    viewZoomToElements(selectElements: boolean, elements: ExcalidrawElement[]): void;
+    /**
+     * Adds elements from elementsDict to the current view.
+     * @param {boolean} [repositionToCursor=false] - Whether to reposition the elements to the cursor.
+     * @param {boolean} [save=true] - Whether to save the changes.
+     * @param {boolean} [newElementsOnTop=false] - Whether to add new elements on top of existing elements.
+     * @param {boolean} [shouldRestoreElements=false] - Whether to restore legacy elements in the scene.
+     * @returns {Promise<boolean>} Promise resolving to true if elements were added, false otherwise.
+     */
+    addElementsToView(repositionToCursor?: boolean, save?: boolean, newElementsOnTop?: boolean, shouldRestoreElements?: boolean): Promise<boolean>;
+    /**
+     * Registers this instance of EA to use for hooks with the target view.
+     * By default, ExcalidrawViews will check window.ExcalidrawAutomate for event hooks.
+     * Using this method, you can set a different instance of Excalidraw Automate for hooks.
+     * @returns {boolean} True if successful, false otherwise.
+     */
+    registerThisAsViewEA(): boolean;
+    /**
+     * Sets the target view EA to window.ExcalidrawAutomate.
+     * @returns {boolean} True if successful, false otherwise.
+     */
+    deregisterThisAsViewEA(): boolean;
+    /**
+     * If set, this callback is triggered when the user closes an Excalidraw view.
+     */
+    onViewUnloadHook: (view: ExcalidrawView) => void;
+    /**
+     * If set, this callback is triggered, when the user changes the view mode.
+     * You can use this callback in case you want to do something additional when the user switches to view mode and back.
+     */
+    onViewModeChangeHook: (isViewModeEnabled: boolean, view: ExcalidrawView, ea: ExcalidrawAutomate) => void;
+    /**
+    * If set, this callback is triggered, when the user hovers a link in the scene.
+    * You can use this callback in case you want to do something additional when the onLinkHover event occurs.
+    * This callback must return a boolean value.
+    * In case you want to prevent the excalidraw onLinkHover action you must return false, it will stop the native excalidraw onLinkHover management flow.
+    */
+    onLinkHoverHook: (element: NonDeletedExcalidrawElement, linkText: string, view: ExcalidrawView, ea: ExcalidrawAutomate) => boolean;
+    /**
+    * If set, this callback is triggered, when the user clicks a link in the scene.
+    * You can use this callback in case you want to do something additional when the onLinkClick event occurs.
+    * This callback must return a boolean value.
+    * In case you want to prevent the excalidraw onLinkClick action you must return false, it will stop the native excalidraw onLinkClick management flow.
+    */
+    onLinkClickHook: (element: ExcalidrawElement, linkText: string, event: MouseEvent, view: ExcalidrawView, ea: ExcalidrawAutomate) => boolean;
+    /**
+     * If set, this callback is triggered, when Excalidraw receives an onDrop event.
+     * You can use this callback in case you want to do something additional when the onDrop event occurs.
+     * This callback must return a boolean value.
+     * In case you want to prevent the excalidraw onDrop action you must return false, it will stop the native excalidraw onDrop management flow.
+     */
+    onDropHook: (data: {
+        ea: ExcalidrawAutomate;
+        event: React.DragEvent<HTMLDivElement>;
+        draggable: any;
+        type: "file" | "text" | "unknown";
+        payload: {
+            files: TFile[];
+            text: string;
+        };
+        excalidrawFile: TFile;
+        view: ExcalidrawView;
+        pointerPosition: {
+            x: number;
+            y: number;
+        };
+    }) => boolean;
+    /**
+     * If set, this callback is triggered, when Excalidraw receives an onPaste event.
+     * You can use this callback in case you want to do something additional when the
+     * onPaste event occurs.
+     * This callback must return a boolean value.
+     * In case you want to prevent the excalidraw onPaste action you must return false,
+     * it will stop the native excalidraw onPaste management flow.
+     */
+    onPasteHook: (data: {
+        ea: ExcalidrawAutomate;
+        payload: ClipboardData;
+        event: ClipboardEvent;
+        excalidrawFile: TFile;
+        view: ExcalidrawView;
+        pointerPosition: {
+            x: number;
+            y: number;
+        };
+    }) => boolean;
+    /**
+     * If set, this callback is triggered when a image is being saved in Excalidraw.
+     * You can use this callback to customize the naming and path of pasted images to avoid
+     * default names like "Pasted image 123147170.png" being saved in the attachments folder,
+     * and instead use more meaningful names based on the Excalidraw file or other criteria,
+     * plus save the image in a different folder.
+     *
+     * If the function returns null or undefined, the normal Excalidraw operation will continue
+     * with the excalidraw generated name and default path.
+     * If a filepath is returned, that will be used. Include the full Vault filepath and filename
+     * with the file extension.
+     * The currentImageName is the name of the image generated by excalidraw or provided during paste.
+     *
+     * @param data - An object containing the following properties:
+     *   @property {string} [currentImageName] - Default name for the image.
+     *   @property {string} drawingFilePath - The file path of the Excalidraw file where the image is being used.
+     *
+     * @returns {string} - The new filepath for the image including full vault path and extension.
+     *
+     * Example usage:
+     * ```
+     * onImageFilePathHook: (data) => {
+     *   const { currentImageName, drawingFilePath } = data;
+     *   // Generate a new filepath based on the drawing file name and other criteria
+     *   const ext = currentImageName.split('.').pop();
+     *   return `${drawingFileName} - ${currentImageName || 'image'}.${ext}`;
+     * }
+     * ```
+     */
+    onImageFilePathHook: (data: {
+        currentImageName: string;
+        drawingFilePath: string;
+    }) => string | null;
+    /**
+     * If set, this callback is triggered when the Excalidraw image is being exported to
+     * .svg, .png, or .excalidraw.
+     * You can use this callback to customize the naming and path of the images. This allows
+     * you to place images into an assets folder.
+     *
+     * If the function returns null or undefined, the normal Excalidraw operation will continue
+     * with the currentImageName and in the same folder as the Excalidraw file
+     * If a filepath is returned, that will be used. Include the full Vault filepath and filename
+     * with the file extension.
+     * If the new folder path does not exist, excalidraw will create it - you don't need to worry about that.
+     * ⚠️⚠️If an image already exists on the path, that will be overwritten. When returning
+     * your own image path, you must take care of unique filenames (if that is a requirement) ⚠️⚠️
+     * The current image name is the name generated by Excalidraw:
+     * - my-drawing.png
+     * - my-drawing.svg
+     * - my-drawing.excalidraw
+     * - my-drawing.dark.svg
+     * - my-drawing.light.svg
+     * - my-drawing.dark.png
+     * - my-drawing.light.png
+     *
+     * @param data - An object containing the following properties:
+     *   @property {string} exportFilepath - Default export filepath for the image.
+     *   @property {string} exportExtension - The file extension of the export (e.g., .dark.svg, .png, .excalidraw).
+     *   @property {string} excalidrawFile - TFile: The Excalidraw file being exported.
+     *   @property {string} oldExcalidrawPath - If action === "move" The old path of the Excalidraw file, else undefined
+     *   @property {string} action - The action being performed: "export", "move", or "delete". move and delete reference the change to the Excalidraw file.
+     *
+     * @returns {string} - The new filepath for the image including full vault path and extension.
+     *
+     * Example usage:
+     * ```
+     * onImageFilePathHook: (data) => {
+     *   const { currentImageName, drawingFilePath, frontmatter } = data;
+     *   // Generate a new filepath based on the drawing file name and other criteria
+     *   const ext = currentImageName.split('.').pop();
+     *   if(frontmatter && frontmatter["my-custom-field"]) {
+     *   }
+     *   return `${drawingFileName} - ${currentImageName || 'image'}.${ext}`;
+     * }
+     * ```
+     */
+    onImageExportPathHook: (data: {
+        exportFilepath: string;
+        exportExtension: string;
+        excalidrawFile: TFile;
+        oldExcalidrawPath?: string;
+        action: "export" | "move" | "delete";
+    }) => string | null;
+    /**
+     * Excalidraw supports auto-export of Excalidraw files to .png, .svg, and .excalidraw formats.
+     *
+     * Auto-export of Excalidraw files can be controlled at multiple levels.
+     * 1) In plugin settings where you can set up default auto-export applicable to all your Excalidraw files.
+     * 2) However, if you do not want to auto-export every file, you can also control auto-export
+     *    at the file level using the 'excalidraw-autoexport' frontmatter property.
+     * 3) This hook gives you an additional layer of control over the auto-export process.
+     *
+     * This hook is triggered when an Excalidraw file is being saved.
+     *
+     * interface AutoexportConfig {
+     *   png: boolean; // Whether to auto-export to PNG
+     *   svg: boolean; // Whether to auto-export to SVG
+     *   excalidraw: boolean; // Whether to auto-export to Excalidraw format
+     *   theme: "light" | "dark" | "both"; // The theme to use for the export
+     * }
+     *
+     * @param {Object} data - The data for the hook.
+     * @param {AutoexportConfig} data.autoexportConfig - The current autoexport configuration.
+     * @param {TFile} data.excalidrawFile - The Excalidraw file being auto-exported.
+     * @returns {AutoexportConfig | null} - Return a modified AutoexportConfig to override the export behavior, or null to use the default.
+     */
+    onTriggerAutoexportHook: (data: {
+        autoexportConfig: AutoexportConfig;
+        excalidrawFile: TFile;
+    }) => AutoexportConfig | null;
+    /**
+     * if set, this callback is triggered, when an Excalidraw file is opened
+     * You can use this callback in case you want to do something additional when the file is opened.
+     * This will run before the file level script defined in the `excalidraw-onload-script` frontmatter.
+     */
+    onFileOpenHook: (data: {
+        ea: ExcalidrawAutomate;
+        excalidrawFile: TFile;
+        view: ExcalidrawView;
+    }) => Promise<void>;
+    /**
+     * if set, this callback is triggered, when an Excalidraw file is created
+     * see also: https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1124
+     */
+    onFileCreateHook: (data: {
+        ea: ExcalidrawAutomate;
+        excalidrawFile: TFile;
+        view: ExcalidrawView;
+    }) => Promise<void>;
+    /**
+     * If set, this callback is triggered whenever the active canvas color changes.
+     * @param {ExcalidrawAutomate} ea - The ExcalidrawAutomate instance.
+     * @param {ExcalidrawView} view - The Excalidraw view.
+     * @param {string} color - The new canvas color.
+     */
+    onCanvasColorChangeHook: (ea: ExcalidrawAutomate, view: ExcalidrawView, //the excalidraw view 
+    color: string) => void;
+    /**
+     * If set, this callback is triggered whenever a drawing is exported to SVG.
+     * The string returned will replace the link in the exported SVG.
+     * The hook is only executed if the link is to a file internal to Obsidian.
+     * @param {Object} data - The data for the hook.
+     * @param {string} data.originalLink - The original link in the SVG.
+     * @param {string} data.obsidianLink - The Obsidian link in the SVG.
+     * @param {TFile | null} data.linkedFile - The linked file in Obsidian.
+     * @param {TFile} data.hostFile - The host file in Obsidian.
+     * @returns {string} The updated link for the SVG.
+     */
+    onUpdateElementLinkForExportHook: (data: {
+        originalLink: string;
+        obsidianLink: string;
+        linkedFile: TFile | null;
+        hostFile: TFile;
+    }) => string;
+    /**
+     * Utility function to generate EmbeddedFilesLoader object.
+     * @param {boolean} [isDark] - Whether to use dark mode.
+     * @returns {EmbeddedFilesLoader} The EmbeddedFilesLoader object.
+     */
+    getEmbeddedFilesLoader(isDark?: boolean): EmbeddedFilesLoader;
+    /**
+     * Utility function to generate ExportSettings object.
+     * @param {boolean} withBackground - Whether to include the background in the export.
+     * @param {boolean} withTheme - Whether to include the theme in the export.
+     * @param {boolean} [isMask=false] - Whether the export is a mask.
+     * @returns {ExportSettings} The ExportSettings object.
+     */
+    getExportSettings(withBackground: boolean, withTheme: boolean, isMask?: boolean): ExportSettings;
+    /**
+     * Gets the elements within a specific area.
+     * @param elements - The elements to check.
+     * @param param1 - The area to check against.
+     * @returns The elements within the area.
+     */
+    getElementsInArea(elements: NonDeletedExcalidrawElement[], element: NonDeletedExcalidrawElement): ExcalidrawElement[];
+    /**
+     * Gets the bounding box of the specified elements.
+     * The bounding box is the box encapsulating all of the elements completely.
+     * @param {ExcalidrawElement[]} elements - Array of elements to get the bounding box for.
+     * @returns {{topX: number; topY: number; width: number; height: number}} The bounding box of the elements.
+     */
+    getBoundingBox(elements: ExcalidrawElement[]): {
+        topX: number;
+        topY: number;
+        width: number;
+        height: number;
+    };
+    /**
+     * Gets elements grouped by the highest level groups.
+     * @param {ExcalidrawElement[]} elements - Array of elements to group.
+     * @returns {ExcalidrawElement[][]} Array of arrays of grouped elements.
+     */
+    getMaximumGroups(elements: ExcalidrawElement[]): ExcalidrawElement[][];
+    /**
+     * Gets the largest element from a group.
+     * Useful when a text element is grouped with a box, and you want to connect an arrow to the box.
+     * @param {ExcalidrawElement[]} elements - Array of elements in the group.
+     * @returns {ExcalidrawElement} The largest element in the group.
+     */
+    getLargestElement(elements: ExcalidrawElement[]): ExcalidrawElement;
+    /**
+     * Intersects an element with a line.
+     * @param {ExcalidrawBindableElement} element - The element to intersect.
+     * @param {readonly [number, number]} a - The start point of the line.
+     * @param {readonly [number, number]} b - The end point of the line.
+     * @param {number} [gap] - The gap between the element and the line.
+     * @returns {Point[]} Array of intersection points (2 or 0).
+     */
+    intersectElementWithLine(element: ExcalidrawBindableElement, a: readonly [number, number], b: readonly [number, number], gap?: number): Point[];
+    /**
+     * Gets the groupId for the group that contains all the elements, or null if such a group does not exist.
+     * @param {ExcalidrawElement[]} elements - Array of elements to check.
+     * @returns {string | null} The groupId or null if not found.
+     */
+    getCommonGroupForElements(elements: ExcalidrawElement[]): string;
+    /**
+     * Gets all the elements from elements[] that share one or more groupIds with the specified element.
+     * @param {ExcalidrawElement} element - The element to check.
+     * @param {ExcalidrawElement[]} elements - Array of elements to search.
+     * @param {boolean} [includeFrameElements=false] - Whether to include frame elements in the search.
+     * @returns {ExcalidrawElement[]} Array of elements in the same group as the specified element.
+     */
+    getElementsInTheSameGroupWithElement(element: ExcalidrawElement, elements: ExcalidrawElement[], includeFrameElements?: boolean): ExcalidrawElement[];
+    /**
+     * Gets all the elements from elements[] that are contained in the specified frame.
+     * @param {ExcalidrawElement} frameElement - The frame element.
+     * @param {ExcalidrawElement[]} elements - Array of elements to search.
+     * @param {boolean} [shouldIncludeFrame=false] - Whether to include the frame element in the result.
+     * @returns {ExcalidrawElement[]} Array of elements contained in the frame.
+     */
+    getElementsInFrame(frameElement: ExcalidrawElement, elements: ExcalidrawElement[], shouldIncludeFrame?: boolean): ExcalidrawElement[];
+    /**
+     * Sets the active script for the ScriptEngine.
+     * @param {string} scriptName - The name of the active script.
+     */
+    activeScript: string;
+    /**
+     * Gets the script settings for the active script.
+     * Saves settings in plugin settings, under the activeScript key.
+     * @returns {Object} The script settings.
+     */
+    getScriptSettings(): {};
+    /**
+     * Sets the script settings for the active script.
+     * @param {Object} settings - The script settings to set.
+     * @returns {Promise<void>} Promise resolving when the settings are saved.
+     */
+    setScriptSettings(settings: any): Promise<void>;
+    /**
+     * Opens a file in a new workspace leaf or reuses an existing adjacent leaf depending on Excalidraw Plugin Settings.
+     * @param {TFile} file - The file to open.
+     * @param {OpenViewState} [openState] - The open state for the file.
+     * @returns {WorkspaceLeaf} The new or adjacent workspace leaf.
+     */
+    openFileInNewOrAdjacentLeaf(file: TFile, openState?: OpenViewState): WorkspaceLeaf;
+    /**
+     * Measures the size of the specified text based on current style settings.
+     * @param {string} text - The text to measure.
+     * @returns {{width: number; height: number}} The width and height of the text.
+     */
+    measureText(text: string): {
+        width: number;
+        height: number;
+    };
+    /**
+     * Returns the size of the image element at 100% (i.e. the original size), or undefined if the data URL is not available.
+     * @param {ExcalidrawImageElement} imageElement - The image element from the active scene on targetView.
+     * @param {boolean} [shouldWaitForImage=false] - Whether to wait for the image to load before returning the size.
+     * @returns {Promise<{width: number; height: number}>} Promise resolving to the original size of the image.
+     */
+    getOriginalImageSize(imageElement: ExcalidrawImageElement, shouldWaitForImage?: boolean): Promise<{
+        width: number;
+        height: number;
+    }>;
+    /**
+     * Resets the image to its original aspect ratio.
+     * If the image is resized then the function returns true.
+     * If the image element is not in EA (only in the view), then if image is resized, the element is copied to EA for Editing using copyViewElementsToEAforEditing([imgEl]).
+     * Note you need to run await ea.addElementsToView(false); to add the modified image to the view.
+     * @param {ExcalidrawImageElement} imgEl - The EA image element to be resized.
+     * @returns {Promise<boolean>} Promise resolving to true if the image was changed, false otherwise.
+     */
+    resetImageAspectRatio(imgEl: ExcalidrawImageElement): Promise<boolean>;
+    /**
+     * Verifies if the plugin version is greater than or equal to the required version.
+     * Excample usage in a script: if (!ea.verifyMinimumPluginVersion("1.5.20")) { console.error("Please update the Excalidraw Plugin to the latest version."); return; }
+     * @param {string} requiredVersion - The required plugin version.
+     * @returns {boolean} True if the plugin version is greater than or equal to the required version, false otherwise.
+     */
+    verifyMinimumPluginVersion(requiredVersion: string): boolean;
+    /**
+     * Checks if the provided view is an instance of ExcalidrawView.
+     * @param {any} view - The view to check.
+     * @returns {boolean} True if the view is an instance of ExcalidrawView, false otherwise.
+     */
+    isExcalidrawView(view: any): boolean;
+    /**
+     * Sets the selection in the view.
+     * @param {ExcalidrawElement[] | string[]} elements - Array of elements or element IDs to select.
+     */
+    selectElementsInView(elements: ExcalidrawElement[] | string[]): void;
+    /**
+     * Generates a random 8-character long element ID.
+     * @returns {string} The generated element ID.
+     */
+    generateElementId(): string;
+    /**
+     * Clones the specified element with a new ID.
+     * @param {ExcalidrawElement} element - The element to clone.
+     * @returns {ExcalidrawElement} The cloned element with a new ID.
+     */
+    cloneElement(element: ExcalidrawElement): ExcalidrawElement;
+    /**
+     * Moves the specified element to a specific position in the z-index.
+     * @param {number} elementId - The ID of the element to move.
+     * @param {number} newZIndex - The new z-index position for the element.
+     */
+    moveViewElementToZIndex(elementId: number, newZIndex: number): void;
+    /**
+     * Converts a hex color string to an RGB array.
+     * @deprecated Use getCM / ColorMaster instead.
+     * @param {string} color - The hex color string.
+     * @returns {number[]} The RGB array.
+     */
+    hexStringToRgb(color: string): number[];
+    /**
+     * Converts an RGB array to a hex color string.
+     * @deprecated Use getCM / ColorMaster instead.
+     * @param {number[]} color - The RGB array.
+     * @returns {string} The hex color string.
+     */
+    rgbToHexString(color: number[]): string;
+    /**
+     * Converts an HSL array to an RGB array.
+     * @deprecated Use getCM / ColorMaster instead.
+     * @param {number[]} color - The HSL array.
+     * @returns {number[]} The RGB array.
+     */
+    hslToRgb(color: number[]): number[];
+    /**
+     * Converts an RGB array to an HSL array.
+     * @deprecated Use getCM / ColorMaster instead.
+     * @param {number[]} color - The RGB array.
+     * @returns {number[]} The HSL array.
+     */
+    rgbToHsl(color: number[]): number[];
+    /**
+     * Converts a color name to a hex color string.
+     * @param {string} color - The color name.
+     * @returns {string} The hex color string.
+     */
+    colorNameToHex(color: string): string;
+    /**
+     * Creates a ColorMaster object for manipulating colors.
+     * @param {TInput} color - The color input.
+     * @returns {ColorMaster} The ColorMaster object.
+     */
+    getCM(color: TInput): ColorMaster;
+    /**
+     * Gets the PolyBool class from https://github.com/velipso/polybooljs.
+     * @returns {PolyBool} The PolyBool class.
+     */
+    getPolyBool(): any;
+    /**
+     * Imports an SVG string into ExcalidrawAutomate elements.
+     * @param {string} svgString - The SVG string to import.
+     * @returns {boolean} True if the import was successful, false otherwise.
+     */
+    importSVG(svgString: string): boolean;
+    /**
+     * Destroys the ExcalidrawAutomate instance, clearing all references and data.
+     */
+    destroy(): void;
+}
+
+/* ************************************** */
+/* lib/types/excalidrawAutomateTypes.d.ts */
+/* ************************************** */
+export type SVGColorInfo = Map<string, {
+    mappedTo: string;
+    fill: boolean;
+    stroke: boolean;
+}>;
+export type ImageInfo = {
+    mimeType: MimeType;
+    id: FileId;
+    dataURL: DataURL;
+    created: number;
+    isHyperLink?: boolean;
+    hyperlink?: string;
+    file?: string | TFile;
+    hasSVGwithBitmap: boolean;
+    latex?: string;
+    size?: Size;
+    colorMap?: ColorMap;
+    pdfPageViewProps?: PDFPageViewProps;
+};
+export interface AddImageOptions {
+    topX: number;
+    topY: number;
+    imageFile: TFile | string;
+    scale?: boolean;
+    anchor?: boolean;
+    colorMap?: ColorMap;
+}
+
+/* ***************************** */
+/* lib/types/penTypes.d.ts */
+/* ***************************** */
+export interface StrokeOptions {
+    thinning: number;
+    smoothing: number;
+    streamline: number;
+    easing: string;
+    simulatePressure?: boolean;
+    start: {
+        cap: boolean;
+        taper: number | boolean;
+        easing: string;
+    };
+    end: {
+        cap: boolean;
+        taper: number | boolean;
+        easing: string;
+    };
+}
+export interface PenOptions {
+    highlighter: boolean;
+    constantPressure: boolean;
+    hasOutline: boolean;
+    outlineWidth: number;
+    options: StrokeOptions;
+}
+export declare type ExtendedFillStyle = "dots" | "zigzag" | "zigzag-line" | "dashed" | "hachure" | "cross-hatch" | "solid" | "";
+export declare type PenType = "default" | "highlighter" | "finetip" | "fountain" | "marker" | "thick-thin" | "thin-thick-thin";
+export interface PenStyle {
+    type: PenType;
+    freedrawOnly: boolean;
+    strokeColor?: string;
+    backgroundColor?: string;
+    fillStyle: ExtendedFillStyle;
+    strokeWidth: number;
+    roughness: number;
+    penOptions: PenOptions;
+}
+
+/* ****************************** */
+/* lib/types/utilTypes.d.ts */
+/* ****************************** */
+export type FILENAMEPARTS = {
+    filepath: string;
+    hasBlockref: boolean;
+    hasGroupref: boolean;
+    hasTaskbone: boolean;
+    hasArearef: boolean;
+    hasFrameref: boolean;
+    hasClippedFrameref: boolean;
+    hasSectionref: boolean;
+    blockref: string;
+    sectionref: string;
+    linkpartReference: string;
+    linkpartAlias: string;
+};
+export declare enum PreviewImageType {
+    PNG = "PNG",
+    SVGIMG = "SVGIMG",
+    SVG = "SVG"
+}
+export interface FrameRenderingOptions {
+    enabled: boolean;
+    name: boolean;
+    outline: boolean;
+    clip: boolean;
+}
+
+/* ************************************ */
+/* lib/types/exportUtilTypes.d.ts */
+/* ************************************ */
+export type PDFPageAlignment = "center" | "top-left" | "top-center" | "top-right" | "bottom-left" | "bottom-center" | "bottom-right" | "center-left" | "center-right";
+export type PDFPageMarginString = "none" | "tiny" | "normal";
+export interface PDFExportScale {
+    fitToPage: number;
+    zoom?: number;
+}
+export interface PDFMargin {
+    left: number;
+    right: number;
+    top: number;
+    bottom: number;
+}
+export interface PDFPageProperties {
+    dimensions?: {
+        width: number;
+        height: number;
+    };
+    backgroundColor?: string;
+    margin: PDFMargin;
+    alignment: PDFPageAlignment;
+}
+export interface PageDimensions {
+    width: number;
+    height: number;
+}
+export type PageOrientation = "portrait" | "landscape";
+export declare const STANDARD_PAGE_SIZES: {
+    readonly A0: {
+        readonly width: 3179.52;
+        readonly height: 4494.96;
+    };
+    readonly A1: {
+        readonly width: 2245.76;
+        readonly height: 3179.52;
+    };
+    readonly A2: {
+        readonly width: 1587.76;
+        readonly height: 2245.76;
+    };
+    readonly A3: {
+        readonly width: 1122.56;
+        readonly height: 1587.76;
+    };
+    readonly A4: {
+        readonly width: 794.56;
+        readonly height: 1122.56;
+    };
+    readonly A5: {
+        readonly width: 559.37;
+        readonly height: 794.56;
+    };
+    readonly A6: {
+        readonly width: 397.28;
+        readonly height: 559.37;
+    };
+    readonly Legal: {
+        readonly width: 816;
+        readonly height: 1344;
+    };
+    readonly Letter: {
+        readonly width: 816;
+        readonly height: 1056;
+    };
+    readonly Tabloid: {
+        readonly width: 1056;
+        readonly height: 1632;
+    };
+    readonly Ledger: {
+        readonly width: 1632;
+        readonly height: 1056;
+    };
+    readonly "HD Screen": {
+        readonly width: 1920;
+        readonly height: 1080;
+    };
+    readonly "MATCH IMAGE": {
+        readonly width: 0;
+        readonly height: 0;
+    };
+};
+export type PageSize = keyof typeof STANDARD_PAGE_SIZES;
+export interface ExportSettings {
+    withBackground: boolean;
+    withTheme: boolean;
+    isMask: boolean;
+    frameRendering?: FrameRenderingOptions;
+    skipInliningFonts?: boolean;
+}
+
+/* ************************************** */
+/* lib/types/embeddedFileLoaderTypes.d.ts */
+/* ************************************** */
+export declare const IMAGE_MIME_TYPES: {
+    readonly svg: "image/svg+xml";
+    readonly png: "image/png";
+    readonly jpg: "image/jpeg";
+    readonly jpeg: "image/jpeg";
+    readonly gif: "image/gif";
+    readonly webp: "image/webp";
+    readonly bmp: "image/bmp";
+    readonly ico: "image/x-icon";
+    readonly avif: "image/avif";
+    readonly jfif: "image/jfif";
+};
+export type ImgData = {
+    mimeType: MimeType;
+    fileId: FileId;
+    dataURL: DataURL;
+    created: number;
+    hasSVGwithBitmap: boolean;
+    size: Size;
+    pdfPageViewProps?: PDFPageViewProps;
+};
+export declare type MimeType = ValueOf<typeof IMAGE_MIME_TYPES> | "application/octet-stream";
+export type FileData = BinaryFileData & {
+    size: Size;
+    hasSVGwithBitmap: boolean;
+    shouldScale: boolean;
+    pdfPageViewProps?: PDFPageViewProps;
+};
+export type PDFPageViewProps = {
+    left: number;
+    bottom: number;
+    right: number;
+    top: number;
+    rotate?: number;
+};
+export type Size = {
+    height: number;
+    width: number;
+};
+export interface ColorMap {
+    [color: string]: string;
+}
+
+/* ******************************** */
+/* lib/types/AIUtilTypes.d.ts */
+/* ******************************** */
+type MessageContent = string | (string | {
+    type: "image_url";
+    image_url: string;
+})[];
+export type GPTCompletionRequest = {
+    model: string;
+    messages?: {
+        role?: "system" | "user" | "assistant" | "function";
+        content?: MessageContent;
+        name?: string | undefined;
+    }[];
+    functions?: any[] | undefined;
+    function_call?: any | undefined;
+    stream?: boolean | undefined;
+    temperature?: number | undefined;
+    top_p?: number | undefined;
+    max_tokens?: number | undefined;
+    n?: number | undefined;
+    best_of?: number | undefined;
+    frequency_penalty?: number | undefined;
+    presence_penalty?: number | undefined;
+    logit_bias?: {
+        [x: string]: number;
+    } | undefined;
+    stop?: (string[] | string) | undefined;
+    size?: string;
+    quality?: "standard" | "hd";
+    prompt?: string;
+    image?: string;
+    mask?: string;
+};
+export type AIRequest = {
+    image?: string;
+    text?: string;
+    instruction?: string;
+    systemPrompt?: string;
+    imageGenerationProperties?: {
+        size?: string;
+        quality?: "standard" | "hd";
+        n?: number;
+        mask?: string;
+    };
+};
+
+/* ************************************** */
+/* node_modules/@zsviczian/excalidraw/types/element/src/types.d.ts */
+/* ************************************** */
+export type ChartType = "bar" | "line";
+export type FillStyle = "hachure" | "cross-hatch" | "solid" | "zigzag";
+export type FontFamilyKeys = keyof typeof FONT_FAMILY;
+export type FontFamilyValues = typeof FONT_FAMILY[FontFamilyKeys];
+export type Theme = typeof THEME[keyof typeof THEME];
+export type FontString = string & {
+    _brand: "fontString";
+};
+export type GroupId = string;
+export type PointerType = "mouse" | "pen" | "touch";
+export type StrokeRoundness = "round" | "sharp";
+export type RoundnessType = ValueOf<typeof ROUNDNESS>;
+export type StrokeStyle = "solid" | "dashed" | "dotted";
+export type TextAlign = typeof TEXT_ALIGN[keyof typeof TEXT_ALIGN];
+type VerticalAlignKeys = keyof typeof VERTICAL_ALIGN;
+export type VerticalAlign = typeof VERTICAL_ALIGN[VerticalAlignKeys];
+export type FractionalIndex = string & {
+    _brand: "franctionalIndex";
+};
+export type BoundElement = Readonly<{
+    id: ExcalidrawLinearElement["id"];
+    type: "arrow" | "text";
+}>;
+type _ExcalidrawElementBase = Readonly<{
+    id: string;
+    x: number;
+    y: number;
+    strokeColor: string;
+    backgroundColor: string;
+    fillStyle: FillStyle;
+    strokeWidth: number;
+    strokeStyle: StrokeStyle;
+    roundness: null | {
+        type: RoundnessType;
+        value?: number;
+    };
+    roughness: number;
+    opacity: number;
+    width: number;
+    height: number;
+    angle: Radians;
+    /** Random integer used to seed shape generation so that the roughjs shape
+        doesn't differ across renders. */
+    seed: number;
+    /** Integer that is sequentially incremented on each change. Used to reconcile
+        elements during collaboration or when saving to server. */
+    version: number;
+    /** Random integer that is regenerated on each change.
+        Used for deterministic reconciliation of updates during collaboration,
+        in case the versions (see above) are identical. */
+    versionNonce: number;
+    /** String in a fractional form defined by https://github.com/rocicorp/fractional-indexing.
+        Used for ordering in multiplayer scenarios, such as during reconciliation or undo / redo.
+        Always kept in sync with the array order by `syncMovedIndices` and `syncInvalidIndices`.
+        Could be null, i.e. for new elements which were not yet assigned to the scene. */
+    index: FractionalIndex | null;
+    isDeleted: boolean;
+    /** List of groups the element belongs to.
+        Ordered from deepest to shallowest. */
+    groupIds: readonly GroupId[];
+    frameId: string | null;
+    /** other elements that are bound to this element */
+    boundElements: readonly BoundElement[] | null;
+    /** epoch (ms) timestamp of last element update */
+    updated: number;
+    link: string | null;
+    locked: boolean;
+    customData?: Record<string, any>;
+}>;
+export type ExcalidrawSelectionElement = _ExcalidrawElementBase & {
+    type: "selection";
+};
+export type ExcalidrawRectangleElement = _ExcalidrawElementBase & {
+    type: "rectangle";
+};
+export type ExcalidrawDiamondElement = _ExcalidrawElementBase & {
+    type: "diamond";
+};
+export type ExcalidrawEllipseElement = _ExcalidrawElementBase & {
+    type: "ellipse";
+};
+export type ExcalidrawEmbeddableElement = _ExcalidrawElementBase & Readonly<{
+    type: "embeddable";
+    scale: [number, number];
+}>;
+export type MagicGenerationData = {
+    status: "pending";
+} | {
+    status: "done";
+    html: string;
+} | {
+    status: "error";
+    message?: string;
+    code: "ERR_GENERATION_INTERRUPTED" | string;
+};
+export type ExcalidrawIframeElement = _ExcalidrawElementBase & Readonly<{
+    type: "iframe";
+    customData?: {
+        generationData?: MagicGenerationData;
+    };
+    scale: [number, number];
+}>;
+export type ExcalidrawIframeLikeElement = ExcalidrawIframeElement | ExcalidrawEmbeddableElement;
+export type IframeData = ({
+    intrinsicSize: {
+        w: number;
+        h: number;
+    };
+    error?: Error;
+    sandbox?: {
+        allowSameOrigin?: boolean;
+    };
+} & ({
+    type: "video" | "generic";
+    link: string;
+} | {
+    type: "document";
+    srcdoc: (theme: Theme) => string;
+}));
+export type ImageCrop = {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    naturalWidth: number;
+    naturalHeight: number;
+};
+export type ExcalidrawImageElement = _ExcalidrawElementBase & Readonly<{
+    type: "image";
+    fileId: FileId | null;
+    /** whether respective file is persisted */
+    status: "pending" | "saved" | "error";
+    /** X and Y scale factors <-1, 1>, used for image axis flipping */
+    scale: [number, number];
+    /** whether an element is cropped */
+    crop: ImageCrop | null;
+}>;
+export type InitializedExcalidrawImageElement = MarkNonNullable<ExcalidrawImageElement, "fileId">;
+type FrameRole = null | "marker";
+export type ExcalidrawFrameElement = _ExcalidrawElementBase & {
+    type: "frame";
+    name: string | null;
+    frameRole?: FrameRole;
+    customData?: {
+        frameColor?: {
+            fill: string;
+            stroke: string;
+            nameColor: string;
+        };
+    };
+};
+export type ExcalidrawMagicFrameElement = _ExcalidrawElementBase & {
+    type: "magicframe";
+    name: string | null;
+    frameRole?: FrameRole;
+};
+export type ExcalidrawFrameLikeElement = ExcalidrawFrameElement | ExcalidrawMagicFrameElement;
+/**
+ * These are elements that don't have any additional properties.
+ */
+export type ExcalidrawGenericElement = ExcalidrawSelectionElement | ExcalidrawRectangleElement | ExcalidrawDiamondElement | ExcalidrawEllipseElement;
+export type ExcalidrawFlowchartNodeElement = ExcalidrawRectangleElement | ExcalidrawDiamondElement | ExcalidrawEllipseElement;
+export type ExcalidrawRectanguloidElement = ExcalidrawRectangleElement | ExcalidrawImageElement | ExcalidrawTextElement | ExcalidrawFreeDrawElement | ExcalidrawIframeLikeElement | ExcalidrawFrameLikeElement | ExcalidrawEmbeddableElement | ExcalidrawSelectionElement;
+/**
+ * ExcalidrawElement should be JSON serializable and (eventually) contain
+ * no computed data. The list of all ExcalidrawElements should be shareable
+ * between peers and contain no state local to the peer.
+ */
+export type ExcalidrawElement = ExcalidrawGenericElement | ExcalidrawTextElement | ExcalidrawLinearElement | ExcalidrawArrowElement | ExcalidrawFreeDrawElement | ExcalidrawImageElement | ExcalidrawFrameElement | ExcalidrawMagicFrameElement | ExcalidrawIframeElement | ExcalidrawEmbeddableElement;
+export type ExcalidrawNonSelectionElement = Exclude<ExcalidrawElement, ExcalidrawSelectionElement>;
+export type Ordered<TElement extends ExcalidrawElement> = TElement & {
+    index: FractionalIndex;
+};
+export type OrderedExcalidrawElement = Ordered<ExcalidrawElement>;
+export type NonDeleted<TElement extends ExcalidrawElement> = TElement & {
+    isDeleted: boolean;
+};
+export type NonDeletedExcalidrawElement = NonDeleted<ExcalidrawElement>;
+export type ExcalidrawTextElement = _ExcalidrawElementBase & Readonly<{
+    type: "text";
+    fontSize: number;
+    fontFamily: FontFamilyValues;
+    text: string;
+    rawText: string;
+    textAlign: TextAlign;
+    verticalAlign: VerticalAlign;
+    containerId: ExcalidrawGenericElement["id"] | null;
+    originalText: string;
+    /**
+     * If `true` the width will fit the text. If `false`, the text will
+     * wrap to fit the width.
+     *
+     * @default true
+     */
+    autoResize: boolean;
+    /**
+     * Unitless line height (aligned to W3C). To get line height in px, multiply
+     *  with font size (using `getLineHeightInPx` helper).
+     */
+    lineHeight: number & {
+        _brand: "unitlessLineHeight";
+    };
+}>;
+export type ExcalidrawBindableElement = ExcalidrawRectangleElement | ExcalidrawDiamondElement | ExcalidrawEllipseElement | ExcalidrawTextElement | ExcalidrawImageElement | ExcalidrawIframeElement | ExcalidrawEmbeddableElement | ExcalidrawFrameElement | ExcalidrawMagicFrameElement;
+export type ExcalidrawTextContainer = ExcalidrawRectangleElement | ExcalidrawDiamondElement | ExcalidrawEllipseElement | ExcalidrawArrowElement;
+export type ExcalidrawTextElementWithContainer = {
+    containerId: ExcalidrawTextContainer["id"];
+} & ExcalidrawTextElement;
+export type FixedPoint = [number, number];
+export type PointBinding = {
+    elementId: ExcalidrawBindableElement["id"];
+    focus: number;
+    gap: number;
+};
+export type FixedPointBinding = Merge<PointBinding, {
+    fixedPoint: FixedPoint;
+}>;
+type Index = number;
+export type PointsPositionUpdates = Map<Index, {
+    point: LocalPoint;
+    isDragging?: boolean;
+}>;
+export type Arrowhead = "arrow" | "bar" | "dot" | "circle" | "circle_outline" | "triangle" | "triangle_outline" | "diamond" | "diamond_outline" | "crowfoot_one" | "crowfoot_many" | "crowfoot_one_or_many";
+export type ExcalidrawLinearElement = _ExcalidrawElementBase & Readonly<{
+    type: "line" | "arrow";
+    points: readonly LocalPoint[];
+    lastCommittedPoint: LocalPoint | null;
+    startBinding: PointBinding | null;
+    endBinding: PointBinding | null;
+    startArrowhead: Arrowhead | null;
+    endArrowhead: Arrowhead | null;
+}>;
+export type ExcalidrawLineElement = ExcalidrawLinearElement & Readonly<{
+    type: "line";
+    polygon: boolean;
+}>;
+export type FixedSegment = {
+    start: LocalPoint;
+    end: LocalPoint;
+    index: Index;
+};
+export type ExcalidrawArrowElement = ExcalidrawLinearElement & Readonly<{
+    type: "arrow";
+    elbowed: boolean;
+}>;
+export type ExcalidrawElbowArrowElement = Merge<ExcalidrawArrowElement, {
+    elbowed: true;
+    startBinding: FixedPointBinding | null;
+    endBinding: FixedPointBinding | null;
+    fixedSegments: readonly FixedSegment[] | null;
+    /**
+     * Marks that the 3rd point should be used as the 2nd point of the arrow in
+     * order to temporarily hide the first segment of the arrow without losing
+     * the data from the points array. It allows creating the expected arrow
+     * path when the arrow with fixed segments is bound on a horizontal side and
+     * moved to a vertical and vica versa.
+     */
+    startIsSpecial: boolean | null;
+    /**
+     * Marks that the 3rd point backwards from the end should be used as the 2nd
+     * point of the arrow in order to temporarily hide the last segment of the
+     * arrow without losing the data from the points array. It allows creating
+     * the expected arrow path when the arrow with fixed segments is bound on a
+     * horizontal side and moved to a vertical and vica versa.
+     */
+    endIsSpecial: boolean | null;
+}>;
+export type ExcalidrawFreeDrawElement = _ExcalidrawElementBase & Readonly<{
+    type: "freedraw";
+    points: readonly LocalPoint[];
+    pressures: readonly number[];
+    simulatePressure: boolean;
+    lastCommittedPoint: LocalPoint | null;
+}>;
+export type FileId = string & {
+    _brand: "FileId";
+};
+export type ExcalidrawElementType = ExcalidrawElement["type"];
+/**
+ * Map of excalidraw elements.
+ * Unspecified whether deleted or non-deleted.
+ * Can be a subset of Scene elements.
+ */
+export type ElementsMap = Map<ExcalidrawElement["id"], ExcalidrawElement>;
+/**
+ * Map of non-deleted elements.
+ * Can be a subset of Scene elements.
+ */
+export type NonDeletedElementsMap = Map<ExcalidrawElement["id"], NonDeletedExcalidrawElement> & MakeBrand<"NonDeletedElementsMap">;
+/**
+ * Map of all excalidraw Scene elements, including deleted.
+ * Not a subset. Use this type when you need access to current Scene elements.
+ */
+export type SceneElementsMap = Map<ExcalidrawElement["id"], Ordered<ExcalidrawElement>> & MakeBrand<"SceneElementsMap">;
+/**
+ * Map of all non-deleted Scene elements.
+ * Not a subset. Use this type when you need access to current Scene elements.
+ */
+export type NonDeletedSceneElementsMap = Map<ExcalidrawElement["id"], Ordered<NonDeletedExcalidrawElement>> & MakeBrand<"NonDeletedSceneElementsMap">;
+export type ElementsMapOrArray = readonly ExcalidrawElement[] | Readonly<ElementsMap>;
+export type ExcalidrawLinearElementSubType = "line" | "sharpArrow" | "curvedArrow" | "elbowArrow";
+export type ConvertibleGenericTypes = "rectangle" | "diamond" | "ellipse";
+export type ConvertibleLinearTypes = ExcalidrawLinearElementSubType;
+export type ConvertibleTypes = ConvertibleGenericTypes | ConvertibleLinearTypes;
+
+/* ************************************** */
+/* node_modules/@zsviczian/excalidraw/types/excalidraw/types.d.ts */
+/* ************************************** */
+export type SocketId = string & {
+    _brand: "SocketId";
+};
+export type Collaborator = Readonly<{
+    pointer?: CollaboratorPointer;
+    button?: "up" | "down";
+    selectedElementIds?: AppState["selectedElementIds"];
+    username?: string | null;
+    userState?: UserIdleState;
+    color?: {
+        background: string;
+        stroke: string;
+    };
+    avatarUrl?: string;
+    id?: string;
+    socketId?: SocketId;
+    isCurrentUser?: boolean;
+    isInCall?: boolean;
+    isSpeaking?: boolean;
+    isMuted?: boolean;
+}>;
+export type CollaboratorPointer = {
+    x: number;
+    y: number;
+    tool: "pointer" | "laser";
+    /**
+     * Whether to render cursor + username. Useful when you only want to render
+     * laser trail.
+     *
+     * @default true
+     */
+    renderCursor?: boolean;
+    /**
+     * Explicit laser color.
+     *
+     * @default string collaborator's cursor color
+     */
+    laserColor?: string;
+};
+export type DataURL = string & {
+    _brand: "DataURL";
+};
+export type BinaryFileData = {
+    mimeType: ValueOf<typeof IMAGE_MIME_TYPES> | typeof MIME_TYPES.binary;
+    id: FileId;
+    dataURL: DataURL;
+    /**
+     * Epoch timestamp in milliseconds
+     */
+    created: number;
+    /**
+     * Indicates when the file was last retrieved from storage to be loaded
+     * onto the scene. We use this flag to determine whether to delete unused
+     * files from storage.
+     *
+     * Epoch timestamp in milliseconds.
+     */
+    lastRetrieved?: number;
+    /**
+     * indicates the version of the file. This can be used to determine whether
+     * the file dataURL has changed e.g. as part of restore due to schema update.
+     */
+    version?: number;
+};
+export type BinaryFileMetadata = Omit<BinaryFileData, "dataURL">;
+export type BinaryFiles = Record<ExcalidrawElement["id"], BinaryFileData>;
+export type ToolType = "selection" | "lasso" | "rectangle" | "diamond" | "ellipse" | "arrow" | "line" | "freedraw" | "text" | "image" | "eraser" | "hand" | "frame" | "magicframe" | "embeddable" | "laser" | "mermaid";
+export type ElementOrToolType = ExcalidrawElementType | ToolType | "custom";
+export type ActiveTool = {
+    type: ToolType;
+    customType: null;
+} | {
+    type: "custom";
+    customType: string;
+};
+export type SidebarName = string;
+export type SidebarTabName = string;
+export type UserToFollow = {
+    socketId: SocketId;
+    username: string;
+};
+type _CommonCanvasAppState = {
+    zoom: AppState["zoom"];
+    scrollX: AppState["scrollX"];
+    scrollY: AppState["scrollY"];
+    width: AppState["width"];
+    height: AppState["height"];
+    viewModeEnabled: AppState["viewModeEnabled"];
+    openDialog: AppState["openDialog"];
+    editingGroupId: AppState["editingGroupId"];
+    selectedElementIds: AppState["selectedElementIds"];
+    frameToHighlight: AppState["frameToHighlight"];
+    offsetLeft: AppState["offsetLeft"];
+    offsetTop: AppState["offsetTop"];
+    theme: AppState["theme"];
+};
+export type StaticCanvasAppState = Readonly<_CommonCanvasAppState & {
+    shouldCacheIgnoreZoom: AppState["shouldCacheIgnoreZoom"];
+    /** null indicates transparent bg */
+    viewBackgroundColor: AppState["viewBackgroundColor"] | null;
+    exportScale: AppState["exportScale"];
+    selectedElementsAreBeingDragged: AppState["selectedElementsAreBeingDragged"];
+    gridSize: AppState["gridSize"];
+    gridStep: AppState["gridStep"];
+    frameRendering: AppState["frameRendering"];
+    linkOpacity: AppState["linkOpacity"];
+    gridColor: AppState["gridColor"];
+    gridDirection: AppState["gridDirection"];
+    frameColor: AppState["frameColor"];
+    currentHoveredFontFamily: AppState["currentHoveredFontFamily"];
+    hoveredElementIds: AppState["hoveredElementIds"];
+    croppingElementId: AppState["croppingElementId"];
+}>;
+export type InteractiveCanvasAppState = Readonly<_CommonCanvasAppState & {
+    activeEmbeddable: AppState["activeEmbeddable"];
+    selectionElement: AppState["selectionElement"];
+    selectedGroupIds: AppState["selectedGroupIds"];
+    selectedLinearElement: AppState["selectedLinearElement"];
+    multiElement: AppState["multiElement"];
+    isBindingEnabled: AppState["isBindingEnabled"];
+    suggestedBindings: AppState["suggestedBindings"];
+    isRotating: AppState["isRotating"];
+    elementsToHighlight: AppState["elementsToHighlight"];
+    collaborators: AppState["collaborators"];
+    snapLines: AppState["snapLines"];
+    zenModeEnabled: AppState["zenModeEnabled"];
+    editingTextElement: AppState["editingTextElement"];
+    gridColor: AppState["gridColor"];
+    gridDirection: AppState["gridDirection"];
+    highlightSearchResult: AppState["highlightSearchResult"];
+    isCropping: AppState["isCropping"];
+    croppingElementId: AppState["croppingElementId"];
+    searchMatches: AppState["searchMatches"];
+    activeLockedId: AppState["activeLockedId"];
+}>;
+export type ObservedAppState = ObservedStandaloneAppState & ObservedElementsAppState;
+export type ObservedStandaloneAppState = {
+    name: AppState["name"];
+    viewBackgroundColor: AppState["viewBackgroundColor"];
+};
+export type ObservedElementsAppState = {
+    editingGroupId: AppState["editingGroupId"];
+    selectedElementIds: AppState["selectedElementIds"];
+    selectedGroupIds: AppState["selectedGroupIds"];
+    selectedLinearElement: {
+        elementId: LinearElementEditor["elementId"];
+        isEditing: boolean;
+    } | null;
+    croppingElementId: AppState["croppingElementId"];
+    lockedMultiSelections: AppState["lockedMultiSelections"];
+    activeLockedId: AppState["activeLockedId"];
+};
+export interface AppState {
+    contextMenu: {
+        items: ContextMenuItems;
+        top: number;
+        left: number;
+    } | null;
+    showWelcomeScreen: boolean;
+    isLoading: boolean;
+    errorMessage: React.ReactNode;
+    activeEmbeddable: {
+        element: NonDeletedExcalidrawElement;
+        state: "hover" | "active";
+    } | null;
+    /**
+     * for a newly created element
+     * - set on pointer down, updated during pointer move, used on pointer up
+     */
+    newElement: NonDeleted<ExcalidrawNonSelectionElement> | null;
+    /**
+     * for a single element that's being resized
+     * - set on pointer down when it's selected and the active tool is selection
+     */
+    resizingElement: NonDeletedExcalidrawElement | null;
+    /**
+     * multiElement is for multi-point linear element that's created by clicking as opposed to dragging
+     * - when set and present, the editor will handle linear element creation logic accordingly
+     */
+    multiElement: NonDeleted<ExcalidrawLinearElement> | null;
+    /**
+     * decoupled from newElement, dragging selection only creates selectionElement
+     * - set on pointer down, updated during pointer move
+     */
+    selectionElement: NonDeletedExcalidrawElement | null;
+    isBindingEnabled: boolean;
+    startBoundElement: NonDeleted<ExcalidrawBindableElement> | null;
+    suggestedBindings: SuggestedBinding[];
+    frameToHighlight: NonDeleted<ExcalidrawFrameLikeElement> | null;
+    frameRendering: {
+        enabled: boolean;
+        name: boolean;
+        outline: boolean;
+        clip: boolean;
+        markerName: boolean;
+        markerEnabled: boolean;
+    };
+    editingFrame: string | null;
+    elementsToHighlight: NonDeleted<ExcalidrawElement>[] | null;
+    /**
+     * set when a new text is created or when an existing text is being edited
+     */
+    editingTextElement: NonDeletedExcalidrawElement | null;
+    activeTool: {
+        /**
+         * indicates a previous tool we should revert back to if we deselect the
+         * currently active tool. At the moment applies to `eraser` and `hand` tool.
+         */
+        lastActiveTool: ActiveTool | null;
+        locked: boolean;
+        fromSelection: boolean;
+    } & ActiveTool;
+    preferredSelectionTool: {
+        type: "selection" | "lasso";
+        initialized: boolean;
+    };
+    penMode: boolean;
+    penDetected: boolean;
+    exportBackground: boolean;
+    exportEmbedScene: boolean;
+    exportWithDarkMode: boolean;
+    exportScale: number;
+    currentItemStrokeColor: string;
+    currentItemBackgroundColor: string;
+    currentItemFillStyle: ExcalidrawElement["fillStyle"];
+    currentItemStrokeWidth: number;
+    currentItemStrokeStyle: ExcalidrawElement["strokeStyle"];
+    currentItemRoughness: number;
+    currentItemOpacity: number;
+    currentItemFontFamily: FontFamilyValues;
+    currentItemFontSize: number;
+    currentItemTextAlign: TextAlign;
+    currentItemStartArrowhead: Arrowhead | null;
+    currentItemEndArrowhead: Arrowhead | null;
+    currentHoveredFontFamily: FontFamilyValues | null;
+    currentItemRoundness: StrokeRoundness;
+    currentItemArrowType: "sharp" | "round" | "elbow";
+    currentItemFrameRole: ExcalidrawFrameLikeElement["frameRole"] | null;
+    viewBackgroundColor: string;
+    scrollX: number;
+    scrollY: number;
+    cursorButton: "up" | "down";
+    scrolledOutside: boolean;
+    name: string | null;
+    isResizing: boolean;
+    isRotating: boolean;
+    zoom: Zoom;
+    openMenu: "canvas" | "shape" | null;
+    openPopup: "canvasBackground" | "elementBackground" | "elementStroke" | "fontFamily" | "compactTextProperties" | "compactStrokeStyles" | "compactOtherProperties" | "compactArrowProperties" | null;
+    openSidebar: {
+        name: SidebarName;
+        tab?: SidebarTabName;
+    } | null;
+    openDialog: null | {
+        name: "imageExport" | "help" | "jsonExport";
+    } | {
+        name: "ttd";
+        tab: "text-to-diagram" | "mermaid";
+    } | {
+        name: "commandPalette";
+    } | {
+        name: "elementLinkSelector";
+        sourceElementId: ExcalidrawElement["id"];
+    };
+    /**
+     * Reflects user preference for whether the default sidebar should be docked.
+     *
+     * NOTE this is only a user preference and does not reflect the actual docked
+     * state of the sidebar, because the host apps can override this through
+     * a DefaultSidebar prop, which is not reflected back to the appState.
+     */
+    defaultSidebarDockedPreference: boolean;
+    lastPointerDownWith: PointerType;
+    selectedElementIds: Readonly<{
+        [id: string]: true;
+    }>;
+    hoveredElementIds: Readonly<{
+        [id: string]: true;
+    }>;
+    previousSelectedElementIds: {
+        [id: string]: true;
+    };
+    selectedElementsAreBeingDragged: boolean;
+    shouldCacheIgnoreZoom: boolean;
+    toast: {
+        message: string;
+        closable?: boolean;
+        duration?: number;
+    } | null;
+    zenModeEnabled: boolean;
+    theme: Theme;
+    /** grid cell px size */
+    gridSize: number;
+    gridStep: number;
+    gridModeEnabled: boolean;
+    viewModeEnabled: boolean;
+    /** top-most selected groups (i.e. does not include nested groups) */
+    selectedGroupIds: {
+        [groupId: string]: boolean;
+    };
+    /** group being edited when you drill down to its constituent element
+      (e.g. when you double-click on a group's element) */
+    editingGroupId: GroupId | null;
+    width: number;
+    height: number;
+    offsetTop: number;
+    offsetLeft: number;
+    fileHandle: FileSystemHandle | null;
+    collaborators: Map<SocketId, Collaborator>;
+    stats: {
+        open: boolean;
+        /** bitmap. Use `STATS_PANELS` bit values */
+        panels: number;
+    };
+    currentChartType: ChartType;
+    pasteDialog: {
+        shown: false;
+        data: null;
+    } | {
+        shown: true;
+        data: Spreadsheet;
+    };
+    showHyperlinkPopup: false | "info" | "editor";
+    linkOpacity: number;
+    trayModeEnabled: boolean;
+    colorPalette?: {
+        canvasBackground: ColorPaletteCustom;
+        elementBackground: ColorPaletteCustom;
+        elementStroke: ColorPaletteCustom;
+        topPicks: {
+            canvasBackground: [string, string, string, string, string];
+            elementStroke: [string, string, string, string, string];
+            elementBackground: [string, string, string, string, string];
+        };
+    };
+    allowWheelZoom?: boolean;
+    allowPinchZoom?: boolean;
+    pinnedScripts?: string[];
+    customPens?: any[];
+    currentStrokeOptions?: any;
+    resetCustomPen?: any;
+    gridColor: {
+        Bold: string;
+        Regular: string;
+    };
+    gridDirection: {
+        horizontal: boolean;
+        vertical: boolean;
+    };
+    highlightSearchResult: boolean;
+    dynamicStyle: {
+        [x: string]: string;
+    };
+    frameColor: {
+        stroke: string;
+        fill: string;
+        nameColor: string;
+    };
+    invertBindingBehaviour: boolean;
+    selectedLinearElement: LinearElementEditor | null;
+    snapLines: readonly SnapLine[];
+    originSnapOffset: {
+        x: number;
+        y: number;
+    } | null;
+    objectsSnapModeEnabled: boolean;
+    /** the user's socket id & username who is being followed on the canvas */
+    userToFollow: UserToFollow | null;
+    /** the socket ids of the users following the current user */
+    followedBy: Set<SocketId>;
+    /** image cropping */
+    isCropping: boolean;
+    croppingElementId: ExcalidrawElement["id"] | null;
+    /** null if no search matches found / search closed */
+    searchMatches: Readonly<{
+        focusedId: ExcalidrawElement["id"] | null;
+        matches: readonly SearchMatch[];
+    }> | null;
+    /** the locked element/group that's active and shows unlock popup */
+    activeLockedId: string | null;
+    lockedMultiSelections: {
+        [groupId: string]: true;
+    };
+    /** properties sidebar mode - determines whether to show compact or complete sidebar */
+    stylesPanelMode: "compact" | "full" | "mobile" | "tray";
+}
+export type SearchMatch = {
+    id: string;
+    focus: boolean;
+    matchedLines: {
+        offsetX: number;
+        offsetY: number;
+        width: number;
+        height: number;
+        showOnCanvas: boolean;
+    }[];
+};
+export type UIAppState = Omit<AppState, "suggestedBindings" | "startBoundElement" | "cursorButton" | "scrollX" | "scrollY">;
+export type NormalizedZoomValue = number & {
+    _brand: "normalizedZoom";
+};
+export type Zoom = Readonly<{
+    value: NormalizedZoomValue;
+}>;
+export type PointerCoords = Readonly<{
+    x: number;
+    y: number;
+}>;
+export type Gesture = {
+    pointers: Map<number, PointerCoords>;
+    lastCenter: {
+        x: number;
+        y: number;
+    } | null;
+    initialDistance: number | null;
+    initialScale: number | null;
+};
+export declare class GestureEvent extends UIEvent {
+    readonly rotation: number;
+    readonly scale: number;
+}
+/** @deprecated legacy: do not use outside of migration paths */
+export type LibraryItem_v1 = readonly NonDeleted<ExcalidrawElement>[];
+/** @deprecated legacy: do not use outside of migration paths */
+type LibraryItems_v1 = readonly LibraryItem_v1[];
+/** v2 library item */
+export type LibraryItem = {
+    id: string;
+    status: "published" | "unpublished";
+    elements: readonly NonDeleted<ExcalidrawElement>[];
+    /** timestamp in epoch (ms) */
+    created: number;
+    name?: string;
+    error?: string;
+};
+export type LibraryItems = readonly LibraryItem[];
+export type LibraryItems_anyVersion = LibraryItems | LibraryItems_v1;
+export type LibraryItemsSource = ((currentLibraryItems: LibraryItems) => MaybePromise<LibraryItems_anyVersion | Blob>) | MaybePromise<LibraryItems_anyVersion | Blob>;
+export type ExcalidrawInitialDataState = Merge<ImportedDataState, {
+    libraryItems?: MaybePromise<Required<ImportedDataState>["libraryItems"]>;
+}>;
+export type OnUserFollowedPayload = {
+    userToFollow: UserToFollow;
+    action: "FOLLOW" | "UNFOLLOW";
+};
+export interface ExcalidrawProps {
+    onChange?: (elements: readonly OrderedExcalidrawElement[], appState: AppState, files: BinaryFiles) => void;
+    onIncrement?: (event: DurableIncrement | EphemeralIncrement) => void;
+    initialData?: (() => MaybePromise<ExcalidrawInitialDataState | null>) | MaybePromise<ExcalidrawInitialDataState | null>;
+    excalidrawAPI?: (api: ExcalidrawImperativeAPI) => void;
+    isCollaborating?: boolean;
+    onPointerUpdate?: (payload: {
+        pointer: {
+            x: number;
+            y: number;
+            tool: "pointer" | "laser";
+        };
+        button: "down" | "up";
+        pointersMap: Gesture["pointers"];
+    }) => void;
+    onPaste?: (data: ClipboardData, event: ClipboardEvent | null) => Promise<boolean> | boolean;
+    onDrop?: (event: React.DragEvent<HTMLDivElement>) => Promise<boolean> | boolean;
+    /**
+     * Called when element(s) are duplicated so you can listen or modify as
+     * needed.
+     *
+     * Called when duplicating via mouse-drag, keyboard, paste, library insert
+     * etc.
+     *
+     * Returned elements will be used in place of the next elements
+     * (you should return all elements, including deleted, and not mutate
+     * the element if changes are made)
+     */
+    onDuplicate?: (nextElements: readonly ExcalidrawElement[], 
+    /** excludes the duplicated elements */
+    prevElements: readonly ExcalidrawElement[]) => ExcalidrawElement[] | void;
+    renderTopLeftUI?: (isMobile: boolean, appState: UIAppState) => JSX.Element | null;
+    renderTopRightUI?: (isMobile: boolean, appState: UIAppState) => JSX.Element | null;
+    langCode?: Language["code"];
+    viewModeEnabled?: boolean;
+    zenModeEnabled?: boolean;
+    gridModeEnabled?: boolean;
+    objectsSnapModeEnabled?: boolean;
+    libraryReturnUrl?: string;
+    initState?: AppState;
+    theme?: Theme;
+    name?: string;
+    renderCustomStats?: (elements: readonly NonDeletedExcalidrawElement[], appState: UIAppState) => JSX.Element;
+    UIOptions?: Partial<UIOptions>;
+    detectScroll?: boolean;
+    handleKeyboardGlobally?: boolean;
+    onLibraryChange?: (libraryItems: LibraryItems) => void | Promise<any>;
+    autoFocus?: boolean;
+    onBeforeTextEdit?: (textElement: ExcalidrawTextElement, isExistingElement: boolean) => string;
+    onBeforeTextSubmit?: (textElement: ExcalidrawTextElement, nextText: string, //wrapped
+    nextOriginalText: string, isDeleted: boolean) => {
+        updatedNextOriginalText: string;
+        nextLink: string;
+    };
+    generateIdForFile?: (file: File) => string | Promise<string>;
+    onThemeChange?: (newTheme: string) => void;
+    onViewModeChange?: (isViewModeEnabled: boolean) => void;
+    generateLinkForSelection?: (id: string, type: "element" | "group") => string;
+    onLinkOpen?: (element: NonDeletedExcalidrawElement, event: CustomEvent<{
+        nativeEvent: MouseEvent | React.PointerEvent<HTMLCanvasElement>;
+    }>) => void;
+    onLinkHover?: (element: NonDeletedExcalidrawElement, event: React.PointerEvent<HTMLCanvasElement>) => void;
+    onPointerDown?: (activeTool: AppState["activeTool"], pointerDownState: PointerDownState) => void;
+    onPointerUp?: (activeTool: AppState["activeTool"], pointerDownState: PointerDownState) => void;
+    onScrollChange?: (scrollX: number, scrollY: number, zoom: Zoom) => void;
+    onUserFollow?: (payload: OnUserFollowedPayload) => void;
+    children?: React.ReactNode;
+    validateEmbeddable?: boolean | string[] | RegExp | RegExp[] | ((link: string) => boolean | undefined);
+    renderEmbeddable?: (element: NonDeleted<ExcalidrawEmbeddableElement>, appState: AppState) => JSX.Element | null;
+    renderWebview?: boolean;
+    renderEmbeddableMenu?: (appState: AppState) => JSX.Element | null;
+    renderMermaid?: boolean;
+    onContextMenu?: (element: readonly NonDeletedExcalidrawElement[], appState: AppState, onClose: (callback?: () => void) => void) => JSX.Element | null;
+    aiEnabled?: boolean;
+    showDeprecatedFonts?: boolean;
+    insertLinkAction?: (linkVal: string) => void;
+    renderScrollbars?: boolean;
+}
+export type SceneData = {
+    elements?: ImportedDataState["elements"];
+    appState?: ImportedDataState["appState"];
+    collaborators?: Map<SocketId, Collaborator>;
+    captureUpdate?: CaptureUpdateActionType;
+};
+export type ExportOpts = {
+    saveFileToDisk?: boolean;
+    onExportToBackend?: (exportedElements: readonly NonDeletedExcalidrawElement[], appState: UIAppState, files: BinaryFiles) => void;
+    renderCustomUI?: (exportedElements: readonly NonDeletedExcalidrawElement[], appState: UIAppState, files: BinaryFiles, canvas: HTMLCanvasElement) => JSX.Element;
+};
+export type CanvasActions = Partial<{
+    changeViewBackgroundColor: boolean;
+    clearCanvas: boolean;
+    export: false | ExportOpts;
+    loadScene: boolean;
+    saveToActiveFile: boolean;
+    toggleTheme: boolean | null;
+    saveAsImage: boolean;
+}>;
+export type UIOptions = Partial<{
+    dockedSidebarBreakpoint: number;
+    canvasActions: CanvasActions;
+    tools: {
+        image: boolean;
+    };
+    /** @deprecated does nothing. Will be removed in 0.15 */
+    welcomeScreen?: boolean;
+}>;
+export type AppProps = Merge<ExcalidrawProps, {
+    UIOptions: Merge<UIOptions, {
+        canvasActions: Required<CanvasActions> & {
+            export: ExportOpts;
+        };
+    }>;
+    detectScroll: boolean;
+    handleKeyboardGlobally: boolean;
+    isCollaborating: boolean;
+    children?: React.ReactNode;
+    aiEnabled: boolean;
+}>;
+/** A subset of App class properties that we need to use elsewhere
+ * in the app, eg Manager. Factored out into a separate type to keep DRY. */
+export type AppClassProperties = {
+    props: AppProps;
+    state: AppState;
+    interactiveCanvas: HTMLCanvasElement | null;
+    /** static canvas */
+    canvas: HTMLCanvasElement;
+    focusContainer(): void;
+    library: Library;
+    imageCache: Map<FileId, {
+        image: HTMLImageElement | Promise<HTMLImageElement>;
+        mimeType: ValueOf<typeof IMAGE_MIME_TYPES>;
+    }>;
+    files: BinaryFiles;
+    device: App["device"];
+    scene: App["scene"];
+    syncActionResult: App["syncActionResult"];
+    fonts: App["fonts"];
+    pasteFromClipboard: App["pasteFromClipboard"];
+    id: App["id"];
+    onInsertElements: App["onInsertElements"];
+    onExportImage: App["onExportImage"];
+    lastViewportPosition: App["lastViewportPosition"];
+    scrollToContent: App["scrollToContent"];
+    addFiles: App["addFiles"];
+    addElementsFromPasteOrLibrary: App["addElementsFromPasteOrLibrary"];
+    setSelection: App["setSelection"];
+    togglePenMode: App["togglePenMode"];
+    toggleLock: App["toggleLock"];
+    setActiveTool: App["setActiveTool"];
+    setOpenDialog: App["setOpenDialog"];
+    insertEmbeddableElement: App["insertEmbeddableElement"];
+    onMagicframeToolSelect: App["onMagicframeToolSelect"];
+    getName: App["getName"];
+    dismissLinearEditor: App["dismissLinearEditor"];
+    flowChartCreator: App["flowChartCreator"];
+    getEffectiveGridSize: App["getEffectiveGridSize"];
+    setPlugins: App["setPlugins"];
+    plugins: App["plugins"];
+    getEditorUIOffsets: App["getEditorUIOffsets"];
+    visibleElements: App["visibleElements"];
+    excalidrawContainerValue: App["excalidrawContainerValue"];
+    onPointerUpEmitter: App["onPointerUpEmitter"];
+    updateEditorAtom: App["updateEditorAtom"];
+    onPointerDownEmitter: App["onPointerDownEmitter"];
+};
+export type PointerDownState = Readonly<{
+    origin: Readonly<{
+        x: number;
+        y: number;
+    }>;
+    originInGrid: Readonly<{
+        x: number;
+        y: number;
+    }>;
+    scrollbars: ReturnType<typeof isOverScrollBars>;
+    lastCoords: {
+        x: number;
+        y: number;
+    };
+    originalElements: Map<string, NonDeleted<ExcalidrawElement>>;
+    resize: {
+        handleType: MaybeTransformHandleType;
+        isResizing: boolean;
+        offset: {
+            x: number;
+            y: number;
+        };
+        arrowDirection: "origin" | "end";
+        center: {
+            x: number;
+            y: number;
+        };
+    };
+    hit: {
+        element: NonDeleted<ExcalidrawElement> | null;
+        allHitElements: NonDeleted<ExcalidrawElement>[];
+        wasAddedToSelection: boolean;
+        hasBeenDuplicated: boolean;
+        hasHitCommonBoundingBoxOfSelectedElements: boolean;
+    };
+    withCmdOrCtrl: boolean;
+    drag: {
+        hasOccurred: boolean;
+        offset: {
+            x: number;
+            y: number;
+        } | null;
+        origin: {
+            x: number;
+            y: number;
+        };
+        blockDragging: boolean;
+    };
+    eventListeners: {
+        onMove: null | ReturnType<typeof throttleRAF>;
+        onUp: null | ((event: PointerEvent) => void);
+        onKeyDown: null | ((event: KeyboardEvent) => void);
+        onKeyUp: null | ((event: KeyboardEvent) => void);
+    };
+    boxSelection: {
+        hasOccurred: boolean;
+    };
+}>;
+export type UnsubscribeCallback = () => void;
+export interface ExcalidrawImperativeAPI {
+    updateScene: InstanceType<typeof App>["updateScene"];
+    applyDeltas: InstanceType<typeof App>["applyDeltas"];
+    mutateElement: InstanceType<typeof App>["mutateElement"];
+    updateLibrary: InstanceType<typeof Library>["updateLibrary"];
+    resetScene: InstanceType<typeof App>["resetScene"];
+    getSceneElementsIncludingDeleted: InstanceType<typeof App>["getSceneElementsIncludingDeleted"];
+    getSceneElementsMapIncludingDeleted: InstanceType<typeof App>["getSceneElementsMapIncludingDeleted"];
+    history: {
+        clear: InstanceType<typeof App>["resetHistory"];
+    };
+    setForceRenderAllEmbeddables: InstanceType<typeof App>["setForceRenderAllEmbeddables"];
+    zoomToFit: InstanceType<typeof App>["zoomToFit"];
+    refreshEditorBreakpoints: InstanceType<typeof App>["refreshEditorBreakpoints"];
+    getColorAtScenePoint: InstanceType<typeof App>["getColorAtScenePoint"];
+    startLineEditor: InstanceType<typeof App>["startLineEditor"];
+    getSceneElements: InstanceType<typeof App>["getSceneElements"];
+    getAppState: () => InstanceType<typeof App>["state"];
+    getFiles: () => InstanceType<typeof App>["files"];
+    getName: InstanceType<typeof App>["getName"];
+    scrollToContent: InstanceType<typeof App>["scrollToContent"];
+    registerAction: (action: Action) => void;
+    refresh: InstanceType<typeof App>["refresh"];
+    setToast: InstanceType<typeof App>["setToast"];
+    addFiles: (data: BinaryFileData[]) => void;
+    updateContainerSize: InstanceType<typeof App>["updateContainerSize"];
+    id: string;
+    selectElements: (elements: readonly ExcalidrawElement[], highlightSearchResult?: boolean) => void;
+    sendBackward: (elements: readonly ExcalidrawElement[]) => void;
+    bringForward: (elements: readonly ExcalidrawElement[]) => void;
+    sendToBack: (elements: readonly ExcalidrawElement[]) => void;
+    bringToFront: (elements: readonly ExcalidrawElement[]) => void;
+    setMobileModeAllowed: (allow: boolean) => void;
+    setActiveTool: InstanceType<typeof App>["setActiveTool"];
+    setCursor: InstanceType<typeof App>["setCursor"];
+    resetCursor: InstanceType<typeof App>["resetCursor"];
+    toggleSidebar: InstanceType<typeof App>["toggleSidebar"];
+    getHTMLIFrameElement: InstanceType<typeof App>["getHTMLIFrameElement"];
+    /**
+     * Disables rendering of frames (including element clipping), but currently
+     * the frames are still interactive in edit mode. As such, this API should be
+     * used in conjunction with view mode (props.viewModeEnabled).
+     */
+    updateFrameRendering: InstanceType<typeof App>["updateFrameRendering"];
+    onChange: (callback: (elements: readonly ExcalidrawElement[], appState: AppState, files: BinaryFiles) => void) => UnsubscribeCallback;
+    onIncrement: (callback: (event: DurableIncrement | EphemeralIncrement) => void) => UnsubscribeCallback;
+    onPointerDown: (callback: (activeTool: AppState["activeTool"], pointerDownState: PointerDownState, event: React.PointerEvent<HTMLElement>) => void) => UnsubscribeCallback;
+    onPointerUp: (callback: (activeTool: AppState["activeTool"], pointerDownState: PointerDownState, event: PointerEvent) => void) => UnsubscribeCallback;
+    onScrollChange: (callback: (scrollX: number, scrollY: number, zoom: Zoom) => void) => UnsubscribeCallback;
+    onUserFollow: (callback: (payload: OnUserFollowedPayload) => void) => UnsubscribeCallback;
+}
+export type Device = Readonly<{
+    viewport: {
+        isMobile: boolean;
+        isLandscape: boolean;
+    };
+    editor: {
+        isMobile: boolean;
+        canFitSidebar: boolean;
+    };
+    isTouchScreen: boolean;
+}>;
+export type FrameNameBounds = {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    angle: number;
+};
+export type FrameNameBoundsCache = {
+    get: (frameElement: ExcalidrawFrameLikeElement | ExcalidrawMagicFrameElement) => FrameNameBounds | null;
+    _cache: Map<string, FrameNameBounds & {
+        zoom: AppState["zoom"]["value"];
+        versionNonce: ExcalidrawFrameLikeElement["versionNonce"];
+    }>;
+};
+export type KeyboardModifiersObject = {
+    ctrlKey: boolean;
+    shiftKey: boolean;
+    altKey: boolean;
+    metaKey: boolean;
+};
+export type Primitive = number | string | boolean | bigint | symbol | null | undefined;
+export type JSONValue = string | number | boolean | null | object;
+export type EmbedsValidationStatus = Map<ExcalidrawIframeLikeElement["id"], boolean>;
+export type ElementsPendingErasure = Set<ExcalidrawElement["id"]>;
+export type PendingExcalidrawElements = ExcalidrawElement[];
+/** Runtime gridSize value. Null indicates disabled grid. */
+export type NullableGridSize = (AppState["gridSize"] & MakeBrand<"NullableGridSize">) | null;
+export type GenerateDiagramToCode = (props: {
+    frame: ExcalidrawMagicFrameElement;
+    children: readonly ExcalidrawElement[];
+}) => MaybePromise<{
+    html: string;
+}>;
+export type Offsets = Partial<{
+    top: number;
+    right: number;
+    bottom: number;
+    left: number;
+}>;
+
+```
+
+---
+
+```js
+/* ************************************** */
+/* node_modules/obsidian/obsidian.d.ts */
+/* ************************************** */
+/**
+ * This file is automatically generated.
+ * Please do not modify or send pull requests for it.
+ */
+
+import { Extension, StateField } from '@codemirror/state';
+import { EditorView, ViewPlugin } from '@codemirror/view';
+import * as Moment from 'moment';
+
+declare global {
+    interface ObjectConstructor {
+        isEmpty(object: Record<string, any>): boolean;
+        each<T>(object: {
+            [key: string]: T;
+        }, callback: (value: T, key?: string) => boolean | void, context?: any): boolean;
+    }
+    interface ArrayConstructor {
+        combine<T>(arrays: T[][]): T[];
+    }
+    interface Array<T> {
+        first(): T | undefined;
+        last(): T | undefined;
+        contains(target: T): boolean;
+        remove(target: T): void;
+        shuffle(): this;
+        unique(): T[];
+        /**
+         *
+         * @since 1.4.4
+         */
+        findLastIndex(predicate: (value: T) => boolean): number;
+    }
+    interface Math {
+        clamp(value: number, min: number, max: number): number;
+        square(value: number): number;
+    }
+    interface StringConstructor {
+        isString(obj: any): obj is string;
+    }
+    interface String {
+        contains(target: string): boolean;
+        startsWith(searchString: string, position?: number): boolean;
+        endsWith(target: string, length?: number): boolean;
+        format(...args: string[]): string;
+    }
+    interface NumberConstructor {
+        isNumber(obj: any): obj is number;
+    }
+    interface Node {
+        detach(): void;
+        empty(): void;
+        insertAfter<T extends Node>(node: T, child: Node | null): T;
+        indexOf(other: Node): number;
+        setChildrenInPlace(children: Node[]): void;
+        appendText(val: string): void;
+        /**
+         * Cross-window capable instanceof check, a drop-in replacement
+         * for instanceof checks on DOM Nodes. Remember to also check
+         * for nulls when necessary.
+         * @param type
+         */
+        instanceOf<T>(type: {
+            new (): T;
+        }): this is T;
+        /**
+         * The document this node belongs to, or the global document.
+         */
+        doc: Document;
+        /**
+         * The window object this node belongs to, or the global window.
+         */
+        win: Window;
+        constructorWin: Window;
+    }
+    interface Element extends Node {
+        getText(): string;
+        setText(val: string | DocumentFragment): void;
+        addClass(...classes: string[]): void;
+        addClasses(classes: string[]): void;
+        removeClass(...classes: string[]): void;
+        removeClasses(classes: string[]): void;
+        toggleClass(classes: string | string[], value: boolean): void;
+        hasClass(cls: string): boolean;
+        setAttr(qualifiedName: string, value: string | number | boolean | null): void;
+        setAttrs(obj: {
+            [key: string]: string | number | boolean | null;
+        }): void;
+        getAttr(qualifiedName: string): string | null;
+        matchParent(selector: string, lastParent?: Element): Element | null;
+        getCssPropertyValue(property: string, pseudoElement?: string): string;
+        isActiveElement(): boolean;
+    }
+    interface HTMLElement extends Element {
+        show(): void;
+        hide(): void;
+        toggle(show: boolean): void;
+        toggleVisibility(visible: boolean): void;
+        /**
+         * Returns whether this element is shown, when the element is attached to the DOM and
+         * none of the parent and ancestor elements are hidden with `display: none`.
+         *
+         * Exception: Does not work on `<body>` and `<html>`, or on elements with `position: fixed`.
+         */
+        isShown(): boolean;
+        setCssStyles(styles: Partial<CSSStyleDeclaration>): void;
+        setCssProps(props: Record<string, string>): void;
+        /**
+         * Get the inner width of this element without padding.
+         */
+        readonly innerWidth: number;
+        /**
+         * Get the inner height of this element without padding.
+         */
+        readonly innerHeight: number;
+    }
+    interface SVGElement extends Element {
+        setCssStyles(styles: Partial<CSSStyleDeclaration>): void;
+        setCssProps(props: Record<string, string>): void;
+    }
+    function isBoolean(obj: any): obj is boolean;
+    function fish(selector: string): HTMLElement | null;
+    function fishAll(selector: string): HTMLElement[];
+    interface Element extends Node {
+        find(selector: string): Element | null;
+        findAll(selector: string): HTMLElement[];
+        findAllSelf(selector: string): HTMLElement[];
+    }
+    interface HTMLElement extends Element {
+        find(selector: string): HTMLElement;
+        findAll(selector: string): HTMLElement[];
+        findAllSelf(selector: string): HTMLElement[];
+    }
+    interface DocumentFragment extends Node, NonElementParentNode, ParentNode {
+        find(selector: string): HTMLElement;
+        findAll(selector: string): HTMLElement[];
+    }
+    interface DomElementInfo {
+        /**
+         * The class to be assigned. Can be a space-separated string or an array of strings.
+         */
+        cls?: string | string[];
+        /**
+         * The textContent to be assigned.
+         */
+        text?: string | DocumentFragment;
+        /**
+         * HTML attributes to be added.
+         */
+        attr?: {
+            [key: string]: string | number | boolean | null;
+        };
+        /**
+         * HTML title (for hover tooltip).
+         */
+        title?: string;
+        /**
+         * The parent element to be assigned to.
+         */
+        parent?: Node;
+        value?: string;
+        type?: string;
+        prepend?: boolean;
+        placeholder?: string;
+        href?: string;
+    }
+    interface SvgElementInfo {
+        /**
+         * The class to be assigned. Can be a space-separated string or an array of strings.
+         */
+        cls?: string | string[];
+        /**
+         * HTML attributes to be added.
+         */
+        attr?: {
+            [key: string]: string | number | boolean | null;
+        };
+        /**
+         * The parent element to be assigned to.
+         */
+        parent?: Node;
+        prepend?: boolean;
+    }
+    interface Node {
+        /**
+         * Create an element and append it to this node.
+         */
+        createEl<K extends keyof HTMLElementTagNameMap>(tag: K, o?: DomElementInfo | string, callback?: (el: HTMLElementTagNameMap[K]) => void): HTMLElementTagNameMap[K];
+        createDiv(o?: DomElementInfo | string, callback?: (el: HTMLDivElement) => void): HTMLDivElement;
+        createSpan(o?: DomElementInfo | string, callback?: (el: HTMLSpanElement) => void): HTMLSpanElement;
+        createSvg<K extends keyof SVGElementTagNameMap>(tag: K, o?: SvgElementInfo | string, callback?: (el: SVGElementTagNameMap[K]) => void): SVGElementTagNameMap[K];
+    }
+    function createEl<K extends keyof HTMLElementTagNameMap>(tag: K, o?: DomElementInfo | string, callback?: (el: HTMLElementTagNameMap[K]) => void): HTMLElementTagNameMap[K];
+    function createDiv(o?: DomElementInfo | string, callback?: (el: HTMLDivElement) => void): HTMLDivElement;
+    function createSpan(o?: DomElementInfo | string, callback?: (el: HTMLSpanElement) => void): HTMLSpanElement;
+    function createSvg<K extends keyof SVGElementTagNameMap>(tag: K, o?: SvgElementInfo | string, callback?: (el: SVGElementTagNameMap[K]) => void): SVGElementTagNameMap[K];
+    function createFragment(callback?: (el: DocumentFragment) => void): DocumentFragment;
+    interface EventListenerInfo {
+        selector: string;
+        listener: Function;
+        options?: boolean | AddEventListenerOptions;
+        callback: Function;
+    }
+    interface HTMLElement extends Element {
+        _EVENTS?: {
+            [K in keyof HTMLElementEventMap]?: EventListenerInfo[];
+        };
+        on<K extends keyof HTMLElementEventMap>(this: HTMLElement, type: K, selector: string, listener: (this: HTMLElement, ev: HTMLElementEventMap[K], delegateTarget: HTMLElement) => any, options?: boolean | AddEventListenerOptions): void;
+        off<K extends keyof HTMLElementEventMap>(this: HTMLElement, type: K, selector: string, listener: (this: HTMLElement, ev: HTMLElementEventMap[K], delegateTarget: HTMLElement) => any, options?: boolean | AddEventListenerOptions): void;
+        onClickEvent(this: HTMLElement, listener: (this: HTMLElement, ev: MouseEvent) => any, options?: boolean | AddEventListenerOptions): void;
+        /**
+         * @param listener - the callback to call when this node is inserted into the DOM.
+         * @param once - if true, this will only fire once and then unhook itself.
+         * @returns destroy - a function to remove the event handler to avoid memory leaks.
+         */
+        onNodeInserted(this: HTMLElement, listener: () => any, once?: boolean): () => void;
+        /**
+         * @param listener - the callback to call when this node has been migrated to another window.
+         * @returns destroy - a function to remove the event handler to avoid memory leaks.
+         */
+        onWindowMigrated(this: HTMLElement, listener: (win: Window) => any): () => void;
+        trigger(eventType: string): void;
+    }
+    interface Document {
+        _EVENTS?: {
+            [K in keyof DocumentEventMap]?: EventListenerInfo[];
+        };
+        on<K extends keyof DocumentEventMap>(this: Document, type: K, selector: string, listener: (this: Document, ev: DocumentEventMap[K], delegateTarget: HTMLElement) => any, options?: boolean | AddEventListenerOptions): void;
+        off<K extends keyof DocumentEventMap>(this: Document, type: K, selector: string, listener: (this: Document, ev: DocumentEventMap[K], delegateTarget: HTMLElement) => any, options?: boolean | AddEventListenerOptions): void;
+    }
+    interface UIEvent extends Event {
+        targetNode: Node | null;
+        win: Window;
+        doc: Document;
+        /**
+         * Cross-window capable instanceof check, a drop-in replacement
+         * for instanceof checks on UIEvents.
+         * @param type
+         */
+        instanceOf<T>(type: {
+            new (...data: any[]): T;
+        }): this is T;
+    }
+    interface AjaxOptions {
+        method?: 'GET' | 'POST';
+        url: string;
+        success?: (response: any, req: XMLHttpRequest) => any;
+        error?: (error: any, req: XMLHttpRequest) => any;
+        data?: object | string | ArrayBuffer;
+        headers?: Record<string, string>;
+        withCredentials?: boolean;
+        req?: XMLHttpRequest;
+    }
+    function ajax(options: AjaxOptions): void;
+    function ajaxPromise(options: AjaxOptions): Promise<any>;
+    function ready(fn: () => any): void;
+    function sleep(ms: number): Promise<void>;
+    function nextFrame(): Promise<void>;
+    /**
+     * The actively focused Window object. This is usually the same as `window` but
+     * it will be different when using popout windows.
+     */
+    let activeWindow: Window;
+    /**
+     * The actively focused Document object. This is usually the same as `document` but
+     * it will be different when using popout windows.
+     */
+    let activeDocument: Document;
+    interface Window extends EventTarget, AnimationFrameProvider, GlobalEventHandlers, WindowEventHandlers, WindowLocalStorage, WindowOrWorkerGlobalScope, WindowSessionStorage {
+        /**
+         * The actively focused Window object. This is usually the same as `window` but
+         * it will be different when using popout windows.
+         */
+        activeWindow: Window;
+        /**
+         * The actively focused Document object. This is usually the same as `document` but
+         * it will be different when using popout windows.
+         */
+        activeDocument: Document;
+        sleep(ms: number): Promise<void>;
+        nextFrame(): Promise<void>;
+    }
+    interface Touch {
+        touchType: 'stylus' | 'direct';
+    }
+}
+
+/**
+ * Attach to an `<input>` element or a `<div contentEditable>` to add type-ahead
+ * support.
+ *
+ * @public
+ * @since 1.4.10
+ */
+export abstract class AbstractInputSuggest<T> extends PopoverSuggest<T> {
+
+    /**
+     * Limit to the number of elements rendered at once. Set to 0 to disable. Defaults to 100.
+     * @public
+     * @since 1.4.10
+     */
+    limit: number;
+    /**
+     * Accepts an `<input>` text box or a contenteditable div.
+     * @public
+     */
+    constructor(app: App, textInputEl: HTMLInputElement | HTMLDivElement);
+
+    /**
+     * Sets the value into the input element.
+     * @public
+     * @since 1.4.10
+     */
+    setValue(value: string): void;
+    /**
+     * Gets the value from the input element.
+     * @public
+     * @since 1.4.10
+     */
+    getValue(): string;
+
+    /**
+     * @public
+     * @since 1.5.7
+     */
+    protected abstract getSuggestions(query: string): T[] | Promise<T[]>;
+    /**
+     * @public
+     * @since 1.6.6
+     */
+    selectSuggestion(value: T, evt: MouseEvent | KeyboardEvent): void;
+    /**
+     * Registers a callback to handle when a suggestion is selected by the user.
+     * @public
+     * @since 1.4.10
+     */
+    onSelect(callback: (value: T, evt: MouseEvent | KeyboardEvent) => any): this;
+
+}
+
+/**
+ * @public
+ * @since 0.9.21
+ */
+export class AbstractTextComponent<T extends HTMLInputElement | HTMLTextAreaElement> extends ValueComponent<string> {
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    inputEl: T;
+
+    /**
+     * @public
+     */
+    constructor(inputEl: T);
+    /**
+     * @public
+     * @since 1.2.3
+     */
+    setDisabled(disabled: boolean): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    getValue(): string;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    setValue(value: string): this;
+    /**
+     * @public
+     * 0.9.7
+     */
+    setPlaceholder(placeholder: string): this;
+    /**
+     * @public
+     * 0.9.21
+     */
+    onChanged(): void;
+    /**
+     * @public
+     * 0.9.7
+     */
+    onChange(callback: (value: string) => any): this;
+}
+
+/**
+ * Adds an icon to the library.
+ * @param iconId - the icon ID
+ * @param svgContent - the content of the SVG.
+ * @public
+ */
+export function addIcon(iconId: string, svgContent: string): void;
+
+/**
+ * This is the API version of the app, which follows the release cycle of the desktop app.
+ * Example: '0.13.21'
+ * @public
+ */
+export let apiVersion: string;
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export class App {
+
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    keymap: Keymap;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    scope: Scope;
+
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    workspace: Workspace;
+
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    vault: Vault;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    metadataCache: MetadataCache;
+
+    /**
+     * @public
+     * @since 0.11.0
+     */
+    fileManager: FileManager;
+
+    /**
+     * The last known user interaction event, to help commands find out what modifier keys are pressed.
+     * @public
+     * @since 0.12.17
+     */
+    lastEvent: UserEvent | null;
+
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    renderContext: RenderContext;
+
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    isDarkMode(): boolean;
+
+    /**
+     * Retrieve value from `localStorage` for this vault.
+     * @param key
+     * @public
+     * @since 1.8.7
+     */
+    loadLocalStorage(key: string): any | null;
+    /**
+     * Save vault-specific value to `localStorage`. If data is `null`, the entry will be cleared.
+     * @param key
+     * @param data value being saved to localStorage. Must be serializable.
+     * @public
+     * @since 1.8.7
+     */
+    saveLocalStorage(key: string, data: unknown | null): void;
+
+}
+
+/** @public */
+export function arrayBufferToBase64(buffer: ArrayBuffer): string;
+
+/** @public */
+export function arrayBufferToHex(data: ArrayBuffer): string;
+
+/** @public */
+export function base64ToArrayBuffer(base64: string): ArrayBuffer;
+
+/**
+ * @public
+ * @since 0.10.3
+ */
+export abstract class BaseComponent {
+    /**
+     * @public
+     * @since 0.10.3
+     */
+    disabled: boolean;
+    /**
+     * Facilitates chaining
+     * @public
+     * @since 0.9.7
+     */
+    then(cb: (component: this) => any): this;
+    /**
+     * @public
+     * @since 1.2.3
+     */
+    setDisabled(disabled: boolean): this;
+}
+
+/**
+ * @public
+ * @since 1.10.0
+ */
+export interface BaseOption {
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    key: string;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    type: string;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    displayName: string;
+}
+
+/**
+ * Represent a single "row" or file in a base.
+ * @public
+ * @since 1.10.0
+ */
+export class BasesEntry implements FormulaContext {
+
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    file: TFile;
+
+    /**
+     * Get the value of the property.
+     * @throws Error if the property is a formula and cannot be evaluated.
+     * @public
+     * @since 1.10.0
+     */
+    getValue(propertyId: BasesPropertyId): Value | null;
+
+}
+
+/**
+ * A group of BasesEntry objects for a given value of the groupBy key.
+ * If there are entries in the results which do not have a value for the
+ * groupBy key, the key will be the {@link NullValue}.
+ * @public
+ * @since 1.10.0
+ */
+export class BasesEntryGroup {
+    /**
+     * The value of the groupBy key for this entry group.
+     * @public
+     * @since 1.10.0
+     */
+    key?: Value;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    entries: BasesEntry[];
+
+    /**
+     * @returns true iff this entry group has a non-null key.
+     * @public
+     * @since 1.10.0
+     */
+    hasKey(): boolean;
+}
+
+/**
+ * A parsed version of the {@link BasesPropertyId}.
+ *
+ * @public
+ * @since 1.10.0
+ */
+export interface BasesProperty {
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    type: BasesPropertyType;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    name: string;
+}
+
+/**
+ * The full ID of a property, used in the bases config file. The prefixed
+ * {@link BasesPropertyType} disambiguates properties of the same name but from different sources.
+ *
+ * @public
+ * @since 1.10.0
+ */
+export type BasesPropertyId = `${BasesPropertyType}.${string}`;
+
+/**
+ * The three valid "sources" of a property in a Base.
+ *
+ * - `note`: Properties from the frontmatter of markdown files in the vault.
+ * - `formula`: Properties calculated by evaluating a formula from the base config file.
+ * - `file`: Properties inherent to a file, such as the name, extension, size, etc.
+ *
+ * @public
+ * @since 1.10.0
+ */
+export type BasesPropertyType = 'note' | 'formula' | 'file';
+
+/**
+ * The BasesQueryResult contains all of the available information from executing the
+ * bases query, applying filters, and evaluating formulas. The `data` or `groupedData`
+ * should be displayed by your view.
+ *
+ * @public
+ * @since 1.10.0
+ */
+export class BasesQueryResult {
+
+    /**
+     * A ungrouped version of the data, with user-configured sort and limit applied.
+     * Where appropriate, views should support groupBy by using `groupedData` instead of this value.
+     *
+     * @public
+     * @since 1.10.0
+     */
+    data: BasesEntry[];
+
+    /**
+     * The data to be rendered, grouped according to the groupBy config.
+     * If there is no groupBy configured, returns a single group with an empty key.
+     * @public
+     * @since 1.10.0
+     */
+    get groupedData(): BasesEntryGroup[];
+    /**
+     * Visible properties defined by the user.
+     * @public
+     * @since 1.10.0
+     */
+    get properties(): BasesPropertyId[];
+
+    /**
+     * Applies a summary function to a single property over a set of entries.
+     * @public
+     * @since 1.10.0
+     */
+    getSummaryValue(queryController: QueryController, entries: BasesEntry[], prop: BasesPropertyId, summaryKey: string): Value;
+}
+
+/**
+ * @public
+ * @since 1.10.0
+ */
+export type BasesSortConfig = {
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    property: BasesPropertyId;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    direction: 'ASC' | 'DESC';
+};
+
+/**
+ * Plugins can create a class which extends this in order to render a Base.
+ * Plugins should create a {@link BaseViewHandlerFactory} function, then call
+ * `plugin.registerView` to register the view factory.
+ *
+ * @public
+ * @since 1.10.0
+ */
+export abstract class BasesView extends Component {
+    /**
+     * The type ID of this view
+     * @public
+     * @since 1.10.0
+     */
+    abstract type: string;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    app: App;
+
+    /**
+     * The config object for this view.
+     * @public
+     * @since 1.10.0
+     */
+    config: BasesViewConfig;
+    /**
+     * All available properties from the dataset.
+     * @public
+     * @since 1.10.0
+     */
+    allProperties: BasesPropertyId[];
+    /**
+     * The most recent output from executing the bases query, applying filters, and evaluating formulas.
+     * This object will be replaced with a new result set when changes to the vault or Bases config occur,
+     * so views should not keep a reference to it. Also note the contained BasesEntry objects will be recreated.
+     * @public
+     * @since 1.10.0
+     */
+    data: BasesQueryResult;
+
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    protected constructor(controller: QueryController);
+    /**
+     * Called when there is new data for the query. This view should rerender with the updated data.
+     * @public
+     * @since 1.10.0
+     */
+    abstract onDataUpdated(): void;
+
+}
+
+/**
+ * The in-memory representation of a single entry in the "views" section of a Bases file.
+ * Contains settings and configuration options set by the user from the toolbar menus and view options.
+ * @public
+ * @since 1.10.0
+ */
+export class BasesViewConfig {
+
+    /**
+     * User-friendly name for this view.
+     * @public
+     * @since 1.10.0
+     */
+    name: string;
+
+    /**
+     * Retrieve the user-configured value of options exposed in `BasesViewRegistration.options`.
+     * @public
+     * @since 1.10.0
+     */
+    get(key: string): unknown;
+    /**
+     * Retrieve a user-configured value from the config, converting it to a BasesPropertyId.
+     * Returns null if the requested key is not present in the config, or if the value is invalid.
+     * @public
+     * @since 1.10.0
+     */
+    getAsPropertyId(key: string): BasesPropertyId | null;
+    /**
+     * Store configuration data for the view. Views should prefer `BasesViewRegistration.options`
+     * to allow users to configure options where appropriate.
+     * @public
+     * @since 1.10.0
+     */
+    set(key: string, value: any | null): void;
+    /**
+     * Ordered list of properties to display in this view.
+     * In a table, these can be interpreted as the list of visible columns.
+     * Order is configured by the user through the properties toolbar menu.
+     * @public
+     * @since 1.10.0
+     */
+    getOrder(): BasesPropertyId[];
+
+    /**
+     * Retrieve the sorting config for this view. Sort is configured by the user through the sort toolbar menu.
+     * Removes invalid sort configs. If no (valid) sort config, returns an empty array.
+     * Does not validate that the properties exists.
+     *
+     * Note that data from BasesQueryResult will be presorted.
+     *
+     * @public
+     * @since 1.10.0
+     */
+    getSort(): BasesSortConfig[];
+
+    /**
+     * Retrieve a friendly name for the provided property.
+     * If the property has been renamed by the user in the Base config, that value is returned.
+     * File properties may have a default name that is returned, otherwise the name with the property
+     * type prefix removed is returned.
+     *
+     * @public
+     * @since 1.10.0
+     */
+    getDisplayName(propertyId: BasesPropertyId): string;
+
+}
+
+/**
+ * Implement this factory function in a {@link BasesViewRegistration} to create a
+ * new instance of a custom Bases view.
+ * @param containerEl - The container below the Bases toolbar where the view will be displayed.
+ * @public
+ * @since 1.10.0
+ */
+export type BasesViewFactory = (controller: QueryController, containerEl: HTMLElement) => BasesView;
+
+/**
+ * Container for options when registering a new Bases view type.
+ * @public
+ * @since 1.10.0
+ */
+export interface BasesViewRegistration {
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    name: string;
+    /**
+     * Icon ID to be used in the Bases view selector.
+     * See {@link https://docs.obsidian.md/Plugins/User+interface/Icons} for available icons and how to add your own.
+     * @public
+     * @since 1.10.0
+     */
+    icon: IconName;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    factory: BasesViewFactory;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    options?: () => ViewOption[];
+}
+
+/**
+ * @public
+ * @since 0.11.13
+ */
+export interface BlockCache extends CacheItem {
+    /** @public */
+    id: string;
+}
+
+/**
+ * @public
+ * @since 0.13.26
+ */
+export interface BlockSubpathResult extends SubpathResult {
+    /**
+     * @public
+     */
+    type: 'block';
+    /**
+     * @public
+     */
+    block: BlockCache;
+    /**
+     * @public
+     */
+    list?: ListItemCache;
+}
+
+/**
+ * {@link Value} wrapping a boolean.
+ * @public
+ * @since 1.10.0
+ */
+export class BooleanValue extends PrimitiveValue<boolean> {
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    static type: string;
+
+}
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export class ButtonComponent extends BaseComponent {
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    buttonEl: HTMLButtonElement;
+
+    /**
+     * @public
+     */
+    constructor(containerEl: HTMLElement);
+    /**
+     * @public
+     * @since 1.2.3
+     */
+    setDisabled(disabled: boolean): this;
+
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    setCta(): this;
+    /**
+     * @public
+     * @since 0.9.20
+     */
+    removeCta(): this;
+    /**
+     * @public
+     * @since 0.11.0
+     */
+    setWarning(): this;
+    /**
+     * @public
+     * @since 1.1.0
+     */
+    setTooltip(tooltip: string, options?: TooltipOptions): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    setButtonText(name: string): this;
+    /**
+     * @public
+     * @since 1.1.0
+     */
+    setIcon(icon: IconName): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    setClass(cls: string): this;
+    /**
+     * @public
+     * @since 0.12.16
+     */
+    onClick(callback: (evt: MouseEvent) => unknown | Promise<unknown>): this;
+}
+
+/**
+ * @public
+ */
+export interface CachedMetadata {
+    /**
+     * @public
+     */
+    links?: LinkCache[];
+    /**
+     * @public
+     */
+    embeds?: EmbedCache[];
+    /**
+     * @public
+     */
+    tags?: TagCache[];
+    /**
+     * @public
+     */
+    headings?: HeadingCache[];
+    /**
+     * @public
+     * @since 1.6.6
+     */
+    footnotes?: FootnoteCache[];
+    /**
+     * @public
+     * @since 1.8.7
+     */
+    footnoteRefs?: FootnoteRefCache[];
+    /**
+     * @public
+     * @since 1.8.7
+     */
+    referenceLinks?: ReferenceLinkCache[];
+    /**
+     * Sections are root level markdown blocks, which can be used to divide the document up.
+     * @public
+     */
+    sections?: SectionCache[];
+    /**
+     * @public
+     */
+    listItems?: ListItemCache[];
+    /**
+     * @public
+     */
+    frontmatter?: FrontMatterCache;
+    /**
+     * Position of the frontmatter in the file.
+     * @public
+     * @since 1.4.0
+     */
+    frontmatterPosition?: Pos;
+
+    /**
+     * @public
+     * @since 1.4.0
+     */
+    frontmatterLinks?: FrontmatterLinkCache[];
+    /**
+     * @public
+     */
+    blocks?: Record<string, BlockCache>;
+
+}
+
+/**
+ * @public
+ */
+export interface CacheItem {
+    /**
+     * Position of this item in the note.
+     * @public
+     */
+    position: Pos;
+
+}
+
+/**
+ * Implementation of the vault adapter for mobile devices.
+ * @public
+ * @since 1.7.2
+ */
+export class CapacitorAdapter implements DataAdapter {
+
+    /**
+     * @public
+     * @since 1.7.2
+     */
+    getName(): string;
+
+    /**
+     * @public
+     * @since 1.7.2
+     */
+    mkdir(normalizedPath: string): Promise<void>;
+    /**
+     * @public
+     * @since 1.7.2
+     */
+    trashSystem(normalizedPath: string): Promise<boolean>;
+    /**
+     * @public
+     * @since 1.7.2
+     */
+    trashLocal(normalizedPath: string): Promise<void>;
+    /**
+     * @public
+     * @since 1.7.2
+     */
+    rmdir(normalizedPath: string, recursive: boolean): Promise<void>;
+    /**
+     * @public
+     * @since 1.7.2
+     */
+    read(normalizedPath: string): Promise<string>;
+    /**
+     * @public
+     * @since 1.7.2
+     */
+    readBinary(normalizedPath: string): Promise<ArrayBuffer>;
+    /**
+     * @public
+     * @since 1.7.2
+     */
+    write(normalizedPath: string, data: string, options?: DataWriteOptions): Promise<void>;
+    /**
+     * @public
+     * @since 1.7.2
+     */
+    writeBinary(normalizedPath: string, data: ArrayBuffer, options?: DataWriteOptions): Promise<void>;
+    /**
+     * @public
+     * @since 1.7.2
+     */
+    append(normalizedPath: string, data: string, options?: DataWriteOptions): Promise<void>;
+    /**
+     * @public
+     * @since 1.7.2
+     */
+    process(normalizedPath: string, fn: (data: string) => string, options?: DataWriteOptions): Promise<string>;
+    /**
+     * @public
+     * @since 1.7.2
+     */
+    getResourcePath(normalizedPath: string): string;
+
+    /**
+     * @public
+     * @since 1.7.2
+     */
+    remove(normalizedPath: string): Promise<void>;
+
+    /**
+     * @public
+     * @since 1.7.2
+     */
+    rename(normalizedPath: string, normalizedNewPath: string): Promise<void>;
+    /**
+     * @public
+     * @since 1.7.2
+     */
+    copy(normalizedPath: string, normalizedNewPath: string): Promise<void>;
+    /**
+     * @public
+     * @since 1.7.2
+     */
+    exists(normalizedPath: string, sensitive?: boolean): Promise<boolean>;
+
+    /**
+     * @public
+     * @since 1.7.2
+     */
+    stat(normalizedPath: string): Promise<Stat | null>;
+    /**
+     * @public
+     * @since 1.7.2
+     */
+    list(normalizedPath: string): Promise<ListedFiles>;
+
+    /**
+     * @public
+     * @since 1.7.2
+     */
+    getFullPath(normalizedPath: string): string;
+
+}
+
+/**
+ * A closeable component that can get dismissed via the Android 'back' button.
+ * @public
+ */
+export interface CloseableComponent {
+    /** @public */
+    close(): void;
+}
+
+/**
+ * Color picker component. Values are by default 6-digit hash-prefixed hex strings like `#000000`.
+ * @public
+ * @since 1.0.0
+ */
+export class ColorComponent extends ValueComponent<string> {
+
+    /**
+     * @public
+     */
+    constructor(containerEl: HTMLElement);
+    /**
+     * @public
+     * @since 1.2.3
+     */
+    setDisabled(disabled: boolean): this;
+    /**
+     * @public
+     * @since 1.0.0
+     */
+    getValue(): HexString;
+    /**
+     * @public
+     * @since 1.0.0
+     */
+    getValueRgb(): RGB;
+    /**
+     * @public
+     * @since 1.0.0
+     */
+    getValueHsl(): HSL;
+
+    /**
+     * @public
+     * @since 1.0.0
+     */
+    setValue(value: HexString): this;
+    /**
+     * @public
+     * @since 1.0.0
+     */
+    setValueRgb(rgb: RGB): this;
+    /**
+     * @public
+     * @since 1.0.0
+     */
+    setValueHsl(hsl: HSL): this;
+
+    /**
+     * @public
+     * @since 1.0.0
+     */
+    onChange(callback: (value: string) => any): this;
+}
+
+/**
+ * @public
+ */
+export interface Command {
+    /**
+     * Globally unique ID to identify this command.
+     * @public
+     */
+    id: string;
+    /**
+     * Human friendly name for searching.
+     * @public
+     */
+    name: string;
+    /**
+     * Icon ID to be used in the toolbar.
+     * See {@link https://docs.obsidian.md/Plugins/User+interface/Icons} for available icons and how to add your own.
+     * @public
+     */
+    icon?: IconName;
+    /** @public */
+    mobileOnly?: boolean;
+    /**
+     * Whether holding the hotkey should repeatedly trigger this command.
+     * @defaultValue false
+     * @public
+     */
+    repeatable?: boolean;
+    /**
+     * Simple callback, triggered globally.
+     * @example
+     * ```ts
+     * this.addCommand({
+     *   id: 'print-greeting-to-console',
+     *   name: 'Print greeting to console',
+     *   callback: () => {
+     *     console.log('Hey, you!');
+     *   },
+     * });
+     * ```
+     * @public
+     */
+    callback?: () => any;
+    /**
+     * Complex callback, overrides the simple callback.
+     * Used to 'check' whether your command can be performed in the current circumstances.
+     * For example, if your command requires the active focused pane to be a MarkdownView, then
+     * you should only return true if the condition is satisfied. Returning false or undefined causes
+     * the command to be hidden from the command palette.
+     *
+     * @param checking - Whether the command palette is just 'checking' if your command should show right now.
+     * If checking is true, then this function should not perform any action.
+     * If checking is false, then this function should perform the action.
+     * @returns Whether this command can be executed at the moment.
+     *
+     * @example
+     * ```ts
+     * this.addCommand({
+     *   id: 'example-command',
+     *   name: 'Example command',
+     *   checkCallback: (checking: boolean) => {
+     *     const value = getRequiredValue();
+     *
+     *     if (value) {
+     *       if (!checking) {
+     *         doCommand(value);
+     *       }
+     *       return true;
+     *     }
+     *
+     *     return false;
+     *   }
+     * });
+     * ```
+     *
+     * @public
+     */
+    checkCallback?: (checking: boolean) => boolean | void;
+
+    /**
+     * A command callback that is only triggered when the user is in an editor.
+     * Overrides `callback` and `checkCallback`
+     * @example
+     * ```ts
+     * this.addCommand({
+     *   id: 'example-command',
+     *   name: 'Example command',
+     *   editorCallback: (editor: Editor, view: MarkdownView) => {
+     *     const sel = editor.getSelection();
+     *
+     *     console.log(`You have selected: ${sel}`);
+     *   }
+     * });
+     * ```
+     * @public
+     * @since 0.12.2
+     */
+    editorCallback?: (editor: Editor, ctx: MarkdownView | MarkdownFileInfo) => any;
+    /**
+     * A command callback that is only triggered when the user is in an editor.
+     * Overrides `editorCallback`, `callback` and `checkCallback`
+     * @example
+     * ```ts
+     * this.addCommand({
+     *   id: 'example-command',
+     *   name: 'Example command',
+     *   editorCheckCallback: (checking: boolean, editor: Editor, view: MarkdownView) => {
+     *     const value = getRequiredValue();
+     *
+     *     if (value) {
+     *       if (!checking) {
+     *         doCommand(value);
+     *       }
+     *
+     *       return true;
+     *     }
+     *
+     *     return false;
+     *   }
+     * });
+     * ```
+     * @public
+     * @since 0.12.2
+     */
+    editorCheckCallback?: (checking: boolean, editor: Editor, ctx: MarkdownView | MarkdownFileInfo) => boolean | void;
+    /**
+     * Sets the default hotkey. It is recommended for plugins to avoid setting default hotkeys if possible,
+     * to avoid conflicting hotkeys with one that's set by the user, even though customized hotkeys have higher priority.
+     * @public
+     */
+    hotkeys?: Hotkey[];
+
+}
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export class Component {
+
+    /**
+     * Load this component and its children
+     * @public
+     * @since 0.9.7
+     */
+    load(): void;
+    /**
+     * Override this to load your component
+     * @public
+     * @virtual
+     * @since 0.9.7
+     */
+    onload(): void;
+    /**
+     * Unload this component and its children
+     * @public
+     * @since 0.9.7
+     */
+    unload(): void;
+    /**
+     * Override this to unload your component
+     * @public
+     * @virtual
+     * @since 0.9.7
+     */
+    onunload(): void;
+    /**
+     * Adds a child component, loading it if this component is loaded
+     * @public
+     * @since 0.12.0
+     */
+    addChild<T extends Component>(component: T): T;
+    /**
+     * Removes a child component, unloading it
+     * @public
+     * @since 0.12.0
+     */
+    removeChild<T extends Component>(component: T): T;
+    /**
+     * Registers a callback to be called when unloading
+     * @public
+     * @since 0.9.7
+     */
+    register(cb: () => any): void;
+    /**
+     * Registers an event to be detached when unloading
+     * @public
+     * @since 0.9.7
+     */
+    registerEvent(eventRef: EventRef): void;
+    /**
+     * Registers an DOM event to be detached when unloading
+     * @public
+     * @since 0.14.8
+     */
+    registerDomEvent<K extends keyof WindowEventMap>(el: Window, type: K, callback: (this: HTMLElement, ev: WindowEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+    /**
+     * Registers an DOM event to be detached when unloading
+     * @public
+     * @since 0.14.8
+     */
+    registerDomEvent<K extends keyof DocumentEventMap>(el: Document, type: K, callback: (this: HTMLElement, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+    /**
+     * Registers an DOM event to be detached when unloading
+     * @public
+     * @since 0.14.8
+     */
+    registerDomEvent<K extends keyof HTMLElementEventMap>(el: HTMLElement, type: K, callback: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+
+    /**
+     * Registers an interval (from setInterval) to be cancelled when unloading
+     * Use {@link window.setInterval} instead of {@link setInterval} to avoid TypeScript confusing between NodeJS vs Browser API
+     * @public
+     * @since 0.13.8
+     */
+    registerInterval(id: number): number;
+}
+
+/** @public */
+export type Constructor<T> = abstract new (...args: any[]) => T;
+
+/**
+ * Work directly with files and folders inside a vault.
+ * If possible prefer using the {@link Vault} API over this.
+ * @public
+ */
+export interface DataAdapter {
+
+    /**
+     * @public
+     */
+    getName(): string;
+
+    /**
+     * Check if something exists at the given path. For a faster way to synchronously check
+     * if a note or attachment is in the vault, use {@link Vault.getAbstractFileByPath}.
+     * @param normalizedPath - path to file/folder, use {@link normalizePath} to normalize beforehand.
+     * @param sensitive - Some file systems/operating systems are case-insensitive, set to true to force a case-sensitivity check.
+     * @public
+     */
+    exists(normalizedPath: string, sensitive?: boolean): Promise<boolean>;
+    /**
+     * Retrieve metadata about the given file/folder.
+     * @param normalizedPath - path to file/folder, use {@link normalizePath} to normalize beforehand.
+     * @public
+     * @since 0.12.2
+     */
+    stat(normalizedPath: string): Promise<Stat | null>;
+    /**
+     * Retrieve a list of all files and folders inside the given folder, non-recursive.
+     * @param normalizedPath - path to folder, use {@link normalizePath} to normalize beforehand.
+     * @public
+     */
+    list(normalizedPath: string): Promise<ListedFiles>;
+    /**
+     * @param normalizedPath - path to file, use {@link normalizePath} to normalize beforehand.
+     * @public
+     */
+    read(normalizedPath: string): Promise<string>;
+    /**
+     * @param normalizedPath - path to file, use {@link normalizePath} to normalize beforehand.
+     * @public
+     */
+    readBinary(normalizedPath: string): Promise<ArrayBuffer>;
+    /**
+     * Write to a plaintext file.
+     * If the file exists its content will be overwritten, otherwise the file will be created.
+     * @param normalizedPath - path to file, use {@link normalizePath} to normalize beforehand.
+     * @param data - new file content
+     * @param options - (Optional)
+     * @public
+     */
+    write(normalizedPath: string, data: string, options?: DataWriteOptions): Promise<void>;
+    /**
+     * Write to a binary file.
+     * If the file exists its content will be overwritten, otherwise the file will be created.
+     * @param normalizedPath - path to file, use {@link normalizePath} to normalize beforehand.
+     * @param data - the new file content
+     * @param options - (Optional)
+     * @public
+     */
+    writeBinary(normalizedPath: string, data: ArrayBuffer, options?: DataWriteOptions): Promise<void>;
+    /**
+     * Add text to the end of a plaintext file.
+     * @param normalizedPath - path to file, use {@link normalizePath} to normalize beforehand.
+     * @param data - the text to append.
+     * @param options - (Optional)
+     * @public
+     */
+    append(normalizedPath: string, data: string, options?: DataWriteOptions): Promise<void>;
+    /**
+     * Atomically read, modify, and save the contents of a plaintext file.
+     * @param normalizedPath - path to file/folder, use {@link normalizePath} to normalize beforehand.
+     * @param fn - a callback function which returns the new content of the file synchronously.
+     * @param options - write options.
+     * @returns string - the text value of the file that was written.
+     * @public
+     */
+    process(normalizedPath: string, fn: (data: string) => string, options?: DataWriteOptions): Promise<string>;
+    /**
+     * Returns an URI for the browser engine to use, for example to embed an image.
+     * @param normalizedPath - path to file/folder, use {@link normalizePath} to normalize beforehand.
+     * @public
+     */
+    getResourcePath(normalizedPath: string): string;
+    /**
+     * Create a directory.
+     * @param normalizedPath - path to use for new folder, use {@link normalizePath} to normalize beforehand.
+     * @public
+     */
+    mkdir(normalizedPath: string): Promise<void>;
+    /**
+     * Try moving to system trash.
+     * @param normalizedPath - path to file/folder, use {@link normalizePath} to normalize beforehand.
+     * @returns Returns true if succeeded. This can fail due to system trash being disabled.
+     * @public
+     */
+    trashSystem(normalizedPath: string): Promise<boolean>;
+    /**
+     * Move to local trash.
+     * Files will be moved into the `.trash` folder at the root of the vault.
+     * @param normalizedPath - path to file/folder, use {@link normalizePath} to normalize beforehand.
+     * @public
+     */
+    trashLocal(normalizedPath: string): Promise<void>;
+    /**
+     * Remove a directory.
+     * @param normalizedPath - path to folder, use {@link normalizePath} to normalize beforehand.
+     * @param recursive - If `true`, delete folders under this folder recursively, if `false` the folder needs to be empty.
+     * @public
+     */
+    rmdir(normalizedPath: string, recursive: boolean): Promise<void>;
+    /**
+     * Delete a file.
+     * @param normalizedPath - path to file, use {@link normalizePath} to normalize beforehand.
+     * @public
+     */
+    remove(normalizedPath: string): Promise<void>;
+
+    /**
+     * Rename a file or folder.
+     * @param normalizedPath - current path to file/folder, use {@link normalizePath} to normalize beforehand.
+     * @param normalizedNewPath - new path to file/folder, use {@link normalizePath} to normalize beforehand.
+     * @public
+     */
+    rename(normalizedPath: string, normalizedNewPath: string): Promise<void>;
+    /**
+     * Create a copy of a file.
+     * This will fail if there is already a file at `normalizedNewPath`.
+     * @param normalizedPath - path to file, use {@link normalizePath} to normalize beforehand.
+     * @param normalizedNewPath - path to file, use {@link normalizePath} to normalize beforehand.
+     * @public
+     */
+    copy(normalizedPath: string, normalizedNewPath: string): Promise<void>;
+}
+
+/**
+ * @public
+ */
+export interface DataWriteOptions {
+    /**
+     * Time of creation, represented as a unix timestamp, in milliseconds.
+     * Omit this if you want to keep the default behaviour.
+     * @public
+     * */
+    ctime?: number;
+    /**
+     * Time of last modification, represented as a unix timestamp, in milliseconds.
+     * Omit this if you want to keep the default behaviour.
+     * @public
+     */
+    mtime?: number;
+
+}
+
+/**
+ * {@link Value} wrapping a Date.
+ * @public
+ * @since 1.10.0
+ */
+export class DateValue extends NotNullValue {
+
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    toString(): string;
+
+    /**
+     * @returns a new DateValue with any time portion in this DateValue removed.
+     * @public
+     * @since 1.10.0
+     */
+    dateOnly(): DateValue;
+
+    /**
+     * @returns a new {@link RelativeDateValue} based on this DateValue.
+     * @public
+     * @since 1.10.0
+     */
+    relative(): string;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    isTruthy(): boolean;
+
+    /**
+     * Create new DateValue from an input string.
+     *
+     * @example
+     * parseFromString("2025-12-31")
+     * parseFromString("2025-12-31T23:59")
+     * parseFromString("2025-12-31T23:59:59")
+     * parseFromString("2025-12-31T23:59:59Z-07")
+     *
+     * @param input - An ISO 8601 date or datetime string.
+     * @public
+     * @since 1.10.0
+     */
+    static parseFromString(input: string): DateValue | null;
+
+}
+
+/**
+ * A standard debounce function.
+ * Use this to have a time-delayed function only be called once in a given timeframe.
+ *
+ * @param cb - The function to call.
+ * @param timeout - The timeout to wait, in milliseconds
+ * @param resetTimer - Whether to reset the timeout when the debouncer is called again.
+ * @returns a debounced function that takes the same parameter as the original function.
+ * @example
+ * ```ts
+ * const debounced = debounce((text: string) => {
+ *     console.log(text);
+ * }, 1000, true);
+ * debounced('Hello world'); // this will not be printed
+ * await sleep(500);
+ * debounced('World, hello'); // this will be printed to the console.
+ * ```
+ * @public
+ */
+export function debounce<T extends unknown[], V>(cb: (...args: [...T]) => V, timeout?: number, resetTimer?: boolean): Debouncer<T, V>;
+
+/** @public */
+export interface Debouncer<T extends unknown[], V> {
+    /** @public */
+    (...args: [...T]): this;
+    /**
+     * Cancel any pending debounced function call.
+     * @public
+     */
+    cancel(): this;
+    /**
+     * If there is any pending function call, clear the timer and call the function immediately.
+     * @public
+     * @since 1.4.4
+     */
+    run(): V | void;
+}
+
+/**
+ * Manually trigger a tooltip that will appear over the provided element.
+ *
+ * To display a tooltip on hover, use {@link setTooltip} instead.
+ * @public
+ * @since 1.8.7
+ */
+export function displayTooltip(newTargetEl: HTMLElement, content: string | DocumentFragment, options?: TooltipOptions): void;
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export class DropdownComponent extends ValueComponent<string> {
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    selectEl: HTMLSelectElement;
+
+    /**
+     * @public
+     */
+    constructor(containerEl: HTMLElement);
+    /**
+     * @public
+     * @since 1.2.3
+     */
+    setDisabled(disabled: boolean): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    addOption(value: string, display: string): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    addOptions(options: Record<string, string>): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    getValue(): string;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    setValue(value: string): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    onChange(callback: (value: string) => any): this;
+}
+
+/**
+ * @public
+ * @since 1.10.0
+ */
+export interface DropdownOption extends BaseOption {
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    type: 'dropdown';
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    default?: string;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    options: Record<string, string>;
+}
+
+/**
+ * {@link Value} wrapping a duration. Durations can be used to modify a {@link DateValue} or can
+ * result from subtracting a DateValue from another.
+ * @public
+ * @since 1.10.0
+ */
+export class DurationValue extends NotNullValue {
+
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    toString(): string;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    isTruthy(): boolean;
+
+    /**
+     * Modifies the provided {@DateValue} by this duration.
+     * @public
+     * @since 1.10.0
+     */
+    addToDate(value: DateValue, subtract?: boolean): DateValue;
+    /**
+     * Convert this duration into milliseconds.
+     * @public
+     * @since 1.10.0
+     */
+    getMilliseconds(): number;
+
+    /**
+     * Create a new DurationValue using an ISO 8601 duration.
+     * See {@link https://en.wikipedia.org/wiki/ISO_8601#Durations} for duration format details.
+     * @public
+     * @since 1.10.0
+     */
+    static parseFromString(input: string): DurationValue | null;
+    /**
+     * Create a new DurationValue from milliseconds.
+     * @public
+     * @since 1.10.0
+     */
+    static fromMilliseconds(milliseconds: number): DurationValue;
+}
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export abstract class EditableFileView extends FileView {
+
+}
+
+/**
+ * A common interface that bridges the gap between CodeMirror 5 and CodeMirror 6.
+ * @public
+ * @since 0.11.11
+ */
+export abstract class Editor {
+
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    getDoc(): this;
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    abstract refresh(): void;
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    abstract getValue(): string;
+    /** @public
+     * @since 0.11.11
+     */
+    abstract setValue(content: string): void;
+    /**
+     * Get the text at line (0-indexed)
+     * @public
+     * @since 0.11.11
+     */
+    abstract getLine(line: number): string;
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    setLine(n: number, text: string): void;
+    /**
+     * Gets the number of lines in the document
+     * @public
+     * @since 0.11.11
+     */
+    abstract lineCount(): number;
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    abstract lastLine(): number;
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    abstract getSelection(): string;
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    somethingSelected(): boolean;
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    abstract getRange(from: EditorPosition, to: EditorPosition): string;
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    abstract replaceSelection(replacement: string, origin?: string): void;
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    abstract replaceRange(replacement: string, from: EditorPosition, to?: EditorPosition, origin?: string): void;
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    abstract getCursor(side?: 'from' | 'to' | 'head' | 'anchor'): EditorPosition;
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    abstract listSelections(): EditorSelection[];
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    setCursor(pos: EditorPosition | number, ch?: number): void;
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    abstract setSelection(anchor: EditorPosition, head?: EditorPosition): void;
+    /**
+     * @public
+     * @since 0.12.11
+     */
+    abstract setSelections(ranges: EditorSelectionOrCaret[], main?: number): void;
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    abstract focus(): void;
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    abstract blur(): void;
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    abstract hasFocus(): boolean;
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    abstract getScrollInfo(): {
+        /**
+         * @public
+         * @since 0.11.11
+         */
+        top: number;
+        /**
+         * @public
+         * @since 0.11.11
+         */
+        left: number;
+    };
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    abstract scrollTo(x?: number | null, y?: number | null): void;
+    /**
+     * @public
+     * @since 0.13.0
+     */
+    abstract scrollIntoView(range: EditorRange, center?: boolean): void;
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    abstract undo(): void;
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    abstract redo(): void;
+    /**
+     * @public
+     * @since 0.12.2
+     */
+    abstract exec(command: EditorCommandName): void;
+    /**
+     * @public
+     * @since 0.13.0
+     */
+    abstract transaction(tx: EditorTransaction, origin?: string): void;
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    abstract wordAt(pos: EditorPosition): EditorRange | null;
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    abstract posToOffset(pos: EditorPosition): number;
+    /**
+     * @public
+     * @since 0.11.11
+     */
+    abstract offsetToPos(offset: number): EditorPosition;
+
+    /**
+     * @public
+     * @since 0.13.26
+     */
+    processLines<T>(read: (line: number, lineText: string) => T | null, write: (line: number, lineText: string, value: T | null) => EditorChange | void, ignoreEmpty?: boolean): void;
+
+}
+
+/**
+ * @public
+ * @since 0.12.11
+ */
+export interface EditorChange extends EditorRangeOrCaret {
+    /** @public */
+    text: string;
+}
+
+/** @public */
+export type EditorCommandName = 'goUp' | 'goDown' | 'goLeft' | 'goRight' | 'goStart' | 'goEnd' | 'goWordLeft' | 'goWordRight' | 'indentMore' | 'indentLess' | 'newlineAndIndent' | 'swapLineUp' | 'swapLineDown' | 'deleteLine' | 'toggleFold' | 'foldAll' | 'unfoldAll';
+
+/**
+ * Use this StateField to get a reference to the EditorView
+ * @public
+ */
+export const editorEditorField: StateField<EditorView>;
+
+/**
+ * Use this StateField to get information about this Markdown editor, such as the associated file, or the Editor.
+ * @public
+ */
+export const editorInfoField: StateField<MarkdownFileInfo>;
+
+/**
+ * Use this StateField to check whether Live Preview is active
+ * @public
+ */
+export const editorLivePreviewField: StateField<boolean>;
+
+/**
+ * @public
+ * @since 0.12.11
+ */
+export interface EditorPosition {
+    /** @public */
+    line: number;
+    /** @public */
+    ch: number;
+}
+
+/**
+ * @public
+ * @since 0.12.11
+ */
+export interface EditorRange {
+    /** @public */
+    from: EditorPosition;
+    /** @public */
+    to: EditorPosition;
+}
+
+/**
+ * @public
+ * @since 0.12.11
+ */
+export interface EditorRangeOrCaret {
+    /** @public */
+    from: EditorPosition;
+    /** @public */
+    to?: EditorPosition;
+}
+
+/**
+ * @public
+ * @since 0.15.0
+ * */
+export interface EditorScrollInfo {
+    /** @public */
+    left: number;
+    /** @public */
+    top: number;
+    /** @public */
+    width: number;
+    /** @public */
+    height: number;
+    /** @public */
+    clientWidth: number;
+    /** @public */
+    clientHeight: number;
+}
+
+/**
+ * @public
+ * @since 0.12.11
+ */
+export interface EditorSelection {
+    /** @public */
+    anchor: EditorPosition;
+    /** @public */
+    head: EditorPosition;
+}
+
+/**
+ * @public
+ * @since 0.12.11
+ */
+export interface EditorSelectionOrCaret {
+    /** @public */
+    anchor: EditorPosition;
+    /** @public */
+    head?: EditorPosition;
+}
+
+/**
+ * @public
+ * @since 0.12.17
+ */
+export abstract class EditorSuggest<T> extends PopoverSuggest<T> {
+
+    /**
+     * Current suggestion context, containing the result of `onTrigger`.
+     * This will be null any time the EditorSuggest is not supposed to run.
+     * @public
+     * @since 0.12.17
+     */
+    context: EditorSuggestContext | null;
+    /**
+     * Override this to use a different limit for suggestion items
+     * @public
+     * @since 0.12.17
+     */
+    limit: number;
+    /**
+     * @public
+     */
+    constructor(app: App);
+    /**
+     * @public
+     * @since 0.13.0
+     */
+    setInstructions(instructions: Instruction[]): void;
+
+    /**
+     * Based on the editor line and cursor position, determine if this EditorSuggest should be triggered at this moment.
+     * Typically, you would run a regular expression on the current line text before the cursor.
+     * Return null to indicate that this editor suggest is not supposed to be triggered.
+     *
+     * Please be mindful of performance when implementing this function, as it will be triggered very often (on each keypress).
+     * Keep it simple, and return null as early as possible if you determine that it is not the right time.
+     * @public
+     * @since 1.1.13
+     */
+    abstract onTrigger(cursor: EditorPosition, editor: Editor, file: TFile | null): EditorSuggestTriggerInfo | null;
+    /**
+     * Generate suggestion items based on this context. Can be async, but preferably sync.
+     * When generating async suggestions, you should pass the context along.
+     * @public
+     * @since 0.12.17
+     */
+    abstract getSuggestions(context: EditorSuggestContext): T[] | Promise<T[]>;
+
+}
+
+/**
+ * @public
+ * @since 0.12.17
+ */
+export interface EditorSuggestContext extends EditorSuggestTriggerInfo {
+    /** @public */
+    editor: Editor;
+    /** @public */
+    file: TFile;
+}
+
+/**
+ * @public
+ * @since 0.12.17
+ */
+export interface EditorSuggestTriggerInfo {
+    /**
+     * The start position of the triggering text. This is used to position the popover.
+     * @public
+     */
+    start: EditorPosition;
+    /**
+     * The end position of the triggering text. This is used to position the popover.
+     * @public
+     */
+    end: EditorPosition;
+    /**
+     * They query string (usually the text between start and end) that will be used to generate the suggestion content.
+     * @public
+     */
+    query: string;
+}
+
+/** @public */
+export interface EditorTransaction {
+    /** @public */
+    replaceSelection?: string;
+    /** @public */
+    changes?: EditorChange[];
+    /**
+     * Multiple selections, overrides `selection`.
+     * @public
+     */
+    selections?: EditorRangeOrCaret[];
+    /** @public */
+    selection?: EditorRangeOrCaret;
+}
+
+/**
+ * This is now deprecated - it is now mapped directly to `editorInfoField`, which return a MarkdownFileInfo, which may be a MarkdownView but not necessarily.
+ * @public
+ * @deprecated use {@link editorInfoField} instead.
+ */
+export const editorViewField: StateField<MarkdownFileInfo>;
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export interface EmbedCache extends ReferenceCache {
+}
+
+/**
+ * @public
+ */
+export interface EventRef {
+
+}
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export class Events {
+
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    on(name: string, callback: (...data: unknown[]) => unknown, ctx?: any): EventRef;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    off(name: string, callback: (...data: unknown[]) => unknown): void;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    offref(ref: EventRef): void;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    trigger(name: string, ...data: unknown[]): void;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    tryTrigger(evt: EventRef, args: unknown[]): void;
+}
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export class ExtraButtonComponent extends BaseComponent {
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    extraSettingsEl: HTMLElement;
+
+    /**
+     * @public
+     */
+    constructor(containerEl: HTMLElement);
+    /**
+     * @public
+     * @since 1.2.3
+     */
+    setDisabled(disabled: boolean): this;
+    /**
+     * @public
+     * @since 1.1.0
+     */
+    setTooltip(tooltip: string, options?: TooltipOptions): this;
+    /**
+     * @param icon - ID of the icon, can use any icon loaded with {@link addIcon} or from the inbuilt library.
+     * @see The Obsidian icon library includes the {@link https://lucide.dev/ Lucide icon library}, any icon name from their site will work here.
+     * @public
+     * @since 0.9.7
+     */
+    setIcon(icon: IconName): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    onClick(callback: () => any): this;
+}
+
+/**
+ * Manage the creation, deletion and renaming of files from the UI.
+ * @public
+ * @since 0.9.7
+ */
+export class FileManager {
+
+    /**
+     * Gets the folder that new files should be saved to, given the user's preferences.
+     * @param sourcePath - The path to the current open/focused file,
+     * used when the user wants new files to be created 'in the same folder'.
+     * Use an empty string if there is no active file.
+     * @param newFilePath - The path to the file that will be newly created,
+     * used to infer what settings to use based on the path's extension.
+     * @public
+     * @since 1.1.13
+     */
+    getNewFileParent(sourcePath: string, newFilePath?: string): TFolder;
+
+    /**
+     * Rename or move a file safely, and update all links to it depending on the user's preferences.
+     * @param file - the file to rename
+     * @param newPath - the new path for the file
+     * @public
+     * @since 0.11.0
+     */
+    renameFile(file: TAbstractFile, newPath: string): Promise<void>;
+
+    /**
+     * @public
+     * @since 0.15.0
+     */
+    promptForDeletion(file: TAbstractFile): Promise<void>;
+
+    /**
+     * Remove a file or a folder from the vault according the user's preferred 'trash'
+     * options (either moving the file to .trash/ or the OS trash bin).
+     * @param file
+     * @public
+     * @since 1.6.6
+     */
+    trashFile(file: TAbstractFile): Promise<void>;
+
+    /**
+     * Generate a Markdown link based on the user's preferences.
+     * @param file - the file to link to.
+     * @param sourcePath - where the link is stored in, used to compute relative links.
+     * @param subpath - A subpath, starting with `#`, used for linking to headings or blocks.
+     * @param alias - The display text if it's to be different than the file name. Pass empty string to use file name.
+     * @public
+     * @since 0.12.0
+     */
+    generateMarkdownLink(file: TFile, sourcePath: string, subpath?: string, alias?: string): string;
+
+    /**
+     * Atomically read, modify, and save the frontmatter of a note.
+     * The frontmatter is passed in as a JS object, and should be mutated directly to achieve the desired result.
+     *
+     * Remember to handle errors thrown by this method.
+     *
+     * @param file - the file to be modified. Must be a Markdown file.
+     * @param fn - a callback function which mutates the frontmatter object synchronously.
+     * @param options - write options.
+     * @throws YAMLParseError if the YAML parsing fails
+     * @throws any errors that your callback function throws
+     * @example
+     * ```ts
+     * app.fileManager.processFrontMatter(file, (frontmatter) => {
+     *     frontmatter['key1'] = value;
+     *     delete frontmatter['key2'];
+     * });
+     * ```
+     * @public
+     * @since 1.4.4
+     */
+    processFrontMatter(file: TFile, fn: (frontmatter: any) => void, options?: DataWriteOptions): Promise<void>;
+
+    /**
+     * Resolves a unique path for the attachment file being saved.
+     * Ensures that the parent directory exists and dedupes the
+     * filename if the destination filename already exists.
+     *
+     * @param filename Name of the attachment being saved
+     * @param sourcePath The path to the note associated with this attachment, defaults to the workspace's active file.
+     * @returns Full path for where the attachment should be saved, according to the user's settings
+     * @public
+     * @since 1.5.7
+     */
+    getAvailablePathForAttachment(filename: string, sourcePath?: string): Promise<string>;
+
+}
+
+/**
+ * @public
+ */
+export interface FileStats {
+    /**
+     * Time of creation, represented as a unix timestamp, in milliseconds.
+     * @public
+     */
+    ctime: number;
+    /**
+     * Time of last modification, represented as a unix timestamp, in milliseconds.
+     * @public
+     */
+    mtime: number;
+    /**
+     * Size on disk, as bytes.
+     * @public
+     */
+    size: number;
+}
+
+/**
+ * Implementation of the vault adapter for desktop.
+ * @public
+ */
+export class FileSystemAdapter implements DataAdapter {
+
+    /**
+     * @public
+     */
+    getName(): string;
+    /**
+     * @public
+     */
+    getBasePath(): string;
+
+    /**
+     * @public
+     */
+    mkdir(normalizedPath: string): Promise<void>;
+    /**
+     * @public
+     */
+    trashSystem(normalizedPath: string): Promise<boolean>;
+    /**
+     * @public
+     */
+    trashLocal(normalizedPath: string): Promise<void>;
+    /**
+     * @public
+     */
+    rmdir(normalizedPath: string, recursive: boolean): Promise<void>;
+    /**
+     * @public
+     */
+    read(normalizedPath: string): Promise<string>;
+    /**
+     * @public
+     */
+    readBinary(normalizedPath: string): Promise<ArrayBuffer>;
+    /**
+     * @public
+     */
+    write(normalizedPath: string, data: string, options?: DataWriteOptions): Promise<void>;
+    /**
+     * @public
+     */
+    writeBinary(normalizedPath: string, data: ArrayBuffer, options?: DataWriteOptions): Promise<void>;
+    /**
+     * @public
+     */
+    append(normalizedPath: string, data: string, options?: DataWriteOptions): Promise<void>;
+    /**
+     * @public
+     */
+    process(normalizedPath: string, fn: (data: string) => string, options?: DataWriteOptions): Promise<string>;
+
+    /**
+     * @public
+     */
+    getResourcePath(normalizedPath: string): string;
+    /**
+     * Returns the file:// path of this file
+     * @public
+     * @since 0.14.3
+     */
+    getFilePath(normalizedPath: string): string;
+    /**
+     * @public
+     */
+    remove(normalizedPath: string): Promise<void>;
+
+    /**
+     * @public
+     */
+    rename(normalizedPath: string, normalizedNewPath: string): Promise<void>;
+
+    /**
+     * @public
+     */
+    copy(normalizedPath: string, normalizedNewPath: string): Promise<void>;
+    /**
+     * @public
+     */
+    exists(normalizedPath: string, sensitive?: boolean): Promise<boolean>;
+
+    /**
+     * @public
+     * @since 0.12.2
+     */
+    stat(normalizedPath: string): Promise<Stat | null>;
+    /**
+     * @public
+     */
+    list(normalizedPath: string): Promise<ListedFiles>;
+
+    /**
+     * @public
+     */
+    getFullPath(normalizedPath: string): string;
+
+    /**
+     * @public
+     */
+    static readLocalFile(path: string): Promise<ArrayBuffer>;
+    /**
+     * @public
+     */
+    static mkdir(path: string): Promise<void>;
+}
+
+/**
+ * {@link Value} wrapping a file in Obsidian.
+ * @public
+ * @since 1.10.0
+ */
+export class FileValue extends NotNullValue {
+
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    toString(): string;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    isTruthy(): boolean;
+
+}
+
+/**
+ * @public
+ */
+export abstract class FileView extends ItemView {
+    /**
+     * @public
+     */
+    allowNoFile: boolean;
+    /**
+     * @public
+     */
+    file: TFile | null;
+    /**
+     * File views can be navigated by default.
+     * @inheritDoc
+     * @public
+     */
+    navigation: boolean;
+    /**
+     * @public
+     */
+    constructor(leaf: WorkspaceLeaf);
+
+    /**
+     * @public
+     */
+    getDisplayText(): string;
+    /**
+     * @public
+     */
+    onload(): void;
+    /**
+     * @public
+     */
+    getState(): Record<string, unknown>;
+
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    setState(state: any, result: ViewStateResult): Promise<void>;
+
+    /**
+     * @public
+     */
+    onLoadFile(file: TFile): Promise<void>;
+    /**
+     * @public
+     */
+    onUnloadFile(file: TFile): Promise<void>;
+    /**
+     * @public
+     */
+    onRename(file: TFile): Promise<void>;
+
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    canAcceptExtension(extension: string): boolean;
+}
+
+/**
+ * Flush the MathJax stylesheet.
+ * @public
+ */
+export function finishRenderMath(): Promise<void>;
+
+/**
+ * @public
+ */
+export interface FootnoteCache extends CacheItem {
+    /**
+     * @public
+     */
+    id: string;
+}
+
+/**
+ * @public
+ */
+export interface FootnoteRefCache extends CacheItem {
+    /**
+     * @public
+     */
+    id: string;
+}
+
+/**
+ * @public
+ * @since 1.7.2
+ */
+export interface FootnoteSubpathResult extends SubpathResult {
+    /**
+     * @public
+     */
+    type: 'footnote';
+    /**
+     * @public
+     */
+    footnote: FootnoteCache;
+}
+
+/**
+ * The context in which a formula is evaluated. In most cases, {@link BasesEntry} is the specific type to use.
+ * @public
+ * @since 1.10.0
+ */
+export interface FormulaContext {
+
+}
+
+/**
+ * @public
+ */
+export interface FrontMatterCache {
+    /**
+     * @public
+     */
+    [key: string]: any;
+}
+
+/** @public */
+export interface FrontMatterInfo {
+    /** @public Whether this file has a frontmatter block */
+    exists: boolean;
+    /** @public String representation of the frontmatter */
+    frontmatter: string;
+    /** @public Start of the frontmatter contents (excluding the ---) */
+    from: number;
+    /** @public End of the frontmatter contents (excluding the ---) */
+    to: number;
+    /** @public Offset where the frontmatter block ends (including the ---) */
+    contentStart: number;
+}
+
+/**
+ * @public
+ */
+export interface FrontmatterLinkCache extends Reference {
+    /**
+     * @public
+     */
+    key: string;
+}
+
+/**
+ * @public
+ * @since 0.9.20
+ */
+export interface FuzzyMatch<T> {
+    /**
+     * @public
+     * @since 0.9.20
+     */
+    item: T;
+    /**
+     * @public
+     * @ince 0.9.20
+     */
+    match: SearchResult;
+}
+
+/**
+ * @public
+ * @since 0.9.20
+ */
+export abstract class FuzzySuggestModal<T> extends SuggestModal<FuzzyMatch<T>> {
+
+    /**
+     * @public
+     * @since 0.9.20
+     */
+    getSuggestions(query: string): FuzzyMatch<T>[];
+    /**
+     * @public
+     * @since 0.9.20
+     */
+    renderSuggestion(item: FuzzyMatch<T>, el: HTMLElement): void;
+    /**
+     * @public
+     * @since 0.9.20
+     */
+    onChooseSuggestion(item: FuzzyMatch<T>, evt: MouseEvent | KeyboardEvent): void;
+    /**
+     * @public
+     * @since 0.9.20
+     */
+    abstract getItems(): T[];
+    /**
+     * @public
+     * @since 0.9.20
+     */
+    abstract getItemText(item: T): string;
+    /**
+     * @public
+     * @since 0.9.20
+     */
+    abstract onChooseItem(item: T, evt: MouseEvent | KeyboardEvent): void;
+}
+
+/**
+ * Combines all tags from frontmatter and note content into a single array.
+ * @public
+ */
+export function getAllTags(cache: CachedMetadata): string[] | null;
+
+/** @public */
+export function getBlobArrayBuffer(blob: Blob): Promise<ArrayBuffer>;
+
+/**
+ * Given the contents of a file, get information about the frontmatter of the file, including
+ * whether there is a frontmatter block, the offsets of where it starts and ends, and the frontmatter text.
+ *
+ * @public
+ * @since 1.5.7
+ */
+export function getFrontMatterInfo(content: string): FrontMatterInfo;
+
+/**
+ * Create an SVG from an iconId. Returns null if no icon associated with the iconId.
+ * @param iconId - the icon ID
+ * @public
+ */
+export function getIcon(iconId: string): SVGSVGElement | null;
+
+/**
+ * Get the list of registered icons.
+ * @public
+ */
+export function getIconIds(): IconName[];
+
+/**
+ * Get the ISO code for the currently configured app language. Defaults to 'en'.
+ * See {@link https://github.com/obsidianmd/obsidian-translations?tab=readme-ov-file#existing-languages} for list of options.
+ * @public
+ * @since 1.8.7
+ */
+export function getLanguage(): string;
+
+/**
+ * Converts the linktext to a linkpath.
+ * @param linktext A wikilink without the leading [[ and trailing ]]
+ * @returns the name of the file that is being linked to.
+ * @public
+ */
+export function getLinkpath(linktext: string): string;
+
+/**
+ * Collapsible container for other ViewOptions.
+ * @public
+ * @since 1.10.0
+ */
+export interface GroupOption {
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    type: 'group';
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    displayName: string;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    items: Exclude<ViewOption, GroupOption>[];
+}
+
+/**
+ * @public
+ */
+export interface HeadingCache extends CacheItem {
+    /**
+     * @public
+     */
+    heading: string;
+    /**
+     * Number between 1 and 6.
+     * @public
+     */
+    level: number;
+}
+
+/**
+ * @public
+ * @since 0.9.16
+ */
+export interface HeadingSubpathResult extends SubpathResult {
+    /**
+     * @public
+     * @since 0.9.16
+     */
+    type: 'heading';
+    /**
+     * @public
+     * @since 0.9.16
+     */
+    current: HeadingCache;
+    /**
+     * @public
+     * @since 0.9.16
+     */
+    next: HeadingCache;
+}
+
+/**
+ * Hex strings are 6-digit hash-prefixed rgb strings in lowercase form.
+ * Example: #ffffff
+ * @public
+ */
+export type HexString = string;
+
+/** @public */
+export function hexToArrayBuffer(hex: string): ArrayBuffer;
+
+/**
+ * @public
+ */
+export interface Hotkey {
+    /** @public */
+    modifiers: Modifier[];
+    /** @public */
+    key: string;
+
+}
+
+/**
+ * @public
+ */
+export interface HoverLinkSource {
+    /**
+     * Text displayed in the 'Page preview' plugin settings.
+     * It should match the plugin's display name.
+     * @public
+     */
+    display: string;
+    /**
+     * Whether the `hover-link` event requires the 'Mod' key to be pressed to trigger.
+     * @public
+     */
+    defaultMod: boolean;
+}
+
+/**
+ * @public
+ * @since 0.11.13
+ */
+export interface HoverParent {
+    /**
+     * @public
+     * @since 0.11.13
+     */
+    hoverPopover: HoverPopover | null;
+}
+
+/**
+ * @public
+ * @since 0.15.0
+ */
+export class HoverPopover extends Component {
+
+    /**
+     * @public
+     */
+    hoverEl: HTMLElement;
+    /**
+     * @public
+     */
+    state: PopoverState;
+
+    /**
+     * @public
+     */
+    constructor(parent: HoverParent, targetEl: HTMLElement | null, waitTime?: number, staticPos?: Point | null);
+
+}
+
+/**
+ * @public
+ * @since 0.16.0
+ */
+export interface HSL {
+    /**
+     * Hue integer value between 0 and 360
+     * @public
+     * @since 0.16.0
+     */
+    h: number;
+    /**
+     * Saturation integer value between 0 and 100
+     * @public
+     * @since 0.16.0
+     */
+    s: number;
+    /**
+     * Lightness integer value between 0 and 100
+     * @public
+     * @since 0.16.0
+     */
+    l: number;
+}
+
+/**
+ * Converts HTML to a Markdown string.
+ * @public
+ */
+export function htmlToMarkdown(html: string | HTMLElement | Document | DocumentFragment): string;
+
+/**
+ * {@link Value} wrapping raw HTML.
+ * @public
+ * @since 1.10.0
+ */
+export class HTMLValue extends StringValue {
+
+}
+
+/**
+ * {@link Value} wrapping a renderable icon.
+ * @public
+ * @since 1.10.0
+ */
+export class IconValue extends StringValue {
+
+}
+
+/**
+ * {@link Value} wrapping a path to an image resource in the vault.
+ * @public
+ * @since 1.10.0
+ */
+export class ImageValue extends StringValue {
+
+}
+
+/**
+ * @public
+ * @since 0.9.20
+ */
+export interface Instruction {
+    /**
+     * @public
+     * @since 0.9.20
+     */
+    command: string;
+    /**
+     * @public
+     * @since 0.9.20
+     */
+    purpose: string;
+}
+
+/**
+ * @public
+ */
+export interface ISuggestOwner<T> {
+    /**
+     * Render the suggestion item into DOM.
+     * @public
+     */
+    renderSuggestion(value: T, el: HTMLElement): void;
+    /**
+     * Called when the user makes a selection.
+     * @public
+     */
+    selectSuggestion(value: T, evt: MouseEvent | KeyboardEvent): void;
+
+}
+
+/**
+ * @public
+ *@since 0.9.7
+ */
+export abstract class ItemView extends View {
+
+    /** @public */
+    contentEl: HTMLElement;
+
+    /**
+     * @public
+     */
+    constructor(leaf: WorkspaceLeaf);
+
+    /**
+     * @public
+     * @since 1.1.0
+     */
+    addAction(icon: IconName, title: string, callback: (evt: MouseEvent) => any): HTMLElement;
+
+}
+
+/**
+ * Iterate links and embeds.
+ * If callback returns true, the iteration process will be interrupted.
+ * @returns true if callback ever returns true, false otherwise.
+ * @public
+ * @deprecated
+ */
+export function iterateCacheRefs(cache: CachedMetadata, cb: (ref: ReferenceCache) => boolean | void): boolean;
+
+/**
+ * If callback returns true, the iteration process will be interrupted.
+ * @returns true if callback ever returns true, false otherwise.
+ * @public
+ */
+export function iterateRefs(refs: Reference[], cb: (ref: Reference) => boolean | void): boolean;
+
+/**
+ * Manages keymap lifecycle for different {@link Scope}s.
+ *
+ * @public
+ * @since 0.13.9
+ */
+export class Keymap {
+
+    /**
+     * Push a scope onto the scope stack, setting it as the active scope to handle all key events.
+     * @public
+     * @since 0.13.9
+     */
+    pushScope(scope: Scope): void;
+    /**
+     * Remove a scope from the scope stack.
+     * If the given scope is active, the next scope in the stack will be made active.
+     * @public
+     * @since 0.13.9
+     */
+    popScope(scope: Scope): void;
+
+    /**
+     * Checks whether the modifier key is pressed during this event.
+     * @public
+     * @since 0.12.17
+     */
+    static isModifier(evt: MouseEvent | TouchEvent | KeyboardEvent, modifier: Modifier): boolean;
+
+    /**
+     * Translates an event into the type of pane that should open.
+     * Returns 'tab' if the modifier key Cmd/Ctrl is pressed OR if this is a middle-click MouseEvent.
+     * Returns 'split' if Cmd/Ctrl+Alt is pressed.
+     * Returns 'window' if Cmd/Ctrl+Alt+Shift is pressed.
+     * @public
+     * @since 0.16.0
+     * */
+    static isModEvent(evt?: UserEvent | null): PaneType | boolean;
+}
+
+/**
+ * @public
+ */
+export interface KeymapContext extends KeymapInfo {
+    /**
+     * Interpreted virtual key.
+     * @public
+     */
+    vkey: string;
+}
+
+/**
+ * @public
+ */
+export interface KeymapEventHandler extends KeymapInfo {
+    /** @public */
+    scope: Scope;
+
+}
+
+/**
+ * Return `false` to automatically preventDefault
+ * @public
+ */
+export type KeymapEventListener = (evt: KeyboardEvent, ctx: KeymapContext) => false | any;
+
+/**
+ * @public
+ * @since 0.10.4
+ */
+export interface KeymapInfo {
+    /**
+     * @public
+     * @since 0.10.4
+     */
+    modifiers: string | null;
+    /**
+     * @public
+     * @since 0.10.4
+     */
+    key: string | null;
+}
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export interface LinkCache extends ReferenceCache {
+}
+
+/**
+ * {@link Value} wrapping an internal wikilink.
+ * @public
+ * @since 1.10.0
+ */
+export class LinkValue extends StringValue {
+
+    /**
+     * Create a new LinkValue from wikilink syntax.
+     * @example
+     * parseFromString("[[Welcome|Example Link]]")
+     *
+     * @public
+     * @since 1.10.0
+     */
+    static parseFromString(app: App, input: string, sourcePath: string): LinkValue | null;
+
+}
+
+/**
+ * @public
+ */
+export interface ListedFiles {
+    /** @public */
+    files: string[];
+    /** @public */
+    folders: string[];
+}
+
+/**
+ * @public
+ */
+export interface ListItemCache extends CacheItem {
+    /**
+     * The block ID of this list item, if defined.
+     * @public
+     */
+    id?: string | undefined;
+    /**
+     * A single character indicating the checked status of a task.
+     * The space character `' '` is interpreted as an incomplete task.
+     * An other character is interpreted as completed task.
+     * `undefined` if this item isn't a task.
+     * @public
+     */
+    task?: string | undefined;
+    /**
+     * Line number of the parent list item (position.start.line).
+     * If this item has no parent (e.g. it's a root level list),
+     * then this value is the negative of the line number of the first list item (start of the list).
+     *
+     * Can be used to deduce which list items belongs to the same group (item1.parent === item2.parent).
+     * Can be used to reconstruct hierarchy information (parentItem.position.start.line === childItem.parent).
+     * @public
+     */
+    parent: number;
+}
+
+/**
+ * {@link Value} wrapping an array of Values. Values do not all need to be of the same type.
+ * @public
+ * @since 1.10.0
+ */
+export class ListValue extends NotNullValue {
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    static type: string;
+
+    /**
+     * The array passed in will be modified!
+     * @param value - Contents of the list.
+     * @public
+     * @since 1.10.0
+     */
+    constructor(value: (unknown | Value)[]);
+
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    toString(): string;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    isTruthy(): boolean;
+    /**
+     * @returns true if any elements in this list loosely equal the provided value.
+     * @public
+     * @since 1.10.0
+     */
+    includes(value: Value): boolean;
+
+    /**
+     * @returns the number of elements in this list.
+     * @public
+     * @since 1.10.0
+     */
+    length(): number;
+    /**
+     * @returns the value at the provided index, or {@link NullValue}.
+     * @public
+     * @since 1.10.0
+     */
+    get(index: number): Value;
+
+    /**
+     * @returns a new {@link ListValue} containing the elements from this ListValue and the provided ListValue.
+     * @public
+     * @since 1.10.0
+     */
+    concat(other: ListValue): ListValue;
+
+}
+
+/**
+ * @public
+ */
+export const livePreviewState: ViewPlugin<LivePreviewStateType>;
+
+/**
+ * The object stored in the view plugin {@link livePreviewState}
+ * @public
+ */
+export interface LivePreviewStateType {
+    /**
+     * True if the left mouse is currently held down in the editor
+     * (for example, when drag-to-select text).
+     * @public
+     */
+    mousedown: boolean;
+}
+
+/**
+ * Load MathJax.
+ * @see {@link https://www.mathjax.org/ Official MathJax documentation}
+ * @public
+ */
+export function loadMathJax(): Promise<void>;
+
+/**
+ * Load Mermaid and return a promise to the global mermaid object.
+ * Can also use `mermaid` after this promise resolves to get the same reference.
+ * @see {@link https://mermaid.js.org/ Official Mermaid documentation}
+ * @public
+ */
+export function loadMermaid(): Promise<any>;
+
+/**
+ * Load PDF.js and return a promise to the global pdfjsLib object.
+ * Can also use `window.pdfjsLib` after this promise resolves to get the same reference.
+ * @see {@link https://mozilla.github.io/pdf.js/ Official PDF.js documentation}
+ * @public
+ */
+export function loadPdfJs(): Promise<any>;
+
+/**
+ * Load Prism.js and return a promise to the global Prism object.
+ * Can also use `Prism` after this promise resolves to get the same reference.
+ * @see {@link https://prismjs.com/ Official Prism documentation}
+ * @public
+ */
+export function loadPrism(): Promise<any>;
+
+/**
+ * Location within a Markdown document
+ * @public
+ */
+export interface Loc {
+    /**
+     * Line number. 0-based.
+     * @public
+     */
+    line: number;
+    /**
+     * Column number.
+     * @public
+     */
+    col: number;
+    /**
+     * Number of characters from the beginning of the file.
+     * @public
+     */
+    offset: number;
+}
+
+/**
+ * This is the editor for Obsidian Mobile as well as the WYSIWYG editor.
+ * @public
+ */
+export class MarkdownEditView implements MarkdownSubView, HoverParent, MarkdownFileInfo {
+
+    /** @public */
+    app: App;
+
+    /** @public */
+    hoverPopover: HoverPopover;
+
+    /**
+     * @public
+     */
+    constructor(view: MarkdownView);
+
+    /**
+     * @public
+     */
+    clear(): void;
+    /**
+     * @public
+     */
+    get(): string;
+    /**
+     * @public
+     */
+    set(data: string, clear: boolean): void;
+
+    /** @public */
+    get file(): TFile;
+
+    /**
+     * @public
+     */
+    getSelection(): string;
+
+    /**
+     * @public
+     */
+    getScroll(): number;
+    /**
+     * @public
+     */
+    applyScroll(scroll: number): void;
+
+}
+
+/**
+ * @public
+ */
+export interface MarkdownFileInfo extends HoverParent {
+    /**
+     * @public
+     */
+    app: App;
+    /**
+     * @public
+     */
+    get file(): TFile | null;
+
+    /**
+     * @public
+     */
+    editor?: Editor;
+}
+
+/**
+ * A post processor receives an element which is a section of the preview.
+ *
+ * Post processors can mutate the DOM to render various things, such as mermaid graphs, latex equations, or custom controls.
+ *
+ * If your post processor requires lifecycle management, for example, to clear an interval, kill a subprocess, etc when this element is
+ * removed from the app, look into {@link MarkdownPostProcessorContext.addChild}
+ * @public
+ * @since 0.10.12
+ */
+export interface MarkdownPostProcessor {
+    /**
+     * The processor function itself.
+     * @public
+     */
+    (el: HTMLElement, ctx: MarkdownPostProcessorContext): Promise<any> | void;
+    /**
+     * An optional integer sort order. Defaults to 0. Lower number runs before higher numbers.
+     * @public
+     */
+    sortOrder?: number;
+}
+
+/**
+ * @public
+ */
+export interface MarkdownPostProcessorContext {
+    /**
+     * @public
+     */
+    docId: string;
+    /**
+     * The path to the associated file. Any links are assumed to be relative to the `sourcePath`.
+     * @public
+     */
+    sourcePath: string;
+    /** @public */
+    frontmatter: any | null | undefined;
+
+    /**
+     * Adds a child component that will have its lifecycle managed by the renderer.
+     *
+     * Use this to add a dependent child to the renderer such that if the containerEl
+     * of the child is ever removed, the component's unload will be called.
+     * @public
+     */
+    addChild(child: MarkdownRenderChild): void;
+    /**
+     * Gets the section information of this element at this point in time.
+     * Only call this function right before you need this information to get the most up-to-date version.
+     * This function may also return null in many circumstances; if you use it, you must be prepared to deal with nulls.
+     * @public
+     */
+    getSectionInfo(el: HTMLElement): MarkdownSectionInformation | null;
+
+}
+
+/** @public **/
+export interface MarkdownPreviewEvents extends Component {
+
+}
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export class MarkdownPreviewRenderer {
+
+    /**
+     * @public
+     * @since 0.10.12
+     */
+    static registerPostProcessor(postProcessor: MarkdownPostProcessor, sortOrder?: number): void;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    static unregisterPostProcessor(postProcessor: MarkdownPostProcessor): void;
+
+    /**
+     * @public
+     * @since 0.12.11
+     */
+    static createCodeBlockPostProcessor(language: string, handler: (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) => Promise<any> | void): (el: HTMLElement, ctx: MarkdownPostProcessorContext) => void;
+
+}
+
+/**
+ * @public
+ */
+export class MarkdownPreviewView extends MarkdownRenderer implements MarkdownSubView, MarkdownPreviewEvents {
+
+    /**
+     * @public
+     */
+    containerEl: HTMLElement;
+
+    /**
+     * @public
+     */
+    get file(): TFile;
+
+    /**
+     * @public
+     */
+    get(): string;
+    /**
+     * @public
+     */
+    set(data: string, clear: boolean): void;
+    /**
+     * @public
+     */
+    clear(): void;
+
+    /**
+     * @public
+     */
+    rerender(full?: boolean): void;
+
+    /**
+     * @public
+     */
+    getScroll(): number;
+    /**
+     * @public
+     */
+    applyScroll(scroll: number): void;
+
+}
+
+/**
+ * @public
+ */
+export class MarkdownRenderChild extends Component {
+    /** @public */
+    containerEl: HTMLElement;
+    /**
+     * @param containerEl - This HTMLElement will be used to test whether this component is still alive.
+     * It should be a child of the Markdown preview sections, and when it's no longer attached
+     * (for example, when it is replaced with a new version because the user edited the Markdown source code),
+     * this component will be unloaded.
+     * @public
+     */
+    constructor(containerEl: HTMLElement);
+}
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export abstract class MarkdownRenderer extends MarkdownRenderChild implements MarkdownPreviewEvents, HoverParent {
+    /** @public */
+    app: App;
+
+    /** @public */
+    hoverPopover: HoverPopover | null;
+
+    /** @public */
+    abstract get file(): TFile;
+
+    /**
+     * Renders Markdown string to an HTML element.
+     * @public
+     * @deprecated - use {@link MarkdownRenderer.render}
+     * @since 0.10.6
+     */
+    static renderMarkdown(markdown: string, el: HTMLElement, sourcePath: string, component: Component): Promise<void>;
+    /**
+     * Renders Markdown string to an HTML element.
+     * @param app - A reference to the app object
+     * @param markdown - The Markdown source code
+     * @param el - The element to append to
+     * @param sourcePath - The normalized path of this Markdown file, used to resolve relative internal links
+     * @param component - A parent component to manage the lifecycle of the rendered child components.
+     * @public
+     */
+    static render(app: App, markdown: string, el: HTMLElement, sourcePath: string, component: Component): Promise<void>;
+}
+
+/** @public */
+export interface MarkdownSectionInformation {
+    /** @public */
+    text: string;
+    /** @public */
+    lineStart: number;
+    /** @public */
+    lineEnd: number;
+}
+
+/**
+ * @public
+ */
+export interface MarkdownSubView {
+
+    /**
+     * @public
+     */
+    getScroll(): number;
+    /**
+     * @public
+     */
+    applyScroll(scroll: number): void;
+
+    /**
+     * @public
+     */
+    get(): string;
+    /**
+     * @public
+     */
+    set(data: string, clear: boolean): void;
+
+}
+
+/**
+ * @public
+ */
+export class MarkdownView extends TextFileView implements MarkdownFileInfo {
+
+    /** @public */
+    editor: Editor;
+
+    /** @public */
+    previewMode: MarkdownPreviewView;
+
+    /** @public */
+    currentMode: MarkdownSubView;
+
+    /** @public */
+    hoverPopover: HoverPopover | null;
+    /**
+     * @public
+     */
+    constructor(leaf: WorkspaceLeaf);
+
+    /**
+     * @public
+     */
+    getViewType(): string;
+
+    /**
+     * @public
+     */
+    getMode(): MarkdownViewModeType;
+
+    /**
+     * @public
+     */
+    getViewData(): string;
+    /**
+     * @public
+     */
+    clear(): void;
+
+    /**
+     * @public
+     */
+    setViewData(data: string, clear: boolean): void;
+
+    /**
+     * @public
+     */
+    showSearch(replace?: boolean): void;
+
+}
+
+/**
+ * @public
+ */
+export type MarkdownViewModeType = 'source' | 'preview';
+
+/**
+ * @public
+ */
+export class Menu extends Component implements CloseableComponent {
+
+    /**
+     * @public
+     */
+    constructor();
+
+    /**
+     * @public
+     */
+    setNoIcon(): this;
+    /**
+     * Force this menu to use native or DOM.
+     * (Only works on the desktop app)
+     * @public
+     * @since 0.16.0
+     */
+    setUseNativeMenu(useNativeMenu: boolean): this;
+    /**
+     * Adds a menu item. Only works when menu is not shown yet.
+     * @public
+     */
+    addItem(cb: (item: MenuItem) => any): this;
+    /**
+     * Adds a separator. Only works when menu is not shown yet.
+     * @public
+     */
+    addSeparator(): this;
+
+    /**
+     * @public
+     * @since 0.12.6
+     */
+    showAtMouseEvent(evt: MouseEvent): this;
+    /**
+     * @public
+     * @since 1.1.0
+     */
+    showAtPosition(position: MenuPositionDef, doc?: Document): this;
+    /**
+     * @public
+     */
+    hide(): this;
+    /** @public */
+    close(): void;
+    /**
+     * @public
+     */
+    onHide(callback: () => any): void;
+
+    /**
+     * @public
+     * @since 1.6.0
+     */
+    static forEvent(evt: PointerEvent | MouseEvent): Menu;
+}
+
+/**
+ * @public
+ */
+export class MenuItem {
+
+    /**
+     * Private constructor. Use {@link Menu.addItem} instead.
+     * @public
+     */
+    private constructor();
+    /**
+     * @public
+     */
+    setTitle(title: string | DocumentFragment): this;
+    /**
+     * @param icon - ID of the icon, can use any icon loaded with {@link addIcon} or from the built-in lucide library.
+     * @see The Obsidian icon library includes the {@link https://lucide.dev/ Lucide icon library}, any icon name from their site will work here.
+     * @public
+     */
+    setIcon(icon: IconName | null): this;
+
+    /**
+     * @public
+     */
+    setChecked(checked: boolean | null): this;
+    /**
+     * @public
+     */
+    setDisabled(disabled: boolean): this;
+    /**
+     * @param state - If the warning state is enabled
+     * If set to true the MenuItem's title and icon will become red. Or whatever colour is applied to the class 'is-warning' by a theme.
+     * @public
+     * @since 0.15.0
+     */
+    setWarning(isWarning: boolean): this;
+    /**
+     * @public
+     * @since 0.15.0
+     */
+    setIsLabel(isLabel: boolean): this;
+
+    /**
+     * @public
+     */
+    onClick(callback: (evt: MouseEvent | KeyboardEvent) => any): this;
+
+    /**
+     * Sets the section this menu item should belong in.
+     * To find the section IDs of an existing menu, inspect the DOM elements
+     * to see their `data-section` attribute.
+     * @public
+     */
+    setSection(section: string): this;
+
+}
+
+/**
+ * @public
+ * @since 1.1.0
+ */
+export interface MenuPositionDef {
+    /** @public */
+    x: number;
+    /** @public */
+    y: number;
+    /** @public */
+    width?: number;
+    /** @public */
+    overlap?: boolean;
+    /** @public */
+    left?: boolean;
+}
+
+/**
+ * @public
+ * @since 0.15.3
+ */
+export class MenuSeparator {
+
+}
+
+/**
+ *
+ * Linktext is any internal link that is composed of a path and a subpath, such as 'My note#Heading'
+ * Linkpath (or path) is the path part of a linktext
+ * Subpath is the heading/block ID part of a linktext.
+ *
+ * @public
+ */
+export class MetadataCache extends Events {
+
+    /**
+     * Get the best match for a linkpath.
+     * @public
+     * @since 0.12.5
+     */
+    getFirstLinkpathDest(linkpath: string, sourcePath: string): TFile | null;
+
+    /**
+     * @public
+     * @since 0.9.21
+     */
+    getFileCache(file: TFile): CachedMetadata | null;
+    /**
+     * @public
+     * @since 0.14.5
+     */
+    getCache(path: string): CachedMetadata | null;
+
+    /**
+     * Generates a linktext for a file.
+     *
+     * If file name is unique, use the filename.
+     * If not unique, use full path.
+     * @public
+     */
+    fileToLinktext(file: TFile, sourcePath: string, omitMdExtension?: boolean): string;
+
+    /**
+     * Contains all resolved links. This object maps each source file's path to an object of destination file paths with the link count.
+     * Source and destination paths are all vault absolute paths that comes from `TFile.path` and can be used with `Vault.getAbstractFileByPath(path)`.
+     * @public
+     */
+    resolvedLinks: Record<string, Record<string, number>>;
+    /**
+     * Contains all unresolved links. This object maps each source file to an object of unknown destinations with count.
+     * Source paths are all vault absolute paths, similar to `resolvedLinks`.
+     * @public
+     */
+    unresolvedLinks: Record<string, Record<string, number>>;
+
+    /**
+     * Called when a file has been indexed, and its (updated) cache is now available.
+     *
+     * Note: This is not called when a file is renamed for performance reasons.
+     * You must hook the vault rename event for those.
+     * @public
+     */
+    on(name: 'changed', callback: (file: TFile, data: string, cache: CachedMetadata) => any, ctx?: any): EventRef;
+    /**
+     * Called when a file has been deleted. A best-effort previous version of the cached metadata is presented,
+     * but it could be null in case the file was not successfully cached previously.
+     * @public
+     */
+    on(name: 'deleted', callback: (file: TFile, prevCache: CachedMetadata | null) => any, ctx?: any): EventRef;
+
+    /**
+     * Called when a file has been resolved for `resolvedLinks` and `unresolvedLinks`.
+     * This happens sometimes after a file has been indexed.
+     * @public
+     */
+    on(name: 'resolve', callback: (file: TFile) => any, ctx?: any): EventRef;
+    /**
+     * Called when all files has been resolved. This will be fired each time files get modified after the initial load.
+     * @public
+     */
+    on(name: 'resolved', callback: () => any, ctx?: any): EventRef;
+}
+
+/**
+ * @public
+ */
+export class Modal implements CloseableComponent {
+    /**
+     * @public
+     */
+    app: App;
+    /**
+     * @public
+     */
+    scope: Scope;
+    /**
+     * @public
+     */
+    containerEl: HTMLElement;
+    /**
+     * @public
+     */
+    modalEl: HTMLElement;
+
+    /**
+     * @public
+     */
+    titleEl: HTMLElement;
+    /**
+     * @public
+     */
+    contentEl: HTMLElement;
+
+    /**
+     * @public
+     * @since 0.9.16
+     */
+    shouldRestoreSelection: boolean;
+
+    /**
+     * @public
+     */
+    constructor(app: App);
+    /**
+     * Show the modal on the active window. On mobile, the modal will animate on screen.
+     * @public
+     */
+    open(): void;
+
+    /**
+     * Hide the modal.
+     * @public
+     */
+    close(): void;
+    /**
+     * @public
+     */
+    onOpen(): Promise<void> | void;
+    /**
+     * @public
+     */
+    onClose(): void;
+
+    /**
+     * @public
+     */
+    setTitle(title: string): this;
+    /**
+     * @public
+     */
+    setContent(content: string | DocumentFragment): this;
+
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    setCloseCallback(callback: () => any): this;
+
+}
+
+/**
+ * Mod = Cmd on MacOS and Ctrl on other OS
+ * Ctrl = Ctrl key for every OS
+ * Meta = Cmd on MacOS and Win key on other OS
+ * @public
+ */
+export type Modifier = 'Mod' | 'Ctrl' | 'Meta' | 'Shift' | 'Alt';
+
+/** @public */
+export const moment: typeof Moment;
+
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export class MomentFormatComponent extends TextComponent {
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    sampleEl: HTMLElement;
+
+    /**
+     * Sets the default format when input is cleared. Also used for placeholder.
+     * @public
+     * @since 0.9.7
+     */
+    setDefaultFormat(defaultFormat: string): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    setSampleEl(sampleEl: HTMLElement): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    setValue(value: string): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    onChanged(): void;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    updateSample(): void;
+}
+
+/**
+ * @public
+ * @since 1.10.0
+ */
+export interface MultitextOption extends BaseOption {
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    type: 'multitext';
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    default?: string[];
+}
+
+/**
+ * @public
+ */
+export function normalizePath(path: string): string;
+
+/**
+ * Notification component. Use to present timely, high-value information.
+ * @public
+ * @since 0.9.7
+ */
+export class Notice {
+    /**
+     * @public
+     * @deprecated Use `messageEl` instead
+     * @since 0.9.7
+     */
+    noticeEl: HTMLElement;
+    /**
+     * @public
+     * @since 1.8.7
+     */
+    containerEl: HTMLElement;
+    /**
+     * @public
+     * @since 1.8.7
+     */
+    messageEl: HTMLElement;
+    /**
+     * @param message - The message to be displayed, can either be a simple string or a {@link DocumentFragment}
+     * @param duration - Time in milliseconds to show the notice for. If this is 0, the
+     * Notice will stay visible until the user manually dismisses it.
+     * @public
+     */
+    constructor(message: string | DocumentFragment, duration?: number);
+    /**
+     * Change the message of this notice.
+     * @public
+     * @since 0.9.7
+     */
+    setMessage(message: string | DocumentFragment): this;
+
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    hide(): void;
+}
+
+/**
+ * Base type for all non-null {@link Values}.
+ * @public
+ * @since 1.10.0
+ */
+export abstract class NotNullValue extends Value {
+}
+
+/**
+ * {@link Value} which represents null.
+ * NullValue is a singleton and `NullValue.value` should be used instead of calling the constructor.
+ * @public
+ * @since 1.10.0
+ */
+export class NullValue extends Value {
+
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    toString(): string;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    isTruthy(): boolean;
+
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    static value: NullValue;
+}
+
+/**
+ * {@link Value} wrapping a number.
+ * @public
+ * @since 1.10.0
+ */
+export class NumberValue extends PrimitiveValue<number> {
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    static type: string;
+
+}
+
+/**
+ * {@link Value} wrapping an object.
+ * @public
+ * @since 1.10.0
+ */
+export class ObjectValue extends NotNullValue {
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    static type: string;
+
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    toString(): string;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    isTruthy(): boolean;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    isEmpty(): boolean;
+
+    /**
+     * @returns the {@link Value} associated with the provided key, or {@link NullValue}.
+     * If the referenced property in the object is not a Value, it will be wrapped before returning.
+     * @public
+     * @since 1.10.0
+     */
+    get(key: string): Value | null;
+
+}
+
+/**
+ * @public
+ */
+export interface ObsidianProtocolData {
+    /** @public */
+    action: string;
+    /** @public */
+    [key: string]: string | 'true';
+}
+
+/**
+ * @public
+ */
+export type ObsidianProtocolHandler = (params: ObsidianProtocolData) => any;
+
+/**
+ * @public
+ */
+export interface OpenViewState {
+    /** @public */
+    state?: Record<string, unknown>;
+    /** @public */
+    eState?: Record<string, unknown>;
+    /** @public */
+    active?: boolean;
+    /** @public */
+    group?: WorkspaceLeaf;
+}
+
+/**
+ * @public
+ */
+export type PaneType = 'tab' | 'split' | 'window';
+
+/**
+ * @public
+ */
+export function parseFrontMatterAliases(frontmatter: any | null): string[] | null;
+
+/**
+ * @public
+ */
+export function parseFrontMatterEntry(frontmatter: any | null, key: string | RegExp): any | null;
+
+/**
+ * @public
+ */
+export function parseFrontMatterStringArray(frontmatter: any | null, key: string | RegExp): string[] | null;
+
+/**
+ * @public
+ */
+export function parseFrontMatterTags(frontmatter: any | null): string[] | null;
+
+/**
+ * Parses the linktext of a wikilink into its component parts.
+ * @param linktext A wikilink without the leading [[ and trailing ]]
+ * @returns filepath and subpath (subpath can refer either to a block id, or a heading)
+ * @public
+ */
+export function parseLinktext(linktext: string): {
+    /**
+     * @public
+     */
+    path: string;
+    /**
+     * @public
+     */
+    subpath: string;
+};
+
+/**
+ * Split a Bases property ID into constituent parts.
+ * @public
+ * @since 1.10.0
+ */
+export function parsePropertyId(propertyId: BasesPropertyId): BasesProperty;
+
+/** @public */
+export function parseYaml(yaml: string): any;
+
+/**
+ * @public
+ * @since 0.12.2
+ */
+export const Platform: {
+    /**
+     * The UI is in desktop mode.
+     * @public
+     */
+    isDesktop: boolean;
+    /**
+     * The UI is in mobile mode.
+     * @public
+     */
+    isMobile: boolean;
+    /**
+     * We're running the electron-based desktop app.
+     * @public
+     */
+    isDesktopApp: boolean;
+    /**
+     * We're running the capacitor-js mobile app.
+     * @public
+     */
+    isMobileApp: boolean;
+    /**
+     * We're running the iOS app.
+     * @public
+     */
+    isIosApp: boolean;
+    /**
+     * We're running the Android app.
+     * @public
+     */
+    isAndroidApp: boolean;
+    /**
+     * We're in a mobile app that has very limited screen space.
+     * @public
+     */
+    isPhone: boolean;
+    /**
+     * We're in a mobile app that has sufficiently large screen space.
+     * @public
+     */
+    isTablet: boolean;
+    /**
+     * We're on a macOS device, or a device that pretends to be one (like iPhones and iPads).
+     * Typically used to detect whether to use command-based hotkeys vs ctrl-based hotkeys.
+     * @public
+     */
+    isMacOS: boolean;
+    /**
+     * We're on a Windows device.
+     * @public
+     */
+    isWin: boolean;
+    /**
+     * We're on a Linux device.
+     * @public
+     */
+    isLinux: boolean;
+    /**
+     * We're running in Safari.
+     * Typically used to provide workarounds for Safari bugs.
+     * @public
+     */
+    isSafari: boolean;
+    /**
+     * The path prefix for resolving local files on this platform.
+     * This returns:
+     * - `file:///` on mobile
+     * - `app://random-id/` on desktop (Replaces the old format of `app://local/`)
+     * @public
+     */
+    resourcePathPrefix: string;
+
+};
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export abstract class Plugin extends Component {
+
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    app: App;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    manifest: PluginManifest;
+    /**
+     * @public
+     */
+    constructor(app: App, manifest: PluginManifest);
+
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    onload(): Promise<void> | void;
+    /**
+     * Adds a ribbon icon to the left bar.
+     * @param icon - The icon name to be used. See {@link addIcon}
+     * @param title - The title to be displayed in the tooltip.
+     * @param callback - The `click` callback.
+     * @public
+     * @since 0.9.7
+     */
+    addRibbonIcon(icon: IconName, title: string, callback: (evt: MouseEvent) => any): HTMLElement;
+    /**
+     * Adds a status bar item to the bottom of the app.
+     * Not available on mobile.
+     * @see {@link https://docs.obsidian.md/Plugins/User+interface/Status+bar}
+     * @return HTMLElement - element to modify.
+     * @public
+     * @since 0.9.7
+     */
+    addStatusBarItem(): HTMLElement;
+    /**
+     * Register a command globally.
+     * Registered commands will be available from the {@link https://help.obsidian.md/Plugins/Command+palette Command palette}.
+     * The command id and name will be automatically prefixed with this plugin's id and name.
+     * @public
+     * @since 0.9.7
+     */
+    addCommand(command: Command): Command;
+    /**
+     * Manually remove a command from the list of global commands.
+     * This should not be needed unless your plugin registers commands dynamically.
+     * @public
+     * @since 1.7.2
+     */
+    removeCommand(commandId: string): void;
+    /**
+     * Register a settings tab, which allows users to change settings.
+     * @see {@link https://docs.obsidian.md/Plugins/User+interface/Settings#Register+a+settings+tab}
+     * @public
+     * @since 0.9.7
+     */
+    addSettingTab(settingTab: PluginSettingTab): void;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    registerView(type: string, viewCreator: ViewCreator): void;
+    /**
+     * Registers a view with the 'Page preview' core plugin as an emitter of the 'hover-link' event.
+     * @public
+     * @since 1.1.0
+     */
+    registerHoverLinkSource(id: string, info: HoverLinkSource): void;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    registerExtensions(extensions: string[], viewType: string): void;
+    /**
+     * Registers a post processor, to change how the document looks in reading mode.
+     * @see {@link https://docs.obsidian.md/Plugins/Editor/Markdown+post+processing}
+     * @public
+     * @since 0.9.7
+     */
+    registerMarkdownPostProcessor(postProcessor: MarkdownPostProcessor, sortOrder?: number): MarkdownPostProcessor;
+    /**
+     * Register a special post processor that handles fenced code given a language and a handler.
+     * This special post processor takes care of removing the `<pre><code>` and create a `<div>` that
+     * will be passed to the handler, and is expected to be filled with custom elements.
+     * @see {@link https://docs.obsidian.md/Plugins/Editor/Markdown+post+processing#Post-process+Markdown+code+blocks}
+     * @public
+     * @since 0.9.7
+     */
+    registerMarkdownCodeBlockProcessor(language: string, handler: (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) => Promise<any> | void, sortOrder?: number): MarkdownPostProcessor;
+    /**
+     * Register a Base view handler that can be used to render data from property queries.
+     *
+     * @returns false if bases are not enabled in this vault.
+     * @public
+     * @since 1.10.0
+     */
+    registerBasesView(viewId: string, registration: BasesViewRegistration): boolean;
+
+    /**
+     * Registers a CodeMirror 6 extension.
+     * To reconfigure cm6 extensions for a plugin on the fly, an array should be passed in, and modified dynamically.
+     * Once this array is modified, calling {@link Workspace.updateOptions} will apply the changes.
+     * @param extension - must be a CodeMirror 6 `Extension`, or an array of Extensions.
+     * @public
+     * @since 0.12.8
+     */
+    registerEditorExtension(extension: Extension): void;
+    /**
+     * Register a handler for obsidian:// URLs.
+     * @param action - the action string. For example, 'open' corresponds to `obsidian://open`.
+     * @param handler - the callback to trigger. A key-value pair that is decoded from the query will be passed in.
+     *                  For example, `obsidian://open?key=value` would generate `{'action': 'open', 'key': 'value'}`.
+     * @public
+     * @since 0.11.0
+     */
+    registerObsidianProtocolHandler(action: string, handler: ObsidianProtocolHandler): void;
+    /**
+     * Register an EditorSuggest which can provide live suggestions while the user is typing.
+     * @public
+     * @since 0.12.7
+     */
+    registerEditorSuggest(editorSuggest: EditorSuggest<any>): void;
+    /**
+     * Load settings data from disk.
+     * Data is stored in `data.json` in the plugin folder.
+     * @see {@link https://docs.obsidian.md/Plugins/User+interface/Settings}
+     * @public
+     * @since 0.9.7
+     */
+    loadData(): Promise<any>;
+    /**
+     * Write settings data to disk.
+     * Data is stored in `data.json` in the plugin folder.
+     * @see {@link https://docs.obsidian.md/Plugins/User+interface/Settings}
+     * @public
+     * @since 0.9.7
+     */
+    saveData(data: any): Promise<void>;
+
+    /**
+     * Perform any initial setup code. The user has explicitly interacted with the plugin
+     * so its safe to engage with the user. If your plugin registers a custom view,
+     * you can open it here.
+     * @public
+     * @since 1.7.2
+     */
+    onUserEnable(): void;
+
+    /**
+     * Called when the `data.json` file is modified on disk externally from Obsidian.
+     * This usually means that a Sync service or external program has modified
+     * the plugin settings.
+     *
+     * Implement this method to reload plugin settings when they have changed externally.
+     *
+     * @public
+     * @since 1.5.7
+     */
+    onExternalSettingsChange?(): any;
+}
+
+
+/**
+ * Metadata about a Community plugin.
+ * @see {@link https://docs.obsidian.md/Reference/Manifest}
+ * @public
+ */
+export interface PluginManifest {
+    /**
+     * Vault path to the plugin folder in the config directory.
+     * @public
+     */
+    dir?: string;
+    /**
+     * The plugin ID.
+     * @public
+     */
+    id: string;
+    /**
+     * The display name.
+     * @public
+     */
+    name: string;
+    /**
+     * The author's name.
+     * @public
+     */
+    author: string;
+    /**
+     * The current version, using {@link https://semver.org/ Semantic Versioning}.
+     * @public
+     */
+    version: string;
+    /**
+     * The minimum required Obsidian version to run this plugin.
+     * @public
+     */
+    minAppVersion: string;
+    /**
+     * A description of the plugin.
+     * @public
+     */
+    description: string;
+    /**
+     * A URL to the author's website.
+     * @public
+     */
+    authorUrl?: string;
+
+    /**
+     * Whether the plugin can be used only on desktop.
+     * @public
+     */
+    isDesktopOnly?: boolean;
+}
+
+/**
+ * Provides a unified interface for users to configure the plugin.
+ * @see {@link https://docs.obsidian.md/Plugins/User+interface/Settings#Register+a+settings+tab}
+ * @public
+ * @since 0.9.7
+ */
+export abstract class PluginSettingTab extends SettingTab {
+
+    /**
+     * @public
+     */
+    constructor(app: App, plugin: Plugin);
+}
+
+/**
+ * @public
+ */
+export interface Point {
+    /**
+     * @public
+     */
+    x: number;
+    /**
+     * @public
+     */
+    y: number;
+}
+
+/**
+ * @public
+ */
+export enum PopoverState {
+
+}
+
+/**
+ * Base class for adding a type-ahead popover.
+ * @public
+ */
+export abstract class PopoverSuggest<T> implements ISuggestOwner<T>, CloseableComponent {
+    /** @public */
+    app: App;
+    /** @public */
+    scope: Scope;
+
+    /** @public */
+    constructor(app: App, scope?: Scope);
+
+    /** @public */
+    open(): void;
+    /** @public */
+    close(): void;
+
+    /**
+     * @inheritDoc
+     * @public
+     */
+    abstract renderSuggestion(value: T, el: HTMLElement): void;
+    /**
+     * @inheritDoc
+     * @public
+     */
+    abstract selectSuggestion(value: T, evt: MouseEvent | KeyboardEvent): void;
+}
+
+/**
+ * Describes a text range in a Markdown document.
+ * @public
+ */
+export interface Pos {
+    /**
+     * Starting location.
+     * @public
+     */
+    start: Loc;
+    /**
+     * End location.
+     * @public
+     */
+    end: Loc;
+}
+
+/**
+ * Construct a fuzzy search callback that runs on a target string.
+ * Performance may be an issue if you are running the search for more than a few thousand times.
+ * If performance is a problem, consider using `prepareSimpleSearch` instead.
+ * @param query - the fuzzy query.
+ * @return fn - the callback function to apply the search on.
+ * @public
+ */
+export function prepareFuzzySearch(query: string): (text: string) => SearchResult | null;
+
+/**
+ * Construct a simple search callback that runs on a target string.
+ * @param query - the space-separated words
+ * @return fn - the callback function to apply the search on
+ * @public
+ */
+export function prepareSimpleSearch(query: string): (text: string) => SearchResult | null;
+
+/**
+ * Base type for {@link Values} which wrap a single primitive.
+ * @public
+ * @since 1.10.0
+ */
+export abstract class PrimitiveValue<T> extends NotNullValue {
+
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    constructor(value: T);
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    toString(): string;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    isTruthy(): boolean;
+
+}
+
+/**
+ * @public
+ * @since 1.4.4
+ */
+export class ProgressBarComponent extends ValueComponent<number> {
+
+    /**
+     * @public
+     */
+    constructor(containerEl: HTMLElement);
+    /**
+     * @public
+     */
+    getValue(): number;
+    /**
+     * @param value - The progress amount, a value between 0-100.
+     * @public
+     */
+    setValue(value: number): this;
+
+}
+
+/**
+ * A dropdown menu allowing selection of a property.
+ * @public
+ * @since 1.10.0
+ */
+export interface PropertyOption extends BaseOption {
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    type: 'property';
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    default?: string;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    placeholder?: string;
+    /**
+     * If provided, only properties which pass the filter will be included for selection in the property dropdown.
+     *
+     * @public
+     * @since 1.10.0
+     */
+    filter?: (prop: BasesPropertyId) => boolean;
+}
+
+/**
+ * Responsible for executing the Bases query and evaluating filters and formulas.
+ * Notifies views of updated results.
+ * @public
+ * @since 1.10.0
+ */
+export class QueryController extends Component {
+
+}
+
+/**
+ * Base interface for items that point to a different location.
+ * @public
+ */
+export interface Reference {
+    /**
+     * Link destination.
+     * @public
+     */
+    link: string;
+    /**
+     * Contains the text as it's written in the document. Not available on Publish.
+     * @public
+     */
+    original: string;
+    /**
+     * Available if title is different from link text, in the case of `[[page name|display name]]` this will return `display name`
+     * @public
+     */
+    displayText?: string;
+}
+
+/**
+ * @public
+ */
+export interface ReferenceCache extends Reference, CacheItem {
+}
+
+/**
+ * @public
+ * @since 1.8.7
+ */
+export interface ReferenceLinkCache extends CacheItem {
+    /**
+     * @public
+     */
+    id: string;
+    /**
+     * @public
+     */
+    link: string;
+}
+
+/**
+ * {@link Value} wrapping a RegExp pattern.
+ * @public
+ * @since 1.10.0
+ */
+export class RegExpValue extends NotNullValue {
+
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    toString(): string;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    isTruthy(): boolean;
+}
+
+/**
+ * {@link Value} wrapping a Date.
+ * RelativeDateValue behaves the same as a {@link DateValue} however it renders as a time relative to now.
+ * @public
+ * @since 1.10.0
+ */
+export class RelativeDateValue extends DateValue {
+
+}
+
+/**
+ * Remove a custom icon from the library.
+ * @param iconId - the icon ID
+ * @public
+ */
+export function removeIcon(iconId: string): void;
+
+/**
+ * Utility functions for rendering Values within the app.
+ * @public
+ * @since 1.10.0
+ */
+export class RenderContext implements HoverParent {
+
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    hoverPopover: HoverPopover | null;
+
+}
+
+/**
+ * @public
+ */
+export function renderMatches(el: HTMLElement | DocumentFragment, text: string, matches: SearchMatches | null, offset?: number): void;
+
+/**
+ * Render some LaTeX math using the MathJax engine. Returns an HTMLElement.
+ * Requires calling `finishRenderMath` when rendering is all done to flush the MathJax stylesheet.
+ * @public
+ */
+export function renderMath(source: string, display: boolean): HTMLElement;
+
+/**
+ * @public
+ */
+export function renderResults(el: HTMLElement, text: string, result: SearchResult, offset?: number): void;
+
+/**
+ * Similar to `fetch()`, request a URL using HTTP/HTTPS, without any CORS restrictions.
+ * Returns the text value of the response.
+ * @public
+ * @since 0.12.11
+ */
+export function request(request: RequestUrlParam | string): Promise<string>;
+
+/**
+ * Similar to `fetch()`, request a URL using HTTP/HTTPS, without any CORS restrictions.
+ * @public
+ */
+export function requestUrl(request: RequestUrlParam | string): RequestUrlResponsePromise;
+
+/** @public */
+export interface RequestUrlParam {
+    /** @public */
+    url: string;
+    /** @public */
+    method?: string;
+    /** @public */
+    contentType?: string;
+    /** @public */
+    body?: string | ArrayBuffer;
+    /** @public */
+    headers?: Record<string, string>;
+    /**
+     * Whether to throw an error when the status code is 400+
+     * Defaults to true
+     * @public
+     */
+    throw?: boolean;
+}
+
+/** @public */
+export interface RequestUrlResponse {
+    /** @public */
+    status: number;
+    /** @public */
+    headers: Record<string, string>;
+    /** @public */
+    arrayBuffer: ArrayBuffer;
+    /** @public */
+    json: any;
+    /** @public */
+    text: string;
+}
+
+/** @public */
+export interface RequestUrlResponsePromise extends Promise<RequestUrlResponse> {
+    /** @public */
+    arrayBuffer: Promise<ArrayBuffer>;
+    /** @public */
+    json: Promise<any>;
+    /** @public */
+    text: Promise<string>;
+}
+
+/**
+ * Returns true if the API version is equal or higher than the requested version.
+ * Use this to limit functionality that require specific API versions to avoid
+ * crashing on older Obsidian builds.
+ * @public
+ */
+export function requireApiVersion(version: string): boolean;
+
+/**
+ * Resolve the given subpath to a reference in the MetadataCache.
+ * @public
+ */
+export function resolveSubpath(cache: CachedMetadata, subpath: string): HeadingSubpathResult | BlockSubpathResult | FootnoteSubpathResult | null;
+
+/**
+ * @public
+ * @since 0.16.0
+ */
+export interface RGB {
+    /**
+     * Red integer value between 0 and 255
+     * @public
+     */
+    r: number;
+    /**
+     * Green integer value between 0 and 255
+     * @public
+     */
+    g: number;
+    /**
+     * Blue integer value between 0 and 255
+     * @public
+     */
+    b: number;
+}
+
+/** @public */
+export function sanitizeHTMLToDom(html: string): DocumentFragment;
+
+/**
+ * A scope receives keyboard events and binds callbacks to given hotkeys.
+ * Only one scope is active at a time, but scopes may define parent scopes (in the constructor) and inherit their hotkeys.
+ * @public
+ */
+export class Scope {
+
+    /**
+     * @public
+     */
+    constructor(parent?: Scope);
+    /**
+     * Add a keymap event handler to this scope.
+     * @param modifiers - `Mod`, `Ctrl`, `Meta`, `Shift`, or `Alt`. `Mod` translates to `Meta` on macOS and `Ctrl` otherwise. Pass `null` to capture all events matching the `key`, regardless of modifiers.
+     * @param key - Keycode from https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key/Key%5FValues
+     * @param func - the callback that will be called when a user triggers the keybind.
+     * @public
+     */
+    register(modifiers: Modifier[] | null, key: string | null, func: KeymapEventListener): KeymapEventHandler;
+    /**
+     * Remove an existing keymap event handler.
+     * @public
+     */
+    unregister(handler: KeymapEventHandler): void;
+
+}
+
+/**
+ * @public
+ * @since 0.9.21
+ */
+export class SearchComponent extends AbstractTextComponent<HTMLInputElement> {
+    /**
+     * @public
+     * @since 0.9.21
+     */
+    clearButtonEl: HTMLElement;
+
+    /**
+     * @public
+     */
+    constructor(containerEl: HTMLElement);
+    /**
+     * @public
+     */
+    onChanged(): void;
+
+}
+
+/**
+ * @public
+ */
+export type SearchMatches = SearchMatchPart[];
+
+/**
+ * Text position offsets within text file. Represents
+ * a text range [from offset, to offset].
+ *
+ * @public
+ */
+export type SearchMatchPart = [number, number];
+
+/**
+ * @public
+ * @since 0.9.21
+ */
+export interface SearchResult {
+    /** @public */
+    score: number;
+    /** @public */
+    matches: SearchMatches;
+}
+
+/**
+ * @public
+ * @since 0.9.21
+ */
+export interface SearchResultContainer {
+    /** @public */
+    match: SearchResult;
+}
+
+/**
+ * @public
+ */
+export interface SectionCache extends CacheItem {
+    /**
+     * The block ID of this section, if defined.
+     * @public
+     */
+    id?: string | undefined;
+    /**
+     * The type string generated by the parser.
+     * Typing is non-exhaustive, more types can be available than are documented here.
+     * @public
+     */
+    type: 'blockquote' | 'callout' | 'code' | 'element' | 'footnoteDefinition' | 'heading' | 'html' | 'list' | 'paragraph' | 'table' | 'text' | 'thematicBreak' | 'yaml' | string;
+}
+
+/**
+ * Insert an SVG into the element from an iconId. Does nothing if no icon associated with the iconId.
+ * @param parent - the HTML element to insert the icon
+ * @param iconId - the icon ID
+ * @see The Obsidian icon library includes the {@link https://lucide.dev/ Lucide icon library}, any icon name from their site will work here.
+ * @public
+ */
+export function setIcon(parent: HTMLElement, iconId: IconName): void;
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export class Setting {
+    /** @public
+     * @since 0.9.7
+     */
+    settingEl: HTMLElement;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    infoEl: HTMLElement;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    nameEl: HTMLElement;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    descEl: HTMLElement;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    controlEl: HTMLElement;
+    /**
+     * @public
+     * @since 0.9.7
+     * */
+    components: BaseComponent[];
+    /**
+     * @public
+     */
+    constructor(containerEl: HTMLElement);
+    /**
+     * @public
+     * @since 0.12.16
+     */
+    setName(name: string | DocumentFragment): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    setDesc(desc: string | DocumentFragment): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    setClass(cls: string): this;
+    /**
+     * @public
+     * @since 1.1.0
+     */
+    setTooltip(tooltip: string, options?: TooltipOptions): this;
+    /**
+     * @public
+     * @since 0.9.16
+     */
+    setHeading(): this;
+    /**
+     * @public
+     * @since 1.2.3
+     */
+    setDisabled(disabled: boolean): this;
+
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    addButton(cb: (component: ButtonComponent) => any): this;
+    /**
+     * @public
+     * @since 0.9.16
+     */
+    addExtraButton(cb: (component: ExtraButtonComponent) => any): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    addToggle(cb: (component: ToggleComponent) => any): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    addText(cb: (component: TextComponent) => any): this;
+    /**
+     * @public
+     * @since 0.9.21
+     */
+    addSearch(cb: (component: SearchComponent) => any): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    addTextArea(cb: (component: TextAreaComponent) => any): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    addMomentFormat(cb: (component: MomentFormatComponent) => any): this;
+    /**
+     * @public
+     * @ince 0.9.7
+     */
+    addDropdown(cb: (component: DropdownComponent) => any): this;
+    /**
+     * @public
+     * @ince 0.16.0
+     */
+    addColorPicker(cb: (component: ColorComponent) => any): this;
+    /**
+     * @public
+     * @ince 1.4.4
+     */
+    addProgressBar(cb: (component: ProgressBarComponent) => any): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    addSlider(cb: (component: SliderComponent) => any): this;
+    /**
+     * Facilitates chaining
+     * @public
+     * @since 0.9.20
+     */
+    then(cb: (setting: this) => any): this;
+    /**
+     * @public
+     * @since 0.13.8
+     */
+    clear(): this;
+
+}
+
+/**
+ * @public
+ * @see {@link https://docs.obsidian.md/Plugins/User+interface/Settings#Register+a+settings+tab}
+ * @since 0.9.7
+ */
+export abstract class SettingTab {
+
+    /**
+     * Reference to the app instance.
+     * @public
+     */
+    app: App;
+
+    /**
+     * Outermost HTML element on the setting tab.
+     * @public
+     */
+    containerEl: HTMLElement;
+
+    /**
+     * Called when the settings tab should be rendered.
+     * @see {@link https://docs.obsidian.md/Plugins/User+interface/Settings#Register+a+settings+tab}
+     * @public
+     */
+    abstract display(): void;
+    /**
+     * Hides the contents of the setting tab.
+     * Any registered components should be unloaded when the view is hidden.
+     * Override this if you need to perform additional cleanup.
+     * @public
+     */
+    hide(): void;
+}
+
+/**
+ * @param el - The element to show the tooltip on
+ * @param tooltip - The tooltip text to show
+ * @param options
+ * @public
+ * @since 1.4.4
+ */
+export function setTooltip(el: HTMLElement, tooltip: string, options?: TooltipOptions): void;
+
+/**
+ * @public
+ */
+export type Side = 'left' | 'right';
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export class SliderComponent extends ValueComponent<number> {
+    /**
+     * @public
+     */
+    sliderEl: HTMLInputElement;
+
+    /**
+     * @public
+     */
+    constructor(containerEl: HTMLElement);
+    /**
+     * @public
+     * @since 1.2.3
+     */
+    setDisabled(disabled: boolean): this;
+    /**
+     * @param instant whether or not the value should get updated while the slider is dragging
+     * @public
+     * @since 1.6.6
+     */
+    setInstant(instant: boolean): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    setLimits(min: number | null, max: number | null, step: number | 'any'): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    getValue(): number;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    setValue(value: number): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    getValuePretty(): string;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    setDynamicTooltip(): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    showTooltip(): void;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    onChange(callback: (value: number) => any): this;
+}
+
+/**
+ * @public
+ * @since 1.10.0
+ */
+export interface SliderOption extends BaseOption {
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    type: 'slider';
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    default?: number;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    min?: number;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    max?: number;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    step?: number;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    instant?: boolean;
+}
+
+/**
+ * @public
+ */
+export function sortSearchResults(results: SearchResultContainer[]): void;
+
+/**
+ * @public
+ */
+export type SplitDirection = 'vertical' | 'horizontal';
+
+/** @public */
+export interface Stat {
+    /** @public */
+    type: 'file' | 'folder';
+    /**
+     * Time of creation, represented as a unix timestamp.
+     * @public
+     * */
+    ctime: number;
+    /**
+     * Time of last modification, represented as a unix timestamp.
+     * @public
+     */
+    mtime: number;
+    /**
+     * Size on disk, as bytes.
+     * @public
+     */
+    size: number;
+}
+
+/** @public */
+export function stringifyYaml(obj: any): string;
+
+/**
+ * {@link Value} wrapping a string.
+ * @public
+ * @since 1.10.0
+ */
+export class StringValue extends PrimitiveValue<string> {
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    static type: string;
+
+}
+
+/**
+ * Normalizes headings for link matching by stripping out special characters and shrinking consecutive spaces.
+ * @public
+ */
+export function stripHeading(heading: string): string;
+
+/**
+ * Prepares headings for linking by stripping out some bad combinations of special characters that could break links.
+ * @public
+ */
+export function stripHeadingForLink(heading: string): string;
+
+/**
+ * @public
+ */
+export interface SubpathResult {
+    /**
+     * @public
+     */
+    start: Loc;
+    /**
+     * @public
+     */
+    end: Loc | null;
+}
+
+/**
+ * @public
+ * @ince 0.9.20
+ */
+export abstract class SuggestModal<T> extends Modal implements ISuggestOwner<T> {
+    /**
+     * @public
+     * @ince 0.9.20
+     */
+    limit: number;
+    /**
+     * @public
+     * @since 0.9.20
+     */
+    emptyStateText: string;
+
+    /**
+     * @public
+     * @0.9.20
+     */
+    inputEl: HTMLInputElement;
+
+    /**
+     * @public
+     * @since 0.9.20
+     */
+    resultContainerEl: HTMLElement;
+
+    /**
+     * @public
+     */
+    constructor(app: App);
+    /**
+     * @public
+     * @since 0.9.20
+     */
+    setPlaceholder(placeholder: string): void;
+    /**
+     * @public
+     * @since 0.9.20
+     */
+    setInstructions(instructions: Instruction[]): void;
+
+    /**
+     * @public
+     * @since 0.9.20
+     */
+    onNoSuggestion(): void;
+    /**
+     * @public
+     * @since 0.9.20
+     */
+    selectSuggestion(value: T, evt: MouseEvent | KeyboardEvent): void;
+    /**
+     * @public
+     * @since 1.7.2
+     */
+    selectActiveSuggestion(evt: MouseEvent | KeyboardEvent): void;
+    /**
+     * @public
+     * @since 1.5.7
+     */
+    abstract getSuggestions(query: string): T[] | Promise<T[]>;
+    /**
+     * @public
+     * @since 1.5.7
+     */
+    abstract renderSuggestion(value: T, el: HTMLElement): void;
+    /**
+     * @public
+     * @since 1.5.7
+     */
+    abstract onChooseSuggestion(item: T, evt: MouseEvent | KeyboardEvent): void;
+}
+
+/**
+ * This can be either a `TFile` or a `TFolder`.
+ * @public
+ * @since 0.9.7
+ */
+export abstract class TAbstractFile {
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    vault: Vault;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    path: string;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    name: string;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    parent: TFolder | null;
+
+}
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export interface TagCache extends CacheItem {
+    /**
+     * @public
+     */
+    tag: string;
+}
+
+/**
+ * {@link Value} wrapping an Obsidian tag.
+ * @public
+ * @since 1.10.0
+ */
+export class TagValue extends StringValue {
+
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    constructor(value: string);
+
+}
+
+/**
+ * @public
+ * @since 0.10.2
+ */
+export class Tasks {
+
+    /**
+     * @public
+     * @since 0.10.2
+     */
+    add(callback: () => Promise<any>): void;
+    /**
+     * @public
+     * @since 0.10.2
+     */
+    addPromise(promise: Promise<any>): void;
+    /**
+     * @public
+     * @since 0.10.2
+     */
+    isEmpty(): boolean;
+    /**
+     * @public
+     * @since 0.10.2
+     */
+    promise(): Promise<any>;
+}
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export class TextAreaComponent extends AbstractTextComponent<HTMLTextAreaElement> {
+    /**
+     * @public
+     */
+    constructor(containerEl: HTMLElement);
+}
+
+/**
+ * @public
+ * @since 0.9.21
+ */
+export class TextComponent extends AbstractTextComponent<HTMLInputElement> {
+    /**
+     * @public
+     */
+    constructor(containerEl: HTMLElement);
+
+}
+
+/**
+ * This class implements a plaintext-based editable file view, which can be loaded and saved given an editor.
+ *
+ * Note that by default, this view only saves when it's closing. To implement auto-save, your editor should
+ * call `this.requestSave()` when the content is changed.
+ * @public
+ * @since 0.10.12
+ */
+export abstract class TextFileView extends EditableFileView {
+
+    /**
+     * In memory data
+     * @public
+     * @since 0.10.12
+     */
+    data: string;
+    /**
+     * Debounced save in 2 seconds from now
+     * @public
+     * @since 0.10.12
+     */
+    requestSave: () => void;
+
+    /**
+     * @public
+     */
+    constructor(leaf: WorkspaceLeaf);
+
+    /**
+     * @public
+     * @since 0.10.12
+     */
+    onUnloadFile(file: TFile): Promise<void>;
+    /**
+     * @public
+     * @since 0.10.12
+     */
+    onLoadFile(file: TFile): Promise<void>;
+
+    /**
+     * @public
+     * @since 0.10.12
+     */
+    save(clear?: boolean): Promise<void>;
+
+    /**
+     * Gets the data from the editor. This will be called to save the editor contents to the file.
+     * @public
+     * @since 0.10.12
+     */
+    abstract getViewData(): string;
+    /**
+     * Set the data to the editor. This is used to load the file contents.
+     *
+     * If clear is set, then it means we're opening a completely different file.
+     * In that case, you should call clear(), or implement a slightly more efficient
+     * clearing mechanism given the new data to be set.
+     * @public
+     * @since 0.10.12
+     */
+    abstract setViewData(data: string, clear: boolean): void;
+    /**
+     * Clear the editor. This is usually called when we're about to open a completely
+     * different file, so it's best to clear any editor states like undo-redo history,
+     * and any caches/indexes associated with the previous file contents.
+     * @public
+     * @since 0.10.12
+     */
+    abstract clear(): void;
+}
+
+/**
+ * @public
+ * @since 1.10.0
+ */
+export interface TextOption extends BaseOption {
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    type: 'text';
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    default?: string;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    placeholder?: string;
+}
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export class TFile extends TAbstractFile {
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    stat: FileStats;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    basename: string;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    extension: string;
+
+}
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export class TFolder extends TAbstractFile {
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    children: TAbstractFile[];
+
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    isRoot(): boolean;
+
+}
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export class ToggleComponent extends ValueComponent<boolean> {
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    toggleEl: HTMLElement;
+
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    constructor(containerEl: HTMLElement);
+    /**
+     * @public
+     * @since 1.2.3
+     */
+    setDisabled(disabled: boolean): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    getValue(): boolean;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    setValue(on: boolean): this;
+
+    /**
+     * @public
+     * @since 1.1.1
+     */
+    setTooltip(tooltip: string, options?: TooltipOptions): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    onClick(): void;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    onChange(callback: (value: boolean) => any): this;
+}
+
+/**
+ * @public
+ * @since 1.10.0
+ */
+export interface ToggleOption extends BaseOption {
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    type: 'toggle';
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    default?: boolean;
+}
+
+/** @public */
+export interface TooltipOptions {
+    /** @public */
+    placement?: TooltipPlacement;
+    /**
+     * @public
+     * @since 1.8.7
+     */
+    classes?: string[];
+    /**
+     * @public
+     * @since 1.8.7
+     */
+    gap?: number;
+
+    /**
+     * @public
+     * @since 1.4.11
+     */
+    delay?: number;
+}
+
+/** @public */
+export type TooltipPlacement = 'bottom' | 'right' | 'left' | 'top';
+
+/**
+ * {@link Value} wrapping an external link.
+ * @public
+ * @since 1.10.0
+ */
+export class UrlValue extends StringValue {
+
+}
+
+/**
+ * @public
+ */
+export type UserEvent = MouseEvent | KeyboardEvent | TouchEvent | PointerEvent;
+
+/**
+ * Container type for data which can expose functions for retrieving, comparing, and rendering the data.
+ * Most commonly used in conjunction with formulas for Bases. Values can be used as formula parameters,
+ * intermediate values, and the result of evaluation.
+ * @public
+ * @since 1.10.0
+ */
+export abstract class Value {
+
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    static equals(a: Value | null, b: Value | null): boolean;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    static looseEquals(a: Value | null, b: Value | null): boolean;
+
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    abstract toString(): string;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    abstract isTruthy(): boolean;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    equals(other: this): boolean;
+    /**
+     * @public
+     * @since 1.10.0
+     */
+    looseEquals(other: Value): boolean;
+    /**
+     * Render this value into the provided HTMLElement.
+     * @public
+     * @since 1.10.0
+     */
+    renderTo(el: HTMLElement, ctx: RenderContext): void;
+
+}
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export abstract class ValueComponent<T> extends BaseComponent {
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    registerOptionListener(listeners: Record<string, (value?: T) => T>, key: string): this;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    abstract getValue(): T;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    abstract setValue(value: T): this;
+}
+
+/**
+ * Work with files and folders stored inside a vault.
+ * @see {@link https://docs.obsidian.md/Plugins/Vault}
+ * @public
+ * @since 0.9.7
+ */
+export class Vault extends Events {
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    adapter: DataAdapter;
+
+    /**
+     * Gets the path to the config folder.
+     * This value is typically `.obsidian` but it could be different.
+     * @public
+     * @since 0.11.1
+     */
+    configDir: string;
+
+    /**
+     * Gets the name of the vault.
+     * @public
+     * @since 0.9.7
+     */
+    getName(): string;
+
+    /**
+     * Get a file inside the vault at the given path.
+     * Returns `null` if the file does not exist.
+     *
+     * @param path
+     * @public
+     * @since 1.5.7
+     */
+    getFileByPath(path: string): TFile | null;
+    /**
+     * Get a folder inside the vault at the given path.
+     * Returns `null` if the folder does not exist.
+     *
+     * @param path
+     * @public
+     * @since 1.5.7
+     */
+    getFolderByPath(path: string): TFolder | null;
+    /**
+     * Get a file or folder inside the vault at the given path. To check if the return type is
+     * a file, use `instanceof TFile`. To check if it is a folder, use `instanceof TFolder`.
+     * @param path - vault absolute path to the folder or file, with extension, case sensitive.
+     * @returns the abstract file, if it's found.
+     * @public
+     * @since 0.11.11
+     */
+    getAbstractFileByPath(path: string): TAbstractFile | null;
+
+    /**
+     * Get the root folder of the current vault.
+     * @public
+     * @since 0.9.7
+     */
+    getRoot(): TFolder;
+
+    /**
+     * Create a new plaintext file inside the vault.
+     * @param path - Vault absolute path for the new file, with extension.
+     * @param data - text content for the new file.
+     * @param options - (Optional)
+     * @public
+     * @since 0.9.7
+     */
+    create(path: string, data: string, options?: DataWriteOptions): Promise<TFile>;
+    /**
+     * Create a new binary file inside the vault.
+     * @param path - Vault absolute path for the new file, with extension.
+     * @param data - content for the new file.
+     * @param options - (Optional)
+     * @throws Error if file already exists
+     * @public
+     * @since 0.9.7
+     */
+    createBinary(path: string, data: ArrayBuffer, options?: DataWriteOptions): Promise<TFile>;
+    /**
+     * Create a new folder inside the vault.
+     * @param path - Vault absolute path for the new folder.
+     * @throws Error if folder already exists
+     * @public
+     * @since 1.4.0
+     */
+    createFolder(path: string): Promise<TFolder>;
+    /**
+     * Read a plaintext file that is stored inside the vault, directly from disk.
+     * Use this if you intend to modify the file content afterwards.
+     * Use {@link Vault.cachedRead} otherwise for better performance.
+     * @public
+     * @since 0.9.7
+     */
+    read(file: TFile): Promise<string>;
+    /**
+     * Read the content of a plaintext file stored inside the vault
+     * Use this if you only want to display the content to the user.
+     * If you want to modify the file content afterward use {@link Vault.read}
+     * @public
+     * @since 0.9.7
+     */
+    cachedRead(file: TFile): Promise<string>;
+    /**
+     * Read the content of a binary file stored inside the vault.
+     * @public
+     * @since 0.9.7
+     */
+    readBinary(file: TFile): Promise<ArrayBuffer>;
+
+    /**
+     * Returns an URI for the browser engine to use, for example to embed an image.
+     * @public
+     * @since 0.9.7
+     */
+    getResourcePath(file: TFile): string;
+    /**
+     * Deletes the file completely.
+     * @param file - The file or folder to be deleted
+     * @param force - Should attempt to delete folder even if it has hidden children
+     * @public
+     * @since 0.9.7
+     */
+    delete(file: TAbstractFile, force?: boolean): Promise<void>;
+    /**
+     * Tries to move to system trash. If that isn't successful/allowed, use local trash
+     * @param file - The file or folder to be deleted
+     * @param system - Set to `false` to use local trash by default.
+     * @public
+     * @since 0.9.7
+     */
+    trash(file: TAbstractFile, system: boolean): Promise<void>;
+    /**
+     * Rename or move a file. To ensure links are automatically renamed,
+     * use {@link FileManager.renameFile} instead.
+     * @param file - the file to rename/move
+     * @param newPath - vault absolute path to move file to.
+     * @public
+     * @since 0.9.11
+     */
+    rename(file: TAbstractFile, newPath: string): Promise<void>;
+    /**
+     * Modify the contents of a plaintext file.
+     * @param file - The file
+     * @param data - The new file content
+     * @param options - (Optional)
+     * @public
+     * @since 0.9.7
+     */
+    modify(file: TFile, data: string, options?: DataWriteOptions): Promise<void>;
+    /**
+     * Modify the contents of a binary file.
+     * @param file - The file
+     * @param data - The new file content
+     * @param options - (Optional)
+     * @public
+     * @since 0.9.7
+     */
+    modifyBinary(file: TFile, data: ArrayBuffer, options?: DataWriteOptions): Promise<void>;
+    /**
+     * Add text to the end of a plaintext file inside the vault.
+     * @param file - The file
+     * @param data - the text to add
+     * @param options - (Optional)
+     * @public
+     * @since 0.13.0
+     */
+    append(file: TFile, data: string, options?: DataWriteOptions): Promise<void>;
+    /**
+     * Atomically read, modify, and save the contents of a note.
+     * @param file - the file to be read and modified.
+     * @param fn - a callback function which returns the new content of the note synchronously.
+     * @param options - write options.
+     * @returns string - the text value of the note that was written.
+     * @example
+     * ```ts
+     * app.vault.process(file, (data) => {
+     *  return data.replace('Hello', 'World');
+     * });
+     * ```
+     * @public
+     * @since 1.1.0
+     */
+    process(file: TFile, fn: (data: string) => string, options?: DataWriteOptions): Promise<string>;
+    /**
+     * Create a copy of a file or folder.
+     * @param file - The file or folder.
+     * @param newPath - Vault absolute path for the new copy.
+     * @public
+     * @since 1.8.7
+     */
+    copy<T extends TAbstractFile>(file: T, newPath: string): Promise<T>;
+    /**
+     * Get all files and folders in the vault.
+     * @public
+     * @since 0.9.7
+     */
+    getAllLoadedFiles(): TAbstractFile[];
+    /**
+     * Get all folders in the vault.
+     * @param includeRoot - Should the root folder (`/`) be returned
+     * @public
+     * @since 1.6.6
+     */
+    getAllFolders(includeRoot?: boolean): TFolder[];
+
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    static recurseChildren(root: TFolder, cb: (file: TAbstractFile) => any): void;
+    /**
+     * Get all Markdown files in the vault.
+     * @public
+     * @since 0.9.7
+     */
+    getMarkdownFiles(): TFile[];
+    /**
+     * Get all files in the vault.
+     * @public
+     * @since 0.9.7
+     */
+    getFiles(): TFile[];
+
+    /**
+     * Called when a file is created.
+     * This is also called when the vault is first loaded for each existing file
+     * If you do not wish to receive create events on vault load, register your event handler inside {@link Workspace.onLayoutReady}.
+     * @public
+     * @since 0.9.7
+     */
+    on(name: 'create', callback: (file: TAbstractFile) => any, ctx?: any): EventRef;
+    /**
+     * Called when a file is modified.
+     * @public
+     * @since 0.9.7
+     */
+    on(name: 'modify', callback: (file: TAbstractFile) => any, ctx?: any): EventRef;
+    /**
+     * Called when a file is deleted.
+     * @public
+     * @since 0.9.7
+     */
+    on(name: 'delete', callback: (file: TAbstractFile) => any, ctx?: any): EventRef;
+    /**
+     * Called when a file is renamed.
+     * @public
+     * @since 0.9.7
+     */
+    on(name: 'rename', callback: (file: TAbstractFile, oldPath: string) => any, ctx?: any): EventRef;
+
+}
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export abstract class View extends Component {
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    app: App;
+    /**
+     * @public
+     * @since 1.1.0
+     */
+    icon: IconName;
+    /**
+     * Whether or not the view is intended for navigation.
+     * If your view is a static view that is not intended to be navigated away, set this to false.
+     * (For example: File explorer, calendar, etc.)
+     * If your view opens a file or can be otherwise navigated, set this to true.
+     * (For example: Markdown editor view, Kanban view, PDF view, etc.)
+     *
+     * @public
+     * @since 0.15.1
+     */
+    navigation: boolean;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    leaf: WorkspaceLeaf;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    containerEl: HTMLElement;
+    /**
+     * Assign an optional scope to your view to register hotkeys for when the view
+     * is in focus.
+     *
+     * @example
+     * ```ts
+     * this.scope = new Scope(this.app.scope);
+     * ```
+     * @default null
+     * @public
+     * @since 1.5.7
+     */
+    scope: Scope | null;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    constructor(leaf: WorkspaceLeaf);
+
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    protected onOpen(): Promise<void>;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    protected onClose(): Promise<void>;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    abstract getViewType(): string;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    getState(): Record<string, unknown>;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    setState(state: unknown, result: ViewStateResult): Promise<void>;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    getEphemeralState(): Record<string, unknown>;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    setEphemeralState(state: unknown): void;
+    /**
+     * @public
+     * @since 1.1.0
+     */
+    getIcon(): IconName;
+    /**
+     * Called when the size of this view is changed.
+     * @public
+     * @since 0.9.7
+     */
+    onResize(): void;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    abstract getDisplayText(): string;
+    /**
+     * Populates the pane menu.
+     *
+     * (Replaces the previously removed `onHeaderMenu` and `onMoreOptionsMenu`)
+     * @public
+     * @since 0.15.3
+     */
+    onPaneMenu(menu: Menu, source: 'more-options' | 'tab-header' | string): void;
+
+}
+
+/**
+ * @public
+ */
+export type ViewCreator = (leaf: WorkspaceLeaf) => View;
+
+/**
+ * ViewOption and the associated sub-types are configuration-driven settings controls
+ * which can be provided by a {@link BasesViewRegistration} to expose configuration options
+ * to users in the view config menu of the Bases toolbar.
+ *
+ * @public
+ * @since 1.10.0
+ */
+export type ViewOption = TextOption | MultitextOption | GroupOption | PropertyOption | ToggleOption | SliderOption | DropdownOption;
+
+/**
+ * @public
+ */
+export interface ViewState {
+
+    /**
+     * @public
+     */
+    type: string;
+    /**
+     * @public
+     */
+    state?: Record<string, unknown>;
+    /**
+     * @public
+     */
+    active?: boolean;
+    /**
+     * @public
+     */
+    pinned?: boolean;
+    /**
+     * @public
+     */
+    group?: WorkspaceLeaf;
+
+}
+
+/**
+ * @public
+ */
+export interface ViewStateResult {
+    /**
+     * Set this to true to indicate that there is a state change which should be recorded in the navigation history.
+     * @public
+     */
+    history: boolean;
+
+}
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export class Workspace extends Events {
+
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    leftSplit: WorkspaceSidedock | WorkspaceMobileDrawer;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    rightSplit: WorkspaceSidedock | WorkspaceMobileDrawer;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    leftRibbon: WorkspaceRibbon;
+    /**
+     * @public
+     * @deprecated No longer used
+     */
+    rightRibbon: WorkspaceRibbon;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    rootSplit: WorkspaceRoot;
+
+    /**
+     * Indicates the currently focused leaf, if one exists.
+     *
+     * Please avoid using `activeLeaf` directly, especially without checking whether
+     * `activeLeaf` is null.
+     *
+     * @public
+     * @since 0.9.7
+     * @deprecated The use of this field is discouraged.
+     * The recommended alternatives are:
+     * - If you need information about the current view, use {@link Workspace.getActiveViewOfType}.
+     * - If you need to open a new file or navigate a view, use {@link Workspace.getLeaf}.
+     */
+    activeLeaf: WorkspaceLeaf | null;
+
+    /**
+     *
+     * @public
+     * @since 0.9.7
+     */
+    containerEl: HTMLElement;
+    /**
+     * If the layout of the app has been successfully initialized.
+     * To react to the layout becoming ready, use {@link Workspace.onLayoutReady}
+     * @public
+     * @since 0.9.7
+     */
+    layoutReady: boolean;
+    /**
+     * Save the state of the current workspace layout.
+     * @public
+     * @since 0.16.0
+     */
+    requestSaveLayout: Debouncer<[], Promise<void>>;
+
+    /**
+     * A component managing the current editor.
+     * This can be null if the active view has no editor.
+     * @public
+     */
+    activeEditor: MarkdownFileInfo | null;
+
+    /**
+     * Runs the callback function right away if layout is already ready,
+     * or push it to a queue to be called later when layout is ready.
+     * @public
+     * @since 0.11.0
+     * */
+    onLayoutReady(callback: () => any): void;
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    changeLayout(workspace: any): Promise<void>;
+
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    getLayout(): Record<string, unknown>;
+
+    /**
+     * @public
+     * @since 0.9.11
+     */
+    createLeafInParent(parent: WorkspaceSplit, index: number): WorkspaceLeaf;
+
+    /**
+     * @public
+     * @since 0.9.7
+     */
+    createLeafBySplit(leaf: WorkspaceLeaf, direction?: SplitDirection, before?: boolean): WorkspaceLeaf;
+    /**
+     * @public
+     * @deprecated - You should use {@link Workspace.getLeaf|getLeaf(true)} instead which does the same thing.
+     * @since 0.9.7
+     */
+    splitActiveLeaf(direction?: SplitDirection): WorkspaceLeaf;
+
+    /**
+     * @public
+     * @deprecated - Use the new form of this method instead
+     * @since 0.13.8
+     */
+    duplicateLeaf(leaf: WorkspaceLeaf, direction?: SplitDirection): Promise<WorkspaceLeaf>;
+    /**
+     * @public
+     * @since 1.1.0
+     */
+    duplicateLeaf(leaf: WorkspaceLeaf, leafType: PaneType | boolean, direction?: SplitDirection): Promise<WorkspaceLeaf>;
+    /**
+     * @public
+     * @deprecated - You should use {@link Workspace.getLeaf|getLeaf(false)} instead which does the same thing.
+     */
+    getUnpinnedLeaf(): WorkspaceLeaf;
+    /**
+     * Creates a new leaf in a leaf adjacent to the currently active leaf.
+     * If direction is `'vertical'`, the leaf will appear to the right.
+     * If direction is `'horizontal'`, the leaf will appear below the current leaf.
+     *
+     * @public
+     * @since 0.16.0
+     */
+    getLeaf(newLeaf?: 'split', direction?: SplitDirection): WorkspaceLeaf;
+    /**
+     * If newLeaf is false (or not set) then an existing leaf which can be navigated
+     * is returned, or a new leaf will be created if there was no leaf available.
+     *
+     * If newLeaf is `'tab'` or `true` then a new leaf will be created in the preferred
+     * location within the root split and returned.
+     *
+     * If newLeaf is `'split'` then a new leaf will be created adjacent to the currently active leaf.
+     *
+     * If newLeaf is `'window'` then a popout window will be created with a new leaf inside.
+     *
+     * @public
+     * @since 0.16.0
+     */
+    getLeaf(newLeaf?: PaneType | boolean): WorkspaceLeaf;
+
+    /**
+     * Migrates this leaf to a new popout window.
+     * Only works on the desktop app.
+     * @public
+     * @throws Error if the app does not support popout windows (i.e. on mobile or if Electron version is too old)
+     * @since 0.15.4
+     */
+    moveLeafToPopout(leaf: WorkspaceLeaf, data?: WorkspaceWindowInitData): WorkspaceWindow;
+
+    /**
+     * Open a new popout window with a single new leaf and return that leaf.
+     * Only works on the desktop app.
+     * @public
+     * @since 0.15.4
+     */
+    openPopoutLeaf(data?: WorkspaceWindowInitData): WorkspaceLeaf;
+    /**
+     * @public
+     * @since 0.16.0
+     */
+    openLinkText(linktext: string, sourcePath: string, newLeaf?: PaneType | boolean, openViewState?: OpenViewState): Promise<void>;
+    /**
+     * Sets the active leaf
+     * @param leaf - The new active leaf
+     * @param params - Parameter object of whether to set the focus.
+     * @public
+     * @since 0.16.3
+     */
+    setActiveLeaf(leaf: WorkspaceLeaf, params?: {
+        /** @public */
+        focus?: boolean;
+    }): void;
+    /**
+     * @deprecated - function signature changed. Use other form instead
+     * @public
+     */
+    setActiveLeaf(leaf: WorkspaceLeaf, pushHistory: boolean, focus: boolean): void;
+
+    /**
+     * Retrieve a leaf by its id.
+     * @param id id of the leaf to retrieve.
+     * @public
+     * @since 1.5.1
+     */
+    getLeafById(id: string): WorkspaceLeaf | null;
+    /**
+     * Get all leaves that belong to a group
+     * @param group id
+     * @public
+     * @since 0.9.7
+     */
+    getGroupLeaves(group: string): WorkspaceLeaf[];
+
+    /**
+     * Get the most recently active leaf in a given workspace root. Useful for interacting with the leaf in the root split while a sidebar leaf might be active.
+     * @param root Root for the leaves you want to search. If a root is not provided, the `rootSplit` and leaves within pop-outs will be searched.
+     * @public
+     * @since 0.15.4
+     */
+    getMostRecentLeaf(root?: WorkspaceParent): WorkspaceLeaf | null;
+    /**
+     * Create a new leaf inside the left sidebar.
+     * @param split Should the existing split be split up?
+     * @public
+     * @since 0.9.7
+     */
+    getLeftLeaf(split: boolean): WorkspaceLeaf | null;
+    /**
+     * Create a new leaf inside the right sidebar.
+     * @param split Should the existing split be split up?
+     * @public
+     * @since 0.9.7
+     */
+    getRightLeaf(split: boolean): WorkspaceLeaf | null;
+    /**
+     * Get side leaf or create one if one does not exist.
+     * @public
+     * @since 1.7.2
+     */
+    ensureSideLeaf(type: string, side: Side, options?: {
+        /** @public */
+        active?: boolean;
+        /** @public */
+        split?: boolean;
+        /** @public */
+        reveal?: boolean;
+        /** @public */
+        state?: any;
+    }): Promise<WorkspaceLeaf>;
+
+    /**
+     * Get the currently active view of a given type.
+     * @public
+     * @since 0.9.16
+     */
+    getActiveViewOfType<T extends View>(type: Constructor<T>): T | null;
+
+    /**
+     * Returns the file for the current view if it's a `FileView`.
+     * Otherwise, it will return the most recently active file.
+     * @public
+     */
+    getActiveFile(): TFile | null;
+
+    /**
+     * Iterate through all leaves in the main area of the workspace.
+     * @public
+     * @since 0.9.7
+     */
+    iterateRootLeaves(callback: (leaf: WorkspaceLeaf) => any): void;
+    /**
+     * Iterate through all leaves, including main area leaves, floating leaves, and sidebar leaves.
+     * @public
+     * @since 0.9.7
+     */
+    iterateAllLeaves(callback: (leaf: WorkspaceLeaf) => any): void;
+    /**
+     * Get all leaves of a given type.
+     * @public
+     * @since 0.9.7
+     */
+    getLeavesOfType(viewType: string): WorkspaceLeaf[];
+    /**
+     * Remove all leaves of the given type.
+     * @public
+     * @since 0.9.7
+     */
+    detachLeavesOfType(viewType: string): void;
+
+    /**
+     * Bring a given leaf to the foreground. If the leaf is in a sidebar, the sidebar will be uncollapsed.
+     * `await` this function to ensure your view has been fully loaded and is not deferred.
+     * @public
+     * @since 1.7.2
+     */
+    revealLeaf(leaf: WorkspaceLeaf): Promise<void>;
+    /**
+     * Get the filenames of the 10 most recently opened files.
+     * @public
+     * @since 0.9.7
+     */
+    getLastOpenFiles(): string[];
+
+    /**
+     * Calling this function will update/reconfigure the options of all Markdown views.
+     * It is fairly expensive, so it should not be called frequently.
+     * @public
+     * @since 0.13.21
+     */
+    updateOptions(): void;
+
+    /**
+     * Add a context menu to internal file links.
+     * @public
+     * @since 0.12.10
+     */
+    handleLinkContextMenu(menu: Menu, linktext: string, sourcePath: string, leaf?: WorkspaceLeaf): boolean;
+
+    /**
+     * Triggered when the active Markdown file is modified. React to file changes before they
+     * are saved to disk.
+     * @public
+     * @since 0.9.7
+     */
+    on(name: 'quick-preview', callback: (file: TFile, data: string) => any, ctx?: any): EventRef;
+    /**
+     * Triggered when a `WorkspaceItem` is resized or the workspace layout has changed.
+     * @public
+     * @since 0.9.7
+     */
+    on(name: 'resize', callback: () => any, ctx?: any): EventRef;
+
+    /**
+     * Triggered when the active leaf changes.
+     * @public
+     * @since 0.10.9
+     */
+    on(name: 'active-leaf-change', callback: (leaf: WorkspaceLeaf | null) => any, ctx?: any): EventRef;
+    /**
+     * Triggered when the active file changes. The file could be in a new leaf, an existing leaf,
+     * or an embed.
+     * @public
+     * @since 0.10.9
+     */
+    on(name: 'file-open', callback: (file: TFile | null) => any, ctx?: any): EventRef;
+
+    /**
+     * @public
+     * @since 0.9.20
+     */
+    on(name: 'layout-change', callback: () => any, ctx?: any): EventRef;
+    /**
+     * Triggered when a new popout window is created.
+     * @public
+     * @since 0.15.3
+     */
+    on(name: 'window-open', callback: (win: WorkspaceWindow, window: Window) => any, ctx?: any): EventRef;
+    /**
+     * Triggered when a popout window is closed.
+     * @public
+     * @since 0.15.3
+     */
+    on(name: 'window-close', callback: (win: WorkspaceWindow, window: Window) => any, ctx?: any): EventRef;
+    /**
+     * Triggered when the CSS of the app has changed.
+     * @public
+     * @since 0.9.7
+     */
+    on(name: 'css-change', callback: () => any, ctx?: any): EventRef;
+
+    /**
+     * Triggered when the user opens the context menu on a file.
+     * @public
+     * @since 0.9.12
+     */
+    on(name: 'file-menu', callback: (menu: Menu, file: TAbstractFile, source: string, leaf?: WorkspaceLeaf) => any, ctx?: any): EventRef;
+    /**
+     * Triggered when the user opens the context menu with multiple files selected in the File Explorer.
+     * @public
+     * @since 1.4.10
+     */
+    on(name: 'files-menu', callback: (menu: Menu, files: TAbstractFile[], source: string, leaf?: WorkspaceLeaf) => any, ctx?: any): EventRef;
+
+    /**
+     * Triggered when the user opens the context menu on an external URL.
+     * @public
+     * @since 1.5.1
+     */
+    on(name: 'url-menu', callback: (menu: Menu, url: string) => any, ctx?: any): EventRef;
+    /**
+     * Triggered when the user opens the context menu on an editor.
+     * @public
+     * @since 1.1.0
+     */
+    on(name: 'editor-menu', callback: (menu: Menu, editor: Editor, info: MarkdownView | MarkdownFileInfo) => any, ctx?: any): EventRef;
+    /**
+     * Triggered when changes to an editor has been applied, either programmatically or from a user event.
+     * @public
+     * @since 1.1.1
+     */
+    on(name: 'editor-change', callback: (editor: Editor, info: MarkdownView | MarkdownFileInfo) => any, ctx?: any): EventRef;
+
+    /**
+     * Triggered when the editor receives a paste event.
+     * Check for `evt.defaultPrevented` before attempting to handle this event, and return if it has been already handled.
+     * Use `evt.preventDefault()` to indicate that you've handled the event.
+     * @public
+     * @since 1.1.0
+     */
+    on(name: 'editor-paste', callback: (evt: ClipboardEvent, editor: Editor, info: MarkdownView | MarkdownFileInfo) => any, ctx?: any): EventRef;
+    /**
+     * Triggered when the editor receives a drop event.
+     * Check for `evt.defaultPrevented` before attempting to handle this event, and return if it has been already handled.
+     * Use `evt.preventDefault()` to indicate that you've handled the event.
+     * @public
+     * @since 1.1.0
+     */
+    on(name: 'editor-drop', callback: (evt: DragEvent, editor: Editor, info: MarkdownView | MarkdownFileInfo) => any, ctx?: any): EventRef;
+
+    /**
+     * Triggered when the app is about to quit.
+     * Not guaranteed to actually run.
+     * Perform some best effort cleanup here.
+     * @public
+     * @since 0.10.2
+     */
+    on(name: 'quit', callback: (tasks: Tasks) => any, ctx?: any): EventRef;
+
+}
+
+/**
+ * @public
+ * @since 0.15.4
+ */
+export abstract class WorkspaceContainer extends WorkspaceSplit {
+
+    /**
+     * @public
+     * @since 0.15.4
+     */
+    abstract win: Window;
+    /**
+     * @public
+     * @since 0.15.4
+     */
+    abstract doc: Document;
+
+}
+
+/**
+ * @public
+ * @since 0.15.2
+ */
+export class WorkspaceFloating extends WorkspaceParent {
+    /**
+     * @public
+     * @since 0.15.2
+     */
+    parent: WorkspaceParent;
+
+}
+
+/**
+ * @public
+ * @since 0.10.2
+ */
+export abstract class WorkspaceItem extends Events {
+
+    /**
+     * The direct parent of the leaf.
+     * @public
+     * @since 1.6.6
+     */
+    abstract parent: WorkspaceParent;
+
+    /**
+     * @public
+     * @since 0.10.2
+     */
+    getRoot(): WorkspaceItem;
+    /**
+     * Get the root container parent item, which can be one of:
+     * - {@link WorkspaceRoot}
+     * - {@link WorkspaceWindow}
+     * @public
+     * @since 0.15.4
+     */
+    getContainer(): WorkspaceContainer;
+
+}
+
+/**
+ * @public
+ */
+export class WorkspaceLeaf extends WorkspaceItem implements HoverParent {
+
+    /**
+     * The direct parent of the leaf.
+     *
+     * On desktop, a leaf is always a child of a `WorkspaceTabs` component.
+     * On mobile, a leaf might be a child of a `WorkspaceMobileDrawer`.
+     * Perform an `instanceof` check before making an assumption about the
+     * `parent`.
+     *
+     * @public
+     */
+    parent: WorkspaceTabs | WorkspaceMobileDrawer;
+
+    /**
+     * The view associated with this leaf. Do not attempt to cast this to your
+     * custom `View` without first checking `instanceof`.
+     * @public
+     */
+    view: View;
+
+    /** @public */
+    hoverPopover: HoverPopover | null;
+
+    /**
+     * Open a file in this leaf.
+     *
+     * @public
+     */
+    openFile(file: TFile, openState?: OpenViewState): Promise<void>;
+
+    /**
+     * @public
+     */
+    open(view: View): Promise<View>;
+
+    /**
+     * @public
+     */
+    getViewState(): ViewState;
+    /**
+     * @public
+     */
+    setViewState(viewState: ViewState, eState?: any): Promise<void>;
+    /**
+     * Returns true if this leaf is currently deferred because it is in the background.
+     * A deferred leaf will have a DeferredView as its view, instead of the View that
+     * it should normally have for its type (like MarkdownView for the `markdown` type).
+     * @since 1.7.2
+     * @public
+     */
+    get isDeferred(): boolean;
+    /**
+     * If this view is currently deferred, load it and await that it has fully loaded.
+     * @since 1.7.2
+     * @public
+     */
+    loadIfDeferred(): Promise<void>;
+
+    /**
+     * @public
+     */
+    getEphemeralState(): any;
+    /**
+     * @public
+     */
+    setEphemeralState(state: any): void;
+    /**
+     * @public
+     */
+    togglePinned(): void;
+    /**
+     * @public
+     */
+    setPinned(pinned: boolean): void;
+
+    /**
+     * @public
+     */
+    setGroupMember(other: WorkspaceLeaf): void;
+    /**
+     * @public
+     */
+    setGroup(group: string): void;
+    /**
+     * @public
+     */
+    detach(): void;
+
+    /**
+     * @public
+     */
+    getIcon(): IconName;
+    /**
+     * @public
+     */
+    getDisplayText(): string;
+
+    /**
+     * @public
+     */
+    onResize(): void;
+
+    /**
+     * @public
+     */
+    on(name: 'pinned-change', callback: (pinned: boolean) => any, ctx?: any): EventRef;
+    /**
+     * @public
+     */
+    on(name: 'group-change', callback: (group: string) => any, ctx?: any): EventRef;
+
+}
+
+/**
+ * @public
+ * @since 1.6.6
+ */
+export class WorkspaceMobileDrawer extends WorkspaceParent {
+
+    /** @public */
+    parent: WorkspaceParent;
+
+    /** @public */
+    collapsed: boolean;
+
+    /** @public */
+    expand(): void;
+
+    /** @public */
+    collapse(): void;
+
+    /** @public */
+    toggle(): void;
+
+}
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export abstract class WorkspaceParent extends WorkspaceItem {
+
+}
+
+/**
+ * @public
+ */
+export class WorkspaceRibbon {
+
+}
+
+/**
+ * @public
+ * @since 0.15.2
+ */
+export class WorkspaceRoot extends WorkspaceContainer {
+    /** @public */
+    win: Window;
+    /** @public */
+    doc: Document;
+}
+
+/**
+ * @public
+ * @since 0.15.4
+ */
+export class WorkspaceSidedock extends WorkspaceSplit {
+
+    /**
+     * @public
+     * @since 0.12.11
+     */
+    collapsed: boolean;
+
+    /**
+     * @public
+     * @since 0.12.11
+     */
+    toggle(): void;
+    /**
+     * @public
+     * @since 0.12.11
+     */
+    collapse(): void;
+    /**
+     * @public
+     * @since 0.12.11
+     */
+    expand(): void;
+
+}
+
+/**
+ * @public
+ * @since 0.9.7
+ */
+export class WorkspaceSplit extends WorkspaceParent {
+    /** @public */
+    parent: WorkspaceParent;
+
+}
+
+/**
+ * @public
+ */
+export class WorkspaceTabs extends WorkspaceParent {
+
+    /** @public */
+    parent: WorkspaceSplit;
+
+}
+
+/**
+ * @public
+ * @since 0.15.4
+ */
+export class WorkspaceWindow extends WorkspaceContainer {
+
+    /** @public */
+    win: Window;
+    /** @public */
+    doc: Document;
+
+}
+
+/**
+ * @public
+ */
+export interface WorkspaceWindowInitData {
+    /** @public */
+    x?: number;
+    /** @public */
+    y?: number;
+
+    /**
+     * The suggested size
+     * @public
+     */
+    size?: {
+        /** @public */
+        width: number;
+        /** @public */
+        height: number;
+    };
+}
+
+
+/** @public */
+export type IconName = string;
+
+```
+
+
+---
+
 # Excalidraw Script Library Examples
 
 This is an automatically generated knowledge base intended for Retrieval Augmented Generation (RAG) and other AI-assisted workflows (e.g. NotebookLM or local embeddings tools).  
