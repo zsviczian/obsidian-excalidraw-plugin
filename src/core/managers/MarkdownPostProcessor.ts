@@ -9,7 +9,6 @@ import {
 import { DEVICE, RERENDER_EVENT } from "../../constants/constants";
 import { EmbeddedFilesLoader } from "../../shared/EmbeddedFileLoader";
 import { createPNG, createSVG } from "../../utils/excalidrawAutomateUtils";
-import { ExportSettings } from "../../view/ExcalidrawView";
 import ExcalidrawPlugin from "../main";
 import {getIMGFilename,} from "../../utils/fileUtils";
 import {
@@ -30,6 +29,7 @@ import { CustomMutationObserver, debug, DEBUGGING } from "../../utils/debugHelpe
 import { getExcalidrawFileForwardLinks } from "../../utils/excalidrawViewUtils";
 import { linkPrompt } from "../../shared/Dialogs/Prompt";
 import { isHTMLElement } from "../../utils/typechecks";
+import { ExportSettings } from "src/types/exportUtilTypes";
 
 interface imgElementAttributes {
   file?: TFile;

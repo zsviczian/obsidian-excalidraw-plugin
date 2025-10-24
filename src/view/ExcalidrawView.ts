@@ -121,7 +121,6 @@ import { updateEquation } from "../shared/LaTeX";
 import {
   EmbeddedFile,
   EmbeddedFilesLoader,
-  FileData,
   generateIdFromFile,
 } from "../shared/EmbeddedFileLoader";
 import { ScriptInstallPrompt } from "../shared/Dialogs/ScriptInstallPrompt";
@@ -155,9 +154,11 @@ import { getPDFCropRect } from "../utils/PDFUtils";
 import { AutoexportConfig, Position, ViewSemaphores } from "../types/excalidrawViewTypes";
 import { DropManager } from "./managers/DropManager";
 import { ImageInfo } from "src/types/excalidrawAutomateTypes";
-import { exportPNG, exportPNGToClipboard, exportSVG, exportToPDF, getMarginValue, getPageDimensions, PageOrientation, PageSize } from "src/utils/exportUtils";
-import { FrameRenderingOptions } from "src/types/utilTypes";
+import { exportPNG, exportPNGToClipboard, exportSVG, exportToPDF, getMarginValue, getPageDimensions } from "src/utils/exportUtils";
+import { PageOrientation, PageSize, ExportSettings } from "src/types/exportUtilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
+import { updateElementIdsInScene } from "src/utils/excalidrawSceneUtils";
+import { FileData } from "src/types/embeddedFileLoaderTypes";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -185,14 +186,6 @@ export enum TextMode {
 
 interface WorkspaceItemExt extends WorkspaceItem {
   containerEl: HTMLElement;
-}
-
-export interface ExportSettings {
-  withBackground: boolean;
-  withTheme: boolean;
-  isMask: boolean;
-  frameRendering?: FrameRenderingOptions; //optional, overrides relevant appState settings for rendering the frame
-  skipInliningFonts?: boolean;
 }
 
 const HIDE = "excalidraw-hidden";
@@ -4271,8 +4264,12 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       }
     }
     if (data.elements) {
-      const preventReload = !(data.elements.some((el) => el.type === "image") && !data.elements.some((el) => el.type !== "image"));
-      window.setTimeout(() => this.save(preventReload), 30); //removed prevent reload = false, as reload was triggered when pasted containers were processed and there was a conflict with the new elements
+      //const onlyImages = data.elements.length > 0 && data.elements.every((el) => el.type === "image");
+      //const preventReload = !onlyImages;
+      data.elements.filter(el=>el.type==="text" || el.link).forEach(el=>
+        updateElementIdsInScene({elements: data.elements as Mutable<ExcalidrawElement>[]},el, nanoid())
+      );
+      window.setTimeout(() => this.save(false), 30); //removed prevent reload = false, as reload was triggered when pasted containers were processed and there was a conflict with the new elements
     }
 
     //process pasted text after it was processed into elements by Excalidraw

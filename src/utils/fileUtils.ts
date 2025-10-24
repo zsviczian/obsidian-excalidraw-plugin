@@ -1,12 +1,12 @@
 import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { App, loadPdfJs, MetadataCache, normalizePath, Notice, requestUrl, RequestUrlResponse, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
 import { DEVICE, EXCALIDRAW_PLUGIN, FRONTMATTER_KEYS, URLFETCHTIMEOUT } from "src/constants/constants";
-import { IMAGE_MIME_TYPES, MimeType } from "../shared/EmbeddedFileLoader";
 import { ExcalidrawSettings } from "src/core/settings";
 import { errorlog, getDataURL } from "./utils";
 import ExcalidrawPlugin from "src/core/main";
 import { getAttachmentsFolderAndFilePath } from "./obsidianUtils";
 import ExcalidrawView from "src/view/ExcalidrawView";
+import { IMAGE_MIME_TYPES, MimeType } from "src/types/embeddedFileLoaderTypes";
 
 /**
  * Splits a full path including a folderpath and a filename into separate folderpath and filename components

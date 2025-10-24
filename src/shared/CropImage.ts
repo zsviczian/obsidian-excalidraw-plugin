@@ -6,9 +6,9 @@ import { Notice } from "obsidian";
 import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { cloneElement } from "src/utils/excalidrawAutomateUtils";
-import { ExportSettings } from "src/view/ExcalidrawView";
 import { nanoid } from "src/constants/constants";
 import { svgToBase64 } from "../utils/utils";
+import { ExportSettings } from "src/types/exportUtilTypes";
 
 /**
  * Creates a masked image from an Excalidraw scene.

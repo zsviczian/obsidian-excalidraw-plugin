@@ -24,6 +24,8 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 ## Fixed
 - side panel does not attach correctly when library is pinned [#2510](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2510)
 - Fixed print area when using marker frames and printing Slideshow to PDF
+- The Invert Colors script and ExcalidrawAutomate bugs that resulted in broken colors and Excalidarw crash in some cases after color inversion.
+- Fixed duplicated PDF elements after copy-pasting from scene to scene.
 `,
 "2.16.1":`
 ## Fixed

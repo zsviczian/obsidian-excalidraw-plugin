@@ -1,7 +1,7 @@
 //for future use, not used currently
 
 import { ImageCrop } from "@zsviczian/excalidraw/types/element/src/types";
-import { PDFPageViewProps } from "src/shared/EmbeddedFileLoader";
+import { PDFPageViewProps } from "src/types/embeddedFileLoaderTypes";
 
 export function getPDFCropRect (props: {
   scale: number,

@@ -8,7 +8,7 @@ import {
 } from "@zsviczian/excalidraw/types/element/src/types";
 import { normalizePath, TFile } from "obsidian";
 
-import ExcalidrawView, { ExportSettings, getTextMode } from "src/view/ExcalidrawView";
+import ExcalidrawView, { getTextMode } from "src/view/ExcalidrawView";
 import {
   GITHUB_RELEASES,
   getCommonBoundingBox,
@@ -37,12 +37,14 @@ import {
   postOpenAI as _postOpenAI,
   extractCodeBlocks as _extractCodeBlocks,
 } from "../utils/AIUtils";
-import { ColorMap, EmbeddedFilesLoader, FileData } from "src/shared/EmbeddedFileLoader";
+import { EmbeddedFilesLoader } from "src/shared/EmbeddedFileLoader";
 import { SVGColorInfo } from "src/types/excalidrawAutomateTypes";
 import { ExcalidrawData, getExcalidrawMarkdownHeaderSection, REGEX_LINK } from "src/shared/ExcalidrawData";
 import { getFrameBasedOnFrameNameOrId } from "./excalidrawViewUtils";
 import { ScriptEngine } from "src/shared/Scripts";
 import { getEA } from "src/core";
+import { ColorMap, FileData } from "src/types/embeddedFileLoaderTypes";
+import { ExportSettings } from "src/types/exportUtilTypes";
 
 declare const PLUGIN_VERSION:string;
 
@@ -150,7 +152,7 @@ export function errorMessage(message: string, source: string):void {
 
 export function isColorStringTransparent(color: string): boolean {
   const rgbaHslaTransparentRegex = /^(rgba|hsla)\(.*?,.*?,.*?,\s*0(\.0+)?\)$/i;
-  const hexTransparentRegex = /^#[a-fA-F0-9]{8}00$/i;
+  const hexTransparentRegex = /^#[a-fA-F0-9]{6}00$/i;
 
   return rgbaHslaTransparentRegex.test(color) || hexTransparentRegex.test(color);
 }

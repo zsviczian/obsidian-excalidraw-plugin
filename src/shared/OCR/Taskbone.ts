@@ -1,13 +1,14 @@
 import { ExcalidrawAutomate } from "../ExcalidrawAutomate";
 import {Notice, requestUrl} from "obsidian"
 import ExcalidrawPlugin from "../../core/main"
-import ExcalidrawView, { ExportSettings } from "../../view/ExcalidrawView"
 import FrontmatterEditor from "src/shared/Frontmatter";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { EmbeddedFilesLoader } from "../EmbeddedFileLoader";
 import { blobToBase64 } from "src/utils/fileUtils";
 import { getEA } from "src/core";
 import { log } from "src/utils/debugHelper";
+import { ExportSettings } from "src/types/exportUtilTypes";
+import ExcalidrawView from "src/view/ExcalidrawView";
 
 const TASKBONE_URL = "https://api.taskbone.com/"; //"https://excalidraw-preview.onrender.com/";
 const TASKBONE_OCR_FN = "execute?id=60f394af-85f6-40bc-9613-5d26dc283cbb";

@@ -1,5 +1,5 @@
 import { Setting } from "obsidian";
-import { PageOrientation, PageSize, PDFPageAlignment, PDFPageMarginString, STANDARD_PAGE_SIZES } from "src/utils/exportUtils";
+import { PageOrientation, PageSize, PDFPageAlignment, PDFPageMarginString, STANDARD_PAGE_SIZES } from "src/types/exportUtilTypes";
 import { t } from "src/lang/helpers";
 
 export interface PDFExportSettings {

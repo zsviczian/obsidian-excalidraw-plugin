@@ -20,7 +20,6 @@ import {
 } from "../constants/constants";
 import ExcalidrawPlugin from "../core/main";
 import { ExcalidrawElement, ExcalidrawImageElement, ExcalidrawTextElement, ImageCrop } from "@zsviczian/excalidraw/types/element/src/types";
-import { ExportSettings } from "../view/ExcalidrawView";
 import { getDataURLFromURL, getIMGFilename, getMimeType, getURLImageExtension } from "./fileUtils";
 import { generateEmbeddableLink } from "./customEmbeddableUtils";
 import { FILENAMEPARTS } from "../types/utilTypes";
@@ -31,11 +30,12 @@ import { CropImage } from "../shared/CropImage";
 import opentype from 'opentype.js';
 import { runCompressionWorker } from "src/shared/Workers/compression-worker";
 import Pool from "es6-promise-pool";
-import { FileData } from "../shared/EmbeddedFileLoader";
 import { t } from "src/lang/helpers";
 import { log } from "./debugHelper";
 import { VersionMismatchPrompt } from "src/shared/Dialogs/VersionMismatch";
 import { ExcalidrawSettings } from "src/core/settings";
+import { FileData } from "src/types/embeddedFileLoaderTypes";
+import { ExportSettings } from "src/types/exportUtilTypes";
 
 declare const PLUGIN_VERSION:string;
 declare var LZString: any;

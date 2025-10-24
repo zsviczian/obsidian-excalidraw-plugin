@@ -13,10 +13,10 @@ import {
   ExcalidrawFrameElement,
   ExcalidrawTextContainer,
 } from "@zsviczian/excalidraw/types/element/src/types";
-import { ColorMap, MimeType } from "./EmbeddedFileLoader";
+import { ColorMap, MimeType } from "../types/embeddedFileLoaderTypes";
 import { Editor,  Notice, OpenViewState, RequestUrlResponse, TFile, TFolder, WorkspaceLeaf } from "obsidian";
 import * as obsidian_module from "obsidian";
-import ExcalidrawView, { ExportSettings, TextMode } from "src/view/ExcalidrawView";
+import ExcalidrawView, { TextMode } from "src/view/ExcalidrawView";
 import { ExcalidrawData, getMarkdownDrawingSection } from "./ExcalidrawData";
 import {
   FRONTMATTER,
@@ -73,7 +73,6 @@ import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import PolyBool from "polybooljs";
 import { EmbeddableMDCustomProps } from "./Dialogs/EmbeddableSettings";
 import {
-  AIRequest,
   postOpenAI as _postOpenAI,
   extractCodeBlocks as _extractCodeBlocks,
 } from "../utils/AIUtils";
@@ -84,13 +83,15 @@ import { ExcalidrawLib } from "../types/excalidrawLib";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/src/types";
 import { AddImageOptions, ImageInfo, SVGColorInfo } from "src/types/excalidrawAutomateTypes";
 import { _measureText, cloneElement, createPNG, createSVG, errorMessage, filterColorMap, getEmbeddedFileForImageElment, getFontFamily, getLineBox, getTemplate, isColorStringTransparent, isSVGColorInfo, mergeColorMapIntoSVGColorInfo, normalizeLinePoints, repositionElementsToCursor, svgColorInfoToColorMap, updateOrAddSVGColorInfo, verifyMinimumPluginVersion } from "src/utils/excalidrawAutomateUtils";
-import { exportToPDF, getMarginValue, getPageDimensions, PageDimensions, PageOrientation, PageSize, PDFExportScale, PDFPageProperties } from "src/utils/exportUtils";
+import { exportToPDF, getMarginValue, getPageDimensions } from "src/utils/exportUtils";
+import { PageDimensions, PageOrientation, PageSize, PDFExportScale, PDFPageProperties, ExportSettings} from "src/types/exportUtilTypes";
 import { FrameRenderingOptions } from "src/types/utilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
 import { AutoexportConfig } from "src/types/excalidrawViewTypes";
 import { FloatingModal } from "./Dialogs/FloatingModal";
 import { patchMobileView } from "src/utils/customEmbeddableUtils";
 import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
+import { AIRequest } from "src/types/AIUtilTypes";
 
 extendPlugins([
   HarmonyPlugin,
@@ -1270,6 +1271,36 @@ export class ExcalidrawAutomate {
   wrapText(text: string, lineLen: number): string {
     return wrapTextAtCharLength(text, lineLen, this.plugin.settings.forceWrap);
   };
+
+  /** ROUNDNESS as defined in the Excalidraw packages/common/src/constants.ts
+   * Radius represented as 25% of element's largest side (width/height).
+   * Used for LEGACY and PROPORTIONAL_RADIUS algorithms, or when the element is
+   * below the cutoff size.
+   * export const DEFAULT_PROPORTIONAL_RADIUS = 0.25;
+   *
+   * Fixed radius for the ADAPTIVE_RADIUS algorithm. In pixels.
+   * export const DEFAULT_ADAPTIVE_RADIUS = 32;
+   *
+   * roundness type (algorithm)
+   * export const ROUNDNESS = {
+   *   Used for legacy rounding (rectangles), which currently works the same
+   *   as PROPORTIONAL_RADIUS, but we need to differentiate for UI purposes and
+   *   forwards-compat.
+   *   LEGACY: 1,
+   *
+   *   Used for linear elements & diamonds
+   *   PROPORTIONAL_RADIUS: 2,
+   *
+   *   Current default algorithm for rectangles, using fixed pixel radius.
+   *   It's working similarly to a regular border-radius, but attemps to make
+   *   radius visually similar across differnt element sizes, especially
+   *   very large and very small elements.
+   *
+   *   NOTE right now we don't allow configuration and use a constant radius
+   *   (see DEFAULT_ADAPTIVE_RADIUS constant)
+   *   ADAPTIVE_RADIUS: 3,
+   * } as const;
+   */
 
   /**
    * Utility function. Returns an element object using style settings and provided parameters.

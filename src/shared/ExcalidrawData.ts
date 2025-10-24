@@ -46,7 +46,8 @@ import {
   FileId,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import { BinaryFiles, DataURL, SceneData } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { EmbeddedFile, MimeType } from "./EmbeddedFileLoader";
+import { EmbeddedFile } from "./EmbeddedFileLoader";
+import { MimeType } from "src/types/embeddedFileLoaderTypes";
 import { MultiOptionConfirmationPrompt } from "./Dialogs/Prompt";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "../utils/mermaidUtils";
 import { DEBUGGING, debug } from "../utils/debugHelper";

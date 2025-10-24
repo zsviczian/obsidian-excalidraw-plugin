@@ -2,7 +2,7 @@
 //https://img.youtube.com/vi/uZz5MgzWXiM/maxresdefault.jpg
 
 import { ExcalidrawElement, FileId } from "@zsviczian/excalidraw/types/element/src/types";
-import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { App, MarkdownRenderer, Notice, TFile } from "obsidian";
 import {  
   DEFAULT_MD_EMBED_CSS,
@@ -15,7 +15,6 @@ import {
 } from "../constants/constants";
 import { createSVG } from "src/utils/excalidrawAutomateUtils";
 import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
-import { ExportSettings } from "../view/ExcalidrawView";
 import { t } from "../lang/helpers";
 import { tex2dataURL } from "./LaTeX";
 import ExcalidrawPlugin from "../core/main";
@@ -39,11 +38,12 @@ import {
   promiseTry,
   PromisePool,
 } from "../utils/utils";
-import { ValueOf } from "../types/types";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "../utils/mermaidUtils";
 import { mermaidToExcalidraw } from "src/constants/constants";
 import { ImageKey, imageCache } from "./ImageCache";
 import { FILENAMEPARTS, PreviewImageType } from "../types/utilTypes";
+import { ColorMap, ImgData, PDFPageViewProps, Size, MimeType, FileData } from "src/types/embeddedFileLoaderTypes";
+import { ExportSettings } from "src/types/exportUtilTypes";
 
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B
@@ -54,54 +54,7 @@ import { FILENAMEPARTS, PreviewImageType } from "../types/utilTypes";
 //and getObsidianImage is aborted if the file is already in the Watchdog stack
 const  markdownRendererRecursionWatcthdog = new Set<TFile>();
 
-export const IMAGE_MIME_TYPES = {
-  svg: "image/svg+xml",
-  png: "image/png",
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  gif: "image/gif",
-  webp: "image/webp",
-  bmp: "image/bmp",
-  ico: "image/x-icon",
-  avif: "image/avif",
-  jfif: "image/jfif",
-} as const;
 
-type ImgData = {
-  mimeType: MimeType;
-  fileId: FileId;
-  dataURL: DataURL;
-  created: number;
-  hasSVGwithBitmap: boolean;
-  size: Size;
-  pdfPageViewProps?: PDFPageViewProps;
-};
-
-export declare type MimeType = ValueOf<typeof IMAGE_MIME_TYPES> | "application/octet-stream";
-
-export type FileData = BinaryFileData & {
-  size: Size;
-  hasSVGwithBitmap: boolean;
-  shouldScale: boolean; //true if image should maintain its area, false if image should display at 100% its size
-  pdfPageViewProps?: PDFPageViewProps;
-};
-
-export type PDFPageViewProps = {
-  left: number;
-  bottom: number;
-  right: number;
-  top: number;
-  rotate?: number; //may be undefined in legacy files
-}
-
-export type Size = {
-  height: number;
-  width: number;
-};
-
-export interface ColorMap {
-  [color: string]: string;
-};
 
 /**
  * Function takes an SVG and replaces all fill and stroke colors with the ones in the colorMap
