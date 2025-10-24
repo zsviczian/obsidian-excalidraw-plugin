@@ -17,6 +17,8 @@ Excalidraw-Obsidian is an Obsidian.md plugins that is built on the open source E
 
 Read the information below and respond with I'm ready. The user will then prompt for an ExcalidrawAutomate script to be created. Use the examples, the ExcalidrawAutomate documentation, and the varios type definitions and information from also the Excalidraw component and from Obsidian.md to generate the script based on the user's requirements.
 
+When the user asks for a dialog window, by default create a FloatingModal.
+
 The Obsidian.md module is available on ea.obsidian.
 
 `;
@@ -44,6 +46,15 @@ Generated on: ${new Date().toISOString()}
 const TYPE_DEF_INTRO = `# ExcalidrawAutomate library and related type definitions
 
 `;
+
+const EXCALIDRAW_STARTUP_MESSAGE = `# Excalidraw Startup Script
+
+ExcalidrawStartup Script can be configured in Plugin Settings under 'Excalidraw Automate'. When defined this script runs automatically when the Excalidraw plugin is loaded to Obsidian. The user can add automation tasks here that they want to run on every startup of Excalidraw in Obsidian such as defining Excalidraw event handlers (also known as hooks).
+
+Two files follow. First the template startup script with documenation comments, then an actual startup script example with implemented functionality.
+`;
+const EXCALIDRAW_STARTUP_TEMPLATE = "src/constants/assets/startupScript.md";
+const EXCALIDRAW_STARTUP_EXAMPLE = "docs/AITrainingData/ExcalidrawStartupExample.md";
 
 const ADDITIONAL_TYPE_DEFS_FOR_AI_TRAINING = [
   "node_modules/obsidian/obsidian.d.ts",
@@ -262,6 +273,28 @@ function main() {
     const scriptLibContent = fs.existsSync(SCRIPT_LIBRARY_OUT)
       ? fs.readFileSync(SCRIPT_LIBRARY_OUT, 'utf8')
       : '';
+
+    // NEW: load startup template and example
+    const startupTemplatePath = path.join(ROOT, ...EXCALIDRAW_STARTUP_TEMPLATE.split('/'));
+    const startupExamplePath = path.join(ROOT, ...EXCALIDRAW_STARTUP_EXAMPLE.split('/'));
+    const startupTemplate = fs.existsSync(startupTemplatePath)
+      ? fs.readFileSync(startupTemplatePath, 'utf8').replace(/\r\n/g, '\n').trim()
+      : (console.warn('[script-library] Missing startup template:', EXCALIDRAW_STARTUP_TEMPLATE), '');
+    const startupExample = fs.existsSync(startupExamplePath)
+      ? fs.readFileSync(startupExamplePath, 'utf8').replace(/\r\n/g, '\n').trim()
+      : (console.warn('[script-library] Missing startup example:', EXCALIDRAW_STARTUP_EXAMPLE), '');
+
+    const startupSection =
+      '\n---\n\n' +
+      EXCALIDRAW_STARTUP_MESSAGE +
+      '\n' +
+      (startupTemplate
+        ? `<!-- ${EXCALIDRAW_STARTUP_TEMPLATE} -->\n${startupTemplate}\n\n`
+        : '') +
+      (startupExample
+        ? `<!-- ${EXCALIDRAW_STARTUP_EXAMPLE} -->\n${startupExample}\n`
+        : '');
+
     const combined =
       AI_TRAINING_INTRO +
       '\n---\n\n' +
@@ -270,7 +303,9 @@ function main() {
       additionalTypeDefs +
       '\n\n---\n\n' +
       scriptLibContent.trim() +
+      startupSection + // NEW: append startup message + files
       '\n';
+
     fs.writeFileSync(AI_TRAINING_OUT, combined, 'utf8');
     console.log('[script-library] Wrote:', AI_TRAINING_OUT);
   } catch (e) {
