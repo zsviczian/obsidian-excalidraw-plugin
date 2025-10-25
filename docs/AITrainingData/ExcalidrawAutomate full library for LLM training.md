@@ -4,10 +4,68 @@ Excalidraw-Obsidian is an Obsidian.md plugins that is built on the open source E
 
 Read the information below and respond with I'm ready. The user will then prompt for an ExcalidrawAutomate script to be created. Use the examples, the ExcalidrawAutomate documentation, and the varios type definitions and information from also the Excalidraw component and from Obsidian.md to generate the script based on the user's requirements.
 
-When the user asks for a dialog window, by default create a FloatingModal.
+- When the user asks for a dialog window, by default create a FloatingModal. Do not extend the FloatingModal class. Instead, define the modal's behavior by creating a new instance (e.g., const modal = new ea.FloatingModal(...)) and then assigning functions directly to the onOpen and onClose properties of that instance.
+For a reference, follow the implementation pattern used in the "Printable Layout Wizard.md" script.
+- Elements have a customData property that can be used to store arbitrary data. To ensure the data the script adds to elements use the ea.addAppendUpdateCustomData function. This function ensures that existing customData is preserved when adding new data.
+- Elements can be hidden by setting their opacity to 0. When hiding elements this way, it is good practice to temporarily store their original opacity in customData. This allows for easy restoration of the original opacity later.
+- Elements can be deleted from the scene by setting their isDeleted property to true.
+- The Obsidian.md module is available on ea.obsidian.
 
-The Obsidian.md module is available on ea.obsidian.
+#### **1. The Core Workflow: Handling Element Immutability**
 
+*   **Central Rule:** Elements in the Excalidraw scene are immutable and should never be modified directly. Always use the ExcalidrawAutomate (EA) "workbench" pattern for modifications.
+*   **The Workflow:**
+    1.  Get elements from the current view using `ea.getViewElements()` or `ea.getViewSelectedElements()`.
+    2.  Copy these elements into the EA workbench for editing using `ea.copyViewElementsToEAforEditing(elements)`.
+    3.  Modify the properties of the element copies that are now in the EA workbench (e.g., `ea.getElement(id).locked = true;`).
+    4.  Commit the changes back to the scene using `await ea.addElementsToView()`.
+*   **Deletion:** To delete an element, set its `isDeleted` property to `true` on the workbench copy (`ea.getElement(id).isDeleted = true;`) and then commit with `await ea.addElementsToView()`.
+*   **Cleanup:** Use `ea.clear()` at the beginning of a script if you are creating a completely new set of elements, to ensure the EA workbench is empty and doesn't contain artifacts from a previous run.
+
+#### **2. User Interaction: Prompts and Dialogs**
+
+*   **Simple Input:** For straightforward user input, use the `utils` object provided to the script.
+    *   `await utils.inputPrompt()`: To get a string or number from the user.
+    *   `await utils.suggester()`: To let the user select from a predefined list of options.
+*   **Complex Dialogs:** When a more complex UI with multiple controls is needed, create a floating dialog window.
+    *   **Use `FloatingModal`:** Always create a new instance: `const modal = new ea.FloatingModal(ea.plugin.app);`.
+    *   **Do Not Extend:** Do not use `class MyModal extends ea.FloatingModal`.
+    *   **Define Behavior:** Assign functions directly to the `onOpen` and `onClose` properties of the instance. Inside `onOpen`, use the `modal.contentEl` property to build your UI.
+    *   **Reference Implementation:** The script "Printable Layout Wizard.md" is the canonical example for this pattern. Use `ea.obsidian.Setting` to add controls like toggles and dropdowns within the modal.
+
+#### **3. Element Manipulation and Querying**
+
+*   **Finding Elements:** The most common starting point is to get the user's selection with `ea.getViewSelectedElements()`. Use standard JavaScript array methods like `.filter()` to narrow down the selection (e.g., `elements.filter(el => el.type === "text")`).
+*   **Geometric Calculations:**
+    *   Before performing layout or positioning tasks, use `ea.getBoundingBox(elements)` to get the collective dimensions and position of a group of elements.
+    *   Use `ea.measureText(text)` to determine the width and height of a string based on the current `ea.style` settings before creating a text element or a container for it.
+*   **Grouping:**
+    *   To create a group, use `ea.addToGroup([elementId1, elementId2, ...])`.
+    *   To operate on existing groups within a selection, use `ea.getMaximumGroups(selectedElements)` which correctly identifies the top-level groups. Use `ea.getLargestElement(group)` to find the primary container within a group (e.g., the box around a text element).
+
+#### **4. Styling: Creation vs. Modification**
+
+*   **For New Elements:** Set the properties on the global `ea.style` object *before* you call a creation function like `ea.addText()` or `ea.addRect()`. This acts like setting the active color/style on a paintbrush.
+*   **For Existing Elements:** To change the style of an existing element, modify the properties directly on the element's copy in the EA workbench (after `copyViewElementsToEAforEditing`). For example: `const myElement = ea.getElement(id); myElement.strokeColor = '#FF0000';`.
+
+#### **5. Data Persistence and Customization**
+
+*   **Storing Custom Data:** Elements have a `customData` property for arbitrary data.
+    *   **Always Use `ea.addAppendUpdateCustomData(id, newData)`:** This is crucial. It safely adds or updates your key-value pairs without overwriting data that might have been stored by other scripts or the Excalidraw plugin itself.
+*   **Creating Configurable Scripts:** To make your script's behavior customizable by the user:
+    *   Use `ea.getScriptSettings()` to retrieve saved settings.
+    *   Check if settings exist, and if not, define the default structure.
+    *   Use `await ea.setScriptSettings(settings)` to save any changes. This allows users to configure your script in the Excalidraw plugin settings pane.
+
+#### **6. Best Practices and Advanced Techniques**
+
+*   **Embrace `await`:** Many EA functions are asynchronous and return a `Promise` (e.g., `ea.addElementsToView()`, `ea.createSVG()`, `utils.inputPrompt()`). **Always** use `await` when calling these functions to ensure your script executes in the correct order.
+*   **Version Checking:** At the beginning of your script, include a check like `if(!ea.verifyMinimumPluginVersion("1.X.X")) { new Notice(...); return; }` to ensure the user has a compatible version of the Excalidraw plugin, preventing errors from missing API functions.
+*   **Accessing Obsidian API:** The full Obsidian API is available via `ea.obsidian`. For example, use `new ea.obsidian.Notice("message")` or `ea.obsidian.normalizePath(filepath)`.
+*   **Visibility vs. Deletion:**
+    *   To temporarily hide an element, set `element.opacity = 0`. It's good practice to store the original opacity in `customData` so it can be restored. It is also recommended to lock hidden elements so they do not get accidentally selected or moved around.
+    *   To permanently remove an element from the scene, set `element.isDeleted = true`.
+*   **Image Handling:** When dealing with image elements, use `ea.getViewFileForImageElement(imageElement)` to get the corresponding `TFile` from the Obsidian vault. This is necessary for any logic that needs to read or manipulate the source image file.
 
 ---
 
@@ -51,7 +109,8 @@ The Obsidian.md module is available on ea.obsidian.
  * you may access this object via the variable `ea`. e.g. ea.addImage(); This ea object is already set to the targetView.
  * Through ea.obsidian all of the Obsidian API is available to the script. Thus you can create modal views, open files, etc.
  * You can access Obsidian type definitions here: https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts
- * In addition to the ea object, the script also receives the `utils` object. utils includes to utility functions: suggester and inputPrompt
+ * In addition to the ea instance, the script also receives the `utils` object. utils includes to utility functions: suggester and inputPrompt.
+ * You may access these via the variable `utils`. e.g. utils.suggester(...);
  *   - inputPrompt(inputPrompt: (
  *       header: string,
  *       placeholder?: string,
@@ -9807,7 +9866,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2025-10-24T11:36:13.143Z
+Generated on: 2025-10-25T15:06:45.991Z
 
 ---
 
@@ -19434,6 +19493,7 @@ async function run() {
   // Initialize state
   let uiHidden = true;
   let currentIcon = "eye";
+  let layerUIWrapper = ea.targetView.contentEl.querySelector(".excalidraw.excalidraw-container > .layer-ui__wrapper");
   const toolbar = ea.targetView.contentEl.querySelector(".excalidraw > .Island");
   let toolbarActive = toolbar?.style.display === "block";
   let prevHiddenState = false;
@@ -19442,30 +19502,40 @@ async function run() {
   const toggleUIVisibility = (hidden) => {
     if(hidden === prevHiddenState) return hidden;
     prevHiddenState = hidden;
-    try{
-      const topBar = ea.targetView.containerEl.querySelector(".App-top-bar");
-      const bottomBar = ea.targetView.containerEl.querySelector(".App-bottom-bar");
-      const sidebarToggle = ea.targetView.containerEl.querySelector(".sidebar-toggle");
-      const plugins = ea.targetView.containerEl.querySelector(".plugins-container");
-
-      if(hidden) {
-        if (toolbarActive && (toolbar?.style.display === "none")) {
-          toolbarActive = false;
+    if (!!layerUIWrapper) {
+      try {
+	    if(hidden) {
+		    layerUIWrapper.style.display = "none";
+	    } else {
+	      layerUIWrapper.style.display = "block";
+	    }
+	  } catch {};
+    } else {
+      try{
+        const topBar = ea.targetView.containerEl.querySelector(".App-top-bar");
+        const bottomBar = ea.targetView.containerEl.querySelector(".App-bottom-bar");
+        const sidebarToggle = ea.targetView.containerEl.querySelector(".sidebar-toggle");
+        const plugins = ea.targetView.containerEl.querySelector(".plugins-container");
+  
+        if(hidden) {
+          if (toolbarActive && (toolbar?.style.display === "none")) {
+            toolbarActive = false;
+          }
+          if (toolbarActive = toolbar?.style.display === "block") {
+            toolbarActive = true;
+          };
         }
-        if (toolbarActive = toolbar?.style.display === "block") {
-          toolbarActive = true;
-        };
-      }
-      
-      const display = hidden ? "none" : "";
-      
-      if (topBar) topBar.style.display = display;
-      if (bottomBar) bottomBar.style.display = display;
-      if (sidebarToggle) sidebarToggle.style.display = display;
-      if (plugins) plugins.style.display = display;
-      if (toolbarActive) toolbar.style.display = hidden ? "none" : "block";
-      modal.modalEl.style.opacity = hidden ? "0.4" : "0.8";
-    } catch {};
+        
+        const display = hidden ? "none" : "";
+        
+        if (topBar) topBar.style.display = display;
+        if (bottomBar) bottomBar.style.display = display;
+        if (sidebarToggle) sidebarToggle.style.display = display;
+        if (plugins) plugins.style.display = display;
+        if (toolbarActive) toolbar.style.display = hidden ? "none" : "block";
+        modal.modalEl.style.opacity = hidden ? "0.4" : "0.8";
+      } catch {};
+    };
     return hidden;
   };
   

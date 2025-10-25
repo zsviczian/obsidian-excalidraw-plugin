@@ -12,7 +12,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2025-10-24T11:36:13.143Z
+Generated on: 2025-10-25T15:06:45.991Z
 
 ---
 
@@ -9639,6 +9639,7 @@ async function run() {
   // Initialize state
   let uiHidden = true;
   let currentIcon = "eye";
+  let layerUIWrapper = ea.targetView.contentEl.querySelector(".excalidraw.excalidraw-container > .layer-ui__wrapper");
   const toolbar = ea.targetView.contentEl.querySelector(".excalidraw > .Island");
   let toolbarActive = toolbar?.style.display === "block";
   let prevHiddenState = false;
@@ -9647,30 +9648,40 @@ async function run() {
   const toggleUIVisibility = (hidden) => {
     if(hidden === prevHiddenState) return hidden;
     prevHiddenState = hidden;
-    try{
-      const topBar = ea.targetView.containerEl.querySelector(".App-top-bar");
-      const bottomBar = ea.targetView.containerEl.querySelector(".App-bottom-bar");
-      const sidebarToggle = ea.targetView.containerEl.querySelector(".sidebar-toggle");
-      const plugins = ea.targetView.containerEl.querySelector(".plugins-container");
-
-      if(hidden) {
-        if (toolbarActive && (toolbar?.style.display === "none")) {
-          toolbarActive = false;
+    if (!!layerUIWrapper) {
+      try {
+	    if(hidden) {
+		    layerUIWrapper.style.display = "none";
+	    } else {
+	      layerUIWrapper.style.display = "block";
+	    }
+	  } catch {};
+    } else {
+      try{
+        const topBar = ea.targetView.containerEl.querySelector(".App-top-bar");
+        const bottomBar = ea.targetView.containerEl.querySelector(".App-bottom-bar");
+        const sidebarToggle = ea.targetView.containerEl.querySelector(".sidebar-toggle");
+        const plugins = ea.targetView.containerEl.querySelector(".plugins-container");
+  
+        if(hidden) {
+          if (toolbarActive && (toolbar?.style.display === "none")) {
+            toolbarActive = false;
+          }
+          if (toolbarActive = toolbar?.style.display === "block") {
+            toolbarActive = true;
+          };
         }
-        if (toolbarActive = toolbar?.style.display === "block") {
-          toolbarActive = true;
-        };
-      }
-      
-      const display = hidden ? "none" : "";
-      
-      if (topBar) topBar.style.display = display;
-      if (bottomBar) bottomBar.style.display = display;
-      if (sidebarToggle) sidebarToggle.style.display = display;
-      if (plugins) plugins.style.display = display;
-      if (toolbarActive) toolbar.style.display = hidden ? "none" : "block";
-      modal.modalEl.style.opacity = hidden ? "0.4" : "0.8";
-    } catch {};
+        
+        const display = hidden ? "none" : "";
+        
+        if (topBar) topBar.style.display = display;
+        if (bottomBar) bottomBar.style.display = display;
+        if (sidebarToggle) sidebarToggle.style.display = display;
+        if (plugins) plugins.style.display = display;
+        if (toolbarActive) toolbar.style.display = hidden ? "none" : "block";
+        modal.modalEl.style.opacity = hidden ? "0.4" : "0.8";
+      } catch {};
+    };
     return hidden;
   };
   

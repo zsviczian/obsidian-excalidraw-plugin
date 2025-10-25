@@ -148,7 +148,8 @@ const GAP = 4;
  * you may access this object via the variable `ea`. e.g. ea.addImage(); This ea object is already set to the targetView.
  * Through ea.obsidian all of the Obsidian API is available to the script. Thus you can create modal views, open files, etc.
  * You can access Obsidian type definitions here: https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts
- * In addition to the ea object, the script also receives the `utils` object. utils includes to utility functions: suggester and inputPrompt
+ * In addition to the ea instance, the script also receives the `utils` object. utils includes to utility functions: suggester and inputPrompt.
+ * You may access these via the variable `utils`. e.g. utils.suggester(...);
  *   - inputPrompt(inputPrompt: (
  *       header: string,
  *       placeholder?: string,
