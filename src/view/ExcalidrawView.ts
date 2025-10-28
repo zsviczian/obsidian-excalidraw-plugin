@@ -2902,6 +2902,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.loadSceneFiles();
     this.updateContainerSize(null, true, justloaded);
     this.initializeToolsIconPanelAfterLoading();
+    this.excalidrawAPI.refreshEditorBreakpoints();
   }
 
   public setDirty(location?:number) {

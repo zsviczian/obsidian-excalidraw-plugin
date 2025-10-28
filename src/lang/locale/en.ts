@@ -215,6 +215,8 @@ export default {
 
 
   //settings.ts
+  DISABLE_CONTEXT_MENU_NAME: "Disable Excalidraw context menu",
+  DISABLE_CONTEXT_MENU_DESC: "Disables the Excalidraw context menu. This can be useful on Mobile devices where the context menu pops up in unwanted moments.",
   NOTEBOOKLM_LINK_ARIA: "Ask NotebookLM for help about the plugin. This model is pre-loaded with all my video transcripts, release notes and other helpful content. Chat with NotebookLM to explore my 250+ videos and the Excalidraw documentation.",
   NOTEBOOKLM_LINK_TEXT: "Learn the Plugin. Access the NotebookLM knowledgebase.",
   LINKS_BUGS_ARIA: "Report bugs and raise feature requsts on the plugin's GitHub page",

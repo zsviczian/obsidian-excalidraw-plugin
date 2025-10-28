@@ -234,6 +234,7 @@ export interface ExcalidrawSettings {
   modifierKeyOverrides: {modifiers: Modifier[], key: string}[];
   showSplashscreen: boolean;
   pdfSettings: PDFExportSettings;
+  disableContextMenu: boolean;
 }
 
 declare const PLUGIN_VERSION:string;
@@ -534,6 +535,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
     alignment: "center",
     margin: "normal",
   },
+  disableContextMenu: false,
 };
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
@@ -1215,6 +1217,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(!this.plugin.settings.disableDoubleClickTextEditing)
           .onChange(async (value) => {
             this.plugin.settings.disableDoubleClickTextEditing = !value;
+            this.applySettingsUpdate();
+          }),
+      );
+    
+    new Setting(detailsEl)
+      .setName(t("DISABLE_CONTEXT_MENU_NAME"))
+      .setDesc(t("DISABLE_CONTEXT_MENU_DESC"))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(!this.plugin.settings.disableContextMenu)
+          .onChange(async (value) => {
+            this.plugin.settings.disableContextMenu = !value;
             this.applySettingsUpdate();
           }),
       );

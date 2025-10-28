@@ -905,3 +905,7 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
   display: flex;
   flex-direction: column;
 }
+
+.excalidraw .FixedSideContainer_side_top {
+    padding-top: 0 !important;
+}
