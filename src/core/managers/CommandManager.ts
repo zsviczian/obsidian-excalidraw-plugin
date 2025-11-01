@@ -989,10 +989,8 @@ export class CommandManager {
         if (checking) {
           if(this.app.workspace.getActiveViewOfType(ExcalidrawView)) {
             const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
-            const api = view?.excalidrawAPI;
-            if(!api) return false;
-            const st = api.getAppState();
-            if(!st.trayModeEnabled) return false;
+            const api = view?.excalidrawAPI as ExcalidrawImperativeAPI;
+            if(!api.isTrayModeEnabled()) return false;
             return true;
           }
           return false;

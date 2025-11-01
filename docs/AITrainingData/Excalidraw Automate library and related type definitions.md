@@ -2271,7 +2271,6 @@ export interface AppState {
     };
     showHyperlinkPopup: false | "info" | "editor";
     linkOpacity: number;
-    trayModeEnabled: boolean;
     colorPalette?: {
         canvasBackground: ColorPaletteCustom;
         elementBackground: ColorPaletteCustom;
@@ -2631,6 +2630,8 @@ export interface ExcalidrawImperativeAPI {
     setForceRenderAllEmbeddables: InstanceType<typeof App>["setForceRenderAllEmbeddables"];
     zoomToFit: InstanceType<typeof App>["zoomToFit"];
     refreshEditorBreakpoints: InstanceType<typeof App>["refreshEditorBreakpoints"];
+    setTrayModeEnabled: InstanceType<typeof App>["setTrayModeEnabled"];
+    isTrayModeEnabled: InstanceType<typeof App>["isTrayModeEnabled"];
     getColorAtScenePoint: InstanceType<typeof App>["getColorAtScenePoint"];
     startLineEditor: InstanceType<typeof App>["startLineEditor"];
     getSceneElements: InstanceType<typeof App>["getSceneElements"];
@@ -2678,6 +2679,7 @@ export type Device = Readonly<{
         canFitSidebar: boolean;
     };
     isTouchScreen: boolean;
+    isTrayMode: boolean;
 }>;
 export type FrameNameBounds = {
     x: number;
@@ -2718,5 +2720,61 @@ export type Offsets = Partial<{
     bottom: number;
     left: number;
 }>;
+
+/* ************************************** */
+/* node_modules/@zsviczian/excalidraw/types/excalidraw/index.d.ts */
+/* ************************************** */
+export declare const Excalidraw: React.MemoExoticComponent<(props: ExcalidrawProps) => import("react/jsx-runtime").JSX.Element>;
+export { getSceneVersion, hashElementsVersion, hashString, getNonDeletedElements, } from "@excalidraw/element";
+export { getTextFromElements } from "@excalidraw/element";
+export { isInvisiblySmallElement } from "@excalidraw/element";
+export { defaultLang, useI18n, languages } from "./i18n";
+export { restore, restoreAppState, restoreElement, restoreElements, restoreLibraryItems, } from "./data/restore";
+export { reconcileElements } from "./data/reconcile";
+export { exportToCanvas, exportToBlob, exportToSvg, exportToClipboard, } from "@excalidraw/utils/export";
+export { getCommonBoundingBox } from "@excalidraw/element/bounds";
+export { getMaximumGroups } from "@excalidraw/element/groups";
+export { determineFocusDistance } from "@excalidraw/element/binding";
+export { measureText } from "@excalidraw/element/textMeasurements";
+export { wrapText } from "@excalidraw/element/textWrapping";
+export { getLineHeight } from "@excalidraw/common";
+export { getFontString, getFontFamilyString } from "@excalidraw/common";
+export { getBoundTextMaxWidth } from "@excalidraw/element/textElement";
+export { mermaidToExcalidraw } from "./components/TTDDialog/MermaidToExcalidrawLib";
+export { destroyObsidianUtils, registerLocalFont, getFontMetrics, getFontFamilies, registerFontsInCSS, getCSSFontDefinition, loadSceneFonts, getSharedMermaidInstance, loadMermaid, intersectElementWithLine, } from "../excalidraw/obsidianUtils";
+export { refreshTextDimensions } from "@excalidraw/element/newElement";
+export { syncMovedIndices, syncInvalidIndices } from "@excalidraw/element";
+export { getContainerElement } from "@excalidraw/element/textElement";
+export { serializeAsJSON, serializeLibraryAsJSON } from "./data/json";
+export { loadFromBlob, loadSceneOrLibraryFromBlob, loadLibraryFromBlob, } from "./data/blob";
+export { getFreeDrawSvgPath } from "@excalidraw/element";
+export { mergeLibraryItems, getLibraryItemsHash } from "./data/library";
+export { isLinearElement } from "@excalidraw/element";
+export { FONT_FAMILY, THEME, MIME_TYPES, ROUNDNESS, DEFAULT_LASER_COLOR, UserIdleState, normalizeLink, } from "@excalidraw/common";
+export { mutateElement, newElementWith, bumpVersion, } from "@excalidraw/element";
+export { CaptureUpdateAction } from "@excalidraw/element";
+export { parseLibraryTokensFromUrl, useHandleLibrary } from "./data/library";
+export { sceneCoordsToViewportCoords, viewportCoordsToSceneCoords, safelyParseJSON, } from "@excalidraw/common";
+export { getEmbedLink } from "@excalidraw/element/embeddable";
+export { Sidebar } from "./components/Sidebar/Sidebar";
+export { Button } from "./components/Button";
+export { Footer };
+export { MainMenu };
+export { Ellipsify } from "./components/Ellipsify";
+export { useDevice } from "./components/App";
+export { WelcomeScreen };
+export { LiveCollaborationTrigger };
+export { Stats } from "./components/Stats";
+export { DefaultSidebar } from "./components/DefaultSidebar";
+export { TTDDialog } from "./components/TTDDialog/TTDDialog";
+export { TTDDialogTrigger } from "./components/TTDDialog/TTDDialogTrigger";
+export { zoomToFitBounds } from "./actions/actionCanvas";
+export { convertToExcalidrawElements } from "./data/transform";
+export { getCommonBounds, getVisibleSceneBounds } from "@excalidraw/element";
+export { elementsOverlappingBBox, isElementInsideBBox, elementPartiallyOverlapsWithOrContainsBBox, } from "@excalidraw/utils/withinBounds";
+export { DiagramToCodePlugin } from "./components/DiagramToCodePlugin/DiagramToCodePlugin";
+export { getDataURL } from "./data/blob";
+export { isElementLink } from "@excalidraw/element";
+export { setCustomTextMetricsProvider } from "@excalidraw/element";
 
 ```

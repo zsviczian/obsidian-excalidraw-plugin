@@ -2828,7 +2828,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             zenModeEnabled,
             viewModeEnabled,
             linkOpacity: this.excalidrawData.getLinkOpacity(),
-            trayModeEnabled: calculateTrayModeValue(this.plugin.settings),
             penMode: penEnabled,
             penDetected: penEnabled,
             allowPinchZoom: this.plugin.settings.allowPinchZoom,
@@ -2862,7 +2861,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           zenModeEnabled: om.zenModeEnabled,
           viewModeEnabled: excalidrawData.elements.length > 0 ? om.viewModeEnabled : false,
           linkOpacity: this.excalidrawData.getLinkOpacity(),
-          trayModeEnabled: calculateTrayModeValue(this.plugin.settings),
           penMode: penEnabled,
           penDetected: penEnabled,
           allowPinchZoom: this.plugin.settings.allowPinchZoom,
@@ -2902,6 +2900,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.loadSceneFiles();
     this.updateContainerSize(null, true, justloaded);
     this.initializeToolsIconPanelAfterLoading();
+    this.setTrayMode(calculateTrayModeValue(this.plugin.settings));
     this.excalidrawAPI.refreshEditorBreakpoints();
   }
 
@@ -5850,13 +5849,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   public setTrayMode(on: boolean) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleTrayMode, "ExcalidrawView.setTrayMode");
     const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
-    if (!api) {
-      return false;
-    }
-    api.updateScene({
-      appState: { trayModeEnabled: on },
-      captureUpdate: CaptureUpdateAction.NEVER,
-    });
+    api.setTrayModeEnabled(on);
     setTimeout(()=>api.refreshEditorBreakpoints());
   }
 

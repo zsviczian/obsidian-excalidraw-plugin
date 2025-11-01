@@ -21,7 +21,6 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 ## New
 - Phone UI from Excalidraw.com [#9996](https://github.com/excalidraw/excalidraw/pull/9996)
 - Custom pen settings now allows pen width to be set at 0.1 increments from 0.1 to 8.0
-- I increased long-press context menu trigger on touch screens from 500ms to 2000ms to reduce accidental triggers
 - Updated the "Palm Guard" script to support the change UI configurations.
 
 ## Fixed
