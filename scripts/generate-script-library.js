@@ -17,6 +17,12 @@ Excalidraw-Obsidian is an Obsidian.md plugins that is built on the open source E
 
 Read the information below and respond with I'm ready. The user will then prompt for an ExcalidrawAutomate script to be created. Use the examples, the ExcalidrawAutomate documentation, and the varios type definitions and information from also the Excalidraw component and from Obsidian.md to generate the script based on the user's requirements.
 
+In addition to ExcalidrawAutomate, you can also use two other sources of functions:
+- The Excalidraw API available via ea.getExcalidrawAPI(). Note: the API is only available if ea.targetView is set. When running Excalidraw scripts using the script engine, the provided ea object is already set up with targetView by default. Otherwise you need to first run ea.setView().
+- window.ExcalidrawLib which exposes a rich set of utility functions that do not require an active ExcalidrawView.
+
+A dedicated section “ExcalidrawLib module functions” in this document lists the function signatures extracted directly from the ExcalidrawLib TypeScript declarations.
+
 - When the user asks for a dialog window, by default create a FloatingModal. Do not extend the FloatingModal class. Instead, define the modal's behavior by creating a new instance (e.g., const modal = new ea.FloatingModal(...)) and then assigning functions directly to the onOpen and onClose properties of that instance.
 For a reference, follow the implementation pattern used in the "Printable Layout Wizard.md" script.
 - Elements have a customData property that can be used to store arbitrary data. To ensure the data the script adds to elements use the ea.addAppendUpdateCustomData function. This function ensures that existing customData is preserved when adding new data.
@@ -128,7 +134,6 @@ const TYPE_DEF_WHITELIST = [
   "lib/types/AIUtilTypes.d.ts",
   "node_modules/@zsviczian/excalidraw/types/element/src/types.d.ts",
   "node_modules/@zsviczian/excalidraw/types/excalidraw/types.d.ts",
-  "node_modules/@zsviczian/excalidraw/types/excalidraw/index.d.ts",
 ];
 
 /**
@@ -256,6 +261,143 @@ function buildAdditionalTypeDefsMarkdown() {
   return body;
 }
 
+// NEW: Resolve module specifiers from types/excalidraw/index.d.ts to absolute .d.ts paths
+function resolveExcalModulePath(spec, excalIndexAbs) {
+  const baseTypesRoot = path.join(ROOT, 'node_modules', '@zsviczian', 'excalidraw', 'types');
+  if (spec.startsWith('@excalidraw/')) {
+    const sub = spec.slice('@excalidraw/'.length); // e.g. 'element', 'element/bounds'
+    const parts = sub.split('/');
+    const pkg = parts.shift(); // 'element' | 'common' | 'utils'
+    const rest = parts;
+    if (!pkg) return null;
+    const base = path.join(baseTypesRoot, pkg);
+    if (rest.length === 0) {
+      return path.join(base, 'src', 'index.d.ts');
+    }
+    return path.join(base, 'src', ...rest) + '.d.ts';
+  }
+  // relative to the excalidraw index.d.ts
+  if (spec.startsWith('.')) {
+    const dir = path.dirname(excalIndexAbs);
+    return path.resolve(dir, spec) + '.d.ts';
+  }
+  // anything else is not expected
+  return null;
+}
+
+// NEW: Extract function signatures for a set of names from a .d.ts file
+function extractFunctionSignaturesFromModule(absPath, names) {
+  const out = {};
+  if (!absPath || !fs.existsSync(absPath)) {
+    return out;
+  }
+  const content = fs.readFileSync(absPath, 'utf8');
+
+  for (const rawName of names) {
+    const name = rawName.trim();
+    if (!name) continue;
+
+    // Try "export declare function NAME ..."
+    let m = content.match(new RegExp(`export\\s+declare\\s+function\\s+${name}[\\s\\S]*?;`, 'm'));
+    if (m) {
+      out[name] = m[0].trim();
+      continue;
+    }
+
+    // Try "declare function NAME ..." (re-exported later)
+    m = content.match(new RegExp(`(^|\\n)declare\\s+function\\s+${name}[\\s\\S]*?;`, 'm'));
+    if (m) {
+      // Ensure it starts with export for readability
+      out[name] = m[0].replace(/^\s*declare\s+/, 'export declare ').trim();
+      continue;
+    }
+
+    // Try "export declare const NAME: (...args) => ...;"
+    m = content.match(new RegExp(`export\\s+declare\\s+const\\s+${name}\\s*:\\s*[\\s\\S]*?=>[\\s\\S]*?;`, 'm'));
+    if (m) {
+      out[name] = m[0].trim();
+      continue;
+    }
+
+    // Try "export declare function-type via type alias" (rare) - fallback to any const function shape
+    m = content.match(new RegExp(`export\\s+declare\\s+(?:var|let|const)\\s+${name}\\s*:\\s*[\\s\\S]*?;`, 'm'));
+    if (m && /=>/.test(m[0])) {
+      out[name] = m[0].trim();
+      continue;
+    }
+  }
+  return out;
+}
+
+// NEW: Build "ExcalidrawLib module functions" section from index.d.ts
+function buildExcalidrawLibFunctionsSection() {
+  const excalIndexRel = 'node_modules/@zsviczian/excalidraw/types/excalidraw/index.d.ts';
+  const excalIndexAbs = path.join(ROOT, ...excalIndexRel.split('/'));
+  if (!fs.existsSync(excalIndexAbs)) {
+    console.warn('[script-library] Missing Excalidraw index.d.ts:', excalIndexRel);
+    return '';
+  }
+
+  const content = fs.readFileSync(excalIndexAbs, 'utf8');
+  const reExport = /export\s*\{\s*([\s\S]*?)\s*\}\s*from\s*["']([^"']+)["'];/g;
+
+  // Collect names by source module
+  const moduleToNames = new Map();
+  for (const match of content.matchAll(reExport)) {
+    const namesChunk = match[1];
+    const spec = match[2];
+    // skip if the export list contains only types we know we shouldn't include? We'll filter later by signature detection.
+    const names = namesChunk
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (!names.length) continue;
+    const abs = resolveExcalModulePath(spec, excalIndexAbs);
+    if (!abs) continue;
+    const key = spec;
+    const curr = moduleToNames.get(key) || { abs, names: new Set() };
+    for (const n of names) curr.names.add(n);
+    moduleToNames.set(key, curr);
+  }
+
+  // Extract signatures
+  const seen = new Set();
+  const sections = [];
+  let functionsFound = 0;
+
+  for (const [spec, { abs, names }] of moduleToNames) {
+    const sigs = extractFunctionSignaturesFromModule(abs, Array.from(names));
+    const sigEntries = Object.entries(sigs)
+      .filter(([name]) => {
+        if (seen.has(name)) return false;
+        seen.add(name);
+        return true;
+      })
+      .sort(([a], [b]) => a.localeCompare(b, 'en', { sensitivity: 'base' }));
+
+    if (!sigEntries.length) continue;
+
+    const rel = path.relative(ROOT, abs).replace(/\\/g, '/');
+    const header = makeSectionHeader(`${spec} -> ${rel}`).replace(/\*\/\n\/\*/g, '*\/\n/*'); // keep style
+    sections.push(header + sigEntries.map(([, s]) => s).join('\n') + '\n');
+    functionsFound += sigEntries.length;
+  }
+
+  if (!sections.length) {
+    console.warn('[script-library] No function signatures found in ExcalidrawLib exports.');
+  }
+
+  const body =
+    '# ExcalidrawLib module functions\n\n' +
+    'The following functions are exposed via window.ExcalidrawLib. Signatures are extracted from TypeScript declarations.\n\n' +
+    '```ts\n' +
+    sections.join('\n') +
+    '```\n';
+
+  console.log(`[script-library] Collected ${functionsFound} ExcalidrawLib function signatures`);
+  return body;
+}
+
 function main() {
   console.log('[script-library] Generating Excalidraw Script Library...');
   if (!fs.existsSync(EA_SCRIPTS_DIR)) {
@@ -354,6 +496,9 @@ function main() {
         ? `<!-- ${EXCALIDRAW_STARTUP_EXAMPLE} -->\n${startupExample}\n`
         : '');
 
+    // NEW: Build ExcalidrawLib functions section
+    const excalidrawLibFunctionsSection = buildExcalidrawLibFunctionsSection();
+
     const combined =
       AI_TRAINING_INTRO +
       '\n---\n\n' +
@@ -361,8 +506,10 @@ function main() {
       '\n\n---\n\n' +
       additionalTypeDefs +
       '\n\n---\n\n' +
+      excalidrawLibFunctionsSection +
+      '\n---\n\n' +
       scriptLibContent.trim() +
-      startupSection + // NEW: append startup message + files
+      startupSection +
       '\n';
 
     fs.writeFileSync(AI_TRAINING_OUT, combined, 'utf8');

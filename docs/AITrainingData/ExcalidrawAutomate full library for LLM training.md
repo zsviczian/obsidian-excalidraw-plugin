@@ -4,6 +4,12 @@ Excalidraw-Obsidian is an Obsidian.md plugins that is built on the open source E
 
 Read the information below and respond with I'm ready. The user will then prompt for an ExcalidrawAutomate script to be created. Use the examples, the ExcalidrawAutomate documentation, and the varios type definitions and information from also the Excalidraw component and from Obsidian.md to generate the script based on the user's requirements.
 
+In addition to ExcalidrawAutomate, you can also use two other sources of functions:
+- The Excalidraw API available via ea.getExcalidrawAPI(). Note: the API is only available if ea.targetView is set. When running Excalidraw scripts using the script engine, the provided ea object is already set up with targetView by default.
+- window.ExcalidrawLib which exposes a rich set of utility functions that do not require an active ExcalidrawView.
+
+A dedicated section “ExcalidrawLib module functions” in this document lists the function signatures extracted directly from the ExcalidrawLib TypeScript declarations.
+
 - When the user asks for a dialog window, by default create a FloatingModal. Do not extend the FloatingModal class. Instead, define the modal's behavior by creating a new instance (e.g., const modal = new ea.FloatingModal(...)) and then assigning functions directly to the onOpen and onClose properties of that instance.
 For a reference, follow the implementation pattern used in the "Printable Layout Wizard.md" script.
 - Elements have a customData property that can be used to store arbitrary data. To ensure the data the script adds to elements use the ea.addAppendUpdateCustomData function. This function ensures that existing customData is preserved when adding new data.
@@ -2791,62 +2797,6 @@ export type Offsets = Partial<{
     bottom: number;
     left: number;
 }>;
-
-/* ************************************** */
-/* node_modules/@zsviczian/excalidraw/types/excalidraw/index.d.ts */
-/* ************************************** */
-export declare const Excalidraw: React.MemoExoticComponent<(props: ExcalidrawProps) => import("react/jsx-runtime").JSX.Element>;
-export { getSceneVersion, hashElementsVersion, hashString, getNonDeletedElements, } from "@excalidraw/element";
-export { getTextFromElements } from "@excalidraw/element";
-export { isInvisiblySmallElement } from "@excalidraw/element";
-export { defaultLang, useI18n, languages } from "./i18n";
-export { restore, restoreAppState, restoreElement, restoreElements, restoreLibraryItems, } from "./data/restore";
-export { reconcileElements } from "./data/reconcile";
-export { exportToCanvas, exportToBlob, exportToSvg, exportToClipboard, } from "@excalidraw/utils/export";
-export { getCommonBoundingBox } from "@excalidraw/element/bounds";
-export { getMaximumGroups } from "@excalidraw/element/groups";
-export { determineFocusDistance } from "@excalidraw/element/binding";
-export { measureText } from "@excalidraw/element/textMeasurements";
-export { wrapText } from "@excalidraw/element/textWrapping";
-export { getLineHeight } from "@excalidraw/common";
-export { getFontString, getFontFamilyString } from "@excalidraw/common";
-export { getBoundTextMaxWidth } from "@excalidraw/element/textElement";
-export { mermaidToExcalidraw } from "./components/TTDDialog/MermaidToExcalidrawLib";
-export { destroyObsidianUtils, registerLocalFont, getFontMetrics, getFontFamilies, registerFontsInCSS, getCSSFontDefinition, loadSceneFonts, getSharedMermaidInstance, loadMermaid, intersectElementWithLine, } from "../excalidraw/obsidianUtils";
-export { refreshTextDimensions } from "@excalidraw/element/newElement";
-export { syncMovedIndices, syncInvalidIndices } from "@excalidraw/element";
-export { getContainerElement } from "@excalidraw/element/textElement";
-export { serializeAsJSON, serializeLibraryAsJSON } from "./data/json";
-export { loadFromBlob, loadSceneOrLibraryFromBlob, loadLibraryFromBlob, } from "./data/blob";
-export { getFreeDrawSvgPath } from "@excalidraw/element";
-export { mergeLibraryItems, getLibraryItemsHash } from "./data/library";
-export { isLinearElement } from "@excalidraw/element";
-export { FONT_FAMILY, THEME, MIME_TYPES, ROUNDNESS, DEFAULT_LASER_COLOR, UserIdleState, normalizeLink, } from "@excalidraw/common";
-export { mutateElement, newElementWith, bumpVersion, } from "@excalidraw/element";
-export { CaptureUpdateAction } from "@excalidraw/element";
-export { parseLibraryTokensFromUrl, useHandleLibrary } from "./data/library";
-export { sceneCoordsToViewportCoords, viewportCoordsToSceneCoords, safelyParseJSON, } from "@excalidraw/common";
-export { getEmbedLink } from "@excalidraw/element/embeddable";
-export { Sidebar } from "./components/Sidebar/Sidebar";
-export { Button } from "./components/Button";
-export { Footer };
-export { MainMenu };
-export { Ellipsify } from "./components/Ellipsify";
-export { useDevice } from "./components/App";
-export { WelcomeScreen };
-export { LiveCollaborationTrigger };
-export { Stats } from "./components/Stats";
-export { DefaultSidebar } from "./components/DefaultSidebar";
-export { TTDDialog } from "./components/TTDDialog/TTDDialog";
-export { TTDDialogTrigger } from "./components/TTDDialog/TTDDialogTrigger";
-export { zoomToFitBounds } from "./actions/actionCanvas";
-export { convertToExcalidrawElements } from "./data/transform";
-export { getCommonBounds, getVisibleSceneBounds } from "@excalidraw/element";
-export { elementsOverlappingBBox, isElementInsideBBox, elementPartiallyOverlapsWithOrContainsBBox, } from "@excalidraw/utils/withinBounds";
-export { DiagramToCodePlugin } from "./components/DiagramToCodePlugin/DiagramToCodePlugin";
-export { getDataURL } from "./data/blob";
-export { isElementLink } from "@excalidraw/element";
-export { setCustomTextMetricsProvider } from "@excalidraw/element";
 
 ```
 
@@ -9910,6 +9860,276 @@ export type IconName = string;
 
 ---
 
+# ExcalidrawLib module functions
+
+The following functions are exposed via window.ExcalidrawLib. Signatures are extracted from TypeScript declarations.
+
+```ts
+/* ************************************** */
+/* @excalidraw/element -> node_modules/@zsviczian/excalidraw/types/element/src/index.d.ts */
+/* ************************************** */
+export declare const getNonDeletedElements: <T extends ExcalidrawElement>(elements: readonly T[]) => readonly NonDeleted<T>[];
+export declare const getSceneVersion: (elements: readonly ExcalidrawElement[]) => number;
+export declare const hashElementsVersion: (elements: ElementsMapOrArray) => number;
+export declare const hashString: (s: string) => number;
+
+/* ************************************** */
+/* ./i18n -> node_modules/@zsviczian/excalidraw/types/excalidraw/i18n.d.ts */
+/* ************************************** */
+export declare const defaultLang: {
+    code: string;
+    label: string;
+};
+export declare const languages: Language[];
+export declare const setLanguage: (lang: Language) => Promise<void>;
+export declare const languages: Language[];
+export declare const setLanguage: (lang: Language) => Promise<void>;
+export declare const useI18n: () => {
+    t: (path: NestedKeyOf<typeof fallbackLangData>, replacement?: {
+        [key: string]: string | number;
+
+/* ************************************** */
+/* ./data/restore -> node_modules/@zsviczian/excalidraw/types/excalidraw/data/restore.d.ts */
+/* ************************************** */
+export declare const restore: (data: Pick<ImportedDataState, "appState" | "elements" | "files"> | null, localAppState: Partial<AppState> | null | undefined, localElements: readonly ExcalidrawElement[] | null | undefined, elementsConfig?: {
+    refreshDimensions?: boolean;
+    repairBindings?: boolean;
+    deleteInvisibleElements?: boolean;
+}) => RestoredDataState;
+export declare const restoreAppState: (appState: ImportedDataState["appState"], localAppState: Partial<AppState> | null | undefined) => RestoredAppState;
+export declare const restoreElement: (element: Exclude<ExcalidrawElement, ExcalidrawSelectionElement>, opts?: {
+    deleteInvisibleElements?: boolean;
+}) => ExcalidrawLinearElement | import("@excalidraw/element/types").ExcalidrawRectangleElement | import("@excalidraw/element/types").ExcalidrawDiamondElement | import("@excalidraw/element/types").ExcalidrawEllipseElement | import("@excalidraw/element/types").ExcalidrawEmbeddableElement | import("@excalidraw/element/types").ExcalidrawIframeElement | import("@excalidraw/element/types").ExcalidrawImageElement | import("@excalidraw/element/types").ExcalidrawFrameElement | import("@excalidraw/element/types").ExcalidrawMagicFrameElement | ExcalidrawTextElement | import("@excalidraw/element/types").ExcalidrawFreeDrawElement | ExcalidrawArrowElement | null;
+export declare const restoreElements: (elements: ImportedDataState["elements"], localElements: readonly ExcalidrawElement[] | null | undefined, opts?: {
+    refreshDimensions?: boolean;
+    repairBindings?: boolean;
+    deleteInvisibleElements?: boolean;
+} | undefined) => OrderedExcalidrawElement[];
+export declare const restoreLibraryItems: (libraryItems: ImportedDataState["libraryItems"], defaultStatus: LibraryItem["status"]) => LibraryItem[];
+
+/* ************************************** */
+/* ./data/reconcile -> node_modules/@zsviczian/excalidraw/types/excalidraw/data/reconcile.d.ts */
+/* ************************************** */
+export declare const reconcileElements: (localElements: readonly OrderedExcalidrawElement[], remoteElements: readonly RemoteExcalidrawElement[], localAppState: AppState) => ReconciledExcalidrawElement[];
+
+/* ************************************** */
+/* @excalidraw/utils/export -> node_modules/@zsviczian/excalidraw/types/utils/src/export.d.ts */
+/* ************************************** */
+export declare const exportToBlob: (opts: ExportOpts & {
+    mimeType?: string;
+    quality?: number;
+    exportPadding?: number;
+}) => Promise<Blob>;
+export declare const exportToCanvas: ({ elements, appState, files, maxWidthOrHeight, getDimensions, exportPadding, exportingFrame, }: ExportOpts & {
+    exportPadding?: number | undefined;
+}) => Promise<HTMLCanvasElement>;
+export declare const exportToClipboard: (opts: ExportOpts & {
+    mimeType?: string;
+    quality?: number;
+    type: "png" | "svg" | "json";
+}) => Promise<void>;
+export declare const exportToSvg: ({ elements, appState, files, exportPadding, renderEmbeddables, exportingFrame, skipInliningFonts, reuseImages, }: Omit<ExportOpts, "getDimensions"> & {
+    exportPadding?: number | undefined;
+    renderEmbeddables?: boolean | undefined;
+    skipInliningFonts?: true | undefined;
+    reuseImages?: boolean | undefined;
+}) => Promise<SVGSVGElement>;
+
+/* ************************************** */
+/* @excalidraw/element/bounds -> node_modules/@zsviczian/excalidraw/types/element/src/bounds.d.ts */
+/* ************************************** */
+export declare const getCommonBoundingBox: (elements: readonly ExcalidrawElement[] | readonly NonDeleted<ExcalidrawElement>[]) => BoundingBox;
+
+/* ************************************** */
+/* @excalidraw/element/groups -> node_modules/@zsviczian/excalidraw/types/element/src/groups.d.ts */
+/* ************************************** */
+export declare const getMaximumGroups: (elements: ExcalidrawElement[], elementsMap: ElementsMap) => ExcalidrawElement[][];
+
+/* ************************************** */
+/* @excalidraw/element/binding -> node_modules/@zsviczian/excalidraw/types/element/src/binding.d.ts */
+/* ************************************** */
+export declare const determineFocusDistance: (element: ExcalidrawBindableElement, elementsMap: ElementsMap, a: GlobalPoint, b: GlobalPoint) => number;
+
+/* ************************************** */
+/* @excalidraw/element/textMeasurements -> node_modules/@zsviczian/excalidraw/types/element/src/textMeasurements.d.ts */
+/* ************************************** */
+export declare const measureText: (text: string, font: FontString, lineHeight: ExcalidrawTextElement["lineHeight"]) => {
+    width: number;
+
+/* ************************************** */
+/* @excalidraw/element/textWrapping -> node_modules/@zsviczian/excalidraw/types/element/src/textWrapping.d.ts */
+/* ************************************** */
+export declare const wrapText: (text: string, font: FontString, maxWidth: number) => string;
+
+/* ************************************** */
+/* @excalidraw/element/textElement -> node_modules/@zsviczian/excalidraw/types/element/src/textElement.d.ts */
+/* ************************************** */
+export declare const getBoundTextMaxWidth: (container: ExcalidrawElement, boundTextElement: ExcalidrawTextElement | null) => number;
+export declare const getContainerElement: (element: ExcalidrawTextElement | null, elementsMap: ElementsMap) => ExcalidrawTextContainer | null;
+
+/* ************************************** */
+/* ./components/TTDDialog/MermaidToExcalidrawLib -> node_modules/@zsviczian/excalidraw/types/excalidraw/components/TTDDialog/MermaidToExcalidrawLib.d.ts */
+/* ************************************** */
+export declare const mermaidToExcalidraw: (mermaidDefinition: string, opts: MermaidConfig, forceSVG?: boolean) => Promise<{
+    elements?: ExcalidrawElement[];
+
+/* ************************************** */
+/* ../excalidraw/obsidianUtils -> node_modules/@zsviczian/excalidraw/types/excalidraw/obsidianUtils.d.ts */
+/* ************************************** */
+export declare function destroyObsidianUtils(): void;
+export declare function getCSSFontDefinition(fontFamily: number): Promise<string>;
+export declare function getFontFamilies(): string[];
+export declare function getFontMetrics(fontFamily: ExcalidrawTextElement["fontFamily"], fontSize?: number): {
+    unitsPerEm: number;
+export declare function getSharedMermaidInstance(): Promise<MermaidToExcalidrawLibProps>;
+export declare const intersectElementWithLine: (element: ExcalidrawElement, a: GlobalPoint, b: GlobalPoint, gap: number | undefined, elementsMap: ElementsMap) => GlobalPoint[] | undefined;
+export declare function loadMermaid(): Promise<MermaidToExcalidrawLibProps>;
+export declare function loadSceneFonts(elements: NonDeletedExcalidrawElement[]): Promise<FontFace[]>;
+export declare function registerFontsInCSS(): Promise<void>;
+export declare function registerLocalFont(fontMetrics: FontMetadata & {
+    name: string;
+
+/* ************************************** */
+/* @excalidraw/element/newElement -> node_modules/@zsviczian/excalidraw/types/element/src/newElement.d.ts */
+/* ************************************** */
+export declare const refreshTextDimensions: (textElement: ExcalidrawTextElement, container: ExcalidrawTextContainer | null, elementsMap: ElementsMap, text?: string) => {
+    x: number;
+
+/* ************************************** */
+/* ./data/json -> node_modules/@zsviczian/excalidraw/types/excalidraw/data/json.d.ts */
+/* ************************************** */
+export declare const serializeAsJSON: (elements: readonly ExcalidrawElement[], appState: Partial<AppState>, files: BinaryFiles, type: "local" | "database") => string;
+export declare const serializeLibraryAsJSON: (libraryItems: LibraryItems) => string;
+
+/* ************************************** */
+/* ./data/blob -> node_modules/@zsviczian/excalidraw/types/excalidraw/data/blob.d.ts */
+/* ************************************** */
+export declare const getDataURL: (file: Blob | File) => Promise<DataURL>;
+export declare const loadFromBlob: (blob: Blob, localAppState: AppState | null, localElements: readonly ExcalidrawElement[] | null, fileHandle?: FileSystemHandle | null) => Promise<import("./restore").RestoredDataState>;
+export declare const loadLibraryFromBlob: (blob: Blob, defaultStatus?: LibraryItem["status"]) => Promise<LibraryItem[]>;
+export declare const loadSceneOrLibraryFromBlob: (blob: Blob | File, localAppState: AppState | null, localElements: readonly ExcalidrawElement[] | null, fileHandle?: FileSystemHandle | null) => Promise<{
+    type: "application/vnd.excalidraw+json";
+
+/* ************************************** */
+/* ./data/library -> node_modules/@zsviczian/excalidraw/types/excalidraw/data/library.d.ts */
+/* ************************************** */
+export declare const getLibraryItemsHash: (items: LibraryItems) => number;
+export declare const mergeLibraryItems: (localItems: LibraryItems, otherItems: LibraryItems) => LibraryItems;
+export declare const parseLibraryTokensFromUrl: () => {
+    libraryUrl: string;
+export declare const useHandleLibrary: (opts: {
+    excalidrawAPI: ExcalidrawImperativeAPI | null;
+    /**
+     * Return `true` if the library install url should be allowed.
+     * If not supplied, only the excalidraw.com base domain is allowed.
+     */
+    validateLibraryUrl?: ((libraryUrl: string) => boolean) | undefined;
+
+/* ************************************** */
+/* @excalidraw/element/embeddable -> node_modules/@zsviczian/excalidraw/types/element/src/embeddable.d.ts */
+/* ************************************** */
+export declare const getEmbedLink: (link: string | null | undefined) => IframeDataWithSandbox | null;
+
+/* ************************************** */
+/* ./components/Sidebar/Sidebar -> node_modules/@zsviczian/excalidraw/types/excalidraw/components/Sidebar/Sidebar.d.ts */
+/* ************************************** */
+export declare const Sidebar: React.ForwardRefExoticComponent<{
+    name: string;
+    children: React.ReactNode;
+    onStateChange?: ((state: {
+        name: string;
+        tab?: string | undefined;
+    } | null) => void) | undefined;
+
+/* ************************************** */
+/* ./components/Button -> node_modules/@zsviczian/excalidraw/types/excalidraw/components/Button.d.ts */
+/* ************************************** */
+export declare const Button: ({ type, onSelect, selected, children, className, ...rest }: ButtonProps) => import("react/jsx-runtime").JSX.Element;
+
+/* ************************************** */
+/* ./components/App -> node_modules/@zsviczian/excalidraw/types/excalidraw/components/App.d.ts */
+/* ************************************** */
+export declare const useDevice: () => Readonly<{
+    viewport: {
+        isMobile: boolean;
+
+/* ************************************** */
+/* ./components/DefaultSidebar -> node_modules/@zsviczian/excalidraw/types/excalidraw/components/DefaultSidebar.d.ts */
+/* ************************************** */
+export declare const DefaultSidebar: import("react").FC<Omit<MarkOptional<Omit<{
+    name: string;
+    children: import("react").ReactNode;
+    onStateChange?: ((state: {
+        name: string;
+        tab?: string | undefined;
+    } | null) => void) | undefined;
+
+/* ************************************** */
+/* ./components/TTDDialog/TTDDialog -> node_modules/@zsviczian/excalidraw/types/excalidraw/components/TTDDialog/TTDDialog.d.ts */
+/* ************************************** */
+export declare const TTDDialog: (props: {
+    onTextSubmit(value: string): Promise<OnTestSubmitRetValue>;
+} | {
+    __fallback: true;
+}) => import("react/jsx-runtime").JSX.Element | null;
+
+/* ************************************** */
+/* ./actions/actionCanvas -> node_modules/@zsviczian/excalidraw/types/excalidraw/actions/actionCanvas.d.ts */
+/* ************************************** */
+export declare const zoomToFitBounds: ({ bounds, appState, canvasOffsets, fitToViewport, viewportZoomFactor, minZoom, maxZoom, }: {
+    bounds: SceneBounds;
+    canvasOffsets?: Partial<{
+        top: number;
+        right: number;
+        bottom: number;
+        left: number;
+    }> | undefined;
+    appState: Readonly<AppState>;
+    /** whether to fit content to viewport (beyond >100%) */
+    fitToViewport: boolean;
+    /** zoom content to cover X of the viewport, when fitToViewport=true */
+    viewportZoomFactor?: number | undefined;
+    minZoom?: number | undefined;
+    maxZoom?: number | undefined;
+}) => {
+    appState: {
+        scrollX: number;
+
+/* ************************************** */
+/* ./data/transform -> node_modules/@zsviczian/excalidraw/types/excalidraw/data/transform.d.ts */
+/* ************************************** */
+export declare const convertToExcalidrawElements: (elementsSkeleton: ExcalidrawElementSkeleton[] | null, opts?: {
+    regenerateIds: boolean;
+}) => import("@excalidraw/element/types").OrderedExcalidrawElement[];
+
+/* ************************************** */
+/* @excalidraw/utils/withinBounds -> node_modules/@zsviczian/excalidraw/types/utils/src/withinBounds.d.ts */
+/* ************************************** */
+export declare const elementPartiallyOverlapsWithOrContainsBBox: (element: Element, bbox: Bounds) => boolean;
+export declare const elementsOverlappingBBox: ({ elements, bounds, type, errorMargin, }: {
+    elements: Elements;
+    bounds: Bounds | ExcalidrawElement;
+    /** safety offset. Defaults to 0. */
+    errorMargin?: number | undefined;
+    /**
+     * - overlap: elements overlapping or inside bounds
+     * - contain: elements inside bounds or bounds inside elements
+     * - inside: elements inside bounds
+     **/
+    type: "overlap" | "contain" | "inside";
+}) => NonDeletedExcalidrawElement[];
+export declare const isElementInsideBBox: (element: Element, bbox: Bounds, eitherDirection?: boolean) => boolean;
+
+/* ************************************** */
+/* ./components/DiagramToCodePlugin/DiagramToCodePlugin -> node_modules/@zsviczian/excalidraw/types/excalidraw/components/DiagramToCodePlugin/DiagramToCodePlugin.d.ts */
+/* ************************************** */
+export declare const DiagramToCodePlugin: (props: {
+    generate: GenerateDiagramToCode;
+}) => null;
+```
+
+---
+
 # Excalidraw Script Library Examples
 
 This is an automatically generated knowledge base intended for Retrieval Augmented Generation (RAG) and other AI-assisted workflows (e.g. NotebookLM or local embeddings tools).  
@@ -9924,7 +10144,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2025-11-01T12:20:14.029Z
+Generated on: 2025-11-01T12:47:45.934Z
 
 ---
 
