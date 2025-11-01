@@ -86,7 +86,7 @@ export default {
   INSERT_MD: "以图像形式嵌入 Markdown 文档到当前绘图中",
   INSERT_PDF: "以图像形式嵌入 PDF 到当前绘图中",
   INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE: "以图像形式嵌入最后激活的 PDF 页面",
-  UNIVERSAL_ADD_FILE: "以交互或图像形式嵌入文件",
+  UNIVERSAL_ADD_FILE: "嵌入文件 (Insert ANY file)",
   INSERT_CARD: "插入“背景笔记”卡片",
   CONVERT_CARD_TO_FILE: "将“背景笔记”卡片保存到文件",
   ERROR_TRY_AGAIN: "请重试。",
@@ -169,7 +169,7 @@ export default {
   COMPATIBILITY_MODE:
     "*.excalidraw 是兼容旧版的绘图文件格式。需要转换为新格式才能解锁本插件的全部功能。",
   CONVERT_FILE: "转换为新格式",
-  BACKUP_AVAILABLE: "加载绘图文件时出错，可能是由于 Obsidian 在上次保存时意外退出了（手机上更容易发生这种意外）。<br><br><b>好消息：</b>这台设备上存在备份。您是否想要恢复本设备上的备份？<br><br>（我建议您先尝试在最近使用过的其他设备上打开该绘图，以检查是否有更新的备份。）",
+  BACKUP_AVAILABLE: "加载绘图文件时出错，可能是由于 Obsidian 在上次保存时意外退出了（移动设备上更容易发生这种意外）。<br><br><b>好消息：</b>这台设备上存在备份。您是否想要恢复本设备上的备份？<br><br>（我建议您先尝试在最近使用过的其他设备上打开该绘图，以检查是否有更新的备份。）",
   BACKUP_RESTORED: "已恢复备份",
   BACKUP_SAVE_AS_FILE: "此绘图为空。但有一个非空的备份可用。您想将其恢复为新文件并在新标签页中打开吗？",
   BACKUP_SAVE: "恢复",
@@ -215,6 +215,8 @@ export default {
 
 
   //settings.ts
+  DISABLE_CONTEXT_MENU_NAME: "禁用 Excalidraw 上下文菜单",
+  DISABLE_CONTEXT_MENU_DESC: "禁用 Excalidraw 的上下文菜单。这在移动设备上非常有用，因为上下文菜单有时会在不需要的时候弹出。",
   NOTEBOOKLM_LINK_ARIA: "向 NotebookLM 咨询有关插件的帮助。此模型已预加载了我所有的视频转录稿、发布说明和其他帮助内容。与 NotebookLM 聊天，浏览我的 250+ 视频和 Excalidraw 文件。",
   NOTEBOOKLM_LINK_TEXT: "学习插件。访问 NotebookLM 知识库。",
   LINKS_BUGS_ARIA: "在插件的 GitHub 页面报告错误和提交功能请求",
