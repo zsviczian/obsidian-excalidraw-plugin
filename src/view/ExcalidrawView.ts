@@ -335,6 +335,13 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   private obsidianMenu: ObsidianMenu;
   private embeddableMenu: EmbeddableMenu;
   private destroyers: Function[] = [];
+  private contentSizeMap = new WeakMap<Element, number>();
+  private lastContentResizeDeltaHeight: number;
+  private resizeBatchTimer: number = null;
+  private resizeBatchStartHeight = 0;
+  private lastAggregatedDh = 0;
+  private lastClientElHeight = 0;
+  private oldKeyboardScroll:number = null;
 
   //https://stackoverflow.com/questions/27132796/is-there-any-javascript-event-fired-when-the-on-screen-keyboard-on-mobile-safari
   private isEditingTextResetTimer: number = null;
@@ -1655,7 +1662,18 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       this.handleLinkClick(ev),
     );
 
-    this.registerDomEvent(this.ownerWindow, "resize", this.onExcalidrawResize.bind(this));
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { height } = entry.contentRect;
+        const prevHeight = this.contentSizeMap.get(entry.target);
+        const dh = prevHeight ? height - prevHeight : 0;
+        this.contentSizeMap.set(entry.target, height);
+        this.lastContentResizeDeltaHeight = dh;
+        this.scheduleBatchedResize(entry);
+      }
+    });
+    ro.observe(this.contentEl);
+    this.destroyers.push(() => ro.disconnect());
 
     this.app.workspace.onLayoutReady(async () => {
       (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onload,`ExcalidrawView.onload > app.workspace.onLayoutReady, file:${this.file?.name}, isActiveLeaf:${this?.app?.workspace?.activeLeaf === this.leaf}, is activeExcalidrawView set:${Boolean(this?.plugin?.activeExcalidrawView)}`);
@@ -5463,7 +5481,30 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     return this.obsidianMenu?.renderButton (isMobile, appState);
   }
 
-  private onExcalidrawResize () {
+  private scheduleBatchedResize(entry: ResizeObserverEntry) {
+    if (!this.lastClientElHeight) this.lastClientElHeight = this.contentEl.clientHeight;
+
+    if (!this.resizeBatchTimer) {
+      const prev = this.contentSizeMap.get(entry.target);
+      this.resizeBatchStartHeight = prev ?? entry.contentRect.height;
+    }
+    const curH = entry.contentRect.height;
+    this.lastAggregatedDh = curH - this.resizeBatchStartHeight;
+
+    if (this.resizeBatchTimer) window.clearTimeout(this.resizeBatchTimer);
+    this.resizeBatchTimer = window.setTimeout(() => {
+      const dh = this.lastAggregatedDh;
+      const heightNow = this.contentEl.clientHeight ?? 0;
+      this.lastClientElHeight = heightNow;
+      this.resizeBatchTimer = null;
+      this.onExcalidrawResize(dh);
+    }, 700);
+  }
+
+  private onExcalidrawResize(dhArg?: number) {
+    const dh = typeof dhArg === "number" ? dhArg : this.lastContentResizeDeltaHeight;
+    console.log(dh, "(batched)");
+
     try {
       const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
       if(!api) return;
@@ -5489,29 +5530,19 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       const isKeyboardBackEvent:Boolean = (this.semaphores.isEditingText || isEventOnSameElement) && !isKeyboardOutEvent;
       this.editingTextElementId = isKeyboardOutEvent ? st.editingTextElement.id : null;
       if(isKeyboardOutEvent) {
-        const appToolHeight = (this.contentEl.querySelector(".Island.App-toolbar") as HTMLElement)?.clientHeight ?? 0;
-        const editingElViewY = sceneCoordsToViewportCoords({sceneX:0, sceneY:st.editingTextElement.y}, st).y;
-        const scrollViewY = sceneCoordsToViewportCoords({sceneX:0, sceneY:-st.scrollY}, st).y;
-        const delta = editingElViewY - scrollViewY;
-        const isElementAboveKeyboard = height > (delta + appToolHeight*2)
-        const excalidrawWrapper = this.excalidrawWrapperRef.current;
-        //console.log({isElementAboveKeyboard});
-        if(excalidrawWrapper && !isElementAboveKeyboard) {
-          excalidrawWrapper.style.top = `${-(st.height - height)}px`;
-          excalidrawWrapper.style.height = `${st.height}px`;
-          this.excalidrawContainer?.querySelector(".App-bottom-bar")?.scrollIntoView();
-          this.headerEl?.scrollIntoView();
-        }
+        console.log("Keyboard open", Date.now());
+          const elCenterY = st.editingTextElement.y + st.editingTextElement.height / 2;
+          const newScroll = (st.height / st.zoom.value) / 2 - elCenterY;
+          this.oldKeyboardScroll = st.scrollY;
+          this.updateScene({appState: {scrollY: newScroll}, captureUpdate: CaptureUpdateAction.NEVER});
+          this.containerEl.scrollIntoView();
       }
-      if(isKeyboardBackEvent) {
-        const excalidrawWrapper = this.excalidrawWrapperRef.current;
-        const appButtonBar = this.excalidrawContainer?.querySelector(".App-bottom-bar");
-        const headerEl = this.headerEl;
-        if(excalidrawWrapper) {
-          excalidrawWrapper.style.top = "";
-          excalidrawWrapper.style.height = "";
-          appButtonBar?.scrollIntoView();
-          headerEl?.scrollIntoView();
+      if (isKeyboardBackEvent) {
+        console.log("Keyboard close", Date.now());       
+        if(this.oldKeyboardScroll != null) {
+          this.updateScene({appState: {scrollY: this.oldKeyboardScroll}, captureUpdate: CaptureUpdateAction.NEVER});
+          this.oldKeyboardScroll = null;
+          this.containerEl.scrollIntoView();
         }
       }
       //end of aweful hack

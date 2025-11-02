@@ -26,8 +26,10 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 ## Fixed
 - side panel does not attach correctly when library is pinned [#2510](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2510)
 - Fixed print area when using marker frames and printing Slideshow to PDF
-- The "Invert Colors" script and ExcalidrawAutomate bugs that resulted in broken colors and Excalidarw crashes in some cases after color inversion.
+- The "Invert Colors" script and ExcalidrawAutomate bugs that resulted in broken colors and Excalidraw crashes in some cases after color inversion.
 - Fixed duplicated PDF elements after copy-pasting from scene to scene.
+- Resolved the large gap at the top on iOS devices. As it turns out, Apple adds additional padding automatically to avoid collision with the notch.
+- Fixed the positioning of the "Canvas and Shape Properties" window.
 `,
 "2.16.1":`
 ## Fixed

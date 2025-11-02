@@ -66,7 +66,7 @@ import { ScriptEngine } from "../shared/Scripts";
 import { hoverEvent, initializeMarkdownPostProcessor, markdownPostProcessor, legacyExcalidrawPopoverObserver } from "./managers/MarkdownPostProcessor";
 import { FieldSuggester } from "../shared/Suggesters/FieldSuggester";
 import { ReleaseNotes } from "../shared/Dialogs/ReleaseNotes";
-import { Packages } from "../types/types";
+import { DeviceType, Packages } from "../types/types";
 import { PreviewImageType } from "../types/utilTypes";
 import { emulateCTRLClickForLinks, linkClickModifierType, PaneTarget } from "../utils/modifierkeyHelper";
 import { imageCache } from "../shared/ImageCache";
@@ -1481,5 +1481,9 @@ export default class ExcalidrawPlugin extends Plugin {
   //aweful coding, but does the job
   public getLabel(key: keyof typeof en): string {
    return t(key);
+  }
+
+  public getObsidianDevice(): DeviceType {
+    return DEVICE;
   }
 }
