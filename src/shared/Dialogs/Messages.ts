@@ -30,6 +30,7 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 - Fixed duplicated PDF elements after copy-pasting from scene to scene.
 - Resolved the large gap at the top on iOS devices. As it turns out, Apple adds additional padding automatically to avoid collision with the notch.
 - Fixed the positioning of the "Canvas and Shape Properties" window.
+- Attempt to fix mobile keyboard popup distorting the view.
 `,
 "2.16.1":`
 ## Fixed
