@@ -98,7 +98,7 @@ Key concepts:
 - Types reference: See \`src/types/penTypes.ts\`. The \`PenOptions\` shape is:
   \`\`\`ts
   interface PenOptions {
-    highlighter: boolean;
+    highlighter: boolean; // if true the pen is drawn at the lowest layer, behind all other elements
     constantPressure: boolean;
     hasOutline: boolean;
     outlineWidth: number;
@@ -112,12 +112,6 @@ Key concepts:
     };
   }
   \`\`\`
-
-How the UI applies pens (from \`ObsidianMenu.renderCustomPens\` and \`setPen()\`):
-- Clicking a pen calls \`api.updateScene({ appState: { currentStrokeOptions: pen.penOptions, ...style }})\` and \`api.setActiveTool({ type: "freedraw" })\`.
-- The style part mirrors \`PenStyle\`: \`currentItemStrokeWidth\`, \`currentItemStrokeColor\`, \`currentItemBackgroundColor\`, \`currentItemFillStyle\`, \`currentItemRoughness\`.
-- When switching tools, the menu may restore previous canvas styles via \`resetCustomPen\` management.
-- A second click (while already in the same custom pen + freedraw) resets to default by clearing \`currentStrokeOptions\`.
 
 Using custom pens from scripts:
 - Activate a custom pen for drawing:
@@ -141,15 +135,14 @@ Using custom pens from scripts:
     },
   };
 
-  // apply stroke options + canvas style, then switch to freedraw
-  api.updateScene({
+  // apply stroke options + canvas style, then switch to freedraw (strokeWidth, color, background, fillStyle are optional)
+  ea.viewUpdateScene({
     appState: {
       currentStrokeOptions: penOptions,
       currentItemStrokeWidth: 0.5,
       currentItemStrokeColor: "#3E6F8D",
       currentItemBackgroundColor: "transparent",
       currentItemFillStyle: "hachure",
-      currentItemRoughness: 0,
     },
   });
   api.setActiveTool({ type: "freedraw" });
@@ -157,7 +150,7 @@ Using custom pens from scripts:
 
 - Clear custom pen (revert to default freedraw behavior):
   \`\`\`ts
-  ea.getExcalidrawAPI().updateScene({ appState: { currentStrokeOptions: null } });
+  ea.viewUpdateScene({ appState: { currentStrokeOptions: null } });
   \`\`\`
 
 - Persist custom strokeOptions onto existing freedraw elements:
