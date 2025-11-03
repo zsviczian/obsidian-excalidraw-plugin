@@ -5,7 +5,7 @@ Excalidraw-Obsidian is an Obsidian.md plugins that is built on the open source E
 Read the information below and respond with I'm ready. The user will then prompt for an ExcalidrawAutomate script to be created. Use the examples, the ExcalidrawAutomate documentation, and the varios type definitions and information from also the Excalidraw component and from Obsidian.md to generate the script based on the user's requirements.
 
 In addition to ExcalidrawAutomate, you can also use two other sources of functions:
-- The Excalidraw API available via ea.getExcalidrawAPI(). Note: the API is only available if ea.targetView is set. When running Excalidraw scripts using the script engine, the provided ea object is already set up with targetView by default.
+- The Excalidraw API available via ea.getExcalidrawAPI(). Note: the API is only available if ea.targetView is set. When running Excalidraw scripts using the script engine, the provided ea object is already set up with targetView by default. Otherwise you need to first run ea.setView().
 - window.ExcalidrawLib which exposes a rich set of utility functions that do not require an active ExcalidrawView.
 
 A dedicated section “ExcalidrawLib module functions” in this document lists the function signatures extracted directly from the ExcalidrawLib TypeScript declarations.
@@ -72,6 +72,103 @@ For a reference, follow the implementation pattern used in the "Printable Layout
     *   To temporarily hide an element, set `element.opacity = 0`. It's good practice to store the original opacity in `customData` so it can be restored. It is also recommended to lock hidden elements so they do not get accidentally selected or moved around.
     *   To permanently remove an element from the scene, set `element.isDeleted = true`.
 *   **Image Handling:** When dealing with image elements, use `ea.getViewFileForImageElement(imageElement)` to get the corresponding `TFile` from the Obsidian vault. This is necessary for any logic that needs to read or manipulate the source image file.
+
+#### **7. Custom Pens and Perfect Freehand**
+
+Excalidraw's freehand tool is powered by the open-source Perfect Freehand library. The plugin exposes “custom pens” that bundle:
+- Canvas style for the next strokes (colors, width, fillStyle, roughness).
+- Perfect Freehand stroke geometry and behavior (pressure simulation, outline, tapering, easing, etc.).
+
+Key concepts:
+- AppState-driven drawing: When `appState.currentStrokeOptions` is set, the freedraw tool renders new strokes using those Perfect Freehand options.
+- Element-level persistence: If a freedraw element has `element.customData.strokeOptions`, it is rendered with those options regardless of the current tool state.
+- Types reference: See `src/types/penTypes.ts`. The `PenOptions` shape is:
+  ```ts
+  interface PenOptions {
+    highlighter: boolean;
+    constantPressure: boolean;
+    hasOutline: boolean;
+    outlineWidth: number;
+    options: {
+      thinning: number;
+      smoothing: number;
+      streamline: number;
+      easing: string; // see supported names below
+      start: { cap: boolean; taper: number | boolean; easing: string; };
+      end:   { cap: boolean; taper: number | boolean; easing: string; };
+    };
+  }
+  ```
+
+How the UI applies pens (from `ObsidianMenu.renderCustomPens` and `setPen()`):
+- Clicking a pen calls `api.updateScene({ appState: { currentStrokeOptions: pen.penOptions, ...style }})` and `api.setActiveTool({ type: "freedraw" })`.
+- The style part mirrors `PenStyle`: `currentItemStrokeWidth`, `currentItemStrokeColor`, `currentItemBackgroundColor`, `currentItemFillStyle`, `currentItemRoughness`.
+- When switching tools, the menu may restore previous canvas styles via `resetCustomPen` management.
+- A second click (while already in the same custom pen + freedraw) resets to default by clearing `currentStrokeOptions`.
+
+Using custom pens from scripts:
+- Activate a custom pen for drawing:
+  ```ts
+  // obtain the Excalidraw API
+  const api = ea.getExcalidrawAPI();
+
+  // define Perfect Freehand options (example similar to "finetip")
+  const penOptions = {
+    highlighter: false,
+    constantPressure: true,
+    hasOutline: false,
+    outlineWidth: 1,
+    options: {
+      thinning: -0.5,
+      smoothing: 0.4,
+      streamline: 0.4,
+      easing: "linear",
+      start: { taper: 5, cap: false, easing: "linear" },
+      end:   { taper: 5, cap: false, easing: "linear" },
+    },
+  };
+
+  // apply stroke options + canvas style, then switch to freedraw
+  api.updateScene({
+    appState: {
+      currentStrokeOptions: penOptions,
+      currentItemStrokeWidth: 0.5,
+      currentItemStrokeColor: "#3E6F8D",
+      currentItemBackgroundColor: "transparent",
+      currentItemFillStyle: "hachure",
+      currentItemRoughness: 0,
+    },
+  });
+  api.setActiveTool({ type: "freedraw" });
+  ```
+
+- Clear custom pen (revert to default freedraw behavior):
+  ```ts
+  ea.getExcalidrawAPI().updateScene({ appState: { currentStrokeOptions: null } });
+  ```
+
+- Persist custom strokeOptions onto existing freedraw elements:
+  ```ts
+  const selected = ea.getViewSelectedElements().filter(el => el.type === "freedraw");
+  ea.copyViewElementsToEAforEditing(selected);
+  for (const el of selected) {
+    ea.addAppendUpdateCustomData(el.id, { strokeOptions: penOptions });
+  }
+  await ea.addElementsToView();
+  ```
+
+Notes:
+- New strokes respect `appState.currentStrokeOptions` at draw time. Existing elements only change if you update their `customData.strokeOptions`.
+- For pens that should behave like real markers/highlighters, set `highlighter: true` and often `constantPressure: true` with an `outlineWidth` for the edge.
+
+Supported easing names (string values for `options.easing`, `options.start.easing`, `options.end.easing`):
+linear, easeInQuad, easeOutQuad, easeInOutQuad, easeInCubic, easeOutCubic, easeInOutCubic, easeInQuart, easeOutQuart, easeInOutQuart, easeInQuint, easeOutQuint, easeInOutQuint, easeInSine, easeOutSine, easeInOutSine, easeInExpo, easeOutExpo, easeInOutExpo, easeInCirc, easeOutCirc, easeInOutCirc, easeInBack, easeOutBack, easeInOutBack, easeInElastic, easeOutElastic, easeInOutElastic, easeInBounce, easeOutBounce, easeInOutBounce.
+
+Example freedraw element carrying `customData.strokeOptions`:
+```json
+{"type":"excalidraw/clipboard","elements":[{"id":"...","type":"freedraw","strokeColor":"#3E6F8D","backgroundColor":"transparent","fillStyle":"hachure","strokeWidth":0.5,"roughness":0,"customData":{"strokeOptions":{"highlighter":false,"hasOutline":false,"outlineWidth":0,"constantPressure":true,"options":{"smoothing":0.4,"thinning":-0.5,"streamline":0.4,"easing":"linear","start":{"taper":5,"cap":false,"easing":"linear"},"end":{"taper":5,"cap":false,"easing":"linear"}}}}}],"files":{}}
+```
+
 
 ---
 
@@ -10144,7 +10241,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2025-11-01T12:47:45.934Z
+Generated on: 2025-11-03T17:02:44.193Z
 
 ---
 
