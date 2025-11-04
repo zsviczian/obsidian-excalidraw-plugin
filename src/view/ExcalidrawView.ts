@@ -335,13 +335,10 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   private obsidianMenu: ObsidianMenu;
   private embeddableMenu: EmbeddableMenu;
   private destroyers: Function[] = [];
-  private contentSizeMap = new WeakMap<Element, number>();
-  private lastContentResizeDeltaHeight: number;
+  private previousContentElHeight: number = 0;
   private resizeBatchTimer: number = null;
-  private resizeBatchStartHeight = 0;
   private lastAggregatedDh = 0;
-  private lastClientElHeight = 0;
-  private oldKeyboardScroll:number = null;
+  private oldKeyboardScroll:{scrollY:number, scrollX:number}|null = null;
 
   //https://stackoverflow.com/questions/27132796/is-there-any-javascript-event-fired-when-the-on-screen-keyboard-on-mobile-safari
   private isEditingTextResetTimer: number = null;
@@ -1662,16 +1659,14 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       this.handleLinkClick(ev),
     );
 
-    const ro = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { height } = entry.contentRect;
-        const prevHeight = this.contentSizeMap.get(entry.target);
-        const dh = prevHeight ? height - prevHeight : 0;
-        this.contentSizeMap.set(entry.target, height);
-        this.lastContentResizeDeltaHeight = dh;
-        this.scheduleBatchedResize(entry);
-      }
+    const ro = new ResizeObserver(() => {
+      const height = this.contentEl.clientHeight;
+      const prevHeight = this.previousContentElHeight;
+      const dh = prevHeight ? height - prevHeight : 0;
+      this.previousContentElHeight = height;
+      this.scheduleBatchedResize(dh);
     });
+    this.previousContentElHeight = this.contentEl.clientHeight;
     ro.observe(this.contentEl);
     this.destroyers.push(() => ro.disconnect());
 
@@ -2919,7 +2914,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.updateContainerSize(null, true, justloaded);
     this.initializeToolsIconPanelAfterLoading();
     this.setTrayMode(calculateTrayModeValue(this.plugin.settings));
-    this.excalidrawAPI.refreshEditorBreakpoints();
   }
 
   public setDirty(location?:number) {
@@ -5481,30 +5475,25 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     return this.obsidianMenu?.renderButton (isMobile, appState);
   }
 
-  private scheduleBatchedResize(entry: ResizeObserverEntry) {
-    if (!this.lastClientElHeight) this.lastClientElHeight = this.contentEl.clientHeight;
-
+  private scheduleBatchedResize(currentDeltaHeight: number) {
+    const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
+    if(!api || !api.isTouchScreen) return;
     if (!this.resizeBatchTimer) {
-      const prev = this.contentSizeMap.get(entry.target);
-      this.resizeBatchStartHeight = prev ?? entry.contentRect.height;
-    }
-    const curH = entry.contentRect.height;
-    this.lastAggregatedDh = curH - this.resizeBatchStartHeight;
-
+      this.lastAggregatedDh = 0;
+    } 
+    this.lastAggregatedDh += currentDeltaHeight;
     if (this.resizeBatchTimer) window.clearTimeout(this.resizeBatchTimer);
     this.resizeBatchTimer = window.setTimeout(() => {
       const dh = this.lastAggregatedDh;
-      const heightNow = this.contentEl.clientHeight ?? 0;
-      this.lastClientElHeight = heightNow;
       this.resizeBatchTimer = null;
-      this.onExcalidrawResize(dh);
-    }, 700);
+      this.lastAggregatedDh = 0;
+      if (Math.abs(dh) > 120) {
+        this.onExcalidrawResize();
+      }
+    }, Math.abs(currentDeltaHeight) < 120 ? 700 : 20);
   }
 
-  private onExcalidrawResize(dhArg?: number) {
-    const dh = typeof dhArg === "number" ? dhArg : this.lastContentResizeDeltaHeight;
-    console.log(dh, "(batched)");
-
+  private onExcalidrawResize() {
     try {
       const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
       if(!api) return;
@@ -5530,17 +5519,20 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       const isKeyboardBackEvent:Boolean = (this.semaphores.isEditingText || isEventOnSameElement) && !isKeyboardOutEvent;
       this.editingTextElementId = isKeyboardOutEvent ? st.editingTextElement.id : null;
       if(isKeyboardOutEvent) {
-        console.log("Keyboard open", Date.now());
-          const elCenterY = st.editingTextElement.y + st.editingTextElement.height / 2;
-          const newScroll = (st.height / st.zoom.value) / 2 - elCenterY;
-          this.oldKeyboardScroll = st.scrollY;
-          this.updateScene({appState: {scrollY: newScroll}, captureUpdate: CaptureUpdateAction.NEVER});
+          const elY = st.editingTextElement.y;
+          const elX = st.editingTextElement.x;
+          const newScrollY = (st.height / st.zoom.value) / 4 - elY;
+          const newScrollX = (st.width / st.zoom.value) / 12 - elX;
+          this.oldKeyboardScroll = {scrollY: st.scrollY, scrollX: st.scrollX};
+          this.updateScene({appState: {scrollY: newScrollY, scrollX: newScrollX}, captureUpdate: CaptureUpdateAction.NEVER});
           this.containerEl.scrollIntoView();
       }
       if (isKeyboardBackEvent) {
-        console.log("Keyboard close", Date.now());       
         if(this.oldKeyboardScroll != null) {
-          this.updateScene({appState: {scrollY: this.oldKeyboardScroll}, captureUpdate: CaptureUpdateAction.NEVER});
+          this.updateScene({
+            appState: {...this.oldKeyboardScroll},
+            captureUpdate: CaptureUpdateAction.NEVER
+          });
           this.oldKeyboardScroll = null;
           this.containerEl.scrollIntoView();
         }
@@ -5678,6 +5670,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
                 saveAsImage: false,
                 saveToActiveFile: false,
               },
+              desktopUIMode: this.plugin.settings.defaultTrayMode ? "tray" : "full",
+              //formFactor: DEVICE.isMobile ? "phone" : DEVICE.isTablet ? "tablet" : "desktop",
             },
             initState: initdata?.appState,
             initialData: initdata,
@@ -5881,7 +5875,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleTrayMode, "ExcalidrawView.setTrayMode");
     const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
     api.setTrayModeEnabled(on);
-    setTimeout(()=>api.refreshEditorBreakpoints());
+    //setTimeout(()=>api.refreshEditorBreakpoints());
   }
 
   /**
