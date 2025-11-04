@@ -454,8 +454,11 @@ export default {
     "⚠️ You must close and reopen the Excalidraw/markdown file for changes to take effect. ⚠️",
   MODES_HEAD: "Modes",
   TRAY_MODE_NAME: "Enable tray-mode",
-  COMPACT_MODE_NAME: "Compact-mode on Tablets",
-  COMPACT_MODE_DESC: "Overrides tray-mode on tablets, allowing the native Excalidraw compact-mode to be used instead.",
+  PREFER_COMPACT_MODE_DESKTOP_NAME: "Prefer compact-mode on Desktop",
+  PREFER_COMPACT_MODE_DESKTOP_DESC: "When toggling tray-mode on a desktop, if this option is enabled, Excalidraw will toggle between compact-mode and tray-mode. " +
+    "If this setting is off, it will toggle betweeen full-mode and tray-mode.",  
+  COMPACT_MODE_NAME: "Prefer compact-mode on Tablets",
+  COMPACT_MODE_DESC: "This setting allows you to have a different default mode on tablets, then on desktops. You can default to compact mode on tablets, and to tray-mode on desktops with the help of this setting.",
   HOTKEY_OVERRIDE_HEAD: "Hotkey overrides",
   HOTKEY_OVERRIDE_DESC: `Some of the Excalidraw hotkeys such as <code>${labelCTRL()}+Enter</code> to edit text or <code>${labelCTRL()}+K</code> to create an element link ` +
     "conflict with Obsidian hotkey settings. The hotkey combinations you add below will override Obsidian's hotkey settings while using Excalidraw, thus " +

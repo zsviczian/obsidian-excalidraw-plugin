@@ -26,6 +26,7 @@ import { PENS } from "src/utils/pens";
 import {
   addYouTubeThumbnail,
   fragWithHTML,
+  setDesktopUIMode,
   setLeftHandedMode,
   setTrayMode,
 } from "src/utils/utils";
@@ -179,6 +180,7 @@ export interface ExcalidrawSettings {
   };
   defaultTrayMode: boolean;
   compactModeOnTablets: boolean;
+  compactModeOnDesktops: boolean;
   previousRelease: string;
   showReleaseNotes: boolean;
   compareManifestToPluginVersion: boolean;
@@ -366,6 +368,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   scriptEngineSettings: {},
   defaultTrayMode: true,
   compactModeOnTablets: true,
+  compactModeOnDesktops: false,
   previousRelease: "0.0.0",
   showReleaseNotes: true,
   compareManifestToPluginVersion: true,
@@ -1275,6 +1278,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             setTrayMode(this.app, this.plugin.settings);
             this.applySettingsUpdate();
           })
+      );
+
+    new Setting(detailsEl)
+      .setName(t("PREFER_COMPACT_MODE_DESKTOP_NAME"))
+      .setDesc(fragWithHTML(t("PREFER_COMPACT_MODE_DESKTOP_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.compactModeOnDesktops)
+          .onChange((value) => {
+            this.plugin.settings.compactModeOnDesktops = value;
+            setDesktopUIMode(this.app, this.plugin.settings);
+            this.applySettingsUpdate();
+          }),
       );
 
     new Setting(detailsEl)

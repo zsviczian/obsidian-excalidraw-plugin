@@ -6,7 +6,7 @@ import {
   TFolder,
 } from "obsidian";
 import { Random } from "roughjs/bin/math";
-import { BinaryFileData, DataURL} from "@zsviczian/excalidraw/types/excalidraw/types";
+import { BinaryFileData, DataURL, ExcalidrawImperativeAPI} from "@zsviczian/excalidraw/types/excalidraw/types";
 import {
   exportToSvg,
   exportToBlob,
@@ -637,6 +637,19 @@ export function calculateTrayModeValue(settings: ExcalidrawSettings): boolean {
 export function setTrayMode(app: App, settings: ExcalidrawSettings) {
   const isTrayMode = calculateTrayModeValue(settings);
   getExcalidrawViews(app).forEach((view) => view.setTrayMode(isTrayMode));
+}
+
+export function setDesktopUIMode(app: App, settings: ExcalidrawSettings) {
+  const isTrayMode = settings.defaultTrayMode;
+  getExcalidrawViews(app).forEach((view) => view
+    .setDesktopUIMode(
+      isTrayMode
+      ? "tray"
+      : settings.compactModeOnDesktops
+      ? "compact"
+      : "full"
+    )
+  );
 }
 
 export type LinkParts = {
