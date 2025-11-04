@@ -415,7 +415,7 @@ export default class ExcalidrawPlugin extends Plugin {
     try {
       this.isReady = true;
       await switchToExcalidraw(this.app);
-      this.switchToExcalidarwAfterLoad();
+      this.switchToExcalidrawAfterLoad();
     } catch (e) {
       new Notice("Error switching views to Excalidraw", 6000);
       console.error("Error switching views to Excalidraw", e);
@@ -620,8 +620,8 @@ export default class ExcalidrawPlugin extends Plugin {
   /**
    * Must be called after the workspace is ready
    */
-  private switchToExcalidarwAfterLoad() {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.switchToExcalidarwAfterLoad, `ExcalidrawPlugin.switchToExcalidarwAfterLoad`);
+  private switchToExcalidrawAfterLoad() {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.switchToExcalidrawAfterLoad, `ExcalidrawPlugin.switchToExcalidrawAfterLoad`);
     let leaf: WorkspaceLeaf;
     for (leaf of this.app.workspace.getLeavesOfType("markdown")) {
       if ( leaf.view instanceof MarkdownView && this.isExcalidrawFile(leaf.view.file)) {

@@ -242,7 +242,7 @@ export class EventManager {
 
     if (previouslyActiveEV && previouslyActiveEV !== newActiveviewEV) {
       if (previouslyActiveEV.leaf !== leaf) {
-        //if loading new view to same leaf then don't save. Excalidarw view will take care of saving anyway.
+        //if loading new view to same leaf then don't save. Excalidraw view will take care of saving anyway.
         //avoid double saving
         if(previouslyActiveEV?.isDirty() && !previouslyActiveEV.semaphores?.viewunload) {
           await previouslyActiveEV.save(true); //this will update transclusions in the drawing
