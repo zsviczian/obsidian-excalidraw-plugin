@@ -279,7 +279,7 @@ const warningUnknowSeriousError = () => {
   new Notice(t("WARNING_SERIOUS_ERROR"),60000);
 };
 
-type ActionButtons = "save" | "isParsed" | "isRaw" | "link" | "scriptInstall";
+type ActionButtons = "save" | "isRaw" | "link" | "scriptInstall";
 
 let windowMigratedDisableZoomOnce = false;
 
@@ -1635,30 +1635,29 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
     this.registerDomEvent(this.containerEl,"wheel",wheelEvent, {passive: false});
 
-    this.actionButtons['scriptInstall'] = this.addAction(SCRIPTENGINE_ICON_NAME, t("INSTALL_SCRIPT_BUTTON"), () => {
-      new ScriptInstallPrompt(this.plugin).open();
-    });
-
-    this.actionButtons['save'] = this.addAction(
-      DISK_ICON_NAME,
-      t("FORCE_SAVE"),
-      async () => this.forceSave(),
-    );
-
-    this.actionButtons['isRaw'] = this.addAction(
-      TEXT_DISPLAY_RAW_ICON_NAME,
-      t("RAW"),
-      () => this.changeTextMode(TextMode.parsed),
-    );
+    this.actionButtons = {
+      scriptInstall: this.addAction(SCRIPTENGINE_ICON_NAME, t("INSTALL_SCRIPT_BUTTON"), () => {
+        new ScriptInstallPrompt(this.plugin).open();
+      }),
+      save: this.addAction(
+        DISK_ICON_NAME,
+        t("FORCE_SAVE"),
+        async () => this.forceSave(),
+      ),
+      isRaw: this.addAction(
+        TEXT_DISPLAY_RAW_ICON_NAME,
+        t("RAW"),
+        () => this.changeTextMode(TextMode.parsed),
+      ),
+      link: this.addAction("link", t("OPEN_LINK"), (ev) =>
+        this.handleLinkClick(ev),
+      ),
+    }
    /*this.actionButtons['isParsed'] = this.addAction(
       TEXT_DISPLAY_PARSED_ICON_NAME,
       t("PARSED"),
       () => this.changeTextMode(TextMode.raw),
     );*/
-    
-    this.actionButtons['link'] = this.addAction("link", t("OPEN_LINK"), (ev) =>
-      this.handleLinkClick(ev),
-    );
 
     const ro = new ResizeObserver(() => {
       const height = this.contentEl.clientHeight;
@@ -2411,7 +2410,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       if (this.compatibilityMode) {
         this.plugin.enableLegacyFilePopoverObserver();
         this.actionButtons['isRaw'].hide();
-        this.actionButtons['isParsed'].hide();
+        // this.actionButtons['isParsed'].hide();
         this.actionButtons['link'].hide();
         this.textMode = TextMode.raw;
         await this.excalidrawData.loadLegacyData(data, this.file);
