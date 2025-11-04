@@ -3011,7 +3011,7 @@ Fix:
 - Transcluded text will now exclude ^block-references at end of lines
 - Phantom duplicates of the drawing appear when "zoom to fit" results in a zoom value below 10% and there are many objects on the canvas [#850](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/850)
 - CTRL+Wheel will increase/decrease zoom in steps of 5% matching the behavior of the "+" & "-" zoom buttons.
-- Latest updates from Excalidarw.com
+- Latest updates from Excalidraw.com
   - Freedraw flip not scaling correctly [#5752](https://github.com/excalidraw/excalidraw/pull/5752)
   - Multiple elements resizing regressions [#5586](https://github.com/excalidraw/excalidraw/pull/5586)
 
@@ -4339,7 +4339,7 @@ Fixed:
 
 # 1.5.8
 
-- minor fix to ExcalidarwAutomate addText to handle non-container bound text wrapping correctly.
+- minor fix to ExcalidrawAutomate addText to handle non-container bound text wrapping correctly.
 
 # 1.5.7
 

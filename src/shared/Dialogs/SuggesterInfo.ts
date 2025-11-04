@@ -979,7 +979,7 @@ export const FRONTMATTER_KEYS_INFO: SuggesterInfo[] = [
   {
     field: "plugin",
     code: null,
-    desc: "Denotes an excalidraw file. If key is not present, the file will not be recognized as an Excalidarw file. Valid values are 'parsed' and 'raw'",
+    desc: "Denotes an excalidraw file. If key is not present, the file will not be recognized as an Excalidraw file. Valid values are 'parsed' and 'raw'",
     after: ": parsed",
   },
   {

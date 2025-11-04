@@ -562,9 +562,9 @@ export class PluginFileManager {
       return;
     }
 
-    const isExcalidarwFile = this.getExcalidrawFiles().has(file);
+    const isExcalidrawFile = this.getExcalidrawFiles().has(file);
     this.updateFileCache(file, undefined, true);
-    if (!isExcalidarwFile) {
+    if (!isExcalidrawFile) {
       return;
     }
 
