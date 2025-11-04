@@ -112,6 +112,7 @@ import {
   checkVersionMismatch,
   calculateTrayModeValue,
   setTrayMode,
+  setDesktopUIMode,
 } from "../utils/utils";
 import { cleanBlockRef, cleanSectionHeading, closeLeafView, getAttachmentsFolderAndFilePath, getExcalidraAndMarkdowViewsForFile, getLeaf, getParentOfClass, obsidianPDFQuoteWithRef, openLeaf, setExcalidrawView } from "../utils/obsidianUtils";
 import { splitFolderAndFilename } from "../utils/fileUtils";
@@ -5518,19 +5519,34 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       const isKeyboardOutEvent:Boolean = st.editingTextElement && !isEventOnSameElement;
       const isKeyboardBackEvent:Boolean = (this.semaphores.isEditingText || isEventOnSameElement) && !isKeyboardOutEvent;
       this.editingTextElementId = isKeyboardOutEvent ? st.editingTextElement.id : null;
+
       if(isKeyboardOutEvent) {
-          const elY = st.editingTextElement.y;
-          const elX = st.editingTextElement.x;
-          const newScrollY = (st.height / st.zoom.value) / 4 - elY;
-          const newScrollX = (st.width / st.zoom.value) / 12 - elX;
-          this.oldKeyboardScroll = {scrollY: st.scrollY, scrollX: st.scrollX};
-          this.updateScene({appState: {scrollY: newScrollY, scrollX: newScrollX}, captureUpdate: CaptureUpdateAction.NEVER});
+          const elTop = st.editingTextElement.y;
+          const elHeight = (st.editingTextElement as any).height ?? 0;
+          const elCenterY = elTop + elHeight / 2;
+
+          const visibleHeight = st.height / st.zoom.value;
+          // visibleTop is -scrollY in scene coords
+          const visibleTop = -st.scrollY;
+          const topThreeQuarterThreshold = visibleTop + visibleHeight * 0.75;
+
+          // If the editing text element is in the top 3/4 of the visible screen, do not change scroll
+          if (!(elCenterY >= visibleTop && elCenterY <= topThreeQuarterThreshold)) {
+            // Otherwise, vertically center the editing text element in the visible area
+            const desiredVisibleTop = elCenterY - visibleHeight / 2;
+            const newScrollY = -desiredVisibleTop;
+
+            this.oldKeyboardScroll = {scrollY: st.scrollY, scrollX: st.scrollX};
+            this.updateScene({appState: {scrollY: newScrollY}, captureUpdate: CaptureUpdateAction.NEVER});
+          }
+
           this.containerEl.scrollIntoView();
       }
       if (isKeyboardBackEvent) {
         if(this.oldKeyboardScroll != null) {
+          // Restore only vertical scroll; remove horizontal scroll completely
           this.updateScene({
-            appState: {...this.oldKeyboardScroll},
+            appState: {scrollY: this.oldKeyboardScroll.scrollY},
             captureUpdate: CaptureUpdateAction.NEVER
           });
           this.oldKeyboardScroll = null;
@@ -5670,7 +5686,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
                 saveAsImage: false,
                 saveToActiveFile: false,
               },
-              desktopUIMode: this.plugin.settings.defaultTrayMode ? "tray" : "full",
+              desktopUIMode: this.plugin.settings.defaultTrayMode
+                ? "tray"
+                : this.plugin.settings.compactModeOnDesktops
+                ? "compact"
+                : "full",
               //formFactor: DEVICE.isMobile ? "phone" : DEVICE.isTablet ? "tablet" : "desktop",
             },
             initState: initdata?.appState,
@@ -5854,8 +5874,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     const newCompactMode = !this.plugin.settings.compactModeOnTablets;
     await this.plugin.loadSettings();
     this.plugin.settings.compactModeOnTablets = newCompactMode;
-    setTrayMode(this.app, this.plugin.settings);
     await this.plugin.saveSettings();
+    setTrayMode(this.app, this.plugin.settings);
   }
 
   public async toggleTrayMode(compactMode?: boolean) {
@@ -5867,8 +5887,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if(compactMode!==undefined) {
       this.plugin.settings.compactModeOnTablets = compactMode;
     }
-    setTrayMode(this.app, this.plugin.settings);
     await this.plugin.saveSettings();
+    setTrayMode(this.app, this.plugin.settings);
+    if(!newTrayMode) {
+      setDesktopUIMode(this.app, this.plugin.settings);
+    }
   }
 
   public setTrayMode(on: boolean) {
@@ -5876,6 +5899,12 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
     api.setTrayModeEnabled(on);
     //setTimeout(()=>api.refreshEditorBreakpoints());
+  }
+
+  public setDesktopUIMode(mode: "full" | "compact" | "tray") {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setDesktopUIMode, "ExcalidrawView.setDesktopUIMode");
+    const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
+    api.setDesktopUIMode(mode);
   }
 
   /**
