@@ -110,9 +110,7 @@ import {
   getFilePathFromObsidianURL,
   getLinkParts,
   checkVersionMismatch,
-  calculateTrayModeValue,
-  setTrayMode,
-  setDesktopUIMode,
+  calculateUIModeValue,
 } from "../utils/utils";
 import { cleanBlockRef, cleanSectionHeading, closeLeafView, getAttachmentsFolderAndFilePath, getExcalidraAndMarkdowViewsForFile, getLeaf, getParentOfClass, obsidianPDFQuoteWithRef, openLeaf, setExcalidrawView } from "../utils/obsidianUtils";
 import { splitFolderAndFilename } from "../utils/fileUtils";
@@ -160,6 +158,8 @@ import { PageOrientation, PageSize, ExportSettings } from "src/types/exportUtilT
 import { CaptureUpdateAction } from "src/constants/constants";
 import { updateElementIdsInScene } from "src/utils/excalidrawSceneUtils";
 import { FileData } from "src/types/embeddedFileLoaderTypes";
+import { UIMode } from "src/shared/Dialogs/UIModeSettingComponent";
+import { UIModeSettings } from "src/shared/Dialogs/UIModeSettings";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -2913,7 +2913,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.loadSceneFiles();
     this.updateContainerSize(null, true, justloaded);
     this.initializeToolsIconPanelAfterLoading();
-    this.setTrayMode(calculateTrayModeValue(this.plugin.settings));
+    const uiMode = calculateUIModeValue(this.plugin.settings);
+    this.setUIMode(uiMode);
   }
 
   public setDirty(location?:number) {
@@ -5359,15 +5360,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           icon: ICONS.trayMode,
           "aria-label": t("ARIA_LABEL_TRAY_MODE"),
           onSelect: ()=> {
-            if(!DEVICE.isTablet) {
-              this.toggleTrayMode();
-              return;
-            }
-            if(this.plugin.settings.defaultTrayMode) {
-              this.toggleCompactMode();
-              return;
-            }
-            this.toggleTrayMode(false);
+            const uiModes = new UIModeSettings(this.plugin);
+            uiModes.open();
           },
         },
         t("TRAY_TRAY_MODE")
@@ -5685,11 +5679,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
                 saveAsImage: false,
                 saveToActiveFile: false,
               },
-              desktopUIMode: this.plugin.settings.defaultTrayMode
-                ? "tray"
-                : this.plugin.settings.compactModeOnDesktops
-                ? "compact"
-                : "full",
+              desktopUIMode: calculateUIModeValue(this.plugin.settings),
               //formFactor: DEVICE.isMobile ? "phone" : DEVICE.isTablet ? "tablet" : "desktop",
             },
             initState: initdata?.appState,
@@ -5866,44 +5856,14 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     });
   }
 
-  public async toggleCompactMode() {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleCompactMode, "ExcalidrawView.toggleCompactMode");
-
-    //just in case settings were updated via Obsidian sync
-    const newCompactMode = !this.plugin.settings.compactModeOnTablets;
-    await this.plugin.loadSettings();
-    this.plugin.settings.compactModeOnTablets = newCompactMode;
-    await this.plugin.saveSettings();
-    setTrayMode(this.app, this.plugin.settings);
-  }
-
-  public async toggleTrayMode(compactMode?: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleTrayMode, "ExcalidrawView.toggleTrayMode");
-    //just in case settings were updated via Obsidian sync
-    const newTrayMode = !this.plugin.settings.defaultTrayMode;
-    await this.plugin.loadSettings();
-    this.plugin.settings.defaultTrayMode = newTrayMode;
-    if(compactMode!==undefined) {
-      this.plugin.settings.compactModeOnTablets = compactMode;
-    }
-    await this.plugin.saveSettings();
-    setTrayMode(this.app, this.plugin.settings);
-    if(!newTrayMode) {
-      setDesktopUIMode(this.app, this.plugin.settings);
-    }
-  }
-
-  public setTrayMode(on: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleTrayMode, "ExcalidrawView.setTrayMode");
+  public setUIMode(mode: UIMode) {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setUIMode, "ExcalidrawView.setDesktopUIMode");
     const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
-    api.setTrayModeEnabled(on);
-    //setTimeout(()=>api.refreshEditorBreakpoints());
-  }
-
-  public setDesktopUIMode(mode: "full" | "compact" | "tray") {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setDesktopUIMode, "ExcalidrawView.setDesktopUIMode");
-    const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
+    if (mode === "phone") {
+      return;
+    }
     api.setDesktopUIMode(mode);
+    api.setTrayModeEnabled(mode === "tray");
   }
 
   /**

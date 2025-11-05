@@ -98,7 +98,7 @@ export default {
   RUN_OCR: "OCR full drawing: Grab text from freedraw + images to clipboard and doc.props",
   RERUN_OCR: "OCR full drawing re-run: Grab text from freedraw + images to clipboard and doc.props",
   RUN_OCR_ELEMENTS: "OCR selected elements: Grab text from freedraw + images to clipboard",
-  TRAY_MODE: "Toggle property-panel tray-mode",
+  UI_MODE: "Toggle UI-mode",
   SEARCH: "Search for text in drawing",
   CROP_PAGE: "Crop and mask selected page",
   CROP_IMAGE: "Crop and mask image",
@@ -137,9 +137,8 @@ export default {
     "1) Please select your drawing using CTRL/CMD+A and make a copy with CTRL/CMD+C.\n" +
     "2) Then create an empty drawing in a new pane by CTRL/CMD+clicking the Excalidraw ribbon button,\n" +
     "3) and paste your work to the new document with CTRL/CMD+V.",
-  ARIA_LABEL_TRAY_MODE: "Tray-mode offers an alternative, more spacious canvas",
-  TRAY_TRAY_MODE: "Toggle tray-mode",
-  TOGGLE_COMPACT_MODE: "Toggle compact-mode",
+  ARIA_LABEL_TRAY_MODE: "You can choose from 3 different desktop and tablet UI modes: Full, Compact, and Tray. On Phones only the Phone mode is available.",
+  TRAY_TRAY_MODE: "Toggle UI-mode",
   TRAY_SCRIPT_LIBRARY: "Script Library",
   TRAY_SCRIPT_LIBRARY_ARIA: "Explore the Excalidraw Script Library",
   TRAY_EXPORT: "Export Image...",
@@ -452,7 +451,14 @@ export default {
     "Note: This setting does not affect the PDF export feature within Excalidraw itself.<br>" +
     "See the other related setting for <a href='#"+TAG_MDREADINGMODE+"'>Markdown Reading Mode</a> under 'Appearance and Behavior' further above.<br>" +
     "⚠️ You must close and reopen the Excalidraw/markdown file for changes to take effect. ⚠️",
-  MODES_HEAD: "Modes",
+  MODES_HEAD: "UI Modes",
+  DESKTOP_UI_MODE_NAME: "Preferred Desktop Mode",
+  DESKTOP_UI_MODE_DESC: "Select the default UI mode for desktop devices.",
+  TABLET_UI_MODE_NAME: "Preferred Tablet Mode",
+  TABLET_UI_MODE_DESC: "Select the default UI mode for tablet devices.",
+  MODE_FULL: "Desktop-mode",
+  MODE_COMPACT: "Compact-mode",
+  MODE_TRAY: "Tray-mode",
   TRAY_MODE_NAME: "Enable tray-mode",
   PREFER_COMPACT_MODE_DESKTOP_NAME: "Prefer compact-mode on Desktop",
   PREFER_COMPACT_MODE_DESKTOP_DESC: "When toggling tray-mode on a desktop, if this option is enabled, Excalidraw will toggle between compact-mode and tray-mode. " +

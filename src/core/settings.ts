@@ -26,9 +26,6 @@ import { PENS } from "src/utils/pens";
 import {
   addYouTubeThumbnail,
   fragWithHTML,
-  setDesktopUIMode,
-  setLeftHandedMode,
-  setTrayMode,
 } from "src/utils/utils";
 import { imageCache } from "src/shared/ImageCache";
 import { MultiOptionConfirmationPrompt } from "src/shared/Dialogs/Prompt";
@@ -47,6 +44,7 @@ import { getExcalidrawViews } from "src/utils/obsidianUtils";
 import { createSliderWithText } from "src/utils/sliderUtils";
 import { PDFExportSettingsComponent, PDFExportSettings } from "src/shared/Dialogs/PDFExportSettingsComponent";
 import { ContentSearcher } from "src/shared/components/ContentSearcher";
+import { UIMode, UIModeSettingsComponent } from "src/shared/Dialogs/UIModeSettingComponent";
 
 export interface ExcalidrawSettings {
   disableDoubleClickTextEditing: boolean;
@@ -89,6 +87,8 @@ export interface ExcalidrawSettings {
   overrideObsidianFontSize: boolean;
   dynamicStyling: DynamicStyle;
   isLeftHanded: boolean;
+  desktopUIMode: UIMode;
+  tabletUIMode: UIMode;
   iframeMatchExcalidrawTheme: boolean;
   matchTheme: boolean;
   matchThemeAlways: boolean;
@@ -178,9 +178,6 @@ export interface ExcalidrawSettings {
       }
     }
   };
-  defaultTrayMode: boolean;
-  compactModeOnTablets: boolean;
-  compactModeOnDesktops: boolean;
   previousRelease: string;
   showReleaseNotes: boolean;
   compareManifestToPluginVersion: boolean;
@@ -282,6 +279,8 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   overrideObsidianFontSize: false,
   dynamicStyling: "colorful",
   isLeftHanded: false,
+  desktopUIMode: "tray",
+  tabletUIMode: "compact",
   iframeMatchExcalidrawTheme: true,
   matchTheme: false,
   matchThemeAlways: false,
@@ -366,9 +365,6 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   mdBorderColor: "Black",
   mdCSS: "",
   scriptEngineSettings: {},
-  defaultTrayMode: true,
-  compactModeOnTablets: true,
-  compactModeOnDesktops: false,
   previousRelease: "0.0.0",
   showReleaseNotes: true,
   compareManifestToPluginVersion: true,
@@ -1267,61 +1263,12 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h3",
     });
 
-    new Setting(detailsEl)
-      .setName(t("TRAY_MODE_NAME"))
-      .setDesc(fragWithHTML(t("ARIA_LABEL_TRAY_MODE")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.defaultTrayMode)
-          .onChange((value) => {
-            this.plugin.settings.defaultTrayMode = value;
-            setTrayMode(this.app, this.plugin.settings);
-            this.applySettingsUpdate();
-          })
-      );
-
-    new Setting(detailsEl)
-      .setName(t("PREFER_COMPACT_MODE_DESKTOP_NAME"))
-      .setDesc(fragWithHTML(t("PREFER_COMPACT_MODE_DESKTOP_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.compactModeOnDesktops)
-          .onChange((value) => {
-            this.plugin.settings.compactModeOnDesktops = value;
-            setDesktopUIMode(this.app, this.plugin.settings);
-            this.applySettingsUpdate();
-          }),
-      );
-
-    new Setting(detailsEl)
-      .setName(t("COMPACT_MODE_NAME"))
-      .setDesc(fragWithHTML(t("COMPACT_MODE_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.compactModeOnTablets)
-          .onChange((value) => {
-            this.plugin.settings.compactModeOnTablets = value;
-            setTrayMode(this.app, this.plugin.settings);
-            this.applySettingsUpdate();
-          }),
-      );
-
-
-    new Setting(detailsEl)
-      .setName(t("LEFTHANDED_MODE_NAME"))
-      .setDesc(fragWithHTML(t("LEFTHANDED_MODE_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.isLeftHanded)
-          .onChange(async (value) => {
-            this.plugin.settings.isLeftHanded = value;
-            //not clear why I need to do this. If I don't double apply the stylesheet changes 
-            //then the style won't be applied in the popout windows
-            setLeftHandedMode(value); 
-            setTimeout(()=>setLeftHandedMode(value));
-            this.applySettingsUpdate();
-          }),
-      );
+    new UIModeSettingsComponent(
+      detailsEl,
+      this.plugin.settings,
+      this.app,
+      ()=>this.applySettingsUpdate(),
+    ).render();
     addYouTubeThumbnail(detailsEl, "H8Njp7ZXYag",999);
 
     detailsEl = displayDetailsEl.createEl("details");
@@ -2584,7 +2531,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     new EmbeddalbeMDFileCustomDataSettingsComponent(
       detailsEl,
       this.plugin.settings.embeddableMarkdownDefaults,
-      this.applySettingsUpdate,
+      (val?:boolean) => this.applySettingsUpdate(val),
     ).render();
 
     detailsEl = embedFilesDetailsEl.createEl("details");

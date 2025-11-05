@@ -6,7 +6,7 @@ import {
   TFolder,
 } from "obsidian";
 import { Random } from "roughjs/bin/math";
-import { BinaryFileData, DataURL, ExcalidrawImperativeAPI} from "@zsviczian/excalidraw/types/excalidraw/types";
+import { BinaryFileData, DataURL} from "@zsviczian/excalidraw/types/excalidraw/types";
 import {
   exportToSvg,
   exportToBlob,
@@ -36,6 +36,7 @@ import { VersionMismatchPrompt } from "src/shared/Dialogs/VersionMismatch";
 import { ExcalidrawSettings } from "src/core/settings";
 import { FileData } from "src/types/embeddedFileLoaderTypes";
 import { ExportSettings } from "src/types/exportUtilTypes";
+import { UIMode } from "src/shared/Dialogs/UIModeSettingComponent";
 
 declare const PLUGIN_VERSION:string;
 declare var LZString: any;
@@ -605,7 +606,12 @@ export function scaleLoadedImage (
 export function setDocLeftHandedMode(isLeftHanded: boolean, ownerDocument:Document) {
   const newStylesheet = ownerDocument.createElement("style");
   newStylesheet.id = "excalidraw-left-handed";
-  newStylesheet.textContent = `.excalidraw .App-bottom-bar{justify-content:flex-end;}`;
+  newStylesheet.textContent = `.excalidraw .App-bottom-bar {
+    justify-content:flex-end !important;
+    left: auto !important;
+    right: 0 !important;
+    transform: none !important;
+  }`;
   const oldStylesheet = ownerDocument.getElementById(newStylesheet.id);
   if (oldStylesheet) {
     ownerDocument.head.removeChild(oldStylesheet);
@@ -616,6 +622,7 @@ export function setDocLeftHandedMode(isLeftHanded: boolean, ownerDocument:Docume
 }
 
 export function setLeftHandedMode (isLeftHanded: boolean) {
+  if(DEVICE.isPhone) return; //no lefthanded mode on phones
   const visitedDocs = new Set<Document>();
   EXCALIDRAW_PLUGIN.app.workspace.iterateAllLeaves((leaf) => {
     const ownerDocument = DEVICE.isMobile?document:leaf.view.containerEl.ownerDocument;
@@ -626,31 +633,20 @@ export function setLeftHandedMode (isLeftHanded: boolean) {
   })  
 };
 
-export function calculateTrayModeValue(settings: ExcalidrawSettings): boolean {
-  const { defaultTrayMode, compactModeOnTablets } = settings;
-  const isTrayMode = DEVICE.isTablet
-    ? (compactModeOnTablets ? false : defaultTrayMode)
-    : defaultTrayMode;
-  return isTrayMode;
+export function calculateUIModeValue(settings: ExcalidrawSettings): UIMode {
+  return DEVICE.isPhone
+  ? "phone"
+  : DEVICE.isTablet
+  ? settings.tabletUIMode
+  : DEVICE.isDesktop
+  ? settings.desktopUIMode
+  : "tray";
 }
 
-export function setTrayMode(app: App, settings: ExcalidrawSettings) {
-  const isTrayMode = calculateTrayModeValue(settings);
-  getExcalidrawViews(app).forEach((view) => view.setTrayMode(isTrayMode));
-}
-
-export function setDesktopUIMode(app: App, settings: ExcalidrawSettings) {
-  const isTrayMode = settings.defaultTrayMode;
-  getExcalidrawViews(app).forEach((view) => view
-    .setDesktopUIMode(
-      isTrayMode
-      ? "tray"
-      : settings.compactModeOnDesktops
-      ? "compact"
-      : "full"
-    )
-  );
-}
+export function setUIMode(app: App, settings: ExcalidrawSettings) {
+  const uiMode = calculateUIModeValue(settings);
+  getExcalidrawViews(app).forEach((view) => view.setUIMode(uiMode));
+};
 
 export type LinkParts = {
   original: string;

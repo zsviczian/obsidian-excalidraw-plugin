@@ -22,7 +22,8 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 - Phone UI from Excalidraw.com [#9996](https://github.com/excalidraw/excalidraw/pull/9996)
 - Custom pen settings now allow pen width to be set at 0.1 increments from 0.1 to 8.0
 - Updated the "Palm Guard" script to support the change UI configurations.
-- Setting under Modes in Plugin Settings to prefer "compact-mode" on desktops when toggling tray mode.
+- Restructured Mode settings in Excalidraw Settings. You can now set the preference for UI mode for desktop and tablets.
+  The old "prefer tray-mode" toggle has been removed. "Toggle Tray-Mode" changes to "Toggle UI-Mode".
 
 ## Fixed
 - side panel does not attach correctly when library is pinned [#2510](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2510)
@@ -31,7 +32,7 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 - Fixed duplicated PDF elements after copy-pasting from scene to scene.
 - Resolved the large gap at the top on iOS devices. As it turns out, Apple adds additional padding automatically to avoid collision with the notch.
 - Fixed the positioning of the "Canvas and Shape Properties" window.
-- Attempt to fix mobile keyboard popup distorting the view.
+- Attempt to fix the mobile keyboard pop-up distorting the view.
 `,
 "2.16.1":`
 ## Fixed

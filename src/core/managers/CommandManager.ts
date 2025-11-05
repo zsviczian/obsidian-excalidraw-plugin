@@ -70,6 +70,7 @@ import { carveOutImage, carveOutPDF, createImageCropperFile } from "../../utils/
 import { showFrameSettings } from "../../shared/Dialogs/FrameSettings";
 import { insertImageToView } from "../../utils/excalidrawViewUtils";
 import ExcalidrawPlugin from "src/core/main";
+import { UIModeSettings } from "src/shared/Dialogs/UIModeSettings";
 
 declare const PLUGIN_VERSION:string;
 
@@ -987,6 +988,7 @@ export class CommandManager {
       name: t("TOGGLE_LEFTHANDED_MODE"),
       checkCallback: (checking: boolean) => {
         if (checking) {
+          if(DEVICE.isMobile) return false;
           if(this.app.workspace.getActiveViewOfType(ExcalidrawView)) {
             const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
             const api = view?.excalidrawAPI as ExcalidrawImperativeAPI;
@@ -1640,7 +1642,7 @@ export class CommandManager {
 
     this.addCommand({
       id: "tray-mode",
-      name: t("TRAY_MODE"),
+      name: t("UI_MODE"),
       checkCallback: (checking: boolean) => {
         if (checking) {
           const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
@@ -1655,7 +1657,8 @@ export class CommandManager {
         }
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view && view.excalidrawAPI) {
-          view.toggleTrayMode();
+          const uiModeSettings = new UIModeSettings(this.plugin);
+          uiModeSettings.open();
           return true;
         }
         return false;
