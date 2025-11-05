@@ -98,7 +98,7 @@ export default {
   RUN_OCR: "OCR 整个绘图：识别涂鸦和图片里的文本并复制到剪贴板和笔记属性中",
   RERUN_OCR: "重新 OCR 整个绘图：识别涂鸦和图片里的文本并复制到剪贴板和笔记属性中",
   RUN_OCR_ELEMENTS: "OCR 选中的元素：识别涂鸦和图片里的文本并复制到剪贴板",
-  TRAY_MODE: "绘图工具属性页：面板模式 ⟺ 托盘模式",
+  TRAY_MODE: "绘图工具属性页：切换托盘模式",
   SEARCH: "搜索文本",
   CROP_PAGE: "裁剪所选页面并添加蒙版",
   CROP_IMAGE: "裁剪图片并添加蒙版",
@@ -454,8 +454,11 @@ export default {
     "⚠️ 关闭并重新打开 Excalidraw/Markdown 文件后生效。",
   MODES_HEAD: "模式",
   TRAY_MODE_NAME: "启用托盘模式",
-  COMPACT_MODE_NAME: "平板上的紧凑模式",
-  COMPACT_MODE_DESC: "覆盖平板上的托盘模式，使用原生的 Excalidraw 紧凑模式。",
+  PREFER_COMPACT_MODE_DESKTOP_NAME: "在桌面端偏好紧凑模式",
+  PREFER_COMPACT_MODE_DESKTOP_DESC: "切换托盘模式时，开启该项，Excalidraw 将在紧凑模式与托盘模式之间切换。" +
+    "关闭该项，则在完整模式与托盘模式之间切换。",
+  COMPACT_MODE_NAME: "在平板上偏好紧凑模式",
+  COMPACT_MODE_DESC: "该项允许平板上和桌面端设置不同的默认模式。你可以在平板上默认使用紧凑模式，而在桌面端默认使用托盘模式。",
   HOTKEY_OVERRIDE_HEAD: "热键覆盖",
   HOTKEY_OVERRIDE_DESC: `一些 Excalidraw 的热键，如 ${labelCTRL()}+Enter 用于编辑文本，或 ${labelCTRL()}+K 用于创建元素链接，` +
     "与 Obsidian 的热键设置冲突。您在下面添加的热键组合将在使用 Excalidraw 时覆盖 Obsidian 的热键设置，" +
