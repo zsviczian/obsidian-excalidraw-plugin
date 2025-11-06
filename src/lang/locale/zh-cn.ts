@@ -98,7 +98,7 @@ export default {
   RUN_OCR: "OCR 整个绘图：识别涂鸦和图片里的文本并复制到剪贴板和笔记属性中",
   RERUN_OCR: "重新 OCR 整个绘图：识别涂鸦和图片里的文本并复制到剪贴板和笔记属性中",
   RUN_OCR_ELEMENTS: "OCR 选中的元素：识别涂鸦和图片里的文本并复制到剪贴板",
-  TRAY_MODE: "绘图工具属性页：切换托盘模式",
+  UI_MODE: "切换 UI 模式",
   SEARCH: "搜索文本",
   CROP_PAGE: "裁剪所选页面并添加蒙版",
   CROP_IMAGE: "裁剪图片并添加蒙版",
@@ -137,9 +137,8 @@ export default {
     "1) 使用 Ctrl/CMD+A 选择您的绘图，然后使用 Ctrl/CMD+C 进行复制。\n" +
     "2) 然后在新窗格中，通过 Ctrl/CMD 点击 Excalidraw 功能区按钮创建一个空白绘图。\n" +
     "3) 最后，使用 Ctrl/CMD+V 将您的作品粘贴到新文件中。",
-  ARIA_LABEL_TRAY_MODE: "托盘模式提供更宽敞的绘图空间",
-  TRAY_TRAY_MODE: "切换托盘模式",
-  TOGGLE_COMPACT_MODE: "切换紧凑模式",
+  ARIA_LABEL_TRAY_MODE: "切换 3 种 UI 模式：完整模式（桌面端）、紧凑模式、托盘模式。手机端只有手机端模式。",
+  TRAY_TRAY_MODE: "切换 UI 模式",
   TRAY_SCRIPT_LIBRARY: "脚本库",
   TRAY_SCRIPT_LIBRARY_ARIA: "浏览 Excalidraw 脚本库",
   TRAY_EXPORT: "导出绘图…",
@@ -452,13 +451,20 @@ export default {
     "注意：该项不会影响 Excalidraw 本身的 PDF 导出功能。<br>" +
     "请参阅下方 <a href='#"+TAG_PDFEXPORT+"'>PDF 导出设置</a>。<br>" +
     "⚠️ 关闭并重新打开 Excalidraw/Markdown 文件后生效。",
-  MODES_HEAD: "模式",
+  MODES_HEAD: "UI 模式",
+  DESKTOP_UI_MODE_NAME: "桌面端偏好模式",
+  DESKTOP_UI_MODE_DESC: "桌面端设备默认 UI 模式。",
+  TABLET_UI_MODE_NAME: "平板端偏好模式",
+  TABLET_UI_MODE_DESC: "平板端设备默认 UI 模式。",
+  MODE_FULL: "Desktop-mode",
+  MODE_COMPACT: "Compact-mode",
+  MODE_TRAY: "Tray-mode",
   TRAY_MODE_NAME: "启用托盘模式",
   PREFER_COMPACT_MODE_DESKTOP_NAME: "在桌面端偏好紧凑模式",
   PREFER_COMPACT_MODE_DESKTOP_DESC: "切换托盘模式时，开启该项，Excalidraw 将在紧凑模式与托盘模式之间切换。" +
     "关闭该项，则在完整模式与托盘模式之间切换。",
-  COMPACT_MODE_NAME: "在平板上偏好紧凑模式",
-  COMPACT_MODE_DESC: "该项允许平板上和桌面端设置不同的默认模式。你可以在平板上默认使用紧凑模式，而在桌面端默认使用托盘模式。",
+  COMPACT_MODE_NAME: "在平板端偏好紧凑模式",
+  COMPACT_MODE_DESC: "该项允许平板端和桌面端设置不同的默认模式。你可以在平板端默认使用紧凑模式，而在桌面端默认使用托盘模式。",
   HOTKEY_OVERRIDE_HEAD: "热键覆盖",
   HOTKEY_OVERRIDE_DESC: `一些 Excalidraw 的热键，如 ${labelCTRL()}+Enter 用于编辑文本，或 ${labelCTRL()}+K 用于创建元素链接，` +
     "与 Obsidian 的热键设置冲突。您在下面添加的热键组合将在使用 Excalidraw 时覆盖 Obsidian 的热键设置，" +
