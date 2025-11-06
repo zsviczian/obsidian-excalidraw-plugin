@@ -1013,6 +1013,25 @@ export class CommandManager {
     });
 
     this.addCommand({
+      id: "toggle-enable-context-menu",
+      name: t("TOGGLE_ENABLE_CONTEXT_MENU"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          if(DEVICE.isMobile) return false;
+          if(this.app.workspace.getActiveViewOfType(ExcalidrawView)) {
+            const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+            const api = view?.excalidrawAPI as ExcalidrawImperativeAPI;
+            return true;
+          }
+          return false;
+        }
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        view.toggleEnableContextMenu();
+        return true;
+      },
+    });
+
+    this.addCommand({
       id: "flip-image",
       name: t("FLIP_IMAGE"),
       checkCallback: (checking:boolean) => {

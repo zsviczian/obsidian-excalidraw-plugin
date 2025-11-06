@@ -24,6 +24,7 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 - Updated the "Palm Guard" script to support the change UI configurations.
 - Restructured Mode settings in Excalidraw Settings. You can now set the preference for UI mode for desktop and tablets.
   The old "prefer tray-mode" toggle has been removed. "Toggle Tray-Mode" changes to "Toggle UI-Mode".
+- New command palette action: "Toggle enable context menu". This setting is helpful on Mobile devices where the context menu may interfere with touch interactions. The setting is saved with the drawing, thus you can add it to your templates (then press CTRL+S to force save) if you want the context menu to be disabled by default.
 
 ## Fixed
 - side panel does not attach correctly when library is pinned [#2510](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2510)
@@ -32,7 +33,8 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 - Fixed duplicated PDF elements after copy-pasting from scene to scene.
 - Resolved the large gap at the top on iOS devices. As it turns out, Apple adds additional padding automatically to avoid collision with the notch.
 - Fixed the positioning of the "Canvas and Shape Properties" window.
-- Attempt to fix the mobile keyboard pop-up distorting the view.
+- Attempt to fix the mobile keyboard pop-up, distorting the view.
+- Added finalize multipoint-line button to compact layout
 `,
 "2.16.1":`
 ## Fixed

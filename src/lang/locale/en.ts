@@ -110,6 +110,7 @@ export default {
   TEMPORARY_ENABLE_AUTOSAVE: "Enable autosave",
   FONTS_LOADED: "Excalidraw: CJK Fonts loaded",
   FONTS_LOAD_ERROR: "Excalidraw: Could not find CJK Fonts in the assets folder\n",
+  TOGGLE_ENABLE_CONTEXT_MENU: "Toggle enable context menu (helpful on Mobile devices)",
 
   //Prompt.ts
   SELECT_LINK_TO_OPEN: "Select a link to open",

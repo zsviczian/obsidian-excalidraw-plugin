@@ -1636,21 +1636,26 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.registerDomEvent(this.containerEl,"wheel",wheelEvent, {passive: false});
 
     this.actionButtons = {
-      scriptInstall: this.addAction(SCRIPTENGINE_ICON_NAME, t("INSTALL_SCRIPT_BUTTON"), () => {
-        new ScriptInstallPrompt(this.plugin).open();
+      scriptInstall: this.addAction(
+        SCRIPTENGINE_ICON_NAME,
+        !DEVICE.isMobile ? t("INSTALL_SCRIPT_BUTTON") : "",
+        () => {
+          new ScriptInstallPrompt(this.plugin).open();
       }),
       save: this.addAction(
         DISK_ICON_NAME,
-        t("FORCE_SAVE"),
+        !DEVICE.isMobile ? t("FORCE_SAVE") : "",
         async () => this.forceSave(),
       ),
       isRaw: this.addAction(
         TEXT_DISPLAY_RAW_ICON_NAME,
-        t("RAW"),
+        !DEVICE.isMobile ? t("RAW") : "",
         () => this.changeTextMode(TextMode.parsed),
       ),
-      link: this.addAction("link", t("OPEN_LINK"), (ev) =>
-        this.handleLinkClick(ev),
+      link: this.addAction(
+        "link",
+        !DEVICE.isMobile ? t("OPEN_LINK") : "",
+        (ev) => this.handleLinkClick(ev),
       ),
     }
    /*this.actionButtons['isParsed'] = this.addAction(
@@ -3703,6 +3708,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         frameRendering: st.frameRendering,
         objectsSnapModeEnabled: st.objectsSnapModeEnabled,
         activeTool,
+        disableContextMenu: st.disableContextMenu,
       },
       prevTextMode: this.prevTextMode,
       files,
@@ -5854,6 +5860,16 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       appState: { allowWheelZoom: this.plugin.settings.allowWheelZoom },
       captureUpdate: CaptureUpdateAction.NEVER,
     });
+  }
+
+  public toggleEnableContextMenu() {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleEnableContextMenu, "ExcalidrawView.toggleEnableContextMenu");
+    const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
+    if (!api) {
+      return;
+    }
+    const disableContextMenu = api.getAppState().disableContextMenu;
+    this.updateScene({appState: {disableContextMenu: !disableContextMenu}, captureUpdate: CaptureUpdateAction.NEVER});
   }
 
   public setUIMode(mode: UIMode) {
