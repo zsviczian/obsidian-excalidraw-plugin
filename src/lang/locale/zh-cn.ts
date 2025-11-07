@@ -110,6 +110,7 @@ export default {
   TEMPORARY_ENABLE_AUTOSAVE: "启用自动保存功能",
   FONTS_LOADED: "Excalidraw: CJK 字体已加载",
   FONTS_LOAD_ERROR: "Excalidraw: 在资源文件夹下找不到 CJK 字体\n",
+  TOGGLE_ENABLE_CONTEXT_MENU: "切换是否启用上下文菜单（在移动设备上很有用）",
 
   //Prompt.ts
   SELECT_LINK_TO_OPEN: "选择要打开的链接",
@@ -215,7 +216,7 @@ export default {
 
   //settings.ts
   DISABLE_CONTEXT_MENU_NAME: "禁用 Excalidraw 上下文菜单",
-  DISABLE_CONTEXT_MENU_DESC: "禁用 Excalidraw 的上下文菜单。这在移动设备上非常有用，因为上下文菜单有时会在不需要的时候弹出。",
+  DISABLE_CONTEXT_MENU_DESC: "禁用 Excalidraw 的上下文菜单。这在移动设备上很有用，因为上下文菜单有时会在不需要的时候弹出。",
   NOTEBOOKLM_LINK_ARIA: "向 NotebookLM 咨询有关插件的帮助。此模型已预加载了我所有的视频转录稿、发布说明和其他帮助内容。与 NotebookLM 聊天，浏览我的 250+ 视频和 Excalidraw 文件。",
   NOTEBOOKLM_LINK_TEXT: "学习插件。访问 NotebookLM 知识库。",
   LINKS_BUGS_ARIA: "在插件的 GitHub 页面报告错误和提交功能请求",
@@ -229,8 +230,8 @@ export default {
   LINKS_VTW: "加入研讨会",
   LINKS_BOOK_ARIA: "阅读我的视觉思维著作《Sketch Your Mind》",
   LINKS_BOOK: "阅读书籍",
-  LINKS_WIKI: "插件 Wiki",
-  LINKS_WIKI_ARIA: "浏览 Excalidraw 插件 Wiki",
+  LINKS_WIKI: "插件维基",
+  LINKS_WIKI_ARIA: "浏览 Excalidraw 插件维基",
 
   RELEASE_NOTES_NAME: "显示更新说明",
   RELEASE_NOTES_DESC:
@@ -777,7 +778,7 @@ export default {
   PRESERVE_TEXT_AFTER_DRAWING_NAME: "兼容 Zotero 和脚注（footnotes）",
   PRESERVE_TEXT_AFTER_DRAWING_DESC: "保留 Excalidraw Markdown 中 <code>## Drawing</code> 部分之后的文本内容。保存非常大的绘图时，这可能会造成微小的性能影响。",
   DEBUGMODE_NAME: "开启 debug 信息",
-  DEBUGMODE_DESC: "我建议在启用/禁用该项后重新启动 Obsidian。这将在控制台中启用调试消息。这对于排查问题很有帮助。" +
+  DEBUGMODE_DESC: "我建议在启用/禁用该项后重新启动 Obsidian。这将在控制台中启用调试消息，有助于排查问题。" +
     "如果您在使用插件时遇到问题，请启用该项，重现问题，并在 <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/issues'>GitHub</a> 上提出的问题中包含控制台日志。",
   SLIDING_PANES_NAME: "支持 Sliding Panes 插件",
   SLIDING_PANES_DESC:
@@ -1203,7 +1204,7 @@ export default {
   UIFM_TITLE: "从仓库中嵌入文件",
   UIFM_SECTION_HEAD: "选择章节标题",
   UIFM_ANCHOR: "锚定为原始大小的 100%",
-  UIFM_ANCHOR_DESC: "这是一个专业功能，请在了解其作用的情况下再使用。启用后，即使你在 Excalidraw 中调整了导入图像的大小，下次打开绘图时，该图像仍会恢复为原始大小的 100%。这在将一个独立的 Excalidraw 点子嵌入到另一份笔记中，并希望保持文字和图标的相对尺寸时非常有用。",
+  UIFM_ANCHOR_DESC: "这是一个专业功能，请在了解其作用的情况下再使用。启用后，即使你在 Excalidraw 中调整了导入图像的大小，下次打开绘图时，该图像仍会恢复为原始大小的 100%。当你将一个独立的 Excalidraw 点子嵌入到另一份笔记中，并希望保持文字和图标的相对尺寸时，这会很有用。",
   UIFM_BTN_EMBEDDABLE: "以交互形式",
   UIFM_BTN_PDF: "PDF 页面",
   UIFM_BTN_IMAGE: "以图像形式",
