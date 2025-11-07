@@ -892,6 +892,7 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
   margin-left: 4px;
 }
 
+.excalidraw .excalidraw-ui-top-right.library-and-pen,
 .ExcalidrawObsidianMenu--mobile {
   display: flex;
   flex-direction: row;
@@ -899,6 +900,10 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
   row-gap: 4px;
   justify-content: center;
   align-items: center;
+}
+
+.excalidraw .excalidraw-ui-top-right.library-and-pen .ToolIcon__penMode {
+  margin: auto;
 }
 
 .ExcalidrawObsidianMenu {

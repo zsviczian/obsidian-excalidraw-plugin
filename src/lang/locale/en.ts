@@ -116,6 +116,7 @@ export default {
   SELECT_LINK_TO_OPEN: "Select a link to open",
 
   //ExcalidrawView.ts
+  ABOUT_LIBRARIES: "How to load libraries",
   ERROR_CANT_READ_FILEPATH: "Error, can't read file path. Importing file instead",
   NO_SEARCH_RESULT: "Didn't find a matching element in the drawing",
   FORCE_SAVE_ABORTED: "Force Save aborted because saving is in progress",

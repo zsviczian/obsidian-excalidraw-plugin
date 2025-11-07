@@ -22,9 +22,9 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 - Phone UI from Excalidraw.com [#9996](https://github.com/excalidraw/excalidraw/pull/9996)
 - Custom pen settings now allow pen width to be set at 0.1 increments from 0.1 to 8.0
 - Updated the "Palm Guard" script to support the change UI configurations.
-- Restructured Mode settings in Excalidraw Settings. You can now set the preference for UI mode for desktop and tablets.
+- Restructured UI-Mode settings in plugin settings. You can now set the preference for UI mode for desktop and tablets.
   The old "prefer tray-mode" toggle has been removed. "Toggle Tray-Mode" changes to "Toggle UI-Mode".
-- New command palette action: "Toggle enable context menu". This setting is helpful on Mobile devices where the context menu may interfere with touch interactions. The setting is saved with the drawing, thus you can add it to your templates (then press CTRL+S to force save) if you want the context menu to be disabled by default.
+- New command palette action: "Toggle enable context menu". This setting is helpful on Mobile devices, where the context menu may interfere with touch interactions. The setting is saved with the drawing, thus you can add it to your templates (then press CTRL+S to force save) if you want the context menu to be disabled by default.
 
 ## Fixed
 - side panel does not attach correctly when library is pinned [#2510](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2510)
