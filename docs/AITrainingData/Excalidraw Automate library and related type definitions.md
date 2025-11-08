@@ -2283,6 +2283,7 @@ export interface AppState {
     };
     allowWheelZoom?: boolean;
     allowPinchZoom?: boolean;
+    disableContextMenu: boolean;
     pinnedScripts?: string[];
     customPens?: any[];
     currentStrokeOptions?: any;
@@ -2329,8 +2330,6 @@ export interface AppState {
     lockedMultiSelections: {
         [groupId: string]: true;
     };
-    /** properties sidebar mode - determines whether to show compact or complete sidebar */
-    stylesPanelMode: "compact" | "full" | "mobile" | "tray";
 }
 export type SearchMatch = {
     id: string;
@@ -2495,6 +2494,12 @@ export type UIOptions = Partial<{
     tools: {
         image: boolean;
     };
+    /**
+     * Optionally control the editor form factor and desktop UI mode from the host app.
+     * If not provided, we will take care of it internally.
+     */
+    formFactor?: EditorInterface["formFactor"];
+    desktopUIMode?: EditorInterface["desktopUIMode"];
     /** @deprecated does nothing. Will be removed in 0.15 */
     welcomeScreen?: boolean;
 }>;
@@ -2525,7 +2530,7 @@ export type AppClassProperties = {
         mimeType: ValueOf<typeof IMAGE_MIME_TYPES>;
     }>;
     files: BinaryFiles;
-    device: App["device"];
+    editorInterface: App["editorInterface"];
     scene: App["scene"];
     syncActionResult: App["syncActionResult"];
     fonts: App["fonts"];
@@ -2629,8 +2634,10 @@ export interface ExcalidrawImperativeAPI {
     };
     setForceRenderAllEmbeddables: InstanceType<typeof App>["setForceRenderAllEmbeddables"];
     zoomToFit: InstanceType<typeof App>["zoomToFit"];
-    refreshEditorBreakpoints: InstanceType<typeof App>["refreshEditorBreakpoints"];
+    refreshEditorInterface: InstanceType<typeof App>["refreshEditorInterface"];
+    isTouchScreen: InstanceType<typeof App>["isTouchScreen"];
     setTrayModeEnabled: InstanceType<typeof App>["setTrayModeEnabled"];
+    setDesktopUIMode: InstanceType<typeof App>["setDesktopUIMode"];
     isTrayModeEnabled: InstanceType<typeof App>["isTrayModeEnabled"];
     getColorAtScenePoint: InstanceType<typeof App>["getColorAtScenePoint"];
     startLineEditor: InstanceType<typeof App>["startLineEditor"];
@@ -2650,12 +2657,12 @@ export interface ExcalidrawImperativeAPI {
     bringForward: (elements: readonly ExcalidrawElement[]) => void;
     sendToBack: (elements: readonly ExcalidrawElement[]) => void;
     bringToFront: (elements: readonly ExcalidrawElement[]) => void;
-    setMobileModeAllowed: (allow: boolean) => void;
     setActiveTool: InstanceType<typeof App>["setActiveTool"];
     setCursor: InstanceType<typeof App>["setCursor"];
     resetCursor: InstanceType<typeof App>["resetCursor"];
     toggleSidebar: InstanceType<typeof App>["toggleSidebar"];
     getHTMLIFrameElement: InstanceType<typeof App>["getHTMLIFrameElement"];
+    getEditorInterface: () => EditorInterface;
     /**
      * Disables rendering of frames (including element clipping), but currently
      * the frames are still interactive in edit mode. As such, this API should be
@@ -2669,18 +2676,6 @@ export interface ExcalidrawImperativeAPI {
     onScrollChange: (callback: (scrollX: number, scrollY: number, zoom: Zoom) => void) => UnsubscribeCallback;
     onUserFollow: (callback: (payload: OnUserFollowedPayload) => void) => UnsubscribeCallback;
 }
-export type Device = Readonly<{
-    viewport: {
-        isMobile: boolean;
-        isLandscape: boolean;
-    };
-    editor: {
-        isMobile: boolean;
-        canFitSidebar: boolean;
-    };
-    isTouchScreen: boolean;
-    isTrayMode: boolean;
-}>;
 export type FrameNameBounds = {
     x: number;
     y: number;
