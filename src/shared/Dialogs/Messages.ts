@@ -17,6 +17,11 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.17.1":`
+## Fixed
+- Excalibrain stopped working after the 2.17.0 update. Fixed. [#2532](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2532)
+- Pinned scripts are not hidden in view mode when in phone UI mode.
+`,
 "2.17.0":`
 ## New
 - Phone UI from Excalidraw.com [#9996](https://github.com/excalidraw/excalidraw/pull/9996)
