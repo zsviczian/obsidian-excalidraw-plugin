@@ -34,7 +34,8 @@ export class FloatingModal extends Modal {
       target instanceof HTMLTextAreaElement ||
       target instanceof HTMLSelectElement ||
       target instanceof HTMLButtonElement ||
-      target.closest(".clickable-icon")
+      target.closest(".clickable-icon") ||
+      target.closest(".modal-close-button") // ensure close button never starts drag
     ) {
       return;
     }
@@ -51,6 +52,7 @@ export class FloatingModal extends Modal {
       const { modalEl } = this;
       this.offsetX = touch.clientX - modalEl.getBoundingClientRect().left;
       this.offsetY = touch.clientY - modalEl.getBoundingClientRect().top;
+      modalEl.style.height = "fit-content";
 
       // Add touch-specific event listeners
       document.addEventListener("touchmove", this.pointerMoveHandler as (e: TouchEvent) => void, {
@@ -178,6 +180,12 @@ export class FloatingModal extends Modal {
         }
         // Add ESC listener (capture to run before underlying workspace)
         document.addEventListener("keydown", this.escListener, { capture: true });
+
+        // NEW: re-enable pointer events on the close button so it is tappable on mobile
+        const closeBtn = containerEl.querySelector(".modal-close-button");
+        if (closeBtn) {
+          (closeBtn as HTMLElement).style.pointerEvents = "auto";
+        }
       }
     });
   }
