@@ -86,7 +86,7 @@ export default {
   INSERT_MD: "以影像形式嵌入 Markdown 文件到當前繪圖中",
   INSERT_PDF: "以影像形式嵌入 PDF 到當前繪圖中",
   INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE: "以影像形式嵌入最後啟用的 PDF 頁面",
-  UNIVERSAL_ADD_FILE: "以互動或影像形式嵌入檔案",
+  UNIVERSAL_ADD_FILE: "嵌入檔案 (Insert ANY file)",
   INSERT_CARD: "插入“背景筆記”卡片",
   CONVERT_CARD_TO_FILE: "將“背景筆記”卡片儲存到檔案",
   ERROR_TRY_AGAIN: "請重試。",
@@ -98,7 +98,7 @@ export default {
   RUN_OCR: "OCR 整個繪圖：識別塗鴉和圖片裡的文字並複製到剪貼簿和筆記屬性中",
   RERUN_OCR: "重新 OCR 整個繪圖：識別塗鴉和圖片裡的文字並複製到剪貼簿和筆記屬性中",
   RUN_OCR_ELEMENTS: "OCR 選中的元素：識別塗鴉和圖片裡的文字並複製到剪貼簿",
-  TRAY_MODE: "繪圖工具屬性頁：面板模式 ⟺ 托盤模式",
+  UI_MODE: "切換 UI 模式",
   SEARCH: "搜尋文字",
   CROP_PAGE: "裁剪所選頁面並新增蒙版",
   CROP_IMAGE: "裁剪圖片並新增蒙版",
@@ -110,11 +110,13 @@ export default {
   TEMPORARY_ENABLE_AUTOSAVE: "啟用自動儲存功能",
   FONTS_LOADED: "Excalidraw: CJK 字型已載入",
   FONTS_LOAD_ERROR: "Excalidraw: 在資原始檔夾下找不到 CJK 字型\n",
+  TOGGLE_ENABLE_CONTEXT_MENU: "切換是否啟用上下文選單（在移動裝置上很有用）",
 
   //Prompt.ts
   SELECT_LINK_TO_OPEN: "選擇要開啟的連結",
 
   //ExcalidrawView.ts
+  ABOUT_LIBRARIES: "如何載入素材庫",
   ERROR_CANT_READ_FILEPATH: "錯誤，無法讀取檔案路徑。正在改為匯入檔案",
   NO_SEARCH_RESULT: "在繪圖中未找到匹配的元素",
   FORCE_SAVE_ABORTED: "自動儲存被中止，因為檔案正在儲存中",
@@ -137,9 +139,8 @@ export default {
     "1) 使用 Ctrl/CMD+A 選擇您的繪圖，然後使用 Ctrl/CMD+C 進行復制。\n" +
     "2) 然後在新窗格中，透過 Ctrl/CMD 點選 Excalidraw 功能區按鈕建立一個空白繪圖。\n" +
     "3) 最後，使用 Ctrl/CMD+V 將您的作品貼上到新檔案中。",
-  ARIA_LABEL_TRAY_MODE: "托盤模式提供更寬敞的繪圖空間",
-  TRAY_TRAY_MODE: "切換托盤模式",
-  TOGGLE_COMPACT_MODE: "切換緊湊模式",
+  ARIA_LABEL_TRAY_MODE: "切換 3 種 UI 模式：完整模式（桌面端）、緊湊模式、托盤模式。手機端只有手機端模式。",
+  TRAY_TRAY_MODE: "切換 UI 模式",
   TRAY_SCRIPT_LIBRARY: "指令碼庫",
   TRAY_SCRIPT_LIBRARY_ARIA: "瀏覽 Excalidraw 指令碼庫",
   TRAY_EXPORT: "匯出繪圖…",
@@ -169,7 +170,7 @@ export default {
   COMPATIBILITY_MODE:
     "*.excalidraw 是相容舊版的繪圖檔案格式。需要轉換為新格式才能解鎖本外掛的全部功能。",
   CONVERT_FILE: "轉換為新格式",
-  BACKUP_AVAILABLE: "載入繪圖檔案時出錯，可能是由於 Obsidian 在上次儲存時意外退出了（手機上更容易發生這種意外）。<br><br><b>好訊息：</b>這臺裝置上存在備份。您是否想要恢復本裝置上的備份？<br><br>（我建議您先嚐試在最近使用過的其他裝置上開啟該繪圖，以檢查是否有更新的備份。）",
+  BACKUP_AVAILABLE: "載入繪圖檔案時出錯，可能是由於 Obsidian 在上次儲存時意外退出了（移動裝置上更容易發生這種意外）。<br><br><b>好訊息：</b>這臺裝置上存在備份。您是否想要恢復本裝置上的備份？<br><br>（我建議您先嚐試在最近使用過的其他裝置上開啟該繪圖，以檢查是否有更新的備份。）",
   BACKUP_RESTORED: "已恢復備份",
   BACKUP_SAVE_AS_FILE: "此繪圖為空。但有一個非空的備份可用。您想將其恢復為新檔案並在新標籤頁中開啟嗎？",
   BACKUP_SAVE: "恢復",
@@ -215,6 +216,8 @@ export default {
 
 
   //settings.ts
+  DISABLE_CONTEXT_MENU_NAME: "停用 Excalidraw 上下文選單",
+  DISABLE_CONTEXT_MENU_DESC: "停用 Excalidraw 的上下文選單。這在移動裝置上很有用，因為上下文選單有時會在不需要的時候彈出。",
   NOTEBOOKLM_LINK_ARIA: "向 NotebookLM 諮詢有關外掛的幫助。此模型已預載入了我所有的影片轉錄稿、釋出說明和其他幫助內容。與 NotebookLM 聊天，瀏覽我的 250+ 影片和 Excalidraw 檔案。",
   NOTEBOOKLM_LINK_TEXT: "學習外掛。訪問 NotebookLM 知識庫。",
   LINKS_BUGS_ARIA: "在外掛的 GitHub 頁面報告錯誤和提交功能請求",
@@ -228,8 +231,8 @@ export default {
   LINKS_VTW: "加入研討會",
   LINKS_BOOK_ARIA: "閱讀我的視覺思維著作《Sketch Your Mind》",
   LINKS_BOOK: "閱讀書籍",
-  LINKS_WIKI: "外掛 Wiki",
-  LINKS_WIKI_ARIA: "瀏覽 Excalidraw 外掛 Wiki",
+  LINKS_WIKI: "外掛維基",
+  LINKS_WIKI_ARIA: "瀏覽 Excalidraw 外掛維基",
 
   RELEASE_NOTES_NAME: "顯示更新說明",
   RELEASE_NOTES_DESC:
@@ -450,10 +453,20 @@ export default {
     "注意：該項不會影響 Excalidraw 本身的 PDF 匯出功能。<br>" +
     "請參閱下方 <a href='#"+TAG_PDFEXPORT+"'>PDF 匯出設定</a>。<br>" +
     "⚠️ 關閉並重新開啟 Excalidraw/Markdown 檔案後生效。",
-  MODES_HEAD: "模式",
+  MODES_HEAD: "UI 模式",
+  DESKTOP_UI_MODE_NAME: "桌面端偏好模式",
+  DESKTOP_UI_MODE_DESC: "桌面端裝置預設 UI 模式。",
+  TABLET_UI_MODE_NAME: "平板端偏好模式",
+  TABLET_UI_MODE_DESC: "平板端裝置預設 UI 模式。",
+  MODE_FULL: "Desktop-mode",
+  MODE_COMPACT: "Compact-mode",
+  MODE_TRAY: "Tray-mode",
   TRAY_MODE_NAME: "啟用托盤模式",
-  COMPACT_MODE_NAME: "平板上的緊湊模式",
-  COMPACT_MODE_DESC: "覆蓋平板上的托盤模式，使用原生的 Excalidraw 緊湊模式。",
+  PREFER_COMPACT_MODE_DESKTOP_NAME: "在桌面端偏好緊湊模式",
+  PREFER_COMPACT_MODE_DESKTOP_DESC: "切換托盤模式時，開啟該項，Excalidraw 將在緊湊模式與托盤模式之間切換。" +
+    "關閉該項，則在完整模式與托盤模式之間切換。",
+  COMPACT_MODE_NAME: "在平板端偏好緊湊模式",
+  COMPACT_MODE_DESC: "該項允許平板端和桌面端設定不同的預設模式。你可以在平板端預設使用緊湊模式，而在桌面端預設使用托盤模式。",
   HOTKEY_OVERRIDE_HEAD: "熱鍵覆蓋",
   HOTKEY_OVERRIDE_DESC: `一些 Excalidraw 的熱鍵，如 ${labelCTRL()}+Enter 用於編輯文字，或 ${labelCTRL()}+K 用於建立元素連結，` +
     "與 Obsidian 的熱鍵設定衝突。您在下面新增的熱鍵組合將在使用 Excalidraw 時覆蓋 Obsidian 的熱鍵設定，" +
@@ -766,7 +779,7 @@ export default {
   PRESERVE_TEXT_AFTER_DRAWING_NAME: "相容 Zotero 和腳註（footnotes）",
   PRESERVE_TEXT_AFTER_DRAWING_DESC: "保留 Excalidraw Markdown 中 <code>## Drawing</code> 部分之後的文字內容。儲存非常大的繪圖時，這可能會造成微小的效能影響。",
   DEBUGMODE_NAME: "開啟 debug 資訊",
-  DEBUGMODE_DESC: "我建議在啟用/停用該項後重新啟動 Obsidian。這將在控制檯中啟用除錯訊息。這對於排查問題很有幫助。" +
+  DEBUGMODE_DESC: "我建議在啟用/停用該項後重新啟動 Obsidian。這將在控制檯中啟用除錯訊息，有助於排查問題。" +
     "如果您在使用外掛時遇到問題，請啟用該項，重現問題，並在 <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/issues'>GitHub</a> 上提出的問題中包含控制檯日誌。",
   SLIDING_PANES_NAME: "支援 Sliding Panes 外掛",
   SLIDING_PANES_DESC:
@@ -1192,7 +1205,7 @@ export default {
   UIFM_TITLE: "從倉庫中嵌入檔案",
   UIFM_SECTION_HEAD: "選擇章節標題",
   UIFM_ANCHOR: "錨定為原始大小的 100%",
-  UIFM_ANCHOR_DESC: "這是一個專業功能，請在瞭解其作用的情況下再使用。啟用後，即使你在 Excalidraw 中調整了匯入影像的大小，下次開啟繪圖時，該影像仍會恢復為原始大小的 100%。這在將一個獨立的 Excalidraw 點子嵌入到另一份筆記中，並希望保持文字和圖示的相對尺寸時非常有用。",
+  UIFM_ANCHOR_DESC: "這是一個專業功能，請在瞭解其作用的情況下再使用。啟用後，即使你在 Excalidraw 中調整了匯入影像的大小，下次開啟繪圖時，該影像仍會恢復為原始大小的 100%。當你將一個獨立的 Excalidraw 點子嵌入到另一份筆記中，並希望保持文字和圖示的相對尺寸時，這會很有用。",
   UIFM_BTN_EMBEDDABLE: "以互動形式",
   UIFM_BTN_PDF: "PDF 頁面",
   UIFM_BTN_IMAGE: "以影像形式",
