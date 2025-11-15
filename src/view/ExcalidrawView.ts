@@ -3803,6 +3803,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   };
 
   private showHoverPreview(linktext?: string, element?: ExcalidrawElement) {
+    if(this.hoverPreviewTarget) return; //hover preview is already shown
     //(process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.showHoverPreview, "ExcalidrawView.showHoverPreview", linktext, element);
     if(!this.lastMouseEvent) return;
     const st = this.excalidrawAPI?.getAppState();
