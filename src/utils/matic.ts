@@ -36,11 +36,13 @@ export async function diagramToHTML({
   apiKey,
   text,
   theme = THEME.LIGHT,
+  openAIURL = "https://api.openai.com/v1/chat/completions",
 }: {
   image: DataURL;
   apiKey: string;
   text: string;
   theme?: Theme;
+  openAIURL?: string;
 }) {
   const body: OpenAIInput.ChatCompletionCreateParamsBase = {
     model: EXCALIDRAW_PLUGIN.settings.openAIDefaultVisionModel,
@@ -79,7 +81,7 @@ export async function diagramToHTML({
     | ({ ok: true } & OpenAIOutput.ChatCompletion)
     | ({ ok: false } & OpenAIOutput.APIError);
 
-  return await fetch("https://api.openai.com/v1/chat/completions", {
+  return await fetch(openAIURL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
