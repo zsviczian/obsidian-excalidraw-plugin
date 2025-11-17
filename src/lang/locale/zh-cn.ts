@@ -247,7 +247,7 @@ export default {
 
   BASIC_HEAD: "基本",
   BASIC_DESC: `包括：更新说明，更新通知，新绘图文件、模板文件、脚本文件的存储路径等。`,
-  FOLDER_NAME: "Excalidraw 文件夹（區分大小寫！）",
+  FOLDER_NAME: "Excalidraw 文件夹（区分大小写！）",
   FOLDER_DESC:
     "新绘图的默认存储路径。若为空，将在仓库根目录中创建新绘图。",
   CROP_SUFFIX_NAME: "裁剪文件的后缀",
@@ -269,10 +269,10 @@ export default {
   ANNOTATE_PRESERVE_SIZE_NAME: "在标注时保留图像尺寸",
   ANNOTATE_PRESERVE_SIZE_DESC:
     "当在 Markdown 中标注图像时，替换后的图像链接将包含原始图像的宽度。",
-  CROP_FOLDER_NAME: "裁剪文件所在文件夹（區分大小寫！）",
+  CROP_FOLDER_NAME: "裁剪文件所在文件夹（区分大小写！）",
   CROP_FOLDER_DESC:
     "裁剪图像时创建的新绘图的默认存储路径。如果留空，将按照仓库附件设置创建。",
-  ANNOTATE_FOLDER_NAME: "标注文件所在文件夹（區分大小寫！）",
+  ANNOTATE_FOLDER_NAME: "标注文件所在文件夹（区分大小写！）",
   ANNOTATE_FOLDER_DESC:
     "标注图像时创建的新绘图的默认存储路径。如果留空，将按照仓库附件设置创建。",
   FOLDER_EMBED_NAME:
@@ -281,7 +281,7 @@ export default {
     "在命令面板中执行“新建绘图”系列命令时，" +
     "新建的绘图文件的存储路径。<br>" +
     "<b>开启：</b>使用上面的 Excalidraw 文件夹。 <br><b>关闭：</b>使用 Obsidian 设置的新附件默认位置。",
-  TEMPLATE_NAME: "Excalidraw 模板文件（區分大小寫！）",
+  TEMPLATE_NAME: "Excalidraw 模板文件（区分大小写！）",
   TEMPLATE_DESC:
     "Excalidraw 模板文件（文件夹）的存储路径。<br>" +
     "<b>模板文件：</b>例如：您的模板在默认的 Excalidraw 文件夹中且文件名是 Template.md，" +
@@ -291,7 +291,7 @@ export default {
     "这时，创建新绘图时将提示您选择使用哪个模板。<br>" +
     "<b>专业提示：</b> 如果您正在使用 Obsidian Templater 插件，您可以将 Templater 代码添加到不同的" +
     "Excalidraw 模板中，以自动配置您的绘图。",
-  SCRIPT_FOLDER_NAME: "Excalidraw 自动化脚本所在文件夹（區分大小寫！）",
+  SCRIPT_FOLDER_NAME: "Excalidraw 自动化脚本所在文件夹（区分大小写！）",
   SCRIPT_FOLDER_DESC:
     "此文件夹用于存放 Excalidraw 自动化脚本。" +
     "您可以在 Obsidian 命令面板中执行这些脚本，" +
@@ -807,7 +807,7 @@ export default {
     "该项可能需要重启 Obsidian 才能生效。",
   LATEX_DEFAULT_NAME: "插入 LaTeX 时的默认公式",
   LATEX_DEFAULT_DESC: "允许留空。允许使用类似 <code>\\color{white}</code> 的格式化表达式。",
-  LATEX_PREAMBLE_NAME: "LaTeX 前言文件（區分大小寫！）",
+  LATEX_PREAMBLE_NAME: "LaTeX 前言文件（区分大小写！）",
   LATEX_PREAMBLE_DESC: "前言文件的完整路径，留空则使用默认值。如果文件不存在，该项将被忽略。<br><strong>重要：</strong>更改后需要重新加载 Obsidian 才能生效！",
   NONSTANDARD_HEAD: "非 Excalidraw.com 官方支持的特性",
   NONSTANDARD_DESC: `这些特性不受 Excalidraw.com 官方支持。如果在 Excalidraw.com 导入绘图，这些特性将会发生不可预知的变化。
@@ -883,7 +883,7 @@ export default {
     如果您希望 Excalidraw 完全本地化，以便在没有互联网连接的情况下使用，可以从 <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip" target="_blank">GitHub 下载所需的字体文件</a>。
     下载后，将内容解压到您的仓库中的一个文件夹内。<br>
     预加载字体会影响启动性能。因此，您可以选择加载哪些字体。`,
-  CJK_ASSETS_FOLDER_NAME: "CJK 字体文件夹（區分大小寫！）",
+  CJK_ASSETS_FOLDER_NAME: "CJK 字体文件夹（区分大小写！）",
   CJK_ASSETS_FOLDER_DESC: `您可以在此设置 CJK 字体文件夹的位置。例如：<code>Excalidraw/CJK Fonts</code>。<br>
     <strong>重要：</strong> 请勿将此文件夹设置为仓库根目录！请勿在此文件夹中放置其他字体。<br>
     <strong>注意：</strong> 如果您使用 Obsidian Sync 并希望在设备之间同步这些字体文件，请确保 Obsidian Sync 设置为同步“所有其他文件类型”。`,
@@ -965,7 +965,7 @@ export default {
       <h3>说明：</h3>
       <ol>
         <li>从 <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip">GitHub</a> 下载字体。</li>
-        <li>解压并将文件复制到仓库文件夹中（默认：<code>Excalidraw/${CJK_FONTS}</code>; 文件夹名称區分大小寫！）。</li>
+        <li>解压并将文件复制到仓库文件夹中（默认：<code>Excalidraw/${CJK_FONTS}</code>; 文件夹名称区分大小写！）。</li>
         <li><mark>请勿</mark>将此文件夹设置为仓库根目录或与其他本地字体混合。</li>
       </ol>
       <h3>对于 Obsidian Sync 用户：</h3>
