@@ -313,6 +313,9 @@ export default {
     "使用哪个 AI 模型来生成文本。请填写有效的 OpenAI 模型名称。" +
     "您可访问 <a href='https://platform.openai.com/docs/models'>OpenAI 网站</a> 了解更多模型信息。",
   AI_OPENAI_DEFAULT_MODEL_PLACEHOLDER: "gpt-3.5-turbo-1106",
+  AI_OPENAI_DEFAULT_MAX_TOKENS_NAME: "最大 token 数",
+  AI_OPENAI_DEFAULT_MAX_TOKENS_DESC:
+    "API 响应中生成的最大 token 数。设置为 0 以忽略 max_tokens 字段（适用于不支持该参数的模型，如 GPT-5）。",
   AI_OPENAI_DEFAULT_IMAGE_MODEL_NAME: "默认的图片 AI 模型",
   AI_OPENAI_DEFAULT_IMAGE_MODEL_DESC:
     "使用哪个 AI 模型来生成图片。图生图会强制使用 dall-e-2 模型，" +
