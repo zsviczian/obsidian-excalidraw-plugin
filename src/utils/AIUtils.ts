@@ -58,6 +58,7 @@ const handleGenericPrompt = async (request: AIRequest) : Promise<RequestUrlRespo
   const {
     openAIAPIToken,
     openAIDefaultTextModel,
+    openAIDefaultTextModelMaxTokens,
     openAIDefaultVisionModel,
     openAIURL,
     openAIImageGenerationURL,
@@ -72,7 +73,7 @@ const handleGenericPrompt = async (request: AIRequest) : Promise<RequestUrlRespo
     case "text":
       body = {
         model: openAIDefaultTextModel,
-        max_tokens: 4096,
+        ...(openAIDefaultTextModelMaxTokens > 0 && { max_tokens: openAIDefaultTextModelMaxTokens }),
         messages: [
           ...(systemPrompt && systemPrompt.trim() !=="" ? [{role: "system" as const,content: systemPrompt}] : []),
           {
@@ -86,7 +87,7 @@ const handleGenericPrompt = async (request: AIRequest) : Promise<RequestUrlRespo
     case "image":
       body = {
         model: openAIDefaultVisionModel,
-        max_tokens: 4096,
+        ...(openAIDefaultTextModelMaxTokens > 0 && { max_tokens: openAIDefaultTextModelMaxTokens }),
         messages: [
           ...(systemPrompt && systemPrompt.trim() !=="" ? [{role: "system" as const,content: systemPrompt}] : []),
           {

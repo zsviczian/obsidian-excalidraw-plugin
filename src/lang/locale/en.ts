@@ -313,6 +313,9 @@ export default {
     "The default AI model to use when generating text. This is a freetext field, so you can enter any valid OpenAI model name. " +
     "Find out more about the available models on the <a href='https://platform.openai.com/docs/models'>OpenAI website</a>.",
   AI_OPENAI_DEFAULT_MODEL_PLACEHOLDER: "Enter your default AI model here. e.g.: gpt-3.5-turbo-1106",
+  AI_OPENAI_DEFAULT_MAX_TOKENS_NAME: "Max tokens",
+  AI_OPENAI_DEFAULT_MAX_TOKENS_DESC:
+    "Maximum number of tokens to generate in the API response. Set to 0 to omit the max_tokens field (useful for models that don't support this parameter, such as GPT-5).",
   AI_OPENAI_DEFAULT_IMAGE_MODEL_NAME: "Default Image Generation AI model",
   AI_OPENAI_DEFAULT_IMAGE_MODEL_DESC:
     "The default AI model to use when generating images. Image editing and variations are only supported by dall-e-2 at this time by OpenAI, " +
