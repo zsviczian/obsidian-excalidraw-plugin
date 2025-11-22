@@ -17,8 +17,10 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
-"2.18.0":`
+"2.17.2":`
 ## Fixed
+- Lasso selection tool is back in the more tools menu in tray-mode and desktop mode.
+- "Toggle enable context menu" command palette action is available on mobile devices.
 - FloatingModal window top-right close button did not work on mobile devices.
 - Hover preview flashed for larger PDF hover previews, in some cases would not even show.
 `,

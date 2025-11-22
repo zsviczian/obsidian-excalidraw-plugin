@@ -1017,7 +1017,6 @@ export class CommandManager {
       name: t("TOGGLE_ENABLE_CONTEXT_MENU"),
       checkCallback: (checking: boolean) => {
         if (checking) {
-          if(DEVICE.isMobile) return false;
           if(this.app.workspace.getActiveViewOfType(ExcalidrawView)) {
             const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
             const api = view?.excalidrawAPI as ExcalidrawImperativeAPI;
