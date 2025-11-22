@@ -213,6 +213,7 @@ export interface ExcalidrawSettings {
   aiEnabled: boolean,
   openAIAPIToken: string,
   openAIDefaultTextModel: string,
+  openAIDefaultTextModelMaxTokens: number,
   openAIDefaultVisionModel: string,
   openAIDefaultImageGenerationModel: string,
   openAIURL: string,
@@ -426,6 +427,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   aiEnabled: true,
   openAIAPIToken: "",
   openAIDefaultTextModel: "gpt-3.5-turbo-1106",
+  openAIDefaultTextModelMaxTokens: 4096,
   openAIDefaultVisionModel: "gpt-4o",
   openAIDefaultImageGenerationModel: "dall-e-3",
   openAIURL: "https://api.openai.com/v1/chat/completions",
@@ -1154,6 +1156,35 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.openAIDefaultTextModel)
           .onChange(async (value) => {
             this.plugin.settings.openAIDefaultTextModel = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("AI_OPENAI_DEFAULT_MAX_TOKENS_NAME"))
+      .setDesc(fragWithHTML(t("AI_OPENAI_DEFAULT_MAX_TOKENS_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder("e.g.: 4096")
+          .setValue(this.plugin.settings.openAIDefaultTextModelMaxTokens.toString())
+          .onChange(async (value) => {
+            const intVal = parseInt(value);
+            if (isNaN(intVal) && value !== "") {
+              text.setValue(this.plugin.settings.openAIDefaultTextModelMaxTokens.toString());
+              return;
+            }
+            if (value === "") {
+              this.plugin.settings.openAIDefaultTextModelMaxTokens = 4096;
+              text.setValue("4096");
+              this.applySettingsUpdate();
+              return;
+            }
+            if (intVal < 0) {
+              text.setValue(this.plugin.settings.openAIDefaultTextModelMaxTokens.toString());
+              return;
+            }
+            this.plugin.settings.openAIDefaultTextModelMaxTokens = intVal;
+            text.setValue(intVal.toString());
             this.applySettingsUpdate();
           }),
       );
