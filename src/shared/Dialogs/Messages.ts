@@ -23,6 +23,11 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 - "Toggle enable context menu" command palette action is available on mobile devices.
 - FloatingModal window top-right close button did not work on mobile devices.
 - Hover preview flashed for larger PDF hover previews, in some cases would not even show.
+- Fixed: opanAI API URL in settings will be honored when creating code from diagram [#2540](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2540) 🙏[@threeq](https://github.com/threeq)
+- Fixed export to PDF. Rounded images cropped from the left and the top were transformed incorrectly. [#2544](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2544)
+
+## New
+- Added configurable max tokens setting for OpenAI API [#2543](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2543) 🙏[@dddrop](https://github.com/dddrop)
 `,
 "2.17.1":`
 ## Fixed

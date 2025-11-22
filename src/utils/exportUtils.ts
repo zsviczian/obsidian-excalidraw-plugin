@@ -176,7 +176,9 @@ async function printPdf(
   printDiv.style.top = "0";
   printDiv.style.left = "0";
   printDiv.style.display = "flex";
-  printDiv.appendChild(elementToPrint);
+  //printDiv.appendChild(elementToPrint); // if I append directly, rounded images and clip paths get messed up
+  // see https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2544
+  printDiv.innerHTML = elementToPrint.outerHTML;
 
   const options: PrintToPDFOptions = {
     includeName: false,
