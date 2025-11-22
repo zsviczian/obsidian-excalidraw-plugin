@@ -5206,6 +5206,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
               apiKey: this.plugin.settings.openAIAPIToken,
               text: textFromFrameChildren,
               theme: appState.theme,
+              openAIURL: this.plugin.settings.openAIURL,
             });
   
             if (!response.ok) {
