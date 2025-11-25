@@ -86,7 +86,6 @@ export const obsidianToExcalidrawMap: { [key: string]: string } = {
 export let {
   sceneCoordsToViewportCoords,
   viewportCoordsToSceneCoords,
-  determineFocusDistance,
   intersectElementWithLine,
   getCommonBoundingBox,
   getMaximumGroups,
@@ -120,7 +119,6 @@ export function updateExcalidrawLib() {
     const requiredFunctions = [
       'sceneCoordsToViewportCoords',
       'viewportCoordsToSceneCoords',
-      'determineFocusDistance',
       'intersectElementWithLine',
       'getCommonBoundingBox',
       'measureText',
@@ -138,7 +136,6 @@ export function updateExcalidrawLib() {
     ({
       sceneCoordsToViewportCoords,
       viewportCoordsToSceneCoords,
-      determineFocusDistance,
       intersectElementWithLine,
       getCommonBoundingBox,
       getMaximumGroups,
