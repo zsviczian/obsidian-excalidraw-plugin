@@ -221,12 +221,13 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     '  "excalidraw-linkbutton-opacity"?: number;\n' +
     '  "excalidraw-autoexport"?: boolean;\n' +
     '  "excalidraw-mask"?: boolean;\n' +
+    '  "excalidraw-export-internal-links"?: boolean;\n' +
     '  "cssclasses"?: string;\n}',
     after: "",
   },
   {
     field: "createSVG",
-    code: "async createSVG(templatePath?: string, embedFont?: boolean, exportSettings?: ExportSettings, loader?: EmbeddedFilesLoader, theme?: string,): Promise<SVGSVGElement>;",
+    code: "async createSVG(templatePath?: string, embedFont?: boolean, exportSettings?: ExportSettings, loader?: EmbeddedFilesLoader, theme?: string, padding?: number, convertMarkdownLinksToObsidianURLs: boolean = false, includeInternalLinks: boolean = true,): Promise<SVGSVGElement>;",
     desc: "Use ExcalidrawAutomate.getExportSettings(boolean,boolean) to create an ExportSettings object.\nUse ExcalidrawAutomate.getEmbeddedFilesLoader(boolean?) to create an EmbeddedFilesLoader object.",
     after: "",
   },
@@ -1071,6 +1072,12 @@ export const FRONTMATTER_KEYS_INFO: SuggesterInfo[] = [
     field: "export-embed-scene",
     code: null,
     desc: "If this key is present it will override the default excalidraw embed and export setting.",
+    after: ": false",
+  },
+  {
+    field: "export-internal-links",
+    code: null,
+    desc: "Default value (if not set) is true, if set to false internal links will not be exported to SVG images and PDFs.",
     after: ": false",
   },
   {

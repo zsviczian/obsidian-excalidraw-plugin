@@ -111,6 +111,7 @@ import {
   getLinkParts,
   checkVersionMismatch,
   calculateUIModeValue,
+  getExportInternalLinks,
 } from "../utils/utils";
 import { cleanBlockRef, cleanSectionHeading, closeLeafView, getAttachmentsFolderAndFilePath, getExcalidraAndMarkdowViewsForFile, getLeaf, getParentOfClass, obsidianPDFQuoteWithRef, openLeaf, setExcalidrawView } from "../utils/obsidianUtils";
 import { splitFolderAndFilename } from "../utils/fileUtils";
@@ -133,7 +134,7 @@ import { getEA } from "src/core"
 import { anyModifierKeysPressed, emulateKeysForLinkClick, isWinALTorMacOPT, isWinCTRLorMacCMD, isWinMETAorMacCTRL, isSHIFT, linkClickModifierType, ModifierKeys } from "../utils/modifierkeyHelper";
 import { setDynamicStyle } from "../utils/dynamicStyling";
 import { CustomEmbeddable, renderWebView } from "./components/CustomEmbeddable";
-import { addBackOfTheNoteCard, deleteAppStateKeys, getExcalidrawFileForwardLinks, getFrameBasedOnFrameNameOrId, getLinkTextFromLink, insertEmbeddableToView, insertImageToView, isTextImageTransclusion, onLoadMessages, openExternalLink, parseObsidianLink, renderContextMenuAction, tmpBruteForceCleanup, toggleImageAnchoring } from "../utils/excalidrawViewUtils";
+import { addBackOfTheNoteCard, deleteAppStateKeys, getExcalidrawFileForwardLinks, getFrameBasedOnFrameNameOrId, getLinkTextFromLink, insertEmbeddableToView, insertImageToView, isTextImageTransclusion, onLoadMessages, openExternalLink, parseObsidianLink, renderContextMenuAction, sceneRemoveInternalLinks, tmpBruteForceCleanup, toggleImageAnchoring } from "../utils/excalidrawViewUtils";
 import { imageCache } from "../shared/ImageCache";
 import { CanvasNodeFactory, ObsidianCanvasNode } from "./managers/CanvasNodeFactory";
 import { EmbeddableMenu } from "./components/menu/EmbeddableActionsMenu";
@@ -520,6 +521,15 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     const ed = this.exportDialog;
     return ed ? !ed.transparent : getWithBackground(this.plugin, this.file)
   }
+
+  public getViewExportIncludeInternalLinks(includeInternalLinks?:boolean) {
+    if(typeof includeInternalLinks !== "undefined") return includeInternalLinks;
+    if(!this.exportDialog) {
+      this.exportDialog = new ExportDialog(this.plugin, this,this.file);
+    }
+    const ed = this.exportDialog;
+    return ed ? ed.exportInternalLinks : getExportInternalLinks(this.plugin, this.file)
+  }
   
   public async svg(scene: any, theme?:string, embedScene?: boolean, embedFont: boolean = false): Promise<SVGSVGElement> {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.svg, "ExcalidrawView.svg", scene, theme, embedScene);
@@ -586,7 +596,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       return;
     }
 
-    const svg = await this.svg(this.getScene(selectedOnly),undefined,embedScene, true);
+    const scene = this.getScene(selectedOnly);
+    if(!this.getViewExportIncludeInternalLinks()) {
+      scene.elements = sceneRemoveInternalLinks(scene);
+    }
+    const svg = await this.svg(scene, undefined, embedScene, true);
     if (!svg) {
       return;
     }
@@ -616,6 +630,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
   
     const scene = this.getScene(selectedOnly);
+    if(!this.getViewExportIncludeInternalLinks()) {
+      scene.elements = sceneRemoveInternalLinks(scene);
+    }
 
     const svg = await this.svg(
       scene,
@@ -968,7 +985,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             [FRONTMATTER_KEYS["export-dark"].name, this.exportDialog.theme === "dark" ? "true" : "false"],
             [FRONTMATTER_KEYS["export-transparent"].name, this.exportDialog.transparent ? "true" : "false"],
             [FRONTMATTER_KEYS["plugin"].name, this.textMode === TextMode.raw ? "raw" : "parsed"],
-            [FRONTMATTER_KEYS["export-embed-scene"].name, this.exportDialog.embedScene ? "true" : "false"], 
+            [FRONTMATTER_KEYS["export-embed-scene"].name, this.exportDialog.embedScene ? "true" : "false"],
+            [FRONTMATTER_KEYS["export-internal-links"].name, this.exportDialog.exportInternalLinks ? "true" : "false"],
           ]
         : [
             [FRONTMATTER_KEYS["plugin"].name, this.textMode === TextMode.raw ? "raw" : "parsed"]

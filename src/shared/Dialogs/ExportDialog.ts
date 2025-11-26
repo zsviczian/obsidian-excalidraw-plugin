@@ -5,7 +5,7 @@ import { DEVICE } from "src/constants/constants";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import ExcalidrawPlugin from "src/core/main";
-import { fragWithHTML, getExportPadding, getExportTheme, getPNGScale, getWithBackground, shouldEmbedScene } from "src/utils/utils";
+import { fragWithHTML, getExportInternalLinks, getExportPadding, getExportTheme, getPNGScale, getWithBackground, shouldEmbedScene } from "src/utils/utils";
 import { exportSVGToClipboard, exportPNG, exportPNGToClipboard } from "src/utils/exportUtils";
 import { PageOrientation, PageSize, PDFPageAlignment, PDFPageMarginString } from "src/types/exportUtilTypes";
 import { t } from "src/lang/helpers";
@@ -22,6 +22,7 @@ export class ExportDialog extends Modal {
   public scale: number;
   public theme: string;
   public transparent: boolean;
+  public exportInternalLinks: boolean = true;
   public saveSettings: boolean;
   public dirty: boolean = false;
   private selectedOnlySetting: Setting;
@@ -64,6 +65,7 @@ export class ExportDialog extends Modal {
     this.exportSelectedOnly = false;
     this.saveToVault = true;
     this.transparent = !getWithBackground(this.plugin, this.file);
+    this.exportInternalLinks = getExportInternalLinks(this.plugin, this.file);
 
     this.pageSize = plugin.settings.pdfSettings.pageSize;
     this.pageOrientation = plugin.settings.pdfSettings.pageOrientation;
@@ -302,7 +304,17 @@ export class ExportDialog extends Modal {
             .onChange(value => {
               this.transparent = value === "transparent";
             })
-        )
+        );
+      
+      new Setting(this.contentContainer)
+        .setName(t("EXPORTDIALOG_INCLUDE_INTERNAL_LINKS"))
+        .addToggle(toggle =>
+          toggle
+            .setValue(this.exportInternalLinks)
+            .onChange(value => {
+              this.exportInternalLinks = value;
+            })
+        );
     }
 
     this.selectedOnlySetting = new Setting(this.contentContainer)

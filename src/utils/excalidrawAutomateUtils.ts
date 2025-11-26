@@ -39,8 +39,8 @@ import {
 } from "../utils/AIUtils";
 import { EmbeddedFilesLoader } from "src/shared/EmbeddedFileLoader";
 import { SVGColorInfo } from "src/types/excalidrawAutomateTypes";
-import { ExcalidrawData, getExcalidrawMarkdownHeaderSection, REGEX_LINK } from "src/shared/ExcalidrawData";
-import { getFrameBasedOnFrameNameOrId } from "./excalidrawViewUtils";
+import { ExcalidrawData, getExcalidrawMarkdownHeaderSection, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "src/shared/ExcalidrawData";
+import { getFrameBasedOnFrameNameOrId, sceneRemoveInternalLinks } from "./excalidrawViewUtils";
 import { ScriptEngine } from "src/shared/Scripts";
 import { getEA } from "src/core";
 import { ColorMap, FileData } from "src/types/embeddedFileLoaderTypes";
@@ -450,6 +450,12 @@ export const updateElementLinksToObsidianLinks = ({elements, hostFile}:{
       const partsArray = REGEX_LINK.getResList(el.link)[0];
       if(!partsArray?.value) return el;
       let linkText = REGEX_LINK.getLink(partsArray);
+      if (linkText.match(REG_LINKINDEX_HYPERLINK)) {
+        if(linkText.startsWith("obsidian://") || linkText.startsWith("cmd://")) return el;
+        const newElement: Mutable<ExcalidrawElement> = cloneElement(el);
+        newElement.link = linkText;
+        return newElement;
+      }
       if (linkText.search("#") > -1) {
         const linkParts = getLinkParts(linkText, hostFile);
         linkText = linkParts.path;
@@ -506,6 +512,7 @@ export async function createSVG(
   padding?: number,
   imagesDict?: any,
   convertMarkdownLinksToObsidianURLs: boolean = false,
+  includeInternalLinks: boolean = true,
 ): Promise<SVGSVGElement> {
   if (!loader) {
     loader = new EmbeddedFilesLoader(plugin);
@@ -536,7 +543,7 @@ export async function createSVG(
       type: "excalidraw",
       version: 2,
       source: GITHUB_RELEASES+PLUGIN_VERSION,
-      elements,
+      elements: includeInternalLinks ? elements : sceneRemoveInternalLinks({elements}),
       appState: {
         theme,
         viewBackgroundColor:

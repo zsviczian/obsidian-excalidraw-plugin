@@ -21,6 +21,27 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 ## New from Excalidraw.com
 - New arrow behavior allows binding arrows to the inside of Shapes. 🙏[mtolmacs](https://github.com/mtolmacs), [dwelle](https://github.com/dwelle) [#9670](https://github.com/excalidraw/excalidraw/pull/9670)
 
+## New
+- New option in the Export Dialog to **include/exclude internal links** when exporting to SVG or PDF.
+  - Useful when sharing an SVG or PDF with others.
+  - Internal links are links that point to files in your Obsidian vault.
+  - By default, internal links are included in exports.
+  - Use the new document property: \`export-internal-links: false\` to disable exporting internal links on a per-drawing basis.
+
+## New in ExcalidrawAutomate
+- **createSVG()** now exposes convertMarkdownLinksToObsidianURLs and includeInternalLinks parameters.
+\`\`\`ts
+async createSVG(
+    templatePath?: string,
+    embedFont: boolean = false,
+    exportSettings?: ExportSettings, 
+    loader?: EmbeddedFilesLoader,
+    theme?: string,
+    padding?: number,
+    convertMarkdownLinksToObsidianURLs: boolean = false,
+    includeInternalLinks: boolean = true,
+  ): Promise<SVGSVGElement>
+\`\`\`
 `,
 "2.17.2":`
 ## Fixed

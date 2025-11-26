@@ -137,6 +137,23 @@ function getLinkFromMarkdownLink(link: string): string {
   return result ? result[1] : link;
 }
 
+function isInternalLink(link:string):boolean {
+  link = getLinkFromMarkdownLink(link);
+  if (link.startsWith("cmd://")) return true;
+  if (link.startsWith("obsidian://")) return true;
+  if (link.match(REG_LINKINDEX_HYPERLINK)) return false;
+  return true;
+}
+
+export function sceneRemoveInternalLinks(scene: {elements: ExcalidrawElement[]}): ExcalidrawElement[] {
+  const elements: ExcalidrawElement[] = JSON.parse(JSON.stringify(scene.elements));
+  elements.forEach(el => {
+    if(!el.link) return;
+    if(isInternalLink(el.link)) (el as Mutable<ExcalidrawElement>).link = null;
+  });
+  return elements;
+}
+
 export function openExternalLink (link:string, app: App, element?: ExcalidrawElement):boolean {
   link = getLinkFromMarkdownLink(link);
   if (link.match(/^cmd:\/\/.*/)) {

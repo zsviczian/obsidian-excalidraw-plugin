@@ -816,6 +816,23 @@ export function getWithBackground (
   return plugin.settings.exportWithBackground;
 };
 
+export function getExportInternalLinks(
+  plugin: ExcalidrawPlugin,
+  file: TFile,
+): boolean {
+  if (file) {
+    const fileCache = plugin.app.metadataCache.getFileCache(file);
+    if (
+      fileCache?.frontmatter &&
+      fileCache.frontmatter[FRONTMATTER_KEYS["export-internal-links"].name] !== null &&
+      (typeof fileCache.frontmatter[FRONTMATTER_KEYS["export-internal-links"].name] !== "undefined")
+    ) {
+      return fileCache.frontmatter[FRONTMATTER_KEYS["export-internal-links"].name];
+    }
+  }
+  return true;
+};
+
 export function getExportPadding (
   plugin: ExcalidrawPlugin,
   file: TFile,

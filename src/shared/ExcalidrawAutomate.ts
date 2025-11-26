@@ -76,7 +76,7 @@ import {
   extractCodeBlocks as _extractCodeBlocks,
 } from "../utils/AIUtils";
 import { EXCALIDRAW_AUTOMATE_INFO, EXCALIDRAW_SCRIPTENGINE_INFO } from "./Dialogs/SuggesterInfo";
-import { addBackOfTheNoteCard } from "../utils/excalidrawViewUtils";
+import { addBackOfTheNoteCard, sceneRemoveInternalLinks } from "../utils/excalidrawViewUtils";
 import { log } from "../utils/debugHelper";
 import { ExcalidrawLib } from "../types/excalidrawLib";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/src/types";
@@ -799,6 +799,7 @@ export class ExcalidrawAutomate {
       "excalidraw-autoexport"?: boolean;
       "excalidraw-mask"?: boolean;
       "excalidraw-open-md"?: boolean;
+      "excalidraw-export-internal-links"?: boolean;
       "cssclasses"?: string;
     };
     plaintext?: string; //text to insert above the `# Text Elements` section
@@ -1099,6 +1100,11 @@ export class ExcalidrawAutomate {
     if(elementsOverride) {
       scene.elements = elementsOverride;
     }
+
+    if(!view.getViewExportIncludeInternalLinks()) {
+      scene.elements = sceneRemoveInternalLinks(scene);
+    }
+
     const exportSettings: ExportSettings = {
       withBackground: view.getViewExportWithBackground(withBackground),
       withTheme: true,
@@ -1141,6 +1147,8 @@ export class ExcalidrawAutomate {
     loader?: EmbeddedFilesLoader,
     theme?: string,
     padding?: number,
+    convertMarkdownLinksToObsidianURLs: boolean = false,
+    includeInternalLinks: boolean = true,
   ): Promise<SVGSVGElement> {
     if (!theme) {
       theme = this.plugin.settings.previewMatchObsidianTheme
@@ -1178,7 +1186,9 @@ export class ExcalidrawAutomate {
       this.plugin,
       0,
       padding,
-      this.imagesDict
+      this.imagesDict,
+      convertMarkdownLinksToObsidianURLs,
+      includeInternalLinks,
     );
   };
 
