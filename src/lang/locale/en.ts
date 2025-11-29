@@ -509,8 +509,7 @@ export default {
     "<b><u>Toggle ON:</u></b>Change grid color to match the canvas color<br><b><u>Toggle OFF:</u></b>Use the color below as the grid color",
   GRID_COLOR_NAME: "Grid color",
   GRID_OPACITY_NAME: "Grid opacity",
-  GRID_OPACITY_DESC: "Grid opacity will also control the opacity of the binding box when binding an arrow to an element.<br>" +
-    "Set the opacity of the grid. 0 is transparent, 100 is opaque.",
+  GRID_OPACITY_DESC: "Sets the opacity of the grid. 0 is transparent, 100 is opaque.",
   GRID_DIRECTION_NAME: "Grid direction",
   GRID_DIRECTION_DESC: "The first toggle shows/hides the horizontal grid, the second toggle shows/hides the vertical grid.",
   GRID_HORIZONTAL: "Render horizontal grid",

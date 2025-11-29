@@ -90,6 +90,8 @@ import { CommandManager } from "./managers/CommandManager";
 import { EventManager } from "./managers/EventManager";
 import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFileModal";
 import en from "src/lang/locale/en";
+import { get } from "http";
+import { getHighlightColor } from "src/utils/dynamicStyling";
 
 declare const PLUGIN_VERSION:string;
 declare const INITIAL_TIMESTAMP: number;
@@ -1485,5 +1487,9 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public getObsidianDevice(): DeviceType {
     return DEVICE;
+  }
+
+  public getHighlightColor(color: string, sceneBgColor: string, opacity: number = 1): string {
+    return getHighlightColor(this.ea, color, sceneBgColor, opacity);
   }
 }

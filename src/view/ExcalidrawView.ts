@@ -2586,7 +2586,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     const opacity = this.plugin.settings.gridSettings.OPACITY/100;
 
     if (this.plugin.settings.gridSettings.DYNAMIC_COLOR) {
-      // Dynamic color: concatenate opacity to the HEX string  
+      // Dynamic color: concatenate opacity to the RGB string  !!! Excalidraw expects an RGBA string !!!
       Regular = (isDark ? cm.lighterBy(10) : cm.darkerBy(10)).alphaTo(opacity).stringRGB({ alpha: true });
       Bold = (isDark ? cm.lighterBy(5) : cm.darkerBy(5)).alphaTo(opacity).stringRGB({ alpha: true });
     } else {
@@ -2597,7 +2597,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       // Regular uses the custom color directly
       Regular = customCM.alphaTo(opacity).stringRGB({ alpha: true });
       
-      // Bold is 7 shades lighter or darker based on the custom color's darkness
+      // Bold is 10 shades lighter or darker based on the custom color's darkness
       Bold = (customIsDark ? customCM.lighterBy(10) : customCM.darkerBy(10)).alphaTo(opacity).stringRGB({ alpha: true });
     }
   
@@ -4049,7 +4049,12 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       st = (this.excalidrawAPI as ExcalidrawImperativeAPI).getAppState();
       canvasColor = canvasColor ?? st.viewBackgroundColor === "transparent" ? "white" : st.viewBackgroundColor;
     }
-    window.setTimeout(()=>this.updateScene({appState:{gridColor: this.getGridColor(canvasColor, st)}, captureUpdate: CaptureUpdateAction.NEVER}));
+    window.setTimeout(()=>this.updateScene(
+      {
+        appState:{
+          gridColor: this.getGridColor(canvasColor, st),
+        },
+        captureUpdate: CaptureUpdateAction.NEVER}));
   }
 
   public updateGridDirection(gridDirection: {horizontal: boolean, vertical: boolean}) {

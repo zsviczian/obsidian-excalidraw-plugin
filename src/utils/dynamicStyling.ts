@@ -1,5 +1,5 @@
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { ColorMaster } from "@zsviczian/colormaster";
+import CM, { ColorMaster } from "@zsviczian/colormaster";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { DynamicStyle } from "src/types/types";
@@ -191,3 +191,43 @@ export const setDynamicStyle = (
     dynamicStyle = null;
   });
 }
+
+const colorsCache: Map<string,ColorMaster> = new Map();
+
+export function getHighlightColor(
+  ea: ExcalidrawAutomate,
+  strokeColor: string,
+  sceneBgColor: string,
+  opacity:number = 1
+): string {
+    strokeColor = strokeColor === "transparent"
+      ? (sceneBgColor==="transparent" ? "#ffffff": sceneBgColor)
+      : strokeColor;
+    
+    let contrasted = colorsCache.get(strokeColor);
+    if(!contrasted) {
+      const bg = ea.getCM(strokeColor);
+      const bgMix = ea.getCM(strokeColor);
+      const isDark = bg.isDark();
+
+      const step = 15;
+      const candidates = [
+        CM((isDark ? bg.lighterBy(step) : bg.darkerBy(step)).stringHEX()),
+        CM((isDark ? bg.lighterBy(step) : bg.darkerBy(step)).stringHEX()),
+        isDark ? bg.lighterBy(step) : bg.darkerBy(step),
+      // Vibrancy boost by mixing toward the opposite theme color
+        bgMix.mix({color: ea.getCM(isDark ? "#ffffff" : "#000000"), ratio:0.35}),
+        ea.getCM(isDark ? "#ffffff" : "#000000"),
+        ea.getCM(isDark ? "#000000" : "#ffffff"),
+      ];
+
+      const desiredContrast = 2.5;
+      contrasted = candidates.find(color => 
+        color.contrast({bgColor: strokeColor, ratio:false}) as number >= desiredContrast) ??
+          candidates.reduce((best, color) => (color.contrast({bgColor: strokeColor, ratio: false}) > best.contrast({bgColor: strokeColor, ratio:false}) ? color : best)
+      );
+      colorsCache.set(strokeColor, contrasted);
+    }
+    contrasted.alphaTo(opacity);
+    return contrasted.stringRGB({alpha:true});
+  }
