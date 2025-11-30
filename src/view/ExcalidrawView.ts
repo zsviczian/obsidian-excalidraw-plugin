@@ -2143,6 +2143,42 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
     this.autosaveFunction = null;
 
+    if (this.dropManager) {
+      this.dropManager.destroy();
+      this.dropManager = null;
+    }
+
+    // Clear all other timers
+    if (this.isEditingTextResetTimer) {
+      window.clearTimeout(this.isEditingTextResetTimer);
+      this.isEditingTextResetTimer = null;
+    }
+    if (this.preventReloadResetTimer) {
+      window.clearTimeout(this.preventReloadResetTimer);
+      this.preventReloadResetTimer = null;
+    }
+    if (this.editingSelfResetTimer) {
+      window.clearTimeout(this.editingSelfResetTimer);
+      this.editingSelfResetTimer = null;
+    }
+    if (this.resizeBatchTimer) {
+      window.clearTimeout(this.resizeBatchTimer);
+      this.resizeBatchTimer = null;
+    }
+    if (this.colorChangeTimer) {
+      window.clearTimeout(this.colorChangeTimer);
+      this.colorChangeTimer = null;
+    }
+    if (this.semaphores?.wheelTimeout) {
+      window.clearTimeout(this.semaphores.wheelTimeout);
+      this.semaphores.wheelTimeout = null;
+    }
+
+    this._plugin = null;
+    this._hookServer = null;
+    this.excalidrawData = null;
+    this.canvasNodeFactory = null;
+
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onunload,`ExcalidrawView.onunload, completed`);
   }
 

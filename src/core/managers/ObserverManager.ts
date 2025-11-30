@@ -41,19 +41,20 @@ export class ObserverManager {
     this.removeModalContainerObserver();
     if (this.workspaceDrawerLeftObserver) {
       this.workspaceDrawerLeftObserver.disconnect();
+      this.workspaceDrawerLeftObserver = null;
     }
     if (this.workspaceDrawerRightObserver) {
       this.workspaceDrawerRightObserver.disconnect();
+      this.workspaceDrawerRightObserver = null;
     }
     if (this.fileExplorerObserver) {
       this.fileExplorerObserver.disconnect();
+      this.fileExplorerObserver = null;
     }
-    if (this.workspaceDrawerRightObserver) {
-      this.workspaceDrawerRightObserver.disconnect();
-    }
-    if (this.workspaceDrawerLeftObserver) {
-      this.workspaceDrawerLeftObserver.disconnect();
-    }
+
+    this.plugin = null;
+    this.app = null;
+    this.activeViewDoc = null;
   }
 
   public addThemeObserver() {
