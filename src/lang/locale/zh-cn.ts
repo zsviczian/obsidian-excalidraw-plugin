@@ -509,8 +509,7 @@ export default {
     "<b>开启：</b>更改网格颜色以匹配绘图颜色。<br><b>关闭：</b>将以下颜色用作网格颜色。",
   GRID_COLOR_NAME: "网格颜色",
   GRID_OPACITY_NAME: "网格透明度",
-  GRID_OPACITY_DESC: "设置网格的透明度。还将控制将箭头绑定到元素时绑定框的透明度。" +
-    "0 全透明 ⟺ 100 不透明。",
+  GRID_OPACITY_DESC: "设置网格的透明度。0 全透明 ⟺ 100 不透明。",
   GRID_DIRECTION_NAME: "网格方向",
   GRID_DIRECTION_DESC: "第一个开关显示/隐藏水平网格，第二个开关显示/隐藏垂直网格。",
   GRID_HORIZONTAL: "渲染水平网格",
