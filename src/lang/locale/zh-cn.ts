@@ -508,9 +508,8 @@ export default {
   GRID_DYNAMIC_COLOR_DESC:
     "<b>开启：</b>更改网格颜色以匹配绘图颜色。<br><b>关闭：</b>将以下颜色用作网格颜色。",
   GRID_COLOR_NAME: "网格颜色",
-  GRID_OPACITY_NAME: "网格透明度",
-  GRID_OPACITY_DESC: "设置网格的透明度。还将控制将箭头绑定到元素时绑定框的透明度。" +
-    "0 全透明 ⟺ 100 不透明。",
+  GRID_OPACITY_NAME: "网格不透明度",
+  GRID_OPACITY_DESC: "设置网格的不透明度。0 全透明 ⟺ 100 不透明。",
   GRID_DIRECTION_NAME: "网格方向",
   GRID_DIRECTION_DESC: "第一个开关显示/隐藏水平网格，第二个开关显示/隐藏垂直网格。",
   GRID_HORIZONTAL: "渲染水平网格",
@@ -585,9 +584,9 @@ export default {
     `<b>开启：</b>在 Excalidraw <u>查看模式（View）</u>下，鼠标悬停在 <code>[[内部链接]]</code> 上即可预览；` +
     "而在<u>普通模式（Normal）</u>下，鼠标悬停在内部链接右上角的蓝色标识上即可预览。<br>" +
     `<b>关闭：</b>鼠标悬停在 <code>[[内部链接]]</code> 上，并且按住 ${labelCTRL()} 才能预览。`,
-  LINKOPACITY_NAME: "链接标识的透明度",
+  LINKOPACITY_NAME: "链接标识的不透明度",
   LINKOPACITY_DESC:
-    "含有链接的元素，其右上角的链接标识的透明度。0 全透明 ⟺ 100 不透明。",
+    "含有链接的元素，其右上角的链接标识的不透明度。0 全透明 ⟺ 100 不透明。",
   LINK_CTRL_CLICK_NAME:
     `按住 ${labelCTRL()} 并点击含有 [[链接]] 或 [别名](链接) 的文本来打开链接`,
   LINK_CTRL_CLICK_DESC:
@@ -1017,15 +1016,15 @@ export default {
   ES_FILENAME_VISIBLE: "显示页内标题",
   ES_BACKGROUND_HEAD: "背景色",
   ES_BACKGROUND_DESC_INFO: "点击此处查看更多颜色信息",
-  ES_BACKGROUND_DESC_DETAIL: "背景色仅影响预览模式的 MD-Embeddable。在编辑模式，它会根据场景（通过笔记属性设置）或插件设置，遵循 Obsidian 的深色/浅色主题。背景色有两层：元素背景色（下层颜色）和上层颜色。选择“匹配元素”表示两层都遵循元素背景色。选择“匹配绘图”或特定背景色不会改变元素背景色。设置透明度（如 50%）会将绘图或选定的颜色与元素背景色混合。要移除元素背景色，可以在 Excalidraw 的元素属性编辑器中将元素背景色设置为透明，这样只有上层颜色生效。",
+  ES_BACKGROUND_DESC_DETAIL: "背景色仅影响预览模式的 MD-Embeddable。在编辑模式，它会根据场景（通过笔记属性设置）或插件设置，遵循 Obsidian 的深色/浅色主题。背景色有两层：元素背景色（下层颜色）和上层颜色。选择“匹配元素”表示两层都遵循元素背景色。选择“匹配绘图”或特定背景色不会改变元素背景色。设置不透明度（如 50%）会将绘图或选定的颜色与元素背景色混合。要移除元素背景色，可以在 Excalidraw 的元素属性编辑器中将元素背景色设置为透明，这样只有上层颜色生效。",
   ES_BACKGROUND_MATCH_ELEMENT: "匹配元素背景色",
   ES_BACKGROUND_MATCH_CANVAS: "匹配绘图背景色",
   ES_BACKGROUND_COLOR: "背景色",
   ES_BORDER_HEAD: "边框颜色",
   ES_BORDER_COLOR: "边框颜色",
   ES_BORDER_MATCH_ELEMENT: "匹配元素边框颜色",
-  ES_BACKGROUND_OPACITY: "背景透明度",
-  ES_BORDER_OPACITY: "边框透明度",
+  ES_BACKGROUND_OPACITY: "背景不透明度",
+  ES_BORDER_OPACITY: "边框不透明度",
   ES_EMBEDDABLE_SETTINGS: "MD-Embeddable 设置",
   ES_USE_OBSIDIAN_DEFAULTS: "使用 Obsidian 默认设置",
   ES_ZOOM_100_RELATIVE_DESC: "使元素的缩放等级等于当前绘图的缩放等级",
