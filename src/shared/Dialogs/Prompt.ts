@@ -101,6 +101,26 @@ export class GenericInputPrompt extends Modal {
   private draggable: boolean = false;
   private cleanupDragListeners: (() => void) | null = null;
 
+  // Add event handler instance properties
+  private handleKeyDown = (evt: KeyboardEvent) => {
+    if ((evt.key === "Enter" && this.lines === 1) || (isWinCTRLorMacCMD(evt) && evt.key === "Enter")) {
+      evt.preventDefault();
+      this.submit();
+    }
+    if (this.displayEditorButtons && evt.key === "k" && isWinCTRLorMacCMD(evt)) {
+      evt.preventDefault();
+      this.linkBtnClickCallback();
+    } 
+  };
+
+  private handleCheckCaret = () => {
+    //timer is implemented because on iPad with pencil the button click generates an event on the textarea
+    this.selectionUpdateTimer = this.view.ownerWindow.setTimeout(() => {
+      this.selectionStart = this.inputComponent.inputEl.selectionStart;
+      this.selectionEnd = this.inputComponent.inputEl.selectionEnd;
+    }, 30);
+  };
+
   public static Prompt(
     view: ExcalidrawView,
     plugin: ExcalidrawPlugin,
@@ -226,25 +246,15 @@ export class GenericInputPrompt extends Modal {
       .setValue(value ?? "")
       .onChange((value) => (this.input = value));
 
-    let i = 0;
-
-    const checkcaret = () => {
-      //timer is implemented because on iPad with pencil the button click generates an event on the textarea
-      this.selectionUpdateTimer = this.view.ownerWindow.setTimeout(() => {
-        this.selectionStart = this.inputComponent.inputEl.selectionStart;
-        this.selectionEnd = this.inputComponent.inputEl.selectionEnd;
-      }, 30);
-    }
-
-    textComponent.inputEl.addEventListener("keydown", this.keyDownCallback.bind(this));
-    textComponent.inputEl.addEventListener('keyup', checkcaret.bind(this)); // Every character written
-    textComponent.inputEl.addEventListener('pointerup', checkcaret.bind(this)); // Click down
-    textComponent.inputEl.addEventListener('touchend', checkcaret.bind(this)); // Click down
-    textComponent.inputEl.addEventListener('input', checkcaret.bind(this)); // Other input events
-    textComponent.inputEl.addEventListener('paste', checkcaret.bind(this)); // Clipboard actions
-    textComponent.inputEl.addEventListener('cut', checkcaret.bind(this));
-    textComponent.inputEl.addEventListener('select', checkcaret.bind(this)); // Some browsers support this event
-    textComponent.inputEl.addEventListener('selectionchange', checkcaret.bind(this));// Some browsers support this event
+    textComponent.inputEl.addEventListener("keydown", this.handleKeyDown);
+    textComponent.inputEl.addEventListener('keyup', this.handleCheckCaret);
+    textComponent.inputEl.addEventListener('pointerup', this.handleCheckCaret);
+    textComponent.inputEl.addEventListener('touchend', this.handleCheckCaret);
+    textComponent.inputEl.addEventListener('input', this.handleCheckCaret);
+    textComponent.inputEl.addEventListener('paste', this.handleCheckCaret);
+    textComponent.inputEl.addEventListener('cut', this.handleCheckCaret);
+    textComponent.inputEl.addEventListener('select', this.handleCheckCaret);
+    textComponent.inputEl.addEventListener('selectionchange', this.handleCheckCaret);
       
     return textComponent;
   }
@@ -372,17 +382,6 @@ export class GenericInputPrompt extends Modal {
     this.cancel();
   }
 
-  private keyDownCallback = (evt: KeyboardEvent) => {
-    if ((evt.key === "Enter" && this.lines === 1) || (isWinCTRLorMacCMD(evt) && evt.key === "Enter")) {
-      evt.preventDefault();
-      this.submit();
-    }
-    if (this.displayEditorButtons && evt.key === "k" && isWinCTRLorMacCMD(evt)) {
-      evt.preventDefault();
-      this.linkBtnClickCallback();
-    } 
-  };
-
   private submit() {
     this.didSubmit = true;
     this.close();
@@ -401,10 +400,18 @@ export class GenericInputPrompt extends Modal {
   }
 
   private removeInputListener() {
-    this.inputComponent?.inputEl?.removeEventListener(
-      "keydown",
-      this.keyDownCallback,
-    );
+    if (!this.inputComponent?.inputEl) return;
+    
+    const inputEl = this.inputComponent.inputEl;
+    inputEl.removeEventListener("keydown", this.handleKeyDown);
+    inputEl.removeEventListener('keyup', this.handleCheckCaret);
+    inputEl.removeEventListener('pointerup', this.handleCheckCaret);
+    inputEl.removeEventListener('touchend', this.handleCheckCaret);
+    inputEl.removeEventListener('input', this.handleCheckCaret);
+    inputEl.removeEventListener('paste', this.handleCheckCaret);
+    inputEl.removeEventListener('cut', this.handleCheckCaret);
+    inputEl.removeEventListener('select', this.handleCheckCaret);
+    inputEl.removeEventListener('selectionchange', this.handleCheckCaret);
   }
 
   private specialCharsBtnClickCallback = (evt: MouseEvent) => {
