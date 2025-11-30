@@ -2052,6 +2052,14 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
     this.clearPreventReloadTimer();
     this.clearEmbeddableNodeIsEditingTimer();
+    if (this.activeLoader) {
+      this.activeLoader.terminate = true;
+      this.activeLoader = null;
+    }
+    if (this.nextLoader) {
+      this.nextLoader.terminate = true;
+      this.nextLoader = null;
+    }
     this.plugin.scriptEngine?.removeViewEAs(this);
     this.excalidrawAPI = null;
     
