@@ -192,7 +192,7 @@ export const setDynamicStyle = (
   });
 }
 
-const colorsCache: Map<string,ColorMaster> = new Map();
+const colorsCache: Map<string,string> = new Map();
 
 export function getHighlightColor(
   ea: ExcalidrawAutomate,
@@ -205,9 +205,11 @@ export function getHighlightColor(
       : strokeColor;*/
     strokeColor = sceneBgColor==="transparent" ? "#ffffff": sceneBgColor;
 
-    
-    let contrasted = colorsCache.get(strokeColor);
-    if(!contrasted) {
+    let contrasted: ColorMaster;
+    const cachedColor = colorsCache.get(strokeColor);
+    if(cachedColor) {
+      contrasted = CM(cachedColor);
+    } else {
       const bg = ea.getCM(strokeColor);
       const bgMix = ea.getCM(strokeColor);
       const isDark = bg.isDark();
@@ -228,7 +230,7 @@ export function getHighlightColor(
         color.contrast({bgColor: strokeColor, ratio:false}) as number >= desiredContrast) ??
           candidates.reduce((best, color) => (color.contrast({bgColor: strokeColor, ratio: false}) > best.contrast({bgColor: strokeColor, ratio:false}) ? color : best)
       );
-      colorsCache.set(strokeColor, contrasted);
+      colorsCache.set(strokeColor, contrasted.stringHEX({alpha:false}));
     }
     contrasted.alphaTo(opacity);
     return contrasted.stringRGB({alpha:true});

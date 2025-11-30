@@ -37,6 +37,7 @@ export class EmbeddableSettings extends Modal {
   private isLocalURI: boolean;
   private mdCustomData: EmbeddableMDCustomProps;
   private onKeyDown: (ev: KeyboardEvent) => void;
+  private listenerHost: Document | null = null;
 
   constructor(
     private plugin: ExcalidrawPlugin,
@@ -72,7 +73,10 @@ export class EmbeddableSettings extends Modal {
   }
 
   onClose() {
-    this.containerEl.removeEventListener("keydown",this.onKeyDown);
+    if(this.listenerHost && this.onKeyDown) {
+      this.listenerHost.removeEventListener("keydown",this.onKeyDown);
+      this.listenerHost = null;
+    }
     this.plugin = null;
     this.view = null;
     this.file = null;
@@ -166,7 +170,11 @@ export class EmbeddableSettings extends Modal {
     }
 
     this.onKeyDown = onKeyDown;
-    this.containerEl.ownerDocument.addEventListener("keydown",onKeyDown);
+    const ownerDoc = this.containerEl.ownerDocument;
+    if(ownerDoc) {
+      this.listenerHost = ownerDoc;
+      ownerDoc.addEventListener("keydown",onKeyDown);
+    }
   }
 
   private async applySettings() {
