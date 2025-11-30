@@ -200,9 +200,11 @@ export function getHighlightColor(
   sceneBgColor: string,
   opacity:number = 1
 ): string {
-    strokeColor = strokeColor === "transparent"
+    /*strokeColor = strokeColor === "transparent"
       ? (sceneBgColor==="transparent" ? "#ffffff": sceneBgColor)
-      : strokeColor;
+      : strokeColor;*/
+    strokeColor = sceneBgColor==="transparent" ? "#ffffff": sceneBgColor;
+
     
     let contrasted = colorsCache.get(strokeColor);
     if(!contrasted) {
