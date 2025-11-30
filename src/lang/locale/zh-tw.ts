@@ -315,7 +315,7 @@ export default {
   AI_OPENAI_DEFAULT_MODEL_PLACEHOLDER: "gpt-3.5-turbo-1106",
   AI_OPENAI_DEFAULT_MAX_TOKENS_NAME: "最大 token 數",
   AI_OPENAI_DEFAULT_MAX_TOKENS_DESC:
-    "API 響應中生成的最大 token 數。設置為 0 以忽略 max_tokens 欄位（適用於不支援該參數的模型，如 GPT-5）。",
+    "API 響應中生成的最大 token 數。設定為 0 以忽略 max_tokens 欄位（適用於不支援該引數的模型，如 GPT-5）。",
   AI_OPENAI_DEFAULT_IMAGE_MODEL_NAME: "預設的圖片 AI 模型",
   AI_OPENAI_DEFAULT_IMAGE_MODEL_DESC:
     "使用哪個 AI 模型來生成圖片。圖生圖會強制使用 dall-e-2 模型，" +
@@ -1134,6 +1134,7 @@ export default {
   EXPORTDIALOG_BACKGROUND: "背景",
   EXPORTDIALOG_BACKGROUND_TRANSPARENT: "透明",
   EXPORTDIALOG_BACKGROUND_USE_COLOR: "使用場景顏色",
+  EXPORTDIALOG_INCLUDE_INTERNAL_LINKS: "匯出內部連結為 SVG/PDF？",
   // Selection
   EXPORTDIALOG_SELECTED_ELEMENTS: "匯出",
   EXPORTDIALOG_SELECTED_ALL: "整個場景",
