@@ -6216,7 +6216,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
   }
 
-    public updateEmbeddableRef(
+  public updateEmbeddableRef(
     elementId: string,
     ref: HTMLIFrameElement | HTMLWebViewElement | null,
   ) {
@@ -6233,10 +6233,15 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     return this.embeddableRefs.get(id);
   }
 
-  public updateEmbeddableLeafRef(id: string, ref: any) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.updateEmbeddableLeafRef, "ExcalidrawView.updateEmbeddableLeafRef", id, ref);
+  public updateEmbeddableLeafRef(
+    elementId: string,
+    ref?: any
+  ) {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.updateEmbeddableLeafRef, "ExcalidrawView.updateEmbeddableLeafRef", elementId, ref);
     if(ref) {
-      this.embeddableLeafRefs.set(id, ref);
+      this.embeddableLeafRefs.set(elementId, ref);
+    } else {
+      this.embeddableLeafRefs.delete(elementId);
     }
   }
 
