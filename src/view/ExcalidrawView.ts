@@ -2036,7 +2036,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     //I noticed Obsidian calls this function twice when disabling the plugin
     //once from "unregisterView"
     //the from "detachLeavesOfType"
-    if(!this.dropManager) return; //the view is already closed
+    if(!this.dropManager && !this.excalidrawRoot) return; //the view is already closed
 
     // This happens when the user right clicks a tab and selects delete
     // in this case the onDelete event handler tirggers, but then Obsidian's delete event handler reaches onclose first, and
@@ -2063,8 +2063,10 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.plugin.scriptEngine?.removeViewEAs(this);
     this.excalidrawAPI = null;
     
-    this.dropManager.destroy();
-    this.dropManager = null;
+    if (this.dropManager) {
+      this.dropManager.destroy();
+      this.dropManager = null;
+    }
 
     if(this.canvasNodeFactory) {
       this.canvasNodeFactory.destroy();
@@ -2138,7 +2140,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.removeParentMoveObserver();
     this.removeSlidingPanesListner();
     if (this.autosaveTimer) {
-      window.clearInterval(this.autosaveTimer);
+      window.clearTimeout(this.autosaveTimer);
       this.autosaveTimer = null;
     }
     this.autosaveFunction = null;
