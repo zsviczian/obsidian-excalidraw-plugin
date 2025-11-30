@@ -60,7 +60,7 @@ function getHeightMax(idTable){
 			return 0;
 		}
 	}
-	return Math.max(...idTable.map(sanitycheck));
+	return Math.max(ea.style.fontSize,...idTable.map(sanitycheck));
 }
 
 function copyStyleGlobal(element){
@@ -160,6 +160,7 @@ for (const el of txt_elements) {
 	for (const line of lines){
 		const lineIdTable = [];
 		for (const part of splitLatex(line)) {
+			if (part.length == 0) continue;
 			let id = await addTextOrLatex(part,0,0);
 			lineIdTable.push(id);
 		}
