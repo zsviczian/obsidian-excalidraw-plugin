@@ -12,12 +12,16 @@ export class FolderSuggestionModal extends SuggestionModal<TFolder> {
   cache: CachedMetadata;
   folders: TFolder[];
   folder: TFolder;
+  private handleGetFolder: () => void;
+
   constructor(app: App, input: TextComponent, items: TFolder[]) {
     super(app, input.inputEl, items);
     this.folders = [...items];
     this.text = input;
 
-    this.inputEl.addEventListener("input", () => this.getFolder());
+    // Pre-bind the handler
+    this.handleGetFolder = this.getFolder.bind(this);
+    this.inputEl.addEventListener("input", this.handleGetFolder);
   }
   getFolder() {
     const v = this.inputEl.value;
@@ -31,6 +35,10 @@ export class FolderSuggestionModal extends SuggestionModal<TFolder> {
     this.folder = folder;
 
     this.onInputChanged();
+  }
+  close(): void {
+    this.inputEl.removeEventListener("input", this.handleGetFolder);
+    super.close();
   }
   getItemText(item: TFolder) {
     return item.path;
