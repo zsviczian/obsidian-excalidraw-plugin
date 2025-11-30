@@ -2044,6 +2044,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if(!this.file) return; 
 
     this.exitFullscreen();
+
     await this.forceSaveIfRequired();
     if (this.excalidrawRoot) {
       this.excalidrawRoot.unmount();
@@ -2060,7 +2061,13 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       this.nextLoader.terminate = true;
       this.nextLoader = null;
     }
-    this.plugin.scriptEngine?.removeViewEAs(this);
+    if (this.plugin) {
+      this.plugin.scriptEngine?.removeViewEAs(this);
+      if(this.plugin.ea?.targetView === this) {
+        this.plugin.ea.targetView = null;
+      }
+    }
+
     this.excalidrawAPI = null;
     
     if (this.dropManager) {
@@ -2070,30 +2077,45 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
     if(this.canvasNodeFactory) {
       this.canvasNodeFactory.destroy();
+      this.canvasNodeFactory = null;
     }
-    this.canvasNodeFactory = null;
-    this.embeddableLeafRefs.clear();
-    this.embeddableRefs.clear();
-    Object.values(this.actionButtons).forEach((el) => el.remove());
-    this.actionButtons = {} as Record<ActionButtons, HTMLElement>;
+
+    if(this.embeddableLeafRefs) {
+      this.embeddableLeafRefs.clear();
+      this.embeddableLeafRefs = null;
+    }
+    
+    if(this.embeddableRefs) {
+      this.embeddableRefs.clear();
+      this.embeddableRefs = null;
+    }
+
+    if(this.actionButtons) {
+      Object.values(this.actionButtons).forEach((el) => el.remove());
+      this.actionButtons = null; //{} as Record<ActionButtons, HTMLElement>;
+    }
+
     if (this.excalidrawData) {
       this.excalidrawData.destroy();
       this.excalidrawData = null;
     };
+
     if(this.exportDialog) {
       this.exportDialog.destroy();
       this.exportDialog = null;
     }
+
     this.hoverPreviewTarget = null;
-    if(this.plugin.ea?.targetView === this) {
-      this.plugin.ea.targetView = null;
-    }
+
     if(this._hookServer?.targetView === this) {
       this._hookServer.targetView = null;
     }
     this._hookServer = null;
-    this.containerEl.onWindowMigrated = null;
-    this.packages = {react:null, reactDOM:null, excalidrawLib:null};
+    if(this.containerEl) {
+      this.containerEl.onWindowMigrated = null;
+    }
+
+    this.packages = null; //{react:null, reactDOM:null, excalidrawLib:null};
 
     let leafcount = 0;
     this.app.workspace.iterateAllLeaves(l=>{
@@ -2103,7 +2125,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         leafcount++;
       }
     })
-    if(leafcount === 0) {
+    if(leafcount === 0 && this.plugin) {
       this.plugin.deletePackage(this.ownerWindow);
     }
 
@@ -2113,6 +2135,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
     //super.onClose will unmount Excalidraw, need to save before that
     await super.onClose();
+    this._plugin = null;
+    this._hookServer = null;
+    this.excalidrawData = null;
+    this.canvasNodeFactory = null;
+
     tmpBruteForceCleanup(this);
   }
 
@@ -2175,11 +2202,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       window.clearTimeout(this.semaphores.wheelTimeout);
       this.semaphores.wheelTimeout = null;
     }
-
-    this._plugin = null;
-    this._hookServer = null;
-    this.excalidrawData = null;
-    this.canvasNodeFactory = null;
 
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onunload,`ExcalidrawView.onunload, completed`);
   }

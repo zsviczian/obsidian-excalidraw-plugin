@@ -560,7 +560,7 @@ export default class ExcalidrawPlugin extends Plugin {
     let fontMetrics = f.extension.startsWith("woff") ? undefined : await getFontMetrics(fourthFontDataURL, "Local Font");
     
     if (!fontMetrics) {
-      console.log("Font Metrics not found, using default");
+      //console.log("Font Metrics not found, using default");
       fontMetrics = {
         unitsPerEm: 1000,
         ascender: 750,
