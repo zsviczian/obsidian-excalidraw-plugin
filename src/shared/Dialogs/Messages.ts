@@ -31,6 +31,7 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 ## Fixed
 - Memory leak issues
 - Potential fix to Backspace and CTRL+V stopping working in text elements after extended use of Excalidraw.
+- Improved detection of on-screen keyboard on mobile devices. (issue reported on [Discord](https://discord.com/channels/1026825302900494357/1444652800360316959))
 
 ## New in ExcalidrawAutomate
 - **createSVG()** now exposes convertMarkdownLinksToObsidianURLs and includeInternalLinks parameters.

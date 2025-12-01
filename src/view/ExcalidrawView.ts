@@ -339,6 +339,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   private destroyers: Function[] = [];
   private previousContentElHeight: number = 0;
   private resizeBatchTimer: number = null;
+  private resizeBatchWindowStart: number = 0;
   private lastAggregatedDh = 0;
   private oldKeyboardScroll:{scrollY:number, scrollX:number}|null = null;
 
@@ -5570,20 +5571,34 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
   private scheduleBatchedResize(currentDeltaHeight: number) {
     const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
-    if(!api || !api.isTouchScreen) return;
+    if (!api || !api.isTouchScreen) return;
+
     if (!this.resizeBatchTimer) {
       this.lastAggregatedDh = 0;
-    } 
+      this.resizeBatchWindowStart = Date.now();
+    }
+
     this.lastAggregatedDh += currentDeltaHeight;
+
     if (this.resizeBatchTimer) window.clearTimeout(this.resizeBatchTimer);
+
+    const elapsed = Date.now() - this.resizeBatchWindowStart;
+    const absoluteDelta = Math.abs(this.lastAggregatedDh);
+    const deltaExceeded = absoluteDelta >= 80;          // lower threshold to catch multi-step keyboards
+    const windowExceeded = elapsed > 900;               // hard stop if the keyboard resizes in many tiny steps
+    const debounceDelay = deltaExceeded ? 30 : 120;     // short delay once we see large movement
+    const finalDelay = windowExceeded ? 0 : debounceDelay;
+
     this.resizeBatchTimer = window.setTimeout(() => {
       const dh = this.lastAggregatedDh;
       this.resizeBatchTimer = null;
       this.lastAggregatedDh = 0;
-      if (Math.abs(dh) > 120) {
+      this.resizeBatchWindowStart = 0;
+
+      if (Math.abs(dh) > 60) {                          // slightly lower than previous 120 to react earlier
         this.onExcalidrawResize();
       }
-    }, Math.abs(currentDeltaHeight) < 120 ? 700 : 20);
+    }, finalDelay);
   }
 
   private onExcalidrawResize() {
