@@ -28,6 +28,10 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
   - By default, internal links are included in exports.
   - Use the new document property: \`export-internal-links: false\` to disable exporting internal links on a per-drawing basis.
 
+## Fixed
+- Memory leak issues
+- Potential fix to Backspace and CTRL+V stopping working in text elements after extended use of Excalidraw.
+
 ## New in ExcalidrawAutomate
 - **createSVG()** now exposes convertMarkdownLinksToObsidianURLs and includeInternalLinks parameters.
 \`\`\`ts

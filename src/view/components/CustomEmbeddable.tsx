@@ -542,6 +542,8 @@ function RenderObsidianView(
       try { mobilePatchCleanupRef.current?.(); } catch {}
       mobilePatchCleanupRef.current = null;
 
+      view.updateEmbeddableLeafRef(element.id);
+      
       if(!leafRef.current) {
         return;
       }
@@ -549,7 +551,7 @@ function RenderObsidianView(
       leafRef.current.leaf?.detach();
       leafRef.current = null;
     }; //cleanup on unmount
-  }, [linkText, subpath, containerRef]);
+  }, [linkText, subpath, containerRef, element.id, file.path]);
   
   //--------------------------------------------------------------------------------
   //Set colors of the canvas node

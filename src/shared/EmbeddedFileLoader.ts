@@ -742,6 +742,10 @@ export class EmbeddedFilesLoader {
     }
 
     const addFilesTimer = setInterval(() => {
+      if (this.terminate) {
+        clearInterval(addFilesTimer);
+        return;
+      }
       if(files[batch].length === 0) {
         return;
       }

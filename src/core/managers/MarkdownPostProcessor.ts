@@ -136,8 +136,17 @@ const _getPNG = async ({imgAttributes,filenameParts,theme,cacheReady,img,file,ex
   if (!png) {
     return null;
   }
-  img.src = URL.createObjectURL(png);
-  cacheReady && imageCache.addImageToCache(cacheKey, img.src, png);
+  const blobUrl = URL.createObjectURL(png);
+  img.src = blobUrl;
+  
+  // Revoke the ObjectURL after the image loads or fails to prevent memory leaks
+  if (!cacheReady) {
+    const cleanup = () => URL.revokeObjectURL(blobUrl);
+    img.addEventListener('load', cleanup, { once: true });
+    img.addEventListener('error', cleanup, { once: true });
+  }
+  
+  cacheReady && imageCache.addImageToCache(cacheKey, blobUrl, png);
   return img;
 }
 
@@ -382,6 +391,14 @@ const addSVGToImgSrc = (img: HTMLImageElement, svg: SVGSVGElement, cacheReady: b
   const blob = new Blob([svgString], { type: 'image/svg+xml' });
   const blobUrl = URL.createObjectURL(blob);
   img.setAttribute("src", blobUrl);
+  
+  // Revoke the ObjectURL after the image loads or fails to prevent memory leaks
+  if (!cacheReady) {
+    const cleanup = () => URL.revokeObjectURL(blobUrl);
+    img.addEventListener('load', cleanup, { once: true });
+    img.addEventListener('error', cleanup, { once: true });
+  }
+  
   cacheReady && imageCache.addImageToCache(cacheKey, blobUrl, blob);
   return img;
 }

@@ -55,6 +55,7 @@ class ImageCache {
     this.db = null;
     this.plugin = null;
     this.app = null;
+    this.obsidanURLCache.forEach((url) => URL.revokeObjectURL(url));
     this.obsidanURLCache.clear();
     this.obsidanURLCache = null;
   }
@@ -179,6 +180,10 @@ class ImageCache {
           const fileExists = files.some((f: TFile) => f.path === filepath);
           const file = fileExists ? files.find((f: TFile) => f.path === filepath) : null;
           if (isLegacyKey || !file || (file && (file.stat.mtime > cursor.value.mtime)) || (!cursor.value.blob && !cursor.value.svg)) {
+            if(this.obsidanURLCache.has(key)) {
+              URL.revokeObjectURL(this.obsidanURLCache.get(key));
+              this.obsidanURLCache.delete(key);
+            }
             deletePromises.push(
               new Promise<void>((innerResolve, innerReject) => {
                 const deleteRequest = store.delete(cursor.primaryKey);
@@ -368,6 +373,9 @@ class ImageCache {
     const key = getKey(key_);
     store.put(data, key);
     if(!Boolean(svg)) {
+      if(this.obsidanURLCache.has(key) && this.obsidanURLCache.get(key) !== obsidianURL) {
+        URL.revokeObjectURL(this.obsidanURLCache.get(key));
+      }
       this.obsidanURLCache.set(key, obsidianURL);
     }
   }
@@ -405,6 +413,9 @@ class ImageCache {
     if (!this.isReady()) {
       return; // Database not initialized yet
     }
+
+    this.obsidanURLCache.forEach((url) => URL.revokeObjectURL(url));
+    this.obsidanURLCache.clear();
 
     return this.clear(this.cacheStoreName, "Image cache was cleared");
   }

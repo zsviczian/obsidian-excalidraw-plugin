@@ -53,6 +53,10 @@ export class EventManager {
       window.clearTimeout(this.leafChangeTimeout);
       this.leafChangeTimeout = null;
     }
+    if(this.debunceActiveLeafChangeHandlerTimer) {
+      window.clearTimeout(this.debunceActiveLeafChangeHandlerTimer);
+      this.debunceActiveLeafChangeHandlerTimer = null;
+    }
     this.removeEventLisnters.forEach((removeEventListener) =>
       removeEventListener(),
     );
