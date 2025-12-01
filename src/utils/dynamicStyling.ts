@@ -196,22 +196,15 @@ const colorsCache: Map<string,string> = new Map();
 
 export function getHighlightColor(
   ea: ExcalidrawAutomate,
-  strokeColor: string,
-  sceneBgColor: string,
+  bgColor: string,
   opacity:number = 1
 ): string {
-    /*strokeColor = strokeColor === "transparent"
-      ? (sceneBgColor==="transparent" ? "#ffffff": sceneBgColor)
-      : strokeColor;*/
-    strokeColor = sceneBgColor==="transparent" ? "#ffffff": sceneBgColor;
+    bgColor = bgColor==="transparent" ? "#ffffff": bgColor;
 
-    let contrasted: ColorMaster;
-    const cachedColor = colorsCache.get(strokeColor);
-    if(cachedColor) {
-      contrasted = CM(cachedColor);
-    } else {
-      const bg = ea.getCM(strokeColor);
-      const bgMix = ea.getCM(strokeColor);
+    let contrastedRGBA = colorsCache.get(bgColor);
+    if(!contrastedRGBA) {
+      const bg = ea.getCM(bgColor);
+      const bgMix = ea.getCM(bgColor);
       const isDark = bg.isDark();
 
       const step = 15;
@@ -226,12 +219,14 @@ export function getHighlightColor(
       ];
 
       const desiredContrast = 2.5;
-      contrasted = candidates.find(color => 
-        color.contrast({bgColor: strokeColor, ratio:false}) as number >= desiredContrast) ??
-          candidates.reduce((best, color) => (color.contrast({bgColor: strokeColor, ratio: false}) > best.contrast({bgColor: strokeColor, ratio:false}) ? color : best)
+      const contrasted = candidates.find(color => 
+        color.contrast({bgColor, ratio:false}) as number >= desiredContrast) ??
+          candidates.reduce((best, color) =>
+            (color.contrast({bgColor, ratio: false}) > best.contrast({bgColor, ratio:false}) ? color : best)
       );
-      colorsCache.set(strokeColor, contrasted.stringHEX({alpha:false}));
+      contrastedRGBA = `rgba(${Math.round(contrasted.red)       
+        },${Math.round(contrasted.green)},${Math.round(contrasted.blue)}`;
+      colorsCache.set(bgColor,contrastedRGBA);
     }
-    contrasted.alphaTo(opacity);
-    return contrasted.stringRGB({alpha:true});
+    return `${contrastedRGBA},${opacity})`;
   }

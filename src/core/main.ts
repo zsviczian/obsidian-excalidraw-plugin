@@ -1489,7 +1489,7 @@ export default class ExcalidrawPlugin extends Plugin {
     return DEVICE;
   }
 
-  public getHighlightColor(color: string, sceneBgColor: string, opacity: number = 1): string {
-    return getHighlightColor(this.ea, color, sceneBgColor, opacity);
+  public getHighlightColor(sceneBgColor: string, opacity: number = 1): string {
+    return getHighlightColor(this.ea, sceneBgColor, opacity);
   }
 }
