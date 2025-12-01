@@ -315,7 +315,7 @@ export default {
   AI_OPENAI_DEFAULT_MODEL_PLACEHOLDER: "gpt-3.5-turbo-1106",
   AI_OPENAI_DEFAULT_MAX_TOKENS_NAME: "最大 token 數",
   AI_OPENAI_DEFAULT_MAX_TOKENS_DESC:
-    "API 響應中生成的最大 token 數。設置為 0 以忽略 max_tokens 欄位（適用於不支援該參數的模型，如 GPT-5）。",
+    "API 生成的最大 token 數。設定為 0 以忽略 max_tokens 欄位（適用於不支援該引數的模型，如 GPT-5）。",
   AI_OPENAI_DEFAULT_IMAGE_MODEL_NAME: "預設的圖片 AI 模型",
   AI_OPENAI_DEFAULT_IMAGE_MODEL_DESC:
     "使用哪個 AI 模型來生成圖片。圖生圖會強制使用 dall-e-2 模型，" +
@@ -692,7 +692,7 @@ export default {
   EMBED_REUSE_EXPORTED_IMAGE_DESC:
     "該項與下方“匯出”部分“匯出設定”中的 <a href='#"+TAG_AUTOEXPORT+"'>自動匯出 SVG/PNG 副本</a> 選項配合使用。如果嵌入到 Markdown 文件中的繪圖檔案存在同名的 SVG/PNG 副本，則將其作為預覽圖，而不再重新生成。<br>" +
     "該項能夠提高 Markdown 文件的開啟速度，尤其是當嵌入到 Markdown 文件中的繪圖檔案中含有大量圖片或 MD-Embed 時。" +
-    "但是，該項也可能導致預覽圖無法立即響應繪圖檔案或者 Obsidian 主題的修改。<br>" +
+    "但是，該項也可能導致預覽圖無法即時反應繪圖檔案或者 Obsidian 主題的修改。<br>" +
     "該項僅作用於嵌入到 Markdown 文件中的繪圖。" +
     "該項無法提升繪圖檔案的開啟速度。詳見 <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.23' target='_blank'>此說明</a>。",
   /*EMBED_PREVIEW_SVG_NAME: "生成 SVG 格式的預覽圖",
@@ -1134,6 +1134,7 @@ export default {
   EXPORTDIALOG_BACKGROUND: "背景",
   EXPORTDIALOG_BACKGROUND_TRANSPARENT: "透明",
   EXPORTDIALOG_BACKGROUND_USE_COLOR: "使用場景顏色",
+  EXPORTDIALOG_INCLUDE_INTERNAL_LINKS: "匯出內部連結為 SVG/PDF？",
   // Selection
   EXPORTDIALOG_SELECTED_ELEMENTS: "匯出",
   EXPORTDIALOG_SELECTED_ALL: "整個場景",
