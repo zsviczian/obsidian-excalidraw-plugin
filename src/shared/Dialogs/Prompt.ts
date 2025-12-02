@@ -484,6 +484,8 @@ export class GenericInputPrompt extends Modal {
 
   onOpen() {
     super.onOpen();
+    this.modalEl.classList.add("excalidraw-modal");
+    this.containerEl.classList.add("excalidraw-modal");
     this.inputComponent.inputEl.focus();
     this.inputComponent.inputEl.select();
     

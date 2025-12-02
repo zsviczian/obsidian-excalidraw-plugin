@@ -19,7 +19,7 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 `,
 "2.18.0":`
 ## New from Excalidraw.com
-- New arrow behavior allows binding arrows to the inside of Shapes. 🙏[mtolmacs](https://github.com/mtolmacs), [dwelle](https://github.com/dwelle) [#9670](https://github.com/excalidraw/excalidraw/pull/9670)
+- 🔥🔥🔥 New arrow behavior allows binding arrows to the inside of shapes and image! 🙏[mtolmacs](https://github.com/mtolmacs), [dwelle](https://github.com/dwelle) [#9670](https://github.com/excalidraw/excalidraw/pull/9670)
 
 ## New
 - New option in the Export Dialog to **include/exclude internal links** when exporting to SVG or PDF.
@@ -32,6 +32,7 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 - Memory leak issues
 - Potential fix to Backspace and CTRL+V stopping working in text elements after extended use of Excalidraw.
 - Improved detection of on-screen keyboard on mobile devices. (issue reported on [Discord](https://discord.com/channels/1026825302900494357/1444652800360316959))
+- Insert any file, insert LaTeX and some other dialogs got hidden behind the on-screen keyboard on mobile devices. Dialogs appear at the top of the screen now on mobile devices.
 
 ## New in ExcalidrawAutomate
 - **createSVG()** now exposes convertMarkdownLinksToObsidianURLs and includeInternalLinks parameters.

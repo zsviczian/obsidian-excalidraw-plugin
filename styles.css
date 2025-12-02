@@ -714,6 +714,13 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
   margin-bottom: -2px;
 }
 
+.is-mobile .modal-container.excalidraw-modal .modal.excalidraw-modal {
+  align-self: flex-start;
+  transform: none !important;
+  margin-top: calc(var(--safe-area-inset-top) + var(--header-height) + var(--size-4-2));
+  width: 100%;
+}
+
 .excalidraw .picker-content {
   grid-gap: 0.2rem !important;
 }

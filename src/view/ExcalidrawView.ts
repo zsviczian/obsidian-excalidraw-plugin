@@ -5627,14 +5627,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       const isKeyboardBackEvent:Boolean = (this.semaphores.isEditingText || isEventOnSameElement) && !isKeyboardOutEvent;
       this.editingTextElementId = isKeyboardOutEvent ? st.editingTextElement.id : null;
 
-      const modalElStyling = (keyboardOut: boolean) => {
-        //addresses the issue of insert file dialog with slide out keyboard overlapping with the file match result list
-        const modalElToMove = this.ownerDocument.querySelector("body > div.modal-container.excalidraw-release");
-        if (modalElToMove) {
-          modalElToMove.style.alignItems = keyboardOut ? "flex-start" : "";
-          modalElToMove.style.marginTop = keyboardOut ? "0px" : "";
-        }
-      }
       if(isKeyboardOutEvent) {
           const elTop = st.editingTextElement.y;
           const elHeight = (st.editingTextElement as any).height ?? 0;
@@ -5656,7 +5648,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           }
 
           this.containerEl.scrollIntoView();
-          modalElStyling(true);
       }
       if (isKeyboardBackEvent) {
         if(this.oldKeyboardScroll != null) {
@@ -5668,7 +5659,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           this.oldKeyboardScroll = null;
           this.containerEl.scrollIntoView();
         }
-        modalElStyling(false);
       }
       //end of aweful hack
       

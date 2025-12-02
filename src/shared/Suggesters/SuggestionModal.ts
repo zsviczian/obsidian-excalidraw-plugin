@@ -84,24 +84,27 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
   open(): void {
     // TODO: Figure out a better way to do this. Idea from Periodic Notes plugin
     this.app.keymap.pushScope(this.scope);
-    this.inputEl.ownerDocument.body.appendChild(this.suggestEl);
-    this.popper = new WeakRef(createPopper(this.inputEl, this.suggestEl, {
-      placement: "bottom-start",
-      modifiers: [
-        {
-          name: "offset",
-          options: {
-            offset: [0, 10],
-          },
-        },
-        {
-          name: "flip",
-          options: {
-            fallbackPlacements: ["top"],
-          },
-        },
-      ],
-    }));
+    //setTimeout(() => {
+      const modal = this.inputEl.closest(".modal");
+      const modalContainer =
+        (this.inputEl.closest(".modal-container") as HTMLElement) ??
+        (modal?.parentElement?.matches(".modal-container")
+          ? (modal.parentElement as HTMLElement)
+          : null);
+
+      const host = modalContainer ?? this.inputEl.ownerDocument.body;
+
+      host.appendChild(this.suggestEl);
+
+      this.popper = new WeakRef(createPopper(this.inputEl, this.suggestEl, {
+        placement: "bottom-start",
+        strategy: host.matches(".modal-container") ? "absolute" : "fixed",
+        modifiers: [
+          { name: "offset", options: { offset: [0, 10] } },
+          { name: "flip", options: { fallbackPlacements: ["top"] } },
+        ],
+      }));
+    //},50);
   }
 
   onEscape(): void {

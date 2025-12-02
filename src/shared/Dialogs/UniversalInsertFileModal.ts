@@ -61,7 +61,10 @@ export class UniversalInsertFileModal extends Modal {
   }
 
   onOpen(): void {
+    const modalEl = this.modalEl; 
+    modalEl.classList.add("excalidraw-modal");
     this.containerEl.classList.add("excalidraw-release");
+    this.containerEl.classList.add("excalidraw-modal");
     this.titleEl.setText(t("UIFM_TITLE"));
     this.createForm();
   }
