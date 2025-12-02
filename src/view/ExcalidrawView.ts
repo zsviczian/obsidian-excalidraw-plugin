@@ -5585,8 +5585,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     const elapsed = Date.now() - this.resizeBatchWindowStart;
     const absoluteDelta = Math.abs(this.lastAggregatedDh);
     const deltaExceeded = absoluteDelta >= 80;          // lower threshold to catch multi-step keyboards
-    const windowExceeded = elapsed > 900;               // hard stop if the keyboard resizes in many tiny steps
-    const debounceDelay = deltaExceeded ? 30 : 120;     // short delay once we see large movement
+    const windowExceeded = elapsed > 2000;              // hard stop if the keyboard resizes in many tiny steps
+    const debounceDelay = deltaExceeded ? 60 : 200;     // short delay once we see large movement
     const finalDelay = windowExceeded ? 0 : debounceDelay;
 
     this.resizeBatchTimer = window.setTimeout(() => {
