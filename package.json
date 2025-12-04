@@ -55,7 +55,7 @@
     "@excalidraw/eslint-config": "^1.0.3",
     "@excalidraw/prettier-config": "^1.0.2",
     "@rollup/plugin-babel": "^6.0.3",
-    "@rollup/plugin-commonjs": "^26.0.1",
+    "@rollup/plugin-commonjs": "^29.0.0",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-replace": "^5.0.2",
     "@rollup/plugin-typescript": "^12.1.2",
