@@ -61,6 +61,7 @@ const SVG_MINIMIZE = ea.obsidian.getIcon("lucide-minimize").outerHTML;
 const SVG_LASER_ON = ea.obsidian.getIcon("lucide-hand").outerHTML;
 const SVG_LASER_OFF = ea.obsidian.getIcon("lucide-wand").outerHTML;
 const SVG_PRINTER = ea.obsidian.getIcon("lucide-printer").outerHTML;
+const SVG_REFOCUS = ea.obsidian.getIcon("lucide-scan-eye").outerHTML;
 
 //-------------------------------
 //utility & convenience functions
@@ -500,9 +501,22 @@ const createPresentationNavigationPanel = () => {
 	    }
 	  });
 	  
+	  el.createEl("button",{
+	    attr: {
+	      title: "Re-focus current slide (shortcut: HOME)"
+	    }
+	  }, button => {
+	    button.innerHTML = SVG_REFOCUS;
+	    button.onclick = () => {
+	      debugger;
+	      slide--;
+        navigate("fwd");
+	    }
+	  });
+	  
  	  el.createEl("button",{
 	    attr: {
-	      title: "Toggle fullscreen. If you hold ALT/OPT when starting the presentation it will not go fullscreen."
+	      title: "Toggle fullscreen. If you hold ALT/OPT when starting the presentation it will not go fullscreen. (shortcut: f)"
 	    },
 	  }, button => {
 	    toggleFullscreenButton = button;
@@ -591,7 +605,7 @@ const keydownListener = (e) => {
       navigate("fwd");
       break;
     case "Home":
-      slide = -1;
+      slide--;
       navigate("fwd");
       break;
     case "e": 
@@ -600,6 +614,9 @@ const keydownListener = (e) => {
         await toggleArrowVisibility(false);
         exitPresentation(true);
       })()
+      break;
+    case "f":
+      toggleFullscreen();
       break;
   }
 }
