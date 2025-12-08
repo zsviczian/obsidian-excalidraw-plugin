@@ -853,6 +853,13 @@ const tmpObsidianWYSIWYG = async (
         imgDiv.firstChild.style.maxHeight = "100%";
         imgDiv.firstChild.style.maxWidth = null;
       }
+      // Resolve the cyclic size dependency by applying a CSS width and/or height
+      if(!onCanvas && isHoverPopover && imgDiv.firstChild instanceof HTMLImageElement) {
+          internalEmbedDiv.style.setProperty("--popover-width", attr.fwidth + "px");
+          internalEmbedDiv.style.setProperty("--popover-height", attr.fheight + "px");
+          internalEmbedDiv.style.width = "var(--popover-width)";
+          internalEmbedDiv.style.height = "var(--popover-height)";
+      }
       internalEmbedDiv.appendChild(imgDiv.firstChild);
       return;
     }
