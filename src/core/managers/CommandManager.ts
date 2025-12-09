@@ -34,6 +34,7 @@ import { insertLaTeXToView, search } from "src/utils/excalidrawAutomateUtils";
 import { templatePromt } from "../../shared/Dialogs/Prompt";
 import { t } from "../../lang/helpers";
 import {
+  createOrOverwriteFile,
   getAliasWithSize,
   getAnnotationFileNameAndFolder,
   getCropFileNameAndFolder,
@@ -51,7 +52,7 @@ import {
   getImageSize,
 } from "../../utils/utils";
 import { extractSVGPNGFileName, getActivePDFPageNumberFromPDFView, getAttachmentsFolderAndFilePath, isObsidianThemeDark, mergeMarkdownFiles, setExcalidrawView } from "../../utils/obsidianUtils";
-import { ExcalidrawElement, ExcalidrawEmbeddableElement, ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { ExcalidrawElement, ExcalidrawEmbeddableElement, ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/element/src/types";
 import { ReleaseNotes } from "../../shared/Dialogs/ReleaseNotes";
 import { ScriptInstallPrompt } from "../../shared/Dialogs/ScriptInstallPrompt";
 import Taskbone from "../../shared/OCR/Taskbone";
@@ -64,12 +65,12 @@ import { EmbeddableSettings } from "../../shared/Dialogs/EmbeddableSettings";
 import { processLinkText } from "../../utils/customEmbeddableUtils";
 import { getEA } from "src/core";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
+import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { carveOutImage, carveOutPDF, createImageCropperFile } from "../../utils/carveout";
 import { showFrameSettings } from "../../shared/Dialogs/FrameSettings";
 import { insertImageToView } from "../../utils/excalidrawViewUtils";
 import ExcalidrawPlugin from "src/core/main";
-import { get } from "http";
+import { UIModeSettings } from "src/shared/Dialogs/UIModeSettings";
 
 declare const PLUGIN_VERSION:string;
 
@@ -258,7 +259,7 @@ export class CommandManager {
             new Notice("The compressed string is corrupted. Unable to decompress data.");
             return;
           }
-          await this.app.vault.modify(activeFile,header + decompressed + "\n```\n%%" + compressed[1]);
+          await createOrOverwriteFile(this.app, activeFile.path,header + decompressed + "\n```\n%%" + compressed[1]);
         })();
 
       }
@@ -355,7 +356,16 @@ export class CommandManager {
           if(excalidrawFname.endsWith(".light.md")) {
             excalidrawFile = this.app.metadataCache.getFirstLinkpathDest(excalidrawFname.replace(/\.light\.md$/,".md"), view.file.path);
           }
-          if(!excalidrawFile) return false;
+          //handles the case if the png or svg is not in the same folder as the excalidraw file
+          if(!excalidrawFile) {
+            const basename = imgFile.basename.replace(/(?:\.dark|\.light)$/,"");
+            const candidates = this.app.vault.getMarkdownFiles().filter(f=>f.basename === basename);
+            if(candidates.length === 1) {
+              excalidrawFile = candidates[0];
+            } else {
+              return false;
+            }
+          }
         }
         if(checking) return true;
         this.plugin.openDrawing(excalidrawFile, "new-tab", true);
@@ -700,7 +710,7 @@ export class CommandManager {
         }
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
-          showFrameSettings(getEA(view));
+          showFrameSettings(view);
           return true;
         }
         return false;
@@ -772,20 +782,19 @@ export class CommandManager {
       checkCallback: (checking:boolean) => this.plugin.forceSaveActiveView(checking),
     })
 
+    //removing raw mode. Not required. I never use it. Raw mode can still be enabled
+    //via document properties. Only showing command palette action if raw mode is enabled
     this.addCommand({
       id: "toggle-lock",
       name: t("TOGGLE_LOCK"),
       checkCallback: (checking: boolean) => {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (checking) {
-          if (
-            Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))
-          ) {
-            return !(this.app.workspace.getActiveViewOfType(ExcalidrawView))
-              .compatibilityMode;
+          if (view) {
+            return !view.compatibilityMode && view.textMode === TextMode.raw;
           }
           return false;
         }
-        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view && !view.compatibilityMode) {
           view.changeTextMode(
             view.textMode === TextMode.parsed ? TextMode.raw : TextMode.parsed,
@@ -979,12 +988,11 @@ export class CommandManager {
       name: t("TOGGLE_LEFTHANDED_MODE"),
       checkCallback: (checking: boolean) => {
         if (checking) {
+          if(DEVICE.isMobile) return false;
           if(this.app.workspace.getActiveViewOfType(ExcalidrawView)) {
             const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
-            const api = view?.excalidrawAPI;
-            if(!api) return false;
-            const st = api.getAppState();
-            if(!st.trayModeEnabled) return false;
+            const api = view?.excalidrawAPI as ExcalidrawImperativeAPI;
+            if(!api.isTrayModeEnabled()) return false;
             return true;
           }
           return false;
@@ -1000,6 +1008,24 @@ export class CommandManager {
           setLeftHandedMode(!isLeftHanded);
           setTimeout(()=>setLeftHandedMode(!isLeftHanded));
         })()
+        return true;
+      },
+    });
+
+    this.addCommand({
+      id: "toggle-enable-context-menu",
+      name: t("TOGGLE_ENABLE_CONTEXT_MENU"),
+      checkCallback: (checking: boolean) => {
+        if (checking) {
+          if(this.app.workspace.getActiveViewOfType(ExcalidrawView)) {
+            const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+            const api = view?.excalidrawAPI as ExcalidrawImperativeAPI;
+            return true;
+          }
+          return false;
+        }
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        view.toggleEnableContextMenu();
         return true;
       },
     });
@@ -1038,8 +1064,13 @@ export class CommandManager {
           x:Math.max(0,centerX - width/2 + view.ownerWindow.screenX),
           y:Math.max(0,centerY - height/2 + view.ownerWindow.screenY),
         }
-      
+        const focusOnFileTab = this.settings.focusOnFileTab;
+        //override focusOnFileTab for popout windows
+        if(DEVICE.isDesktop) {
+          this.settings.focusOnFileTab = false;
+        }
         this.plugin.openDrawing(ef.file, DEVICE.isMobile ? "new-tab":"popout-window", true, undefined, false, {x,y,width,height});
+        this.settings.focusOnFileTab = focusOnFileTab;
       }
     })
 
@@ -1267,7 +1298,7 @@ export class CommandManager {
           if(!excalidrawView.excalidrawAPI) return false;
           const embeddables = excalidrawView.getViewSelectedElements().filter(el=>el.type==="embeddable");
           const imageEls = excalidrawView.getViewSelectedElements().filter(el=>el.type==="image");
-          const isPDF = (imageEls.length === 0 && embeddables.length === 1 && excalidrawView.getEmbeddableLeafElementById(embeddables[0].id)?.leaf?.view?.getViewType() === "pdf")
+          const isPDF = (imageEls.length === 0 && embeddables.length === 1 && excalidrawView.getEmbeddableLeafElementById(embeddables[0].id)?.node?.child?.file?.extension === "pdf")
           const isImage = (imageEls.length === 1 && embeddables.length === 0)
 
           if(!isPDF && !isImage) {
@@ -1276,7 +1307,7 @@ export class CommandManager {
             return false;
           }
 
-          const page = isPDF ? getActivePDFPageNumberFromPDFView(excalidrawView.getEmbeddableLeafElementById(embeddables[0].id)?.leaf?.view) : undefined;
+          const page = isPDF ? getActivePDFPageNumberFromPDFView(excalidrawView.getEmbeddableLeafElementById(embeddables[0].id)?.node?.child) : undefined;
           if(isPDF && !page) {
             return false;
           }
@@ -1286,8 +1317,8 @@ export class CommandManager {
           if(isPDF) {
             const embeddableEl = embeddables[0] as ExcalidrawEmbeddableElement;
             const ea = new ExcalidrawAutomate(this.plugin,excalidrawView);
-            const view = excalidrawView.getEmbeddableLeafElementById(embeddableEl.id)?.leaf?.view;
-            const pdfFile: TFile = view && (view instanceof FileView) ? view.file : undefined;
+            const view = excalidrawView.getEmbeddableLeafElementById(embeddableEl.id)?.node?.child;
+            const pdfFile: TFile = view?.file;
             carveOutPDF(ea, embeddableEl, `${pdfFile?.path}#page=${page}`, pdfFile);
             return;
           }
@@ -1629,7 +1660,7 @@ export class CommandManager {
 
     this.addCommand({
       id: "tray-mode",
-      name: t("TRAY_MODE"),
+      name: t("UI_MODE"),
       checkCallback: (checking: boolean) => {
         if (checking) {
           const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
@@ -1644,7 +1675,8 @@ export class CommandManager {
         }
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view && view.excalidrawAPI) {
-          view.toggleTrayMode();
+          const uiModeSettings = new UIModeSettings(this.plugin);
+          uiModeSettings.open();
           return true;
         }
         return false;
@@ -1693,15 +1725,19 @@ export class CommandManager {
         const PDFLink = this.plugin.getLastActivePDFPageLink(view.file);
         if(!PDFLink) return false;
         if(checking) return true;
-        const ea = getEA(view);
-        insertImageToView(
-          ea,
-          view.currentPosition,
-          PDFLink,
-          undefined,
-          undefined,
-          true,
-        );
+        (async()=>{
+          const ea = getEA(view) as ExcalidrawAutomate;
+          const id = await insertImageToView(
+            ea,
+            view.currentPosition,
+            PDFLink,
+            undefined,
+            undefined,
+            true,
+          );
+          ea.selectElementsInView([id]);
+          ea.destroy()
+        })();
       },
     });
 
@@ -1818,10 +1854,7 @@ export class CommandManager {
           const template = await this.plugin.getBlankDrawing();
           const target = await this.app.vault.read(activeFile);
           const mergedTarget = mergeMarkdownFiles(template, target);
-          await this.app.vault.modify(
-            activeFile,
-            mergedTarget,
-          );
+          await createOrOverwriteFile(this.app, activeFile.path, mergedTarget);
           setExcalidrawView(activeView.leaf);
         })();
       },

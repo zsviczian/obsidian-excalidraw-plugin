@@ -1,5 +1,5 @@
 import { Setting } from "obsidian";
-import { PageOrientation, PageSize, PDFPageAlignment, PDFPageMarginString, STANDARD_PAGE_SIZES } from "src/utils/exportUtils";
+import { PageOrientation, PageSize, PDFPageAlignment, PDFPageMarginString, STANDARD_PAGE_SIZES } from "src/types/exportUtilTypes";
 import { t } from "src/lang/helpers";
 
 export interface PDFExportSettings {
@@ -21,12 +21,18 @@ export class PDFExportSettingsComponent {
     if (!update) this.update = () => {};
   }
 
+  isOrientationAndTilingVisible() {
+    return !(this.settings.pageSize === "HD Screen" || this.settings.pageSize === "MATCH IMAGE");
+  }
+
   render() {
     const pageSizeOptions: Record<string, string> = Object.keys(STANDARD_PAGE_SIZES)
       .reduce((acc, key) => ({
         ...acc,
         [key]: key
       }), {});
+
+    let div: HTMLDivElement;
 
     new Setting(this.contentEl)
       .setName(t("EXPORTDIALOG_PAGE_SIZE"))
@@ -36,11 +42,15 @@ export class PDFExportSettingsComponent {
           .setValue(this.settings.pageSize)
           .onChange(value => {
             this.settings.pageSize = value as PageSize;
+            div.style.display = this.isOrientationAndTilingVisible() ? "block" : "none";
             this.update();
           })
       );
 
-    new Setting(this.contentEl)
+    div = this.contentEl.createDiv();
+    div.style.display = this.isOrientationAndTilingVisible() ? "block" : "none";
+    
+    new Setting(div)
       .setName(t("EXPORTDIALOG_PAGE_ORIENTATION"))
       .addDropdown(dropdown => 
         dropdown
@@ -55,7 +65,7 @@ export class PDFExportSettingsComponent {
           })
       );
     
-    new Setting(this.contentEl)
+    new Setting(div)
       .setName(t("EXPORTDIALOG_PDF_FIT_TO_PAGE"))
       .addDropdown(dropdown => 
         dropdown

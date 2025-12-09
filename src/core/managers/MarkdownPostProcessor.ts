@@ -9,7 +9,6 @@ import {
 import { DEVICE, RERENDER_EVENT } from "../../constants/constants";
 import { EmbeddedFilesLoader } from "../../shared/EmbeddedFileLoader";
 import { createPNG, createSVG } from "../../utils/excalidrawAutomateUtils";
-import { ExportSettings } from "../../view/ExcalidrawView";
 import ExcalidrawPlugin from "../main";
 import {getIMGFilename,} from "../../utils/fileUtils";
 import {
@@ -30,6 +29,7 @@ import { CustomMutationObserver, debug, DEBUGGING } from "../../utils/debugHelpe
 import { getExcalidrawFileForwardLinks } from "../../utils/excalidrawViewUtils";
 import { linkPrompt } from "../../shared/Dialogs/Prompt";
 import { isHTMLElement } from "../../utils/typechecks";
+import { ExportSettings } from "src/types/exportUtilTypes";
 
 interface imgElementAttributes {
   file?: TFile;
@@ -136,8 +136,17 @@ const _getPNG = async ({imgAttributes,filenameParts,theme,cacheReady,img,file,ex
   if (!png) {
     return null;
   }
-  img.src = URL.createObjectURL(png);
-  cacheReady && imageCache.addImageToCache(cacheKey, img.src, png);
+  const blobUrl = URL.createObjectURL(png);
+  img.src = blobUrl;
+  
+  // Revoke the ObjectURL after the image loads or fails to prevent memory leaks
+  if (!cacheReady) {
+    const cleanup = () => URL.revokeObjectURL(blobUrl);
+    img.addEventListener('load', cleanup, { once: true });
+    img.addEventListener('error', cleanup, { once: true });
+  }
+  
+  cacheReady && imageCache.addImageToCache(cacheKey, blobUrl, png);
   return img;
 }
 
@@ -382,6 +391,14 @@ const addSVGToImgSrc = (img: HTMLImageElement, svg: SVGSVGElement, cacheReady: b
   const blob = new Blob([svgString], { type: 'image/svg+xml' });
   const blobUrl = URL.createObjectURL(blob);
   img.setAttribute("src", blobUrl);
+  
+  // Revoke the ObjectURL after the image loads or fails to prevent memory leaks
+  if (!cacheReady) {
+    const cleanup = () => URL.revokeObjectURL(blobUrl);
+    img.addEventListener('load', cleanup, { once: true });
+    img.addEventListener('error', cleanup, { once: true });
+  }
+  
   cacheReady && imageCache.addImageToCache(cacheKey, blobUrl, blob);
   return img;
 }
@@ -710,7 +727,7 @@ const isTextOnlyEmbed = (internalEmbedEl: Element):boolean => {
   if(!src) return true; //technically this does not mean this is a text only embed, but still should abort further processing
   const fnameParts = getEmbeddedFilenameParts(src);
   return !(fnameParts.hasArearef || fnameParts.hasGroupref || fnameParts.hasFrameref || fnameParts.hasClippedFrameref) &&
-    (fnameParts.hasBlockref || fnameParts.hasSectionref)
+    (fnameParts.hasBlockref || fnameParts.hasSectionref) && fnameParts.blockref !== "as-image"
 }
 
 const tmpObsidianWYSIWYG = async (
@@ -724,6 +741,9 @@ const tmpObsidianWYSIWYG = async (
   const file = app.vault.getAbstractFileByPath(ctx.sourcePath);
   if(!(file instanceof TFile)) return;
   if(!plugin.isExcalidrawFile(file)) return;
+  if(ctx.frontmatter?.["excalidraw-embed-md"]) {
+    return;
+  }
 
   //@ts-ignore
   if (ctx.remainingNestLevel < 4) {
@@ -802,10 +822,14 @@ const tmpObsidianWYSIWYG = async (
       el.empty();
     } else {
       //Obsidian changed this at some point from h3 to h5 and also the text...
-      const warningEl = el.querySelector("div>*[data-heading^='Unable to find ");
+      let warningEl = el.querySelector("div>*[data-heading^='Unable to find ");
+      if(!warningEl) {
+        //changed in Obsidian 1.8.9
+        warningEl = el.querySelector("div > *[data-heading]");
+      }
       if(warningEl) {
         const dataHeading = warningEl.getAttr("data-heading");
-        const ref = warningEl.getAttr("data-heading").match(/Unable to find[^^]+(\^(?:group=|area=|frame=|clippedframe=)[^ ”]+)/)?.[1];
+        const ref = dataHeading.match(/.+(\^(?:group=|area=|frame=|clippedframe=)[A-Za-z0-9_-]{8,21})/)?.[1];
         if(ref) {
           attr.fname = file.path + "#" +ref;
           areaPreview = true;
@@ -926,7 +950,7 @@ export const markdownPostProcessor = async (
       if(docIDs.has(ctx.docId) && !el.hasChildNodes()) {
         docIDs.delete(ctx.docId);
       }
-      const isAreaGroupFrameRef = el.querySelectorAll('[data-heading^="Unable to find"]').length === 1;
+      const isAreaGroupFrameRef = el.querySelectorAll('div > *[data-heading]').length === 1;
       if(!isAreaGroupFrameRef) {
         return;
       }

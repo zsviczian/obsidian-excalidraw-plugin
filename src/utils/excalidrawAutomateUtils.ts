@@ -5,10 +5,10 @@ import {
   ExcalidrawElement,
   ExcalidrawImageElement,
   FileId,
-} from "@zsviczian/excalidraw/types/excalidraw/element/types";
+} from "@zsviczian/excalidraw/types/element/src/types";
 import { normalizePath, TFile } from "obsidian";
 
-import ExcalidrawView, { ExportSettings, getTextMode } from "src/view/ExcalidrawView";
+import ExcalidrawView, { getTextMode } from "src/view/ExcalidrawView";
 import {
   GITHUB_RELEASES,
   getCommonBoundingBox,
@@ -32,16 +32,19 @@ import {
 } from "src/utils/utils";
 import { GenericInputPrompt, NewFileActions } from "src/shared/Dialogs/Prompt";
 import { t } from "src/lang/helpers";
-import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
+import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import {
   postOpenAI as _postOpenAI,
   extractCodeBlocks as _extractCodeBlocks,
 } from "../utils/AIUtils";
-import { ColorMap, EmbeddedFilesLoader, FileData } from "src/shared/EmbeddedFileLoader";
+import { EmbeddedFilesLoader } from "src/shared/EmbeddedFileLoader";
 import { SVGColorInfo } from "src/types/excalidrawAutomateTypes";
-import { ExcalidrawData, getExcalidrawMarkdownHeaderSection, REGEX_LINK } from "src/shared/ExcalidrawData";
-import { getFrameBasedOnFrameNameOrId } from "./excalidrawViewUtils";
+import { ExcalidrawData, getExcalidrawMarkdownHeaderSection, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "src/shared/ExcalidrawData";
+import { getFrameBasedOnFrameNameOrId, sceneRemoveInternalLinks } from "./excalidrawViewUtils";
 import { ScriptEngine } from "src/shared/Scripts";
+import { getEA } from "src/core";
+import { ColorMap, FileData } from "src/types/embeddedFileLoaderTypes";
+import { ExportSettings } from "src/types/exportUtilTypes";
 
 declare const PLUGIN_VERSION:string;
 
@@ -149,7 +152,7 @@ export function errorMessage(message: string, source: string):void {
 
 export function isColorStringTransparent(color: string): boolean {
   const rgbaHslaTransparentRegex = /^(rgba|hsla)\(.*?,.*?,.*?,\s*0(\.0+)?\)$/i;
-  const hexTransparentRegex = /^#[a-fA-F0-9]{8}00$/i;
+  const hexTransparentRegex = /^#[a-fA-F0-9]{6}00$/i;
 
   return rgbaHslaTransparentRegex.test(color) || hexTransparentRegex.test(color);
 }
@@ -280,10 +283,17 @@ export async function getTemplate(
       }
     }
     if(filenameParts.hasFrameref || filenameParts.hasClippedFrameref) {
-      const el = getFrameBasedOnFrameNameOrId(filenameParts.blockref,scene.elements);     
-      
+      const el = getFrameBasedOnFrameNameOrId(filenameParts.blockref,scene.elements);
       if(el) {
-        groupElements = plugin.ea.getElementsInFrame(el,scene.elements, filenameParts.hasClippedFrameref);
+        groupElements = el.frameRole === "marker"
+        ? plugin.ea.getElementsInArea(scene.elements, el).concat(el)
+        : plugin.ea.getElementsInFrame(el,scene.elements, filenameParts.hasClippedFrameref);
+      }
+    }
+    if(filenameParts.hasArearef) {
+      const el=scene.elements.find((el: ExcalidrawElement)=>el.id===filenameParts.blockref);
+      if(el) {
+        groupElements = plugin.ea.getElementsInArea(scene.elements, el);
       }
     }
 
@@ -440,6 +450,12 @@ export const updateElementLinksToObsidianLinks = ({elements, hostFile}:{
       const partsArray = REGEX_LINK.getResList(el.link)[0];
       if(!partsArray?.value) return el;
       let linkText = REGEX_LINK.getLink(partsArray);
+      if (linkText.match(REG_LINKINDEX_HYPERLINK)) {
+        if(linkText.startsWith("obsidian://") || linkText.startsWith("cmd://")) return el;
+        const newElement: Mutable<ExcalidrawElement> = cloneElement(el);
+        newElement.link = linkText;
+        return newElement;
+      }
       if (linkText.search("#") > -1) {
         const linkParts = getLinkParts(linkText, hostFile);
         linkText = linkParts.path;
@@ -456,12 +472,16 @@ export const updateElementLinksToObsidianLinks = ({elements, hostFile}:{
       }
       let link = EXCALIDRAW_PLUGIN.app.getObsidianUrl(file);
       if(window.ExcalidrawAutomate?.onUpdateElementLinkForExportHook) {
-        link = window.ExcalidrawAutomate.onUpdateElementLinkForExportHook({
-          originalLink: el.link,
-          obsidianLink: link,
-          linkedFile: file,
-          hostFile: hostFile
-       });
+        try {
+          link = window.ExcalidrawAutomate.onUpdateElementLinkForExportHook({
+            originalLink: el.link,
+            obsidianLink: link,
+            linkedFile: file,
+            hostFile: hostFile
+          }) ?? link;
+        } catch (e) {
+          errorlog({where: "excalidrawAutomateUtils.updateElementLinksToObsidianLinks", fn: window.ExcalidrawAutomate.onUpdateElementLinkForExportHook, error: e});
+        }
       }
       const newElement: Mutable<ExcalidrawElement> = cloneElement(el);
       newElement.link = link;
@@ -492,6 +512,7 @@ export async function createSVG(
   padding?: number,
   imagesDict?: any,
   convertMarkdownLinksToObsidianURLs: boolean = false,
+  includeInternalLinks: boolean = true,
 ): Promise<SVGSVGElement> {
   if (!loader) {
     loader = new EmbeddedFilesLoader(plugin);
@@ -522,7 +543,7 @@ export async function createSVG(
       type: "excalidraw",
       version: 2,
       source: GITHUB_RELEASES+PLUGIN_VERSION,
-      elements,
+      elements: includeInternalLinks ? elements : sceneRemoveInternalLinks({elements}),
       appState: {
         theme,
         viewBackgroundColor:
@@ -547,13 +568,21 @@ export async function createSVG(
   if (withTheme && theme === "dark") addFilterToForeignObjects(svg);
 
   if(
-    !(filenameParts.hasGroupref || filenameParts.hasFrameref || filenameParts.hasClippedFrameref) && 
+    !(filenameParts.hasGroupref || filenameParts.hasClippedFrameref) && 
     (filenameParts.hasBlockref || filenameParts.hasSectionref)
   ) {
     let el = filenameParts.hasSectionref
       ? getTextElementsMatchingQuery(elements,["# "+filenameParts.sectionref],true)
       : elements.filter((el: ExcalidrawElement)=>el.id===filenameParts.blockref);
-    if(el.length>0) {
+    if(el.length === 0 && filenameParts.hasFrameref) {
+      const frame = getFrameBasedOnFrameNameOrId(filenameParts.blockref, elements);
+      if(frame) {
+        el = [frame];
+      }
+    }
+    const isNonMarkerFrameRef = filenameParts.hasFrameref && el.length === 1 && el[0].type === "frame" && el[0].frameRole !== "marker";
+
+    if(el.length>0 && !isNonMarkerFrameRef) {
       const containerId = el[0].containerId;
       if(containerId) {
         el = el.concat(elements.filter((el: ExcalidrawElement)=>el.id === containerId));
@@ -624,9 +653,9 @@ export function repositionElementsToCursor(
   return restore({elements}, null, null).elements;
 }
 
-export const insertLaTeXToView = (view: ExcalidrawView) => {
+export const insertLaTeXToView = (view: ExcalidrawView, center: boolean = false) => {
   const app = view.plugin.app;
-  const ea = view.plugin.ea;
+  const ea = getEA(view) as ExcalidrawAutomate;
   GenericInputPrompt.Prompt(
     view,
     view.plugin,
@@ -637,13 +666,19 @@ export const insertLaTeXToView = (view: ExcalidrawView) => {
     undefined,
     3
   ).then(async (formula: string) => {
-    if (!formula) {
-      return;
+    if (formula) {
+      const id = await ea.addLaTex(0, 0, formula);
+      if(center) {
+        const el = ea.getElement(id);
+        let {width, height} = el;
+        let {x, y} = ea.getViewCenterPosition();
+        el.x = x - width / 2;
+        el.y = y - height / 2;
+      }
+      await ea.addElementsToView(!center, false, true);
+      ea.selectElementsInView([id]);
     }
-    ea.reset();
-    await ea.addLaTex(0, 0, formula);
-    ea.setView(view);
-    ea.addElementsToView(true, false, true);
+    ea.destroy();
   });
 };
 
@@ -698,14 +733,14 @@ export const getTextElementsMatchingQuery = (
     el.type === "text" && 
     query.some((q) => {
       if (exactMatch) {
-        const text = el.rawText.toLowerCase().split("\n")[0].trim();
+        const text = el.customData?.text2Path?.text ?? el.rawText.toLowerCase().split("\n")[0].trim();
         const m = text.match(/^#*(# .*)/);
         if (!m || m.length !== 2) {
           return false;
         }
         return m[1] === q.toLowerCase();
       }
-      const text = el.rawText.toLowerCase().replaceAll("\n", " ").trim();
+      const text = el.customData?.text2Path?.text ?? el.rawText.toLowerCase().replaceAll("\n", " ").trim();
       return text.match(q.toLowerCase()); //to distinguish between "# frame" and "# frame 1" https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530
     }));
 }

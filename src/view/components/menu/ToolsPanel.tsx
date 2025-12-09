@@ -19,6 +19,7 @@ import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFile
 import { DEBUGGING, debug } from "src/utils/debugHelper";
 import { REM_VALUE } from "src/core/managers/StylesManager";
 import { getExcalidrawViews } from "src/utils/obsidianUtils";
+import { UIModeSettings } from "src/shared/Dialogs/UIModeSettings";
 
 declare const PLUGIN_VERSION:string;
 
@@ -56,7 +57,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   onRightEdge: boolean = false;
   onBottomEdge: boolean = false;
   public containerRef: React.RefObject<HTMLDivElement>;
-  private view: ExcalidrawView;
+  private getView(): ExcalidrawView | null {
+    return this.props.view?.deref() ?? null;
+  }
 
   componentWillUnmount(): void {
     if (this.containerRef.current) {
@@ -64,14 +67,11 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     }
     this.setState({ scriptIconMap: null });
     this.containerRef = null;
-    this.view = null;
   }
 
   constructor(props: PanelProps) {
     super(props);
-    this.view = props.view.deref();
-    const react = this.view.packages.react;
-    
+    const react = this.getView()?.packages.react;
     this.containerRef = react.createRef();
     this.state = {
       visible: props.visible,
@@ -208,83 +208,103 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   actionOpenScriptInstallDialog() {
-    new ScriptInstallPrompt(this.view.plugin).open();
+    const view = this.getView();
+    if (!view) return;
+    new ScriptInstallPrompt(view.plugin).open()
   }
 
   actionOpenReleaseNotes() {
-    new ReleaseNotes(
-      this.view.app,
-      this.view.plugin,
-      PLUGIN_VERSION,
-    ).open();
+    const view = this.getView();
+    if (!view) return
+    new ReleaseNotes(view.app, view.plugin, PLUGIN_VERSION).open();
   }
 
   actionConvertExcalidrawToMD() {
-    this.view.convertExcalidrawToMD();
+    this.getView()?.convertExcalidrawToMD();
   }
 
   actionToggleViewMode() {
+    const view = this.getView();
+    if (!view) return;
     if (this.state.isPreviewMode) {
-      this.view.changeTextMode(TextMode.raw);
+      view.changeTextMode(TextMode.raw);
     } else {
-      this.view.changeTextMode(TextMode.parsed);
+      view.changeTextMode(TextMode.parsed);
     }
   }
 
   actionToggleTrayMode() {
-    this.view.toggleTrayMode();
+    const plugin = this.getView()?.plugin;
+    if (!plugin) return;
+    new UIModeSettings(plugin).open();
   }
 
   actionToggleFullscreen() {
+    const view = this.getView();
+    if (!view) return;
     if (this.state.isFullscreen) {
-      this.view.exitFullscreen();
+      view.exitFullscreen();
     } else {
-      this.view.gotoFullscreen();
+      view.gotoFullscreen();
     }
   }
 
   actionSearch() {
-    search(this.view);
+    const view = this.getView();
+    if (!view) return;
+    search(view);
   }
 
   actionOCR(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
-    if(!this.view.plugin.settings.taskboneEnabled) {
+    const view = this.getView();
+    const plugin = view?.plugin;
+    if (!view || !plugin) return;
+    if(!plugin.settings.taskboneEnabled) {
       new Notice("Taskbone OCR is not enabled. Please go to plugins settings to enable it.",4000);
       return;
     }
-    this.view.plugin.taskbone.getTextForView(this.view, {forceReScan: isWinCTRLorMacCMD(e)});
+    plugin.taskbone.getTextForView(view, {forceReScan: isWinCTRLorMacCMD(e)});
   }
 
   actionOpenLink(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    const view = this.getView();
+    if (!view) return;
     const event = new MouseEvent("click", {
       ctrlKey: e.ctrlKey || !(DEVICE.isIOS || DEVICE.isMacOS),
       metaKey: e.metaKey ||  (DEVICE.isIOS || DEVICE.isMacOS),
       shiftKey: e.shiftKey,
       altKey: e.altKey,
     });
-    this.view.handleLinkClick(event, true);
+    view.handleLinkClick(event, true);
   }
 
   actionOpenLinkProperties() {
+    const view = this.getView();
+    if (!view) return;
     const event = new MouseEvent("click", {
       ctrlKey: true,
       metaKey: true,
       shiftKey: false,
       altKey: false,
     });
-    this.view.handleLinkClick(event);
+    view.handleLinkClick(event);
   }
 
   actionForceSave() {
-    this.view.forceSave();
+    const view = this.getView();
+    if (!view) return;
+    view.forceSave();
   }
 
   actionExportLibrary() {
-    this.view.plugin.exportLibrary();
+    const plugin = this.getView()?.plugin;
+    if (!plugin) return;
+    plugin.exportLibrary();
   }
 
   actionExportImage() {
-    const view = this.view;
+    const view = this.getView();
+    if (!view) return;
     if(!view.exportDialog) {
       view.exportDialog = new ExportDialog(view.plugin, view,view.file);
       view.exportDialog.createForm();
@@ -293,69 +313,91 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   actionOpenAsMarkdown() {
-    this.view.openAsMarkdown();
+    const view = this.getView();
+    if (!view) return;
+    view.openAsMarkdown();
   }
 
   actionLinkToElement(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    const view = this.getView();
+    if (!view) return;
     if(isWinALTorMacOPT(e)) {
-      openExternalLink("https://youtu.be/yZQoJg2RCKI", this.view.app);
+      openExternalLink("https://youtu.be/yZQoJg2RCKI", view.app);
       return;
     }
-    this.view.copyLinkToSelectedElementToClipboard(
+    view.copyLinkToSelectedElementToClipboard(
       isWinCTRLorMacCMD(e) ? "group=" : (isSHIFT(e) ? "area=" : "")
     );
   }
 
   actionAddAnyFile() {
+    const view = this.getView();
+    const plugin = view?.plugin;
+    if (!view || !plugin) return;
     this.props.centerPointer();
-    const insertFileModal = new UniversalInsertFileModal(this.view.plugin, this.view);
+    const insertFileModal = new UniversalInsertFileModal(plugin, view);
     insertFileModal.open();
   }
 
   actionInsertImage() {
+    const view = this.getView();
+    const plugin = view?.plugin;
+    if (!view || !plugin) return;
     this.props.centerPointer();
-    this.view.plugin.insertImageDialog.start(
-      this.view,
-    );
+    plugin.insertImageDialog.start(view);
   }
 
   actionInsertPDF() {
+    const view = this.getView();
+    const plugin = view?.plugin;
+    if (!view || !plugin) return;
     this.props.centerPointer();
-    const insertPDFModal = new InsertPDFModal(this.view.plugin, this.view);
+    const insertPDFModal = new InsertPDFModal(plugin, view);
     insertPDFModal.open();
   }
 
   actionInsertMarkdown() {
+    const view = this.getView();
+    const plugin = view?.plugin;
+    if (!view || !plugin) return;
     this.props.centerPointer();
-    this.view.plugin.insertMDDialog.start(
-      this.view,
-    );
+    plugin.insertMDDialog.start(view);
   }
 
   actionInsertBackOfNote()  {
+    const view = this.getView();
+    if (!view) return;
     this.props.centerPointer();
-    this.view.insertBackOfTheNoteCard();
+    view.insertBackOfTheNoteCard();
   }
 
   actionInsertLaTeX(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    const view = this.getView();
+    if (!view) return;
     if(isWinALTorMacOPT(e)) {
-      openExternalLink("https://youtu.be/r08wk-58DPk", this.view.app);
+      openExternalLink("https://youtu.be/r08wk-58DPk", view.app);
       return;
     }
     this.props.centerPointer();
-    insertLaTeXToView(this.view);
+    insertLaTeXToView(view);
   }
 
   actionInsertLink() {
+    const view = this.getView();
+    const plugin = view?.plugin;
+    if (!view || !plugin) return;
     this.props.centerPointer();
-    this.view.plugin.insertLinkDialog.start(
-      this.view.file.path,
-      (text: string, fontFamily?: 1 | 2 | 3 | 4, save?: boolean) => this.view.addText (text, fontFamily, save),
+    plugin.insertLinkDialog.start(
+      view.file.path,
+      (text: string, fontFamily?: 1 | 2 | 3 | 4, save?: boolean) => view.addText (text, fontFamily, save),
     );
   }
 
   actionImportSVG(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
-    this.view.plugin.importSVGDialog.start(this.view);
+    const view = this.getView();
+    const plugin = view?.plugin;
+    if (!view || !plugin) return;
+    plugin.importSVGDialog.start(view);
   }
   
   actionCropImage(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
@@ -364,8 +406,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   async actionRunScript(key: string) {
-    const view = this.view;
-    const plugin = view.plugin;
+    const view = this.getView();
+    const plugin = view?.plugin;
+    if (!view || !plugin) return;
     const f = plugin.app.vault.getAbstractFileByPath(key);
     if (f && f instanceof TFile) {
       plugin.scriptEngine.executeScript(
@@ -378,9 +421,10 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   async actionPinScript(key: string, scriptName: string) {
-    const view = this.view; 
+    const view = this.getView();
+    const plugin = view?.plugin;
+    if (!view || !plugin) return;
     const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
-    const plugin = view.plugin;
     await plugin.loadSettings();
     const index = plugin.settings.pinnedScripts.indexOf(key)
     if(index > -1) {
@@ -410,26 +454,29 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   private islandOnPointerDown(event: React.PointerEvent) {
-      const onDrag = (e: PointerEvent) => {
-        e.preventDefault();
-        this.pos1 = this.pos3 - e.clientX;
-        this.pos2 = this.pos4 - e.clientY;
-        this.pos3 = e.clientX;
-        this.pos4 = e.clientY;
-        this.updatePosition(this.pos2, this.pos1);
-      };
+    const view = this.getView();
+    if (!view) return;
 
-      const onPointerUp = () => {
-        this.view.ownerDocument?.removeEventListener("pointerup", onPointerUp);
-        this.view.ownerDocument?.removeEventListener("pointermove", onDrag);
-      };
-
-      event.preventDefault();
-      this.penDownX = this.pos3 = event.clientX;
-      this.penDownY = this.pos4 = event.clientY;
-      this.view.ownerDocument.addEventListener("pointerup", onPointerUp);
-      this.view.ownerDocument.addEventListener("pointermove", onDrag);
+    const onDrag = (e: PointerEvent) => {
+      e.preventDefault();
+      this.pos1 = this.pos3 - e.clientX;
+      this.pos2 = this.pos4 - e.clientY;
+      this.pos3 = e.clientX;
+      this.pos4 = e.clientY;
+      this.updatePosition(this.pos2, this.pos1);
     };
+
+    const onPointerUp = () => {
+      view.ownerDocument?.removeEventListener("pointerup", onPointerUp);
+      view.ownerDocument?.removeEventListener("pointermove", onDrag);
+    };
+
+    event.preventDefault();
+    this.penDownX = this.pos3 = event.clientX;
+    this.penDownY = this.pos4 = event.clientY;
+    view.ownerDocument.addEventListener("pointerup", onPointerUp);
+    view.ownerDocument.addEventListener("pointermove", onDrag);
+  };
 
   render() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.render,"ToolsPanel.render()");
@@ -494,11 +541,11 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
               display: this.state.minimized ? "none" : "block",
             }}
           >
-            <div className="panelColumn">
+            <div className="selected-shape-actions">
               <fieldset>
                 <legend>Utility actions</legend>
                 <div className="buttonList buttonListIcon">
-                <ActionButton
+                  <ActionButton
                     key={"scriptEngine"}
                     title={t("INSTALL_SCRIPT_BUTTON")}
                     action={this.actionOpenScriptInstallDialog.bind(this)}
@@ -517,7 +564,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                       action={(this.actionConvertExcalidrawToMD.bind(this))}
                       icon={ICONS.convertFile}
                     />
-                  ) : (
+                  ) : !this.state.isPreviewMode && (
                     <ActionButton
                       key={"viewmode"}
                       title={this.state.isPreviewMode ? t("PARSED") : t("RAW")}
@@ -530,8 +577,8 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     />
                   )}
                   <ActionButton
-                    key={"tray-mode"}
-                    title={t("TRAY_MODE")}
+                    key={"ui-mode"}
+                    title={t("UI_MODE")}
                     action={this.actionToggleTrayMode.bind(this)}
                     icon={ICONS.trayMode}
                   />
@@ -549,6 +596,8 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                         : ICONS.gotoFullScreen
                     }
                   />
+                </div>
+                <div className="buttonList buttonListIcon">
                   <ActionButton
                     key={"search"}
                     title={t("SEARCH")}
@@ -684,7 +733,16 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       return "";
     }
 
-    const downloadedScriptsRoot = `${this.view.plugin.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}/`;
+    const view = this.getView();
+    const plugin = view?.plugin;
+    if (!view || !plugin) return null;
+
+
+    if(!plugin._loaded) {
+      return null;
+    }
+
+    const downloadedScriptsRoot = `${plugin.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}/`;
 
     const filterCondition = (key: string): boolean =>
       isDownloaded

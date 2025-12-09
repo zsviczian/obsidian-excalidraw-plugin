@@ -17,6 +17,8 @@ export class FileSuggestionModal extends SuggestionModal<LinkSuggestion> {
   cache: CachedMetadata;
   filesAndAliases: LinkSuggestion[];
   file: TFile;
+  private handleGetFile: () => void;
+  
   constructor(app: App, input: TextComponent, items: TFile[], private plugin: ExcalidrawPlugin) {
     const filesAndAliases = [];
     for (const file of items) {
@@ -36,7 +38,11 @@ export class FileSuggestionModal extends SuggestionModal<LinkSuggestion> {
     this.text = input;
     this.suggestEl.style.maxWidth = "100%";
     this.suggestEl.style.width = `${input.inputEl.clientWidth}px`;
-    this.inputEl.addEventListener("input", () => this.getFile());
+    
+    // Pre-bind the handler
+    this.handleGetFile = this.getFile.bind(this);
+    this.inputEl.addEventListener("input", this.handleGetFile);
+    
     this.setPlaceholder(t("SELECT_FILE_TO_INSERT"));
     this.emptyStateText = t("NO_MATCH");
   }
@@ -138,5 +144,10 @@ export class FileSuggestionModal extends SuggestionModal<LinkSuggestion> {
 
   getItems() {
     return this.filesAndAliases;
+  }
+
+  close(): void {
+    this.inputEl.removeEventListener("input", this.handleGetFile);
+    super.close();
   }
 }

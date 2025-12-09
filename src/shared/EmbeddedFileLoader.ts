@@ -1,8 +1,8 @@
 //https://stackoverflow.com/questions/2068344/how-do-i-get-a-youtube-video-thumbnail-from-the-youtube-api
 //https://img.youtube.com/vi/uZz5MgzWXiM/maxresdefault.jpg
 
-import { ExcalidrawElement, FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
-import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { ExcalidrawElement, FileId } from "@zsviczian/excalidraw/types/element/src/types";
+import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { App, MarkdownRenderer, Notice, TFile } from "obsidian";
 import {  
   DEFAULT_MD_EMBED_CSS,
@@ -15,7 +15,6 @@ import {
 } from "../constants/constants";
 import { createSVG } from "src/utils/excalidrawAutomateUtils";
 import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
-import { ExportSettings } from "../view/ExcalidrawView";
 import { t } from "../lang/helpers";
 import { tex2dataURL } from "./LaTeX";
 import ExcalidrawPlugin from "../core/main";
@@ -39,11 +38,12 @@ import {
   promiseTry,
   PromisePool,
 } from "../utils/utils";
-import { ValueOf } from "../types/types";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "../utils/mermaidUtils";
 import { mermaidToExcalidraw } from "src/constants/constants";
 import { ImageKey, imageCache } from "./ImageCache";
 import { FILENAMEPARTS, PreviewImageType } from "../types/utilTypes";
+import { ColorMap, ImgData, PDFPageViewProps, Size, MimeType, FileData } from "src/types/embeddedFileLoaderTypes";
+import { ExportSettings } from "src/types/exportUtilTypes";
 
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B
@@ -54,54 +54,7 @@ import { FILENAMEPARTS, PreviewImageType } from "../types/utilTypes";
 //and getObsidianImage is aborted if the file is already in the Watchdog stack
 const  markdownRendererRecursionWatcthdog = new Set<TFile>();
 
-export const IMAGE_MIME_TYPES = {
-  svg: "image/svg+xml",
-  png: "image/png",
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  gif: "image/gif",
-  webp: "image/webp",
-  bmp: "image/bmp",
-  ico: "image/x-icon",
-  avif: "image/avif",
-  jfif: "image/jfif",
-} as const;
 
-type ImgData = {
-  mimeType: MimeType;
-  fileId: FileId;
-  dataURL: DataURL;
-  created: number;
-  hasSVGwithBitmap: boolean;
-  size: Size;
-  pdfPageViewProps?: PDFPageViewProps;
-};
-
-export declare type MimeType = ValueOf<typeof IMAGE_MIME_TYPES> | "application/octet-stream";
-
-export type FileData = BinaryFileData & {
-  size: Size;
-  hasSVGwithBitmap: boolean;
-  shouldScale: boolean; //true if image should maintain its area, false if image should display at 100% its size
-  pdfPageViewProps?: PDFPageViewProps;
-};
-
-export type PDFPageViewProps = {
-  left: number;
-  bottom: number;
-  right: number;
-  top: number;
-  rotate?: number; //may be undefined in legacy files
-}
-
-export type Size = {
-  height: number;
-  width: number;
-};
-
-export interface ColorMap {
-  [color: string]: string;
-};
 
 /**
  * Function takes an SVG and replaces all fill and stroke colors with the ones in the colorMap
@@ -201,6 +154,10 @@ export class EmbeddedFile {
     }
   }
 
+  get hasSeparateDarkAndLightVersion(): boolean {
+    return this.isSVGwithBitmap || (this.file && this.file.extension.toLowerCase() === "pdf");
+  }
+
   public resetImage(hostPath: string, imgPath: string) {
     this.imgInverted = this.img = "";
     this.mtime = 0;
@@ -278,11 +235,12 @@ export class EmbeddedFile {
     if (this.fileChanged()) {
       this.imgInverted = this.img = "";
     }
+    this.isSVGwithBitmap = isSVGwithBitmap;
     this.mtime = this.isHyperLink || this.isLocalLink ? 0 : this.file.stat.mtime;
     this.pdfPageViewProps = pdfPageViewProps;
     this.size = size;
     this.mimeType = mimeType;
-    switch (isDark && isSVGwithBitmap) {
+    switch (isDark && this.hasSeparateDarkAndLightVersion) {
       case true:
         this.imgInverted = imgBase64;
         break;
@@ -290,7 +248,6 @@ export class EmbeddedFile {
         this.img = imgBase64;
         break; //bitmaps and SVGs without an embedded bitmap do not need a negative image
     }
-    this.isSVGwithBitmap = isSVGwithBitmap;
   }
 
   public isLoaded(isDark: boolean): boolean {
@@ -309,7 +266,7 @@ export class EmbeddedFile {
         return false;
       }
     }
-    if (this.isSVGwithBitmap && isDark) {
+    if (this.hasSeparateDarkAndLightVersion && isDark) {
       return this.imgInverted !== "";
     }
     return this.img !== "";
@@ -319,7 +276,7 @@ export class EmbeddedFile {
     if (!this.file && !this.isHyperLink && !this.isLocalLink) {
       return "";
     }
-    if (isDark && this.isSVGwithBitmap) {
+    if (this.hasSeparateDarkAndLightVersion && isDark) {
       return this.imgInverted;
     }
     return this.img; //images that are not SVGwithBitmap, only the light string is stored, since inverted and non-inverted are ===
@@ -608,7 +565,7 @@ export class EmbeddedFilesLoader {
       return {
         mimeType,
         fileId: await generateIdFromFile(
-          isHyperLink || isPDF || isExcalidrawFile ? (new TextEncoder()).encode(dataURL as string) : ab,
+          isHyperLink || isPDF || isExcalidrawFile ? (new TextEncoder()).encode(dataURL as string).buffer : ab,
           inFile instanceof EmbeddedFile ? inFile.filenameparts?.linkpartReference : undefined
         ),
         dataURL,
@@ -675,7 +632,7 @@ export class EmbeddedFilesLoader {
               };
               files[batch].push(fileData);
             }
-          } else if (embeddedFile.isSVGwithBitmap && (depth !== 0 || isThemeChange)) {
+          } else if (embeddedFile.hasSeparateDarkAndLightVersion && (depth !== 0 || isThemeChange)) {
             //this will reload the image in light/dark mode when switching themes
             const fileData: FileData = {
               mimeType: embeddedFile.mimeType,
@@ -785,6 +742,10 @@ export class EmbeddedFilesLoader {
     }
 
     const addFilesTimer = setInterval(() => {
+      if (this.terminate) {
+        clearInterval(addFilesTimer);
+        return;
+      }
       if(files[batch].length === 0) {
         return;
       }
@@ -927,6 +888,26 @@ export class EmbeddedFilesLoader {
 
       const canvas = await renderPage(pageNum); 
       if(canvas) {
+        // NEW: invert colors for dark theme (keep alpha unchanged)
+        if (this.isDark) {
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            try {
+              const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const data = img.data;
+              for (let i = 0; i < data.length; i += 4) {
+                data[i] = 255 - data[i];       // R
+                data[i + 1] = 255 - data[i+1]; // G
+                data[i + 2] = 255 - data[i+2]; // B
+                // alpha channel (data[i+3]) remains unchanged
+              }
+              ctx.putImageData(img, 0, 0);
+            } catch (e) {
+              // If reading pixel data fails, silently fallback to non-inverted
+            }
+          }
+        }
+
         const result: [DataURL,Size, PDFPageViewProps] = [`data:image/png;base64,${await new Promise((resolve, reject) => {
           canvas.toBlob(async (blob) => {
             const dataURL = await blobToBase64(blob);
@@ -1215,11 +1196,14 @@ export const generateIdFromFile = async (file: ArrayBuffer, key?: string): Promi
     }
 
     // Hash the combined data (file and key, if provided)
-    const hashBuffer = await window.crypto.subtle.digest("SHA-1", dataToHash);
+    // Ensure we pass an ArrayBuffer (not ArrayBufferLike) to subtle.digest
+    const buffer: ArrayBuffer = dataToHash.buffer.slice(
+      dataToHash.byteOffset,
+      dataToHash.byteOffset + dataToHash.byteLength
+    ) as ArrayBuffer;
+    const hashBuffer = await window.crypto.subtle.digest("SHA-1", buffer);
     id =
-      // Convert buffer to byte array
       Array.from(new Uint8Array(hashBuffer))
-        // Convert to hex string
         .map((byte) => byte.toString(16).padStart(2, "0"))
         .join("") as FileId;
   } catch (error) {

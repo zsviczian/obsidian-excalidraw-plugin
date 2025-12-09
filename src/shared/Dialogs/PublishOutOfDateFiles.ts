@@ -1,7 +1,7 @@
 import { Modal, Setting, TFile } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
 import { getIMGFilename } from "src/utils/fileUtils";
-import { addIframe } from "src/utils/utils";
+import { addYouTubeThumbnail } from "src/utils/utils";
 
 const haveLinkedFilesChanged = (depth: number, mtime: number, path: string, sourceList: Set<string>, plugin: ExcalidrawPlugin):boolean  => {
   if(depth++ > 5) return false;
@@ -67,7 +67,7 @@ export class PublishOutOfDateFilesDialog extends Modal {
       text: "Video about Obsidian Publish support",
     });
     detailsEl.createEl("br");
-    addIframe(detailsEl, "JC1E-jeiWhI");
+    addYouTubeThumbnail(detailsEl, "JC1E-jeiWhI");
     const p = this.contentEl.createEl("p",{text: "Collecting data..."});
     const statusEl = this.contentEl.createEl("p", {text: "Status: "});
     const files = await listOfOutOfSyncImgExports(this.plugin, recursive, statusEl);

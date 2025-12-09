@@ -1,11 +1,8 @@
 /*
 
+<a href="https://www.youtube.com/watch?v=epYNx2FSf2w" target="_blank"><img src ="https://i.ytimg.com/vi/epYNx2FSf2w/maxresdefault.jpg" style="width:560px;"></a>
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/epYNx2FSf2w" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-Link:: https://youtu.be/epYNx2FSf2w
-
-<iframe width="560" height="315" src="https://www.youtube.com/embed/diBT5iaoAYo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-Link:: https://youtu.be/diBT5iaoAYo
+<a href="https://www.youtube.com/watch?v=diBT5iaoAYo" target="_blank"><img src ="https://i.ytimg.com/vi/diBT5iaoAYo/maxresdefault.jpg" style="width:560px;"></a>
 
 Design your palette at http://paletton.com/
 Once you are happy with your colors, click Tables/Export in the bottom right of the screen:

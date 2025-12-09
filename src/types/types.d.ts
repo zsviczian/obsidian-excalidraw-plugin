@@ -18,6 +18,7 @@ export type GridSettings = {
   DYNAMIC_COLOR: boolean;  // Whether the grid color is dynamic
   COLOR: string;           // The grid color (in hex format)
   OPACITY: number;         // The grid opacity (hex value between "00" and "FF")
+  GRID_DIRECTION: {horizontal: boolean, vertical: boolean}; // Whether the grid is horizontal or vertical
 };
 
 export type DeviceType = {
@@ -57,6 +58,7 @@ declare global {
 declare module "obsidian" {
   interface App {
     internalPlugins: any;
+    setting: any;
     isMobile(): boolean;
     getObsidianUrl(file:TFile): string;
     metadataTypeManager: {

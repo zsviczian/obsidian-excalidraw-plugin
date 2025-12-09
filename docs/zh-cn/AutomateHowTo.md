@@ -167,7 +167,7 @@ strokeStyle 是一个字符串。
 ### strokeSharpness, setStrokeSharpness()
 ```typescript
 type StrokeSharpness = "round" | "sharp";
-setStrokeSharpness(val:nmuber);
+setStrokeSharpness(val:number);
 ```
 strokeSharpness 是一个字符串。
 
@@ -282,7 +282,7 @@ addToGroup(objectIds:[]):void
 ```
 将 `objectIds` 中列出的对象进行分组。
 
-## Utility functions
+## 实用函数
 ### clear()
 `clear()` 将从缓存中清除对象，但会保留元素样式设置。
 
@@ -407,7 +407,7 @@ async createPNG(templatePath?:string)
 	- Test 3.1
 ```
 
-The script:
+脚本：
 
 *使用 <kbd>CTRL+Shift+V</kbd> 将代码粘贴到 Obsidian 中！*
 ```javascript

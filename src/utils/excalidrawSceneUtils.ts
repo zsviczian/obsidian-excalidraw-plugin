@@ -1,5 +1,5 @@
-import { ExcalidrawArrowElement, ExcalidrawElement, ExcalidrawTextElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
-import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
+import { ExcalidrawArrowElement, ExcalidrawElement, ExcalidrawTextElement } from "@zsviczian/excalidraw/types/element/src/types";
+import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 
 
 export function updateElementIdsInScene(

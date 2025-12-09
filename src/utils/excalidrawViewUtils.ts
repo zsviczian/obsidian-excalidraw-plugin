@@ -1,19 +1,21 @@
 
-import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS } from "src/constants/constants";
-import { App, Modal, Notice, TFile, WorkspaceLeaf } from "obsidian";
+import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS, AUDIO_TYPES, CARD_WIDTH, CARD_HEIGHT } from "src/constants/constants";
+import { App, Modal, Notice, TFile } from "obsidian";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
-import { REGEX_LINK, REG_LINKINDEX_HYPERLINK, getExcalidrawMarkdownHeaderSection, REGEX_TAGS } from "../shared/ExcalidrawData";
+import { REGEX_LINK, REG_LINKINDEX_HYPERLINK, getExcalidrawMarkdownHeaderSection, REGEX_TAGS, getExcalidrawMarkdownHeader } from "../shared/ExcalidrawData";
 import ExcalidrawView from "src/view/ExcalidrawView";
-import { ExcalidrawElement, ExcalidrawFrameElement, ExcalidrawImageElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { ExcalidrawElement, ExcalidrawFrameElement, ExcalidrawImageElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { getEmbeddedFilenameParts, getLinkParts, isImagePartRef } from "./utils";
-import { cleanSectionHeading } from "./obsidianUtils";
+import { cleanSectionHeading, getAudioElementHeight } from "./obsidianUtils";
 import { getEA } from "src/core";
-import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { AppState, ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
 import { nanoid } from "nanoid";
 import { t } from "src/lang/helpers";
-import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
+import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { EmbeddedFile } from "src/shared/EmbeddedFileLoader";
+import { CaptureUpdateAction } from "src/constants/constants";
+import ExcalidrawPlugin from "src/core/main";
 
 export async function insertImageToView(
   ea: ExcalidrawAutomate,
@@ -37,6 +39,16 @@ export async function insertImageToView(
   if(shouldInsertToView) {await ea.addElementsToView(repositionToCursor, true, true);}
   return id;
 }
+
+  export function deleteAppStateKeys(
+    st: AppState,
+    [...keys]: (keyof AppState)[],
+  ): Partial<AppState> {
+    keys.forEach((key) => {
+      delete (st as Mutable<AppState>)[key];
+    });
+    return st;
+  };
 
 export async function insertEmbeddableToView (
   ea: ExcalidrawAutomate,
@@ -64,11 +76,20 @@ export async function insertEmbeddableToView (
   if(file && (IMAGE_TYPES.contains(file.extension) || ea.isExcalidrawFile(file)) && !ANIMATED_IMAGE_TYPES.contains(file.extension)) {
     return await insertImageToView(ea, position, link??file, undefined, shouldInsertToView);
   } else {
+    let height = MAX_IMAGE_SIZE;
+    if (
+      (file && AUDIO_TYPES.contains(file.extension.toLowerCase())) ||
+      (link && AUDIO_TYPES.contains(link.match(/\[\[[^\]]+?\.([^\.\]]+)]]/)?.[1]?.toLocaleLowerCase()))
+    ) {
+      ea.style.strokeColor = "transparent";
+      ea.style.backgroundColor = "transparent";
+      height = getAudioElementHeight();
+    }
     const id = ea.addEmbeddable(
       position.x,
       position.y,
       MAX_IMAGE_SIZE,
-      MAX_IMAGE_SIZE,
+      height,
       link,
       file,
     );
@@ -114,6 +135,23 @@ export function openTagSearch(link: string, app: App, view?: ExcalidrawView) {
 function getLinkFromMarkdownLink(link: string): string {
   const result = /^\[[^\]]*]\(([^\)]*)\)/.exec(link);
   return result ? result[1] : link;
+}
+
+function isInternalLink(link:string):boolean {
+  link = getLinkFromMarkdownLink(link);
+  if (link.startsWith("cmd://")) return true;
+  if (link.startsWith("obsidian://")) return true;
+  if (link.match(REG_LINKINDEX_HYPERLINK)) return false;
+  return true;
+}
+
+export function sceneRemoveInternalLinks(scene: {elements: ExcalidrawElement[]}): ExcalidrawElement[] {
+  const elements: ExcalidrawElement[] = JSON.parse(JSON.stringify(scene.elements));
+  elements.forEach(el => {
+    if(!el.link) return;
+    if(isInternalLink(el.link)) (el as Mutable<ExcalidrawElement>).link = null;
+  });
+  return elements;
 }
 
 export function openExternalLink (link:string, app: App, element?: ExcalidrawElement):boolean {
@@ -208,8 +246,8 @@ export function getFrameBasedOnFrameNameOrId(
 ): ExcalidrawFrameElement | null {
   const frames = elements
     .filter((el: ExcalidrawElement)=>el.type==="frame")
-    .map((el: ExcalidrawFrameElement, idx: number)=>{
-      return {el: el, id: el.id, name: el.name ?? `Frame ${String(idx+1).padStart(2,"0")}`};
+    .map((el: ExcalidrawFrameElement)=>{
+      return {el: el, id: el.id, name: el.name ?? "Frame"};
     })
     .filter((item:any) => item.id === frameName || item.name === frameName)
     .map((item:any)=>item.el as ExcalidrawFrameElement);
@@ -222,6 +260,8 @@ export async function addBackOfTheNoteCard(
   activate: boolean = true,
   cardBody?: string,
   embeddableCustomData?: EmbeddableMDCustomProps,
+  center: boolean = false,
+  position?: {x: number, y: number},
 ):Promise<string> {
   const data = view.data;
   const header = getExcalidrawMarkdownHeaderSection(data);
@@ -251,22 +291,31 @@ export async function addBackOfTheNoteCard(
   }
 
   const ea = getEA(view) as ExcalidrawAutomate;
+  let {x,y} = position ?? ea.targetView.currentPosition;
+  if(center) {
+    const centerPos = ea.getViewCenterPosition();
+    if(centerPos) {
+      x = centerPos.x - (CARD_WIDTH / 2);
+      y = centerPos.y - (CARD_HEIGHT / 2);
+    }
+  }
+
   const id = ea.addEmbeddable(
-    0,0,400,500,
+    x,y,CARD_WIDTH,CARD_HEIGHT,
     `[[${view.file.path}#${title}]]`,
     undefined,
     embeddableCustomData
   );
-  await ea.addElementsToView(true, false, true);
+  await ea.addElementsToView(!center, false, true);
 
   const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
   const el = ea.getViewElements().find(el=>el.id === id);
   api.selectElements([el]);
   if(activate) {
     window.setTimeout(()=>{
-      api.updateScene({appState: {activeEmbeddable: {element: el, state: "active"}}, storeAction: "update"});
+      api.updateScene({appState: {activeEmbeddable: {element: el, state: "active"}}, captureUpdate: CaptureUpdateAction.NEVER,});
       if(found) view.getEmbeddableLeafElementById(el.id)?.editNode?.();
-    });
+    },200);
   }
   ea.destroy();
   return el.id;
@@ -464,4 +513,20 @@ export async function toggleImageAnchoring(
   }
   await ea.addElementsToView(false, false);
   ea.destroy();
+}
+
+export function onLoadMessages(plugin: ExcalidrawPlugin, scene: {elements: ExcalidrawElement[], appState: AppState}, data: string) {
+  setTimeout(() => {
+    if(!(scene.appState.frameRendering?.markerEnabled ?? true) && scene.elements.some(el=>el.type === "frame" && el.frameRole === "marker")) {
+      new Notice(t("MARKER_FRAME_RENDERING_DISABLED_NOTICE"));
+    }
+    /*const backOfTheCardNote = getExcalidrawMarkdownHeader(data)
+      .header
+      .replace(/^---\n[\s\S]*?\n---/gm, "")
+      .replace("==⚠  Switch to EXCALIDRAW VIEW in the MORE OPTIONS menu of this document. ⚠== You can decompress Drawing data with the command palette: 'Decompress current Excalidraw file'. For more info check in plugin settings under 'Saving'","")
+      .trim();
+    if(backOfTheCardNote.length>0) {
+      new Notice(t("DRAWING_HAS_BACK_OF_THE_CARD")); 
+    }*/
+  });
 }

@@ -1,8 +1,8 @@
 import { customAlphabet } from "nanoid";
 import { ExcalidrawLib } from "../types/excalidrawLib";
-import { moment } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
 import { DeviceType } from "src/types/types";
+import { errorHandler } from "../utils/ErrorHandler";
 //This is only for backward compatibility because an early version of obsidian included an encoding to avoid fantom links from littering Obsidian graph view
 declare const PLUGIN_VERSION:string;
 export let EXCALIDRAW_PLUGIN: ExcalidrawPlugin = null;
@@ -79,14 +79,13 @@ export const obsidianToExcalidrawMap: { [key: string]: string } = {
   'ur': 'ur-PK', // Assuming Pakistan for Urdu
   'vi': 'vi-VN',
   'zh': 'zh-CN',
-  'zh-TW': 'zh-TW',
+  'zh-tw': 'zh-TW',
 };
 
 
 export let {
   sceneCoordsToViewportCoords,
   viewportCoordsToSceneCoords,
-  determineFocusDistance,
   intersectElementWithLine,
   getCommonBoundingBox,
   getMaximumGroups,
@@ -106,33 +105,63 @@ export let {
   getCSSFontDefinition,
   loadSceneFonts,
   loadMermaid,
+  syncInvalidIndices,
 } = excalidrawLib;
 
 export function updateExcalidrawLib() {
-  ({
-    sceneCoordsToViewportCoords,
-    viewportCoordsToSceneCoords,
-    determineFocusDistance,
-    intersectElementWithLine,
-    getCommonBoundingBox,
-    getMaximumGroups,
-    measureText,
-    getLineHeight,
-    wrapText, 
-    getFontString, 
-    getBoundTextMaxWidth, 
-    exportToSvg,
-    exportToBlob,
-    mutateElement,
-    restore,
-    mermaidToExcalidraw,
-    getFontFamilyString,
-    getContainerElement,
-    refreshTextDimensions,
-    getCSSFontDefinition,
-    loadSceneFonts,
-    loadMermaid,
-  } = excalidrawLib);
+  try {
+    // First validate that excalidrawLib exists and has the expected methods
+    if (!excalidrawLib) {
+      throw new Error("excalidrawLib is undefined");
+    }
+    
+    // Check that critical functions exist before assigning them
+    const requiredFunctions = [
+      'sceneCoordsToViewportCoords',
+      'viewportCoordsToSceneCoords',
+      'intersectElementWithLine',
+      'getCommonBoundingBox',
+      'measureText',
+      'getLineHeight',
+      'restore'
+    ];
+    
+    for (const fnName of requiredFunctions) {
+      if (!(fnName in excalidrawLib) || typeof excalidrawLib[fnName as keyof typeof excalidrawLib] !== 'function') {
+        throw new Error(`Required function ${fnName} is missing from excalidrawLib`);
+      }
+    }
+    
+    // If validation passes, update the exported functions
+    ({
+      sceneCoordsToViewportCoords,
+      viewportCoordsToSceneCoords,
+      intersectElementWithLine,
+      getCommonBoundingBox,
+      getMaximumGroups,
+      measureText,
+      getLineHeight,
+      wrapText, 
+      getFontString, 
+      getBoundTextMaxWidth, 
+      exportToSvg,
+      exportToBlob,
+      mutateElement,
+      restore,
+      mermaidToExcalidraw,
+      getFontFamilyString,
+      getContainerElement,
+      refreshTextDimensions,
+      getCSSFontDefinition,
+      loadSceneFonts,
+      loadMermaid,
+      syncInvalidIndices,
+    } = excalidrawLib);
+  } catch (error) {
+    errorHandler.handleError(error, "updateExcalidrawLib", true);
+    // Don't throw here - we'll try to continue with potentially stale functions
+    // but at least we won't crash
+  }
 }
 
 export const FONTS_STYLE_ID = "excalidraw-custom-fonts";
@@ -202,9 +231,10 @@ export const IMAGE_TYPES = ["jpeg", "jpg", "png", "gif", "svg", "webp", "bmp", "
 export const ANIMATED_IMAGE_TYPES = ["gif", "webp", "apng", "svg"];
 export const EXPORT_TYPES = ["svg", "dark.svg", "light.svg", "png", "dark.png", "light.png"];
 export const MAX_IMAGE_SIZE = 500;
-
-export const VIDEO_TYPES = ["mp4", "webm", "ogv", "mov", "mkv"];
-export const AUDIO_TYPES = ["mp3", "wav", "m4a", "3gp", "flac", "ogg", "oga", "opus"];
+export const CARD_WIDTH = 400;
+export const CARD_HEIGHT = 500;
+export const VIDEO_TYPES = ["mp4","webm","ogv","mov","mkv","avi","m4v","wmv"];
+export const AUDIO_TYPES = ["mp3","wav", "m4a", "3gp", "flac", "ogg", "oga", "opus", "aac", "aiff", "aif", "mid", "midi"];
 export const CODE_TYPES = ["json", "css", "js"];
 
 export const FRONTMATTER_KEYS:{[key:string]: {name: string, type: string, depricated?:boolean}} = {
@@ -216,6 +246,7 @@ export const FRONTMATTER_KEYS:{[key:string]: {name: string, type: string, depric
   "export-padding": {name: "excalidraw-export-padding", type: "number"},
   "export-pngscale": {name: "excalidraw-export-pngscale", type: "number"},
   "export-embed-scene": {name: "excalidraw-export-embed-scene", type: "checkbox"},
+  "export-internal-links": {name: "excalidraw-export-internal-links", type: "checkbox"},
   "link-prefix": {name: "excalidraw-link-prefix", type: "text"},
   "url-prefix": {name: "excalidraw-url-prefix", type: "text"},
   "link-brackets": {name: "excalidraw-link-brackets", type: "checkbox"},
@@ -230,7 +261,41 @@ export const FRONTMATTER_KEYS:{[key:string]: {name: string, type: string, depric
   "iframe-theme": {name: "excalidraw-iframe-theme", type: "text", depricated: true},
   "embeddable-theme": {name: "excalidraw-embeddable-theme", type: "text"},
   "open-as-markdown": {name: "excalidraw-open-md", type: "checkbox"},
+  "embed-as-markdown": {name: "excalidraw-embed-md", type: "checkbox"},
 };
+
+export const CaptureUpdateAction = {
+  /**
+   * Immediately undoable.
+   *
+   * Use for updates which should be captured.
+   * Should be used for most of the local updates.
+   *
+   * These updates will _immediately_ make it to the local undo / redo stacks.
+   */
+  IMMEDIATELY: "IMMEDIATELY",
+  /**
+   * Never undoable.
+   *
+   * Use for updates which should never be recorded, such as remote updates
+   * or scene initialization.
+   *
+   * These updates will _never_ make it to the local undo / redo stacks.
+   */
+  NEVER: "NEVER",
+  /**
+   * Eventually undoable.
+   *
+   * Use for updates which should not be captured immediately - likely
+   * exceptions which are part of some async multi-step process. Otherwise, all
+   * such updates would end up being captured with the next
+   * `CaptureUpdateAction.IMMEDIATELY` - triggered either by the next `updateScene`
+   * or internally by the editor.
+   *
+   * These updates will _eventually_ make it to the local undo / redo stacks.
+   */
+  EVENTUALLY: "EVENTUALLY",
+} as const;
 
 export const EMBEDDABLE_THEME_FRONTMATTER_VALUES = ["light", "dark", "auto", "dafault"];
 export const VIEW_TYPE_EXCALIDRAW = "excalidraw";

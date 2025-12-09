@@ -7,28 +7,24 @@ This script modifies the color lightness/hue/saturation/transparency of selected
 - The color of SVG elements and nested Excalidraw drawings will only be mapped. When mapping colors, the original image remains unchanged, only a mapping table is created and the image is recolored during rendering of your Excalidraw screen. In case you want to make manual changes you can also edit the mapping in Markdown View Mode under `## Embedded Files`
 
 If you select only a single SVG or nested Excalidraw element, then the script offers an additional feature. You can map colors one by one in the image. 
-```js*/
+```js
+*/
 
 const HELP_TEXT = `
-<ul>
-<li dir="auto">Select SVG images, nested Excalidraw drawings and/or regular Excalidraw elements</li>
-<li dir="auto">For a single selected image, you can map colors individually in the color mapping section</li>
-<li dir="auto">For Excalidraw elements: stroke and background colors are modified permanently</li>
-<li dir="auto">For SVG/nested drawings: original files stay unchanged, color mapping is stored under <code>## Embedded Files</code></li>
-<li dir="auto">Using color maps helps maintain links between drawings while allowing different color themes</li>
-<li dir="auto">Sliders work on relative scale - the amount of change is applied to current values</li>
-<li dir="auto">Unlike Excalidraw's opacity setting which affects the whole element:
-<ul>
-<li dir="auto">Shade Master can set different opacity for stroke vs background</li>
-<li dir="auto">Note: SVG/nested drawing colors are mapped at color name level, thus "black" is different from "#000000"</li>
-<li dir="auto">Additionally if the same color is used as fill and stroke the color can only be mapped once</li>
-</ul>
-</li>
-<li dir="auto">This is an experimental script - contributions welcome on GitHub via PRs</li>
-</ul>
-<div class="excalidraw-videoWrapper"><div>
-<iframe src="https://www.youtube.com/embed/ISuORbVKyhQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-</div></div>
+- Select SVG images, nested Excalidraw drawings and/or regular Excalidraw elements
+- For a single selected image, you can map colors individually in the color mapping section
+- For Excalidraw elements: stroke and background colors are modified permanently
+- For SVG/nested drawings: original files stay unchanged, color mapping is stored under \`## Embedded Files\`
+- Using color maps helps maintain links between drawings while allowing different color themes
+- Sliders work on relative scale - the amount of change is applied to current values
+- Unlike Excalidraw's opacity setting which affects the whole element:
+    - Shade Master can set different opacity for stroke vs background
+    - **Note:** SVG/nested drawing colors are mapped at color name level, thus "black" is different from "#000000"
+    - Additionally if the same color is used as fill and stroke the color can only be mapped once
+- This is an experimental script - contributions welcome on GitHub via PRs
+
+<a href="https://www.youtube.com/watch?v=ISuORbVKyhQ" target="_blank"><img src ="https://i.ytimg.com/vi/ISuORbVKyhQ/maxresdefault.jpg" style="max-width:560px; width:100%"></a>
+
 `;
 
 if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.7.2")) {
@@ -343,7 +339,8 @@ function showModal() {
     const helpDetailsDiv = helpDiv.createEl("div", {
       attr: { style: "margin-top: 0em; " }
     });
-    helpDetailsDiv.innerHTML = HELP_TEXT;
+    //helpDetailsDiv.innerHTML = HELP_TEXT;
+    await ea.obsidian.MarkdownRenderer.render(ea.plugin.app, HELP_TEXT, helpDetailsDiv, "", ea.plugin);
 
     const component = new ea.obsidian.Setting(contentEl)
       .setName(FORMAT)

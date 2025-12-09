@@ -290,6 +290,7 @@ textarea.excalidraw-wysiwyg {
 }
 
 .excalidraw .tray-zoom {
+  height: var(--default-button-size);
   pointer-events: initial;
   padding-bottom: 0.05rem;
   padding-top: 0.05rem;
@@ -318,9 +319,11 @@ textarea.excalidraw-wysiwyg {
   font-size: 0.45rem !important;
 }
 
+/*
 .Island > .Stack > .Stack {
   padding:0.2rem;
 }
+*/
 
 label.color-input-container > input {
   max-width: 5rem;
@@ -329,7 +332,7 @@ label.color-input-container > input {
 .excalidraw .FixedSideContainer_side_top {
   left: 10px !important;
   top: 10px !important;
-  right: 10px !important;
+  right: 10px;
   bottom: 10px !important;
 }
 
@@ -347,6 +350,10 @@ label.color-input-container > input {
  {
   max-height: 70vh;
   overflow-y: auto;
+}
+
+.excalidraw .App-mobile-menu {
+  width: 12.5rem !important;
 }
 
 .excalidraw .panelColumn .buttonList {
@@ -427,25 +434,6 @@ div.excalidraw-draginfo {
   margin: auto;
 }
 
-.modal-content.excalidraw-scriptengine-install .search-bar-wrapper {
-  position: sticky;
-  top: 1rem;
-  margin-right: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  flex-wrap: nowrap;
-  z-index: 10;
-  background: var(--background-secondary);
-  padding: 0.5rem;
-  border-bottom: 1px solid var(--background-modifier-border);
-  float: right;
-  max-width: 28rem;
-}
-
-div.search-bar-wrapper input {
-  margin-right: -0.5rem;
-}
 
 .modal-content.excalidraw-scriptengine-install .hit-count {
   margin-left: 0.5em;
@@ -637,20 +625,27 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 }
 
 .excalidraw-settings-links-container {
-  display: flex; /* Align SVG and text horizontally */
-  align-items: center; /* Center SVG and text vertically */
-  text-decoration: none; /* Remove underline from links */
-  color: inherit; /* Inherit text color */
-  text-align: center;
+    align-items: center;
+    color: inherit;
+    display: flex;
+    gap: .3em;
+    text-align: center;
+    text-decoration: none;
+    flex-wrap: wrap;
+    justify-content: center;
+    flex-direction: row;
 }
 
 .excalidraw-settings-links-container a {
   display: flex; /* Align children horizontally */
   align-items: center; /* Center items vertically */
   text-align: left;
+  margin-right: 4px;
+  margin-left: 4px;
 }
 
-.excalidraw-settings-links-container svg {
+.excalidraw-settings-links-container svg,
+.ex-setting-actions-container svg {
   margin-right: 8px;
   height: 30px;
   width: 30px;
@@ -719,6 +714,13 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
   margin-bottom: -2px;
 }
 
+.is-mobile .modal-container.excalidraw-modal .modal.excalidraw-modal {
+  align-self: flex-start;
+  transform: none !important;
+  margin-top: calc(var(--safe-area-inset-top) + var(--header-height) + var(--size-4-2));
+  width: 100%;
+}
+
 .excalidraw .picker-content {
   grid-gap: 0.2rem !important;
 }
@@ -734,4 +736,193 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 
 .excalidraw .context-menu {
   height: fit-content;
+}
+
+.excalidraw-prompt-buttonbar-top,
+.excalidraw-prompt-buttonbar-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;  /* keep both rows top‐aligned */
+  row-gap: 0.5em;           /* vertical space when wrapped */
+}
+
+/* top bar specifics */
+.excalidraw-prompt-buttonbar-top {
+  padding: 0.5em 0;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+/* bottom bar specifics */
+.excalidraw-prompt-buttonbar-bottom {
+  margin-top: 1rem;
+}
+
+/* make each child a flex row */
+.excalidraw-prompt-buttonbar-top  > div,
+.excalidraw-prompt-buttonbar-bottom > div {
+  display: flex;
+}
+
+/* push the first group to the left */
+.excalidraw-prompt-buttonbar-top  > div:first-child,
+.excalidraw-prompt-buttonbar-bottom > div:first-child {
+  margin-right: auto;
+}
+
+/* push the second group to the right */
+.excalidraw-prompt-buttonbar-top  > div:last-child,
+.excalidraw-prompt-buttonbar-bottom > div:last-child {
+  margin-left: auto;
+}
+
+.excalidraw-search.document-search-container {
+  display: flex;
+  flex-direction: column;
+  background: var(--background-secondary);
+  border-radius: 8px;
+  box-shadow: 0 1px 4px 0 rgba(0,0,0,0.10);
+  padding: 0.5em 0.8em;
+  margin-bottom: 2em;
+  min-width: 18rem;
+  position: sticky;
+  top: 1rem;
+  margin-right: 1rem;
+  margin-left: 1rem;
+}
+
+.excalidraw-search .document-search {
+  align-items: center;
+  max-width: none;
+}
+
+.excalidraw-search .search-input-container.document-search-input {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  background: var(--background-primary);
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  min-width: 0;
+}
+
+.excalidraw-search .search-input-container .clickable-icon {
+  display: flex;
+  align-items: center;
+  color: var(--text-faint);
+}
+
+.excalidraw-search .search-input-container input[type="text"] {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-normal);
+  font-size: 1em;
+  flex: 1 1 auto;
+  padding: 0.1em 2em;
+  margin: 0;
+}
+
+.excalidraw-search .document-search-count {
+  margin-left: 0.5em;
+  color: var(--text-faint);
+  font-size: 0.95em;
+  white-space: nowrap;
+  min-width: 3.5em;
+  text-align: right;
+}
+
+.excalidraw-search .document-search-buttons {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.excalidraw-search .document-search-button {
+  background: none;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  padding: 0.1em 0.2em;
+  margin: 0 1px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-faint);
+  transition: background 0.15s;
+  height: 2em;
+  width: 2em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.excalidraw-search .document-search-button:hover, .excalidraw-search .document-search-button:focus {
+  background: var(--background-modifier-hover);
+  color: var(--text-accent);
+}
+
+.excalidraw-search .document-search-button svg {
+  width: 1.3em;
+  height: 1.3em;
+  stroke: currentColor;
+  fill: none;
+  pointer-events: none;
+}
+
+/*remove blur from PDF embed*/
+.excalidraw__embeddable-container canvas {
+  image-rendering: auto;
+}
+
+.excalidraw__embeddable-container .mod-nofilter canvas {
+  filter: none !important;
+}
+
+.excalidraw__embeddable-container .canvas-node.is-selected .canvas-node-container,
+.excalidraw__embeddable-container .canvas-node.is-focused .canvas-node-container {
+  border-color: inherit;
+  box-shadow: inherit;
+}
+
+.excalidraw__embeddable-container .pdf-toolbar-right {
+  display: none;
+}
+
+.excalidraw-scriptengine-install .modal-close-button {
+  z-index: 9999;
+}
+
+.excalidraw .undo-redo-buttons button {
+  width: 3em;
+}
+
+.ExcalidrawObsidianMenu--mobile label.ToolIcon {
+  margin-left: 4px;
+}
+
+.excalidraw .excalidraw-ui-top-right.library-and-pen,
+.ExcalidrawObsidianMenu--mobile {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  row-gap: 4px;
+  justify-content: center;
+  align-items: center;
+}
+
+.excalidraw .excalidraw-ui-top-right.library-and-pen .ToolIcon__penMode {
+  margin: auto;
+}
+
+.ExcalidrawObsidianMenu {
+  display: flex;
+  flex-direction: column;
+}
+
+.excalidraw .FixedSideContainer_side_top {
+    padding-top: 0 !important;
+
+}
+
+.excalidraw .ToolIcon.ToolIcon__penMode {
+	height:fit-content
 }

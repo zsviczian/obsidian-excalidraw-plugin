@@ -5,281 +5,253 @@ If you'd like to learn more, please subscribe to my YouTube channel: [Visual PKM
 
 Thank you & Enjoy!
 
-<div class="excalidraw-videoWrapper"><div>
-<iframe src="https://www.youtube.com/embed/P_Q6avJGoWI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-</div></div>
+<div class="excalidraw-videoWrapper">
+<a href="https://www.youtube.com/watch?v=P_Q6avJGoWI" target="_blank"><img src ="https://i.ytimg.com/vi/P_Q6avJGoWI/maxresdefault.jpg" style="width:100%;"></a>
+</div>
 `;
 
 export const RELEASE_NOTES: { [k: string]: string } = {
-  Intro: `After each update you'll be prompted with the release notes. You can disable this in plugin settings.
+  Intro: `After each update, you'll see these release notes (you can turn this off in the plugin settings).
 
-I develop this plugin as a hobby, spending my free time doing this. If you find it valuable, then please say THANK YOU or...
+I build this plugin in my free time, as a labor of love. Curious about the philosophy behind it? Check out [📕 Sketch Your Mind](https://sketch-your-mind.com). If you find it valuable, say THANK YOU or…
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
-"2.8.3":`
-## Fixed
-- Chinese translation not available since 2.8.0. [#2247](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2247)
-- Since the most recent Samsung Android update, adding images from the gallery returns an Unsupported Image Type error. [#2245](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2245)
-- Duplicating/removing frame while children selected [#9079](https://github.com/excalidraw/excalidraw/pull/9079)
-`,
-"2.8.2":`
-## New
-- Moved "Create new drawing" option up in the context menu [#2243](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2243)
-
-## Fixed
-- In rare cases drawing content gets overwritten with another drawing [#2152](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2152)
-- "Wrap selection in frame" sets dark mode to light mode [#2240](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2240)
-- Multiple bug fixes from Excalidraw.com
-  - Elbow arrows within boxes [#9077](https://github.com/excalidraw/excalidraw/issues/9077)
-  - Elbow arrow orthogonality [#9073](https://github.com/excalidraw/excalidraw/pull/9073)
-  - Improve library sidebar performance [#9060](https://github.com/excalidraw/excalidraw/pull/9060)
-  - Opacity slider now displays numerical value [#9009](https://github.com/excalidraw/excalidraw/pull/9009)
-  - Resize a frame and its children together when box selecting the frame and its children together [#9031](https://github.com/excalidraw/excalidraw/pull/9031)
-  - Excalidraw screen flickering in dark mode [#9057](https://github.com/excalidraw/excalidraw/pull/9057)
-`,
-"2.8.1":`
-## Fixed
-- Unable to open Excalidraw files after the 2.8.0 update. [#2235](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2235)
-`,
-"2.8.0":`
-<div class="excalidraw-videoWrapper"><div>
-<iframe src="https://www.youtube.com/embed/tWi5xTUTz7E" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-</div></div>
+"2.18.0":`
+## New from Excalidraw.com
+- 🔥🔥🔥 New arrow behavior allows binding arrows to the inside of shapes and image! 🙏[mtolmacs](https://github.com/mtolmacs), [dwelle](https://github.com/dwelle) [#9670](https://github.com/excalidraw/excalidraw/pull/9670)
 
 ## New
-- Updated "Export Image" dialog
-  - 🚀 PDF Export option including tiling of images over multiple pages.  Only available on desktop :(
-  - SVG to clipboard
-  - More granular setting for padding and scale
-  - Slideshow script can now print slides to PDF (update script from script store)
-- Set local graph to show the links in the embeddable when it is activated/deactivated [#2200](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2200)
+- New option in the Export Dialog to **include/exclude internal links** when exporting to SVG or PDF.
+  - Useful when sharing an SVG or PDF with others.
+  - Internal links are links that point to files in your Obsidian vault.
+  - By default, internal links are included in exports.
+  - Use the new document property: \`export-internal-links: false\` to disable exporting internal links on a per-drawing basis.
 
 ## Fixed
-- Fixed several LaTeX issues. 🙏 @Sintuz [#1631](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1631), [#2195](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2195), [#1842](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1842)
-- Fixed support for *.jfif and *.avif images [#2212](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2212)
-- PDF++ selection is not correctly showing after embedded into a drawing (for some specific files) [#2213](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2213)
-- iOS 18 can't upload image and library [#2182](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2182)
-- Image block references are broken in hover previews [#2218](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2218)
-  - ⚠️ Note there is a known issue in Obsidian 1.8.2 ⚠️ affecting preview windows in Excalidraw. I received confirmation that this will be fixed in 1.8.3. For now, if hover previews are important to you, you can downgrade to Obsidian 1.8.1 [#2228](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2225) 
-- Mobile elements panel and context menu are not scrollable  [#2216](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2216)
-- "Local Font" menu disappears when opening a drawing in an Obsidian popout-window [#2205](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2205)
-
-## Updates from Excalidraw.com
-- Pressing delete on a frame will only delete the children [#9011](https://github.com/excalidraw/excalidraw/pull/9011)
-- New crowfoot arrowheads and a new arrowhead picker [#8942](https://github.com/excalidraw/excalidraw/pull/8942)
-- Fixed some of the arrow binding issues [#9010](https://github.com/excalidraw/excalidraw/pull/9010), [#2209](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2209)
-- New context menu action: "Wrap selection in frame" [#9005](https://github.com/excalidraw/excalidraw/pull/9005)
-- Elbow arrow segment fixing and positioning [#8952](https://github.com/excalidraw/excalidraw/pull/8952)
-- When drag creating a new frame, do not add a partial group to it. When wrapping a selected partial group in a frame however, do add it to the wrapping frame. But such that it should be separated from the previous containing group. [#9014](https://github.com/excalidraw/excalidraw/pull/9014)
+- Memory leak issues
+- Potential fix to Backspace and CTRL+V stopping working in text elements after extended use of Excalidraw.
+- Improved detection of on-screen keyboard on mobile devices. (issue reported on [Discord](https://discord.com/channels/1026825302900494357/1444652800360316959))
+- Insert any file, insert LaTeX and some other dialogs got hidden behind the on-screen keyboard on mobile devices. Dialogs appear at the top of the screen now on mobile devices.
 
 ## New in ExcalidrawAutomate
-- New hook: ${String.fromCharCode(96)}onImageFileNameHook${String.fromCharCode(96)}. When set, this callback is triggered when a image is being saved in Excalidraw.
-- PDF export functions, paving the way for slideshow to export slides to PDF
-${String.fromCharCode(96,96,96)}ts
-/**
- * Returns the dimensions of a standard page size in pixels.
-*/
-function getPagePDFDimensions(
-  pageSize: PageSize,
-  orientation: PageOrientation
-): PageDimensions;
+- **createSVG()** now exposes convertMarkdownLinksToObsidianURLs and includeInternalLinks parameters.
+\`\`\`ts
+async createSVG(
+    templatePath?: string,
+    embedFont: boolean = false,
+    exportSettings?: ExportSettings, 
+    loader?: EmbeddedFilesLoader,
+    theme?: string,
+    padding?: number,
+    convertMarkdownLinksToObsidianURLs: boolean = false,
+    includeInternalLinks: boolean = true,
+  ): Promise<SVGSVGElement>
+\`\`\`
+`,
+"2.17.2":`
+## Fixed
+- Lasso selection tool is back in the more tools menu in tray-mode and desktop mode.
+- "Toggle enable context menu" command palette action is available on mobile devices.
+- FloatingModal window top-right close button did not work on mobile devices.
+- Hover preview flashed for larger PDF hover previews, in some cases would not even show.
+- Fixed: opanAI API URL in settings will be honored when creating code from diagram [#2540](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2540) 🙏[@threeq](https://github.com/threeq)
+- Fixed export to PDF. Rounded images cropped from the left and the top were transformed incorrectly. [#2544](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2544)
 
-/**
- * Creates a PDF from the provided SVG elements with specified scaling and page properties.
-*/
-function createPDF(props: {
-  SVG: SVGSVGElement[];
-  scale?: PDFExportScale;
-  pageProps?: PDFPageProperties;
-  filename: string;
-}): Promise<void>;
+## New
+- Added configurable max tokens setting for OpenAI API [#2543](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2543) 🙏[@dddrop](https://github.com/dddrop)
+`,
+"2.17.1":`
+## Fixed
+- Excalibrain stopped working after the 2.17.0 update. Fixed. [#2532](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2532)
+- Pinned scripts are not hidden in view mode when in phone UI mode.
+`,
+"2.17.0":`
+## New
+- Phone UI from Excalidraw.com [#9996](https://github.com/excalidraw/excalidraw/pull/9996)
+- Custom pen settings now allow pen width to be set at 0.1 increments from 0.1 to 8.0
+- Updated the "Palm Guard" script to support the change UI configurations.
+- Restructured UI-Mode settings in plugin settings. You can now set the preference for UI mode for desktop and tablets.
+  The old "prefer tray-mode" toggle has been removed. "Toggle Tray-Mode" changes to "Toggle UI-Mode".
+- New command palette action: "Toggle enable context menu". This setting is helpful on Mobile devices, where the context menu may interfere with touch interactions. The setting is saved with the drawing, thus you can add it to your templates (then press CTRL+S to force save) if you want the context menu to be disabled by default.
 
-/**
- * Creates an SVG representation of the current view.
-*/
-function createViewSVG(props : {
-  withBackground?: boolean;
-  theme?: "light" | "dark";
-  frameRendering?: FrameRenderingOptions;
-  padding?: number;
-  selectedOnly?: boolean;
-  skipInliningFonts?: boolean;
-  embedScene?: boolean;
-}): Promise<SVGSVGElement>;
+## Fixed
+- side panel does not attach correctly when library is pinned [#2510](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2510)
+- Fixed print area when using marker frames and printing Slideshow to PDF
+- The "Invert Colors" script and ExcalidrawAutomate bugs that resulted in broken colors and Excalidraw crashes in some cases after color inversion.
+- Fixed duplicated PDF elements after copy-pasting from scene to scene.
+- Resolved the large gap at the top on iOS devices. As it turns out, Apple adds additional padding automatically to avoid collision with the notch.
+- Fixed the positioning of the "Canvas and Shape Properties" window.
+- Attempt to fix the mobile keyboard pop-up, distorting the view.
+- Added finalize multipoint-line button to compact layout
+`,
+"2.16.1":`
+## Fixed
+- Based on a request from [Kevin](https://github.com/Kovah) referencing GDPR, I removed YouTube iframes from settings, scripts, etc., and replaced them with thumbnail images + links to YouTube. [#2234](https://github.com/zsviczian/obsidian-excalidraw-plugin/discussions/2234)`,
+"2.16.0":`
+<div class="excalidraw-videoWrapper">
+<a href="https://www.youtube.com/watch?v=51EgDgtiZgQ" target="_blank"><img src ="https://i.ytimg.com/vi/51EgDgtiZgQ/maxresdefault.jpg" style="width:100%;"></a>
+</div>
 
+## New from Excalidraw.com
+- New library search feature [#9903](https://github.com/excalidraw/excalidraw/pull/9903)
+  - You can rename library items by selecting them, then choosing "Rename or publish" from the ... menu.
+- New compact mode for tablets [#9910](https://github.com/excalidraw/excalidraw/pull/9910)
+  - New setting in plugin setting \`Compact-mode on Tablets\` to override tray-mode on tablets in favor of the new compact mode.
+
+## New
+- Embedding PDF as images, frames are now marker frames instead of regular frames. You can reference pages, including their markup in markdown notes, using this syntax: \`![[drawing#^frame=12]]\` (page 12)
+- Pinned scripts toolbar is now on the right side in all modes: tray-, normal-, and compact. The toolbar moves into view when the side panel is opened for the stencil library or for search.
+- Better RTL support, pinned scripts are rendered on the left side in RTL mode.
+
+## Fixed
+- Critical fix: When clicking to follow a link in a markdown embeddable in preview mode to open an Excalidraw drawing in the same tab, the back of the newly opened drawing was overwritten with the content of the source drawing.
+- PDF++ Links from document to Excalidraw select everything in the scene instead of the linked element. [#2503](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2503)
+
+`,
+"2.15.3":`
+## Fixed
+- New back of the note cards are not visible until the drawing is saved. When adding a back-of-the-note card using the context menu, the card got placed at the absolute 0,0 position in the scene instead of the current pointer position. [#9949](https://github.com/excalidraw/excalidraw/issues/9949)
+- Drawings created 4 years ago don't open [#2479](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2479)
+- On Obsidian Mobile, when an element has multiple links, clicking the link icon, the link selector pops up and immediately closes
+- Improved handling of importing external images and drag and drop of images from inside Obsidian. Features like (Convert SVG to Strokes) and (Flip the card) now work immediately, you don't need to force save, or wait for autosave to kick in.
+
+## New
+- Added startup check that detects when Obsidian's recorded plugin version differs from the installed Excalidraw code (e.g. after partial sync of large files) and offers to update or ignore, with a setting to disable the check.
+- When Excalidraw is open in two or more tabs—either as Markdown or Excalidraw—auto-zoom is disabled. This allows you to work in multiple tabs on the same drawing at once: focusing on different areas of the same drawing, or editing the Markdown and Excalidraw views in parallel.
+`,
+"2.15.2":`
+## Fixed:
+- Pressing enter on a text element erroneously activated all markdown embeddables in the scene. [discord](https://discord.com/channels/1026825302900494357/1412683408424833045)
+- After updating to PDF++ 0.40.31, touch scrolling of embedded PDF documents stopped working on mobile devices, and the PDF document appeared with the wrong themes in some cases.
+- Issue with the Kanban board as an active embeddable on mobile phones is fixed.
+
+## Fixed in ExcalidrawAutomate
+- \`getActiveEmbeddableViewOrEditor (view?:ExcalidrawView): {view:any}|{file:TFile, editor:Editor}|{node: ObsidianCanvasNode}|null;\` no returns the node, instead of the empty view from the leaf.
+`,
+"2.15.1":`
+## Fixed
+- PDF improvements
+  - It was not possible to scroll the embedded PDF. [#9891](https://github.com/excalidraw/excalidraw/pull/9891)
+  - Embedded PDF pages were blurred (pixelated).
+  - Embedded PDF now accurately follows \`excalidraw-embeddable-theme\` document property.
+    - auto: follows Excalidraw theme (regardless of Obsidian theme)
+    - default: follows Obsidian theme (regardless of Excalidraw theme)
+    - dark: always displays the PDF in dark mode (regardless of Excalidraw and Obsidian themes)
+    - light: always displays the PDF in light mode (regardless of Excalidraw and Obsidian themes)
+  - New embeddable-menu buttons:
+    - Snapshot: inserts an image of the current active page to the scene
+    - Bookmark: updates the embed link to the current page
+- Pasting an oversized image triggered an error and caused Excalidraw to discard the scene. [#2453](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2453), [#9878](https://github.com/excalidraw/excalidraw/issues/9878)
+- Video with local URI will no longer autoplay when the scene loads
+- Error creating link to element when element is a sticky note
+- Area link embeds hide the content of the objects within the area [#2461](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2461)
+- On Obsidian Mobile 1.9.10, embeddables could cause a black/white screen (no active view) until reselecting the Excalidraw page; [#2460](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2460)
+- Scrolling of embedded web pages on mobile devices is working again.
+
+## New
+- Insert Any File now supports adding Audio files.
+- New option in settings under "Zoom and Pan". Pan with right mouse button (Miro-style): right-click and drag to pan the canvas. Press 'm' for the context menu (disabled while editing text). 🙏 [@mfuria](https://github.com/mfuria) for making this happen! [#2450](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2450), [#329](https://github.com/zsviczian/excalidraw/pull/329)
+- Insert image in the main toolbar now opens a dropdown menu of options: Insert from system, insert from Vault, insert Card, and insert LaTeX. [#2448](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2448)
+
+## Deprecated
+- Removed "Toggle RAW mode" from the Command Palette and the Obsidian Tools menu due to low usage. RAW mode remains available by adding \`excalidraw-plugin: raw\` to the note's YAML frontmatter/document properties.
+
+## New in ExcalidrawAutomate
+\`\`\`ts
 /**
- * If set, this callback is triggered when a image is being saved in Excalidraw.
- * You can use this callback to customize the naming and path of pasted images to avoid
- * default names like "Pasted image 123147170.png" being saved in the attachments folder,
- * and instead use more meaningful names based on the Excalidraw file or other criteria,
- * plus save the image in a different folder.
- * 
- * If the function returns null or undefined, the normal Excalidraw operation will continue
- * with the excalidraw generated name and default path.
- * If a filepath is returned, that will be used. Include the full Vault filepath and filename
- * with the file extension.
- * The currentImageName is the name of the image generated by excalidraw or provided during paste.
+ * Returns the center position of the current view in Excalidraw coordinates.
+ * @returns {{x:number, y:number}} The center position of the view.
  */
-function onImageFilePathHook: (data: {
-  currentImageName: string;
-  drawingFilePath: string;
-}) => string = null;  
-${String.fromCharCode(96,96,96)}
+public getViewCenterPosition(): {x:number, y:number};
+\`\`\`
 `,
-"2.7.5":`
-## Fixed
-- PDF export scenario described in [#2184](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2184)
-- Elbow arrows do not work within frames [#2187](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2187)
-- Embedding images into Excalidraw with areaRef links did not work as expected due to conflicting SVG viewbox and width and height values
-- Can't exit full-screen mode in popout windows using the Command Palette toggle action [#2188](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2188)
-- If the image mask extended beyond the image in "Mask and Crop" image mode, the mask got misaligned from the image.
-- PDF image embedding fixes that impacted some PDF files (not all):
-    - When cropping the PDF page in the scene (by double-clicking the image to crop), the size and position of the PDF cutout drifted.
-    - Using PDF++ there was a small offset in the position of the cutout in PDF++ and the image in Excalidraw.
- - Updated a number of scripts including Split Ellipse, Select Similar Elements, and Concatenate Lines
+"2.15.0":`
+<div class="excalidraw-videoWrapper">
+<a href="https://www.youtube.com/watch?v=DqDnzCOoYMc" target="_blank"><img src ="https://i.ytimg.com/vi/DqDnzCOoYMc/maxresdefault.jpg" style="width:100%;"></a>
+</div>
 
-## New in ExcalidrawAutomate
-${String.fromCharCode(96,96,96)}
+## New
+- Introducing **Marker Frames**. These are special frames that can be used to mark slides, pages areas for PDF printouts, image references, etc.
+  To create a marker frame, create a frame and toggle the marker frame in the elements properties panel.
+    - Markers are not included in exports such as images or PDFs.
+    - Markers do not contain elements
+    - Markers can be hidden/shown from the canvas context menu
+- Updated the "Printable Layout Wizard" script
+  - Now works with marker frames
+  - Supports different page sizes and orientations within a single PDF document
+  - The printout may include non-marker frames (e.g., PDF image embeds in frames)
+- Pro-tip: You can also use marker frames... 
+    - with the Slideshow plugin
+    - to create image-area references such that the frames do not get rendered in exported images, and you can reference areas by frame name
+- Performance improvement of Image-area references
+
+# New in ExcalidrawAutomate
+- \`createPDF()\` now supports \`SVG[]\` array of SVGs with different sizes.
+- New function:
+\`\`\`ts
   /**
-   * Add, modify, or delete keys in element.customData and preserve existing keys.
-   * Creates customData={} if it does not exist.
-   * Takes the element id for an element in ea.elementsDict and the newData to add or modify.
-   * To delete keys set key value in newData to undefined. So {keyToBeDeleted:undefined} will be deleted.
-   * @param id
-   * @param newData 
-   * @returns undefined if element does not exist in elementsDict, returns the modified element otherwise.
+   * Gets the elements within a specific area.
+   * @param elements - The elements to check.
+   * @param param1 - The area to check against.
+   * @returns The elements within the area.
    */
-  public addAppendUpdateCustomData(id:string, newData: Partial<Record<string, unknown>>);
-${String.fromCharCode(96,96,96)}
+  elementsInArea(
+    elements: NonDeletedExcalidrawElement[], 
+    {x, y, width, height}:{
+      x:number; y:number; width:number; height:number;
+    }
+  ):ExcalidrawElement[] 
+\`\`\`
 `,
-"2.7.4":`
-## Fixed
-- Regression from 2.7.3 where image fileId got overwritten in some cases
-- White flash when opening a dark drawing [#2178](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2178)
-`,
-"2.7.3":`
-<div class="excalidraw-videoWrapper"><div>
-<iframe src="https://www.youtube.com/embed/ISuORbVKyhQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-</div></div>
+"2.14.3":`
+<div class="excalidraw-videoWrapper">
+<a href="https://www.youtube.com/watch?v=29EWeglRm7s" target="_blank"><img src ="https://i.ytimg.com/vi/29EWeglRm7s/maxresdefault.jpg" style="width:100%;"></a>
+</div>
+
+Updated the Printable Layout Wizard script with the option to exclude empty pages.
 
 ## Fixed
-- Toggling image size anchoring on and off by modifying the image link did not update the image in the view until the user forced saved it or closed and opened the drawing again. This was a side-effect of the less frequent view save introduced in 2.7.1
+- If a frame is locked, elements created over the frame or dragged over the frame should not be auto-added to the frame. [#9850](https://github.com/excalidraw/excalidraw/issues/9850)
+
+## Fixed in ExcalidrawAutomate
+- Not all AppState properties were being correctly copied to the template when creating a new drawing with ea.create() [#2440](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2440)
+`,
+"2.14.2":`
+## Fixed
+- Converting Markdown to Excalidraw ("Back of note"/"Convert markdown to ExcaliDrawing") no longer appends T00:00:00.000Z to an existing date frontmatter field and handles merging of lists such as tags intelligently [#2414](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2414)
+- Multi‑point line creation on touchscreens (tap–tap–tap) produced a horizontal line after using a pen. Fixed. [#9840](https://github.com/excalidraw/excalidraw/pull/9840#issuecomment-3165319266)
 
 ## New
-- **Shade Master Script**: A new script that allows you to modify the color lightness, hue, saturation, and transparency of selected Excalidraw elements, SVG images, and nested Excalidraw drawings. When a single image is selected, you can map colors individually. The original image remains unchanged, and a mapping table is added under ${String.fromCharCode(96)}## Embedded Files${String.fromCharCode(96)} for SVG and nested drawings. This helps maintain links between drawings while allowing different color themes.
-- New Command Palette Command: "Duplicate selected image with a different image ID". Creates a copy of the selected image with a new image ID. This allows you to add multiple color mappings to the same image. In the scene, the image will be treated as if a different image, but loaded from the same file in the Vault.
+- Zoom settings (Settings → Excalidraw → Appearance and Behavior → Zoom) [#2434](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2434):
+  - Zoom increment (default 5%) to fine‑tune mouse wheel / gesture precision.
+  - Minimum zoom (default 10%) controls how far you can zoom out (below 10% may be unstable—use with caution).
+  - Maximum zoom (default 3000%) defines the upper zoom limit.
+- Palm Guard script (in script store): Mobile-friendly drawing mode for stylus users. Enters fullscreen, hides UI, shows a draggable minimal toolbar (toggle + exit) to prevent accidental palm taps; single tap to exit. Inspired by [#2409](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2409)
 
-## QoL Improvements
-- New setting under ${String.fromCharCode(96)}Embedding Excalidraw into your notes and Exporting${String.fromCharCode(96)} > ${String.fromCharCode(96)}Image Caching and rendering optimization${String.fromCharCode(96)}. You can now set the number of concurrent workers that render your embedded images. Increasing the number will increase the speed but temporarily reduce the responsiveness of your system in case of large drawings.
-- Moved pen-related settings under ${String.fromCharCode(96)}Excalidraw appearance and behavior${String.fromCharCode(96)} to their sub-heading called ${String.fromCharCode(96)}Pen${String.fromCharCode(96)}.
-- Minor error fixing and performance optimizations when loading and updating embedded images.
-- Color maps in ${String.fromCharCode(96)}## Embedded Files${String.fromCharCode(96)} may now include color keys "stroke" and "fill". If set, these will change the fill and stroke attributes of the SVG root element of the relevant file.
+<div class="excalidraw-videoWrapper">
+<a href="https://www.youtube.com/watch?v=A_udjVjgWN0" target="_blank"><img src ="https://i.ytimg.com/vi/A_udjVjgWN0/maxresdefault.jpg" style="width:100%;"></a>
+</div>
 
-## New in ExcalidrawAutomate
-${String.fromCharCode(96,96,96)}ts
-// Updates the color map of an SVG image element in the view. If a ColorMap is provided, it will be used directly.
-// If an SVGColorInfo is provided, it will be converted to a ColorMap.
-// The view will be marked as dirty and the image will be reset using the color map.
-updateViewSVGImageColorMap(
-  elements: ExcalidrawImageElement | ExcalidrawImageElement[],
-  colors: ColorMap | SVGColorInfo | ColorMap[] | SVGColorInfo[]
-): Promise<void>;
+## ExcalidrawAutomate
+- Improved \`FloatingModal\` behavior. Floating Modal now does not trap keyboard events, the header element does not block "X" button in the top right corner, all four corners are rounded on Mobile Devices.
 
-// Retrieves the color map for an image element.
-// The color map contains information about the mapping of colors used in the image.
-// If the element already has a color map, it will be returned.
-getColorMapForImageElement(el: ExcalidrawElement): ColorMap;
-
-// Retrieves the color map for an SVG image element.
-// The color map contains information about the fill and stroke colors used in the SVG.
-// If the element already has a color map, it will be merged with the colors extracted from the SVG.
-getColorMapForImgElement(el: ExcalidrawElement): Promise<SVGColorInfo>;
-
-// Extracts the fill (background) and stroke colors from an Excalidraw file and returns them as an SVGColorInfo.
-getColosFromExcalidrawFile(file:TFile, img: ExcalidrawImageElement): Promise<SVGColorInfo>;
-
-// Extracts the fill and stroke colors from an SVG string and returns them as an SVGColorInfo.
-getColorsFromSVGString(svgString: string): SVGColorInfo;
-
-// upgraded the addImage function.
-// 1. It now accepts an object as the input parameter, making your scripts more readable
-// 2. AddImageOptions now includes colorMap as an optional parameter, this will only have an effect in case of SVGs and nested Excalidraws
-// 3. The API function is backwards compatible, but I recommend new implementations to use the object based input
-addImage(opts: AddImageOptions}): Promise<string>;
-
-interface AddImageOptions {
-  topX: number;
-  topY: number;
-  imageFile: TFile | string;
-  scale?: boolean; 
-  anchor?: boolean;
-  colorMap?: ColorMap;
-}
-
-type SVGColorInfo = Map<string, {
-  mappedTo: string;
-  fill: boolean;
-  stroke: boolean;
-}>;
-
-interface ColorMap {
-  [color: string]: string;
-};
-${String.fromCharCode(96,96,96)}
 `,
-"2.7.2":`
+"2.14.1":`
 ## Fixed
-- The plugin did not load on **iOS 16 and older**. [#2170](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2170)
-- Added empty line between ${String.fromCharCode(96)}# Excalidraw Data${String.fromCharCode(96)} and ${String.fromCharCode(96)}## Text Elements${String.fromCharCode(96)}. This will now follow **correct markdown linting**. [#2168](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2168)
-- Adding an **embeddable** to view did not **honor the element background and element stroke colors**, even if it was configured in plugin settings. [#2172](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2172)
-- **Deconstruct selected elements script** did not copy URLs and URIs for images embedded from outside Obsidian. Please update your script from the script library. 
-- When **rearranging tabs in Obsidian**, e.g. having two tabs side by side, and moving one of them to another location, if the tab was an Excalidraw tab, it appeared as non-responsive after the move, until the tab was resized.
+- Excalidraw broke Obsidian's UI in Arabic, Persian, and Hebrew due to LTR, RTL conflict. [#2423](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2423) 
+- Styling issues impacting native Obsidian search/replace dialogs. [#2420](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2420)
+- Now using native Obsidian attachment location function. 🙏 [mnaoumov](https://github.com/mnaoumov) [#2421](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2421), potentially fixes [#179](https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/179) of the Obsidian Custom Attachment Location plugin issue.
 
-## Source Code Refactoring
-- Updated filenames, file locations, and file name letter-casing across the project
-- Extracted onDrop, onDragover, etc. handlers to DropManger in ExcalidrawView
-`,
-"2.7.1":`
-## Fixed
-- Deleting excalidraw file from file system while it is open in fullscreen mode in Obsidian causes Obsidian to be stuck in full-screen view [#2161](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2161)
-- Chinese fonts are not rendered in LaTeX statements [#2162](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2162)
-- Since Electron 32 (newer Obsidian Desktop installers) drag and drop links from Finder or OS File Explorer did not work. [Electron breaking change](https://www.electronjs.org/docs/latest/breaking-changes#removed-filepath). This is now fixed
-- Addressed unnecessary image reloads when changing windows in Obsidian
-`,
-"2.7.0":`
-## Fixed
-- Various Markdown embeddable "fuzziness":  
-    - Fixed issues with appearance settings and edit mode toggling when single-click editing is enabled.  
-    - Ensured embeddable file editing no longer gets interrupted unexpectedly.  
-- **Hover Preview**: Disabled hover preview for back-of-the-note cards to reduce distractions.
-- **Settings Save**: Fixed an issue where plugin settings unnecessarily saved on every startup.
-
-## New Features
-- **Image Cropping Snaps to Objects**: When snapping is enabled in the scene, image cropping now aligns to nearby objects.  
-- **Session Persistence for Pen Mode**: Excalidraw remembers the last pen mode when switching between drawings within the same session.
-
-## Refactoring
-- **Mermaid Diagrams**: Excalidraw now uses its own Mermaid package, breaking future dependencies on Obsidian's Mermaid updates. This ensures stability and includes all fixes and improvements made to Excalidraw Mermaid since February 2024. The plugin file size has increased slightly, but this change significantly improves maintainability while remaining invisible to users.  
-- **MathJax Optimization**: MathJax (LaTeX equation SVG image generation) now loads only on demand, with the package compressed to minimize the startup and file size impact caused by the inclusion of Mermaid.  
-- **On-Demand Language Loading**: Non-English language files are now compressed and load only when needed, counterbalancing the increase in file size due to Mermaid and improving load speeds.  
-- **Codebase Restructuring**: Improved type safety by removing many ${String.fromCharCode(96)}//@ts-ignore${String.fromCharCode(96)} commands and enhancing modularity. Introduced new management classes: **CommandManager**, **EventManager**, **PluginFileManager**, **ObserverManager**, and **PackageManager**. Further restructuring is planned for upcoming releases to improve maintainability and stability.
-`,
-"2.6.8":`
 ## New
-- **QoL improvements**:
-  - Obsidian-link search button in Element Link Editor.
-  - Add Any File now searches file aliases as well.
-  - Cosmetic changes to file search modals (display path, show file type icon).
-  - Text Element cursor-color matches the text color.
-- New script in script store: [Image Occlusion](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Image%20Occlusion.md) by [@TrillStones](https://github.com/TrillStones) 🙏
-
-## Fixed
-- Excalidraw icon on the **ribbon menu kept reappearing** every time you reopen Obsidian [#2115](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2115)
-- In pen mode, when **single-finger panning** is enabled, Excalidraw should still **allow actions with the mouse**.
-- When **editing a drawing in split mode** (drawing is on one side, markdown view is on the other), editing the markdown note sometimes causes the drawing to re-zoom and jump away from the selected area.
-- Hover-Editor compatibility resolved [2041](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2041)
--  ${String.fromCharCode(96)}ExcalidrawAutomate.create() ${String.fromCharCode(96)} will now correctly include the markdown text in templates above Excalidraw Data and below YAML front matter. This also fixes the same issue with the **Deconstruct Selected Element script**.
-
+- New frontmatter option \`excalidraw-embed-md\`. When set to \`true\`, embedding the drawing into a markdown note will render the "back of the note" (its markdown content) instead of rendering it as an image.
+  - If you want to always display the drawing as an image, even when \`excalidraw-embed-md\` is enabled, use the special embed syntax: \`![[drawing#^as-image]]\`. Here, \`as-image\` is a phantom block reference that forces image rendering.
+- Added Spanish translation by [@Joakim31](https://github.com/Joakim31) [#2425](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2425)
+- Incremental minor updates from the main [Excalidraw project](https://github.com/excalidraw/excalidraw).
+`,
+"2.14.0":`
+## A Big "Small" Update
+- Added search to Excalidraw Settings, plus added a link to access the public NotebookLM workbook pre-loaded with everything about the plugin
+- New Taiwan-idiomatic Traditional Chinese translation by [@rlan](https://github.com/rlan) [#2413](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2413)
 `,
 };

@@ -1,7 +1,7 @@
 import { TFile } from "obsidian";
 import * as React from "react";
 import ExcalidrawView from "../../ExcalidrawView";
-import { ExcalidrawElement, ExcalidrawEmbeddableElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { ExcalidrawElement, ExcalidrawEmbeddableElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { AppState, ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ActionButton } from "./ActionButton";
 import { ICONS } from "../../../constants/actionIcons";
@@ -10,11 +10,12 @@ import { ScriptEngine } from "../../../shared/Scripts";
 import { MD_EX_SECTIONS, ROOTELEMENTSIZE, nanoid, sceneCoordsToViewportCoords } from "src/constants/constants";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK } from "../../../shared/ExcalidrawData";
 import { processLinkText, useDefaultExcalidrawFrame } from "src/utils/customEmbeddableUtils";
-import { cleanSectionHeading } from "src/utils/obsidianUtils";
+import { cleanSectionHeading, getActivePDFPageNumberFromPDFView } from "src/utils/obsidianUtils";
 import { EmbeddableSettings } from "src/shared/Dialogs/EmbeddableSettings";
-import { openExternalLink } from "src/utils/excalidrawViewUtils";
+import { insertImageToView, openExternalLink } from "src/utils/excalidrawViewUtils";
 import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
+import { CaptureUpdateAction } from "src/constants/constants";
 
 export class EmbeddableMenu {
   private menuFadeTimeout: number = 0;
@@ -39,7 +40,7 @@ export class EmbeddableMenu {
     this.renderButtons = null;
   }
 
-  private updateElement = (subpath: string, element: ExcalidrawEmbeddableElement, file: TFile) => {
+  private updateElement = async (subpath: string, element: ExcalidrawEmbeddableElement, file: TFile, save: boolean = true) => {
     if(!element) return;
     const view = this.view;
     const app = view.app;
@@ -55,7 +56,8 @@ export class EmbeddableMenu {
     ea.copyViewElementsToEAforEditing([element]);
     ea.getElement(element.id).link = link;
     view.excalidrawData.elementLinks.set(element.id, link);
-    ea.addElementsToView(false, true, true).then(() => ea.destroy());
+    await ea.addElementsToView(false, save, true);
+    ea.destroy();
   }
 
   private handleMouseEnter () {
@@ -69,8 +71,30 @@ export class EmbeddableMenu {
     }, 5000);
   };
 
+  private async actionBaseViewSelection (file: TFile, subpath: string, element: ExcalidrawEmbeddableElement) {
+    this.view.updateScene({appState: {activeEmbeddable: null}, captureUpdate: CaptureUpdateAction.NEVER});
+    const views = Array.from(
+      (await this.view.app.vault.read(file)).matchAll(/\s*name\: (.*)$/gm)
+    ).map(x=>x?.[1]);
+    let values, display;
+    values = [""].concat(
+      views.map((b: string) => `#${cleanSectionHeading(b)}`)
+    );
+    display = [t("DO_NOT_PIN_VIEW")].concat(
+      views.map((b: string) => b)
+    );
+    
+    const newSubpath = await ScriptEngine.suggester(
+      this.view.app, display, values, t("SELECT_VIEW")
+    );
+    if(!newSubpath && newSubpath!=="") return;
+    if (newSubpath !== subpath) {
+      this.updateElement(newSubpath, element, file);
+    }
+  }
+
   private async actionMarkdownSelection (file: TFile, isExcalidrawFile: boolean, subpath: string, element: ExcalidrawEmbeddableElement) {
-    this.view.updateScene({appState: {activeEmbeddable: null}, storeAction: "update"});
+    this.view.updateScene({appState: {activeEmbeddable: null}, captureUpdate: CaptureUpdateAction.NEVER});
     const sections = (await this.view.app.metadataCache.blockCache
       .getForFile({ isCancelled: () => false },file))
       .blocks.filter((b: any) => b.display && b.node?.type === "heading")
@@ -88,7 +112,7 @@ export class EmbeddableMenu {
       );
     }
     const newSubpath = await ScriptEngine.suggester(
-      this.view.app, display, values, "Select section from document"
+      this.view.app, display, values, t("SELECT_SECTION")
     );
     if(!newSubpath && newSubpath!=="") return;
     if (newSubpath !== subpath) {
@@ -96,9 +120,49 @@ export class EmbeddableMenu {
     }
   }
 
+  private actionBookmarkPage (element: ExcalidrawEmbeddableElement) {
+    if(!element) return;
+    const pdfView = this.view.getEmbeddableLeafElementById(element.id)?.node?.child;
+    if(!pdfView) return;
+    const page = getActivePDFPageNumberFromPDFView(pdfView);
+    if(!page) return;
+    const pdfFile: TFile = pdfView?.file;
+    if(!pdfFile) return;
+    this.updateElement(`#page=${page}`, element, pdfFile, false);
+  }
+
+  private async actionInsertPageAsImage (element: ExcalidrawEmbeddableElement) {
+    if(!element) return;
+    const pdfView = this.view.getEmbeddableLeafElementById(element.id)?.node?.child;
+    if(!pdfView) return;
+    const page = getActivePDFPageNumberFromPDFView(pdfView);
+    if(!page) return;
+    const pdfFile: TFile = pdfView?.file;
+    if(!pdfFile) return;
+    const ea = getEA(this.view) as ExcalidrawAutomate;
+    ea.selectElementsInView([]);
+    const x = element.x + element.width + 20;
+    const y = element.y;
+    const path = this.view.app.metadataCache.fileToLinktext(
+      pdfFile,
+      this.view.file.path,
+      false,
+    )
+    const id = await insertImageToView(
+      ea,
+      {x,y},
+      `${path}#page=${page}`,
+      undefined,
+      undefined,
+      false,
+    );
+    ea.selectElementsInView([id]);
+    ea.destroy();
+  }
+
   private async actionMarkdownBlock (file: TFile, subpath: string, element: ExcalidrawEmbeddableElement) {
     if(!file) return;
-    this.view.updateScene({appState: {activeEmbeddable: null}, storeAction: "update"});
+    this.view.updateScene({appState: {activeEmbeddable: null}, captureUpdate: CaptureUpdateAction.NEVER});
     const paragraphs = (await this.view.app.metadataCache.blockCache
       .getForFile({ isCancelled: () => false },file))
       .blocks.filter((b: any) => b.display && b.node && 
@@ -109,7 +173,7 @@ export class EmbeddableMenu {
       paragraphs.map((b: any) => `${b.node?.id ? `#^${b.node.id}: ` : ``}${b.display.trim()}`));
 
     const selectedBlock = await ScriptEngine.suggester(
-      this.view.app, display, values, "Select section from document"
+      this.view.app, display, values, t("SELECT_SECTION")
     );
     if(!selectedBlock) return;
 
@@ -211,6 +275,7 @@ export class EmbeddableMenu {
         const { subpath, file } = processLinkText(link, view);
         if(!file) return;
         const isMD = file.extension==="md";
+        const isBase = file.extension==="base";
         const isExcalidrawFile = view.plugin.isExcalidrawFile(file);
         const isPDF = file.extension==="pdf";
         const { x, y } = sceneCoordsToViewportCoords( { sceneX: element.x, sceneY: element.y }, appState);
@@ -237,6 +302,14 @@ export class EmbeddableMenu {
                 display: "block",
               }}
             >
+              {isBase && (
+                <ActionButton
+                  key={"MarkdownSection"}
+                  title={t("PIN_VIEW")}
+                  action={async () => this.actionBaseViewSelection(file, subpath, element)}
+                  icon={ICONS.ZoomToSection}
+                />
+              )}
               {isMD && (
                 <ActionButton
                   key={"MarkdownSection"}
@@ -266,12 +339,26 @@ export class EmbeddableMenu {
                 icon={ICONS.Properties}
               />
               {isPDF && (
-                <ActionButton
-                key={"Crop"}
-                title={t("CROP_PAGE")}
-                action={() => this.actionCrop(element)}
-                icon={ICONS.Crop}
-              />
+                <>
+                  <ActionButton
+                    key={"Crop"}
+                    title={t("CROP_PAGE")}
+                    action={() => this.actionCrop(element)}
+                    icon={ICONS.Crop}
+                  />
+                  <ActionButton
+                    key={"Bookmark"}
+                    title={t("BOOKMARK_PAGE")}
+                    action={() => this.actionBookmarkPage(element)}
+                    icon={ICONS.Bookmark}
+                  />
+                  <ActionButton
+                    key={"Camera"}
+                    title={t("CAPTURE_PAGE")}
+                    action={() => this.actionInsertPageAsImage(element)}
+                    icon={ICONS.Camera}
+                  />
+                </>
               )}
             </div>
           </div>  

@@ -1,17 +1,19 @@
 import { App, FileView, WorkspaceLeaf } from "obsidian";
-import { VIEW_TYPE_EXCALIDRAW_LOADING } from "src/constants/constants";
+import { act } from "react";
+import { DEVICE, VIEW_TYPE_EXCALIDRAW_LOADING } from "src/constants/constants";
 import ExcalidrawPlugin from "src/core/main";
-import { setExcalidrawView } from "src/utils/obsidianUtils";
+import { isUnwantedLeaf, setExcalidrawView } from "src/utils/obsidianUtils";
 
-export function switchToExcalidraw(app: App) {
-  const leaves = app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW_LOADING).filter(l=>l.view instanceof ExcalidrawLoading);
-  leaves.forEach(l=>(l.view as ExcalidrawLoading).switchToeExcalidraw());
+export async function switchToExcalidraw(app: App) {
+  const leaves = app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW_LOADING);
+  for(const leaf of leaves) {
+    await (leaf.view as ExcalidrawLoading)?.switchToeExcalidraw();
+  }
 }
 
 export class ExcalidrawLoading extends FileView {
   constructor(leaf: WorkspaceLeaf, private plugin: ExcalidrawPlugin) {
     super(leaf);
-    this.displayLoadingText();
   }
 
   public onload() {
@@ -19,8 +21,13 @@ export class ExcalidrawLoading extends FileView {
     this.displayLoadingText();
   }
 
-  public switchToeExcalidraw() {
-    setExcalidrawView(this.leaf);
+  public async switchToeExcalidraw() {
+    const prevLeaf = this.app.workspace.activeLeaf;
+    await setExcalidrawView(this.leaf);
+    const activeLeaf = this.app.workspace.activeLeaf;
+    if(prevLeaf === this.leaf && activeLeaf !== prevLeaf && isUnwantedLeaf(activeLeaf)) {
+      this.app.workspace.activeLeaf.detach();
+    }
   }
   
   getViewType(): string {

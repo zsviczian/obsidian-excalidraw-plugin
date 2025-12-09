@@ -5,10 +5,13 @@ import { DEVICE } from "src/constants/constants";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import ExcalidrawPlugin from "src/core/main";
-import { fragWithHTML, getExportPadding, getExportTheme, getPNGScale, getWithBackground, shouldEmbedScene } from "src/utils/utils";
-import { PageOrientation, PageSize, PDFPageAlignment, PDFPageMarginString, exportSVGToClipboard } from "src/utils/exportUtils";
+import { fragWithHTML, getExportInternalLinks, getExportPadding, getExportTheme, getPNGScale, getWithBackground, shouldEmbedScene } from "src/utils/utils";
+import { exportSVGToClipboard, exportPNG, exportPNGToClipboard } from "src/utils/exportUtils";
+import { PageOrientation, PageSize, PDFPageAlignment, PDFPageMarginString } from "src/types/exportUtilTypes";
 import { t } from "src/lang/helpers";
 import { PDFExportSettings, PDFExportSettingsComponent } from "./PDFExportSettingsComponent";
+import { captureScreenshot } from "src/utils/screenshot";
+import { exportImageToFile, getIMGFilename } from "src/utils/fileUtils";
 
 
 
@@ -19,6 +22,7 @@ export class ExportDialog extends Modal {
   public scale: number;
   public theme: string;
   public transparent: boolean;
+  public exportInternalLinks: boolean = true;
   public saveSettings: boolean;
   public dirty: boolean = false;
   private selectedOnlySetting: Setting;
@@ -34,7 +38,7 @@ export class ExportDialog extends Modal {
   public saveToVault: boolean;
   public pageSize: PageSize = "A4";
   public pageOrientation: PageOrientation = "portrait";
-  private activeTab: "image" | "pdf" = "image";
+  private activeTab: "image" | "pdf" | "screenshot" = "image";
   private contentContainer: HTMLDivElement;
   private buttonContainerRow1: HTMLDivElement;
   private buttonContainerRow2: HTMLDivElement;
@@ -43,6 +47,7 @@ export class ExportDialog extends Modal {
   public customPaperColor: string = "#ffffff";
   public alignment: PDFPageAlignment = "center";
   public margin: PDFPageMarginString = "normal";
+  private scaleSetting:Setting;
 
   constructor(
     private plugin: ExcalidrawPlugin,
@@ -60,6 +65,7 @@ export class ExportDialog extends Modal {
     this.exportSelectedOnly = false;
     this.saveToVault = true;
     this.transparent = !getWithBackground(this.plugin, this.file);
+    this.exportInternalLinks = getExportInternalLinks(this.plugin, this.file);
 
     this.pageSize = plugin.settings.pdfSettings.pageSize;
     this.pageOrientation = plugin.settings.pdfSettings.pageOrientation;
@@ -86,12 +92,28 @@ export class ExportDialog extends Modal {
     this.containerEl.remove();
   }
 
+  get isSelectedOnly(): boolean {
+    return this.hasSelectedElements && this.exportSelectedOnly;
+  }
+  
+  updateBoundingBox() {
+    if(this.isSelectedOnly) {
+      this.boundingBox = this.ea.getBoundingBox(this.view.getViewSelectedElements());
+    } else {
+      this.boundingBox = this.ea.getBoundingBox(this.ea.getViewElements());
+    }
+    if(this.scaleSetting) {
+      this.scaleSetting.setDesc(this.size());
+    }
+  }
+
   onOpen(): void {
     this.containerEl.classList.add("excalidraw-release");
     this.titleEl.setText(t("EXPORTDIALOG_TITLE"));
     this.hasSelectedElements = this.view.getViewSelectedElements().length > 0;
     //@ts-ignore
     this.selectedOnlySetting.setVisibility(this.hasSelectedElements);
+    this.updateBoundingBox();
   }
 
   async onClose() {
@@ -113,11 +135,17 @@ export class ExportDialog extends Modal {
         cls: `nav-button ${this.activeTab === "pdf" ? "is-active" : ""}`
       });
 
+      const screenshotTab = tabContainer.createEl("button", {
+        text: t("EXPORTDIALOG_TAB_SCREENSHOT"),
+        cls: `nav-button ${this.activeTab === "screenshot" ? "is-active" : ""}`
+      });
+
       // Tab click handlers
       imageTab.onclick = () => {
         this.activeTab = "image";
         imageTab.addClass("is-active");
         pdfTab.removeClass("is-active");
+        screenshotTab.removeClass("is-active");
         this.renderContent();
       };
 
@@ -125,8 +153,17 @@ export class ExportDialog extends Modal {
         this.activeTab = "pdf";
         pdfTab.addClass("is-active");
         imageTab.removeClass("is-active");
+        screenshotTab.removeClass("is-active");
         this.renderContent();
       };
+
+      screenshotTab.onclick = () => {
+        this.activeTab = "screenshot";
+        screenshotTab.addClass("is-active");
+        imageTab.removeClass("is-active");
+        pdfTab.removeClass("is-active");
+        this.renderContent();
+      }
     }
 
     // Create content container
@@ -157,31 +194,61 @@ export class ExportDialog extends Modal {
     this.buttonContainerRow1.empty();
     this.buttonContainerRow2.empty();
 
-    if (this.activeTab === "image") {
-      this.createImageSettings();
-      this.createExportSettings();
-      this.createImageButtons();
-    } else {
-      this.createImageSettings();
-      this.createPDFSettings();
-      this.createPDFButton();
+    this.createHeader();
+    switch (this.activeTab) {
+      case "pdf":
+        this.createImageSettings();
+        this.createPDFSettings();
+        this.createPDFButton();
+        break;
+      case "screenshot":
+        if(this.view.isInMainObsidianWorkspace) {
+          this.createImageSettings(true);
+          this.createImageButtons(true);
+        }
+        break;
+      case "image":
+      default:
+          this.createImageSettings(false);
+          this.createExportSettings();
+          this.createImageButtons();
+          break;
     }
   }
+
+  private size ():DocumentFragment {
+    const width = Math.round(this.scale*this.boundingBox.width + this.padding*2);
+    const height = Math.round(this.scale*this.boundingBox.height + this.padding*2);
+    return fragWithHTML(`${t("EXPORTDIALOG_SIZE_DESC")}<br>${t("EXPORTDIALOG_SCALE_VALUE")} <b>${this.scale}</b><br>${t("EXPORTDIALOG_IMAGE_SIZE")} <b>${width}x${height}</b>`);
+  }
+
+  private createHeader() {
+    switch (this.activeTab) {
+      case "pdf":
+        this.contentContainer.createEl("h1",{text: t("EXPORTDIALOG_PDF_SETTINGS")});
+        //this.contentContainer.createEl("p",{text: t("EXPORTDIALOG_PDF_DESC")});
+        break;
+      case "screenshot":
+        this.contentContainer.createEl("h1",{text: t("EXPORTDIALOG_TAB_SCREENSHOT")});
+        if(this.view.isInMainObsidianWorkspace) {
+          this.contentContainer.createEl("p",{text: t("EXPORTDIALOG_SCREENSHOT_DESC")})
+        } else {
+          this.contentContainer.createEl("p",{text: t("EXPORTDIALOG_NOT_AVAILALBE")})
+        }
+        break;
+      case "image":
+      default:
+        this.contentContainer.createEl("h1",{text: t("EXPORTDIALOG_IMAGE_SETTINGS")});
+        this.contentContainer.createEl("p",{text: t("EXPORTDIALOG_IMAGE_DESC")})
+        break;
+    }
+
+  }
   
-  private createImageSettings() {
-    let scaleSetting:Setting;
+  private createImageSettings(isScreenshot: boolean = false) {
     let paddingSetting: Setting;   
 
-    this.contentContainer.createEl("h1",{text: t("EXPORTDIALOG_IMAGE_SETTINGS")});
-    this.contentContainer.createEl("p",{text: t("EXPORTDIALOG_IMAGE_DESC")})
-
     this.createSaveSettingsDropdown();
-
-    const size = ():DocumentFragment => {
-      const width = Math.round(this.scale*this.boundingBox.width + this.padding*2);
-      const height = Math.round(this.scale*this.boundingBox.height + this.padding*2);
-      return fragWithHTML(`${t("EXPORTDIALOG_SIZE_DESC")}<br>${t("EXPORTDIALOG_SCALE_VALUE")} <b>${this.scale}</b><br>${t("EXPORTDIALOG_IMAGE_SIZE")} <b>${width}x${height}</b>`);
-    }
 
     const padding = ():DocumentFragment => {
       return fragWithHTML(`${t("EXPORTDIALOG_CURRENT_PADDING")} <b>${this.padding}</b>`);
@@ -196,21 +263,21 @@ export class ExportDialog extends Modal {
           .setValue(this.padding)
           .onChange(value => {
             this.padding = value;
-            scaleSetting.setDesc(size());
+            this.scaleSetting.setDesc(this.size());
             paddingSetting.setDesc(padding());
           })
         })
     
-    scaleSetting = new Setting(this.contentContainer)
+    this.scaleSetting = new Setting(this.contentContainer)
       .setName(t("EXPORTDIALOG_SCALE"))
-      .setDesc(size())
+      .setDesc(this.size())
       .addSlider(slider => 
         slider
           .setLimits(0.2,7,0.1)
           .setValue(this.scale)
           .onChange(value => {
             this.scale = value;
-            scaleSetting.setDesc(size());
+            this.scaleSetting.setDesc(this.size());
           })
       )
   
@@ -226,17 +293,29 @@ export class ExportDialog extends Modal {
           })
       )
 
-    new Setting(this.contentContainer)
-      .setName(t("EXPORTDIALOG_BACKGROUND"))
-      .addDropdown(dropdown => 
-        dropdown
-          .addOption("transparent", t("EXPORTDIALOG_BACKGROUND_TRANSPARENT"))
-          .addOption("with-color", t("EXPORTDIALOG_BACKGROUND_USE_COLOR"))
-          .setValue(this.transparent?"transparent":"with-color")
-          .onChange(value => {
-            this.transparent = value === "transparent";
-          })
-      )
+    if(!isScreenshot) {
+      new Setting(this.contentContainer)
+        .setName(t("EXPORTDIALOG_BACKGROUND"))
+        .addDropdown(dropdown => 
+          dropdown
+            .addOption("transparent", t("EXPORTDIALOG_BACKGROUND_TRANSPARENT"))
+            .addOption("with-color", t("EXPORTDIALOG_BACKGROUND_USE_COLOR"))
+            .setValue(this.transparent?"transparent":"with-color")
+            .onChange(value => {
+              this.transparent = value === "transparent";
+            })
+        );
+      
+      new Setting(this.contentContainer)
+        .setName(t("EXPORTDIALOG_INCLUDE_INTERNAL_LINKS"))
+        .addToggle(toggle =>
+          toggle
+            .setValue(this.exportInternalLinks)
+            .onChange(value => {
+              this.exportInternalLinks = value;
+            })
+        );
+    }
 
     this.selectedOnlySetting = new Setting(this.contentContainer)
       .setName(t("EXPORTDIALOG_SELECTED_ELEMENTS"))
@@ -247,8 +326,11 @@ export class ExportDialog extends Modal {
           .setValue(this.exportSelectedOnly?"selected":"all")
           .onChange(value => {
             this.exportSelectedOnly = value === "selected";
+            this.updateBoundingBox();
           })
       );
+    //@ts-ignore
+    this.selectedOnlySetting.setVisibility(this.hasSelectedElements);
   }
 
   private createExportSettings() {
@@ -295,14 +377,29 @@ export class ExportDialog extends Modal {
     ).render();
   }
 
-  private createImageButtons() {
+  private createImageButtons(isScreenshot: boolean = false) {
     if(DEVICE.isDesktop) {
       const bPNG = this.buttonContainerRow1.createEl("button", { 
         text: t("EXPORTDIALOG_PNGTOFILE"), 
         cls: "excalidraw-export-button"
       });
       bPNG.onclick = () => {
-        this.view.exportPNG(this.embedScene, this.hasSelectedElements && this.exportSelectedOnly);
+        if(isScreenshot) {
+          //allow dialog to close before taking screenshot
+          setTimeout(async () => {
+            const png = await captureScreenshot(this.view, {
+              zoom: this.scale,
+              margin: this.padding,
+              selectedOnly: this.isSelectedOnly,
+              theme: this.theme
+            });
+            if(png) {
+              exportPNG(png, this.view.file.basename);
+            }
+          });
+        } else {
+          this.view.exportPNG(this.embedScene, this.isSelectedOnly);
+        }
         this.close();
       };
     }
@@ -312,7 +409,22 @@ export class ExportDialog extends Modal {
       cls: "excalidraw-export-button"
     });
     bPNGVault.onclick = () => {
-      this.view.savePNG(this.view.getScene(this.hasSelectedElements && this.exportSelectedOnly));
+      if(isScreenshot) {
+        //allow dialog to close before taking screenshot
+        setTimeout(async () => {
+          const png = await captureScreenshot(this.view, {
+            zoom: this.scale,
+            margin: this.padding,
+            selectedOnly: this.isSelectedOnly,
+            theme: this.theme
+          });
+          if(png) {
+            exportImageToFile(this.view, getIMGFilename(this.view.file.path,"png"), png, ".png");
+          }
+        });
+      } else {
+        this.view.savePNG({scene: this.view.getScene(this.isSelectedOnly)});
+      }
       this.close();
     };
 
@@ -321,9 +433,26 @@ export class ExportDialog extends Modal {
       cls: "excalidraw-export-button"
     });
     bPNGClipboard.onclick = async () => {
-      this.view.exportPNGToClipboard(this.embedScene, this.hasSelectedElements && this.exportSelectedOnly);
+      if(isScreenshot) {
+        //allow dialog to close before taking screenshot
+        setTimeout(async () => {
+          const png = await captureScreenshot(this.view, {
+            zoom: this.scale,
+            margin: this.padding,
+            selectedOnly: this.isSelectedOnly,
+            theme: this.theme
+          });
+          if(png) {
+            exportPNGToClipboard(png);
+          }
+        });
+      } else {
+        this.view.exportPNGToClipboard(this.embedScene, this.isSelectedOnly);
+      }
       this.close();
     };
+
+    if(isScreenshot) return;
 
     if(DEVICE.isDesktop) {
       const bExcalidraw = this.buttonContainerRow2.createEl("button", { 
@@ -340,7 +469,7 @@ export class ExportDialog extends Modal {
         cls: "excalidraw-export-button" 
       });
       bSVG.onclick = () => {
-        this.view.exportSVG(this.embedScene, this.hasSelectedElements && this.exportSelectedOnly);
+        this.view.exportSVG(this.embedScene, this.isSelectedOnly);
         this.close();
       };
     }
@@ -350,7 +479,7 @@ export class ExportDialog extends Modal {
       cls: "excalidraw-export-button" 
     });
     bSVGVault.onclick = () => {
-      this.view.saveSVG(this.view.getScene(this.hasSelectedElements && this.exportSelectedOnly));
+      this.view.saveSVG({scene: this.view.getScene(this.isSelectedOnly)});
       this.close();
     };
 
@@ -359,7 +488,7 @@ export class ExportDialog extends Modal {
       cls: "excalidraw-export-button" 
     });
     bSVGClipboard.onclick = async () => {
-      const svg = await this.view.getSVG(this.embedScene, this.hasSelectedElements && this.exportSelectedOnly);
+      const svg = await this.view.getSVG(this.embedScene, this.isSelectedOnly);
       exportSVGToClipboard(svg);
       this.close();
     };
@@ -392,7 +521,7 @@ export class ExportDialog extends Modal {
     });
     bPDFExport.onclick = () => {
       this.view.exportPDF(
-        this.hasSelectedElements && this.exportSelectedOnly,
+        this.isSelectedOnly,
         this.pageSize,
         this.pageOrientation
       );

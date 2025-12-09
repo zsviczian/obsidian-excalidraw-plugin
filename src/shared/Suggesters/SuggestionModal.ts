@@ -19,24 +19,34 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
   emptyStateText: string = "No match found";
   limit: number = 100;
   shouldNotOpen: boolean;
+  
+  // Pre-bound event handlers
+  private handleInput: () => void;
+  private handleFocus: () => void;
+  private handleBlur: () => void;
+  private handleMouseDown: (event: MouseEvent) => void;
+  
   constructor(app: App, inputEl: HTMLInputElement, items: T[]) {
     super(app);
     this.inputEl = inputEl;
     this.items = items;
+    
+    // Pre-bind event handlers
+    this.handleInput = this.onInputChanged.bind(this);
+    this.handleFocus = this.onFocus.bind(this);
+    this.handleBlur = this.close.bind(this);
+    this.handleMouseDown = (event: MouseEvent) => {
+      event.preventDefault();
+    };
+    
     this.suggestEl = createDiv("suggestion-container");
     this.contentEl = this.suggestEl.createDiv("suggestion");
     this.suggester = new Suggester(this, this.contentEl, this.scope);
     this.scope.register([], "Escape", this.onEscape.bind(this));
-    this.inputEl.addEventListener("input", this.onInputChanged.bind(this));
-    this.inputEl.addEventListener("focus", this.onFocus.bind(this));
-    this.inputEl.addEventListener("blur", this.close.bind(this));
-    this.suggestEl.on(
-      "mousedown",
-      ".suggestion-container",
-      (event: MouseEvent) => {
-        event.preventDefault();
-      },
-    );
+    this.inputEl.addEventListener("input", this.handleInput);
+    this.inputEl.addEventListener("focus", this.handleFocus);
+    this.inputEl.addEventListener("blur", this.handleBlur);
+    this.suggestEl.on("mousedown", ".suggestion-container", this.handleMouseDown);
   }
 
   empty() {
@@ -74,24 +84,27 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
   open(): void {
     // TODO: Figure out a better way to do this. Idea from Periodic Notes plugin
     this.app.keymap.pushScope(this.scope);
-    this.inputEl.ownerDocument.body.appendChild(this.suggestEl);
-    this.popper = new WeakRef(createPopper(this.inputEl, this.suggestEl, {
-      placement: "bottom-start",
-      modifiers: [
-        {
-          name: "offset",
-          options: {
-            offset: [0, 10],
-          },
-        },
-        {
-          name: "flip",
-          options: {
-            fallbackPlacements: ["top"],
-          },
-        },
-      ],
-    }));
+    //setTimeout(() => {
+      const modal = this.inputEl.closest(".modal");
+      const modalContainer =
+        (this.inputEl.closest(".modal-container") as HTMLElement) ??
+        (modal?.parentElement?.matches(".modal-container")
+          ? (modal.parentElement as HTMLElement)
+          : null);
+
+      const host = modalContainer ?? this.inputEl.ownerDocument.body;
+
+      host.appendChild(this.suggestEl);
+
+      this.popper = new WeakRef(createPopper(this.inputEl, this.suggestEl, {
+        placement: "bottom-start",
+        strategy: host.matches(".modal-container") ? "absolute" : "fixed",
+        modifiers: [
+          { name: "offset", options: { offset: [0, 10] } },
+          { name: "flip", options: { fallbackPlacements: ["top"] } },
+        ],
+      }));
+    //},50);
   }
 
   onEscape(): void {
@@ -106,9 +119,9 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
     if (this.popper?.deref()) {
       this.popper.deref().destroy();
     }
-    this.inputEl.removeEventListener("input", this.onInputChanged.bind(this));
-    this.inputEl.removeEventListener("focus", this.onFocus.bind(this));
-    this.inputEl.removeEventListener("blur", this.close.bind(this));
+    this.inputEl.removeEventListener("input", this.handleInput);
+    this.inputEl.removeEventListener("focus", this.handleFocus);
+    this.inputEl.removeEventListener("blur", this.handleBlur);
     this.suggestEl.detach(); 
   }
 

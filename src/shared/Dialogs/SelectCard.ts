@@ -3,10 +3,13 @@ import { t } from "../../lang/helpers";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
-import { MD_EX_SECTIONS } from "src/constants/constants";
+import { CARD_HEIGHT, CARD_WIDTH, MD_EX_SECTIONS } from "src/constants/constants";
 import { addBackOfTheNoteCard } from "src/utils/excalidrawViewUtils";
 
 export class SelectCard extends FuzzySuggestModal<string> {
+  private center: boolean = false;
+  private x: number = 0;
+  private y: number = 0;
 
   constructor(
     public app: App,
@@ -31,7 +34,7 @@ export class SelectCard extends FuzzySuggestModal<string> {
             this.close();
             return;
           }
-          addBackOfTheNoteCard(this.view, item);
+          addBackOfTheNoteCard(this.view, item, true, undefined, undefined, this.center, {x: this.x, y: this.y});
           this.close();
         }
       }
@@ -48,18 +51,29 @@ export class SelectCard extends FuzzySuggestModal<string> {
 
   onChooseItem(item: string): void {
     const ea = getEA(this.view) as ExcalidrawAutomate;
+    if(this.center) {
+      const centerPos = ea.getViewCenterPosition();
+      if(centerPos) {
+        this.x = centerPos.x - (CARD_WIDTH / 2);
+        this.y = centerPos.y - (CARD_HEIGHT / 2);
+      }
+    }
+
     const id = ea.addEmbeddable(
-      0,0,400,500,
+      this.x,this.y,CARD_WIDTH,CARD_HEIGHT,
       `[[${this.view.file.path}#${item}]]`
     );
     (async () => {
-      await ea.addElementsToView(true, false, true);
+      await ea.addElementsToView(!this.center, false, true);
       ea.selectElementsInView([id]);
       ea.destroy();
     })();
   }
 
-  public start(): void {
+  public start(center: boolean = false): void {
+    this.x = this.view.currentPosition.x;
+    this.y = this.view.currentPosition.y;
+    this.center = !!center;
     this.emptyStateText = t("EMPTY_SECTION_MESSAGE");
     this.setPlaceholder(t("SELECT_SECTION_OR_TYPE_NEW"));
     this.open();

@@ -1,7 +1,7 @@
 import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { TFile } from "obsidian";
 import { FileId } from "src/core";
-import { ColorMap, MimeType, PDFPageViewProps, Size } from "src/shared/EmbeddedFileLoader";
+import { ColorMap, PDFPageViewProps, Size, MimeType } from "./embeddedFileLoaderTypes";
 
 export type SVGColorInfo = Map<string, {
   mappedTo: string;

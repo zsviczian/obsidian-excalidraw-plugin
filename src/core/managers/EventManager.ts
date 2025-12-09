@@ -1,7 +1,7 @@
 import { WorkspaceLeaf, TFile, Editor, MarkdownView, MarkdownFileInfo, MetadataCache, App, EventRef, Menu, FileView } from "obsidian";
-import { ExcalidrawElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { getLink } from "../../utils/fileUtils";
-import { editorInsertText, getExcalidrawViews, getParentOfClass, setExcalidrawView } from "../../utils/obsidianUtils";
+import { editorInsertText, getExcalidrawViews, getParentOfClass, isUnwantedLeaf, setExcalidrawView } from "../../utils/obsidianUtils";
 import ExcalidrawPlugin from "src/core/main";
 import { DEBUGGING, debug } from "src/utils/debugHelper";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
@@ -21,6 +21,7 @@ export class EventManager {
   private removeEventLisnters:(()=>void)[] = []; //only used if I register an event directly, not via Obsidian's registerEvent
   private previouslyActiveLeaf: WorkspaceLeaf;
   private splitViewLeafSwitchTimestamp: number = 0;
+  private debunceActiveLeafChangeHandlerTimer: number|null = null;
 
   get settings() {
     return this.plugin.settings;
@@ -51,6 +52,10 @@ export class EventManager {
     if(this.leafChangeTimeout) {
       window.clearTimeout(this.leafChangeTimeout);
       this.leafChangeTimeout = null;
+    }
+    if(this.debunceActiveLeafChangeHandlerTimer) {
+      window.clearTimeout(this.debunceActiveLeafChangeHandlerTimer);
+      this.debunceActiveLeafChangeHandlerTimer = null;
     }
     this.removeEventLisnters.forEach((removeEventListener) =>
       removeEventListener(),
@@ -101,6 +106,15 @@ export class EventManager {
 
     this.registerEvent(this.app.workspace.on("file-menu", this.onFileMenuHandler.bind(this)));
     this.plugin.registerEvent(this.plugin.app.workspace.on("editor-menu", this.onEditorMenuHandler.bind(this)));
+  }
+
+  public setDebounceActiveLeafChangeHandler() {
+    if(this.debunceActiveLeafChangeHandlerTimer) {
+      window.clearTimeout(this.debunceActiveLeafChangeHandlerTimer);
+    }
+    this.debunceActiveLeafChangeHandlerTimer = window.setTimeout(() => {
+      this.debunceActiveLeafChangeHandlerTimer = null;
+    }, 50);
   }
 
   private onLayoutChangeHandler() {
@@ -164,6 +178,17 @@ export class EventManager {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onActiveLeafChangeHandler,`onActiveLeafChangeEventHandler`, leaf);
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/723
 
+     if(this.debunceActiveLeafChangeHandlerTimer) {
+       return;
+     }
+
+    //In Obsidian 1.8.x the active excalidraw leaf is obscured by an empty leaf without a parent
+    //This hack resolves it
+    if(this.app.workspace.activeLeaf === leaf && isUnwantedLeaf(leaf)) {
+      leaf.detach();
+      return;
+    }
+
     if (leaf.view && leaf.view.getViewType() === "pdf") {
       this.plugin.lastPDFLeafID = leaf.id;
     }
@@ -221,7 +246,7 @@ export class EventManager {
 
     if (previouslyActiveEV && previouslyActiveEV !== newActiveviewEV) {
       if (previouslyActiveEV.leaf !== leaf) {
-        //if loading new view to same leaf then don't save. Excalidarw view will take care of saving anyway.
+        //if loading new view to same leaf then don't save. Excalidraw view will take care of saving anyway.
         //avoid double saving
         if(previouslyActiveEV?.isDirty() && !previouslyActiveEV.semaphores?.viewunload) {
           await previouslyActiveEV.save(true); //this will update transclusions in the drawing

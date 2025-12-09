@@ -3,6 +3,7 @@ import ExcalidrawPlugin from "src/core/main";
 import { CustomMutationObserver } from "src/utils/debugHelper";
 import { getExcalidrawViews, isObsidianThemeDark } from "src/utils/obsidianUtils";
 import { App, Notice, TFile } from "obsidian";
+import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 
 export class ObserverManager {
   private plugin: ExcalidrawPlugin;
@@ -40,19 +41,20 @@ export class ObserverManager {
     this.removeModalContainerObserver();
     if (this.workspaceDrawerLeftObserver) {
       this.workspaceDrawerLeftObserver.disconnect();
+      this.workspaceDrawerLeftObserver = null;
     }
     if (this.workspaceDrawerRightObserver) {
       this.workspaceDrawerRightObserver.disconnect();
+      this.workspaceDrawerRightObserver = null;
     }
     if (this.fileExplorerObserver) {
       this.fileExplorerObserver.disconnect();
+      this.fileExplorerObserver = null;
     }
-    if (this.workspaceDrawerRightObserver) {
-      this.workspaceDrawerRightObserver.disconnect();
-    }
-    if (this.workspaceDrawerLeftObserver) {
-      this.workspaceDrawerLeftObserver.disconnect();
-    }
+
+    this.plugin = null;
+    this.app = null;
+    this.activeViewDoc = null;
   }
 
   public addThemeObserver() {
@@ -130,7 +132,7 @@ export class ObserverManager {
         return;
       }
       if (this.plugin.isExcalidrawFile(f)) {
-        el.insertBefore(
+        el.insertAfter(
           createDiv({
             cls: "nav-file-tag",
             text: this.settings.experimentalFileTag,
@@ -183,17 +185,20 @@ export class ObserverManager {
     //The user clicks settings, or "open another vault", or the command palette
     const modalContainerObserverFn: MutationCallback = async (m: MutationRecord[]) => {
       (process.env.NODE_ENV === 'development') && DEBUGGING && debug(modalContainerObserverFn,`ExcalidrawPlugin.modalContainerObserverFn`, m);
+      const view = this.plugin.activeExcalidrawView;
       if (
         (m.length !== 1) ||
         (m[0].type !== "childList") ||
         (m[0].addedNodes.length !== 1) ||
-        (!this.plugin.activeExcalidrawView) ||
-        this.plugin.activeExcalidrawView?.semaphores?.viewunload ||
-        (!this.plugin.activeExcalidrawView?.isDirty())
+        (!view) ||
+        view.semaphores?.viewunload ||
+        (!view.isDirty())
       ) {
         return;
       }
-      this.plugin.activeExcalidrawView.save();
+      
+      const { errorMessage } = (view.excalidrawAPI as ExcalidrawImperativeAPI).getAppState();
+      if (!errorMessage) this.plugin.activeExcalidrawView.save();
     };
 
     this.modalContainerObserver = DEBUGGING

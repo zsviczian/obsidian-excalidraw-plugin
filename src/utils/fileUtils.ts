@@ -1,17 +1,17 @@
 import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { App, loadPdfJs, normalizePath, Notice, requestUrl, RequestUrlResponse, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
+import { App, loadPdfJs, MetadataCache, normalizePath, Notice, requestUrl, RequestUrlResponse, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
 import { DEVICE, EXCALIDRAW_PLUGIN, FRONTMATTER_KEYS, URLFETCHTIMEOUT } from "src/constants/constants";
-import { IMAGE_MIME_TYPES, MimeType } from "../shared/EmbeddedFileLoader";
 import { ExcalidrawSettings } from "src/core/settings";
 import { errorlog, getDataURL } from "./utils";
 import ExcalidrawPlugin from "src/core/main";
-import { ANNOTATED_PREFIX, CROPPED_PREFIX } from "./carveout";
 import { getAttachmentsFolderAndFilePath } from "./obsidianUtils";
+import ExcalidrawView from "src/view/ExcalidrawView";
+import { IMAGE_MIME_TYPES, MimeType } from "src/types/embeddedFileLoaderTypes";
 
 /**
  * Splits a full path including a folderpath and a filename into separate folderpath and filename components
  * @param filepath
- * @returns folderpath will be normalized. This means "/" for root folder and no trailing "/" for other folders
+ * @returns returns "" for root folder and normalized path for subfolders (no trailing "/", e.g. "folder/subfolder")
  */
 type ImageExtension = keyof typeof IMAGE_MIME_TYPES;
 
@@ -23,11 +23,13 @@ export function splitFolderAndFilename(filepath: string): {
 } {
   const lastIndex = filepath.lastIndexOf("/");
   const filename = lastIndex == -1 ? filepath : filepath.substring(lastIndex + 1);
+  const lastDotIndex = filename.lastIndexOf(".");
+  const folderpath = filepath.substring(0, lastIndex);
   return {
-    folderpath: normalizePath(filepath.substring(0, lastIndex)),
+    folderpath: folderpath ? normalizePath(folderpath) : "",
     filename,
     basename: filename.replace(/\.[^/.]+$/, ""),
-    extension: filename.substring(filename.lastIndexOf(".") + 1),
+    extension: lastDotIndex > 0 ? filename.substring(lastDotIndex + 1) : "",
   };
 }
 
@@ -404,9 +406,9 @@ export const getAliasWithSize = (alias: string, size: string): string => {
 }
 
 export const getCropFileNameAndFolder = async (plugin: ExcalidrawPlugin, hostPath: string, baseNewFileName: string):Promise<{folderpath: string, filename: string}> => {
-  let prefix = plugin.settings.cropPrefix;
-  if(!prefix || prefix.trim() === "") prefix = CROPPED_PREFIX;
-  const filename = prefix + baseNewFileName + ".md";
+  let prefix = plugin.settings.cropPrefix || "";
+  let suffix = plugin.settings.cropSuffix || "";
+  const filename = prefix + baseNewFileName + suffix + ".md";
   if(!plugin.settings.cropFolder || plugin.settings.cropFolder.trim() === "") {
     const folderpath = (await getAttachmentsFolderAndFilePath(plugin.app, hostPath, filename)).folder;
     return {folderpath, filename};
@@ -417,9 +419,9 @@ export const getCropFileNameAndFolder = async (plugin: ExcalidrawPlugin, hostPat
 }
 
 export const getAnnotationFileNameAndFolder = async (plugin: ExcalidrawPlugin, hostPath: string, baseNewFileName: string):Promise<{folderpath: string, filename: string}> => {
-  let prefix = plugin.settings.annotatePrefix;
-  if(!prefix || prefix.trim() === "") prefix = ANNOTATED_PREFIX;
-  const filename = prefix + baseNewFileName + ".md";
+  let prefix = plugin.settings.annotatePrefix || "";
+  let suffix = plugin.settings.annotateSuffix || "";
+  const filename = prefix + baseNewFileName + suffix + ".md";
   if(!plugin.settings.annotateFolder || plugin.settings.annotateFolder.trim() === "") {
     const folderpath = (await getAttachmentsFolderAndFilePath(plugin.app, hostPath, filename)).folder;
     return {folderpath, filename};
@@ -494,8 +496,59 @@ export const hasExcalidrawEmbeddedImagesTreeChanged = (sourceFile: TFile, mtime:
   return fileList.some(f=>f.stat.mtime > mtime);
 }
 
-export async function createOrOverwriteFile(app: App, path: string, content: string | ArrayBuffer): Promise<TFile> {
+export async function exportImageToFile(view: ExcalidrawView, path: string, content: string | ArrayBuffer | Blob, extension: string): Promise<TFile> {
+  const ea = view?.getHookServer();
+  if(ea?.onImageExportPathHook) {
+    try {
+      path = ea.onImageExportPathHook({
+        exportFilepath: path,
+        exportExtension: extension,
+        excalidrawFile: view.file,
+        action: "export",
+      }) ?? path;
+    } catch (e) {
+      errorlog({where: "fileUtils.exportImageToFile", fn: ea.onImageExportPathHook, error: e});
+    }
+  }
+  return await createOrOverwriteFile(view.app, path, content);
+}
+
+export async function importFileToVault(app: App, fname: string, content: string | ArrayBuffer | Blob, excalidrawFile: TFile, view?: ExcalidrawView): Promise<TFile> {
+  let hookFilepath:string;
+  const ea = view?.getHookServer();
+  if(ea?.onImageFilePathHook) {
+    try {
+      hookFilepath = ea.onImageFilePathHook({
+        currentImageName: fname,
+        drawingFilePath: excalidrawFile.path,
+      })
+    } catch (e) {
+      errorlog({where: "fileUtils.importFileToVault", fn: ea.onImageFilePathHook, error: e});
+    }
+  }
+
+  let filepath:string;
+  if(hookFilepath) {
+    const {folderpath, filename} = splitFolderAndFilename(hookFilepath);
+    await checkAndCreateFolder(folderpath);
+    filepath = getNewUniqueFilepath(app.vault,filename,folderpath);
+  } else {
+    const {folder} = await getAttachmentsFolderAndFilePath(app, excalidrawFile.path, fname);
+    filepath = getNewUniqueFilepath(app.vault,fname,folder);
+  }
+
+  return await createOrOverwriteFile(app, filepath, content);
+}
+
+export async function createOrOverwriteFile(app: App, path: string, content: string | ArrayBuffer | Blob): Promise<TFile> {
+  const {folderpath} = splitFolderAndFilename(path);
+  if(folderpath) {
+    await checkAndCreateFolder(folderpath);
+  }
   const file = app.vault.getAbstractFileByPath(normalizePath(path));
+  if (content instanceof Blob) {
+    content = await content.arrayBuffer();
+  }
   if(content instanceof ArrayBuffer) {
     if(file && file instanceof TFile) {
       await app.vault.modifyBinary(file, content);
@@ -511,4 +564,41 @@ export async function createOrOverwriteFile(app: App, path: string, content: str
   } else {
     return await app.vault.create(path, content);
   }
+}
+
+export async function createFileAndAwaitMetacacheUpdate(
+  app: App,
+  path: string,
+  content: string | ArrayBuffer | Blob,
+) : Promise<TFile> {
+  path = normalizePath(path);
+  let ready = false;
+  const extension = path.substring(path.lastIndexOf(".") + 1);
+
+  //metadataCache.on("changed", (file:TFile) => void) does not fire for non-markdown files
+  if(extension === "md") {
+    const metaCache: MetadataCache = app.metadataCache;
+    const handler = (file:TFile) => {
+      if(file.path === path) {
+        metaCache.off("changed", handler);
+        ready = true;
+      }
+    }
+    metaCache.on("changed", handler);
+
+    const file = await createOrOverwriteFile(app, path, content);
+
+    if(!file) {
+      ready = true; //if file is null, it means it was not created, so we can skip waiting
+      metaCache.off("changed", handler);
+    }
+
+    let attempts = 0;
+    while (!ready && attempts++ < 15) await sleep(50);
+    if(!ready) {
+      metaCache.off("changed", handler); //if we timed out, remove the handler
+    }
+    return file;
+  }
+  return await createOrOverwriteFile(app, path, content);
 }

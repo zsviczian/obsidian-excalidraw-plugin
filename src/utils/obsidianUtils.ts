@@ -3,12 +3,12 @@ import {
   Editor,
   FrontMatterCache,
   MarkdownView,
-  normalizePath, OpenViewState, parseFrontMatterEntry, TFile, View, ViewState, Workspace, WorkspaceLeaf, WorkspaceSplit
+  OpenViewState, parseFrontMatterEntry, TextFileView, TFile, View, ViewState, Workspace, WorkspaceLeaf, WorkspaceSplit
 } from "obsidian";
 import ExcalidrawPlugin from "../core/main";
-import { checkAndCreateFolder, splitFolderAndFilename } from "./fileUtils";
+import { splitFolderAndFilename } from "./fileUtils";
 import { linkClickModifierType, ModifierKeys } from "./modifierkeyHelper";
-import { EXCALIDRAW_PLUGIN, REG_BLOCK_REF_CLEAN, REG_SECTION_REF_CLEAN, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
+import { DEVICE, EXCALIDRAW_PLUGIN, REG_BLOCK_REF_CLEAN, REG_SECTION_REF_CLEAN, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
 import yaml from "js-yaml";
 import { debug, DEBUGGING } from "./debugHelper";
 import ExcalidrawView from "src/view/ExcalidrawView";
@@ -28,6 +28,14 @@ export const getParentOfClass = (element: Element, cssClass: string):HTMLElement
 export function getExcalidrawViews(app: App): ExcalidrawView[] {
   const leaves = app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).filter(l=>l.view instanceof ExcalidrawView);
   return leaves.map(l=>l.view as ExcalidrawView);
+}
+
+export function getExcalidraAndMarkdowViewsForFile(app: App, file: TFile): TextFileView[] {
+  const leaves = [
+    ...app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).filter(l=>l.view instanceof ExcalidrawView),
+    ...app.workspace.getLeavesOfType("markdown").filter(l=>l.view instanceof MarkdownView)
+  ];
+  return leaves.map(l=>l.view as TextFileView).filter(v=>v.file === file);
 }
 
 export const getLeaf = (
@@ -174,25 +182,13 @@ export const getAttachmentsFolderAndFilePath = async (
   activeViewFilePath: string,
   newFileName: string
 ): Promise<{ folder: string; filepath: string; }> => {
-  let folder = app.vault.getConfig("attachmentFolderPath");
-  // folder == null: save to vault root
-  // folder == "./" save to same folder as current file
-  // folder == "folder" save to specific folder in vault
-  // folder == "./folder" save to specific subfolder of current active folder
-  if (folder && folder.startsWith("./")) {
-    // folder relative to current file
-    const activeFileFolder = `${splitFolderAndFilename(activeViewFilePath).folderpath}/`;
-    folder = normalizePath(activeFileFolder + folder.substring(2));
-  }
-  if (!folder || folder === "/") {
-    folder = "";
-  }
-  await checkAndCreateFolder(folder);
+  const { basename, extension } = splitFolderAndFilename(newFileName);
+  const activeViewFile = app.vault.getFileByPath(activeViewFilePath);
+  const attachmentFilePath = await app.vault.getAvailablePathForAttachments(basename, extension, activeViewFile);
+  const { folderpath } = splitFolderAndFilename(attachmentFilePath);
   return {
-    folder,
-    filepath: normalizePath(
-      folder === "" ? newFileName : `${folder}/${newFileName}`
-    ),
+    folder: folderpath,
+    filepath: attachmentFilePath
   };
 };
 
@@ -308,50 +304,93 @@ export const openLeaf = ({
 }
 
 export function mergeMarkdownFiles (template: string, target: string): string {
-  // Extract frontmatter from the template
-  const templateFrontmatterEnd = template.indexOf('---', 4); // Find end of frontmatter
-  const templateFrontmatter = template.substring(4, templateFrontmatterEnd).trim();
-  const templateContent = template.substring(templateFrontmatterEnd + 3); // Skip frontmatter and ---
-  
-  // Parse template frontmatter
-  const templateFrontmatterObj: FrontMatterCache = yaml.load(templateFrontmatter) || {};
+  // Template frontmatter
+  const templateFrontmatterEnd = template.indexOf('---', 4);
+  const templateFrontmatterRaw = template.substring(4, templateFrontmatterEnd).trim();
+  const templateContent = template.substring(templateFrontmatterEnd + 3);
+  const templateFrontmatterObj: FrontMatterCache = yaml.load(templateFrontmatterRaw) || {};
 
-  // Extract frontmatter from the target if it exists
-  let targetFrontmatterObj: FrontMatterCache = {};
-  let targetContent = '';
-  if (target.startsWith('---\n') && target.indexOf('---\n', 4) > 0) {
-    const targetFrontmatterEnd = target.indexOf('---\n', 4); // Find end of frontmatter
-    const targetFrontmatter = target.substring(4, targetFrontmatterEnd).trim();
-    targetContent = target.substring(targetFrontmatterEnd + 3); // Skip frontmatter and ---
+  const hasTargetFM = target.startsWith('---\n') && target.indexOf('---\n', 4) > 0;
+  if (hasTargetFM) {
+    const targetFrontmatterEnd = target.indexOf('---\n', 4);
+    let targetFrontmatterRaw = target.substring(4, targetFrontmatterEnd).replace(/\s+$/,''); // keep as-is
+    const targetContent = target.substring(targetFrontmatterEnd + 3);
 
-    // Parse target frontmatter
-    targetFrontmatterObj = yaml.load(targetFrontmatter) || {};
+    const targetFrontmatterObj: FrontMatterCache = yaml.load(targetFrontmatterRaw) || {};
+
+    // 1. Merge array keys present in both (target has precedence for ordering)
+    const mergeArrayKeys = Object.keys(templateFrontmatterObj)
+      .filter(k => Array.isArray(templateFrontmatterObj[k]) && Array.isArray(targetFrontmatterObj[k]));
+
+    if (mergeArrayKeys.length) {
+      for (const k of mergeArrayKeys) {
+        const tArr = targetFrontmatterObj[k] as any[];
+        const tplArr = templateFrontmatterObj[k] as any[];
+        const merged = [...tArr, ...tplArr.filter(v => !tArr.includes(v))];
+        // Produce YAML for just this key
+        const mergedYaml = yaml.dump({ [k]: merged }).trimEnd();
+        targetFrontmatterRaw = replaceYamlKeyBlock(targetFrontmatterRaw, k, mergedYaml) ?? targetFrontmatterRaw;
+      }
+    }
+
+    // 2. Append only missing keys (not present in target)
+    const newKeys: Record<string, any> = {};
+    for (const k of Object.keys(templateFrontmatterObj)) {
+      if (!(k in targetFrontmatterObj)) {
+        newKeys[k] = templateFrontmatterObj[k];
+      }
+    }
+
+    const appended = Object.keys(newKeys).length
+      ? targetFrontmatterRaw + '\n' + yaml.dump(newKeys).trimEnd()
+      : targetFrontmatterRaw;
+
+    return `---\n${appended}\n---\n${targetContent}\n\n${templateContent.trim()}\n`;
   } else {
-    // If target doesn't have frontmatter, consider the entire content as target content
-    targetContent = target.trim();
+    // No frontmatter in target: use template FM + target content + template content
+    const targetContent = target.trim();
+    const templateFMYaml = yaml.dump(templateFrontmatterObj).trimEnd();
+    return `---\n${templateFMYaml}\n---\n${targetContent}\n\n${templateContent.trim()}\n`;
   }
+};
 
-  // Merge frontmatter with target values taking precedence
-  const mergedFrontmatter: FrontMatterCache = { ...templateFrontmatterObj };
-
-  // Merge arrays by combining and removing duplicates
-  for (const key in targetFrontmatterObj) {
-    if (Array.isArray(targetFrontmatterObj[key]) && Array.isArray(mergedFrontmatter[key])) {
-      const combinedArray = [...new Set([...mergedFrontmatter[key], ...targetFrontmatterObj[key]])];
-      mergedFrontmatter[key] = combinedArray;
-    } else {
-      mergedFrontmatter[key] = targetFrontmatterObj[key];
+// Helper: replace a top-level YAML key block (line-based, avoids partial matches causing duplicates)
+function replaceYamlKeyBlock(src: string, key: string, newBlock: string): string | null {
+  const lines = src.split(/\r?\n/);
+  let start = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (new RegExp(`^${escapeRegex(key)}\\s*:`).test(lines[i])) {
+      start = i;
+      break;
     }
   }
+  if (start === -1) return null;
 
-  // Convert merged frontmatter back to YAML
-  const mergedFrontmatterYaml = yaml.dump(mergedFrontmatter);
+  let end = start + 1;
+  while (end < lines.length) {
+    const line = lines[end];
+    if (line.trim() === "") { // blank line ends block (retain blank after replacement)
+      break;
+    }
+    if (/^[^\s].*?:/.test(line)) { // next top-level key
+      break;
+    }
+    if (!/^\s/.test(line)) { // safety: non-indented (shouldn't happen)
+      break;
+    }
+    end++;
+  }
 
-  // Concatenate frontmatter and content
-  const mergedMarkdown = `---\n${mergedFrontmatterYaml}---\n${targetContent}\n\n${templateContent.trim()}\n`;
+  const before = lines.slice(0, start);
+  const after = lines.slice(end);
+  const replaced = [...before, newBlock, ...after].join('\n');
 
-  return mergedMarkdown;
-};
+  return replaced;
+}
+
+function escapeRegex(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 export const editorInsertText = (editor: Editor, text: string)=> {
   const cursor = editor.getCursor();
@@ -415,4 +454,62 @@ export async function closeLeafView(leaf: WorkspaceLeaf) {
     type: "empty",
     state: {},
   });
+}
+
+//In Obsidian 1.8.x the active excalidraw leaf is obscured by an empty leaf without a parent
+//In some ways similar to patchMobileView() - though does something completely different, but both mobile leaf related
+export function isUnwantedLeaf(leaf:WorkspaceLeaf):boolean {
+  return !DEVICE.isDesktop && 
+    leaf.view?.getViewType() === "empty" && leaf.parent && !leaf.parent.parent &&
+    //@ts-ignore
+    leaf.parent.type === "split" && leaf.parent.children.length === 1
+}
+
+/**
+ * Gets the height of an audio element in Obsidian's CSS environment
+ * @returns The height of the audio element in pixels
+ */
+export function getAudioElementHeight(): number {
+  // Create a temporary audio element with controls
+  const audioElement = document.createElement("audio");
+  audioElement.controls = true;
+  audioElement.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA"; // Minimal valid audio
+  
+  // Create a wrapper to avoid affecting page layout
+  const wrapper = document.createElement("div");
+  wrapper.style.position = "absolute";
+  wrapper.style.left = "-9999px";
+  wrapper.style.visibility = "hidden";
+  wrapper.style.pointerEvents = "none";
+  wrapper.appendChild(audioElement);
+  
+  // Add to document to allow CSS to be applied
+  document.body.appendChild(wrapper);
+  
+  // Get height
+  let height = 0;
+  try {
+    // Force layout calculation
+    document.body.offsetHeight;
+    
+    // Get height from bounding rect
+    const rect = audioElement.getBoundingClientRect();
+    height = rect.height;
+    
+    // Fallback to computed style if bounding rect returns 0
+    if (height === 0) {
+      const computedStyle = window.getComputedStyle(audioElement);
+      height = parseFloat(computedStyle.height) || 0;
+      
+      // If still 0, try measuring the wrapper
+      if (height === 0) {
+        height = wrapper.getBoundingClientRect().height;
+      }
+    }
+  } finally {
+    // Clean up
+    document.body.removeChild(wrapper);
+  }
+  
+  return Math.round(height);
 }

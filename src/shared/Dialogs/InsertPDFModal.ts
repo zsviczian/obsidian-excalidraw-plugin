@@ -70,7 +70,7 @@ export class InsertPDFModal extends Modal {
     this.setImageSizeMessage  = null;
   }
 
-  private async getPageDimensions (pdfDoc: any) {
+  private async getPDFPageDimensions (pdfDoc: any) {
     try {
       const scale = this.plugin.settings.pdfScale;
       const canvas = createEl("canvas");
@@ -197,7 +197,7 @@ export class InsertPDFModal extends Modal {
           rangeOnChange(`1-${numPages}`);
           importButtonMessages();
           numPagesMessages();
-          this.getPageDimensions(this.pdfDoc);
+          this.getPDFPageDimensions(this.pdfDoc);
         } else {
           importButton.setDisabled(true);
         }
@@ -439,7 +439,10 @@ export class InsertPDFModal extends Modal {
 
               if(this.frame) {
                 const frameID = ea.addFrame(topX, topY,imgWidth,imgHeight,`${page}`);
-                ea.addElementsToFrame(frameID, [boxID,imageID]);
+                const frameEl = ea.getElement(frameID) as any;
+                frameEl.frameRole = "marker";
+                ea.addToGroup([frameID,boxID,imageID]);
+                //ea.addElementsToFrame(frameID, [boxID,imageID]);
                 ea.getElement(frameID).link = this.pdfFile.path + `#page=${page}`;
               }
               

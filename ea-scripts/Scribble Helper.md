@@ -3,25 +3,31 @@
 
 Scribble Helper can improve handwriting and add links. It lets you create and edit text elements, including wrapped text and sticky notes, by double-tapping on the canvas. When you run the script, it creates an event handler that will activate the editor when you double-tap. If you select a text element on the canvas before running the script, it will open the editor for that element. If you use a pen, you can set it up to only activate Scribble Helper when you double-tap with the pen. The event handler is removed when you run the script a second time or switch to a different tab.
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/BvYkOaly-QM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<a href="https://www.youtube.com/watch?v=BvYkOaly-QM" target="_blank"><img src ="https://i.ytimg.com/vi/BvYkOaly-QM/maxresdefault.jpg" style="width:560px;"></a>
 
 ```javascript
 */
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.8.25")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.11.0")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
 
+// ------------------------------
+// Constants and initialization
+// ------------------------------
 const helpLINK = "https://youtu.be/BvYkOaly-QM";
 const DBLCLICKTIMEOUT = 300;
 const maxWidth = 600;
 const padding = 6;
 const api = ea.getExcalidrawAPI();
 const win = ea.targetView.ownerWindow;
+
+// Initialize global variables
 if(!win.ExcalidrawScribbleHelper) win.ExcalidrawScribbleHelper = {};
 if(typeof win.ExcalidrawScribbleHelper.penOnly === "undefined") {
   win.ExcalidrawScribbleHelper.penOnly = false;
 }
+
 let windowOpen = false; //to prevent the modal window to open again while writing with scribble
 let prevZoomValue = api.getAppState().zoom.value; //used to avoid trigger on pinch zoom
 
@@ -49,8 +55,10 @@ if(typeof win.ExcalidrawScribbleHelper.action === "undefined") {
 }
 
 //---------------------------------------
-// Color Palette for stroke color setting
+// Helper Functions 
 //---------------------------------------
+
+// Color Palette for stroke color setting
 // https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.8
 const defaultStrokeColors = [
     "#000000", "#343a40", "#495057", "#c92a2a", "#a61e4d",
@@ -58,7 +66,7 @@ const defaultStrokeColors = [
     "#087f5b", "#2b8a3e", "#5c940d", "#e67700", "#d9480f"
   ];
 
-const loadColorPalette = () => {
+function loadColorPalette() {
   const st = api.getAppState();
   const strokeColors = new Set();
   let strokeColorPalette = st.colorPalette?.elementStroke ?? defaultStrokeColors;
@@ -79,18 +87,8 @@ const loadColorPalette = () => {
   return strokeColors;
 }
 
-//----------------------------------------------------------
-// Define variables to cache element location on first click
-//----------------------------------------------------------
-// if a single element is selected when the action is started, update that existing text
-let containerElements = ea.getViewSelectedElements()
-  .filter(el=>["arrow","rectangle","ellipse","line","diamond"].contains(el.type));
-let selectedTextElements = ea.getViewSelectedElements().filter(el=>el.type==="text");
-
-//-------------------------------------------
-// Functions to add and remove event listners
-//-------------------------------------------
-const addEventHandler = (handler) => {
+// Event handler management
+function addEventHandler(handler) {
   if(win.ExcalidrawScribbleHelper.eventHandler) {
     win.removeEventListner("pointerdown", handler);
   }
@@ -99,40 +97,53 @@ const addEventHandler = (handler) => {
   win.ExcalidrawScribbleHelper.window = win;
 }
 
-const removeEventHandler = (handler) => {
+function removeEventHandler(handler) {
   win.removeEventListener("pointerdown",handler);
   delete win.ExcalidrawScribbleHelper.eventHandler;
   delete win.ExcalidrawScribbleHelper.window;
 }
 
-//Stop the script if scribble helper is clicked and no eligable element is selected
-let silent = false;
-if (win.ExcalidrawScribbleHelper?.eventHandler) {
-  removeEventHandler(win.ExcalidrawScribbleHelper.eventHandler);
-  delete win.ExcalidrawScribbleHelper.eventHandler;
-  delete win.ExcalidrawScribbleHelper.window;
-  if(!(containerElements.length === 1 || selectedTextElements.length === 1)) {
-    new Notice ("Scribble Helper was stopped",1000);
-    return;
+// Edit existing text element function
+async function editExistingTextElement(elements) {
+  windowOpen = true;
+  ea.copyViewElementsToEAforEditing(elements);
+  const el = ea.getElements()[0];
+  ea.style.strokeColor = el.strokeColor;
+  const text = await utils.inputPrompt({
+    header: "Edit text",
+    placeholder: "",
+    value: elements[0].rawText,
+    //buttons: undefined,
+    lines: 5,
+    displayEditorButtons: true,
+    customComponents: customControls,
+    blockPointerInputOutsideModal: true,
+    controlsOnTop: true
+  });
+
+  windowOpen = false;
+  if(!text) return;
+  
+  el.strokeColor = ea.style.strokeColor;
+  el.originalText = text;
+  el.text = text;
+  el.rawText = text;
+  if(el.autoResize) {
+    ea.refreshTextElementSize(el.id);
   }
-  silent = true;
+  await ea.addElementsToView(false,false);
+  if(el.containerId) {
+    const containers = ea.getViewElements().filter(e=>e.id === el.containerId);
+    api.updateContainerSize(containers);
+    ea.selectElementsInView(containers);
+  }
 }
 
-// ----------------------
-// Custom dialog controls
-// ----------------------
-if (typeof win.ExcalidrawScribbleHelper.penOnly === "undefined") {
-  win.ExcalidrawScribbleHelper.penOnly = undefined;
-}
-if (typeof win.ExcalidrawScribbleHelper.penDetected === "undefined") {
-  win.ExcalidrawScribbleHelper.penDetected = false;
-}
-let timer = Date.now();
-let eventHandler = () => {};
-
-const customControls =  (container) => {
+// Custom dialog UI components
+function customControls (container) {
   const helpDIV = container.createDiv();
   helpDIV.innerHTML = `<a href="${helpLINK}" target="_blank">Click here for help</a>`;
+  helpDIV.style.paddingBottom = "0.25em";
   const viewBackground = api.getAppState().viewBackgroundColor;
   const el1 = new ea.obsidian.Setting(container)
     .setName(`Text color`)
@@ -152,9 +163,10 @@ const customControls =  (container) => {
   el1.nameEl.style.color = ea.style.strokeColor;
   el1.nameEl.style.background = viewBackground;
   el1.nameEl.style.fontWeight = "bold";
-								 
+  el1.settingEl.style.padding = "0.25em 0";
+
   const el2 = new ea.obsidian.Setting(container)
-    .setName(`Trigger editor by pen double tap only`)
+    .setDesc(`Trigger editor by pen double tap only`)
     .addToggle((toggle) => toggle
       .setValue(win.ExcalidrawScribbleHelper.penOnly)
       .onChange(value => {
@@ -162,13 +174,23 @@ const customControls =  (container) => {
       })
     )
   el2.settingEl.style.border = "none";
+  el2.settingEl.style.padding = "0.25em 0";
   el2.settingEl.style.display = win.ExcalidrawScribbleHelper.penDetected ? "" : "none";
 }
 
+//----------------------------------------------------------
+// Cache element location on first click
+//----------------------------------------------------------
+// if a single element is selected when the action is started, update that existing text
+let containerElements = ea.getViewSelectedElements()
+  .filter(el=>["arrow","rectangle","ellipse","line","diamond"].contains(el.type));
+let selectedTextElements = ea.getViewSelectedElements().filter(el=>el.type==="text");
+
 // -------------------------------
-// Click / dbl click event handler
+// Main Click / dbl click event handler
 // -------------------------------
-eventHandler = async (evt) => {
+let timer = Date.now();
+async function eventHandler(evt) {
   if(windowOpen) return;
   if(ea.targetView !== app.workspace.activeLeaf.view) removeEventHandler(eventHandler);
   if(evt && evt.target && !evt.target.hasClass("excalidraw__canvas")) return;
@@ -252,7 +274,7 @@ eventHandler = async (evt) => {
     },
     {
       caption: "☱",
-      tooltip: "Add as Wrapped Text (rectangle with transparent border and background)",
+      tooltip: "Add as Wrapped Text",
       action: () => {
         win.ExcalidrawScribbleHelper.action="Wrap";
         if(settings["Default action"].value!=="Wrap") {
@@ -266,6 +288,7 @@ eventHandler = async (evt) => {
   if(win.ExcalidrawScribbleHelper.action !== "Text") actionButtons.push(actionButtons.shift());
   if(win.ExcalidrawScribbleHelper.action === "Wrap") actionButtons.push(actionButtons.shift());
 
+  // Apply styles from current app state
   ea.style.strokeColor = st.currentItemStrokeColor ?? ea.style.strokeColor;
   ea.style.roughness = st.currentItemRoughness ?? ea.style.roughness;
   ea.setStrokeSharpness(st.currentItemRoundness === "round" ? 0 : st.currentItemRoundness)
@@ -281,9 +304,18 @@ eventHandler = async (evt) => {
   ea.style.verticalAlign = "middle";
 
   windowOpen = true;
-  const text = await utils.inputPrompt (
-    "Edit text", "", "", containerID?undefined:actionButtons, 5, true, customControls, true
-  );
+  
+  const text = await utils.inputPrompt ({
+    header: "Edit text",
+    placeholder: "",
+    value: "",
+    buttons: containerID?undefined:actionButtons,
+    lines: 5,
+    displayEditorButtons: true,
+    customComponents: customControls,
+    blockPointerInputOutsideModal: true,
+    controlsOnTop: true
+  });
   windowOpen = false;
 
   if(!text || text.trim() === "") return;
@@ -297,8 +329,11 @@ eventHandler = async (evt) => {
   const textEl = ea.getElement(textId);
 
   if(!container && (win.ExcalidrawScribbleHelper.action === "Wrap")) {
-    ea.style.backgroundColor = "transparent";
-    ea.style.strokeColor = "transparent";
+    textEl.autoResize = false;
+    textEl.width = Math.min(textEl.width, maxWidth);
+    ea.addElementsToView(false, false, true);
+    addEventHandler(eventHandler);
+    return;
   }
 
   if(!container && (win.ExcalidrawScribbleHelper.action === "Sticky")) {
@@ -342,36 +377,22 @@ eventHandler = async (evt) => {
   ea.selectElementsInView(containers);
 };
 
-// ---------------------
-// Edit Existing Element
-// ---------------------
-const editExistingTextElement = async (elements) => {
-  windowOpen = true;
-  ea.copyViewElementsToEAforEditing(elements);
-  const el = ea.getElements()[0];
-  ea.style.strokeColor = el.strokeColor;
-  const text = await utils.inputPrompt(
-    "Edit text","",elements[0].rawText,undefined,5,true,customControls,true
-  ); 
-  windowOpen = false;
-  if(!text) return;
-  
-  el.strokeColor = ea.style.strokeColor;
-  el.originalText = text;
-  el.text = text;
-  el.rawText = text;
-  ea.refreshTextElementSize(el.id);
-  await ea.addElementsToView(false,false);
-  if(el.containerId) {
-    const containers = ea.getViewElements().filter(e=>e.id === el.containerId);
-    api.updateContainerSize(containers);
-    ea.selectElementsInView(containers);
+//---------------------
+// Script entry point
+//---------------------
+//Stop the script if scribble helper is clicked and no eligable element is selected
+let silent = false;
+if (win.ExcalidrawScribbleHelper?.eventHandler) {
+  removeEventHandler(win.ExcalidrawScribbleHelper.eventHandler);
+  delete win.ExcalidrawScribbleHelper.eventHandler;
+  delete win.ExcalidrawScribbleHelper.window;
+  if(!(containerElements.length === 1 || selectedTextElements.length === 1)) {
+    new Notice ("Scribble Helper was stopped",1000);
+    return;
   }
+  silent = true;
 }
 
-//--------------
-// Start actions
-//--------------
 if(!win.ExcalidrawScribbleHelper?.eventHandler) {
   if(!silent) new Notice(
     "To create a new text element,\ndouble-tap the screen.\n\n" +

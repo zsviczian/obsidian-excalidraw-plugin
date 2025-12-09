@@ -1,12 +1,12 @@
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { ColorMaster } from "@zsviczian/colormaster";
+import CM, { ColorMaster } from "@zsviczian/colormaster";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { DynamicStyle } from "src/types/types";
 import { cloneElement } from "./excalidrawAutomateUtils";
-import { ExcalidrawFrameElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { ExcalidrawFrameElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { addAppendUpdateCustomData } from "./utils";
-import { mutateElement } from "src/constants/constants";
+import { CaptureUpdateAction } from "src/constants/constants";
 
 export const setDynamicStyle = (
   ea: ExcalidrawAutomate,
@@ -16,8 +16,13 @@ export const setDynamicStyle = (
   textBackgroundColor?: string,
 ) => {
   if(dynamicStyle === "none") {
-    view.excalidrawContainer?.removeAttribute("style");
-    setTimeout(()=>view.updateScene({appState:{dynamicStyle: ""}, storeAction: "update"}));
+    //view.excalidrawContainer?.removeAttribute("style");
+    setTimeout(()=>
+      view.updateScene({
+        appState:{dynamicStyle: {}}, 
+        captureUpdate: CaptureUpdateAction.NEVER
+      })
+    );
     const toolspanel = view.toolsPanelRef?.current?.containerRef?.current;
     if(toolspanel) {
       let toolsStyle = toolspanel.getAttribute("style");
@@ -170,7 +175,7 @@ export const setDynamicStyle = (
       ) {
         return;
       }
-      mutateElement(e,{customData: f.customData});
+      (view.excalidrawAPI as ExcalidrawImperativeAPI).mutateElement(e,{customData: f.customData});
     });
 
     view.updateScene({
@@ -178,7 +183,7 @@ export const setDynamicStyle = (
         frameColor,
         dynamicStyle: styleObject
       },
-      storeAction: "update",
+      captureUpdate: CaptureUpdateAction.NEVER,
     });
     view = null;
     ea = null;
@@ -186,3 +191,42 @@ export const setDynamicStyle = (
     dynamicStyle = null;
   });
 }
+
+const colorsCache: Map<string,string> = new Map();
+
+export function getHighlightColor(
+  ea: ExcalidrawAutomate,
+  bgColor: string,
+  opacity:number = 1
+): string {
+    bgColor = bgColor==="transparent" ? "#ffffff": bgColor;
+
+    let contrastedRGBA = colorsCache.get(bgColor);
+    if(!contrastedRGBA) {
+      const bg = ea.getCM(bgColor);
+      const bgMix = ea.getCM(bgColor);
+      const isDark = bg.isDark();
+
+      const step = 15;
+      const candidates = [
+        CM((isDark ? bg.lighterBy(step) : bg.darkerBy(step)).stringHEX()),
+        CM((isDark ? bg.lighterBy(step) : bg.darkerBy(step)).stringHEX()),
+        isDark ? bg.lighterBy(step) : bg.darkerBy(step),
+      // Vibrancy boost by mixing toward the opposite theme color
+        bgMix.mix({color: ea.getCM(isDark ? "#ffffff" : "#000000"), ratio:0.35}),
+        ea.getCM(isDark ? "#ffffff" : "#000000"),
+        ea.getCM(isDark ? "#000000" : "#ffffff"),
+      ];
+
+      const desiredContrast = 2.5;
+      const contrasted = candidates.find(color => 
+        color.contrast({bgColor, ratio:false}) as number >= desiredContrast) ??
+          candidates.reduce((best, color) =>
+            (color.contrast({bgColor, ratio: false}) > best.contrast({bgColor, ratio:false}) ? color : best)
+      );
+      contrastedRGBA = `rgba(${Math.round(contrasted.red)       
+        },${Math.round(contrasted.green)},${Math.round(contrasted.blue)}`;
+      colorsCache.set(bgColor,contrastedRGBA);
+    }
+    return `${contrastedRGBA},${opacity})`;
+  }

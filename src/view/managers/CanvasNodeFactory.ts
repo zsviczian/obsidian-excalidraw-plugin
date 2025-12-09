@@ -34,6 +34,7 @@ export interface ObsidianCanvasNode {
   isEditing: boolean;
   file: TFile;
   detach: Function;
+  isEditable: Function;
 }
 
 export class CanvasNodeFactory {
@@ -50,17 +51,17 @@ export class CanvasNodeFactory {
   }
 
   public async initialize() {
-    //@ts-ignore
+    const app = this.view.app;
     const canvasPlugin = app.internalPlugins.plugins["canvas"];
     
     if(!canvasPlugin._loaded) {
       await canvasPlugin.load();
     }
     const doc = this.view.ownerDocument;
-    const rootSplit:WorkspaceSplit = new (WorkspaceSplit as ConstructableWorkspaceSplit)(this.view.app.workspace, "vertical");
-    rootSplit.getRoot = () => this.view.app.workspace[doc === document ? 'rootSplit' : 'floatingSplit'];
+    const rootSplit:WorkspaceSplit = new (WorkspaceSplit as ConstructableWorkspaceSplit)(app.workspace, "vertical");
+    rootSplit.getRoot = () => app.workspace[doc === document ? 'rootSplit' : 'floatingSplit'];
     rootSplit.getContainer = () => getContainerForDocument(doc);
-    this.leaf = this.view.app.workspace.createLeafInParent(rootSplit, 0);
+    this.leaf = app.workspace.createLeafInParent(rootSplit, 0);
     this.canvas = canvasPlugin.views.canvas(this.leaf).canvas;
     this.initialized = true;
   }
@@ -84,8 +85,8 @@ export class CanvasNodeFactory {
 
   private async waitForEditor(node: ObsidianCanvasNode): Promise<HTMLElement | null> {
     let counter = 0;
-    while (!node.child.editor?.containerEl?.parentElement?.parentElement && counter++ < 100) {
-      await new Promise(resolve => setTimeout(resolve, 25));
+    while (!node.child.editor?.containerEl?.parentElement?.parentElement && counter++ < 40) {
+      await sleep(25);
     }
     return node.child.editor?.containerEl?.parentElement?.parentElement;
   }
@@ -112,12 +113,11 @@ export class CanvasNodeFactory {
   }
 
   public async startEditing(node: ObsidianCanvasNode, theme: string) {
-    if (!this.initialized || !node) return;
+    if (!this.initialized || !node || !node.isEditable()) return;
     
     try {
-      //if (node.file === this.view.file) {
-        await this.view.setEmbeddableNodeIsEditing();
-      //}
+      await this.view.setEmbeddableNodeIsEditing();
+      
       node.startEditing();
       node.isEditing = true;
 
@@ -138,12 +138,10 @@ export class CanvasNodeFactory {
   }
 
   public stopEditing(node: ObsidianCanvasNode) {
-    if (!this.initialized || !node || !node.isEditing) return;
+    if (!this.initialized || !node || !node.isEditing || !node.isEditable()) return;
     
     try {
-      //if (node.file === this.view.file) {
-        this.view.clearEmbeddableNodeIsEditing();
-      //}
+      this.view.clearEmbeddableNodeIsEditing();
       node.child.showPreview();
       node.isEditing = false;
       this.observer?.disconnect();

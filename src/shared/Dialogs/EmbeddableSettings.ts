@@ -1,5 +1,5 @@
-import { ExcalidrawEmbeddableElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
-import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
+import { ExcalidrawEmbeddableElement } from "@zsviczian/excalidraw/types/element/src/types";
+import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { Modal, Notice, Setting, TFile, ToggleComponent } from "obsidian";
 import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
@@ -12,6 +12,7 @@ import { getYouTubeStartAt, isValidYouTubeStart, isYouTube, updateYouTubeStartTi
 import { EmbeddalbeMDFileCustomDataSettingsComponent } from "./EmbeddableMDFileCustomDataSettingsComponent";
 import { isWinCTRLorMacCMD } from "src/utils/modifierkeyHelper";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { CaptureUpdateAction } from "src/constants/constants";
 
 export type EmbeddableMDCustomProps = {
   useObsidianDefaults: boolean;
@@ -36,6 +37,7 @@ export class EmbeddableSettings extends Modal {
   private isLocalURI: boolean;
   private mdCustomData: EmbeddableMDCustomProps;
   private onKeyDown: (ev: KeyboardEvent) => void;
+  private listenerHost: Document | null = null;
 
   constructor(
     private plugin: ExcalidrawPlugin,
@@ -49,7 +51,7 @@ export class EmbeddableSettings extends Modal {
     this.zoomValue = element.scale[0];
     this.isYouTube = isYouTube(this.element.link);
     this.notExcalidrawIsInternal = this.file && !this.view.plugin.isExcalidrawFile(this.file)
-    this.isMDFile = this.file && this.file.extension === "md"; // && !this.view.plugin.isExcalidrawFile(this.file);
+    this.isMDFile = this.file && this.file.extension.toLowerCase() === "md"; // && !this.view.plugin.isExcalidrawFile(this.file);
     this.isLocalURI = this.element.link.startsWith("file://");
     if(isYouTube) this.youtubeStart = getYouTubeStartAt(this.element.link);
 
@@ -71,7 +73,10 @@ export class EmbeddableSettings extends Modal {
   }
 
   onClose() {
-    this.containerEl.removeEventListener("keydown",this.onKeyDown);
+    if(this.listenerHost && this.onKeyDown) {
+      this.listenerHost.removeEventListener("keydown",this.onKeyDown);
+      this.listenerHost = null;
+    }
     this.plugin = null;
     this.view = null;
     this.file = null;
@@ -165,7 +170,11 @@ export class EmbeddableSettings extends Modal {
     }
 
     this.onKeyDown = onKeyDown;
-    this.containerEl.ownerDocument.addEventListener("keydown",onKeyDown);
+    const ownerDoc = this.containerEl.ownerDocument;
+    if(ownerDoc) {
+      this.listenerHost = ownerDoc;
+      ownerDoc.addEventListener("keydown",onKeyDown);
+    }
   }
 
   private async applySettings() {
@@ -225,8 +234,7 @@ export class EmbeddableSettings extends Modal {
     if(dirty) {
       (async() => {
         await this.ea.addElementsToView();
-        //@ts-ignore
-        this.ea.viewUpdateScene({appState: {}, storeAction: "update"});
+        this.ea.viewUpdateScene({appState: {}, captureUpdate: CaptureUpdateAction.NEVER});
         this.close(); //close should only run once update scene is done
       })();
     } else {

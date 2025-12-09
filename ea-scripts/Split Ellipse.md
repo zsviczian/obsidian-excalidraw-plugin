@@ -2,8 +2,8 @@
 
 This script splits an ellipse at any point where a line intersects it. If no lines are selected, it will use every line that intersects the ellipse. Otherwise, it will only use the selected lines. If there is no intersecting line, the ellipse will be converted into a line object. 
 There is also the option to close the object along the cut, which will close the cut in the shape of the line.
-![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-splitEllipse-demo1.jpg)
-![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-splitEllipse-demo2.jpg)
+![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-splitEllipse-demo1.png)
+![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-splitEllipse-demo2.png)
 Tip: To use an ellipse as the cutting object, you first have to use this script on it, since it will convert the ellipse into a line.
 
 
@@ -54,6 +54,7 @@ angles.forEach((angle, key) => {
 
   const lineId = ea.addLine(points);
   const line = ea.getElement(lineId);
+  if (closeObject && cuttingLine) line.polygon = true;
   line.frameId = ellipse.frameId;
   line.groupIds = ellipse.groupIds;
 });

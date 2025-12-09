@@ -1,5 +1,7 @@
 # [◀ Excalidraw Automate How To](./readme.md)
 
+【English | [简体中文](zh-cn/docs/ExcalidrawScriptsEngine.md)】
+
 [![Script Engine](https://user-images.githubusercontent.com/14358394/145684531-8d9c2992-59ac-4ebc-804a-4cce1777ded2.jpg)](https://youtu.be/hePJcObHIso)
 
 ## Introduction

@@ -48,6 +48,7 @@ const EDIT_ZOOMOUT = 0.7; //70% of original slide zoom, set to a value between 1
 const FADE_LEVEL = 0.1; //opacity of the slideshow controls after fade delay (value between 0 and 1)
 const PRINT_SLIDE_WIDTH = 1920;
 const PRINT_SLIDE_HEIGHT = 1080;
+const MAX_ZOOM = 30; //3000%
 //using outerHTML because the SVG object returned by Obsidin is in the main workspace window
 //but excalidraw might be open in a popout window which has a different document object
 const SVG_COG = ea.obsidian.getIcon("lucide-settings").outerHTML;
@@ -60,6 +61,7 @@ const SVG_MINIMIZE = ea.obsidian.getIcon("lucide-minimize").outerHTML;
 const SVG_LASER_ON = ea.obsidian.getIcon("lucide-hand").outerHTML;
 const SVG_LASER_OFF = ea.obsidian.getIcon("lucide-wand").outerHTML;
 const SVG_PRINTER = ea.obsidian.getIcon("lucide-printer").outerHTML;
+const SVG_REFOCUS = ea.obsidian.getIcon("lucide-scan-eye").outerHTML;
 
 //-------------------------------
 //utility & convenience functions
@@ -278,7 +280,7 @@ const getNavigationRect = ({ x1, y1, x2, y2, printDimensions }) => {
   const { width, height } = printDimensions ? printDimensions : excalidrawAPI.getAppState();
   const ratioX = width / Math.abs(x1 - x2);
   const ratioY = height / Math.abs(y1 - y2);
-  let ratio = Math.min(Math.max(ratioX, ratioY), 30);
+  let ratio = Math.min(Math.max(ratioX, ratioY), MAX_ZOOM);
 
   const scaledWidth = Math.abs(x1 - x2) * ratio;
   const scaledHeight = Math.abs(y1 - y2) * ratio;
@@ -499,9 +501,22 @@ const createPresentationNavigationPanel = () => {
 	    }
 	  });
 	  
+	  el.createEl("button",{
+	    attr: {
+	      title: "Re-focus current slide (shortcut: HOME)"
+	    }
+	  }, button => {
+	    button.innerHTML = SVG_REFOCUS;
+	    button.onclick = () => {
+	      debugger;
+	      slide--;
+        navigate("fwd");
+	    }
+	  });
+	  
  	  el.createEl("button",{
 	    attr: {
-	      title: "Toggle fullscreen. If you hold ALT/OPT when starting the presentation it will not go fullscreen."
+	      title: "Toggle fullscreen. If you hold ALT/OPT when starting the presentation it will not go fullscreen. (shortcut: f)"
 	    },
 	  }, button => {
 	    toggleFullscreenButton = button;
@@ -590,7 +605,7 @@ const keydownListener = (e) => {
       navigate("fwd");
       break;
     case "Home":
-      slide = -1;
+      slide--;
       navigate("fwd");
       break;
     case "e": 
@@ -599,6 +614,9 @@ const keydownListener = (e) => {
         await toggleArrowVisibility(false);
         exitPresentation(true);
       })()
+      break;
+    case "f":
+      toggleFullscreen();
       break;
   }
 }
@@ -793,6 +811,22 @@ const translateToZero = ({ top, left, bottom, right }, padding) => {
   };
 }
 
+const getElementPlaceholdersForMarkerFrames = () => {
+  const viewMarkerFrames = ea.getViewElements().filter(el=>el.type === "frame" && el.frameRole === "marker");
+  if(viewMarkerFrames.length === 0) return;
+  ea.clear();
+  ea.style.opacity = 0;
+  ea.style.roughness = 0;
+	ea.style.fillStyle = "solid";
+	ea.style.backgroundColor = "black"
+	ea.style.strokeWidth = 0.01;
+
+  for (const frame of viewMarkerFrames) {
+	  ea.addRect(frame.x, frame.y, frame.width, frame.height);
+  }
+  return ea.getViewElements().concat(ea.getElements());
+}
+
 const printToPDF = async (e) => {
   const slideWidth = e.shiftKey ? excalidrawAPI.getAppState().width : PRINT_SLIDE_WIDTH;
   const slideHeight = e.shiftKey ? excalidrawAPI.getAppState().height : PRINT_SLIDE_HEIGHT;
@@ -803,6 +837,7 @@ const printToPDF = async (e) => {
   const padding =  shouldClipFrames ? 0 : Math.round(Math.max(slideWidth,slideHeight)/2)+10;
   const st = ea.getExcalidrawAPI().getAppState();
   setSingleNotice("Generating image. This can take a longer time depending on the size of the image and speed of your device");
+  const elementsOverride = getElementPlaceholdersForMarkerFrames();
   const svg = await ea.createViewSVG({
     withBackground: true,
     theme: st.theme,
@@ -811,6 +846,7 @@ const printToPDF = async (e) => {
     selectedOnly: false,
     skipInliningFonts: false,
     embedScene: false,
+    elementsOverride,
   });
   const pages = [];
   for(i=0;i<slides.length;i++) {

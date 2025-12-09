@@ -21,3 +21,6 @@ yarn.lock
 .DS_Store
 .lock
 .lock
+
+# Obsidian files
+Obsidian
