@@ -679,7 +679,7 @@ export const insertLaTeXToView = (view: ExcalidrawView, center: boolean = false)
       ea.selectElementsInView([id]);
     }
     ea.destroy();
-  });
+  }, () => {});
 };
 
 export const search = async (view: ExcalidrawView) => {
