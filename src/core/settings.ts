@@ -47,6 +47,7 @@ import { ContentSearcher } from "src/shared/components/ContentSearcher";
 import { UIMode, UIModeSettingsComponent } from "src/shared/Dialogs/UIModeSettingComponent";
 
 export interface ExcalidrawSettings {
+  copyLinkToElemenetAnchorTo100: boolean;
   disableDoubleClickTextEditing: boolean;
   folder: string;
   cropFolder: string;
@@ -240,6 +241,7 @@ export interface ExcalidrawSettings {
 declare const PLUGIN_VERSION:string;
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
+  copyLinkToElemenetAnchorTo100: false,
   disableDoubleClickTextEditing: false,
   folder: "Excalidraw",
   cropFolder: "",

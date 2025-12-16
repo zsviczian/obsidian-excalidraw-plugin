@@ -1267,10 +1267,14 @@ export default class ExcalidrawPlugin extends Plugin {
     return JSON_parse(this.settings.library);
   }
 
-  public setStencilLibrary(library: {}) {
+  public async setStencilLibrary(library: {}) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setStencilLibrary,`ExcalidrawPlugin.setStencilLibrary`, library);
     this.settings.library = "deprecated";
+    if(JSON.stringify(this.settings.library2) === JSON.stringify(library)) {
+      return;
+    }
     this.settings.library2 = library;
+    await this.saveSettings();
   }
 
   public triggerEmbedUpdates(filepath?: string) {

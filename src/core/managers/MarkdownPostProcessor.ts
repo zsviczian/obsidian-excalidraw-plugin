@@ -829,7 +829,10 @@ const tmpObsidianWYSIWYG = async (
       }
       if(warningEl) {
         const dataHeading = warningEl.getAttr("data-heading");
-        const ref = dataHeading.match(/.+(\^(?:group=|area=|frame=|clippedframe=)[A-Za-z0-9_-]{8,21})/)?.[1];
+        const ref = dataHeading.match(/.+(\^(?:group=|area=|frame=|clippedframe=)[A-Za-z0-9_-]{8,21})/)?.[1]
+          // I am unsure if this works with all Obsidian translations,
+          // thus I kept the first with the fix ID length and have the frame name as fallback
+          ?? dataHeading.match(/.+(\^(?:group=|area=|frame=|clippedframe=)[A-Za-z0-9_-]+)/)?.[1]; 
         if(ref) {
           attr.fname = file.path + "#" +ref;
           areaPreview = true;

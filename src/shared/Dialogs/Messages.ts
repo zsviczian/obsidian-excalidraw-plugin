@@ -17,6 +17,17 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.18.1":`
+## New
+- \`Copy \[\[link\]\] for selected elements\` context menu action improvements
+  - now includes checkbox to add '|100%' anchor to the link.
+  - includes option to copy by frame name not frame ID if the frame has a name.
+
+## Fixed
+- Unnecessary data.json writes each time a drawing is opened.[#2562](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2562)
+- Angle snapping when line is over an object
+- Hover preview when referencing a frame by name in an image reference
+`,
 "2.18.0":`
 ## New from Excalidraw.com
 - 🔥🔥🔥 New arrow behavior allows binding arrows to the inside of shapes and image! 🙏[mtolmacs](https://github.com/mtolmacs), [dwelle](https://github.com/dwelle) [#9670](https://github.com/excalidraw/excalidraw/pull/9670)

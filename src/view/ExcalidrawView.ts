@@ -4251,8 +4251,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         source: GITHUB_RELEASES+PLUGIN_VERSION,
         libraryItems: items,
       };
-      this.plugin.setStencilLibrary(lib);
-      await this.plugin.saveSettings();
+
+      await this.plugin.setStencilLibrary(lib)
     })();
   }
 
