@@ -2010,6 +2010,9 @@ export class ExcalidrawAutomate {
    * @returns {Promise<string>} Promise resolving to the ID of the added LaTeX image element.
    */
   async addLaTex(topX: number, topY: number, tex: string): Promise<string> {
+    if (!tex){
+      return null;
+    }
     const id = nanoid();
     const image = await tex2dataURL(tex, 4, this.plugin);
     if (!image) {

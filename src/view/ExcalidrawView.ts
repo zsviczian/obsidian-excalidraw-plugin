@@ -1077,7 +1077,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         addFiles,
       );
       this.setDirty(1);
-    });  
+    }, () => {} ); 
   }
 
   async openEmbeddedLinkEditor(imgId:string) {
