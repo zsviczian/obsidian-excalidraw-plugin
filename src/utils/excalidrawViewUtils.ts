@@ -271,12 +271,11 @@ export async function addBackOfTheNoteCard(
   const shouldRemoveTrailingHashtag = Boolean(hastag);
   view.data = data.replace(
     header,
-    (shouldRemoveTrailingHashtag 
+    () => (shouldRemoveTrailingHashtag 
       ? header.substring(0,header.length-hastag[0].length) 
       : header) +
         `\n# ${title}\n\n${cardBody ? cardBody+"\n\n" : ""}${
           shouldAddHashtag || shouldRemoveTrailingHashtag ? "#\n" : ""}`);
-  
   await view.forceSave(true);
   let watchdog = 0;
   await sleep(200);
