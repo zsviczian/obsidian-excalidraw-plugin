@@ -6,6 +6,7 @@ import ExcalidrawView from "src/view/ExcalidrawView";
 
 /**
    *
+   * @param view - ExcalidrawView instance
    * @param prefix - defines the default button.
    * @returns
    */
@@ -56,13 +57,16 @@ export async function copyLinkToSelectedElementToClipboard(view: ExcalidrawView,
   const getFrameTarget = () =>
     frameNameIsValid && copyFrameLinkByName ? frameName : frames[0].id;
 
+  let cancelled = true;
+
   const button = {
-    area: { caption: "Area", action: () => { prefix = "area="; return; } },
-    link: { caption: "Link", action: () => { prefix = ""; return; } },
-    group: { caption: "Group", action: () => { prefix = "group="; return; } },
+    area: { caption: "Area", action: () => { cancelled = false; prefix = "area="; return; } },
+    link: { caption: "Link", action: () => { cancelled = false; prefix = ""; return; } },
+    group: { caption: "Group", action: () => { cancelled = false; prefix = "group="; return; } },
     frame: {
       caption: "Frame",
       action: () => {
+        cancelled = false;
         prefix = "frame=";
         elementId = getFrameTarget();
         return;
@@ -71,6 +75,7 @@ export async function copyLinkToSelectedElementToClipboard(view: ExcalidrawView,
     clippedframe: {
       caption: "Clipped Frame",
       action: () => {
+        cancelled = false;
         prefix = "clippedframe=";
         elementId = getFrameTarget();
         return;
@@ -203,10 +208,14 @@ export async function copyLinkToSelectedElementToClipboard(view: ExcalidrawView,
     }
   }
 
-  if (!alias && anchorTo100) {
+  if (cancelled) {
+    return;
+  }
+
+  if ((alias === "" || alias == null) && anchorTo100) {
     alias = "100%";
   }
-  // Note: anchorTo100 is persisted here; any existing behavior tied to this setting elsewhere remains intact.
+
   navigator.clipboard.writeText(
     `${prefix.length > 0 ? "!" : ""}[[${view.file.path}#^${prefix}${elementId}${alias ? `|${alias}` : ``}]]`,
   );
