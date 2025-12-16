@@ -542,6 +542,7 @@ export declare class ExcalidrawAutomate {
             "excalidraw-autoexport"?: boolean;
             "excalidraw-mask"?: boolean;
             "excalidraw-open-md"?: boolean;
+            "excalidraw-export-internal-links"?: boolean;
             "cssclasses"?: string;
         };
         plaintext?: string;
@@ -624,7 +625,7 @@ export declare class ExcalidrawAutomate {
      * @param {number} [padding] - The padding to use for the SVG.
      * @returns {Promise<SVGSVGElement>} Promise resolving to the created SVG element.
      */
-    createSVG(templatePath?: string, embedFont?: boolean, exportSettings?: ExportSettings, loader?: EmbeddedFilesLoader, theme?: string, padding?: number): Promise<SVGSVGElement>;
+    createSVG(templatePath?: string, embedFont?: boolean, exportSettings?: ExportSettings, loader?: EmbeddedFilesLoader, theme?: string, padding?: number, convertMarkdownLinksToObsidianURLs?: boolean, includeInternalLinks?: boolean): Promise<SVGSVGElement>;
     /**
      * Creates a PNG image from the ExcalidrawAutomate elements and the template provided.
      * @param {string} [templatePath] - The template path to use for the PNG.
@@ -2015,14 +2016,12 @@ export type ExcalidrawTextElementWithContainer = {
     containerId: ExcalidrawTextContainer["id"];
 } & ExcalidrawTextElement;
 export type FixedPoint = [number, number];
-export type PointBinding = {
+export type BindMode = "inside" | "orbit" | "skip";
+export type FixedPointBinding = {
     elementId: ExcalidrawBindableElement["id"];
-    focus: number;
-    gap: number;
-};
-export type FixedPointBinding = Merge<PointBinding, {
     fixedPoint: FixedPoint;
-}>;
+    mode: BindMode;
+};
 type Index = number;
 export type PointsPositionUpdates = Map<Index, {
     point: LocalPoint;
@@ -2032,9 +2031,8 @@ export type Arrowhead = "arrow" | "bar" | "dot" | "circle" | "circle_outline" | 
 export type ExcalidrawLinearElement = _ExcalidrawElementBase & Readonly<{
     type: "line" | "arrow";
     points: readonly LocalPoint[];
-    lastCommittedPoint: LocalPoint | null;
-    startBinding: PointBinding | null;
-    endBinding: PointBinding | null;
+    startBinding: FixedPointBinding | null;
+    endBinding: FixedPointBinding | null;
     startArrowhead: Arrowhead | null;
     endArrowhead: Arrowhead | null;
 }>;
@@ -2053,9 +2051,9 @@ export type ExcalidrawArrowElement = ExcalidrawLinearElement & Readonly<{
 }>;
 export type ExcalidrawElbowArrowElement = Merge<ExcalidrawArrowElement, {
     elbowed: true;
+    fixedSegments: readonly FixedSegment[] | null;
     startBinding: FixedPointBinding | null;
     endBinding: FixedPointBinding | null;
-    fixedSegments: readonly FixedSegment[] | null;
     /**
      * Marks that the 3rd point should be used as the 2nd point of the arrow in
      * order to temporarily hide the first segment of the arrow without losing
@@ -2078,7 +2076,6 @@ export type ExcalidrawFreeDrawElement = _ExcalidrawElementBase & Readonly<{
     points: readonly LocalPoint[];
     pressures: readonly number[];
     simulatePressure: boolean;
-    lastCommittedPoint: LocalPoint | null;
 }>;
 export type FileId = string & {
     _brand: "FileId";
@@ -2225,6 +2222,7 @@ export type StaticCanvasAppState = Readonly<_CommonCanvasAppState & {
     frameColor: AppState["frameColor"];
     currentHoveredFontFamily: AppState["currentHoveredFontFamily"];
     hoveredElementIds: AppState["hoveredElementIds"];
+    suggestedBinding: AppState["suggestedBinding"];
     croppingElementId: AppState["croppingElementId"];
 }>;
 export type InteractiveCanvasAppState = Readonly<_CommonCanvasAppState & {
@@ -2233,14 +2231,16 @@ export type InteractiveCanvasAppState = Readonly<_CommonCanvasAppState & {
     selectedGroupIds: AppState["selectedGroupIds"];
     selectedLinearElement: AppState["selectedLinearElement"];
     multiElement: AppState["multiElement"];
+    newElement: AppState["newElement"];
     isBindingEnabled: AppState["isBindingEnabled"];
-    suggestedBindings: AppState["suggestedBindings"];
+    suggestedBinding: AppState["suggestedBinding"];
     isRotating: AppState["isRotating"];
     elementsToHighlight: AppState["elementsToHighlight"];
     collaborators: AppState["collaborators"];
     snapLines: AppState["snapLines"];
     zenModeEnabled: AppState["zenModeEnabled"];
     editingTextElement: AppState["editingTextElement"];
+    viewBackgroundColor: AppState["viewBackgroundColor"];
     gridColor: AppState["gridColor"];
     gridDirection: AppState["gridDirection"];
     highlightSearchResult: AppState["highlightSearchResult"];
@@ -2248,6 +2248,11 @@ export type InteractiveCanvasAppState = Readonly<_CommonCanvasAppState & {
     croppingElementId: AppState["croppingElementId"];
     searchMatches: AppState["searchMatches"];
     activeLockedId: AppState["activeLockedId"];
+    hoveredElementIds: AppState["hoveredElementIds"];
+    frameRendering: AppState["frameRendering"];
+    frameColor: AppState["frameColor"];
+    shouldCacheIgnoreZoom: AppState["shouldCacheIgnoreZoom"];
+    exportScale: AppState["exportScale"];
 }>;
 export type ObservedAppState = ObservedStandaloneAppState & ObservedElementsAppState;
 export type ObservedStandaloneAppState = {
@@ -2301,7 +2306,7 @@ export interface AppState {
     selectionElement: NonDeletedExcalidrawElement | null;
     isBindingEnabled: boolean;
     startBoundElement: NonDeleted<ExcalidrawBindableElement> | null;
-    suggestedBindings: SuggestedBinding[];
+    suggestedBinding: NonDeleted<ExcalidrawBindableElement> | null;
     frameToHighlight: NonDeleted<ExcalidrawFrameLikeElement> | null;
     frameRendering: {
         enabled: boolean;
@@ -2374,6 +2379,8 @@ export interface AppState {
         tab: "text-to-diagram" | "mermaid";
     } | {
         name: "commandPalette";
+    } | {
+        name: "settings";
     } | {
         name: "elementLinkSelector";
         sourceElementId: ExcalidrawElement["id"];
@@ -2497,6 +2504,7 @@ export interface AppState {
     lockedMultiSelections: {
         [groupId: string]: true;
     };
+    bindMode: BindMode;
 }
 export type SearchMatch = {
     id: string;
@@ -2509,7 +2517,7 @@ export type SearchMatch = {
         showOnCanvas: boolean;
     }[];
 };
-export type UIAppState = Omit<AppState, "suggestedBindings" | "startBoundElement" | "cursorButton" | "scrollX" | "scrollY">;
+export type UIAppState = Omit<AppState, "startBoundElement" | "cursorButton" | "scrollX" | "scrollY">;
 export type NormalizedZoomValue = number & {
     _brand: "normalizedZoom";
 };
@@ -2728,6 +2736,7 @@ export type AppClassProperties = {
     onPointerUpEmitter: App["onPointerUpEmitter"];
     updateEditorAtom: App["updateEditorAtom"];
     onPointerDownEmitter: App["onPointerDownEmitter"];
+    bindModeHandler: App["bindModeHandler"];
 };
 export type PointerDownState = Readonly<{
     origin: Readonly<{
@@ -2805,6 +2814,7 @@ export interface ExcalidrawImperativeAPI {
     isTouchScreen: InstanceType<typeof App>["isTouchScreen"];
     setTrayModeEnabled: InstanceType<typeof App>["setTrayModeEnabled"];
     setDesktopUIMode: InstanceType<typeof App>["setDesktopUIMode"];
+    setMobileModeAllowed: InstanceType<typeof App>["setMobileModeAllowed"];
     isTrayModeEnabled: InstanceType<typeof App>["isTrayModeEnabled"];
     getColorAtScenePoint: InstanceType<typeof App>["getColorAtScenePoint"];
     startLineEditor: InstanceType<typeof App>["startLineEditor"];
@@ -9976,16 +9986,25 @@ export declare const useI18n: () => {
 /* ************************************** */
 /* ./data/restore -> node_modules/@zsviczian/excalidraw/types/excalidraw/data/restore.d.ts */
 /* ************************************** */
-export declare const restore: (data: Pick<ImportedDataState, "appState" | "elements" | "files"> | null, localAppState: Partial<AppState> | null | undefined, localElements: readonly ExcalidrawElement[] | null | undefined, elementsConfig?: {
+export declare const restore: (data: Pick<ImportedDataState, "appState" | "elements" | "files"> | null, 
+/**
+ * Local AppState (`this.state` or initial state from localStorage) so that we
+ * don't overwrite local state with default values (when values not
+ * explicitly specified).
+ * Supply `null` if you can't get access to it.
+ */
+localAppState: Partial<AppState> | null | undefined, localElements: readonly ExcalidrawElement[] | null | undefined, elementsConfig?: {
     refreshDimensions?: boolean;
     repairBindings?: boolean;
     deleteInvisibleElements?: boolean;
 }) => RestoredDataState;
 export declare const restoreAppState: (appState: ImportedDataState["appState"], localAppState: Partial<AppState> | null | undefined) => RestoredAppState;
-export declare const restoreElement: (element: Exclude<ExcalidrawElement, ExcalidrawSelectionElement>, opts?: {
+export declare const restoreElement: (element: Exclude<ExcalidrawElement, ExcalidrawSelectionElement>, elementsMap: Readonly<ElementsMap>, opts?: {
     deleteInvisibleElements?: boolean;
-}) => ExcalidrawLinearElement | import("@excalidraw/element/types").ExcalidrawRectangleElement | import("@excalidraw/element/types").ExcalidrawDiamondElement | import("@excalidraw/element/types").ExcalidrawEllipseElement | import("@excalidraw/element/types").ExcalidrawEmbeddableElement | import("@excalidraw/element/types").ExcalidrawIframeElement | import("@excalidraw/element/types").ExcalidrawImageElement | import("@excalidraw/element/types").ExcalidrawFrameElement | import("@excalidraw/element/types").ExcalidrawMagicFrameElement | ExcalidrawTextElement | import("@excalidraw/element/types").ExcalidrawFreeDrawElement | ExcalidrawArrowElement | null;
-export declare const restoreElements: (elements: ImportedDataState["elements"], localElements: readonly ExcalidrawElement[] | null | undefined, opts?: {
+}) => typeof element | null;
+export declare const restoreElements: (targetElements: ImportedDataState["elements"], 
+/** NOTE doesn't serve for reconciliation */
+localElements: readonly ExcalidrawElement[] | null | undefined, opts?: {
     refreshDimensions?: boolean;
     repairBindings?: boolean;
     deleteInvisibleElements?: boolean;
@@ -10006,7 +10025,7 @@ export declare const exportToBlob: (opts: ExportOpts & {
     exportPadding?: number;
 }) => Promise<Blob>;
 export declare const exportToCanvas: ({ elements, appState, files, maxWidthOrHeight, getDimensions, exportPadding, exportingFrame, }: ExportOpts & {
-    exportPadding?: number | undefined;
+    exportPadding?: number;
 }) => Promise<HTMLCanvasElement>;
 export declare const exportToClipboard: (opts: ExportOpts & {
     mimeType?: string;
@@ -10014,10 +10033,10 @@ export declare const exportToClipboard: (opts: ExportOpts & {
     type: "png" | "svg" | "json";
 }) => Promise<void>;
 export declare const exportToSvg: ({ elements, appState, files, exportPadding, renderEmbeddables, exportingFrame, skipInliningFonts, reuseImages, }: Omit<ExportOpts, "getDimensions"> & {
-    exportPadding?: number | undefined;
-    renderEmbeddables?: boolean | undefined;
-    skipInliningFonts?: true | undefined;
-    reuseImages?: boolean | undefined;
+    exportPadding?: number;
+    renderEmbeddables?: boolean;
+    skipInliningFonts?: true;
+    reuseImages?: boolean;
 }) => Promise<SVGSVGElement>;
 
 /* ************************************** */
@@ -10029,11 +10048,6 @@ export declare const getCommonBoundingBox: (elements: readonly ExcalidrawElement
 /* @excalidraw/element/groups -> node_modules/@zsviczian/excalidraw/types/element/src/groups.d.ts */
 /* ************************************** */
 export declare const getMaximumGroups: (elements: ExcalidrawElement[], elementsMap: ElementsMap) => ExcalidrawElement[][];
-
-/* ************************************** */
-/* @excalidraw/element/binding -> node_modules/@zsviczian/excalidraw/types/element/src/binding.d.ts */
-/* ************************************** */
-export declare const determineFocusDistance: (element: ExcalidrawBindableElement, elementsMap: ElementsMap, a: GlobalPoint, b: GlobalPoint) => number;
 
 /* ************************************** */
 /* @excalidraw/element/textMeasurements -> node_modules/@zsviczian/excalidraw/types/element/src/textMeasurements.d.ts */
@@ -10061,7 +10075,6 @@ export declare const mermaidToExcalidraw: (mermaidDefinition: string, opts: Merm
 /* ************************************** */
 /* ../excalidraw/obsidianUtils -> node_modules/@zsviczian/excalidraw/types/excalidraw/obsidianUtils.d.ts */
 /* ************************************** */
-export declare function destroyObsidianUtils(): void;
 export declare function getCSSFontDefinition(fontFamily: number): Promise<string>;
 export declare function getFontFamilies(): string[];
 export declare function getFontMetrics(fontFamily: ExcalidrawTextElement["fontFamily"], fontSize?: number): {
@@ -10090,9 +10103,17 @@ export declare const serializeLibraryAsJSON: (libraryItems: LibraryItems) => str
 /* ./data/blob -> node_modules/@zsviczian/excalidraw/types/excalidraw/data/blob.d.ts */
 /* ************************************** */
 export declare const getDataURL: (file: Blob | File) => Promise<DataURL>;
-export declare const loadFromBlob: (blob: Blob, localAppState: AppState | null, localElements: readonly ExcalidrawElement[] | null, fileHandle?: FileSystemHandle | null) => Promise<import("./restore").RestoredDataState>;
+export declare const loadFromBlob: (blob: Blob, 
+/** @see restore.localAppState */
+localAppState: AppState | null, localElements: readonly ExcalidrawElement[] | null, 
+/** FileSystemHandle. Defaults to `blob.handle` if defined, otherwise null. */
+fileHandle?: FileSystemHandle | null) => Promise<import("./restore").RestoredDataState>;
 export declare const loadLibraryFromBlob: (blob: Blob, defaultStatus?: LibraryItem["status"]) => Promise<LibraryItem[]>;
-export declare const loadSceneOrLibraryFromBlob: (blob: Blob | File, localAppState: AppState | null, localElements: readonly ExcalidrawElement[] | null, fileHandle?: FileSystemHandle | null) => Promise<{
+export declare const loadSceneOrLibraryFromBlob: (blob: Blob | File, 
+/** @see restore.localAppState */
+localAppState: AppState | null, localElements: readonly ExcalidrawElement[] | null, 
+/** FileSystemHandle. Defaults to `blob.handle` if defined, otherwise null. */
+fileHandle?: FileSystemHandle | null) => Promise<{
     type: "application/vnd.excalidraw+json";
 
 /* ************************************** */
@@ -10108,7 +10129,7 @@ export declare const useHandleLibrary: (opts: {
      * Return `true` if the library install url should be allowed.
      * If not supplied, only the excalidraw.com base domain is allowed.
      */
-    validateLibraryUrl?: ((libraryUrl: string) => boolean) | undefined;
+    validateLibraryUrl?: (libraryUrl: string) => boolean;
 
 /* ************************************** */
 /* @excalidraw/element/embeddable -> node_modules/@zsviczian/excalidraw/types/element/src/embeddable.d.ts */
@@ -10119,12 +10140,9 @@ export declare const getEmbedLink: (link: string | null | undefined) => IframeDa
 /* ./components/Sidebar/Sidebar -> node_modules/@zsviczian/excalidraw/types/excalidraw/components/Sidebar/Sidebar.d.ts */
 /* ************************************** */
 export declare const Sidebar: React.ForwardRefExoticComponent<{
-    name: string;
+    name: import("../../types").SidebarName;
     children: React.ReactNode;
-    onStateChange?: ((state: {
-        name: string;
-        tab?: string | undefined;
-    } | null) => void) | undefined;
+    onStateChange?: (state: import("../../types").AppState["openSidebar"]) => void;
 
 /* ************************************** */
 /* ./components/Button -> node_modules/@zsviczian/excalidraw/types/excalidraw/components/Button.d.ts */
@@ -10142,12 +10160,9 @@ export declare const useStylesPanelMode: () => StylesPanelMode;
 /* ./components/DefaultSidebar -> node_modules/@zsviczian/excalidraw/types/excalidraw/components/DefaultSidebar.d.ts */
 /* ************************************** */
 export declare const DefaultSidebar: import("react").FC<Omit<MarkOptional<Omit<{
-    name: string;
-    children: import("react").ReactNode;
-    onStateChange?: ((state: {
-        name: string;
-        tab?: string | undefined;
-    } | null) => void) | undefined;
+    name: import("../types").SidebarName;
+    children: React.ReactNode;
+    onStateChange?: (state: import("../types").AppState["openSidebar"]) => void;
 
 /* ************************************** */
 /* ./components/TTDDialog/TTDDialog -> node_modules/@zsviczian/excalidraw/types/excalidraw/components/TTDDialog/TTDDialog.d.ts */
@@ -10163,19 +10178,14 @@ export declare const TTDDialog: (props: {
 /* ************************************** */
 export declare const zoomToFitBounds: ({ bounds, appState, canvasOffsets, fitToViewport, viewportZoomFactor, minZoom, maxZoom, }: {
     bounds: SceneBounds;
-    canvasOffsets?: Partial<{
-        top: number;
-        right: number;
-        bottom: number;
-        left: number;
-    }> | undefined;
+    canvasOffsets?: Offsets;
     appState: Readonly<AppState>;
     /** whether to fit content to viewport (beyond >100%) */
     fitToViewport: boolean;
     /** zoom content to cover X of the viewport, when fitToViewport=true */
-    viewportZoomFactor?: number | undefined;
-    minZoom?: number | undefined;
-    maxZoom?: number | undefined;
+    viewportZoomFactor?: number;
+    minZoom?: number;
+    maxZoom?: number;
 }) => {
     appState: {
         scrollX: number;
@@ -10195,7 +10205,7 @@ export declare const elementsOverlappingBBox: ({ elements, bounds, type, errorMa
     elements: Elements;
     bounds: Bounds | ExcalidrawElement;
     /** safety offset. Defaults to 0. */
-    errorMargin?: number | undefined;
+    errorMargin?: number;
     /**
      * - overlap: elements overlapping or inside bounds
      * - contain: elements inside bounds or bounds inside elements
@@ -10229,7 +10239,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2025-11-08T10:33:54.489Z
+Generated on: 2025-12-16T18:32:52.637Z
 
 ---
 
@@ -23289,6 +23299,7 @@ const SVG_MINIMIZE = ea.obsidian.getIcon("lucide-minimize").outerHTML;
 const SVG_LASER_ON = ea.obsidian.getIcon("lucide-hand").outerHTML;
 const SVG_LASER_OFF = ea.obsidian.getIcon("lucide-wand").outerHTML;
 const SVG_PRINTER = ea.obsidian.getIcon("lucide-printer").outerHTML;
+const SVG_REFOCUS = ea.obsidian.getIcon("lucide-scan-eye").outerHTML;
 
 //-------------------------------
 //utility & convenience functions
@@ -23728,9 +23739,22 @@ const createPresentationNavigationPanel = () => {
 	    }
 	  });
 	  
+	  el.createEl("button",{
+	    attr: {
+	      title: "Re-focus current slide (shortcut: HOME)"
+	    }
+	  }, button => {
+	    button.innerHTML = SVG_REFOCUS;
+	    button.onclick = () => {
+	      debugger;
+	      slide--;
+        navigate("fwd");
+	    }
+	  });
+	  
  	  el.createEl("button",{
 	    attr: {
-	      title: "Toggle fullscreen. If you hold ALT/OPT when starting the presentation it will not go fullscreen."
+	      title: "Toggle fullscreen. If you hold ALT/OPT when starting the presentation it will not go fullscreen. (shortcut: f)"
 	    },
 	  }, button => {
 	    toggleFullscreenButton = button;
@@ -23819,7 +23843,7 @@ const keydownListener = (e) => {
       navigate("fwd");
       break;
     case "Home":
-      slide = -1;
+      slide--;
       navigate("fwd");
       break;
     case "e": 
@@ -23828,6 +23852,9 @@ const keydownListener = (e) => {
         await toggleArrowVisibility(false);
         exitPresentation(true);
       })()
+      break;
+    case "f":
+      toggleFullscreen();
       break;
   }
 }

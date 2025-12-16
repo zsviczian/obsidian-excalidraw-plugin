@@ -375,6 +375,7 @@ export declare class ExcalidrawAutomate {
             "excalidraw-autoexport"?: boolean;
             "excalidraw-mask"?: boolean;
             "excalidraw-open-md"?: boolean;
+            "excalidraw-export-internal-links"?: boolean;
             "cssclasses"?: string;
         };
         plaintext?: string;
@@ -457,7 +458,7 @@ export declare class ExcalidrawAutomate {
      * @param {number} [padding] - The padding to use for the SVG.
      * @returns {Promise<SVGSVGElement>} Promise resolving to the created SVG element.
      */
-    createSVG(templatePath?: string, embedFont?: boolean, exportSettings?: ExportSettings, loader?: EmbeddedFilesLoader, theme?: string, padding?: number): Promise<SVGSVGElement>;
+    createSVG(templatePath?: string, embedFont?: boolean, exportSettings?: ExportSettings, loader?: EmbeddedFilesLoader, theme?: string, padding?: number, convertMarkdownLinksToObsidianURLs?: boolean, includeInternalLinks?: boolean): Promise<SVGSVGElement>;
     /**
      * Creates a PNG image from the ExcalidrawAutomate elements and the template provided.
      * @param {string} [templatePath] - The template path to use for the PNG.
@@ -1848,14 +1849,12 @@ export type ExcalidrawTextElementWithContainer = {
     containerId: ExcalidrawTextContainer["id"];
 } & ExcalidrawTextElement;
 export type FixedPoint = [number, number];
-export type PointBinding = {
+export type BindMode = "inside" | "orbit" | "skip";
+export type FixedPointBinding = {
     elementId: ExcalidrawBindableElement["id"];
-    focus: number;
-    gap: number;
-};
-export type FixedPointBinding = Merge<PointBinding, {
     fixedPoint: FixedPoint;
-}>;
+    mode: BindMode;
+};
 type Index = number;
 export type PointsPositionUpdates = Map<Index, {
     point: LocalPoint;
@@ -1865,9 +1864,8 @@ export type Arrowhead = "arrow" | "bar" | "dot" | "circle" | "circle_outline" | 
 export type ExcalidrawLinearElement = _ExcalidrawElementBase & Readonly<{
     type: "line" | "arrow";
     points: readonly LocalPoint[];
-    lastCommittedPoint: LocalPoint | null;
-    startBinding: PointBinding | null;
-    endBinding: PointBinding | null;
+    startBinding: FixedPointBinding | null;
+    endBinding: FixedPointBinding | null;
     startArrowhead: Arrowhead | null;
     endArrowhead: Arrowhead | null;
 }>;
@@ -1886,9 +1884,9 @@ export type ExcalidrawArrowElement = ExcalidrawLinearElement & Readonly<{
 }>;
 export type ExcalidrawElbowArrowElement = Merge<ExcalidrawArrowElement, {
     elbowed: true;
+    fixedSegments: readonly FixedSegment[] | null;
     startBinding: FixedPointBinding | null;
     endBinding: FixedPointBinding | null;
-    fixedSegments: readonly FixedSegment[] | null;
     /**
      * Marks that the 3rd point should be used as the 2nd point of the arrow in
      * order to temporarily hide the first segment of the arrow without losing
@@ -1911,7 +1909,6 @@ export type ExcalidrawFreeDrawElement = _ExcalidrawElementBase & Readonly<{
     points: readonly LocalPoint[];
     pressures: readonly number[];
     simulatePressure: boolean;
-    lastCommittedPoint: LocalPoint | null;
 }>;
 export type FileId = string & {
     _brand: "FileId";
@@ -2058,6 +2055,7 @@ export type StaticCanvasAppState = Readonly<_CommonCanvasAppState & {
     frameColor: AppState["frameColor"];
     currentHoveredFontFamily: AppState["currentHoveredFontFamily"];
     hoveredElementIds: AppState["hoveredElementIds"];
+    suggestedBinding: AppState["suggestedBinding"];
     croppingElementId: AppState["croppingElementId"];
 }>;
 export type InteractiveCanvasAppState = Readonly<_CommonCanvasAppState & {
@@ -2066,14 +2064,16 @@ export type InteractiveCanvasAppState = Readonly<_CommonCanvasAppState & {
     selectedGroupIds: AppState["selectedGroupIds"];
     selectedLinearElement: AppState["selectedLinearElement"];
     multiElement: AppState["multiElement"];
+    newElement: AppState["newElement"];
     isBindingEnabled: AppState["isBindingEnabled"];
-    suggestedBindings: AppState["suggestedBindings"];
+    suggestedBinding: AppState["suggestedBinding"];
     isRotating: AppState["isRotating"];
     elementsToHighlight: AppState["elementsToHighlight"];
     collaborators: AppState["collaborators"];
     snapLines: AppState["snapLines"];
     zenModeEnabled: AppState["zenModeEnabled"];
     editingTextElement: AppState["editingTextElement"];
+    viewBackgroundColor: AppState["viewBackgroundColor"];
     gridColor: AppState["gridColor"];
     gridDirection: AppState["gridDirection"];
     highlightSearchResult: AppState["highlightSearchResult"];
@@ -2081,6 +2081,11 @@ export type InteractiveCanvasAppState = Readonly<_CommonCanvasAppState & {
     croppingElementId: AppState["croppingElementId"];
     searchMatches: AppState["searchMatches"];
     activeLockedId: AppState["activeLockedId"];
+    hoveredElementIds: AppState["hoveredElementIds"];
+    frameRendering: AppState["frameRendering"];
+    frameColor: AppState["frameColor"];
+    shouldCacheIgnoreZoom: AppState["shouldCacheIgnoreZoom"];
+    exportScale: AppState["exportScale"];
 }>;
 export type ObservedAppState = ObservedStandaloneAppState & ObservedElementsAppState;
 export type ObservedStandaloneAppState = {
@@ -2134,7 +2139,7 @@ export interface AppState {
     selectionElement: NonDeletedExcalidrawElement | null;
     isBindingEnabled: boolean;
     startBoundElement: NonDeleted<ExcalidrawBindableElement> | null;
-    suggestedBindings: SuggestedBinding[];
+    suggestedBinding: NonDeleted<ExcalidrawBindableElement> | null;
     frameToHighlight: NonDeleted<ExcalidrawFrameLikeElement> | null;
     frameRendering: {
         enabled: boolean;
@@ -2207,6 +2212,8 @@ export interface AppState {
         tab: "text-to-diagram" | "mermaid";
     } | {
         name: "commandPalette";
+    } | {
+        name: "settings";
     } | {
         name: "elementLinkSelector";
         sourceElementId: ExcalidrawElement["id"];
@@ -2330,6 +2337,7 @@ export interface AppState {
     lockedMultiSelections: {
         [groupId: string]: true;
     };
+    bindMode: BindMode;
 }
 export type SearchMatch = {
     id: string;
@@ -2342,7 +2350,7 @@ export type SearchMatch = {
         showOnCanvas: boolean;
     }[];
 };
-export type UIAppState = Omit<AppState, "suggestedBindings" | "startBoundElement" | "cursorButton" | "scrollX" | "scrollY">;
+export type UIAppState = Omit<AppState, "startBoundElement" | "cursorButton" | "scrollX" | "scrollY">;
 export type NormalizedZoomValue = number & {
     _brand: "normalizedZoom";
 };
@@ -2561,6 +2569,7 @@ export type AppClassProperties = {
     onPointerUpEmitter: App["onPointerUpEmitter"];
     updateEditorAtom: App["updateEditorAtom"];
     onPointerDownEmitter: App["onPointerDownEmitter"];
+    bindModeHandler: App["bindModeHandler"];
 };
 export type PointerDownState = Readonly<{
     origin: Readonly<{
@@ -2638,6 +2647,7 @@ export interface ExcalidrawImperativeAPI {
     isTouchScreen: InstanceType<typeof App>["isTouchScreen"];
     setTrayModeEnabled: InstanceType<typeof App>["setTrayModeEnabled"];
     setDesktopUIMode: InstanceType<typeof App>["setDesktopUIMode"];
+    setMobileModeAllowed: InstanceType<typeof App>["setMobileModeAllowed"];
     isTrayModeEnabled: InstanceType<typeof App>["isTrayModeEnabled"];
     getColorAtScenePoint: InstanceType<typeof App>["getColorAtScenePoint"];
     startLineEditor: InstanceType<typeof App>["startLineEditor"];

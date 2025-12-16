@@ -161,6 +161,7 @@ import { updateElementIdsInScene } from "src/utils/excalidrawSceneUtils";
 import { FileData } from "src/types/embeddedFileLoaderTypes";
 import { UIMode } from "src/shared/Dialogs/UIModeSettingComponent";
 import { UIModeSettings } from "src/shared/Dialogs/UIModeSettings";
+import { copyLinkToSelectedElementToClipboard } from "src/shared/Dialogs/copyLinkToSelectedElement";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -6123,110 +6124,19 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   }
 
   /**
-   * 
-   * @param prefix - defines the default button. 
-   * @returns 
+   *
+   * @param prefix - defines the default button.
+   * @returns
    */
-  public async copyLinkToSelectedElementToClipboard(prefix:string) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.copyLinkToSelectedElementToClipboard, "ExcalidrawView.copyLinkToSelectedElementToClipboard", prefix);
-    const elements = this.getViewSelectedElements();
-    if (elements.length < 1) {
-      new Notice(t("INSERT_LINK_TO_ELEMENT_ERROR"));
-      return;
-    }
-
-    let elementId:string = undefined;
-
-    if(elements.length === 2) {
-      const textEl = elements.filter(el=>el.type==="text");
-      if(textEl.length===1 && (textEl[0] as ExcalidrawTextElement).containerId) {
-        const container = elements.filter(el=>el.boundElements && el.boundElements.some(be=>be.type==="text"))
-        if(container.length===1) {
-          elementId = textEl[0].id;
-        }
-      }
-    }
-
-    if(!elementId) {
-      elementId = elements.length === 1 
-        ? elements[0].id
-        : this.plugin.ea.getLargestElement(elements).id;
-    }
-
-    const frames = elements.filter(el=>el.type==="frame");
-    const hasFrame = frames.length === 1;
-    const hasMarkerFrame = hasFrame && frames[0].frameRole === "marker";
-    const hasGroup = elements.some(el=>el.groupIds && el.groupIds.length>0);
-
-    let button = {
-      area: {caption: "Area", action:()=>{prefix="area="; return;}},
-      link: {caption: "Link", action:()=>{prefix="";return}},
-      group: {caption: "Group", action:()=>{prefix="group="; return;}},
-      frame: {caption: "Frame", action:()=>{prefix="frame="; elementId = frames[0].id; return;}},
-      clippedframe: {caption: "Clipped Frame", action:()=>{prefix="clippedframe="; ; elementId = frames[0].id; return;}},
-    }
-
-    let buttons = [];
-    switch(prefix) {
-      case "area=":
-        buttons = [
-          button.area,
-          button.link,
-          ...hasGroup ? [button.group] : [],
-          ...hasFrame && !hasMarkerFrame ? [button.clippedframe] : [],
-          ...hasFrame ? [button.frame] : [],
-        ];
-        break;  
-      case "group=":
-        buttons = [
-          ...hasGroup ? [button.group] : [],
-          button.link,
-          button.area,
-          ...hasFrame && !hasMarkerFrame ? [button.clippedframe] : [],
-          ...hasFrame ? [button.frame] : [],
-        ];
-        break;
-      case "frame=":
-        buttons = [
-          ...hasFrame && !hasMarkerFrame ? [button.clippedframe] : [],
-          ...hasFrame ? [button.frame] : [],
-          ...hasGroup ? [button.group] : [],
-          button.link,
-          button.area,
-        ];
-        break;
-      case "clippedframe=":
-        buttons = [
-          ...hasFrame && !hasMarkerFrame ? [button.clippedframe] : [],
-          ...hasFrame ? [button.frame] : [],
-          ...hasGroup ? [button.group] : [],
-          button.link,
-          button.area,
-        ];
-        break;
-      default:
-        buttons = [
-          {caption: "Link", action:()=>{prefix="";return}},
-          {caption: "Area", action:()=>{prefix="area="; return;}},
-          {caption: "Group", action:()=>{prefix="group="; return;}},
-          ...hasFrame && !hasMarkerFrame ? [button.clippedframe] : [],
-          ...hasFrame ? [button.frame] : [],
-        ]
-    }
-
-    const alias = await ScriptEngine.inputPrompt(
-      this,
-      this.plugin,
-      this.app,
-      "Set link alias",
-      "Leave empty if you do not want to set an alias",
-      "",
-      buttons,
-    );
-    navigator.clipboard.writeText(
-      `${prefix.length>0?"!":""}[[${this.file.path}#^${prefix}${elementId}${alias ? `|${alias}` : ``}]]`,
-    );
-    new Notice(t("INSERT_LINK_TO_ELEMENT_READY"));
+  public copyLinkToSelectedElementToClipboard(prefix: string) {
+    (process.env.NODE_ENV === "development") &&
+      DEBUGGING &&
+      debug(
+        this.copyLinkToSelectedElementToClipboard,
+        "ExcalidrawView.copyLinkToSelectedElementToClipboard",
+        prefix,
+      );
+    copyLinkToSelectedElementToClipboard(this, prefix);
   }
 
   public updateScene(
