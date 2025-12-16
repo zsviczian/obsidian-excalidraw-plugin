@@ -48,6 +48,7 @@ import { UIMode, UIModeSettingsComponent } from "src/shared/Dialogs/UIModeSettin
 
 export interface ExcalidrawSettings {
   copyLinkToElemenetAnchorTo100: boolean;
+  copyFrameLinkByName: boolean;
   disableDoubleClickTextEditing: boolean;
   folder: string;
   cropFolder: string;
@@ -242,6 +243,7 @@ declare const PLUGIN_VERSION:string;
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   copyLinkToElemenetAnchorTo100: false,
+  copyFrameLinkByName: false,
   disableDoubleClickTextEditing: false,
   folder: "Excalidraw",
   cropFolder: "",

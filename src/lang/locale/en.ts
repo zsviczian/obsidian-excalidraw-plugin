@@ -63,6 +63,7 @@ export default {
   MARKER_FRAME_TITLE_SHOW: "Show Marker Frame Titles",
   MARKER_FRAME_TITLE_HIDE: "Hide Marker Frame Titles",
   COPY_ELEMENT_LINK: "Copy [[link]] for selected element(s)",
+  FRAME_WITH_NAME: "Copy frame link by name",
   COPY_DRAWING_LINK: "Copy ![[embed link]] for this drawing",
   INSERT_LINK_TO_ELEMENT:
     `Copy [[link]] for selected element to clipboard. ${labelCTRL()}+CLICK to copy 'group=' link. ${labelSHIFT()}+CLICK to copy an 'area=' link.`,
