@@ -19,14 +19,16 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 `,
 "2.18.1":`
 ## New
-- \`Copy \[\[link\]\] for selected elements\` context menu action improvements
-  - now includes checkbox to add '|100%' anchor to the link.
-  - includes option to copy by frame name not frame ID if the frame has a name.
+- Improved the **Copy [[link]] for selected elements** context-menu action:
+  - Added an optional checkbox to append the \`|100%\` anchor to the copied link.
+  - Added an option to copy by **frame name** (instead of frame ID) when the frame is named.
 
 ## Fixed
-- Unnecessary data.json writes each time a drawing is opened.[#2562](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2562)
-- Angle snapping when line is over an object
-- Hover preview when referencing a frame by name in an image reference
+- Prevented unnecessary \`data.json\` saves each time a drawing is opened. [#2562](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2562)
+- Fixed angle snapping when a line passes over an object.
+- Fixed hover preview when referencing a frame by name in an image reference.
+- Fixed “Back of note” card insertion breaking LaTeX equations in existing cards. [#2296](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2296) 🙏[@TravisLEBLANC1](https://github.com/TravisLEBLANC1)
+- Adjusted hover-preview sizing to more closely match embeds. [#2525](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2575) 🙏[parkero](https://github.com/parkero)
 `,
 "2.18.0":`
 ## New from Excalidraw.com
