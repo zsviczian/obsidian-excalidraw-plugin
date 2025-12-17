@@ -63,6 +63,7 @@ export default {
   MARKER_FRAME_TITLE_SHOW: "显示标记画框名称",
   MARKER_FRAME_TITLE_HIDE: "隐藏标记画框名称",
   COPY_ELEMENT_LINK: "复制所选元素的 [[file#^id]] 链接",
+  FRAME_WITH_NAME: "按名称复制画框链接",
   COPY_DRAWING_LINK: "复制绘图的 ![[drawing]] 链接",
   INSERT_LINK_TO_ELEMENT:
     `单击=复制所选元素的 [[file#^id]] 链接\n${labelCTRL()}=复制元素所在分组为 [[file#^group=id]] 链接\n${labelSHIFT()}=复制所选元素所在区域为 [[file#^area=id]] 链接`,
