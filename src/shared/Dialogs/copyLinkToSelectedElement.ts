@@ -60,9 +60,29 @@ export async function copyLinkToSelectedElementToClipboard(view: ExcalidrawView,
   let cancelled = true;
 
   const button = {
-    area: { caption: "Area", action: () => { cancelled = false; prefix = "area="; return; } },
-    link: { caption: "Link", action: () => { cancelled = false; prefix = ""; return; } },
-    group: { caption: "Group", action: () => { cancelled = false; prefix = "group="; return; } },
+    area: {
+      caption: "Area",
+      action: () => {
+        cancelled = false;
+        prefix = "area=";
+        return;
+      }
+    },
+    link: {
+      caption: "Link",
+      action: () => {
+        cancelled = false;
+        prefix = "";
+        return;
+      } },
+    group: {
+      caption: "Group",
+      action: () => {
+        cancelled = false;
+        prefix = "group=";
+        return;
+      }
+    },
     frame: {
       caption: "Frame",
       action: () => {
@@ -123,9 +143,9 @@ export async function copyLinkToSelectedElementToClipboard(view: ExcalidrawView,
       break;
     default:
       buttons = [
-        { caption: "Link", action: () => { prefix = ""; return; } },
-        { caption: "Area", action: () => { prefix = "area="; return; } },
-        { caption: "Group", action: () => { prefix = "group="; return; } },
+        button.link,
+        button.area,
+        button.group,
         ...(hasFrame && !hasMarkerFrame ? [button.clippedframe] : []),
         ...(hasFrame ? [button.frame] : []),
       ];

@@ -17,6 +17,12 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.18.2":`
+## Fixed
+- Stroke palette menu for embedded notes is gone after 2.17 update [#2580](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2580)
+- Cannot link to group [#2579](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2579)
+
+`,
 "2.18.1":`
 ## New
 - Improved the **Copy [[link]] for selected elements** context-menu action:
