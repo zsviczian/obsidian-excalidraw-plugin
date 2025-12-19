@@ -590,7 +590,7 @@ function main() {
     const excalidrawLibFunctionsSection = buildExcalidrawLibFunctionsSection();
 
     const combined =
-      AI_TRAINING_INTRO +
+      (AI_TRAINING_INTRO +
       '\n---\n\n' +
       typeDefContent.trim() +
       '\n\n---\n\n' +
@@ -600,7 +600,9 @@ function main() {
       '\n---\n\n' +
       scriptLibContent.trim() +
       startupSection +
-      '\n';
+      '\n')
+      .replaceAll("https://you", "https:// you")
+      .replaceAll("https://www.you", "https:// www.you"); // prevent accidental link triggering
 
     fs.writeFileSync(AI_TRAINING_OUT, combined, 'utf8');
     console.log('[script-library] Wrote:', AI_TRAINING_OUT);

@@ -12,7 +12,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2025-12-16T18:32:52.637Z
+Generated on: 2025-12-19T20:29:02.906Z
 
 ---
 
