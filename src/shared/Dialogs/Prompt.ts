@@ -23,6 +23,10 @@ import { REGEX_LINK, REGEX_TAGS } from "../ExcalidrawData";
 import { ScriptEngine } from "../Scripts";
 import { openExternalLink, openTagSearch, parseObsidianLink } from "src/utils/excalidrawViewUtils";
 import { ButtonDefinition } from "src/types/promptTypes";
+import { EditorView, keymap } from "@codemirror/view"
+import { parser } from "./math-only";
+import { LRLanguage } from "@codemirror/language";
+import { EditorState, Prec } from "@codemirror/state";
 
 export class Prompt extends Modal {
   private promptEl: HTMLInputElement;
@@ -76,6 +80,133 @@ export class Prompt extends Modal {
   async openAndGetValue(resolve: (value: string) => void): Promise<void> {
     this.resolve = resolve;
     this.open();
+  }
+}
+
+export class LaTexPrompt extends Modal {
+  public waitForClose : Promise<string>;
+  private promptEl: HTMLInputElement;
+  private resolvePromise: (input: string) => void;
+  private rejectPromise: (reason?: any) => void;
+  private editorView : EditorView;
+  private latexsSuitePlugin : any;
+
+  protected constructor(
+    app: App,
+    private prompt_text: string,
+    private default_value?: string,
+  ) {
+    super(app);
+    this.titleEl.setText(this.prompt_text);
+    this.latexsSuitePlugin = app.plugins.plugins["obsidian-latex-suite"];
+    const mainContentContainer: HTMLDivElement = this.contentEl.createDiv();
+    this.display(default_value, mainContentContainer);
+    this.waitForClose = new Promise<string>((resolve, reject) => {
+      this.resolvePromise = resolve;
+      this.rejectPromise = reject;
+    });
+    this.editorView.focus();
+  }
+
+  public static Prompt(app: App,
+    prompt_text?: string,
+    default_value?: string,
+  ): Promise<string>{
+    const latexprompt = new LaTexPrompt(app, prompt_text, default_value);
+
+    return latexprompt.waitForClose;
+  }
+
+  private display(value : string, container : HTMLDivElement) {
+    // the language is trivial: everything is in "math"
+    // so that latex-suite always thinks we are in mathmode
+    const language =  LRLanguage.define({parser:parser});
+
+    // latex-suite crashes if EditorState.doc == ""
+    // we should try patch this in latex-suite
+    // but for the moment: here is a gard extension
+    const preventEmptyDoc = EditorState.transactionFilter.of(tr => {
+      if (!tr.docChanged) return tr;
+      const newDoc = tr.newDoc;
+      if (newDoc.length === 0) {
+        return [ tr, { changes: { from: 0, to: 0, insert: " " }} ];
+      }
+      return tr;
+    });
+
+    if (this.latexsSuitePlugin) {
+      const extensions = [
+        language, 
+        Prec.highest(preventEmptyDoc),
+        ... this.latexsSuitePlugin.editorExtensions
+      ];
+      
+      this.editorView = new EditorView({ 
+        doc: value, 
+        parent : container,
+        extensions : extensions,
+      });
+    } else {
+      this.editorView = new EditorView({ 
+        doc: value, 
+        parent : container,
+      });
+    }
+    
+    const buttonBarContainer: HTMLDivElement = container.createDiv();
+    buttonBarContainer.addClass(`excalidraw-prompt-buttonbar-bottom`);
+    const actionButtonContainer: HTMLDivElement = buttonBarContainer.createDiv();
+
+    this.createButton(
+        actionButtonContainer,
+        "✅",
+        this.submitCallback.bind(this),
+      ).setCta().buttonEl.style.marginRight = "0";
+    this.createButton(
+        actionButtonContainer, 
+        "❌", 
+        this.cancelCallback.bind(this), 
+        t("PROMPT_BUTTON_CANCEL"));
+    this.open();
+  }
+
+  private createButton(container: HTMLElement,
+    text: string,
+    callback: (evt: MouseEvent) => any,
+    tooltip: string = "",
+    margin: string = "5px",
+  ){
+    const btn = new ButtonComponent(container);
+    btn.buttonEl.style.padding = "0.5em";
+    btn.buttonEl.style.marginLeft = margin;
+    btn.setTooltip(tooltip);
+    btn.setButtonText(text).onClick(callback);
+    return btn;
+  }
+  
+  private submitCallback(){
+    const res = this.editorView.state.doc.toString();
+    if (res.trim().length == 0) {
+      this.rejectPromise("empty latex");
+    } else { 
+      this.resolvePromise(res);
+    }
+    this.close();
+  }
+
+  private cancelCallback(){
+    this.rejectPromise("Canceled input");
+    this.close();
+  }
+
+  onOpen(): void {
+    super.onOpen();
+    this.editorView.focus();
+  }
+
+  onClose(): void {
+    this.contentEl.empty();
+    this.editorView.destroy();
   }
 }
 
