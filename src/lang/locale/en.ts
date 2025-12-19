@@ -564,6 +564,12 @@ export default {
     "In PREVIEW mode, when parsing Text Elements, place brackets around links. " +
     "You can override this setting for a specific drawing by adding <code>"
   }${FRONTMATTER_KEYS["link-brackets"].name}: true/false</code> to the file's frontmatter.`,
+  /*LINK_DETECTION_NAME: "Do not auto-create element link from text",
+  LINK_DETECTION_DESC: "By default, Excalidraw will automatically create an element link when you type or paste a valid " +
+    "[[Obsidian link]] or a (web link) into a Text Element. This link overrides whatever element link you may have set previously. " +
+    "Even if you delete the element link, if the text element contains a valid link, Excalidraw will recreate the element link. " +
+    "If you turn this setting on, Excalidraw will not auto-create element links from text. You can still manually set element links " +
+    `Links in the text will still be navigable when you ${labelCTRL()} + CLICK the element.`,*/
   LINK_PREFIX_NAME: "Link prefix",
   LINK_PREFIX_DESC: `${
     "In PREVIEW mode, if the Text Element contains a link, precede the text with these characters. " +

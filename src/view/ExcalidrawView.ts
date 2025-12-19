@@ -4648,6 +4648,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       //  - depending on the textMode, return the text with markdown markup or the parsed text
       // if quick parse was not successful return [null, null, null] to indicate that the no changes were made to the text element
       if (parseResultOriginal) {
+        //const allowLinkSync = this.plugin.settings.allowLinkSync;
         //there were no transclusions in the raw text, quick parse was successful
         if (containerId) {
           this.updateContainerSize(containerId, true);
