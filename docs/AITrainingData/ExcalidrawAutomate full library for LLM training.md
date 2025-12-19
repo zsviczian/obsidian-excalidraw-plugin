@@ -10239,7 +10239,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2025-12-19T20:29:02.906Z
+Generated on: 2025-12-19T20:37:10.025Z
 
 ---
 
@@ -10253,7 +10253,7 @@ If you are enjoying the Excalidraw plugin then please support my work and enthus
 Jump ahead to the [[#List of available scripts]]
 
 # Introducing Excalidraw Automate Script Engine
-<a href="https:// www.youtube.com/watch?v=hePJcObHIso" target="_blank"><img src ="https://i.ytimg.com/vi/hePJcObHIso/maxresdefault.jpg" style="width:560px;"></a>
+<a href="YouTube: hePJcObHIso" target="_blank"><img src ="https://i.ytimg.com/vi/hePJcObHIso/maxresdefault.jpg" style="width:560px;"></a>
 
 Script Engine scripts are installed in the `Downloaded` subfolder of the `Excalidraw Automate script folder` specified in plugin settings.
 
@@ -10535,7 +10535,7 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Create%20DrawIO%20file.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Create%20DrawIO%20file.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">The script will prompt you for a filename, then create a new draw.io diagram file and open the file in the <a href='https://github.com/zapthedingbat/drawio-obsidian'>Diagram plugin</a>, in a new tab.<br><a href="https:// www.youtube.com/watch?v=DJcosmN-q2s" target="_blank"><img src ="https://i.ytimg.com/vi/DJcosmN-q2s/maxresdefault.jpg" style="width:400px;"></a></td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Create%20DrawIO%20file.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">The script will prompt you for a filename, then create a new draw.io diagram file and open the file in the <a href='https://github.com/zapthedingbat/drawio-obsidian'>Diagram plugin</a>, in a new tab.<br><a href="YouTube: DJcosmN-q2s" target="_blank"><img src ="https://i.ytimg.com/vi/DJcosmN-q2s/maxresdefault.jpg" style="width:400px;"></a></td></tr></table>
 
 ## Create new markdown file and embed into active drawing
 ```excalidraw-script-install
@@ -10567,7 +10567,7 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Deconstruct%20selected%20elements%20into%20new%20drawing.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Deconstruct%20selected%20elements%20into%20new%20drawing.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Select some elements in the scene. The script will take these elements and move them into a new Excalidraw file, and open that file. The selected elements will also be replaced in your original drawing with the embedded Excalidraw file (the one that was just created). You will be prompted for the file name of the new deconstructed image. The script is useful if you want to break a larger drawing into smaller reusable parts that you want to reference in multiple drawings.<br><a href="https:// www.youtube.com/watch?v=HRtaaD34Zzg" target="_blank"><img src ="https://i.ytimg.com/vi/HRtaaD34Zzg/maxresdefault.jpg" style="width:400px;"></a><br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-deconstruct.jpg'></td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Deconstruct%20selected%20elements%20into%20new%20drawing.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Select some elements in the scene. The script will take these elements and move them into a new Excalidraw file, and open that file. The selected elements will also be replaced in your original drawing with the embedded Excalidraw file (the one that was just created). You will be prompted for the file name of the new deconstructed image. The script is useful if you want to break a larger drawing into smaller reusable parts that you want to reference in multiple drawings.<br><a href="YouTube: HRtaaD34Zzg" target="_blank"><img src ="https://i.ytimg.com/vi/HRtaaD34Zzg/maxresdefault.jpg" style="width:400px;"></a><br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-deconstruct.jpg'></td></tr></table>
 
 ## Elbow connectors
 ```excalidraw-script-install
@@ -10585,7 +10585,7 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Excalidraw%20Collaboration%20Frame.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/1-2-3'>@1-2-3</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Excalidraw%20Collaboration%20Frame.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Creates a new Excalidraw.com collaboration room and places the link to the room on the clipboard.<a href="https:// www.youtube.com/watch?v=7isRfeAhEH4" target="_blank"><img src ="https://i.ytimg.com/vi/7isRfeAhEH4/maxresdefault.jpg" style="width:400px;"></a></td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/1-2-3'>@1-2-3</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Excalidraw%20Collaboration%20Frame.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Creates a new Excalidraw.com collaboration room and places the link to the room on the clipboard.<a href="YouTube: 7isRfeAhEH4" target="_blank"><img src ="https://i.ytimg.com/vi/7isRfeAhEH4/maxresdefault.jpg" style="width:400px;"></a></td></tr></table>
 
 ## Expand rectangles horizontally keep text centered
 ```excalidraw-script-install
@@ -10653,7 +10653,7 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Golden%20Ratio.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">The script performs two different functions depending on the elements selected in the view.<br>
 1) In case you select text elements, the script will cycle through a set of font scales. First the 2 larger fonts following the Fibonacci sequence (fontsize * φ; fonsize * φ^2), then the 2 smaller fonts (fontsize / φ; fontsize / φ^2), finally the original size, followed again by the 2 larger fonts. If you wait 2 seconds, the sequence clears and starts from which ever font size you are on. So if you want the 3rd larges font, then toggle twice, wait 2 sec, then toggle again.<br>
-2) In case you select a single rectangle, the script will open the "Golden Grid", "Golden Spiral" window, where you can set up the type of grid or spiral you want to insert into the document.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/golden-ratio.jpg'><br><a href="https:// www.youtube.com/watch?v=2SHn_ruax-s" target="_blank"><img src ="https://i.ytimg.com/vi/2SHn_ruax-s/maxresdefault.jpg" style="width:400px;"></a></td></tr></table> 
+2) In case you select a single rectangle, the script will open the "Golden Grid", "Golden Spiral" window, where you can set up the type of grid or spiral you want to insert into the document.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/golden-ratio.jpg'><br><a href="YouTube: 2SHn_ruax-s" target="_blank"><img src ="https://i.ytimg.com/vi/2SHn_ruax-s/maxresdefault.jpg" style="width:400px;"></a></td></tr></table> 
 
 ## Grid selected images
 ```excalidraw-script-install
@@ -10665,13 +10665,13 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/ExcaliAI.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/ExcaliAI.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Various AI features based on GPT Vision.<br><a href="https:// www.youtube.com/watch?v=A1vrSGBbWgo" target="_blank"><img src ="https://i.ytimg.com/vi/A1vrSGBbWgo/maxresdefault.jpg" style="width:400px;"></a><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-draw-a-ui.jpg'></td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/ExcaliAI.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Various AI features based on GPT Vision.<br><a href="YouTube: A1vrSGBbWgo" target="_blank"><img src ="https://i.ytimg.com/vi/A1vrSGBbWgo/maxresdefault.jpg" style="width:400px;"></a><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-draw-a-ui.jpg'></td></tr></table>
 
 ## Excalidraw Writing Machine
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Excalidraw%20Writing%20Machine.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Excalidraw%20Writing%20Machine.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Creates a hierarchical Markdown document out of a visual layout of an article that can be fed to Templater and converted into an article using AI for Templater.<br>Watch this video to understand how the script is intended to work:<br><a href="https:// www.youtube.com/watch?v=zvRpCOZAUSs" target="_blank"><img src ="https://i.ytimg.com/vi/zvRpCOZAUSs/maxresdefault.jpg" style="width:400px;"></a><br>You can download the sample Obsidian Templater file from <a href="https://gist.github.com/zsviczian/bf49d4b2d401f5749aaf8c2fa8a513d9">here</a>. You can download the demo PDF document showcased in the video from <a href="https://zsviczian.github.io/DemoArticle-AtomicHabits.pdf">here</a>.</td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Excalidraw%20Writing%20Machine.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Creates a hierarchical Markdown document out of a visual layout of an article that can be fed to Templater and converted into an article using AI for Templater.<br>Watch this video to understand how the script is intended to work:<br><a href="YouTube: zvRpCOZAUSs" target="_blank"><img src ="https://i.ytimg.com/vi/zvRpCOZAUSs/maxresdefault.jpg" style="width:400px;"></a><br>You can download the sample Obsidian Templater file from <a href="https://gist.github.com/zsviczian/bf49d4b2d401f5749aaf8c2fa8a513d9">here</a>. You can download the demo PDF document showcased in the video from <a href="https://zsviczian.github.io/DemoArticle-AtomicHabits.pdf">here</a>.</td></tr></table>
 
 ## Full-Year Calendar Generator
 ```excalidraw-script-install
@@ -10683,7 +10683,7 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/GPT-Draw-a-UI.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/GPT-Draw-a-UI.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script was discontinued in favor of ExcaliAI. Draw a UI and let GPT create the code for you.<br><a href="https:// www.youtube.com/watch?v=y3kHl_6Ll4w" target="_blank"><img src ="https://i.ytimg.com/vi/y3kHl_6Ll4w/maxresdefault.jpg" style="width:400px;"></a><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-draw-a-ui.jpg'></td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/GPT-Draw-a-UI.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script was discontinued in favor of ExcaliAI. Draw a UI and let GPT create the code for you.<br><a href="YouTube: y3kHl_6Ll4w" target="_blank"><img src ="https://i.ytimg.com/vi/y3kHl_6Ll4w/maxresdefault.jpg" style="width:400px;"></a><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-draw-a-ui.jpg'></td></tr></table>
 
 ## Image Occlusion
 ```excalidraw-script-install
@@ -10731,13 +10731,13 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Organic%20Line.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Organic%20Line.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Converts selected freedraw lines such that pencil pressure will decrease from maximum to minimum from the beginning of the line to its end. The resulting line is placed at the back of the layers, under all other items. Helpful when drawing organic mindmaps.<br>The script has been superseded by Custom Pens that you can enable in plugin settings. Find out more by watching this <a href="https:// youtu.be/OjNhjaH2KjI" target="_blank">video</a><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-organic-line.jpg'></td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Organic%20Line.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Converts selected freedraw lines such that pencil pressure will decrease from maximum to minimum from the beginning of the line to its end. The resulting line is placed at the back of the layers, under all other items. Helpful when drawing organic mindmaps.<br>The script has been superseded by Custom Pens that you can enable in plugin settings. Find out more by watching this <a href="YouTube: OjNhjaH2KjI" target="_blank">video</a><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-organic-line.jpg'></td></tr></table>
 
 ## Organic Line Legacy
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Organic%20Line%20Legacy.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Organic%20Line%20Legacy.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Converts selected freedraw lines such that pencil pressure will decrease from maximum to minimum from the beginning of the line to its end. The resulting line is placed at the back of the layers, under all other items. Helpful when drawing organic mindmaps.<br>This is the old script from this <a href="https:// youtu.be/JMcNDdj_lPs?t=479" target="_blank">video</a>. Since it's release this has been superseded by custom pens that you can enable in plugin settings. For more on custom pens, watch <a href="https:// youtu.be/OjNhjaH2KjI" target="_blank">this</a><br>The benefit of the approach in this implementation of custom pens is that it will look the same on excalidraw.com when you copy your drawing over for sharing with non-Obsidian users. Otherwise custom pens are faster to use and much more configurable.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-organic-line-legacy.jpg'></td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Organic%20Line%20Legacy.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Converts selected freedraw lines such that pencil pressure will decrease from maximum to minimum from the beginning of the line to its end. The resulting line is placed at the back of the layers, under all other items. Helpful when drawing organic mindmaps.<br>This is the old script from this <a href="YouTube: JMcNDdj_lPs?t=479" target="_blank">video</a>. Since it's release this has been superseded by custom pens that you can enable in plugin settings. For more on custom pens, watch <a href="YouTube: OjNhjaH2KjI" target="_blank">this</a><br>The benefit of the approach in this implementation of custom pens is that it will look the same on excalidraw.com when you copy your drawing over for sharing with non-Obsidian users. Otherwise custom pens are faster to use and much more configurable.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-organic-line-legacy.jpg'></td></tr></table>
 
 ## Palette Loader
 ```excalidraw-script-install
@@ -10751,13 +10751,13 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr>
 <tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Palm%20Guard.md'>File on GitHub</a></td></tr>
-<tr valign='top'><td class="label">Description</td><td class="data">Mobile & desktop palm‑rejection and distraction‑free drawing mode: optionally enters fullscreen, hides ALL Excalidraw UI chrome (top toolbar, side / bottom bars, plugin panels) for a clean / zen / immersive / kiosk / focus mode canvas. Provides a tiny draggable micro toolbar (toggle visibility + exit) so you gain maximum drawing area while preventing accidental palm taps. Uses the hotkey you assign in Obsidian’s Hotkey settings for this script to instantly show / hide controls (if no hotkey is set, use the on‑screen toggle). Ideal for stylus sketching, presentations, screen recording, split‑view space saving, or anyone searching for: palm rejection, hide toolbar, hide UI controls, clean mode, distraction free Excalidraw.<br><a href="https:// www.youtube.com/watch?v=A_udjVjgWN0" target="_blank"><img src ="https://i.ytimg.com/vi/A_udjVjgWN0/maxresdefault.jpg" style="width:400px;"></a><br><a href='https:// youtu.be/A_udjVjgWN0' target='_blank'>Link to video on YouTube</a></td></tr></table>
+<tr valign='top'><td class="label">Description</td><td class="data">Mobile & desktop palm‑rejection and distraction‑free drawing mode: optionally enters fullscreen, hides ALL Excalidraw UI chrome (top toolbar, side / bottom bars, plugin panels) for a clean / zen / immersive / kiosk / focus mode canvas. Provides a tiny draggable micro toolbar (toggle visibility + exit) so you gain maximum drawing area while preventing accidental palm taps. Uses the hotkey you assign in Obsidian’s Hotkey settings for this script to instantly show / hide controls (if no hotkey is set, use the on‑screen toggle). Ideal for stylus sketching, presentations, screen recording, split‑view space saving, or anyone searching for: palm rejection, hide toolbar, hide UI controls, clean mode, distraction free Excalidraw.<br><a href="YouTube: A_udjVjgWN0" target="_blank"><img src ="https://i.ytimg.com/vi/A_udjVjgWN0/maxresdefault.jpg" style="width:400px;"></a><br><a href='YouTube: A_udjVjgWN0' target='_blank'>Link to video on YouTube</a></td></tr></table>
 
 ## PDF Page Text to Clipboard
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/PDF%20Page%20Text%20to%20Clipboard.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/PDF%20Page%20Text%20to%20Clipboard.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Copies the text from the selected PDF page on the Excalidraw canvas to the clipboard.<br><a href="https:// www.youtube.com/watch?v=Kwt_8WdOUT4" target="_blank"><img src ="https://i.ytimg.com/vi/Kwt_8WdOUT4/maxresdefault.jpg" style="width:400px;"></a><br><a href='https:// youtu.be/Kwt_8WdOUT4' target='_blank'>Link to video on YouTube</a></td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/PDF%20Page%20Text%20to%20Clipboard.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Copies the text from the selected PDF page on the Excalidraw canvas to the clipboard.<br><a href="YouTube: Kwt_8WdOUT4" target="_blank"><img src ="https://i.ytimg.com/vi/Kwt_8WdOUT4/maxresdefault.jpg" style="width:400px;"></a><br><a href='YouTube: Kwt_8WdOUT4' target='_blank'>Link to video on YouTube</a></td></tr></table>
 
 ## Relative Font Size Cycle
 ```excalidraw-script-install
@@ -10793,7 +10793,7 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Scribble%20Helper.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Scribble%20Helper.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">iOS scribble helper for better handwriting experience with text elements. If no elements are selected then the creates a text element at pointer position and you can use the edit box to modify the text with scribble. If a text element is selected then opens the input prompt where you can modify this text with scribble.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-scribble-helper.jpg'><br><a href="https:// www.youtube.com/watch?v=BvYkOaly-QM" target="_blank"><img src ="https://i.ytimg.com/vi/BvYkOaly-QM/maxresdefault.jpg" style="width:560px;"></a></td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Scribble%20Helper.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">iOS scribble helper for better handwriting experience with text elements. If no elements are selected then the creates a text element at pointer position and you can use the edit box to modify the text with scribble. If a text element is selected then opens the input prompt where you can modify this text with scribble.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-scribble-helper.jpg'><br><a href="YouTube: BvYkOaly-QM" target="_blank"><img src ="https://i.ytimg.com/vi/BvYkOaly-QM/maxresdefault.jpg" style="width:560px;"></a></td></tr></table>
 
 ## Select Elements of Type
 ```excalidraw-script-install
@@ -10861,14 +10861,14 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Shade%20Master.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Shade%20Master.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">You can modify the colors of SVG images, embedded files, and Excalidraw elements in a drawing by changing Hue, Saturation, Lightness and Transparency; and if only a single SVG or nested Excalidraw drawing is selected, then you can remap image colors.<br><a href="https:// www.youtube.com/watch?v=ISuORbVKyhQ" target="_blank"><img src ="https://i.ytimg.com/vi/ISuORbVKyhQ/maxresdefault.jpg" style="width:560px;"></a></td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Shade%20Master.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">You can modify the colors of SVG images, embedded files, and Excalidraw elements in a drawing by changing Hue, Saturation, Lightness and Transparency; and if only a single SVG or nested Excalidraw drawing is selected, then you can remap image colors.<br><a href="YouTube: ISuORbVKyhQ" target="_blank"><img src ="https://i.ytimg.com/vi/ISuORbVKyhQ/maxresdefault.jpg" style="width:560px;"></a></td></tr></table>
 
 
 ## Slideshow
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Slideshow.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Slideshow.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">The script will convert your drawing into a slideshow presentation.<br><a href="https:// www.youtube.com/watch?v=JwgtCrIVeEU" target="_blank"><img src ="https://i.ytimg.com/vi/JwgtCrIVeEU/maxresdefault.jpg" style="width:560px;"></a></td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Slideshow.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">The script will convert your drawing into a slideshow presentation.<br><a href="YouTube: JwgtCrIVeEU" target="_blank"><img src ="https://i.ytimg.com/vi/JwgtCrIVeEU/maxresdefault.jpg" style="width:560px;"></a></td></tr></table>
 
 ## Split Ellipse
 ```excalidraw-script-install
@@ -10922,7 +10922,7 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Printable%20Layout%20Wizard.md
 ```
-<table><tr valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Printable%20Layout%20Wizard.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Export Excalidraw to PDF Pages: Define printable page areas using frames, then export each frame as a separate page in a multi-page PDF. Perfect for turning your Excalidraw drawings into printable notes, handouts, or booklets. Supports standard and custom page sizes, margins, and easy frame arrangement.<br><a href="https:// www.youtube.com/watch?v=29EWeglRm7s" target="_blank"><img src ="https://i.ytimg.com/vi/29EWeglRm7s/maxresdefault.jpg" style="width:400px;"></a><br><a href='https:// youtu.be/29EWeglRm7s' target='_blank'>Link to video on YouTube</a><br><a href="https:// www.youtube.com/watch?v=DqDnzCOoYMc" target="_blank"><img src ="https://i.ytimg.com/vi/DqDnzCOoYMc/maxresdefault.jpg" style="width:400px;"></a><br><a href='https:// youtu.be/DqDnzCOoYMc' target='_blank'>Link to video on YouTube</a><br><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-layout-wizard-01.png" style="max-width: 400px;"><br><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-layout-wizard-02.png" style="max-width: 400px;"></td></tr></table>
+<table><tr valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Printable%20Layout%20Wizard.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Export Excalidraw to PDF Pages: Define printable page areas using frames, then export each frame as a separate page in a multi-page PDF. Perfect for turning your Excalidraw drawings into printable notes, handouts, or booklets. Supports standard and custom page sizes, margins, and easy frame arrangement.<br><a href="YouTube: 29EWeglRm7s" target="_blank"><img src ="https://i.ytimg.com/vi/29EWeglRm7s/maxresdefault.jpg" style="width:400px;"></a><br><a href='YouTube: 29EWeglRm7s' target='_blank'>Link to video on YouTube</a><br><a href="YouTube: DqDnzCOoYMc" target="_blank"><img src ="https://i.ytimg.com/vi/DqDnzCOoYMc/maxresdefault.jpg" style="width:400px;"></a><br><a href='YouTube: DqDnzCOoYMc' target='_blank'>Link to video on YouTube</a><br><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-layout-wizard-01.png" style="max-width: 400px;"><br><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-layout-wizard-02.png" style="max-width: 400px;"></td></tr></table>
 
 
 ## Zoom to Fit Selected Elements
@@ -13112,9 +13112,9 @@ await ea.addElementsToView(false, false);
 
 Select some elements in the scene. The script will take these elements and move them into a new Excalidraw file, and open that file. The selected elements will also be replaced in your original drawing with the embedded Excalidraw file (the one that was just created). You will be prompted for the file name of the new deconstructed image. The script is useful if you want to break a larger drawing into smaller reusable parts that you want to reference in multiple drawings.
 
-<a href="https:// www.youtube.com/watch?v=HRtaaD34Zzg" target="_blank"><img src ="https://i.ytimg.com/vi/HRtaaD34Zzg/maxresdefault.jpg" style="width:560px;"></a>
+<a href="YouTube: HRtaaD34Zzg" target="_blank"><img src ="https://i.ytimg.com/vi/HRtaaD34Zzg/maxresdefault.jpg" style="width:560px;"></a>
 
-<a href="https:// www.youtube.com/watch?v=mvMQcz401yo" target="_blank"><img src ="https://i.ytimg.com/vi/mvMQcz401yo/maxresdefault.jpg" style="width:560px;"></a>
+<a href="YouTube: mvMQcz401yo" target="_blank"><img src ="https://i.ytimg.com/vi/mvMQcz401yo/maxresdefault.jpg" style="width:560px;"></a>
 
 ```javascript
 */
@@ -13490,7 +13490,7 @@ ea.addElementsToView(false,false);
 
 /*
 
-<a href="https:// www.youtube.com/watch?v=A1vrSGBbWgo" target="_blank"><img src ="https://i.ytimg.com/vi/A1vrSGBbWgo/maxresdefault.jpg" style="width:560px;"></a>
+<a href="YouTube: A1vrSGBbWgo" target="_blank"><img src ="https://i.ytimg.com/vi/A1vrSGBbWgo/maxresdefault.jpg" style="width:560px;"></a>
 
 
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-draw-a-ui.jpg)
@@ -14208,7 +14208,7 @@ new Notice("The collaboration room link is available on the clipboard.",4000);
 /*
 Generates a hierarchical Markdown document out of a visual layout of an article.
 Watch this video to understand how the script is intended to work:
-![Excalidraw Writing Machine YouTube Video](https:// youtu.be/zvRpCOZAUSs)
+![Excalidraw Writing Machine YouTube Video](YouTube: zvRpCOZAUSs)
 You can download the sample Obsidian Templater file from [here](https://gist.github.com/zsviczian/bf49d4b2d401f5749aaf8c2fa8a513d9)
 You can download the demo PDF document showcased in the video from [here](https://zsviczian.github.io/DemoArticle-AtomicHabits.pdf)
 
@@ -15713,7 +15713,7 @@ The script performs two different functions depending on the elements selected i
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/golden-ratio.jpg)
 
 
-<a href="https:// www.youtube.com/watch?v=2SHn_ruax-s" target="_blank"><img src ="https://i.ytimg.com/vi/2SHn_ruax-s/maxresdefault.jpg" style="width:560px;"></a>
+<a href="YouTube: 2SHn_ruax-s" target="_blank"><img src ="https://i.ytimg.com/vi/2SHn_ruax-s/maxresdefault.jpg" style="width:560px;"></a>
 
 Gravitational point of spiral: $$\left[x,y\right]=\left[ x + \frac{{\text{width} \cdot \phi^2}}{{\phi^2 + 1}}\;, \; y + \frac{{\text{height} \cdot \phi^2}}{{\phi^2 + 1}} \right]$$
 Dimensions of inner rectangles in case of Double Spiral: $$[width, height] = \left[\frac{width\cdot(\phi^2+1)}{2\phi^2}\;, \;\frac{height\cdot(\phi^2+1)}{2\phi^2}\right]$$
@@ -16389,7 +16389,7 @@ modal.open();
 
 /*
 
-<a href="https:// www.youtube.com/watch?v=A1vrSGBbWgo" target="_blank"><img src ="https://i.ytimg.com/vi/A1vrSGBbWgo/maxresdefault.jpg" style="width:560px;"></a>
+<a href="YouTube: A1vrSGBbWgo" target="_blank"><img src ="https://i.ytimg.com/vi/A1vrSGBbWgo/maxresdefault.jpg" style="width:560px;"></a>
 
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-draw-a-ui.jpg)
 ```js*/
@@ -19359,7 +19359,7 @@ function recalculateEndPointOfLine(line, el, elB, gapValue) {
 
 Converts selected freedraw lines such that pencil pressure will decrease from maximum to minimum from the beginning of the line to its end. The resulting line is placed at the back of the layers, under all other items. Helpful when drawing organic mindmaps.
 
-This is the old script from this [video](https:// youtu.be/JMcNDdj_lPs?t=479). Since it's release this has been superseded by custom pens that you can enable in plugin settings. For more on custom pens, watch [this](https:// youtu.be/OjNhjaH2KjI) 
+This is the old script from this [video](YouTube: JMcNDdj_lPs?t=479). Since it's release this has been superseded by custom pens that you can enable in plugin settings. For more on custom pens, watch [this](YouTube: OjNhjaH2KjI) 
 
 The benefit of the approach in this implementation of custom pens is that it will look the same on excalidraw.com when you copy your drawing over for sharing with non-Obsidian users. Otherwise custom pens are faster to use and much more configurable.
 
@@ -19486,9 +19486,9 @@ ea.selectElementsInView(ea.getViewElements().filter(el=>ids.contains(el.id)));
 
 /*
 
-<a href="https:// www.youtube.com/watch?v=epYNx2FSf2w" target="_blank"><img src ="https://i.ytimg.com/vi/epYNx2FSf2w/maxresdefault.jpg" style="width:560px;"></a>
+<a href="YouTube: epYNx2FSf2w" target="_blank"><img src ="https://i.ytimg.com/vi/epYNx2FSf2w/maxresdefault.jpg" style="width:560px;"></a>
 
-<a href="https:// www.youtube.com/watch?v=diBT5iaoAYo" target="_blank"><img src ="https://i.ytimg.com/vi/diBT5iaoAYo/maxresdefault.jpg" style="width:560px;"></a>
+<a href="YouTube: diBT5iaoAYo" target="_blank"><img src ="https://i.ytimg.com/vi/diBT5iaoAYo/maxresdefault.jpg" style="width:560px;"></a>
 
 Design your palette at http://paletton.com/
 Once you are happy with your colors, click Tables/Export in the bottom right of the screen:
@@ -19829,7 +19829,7 @@ Features:
 - Exit Palm Guard mode with a single tap
 - Press the hotkey you configured for this script in Obsidian's Hotkey settings (e.g., ALT+X) to toggle UI visibility; if no hotkey is set, use the on-screen toggle button.
 
-![Palm Guard Script](https:// youtu.be/A_udjVjgWN0)
+![Palm Guard Script](YouTube: A_udjVjgWN0)
 
 ```js
 */
@@ -20042,7 +20042,7 @@ run();
 /*
 Copies the text from the selected PDF page on the Excalidraw canvas to the clipboard.
 
-<a href="https:// www.youtube.com/watch?v=Kwt_8WdOUT4" target="_blank"><img src ="https://i.ytimg.com/vi/Kwt_8WdOUT4/maxresdefault.jpg" style="width:560px;"></a>
+<a href="YouTube: Kwt_8WdOUT4" target="_blank"><img src ="https://i.ytimg.com/vi/Kwt_8WdOUT4/maxresdefault.jpg" style="width:560px;"></a>
 
 
 ```js*/
@@ -20092,9 +20092,9 @@ Export Excalidraw to PDF Pages: Define printable page areas using frames, then e
 
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-layout-wizard-03.png)
 
-![Marker Frames](https:// youtu.be/DqDnzCOoYMc)
+![Marker Frames](YouTube: DqDnzCOoYMc)
 
-![Printable Layout Wizard](https:// youtu.be/29EWeglRm7s)
+![Printable Layout Wizard](YouTube: 29EWeglRm7s)
 
 ```js
 */
@@ -20156,11 +20156,11 @@ You can also access script settings at the bottom of Excalidraw Plugin settings.
 
 ---
 
-**Tip:** For more on templates, see [Mastering Excalidraw Templates](https:// youtu.be/jgUpYznHP9A). For referencing pages in markdown, see [Image Fragments](https:// youtu.be/sjZfdqpxqsg) and [Image Block References](https:// youtu.be/yZQoJg2RCKI).
+**Tip:** For more on templates, see [Mastering Excalidraw Templates](YouTube: jgUpYznHP9A). For referencing pages in markdown, see [Image Fragments](YouTube: sjZfdqpxqsg) and [Image Block References](YouTube: yZQoJg2RCKI).
 
-![Marker Frames](https:// youtu.be/DqDnzCOoYMc)
+![Marker Frames](YouTube: DqDnzCOoYMc)
 
-![Printable Layout Wizard](https:// youtu.be/29EWeglRm7s)
+![Printable Layout Wizard](YouTube: 29EWeglRm7s)
 `;
 
 async function run() {
@@ -20959,7 +20959,7 @@ run();
 
 Click to watch the intro video:
 
-[![Script Engine](https://user-images.githubusercontent.com/14358394/145684531-8d9c2992-59ac-4ebc-804a-4cce1777ded2.jpg)](https:// youtu.be/hePJcObHIso)
+[![Script Engine](https://user-images.githubusercontent.com/14358394/145684531-8d9c2992-59ac-4ebc-804a-4cce1777ded2.jpg)](YouTube: hePJcObHIso)
 
 > **Warning**
 > There is an easier way to install/manage scripts than what is shown in this video
@@ -21032,7 +21032,7 @@ Open the script you are interested in and save it to your Obsidian Vault includi
 |[Split text by lines](Split%20text%20by%20lines.md)|Split lines of text into separate text elements for easier reorganization|![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-split-lines.jpg)|[@zsviczian](https://github.com/zsviczian)|
 |[Set Text Alignment](Set%20Text%20Alignment.md)|Sets text alignment of text block (cetner, right, left). Useful if you want to set a keyboard shortcut for selecting text alignment.|![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-text-align.jpg)|[@zsviczian](https://github.com/zsviczian)|
 |[Split Ellipse](Split%20Ellipse.md)|This script splits an ellipse at any point where a line intersects it.|![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-splitEllipse-demo1.png)|[@GColoy](https://github.com/GColoy)|
-|[TheBrain-navigation](TheBrain-navigation.md)|An Excalidraw based graph user interface for your Vault. Requires the [Dataview plugin](https://github.com/blacksmithgu/obsidian-dataview). Generates a graph view similar to that of [TheBrain](https://TheBrain.com) plex. Watch introduction to this script on [YouTube](https:// youtu.be/plYobK-VufM).|![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/TheBrain.jpg)|[@zsviczian](https://github.com/zsviczian)|
+|[TheBrain-navigation](TheBrain-navigation.md)|An Excalidraw based graph user interface for your Vault. Requires the [Dataview plugin](https://github.com/blacksmithgu/obsidian-dataview). Generates a graph view similar to that of [TheBrain](https://TheBrain.com) plex. Watch introduction to this script on [YouTube](YouTube: plYobK-VufM).|![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/TheBrain.jpg)|[@zsviczian](https://github.com/zsviczian)|
 |[Toggle Fullscreen on Mobile](Toggle%20Fullscreen%20on%20Mobile.md)|Hides Obsidian workspace leaf padding and header (based on option in settings, default is "hide header" = false) which will take Excalidraw to full screen. ⚠ Note that if the header is not visible, it will be very difficult to invoke the command palette to end full screen. Only hide the header if you have a keyboard or you've practiced opening command palette!|![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/ea-toggle-fullscreen.jpg)|[@zsviczian](https://github.com/zsviczian)|
 |[Toggle Grid](Toggle%20Grid.md)|Toggles the grid.||[@GColoy](https://github.com/GColoy)|
 |[Transfer TextElements to Excalidraw markdown metadata](Transfer%20TextElements%20to%20Excalidraw%20markdown%20metadata.md)|The script will delete the selected text elements from the canvas and will copy the text from these text elements into the Excalidraw markdown file as metadata. This means, that the text will no longer be visible in the drawing, however you will be able to search for the text in Obsidian and find the drawing containing this image.|![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-text-to-metadata.jpg)|[@zsviczian](https://github.com/zsviczian)|
@@ -21427,7 +21427,7 @@ ea.addElementsToView(false,false);
 
 Scribble Helper can improve handwriting and add links. It lets you create and edit text elements, including wrapped text and sticky notes, by double-tapping on the canvas. When you run the script, it creates an event handler that will activate the editor when you double-tap. If you select a text element on the canvas before running the script, it will open the editor for that element. If you use a pen, you can set it up to only activate Scribble Helper when you double-tap with the pen. The event handler is removed when you run the script a second time or switch to a different tab.
 
-<a href="https:// www.youtube.com/watch?v=BvYkOaly-QM" target="_blank"><img src ="https://i.ytimg.com/vi/BvYkOaly-QM/maxresdefault.jpg" style="width:560px;"></a>
+<a href="YouTube: BvYkOaly-QM" target="_blank"><img src ="https://i.ytimg.com/vi/BvYkOaly-QM/maxresdefault.jpg" style="width:560px;"></a>
 
 ```javascript
 */
@@ -21439,7 +21439,7 @@ if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.11.0")) {
 // ------------------------------
 // Constants and initialization
 // ------------------------------
-const helpLINK = "https:// youtu.be/BvYkOaly-QM";
+const helpLINK = "YouTube: BvYkOaly-QM";
 const DBLCLICKTIMEOUT = 300;
 const maxWidth = 600;
 const padding = 6;
@@ -22528,7 +22528,7 @@ const HELP_TEXT = `
     - Additionally if the same color is used as fill and stroke the color can only be mapped once
 - This is an experimental script - contributions welcome on GitHub via PRs
 
-<a href="https:// www.youtube.com/watch?v=ISuORbVKyhQ" target="_blank"><img src ="https://i.ytimg.com/vi/ISuORbVKyhQ/maxresdefault.jpg" style="max-width:560px; width:100%"></a>
+<a href="YouTube: ISuORbVKyhQ" target="_blank"><img src ="https://i.ytimg.com/vi/ISuORbVKyhQ/maxresdefault.jpg" style="max-width:560px; width:100%"></a>
 
 `;
 
@@ -23240,7 +23240,7 @@ processQueue();
 
 # About the slideshow script
 The script will convert your drawing into a slideshow presentation.
-![Slideshow 3.0](https:// www.youtube.com/JwgtCrIVeEU)
+![Slideshow 3.0](YouTube: JwgtCrIVeEU)
 
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-slideshow-2.jpg)
 ## Presentation options

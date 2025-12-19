@@ -601,8 +601,9 @@ function main() {
       scriptLibContent.trim() +
       startupSection +
       '\n')
-      .replaceAll("https://you", "https:// you")
-      .replaceAll("https://www.you", "https:// www.you"); // prevent accidental link triggering
+      .replaceAll("https://youtu.be/", "YouTube: ")
+      .replaceAll("https://www.youtube.com/watch?v=", "YouTube: ")
+      .replaceAll("https://www.youtube.com/", "YouTube: "); // prevent accidental link triggering
 
     fs.writeFileSync(AI_TRAINING_OUT, combined, 'utf8');
     console.log('[script-library] Wrote:', AI_TRAINING_OUT);
