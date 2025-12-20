@@ -140,8 +140,16 @@ export class LaTexPrompt extends Modal {
         extensions : extensions,
       });
     } else {
+      const extensions = [
+        Prec.high(keymap.of([{
+          key:"Mod-Enter", 
+          run : () => {this.submitCallback(); return true;}
+        }])),
+        history(),
+      ];
       this.editorView = new EditorView({ 
         doc: value, 
+        extensions : extensions,
         parent : container,
       });
     }
