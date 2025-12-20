@@ -2,15 +2,15 @@
 import {LRParser} from "@lezer/lr"
 export const parser = LRParser.deserialize({
   version: 14,
-  states: "[OQOPOOQOOOOO",
-  stateData: "V~ORPO~O",
-  goto: "QPP",
-  nodeNames: "⚠ math",
-  maxTerm: 3,
+  states: "zOOOO?MrOOQOPOOOOOO'#Ca'#CaOYOPO'#C_OOOO?MtOOOOO-E6_-E6_QOOOOO",
+  stateData: "b~OVQOURP~OVQOURX~O",
+  goto: "fUPPVY]`RPORSPRUSQRPRTR",
+  nodeNames: "⚠ Document math-begin math math-end",
+  maxTerm: 7,
   skippedNodes: [0],
-  repeatNodeCount: 0,
-  tokenData: "{~RRO;'S[;'S;=`j;=`O[~aRR~O;'S[;'S;=`j;=`O[~oSR~O;'S[;'S;=`j;=`<%l[<%lO[",
+  repeatNodeCount: 1,
+  tokenData: "i~RRO;'S[;'S;=`a;=`O[~aOV~~fPV~;=`<%l[",
   tokenizers: [0],
-  topRules: {"math":[0,1]},
+  topRules: {"Document":[0,1]},
   tokenPrec: 0
 })

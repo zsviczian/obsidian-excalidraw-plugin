@@ -118,29 +118,16 @@ export class LaTexPrompt extends Modal {
   }
 
   private display(value : string, container : HTMLDivElement) {
-    // the language is trivial: everything is in "math"
-    // so that latex-suite always thinks we are in mathmode
-    const language =  LRLanguage.define({parser:parser});
-
-    // latex-suite crashes if EditorState.doc == ""
-    // we should try patch this in latex-suite
-    // but for the moment: here is a gard extension
-    const preventEmptyDoc = EditorState.transactionFilter.of(tr => {
-      if (!tr.docChanged) return tr;
-      const newDoc = tr.newDoc;
-      if (newDoc.length === 0) {
-        return [ tr, { changes: { from: 0, to: 0, insert: " " }} ];
-      }
-      return tr;
-    });
-
     if (this.latexsSuitePlugin) {
+      // the language put eveything in a "math" node
+      // surrounded by "math-begin" and "math-end" 
+      // so that latex-suite always thinks we are in mathmode
+      const language = LRLanguage.define({parser:parser});
       const extensions = [
         language, 
-        Prec.highest(preventEmptyDoc),
         ... this.latexsSuitePlugin.editorExtensions
       ];
-      
+
       this.editorView = new EditorView({ 
         doc: value, 
         parent : container,
