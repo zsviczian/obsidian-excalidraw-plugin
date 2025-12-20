@@ -126,6 +126,10 @@ export class LaTexPrompt extends Modal {
       const language = LRLanguage.define({parser:parser});
       const extensions = [
         language, 
+        Prec.high(keymap.of([{
+          key:"Mod-Enter", 
+          run : () => {this.submitCallback(); return true;}
+        }])),
         history(),
         ... this.latexsSuitePlugin.editorExtensions
       ];
