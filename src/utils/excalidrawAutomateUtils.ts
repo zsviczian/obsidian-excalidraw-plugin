@@ -5,6 +5,7 @@ import {
   ExcalidrawElement,
   ExcalidrawImageElement,
   FileId,
+  FixedPoint,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import { normalizePath, TFile } from "obsidian";
 
@@ -38,7 +39,7 @@ import {
   extractCodeBlocks as _extractCodeBlocks,
 } from "../utils/AIUtils";
 import { EmbeddedFilesLoader } from "src/shared/EmbeddedFileLoader";
-import { SVGColorInfo } from "src/types/excalidrawAutomateTypes";
+import { ScriptSettingValue, SVGColorInfo } from "src/types/excalidrawAutomateTypes";
 import { ExcalidrawData, getExcalidrawMarkdownHeaderSection, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "src/shared/ExcalidrawData";
 import { getFrameBasedOnFrameNameOrId, sceneRemoveInternalLinks } from "./excalidrawViewUtils";
 import { ScriptEngine } from "src/shared/Scripts";
@@ -853,3 +854,74 @@ export const getBoundTextElementId = (container: ExcalidrawElement | null) => {
     ? container?.boundElements?.find((ele) => ele.type === "text")?.id || null
     : null;
 };
+
+/**
+ * 
+ * FixedPoint represents the fixed point binding information in form of a vertical and
+ * horizontal ratio (i.e. a percentage value in the 0.0-1.0 range). This ratio
+ * gives the user selected fixed point by multiplying the bound element width
+ * with fixedPoint[0] and the bound element height with fixedPoint[1] to get the
+ * bound element-local point coordinate.
+ */
+export const normalizeFixedPoint = <T extends FixedPoint | null | undefined>(
+  fixedPoint: T,
+): T extends null ? null : FixedPoint => {
+  if (!fixedPoint) {
+    return [0.50001, 0.5001] as any as T extends null ? null : FixedPoint;
+  }
+  if (fixedPoint[0] < 0 || fixedPoint[0] > 1) {
+    fixedPoint[0] = 0.5001;
+  }
+  if (fixedPoint[1] < 0 || fixedPoint[1] > 1) {
+    fixedPoint[1] = 0.5001;
+  }
+  // Do not allow a precise 0.5 for fixed point ratio
+  // to avoid jumping arrow heading due to floating point imprecision
+  if (
+    fixedPoint &&
+    (Math.abs(fixedPoint[0] - 0.5) < 0.0001 ||
+      Math.abs(fixedPoint[1] - 0.5) < 0.0001)
+  ) {
+    return fixedPoint.map((ratio) =>
+      Math.abs(ratio - 0.5) < 0.0001 ? 0.5001 : ratio,
+    ) as T extends null ? null : FixedPoint;
+  }
+  return fixedPoint as any as T extends null ? null : FixedPoint;
+};
+
+export const normalizeBindMode = (bindMode?: string): "orbit" | "inside" => {
+  if (!bindMode || (bindMode !== "orbit" && bindMode !== "inside")) {
+    return "orbit";
+  }
+  return bindMode;
+};
+
+/**
+ * Ensures that plugin.settings.scriptEngineSettings and the active script's settings object exist.
+ * Handles undefined/null during initialization.
+ *
+ * Note: kept in utils (not as an EA private method) so it won't be exposed on window.ExcalidrawAutomate.
+ */
+export function ensureActiveScriptSettingsObject(
+  ea: ExcalidrawAutomate
+): Record<string, ScriptSettingValue> | null {
+  const activeScript = ea?.activeScript;
+  const plugin = ea?.plugin;
+
+  if (!activeScript || !plugin?.settings) {
+    return null;
+  }
+
+  // Ensure the top-level container exists
+  if (!plugin.settings.scriptEngineSettings || typeof plugin.settings.scriptEngineSettings !== "object") {
+    plugin.settings.scriptEngineSettings = {};
+  }
+
+  // Ensure the per-script settings object exists (handle null/undefined)
+  const current = plugin.settings.scriptEngineSettings[activeScript];
+  if (!current || typeof current !== "object") {
+    plugin.settings.scriptEngineSettings[activeScript] = {};
+  }
+
+  return plugin.settings.scriptEngineSettings[activeScript] as Record<string, ScriptSettingValue>;
+}

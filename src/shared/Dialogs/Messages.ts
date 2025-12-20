@@ -17,6 +17,26 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.18.3":`
+## New
+- Added Mindmap Builder script to the script store.
+
+## Fixed
+- YouTube video embeds working on iOS  [#2569](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2569)
+
+## New in ExcalidrawAutomate
+- Added 3 new helper functions for working with Script Engine settings (safe during initialization when \`scriptEngineSettings[activeScript]\` is \`undefined\` / \`null\`):
+  - \`setScriptSettingValue(key: string, value: ScriptSettingValue): void\`
+  - \`getScriptSettingValue(key: string, defaultValue: ScriptSettingValue): ScriptSettingValue\`
+  - \`saveScriptSettings(): Promise<void>\`
+
+- Updated \`addArrow()\` to support the new Excalidraw binding options:
+  - \`startBindMode?: "inside" | "orbit"\`
+  - \`endBindMode?: "inside" | "orbit"\`
+  - \`startFixedPoint?: [number, number]\`
+  - \`endFixedPoint?: [number, number]\`
+  - \`elbowed?: boolean\`
+`,
 "2.18.2":`
 ## Fixed
 - Stroke palette menu for embedded notes is gone after 2.17 update [#2580](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2580)

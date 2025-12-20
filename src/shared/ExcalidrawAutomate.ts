@@ -80,8 +80,8 @@ import { addBackOfTheNoteCard, sceneRemoveInternalLinks } from "../utils/excalid
 import { log } from "../utils/debugHelper";
 import { ExcalidrawLib } from "../types/excalidrawLib";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/src/types";
-import { AddImageOptions, ImageInfo, SVGColorInfo } from "src/types/excalidrawAutomateTypes";
-import { _measureText, cloneElement, createPNG, createSVG, errorMessage, filterColorMap, getEmbeddedFileForImageElment, getFontFamily, getLineBox, getTemplate, isColorStringTransparent, isSVGColorInfo, mergeColorMapIntoSVGColorInfo, normalizeLinePoints, repositionElementsToCursor, svgColorInfoToColorMap, updateOrAddSVGColorInfo, verifyMinimumPluginVersion } from "src/utils/excalidrawAutomateUtils";
+import { AddImageOptions, ImageInfo, ScriptSettingValue, SVGColorInfo } from "src/types/excalidrawAutomateTypes";
+import { _measureText, cloneElement, createPNG, createSVG, ensureActiveScriptSettingsObject, errorMessage, filterColorMap, getEmbeddedFileForImageElment, getFontFamily, getLineBox, getTemplate, isColorStringTransparent, isSVGColorInfo, mergeColorMapIntoSVGColorInfo, normalizeBindMode, normalizeFixedPoint, normalizeLinePoints, repositionElementsToCursor, svgColorInfoToColorMap, updateOrAddSVGColorInfo, verifyMinimumPluginVersion } from "src/utils/excalidrawAutomateUtils";
 import { exportToPDF, getMarginValue, getPageDimensions } from "src/utils/exportUtils";
 import { PageDimensions, PageOrientation, PageSize, PDFExportScale, PDFPageProperties, ExportSettings} from "src/types/exportUtilTypes";
 import { FrameRenderingOptions } from "src/types/utilTypes";
@@ -91,6 +91,8 @@ import { FloatingModal } from "./Dialogs/FloatingModal";
 import { patchMobileView } from "src/utils/customEmbeddableUtils";
 import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
 import { AIRequest } from "src/types/AIUtilTypes";
+import { arrow, end } from "@popperjs/core";
+import { start } from "repl";
 
 extendPlugins([
   HarmonyPlugin,
@@ -1796,6 +1798,17 @@ export class ExcalidrawAutomate {
    * @param {"arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null} [formatting.endArrowHead] - The end arrowhead type.
    * @param {string} [formatting.startObjectId] - The ID of the start object.
    * @param {string} [formatting.endObjectId] - The ID of the end object.
+   * BindMode Determines whether the arrow remains outside the shape or is allowed to
+   * go all the way inside the shape up to the exact fixed point.
+   * @param {"inside" | "orbit"} [formatting.startBindMode] - The binding mode for the start object.
+   * @param {"inside" | "orbit"} [formatting.endBindMode] - The binding mode for the end object. 
+   * FixedPoint represents the fixed point binding information in form of a vertical and
+   * horizontal ratio (i.e. a percentage value in the 0.0-1.0 range). This ratio
+   * gives the user selected fixed point by multiplying the bound element width
+   * with fixedPoint[0] and the bound element height with fixedPoint[1] to get the
+   * bound element-local point coordinate.
+   * @param {[number, number]} [formatting.startFixedPoint] - The fixed point for the start object.
+   * @param {[number, number]} [formatting.endFixedPoint] - The fixed point for the end object.
    * @param {string} [id] - The ID of the arrow element.
    * @returns {string} The ID of the added arrow element.
    */
@@ -1806,32 +1819,40 @@ export class ExcalidrawAutomate {
       endArrowHead?: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null;
       startObjectId?: string;
       endObjectId?: string;
+      startBindMode?: "inside" | "orbit";
+      endBindMode?: "inside" | "orbit";
+      startFixedPoint?: [number, number];
+      endFixedPoint?: [number, number];
+      elbowed?: boolean;
     },
     id?: string,
   ): string {
+    const startFixedPoint = normalizeFixedPoint(formatting?.startFixedPoint);
+    const endFixedPoint = normalizeFixedPoint(formatting?.endFixedPoint);
+    const startMode = normalizeBindMode(formatting?.startBindMode);
+    const endMode = normalizeBindMode(formatting?.endBindMode);
     const box = getLineBox(points);
+    const elbowed = formatting?.elbowed ?? false;
+    const startElement = formatting?.startObjectId
+      ? this.getElement(formatting.startObjectId) as Mutable<ExcalidrawBindableElement>
+      : null;
+    const endElement = formatting?.endObjectId
+      ? this.getElement(formatting.endObjectId) as Mutable<ExcalidrawBindableElement>
+      : null;
     id = id ?? nanoid();
-    const startPoint = points[0] as GlobalPoint;
-    const endPoint = points[points.length - 1] as GlobalPoint;
-    const elementsMap = arrayToMap(this.getElements());
     this.elementsDict[id] = {
       points: normalizeLinePoints(points),
+      elbowed,
       lastCommittedPoint: null,
       startBinding: {
         elementId: formatting?.startObjectId,
-        mode: "orbit",
-				fixedPoint: [
-					1,
-					1
-				],
+        mode: startMode,
+				fixedPoint: startFixedPoint,
       },
       endBinding: {
         elementId: formatting?.endObjectId,
-        mode: "orbit",
-				fixedPoint: [
-					0,
-					0
-				],
+        mode: endMode,
+				fixedPoint: endFixedPoint,
       },
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/388
       startArrowhead:
@@ -1844,20 +1865,20 @@ export class ExcalidrawAutomate {
           : this.style.endArrowHead,
       ...this.boxedElement(id, "arrow", points[0][0], points[0][1], box.w, box.h),
     };
-    if (formatting?.startObjectId) {
-      if (!this.elementsDict[formatting.startObjectId].boundElements) {
-        this.elementsDict[formatting.startObjectId].boundElements = [];
+    if (startElement) {
+      if (!startElement.boundElements) {
+        startElement.boundElements = [];
       }
-      this.elementsDict[formatting.startObjectId].boundElements.push({
+      (startElement.boundElements as Mutable<ExcalidrawElement["boundElements"]>).push({
         type: "arrow",
         id,
       });
     }
-    if (formatting?.endObjectId) {
-      if (!this.elementsDict[formatting.endObjectId].boundElements) {
-        this.elementsDict[formatting.endObjectId].boundElements = [];
+    if (endElement) {
+      if (!endElement.boundElements) {
+        endElement.boundElements = [];
       }
-      this.elementsDict[formatting.endObjectId].boundElements.push({
+      (endElement.boundElements as Mutable<ExcalidrawElement["boundElements"]>).push({
         type: "arrow",
         id,
       });
@@ -3311,6 +3332,23 @@ export class ExcalidrawAutomate {
     this.plugin.settings.scriptEngineSettings[this.activeScript] = settings;
     await this.plugin.saveSettings();
   };
+
+  public setScriptSettingValue(key: string, value: ScriptSettingValue): void {
+    const settings = ensureActiveScriptSettingsObject(this);
+    if (!settings) return;
+    settings[key] = value;
+  }
+
+  public getScriptSettingValue(key: string, defaultValue: ScriptSettingValue): ScriptSettingValue {
+    const settings = ensureActiveScriptSettingsObject(this);
+    if (!settings) return defaultValue;
+    return settings[key] ?? defaultValue;
+  }
+
+  public async saveScriptSettings(): Promise<void> {
+    ensureActiveScriptSettingsObject(this);
+    await this.plugin.saveSettings();
+  }
 
   /**
    * Opens a file in a new workspace leaf or reuses an existing adjacent leaf depending on Excalidraw Plugin Settings.
