@@ -27,7 +27,7 @@ import { EditorView, keymap } from "@codemirror/view";
 import { history } from "@codemirror/commands";
 import { parser } from "./math-only";
 import { LRLanguage } from "@codemirror/language";
-import { EditorState, Prec } from "@codemirror/state";
+import { editorLivePreviewField } from "obsidian";
 
 export class Prompt extends Modal {
   private promptEl: HTMLInputElement;
@@ -126,11 +126,12 @@ export class LaTexPrompt extends Modal {
       const language = LRLanguage.define({parser:parser});
       const extensions = [
         language, 
-        Prec.high(keymap.of([{
+        keymap.of([{
           key:"Mod-Enter", 
           run : () => {this.submitCallback(); return true;}
-        }])),
+        }]),
         history(),
+        editorLivePreviewField.init(() => false),
         ... this.latexsSuitePlugin.editorExtensions
       ];
 
@@ -141,10 +142,10 @@ export class LaTexPrompt extends Modal {
       });
     } else {
       const extensions = [
-        Prec.high(keymap.of([{
+        keymap.of([{
           key:"Mod-Enter", 
           run : () => {this.submitCallback(); return true;}
-        }])),
+        }]),
         history(),
       ];
       this.editorView = new EditorView({ 
