@@ -33,6 +33,7 @@ let boxChildren = getVal(K_BOX, false) === true;
 let roundedCorners = getVal(K_ROUND, true) === true;
 let multicolor = getVal(K_MULTICOLOR, true) === true;
 let currentModalGrowthMode = getVal(K_GROWTH, "Radial");
+let autoLayoutDisabled = false;
 
 const NORMAL_SIZES = [36, 28, 20, 16]; 
 const FIBO_SIZES = [68, 42, 26, 16];
@@ -130,9 +131,7 @@ const layoutSubtree = (nodeId, x, centerY, side, allElements) => {
   eaNode.x = side === 1 ? x : x - node.width;
   eaNode.y = centerY - node.height / 2;
   const children = getChildrenNodes(nodeId, allElements);
-  // Stable sort for descendants: preserve visual order by Y
   children.sort((a, b) => a.y - b.y);
-  
   const subtreeHeight = getSubtreeHeight(nodeId, allElements);
   let currentY = centerY - subtreeHeight / 2;
   children.forEach(child => {
@@ -164,7 +163,6 @@ const triggerGlobalLayout = (rootId) => {
   const existingL1 = l1Nodes.filter(n => !n.customData?.mindmapNew);
   const newL1 = l1Nodes.filter(n => n.customData?.mindmapNew);
   
-  // Stable Sort: Left/Right facing use Y-coord for stability. Radial uses Angle.
   if (mode === "Radial") {
     existingL1.sort((a, b) => getAngleFromCenter(rootCenter, {x: a.x + a.width/2, y: a.y + a.height/2}) - getAngleFromCenter(rootCenter, {x: b.x + b.width/2, y: b.y + b.height/2}));
   } else {
@@ -220,9 +218,6 @@ const addNode = async (text, follow = false) => {
     depth = info.depth + 1; rootId = info.rootId;
     const rootEl = allElements.find(e => e.id === rootId);
     
-    // COLOR INHERITANCE FIX:
-    // depth 1: handle new color logic
-    // depth 2+: always force parent color inheritance
     if (depth === 1) {
         if (multicolor) {
             const existingColors = getChildrenNodes(parent.id, allElements).map(n => n.strokeColor);
@@ -249,19 +244,58 @@ const addNode = async (text, follow = false) => {
   if (!parent) {
     ea.style.strokeColor = multicolor ? "black" : st.currentItemStrokeColor;
     newNodeId = ea.addText(0, 0, text, { box: "rectangle", textAlign: "center", textVerticalAlign: "middle", width: shouldWrap ? curMaxW : undefined, autoResize: !shouldWrap });
-    ea.addAppendUpdateCustomData(newNodeId, { growthMode: currentModalGrowthMode });
+    ea.addAppendUpdateCustomData(newNodeId, { growthMode: currentModalGrowthMode, autoLayoutDisabled: false });
     rootId = newNodeId;
   } else {
     ea.style.strokeColor = getReadableColor(nodeColor);
-    newNodeId = ea.addText(parent.x, parent.y, text, { box: boxChildren ? "rectangle" : false, textAlign: boxChildren ? "center" : "left", textVerticalAlign: "middle", width: shouldWrap ? maxWidth : undefined, autoResize: !shouldWrap });
+    
+    // Positioning for Manual Mode (No Auto Layout)
+    let px = parent.x, py = parent.y;
+    if (autoLayoutDisabled) {
+      const mode = allElements.find(e => e.id === rootId)?.customData?.growthMode || currentModalGrowthMode;
+      const rootEl = allElements.find(e => e.id === rootId);
+      const rootCenter = { x: rootEl.x + rootEl.width / 2, y: rootEl.y + rootEl.height / 2 };
+      const side = (parent.x + parent.width/2 > rootCenter.x) ? 1 : -1;
+      
+      const manualGapX = 200; // Further out
+      const jitterX = (Math.random() - 0.5) * 40;
+      const jitterY = (Math.random() - 0.5) * 40;
+      
+      const nodeW = shouldWrap ? maxWidth : metrics.width;
+      px = side === 1 ? parent.x + parent.width + manualGapX + jitterX : parent.x - manualGapX - nodeW + jitterX;
+      py = (parent.y + parent.height/2) - (metrics.height / 2) + jitterY;
+    }
+
+    newNodeId = ea.addText(px, py, text, { box: boxChildren ? "rectangle" : false, textAlign: boxChildren ? "center" : "left", textVerticalAlign: "middle", width: shouldWrap ? maxWidth : undefined, autoResize: !shouldWrap });
     if (depth === 1) ea.addAppendUpdateCustomData(newNodeId, { mindmapNew: true });
+    
     ea.copyViewElementsToEAforEditing([parent]);
     ea.style.strokeWidth = STROKE_WIDTHS[Math.min(depth, STROKE_WIDTHS.length - 1)];
-    ea.addArrow([[parent.x + parent.width/2, parent.y + parent.height/2], [parent.x + parent.width/2, parent.y + parent.height/2]], { startObjectId: parent.id, endObjectId: newNodeId, startArrowHead: null, endArrowHead: null });
+    const startPoint = [parent.x + parent.width/2, parent.y + parent.height/2];
+    ea.addArrow([startPoint, startPoint], { startObjectId: parent.id, endObjectId: newNodeId, startArrowHead: null, endArrowHead: null });
   }
 
   await ea.addElementsToView(!parent, false, true, true);
-  if (rootId) { triggerGlobalLayout(rootId); await ea.addElementsToView(false, false, true, true); }
+  
+  if (rootId && !autoLayoutDisabled) { 
+    triggerGlobalLayout(rootId); 
+    await ea.addElementsToView(false, false, true, true); 
+  } else if (rootId && autoLayoutDisabled && parent) {
+    // Manually fix arrow endpoints for the single new node
+    const allEls = ea.getViewElements();
+    const node = allEls.find(el => el.id === newNodeId);
+    const arrow = allEls.find(a => a.type === "arrow" && a.endBinding?.elementId === newNodeId);
+    if (arrow) {
+      ea.copyViewElementsToEAforEditing([arrow]);
+      const eaA = ea.getElement(arrow.id);
+      const sX = parent.x + parent.width/2, sY = parent.y + parent.height/2;
+      const eX = node.x + node.width/2, eY = node.y + node.height/2;
+      eaA.x = sX; eaA.y = sY;
+      eaA.points = [[0, 0], [eX - sX, eY - sY]];
+      await ea.addElementsToView(false, false, true, true);
+    }
+  }
+
   const finalNode = ea.getViewElements().find(el => el.id === newNodeId);
   if (follow || !parent) ea.selectElementsInView([finalNode]);
   else if (parent) ea.selectElementsInView([parent]);
@@ -291,14 +325,15 @@ const navigateMap = (key) => {
     else { const ch = getChildrenNodes(current.id, allElements); if (ch.length) ea.selectElementsInView([ch[0]]); }
   } else if (key === "ArrowUp" || key === "ArrowDown") {
     const parent = getParentNode(current.id, allElements), siblings = getChildrenNodes(parent.id, allElements);
-    if (root.customData?.growthMode === "Radial") {
+    const mode = root.customData?.growthMode || currentModalGrowthMode;
+    if (mode === "Radial") {
         siblings.sort((a, b) => getAngleFromCenter(rootCenter, {x: a.x + a.width/2, y: a.y + a.height/2}) - getAngleFromCenter(rootCenter, {x: b.x + b.width/2, y: b.y + b.height/2}));
     } else {
         siblings.sort((a, b) => a.y - b.y);
     }
     const idx = siblings.findIndex(s => s.id === current.id);
     const nIdx = key === "ArrowUp" ? (idx - 1 + siblings.length) % siblings.length : (idx + 1) % siblings.length;
-    ea.selectElementsInView([siblings[nIdx]]);
+    ea.selectElementsInView([siblings[idx === -1 ? 0 : nIdx]]);
   }
 };
 
@@ -312,7 +347,7 @@ modal.onOpen = () => {
 
   const statusEl = contentEl.createDiv({ attr: { style: "font-size:0.85em; color:var(--text-accent); font-weight:bold; margin:12px 0; border-bottom:1px solid var(--background-modifier-border); padding-bottom:5px;" }});
   
-  let strategyDropdown;
+  let strategyDropdown, autoLayoutToggle;
   const updateStatus = () => {
     const all = ea.getViewElements();
     const sel = ea.getViewSelectedElement();
@@ -322,10 +357,19 @@ modal.onOpen = () => {
     if (sel) {
         const info = getHierarchy(sel, all);
         const root = all.find(e => e.id === info.rootId);
+        
+        // Sync Strategy
         const mapStrategy = root.customData?.growthMode;
         if (mapStrategy && mapStrategy !== currentModalGrowthMode) {
             currentModalGrowthMode = mapStrategy;
             strategyDropdown.setValue(mapStrategy);
+        }
+        
+        // Sync Auto Layout Disable preference
+        const mapLayoutPref = root.customData?.autoLayoutDisabled === true;
+        if (mapLayoutPref !== autoLayoutDisabled) {
+          autoLayoutDisabled = mapLayoutPref;
+          autoLayoutToggle.setValue(mapLayoutPref);
         }
     }
   };
@@ -348,11 +392,27 @@ modal.onOpen = () => {
         ea.copyViewElementsToEAforEditing(ea.getViewElements().filter(e => e.id === info.rootId));
         ea.addAppendUpdateCustomData(info.rootId, { growthMode: v });
         await ea.addElementsToView(false, false, true, true);
-        triggerGlobalLayout(info.rootId);
-        await ea.addElementsToView(false, false, true, true);
+        if (!autoLayoutDisabled) {
+          triggerGlobalLayout(info.rootId);
+          await ea.addElementsToView(false, false, true, true);
+        }
       }
     });
   });
+
+  autoLayoutToggle = new ea.obsidian.Setting(contentEl).setName("Disable Auto-Layout").addToggle(t => t
+    .setValue(autoLayoutDisabled)
+    .onChange(async v => {
+      autoLayoutDisabled = v;
+      const sel = ea.getViewSelectedElement();
+      if (sel) {
+        const info = getHierarchy(sel, ea.getViewElements());
+        ea.copyViewElementsToEAforEditing(ea.getViewElements().filter(e => e.id === info.rootId));
+        ea.addAppendUpdateCustomData(info.rootId, { autoLayoutDisabled: v });
+        await ea.addElementsToView(false, false, true, true);
+      }
+    })
+  ).components[0];
 
   new ea.obsidian.Setting(contentEl).setName("Multicolor Branches").addToggle(t => t.setValue(multicolor).onChange(v => { multicolor = v; ea.setScriptSettingValue(K_MULTICOLOR, { value: v }); dirty = true; }));
 
