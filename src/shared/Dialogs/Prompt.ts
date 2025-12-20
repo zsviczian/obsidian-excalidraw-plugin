@@ -23,7 +23,8 @@ import { REGEX_LINK, REGEX_TAGS } from "../ExcalidrawData";
 import { ScriptEngine } from "../Scripts";
 import { openExternalLink, openTagSearch, parseObsidianLink } from "src/utils/excalidrawViewUtils";
 import { ButtonDefinition } from "src/types/promptTypes";
-import { EditorView, keymap } from "@codemirror/view"
+import { EditorView, keymap } from "@codemirror/view";
+import { history } from "@codemirror/commands";
 import { parser } from "./math-only";
 import { LRLanguage } from "@codemirror/language";
 import { EditorState, Prec } from "@codemirror/state";
@@ -125,6 +126,7 @@ export class LaTexPrompt extends Modal {
       const language = LRLanguage.define({parser:parser});
       const extensions = [
         language, 
+        history(),
         ... this.latexsSuitePlugin.editorExtensions
       ];
 
