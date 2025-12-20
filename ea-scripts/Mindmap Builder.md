@@ -132,7 +132,9 @@ const layoutSubtree = (nodeId, x, centerY, side, allElements) => {
   eaNode.x = side === 1 ? x : x - node.width;
   eaNode.y = centerY - node.height / 2;
   const children = getChildrenNodes(nodeId, allElements);
+  // Stable sort for descendants: preserve visual order by Y
   children.sort((a, b) => a.y - b.y);
+  
   const subtreeHeight = getSubtreeHeight(nodeId, allElements);
   let currentY = centerY - subtreeHeight / 2;
   children.forEach(child => {
@@ -206,7 +208,7 @@ const triggerGlobalLayout = (rootId) => {
 // 4. Add Node Logic
 // ---------------------------------------------------------------------------
 
-const addNode = async (text, follow = false) => {
+const addNode = async (text, follow = false, skipFinalLayout = false) => {
   if (!text || text.trim() === "") return;
   const allElements = ea.getViewElements();
   const st = ea.getExcalidrawAPI().getAppState();
@@ -275,10 +277,10 @@ const addNode = async (text, follow = false) => {
 
   await ea.addElementsToView(!parent, false, true, true);
   
-  if (rootId && !autoLayoutDisabled) { 
+  if (!skipFinalLayout && rootId && !autoLayoutDisabled) { 
     triggerGlobalLayout(rootId); 
     await ea.addElementsToView(false, false, true, true); 
-  } else if (rootId && autoLayoutDisabled && parent) {
+  } else if (rootId && (autoLayoutDisabled || skipFinalLayout) && parent) {
     const allEls = ea.getViewElements();
     const node = allEls.find(el => el.id === newNodeId);
     const arrow = allEls.find(a => a.type === "arrow" && a.endBinding?.elementId === newNodeId);
@@ -321,7 +323,6 @@ const copyMapAsText = async () => {
   const buildList = (nodeId, depth = 0) => {
     const node = all.find(e => e.id === nodeId);
     const children = getChildrenNodes(nodeId, all);
-    // Sort visually for export
     children.sort((a,b) => a.y - b.y);
     
     let str = "";
@@ -335,24 +336,20 @@ const copyMapAsText = async () => {
 
   const md = buildList(rootNode.id);
   await navigator.clipboard.writeText(md);
-  new Notice("Mindmap copied to clipboard as list.");
+  new Notice("Mindmap copied to clipboard.");
 };
 
 const pasteListToMap = async () => {
-  const text = await navigator.clipboard.readText();
-  if (!text) return;
+  const rawText = await navigator.clipboard.readText();
+  if (!rawText) return;
 
-  const lines = text
-    .split(/\r\n|\n|\r/)
-    .map(l => l.trimEnd())
-    .filter(l => l.trim() !== "");
-
+  const lines = rawText.split(/\r\n|\n|\r/).filter(l => l.trim() !== "");
   let parsed = [];
-  let rootText = null;
+  let rootTextFromHeader = null;
 
   lines.forEach(line => {
     if (line.startsWith("# ")) {
-      rootText = line.substring(2).trim();
+      rootTextFromHeader = line.substring(2).trim();
     } else {
       const match = line.match(/^(\s*)(?:-|\*|\d+\.)\s+(.*)$/);
       if (match) {
@@ -361,52 +358,61 @@ const pasteListToMap = async () => {
     }
   });
 
-  if (parsed.length === 0 && !rootText) return;
-
-  const sel = ea.getViewSelectedElement();
-  let currentParentId = sel?.id;
-
-  // Handle root creation if no selection
-  if (!currentParentId) {
-    if (rootText) {
-      const root = await addNode(rootText, true);
-      currentParentId = root.id;
-    } else if (parsed.length > 0) {
-      // Check if there is only one top-level item
-      const topLevel = parsed.filter(p => p.indent === parsed[0].indent);
-      if (topLevel.length === 1) {
-        const root = await addNode(topLevel[0].text, true);
-        currentParentId = root.id;
-        parsed.shift();
-      } else {
-        const root = await addNode("Mindmap Builder Paste", true);
-        currentParentId = root.id;
-      }
-    }
+  if (parsed.length === 0 && !rootTextFromHeader) {
+    new Notice("No valid Markdown list found on clipboard.");
+    return;
   }
 
-  // Recursive paste
-  const stack = [{ id: currentParentId, indent: -1 }];
+  const sel = ea.getViewSelectedElement();
+  let currentParent;
+
+  // 1. Resolve Root
+  if (!sel) {
+    if (rootTextFromHeader) {
+      currentParent = await addNode(rootTextFromHeader, true, true);
+    } else {
+      // Check if there's exactly one top-level item in the list
+      const minIndent = Math.min(...parsed.map(p => p.indent));
+      const topLevelItems = parsed.filter(p => p.indent === minIndent);
+      if (topLevelItems.length === 1) {
+        currentParent = await addNode(topLevelItems[0].text, true, true);
+        parsed.shift();
+      } else {
+        currentParent = await addNode("Mindmap Builder Paste", true, true);
+      }
+    }
+  } else {
+    currentParent = sel;
+    // If selected element is part of a container, parent is already handled in addNode
+  }
+
+  // 2. Process Nested List
+  // We use a stack to track nodes at each indentation level
+  const stack = [{ indent: -1, node: currentParent }];
+  
   for (const item of parsed) {
+    // Pop the stack until we find the parent level
     while (stack.length > 1 && item.indent <= stack[stack.length - 1].indent) {
       stack.pop();
     }
-    const newNode = await addNode(item.text, false);
-    stack.push({ id: newNode.id, indent: item.indent });
-    // This is batch adding, so we need to sync parent for each iteration
-    const arrows = ea.getViewElements().filter(el => el.type === "arrow");
-    const arrow = arrows.find(a => a.endBinding?.elementId === newNode.id);
-    if (arrow) {
-      ea.copyViewElementsToEAforEditing([arrow]);
-      const eaA = ea.getElement(arrow.id);
-      const pNode = ea.getViewElements().find(e => e.id === stack[stack.length-2].id);
-      const sX = pNode.x + pNode.width/2, sY = pNode.y + pNode.height/2;
-      const eX = newNode.x + newNode.width/2, eY = newNode.y + newNode.height/2;
-      eaA.x = sX; eaA.y = sY; eaA.points = [[0, 0], [eX - sX, eY - sY]];
-      await ea.addElementsToView(false, false, true, true);
-    }
+    
+    // The current parent is the top of the stack
+    const parentNode = stack[stack.length - 1].node;
+    
+    // Add node (passing true to skip re-layout during batch add)
+    ea.selectElementsInView([parentNode]);
+    const newNode = await addNode(item.text, false, true);
+    
+    stack.push({ indent: item.indent, node: newNode });
   }
-  new Notice("Paste complete.");
+
+  // 3. Final Layout
+  const allEls = ea.getViewElements();
+  const info = getHierarchy(currentParent, allEls);
+  triggerGlobalLayout(info.rootId);
+  await ea.addElementsToView(false, false, true, true);
+  
+  new Notice("Mindmap paste complete.");
 };
 
 // ---------------------------------------------------------------------------
