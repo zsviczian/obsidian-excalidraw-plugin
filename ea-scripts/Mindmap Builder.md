@@ -48,6 +48,7 @@ const INSTRUCTIONS = `
 - **${isMac ? "OPT" : "ALT"} + Arrows**: Navigate through the mindmap nodes on the canvas.
 - **Coloring**: L1 branches get unique colors (Multicolor mode). Descendants (L2+) always inherit their parent's color.
 - **Growth Strategy**: Stored in the central node. Existing maps maintain their style automatically.
+- **Copy/Paste**: Export/Import indented Markdown lists.
 `;
 
 // ---------------------------------------------------------------------------
@@ -252,15 +253,12 @@ const addNode = async (text, follow = false) => {
     // Positioning for Manual Mode (No Auto Layout)
     let px = parent.x, py = parent.y;
     if (autoLayoutDisabled) {
-      const mode = allElements.find(e => e.id === rootId)?.customData?.growthMode || currentModalGrowthMode;
       const rootEl = allElements.find(e => e.id === rootId);
       const rootCenter = { x: rootEl.x + rootEl.width / 2, y: rootEl.y + rootEl.height / 2 };
       const side = (parent.x + parent.width/2 > rootCenter.x) ? 1 : -1;
-      
-      const manualGapX = 200; // Further out
-      const jitterX = (Math.random() - 0.5) * 40;
-      const jitterY = (Math.random() - 0.5) * 40;
-      
+      const manualGapX = 220; 
+      const jitterX = (Math.random() - 0.5) * 100;
+      const jitterY = (Math.random() - 0.5) * 100;
       const nodeW = shouldWrap ? maxWidth : metrics.width;
       px = side === 1 ? parent.x + parent.width + manualGapX + jitterX : parent.x - manualGapX - nodeW + jitterX;
       py = (parent.y + parent.height/2) - (metrics.height / 2) + jitterY;
@@ -281,7 +279,6 @@ const addNode = async (text, follow = false) => {
     triggerGlobalLayout(rootId); 
     await ea.addElementsToView(false, false, true, true); 
   } else if (rootId && autoLayoutDisabled && parent) {
-    // Manually fix arrow endpoints for the single new node
     const allEls = ea.getViewElements();
     const node = allEls.find(el => el.id === newNodeId);
     const arrow = allEls.find(a => a.type === "arrow" && a.endBinding?.elementId === newNodeId);
@@ -299,10 +296,121 @@ const addNode = async (text, follow = false) => {
   const finalNode = ea.getViewElements().find(el => el.id === newNodeId);
   if (follow || !parent) ea.selectElementsInView([finalNode]);
   else if (parent) ea.selectElementsInView([parent]);
+  return finalNode;
 };
 
 // ---------------------------------------------------------------------------
-// 5. Navigation & Modal UI
+// 5. Copy & Paste Engine
+// ---------------------------------------------------------------------------
+const getText = (all, node) => {
+  if (node.type === "text") return node.originalText;
+  const textId = node.boundElements.find(be => be.type==="text")?.id;
+  if (!textId) return "";
+  textEl = all.find(el=>el.id === textId);
+  if (!textEl) return "";
+  return textEl.originalText;
+}
+
+const copyMapAsText = async () => {
+  const sel = ea.getViewSelectedElement();
+  if (!sel) return;
+  const all = ea.getViewElements();
+  const info = getHierarchy(sel, all);
+  const rootNode = all.find(e => e.id === info.rootId);
+  
+  const buildList = (nodeId, depth = 0) => {
+    const node = all.find(e => e.id === nodeId);
+    const children = getChildrenNodes(nodeId, all);
+    // Sort visually for export
+    children.sort((a,b) => a.y - b.y);
+    
+    let str = "";
+    const text = getText(all,node);
+    if (depth === 0) str += `# ${text}\n\n`;
+    else str += `${"  ".repeat(depth - 1)}- ${text}\n`;
+    
+    children.forEach(c => { str += buildList(c.id, depth + 1); });
+    return str;
+  };
+
+  const md = buildList(rootNode.id);
+  await navigator.clipboard.writeText(md);
+  new Notice("Mindmap copied to clipboard as list.");
+};
+
+const pasteListToMap = async () => {
+  const text = await navigator.clipboard.readText();
+  if (!text) return;
+
+  const lines = text
+    .split(/\r\n|\n|\r/)
+    .map(l => l.trimEnd())
+    .filter(l => l.trim() !== "");
+
+  let parsed = [];
+  let rootText = null;
+
+  lines.forEach(line => {
+    if (line.startsWith("# ")) {
+      rootText = line.substring(2).trim();
+    } else {
+      const match = line.match(/^(\s*)(?:-|\*|\d+\.)\s+(.*)$/);
+      if (match) {
+        parsed.push({ indent: match[1].length, text: match[2].trim() });
+      }
+    }
+  });
+
+  if (parsed.length === 0 && !rootText) return;
+
+  const sel = ea.getViewSelectedElement();
+  let currentParentId = sel?.id;
+
+  // Handle root creation if no selection
+  if (!currentParentId) {
+    if (rootText) {
+      const root = await addNode(rootText, true);
+      currentParentId = root.id;
+    } else if (parsed.length > 0) {
+      // Check if there is only one top-level item
+      const topLevel = parsed.filter(p => p.indent === parsed[0].indent);
+      if (topLevel.length === 1) {
+        const root = await addNode(topLevel[0].text, true);
+        currentParentId = root.id;
+        parsed.shift();
+      } else {
+        const root = await addNode("Mindmap Builder Paste", true);
+        currentParentId = root.id;
+      }
+    }
+  }
+
+  // Recursive paste
+  const stack = [{ id: currentParentId, indent: -1 }];
+  for (const item of parsed) {
+    while (stack.length > 1 && item.indent <= stack[stack.length - 1].indent) {
+      stack.pop();
+    }
+    const newNode = await addNode(item.text, false);
+    stack.push({ id: newNode.id, indent: item.indent });
+    // This is batch adding, so we need to sync parent for each iteration
+    const arrows = ea.getViewElements().filter(el => el.type === "arrow");
+    const arrow = arrows.find(a => a.endBinding?.elementId === newNode.id);
+    if (arrow) {
+      ea.copyViewElementsToEAforEditing([arrow]);
+      const eaA = ea.getElement(arrow.id);
+      const pNode = ea.getViewElements().find(e => e.id === stack[stack.length-2].id);
+      const sX = pNode.x + pNode.width/2, sY = pNode.y + pNode.height/2;
+      const eX = newNode.x + newNode.width/2, eY = newNode.y + newNode.height/2;
+      eaA.x = sX; eaA.y = sY; eaA.points = [[0, 0], [eX - sX, eY - sY]];
+      await ea.addElementsToView(false, false, true, true);
+    }
+  }
+  new Notice("Paste complete.");
+};
+
+// ---------------------------------------------------------------------------
+// 6. Navigation & Modal UI
 // ---------------------------------------------------------------------------
 
 const navigateMap = (key) => {
@@ -357,15 +465,11 @@ modal.onOpen = () => {
     if (sel) {
         const info = getHierarchy(sel, all);
         const root = all.find(e => e.id === info.rootId);
-        
-        // Sync Strategy
         const mapStrategy = root.customData?.growthMode;
         if (mapStrategy && mapStrategy !== currentModalGrowthMode) {
             currentModalGrowthMode = mapStrategy;
             strategyDropdown.setValue(mapStrategy);
         }
-        
-        // Sync Auto Layout Disable preference
         const mapLayoutPref = root.customData?.autoLayoutDisabled === true;
         if (mapLayoutPref !== autoLayoutDisabled) {
           autoLayoutDisabled = mapLayoutPref;
@@ -376,7 +480,7 @@ modal.onOpen = () => {
 
   let inputEl;
   new ea.obsidian.Setting(contentEl).setName("Node Text").addText(text => {
-      inputEl = text.inputEl; inputEl.style.width = "100%"; inputEl.placeholder = "Concept...";
+      inputEl = text.inputEl; inputEl.style.width = "100%"; inputEl.placeholder = "Enter concept...";
   }).settingEl.style.display = "block";
 
   new ea.obsidian.Setting(contentEl).setName("Growth Strategy").addDropdown(d => {
@@ -384,7 +488,7 @@ modal.onOpen = () => {
     d.addOptions({ "Radial": "Radial", "Right-facing": "Right-facing", "Left-facing": "Left-facing" })
     .setValue(currentModalGrowthMode)
     .onChange(async v => { 
-      currentModalGrowthMode = v; 
+      currentModalGrowthMode = v;
       ea.setScriptSettingValue(K_GROWTH, { value: v }); dirty = true; 
       const sel = ea.getViewSelectedElement();
       if (sel) {
@@ -426,10 +530,12 @@ modal.onOpen = () => {
   new ea.obsidian.Setting(contentEl).setName("Box Child Nodes").addToggle(t => t.setValue(boxChildren).onChange(v => { boxChildren = v; ea.setScriptSettingValue(K_BOX, { value: v }); dirty = true; }));
   new ea.obsidian.Setting(contentEl).setName("Rounded Corners").addToggle(t => t.setValue(roundedCorners).onChange(v => { roundedCorners = v; ea.setScriptSettingValue(K_ROUND, { value: v }); dirty = true; }));
 
-  const btnGrid = contentEl.createDiv({ attr: { style: "display: grid; grid-template-columns: 1fr 1fr 1fr; gap:8px; margin-top:20px;" }});
+  const btnGrid = contentEl.createDiv({ attr: { style: "display: grid; grid-template-columns: repeat(5, 1fr); gap:6px; margin-top:20px;" }});
   btnGrid.createEl("button", { text: "Sibling", cls: "mod-cta" }).onclick = async () => { await addNode(inputEl.value, false); inputEl.value = ""; inputEl.focus(); updateStatus(); };
   btnGrid.createEl("button", { text: "Follow" }).onclick = async () => { await addNode(inputEl.value, true); inputEl.value = ""; inputEl.focus(); updateStatus(); };
   btnGrid.createEl("button", { text: "Close" }).onclick = async () => { await addNode(inputEl.value, false); modal.close(); };
+  btnGrid.createEl("button", { text: "Copy" }).onclick = copyMapAsText;
+  btnGrid.createEl("button", { text: "Paste" }).onclick = pasteListToMap;
 
   const keyHandler = async (e) => {
     if (ownerWindow.document.activeElement !== inputEl) return;
